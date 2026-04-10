@@ -1,0 +1,22 @@
+{
+  "name": "city-builder",
+  "version": "1.0.0",
+  "description": "City builder optimizer - maximize population with roads, services, and residentials",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/cli.js",
+    "solve": "tsc && node dist/cli.js",
+    "solve:greedy": "tsc && node dist/cli.js greedy",
+    "solve:cp-sat": "tsc && node dist/cli.js cp-sat",
+    "setup:cp-sat": "bash scripts/setup-cp-sat.sh",
+    "test": "npm run build && node tests/review-findings.test.cjs && node tests/optimizers.test.cjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "typescript": "^5.3.0"
+  }
+}

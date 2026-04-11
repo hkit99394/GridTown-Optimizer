@@ -170,6 +170,29 @@
           <section class="subpanel">
             <div class="subpanel-head">
               <div>
+                <p class="eyebrow">Import</p>
+                <h3>Bulk paste catalogs</h3>
+              </div>
+            </div>
+            <div class="form-grid">
+              <label class="field">
+                <span>Paste service and residential tables</span>
+                <textarea
+                  id="catalogImportText"
+                  rows="10"
+                  placeholder="Paste one or both tab-separated tables here, then import them into the catalogs."
+                ></textarea>
+              </label>
+            </div>
+            <div class="actions-row compact-actions">
+              <button id="importCatalogTextButton" type="button" class="button secondary">Import pasted tables</button>
+              <p id="catalogImportStatus" class="status-text" aria-live="polite">Paste one or both tables to replace the current catalogs.</p>
+            </div>
+          </section>
+
+          <section class="subpanel">
+            <div class="subpanel-head">
+              <div>
                 <p class="eyebrow">Catalog</p>
                 <h3>Service types</h3>
               </div>
@@ -229,6 +252,33 @@
             <p id="solveTimer" class="timer-text" aria-live="off">Elapsed 00:00</p>
           </div>
 
+          <section class="subpanel summary-storage">
+            <div class="subpanel-head">
+              <div>
+                <p class="eyebrow">Save</p>
+                <h3>Configs</h3>
+              </div>
+            </div>
+            <div class="form-grid two-up">
+              <label class="field">
+                <span>Config name</span>
+                <input id="configStorageName" type="text" placeholder="My favorite setup" />
+              </label>
+              <div class="storage-button-block">
+                <button id="saveConfigButton" type="button" class="button secondary">Save current config</button>
+              </div>
+              <label class="field">
+                <span>Saved configs</span>
+                <select id="savedConfigsSelect"></select>
+              </label>
+              <div class="storage-button-row">
+                <button id="loadConfigButton" type="button" class="button ghost">Load selected</button>
+                <button id="deleteConfigButton" type="button" class="button ghost danger">Delete</button>
+              </div>
+            </div>
+            <p id="configStorageStatus" class="status-text" aria-live="polite">Saved configs stay in this browser for later reuse.</p>
+          </section>
+
           <details class="payload-preview">
             <summary>Payload preview</summary>
             <pre id="payloadPreview"></pre>
@@ -243,6 +293,33 @@
             </div>
             <span id="resultBadge" class="result-badge idle">Waiting</span>
           </div>
+
+          <section class="subpanel result-storage-panel">
+            <div class="subpanel-head">
+              <div>
+                <p class="eyebrow">Save</p>
+                <h3>Output layouts</h3>
+              </div>
+            </div>
+            <div class="form-grid two-up">
+              <label class="field">
+                <span>Layout name</span>
+                <input id="layoutStorageName" type="text" placeholder="Best downtown variant" />
+              </label>
+              <div class="storage-button-block">
+                <button id="saveLayoutButton" type="button" class="button secondary">Save current layout</button>
+              </div>
+              <label class="field">
+                <span>Saved layouts</span>
+                <select id="savedLayoutsSelect"></select>
+              </label>
+              <div class="storage-button-row">
+                <button id="loadLayoutButton" type="button" class="button ghost">Display saved</button>
+                <button id="deleteLayoutButton" type="button" class="button ghost danger">Delete</button>
+              </div>
+            </div>
+            <p id="layoutStorageStatus" class="status-text" aria-live="polite">Save a solved output to reopen and display it later.</p>
+          </section>
 
           <div id="resultsEmpty" class="empty-state">
             Run the solver to inspect total population, validation, placements, and the solved layout map.
@@ -265,6 +342,10 @@
               <article class="metric-card">
                 <span class="metric-label">Residentials</span>
                 <strong id="resultResidentialCount">0</strong>
+              </article>
+              <article class="metric-card">
+                <span class="metric-label">Elapsed</span>
+                <strong id="resultElapsed">00:00</strong>
               </article>
               <article class="metric-card accent">
                 <span class="metric-label">Solver status</span>

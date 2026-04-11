@@ -55,6 +55,9 @@ const DEFAULT_RESIDENTIAL_TYPES = [
   { name: "Serene Heights", resident: "150/450", size: "2x2", avail: "1" },
 ];
 
+const CONFIG_STORAGE_KEY = "city-builder:planner-configs:v1";
+const LAYOUT_STORAGE_KEY = "city-builder:planner-layouts:v1";
+
 const state = {
   grid: cloneGrid(SAMPLE_GRID),
   paintMode: "toggle",
@@ -91,6 +94,7 @@ const state = {
   result: null,
   resultError: "",
   resultContext: null,
+  resultElapsedMs: 0,
 };
 
 const elements = {
@@ -104,6 +108,9 @@ const elements = {
   cpSatPanel: document.querySelector("#cpSatPanel"),
   maxServices: document.querySelector("#maxServices"),
   maxResidentials: document.querySelector("#maxResidentials"),
+  catalogImportText: document.querySelector("#catalogImportText"),
+  importCatalogTextButton: document.querySelector("#importCatalogTextButton"),
+  catalogImportStatus: document.querySelector("#catalogImportStatus"),
   addServiceTypeButton: document.querySelector("#addServiceTypeButton"),
   addResidentialTypeButton: document.querySelector("#addResidentialTypeButton"),
   serviceList: document.querySelector("#serviceList"),
@@ -112,6 +119,12 @@ const elements = {
   stopSolveButton: document.querySelector("#stopSolveButton"),
   solveStatus: document.querySelector("#solveStatus"),
   solveTimer: document.querySelector("#solveTimer"),
+  configStorageName: document.querySelector("#configStorageName"),
+  saveConfigButton: document.querySelector("#saveConfigButton"),
+  savedConfigsSelect: document.querySelector("#savedConfigsSelect"),
+  loadConfigButton: document.querySelector("#loadConfigButton"),
+  deleteConfigButton: document.querySelector("#deleteConfigButton"),
+  configStorageStatus: document.querySelector("#configStorageStatus"),
   payloadPreview: document.querySelector("#payloadPreview"),
   summaryGridSize: document.querySelector("#summaryGridSize"),
   summaryAllowedCells: document.querySelector("#summaryAllowedCells"),
@@ -126,11 +139,18 @@ const elements = {
   resultRoadCount: document.querySelector("#resultRoadCount"),
   resultServiceCount: document.querySelector("#resultServiceCount"),
   resultResidentialCount: document.querySelector("#resultResidentialCount"),
+  resultElapsed: document.querySelector("#resultElapsed"),
   resultSolverStatus: document.querySelector("#resultSolverStatus"),
   serviceResultList: document.querySelector("#serviceResultList"),
   residentialResultList: document.querySelector("#residentialResultList"),
   resultMapGrid: document.querySelector("#resultMapGrid"),
   resultOverlay: document.querySelector("#resultOverlay"),
+  layoutStorageName: document.querySelector("#layoutStorageName"),
+  saveLayoutButton: document.querySelector("#saveLayoutButton"),
+  savedLayoutsSelect: document.querySelector("#savedLayoutsSelect"),
+  loadLayoutButton: document.querySelector("#loadLayoutButton"),
+  deleteLayoutButton: document.querySelector("#deleteLayoutButton"),
+  layoutStorageStatus: document.querySelector("#layoutStorageStatus"),
   greedyLocalSearch: document.querySelector("#greedyLocalSearch"),
   greedyRestarts: document.querySelector("#greedyRestarts"),
   greedyServiceRefineIterations: document.querySelector("#greedyServiceRefineIterations"),
@@ -155,6 +175,77 @@ function cloneGrid(grid) {
 
 function createGrid(rows, cols, value = 1) {
   return Array.from({ length: rows }, () => Array.from({ length: cols }, () => value));
+}
+
+function cloneJson(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function createSavedEntryId() {
+  return `saved-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function formatSavedTimestamp(savedAt) {
+  const date = new Date(savedAt);
+  return Number.isNaN(date.getTime()) ? "Unknown time" : date.toLocaleString();
+}
+
+function normalizeElapsedMs(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < 0) return 0;
+  return Math.round(number);
+}
+
+function readStoredEntries(storageKey) {
+  try {
+    const raw = window.localStorage.getItem(storageKey);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeStoredEntries(storageKey, entries) {
+  window.localStorage.setItem(storageKey, JSON.stringify(entries));
+}
+
+function populateSavedSelect(selectElement, entries, placeholder, labelBuilder = null) {
+  selectElement.innerHTML = "";
+
+  const emptyOption = document.createElement("option");
+  emptyOption.value = "";
+  emptyOption.textContent = placeholder;
+  selectElement.append(emptyOption);
+
+  entries.forEach((entry) => {
+    const option = document.createElement("option");
+    option.value = entry.id;
+    option.textContent = labelBuilder ? labelBuilder(entry) : `${entry.name} • ${formatSavedTimestamp(entry.savedAt)}`;
+    selectElement.append(option);
+  });
+}
+
+function refreshSavedConfigOptions(selectedId = "") {
+  const entries = readStoredEntries(CONFIG_STORAGE_KEY);
+  populateSavedSelect(elements.savedConfigsSelect, entries, "Select a saved config");
+  if (selectedId && entries.some((entry) => entry.id === selectedId)) {
+    elements.savedConfigsSelect.value = selectedId;
+  }
+}
+
+function refreshSavedLayoutOptions(selectedId = "") {
+  const entries = readStoredEntries(LAYOUT_STORAGE_KEY);
+  populateSavedSelect(
+    elements.savedLayoutsSelect,
+    entries,
+    "Select a saved layout",
+    (entry) => `${entry.name} • ${formatElapsedTime(getSavedLayoutElapsedMs(entry))} • ${formatSavedTimestamp(entry.savedAt)}`
+  );
+  if (selectedId && entries.some((entry) => entry.id === selectedId)) {
+    elements.savedLayoutsSelect.value = selectedId;
+  }
 }
 
 function clampInteger(value, fallback, min = 0) {
@@ -189,6 +280,25 @@ function formatElapsedTime(ms) {
     return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   }
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function getSavedLayoutElapsedMs(entry) {
+  return normalizeElapsedMs(entry?.elapsedMs ?? entry?.resultElapsedMs ?? entry?.result?.stats?.elapsedMs ?? 0);
+}
+
+function setResultElapsed(ms, options = {}) {
+  const { syncTimerWhenIdle = false } = options;
+  state.resultElapsedMs = normalizeElapsedMs(ms);
+  if (elements.resultElapsed) {
+    elements.resultElapsed.textContent = formatElapsedTime(state.resultElapsedMs);
+  }
+  if (syncTimerWhenIdle && !state.isSolving) {
+    clearSolveTimerTicker();
+    state.solveTimerStartedAt = 0;
+    state.solveTimerElapsedMs = state.resultElapsedMs;
+    state.solveTimerFrozen = true;
+    renderSolveTimer();
+  }
 }
 
 function renderSolveTimer() {
@@ -254,6 +364,270 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+function splitTabularLine(line) {
+  const trimmed = String(line ?? "").trim();
+  if (!trimmed) return [];
+  if (trimmed.includes("\t")) {
+    return trimmed.split("\t").map((cell) => cell.trim());
+  }
+  return trimmed.split(/\s{2,}/).map((cell) => cell.trim());
+}
+
+function normalizeHeaderName(value) {
+  return String(value ?? "").toLowerCase().replace(/[^a-z]/g, "");
+}
+
+function parseCatalogImportBlock(lines) {
+  if (!lines.length) return null;
+  const header = splitTabularLine(lines[0]).map(normalizeHeaderName);
+  const rows = lines.slice(1).map(splitTabularLine).filter((cells) => cells.length > 0);
+
+  if (header.includes("name") && header.includes("resident") && header.includes("size") && header.includes("avail")) {
+    const nameIndex = header.indexOf("name");
+    const residentIndex = header.indexOf("resident");
+    const sizeIndex = header.indexOf("size");
+    const availIndex = header.indexOf("avail");
+    return {
+      kind: "residentials",
+      rows: rows.map((cells) => ({
+        name: cells[nameIndex] ?? "",
+        resident: cells[residentIndex] ?? "",
+        size: cells[sizeIndex] ?? "",
+        avail: cells[availIndex] ?? "",
+      })),
+    };
+  }
+
+  if (header.includes("name") && header.includes("bonus") && header.includes("size") && header.includes("effective")) {
+    const nameIndex = header.indexOf("name");
+    const bonusIndex = header.indexOf("bonus");
+    const sizeIndex = header.indexOf("size");
+    const effectiveIndex = header.indexOf("effective");
+    return {
+      kind: "services",
+      rows: rows.map((cells) => ({
+        name: cells[nameIndex] ?? "",
+        bonus: cells[bonusIndex] ?? "",
+        size: cells[sizeIndex] ?? "",
+        effective: cells[effectiveIndex] ?? "",
+      })),
+    };
+  }
+
+  return null;
+}
+
+function parseCatalogImportText(text) {
+  const blocks = String(text ?? "")
+    .split(/\r?\n\s*\r?\n+/)
+    .map((block) => block.split(/\r?\n/).map((line) => line.trim()).filter(Boolean))
+    .filter((lines) => lines.length > 0);
+
+  let importedServices = null;
+  let importedResidentials = null;
+
+  for (const block of blocks) {
+    const parsed = parseCatalogImportBlock(block);
+    if (!parsed) continue;
+    if (parsed.kind === "services") importedServices = parsed.rows;
+    if (parsed.kind === "residentials") importedResidentials = parsed.rows;
+  }
+
+  if (!importedServices && !importedResidentials) {
+    throw new Error("No supported table headers were found. Paste a service table, a residential table, or both.");
+  }
+
+  return {
+    services: importedServices,
+    residentials: importedResidentials,
+  };
+}
+
+function getConfigSnapshot() {
+  return {
+    grid: cloneGrid(state.grid),
+    optimizer: state.optimizer,
+    serviceTypes: cloneJson(state.serviceTypes),
+    residentialTypes: cloneJson(state.residentialTypes),
+    availableBuildings: cloneJson(state.availableBuildings),
+    greedy: cloneJson(state.greedy),
+    cpSat: cloneJson(state.cpSat),
+  };
+}
+
+function applyConfigSnapshot(snapshot) {
+  state.grid = isGridLike(snapshot?.grid) ? cloneGrid(snapshot.grid) : cloneGrid(SAMPLE_GRID);
+  state.optimizer = snapshot?.optimizer === "cp-sat" ? "cp-sat" : "greedy";
+  state.serviceTypes = Array.isArray(snapshot?.serviceTypes)
+    ? snapshot.serviceTypes.map((entry) => ({ ...entry }))
+    : DEFAULT_SERVICE_TYPES.map((entry) => ({ ...entry }));
+  state.residentialTypes = Array.isArray(snapshot?.residentialTypes)
+    ? snapshot.residentialTypes.map((entry) => ({ ...entry }))
+    : DEFAULT_RESIDENTIAL_TYPES.map((entry) => ({ ...entry }));
+  state.availableBuildings = {
+    services: snapshot?.availableBuildings?.services ?? "",
+    residentials: snapshot?.availableBuildings?.residentials ?? "",
+  };
+  state.greedy = {
+    ...state.greedy,
+    ...(snapshot?.greedy ?? {}),
+  };
+  state.cpSat = {
+    ...state.cpSat,
+    ...(snapshot?.cpSat ?? {}),
+  };
+}
+
+function isGridLike(grid) {
+  return Array.isArray(grid)
+    && grid.length > 0
+    && grid.every((row) => Array.isArray(row) && row.length === grid[0].length && row.every((cell) => cell === 0 || cell === 1));
+}
+
+function syncPlannerFromState() {
+  updateGridDimensionInputs();
+  setOptimizer(state.optimizer);
+  syncSolverFields();
+  renderGrid();
+  renderServiceTypes();
+  renderResidentialTypes();
+  updatePayloadPreview();
+  updateSummary();
+}
+
+function saveCurrentConfig() {
+  const name = elements.configStorageName.value.trim() || `Config ${new Date().toLocaleString()}`;
+  const entries = readStoredEntries(CONFIG_STORAGE_KEY);
+  const existingIndex = entries.findIndex((entry) => entry.name.toLowerCase() === name.toLowerCase());
+  const id = existingIndex >= 0 ? entries[existingIndex].id : createSavedEntryId();
+  const nextEntry = {
+    id,
+    name,
+    savedAt: new Date().toISOString(),
+    snapshot: getConfigSnapshot(),
+  };
+  if (existingIndex >= 0) {
+    entries[existingIndex] = nextEntry;
+  } else {
+    entries.unshift(nextEntry);
+  }
+  writeStoredEntries(CONFIG_STORAGE_KEY, entries);
+  refreshSavedConfigOptions(id);
+  elements.configStorageName.value = name;
+  elements.configStorageStatus.textContent = `Saved config "${name}".`;
+}
+
+function loadSelectedConfig() {
+  const selectedId = elements.savedConfigsSelect.value;
+  if (!selectedId) {
+    elements.configStorageStatus.textContent = "Choose a saved config first.";
+    return;
+  }
+  const entry = readStoredEntries(CONFIG_STORAGE_KEY).find((item) => item.id === selectedId);
+  if (!entry?.snapshot) {
+    elements.configStorageStatus.textContent = "That saved config could not be found.";
+    refreshSavedConfigOptions();
+    return;
+  }
+  applyConfigSnapshot(entry.snapshot);
+  state.result = null;
+  state.resultError = "";
+  state.resultContext = null;
+  setResultElapsed(0);
+  if (!state.isSolving) {
+    resetSolveTimer();
+  }
+  syncPlannerFromState();
+  renderResults();
+  elements.configStorageName.value = entry.name;
+  setSolveState(`Loaded config "${entry.name}".`);
+  elements.configStorageStatus.textContent = `Loaded config "${entry.name}".`;
+}
+
+function deleteSelectedConfig() {
+  const selectedId = elements.savedConfigsSelect.value;
+  if (!selectedId) {
+    elements.configStorageStatus.textContent = "Choose a saved config to delete.";
+    return;
+  }
+  const entries = readStoredEntries(CONFIG_STORAGE_KEY);
+  const entry = entries.find((item) => item.id === selectedId);
+  writeStoredEntries(
+    CONFIG_STORAGE_KEY,
+    entries.filter((item) => item.id !== selectedId)
+  );
+  refreshSavedConfigOptions();
+  elements.configStorageStatus.textContent = entry ? `Deleted config "${entry.name}".` : "Deleted the selected config.";
+}
+
+function saveCurrentLayout() {
+  if (!state.result || !state.resultContext) {
+    elements.layoutStorageStatus.textContent = "Run or load a result before saving a layout.";
+    return;
+  }
+  const name = elements.layoutStorageName.value.trim() || `Layout ${new Date().toLocaleString()}`;
+  const entries = readStoredEntries(LAYOUT_STORAGE_KEY);
+  const existingIndex = entries.findIndex((entry) => entry.name.toLowerCase() === name.toLowerCase());
+  const id = existingIndex >= 0 ? entries[existingIndex].id : createSavedEntryId();
+  const elapsedMs = normalizeElapsedMs(state.resultElapsedMs || state.solveTimerElapsedMs);
+  const nextEntry = {
+    id,
+    name,
+    savedAt: new Date().toISOString(),
+    result: cloneJson(state.result),
+    resultContext: cloneJson(state.resultContext),
+    elapsedMs,
+  };
+  if (existingIndex >= 0) {
+    entries[existingIndex] = nextEntry;
+  } else {
+    entries.unshift(nextEntry);
+  }
+  writeStoredEntries(LAYOUT_STORAGE_KEY, entries);
+  refreshSavedLayoutOptions(id);
+  elements.layoutStorageName.value = name;
+  elements.layoutStorageStatus.textContent = `Saved layout "${name}" with elapsed ${formatElapsedTime(elapsedMs)}.`;
+}
+
+function loadSelectedLayout() {
+  const selectedId = elements.savedLayoutsSelect.value;
+  if (!selectedId) {
+    elements.layoutStorageStatus.textContent = "Choose a saved layout first.";
+    return;
+  }
+  const entry = readStoredEntries(LAYOUT_STORAGE_KEY).find((item) => item.id === selectedId);
+  if (!entry?.result || !entry?.resultContext) {
+    elements.layoutStorageStatus.textContent = "That saved layout could not be found.";
+    refreshSavedLayoutOptions();
+    return;
+  }
+  state.result = cloneJson(entry.result);
+  state.resultContext = cloneJson(entry.resultContext);
+  state.resultError = "";
+  const elapsedMs = getSavedLayoutElapsedMs(entry);
+  setResultElapsed(elapsedMs, { syncTimerWhenIdle: true });
+  renderResults();
+  elements.layoutStorageName.value = entry.name;
+  setSolveState(`Loaded saved layout "${entry.name}" with elapsed ${formatElapsedTime(elapsedMs)}.`);
+  elements.layoutStorageStatus.textContent = `Displaying saved layout "${entry.name}" with elapsed ${formatElapsedTime(elapsedMs)}.`;
+}
+
+function deleteSelectedLayout() {
+  const selectedId = elements.savedLayoutsSelect.value;
+  if (!selectedId) {
+    elements.layoutStorageStatus.textContent = "Choose a saved layout to delete.";
+    return;
+  }
+  const entries = readStoredEntries(LAYOUT_STORAGE_KEY);
+  const entry = entries.find((item) => item.id === selectedId);
+  writeStoredEntries(
+    LAYOUT_STORAGE_KEY,
+    entries.filter((item) => item.id !== selectedId)
+  );
+  refreshSavedLayoutOptions();
+  elements.layoutStorageStatus.textContent = entry ? `Deleted layout "${entry.name}".` : "Deleted the selected layout.";
 }
 
 function parsePair(value, separator, label) {
@@ -591,6 +965,28 @@ function renderResidentialTypes() {
   updateSummary();
 }
 
+function importCatalogText() {
+  try {
+    const imported = parseCatalogImportText(elements.catalogImportText.value);
+    if (imported.services) {
+      state.serviceTypes = imported.services.map((entry) => ({ ...entry }));
+      renderServiceTypes();
+    }
+    if (imported.residentials) {
+      state.residentialTypes = imported.residentials.map((entry) => ({ ...entry }));
+      renderResidentialTypes();
+    }
+    updatePayloadPreview();
+    const importedParts = [
+      imported.services ? `${imported.services.length} service rows` : "",
+      imported.residentials ? `${imported.residentials.length} residential rows` : "",
+    ].filter(Boolean);
+    elements.catalogImportStatus.textContent = `Imported ${importedParts.join(" and ")}.`;
+  } catch (error) {
+    elements.catalogImportStatus.textContent = error instanceof Error ? error.message : "Failed to import pasted tables.";
+  }
+}
+
 function buildSolveRequest() {
   const timeLimitSeconds = readOptionalInteger(state.cpSat.timeLimitSeconds, 1);
   const params = {
@@ -905,6 +1301,7 @@ function renderResults() {
     elements.resultRoadCount.textContent = "0";
     elements.resultServiceCount.textContent = "0";
     elements.resultResidentialCount.textContent = "0";
+    elements.resultElapsed.textContent = formatElapsedTime(state.resultElapsedMs);
     elements.resultSolverStatus.textContent = "failed";
     elements.serviceResultList.innerHTML = "<li>No service placements available.</li>";
     elements.residentialResultList.innerHTML = "<li>No residential placements available.</li>";
@@ -919,6 +1316,7 @@ function renderResults() {
     elements.resultsContent.hidden = true;
     elements.resultBadge.textContent = "Waiting";
     elements.resultBadge.className = "result-badge idle";
+    elements.resultElapsed.textContent = "00:00";
     elements.resultMapGrid.innerHTML = "";
     delete elements.resultMapGrid.dataset.cols;
     clearResultOverlay();
@@ -945,6 +1343,7 @@ function renderResults() {
   elements.resultRoadCount.textContent = String(stats.roadCount);
   elements.resultServiceCount.textContent = String(stats.serviceCount);
   elements.resultResidentialCount.textContent = String(stats.residentialCount);
+  elements.resultElapsed.textContent = formatElapsedTime(state.resultElapsedMs);
   elements.resultSolverStatus.textContent =
     stoppedByUser && stats.cpSatStatus
       ? `${stats.cpSatStatus} (stopped)`
@@ -1043,6 +1442,7 @@ async function runSolve() {
     state.result = payload;
     state.resultError = "";
     pauseSolveTimer();
+    setResultElapsed(state.solveTimerElapsedMs);
     const stoppedByUser = Boolean(payload.solution?.stoppedByUser || payload.stats?.stoppedByUser);
     setSolveState(
       stoppedByUser
@@ -1053,6 +1453,7 @@ async function runSolve() {
     state.result = null;
     state.resultError = error instanceof Error ? error.message : "Unknown solve error.";
     pauseSolveTimer();
+    setResultElapsed(state.solveTimerElapsedMs);
     setSolveState(/stopped/i.test(state.resultError) ? "Solver stopped." : "Solver run failed.");
   } finally {
     state.isSolving = false;
@@ -1120,6 +1521,8 @@ function init() {
   renderGrid();
   renderServiceTypes();
   renderResidentialTypes();
+  refreshSavedConfigOptions();
+  refreshSavedLayoutOptions();
   updatePayloadPreview();
   renderResults();
   initResizeHandling();
@@ -1234,6 +1637,34 @@ function init() {
   elements.maxResidentials.addEventListener("input", () => {
     state.availableBuildings.residentials = elements.maxResidentials.value;
     updatePayloadPreview();
+  });
+
+  elements.importCatalogTextButton.addEventListener("click", () => {
+    importCatalogText();
+  });
+
+  elements.saveConfigButton.addEventListener("click", () => {
+    saveCurrentConfig();
+  });
+
+  elements.loadConfigButton.addEventListener("click", () => {
+    loadSelectedConfig();
+  });
+
+  elements.deleteConfigButton.addEventListener("click", () => {
+    deleteSelectedConfig();
+  });
+
+  elements.saveLayoutButton.addEventListener("click", () => {
+    saveCurrentLayout();
+  });
+
+  elements.loadLayoutButton.addEventListener("click", () => {
+    loadSelectedLayout();
+  });
+
+  elements.deleteLayoutButton.addEventListener("click", () => {
+    deleteSelectedLayout();
   });
 
   elements.solveButton.addEventListener("click", () => {

@@ -68,6 +68,7 @@ body::after {
 
 button,
 input,
+select,
 textarea {
   font: inherit;
 }
@@ -439,6 +440,7 @@ pre {
 }
 
 .field input,
+.field select,
 .field textarea {
   min-height: 46px;
   width: 100%;
@@ -452,6 +454,7 @@ pre {
 }
 
 .field input:focus,
+.field select:focus,
 .field textarea:focus {
   border-color: rgba(31, 122, 87, 0.35);
   box-shadow: 0 0 0 4px rgba(31, 122, 87, 0.08);
@@ -601,12 +604,46 @@ pre {
   margin-top: 24px;
 }
 
+.compact-actions {
+  margin-top: 16px;
+}
+
 .timer-text {
   margin: 0 0 0 auto;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.03em;
   white-space: nowrap;
+}
+
+.summary-storage,
+.result-storage-panel {
+  margin-top: 20px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 251, 245, 0.82);
+}
+
+.storage-button-block,
+.storage-button-row {
+  display: flex;
+  align-items: flex-end;
+}
+
+.storage-button-block {
+  padding-top: 30px;
+}
+
+.storage-button-row {
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 30px;
+}
+
+.button.danger {
+  border-color: rgba(178, 75, 60, 0.2);
+  color: var(--danger);
 }
 
 .payload-preview {

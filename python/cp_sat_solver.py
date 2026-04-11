@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import json
+import os
+import signal
 import sys
 from collections import defaultdict
 
@@ -22,6 +24,76 @@ def fail(message: str) -> None:
     raise SystemExit(1)
 
 
+def status_name_for(status: int) -> str:
+    return {
+        cp_model.OPTIMAL: "OPTIMAL",
+        cp_model.FEASIBLE: "FEASIBLE",
+        cp_model.INFEASIBLE: "INFEASIBLE",
+        cp_model.MODEL_INVALID: "MODEL_INVALID",
+        cp_model.UNKNOWN: "UNKNOWN",
+    }.get(status, f"STATUS_{status}")
+
+
+def collect_solution(value_reader, built):
+    roads = []
+    for cell_id, road_var in enumerate(built["road_vars"]):
+        if value_reader(road_var) != 1:
+            continue
+        r, c = built["id_to_cell"][cell_id]
+        roads.append(f"{r},{c}")
+
+    services = []
+    for candidate_index, variable in enumerate(built["service_vars"]):
+        if value_reader(variable) != 1:
+            continue
+        candidate = built["service_candidates"][candidate_index]
+        services.append(
+            {
+                "r": candidate["r"],
+                "c": candidate["c"],
+                "rows": candidate["rows"],
+                "cols": candidate["cols"],
+                "range": candidate["range"],
+                "bonus": candidate["bonus"],
+                "typeIndex": candidate["typeIndex"],
+            }
+        )
+
+    residentials = []
+    populations = []
+    for candidate_index, variable in enumerate(built["residential_vars"]):
+        if value_reader(variable) != 1:
+            continue
+        candidate = built["residential_candidates"][candidate_index]
+        population = value_reader(built["populations"][candidate_index])
+        residentials.append(
+            {
+                "r": candidate["r"],
+                "c": candidate["c"],
+                "rows": candidate["rows"],
+                "cols": candidate["cols"],
+                "typeIndex": candidate["typeIndex"],
+                "population": population,
+            }
+        )
+        populations.append(population)
+
+    return {
+        "roads": roads,
+        "services": services,
+        "residentials": residentials,
+        "populations": populations,
+        "totalPopulation": sum(populations),
+    }
+
+
+def write_snapshot(snapshot_file_path: str, response) -> None:
+    temp_path = f"{snapshot_file_path}.tmp"
+    with open(temp_path, "w", encoding="utf-8") as handle:
+        json.dump(response, handle)
+    os.replace(temp_path, snapshot_file_path)
+
+
 def is_allowed(grid, r: int, c: int) -> bool:
     return 0 <= r < len(grid) and 0 <= c < len(grid[0]) and grid[r][c] == 1
 
@@ -36,6 +108,46 @@ def orthogonal_neighbors(grid, r: int, c: int):
 
 def rectangle_cells(r: int, c: int, rows: int, cols: int):
     return [(r + dr, c + dc) for dr in range(rows) for dc in range(cols)]
+
+
+def build_blocked_prefix_sum(grid):
+    h = len(grid)
+    w = len(grid[0])
+    prefix = [[0] * (w + 1) for _ in range(h + 1)]
+    for r in range(h):
+        row_blocked = 0
+        for c in range(w):
+            if grid[r][c] != 1:
+                row_blocked += 1
+            prefix[r + 1][c + 1] = prefix[r][c + 1] + row_blocked
+    return prefix
+
+
+def rectangle_blocked_count(prefix, r: int, c: int, rows: int, cols: int):
+    r2 = r + rows
+    c2 = c + cols
+    return prefix[r2][c2] - prefix[r][c2] - prefix[r2][c] + prefix[r][c]
+
+
+def enumerate_valid_placements(grid, blocked_prefix_sum, dimensions):
+    h = len(grid)
+    w = len(grid[0])
+    placement_map = {}
+    seen = set()
+    for rows, cols in dimensions:
+        key = f"{rows}x{cols}"
+        if key in seen:
+            continue
+        seen.add(key)
+        placements = []
+        if rows <= h and cols <= w:
+            for r in range(h - rows + 1):
+                for c in range(w - cols + 1):
+                    if rectangle_blocked_count(blocked_prefix_sum, r, c, rows, cols) != 0:
+                        continue
+                    placements.append({"r": r, "c": c, "rows": rows, "cols": cols})
+        placement_map[key] = placements
+    return placement_map
 
 
 def rectangle_border_cells(grid, r: int, c: int, rows: int, cols: int):
@@ -86,42 +198,70 @@ def service_type_orientations(service_type):
     return orientations
 
 
+def service_type_priority(service_type):
+    rows = int(service_type["rows"])
+    cols = int(service_type["cols"])
+    effect_range = int(service_type["range"])
+    footprint_area = max(1, rows * cols)
+    effect_area = (rows + 2 * effect_range) * (cols + 2 * effect_range)
+    bonus = int(service_type["bonus"])
+    return (bonus * effect_area) / footprint_area
+
+
+def residential_type_priority(residential_type):
+    area = max(1, int(residential_type["w"]) * int(residential_type["h"]))
+    return int(residential_type["max"]) / area + int(residential_type["min"]) / area / 10
+
+
 def enumerate_service_candidates(grid, params, cell_to_id):
     candidates = []
-    h = len(grid)
-    w = len(grid[0])
     service_types = params.get("serviceTypes") or []
-    for type_index, service_type in enumerate(service_types):
+    blocked_prefix_sum = build_blocked_prefix_sum(grid)
+    placement_map = enumerate_valid_placements(
+        grid,
+        blocked_prefix_sum,
+        [dimension for service_type in service_types for dimension in service_type_orientations(service_type)],
+    )
+    type_order = sorted(
+        range(len(service_types)),
+        key=lambda index: (
+            -service_type_priority(service_types[index]),
+            -int(service_types[index]["bonus"]),
+            -int(service_types[index]["range"]),
+            int(service_types[index]["rows"]) * int(service_types[index]["cols"]),
+            -int(service_types[index].get("avail", 0)),
+            index,
+        ),
+    )
+    for type_index in type_order:
+        service_type = service_types[type_index]
         avail = int(service_type["avail"])
         if avail <= 0:
             continue
         effect_range = int(service_type["range"])
         bonus = int(service_type["bonus"])
         for rows, cols in service_type_orientations(service_type):
-            if rows > h or cols > w:
-                continue
-            for r in range(h - rows + 1):
-                for c in range(w - cols + 1):
-                    cells = rectangle_cells(r, c, rows, cols)
-                    if not all(is_allowed(grid, rr, cc) for rr, cc in cells):
-                        continue
-                    border = [cell_to_id[cell] for cell in rectangle_border_cells(grid, r, c, rows, cols) if cell in cell_to_id]
-                    if not border:
-                        continue
-                    candidates.append(
-                        {
-                            "r": r,
-                            "c": c,
-                            "rows": rows,
-                            "cols": cols,
-                            "range": effect_range,
-                            "typeIndex": type_index,
-                            "bonus": bonus,
-                            "cells": [cell_to_id[cell] for cell in cells],
-                            "border": sorted(set(border)),
-                            "effect_zone": {cell_to_id[cell] for cell in service_effect_zone(grid, r, c, rows, cols, effect_range) if cell in cell_to_id},
-                        }
-                    )
+            for placement in placement_map.get(f"{rows}x{cols}", []):
+                r = placement["r"]
+                c = placement["c"]
+                cells = rectangle_cells(r, c, rows, cols)
+                border = [cell_to_id[cell] for cell in rectangle_border_cells(grid, r, c, rows, cols) if cell in cell_to_id]
+                if not border:
+                    continue
+                candidates.append(
+                    {
+                        "r": r,
+                        "c": c,
+                        "rows": rows,
+                        "cols": cols,
+                        "range": effect_range,
+                        "typeIndex": type_index,
+                        "bonus": bonus,
+                        "cells": [cell_to_id[cell] for cell in cells],
+                        "border": sorted(set(border)),
+                        "effect_zone": {cell_to_id[cell] for cell in service_effect_zone(grid, r, c, rows, cols, effect_range) if cell in cell_to_id},
+                    }
+                )
     return candidates
 
 
@@ -129,7 +269,29 @@ def enumerate_residential_candidates(grid, params, cell_to_id, total_bonus_upper
     candidates = []
     residential_types = params.get("residentialTypes")
     if residential_types:
-        for type_index, residential_type in enumerate(residential_types):
+        blocked_prefix_sum = build_blocked_prefix_sum(grid)
+        placement_map = enumerate_valid_placements(
+            grid,
+            blocked_prefix_sum,
+            [
+                dimension
+                for residential_type in residential_types
+                for dimension in {(int(residential_type["h"]), int(residential_type["w"])), (int(residential_type["w"]), int(residential_type["h"]))}
+            ],
+        )
+        type_order = sorted(
+            range(len(residential_types)),
+            key=lambda index: (
+                -residential_type_priority(residential_types[index]),
+                -int(residential_types[index]["max"]),
+                -int(residential_types[index]["min"]),
+                int(residential_types[index]["w"]) * int(residential_types[index]["h"]),
+                -int(residential_types[index].get("avail", 0)),
+                index,
+            ),
+        )
+        for type_index in type_order:
+            residential_type = residential_types[type_index]
             avail = int(residential_type.get("avail", 0))
             if avail <= 0:
                 continue
@@ -138,38 +300,36 @@ def enumerate_residential_candidates(grid, params, cell_to_id, total_bonus_upper
             orientations = {(h, w)}
             orientations.add((w, h))
             for rows, cols in orientations:
-                if rows > len(grid) or cols > len(grid[0]):
-                    continue
-                for r in range(len(grid) - rows + 1):
-                    for c in range(len(grid[0]) - cols + 1):
-                        cells = rectangle_cells(r, c, rows, cols)
-                        if not all(is_allowed(grid, rr, cc) for rr, cc in cells):
-                            continue
-                        border = [cell_to_id[cell] for cell in rectangle_border_cells(grid, r, c, rows, cols) if cell in cell_to_id]
-                        if not border:
-                            continue
-                        max_pop = residential_type.get("max")
-                        if max_pop is None:
-                            max_pop = int(residential_type["min"]) + total_bonus_upper_bound
-                        candidates.append(
-                            {
-                                "r": r,
-                                "c": c,
-                                "rows": rows,
-                                "cols": cols,
-                                "typeIndex": type_index,
-                                "base": int(residential_type["min"]),
-                                "max": int(max_pop),
-                                "cells": [cell_to_id[cell] for cell in cells],
-                                "border": sorted(set(border)),
-                            }
-                        )
+                for placement in placement_map.get(f"{rows}x{cols}", []):
+                    r = placement["r"]
+                    c = placement["c"]
+                    cells = rectangle_cells(r, c, rows, cols)
+                    border = [cell_to_id[cell] for cell in rectangle_border_cells(grid, r, c, rows, cols) if cell in cell_to_id]
+                    if not border:
+                        continue
+                    max_pop = residential_type.get("max")
+                    if max_pop is None:
+                        max_pop = int(residential_type["min"]) + total_bonus_upper_bound
+                    candidates.append(
+                        {
+                            "r": r,
+                            "c": c,
+                            "rows": rows,
+                            "cols": cols,
+                            "typeIndex": type_index,
+                            "base": int(residential_type["min"]),
+                            "max": int(max_pop),
+                            "cells": [cell_to_id[cell] for cell in cells],
+                            "border": sorted(set(border)),
+                        }
+                    )
         return candidates
 
     settings = params.get("residentialSettings") or {}
     base_pop = int(params.get("basePop", 0))
     fallback_max = params.get("maxPop")
     fallback_max = int(fallback_max) if fallback_max is not None else None
+    blocked_prefix_sum = build_blocked_prefix_sum(grid)
     for rows, cols in ((2, 2), (2, 3)):
         key = f"{rows}x{cols}"
         size_setting = settings.get(key) or {}
@@ -181,9 +341,9 @@ def enumerate_residential_candidates(grid, params, cell_to_id, total_bonus_upper
             max_pop = int(max_pop)
         for r in range(len(grid) - rows + 1):
             for c in range(len(grid[0]) - cols + 1):
-                cells = rectangle_cells(r, c, rows, cols)
-                if not all(is_allowed(grid, rr, cc) for rr, cc in cells):
+                if rectangle_blocked_count(blocked_prefix_sum, r, c, rows, cols) != 0:
                     continue
+                cells = rectangle_cells(r, c, rows, cols)
                 border = [cell_to_id[cell] for cell in rectangle_border_cells(grid, r, c, rows, cols) if cell in cell_to_id]
                 if not border:
                     continue
@@ -381,73 +541,82 @@ def solve():
     built = build_model(grid, params)
     model = built["model"]
     solver = cp_model.CpSolver()
-    solver.parameters.max_time_in_seconds = float(cp_sat_options.get("timeLimitSeconds", 120))
+    stop_requested = False
+    stopped_by_user = False
+    stop_file_path = cp_sat_options.get("stopFilePath")
+    snapshot_file_path = cp_sat_options.get("snapshotFilePath")
+
+    def request_stop(_signum, _frame):
+        nonlocal stop_requested
+        stop_requested = True
+
+    def should_stop() -> bool:
+        return stop_requested or (bool(stop_file_path) and os.path.exists(stop_file_path))
+
+    class SnapshotCallback(cp_model.CpSolverSolutionCallback):
+        def __init__(self):
+            super().__init__()
+            self.latest_solution = None
+
+        def OnSolutionCallback(self):
+            nonlocal stopped_by_user
+            self.latest_solution = collect_solution(self.Value, built)
+            if snapshot_file_path:
+                write_snapshot(
+                    snapshot_file_path,
+                    {
+                        **self.latest_solution,
+                        "status": "FEASIBLE",
+                        "stoppedByUser": False,
+                    },
+                )
+            if should_stop():
+                stopped_by_user = True
+                self.StopSearch()
+
+    signal.signal(signal.SIGTERM, request_stop)
+    signal.signal(signal.SIGINT, request_stop)
+
+    time_limit_seconds = cp_sat_options.get("timeLimitSeconds")
+    if time_limit_seconds not in (None, ""):
+        solver.parameters.max_time_in_seconds = float(time_limit_seconds)
+    random_seed = cp_sat_options.get("randomSeed")
+    if random_seed not in (None, ""):
+        solver.parameters.random_seed = int(random_seed)
+    if "randomizeSearch" in cp_sat_options:
+        solver.parameters.randomize_search = bool(cp_sat_options.get("randomizeSearch"))
     solver.parameters.num_search_workers = int(cp_sat_options.get("numWorkers", 8))
     solver.parameters.log_search_progress = bool(cp_sat_options.get("logSearchProgress", False))
 
-    status = solver.Solve(model)
-    status_name = {
-        cp_model.OPTIMAL: "OPTIMAL",
-        cp_model.FEASIBLE: "FEASIBLE",
-        cp_model.INFEASIBLE: "INFEASIBLE",
-        cp_model.MODEL_INVALID: "MODEL_INVALID",
-        cp_model.UNKNOWN: "UNKNOWN",
-    }.get(status, f"STATUS_{status}")
+    snapshot_callback = SnapshotCallback()
+
+    def best_bound_callback(_bound):
+        nonlocal stopped_by_user
+        if should_stop():
+            stopped_by_user = True
+            solver.StopSearch()
+
+    solver.best_bound_callback = best_bound_callback
+
+    status = solver.solve(model, snapshot_callback)
+    status_name = status_name_for(status)
 
     if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        if stopped_by_user and snapshot_callback.latest_solution is not None:
+            status_name = "FEASIBLE"
+        elif stopped_by_user:
+            fail("CP-SAT solve was stopped before finding a feasible solution.")
         fail(f"No feasible solution found with CP-SAT. Status: {status_name}.")
 
-    roads = []
-    for cell_id, road_var in enumerate(built["road_vars"]):
-        if solver.Value(road_var) != 1:
-            continue
-        r, c = built["id_to_cell"][cell_id]
-        roads.append(f"{r},{c}")
+    if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        response = collect_solution(solver.Value, built)
+    elif snapshot_callback.latest_solution is not None:
+        response = snapshot_callback.latest_solution
+    else:
+        fail("CP-SAT backend stopped without returning a feasible solution.")
 
-    services = []
-    for candidate_index, variable in enumerate(built["service_vars"]):
-        if solver.Value(variable) != 1:
-            continue
-        candidate = built["service_candidates"][candidate_index]
-        services.append(
-            {
-                "r": candidate["r"],
-                "c": candidate["c"],
-                "rows": candidate["rows"],
-                "cols": candidate["cols"],
-                "range": candidate["range"],
-                "bonus": candidate["bonus"],
-                "typeIndex": candidate["typeIndex"],
-            }
-        )
-
-    residentials = []
-    populations = []
-    for candidate_index, variable in enumerate(built["residential_vars"]):
-        if solver.Value(variable) != 1:
-            continue
-        candidate = built["residential_candidates"][candidate_index]
-        population = solver.Value(built["populations"][candidate_index])
-        residentials.append(
-            {
-                "r": candidate["r"],
-                "c": candidate["c"],
-                "rows": candidate["rows"],
-                "cols": candidate["cols"],
-                "typeIndex": candidate["typeIndex"],
-                "population": population,
-            }
-        )
-        populations.append(population)
-
-    response = {
-        "status": status_name,
-        "roads": roads,
-        "services": services,
-        "residentials": residentials,
-        "populations": populations,
-        "totalPopulation": sum(populations),
-    }
+    response["status"] = status_name
+    response["stoppedByUser"] = stopped_by_user
     json.dump(response, sys.stdout)
 
 

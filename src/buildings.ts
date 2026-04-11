@@ -13,8 +13,9 @@ import type {
   ServiceTypeSetting,
   SolverParams,
 } from "./types.js";
-import { height, width, isAllowed } from "./grid.js";
+import { buildBlockedPrefixSum, height, width, isAllowed, rectangleBlockedCount } from "./grid.js";
 import { rectangleCells, rectangleBorderCells } from "./grid.js";
+import { normalizeSize } from "./rules.js";
 
 export function normalizeServicePlacement(service: ServicePlacement): Required<ServicePlacement> {
   return {
@@ -30,6 +31,79 @@ function serviceTypeOrientations(type: ServiceTypeSetting): [number, number][] {
   const orientations: [number, number][] = [[type.rows, type.cols]];
   if ((type.allowRotation ?? true) && type.rows !== type.cols) orientations.push([type.cols, type.rows]);
   return orientations;
+}
+
+function serviceTypePriority(type: ServiceTypeSetting): number {
+  const [rows, cols] = normalizeSize(type.rows, type.cols);
+  const footprintArea = rows * cols;
+  const effectArea = (rows + 2 * type.range) * (cols + 2 * type.range);
+  return (type.bonus * effectArea) / Math.max(1, footprintArea);
+}
+
+function residentialTypePriority(type: ResidentialTypeSetting): number {
+  const area = Math.max(1, type.w * type.h);
+  return type.max / area + type.min / area / 10;
+}
+
+function sortedServiceTypeIndices(types: ServiceTypeSetting[]): number[] {
+  return types
+    .map((type, index) => ({ type, index }))
+    .sort((a, b) =>
+      serviceTypePriority(b.type) - serviceTypePriority(a.type)
+      || b.type.bonus - a.type.bonus
+      || b.type.range - a.type.range
+      || a.type.rows * a.type.cols - b.type.rows * b.type.cols
+      || b.type.avail - a.type.avail
+      || a.index - b.index
+    )
+    .map((entry) => entry.index);
+}
+
+function sortedResidentialTypeIndices(types: ResidentialTypeSetting[]): number[] {
+  return types
+    .map((type, index) => ({ type, index }))
+    .sort((a, b) =>
+      residentialTypePriority(b.type) - residentialTypePriority(a.type)
+      || b.type.max - a.type.max
+      || b.type.min - a.type.min
+      || a.type.w * a.type.h - b.type.w * b.type.h
+      || b.type.avail - a.type.avail
+      || a.index - b.index
+    )
+    .map((entry) => entry.index);
+}
+
+type PlacementPrototype = { r: number; c: number; rows: number; cols: number };
+
+function enumerateValidPlacementsForDimensions(
+  G: Grid,
+  blockedPrefixSum: number[][],
+  dimensions: [number, number][]
+): Map<string, PlacementPrototype[]> {
+  const H = height(G);
+  const W = width(G);
+  const placementMap = new Map<string, PlacementPrototype[]>();
+  const seen = new Set<string>();
+
+  for (const [rows, cols] of dimensions) {
+    const key = `${rows}x${cols}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const placements: PlacementPrototype[] = [];
+    if (rows > H || cols > W) {
+      placementMap.set(key, placements);
+      continue;
+    }
+    for (let r = 0; r <= H - rows; r++) {
+      for (let c = 0; c <= W - cols; c++) {
+        if (rectangleBlockedCount(blockedPrefixSum, r, c, rows, cols) !== 0) continue;
+        placements.push({ r, c, rows, cols });
+      }
+    }
+    placementMap.set(key, placements);
+  }
+
+  return placementMap;
 }
 
 /**
@@ -66,26 +140,29 @@ export function residentialFootprint(r: number, c: number, rows: number, cols: n
 
 /** All valid service placements from configured service types. */
 export function enumerateServiceCandidates(G: Grid, params: SolverParams): ServiceCandidate[] {
-  const H = height(G);
-  const W = width(G);
   const out: ServiceCandidate[] = [];
   const types = params.serviceTypes ?? [];
+  const blockedPrefixSum = buildBlockedPrefixSum(G);
+  const placementMap = enumerateValidPlacementsForDimensions(
+    G,
+    blockedPrefixSum,
+    types.flatMap((type) => serviceTypeOrientations(type))
+  );
 
-  for (let typeIndex = 0; typeIndex < types.length; typeIndex++) {
+  for (const typeIndex of sortedServiceTypeIndices(types)) {
     const type = types[typeIndex];
     if (type.avail <= 0) continue;
     for (const [rows, cols] of serviceTypeOrientations(type)) {
-      if (rows > H || cols > W) continue;
-      for (let r = 0; r <= H - rows; r++) {
-        for (let c = 0; c <= W - cols; c++) {
-          let ok = true;
-          for (let i = 0; i < rows && ok; i++) {
-            for (let j = 0; j < cols && ok; j++) {
-              if (!isAllowed(G, r + i, c + j)) ok = false;
-            }
-          }
-          if (ok) out.push({ r, c, rows, cols, range: type.range, typeIndex, bonus: type.bonus });
-        }
+      for (const placement of placementMap.get(`${rows}x${cols}`) ?? []) {
+        out.push({
+          r: placement.r,
+          c: placement.c,
+          rows,
+          cols,
+          range: type.range,
+          typeIndex,
+          bonus: type.bonus,
+        });
       }
     }
   }
@@ -94,23 +171,22 @@ export function enumerateServiceCandidates(G: Grid, params: SolverParams): Servi
 
 /** All valid 2×2 and 2×3 residential placements (legacy, no types) */
 export function enumerateResidentialCandidates(G: Grid): ResidentialPlacement[] {
-  const H = height(G);
-  const W = width(G);
   const out: ResidentialPlacement[] = [];
+  const blockedPrefixSum = buildBlockedPrefixSum(G);
+  const placementMap = enumerateValidPlacementsForDimensions(
+    G,
+    blockedPrefixSum,
+    [
+      [2, 2],
+      [2, 3],
+    ]
+  );
   for (const [rows, cols] of [
     [2, 2],
     [2, 3],
   ] as [number, number][]) {
-    for (let r = 0; r <= H - rows; r++) {
-      for (let c = 0; c <= W - cols; c++) {
-        let ok = true;
-        for (let i = 0; i < rows && ok; i++) {
-          for (let j = 0; j < cols && ok; j++) {
-            if (!isAllowed(G, r + i, c + j)) ok = false;
-          }
-        }
-        if (ok) out.push({ r, c, rows, cols });
-      }
+    for (const placement of placementMap.get(`${rows}x${cols}`) ?? []) {
+      out.push({ r: placement.r, c: placement.c, rows, cols });
     }
   }
   return out;
@@ -121,25 +197,25 @@ export function enumerateResidentialCandidatesFromTypes(
   G: Grid,
   types: ResidentialTypeSetting[]
 ): ResidentialCandidate[] {
-  const H = height(G);
-  const W = width(G);
   const out: ResidentialCandidate[] = [];
-  for (let typeIndex = 0; typeIndex < types.length; typeIndex++) {
+  const blockedPrefixSum = buildBlockedPrefixSum(G);
+  const placementMap = enumerateValidPlacementsForDimensions(
+    G,
+    blockedPrefixSum,
+    types.flatMap((type) => {
+      const dimensions: [number, number][] = [[type.h, type.w]];
+      if (type.w !== type.h) dimensions.push([type.w, type.h]);
+      return dimensions;
+    })
+  );
+
+  for (const typeIndex of sortedResidentialTypeIndices(types)) {
     const { w, h } = types[typeIndex];
     const orientations: [number, number][] = [[h, w]];
     if (w !== h) orientations.push([w, h]);
     for (const [rows, cols] of orientations) {
-      if (rows > H || cols > W) continue;
-      for (let r = 0; r <= H - rows; r++) {
-        for (let c = 0; c <= W - cols; c++) {
-          let ok = true;
-          for (let i = 0; i < rows && ok; i++) {
-            for (let j = 0; j < cols && ok; j++) {
-              if (!isAllowed(G, r + i, c + j)) ok = false;
-            }
-          }
-          if (ok) out.push({ r, c, rows, cols, typeIndex });
-        }
+      for (const placement of placementMap.get(`${rows}x${cols}`) ?? []) {
+        out.push({ r: placement.r, c: placement.c, rows, cols, typeIndex });
       }
     }
   }

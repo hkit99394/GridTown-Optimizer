@@ -56,6 +56,7 @@ export type ResidentialSettings = Partial<Record<string, ResidentialSizeSetting>
  * Building can be rotated so both (w×h) and (h×w) count as this type and share the same avail.
  */
 export interface ResidentialTypeSetting {
+  name?: string;
   w: number;
   h: number;
   min: number;
@@ -68,6 +69,7 @@ export interface ResidentialTypeSetting {
  * When allowRotation is true (default), both (rows×cols) and (cols×rows) are allowed for this type.
  */
 export interface ServiceTypeSetting {
+  name?: string;
   rows: number;
   cols: number;
   bonus: number;
@@ -83,12 +85,20 @@ export interface CpSatOptions {
   pythonExecutable?: string;
   /** Override the CP-SAT backend script path. */
   scriptPath?: string;
-  /** Max solve time in seconds. Default 120. */
+  /** Optional max solve time in seconds. When omitted, CP-SAT runs until it finishes or is stopped externally. */
   timeLimitSeconds?: number;
   /** CP-SAT worker count. Default 8. */
   numWorkers?: number;
   /** Emit OR-Tools search logs. Default false. */
   logSearchProgress?: boolean;
+  /** Internal stop-token path used by the local web server. */
+  stopFilePath?: string;
+  /** Internal best-snapshot path used by the local web server. */
+  snapshotFilePath?: string;
+  /** Optional CP-SAT random seed for experimentation. */
+  randomSeed?: number;
+  /** Optional CP-SAT randomize-search toggle for experimentation. */
+  randomizeSearch?: boolean;
 }
 
 export interface GreedyOptions {
@@ -106,6 +116,10 @@ export interface GreedyOptions {
   serviceExactPoolLimit?: number;
   /** Hard cap on evaluated service combinations (default 12000) */
   serviceExactMaxCombinations?: number;
+  /** Internal stop-token path used by the local web server. */
+  stopFilePath?: string;
+  /** Internal best-snapshot path used by the local web server. */
+  snapshotFilePath?: string;
 }
 
 export interface SolverParams {
@@ -169,6 +183,8 @@ export interface Solution {
   optimizer?: OptimizerName;
   /** CP-SAT backend status such as OPTIMAL or FEASIBLE; omitted for non-CP-SAT solvers. */
   cpSatStatus?: string;
+  /** True when a CP-SAT run was stopped early and this solution is the best feasible result found so far. */
+  stoppedByUser?: boolean;
   roads: Set<string>;
   services: ServicePlacement[];
   /** Service type index per placement; -1 only for manual solutions without configured service types */

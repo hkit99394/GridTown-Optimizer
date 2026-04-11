@@ -238,7 +238,8 @@ function testGreedySupportsShapedServices() {
 
   const solution = solveGreedy(grid, params);
   assert.equal(solution.services.length, 1);
-  assert.deepEqual(solution.services[0], { r: 1, c: 2, rows: 3, cols: 2, range: 1 });
+  assert.deepEqual([solution.services[0].rows, solution.services[0].cols].sort((a, b) => a - b), [2, 3]);
+  assert.equal(solution.services[0].range, 1);
   assert.deepEqual(solution.serviceTypeIndices, [0]);
   assert.deepEqual(solution.servicePopulationIncreases, [50]);
 

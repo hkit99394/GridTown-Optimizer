@@ -96,6 +96,26 @@ function testResidentialCapStillAppliesWithTypedResidentials() {
   assert.equal(solution.totalPopulation, 20);
 }
 
+function testNamedBuildingTypesAreAccepted() {
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+  ];
+  const params = {
+    serviceTypes: [{ name: "Health Clinic", rows: 2, cols: 2, bonus: 40, range: 1, avail: 1 }],
+    residentialTypes: [{ name: "The Aurora", w: 2, h: 2, min: 100, max: 140, avail: 1 }],
+    availableBuildings: { residentials: 1, services: 1 },
+    greedy: { localSearch: false },
+  };
+
+  const solution = solve(grid, params);
+  assert.equal(solution.services.length, 1);
+  assert.equal(solution.residentials.length, 1);
+  assert.equal(solution.totalPopulation >= 100, true);
+}
+
 function testIndexImportHasNoSideEffects() {
   const originalLog = console.log;
   const calls = [];
@@ -120,6 +140,7 @@ testDistinctResidentialTypes();
 testNoRowZeroRoadThrows();
 testEvaluatorHonorsCountCaps();
 testResidentialCapStillAppliesWithTypedResidentials();
+testNamedBuildingTypesAreAccepted();
 testIndexImportHasNoSideEffects();
 
 console.log("All review finding regression tests passed.");

@@ -143,6 +143,7 @@ npm test
 Available scripts from [package.json](./package.json):
 
 - `npm run build`
+- `npm run web`
 - `npm run solve`
 - `npm run solve:greedy`
 - `npm run solve:cp-sat`
@@ -150,6 +151,32 @@ Available scripts from [package.json](./package.json):
 - `npm test`
 
 `npm run solve` currently runs the built-in example with the default greedy backend.
+
+## Web Planner
+
+You can also open a lightweight local planning UI for preparing:
+
+- the 0/1 grid
+- service building types
+- residential building types
+- greedy or CP-SAT solver options
+
+Start it with:
+
+```bash
+npm run web
+```
+
+Then open [http://localhost:4173](http://localhost:4173).
+
+The planner includes:
+
+- an interactive grid editor
+- repeatable service and residential type forms
+- solver-specific option panels
+- a `Run solver` action for greedy or CP-SAT
+- an optional CP-SAT time limit, or a manual `Stop solver` action for long runs
+- validation plus a solved layout map with building overlays
 
 ## Library Usage
 
@@ -204,7 +231,7 @@ const solution = solve(grid, {
   ...params,
   optimizer: "cp-sat",
   cpSat: {
-    timeLimitSeconds: 120,
+    timeLimitSeconds: 120, // optional
     numWorkers: 8,
     logSearchProgress: false,
   },
@@ -316,6 +343,7 @@ A `Solution` contains:
 
 - `optimizer`
 - `cpSatStatus`
+- `stoppedByUser`
 - `roads: Set<string>`
 - `services`
 - `serviceTypeIndices`
@@ -341,5 +369,7 @@ Road cells are encoded as `"r,c"` strings inside the `Set`.
 ## Notes
 
 - The greedy solver can outperform a time-limited CP-SAT run if CP-SAT returns only `FEASIBLE` rather than `OPTIMAL`.
+- If you omit `cpSat.timeLimitSeconds`, the CP-SAT backend runs without a preset cap.
+- In the web planner, stopping CP-SAT early returns the best feasible result found so far when one exists.
 - CP-SAT requires a working Python runtime plus OR-Tools.
 - The example CLI prints a validation result and an ASCII map so you can quickly inspect solver output.

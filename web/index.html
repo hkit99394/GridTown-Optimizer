@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>City Builder Planner</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="eyebrow">City Builder Planner</div>
+        <h1>Prepare the grid, building catalog, and solver strategy in one place.</h1>
+        <p class="hero-copy">
+          Shape the playable area, define service and residential types, then switch between greedy and CP-SAT with
+          their own tuning options before you solve.
+        </p>
+        <div class="hero-strip">
+          <span class="pill">Interactive grid editor</span>
+          <span class="pill">Typed service and residential inputs</span>
+          <span class="pill">Greedy and CP-SAT controls</span>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="panel panel-grid">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Step 1</p>
+              <h2>Grid Canvas</h2>
+            </div>
+            <p class="panel-note">Row <code>0</code> is the road anchor edge, so the top row matters.</p>
+          </div>
+
+          <div class="toolbar-grid">
+            <label class="field">
+              <span>Rows</span>
+              <input id="gridRows" type="number" min="1" step="1" />
+            </label>
+            <label class="field">
+              <span>Cols</span>
+              <input id="gridCols" type="number" min="1" step="1" />
+            </label>
+            <button id="resizeGridButton" type="button" class="button secondary">Resize grid</button>
+            <button id="fillAllowedButton" type="button" class="button ghost">All allowed</button>
+            <button id="clearGridButton" type="button" class="button ghost">All blocked</button>
+            <button id="sampleGridButton" type="button" class="button ghost">Sample mask</button>
+            <button id="checkerGridButton" type="button" class="button ghost">Checker</button>
+          </div>
+
+          <div class="paint-controls">
+            <span class="paint-label">Paint mode</span>
+            <div class="segmented" id="paintModeToggle">
+              <button type="button" data-paint-mode="toggle">Toggle</button>
+              <button type="button" data-paint-mode="allow">Allow</button>
+              <button type="button" data-paint-mode="block">Block</button>
+            </div>
+            <p id="gridStats" class="grid-stats"></p>
+          </div>
+
+          <div class="grid-frame">
+            <div id="gridEditor" class="grid-editor" aria-label="Grid editor"></div>
+          </div>
+        </section>
+
+        <aside class="panel panel-config">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Step 2</p>
+              <h2>Planning Inputs</h2>
+            </div>
+            <p class="panel-note">Define the inventory and select how the search should behave.</p>
+          </div>
+
+          <section class="subpanel">
+            <div class="subpanel-head">
+              <div>
+                <p class="eyebrow">Solver</p>
+                <h3>Choose an optimizer</h3>
+              </div>
+            </div>
+
+            <div class="segmented segmented-wide" id="solverToggle">
+              <button type="button" data-optimizer="greedy">Greedy</button>
+              <button type="button" data-optimizer="cp-sat">CP-SAT</button>
+            </div>
+
+            <div class="solver-panels">
+              <section id="greedyPanel" class="solver-panel">
+                <div class="form-grid two-up">
+                  <label class="check-field">
+                    <input id="greedyLocalSearch" type="checkbox" />
+                    <span>Enable local search</span>
+                  </label>
+                  <label class="check-field">
+                    <input id="greedyExhaustiveServiceSearch" type="checkbox" />
+                    <span>Try exhaustive service search</span>
+                  </label>
+                  <label class="field">
+                    <span>Restarts</span>
+                    <input id="greedyRestarts" type="number" min="1" step="1" />
+                  </label>
+                  <label class="field">
+                    <span>Refine passes</span>
+                    <input id="greedyServiceRefineIterations" type="number" min="0" step="1" />
+                  </label>
+                  <label class="field">
+                    <span>Candidate limit</span>
+                    <input id="greedyServiceRefineCandidateLimit" type="number" min="1" step="1" />
+                  </label>
+                  <label class="field">
+                    <span>Exact pool limit</span>
+                    <input id="greedyServiceExactPoolLimit" type="number" min="1" step="1" />
+                  </label>
+                  <label class="field">
+                    <span>Exact max combinations</span>
+                    <input id="greedyServiceExactMaxCombinations" type="number" min="1" step="1" />
+                  </label>
+                </div>
+              </section>
+
+              <section id="cpSatPanel" class="solver-panel" hidden>
+                <div class="solver-callout">
+                  CP-SAT uses the Python OR-Tools backend. If the environment is not set up yet, use
+                  <code>npm run setup:cp-sat</code> first. Leave the time limit blank to let it run until it
+                  finishes or you stop it manually.
+                </div>
+                <div class="form-grid two-up">
+                  <label class="field">
+                    <span>Time limit (seconds, optional)</span>
+                    <input id="cpSatTimeLimitSeconds" type="number" min="1" step="1" placeholder="Blank = no preset cap" />
+                  </label>
+                  <label class="field">
+                    <span>Workers</span>
+                    <input id="cpSatNumWorkers" type="number" min="1" step="1" />
+                  </label>
+                  <label class="check-field">
+                    <input id="cpSatLogSearchProgress" type="checkbox" />
+                    <span>Log search progress</span>
+                  </label>
+                  <label class="field full-width">
+                    <span>Python executable (optional)</span>
+                    <input id="cpSatPythonExecutable" type="text" placeholder=".venv-cp-sat/bin/python" />
+                  </label>
+                </div>
+              </section>
+            </div>
+          </section>
+
+          <section class="subpanel">
+            <div class="subpanel-head">
+              <div>
+                <p class="eyebrow">Limits</p>
+                <h3>Global caps</h3>
+              </div>
+            </div>
+
+            <div class="form-grid two-up">
+              <label class="field">
+                <span>Max services</span>
+                <input id="maxServices" type="number" min="1" step="1" placeholder="Optional" />
+              </label>
+              <label class="field">
+                <span>Max residentials</span>
+                <input id="maxResidentials" type="number" min="1" step="1" placeholder="Optional" />
+              </label>
+            </div>
+          </section>
+
+          <section class="subpanel">
+            <div class="subpanel-head">
+              <div>
+                <p class="eyebrow">Catalog</p>
+                <h3>Service types</h3>
+              </div>
+              <button id="addServiceTypeButton" type="button" class="button secondary">Add service</button>
+            </div>
+            <div id="serviceList"></div>
+          </section>
+
+          <section class="subpanel">
+            <div class="subpanel-head">
+              <div>
+                <p class="eyebrow">Catalog</p>
+                <h3>Residential types</h3>
+              </div>
+              <button id="addResidentialTypeButton" type="button" class="button secondary">Add residential</button>
+            </div>
+            <div id="residentialList"></div>
+          </section>
+        </aside>
+
+        <section class="panel panel-summary">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Step 3</p>
+              <h2>Launch Snapshot</h2>
+            </div>
+            <p class="panel-note">Review the current setup, then run the selected solver.</p>
+          </div>
+
+          <div class="metric-strip">
+            <article class="metric-card">
+              <span class="metric-label">Grid</span>
+              <strong id="summaryGridSize">0 x 0</strong>
+            </article>
+            <article class="metric-card">
+              <span class="metric-label">Allowed cells</span>
+              <strong id="summaryAllowedCells">0</strong>
+            </article>
+            <article class="metric-card">
+              <span class="metric-label">Service types</span>
+              <strong id="summaryServiceTypes">0</strong>
+            </article>
+            <article class="metric-card">
+              <span class="metric-label">Residential types</span>
+              <strong id="summaryResidentialTypes">0</strong>
+            </article>
+            <article class="metric-card accent">
+              <span class="metric-label">Active solver</span>
+              <strong id="summaryOptimizer">Greedy</strong>
+            </article>
+          </div>
+
+          <div class="actions-row">
+            <button id="solveButton" type="button" class="button primary">Run solver</button>
+            <button id="stopSolveButton" type="button" class="button secondary" disabled>Stop solver</button>
+            <p id="solveStatus" class="status-text" aria-live="polite">Ready to solve.</p>
+            <p id="solveTimer" class="timer-text" aria-live="off">Elapsed 00:00</p>
+          </div>
+
+          <details class="payload-preview">
+            <summary>Payload preview</summary>
+            <pre id="payloadPreview"></pre>
+          </details>
+        </section>
+
+        <section class="panel panel-results">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Result</p>
+              <h2>Solver Output</h2>
+            </div>
+            <span id="resultBadge" class="result-badge idle">Waiting</span>
+          </div>
+
+          <div id="resultsEmpty" class="empty-state">
+            Run the solver to inspect total population, validation, placements, and the solved layout map.
+          </div>
+
+          <div id="resultsContent" hidden>
+            <div class="metric-strip result-metrics">
+              <article class="metric-card">
+                <span class="metric-label">Population</span>
+                <strong id="resultPopulation">0</strong>
+              </article>
+              <article class="metric-card">
+                <span class="metric-label">Roads</span>
+                <strong id="resultRoadCount">0</strong>
+              </article>
+              <article class="metric-card">
+                <span class="metric-label">Services</span>
+                <strong id="resultServiceCount">0</strong>
+              </article>
+              <article class="metric-card">
+                <span class="metric-label">Residentials</span>
+                <strong id="resultResidentialCount">0</strong>
+              </article>
+              <article class="metric-card accent">
+                <span class="metric-label">Solver status</span>
+                <strong id="resultSolverStatus">n/a</strong>
+              </article>
+            </div>
+
+            <div id="validationNotice" class="notice"></div>
+
+            <div class="result-columns">
+              <section class="result-block">
+                <div class="subpanel-head">
+                  <div>
+                    <p class="eyebrow">Placements</p>
+                    <h3>Chosen buildings</h3>
+                  </div>
+                </div>
+                <div class="placement-columns">
+                  <div>
+                    <h4>Services</h4>
+                    <ul id="serviceResultList" class="result-list"></ul>
+                  </div>
+                  <div>
+                    <h4>Residentials</h4>
+                    <ul id="residentialResultList" class="result-list"></ul>
+                  </div>
+                </div>
+              </section>
+
+              <section class="result-block">
+                <div class="subpanel-head">
+                  <div>
+                    <p class="eyebrow">Map</p>
+                    <h3>Solved layout</h3>
+                  </div>
+                </div>
+                <div class="map-legend">
+                  <span class="legend-chip"><span class="legend-swatch empty"></span>Empty</span>
+                  <span class="legend-chip"><span class="legend-swatch road"></span>Road</span>
+                  <span class="legend-chip"><span class="legend-swatch service"></span>Service</span>
+                  <span class="legend-chip"><span class="legend-swatch residential"></span>Residential</span>
+                  <span class="legend-chip"><span class="legend-swatch blocked"></span>Blocked</span>
+                  <span class="legend-chip"><span class="legend-swatch overlay"></span>Building IDs</span>
+                </div>
+                <div class="matrix-frame">
+                  <div class="map-stack">
+                    <div id="resultMapGrid" class="grid-editor result-grid" data-layout-mode="comfortable" aria-label="Solved layout map"></div>
+                    <div id="resultOverlay" class="map-overlay" aria-hidden="true"></div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/app.js" defer></script>
+  </body>
+</html>

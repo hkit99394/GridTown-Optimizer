@@ -2,6 +2,8 @@
  * Greedy solver + optional local search (see ALGORITHM.md)
  */
 
+import { existsSync, renameSync, writeFileSync } from "node:fs";
+
 import type { Grid } from "./types.js";
 import type {
   GreedyOptions,
@@ -32,6 +34,14 @@ import {
   normalizeServicePlacement,
 } from "./buildings.js";
 import { getBuildingLimits, getResidentialBaseMax, NO_TYPE_INDEX } from "./rules.js";
+
+type SerializedSolution = Omit<Solution, "roads"> & { roads: string[] };
+
+class GreedyStopError extends Error {
+  constructor(readonly bestSolution: Solution | null) {
+    super(bestSolution ? "Greedy solve was stopped." : "Greedy solve was stopped before finding a feasible solution.");
+  }
+}
 
 function shuffle<T>(a: T[]): T[] {
   const out = [...a];
@@ -87,7 +97,22 @@ function getGreedyOptions(params: SolverParams): Required<GreedyOptions> {
     exhaustiveServiceSearch: greedy.exhaustiveServiceSearch ?? params.exhaustiveServiceSearch ?? false,
     serviceExactPoolLimit: greedy.serviceExactPoolLimit ?? params.serviceExactPoolLimit ?? 22,
     serviceExactMaxCombinations: greedy.serviceExactMaxCombinations ?? params.serviceExactMaxCombinations ?? 12000,
+    stopFilePath: greedy.stopFilePath ?? "",
+    snapshotFilePath: greedy.snapshotFilePath ?? "",
   };
+}
+
+function serializeSolution(solution: Solution): SerializedSolution {
+  return {
+    ...solution,
+    roads: Array.from(solution.roads),
+  };
+}
+
+function writeSolutionSnapshot(snapshotFilePath: string, solution: Solution): void {
+  const tempPath = `${snapshotFilePath}.tmp`;
+  writeFileSync(tempPath, JSON.stringify(serializeSolution(solution)));
+  renameSync(tempPath, snapshotFilePath);
 }
 
 function serviceCandidateKey(candidate: ServiceCandidate): string {
@@ -121,6 +146,13 @@ function materializeChosenServiceCandidate(solution: Solution, index: number): S
   };
 }
 
+function rectanglesOverlap(
+  a: { r: number; c: number; rows: number; cols: number },
+  b: { r: number; c: number; rows: number; cols: number }
+): boolean {
+  return a.r < b.r + b.rows && a.r + a.rows > b.r && a.c < b.c + b.cols && a.c + a.cols > b.c;
+}
+
 function solveOne(
   G: Grid,
   params: SolverParams,
@@ -132,7 +164,8 @@ function solveOne(
   useServiceTypes: boolean,
   useTypes: boolean,
   localSearch: boolean,
-  fixedServices?: ServiceCandidate[]
+  fixedServices?: ServiceCandidate[],
+  maybeStop?: () => void
 ): Solution | null {
   const roads = roadSeedRow0(G);
   if (roads.size === 0) return null;
@@ -147,6 +180,7 @@ function solveOne(
   const effectZones: Set<string>[] = [];
   const serviceSource = fixedServices ?? serviceOrder;
   for (const s of serviceSource) {
+    maybeStop?.();
     if (maxServices !== undefined && services.length >= maxServices) break;
     const placement = materializeServicePlacement(s);
     if (useServiceTypes && remainingServiceAvail) {
@@ -194,6 +228,7 @@ function solveOne(
     let best: ResidentialCandidatesList[0] | null = null;
     let bestPop = -1;
     for (const cand of anyResidentialCandidates) {
+      maybeStop?.();
       if (useTypes && remainingAvail) {
         const ti = getCandidateTypeIndex(cand);
         if (remainingAvail[ti] <= 0) continue;
@@ -236,7 +271,8 @@ function solveOne(
       residentialCandidatesForLocal,
       params,
       useTypes ? remainingAvail : null,
-      maxResidentials
+      maxResidentials,
+      maybeStop
     );
   }
 
@@ -310,6 +346,8 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     exhaustiveServiceSearch,
     serviceExactPoolLimit,
     serviceExactMaxCombinations,
+    stopFilePath,
+    snapshotFilePath,
   } = getGreedyOptions(params);
   const { maxServices, maxResidentials } = getBuildingLimits(params);
   const useServiceTypes = (params.serviceTypes?.length ?? 0) > 0;
@@ -318,17 +356,49 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
   const residentialCandidatesFromTypes = useTypes ? enumerateResidentialCandidatesFromTypes(G, params.residentialTypes!) : [];
   const anyResidentialCandidates = useTypes ? residentialCandidatesFromTypes : residentialCandidatesLegacy;
   const residentialCandidatesForLocal = useTypes ? residentialCandidatesFromTypes : residentialCandidatesLegacy;
+  let best: Solution | null = null;
+  let stopCounter = 0;
+
+  const maybeStop = (): void => {
+    if (!stopFilePath) return;
+    stopCounter += 1;
+    if (stopCounter % 128 !== 0) return;
+    if (!existsSync(stopFilePath)) return;
+    throw new GreedyStopError(best ? { ...best, stoppedByUser: true } : null);
+  };
+
+  const updateBest = (candidate: Solution | null): void => {
+    if (!candidate) return;
+    if (!best || candidate.totalPopulation > best.totalPopulation) {
+      best = candidate;
+      if (snapshotFilePath) writeSolutionSnapshot(snapshotFilePath, best);
+    }
+  };
 
   const serviceCandidates = enumerateServiceCandidates(G, params);
+  const residentialCandidateStats = anyResidentialCandidates.map((residential) => ({
+    r: residential.r,
+    c: residential.c,
+    rows: residential.rows,
+    cols: residential.cols,
+    ...getResidentialBaseMax(params, residential.rows, residential.cols, getCandidateTypeIndex(residential)),
+  }));
   const serviceScores = new Map<string, number>();
   for (const s of serviceCandidates) {
-    const zone = new Set(serviceEffectZone(G, s));
+    maybeStop();
+    const effectBounds = {
+      r: s.r - s.range,
+      c: s.c - s.range,
+      rows: s.rows + 2 * s.range,
+      cols: s.cols + 2 * s.range,
+    };
+    const footprint = { r: s.r, c: s.c, rows: s.rows, cols: s.cols };
     let score = 0;
-    for (const res of anyResidentialCandidates) {
-      const foot = residentialFootprint(res.r, res.c, res.rows, res.cols);
-      if (!foot.some((k) => zone.has(k))) continue;
-      const { base, max } = getResidentialBaseMax(params, res.rows, res.cols, getCandidateTypeIndex(res));
-      score += Math.min(base + s.bonus, max);
+    for (const res of residentialCandidateStats) {
+      maybeStop();
+      if (rectanglesOverlap(footprint, res)) continue;
+      if (!rectanglesOverlap(effectBounds, res)) continue;
+      score += Math.min(res.base + s.bonus, res.max);
     }
     serviceScores.set(serviceCandidateKey(s), score);
   }
@@ -347,53 +417,102 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
   const inferredUpper = explicitServiceCap ?? (positiveBonuses > 0 ? Math.min(totalServiceAvail, positiveBonuses) : totalServiceAvail);
   const serviceCaps = explicitServiceCap !== undefined ? [explicitServiceCap] : Array.from({ length: inferredUpper + 1 }, (_, i) => i);
 
-  let best: Solution | null = null;
-  for (const cap of serviceCaps) {
-    let bestForCap = solveOne(
-      G,
-      params,
-      serviceOrderSorted,
-      anyResidentialCandidates,
-      residentialCandidatesForLocal,
-      cap,
-      maxResidentials,
-      useServiceTypes,
-      useTypes,
-      localSearch
-    );
-    for (let r = 1; r < restarts; r++) {
-      const order = shuffle([...serviceOrderSorted]);
-      const sol = solveOne(
+  try {
+    for (const cap of serviceCaps) {
+      maybeStop();
+      let bestForCap = solveOne(
         G,
         params,
-        order,
+        serviceOrderSorted,
         anyResidentialCandidates,
         residentialCandidatesForLocal,
         cap,
         maxResidentials,
         useServiceTypes,
         useTypes,
-        localSearch
+        localSearch,
+        undefined,
+        maybeStop
       );
-      if (sol && (!bestForCap || sol.totalPopulation > bestForCap.totalPopulation)) bestForCap = sol;
+      updateBest(bestForCap);
+      for (let r = 1; r < restarts; r++) {
+        maybeStop();
+        const order = shuffle([...serviceOrderSorted]);
+        const sol = solveOne(
+          G,
+          params,
+          order,
+          anyResidentialCandidates,
+          residentialCandidatesForLocal,
+          cap,
+          maxResidentials,
+          useServiceTypes,
+          useTypes,
+          localSearch,
+          undefined,
+          maybeStop
+        );
+        if (sol && (!bestForCap || sol.totalPopulation > bestForCap.totalPopulation)) {
+          bestForCap = sol;
+          updateBest(bestForCap);
+        }
+      }
+      updateBest(bestForCap);
     }
-    if (bestForCap && (!best || bestForCap.totalPopulation > best.totalPopulation)) best = bestForCap;
-  }
-  if (!best) throw new Error("No feasible solution found.");
+    if (!best) throw new Error("No feasible solution found.");
 
-  const refineIters = serviceRefineIterations;
-  const refineLimit = Math.min(serviceRefineCandidateLimit, serviceOrderSorted.length);
-  const refinePool = serviceOrderSorted.slice(0, refineLimit);
-  for (let iter = 0; iter < refineIters; iter++) {
-    let improved = false;
-    for (let i = 0; i < best.services.length; i++) {
-      let localBest: Solution = best;
-      for (const cand of refinePool) {
-        const currentChoice = materializeChosenServiceCandidate(best, i);
-        if (serviceCandidateKey(cand) === serviceCandidateKey(currentChoice)) continue;
-        if (best.services.some((s, idx) => idx !== i && sameServicePlacement(s, cand))) continue;
-        const forced = best.services.map((_, idx) => materializeChosenServiceCandidate(best!, idx));
-        forced[i] = cand;
+    const refineIters = serviceRefineIterations;
+    const refineLimit = Math.min(serviceRefineCandidateLimit, serviceOrderSorted.length);
+    const refinePool = serviceOrderSorted.slice(0, refineLimit);
+    for (let iter = 0; iter < refineIters; iter++) {
+      maybeStop();
+      let improved = false;
+      for (let i = 0; i < best.services.length; i++) {
+        maybeStop();
+        let localBest: Solution = best;
+        for (const cand of refinePool) {
+          maybeStop();
+          const currentChoice = materializeChosenServiceCandidate(best, i);
+          if (serviceCandidateKey(cand) === serviceCandidateKey(currentChoice)) continue;
+          if (best.services.some((s, idx) => idx !== i && sameServicePlacement(s, cand))) continue;
+          const forced = best.services.map((_, idx) => materializeChosenServiceCandidate(best!, idx));
+          forced[i] = cand;
+          const trial = solveOne(
+            G,
+            params,
+            serviceOrderSorted,
+            anyResidentialCandidates,
+            residentialCandidatesForLocal,
+            best.services.length,
+            maxResidentials,
+            useServiceTypes,
+            useTypes,
+            localSearch,
+            forced,
+            maybeStop
+          );
+          if (trial && trial.totalPopulation > localBest.totalPopulation) {
+            localBest = trial;
+          }
+        }
+        if (localBest.totalPopulation > best.totalPopulation) {
+          best = localBest;
+          updateBest(best);
+          improved = true;
+        }
+      }
+      if (!improved) break;
+    }
+
+    // Optional exhaustive search over service layouts from top-ranked pool.
+    if (exhaustiveServiceSearch && best.services.length >= 0) {
+      const poolLimit = Math.max(0, Math.min(serviceExactPoolLimit, serviceOrderSorted.length));
+      const comboCap = Math.max(1, serviceExactMaxCombinations);
+      const pool = serviceOrderSorted.slice(0, poolLimit);
+      const combos = combinationsOfK(pool.length, best.services.length, comboCap);
+      for (const idxs of combos) {
+        maybeStop();
+        const forced = idxs.map((i) => pool[i]);
         const trial = solveOne(
           G,
           params,
@@ -405,46 +524,23 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
           useServiceTypes,
           useTypes,
           localSearch,
-          forced
+          forced,
+          maybeStop
         );
-        if (trial && trial.totalPopulation > localBest.totalPopulation) {
-          localBest = trial;
+        if (trial && trial.totalPopulation > best.totalPopulation) {
+          best = trial;
+          updateBest(best);
         }
       }
-      if (localBest.totalPopulation > best.totalPopulation) {
-        best = localBest;
-        improved = true;
-      }
     }
-    if (!improved) break;
+  } catch (error) {
+    if (error instanceof GreedyStopError) {
+      if (error.bestSolution) return error.bestSolution;
+      throw error;
+    }
+    throw error;
   }
 
-  // Optional exhaustive search over service layouts from top-ranked pool.
-  if (exhaustiveServiceSearch && best.services.length >= 0) {
-    const poolLimit = Math.max(0, Math.min(serviceExactPoolLimit, serviceOrderSorted.length));
-    const comboCap = Math.max(1, serviceExactMaxCombinations);
-    const pool = serviceOrderSorted.slice(0, poolLimit);
-    const combos = combinationsOfK(pool.length, best.services.length, comboCap);
-    for (const idxs of combos) {
-      const forced = idxs.map((i) => pool[i]);
-      const trial = solveOne(
-        G,
-        params,
-        serviceOrderSorted,
-        anyResidentialCandidates,
-        residentialCandidatesForLocal,
-        best.services.length,
-        maxResidentials,
-        useServiceTypes,
-        useTypes,
-        localSearch,
-        forced
-      );
-      if (trial && trial.totalPopulation > best.totalPopulation) {
-        best = trial;
-      }
-    }
-  }
   return best;
 }
 
@@ -473,7 +569,8 @@ function localSearchImprove(
   residentialCandidates: ResidentialPlacement[] | ResidentialCandidate[],
   params: SolverParams,
   remainingAvail: number[] | null,
-  maxResidentials: number | undefined
+  maxResidentials: number | undefined,
+  maybeStop?: () => void
 ): number {
   const useTypes = remainingAvail !== null && residentialCandidates.length > 0 && "typeIndex" in residentialCandidates[0];
   const maxIter = 20;
@@ -488,15 +585,18 @@ function localSearchImprove(
   }
 
   for (let iter = 0; iter < maxIter; iter++) {
+    maybeStop?.();
     let improved = false;
 
     for (let i = 0; i < residentials.length; i++) {
+      maybeStop?.();
       const res = residentials[i];
       const currentPop = populations[i];
       const resType = residentialTypeIndices[i] ?? NO_TYPE_INDEX;
       const othersOccupied = new Set(occupied);
       for (const k of residentialFootprint(res.r, res.c, res.rows, res.cols)) othersOccupied.delete(k);
       for (const cand of residentialCandidates) {
+        maybeStop?.();
         if (cand.r === res.r && cand.c === res.c && cand.rows === res.rows && cand.cols === res.cols) continue;
         const candidateTypeIndex = getCandidateTypeIndex(cand);
         if (useTypes && remainingAvail) {
@@ -527,6 +627,7 @@ function localSearchImprove(
 
     if (maxResidentials !== undefined && residentials.length >= maxResidentials) break;
     for (const cand of residentialCandidates) {
+      maybeStop?.();
       const candidateTypeIndex = getCandidateTypeIndex(cand);
       if (useTypes && remainingAvail) {
         if (remainingAvail[candidateTypeIndex] <= 0) continue;

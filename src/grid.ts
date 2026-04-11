@@ -21,6 +21,39 @@ export function isAllowed(G: Grid, r: number, c: number): boolean {
   return isInBounds(G, r, c) && G[r][c] === 1;
 }
 
+/** Prefix sum of blocked cells for O(1) rectangle feasibility checks. */
+export function buildBlockedPrefixSum(G: Grid): number[][] {
+  const H = height(G);
+  const W = width(G);
+  const prefix = Array.from({ length: H + 1 }, () => Array(W + 1).fill(0));
+  for (let r = 0; r < H; r++) {
+    let rowBlocked = 0;
+    for (let c = 0; c < W; c++) {
+      if (G[r][c] !== 1) rowBlocked++;
+      prefix[r + 1][c + 1] = prefix[r][c + 1] + rowBlocked;
+    }
+  }
+  return prefix;
+}
+
+/** Count blocked cells inside rectangle [r, r+rows) × [c, c+cols). */
+export function rectangleBlockedCount(
+  blockedPrefixSum: number[][],
+  r: number,
+  c: number,
+  rows: number,
+  cols: number
+): number {
+  const r2 = r + rows;
+  const c2 = c + cols;
+  return (
+    blockedPrefixSum[r2][c2]
+    - blockedPrefixSum[r][c2]
+    - blockedPrefixSum[r2][c]
+    + blockedPrefixSum[r][c]
+  );
+}
+
 const ORTH: [number, number][] = [
   [-1, 0],
   [1, 0],

@@ -106,9 +106,8 @@ function buildWarmStartHint(solution: Solution, neighborhoodWindow: CpSatNeighbo
       populations: [...solution.populations],
       totalPopulation: solution.totalPopulation,
     },
-    repairHint: true,
-    fixVariablesToHintedValue: false,
-    hintConflictLimit: 20,
+    // Keep the incumbent as a regular warm start, but avoid OR-Tools' repair_hint
+    // path here because it has been crashing inside MinimizeL1DistanceWithHint().
     neighborhoodWindow,
     fixOutsideNeighborhoodToHintedValue: true,
   };
@@ -287,6 +286,9 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
         optimizer: "cp-sat",
         cpSat: {
           ...(params.cpSat ?? {}),
+          // LNS repair is safer with a single worker; multi-worker repair_hint-style
+          // search has been crashing in the local OR-Tools runtime.
+          numWorkers: 1,
           timeLimitSeconds: options.repairTimeLimitSeconds,
           stopFilePath: options.stopFilePath || undefined,
           warmStartHint: buildWarmStartHint(incumbent, neighborhoodWindow),

@@ -9,7 +9,7 @@ import { resolve } from "node:path";
 
 import { validateSolutionMap } from "./index.js";
 import { getOptimizerAdapter, resolveOptimizerName } from "./optimizerRegistry.js";
-import type { BackgroundSolveHandle, Grid, OptimizerName, Solution, SolverParams } from "./types.js";
+import type { BackgroundSolveHandle, Grid, OptimizerName, SerializedSolution, Solution, SolverParams } from "./types.js";
 
 const PORT = Number(process.env.PORT ?? 4173);
 const WEB_ROOT = resolve(__dirname, "../web");
@@ -18,6 +18,12 @@ interface SolveRequest {
   grid: Grid;
   params: SolverParams;
   requestId?: string;
+}
+
+interface LayoutEvaluateRequest {
+  grid: Grid;
+  params: SolverParams;
+  solution: SerializedSolution;
 }
 
 interface CancelSolveRequest {
@@ -93,13 +99,42 @@ function isCancelSolveRequest(value: unknown): value is CancelSolveRequest {
   return typeof candidate.requestId === "string" && candidate.requestId.trim().length > 0;
 }
 
-function buildSolveResponse(grid: Grid, params: SolverParams, solution: Solution) {
-  const validation = validateSolutionMap({
+function isSerializedSolution(value: unknown): value is SerializedSolution {
+  if (typeof value !== "object" || value === null) return false;
+  const candidate = value as Partial<SerializedSolution>;
+  return Array.isArray(candidate.roads)
+    && Array.isArray(candidate.services)
+    && Array.isArray(candidate.serviceTypeIndices)
+    && Array.isArray(candidate.servicePopulationIncreases)
+    && Array.isArray(candidate.residentials)
+    && Array.isArray(candidate.residentialTypeIndices)
+    && Array.isArray(candidate.populations)
+    && typeof candidate.totalPopulation === "number";
+}
+
+function isLayoutEvaluateRequest(value: unknown): value is LayoutEvaluateRequest {
+  if (typeof value !== "object" || value === null) return false;
+  const candidate = value as Partial<LayoutEvaluateRequest>;
+  return isGrid(candidate.grid) && typeof candidate.params === "object" && candidate.params !== null && isSerializedSolution(candidate.solution);
+}
+
+function materializeSerializedSolution(solution: SerializedSolution): Solution {
+  return {
+    ...solution,
+    roads: new Set(solution.roads),
+  };
+}
+
+function buildSolveResponsePayload(grid: Grid, params: SolverParams, solution: Solution) {
+  return validateSolutionMap({
     grid,
     solution,
     params,
   });
+}
 
+function buildSolveResponse(grid: Grid, params: SolverParams, solution: Solution) {
+  const validation = buildSolveResponsePayload(grid, params, solution);
   return {
     solution: serializeSolution(solution),
     validation: {
@@ -118,6 +153,39 @@ function buildSolveResponse(grid: Grid, params: SolverParams, solution: Solution
       roadCount: solution.roads.size,
       serviceCount: solution.services.length,
       residentialCount: solution.residentials.length,
+    },
+  };
+}
+
+function buildManualLayoutResponse(grid: Grid, params: SolverParams, solution: Solution) {
+  const initialValidation = buildSolveResponsePayload(grid, params, solution);
+  const normalizedSolution: Solution = {
+    ...solution,
+    cpSatStatus: undefined,
+    stoppedByUser: false,
+    populations: [...initialValidation.recomputedPopulations],
+    totalPopulation: initialValidation.recomputedTotalPopulation,
+  };
+  const validation = buildSolveResponsePayload(grid, params, normalizedSolution);
+
+  return {
+    solution: serializeSolution(normalizedSolution),
+    validation: {
+      valid: validation.valid,
+      errors: validation.errors,
+      recomputedPopulations: validation.recomputedPopulations,
+      recomputedTotalPopulation: validation.recomputedTotalPopulation,
+      mapRows: validation.mapRows,
+      mapText: validation.mapText,
+    },
+    stats: {
+      optimizer: normalizedSolution.optimizer,
+      cpSatStatus: normalizedSolution.cpSatStatus ?? null,
+      stoppedByUser: Boolean(normalizedSolution.stoppedByUser),
+      totalPopulation: normalizedSolution.totalPopulation,
+      roadCount: normalizedSolution.roads.size,
+      serviceCount: normalizedSolution.services.length,
+      residentialCount: normalizedSolution.residentials.length,
     },
   };
 }
@@ -262,6 +330,25 @@ const server = createServer(async (req, res) => {
       sendJson(res, 200, {
         ok: true,
         ...buildSolveResponse(payload.grid, payload.params, solution),
+      });
+      return;
+    }
+
+    if (method === "POST" && url.pathname === "/api/layout/evaluate") {
+      const body = await readBody(req);
+      const payload = JSON.parse(body) as unknown;
+      if (!isLayoutEvaluateRequest(payload)) {
+        sendJson(res, 400, {
+          ok: false,
+          error: "Invalid layout-evaluate payload. Expected { grid, params, solution } with a rectangular 0/1 grid.",
+        });
+        return;
+      }
+
+      const solution = materializeSerializedSolution(payload.solution);
+      sendJson(res, 200, {
+        ok: true,
+        ...buildManualLayoutResponse(payload.grid, payload.params, solution),
       });
       return;
     }

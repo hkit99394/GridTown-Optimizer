@@ -3,84 +3,134 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>City Builder Planner</title>
+    <title>City Builder Planner | Operations Cockpit</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <div class="page-shell">
-      <header class="hero">
-        <div class="eyebrow">City Builder Planner</div>
-        <h1>Prepare the grid, building catalog, and solver strategy in one place.</h1>
-        <p class="hero-copy">
-          Shape the playable area, define service and residential types, then switch between greedy and CP-SAT with
-          their own tuning options before you solve.
-        </p>
-        <div class="hero-strip">
-          <span class="pill">Interactive grid editor</span>
-          <span class="pill">Typed service and residential inputs</span>
-          <span class="pill">Greedy and CP-SAT controls</span>
+    <div class="page-shell cockpit-shell">
+      <header class="cockpit-header">
+        <div class="cockpit-title">
+          <p class="eyebrow">Operations Cockpit</p>
+          <h1>Command the grid, tune the solver, and keep every saved layout in a live console.</h1>
+          <p class="hero-copy">
+            This preview keeps the full planner workflow intact, but it presents the UI as a bright command surface:
+            dense controls up front, hard-edged status panels, and a full-width result bay for the final output.
+          </p>
+          <div class="command-strip" aria-label="Planner capabilities">
+            <span class="command-chip">Grid editor</span>
+            <span class="command-chip">Catalog intake</span>
+            <span class="command-chip">Solver runtime</span>
+            <span class="command-chip">Saved states</span>
+          </div>
+          <nav class="jump-row" aria-label="Planner sections">
+            <a class="jump-link" href="#gridStage">Grid bay</a>
+            <a class="jump-link" href="#catalogStage">Catalog bay</a>
+            <a class="jump-link" href="#controlStage">Control stack</a>
+            <a class="jump-link" href="#resultStage">Output bay</a>
+          </nav>
         </div>
+
+        <aside class="telemetry-panel">
+          <section class="telemetry-card telemetry-status">
+            <p class="eyebrow">System state</p>
+            <strong>Ready</strong>
+            <p>Rows, catalogs, and solver parameters stay live while you switch modes or reuse stored layouts.</p>
+          </section>
+
+          <section class="telemetry-grid" aria-label="Planner telemetry">
+            <article class="telemetry-card">
+              <span class="telemetry-label">Input</span>
+              <strong>Grid + catalog</strong>
+              <p>Editable in-place with resize, presets, and import.</p>
+            </article>
+            <article class="telemetry-card">
+              <span class="telemetry-label">Solver</span>
+              <strong>Greedy / CP-SAT</strong>
+              <p>Toggle strategies, tune caps, and stop runs manually.</p>
+            </article>
+            <article class="telemetry-card">
+              <span class="telemetry-label">Output</span>
+              <strong>Metrics + map</strong>
+              <p>Review validation, placements, overlays, and saved layouts.</p>
+            </article>
+            <article class="telemetry-card accent">
+              <span class="telemetry-label">Hinting</span>
+              <strong>Layout reuse</strong>
+              <p>Saved layouts can become CP-SAT hints instantly.</p>
+            </article>
+          </section>
+        </aside>
       </header>
 
-      <main class="workspace">
-        <div class="workspace-main">
-          <section class="panel panel-grid">
-            <div class="panel-header">
+      <main class="cockpit-grid">
+        <div class="primary-stack">
+          <section id="gridStage" class="stage module module-grid">
+            <div class="module-head">
               <div>
-                <p class="eyebrow">Step 1</p>
-                <h2>Grid Canvas</h2>
+                <p class="eyebrow">Grid control</p>
+                <h2>Sector map</h2>
               </div>
-              <p class="panel-note">Row <code>0</code> is the road anchor edge, so the top row matters.</p>
+              <p class="module-note">
+                Resize the board, switch paint modes, and stamp allowed or blocked cells before launching a solve.
+              </p>
             </div>
 
-            <div class="toolbar-grid">
-              <label class="field">
-                <span>Rows</span>
-                <input id="gridRows" type="number" min="1" step="1" />
-              </label>
-              <label class="field">
-                <span>Cols</span>
-                <input id="gridCols" type="number" min="1" step="1" />
-              </label>
-              <button id="resizeGridButton" type="button" class="button secondary">Resize grid</button>
-              <button id="fillAllowedButton" type="button" class="button ghost">All allowed</button>
-              <button id="clearGridButton" type="button" class="button ghost">All blocked</button>
-              <button id="sampleGridButton" type="button" class="button ghost">Sample mask</button>
-              <button id="checkerGridButton" type="button" class="button ghost">Checker</button>
-            </div>
+            <div class="module-body">
+              <div class="command-panel">
+                <div class="toolbar-grid">
+                  <label class="field">
+                    <span>Rows</span>
+                    <input id="gridRows" type="number" min="1" step="1" />
+                  </label>
+                  <label class="field">
+                    <span>Cols</span>
+                    <input id="gridCols" type="number" min="1" step="1" />
+                  </label>
+                  <button id="resizeGridButton" type="button" class="button secondary">Resize grid</button>
+                  <button id="fillAllowedButton" type="button" class="button ghost">All allowed</button>
+                  <button id="clearGridButton" type="button" class="button ghost">All blocked</button>
+                  <button id="sampleGridButton" type="button" class="button ghost">Sample mask</button>
+                  <button id="checkerGridButton" type="button" class="button ghost">Checker</button>
+                </div>
 
-            <div class="paint-controls">
-              <span class="paint-label">Paint mode</span>
-              <div class="segmented" id="paintModeToggle">
-                <button type="button" data-paint-mode="toggle">Toggle</button>
-                <button type="button" data-paint-mode="allow">Allow</button>
-                <button type="button" data-paint-mode="block">Block</button>
+                <div class="signal-band">
+                  <div class="paint-copy">
+                    <span class="paint-label">Paint mode</span>
+                    <p id="gridStats" class="grid-stats"></p>
+                  </div>
+                  <div class="segmented" id="paintModeToggle" role="tablist" aria-label="Paint mode">
+                    <button type="button" data-paint-mode="toggle">Toggle</button>
+                    <button type="button" data-paint-mode="allow">Allow</button>
+                    <button type="button" data-paint-mode="block">Block</button>
+                  </div>
+                </div>
               </div>
-              <p id="gridStats" class="grid-stats"></p>
-            </div>
 
-            <div class="grid-frame">
-              <div id="gridEditor" class="grid-editor" aria-label="Grid editor"></div>
+              <div class="grid-frame cockpit-frame">
+                <div id="gridEditor" class="grid-editor" aria-label="Grid editor"></div>
+              </div>
             </div>
           </section>
 
-          <section class="panel panel-catalogs">
-            <div class="panel-header">
+          <section id="catalogStage" class="stage module module-catalog">
+            <div class="module-head">
               <div>
-                <p class="eyebrow">Step 2</p>
-                <h2>Catalog Workbench</h2>
+                <p class="eyebrow">Catalog control</p>
+                <h2>Building roster</h2>
               </div>
-              <p class="panel-note">Paste, review, and edit the service and residential types used by the current plan.</p>
+              <p class="module-note">
+                Paste both tables, then edit the service and residential inventories row by row without losing context.
+              </p>
             </div>
 
-            <section class="subpanel catalog-import-panel">
-              <div class="subpanel-head">
-                <div>
-                  <p class="eyebrow">Import</p>
-                  <h3>Bulk paste catalogs</h3>
+            <div class="module-body">
+              <section class="drawer-card import-card">
+                <div class="drawer-head">
+                  <div>
+                    <p class="eyebrow">Import</p>
+                    <h3>Paste catalog tables</h3>
+                  </div>
                 </div>
-              </div>
-              <div class="form-grid">
                 <label class="field">
                   <span>Paste service and residential tables</span>
                   <textarea
@@ -89,341 +139,372 @@
                     placeholder="Paste one or both tab-separated tables here, then import them into the catalogs."
                   ></textarea>
                 </label>
-              </div>
-              <div class="actions-row compact-actions">
-                <button id="importCatalogTextButton" type="button" class="button secondary">Import pasted tables</button>
-                <p id="catalogImportStatus" class="status-text" aria-live="polite">Paste one or both tables to replace the current catalogs.</p>
-              </div>
-            </section>
-
-            <div class="catalog-grid">
-              <section class="subpanel catalog-section">
-                <div class="subpanel-head">
-                  <div>
-                    <p class="eyebrow">Catalog</p>
-                    <h3>Service types</h3>
-                  </div>
-                  <button id="addServiceTypeButton" type="button" class="button secondary">Add service</button>
+                <div class="actions-row compact-actions">
+                  <button id="importCatalogTextButton" type="button" class="button secondary">Import pasted tables</button>
+                  <p id="catalogImportStatus" class="status-text" aria-live="polite">
+                    Paste one or both tables to replace the current catalogs.
+                  </p>
                 </div>
-                <div id="serviceList"></div>
               </section>
 
-              <section class="subpanel catalog-section">
-                <div class="subpanel-head">
-                  <div>
-                    <p class="eyebrow">Catalog</p>
-                    <h3>Residential types</h3>
+              <div class="catalog-grid">
+                <section class="drawer-card catalog-section">
+                  <div class="drawer-head">
+                    <div>
+                      <p class="eyebrow">Catalog</p>
+                      <h3>Service types</h3>
+                    </div>
+                    <button id="addServiceTypeButton" type="button" class="button secondary">Add service</button>
                   </div>
-                  <button id="addResidentialTypeButton" type="button" class="button secondary">Add residential</button>
+                  <div id="serviceList"></div>
+                </section>
+
+                <section class="drawer-card catalog-section">
+                  <div class="drawer-head">
+                    <div>
+                      <p class="eyebrow">Catalog</p>
+                      <h3>Residential types</h3>
+                    </div>
+                    <button id="addResidentialTypeButton" type="button" class="button secondary">Add residential</button>
+                  </div>
+                  <div id="residentialList"></div>
+                </section>
+              </div>
+            </div>
+          </section>
+
+          <section id="resultStage" class="stage module module-results">
+            <div class="module-head">
+              <div>
+                <p class="eyebrow">Output bay</p>
+                <h2>Result capture</h2>
+              </div>
+              <span id="resultBadge" class="result-badge idle">Waiting</span>
+            </div>
+
+            <div class="module-body">
+              <section class="drawer-card result-storage-panel">
+                <div class="drawer-head">
+                  <div>
+                    <p class="eyebrow">Save</p>
+                    <h3>Output layouts</h3>
+                  </div>
                 </div>
-                <div id="residentialList"></div>
+                <div class="form-grid two-up">
+                  <label class="field">
+                    <span>Layout name</span>
+                    <input id="layoutStorageName" type="text" placeholder="Best downtown variant" />
+                  </label>
+                  <div class="storage-button-block">
+                    <button id="saveLayoutButton" type="button" class="button secondary">Save current layout</button>
+                  </div>
+                  <label class="field">
+                    <span>Saved layouts</span>
+                    <select id="savedLayoutsSelect"></select>
+                  </label>
+                  <div class="storage-button-row">
+                    <button id="useLayoutAsHintButton" type="button" class="button ghost">Use as CP-SAT hint</button>
+                    <button id="loadLayoutButton" type="button" class="button ghost">Display saved</button>
+                    <button id="deleteLayoutButton" type="button" class="button ghost danger">Delete</button>
+                  </div>
+                </div>
+                <p id="layoutStorageStatus" class="status-text" aria-live="polite">
+                  Save a solved output to reopen and display it later.
+                </p>
               </section>
+
+              <div id="resultsEmpty" class="empty-state">
+                Run the solver, or display a saved output layout, to inspect total population, validation, placements,
+                and the solved layout map.
+              </div>
+
+              <div id="resultsContent" hidden>
+                <div class="metric-strip result-metrics">
+                  <article class="metric-card">
+                    <span class="metric-label">Population</span>
+                    <strong id="resultPopulation">0</strong>
+                  </article>
+                  <article class="metric-card">
+                    <span class="metric-label">Roads</span>
+                    <strong id="resultRoadCount">0</strong>
+                  </article>
+                  <article class="metric-card">
+                    <span class="metric-label">Services</span>
+                    <strong id="resultServiceCount">0</strong>
+                  </article>
+                  <article class="metric-card">
+                    <span class="metric-label">Residentials</span>
+                    <strong id="resultResidentialCount">0</strong>
+                  </article>
+                  <article class="metric-card">
+                    <span class="metric-label">Elapsed</span>
+                    <strong id="resultElapsed">00:00</strong>
+                  </article>
+                  <article class="metric-card accent">
+                    <span class="metric-label">Solver status</span>
+                    <strong id="resultSolverStatus">n/a</strong>
+                  </article>
+                </div>
+
+                <div id="validationNotice" class="notice"></div>
+
+                <div class="result-columns">
+                  <section class="result-block">
+                    <div class="drawer-head">
+                      <div>
+                        <p class="eyebrow">Placements</p>
+                        <h3>Chosen buildings</h3>
+                      </div>
+                    </div>
+                    <div class="placement-columns">
+                      <div>
+                        <h4>Services</h4>
+                        <ul id="serviceResultList" class="result-list"></ul>
+                      </div>
+                      <div>
+                        <h4>Residentials</h4>
+                        <ul id="residentialResultList" class="result-list"></ul>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section class="result-block">
+                    <div class="drawer-head">
+                      <div>
+                        <p class="eyebrow">Map</p>
+                        <h3>Solved layout</h3>
+                      </div>
+                    </div>
+                    <div class="map-legend">
+                      <span class="legend-chip"><span class="legend-swatch empty"></span>Empty</span>
+                      <span class="legend-chip"><span class="legend-swatch road"></span>Road</span>
+                      <span class="legend-chip"><span class="legend-swatch service"></span>Service</span>
+                      <span class="legend-chip"><span class="legend-swatch residential"></span>Residential</span>
+                      <span class="legend-chip"><span class="legend-swatch blocked"></span>Blocked</span>
+                      <span class="legend-chip"><span class="legend-swatch overlay"></span>Building IDs</span>
+                    </div>
+                    <div class="matrix-frame">
+                      <div class="map-stack">
+                        <div
+                          id="resultMapGrid"
+                          class="grid-editor result-grid"
+                          data-layout-mode="comfortable"
+                          aria-label="Solved layout map"
+                        ></div>
+                        <div id="resultOverlay" class="map-overlay" aria-hidden="true"></div>
+                      </div>
+                    </div>
+                  </section>
+                </div>
+              </div>
             </div>
           </section>
         </div>
 
-        <aside class="control-rail">
-          <section class="panel panel-sidebar">
-          <div class="panel-header">
+        <aside id="controlStage" class="stage module module-control">
+          <div class="module-head">
             <div>
-              <p class="eyebrow">Step 3</p>
-              <h2>Solve Controls</h2>
+              <p class="eyebrow">Control stack</p>
+              <h2>Optimizer deck</h2>
             </div>
-            <p class="panel-note">Tune the solver, manage saved configs, and launch runs without losing the current context.</p>
+            <p class="module-note">
+              Keep the current input intact while switching solver strategy, caps, or runtime hints.
+            </p>
           </div>
 
-          <section class="subpanel control-card">
-            <div class="subpanel-head">
-              <div>
-                <p class="eyebrow">Solver</p>
-                <h3>Choose an optimizer</h3>
-              </div>
-            </div>
-
-            <div class="segmented segmented-wide" id="solverToggle">
-              <button type="button" data-optimizer="greedy">Greedy</button>
-              <button type="button" data-optimizer="cp-sat">CP-SAT</button>
-            </div>
-
-            <div class="solver-panels">
-              <section id="greedyPanel" class="solver-panel">
-                <div class="form-grid two-up">
-                  <label class="check-field">
-                    <input id="greedyLocalSearch" type="checkbox" />
-                    <span>Enable local search</span>
-                  </label>
-                  <label class="check-field">
-                    <input id="greedyExhaustiveServiceSearch" type="checkbox" />
-                    <span>Try exhaustive service search</span>
-                  </label>
-                  <label class="field">
-                    <span>Restarts</span>
-                    <input id="greedyRestarts" type="number" min="1" step="1" />
-                  </label>
-                  <label class="field">
-                    <span>Refine passes</span>
-                    <input id="greedyServiceRefineIterations" type="number" min="0" step="1" />
-                  </label>
-                  <label class="field">
-                    <span>Candidate limit</span>
-                    <input id="greedyServiceRefineCandidateLimit" type="number" min="1" step="1" />
-                  </label>
-                  <label class="field">
-                    <span>Exact pool limit</span>
-                    <input id="greedyServiceExactPoolLimit" type="number" min="1" step="1" />
-                  </label>
-                  <label class="field">
-                    <span>Exact max combinations</span>
-                    <input id="greedyServiceExactMaxCombinations" type="number" min="1" step="1" />
-                  </label>
+          <div class="module-body">
+            <section class="drawer-card summary-card">
+              <div class="drawer-head">
+                <div>
+                  <p class="eyebrow">Overview</p>
+                  <h3>Plan at a glance</h3>
                 </div>
-              </section>
+              </div>
+              <div class="metric-strip summary-metrics">
+                <article class="metric-card">
+                  <span class="metric-label">Grid</span>
+                  <strong id="summaryGridSize">0 x 0</strong>
+                </article>
+                <article class="metric-card">
+                  <span class="metric-label">Allowed cells</span>
+                  <strong id="summaryAllowedCells">0</strong>
+                </article>
+                <article class="metric-card">
+                  <span class="metric-label">Service types</span>
+                  <strong id="summaryServiceTypes">0</strong>
+                </article>
+                <article class="metric-card">
+                  <span class="metric-label">Residential types</span>
+                  <strong id="summaryResidentialTypes">0</strong>
+                </article>
+                <article class="metric-card accent">
+                  <span class="metric-label">Active solver</span>
+                  <strong id="summaryOptimizer">Greedy</strong>
+                </article>
+              </div>
+            </section>
 
-              <section id="cpSatPanel" class="solver-panel" hidden>
-                <div class="solver-callout">
-                  CP-SAT uses the Python OR-Tools backend. If the environment is not set up yet, use
-                  <code>npm run setup:cp-sat</code> first. Leave the time limit blank to let it run until it
-                  finishes or you stop it manually.
+            <section class="drawer-card control-card">
+              <div class="drawer-head">
+                <div>
+                  <p class="eyebrow">Solver</p>
+                  <h3>Choose an optimizer</h3>
                 </div>
-                <div class="form-grid two-up">
-                  <label class="field">
-                    <span>Time limit (seconds, optional)</span>
-                    <input id="cpSatTimeLimitSeconds" type="number" min="1" step="1" placeholder="Blank = no preset cap" />
-                  </label>
-                  <label class="field">
-                    <span>Workers</span>
-                    <input id="cpSatNumWorkers" type="number" min="1" step="1" />
-                  </label>
-                  <label class="check-field">
-                    <input id="cpSatLogSearchProgress" type="checkbox" />
-                    <span>Log search progress</span>
-                  </label>
-                  <label class="field full-width">
-                    <span>Python executable (optional)</span>
-                    <input id="cpSatPythonExecutable" type="text" placeholder=".venv-cp-sat/bin/python" />
-                  </label>
+              </div>
+
+              <div class="segmented segmented-wide" id="solverToggle">
+                <button type="button" data-optimizer="greedy">Greedy</button>
+                <button type="button" data-optimizer="cp-sat">CP-SAT</button>
+              </div>
+
+              <div class="solver-panels">
+                <section id="greedyPanel" class="solver-panel">
+                  <div class="form-grid two-up">
+                    <label class="check-field">
+                      <input id="greedyLocalSearch" type="checkbox" />
+                      <span>Enable local search</span>
+                    </label>
+                    <label class="check-field">
+                      <input id="greedyExhaustiveServiceSearch" type="checkbox" />
+                      <span>Try exhaustive service search</span>
+                    </label>
+                    <label class="field">
+                      <span>Restarts</span>
+                      <input id="greedyRestarts" type="number" min="1" step="1" />
+                    </label>
+                    <label class="field">
+                      <span>Refine passes</span>
+                      <input id="greedyServiceRefineIterations" type="number" min="0" step="1" />
+                    </label>
+                    <label class="field">
+                      <span>Candidate limit</span>
+                      <input id="greedyServiceRefineCandidateLimit" type="number" min="1" step="1" />
+                    </label>
+                    <label class="field">
+                      <span>Exact pool limit</span>
+                      <input id="greedyServiceExactPoolLimit" type="number" min="1" step="1" />
+                    </label>
+                    <label class="field">
+                      <span>Exact max combinations</span>
+                      <input id="greedyServiceExactMaxCombinations" type="number" min="1" step="1" />
+                    </label>
+                  </div>
+                </section>
+
+                <section id="cpSatPanel" class="solver-panel" hidden>
+                  <div class="solver-callout">
+                    CP-SAT uses the Python OR-Tools backend. If the environment is not set up yet, use
+                    <code>npm run setup:cp-sat</code> first. Leave the time limit blank to let it run until it finishes
+                    or you stop it manually.
+                  </div>
+                  <div class="form-grid two-up">
+                    <label class="field">
+                      <span>Time limit (seconds, optional)</span>
+                      <input
+                        id="cpSatTimeLimitSeconds"
+                        type="number"
+                        min="1"
+                        step="1"
+                        placeholder="Blank = no preset cap"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>Workers</span>
+                      <input id="cpSatNumWorkers" type="number" min="1" step="1" />
+                    </label>
+                    <label class="check-field">
+                      <input id="cpSatLogSearchProgress" type="checkbox" />
+                      <span>Log search progress</span>
+                    </label>
+                    <label class="field full-width">
+                      <span>Python executable (optional)</span>
+                      <input id="cpSatPythonExecutable" type="text" placeholder=".venv-cp-sat/bin/python" />
+                    </label>
+                  </div>
+                  <div class="actions-row compact-actions">
+                    <p id="cpSatHintStatus" class="status-text" aria-live="polite">
+                      No saved layout selected as a CP-SAT hint.
+                    </p>
+                    <button id="clearCpSatHintButton" type="button" class="button ghost">Clear hint</button>
+                  </div>
+                </section>
+              </div>
+            </section>
+
+            <section class="drawer-card control-card">
+              <div class="drawer-head">
+                <div>
+                  <p class="eyebrow">Limits</p>
+                  <h3>Global caps</h3>
                 </div>
-                <div class="actions-row compact-actions">
-                  <p id="cpSatHintStatus" class="status-text" aria-live="polite">No saved layout selected as a CP-SAT hint.</p>
-                  <button id="clearCpSatHintButton" type="button" class="button ghost">Clear hint</button>
+              </div>
+
+              <div class="form-grid two-up">
+                <label class="field">
+                  <span>Max services</span>
+                  <input id="maxServices" type="number" min="1" step="1" placeholder="Optional" />
+                </label>
+                <label class="field">
+                  <span>Max residentials</span>
+                  <input id="maxResidentials" type="number" min="1" step="1" placeholder="Optional" />
+                </label>
+              </div>
+            </section>
+
+            <section class="drawer-card storage-card">
+              <div class="drawer-head">
+                <div>
+                  <p class="eyebrow">Library</p>
+                  <h3>Saved input setups</h3>
                 </div>
-              </section>
-            </div>
-          </section>
-
-          <section class="subpanel control-card">
-            <div class="subpanel-head">
-              <div>
-                <p class="eyebrow">Limits</p>
-                <h3>Global caps</h3>
               </div>
-            </div>
-
-            <div class="form-grid two-up">
-              <label class="field">
-                <span>Max services</span>
-                <input id="maxServices" type="number" min="1" step="1" placeholder="Optional" />
-              </label>
-              <label class="field">
-                <span>Max residentials</span>
-                <input id="maxResidentials" type="number" min="1" step="1" placeholder="Optional" />
-              </label>
-            </div>
-          </section>
-
-          <section class="subpanel subpanel-launch control-card">
-            <div class="subpanel-head">
-              <div>
-                <p class="eyebrow">Launch</p>
-                <h3>Run planner</h3>
+              <div class="form-grid two-up">
+                <label class="field">
+                  <span>Input name</span>
+                  <input id="configStorageName" type="text" placeholder="Downtown starting layout" />
+                </label>
+                <div class="storage-button-block">
+                  <button id="saveConfigButton" type="button" class="button secondary">Save current input</button>
+                </div>
+                <label class="field">
+                  <span>Saved inputs</span>
+                  <select id="savedConfigsSelect"></select>
+                </label>
+                <div class="storage-button-row">
+                  <button id="loadConfigButton" type="button" class="button ghost">Load selected input</button>
+                  <button id="deleteConfigButton" type="button" class="button ghost danger">Delete</button>
+                </div>
               </div>
-            </div>
+              <p id="configStorageStatus" class="status-text" aria-live="polite">
+                Saved inputs include the grid, catalogs, and solver settings.
+              </p>
+            </section>
 
-            <div class="metric-strip summary-metrics">
-              <article class="metric-card">
-                <span class="metric-label">Grid</span>
-                <strong id="summaryGridSize">0 x 0</strong>
-              </article>
-              <article class="metric-card">
-                <span class="metric-label">Allowed cells</span>
-                <strong id="summaryAllowedCells">0</strong>
-              </article>
-              <article class="metric-card">
-                <span class="metric-label">Service types</span>
-                <strong id="summaryServiceTypes">0</strong>
-              </article>
-              <article class="metric-card">
-                <span class="metric-label">Residential types</span>
-                <strong id="summaryResidentialTypes">0</strong>
-              </article>
-              <article class="metric-card accent">
-                <span class="metric-label">Active solver</span>
-                <strong id="summaryOptimizer">Greedy</strong>
-              </article>
-            </div>
+            <details class="payload-preview">
+              <summary>Payload preview</summary>
+              <pre id="payloadPreview"></pre>
+            </details>
 
-            <div class="solver-actions">
-              <div class="solver-button-row">
-                <button id="solveButton" type="button" class="button primary">Run solver</button>
-                <button id="stopSolveButton" type="button" class="button secondary" disabled>Stop solver</button>
+            <section class="drawer-card launch-card">
+              <div class="drawer-head">
+                <div>
+                  <p class="eyebrow">Launch</p>
+                  <h3>Run planner</h3>
+                </div>
               </div>
-              <div class="solver-feedback">
-                <p id="solveStatus" class="status-text" aria-live="polite">Ready to solve.</p>
-                <p id="solveTimer" class="timer-text" aria-live="off">Elapsed 00:00</p>
+              <div class="solver-actions">
+                <div class="solver-button-row">
+                  <button id="solveButton" type="button" class="button primary">Run solver</button>
+                  <button id="stopSolveButton" type="button" class="button secondary" disabled>Stop solver</button>
+                </div>
+                <div class="solver-feedback">
+                  <p id="solveStatus" class="status-text" aria-live="polite">Ready to solve.</p>
+                  <p id="solveTimer" class="timer-text" aria-live="off">Elapsed 00:00</p>
+                </div>
               </div>
-            </div>
-          </section>
-
-          <section class="subpanel summary-storage control-card">
-            <div class="subpanel-head">
-              <div>
-                <p class="eyebrow">Library</p>
-                <h3>Saved inputs</h3>
-              </div>
-            </div>
-            <div class="form-grid two-up">
-              <label class="field">
-                <span>Input name</span>
-                <input id="configStorageName" type="text" placeholder="Downtown starting layout" />
-              </label>
-              <div class="storage-button-block">
-                <button id="saveConfigButton" type="button" class="button secondary">Save current input</button>
-              </div>
-              <label class="field">
-                <span>Saved inputs</span>
-                <select id="savedConfigsSelect"></select>
-              </label>
-              <div class="storage-button-row">
-                <button id="loadConfigButton" type="button" class="button ghost">Load selected input</button>
-                <button id="deleteConfigButton" type="button" class="button ghost danger">Delete</button>
-              </div>
-            </div>
-            <p id="configStorageStatus" class="status-text" aria-live="polite">Saved inputs include the grid, catalogs, and solver settings.</p>
-          </section>
-
-          <details class="payload-preview control-card">
-            <summary>Payload preview</summary>
-            <pre id="payloadPreview"></pre>
-          </details>
-          </section>
+            </section>
+          </div>
         </aside>
-
-        <section class="panel panel-results">
-          <div class="panel-header">
-            <div>
-              <p class="eyebrow">Step 4</p>
-              <h2>Solver Output</h2>
-            </div>
-            <span id="resultBadge" class="result-badge idle">Waiting</span>
-          </div>
-
-          <section class="subpanel result-storage-panel">
-            <div class="subpanel-head">
-              <div>
-                <p class="eyebrow">Save</p>
-                <h3>Output layouts</h3>
-              </div>
-            </div>
-            <div class="form-grid two-up">
-              <label class="field">
-                <span>Layout name</span>
-                <input id="layoutStorageName" type="text" placeholder="Best downtown variant" />
-              </label>
-              <div class="storage-button-block">
-                <button id="saveLayoutButton" type="button" class="button secondary">Save current layout</button>
-              </div>
-              <label class="field">
-                <span>Saved layouts</span>
-                <select id="savedLayoutsSelect"></select>
-              </label>
-              <div class="storage-button-row">
-                <button id="useLayoutAsHintButton" type="button" class="button ghost">Use as CP-SAT hint</button>
-                <button id="loadLayoutButton" type="button" class="button ghost">Display saved</button>
-                <button id="deleteLayoutButton" type="button" class="button ghost danger">Delete</button>
-              </div>
-            </div>
-            <p id="layoutStorageStatus" class="status-text" aria-live="polite">Save a solved output to reopen and display it later.</p>
-          </section>
-
-          <div id="resultsEmpty" class="empty-state">
-            Run the solver, or display a saved output layout, to inspect total population, validation, placements, and the solved layout map.
-          </div>
-
-          <div id="resultsContent" hidden>
-            <div class="metric-strip result-metrics">
-              <article class="metric-card">
-                <span class="metric-label">Population</span>
-                <strong id="resultPopulation">0</strong>
-              </article>
-              <article class="metric-card">
-                <span class="metric-label">Roads</span>
-                <strong id="resultRoadCount">0</strong>
-              </article>
-              <article class="metric-card">
-                <span class="metric-label">Services</span>
-                <strong id="resultServiceCount">0</strong>
-              </article>
-              <article class="metric-card">
-                <span class="metric-label">Residentials</span>
-                <strong id="resultResidentialCount">0</strong>
-              </article>
-              <article class="metric-card">
-                <span class="metric-label">Elapsed</span>
-                <strong id="resultElapsed">00:00</strong>
-              </article>
-              <article class="metric-card accent">
-                <span class="metric-label">Solver status</span>
-                <strong id="resultSolverStatus">n/a</strong>
-              </article>
-            </div>
-
-            <div id="validationNotice" class="notice"></div>
-
-            <div class="result-columns">
-              <section class="result-block">
-                <div class="subpanel-head">
-                  <div>
-                    <p class="eyebrow">Placements</p>
-                    <h3>Chosen buildings</h3>
-                  </div>
-                </div>
-                <div class="placement-columns">
-                  <div>
-                    <h4>Services</h4>
-                    <ul id="serviceResultList" class="result-list"></ul>
-                  </div>
-                  <div>
-                    <h4>Residentials</h4>
-                    <ul id="residentialResultList" class="result-list"></ul>
-                  </div>
-                </div>
-              </section>
-
-              <section class="result-block">
-                <div class="subpanel-head">
-                  <div>
-                    <p class="eyebrow">Map</p>
-                    <h3>Solved layout</h3>
-                  </div>
-                </div>
-                <div class="map-legend">
-                  <span class="legend-chip"><span class="legend-swatch empty"></span>Empty</span>
-                  <span class="legend-chip"><span class="legend-swatch road"></span>Road</span>
-                  <span class="legend-chip"><span class="legend-swatch service"></span>Service</span>
-                  <span class="legend-chip"><span class="legend-swatch residential"></span>Residential</span>
-                  <span class="legend-chip"><span class="legend-swatch blocked"></span>Blocked</span>
-                  <span class="legend-chip"><span class="legend-swatch overlay"></span>Building IDs</span>
-                </div>
-                <div class="matrix-frame">
-                  <div class="map-stack">
-                    <div id="resultMapGrid" class="grid-editor result-grid" data-layout-mode="comfortable" aria-label="Solved layout map"></div>
-                    <div id="resultOverlay" class="map-overlay" aria-hidden="true"></div>
-                  </div>
-                </div>
-              </section>
-            </div>
-          </div>
-        </section>
       </main>
     </div>
 

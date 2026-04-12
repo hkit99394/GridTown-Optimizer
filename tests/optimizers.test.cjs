@@ -3,7 +3,27 @@ const childProcess = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const { solve, solveGreedy, solveCpSat, validateSolution, validateSolutionMap } = require("../dist/index.js");
+const {
+  solve,
+  solveGreedy,
+  solveCpSat,
+  validateSolution,
+  validateSolutionMap,
+  getOptimizerAdapter,
+  listOptimizerAdapters,
+  resolveOptimizerName,
+} = require("../dist/index.js");
+
+function testOptimizerRegistry() {
+  assert.equal(resolveOptimizerName(undefined), "greedy");
+  assert.equal(resolveOptimizerName({ optimizer: "cp-sat" }), "cp-sat");
+  assert.equal(getOptimizerAdapter("greedy").name, "greedy");
+  assert.equal(getOptimizerAdapter({ optimizer: "cp-sat" }).name, "cp-sat");
+  assert.deepEqual(
+    listOptimizerAdapters().map((adapter) => adapter.name).sort(),
+    ["cp-sat", "greedy"]
+  );
+}
 
 function resolveCpSatPython() {
   const venvPython = path.resolve(__dirname, "../.venv-cp-sat/bin/python");
@@ -255,6 +275,7 @@ function testGreedySupportsShapedServices() {
   assert.match(brokenValidation.errors.join("\n"), /does not match configured service type/);
 }
 
+testOptimizerRegistry();
 testGreedyDispatcher();
 maybeTestCpSatOptimizer();
 maybeTestCpSatSupportsShapedServices();

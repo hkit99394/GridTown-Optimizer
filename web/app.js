@@ -57,6 +57,8 @@ const DEFAULT_RESIDENTIAL_TYPES = [
 
 const CONFIG_STORAGE_KEY = "city-builder:planner-configs:v1";
 const LAYOUT_STORAGE_KEY = "city-builder:planner-layouts:v1";
+const SOLVE_STATUS_POLL_INTERVAL_MS = 1000;
+const LIVE_SNAPSHOT_REFRESH_INTERVAL_MS = 60 * 1000;
 
 const state = {
   grid: cloneGrid(SAMPLE_GRID),
@@ -92,6 +94,7 @@ const state = {
   solveTimerHandle: 0,
   solveTimerFrozen: true,
   result: null,
+  resultIsLiveSnapshot: false,
   resultError: "",
   resultContext: null,
   resultElapsedMs: 0,
@@ -739,6 +742,12 @@ function applyConfigSnapshot(snapshot) {
   };
 }
 
+function clearRenderedResultState() {
+  state.result = null;
+  state.resultIsLiveSnapshot = false;
+  state.resultError = "";
+}
+
 function isGridLike(grid) {
   return Array.isArray(grid)
     && grid.length > 0
@@ -796,8 +805,7 @@ function loadSelectedConfig() {
   }
   clearCpSatWarmStart({ silent: true, refreshPreview: false });
   applyConfigSnapshot(entry.snapshot);
-  state.result = null;
-  state.resultError = "";
+  clearRenderedResultState();
   state.resultContext = null;
   setResultElapsed(0);
   if (!state.isSolving) {
@@ -880,6 +888,7 @@ function loadSelectedLayout() {
   }
   clearCpSatWarmStart({ silent: true });
   state.result = cloneJson(entry.result);
+  state.resultIsLiveSnapshot = false;
   state.resultContext = cloneJson(entry.resultContext);
   state.resultError = "";
   const elapsedMs = getSavedLayoutElapsedMs(entry);
@@ -918,6 +927,7 @@ function useSelectedLayoutAsCpSatHint() {
     };
     applySolveRequestToPlanner(checkpoint.modelInput, { preserveCpSatRuntime: true, optimizer: "cp-sat" });
     state.result = cloneJson(entry.result);
+    state.resultIsLiveSnapshot = false;
     state.resultContext = cloneJson(entry.resultContext);
     state.resultError = "";
     const elapsedMs = getSavedLayoutElapsedMs(entry);
@@ -1452,6 +1462,15 @@ function buildSolveProgressMessage(payload) {
     : `Running ${optimizerLabel} solver. Searching for an initial result...`;
 }
 
+function applyRunningSnapshot(payload) {
+  if (!payload?.solution || payload.jobStatus !== "running") return;
+  state.result = payload;
+  state.resultIsLiveSnapshot = true;
+  state.resultError = "";
+  setResultElapsed(state.solveTimerElapsedMs);
+  renderResults();
+}
+
 async function requestStopSolve() {
   if (!state.isSolving || !state.activeSolveRequestId || state.isStopping) return;
 
@@ -1663,6 +1682,7 @@ function renderSolvedMap(grid, solution) {
 function renderResults() {
   syncActionAvailability();
   if (state.resultError) {
+    state.resultIsLiveSnapshot = false;
     elements.resultsEmpty.hidden = true;
     elements.resultsContent.hidden = false;
     elements.resultBadge.textContent = "Error";
@@ -1684,6 +1704,7 @@ function renderResults() {
   }
 
   if (!state.result) {
+    state.resultIsLiveSnapshot = false;
     elements.resultsEmpty.hidden = false;
     elements.resultsContent.hidden = true;
     elements.resultBadge.textContent = "Waiting";
@@ -1697,29 +1718,42 @@ function renderResults() {
 
   const { solution, stats, validation } = state.result;
   const stoppedByUser = Boolean(solution.stoppedByUser || stats.stoppedByUser);
+  const liveSnapshot = Boolean(state.isSolving && state.resultIsLiveSnapshot);
   const solvedGrid = state.resultContext?.grid ?? state.grid;
   elements.resultsEmpty.hidden = true;
   elements.resultsContent.hidden = false;
-  elements.resultBadge.textContent = validation.valid ? (stoppedByUser ? "Stopped" : "Validated") : "Needs review";
-  elements.resultBadge.className = `result-badge ${validation.valid ? "success" : "error"}`;
-  elements.validationNotice.className = `notice ${validation.valid ? "success" : "error"}`;
-  elements.validationNotice.textContent = validation.valid
-    ? (
-      stoppedByUser
-        ? `${getOptimizerLabel(stats.optimizer)} was stopped early. Showing the best validated result found so far.`
-        : "The solver output passed validation for the current grid and settings."
-    )
-    : validation.errors.join(" ");
+  if (liveSnapshot) {
+    elements.resultBadge.textContent = validation.valid ? "Live snapshot" : "Snapshot review";
+    elements.resultBadge.className = `result-badge ${validation.valid ? "running" : "error"}`;
+    elements.validationNotice.className = `notice ${validation.valid ? "info" : "error"}`;
+    elements.validationNotice.textContent = validation.valid
+      ? "Showing the best validated layout found so far while the solver keeps running. This view refreshes every 1 minute."
+      : `The latest running snapshot needs review: ${validation.errors.join(" ")}`;
+  } else {
+    elements.resultBadge.textContent = validation.valid ? (stoppedByUser ? "Stopped" : "Validated") : "Needs review";
+    elements.resultBadge.className = `result-badge ${validation.valid ? "success" : "error"}`;
+    elements.validationNotice.className = `notice ${validation.valid ? "success" : "error"}`;
+    elements.validationNotice.textContent = validation.valid
+      ? (
+        stoppedByUser
+          ? `${getOptimizerLabel(stats.optimizer)} was stopped early. Showing the best validated result found so far.`
+          : "The solver output passed validation for the current grid and settings."
+      )
+      : validation.errors.join(" ");
+  }
 
   elements.resultPopulation.textContent = Number(stats.totalPopulation).toLocaleString();
   elements.resultRoadCount.textContent = String(stats.roadCount);
   elements.resultServiceCount.textContent = String(stats.serviceCount);
   elements.resultResidentialCount.textContent = String(stats.residentialCount);
   elements.resultElapsed.textContent = formatElapsedTime(state.resultElapsedMs);
-  elements.resultSolverStatus.textContent =
-    stoppedByUser && stats.cpSatStatus
-      ? `${stats.cpSatStatus} (stopped)`
-      : stats.cpSatStatus || (stats.optimizer ?? "n/a");
+  elements.resultSolverStatus.textContent = liveSnapshot
+    ? `${stats.cpSatStatus || getOptimizerLabel(stats.optimizer)} (live)`
+    : (
+      stoppedByUser && stats.cpSatStatus
+        ? `${stats.cpSatStatus} (stopped)`
+        : stats.cpSatStatus || (stats.optimizer ?? "n/a")
+    );
 
   elements.serviceResultList.innerHTML = "";
   if (solution.services.length === 0) {
@@ -1753,8 +1787,16 @@ function renderResults() {
 }
 
 async function waitForSolveResult(requestId) {
+  let nextSnapshotRefreshAt = Date.now() + LIVE_SNAPSHOT_REFRESH_INTERVAL_MS;
   while (true) {
-    const response = await fetch(`/api/solve/status?requestId=${encodeURIComponent(requestId)}`, {
+    const shouldRequestSnapshot = Date.now() >= nextSnapshotRefreshAt;
+    const searchParams = new URLSearchParams({ requestId });
+    if (shouldRequestSnapshot) {
+      searchParams.set("includeSnapshot", "1");
+      nextSnapshotRefreshAt = Date.now() + LIVE_SNAPSHOT_REFRESH_INTERVAL_MS;
+    }
+
+    const response = await fetch(`/api/solve/status?${searchParams.toString()}`, {
       cache: "no-store",
     });
     const payload = await response.json();
@@ -1763,8 +1805,11 @@ async function waitForSolveResult(requestId) {
     }
 
     if (payload.jobStatus === "running") {
+      if (payload.liveSnapshot && payload.solution) {
+        applyRunningSnapshot(payload);
+      }
       setSolveState(buildSolveProgressMessage(payload));
-      await delay(1000);
+      await delay(SOLVE_STATUS_POLL_INTERVAL_MS);
       continue;
     }
 
@@ -1780,6 +1825,7 @@ async function runSolve() {
   state.isSolving = true;
   state.isStopping = false;
   state.activeSolveRequestId = createSolveRequestId();
+  state.resultIsLiveSnapshot = false;
   state.resultError = "";
   try {
     startSolveTimer();
@@ -1812,6 +1858,7 @@ async function runSolve() {
     const payload = await waitForSolveResult(state.activeSolveRequestId);
 
     state.result = payload;
+    state.resultIsLiveSnapshot = false;
     state.resultError = "";
     pauseSolveTimer();
     setResultElapsed(state.solveTimerElapsedMs);
@@ -1823,6 +1870,7 @@ async function runSolve() {
     );
   } catch (error) {
     state.result = null;
+    state.resultIsLiveSnapshot = false;
     state.resultError = error instanceof Error ? error.message : "Unknown solve error.";
     pauseSolveTimer();
     setResultElapsed(state.solveTimerElapsedMs);

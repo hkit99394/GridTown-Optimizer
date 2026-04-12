@@ -6,9 +6,12 @@ export { solve, solveGreedy } from "./solver.js";
 export { solveCpSat } from "./cpSatSolver.js";
 export { evaluateLayout, validateSolution } from "./evaluator.js";
 export { formatSolutionMap, renderSolutionMap, validateSolutionMap } from "./map.js";
+export { getOptimizerAdapter, listOptimizerAdapters, resolveOptimizerName } from "./optimizerRegistry.js";
 
 export type {
   Grid,
+  BackgroundSolveHandle,
+  BackgroundSolveSnapshotState,
   OptimizerName,
   CpSatOptions,
   GreedyOptions,

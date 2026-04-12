@@ -7,6 +7,7 @@ import { existsSync, renameSync, writeFileSync } from "node:fs";
 import type { Grid } from "./types.js";
 import type {
   GreedyOptions,
+  OptimizerName,
   ServicePlacement,
   ServiceCandidate,
   ResidentialPlacement,
@@ -545,14 +546,13 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
 }
 
 export function solve(G: Grid, params: SolverParams): Solution {
-  switch (params.optimizer ?? "greedy") {
-    case "greedy":
-      return solveGreedy(G, params);
-    case "cp-sat":
-      return solveCpSat(G, params);
-    default:
-      throw new Error(`Unsupported optimizer: ${String(params.optimizer)}`);
-  }
+  const optimizerName: OptimizerName = params.optimizer === "cp-sat" ? "cp-sat" : "greedy";
+  const optimizerSolvers: Record<OptimizerName, (grid: Grid, solverParams: SolverParams) => Solution> = {
+    greedy: solveGreedy,
+    "cp-sat": solveCpSat,
+  };
+
+  return optimizerSolvers[optimizerName](G, params);
 }
 
 function localSearchImprove(

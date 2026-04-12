@@ -7,10 +7,9 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
-import { solve, validateSolutionMap } from "./index.js";
-import { startCpSatSolve } from "./cpSatSolver.js";
-import { startGreedySolve } from "./greedyBridge.js";
-import type { Grid, OptimizerName, Solution, SolverParams } from "./types.js";
+import { validateSolutionMap } from "./index.js";
+import { getOptimizerAdapter, resolveOptimizerName } from "./optimizerRegistry.js";
+import type { BackgroundSolveHandle, Grid, OptimizerName, Solution, SolverParams } from "./types.js";
 
 const PORT = Number(process.env.PORT ?? 4173);
 const WEB_ROOT = resolve(__dirname, "../web");
@@ -26,16 +25,6 @@ interface CancelSolveRequest {
 }
 
 type SolveJobStatus = "running" | "completed" | "stopped" | "failed";
-
-interface BackgroundSolveHandle {
-  promise: Promise<Solution>;
-  cancel: () => void;
-  getLatestSnapshot: () => Solution | null;
-  getLatestSnapshotState: () => {
-    hasFeasibleSolution: boolean;
-    totalPopulation: number | null;
-  };
-}
 
 interface SolveJob {
   requestId: string;
@@ -103,10 +92,6 @@ function isCancelSolveRequest(value: unknown): value is CancelSolveRequest {
   return typeof candidate.requestId === "string" && candidate.requestId.trim().length > 0;
 }
 
-function isCpSatRequest(params: SolverParams): boolean {
-  return params.optimizer === "cp-sat";
-}
-
 function buildSolveResponse(grid: Grid, params: SolverParams, solution: Solution) {
   const validation = validateSolutionMap({
     grid,
@@ -137,10 +122,9 @@ function buildSolveResponse(grid: Grid, params: SolverParams, solution: Solution
 }
 
 function startSolveJob(grid: Grid, params: SolverParams, requestId: string): SolveJob {
-  const optimizer = params.optimizer ?? "greedy";
-  const handle: BackgroundSolveHandle = isCpSatRequest(params)
-    ? startCpSatSolve(grid, params)
-    : startGreedySolve(grid, params);
+  const optimizerAdapter = getOptimizerAdapter(params);
+  const optimizer = optimizerAdapter.name;
+  const handle = optimizerAdapter.startBackgroundSolve(grid, params);
   const job: SolveJob = {
     requestId,
     optimizer,
@@ -254,9 +238,7 @@ const server = createServer(async (req, res) => {
         return;
       }
 
-      const solution = isCpSatRequest(payload.params)
-        ? await startCpSatSolve(payload.grid, payload.params).promise
-        : solve(payload.grid, payload.params);
+      const solution = getOptimizerAdapter(payload.params).solve(payload.grid, payload.params);
 
       sendJson(res, 200, {
         ok: true,
@@ -293,7 +275,7 @@ const server = createServer(async (req, res) => {
       sendJson(res, 202, {
         ok: true,
         requestId,
-        optimizer: payload.params.optimizer ?? "greedy",
+        optimizer: resolveOptimizerName(payload.params),
         jobStatus: "running",
       });
       return;
@@ -301,6 +283,7 @@ const server = createServer(async (req, res) => {
 
     if ((method === "GET" || method === "HEAD") && url.pathname === "/api/solve/status") {
       const requestId = url.searchParams.get("requestId")?.trim() ?? "";
+      const includeSnapshot = ["1", "true", "yes"].includes((url.searchParams.get("includeSnapshot") ?? "").toLowerCase());
       if (!requestId) {
         sendJson(res, 400, {
           ok: false,
@@ -346,6 +329,22 @@ const server = createServer(async (req, res) => {
         hasFeasibleSolution: false,
         totalPopulation: null,
       };
+      const runningSnapshot = includeSnapshot ? (job.handle?.getLatestSnapshot() ?? null) : null;
+      if (runningSnapshot) {
+        sendJson(res, 200, {
+          ok: true,
+          requestId: job.requestId,
+          optimizer: job.optimizer,
+          jobStatus: job.status,
+          cancelRequested: job.cancelRequested,
+          hasFeasibleSolution: snapshotState.hasFeasibleSolution,
+          bestTotalPopulation: snapshotState.totalPopulation,
+          liveSnapshot: true,
+          ...buildSolveResponse(job.grid, job.params, runningSnapshot),
+        }, method === "HEAD");
+        return;
+      }
+
       sendJson(res, 200, {
         ok: true,
         requestId: job.requestId,
@@ -413,10 +412,9 @@ const server = createServer(async (req, res) => {
       ? 400
       : message.includes("was stopped")
         ? 409
-      : message.includes("CP-SAT backend failed")
-          || message.includes("Failed to launch CP-SAT backend")
-          || message.includes("Greedy backend failed")
-          || message.includes("Failed to launch greedy backend")
+      : message.includes("backend failed")
+          || message.includes("Failed to launch")
+          || message.includes("exceeded")
         ? 500
         : 400;
     sendJson(res, statusCode, { ok: false, error: message });

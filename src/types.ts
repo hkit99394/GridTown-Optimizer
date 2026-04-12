@@ -199,6 +199,21 @@ export interface Solution {
   totalPopulation: number;
 }
 
+/** Shared progress snapshot returned by long-running background solvers. */
+export interface BackgroundSolveSnapshotState {
+  hasFeasibleSolution: boolean;
+  totalPopulation: number | null;
+  cpSatStatus?: string | null;
+}
+
+/** Shared contract for cancellable background solver runs. */
+export interface BackgroundSolveHandle {
+  promise: Promise<Solution>;
+  cancel: () => void;
+  getLatestSnapshot: () => Solution | null;
+  getLatestSnapshotState: () => BackgroundSolveSnapshotState;
+}
+
 /** JSON-serializable form of Solution for APIs and persisted browser storage. */
 export interface SerializedSolution extends Omit<Solution, "roads"> {
   roads: string[];

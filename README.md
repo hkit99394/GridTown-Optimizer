@@ -2,30 +2,33 @@
 
 Optimize a city layout on a 2D grid by placing roads, service buildings, and residential buildings to maximize total population.
 
-This project includes:
+This project now includes:
+- a `greedy` heuristic solver with restarts and local search
+- an `LNS` solver that improves a seed layout with neighborhood CP-SAT repair
+- a `CP-SAT` solver backed by Google OR-Tools
+- strict validators and exact layout scoring
+- a local web planner with saved layouts, map inspection, and manual editing
 
-- a greedy heuristic solver with local search
-- a CP-SAT solver backed by Google OR-Tools
-- strict validators for layouts and solver output
-- an ASCII map renderer for quick inspection
-
-The formal problem statement lives in [SPEC.md](./SPEC.md). A shorter product-level summary lives in [Requirement.md](./Requirement.md). The current heuristic design is described in [ALGORITHM.md](./ALGORITHM.md).
+Core reference docs:
+- [SPEC.md](./SPEC.md): formal problem statement
+- [Requirement.md](./Requirement.md): product-level summary
+- [ALGORITHM.md](./ALGORITHM.md): heuristic design notes
+- [PLANNER_ARCHITECTURE.md](./PLANNER_ARCHITECTURE.md): current web/backend module boundaries
+- [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md): overall solver roadmap
+- [CP_SAT_ROADMAP.md](./CP_SAT_ROADMAP.md): CP-SAT-specific roadmap
 
 ## Problem Summary
 
 The input is a grid of `0` and `1` values:
-
 - `1` means the cell is allowed
 - `0` means the cell is blocked
 
 The solver must place:
-
 - roads on allowed cells
 - service buildings on allowed rectangular footprints
 - residential buildings on allowed rectangular footprints
 
 Subject to these core rules:
-
 - roads must form one connected network
 - the road network must touch row `0`
 - every building must connect to the road network
@@ -40,10 +43,7 @@ The objective is to maximize total residential population.
 
 ### Service buildings
 
-Service buildings are rectangular and type-driven.
-
 Each service type defines:
-
 - `rows`
 - `cols`
 - `bonus`
@@ -51,57 +51,55 @@ Each service type defines:
 - `avail`
 - optional `allowRotation`
 
-Examples:
-
-- `2x2`
-- `2x3`
-- `2x4`
-- `3x3`
-- more generally any rectangular `n x m` footprint that fits on allowed cells
-
 ### Residential buildings
 
-Residential buildings are rectangular and type-driven.
+Each residential type defines:
+- `w`
+- `h`
+- `min`
+- `max`
+- `avail`
 
-Examples:
-
-- `2x2`
-- `2x3`
-- `3x3`
-- `3x4`
-- more generally any rectangular `n x m` footprint that fits on allowed cells
-
-You can configure them in two ways:
-
-- preferred: `residentialTypes`
-- compatibility fallback: `residentialSettings` plus optional `basePop` / `maxPop`
+Preferred configuration is typed `residentialTypes`. Legacy `residentialSettings` plus `basePop` / `maxPop` are still supported for compatibility.
 
 ## Solvers
 
 ### `greedy`
 
-The greedy solver is the default backend.
+The greedy solver is the default heuristic backend.
 
 It uses:
-
 - service candidate ranking
 - constructive placement
 - optional restarts
 - local improvement
 - optional bounded exhaustive search over top service layouts
 
-Use this when you want fast iteration and good practical solutions.
+Use this when you want fast iteration and a strong incumbent quickly.
+
+### `lns`
+
+`LNS` means `Large Neighborhood Search`.
+
+In this project it:
+- starts from a greedy solution or a displayed saved layout seed
+- fixes everything outside one neighborhood window
+- repairs that window with CP-SAT
+- keeps the best incumbent found so far
+
+It also includes deterministic same-cell upgrade passes for obviously stronger service and residential replacements.
+
+Use this when you want a better layout than greedy without doing a full global CP-SAT search from scratch.
 
 ### `cp-sat`
 
-The CP-SAT solver is an exact optimization backend using OR-Tools.
+The CP-SAT solver is the exact optimization backend using OR-Tools.
 
-In practice it may return either:
-
+In practice it may return:
 - `OPTIMAL`: best solution found and proven optimal
-- `FEASIBLE`: good solution found within the time limit, but not proven optimal
+- `FEASIBLE`: best known solution found within limits, not proven optimal
 
-Use this when you want a stronger search or proof of optimality on smaller instances.
+Use this when you want deeper global search or proof of optimality on instances the exact model can handle well.
 
 ## Quick Start
 
@@ -117,7 +115,13 @@ npm install
 npm run build
 ```
 
-### 3. Run the example
+### 3. Optional: set up CP-SAT
+
+```bash
+npm run setup:cp-sat
+```
+
+### 4. Run an example solve
 
 Greedy:
 
@@ -125,14 +129,19 @@ Greedy:
 npm run solve:greedy
 ```
 
+LNS:
+
+```bash
+npm run solve:lns
+```
+
 CP-SAT:
 
 ```bash
-npm run setup:cp-sat
 npm run solve:cp-sat
 ```
 
-### 4. Run tests
+### 5. Run tests
 
 ```bash
 npm test
@@ -141,11 +150,11 @@ npm test
 ## CLI Commands
 
 Available scripts from [package.json](./package.json):
-
 - `npm run build`
 - `npm run web`
 - `npm run solve`
 - `npm run solve:greedy`
+- `npm run solve:lns`
 - `npm run solve:cp-sat`
 - `npm run setup:cp-sat`
 - `npm test`
@@ -154,14 +163,7 @@ Available scripts from [package.json](./package.json):
 
 ## Web Planner
 
-You can also open a lightweight local planning UI for preparing:
-
-- the 0/1 grid
-- service building types
-- residential building types
-- greedy or CP-SAT solver options
-
-Start it with:
+Start the planner with:
 
 ```bash
 npm run web
@@ -169,14 +171,26 @@ npm run web
 
 Then open [http://localhost:4173](http://localhost:4173).
 
-The planner includes:
-
+The planner now includes:
 - an interactive grid editor
-- repeatable service and residential type forms
-- solver-specific option panels
-- a `Run solver` action for greedy or CP-SAT
-- an optional CP-SAT time limit, or a manual `Stop solver` action for long runs
-- validation plus a solved layout map with building overlays
+- service and residential catalog editing
+- collapsible catalog import
+- solver-specific control panels for `greedy`, `LNS`, and `CP-SAT`
+- saved input setups
+- saved solved layouts
+- automatic `LNS` seeding and `CP-SAT` hinting from the displayed output
+- result review with validation, placements, remaining availability, and solved map overlays
+- manual layout editing on the solved map:
+  - add remaining buildings
+  - move buildings
+  - remove buildings
+  - add or remove roads
+- expansion comparison tooling for proposed next service or residential additions
+
+Notes:
+- `LNS` and `CP-SAT` need the Python OR-Tools backend
+- stopping a background solve preserves the best feasible result when one exists
+- the displayed output can be reused as the default seed or hint when the current model fingerprint still matches
 
 ## Library Usage
 
@@ -222,6 +236,24 @@ console.log(solution.totalPopulation);
 console.log(solution.cpSatStatus); // only set for CP-SAT
 ```
 
+### Run LNS explicitly
+
+```ts
+import { solve } from "./dist/index.js";
+
+const solution = solve(grid, {
+  ...params,
+  optimizer: "lns",
+  lns: {
+    iterations: 12,
+    maxNoImprovementIterations: 4,
+    neighborhoodRows: 6,
+    neighborhoodCols: 8,
+    repairTimeLimitSeconds: 5,
+  },
+});
+```
+
 ### Run CP-SAT explicitly
 
 ```ts
@@ -231,7 +263,7 @@ const solution = solve(grid, {
   ...params,
   optimizer: "cp-sat",
   cpSat: {
-    timeLimitSeconds: 120, // optional
+    timeLimitSeconds: 120,
     numWorkers: 8,
     logSearchProgress: false,
   },
@@ -269,28 +301,32 @@ The public API is exposed from [src/index.ts](./src/index.ts):
 
 - `solve`
 - `solveGreedy`
+- `solveLns`
 - `solveCpSat`
 - `evaluateLayout`
 - `validateSolution`
 - `renderSolutionMap`
 - `formatSolutionMap`
 - `validateSolutionMap`
+- `getOptimizerAdapter`
+- `listOptimizerAdapters`
+- `resolveOptimizerName`
 
 Useful types include:
-
 - `SolverParams`
 - `Solution`
 - `ServiceTypeSetting`
 - `ResidentialTypeSetting`
 - `CpSatOptions`
 - `GreedyOptions`
+- `LnsOptions`
+- `CpSatWarmStartHint`
 
 ## Input Notes
 
 ### Grid
 
 `Grid` is `number[][]`, where:
-
 - `1` = allowed
 - `0` = blocked
 
@@ -335,12 +371,34 @@ greedy: {
 }
 ```
 
-Top-level greedy tuning fields still exist for backward compatibility, but the nested `greedy` form is the cleaner API.
+### LNS options
+
+```ts
+lns: {
+  iterations: 12,
+  maxNoImprovementIterations: 4,
+  neighborhoodRows: 6,
+  neighborhoodCols: 8,
+  repairTimeLimitSeconds: 5,
+}
+```
+
+### CP-SAT options
+
+```ts
+cpSat: {
+  timeLimitSeconds?: number;
+  numWorkers?: number;
+  logSearchProgress?: boolean;
+  randomSeed?: number;
+  randomizeSearch?: boolean;
+  warmStartHint?: CpSatWarmStartHint;
+}
+```
 
 ## Output Shape
 
 A `Solution` contains:
-
 - `optimizer`
 - `cpSatStatus`
 - `stoppedByUser`
@@ -358,18 +416,23 @@ Road cells are encoded as `"r,c"` strings inside the `Set`.
 ## Project Layout
 
 - [src/index.ts](./src/index.ts): public API
-- [src/cli.ts](./src/cli.ts): example runner
+- [src/solve.ts](./src/solve.ts): top-level solver dispatch
+- [src/optimizerRegistry.ts](./src/optimizerRegistry.ts): optimizer registry
 - [src/solver.ts](./src/solver.ts): greedy solver
+- [src/lnsSolver.ts](./src/lnsSolver.ts): LNS solver
 - [src/cpSatSolver.ts](./src/cpSatSolver.ts): TypeScript bridge for CP-SAT
 - [python/cp_sat_solver.py](./python/cp_sat_solver.py): OR-Tools CP-SAT model
+- [src/solveJobManager.ts](./src/solveJobManager.ts): background solve job lifecycle
+- [src/webServerRequestHandler.ts](./src/webServerRequestHandler.ts): web planner request handling
+- [web/](./web): planner UI modules
 - [src/evaluator.ts](./src/evaluator.ts): validation and exact scoring
 - [src/map.ts](./src/map.ts): ASCII rendering and map-aware validation
-- [tests/](./tests): regression and optimizer tests
+- [tests/](./tests): regression, route, and optimizer tests
 
 ## Notes
 
-- The greedy solver can outperform a time-limited CP-SAT run if CP-SAT returns only `FEASIBLE` rather than `OPTIMAL`.
-- If you omit `cpSat.timeLimitSeconds`, the CP-SAT backend runs without a preset cap.
-- In the web planner, stopping CP-SAT early returns the best feasible result found so far when one exists.
-- CP-SAT requires a working Python runtime plus OR-Tools.
-- The example CLI prints a validation result and an ASCII map so you can quickly inspect solver output.
+- `CP-SAT` requires a working Python runtime plus OR-Tools.
+- If you omit `cpSat.timeLimitSeconds`, the CP-SAT backend runs until it finishes or is stopped.
+- In the web planner, stopping `CP-SAT` or `LNS` early preserves the best feasible result found so far when one exists.
+- `LNS` currently uses CP-SAT as the neighborhood repair engine.
+- The example CLI prints validation output and an ASCII map for quick inspection.

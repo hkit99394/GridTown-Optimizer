@@ -40,6 +40,7 @@ const DEFAULT_PARAMS = {
 function readCliOptimizer(): OptimizerName {
   const value = process.argv[2]?.trim();
   if (value === "cp-sat") return "cp-sat";
+  if (value === "lns") return "lns";
   return "greedy";
 }
 

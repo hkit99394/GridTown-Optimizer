@@ -7,7 +7,8 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
-import type { EvaluatedServicePlacement, Grid, SolverParams, Solution } from "./types.js";
+import type { BackgroundSolveHandle, EvaluatedServicePlacement, Grid, SolverParams, Solution } from "./types.js";
+import { startJsonBackgroundSolve } from "./backgroundSolverRunner.js";
 import { evaluateLayout } from "./evaluator.js";
 import { roadsConnectedToRow0 } from "./roads.js";
 
@@ -37,47 +38,32 @@ interface CpSatRawSolution {
   populations: number[];
   totalPopulation: number;
   status: string;
+  stoppedByUser?: boolean;
 }
+
+export type CpSatSolveHandle = BackgroundSolveHandle;
 
 function defaultPythonExecutable(): string {
   const venvPython = resolve(__dirname, "../.venv-cp-sat/bin/python");
   return existsSync(venvPython) ? venvPython : "python3";
 }
 
-export function solveCpSat(G: Grid, params: SolverParams): Solution {
-  const pythonExecutable = params.cpSat?.pythonExecutable ?? process.env.CITY_BUILDER_CP_SAT_PYTHON ?? defaultPythonExecutable();
-  const scriptPath = params.cpSat?.scriptPath ?? resolve(__dirname, "../python/cp_sat_solver.py");
-
-  const request = {
+function buildCpSatRequest(G: Grid, params: SolverParams) {
+  return {
     grid: G,
     params,
   };
+}
 
-  const result = spawnSync(pythonExecutable, [scriptPath], {
-    input: JSON.stringify(request),
-    encoding: "utf8",
-    maxBuffer: 16 * 1024 * 1024,
-  });
-
-  if (result.error) {
-    throw new Error(`Failed to launch CP-SAT backend with ${pythonExecutable}: ${result.error.message}`);
-  }
-
-  if (result.status !== 0) {
-    const stderr = result.stderr?.trim();
-    const stdout = result.stdout?.trim();
-    throw new Error(
-      `CP-SAT backend failed with exit code ${result.status}.${stderr ? ` stderr: ${stderr}` : ""}${stdout ? ` stdout: ${stdout}` : ""}`
-    );
-  }
-
-  let raw: CpSatRawSolution;
+function parseCpSatRawSolution(stdout: string): CpSatRawSolution {
   try {
-    raw = JSON.parse(result.stdout);
+    return JSON.parse(stdout);
   } catch (error) {
     throw new Error(`CP-SAT backend returned invalid JSON: ${(error as Error).message}`);
   }
+}
 
+function materializeCpSatSolution(G: Grid, params: SolverParams, raw: CpSatRawSolution): Solution {
   const roads = new Set(raw.roads);
   const connectedRoads = roadsConnectedToRow0(G, roads);
   if (connectedRoads.size === 0) {
@@ -115,6 +101,7 @@ export function solveCpSat(G: Grid, params: SolverParams): Solution {
   return {
     optimizer: "cp-sat",
     cpSatStatus: raw.status,
+    stoppedByUser: Boolean(raw.stoppedByUser),
     roads,
     services: raw.services.map(({ r, c, rows, cols, range }) => ({ r, c, rows, cols, range })),
     serviceTypeIndices: raw.services.map((service) => service.typeIndex),
@@ -124,4 +111,69 @@ export function solveCpSat(G: Grid, params: SolverParams): Solution {
     populations: raw.populations,
     totalPopulation: raw.totalPopulation,
   };
+}
+
+export function startCpSatSolve(G: Grid, params: SolverParams): CpSatSolveHandle {
+  const pythonExecutable = params.cpSat?.pythonExecutable ?? process.env.CITY_BUILDER_CP_SAT_PYTHON ?? defaultPythonExecutable();
+  const scriptPath = params.cpSat?.scriptPath ?? resolve(__dirname, "../python/cp_sat_solver.py");
+  return startJsonBackgroundSolve({
+    solverLabel: "CP-SAT",
+    stopDirectoryPrefix: "city-builder-cp-sat-stop-",
+    command: pythonExecutable,
+    args: [scriptPath],
+    launchContext: `with ${pythonExecutable}`,
+    buildRequest: ({ stopFilePath, snapshotFilePath }) =>
+      buildCpSatRequest(G, {
+        ...params,
+        cpSat: {
+          ...(params.cpSat ?? {}),
+          stopFilePath,
+          snapshotFilePath,
+        } as SolverParams["cpSat"],
+      }),
+    parseRaw: parseCpSatRawSolution,
+    materializeSolution: (raw, stoppedByUser) =>
+      materializeCpSatSolution(G, params, {
+        ...raw,
+        stoppedByUser: stoppedByUser || Boolean(raw.stoppedByUser),
+      }),
+    getSnapshotState: (raw) => ({
+      hasFeasibleSolution: Boolean(raw),
+      totalPopulation: raw?.totalPopulation ?? null,
+      cpSatStatus: raw?.status ?? null,
+    }),
+    readStoppedByUser: (raw) => Boolean(raw.stoppedByUser),
+    stoppedBeforeFeasibleMessage: "CP-SAT solve was stopped before finding a feasible solution.",
+    noSolutionMessage: "CP-SAT backend exited without returning a solution.",
+  });
+}
+
+export async function solveCpSatAsync(G: Grid, params: SolverParams): Promise<Solution> {
+  return startCpSatSolve(G, params).promise;
+}
+
+export function solveCpSat(G: Grid, params: SolverParams): Solution {
+  const pythonExecutable = params.cpSat?.pythonExecutable ?? process.env.CITY_BUILDER_CP_SAT_PYTHON ?? defaultPythonExecutable();
+  const scriptPath = params.cpSat?.scriptPath ?? resolve(__dirname, "../python/cp_sat_solver.py");
+  const request = buildCpSatRequest(G, params);
+
+  const result = spawnSync(pythonExecutable, [scriptPath], {
+    input: JSON.stringify(request),
+    encoding: "utf8",
+    maxBuffer: 16 * 1024 * 1024,
+  });
+
+  if (result.error) {
+    throw new Error(`Failed to launch CP-SAT backend with ${pythonExecutable}: ${result.error.message}`);
+  }
+
+  if (result.status !== 0) {
+    const stderr = result.stderr?.trim();
+    const stdout = result.stdout?.trim();
+    throw new Error(
+      `CP-SAT backend failed with exit code ${result.status}.${stderr ? ` stderr: ${stderr}` : ""}${stdout ? ` stdout: ${stdout}` : ""}`
+    );
+  }
+
+  return materializeCpSatSolution(G, params, parseCpSatRawSolution(result.stdout));
 }

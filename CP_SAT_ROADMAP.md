@@ -66,6 +66,8 @@ Questions:
 
 ### 3. Audit the exact objective explicitly
 
+Status: Implemented
+
 Expected impact: High
 
 Why:
@@ -77,6 +79,11 @@ Targets:
 - confirm the current objective matches intended product behavior
 - decide whether the current scaled form should remain, or be made more explicit as a lexicographic objective policy
 - verify that future cuts and symmetry rules remain correct for this exact objective
+
+Delivered:
+- the CP-SAT objective is now expressed explicitly as `maximize population, then minimize roads + services`
+- the scaling factor is named and audited against the maximum possible tie-break swing
+- solver-level tests now cover both fewer-road and fewer-service tie-break behavior
 
 ### 4. Add stronger valid inequalities and implied bounds
 

@@ -172,6 +172,118 @@ function maybeTestCpSatBackendJsonContractSmoke() {
   assert(Array.isArray(payload.populations));
   assert.equal(payload.populations.length, payload.residentials.length);
   assert.equal(payload.totalPopulation, payload.populations.reduce((sum, value) => sum + value, 0));
+  assert.equal(typeof payload.objectivePolicy?.populationWeight, "number");
+  assert.equal(typeof payload.objectivePolicy?.maxTieBreakPenalty, "number");
+  assert.equal(typeof payload.objectivePolicy?.summary, "string");
+}
+
+function maybeTestCpSatObjectivePolicyHelpers() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const command = `
+import importlib.util
+import json
+
+spec = importlib.util.spec_from_file_location("cp_sat_solver", ${JSON.stringify(scriptPath)})
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+grid = [
+  [1, 1, 1],
+  [1, 1, 1],
+  [1, 1, 1],
+]
+params = {
+    "serviceTypes": [{"rows": 1, "cols": 1, "bonus": 0, "range": 0, "avail": 1}],
+    "residentialTypes": [{"w": 2, "h": 2, "min": 10, "max": 10, "avail": 1}],
+    "availableBuildings": {"services": 1, "residentials": 1},
+}
+
+built = module.build_model(grid, params)
+
+print(json.dumps({
+    "population_weight": built.objective_policy.population_weight,
+    "max_tie_break_penalty": built.objective_policy.max_tie_break_penalty,
+    "service_candidate_count": len(built.service_candidates),
+    "cell_count": len(built.allowed_cells),
+}))
+`;
+
+  const result = childProcess.spawnSync(pythonExecutable, ["-c", command], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT objective policy helpers.");
+  }
+
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.max_tie_break_penalty, payload.cell_count + payload.service_candidate_count);
+  assert.equal(payload.population_weight, payload.max_tie_break_penalty + 1);
+}
+
+function maybeTestCpSatObjectivePrefersFewerRoadsOnPopulationTie() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const grid = [
+    [1, 1, 0, 1],
+    [1, 1, 0, 1],
+    [0, 0, 0, 1],
+    [0, 1, 1, 1],
+    [0, 1, 1, 1],
+  ];
+  const params = {
+    optimizer: "cp-sat",
+    cpSat: {
+      pythonExecutable,
+      timeLimitSeconds: 5,
+      numWorkers: 1,
+    },
+    residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
+    availableBuildings: { residentials: 1, services: 0 },
+  };
+
+  const solution = solveCpSat(grid, params);
+  assert.equal(solution.totalPopulation, 10);
+  assert.equal(solution.roads.size, 1);
+  assert.equal(solution.residentials.length, 1);
+  assert.equal(solution.residentials[0].r, 0);
+  assert.equal(solution.residentials[0].c, 0);
+}
+
+function maybeTestCpSatObjectiveAvoidsUselessServices() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const grid = [
+    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1],
+  ];
+  const params = {
+    optimizer: "cp-sat",
+    cpSat: {
+      pythonExecutable,
+      timeLimitSeconds: 5,
+      numWorkers: 1,
+    },
+    serviceTypes: [{ rows: 1, cols: 1, bonus: 0, range: 0, avail: 1 }],
+    residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
+    availableBuildings: { services: 1, residentials: 1 },
+  };
+
+  const solution = solveCpSat(grid, params);
+  assert.equal(solution.totalPopulation, 10);
+  assert.equal(solution.services.length, 0);
 }
 
 function testSolutionValidator() {
@@ -593,7 +705,10 @@ print(json.dumps({
 
 testGreedyDispatcher();
 maybeTestCpSatBackendJsonContractSmoke();
+maybeTestCpSatObjectivePolicyHelpers();
 maybeTestCpSatOptimizer();
+maybeTestCpSatObjectivePrefersFewerRoadsOnPopulationTie();
+maybeTestCpSatObjectiveAvoidsUselessServices();
 maybeTestCpSatSupportsShapedServices();
 maybeTestCpSatCandidateReductionHelpers();
 maybeTestCpSatReachabilityReductionHelpers();

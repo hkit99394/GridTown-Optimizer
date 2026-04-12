@@ -35,6 +35,7 @@ Subject to these core rules:
 - residential buildings have typed min/max population and availability
 
 The objective is to maximize total residential population.
+For the CP-SAT solver, ties are broken explicitly in favor of fewer roads and fewer placed services.
 
 ## Supported Model
 

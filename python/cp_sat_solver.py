@@ -38,9 +38,20 @@ class BuiltCpSatModel:
     residential_vars: list[Any]
     residential_candidates: list[dict[str, Any]]
     populations: list[Any]
+    total_roads: Any
+    total_services: Any
+    total_population: Any
+    objective_policy: Any
     id_to_cell: dict[int, tuple[int, int]]
     road_eligible_cells: list[tuple[int, int]]
     directed_edges: list[tuple[int, int, Any]]
+
+
+@dataclass(frozen=True)
+class ObjectivePolicy:
+    population_weight: int
+    max_tie_break_penalty: int
+    tie_break_summary: str
 
 
 def fail(message: str) -> None:
@@ -429,7 +440,25 @@ def add_flow_connectivity_constraints(
     return directed_edges
 
 
-def add_population_model_and_objective(model, cell_count, service_vars, service_candidates, residential_vars, residential_candidates, road_vars):
+def build_objective_policy(cell_count: int, service_candidate_count: int) -> ObjectivePolicy:
+    max_tie_break_penalty = cell_count + service_candidate_count
+    return ObjectivePolicy(
+        population_weight=max_tie_break_penalty + 1,
+        max_tie_break_penalty=max_tie_break_penalty,
+        tie_break_summary="maximize population, then minimize roads + services",
+    )
+
+
+def add_population_model_and_objective(
+    model,
+    cell_count,
+    service_vars,
+    service_candidates,
+    residential_vars,
+    residential_candidates,
+    road_vars,
+    total_roads,
+):
     service_cover_sets = [candidate["effect_zone"] for candidate in service_candidates]
     populations = []
     for candidate_index, candidate in enumerate(residential_candidates):
@@ -446,9 +475,16 @@ def add_population_model_and_objective(model, cell_count, service_vars, service_
         model.Add(pop_var <= candidate["base"] * residential_vars[candidate_index] + boost_expr)
         populations.append(pop_var)
 
-    penalty_cap = cell_count + len(service_candidates) + 1
-    model.Maximize(sum(populations) * penalty_cap - sum(road_vars) - sum(service_vars))
-    return populations
+    total_population_upper_bound = sum(candidate["max"] for candidate in residential_candidates)
+    total_population = model.NewIntVar(0, total_population_upper_bound, "total_population")
+    model.Add(total_population == sum(populations))
+
+    total_services = model.NewIntVar(0, len(service_candidates), "total_services")
+    model.Add(total_services == sum(service_vars))
+
+    objective_policy = build_objective_policy(cell_count, len(service_candidates))
+    model.Maximize(total_population * objective_policy.population_weight - total_roads - total_services)
+    return populations, total_population, total_services, objective_policy
 
 
 def prune_dominated_service_candidates(candidates, params):
@@ -699,7 +735,7 @@ def build_model(grid, params) -> BuiltCpSatModel:
         eligible_row0_ids,
         total_roads,
     )
-    populations = add_population_model_and_objective(
+    populations, total_population, total_services, objective_policy = add_population_model_and_objective(
         model,
         cell_count,
         service_vars,
@@ -707,6 +743,7 @@ def build_model(grid, params) -> BuiltCpSatModel:
         residential_vars,
         residential_candidates,
         road_vars,
+        total_roads,
     )
 
     return BuiltCpSatModel(
@@ -720,6 +757,10 @@ def build_model(grid, params) -> BuiltCpSatModel:
         residential_vars=residential_vars,
         residential_candidates=residential_candidates,
         populations=populations,
+        total_roads=total_roads,
+        total_services=total_services,
+        total_population=total_population,
+        objective_policy=objective_policy,
         id_to_cell=id_to_cell,
         road_eligible_cells=sorted(road_eligible_cells),
         directed_edges=directed_edges,
@@ -800,7 +841,12 @@ def solve():
         "services": services,
         "residentials": residentials,
         "populations": populations,
-        "totalPopulation": sum(populations),
+        "totalPopulation": solver.Value(built.total_population),
+        "objectivePolicy": {
+            "populationWeight": built.objective_policy.population_weight,
+            "maxTieBreakPenalty": built.objective_policy.max_tie_break_penalty,
+            "summary": built.objective_policy.tie_break_summary,
+        },
     }
     json.dump(response, sys.stdout)
 

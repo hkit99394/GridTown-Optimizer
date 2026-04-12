@@ -7,7 +7,6 @@ import { existsSync, renameSync, writeFileSync } from "node:fs";
 import type { Grid } from "./types.js";
 import type {
   GreedyOptions,
-  OptimizerName,
   ServicePlacement,
   ServiceCandidate,
   ResidentialPlacement,
@@ -15,7 +14,6 @@ import type {
   SolverParams,
   Solution,
 } from "./types.js";
-import { solveCpSat } from "./cpSatSolver.js";
 import {
   roadSeedRow0,
   ensureBuildingConnectedToRoads,
@@ -543,16 +541,6 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
   }
 
   return best;
-}
-
-export function solve(G: Grid, params: SolverParams): Solution {
-  const optimizerName: OptimizerName = params.optimizer === "cp-sat" ? "cp-sat" : "greedy";
-  const optimizerSolvers: Record<OptimizerName, (grid: Grid, solverParams: SolverParams) => Solution> = {
-    greedy: solveGreedy,
-    "cp-sat": solveCpSat,
-  };
-
-  return optimizerSolvers[optimizerName](G, params);
 }
 
 function localSearchImprove(

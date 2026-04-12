@@ -78,7 +78,36 @@ export interface ServiceTypeSetting {
   allowRotation?: boolean;
 }
 
-export type OptimizerName = "greedy" | "cp-sat";
+export type OptimizerName = "greedy" | "cp-sat" | "lns";
+
+export interface CpSatNeighborhoodWindow {
+  top: number;
+  left: number;
+  rows: number;
+  cols: number;
+}
+
+export interface CpSatWarmStartHint {
+  sourceName?: string;
+  modelFingerprint?: string;
+  roadKeys?: string[];
+  serviceCandidateKeys?: PersistedServiceCandidateKey[];
+  residentialCandidateKeys?: PersistedResidentialCandidateKey[];
+  solution?: {
+    roads?: string[];
+    services?: CpSatContinuationHintedServicePlacement[];
+    residentials?: CpSatContinuationHintedResidentialPlacement[];
+    populations?: number[];
+    totalPopulation?: number;
+  };
+  objectiveLowerBound?: number;
+  preferStrictImprove?: boolean;
+  repairHint?: boolean;
+  fixVariablesToHintedValue?: boolean;
+  hintConflictLimit?: number;
+  neighborhoodWindow?: CpSatNeighborhoodWindow;
+  fixOutsideNeighborhoodToHintedValue?: boolean;
+}
 
 export interface CpSatOptions {
   /** Python executable to run the CP-SAT backend. Defaults to .venv-cp-sat/bin/python when present, else python3. */
@@ -99,6 +128,8 @@ export interface CpSatOptions {
   randomSeed?: number;
   /** Optional CP-SAT randomize-search toggle for experimentation. */
   randomizeSearch?: boolean;
+  /** Optional warm-start hint, including local repair windows for LNS-style runs. */
+  warmStartHint?: CpSatWarmStartHint;
 }
 
 export interface GreedyOptions {
@@ -122,6 +153,25 @@ export interface GreedyOptions {
   snapshotFilePath?: string;
 }
 
+export interface LnsOptions {
+  /** Number of neighborhood-repair attempts to run after the greedy seed. */
+  iterations?: number;
+  /** Stop after this many consecutive non-improving neighborhoods. */
+  maxNoImprovementIterations?: number;
+  /** Height of each repair neighborhood. Defaults to about half the grid height. */
+  neighborhoodRows?: number;
+  /** Width of each repair neighborhood. Defaults to about half the grid width. */
+  neighborhoodCols?: number;
+  /** Per-neighborhood CP-SAT repair budget in seconds. */
+  repairTimeLimitSeconds?: number;
+  /** Optional saved-layout seed used instead of rebuilding the initial greedy incumbent. */
+  seedHint?: CpSatWarmStartHint;
+  /** Internal stop-token path used by the local web server. */
+  stopFilePath?: string;
+  /** Internal best-snapshot path used by the local web server. */
+  snapshotFilePath?: string;
+}
+
 export interface SolverParams {
   /** Optimizer backend. Defaults to greedy. */
   optimizer?: OptimizerName;
@@ -129,6 +179,8 @@ export interface SolverParams {
   cpSat?: CpSatOptions;
   /** Greedy-only tuning knobs. Ignored by the CP-SAT backend. */
   greedy?: GreedyOptions;
+  /** LNS-only tuning knobs. Ignored by other backends. */
+  lns?: LnsOptions;
   /**
    * Service types: each type has its own footprint, bonus, range, and availability.
    */
@@ -251,6 +303,7 @@ export interface SolveResponsePayload {
   solution: SerializedSolution;
   validation: SolveResponseValidation;
   stats: SolveResponseStats;
+  message?: string;
 }
 
 /** Stable semantic key for a road cell in persisted snapshots: "r,c". */

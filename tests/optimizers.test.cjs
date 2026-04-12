@@ -7,6 +7,7 @@ const {
   solve,
   solveGreedy,
   solveCpSat,
+  solveLns,
   validateSolution,
   validateSolutionMap,
   getOptimizerAdapter,
@@ -17,11 +18,13 @@ const {
 function testOptimizerRegistry() {
   assert.equal(resolveOptimizerName(undefined), "greedy");
   assert.equal(resolveOptimizerName({ optimizer: "cp-sat" }), "cp-sat");
+  assert.equal(resolveOptimizerName({ optimizer: "lns" }), "lns");
   assert.equal(getOptimizerAdapter("greedy").name, "greedy");
   assert.equal(getOptimizerAdapter({ optimizer: "cp-sat" }).name, "cp-sat");
+  assert.equal(getOptimizerAdapter("lns").name, "lns");
   assert.deepEqual(
     listOptimizerAdapters().map((adapter) => adapter.name).sort(),
-    ["cp-sat", "greedy"]
+    ["cp-sat", "greedy", "lns"]
   );
 }
 
@@ -146,6 +149,94 @@ function maybeTestCpSatSupportsShapedServices() {
   assert.deepEqual([...direct.servicePopulationIncreases], [50]);
   assert.deepEqual([solution.services[0].rows, solution.services[0].cols].sort((a, b) => a - b), [2, 3]);
   assert.equal(solution.services[0].range, 1);
+
+  const validation = validateSolution({ grid, solution, params });
+  assert.equal(validation.valid, true);
+}
+
+function maybeTestLnsOptimizer() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const grid = [
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+  ];
+  const params = {
+    optimizer: "lns",
+    cpSat: {
+      pythonExecutable,
+      numWorkers: 1,
+      timeLimitSeconds: 5,
+    },
+    lns: {
+      iterations: 2,
+      maxNoImprovementIterations: 2,
+      repairTimeLimitSeconds: 1,
+      neighborhoodRows: 3,
+      neighborhoodCols: 3,
+    },
+    serviceTypes: [{ rows: 2, cols: 2, bonus: 80, range: 2, avail: 1 }],
+    residentialTypes: [
+      { w: 2, h: 2, min: 100, max: 180, avail: 2 },
+      { w: 2, h: 3, min: 130, max: 260, avail: 1 },
+    ],
+    availableBuildings: { services: 1, residentials: 3 },
+    greedy: {
+      localSearch: true,
+      restarts: 2,
+      serviceRefineIterations: 1,
+      serviceRefineCandidateLimit: 10,
+      exhaustiveServiceSearch: false,
+    },
+  };
+
+  const greedySeed = solveGreedy(grid, { ...params, optimizer: "greedy" });
+  const solution = solve(grid, params);
+  const direct = solveLns(grid, params);
+  const seeded = solveLns(grid, {
+    ...params,
+    lns: {
+      ...params.lns,
+      seedHint: {
+        solution: {
+          roads: [...greedySeed.roads],
+          services: greedySeed.services.map((service, index) => ({
+            r: service.r,
+            c: service.c,
+            rows: service.rows,
+            cols: service.cols,
+            range: service.range,
+            typeIndex: greedySeed.serviceTypeIndices[index] ?? -1,
+            bonus: greedySeed.servicePopulationIncreases[index] ?? 0,
+          })),
+          residentials: greedySeed.residentials.map((residential, index) => ({
+            r: residential.r,
+            c: residential.c,
+            rows: residential.rows,
+            cols: residential.cols,
+            typeIndex: greedySeed.residentialTypeIndices[index] ?? -1,
+            population: greedySeed.populations[index] ?? 0,
+          })),
+          populations: [...greedySeed.populations],
+          totalPopulation: greedySeed.totalPopulation,
+        },
+      },
+    },
+  });
+
+  assert.equal(solution.optimizer, "lns");
+  assert.equal(direct.optimizer, "lns");
+  assert.equal(seeded.optimizer, "lns");
+  assert.ok(solution.totalPopulation >= greedySeed.totalPopulation);
+  assert.ok(direct.totalPopulation >= greedySeed.totalPopulation);
+  assert.ok(seeded.totalPopulation >= greedySeed.totalPopulation);
 
   const validation = validateSolution({ grid, solution, params });
   assert.equal(validation.valid, true);
@@ -279,6 +370,7 @@ testOptimizerRegistry();
 testGreedyDispatcher();
 maybeTestCpSatOptimizer();
 maybeTestCpSatSupportsShapedServices();
+maybeTestLnsOptimizer();
 testSolutionValidator();
 testSolutionMapValidatorRejectsRoadsNotConnectedToRow0();
 testTopRowBuildingCountsAsRoadConnected();

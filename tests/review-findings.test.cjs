@@ -1,6 +1,6 @@
 const assert = require("node:assert/strict");
 
-const { solve } = require("../dist/solver.js");
+const { solve } = require("../dist/index.js");
 const { evaluateLayout } = require("../dist/evaluator.js");
 
 function testDistinctResidentialTypes() {

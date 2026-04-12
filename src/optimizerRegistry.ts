@@ -8,6 +8,8 @@
 
 import { solveCpSat, startCpSatSolve } from "./cpSatSolver.js";
 import { startGreedySolve } from "./greedyBridge.js";
+import { startLnsSolve } from "./lnsBridge.js";
+import { solveLns } from "./lnsSolver.js";
 import { solveGreedy } from "./solver.js";
 
 import type { BackgroundSolveHandle, Grid, OptimizerName, Solution, SolverParams } from "./types.js";
@@ -29,13 +31,19 @@ const optimizerAdapters: Record<OptimizerName, OptimizerAdapter> = {
     solve: solveCpSat,
     startBackgroundSolve: startCpSatSolve,
   },
+  lns: {
+    name: "lns",
+    solve: solveLns,
+    startBackgroundSolve: startLnsSolve,
+  },
 };
 
 export function resolveOptimizerName(
   value: Pick<SolverParams, "optimizer"> | OptimizerName | null | undefined
 ): OptimizerName {
   const candidate = typeof value === "string" ? value : value?.optimizer;
-  return candidate === "cp-sat" ? "cp-sat" : "greedy";
+  if (candidate === "cp-sat" || candidate === "lns") return candidate;
+  return "greedy";
 }
 
 export function getOptimizerAdapter(

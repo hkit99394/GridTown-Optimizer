@@ -2,8 +2,10 @@
  * Public library entry point.
  */
 
-export { solve, solveGreedy } from "./solver.js";
+export { solve } from "./solve.js";
+export { solveGreedy } from "./solver.js";
 export { solveCpSat } from "./cpSatSolver.js";
+export { solveLns } from "./lnsSolver.js";
 export { evaluateLayout, validateSolution } from "./evaluator.js";
 export { formatSolutionMap, renderSolutionMap, validateSolutionMap } from "./map.js";
 export { getOptimizerAdapter, listOptimizerAdapters, resolveOptimizerName } from "./optimizerRegistry.js";
@@ -15,6 +17,9 @@ export type {
   OptimizerName,
   CpSatOptions,
   GreedyOptions,
+  LnsOptions,
+  CpSatNeighborhoodWindow,
+  CpSatWarmStartHint,
   SolverParams,
   Solution,
   SerializedSolution,

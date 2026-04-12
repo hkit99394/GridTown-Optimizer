@@ -85,6 +85,13 @@ const state = {
     logSearchProgress: false,
     pythonExecutable: "",
   },
+  lns: {
+    iterations: 12,
+    maxNoImprovementIterations: 4,
+    neighborhoodRows: 6,
+    neighborhoodCols: 8,
+    repairTimeLimitSeconds: 5,
+  },
   isPainting: false,
   isSolving: false,
   isStopping: false,
@@ -99,6 +106,7 @@ const state = {
   resultContext: null,
   resultElapsedMs: 0,
   cpSatWarmStart: null,
+  lnsWarmStart: null,
 };
 
 const elements = {
@@ -109,6 +117,7 @@ const elements = {
   paintModeToggle: document.querySelector("#paintModeToggle"),
   solverToggle: document.querySelector("#solverToggle"),
   greedyPanel: document.querySelector("#greedyPanel"),
+  lnsPanel: document.querySelector("#lnsPanel"),
   cpSatPanel: document.querySelector("#cpSatPanel"),
   maxServices: document.querySelector("#maxServices"),
   maxResidentials: document.querySelector("#maxResidentials"),
@@ -162,10 +171,20 @@ const elements = {
   greedyExhaustiveServiceSearch: document.querySelector("#greedyExhaustiveServiceSearch"),
   greedyServiceExactPoolLimit: document.querySelector("#greedyServiceExactPoolLimit"),
   greedyServiceExactMaxCombinations: document.querySelector("#greedyServiceExactMaxCombinations"),
+  lnsIterations: document.querySelector("#lnsIterations"),
+  lnsMaxNoImprovementIterations: document.querySelector("#lnsMaxNoImprovementIterations"),
+  lnsNeighborhoodRows: document.querySelector("#lnsNeighborhoodRows"),
+  lnsNeighborhoodCols: document.querySelector("#lnsNeighborhoodCols"),
+  lnsRepairTimeLimitSeconds: document.querySelector("#lnsRepairTimeLimitSeconds"),
+  lnsNumWorkers: document.querySelector("#lnsNumWorkers"),
+  lnsLogSearchProgress: document.querySelector("#lnsLogSearchProgress"),
+  lnsPythonExecutable: document.querySelector("#lnsPythonExecutable"),
   cpSatTimeLimitSeconds: document.querySelector("#cpSatTimeLimitSeconds"),
   cpSatNumWorkers: document.querySelector("#cpSatNumWorkers"),
   cpSatLogSearchProgress: document.querySelector("#cpSatLogSearchProgress"),
   cpSatPythonExecutable: document.querySelector("#cpSatPythonExecutable"),
+  lnsSeedStatus: document.querySelector("#lnsSeedStatus"),
+  clearLnsSeedButton: document.querySelector("#clearLnsSeedButton"),
   cpSatHintStatus: document.querySelector("#cpSatHintStatus"),
   clearCpSatHintButton: document.querySelector("#clearCpSatHintButton"),
   resizeGridButton: document.querySelector("#resizeGridButton"),
@@ -173,6 +192,7 @@ const elements = {
   clearGridButton: document.querySelector("#clearGridButton"),
   sampleGridButton: document.querySelector("#sampleGridButton"),
   checkerGridButton: document.querySelector("#checkerGridButton"),
+  useLayoutAsLnsSeedButton: document.querySelector("#useLayoutAsLnsSeedButton"),
   useLayoutAsHintButton: document.querySelector("#useLayoutAsHintButton"),
 };
 
@@ -380,6 +400,19 @@ function clearCpSatWarmStart(options = {}) {
   }
 }
 
+function clearLnsWarmStart(options = {}) {
+  const { message = "", silent = false, refreshPreview = true } = options;
+  state.lnsWarmStart = null;
+  if (refreshPreview) {
+    updatePayloadPreview();
+  } else {
+    renderLnsSeedStatus();
+  }
+  if (!silent && message) {
+    setSolveState(message);
+  }
+}
+
 function applySolveRequestToPlanner(request, options = {}) {
   const { preserveCpSatRuntime = true, optimizer = "cp-sat" } = options;
   if (!isGridLike(request?.grid) || typeof request?.params !== "object" || request.params == null) {
@@ -400,7 +433,7 @@ function applySolveRequestToPlanner(request, options = {}) {
       ? String(params.availableBuildings.residentials)
       : (params.maxResidentials != null ? String(params.maxResidentials) : ""),
   };
-  state.optimizer = optimizer === "greedy" ? "greedy" : "cp-sat";
+  state.optimizer = normalizeOptimizer(optimizer);
 
   if (!preserveCpSatRuntime && params.cpSat) {
     state.cpSat = {
@@ -445,6 +478,42 @@ function renderCpSatHintStatus() {
 
   elements.cpSatHintStatus.textContent = message;
   elements.clearCpSatHintButton.disabled = state.isSolving ? true : false;
+}
+
+function renderLnsSeedStatus() {
+  if (!elements.lnsSeedStatus || !elements.clearLnsSeedButton) return;
+  if (!state.lnsWarmStart) {
+    elements.lnsSeedStatus.textContent = "No saved layout selected as an LNS seed.";
+    elements.clearLnsSeedButton.disabled = true;
+    return;
+  }
+
+  const checkpoint = state.lnsWarmStart.checkpoint;
+  const population = Number(checkpoint.incumbent?.objective?.value ?? 0).toLocaleString();
+  let message = `Using saved layout "${state.lnsWarmStart.name}" as an LNS seed. Best population ${population}.`;
+
+  try {
+    const previewRequest = buildSolveRequest({
+      hintMismatch: "ignore",
+      includeWarmStartHint: false,
+      includeLnsSeed: false,
+    });
+    const currentFingerprint = computeCpSatModelFingerprint(buildCpSatContinuationModelInput(previewRequest));
+    if (state.optimizer !== "lns") {
+      message = `Saved layout "${state.lnsWarmStart.name}" is selected as an LNS seed. Switch to LNS to use it.`;
+    } else if (currentFingerprint !== checkpoint.compatibility.modelFingerprint) {
+      message = `Saved layout "${state.lnsWarmStart.name}" is selected as an LNS seed, but the current grid or building settings no longer match it.`;
+    }
+  } catch {
+    if (state.optimizer !== "lns") {
+      message = `Saved layout "${state.lnsWarmStart.name}" is selected as an LNS seed. Switch to LNS to use it.`;
+    } else {
+      message = `Saved layout "${state.lnsWarmStart.name}" is selected as an LNS seed. Finish the current inputs to use it.`;
+    }
+  }
+
+  elements.lnsSeedStatus.textContent = message;
+  elements.clearLnsSeedButton.disabled = state.isSolving ? true : false;
 }
 
 function formatSavedTimestamp(savedAt) {
@@ -707,6 +776,10 @@ function parseCatalogImportText(text) {
   };
 }
 
+function normalizeOptimizer(optimizer) {
+  return optimizer === "cp-sat" || optimizer === "lns" ? optimizer : "greedy";
+}
+
 function getConfigSnapshot() {
   return {
     grid: cloneGrid(state.grid),
@@ -716,12 +789,13 @@ function getConfigSnapshot() {
     availableBuildings: cloneJson(state.availableBuildings),
     greedy: cloneJson(state.greedy),
     cpSat: cloneJson(state.cpSat),
+    lns: cloneJson(state.lns),
   };
 }
 
 function applyConfigSnapshot(snapshot) {
   state.grid = isGridLike(snapshot?.grid) ? cloneGrid(snapshot.grid) : cloneGrid(SAMPLE_GRID);
-  state.optimizer = snapshot?.optimizer === "cp-sat" ? "cp-sat" : "greedy";
+  state.optimizer = normalizeOptimizer(snapshot?.optimizer);
   state.serviceTypes = Array.isArray(snapshot?.serviceTypes)
     ? snapshot.serviceTypes.map((entry) => ({ ...entry }))
     : DEFAULT_SERVICE_TYPES.map((entry) => ({ ...entry }));
@@ -739,6 +813,10 @@ function applyConfigSnapshot(snapshot) {
   state.cpSat = {
     ...state.cpSat,
     ...(snapshot?.cpSat ?? {}),
+  };
+  state.lns = {
+    ...state.lns,
+    ...(snapshot?.lns ?? {}),
   };
 }
 
@@ -804,6 +882,7 @@ function loadSelectedConfig() {
     return;
   }
   clearCpSatWarmStart({ silent: true, refreshPreview: false });
+  clearLnsWarmStart({ silent: true, refreshPreview: false });
   applyConfigSnapshot(entry.snapshot);
   clearRenderedResultState();
   state.resultContext = null;
@@ -887,6 +966,7 @@ function loadSelectedLayout() {
     return;
   }
   clearCpSatWarmStart({ silent: true });
+  clearLnsWarmStart({ silent: true });
   state.result = cloneJson(entry.result);
   state.resultIsLiveSnapshot = false;
   state.resultContext = cloneJson(entry.resultContext);
@@ -897,6 +977,52 @@ function loadSelectedLayout() {
   elements.layoutStorageName.value = entry.name;
   setSolveState(`Loaded saved layout "${entry.name}" with elapsed ${formatElapsedTime(elapsedMs)}.`);
   elements.layoutStorageStatus.textContent = `Displaying saved layout "${entry.name}" with elapsed ${formatElapsedTime(elapsedMs)}.`;
+}
+
+function useSelectedLayoutAsLnsSeed() {
+  if (state.isSolving) {
+    elements.layoutStorageStatus.textContent = "Wait for the current solve to finish before selecting an LNS seed.";
+    return;
+  }
+
+  const selectedId = elements.savedLayoutsSelect.value;
+  if (!selectedId) {
+    elements.layoutStorageStatus.textContent = "Choose a saved layout first.";
+    return;
+  }
+
+  const entry = readStoredEntries(LAYOUT_STORAGE_KEY).find((item) => item.id === selectedId);
+  if (!entry?.result || !entry?.resultContext) {
+    elements.layoutStorageStatus.textContent = "That saved layout could not be found.";
+    refreshSavedLayoutOptions();
+    return;
+  }
+
+  try {
+    const checkpoint = getSavedLayoutCheckpoint(entry);
+    state.lnsWarmStart = {
+      id: entry.id,
+      name: entry.name,
+      checkpoint,
+    };
+    applySolveRequestToPlanner(checkpoint.modelInput, { preserveCpSatRuntime: true, optimizer: "lns" });
+    state.result = cloneJson(entry.result);
+    state.resultIsLiveSnapshot = false;
+    state.resultContext = cloneJson(entry.resultContext);
+    state.resultError = "";
+    const elapsedMs = getSavedLayoutElapsedMs(entry);
+    setResultElapsed(elapsedMs, { syncTimerWhenIdle: true });
+    renderResults();
+    renderLnsSeedStatus();
+    setSolveState(`Ready to run LNS with saved layout "${entry.name}" as the seed.`);
+    elements.layoutStorageName.value = entry.name;
+    elements.layoutStorageStatus.textContent = `Using saved layout "${entry.name}" as an LNS seed.`;
+  } catch (error) {
+    clearLnsWarmStart({ silent: true });
+    elements.layoutStorageStatus.textContent = error instanceof Error
+      ? error.message
+      : "That saved layout could not be used as an LNS seed.";
+  }
 }
 
 function useSelectedLayoutAsCpSatHint() {
@@ -957,6 +1083,9 @@ function deleteSelectedLayout() {
     LAYOUT_STORAGE_KEY,
     entries.filter((item) => item.id !== selectedId)
   );
+  if (state.lnsWarmStart?.id === selectedId) {
+    clearLnsWarmStart({ silent: true });
+  }
   if (state.cpSatWarmStart?.id === selectedId) {
     clearCpSatWarmStart({ silent: true });
   }
@@ -1035,12 +1164,14 @@ function setPaintMode(mode) {
 }
 
 function setOptimizer(optimizer) {
-  state.optimizer = optimizer;
+  state.optimizer = normalizeOptimizer(optimizer);
   for (const button of elements.solverToggle.querySelectorAll("button")) {
-    button.classList.toggle("active", button.dataset.optimizer === optimizer);
+    button.classList.toggle("active", button.dataset.optimizer === state.optimizer);
   }
-  elements.greedyPanel.hidden = optimizer !== "greedy";
-  elements.cpSatPanel.hidden = optimizer !== "cp-sat";
+  elements.greedyPanel.hidden = state.optimizer !== "greedy";
+  elements.lnsPanel.hidden = state.optimizer !== "lns";
+  elements.cpSatPanel.hidden = state.optimizer !== "cp-sat";
+  syncSolverFields();
   updateSummary();
 }
 
@@ -1206,6 +1337,15 @@ function syncSolverFields() {
   elements.greedyServiceExactPoolLimit.value = String(state.greedy.serviceExactPoolLimit);
   elements.greedyServiceExactMaxCombinations.value = String(state.greedy.serviceExactMaxCombinations);
 
+  elements.lnsIterations.value = String(state.lns.iterations);
+  elements.lnsMaxNoImprovementIterations.value = String(state.lns.maxNoImprovementIterations);
+  elements.lnsNeighborhoodRows.value = String(state.lns.neighborhoodRows);
+  elements.lnsNeighborhoodCols.value = String(state.lns.neighborhoodCols);
+  elements.lnsRepairTimeLimitSeconds.value = String(state.lns.repairTimeLimitSeconds);
+  elements.lnsNumWorkers.value = String(state.cpSat.numWorkers);
+  elements.lnsLogSearchProgress.checked = state.cpSat.logSearchProgress;
+  elements.lnsPythonExecutable.value = state.cpSat.pythonExecutable;
+
   elements.cpSatTimeLimitSeconds.value = state.cpSat.timeLimitSeconds;
   elements.cpSatNumWorkers.value = String(state.cpSat.numWorkers);
   elements.cpSatLogSearchProgress.checked = state.cpSat.logSearchProgress;
@@ -1349,9 +1489,40 @@ function buildCpSatWarmStartHintPayload(grid, params, hintMismatch = "error") {
   };
 }
 
+function buildLnsSeedPayload(grid, params, hintMismatch = "error") {
+  if (params.optimizer !== "lns" || !state.lnsWarmStart) return undefined;
+
+  const checkpoint = state.lnsWarmStart.checkpoint;
+  const currentFingerprint = computeCpSatModelFingerprint(buildCpSatContinuationModelInput({ grid, params }));
+  if (currentFingerprint !== checkpoint.compatibility.modelFingerprint) {
+    if (hintMismatch === "error") {
+      throw new Error(
+        `Saved layout "${state.lnsWarmStart.name}" no longer matches the current grid or building settings. Clear the seed or restore the matching layout first.`
+      );
+    }
+    return undefined;
+  }
+
+  return {
+    sourceName: state.lnsWarmStart.name,
+    modelFingerprint: checkpoint.compatibility.modelFingerprint,
+    roadKeys: cloneJson(checkpoint.hint.roadKeys),
+    serviceCandidateKeys: cloneJson(checkpoint.hint.serviceCandidateKeys),
+    residentialCandidateKeys: cloneJson(checkpoint.hint.residentialCandidateKeys),
+    solution: cloneJson(checkpoint.hint.solution),
+    objectiveLowerBound: checkpoint.resumePolicy.objectiveCutoff.value,
+    preferStrictImprove: Boolean(checkpoint.resumePolicy.objectiveCutoff.preferStrictImprove),
+    repairHint: Boolean(checkpoint.resumePolicy.repairHint),
+    fixVariablesToHintedValue: Boolean(checkpoint.resumePolicy.fixVariablesToHintedValue),
+    hintConflictLimit: 20,
+  };
+}
+
 function buildSolveRequest(options = {}) {
-  const { hintMismatch = "error", includeWarmStartHint = true } = options;
+  const { hintMismatch = "error", includeWarmStartHint = true, includeLnsSeed = true } = options;
   const timeLimitSeconds = readOptionalInteger(state.cpSat.timeLimitSeconds, 1);
+  const defaultNeighborhoodRows = Math.max(1, Math.ceil(state.grid.length / 2));
+  const defaultNeighborhoodCols = Math.max(1, Math.ceil((state.grid[0]?.length ?? 1) / 2));
   const grid = cloneGrid(state.grid);
   const params = {
     optimizer: state.optimizer,
@@ -1372,6 +1543,13 @@ function buildSolveRequest(options = {}) {
       ...(timeLimitSeconds !== undefined ? { timeLimitSeconds } : {}),
       ...(state.cpSat.pythonExecutable.trim() ? { pythonExecutable: state.cpSat.pythonExecutable.trim() } : {}),
     },
+    lns: {
+      iterations: clampInteger(state.lns.iterations, 12, 1),
+      maxNoImprovementIterations: clampInteger(state.lns.maxNoImprovementIterations, 4, 1),
+      neighborhoodRows: clampInteger(state.lns.neighborhoodRows, defaultNeighborhoodRows, 1),
+      neighborhoodCols: clampInteger(state.lns.neighborhoodCols, defaultNeighborhoodCols, 1),
+      repairTimeLimitSeconds: clampInteger(state.lns.repairTimeLimitSeconds, 5, 1),
+    },
   };
 
   const maxServices = readOptionalInteger(state.availableBuildings.services, 1);
@@ -1389,6 +1567,13 @@ function buildSolveRequest(options = {}) {
     }
   }
 
+  if (includeLnsSeed && params.optimizer === "lns") {
+    const seedHint = buildLnsSeedPayload(grid, params, hintMismatch);
+    if (seedHint) {
+      params.lns.seedHint = seedHint;
+    }
+  }
+
   return {
     grid,
     params,
@@ -1402,6 +1587,7 @@ function updatePayloadPreview() {
     elements.payloadPreview.textContent = `Payload not ready.\n${error instanceof Error ? error.message : "Unknown parsing error."}`;
   }
   renderCpSatHintStatus();
+  renderLnsSeedStatus();
 }
 
 function updateSummary() {
@@ -1411,7 +1597,7 @@ function updateSummary() {
   elements.summaryAllowedCells.textContent = String(countAllowedCells());
   elements.summaryServiceTypes.textContent = String(state.serviceTypes.length);
   elements.summaryResidentialTypes.textContent = String(state.residentialTypes.length);
-  elements.summaryOptimizer.textContent = state.optimizer === "greedy" ? "Greedy" : "CP-SAT";
+  elements.summaryOptimizer.textContent = getOptimizerLabel(state.optimizer);
 }
 
 function syncActionAvailability() {
@@ -1420,8 +1606,10 @@ function syncActionAvailability() {
   elements.stopSolveButton.disabled = !(state.isSolving && state.activeSolveRequestId && !state.isStopping);
   elements.loadConfigButton.disabled = state.isSolving;
   elements.loadLayoutButton.disabled = state.isSolving;
+  elements.useLayoutAsLnsSeedButton.disabled = state.isSolving;
   elements.useLayoutAsHintButton.disabled = state.isSolving;
   elements.saveLayoutButton.disabled = state.isSolving || !state.result || !state.resultContext;
+  elements.clearLnsSeedButton.disabled = state.isSolving || !state.lnsWarmStart;
   elements.clearCpSatHintButton.disabled = state.isSolving || !state.cpSatWarmStart;
 }
 
@@ -1431,7 +1619,9 @@ function setSolveState(message) {
 }
 
 function getOptimizerLabel(optimizer) {
-  return optimizer === "cp-sat" ? "CP-SAT" : "Greedy";
+  if (optimizer === "cp-sat") return "CP-SAT";
+  if (optimizer === "lns") return "LNS";
+  return "Greedy";
 }
 
 function buildSolveProgressMessage(payload) {
@@ -1446,7 +1636,9 @@ function buildSolveProgressMessage(payload) {
     if (payload.hasFeasibleSolution) {
       return optimizer === "cp-sat"
         ? `Stop requested. Finalizing the best feasible ${optimizerLabel} result.${bestLabel}`
-        : `Stop requested. Finalizing the best ${optimizerLabel} result found so far.${bestLabel}`;
+        : optimizer === "lns"
+          ? `Stop requested. Finalizing the best ${optimizerLabel} result found after neighborhood repair.${bestLabel}`
+          : `Stop requested. Finalizing the best ${optimizerLabel} result found so far.${bestLabel}`;
     }
     return `Stop requested. Waiting for ${optimizerLabel} to stop. No result has been found yet.`;
   }
@@ -1454,12 +1646,24 @@ function buildSolveProgressMessage(payload) {
   if (payload.hasFeasibleSolution) {
     return optimizer === "cp-sat"
       ? `Running ${optimizerLabel} solver. Feasible solution found and still improving.${bestLabel}`
-      : `Running ${optimizerLabel} solver. Search is still improving.${bestLabel}`;
+      : optimizer === "lns"
+        ? (
+          state.lnsWarmStart
+            ? `Running ${optimizerLabel} solver. Saved seed is ready and neighborhood repairs are still improving.${bestLabel}`
+            : `Running ${optimizerLabel} solver. Greedy seed is ready and neighborhood repairs are still improving.${bestLabel}`
+        )
+        : `Running ${optimizerLabel} solver. Search is still improving.${bestLabel}`;
   }
 
-  return optimizer === "cp-sat"
-    ? `Running ${optimizerLabel} solver. Searching for the first feasible solution...`
-    : `Running ${optimizerLabel} solver. Searching for an initial result...`;
+  if (optimizer === "cp-sat") {
+    return `Running ${optimizerLabel} solver. Searching for the first feasible solution...`;
+  }
+  if (optimizer === "lns") {
+    return state.lnsWarmStart
+      ? `Running ${optimizerLabel} solver. Loading the saved seed before neighborhood repair...`
+      : `Running ${optimizerLabel} solver. Building the greedy seed before neighborhood repair...`;
+  }
+  return `Running ${optimizerLabel} solver. Searching for an initial result...`;
 }
 
 function applyRunningSnapshot(payload) {
@@ -1727,7 +1931,7 @@ function renderResults() {
     elements.resultBadge.className = `result-badge ${validation.valid ? "running" : "error"}`;
     elements.validationNotice.className = `notice ${validation.valid ? "info" : "error"}`;
     elements.validationNotice.textContent = validation.valid
-      ? "Showing the best validated layout found so far while the solver keeps running. This view refreshes every 1 minute."
+      ? "Showing the best validated layout found so far while the solver keeps running. The first live capture appears as soon as an incumbent is available, then refreshes every 1 minute."
       : `The latest running snapshot needs review: ${validation.errors.join(" ")}`;
   } else {
     elements.resultBadge.textContent = validation.valid ? (stoppedByUser ? "Stopped" : "Validated") : "Needs review";
@@ -1787,13 +1991,13 @@ function renderResults() {
 }
 
 async function waitForSolveResult(requestId) {
-  let nextSnapshotRefreshAt = Date.now() + LIVE_SNAPSHOT_REFRESH_INTERVAL_MS;
+  let hasReceivedRunningSnapshot = false;
+  let nextSnapshotRefreshAt = 0;
   while (true) {
-    const shouldRequestSnapshot = Date.now() >= nextSnapshotRefreshAt;
+    const shouldRequestSnapshot = !hasReceivedRunningSnapshot || Date.now() >= nextSnapshotRefreshAt;
     const searchParams = new URLSearchParams({ requestId });
     if (shouldRequestSnapshot) {
       searchParams.set("includeSnapshot", "1");
-      nextSnapshotRefreshAt = Date.now() + LIVE_SNAPSHOT_REFRESH_INTERVAL_MS;
     }
 
     const response = await fetch(`/api/solve/status?${searchParams.toString()}`, {
@@ -1807,6 +2011,8 @@ async function waitForSolveResult(requestId) {
     if (payload.jobStatus === "running") {
       if (payload.liveSnapshot && payload.solution) {
         applyRunningSnapshot(payload);
+        hasReceivedRunningSnapshot = true;
+        nextSnapshotRefreshAt = Date.now() + LIVE_SNAPSHOT_REFRESH_INTERVAL_MS;
       }
       setSolveState(buildSolveProgressMessage(payload));
       await delay(SOLVE_STATUS_POLL_INTERVAL_MS);
@@ -1838,6 +2044,10 @@ async function runSolve() {
           ? `Running CP-SAT solver with a ${timeLimitSeconds}s limit...`
           : "Running CP-SAT solver until it finishes or you stop it..."
       );
+    } else if (state.optimizer === "lns") {
+      setSolveState(
+        `${state.lnsWarmStart ? `Running LNS from saved seed "${state.lnsWarmStart.name}"` : "Running LNS from a greedy seed"} with ${request.params.lns.iterations} neighborhood repairs and a ${request.params.lns.repairTimeLimitSeconds}s repair cap...`
+      );
     } else {
       setSolveState("Running greedy solver...");
     }
@@ -1864,9 +2074,11 @@ async function runSolve() {
     setResultElapsed(state.solveTimerElapsedMs);
     const stoppedByUser = Boolean(payload.solution?.stoppedByUser || payload.stats?.stoppedByUser);
     setSolveState(
-      stoppedByUser
-        ? `Stopped early. Showing the best ${getOptimizerLabel(payload.stats.optimizer)} result found${payload.stats.cpSatStatus ? ` (${payload.stats.cpSatStatus})` : ""}.`
-        : `Solved with ${getOptimizerLabel(payload.stats.optimizer)}${payload.stats.cpSatStatus ? ` (${payload.stats.cpSatStatus})` : ""}.`
+      payload.message
+        ? payload.message
+        : stoppedByUser
+          ? `Stopped early. Showing the best ${getOptimizerLabel(payload.stats.optimizer)} result found${payload.stats.cpSatStatus ? ` (${payload.stats.cpSatStatus})` : ""}.`
+          : `Solved with ${getOptimizerLabel(payload.stats.optimizer)}${payload.stats.cpSatStatus ? ` (${payload.stats.cpSatStatus})` : ""}.`
     );
   } catch (error) {
     state.result = null;
@@ -2036,6 +2248,34 @@ function init() {
     });
   });
 
+  const lnsBindings = [
+    ["lnsIterations", "iterations"],
+    ["lnsMaxNoImprovementIterations", "maxNoImprovementIterations"],
+    ["lnsNeighborhoodRows", "neighborhoodRows"],
+    ["lnsNeighborhoodCols", "neighborhoodCols"],
+    ["lnsRepairTimeLimitSeconds", "repairTimeLimitSeconds"],
+  ];
+
+  lnsBindings.forEach(([elementKey, stateKey]) => {
+    elements[elementKey].addEventListener("input", () => {
+      state.lns[stateKey] = elements[elementKey].value;
+      updatePayloadPreview();
+    });
+  });
+
+  const lnsCpSatBindings = [
+    ["lnsNumWorkers", "numWorkers", "number"],
+    ["lnsLogSearchProgress", "logSearchProgress", "checkbox"],
+    ["lnsPythonExecutable", "pythonExecutable", "text"],
+  ];
+
+  lnsCpSatBindings.forEach(([elementKey, stateKey, inputType]) => {
+    elements[elementKey].addEventListener("input", () => {
+      state.cpSat[stateKey] = inputType === "checkbox" ? elements[elementKey].checked : elements[elementKey].value;
+      updatePayloadPreview();
+    });
+  });
+
   const cpSatBindings = [
     ["cpSatTimeLimitSeconds", "timeLimitSeconds", "number"],
     ["cpSatNumWorkers", "numWorkers", "number"],
@@ -2084,6 +2324,10 @@ function init() {
     loadSelectedLayout();
   });
 
+  elements.useLayoutAsLnsSeedButton.addEventListener("click", () => {
+    useSelectedLayoutAsLnsSeed();
+  });
+
   elements.useLayoutAsHintButton.addEventListener("click", () => {
     useSelectedLayoutAsCpSatHint();
   });
@@ -2094,6 +2338,10 @@ function init() {
 
   elements.clearCpSatHintButton.addEventListener("click", () => {
     clearCpSatWarmStart({ message: "Cleared the CP-SAT hint." });
+  });
+
+  elements.clearLnsSeedButton.addEventListener("click", () => {
+    clearLnsWarmStart({ message: "Cleared the LNS seed." });
   });
 
   elements.solveButton.addEventListener("click", () => {

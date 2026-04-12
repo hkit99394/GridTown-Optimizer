@@ -35,6 +35,7 @@ interface SolveJob {
   cancelRequested: boolean;
   handle: BackgroundSolveHandle | null;
   solution: Solution | null;
+  message: string | null;
   error: string | null;
   createdAt: number;
   finishedAt?: number;
@@ -121,6 +122,20 @@ function buildSolveResponse(grid: Grid, params: SolverParams, solution: Solution
   };
 }
 
+function buildRecoveredSolveMessage(job: SolveJob, error: unknown): string {
+  const rawMessage = error instanceof Error ? error.message : "Unknown solver error.";
+  if (
+    job.optimizer === "lns"
+    && /No feasible solution found with CP-SAT\. Status: UNKNOWN\./.test(rawMessage)
+  ) {
+    return "LNS kept the best available seed because the latest neighborhood repair found no improvement.";
+  }
+  if (job.optimizer === "lns") {
+    return "LNS kept the best available solution after a repair step ended early.";
+  }
+  return "Showing the best available solution captured before the solver stopped progressing.";
+}
+
 function startSolveJob(grid: Grid, params: SolverParams, requestId: string): SolveJob {
   const optimizerAdapter = getOptimizerAdapter(params);
   const optimizer = optimizerAdapter.name;
@@ -134,6 +149,7 @@ function startSolveJob(grid: Grid, params: SolverParams, requestId: string): Sol
     cancelRequested: false,
     handle,
     solution: null,
+    message: null,
     error: null,
     createdAt: Date.now(),
   };
@@ -144,22 +160,25 @@ function startSolveJob(grid: Grid, params: SolverParams, requestId: string): Sol
     .then((solution) => {
       job.solution = solution;
       job.status = solution.stoppedByUser || job.cancelRequested ? "stopped" : "completed";
+      job.message = null;
       job.error = null;
     })
     .catch((error) => {
-      const recoveredSolution = job.cancelRequested ? (job.handle?.getLatestSnapshot() ?? null) : null;
+      const recoveredSolution = job.handle?.getLatestSnapshot() ?? null;
       if (recoveredSolution) {
         job.solution = {
           ...recoveredSolution,
-          stoppedByUser: true,
+          stoppedByUser: job.cancelRequested ? true : Boolean(recoveredSolution.stoppedByUser),
         };
-        job.status = "stopped";
-        job.error = null;
+        job.status = job.cancelRequested ? "stopped" : "completed";
+        job.message = job.cancelRequested ? null : buildRecoveredSolveMessage(job, error);
+        job.error = job.cancelRequested ? null : null;
         return;
       }
 
       job.solution = null;
       job.status = job.cancelRequested ? "stopped" : "failed";
+      job.message = null;
       job.error = error instanceof Error ? error.message : "Unknown CP-SAT error.";
     })
     .finally(() => {
@@ -308,6 +327,7 @@ const server = createServer(async (req, res) => {
           optimizer: job.optimizer,
           jobStatus: job.status,
           cancelRequested: job.cancelRequested,
+          ...(job.message ? { message: job.message } : {}),
           ...buildSolveResponse(job.grid, job.params, job.solution),
         }, method === "HEAD");
         return;
@@ -340,6 +360,7 @@ const server = createServer(async (req, res) => {
           hasFeasibleSolution: snapshotState.hasFeasibleSolution,
           bestTotalPopulation: snapshotState.totalPopulation,
           liveSnapshot: true,
+          ...(job.message ? { message: job.message } : {}),
           ...buildSolveResponse(job.grid, job.params, runningSnapshot),
         }, method === "HEAD");
         return;

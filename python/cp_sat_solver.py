@@ -387,6 +387,24 @@ def residential_candidate_key(candidate) -> str:
     return f"residential:{int(candidate['typeIndex'])}:{int(candidate['r'])}:{int(candidate['c'])}:{int(candidate['rows'])}:{int(candidate['cols'])}"
 
 
+def rectangle_intersects_window(candidate, neighborhood_window) -> bool:
+    if not neighborhood_window:
+        return False
+    top = int(neighborhood_window.get("top", 0))
+    left = int(neighborhood_window.get("left", 0))
+    rows = int(neighborhood_window.get("rows", 0))
+    cols = int(neighborhood_window.get("cols", 0))
+    if rows <= 0 or cols <= 0:
+        return False
+    bottom = top + rows
+    right = left + cols
+    candidate_top = int(candidate["r"])
+    candidate_left = int(candidate["c"])
+    candidate_bottom = candidate_top + int(candidate["rows"])
+    candidate_right = candidate_left + int(candidate["cols"])
+    return candidate_top < bottom and candidate_bottom > top and candidate_left < right and candidate_right > left
+
+
 def build_model(grid, params):
     if not grid or not grid[0]:
         fail("Grid must be non-empty.")
@@ -592,6 +610,62 @@ def apply_warm_start_hint(model, built, warm_start_hint):
         model.Add(sum(built["populations"]) >= cutoff)
 
 
+def apply_local_neighborhood_fixing(model, built, warm_start_hint):
+    if not warm_start_hint or not bool(warm_start_hint.get("fixOutsideNeighborhoodToHintedValue")):
+        return
+
+    neighborhood_window = warm_start_hint.get("neighborhoodWindow") or {}
+    rows = int(neighborhood_window.get("rows", 0) or 0)
+    cols = int(neighborhood_window.get("cols", 0) or 0)
+    if rows <= 0 or cols <= 0:
+        return
+
+    road_keys = {str(key) for key in warm_start_hint.get("roadKeys") or []}
+    service_keys = {str(key) for key in warm_start_hint.get("serviceCandidateKeys") or []}
+    residential_keys = {str(key) for key in warm_start_hint.get("residentialCandidateKeys") or []}
+
+    road_lookup = {f"{r},{c}": idx for idx, (r, c) in enumerate(built["allowed_cells"])}
+    selected_road_ids = {road_lookup[key] for key in road_keys if key in road_lookup}
+    selected_service_ids = {
+        candidate_index
+        for candidate_index, candidate in enumerate(built["service_candidates"])
+        if service_candidate_key(candidate) in service_keys
+    }
+    selected_residential_ids = {
+        candidate_index
+        for candidate_index, candidate in enumerate(built["residential_candidates"])
+        if residential_candidate_key(candidate) in residential_keys
+    }
+
+    top = int(neighborhood_window.get("top", 0))
+    left = int(neighborhood_window.get("left", 0))
+    bottom = top + rows
+    right = left + cols
+
+    for cell_id, variable in enumerate(built["road_vars"]):
+        r, c = built["allowed_cells"][cell_id]
+        if top <= r < bottom and left <= c < right:
+            continue
+        model.Add(variable == (1 if cell_id in selected_road_ids else 0))
+
+    hinted_root_id = next((cell_id for cell_id in built["row0_ids"] if cell_id in selected_road_ids), None)
+    if hinted_root_id is not None:
+        for cell_id, variable in built["root_vars"].items():
+            model.Add(variable == (1 if cell_id == hinted_root_id else 0))
+
+    for candidate_index, variable in enumerate(built["service_vars"]):
+        candidate = built["service_candidates"][candidate_index]
+        if rectangle_intersects_window(candidate, neighborhood_window):
+            continue
+        model.Add(variable == (1 if candidate_index in selected_service_ids else 0))
+
+    for candidate_index, variable in enumerate(built["residential_vars"]):
+        candidate = built["residential_candidates"][candidate_index]
+        if rectangle_intersects_window(candidate, neighborhood_window):
+            continue
+        model.Add(variable == (1 if candidate_index in selected_residential_ids else 0))
+
+
 def solve():
     payload = json.load(sys.stdin)
     grid = payload["grid"]
@@ -602,6 +676,7 @@ def solve():
     built = build_model(grid, params)
     model = built["model"]
     apply_warm_start_hint(model, built, warm_start_hint)
+    apply_local_neighborhood_fixing(model, built, warm_start_hint)
     solver = cp_model.CpSolver()
     stop_requested = False
     stopped_by_user = False

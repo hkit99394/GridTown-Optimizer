@@ -203,6 +203,7 @@
                     <select id="savedLayoutsSelect"></select>
                   </label>
                   <div class="storage-button-row">
+                    <button id="useLayoutAsLnsSeedButton" type="button" class="button ghost">Use as LNS seed</button>
                     <button id="useLayoutAsHintButton" type="button" class="button ghost">Use as CP-SAT hint</button>
                     <button id="loadLayoutButton" type="button" class="button ghost">Display saved</button>
                     <button id="deleteLayoutButton" type="button" class="button ghost danger">Delete</button>
@@ -354,6 +355,7 @@
 
               <div class="segmented segmented-wide" id="solverToggle">
                 <button type="button" data-optimizer="greedy">Greedy</button>
+                <button type="button" data-optimizer="lns">LNS</button>
                 <button type="button" data-optimizer="cp-sat">CP-SAT</button>
               </div>
 
@@ -388,6 +390,53 @@
                       <span>Exact max combinations</span>
                       <input id="greedyServiceExactMaxCombinations" type="number" min="1" step="1" />
                     </label>
+                  </div>
+                </section>
+
+                <section id="lnsPanel" class="solver-panel" hidden>
+                  <div class="solver-callout">
+                    LNS builds a greedy seed first, then repairs one neighborhood at a time with CP-SAT. It is the
+                    fastest improvement-oriented mode in the planner, but it still needs the Python OR-Tools backend.
+                  </div>
+                  <div class="form-grid two-up">
+                    <label class="field">
+                      <span>Iterations</span>
+                      <input id="lnsIterations" type="number" min="1" step="1" />
+                    </label>
+                    <label class="field">
+                      <span>Max stalled neighborhoods</span>
+                      <input id="lnsMaxNoImprovementIterations" type="number" min="1" step="1" />
+                    </label>
+                    <label class="field">
+                      <span>Neighborhood rows</span>
+                      <input id="lnsNeighborhoodRows" type="number" min="1" step="1" />
+                    </label>
+                    <label class="field">
+                      <span>Neighborhood cols</span>
+                      <input id="lnsNeighborhoodCols" type="number" min="1" step="1" />
+                    </label>
+                    <label class="field">
+                      <span>Repair time limit (seconds)</span>
+                      <input id="lnsRepairTimeLimitSeconds" type="number" min="1" step="1" />
+                    </label>
+                    <label class="field">
+                      <span>Repair workers</span>
+                      <input id="lnsNumWorkers" type="number" min="1" step="1" />
+                    </label>
+                    <label class="check-field">
+                      <input id="lnsLogSearchProgress" type="checkbox" />
+                      <span>Log repair search progress</span>
+                    </label>
+                    <label class="field full-width">
+                      <span>Python executable (optional)</span>
+                      <input id="lnsPythonExecutable" type="text" placeholder=".venv-cp-sat/bin/python" />
+                    </label>
+                  </div>
+                  <div class="actions-row compact-actions">
+                    <p id="lnsSeedStatus" class="status-text" aria-live="polite">
+                      No saved layout selected as an LNS seed.
+                    </p>
+                    <button id="clearLnsSeedButton" type="button" class="button ghost">Clear seed</button>
                   </div>
                 </section>
 

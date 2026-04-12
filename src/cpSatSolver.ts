@@ -39,15 +39,103 @@ interface CpSatRawSolution {
   status: string;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function expectInteger(value: unknown, label: string): number {
+  if (typeof value !== "number" || !Number.isInteger(value)) {
+    throw new Error(`CP-SAT backend returned invalid JSON: ${label} must be an integer.`);
+  }
+  return value;
+}
+
+function expectString(value: unknown, label: string): string {
+  if (typeof value !== "string") {
+    throw new Error(`CP-SAT backend returned invalid JSON: ${label} must be a string.`);
+  }
+  return value;
+}
+
+function expectStringArray(value: unknown, label: string): string[] {
+  if (!Array.isArray(value)) {
+    throw new Error(`CP-SAT backend returned invalid JSON: ${label} must be an array.`);
+  }
+  return value.map((entry, index) => expectString(entry, `${label}[${index}]`));
+}
+
+function parseCpSatServicePlacement(value: unknown, index: number): CpSatServicePlacement {
+  if (!isRecord(value)) {
+    throw new Error(`CP-SAT backend returned invalid JSON: services[${index}] must be an object.`);
+  }
+  return {
+    r: expectInteger(value.r, `services[${index}].r`),
+    c: expectInteger(value.c, `services[${index}].c`),
+    rows: expectInteger(value.rows, `services[${index}].rows`),
+    cols: expectInteger(value.cols, `services[${index}].cols`),
+    range: expectInteger(value.range, `services[${index}].range`),
+    bonus: expectInteger(value.bonus, `services[${index}].bonus`),
+    typeIndex: expectInteger(value.typeIndex, `services[${index}].typeIndex`),
+  };
+}
+
+function parseCpSatResidentialPlacement(value: unknown, index: number): CpSatResidentialPlacement {
+  if (!isRecord(value)) {
+    throw new Error(`CP-SAT backend returned invalid JSON: residentials[${index}] must be an object.`);
+  }
+  return {
+    r: expectInteger(value.r, `residentials[${index}].r`),
+    c: expectInteger(value.c, `residentials[${index}].c`),
+    rows: expectInteger(value.rows, `residentials[${index}].rows`),
+    cols: expectInteger(value.cols, `residentials[${index}].cols`),
+    typeIndex: expectInteger(value.typeIndex, `residentials[${index}].typeIndex`),
+    population: expectInteger(value.population, `residentials[${index}].population`),
+  };
+}
+
+function normalizeCpSatRawSolution(value: unknown): CpSatRawSolution {
+  if (!isRecord(value)) {
+    throw new Error("CP-SAT backend returned invalid JSON: top-level payload must be an object.");
+  }
+
+  const roads = expectStringArray(value.roads, "roads");
+  const services = Array.isArray(value.services)
+    ? value.services.map((entry, index) => parseCpSatServicePlacement(entry, index))
+    : (() => {
+        throw new Error("CP-SAT backend returned invalid JSON: services must be an array.");
+      })();
+  const residentials = Array.isArray(value.residentials)
+    ? value.residentials.map((entry, index) => parseCpSatResidentialPlacement(entry, index))
+    : (() => {
+        throw new Error("CP-SAT backend returned invalid JSON: residentials must be an array.");
+      })();
+  const populations = Array.isArray(value.populations)
+    ? value.populations.map((entry, index) => expectInteger(entry, `populations[${index}]`))
+    : (() => {
+        throw new Error("CP-SAT backend returned invalid JSON: populations must be an array.");
+      })();
+  const totalPopulation = expectInteger(value.totalPopulation, "totalPopulation");
+  const status = expectString(value.status, "status");
+
+  if (populations.length !== residentials.length) {
+    throw new Error("CP-SAT backend returned invalid JSON: populations length must match residentials length.");
+  }
+  if (totalPopulation !== populations.reduce((sum, population) => sum + population, 0)) {
+    throw new Error("CP-SAT backend returned invalid JSON: totalPopulation must equal the population sum.");
+  }
+
+  return { roads, services, residentials, populations, totalPopulation, status };
+}
+
 function defaultPythonExecutable(): string {
   const venvPython = resolve(__dirname, "../.venv-cp-sat/bin/python");
   return existsSync(venvPython) ? venvPython : "python3";
 }
 
-export function solveCpSat(G: Grid, params: SolverParams): Solution {
-  const pythonExecutable = params.cpSat?.pythonExecutable ?? process.env.CITY_BUILDER_CP_SAT_PYTHON ?? defaultPythonExecutable();
+function runCpSatBackend(G: Grid, params: SolverParams) {
+  const pythonExecutable =
+    params.cpSat?.pythonExecutable ?? process.env.CITY_BUILDER_CP_SAT_PYTHON ?? defaultPythonExecutable();
   const scriptPath = params.cpSat?.scriptPath ?? resolve(__dirname, "../python/cp_sat_solver.py");
-
   const request = {
     grid: G,
     params,
@@ -71,21 +159,23 @@ export function solveCpSat(G: Grid, params: SolverParams): Solution {
     );
   }
 
-  let raw: CpSatRawSolution;
-  try {
-    raw = JSON.parse(result.stdout);
-  } catch (error) {
-    throw new Error(`CP-SAT backend returned invalid JSON: ${(error as Error).message}`);
-  }
+  return result.stdout;
+}
 
+function parseCpSatRawSolution(stdout: string): CpSatRawSolution {
+  try {
+    return normalizeCpSatRawSolution(JSON.parse(stdout) as unknown);
+  } catch (error) {
+    const message = (error as Error).message;
+    if (message.startsWith("CP-SAT backend returned invalid JSON:")) {
+      throw error as Error;
+    }
+    throw new Error(`CP-SAT backend returned invalid JSON: ${message}`);
+  }
+}
+
+function decodeCpSatLayout(raw: CpSatRawSolution) {
   const roads = new Set(raw.roads);
-  const connectedRoads = roadsConnectedToRow0(G, roads);
-  if (connectedRoads.size === 0) {
-    throw new Error("CP-SAT backend produced an invalid layout: road network does not touch row 0.");
-  }
-  if (connectedRoads.size !== roads.size) {
-    throw new Error("CP-SAT backend produced an invalid layout: some road cells are not connected to row 0.");
-  }
   const services: EvaluatedServicePlacement[] = raw.services.map((service) => ({
     r: service.r,
     c: service.c,
@@ -100,26 +190,43 @@ export function solveCpSat(G: Grid, params: SolverParams): Solution {
     rows: residential.rows,
     cols: residential.cols,
   }));
+  return { roads, services, residentials };
+}
+
+function validateCpSatLayout(G: Grid, params: SolverParams, raw: CpSatRawSolution): ReturnType<typeof decodeCpSatLayout> {
+  const layout = decodeCpSatLayout(raw);
+  const connectedRoads = roadsConnectedToRow0(G, layout.roads);
+  if (connectedRoads.size === 0) {
+    throw new Error("CP-SAT backend produced an invalid layout: road network does not touch row 0.");
+  }
+  if (connectedRoads.size !== layout.roads.size) {
+    throw new Error("CP-SAT backend produced an invalid layout: some road cells are not connected to row 0.");
+  }
 
   const evaluation = evaluateLayout({
     grid: G,
-    roads,
-    services,
-    residentials,
+    roads: layout.roads,
+    services: layout.services,
+    residentials: layout.residentials,
     params,
   });
   if (!evaluation.valid) {
     throw new Error(`CP-SAT backend produced an invalid layout: ${evaluation.errors.join(" ")}`);
   }
+  return layout;
+}
 
+export function solveCpSat(G: Grid, params: SolverParams): Solution {
+  const raw = parseCpSatRawSolution(runCpSatBackend(G, params));
+  const layout = validateCpSatLayout(G, params, raw);
   return {
     optimizer: "cp-sat",
     cpSatStatus: raw.status,
-    roads,
+    roads: layout.roads,
     services: raw.services.map(({ r, c, rows, cols, range }) => ({ r, c, rows, cols, range })),
     serviceTypeIndices: raw.services.map((service) => service.typeIndex),
     servicePopulationIncreases: raw.services.map((service) => service.bonus),
-    residentials,
+    residentials: layout.residentials,
     residentialTypeIndices: raw.residentials.map((residential) => residential.typeIndex),
     populations: raw.populations,
     totalPopulation: raw.totalPopulation,

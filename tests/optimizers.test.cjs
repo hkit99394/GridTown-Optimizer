@@ -7,22 +7,21 @@ const { solve, solveGreedy, solveCpSat, validateSolution, validateSolutionMap } 
 
 function resolveCpSatPython() {
   const venvPython = path.resolve(__dirname, "../.venv-cp-sat/bin/python");
-  const pythonExecutable = fs.existsSync(venvPython) ? venvPython : process.env.CITY_BUILDER_CP_SAT_PYTHON;
+  const candidates = [fs.existsSync(venvPython) ? venvPython : null, process.env.CITY_BUILDER_CP_SAT_PYTHON || null, "python3"].filter(
+    Boolean
+  );
 
-  if (!pythonExecutable) {
-    console.log("Skipping CP-SAT optimizer test because no CP-SAT python runtime is configured.");
-    return null;
+  for (const pythonExecutable of candidates) {
+    const importCheck = childProcess.spawnSync(pythonExecutable, ["-c", "import ortools"], {
+      encoding: "utf8",
+    });
+    if (importCheck.status === 0) {
+      return pythonExecutable;
+    }
   }
 
-  const importCheck = childProcess.spawnSync(pythonExecutable, ["-c", "import ortools"], {
-    encoding: "utf8",
-  });
-  if (importCheck.status !== 0) {
-    console.log("Skipping CP-SAT optimizer test because OR-Tools is not installed in the configured python runtime.");
-    return null;
-  }
-
-  return pythonExecutable;
+  console.log("Skipping CP-SAT optimizer test because no Python runtime with OR-Tools is configured.");
+  return null;
 }
 
 function testGreedyDispatcher() {
@@ -129,6 +128,50 @@ function maybeTestCpSatSupportsShapedServices() {
 
   const validation = validateSolution({ grid, solution, params });
   assert.equal(validation.valid, true);
+}
+
+function maybeTestCpSatBackendJsonContractSmoke() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+  ];
+  const params = {
+    serviceTypes: [{ rows: 2, cols: 2, bonus: 15, range: 1, avail: 1 }],
+    residentialTypes: [{ w: 2, h: 2, min: 40, max: 55, avail: 1 }],
+    availableBuildings: { services: 1, residentials: 1 },
+    cpSat: { timeLimitSeconds: 5, numWorkers: 1 },
+  };
+
+  const result = childProcess.spawnSync(
+    pythonExecutable,
+    [scriptPath],
+    {
+      input: JSON.stringify({ grid, params }),
+      encoding: "utf8",
+    }
+  );
+
+  if (result.status !== 0) {
+    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to run CP-SAT backend smoke test.");
+  }
+
+  const payload = JSON.parse(result.stdout);
+  assert.equal(typeof payload.status, "string");
+  assert.match(payload.status, /^(OPTIMAL|FEASIBLE)$/);
+  assert(Array.isArray(payload.roads));
+  assert(Array.isArray(payload.services));
+  assert(Array.isArray(payload.residentials));
+  assert(Array.isArray(payload.populations));
+  assert.equal(payload.populations.length, payload.residentials.length);
+  assert.equal(payload.totalPopulation, payload.populations.reduce((sum, value) => sum + value, 0));
 }
 
 function testSolutionValidator() {
@@ -299,8 +342,10 @@ weak_room_params = {
     "availableBuildings": {"services": 2},
 }
 
-strong_candidates = module.enumerate_service_candidates(grid, strong_params, cell_to_id)
-weak_room_candidates = module.enumerate_service_candidates(grid, weak_room_params, cell_to_id)
+strong_maps = module.build_candidate_placement_maps(grid, strong_params)
+weak_room_maps = module.build_candidate_placement_maps(grid, weak_room_params)
+strong_candidates = module.enumerate_service_candidates(grid, strong_params, cell_to_id, strong_maps.service)
+weak_room_candidates = module.enumerate_service_candidates(grid, weak_room_params, cell_to_id, weak_room_maps.service)
 
 print(json.dumps({
     "strong_count": len(strong_candidates),
@@ -320,10 +365,241 @@ print(json.dumps({
   assert.equal(payload.weak_room_count, 18);
 }
 
+function maybeTestCpSatReachabilityReductionHelpers() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const command = `
+import importlib.util
+import json
+
+spec = importlib.util.spec_from_file_location("cp_sat_solver", ${JSON.stringify(scriptPath)})
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+grid = [
+  [1, 1, 0, 0, 0],
+  [1, 1, 0, 1, 1],
+  [0, 0, 0, 1, 1],
+  [1, 1, 0, 1, 1],
+  [1, 1, 0, 1, 1],
+]
+params = {
+    "serviceTypes": [{"rows": 2, "cols": 2, "bonus": 20, "range": 1, "avail": 1}],
+    "residentialTypes": [{"w": 2, "h": 2, "min": 50, "max": 100, "avail": 2}],
+    "availableBuildings": {"services": 1, "residentials": 2},
+}
+
+built = module.build_model(grid, params)
+
+print(json.dumps({
+    "allowed_cells": built.allowed_cells,
+    "service_candidates": [
+        {"r": candidate["r"], "c": candidate["c"], "rows": candidate["rows"], "cols": candidate["cols"]}
+        for candidate in built.service_candidates
+    ],
+    "residential_candidates": [
+        {"r": candidate["r"], "c": candidate["c"], "rows": candidate["rows"], "cols": candidate["cols"]}
+        for candidate in built.residential_candidates
+    ],
+}))
+`;
+
+  const result = childProcess.spawnSync(pythonExecutable, ["-c", command], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT reachability reduction helpers.");
+  }
+
+  const payload = JSON.parse(result.stdout);
+  assert.deepEqual(payload.allowed_cells, [
+    [0, 0],
+    [0, 1],
+    [1, 0],
+    [1, 1],
+  ]);
+  assert.deepEqual(payload.service_candidates, [
+    { r: 0, c: 0, rows: 2, cols: 2 },
+  ]);
+  assert.deepEqual(payload.residential_candidates, [
+    { r: 0, c: 0, rows: 2, cols: 2 },
+  ]);
+}
+
+function maybeTestCpSatConnectivityHelperConstraints() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const command = `
+import importlib.util
+import json
+
+spec = importlib.util.spec_from_file_location("cp_sat_solver", ${JSON.stringify(scriptPath)})
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+grid = [
+  [1, 1, 1],
+  [1, 1, 1],
+]
+params = {
+    "availableBuildings": {"services": 0, "residentials": 0},
+}
+
+built = module.build_model(grid, params)
+model = built.model
+model.Add(built.road_vars[0] == 1)
+model.Add(built.road_vars[1] == 1)
+
+solver = module.cp_model.CpSolver()
+solver.parameters.num_search_workers = 1
+status = solver.Solve(model)
+if status not in (module.cp_model.OPTIMAL, module.cp_model.FEASIBLE):
+    raise RuntimeError("Failed to solve helper connectivity model.")
+
+root_ids = [cell_id for cell_id, variable in built.root_vars.items() if solver.Value(variable) == 1]
+roads = [built.allowed_cells[cell_id] for cell_id, variable in enumerate(built.road_vars) if solver.Value(variable) == 1]
+
+print(json.dumps({
+    "root_ids": root_ids,
+    "roads": roads,
+}))
+`;
+
+  const result = childProcess.spawnSync(pythonExecutable, ["-c", command], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT connectivity helper constraints.");
+  }
+
+  const payload = JSON.parse(result.stdout);
+  assert.deepEqual(payload.root_ids, [0]);
+  assert.deepEqual(payload.roads, [
+    [0, 0],
+    [0, 1],
+  ]);
+}
+
+function maybeTestCpSatRoadEligibilityReductionHelpers() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const command = `
+import importlib.util
+import json
+
+spec = importlib.util.spec_from_file_location("cp_sat_solver", ${JSON.stringify(scriptPath)})
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+grid = [
+  [1, 1],
+  [1, 0],
+  [1, 0],
+]
+params = {
+    "availableBuildings": {"services": 0, "residentials": 0},
+}
+
+built = module.build_model(grid, params)
+
+print(json.dumps({
+    "allowed_cells": built.allowed_cells,
+    "road_eligible_cells": built.road_eligible_cells,
+}))
+`;
+
+  const result = childProcess.spawnSync(pythonExecutable, ["-c", command], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT road eligibility reduction helpers.");
+  }
+
+  const payload = JSON.parse(result.stdout);
+  assert.deepEqual(payload.allowed_cells, [
+    [0, 0],
+    [0, 1],
+    [1, 0],
+    [2, 0],
+  ]);
+  assert.deepEqual(payload.road_eligible_cells, [
+    [0, 0],
+    [0, 1],
+  ]);
+}
+
+function maybeTestCpSatDisallowsBidirectionalRoadFlow() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const command = `
+import importlib.util
+import json
+
+spec = importlib.util.spec_from_file_location("cp_sat_solver", ${JSON.stringify(scriptPath)})
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+grid = [
+  [1, 1],
+]
+params = {
+    "availableBuildings": {"services": 0, "residentials": 0},
+}
+
+built = module.build_model(grid, params)
+model = built.model
+model.Add(built.road_vars[0] == 1)
+model.Add(built.road_vars[1] == 1)
+for source_id, target_id, flow_var in built.directed_edges:
+    if (source_id, target_id) in ((0, 1), (1, 0)):
+        model.Add(flow_var >= 1)
+
+solver = module.cp_model.CpSolver()
+solver.parameters.num_search_workers = 1
+status = solver.Solve(model)
+
+print(json.dumps({
+    "status": int(status),
+    "infeasible": status == module.cp_model.INFEASIBLE,
+}))
+`;
+
+  const result = childProcess.spawnSync(pythonExecutable, ["-c", command], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT bidirectional flow constraints.");
+  }
+
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.infeasible, true);
+}
+
 testGreedyDispatcher();
+maybeTestCpSatBackendJsonContractSmoke();
 maybeTestCpSatOptimizer();
 maybeTestCpSatSupportsShapedServices();
 maybeTestCpSatCandidateReductionHelpers();
+maybeTestCpSatReachabilityReductionHelpers();
+maybeTestCpSatConnectivityHelperConstraints();
+maybeTestCpSatRoadEligibilityReductionHelpers();
+maybeTestCpSatDisallowsBidirectionalRoadFlow();
 testSolutionValidator();
 testSolutionMapValidatorRejectsRoadsNotConnectedToRow0();
 testTopRowBuildingCountsAsRoadConnected();

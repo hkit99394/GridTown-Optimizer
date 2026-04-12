@@ -38,6 +38,46 @@ def rectangle_cells(r: int, c: int, rows: int, cols: int):
     return [(r + dr, c + dc) for dr in range(rows) for dc in range(cols)]
 
 
+def build_blocked_prefix_sum(grid):
+    h = len(grid)
+    w = len(grid[0])
+    prefix = [[0] * (w + 1) for _ in range(h + 1)]
+    for r in range(h):
+        row_blocked = 0
+        for c in range(w):
+            if grid[r][c] != 1:
+                row_blocked += 1
+            prefix[r + 1][c + 1] = prefix[r][c + 1] + row_blocked
+    return prefix
+
+
+def rectangle_blocked_count(prefix, r: int, c: int, rows: int, cols: int):
+    r2 = r + rows
+    c2 = c + cols
+    return prefix[r2][c2] - prefix[r][c2] - prefix[r2][c] + prefix[r][c]
+
+
+def enumerate_valid_placements(grid, blocked_prefix_sum, dimensions):
+    h = len(grid)
+    w = len(grid[0])
+    placement_map = {}
+    seen = set()
+    for rows, cols in dimensions:
+        key = f"{rows}x{cols}"
+        if key in seen:
+            continue
+        seen.add(key)
+        placements = []
+        if rows <= h and cols <= w:
+            for r in range(h - rows + 1):
+                for c in range(w - cols + 1):
+                    if rectangle_blocked_count(blocked_prefix_sum, r, c, rows, cols) != 0:
+                        continue
+                    placements.append({"r": r, "c": c, "rows": rows, "cols": cols})
+        placement_map[key] = placements
+    return placement_map
+
+
 def rectangle_border_cells(grid, r: int, c: int, rows: int, cols: int):
     cells = set()
     for r0, c0 in rectangle_cells(r, c, rows, cols):
@@ -73,6 +113,14 @@ def infer_max_services(params, service_candidate_count: int | None = None):
     return service_candidate_count
 
 
+def infer_service_slot_cap(params, service_types):
+    total_available = sum(max(0, int(service_type.get("avail", 0))) for service_type in service_types)
+    max_services = infer_max_services(params)
+    if max_services is None:
+        return total_available
+    return min(int(max_services), total_available)
+
+
 def touches_road_anchor_row(candidate):
     return int(candidate["r"]) == 0
 
@@ -86,11 +134,68 @@ def service_type_orientations(service_type):
     return orientations
 
 
+def prune_dominated_service_candidates(candidates, params):
+    if not candidates:
+        return candidates
+
+    service_types = params.get("serviceTypes") or []
+    if not service_types:
+        return candidates
+
+    service_slot_cap = infer_service_slot_cap(params, service_types)
+    if service_slot_cap <= 0:
+        return []
+
+    always_available_types = {
+        type_index
+        for type_index, service_type in enumerate(service_types)
+        if max(0, int(service_type.get("avail", 0))) >= service_slot_cap
+    }
+    if not always_available_types:
+        return candidates
+
+    candidates_by_signature = defaultdict(list)
+    for candidate in candidates:
+        signature = (candidate["r"], candidate["c"], candidate["rows"], candidate["cols"])
+        candidates_by_signature[signature].append(candidate)
+
+    pruned = []
+    for group in candidates_by_signature.values():
+        for candidate in group:
+            dominated = False
+            for other in group:
+                if other is candidate:
+                    continue
+                if other["typeIndex"] not in always_available_types:
+                    continue
+                if other["bonus"] < candidate["bonus"]:
+                    continue
+                if not other["effect_zone"].issuperset(candidate["effect_zone"]):
+                    continue
+                if (
+                    other["bonus"] > candidate["bonus"]
+                    or other["effect_zone"] != candidate["effect_zone"]
+                    or other["typeIndex"] < candidate["typeIndex"]
+                ):
+                    dominated = True
+                    break
+            if not dominated:
+                pruned.append(candidate)
+
+    return pruned
+
+
 def enumerate_service_candidates(grid, params, cell_to_id):
     candidates = []
     h = len(grid)
     w = len(grid[0])
     service_types = params.get("serviceTypes") or []
+    blocked_prefix_sum = build_blocked_prefix_sum(grid)
+    placement_map = enumerate_valid_placements(
+        grid,
+        blocked_prefix_sum,
+        [dimension for service_type in service_types for dimension in service_type_orientations(service_type)],
+    )
     for type_index, service_type in enumerate(service_types):
         avail = int(service_type["avail"])
         if avail <= 0:
@@ -98,92 +203,10 @@ def enumerate_service_candidates(grid, params, cell_to_id):
         effect_range = int(service_type["range"])
         bonus = int(service_type["bonus"])
         for rows, cols in service_type_orientations(service_type):
-            if rows > h or cols > w:
-                continue
-            for r in range(h - rows + 1):
-                for c in range(w - cols + 1):
-                    cells = rectangle_cells(r, c, rows, cols)
-                    if not all(is_allowed(grid, rr, cc) for rr, cc in cells):
-                        continue
-                    border = [cell_to_id[cell] for cell in rectangle_border_cells(grid, r, c, rows, cols) if cell in cell_to_id]
-                    if not border:
-                        continue
-                    candidates.append(
-                        {
-                            "r": r,
-                            "c": c,
-                            "rows": rows,
-                            "cols": cols,
-                            "range": effect_range,
-                            "typeIndex": type_index,
-                            "bonus": bonus,
-                            "cells": [cell_to_id[cell] for cell in cells],
-                            "border": sorted(set(border)),
-                            "effect_zone": {cell_to_id[cell] for cell in service_effect_zone(grid, r, c, rows, cols, effect_range) if cell in cell_to_id},
-                        }
-                    )
-    return candidates
-
-
-def enumerate_residential_candidates(grid, params, cell_to_id, total_bonus_upper_bound: int):
-    candidates = []
-    residential_types = params.get("residentialTypes")
-    if residential_types:
-        for type_index, residential_type in enumerate(residential_types):
-            avail = int(residential_type.get("avail", 0))
-            if avail <= 0:
-                continue
-            w = int(residential_type["w"])
-            h = int(residential_type["h"])
-            orientations = {(h, w)}
-            orientations.add((w, h))
-            for rows, cols in orientations:
-                if rows > len(grid) or cols > len(grid[0]):
-                    continue
-                for r in range(len(grid) - rows + 1):
-                    for c in range(len(grid[0]) - cols + 1):
-                        cells = rectangle_cells(r, c, rows, cols)
-                        if not all(is_allowed(grid, rr, cc) for rr, cc in cells):
-                            continue
-                        border = [cell_to_id[cell] for cell in rectangle_border_cells(grid, r, c, rows, cols) if cell in cell_to_id]
-                        if not border:
-                            continue
-                        max_pop = residential_type.get("max")
-                        if max_pop is None:
-                            max_pop = int(residential_type["min"]) + total_bonus_upper_bound
-                        candidates.append(
-                            {
-                                "r": r,
-                                "c": c,
-                                "rows": rows,
-                                "cols": cols,
-                                "typeIndex": type_index,
-                                "base": int(residential_type["min"]),
-                                "max": int(max_pop),
-                                "cells": [cell_to_id[cell] for cell in cells],
-                                "border": sorted(set(border)),
-                            }
-                        )
-        return candidates
-
-    settings = params.get("residentialSettings") or {}
-    base_pop = int(params.get("basePop", 0))
-    fallback_max = params.get("maxPop")
-    fallback_max = int(fallback_max) if fallback_max is not None else None
-    for rows, cols in ((2, 2), (2, 3)):
-        key = f"{rows}x{cols}"
-        size_setting = settings.get(key) or {}
-        base = int(size_setting.get("min", base_pop))
-        max_pop = size_setting.get("max", fallback_max)
-        if max_pop is None:
-            max_pop = base + total_bonus_upper_bound
-        else:
-            max_pop = int(max_pop)
-        for r in range(len(grid) - rows + 1):
-            for c in range(len(grid[0]) - cols + 1):
+            for placement in placement_map.get(f"{rows}x{cols}", []):
+                r = placement["r"]
+                c = placement["c"]
                 cells = rectangle_cells(r, c, rows, cols)
-                if not all(is_allowed(grid, rr, cc) for rr, cc in cells):
-                    continue
                 border = [cell_to_id[cell] for cell in rectangle_border_cells(grid, r, c, rows, cols) if cell in cell_to_id]
                 if not border:
                     continue
@@ -193,13 +216,99 @@ def enumerate_residential_candidates(grid, params, cell_to_id, total_bonus_upper
                         "c": c,
                         "rows": rows,
                         "cols": cols,
-                        "typeIndex": NO_RESIDENTIAL_TYPE,
-                        "base": base,
-                        "max": max_pop,
+                        "range": effect_range,
+                        "typeIndex": type_index,
+                        "bonus": bonus,
                         "cells": [cell_to_id[cell] for cell in cells],
                         "border": sorted(set(border)),
+                        "effect_zone": {cell_to_id[cell] for cell in service_effect_zone(grid, r, c, rows, cols, effect_range) if cell in cell_to_id},
                     }
                 )
+    return prune_dominated_service_candidates(candidates, params)
+
+
+def enumerate_residential_candidates(grid, params, cell_to_id, total_bonus_upper_bound: int):
+    candidates = []
+    residential_types = params.get("residentialTypes")
+    blocked_prefix_sum = build_blocked_prefix_sum(grid)
+    if residential_types:
+        placement_map = enumerate_valid_placements(
+            grid,
+            blocked_prefix_sum,
+            [
+                dimension
+                for residential_type in residential_types
+                for dimension in {(int(residential_type["h"]), int(residential_type["w"])), (int(residential_type["w"]), int(residential_type["h"]))}
+            ],
+        )
+        for type_index, residential_type in enumerate(residential_types):
+            avail = int(residential_type.get("avail", 0))
+            if avail <= 0:
+                continue
+            w = int(residential_type["w"])
+            h = int(residential_type["h"])
+            orientations = {(h, w)}
+            orientations.add((w, h))
+            for rows, cols in orientations:
+                for placement in placement_map.get(f"{rows}x{cols}", []):
+                    r = placement["r"]
+                    c = placement["c"]
+                    cells = rectangle_cells(r, c, rows, cols)
+                    border = [cell_to_id[cell] for cell in rectangle_border_cells(grid, r, c, rows, cols) if cell in cell_to_id]
+                    if not border:
+                        continue
+                    max_pop = residential_type.get("max")
+                    if max_pop is None:
+                        max_pop = int(residential_type["min"]) + total_bonus_upper_bound
+                    candidates.append(
+                        {
+                            "r": r,
+                            "c": c,
+                            "rows": rows,
+                            "cols": cols,
+                            "typeIndex": type_index,
+                            "base": int(residential_type["min"]),
+                            "max": int(max_pop),
+                            "cells": [cell_to_id[cell] for cell in cells],
+                            "border": sorted(set(border)),
+                        }
+                    )
+        return candidates
+
+    settings = params.get("residentialSettings") or {}
+    base_pop = int(params.get("basePop", 0))
+    fallback_max = params.get("maxPop")
+    fallback_max = int(fallback_max) if fallback_max is not None else None
+    placement_map = enumerate_valid_placements(grid, blocked_prefix_sum, [(2, 2), (2, 3)])
+    for rows, cols in ((2, 2), (2, 3)):
+        key = f"{rows}x{cols}"
+        size_setting = settings.get(key) or {}
+        base = int(size_setting.get("min", base_pop))
+        max_pop = size_setting.get("max", fallback_max)
+        if max_pop is None:
+            max_pop = base + total_bonus_upper_bound
+        else:
+            max_pop = int(max_pop)
+        for placement in placement_map.get(f"{rows}x{cols}", []):
+            r = placement["r"]
+            c = placement["c"]
+            cells = rectangle_cells(r, c, rows, cols)
+            border = [cell_to_id[cell] for cell in rectangle_border_cells(grid, r, c, rows, cols) if cell in cell_to_id]
+            if not border:
+                continue
+            candidates.append(
+                {
+                    "r": r,
+                    "c": c,
+                    "rows": rows,
+                    "cols": cols,
+                    "typeIndex": NO_RESIDENTIAL_TYPE,
+                    "base": base,
+                    "max": max_pop,
+                    "cells": [cell_to_id[cell] for cell in cells],
+                    "border": sorted(set(border)),
+                }
+            )
     return candidates
 
 

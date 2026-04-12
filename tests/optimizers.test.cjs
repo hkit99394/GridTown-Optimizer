@@ -254,9 +254,76 @@ function testGreedySupportsShapedServices() {
   assert.match(brokenValidation.errors.join("\n"), /does not match configured service type/);
 }
 
+function maybeTestCpSatCandidateReductionHelpers() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const command = `
+import importlib.util
+import json
+
+spec = importlib.util.spec_from_file_location("cp_sat_solver", ${JSON.stringify(scriptPath)})
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+grid = [
+  [1, 1, 1, 1],
+  [1, 1, 1, 1],
+  [1, 1, 1, 1],
+  [1, 1, 1, 1],
+]
+allowed = []
+cell_to_id = {}
+for r, row in enumerate(grid):
+    for c, cell in enumerate(row):
+        if cell != 1:
+            continue
+        cell_to_id[(r, c)] = len(allowed)
+        allowed.append((r, c))
+
+strong_params = {
+    "serviceTypes": [
+        {"rows": 2, "cols": 2, "bonus": 100, "range": 1, "avail": 1},
+        {"rows": 2, "cols": 2, "bonus": 10, "range": 0, "avail": 1},
+    ],
+    "availableBuildings": {"services": 1},
+}
+weak_room_params = {
+    "serviceTypes": [
+        {"rows": 2, "cols": 2, "bonus": 100, "range": 1, "avail": 1},
+        {"rows": 2, "cols": 2, "bonus": 10, "range": 0, "avail": 1},
+    ],
+    "availableBuildings": {"services": 2},
+}
+
+strong_candidates = module.enumerate_service_candidates(grid, strong_params, cell_to_id)
+weak_room_candidates = module.enumerate_service_candidates(grid, weak_room_params, cell_to_id)
+
+print(json.dumps({
+    "strong_count": len(strong_candidates),
+    "weak_room_count": len(weak_room_candidates),
+}))
+`;
+
+  const result = childProcess.spawnSync(pythonExecutable, ["-c", command], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT candidate reduction helpers.");
+  }
+
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.strong_count, 9);
+  assert.equal(payload.weak_room_count, 18);
+}
+
 testGreedyDispatcher();
 maybeTestCpSatOptimizer();
 maybeTestCpSatSupportsShapedServices();
+maybeTestCpSatCandidateReductionHelpers();
 testSolutionValidator();
 testSolutionMapValidatorRejectsRoadsNotConnectedToRow0();
 testTopRowBuildingCountsAsRoadConnected();

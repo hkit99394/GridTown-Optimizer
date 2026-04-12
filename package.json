@@ -12,7 +12,7 @@
     "solve:cp-sat": "tsc && node dist/cli.js cp-sat",
     "solve:lns": "tsc && node dist/cli.js lns",
     "setup:cp-sat": "bash scripts/setup-cp-sat.sh",
-    "test": "npm run build && node tests/review-findings.test.cjs && node tests/optimizers.test.cjs"
+    "test": "npm run build && node tests/review-findings.test.cjs && node tests/web-server-routes.test.cjs && node tests/optimizers.test.cjs"
   },
   "keywords": [],
   "author": "",

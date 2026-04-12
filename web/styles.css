@@ -145,16 +145,24 @@ pre {
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1.12fr) minmax(360px, 0.88fr);
-  grid-template-areas:
-    "grid config"
-    "summary config"
-    "results results";
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 420px);
   gap: 24px;
+  align-items: start;
+}
+
+.workspace-main {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+
+.control-rail {
+  min-width: 0;
 }
 
 .panel {
   overflow: hidden;
+  min-width: 0;
   border: 1px solid var(--line);
   border-radius: var(--radius-xl);
   background: var(--panel);
@@ -162,20 +170,21 @@ pre {
   backdrop-filter: blur(14px);
 }
 
-.panel-grid {
-  grid-area: grid;
-}
-
-.panel-config {
-  grid-area: config;
-}
-
-.panel-summary {
-  grid-area: summary;
+.panel-sidebar {
+  align-self: start;
+  position: sticky;
+  top: 24px;
+  z-index: 3;
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  scrollbar-gutter: stable;
+  background:
+    linear-gradient(180deg, rgba(255, 250, 242, 0.96), rgba(249, 245, 237, 0.92)),
+    rgba(255, 250, 242, 0.9);
 }
 
 .panel-results {
-  grid-area: results;
+  grid-column: 1 / -1;
 }
 
 .panel-header,
@@ -200,15 +209,13 @@ pre {
 
 .toolbar-grid,
 .paint-controls,
-.subpanel,
-.panel-summary,
-.panel-results {
+.subpanel {
   padding: 24px 28px 28px;
 }
 
 .toolbar-grid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, auto));
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
   gap: 12px;
   align-items: end;
 }
@@ -232,6 +239,12 @@ pre {
 .timer-text,
 .solver-callout {
   color: var(--muted);
+}
+
+.grid-stats,
+.status-text,
+.timer-text {
+  margin: 0;
 }
 
 .grid-frame {
@@ -400,9 +413,23 @@ pre {
   border-top: 1px solid var(--line);
 }
 
-.panel-config .subpanel:first-of-type {
+.panel-catalogs .subpanel:first-of-type,
+.panel-sidebar .subpanel:first-of-type,
+.panel-results .subpanel:first-of-type {
   border-top: 0;
   padding-top: 24px;
+}
+
+.catalog-section {
+  background:
+    linear-gradient(180deg, rgba(255, 252, 246, 0.42), rgba(255, 251, 245, 0)),
+    transparent;
+}
+
+.catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 24px;
 }
 
 .subpanel-head h3 {
@@ -604,12 +631,74 @@ pre {
   margin-top: 24px;
 }
 
+.subpanel-launch {
+  background:
+    linear-gradient(180deg, rgba(216, 239, 223, 0.18), rgba(255, 246, 233, 0.08)),
+    transparent;
+}
+
+.panel-sidebar .panel-header {
+  padding-bottom: 6px;
+}
+
+.panel-sidebar .subpanel.control-card,
+.panel-sidebar .payload-preview.control-card {
+  margin: 0 18px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 251, 245, 0.82);
+}
+
+.panel-sidebar .subpanel.control-card {
+  padding: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.panel-sidebar .subpanel.control-card:first-of-type {
+  padding-top: 18px;
+}
+
+.panel-sidebar .summary-storage.control-card {
+  margin-top: 0;
+}
+
+.summary-metrics {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.summary-metrics .metric-card:last-child {
+  grid-column: 1 / -1;
+}
+
+.solver-actions {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.solver-button-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.solver-feedback {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+}
+
+.solver-feedback p {
+  margin: 0;
+}
+
 .compact-actions {
   margin-top: 16px;
 }
 
 .timer-text {
-  margin: 0 0 0 auto;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.03em;
@@ -652,6 +741,10 @@ pre {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background: rgba(255, 251, 245, 0.8);
+}
+
+.panel-sidebar .payload-preview.control-card {
+  margin-top: 0;
 }
 
 .payload-preview summary {
@@ -713,6 +806,15 @@ pre {
   border-color: rgba(178, 75, 60, 0.2);
   background: rgba(247, 223, 219, 0.9);
   color: #8d2d24;
+}
+
+#resultsContent {
+  padding: 24px 28px 28px;
+}
+
+#resultsContent > .metric-strip:first-child,
+#resultsContent > .notice:first-child {
+  margin-top: 0;
 }
 
 .map-legend {
@@ -806,7 +908,7 @@ pre {
 }
 
 .legend-swatch.road {
-  background: linear-gradient(145deg, #2b8a6a, #1f6d53);
+  background: linear-gradient(145deg, #b7bcbe, #80888c);
 }
 
 .legend-swatch.service {
@@ -839,6 +941,10 @@ pre {
   margin-top: 18px;
 }
 
+.result-metrics {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .placement-columns {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -869,15 +975,18 @@ pre {
 @media (max-width: 1200px) {
   .workspace {
     grid-template-columns: 1fr;
-    grid-template-areas:
-      "grid"
-      "config"
-      "summary"
-      "results";
   }
 
-  .toolbar-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+  .panel-sidebar {
+    position: static;
+    z-index: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .catalog-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
   }
 
   .metric-strip,
@@ -896,16 +1005,21 @@ pre {
   .toolbar-grid,
   .paint-controls,
   .subpanel,
-  .panel-summary,
-  .panel-results,
   .grid-frame {
     padding-inline: 18px;
+  }
+
+  .panel-sidebar .subpanel.control-card,
+  .panel-sidebar .payload-preview.control-card {
+    margin-inline: 18px;
   }
 
   .toolbar-grid,
   .two-up,
   .three-up,
   .metric-strip,
+  .summary-metrics,
+  .solver-button-row,
   .placement-columns,
   .result-columns {
     grid-template-columns: 1fr;
@@ -925,5 +1039,9 @@ pre {
   .subpanel-head {
     flex-direction: column;
     align-items: start;
+  }
+
+  #resultsContent {
+    padding-inline: 18px;
   }
 }

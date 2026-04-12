@@ -199,6 +199,165 @@ export interface Solution {
   totalPopulation: number;
 }
 
+/** JSON-serializable form of Solution for APIs and persisted browser storage. */
+export interface SerializedSolution extends Omit<Solution, "roads"> {
+  roads: string[];
+}
+
+/** Current solve request payload shape used by the web planner and local web server. */
+export interface SolveRequestPayload {
+  grid: Grid;
+  params: SolverParams;
+}
+
+/** Solver summary returned by the local web server for display and persistence. */
+export interface SolveResponseStats {
+  optimizer?: OptimizerName;
+  cpSatStatus: string | null;
+  stoppedByUser: boolean;
+  totalPopulation: number;
+  roadCount: number;
+  serviceCount: number;
+  residentialCount: number;
+}
+
+/** Validation details returned alongside a solved layout. */
+export interface SolveResponseValidation {
+  valid: boolean;
+  errors: string[];
+  recomputedPopulations: number[];
+  recomputedTotalPopulation: number;
+  mapRows: string[];
+  mapText: string;
+}
+
+/** Display-ready solve result payload as saved by the planner UI. */
+export interface SolveResponsePayload {
+  solution: SerializedSolution;
+  validation: SolveResponseValidation;
+  stats: SolveResponseStats;
+}
+
+/** Stable semantic key for a road cell in persisted snapshots: "r,c". */
+export type PersistedRoadKey = string;
+
+/** Stable semantic key for a hinted service candidate: "service:typeIndex:r:c:rows:cols". */
+export type PersistedServiceCandidateKey = string;
+
+/** Stable semantic key for a hinted residential candidate: "residential:typeIndex:r:c:rows:cols". */
+export type PersistedResidentialCandidateKey = string;
+
+/**
+ * Full request model used to continue a saved CP-SAT solve later.
+ * This is stricter than SolveRequestPayload because continuation only makes
+ * sense when the model is rebuilt as CP-SAT again.
+ */
+export interface CpSatContinuationModelInput {
+  grid: Grid;
+  params: SolverParams & {
+    optimizer: "cp-sat";
+  };
+}
+
+/** Versioning and fingerprint data used to reject incompatible continuation attempts. */
+export interface CpSatContinuationCompatibility {
+  modelEncodingVersion: "cp-sat-layout-v1";
+  candidateKeyVersion: 1;
+  modelFingerprint: string;
+  candidateUniverseHash: string;
+  createdWith: {
+    appVersion?: string;
+    ortoolsVersion?: string;
+  };
+}
+
+/** Default runtime knobs to reuse when restarting from a saved CP-SAT checkpoint. */
+export interface CpSatContinuationRuntimeDefaults {
+  numWorkers?: number;
+  randomSeed?: number;
+  randomizeSearch?: boolean;
+  logSearchProgress?: boolean;
+}
+
+/** Best-known objective snapshot stored at save time. */
+export interface CpSatContinuationIncumbent {
+  status: "FEASIBLE" | "OPTIMAL";
+  objective: {
+    name: "totalPopulation";
+    sense: "maximize";
+    value: number;
+    bestBound?: number | null;
+  };
+  elapsedMs: number;
+  stoppedByUser: boolean;
+}
+
+/** Typed service placement saved specifically for rebuilding CP-SAT solution hints. */
+export interface CpSatContinuationHintedServicePlacement extends ServicePlacement {
+  typeIndex: number;
+  bonus: number;
+}
+
+/** Typed residential placement saved specifically for rebuilding CP-SAT solution hints. */
+export interface CpSatContinuationHintedResidentialPlacement extends ResidentialPlacement {
+  typeIndex: number;
+  population: number;
+}
+
+/** Saved best-so-far assignment used as a warm start for a future CP-SAT run. */
+export interface CpSatContinuationHint {
+  roadKeys: PersistedRoadKey[];
+  serviceCandidateKeys: PersistedServiceCandidateKey[];
+  residentialCandidateKeys: PersistedResidentialCandidateKey[];
+  solution: {
+    roads: PersistedRoadKey[];
+    services: CpSatContinuationHintedServicePlacement[];
+    residentials: CpSatContinuationHintedResidentialPlacement[];
+    populations: number[];
+    totalPopulation: number;
+  };
+}
+
+/** Resume policy for a future warm restart from a saved CP-SAT checkpoint. */
+export interface CpSatContinuationResumePolicy {
+  requireExactModelMatch: true;
+  applyHints: boolean;
+  repairHint: boolean;
+  fixVariablesToHintedValue: boolean;
+  objectiveCutoff: {
+    op: ">=";
+    value: number;
+    preferStrictImprove: boolean;
+  };
+}
+
+/** Persisted CP-SAT checkpoint that can be loaded later as a warm restart. */
+export interface CpSatContinuationCheckpoint {
+  kind: "city-builder.cp-sat-checkpoint";
+  version: 1;
+  compatibility: CpSatContinuationCompatibility;
+  modelInput: CpSatContinuationModelInput;
+  runtimeDefaults: CpSatContinuationRuntimeDefaults;
+  incumbent: CpSatContinuationIncumbent;
+  hint: CpSatContinuationHint;
+  resumePolicy: CpSatContinuationResumePolicy;
+}
+
+/**
+ * Browser-saved output layout record.
+ * The `continueCpSat` block is optional so existing saved layouts remain valid
+ * and non-CP-SAT results can stay display-only.
+ */
+export interface SavedLayoutRecord {
+  id: string;
+  name: string;
+  savedAt: string;
+  elapsedMs: number;
+  result: SolveResponsePayload;
+  resultContext: SolveRequestPayload;
+  continueCpSat?: CpSatContinuationCheckpoint;
+}
+
 /** Explicit service placement for manual layout evaluation */
 export interface EvaluatedServicePlacement extends ServicePlacement {
   /** Population increase contributed by this service */

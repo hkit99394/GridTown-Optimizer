@@ -95,6 +95,7 @@ const state = {
   resultError: "",
   resultContext: null,
   resultElapsedMs: 0,
+  cpSatWarmStart: null,
 };
 
 const elements = {
@@ -162,11 +163,14 @@ const elements = {
   cpSatNumWorkers: document.querySelector("#cpSatNumWorkers"),
   cpSatLogSearchProgress: document.querySelector("#cpSatLogSearchProgress"),
   cpSatPythonExecutable: document.querySelector("#cpSatPythonExecutable"),
+  cpSatHintStatus: document.querySelector("#cpSatHintStatus"),
+  clearCpSatHintButton: document.querySelector("#clearCpSatHintButton"),
   resizeGridButton: document.querySelector("#resizeGridButton"),
   fillAllowedButton: document.querySelector("#fillAllowedButton"),
   clearGridButton: document.querySelector("#clearGridButton"),
   sampleGridButton: document.querySelector("#sampleGridButton"),
   checkerGridButton: document.querySelector("#checkerGridButton"),
+  useLayoutAsHintButton: document.querySelector("#useLayoutAsHintButton"),
 };
 
 function cloneGrid(grid) {
@@ -183,6 +187,261 @@ function cloneJson(value) {
 
 function createSavedEntryId() {
   return `saved-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function stableStringify(value) {
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableStringify(item)).join(",")}]`;
+  }
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value).filter(([, entryValue]) => entryValue !== undefined);
+    entries.sort(([left], [right]) => left.localeCompare(right));
+    return `{${entries.map(([key, entryValue]) => `${JSON.stringify(key)}:${stableStringify(entryValue)}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function hashString(value) {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16).padStart(8, "0");
+}
+
+function sortedUnique(values) {
+  return Array.from(new Set(values)).sort();
+}
+
+function buildServiceCandidateKey(service, typeIndex) {
+  return `service:${typeIndex}:${service.r}:${service.c}:${service.rows}:${service.cols}`;
+}
+
+function buildResidentialCandidateKey(residential, typeIndex) {
+  return `residential:${typeIndex}:${residential.r}:${residential.c}:${residential.rows}:${residential.cols}`;
+}
+
+function serializeServiceTypeForCatalog(serviceType) {
+  return {
+    name: serviceType?.name ?? "",
+    bonus: String(serviceType?.bonus ?? ""),
+    size: `${serviceType?.rows ?? 0}x${serviceType?.cols ?? 0}`,
+    effective: `${(serviceType?.rows ?? 0) + (serviceType?.range ?? 0) * 2}x${(serviceType?.cols ?? 0) + (serviceType?.range ?? 0) * 2}`,
+  };
+}
+
+function serializeResidentialTypeForCatalog(residentialType) {
+  return {
+    name: residentialType?.name ?? "",
+    resident: `${residentialType?.min ?? 0}/${residentialType?.max ?? 0}`,
+    size: `${residentialType?.w ?? 0}x${residentialType?.h ?? 0}`,
+    avail: String(residentialType?.avail ?? ""),
+  };
+}
+
+function buildCpSatContinuationModelInput(request) {
+  const params = request?.params ?? {};
+  const modelParams = {
+    optimizer: "cp-sat",
+    ...(Array.isArray(params.serviceTypes) ? { serviceTypes: cloneJson(params.serviceTypes) } : {}),
+    ...(Array.isArray(params.residentialTypes) ? { residentialTypes: cloneJson(params.residentialTypes) } : {}),
+    ...(params.residentialSettings ? { residentialSettings: cloneJson(params.residentialSettings) } : {}),
+    ...(params.basePop != null ? { basePop: params.basePop } : {}),
+    ...(params.maxPop != null ? { maxPop: params.maxPop } : {}),
+    ...(params.availableBuildings ? { availableBuildings: cloneJson(params.availableBuildings) } : {}),
+    ...(params.maxServices != null ? { maxServices: params.maxServices } : {}),
+    ...(params.maxResidentials != null ? { maxResidentials: params.maxResidentials } : {}),
+  };
+
+  return {
+    grid: cloneGrid(request.grid),
+    params: modelParams,
+  };
+}
+
+function computeCpSatModelFingerprint(modelInput) {
+  return `fnv1a:${hashString(stableStringify(modelInput))}`;
+}
+
+function buildCpSatWarmStartCheckpoint(result, resultContext, elapsedMs) {
+  if (!result?.solution || !resultContext?.grid || !resultContext?.params) {
+    throw new Error("This saved layout does not include enough data to build a CP-SAT hint.");
+  }
+
+  const solution = result.solution;
+  const modelInput = buildCpSatContinuationModelInput(resultContext);
+  const roadKeys = sortedUnique(Array.isArray(solution.roads) ? solution.roads : []);
+  const serviceCandidateKeys = sortedUnique(
+    (solution.services ?? []).map((service, index) => buildServiceCandidateKey(service, solution.serviceTypeIndices?.[index] ?? -1))
+  );
+  const residentialCandidateKeys = sortedUnique(
+    (solution.residentials ?? []).map((residential, index) =>
+      buildResidentialCandidateKey(residential, solution.residentialTypeIndices?.[index] ?? -1)
+    )
+  );
+  const candidateUniverseHash = `fnv1a:${hashString(
+    stableStringify({
+      roads: roadKeys,
+      services: serviceCandidateKeys,
+      residentials: residentialCandidateKeys,
+    })
+  )}`;
+
+  return {
+    kind: "city-builder.cp-sat-checkpoint",
+    version: 1,
+    compatibility: {
+      modelEncodingVersion: "cp-sat-layout-v1",
+      candidateKeyVersion: 1,
+      modelFingerprint: computeCpSatModelFingerprint(modelInput),
+      candidateUniverseHash,
+      createdWith: {},
+    },
+    modelInput,
+    runtimeDefaults: {
+      ...(resultContext.params?.cpSat?.numWorkers != null ? { numWorkers: resultContext.params.cpSat.numWorkers } : {}),
+      ...(resultContext.params?.cpSat?.randomSeed != null ? { randomSeed: resultContext.params.cpSat.randomSeed } : {}),
+      ...(resultContext.params?.cpSat?.randomizeSearch != null ? { randomizeSearch: resultContext.params.cpSat.randomizeSearch } : {}),
+      ...(resultContext.params?.cpSat?.logSearchProgress != null ? { logSearchProgress: resultContext.params.cpSat.logSearchProgress } : {}),
+    },
+    incumbent: {
+      status: solution.cpSatStatus === "OPTIMAL" ? "OPTIMAL" : "FEASIBLE",
+      objective: {
+        name: "totalPopulation",
+        sense: "maximize",
+        value: Number(solution.totalPopulation ?? 0),
+        bestBound: null,
+      },
+      elapsedMs: normalizeElapsedMs(elapsedMs),
+      stoppedByUser: Boolean(solution.stoppedByUser || result.stats?.stoppedByUser),
+    },
+    hint: {
+      roadKeys,
+      serviceCandidateKeys,
+      residentialCandidateKeys,
+      solution: {
+        roads: roadKeys,
+        services: (solution.services ?? []).map((service, index) => ({
+          r: service.r,
+          c: service.c,
+          rows: service.rows,
+          cols: service.cols,
+          range: service.range,
+          typeIndex: solution.serviceTypeIndices?.[index] ?? -1,
+          bonus: solution.servicePopulationIncreases?.[index] ?? 0,
+        })),
+        residentials: (solution.residentials ?? []).map((residential, index) => ({
+          r: residential.r,
+          c: residential.c,
+          rows: residential.rows,
+          cols: residential.cols,
+          typeIndex: solution.residentialTypeIndices?.[index] ?? -1,
+          population: solution.populations?.[index] ?? 0,
+        })),
+        populations: cloneJson(solution.populations ?? []),
+        totalPopulation: Number(solution.totalPopulation ?? 0),
+      },
+    },
+    resumePolicy: {
+      requireExactModelMatch: true,
+      applyHints: true,
+      repairHint: true,
+      fixVariablesToHintedValue: false,
+      objectiveCutoff: {
+        op: ">=",
+        value: Number(solution.totalPopulation ?? 0),
+        preferStrictImprove: false,
+      },
+    },
+  };
+}
+
+function getSavedLayoutCheckpoint(entry) {
+  if (entry?.continueCpSat) {
+    return cloneJson(entry.continueCpSat);
+  }
+  return buildCpSatWarmStartCheckpoint(entry?.result, entry?.resultContext, getSavedLayoutElapsedMs(entry));
+}
+
+function clearCpSatWarmStart(options = {}) {
+  const { message = "", silent = false, refreshPreview = true } = options;
+  state.cpSatWarmStart = null;
+  if (refreshPreview) {
+    updatePayloadPreview();
+  } else {
+    renderCpSatHintStatus();
+  }
+  if (!silent && message) {
+    setSolveState(message);
+  }
+}
+
+function applySolveRequestToPlanner(request, options = {}) {
+  const { preserveCpSatRuntime = true, optimizer = "cp-sat" } = options;
+  if (!isGridLike(request?.grid) || typeof request?.params !== "object" || request.params == null) {
+    throw new Error("That saved layout does not include a usable planner configuration.");
+  }
+
+  const params = request.params;
+  state.grid = cloneGrid(request.grid);
+  state.serviceTypes = Array.isArray(params.serviceTypes)
+    ? params.serviceTypes.map((serviceType) => serializeServiceTypeForCatalog(serviceType))
+    : [];
+  state.residentialTypes = Array.isArray(params.residentialTypes)
+    ? params.residentialTypes.map((residentialType) => serializeResidentialTypeForCatalog(residentialType))
+    : [];
+  state.availableBuildings = {
+    services: params.availableBuildings?.services != null ? String(params.availableBuildings.services) : (params.maxServices != null ? String(params.maxServices) : ""),
+    residentials: params.availableBuildings?.residentials != null
+      ? String(params.availableBuildings.residentials)
+      : (params.maxResidentials != null ? String(params.maxResidentials) : ""),
+  };
+  state.optimizer = optimizer === "greedy" ? "greedy" : "cp-sat";
+
+  if (!preserveCpSatRuntime && params.cpSat) {
+    state.cpSat = {
+      ...state.cpSat,
+      ...(params.cpSat.timeLimitSeconds != null ? { timeLimitSeconds: String(params.cpSat.timeLimitSeconds) } : {}),
+      ...(params.cpSat.numWorkers != null ? { numWorkers: params.cpSat.numWorkers } : {}),
+      ...(params.cpSat.logSearchProgress != null ? { logSearchProgress: Boolean(params.cpSat.logSearchProgress) } : {}),
+      ...(params.cpSat.pythonExecutable != null ? { pythonExecutable: String(params.cpSat.pythonExecutable) } : {}),
+    };
+  }
+
+  syncPlannerFromState();
+}
+
+function renderCpSatHintStatus() {
+  if (!elements.cpSatHintStatus || !elements.clearCpSatHintButton) return;
+  if (!state.cpSatWarmStart) {
+    elements.cpSatHintStatus.textContent = "No saved layout selected as a CP-SAT hint.";
+    elements.clearCpSatHintButton.disabled = true;
+    return;
+  }
+
+  const checkpoint = state.cpSatWarmStart.checkpoint;
+  const population = Number(checkpoint.incumbent?.objective?.value ?? 0).toLocaleString();
+  let message = `Using saved layout "${state.cpSatWarmStart.name}" as a CP-SAT hint. Best population ${population}.`;
+
+  try {
+    const previewRequest = buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false });
+    const currentFingerprint = computeCpSatModelFingerprint(buildCpSatContinuationModelInput(previewRequest));
+    if (state.optimizer !== "cp-sat") {
+      message = `Saved layout "${state.cpSatWarmStart.name}" is selected as a hint. Switch to CP-SAT to use it.`;
+    } else if (currentFingerprint !== checkpoint.compatibility.modelFingerprint) {
+      message = `Saved layout "${state.cpSatWarmStart.name}" is selected as a hint, but the current grid or building settings no longer match it.`;
+    }
+  } catch {
+    if (state.optimizer !== "cp-sat") {
+      message = `Saved layout "${state.cpSatWarmStart.name}" is selected as a hint. Switch to CP-SAT to use it.`;
+    } else {
+      message = `Saved layout "${state.cpSatWarmStart.name}" is selected as a hint. Finish the current inputs to use it.`;
+    }
+  }
+
+  elements.cpSatHintStatus.textContent = message;
+  elements.clearCpSatHintButton.disabled = state.isSolving ? true : false;
 }
 
 function formatSavedTimestamp(savedAt) {
@@ -229,7 +488,7 @@ function populateSavedSelect(selectElement, entries, placeholder, labelBuilder =
 
 function refreshSavedConfigOptions(selectedId = "") {
   const entries = readStoredEntries(CONFIG_STORAGE_KEY);
-  populateSavedSelect(elements.savedConfigsSelect, entries, "Select a saved config");
+  populateSavedSelect(elements.savedConfigsSelect, entries, "Select a saved input setup");
   if (selectedId && entries.some((entry) => entry.id === selectedId)) {
     elements.savedConfigsSelect.value = selectedId;
   }
@@ -498,7 +757,7 @@ function syncPlannerFromState() {
 }
 
 function saveCurrentConfig() {
-  const name = elements.configStorageName.value.trim() || `Config ${new Date().toLocaleString()}`;
+  const name = elements.configStorageName.value.trim() || `Input ${new Date().toLocaleString()}`;
   const entries = readStoredEntries(CONFIG_STORAGE_KEY);
   const existingIndex = entries.findIndex((entry) => entry.name.toLowerCase() === name.toLowerCase());
   const id = existingIndex >= 0 ? entries[existingIndex].id : createSavedEntryId();
@@ -516,21 +775,26 @@ function saveCurrentConfig() {
   writeStoredEntries(CONFIG_STORAGE_KEY, entries);
   refreshSavedConfigOptions(id);
   elements.configStorageName.value = name;
-  elements.configStorageStatus.textContent = `Saved config "${name}".`;
+  elements.configStorageStatus.textContent = `Saved input setup "${name}".`;
 }
 
 function loadSelectedConfig() {
+  if (state.isSolving) {
+    elements.configStorageStatus.textContent = "Wait for the current solve to finish before loading a different input setup.";
+    return;
+  }
   const selectedId = elements.savedConfigsSelect.value;
   if (!selectedId) {
-    elements.configStorageStatus.textContent = "Choose a saved config first.";
+    elements.configStorageStatus.textContent = "Choose a saved input setup first.";
     return;
   }
   const entry = readStoredEntries(CONFIG_STORAGE_KEY).find((item) => item.id === selectedId);
   if (!entry?.snapshot) {
-    elements.configStorageStatus.textContent = "That saved config could not be found.";
+    elements.configStorageStatus.textContent = "That saved input setup could not be found.";
     refreshSavedConfigOptions();
     return;
   }
+  clearCpSatWarmStart({ silent: true, refreshPreview: false });
   applyConfigSnapshot(entry.snapshot);
   state.result = null;
   state.resultError = "";
@@ -542,14 +806,14 @@ function loadSelectedConfig() {
   syncPlannerFromState();
   renderResults();
   elements.configStorageName.value = entry.name;
-  setSolveState(`Loaded config "${entry.name}".`);
-  elements.configStorageStatus.textContent = `Loaded config "${entry.name}".`;
+  setSolveState(`Loaded input setup "${entry.name}".`);
+  elements.configStorageStatus.textContent = `Loaded input setup "${entry.name}".`;
 }
 
 function deleteSelectedConfig() {
   const selectedId = elements.savedConfigsSelect.value;
   if (!selectedId) {
-    elements.configStorageStatus.textContent = "Choose a saved config to delete.";
+    elements.configStorageStatus.textContent = "Choose a saved input setup to delete.";
     return;
   }
   const entries = readStoredEntries(CONFIG_STORAGE_KEY);
@@ -559,10 +823,16 @@ function deleteSelectedConfig() {
     entries.filter((item) => item.id !== selectedId)
   );
   refreshSavedConfigOptions();
-  elements.configStorageStatus.textContent = entry ? `Deleted config "${entry.name}".` : "Deleted the selected config.";
+  elements.configStorageStatus.textContent = entry
+    ? `Deleted input setup "${entry.name}".`
+    : "Deleted the selected input setup.";
 }
 
 function saveCurrentLayout() {
+  if (state.isSolving) {
+    elements.layoutStorageStatus.textContent = "Wait for the current solve to finish before saving a layout.";
+    return;
+  }
   if (!state.result || !state.resultContext) {
     elements.layoutStorageStatus.textContent = "Run or load a result before saving a layout.";
     return;
@@ -579,6 +849,7 @@ function saveCurrentLayout() {
     result: cloneJson(state.result),
     resultContext: cloneJson(state.resultContext),
     elapsedMs,
+    continueCpSat: buildCpSatWarmStartCheckpoint(state.result, state.resultContext, elapsedMs),
   };
   if (existingIndex >= 0) {
     entries[existingIndex] = nextEntry;
@@ -592,6 +863,10 @@ function saveCurrentLayout() {
 }
 
 function loadSelectedLayout() {
+  if (state.isSolving) {
+    elements.layoutStorageStatus.textContent = "Wait for the current solve to finish before loading a saved layout.";
+    return;
+  }
   const selectedId = elements.savedLayoutsSelect.value;
   if (!selectedId) {
     elements.layoutStorageStatus.textContent = "Choose a saved layout first.";
@@ -603,6 +878,7 @@ function loadSelectedLayout() {
     refreshSavedLayoutOptions();
     return;
   }
+  clearCpSatWarmStart({ silent: true });
   state.result = cloneJson(entry.result);
   state.resultContext = cloneJson(entry.resultContext);
   state.resultError = "";
@@ -612,6 +888,51 @@ function loadSelectedLayout() {
   elements.layoutStorageName.value = entry.name;
   setSolveState(`Loaded saved layout "${entry.name}" with elapsed ${formatElapsedTime(elapsedMs)}.`);
   elements.layoutStorageStatus.textContent = `Displaying saved layout "${entry.name}" with elapsed ${formatElapsedTime(elapsedMs)}.`;
+}
+
+function useSelectedLayoutAsCpSatHint() {
+  if (state.isSolving) {
+    elements.layoutStorageStatus.textContent = "Wait for the current solve to finish before selecting a CP-SAT hint.";
+    return;
+  }
+
+  const selectedId = elements.savedLayoutsSelect.value;
+  if (!selectedId) {
+    elements.layoutStorageStatus.textContent = "Choose a saved layout first.";
+    return;
+  }
+
+  const entry = readStoredEntries(LAYOUT_STORAGE_KEY).find((item) => item.id === selectedId);
+  if (!entry?.result || !entry?.resultContext) {
+    elements.layoutStorageStatus.textContent = "That saved layout could not be found.";
+    refreshSavedLayoutOptions();
+    return;
+  }
+
+  try {
+    const checkpoint = getSavedLayoutCheckpoint(entry);
+    state.cpSatWarmStart = {
+      id: entry.id,
+      name: entry.name,
+      checkpoint,
+    };
+    applySolveRequestToPlanner(checkpoint.modelInput, { preserveCpSatRuntime: true, optimizer: "cp-sat" });
+    state.result = cloneJson(entry.result);
+    state.resultContext = cloneJson(entry.resultContext);
+    state.resultError = "";
+    const elapsedMs = getSavedLayoutElapsedMs(entry);
+    setResultElapsed(elapsedMs, { syncTimerWhenIdle: true });
+    renderResults();
+    renderCpSatHintStatus();
+    setSolveState(`Ready to run CP-SAT with saved layout "${entry.name}" as a warm-start hint.`);
+    elements.layoutStorageName.value = entry.name;
+    elements.layoutStorageStatus.textContent = `Using saved layout "${entry.name}" as a CP-SAT hint.`;
+  } catch (error) {
+    clearCpSatWarmStart({ silent: true });
+    elements.layoutStorageStatus.textContent = error instanceof Error
+      ? error.message
+      : "That saved layout could not be used as a CP-SAT hint.";
+  }
 }
 
 function deleteSelectedLayout() {
@@ -626,6 +947,9 @@ function deleteSelectedLayout() {
     LAYOUT_STORAGE_KEY,
     entries.filter((item) => item.id !== selectedId)
   );
+  if (state.cpSatWarmStart?.id === selectedId) {
+    clearCpSatWarmStart({ silent: true });
+  }
   refreshSavedLayoutOptions();
   elements.layoutStorageStatus.textContent = entry ? `Deleted layout "${entry.name}".` : "Deleted the selected layout.";
 }
@@ -987,8 +1311,38 @@ function importCatalogText() {
   }
 }
 
-function buildSolveRequest() {
+function buildCpSatWarmStartHintPayload(grid, params, hintMismatch = "error") {
+  if (params.optimizer !== "cp-sat" || !state.cpSatWarmStart) return undefined;
+
+  const checkpoint = state.cpSatWarmStart.checkpoint;
+  const currentFingerprint = computeCpSatModelFingerprint(buildCpSatContinuationModelInput({ grid, params }));
+  if (currentFingerprint !== checkpoint.compatibility.modelFingerprint) {
+    if (hintMismatch === "error") {
+      throw new Error(
+        `Saved layout "${state.cpSatWarmStart.name}" no longer matches the current grid or building settings. Clear the hint or restore the matching layout first.`
+      );
+    }
+    return undefined;
+  }
+
+  return {
+    sourceName: state.cpSatWarmStart.name,
+    modelFingerprint: checkpoint.compatibility.modelFingerprint,
+    roadKeys: cloneJson(checkpoint.hint.roadKeys),
+    serviceCandidateKeys: cloneJson(checkpoint.hint.serviceCandidateKeys),
+    residentialCandidateKeys: cloneJson(checkpoint.hint.residentialCandidateKeys),
+    objectiveLowerBound: checkpoint.resumePolicy.objectiveCutoff.value,
+    preferStrictImprove: Boolean(checkpoint.resumePolicy.objectiveCutoff.preferStrictImprove),
+    repairHint: Boolean(checkpoint.resumePolicy.repairHint),
+    fixVariablesToHintedValue: Boolean(checkpoint.resumePolicy.fixVariablesToHintedValue),
+    hintConflictLimit: 20,
+  };
+}
+
+function buildSolveRequest(options = {}) {
+  const { hintMismatch = "error", includeWarmStartHint = true } = options;
   const timeLimitSeconds = readOptionalInteger(state.cpSat.timeLimitSeconds, 1);
+  const grid = cloneGrid(state.grid);
   const params = {
     optimizer: state.optimizer,
     serviceTypes: state.serviceTypes.map((entry, index) => parseServiceCatalogEntry(entry, index)),
@@ -1018,18 +1372,26 @@ function buildSolveRequest() {
     if (maxResidentials !== undefined) params.availableBuildings.residentials = maxResidentials;
   }
 
+  if (includeWarmStartHint && params.optimizer === "cp-sat") {
+    const warmStartHint = buildCpSatWarmStartHintPayload(grid, params, hintMismatch);
+    if (warmStartHint) {
+      params.cpSat.warmStartHint = warmStartHint;
+    }
+  }
+
   return {
-    grid: cloneGrid(state.grid),
+    grid,
     params,
   };
 }
 
 function updatePayloadPreview() {
   try {
-    elements.payloadPreview.textContent = JSON.stringify(buildSolveRequest(), null, 2);
+    elements.payloadPreview.textContent = JSON.stringify(buildSolveRequest({ hintMismatch: "ignore" }), null, 2);
   } catch (error) {
     elements.payloadPreview.textContent = `Payload not ready.\n${error instanceof Error ? error.message : "Unknown parsing error."}`;
   }
+  renderCpSatHintStatus();
 }
 
 function updateSummary() {
@@ -1042,11 +1404,20 @@ function updateSummary() {
   elements.summaryOptimizer.textContent = state.optimizer === "greedy" ? "Greedy" : "CP-SAT";
 }
 
-function setSolveState(message) {
-  elements.solveStatus.textContent = message;
+function syncActionAvailability() {
   elements.solveButton.disabled = state.isSolving;
   elements.solveButton.textContent = state.isSolving ? "Solving..." : "Run solver";
   elements.stopSolveButton.disabled = !(state.isSolving && state.activeSolveRequestId && !state.isStopping);
+  elements.loadConfigButton.disabled = state.isSolving;
+  elements.loadLayoutButton.disabled = state.isSolving;
+  elements.useLayoutAsHintButton.disabled = state.isSolving;
+  elements.saveLayoutButton.disabled = state.isSolving || !state.result || !state.resultContext;
+  elements.clearCpSatHintButton.disabled = state.isSolving || !state.cpSatWarmStart;
+}
+
+function setSolveState(message) {
+  elements.solveStatus.textContent = message;
+  syncActionAvailability();
 }
 
 function getOptimizerLabel(optimizer) {
@@ -1290,6 +1661,7 @@ function renderSolvedMap(grid, solution) {
 }
 
 function renderResults() {
+  syncActionAvailability();
   if (state.resultError) {
     elements.resultsEmpty.hidden = true;
     elements.resultsContent.hidden = false;
@@ -1525,6 +1897,7 @@ function init() {
   refreshSavedLayoutOptions();
   updatePayloadPreview();
   renderResults();
+  syncActionAvailability();
   initResizeHandling();
   requestAnimationFrame(refreshMatrixLayouts);
 
@@ -1663,8 +2036,16 @@ function init() {
     loadSelectedLayout();
   });
 
+  elements.useLayoutAsHintButton.addEventListener("click", () => {
+    useSelectedLayoutAsCpSatHint();
+  });
+
   elements.deleteLayoutButton.addEventListener("click", () => {
     deleteSelectedLayout();
+  });
+
+  elements.clearCpSatHintButton.addEventListener("click", () => {
+    clearCpSatWarmStart({ message: "Cleared the CP-SAT hint." });
   });
 
   elements.solveButton.addEventListener("click", () => {

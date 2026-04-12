@@ -379,6 +379,14 @@ def typed_service_bonus_upper_bound(params):
     return sum(bonuses)
 
 
+def service_candidate_key(candidate) -> str:
+    return f"service:{int(candidate['typeIndex'])}:{int(candidate['r'])}:{int(candidate['c'])}:{int(candidate['rows'])}:{int(candidate['cols'])}"
+
+
+def residential_candidate_key(candidate) -> str:
+    return f"residential:{int(candidate['typeIndex'])}:{int(candidate['r'])}:{int(candidate['c'])}:{int(candidate['rows'])}:{int(candidate['cols'])}"
+
+
 def build_model(grid, params):
     if not grid or not grid[0]:
         fail("Grid must be non-empty.")
@@ -532,14 +540,68 @@ def build_model(grid, params):
     }
 
 
+def apply_warm_start_hint(model, built, warm_start_hint):
+    if not warm_start_hint:
+        return
+
+    road_keys = {str(key) for key in warm_start_hint.get("roadKeys") or []}
+    service_keys = {str(key) for key in warm_start_hint.get("serviceCandidateKeys") or []}
+    residential_keys = {str(key) for key in warm_start_hint.get("residentialCandidateKeys") or []}
+    residential_population_by_key = {}
+    for residential in ((warm_start_hint.get("solution") or {}).get("residentials") or []):
+        key = residential_candidate_key(residential)
+        residential_population_by_key[key] = int(residential.get("population", 0))
+
+    road_lookup = {f"{r},{c}": idx for idx, (r, c) in enumerate(built["allowed_cells"])}
+    service_lookup = {
+        service_candidate_key(candidate): candidate_index
+        for candidate_index, candidate in enumerate(built["service_candidates"])
+    }
+    residential_lookup = {
+        residential_candidate_key(candidate): candidate_index
+        for candidate_index, candidate in enumerate(built["residential_candidates"])
+    }
+
+    selected_road_ids = {road_lookup[key] for key in road_keys if key in road_lookup}
+    selected_service_ids = {service_lookup[key] for key in service_keys if key in service_lookup}
+    selected_residential_ids = {residential_lookup[key] for key in residential_keys if key in residential_lookup}
+
+    for cell_id, variable in enumerate(built["road_vars"]):
+        model.AddHint(variable, 1 if cell_id in selected_road_ids else 0)
+
+    hinted_root_id = next((cell_id for cell_id in built["row0_ids"] if cell_id in selected_road_ids), None)
+    if hinted_root_id is not None:
+        for cell_id, variable in built["root_vars"].items():
+            model.AddHint(variable, 1 if cell_id == hinted_root_id else 0)
+
+    for candidate_index, variable in enumerate(built["service_vars"]):
+        model.AddHint(variable, 1 if candidate_index in selected_service_ids else 0)
+
+    for candidate_index, variable in enumerate(built["residential_vars"]):
+        model.AddHint(variable, 1 if candidate_index in selected_residential_ids else 0)
+        candidate = built["residential_candidates"][candidate_index]
+        key = residential_candidate_key(candidate)
+        population = residential_population_by_key.get(key, 0)
+        model.AddHint(built["populations"][candidate_index], population)
+
+    objective_lower_bound = warm_start_hint.get("objectiveLowerBound")
+    if objective_lower_bound not in (None, ""):
+        cutoff = int(objective_lower_bound)
+        if bool(warm_start_hint.get("preferStrictImprove")):
+            cutoff += 1
+        model.Add(sum(built["populations"]) >= cutoff)
+
+
 def solve():
     payload = json.load(sys.stdin)
     grid = payload["grid"]
     params = payload.get("params") or {}
     cp_sat_options = params.get("cpSat") or {}
+    warm_start_hint = cp_sat_options.get("warmStartHint")
 
     built = build_model(grid, params)
     model = built["model"]
+    apply_warm_start_hint(model, built, warm_start_hint)
     solver = cp_model.CpSolver()
     stop_requested = False
     stopped_by_user = False
@@ -587,6 +649,14 @@ def solve():
         solver.parameters.randomize_search = bool(cp_sat_options.get("randomizeSearch"))
     solver.parameters.num_search_workers = int(cp_sat_options.get("numWorkers", 8))
     solver.parameters.log_search_progress = bool(cp_sat_options.get("logSearchProgress", False))
+    if warm_start_hint:
+        if "repairHint" in warm_start_hint:
+            solver.parameters.repair_hint = bool(warm_start_hint.get("repairHint"))
+        if "fixVariablesToHintedValue" in warm_start_hint:
+            solver.parameters.fix_variables_to_their_hinted_value = bool(warm_start_hint.get("fixVariablesToHintedValue"))
+        hint_conflict_limit = warm_start_hint.get("hintConflictLimit")
+        if hint_conflict_limit not in (None, ""):
+            solver.parameters.hint_conflict_limit = int(hint_conflict_limit)
 
     snapshot_callback = SnapshotCallback()
 

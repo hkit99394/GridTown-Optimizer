@@ -168,6 +168,46 @@ function testGreedySkipsServicesWithZeroMarginalGain() {
   assert.equal(solution.totalPopulation, 200);
 }
 
+function testGreedyLocalSearchDoesNotRegressNontrivialSeed() {
+  const { solveGreedy } = require("../dist/index.js");
+  const grid = [
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+  ];
+  const params = {
+    serviceTypes: [
+      { rows: 2, cols: 2, bonus: 80, range: 1, avail: 1 },
+      { rows: 2, cols: 3, bonus: 60, range: 1, avail: 1 },
+    ],
+    residentialTypes: [
+      { w: 2, h: 2, min: 70, max: 130, avail: 2 },
+      { w: 2, h: 3, min: 90, max: 210, avail: 2 },
+    ],
+    availableBuildings: { services: 2, residentials: 3 },
+    greedy: {
+      localSearch: false,
+      restarts: 1,
+      serviceRefineIterations: 0,
+      exhaustiveServiceSearch: false,
+    },
+  };
+
+  const baseline = solveGreedy(grid, params);
+  const improved = solveGreedy(grid, {
+    ...params,
+    greedy: {
+      ...params.greedy,
+      localSearch: true,
+    },
+  });
+
+  assert.equal(improved.totalPopulation >= baseline.totalPopulation, true);
+}
+
 function testIndexImportHasNoSideEffects() {
   const originalLog = console.log;
   const calls = [];
@@ -295,6 +335,7 @@ testEvaluatorHonorsCountCaps();
 testResidentialCapStillAppliesWithTypedResidentials();
 testNamedBuildingTypesAreAccepted();
 testGreedySkipsServicesWithZeroMarginalGain();
+testGreedyLocalSearchDoesNotRegressNontrivialSeed();
 testIndexImportHasNoSideEffects();
 testPlannerServiceAvailabilityRoundTrip();
 testManualLayoutResponseClearsSolverMetadata();

@@ -692,6 +692,21 @@ function localSearchImprove(
 ): number {
   const useTypes = remainingAvail !== null && residentialCandidates.length > 0 && "typeIndex" in residentialCandidates[0];
   const maxIter = 20;
+  type MoveChoice = {
+    kind: "move";
+    residentialIndex: number;
+    candidate: ResidentialPlacement | ResidentialCandidate;
+    candidateTypeIndex: number;
+    currentTypeIndex: number;
+    currentPop: number;
+    newPop: number;
+  };
+  type AddChoice = {
+    kind: "add";
+    candidate: ResidentialPlacement | ResidentialCandidate;
+    candidateTypeIndex: number;
+    addPop: number;
+  };
 
   function popFor(cand: ResidentialPlacement | ResidentialCandidate): number {
     const { base, max } = getResidentialBaseMax(params, cand.rows, cand.cols, getCandidateTypeIndex(cand));
@@ -704,7 +719,10 @@ function localSearchImprove(
 
   for (let iter = 0; iter < maxIter; iter++) {
     maybeStop?.();
-    let improved = false;
+    let bestMove: MoveChoice | null = null;
+    let bestMoveDelta = 0;
+    let bestAdd: AddChoice | null = null;
+    let bestAddDelta = 0;
 
     for (let i = 0; i < residentials.length; i++) {
       maybeStop?.();
@@ -715,56 +733,109 @@ function localSearchImprove(
       for (const k of residentialFootprint(res.r, res.c, res.rows, res.cols)) othersOccupied.delete(k);
       for (const cand of residentialCandidates) {
         maybeStop?.();
-        if (cand.r === res.r && cand.c === res.c && cand.rows === res.rows && cand.cols === res.cols) continue;
         const candidateTypeIndex = getCandidateTypeIndex(cand);
+        const samePlacement =
+          cand.r === res.r
+          && cand.c === res.c
+          && cand.rows === res.rows
+          && cand.cols === res.cols;
+        if (samePlacement && candidateTypeIndex === resType) continue;
         if (useTypes && remainingAvail) {
           if (candidateTypeIndex !== resType && remainingAvail[candidateTypeIndex] <= 0) continue;
         }
         if (overlaps(othersOccupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
         if (!canConnectToRoads(G, roads, othersOccupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
         const newPop = popFor(cand);
-        if (newPop > currentPop) {
-          for (const k of residentialFootprint(res.r, res.c, res.rows, res.cols)) occupied.delete(k);
-          if (useTypes && remainingAvail && resType >= 0) remainingAvail[resType]++;
-          ensureBuildingConnectedToRoads(G, roads, occupied, cand.r, cand.c, cand.rows, cand.cols);
-          for (const k of roads) occupied.add(k);
-          for (const k of residentialFootprint(cand.r, cand.c, cand.rows, cand.cols)) occupied.add(k);
-          if (useTypes && remainingAvail && candidateTypeIndex >= 0) remainingAvail[candidateTypeIndex]--;
-          residentials[i] = { r: cand.r, c: cand.c, rows: cand.rows, cols: cand.cols };
-          residentialTypeIndices[i] = candidateTypeIndex;
-          populations[i] = newPop;
-          totalPopulation = totalPopulation - currentPop + newPop;
-          improved = true;
-          break;
+        const delta = newPop - currentPop;
+        if (delta > bestMoveDelta) {
+          bestMove = {
+            kind: "move",
+            residentialIndex: i,
+            candidate: cand,
+            candidateTypeIndex,
+            currentTypeIndex: resType,
+            currentPop,
+            newPop,
+          };
+          bestMoveDelta = delta;
         }
       }
-      if (improved) break;
     }
 
-    if (improved) continue;
-
-    if (maxResidentials !== undefined && residentials.length >= maxResidentials) break;
-    for (const cand of residentialCandidates) {
-      maybeStop?.();
-      const candidateTypeIndex = getCandidateTypeIndex(cand);
-      if (useTypes && remainingAvail) {
-        if (remainingAvail[candidateTypeIndex] <= 0) continue;
+    if (maxResidentials === undefined || residentials.length < maxResidentials) {
+      for (const cand of residentialCandidates) {
+        maybeStop?.();
+        const candidateTypeIndex = getCandidateTypeIndex(cand);
+        if (useTypes && remainingAvail) {
+          if (remainingAvail[candidateTypeIndex] <= 0) continue;
+        }
+        if (overlaps(occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
+        if (!canConnectToRoads(G, roads, occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
+        const addPop = popFor(cand);
+        if (addPop > bestAddDelta) {
+          bestAdd = {
+            kind: "add",
+            candidate: cand,
+            candidateTypeIndex,
+            addPop,
+          };
+          bestAddDelta = addPop;
+        }
       }
-      if (overlaps(occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
-      if (!canConnectToRoads(G, roads, occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
-      const addPop = popFor(cand);
+    }
+
+    if (bestMoveDelta <= 0 && bestAddDelta <= 0) break;
+
+    if (bestAddDelta > bestMoveDelta && bestAdd) {
+      const { candidate, candidateTypeIndex, addPop } = bestAdd;
       totalPopulation += addPop;
-      ensureBuildingConnectedToRoads(G, roads, occupied, cand.r, cand.c, cand.rows, cand.cols);
+      ensureBuildingConnectedToRoads(G, roads, occupied, candidate.r, candidate.c, candidate.rows, candidate.cols);
       for (const k of roads) occupied.add(k);
-      for (const k of residentialFootprint(cand.r, cand.c, cand.rows, cand.cols)) occupied.add(k);
-      residentials.push({ r: cand.r, c: cand.c, rows: cand.rows, cols: cand.cols });
+      for (const k of residentialFootprint(candidate.r, candidate.c, candidate.rows, candidate.cols)) occupied.add(k);
+      residentials.push({ r: candidate.r, c: candidate.c, rows: candidate.rows, cols: candidate.cols });
       residentialTypeIndices.push(candidateTypeIndex);
       populations.push(addPop);
       if (useTypes && remainingAvail && candidateTypeIndex >= 0) remainingAvail[candidateTypeIndex]--;
-      improved = true;
-      break;
+      continue;
     }
-    if (!improved) break;
+
+    if (bestMove) {
+      const currentResidential = residentials[bestMove.residentialIndex];
+      for (const k of residentialFootprint(
+        currentResidential.r,
+        currentResidential.c,
+        currentResidential.rows,
+        currentResidential.cols
+      )) occupied.delete(k);
+      if (useTypes && remainingAvail && bestMove.currentTypeIndex >= 0) remainingAvail[bestMove.currentTypeIndex]++;
+      ensureBuildingConnectedToRoads(
+        G,
+        roads,
+        occupied,
+        bestMove.candidate.r,
+        bestMove.candidate.c,
+        bestMove.candidate.rows,
+        bestMove.candidate.cols
+      );
+      for (const k of roads) occupied.add(k);
+      for (const k of residentialFootprint(
+        bestMove.candidate.r,
+        bestMove.candidate.c,
+        bestMove.candidate.rows,
+        bestMove.candidate.cols
+      )) occupied.add(k);
+      if (useTypes && remainingAvail && bestMove.candidateTypeIndex >= 0) remainingAvail[bestMove.candidateTypeIndex]--;
+      residentials[bestMove.residentialIndex] = {
+        r: bestMove.candidate.r,
+        c: bestMove.candidate.c,
+        rows: bestMove.candidate.rows,
+        cols: bestMove.candidate.cols,
+      };
+      residentialTypeIndices[bestMove.residentialIndex] = bestMove.candidateTypeIndex;
+      populations[bestMove.residentialIndex] = bestMove.newPop;
+      totalPopulation = totalPopulation - bestMove.currentPop + bestMove.newPop;
+      continue;
+    }
   }
   return totalPopulation;
 }

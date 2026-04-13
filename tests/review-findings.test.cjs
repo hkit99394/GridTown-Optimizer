@@ -1,7 +1,36 @@
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const vm = require("node:vm");
 
 const { solve } = require("../dist/index.js");
 const { evaluateLayout } = require("../dist/evaluator.js");
+const { buildManualLayoutResponse } = require("../dist/webServerHttp.js");
+
+function loadPlannerSharedModule() {
+  const source = fs.readFileSync(path.resolve(__dirname, "../web/plannerShared.js"), "utf8");
+  const context = {
+    window: {
+      setTimeout,
+      clearTimeout,
+    },
+    JSON,
+    Math,
+    Date,
+    Array,
+    Object,
+    Number,
+    String,
+    Boolean,
+    RegExp,
+    Set,
+    Map,
+    Promise,
+  };
+  vm.createContext(context);
+  vm.runInContext(source, context);
+  return context.window.CityBuilderShared;
+}
 
 function testDistinctResidentialTypes() {
   const grid = [
@@ -136,11 +165,114 @@ function testIndexImportHasNoSideEffects() {
   }
 }
 
+function testPlannerServiceAvailabilityRoundTrip() {
+  const plannerShared = loadPlannerSharedModule();
+  const serialized = plannerShared.serializeServiceTypeForCatalog({
+    name: "Health Clinic",
+    rows: 2,
+    cols: 2,
+    bonus: 40,
+    range: 1,
+    avail: 3,
+  });
+  assert.equal(serialized.avail, "3");
+
+  const parsed = plannerShared.parseServiceCatalogEntry(serialized, 0);
+  assert.equal(parsed.avail, 3);
+
+  const imported = plannerShared.parseCatalogImportText(
+    ["Name\tBonus\tSize\tEffective\tAvail", "Health Clinic\t40\t2x2\t4x4\t3"].join("\n")
+  );
+  assert.equal(imported.services.length, 1);
+  assert.equal(imported.services[0].avail, "3");
+
+  const importedLegacy = plannerShared.parseCatalogImportText(
+    ["Name\tBonus\tSize\tEffective", "Health Clinic\t40\t2x2\t4x4"].join("\n")
+  );
+  assert.equal(importedLegacy.services[0].avail, "1");
+}
+
+function testManualLayoutResponseClearsSolverMetadata() {
+  const response = buildManualLayoutResponse(
+    [
+      [1, 1],
+      [1, 1],
+    ],
+    {
+      basePop: 10,
+      maxPop: 10,
+      availableBuildings: { residentials: 0, services: 0 },
+    },
+    {
+      optimizer: "cp-sat",
+      cpSatStatus: "OPTIMAL",
+      cpSatObjectivePolicy: {
+        populationWeight: 5,
+        maxTieBreakPenalty: 4,
+        summary: "maximize population, then minimize roads + services",
+      },
+      cpSatTelemetry: {
+        solveWallTimeSeconds: 1,
+        userTimeSeconds: 1,
+        solutionCount: 1,
+        incumbentObjectiveValue: 0,
+        bestObjectiveBound: 0,
+        objectiveGap: 0,
+        incumbentPopulation: 0,
+        bestPopulationUpperBound: 0,
+        populationGapUpperBound: 0,
+        lastImprovementAtSeconds: 0,
+        secondsSinceLastImprovement: 0,
+        numBranches: 0,
+        numConflicts: 0,
+      },
+      cpSatPortfolio: {
+        workerCount: 1,
+        selectedWorkerIndex: 0,
+        workers: [
+          {
+            workerIndex: 0,
+            randomSeed: 1,
+            randomizeSearch: true,
+            numWorkers: 1,
+            status: "OPTIMAL",
+            feasible: true,
+            totalPopulation: 0,
+          },
+        ],
+      },
+      stoppedByUser: true,
+      roads: new Set(["0,0", "0,1"]),
+      services: [],
+      serviceTypeIndices: [],
+      servicePopulationIncreases: [],
+      residentials: [],
+      residentialTypeIndices: [],
+      populations: [],
+      totalPopulation: 0,
+    }
+  );
+
+  assert.equal(response.solution.optimizer, undefined);
+  assert.equal(response.solution.manualLayout, true);
+  assert.equal(response.solution.cpSatStatus, undefined);
+  assert.equal(response.solution.cpSatObjectivePolicy, undefined);
+  assert.equal(response.solution.cpSatTelemetry, undefined);
+  assert.equal(response.solution.cpSatPortfolio, undefined);
+  assert.equal(response.solution.stoppedByUser, false);
+  assert.equal(response.stats.optimizer, undefined);
+  assert.equal(response.stats.manualLayout, true);
+  assert.equal(response.stats.cpSatStatus, null);
+  assert.equal(response.stats.stoppedByUser, false);
+}
+
 testDistinctResidentialTypes();
 testNoRowZeroRoadThrows();
 testEvaluatorHonorsCountCaps();
 testResidentialCapStillAppliesWithTypedResidentials();
 testNamedBuildingTypesAreAccepted();
 testIndexImportHasNoSideEffects();
+testPlannerServiceAvailabilityRoundTrip();
+testManualLayoutResponseClearsSolverMetadata();
 
 console.log("All review finding regression tests passed.");

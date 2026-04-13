@@ -135,6 +135,9 @@ async function testLayoutEvaluateRoute(handler) {
   assert.equal(result.payload.ok, true);
   assert.equal(result.payload.validation.valid, true);
   assert.equal(result.payload.stats.totalPopulation, 100);
+  assert.equal(result.payload.solution.manualLayout, true);
+  assert.equal(result.payload.stats.manualLayout, true);
+  assert.equal(result.payload.stats.cpSatStatus, null);
 }
 
 async function testBackgroundSolveRoutes(handler) {

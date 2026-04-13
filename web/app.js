@@ -14,18 +14,18 @@ const SAMPLE_GRID = [
 ];
 
 const DEFAULT_SERVICE_TYPES = [
-  { name: "Elementary School", bonus: "126", size: "2x2", effective: "12x12" },
-  { name: "Town Bank", bonus: "224", size: "2x2", effective: "12x12" },
-  { name: "Health Clinic", bonus: "108", size: "2x2", effective: "10x10" },
-  { name: "Gas Station", bonus: "118", size: "2x2", effective: "12x12" },
-  { name: "Townsquare", bonus: "115", size: "2x2", effective: "10x10" },
-  { name: "Fire Station", bonus: "204", size: "2x2", effective: "10x10" },
-  { name: "Mining Museum", bonus: "224", size: "2x2", effective: "12x12" },
-  { name: "Square", bonus: "364", size: "2x3", effective: "10x11" },
-  { name: "Park", bonus: "215", size: "2x3", effective: "12x13" },
-  { name: "Congress Center", bonus: "270", size: "4x2", effective: "14x12" },
-  { name: "Cinema", bonus: "189", size: "2x2", effective: "10x10" },
-  { name: "Supermarket", bonus: "386", size: "3x2", effective: "13x12" },
+  { name: "Elementary School", bonus: "126", size: "2x2", effective: "12x12", avail: "1" },
+  { name: "Town Bank", bonus: "224", size: "2x2", effective: "12x12", avail: "1" },
+  { name: "Health Clinic", bonus: "108", size: "2x2", effective: "10x10", avail: "1" },
+  { name: "Gas Station", bonus: "118", size: "2x2", effective: "12x12", avail: "1" },
+  { name: "Townsquare", bonus: "115", size: "2x2", effective: "10x10", avail: "1" },
+  { name: "Fire Station", bonus: "204", size: "2x2", effective: "10x10", avail: "1" },
+  { name: "Mining Museum", bonus: "224", size: "2x2", effective: "12x12", avail: "1" },
+  { name: "Square", bonus: "364", size: "2x3", effective: "10x11", avail: "1" },
+  { name: "Park", bonus: "215", size: "2x3", effective: "12x13", avail: "1" },
+  { name: "Congress Center", bonus: "270", size: "4x2", effective: "14x12", avail: "1" },
+  { name: "Cinema", bonus: "189", size: "2x2", effective: "10x10", avail: "1" },
+  { name: "Supermarket", bonus: "386", size: "3x2", effective: "13x12", avail: "1" },
 ];
 
 const DEFAULT_RESIDENTIAL_TYPES = [
@@ -542,7 +542,7 @@ function init() {
   });
 
   elements.addServiceTypeButton.addEventListener("click", () => {
-    state.serviceTypes.push({ name: "", bonus: "100", size: "2x2", effective: "10x10" });
+    state.serviceTypes.push({ name: "", bonus: "100", size: "2x2", effective: "10x10", avail: "1" });
     workbenchController.renderServiceTypes();
     requestBuilderController.updatePayloadPreview();
   });

@@ -94,6 +94,7 @@ export function buildSolveResponse(grid: Grid, params: SolverParams, solution: S
     },
     stats: {
       optimizer: solution.optimizer,
+      manualLayout: Boolean(solution.manualLayout),
       cpSatStatus: solution.cpSatStatus ?? null,
       stoppedByUser: Boolean(solution.stoppedByUser),
       totalPopulation: solution.totalPopulation,
@@ -108,7 +109,12 @@ export function buildManualLayoutResponse(grid: Grid, params: SolverParams, solu
   const initialValidation = buildSolveResponsePayload(grid, params, solution);
   const normalizedSolution: Solution = {
     ...solution,
+    optimizer: undefined,
+    manualLayout: true,
     cpSatStatus: undefined,
+    cpSatObjectivePolicy: undefined,
+    cpSatTelemetry: undefined,
+    cpSatPortfolio: undefined,
     stoppedByUser: false,
     populations: [...initialValidation.recomputedPopulations],
     totalPopulation: initialValidation.recomputedTotalPopulation,
@@ -127,6 +133,7 @@ export function buildManualLayoutResponse(grid: Grid, params: SolverParams, solu
     },
     stats: {
       optimizer: normalizedSolution.optimizer,
+      manualLayout: Boolean(normalizedSolution.manualLayout),
       cpSatStatus: normalizedSolution.cpSatStatus ?? null,
       stoppedByUser: Boolean(normalizedSolution.stoppedByUser),
       totalPopulation: normalizedSolution.totalPopulation,

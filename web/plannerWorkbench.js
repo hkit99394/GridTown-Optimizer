@@ -303,6 +303,7 @@
           <td><input type="number" min="0" step="1" value="${escapeHtml(entry.bonus)}" data-collection="serviceTypes" data-index="${index}" data-field="bonus" /></td>
           <td><input type="text" value="${escapeHtml(entry.size)}" data-collection="serviceTypes" data-index="${index}" data-field="size" /></td>
           <td><input type="text" value="${escapeHtml(entry.effective)}" data-collection="serviceTypes" data-index="${index}" data-field="effective" /></td>
+          <td><input type="number" min="0" step="1" value="${escapeHtml(entry.avail ?? "1")}" data-collection="serviceTypes" data-index="${index}" data-field="avail" /></td>
           <td class="catalog-action-cell"><button type="button" class="button ghost compact" data-action="remove-service" data-index="${index}">Remove</button></td>
         </tr>
       `).join("");
@@ -317,6 +318,7 @@
                 <th>Bonus</th>
                 <th>Size</th>
                 <th>Effective</th>
+                <th>Avail</th>
                 <th>Actions</th>
               </tr>
             </thead>

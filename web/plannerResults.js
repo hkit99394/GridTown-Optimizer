@@ -50,6 +50,13 @@
       return { r, c };
     }
 
+    function getTypeTotalAvailable(type, isService) {
+      const fallback = isService ? 1 : 0;
+      const rawAvailable = type?.avail ?? fallback;
+      const parsedAvailable = Number(rawAvailable);
+      return Number.isFinite(parsedAvailable) ? Math.max(0, Math.floor(parsedAvailable)) : fallback;
+    }
+
     function getSelectedPlacementLabel(solution = state.result?.solution) {
       const selected = getSelectedMapPlacement(solution);
       if (!selected) return "";
@@ -493,8 +500,7 @@
         isService ? solution?.serviceTypeIndices : solution?.residentialTypeIndices,
         types.length
       );
-      const parsedAvailable = Number(types[typeIndex]?.avail ?? 0);
-      const totalAvailable = Number.isFinite(parsedAvailable) ? Math.max(0, Math.floor(parsedAvailable)) : 0;
+      const totalAvailable = getTypeTotalAvailable(types[typeIndex], isService);
       const used = usedCounts[typeIndex] ?? 0;
       return {
         totalAvailable,
@@ -592,12 +598,11 @@
 
       const remainingEntries = Array.isArray(types)
         ? types.flatMap((type, index) => {
-          const parsedAvailable = Number(type?.avail ?? 0);
-          const totalAvailable = Number.isFinite(parsedAvailable) ? Math.max(0, Math.floor(parsedAvailable)) : 0;
+          const isService = labelPrefix === "Service";
+          const totalAvailable = getTypeTotalAvailable(type, isService);
           const used = usedCounts[index] ?? 0;
           const remaining = Math.max(0, totalAvailable - used);
           if (!remaining) return [];
-          const isService = labelPrefix === "Service";
           return [{
             name: type?.name || `${labelPrefix} Type ${index + 1}`,
             kind: isService ? "service" : "residential",
@@ -894,6 +899,7 @@
 
       const { solution, stats, validation } = state.result;
       state.selectedMapBuilding = getSelectedMapPlacement(solution)?.kind ? state.selectedMapBuilding : null;
+      const manualLayout = Boolean(state.layoutEditor.edited || solution.manualLayout || stats.manualLayout);
       const stoppedByUser = Boolean(solution.stoppedByUser || stats.stoppedByUser);
       const liveSnapshot = Boolean(state.isSolving && state.resultIsLiveSnapshot);
       const solvedGrid = state.resultContext?.grid ?? state.grid;
@@ -906,12 +912,12 @@
         elements.validationNotice.textContent = validation.valid
           ? "Showing the best validated layout found so far while the solver keeps running. The first live capture appears as soon as an incumbent is available, then refreshes every 1 minute."
           : `The latest running snapshot needs review: ${validation.errors.join(" ")}`;
-      } else if (state.layoutEditor.edited) {
-        elements.resultBadge.textContent = validation.valid ? "Edited" : "Edited review";
+      } else if (manualLayout) {
+        elements.resultBadge.textContent = validation.valid ? "Manual" : "Manual review";
         elements.resultBadge.className = `result-badge ${validation.valid ? "success" : "error"}`;
         elements.validationNotice.className = `notice ${validation.valid ? "info" : "error"}`;
         elements.validationNotice.textContent = validation.valid
-          ? "The manual layout edit passed validation for the current grid and settings."
+          ? "This layout was manually edited and revalidated for the current grid and settings."
           : validation.errors.join(" ");
       } else {
         elements.resultBadge.textContent = validation.valid ? (stoppedByUser ? "Stopped" : "Validated") : "Needs review";
@@ -931,7 +937,7 @@
       elements.resultServiceCount.textContent = String(stats.serviceCount);
       elements.resultResidentialCount.textContent = String(stats.residentialCount);
       elements.resultElapsed.textContent = formatElapsedTime(state.resultElapsedMs);
-      elements.resultSolverStatus.textContent = state.layoutEditor.edited
+      elements.resultSolverStatus.textContent = manualLayout
         ? "manual edit"
         : liveSnapshot
           ? `${stats.cpSatStatus || getOptimizerLabel(stats.optimizer)} (live)`

@@ -54,6 +54,7 @@
       bonus: String(serviceType?.bonus ?? ""),
       size: `${serviceType?.rows ?? 0}x${serviceType?.cols ?? 0}`,
       effective: `${(serviceType?.rows ?? 0) + (serviceType?.range ?? 0) * 2}x${(serviceType?.cols ?? 0) + (serviceType?.range ?? 0) * 2}`,
+      avail: String(serviceType?.avail ?? 1),
     };
   }
 
@@ -280,6 +281,7 @@
       const bonusIndex = header.indexOf("bonus");
       const sizeIndex = header.indexOf("size");
       const effectiveIndex = header.indexOf("effective");
+      const availIndex = header.indexOf("avail");
       return {
         kind: "services",
         rows: rows.map((cells) => ({
@@ -287,6 +289,7 @@
           bonus: cells[bonusIndex] ?? "",
           size: cells[sizeIndex] ?? "",
           effective: cells[effectiveIndex] ?? "",
+          avail: availIndex >= 0 ? (cells[availIndex] ?? "") : "1",
         })),
       };
     }
@@ -347,6 +350,7 @@
     const [effectiveRows, effectiveCols] = parsePair(entry.effective, "x", `Service ${index + 1} effective area`);
     const rangeByRows = (effectiveRows - rows) / 2;
     const rangeByCols = (effectiveCols - cols) / 2;
+    const rawAvail = String(entry.avail ?? "").trim();
     if (!Number.isInteger(rangeByRows) || !Number.isInteger(rangeByCols) || rangeByRows !== rangeByCols || rangeByRows < 0) {
       throw new Error(
         `Service ${index + 1}${name ? ` (${name})` : ""} needs an Effective value that matches Size with the same outward range.`
@@ -358,7 +362,7 @@
       cols,
       bonus: parseIntegerField(entry.bonus, `Service ${index + 1} bonus`, 0),
       range: rangeByRows,
-      avail: 1,
+      avail: rawAvail ? parseIntegerField(rawAvail, `Service ${index + 1} avail`, 0) : 1,
       allowRotation: true,
     };
   }

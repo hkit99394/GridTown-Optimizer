@@ -109,38 +109,35 @@ Targets:
 - stop after no improvement for `T` seconds, not only after `N` stale neighborhoods
 - split budget more intentionally between seeding and repair
 
-### 5. Expose richer CP-SAT search parameters
+### 5. Surface shipped CP-SAT controls in planner presets and job APIs
 
 Expected impact: Medium-high
 
 Why:
-- before building portfolio or distributed orchestration, we should use more of the official CP-SAT search surface
+- richer CP-SAT search controls already exist in the exact solver, but they are still hard to use from the planner and default runtime policy
+- quality-per-minute depends on exposing the right exact knobs at the workflow layer, not just in the backend contract
 
-Candidates:
+Concrete work:
 - relative / absolute gap limits
-- worker allocation controls
-- shared-tree style settings where stable
+- worker allocation and seed controls
+- recommended exact-run presets in the planner
 - safer LNS-related CP-SAT settings that do not reintroduce the local crash path
 
 ## Later Priorities
 
-### 6. Add single-machine CP-SAT portfolio search
+### 6. Expose shipped single-machine CP-SAT portfolio search in the planner
 
 Expected impact: Medium-high
 
 Why:
-- several short CP-SAT jobs with different seeds / parameter mixes may beat one long run
-- this is still much cheaper than true distributed solving
-
-Important prerequisite:
-- this needs a portfolio coordinator, not just more workers
-- today one request maps to one background solve handle, so `shared best incumbent` and aggregated progress are not available yet
+- several short CP-SAT jobs with different seeds / parameter mixes can beat one long run
+- the exact solver and benchmark harness already support single-machine portfolio search, but the planner and background-job surfaces do not present it cleanly yet
 
 Planned shape:
 - 2-4 parallel workers
-- shared best incumbent at the coordinator layer
-- stop laggards on timeout or no-improvement
-- expose aggregated best result and worker progress in the API
+- planner-visible presets and saved settings
+- aggregated best result and worker progress in the API
+- optional coordinator-side stop rules for lagging workers
 
 ### 7. Split the greedy solver into reusable phases
 
@@ -162,7 +159,7 @@ Expected impact: Low near-term, high implementation cost
 
 Why:
 - it is the most complex path
-- the likely better near-term return is still `LNS + better runtime policy + portfolio CP-SAT`
+- the likely better near-term return is still `LNS + better runtime policy + exposing shipped portfolio CP-SAT`
 
 ## LNS Follow-Up Plan
 

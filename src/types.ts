@@ -341,6 +341,8 @@ export interface SolverParams {
 
 export interface Solution {
   optimizer?: OptimizerName;
+  /** True when the layout was manually edited and then revalidated outside a solver run. */
+  manualLayout?: boolean;
   /** CP-SAT backend status such as OPTIMAL or FEASIBLE; omitted for non-CP-SAT solvers. */
   cpSatStatus?: string;
   /** Explicit CP-SAT objective metadata when the solution came from the CP-SAT backend. */
@@ -394,6 +396,7 @@ export interface SolveRequestPayload {
 /** Solver summary returned by the local web server for display and persistence. */
 export interface SolveResponseStats {
   optimizer?: OptimizerName;
+  manualLayout: boolean;
   cpSatStatus: string | null;
   stoppedByUser: boolean;
   totalPopulation: number;

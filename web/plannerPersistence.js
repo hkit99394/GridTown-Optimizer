@@ -106,10 +106,16 @@
       state.grid = isGridLike(snapshot?.grid) ? cloneGrid(snapshot.grid) : cloneGrid(sampleGrid);
       state.optimizer = normalizeOptimizer(snapshot?.optimizer);
       state.serviceTypes = Array.isArray(snapshot?.serviceTypes)
-        ? snapshot.serviceTypes.map((entry) => ({ ...entry }))
+        ? snapshot.serviceTypes.map((entry) => ({
+          avail: entry?.avail ?? "1",
+          ...entry,
+        }))
         : defaultServiceTypes.map((entry) => ({ ...entry }));
       state.residentialTypes = Array.isArray(snapshot?.residentialTypes)
-        ? snapshot.residentialTypes.map((entry) => ({ ...entry }))
+        ? snapshot.residentialTypes.map((entry) => ({
+          avail: entry?.avail ?? "1",
+          ...entry,
+        }))
         : defaultResidentialTypes.map((entry) => ({ ...entry }));
       state.availableBuildings = {
         services: snapshot?.availableBuildings?.services ?? "",

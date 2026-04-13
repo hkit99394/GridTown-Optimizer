@@ -29,6 +29,7 @@ from cp_sat_runtime_support import (
     CpSatSolveResult,
     CpSatTelemetry,
     CpSatTelemetryCollector,
+    build_snapshot_response,
     build_solution_response,
     collect_cp_sat_telemetry,
     portfolio_worker_summary_payload,
@@ -96,16 +97,6 @@ class GateAccessAnalysis:
 def fail(message: str) -> None:
     print(message, file=sys.stderr)
     raise SystemExit(1)
-
-
-def status_name_for(status: int) -> str:
-    return {
-        cp_model.OPTIMAL: "OPTIMAL",
-        cp_model.FEASIBLE: "FEASIBLE",
-        cp_model.INFEASIBLE: "INFEASIBLE",
-        cp_model.MODEL_INVALID: "MODEL_INVALID",
-        cp_model.UNKNOWN: "UNKNOWN",
-    }.get(status, f"STATUS_{status}")
 
 
 def collect_solution(value_reader, built):
@@ -1262,18 +1253,6 @@ def configure_solver_parameters(solver, cp_sat_options):
     solver.parameters.log_search_progress = bool(cp_sat_options.get("logSearchProgress", False))
 
 
-def parse_hint_cell_key(key):
-    if not isinstance(key, str):
-        return None
-    parts = key.split(",")
-    if len(parts) != 2:
-        return None
-    try:
-        return (int(parts[0]), int(parts[1]))
-    except ValueError:
-        return None
-
-
 def select_hint_candidate_indices(hint_candidates, candidates, kind):
     selected_indices = set()
     for hint in hint_candidates or []:
@@ -1422,11 +1401,13 @@ def solve_single_cp_sat(grid, params, cp_sat_options, progress_emitter=None):
         )
 
     if stopped_by_user and telemetry_collector.latest_solution is not None:
-        response = {
-            **telemetry_collector.latest_solution,
-            "status": "FEASIBLE",
-            "stoppedByUser": True,
-        }
+        response = build_snapshot_response(
+            telemetry_collector.latest_solution,
+            built,
+            "FEASIBLE",
+            telemetry,
+            stopped_by_user=True,
+        )
         objective_value = None
         if telemetry.incumbent_objective_value is not None:
             objective_value = int(round(telemetry.incumbent_objective_value))
@@ -1465,14 +1446,33 @@ def portfolio_worker_task(grid, params, worker_option, worker_index):
 
 def solve_cp_sat_portfolio(grid, params, cp_sat_options, progress_emitter=None):
     worker_options = build_portfolio_worker_options(cp_sat_options)
+    snapshot_file_path = cp_sat_options.get("snapshotFilePath")
+    best_snapshot_result = None
+
+    def on_worker_result(result):
+        nonlocal best_snapshot_result
+        if progress_emitter is not None:
+            progress_emitter(progress_payload("portfolio-worker-complete", worker=result.summary))
+        if snapshot_file_path and result.solve_result.response is not None:
+            candidate_is_better = best_snapshot_result is None
+            if not candidate_is_better:
+                candidate_is_better = select_best_portfolio_result([best_snapshot_result, result]) is result
+            if candidate_is_better:
+                best_snapshot_result = result
+                write_snapshot(
+                    snapshot_file_path,
+                    {
+                        **result.solve_result.response,
+                        "stoppedByUser": False,
+                    },
+                )
+
     results = run_portfolio_workers(
         grid,
         params,
         worker_options,
         portfolio_worker_task,
-        on_result=(lambda result: progress_emitter(progress_payload("portfolio-worker-complete", worker=result.summary)))
-        if progress_emitter is not None
-        else None,
+        on_result=on_worker_result,
     )
     best_result = select_best_portfolio_result(results)
     if best_result is None:

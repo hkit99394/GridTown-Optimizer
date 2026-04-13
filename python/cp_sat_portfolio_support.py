@@ -19,6 +19,7 @@ def build_portfolio_worker_options(cp_sat_options):
     for seed in seeds:
         worker_option = dict(cp_sat_options)
         worker_option.pop("portfolio", None)
+        worker_option.pop("snapshotFilePath", None)
         worker_option["numWorkers"] = int(portfolio_options.get("perWorkerNumWorkers") or 1)
         worker_option["randomSeed"] = int(seed)
         worker_option["randomizeSearch"] = randomize_search

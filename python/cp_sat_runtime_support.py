@@ -283,3 +283,13 @@ def build_solution_response(solver, built, status_name: str, telemetry: CpSatTel
         "objectivePolicy": objective_policy_payload(built.objective_policy),
         "telemetry": telemetry_payload(telemetry),
     }
+
+
+def build_snapshot_response(snapshot_solution: dict[str, Any], built, status_name: str, telemetry: CpSatTelemetry, *, stopped_by_user: bool):
+    return {
+        **snapshot_solution,
+        "status": status_name,
+        "stoppedByUser": stopped_by_user,
+        "objectivePolicy": objective_policy_payload(built.objective_policy),
+        "telemetry": telemetry_payload(telemetry),
+    }

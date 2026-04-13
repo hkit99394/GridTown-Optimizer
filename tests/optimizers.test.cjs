@@ -464,6 +464,76 @@ print(json.dumps({
   assert.equal(payload.total_roads_hinted, 2);
 }
 
+function maybeTestCpSatSnapshotResponseHelpers() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const scriptPath = path.resolve(__dirname, "../python/cp_sat_runtime_support.py");
+  const command = `
+import importlib.util
+import json
+
+spec = importlib.util.spec_from_file_location("cp_sat_runtime_support", ${JSON.stringify(scriptPath)})
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+class Policy:
+    population_weight = 17
+    max_tie_break_penalty = 16
+    tie_break_summary = "maximize population, then minimize roads + services"
+
+class Built:
+    objective_policy = Policy()
+
+telemetry = module.CpSatTelemetry(
+    solve_wall_time_seconds=1.25,
+    user_time_seconds=1.2,
+    solution_count=3,
+    incumbent_objective_value=42.0,
+    best_objective_bound=45.0,
+    objective_gap=3.0,
+    incumbent_population=40,
+    best_population_upper_bound=43,
+    population_gap_upper_bound=3,
+    last_improvement_at_seconds=0.8,
+    seconds_since_last_improvement=0.45,
+    num_branches=12,
+    num_conflicts=1,
+)
+
+response = module.build_snapshot_response(
+    {
+        "roads": ["0,0"],
+        "services": [],
+        "residentials": [],
+        "populations": [],
+        "totalPopulation": 40,
+    },
+    Built(),
+    "FEASIBLE",
+    telemetry,
+    stopped_by_user=True,
+)
+
+print(json.dumps(response))
+`;
+
+  const result = childProcess.spawnSync(pythonExecutable, ["-c", command], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT snapshot response helpers.");
+  }
+
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.stoppedByUser, true);
+  assert.equal(payload.totalPopulation, 40);
+  assert.equal(payload.objectivePolicy.populationWeight, 17);
+  assert.equal(payload.telemetry.incumbentPopulation, 40);
+}
+
 async function maybeTestCpSatWarmStartContinuation() {
   const pythonExecutable = resolveCpSatPython();
   if (!pythonExecutable) {
@@ -520,6 +590,8 @@ worker_options = module.build_portfolio_worker_options({
     "timeLimitSeconds": 12,
     "maxDeterministicTime": 6,
     "numWorkers": 8,
+    "stopFilePath": "/tmp/shared-stop-token",
+    "snapshotFilePath": "/tmp/shared-snapshot.json",
     "portfolio": {
         "randomSeeds": [7, 9],
         "perWorkerTimeLimitSeconds": 2,
@@ -548,6 +620,8 @@ print(json.dumps(worker_options))
       maxDeterministicTime: worker.maxDeterministicTime,
       numWorkers: worker.numWorkers,
       randomizeSearch: worker.randomizeSearch,
+      stopFilePath: worker.stopFilePath,
+      hasSnapshotFilePath: Object.prototype.hasOwnProperty.call(worker, "snapshotFilePath"),
       hasPortfolio: Object.prototype.hasOwnProperty.call(worker, "portfolio"),
     })),
     [
@@ -557,6 +631,8 @@ print(json.dumps(worker_options))
         maxDeterministicTime: 1.5,
         numWorkers: 1,
         randomizeSearch: true,
+        stopFilePath: "/tmp/shared-stop-token",
+        hasSnapshotFilePath: false,
         hasPortfolio: false,
       },
       {
@@ -565,6 +641,8 @@ print(json.dumps(worker_options))
         maxDeterministicTime: 1.5,
         numWorkers: 1,
         randomizeSearch: true,
+        stopFilePath: "/tmp/shared-stop-token",
+        hasSnapshotFilePath: false,
         hasPortfolio: false,
       },
     ]
@@ -1922,6 +2000,7 @@ async function main() {
   maybeTestCpSatObjectivePolicyHelpers();
   maybeTestCpSatRuntimeOptionHelpers();
   maybeTestCpSatWarmStartHelpers();
+  maybeTestCpSatSnapshotResponseHelpers();
   maybeTestCpSatPortfolioOptionHelpers();
   testCpSatPortfolioExecutorFallbackHelpers();
   maybeTestCpSatPopulationUpperBoundHelpers();

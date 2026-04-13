@@ -80,6 +80,15 @@ export interface ServiceTypeSetting {
 
 export type OptimizerName = "greedy" | "cp-sat" | "lns";
 
+/** Stable semantic key for a road cell in persisted snapshots: "r,c". */
+export type PersistedRoadKey = string;
+
+/** Stable semantic key for a hinted service candidate: "service:typeIndex:r:c:rows:cols". */
+export type PersistedServiceCandidateKey = string;
+
+/** Stable semantic key for a hinted residential candidate: "residential:typeIndex:r:c:rows:cols". */
+export type PersistedResidentialCandidateKey = string;
+
 export interface CpSatNeighborhoodWindow {
   top: number;
   left: number;
@@ -87,19 +96,45 @@ export interface CpSatNeighborhoodWindow {
   cols: number;
 }
 
+export interface CpSatWarmStartServicePlacement extends ServicePlacement {
+  typeIndex?: number;
+  bonus?: number;
+}
+
+export interface CpSatWarmStartResidentialPlacement extends ResidentialPlacement {
+  typeIndex?: number;
+  population?: number;
+}
+
+/** Typed service placement saved specifically for rebuilding CP-SAT solution hints. */
+export interface CpSatContinuationHintedServicePlacement extends ServicePlacement {
+  typeIndex: number;
+  bonus: number;
+}
+
+/** Typed residential placement saved specifically for rebuilding CP-SAT solution hints. */
+export interface CpSatContinuationHintedResidentialPlacement extends ResidentialPlacement {
+  typeIndex: number;
+  population: number;
+}
+
 export interface CpSatWarmStartHint {
   sourceName?: string;
   modelFingerprint?: string;
-  roadKeys?: string[];
+  roadKeys?: PersistedRoadKey[];
   serviceCandidateKeys?: PersistedServiceCandidateKey[];
   residentialCandidateKeys?: PersistedResidentialCandidateKey[];
+  roads?: PersistedRoadKey[];
+  services?: CpSatWarmStartServicePlacement[];
+  residentials?: CpSatWarmStartResidentialPlacement[];
   solution?: {
-    roads?: string[];
+    roads?: PersistedRoadKey[];
     services?: CpSatContinuationHintedServicePlacement[];
     residentials?: CpSatContinuationHintedResidentialPlacement[];
     populations?: number[];
     totalPopulation?: number;
   };
+  totalPopulation?: number;
   objectiveLowerBound?: number;
   preferStrictImprove?: boolean;
   repairHint?: boolean;
@@ -109,6 +144,74 @@ export interface CpSatWarmStartHint {
   fixOutsideNeighborhoodToHintedValue?: boolean;
 }
 
+export interface CpSatPortfolioOptions {
+  /** Number of independent CP-SAT workers to launch when randomSeeds is not provided. */
+  workerCount?: number;
+  /** Explicit per-worker random seeds. Overrides workerCount when provided. */
+  randomSeeds?: number[];
+  /** Per-worker time limit override. Defaults to the outer timeLimitSeconds. */
+  perWorkerTimeLimitSeconds?: number;
+  /** Per-worker deterministic time override. Defaults to the outer maxDeterministicTime. */
+  perWorkerMaxDeterministicTime?: number;
+  /** Per-worker CP-SAT internal worker count. Defaults to 1 to avoid oversubscription. */
+  perWorkerNumWorkers?: number;
+  /** Override randomized search for every portfolio worker. Defaults to true. */
+  randomizeSearch?: boolean;
+}
+
+export interface CpSatObjectivePolicy {
+  populationWeight: number;
+  maxTieBreakPenalty: number;
+  summary: string;
+}
+
+export interface CpSatTelemetry {
+  solveWallTimeSeconds: number;
+  userTimeSeconds: number;
+  solutionCount: number;
+  incumbentObjectiveValue: number | null;
+  bestObjectiveBound: number | null;
+  objectiveGap: number | null;
+  incumbentPopulation: number | null;
+  bestPopulationUpperBound: number | null;
+  populationGapUpperBound: number | null;
+  lastImprovementAtSeconds: number | null;
+  secondsSinceLastImprovement: number | null;
+  numBranches: number;
+  numConflicts: number;
+}
+
+export interface CpSatPortfolioWorkerSummary {
+  workerIndex: number;
+  randomSeed: number | null;
+  randomizeSearch: boolean;
+  numWorkers: number;
+  status: string;
+  feasible: boolean;
+  totalPopulation: number | null;
+}
+
+export interface CpSatPortfolioSummary {
+  workerCount: number;
+  selectedWorkerIndex: number | null;
+  workers: CpSatPortfolioWorkerSummary[];
+}
+
+export type CpSatProgressKind = "incumbent" | "bound" | "portfolio-worker-complete";
+
+export interface CpSatProgressUpdate {
+  kind: CpSatProgressKind;
+  telemetry?: CpSatTelemetry;
+  worker?: CpSatPortfolioWorkerSummary;
+}
+
+export interface CpSatAsyncOptions {
+  /** Called as the Python backend emits live CP-SAT progress events. */
+  onProgress?: (update: CpSatProgressUpdate) => void;
+  /** Minimum interval between streamed bound updates. Defaults to 0.5 seconds. */
+  progressIntervalSeconds?: number;
+}
+
 export interface CpSatOptions {
   /** Python executable to run the CP-SAT backend. Defaults to .venv-cp-sat/bin/python when present, else python3. */
   pythonExecutable?: string;
@@ -116,20 +219,34 @@ export interface CpSatOptions {
   scriptPath?: string;
   /** Optional max solve time in seconds. When omitted, CP-SAT runs until it finishes or is stopped externally. */
   timeLimitSeconds?: number;
+  /** Max deterministic time. Useful for more reproducible benchmark comparisons. */
+  maxDeterministicTime?: number;
   /** CP-SAT worker count. Default 8. */
   numWorkers?: number;
+  /** Fixed search seed for reproducibility. */
+  randomSeed?: number;
+  /** Enable randomized search decisions. Default false. */
+  randomizeSearch?: boolean;
+  /** Relative optimality gap limit. Stop once the relative gap is at or below this value. */
+  relativeGapLimit?: number;
+  /** Absolute optimality gap limit. Stop once the absolute gap is at or below this value. */
+  absoluteGapLimit?: number;
+  /** Soft warm-start incumbent. Accepts either a serializable hint or an existing Solution. */
+  warmStartHint?: CpSatWarmStartHint | Solution;
+  /** Hard lower bound on total population for continuation runs from a known incumbent. */
+  objectiveLowerBound?: number;
+  /** Single-machine portfolio search across multiple CP-SAT workers. */
+  portfolio?: CpSatPortfolioOptions;
+  /** Emit NDJSON progress events from the Python backend. Primarily used by the async bridge. */
+  streamProgress?: boolean;
+  /** Minimum interval between streamed bound-progress updates. Defaults to 0.5 seconds when streaming is enabled. */
+  progressIntervalSeconds?: number;
   /** Emit OR-Tools search logs. Default false. */
   logSearchProgress?: boolean;
   /** Internal stop-token path used by the local web server. */
   stopFilePath?: string;
   /** Internal best-snapshot path used by the local web server. */
   snapshotFilePath?: string;
-  /** Optional CP-SAT random seed for experimentation. */
-  randomSeed?: number;
-  /** Optional CP-SAT randomize-search toggle for experimentation. */
-  randomizeSearch?: boolean;
-  /** Optional warm-start hint, including local repair windows for LNS-style runs. */
-  warmStartHint?: CpSatWarmStartHint;
 }
 
 export interface GreedyOptions {
@@ -181,9 +298,7 @@ export interface SolverParams {
   greedy?: GreedyOptions;
   /** LNS-only tuning knobs. Ignored by other backends. */
   lns?: LnsOptions;
-  /**
-   * Service types: each type has its own footprint, bonus, range, and availability.
-   */
+  /** Service types: each type has its own footprint, bonus, range, and availability. */
   serviceTypes?: ServiceTypeSetting[];
   /**
    * Residential types with rotation: each type allows (w×h) and (h×w), with per-type min, max, and avail.
@@ -209,25 +324,18 @@ export interface SolverParams {
   /** @deprecated Use availableBuildings.residentials */
   maxResidentials?: number;
   /** @deprecated Use greedy.localSearch */
-  /** Run local search to improve solution (default true) */
   localSearch?: boolean;
   /** @deprecated Use greedy.restarts */
-  /** Number of restarts with different service order; take best solution (default 1) */
   restarts?: number;
   /** @deprecated Use greedy.serviceRefineIterations */
-  /** Service-position refinement passes after restarts (default 2) */
   serviceRefineIterations?: number;
   /** @deprecated Use greedy.serviceRefineCandidateLimit */
-  /** Max service candidates considered per refinement pass (default 40) */
   serviceRefineCandidateLimit?: number;
   /** @deprecated Use greedy.exhaustiveServiceSearch */
-  /** Run exhaustive search over service layouts in top-N pool (default false) */
   exhaustiveServiceSearch?: boolean;
   /** @deprecated Use greedy.serviceExactPoolLimit */
-  /** Pool size for exhaustive service search (default 22) */
   serviceExactPoolLimit?: number;
   /** @deprecated Use greedy.serviceExactMaxCombinations */
-  /** Hard cap on evaluated service combinations (default 12000) */
   serviceExactMaxCombinations?: number;
 }
 
@@ -235,7 +343,13 @@ export interface Solution {
   optimizer?: OptimizerName;
   /** CP-SAT backend status such as OPTIMAL or FEASIBLE; omitted for non-CP-SAT solvers. */
   cpSatStatus?: string;
-  /** True when a CP-SAT run was stopped early and this solution is the best feasible result found so far. */
+  /** Explicit CP-SAT objective metadata when the solution came from the CP-SAT backend. */
+  cpSatObjectivePolicy?: CpSatObjectivePolicy;
+  /** Exact-run telemetry emitted by the CP-SAT backend when available. */
+  cpSatTelemetry?: CpSatTelemetry;
+  /** Portfolio summary when CP-SAT used multi-run portfolio search. */
+  cpSatPortfolio?: CpSatPortfolioSummary;
+  /** True when a run was stopped early and this solution is the best feasible result found so far. */
   stoppedByUser?: boolean;
   roads: Set<string>;
   services: ServicePlacement[];
@@ -306,15 +420,6 @@ export interface SolveResponsePayload {
   message?: string;
 }
 
-/** Stable semantic key for a road cell in persisted snapshots: "r,c". */
-export type PersistedRoadKey = string;
-
-/** Stable semantic key for a hinted service candidate: "service:typeIndex:r:c:rows:cols". */
-export type PersistedServiceCandidateKey = string;
-
-/** Stable semantic key for a hinted residential candidate: "residential:typeIndex:r:c:rows:cols". */
-export type PersistedResidentialCandidateKey = string;
-
 /**
  * Full request model used to continue a saved CP-SAT solve later.
  * This is stricter than SolveRequestPayload because continuation only makes
@@ -358,18 +463,6 @@ export interface CpSatContinuationIncumbent {
   };
   elapsedMs: number;
   stoppedByUser: boolean;
-}
-
-/** Typed service placement saved specifically for rebuilding CP-SAT solution hints. */
-export interface CpSatContinuationHintedServicePlacement extends ServicePlacement {
-  typeIndex: number;
-  bonus: number;
-}
-
-/** Typed residential placement saved specifically for rebuilding CP-SAT solution hints. */
-export interface CpSatContinuationHintedResidentialPlacement extends ResidentialPlacement {
-  typeIndex: number;
-  population: number;
 }
 
 /** Saved best-so-far assignment used as a warm start for a future CP-SAT run. */

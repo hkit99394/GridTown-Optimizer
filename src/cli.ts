@@ -4,7 +4,7 @@
 
 import type { Grid, OptimizerName } from "./types.js";
 import { normalizeServicePlacement } from "./buildings.js";
-import { formatSolutionMap, solve, validateSolutionMap } from "./index.js";
+import { formatSolutionMap, solveAsync, validateSolutionMap } from "./index.js";
 
 const DEFAULT_PARAMS = {
   serviceTypes: [
@@ -44,7 +44,7 @@ function readCliOptimizer(): OptimizerName {
   return "greedy";
 }
 
-function runExample(): void {
+async function runExample(): Promise<void> {
   const optimizer = readCliOptimizer();
   const grid: Grid = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -62,12 +62,58 @@ function runExample(): void {
   ];
 
   const params = { ...DEFAULT_PARAMS, optimizer };
-  const solution = solve(grid, params);
+  const solution = await solveAsync(
+    grid,
+    params,
+    optimizer === "cp-sat"
+      ? {
+          onProgress: (update) => {
+            if (update.kind === "portfolio-worker-complete" && update.worker) {
+              console.log(
+                "[CP-SAT progress]",
+                `worker=${update.worker.workerIndex}`,
+                `status=${update.worker.status}`,
+                `population=${update.worker.totalPopulation ?? "n/a"}`
+              );
+              return;
+            }
+            if (!update.telemetry) {
+              return;
+            }
+            console.log(
+              "[CP-SAT progress]",
+              `kind=${update.kind}`,
+              `wall=${update.telemetry.solveWallTimeSeconds.toFixed(3)}s`,
+              `pop=${update.telemetry.incumbentPopulation ?? "n/a"}`,
+              `bound=${update.telemetry.bestPopulationUpperBound ?? "n/a"}`,
+              `gap=${update.telemetry.populationGapUpperBound ?? "n/a"}`
+            );
+          },
+        }
+      : undefined
+  );
   const validation = validateSolutionMap({ grid, solution, params });
 
   console.log("=== City Builder Solution ===\n");
   console.log("Optimizer:", solution.optimizer ?? optimizer);
   if (solution.cpSatStatus) console.log("CP-SAT status:", solution.cpSatStatus);
+  if (solution.cpSatObjectivePolicy) console.log("CP-SAT objective:", solution.cpSatObjectivePolicy.summary);
+  if (solution.cpSatTelemetry) {
+    console.log(
+      "CP-SAT telemetry:",
+      `wall=${solution.cpSatTelemetry.solveWallTimeSeconds.toFixed(3)}s,`,
+      `bestBound=${solution.cpSatTelemetry.bestPopulationUpperBound},`,
+      `gap=${solution.cpSatTelemetry.populationGapUpperBound},`,
+      `lastImprovementLag=${solution.cpSatTelemetry.secondsSinceLastImprovement?.toFixed(3)}s`
+    );
+  }
+  if (solution.cpSatPortfolio) {
+    console.log(
+      "CP-SAT portfolio:",
+      `workers=${solution.cpSatPortfolio.workerCount},`,
+      `selected=${solution.cpSatPortfolio.selectedWorkerIndex}`
+    );
+  }
   console.log("Total population:", solution.totalPopulation);
   console.log("Roads:", solution.roads.size, "cells");
   console.log("Services:", solution.services.length);
@@ -92,4 +138,7 @@ function runExample(): void {
   console.log(formatSolutionMap(grid, solution));
 }
 
-runExample();
+void runExample().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

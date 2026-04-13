@@ -2,10 +2,18 @@
  * Public library entry point.
  */
 
-export { solve } from "./solve.js";
+export { solve, solveAsync } from "./solve.js";
 export { solveGreedy } from "./solver.js";
-export { solveCpSat } from "./cpSatSolver.js";
+export { solveCpSat, solveCpSatAsync, startCpSatSolve } from "./cpSatSolver.js";
 export { solveLns } from "./lnsSolver.js";
+export {
+  DEFAULT_CP_SAT_BENCHMARK_CORPUS,
+  DEFAULT_CP_SAT_BENCHMARK_OPTIONS,
+  formatCpSatBenchmarkSuite,
+  listCpSatBenchmarkCaseNames,
+  normalizeCpSatBenchmarkOptions,
+  runCpSatBenchmarkSuite,
+} from "./cpSatBenchmark.js";
 export { evaluateLayout, validateSolution } from "./evaluator.js";
 export { formatSolutionMap, renderSolutionMap, validateSolutionMap } from "./map.js";
 export { getOptimizerAdapter, listOptimizerAdapters, resolveOptimizerName } from "./optimizerRegistry.js";
@@ -16,10 +24,20 @@ export type {
   BackgroundSolveSnapshotState,
   OptimizerName,
   CpSatOptions,
+  CpSatObjectivePolicy,
+  CpSatTelemetry,
+  CpSatPortfolioOptions,
+  CpSatPortfolioSummary,
+  CpSatPortfolioWorkerSummary,
+  CpSatProgressKind,
+  CpSatProgressUpdate,
+  CpSatAsyncOptions,
+  CpSatWarmStartHint,
+  CpSatWarmStartServicePlacement,
+  CpSatWarmStartResidentialPlacement,
   GreedyOptions,
   LnsOptions,
   CpSatNeighborhoodWindow,
-  CpSatWarmStartHint,
   SolverParams,
   Solution,
   SerializedSolution,
@@ -55,3 +73,10 @@ export type {
   SavedLayoutRecord,
 } from "./types.js";
 export type { SolutionMapValidationResult } from "./map.js";
+export type {
+  CpSatBenchmarkCase,
+  CpSatBenchmarkRunOptions,
+  CpSatBenchmarkProgressSample,
+  CpSatBenchmarkCaseResult,
+  CpSatBenchmarkSuiteResult,
+} from "./cpSatBenchmark.js";

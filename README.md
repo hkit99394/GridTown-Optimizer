@@ -38,6 +38,7 @@ Subject to these core rules:
 - residential buildings have typed min/max population and availability
 
 The objective is to maximize total residential population.
+For the CP-SAT solver, ties are broken explicitly in favor of fewer roads and fewer placed services.
 
 ## Supported Model
 
@@ -234,6 +235,8 @@ const solution = solve(grid, params);
 console.log(solution.optimizer);
 console.log(solution.totalPopulation);
 console.log(solution.cpSatStatus); // only set for CP-SAT
+console.log(solution.cpSatObjectivePolicy?.summary); // only set for CP-SAT
+console.log(solution.cpSatTelemetry?.bestPopulationUpperBound); // only set for CP-SAT
 ```
 
 ### Run LNS explicitly
@@ -257,17 +260,157 @@ const solution = solve(grid, {
 ### Run CP-SAT explicitly
 
 ```ts
-import { solve } from "./dist/index.js";
+import { solveAsync } from "./dist/index.js";
 
-const solution = solve(grid, {
+const solution = await solveAsync(grid, {
   ...params,
   optimizer: "cp-sat",
   cpSat: {
     timeLimitSeconds: 120,
+    maxDeterministicTime: 30,
     numWorkers: 8,
+    randomSeed: 42,
+    randomizeSearch: false,
+    relativeGapLimit: 0.01,
+    absoluteGapLimit: 10,
     logSearchProgress: false,
   },
 });
+```
+
+For CP-SAT integrations, prefer `solveAsync(...)` or `solveCpSatAsync(...)`. The synchronous `solve(...)` and `solveCpSat(...)` entrypoints remain available as compatibility surfaces, but the async bridge is the recommended runtime path.
+
+You can also subscribe to live CP-SAT progress while using the async path:
+
+```ts
+import { solveAsync } from "./dist/index.js";
+
+const solution = await solveAsync(
+  grid,
+  {
+    ...params,
+    optimizer: "cp-sat",
+    cpSat: {
+      timeLimitSeconds: 120,
+      numWorkers: 1,
+    },
+  },
+  {
+    onProgress(update) {
+      if (update.telemetry) {
+        console.log(update.kind, update.telemetry.incumbentPopulation, update.telemetry.bestPopulationUpperBound);
+      }
+    },
+    progressIntervalSeconds: 0.5,
+  }
+);
+```
+
+Useful CP-SAT runtime controls include:
+
+- `timeLimitSeconds`
+- `maxDeterministicTime`
+- `numWorkers`
+- `randomSeed`
+- `randomizeSearch`
+- `relativeGapLimit`
+- `absoluteGapLimit`
+- `logSearchProgress`
+
+For continuation runs, CP-SAT also supports:
+
+- `warmStartHint`
+- `objectiveLowerBound`
+
+`warmStartHint` accepts either:
+
+- a serializable hint object, or
+- an existing `Solution`
+
+Example:
+
+```ts
+const seed = solve(grid, params);
+
+const continued = await solveAsync(grid, {
+  ...params,
+  optimizer: "cp-sat",
+  cpSat: {
+    timeLimitSeconds: 120,
+    numWorkers: 1,
+    warmStartHint: seed,
+    objectiveLowerBound: seed.totalPopulation,
+  },
+});
+```
+
+For single-machine portfolio search, CP-SAT also supports:
+
+- `portfolio.workerCount`
+- `portfolio.randomSeeds`
+- `portfolio.perWorkerTimeLimitSeconds`
+- `portfolio.perWorkerMaxDeterministicTime`
+- `portfolio.perWorkerNumWorkers`
+- `portfolio.randomizeSearch`
+
+Example:
+
+```ts
+const portfolio = await solveAsync(grid, {
+  ...params,
+  optimizer: "cp-sat",
+  cpSat: {
+    timeLimitSeconds: 60,
+    portfolio: {
+      randomSeeds: [3, 11, 17],
+      perWorkerTimeLimitSeconds: 20,
+      perWorkerNumWorkers: 1,
+    },
+  },
+});
+```
+
+### Run the benchmark corpus
+
+The repository now includes a fixed CP-SAT benchmark corpus plus an async benchmark harness for reproducible exact-run comparisons.
+
+Run the default suite:
+
+```bash
+npm run benchmark:cp-sat
+```
+
+Run one named case and emit JSON:
+
+```bash
+npm run benchmark:cp-sat -- --json compact-service-single
+```
+
+List the available case names:
+
+```bash
+npm run benchmark:cp-sat -- --list
+```
+
+From code:
+
+```ts
+import { runCpSatBenchmarkSuite } from "./dist/index.js";
+
+const result = await runCpSatBenchmarkSuite(undefined, {
+  names: ["typed-housing-single", "typed-housing-portfolio"],
+  cpSat: {
+    pythonExecutable: ".venv-cp-sat/bin/python",
+    timeLimitSeconds: 10,
+    maxDeterministicTime: 10,
+    numWorkers: 1,
+    randomSeed: 7,
+    progressIntervalSeconds: 0.5,
+  },
+});
+
+console.log(result.results[0].cpSatTelemetry?.bestPopulationUpperBound);
+console.log(result.results[0].progressTimeline.length);
 ```
 
 ### Validate a solver result
@@ -299,10 +442,16 @@ console.log(validation.mapText);
 
 The public API is exposed from [src/index.ts](./src/index.ts):
 
+- `solveAsync`
 - `solve`
 - `solveGreedy`
+- `solveCpSatAsync`
 - `solveLns`
 - `solveCpSat`
+- `runCpSatBenchmarkSuite`
+- `listCpSatBenchmarkCaseNames`
+- `normalizeCpSatBenchmarkOptions`
+- `DEFAULT_CP_SAT_BENCHMARK_CORPUS`
 - `evaluateLayout`
 - `validateSolution`
 - `renderSolutionMap`
@@ -318,9 +467,17 @@ Useful types include:
 - `ServiceTypeSetting`
 - `ResidentialTypeSetting`
 - `CpSatOptions`
+- `CpSatBenchmarkCase`
+- `CpSatBenchmarkSuiteResult`
+- `CpSatAsyncOptions`
+- `CpSatProgressUpdate`
+- `CpSatObjectivePolicy`
+- `CpSatTelemetry`
+- `CpSatPortfolioOptions`
+- `CpSatPortfolioSummary`
+- `CpSatWarmStartHint`
 - `GreedyOptions`
 - `LnsOptions`
-- `CpSatWarmStartHint`
 
 ## Input Notes
 
@@ -401,6 +558,9 @@ cpSat: {
 A `Solution` contains:
 - `optimizer`
 - `cpSatStatus`
+- `cpSatObjectivePolicy`
+- `cpSatTelemetry`
+- `cpSatPortfolio`
 - `stoppedByUser`
 - `roads: Set<string>`
 - `services`

@@ -79,6 +79,9 @@ function maybeTestCpSatOptimizer() {
   assert.match(direct.cpSatStatus ?? "", /^(OPTIMAL|FEASIBLE)$/);
   assert.equal(typeof solution.cpSatObjectivePolicy?.populationWeight, "number");
   assert.equal(solution.cpSatObjectivePolicy?.summary, "maximize population, then minimize roads + services");
+  assert.equal(typeof solution.cpSatTelemetry?.solveWallTimeSeconds, "number");
+  assert.equal(typeof solution.cpSatTelemetry?.bestObjectiveBound, "number");
+  assert.equal(typeof solution.cpSatTelemetry?.solutionCount, "number");
   assert.equal(solution.totalPopulation, 110);
   assert.deepEqual([...solution.residentialTypeIndices].sort((a, b) => a - b), [0, 1]);
   assert.equal(direct.totalPopulation, 110);
@@ -177,6 +180,17 @@ function maybeTestCpSatBackendJsonContractSmoke() {
   assert.equal(typeof payload.objectivePolicy?.populationWeight, "number");
   assert.equal(typeof payload.objectivePolicy?.maxTieBreakPenalty, "number");
   assert.equal(typeof payload.objectivePolicy?.summary, "string");
+  assert.equal(typeof payload.telemetry?.solveWallTimeSeconds, "number");
+  assert.equal(typeof payload.telemetry?.userTimeSeconds, "number");
+  assert.equal(typeof payload.telemetry?.solutionCount, "number");
+  assert.equal(typeof payload.telemetry?.bestObjectiveBound, "number");
+  assert.equal(typeof payload.telemetry?.objectiveGap, "number");
+  assert.equal(typeof payload.telemetry?.bestPopulationUpperBound, "number");
+  assert.equal(typeof payload.telemetry?.populationGapUpperBound, "number");
+  assert.equal(typeof payload.telemetry?.lastImprovementAtSeconds, "number");
+  assert.equal(typeof payload.telemetry?.secondsSinceLastImprovement, "number");
+  assert.equal(typeof payload.telemetry?.numBranches, "number");
+  assert.equal(typeof payload.telemetry?.numConflicts, "number");
 }
 
 function maybeTestCpSatObjectivePolicyHelpers() {

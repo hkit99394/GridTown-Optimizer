@@ -107,6 +107,22 @@ export interface CpSatObjectivePolicy {
   summary: string;
 }
 
+export interface CpSatTelemetry {
+  solveWallTimeSeconds: number;
+  userTimeSeconds: number;
+  solutionCount: number;
+  incumbentObjectiveValue: number | null;
+  bestObjectiveBound: number | null;
+  objectiveGap: number | null;
+  incumbentPopulation: number | null;
+  bestPopulationUpperBound: number | null;
+  populationGapUpperBound: number | null;
+  lastImprovementAtSeconds: number | null;
+  secondsSinceLastImprovement: number | null;
+  numBranches: number;
+  numConflicts: number;
+}
+
 export interface GreedyOptions {
   /** Run local search to improve solution (default true) */
   localSearch?: boolean;
@@ -187,6 +203,8 @@ export interface Solution {
   cpSatStatus?: string;
   /** Explicit CP-SAT objective metadata when the solution came from the CP-SAT backend. */
   cpSatObjectivePolicy?: CpSatObjectivePolicy;
+  /** Exact-run telemetry emitted by the CP-SAT backend when available. */
+  cpSatTelemetry?: CpSatTelemetry;
   roads: Set<string>;
   services: ServicePlacement[];
   /** Service type index per placement; -1 only for manual solutions without configured service types */

@@ -7,7 +7,7 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
-import type { CpSatObjectivePolicy, EvaluatedServicePlacement, Grid, SolverParams, Solution } from "./types.js";
+import type { CpSatObjectivePolicy, CpSatTelemetry, EvaluatedServicePlacement, Grid, SolverParams, Solution } from "./types.js";
 import { evaluateLayout } from "./evaluator.js";
 import { roadsConnectedToRow0 } from "./roads.js";
 
@@ -38,6 +38,7 @@ interface CpSatRawSolution {
   totalPopulation: number;
   status: string;
   objectivePolicy?: CpSatObjectivePolicy;
+  telemetry?: CpSatTelemetry;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -73,6 +74,46 @@ function parseCpSatObjectivePolicy(value: unknown): CpSatObjectivePolicy {
     populationWeight: expectInteger(value.populationWeight, "objectivePolicy.populationWeight"),
     maxTieBreakPenalty: expectInteger(value.maxTieBreakPenalty, "objectivePolicy.maxTieBreakPenalty"),
     summary: expectString(value.summary, "objectivePolicy.summary"),
+  };
+}
+
+function expectNullableNumber(value: unknown, label: string): number | null {
+  if (value === null) {
+    return null;
+  }
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    throw new Error(`CP-SAT backend returned invalid JSON: ${label} must be a finite number or null.`);
+  }
+  return value;
+}
+
+function parseCpSatTelemetry(value: unknown): CpSatTelemetry {
+  if (!isRecord(value)) {
+    throw new Error("CP-SAT backend returned invalid JSON: telemetry must be an object.");
+  }
+  return {
+    solveWallTimeSeconds: expectNullableNumber(value.solveWallTimeSeconds, "telemetry.solveWallTimeSeconds") ?? 0,
+    userTimeSeconds: expectNullableNumber(value.userTimeSeconds, "telemetry.userTimeSeconds") ?? 0,
+    solutionCount: expectInteger(value.solutionCount, "telemetry.solutionCount"),
+    incumbentObjectiveValue: expectNullableNumber(value.incumbentObjectiveValue, "telemetry.incumbentObjectiveValue"),
+    bestObjectiveBound: expectNullableNumber(value.bestObjectiveBound, "telemetry.bestObjectiveBound"),
+    objectiveGap: expectNullableNumber(value.objectiveGap, "telemetry.objectiveGap"),
+    incumbentPopulation: value.incumbentPopulation === null ? null : expectInteger(value.incumbentPopulation, "telemetry.incumbentPopulation"),
+    bestPopulationUpperBound:
+      value.bestPopulationUpperBound === null
+        ? null
+        : expectInteger(value.bestPopulationUpperBound, "telemetry.bestPopulationUpperBound"),
+    populationGapUpperBound:
+      value.populationGapUpperBound === null
+        ? null
+        : expectInteger(value.populationGapUpperBound, "telemetry.populationGapUpperBound"),
+    lastImprovementAtSeconds: expectNullableNumber(value.lastImprovementAtSeconds, "telemetry.lastImprovementAtSeconds"),
+    secondsSinceLastImprovement: expectNullableNumber(
+      value.secondsSinceLastImprovement,
+      "telemetry.secondsSinceLastImprovement"
+    ),
+    numBranches: expectInteger(value.numBranches, "telemetry.numBranches"),
+    numConflicts: expectInteger(value.numConflicts, "telemetry.numConflicts"),
   };
 }
 
@@ -129,6 +170,7 @@ function normalizeCpSatRawSolution(value: unknown): CpSatRawSolution {
   const totalPopulation = expectInteger(value.totalPopulation, "totalPopulation");
   const status = expectString(value.status, "status");
   const objectivePolicy = value.objectivePolicy === undefined ? undefined : parseCpSatObjectivePolicy(value.objectivePolicy);
+  const telemetry = value.telemetry === undefined ? undefined : parseCpSatTelemetry(value.telemetry);
 
   if (populations.length !== residentials.length) {
     throw new Error("CP-SAT backend returned invalid JSON: populations length must match residentials length.");
@@ -137,7 +179,7 @@ function normalizeCpSatRawSolution(value: unknown): CpSatRawSolution {
     throw new Error("CP-SAT backend returned invalid JSON: totalPopulation must equal the population sum.");
   }
 
-  return { roads, services, residentials, populations, totalPopulation, status, objectivePolicy };
+  return { roads, services, residentials, populations, totalPopulation, status, objectivePolicy, telemetry };
 }
 
 function defaultPythonExecutable(): string {
@@ -237,6 +279,7 @@ export function solveCpSat(G: Grid, params: SolverParams): Solution {
     optimizer: "cp-sat",
     cpSatStatus: raw.status,
     cpSatObjectivePolicy: raw.objectivePolicy,
+    cpSatTelemetry: raw.telemetry,
     roads: layout.roads,
     services: raw.services.map(({ r, c, rows, cols, range }) => ({ r, c, rows, cols, range })),
     serviceTypeIndices: raw.services.map((service) => service.typeIndex),

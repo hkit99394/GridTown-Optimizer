@@ -123,6 +123,8 @@ Delivered:
 
 ### 6. Add exact-run telemetry
 
+Status: Implemented
+
 Expected impact: Medium-high
 
 Why:
@@ -137,6 +139,11 @@ Targets:
 - surface best bound
 - surface optimality gap
 - track time since last incumbent improvement
+
+Delivered:
+- the CP-SAT backend now emits final exact-run telemetry including incumbent objective, best bound, objective gap, population upper bound, and time since last improvement
+- the TypeScript bridge now preserves that telemetry on `Solution.cpSatTelemetry`
+- regression tests cover both backend JSON telemetry and the public CP-SAT solution contract
 
 Note:
 - this branch currently runs CP-SAT as a single blocking solve, so telemetry work likely needs callback-based reporting and a broader execution model

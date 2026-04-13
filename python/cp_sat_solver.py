@@ -66,6 +66,23 @@ class GateAccessAnalysis:
     residential_region_coefficients_by_gate: dict[int, dict[int, int]]
 
 
+@dataclass(frozen=True)
+class CpSatTelemetry:
+    solve_wall_time_seconds: float
+    user_time_seconds: float
+    solution_count: int
+    incumbent_objective_value: float | None
+    best_objective_bound: float | None
+    objective_gap: float | None
+    incumbent_population: int | None
+    best_population_upper_bound: int | None
+    population_gap_upper_bound: int | None
+    last_improvement_at_seconds: float | None
+    seconds_since_last_improvement: float | None
+    num_branches: int
+    num_conflicts: int
+
+
 def fail(message: str) -> None:
     print(message, file=sys.stderr)
     raise SystemExit(1)
@@ -712,6 +729,12 @@ def build_objective_policy(cell_count: int, service_candidate_count: int) -> Obj
     )
 
 
+def population_from_objective_value(objective_value: float | int | None, objective_policy: ObjectivePolicy) -> int | None:
+    if objective_value is None:
+        return None
+    return int((int(objective_value) + objective_policy.max_tie_break_penalty) // objective_policy.population_weight)
+
+
 def annotate_residential_population_upper_bounds(params, service_candidates, residential_candidates):
     if not residential_candidates:
         return residential_candidates
@@ -1108,6 +1131,59 @@ def configure_solver_parameters(solver, cp_sat_options):
     solver.parameters.log_search_progress = bool(cp_sat_options.get("logSearchProgress", False))
 
 
+class CpSatTelemetryCollector(cp_model.CpSolverSolutionCallback):
+    def __init__(self):
+        super().__init__()
+        self.solution_count = 0
+        self.last_improvement_at_seconds = None
+        self.last_incumbent_objective_value = None
+
+    def on_solution_callback(self):
+        self.solution_count += 1
+        self.last_improvement_at_seconds = float(self.WallTime())
+        self.last_incumbent_objective_value = float(self.ObjectiveValue())
+
+
+def collect_cp_sat_telemetry(solver, telemetry_collector: CpSatTelemetryCollector, status, built: BuiltCpSatModel) -> CpSatTelemetry:
+    incumbent_objective_value = None
+    incumbent_population = None
+    best_objective_bound = None
+    best_population_upper_bound = None
+    objective_gap = None
+    population_gap_upper_bound = None
+
+    if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        incumbent_objective_value = float(solver.ObjectiveValue())
+        incumbent_population = int(solver.Value(built.total_population))
+        best_objective_bound = float(solver.BestObjectiveBound())
+        objective_gap = max(0.0, best_objective_bound - incumbent_objective_value)
+        best_population_upper_bound = population_from_objective_value(best_objective_bound, built.objective_policy)
+        if best_population_upper_bound is not None and incumbent_population is not None:
+            population_gap_upper_bound = max(0, best_population_upper_bound - incumbent_population)
+
+    solve_wall_time_seconds = float(solver.WallTime())
+    last_improvement_at_seconds = telemetry_collector.last_improvement_at_seconds
+    seconds_since_last_improvement = None
+    if last_improvement_at_seconds is not None:
+        seconds_since_last_improvement = max(0.0, solve_wall_time_seconds - last_improvement_at_seconds)
+
+    return CpSatTelemetry(
+        solve_wall_time_seconds=solve_wall_time_seconds,
+        user_time_seconds=float(solver.UserTime()),
+        solution_count=telemetry_collector.solution_count,
+        incumbent_objective_value=incumbent_objective_value,
+        best_objective_bound=best_objective_bound,
+        objective_gap=objective_gap,
+        incumbent_population=incumbent_population,
+        best_population_upper_bound=best_population_upper_bound,
+        population_gap_upper_bound=population_gap_upper_bound,
+        last_improvement_at_seconds=last_improvement_at_seconds,
+        seconds_since_last_improvement=seconds_since_last_improvement,
+        num_branches=int(solver.NumBranches()),
+        num_conflicts=int(solver.NumConflicts()),
+    )
+
+
 def solve():
     payload = json.load(sys.stdin)
     grid = payload["grid"]
@@ -1118,8 +1194,8 @@ def solve():
     model = built.model
     solver = cp_model.CpSolver()
     configure_solver_parameters(solver, cp_sat_options)
-
-    status = solver.Solve(model)
+    telemetry_collector = CpSatTelemetryCollector()
+    status = solver.Solve(model, telemetry_collector)
     status_name = {
         cp_model.OPTIMAL: "OPTIMAL",
         cp_model.FEASIBLE: "FEASIBLE",
@@ -1130,6 +1206,8 @@ def solve():
 
     if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
         fail(f"No feasible solution found with CP-SAT. Status: {status_name}.")
+
+    telemetry = collect_cp_sat_telemetry(solver, telemetry_collector, status, built)
 
     roads = []
     for cell_id, road_var in enumerate(built.road_vars):
@@ -1185,6 +1263,21 @@ def solve():
             "populationWeight": built.objective_policy.population_weight,
             "maxTieBreakPenalty": built.objective_policy.max_tie_break_penalty,
             "summary": built.objective_policy.tie_break_summary,
+        },
+        "telemetry": {
+            "solveWallTimeSeconds": telemetry.solve_wall_time_seconds,
+            "userTimeSeconds": telemetry.user_time_seconds,
+            "solutionCount": telemetry.solution_count,
+            "incumbentObjectiveValue": telemetry.incumbent_objective_value,
+            "bestObjectiveBound": telemetry.best_objective_bound,
+            "objectiveGap": telemetry.objective_gap,
+            "incumbentPopulation": telemetry.incumbent_population,
+            "bestPopulationUpperBound": telemetry.best_population_upper_bound,
+            "populationGapUpperBound": telemetry.population_gap_upper_bound,
+            "lastImprovementAtSeconds": telemetry.last_improvement_at_seconds,
+            "secondsSinceLastImprovement": telemetry.seconds_since_last_improvement,
+            "numBranches": telemetry.num_branches,
+            "numConflicts": telemetry.num_conflicts,
         },
     }
     json.dump(response, sys.stdout)

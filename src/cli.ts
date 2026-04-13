@@ -67,6 +67,16 @@ function runExample(): void {
   console.log("=== City Builder Solution ===\n");
   console.log("Optimizer:", solution.optimizer ?? optimizer);
   if (solution.cpSatStatus) console.log("CP-SAT status:", solution.cpSatStatus);
+  if (solution.cpSatObjectivePolicy) console.log("CP-SAT objective:", solution.cpSatObjectivePolicy.summary);
+  if (solution.cpSatTelemetry) {
+    console.log(
+      "CP-SAT telemetry:",
+      `wall=${solution.cpSatTelemetry.solveWallTimeSeconds.toFixed(3)}s,`,
+      `bestBound=${solution.cpSatTelemetry.bestPopulationUpperBound},`,
+      `gap=${solution.cpSatTelemetry.populationGapUpperBound},`,
+      `lastImprovementLag=${solution.cpSatTelemetry.secondsSinceLastImprovement?.toFixed(3)}s`
+    );
+  }
   console.log("Total population:", solution.totalPopulation);
   console.log("Roads:", solution.roads.size, "cells");
   console.log("Services:", solution.services.length);

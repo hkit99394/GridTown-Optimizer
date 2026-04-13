@@ -4,6 +4,11 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const {
+  DEFAULT_CP_SAT_BENCHMARK_CORPUS,
+  DEFAULT_CP_SAT_BENCHMARK_OPTIONS,
+  listCpSatBenchmarkCaseNames,
+  normalizeCpSatBenchmarkOptions,
+  runCpSatBenchmarkSuite,
   solve,
   solveAsync,
   solveGreedy,
@@ -694,6 +699,141 @@ async function maybeTestCpSatAsyncOptimizer() {
   assert.equal(direct.totalPopulation, 110);
   assert(progressUpdates.length > 0);
   assert(progressUpdates.some((update) => update.kind === "incumbent" || update.kind === "bound"));
+}
+
+async function testCpSatBenchmarkCorpusHelpers() {
+  const names = DEFAULT_CP_SAT_BENCHMARK_CORPUS.map((entry) => entry.name);
+  assert.equal(new Set(names).size, names.length);
+  assert.deepEqual(listCpSatBenchmarkCaseNames(), names);
+
+  const normalized = normalizeCpSatBenchmarkOptions(
+    {
+      timeLimitSeconds: 12,
+      portfolio: {
+        workerCount: 2,
+      },
+    },
+    {
+      randomSeed: 7,
+    }
+  );
+
+  assert.equal(normalized.timeLimitSeconds, 12);
+  assert.equal(normalized.maxDeterministicTime, DEFAULT_CP_SAT_BENCHMARK_OPTIONS.maxDeterministicTime);
+  assert.equal(normalized.numWorkers, DEFAULT_CP_SAT_BENCHMARK_OPTIONS.numWorkers);
+  assert.equal(normalized.randomSeed, 7);
+  assert.equal(normalized.randomizeSearch, false);
+  assert.equal(normalized.progressIntervalSeconds, DEFAULT_CP_SAT_BENCHMARK_OPTIONS.progressIntervalSeconds);
+  assert.deepEqual(normalized.portfolio?.randomSeeds, [7, 108]);
+  assert.equal(normalized.portfolio?.workerCount, 2);
+  assert.equal(normalized.portfolio?.perWorkerTimeLimitSeconds, 12);
+  assert.equal(normalized.portfolio?.perWorkerMaxDeterministicTime, DEFAULT_CP_SAT_BENCHMARK_OPTIONS.maxDeterministicTime);
+  assert.equal(normalized.portfolio?.perWorkerNumWorkers, 1);
+
+  const normalizedWithExplicitSeeds = normalizeCpSatBenchmarkOptions(
+    {
+      portfolio: {
+        workerCount: 99,
+        randomSeeds: [2, 5, 8],
+      },
+    },
+    undefined
+  );
+
+  assert.equal(normalizedWithExplicitSeeds.portfolio?.workerCount, 3);
+  assert.deepEqual(normalizedWithExplicitSeeds.portfolio?.randomSeeds, [2, 5, 8]);
+
+  await assert.rejects(
+    () => runCpSatBenchmarkSuite(DEFAULT_CP_SAT_BENCHMARK_CORPUS, { names: ["missing-case"] }),
+    /Unknown CP-SAT benchmark case\(s\): missing-case/
+  );
+}
+
+async function maybeTestCpSatBenchmarkSuite() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const result = await runCpSatBenchmarkSuite(DEFAULT_CP_SAT_BENCHMARK_CORPUS, {
+    names: ["compact-service-single"],
+    cpSat: {
+      pythonExecutable,
+      timeLimitSeconds: 5,
+      maxDeterministicTime: 5,
+      numWorkers: 1,
+      randomSeed: 13,
+      progressIntervalSeconds: 0,
+    },
+  });
+
+  assert.equal(result.caseCount, 1);
+  assert.deepEqual(result.selectedCaseNames, ["compact-service-single"]);
+  assert.equal(result.results[0].name, "compact-service-single");
+  assert.match(result.results[0].cpSatStatus ?? "", /^(OPTIMAL|FEASIBLE)$/);
+  assert.equal(result.results[0].cpSatOptions.randomSeed, 13);
+  assert(result.results[0].wallClockSeconds >= 0);
+  assert.equal(typeof result.results[0].cpSatTelemetry?.solveWallTimeSeconds, "number");
+  assert(result.results[0].progressTimeline.length > 0);
+
+  const withoutTimeline = await runCpSatBenchmarkSuite(DEFAULT_CP_SAT_BENCHMARK_CORPUS, {
+    names: ["compact-service-single"],
+    includeProgressTimeline: false,
+    cpSat: {
+      pythonExecutable,
+      timeLimitSeconds: 5,
+      maxDeterministicTime: 5,
+      numWorkers: 1,
+      randomSeed: 13,
+    },
+  });
+
+  assert.equal(withoutTimeline.results[0].progressTimeline.length, 0);
+
+  const continuationGrid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+  ];
+  const continuationParams = {
+    serviceTypes: [{ rows: 1, cols: 1, bonus: 30, range: 1, avail: 1 }],
+    residentialTypes: [{ w: 2, h: 2, min: 10, max: 40, avail: 1 }],
+    availableBuildings: { services: 1, residentials: 1 },
+    greedy: { localSearch: false, restarts: 1 },
+  };
+  const seed = solveGreedy(continuationGrid, continuationParams);
+  const continuationBenchmark = await runCpSatBenchmarkSuite(
+    [
+      {
+        name: "continued-single",
+        description: "Continuation benchmark with a Solution warm start.",
+        grid: continuationGrid,
+        params: {
+          ...continuationParams,
+          optimizer: "cp-sat",
+          cpSat: {
+            warmStartHint: seed,
+            objectiveLowerBound: seed.totalPopulation,
+          },
+        },
+      },
+    ],
+    {
+      cpSat: {
+        pythonExecutable,
+        timeLimitSeconds: 5,
+        maxDeterministicTime: 5,
+        numWorkers: 1,
+        randomSeed: 19,
+        progressIntervalSeconds: 0,
+      },
+    }
+  );
+
+  assert.match(continuationBenchmark.results[0].cpSatStatus ?? "", /^(OPTIMAL|FEASIBLE)$/);
+  assert(continuationBenchmark.results[0].cpSatOptions.warmStartHint);
+  assert(continuationBenchmark.results[0].cpSatOptions.warmStartHint.roads instanceof Set);
 }
 
 function testCpSatRejectsDuplicatePortfolioWorkerIndices() {
@@ -1542,6 +1682,8 @@ async function main() {
   await maybeTestCpSatOptimizer();
   maybeTestCpSatSyncCompatibility();
   await maybeTestCpSatAsyncOptimizer();
+  await testCpSatBenchmarkCorpusHelpers();
+  await maybeTestCpSatBenchmarkSuite();
   await maybeTestCpSatWarmStartContinuation();
   await maybeTestCpSatPortfolioSolve();
   await maybeTestCpSatObjectivePrefersFewerRoadsOnPopulationTie();

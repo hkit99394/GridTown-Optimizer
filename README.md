@@ -311,6 +311,49 @@ const portfolio = await solveAsync(grid, {
 });
 ```
 
+### Run the benchmark corpus
+
+The repository now includes a fixed CP-SAT benchmark corpus plus an async benchmark harness for reproducible exact-run comparisons.
+
+Run the default suite:
+
+```bash
+npm run benchmark:cp-sat
+```
+
+Run one named case and emit JSON:
+
+```bash
+npm run benchmark:cp-sat -- --json compact-service-single
+```
+
+List the available case names:
+
+```bash
+npm run benchmark:cp-sat -- --list
+```
+
+From code:
+
+```ts
+import { runCpSatBenchmarkSuite } from "./dist/index.js";
+
+const result = await runCpSatBenchmarkSuite(undefined, {
+  names: ["typed-housing-single", "typed-housing-portfolio"],
+  cpSat: {
+    pythonExecutable: ".venv-cp-sat/bin/python",
+    timeLimitSeconds: 10,
+    maxDeterministicTime: 10,
+    numWorkers: 1,
+    randomSeed: 7,
+    progressIntervalSeconds: 0.5,
+  },
+});
+
+console.log(result.results[0].cpSatTelemetry?.bestPopulationUpperBound);
+console.log(result.results[0].progressTimeline.length);
+```
+
 ### Validate a solver result
 
 ```ts
@@ -345,6 +388,10 @@ The public API is exposed from [src/index.ts](./src/index.ts):
 - `solveGreedy`
 - `solveCpSatAsync`
 - `solveCpSat`
+- `runCpSatBenchmarkSuite`
+- `listCpSatBenchmarkCaseNames`
+- `normalizeCpSatBenchmarkOptions`
+- `DEFAULT_CP_SAT_BENCHMARK_CORPUS`
 - `evaluateLayout`
 - `validateSolution`
 - `renderSolutionMap`
@@ -358,6 +405,8 @@ Useful types include:
 - `ServiceTypeSetting`
 - `ResidentialTypeSetting`
 - `CpSatOptions`
+- `CpSatBenchmarkCase`
+- `CpSatBenchmarkSuiteResult`
 - `CpSatAsyncOptions`
 - `CpSatProgressUpdate`
 - `CpSatObjectivePolicy`

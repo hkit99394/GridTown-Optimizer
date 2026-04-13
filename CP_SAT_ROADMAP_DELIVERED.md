@@ -56,13 +56,19 @@ This file keeps the completed CP-SAT roadmap work out of the main roadmap so [CP
 - top-level CP-SAT integration tests moved to async-first coverage
 - sync entrypoints retained as compatibility surfaces
 
-### 9. Warm start and continuation
+### 9. Benchmark corpus and reproducible exact-run harness
+- fixed benchmark corpus for single and portfolio CP-SAT cases
+- reproducible benchmark defaults for time, deterministic time, workers, and seeds
+- async progress timeline capture and stable JSON/text benchmark summaries
+- public benchmark runner and npm entrypoint
+
+### 10. Warm start and continuation
 - `warmStartHint`
 - `objectiveLowerBound`
 - direct hint payloads or prior `Solution`
 - tested continuation flow
 
-### 10. Single-machine portfolio CP-SAT
+### 11. Single-machine portfolio CP-SAT
 - seeded worker generation
 - portfolio winner selection
 - per-worker status summary

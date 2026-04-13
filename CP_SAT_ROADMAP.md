@@ -23,6 +23,7 @@ Delivered summary:
 - exact-run telemetry
 - live progress streaming
 - async caller migration
+- benchmark corpus and reproducible exact-run harness
 - warm-start / continuation support
 - single-machine portfolio CP-SAT
 
@@ -30,22 +31,9 @@ Detailed delivered notes are in [CP_SAT_ROADMAP_DELIVERED.md](./CP_SAT_ROADMAP_D
 
 ## Remaining Work By Impact
 
-### 1. Add a benchmark corpus and reproducible exact-run harness
+### 1. Distributed CP-SAT
 
 Why it is first:
-- future CP-SAT work needs trustworthy before/after comparisons
-- distributed execution is hard to judge without a stable benchmark set
-- this is the main guard against “more infrastructure, unclear gain”
-
-Scope:
-- fixed benchmark grids and parameter sets
-- reproducible seeds and runtime settings
-- recorded incumbent / bound / wall-time comparisons
-- portfolio and async execution benchmarks
-
-### 2. Distributed CP-SAT
-
-Why it is second:
 - this has the highest long-term compute ceiling, but not the biggest immediate impact
 - it is only worth doing after single-machine exact solving, async execution, and measurement are all solid
 - it is the highest-complexity remaining task
@@ -56,9 +44,9 @@ Core requirements:
 - worker lifecycle, cancellation, and fault handling
 - stable result selection and final exact-run summary
 
-### 3. Deepen async and portfolio failure-mode coverage
+### 2. Deepen async and portfolio failure-mode coverage
 
-Why it is third:
+Why it is second:
 - the important validation and fallback tests now exist
 - more edge-case coverage is still worthwhile, but it is a confidence multiplier rather than a primary capability gain
 

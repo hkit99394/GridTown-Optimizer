@@ -4,6 +4,14 @@
 
 export { solveAsync, solve, solveGreedy } from "./solver.js";
 export { solveCpSatAsync, solveCpSat } from "./cpSatSolver.js";
+export {
+  DEFAULT_CP_SAT_BENCHMARK_CORPUS,
+  DEFAULT_CP_SAT_BENCHMARK_OPTIONS,
+  formatCpSatBenchmarkSuite,
+  listCpSatBenchmarkCaseNames,
+  normalizeCpSatBenchmarkOptions,
+  runCpSatBenchmarkSuite,
+} from "./cpSatBenchmark.js";
 export { evaluateLayout, validateSolution } from "./evaluator.js";
 export { formatSolutionMap, renderSolutionMap, validateSolutionMap } from "./map.js";
 
@@ -40,3 +48,10 @@ export type {
   SolutionValidationResult,
 } from "./types.js";
 export type { SolutionMapValidationResult } from "./map.js";
+export type {
+  CpSatBenchmarkCase,
+  CpSatBenchmarkRunOptions,
+  CpSatBenchmarkProgressSample,
+  CpSatBenchmarkCaseResult,
+  CpSatBenchmarkSuiteResult,
+} from "./cpSatBenchmark.js";

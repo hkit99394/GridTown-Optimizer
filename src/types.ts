@@ -91,6 +91,12 @@ export interface CpSatOptions {
   logSearchProgress?: boolean;
 }
 
+export interface CpSatObjectivePolicy {
+  populationWeight: number;
+  maxTieBreakPenalty: number;
+  summary: string;
+}
+
 export interface GreedyOptions {
   /** Run local search to improve solution (default true) */
   localSearch?: boolean;
@@ -169,6 +175,8 @@ export interface Solution {
   optimizer?: OptimizerName;
   /** CP-SAT backend status such as OPTIMAL or FEASIBLE; omitted for non-CP-SAT solvers. */
   cpSatStatus?: string;
+  /** Explicit CP-SAT objective metadata when the solution came from the CP-SAT backend. */
+  cpSatObjectivePolicy?: CpSatObjectivePolicy;
   roads: Set<string>;
   services: ServicePlacement[];
   /** Service type index per placement; -1 only for manual solutions without configured service types */

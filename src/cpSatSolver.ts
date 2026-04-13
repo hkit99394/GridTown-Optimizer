@@ -7,7 +7,7 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
-import type { EvaluatedServicePlacement, Grid, SolverParams, Solution } from "./types.js";
+import type { CpSatObjectivePolicy, EvaluatedServicePlacement, Grid, SolverParams, Solution } from "./types.js";
 import { evaluateLayout } from "./evaluator.js";
 import { roadsConnectedToRow0 } from "./roads.js";
 
@@ -37,6 +37,7 @@ interface CpSatRawSolution {
   populations: number[];
   totalPopulation: number;
   status: string;
+  objectivePolicy?: CpSatObjectivePolicy;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -62,6 +63,17 @@ function expectStringArray(value: unknown, label: string): string[] {
     throw new Error(`CP-SAT backend returned invalid JSON: ${label} must be an array.`);
   }
   return value.map((entry, index) => expectString(entry, `${label}[${index}]`));
+}
+
+function parseCpSatObjectivePolicy(value: unknown): CpSatObjectivePolicy {
+  if (!isRecord(value)) {
+    throw new Error("CP-SAT backend returned invalid JSON: objectivePolicy must be an object.");
+  }
+  return {
+    populationWeight: expectInteger(value.populationWeight, "objectivePolicy.populationWeight"),
+    maxTieBreakPenalty: expectInteger(value.maxTieBreakPenalty, "objectivePolicy.maxTieBreakPenalty"),
+    summary: expectString(value.summary, "objectivePolicy.summary"),
+  };
 }
 
 function parseCpSatServicePlacement(value: unknown, index: number): CpSatServicePlacement {
@@ -116,6 +128,7 @@ function normalizeCpSatRawSolution(value: unknown): CpSatRawSolution {
       })();
   const totalPopulation = expectInteger(value.totalPopulation, "totalPopulation");
   const status = expectString(value.status, "status");
+  const objectivePolicy = value.objectivePolicy === undefined ? undefined : parseCpSatObjectivePolicy(value.objectivePolicy);
 
   if (populations.length !== residentials.length) {
     throw new Error("CP-SAT backend returned invalid JSON: populations length must match residentials length.");
@@ -124,7 +137,7 @@ function normalizeCpSatRawSolution(value: unknown): CpSatRawSolution {
     throw new Error("CP-SAT backend returned invalid JSON: totalPopulation must equal the population sum.");
   }
 
-  return { roads, services, residentials, populations, totalPopulation, status };
+  return { roads, services, residentials, populations, totalPopulation, status, objectivePolicy };
 }
 
 function defaultPythonExecutable(): string {
@@ -154,8 +167,9 @@ function runCpSatBackend(G: Grid, params: SolverParams) {
   if (result.status !== 0) {
     const stderr = result.stderr?.trim();
     const stdout = result.stdout?.trim();
+    const exitDetail = result.status === null ? `signal ${result.signal ?? "unknown"}` : `exit code ${result.status}`;
     throw new Error(
-      `CP-SAT backend failed with exit code ${result.status}.${stderr ? ` stderr: ${stderr}` : ""}${stdout ? ` stdout: ${stdout}` : ""}`
+      `CP-SAT backend failed with ${exitDetail}.${stderr ? ` stderr: ${stderr}` : ""}${stdout ? ` stdout: ${stdout}` : ""}`
     );
   }
 
@@ -222,6 +236,7 @@ export function solveCpSat(G: Grid, params: SolverParams): Solution {
   return {
     optimizer: "cp-sat",
     cpSatStatus: raw.status,
+    cpSatObjectivePolicy: raw.objectivePolicy,
     roads: layout.roads,
     services: raw.services.map(({ r, c, rows, cols, range }) => ({ r, c, rows, cols, range })),
     serviceTypeIndices: raw.services.map((service) => service.typeIndex),

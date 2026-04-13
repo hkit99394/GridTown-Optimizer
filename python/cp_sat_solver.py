@@ -41,7 +41,8 @@ class BuiltCpSatModel:
     total_roads: Any
     total_services: Any
     total_population: Any
-    objective_policy: Any
+    total_population_upper_bound: int
+    objective_policy: ObjectivePolicy
     id_to_cell: dict[int, tuple[int, int]]
     road_eligible_cells: list[tuple[int, int]]
     directed_edges: list[tuple[int, int, Any]]
@@ -52,6 +53,17 @@ class ObjectivePolicy:
     population_weight: int
     max_tie_break_penalty: int
     tie_break_summary: str
+
+
+@dataclass(frozen=True)
+class GateAccessAnalysis:
+    gate_downstream_cells: dict[int, set[int]]
+    service_gate_requirements: dict[int, list[int]]
+    residential_gate_requirements: dict[int, list[int]]
+    service_candidate_indices_by_gate: dict[int, list[int]]
+    residential_candidate_indices_by_gate: dict[int, list[int]]
+    service_region_coefficients_by_gate: dict[int, dict[int, int]]
+    residential_region_coefficients_by_gate: dict[int, dict[int, int]]
 
 
 def fail(message: str) -> None:
@@ -334,6 +346,108 @@ def build_road_neighbor_ids(grid, id_to_cell, cell_to_id, road_eligible_ids):
     return road_neighbor_ids
 
 
+def compute_reachable_road_ids_without_gate(road_neighbor_ids, road_eligible_ids, eligible_row0_ids, blocked_gate_id):
+    start_ids = [cell_id for cell_id in eligible_row0_ids if cell_id != blocked_gate_id]
+    visited = set(start_ids)
+    queue = list(start_ids)
+    index = 0
+    while index < len(queue):
+        cell_id = queue[index]
+        index += 1
+        for neighbor_id in road_neighbor_ids.get(cell_id, []):
+            if neighbor_id == blocked_gate_id or neighbor_id not in road_eligible_ids or neighbor_id in visited:
+                continue
+            visited.add(neighbor_id)
+            queue.append(neighbor_id)
+    return visited
+
+
+def compute_gate_downstream_cells(road_neighbor_ids, road_eligible_ids, eligible_row0_ids):
+    road_eligible_ids = set(road_eligible_ids)
+    gate_downstream_cells = {}
+    for gate_id in road_eligible_ids:
+        reachable_without_gate = compute_reachable_road_ids_without_gate(
+            road_neighbor_ids, road_eligible_ids, eligible_row0_ids, gate_id
+        )
+        downstream = road_eligible_ids - reachable_without_gate - {gate_id}
+        if downstream:
+            gate_downstream_cells[gate_id] = downstream
+    return gate_downstream_cells
+
+
+def compute_candidate_gate_requirements(candidates, gate_downstream_cells, road_eligible_ids):
+    road_eligible_ids = set(road_eligible_ids)
+    gate_requirements = defaultdict(list)
+    for candidate_index, candidate in enumerate(candidates):
+        if touches_road_anchor_row(candidate):
+            continue
+        viable_border = {cell_id for cell_id in candidate["border"] if cell_id in road_eligible_ids}
+        if not viable_border:
+            continue
+        for gate_id, downstream_cells in gate_downstream_cells.items():
+            if all(cell_id == gate_id or cell_id in downstream_cells for cell_id in viable_border):
+                gate_requirements[candidate_index].append(gate_id)
+    return gate_requirements
+
+
+def build_gate_regional_capacity_coefficients(candidates, gate_candidate_indices, gate_region_cells):
+    gate_region_cells = set(gate_region_cells)
+    coefficients = defaultdict(int)
+    for candidate_index in gate_candidate_indices:
+        for cell_id in candidates[candidate_index]["border"]:
+            if cell_id in gate_region_cells:
+                coefficients[cell_id] += 1
+    return coefficients
+
+
+def analyze_gate_access_constraints(road_eligible_ids, road_neighbor_ids, eligible_row0_ids, service_candidates, residential_candidates):
+    gate_downstream_cells = compute_gate_downstream_cells(road_neighbor_ids, road_eligible_ids, eligible_row0_ids)
+    service_gate_requirements = compute_candidate_gate_requirements(service_candidates, gate_downstream_cells, road_eligible_ids)
+    residential_gate_requirements = compute_candidate_gate_requirements(
+        residential_candidates, gate_downstream_cells, road_eligible_ids
+    )
+
+    service_candidate_indices_by_gate = defaultdict(list)
+    for candidate_index, gate_ids in service_gate_requirements.items():
+        for gate_id in gate_ids:
+            service_candidate_indices_by_gate[gate_id].append(candidate_index)
+
+    residential_candidate_indices_by_gate = defaultdict(list)
+    for candidate_index, gate_ids in residential_gate_requirements.items():
+        for gate_id in gate_ids:
+            residential_candidate_indices_by_gate[gate_id].append(candidate_index)
+
+    service_region_coefficients_by_gate = {}
+    residential_region_coefficients_by_gate = {}
+    for gate_id, downstream_cells in gate_downstream_cells.items():
+        gate_region_cells = set(downstream_cells)
+        gate_region_cells.add(gate_id)
+
+        gated_service_indices = service_candidate_indices_by_gate.get(gate_id, [])
+        if gated_service_indices:
+            service_region_coefficients_by_gate[gate_id] = dict(
+                build_gate_regional_capacity_coefficients(service_candidates, gated_service_indices, gate_region_cells)
+            )
+
+        gated_residential_indices = residential_candidate_indices_by_gate.get(gate_id, [])
+        if gated_residential_indices:
+            residential_region_coefficients_by_gate[gate_id] = dict(
+                build_gate_regional_capacity_coefficients(
+                    residential_candidates, gated_residential_indices, gate_region_cells
+                )
+            )
+
+    return GateAccessAnalysis(
+        gate_downstream_cells=gate_downstream_cells,
+        service_gate_requirements=service_gate_requirements,
+        residential_gate_requirements=residential_gate_requirements,
+        service_candidate_indices_by_gate=dict(service_candidate_indices_by_gate),
+        residential_candidate_indices_by_gate=dict(residential_candidate_indices_by_gate),
+        service_region_coefficients_by_gate=service_region_coefficients_by_gate,
+        residential_region_coefficients_by_gate=residential_region_coefficients_by_gate,
+    )
+
+
 def add_per_type_availability_constraints(model, placement_vars, candidates, type_settings):
     by_type = defaultdict(list)
     for candidate_index, candidate in enumerate(candidates):
@@ -367,6 +481,103 @@ def add_border_access_constraints(model, road_vars, service_vars, service_candid
         if touches_road_anchor_row(residential_candidates[candidate_index]):
             continue
         model.Add(sum(road_vars[cell_id] for cell_id in border) >= variable)
+
+
+def build_border_access_capacity_coefficients(cell_count, candidates):
+    coefficients = [0] * cell_count
+    non_anchor_candidate_indices = []
+    for candidate_index, candidate in enumerate(candidates):
+        if touches_road_anchor_row(candidate):
+            continue
+        non_anchor_candidate_indices.append(candidate_index)
+        for cell_id in candidate["border"]:
+            coefficients[cell_id] += 1
+    return non_anchor_candidate_indices, coefficients
+
+
+def add_aggregated_border_capacity_constraints(model, road_vars, service_vars, service_candidates, residential_vars, residential_candidates):
+    service_indices, service_coefficients = build_border_access_capacity_coefficients(len(road_vars), service_candidates)
+    if service_indices:
+        model.Add(
+            sum(service_vars[candidate_index] for candidate_index in service_indices)
+            <= sum(coefficient * road_vars[cell_id] for cell_id, coefficient in enumerate(service_coefficients) if coefficient > 0)
+        )
+
+    residential_indices, residential_coefficients = build_border_access_capacity_coefficients(len(road_vars), residential_candidates)
+    if residential_indices:
+        model.Add(
+            sum(residential_vars[candidate_index] for candidate_index in residential_indices)
+            <= sum(coefficient * road_vars[cell_id] for cell_id, coefficient in enumerate(residential_coefficients) if coefficient > 0)
+        )
+
+    combined_indices = [(service_vars, candidate_index) for candidate_index in service_indices] + [
+        (residential_vars, candidate_index) for candidate_index in residential_indices
+    ]
+    if combined_indices:
+        combined_coefficients = [
+            service_coefficients[cell_id] + residential_coefficients[cell_id] for cell_id in range(len(road_vars))
+        ]
+        model.Add(
+            sum(variable_list[candidate_index] for variable_list, candidate_index in combined_indices)
+            <= sum(coefficient * road_vars[cell_id] for cell_id, coefficient in enumerate(combined_coefficients) if coefficient > 0)
+        )
+
+
+def add_gate_implied_access_constraints(
+    model,
+    road_vars,
+    service_vars,
+    residential_vars,
+    gate_access_analysis: GateAccessAnalysis,
+):
+    for candidate_index, gate_ids in gate_access_analysis.service_gate_requirements.items():
+        for gate_id in gate_ids:
+            model.Add(service_vars[candidate_index] <= road_vars[gate_id])
+
+    for candidate_index, gate_ids in gate_access_analysis.residential_gate_requirements.items():
+        for gate_id in gate_ids:
+            model.Add(residential_vars[candidate_index] <= road_vars[gate_id])
+
+    for gate_id in gate_access_analysis.gate_downstream_cells:
+        gated_service_indices = gate_access_analysis.service_candidate_indices_by_gate.get(gate_id, [])
+        if gated_service_indices:
+            service_coefficients = gate_access_analysis.service_region_coefficients_by_gate.get(gate_id, {})
+            model.Add(
+                sum(service_vars[candidate_index] for candidate_index in gated_service_indices)
+                <= sum(
+                    coefficient * road_vars[cell_id]
+                    for cell_id, coefficient in service_coefficients.items()
+                )
+            )
+
+        gated_residential_indices = gate_access_analysis.residential_candidate_indices_by_gate.get(gate_id, [])
+        if gated_residential_indices:
+            residential_coefficients = gate_access_analysis.residential_region_coefficients_by_gate.get(gate_id, {})
+            model.Add(
+                sum(residential_vars[candidate_index] for candidate_index in gated_residential_indices)
+                <= sum(
+                    coefficient * road_vars[cell_id]
+                    for cell_id, coefficient in residential_coefficients.items()
+                )
+            )
+
+        if gated_service_indices or gated_residential_indices:
+            combined_coefficients = defaultdict(int)
+            for cell_id, coefficient in gate_access_analysis.service_region_coefficients_by_gate.get(gate_id, {}).items():
+                combined_coefficients[cell_id] += coefficient
+            for cell_id, coefficient in gate_access_analysis.residential_region_coefficients_by_gate.get(
+                gate_id, {}
+            ).items():
+                combined_coefficients[cell_id] += coefficient
+
+            model.Add(
+                sum(service_vars[candidate_index] for candidate_index in gated_service_indices)
+                + sum(residential_vars[candidate_index] for candidate_index in gated_residential_indices)
+                <= sum(
+                    coefficient * road_vars[cell_id]
+                    for cell_id, coefficient in combined_coefficients.items()
+                )
+            )
 
 
 def add_road_support_constraints(model, road_vars, road_neighbor_ids, root_vars):
@@ -440,6 +651,58 @@ def add_flow_connectivity_constraints(
     return directed_edges
 
 
+def prune_objectively_useless_service_candidates(service_candidates, residential_candidates):
+    if not service_candidates:
+        return service_candidates
+
+    residential_cell_ids = {
+        cell_id
+        for candidate in residential_candidates
+        for cell_id in candidate["cells"]
+    }
+
+    pruned = []
+    for candidate in service_candidates:
+        if candidate["bonus"] <= 0:
+            continue
+        if not residential_cell_ids or not (candidate["effect_zone"] & residential_cell_ids):
+            continue
+        pruned.append(candidate)
+    return pruned
+
+
+def compute_total_population_upper_bound(params, residential_candidates):
+    if not residential_candidates:
+        return 0
+
+    available = params.get("availableBuildings") or {}
+    max_residentials = available.get("residentials", params.get("maxResidentials"))
+    residential_types = params.get("residentialTypes") or []
+
+    if residential_types:
+        candidate_maxima = []
+        candidates_by_type = defaultdict(list)
+        for candidate in residential_candidates:
+            candidates_by_type[candidate["typeIndex"]].append(int(candidate.get("populationUpperBound", candidate["max"])))
+
+        for type_index, residential_type in enumerate(residential_types):
+            maxima = sorted(candidates_by_type.get(type_index, []), reverse=True)
+            if not maxima:
+                continue
+            type_avail = max(0, int(residential_type.get("avail", 0)))
+            candidate_maxima.extend(maxima[:type_avail])
+    else:
+        candidate_maxima = sorted(
+            (int(candidate.get("populationUpperBound", candidate["max"])) for candidate in residential_candidates),
+            reverse=True,
+        )
+
+    candidate_maxima.sort(reverse=True)
+    if max_residentials is not None:
+        candidate_maxima = candidate_maxima[: int(max_residentials)]
+    return sum(candidate_maxima)
+
+
 def build_objective_policy(cell_count: int, service_candidate_count: int) -> ObjectivePolicy:
     max_tie_break_penalty = cell_count + service_candidate_count
     return ObjectivePolicy(
@@ -447,6 +710,45 @@ def build_objective_policy(cell_count: int, service_candidate_count: int) -> Obj
         max_tie_break_penalty=max_tie_break_penalty,
         tie_break_summary="maximize population, then minimize roads + services",
     )
+
+
+def annotate_residential_population_upper_bounds(params, service_candidates, residential_candidates):
+    if not residential_candidates:
+        return residential_candidates
+
+    service_types = params.get("serviceTypes") or []
+    if not service_types or not service_candidates:
+        for candidate in residential_candidates:
+            candidate["populationUpperBound"] = min(int(candidate["max"]), int(candidate["base"]))
+        return residential_candidates
+
+    service_slot_cap = infer_service_slot_cap(params, service_types)
+    for candidate in residential_candidates:
+        candidate_cells = set(candidate["cells"])
+        bonuses = []
+        covering_counts_by_type = defaultdict(int)
+        for service_candidate in service_candidates:
+            if not (candidate_cells & service_candidate["effect_zone"]):
+                continue
+            covering_counts_by_type[service_candidate["typeIndex"]] += 1
+
+        for type_index, service_type in enumerate(service_types):
+            cover_count = covering_counts_by_type.get(type_index, 0)
+            if cover_count <= 0:
+                continue
+            bonus = int(service_type.get("bonus", 0))
+            if bonus <= 0:
+                continue
+            type_avail = max(0, int(service_type.get("avail", 0)))
+            bonuses.extend([bonus] * min(cover_count, type_avail))
+
+        bonuses.sort(reverse=True)
+        if service_slot_cap is not None:
+            bonuses = bonuses[:service_slot_cap]
+
+        candidate["populationUpperBound"] = min(int(candidate["max"]), int(candidate["base"]) + sum(bonuses))
+
+    return residential_candidates
 
 
 def add_population_model_and_objective(
@@ -458,11 +760,13 @@ def add_population_model_and_objective(
     residential_candidates,
     road_vars,
     total_roads,
+    total_population_upper_bound,
 ):
     service_cover_sets = [candidate["effect_zone"] for candidate in service_candidates]
     populations = []
     for candidate_index, candidate in enumerate(residential_candidates):
-        pop_var = model.NewIntVar(0, candidate["max"], f"population_{candidate_index}")
+        population_upper_bound = int(candidate.get("populationUpperBound", candidate["max"]))
+        pop_var = model.NewIntVar(0, population_upper_bound, f"population_{candidate_index}")
         boost_terms = []
         candidate_cells = set(candidate["cells"])
         for service_index, cover_zone in enumerate(service_cover_sets):
@@ -471,11 +775,10 @@ def add_population_model_and_objective(
                 continue
             boost_terms.append(bonus * service_vars[service_index])
         boost_expr = sum(boost_terms) if boost_terms else 0
-        model.Add(pop_var <= candidate["max"] * residential_vars[candidate_index])
+        model.Add(pop_var <= population_upper_bound * residential_vars[candidate_index])
         model.Add(pop_var <= candidate["base"] * residential_vars[candidate_index] + boost_expr)
         populations.append(pop_var)
 
-    total_population_upper_bound = sum(candidate["max"] for candidate in residential_candidates)
     total_population = model.NewIntVar(0, total_population_upper_bound, "total_population")
     model.Add(total_population == sum(populations))
 
@@ -684,6 +987,9 @@ def build_model(grid, params) -> BuiltCpSatModel:
     service_candidates = enumerate_service_candidates(grid, params, cell_to_id, placement_maps.service)
     total_bonus_upper_bound = typed_service_bonus_upper_bound(params)
     residential_candidates = enumerate_residential_candidates(grid, params, cell_to_id, total_bonus_upper_bound, placement_maps)
+    service_candidates = prune_objectively_useless_service_candidates(service_candidates, residential_candidates)
+    residential_candidates = annotate_residential_population_upper_bounds(params, service_candidates, residential_candidates)
+    total_population_upper_bound = compute_total_population_upper_bound(params, residential_candidates)
 
     model = cp_model.CpModel()
     cell_count = len(allowed_cells)
@@ -704,6 +1010,13 @@ def build_model(grid, params) -> BuiltCpSatModel:
     total_roads = model.NewIntVar(1, cell_count, "total_roads")
     model.Add(total_roads == sum(road_vars))
     road_neighbor_ids = build_road_neighbor_ids(grid, id_to_cell, cell_to_id, road_eligible_ids)
+    gate_access_analysis = analyze_gate_access_constraints(
+        road_eligible_ids,
+        road_neighbor_ids,
+        eligible_row0_ids,
+        service_candidates,
+        residential_candidates,
+    )
 
     service_vars = [model.NewBoolVar(f"service_{candidate_index}") for candidate_index in range(len(service_candidates))]
     max_services = infer_max_services(params)
@@ -722,6 +1035,16 @@ def build_model(grid, params) -> BuiltCpSatModel:
 
     add_occupancy_constraints(model, cell_count, road_vars, service_vars, service_candidates, residential_vars, residential_candidates)
     add_border_access_constraints(model, road_vars, service_vars, service_candidates, residential_vars, residential_candidates)
+    add_aggregated_border_capacity_constraints(
+        model, road_vars, service_vars, service_candidates, residential_vars, residential_candidates
+    )
+    add_gate_implied_access_constraints(
+        model,
+        road_vars,
+        service_vars,
+        residential_vars,
+        gate_access_analysis,
+    )
     add_road_support_constraints(model, road_vars, road_neighbor_ids, root_vars)
     directed_edges = add_flow_connectivity_constraints(
         model,
@@ -744,6 +1067,7 @@ def build_model(grid, params) -> BuiltCpSatModel:
         residential_candidates,
         road_vars,
         total_roads,
+        total_population_upper_bound,
     )
 
     return BuiltCpSatModel(
@@ -760,6 +1084,7 @@ def build_model(grid, params) -> BuiltCpSatModel:
         total_roads=total_roads,
         total_services=total_services,
         total_population=total_population,
+        total_population_upper_bound=total_population_upper_bound,
         objective_policy=objective_policy,
         id_to_cell=id_to_cell,
         road_eligible_cells=sorted(road_eligible_cells),

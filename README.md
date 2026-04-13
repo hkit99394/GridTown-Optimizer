@@ -194,6 +194,7 @@ const solution = solve(grid, params);
 console.log(solution.optimizer);
 console.log(solution.totalPopulation);
 console.log(solution.cpSatStatus); // only set for CP-SAT
+console.log(solution.cpSatObjectivePolicy?.summary); // only set for CP-SAT
 ```
 
 ### Run CP-SAT explicitly
@@ -317,6 +318,7 @@ A `Solution` contains:
 
 - `optimizer`
 - `cpSatStatus`
+- `cpSatObjectivePolicy`
 - `roads: Set<string>`
 - `services`
 - `serviceTypeIndices`

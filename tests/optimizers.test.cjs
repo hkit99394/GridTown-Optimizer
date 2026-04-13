@@ -77,6 +77,8 @@ function maybeTestCpSatOptimizer() {
   assert.equal(solution.optimizer, "cp-sat");
   assert.match(solution.cpSatStatus ?? "", /^(OPTIMAL|FEASIBLE)$/);
   assert.match(direct.cpSatStatus ?? "", /^(OPTIMAL|FEASIBLE)$/);
+  assert.equal(typeof solution.cpSatObjectivePolicy?.populationWeight, "number");
+  assert.equal(solution.cpSatObjectivePolicy?.summary, "maximize population, then minimize roads + services");
   assert.equal(solution.totalPopulation, 110);
   assert.deepEqual([...solution.residentialTypeIndices].sort((a, b) => a - b), [0, 1]);
   assert.equal(direct.totalPopulation, 110);
@@ -223,6 +225,289 @@ print(json.dumps({
   const payload = JSON.parse(result.stdout);
   assert.equal(payload.max_tie_break_penalty, payload.cell_count + payload.service_candidate_count);
   assert.equal(payload.population_weight, payload.max_tie_break_penalty + 1);
+}
+
+function maybeTestCpSatPopulationUpperBoundHelpers() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const command = `
+import importlib.util
+import json
+
+spec = importlib.util.spec_from_file_location("cp_sat_solver", ${JSON.stringify(scriptPath)})
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+grid = [
+  [1, 1, 1, 1, 1],
+  [1, 1, 1, 1, 1],
+  [1, 1, 1, 1, 1],
+  [1, 1, 1, 1, 1],
+  [1, 1, 1, 1, 1],
+]
+params = {
+    "residentialTypes": [
+        {"w": 2, "h": 2, "min": 10, "max": 100, "avail": 1},
+        {"w": 2, "h": 2, "min": 10, "max": 40, "avail": 3},
+    ],
+    "availableBuildings": {"residentials": 2, "services": 0},
+}
+
+built = module.build_model(grid, params)
+
+print(json.dumps({
+    "total_population_upper_bound": built.total_population_upper_bound,
+    "residential_candidate_count": len(built.residential_candidates),
+}))
+`;
+
+  const result = childProcess.spawnSync(pythonExecutable, ["-c", command], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT population upper bound helpers.");
+  }
+
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.total_population_upper_bound, 20);
+  assert(payload.residential_candidate_count > 2);
+}
+
+function maybeTestCpSatResidentialPopulationUpperBoundHelpers() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const command = `
+import importlib.util
+import json
+
+spec = importlib.util.spec_from_file_location("cp_sat_solver", ${JSON.stringify(scriptPath)})
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+grid = [
+  [1, 1, 1, 1],
+  [1, 1, 1, 1],
+  [1, 1, 1, 1],
+  [1, 1, 1, 1],
+]
+params = {
+    "serviceTypes": [{"rows": 1, "cols": 1, "bonus": 30, "range": 1, "avail": 1}],
+    "residentialTypes": [{"w": 2, "h": 2, "min": 10, "max": 100, "avail": 1}],
+    "availableBuildings": {"services": 1, "residentials": 1},
+}
+
+built = module.build_model(grid, params)
+top_left = next(candidate for candidate in built.residential_candidates if candidate["r"] == 0 and candidate["c"] == 0)
+
+print(json.dumps({
+    "population_upper_bound": top_left["populationUpperBound"],
+    "total_population_upper_bound": built.total_population_upper_bound,
+}))
+`;
+
+  const result = childProcess.spawnSync(pythonExecutable, ["-c", command], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT residential population upper bounds.");
+  }
+
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.population_upper_bound, 40);
+  assert.equal(payload.total_population_upper_bound, 40);
+}
+
+function maybeTestCpSatPrunesObjectivelyUselessServices() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const command = `
+import importlib.util
+import json
+
+spec = importlib.util.spec_from_file_location("cp_sat_solver", ${JSON.stringify(scriptPath)})
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+grid = [
+  [1, 1, 1, 1],
+  [1, 1, 1, 1],
+  [1, 1, 1, 1],
+  [1, 1, 1, 1],
+]
+params = {
+    "serviceTypes": [{"rows": 1, "cols": 1, "bonus": 0, "range": 1, "avail": 1}],
+    "residentialTypes": [{"w": 2, "h": 2, "min": 10, "max": 20, "avail": 1}],
+    "availableBuildings": {"services": 1, "residentials": 1},
+}
+
+built = module.build_model(grid, params)
+
+print(json.dumps({
+    "service_candidate_count": len(built.service_candidates),
+}))
+`;
+
+  const result = childProcess.spawnSync(pythonExecutable, ["-c", command], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT useless service pruning.");
+  }
+
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.service_candidate_count, 0);
+}
+
+function maybeTestCpSatBorderAccessCapacityHelpers() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const command = `
+import importlib.util
+import json
+
+spec = importlib.util.spec_from_file_location("cp_sat_solver", ${JSON.stringify(scriptPath)})
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+candidates = [
+    {"r": 0, "border": [0, 1]},
+    {"r": 1, "border": [1, 2]},
+    {"r": 2, "border": [2, 3]},
+]
+indices, coefficients = module.build_border_access_capacity_coefficients(5, candidates)
+
+print(json.dumps({
+    "indices": indices,
+    "coefficients": coefficients,
+}))
+`;
+
+  const result = childProcess.spawnSync(pythonExecutable, ["-c", command], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT border access capacity helpers.");
+  }
+
+  const payload = JSON.parse(result.stdout);
+  assert.deepEqual(payload.indices, [1, 2]);
+  assert.deepEqual(payload.coefficients, [0, 1, 2, 1, 0]);
+}
+
+function maybeTestCpSatGateRequirementHelpers() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const command = `
+import importlib.util
+import json
+
+spec = importlib.util.spec_from_file_location("cp_sat_solver", ${JSON.stringify(scriptPath)})
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+road_neighbor_ids = {
+    0: [1],
+    1: [0, 2, 3],
+    2: [1],
+    3: [1, 4],
+    4: [3],
+}
+road_eligible_ids = {0, 1, 2, 3, 4}
+eligible_row0_ids = [0]
+
+gate_downstream = module.compute_gate_downstream_cells(road_neighbor_ids, road_eligible_ids, eligible_row0_ids)
+candidates = [
+    {"r": 2, "border": [4]},
+    {"r": 2, "border": [2, 0]},
+    {"r": 0, "border": [4]},
+]
+gate_requirements = module.compute_candidate_gate_requirements(candidates, gate_downstream, road_eligible_ids)
+
+print(json.dumps({
+    "gate_downstream": {str(key): sorted(value) for key, value in gate_downstream.items()},
+    "gate_requirements": {str(key): value for key, value in gate_requirements.items()},
+}))
+`;
+
+  const result = childProcess.spawnSync(pythonExecutable, ["-c", command], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT gate requirement helpers.");
+  }
+
+  const payload = JSON.parse(result.stdout);
+  assert.deepEqual(payload.gate_downstream, {
+    0: [1, 2, 3, 4],
+    1: [2, 3, 4],
+    3: [4],
+  });
+  assert.deepEqual(payload.gate_requirements, {
+    0: [0, 1, 3],
+    1: [0],
+  });
+}
+
+function maybeTestCpSatGateRegionalCapacityHelpers() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const command = `
+import importlib.util
+import json
+
+spec = importlib.util.spec_from_file_location("cp_sat_solver", ${JSON.stringify(scriptPath)})
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+candidates = [
+    {"border": [0, 1, 4]},
+    {"border": [1, 2, 4]},
+    {"border": [2, 3]},
+]
+coefficients = module.build_gate_regional_capacity_coefficients(candidates, [0, 1], {1, 2, 4})
+
+print(json.dumps({
+    "coefficients": {str(key): value for key, value in coefficients.items()},
+}))
+`;
+
+  const result = childProcess.spawnSync(pythonExecutable, ["-c", command], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT gate regional capacity helpers.");
+  }
+
+  const payload = JSON.parse(result.stdout);
+  assert.deepEqual(payload.coefficients, {
+    1: 2,
+    2: 1,
+    4: 2,
+  });
 }
 
 function maybeTestCpSatObjectivePrefersFewerRoadsOnPopulationTie() {
@@ -534,9 +819,7 @@ print(json.dumps({
     [1, 0],
     [1, 1],
   ]);
-  assert.deepEqual(payload.service_candidates, [
-    { r: 0, c: 0, rows: 2, cols: 2 },
-  ]);
+  assert.deepEqual(payload.service_candidates, []);
   assert.deepEqual(payload.residential_candidates, [
     { r: 0, c: 0, rows: 2, cols: 2 },
   ]);
@@ -706,9 +989,15 @@ print(json.dumps({
 testGreedyDispatcher();
 maybeTestCpSatBackendJsonContractSmoke();
 maybeTestCpSatObjectivePolicyHelpers();
+maybeTestCpSatPopulationUpperBoundHelpers();
+maybeTestCpSatResidentialPopulationUpperBoundHelpers();
 maybeTestCpSatOptimizer();
 maybeTestCpSatObjectivePrefersFewerRoadsOnPopulationTie();
 maybeTestCpSatObjectiveAvoidsUselessServices();
+maybeTestCpSatPrunesObjectivelyUselessServices();
+maybeTestCpSatBorderAccessCapacityHelpers();
+maybeTestCpSatGateRequirementHelpers();
+maybeTestCpSatGateRegionalCapacityHelpers();
 maybeTestCpSatSupportsShapedServices();
 maybeTestCpSatCandidateReductionHelpers();
 maybeTestCpSatReachabilityReductionHelpers();

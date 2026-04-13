@@ -145,6 +145,29 @@ function testNamedBuildingTypesAreAccepted() {
   assert.equal(solution.totalPopulation >= 100, true);
 }
 
+function testGreedySkipsServicesWithZeroMarginalGain() {
+  const { solveGreedy } = require("../dist/index.js");
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+  ];
+  const params = {
+    serviceTypes: [{ rows: 2, cols: 2, bonus: 50, range: 1, avail: 1 }],
+    residentialTypes: [{ w: 2, h: 2, min: 100, max: 100, avail: 2 }],
+    availableBuildings: { services: 1, residentials: 2 },
+    greedy: { localSearch: false, restarts: 1, exhaustiveServiceSearch: false },
+  };
+
+  const solution = solveGreedy(grid, params);
+
+  assert.equal(solution.services.length, 0);
+  assert.equal(solution.residentials.length, 2);
+  assert.equal(solution.totalPopulation, 200);
+}
+
 function testIndexImportHasNoSideEffects() {
   const originalLog = console.log;
   const calls = [];
@@ -271,6 +294,7 @@ testNoRowZeroRoadThrows();
 testEvaluatorHonorsCountCaps();
 testResidentialCapStillAppliesWithTypedResidentials();
 testNamedBuildingTypesAreAccepted();
+testGreedySkipsServicesWithZeroMarginalGain();
 testIndexImportHasNoSideEffects();
 testPlannerServiceAvailabilityRoundTrip();
 testManualLayoutResponseClearsSolverMetadata();

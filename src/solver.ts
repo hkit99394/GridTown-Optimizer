@@ -35,6 +35,14 @@ import {
 import { getBuildingLimits, getResidentialBaseMax, NO_TYPE_INDEX } from "./rules.js";
 
 type SerializedSolution = Omit<Solution, "roads"> & { roads: string[] };
+type ResidentialCandidateStat = {
+  r: number;
+  c: number;
+  rows: number;
+  cols: number;
+  base: number;
+  max: number;
+};
 
 class GreedyStopError extends Error {
   constructor(readonly bestSolution: Solution | null) {
@@ -152,10 +160,80 @@ function rectanglesOverlap(
   return a.r < b.r + b.rows && a.r + a.rows > b.r && a.c < b.c + b.cols && a.c + a.cols > b.c;
 }
 
+function marginalPopulationGain(base: number, max: number, currentBoost: number, extraBoost: number): number {
+  const currentPopulation = Math.min(base + currentBoost, max);
+  const boostedPopulation = Math.min(base + currentBoost + extraBoost, max);
+  return Math.max(0, boostedPopulation - currentPopulation);
+}
+
+function buildServiceCoverageIndex(
+  serviceCandidates: ServiceCandidate[],
+  residentialCandidateStats: ResidentialCandidateStat[]
+): Map<string, number[]> {
+  const coverageByKey = new Map<string, number[]>();
+  for (const service of serviceCandidates) {
+    const key = serviceCandidateKey(service);
+    const effectBounds = {
+      r: service.r - service.range,
+      c: service.c - service.range,
+      rows: service.rows + 2 * service.range,
+      cols: service.cols + 2 * service.range,
+    };
+    const footprint = { r: service.r, c: service.c, rows: service.rows, cols: service.cols };
+    const coveredIndices: number[] = [];
+    for (let index = 0; index < residentialCandidateStats.length; index++) {
+      const residential = residentialCandidateStats[index];
+      if (rectanglesOverlap(footprint, residential)) continue;
+      if (!rectanglesOverlap(effectBounds, residential)) continue;
+      coveredIndices.push(index);
+    }
+    coverageByKey.set(key, coveredIndices);
+  }
+  return coverageByKey;
+}
+
+function computeServiceStaticScore(
+  service: ServiceCandidate,
+  residentialCandidateStats: ResidentialCandidateStat[],
+  serviceCoverageByKey: Map<string, number[]>
+): number {
+  const coveredIndices = serviceCoverageByKey.get(serviceCandidateKey(service)) ?? [];
+  let score = 0;
+  for (const index of coveredIndices) {
+    const residential = residentialCandidateStats[index];
+    score += marginalPopulationGain(residential.base, residential.max, 0, service.bonus);
+  }
+  return score;
+}
+
+function computeServiceMarginalScore(
+  service: ServiceCandidate,
+  occupied: Set<string>,
+  currentResidentialBoosts: number[],
+  residentialCandidateStats: ResidentialCandidateStat[],
+  serviceCoverageByKey: Map<string, number[]>
+): number {
+  const coveredIndices = serviceCoverageByKey.get(serviceCandidateKey(service)) ?? [];
+  let score = 0;
+  for (const index of coveredIndices) {
+    const residential = residentialCandidateStats[index];
+    if (overlaps(occupied, residential.r, residential.c, residential.rows, residential.cols)) continue;
+    score += marginalPopulationGain(
+      residential.base,
+      residential.max,
+      currentResidentialBoosts[index] ?? 0,
+      service.bonus
+    );
+  }
+  return score;
+}
+
 function solveOne(
   G: Grid,
   params: SolverParams,
   serviceOrder: ServiceCandidate[],
+  residentialCandidateStats: ResidentialCandidateStat[],
+  serviceCoverageByKey: Map<string, number[]>,
   anyResidentialCandidates: ResidentialCandidatesList,
   residentialCandidatesForLocal: ResidentialCandidatesList,
   maxServices: number | undefined,
@@ -177,32 +255,89 @@ function solveOne(
   const serviceTypeIndices: number[] = [];
   const serviceBonuses: number[] = [];
   const effectZones: Set<string>[] = [];
+  const currentResidentialBoosts = Array.from({ length: residentialCandidateStats.length }, () => 0);
   const serviceSource = fixedServices ?? serviceOrder;
-  for (const s of serviceSource) {
-    maybeStop?.();
-    if (maxServices !== undefined && services.length >= maxServices) break;
-    const placement = materializeServicePlacement(s);
-    if (useServiceTypes && remainingServiceAvail) {
-      if (remainingServiceAvail[s.typeIndex] <= 0) {
-        if (fixedServices) return null;
-        continue;
+  if (fixedServices) {
+    for (const s of serviceSource) {
+      maybeStop?.();
+      if (maxServices !== undefined && services.length >= maxServices) break;
+      const placement = materializeServicePlacement(s);
+      if (useServiceTypes && remainingServiceAvail) {
+        if (remainingServiceAvail[s.typeIndex] <= 0) {
+          return null;
+        }
       }
+      if (overlaps(occupied, placement.r, placement.c, placement.rows, placement.cols)) {
+        return null;
+      }
+      if (!ensureBuildingConnectedToRoads(G, roads, occupied, placement.r, placement.c, placement.rows, placement.cols)) {
+        return null;
+      }
+      for (const k of roads) occupied.add(k);
+      for (const k of serviceFootprint(placement)) occupied.add(k);
+      services.push(placement);
+      serviceTypeIndices.push(s.typeIndex);
+      serviceBonuses.push(s.bonus);
+      effectZones.push(new Set(serviceEffectZone(G, placement)));
+      const coveredIndices = serviceCoverageByKey.get(serviceCandidateKey(s)) ?? [];
+      for (const index of coveredIndices) {
+        currentResidentialBoosts[index] += s.bonus;
+      }
+      if (useServiceTypes && remainingServiceAvail) remainingServiceAvail[s.typeIndex]--;
     }
-    if (overlaps(occupied, placement.r, placement.c, placement.rows, placement.cols)) {
-      if (fixedServices) return null;
-      continue;
+  } else {
+    const serviceOrderIndex = new Map<string, number>();
+    for (let index = 0; index < serviceSource.length; index++) {
+      serviceOrderIndex.set(serviceCandidateKey(serviceSource[index]), index);
     }
-    if (!ensureBuildingConnectedToRoads(G, roads, occupied, placement.r, placement.c, placement.rows, placement.cols)) {
-      if (fixedServices) return null;
-      continue;
+
+    for (;;) {
+      maybeStop?.();
+      if (maxServices !== undefined && services.length >= maxServices) break;
+
+      let bestCandidate: ServiceCandidate | null = null;
+      let bestScore = 0;
+      let bestOrderIndex = Infinity;
+      for (const service of serviceSource) {
+        maybeStop?.();
+        const key = serviceCandidateKey(service);
+        const placement = materializeServicePlacement(service);
+        if (useServiceTypes && remainingServiceAvail && remainingServiceAvail[service.typeIndex] <= 0) continue;
+        if (overlaps(occupied, placement.r, placement.c, placement.rows, placement.cols)) continue;
+        if (!canConnectToRoads(G, roads, occupied, placement.r, placement.c, placement.rows, placement.cols)) continue;
+        const score = computeServiceMarginalScore(
+          service,
+          occupied,
+          currentResidentialBoosts,
+          residentialCandidateStats,
+          serviceCoverageByKey
+        );
+        const orderIndex = serviceOrderIndex.get(key) ?? Infinity;
+        if (score > bestScore || (score === bestScore && score > 0 && orderIndex < bestOrderIndex)) {
+          bestCandidate = service;
+          bestScore = score;
+          bestOrderIndex = orderIndex;
+        }
+      }
+
+      if (!bestCandidate || bestScore <= 0) break;
+
+      const placement = materializeServicePlacement(bestCandidate);
+      if (!ensureBuildingConnectedToRoads(G, roads, occupied, placement.r, placement.c, placement.rows, placement.cols)) {
+        break;
+      }
+      for (const k of roads) occupied.add(k);
+      for (const k of serviceFootprint(placement)) occupied.add(k);
+      services.push(placement);
+      serviceTypeIndices.push(bestCandidate.typeIndex);
+      serviceBonuses.push(bestCandidate.bonus);
+      effectZones.push(new Set(serviceEffectZone(G, placement)));
+      const coveredIndices = serviceCoverageByKey.get(serviceCandidateKey(bestCandidate)) ?? [];
+      for (const index of coveredIndices) {
+        currentResidentialBoosts[index] += bestCandidate.bonus;
+      }
+      if (useServiceTypes && remainingServiceAvail) remainingServiceAvail[bestCandidate.typeIndex]--;
     }
-    for (const k of roads) occupied.add(k);
-    for (const k of serviceFootprint(placement)) occupied.add(k);
-    services.push(placement);
-    serviceTypeIndices.push(s.typeIndex);
-    serviceBonuses.push(s.bonus);
-    effectZones.push(new Set(serviceEffectZone(G, placement)));
-    if (useServiceTypes && remainingServiceAvail) remainingServiceAvail[s.typeIndex]--;
   }
   if (fixedServices && services.length !== fixedServices.length) return null;
 
@@ -382,24 +517,11 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     cols: residential.cols,
     ...getResidentialBaseMax(params, residential.rows, residential.cols, getCandidateTypeIndex(residential)),
   }));
+  const serviceCoverageByKey = buildServiceCoverageIndex(serviceCandidates, residentialCandidateStats);
   const serviceScores = new Map<string, number>();
   for (const s of serviceCandidates) {
     maybeStop();
-    const effectBounds = {
-      r: s.r - s.range,
-      c: s.c - s.range,
-      rows: s.rows + 2 * s.range,
-      cols: s.cols + 2 * s.range,
-    };
-    const footprint = { r: s.r, c: s.c, rows: s.rows, cols: s.cols };
-    let score = 0;
-    for (const res of residentialCandidateStats) {
-      maybeStop();
-      if (rectanglesOverlap(footprint, res)) continue;
-      if (!rectanglesOverlap(effectBounds, res)) continue;
-      score += Math.min(res.base + s.bonus, res.max);
-    }
-    serviceScores.set(serviceCandidateKey(s), score);
+    serviceScores.set(serviceCandidateKey(s), computeServiceStaticScore(s, residentialCandidateStats, serviceCoverageByKey));
   }
   const serviceOrderSorted = [...serviceCandidates].sort(
     (a, b) => (serviceScores.get(serviceCandidateKey(b)) ?? 0) - (serviceScores.get(serviceCandidateKey(a)) ?? 0)
@@ -423,6 +545,8 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
         G,
         params,
         serviceOrderSorted,
+        residentialCandidateStats,
+        serviceCoverageByKey,
         anyResidentialCandidates,
         residentialCandidatesForLocal,
         cap,
@@ -441,6 +565,8 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
           G,
           params,
           order,
+          residentialCandidateStats,
+          serviceCoverageByKey,
           anyResidentialCandidates,
           residentialCandidatesForLocal,
           cap,
@@ -480,6 +606,8 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
             G,
             params,
             serviceOrderSorted,
+            residentialCandidateStats,
+            serviceCoverageByKey,
             anyResidentialCandidates,
             residentialCandidatesForLocal,
             best.services.length,
@@ -516,6 +644,8 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
           G,
           params,
           serviceOrderSorted,
+          residentialCandidateStats,
+          serviceCoverageByKey,
           anyResidentialCandidates,
           residentialCandidatesForLocal,
           best.services.length,

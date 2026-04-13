@@ -7,7 +7,15 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
-import type { CpSatObjectivePolicy, CpSatTelemetry, EvaluatedServicePlacement, Grid, SolverParams, Solution } from "./types.js";
+import type {
+  CpSatObjectivePolicy,
+  CpSatTelemetry,
+  CpSatWarmStartHint,
+  EvaluatedServicePlacement,
+  Grid,
+  SolverParams,
+  Solution,
+} from "./types.js";
 import { evaluateLayout } from "./evaluator.js";
 import { roadsConnectedToRow0 } from "./roads.js";
 
@@ -187,13 +195,62 @@ function defaultPythonExecutable(): string {
   return existsSync(venvPython) ? venvPython : "python3";
 }
 
+function isSolutionWarmStartHint(value: CpSatWarmStartHint | Solution): value is Solution {
+  return value.roads instanceof Set;
+}
+
+function normalizeWarmStartHint(value: CpSatWarmStartHint | Solution | undefined): CpSatWarmStartHint | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  if (isSolutionWarmStartHint(value)) {
+    return {
+      roads: [...value.roads],
+      services: value.services.map((service, index) => ({
+        ...service,
+        typeIndex: value.serviceTypeIndices[index],
+        bonus: value.servicePopulationIncreases[index],
+      })),
+      residentials: value.residentials.map((residential, index) => ({
+        ...residential,
+        typeIndex: value.residentialTypeIndices[index],
+        population: value.populations[index],
+      })),
+      totalPopulation: value.totalPopulation,
+    };
+  }
+
+  return {
+    roads: [...value.roads],
+    services: value.services.map((service) => ({ ...service })),
+    residentials: value.residentials.map((residential) => ({ ...residential })),
+    totalPopulation: value.totalPopulation,
+  };
+}
+
+function buildCpSatBackendParams(params: SolverParams): SolverParams {
+  if (!params.cpSat?.warmStartHint) {
+    return params;
+  }
+
+  return {
+    ...params,
+    cpSat: {
+      ...params.cpSat,
+      warmStartHint: normalizeWarmStartHint(params.cpSat.warmStartHint),
+    },
+  };
+}
+
 function runCpSatBackend(G: Grid, params: SolverParams) {
   const pythonExecutable =
     params.cpSat?.pythonExecutable ?? process.env.CITY_BUILDER_CP_SAT_PYTHON ?? defaultPythonExecutable();
   const scriptPath = params.cpSat?.scriptPath ?? resolve(__dirname, "../python/cp_sat_solver.py");
+  const backendParams = buildCpSatBackendParams(params);
   const request = {
     grid: G,
-    params,
+    params: backendParams,
   };
 
   const result = spawnSync(pythonExecutable, [scriptPath], {

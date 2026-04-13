@@ -150,6 +150,8 @@ Note:
 
 ### 7. Add warm-start and continuation support
 
+Status: Implemented
+
 Expected impact: Medium
 
 Why:
@@ -160,6 +162,12 @@ Targets:
 - allow a saved incumbent to be injected safely
 - support continuation runs from a known exact/feasible incumbent
 - keep warm-start policy distinct from local-search or heuristic repair behavior
+
+Delivered:
+- CP-SAT now accepts `warmStartHint` as either a serializable hint payload or an existing `Solution`
+- the backend applies soft `AddHint(...)` warm starts for roads, canonical root choice, services, residentials, and population totals
+- continuation runs can enforce `objectiveLowerBound` on total population without changing the objective itself
+- regression tests now cover both direct hint injection and end-to-end continuation from a prior solution
 
 ### 8. Add single-machine CP-SAT portfolio search
 

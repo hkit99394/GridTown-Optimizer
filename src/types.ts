@@ -97,6 +97,10 @@ export interface CpSatOptions {
   relativeGapLimit?: number;
   /** Absolute optimality gap limit. Stop once the absolute gap is at or below this value. */
   absoluteGapLimit?: number;
+  /** Soft warm-start incumbent. Accepts either a serializable hint or an existing Solution. */
+  warmStartHint?: CpSatWarmStartHint | Solution;
+  /** Hard lower bound on total population for continuation runs from a known incumbent. */
+  objectiveLowerBound?: number;
   /** Emit OR-Tools search logs. Default false. */
   logSearchProgress?: boolean;
 }
@@ -121,6 +125,23 @@ export interface CpSatTelemetry {
   secondsSinceLastImprovement: number | null;
   numBranches: number;
   numConflicts: number;
+}
+
+export interface CpSatWarmStartServicePlacement extends ServicePlacement {
+  typeIndex?: number;
+  bonus?: number;
+}
+
+export interface CpSatWarmStartResidentialPlacement extends ResidentialPlacement {
+  typeIndex?: number;
+  population?: number;
+}
+
+export interface CpSatWarmStartHint {
+  roads: string[];
+  services: CpSatWarmStartServicePlacement[];
+  residentials: CpSatWarmStartResidentialPlacement[];
+  totalPopulation?: number;
 }
 
 export interface GreedyOptions {

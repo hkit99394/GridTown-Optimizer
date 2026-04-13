@@ -298,6 +298,104 @@ print(json.dumps({
   assert.equal(payload.log_search_progress, true);
 }
 
+function maybeTestCpSatWarmStartHelpers() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const command = `
+import importlib.util
+import json
+
+spec = importlib.util.spec_from_file_location("cp_sat_solver", ${JSON.stringify(scriptPath)})
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+grid = [
+  [1, 1, 1, 1],
+  [1, 1, 1, 1],
+  [1, 1, 1, 1],
+  [1, 1, 1, 1],
+]
+params = {
+    "serviceTypes": [{"rows": 1, "cols": 1, "bonus": 30, "range": 1, "avail": 1}],
+    "residentialTypes": [{"w": 2, "h": 2, "min": 10, "max": 40, "avail": 1}],
+    "availableBuildings": {"services": 1, "residentials": 1},
+}
+
+built = module.build_model(grid, params)
+module.apply_warm_start_hints(built.model, built, {
+    "roads": ["0,0", "0,1"],
+    "services": [{"r": 1, "c": 2, "rows": 1, "cols": 1, "range": 1, "typeIndex": 0, "bonus": 30}],
+    "residentials": [{"r": 0, "c": 0, "rows": 2, "cols": 2, "typeIndex": 0, "population": 40}],
+    "totalPopulation": 40,
+})
+module.apply_objective_lower_bound(built.model, built, 40)
+
+hint_proto = built.model.Proto().solution_hint
+vars_to_values = dict(zip(hint_proto.vars, hint_proto.values))
+
+print(json.dumps({
+    "hint_count": len(hint_proto.vars),
+    "total_population_hinted": vars_to_values.get(built.total_population.Index()),
+    "total_services_hinted": vars_to_values.get(built.total_services.Index()),
+    "total_roads_hinted": vars_to_values.get(built.total_roads.Index()),
+}))
+`;
+
+  const result = childProcess.spawnSync(pythonExecutable, ["-c", command], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT warm-start helpers.");
+  }
+
+  const payload = JSON.parse(result.stdout);
+  assert(payload.hint_count > 0);
+  assert.equal(payload.total_population_hinted, 40);
+  assert.equal(payload.total_services_hinted, 1);
+  assert.equal(payload.total_roads_hinted, 2);
+}
+
+function maybeTestCpSatWarmStartContinuation() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+  ];
+  const params = {
+    serviceTypes: [{ rows: 1, cols: 1, bonus: 30, range: 1, avail: 1 }],
+    residentialTypes: [{ w: 2, h: 2, min: 10, max: 40, avail: 1 }],
+    availableBuildings: { services: 1, residentials: 1 },
+    greedy: { localSearch: false, restarts: 1 },
+  };
+
+  const seed = solveGreedy(grid, params);
+  const continued = solveCpSat(grid, {
+    ...params,
+    optimizer: "cp-sat",
+    cpSat: {
+      pythonExecutable,
+      timeLimitSeconds: 5,
+      numWorkers: 1,
+      randomSeed: 7,
+      warmStartHint: seed,
+      objectiveLowerBound: seed.totalPopulation,
+    },
+  });
+
+  assert.match(continued.cpSatStatus ?? "", /^(OPTIMAL|FEASIBLE)$/);
+  assert(continued.totalPopulation >= seed.totalPopulation);
+}
+
 function maybeTestCpSatPopulationUpperBoundHelpers() {
   const pythonExecutable = resolveCpSatPython();
   if (!pythonExecutable) {
@@ -1061,9 +1159,11 @@ testGreedyDispatcher();
 maybeTestCpSatBackendJsonContractSmoke();
 maybeTestCpSatObjectivePolicyHelpers();
 maybeTestCpSatRuntimeOptionHelpers();
+maybeTestCpSatWarmStartHelpers();
 maybeTestCpSatPopulationUpperBoundHelpers();
 maybeTestCpSatResidentialPopulationUpperBoundHelpers();
 maybeTestCpSatOptimizer();
+maybeTestCpSatWarmStartContinuation();
 maybeTestCpSatObjectivePrefersFewerRoadsOnPopulationTie();
 maybeTestCpSatObjectiveAvoidsUselessServices();
 maybeTestCpSatPrunesObjectivelyUselessServices();

@@ -1131,6 +1131,133 @@ def configure_solver_parameters(solver, cp_sat_options):
     solver.parameters.log_search_progress = bool(cp_sat_options.get("logSearchProgress", False))
 
 
+def parse_hint_cell_key(key):
+    if not isinstance(key, str):
+        return None
+    parts = key.split(",")
+    if len(parts) != 2:
+        return None
+    try:
+        return (int(parts[0]), int(parts[1]))
+    except ValueError:
+        return None
+
+
+def select_hint_candidate_indices(hint_candidates, candidates, kind):
+    selected_indices = set()
+    for hint in hint_candidates or []:
+        if not isinstance(hint, dict):
+            continue
+        matches = [
+            candidate_index
+            for candidate_index, candidate in enumerate(candidates)
+            if int(candidate["r"]) == int(hint.get("r", -1))
+            and int(candidate["c"]) == int(hint.get("c", -1))
+            and int(candidate["rows"]) == int(hint.get("rows", -1))
+            and int(candidate["cols"]) == int(hint.get("cols", -1))
+        ]
+        if kind == "service":
+            if hint.get("typeIndex") is not None:
+                matches = [candidate_index for candidate_index in matches if candidates[candidate_index]["typeIndex"] == int(hint["typeIndex"])]
+            if hint.get("range") is not None:
+                matches = [candidate_index for candidate_index in matches if candidates[candidate_index]["range"] == int(hint["range"])]
+            if hint.get("bonus") is not None:
+                matches = [candidate_index for candidate_index in matches if candidates[candidate_index]["bonus"] == int(hint["bonus"])]
+        else:
+            if hint.get("typeIndex") is not None:
+                matches = [candidate_index for candidate_index in matches if candidates[candidate_index]["typeIndex"] == int(hint["typeIndex"])]
+        if len(matches) == 1:
+            selected_indices.add(matches[0])
+    return selected_indices
+
+
+def apply_warm_start_hints(model, built: BuiltCpSatModel, warm_start_hint):
+    if not warm_start_hint:
+        return
+
+    allowed_cell_to_id = {cell: cell_id for cell_id, cell in enumerate(built.allowed_cells)}
+    selected_road_ids = set()
+    for key in warm_start_hint.get("roads", []):
+        cell = parse_hint_cell_key(key)
+        if cell is None:
+            continue
+        cell_id = allowed_cell_to_id.get(cell)
+        if cell_id is not None:
+            selected_road_ids.add(cell_id)
+
+    if selected_road_ids:
+        for cell_id, road_var in enumerate(built.road_vars):
+            model.AddHint(road_var, 1 if cell_id in selected_road_ids else 0)
+
+    if built.root_vars:
+        selected_root_ids = sorted(cell_id for cell_id in built.root_vars if cell_id in selected_road_ids)
+        selected_root_id = selected_root_ids[0] if selected_root_ids else None
+        if selected_root_id is not None:
+            for cell_id, root_var in built.root_vars.items():
+                model.AddHint(root_var, 1 if cell_id == selected_root_id else 0)
+
+    selected_service_indices = select_hint_candidate_indices(
+        warm_start_hint.get("services", []), built.service_candidates, "service"
+    )
+    if selected_service_indices or warm_start_hint.get("services"):
+        for candidate_index, variable in enumerate(built.service_vars):
+            model.AddHint(variable, 1 if candidate_index in selected_service_indices else 0)
+
+    selected_residential_indices = select_hint_candidate_indices(
+        warm_start_hint.get("residentials", []), built.residential_candidates, "residential"
+    )
+    residential_hint_by_index = {}
+    for hint in warm_start_hint.get("residentials", []):
+        matches = select_hint_candidate_indices([hint], built.residential_candidates, "residential")
+        if len(matches) != 1:
+            continue
+        match_index = next(iter(matches))
+        residential_hint_by_index[match_index] = hint
+
+    if selected_residential_indices or warm_start_hint.get("residentials"):
+        for candidate_index, variable in enumerate(built.residential_vars):
+            model.AddHint(variable, 1 if candidate_index in selected_residential_indices else 0)
+
+    if residential_hint_by_index:
+        for candidate_index, pop_var in enumerate(built.populations):
+            if candidate_index in residential_hint_by_index and residential_hint_by_index[candidate_index].get("population") is not None:
+                hinted_population = int(residential_hint_by_index[candidate_index]["population"])
+                hinted_population = max(
+                    0,
+                    min(
+                        hinted_population,
+                        int(
+                            built.residential_candidates[candidate_index].get(
+                                "populationUpperBound", built.residential_candidates[candidate_index]["max"]
+                            )
+                        ),
+                    ),
+                )
+                model.AddHint(pop_var, hinted_population)
+            else:
+                model.AddHint(pop_var, 0)
+
+    if selected_road_ids:
+        model.AddHint(built.total_roads, len(selected_road_ids))
+    if selected_service_indices or warm_start_hint.get("services"):
+        model.AddHint(built.total_services, len(selected_service_indices))
+    if warm_start_hint.get("totalPopulation") is not None:
+        hinted_total_population = int(warm_start_hint["totalPopulation"])
+        hinted_total_population = max(0, min(hinted_total_population, built.total_population_upper_bound))
+        model.AddHint(built.total_population, hinted_total_population)
+
+
+def apply_objective_lower_bound(model, built: BuiltCpSatModel, objective_lower_bound):
+    if objective_lower_bound is None:
+        return
+    lower_bound = int(objective_lower_bound)
+    if lower_bound > built.total_population_upper_bound:
+        fail(
+            f"Objective lower bound {lower_bound} exceeds the model upper bound {built.total_population_upper_bound}."
+        )
+    model.Add(built.total_population >= lower_bound)
+
+
 class CpSatTelemetryCollector(cp_model.CpSolverSolutionCallback):
     def __init__(self):
         super().__init__()
@@ -1192,6 +1319,8 @@ def solve():
 
     built = build_model(grid, params)
     model = built.model
+    apply_warm_start_hints(model, built, cp_sat_options.get("warmStartHint"))
+    apply_objective_lower_bound(model, built, cp_sat_options.get("objectiveLowerBound"))
     solver = cp_model.CpSolver()
     configure_solver_parameters(solver, cp_sat_options)
     telemetry_collector = CpSatTelemetryCollector()

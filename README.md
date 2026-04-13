@@ -230,6 +230,33 @@ Useful CP-SAT runtime controls include:
 - `absoluteGapLimit`
 - `logSearchProgress`
 
+For continuation runs, CP-SAT also supports:
+
+- `warmStartHint`
+- `objectiveLowerBound`
+
+`warmStartHint` accepts either:
+
+- a serializable hint object, or
+- an existing `Solution`
+
+Example:
+
+```ts
+const seed = solve(grid, params);
+
+const continued = solve(grid, {
+  ...params,
+  optimizer: "cp-sat",
+  cpSat: {
+    timeLimitSeconds: 120,
+    numWorkers: 1,
+    warmStartHint: seed,
+    objectiveLowerBound: seed.totalPopulation,
+  },
+});
+```
+
 ### Validate a solver result
 
 ```ts
@@ -275,6 +302,9 @@ Useful types include:
 - `ServiceTypeSetting`
 - `ResidentialTypeSetting`
 - `CpSatOptions`
+- `CpSatObjectivePolicy`
+- `CpSatTelemetry`
+- `CpSatWarmStartHint`
 - `GreedyOptions`
 
 ## Input Notes

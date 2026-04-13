@@ -54,7 +54,7 @@ function testGreedyDispatcher() {
   assert.equal(dispatched.totalPopulation, direct.totalPopulation);
 }
 
-function maybeTestCpSatOptimizer() {
+async function maybeTestCpSatOptimizer() {
   const pythonExecutable = resolveCpSatPython();
   if (!pythonExecutable) {
     return;
@@ -80,8 +80,8 @@ function maybeTestCpSatOptimizer() {
     availableBuildings: { residentials: 2, services: 0 },
   };
 
-  const solution = solve(grid, params);
-  const direct = solveCpSat(grid, params);
+  const solution = await solveAsync(grid, params);
+  const direct = await solveCpSatAsync(grid, params);
 
   assert.equal(solution.optimizer, "cp-sat");
   assert.match(solution.cpSatStatus ?? "", /^(OPTIMAL|FEASIBLE)$/);
@@ -96,7 +96,39 @@ function maybeTestCpSatOptimizer() {
   assert.equal(direct.totalPopulation, 110);
 }
 
-function maybeTestCpSatSupportsShapedServices() {
+function maybeTestCpSatSyncCompatibility() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+  ];
+  const params = {
+    optimizer: "cp-sat",
+    cpSat: {
+      pythonExecutable,
+      timeLimitSeconds: 5,
+      numWorkers: 1,
+    },
+    residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
+    availableBuildings: { residentials: 1, services: 0 },
+  };
+
+  const dispatched = solve(grid, params);
+  const direct = solveCpSat(grid, params);
+
+  assert.match(dispatched.cpSatStatus ?? "", /^(OPTIMAL|FEASIBLE)$/);
+  assert.match(direct.cpSatStatus ?? "", /^(OPTIMAL|FEASIBLE)$/);
+  assert.equal(dispatched.totalPopulation, 10);
+  assert.equal(direct.totalPopulation, 10);
+}
+
+async function maybeTestCpSatSupportsShapedServices() {
   const pythonExecutable = resolveCpSatPython();
   if (!pythonExecutable) {
     return;
@@ -125,8 +157,8 @@ function maybeTestCpSatSupportsShapedServices() {
     availableBuildings: { services: 1, residentials: 2 },
   };
 
-  const solution = solve(grid, params);
-  const direct = solveCpSat(grid, params);
+  const solution = await solveAsync(grid, params);
+  const direct = await solveCpSatAsync(grid, params);
 
   assert.equal(solution.optimizer, "cp-sat");
   assert.match(solution.cpSatStatus ?? "", /^(OPTIMAL|FEASIBLE)$/);
@@ -200,6 +232,48 @@ function maybeTestCpSatBackendJsonContractSmoke() {
   assert.equal(typeof payload.telemetry?.secondsSinceLastImprovement, "number");
   assert.equal(typeof payload.telemetry?.numBranches, "number");
   assert.equal(typeof payload.telemetry?.numConflicts, "number");
+}
+
+function maybeTestCpSatBackendStreamingProtocol() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+  ];
+  const params = {
+    serviceTypes: [{ rows: 1, cols: 1, bonus: 30, range: 1, avail: 1 }],
+    residentialTypes: [{ w: 2, h: 2, min: 10, max: 40, avail: 1 }],
+    availableBuildings: { services: 1, residentials: 1 },
+    cpSat: { timeLimitSeconds: 5, numWorkers: 1, streamProgress: true, progressIntervalSeconds: 0 },
+  };
+
+  const result = childProcess.spawnSync(pythonExecutable, [scriptPath], {
+    input: JSON.stringify({ grid, params }),
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to run CP-SAT backend streaming protocol test.");
+  }
+
+  const lines = result.stdout
+    .trim()
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => JSON.parse(line));
+
+  assert(lines.length >= 2);
+  assert(lines.some((entry) => entry.event === "progress"));
+  const finalEntry = lines.at(-1);
+  assert.equal(finalEntry.event, "result");
+  assert.equal(typeof finalEntry.payload.totalPopulation, "number");
 }
 
 function maybeTestCpSatObjectivePolicyHelpers() {
@@ -368,7 +442,7 @@ print(json.dumps({
   assert.equal(payload.total_roads_hinted, 2);
 }
 
-function maybeTestCpSatWarmStartContinuation() {
+async function maybeTestCpSatWarmStartContinuation() {
   const pythonExecutable = resolveCpSatPython();
   if (!pythonExecutable) {
     return;
@@ -388,7 +462,7 @@ function maybeTestCpSatWarmStartContinuation() {
   };
 
   const seed = solveGreedy(grid, params);
-  const continued = solveCpSat(grid, {
+  const continued = await solveCpSatAsync(grid, {
     ...params,
     optimizer: "cp-sat",
     cpSat: {
@@ -538,7 +612,7 @@ print(json.dumps(results))
   ]);
 }
 
-function maybeTestCpSatPortfolioSolve() {
+async function maybeTestCpSatPortfolioSolve() {
   const pythonExecutable = resolveCpSatPython();
   if (!pythonExecutable) {
     return;
@@ -550,7 +624,7 @@ function maybeTestCpSatPortfolioSolve() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
   ];
-  const solution = solveCpSat(grid, {
+  const solution = await solveCpSatAsync(grid, {
     optimizer: "cp-sat",
     cpSat: {
       pythonExecutable,
@@ -605,12 +679,21 @@ async function maybeTestCpSatAsyncOptimizer() {
     availableBuildings: { residentials: 2, services: 0 },
   };
 
-  const dispatched = await solveAsync(grid, params);
-  const direct = await solveCpSatAsync(grid, params);
+  const progressUpdates = [];
+  const dispatched = await solveAsync(grid, params, {
+    onProgress: (update) => progressUpdates.push(update),
+    progressIntervalSeconds: 0,
+  });
+  const direct = await solveCpSatAsync(grid, params, {
+    onProgress: (update) => progressUpdates.push(update),
+    progressIntervalSeconds: 0,
+  });
 
   assert.match(dispatched.cpSatStatus ?? "", /^(OPTIMAL|FEASIBLE)$/);
   assert.equal(dispatched.totalPopulation, 110);
   assert.equal(direct.totalPopulation, 110);
+  assert(progressUpdates.length > 0);
+  assert(progressUpdates.some((update) => update.kind === "incumbent" || update.kind === "bound"));
 }
 
 function testCpSatRejectsDuplicatePortfolioWorkerIndices() {
@@ -969,7 +1052,7 @@ print(json.dumps({
   });
 }
 
-function maybeTestCpSatObjectivePrefersFewerRoadsOnPopulationTie() {
+async function maybeTestCpSatObjectivePrefersFewerRoadsOnPopulationTie() {
   const pythonExecutable = resolveCpSatPython();
   if (!pythonExecutable) {
     return;
@@ -993,7 +1076,7 @@ function maybeTestCpSatObjectivePrefersFewerRoadsOnPopulationTie() {
     availableBuildings: { residentials: 1, services: 0 },
   };
 
-  const solution = solveCpSat(grid, params);
+  const solution = await solveCpSatAsync(grid, params);
   assert.equal(solution.totalPopulation, 10);
   assert.equal(solution.roads.size, 1);
   assert.equal(solution.residentials.length, 1);
@@ -1001,7 +1084,7 @@ function maybeTestCpSatObjectivePrefersFewerRoadsOnPopulationTie() {
   assert.equal(solution.residentials[0].c, 0);
 }
 
-function maybeTestCpSatObjectiveAvoidsUselessServices() {
+async function maybeTestCpSatObjectiveAvoidsUselessServices() {
   const pythonExecutable = resolveCpSatPython();
   if (!pythonExecutable) {
     return;
@@ -1025,7 +1108,7 @@ function maybeTestCpSatObjectiveAvoidsUselessServices() {
     availableBuildings: { services: 1, residentials: 1 },
   };
 
-  const solution = solveCpSat(grid, params);
+  const solution = await solveCpSatAsync(grid, params);
   assert.equal(solution.totalPopulation, 10);
   assert.equal(solution.services.length, 0);
 }
@@ -1448,6 +1531,7 @@ print(json.dumps({
 async function main() {
   testGreedyDispatcher();
   maybeTestCpSatBackendJsonContractSmoke();
+  maybeTestCpSatBackendStreamingProtocol();
   maybeTestCpSatObjectivePolicyHelpers();
   maybeTestCpSatRuntimeOptionHelpers();
   maybeTestCpSatWarmStartHelpers();
@@ -1455,17 +1539,18 @@ async function main() {
   testCpSatPortfolioExecutorFallbackHelpers();
   maybeTestCpSatPopulationUpperBoundHelpers();
   maybeTestCpSatResidentialPopulationUpperBoundHelpers();
-  maybeTestCpSatOptimizer();
+  await maybeTestCpSatOptimizer();
+  maybeTestCpSatSyncCompatibility();
   await maybeTestCpSatAsyncOptimizer();
-  maybeTestCpSatWarmStartContinuation();
-  maybeTestCpSatPortfolioSolve();
-  maybeTestCpSatObjectivePrefersFewerRoadsOnPopulationTie();
-  maybeTestCpSatObjectiveAvoidsUselessServices();
+  await maybeTestCpSatWarmStartContinuation();
+  await maybeTestCpSatPortfolioSolve();
+  await maybeTestCpSatObjectivePrefersFewerRoadsOnPopulationTie();
+  await maybeTestCpSatObjectiveAvoidsUselessServices();
   maybeTestCpSatPrunesObjectivelyUselessServices();
   maybeTestCpSatBorderAccessCapacityHelpers();
   maybeTestCpSatGateRequirementHelpers();
   maybeTestCpSatGateRegionalCapacityHelpers();
-  maybeTestCpSatSupportsShapedServices();
+  await maybeTestCpSatSupportsShapedServices();
   maybeTestCpSatCandidateReductionHelpers();
   maybeTestCpSatReachabilityReductionHelpers();
   maybeTestCpSatConnectivityHelperConstraints();

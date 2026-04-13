@@ -61,7 +61,36 @@ async function runExample(): Promise<void> {
   ];
 
   const params = { ...DEFAULT_PARAMS, optimizer };
-  const solution = await solveAsync(grid, params);
+  const solution = await solveAsync(
+    grid,
+    params,
+    optimizer === "cp-sat"
+      ? {
+          onProgress: (update) => {
+            if (update.kind === "portfolio-worker-complete" && update.worker) {
+              console.log(
+                "[CP-SAT progress]",
+                `worker=${update.worker.workerIndex}`,
+                `status=${update.worker.status}`,
+                `population=${update.worker.totalPopulation ?? "n/a"}`
+              );
+              return;
+            }
+            if (!update.telemetry) {
+              return;
+            }
+            console.log(
+              "[CP-SAT progress]",
+              `kind=${update.kind}`,
+              `wall=${update.telemetry.solveWallTimeSeconds.toFixed(3)}s`,
+              `pop=${update.telemetry.incumbentPopulation ?? "n/a"}`,
+              `bound=${update.telemetry.bestPopulationUpperBound ?? "n/a"}`,
+              `gap=${update.telemetry.populationGapUpperBound ?? "n/a"}`
+            );
+          },
+        }
+      : undefined
+  );
   const validation = validateSolutionMap({ grid, solution, params });
 
   console.log("=== City Builder Solution ===\n");

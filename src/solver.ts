@@ -4,6 +4,7 @@
 
 import type { Grid } from "./types.js";
 import type {
+  CpSatAsyncOptions,
   GreedyOptions,
   ServicePlacement,
   ServiceCandidate,
@@ -459,12 +460,12 @@ export function solve(G: Grid, params: SolverParams): Solution {
   }
 }
 
-export async function solveAsync(G: Grid, params: SolverParams): Promise<Solution> {
+export async function solveAsync(G: Grid, params: SolverParams, cpSatAsyncOptions?: CpSatAsyncOptions): Promise<Solution> {
   switch (params.optimizer ?? "greedy") {
     case "greedy":
       return solveGreedy(G, params);
     case "cp-sat":
-      return solveCpSatAsync(G, params);
+      return solveCpSatAsync(G, params, cpSatAsyncOptions);
     default:
       throw new Error(`Unsupported optimizer: ${String(params.optimizer)}`);
   }

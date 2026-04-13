@@ -29,6 +29,8 @@ from cp_sat_runtime_support import (
     build_solution_response,
     collect_cp_sat_telemetry,
     portfolio_worker_summary_payload,
+    progress_payload,
+    result_payload,
     solver_status_name,
 )
 from cp_sat_portfolio_support import (
@@ -1263,14 +1265,23 @@ def apply_objective_lower_bound(model, built: BuiltCpSatModel, objective_lower_b
     model.Add(built.total_population >= lower_bound)
 
 
-def solve_single_cp_sat(grid, params, cp_sat_options):
+def solve_single_cp_sat(grid, params, cp_sat_options, progress_emitter=None):
     built = build_model(grid, params)
     model = built.model
     apply_warm_start_hints(model, built, cp_sat_options.get("warmStartHint"))
     apply_objective_lower_bound(model, built, cp_sat_options.get("objectiveLowerBound"))
     solver = cp_model.CpSolver()
     configure_solver_parameters(solver, cp_sat_options)
-    telemetry_collector = CpSatTelemetryCollector()
+    telemetry_collector = CpSatTelemetryCollector(
+        built=built,
+        population_from_objective_value=population_from_objective_value,
+        progress_emitter=progress_emitter,
+        progress_interval_seconds=cp_sat_options.get("progressIntervalSeconds", 0.5),
+    )
+    if progress_emitter is not None:
+        solver.best_bound_callback = telemetry_collector.on_best_bound_callback
+    if progress_emitter is not None and bool(cp_sat_options.get("logSearchProgress", False)):
+        solver.log_callback = lambda message: print(message, file=sys.stderr, end="")
     status = solver.Solve(model, telemetry_collector)
     status_name = solver_status_name(status)
     telemetry = collect_cp_sat_telemetry(
@@ -1316,9 +1327,17 @@ def portfolio_worker_task(grid, params, worker_option, worker_index):
         solve_result=solve_result,
     )
 
-def solve_cp_sat_portfolio(grid, params, cp_sat_options):
+def solve_cp_sat_portfolio(grid, params, cp_sat_options, progress_emitter=None):
     worker_options = build_portfolio_worker_options(cp_sat_options)
-    results = run_portfolio_workers(grid, params, worker_options, portfolio_worker_task)
+    results = run_portfolio_workers(
+        grid,
+        params,
+        worker_options,
+        portfolio_worker_task,
+        on_result=(lambda result: progress_emitter(progress_payload("portfolio-worker-complete", worker=result.summary)))
+        if progress_emitter is not None
+        else None,
+    )
     best_result = select_best_portfolio_result(results)
     if best_result is None:
         statuses = ", ".join(
@@ -1346,14 +1365,24 @@ def solve():
     grid = payload["grid"]
     params = payload.get("params") or {}
     cp_sat_options = params.get("cpSat") or {}
+    stream_progress = bool(cp_sat_options.get("streamProgress", False))
+
+    def emit_stream_event(event):
+        sys.stdout.write(json.dumps(event) + "\n")
+        sys.stdout.flush()
+
+    progress_emitter = emit_stream_event if stream_progress else None
     if cp_sat_options.get("portfolio"):
-        response = solve_cp_sat_portfolio(grid, params, cp_sat_options)
+        response = solve_cp_sat_portfolio(grid, params, cp_sat_options, progress_emitter)
     else:
-        result = solve_single_cp_sat(grid, params, cp_sat_options)
+        result = solve_single_cp_sat(grid, params, cp_sat_options, progress_emitter)
         if not result.feasible:
             fail(f"No feasible solution found with CP-SAT. Status: {result.status}.")
         response = result.response
-    json.dump(response, sys.stdout)
+    if stream_progress:
+        emit_stream_event(result_payload(response))
+    else:
+        json.dump(response, sys.stdout)
 
 
 if __name__ == "__main__":

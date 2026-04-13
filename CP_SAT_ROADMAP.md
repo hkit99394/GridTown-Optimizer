@@ -12,7 +12,7 @@ This roadmap is intentionally not about quality-per-minute. The focus is:
 
 ## Current Status
 
-Tasks `1-8` are delivered.
+The main single-machine CP-SAT foundation is delivered.
 
 Delivered summary:
 - exact-safe candidate reduction
@@ -21,6 +21,8 @@ Delivered summary:
 - stronger valid cuts and implied bounds
 - richer runtime controls
 - exact-run telemetry
+- live progress streaming
+- async caller migration
 - warm-start / continuation support
 - single-machine portfolio CP-SAT
 
@@ -28,34 +30,9 @@ Detailed delivered notes are in [CP_SAT_ROADMAP_DELIVERED.md](./CP_SAT_ROADMAP_D
 
 ## Remaining Work By Impact
 
-### 1. Add live CP-SAT progress streaming
+### 1. Add a benchmark corpus and reproducible exact-run harness
 
 Why it is first:
-- final telemetry already exists, but long exact runs still look opaque while they are in progress
-- live incumbent / bound / gap reporting has the biggest immediate usability impact for exact solving
-- it builds directly on the telemetry and async groundwork already in place
-
-Scope:
-- stream incumbent updates
-- stream best-bound updates
-- show gap and time since last improvement during the run
-- make the progress contract reusable by CLI, server, and UI layers
-
-### 2. Migrate more callers to `solveAsync(...)`
-
-Why it is second:
-- the async CP-SAT bridge already exists
-- wider adoption removes avoidable Node-side blocking in real integrations
-- this is the fastest way to turn the new execution path into real operational value
-
-Scope:
-- move higher-level callers away from the sync CP-SAT path where practical
-- keep sync only as a compatibility surface
-- align server/UI entrypoints on the async path first
-
-### 3. Add a benchmark corpus and reproducible exact-run harness
-
-Why it is third:
 - future CP-SAT work needs trustworthy before/after comparisons
 - distributed execution is hard to judge without a stable benchmark set
 - this is the main guard against “more infrastructure, unclear gain”
@@ -66,9 +43,9 @@ Scope:
 - recorded incumbent / bound / wall-time comparisons
 - portfolio and async execution benchmarks
 
-### 4. Distributed CP-SAT
+### 2. Distributed CP-SAT
 
-Why it is fourth:
+Why it is second:
 - this has the highest long-term compute ceiling, but not the biggest immediate impact
 - it is only worth doing after single-machine exact solving, async execution, and measurement are all solid
 - it is the highest-complexity remaining task
@@ -79,9 +56,9 @@ Core requirements:
 - worker lifecycle, cancellation, and fault handling
 - stable result selection and final exact-run summary
 
-### 5. Deepen async and portfolio failure-mode coverage
+### 3. Deepen async and portfolio failure-mode coverage
 
-Why it is fifth:
+Why it is third:
 - the important validation and fallback tests now exist
 - more edge-case coverage is still worthwhile, but it is a confidence multiplier rather than a primary capability gain
 

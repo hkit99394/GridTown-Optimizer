@@ -8,7 +8,10 @@ import { resolve } from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 
 import type {
+  CpSatAsyncOptions,
   CpSatObjectivePolicy,
+  CpSatProgressKind,
+  CpSatProgressUpdate,
   CpSatPortfolioSummary,
   CpSatPortfolioWorkerSummary,
   CpSatTelemetry,
@@ -50,6 +53,18 @@ interface CpSatRawSolution {
   objectivePolicy?: CpSatObjectivePolicy;
   telemetry?: CpSatTelemetry;
   portfolio?: CpSatPortfolioSummary;
+}
+
+interface CpSatRawProgressEvent {
+  event: "progress";
+  kind: CpSatProgressKind;
+  telemetry?: CpSatTelemetry;
+  worker?: CpSatPortfolioWorkerSummary;
+}
+
+interface CpSatRawResultEvent {
+  event: "result";
+  payload: CpSatRawSolution;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -180,6 +195,24 @@ function parseCpSatPortfolioSummary(value: unknown): CpSatPortfolioSummary {
   };
 }
 
+function expectCpSatProgressKind(value: unknown, label: string): CpSatProgressKind {
+  if (value === "incumbent" || value === "bound" || value === "portfolio-worker-complete") {
+    return value;
+  }
+  throw new Error(`CP-SAT backend returned invalid JSON: ${label} must be a known progress kind.`);
+}
+
+function parseCpSatProgressUpdate(value: unknown): CpSatProgressUpdate {
+  if (!isRecord(value)) {
+    throw new Error("CP-SAT backend returned invalid JSON: progress event must be an object.");
+  }
+  return {
+    kind: expectCpSatProgressKind(value.kind, "progress.kind"),
+    telemetry: value.telemetry === undefined ? undefined : parseCpSatTelemetry(value.telemetry),
+    worker: value.worker === undefined ? undefined : parseCpSatPortfolioWorkerSummary(value.worker, 0),
+  };
+}
+
 function parseCpSatServicePlacement(value: unknown, index: number): CpSatServicePlacement {
   if (!isRecord(value)) {
     throw new Error(`CP-SAT backend returned invalid JSON: services[${index}] must be an object.`);
@@ -285,8 +318,14 @@ function normalizeWarmStartHint(value: CpSatWarmStartHint | Solution | undefined
   };
 }
 
-function buildCpSatBackendParams(params: SolverParams): SolverParams {
-  if (!params.cpSat?.warmStartHint) {
+function buildCpSatBackendParams(params: SolverParams, asyncOptions?: CpSatAsyncOptions): SolverParams {
+  const normalizedWarmStartHint = params.cpSat?.warmStartHint ? normalizeWarmStartHint(params.cpSat.warmStartHint) : undefined;
+  const streamProgress = Boolean(
+    asyncOptions && (params.cpSat?.streamProgress || asyncOptions.onProgress || asyncOptions.progressIntervalSeconds !== undefined)
+  );
+  const progressIntervalSeconds = asyncOptions?.progressIntervalSeconds ?? params.cpSat?.progressIntervalSeconds;
+
+  if (!params.cpSat && !streamProgress) {
     return params;
   }
 
@@ -294,21 +333,23 @@ function buildCpSatBackendParams(params: SolverParams): SolverParams {
     ...params,
     cpSat: {
       ...params.cpSat,
-      warmStartHint: normalizeWarmStartHint(params.cpSat.warmStartHint),
+      ...(normalizedWarmStartHint ? { warmStartHint: normalizedWarmStartHint } : {}),
+      ...(streamProgress ? { streamProgress: true } : {}),
+      ...(progressIntervalSeconds !== undefined ? { progressIntervalSeconds } : {}),
     },
   };
 }
 
-function buildCpSatBackendInvocation(G: Grid, params: SolverParams) {
+function buildCpSatBackendInvocation(G: Grid, params: SolverParams, asyncOptions?: CpSatAsyncOptions) {
   const pythonExecutable =
     params.cpSat?.pythonExecutable ?? process.env.CITY_BUILDER_CP_SAT_PYTHON ?? defaultPythonExecutable();
   const scriptPath = params.cpSat?.scriptPath ?? resolve(__dirname, "../python/cp_sat_solver.py");
-  const backendParams = buildCpSatBackendParams(params);
+  const backendParams = buildCpSatBackendParams(params, asyncOptions);
   const request = JSON.stringify({
     grid: G,
     params: backendParams,
   });
-  return { pythonExecutable, scriptPath, request };
+  return { pythonExecutable, scriptPath, request, streamProgress: Boolean(backendParams.cpSat?.streamProgress) };
 }
 
 function runCpSatBackend(G: Grid, params: SolverParams) {
@@ -335,19 +376,79 @@ function runCpSatBackend(G: Grid, params: SolverParams) {
   return result.stdout;
 }
 
-function runCpSatBackendAsync(G: Grid, params: SolverParams): Promise<string> {
-  const { pythonExecutable, scriptPath, request } = buildCpSatBackendInvocation(G, params);
+function parseCpSatStreamEvent(line: string): CpSatRawProgressEvent | CpSatRawResultEvent {
+  const value = JSON.parse(line) as unknown;
+  if (!isRecord(value)) {
+    throw new Error("CP-SAT backend returned invalid JSON: stream event must be an object.");
+  }
+  const event = expectString(value.event, "stream.event");
+  if (event === "progress") {
+    const update = parseCpSatProgressUpdate(value);
+    return {
+      event,
+      kind: update.kind,
+      telemetry: update.telemetry,
+      worker: update.worker,
+    };
+  }
+  if (event === "result") {
+    return {
+      event,
+      payload: normalizeCpSatRawSolution(value.payload),
+    };
+  }
+  throw new Error("CP-SAT backend returned invalid JSON: unknown stream event type.");
+}
+
+async function runCpSatBackendAsync(
+  G: Grid,
+  params: SolverParams,
+  asyncOptions?: CpSatAsyncOptions
+): Promise<CpSatRawSolution> {
+  const { pythonExecutable, scriptPath, request, streamProgress } = buildCpSatBackendInvocation(G, params, asyncOptions);
   return new Promise((resolvePromise, rejectPromise) => {
     const child = spawn(pythonExecutable, [scriptPath], {
       stdio: ["pipe", "pipe", "pipe"],
     });
     let stdout = "";
     let stderr = "";
+    let lineBuffer = "";
+    let sawStreamEvent = false;
+    let finalPayload: CpSatRawSolution | null = null;
 
     child.stdout.setEncoding("utf8");
     child.stderr.setEncoding("utf8");
     child.stdout.on("data", (chunk: string) => {
       stdout += chunk;
+      if (!streamProgress) {
+        return;
+      }
+      lineBuffer += chunk;
+      let newlineIndex = lineBuffer.indexOf("\n");
+      while (newlineIndex >= 0) {
+        const line = lineBuffer.slice(0, newlineIndex).trim();
+        lineBuffer = lineBuffer.slice(newlineIndex + 1);
+        if (line) {
+          try {
+            const event = parseCpSatStreamEvent(line);
+            sawStreamEvent = true;
+            if (event.event === "progress") {
+              asyncOptions?.onProgress?.({
+                kind: event.kind,
+                telemetry: event.telemetry,
+                worker: event.worker,
+              });
+            } else {
+              finalPayload = event.payload;
+            }
+          } catch (error) {
+            rejectPromise(error as Error);
+            child.kill();
+            return;
+          }
+        }
+        newlineIndex = lineBuffer.indexOf("\n");
+      }
     });
     child.stderr.on("data", (chunk: string) => {
       stderr += chunk;
@@ -369,7 +470,35 @@ function runCpSatBackendAsync(G: Grid, params: SolverParams): Promise<string> {
         );
         return;
       }
-      resolvePromise(stdout);
+      try {
+        if (streamProgress) {
+          const trailing = lineBuffer.trim();
+          if (trailing) {
+            const event = parseCpSatStreamEvent(trailing);
+            sawStreamEvent = true;
+            if (event.event === "progress") {
+              asyncOptions?.onProgress?.({
+                kind: event.kind,
+                telemetry: event.telemetry,
+                worker: event.worker,
+              });
+            } else {
+              finalPayload = event.payload;
+            }
+          }
+          if (finalPayload) {
+            resolvePromise(finalPayload);
+            return;
+          }
+          if (sawStreamEvent) {
+            rejectPromise(new Error("CP-SAT backend returned streamed progress without a final result payload."));
+            return;
+          }
+        }
+        resolvePromise(parseCpSatRawSolution(stdout));
+      } catch (error) {
+        rejectPromise(error as Error);
+      }
     });
     child.stdin.end(request, "utf8");
   });
@@ -453,7 +582,7 @@ function materializeCpSatSolution(G: Grid, params: SolverParams, raw: CpSatRawSo
   };
 }
 
-export async function solveCpSatAsync(G: Grid, params: SolverParams): Promise<Solution> {
-  const raw = parseCpSatRawSolution(await runCpSatBackendAsync(G, params));
+export async function solveCpSatAsync(G: Grid, params: SolverParams, asyncOptions?: CpSatAsyncOptions): Promise<Solution> {
+  const raw = await runCpSatBackendAsync(G, params, asyncOptions);
   return materializeCpSatSolution(G, params, raw);
 }

@@ -103,6 +103,10 @@ export interface CpSatOptions {
   objectiveLowerBound?: number;
   /** Single-machine portfolio search across multiple CP-SAT workers. */
   portfolio?: CpSatPortfolioOptions;
+  /** Emit NDJSON progress events from the Python backend. Primarily used by the async bridge. */
+  streamProgress?: boolean;
+  /** Minimum interval between streamed bound-progress updates. Defaults to 0.5 seconds when streaming is enabled. */
+  progressIntervalSeconds?: number;
   /** Emit OR-Tools search logs. Default false. */
   logSearchProgress?: boolean;
 }
@@ -175,6 +179,21 @@ export interface CpSatPortfolioSummary {
   workerCount: number;
   selectedWorkerIndex: number | null;
   workers: CpSatPortfolioWorkerSummary[];
+}
+
+export type CpSatProgressKind = "incumbent" | "bound" | "portfolio-worker-complete";
+
+export interface CpSatProgressUpdate {
+  kind: CpSatProgressKind;
+  telemetry?: CpSatTelemetry;
+  worker?: CpSatPortfolioWorkerSummary;
+}
+
+export interface CpSatAsyncOptions {
+  /** Called as the Python backend emits live CP-SAT progress events. */
+  onProgress?: (update: CpSatProgressUpdate) => void;
+  /** Minimum interval between streamed bound updates. Defaults to 0.5 seconds. */
+  progressIntervalSeconds?: number;
 }
 
 export interface GreedyOptions {

@@ -201,9 +201,9 @@ console.log(solution.cpSatTelemetry?.bestPopulationUpperBound); // only set for 
 ### Run CP-SAT explicitly
 
 ```ts
-import { solve } from "./dist/index.js";
+import { solveAsync } from "./dist/index.js";
 
-const solution = solve(grid, {
+const solution = await solveAsync(grid, {
   ...params,
   optimizer: "cp-sat",
   cpSat: {
@@ -219,7 +219,33 @@ const solution = solve(grid, {
 });
 ```
 
-For non-blocking Node usage, the library also exposes `solveAsync(...)` and `solveCpSatAsync(...)`, which run the CP-SAT backend through an asynchronous child-process bridge instead of the legacy blocking sync path.
+For CP-SAT integrations, prefer `solveAsync(...)` or `solveCpSatAsync(...)`. The synchronous `solve(...)` and `solveCpSat(...)` entrypoints remain available as compatibility surfaces, but the async bridge is the recommended runtime path.
+
+You can also subscribe to live CP-SAT progress while using the async path:
+
+```ts
+import { solveAsync } from "./dist/index.js";
+
+const solution = await solveAsync(
+  grid,
+  {
+    ...params,
+    optimizer: "cp-sat",
+    cpSat: {
+      timeLimitSeconds: 120,
+      numWorkers: 1,
+    },
+  },
+  {
+    onProgress(update) {
+      if (update.telemetry) {
+        console.log(update.kind, update.telemetry.incumbentPopulation, update.telemetry.bestPopulationUpperBound);
+      }
+    },
+    progressIntervalSeconds: 0.5,
+  }
+);
+```
 
 Useful CP-SAT runtime controls include:
 
@@ -247,7 +273,7 @@ Example:
 ```ts
 const seed = solve(grid, params);
 
-const continued = solve(grid, {
+const continued = await solveAsync(grid, {
   ...params,
   optimizer: "cp-sat",
   cpSat: {
@@ -271,7 +297,7 @@ For single-machine portfolio search, CP-SAT also supports:
 Example:
 
 ```ts
-const portfolio = solve(grid, {
+const portfolio = await solveAsync(grid, {
   ...params,
   optimizer: "cp-sat",
   cpSat: {
@@ -314,11 +340,11 @@ console.log(validation.mapText);
 
 The public API is exposed from [src/index.ts](./src/index.ts):
 
-- `solve`
 - `solveAsync`
+- `solve`
 - `solveGreedy`
-- `solveCpSat`
 - `solveCpSatAsync`
+- `solveCpSat`
 - `evaluateLayout`
 - `validateSolution`
 - `renderSolutionMap`
@@ -332,6 +358,8 @@ Useful types include:
 - `ServiceTypeSetting`
 - `ResidentialTypeSetting`
 - `CpSatOptions`
+- `CpSatAsyncOptions`
+- `CpSatProgressUpdate`
 - `CpSatObjectivePolicy`
 - `CpSatTelemetry`
 - `CpSatPortfolioOptions`

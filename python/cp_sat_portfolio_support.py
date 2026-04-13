@@ -46,7 +46,7 @@ def select_best_portfolio_result(results):
     )
 
 
-def run_portfolio_workers(grid, params, worker_options, worker_task):
+def run_portfolio_workers(grid, params, worker_options, worker_task, on_result=None):
     max_workers = max(1, len(worker_options))
     def run_with_executor(executor_factory):
         results = []
@@ -56,7 +56,10 @@ def run_portfolio_workers(grid, params, worker_options, worker_task):
                 for worker_index, worker_option in enumerate(worker_options)
             ]
             for future in concurrent.futures.as_completed(futures):
-                results.append(future.result())
+                result = future.result()
+                results.append(result)
+                if on_result is not None:
+                    on_result(result)
         return results
 
     process_factory = lambda: concurrent.futures.ProcessPoolExecutor(

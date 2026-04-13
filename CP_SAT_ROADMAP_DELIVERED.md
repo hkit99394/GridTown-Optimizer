@@ -44,13 +44,25 @@ This file keeps the completed CP-SAT roadmap work out of the main roadmap so [CP
 - branches / conflicts
 - public solution contract support
 
-### 7. Warm start and continuation
+### 7. Live progress streaming
+- streamed incumbent updates
+- streamed best-bound updates
+- reusable async progress contract for Node callers
+- CLI-visible live CP-SAT progress output
+
+### 8. Async caller migration
+- async-first public examples
+- CLI on `solveAsync(...)`
+- top-level CP-SAT integration tests moved to async-first coverage
+- sync entrypoints retained as compatibility surfaces
+
+### 9. Warm start and continuation
 - `warmStartHint`
 - `objectiveLowerBound`
 - direct hint payloads or prior `Solution`
 - tested continuation flow
 
-### 8. Single-machine portfolio CP-SAT
+### 10. Single-machine portfolio CP-SAT
 - seeded worker generation
 - portfolio winner selection
 - per-worker status summary
@@ -59,4 +71,4 @@ This file keeps the completed CP-SAT roadmap work out of the main roadmap so [CP
 ## Notes
 
 - The library now also exposes an async CP-SAT path through `solveAsync(...)` and `solveCpSatAsync(...)`.
-- Distributed CP-SAT is intentionally not included here because it remains the only unfinished numbered roadmap task.
+- Remaining benchmark, distributed-execution, and deeper failure-mode work stays in [CP_SAT_ROADMAP.md](./CP_SAT_ROADMAP.md).

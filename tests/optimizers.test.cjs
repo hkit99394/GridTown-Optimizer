@@ -401,6 +401,40 @@ print(json.dumps({
   assert.equal(payload.relative_gap_limit, 0.125);
   assert.equal(payload.absolute_gap_limit, 9);
   assert.equal(payload.log_search_progress, true);
+
+  const noLimitCommand = `
+import importlib.util
+import json
+import math
+
+spec = importlib.util.spec_from_file_location("cp_sat_solver", ${JSON.stringify(scriptPath)})
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+baseline_solver = module.cp_model.CpSolver()
+solver = module.cp_model.CpSolver()
+module.configure_solver_parameters(solver, {
+    "numWorkers": 1,
+})
+
+print(json.dumps({
+    "baseline_is_infinite": math.isinf(baseline_solver.parameters.max_time_in_seconds),
+    "configured_is_infinite": math.isinf(solver.parameters.max_time_in_seconds),
+    "baseline_max_time_in_seconds": None if math.isinf(baseline_solver.parameters.max_time_in_seconds) else baseline_solver.parameters.max_time_in_seconds,
+    "configured_max_time_in_seconds": None if math.isinf(solver.parameters.max_time_in_seconds) else solver.parameters.max_time_in_seconds,
+}))
+`;
+
+  const noLimitResult = childProcess.spawnSync(pythonExecutable, ["-c", noLimitCommand], {
+    encoding: "utf8",
+  });
+  if (noLimitResult.status !== 0) {
+    throw new Error(noLimitResult.stderr?.trim() || noLimitResult.stdout?.trim() || "Failed to inspect CP-SAT default time limit behavior.");
+  }
+
+  const noLimitPayload = JSON.parse(noLimitResult.stdout);
+  assert.equal(noLimitPayload.configured_is_infinite, noLimitPayload.baseline_is_infinite);
+  assert.equal(noLimitPayload.configured_max_time_in_seconds, noLimitPayload.baseline_max_time_in_seconds);
 }
 
 function maybeTestCpSatWarmStartHelpers() {

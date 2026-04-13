@@ -1238,7 +1238,8 @@ def build_model(grid, params) -> BuiltCpSatModel:
 
 
 def configure_solver_parameters(solver, cp_sat_options):
-    solver.parameters.max_time_in_seconds = float(cp_sat_options.get("timeLimitSeconds", 120))
+    if cp_sat_options.get("timeLimitSeconds") is not None:
+        solver.parameters.max_time_in_seconds = float(cp_sat_options["timeLimitSeconds"])
     if cp_sat_options.get("maxDeterministicTime") is not None:
         solver.parameters.max_deterministic_time = float(cp_sat_options["maxDeterministicTime"])
     solver.parameters.num_search_workers = int(cp_sat_options.get("numWorkers", 8))

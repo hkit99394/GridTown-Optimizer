@@ -56,6 +56,7 @@ export type ResidentialSettings = Partial<Record<string, ResidentialSizeSetting>
  * Building can be rotated so both (w×h) and (h×w) count as this type and share the same avail.
  */
 export interface ResidentialTypeSetting {
+  name?: string;
   w: number;
   h: number;
   min: number;
@@ -68,6 +69,7 @@ export interface ResidentialTypeSetting {
  * When allowRotation is true (default), both (rows×cols) and (cols×rows) are allowed for this type.
  */
 export interface ServiceTypeSetting {
+  name?: string;
   rows: number;
   cols: number;
   bonus: number;
@@ -76,39 +78,85 @@ export interface ServiceTypeSetting {
   allowRotation?: boolean;
 }
 
-export type OptimizerName = "greedy" | "cp-sat";
+export type OptimizerName = "greedy" | "cp-sat" | "lns";
 
-export interface CpSatOptions {
-  /** Python executable to run the CP-SAT backend. Defaults to .venv-cp-sat/bin/python when present, else python3. */
-  pythonExecutable?: string;
-  /** Override the CP-SAT backend script path. */
-  scriptPath?: string;
-  /** Max solve time in seconds. Default 120. */
-  timeLimitSeconds?: number;
-  /** Max deterministic time. Useful for more reproducible benchmark comparisons. */
-  maxDeterministicTime?: number;
-  /** CP-SAT worker count. Default 8. */
-  numWorkers?: number;
-  /** Fixed search seed for reproducibility. */
-  randomSeed?: number;
-  /** Enable randomized search decisions. Default false. */
-  randomizeSearch?: boolean;
-  /** Relative optimality gap limit. Stop once the relative gap is at or below this value. */
-  relativeGapLimit?: number;
-  /** Absolute optimality gap limit. Stop once the absolute gap is at or below this value. */
-  absoluteGapLimit?: number;
-  /** Soft warm-start incumbent. Accepts either a serializable hint or an existing Solution. */
-  warmStartHint?: CpSatWarmStartHint | Solution;
-  /** Hard lower bound on total population for continuation runs from a known incumbent. */
+/** Stable semantic key for a road cell in persisted snapshots: "r,c". */
+export type PersistedRoadKey = string;
+
+/** Stable semantic key for a hinted service candidate: "service:typeIndex:r:c:rows:cols". */
+export type PersistedServiceCandidateKey = string;
+
+/** Stable semantic key for a hinted residential candidate: "residential:typeIndex:r:c:rows:cols". */
+export type PersistedResidentialCandidateKey = string;
+
+export interface CpSatNeighborhoodWindow {
+  top: number;
+  left: number;
+  rows: number;
+  cols: number;
+}
+
+export interface CpSatWarmStartServicePlacement extends ServicePlacement {
+  typeIndex?: number;
+  bonus?: number;
+}
+
+export interface CpSatWarmStartResidentialPlacement extends ResidentialPlacement {
+  typeIndex?: number;
+  population?: number;
+}
+
+/** Typed service placement saved specifically for rebuilding CP-SAT solution hints. */
+export interface CpSatContinuationHintedServicePlacement extends ServicePlacement {
+  typeIndex: number;
+  bonus: number;
+}
+
+/** Typed residential placement saved specifically for rebuilding CP-SAT solution hints. */
+export interface CpSatContinuationHintedResidentialPlacement extends ResidentialPlacement {
+  typeIndex: number;
+  population: number;
+}
+
+export interface CpSatWarmStartHint {
+  sourceName?: string;
+  modelFingerprint?: string;
+  roadKeys?: PersistedRoadKey[];
+  serviceCandidateKeys?: PersistedServiceCandidateKey[];
+  residentialCandidateKeys?: PersistedResidentialCandidateKey[];
+  roads?: PersistedRoadKey[];
+  services?: CpSatWarmStartServicePlacement[];
+  residentials?: CpSatWarmStartResidentialPlacement[];
+  solution?: {
+    roads?: PersistedRoadKey[];
+    services?: CpSatContinuationHintedServicePlacement[];
+    residentials?: CpSatContinuationHintedResidentialPlacement[];
+    populations?: number[];
+    totalPopulation?: number;
+  };
+  totalPopulation?: number;
   objectiveLowerBound?: number;
-  /** Single-machine portfolio search across multiple CP-SAT workers. */
-  portfolio?: CpSatPortfolioOptions;
-  /** Emit NDJSON progress events from the Python backend. Primarily used by the async bridge. */
-  streamProgress?: boolean;
-  /** Minimum interval between streamed bound-progress updates. Defaults to 0.5 seconds when streaming is enabled. */
-  progressIntervalSeconds?: number;
-  /** Emit OR-Tools search logs. Default false. */
-  logSearchProgress?: boolean;
+  preferStrictImprove?: boolean;
+  repairHint?: boolean;
+  fixVariablesToHintedValue?: boolean;
+  hintConflictLimit?: number;
+  neighborhoodWindow?: CpSatNeighborhoodWindow;
+  fixOutsideNeighborhoodToHintedValue?: boolean;
+}
+
+export interface CpSatPortfolioOptions {
+  /** Number of independent CP-SAT workers to launch when randomSeeds is not provided. */
+  workerCount?: number;
+  /** Explicit per-worker random seeds. Overrides workerCount when provided. */
+  randomSeeds?: number[];
+  /** Per-worker time limit override. Defaults to the outer timeLimitSeconds. */
+  perWorkerTimeLimitSeconds?: number;
+  /** Per-worker deterministic time override. Defaults to the outer maxDeterministicTime. */
+  perWorkerMaxDeterministicTime?: number;
+  /** Per-worker CP-SAT internal worker count. Defaults to 1 to avoid oversubscription. */
+  perWorkerNumWorkers?: number;
+  /** Override randomized search for every portfolio worker. Defaults to true. */
+  randomizeSearch?: boolean;
 }
 
 export interface CpSatObjectivePolicy {
@@ -131,38 +179,6 @@ export interface CpSatTelemetry {
   secondsSinceLastImprovement: number | null;
   numBranches: number;
   numConflicts: number;
-}
-
-export interface CpSatWarmStartServicePlacement extends ServicePlacement {
-  typeIndex?: number;
-  bonus?: number;
-}
-
-export interface CpSatWarmStartResidentialPlacement extends ResidentialPlacement {
-  typeIndex?: number;
-  population?: number;
-}
-
-export interface CpSatWarmStartHint {
-  roads: string[];
-  services: CpSatWarmStartServicePlacement[];
-  residentials: CpSatWarmStartResidentialPlacement[];
-  totalPopulation?: number;
-}
-
-export interface CpSatPortfolioOptions {
-  /** Number of independent CP-SAT workers to launch when randomSeeds is not provided. */
-  workerCount?: number;
-  /** Explicit per-worker random seeds. Overrides workerCount when provided. */
-  randomSeeds?: number[];
-  /** Per-worker time limit override. Defaults to the outer timeLimitSeconds. */
-  perWorkerTimeLimitSeconds?: number;
-  /** Per-worker deterministic time override. Defaults to the outer maxDeterministicTime. */
-  perWorkerMaxDeterministicTime?: number;
-  /** Per-worker CP-SAT internal worker count. Defaults to 1 to avoid oversubscription. */
-  perWorkerNumWorkers?: number;
-  /** Override randomized search for every portfolio worker. Defaults to true. */
-  randomizeSearch?: boolean;
 }
 
 export interface CpSatPortfolioWorkerSummary {
@@ -196,6 +212,43 @@ export interface CpSatAsyncOptions {
   progressIntervalSeconds?: number;
 }
 
+export interface CpSatOptions {
+  /** Python executable to run the CP-SAT backend. Defaults to .venv-cp-sat/bin/python when present, else python3. */
+  pythonExecutable?: string;
+  /** Override the CP-SAT backend script path. */
+  scriptPath?: string;
+  /** Optional max solve time in seconds. When omitted, CP-SAT runs until it finishes or is stopped externally. */
+  timeLimitSeconds?: number;
+  /** Max deterministic time. Useful for more reproducible benchmark comparisons. */
+  maxDeterministicTime?: number;
+  /** CP-SAT worker count. Default 8. */
+  numWorkers?: number;
+  /** Fixed search seed for reproducibility. */
+  randomSeed?: number;
+  /** Enable randomized search decisions. Default false. */
+  randomizeSearch?: boolean;
+  /** Relative optimality gap limit. Stop once the relative gap is at or below this value. */
+  relativeGapLimit?: number;
+  /** Absolute optimality gap limit. Stop once the absolute gap is at or below this value. */
+  absoluteGapLimit?: number;
+  /** Soft warm-start incumbent. Accepts either a serializable hint or an existing Solution. */
+  warmStartHint?: CpSatWarmStartHint | Solution;
+  /** Hard lower bound on total population for continuation runs from a known incumbent. */
+  objectiveLowerBound?: number;
+  /** Single-machine portfolio search across multiple CP-SAT workers. */
+  portfolio?: CpSatPortfolioOptions;
+  /** Emit NDJSON progress events from the Python backend. Primarily used by the async bridge. */
+  streamProgress?: boolean;
+  /** Minimum interval between streamed bound-progress updates. Defaults to 0.5 seconds when streaming is enabled. */
+  progressIntervalSeconds?: number;
+  /** Emit OR-Tools search logs. Default false. */
+  logSearchProgress?: boolean;
+  /** Internal stop-token path used by the local web server. */
+  stopFilePath?: string;
+  /** Internal best-snapshot path used by the local web server. */
+  snapshotFilePath?: string;
+}
+
 export interface GreedyOptions {
   /** Run local search to improve solution (default true) */
   localSearch?: boolean;
@@ -211,6 +264,29 @@ export interface GreedyOptions {
   serviceExactPoolLimit?: number;
   /** Hard cap on evaluated service combinations (default 12000) */
   serviceExactMaxCombinations?: number;
+  /** Internal stop-token path used by the local web server. */
+  stopFilePath?: string;
+  /** Internal best-snapshot path used by the local web server. */
+  snapshotFilePath?: string;
+}
+
+export interface LnsOptions {
+  /** Number of neighborhood-repair attempts to run after the greedy seed. */
+  iterations?: number;
+  /** Stop after this many consecutive non-improving neighborhoods. */
+  maxNoImprovementIterations?: number;
+  /** Height of each repair neighborhood. Defaults to about half the grid height. */
+  neighborhoodRows?: number;
+  /** Width of each repair neighborhood. Defaults to about half the grid width. */
+  neighborhoodCols?: number;
+  /** Per-neighborhood CP-SAT repair budget in seconds. */
+  repairTimeLimitSeconds?: number;
+  /** Optional saved-layout seed used instead of rebuilding the initial greedy incumbent. */
+  seedHint?: CpSatWarmStartHint;
+  /** Internal stop-token path used by the local web server. */
+  stopFilePath?: string;
+  /** Internal best-snapshot path used by the local web server. */
+  snapshotFilePath?: string;
 }
 
 export interface SolverParams {
@@ -220,9 +296,9 @@ export interface SolverParams {
   cpSat?: CpSatOptions;
   /** Greedy-only tuning knobs. Ignored by the CP-SAT backend. */
   greedy?: GreedyOptions;
-  /**
-   * Service types: each type has its own footprint, bonus, range, and availability.
-   */
+  /** LNS-only tuning knobs. Ignored by other backends. */
+  lns?: LnsOptions;
+  /** Service types: each type has its own footprint, bonus, range, and availability. */
   serviceTypes?: ServiceTypeSetting[];
   /**
    * Residential types with rotation: each type allows (w×h) and (h×w), with per-type min, max, and avail.
@@ -248,25 +324,18 @@ export interface SolverParams {
   /** @deprecated Use availableBuildings.residentials */
   maxResidentials?: number;
   /** @deprecated Use greedy.localSearch */
-  /** Run local search to improve solution (default true) */
   localSearch?: boolean;
   /** @deprecated Use greedy.restarts */
-  /** Number of restarts with different service order; take best solution (default 1) */
   restarts?: number;
   /** @deprecated Use greedy.serviceRefineIterations */
-  /** Service-position refinement passes after restarts (default 2) */
   serviceRefineIterations?: number;
   /** @deprecated Use greedy.serviceRefineCandidateLimit */
-  /** Max service candidates considered per refinement pass (default 40) */
   serviceRefineCandidateLimit?: number;
   /** @deprecated Use greedy.exhaustiveServiceSearch */
-  /** Run exhaustive search over service layouts in top-N pool (default false) */
   exhaustiveServiceSearch?: boolean;
   /** @deprecated Use greedy.serviceExactPoolLimit */
-  /** Pool size for exhaustive service search (default 22) */
   serviceExactPoolLimit?: number;
   /** @deprecated Use greedy.serviceExactMaxCombinations */
-  /** Hard cap on evaluated service combinations (default 12000) */
   serviceExactMaxCombinations?: number;
 }
 
@@ -280,6 +349,8 @@ export interface Solution {
   cpSatTelemetry?: CpSatTelemetry;
   /** Portfolio summary when CP-SAT used multi-run portfolio search. */
   cpSatPortfolio?: CpSatPortfolioSummary;
+  /** True when a run was stopped early and this solution is the best feasible result found so far. */
+  stoppedByUser?: boolean;
   roads: Set<string>;
   services: ServicePlacement[];
   /** Service type index per placement; -1 only for manual solutions without configured service types */
@@ -292,6 +363,160 @@ export interface Solution {
   /** Population per residential (same order as residentials) */
   populations: number[];
   totalPopulation: number;
+}
+
+/** Shared progress snapshot returned by long-running background solvers. */
+export interface BackgroundSolveSnapshotState {
+  hasFeasibleSolution: boolean;
+  totalPopulation: number | null;
+  cpSatStatus?: string | null;
+}
+
+/** Shared contract for cancellable background solver runs. */
+export interface BackgroundSolveHandle {
+  promise: Promise<Solution>;
+  cancel: () => void;
+  getLatestSnapshot: () => Solution | null;
+  getLatestSnapshotState: () => BackgroundSolveSnapshotState;
+}
+
+/** JSON-serializable form of Solution for APIs and persisted browser storage. */
+export interface SerializedSolution extends Omit<Solution, "roads"> {
+  roads: string[];
+}
+
+/** Current solve request payload shape used by the web planner and local web server. */
+export interface SolveRequestPayload {
+  grid: Grid;
+  params: SolverParams;
+}
+
+/** Solver summary returned by the local web server for display and persistence. */
+export interface SolveResponseStats {
+  optimizer?: OptimizerName;
+  cpSatStatus: string | null;
+  stoppedByUser: boolean;
+  totalPopulation: number;
+  roadCount: number;
+  serviceCount: number;
+  residentialCount: number;
+}
+
+/** Validation details returned alongside a solved layout. */
+export interface SolveResponseValidation {
+  valid: boolean;
+  errors: string[];
+  recomputedPopulations: number[];
+  recomputedTotalPopulation: number;
+  mapRows: string[];
+  mapText: string;
+}
+
+/** Display-ready solve result payload as saved by the planner UI. */
+export interface SolveResponsePayload {
+  solution: SerializedSolution;
+  validation: SolveResponseValidation;
+  stats: SolveResponseStats;
+  message?: string;
+}
+
+/**
+ * Full request model used to continue a saved CP-SAT solve later.
+ * This is stricter than SolveRequestPayload because continuation only makes
+ * sense when the model is rebuilt as CP-SAT again.
+ */
+export interface CpSatContinuationModelInput {
+  grid: Grid;
+  params: SolverParams & {
+    optimizer: "cp-sat";
+  };
+}
+
+/** Versioning and fingerprint data used to reject incompatible continuation attempts. */
+export interface CpSatContinuationCompatibility {
+  modelEncodingVersion: "cp-sat-layout-v1";
+  candidateKeyVersion: 1;
+  modelFingerprint: string;
+  candidateUniverseHash: string;
+  createdWith: {
+    appVersion?: string;
+    ortoolsVersion?: string;
+  };
+}
+
+/** Default runtime knobs to reuse when restarting from a saved CP-SAT checkpoint. */
+export interface CpSatContinuationRuntimeDefaults {
+  numWorkers?: number;
+  randomSeed?: number;
+  randomizeSearch?: boolean;
+  logSearchProgress?: boolean;
+}
+
+/** Best-known objective snapshot stored at save time. */
+export interface CpSatContinuationIncumbent {
+  status: "FEASIBLE" | "OPTIMAL";
+  objective: {
+    name: "totalPopulation";
+    sense: "maximize";
+    value: number;
+    bestBound?: number | null;
+  };
+  elapsedMs: number;
+  stoppedByUser: boolean;
+}
+
+/** Saved best-so-far assignment used as a warm start for a future CP-SAT run. */
+export interface CpSatContinuationHint {
+  roadKeys: PersistedRoadKey[];
+  serviceCandidateKeys: PersistedServiceCandidateKey[];
+  residentialCandidateKeys: PersistedResidentialCandidateKey[];
+  solution: {
+    roads: PersistedRoadKey[];
+    services: CpSatContinuationHintedServicePlacement[];
+    residentials: CpSatContinuationHintedResidentialPlacement[];
+    populations: number[];
+    totalPopulation: number;
+  };
+}
+
+/** Resume policy for a future warm restart from a saved CP-SAT checkpoint. */
+export interface CpSatContinuationResumePolicy {
+  requireExactModelMatch: true;
+  applyHints: boolean;
+  repairHint: boolean;
+  fixVariablesToHintedValue: boolean;
+  objectiveCutoff: {
+    op: ">=";
+    value: number;
+    preferStrictImprove: boolean;
+  };
+}
+
+/** Persisted CP-SAT checkpoint that can be loaded later as a warm restart. */
+export interface CpSatContinuationCheckpoint {
+  kind: "city-builder.cp-sat-checkpoint";
+  version: 1;
+  compatibility: CpSatContinuationCompatibility;
+  modelInput: CpSatContinuationModelInput;
+  runtimeDefaults: CpSatContinuationRuntimeDefaults;
+  incumbent: CpSatContinuationIncumbent;
+  hint: CpSatContinuationHint;
+  resumePolicy: CpSatContinuationResumePolicy;
+}
+
+/**
+ * Browser-saved output layout record.
+ * The `continueCpSat` block is optional so existing saved layouts remain valid
+ * and non-CP-SAT results can stay display-only.
+ */
+export interface SavedLayoutRecord {
+  id: string;
+  name: string;
+  savedAt: string;
+  elapsedMs: number;
+  result: SolveResponsePayload;
+  resultContext: SolveRequestPayload;
+  continueCpSat?: CpSatContinuationCheckpoint;
 }
 
 /** Explicit service placement for manual layout evaluation */

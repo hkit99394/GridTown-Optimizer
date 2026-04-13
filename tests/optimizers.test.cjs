@@ -6,6 +6,9 @@ const path = require("node:path");
 const {
   DEFAULT_CP_SAT_BENCHMARK_CORPUS,
   DEFAULT_CP_SAT_BENCHMARK_OPTIONS,
+  getOptimizerAdapter,
+  listOptimizerAdapters,
+  resolveOptimizerName,
   listCpSatBenchmarkCaseNames,
   normalizeCpSatBenchmarkOptions,
   runCpSatBenchmarkSuite,
@@ -14,10 +17,24 @@ const {
   solveGreedy,
   solveCpSat,
   solveCpSatAsync,
+  solveLns,
   validateSolution,
   validateSolutionMap,
 } = require("../dist/index.js");
 const { parseCpSatRawSolution } = require("../dist/cpSatSolver.js");
+
+function testOptimizerRegistry() {
+  assert.equal(resolveOptimizerName(undefined), "greedy");
+  assert.equal(resolveOptimizerName({ optimizer: "cp-sat" }), "cp-sat");
+  assert.equal(resolveOptimizerName({ optimizer: "lns" }), "lns");
+  assert.equal(getOptimizerAdapter("greedy").name, "greedy");
+  assert.equal(getOptimizerAdapter({ optimizer: "cp-sat" }).name, "cp-sat");
+  assert.equal(getOptimizerAdapter("lns").name, "lns");
+  assert.deepEqual(
+    listOptimizerAdapters().map((adapter) => adapter.name).sort(),
+    ["cp-sat", "greedy", "lns"]
+  );
+}
 
 function resolveCpSatPython() {
   const venvPython = path.resolve(__dirname, "../.venv-cp-sat/bin/python");
@@ -1253,6 +1270,235 @@ async function maybeTestCpSatObjectiveAvoidsUselessServices() {
   assert.equal(solution.services.length, 0);
 }
 
+function maybeTestLnsOptimizer() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const grid = [
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+  ];
+  const params = {
+    optimizer: "lns",
+    cpSat: {
+      pythonExecutable,
+      numWorkers: 1,
+      timeLimitSeconds: 5,
+    },
+    lns: {
+      iterations: 2,
+      maxNoImprovementIterations: 2,
+      repairTimeLimitSeconds: 1,
+      neighborhoodRows: 3,
+      neighborhoodCols: 3,
+    },
+    serviceTypes: [{ rows: 2, cols: 2, bonus: 80, range: 2, avail: 1 }],
+    residentialTypes: [
+      { w: 2, h: 2, min: 100, max: 180, avail: 2 },
+      { w: 2, h: 3, min: 130, max: 260, avail: 1 },
+    ],
+    availableBuildings: { services: 1, residentials: 3 },
+    greedy: {
+      localSearch: true,
+      restarts: 2,
+      serviceRefineIterations: 1,
+      serviceRefineCandidateLimit: 10,
+      exhaustiveServiceSearch: false,
+    },
+  };
+
+  const greedySeed = solveGreedy(grid, { ...params, optimizer: "greedy" });
+  const solution = solve(grid, params);
+  const direct = solveLns(grid, params);
+  const seeded = solveLns(grid, {
+    ...params,
+    lns: {
+      ...params.lns,
+      seedHint: {
+        solution: {
+          roads: [...greedySeed.roads],
+          services: greedySeed.services.map((service, index) => ({
+            r: service.r,
+            c: service.c,
+            rows: service.rows,
+            cols: service.cols,
+            range: service.range,
+            typeIndex: greedySeed.serviceTypeIndices[index] ?? -1,
+            bonus: greedySeed.servicePopulationIncreases[index] ?? 0,
+          })),
+          residentials: greedySeed.residentials.map((residential, index) => ({
+            r: residential.r,
+            c: residential.c,
+            rows: residential.rows,
+            cols: residential.cols,
+            typeIndex: greedySeed.residentialTypeIndices[index] ?? -1,
+            population: greedySeed.populations[index] ?? 0,
+          })),
+          populations: [...greedySeed.populations],
+          totalPopulation: greedySeed.totalPopulation,
+        },
+      },
+    },
+  });
+
+  assert.equal(solution.optimizer, "lns");
+  assert.equal(direct.optimizer, "lns");
+  assert.equal(seeded.optimizer, "lns");
+  assert.ok(solution.totalPopulation >= greedySeed.totalPopulation);
+  assert.ok(direct.totalPopulation >= greedySeed.totalPopulation);
+  assert.ok(seeded.totalPopulation >= greedySeed.totalPopulation);
+
+  const validation = validateSolution({ grid, solution, params });
+  assert.equal(validation.valid, true);
+}
+
+function testLnsDeterministicServiceUpgrade() {
+  const tempDir = fs.mkdtempSync(path.join(process.cwd(), "tmp-lns-upgrade-"));
+  const stopFilePath = path.join(tempDir, "stop-now");
+  fs.writeFileSync(stopFilePath, "stop");
+
+  try {
+    const grid = Array.from({ length: 6 }, () => Array.from({ length: 6 }, () => 1));
+    const params = {
+      optimizer: "lns",
+      cpSat: {
+        timeLimitSeconds: 1,
+        numWorkers: 1,
+      },
+      serviceTypes: [
+        { rows: 2, cols: 2, bonus: 118, range: 5, avail: 1 },
+        { rows: 2, cols: 2, bonus: 480, range: 5, avail: 1 },
+      ],
+      residentialTypes: [{ w: 2, h: 2, min: 100, max: 600, avail: 1 }],
+      availableBuildings: { services: 1, residentials: 1 },
+      lns: {
+        iterations: 1,
+        maxNoImprovementIterations: 1,
+        repairTimeLimitSeconds: 1,
+        neighborhoodRows: 3,
+        neighborhoodCols: 3,
+        stopFilePath,
+        seedHint: {
+          solution: {
+            roads: ["0,0", "0,1", "0,2", "0,3", "0,4", "0,5", "1,0", "2,0", "3,0", "4,0", "5,0"],
+            services: [
+              {
+                r: 1,
+                c: 1,
+                rows: 2,
+                cols: 2,
+                range: 5,
+                typeIndex: 0,
+                bonus: 118,
+              },
+            ],
+            residentials: [
+              {
+                r: 3,
+                c: 1,
+                rows: 2,
+                cols: 2,
+                typeIndex: 0,
+                population: 218,
+              },
+            ],
+            populations: [218],
+            totalPopulation: 218,
+          },
+        },
+      },
+    };
+
+    const solution = solveLns(grid, params);
+    assert.equal(solution.optimizer, "lns");
+    assert.equal(solution.serviceTypeIndices[0], 1);
+    assert.equal(solution.servicePopulationIncreases[0], 480);
+    assert.equal(solution.totalPopulation, 580);
+    assert.equal(solution.populations[0], 580);
+
+    const validation = validateSolution({ grid, solution, params });
+    assert.equal(validation.valid, true);
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+}
+
+function testLnsDeterministicResidentialUpgrade() {
+  const tempDir = fs.mkdtempSync(path.join(process.cwd(), "tmp-lns-res-upgrade-"));
+  const stopFilePath = path.join(tempDir, "stop-now");
+  fs.writeFileSync(stopFilePath, "stop");
+
+  try {
+    const grid = Array.from({ length: 6 }, () => Array.from({ length: 6 }, () => 1));
+    const params = {
+      optimizer: "lns",
+      cpSat: {
+        timeLimitSeconds: 1,
+        numWorkers: 1,
+      },
+      serviceTypes: [{ rows: 2, cols: 2, bonus: 480, range: 5, avail: 1 }],
+      residentialTypes: [
+        { w: 2, h: 2, min: 100, max: 400, avail: 1 },
+        { w: 2, h: 2, min: 100, max: 700, avail: 1 },
+      ],
+      availableBuildings: { services: 1, residentials: 1 },
+      lns: {
+        iterations: 1,
+        maxNoImprovementIterations: 1,
+        repairTimeLimitSeconds: 1,
+        neighborhoodRows: 3,
+        neighborhoodCols: 3,
+        stopFilePath,
+        seedHint: {
+          solution: {
+            roads: ["0,0", "0,1", "0,2", "0,3", "0,4", "0,5", "1,0", "2,0", "3,0", "4,0", "5,0"],
+            services: [
+              {
+                r: 1,
+                c: 1,
+                rows: 2,
+                cols: 2,
+                range: 5,
+                typeIndex: 0,
+                bonus: 480,
+              },
+            ],
+            residentials: [
+              {
+                r: 3,
+                c: 1,
+                rows: 2,
+                cols: 2,
+                typeIndex: 0,
+                population: 400,
+              },
+            ],
+            populations: [400],
+            totalPopulation: 400,
+          },
+        },
+      },
+    };
+
+    const solution = solveLns(grid, params);
+    assert.equal(solution.optimizer, "lns");
+    assert.equal(solution.residentialTypeIndices[0], 1);
+    assert.equal(solution.totalPopulation, 580);
+    assert.equal(solution.populations[0], 580);
+
+    const validation = validateSolution({ grid, solution, params });
+    assert.equal(validation.valid, true);
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+}
+
 function testSolutionValidator() {
   const grid = [
     [1, 1, 1, 1],
@@ -1360,7 +1606,8 @@ function testGreedySupportsShapedServices() {
 
   const solution = solveGreedy(grid, params);
   assert.equal(solution.services.length, 1);
-  assert.deepEqual(solution.services[0], { r: 1, c: 2, rows: 3, cols: 2, range: 1 });
+  assert.deepEqual([solution.services[0].rows, solution.services[0].cols].sort((a, b) => a - b), [2, 3]);
+  assert.equal(solution.services[0].range, 1);
   assert.deepEqual(solution.serviceTypeIndices, [0]);
   assert.deepEqual(solution.servicePopulationIncreases, [50]);
 

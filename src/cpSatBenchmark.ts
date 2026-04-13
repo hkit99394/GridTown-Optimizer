@@ -1,6 +1,6 @@
 import { performance } from "node:perf_hooks";
 
-import { solveAsync } from "./solver.js";
+import { solveAsync } from "./solve.js";
 
 import type {
   CpSatAsyncOptions,

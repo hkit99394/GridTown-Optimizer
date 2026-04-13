@@ -2,65 +2,62 @@
 
 ## Goal
 
-Strengthen `CP-SAT` as the exact/global solver for City Builder.
+Strengthen `CP-SAT` as the exact/global solver.
 
 This roadmap is intentionally not about quality-per-minute. The focus is:
-- tighter exact modeling
-- stronger propagation and bounds
-- more stable long runs
-- clearer exact-solver observability
+- stronger exact search
+- clearer exact-run visibility
+- stable long-running execution
+- scalable search orchestration
 
 ## Current Status
 
-The main single-machine CP-SAT foundation is delivered.
+The single-machine CP-SAT foundation is delivered.
 
 Delivered summary:
 - exact-safe candidate reduction
-- stronger road-connectivity formulation
+- stronger connectivity and implied cuts
 - explicit audited objective
-- stronger valid cuts and implied bounds
-- richer runtime controls
-- exact-run telemetry
-- live progress streaming
-- async caller migration
-- benchmark corpus and reproducible exact-run harness
-- warm-start / continuation support
+- richer runtime parameters
+- warm-start and continuation support
+- telemetry and streamed progress plumbing
+- async-first caller path
+- benchmark corpus and reproducible harness
 - single-machine portfolio CP-SAT
 
-Detailed delivered notes are in [CP_SAT_ROADMAP_DELIVERED.md](./CP_SAT_ROADMAP_DELIVERED.md).
+Detailed delivered notes live in [CP_SAT_ROADMAP_DELIVERED.md](./CP_SAT_ROADMAP_DELIVERED.md).
 
 ## Remaining Work By Impact
 
 ### 1. Distributed CP-SAT
 
-Why it is first:
-- this has the highest long-term compute ceiling, but not the biggest immediate impact
-- it is only worth doing after single-machine exact solving, async execution, and measurement are all solid
-- it is the highest-complexity remaining task
+Why it matters:
+- this has the highest remaining compute ceiling
+- it is now justified because single-machine exact solving, async execution, and measurement are already in place
+- it is the only remaining item that can materially expand exact-search coverage beyond one host
 
 Core requirements:
-- coordinator for multi-worker / multi-machine exact runs
+- coordinator for multi-worker or multi-machine exact runs
 - shared incumbent and bound reporting
-- worker lifecycle, cancellation, and fault handling
-- stable result selection and final exact-run summary
+- worker lifecycle, cancellation, and degraded-mode handling
+- stable final result selection and exact-run summary
 
 ### 2. Deepen async and portfolio failure-mode coverage
 
-Why it is second:
-- the important validation and fallback tests now exist
-- more edge-case coverage is still worthwhile, but it is a confidence multiplier rather than a primary capability gain
+Why it matters:
+- async and portfolio paths are shipped, but more edge-case coverage will make them safer to evolve
+- this is the main confidence gap after distributed search
 
 Scope:
 - interruption and cancellation cases
-- broken worker / degraded pool execution
+- broken worker and degraded pool execution
 - malformed streamed progress payloads
 - async child-process failure paths
 
 ## Guardrails
 
 - Keep this roadmap exact-solver focused; heuristic workflow belongs elsewhere.
-- Prefer formulation improvements before orchestration complexity.
-- Treat residential candidate pruning conservatively unless dominance is proven.
+- Prefer model and search-quality work before orchestration complexity.
+- Treat residential pruning conservatively unless dominance is proven.
 - Do not change the exact objective implicitly while tuning the model.
-- Keep the sync CP-SAT entrypoint only as a compatibility surface; prefer async for new integration work.
-- Treat distributed CP-SAT as a measured infrastructure step, not an automatic next move.
+- Prefer async CP-SAT integration for new work.

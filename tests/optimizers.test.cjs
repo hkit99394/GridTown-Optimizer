@@ -76,6 +76,48 @@ function testGreedyDispatcher() {
   assert.equal(dispatched.totalPopulation, direct.totalPopulation);
 }
 
+function testGreedyRandomSeedIsDeterministic() {
+  const grid = [
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+  ];
+  const params = {
+    serviceTypes: [
+      { rows: 2, cols: 2, bonus: 60, range: 1, avail: 1 },
+      { rows: 2, cols: 3, bonus: 90, range: 1, avail: 1 },
+      { rows: 3, cols: 2, bonus: 70, range: 2, avail: 1 },
+    ],
+    residentialTypes: [
+      { w: 2, h: 2, min: 80, max: 180, avail: 2 },
+      { w: 2, h: 3, min: 120, max: 260, avail: 2 },
+    ],
+    availableBuildings: { services: 2, residentials: 3 },
+    greedy: {
+      localSearch: false,
+      randomSeed: 17,
+      restarts: 4,
+      serviceRefineIterations: 0,
+      exhaustiveServiceSearch: false,
+    },
+  };
+
+  const first = solveGreedy(grid, params);
+  const second = solveGreedy(grid, params);
+
+  assert.equal(first.totalPopulation, second.totalPopulation);
+  assert.deepEqual([...first.roads].sort(), [...second.roads].sort());
+  assert.deepEqual(first.services, second.services);
+  assert.deepEqual(first.serviceTypeIndices, second.serviceTypeIndices);
+  assert.deepEqual(first.servicePopulationIncreases, second.servicePopulationIncreases);
+  assert.deepEqual(first.residentials, second.residentials);
+  assert.deepEqual(first.residentialTypeIndices, second.residentialTypeIndices);
+  assert.deepEqual(first.populations, second.populations);
+}
+
 async function maybeTestCpSatOptimizer() {
   const pythonExecutable = resolveCpSatPython();
   if (!pythonExecutable) {
@@ -2029,6 +2071,7 @@ print(json.dumps({
 
 async function main() {
   testGreedyDispatcher();
+  testGreedyRandomSeedIsDeterministic();
   maybeTestCpSatBackendJsonContractSmoke();
   maybeTestCpSatBackendStreamingProtocol();
   maybeTestCpSatObjectivePolicyHelpers();

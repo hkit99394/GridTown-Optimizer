@@ -252,6 +252,8 @@ export interface CpSatOptions {
 export interface GreedyOptions {
   /** Run local search to improve solution (default true) */
   localSearch?: boolean;
+  /** Fixed seed for reproducible greedy restart shuffling. */
+  randomSeed?: number;
   /** Number of restarts with different service order; take best solution (default 1) */
   restarts?: number;
   /** Service-position refinement passes after restarts (default 2) */

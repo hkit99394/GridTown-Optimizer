@@ -51,6 +51,7 @@
       if (params.greedy) {
         state.greedy = {
           ...state.greedy,
+          randomSeed: "",
           ...params.greedy,
         };
       }
@@ -258,6 +259,7 @@
 
     function syncSolverFields() {
       elements.greedyLocalSearch.checked = state.greedy.localSearch;
+      elements.greedyRandomSeed.value = state.greedy.randomSeed === "" ? "" : String(state.greedy.randomSeed ?? "");
       elements.greedyRestarts.value = String(state.greedy.restarts);
       elements.greedyServiceRefineIterations.value = String(state.greedy.serviceRefineIterations);
       elements.greedyServiceRefineCandidateLimit.value = String(state.greedy.serviceRefineCandidateLimit);

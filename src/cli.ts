@@ -28,6 +28,7 @@ const DEFAULT_PARAMS = {
   ],
   greedy: {
     localSearch: true,
+    randomSeed: undefined,
     restarts: 20,
     serviceRefineIterations: 4,
     serviceRefineCandidateLimit: 60,
@@ -37,15 +38,39 @@ const DEFAULT_PARAMS = {
   },
 };
 
+function readCliArgs(): string[] {
+  return process.argv.slice(2);
+}
+
 function readCliOptimizer(): OptimizerName {
-  const value = process.argv[2]?.trim();
+  const value = readCliArgs().find((arg) => {
+    const trimmed = arg.trim();
+    return trimmed === "greedy" || trimmed === "lns" || trimmed === "cp-sat";
+  });
   if (value === "cp-sat") return "cp-sat";
   if (value === "lns") return "lns";
   return "greedy";
 }
 
+function readCliGreedyRandomSeed(): number | undefined {
+  const args = readCliArgs();
+  for (let index = 0; index < args.length; index++) {
+    const arg = args[index].trim();
+    if (arg.startsWith("--greedy-seed=")) {
+      const value = Number.parseInt(arg.slice("--greedy-seed=".length), 10);
+      return Number.isInteger(value) ? value : undefined;
+    }
+    if (arg === "--greedy-seed") {
+      const value = Number.parseInt(args[index + 1] ?? "", 10);
+      return Number.isInteger(value) ? value : undefined;
+    }
+  }
+  return undefined;
+}
+
 async function runExample(): Promise<void> {
   const optimizer = readCliOptimizer();
+  const greedyRandomSeed = readCliGreedyRandomSeed();
   const grid: Grid = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -61,7 +86,14 @@ async function runExample(): Promise<void> {
     [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
   ];
 
-  const params = { ...DEFAULT_PARAMS, optimizer };
+  const params = {
+    ...DEFAULT_PARAMS,
+    optimizer,
+    greedy: {
+      ...DEFAULT_PARAMS.greedy,
+      ...(greedyRandomSeed !== undefined ? { randomSeed: greedyRandomSeed } : {}),
+    },
+  };
   const solution = await solveAsync(
     grid,
     params,
@@ -96,6 +128,7 @@ async function runExample(): Promise<void> {
 
   console.log("=== City Builder Solution ===\n");
   console.log("Optimizer:", solution.optimizer ?? optimizer);
+  if (params.greedy.randomSeed !== undefined) console.log("Greedy random seed:", params.greedy.randomSeed);
   if (solution.cpSatStatus) console.log("CP-SAT status:", solution.cpSatStatus);
   if (solution.cpSatObjectivePolicy) console.log("CP-SAT objective:", solution.cpSatObjectivePolicy.summary);
   if (solution.cpSatTelemetry) {

@@ -123,6 +123,7 @@ const state = {
   },
   greedy: {
     localSearch: true,
+    randomSeed: "",
     restarts: 20,
     serviceRefineIterations: 4,
     serviceRefineCandidateLimit: 60,
@@ -257,6 +258,7 @@ const elements = {
   deleteLayoutButton: document.querySelector("#deleteLayoutButton"),
   layoutStorageStatus: document.querySelector("#layoutStorageStatus"),
   greedyLocalSearch: document.querySelector("#greedyLocalSearch"),
+  greedyRandomSeed: document.querySelector("#greedyRandomSeed"),
   greedyRestarts: document.querySelector("#greedyRestarts"),
   greedyServiceRefineIterations: document.querySelector("#greedyServiceRefineIterations"),
   greedyServiceRefineCandidateLimit: document.querySelector("#greedyServiceRefineCandidateLimit"),
@@ -563,6 +565,7 @@ function init() {
 
   const greedyBindings = [
     ["greedyLocalSearch", "localSearch", "checkbox"],
+    ["greedyRandomSeed", "randomSeed", "number"],
     ["greedyRestarts", "restarts", "number"],
     ["greedyServiceRefineIterations", "serviceRefineIterations", "number"],
     ["greedyServiceRefineCandidateLimit", "serviceRefineCandidateLimit", "number"],

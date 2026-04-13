@@ -179,6 +179,7 @@
     function buildSolveRequest(options = {}) {
       const { hintMismatch = "error", includeWarmStartHint = true, includeLnsSeed = true } = options;
       const timeLimitSeconds = readOptionalInteger(state.cpSat.timeLimitSeconds, 1);
+      const greedyRandomSeed = readOptionalInteger(state.greedy.randomSeed, 0);
       const defaultNeighborhoodRows = Math.max(1, Math.ceil(state.grid.length / 2));
       const defaultNeighborhoodCols = Math.max(1, Math.ceil((state.grid[0]?.length ?? 1) / 2));
       const grid = cloneGrid(state.grid);
@@ -188,6 +189,7 @@
         residentialTypes: state.residentialTypes.map((entry, index) => parseResidentialCatalogEntry(entry, index)),
         greedy: {
           localSearch: Boolean(state.greedy.localSearch),
+          ...(greedyRandomSeed !== undefined ? { randomSeed: greedyRandomSeed } : {}),
           restarts: clampInteger(state.greedy.restarts, 1, 1),
           serviceRefineIterations: clampInteger(state.greedy.serviceRefineIterations, 0, 0),
           serviceRefineCandidateLimit: clampInteger(state.greedy.serviceRefineCandidateLimit, 1, 1),

@@ -50,10 +50,32 @@ class GreedyStopError extends Error {
   }
 }
 
-function shuffle<T>(a: T[]): T[] {
+type RandomSource = () => number;
+type NormalizedGreedyOptions = Omit<Required<GreedyOptions>, "randomSeed"> & {
+  randomSeed?: number;
+};
+
+function createSeededRandom(seed: number): RandomSource {
+  let state = seed >>> 0;
+  return () => {
+    state = (state + 0x6d2b79f5) >>> 0;
+    let next = state;
+    next = Math.imul(next ^ (next >>> 15), next | 1);
+    next ^= next + Math.imul(next ^ (next >>> 7), next | 61);
+    return ((next ^ (next >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function deriveSeed(baseSeed: number, capIndex: number, restartIndex: number): number {
+  let mixed = (baseSeed ^ Math.imul(capIndex + 1, 0x9e3779b1)) >>> 0;
+  mixed = (mixed ^ Math.imul(restartIndex + 1, 0x85ebca6b)) >>> 0;
+  return mixed >>> 0;
+}
+
+function shuffle<T>(a: T[], random: RandomSource = Math.random): T[] {
   const out = [...a];
   for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(random() * (i + 1));
     [out[i], out[j]] = [out[j], out[i]];
   }
   return out;
@@ -94,10 +116,14 @@ function getCandidateTypeIndex(candidate: ResidentialPlacement | ResidentialCand
 
 type ResidentialCandidatesList = (ResidentialPlacement | ResidentialCandidate)[];
 
-function getGreedyOptions(params: SolverParams): Required<GreedyOptions> {
+function getGreedyOptions(params: SolverParams): NormalizedGreedyOptions {
   const greedy = params.greedy ?? {};
+  const randomSeed = typeof greedy.randomSeed === "number" && Number.isInteger(greedy.randomSeed)
+    ? greedy.randomSeed
+    : undefined;
   return {
     localSearch: greedy.localSearch ?? params.localSearch ?? true,
+    ...(randomSeed !== undefined ? { randomSeed } : {}),
     restarts: greedy.restarts ?? params.restarts ?? 1,
     serviceRefineIterations: greedy.serviceRefineIterations ?? params.serviceRefineIterations ?? 2,
     serviceRefineCandidateLimit: greedy.serviceRefineCandidateLimit ?? params.serviceRefineCandidateLimit ?? 40,
@@ -474,6 +500,7 @@ function solveOne(
 export function solveGreedy(G: Grid, params: SolverParams): Solution {
   const {
     localSearch,
+    randomSeed,
     restarts,
     serviceRefineIterations,
     serviceRefineCandidateLimit,
@@ -539,7 +566,8 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
   const serviceCaps = explicitServiceCap !== undefined ? [explicitServiceCap] : Array.from({ length: inferredUpper + 1 }, (_, i) => i);
 
   try {
-    for (const cap of serviceCaps) {
+    for (let capIndex = 0; capIndex < serviceCaps.length; capIndex++) {
+      const cap = serviceCaps[capIndex];
       maybeStop();
       let bestForCap = solveOne(
         G,
@@ -560,7 +588,10 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
       updateBest(bestForCap);
       for (let r = 1; r < restarts; r++) {
         maybeStop();
-        const order = shuffle([...serviceOrderSorted]);
+        const order = shuffle(
+          serviceOrderSorted,
+          randomSeed === undefined ? Math.random : createSeededRandom(deriveSeed(randomSeed, capIndex, r))
+        );
         const sol = solveOne(
           G,
           params,

@@ -123,6 +123,7 @@
       };
       state.greedy = {
         ...state.greedy,
+        randomSeed: "",
         ...(snapshot?.greedy ?? {}),
       };
       state.cpSat = {

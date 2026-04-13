@@ -207,11 +207,27 @@ const solution = solve(grid, {
   optimizer: "cp-sat",
   cpSat: {
     timeLimitSeconds: 120,
+    maxDeterministicTime: 30,
     numWorkers: 8,
+    randomSeed: 42,
+    randomizeSearch: false,
+    relativeGapLimit: 0.01,
+    absoluteGapLimit: 10,
     logSearchProgress: false,
   },
 });
 ```
+
+Useful CP-SAT runtime controls include:
+
+- `timeLimitSeconds`
+- `maxDeterministicTime`
+- `numWorkers`
+- `randomSeed`
+- `randomizeSearch`
+- `relativeGapLimit`
+- `absoluteGapLimit`
+- `logSearchProgress`
 
 ### Validate a solver result
 

@@ -1092,6 +1092,22 @@ def build_model(grid, params) -> BuiltCpSatModel:
     )
 
 
+def configure_solver_parameters(solver, cp_sat_options):
+    solver.parameters.max_time_in_seconds = float(cp_sat_options.get("timeLimitSeconds", 120))
+    if cp_sat_options.get("maxDeterministicTime") is not None:
+        solver.parameters.max_deterministic_time = float(cp_sat_options["maxDeterministicTime"])
+    solver.parameters.num_search_workers = int(cp_sat_options.get("numWorkers", 8))
+    if cp_sat_options.get("randomSeed") is not None:
+        solver.parameters.random_seed = int(cp_sat_options["randomSeed"])
+    if cp_sat_options.get("randomizeSearch") is not None:
+        solver.parameters.randomize_search = bool(cp_sat_options["randomizeSearch"])
+    if cp_sat_options.get("relativeGapLimit") is not None:
+        solver.parameters.relative_gap_limit = float(cp_sat_options["relativeGapLimit"])
+    if cp_sat_options.get("absoluteGapLimit") is not None:
+        solver.parameters.absolute_gap_limit = float(cp_sat_options["absoluteGapLimit"])
+    solver.parameters.log_search_progress = bool(cp_sat_options.get("logSearchProgress", False))
+
+
 def solve():
     payload = json.load(sys.stdin)
     grid = payload["grid"]
@@ -1101,9 +1117,7 @@ def solve():
     built = build_model(grid, params)
     model = built.model
     solver = cp_model.CpSolver()
-    solver.parameters.max_time_in_seconds = float(cp_sat_options.get("timeLimitSeconds", 120))
-    solver.parameters.num_search_workers = int(cp_sat_options.get("numWorkers", 8))
-    solver.parameters.log_search_progress = bool(cp_sat_options.get("logSearchProgress", False))
+    configure_solver_parameters(solver, cp_sat_options)
 
     status = solver.Solve(model)
     status_name = {

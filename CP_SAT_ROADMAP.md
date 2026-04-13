@@ -19,7 +19,7 @@ In this branch, the CP-SAT backend currently:
 - enforces road connectivity with a directed-flow formulation
 - models residential population as `base + service boost`, capped by `max`
 - optimizes a scaled objective that prioritizes population and uses roads/services as tie-break penalties
-- exposes only a small runtime surface: time limit, worker count, and search logging
+- exposes a configurable runtime surface: time limit, deterministic time, worker count, random seed, randomized search, gap limits, and search logging
 
 Main implementation files:
 - [python/cp_sat_solver.py](./python/cp_sat_solver.py)
@@ -101,6 +101,8 @@ Targets:
 
 ### 5. Expand the CP-SAT runtime surface
 
+Status: Implemented
+
 Expected impact: Medium-high
 
 Why:
@@ -113,6 +115,11 @@ Targets:
 - add relative / absolute gap controls
 - add deterministic time if useful
 - keep worker count configurable, but make benchmarking reproducible
+
+Delivered:
+- CP-SAT options now expose `randomSeed`, `randomizeSearch`, `relativeGapLimit`, `absoluteGapLimit`, and `maxDeterministicTime`
+- the Python backend applies those options through a dedicated solver-configuration helper
+- regression tests now verify that the runtime options reach the OR-Tools solver object
 
 ### 6. Add exact-run telemetry
 

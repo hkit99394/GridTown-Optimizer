@@ -85,8 +85,18 @@ export interface CpSatOptions {
   scriptPath?: string;
   /** Max solve time in seconds. Default 120. */
   timeLimitSeconds?: number;
+  /** Max deterministic time. Useful for more reproducible benchmark comparisons. */
+  maxDeterministicTime?: number;
   /** CP-SAT worker count. Default 8. */
   numWorkers?: number;
+  /** Fixed search seed for reproducibility. */
+  randomSeed?: number;
+  /** Enable randomized search decisions. Default false. */
+  randomizeSearch?: boolean;
+  /** Relative optimality gap limit. Stop once the relative gap is at or below this value. */
+  relativeGapLimit?: number;
+  /** Absolute optimality gap limit. Stop once the absolute gap is at or below this value. */
+  absoluteGapLimit?: number;
   /** Emit OR-Tools search logs. Default false. */
   logSearchProgress?: boolean;
 }

@@ -227,6 +227,63 @@ print(json.dumps({
   assert.equal(payload.population_weight, payload.max_tie_break_penalty + 1);
 }
 
+function maybeTestCpSatRuntimeOptionHelpers() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const command = `
+import importlib.util
+import json
+
+spec = importlib.util.spec_from_file_location("cp_sat_solver", ${JSON.stringify(scriptPath)})
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+solver = module.cp_model.CpSolver()
+module.configure_solver_parameters(solver, {
+    "timeLimitSeconds": 7,
+    "maxDeterministicTime": 3.5,
+    "numWorkers": 1,
+    "randomSeed": 42,
+    "randomizeSearch": True,
+    "relativeGapLimit": 0.125,
+    "absoluteGapLimit": 9,
+    "logSearchProgress": True,
+})
+
+print(json.dumps({
+    "max_time_in_seconds": solver.parameters.max_time_in_seconds,
+    "max_deterministic_time": solver.parameters.max_deterministic_time,
+    "num_search_workers": solver.parameters.num_search_workers,
+    "random_seed": solver.parameters.random_seed,
+    "randomize_search": solver.parameters.randomize_search,
+    "relative_gap_limit": solver.parameters.relative_gap_limit,
+    "absolute_gap_limit": solver.parameters.absolute_gap_limit,
+    "log_search_progress": solver.parameters.log_search_progress,
+}))
+`;
+
+  const result = childProcess.spawnSync(pythonExecutable, ["-c", command], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT runtime option helpers.");
+  }
+
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.max_time_in_seconds, 7);
+  assert.equal(payload.max_deterministic_time, 3.5);
+  assert.equal(payload.num_search_workers, 1);
+  assert.equal(payload.random_seed, 42);
+  assert.equal(payload.randomize_search, true);
+  assert.equal(payload.relative_gap_limit, 0.125);
+  assert.equal(payload.absolute_gap_limit, 9);
+  assert.equal(payload.log_search_progress, true);
+}
+
 function maybeTestCpSatPopulationUpperBoundHelpers() {
   const pythonExecutable = resolveCpSatPython();
   if (!pythonExecutable) {
@@ -989,6 +1046,7 @@ print(json.dumps({
 testGreedyDispatcher();
 maybeTestCpSatBackendJsonContractSmoke();
 maybeTestCpSatObjectivePolicyHelpers();
+maybeTestCpSatRuntimeOptionHelpers();
 maybeTestCpSatPopulationUpperBoundHelpers();
 maybeTestCpSatResidentialPopulationUpperBoundHelpers();
 maybeTestCpSatOptimizer();

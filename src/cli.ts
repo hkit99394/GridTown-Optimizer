@@ -4,7 +4,7 @@
 
 import type { Grid, OptimizerName } from "./types.js";
 import { normalizeServicePlacement } from "./buildings.js";
-import { formatSolutionMap, solve, validateSolutionMap } from "./index.js";
+import { formatSolutionMap, solveAsync, validateSolutionMap } from "./index.js";
 
 const DEFAULT_PARAMS = {
   serviceTypes: [
@@ -43,7 +43,7 @@ function readCliOptimizer(): OptimizerName {
   return "greedy";
 }
 
-function runExample(): void {
+async function runExample(): Promise<void> {
   const optimizer = readCliOptimizer();
   const grid: Grid = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -61,7 +61,7 @@ function runExample(): void {
   ];
 
   const params = { ...DEFAULT_PARAMS, optimizer };
-  const solution = solve(grid, params);
+  const solution = await solveAsync(grid, params);
   const validation = validateSolutionMap({ grid, solution, params });
 
   console.log("=== City Builder Solution ===\n");
@@ -75,6 +75,13 @@ function runExample(): void {
       `bestBound=${solution.cpSatTelemetry.bestPopulationUpperBound},`,
       `gap=${solution.cpSatTelemetry.populationGapUpperBound},`,
       `lastImprovementLag=${solution.cpSatTelemetry.secondsSinceLastImprovement?.toFixed(3)}s`
+    );
+  }
+  if (solution.cpSatPortfolio) {
+    console.log(
+      "CP-SAT portfolio:",
+      `workers=${solution.cpSatPortfolio.workerCount},`,
+      `selected=${solution.cpSatPortfolio.selectedWorkerIndex}`
     );
   }
   console.log("Total population:", solution.totalPopulation);
@@ -101,4 +108,7 @@ function runExample(): void {
   console.log(formatSolutionMap(grid, solution));
 }
 
-runExample();
+void runExample().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

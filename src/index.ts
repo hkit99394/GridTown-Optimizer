@@ -2,8 +2,8 @@
  * Public library entry point.
  */
 
-export { solve, solveGreedy } from "./solver.js";
-export { solveCpSat } from "./cpSatSolver.js";
+export { solve, solveAsync, solveGreedy } from "./solver.js";
+export { solveCpSat, solveCpSatAsync } from "./cpSatSolver.js";
 export { evaluateLayout, validateSolution } from "./evaluator.js";
 export { formatSolutionMap, renderSolutionMap, validateSolutionMap } from "./map.js";
 
@@ -13,6 +13,9 @@ export type {
   CpSatOptions,
   CpSatObjectivePolicy,
   CpSatTelemetry,
+  CpSatPortfolioOptions,
+  CpSatPortfolioSummary,
+  CpSatPortfolioWorkerSummary,
   CpSatWarmStartHint,
   CpSatWarmStartServicePlacement,
   CpSatWarmStartResidentialPlacement,

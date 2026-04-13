@@ -171,6 +171,8 @@ Delivered:
 
 ### 8. Add single-machine CP-SAT portfolio search
 
+Status: Implemented
+
 Expected impact: Medium
 
 Why:
@@ -181,6 +183,12 @@ Prerequisites:
 - reproducible benchmarking
 - richer telemetry
 - a coordinator layer for multiple CP-SAT workers
+
+Delivered:
+- CP-SAT now supports a `portfolio` option that launches multiple seeded single-machine workers and returns the best feasible exact result
+- the coordinator returns a `cpSatPortfolio` summary with worker statuses, seeds, and the selected winner
+- the implementation prefers process workers and falls back to a thread pool when the local runtime blocks process-pool semaphore checks
+- regression tests cover both portfolio worker-option generation and end-to-end portfolio solving
 
 ### 9. Consider distributed CP-SAT last
 

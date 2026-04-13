@@ -101,6 +101,8 @@ export interface CpSatOptions {
   warmStartHint?: CpSatWarmStartHint | Solution;
   /** Hard lower bound on total population for continuation runs from a known incumbent. */
   objectiveLowerBound?: number;
+  /** Single-machine portfolio search across multiple CP-SAT workers. */
+  portfolio?: CpSatPortfolioOptions;
   /** Emit OR-Tools search logs. Default false. */
   logSearchProgress?: boolean;
 }
@@ -142,6 +144,37 @@ export interface CpSatWarmStartHint {
   services: CpSatWarmStartServicePlacement[];
   residentials: CpSatWarmStartResidentialPlacement[];
   totalPopulation?: number;
+}
+
+export interface CpSatPortfolioOptions {
+  /** Number of independent CP-SAT workers to launch when randomSeeds is not provided. */
+  workerCount?: number;
+  /** Explicit per-worker random seeds. Overrides workerCount when provided. */
+  randomSeeds?: number[];
+  /** Per-worker time limit override. Defaults to the outer timeLimitSeconds. */
+  perWorkerTimeLimitSeconds?: number;
+  /** Per-worker deterministic time override. Defaults to the outer maxDeterministicTime. */
+  perWorkerMaxDeterministicTime?: number;
+  /** Per-worker CP-SAT internal worker count. Defaults to 1 to avoid oversubscription. */
+  perWorkerNumWorkers?: number;
+  /** Override randomized search for every portfolio worker. Defaults to true. */
+  randomizeSearch?: boolean;
+}
+
+export interface CpSatPortfolioWorkerSummary {
+  workerIndex: number;
+  randomSeed: number | null;
+  randomizeSearch: boolean;
+  numWorkers: number;
+  status: string;
+  feasible: boolean;
+  totalPopulation: number | null;
+}
+
+export interface CpSatPortfolioSummary {
+  workerCount: number;
+  selectedWorkerIndex: number | null;
+  workers: CpSatPortfolioWorkerSummary[];
 }
 
 export interface GreedyOptions {
@@ -226,6 +259,8 @@ export interface Solution {
   cpSatObjectivePolicy?: CpSatObjectivePolicy;
   /** Exact-run telemetry emitted by the CP-SAT backend when available. */
   cpSatTelemetry?: CpSatTelemetry;
+  /** Portfolio summary when CP-SAT used multi-run portfolio search. */
+  cpSatPortfolio?: CpSatPortfolioSummary;
   roads: Set<string>;
   services: ServicePlacement[];
   /** Service type index per placement; -1 only for manual solutions without configured service types */

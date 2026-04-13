@@ -219,6 +219,8 @@ const solution = solve(grid, {
 });
 ```
 
+For non-blocking Node usage, the library also exposes `solveAsync(...)` and `solveCpSatAsync(...)`, which run the CP-SAT backend through an asynchronous child-process bridge instead of the legacy blocking sync path.
+
 Useful CP-SAT runtime controls include:
 
 - `timeLimitSeconds`
@@ -257,6 +259,32 @@ const continued = solve(grid, {
 });
 ```
 
+For single-machine portfolio search, CP-SAT also supports:
+
+- `portfolio.workerCount`
+- `portfolio.randomSeeds`
+- `portfolio.perWorkerTimeLimitSeconds`
+- `portfolio.perWorkerMaxDeterministicTime`
+- `portfolio.perWorkerNumWorkers`
+- `portfolio.randomizeSearch`
+
+Example:
+
+```ts
+const portfolio = solve(grid, {
+  ...params,
+  optimizer: "cp-sat",
+  cpSat: {
+    timeLimitSeconds: 60,
+    portfolio: {
+      randomSeeds: [3, 11, 17],
+      perWorkerTimeLimitSeconds: 20,
+      perWorkerNumWorkers: 1,
+    },
+  },
+});
+```
+
 ### Validate a solver result
 
 ```ts
@@ -287,8 +315,10 @@ console.log(validation.mapText);
 The public API is exposed from [src/index.ts](./src/index.ts):
 
 - `solve`
+- `solveAsync`
 - `solveGreedy`
 - `solveCpSat`
+- `solveCpSatAsync`
 - `evaluateLayout`
 - `validateSolution`
 - `renderSolutionMap`
@@ -304,6 +334,8 @@ Useful types include:
 - `CpSatOptions`
 - `CpSatObjectivePolicy`
 - `CpSatTelemetry`
+- `CpSatPortfolioOptions`
+- `CpSatPortfolioSummary`
 - `CpSatWarmStartHint`
 - `GreedyOptions`
 
@@ -367,6 +399,7 @@ A `Solution` contains:
 - `cpSatStatus`
 - `cpSatObjectivePolicy`
 - `cpSatTelemetry`
+- `cpSatPortfolio`
 - `roads: Set<string>`
 - `services`
 - `serviceTypeIndices`

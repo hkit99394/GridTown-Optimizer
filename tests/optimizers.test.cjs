@@ -3,7 +3,16 @@ const childProcess = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const { solve, solveGreedy, solveCpSat, validateSolution, validateSolutionMap } = require("../dist/index.js");
+const {
+  solve,
+  solveAsync,
+  solveGreedy,
+  solveCpSat,
+  solveCpSatAsync,
+  validateSolution,
+  validateSolutionMap,
+} = require("../dist/index.js");
+const { parseCpSatRawSolution } = require("../dist/cpSatSolver.js");
 
 function resolveCpSatPython() {
   const venvPython = path.resolve(__dirname, "../.venv-cp-sat/bin/python");
@@ -394,6 +403,287 @@ function maybeTestCpSatWarmStartContinuation() {
 
   assert.match(continued.cpSatStatus ?? "", /^(OPTIMAL|FEASIBLE)$/);
   assert(continued.totalPopulation >= seed.totalPopulation);
+}
+
+function maybeTestCpSatPortfolioOptionHelpers() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const command = `
+import importlib.util
+import json
+
+spec = importlib.util.spec_from_file_location("cp_sat_solver", ${JSON.stringify(scriptPath)})
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+worker_options = module.build_portfolio_worker_options({
+    "timeLimitSeconds": 12,
+    "maxDeterministicTime": 6,
+    "numWorkers": 8,
+    "portfolio": {
+        "randomSeeds": [7, 9],
+        "perWorkerTimeLimitSeconds": 2,
+        "perWorkerMaxDeterministicTime": 1.5,
+        "perWorkerNumWorkers": 1,
+        "randomizeSearch": True,
+    }
+})
+
+print(json.dumps(worker_options))
+`;
+
+  const result = childProcess.spawnSync(pythonExecutable, ["-c", command], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT portfolio option helpers.");
+  }
+
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.length, 2);
+  assert.deepEqual(
+    payload.map((worker) => ({
+      randomSeed: worker.randomSeed,
+      timeLimitSeconds: worker.timeLimitSeconds,
+      maxDeterministicTime: worker.maxDeterministicTime,
+      numWorkers: worker.numWorkers,
+      randomizeSearch: worker.randomizeSearch,
+      hasPortfolio: Object.prototype.hasOwnProperty.call(worker, "portfolio"),
+    })),
+    [
+      {
+        randomSeed: 7,
+        timeLimitSeconds: 2,
+        maxDeterministicTime: 1.5,
+        numWorkers: 1,
+        randomizeSearch: true,
+        hasPortfolio: false,
+      },
+      {
+        randomSeed: 9,
+        timeLimitSeconds: 2,
+        maxDeterministicTime: 1.5,
+        numWorkers: 1,
+        randomizeSearch: true,
+        hasPortfolio: false,
+      },
+    ]
+  );
+}
+
+function testCpSatPortfolioExecutorFallbackHelpers() {
+  const scriptPath = path.resolve(__dirname, "../python/cp_sat_portfolio_support.py");
+  const command = `
+import importlib.util
+import json
+
+spec = importlib.util.spec_from_file_location("cp_sat_portfolio_support", ${JSON.stringify(scriptPath)})
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+class RaisingProcessExecutor:
+    def __init__(self, *args, **kwargs):
+        pass
+    def __enter__(self):
+        return self
+    def __exit__(self, exc_type, exc, tb):
+        return False
+    def submit(self, *args, **kwargs):
+        raise PermissionError("process pool blocked")
+
+class FakeFuture:
+    def __init__(self, value):
+        self._value = value
+    def result(self):
+        return self._value
+
+class FakeThreadExecutor:
+    def __init__(self, *args, **kwargs):
+        pass
+    def __enter__(self):
+        return self
+    def __exit__(self, exc_type, exc, tb):
+        return False
+    def submit(self, fn, *args, **kwargs):
+        return FakeFuture(fn(*args, **kwargs))
+
+module.concurrent.futures.ProcessPoolExecutor = RaisingProcessExecutor
+module.concurrent.futures.ThreadPoolExecutor = FakeThreadExecutor
+module.concurrent.futures.as_completed = lambda futures: futures
+
+results = module.run_portfolio_workers(
+    [[1]],
+    {"optimizer": "cp-sat"},
+    [{"randomSeed": 7}, {"randomSeed": 9}],
+    lambda grid, params, worker_option, worker_index: {"workerIndex": worker_index, "seed": worker_option["randomSeed"]},
+)
+print(json.dumps(results))
+`;
+
+  const result = childProcess.spawnSync("python3", ["-c", command], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT portfolio fallback helpers.");
+  }
+
+  const payload = JSON.parse(result.stdout);
+  assert.deepEqual(payload, [
+    { workerIndex: 0, seed: 7 },
+    { workerIndex: 1, seed: 9 },
+  ]);
+}
+
+function maybeTestCpSatPortfolioSolve() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+  ];
+  const solution = solveCpSat(grid, {
+    optimizer: "cp-sat",
+    cpSat: {
+      pythonExecutable,
+      timeLimitSeconds: 5,
+      portfolio: {
+        randomSeeds: [3, 11],
+        perWorkerTimeLimitSeconds: 2,
+        perWorkerNumWorkers: 1,
+      },
+    },
+    residentialTypes: [
+      { w: 2, h: 2, min: 10, max: 10, avail: 1 },
+      { w: 2, h: 2, min: 100, max: 100, avail: 1 },
+    ],
+    availableBuildings: { residentials: 2, services: 0 },
+  });
+
+  assert.match(solution.cpSatStatus ?? "", /^(OPTIMAL|FEASIBLE)$/);
+  assert.equal(solution.totalPopulation, 110);
+  assert.equal(solution.cpSatPortfolio?.workerCount, 2);
+  assert.equal(solution.cpSatPortfolio?.workers.length, 2);
+  assert.equal(typeof solution.cpSatPortfolio?.selectedWorkerIndex, "number");
+  assert(solution.cpSatPortfolio?.workers.some((worker) => worker.feasible));
+  assert(
+    solution.cpSatPortfolio?.workers.some((worker) => worker.workerIndex === solution.cpSatPortfolio?.selectedWorkerIndex)
+  );
+}
+
+async function maybeTestCpSatAsyncOptimizer() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+  ];
+  const params = {
+    optimizer: "cp-sat",
+    cpSat: {
+      pythonExecutable,
+      timeLimitSeconds: 5,
+      numWorkers: 1,
+    },
+    residentialTypes: [
+      { w: 2, h: 2, min: 10, max: 10, avail: 1 },
+      { w: 2, h: 2, min: 100, max: 100, avail: 1 },
+    ],
+    availableBuildings: { residentials: 2, services: 0 },
+  };
+
+  const dispatched = await solveAsync(grid, params);
+  const direct = await solveCpSatAsync(grid, params);
+
+  assert.match(dispatched.cpSatStatus ?? "", /^(OPTIMAL|FEASIBLE)$/);
+  assert.equal(dispatched.totalPopulation, 110);
+  assert.equal(direct.totalPopulation, 110);
+}
+
+function testCpSatRejectsDuplicatePortfolioWorkerIndices() {
+  assert.throws(
+    () =>
+      parseCpSatRawSolution(
+        JSON.stringify({
+          status: "FEASIBLE",
+          roads: ["0,0"],
+          services: [],
+          residentials: [],
+          populations: [],
+          totalPopulation: 0,
+          portfolio: {
+            workerCount: 2,
+            selectedWorkerIndex: 0,
+            workers: [
+              {
+                workerIndex: 0,
+                randomSeed: 1,
+                randomizeSearch: true,
+                numWorkers: 1,
+                status: "FEASIBLE",
+                feasible: true,
+                totalPopulation: 0,
+              },
+              {
+                workerIndex: 0,
+                randomSeed: 2,
+                randomizeSearch: true,
+                numWorkers: 1,
+                status: "FEASIBLE",
+                feasible: true,
+                totalPopulation: 0,
+              },
+            ],
+          },
+        })
+      ),
+    /portfolio\.workers must have unique workerIndex values/
+  );
+}
+
+function testCpSatRejectsDanglingSelectedPortfolioWorkerIndex() {
+  assert.throws(
+    () =>
+      parseCpSatRawSolution(
+        JSON.stringify({
+          status: "FEASIBLE",
+          roads: ["0,0"],
+          services: [],
+          residentials: [],
+          populations: [],
+          totalPopulation: 0,
+          portfolio: {
+            workerCount: 1,
+            selectedWorkerIndex: 99,
+            workers: [
+              {
+                workerIndex: 0,
+                randomSeed: 1,
+                randomizeSearch: true,
+                numWorkers: 1,
+                status: "FEASIBLE",
+                feasible: true,
+                totalPopulation: 0,
+              },
+            ],
+          },
+        })
+      ),
+    /portfolio\.selectedWorkerIndex must reference a listed worker/
+  );
 }
 
 function maybeTestCpSatPopulationUpperBoundHelpers() {
@@ -1155,30 +1445,43 @@ print(json.dumps({
   assert.equal(payload.infeasible, true);
 }
 
-testGreedyDispatcher();
-maybeTestCpSatBackendJsonContractSmoke();
-maybeTestCpSatObjectivePolicyHelpers();
-maybeTestCpSatRuntimeOptionHelpers();
-maybeTestCpSatWarmStartHelpers();
-maybeTestCpSatPopulationUpperBoundHelpers();
-maybeTestCpSatResidentialPopulationUpperBoundHelpers();
-maybeTestCpSatOptimizer();
-maybeTestCpSatWarmStartContinuation();
-maybeTestCpSatObjectivePrefersFewerRoadsOnPopulationTie();
-maybeTestCpSatObjectiveAvoidsUselessServices();
-maybeTestCpSatPrunesObjectivelyUselessServices();
-maybeTestCpSatBorderAccessCapacityHelpers();
-maybeTestCpSatGateRequirementHelpers();
-maybeTestCpSatGateRegionalCapacityHelpers();
-maybeTestCpSatSupportsShapedServices();
-maybeTestCpSatCandidateReductionHelpers();
-maybeTestCpSatReachabilityReductionHelpers();
-maybeTestCpSatConnectivityHelperConstraints();
-maybeTestCpSatRoadEligibilityReductionHelpers();
-maybeTestCpSatDisallowsBidirectionalRoadFlow();
-testSolutionValidator();
-testSolutionMapValidatorRejectsRoadsNotConnectedToRow0();
-testTopRowBuildingCountsAsRoadConnected();
-testGreedySupportsShapedServices();
+async function main() {
+  testGreedyDispatcher();
+  maybeTestCpSatBackendJsonContractSmoke();
+  maybeTestCpSatObjectivePolicyHelpers();
+  maybeTestCpSatRuntimeOptionHelpers();
+  maybeTestCpSatWarmStartHelpers();
+  maybeTestCpSatPortfolioOptionHelpers();
+  testCpSatPortfolioExecutorFallbackHelpers();
+  maybeTestCpSatPopulationUpperBoundHelpers();
+  maybeTestCpSatResidentialPopulationUpperBoundHelpers();
+  maybeTestCpSatOptimizer();
+  await maybeTestCpSatAsyncOptimizer();
+  maybeTestCpSatWarmStartContinuation();
+  maybeTestCpSatPortfolioSolve();
+  maybeTestCpSatObjectivePrefersFewerRoadsOnPopulationTie();
+  maybeTestCpSatObjectiveAvoidsUselessServices();
+  maybeTestCpSatPrunesObjectivelyUselessServices();
+  maybeTestCpSatBorderAccessCapacityHelpers();
+  maybeTestCpSatGateRequirementHelpers();
+  maybeTestCpSatGateRegionalCapacityHelpers();
+  maybeTestCpSatSupportsShapedServices();
+  maybeTestCpSatCandidateReductionHelpers();
+  maybeTestCpSatReachabilityReductionHelpers();
+  maybeTestCpSatConnectivityHelperConstraints();
+  maybeTestCpSatRoadEligibilityReductionHelpers();
+  maybeTestCpSatDisallowsBidirectionalRoadFlow();
+  testCpSatRejectsDuplicatePortfolioWorkerIndices();
+  testCpSatRejectsDanglingSelectedPortfolioWorkerIndex();
+  testSolutionValidator();
+  testSolutionMapValidatorRejectsRoadsNotConnectedToRow0();
+  testTopRowBuildingCountsAsRoadConnected();
+  testGreedySupportsShapedServices();
 
-console.log("Optimizer backend tests passed.");
+  console.log("Optimizer backend tests passed.");
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

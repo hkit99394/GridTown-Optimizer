@@ -12,7 +12,7 @@ import type {
   SolverParams,
   Solution,
 } from "./types.js";
-import { solveCpSat } from "./cpSatSolver.js";
+import { solveCpSat, solveCpSatAsync } from "./cpSatSolver.js";
 import {
   roadSeedRow0,
   ensureBuildingConnectedToRoads,
@@ -454,6 +454,17 @@ export function solve(G: Grid, params: SolverParams): Solution {
       return solveGreedy(G, params);
     case "cp-sat":
       return solveCpSat(G, params);
+    default:
+      throw new Error(`Unsupported optimizer: ${String(params.optimizer)}`);
+  }
+}
+
+export async function solveAsync(G: Grid, params: SolverParams): Promise<Solution> {
+  switch (params.optimizer ?? "greedy") {
+    case "greedy":
+      return solveGreedy(G, params);
+    case "cp-sat":
+      return solveCpSatAsync(G, params);
     default:
       throw new Error(`Unsupported optimizer: ${String(params.optimizer)}`);
   }

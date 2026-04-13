@@ -5,10 +5,12 @@
 
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 
 import type {
   CpSatObjectivePolicy,
+  CpSatPortfolioSummary,
+  CpSatPortfolioWorkerSummary,
   CpSatTelemetry,
   CpSatWarmStartHint,
   EvaluatedServicePlacement,
@@ -47,6 +49,7 @@ interface CpSatRawSolution {
   status: string;
   objectivePolicy?: CpSatObjectivePolicy;
   telemetry?: CpSatTelemetry;
+  portfolio?: CpSatPortfolioSummary;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -63,6 +66,13 @@ function expectInteger(value: unknown, label: string): number {
 function expectString(value: unknown, label: string): string {
   if (typeof value !== "string") {
     throw new Error(`CP-SAT backend returned invalid JSON: ${label} must be a string.`);
+  }
+  return value;
+}
+
+function expectBoolean(value: unknown, label: string): boolean {
+  if (typeof value !== "boolean") {
+    throw new Error(`CP-SAT backend returned invalid JSON: ${label} must be a boolean.`);
   }
   return value;
 }
@@ -125,6 +135,51 @@ function parseCpSatTelemetry(value: unknown): CpSatTelemetry {
   };
 }
 
+function parseCpSatPortfolioWorkerSummary(value: unknown, index: number): CpSatPortfolioWorkerSummary {
+  if (!isRecord(value)) {
+    throw new Error(`CP-SAT backend returned invalid JSON: portfolio.workers[${index}] must be an object.`);
+  }
+  return {
+    workerIndex: expectInteger(value.workerIndex, `portfolio.workers[${index}].workerIndex`),
+    randomSeed: value.randomSeed === null ? null : expectInteger(value.randomSeed, `portfolio.workers[${index}].randomSeed`),
+    randomizeSearch: expectBoolean(value.randomizeSearch, `portfolio.workers[${index}].randomizeSearch`),
+    numWorkers: expectInteger(value.numWorkers, `portfolio.workers[${index}].numWorkers`),
+    status: expectString(value.status, `portfolio.workers[${index}].status`),
+    feasible: expectBoolean(value.feasible, `portfolio.workers[${index}].feasible`),
+    totalPopulation:
+      value.totalPopulation === null
+        ? null
+        : expectInteger(value.totalPopulation, `portfolio.workers[${index}].totalPopulation`),
+  };
+}
+
+function parseCpSatPortfolioSummary(value: unknown): CpSatPortfolioSummary {
+  if (!isRecord(value)) {
+    throw new Error("CP-SAT backend returned invalid JSON: portfolio must be an object.");
+  }
+  if (!Array.isArray(value.workers)) {
+    throw new Error("CP-SAT backend returned invalid JSON: portfolio.workers must be an array.");
+  }
+  const workerCount = expectInteger(value.workerCount, "portfolio.workerCount");
+  const selectedWorkerIndex =
+    value.selectedWorkerIndex === null ? null : expectInteger(value.selectedWorkerIndex, "portfolio.selectedWorkerIndex");
+  const workers = value.workers.map((entry, index) => parseCpSatPortfolioWorkerSummary(entry, index));
+  if (workers.length !== workerCount) {
+    throw new Error("CP-SAT backend returned invalid JSON: portfolio.workerCount must match workers length.");
+  }
+  if (new Set(workers.map((worker) => worker.workerIndex)).size !== workers.length) {
+    throw new Error("CP-SAT backend returned invalid JSON: portfolio.workers must have unique workerIndex values.");
+  }
+  if (selectedWorkerIndex !== null && !workers.some((worker) => worker.workerIndex === selectedWorkerIndex)) {
+    throw new Error("CP-SAT backend returned invalid JSON: portfolio.selectedWorkerIndex must reference a listed worker.");
+  }
+  return {
+    workerCount,
+    selectedWorkerIndex,
+    workers,
+  };
+}
+
 function parseCpSatServicePlacement(value: unknown, index: number): CpSatServicePlacement {
   if (!isRecord(value)) {
     throw new Error(`CP-SAT backend returned invalid JSON: services[${index}] must be an object.`);
@@ -179,6 +234,7 @@ function normalizeCpSatRawSolution(value: unknown): CpSatRawSolution {
   const status = expectString(value.status, "status");
   const objectivePolicy = value.objectivePolicy === undefined ? undefined : parseCpSatObjectivePolicy(value.objectivePolicy);
   const telemetry = value.telemetry === undefined ? undefined : parseCpSatTelemetry(value.telemetry);
+  const portfolio = value.portfolio === undefined ? undefined : parseCpSatPortfolioSummary(value.portfolio);
 
   if (populations.length !== residentials.length) {
     throw new Error("CP-SAT backend returned invalid JSON: populations length must match residentials length.");
@@ -187,7 +243,7 @@ function normalizeCpSatRawSolution(value: unknown): CpSatRawSolution {
     throw new Error("CP-SAT backend returned invalid JSON: totalPopulation must equal the population sum.");
   }
 
-  return { roads, services, residentials, populations, totalPopulation, status, objectivePolicy, telemetry };
+  return { roads, services, residentials, populations, totalPopulation, status, objectivePolicy, telemetry, portfolio };
 }
 
 function defaultPythonExecutable(): string {
@@ -243,18 +299,22 @@ function buildCpSatBackendParams(params: SolverParams): SolverParams {
   };
 }
 
-function runCpSatBackend(G: Grid, params: SolverParams) {
+function buildCpSatBackendInvocation(G: Grid, params: SolverParams) {
   const pythonExecutable =
     params.cpSat?.pythonExecutable ?? process.env.CITY_BUILDER_CP_SAT_PYTHON ?? defaultPythonExecutable();
   const scriptPath = params.cpSat?.scriptPath ?? resolve(__dirname, "../python/cp_sat_solver.py");
   const backendParams = buildCpSatBackendParams(params);
-  const request = {
+  const request = JSON.stringify({
     grid: G,
     params: backendParams,
-  };
+  });
+  return { pythonExecutable, scriptPath, request };
+}
 
+function runCpSatBackend(G: Grid, params: SolverParams) {
+  const { pythonExecutable, scriptPath, request } = buildCpSatBackendInvocation(G, params);
   const result = spawnSync(pythonExecutable, [scriptPath], {
-    input: JSON.stringify(request),
+    input: request,
     encoding: "utf8",
     maxBuffer: 16 * 1024 * 1024,
   });
@@ -275,7 +335,47 @@ function runCpSatBackend(G: Grid, params: SolverParams) {
   return result.stdout;
 }
 
-function parseCpSatRawSolution(stdout: string): CpSatRawSolution {
+function runCpSatBackendAsync(G: Grid, params: SolverParams): Promise<string> {
+  const { pythonExecutable, scriptPath, request } = buildCpSatBackendInvocation(G, params);
+  return new Promise((resolvePromise, rejectPromise) => {
+    const child = spawn(pythonExecutable, [scriptPath], {
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    let stdout = "";
+    let stderr = "";
+
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk: string) => {
+      stdout += chunk;
+    });
+    child.stderr.on("data", (chunk: string) => {
+      stderr += chunk;
+    });
+    child.on("error", (error) => {
+      rejectPromise(new Error(`Failed to launch CP-SAT backend with ${pythonExecutable}: ${error.message}`));
+    });
+    child.on("close", (code, signal) => {
+      if (code !== 0) {
+        const trimmedStderr = stderr.trim();
+        const trimmedStdout = stdout.trim();
+        const exitDetail = code === null ? `signal ${signal ?? "unknown"}` : `exit code ${code}`;
+        rejectPromise(
+          new Error(
+            `CP-SAT backend failed with ${exitDetail}.${trimmedStderr ? ` stderr: ${trimmedStderr}` : ""}${
+              trimmedStdout ? ` stdout: ${trimmedStdout}` : ""
+            }`
+          )
+        );
+        return;
+      }
+      resolvePromise(stdout);
+    });
+    child.stdin.end(request, "utf8");
+  });
+}
+
+export function parseCpSatRawSolution(stdout: string): CpSatRawSolution {
   try {
     return normalizeCpSatRawSolution(JSON.parse(stdout) as unknown);
   } catch (error) {
@@ -331,12 +431,17 @@ function validateCpSatLayout(G: Grid, params: SolverParams, raw: CpSatRawSolutio
 
 export function solveCpSat(G: Grid, params: SolverParams): Solution {
   const raw = parseCpSatRawSolution(runCpSatBackend(G, params));
+  return materializeCpSatSolution(G, params, raw);
+}
+
+function materializeCpSatSolution(G: Grid, params: SolverParams, raw: CpSatRawSolution): Solution {
   const layout = validateCpSatLayout(G, params, raw);
   return {
     optimizer: "cp-sat",
     cpSatStatus: raw.status,
     cpSatObjectivePolicy: raw.objectivePolicy,
     cpSatTelemetry: raw.telemetry,
+    cpSatPortfolio: raw.portfolio,
     roads: layout.roads,
     services: raw.services.map(({ r, c, rows, cols, range }) => ({ r, c, rows, cols, range })),
     serviceTypeIndices: raw.services.map((service) => service.typeIndex),
@@ -346,4 +451,9 @@ export function solveCpSat(G: Grid, params: SolverParams): Solution {
     populations: raw.populations,
     totalPopulation: raw.totalPopulation,
   };
+}
+
+export async function solveCpSatAsync(G: Grid, params: SolverParams): Promise<Solution> {
+  const raw = parseCpSatRawSolution(await runCpSatBackendAsync(G, params));
+  return materializeCpSatSolution(G, params, raw);
 }

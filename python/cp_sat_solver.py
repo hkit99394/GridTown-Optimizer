@@ -4,6 +4,7 @@ import json
 import sys
 from collections import defaultdict
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 try:
@@ -14,6 +15,27 @@ except ImportError as exc:
         file=sys.stderr,
     )
     raise SystemExit(1) from exc
+
+CURRENT_DIR = Path(__file__).resolve().parent
+if str(CURRENT_DIR) not in sys.path:
+    sys.path.append(str(CURRENT_DIR))
+
+from cp_sat_runtime_support import (
+    CpSatPortfolioWorkerResult,
+    CpSatPortfolioWorkerSummary,
+    CpSatSolveResult,
+    CpSatTelemetry,
+    CpSatTelemetryCollector,
+    build_solution_response,
+    collect_cp_sat_telemetry,
+    portfolio_worker_summary_payload,
+    solver_status_name,
+)
+from cp_sat_portfolio_support import (
+    build_portfolio_worker_options,
+    run_portfolio_workers,
+    select_best_portfolio_result,
+)
 
 
 NO_RESIDENTIAL_TYPE = -1
@@ -64,23 +86,6 @@ class GateAccessAnalysis:
     residential_candidate_indices_by_gate: dict[int, list[int]]
     service_region_coefficients_by_gate: dict[int, dict[int, int]]
     residential_region_coefficients_by_gate: dict[int, dict[int, int]]
-
-
-@dataclass(frozen=True)
-class CpSatTelemetry:
-    solve_wall_time_seconds: float
-    user_time_seconds: float
-    solution_count: int
-    incumbent_objective_value: float | None
-    best_objective_bound: float | None
-    objective_gap: float | None
-    incumbent_population: int | None
-    best_population_upper_bound: int | None
-    population_gap_upper_bound: int | None
-    last_improvement_at_seconds: float | None
-    seconds_since_last_improvement: float | None
-    num_branches: int
-    num_conflicts: int
 
 
 def fail(message: str) -> None:
@@ -1258,65 +1263,7 @@ def apply_objective_lower_bound(model, built: BuiltCpSatModel, objective_lower_b
     model.Add(built.total_population >= lower_bound)
 
 
-class CpSatTelemetryCollector(cp_model.CpSolverSolutionCallback):
-    def __init__(self):
-        super().__init__()
-        self.solution_count = 0
-        self.last_improvement_at_seconds = None
-        self.last_incumbent_objective_value = None
-
-    def on_solution_callback(self):
-        self.solution_count += 1
-        self.last_improvement_at_seconds = float(self.WallTime())
-        self.last_incumbent_objective_value = float(self.ObjectiveValue())
-
-
-def collect_cp_sat_telemetry(solver, telemetry_collector: CpSatTelemetryCollector, status, built: BuiltCpSatModel) -> CpSatTelemetry:
-    incumbent_objective_value = None
-    incumbent_population = None
-    best_objective_bound = None
-    best_population_upper_bound = None
-    objective_gap = None
-    population_gap_upper_bound = None
-
-    if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
-        incumbent_objective_value = float(solver.ObjectiveValue())
-        incumbent_population = int(solver.Value(built.total_population))
-        best_objective_bound = float(solver.BestObjectiveBound())
-        objective_gap = max(0.0, best_objective_bound - incumbent_objective_value)
-        best_population_upper_bound = population_from_objective_value(best_objective_bound, built.objective_policy)
-        if best_population_upper_bound is not None and incumbent_population is not None:
-            population_gap_upper_bound = max(0, best_population_upper_bound - incumbent_population)
-
-    solve_wall_time_seconds = float(solver.WallTime())
-    last_improvement_at_seconds = telemetry_collector.last_improvement_at_seconds
-    seconds_since_last_improvement = None
-    if last_improvement_at_seconds is not None:
-        seconds_since_last_improvement = max(0.0, solve_wall_time_seconds - last_improvement_at_seconds)
-
-    return CpSatTelemetry(
-        solve_wall_time_seconds=solve_wall_time_seconds,
-        user_time_seconds=float(solver.UserTime()),
-        solution_count=telemetry_collector.solution_count,
-        incumbent_objective_value=incumbent_objective_value,
-        best_objective_bound=best_objective_bound,
-        objective_gap=objective_gap,
-        incumbent_population=incumbent_population,
-        best_population_upper_bound=best_population_upper_bound,
-        population_gap_upper_bound=population_gap_upper_bound,
-        last_improvement_at_seconds=last_improvement_at_seconds,
-        seconds_since_last_improvement=seconds_since_last_improvement,
-        num_branches=int(solver.NumBranches()),
-        num_conflicts=int(solver.NumConflicts()),
-    )
-
-
-def solve():
-    payload = json.load(sys.stdin)
-    grid = payload["grid"]
-    params = payload.get("params") or {}
-    cp_sat_options = params.get("cpSat") or {}
-
+def solve_single_cp_sat(grid, params, cp_sat_options):
     built = build_model(grid, params)
     model = built.model
     apply_warm_start_hints(model, built, cp_sat_options.get("warmStartHint"))
@@ -1325,90 +1272,87 @@ def solve():
     configure_solver_parameters(solver, cp_sat_options)
     telemetry_collector = CpSatTelemetryCollector()
     status = solver.Solve(model, telemetry_collector)
-    status_name = {
-        cp_model.OPTIMAL: "OPTIMAL",
-        cp_model.FEASIBLE: "FEASIBLE",
-        cp_model.INFEASIBLE: "INFEASIBLE",
-        cp_model.MODEL_INVALID: "MODEL_INVALID",
-        cp_model.UNKNOWN: "UNKNOWN",
-    }.get(status, f"STATUS_{status}")
+    status_name = solver_status_name(status)
+    telemetry = collect_cp_sat_telemetry(
+        solver,
+        telemetry_collector,
+        status,
+        built,
+        population_from_objective_value,
+    )
 
     if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
-        fail(f"No feasible solution found with CP-SAT. Status: {status_name}.")
-
-    telemetry = collect_cp_sat_telemetry(solver, telemetry_collector, status, built)
-
-    roads = []
-    for cell_id, road_var in enumerate(built.road_vars):
-        if solver.Value(road_var) != 1:
-            continue
-        r, c = built.id_to_cell[cell_id]
-        roads.append(f"{r},{c}")
-
-    services = []
-    for candidate_index, variable in enumerate(built.service_vars):
-        if solver.Value(variable) != 1:
-            continue
-        candidate = built.service_candidates[candidate_index]
-        services.append(
-            {
-                "r": candidate["r"],
-                "c": candidate["c"],
-                "rows": candidate["rows"],
-                "cols": candidate["cols"],
-                "range": candidate["range"],
-                "bonus": candidate["bonus"],
-                "typeIndex": candidate["typeIndex"],
-            }
+        return CpSatSolveResult(
+            status=status_name,
+            feasible=False,
+            objective_value=None,
+            total_population=None,
+            response=None,
+            telemetry=telemetry,
         )
 
-    residentials = []
-    populations = []
-    for candidate_index, variable in enumerate(built.residential_vars):
-        if solver.Value(variable) != 1:
-            continue
-        candidate = built.residential_candidates[candidate_index]
-        population = solver.Value(built.populations[candidate_index])
-        residentials.append(
-            {
-                "r": candidate["r"],
-                "c": candidate["c"],
-                "rows": candidate["rows"],
-                "cols": candidate["cols"],
-                "typeIndex": candidate["typeIndex"],
-                "population": population,
-            }
-        )
-        populations.append(population)
+    response = build_solution_response(solver, built, status_name, telemetry)
+    return CpSatSolveResult(
+        status=status_name,
+        feasible=True,
+        objective_value=int(solver.ObjectiveValue()),
+        total_population=response["totalPopulation"],
+        response=response,
+        telemetry=telemetry,
+    )
 
-    response = {
-        "status": status_name,
-        "roads": roads,
-        "services": services,
-        "residentials": residentials,
-        "populations": populations,
-        "totalPopulation": solver.Value(built.total_population),
-        "objectivePolicy": {
-            "populationWeight": built.objective_policy.population_weight,
-            "maxTieBreakPenalty": built.objective_policy.max_tie_break_penalty,
-            "summary": built.objective_policy.tie_break_summary,
-        },
-        "telemetry": {
-            "solveWallTimeSeconds": telemetry.solve_wall_time_seconds,
-            "userTimeSeconds": telemetry.user_time_seconds,
-            "solutionCount": telemetry.solution_count,
-            "incumbentObjectiveValue": telemetry.incumbent_objective_value,
-            "bestObjectiveBound": telemetry.best_objective_bound,
-            "objectiveGap": telemetry.objective_gap,
-            "incumbentPopulation": telemetry.incumbent_population,
-            "bestPopulationUpperBound": telemetry.best_population_upper_bound,
-            "populationGapUpperBound": telemetry.population_gap_upper_bound,
-            "lastImprovementAtSeconds": telemetry.last_improvement_at_seconds,
-            "secondsSinceLastImprovement": telemetry.seconds_since_last_improvement,
-            "numBranches": telemetry.num_branches,
-            "numConflicts": telemetry.num_conflicts,
-        },
+def portfolio_worker_task(grid, params, worker_option, worker_index):
+    solve_result = solve_single_cp_sat(grid, params, worker_option)
+    return CpSatPortfolioWorkerResult(
+        summary=CpSatPortfolioWorkerSummary(
+            worker_index=worker_index,
+            random_seed=worker_option.get("randomSeed"),
+            randomize_search=bool(worker_option.get("randomizeSearch", False)),
+            num_workers=int(worker_option.get("numWorkers", 1)),
+            status=solve_result.status,
+            feasible=solve_result.feasible,
+            total_population=solve_result.total_population,
+        ),
+        solve_result=solve_result,
+    )
+
+def solve_cp_sat_portfolio(grid, params, cp_sat_options):
+    worker_options = build_portfolio_worker_options(cp_sat_options)
+    results = run_portfolio_workers(grid, params, worker_options, portfolio_worker_task)
+    best_result = select_best_portfolio_result(results)
+    if best_result is None:
+        statuses = ", ".join(
+            f"worker {result.summary.worker_index}: {result.solve_result.status}"
+            for result in sorted(results, key=lambda result: result.summary.worker_index)
+        )
+        fail(f"No feasible solution found with CP-SAT portfolio. Statuses: {statuses}.")
+
+    response = best_result.solve_result.response
+    if response is None:
+        fail("CP-SAT portfolio produced a feasible worker without a serializable response.")
+    response["portfolio"] = {
+        "workerCount": len(worker_options),
+        "selectedWorkerIndex": best_result.summary.worker_index,
+        "workers": [
+            portfolio_worker_summary_payload(result.summary)
+            for result in sorted(results, key=lambda result: result.summary.worker_index)
+        ],
     }
+    return response
+
+
+def solve():
+    payload = json.load(sys.stdin)
+    grid = payload["grid"]
+    params = payload.get("params") or {}
+    cp_sat_options = params.get("cpSat") or {}
+    if cp_sat_options.get("portfolio"):
+        response = solve_cp_sat_portfolio(grid, params, cp_sat_options)
+    else:
+        result = solve_single_cp_sat(grid, params, cp_sat_options)
+        if not result.feasible:
+            fail(f"No feasible solution found with CP-SAT. Status: {result.status}.")
+        response = result.response
     json.dump(response, sys.stdout)
 
 

@@ -18,6 +18,28 @@
       parseServiceCatalogEntry,
     } = helpers;
 
+    function generateCpSatRandomSeed() {
+      const cryptoObject = globalObject.crypto;
+      if (cryptoObject?.getRandomValues) {
+        const values = new Uint32Array(1);
+        cryptoObject.getRandomValues(values);
+        return Math.max(1, values[0] & 0x7fffffff);
+      }
+      return Math.max(1, Math.floor(Math.random() * 0x7fffffff));
+    }
+
+    function ensureCpSatRandomSeed() {
+      const existingSeed = readOptionalInteger(state.cpSat.randomSeed, 0);
+      if (existingSeed !== undefined) return existingSeed;
+      const generatedSeed = generateCpSatRandomSeed();
+      state.cpSat.randomSeed = String(generatedSeed);
+      if (elements.cpSatRandomSeed) {
+        elements.cpSatRandomSeed.value = String(generatedSeed);
+      }
+      updatePayloadPreview();
+      return generatedSeed;
+    }
+
     function getSavedLayoutCheckpoint(entry) {
       if (entry?.continueCpSat) {
         return cloneJson(entry.continueCpSat);
@@ -179,6 +201,7 @@
     function buildSolveRequest(options = {}) {
       const { hintMismatch = "error", includeWarmStartHint = true, includeLnsSeed = true } = options;
       const timeLimitSeconds = readOptionalInteger(state.cpSat.timeLimitSeconds, 1);
+      const cpSatRandomSeed = readOptionalInteger(state.cpSat.randomSeed, 0);
       const greedyRandomSeed = readOptionalInteger(state.greedy.randomSeed, 0);
       const defaultNeighborhoodRows = Math.max(1, Math.ceil(state.grid.length / 2));
       const defaultNeighborhoodCols = Math.max(1, Math.ceil((state.grid[0]?.length ?? 1) / 2));
@@ -200,6 +223,7 @@
         cpSat: {
           numWorkers: clampInteger(state.cpSat.numWorkers, 8, 1),
           logSearchProgress: Boolean(state.cpSat.logSearchProgress),
+          ...(cpSatRandomSeed !== undefined ? { randomSeed: cpSatRandomSeed } : {}),
           ...(timeLimitSeconds !== undefined ? { timeLimitSeconds } : {}),
           ...(state.cpSat.pythonExecutable.trim() ? { pythonExecutable: state.cpSat.pythonExecutable.trim() } : {}),
         },
@@ -252,6 +276,7 @@
 
     return Object.freeze({
       buildSolveRequest,
+      ensureCpSatRandomSeed,
       getDisplayedLayoutCheckpoint,
       getDisplayedLayoutSourceLabel,
       getSavedLayoutCheckpoint,

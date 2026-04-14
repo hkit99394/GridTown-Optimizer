@@ -22,6 +22,7 @@ const {
   validateSolutionMap,
 } = require("../dist/index.js");
 const { parseCpSatRawSolution } = require("../dist/cpSatSolver.js");
+const { buildNeighborhoodWindows } = require("../dist/lnsSolver.js");
 
 function testOptimizerRegistry() {
   assert.equal(resolveOptimizerName(undefined), "greedy");
@@ -116,6 +117,72 @@ function testGreedyRandomSeedIsDeterministic() {
   assert.deepEqual(first.residentials, second.residentials);
   assert.deepEqual(first.residentialTypeIndices, second.residentialTypeIndices);
   assert.deepEqual(first.populations, second.populations);
+}
+
+function testLnsNeighborhoodWindowsPrioritizeWeakServicesAndUpgradeHeadroom() {
+  const grid = Array.from({ length: 6 }, () => Array.from({ length: 6 }, () => 1));
+  const params = {
+    serviceTypes: [
+      { rows: 2, cols: 2, bonus: 30, range: 1, avail: 2 },
+      { rows: 2, cols: 2, bonus: 180, range: 4, avail: 2 },
+    ],
+    residentialTypes: [
+      { w: 2, h: 2, min: 100, max: 150, avail: 1 },
+      { w: 2, h: 2, min: 100, max: 500, avail: 1 },
+    ],
+    availableBuildings: { services: 2, residentials: 2 },
+    lns: {
+      iterations: 3,
+      maxNoImprovementIterations: 2,
+      neighborhoodRows: 3,
+      neighborhoodCols: 3,
+      repairTimeLimitSeconds: 1,
+    },
+  };
+  const incumbent = {
+    optimizer: "lns",
+    roads: new Set(["0,0", "0,1", "0,2", "0,3", "0,4", "0,5", "1,0", "2,0", "3,0", "4,0", "5,0"]),
+    services: [
+      { r: 1, c: 4, rows: 2, cols: 2, range: 1 },
+      { r: 1, c: 0, rows: 2, cols: 2, range: 4 },
+    ],
+    serviceTypeIndices: [0, 1],
+    servicePopulationIncreases: [30, 180],
+    residentials: [
+      { r: 4, c: 0, rows: 2, cols: 2 },
+      { r: 4, c: 4, rows: 2, cols: 2 },
+    ],
+    residentialTypeIndices: [1, 0],
+    populations: [280, 150],
+    totalPopulation: 430,
+  };
+
+  const windows = buildNeighborhoodWindows(grid, params, incumbent, {
+    iterations: 3,
+    maxNoImprovementIterations: 2,
+    neighborhoodRows: 3,
+    neighborhoodCols: 3,
+    repairTimeLimitSeconds: 1,
+    stopFilePath: "",
+    snapshotFilePath: "",
+  });
+  const indexOfWindow = (target) =>
+    windows.findIndex((window) =>
+      window.top === target.top
+      && window.left === target.left
+      && window.rows === target.rows
+      && window.cols === target.cols
+    );
+
+  const weakServiceWindow = { top: 1, left: 3, rows: 3, cols: 3 };
+  const strongServiceWindow = { top: 1, left: 0, rows: 3, cols: 3 };
+  const highHeadroomResidentialWindow = { top: 3, left: 0, rows: 3, cols: 3 };
+  const saturatedResidentialWindow = { top: 3, left: 3, rows: 3, cols: 3 };
+
+  assert.equal(indexOfWindow(weakServiceWindow), 0);
+  assert.ok(indexOfWindow(strongServiceWindow) > indexOfWindow(weakServiceWindow));
+  assert.ok(indexOfWindow(highHeadroomResidentialWindow) >= 0);
+  assert.ok(indexOfWindow(highHeadroomResidentialWindow) < indexOfWindow(saturatedResidentialWindow));
 }
 
 async function maybeTestCpSatOptimizer() {
@@ -2072,6 +2139,7 @@ print(json.dumps({
 async function main() {
   testGreedyDispatcher();
   testGreedyRandomSeedIsDeterministic();
+  testLnsNeighborhoodWindowsPrioritizeWeakServicesAndUpgradeHeadroom();
   maybeTestCpSatBackendJsonContractSmoke();
   maybeTestCpSatBackendStreamingProtocol();
   maybeTestCpSatObjectivePolicyHelpers();
@@ -2107,6 +2175,9 @@ async function main() {
   testSolutionMapValidatorRejectsRoadsNotConnectedToRow0();
   testTopRowBuildingCountsAsRoadConnected();
   testGreedySupportsShapedServices();
+  maybeTestLnsOptimizer();
+  testLnsDeterministicServiceUpgrade();
+  testLnsDeterministicResidentialUpgrade();
 
   console.log("Optimizer backend tests passed.");
 }

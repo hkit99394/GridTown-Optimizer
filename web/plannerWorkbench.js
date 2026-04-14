@@ -65,7 +65,9 @@
       if (!preserveCpSatRuntime && params.cpSat) {
         state.cpSat = {
           ...state.cpSat,
+          randomSeed: "",
           ...(params.cpSat.timeLimitSeconds != null ? { timeLimitSeconds: String(params.cpSat.timeLimitSeconds) } : {}),
+          ...(params.cpSat.randomSeed != null ? { randomSeed: String(params.cpSat.randomSeed) } : {}),
           ...(params.cpSat.numWorkers != null ? { numWorkers: params.cpSat.numWorkers } : {}),
           ...(params.cpSat.logSearchProgress != null ? { logSearchProgress: Boolean(params.cpSat.logSearchProgress) } : {}),
           ...(params.cpSat.pythonExecutable != null ? { pythonExecutable: String(params.cpSat.pythonExecutable) } : {}),
@@ -278,6 +280,7 @@
       elements.lnsUseDisplayedSeed.checked = Boolean(state.lns.useDisplayedSeed);
 
       elements.cpSatTimeLimitSeconds.value = state.cpSat.timeLimitSeconds;
+      elements.cpSatRandomSeed.value = state.cpSat.randomSeed === "" ? "" : String(state.cpSat.randomSeed ?? "");
       elements.cpSatNumWorkers.value = String(state.cpSat.numWorkers);
       elements.cpSatLogSearchProgress.checked = state.cpSat.logSearchProgress;
       elements.cpSatPythonExecutable.value = state.cpSat.pythonExecutable;

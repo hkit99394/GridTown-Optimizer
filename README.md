@@ -13,6 +13,7 @@ Core reference docs:
 - [SPEC.md](./SPEC.md): formal problem statement
 - [Requirement.md](./Requirement.md): product-level summary
 - [ALGORITHM.md](./ALGORITHM.md): heuristic design notes
+- [LEARNED_GUIDANCE_ROADMAP.md](./LEARNED_GUIDANCE_ROADMAP.md): roadmap for ML / RL-style learned guidance over the current solver stack
 - [PLANNER_ARCHITECTURE.md](./PLANNER_ARCHITECTURE.md): current web/backend module boundaries
 - [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md): overall solver roadmap
 - [CP_SAT_ROADMAP.md](./CP_SAT_ROADMAP.md): CP-SAT-specific roadmap

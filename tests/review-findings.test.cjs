@@ -32,6 +32,32 @@ function loadPlannerSharedModule() {
   return context.window.CityBuilderShared;
 }
 
+function loadPlannerRequestBuilderModule(crypto = undefined) {
+  const source = fs.readFileSync(path.resolve(__dirname, "../web/plannerRequestBuilder.js"), "utf8");
+  const context = {
+    window: {
+      crypto,
+    },
+    JSON,
+    Math,
+    Date,
+    Array,
+    Object,
+    Number,
+    String,
+    Boolean,
+    RegExp,
+    Set,
+    Map,
+    Promise,
+    Uint32Array,
+    Error,
+  };
+  vm.createContext(context);
+  vm.runInContext(source, context);
+  return context.window.CityBuilderRequestBuilder;
+}
+
 function testDistinctResidentialTypes() {
   const grid = [
     [1, 1, 1, 1],
@@ -255,6 +281,105 @@ function testPlannerServiceAvailabilityRoundTrip() {
   assert.equal(importedLegacy.services[0].avail, "1");
 }
 
+function testPlannerAutoFillsCpSatRandomSeed() {
+  const plannerRequestBuilder = loadPlannerRequestBuilderModule({
+    getRandomValues(array) {
+      array[0] = 123456789;
+      return array;
+    },
+  });
+  const controller = plannerRequestBuilder.createPlannerRequestBuilderController({
+    state: {
+      optimizer: "cp-sat",
+      grid: [[1, 1], [1, 1]],
+      serviceTypes: [],
+      residentialTypes: [],
+      availableBuildings: {
+        services: "",
+        residentials: "",
+      },
+      greedy: {
+        localSearch: true,
+        randomSeed: "",
+        restarts: 1,
+        serviceRefineIterations: 0,
+        serviceRefineCandidateLimit: 1,
+        exhaustiveServiceSearch: false,
+        serviceExactPoolLimit: 1,
+        serviceExactMaxCombinations: 1,
+      },
+      cpSat: {
+        timeLimitSeconds: "",
+        randomSeed: "",
+        numWorkers: 8,
+        logSearchProgress: false,
+        pythonExecutable: "",
+        useDisplayedHint: false,
+      },
+      lns: {
+        iterations: 1,
+        maxNoImprovementIterations: 1,
+        neighborhoodRows: 1,
+        neighborhoodCols: 1,
+        repairTimeLimitSeconds: 1,
+        useDisplayedSeed: false,
+      },
+      result: null,
+      resultContext: null,
+      resultElapsedMs: 0,
+    },
+    elements: {
+      cpSatRandomSeed: { value: "" },
+      cpSatHintStatus: { textContent: "" },
+      lnsSeedStatus: { textContent: "" },
+      payloadPreview: { textContent: "" },
+      layoutStorageName: { value: "" },
+    },
+    helpers: {
+      buildCpSatContinuationModelInput() {
+        return {};
+      },
+      buildCpSatWarmStartCheckpoint() {
+        throw new Error("Warm-start checkpoint should not be requested in this test.");
+      },
+      clampInteger(value, fallback, min = 0) {
+        const parsed = Number(value);
+        if (!Number.isFinite(parsed)) return fallback;
+        return Math.max(min, Math.floor(parsed));
+      },
+      cloneGrid(grid) {
+        return JSON.parse(JSON.stringify(grid));
+      },
+      cloneJson(value) {
+        return JSON.parse(JSON.stringify(value));
+      },
+      computeCpSatModelFingerprint() {
+        return "fingerprint";
+      },
+      getSavedLayoutElapsedMs() {
+        return 0;
+      },
+      readOptionalInteger(value, min = 0) {
+        if (value === "" || value === null || value === undefined) return undefined;
+        const parsed = Number(value);
+        if (!Number.isFinite(parsed)) return undefined;
+        return Math.max(min, Math.floor(parsed));
+      },
+      parseResidentialCatalogEntry(entry) {
+        return entry;
+      },
+      parseServiceCatalogEntry(entry) {
+        return entry;
+      },
+    },
+  });
+
+  assert.equal(controller.ensureCpSatRandomSeed(), 123456789);
+  const request = controller.buildSolveRequest();
+  assert.equal(request.params.cpSat.randomSeed, 123456789);
+  assert.equal(controller.ensureCpSatRandomSeed(), 123456789);
+}
+
 function testManualLayoutResponseClearsSolverMetadata() {
   const response = buildManualLayoutResponse(
     [
@@ -338,6 +463,7 @@ testGreedySkipsServicesWithZeroMarginalGain();
 testGreedyLocalSearchDoesNotRegressNontrivialSeed();
 testIndexImportHasNoSideEffects();
 testPlannerServiceAvailabilityRoundTrip();
+testPlannerAutoFillsCpSatRandomSeed();
 testManualLayoutResponseClearsSolverMetadata();
 
 console.log("All review finding regression tests passed.");

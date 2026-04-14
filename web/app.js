@@ -133,6 +133,7 @@ const state = {
   },
   cpSat: {
     timeLimitSeconds: "",
+    randomSeed: "",
     numWorkers: 8,
     logSearchProgress: false,
     pythonExecutable: "",
@@ -275,6 +276,7 @@ const elements = {
   lnsPythonExecutable: document.querySelector("#lnsPythonExecutable"),
   lnsUseDisplayedSeed: document.querySelector("#lnsUseDisplayedSeed"),
   cpSatTimeLimitSeconds: document.querySelector("#cpSatTimeLimitSeconds"),
+  cpSatRandomSeed: document.querySelector("#cpSatRandomSeed"),
   cpSatNumWorkers: document.querySelector("#cpSatNumWorkers"),
   cpSatLogSearchProgress: document.querySelector("#cpSatLogSearchProgress"),
   cpSatPythonExecutable: document.querySelector("#cpSatPythonExecutable"),
@@ -434,6 +436,7 @@ const solveRuntimeController = createSolveRuntime({
   callbacks: {
     buildSolveRequest: requestBuilderController.buildSolveRequest,
     clearExpansionAdvice,
+    ensureCpSatRandomSeed: requestBuilderController.ensureCpSatRandomSeed,
     getDisplayedLayoutCheckpoint: requestBuilderController.getDisplayedLayoutCheckpoint,
     getOptimizerLabel: shellController.getOptimizerLabel,
     renderResults: resultsController.renderResults,
@@ -616,6 +619,7 @@ function init() {
 
   const cpSatBindings = [
     ["cpSatTimeLimitSeconds", "timeLimitSeconds", "number"],
+    ["cpSatRandomSeed", "randomSeed", "number"],
     ["cpSatNumWorkers", "numWorkers", "number"],
     ["cpSatLogSearchProgress", "logSearchProgress", "checkbox"],
     ["cpSatPythonExecutable", "pythonExecutable", "text"],

@@ -128,6 +128,7 @@
       };
       state.cpSat = {
         ...state.cpSat,
+        randomSeed: "",
         ...(snapshot?.cpSat ?? {}),
       };
       state.lns = {

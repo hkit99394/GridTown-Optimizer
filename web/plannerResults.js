@@ -638,6 +638,26 @@
       });
     }
 
+    function formatCpSatSeedStatus(solution) {
+      const configuredSeed = state.resultContext?.params?.cpSat?.randomSeed;
+      const portfolioWorkers = solution?.cpSatPortfolio?.workers ?? [];
+      if (portfolioWorkers.length > 0) {
+        const selectedWorker = portfolioWorkers.find(
+          (worker) => worker.workerIndex === solution.cpSatPortfolio?.selectedWorkerIndex
+        );
+        if (Number.isInteger(selectedWorker?.randomSeed)) {
+          return `, selected seed ${selectedWorker.randomSeed}`;
+        }
+        const workerSeeds = portfolioWorkers
+          .map((worker) => (Number.isInteger(worker.randomSeed) ? worker.randomSeed : null))
+          .filter((seed) => seed !== null);
+        if (workerSeeds.length > 0) {
+          return `, portfolio seeds ${workerSeeds.join(", ")}`;
+        }
+      }
+      return Number.isInteger(configuredSeed) ? `, seed ${configuredSeed}` : "";
+    }
+
     function createSolvedMapMatrix(grid, solution) {
       const matrix = grid.map((row) => row.map((cell) => (cell === 1 ? "empty" : "blocked")));
 
@@ -937,14 +957,15 @@
       elements.resultServiceCount.textContent = String(stats.serviceCount);
       elements.resultResidentialCount.textContent = String(stats.residentialCount);
       elements.resultElapsed.textContent = formatElapsedTime(state.resultElapsedMs);
+      const cpSatSeedStatus = manualLayout ? "" : formatCpSatSeedStatus(solution);
       elements.resultSolverStatus.textContent = manualLayout
         ? "manual edit"
         : liveSnapshot
-          ? `${stats.cpSatStatus || getOptimizerLabel(stats.optimizer)} (live)`
+          ? `${stats.cpSatStatus || getOptimizerLabel(stats.optimizer)} (live)${cpSatSeedStatus}`
           : (
             stoppedByUser && stats.cpSatStatus
-              ? `${stats.cpSatStatus} (stopped)`
-              : stats.cpSatStatus || (stats.optimizer ?? "n/a")
+              ? `${stats.cpSatStatus} (stopped)${cpSatSeedStatus}`
+              : `${stats.cpSatStatus || (stats.optimizer ?? "n/a")}${cpSatSeedStatus}`
           );
 
       elements.serviceResultList.innerHTML = "";

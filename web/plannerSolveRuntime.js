@@ -20,6 +20,7 @@
     const {
       buildSolveRequest,
       clearExpansionAdvice,
+      ensureCpSatRandomSeed,
       getDisplayedLayoutCheckpoint,
       getOptimizerLabel,
       renderResults,
@@ -231,14 +232,18 @@
       clearExpansionAdvice();
       try {
         startSolveTimer();
+        if (state.optimizer === "cp-sat") {
+          ensureCpSatRandomSeed();
+        }
         const request = buildSolveRequest();
         state.resultContext = request;
         if (state.optimizer === "cp-sat") {
           const timeLimitSeconds = request.params.cpSat?.timeLimitSeconds;
+          const randomSeed = request.params.cpSat?.randomSeed;
           setSolveState(
             timeLimitSeconds
-              ? `Running CP-SAT solver with a ${timeLimitSeconds}s limit...`
-              : "Running CP-SAT solver until it finishes or you stop it..."
+              ? `Running CP-SAT solver with seed ${randomSeed ?? "auto"} and a ${timeLimitSeconds}s limit...`
+              : `Running CP-SAT solver with seed ${randomSeed ?? "auto"} until it finishes or you stop it...`
           );
         } else if (state.optimizer === "lns") {
           setSolveState(

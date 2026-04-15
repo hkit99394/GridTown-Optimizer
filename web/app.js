@@ -133,6 +133,7 @@ const state = {
   },
   cpSat: {
     timeLimitSeconds: "",
+    noImprovementTimeoutSeconds: "",
     randomSeed: "",
     numWorkers: 8,
     logSearchProgress: false,
@@ -160,6 +161,7 @@ const state = {
   resultError: "",
   resultContext: null,
   resultElapsedMs: 0,
+  solveProgressLog: [],
   selectedMapBuilding: null,
   selectedMapCell: null,
   layoutEditor: {
@@ -186,6 +188,8 @@ const elements = {
   gridStats: document.querySelector("#gridStats"),
   paintModeToggle: document.querySelector("#paintModeToggle"),
   solverToggle: document.querySelector("#solverToggle"),
+  runtimePresetButtons: document.querySelector("#runtimePresetButtons"),
+  runtimePresetStatus: document.querySelector("#runtimePresetStatus"),
   greedyPanel: document.querySelector("#greedyPanel"),
   lnsPanel: document.querySelector("#lnsPanel"),
   cpSatPanel: document.querySelector("#cpSatPanel"),
@@ -224,6 +228,8 @@ const elements = {
   resultResidentialCount: document.querySelector("#resultResidentialCount"),
   resultElapsed: document.querySelector("#resultElapsed"),
   resultSolverStatus: document.querySelector("#resultSolverStatus"),
+  resultProgressSummary: document.querySelector("#resultProgressSummary"),
+  resultProgressLog: document.querySelector("#resultProgressLog"),
   expansionNextService: document.querySelector("#expansionNextService"),
   expansionNextResidential: document.querySelector("#expansionNextResidential"),
   compareExpansionButton: document.querySelector("#compareExpansionButton"),
@@ -276,6 +282,7 @@ const elements = {
   lnsPythonExecutable: document.querySelector("#lnsPythonExecutable"),
   lnsUseDisplayedSeed: document.querySelector("#lnsUseDisplayedSeed"),
   cpSatTimeLimitSeconds: document.querySelector("#cpSatTimeLimitSeconds"),
+  cpSatNoImprovementTimeoutSeconds: document.querySelector("#cpSatNoImprovementTimeoutSeconds"),
   cpSatRandomSeed: document.querySelector("#cpSatRandomSeed"),
   cpSatNumWorkers: document.querySelector("#cpSatNumWorkers"),
   cpSatLogSearchProgress: document.querySelector("#cpSatLogSearchProgress"),
@@ -318,6 +325,7 @@ function clearRenderedResultState() {
   state.result = null;
   state.resultIsLiveSnapshot = false;
   state.resultError = "";
+  state.solveProgressLog = [];
   state.selectedMapBuilding = null;
   state.selectedMapCell = null;
   state.layoutEditor.mode = "inspect";
@@ -376,6 +384,7 @@ workbenchController = createPlannerWorkbenchController({
     getOptimizerLabel: shellController.getOptimizerLabel,
     refreshResultOverlay: () => resultsController?.refreshResultOverlay(),
     renderExpansionAdvice: () => expansionAdviceController?.renderExpansionAdvice(),
+    setSolveState: shellController.setSolveState,
     updatePayloadPreview: () => requestBuilderController?.updatePayloadPreview(),
   },
 });
@@ -514,6 +523,14 @@ function init() {
     requestBuilderController.updatePayloadPreview();
   });
 
+  elements.runtimePresetButtons.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const button = target.closest("button");
+    if (!(button instanceof HTMLButtonElement) || !button.dataset.runtimePreset) return;
+    workbenchController.applyRuntimePreset(button.dataset.runtimePreset);
+  });
+
   elements.resizeGridButton.addEventListener("click", () => {
     const rows = clampInteger(elements.gridRows.value, state.grid.length, 1);
     const cols = clampInteger(elements.gridCols.value, state.grid[0].length, 1);
@@ -619,6 +636,7 @@ function init() {
 
   const cpSatBindings = [
     ["cpSatTimeLimitSeconds", "timeLimitSeconds", "number"],
+    ["cpSatNoImprovementTimeoutSeconds", "noImprovementTimeoutSeconds", "number"],
     ["cpSatRandomSeed", "randomSeed", "number"],
     ["cpSatNumWorkers", "numWorkers", "number"],
     ["cpSatLogSearchProgress", "logSearchProgress", "checkbox"],

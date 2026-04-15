@@ -24,6 +24,7 @@
       getOptimizerLabel,
       refreshResultOverlay,
       renderExpansionAdvice,
+      setSolveState,
       updatePayloadPreview,
     } = callbacks;
 
@@ -67,6 +68,9 @@
           ...state.cpSat,
           randomSeed: "",
           ...(params.cpSat.timeLimitSeconds != null ? { timeLimitSeconds: String(params.cpSat.timeLimitSeconds) } : {}),
+          ...(params.cpSat.noImprovementTimeoutSeconds != null
+            ? { noImprovementTimeoutSeconds: String(params.cpSat.noImprovementTimeoutSeconds) }
+            : {}),
           ...(params.cpSat.randomSeed != null ? { randomSeed: String(params.cpSat.randomSeed) } : {}),
           ...(params.cpSat.numWorkers != null ? { numWorkers: params.cpSat.numWorkers } : {}),
           ...(params.cpSat.logSearchProgress != null ? { logSearchProgress: Boolean(params.cpSat.logSearchProgress) } : {}),
@@ -259,6 +263,62 @@
       updatePayloadPreview();
     }
 
+    function applyRuntimePreset(kind) {
+      const defaultNeighborhoodRows = Math.max(1, Math.ceil(state.grid.length / 2));
+      const defaultNeighborhoodCols = Math.max(1, Math.ceil((state.grid[0]?.length ?? 1) / 2));
+
+      if (kind === "fast-greedy") {
+        state.greedy = {
+          ...state.greedy,
+          localSearch: true,
+          restarts: 8,
+          serviceRefineIterations: 2,
+          serviceRefineCandidateLimit: 40,
+          exhaustiveServiceSearch: false,
+          serviceExactPoolLimit: 16,
+          serviceExactMaxCombinations: 4000,
+        };
+        elements.runtimePresetStatus.textContent =
+          'Applied "Fast Greedy": quick incumbent-first settings with lighter restarts and no exhaustive service pass.';
+      } else if (kind === "lns-improve") {
+        state.lns = {
+          ...state.lns,
+          iterations: 16,
+          maxNoImprovementIterations: 4,
+          neighborhoodRows: defaultNeighborhoodRows,
+          neighborhoodCols: defaultNeighborhoodCols,
+          repairTimeLimitSeconds: 5,
+          useDisplayedSeed: true,
+        };
+        elements.runtimePresetStatus.textContent =
+          'Applied "LNS Improve": use the displayed layout as the default seed and spend the budget on neighborhood repair.';
+      } else if (kind === "bounded-cp-sat") {
+        state.cpSat = {
+          ...state.cpSat,
+          timeLimitSeconds: "30",
+          noImprovementTimeoutSeconds: "10",
+          numWorkers: 8,
+          useDisplayedHint: true,
+        };
+        elements.runtimePresetStatus.textContent =
+          'Applied "Bounded CP-SAT": 30s max runtime with a 10s no-improvement cutoff and displayed-layout hinting.';
+      } else {
+        return;
+      }
+
+      const optimizer =
+        kind === "fast-greedy" ? "greedy"
+        : kind === "lns-improve" ? "lns"
+        : "cp-sat";
+      setOptimizer(optimizer);
+      syncSolverFields();
+      updateSummary();
+      updatePayloadPreview();
+      if (!state.isSolving) {
+        setSolveState?.(`${elements.runtimePresetStatus.textContent}`);
+      }
+    }
+
     function syncSolverFields() {
       elements.greedyLocalSearch.checked = state.greedy.localSearch;
       elements.greedyRandomSeed.value = state.greedy.randomSeed === "" ? "" : String(state.greedy.randomSeed ?? "");
@@ -280,6 +340,7 @@
       elements.lnsUseDisplayedSeed.checked = Boolean(state.lns.useDisplayedSeed);
 
       elements.cpSatTimeLimitSeconds.value = state.cpSat.timeLimitSeconds;
+      elements.cpSatNoImprovementTimeoutSeconds.value = state.cpSat.noImprovementTimeoutSeconds;
       elements.cpSatRandomSeed.value = state.cpSat.randomSeed === "" ? "" : String(state.cpSat.randomSeed ?? "");
       elements.cpSatNumWorkers.value = String(state.cpSat.numWorkers);
       elements.cpSatLogSearchProgress.checked = state.cpSat.logSearchProgress;
@@ -460,6 +521,7 @@
       applyMatrixLayout,
       applyPaint,
       applyPreset,
+      applyRuntimePreset,
       applySolveRequestToPlanner,
       countAllowedCells,
       handleCatalogClick,

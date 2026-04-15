@@ -577,6 +577,13 @@ details.payload-preview {
   margin-top: 16px;
 }
 
+.runtime-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
 .solver-panel {
   display: grid;
   gap: 14px;
@@ -880,6 +887,33 @@ details.payload-preview pre {
 
 .result-list li .button {
   flex: 0 0 auto;
+}
+
+.progress-log {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.progress-log li {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.progress-log-stamp {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
+}
+
+.progress-log-detail {
+  color: var(--muted);
+  line-height: 1.5;
 }
 
 .map-legend {
@@ -1336,6 +1370,10 @@ textarea:focus {
 
   .compact-actions {
     align-items: stretch;
+  }
+
+  .runtime-preset-grid {
+    grid-template-columns: 1fr;
   }
 
   .segmented {

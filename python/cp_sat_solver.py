@@ -1304,8 +1304,18 @@ def solve_single_cp_sat(grid, params, cp_sat_options, progress_emitter=None):
     configure_solver_parameters(solver, cp_sat_options)
     stop_requested = False
     stopped_by_user = False
+    stopped_for_no_improvement = False
     stop_file_path = cp_sat_options.get("stopFilePath")
     snapshot_file_path = cp_sat_options.get("snapshotFilePath")
+    no_improvement_timeout_seconds = cp_sat_options.get("noImprovementTimeoutSeconds")
+    if no_improvement_timeout_seconds in (None, ""):
+        no_improvement_timeout_seconds = None
+    else:
+        no_improvement_timeout_seconds = float(no_improvement_timeout_seconds)
+        if no_improvement_timeout_seconds <= 0:
+            no_improvement_timeout_seconds = None
+    no_improvement_timer = None
+    solve_finished = False
 
     def request_stop(_signum, _frame):
         nonlocal stop_requested
@@ -1313,6 +1323,29 @@ def solve_single_cp_sat(grid, params, cp_sat_options, progress_emitter=None):
 
     def should_stop() -> bool:
         return stop_requested or (bool(stop_file_path) and os.path.exists(stop_file_path))
+
+    def cancel_no_improvement_timer():
+        nonlocal no_improvement_timer
+        if no_improvement_timer is None:
+            return
+        no_improvement_timer.cancel()
+        no_improvement_timer = None
+
+    def stop_for_no_improvement():
+        nonlocal stopped_for_no_improvement
+        if no_improvement_timeout_seconds is None or solve_finished or should_stop() or stopped_for_no_improvement:
+            return
+        stopped_for_no_improvement = True
+        solver.StopSearch()
+
+    def schedule_no_improvement_timer():
+        nonlocal no_improvement_timer
+        if no_improvement_timeout_seconds is None:
+            return
+        cancel_no_improvement_timer()
+        no_improvement_timer = threading.Timer(no_improvement_timeout_seconds, stop_for_no_improvement)
+        no_improvement_timer.daemon = True
+        no_improvement_timer.start()
 
     class SnapshotTelemetryCollector(CpSatTelemetryCollector):
         def __init__(self):
@@ -1329,17 +1362,22 @@ def solve_single_cp_sat(grid, params, cp_sat_options, progress_emitter=None):
             super().on_solution_callback()
             self.latest_solution = collect_solution(self.Value, built)
             if snapshot_file_path:
+                telemetry = self.current_telemetry()
                 write_snapshot(
                     snapshot_file_path,
-                    {
-                        **self.latest_solution,
-                        "status": "FEASIBLE",
-                        "stoppedByUser": False,
-                    },
+                    build_snapshot_response(
+                        self.latest_solution,
+                        built,
+                        "FEASIBLE",
+                        telemetry,
+                        stopped_by_user=False,
+                    ),
                 )
             if should_stop():
                 stopped_by_user = True
                 self.StopSearch()
+                return
+            schedule_no_improvement_timer()
 
     telemetry_collector = SnapshotTelemetryCollector()
     if warm_start_hint:
@@ -1369,6 +1407,17 @@ def solve_single_cp_sat(grid, params, cp_sat_options, progress_emitter=None):
                 return
             if progress_emitter is not None:
                 telemetry_collector.on_best_bound_callback(bound)
+            if snapshot_file_path and telemetry_collector.latest_solution is not None:
+                write_snapshot(
+                    snapshot_file_path,
+                    build_snapshot_response(
+                        telemetry_collector.latest_solution,
+                        built,
+                        "FEASIBLE",
+                        telemetry_collector.current_telemetry(),
+                        stopped_by_user=False,
+                    ),
+                )
 
         solver.best_bound_callback = best_bound_callback
         if progress_emitter is not None and bool(cp_sat_options.get("logSearchProgress", False)):
@@ -1376,6 +1425,8 @@ def solve_single_cp_sat(grid, params, cp_sat_options, progress_emitter=None):
 
         status = solver.Solve(model, telemetry_collector)
     finally:
+        solve_finished = True
+        cancel_no_improvement_timer()
         if install_signal_handlers:
             signal.signal(signal.SIGTERM, previous_sigterm)
             signal.signal(signal.SIGINT, previous_sigint)
@@ -1408,6 +1459,26 @@ def solve_single_cp_sat(grid, params, cp_sat_options, progress_emitter=None):
             "FEASIBLE",
             telemetry,
             stopped_by_user=True,
+        )
+        objective_value = None
+        if telemetry.incumbent_objective_value is not None:
+            objective_value = int(round(telemetry.incumbent_objective_value))
+        return CpSatSolveResult(
+            status="FEASIBLE",
+            feasible=True,
+            objective_value=objective_value,
+            total_population=response["totalPopulation"],
+            response=response,
+            telemetry=telemetry,
+        )
+
+    if stopped_for_no_improvement and telemetry_collector.latest_solution is not None:
+        response = build_snapshot_response(
+            telemetry_collector.latest_solution,
+            built,
+            "FEASIBLE",
+            telemetry,
+            stopped_by_user=False,
         )
         objective_value = None
         if telemetry.incumbent_objective_value is not None:

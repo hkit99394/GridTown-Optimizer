@@ -197,12 +197,13 @@ async function handleStartSolve(
     return true;
   }
 
-  solveJobManager.start(payload.grid, payload.params, requestId);
+  const job = solveJobManager.start(payload.grid, payload.params, requestId);
   sendJson(res, 202, {
     ok: true,
     requestId,
     optimizer: resolveOptimizerName(payload.params),
     jobStatus: "running",
+    progressLogFilePath: job.progressLogFilePath,
   });
   return true;
 }
@@ -244,6 +245,7 @@ function handleSolveStatus(
       optimizer: job.optimizer,
       jobStatus: job.status,
       cancelRequested: job.cancelRequested,
+      progressLogFilePath: job.progressLogFilePath,
       ...(job.message ? { message: job.message } : {}),
       ...buildSolveResponse(job.grid, job.params, job.solution),
     }, method === "HEAD");
@@ -257,6 +259,7 @@ function handleSolveStatus(
       optimizer: job.optimizer,
       jobStatus: job.status,
       cancelRequested: job.cancelRequested,
+      progressLogFilePath: job.progressLogFilePath,
       error: job.error ?? (job.status === "stopped" ? "Solve was stopped." : "Solve failed."),
     }, method === "HEAD");
     return true;
@@ -269,6 +272,7 @@ function handleSolveStatus(
       optimizer: job.optimizer,
       jobStatus: job.status,
       cancelRequested: job.cancelRequested,
+      progressLogFilePath: job.progressLogFilePath,
       hasFeasibleSolution: snapshotState.hasFeasibleSolution,
       bestTotalPopulation: snapshotState.totalPopulation,
       liveSnapshot: true,
@@ -284,6 +288,7 @@ function handleSolveStatus(
     optimizer: job.optimizer,
     jobStatus: job.status,
     cancelRequested: job.cancelRequested,
+    progressLogFilePath: job.progressLogFilePath,
     hasFeasibleSolution: snapshotState.hasFeasibleSolution,
     bestTotalPopulation: snapshotState.totalPopulation,
   }, method === "HEAD");

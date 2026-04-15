@@ -266,6 +266,7 @@
       state.layoutEditor.edited = false;
       state.layoutEditor.status = "";
       state.result = cloneJson(entry.result);
+      state.solveProgressLog = Array.isArray(entry.result?.progressLog) ? cloneJson(entry.result.progressLog) : [];
       state.resultIsLiveSnapshot = false;
       state.resultContext = loadedResultContext;
       state.resultError = "";

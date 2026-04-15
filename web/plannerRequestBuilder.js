@@ -201,6 +201,7 @@
     function buildSolveRequest(options = {}) {
       const { hintMismatch = "error", includeWarmStartHint = true, includeLnsSeed = true } = options;
       const timeLimitSeconds = readOptionalInteger(state.cpSat.timeLimitSeconds, 1);
+      const noImprovementTimeoutSeconds = readOptionalInteger(state.cpSat.noImprovementTimeoutSeconds, 1);
       const cpSatRandomSeed = readOptionalInteger(state.cpSat.randomSeed, 0);
       const greedyRandomSeed = readOptionalInteger(state.greedy.randomSeed, 0);
       const defaultNeighborhoodRows = Math.max(1, Math.ceil(state.grid.length / 2));
@@ -225,6 +226,7 @@
           logSearchProgress: Boolean(state.cpSat.logSearchProgress),
           ...(cpSatRandomSeed !== undefined ? { randomSeed: cpSatRandomSeed } : {}),
           ...(timeLimitSeconds !== undefined ? { timeLimitSeconds } : {}),
+          ...(noImprovementTimeoutSeconds !== undefined ? { noImprovementTimeoutSeconds } : {}),
           ...(state.cpSat.pythonExecutable.trim() ? { pythonExecutable: state.cpSat.pythonExecutable.trim() } : {}),
         },
         lns: {

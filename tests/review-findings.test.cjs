@@ -1,11 +1,13 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
+const os = require("node:os");
 const path = require("node:path");
 const vm = require("node:vm");
 
 const { solve } = require("../dist/index.js");
 const { evaluateLayout } = require("../dist/evaluator.js");
 const { buildManualLayoutResponse } = require("../dist/webServerHttp.js");
+const { SolveProgressLogWriter } = require("../dist/solveProgressLog.js");
 
 function loadPlannerSharedModule() {
   const source = fs.readFileSync(path.resolve(__dirname, "../web/plannerShared.js"), "utf8");
@@ -56,6 +58,54 @@ function loadPlannerRequestBuilderModule(crypto = undefined) {
   vm.createContext(context);
   vm.runInContext(source, context);
   return context.window.CityBuilderRequestBuilder;
+}
+
+function loadPlannerWorkbenchModule() {
+  const source = fs.readFileSync(path.resolve(__dirname, "../web/plannerWorkbench.js"), "utf8");
+  const context = {
+    window: {},
+    JSON,
+    Math,
+    Date,
+    Array,
+    Object,
+    Number,
+    String,
+    Boolean,
+    RegExp,
+    Set,
+    Map,
+    Promise,
+  };
+  vm.createContext(context);
+  vm.runInContext(source, context);
+  return context.window.CityBuilderWorkbench;
+}
+
+function loadPlannerSolveRuntimeModule() {
+  const source = fs.readFileSync(path.resolve(__dirname, "../web/plannerSolveRuntime.js"), "utf8");
+  const context = {
+    window: {
+      clearInterval,
+      setInterval,
+    },
+    JSON,
+    Math,
+    Date,
+    Array,
+    Object,
+    Number,
+    String,
+    Boolean,
+    RegExp,
+    Set,
+    Map,
+    Promise,
+    Error,
+  };
+  vm.createContext(context);
+  vm.runInContext(source, context);
+  return context.window.CityBuilderSolveRuntime;
 }
 
 function testDistinctResidentialTypes() {
@@ -310,6 +360,7 @@ function testPlannerAutoFillsCpSatRandomSeed() {
       },
       cpSat: {
         timeLimitSeconds: "",
+        noImprovementTimeoutSeconds: "",
         randomSeed: "",
         numWorkers: 8,
         logSearchProgress: false,
@@ -378,6 +429,247 @@ function testPlannerAutoFillsCpSatRandomSeed() {
   const request = controller.buildSolveRequest();
   assert.equal(request.params.cpSat.randomSeed, 123456789);
   assert.equal(controller.ensureCpSatRandomSeed(), 123456789);
+}
+
+function testPlannerBuildSolveRequestIncludesCpSatNoImprovementTimeout() {
+  const plannerRequestBuilder = loadPlannerRequestBuilderModule();
+  const controller = plannerRequestBuilder.createPlannerRequestBuilderController({
+    state: {
+      optimizer: "cp-sat",
+      grid: [[1, 1], [1, 1]],
+      serviceTypes: [],
+      residentialTypes: [],
+      availableBuildings: {
+        services: "",
+        residentials: "",
+      },
+      greedy: {
+        localSearch: true,
+        randomSeed: "",
+        restarts: 1,
+        serviceRefineIterations: 0,
+        serviceRefineCandidateLimit: 1,
+        exhaustiveServiceSearch: false,
+        serviceExactPoolLimit: 1,
+        serviceExactMaxCombinations: 1,
+      },
+      cpSat: {
+        timeLimitSeconds: "30",
+        noImprovementTimeoutSeconds: "10",
+        randomSeed: "",
+        numWorkers: 8,
+        logSearchProgress: false,
+        pythonExecutable: "",
+        useDisplayedHint: false,
+      },
+      lns: {
+        iterations: 1,
+        maxNoImprovementIterations: 1,
+        neighborhoodRows: 1,
+        neighborhoodCols: 1,
+        repairTimeLimitSeconds: 1,
+        useDisplayedSeed: false,
+      },
+      result: null,
+      resultContext: null,
+      resultElapsedMs: 0,
+    },
+    elements: {
+      cpSatRandomSeed: { value: "" },
+      cpSatHintStatus: { textContent: "" },
+      lnsSeedStatus: { textContent: "" },
+      payloadPreview: { textContent: "" },
+      layoutStorageName: { value: "" },
+    },
+    helpers: {
+      buildCpSatContinuationModelInput() {
+        return {};
+      },
+      buildCpSatWarmStartCheckpoint() {
+        throw new Error("Warm-start checkpoint should not be requested in this test.");
+      },
+      clampInteger(value, fallback, min = 0) {
+        const parsed = Number(value);
+        if (!Number.isFinite(parsed)) return fallback;
+        return Math.max(min, Math.floor(parsed));
+      },
+      cloneGrid(grid) {
+        return JSON.parse(JSON.stringify(grid));
+      },
+      cloneJson(value) {
+        return JSON.parse(JSON.stringify(value));
+      },
+      computeCpSatModelFingerprint() {
+        return "fingerprint";
+      },
+      getSavedLayoutElapsedMs() {
+        return 0;
+      },
+      readOptionalInteger(value, min = 0) {
+        if (value === "" || value === null || value === undefined) return undefined;
+        const parsed = Number(value);
+        if (!Number.isFinite(parsed)) return undefined;
+        return Math.max(min, Math.floor(parsed));
+      },
+      parseResidentialCatalogEntry(entry) {
+        return entry;
+      },
+      parseServiceCatalogEntry(entry) {
+        return entry;
+      },
+    },
+  });
+
+  const request = controller.buildSolveRequest();
+  assert.equal(request.params.cpSat.timeLimitSeconds, 30);
+  assert.equal(request.params.cpSat.noImprovementTimeoutSeconds, 10);
+}
+
+function testPlannerRuntimePresetAppliesBoundedCpSatPolicy() {
+  const plannerWorkbench = loadPlannerWorkbenchModule();
+  let payloadPreviewUpdates = 0;
+  let solveStateMessage = "";
+  const state = {
+    isSolving: false,
+    grid: [[1, 1], [1, 1], [1, 1], [1, 1]],
+    optimizer: "greedy",
+    serviceTypes: [{ name: "Clinic" }],
+    residentialTypes: [{ name: "Tower" }],
+    availableBuildings: {
+      services: "",
+      residentials: "",
+    },
+    greedy: {
+      localSearch: true,
+      randomSeed: "",
+      restarts: 20,
+      serviceRefineIterations: 4,
+      serviceRefineCandidateLimit: 60,
+      exhaustiveServiceSearch: true,
+      serviceExactPoolLimit: 22,
+      serviceExactMaxCombinations: 12000,
+    },
+    cpSat: {
+      timeLimitSeconds: "",
+      noImprovementTimeoutSeconds: "",
+      randomSeed: "",
+      numWorkers: 2,
+      logSearchProgress: false,
+      pythonExecutable: "",
+      useDisplayedHint: false,
+    },
+    lns: {
+      iterations: 12,
+      maxNoImprovementIterations: 4,
+      neighborhoodRows: 2,
+      neighborhoodCols: 2,
+      repairTimeLimitSeconds: 5,
+      useDisplayedSeed: false,
+    },
+    expansionAdvice: {
+      nextServiceText: "",
+      nextResidentialText: "",
+    },
+  };
+  const elements = {
+    solverToggle: { querySelectorAll: () => [] },
+    greedyPanel: { hidden: false },
+    lnsPanel: { hidden: true },
+    cpSatPanel: { hidden: true },
+    runtimePresetStatus: { textContent: "" },
+    greedyLocalSearch: { checked: false },
+    greedyRandomSeed: { value: "" },
+    greedyRestarts: { value: "" },
+    greedyServiceRefineIterations: { value: "" },
+    greedyServiceRefineCandidateLimit: { value: "" },
+    greedyExhaustiveServiceSearch: { checked: false },
+    greedyServiceExactPoolLimit: { value: "" },
+    greedyServiceExactMaxCombinations: { value: "" },
+    lnsIterations: { value: "" },
+    lnsMaxNoImprovementIterations: { value: "" },
+    lnsNeighborhoodRows: { value: "" },
+    lnsNeighborhoodCols: { value: "" },
+    lnsRepairTimeLimitSeconds: { value: "" },
+    lnsNumWorkers: { value: "" },
+    lnsLogSearchProgress: { checked: false },
+    lnsPythonExecutable: { value: "" },
+    lnsUseDisplayedSeed: { checked: false },
+    cpSatTimeLimitSeconds: { value: "" },
+    cpSatNoImprovementTimeoutSeconds: { value: "" },
+    cpSatRandomSeed: { value: "" },
+    cpSatNumWorkers: { value: "" },
+    cpSatLogSearchProgress: { checked: false },
+    cpSatPythonExecutable: { value: "" },
+    cpSatUseDisplayedHint: { checked: false },
+    maxServices: { value: "" },
+    maxResidentials: { value: "" },
+    summaryGridSize: { textContent: "" },
+    summaryAllowedCells: { textContent: "" },
+    summaryServiceTypes: { textContent: "" },
+    summaryResidentialTypes: { textContent: "" },
+    summaryOptimizer: { textContent: "" },
+  };
+  const controller = plannerWorkbench.createPlannerWorkbenchController({
+    state,
+    elements,
+    constants: {
+      sampleGrid: [[1]],
+    },
+    helpers: {
+      cloneGrid(grid) {
+        return JSON.parse(JSON.stringify(grid));
+      },
+      createGrid(rows, cols, value) {
+        return Array.from({ length: rows }, () => Array.from({ length: cols }, () => value));
+      },
+      escapeHtml(value) {
+        return String(value);
+      },
+      isGridLike(value) {
+        return Array.isArray(value);
+      },
+      normalizeOptimizer(value) {
+        return value === "cp-sat" || value === "lns" ? value : "greedy";
+      },
+      parseCatalogImportText() {
+        return {};
+      },
+      serializeResidentialTypeForCatalog(entry) {
+        return entry;
+      },
+      serializeServiceTypeForCatalog(entry) {
+        return entry;
+      },
+    },
+    callbacks: {
+      getOptimizerLabel(optimizer) {
+        return optimizer === "cp-sat" ? "CP-SAT" : optimizer === "lns" ? "LNS" : "Greedy";
+      },
+      refreshResultOverlay() {},
+      renderExpansionAdvice() {},
+      setSolveState(message) {
+        solveStateMessage = message;
+      },
+      updatePayloadPreview() {
+        payloadPreviewUpdates += 1;
+      },
+    },
+  });
+
+  controller.applyRuntimePreset("bounded-cp-sat");
+
+  assert.equal(state.optimizer, "cp-sat");
+  assert.equal(state.cpSat.timeLimitSeconds, "30");
+  assert.equal(state.cpSat.noImprovementTimeoutSeconds, "10");
+  assert.equal(state.cpSat.numWorkers, 8);
+  assert.equal(state.cpSat.useDisplayedHint, true);
+  assert.equal(elements.cpSatTimeLimitSeconds.value, "30");
+  assert.equal(elements.cpSatNoImprovementTimeoutSeconds.value, "10");
+  assert.equal(elements.cpSatUseDisplayedHint.checked, true);
+  assert.equal(elements.summaryOptimizer.textContent, "CP-SAT");
+  assert.equal(solveStateMessage.includes("Bounded CP-SAT"), true);
+  assert.equal(payloadPreviewUpdates > 0, true);
+  assert.equal(controller.countAllowedCells(), 8);
 }
 
 function testManualLayoutResponseClearsSolverMetadata() {
@@ -454,6 +746,201 @@ function testManualLayoutResponseClearsSolverMetadata() {
   assert.equal(response.stats.stoppedByUser, false);
 }
 
+function testPlannerSolveProgressLogCapturesSnapshotAndFinalResult() {
+  const runtimeModule = loadPlannerSolveRuntimeModule();
+  const logAfterSnapshot = runtimeModule.appendSolveProgressLog([], {
+    optimizer: "cp-sat",
+    solution: {
+      optimizer: "cp-sat",
+      totalPopulation: 1234,
+      cpSatStatus: "FEASIBLE",
+      cpSatTelemetry: {
+        bestPopulationUpperBound: 1300,
+        populationGapUpperBound: 66,
+        secondsSinceLastImprovement: 4.5,
+      },
+    },
+    stats: {
+      optimizer: "cp-sat",
+      totalPopulation: 1234,
+      cpSatStatus: "FEASIBLE",
+    },
+  }, {
+    elapsedMs: 60000,
+    capturedAt: "2026-04-14T11:00:00.000Z",
+    source: "live-snapshot",
+  });
+
+  assert.equal(logAfterSnapshot.length, 1);
+  assert.deepEqual(JSON.parse(JSON.stringify(logAfterSnapshot[0])), {
+    capturedAt: "2026-04-14T11:00:00.000Z",
+    elapsedMs: 60000,
+    source: "live-snapshot",
+    optimizer: "cp-sat",
+    hasFeasibleSolution: true,
+    totalPopulation: 1234,
+    cpSatStatus: "FEASIBLE",
+    bestPopulationUpperBound: 1300,
+    populationGapUpperBound: 66,
+    solveWallTimeSeconds: null,
+    lastImprovementAtSeconds: null,
+    secondsSinceLastImprovement: 4.5,
+    note: null,
+  });
+
+  const logAfterFinal = runtimeModule.appendSolveProgressLog(logAfterSnapshot, {
+    optimizer: "cp-sat",
+    solution: {
+      optimizer: "cp-sat",
+      totalPopulation: 1250,
+      cpSatStatus: "OPTIMAL",
+      cpSatTelemetry: {
+        bestPopulationUpperBound: 1250,
+        populationGapUpperBound: 0,
+        secondsSinceLastImprovement: 0.2,
+      },
+    },
+    stats: {
+      optimizer: "cp-sat",
+      totalPopulation: 1250,
+      cpSatStatus: "OPTIMAL",
+    },
+  }, {
+    elapsedMs: 90000,
+    capturedAt: "2026-04-14T11:00:30.000Z",
+    source: "final-result",
+  });
+
+  assert.equal(logAfterFinal.length, 2);
+  assert.equal(logAfterFinal[1].source, "final-result");
+  assert.equal(logAfterFinal[1].totalPopulation, 1250);
+  assert.equal(logAfterFinal[1].cpSatStatus, "OPTIMAL");
+  assert.equal(logAfterFinal[1].bestPopulationUpperBound, 1250);
+  assert.equal(logAfterFinal[1].populationGapUpperBound, 0);
+}
+
+function testFilesystemSolveLogTracksSolverClockAcrossHeartbeats() {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "solve-progress-log-"));
+  const writer = new SolveProgressLogWriter({
+    rootDirectory: tempRoot,
+    requestId: "lag-test",
+    optimizer: "cp-sat",
+    grid: [[1]],
+    params: { optimizer: "cp-sat", cpSat: { randomSeed: 7 } },
+    createdAtMs: 0,
+  });
+  const feasibleSolution = {
+    optimizer: "cp-sat",
+    cpSatStatus: "FEASIBLE",
+    cpSatTelemetry: {
+      solveWallTimeSeconds: 49.774,
+      userTimeSeconds: 49.774,
+      solutionCount: 1,
+      incumbentObjectiveValue: 10,
+      bestObjectiveBound: 20,
+      objectiveGap: 10,
+      incumbentPopulation: 10,
+      bestPopulationUpperBound: 20,
+      populationGapUpperBound: 10,
+      lastImprovementAtSeconds: 49.774,
+      secondsSinceLastImprovement: 0,
+      numBranches: 0,
+      numConflicts: 0,
+    },
+    stoppedByUser: false,
+    roads: new Set(),
+    services: [],
+    serviceTypeIndices: [],
+    servicePopulationIncreases: [],
+    residentials: [],
+    residentialTypeIndices: [],
+    populations: [],
+    totalPopulation: 10,
+  };
+
+  writer.appendSolutionSample(feasibleSolution, {
+    elapsedMs: 100025,
+    capturedAt: "2026-04-14T19:00:00.000Z",
+    source: "live-snapshot",
+  });
+
+  writer.appendSolutionSample({
+    ...feasibleSolution,
+    cpSatTelemetry: {
+      ...feasibleSolution.cpSatTelemetry,
+      secondsSinceLastImprovement: 60,
+    },
+  }, {
+    elapsedMs: 160025,
+    capturedAt: "2026-04-14T19:01:00.000Z",
+    source: "live-snapshot",
+  });
+
+  writer.finish("completed", {
+    finishedAtMs: 160025,
+    solution: feasibleSolution,
+  });
+
+  const payload = JSON.parse(fs.readFileSync(writer.filePath, "utf8"));
+  assert.equal(payload.entries.length, 2);
+  assert.deepEqual(payload.entries.map((entry) => ({
+    solveWallTimeSeconds: entry.solveWallTimeSeconds,
+    lastImprovementAtSeconds: entry.lastImprovementAtSeconds,
+    secondsSinceLastImprovement: entry.secondsSinceLastImprovement,
+  })), [
+    {
+      solveWallTimeSeconds: 49.774,
+      lastImprovementAtSeconds: 49.774,
+      secondsSinceLastImprovement: 0,
+    },
+    {
+      solveWallTimeSeconds: 109.774,
+      lastImprovementAtSeconds: 49.774,
+      secondsSinceLastImprovement: 60,
+    },
+  ]);
+  assert.deepEqual(payload.finalResult.mapRows, [
+    "   0",
+    " 0 .",
+    "",
+    "Legend: # blocked  R road  S service  H residential  . empty",
+  ]);
+  assert.equal(payload.finalResult.mapText, payload.finalResult.mapRows.join("\n"));
+  assert.deepEqual(payload.finalResult.solution, {
+    optimizer: "cp-sat",
+    cpSatStatus: "FEASIBLE",
+    cpSatTelemetry: {
+      solveWallTimeSeconds: 109.774,
+      userTimeSeconds: 109.774,
+      solutionCount: 1,
+      incumbentObjectiveValue: 10,
+      bestObjectiveBound: 20,
+      objectiveGap: 10,
+      incumbentPopulation: 10,
+      bestPopulationUpperBound: 20,
+      populationGapUpperBound: 10,
+      lastImprovementAtSeconds: 49.774,
+      secondsSinceLastImprovement: 60,
+      numBranches: 0,
+      numConflicts: 0,
+    },
+    stoppedByUser: false,
+    roads: [],
+    services: [],
+    serviceTypeIndices: [],
+    servicePopulationIncreases: [],
+    residentials: [],
+    residentialTypeIndices: [],
+    populations: [],
+    totalPopulation: 10,
+  });
+  assert.equal(payload.finalResult.solution.cpSatTelemetry.solveWallTimeSeconds, payload.entries[1].solveWallTimeSeconds);
+  assert.equal(
+    payload.finalResult.solution.cpSatTelemetry.secondsSinceLastImprovement,
+    payload.entries[1].secondsSinceLastImprovement
+  );
+}
+
 testDistinctResidentialTypes();
 testNoRowZeroRoadThrows();
 testEvaluatorHonorsCountCaps();
@@ -464,6 +951,10 @@ testGreedyLocalSearchDoesNotRegressNontrivialSeed();
 testIndexImportHasNoSideEffects();
 testPlannerServiceAvailabilityRoundTrip();
 testPlannerAutoFillsCpSatRandomSeed();
+testPlannerBuildSolveRequestIncludesCpSatNoImprovementTimeout();
+testPlannerRuntimePresetAppliesBoundedCpSatPolicy();
 testManualLayoutResponseClearsSolverMetadata();
+testPlannerSolveProgressLogCapturesSnapshotAndFinalResult();
+testFilesystemSolveLogTracksSolverClockAcrossHeartbeats();
 
 console.log("All review finding regression tests passed.");

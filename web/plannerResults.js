@@ -231,7 +231,11 @@
         }
 
         clearExpansionAdvice();
-        state.result = payload;
+        state.solveProgressLog = [];
+        state.result = {
+          ...payload,
+          progressLog: [],
+        };
         state.resultIsLiveSnapshot = false;
         state.resultError = "";
         state.selectedMapBuilding = selectedBuilding;
@@ -658,6 +662,89 @@
       return Number.isInteger(configuredSeed) ? `, seed ${configuredSeed}` : "";
     }
 
+    function formatProgressLogNumber(value, options = {}) {
+      if (typeof value !== "number" || !Number.isFinite(value)) return null;
+      const { maximumFractionDigits = 0 } = options;
+      return Number(value).toLocaleString(undefined, { maximumFractionDigits });
+    }
+
+    function getResultProgressLogEntries() {
+      return Array.isArray(state.result?.progressLog)
+        ? state.result.progressLog
+        : Array.isArray(state.solveProgressLog)
+          ? state.solveProgressLog
+          : [];
+    }
+
+    function renderProgressLog(options = {}) {
+      if (!elements.resultProgressSummary || !elements.resultProgressLog) return;
+
+      const {
+        liveSnapshot = false,
+        manualLayout = false,
+      } = options;
+      const entries = getResultProgressLogEntries();
+
+      elements.resultProgressLog.innerHTML = "";
+
+      if (manualLayout) {
+        elements.resultProgressSummary.textContent = "Manual layout edits clear the recorded solver performance history.";
+        elements.resultProgressLog.innerHTML = "<li>No solver samples are attached to this manual layout.</li>";
+        return;
+      }
+
+      if (entries.length === 0) {
+        elements.resultProgressSummary.textContent = liveSnapshot
+          ? "Waiting for the first feasible snapshot before the performance log can start."
+          : "No performance samples were recorded for this layout.";
+        elements.resultProgressLog.innerHTML = "<li>No live or final progress samples are available.</li>";
+        return;
+      }
+
+      elements.resultProgressSummary.textContent = liveSnapshot
+        ? `Recorded ${entries.length} performance sample${entries.length === 1 ? "" : "s"} so far. A new row is added whenever the live snapshot refreshes.`
+        : `Recorded ${entries.length} performance sample${entries.length === 1 ? "" : "s"} for this solve, including the final result.`;
+
+      entries.forEach((entry) => {
+        const item = document.createElement("li");
+        const stamp = document.createElement("strong");
+        stamp.className = "progress-log-stamp";
+        stamp.textContent = formatElapsedTime(entry.elapsedMs ?? 0);
+
+        const detail = document.createElement("span");
+        detail.className = "progress-log-detail";
+
+        const parts = [];
+        const sourceLabel = entry.source === "final-result" ? "Final" : "Snapshot";
+        const optimizerLabel = entry.optimizer ? getOptimizerLabel(entry.optimizer) : "Solver";
+        parts.push(`${sourceLabel} ${optimizerLabel}`);
+        if (typeof entry.totalPopulation === "number") {
+          parts.push(`${Number(entry.totalPopulation).toLocaleString()} population`);
+        }
+        if (entry.cpSatStatus) {
+          parts.push(entry.cpSatStatus);
+        }
+        const boundLabel = formatProgressLogNumber(entry.bestPopulationUpperBound);
+        if (boundLabel !== null) {
+          parts.push(`bound <= ${boundLabel}`);
+        }
+        const gapLabel = formatProgressLogNumber(entry.populationGapUpperBound);
+        if (gapLabel !== null) {
+          parts.push(`gap <= ${gapLabel}`);
+        }
+        const improvementLabel = formatProgressLogNumber(entry.secondsSinceLastImprovement, {
+          maximumFractionDigits: 1,
+        });
+        if (improvementLabel !== null) {
+          parts.push(`last improvement ${improvementLabel}s ago`);
+        }
+
+        detail.textContent = parts.join(" • ");
+        item.append(stamp, detail);
+        elements.resultProgressLog.append(item);
+      });
+    }
+
     function createSolvedMapMatrix(grid, solution) {
       const matrix = grid.map((row) => row.map((cell) => (cell === 1 ? "empty" : "blocked")));
 
@@ -884,6 +971,12 @@
         elements.resultResidentialCount.textContent = "0";
         elements.resultElapsed.textContent = formatElapsedTime(state.resultElapsedMs);
         elements.resultSolverStatus.textContent = "failed";
+        if (elements.resultProgressSummary) {
+          elements.resultProgressSummary.textContent = "The solve failed before a performance history could be shown.";
+        }
+        if (elements.resultProgressLog) {
+          elements.resultProgressLog.innerHTML = "<li>No performance samples are available.</li>";
+        }
         elements.serviceResultList.innerHTML = "<li>No service placements available.</li>";
         elements.residentialResultList.innerHTML = "<li>No residential placements available.</li>";
         elements.remainingServiceList.innerHTML = "<li>No service availability to show.</li>";
@@ -906,6 +999,12 @@
         elements.resultBadge.textContent = "Waiting";
         elements.resultBadge.className = "result-badge idle";
         elements.resultElapsed.textContent = "00:00";
+        if (elements.resultProgressSummary) {
+          elements.resultProgressSummary.textContent = "Run the solver to start recording a performance log.";
+        }
+        if (elements.resultProgressLog) {
+          elements.resultProgressLog.innerHTML = "";
+        }
         elements.remainingServiceList.innerHTML = "<li>No service availability to show.</li>";
         elements.remainingResidentialList.innerHTML = "<li>No residential availability to show.</li>";
         elements.resultMapGrid.innerHTML = "";
@@ -1011,6 +1110,7 @@
         "Residential"
       );
 
+      renderProgressLog({ liveSnapshot, manualLayout });
       renderSolvedMap(solvedGrid, solution);
       renderLayoutEditorControls();
       renderExpansionAdvice();

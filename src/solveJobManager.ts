@@ -1,7 +1,17 @@
 import { getOptimizerAdapter } from "./optimizerRegistry.js";
+import { SolveProgressLogWriter } from "./solveProgressLog.js";
 import type { BackgroundSolveHandle, Grid, OptimizerName, Solution, SolverParams } from "./types.js";
 
 export type SolveJobStatus = "running" | "completed" | "stopped" | "failed";
+
+const DEFAULT_PROGRESS_LOG_INTERVAL_MS = 60 * 1000;
+const DEFAULT_PROGRESS_LOG_POLL_INTERVAL_MS = 5 * 1000;
+
+export interface SolveJobManagerOptions {
+  progressLogRoot?: string;
+  progressLogIntervalMs?: number;
+  progressLogPollIntervalMs?: number;
+}
 
 export interface SolveJob {
   requestId: string;
@@ -16,6 +26,9 @@ export interface SolveJob {
   error: string | null;
   createdAt: number;
   finishedAt?: number;
+  progressLogFilePath: string;
+  progressLogWriter: SolveProgressLogWriter;
+  progressLogIntervalHandle: NodeJS.Timeout | null;
 }
 
 export interface SolveJobSnapshotState {
@@ -45,11 +58,29 @@ function buildRecoveredSolveMessage(job: SolveJob, error: unknown): string {
 
 export class SolveJobManager {
   private readonly jobs = new Map<string, SolveJob>();
+  private readonly progressLogRoot?: string;
+  private readonly progressLogIntervalMs: number;
+  private readonly progressLogPollIntervalMs: number;
+
+  constructor(options: SolveJobManagerOptions = {}) {
+    this.progressLogRoot = options.progressLogRoot;
+    this.progressLogIntervalMs = options.progressLogIntervalMs ?? DEFAULT_PROGRESS_LOG_INTERVAL_MS;
+    this.progressLogPollIntervalMs = options.progressLogPollIntervalMs ?? DEFAULT_PROGRESS_LOG_POLL_INTERVAL_MS;
+  }
 
   start(grid: Grid, params: SolverParams, requestId: string): SolveJob {
     const optimizerAdapter = getOptimizerAdapter(params);
     const optimizer = optimizerAdapter.name;
     const handle = optimizerAdapter.startBackgroundSolve(grid, params);
+    const createdAt = Date.now();
+    const progressLogWriter = new SolveProgressLogWriter({
+      rootDirectory: this.progressLogRoot,
+      requestId,
+      optimizer,
+      grid,
+      params,
+      createdAtMs: createdAt,
+    });
     const job: SolveJob = {
       requestId,
       optimizer,
@@ -61,17 +92,36 @@ export class SolveJobManager {
       solution: null,
       message: null,
       error: null,
-      createdAt: Date.now(),
+      createdAt,
+      progressLogFilePath: progressLogWriter.filePath,
+      progressLogWriter,
+      progressLogIntervalHandle: null,
     };
 
     this.jobs.set(requestId, job);
+    job.progressLogWriter.appendPendingSample({
+      elapsedMs: 0,
+    });
+    job.progressLogIntervalHandle = this.startProgressLogTicker(job);
 
     void handle.promise
       .then((solution) => {
         job.solution = solution;
         job.status = solution.stoppedByUser || job.cancelRequested ? "stopped" : "completed";
-        job.message = null;
+        job.message = job.status === "stopped"
+          ? "Solve was stopped by user. Showing the best feasible result found so far."
+          : null;
         job.error = null;
+        job.progressLogWriter.appendSolutionSample(solution, {
+          elapsedMs: Date.now() - job.createdAt,
+          source: "final-result",
+        });
+        job.progressLogWriter.finish(job.status, {
+          finishedAtMs: Date.now(),
+          solution,
+          message: job.message,
+          error: null,
+        });
       })
       .catch((error) => {
         const recoveredSolution = job.handle?.getLatestSnapshot() ?? null;
@@ -81,17 +131,39 @@ export class SolveJobManager {
             stoppedByUser: job.cancelRequested ? true : Boolean(recoveredSolution.stoppedByUser),
           };
           job.status = job.cancelRequested ? "stopped" : "completed";
-          job.message = job.cancelRequested ? null : buildRecoveredSolveMessage(job, error);
+          job.message = job.cancelRequested
+            ? "Solve was stopped by user. Showing the best feasible result found so far."
+            : buildRecoveredSolveMessage(job, error);
           job.error = null;
+          job.progressLogWriter.appendSolutionSample(job.solution, {
+            elapsedMs: Date.now() - job.createdAt,
+            source: "final-result",
+          });
+          job.progressLogWriter.finish(job.status, {
+            finishedAtMs: Date.now(),
+            solution: job.solution,
+            message: job.message,
+            error: null,
+          });
           return;
         }
 
         job.solution = null;
         job.status = job.cancelRequested ? "stopped" : "failed";
-        job.message = null;
+        job.message = job.cancelRequested ? "Solve was stopped before a feasible solution was found." : null;
         job.error = error instanceof Error ? error.message : "Unknown CP-SAT error.";
+        job.progressLogWriter.finish(job.status, {
+          finishedAtMs: Date.now(),
+          solution: null,
+          message: job.message,
+          error: job.error,
+        });
       })
       .finally(() => {
+        if (job.progressLogIntervalHandle) {
+          clearInterval(job.progressLogIntervalHandle);
+          job.progressLogIntervalHandle = null;
+        }
         job.handle = null;
         job.finishedAt = Date.now();
       });
@@ -136,5 +208,45 @@ export class SolveJobManager {
     job.cancelRequested = true;
     job.handle.cancel();
     return job;
+  }
+
+  private startProgressLogTicker(job: SolveJob): NodeJS.Timeout {
+    const tick = () => {
+      const elapsedMs = Date.now() - job.createdAt;
+      const lastEntry = job.progressLogWriter.getLastEntry();
+      const snapshot = job.handle?.getLatestSnapshot() ?? null;
+      if (!snapshot) {
+        if (!lastEntry || lastEntry.hasFeasibleSolution) return;
+        if (elapsedMs - lastEntry.elapsedMs < this.progressLogIntervalMs) return;
+        job.progressLogWriter.appendPendingSample({
+          elapsedMs,
+          note: "Still searching for the first feasible solution.",
+        });
+        return;
+      }
+
+      const bestPopulationUpperBound = snapshot.cpSatTelemetry?.bestPopulationUpperBound ?? null;
+      const populationGapUpperBound = snapshot.cpSatTelemetry?.populationGapUpperBound ?? null;
+      const shouldAppendImmediately = !lastEntry
+        || !lastEntry.hasFeasibleSolution
+        || lastEntry.totalPopulation !== snapshot.totalPopulation
+        || lastEntry.cpSatStatus !== (snapshot.cpSatStatus ?? null)
+        || lastEntry.bestPopulationUpperBound !== bestPopulationUpperBound
+        || lastEntry.populationGapUpperBound !== populationGapUpperBound;
+
+      const shouldAppendHeartbeat = !shouldAppendImmediately
+        && (!lastEntry || elapsedMs - lastEntry.elapsedMs >= this.progressLogIntervalMs);
+
+      if (!shouldAppendImmediately && !shouldAppendHeartbeat) return;
+
+      job.progressLogWriter.appendSolutionSample(snapshot, {
+        elapsedMs,
+        source: "live-snapshot",
+      });
+    };
+
+    const handle = setInterval(tick, this.progressLogPollIntervalMs);
+    handle.unref?.();
+    return handle;
   }
 }

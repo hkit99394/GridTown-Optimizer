@@ -1,6 +1,7 @@
 const assert = require("node:assert/strict");
 const childProcess = require("node:child_process");
 const fs = require("node:fs");
+const os = require("node:os");
 const path = require("node:path");
 
 const {
@@ -675,6 +676,147 @@ print(json.dumps(response))
   assert.equal(payload.totalPopulation, 40);
   assert.equal(payload.objectivePolicy.populationWeight, 17);
   assert.equal(payload.telemetry.incumbentPopulation, 40);
+}
+
+function maybeTestCpSatNoImprovementTimeoutHelpers() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const command = `
+import importlib.util
+import json
+
+spec = importlib.util.spec_from_file_location("cp_sat_solver", ${JSON.stringify(scriptPath)})
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+class ImmediateTimer:
+    started = 0
+
+    def __init__(self, interval, function):
+        self.interval = interval
+        self.function = function
+        self.daemon = False
+
+    def start(self):
+        ImmediateTimer.started += 1
+        self.function()
+
+    def cancel(self):
+        pass
+
+module.threading.Timer = ImmediateTimer
+
+grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+]
+params = {
+    "serviceTypes": [{"rows": 1, "cols": 1, "bonus": 30, "range": 1, "avail": 1}],
+    "residentialTypes": [{"w": 2, "h": 2, "min": 10, "max": 40, "avail": 1}],
+    "availableBuildings": {"services": 1, "residentials": 1},
+}
+
+result = module.solve_single_cp_sat(grid, params, {
+    "timeLimitSeconds": 5,
+    "numWorkers": 1,
+    "noImprovementTimeoutSeconds": 1,
+})
+
+print(json.dumps({
+    "timer_started": ImmediateTimer.started,
+    "feasible": result.feasible,
+    "status": result.status,
+    "stopped_by_user": None if result.response is None else result.response.get("stoppedByUser"),
+    "total_population": result.total_population,
+}))
+`;
+
+  const result = childProcess.spawnSync(pythonExecutable, ["-c", command], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT no-improvement timeout helpers.");
+  }
+
+  const payload = JSON.parse(result.stdout);
+  assert(payload.timer_started >= 1);
+  assert.equal(payload.feasible, true);
+  assert.equal(payload.stopped_by_user, false);
+  assert.equal(typeof payload.total_population, "number");
+}
+
+function maybeTestCpSatSnapshotWritesTelemetry() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const snapshotFilePath = path.join(os.tmpdir(), `city-builder-test-cp-sat-snapshot-${process.pid}.json`);
+  fs.rmSync(snapshotFilePath, { force: true });
+  const command = `
+import importlib.util
+import json
+import os
+
+spec = importlib.util.spec_from_file_location("cp_sat_solver", ${JSON.stringify(scriptPath)})
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+]
+params = {
+    "residentialTypes": [
+        {"w": 2, "h": 2, "min": 10, "max": 10, "avail": 1},
+        {"w": 2, "h": 2, "min": 100, "max": 100, "avail": 1},
+    ],
+    "availableBuildings": {"residentials": 2, "services": 0},
+}
+
+result = module.solve_single_cp_sat(grid, params, {
+    "timeLimitSeconds": 5,
+    "numWorkers": 1,
+    "snapshotFilePath": ${JSON.stringify(snapshotFilePath)},
+})
+
+snapshot = None
+if os.path.exists(${JSON.stringify(snapshotFilePath)}):
+    with open(${JSON.stringify(snapshotFilePath)}, "r", encoding="utf-8") as handle:
+        snapshot = json.load(handle)
+
+print(json.dumps({
+    "status": result.status,
+    "snapshot_exists": snapshot is not None,
+    "snapshot_has_telemetry": snapshot is not None and snapshot.get("telemetry") is not None,
+    "snapshot_incumbent_population": None if snapshot is None else snapshot.get("telemetry", {}).get("incumbentPopulation"),
+    "snapshot_solution_count": None if snapshot is None else snapshot.get("telemetry", {}).get("solutionCount"),
+}))
+`;
+
+  const result = childProcess.spawnSync(pythonExecutable, ["-c", command], {
+    encoding: "utf8",
+  });
+  fs.rmSync(snapshotFilePath, { force: true });
+  if (result.status !== 0) {
+    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT snapshot telemetry output.");
+  }
+
+  const payload = JSON.parse(result.stdout);
+  assert.match(payload.status ?? "", /^(OPTIMAL|FEASIBLE)$/);
+  assert.equal(payload.snapshot_exists, true);
+  assert.equal(payload.snapshot_has_telemetry, true);
+  assert.equal(typeof payload.snapshot_incumbent_population, "number");
+  assert.equal(typeof payload.snapshot_solution_count, "number");
 }
 
 async function maybeTestCpSatWarmStartContinuation() {
@@ -2146,6 +2288,8 @@ async function main() {
   maybeTestCpSatRuntimeOptionHelpers();
   maybeTestCpSatWarmStartHelpers();
   maybeTestCpSatSnapshotResponseHelpers();
+  maybeTestCpSatNoImprovementTimeoutHelpers();
+  maybeTestCpSatSnapshotWritesTelemetry();
   maybeTestCpSatPortfolioOptionHelpers();
   testCpSatPortfolioExecutorFallbackHelpers();
   maybeTestCpSatPopulationUpperBoundHelpers();

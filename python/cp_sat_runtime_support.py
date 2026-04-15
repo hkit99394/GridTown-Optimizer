@@ -190,9 +190,9 @@ def result_payload(response: dict[str, Any]):
 
 
 def collect_cp_sat_telemetry(solver, telemetry_collector: CpSatTelemetryCollector, status, built, population_from_objective_value):
-    incumbent_objective_value = None
-    incumbent_population = None
-    best_objective_bound = None
+    incumbent_objective_value = telemetry_collector.last_incumbent_objective_value
+    incumbent_population = telemetry_collector.last_incumbent_population
+    best_objective_bound = telemetry_collector.last_best_objective_bound
     best_population_upper_bound = None
     objective_gap = None
     population_gap_upper_bound = None
@@ -201,7 +201,11 @@ def collect_cp_sat_telemetry(solver, telemetry_collector: CpSatTelemetryCollecto
         incumbent_objective_value = float(solver.ObjectiveValue())
         incumbent_population = int(solver.Value(built.total_population))
         best_objective_bound = float(solver.BestObjectiveBound())
+
+    if incumbent_objective_value is not None and best_objective_bound is not None:
         objective_gap = max(0.0, best_objective_bound - incumbent_objective_value)
+
+    if best_objective_bound is not None:
         best_population_upper_bound = population_from_objective_value(best_objective_bound, built.objective_policy)
         if best_population_upper_bound is not None and incumbent_population is not None:
             population_gap_upper_bound = max(0, best_population_upper_bound - incumbent_population)

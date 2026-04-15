@@ -268,6 +268,7 @@ const solution = await solveAsync(grid, {
   optimizer: "cp-sat",
   cpSat: {
     timeLimitSeconds: 120,
+    noImprovementTimeoutSeconds: 15,
     maxDeterministicTime: 30,
     numWorkers: 8,
     randomSeed: 42,
@@ -316,6 +317,7 @@ Useful CP-SAT runtime controls include:
 - `randomizeSearch`
 - `relativeGapLimit`
 - `absoluteGapLimit`
+- `noImprovementTimeoutSeconds`
 - `logSearchProgress`
 
 For continuation runs, CP-SAT also supports:

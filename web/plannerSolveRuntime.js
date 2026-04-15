@@ -1,4 +1,75 @@
 (function attachPlannerSolveRuntime(globalObject) {
+  function normalizeProgressElapsedMs(value) {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) return 0;
+    return Math.max(0, Math.round(numericValue));
+  }
+
+  function buildSolveProgressLogEntry(payload, options = {}) {
+    if (!payload?.solution && typeof payload?.bestTotalPopulation !== "number") return null;
+
+    const telemetry = payload?.solution?.cpSatTelemetry ?? null;
+    const totalPopulation =
+      typeof payload?.stats?.totalPopulation === "number"
+        ? payload.stats.totalPopulation
+        : typeof payload?.solution?.totalPopulation === "number"
+          ? payload.solution.totalPopulation
+          : typeof payload?.bestTotalPopulation === "number"
+            ? payload.bestTotalPopulation
+            : null;
+
+    return {
+      capturedAt: typeof options.capturedAt === "string" && options.capturedAt.trim()
+        ? options.capturedAt
+        : new Date().toISOString(),
+      elapsedMs: normalizeProgressElapsedMs(options.elapsedMs),
+      source: options.source === "final-result" ? "final-result" : "live-snapshot",
+      optimizer: payload?.stats?.optimizer ?? payload?.solution?.optimizer ?? payload?.optimizer ?? options.fallbackOptimizer ?? null,
+      hasFeasibleSolution: true,
+      totalPopulation,
+      cpSatStatus: payload?.solution?.cpSatStatus ?? payload?.stats?.cpSatStatus ?? null,
+      bestPopulationUpperBound:
+        typeof telemetry?.bestPopulationUpperBound === "number" ? telemetry.bestPopulationUpperBound : null,
+      populationGapUpperBound:
+        typeof telemetry?.populationGapUpperBound === "number" ? telemetry.populationGapUpperBound : null,
+      solveWallTimeSeconds:
+        typeof telemetry?.solveWallTimeSeconds === "number" ? telemetry.solveWallTimeSeconds : null,
+      lastImprovementAtSeconds:
+        typeof telemetry?.lastImprovementAtSeconds === "number" ? telemetry.lastImprovementAtSeconds : null,
+      secondsSinceLastImprovement:
+        typeof telemetry?.secondsSinceLastImprovement === "number" ? telemetry.secondsSinceLastImprovement : null,
+      note: null,
+    };
+  }
+
+  function appendSolveProgressLog(logEntries, payload, options = {}) {
+    const entry = buildSolveProgressLogEntry(payload, options);
+    if (!entry) return Array.isArray(logEntries) ? logEntries.slice() : [];
+    const nextEntries = Array.isArray(logEntries) ? logEntries.slice() : [];
+    const lastEntry = nextEntries[nextEntries.length - 1];
+
+    if (
+      lastEntry
+      && lastEntry.elapsedMs === entry.elapsedMs
+      && lastEntry.source === entry.source
+      && lastEntry.optimizer === entry.optimizer
+      && lastEntry.hasFeasibleSolution === entry.hasFeasibleSolution
+      && lastEntry.totalPopulation === entry.totalPopulation
+      && lastEntry.cpSatStatus === entry.cpSatStatus
+      && lastEntry.bestPopulationUpperBound === entry.bestPopulationUpperBound
+      && lastEntry.populationGapUpperBound === entry.populationGapUpperBound
+      && lastEntry.solveWallTimeSeconds === entry.solveWallTimeSeconds
+      && lastEntry.lastImprovementAtSeconds === entry.lastImprovementAtSeconds
+      && lastEntry.secondsSinceLastImprovement === entry.secondsSinceLastImprovement
+    ) {
+      nextEntries[nextEntries.length - 1] = entry;
+      return nextEntries;
+    }
+
+    nextEntries.push(entry);
+    return nextEntries;
+  }
+
   function createSolveRuntime(options) {
     const {
       state,
@@ -143,7 +214,15 @@
     function applyRunningSnapshot(payload) {
       if (!payload?.solution || payload.jobStatus !== "running") return;
       clearExpansionAdvice();
-      state.result = payload;
+      state.solveProgressLog = appendSolveProgressLog(state.solveProgressLog, payload, {
+        elapsedMs: state.solveTimerElapsedMs,
+        fallbackOptimizer: state.optimizer,
+        source: "live-snapshot",
+      });
+      state.result = {
+        ...payload,
+        progressLog: state.solveProgressLog.slice(),
+      };
       state.resultIsLiveSnapshot = true;
       state.resultError = "";
       state.layoutEditor.edited = false;
@@ -226,6 +305,7 @@
       state.activeSolveRequestId = createSolveRequestId();
       state.resultIsLiveSnapshot = false;
       state.resultError = "";
+      state.solveProgressLog = [];
       state.layoutEditor.mode = "inspect";
       state.layoutEditor.pendingPlacement = null;
       state.layoutEditor.status = "";
@@ -239,10 +319,18 @@
         state.resultContext = request;
         if (state.optimizer === "cp-sat") {
           const timeLimitSeconds = request.params.cpSat?.timeLimitSeconds;
+          const noImprovementTimeoutSeconds = request.params.cpSat?.noImprovementTimeoutSeconds;
           const randomSeed = request.params.cpSat?.randomSeed;
+          const runCaps = [];
+          if (timeLimitSeconds) {
+            runCaps.push(`${timeLimitSeconds}s max runtime`);
+          }
+          if (noImprovementTimeoutSeconds) {
+            runCaps.push(`${noImprovementTimeoutSeconds}s no-improvement cutoff`);
+          }
           setSolveState(
-            timeLimitSeconds
-              ? `Running CP-SAT solver with seed ${randomSeed ?? "auto"} and a ${timeLimitSeconds}s limit...`
+            runCaps.length > 0
+              ? `Running CP-SAT solver with seed ${randomSeed ?? "auto"}, ${runCaps.join(", ")}...`
               : `Running CP-SAT solver with seed ${randomSeed ?? "auto"} until it finishes or you stop it...`
           );
         } else if (state.optimizer === "lns") {
@@ -268,7 +356,15 @@
         }
         const payload = await waitForSolveResult(state.activeSolveRequestId);
 
-        state.result = payload;
+        state.solveProgressLog = appendSolveProgressLog(state.solveProgressLog, payload, {
+          elapsedMs: state.solveTimerElapsedMs,
+          fallbackOptimizer: state.optimizer,
+          source: "final-result",
+        });
+        state.result = {
+          ...payload,
+          progressLog: state.solveProgressLog.slice(),
+        };
         state.resultIsLiveSnapshot = false;
         state.resultError = "";
         state.layoutEditor.edited = false;
@@ -290,6 +386,7 @@
         state.result = null;
         state.resultIsLiveSnapshot = false;
         state.resultError = error instanceof Error ? error.message : "Unknown solve error.";
+        state.solveProgressLog = [];
         state.layoutEditor.edited = false;
         state.layoutEditor.status = "";
         pauseSolveTimer();
@@ -314,6 +411,8 @@
   }
 
   globalObject.CityBuilderSolveRuntime = Object.freeze({
+    appendSolveProgressLog,
+    buildSolveProgressLogEntry,
     createSolveRuntime,
   });
 })(window);

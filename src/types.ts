@@ -231,6 +231,8 @@ export interface CpSatOptions {
   relativeGapLimit?: number;
   /** Absolute optimality gap limit. Stop once the absolute gap is at or below this value. */
   absoluteGapLimit?: number;
+  /** Stop after this many seconds without a new incumbent, but only after the first feasible solution is found. */
+  noImprovementTimeoutSeconds?: number;
   /** Soft warm-start incumbent. Accepts either a serializable hint or an existing Solution. */
   warmStartHint?: CpSatWarmStartHint | Solution;
   /** Hard lower bound on total population for continuation runs from a known incumbent. */
@@ -417,11 +419,30 @@ export interface SolveResponseValidation {
   mapText: string;
 }
 
+/** Chronological performance sample captured during a planner solve. */
+export interface SolveProgressLogEntry {
+  capturedAt: string;
+  elapsedMs: number;
+  source: "live-snapshot" | "final-result";
+  optimizer: OptimizerName | null;
+  hasFeasibleSolution: boolean;
+  totalPopulation: number | null;
+  cpSatStatus: string | null;
+  bestPopulationUpperBound: number | null;
+  populationGapUpperBound: number | null;
+  solveWallTimeSeconds: number | null;
+  lastImprovementAtSeconds: number | null;
+  secondsSinceLastImprovement: number | null;
+  note?: string | null;
+}
+
 /** Display-ready solve result payload as saved by the planner UI. */
 export interface SolveResponsePayload {
   solution: SerializedSolution;
   validation: SolveResponseValidation;
   stats: SolveResponseStats;
+  progressLog?: SolveProgressLogEntry[];
+  progressLogFilePath?: string;
   message?: string;
 }
 

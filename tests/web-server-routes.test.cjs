@@ -1,7 +1,10 @@
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const os = require("node:os");
 const path = require("node:path");
 const { Readable } = require("node:stream");
 
+const { SolveJobManager } = require("../dist/solveJobManager.js");
 const { createPlannerRequestHandler } = require("../dist/webServerRequestHandler.js");
 const { solve } = require("../dist/index.js");
 
@@ -156,11 +159,24 @@ async function testBackgroundSolveRoutes(handler) {
   assert.equal(startResult.payload.ok, true);
   assert.equal(startResult.payload.requestId, requestId);
   assert.equal(startResult.payload.jobStatus, "running");
+  assert.equal(typeof startResult.payload.progressLogFilePath, "string");
 
   const finalPayload = await waitForSolve(handler, requestId);
   assert.equal(finalPayload.jobStatus, "completed");
   assert.equal(finalPayload.stats.totalPopulation, 100);
   assert.equal(finalPayload.solution.residentials.length, 1);
+  assert.equal(finalPayload.progressLogFilePath, startResult.payload.progressLogFilePath);
+
+  const persistedLog = JSON.parse(fs.readFileSync(startResult.payload.progressLogFilePath, "utf8"));
+  assert.equal(persistedLog.requestId, requestId);
+  assert.equal(persistedLog.status, "completed");
+  assert.deepEqual(persistedLog.input.grid, solvePayload.grid);
+  assert.equal(persistedLog.input.params.greedy.localSearch, false);
+  assert.equal(Array.isArray(persistedLog.entries), true);
+  assert.equal(persistedLog.entries.length >= 2, true);
+  assert.equal(persistedLog.entries[0].hasFeasibleSolution, false);
+  assert.equal(persistedLog.entries[0].totalPopulation, null);
+  assert.equal(persistedLog.entries[persistedLog.entries.length - 1].source, "final-result");
 }
 
 async function testCancelMissingSolveRoute(handler) {
@@ -176,8 +192,14 @@ async function testCancelMissingSolveRoute(handler) {
 }
 
 async function main() {
+  const progressLogRoot = fs.mkdtempSync(path.join(os.tmpdir(), "planner-route-logs-"));
   const handler = createPlannerRequestHandler({
     webRoot: path.resolve(__dirname, "../web"),
+    solveJobManager: new SolveJobManager({
+      progressLogRoot,
+      progressLogIntervalMs: 10,
+      progressLogPollIntervalMs: 5,
+    }),
   });
 
   await testHealthRoute(handler);

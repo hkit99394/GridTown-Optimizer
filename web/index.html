@@ -425,6 +425,27 @@
                 </div>
               </div>
 
+              <div class="solver-callout">
+                Recommended runtime flow: start with a fast greedy answer, improve it with LNS, then use a short CP-SAT
+                polish pass instead of a long open-ended exact run.
+              </div>
+
+              <div id="runtimePresetButtons" class="runtime-preset-grid">
+                <button type="button" class="button secondary compact" data-runtime-preset="fast-greedy">
+                  Fast Greedy
+                </button>
+                <button type="button" class="button secondary compact" data-runtime-preset="lns-improve">
+                  LNS Improve
+                </button>
+                <button type="button" class="button secondary compact" data-runtime-preset="bounded-cp-sat">
+                  Bounded CP-SAT
+                </button>
+              </div>
+
+              <p id="runtimePresetStatus" class="status-text" aria-live="polite">
+                Presets keep the recommended greedy -> LNS -> bounded CP-SAT flow one click away.
+              </p>
+
               <div class="segmented segmented-wide" id="solverToggle">
                 <button type="button" data-optimizer="greedy">Greedy</button>
                 <button type="button" data-optimizer="lns">LNS</button>
@@ -543,6 +564,16 @@
                     <label class="field">
                       <span>Workers</span>
                       <input id="cpSatNumWorkers" type="number" min="1" step="1" />
+                    </label>
+                    <label class="field">
+                      <span>No-improvement cutoff (seconds)</span>
+                      <input
+                        id="cpSatNoImprovementTimeoutSeconds"
+                        type="number"
+                        min="1"
+                        step="1"
+                        placeholder="Blank = disabled"
+                      />
                     </label>
                     <label class="check-field">
                       <input id="cpSatLogSearchProgress" type="checkbox" />

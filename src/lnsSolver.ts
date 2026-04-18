@@ -6,11 +6,11 @@ import { existsSync } from "node:fs";
 
 import { normalizeServicePlacement } from "./buildings.js";
 import { solveCpSat } from "./cpSatSolver.js";
-import { validateSolution } from "./evaluator.js";
 import { height, width } from "./grid.js";
 import { buildNeighborhoodWindows, computeResidentialBoostsForSolution, selectNeighborhoodWindow } from "./lnsNeighborhoods.js";
 import { compatibleResidentialTypeIndices, getResidentialBaseMax, NO_TYPE_INDEX } from "./rules.js";
 import { writeSolutionSnapshot } from "./solutionSerialization.js";
+import { materializeValidLnsSeedSolution } from "./solverInputValidation.js";
 import { solveGreedy } from "./solver.js";
 
 import type {
@@ -103,57 +103,6 @@ function shouldStop(stopFilePath: string): boolean {
 function isRecoverableRepairFailure(error: unknown): boolean {
   if (!(error instanceof Error)) return false;
   return /No feasible solution found with CP-SAT\./.test(error.message);
-}
-
-function toInteger(value: unknown, fallback = 0, min = 0): number {
-  const number = Number(value);
-  if (!Number.isFinite(number)) return fallback;
-  return Math.max(min, Math.round(number));
-}
-
-function materializeSeedSolution(seedHint?: CpSatWarmStartHint): Solution | null {
-  if (!seedHint) return null;
-  if (!seedHint.solution) {
-    throw new Error("LNS seed hint is missing the saved solution payload.");
-  }
-
-  const seededSolution = seedHint.solution;
-  const seededServices = Array.isArray(seededSolution.services) ? seededSolution.services : [];
-  const seededResidentials = Array.isArray(seededSolution.residentials) ? seededSolution.residentials : [];
-  const serviceTypeIndices = seededServices.map((service) => toInteger(service.typeIndex, NO_TYPE_INDEX, NO_TYPE_INDEX));
-  const servicePopulationIncreases = seededServices.map((service) => toInteger(service.bonus, 0));
-  const residentialTypeIndices = seededResidentials.map((residential) =>
-    toInteger(residential.typeIndex, NO_TYPE_INDEX, NO_TYPE_INDEX)
-  );
-  const populations = Array.isArray(seededSolution.populations) && seededSolution.populations.length === seededResidentials.length
-    ? seededSolution.populations.map((population) => toInteger(population, 0))
-    : seededResidentials.map((residential) => toInteger(residential.population, 0));
-
-  return {
-    optimizer: "lns",
-    roads: new Set(Array.isArray(seededSolution.roads) ? seededSolution.roads : (seedHint.roadKeys ?? [])),
-    services: seededServices.map((service) => ({
-      r: toInteger(service.r, 0),
-      c: toInteger(service.c, 0),
-      rows: toInteger(service.rows, 0),
-      cols: toInteger(service.cols, 0),
-      range: toInteger(service.range, 0),
-    })),
-    serviceTypeIndices,
-    servicePopulationIncreases,
-    residentials: seededResidentials.map((residential) => ({
-      r: toInteger(residential.r, 0),
-      c: toInteger(residential.c, 0),
-      rows: toInteger(residential.rows, 0),
-      cols: toInteger(residential.cols, 0),
-    })),
-    residentialTypeIndices,
-    populations,
-    totalPopulation: toInteger(
-      seededSolution.totalPopulation,
-      populations.reduce((sum, population) => sum + population, 0)
-    ),
-  };
 }
 
 function serviceTypeSupportsPlacement(
@@ -321,20 +270,8 @@ function applyDeterministicDominanceUpgrades(G: Grid, params: SolverParams, solu
   }
 }
 
-function materializeValidSeedSolution(G: Grid, params: SolverParams, seedHint?: CpSatWarmStartHint): Solution | null {
-  const incumbent = materializeSeedSolution(seedHint);
-  if (!incumbent) return null;
-
-  const seedValidation = validateSolution({
-    grid: G,
-    solution: incumbent,
-    params,
-  });
-  return seedValidation.valid ? incumbent : null;
-}
-
 function buildInitialLnsIncumbent(G: Grid, params: SolverParams): Solution {
-  const seededIncumbent = materializeValidSeedSolution(G, params, params.lns?.seedHint);
+  const seededIncumbent = materializeValidLnsSeedSolution(G, params, params.lns?.seedHint);
   const initialIncumbent = seededIncumbent ?? {
     ...solveGreedy(G, { ...params, optimizer: "greedy" }),
     optimizer: "lns" as const,

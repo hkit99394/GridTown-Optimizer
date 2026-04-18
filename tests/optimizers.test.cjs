@@ -1910,12 +1910,7 @@ function maybeTestLnsOptimizer() {
   assert.equal(validation.valid, true);
 }
 
-function maybeTestLnsFallsBackWhenSeedHintIsInvalid() {
-  const pythonExecutable = resolveCpSatPython();
-  if (!pythonExecutable) {
-    return;
-  }
-
+function testLnsRejectsInvalidSeedHint() {
   const grid = [
     [1, 1, 1, 1],
     [1, 1, 1, 1],
@@ -1924,11 +1919,6 @@ function maybeTestLnsFallsBackWhenSeedHintIsInvalid() {
   ];
   const params = {
     optimizer: "lns",
-    cpSat: {
-      pythonExecutable,
-      numWorkers: 1,
-      timeLimitSeconds: 5,
-    },
     lns: {
       iterations: 2,
       maxNoImprovementIterations: 2,
@@ -1953,11 +1943,48 @@ function maybeTestLnsFallsBackWhenSeedHintIsInvalid() {
     greedy: { localSearch: false, restarts: 1, exhaustiveServiceSearch: false },
   };
 
-  const solution = solveLns(grid, params);
-  const validation = validateSolution({ grid, solution, params });
+  assert.throws(
+    () => solveLns(grid, params),
+    /Invalid solver input: LNS seed hint is invalid:/
+  );
+}
 
-  assert.equal(solution.totalPopulation, 10);
-  assert.equal(validation.valid, true);
+function testLnsRejectsMalformedSeedHintFields() {
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+  ];
+  const params = {
+    optimizer: "lns",
+    lns: {
+      iterations: 2,
+      maxNoImprovementIterations: 2,
+      repairTimeLimitSeconds: 1,
+      neighborhoodRows: 3,
+      neighborhoodCols: 3,
+      seedHint: {
+        solution: {
+          roads: [],
+          services: [],
+          residentials: [
+            { r: null, c: 0, rows: 2, cols: 2, typeIndex: 0, population: 10 },
+          ],
+          populations: [10],
+          totalPopulation: 10,
+        },
+      },
+    },
+    residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
+    availableBuildings: { residentials: 1, services: 0 },
+    greedy: { localSearch: false, restarts: 1, exhaustiveServiceSearch: false },
+  };
+
+  assert.throws(
+    () => solveLns(grid, params),
+    /Invalid solver input: LNS seed hint solution\.residentials\[0\]\.r must be an integer >= 0\./
+  );
 }
 
 function maybeTestLnsExploresMultipleRowZeroSeeds() {
@@ -2701,7 +2728,8 @@ async function main() {
   testLnsNeighborhoodWindowsEscalateWhenStagnating();
   testLnsRunsFinalEscalationWithinConfiguredBudget();
   maybeTestLnsOptimizer();
-  maybeTestLnsFallsBackWhenSeedHintIsInvalid();
+  testLnsRejectsInvalidSeedHint();
+  testLnsRejectsMalformedSeedHintFields();
   maybeTestLnsExploresMultipleRowZeroSeeds();
   maybeTestLnsCanRepairRowZeroAnchorLayouts();
   testLnsDeterministicServiceUpgrade();

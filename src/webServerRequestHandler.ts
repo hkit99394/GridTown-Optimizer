@@ -10,7 +10,7 @@ import {
   handleStartSolve,
 } from "./webServerApiRoutes.js";
 import { servePlannerStatic } from "./webServerStatic.js";
-import { getErrorStatusCode, sendJson } from "./webServerTransport.js";
+import { getErrorMessage, getErrorStatusCode, sendJson } from "./webServerTransport.js";
 
 export interface PlannerRequestHandlerOptions {
   solveJobManager?: SolveJobManager;
@@ -47,8 +47,7 @@ export function createPlannerRequestHandler(options: PlannerRequestHandlerOption
       }
       await servePlannerStatic(options.webRoot, url.pathname, method, res);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown server error.";
-      sendJson(res, getErrorStatusCode(message), { ok: false, error: message });
+      sendJson(res, getErrorStatusCode(error), { ok: false, error: getErrorMessage(error) });
     }
   };
 }

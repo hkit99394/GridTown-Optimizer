@@ -3,6 +3,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 
 import { getOptimizerAdapter, resolveOptimizerName } from "./optimizerRegistry.js";
 import { SolveJobManager } from "./solveJobManager.js";
+import { assertValidSolveInputs } from "./solverInputValidation.js";
 import {
   buildManualLayoutResponse,
   buildSolveResponse,
@@ -68,6 +69,7 @@ export async function handleImmediateSolve(
   );
   if (!payload) return true;
 
+  assertValidSolveInputs(payload.grid, payload.params);
   const handle = getOptimizerAdapter(payload.params).startBackgroundSolve(payload.grid, payload.params);
   const disconnectMonitor = monitorClientDisconnect(req, res, () => {
     handle.cancel();
@@ -131,6 +133,7 @@ export async function handleStartSolve(
   );
   if (!payload) return true;
 
+  assertValidSolveInputs(payload.grid, payload.params);
   const requestId = typeof payload.requestId === "string" && payload.requestId.trim()
     ? payload.requestId.trim()
     : randomUUID();

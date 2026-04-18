@@ -1,5 +1,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 
+import { isSolverInputError, isSolverInputErrorMessage } from "./solverInputValidation.js";
+
 const MAX_BODY_SIZE_BYTES = 2 * 1024 * 1024;
 
 export interface ClientDisconnectMonitor {
@@ -43,12 +45,21 @@ export function contentTypeFor(pathname: string): string {
   return "text/html; charset=utf-8";
 }
 
-export function getErrorStatusCode(message: string): number {
+export function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string" && error) return error;
+  return "Unknown server error.";
+}
+
+export function getErrorStatusCode(error: unknown): number {
+  if (isSolverInputError(error)) return 400;
+  const message = getErrorMessage(error);
   if (
     message === "Invalid JSON request body."
     || message.includes("Invalid solve payload")
     || message.includes("Invalid layout-evaluate payload")
     || message.includes("Invalid cancel payload")
+    || isSolverInputErrorMessage(message)
   ) {
     return 400;
   }

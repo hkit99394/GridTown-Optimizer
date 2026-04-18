@@ -7,6 +7,7 @@ const { Readable } = require("node:stream");
 
 const optimizerRegistry = require("../dist/optimizerRegistry.js");
 const { SolveJobManager } = require("../dist/solveJobManager.js");
+const { SolverInputError } = require("../dist/solverInputValidation.js");
 const { createPlannerRequestHandler } = require("../dist/webServerRequestHandler.js");
 const { solve } = require("../dist/index.js");
 
@@ -285,6 +286,123 @@ async function testImmediateSolveBackendJsonErrorsReturnInternalServerError(hand
   }
 }
 
+async function testImmediateSolveRejectsInvalidLnsSeedHint(handler) {
+  const solvePayload = buildTinySolvePayload();
+  const result = await invoke(handler, {
+    method: "POST",
+    url: "/api/solve",
+    json: {
+      ...solvePayload,
+      params: {
+        ...solvePayload.params,
+        optimizer: "lns",
+        lns: {
+          iterations: 1,
+          maxNoImprovementIterations: 1,
+          neighborhoodRows: 2,
+          neighborhoodCols: 2,
+          seedHint: {},
+        },
+      },
+    },
+  });
+
+  assert.equal(result.statusCode, 400);
+  assert.equal(result.payload.ok, false);
+  assert.equal(result.payload.error, "Invalid solver input: LNS seed hint is missing the saved solution payload.");
+}
+
+async function testImmediateSolveRejectsMalformedLnsSeedFields(handler) {
+  const solvePayload = buildTinySolvePayload();
+  const result = await invoke(handler, {
+    method: "POST",
+    url: "/api/solve",
+    json: {
+      ...solvePayload,
+      params: {
+        ...solvePayload.params,
+        optimizer: "lns",
+        lns: {
+          iterations: 1,
+          maxNoImprovementIterations: 1,
+          neighborhoodRows: 2,
+          neighborhoodCols: 2,
+          seedHint: {
+            solution: {
+              roads: [],
+              services: [],
+              residentials: [
+                { r: null, c: 0, rows: 2, cols: 2, typeIndex: 0, population: 100 },
+              ],
+              populations: [100],
+              totalPopulation: 100,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  assert.equal(result.statusCode, 400);
+  assert.equal(result.payload.ok, false);
+  assert.equal(result.payload.error, "Invalid solver input: LNS seed hint solution.residentials[0].r must be an integer >= 0.");
+}
+
+async function testImmediateSolvePreservesTypedSolverInputErrors(handler) {
+  const solvePayload = buildTinySolvePayload();
+  const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+
+  optimizerRegistry.getOptimizerAdapter = () => ({
+    name: "lns",
+    solve() {
+      throw new Error("Immediate solves should use the non-blocking background adapter.");
+    },
+    startBackgroundSolve() {
+      const error = new SolverInputError("Simulated typed validation failure.");
+      error.message = "Simulated typed validation failure.";
+      return {
+        promise: Promise.reject(error),
+        cancel() {},
+        getLatestSnapshot() {
+          return null;
+        },
+        getLatestSnapshotState() {
+          return {
+            hasFeasibleSolution: false,
+            totalPopulation: null,
+          };
+        },
+      };
+    },
+  });
+
+  try {
+    const result = await invoke(handler, {
+      method: "POST",
+      url: "/api/solve",
+      json: {
+        ...solvePayload,
+        params: {
+          ...solvePayload.params,
+          optimizer: "lns",
+          lns: {
+            iterations: 1,
+            maxNoImprovementIterations: 1,
+            neighborhoodRows: 2,
+            neighborhoodCols: 2,
+          },
+        },
+      },
+    });
+
+    assert.equal(result.statusCode, 400);
+    assert.equal(result.payload.ok, false);
+    assert.equal(result.payload.error, "Simulated typed validation failure.");
+  } finally {
+    optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
+  }
+}
+
 async function testLayoutEvaluateRoute(handler) {
   const solvePayload = buildTinySolvePayload();
   const solved = solve(solvePayload.grid, solvePayload.params);
@@ -372,6 +490,33 @@ async function testBackgroundSolveRoutes(handler) {
   assert.equal(persistedLog.entries[persistedLog.entries.length - 1].source, "final-result");
 }
 
+async function testStartSolveRejectsInvalidLnsSeedHint(handler) {
+  const solvePayload = buildTinySolvePayload();
+  const result = await invoke(handler, {
+    method: "POST",
+    url: "/api/solve/start",
+    json: {
+      ...solvePayload,
+      requestId: "invalid-lns-seed",
+      params: {
+        ...solvePayload.params,
+        optimizer: "lns",
+        lns: {
+          iterations: 1,
+          maxNoImprovementIterations: 1,
+          neighborhoodRows: 2,
+          neighborhoodCols: 2,
+          seedHint: {},
+        },
+      },
+    },
+  });
+
+  assert.equal(result.statusCode, 400);
+  assert.equal(result.payload.ok, false);
+  assert.equal(result.payload.error, "Invalid solver input: LNS seed hint is missing the saved solution payload.");
+}
+
 async function testCancelMissingSolveRoute(handler) {
   const result = await invoke(handler, {
     method: "POST",
@@ -438,10 +583,14 @@ async function main() {
   await testMethodNotAllowed(handler);
   await testImmediateSolveRoute(handler);
   await testImmediateSolveBackendJsonErrorsReturnInternalServerError(handler);
+  await testImmediateSolveRejectsInvalidLnsSeedHint(handler);
+  await testImmediateSolveRejectsMalformedLnsSeedFields(handler);
+  await testImmediateSolvePreservesTypedSolverInputErrors(handler);
   await testImmediateSolveCancelsOnDisconnect(handler);
   await testLayoutEvaluateRoute(handler);
   await testLayoutEvaluateRejectsMalformedSerializedSolutions(handler);
   await testBackgroundSolveRoutes(handler);
+  await testStartSolveRejectsInvalidLnsSeedHint(handler);
   await testCancelMissingSolveRoute(handler);
   await testCompletedSolveJobsExpire();
 

@@ -10,15 +10,44 @@ import { rectangleCells } from "./grid.js";
 
 /** Road seed: exactly one allowed cell in row 0 (first found). Satisfies "at least one road in row 0". */
 export function roadSeedRow0(G: Grid): Set<string> {
-  const R = new Set<string>();
+  return new Set(roadSeedRow0Candidates(G)[0] ?? []);
+}
+
+/** Candidate row-0 road seeds, one per allowed anchor cell in row 0. */
+export function roadSeedRow0Candidates(G: Grid): Set<string>[] {
+  const seeds: Set<string>[] = [];
   const W = width(G);
   for (let c = 0; c < W; c++) {
-    if (isAllowed(G, 0, c)) {
-      R.add(cellKey(0, c));
-      return R;
-    }
+    if (!isAllowed(G, 0, c)) continue;
+    seeds.push(new Set([cellKey(0, c)]));
   }
-  return R;
+  return seeds;
+}
+
+/** @deprecated Row-0 anchor correctness requires evaluating every allowed row-0 seed. */
+export function roadSeedRow0RepresentativeCandidates(G: Grid, limit: number): Set<string>[] {
+  void limit;
+  return roadSeedRow0Candidates(G);
+}
+
+function availableRow0RoadTargets(G: Grid, blocked: Set<string>): Set<string> {
+  const targets = new Set<string>();
+  const W = width(G);
+  for (let c = 0; c < W; c++) {
+    if (!isAllowed(G, 0, c)) continue;
+    const key = cellKey(0, c);
+    if (blocked.has(key)) continue;
+    targets.add(key);
+  }
+  return targets;
+}
+
+export function findAvailableRow0RoadCell(G: Grid, blocked: Set<string>): string | null {
+  return availableRow0RoadTargets(G, blocked).values().next().value ?? null;
+}
+
+export function hasAvailableRow0RoadCell(G: Grid, blocked: Set<string>): boolean {
+  return findAvailableRow0RoadCell(G, blocked) !== null;
 }
 
 /** BFS from start cells to any cell in targets; only allowed cells. Exclude cells in blockSet (e.g. building footprint). Returns path from start to first target, or null. */
@@ -96,10 +125,12 @@ export function ensureBuildingConnectedToRoads(
   const blockSet = new Set<string>();
   for (const k of occupied) if (!roads.has(k)) blockSet.add(k);
   for (const k of rectangleCells(r, c, rows, cols)) blockSet.add(k);
+  const targets = roads.size > 0 ? roads : availableRow0RoadTargets(G, blockSet);
+  if (targets.size === 0) return false;
   const path = bfsPathToTargets(
     G,
     border.filter(([br, bc]) => isAllowed(G, br, bc) && !blockSet.has(cellKey(br, bc))),
-    roads,
+    targets,
     blockSet
   );
   if (!path) return false;
@@ -176,10 +207,12 @@ export function canConnectToRoads(
   const blockSet = new Set<string>();
   for (const k of occupied) if (!roads.has(k)) blockSet.add(k);
   for (const k of rectangleCells(r, c, rows, cols)) blockSet.add(k);
+  const targets = roads.size > 0 ? roads : availableRow0RoadTargets(G, blockSet);
+  if (targets.size === 0) return false;
   const path = bfsPathToTargets(
     G,
     border.filter(([br, bc]) => isAllowed(G, br, bc) && !blockSet.has(cellKey(br, bc))),
-    roads,
+    targets,
     blockSet
   );
   return path !== null;

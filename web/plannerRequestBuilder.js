@@ -40,20 +40,53 @@
       return generatedSeed;
     }
 
+    function getCheckpointBuildErrorMessage(error) {
+      if (error && typeof error === "object" && typeof error.message === "string") {
+        return error.message;
+      }
+      return "The displayed output cannot be reused as a continuation checkpoint.";
+    }
+
+    function tryBuildCheckpoint(result, resultContext, elapsedMs) {
+      if (!result?.solution || !resultContext?.grid || !resultContext?.params) {
+        return {
+          checkpoint: null,
+          error: "missing",
+        };
+      }
+      try {
+        return {
+          checkpoint: buildCpSatWarmStartCheckpoint(result, resultContext, elapsedMs),
+          error: null,
+        };
+      } catch (error) {
+        return {
+          checkpoint: null,
+          error: getCheckpointBuildErrorMessage(error),
+        };
+      }
+    }
+
     function getSavedLayoutCheckpoint(entry) {
+      if (entry?.result?.validation?.valid !== true) {
+        return null;
+      }
       if (entry?.continueCpSat) {
         return cloneJson(entry.continueCpSat);
       }
-      return buildCpSatWarmStartCheckpoint(entry?.result, entry?.resultContext, getSavedLayoutElapsedMs(entry));
+      return tryBuildCheckpoint(entry?.result, entry?.resultContext, getSavedLayoutElapsedMs(entry)).checkpoint;
+    }
+
+    function getDisplayedLayoutCheckpointState() {
+      return tryBuildCheckpoint(state.result, state.resultContext, state.resultElapsedMs);
     }
 
     function getDisplayedLayoutCheckpoint() {
-      if (!state.result?.solution || !state.resultContext?.grid || !state.resultContext?.params) return null;
-      try {
-        return buildCpSatWarmStartCheckpoint(state.result, state.resultContext, state.resultElapsedMs);
-      } catch {
-        return null;
-      }
+      return getDisplayedLayoutCheckpointState().checkpoint;
+    }
+
+    function getDisplayedLayoutCheckpointError() {
+      return getDisplayedLayoutCheckpointState().error;
     }
 
     function getDisplayedLayoutSourceLabel() {
@@ -61,84 +94,101 @@
       return name || "the displayed output";
     }
 
-    function renderCpSatHintStatus() {
-      if (!elements.cpSatHintStatus) return;
-      if (!state.cpSat.useDisplayedHint) {
-        elements.cpSatHintStatus.textContent = "Default CP-SAT hinting from the displayed output is turned off.";
+    function buildCurrentModelFingerprint(requestOptions) {
+      const previewRequest = buildSolveRequest(requestOptions);
+      return computeCpSatModelFingerprint(buildCpSatContinuationModelInput(previewRequest));
+    }
+
+    function renderDisplayedLayoutContinuationStatus(options) {
+      const {
+        element,
+        enabled,
+        disabledMessage,
+        missingMessage,
+        activeOptimizer,
+        defaultLabel,
+        readyLabel,
+        mismatchLabel,
+        previewRequestOptions,
+      } = options;
+      if (!element) return;
+      if (!enabled) {
+        element.textContent = disabledMessage;
         return;
       }
 
-      const checkpoint = getDisplayedLayoutCheckpoint();
+      const { checkpoint, error } = getDisplayedLayoutCheckpointState();
+      if (error) {
+        element.textContent = error === "missing" ? missingMessage : error;
+        return;
+      }
       if (!checkpoint) {
-        elements.cpSatHintStatus.textContent = "No displayed output is available to use as a CP-SAT hint.";
+        element.textContent = missingMessage;
         return;
       }
 
       const sourceLabel = getDisplayedLayoutSourceLabel();
       const population = Number(checkpoint.incumbent?.objective?.value ?? 0).toLocaleString();
-      let message = `Using ${sourceLabel} as the default CP-SAT hint. Best population ${population}.`;
+      let message = `Using ${sourceLabel} as the default ${defaultLabel}. Best population ${population}.`;
 
       try {
-        const previewRequest = buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false });
-        const currentFingerprint = computeCpSatModelFingerprint(buildCpSatContinuationModelInput(previewRequest));
-        if (state.optimizer !== "cp-sat") {
-          message = `${sourceLabel} is ready as the default CP-SAT hint. Switch to CP-SAT to use it.`;
+        const currentFingerprint = buildCurrentModelFingerprint(previewRequestOptions);
+        if (state.optimizer !== activeOptimizer) {
+          message = `${sourceLabel} is ready as the default ${readyLabel}. Switch to ${activeOptimizer === "cp-sat" ? "CP-SAT" : "LNS"} to use it.`;
         } else if (currentFingerprint !== checkpoint.compatibility.modelFingerprint) {
-          message = `${sourceLabel} is displayed, but the current grid or building settings no longer match it for CP-SAT hinting.`;
+          message = `${sourceLabel} is displayed, but the current grid or building settings no longer match it for ${mismatchLabel}.`;
         }
       } catch {
-        if (state.optimizer !== "cp-sat") {
-          message = `${sourceLabel} is ready as the default CP-SAT hint. Switch to CP-SAT to use it.`;
+        if (state.optimizer !== activeOptimizer) {
+          message = `${sourceLabel} is ready as the default ${readyLabel}. Switch to ${activeOptimizer === "cp-sat" ? "CP-SAT" : "LNS"} to use it.`;
         } else {
-          message = `${sourceLabel} is displayed. Finish the current inputs to use it as a CP-SAT hint.`;
+          message = `${sourceLabel} is displayed. Finish the current inputs to use it as a ${defaultLabel}.`;
         }
       }
 
-      elements.cpSatHintStatus.textContent = message;
+      element.textContent = message;
+    }
+
+    function renderCpSatHintStatus() {
+      renderDisplayedLayoutContinuationStatus({
+        element: elements.cpSatHintStatus,
+        enabled: state.cpSat.useDisplayedHint,
+        disabledMessage: "Default CP-SAT hinting from the displayed output is turned off.",
+        missingMessage: "No displayed output is available to use as a CP-SAT hint.",
+        activeOptimizer: "cp-sat",
+        defaultLabel: "CP-SAT hint",
+        readyLabel: "CP-SAT hint",
+        mismatchLabel: "CP-SAT hinting",
+        previewRequestOptions: { hintMismatch: "ignore", includeWarmStartHint: false },
+      });
     }
 
     function renderLnsSeedStatus() {
-      if (!elements.lnsSeedStatus) return;
-      if (!state.lns.useDisplayedSeed) {
-        elements.lnsSeedStatus.textContent = "Default LNS seeding from the displayed output is turned off.";
-        return;
-      }
-
-      const checkpoint = getDisplayedLayoutCheckpoint();
-      if (!checkpoint) {
-        elements.lnsSeedStatus.textContent = "No displayed output is available to use as an LNS seed.";
-        return;
-      }
-
-      const sourceLabel = getDisplayedLayoutSourceLabel();
-      const population = Number(checkpoint.incumbent?.objective?.value ?? 0).toLocaleString();
-      let message = `Using ${sourceLabel} as the default LNS seed. Best population ${population}.`;
-
-      try {
-        const previewRequest = buildSolveRequest({
+      renderDisplayedLayoutContinuationStatus({
+        element: elements.lnsSeedStatus,
+        enabled: state.lns.useDisplayedSeed,
+        disabledMessage: "Default LNS seeding from the displayed output is turned off.",
+        missingMessage: "No displayed output is available to use as an LNS seed.",
+        activeOptimizer: "lns",
+        defaultLabel: "LNS seed",
+        readyLabel: "LNS seed",
+        mismatchLabel: "LNS seeding",
+        previewRequestOptions: {
           hintMismatch: "ignore",
           includeWarmStartHint: false,
           includeLnsSeed: false,
-        });
-        const currentFingerprint = computeCpSatModelFingerprint(buildCpSatContinuationModelInput(previewRequest));
-        if (state.optimizer !== "lns") {
-          message = `${sourceLabel} is ready as the default LNS seed. Switch to LNS to use it.`;
-        } else if (currentFingerprint !== checkpoint.compatibility.modelFingerprint) {
-          message = `${sourceLabel} is displayed, but the current grid or building settings no longer match it for LNS seeding.`;
-        }
-      } catch {
-        if (state.optimizer !== "lns") {
-          message = `${sourceLabel} is ready as the default LNS seed. Switch to LNS to use it.`;
-        } else {
-          message = `${sourceLabel} is displayed. Finish the current inputs to use it as an LNS seed.`;
-        }
-      }
-
-      elements.lnsSeedStatus.textContent = message;
+        },
+      });
     }
 
-    function buildCpSatWarmStartHintPayload(grid, params, hintMismatch = "error") {
-      if (params.optimizer !== "cp-sat" || !state.cpSat.useDisplayedHint) return undefined;
+    function buildDisplayedLayoutContinuationBasePayload(grid, params, options) {
+      const {
+        optimizer,
+        enabled,
+        hintMismatch,
+        mismatchMessage,
+      } = options;
+      if (params.optimizer !== optimizer || !enabled) return undefined;
 
       const checkpoint = getDisplayedLayoutCheckpoint();
       if (!checkpoint) return undefined;
@@ -146,55 +196,51 @@
       const currentFingerprint = computeCpSatModelFingerprint(buildCpSatContinuationModelInput({ grid, params }));
       if (currentFingerprint !== checkpoint.compatibility.modelFingerprint) {
         if (hintMismatch === "error") {
-          throw new Error(
-            `${sourceLabel} no longer matches the current grid or building settings. Turn off default hinting or restore matching inputs first.`
-          );
+          throw new Error(`${sourceLabel} no longer matches the current grid or building settings. ${mismatchMessage}`);
         }
         return undefined;
       }
 
       return {
-        sourceName: sourceLabel,
-        modelFingerprint: checkpoint.compatibility.modelFingerprint,
-        roadKeys: cloneJson(checkpoint.hint.roadKeys),
-        serviceCandidateKeys: cloneJson(checkpoint.hint.serviceCandidateKeys),
-        residentialCandidateKeys: cloneJson(checkpoint.hint.residentialCandidateKeys),
-        objectiveLowerBound: checkpoint.resumePolicy.objectiveCutoff.value,
-        preferStrictImprove: Boolean(checkpoint.resumePolicy.objectiveCutoff.preferStrictImprove),
-        repairHint: Boolean(checkpoint.resumePolicy.repairHint),
-        fixVariablesToHintedValue: Boolean(checkpoint.resumePolicy.fixVariablesToHintedValue),
-        hintConflictLimit: 20,
+        checkpoint,
+        sourceLabel,
+        payload: {
+          sourceName: sourceLabel,
+          modelFingerprint: checkpoint.compatibility.modelFingerprint,
+          roadKeys: cloneJson(checkpoint.hint.roadKeys),
+          serviceCandidateKeys: cloneJson(checkpoint.hint.serviceCandidateKeys),
+          residentialCandidateKeys: cloneJson(checkpoint.hint.residentialCandidateKeys),
+          objectiveLowerBound: checkpoint.resumePolicy.objectiveCutoff.value,
+          preferStrictImprove: Boolean(checkpoint.resumePolicy.objectiveCutoff.preferStrictImprove),
+          repairHint: Boolean(checkpoint.resumePolicy.repairHint),
+          fixVariablesToHintedValue: Boolean(checkpoint.resumePolicy.fixVariablesToHintedValue),
+          hintConflictLimit: 20,
+        },
       };
     }
 
-    function buildLnsSeedPayload(grid, params, hintMismatch = "error") {
-      if (params.optimizer !== "lns" || !state.lns.useDisplayedSeed) return undefined;
+    function buildCpSatWarmStartHintPayload(grid, params, hintMismatch = "error") {
+      const continuation = buildDisplayedLayoutContinuationBasePayload(grid, params, {
+        optimizer: "cp-sat",
+        enabled: state.cpSat.useDisplayedHint,
+        hintMismatch,
+        mismatchMessage: "Turn off default hinting or restore matching inputs first.",
+      });
+      return continuation?.payload;
+    }
 
-      const checkpoint = getDisplayedLayoutCheckpoint();
-      if (!checkpoint) return undefined;
-      const sourceLabel = getDisplayedLayoutSourceLabel();
-      const currentFingerprint = computeCpSatModelFingerprint(buildCpSatContinuationModelInput({ grid, params }));
-      if (currentFingerprint !== checkpoint.compatibility.modelFingerprint) {
-        if (hintMismatch === "error") {
-          throw new Error(
-            `${sourceLabel} no longer matches the current grid or building settings. Turn off default seeding or restore matching inputs first.`
-          );
-        }
-        return undefined;
-      }
+    function buildLnsSeedPayload(grid, params, hintMismatch = "error") {
+      const continuation = buildDisplayedLayoutContinuationBasePayload(grid, params, {
+        optimizer: "lns",
+        enabled: state.lns.useDisplayedSeed,
+        hintMismatch,
+        mismatchMessage: "Turn off default seeding or restore matching inputs first.",
+      });
+      if (!continuation) return undefined;
 
       return {
-        sourceName: sourceLabel,
-        modelFingerprint: checkpoint.compatibility.modelFingerprint,
-        roadKeys: cloneJson(checkpoint.hint.roadKeys),
-        serviceCandidateKeys: cloneJson(checkpoint.hint.serviceCandidateKeys),
-        residentialCandidateKeys: cloneJson(checkpoint.hint.residentialCandidateKeys),
-        solution: cloneJson(checkpoint.hint.solution),
-        objectiveLowerBound: checkpoint.resumePolicy.objectiveCutoff.value,
-        preferStrictImprove: Boolean(checkpoint.resumePolicy.objectiveCutoff.preferStrictImprove),
-        repairHint: Boolean(checkpoint.resumePolicy.repairHint),
-        fixVariablesToHintedValue: Boolean(checkpoint.resumePolicy.fixVariablesToHintedValue),
-        hintConflictLimit: 20,
+        ...continuation.payload,
+        solution: cloneJson(continuation.checkpoint.hint.solution),
       };
     }
 
@@ -224,6 +270,7 @@
         cpSat: {
           numWorkers: clampInteger(state.cpSat.numWorkers, 8, 1),
           logSearchProgress: Boolean(state.cpSat.logSearchProgress),
+          useDisplayedHint: Boolean(state.cpSat.useDisplayedHint),
           ...(cpSatRandomSeed !== undefined ? { randomSeed: cpSatRandomSeed } : {}),
           ...(timeLimitSeconds !== undefined ? { timeLimitSeconds } : {}),
           ...(noImprovementTimeoutSeconds !== undefined ? { noImprovementTimeoutSeconds } : {}),
@@ -235,6 +282,7 @@
           neighborhoodRows: clampInteger(state.lns.neighborhoodRows, defaultNeighborhoodRows, 1),
           neighborhoodCols: clampInteger(state.lns.neighborhoodCols, defaultNeighborhoodCols, 1),
           repairTimeLimitSeconds: clampInteger(state.lns.repairTimeLimitSeconds, 5, 1),
+          useDisplayedSeed: Boolean(state.lns.useDisplayedSeed),
         },
       };
 

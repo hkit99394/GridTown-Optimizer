@@ -2,21 +2,13 @@
  * Background worker for greedy solves used by the local web planner.
  */
 
+import { serializeSolution } from "./solutionSerialization.js";
 import { solveGreedy } from "./solver.js";
-import type { Grid, Solution, SolverParams } from "./types.js";
+import type { Grid, SolverParams } from "./types.js";
 
 interface SolveRequest {
   grid: Grid;
   params: SolverParams;
-}
-
-type SerializedSolution = Omit<Solution, "roads"> & { roads: string[] };
-
-function serializeSolution(solution: Solution): SerializedSolution {
-  return {
-    ...solution,
-    roads: Array.from(solution.roads),
-  };
 }
 
 async function readStdin(): Promise<string> {

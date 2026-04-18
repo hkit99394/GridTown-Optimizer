@@ -97,10 +97,26 @@
     return Math.round(number);
   }
 
+  const INVALID_CONTINUATION_LAYOUT_ERROR =
+    "Only valid layouts can be reused as a CP-SAT hint or LNS seed. Fix the validation errors first.";
+  const MISSING_CONTINUATION_VALIDATION_ERROR =
+    "This layout is missing validation metadata. Re-evaluate or re-save it before reusing it as a CP-SAT hint or LNS seed.";
+
+  function validateContinuationSourceResult(result) {
+    if (!result?.validation || result.validation.valid !== true) {
+      if (result?.validation?.valid === false) {
+        throw new Error(INVALID_CONTINUATION_LAYOUT_ERROR);
+      }
+      throw new Error(MISSING_CONTINUATION_VALIDATION_ERROR);
+    }
+    return result.validation;
+  }
+
   function buildCpSatWarmStartCheckpoint(result, resultContext, elapsedMs) {
     if (!result?.solution || !resultContext?.grid || !resultContext?.params) {
       throw new Error("This saved layout does not include enough data to build a CP-SAT hint.");
     }
+    const validation = validateContinuationSourceResult(result);
 
     const solution = result.solution;
     const modelInput = buildCpSatContinuationModelInput(resultContext);
@@ -143,7 +159,7 @@
         objective: {
           name: "totalPopulation",
           sense: "maximize",
-          value: Number(solution.totalPopulation ?? 0),
+          value: Number(validation.recomputedTotalPopulation ?? solution.totalPopulation ?? 0),
           bestBound: null,
         },
         elapsedMs: normalizeElapsedMs(elapsedMs),
@@ -173,7 +189,7 @@
             population: solution.populations?.[index] ?? 0,
           })),
           populations: cloneJson(solution.populations ?? []),
-          totalPopulation: Number(solution.totalPopulation ?? 0),
+          totalPopulation: Number(validation.recomputedTotalPopulation ?? solution.totalPopulation ?? 0),
         },
       },
       resumePolicy: {
@@ -183,7 +199,7 @@
         fixVariablesToHintedValue: false,
         objectiveCutoff: {
           op: ">=",
-          value: Number(solution.totalPopulation ?? 0),
+          value: Number(validation.recomputedTotalPopulation ?? solution.totalPopulation ?? 0),
           preferStrictImprove: false,
         },
       },

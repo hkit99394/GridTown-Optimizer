@@ -75,6 +75,7 @@
           ...(params.cpSat.numWorkers != null ? { numWorkers: params.cpSat.numWorkers } : {}),
           ...(params.cpSat.logSearchProgress != null ? { logSearchProgress: Boolean(params.cpSat.logSearchProgress) } : {}),
           ...(params.cpSat.pythonExecutable != null ? { pythonExecutable: String(params.cpSat.pythonExecutable) } : {}),
+          ...(params.cpSat.useDisplayedHint != null ? { useDisplayedHint: Boolean(params.cpSat.useDisplayedHint) } : {}),
         };
       }
 

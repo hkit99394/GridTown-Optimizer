@@ -6,11 +6,15 @@ export type SolveJobStatus = "running" | "completed" | "stopped" | "failed";
 
 const DEFAULT_PROGRESS_LOG_INTERVAL_MS = 60 * 1000;
 const DEFAULT_PROGRESS_LOG_POLL_INTERVAL_MS = 5 * 1000;
+const DEFAULT_COMPLETED_JOB_RETENTION_MS = 15 * 60 * 1000;
+const DEFAULT_MAX_RETAINED_COMPLETED_JOBS = 64;
 
 export interface SolveJobManagerOptions {
   progressLogRoot?: string;
   progressLogIntervalMs?: number;
   progressLogPollIntervalMs?: number;
+  completedJobRetentionMs?: number;
+  maxRetainedCompletedJobs?: number;
 }
 
 export interface SolveJob {
@@ -61,14 +65,19 @@ export class SolveJobManager {
   private readonly progressLogRoot?: string;
   private readonly progressLogIntervalMs: number;
   private readonly progressLogPollIntervalMs: number;
+  private readonly completedJobRetentionMs: number;
+  private readonly maxRetainedCompletedJobs: number;
 
   constructor(options: SolveJobManagerOptions = {}) {
     this.progressLogRoot = options.progressLogRoot;
     this.progressLogIntervalMs = options.progressLogIntervalMs ?? DEFAULT_PROGRESS_LOG_INTERVAL_MS;
     this.progressLogPollIntervalMs = options.progressLogPollIntervalMs ?? DEFAULT_PROGRESS_LOG_POLL_INTERVAL_MS;
+    this.completedJobRetentionMs = Math.max(0, options.completedJobRetentionMs ?? DEFAULT_COMPLETED_JOB_RETENTION_MS);
+    this.maxRetainedCompletedJobs = Math.max(1, options.maxRetainedCompletedJobs ?? DEFAULT_MAX_RETAINED_COMPLETED_JOBS);
   }
 
   start(grid: Grid, params: SolverParams, requestId: string): SolveJob {
+    this.pruneJobs();
     const optimizerAdapter = getOptimizerAdapter(params);
     const optimizer = optimizerAdapter.name;
     const handle = optimizerAdapter.startBackgroundSolve(grid, params);
@@ -106,76 +115,48 @@ export class SolveJobManager {
 
     void handle.promise
       .then((solution) => {
-        job.solution = solution;
-        job.status = solution.stoppedByUser || job.cancelRequested ? "stopped" : "completed";
-        job.message = job.status === "stopped"
+        const status = solution.stoppedByUser || job.cancelRequested ? "stopped" : "completed";
+        const message = status === "stopped"
           ? "Solve was stopped by user. Showing the best feasible result found so far."
           : null;
-        job.error = null;
-        job.progressLogWriter.appendSolutionSample(solution, {
-          elapsedMs: Date.now() - job.createdAt,
-          source: "final-result",
-        });
-        job.progressLogWriter.finish(job.status, {
-          finishedAtMs: Date.now(),
-          solution,
-          message: job.message,
-          error: null,
-        });
+        this.finalizeJobWithSolution(job, solution, status, message);
       })
       .catch((error) => {
         const recoveredSolution = job.handle?.getLatestSnapshot() ?? null;
         if (recoveredSolution) {
-          job.solution = {
+          const solution = {
             ...recoveredSolution,
             stoppedByUser: job.cancelRequested ? true : Boolean(recoveredSolution.stoppedByUser),
           };
-          job.status = job.cancelRequested ? "stopped" : "completed";
-          job.message = job.cancelRequested
+          const status = job.cancelRequested ? "stopped" : "completed";
+          const message = job.cancelRequested
             ? "Solve was stopped by user. Showing the best feasible result found so far."
             : buildRecoveredSolveMessage(job, error);
-          job.error = null;
-          job.progressLogWriter.appendSolutionSample(job.solution, {
-            elapsedMs: Date.now() - job.createdAt,
-            source: "final-result",
-          });
-          job.progressLogWriter.finish(job.status, {
-            finishedAtMs: Date.now(),
-            solution: job.solution,
-            message: job.message,
-            error: null,
-          });
+          this.finalizeJobWithSolution(job, solution, status, message);
           return;
         }
 
-        job.solution = null;
-        job.status = job.cancelRequested ? "stopped" : "failed";
-        job.message = job.cancelRequested ? "Solve was stopped before a feasible solution was found." : null;
-        job.error = error instanceof Error ? error.message : "Unknown CP-SAT error.";
-        job.progressLogWriter.finish(job.status, {
-          finishedAtMs: Date.now(),
-          solution: null,
-          message: job.message,
-          error: job.error,
-        });
+        this.finalizeJobWithoutSolution(
+          job,
+          job.cancelRequested ? "stopped" : "failed",
+          job.cancelRequested ? "Solve was stopped before a feasible solution was found." : null,
+          error instanceof Error ? error.message : "Unknown CP-SAT error."
+        );
       })
       .finally(() => {
-        if (job.progressLogIntervalHandle) {
-          clearInterval(job.progressLogIntervalHandle);
-          job.progressLogIntervalHandle = null;
-        }
-        job.handle = null;
-        job.finishedAt = Date.now();
+        this.releaseJobResources(job);
       });
 
     return job;
   }
 
   get(requestId: string): SolveJob | null {
+    this.pruneJobs();
     return this.jobs.get(requestId) ?? null;
   }
 
   replaceIfIdle(requestId: string): SolveJob | null {
+    this.pruneJobs();
     const existingJob = this.jobs.get(requestId) ?? null;
     if (existingJob && existingJob.status !== "running") {
       this.jobs.delete(requestId);
@@ -184,6 +165,7 @@ export class SolveJobManager {
   }
 
   getStatus(requestId: string, includeSnapshot: boolean): SolveJobStatusView | null {
+    this.pruneJobs();
     const job = this.jobs.get(requestId) ?? null;
     if (!job) return null;
 
@@ -200,6 +182,7 @@ export class SolveJobManager {
   }
 
   cancel(requestId: string): SolveJob | null {
+    this.pruneJobs();
     const job = this.jobs.get(requestId) ?? null;
     if (!job || job.status !== "running" || !job.handle) {
       return job;
@@ -208,6 +191,80 @@ export class SolveJobManager {
     job.cancelRequested = true;
     job.handle.cancel();
     return job;
+  }
+
+  private pruneJobs(now = Date.now()): void {
+    const retainedCompletedJobs: SolveJob[] = [];
+
+    for (const [requestId, job] of this.jobs) {
+      if (job.status === "running") continue;
+
+      const finishedAt = job.finishedAt ?? job.createdAt;
+      if (now - finishedAt > this.completedJobRetentionMs) {
+        this.jobs.delete(requestId);
+        continue;
+      }
+      retainedCompletedJobs.push(job);
+    }
+
+    if (retainedCompletedJobs.length <= this.maxRetainedCompletedJobs) return;
+
+    retainedCompletedJobs.sort((left, right) => (left.finishedAt ?? left.createdAt) - (right.finishedAt ?? right.createdAt));
+    for (const job of retainedCompletedJobs.slice(0, retainedCompletedJobs.length - this.maxRetainedCompletedJobs)) {
+      this.jobs.delete(job.requestId);
+    }
+  }
+
+  private finalizeJobWithSolution(
+    job: SolveJob,
+    solution: Solution,
+    status: Exclude<SolveJobStatus, "running" | "failed"> | "completed",
+    message: string | null
+  ): void {
+    const finishedAtMs = Date.now();
+    job.solution = solution;
+    job.status = status;
+    job.message = message;
+    job.error = null;
+    job.progressLogWriter.appendSolutionSample(solution, {
+      elapsedMs: finishedAtMs - job.createdAt,
+      source: "final-result",
+    });
+    job.progressLogWriter.finish(status, {
+      finishedAtMs,
+      solution,
+      message,
+      error: null,
+    });
+  }
+
+  private finalizeJobWithoutSolution(
+    job: SolveJob,
+    status: Exclude<SolveJobStatus, "running" | "completed">,
+    message: string | null,
+    error: string
+  ): void {
+    const finishedAtMs = Date.now();
+    job.solution = null;
+    job.status = status;
+    job.message = message;
+    job.error = error;
+    job.progressLogWriter.finish(status, {
+      finishedAtMs,
+      solution: null,
+      message,
+      error,
+    });
+  }
+
+  private releaseJobResources(job: SolveJob): void {
+    if (job.progressLogIntervalHandle) {
+      clearInterval(job.progressLogIntervalHandle);
+      job.progressLogIntervalHandle = null;
+    }
+    job.handle = null;
+    job.finishedAt = Date.now();
+    this.pruneJobs(job.finishedAt);
   }
 
   private startProgressLogTicker(job: SolveJob): NodeJS.Timeout {

@@ -1,9 +1,11 @@
 const assert = require("node:assert/strict");
+const { EventEmitter } = require("node:events");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const { Readable } = require("node:stream");
 
+const optimizerRegistry = require("../dist/optimizerRegistry.js");
 const { SolveJobManager } = require("../dist/solveJobManager.js");
 const { createPlannerRequestHandler } = require("../dist/webServerRequestHandler.js");
 const { solve } = require("../dist/index.js");
@@ -17,20 +19,92 @@ function createMockRequest(method, url, body = "") {
 }
 
 function createMockResponse() {
-  return {
-    statusCode: 0,
-    headers: {},
-    body: "",
-    writeHead(statusCode, headers) {
-      this.statusCode = statusCode;
-      this.headers = headers ?? {};
-    },
-    end(chunk) {
-      if (chunk) {
-        this.body += Buffer.isBuffer(chunk) ? chunk.toString("utf8") : String(chunk);
-      }
-    },
+  const response = new EventEmitter();
+  response.statusCode = 0;
+  response.headers = {};
+  response.body = "";
+  response.writableEnded = false;
+  response.writeHead = function writeHead(statusCode, headers) {
+    this.statusCode = statusCode;
+    this.headers = headers ?? {};
   };
+  response.end = function end(chunk) {
+    this.writableEnded = true;
+    if (chunk) {
+      this.body += Buffer.isBuffer(chunk) ? chunk.toString("utf8") : String(chunk);
+    }
+  };
+  return response;
+}
+
+function createDeferred() {
+  let resolve;
+  const promise = new Promise((promiseResolve) => {
+    resolve = promiseResolve;
+  });
+  return { promise, resolve };
+}
+
+function waitForNextTurn() {
+  return new Promise((resolve) => setImmediate(resolve));
+}
+
+async function testImmediateSolveCancelsOnDisconnect(handler) {
+  const solvePayload = buildTinySolvePayload();
+  const backgroundSolution = solve(solvePayload.grid, solvePayload.params);
+  const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+  let cancelCalled = false;
+  const handlePromiseDeferred = createDeferred();
+  let fallbackResolveTimer = null;
+  const startBackgroundSolveDeferred = createDeferred();
+
+  optimizerRegistry.getOptimizerAdapter = () => ({
+    name: "greedy",
+    solve() {
+      throw new Error("Immediate solves should use the non-blocking background adapter.");
+    },
+    startBackgroundSolve() {
+      startBackgroundSolveDeferred.resolve();
+      return {
+        promise: handlePromiseDeferred.promise,
+        cancel() {
+          cancelCalled = true;
+          handlePromiseDeferred.resolve(backgroundSolution);
+        },
+        getLatestSnapshot() {
+          return null;
+        },
+        getLatestSnapshotState() {
+          return {
+            hasFeasibleSolution: false,
+            totalPopulation: null,
+          };
+        },
+      };
+    },
+  });
+
+  try {
+    const req = createMockRequest("POST", "/api/solve", JSON.stringify(solvePayload));
+    const res = createMockResponse();
+    const pending = handler(req, res);
+    await startBackgroundSolveDeferred.promise;
+    await waitForNextTurn();
+    fallbackResolveTimer = setTimeout(() => {
+      handlePromiseDeferred.resolve(backgroundSolution);
+    }, 50);
+    res.emit("close");
+    await pending;
+    clearTimeout(fallbackResolveTimer);
+    fallbackResolveTimer = null;
+
+    assert.equal(cancelCalled, true);
+    assert.equal(res.writableEnded, false);
+    assert.equal(res.body, "");
+  } finally {
+    if (fallbackResolveTimer) clearTimeout(fallbackResolveTimer);
+    optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
+  }
 }
 
 async function invoke(handler, { method = "GET", url = "/", json = undefined, body = undefined }) {
@@ -96,6 +170,18 @@ async function testStaticPlannerModules(handler) {
   assert.match(result.body, /CityBuilderShell/);
 }
 
+async function testUnexpectedStaticServerErrorsReturnInternalServerError() {
+  const handler = createPlannerRequestHandler({
+    webRoot: path.resolve(__dirname, "../web-does-not-exist"),
+  });
+
+  const result = await invoke(handler, { method: "GET", url: "/" });
+
+  assert.equal(result.statusCode, 500);
+  assert.equal(result.payload.ok, false);
+  assert.match(result.payload.error, /ENOENT/);
+}
+
 async function testMethodNotAllowed(handler) {
   const result = await invoke(handler, { method: "PUT", url: "/api/solve" });
   assert.equal(result.statusCode, 405);
@@ -105,16 +191,98 @@ async function testMethodNotAllowed(handler) {
 
 async function testImmediateSolveRoute(handler) {
   const solvePayload = buildTinySolvePayload();
-  const result = await invoke(handler, {
-    method: "POST",
-    url: "/api/solve",
-    json: solvePayload,
+  const backgroundSolution = solve(solvePayload.grid, solvePayload.params);
+  const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+  let solveCalled = false;
+  let startBackgroundSolveCalled = false;
+
+  optimizerRegistry.getOptimizerAdapter = () => ({
+    name: "greedy",
+    solve() {
+      solveCalled = true;
+      throw new Error("Immediate solves should use the non-blocking background adapter.");
+    },
+    startBackgroundSolve() {
+      startBackgroundSolveCalled = true;
+      return {
+        promise: Promise.resolve(backgroundSolution),
+        cancel() {},
+        getLatestSnapshot() {
+          return null;
+        },
+        getLatestSnapshotState() {
+          return {
+            hasFeasibleSolution: false,
+            totalPopulation: null,
+          };
+        },
+      };
+    },
   });
 
-  assert.equal(result.statusCode, 200);
-  assert.equal(result.payload.ok, true);
-  assert.equal(result.payload.stats.totalPopulation, 100);
-  assert.equal(result.payload.solution.residentials.length, 1);
+  try {
+    const result = await invoke(handler, {
+      method: "POST",
+      url: "/api/solve",
+      json: solvePayload,
+    });
+
+    assert.equal(result.statusCode, 200);
+    assert.equal(result.payload.ok, true);
+    assert.equal(result.payload.stats.totalPopulation, 100);
+    assert.equal(result.payload.solution.residentials.length, 1);
+    assert.equal(startBackgroundSolveCalled, true);
+    assert.equal(solveCalled, false);
+  } finally {
+    optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
+  }
+}
+
+async function testImmediateSolveBackendJsonErrorsReturnInternalServerError(handler) {
+  const solvePayload = buildTinySolvePayload();
+  const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+
+  optimizerRegistry.getOptimizerAdapter = () => ({
+    name: "cp-sat",
+    solve() {
+      throw new Error("Immediate solves should use the non-blocking background adapter.");
+    },
+    startBackgroundSolve() {
+      return {
+        promise: Promise.reject(new Error("CP-SAT backend returned invalid JSON: broken payload")),
+        cancel() {},
+        getLatestSnapshot() {
+          return null;
+        },
+        getLatestSnapshotState() {
+          return {
+            hasFeasibleSolution: false,
+            totalPopulation: null,
+          };
+        },
+      };
+    },
+  });
+
+  try {
+    const result = await invoke(handler, {
+      method: "POST",
+      url: "/api/solve",
+      json: {
+        ...solvePayload,
+        params: {
+          ...solvePayload.params,
+          optimizer: "cp-sat",
+        },
+      },
+    });
+
+    assert.equal(result.statusCode, 500);
+    assert.equal(result.payload.ok, false);
+    assert.equal(result.payload.error, "CP-SAT backend returned invalid JSON: broken payload");
+  } finally {
+    optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
+  }
 }
 
 async function testLayoutEvaluateRoute(handler) {
@@ -141,6 +309,31 @@ async function testLayoutEvaluateRoute(handler) {
   assert.equal(result.payload.solution.manualLayout, true);
   assert.equal(result.payload.stats.manualLayout, true);
   assert.equal(result.payload.stats.cpSatStatus, null);
+}
+
+async function testLayoutEvaluateRejectsMalformedSerializedSolutions(handler) {
+  const solvePayload = buildTinySolvePayload();
+  const solved = solve(solvePayload.grid, solvePayload.params);
+  const serializedSolution = {
+    ...solved,
+    roads: [{}],
+  };
+
+  const result = await invoke(handler, {
+    method: "POST",
+    url: "/api/layout/evaluate",
+    json: {
+      ...solvePayload,
+      solution: serializedSolution,
+    },
+  });
+
+  assert.equal(result.statusCode, 400);
+  assert.equal(result.payload.ok, false);
+  assert.equal(
+    result.payload.error,
+    "Invalid layout-evaluate payload. Expected { grid, params, solution } with a rectangular 0/1 grid."
+  );
 }
 
 async function testBackgroundSolveRoutes(handler) {
@@ -191,6 +384,43 @@ async function testCancelMissingSolveRoute(handler) {
   assert.equal(result.payload.stopped, false);
 }
 
+async function testCompletedSolveJobsExpire() {
+  const progressLogRoot = fs.mkdtempSync(path.join(os.tmpdir(), "planner-route-expiry-"));
+  const handler = createPlannerRequestHandler({
+    webRoot: path.resolve(__dirname, "../web"),
+    solveJobManager: new SolveJobManager({
+      progressLogRoot,
+      progressLogIntervalMs: 10,
+      progressLogPollIntervalMs: 5,
+      completedJobRetentionMs: 50,
+    }),
+  });
+  const solvePayload = buildTinySolvePayload();
+  const requestId = "expiring-route-test-greedy";
+  const startResult = await invoke(handler, {
+    method: "POST",
+    url: "/api/solve/start",
+    json: {
+      ...solvePayload,
+      requestId,
+    },
+  });
+
+  assert.equal(startResult.statusCode, 202);
+  await waitForSolve(handler, requestId);
+  await new Promise((resolve) => setTimeout(resolve, 80));
+
+  const expiredResult = await invoke(handler, {
+    method: "GET",
+    url: `/api/solve/status?${new URLSearchParams({ requestId }).toString()}`,
+  });
+
+  assert.equal(expiredResult.statusCode, 404);
+  assert.equal(expiredResult.payload.ok, false);
+  assert.match(expiredResult.payload.error, /No solve job was found/);
+  assert.equal(fs.existsSync(startResult.payload.progressLogFilePath), true);
+}
+
 async function main() {
   const progressLogRoot = fs.mkdtempSync(path.join(os.tmpdir(), "planner-route-logs-"));
   const handler = createPlannerRequestHandler({
@@ -204,11 +434,16 @@ async function main() {
 
   await testHealthRoute(handler);
   await testStaticPlannerModules(handler);
+  await testUnexpectedStaticServerErrorsReturnInternalServerError();
   await testMethodNotAllowed(handler);
   await testImmediateSolveRoute(handler);
+  await testImmediateSolveBackendJsonErrorsReturnInternalServerError(handler);
+  await testImmediateSolveCancelsOnDisconnect(handler);
   await testLayoutEvaluateRoute(handler);
+  await testLayoutEvaluateRejectsMalformedSerializedSolutions(handler);
   await testBackgroundSolveRoutes(handler);
   await testCancelMissingSolveRoute(handler);
+  await testCompletedSolveJobsExpire();
 
   console.log("Web server route tests passed.");
 }

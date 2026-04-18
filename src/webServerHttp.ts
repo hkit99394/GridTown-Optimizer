@@ -1,4 +1,5 @@
 import { validateSolutionMap } from "./index.js";
+import { materializeSerializedSolution, serializeSolution } from "./solutionSerialization.js";
 import type { Grid, SerializedSolution, Solution, SolverParams } from "./types.js";
 
 export interface SolveRequest {
@@ -15,6 +16,39 @@ export interface LayoutEvaluateRequest {
 
 export interface CancelSolveRequest {
   requestId: string;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isInteger(value: unknown, minimum = 0): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= minimum;
+}
+
+function isRoadKey(value: unknown): value is string {
+  if (typeof value !== "string") return false;
+  const parts = value.split(",");
+  if (parts.length !== 2) return false;
+  const [row, col] = parts.map(Number);
+  return Number.isInteger(row) && row >= 0 && Number.isInteger(col) && col >= 0;
+}
+
+function isSerializedServicePlacement(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  return isInteger(value.r)
+    && isInteger(value.c)
+    && isInteger(value.rows, 1)
+    && isInteger(value.cols, 1)
+    && isInteger(value.range);
+}
+
+function isSerializedResidentialPlacement(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  return isInteger(value.r)
+    && isInteger(value.c)
+    && isInteger(value.rows, 1)
+    && isInteger(value.cols, 1);
 }
 
 export function isGrid(value: unknown): value is Grid {
@@ -43,13 +77,24 @@ export function isSerializedSolution(value: unknown): value is SerializedSolutio
   if (typeof value !== "object" || value === null) return false;
   const candidate = value as Partial<SerializedSolution>;
   return Array.isArray(candidate.roads)
+    && candidate.roads.every((road) => isRoadKey(road))
     && Array.isArray(candidate.services)
+    && candidate.services.every((service) => isSerializedServicePlacement(service))
     && Array.isArray(candidate.serviceTypeIndices)
+    && candidate.serviceTypeIndices.length === candidate.services.length
+    && candidate.serviceTypeIndices.every((typeIndex) => isInteger(typeIndex, -1))
     && Array.isArray(candidate.servicePopulationIncreases)
+    && candidate.servicePopulationIncreases.length === candidate.services.length
+    && candidate.servicePopulationIncreases.every((bonus) => isInteger(bonus))
     && Array.isArray(candidate.residentials)
+    && candidate.residentials.every((residential) => isSerializedResidentialPlacement(residential))
     && Array.isArray(candidate.residentialTypeIndices)
+    && candidate.residentialTypeIndices.length === candidate.residentials.length
+    && candidate.residentialTypeIndices.every((typeIndex) => isInteger(typeIndex, -1))
     && Array.isArray(candidate.populations)
-    && typeof candidate.totalPopulation === "number";
+    && candidate.populations.length === candidate.residentials.length
+    && candidate.populations.every((population) => isInteger(population))
+    && isInteger(candidate.totalPopulation);
 }
 
 export function isLayoutEvaluateRequest(value: unknown): value is LayoutEvaluateRequest {
@@ -58,19 +103,7 @@ export function isLayoutEvaluateRequest(value: unknown): value is LayoutEvaluate
   return isGrid(candidate.grid) && typeof candidate.params === "object" && candidate.params !== null && isSerializedSolution(candidate.solution);
 }
 
-export function materializeSerializedSolution(solution: SerializedSolution): Solution {
-  return {
-    ...solution,
-    roads: new Set(solution.roads),
-  };
-}
-
-function serializeSolution(solution: Solution): SerializedSolution {
-  return {
-    ...solution,
-    roads: Array.from(solution.roads),
-  };
-}
+export { materializeSerializedSolution };
 
 export function buildSolveResponsePayload(grid: Grid, params: SolverParams, solution: Solution) {
   return validateSolutionMap({

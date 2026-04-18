@@ -585,8 +585,14 @@ Road cells are encoded as `"r,c"` strings inside the `Set`.
 - [src/lnsSolver.ts](./src/lnsSolver.ts): LNS solver
 - [src/cpSatSolver.ts](./src/cpSatSolver.ts): TypeScript bridge for CP-SAT
 - [python/cp_sat_solver.py](./python/cp_sat_solver.py): OR-Tools CP-SAT model
+- [src/lnsNeighborhoods.ts](./src/lnsNeighborhoods.ts): LNS neighborhood planning and escalation
+- [src/solutionSerialization.ts](./src/solutionSerialization.ts): shared solution serialization and snapshot persistence
+- [src/greedyRow0Anchors.ts](./src/greedyRow0Anchors.ts): greedy row-0 feasibility and anchor refinement helpers
 - [src/solveJobManager.ts](./src/solveJobManager.ts): background solve job lifecycle
-- [src/webServerRequestHandler.ts](./src/webServerRequestHandler.ts): web planner request handling
+- [src/webServerRequestHandler.ts](./src/webServerRequestHandler.ts): thin planner request composition
+- [src/webServerApiRoutes.ts](./src/webServerApiRoutes.ts): planner API route handlers
+- [src/webServerTransport.ts](./src/webServerTransport.ts): shared HTTP transport helpers
+- [src/webServerStatic.ts](./src/webServerStatic.ts): local planner static asset serving
 - [web/](./web): planner UI modules
 - [src/evaluator.ts](./src/evaluator.ts): validation and exact scoring
 - [src/map.ts](./src/map.ts): ASCII rendering and map-aware validation

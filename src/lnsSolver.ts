@@ -2,12 +2,15 @@
  * Large Neighborhood Search seeded from the greedy incumbent and repaired by CP-SAT.
  */
 
-import { existsSync, renameSync, writeFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 
-import { normalizeServicePlacement, residentialFootprint, serviceEffectZone, serviceFootprint } from "./buildings.js";
+import { normalizeServicePlacement } from "./buildings.js";
 import { solveCpSat } from "./cpSatSolver.js";
-import { height, isAllowed, orthogonalNeighbors, width } from "./grid.js";
+import { validateSolution } from "./evaluator.js";
+import { height, width } from "./grid.js";
+import { buildNeighborhoodWindows, computeResidentialBoostsForSolution, selectNeighborhoodWindow } from "./lnsNeighborhoods.js";
 import { compatibleResidentialTypeIndices, getResidentialBaseMax, NO_TYPE_INDEX } from "./rules.js";
+import { writeSolutionSnapshot } from "./solutionSerialization.js";
 import { solveGreedy } from "./solver.js";
 
 import type {
@@ -19,20 +22,6 @@ import type {
   Solution,
   SolverParams,
 } from "./types.js";
-import { cellFromKey, cellKey } from "./types.js";
-
-type SerializedSolution = Omit<Solution, "roads"> & { roads: string[] };
-
-interface NeighborhoodAnchor {
-  r: number;
-  c: number;
-  rows: number;
-  cols: number;
-}
-
-interface RankedNeighborhoodAnchor extends NeighborhoodAnchor {
-  score: number;
-}
 
 type NormalizedLnsOptions = Omit<Required<LnsOptions>, "seedHint"> & {
   seedHint?: CpSatWarmStartHint;
@@ -53,19 +42,6 @@ function getLnsOptions(G: Grid, params: SolverParams): NormalizedLnsOptions {
     stopFilePath: lns.stopFilePath ?? "",
     snapshotFilePath: lns.snapshotFilePath ?? "",
   };
-}
-
-function serializeSolution(solution: Solution): SerializedSolution {
-  return {
-    ...solution,
-    roads: Array.from(solution.roads),
-  };
-}
-
-function writeSolutionSnapshot(snapshotFilePath: string, solution: Solution): void {
-  const tempPath = `${snapshotFilePath}.tmp`;
-  writeFileSync(tempPath, JSON.stringify(serializeSolution(solution)));
-  renameSync(tempPath, snapshotFilePath);
 }
 
 function serviceCandidateKey(solution: Solution, index: number): string {
@@ -118,265 +94,7 @@ function buildWarmStartHint(solution: Solution, neighborhoodWindow: CpSatNeighbo
     fixOutsideNeighborhoodToHintedValue: true,
   };
 }
-
-function clampNeighborhoodWindow(
-  G: Grid,
-  anchor: NeighborhoodAnchor,
-  neighborhoodRows: number,
-  neighborhoodCols: number
-): CpSatNeighborhoodWindow | null {
-  const H = height(G);
-  const W = width(G);
-  if (H === 0 || W === 0) return null;
-
-  const repairRowStart = H > 1 ? 1 : 0;
-  const repairableRows = H - repairRowStart;
-  if (repairableRows <= 0) return null;
-
-  const rows = Math.max(1, Math.min(neighborhoodRows, repairableRows));
-  const cols = Math.max(1, Math.min(neighborhoodCols, W));
-  const anchorCenterRow = anchor.r + Math.floor(anchor.rows / 2);
-  const anchorCenterCol = anchor.c + Math.floor(anchor.cols / 2);
-
-  let top = anchorCenterRow - Math.floor(rows / 2);
-  top = Math.max(repairRowStart, Math.min(top, H - rows));
-
-  let left = anchorCenterCol - Math.floor(cols / 2);
-  left = Math.max(0, Math.min(left, W - cols));
-
-  return { top, left, rows, cols };
-}
-
-function addWindow(
-  dedupe: Map<string, CpSatNeighborhoodWindow>,
-  window: CpSatNeighborhoodWindow | null
-): void {
-  if (!window) return;
-  dedupe.set(`${window.top}:${window.left}:${window.rows}:${window.cols}`, window);
-}
-
-function interleaveAnchors(anchorGroups: NeighborhoodAnchor[][]): NeighborhoodAnchor[] {
-  const interleaved: NeighborhoodAnchor[] = [];
-  const maxLength = anchorGroups.reduce((max, group) => Math.max(max, group.length), 0);
-  for (let index = 0; index < maxLength; index++) {
-    for (const group of anchorGroups) {
-      if (index < group.length) interleaved.push(group[index]);
-    }
-  }
-  return interleaved;
-}
-
-function buildOccupiedCellSet(solution: Solution): Set<string> {
-  const occupied = new Set<string>();
-  for (const service of solution.services) {
-    for (const cell of serviceFootprint(service)) occupied.add(cell);
-  }
-  for (const residential of solution.residentials) {
-    for (const cell of residentialFootprint(residential.r, residential.c, residential.rows, residential.cols)) occupied.add(cell);
-  }
-  return occupied;
-}
-
-function buildWeakServiceAnchors(
-  G: Grid,
-  params: SolverParams,
-  incumbent: Solution,
-  limit: number
-): NeighborhoodAnchor[] {
-  if (!incumbent.services.length || limit <= 0) return [];
-
-  const boosts = computeResidentialBoostsForSolution(G, incumbent);
-  const residentialFootprints = incumbent.residentials.map((residential) =>
-    residentialFootprint(residential.r, residential.c, residential.rows, residential.cols)
-  );
-  const serviceEffectZones = incumbent.services.map((service) => new Set(serviceEffectZone(G, service)));
-
-  return incumbent.services
-    .map((service, serviceIndex) => {
-      const serviceBonus = incumbent.servicePopulationIncreases[serviceIndex] ?? 0;
-      const effectZone = serviceEffectZones[serviceIndex];
-      let marginalGain = 0;
-      let coveredResidentials = 0;
-
-      for (let residentialIndex = 0; residentialIndex < incumbent.residentials.length; residentialIndex++) {
-        if (!residentialFootprints[residentialIndex].some((cell) => effectZone.has(cell))) continue;
-        coveredResidentials += 1;
-
-        const residential = incumbent.residentials[residentialIndex];
-        const typeIndex = incumbent.residentialTypeIndices[residentialIndex] ?? NO_TYPE_INDEX;
-        const { base, max } = getResidentialBaseMax(params, residential.rows, residential.cols, typeIndex);
-        const populationWithoutService = Math.min(Math.max(base + boosts[residentialIndex] - serviceBonus, base), max);
-        const populationWithService = incumbent.populations[residentialIndex] ?? Math.min(Math.max(base + boosts[residentialIndex], base), max);
-        marginalGain += populationWithService - populationWithoutService;
-      }
-
-      return {
-        ...normalizeServicePlacement(service),
-        score: marginalGain * 1000 + coveredResidentials,
-        marginalGain,
-        coveredResidentials,
-        serviceBonus,
-      };
-    })
-    .sort((a, b) =>
-      a.score - b.score
-      || a.marginalGain - b.marginalGain
-      || a.coveredResidentials - b.coveredResidentials
-      || a.serviceBonus - b.serviceBonus
-      || a.r - b.r
-      || a.c - b.c
-    )
-    .slice(0, limit)
-    .map(({ r, c, rows, cols }) => ({ r, c, rows, cols }));
-}
-
-function buildResidentialOpportunityAnchors(
-  params: SolverParams,
-  incumbent: Solution,
-  limit: number
-): NeighborhoodAnchor[] {
-  if (!incumbent.residentials.length || limit <= 0) return [];
-
-  return incumbent.residentials
-    .map((residential, index) => {
-      const typeIndex = incumbent.residentialTypeIndices[index] ?? NO_TYPE_INDEX;
-      const { base, max } = getResidentialBaseMax(params, residential.rows, residential.cols, typeIndex);
-      const population = incumbent.populations[index] ?? base;
-      const headroom = Math.max(0, max - population);
-      const totalBoostCapacity = Math.max(1, max - base);
-      return {
-        ...residential,
-        score: headroom * 1000 + Math.round((headroom / totalBoostCapacity) * 100),
-        headroom,
-        population,
-      };
-    })
-    .filter((entry) => entry.headroom > 0)
-    .sort((a, b) =>
-      b.score - a.score
-      || b.headroom - a.headroom
-      || a.population - b.population
-      || a.r - b.r
-      || a.c - b.c
-    )
-    .slice(0, limit)
-    .map(({ r, c, rows, cols }) => ({ r, c, rows, cols }));
-}
-
-function buildFrontierCongestionAnchors(
-  G: Grid,
-  incumbent: Solution,
-  limit: number
-): NeighborhoodAnchor[] {
-  if (limit <= 0) return [];
-
-  const occupied = buildOccupiedCellSet(incumbent);
-  const candidates = new Map<string, RankedNeighborhoodAnchor>();
-
-  for (const roadKey of incumbent.roads) {
-    const { r, c } = cellFromKey(roadKey);
-    if (!isAllowed(G, r, c)) continue;
-    const neighbors = orthogonalNeighbors(G, r, c);
-    let occupiedNeighbors = 0;
-    let frontierNeighbors = 0;
-    for (const [nr, nc] of neighbors) {
-      const neighborKey = cellKey(nr, nc);
-      if (!isAllowed(G, nr, nc)) continue;
-      if (occupied.has(neighborKey)) {
-        occupiedNeighbors += 1;
-      } else if (!incumbent.roads.has(neighborKey)) {
-        frontierNeighbors += 1;
-      }
-    }
-    const score = occupiedNeighbors * 4 + frontierNeighbors;
-    if (score <= 0) continue;
-    candidates.set(`road:${roadKey}`, { r, c, rows: 1, cols: 1, score });
-  }
-
-  const H = height(G);
-  const W = width(G);
-  for (let r = 1; r < H; r++) {
-    for (let c = 0; c < W; c++) {
-      if (!isAllowed(G, r, c)) continue;
-      const key = cellKey(r, c);
-      if (occupied.has(key) || incumbent.roads.has(key)) continue;
-      const neighbors = orthogonalNeighbors(G, r, c);
-      let roadNeighbors = 0;
-      let occupiedNeighbors = 0;
-      for (const [nr, nc] of neighbors) {
-        const neighborKey = cellKey(nr, nc);
-        if (incumbent.roads.has(neighborKey)) roadNeighbors += 1;
-        if (occupied.has(neighborKey)) occupiedNeighbors += 1;
-      }
-      if (roadNeighbors === 0 || occupiedNeighbors === 0) continue;
-      candidates.set(`frontier:${key}`, {
-        r,
-        c,
-        rows: 1,
-        cols: 1,
-        score: occupiedNeighbors * 3 + roadNeighbors * 2,
-      });
-    }
-  }
-
-  return [...candidates.values()]
-    .sort((a, b) => b.score - a.score || a.r - b.r || a.c - b.c)
-    .slice(0, limit)
-    .map(({ r, c, rows, cols }) => ({ r, c, rows, cols }));
-}
-
-export function buildNeighborhoodWindows(
-  G: Grid,
-  params: SolverParams,
-  incumbent: Solution,
-  options: NormalizedLnsOptions
-): CpSatNeighborhoodWindow[] {
-  const windows = new Map<string, CpSatNeighborhoodWindow>();
-  const focusedAnchorLimit = Math.max(3, options.maxNoImprovementIterations * 2);
-
-  const weakResidentials = incumbent.residentials
-    .map((residential, index) => ({
-      ...residential,
-      population: incumbent.populations[index] ?? 0,
-    }))
-    .sort((a, b) => a.population - b.population);
-
-  const focusedAnchors = interleaveAnchors([
-    buildWeakServiceAnchors(G, params, incumbent, focusedAnchorLimit),
-    buildResidentialOpportunityAnchors(params, incumbent, focusedAnchorLimit),
-    buildFrontierCongestionAnchors(G, incumbent, focusedAnchorLimit),
-  ]);
-
-  for (const anchor of focusedAnchors) {
-    addWindow(windows, clampNeighborhoodWindow(G, anchor, options.neighborhoodRows, options.neighborhoodCols));
-  }
-  for (const service of incumbent.services) {
-    addWindow(windows, clampNeighborhoodWindow(G, normalizeServicePlacement(service), options.neighborhoodRows, options.neighborhoodCols));
-  }
-  for (const residential of weakResidentials) {
-    addWindow(windows, clampNeighborhoodWindow(G, residential, options.neighborhoodRows, options.neighborhoodCols));
-  }
-
-  const H = height(G);
-  const W = width(G);
-  const rows = Math.max(1, Math.min(options.neighborhoodRows, H > 1 ? H - 1 : H));
-  const cols = Math.max(1, Math.min(options.neighborhoodCols, W));
-  const rowStart = H > 1 ? 1 : 0;
-  const rowStride = Math.max(1, Math.floor(rows / 2));
-  const colStride = Math.max(1, Math.floor(cols / 2));
-
-  for (let top = rowStart; top <= H - rows; top += rowStride) {
-    for (let left = 0; left <= W - cols; left += colStride) {
-      addWindow(windows, { top, left, rows, cols });
-    }
-    addWindow(windows, { top: Math.max(rowStart, H - rows), left: 0, rows, cols });
-  }
-  for (let left = 0; left <= W - cols; left += colStride) {
-    addWindow(windows, { top: Math.max(rowStart, H - rows), left, rows, cols });
-  }
-
-  return [...windows.values()];
-}
+export { buildNeighborhoodWindows } from "./lnsNeighborhoods.js";
 
 function shouldStop(stopFilePath: string): boolean {
   return Boolean(stopFilePath) && existsSync(stopFilePath);
@@ -467,20 +185,6 @@ function countResidentialTypeUsage(solution: Solution, typeCount: number): numbe
     }
   }
   return counts;
-}
-
-function computeResidentialBoostsForSolution(G: Grid, solution: Solution): number[] {
-  const effectZones = solution.services.map((service) => new Set(serviceEffectZone(G, service)));
-  return solution.residentials.map((residential) => {
-    const footprint = residentialFootprint(residential.r, residential.c, residential.rows, residential.cols);
-    let boost = 0;
-    for (let serviceIndex = 0; serviceIndex < effectZones.length; serviceIndex++) {
-      if (footprint.some((cell) => effectZones[serviceIndex].has(cell))) {
-        boost += solution.servicePopulationIncreases[serviceIndex] ?? 0;
-      }
-    }
-    return boost;
-  });
 }
 
 function recomputeSolutionPopulationTotals(G: Grid, params: SolverParams, solution: Solution): Solution {
@@ -617,36 +321,61 @@ function applyDeterministicDominanceUpgrades(G: Grid, params: SolverParams, solu
   }
 }
 
+function materializeValidSeedSolution(G: Grid, params: SolverParams, seedHint?: CpSatWarmStartHint): Solution | null {
+  const incumbent = materializeSeedSolution(seedHint);
+  if (!incumbent) return null;
+
+  const seedValidation = validateSolution({
+    grid: G,
+    solution: incumbent,
+    params,
+  });
+  return seedValidation.valid ? incumbent : null;
+}
+
+function buildInitialLnsIncumbent(G: Grid, params: SolverParams): Solution {
+  const seededIncumbent = materializeValidSeedSolution(G, params, params.lns?.seedHint);
+  const initialIncumbent = seededIncumbent ?? {
+    ...solveGreedy(G, { ...params, optimizer: "greedy" }),
+    optimizer: "lns" as const,
+  };
+  return applyDeterministicDominanceUpgrades(G, params, initialIncumbent);
+}
+
+function materializeStoppedLnsSolution(incumbent: Solution): Solution {
+  return {
+    ...incumbent,
+    optimizer: "lns",
+    stoppedByUser: true,
+  };
+}
+
+function materializeCompletedLnsSolution(incumbent: Solution): Solution {
+  return {
+    ...incumbent,
+    optimizer: "lns",
+  };
+}
+
 export function solveLns(G: Grid, params: SolverParams): Solution {
   const options = getLnsOptions(G, params);
 
-  let incumbent = materializeSeedSolution(params.lns?.seedHint);
-  if (!incumbent) {
-    incumbent = {
-      ...solveGreedy(G, { ...params, optimizer: "greedy" }),
-      optimizer: "lns",
-    };
-  }
-  incumbent = applyDeterministicDominanceUpgrades(G, params, incumbent);
+  let incumbent = buildInitialLnsIncumbent(G, params);
 
   if (options.snapshotFilePath) writeSolutionSnapshot(options.snapshotFilePath, incumbent);
 
   let stagnantIterations = 0;
   for (let iteration = 0; iteration < options.iterations; iteration++) {
     if (shouldStop(options.stopFilePath)) {
-      return {
-        ...incumbent,
-        optimizer: "lns",
-        stoppedByUser: true,
-      };
+      return materializeStoppedLnsSolution(incumbent);
     }
 
     if (stagnantIterations >= options.maxNoImprovementIterations) break;
 
-    const windows = buildNeighborhoodWindows(G, params, incumbent, options);
+    const windows = buildNeighborhoodWindows(G, params, incumbent, options, stagnantIterations + 1);
     if (windows.length === 0) break;
 
-    const neighborhoodWindow = windows[iteration % windows.length];
+    const neighborhoodWindow = selectNeighborhoodWindow(windows, iteration, stagnantIterations, options);
     try {
       const candidate = solveCpSat(G, {
         ...params,
@@ -674,11 +403,7 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
       stagnantIterations += 1;
     } catch (error) {
       if (shouldStop(options.stopFilePath)) {
-        return {
-          ...incumbent,
-          optimizer: "lns",
-          stoppedByUser: true,
-        };
+        return materializeStoppedLnsSolution(incumbent);
       }
       if (isRecoverableRepairFailure(error)) {
         stagnantIterations += 1;
@@ -688,8 +413,5 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
     }
   }
 
-  return {
-    ...incumbent,
-    optimizer: "lns",
-  };
+  return materializeCompletedLnsSolution(incumbent);
 }

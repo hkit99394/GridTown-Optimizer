@@ -221,6 +221,13 @@
       const existingIndex = entries.findIndex((entry) => entry.name.toLowerCase() === name.toLowerCase());
       const id = existingIndex >= 0 ? entries[existingIndex].id : createSavedEntryId();
       const elapsedMs = normalizeElapsedMs(state.resultElapsedMs || state.solveTimerElapsedMs);
+      let continueCpSat = null;
+      let continuationStatus = "";
+      try {
+        continueCpSat = buildCpSatWarmStartCheckpoint(state.result, state.resultContext, elapsedMs);
+      } catch (error) {
+        continuationStatus = error instanceof Error ? ` ${error.message}` : "";
+      }
       const nextEntry = {
         id,
         name,
@@ -228,7 +235,7 @@
         result: cloneJson(state.result),
         resultContext: cloneJson(state.resultContext),
         elapsedMs,
-        continueCpSat: buildCpSatWarmStartCheckpoint(state.result, state.resultContext, elapsedMs),
+        ...(continueCpSat ? { continueCpSat } : {}),
       };
       if (existingIndex >= 0) {
         entries[existingIndex] = nextEntry;
@@ -238,7 +245,9 @@
       writeStoredEntries(LAYOUT_STORAGE_KEY, entries);
       refreshSavedLayoutOptions(id);
       elements.layoutStorageName.value = name;
-      elements.layoutStorageStatus.textContent = `Saved layout "${name}" with elapsed ${formatElapsedTime(elapsedMs)}.`;
+      elements.layoutStorageStatus.textContent = continueCpSat
+        ? `Saved layout "${name}" with elapsed ${formatElapsedTime(elapsedMs)}.`
+        : `Saved layout "${name}" with elapsed ${formatElapsedTime(elapsedMs)}.${continuationStatus}`;
     }
 
     function loadSelectedLayout() {

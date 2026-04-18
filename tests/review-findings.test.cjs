@@ -9,6 +9,31 @@ const { evaluateLayout } = require("../dist/evaluator.js");
 const { buildManualLayoutResponse } = require("../dist/webServerHttp.js");
 const { SolveProgressLogWriter } = require("../dist/solveProgressLog.js");
 
+function createFakeDomElement(overrides = {}) {
+  return {
+    value: "",
+    checked: false,
+    hidden: false,
+    textContent: "",
+    innerHTML: "",
+    dataset: {},
+    style: {
+      setProperty() {},
+    },
+    parentElement: null,
+    append() {},
+    appendChild() {},
+    setAttribute() {},
+    querySelectorAll() {
+      return [];
+    },
+    classList: {
+      toggle() {},
+    },
+    ...overrides,
+  };
+}
+
 function loadPlannerSharedModule() {
   const source = fs.readFileSync(path.resolve(__dirname, "../web/plannerShared.js"), "utf8");
   const context = {
@@ -62,8 +87,17 @@ function loadPlannerRequestBuilderModule(crypto = undefined) {
 
 function loadPlannerWorkbenchModule() {
   const source = fs.readFileSync(path.resolve(__dirname, "../web/plannerWorkbench.js"), "utf8");
+  class ResizeObserver {
+    observe() {}
+    disconnect() {}
+  }
   const context = {
     window: {},
+    document: {
+      createElement() {
+        return createFakeDomElement();
+      },
+    },
     JSON,
     Math,
     Date,
@@ -76,6 +110,7 @@ function loadPlannerWorkbenchModule() {
     Set,
     Map,
     Promise,
+    ResizeObserver,
   };
   vm.createContext(context);
   vm.runInContext(source, context);
@@ -523,6 +558,212 @@ function testPlannerBuildSolveRequestIncludesCpSatNoImprovementTimeout() {
   const request = controller.buildSolveRequest();
   assert.equal(request.params.cpSat.timeLimitSeconds, 30);
   assert.equal(request.params.cpSat.noImprovementTimeoutSeconds, 10);
+  assert.equal(request.params.cpSat.useDisplayedHint, false);
+  assert.equal(request.params.lns.useDisplayedSeed, false);
+}
+
+function testPlannerSavedLayoutRestoreRoundTripsHintSeedToggles() {
+  const plannerShared = loadPlannerSharedModule();
+  const plannerRequestBuilder = loadPlannerRequestBuilderModule();
+  const plannerWorkbench = loadPlannerWorkbenchModule();
+  const grid = [
+    [1, 1],
+    [1, 1],
+  ];
+
+  const requestBuilderController = plannerRequestBuilder.createPlannerRequestBuilderController({
+    state: {
+      optimizer: "cp-sat",
+      grid,
+      serviceTypes: [],
+      residentialTypes: [
+        plannerShared.serializeResidentialTypeForCatalog({ w: 2, h: 2, min: 10, max: 10, avail: 1 }),
+      ],
+      availableBuildings: {
+        services: "0",
+        residentials: "1",
+      },
+      greedy: {
+        localSearch: false,
+        randomSeed: "",
+        restarts: 1,
+        serviceRefineIterations: 0,
+        serviceRefineCandidateLimit: 1,
+        exhaustiveServiceSearch: false,
+        serviceExactPoolLimit: 1,
+        serviceExactMaxCombinations: 1,
+      },
+      cpSat: {
+        timeLimitSeconds: "",
+        noImprovementTimeoutSeconds: "",
+        randomSeed: "",
+        numWorkers: 8,
+        logSearchProgress: false,
+        pythonExecutable: "",
+        useDisplayedHint: false,
+      },
+      lns: {
+        iterations: 1,
+        maxNoImprovementIterations: 1,
+        neighborhoodRows: 2,
+        neighborhoodCols: 2,
+        repairTimeLimitSeconds: 1,
+        useDisplayedSeed: false,
+      },
+      result: null,
+      resultContext: null,
+      resultElapsedMs: 0,
+    },
+    elements: {
+      cpSatRandomSeed: createFakeDomElement(),
+      cpSatHintStatus: createFakeDomElement(),
+      lnsSeedStatus: createFakeDomElement(),
+      payloadPreview: createFakeDomElement(),
+      layoutStorageName: createFakeDomElement(),
+    },
+    helpers: {
+      buildCpSatContinuationModelInput: plannerShared.buildCpSatContinuationModelInput,
+      buildCpSatWarmStartCheckpoint: plannerShared.buildCpSatWarmStartCheckpoint,
+      clampInteger: plannerShared.clampInteger,
+      cloneGrid: plannerShared.cloneGrid,
+      cloneJson: plannerShared.cloneJson,
+      computeCpSatModelFingerprint: plannerShared.computeCpSatModelFingerprint,
+      getSavedLayoutElapsedMs: plannerShared.getSavedLayoutElapsedMs,
+      readOptionalInteger: plannerShared.readOptionalInteger,
+      parseResidentialCatalogEntry: plannerShared.parseResidentialCatalogEntry,
+      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry,
+    },
+  });
+
+  const savedRequest = requestBuilderController.buildSolveRequest();
+  assert.equal(savedRequest.params.cpSat.useDisplayedHint, false);
+  assert.equal(savedRequest.params.lns.useDisplayedSeed, false);
+
+  const restoredState = {
+    optimizer: "greedy",
+    isSolving: false,
+    grid,
+    serviceTypes: [],
+    residentialTypes: [],
+    availableBuildings: {
+      services: "",
+      residentials: "",
+    },
+    greedy: {
+      localSearch: true,
+      randomSeed: "",
+      restarts: 20,
+      serviceRefineIterations: 4,
+      serviceRefineCandidateLimit: 60,
+      exhaustiveServiceSearch: true,
+      serviceExactPoolLimit: 22,
+      serviceExactMaxCombinations: 12000,
+    },
+    cpSat: {
+      timeLimitSeconds: "",
+      noImprovementTimeoutSeconds: "",
+      randomSeed: "",
+      numWorkers: 8,
+      logSearchProgress: false,
+      pythonExecutable: "",
+      useDisplayedHint: true,
+    },
+    lns: {
+      iterations: 12,
+      maxNoImprovementIterations: 4,
+      neighborhoodRows: 6,
+      neighborhoodCols: 8,
+      repairTimeLimitSeconds: 5,
+      useDisplayedSeed: true,
+    },
+    expansionAdvice: {
+      nextServiceText: "",
+      nextResidentialText: "",
+    },
+  };
+
+  const workbenchController = plannerWorkbench.createPlannerWorkbenchController({
+    state: restoredState,
+    elements: {
+      gridRows: createFakeDomElement(),
+      gridCols: createFakeDomElement(),
+      expansionNextService: createFakeDomElement(),
+      expansionNextResidential: createFakeDomElement(),
+      gridEditor: createFakeDomElement(),
+      resultMapGrid: createFakeDomElement(),
+      paintModeToggle: createFakeDomElement(),
+      solverToggle: createFakeDomElement(),
+      greedyPanel: createFakeDomElement(),
+      lnsPanel: createFakeDomElement(),
+      cpSatPanel: createFakeDomElement(),
+      greedyLocalSearch: createFakeDomElement(),
+      greedyRandomSeed: createFakeDomElement(),
+      greedyRestarts: createFakeDomElement(),
+      greedyServiceRefineIterations: createFakeDomElement(),
+      greedyServiceRefineCandidateLimit: createFakeDomElement(),
+      greedyExhaustiveServiceSearch: createFakeDomElement(),
+      greedyServiceExactPoolLimit: createFakeDomElement(),
+      greedyServiceExactMaxCombinations: createFakeDomElement(),
+      lnsIterations: createFakeDomElement(),
+      lnsMaxNoImprovementIterations: createFakeDomElement(),
+      lnsNeighborhoodRows: createFakeDomElement(),
+      lnsNeighborhoodCols: createFakeDomElement(),
+      lnsRepairTimeLimitSeconds: createFakeDomElement(),
+      lnsNumWorkers: createFakeDomElement(),
+      lnsLogSearchProgress: createFakeDomElement(),
+      lnsPythonExecutable: createFakeDomElement(),
+      lnsUseDisplayedSeed: createFakeDomElement(),
+      cpSatTimeLimitSeconds: createFakeDomElement(),
+      cpSatNoImprovementTimeoutSeconds: createFakeDomElement(),
+      cpSatRandomSeed: createFakeDomElement(),
+      cpSatNumWorkers: createFakeDomElement(),
+      cpSatLogSearchProgress: createFakeDomElement(),
+      cpSatPythonExecutable: createFakeDomElement(),
+      cpSatUseDisplayedHint: createFakeDomElement(),
+      maxServices: createFakeDomElement(),
+      maxResidentials: createFakeDomElement(),
+      serviceList: createFakeDomElement(),
+      residentialList: createFakeDomElement(),
+      gridStats: createFakeDomElement(),
+      runtimePresetStatus: createFakeDomElement(),
+      summaryGridSize: createFakeDomElement(),
+      summaryAllowedCells: createFakeDomElement(),
+      summaryServiceTypes: createFakeDomElement(),
+      summaryResidentialTypes: createFakeDomElement(),
+      summaryOptimizer: createFakeDomElement(),
+      payloadPreview: createFakeDomElement(),
+    },
+    constants: {
+      sampleGrid: [[1]],
+    },
+    helpers: {
+      cloneGrid: plannerShared.cloneGrid,
+      createGrid: plannerShared.createGrid,
+      escapeHtml: plannerShared.escapeHtml,
+      isGridLike: plannerShared.isGridLike,
+      normalizeOptimizer: plannerShared.normalizeOptimizer,
+      parseCatalogImportText: plannerShared.parseCatalogImportText,
+      serializeResidentialTypeForCatalog: plannerShared.serializeResidentialTypeForCatalog,
+      serializeServiceTypeForCatalog: plannerShared.serializeServiceTypeForCatalog,
+    },
+    callbacks: {
+      getOptimizerLabel(optimizer) {
+        return optimizer === "cp-sat" ? "CP-SAT" : optimizer === "lns" ? "LNS" : "Greedy";
+      },
+      refreshResultOverlay() {},
+      renderExpansionAdvice() {},
+      setSolveState() {},
+      updatePayloadPreview() {},
+    },
+  });
+
+  workbenchController.applySolveRequestToPlanner(savedRequest, {
+    preserveCpSatRuntime: false,
+    optimizer: savedRequest.params.optimizer,
+  });
+
+  assert.equal(restoredState.cpSat.useDisplayedHint, false);
+  assert.equal(restoredState.lns.useDisplayedSeed, false);
 }
 
 function testPlannerRuntimePresetAppliesBoundedCpSatPolicy() {
@@ -746,6 +987,412 @@ function testManualLayoutResponseClearsSolverMetadata() {
   assert.equal(response.stats.stoppedByUser, false);
 }
 
+function testBuildCpSatWarmStartCheckpointRejectsInvalidLayouts() {
+  const plannerShared = loadPlannerSharedModule();
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+  ];
+  const params = {
+    optimizer: "cp-sat",
+    residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
+    availableBuildings: { residentials: 1, services: 0 },
+  };
+  const invalidManualResult = buildManualLayoutResponse(grid, params, {
+    roads: new Set(["0,2", "1,2"]),
+    services: [],
+    serviceTypeIndices: [],
+    servicePopulationIncreases: [],
+    residentials: [
+      { r: 0, c: 0, rows: 2, cols: 2 },
+      { r: 2, c: 0, rows: 2, cols: 2 },
+    ],
+    residentialTypeIndices: [0, 0],
+    populations: [10, 10],
+    totalPopulation: 20,
+  });
+
+  assert.equal(invalidManualResult.validation.valid, false);
+  assert.throws(
+    () => plannerShared.buildCpSatWarmStartCheckpoint(invalidManualResult, { grid, params }, 0),
+    /Only valid layouts can be reused as a CP-SAT hint or LNS seed/
+  );
+}
+
+function testBuildCpSatWarmStartCheckpointRejectsLegacyLayoutsWithoutValidation() {
+  const plannerShared = loadPlannerSharedModule();
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+  ];
+  const params = {
+    optimizer: "cp-sat",
+    residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
+    availableBuildings: { residentials: 1, services: 0 },
+  };
+  const invalidManualResult = buildManualLayoutResponse(grid, params, {
+    roads: new Set(["0,2", "1,2"]),
+    services: [],
+    serviceTypeIndices: [],
+    servicePopulationIncreases: [],
+    residentials: [
+      { r: 0, c: 0, rows: 2, cols: 2 },
+      { r: 2, c: 0, rows: 2, cols: 2 },
+    ],
+    residentialTypeIndices: [0, 0],
+    populations: [10, 10],
+    totalPopulation: 20,
+  });
+  const legacySavedResult = {
+    ...invalidManualResult,
+  };
+  delete legacySavedResult.validation;
+
+  assert.throws(
+    () => plannerShared.buildCpSatWarmStartCheckpoint(legacySavedResult, { grid, params }, 0),
+    /missing validation metadata/
+  );
+}
+
+function testPlannerRequestBuilderSkipsLegacySavedCheckpointWithoutValidation() {
+  const plannerShared = loadPlannerSharedModule();
+  const plannerRequestBuilder = loadPlannerRequestBuilderModule();
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+  ];
+  const params = {
+    optimizer: "cp-sat",
+    residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
+    availableBuildings: { residentials: 1, services: 0 },
+    cpSat: {},
+    lns: {},
+  };
+  const validManualResult = buildManualLayoutResponse(grid, params, {
+    roads: new Set(["0,3"]),
+    services: [],
+    serviceTypeIndices: [],
+    servicePopulationIncreases: [],
+    residentials: [
+      { r: 0, c: 0, rows: 2, cols: 2 },
+    ],
+    residentialTypeIndices: [0],
+    populations: [10],
+    totalPopulation: 10,
+  });
+  const legacySavedResult = {
+    ...validManualResult,
+  };
+  delete legacySavedResult.validation;
+
+  const controller = plannerRequestBuilder.createPlannerRequestBuilderController({
+    state: {
+      optimizer: "cp-sat",
+      grid,
+      serviceTypes: [],
+      residentialTypes: [
+        plannerShared.serializeResidentialTypeForCatalog({ w: 2, h: 2, min: 10, max: 10, avail: 1 }),
+      ],
+      availableBuildings: {
+        services: "0",
+        residentials: "1",
+      },
+      greedy: {
+        localSearch: false,
+        randomSeed: "",
+        restarts: 1,
+        serviceRefineIterations: 0,
+        serviceRefineCandidateLimit: 1,
+        exhaustiveServiceSearch: false,
+        serviceExactPoolLimit: 1,
+        serviceExactMaxCombinations: 1,
+      },
+      cpSat: {
+        timeLimitSeconds: "",
+        noImprovementTimeoutSeconds: "",
+        randomSeed: "",
+        numWorkers: 8,
+        logSearchProgress: false,
+        pythonExecutable: "",
+        useDisplayedHint: false,
+      },
+      lns: {
+        iterations: 1,
+        maxNoImprovementIterations: 1,
+        neighborhoodRows: 2,
+        neighborhoodCols: 2,
+        repairTimeLimitSeconds: 1,
+        useDisplayedSeed: false,
+      },
+      result: null,
+      resultContext: null,
+      resultElapsedMs: 0,
+    },
+    elements: {
+      cpSatRandomSeed: { value: "" },
+      cpSatHintStatus: { textContent: "" },
+      lnsSeedStatus: { textContent: "" },
+      payloadPreview: { textContent: "" },
+      layoutStorageName: { value: "" },
+    },
+    helpers: {
+      buildCpSatContinuationModelInput: plannerShared.buildCpSatContinuationModelInput,
+      buildCpSatWarmStartCheckpoint: plannerShared.buildCpSatWarmStartCheckpoint,
+      clampInteger: plannerShared.clampInteger,
+      cloneGrid: plannerShared.cloneGrid,
+      cloneJson: plannerShared.cloneJson,
+      computeCpSatModelFingerprint: plannerShared.computeCpSatModelFingerprint,
+      getSavedLayoutElapsedMs: plannerShared.getSavedLayoutElapsedMs,
+      readOptionalInteger: plannerShared.readOptionalInteger,
+      parseResidentialCatalogEntry: plannerShared.parseResidentialCatalogEntry,
+      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry,
+    },
+  });
+
+  const checkpoint = plannerShared.buildCpSatWarmStartCheckpoint(validManualResult, { grid, params }, 0);
+  const legacySavedEntry = {
+    id: "legacy-layout",
+    name: "Legacy Layout",
+    savedAt: "2026-04-18T09:00:00.000Z",
+    elapsedMs: 0,
+    result: legacySavedResult,
+    resultContext: { grid, params },
+    continueCpSat: checkpoint,
+  };
+
+  assert.equal(controller.getSavedLayoutCheckpoint(legacySavedEntry), null);
+}
+
+function testPlannerRequestBuilderSkipsInvalidDisplayedLayoutContinuation() {
+  const plannerShared = loadPlannerSharedModule();
+  const plannerRequestBuilder = loadPlannerRequestBuilderModule();
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+  ];
+  const params = {
+    optimizer: "cp-sat",
+    residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
+    availableBuildings: { residentials: 1, services: 0 },
+    cpSat: {},
+    lns: {},
+  };
+  const invalidManualResult = buildManualLayoutResponse(grid, params, {
+    roads: new Set(["0,2", "1,2"]),
+    services: [],
+    serviceTypeIndices: [],
+    servicePopulationIncreases: [],
+    residentials: [
+      { r: 0, c: 0, rows: 2, cols: 2 },
+      { r: 2, c: 0, rows: 2, cols: 2 },
+    ],
+    residentialTypeIndices: [0, 0],
+    populations: [10, 10],
+    totalPopulation: 20,
+  });
+  const state = {
+    optimizer: "cp-sat",
+    grid,
+    serviceTypes: [],
+    residentialTypes: [
+      plannerShared.serializeResidentialTypeForCatalog({ w: 2, h: 2, min: 10, max: 10, avail: 1 }),
+    ],
+    availableBuildings: {
+      services: "0",
+      residentials: "1",
+    },
+    greedy: {
+      localSearch: false,
+      randomSeed: "",
+      restarts: 1,
+      serviceRefineIterations: 0,
+      serviceRefineCandidateLimit: 1,
+      exhaustiveServiceSearch: false,
+      serviceExactPoolLimit: 1,
+      serviceExactMaxCombinations: 1,
+    },
+    cpSat: {
+      timeLimitSeconds: "",
+      noImprovementTimeoutSeconds: "",
+      randomSeed: "",
+      numWorkers: 8,
+      logSearchProgress: false,
+      pythonExecutable: "",
+      useDisplayedHint: true,
+    },
+    lns: {
+      iterations: 1,
+      maxNoImprovementIterations: 1,
+      neighborhoodRows: 2,
+      neighborhoodCols: 2,
+      repairTimeLimitSeconds: 1,
+      useDisplayedSeed: true,
+    },
+    result: invalidManualResult,
+    resultContext: { grid, params },
+    resultElapsedMs: 0,
+  };
+  const elements = {
+    cpSatRandomSeed: { value: "" },
+    cpSatHintStatus: { textContent: "" },
+    lnsSeedStatus: { textContent: "" },
+    payloadPreview: { textContent: "" },
+    layoutStorageName: { value: "" },
+  };
+  const controller = plannerRequestBuilder.createPlannerRequestBuilderController({
+    state,
+    elements,
+    helpers: {
+      buildCpSatContinuationModelInput: plannerShared.buildCpSatContinuationModelInput,
+      buildCpSatWarmStartCheckpoint: plannerShared.buildCpSatWarmStartCheckpoint,
+      clampInteger: plannerShared.clampInteger,
+      cloneGrid: plannerShared.cloneGrid,
+      cloneJson: plannerShared.cloneJson,
+      computeCpSatModelFingerprint: plannerShared.computeCpSatModelFingerprint,
+      getSavedLayoutElapsedMs: plannerShared.getSavedLayoutElapsedMs,
+      readOptionalInteger: plannerShared.readOptionalInteger,
+      parseResidentialCatalogEntry: plannerShared.parseResidentialCatalogEntry,
+      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry,
+    },
+  });
+
+  controller.renderCpSatHintStatus();
+  controller.renderLnsSeedStatus();
+
+  assert.match(elements.cpSatHintStatus.textContent, /Only valid layouts can be reused as a CP-SAT hint or LNS seed/);
+  assert.match(elements.lnsSeedStatus.textContent, /Only valid layouts can be reused as a CP-SAT hint or LNS seed/);
+  assert.equal(controller.getDisplayedLayoutCheckpoint(), null);
+
+  const cpSatRequest = controller.buildSolveRequest({ hintMismatch: "ignore" });
+  assert.equal(cpSatRequest.params.cpSat.warmStartHint, undefined);
+
+  state.optimizer = "lns";
+  const lnsRequest = controller.buildSolveRequest({ hintMismatch: "ignore" });
+  assert.equal(lnsRequest.params.lns.seedHint, undefined);
+}
+
+function testPlannerRequestBuilderSkipsLegacyDisplayedLayoutContinuationWithoutValidation() {
+  const plannerShared = loadPlannerSharedModule();
+  const plannerRequestBuilder = loadPlannerRequestBuilderModule();
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+  ];
+  const params = {
+    optimizer: "cp-sat",
+    residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
+    availableBuildings: { residentials: 1, services: 0 },
+    cpSat: {},
+    lns: {},
+  };
+  const validManualResult = buildManualLayoutResponse(grid, params, {
+    roads: new Set(["0,3"]),
+    services: [],
+    serviceTypeIndices: [],
+    servicePopulationIncreases: [],
+    residentials: [
+      { r: 0, c: 0, rows: 2, cols: 2 },
+    ],
+    residentialTypeIndices: [0],
+    populations: [10],
+    totalPopulation: 10,
+  });
+  const legacySavedResult = {
+    ...validManualResult,
+  };
+  delete legacySavedResult.validation;
+
+  const state = {
+    optimizer: "cp-sat",
+    grid,
+    serviceTypes: [],
+    residentialTypes: [
+      plannerShared.serializeResidentialTypeForCatalog({ w: 2, h: 2, min: 10, max: 10, avail: 1 }),
+    ],
+    availableBuildings: {
+      services: "0",
+      residentials: "1",
+    },
+    greedy: {
+      localSearch: false,
+      randomSeed: "",
+      restarts: 1,
+      serviceRefineIterations: 0,
+      serviceRefineCandidateLimit: 1,
+      exhaustiveServiceSearch: false,
+      serviceExactPoolLimit: 1,
+      serviceExactMaxCombinations: 1,
+    },
+    cpSat: {
+      timeLimitSeconds: "",
+      noImprovementTimeoutSeconds: "",
+      randomSeed: "",
+      numWorkers: 8,
+      logSearchProgress: false,
+      pythonExecutable: "",
+      useDisplayedHint: true,
+    },
+    lns: {
+      iterations: 1,
+      maxNoImprovementIterations: 1,
+      neighborhoodRows: 2,
+      neighborhoodCols: 2,
+      repairTimeLimitSeconds: 1,
+      useDisplayedSeed: true,
+    },
+    result: legacySavedResult,
+    resultContext: { grid, params },
+    resultElapsedMs: 0,
+  };
+  const elements = {
+    cpSatRandomSeed: { value: "" },
+    cpSatHintStatus: { textContent: "" },
+    lnsSeedStatus: { textContent: "" },
+    payloadPreview: { textContent: "" },
+    layoutStorageName: { value: "" },
+  };
+  const controller = plannerRequestBuilder.createPlannerRequestBuilderController({
+    state,
+    elements,
+    helpers: {
+      buildCpSatContinuationModelInput: plannerShared.buildCpSatContinuationModelInput,
+      buildCpSatWarmStartCheckpoint: plannerShared.buildCpSatWarmStartCheckpoint,
+      clampInteger: plannerShared.clampInteger,
+      cloneGrid: plannerShared.cloneGrid,
+      cloneJson: plannerShared.cloneJson,
+      computeCpSatModelFingerprint: plannerShared.computeCpSatModelFingerprint,
+      getSavedLayoutElapsedMs: plannerShared.getSavedLayoutElapsedMs,
+      readOptionalInteger: plannerShared.readOptionalInteger,
+      parseResidentialCatalogEntry: plannerShared.parseResidentialCatalogEntry,
+      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry,
+    },
+  });
+
+  controller.renderCpSatHintStatus();
+  controller.renderLnsSeedStatus();
+
+  assert.match(elements.cpSatHintStatus.textContent, /missing validation metadata/);
+  assert.match(elements.lnsSeedStatus.textContent, /missing validation metadata/);
+  assert.equal(controller.getDisplayedLayoutCheckpoint(), null);
+
+  const cpSatRequest = controller.buildSolveRequest({ hintMismatch: "ignore" });
+  assert.equal(cpSatRequest.params.cpSat.warmStartHint, undefined);
+
+  state.optimizer = "lns";
+  const lnsRequest = controller.buildSolveRequest({ hintMismatch: "ignore" });
+  assert.equal(lnsRequest.params.lns.seedHint, undefined);
+}
+
 function testPlannerSolveProgressLogCapturesSnapshotAndFinalResult() {
   const runtimeModule = loadPlannerSolveRuntimeModule();
   const logAfterSnapshot = runtimeModule.appendSolveProgressLog([], {
@@ -952,8 +1599,14 @@ testIndexImportHasNoSideEffects();
 testPlannerServiceAvailabilityRoundTrip();
 testPlannerAutoFillsCpSatRandomSeed();
 testPlannerBuildSolveRequestIncludesCpSatNoImprovementTimeout();
+testPlannerSavedLayoutRestoreRoundTripsHintSeedToggles();
 testPlannerRuntimePresetAppliesBoundedCpSatPolicy();
 testManualLayoutResponseClearsSolverMetadata();
+testBuildCpSatWarmStartCheckpointRejectsInvalidLayouts();
+testBuildCpSatWarmStartCheckpointRejectsLegacyLayoutsWithoutValidation();
+testPlannerRequestBuilderSkipsLegacySavedCheckpointWithoutValidation();
+testPlannerRequestBuilderSkipsInvalidDisplayedLayoutContinuation();
+testPlannerRequestBuilderSkipsLegacyDisplayedLayoutContinuationWithoutValidation();
 testPlannerSolveProgressLogCapturesSnapshotAndFinalResult();
 testFilesystemSolveLogTracksSolverClockAcrossHeartbeats();
 

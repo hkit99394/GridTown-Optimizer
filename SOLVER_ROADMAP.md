@@ -191,12 +191,45 @@ Why:
 
 ### 7. Keep learned guidance separate from the core runtime roadmap
 
-Priority: Separate track
-Impact factor: Strategic, not near-term
+Priority: Separate gated track, after priorities 1 through 5 for core product work
+Impact factor: `2.0 / 5` near-term product leverage, higher long-term strategic upside
 
 Why:
-- the solver stack is finally measurable enough to support learned-guidance work
+- learned guidance is a real fit for search control around `greedy`, `LNS`, and `CP-SAT`, especially for re-ranking and later `LNS` control
+- full RL is not the next production lever; the relevant AlphaGo / AlphaZero lesson is policy / value guidance around exact search, not end-to-end self-play
+- the deterministic solver still has higher-ROI unfinished work, especially `LNS` stopping / budgeting and reusable-input hardening
 - that work should stay tracked in [LEARNED_GUIDANCE_ROADMAP.md](./LEARNED_GUIDANCE_ROADMAP.md), not mixed into the runtime-execution roadmap
+
+Ordering inside the learned-guidance track:
+- first: shared traces, equal-budget benchmarks, and `LNS` benchmark support
+- second: ablations of current heuristic lift
+- third: greedy service re-ranking
+- fourth: `LNS` window re-ranking
+- fifth: counterfactual `LNS` replay data
+- sixth: value-guided seeds only if seed quality becomes a measured bottleneck
+- seventh: contextual bandits for `LNS` control only if re-ranking already wins
+- eighth: full RL only after earlier learned stages beat deterministic baselines on holdout cases
+
+## Cross-Track Ordering
+
+If all remaining work is ranked in one combined near-term ordering, the recommended order is:
+
+1. finish deterministic `LNS` stopping and budget policy
+2. expose planner-visible single-machine `CP-SAT` portfolio search
+3. extend typed validation and checkpoint hardening across reusable inputs
+4. resolve planner/runtime mismatches and remaining `auto` cleanup
+5. split the greedy solver into cleaner reusable phases
+6. build the learned-guidance foundation: shared traces, equal-budget benchmarks, and `LNS` benchmark support
+7. run learned-guidance ablations
+8. try low-risk learned guidance: greedy service re-ranking and `LNS` window re-ranking
+9. only then consider value-guided seeds if seed quality becomes a measured bottleneck
+10. treat contextual bandits and full RL as gated research after earlier learned stages already win
+
+Why this order:
+- items 1 through 4 directly improve the common planner path or reduce failure risk
+- item 5 creates cleaner seams for both deterministic and learned follow-on work
+- items 6 through 10 depend on a more stable deterministic baseline, better measurement discipline, and more expensive labels
+- full RL currently has the lowest near-term product leverage per unit complexity
 
 ## LNS Follow-Up Plan
 
@@ -256,4 +289,5 @@ Remaining:
 - The current local OR-Tools runtime still has a known crash path around `repair_hint` plus multi-worker repair, so planner/runtime messaging should not imply user-controlled multi-worker `LNS` repair until that runtime issue is proven fixed.
 - With `auto` shipped, the next exact-solver UX step is planner-visible single-machine portfolio search, not distributed solving.
 - Solver-output validation is already a shipped safeguard; the remaining validation work is broader reusable-input coverage.
+- AlphaGo / AlphaZero-style ideas transfer here only in the narrow sense of policy / value guidance over the existing search stack; full RL remains a gated research path.
 - Input validation now matters as much as solver quality because the planner reuses more serialized solver state across runs.

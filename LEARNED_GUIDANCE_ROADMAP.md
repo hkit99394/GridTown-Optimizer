@@ -14,8 +14,8 @@ This roadmap is intentionally about `hybrid search`, not replacing the current s
 ## Non-Goals
 
 This roadmap is not about:
-- replacing [src/evaluator.ts](./src/evaluator.ts) as the source of truth for legality and population
-- replacing [src/cpSatSolver.ts](./src/cpSatSolver.ts) as the exact repair / global solve path
+- replacing [src/core/evaluator.ts](./src/core/evaluator.ts) as the source of truth for legality and population
+- replacing [src/cp-sat/solver.ts](./src/cp-sat/solver.ts) as the exact repair / global solve path
 - learning road connectivity or shortest-path logic that is already solved cleanly with graph algorithms
 - training a raw cell-by-cell end-to-end RL agent as the first milestone
 
@@ -24,6 +24,8 @@ This roadmap is not about:
 - Keep exact legality and final scoring deterministic.
 - Instrument first, train second.
 - Prefer supervised ranking or bandit-style guidance before full RL.
+- Use AlphaGo / AlphaZero as search-guidance inspiration, not as a self-play template.
+- Only pursue full RL after cheaper learned baselines already win.
 - Keep learned logic behind feature flags and preserve deterministic fallback behavior.
 - Compare approaches under equal wall-clock and equal solver-budget constraints.
 
@@ -31,7 +33,7 @@ This roadmap is not about:
 
 ### What already exists
 
-- `greedy`, `LNS`, and `CP-SAT` are all shipped.
+- `greedy`, `LNS`, `CP-SAT`, and `auto` are all shipped.
 - `LNS` already has a strong hybrid shape: seed, neighborhood selection, exact repair, incumbent acceptance.
 - `CP-SAT` already supports warm starts and bounded continuation.
 - exact layout validation and population scoring are already centralized.
@@ -47,21 +49,62 @@ Relevant docs:
 - a generic benchmark and event layer for `greedy`, `LNS`, and `CP-SAT`
 - equal-budget measurement for incumbent-quality-over-time across all optimizers
 - trace logging that is rich enough to support offline learning
+- a shipped `LNS` benchmark / export path that matches the existing `greedy` and `CP-SAT` suites
 - ablation data showing where the current heuristic lift actually comes from
 
+## AlphaGo / AlphaZero Feasibility
+
+Current conclusion:
+- This repo is a good fit for learned guidance in the narrow AlphaGo sense: learned policies or values should steer strong deterministic search, not replace it.
+- The strongest current seam is `LNS` control, especially neighborhood re-ranking under a fixed repair budget.
+- Full end-to-end RL is not a current implementation priority. It belongs on a gated research track after cheaper learned baselines win.
+
+What transfers well:
+- policy / value guidance around exact legality, validation, and search
+- ranking which candidate, neighborhood, or seed to try next
+- learning the control layer while keeping `CP-SAT` and exact scoring deterministic
+
+What does not transfer well:
+- adversarial self-play assumptions
+- cheap rollout assumptions, because one useful `LNS` label may cost a bounded `CP-SAT` repair run
+- raw cell-by-cell generation or attempts to replace `CP-SAT`
+
+Gates before any RL work:
+- finish deterministic `LNS` stopping and budget policy in [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md)
+- add shared traces and a reusable `LNS` benchmark / export path
+- close reusable `CP-SAT` input validation gaps
+- beat deterministic baselines with supervised reranking or bandits under equal wall-clock on holdout cases
+
 ## Roadmap
+
+### Ordering By Priority
+
+The current recommended order inside the learned-guidance track is:
+
+1. measurement foundation and shared cross-optimizer traces
+2. baseline ablations
+3. learned greedy service re-ranking
+4. learned `LNS` window re-ranking
+5. counterfactual `LNS` replay data
+6. value-guided seed experiments, only if seed quality becomes a measured bottleneck
+7. contextual bandits for `LNS` control, only if re-ranking already wins
+8. full RL, research-only and only if all earlier gates are cleared
+
+Why this order:
+- phases 0 through 4 reduce uncertainty and create reusable data at the lowest experimentation cost
+- phases 5 through 8 depend on a more stable solver policy, better reusable-input validation, and more expensive labels
 
 ### Phase 0: Measurement Foundation
 
 Status: First
 
 Why:
-- the current benchmark harness is `CP-SAT` focused
+- the repo already has `greedy` and `CP-SAT` benchmark support, but it still lacks a shared cross-optimizer trace layer and a shipped `LNS` benchmark path
 - `greedy` and `LNS` do not yet expose enough common progress events to support fair learning experiments
 - success metrics like `time-to-first-improvement` and `time-to-best-incumbent` are not consistently measurable yet
 
 Concrete work:
-- add shared optimizer run events to [src/types.ts](./src/types.ts)
+- add shared optimizer run events to [src/core/types.ts](./src/core/types.ts)
 - add a generic benchmark / trace runner for `greedy`, `LNS`, and `CP-SAT`
 - emit JSONL traces for solver milestones:
   - seed built
@@ -72,7 +115,7 @@ Concrete work:
   - incumbent improved
   - solver finished
 - make benchmark runs reproducible with explicit seeds where supported
-- record final validation using [src/evaluator.ts](./src/evaluator.ts)
+- record final validation using [src/core/evaluator.ts](./src/core/evaluator.ts)
 
 Deliverables:
 - a reusable benchmark CLI for all optimizers
@@ -197,11 +240,12 @@ Exit criteria:
 
 ### Phase 5: Value Model And CP-SAT Warm Starts
 
-Status: Later
+Status: Later, and only if seed quality becomes a measured bottleneck
 
 Why:
 - this is the closest analogue to AlphaGo-style value guidance
 - `CP-SAT` already supports warm starts, so stronger seeds can compound with exact search
+- the current runtime usually carries one incumbent forward, so this is not yet the first demonstrated production bottleneck
 
 Targets:
 - predict which partial layouts or incumbents are most promising
@@ -222,11 +266,12 @@ Exit criteria:
 
 ### Phase 6: Contextual Bandits Or RL
 
-Status: Only after earlier phases prove value
+Status: Research-only, only after earlier phases prove value
 
 Why:
 - RL adds training and evaluation complexity
 - if supervised ranking and value guidance already work, RL should only be added when it clearly improves search control
+- `LNS` labels are expensive because they require bounded `CP-SAT` repair, and current local repair still runs single-worker for stability
 
 Good RL targets:
 - choose which `LNS` window to repair next
@@ -248,19 +293,24 @@ Exit criteria:
 - the RL or bandit policy consistently beats the best supervised guidance baseline
 - the added complexity is justified by measured gains, not only by research interest
 
+Additional gates:
+- deterministic `LNS` stopping and budget policy has stabilized
+- shared traces and a shipped `LNS` benchmark path exist
+- reusable `CP-SAT` checkpoint and hint inputs are validated well enough for learned seed experiments
+
 ## File Placement Guidance
 
 ### Core runtime integration
 
-- [src/types.ts](./src/types.ts): shared event, trace, and benchmark types
-- [src/solve.ts](./src/solve.ts): common solver callback / instrumentation entry point
-- [src/solver.ts](./src/solver.ts): greedy trace emission and optional learned service re-ranking hook
-- [src/lnsSolver.ts](./src/lnsSolver.ts): LNS trace emission and optional learned window re-ranking hook
-- [src/cpSatSolver.ts](./src/cpSatSolver.ts): benchmark-safe warm-start comparisons and seed-quality reporting
+- [src/core/types.ts](./src/core/types.ts): shared event, trace, and benchmark types
+- [src/runtime/solve.ts](./src/runtime/solve.ts): common solver callback / instrumentation entry point
+- [src/greedy/solver.ts](./src/greedy/solver.ts): greedy trace emission and optional learned service re-ranking hook
+- [src/lns/solver.ts](./src/lns/solver.ts): `LNS` trace emission and optional learned window re-ranking hook
+- [src/cp-sat/solver.ts](./src/cp-sat/solver.ts): benchmark-safe warm-start comparisons and seed-quality reporting
 
 ### Benchmarking and research support
 
-- add a generic optimizer benchmark module next to [src/cpSatBenchmark.ts](./src/cpSatBenchmark.ts)
+- add a generic optimizer benchmark module next to [src/benchmarks/greedy.ts](./src/benchmarks/greedy.ts) and [src/benchmarks/cpSat.ts](./src/benchmarks/cpSat.ts)
 - keep model-training code out of the main app path, for example under `python/ml/`
 - keep persisted traces as plain JSONL to stay easy to inspect and replay
 
@@ -272,7 +322,7 @@ Every milestone should clear all of the following before the next phase begins:
    compare under matched wall-clock and matched `CP-SAT` repair budgets
 
 2. Exact validation:
-   every reported solution must pass [src/evaluator.ts](./src/evaluator.ts)
+   every reported solution must pass [src/core/evaluator.ts](./src/core/evaluator.ts)
 
 3. Repeated seeded runs:
    use repeated runs where randomness exists and report aggregate statistics
@@ -296,20 +346,24 @@ Every milestone should clear all of the following before the next phase begins:
 
 ## Risks
 
-- LNS labels are expensive because they require `CP-SAT` repair.
+- `LNS` labels are expensive because they require `CP-SAT` repair, and local repair still runs single-worker for stability.
 - Selection bias is a real risk for offline LNS data.
-- A small benchmark corpus can make a learned policy look better than it is.
+- The shipped benchmark corpora are enough for regression and ablation, not strong ML generalization claims by themselves.
 - The strongest learned component may turn out to be ranking or budget allocation, not full RL.
+- The deterministic solver policy is still moving, especially around `LNS` stopping and budgeting.
+- Reusable `CP-SAT` input validation is not fully finished yet.
 
 ## Summary
 
 The recommended sequence is:
 
-1. measurement foundation
+1. measurement foundation and shared traces
 2. ablations
 3. learned greedy service re-ranking
-4. learned LNS window re-ranking
-5. value-guided warm starts
-6. contextual bandits or RL only if earlier phases already win
+4. learned `LNS` window re-ranking
+5. counterfactual `LNS` replay data
+6. value-guided warm starts only if seed quality becomes a measured bottleneck
+7. contextual bandits only if re-ranking already wins
+8. full RL only as gated research after earlier phases already win
 
 This keeps the project grounded in the strengths of the current solver stack while still leaving room for Go-style learned guidance where it can actually help.

@@ -3,6 +3,7 @@
 Optimize a city layout on a 2D grid by placing roads, service buildings, and residential buildings to maximize total population.
 
 This project now includes:
+- an `auto` staged solver that runs `greedy -> LNS -> bounded CP-SAT`
 - a `greedy` heuristic solver with restarts and local search
 - an `LNS` solver that improves a seed layout with neighborhood CP-SAT repair
 - a `CP-SAT` solver backed by Google OR-Tools
@@ -66,9 +67,21 @@ Preferred configuration is typed `residentialTypes`. Legacy `residentialSettings
 
 ## Solvers
 
+### `auto`
+
+`auto` is the recommended quality path.
+
+In this project it:
+- starts with a fast greedy incumbent
+- improves it with `LNS`
+- follows with bounded `CP-SAT` polishing
+- keeps alternating bounded `LNS` and `CP-SAT` while meaningful improvement continues
+
+Use this when overall answer quality matters more than keeping the run purely standalone or heuristic.
+
 ### `greedy`
 
-The greedy solver is the default heuristic backend.
+The greedy solver is the fast standalone seed / advanced mode.
 
 It uses:
 - service candidate ranking
@@ -125,6 +138,12 @@ npm run setup:cp-sat
 
 ### 4. Run an example solve
 
+Auto:
+
+```bash
+npm run solve:auto
+```
+
 Greedy:
 
 ```bash
@@ -155,13 +174,16 @@ Available scripts from [package.json](./package.json):
 - `npm run build`
 - `npm run web`
 - `npm run solve`
+- `npm run solve:auto`
 - `npm run solve:greedy`
 - `npm run solve:lns`
 - `npm run solve:cp-sat`
+- `npm run benchmark:greedy`
+- `npm run benchmark:cp-sat`
 - `npm run setup:cp-sat`
 - `npm test`
 
-`npm run solve` currently runs the built-in example with the default greedy backend.
+`npm run solve` currently runs the built-in example with the default `auto` backend in the example CLI.
 
 ## Web Planner
 
@@ -177,22 +199,24 @@ The planner now includes:
 - an interactive grid editor
 - service and residential catalog editing
 - collapsible catalog import
-- solver-specific control panels for `greedy`, `LNS`, and `CP-SAT`
+- solver-specific control panels for `auto`, `greedy`, `LNS`, and `CP-SAT`
 - saved input setups
 - saved solved layouts
-- automatic `LNS` seeding and `CP-SAT` hinting from the displayed output
+- automatic `LNS` seeding and `CP-SAT` hinting from the displayed output when the displayed layout is validated and model-compatible
 - result review with validation, placements, remaining availability, and solved map overlays
 - manual layout editing on the solved map:
   - add remaining buildings
   - move buildings
   - remove buildings
   - add or remove roads
+  - rotate a pending placement by 90 degrees before placing it
+  - defer validation until you click `Validate layout`
 - expansion comparison tooling for proposed next service or residential additions
 
 Notes:
 - `LNS` and `CP-SAT` need the Python OR-Tools backend
 - stopping a background solve preserves the best feasible result when one exists
-- the displayed output can be reused as the default seed or hint when the current model fingerprint still matches
+- the displayed output can be reused as the default seed or hint only when the current model fingerprint still matches and the layout has been validated
 
 ## Library Usage
 
@@ -375,7 +399,27 @@ const portfolio = await solveAsync(grid, {
 
 ### Run the benchmark corpus
 
-The repository now includes a fixed CP-SAT benchmark corpus plus an async benchmark harness for reproducible exact-run comparisons.
+The repository includes both a fixed greedy benchmark corpus and a fixed CP-SAT benchmark corpus.
+
+Run the greedy suite:
+
+```bash
+npm run benchmark:greedy
+```
+
+Run one named greedy case and emit JSON:
+
+```bash
+npm run benchmark:greedy -- --json cap-sweep-mixed
+```
+
+List the available greedy case names:
+
+```bash
+npm run benchmark:greedy -- --list
+```
+
+The repository also includes a fixed CP-SAT benchmark corpus plus an async benchmark harness for reproducible exact-run comparisons.
 
 Run the default suite:
 
@@ -447,10 +491,20 @@ The public API is exposed from [src/index.ts](./src/index.ts):
 
 - `solveAsync`
 - `solve`
+- `solveAuto`
+- `startAutoSolve`
+- `describeAutoStopReason`
 - `solveGreedy`
 - `solveCpSatAsync`
 - `solveLns`
 - `solveCpSat`
+- `runGreedyBenchmarkSuite`
+- `listGreedyBenchmarkCaseNames`
+- `normalizeGreedyBenchmarkOptions`
+- `createGreedyBenchmarkSnapshot`
+- `formatGreedyBenchmarkSuite`
+- `DEFAULT_GREEDY_BENCHMARK_CORPUS`
+- `DEFAULT_GREEDY_BENCHMARK_OPTIONS`
 - `runCpSatBenchmarkSuite`
 - `listCpSatBenchmarkCaseNames`
 - `normalizeCpSatBenchmarkOptions`
@@ -465,6 +519,9 @@ The public API is exposed from [src/index.ts](./src/index.ts):
 - `resolveOptimizerName`
 
 Useful types include:
+- `OptimizerName`
+- `AutoOptions`
+- `AutoSolveStageMetadata`
 - `SolverParams`
 - `Solution`
 - `ServiceTypeSetting`
@@ -579,29 +636,32 @@ Road cells are encoded as `"r,c"` strings inside the `Set`.
 ## Project Layout
 
 - [src/index.ts](./src/index.ts): public API
-- [src/solve.ts](./src/solve.ts): top-level solver dispatch
-- [src/optimizerRegistry.ts](./src/optimizerRegistry.ts): optimizer registry
-- [src/solver.ts](./src/solver.ts): greedy solver
-- [src/lnsSolver.ts](./src/lnsSolver.ts): LNS solver
-- [src/cpSatSolver.ts](./src/cpSatSolver.ts): TypeScript bridge for CP-SAT
+- [src/runtime/solve.ts](./src/runtime/solve.ts): top-level solver dispatch
+- [src/runtime/optimizerRegistry.ts](./src/runtime/optimizerRegistry.ts): optimizer registry
+- [src/auto/solver.ts](./src/auto/solver.ts): staged `auto` orchestration
+- [src/greedy/solver.ts](./src/greedy/solver.ts): greedy solver
+- [src/lns/solver.ts](./src/lns/solver.ts): LNS solver
+- [src/cp-sat/solver.ts](./src/cp-sat/solver.ts): TypeScript bridge for CP-SAT
 - [python/cp_sat_solver.py](./python/cp_sat_solver.py): OR-Tools CP-SAT model
-- [src/lnsNeighborhoods.ts](./src/lnsNeighborhoods.ts): LNS neighborhood planning and escalation
-- [src/solutionSerialization.ts](./src/solutionSerialization.ts): shared solution serialization and snapshot persistence
-- [src/greedyRow0Anchors.ts](./src/greedyRow0Anchors.ts): greedy row-0 feasibility and anchor refinement helpers
-- [src/solveJobManager.ts](./src/solveJobManager.ts): background solve job lifecycle
-- [src/webServerRequestHandler.ts](./src/webServerRequestHandler.ts): thin planner request composition
-- [src/webServerApiRoutes.ts](./src/webServerApiRoutes.ts): planner API route handlers
-- [src/webServerTransport.ts](./src/webServerTransport.ts): shared HTTP transport helpers
-- [src/webServerStatic.ts](./src/webServerStatic.ts): local planner static asset serving
+- [src/greedy/row0Anchors.ts](./src/greedy/row0Anchors.ts): greedy row-0 feasibility and anchor refinement helpers
+- [src/runtime/jobs/solveJobManager.ts](./src/runtime/jobs/solveJobManager.ts): background solve job lifecycle
+- [src/server/http/requestHandler.ts](./src/server/http/requestHandler.ts): planner request composition
+- [src/server/http/routes.ts](./src/server/http/routes.ts): planner API route handlers
+- [src/server/http/contracts.ts](./src/server/http/contracts.ts): shared HTTP payload contracts
+- [src/server/http/static.ts](./src/server/http/static.ts): local planner static asset serving
+- [src/benchmarks/greedy.ts](./src/benchmarks/greedy.ts): fixed greedy benchmark corpus and harness
+- [src/benchmarks/cpSat.ts](./src/benchmarks/cpSat.ts): fixed CP-SAT benchmark corpus and harness
 - [web/](./web): planner UI modules
-- [src/evaluator.ts](./src/evaluator.ts): validation and exact scoring
-- [src/map.ts](./src/map.ts): ASCII rendering and map-aware validation
+- [src/core/evaluator.ts](./src/core/evaluator.ts): validation and exact scoring
+- [src/core/map.ts](./src/core/map.ts): ASCII rendering and map-aware validation
 - [tests/](./tests): regression, route, and optimizer tests
 
 ## Notes
 
 - `CP-SAT` requires a working Python runtime plus OR-Tools.
 - If you omit `cpSat.timeLimitSeconds`, the CP-SAT backend runs until it finishes or is stopped.
+- If you omit `auto.wallClockLimitSeconds`, the outer `auto` policy has no global cap.
 - In the web planner, stopping `CP-SAT` or `LNS` early preserves the best feasible result found so far when one exists.
+- In the web planner, stopping `auto` preserves the best incumbent found so far.
 - `LNS` currently uses CP-SAT as the neighborhood repair engine.
 - The example CLI prints validation output and an ASCII map for quick inspection.

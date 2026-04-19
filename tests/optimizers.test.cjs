@@ -34,7 +34,11 @@ const {
 const { parseCpSatRawSolution } = require("../dist/cp-sat/solver.js");
 const { buildNeighborhoodWindows } = require("../dist/lns/solver.js");
 const { applyDeterministicDominanceUpgrades } = require("../dist/core/dominanceUpgrades.js");
-const { roadSeedRow0Candidates, roadSeedRow0RepresentativeCandidates } = require("../dist/core/roads.js");
+const {
+  materializeDeferredRoadNetwork,
+  roadSeedRow0Candidates,
+  roadSeedRow0RepresentativeCandidates,
+} = require("../dist/core/roads.js");
 
 function testOptimizerRegistry() {
   assert.equal(resolveOptimizerName(undefined), "greedy");
@@ -2410,6 +2414,89 @@ function testGreedyIncrementalInvalidationCounters() {
   assert.equal(fixedServiceCounters.servicePhase.fixedPlacements > 0, true);
 }
 
+function testGreedyDeferredRoadCommitmentBenchmarkCase() {
+  const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
+    names: ["deferred-road-packing-gain"],
+  });
+  const benchmarkCase = DEFAULT_GREEDY_BENCHMARK_CORPUS.find((entry) => entry.name === "deferred-road-packing-gain");
+  const deferredParams = structuredClone(benchmarkCase.params);
+  deferredParams.greedy = { ...deferredParams.greedy, profile: true };
+  const deferredSolution = solveGreedy(
+    benchmarkCase.grid.map((row) => [...row]),
+    deferredParams
+  );
+  const explicitParams = structuredClone(benchmarkCase.params);
+  explicitParams.greedy = { ...explicitParams.greedy, deferRoadCommitment: false, profile: true };
+  const explicitSolution = solveGreedy(
+    benchmarkCase.grid.map((row) => [...row]),
+    explicitParams
+  );
+  const counters = deferredSolution.greedyProfile.counters;
+  const validation = validateSolutionMap({
+    grid: benchmarkCase.grid,
+    solution: deferredSolution,
+    params: deferredParams,
+  });
+
+  assert.equal(result.caseCount, 1);
+  assert.deepEqual(result.selectedCaseNames, ["deferred-road-packing-gain"]);
+  assert.equal(result.results[0].name, "deferred-road-packing-gain");
+  assert.equal(result.results[0].totalPopulation, 260);
+  assert.equal(result.results[0].roadCount, 4);
+  assert.equal(result.results[0].serviceCount, 1);
+  assert.equal(result.results[0].residentialCount, 2);
+  assert.equal(deferredSolution.totalPopulation, 260);
+  assert.equal(deferredSolution.roads.size, 4);
+  assert.equal(explicitSolution.totalPopulation, 180);
+  assert.equal(explicitSolution.roads.size, 2);
+  assert.equal(deferredSolution.totalPopulation > explicitSolution.totalPopulation, true);
+  assert.equal(validation.valid, true);
+  assert.equal(counters.roads.deferredFrontierRecomputes > 0, true);
+  assert.equal(counters.roads.deferredReconstructionSteps > 0, true);
+  assert.equal(counters.roads.deferredReconstructionFailures >= 0, true);
+  assert.match(formatGreedyBenchmarkSuite(result), /deferred-road-packing-gain/);
+  assert.match(formatGreedyBenchmarkSuite(result), /deferred-roads=/);
+}
+
+function testGreedyDeferredRoadCommitmentKeepsTopRowShortcut() {
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+  ];
+  const params = {
+    residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
+    availableBuildings: { residentials: 1, services: 0 },
+    greedy: { localSearch: false, restarts: 1, exhaustiveServiceSearch: false, deferRoadCommitment: true },
+  };
+
+  const solution = solveGreedy(grid, params);
+  const validation = validateSolution({ grid, solution, params });
+
+  assert.equal(solution.residentials[0].r, 0);
+  assert.equal(solution.roads.size > 0, true);
+  assert.equal(validation.valid, true);
+}
+
+function testGreedyDeferredRoadMaterializationFailsDeterministically() {
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+  ];
+  const occupiedBuildings = new Set(["0,0", "0,1", "0,2", "0,3"]);
+  const roads = materializeDeferredRoadNetwork(
+    grid,
+    undefined,
+    occupiedBuildings,
+    [{ r: 2, c: 1, rows: 1, cols: 1 }]
+  );
+
+  assert.equal(roads, null);
+}
+
 function testGreedyTypedFootprintPressureBenchmarkCase() {
   const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
     names: ["typed-footprint-pressure"],
@@ -4103,6 +4190,9 @@ async function main() {
   testGreedyAdaptiveCapSearchMatchesBestExplicitCap();
   testGreedyIncrementalInvalidationPreservesBenchmarkOutputs();
   testGreedyIncrementalInvalidationCounters();
+  testGreedyDeferredRoadCommitmentBenchmarkCase();
+  testGreedyDeferredRoadCommitmentKeepsTopRowShortcut();
+  testGreedyDeferredRoadMaterializationFailsDeterministically();
   testGreedyTypedFootprintPressureBenchmarkCase();
   testGreedyTypedAvailabilityPressureBenchmarkCase();
   testGreedyGroupedServiceScoringLeavesUntypedBenchmarkUndiscounted();

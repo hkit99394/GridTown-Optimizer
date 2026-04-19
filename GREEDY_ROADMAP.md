@@ -245,6 +245,13 @@ Guardrail:
 - do not weaken the current row-0 shortcut: buildings whose footprint touches row `0` should continue to pass connectivity immediately
 - if deferred connectivity picks a building set that cannot be realized by an explicit connected road network, fail that realization deterministically instead of silently returning an implicit-road layout
 
+Shipped bounded slice:
+- `src/greedy/solver.ts` now supports `greedy.deferRoadCommitment` as an opt-in experiment; the default path still commits explicit road paths during construction
+- in deferred mode, the main service and residential construction loops recompute row-0-reachable empty space after each accepted placement and treat non-row-0 candidates as connectable when one of their border cells stays inside that frontier
+- deferred mode only applies to the main construction pass in this first slice; `fixedServices` reruns still evaluate under the explicit-road path, and row-0 anchor refinement is skipped while deferred mode is enabled because the construction frontier is no longer tied to a single committed row-0 seed
+- before `localSearchImprove()` and final validation, the chosen building set is converted back into an explicit connected road network; if that reconstruction fails, the trial is rejected deterministically instead of returning an implicit-road layout
+- `greedy.profile` now exposes deferred frontier recomputation and reconstruction counters, and `benchmark:greedy` includes `deferred-road-packing-gain` plus a `deferred-roads=` summary line so the experiment stays visible in the fixed corpus
+
 ### 9. Make fixed-service refinement and exhaustive evaluation seed/order-complete
 
 Expected impact: Medium quality improvement, medium implementation cost

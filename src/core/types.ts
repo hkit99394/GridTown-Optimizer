@@ -295,6 +295,8 @@ export interface CpSatOptions {
 export interface GreedyOptions {
   /** Run local search to improve solution (default true) */
   localSearch?: boolean;
+  /** Prototype deferred road commitment during the main greedy construction pass (default false). */
+  deferRoadCommitment?: boolean;
   /** Fixed seed for reproducible greedy restart shuffling. */
   randomSeed?: number;
   /** Collect phase-level profiling counters without changing solver behavior. */
@@ -377,6 +379,9 @@ export interface GreedyProfileCounters {
     probeReuses: number;
     row0Checks: number;
     fallbackRoads: number;
+    deferredFrontierRecomputes: number;
+    deferredReconstructionSteps: number;
+    deferredReconstructionFailures: number;
   };
 }
 

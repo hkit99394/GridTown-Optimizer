@@ -22,6 +22,7 @@ export interface GreedyBenchmarkCaseResult {
   gridRows: number;
   gridCols: number;
   totalPopulation: number;
+  roadCount: number;
   serviceCount: number;
   residentialCount: number;
   greedyOptions: GreedyOptions;
@@ -46,6 +47,7 @@ export interface GreedyBenchmarkSnapshot {
 
 export const DEFAULT_GREEDY_BENCHMARK_OPTIONS = Object.freeze({
   localSearch: true,
+  deferRoadCommitment: false,
   profile: true,
   randomSeed: 7,
   restarts: 2,
@@ -58,6 +60,7 @@ export const DEFAULT_GREEDY_BENCHMARK_OPTIONS = Object.freeze({
   Pick<
     GreedyOptions,
     | "localSearch"
+    | "deferRoadCommitment"
     | "profile"
     | "randomSeed"
     | "restarts"
@@ -89,6 +92,7 @@ export function normalizeGreedyBenchmarkOptions(
   return {
     ...merged,
     localSearch: merged.localSearch ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.localSearch,
+    deferRoadCommitment: merged.deferRoadCommitment ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.deferRoadCommitment,
     profile: merged.profile ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.profile,
     randomSeed: merged.randomSeed ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.randomSeed,
     restarts: merged.restarts ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.restarts,
@@ -109,6 +113,7 @@ function buildBenchmarkParams(benchmarkCase: GreedyBenchmarkCase, overrides?: Pa
   const normalizedGreedy = normalizeGreedyBenchmarkOptions(
     {
       localSearch: params.greedy?.localSearch ?? params.localSearch,
+      deferRoadCommitment: params.greedy?.deferRoadCommitment,
       profile: params.greedy?.profile,
       randomSeed: params.greedy?.randomSeed,
       restarts: params.greedy?.restarts ?? params.restarts,
@@ -189,6 +194,7 @@ function runGreedyBenchmarkCase(
     gridRows: benchmarkCase.grid.length,
     gridCols: benchmarkCase.grid[0]?.length ?? 0,
     totalPopulation: solution.totalPopulation,
+    roadCount: solution.roads.size,
     serviceCount: solution.services.length,
     residentialCount: solution.residentials.length,
     greedyOptions: cloneGreedyOptions(params.greedy ?? {}),
@@ -234,7 +240,7 @@ export function formatGreedyBenchmarkSuite(result: GreedyBenchmarkSuiteResult): 
     const counters = benchmark.greedyProfile?.counters;
     lines.push(`- ${benchmark.name}: ${benchmark.description}`);
     lines.push(
-      `  population=${benchmark.totalPopulation} wall=${benchmark.wallClockSeconds.toFixed(3)}s services=${benchmark.serviceCount} residentials=${benchmark.residentialCount}`
+      `  population=${benchmark.totalPopulation} wall=${benchmark.wallClockSeconds.toFixed(3)}s roads=${benchmark.roadCount} services=${benchmark.serviceCount} residentials=${benchmark.residentialCount}`
     );
     if (counters) {
       lines.push(
@@ -254,6 +260,9 @@ export function formatGreedyBenchmarkSuite(result: GreedyBenchmarkSuiteResult): 
       );
       lines.push(
         `  invalidation=svc-invalid:${counters.servicePhase.candidateInvalidations} svc-type:${counters.servicePhase.typeInvalidations} svc-dirty:${counters.servicePhase.scoreDirtyMarks} svc-rescore:${counters.servicePhase.scoreRecomputes} res-invalid:${counters.residentialPhase.candidateInvalidations} res-type:${counters.residentialPhase.typeInvalidations}`
+      );
+      lines.push(
+        `  deferred-roads=frontier:${counters.roads.deferredFrontierRecomputes} rebuild-steps:${counters.roads.deferredReconstructionSteps} rebuild-failures:${counters.roads.deferredReconstructionFailures}`
       );
     } else {
       lines.push("  profile=disabled");
@@ -522,6 +531,37 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 8,
         serviceExactMaxCombinations: 64,
+      },
+    },
+  },
+  {
+    name: "deferred-road-packing-gain",
+    description: "Packing-heavy case where deferred road commitment finds a stronger valid explicit-road realization.",
+    grid: [
+      [1, 1, 1, 1, 1, 1],
+      [1, 0, 1, 1, 1, 0],
+      [1, 1, 1, 1, 0, 1],
+      [1, 1, 1, 1, 0, 1],
+      [0, 1, 1, 0, 1, 1],
+      [1, 0, 1, 0, 1, 1],
+    ],
+    params: {
+      optimizer: "greedy",
+      serviceTypes: [{ rows: 1, cols: 1, bonus: 55, range: 1, avail: 2 }],
+      residentialTypes: [
+        { w: 2, h: 2, min: 60, max: 120, avail: 4 },
+        { w: 2, h: 3, min: 90, max: 170, avail: 2 },
+      ],
+      greedy: {
+        localSearch: false,
+        deferRoadCommitment: true,
+        randomSeed: 7,
+        restarts: 1,
+        serviceRefineIterations: 0,
+        serviceRefineCandidateLimit: 6,
+        exhaustiveServiceSearch: false,
+        serviceExactPoolLimit: 6,
+        serviceExactMaxCombinations: 32,
       },
     },
   },

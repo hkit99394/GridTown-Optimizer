@@ -102,6 +102,15 @@ function buildingTouchesRoadAnchorRow(r: number): boolean {
   return r === 0;
 }
 
+export interface Row0ReachableEmptyFrontier {
+  reachable: Set<string>;
+  distanceByKey: Map<string, number>;
+}
+
+export interface DeferredRoadFrontierProbe {
+  distance: number;
+}
+
 export interface RoadConnectionProbe {
   path: [number, number][] | null;
 }
@@ -140,6 +149,63 @@ function buildRoadConnectionProbe(
   );
   if (!path) return null;
   return { path };
+}
+
+export function computeRow0ReachableEmptyFrontier(
+  G: Grid,
+  blocked: Set<string>
+): Row0ReachableEmptyFrontier {
+  const reachable = new Set<string>();
+  const distanceByKey = new Map<string, number>();
+  const queue: [number, number][] = [];
+  const W = width(G);
+  for (let c = 0; c < W; c++) {
+    if (!isAllowed(G, 0, c)) continue;
+    const key = cellKey(0, c);
+    if (blocked.has(key)) continue;
+    reachable.add(key);
+    distanceByKey.set(key, 0);
+    queue.push([0, c]);
+  }
+
+  while (queue.length > 0) {
+    const [r, c] = queue.shift()!;
+    const currentDistance = distanceByKey.get(cellKey(r, c)) ?? 0;
+    for (const [r2, c2] of orthogonalNeighbors(G, r, c)) {
+      if (!isAllowed(G, r2, c2)) continue;
+      const nextKey = cellKey(r2, c2);
+      if (blocked.has(nextKey) || reachable.has(nextKey)) continue;
+      reachable.add(nextKey);
+      distanceByKey.set(nextKey, currentDistance + 1);
+      queue.push([r2, c2]);
+    }
+  }
+
+  return { reachable, distanceByKey };
+}
+
+export function probeBuildingConnectedToRow0ReachableEmptyFrontier(
+  G: Grid,
+  frontier: Row0ReachableEmptyFrontier,
+  r: number,
+  c: number,
+  rows: number,
+  cols: number
+): DeferredRoadFrontierProbe | null {
+  if (buildingTouchesRoadAnchorRow(r)) {
+    return { distance: 0 };
+  }
+
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (const [br, bc] of rectangleBorderCells(r, c, rows, cols)) {
+    if (!isAllowed(G, br, bc)) continue;
+    const key = cellKey(br, bc);
+    if (!frontier.reachable.has(key)) continue;
+    const distance = frontier.distanceByKey.get(key) ?? Number.POSITIVE_INFINITY;
+    if (distance < bestDistance) bestDistance = distance;
+  }
+  if (!Number.isFinite(bestDistance)) return null;
+  return { distance: bestDistance };
 }
 
 export function applyRoadConnectionProbe(roads: Set<string>, probe: RoadConnectionProbe): void {
@@ -242,4 +308,70 @@ export function probeBuildingConnectedToRoads(
   cols: number
 ): RoadConnectionProbe | null {
   return buildRoadConnectionProbe(G, roads, occupied, r, c, rows, cols);
+}
+
+type BuildingPlacementForRoadMaterialization = {
+  r: number;
+  c: number;
+  rows: number;
+  cols: number;
+};
+
+export function materializeDeferredRoadNetwork(
+  G: Grid,
+  initialRoadSeed: Set<string> | undefined,
+  occupiedBuildings: Set<string>,
+  buildings: BuildingPlacementForRoadMaterialization[]
+): Set<string> | null {
+  const roads = roadsConnectedToRow0(G, new Set<string>(initialRoadSeed ?? []));
+  if (roads.size === 0) {
+    const fallbackRoad = findAvailableRow0RoadCell(G, occupiedBuildings);
+    if (!fallbackRoad) return null;
+    roads.add(fallbackRoad);
+  }
+
+  const pending = buildings.filter((building) => !buildingTouchesRoadAnchorRow(building.r));
+  while (pending.length > 0) {
+    let bestIndex = -1;
+    let bestCost = Number.POSITIVE_INFINITY;
+    let bestProbe: RoadConnectionProbe | null = null;
+    let bestBuilding: BuildingPlacementForRoadMaterialization | null = null;
+    for (let index = 0; index < pending.length; index++) {
+      const building = pending[index];
+      const probe = buildRoadConnectionProbe(
+        G,
+        roads,
+        occupiedBuildings,
+        building.r,
+        building.c,
+        building.rows,
+        building.cols
+      );
+      if (!probe) continue;
+      const cost = probe.path?.length ?? 0;
+      if (
+        cost < bestCost
+        || (cost === bestCost && bestBuilding !== null && (
+          building.r < bestBuilding.r
+          || (building.r === bestBuilding.r && (
+            building.c < bestBuilding.c
+            || (building.c === bestBuilding.c && (
+              building.rows < bestBuilding.rows
+              || (building.rows === bestBuilding.rows && building.cols < bestBuilding.cols)
+            ))
+          ))
+        ))
+      ) {
+        bestIndex = index;
+        bestCost = cost;
+        bestProbe = probe;
+        bestBuilding = building;
+      }
+    }
+    if (bestIndex < 0 || !bestProbe) return null;
+    applyRoadConnectionProbe(roads, bestProbe);
+    pending.splice(bestIndex, 1);
+  }
+
+  return roads;
 }

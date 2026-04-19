@@ -44,6 +44,7 @@ The main quality limitation is that service choice still uses a shallow proxy fo
 - packing fragmentation
 - row-0 anchor quality
 - downstream placement opportunity cost
+- premature road commitment that can occupy corridor cells needed by better later buildings
 
 There are also two specific quality gaps in the current implementation:
 - the typed-residential service scoring proxy can over-count mutually exclusive same-footprint variants and scarce-type upside
@@ -206,7 +207,45 @@ Concrete work:
 Guardrail:
 - phase-level profiling should prove this is worth the added complexity before landing a broad refactor
 
-### 8. Make fixed-service refinement and exhaustive evaluation seed/order-complete
+Shipped bounded slice:
+- `src/greedy/solver.ts` now maintains active candidate pools for the main service placement loop and the main residential placement loop, so overlap-invalidated candidates drop out of future scans instead of being rechecked every iteration
+- reverse indexes from occupied cells to service candidates, residential candidates, and residential scoring groups are now precomputed once per greedy solve and reused by every `solveOne()` attempt
+- service rescoring is now lazy in the main service loop: scores stay cached until a newly blocked residential group or a newly boosted covered group marks the affected service candidates dirty
+- service and residential type exhaustion now proactively invalidate candidates of exhausted types in the main construction loops
+- the `fixedServices` service-placement path and `localSearchImprove()` remain unchanged in this first slice, but any `solveOne()` call now reuses the new residential active-pool invalidation loop, including refinement and exhaustive reruns
+- connectivity probing stays fresh for active candidates on every scan; failed road probes are not cached across iterations in this first invalidation slice
+- `greedy.profile` now exposes service/residential invalidation counts plus dirty/rescore counters, and `benchmark:greedy` includes `crowded-invalidation-heavy` with an `invalidation=` summary line so Step 7 stays visible in the fixed corpus
+
+### 8. Prototype deferred road commitment using row-0-reachable empty space
+
+Expected impact: Medium-high quality improvement, medium heuristic risk
+
+Why:
+- the current greedy path materializes the selected connection path immediately after each accepted placement
+- those committed road cells then become occupied cells that can block later service or residential placements
+- on corridor or choke-point maps, a locally cheap early road path can shrink the later packing frontier more than the current scoring or tie-breakers account for
+- row-0 buildings already have a simpler rule and should keep it: if a building footprint touches row `0`, it passes connectivity immediately without any extra empty-cell or BFS check
+
+Concrete work:
+- introduce a temporary row-0-reachable empty-space frontier for greedy construction, distinct from the final explicit road set
+- during service and residential candidate scans, treat a non-row-0 building as connectable when at least one adjacent empty allowed cell can reach row `0` through empty allowed cells
+- do not immediately occupy the winning connection path during the main construction loop; only occupy the building footprint while the deferred-connectivity model remains consistent
+- keep row-0 buildings as automatic pass-through candidates in both construction and validation planning
+- add a bounded post-pass that materializes an explicit connected road set for the chosen buildings, preferably sharing paths across buildings instead of replaying one shortest path per building independently
+- validate the reconstructed roads with the existing evaluator and reject or repair any deferred layout that cannot be realized as a legal explicit road network
+- add focused benchmarks for narrow corridors, single-gate regions, and packing-heavy maps where early road occupation currently blocks later buildings
+
+First bounded slice:
+- gate the experiment behind a greedy option so the current explicit-road construction path remains the default while the deferred policy is measured
+- start with full recomputation of the row-0-reachable empty frontier after each accepted placement before attempting more incremental maintenance
+- reconstruct roads only once after the main construction pass, then compare incumbent population, road count, and wall time against the current explicit-road baseline
+
+Guardrail:
+- every returned greedy solution must still include an explicit road set that satisfies the spec and the strict evaluator
+- do not weaken the current row-0 shortcut: buildings whose footprint touches row `0` should continue to pass connectivity immediately
+- if deferred connectivity picks a building set that cannot be realized by an explicit connected road network, fail that realization deterministically instead of silently returning an implicit-road layout
+
+### 9. Make fixed-service refinement and exhaustive evaluation seed/order-complete
 
 Expected impact: Medium quality improvement, medium implementation cost
 
@@ -225,7 +264,7 @@ Guardrail:
 - control combinatorial growth carefully; this path should stay bounded and measurable
 - prefer coarse completeness first, then deeper search only if benchmarks justify it
 
-### 9. Strengthen local search beyond residential-only moves
+### 10. Strengthen local search beyond residential-only moves
 
 Expected impact: High solution-quality gain
 
@@ -244,7 +283,7 @@ Guardrail:
 
 ## Later Priorities
 
-### 10. Reduce allocation pressure in hot geometry and occupancy helpers
+### 11. Reduce allocation pressure in hot geometry and occupancy helpers
 
 Expected impact: Medium runtime gain, broader refactor footprint
 
@@ -257,7 +296,7 @@ Concrete work:
 - reduce temporary `Set` creation in repeated helper calls
 - collapse repeated rectangle normalization in hot loops
 
-### 11. Explore a stronger greedy search policy
+### 12. Explore a stronger greedy search policy
 
 Expected impact: Potentially very high quality gain, higher heuristic risk
 
@@ -269,7 +308,7 @@ Options:
 Why this is later:
 - these changes are higher risk and should come after measurement plus the lower-risk runtime wins
 
-### 12. Decide whether greedy should stay standalone or become more explicitly hybrid
+### 13. Decide whether greedy should stay standalone or become more explicitly hybrid
 
 Expected impact: Strategic
 
@@ -290,9 +329,10 @@ Decision point:
 5. Make service scoring footprint-aware and availability-aware for typed residential candidates.
 6. Add better tie-breakers and deterministic same-footprint upgrades.
 7. Introduce incremental candidate invalidation.
-8. Make fixed-service refinement and exhaustive evaluation seed/order-complete.
-9. Extend local search to include service neighborhoods.
-10. Revisit deeper redesigns only after the above is measured.
+8. Prototype deferred road commitment with row-0-reachable empty-space checks plus explicit road reconstruction.
+9. Make fixed-service refinement and exhaustive evaluation seed/order-complete.
+10. Extend local search to include service neighborhoods.
+11. Revisit deeper redesigns only after the above is measured.
 
 ## Success Metrics
 
@@ -314,6 +354,7 @@ Secondary metrics:
 
 - Keep greedy seed quality and greedy wall-clock cost both visible in benchmarks.
 - Do not silently weaken row-0 connectivity guarantees or final layout validation.
+- If greedy experiments with deferred or implicit road candidates, always reconstruct and validate an explicit final road set before returning a solution.
 - Prefer deterministic tie-break behavior when a seed is provided.
 - Avoid broad structural refactors until profiling proves they matter.
 - Treat greedy as part of the staged solver workflow, not as an isolated algorithm.

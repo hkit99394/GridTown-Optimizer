@@ -69,6 +69,15 @@ type CapResult = {
   serviceCount: number;
 };
 type MaybeStop = (() => void) | undefined;
+interface GreedyPrecomputedIndexes {
+  serviceCandidateIndicesByKey: Map<string, number>;
+  serviceCandidatesByOccupiedCell: Map<string, number[]>;
+  residentialGroupsByOccupiedCell: Map<string, number[]>;
+  serviceCandidateIndicesByResidentialGroup: number[][];
+  serviceCandidateIndicesByType: number[][] | null;
+  residentialCandidatesByOccupiedCell: Map<string, number[]>;
+  residentialCandidateIndicesByType: number[][] | null;
+}
 interface GreedySolveContext {
   grid: Grid;
   params: SolverParams;
@@ -77,6 +86,7 @@ interface GreedySolveContext {
   serviceCoverageGroupsByKey: Map<string, number[]>;
   anyResidentialCandidates: ResidentialCandidatesList;
   residentialCandidatesForLocal: ResidentialCandidatesList;
+  precomputedIndexes: GreedyPrecomputedIndexes;
   maxResidentials: number | undefined;
   useServiceTypes: boolean;
   useTypes: boolean;
@@ -130,15 +140,21 @@ function createGreedyProfileCounters(): GreedyProfileCounters {
     servicePhase: {
       candidateScans: 0,
       canConnectChecks: 0,
+      candidateInvalidations: 0,
+      typeInvalidations: 0,
       groupedScoreLookups: 0,
       groupedScoreGroupEvaluations: 0,
       availabilityDiscountedGroups: 0,
+      scoreDirtyMarks: 0,
+      scoreRecomputes: 0,
       placements: 0,
       fixedPlacements: 0,
     },
     residentialPhase: {
       candidateScans: 0,
       canConnectChecks: 0,
+      candidateInvalidations: 0,
+      typeInvalidations: 0,
       placements: 0,
       populationCacheLookups: 0,
     },
@@ -716,6 +732,173 @@ function buildResidentialPopulationCache(
   return cache;
 }
 
+type ActiveCandidatePool = {
+  activeIndices: number[];
+  positions: number[];
+};
+
+function createActiveCandidatePool(candidateCount: number): ActiveCandidatePool {
+  return {
+    activeIndices: Array.from({ length: candidateCount }, (_, index) => index),
+    positions: Array.from({ length: candidateCount }, (_, index) => index),
+  };
+}
+
+function isCandidateActive(pool: ActiveCandidatePool, candidateIndex: number): boolean {
+  return (pool.positions[candidateIndex] ?? -1) >= 0;
+}
+
+function removeActiveCandidate(pool: ActiveCandidatePool, candidateIndex: number): boolean {
+  const position = pool.positions[candidateIndex] ?? -1;
+  if (position < 0) return false;
+  const lastPosition = pool.activeIndices.length - 1;
+  const lastCandidateIndex = pool.activeIndices[lastPosition];
+  pool.activeIndices[position] = lastCandidateIndex;
+  pool.positions[lastCandidateIndex] = position;
+  pool.activeIndices.pop();
+  pool.positions[candidateIndex] = -1;
+  return true;
+}
+
+function buildFootprintCandidateIndex<T>(
+  candidates: readonly T[],
+  footprintKeys: (candidate: T) => string[]
+): Map<string, number[]> {
+  const byCell = new Map<string, number[]>();
+  for (let candidateIndex = 0; candidateIndex < candidates.length; candidateIndex++) {
+    for (const cellKey of footprintKeys(candidates[candidateIndex])) {
+      const existing = byCell.get(cellKey);
+      if (existing) {
+        existing.push(candidateIndex);
+      } else {
+        byCell.set(cellKey, [candidateIndex]);
+      }
+    }
+  }
+  return byCell;
+}
+
+function buildResidentialGroupCellIndex(
+  groups: ResidentialScoringGroup[]
+): Map<string, number[]> {
+  return buildFootprintCandidateIndex(groups, (group) =>
+    residentialFootprint(group.r, group.c, group.rows, group.cols)
+  );
+}
+
+function buildServiceCoverageReverseIndex(
+  serviceCandidates: readonly ServiceCandidate[],
+  serviceCoverageGroupsByKey: Map<string, number[]>,
+  groupCount: number
+): number[][] {
+  const byGroup = Array.from({ length: groupCount }, () => [] as number[]);
+  for (let candidateIndex = 0; candidateIndex < serviceCandidates.length; candidateIndex++) {
+    const groupIndices = serviceCoverageGroupsByKey.get(serviceCandidateKey(serviceCandidates[candidateIndex])) ?? [];
+    for (const groupIndex of groupIndices) {
+      byGroup[groupIndex].push(candidateIndex);
+    }
+  }
+  return byGroup;
+}
+
+function buildTypedCandidateIndex(
+  candidateCount: number,
+  getTypeIndex: (candidateIndex: number) => number,
+  typeCount: number
+): number[][] {
+  const byType = Array.from({ length: typeCount }, () => [] as number[]);
+  for (let candidateIndex = 0; candidateIndex < candidateCount; candidateIndex++) {
+    const typeIndex = getTypeIndex(candidateIndex);
+    if (typeIndex >= 0 && typeIndex < typeCount) {
+      byType[typeIndex].push(candidateIndex);
+    }
+  }
+  return byType;
+}
+
+function collectIndexedCandidatesForCells(
+  cellKeys: Iterable<string>,
+  indexByCell: Map<string, number[]>
+): number[] {
+  const affected = new Set<number>();
+  for (const cellKey of cellKeys) {
+    for (const candidateIndex of indexByCell.get(cellKey) ?? []) {
+      affected.add(candidateIndex);
+    }
+  }
+  return [...affected];
+}
+
+function mapGlobalCandidateIndicesToLocal(
+  candidateIndices: Iterable<number>,
+  globalToLocalCandidateIndices: readonly number[]
+): number[] {
+  const mapped = new Set<number>();
+  for (const candidateIndex of candidateIndices) {
+    const localIndex = globalToLocalCandidateIndices[candidateIndex] ?? -1;
+    if (localIndex >= 0) mapped.add(localIndex);
+  }
+  return [...mapped];
+}
+
+function invalidateCandidatePoolEntries(
+  pool: ActiveCandidatePool,
+  candidateIndices: Iterable<number>
+): number {
+  let invalidated = 0;
+  for (const candidateIndex of candidateIndices) {
+    if (removeActiveCandidate(pool, candidateIndex)) {
+      invalidated += 1;
+    }
+  }
+  return invalidated;
+}
+
+function markServiceCandidatesDirty(
+  candidateIndices: Iterable<number>,
+  dirtyScores: boolean[],
+  activePool: ActiveCandidatePool
+): number {
+  let marked = 0;
+  for (const candidateIndex of candidateIndices) {
+    if (!isCandidateActive(activePool, candidateIndex) || dirtyScores[candidateIndex]) continue;
+    dirtyScores[candidateIndex] = true;
+    marked += 1;
+  }
+  return marked;
+}
+
+function collectServiceCandidatesForResidentialGroups(
+  groupIndices: Iterable<number>,
+  serviceCandidateIndicesByGroup: readonly number[][]
+): number[] {
+  const affected = new Set<number>();
+  for (const groupIndex of groupIndices) {
+    for (const candidateIndex of serviceCandidateIndicesByGroup[groupIndex] ?? []) {
+      affected.add(candidateIndex);
+    }
+  }
+  return [...affected];
+}
+
+function collectNewlyOccupiedKeys(
+  occupied: Set<string>,
+  probe: RoadConnectionProbe | null,
+  footprintKeys: Iterable<string>
+): string[] {
+  const newlyOccupied = new Set<string>();
+  if (probe?.path) {
+    for (const [r, c] of probe.path) {
+      const key = `${r},${c}`;
+      if (!occupied.has(key)) newlyOccupied.add(key);
+    }
+  }
+  for (const key of footprintKeys) {
+    if (!occupied.has(key)) newlyOccupied.add(key);
+  }
+  return [...newlyOccupied];
+}
+
 function solveOne(
   context: GreedySolveContext,
   options: SolveOneOptions
@@ -728,6 +911,7 @@ function solveOne(
     serviceCoverageGroupsByKey,
     anyResidentialCandidates,
     residentialCandidatesForLocal,
+    precomputedIndexes,
     maxResidentials,
     useServiceTypes,
     useTypes,
@@ -763,6 +947,49 @@ function solveOne(
     if (profileCounters) profileCounters.roads.probeCalls++;
     return probeBuildingConnectedToRoads(G, roads, snapshotOccupied, r, c, rows, cols);
   };
+  const serviceOrderGlobalCandidateIndices = !fixedServices
+    ? serviceSource.map((candidate) => precomputedIndexes.serviceCandidateIndicesByKey.get(serviceCandidateKey(candidate)) ?? -1)
+    : null;
+  const serviceGlobalToLocalCandidateIndices = !fixedServices && serviceOrderGlobalCandidateIndices
+    ? Array.from({ length: serviceOrder.length }, () => -1)
+    : null;
+  if (!fixedServices && serviceOrderGlobalCandidateIndices && serviceGlobalToLocalCandidateIndices) {
+    for (let localIndex = 0; localIndex < serviceOrderGlobalCandidateIndices.length; localIndex++) {
+      const globalIndex = serviceOrderGlobalCandidateIndices[localIndex];
+      if (globalIndex >= 0) {
+        serviceGlobalToLocalCandidateIndices[globalIndex] = localIndex;
+      }
+    }
+  }
+  const serviceActivePool = !fixedServices ? createActiveCandidatePool(serviceSource.length) : null;
+  const serviceScoreCache = !fixedServices ? Array.from({ length: serviceSource.length }, () => 0) : null;
+  const serviceScoreDirty = !fixedServices ? Array.from({ length: serviceSource.length }, () => true) : null;
+  if (serviceActivePool && serviceGlobalToLocalCandidateIndices && occupied.size > 0) {
+    const invalidated = invalidateCandidatePoolEntries(
+      serviceActivePool,
+      mapGlobalCandidateIndicesToLocal(
+        collectIndexedCandidatesForCells(occupied, precomputedIndexes.serviceCandidatesByOccupiedCell),
+        serviceGlobalToLocalCandidateIndices
+      )
+    );
+    if (profileCounters) profileCounters.servicePhase.candidateInvalidations += invalidated;
+  }
+  if (serviceActivePool && serviceGlobalToLocalCandidateIndices && useServiceTypes && remainingServiceAvail && precomputedIndexes.serviceCandidateIndicesByType) {
+    for (let typeIndex = 0; typeIndex < remainingServiceAvail.length; typeIndex++) {
+      if (remainingServiceAvail[typeIndex] > 0) continue;
+      const invalidated = invalidateCandidatePoolEntries(
+        serviceActivePool,
+        mapGlobalCandidateIndicesToLocal(
+          precomputedIndexes.serviceCandidateIndicesByType[typeIndex] ?? [],
+          serviceGlobalToLocalCandidateIndices
+        )
+      );
+      if (profileCounters) {
+        profileCounters.servicePhase.candidateInvalidations += invalidated;
+        profileCounters.servicePhase.typeInvalidations += invalidated;
+      }
+    }
+  }
   if (fixedServices) {
     for (const s of serviceSource) {
       maybeStop?.();
@@ -804,32 +1031,49 @@ function solveOne(
     for (;;) {
       maybeStop?.();
       if (maxServices !== undefined && services.length >= maxServices) break;
+      if (
+        !serviceActivePool
+        || !serviceScoreCache
+        || !serviceScoreDirty
+        || !serviceOrderGlobalCandidateIndices
+        || !serviceGlobalToLocalCandidateIndices
+      ) {
+        break;
+      }
 
       let bestCandidate: ServiceCandidate | null = null;
+      let bestCandidateIndex = -1;
       let bestProbe: RoadConnectionProbe | null = null;
       let bestScore = 0;
-      for (const service of serviceSource) {
+      for (const candidateIndex of serviceActivePool.activeIndices) {
         maybeStop?.();
         if (profileCounters) profileCounters.servicePhase.candidateScans++;
+        const service = serviceSource[candidateIndex];
+        const globalCandidateIndex = serviceOrderGlobalCandidateIndices[candidateIndex] ?? -1;
+        if (globalCandidateIndex < 0) continue;
         const placement = materializeServicePlacement(service);
         if (useServiceTypes && remainingServiceAvail && remainingServiceAvail[service.typeIndex] <= 0) continue;
         if (roads.size === 0) {
           if (profileCounters) profileCounters.roads.row0Checks++;
           if (!placementLeavesRow0RoadCellAvailable(G, occupied, placement.r, placement.c, placement.rows, placement.cols)) continue;
         }
-        if (overlaps(occupied, placement.r, placement.c, placement.rows, placement.cols)) continue;
         if (profileCounters) profileCounters.servicePhase.canConnectChecks++;
         const probe = probeRoadConnection(occupied, placement.r, placement.c, placement.rows, placement.cols);
         if (!probe) continue;
-        const score = computeServiceMarginalScore(
-          service,
-          occupied,
-          currentResidentialGroupBoosts,
-          residentialScoringGroups,
-          serviceCoverageGroupsByKey,
-          remainingAvail,
-          profileCounters
-        );
+        if (serviceScoreDirty[candidateIndex]) {
+          serviceScoreCache[candidateIndex] = computeServiceMarginalScore(
+            service,
+            occupied,
+            currentResidentialGroupBoosts,
+            residentialScoringGroups,
+            serviceCoverageGroupsByKey,
+            remainingAvail,
+            profileCounters
+          );
+          serviceScoreDirty[candidateIndex] = false;
+          if (profileCounters) profileCounters.servicePhase.scoreRecomputes++;
+        }
+        const score = serviceScoreCache[candidateIndex] ?? 0;
         if (
           score > bestScore
           || (score === bestScore && score > 0 && bestCandidate !== null
@@ -837,22 +1081,23 @@ function solveOne(
             && compareServiceTieBreaks(service, probe, bestCandidate, bestProbe) < 0)
         ) {
           bestCandidate = service;
+          bestCandidateIndex = candidateIndex;
           bestScore = score;
           bestProbe = probe;
         }
       }
 
-      if (!bestCandidate || bestScore <= 0) break;
+      if (!bestCandidate || bestCandidateIndex < 0 || bestScore <= 0) break;
 
       const placement = materializeServicePlacement(bestCandidate);
+      const newlyOccupiedKeys = collectNewlyOccupiedKeys(occupied, bestProbe, serviceFootprint(placement));
       if (profileCounters) profileCounters.roads.ensureConnectedCalls++;
       if (!bestProbe) {
         break;
       }
       if (profileCounters) profileCounters.roads.probeReuses++;
       applyRoadConnectionProbe(roads, bestProbe);
-      for (const k of roads) occupied.add(k);
-      for (const k of serviceFootprint(placement)) occupied.add(k);
+      for (const k of newlyOccupiedKeys) occupied.add(k);
       services.push(placement);
       serviceTypeIndices.push(bestCandidate.typeIndex);
       serviceBonuses.push(bestCandidate.bonus);
@@ -861,7 +1106,52 @@ function solveOne(
       for (const groupIndex of coveredGroupIndices) {
         currentResidentialGroupBoosts[groupIndex] += bestCandidate.bonus;
       }
-      if (useServiceTypes && remainingServiceAvail) remainingServiceAvail[bestCandidate.typeIndex]--;
+      if (serviceGlobalToLocalCandidateIndices) {
+        const invalidated = invalidateCandidatePoolEntries(
+          serviceActivePool,
+          mapGlobalCandidateIndicesToLocal(
+            collectIndexedCandidatesForCells(newlyOccupiedKeys, precomputedIndexes.serviceCandidatesByOccupiedCell),
+            serviceGlobalToLocalCandidateIndices
+          )
+        );
+        if (profileCounters) profileCounters.servicePhase.candidateInvalidations += invalidated;
+      }
+      if (serviceGlobalToLocalCandidateIndices && serviceScoreDirty) {
+        const blockedGroupIndices = collectIndexedCandidatesForCells(
+          newlyOccupiedKeys,
+          precomputedIndexes.residentialGroupsByOccupiedCell
+        );
+        const affectedGroupIndices = new Set<number>(coveredGroupIndices);
+        for (const groupIndex of blockedGroupIndices) affectedGroupIndices.add(groupIndex);
+        const dirtyMarks = markServiceCandidatesDirty(
+          mapGlobalCandidateIndicesToLocal(
+            collectServiceCandidatesForResidentialGroups(
+              affectedGroupIndices,
+              precomputedIndexes.serviceCandidateIndicesByResidentialGroup
+            ),
+            serviceGlobalToLocalCandidateIndices
+          ),
+          serviceScoreDirty,
+          serviceActivePool
+        );
+        if (profileCounters) profileCounters.servicePhase.scoreDirtyMarks += dirtyMarks;
+      }
+      if (useServiceTypes && remainingServiceAvail) {
+        remainingServiceAvail[bestCandidate.typeIndex]--;
+        if (remainingServiceAvail[bestCandidate.typeIndex] <= 0 && serviceGlobalToLocalCandidateIndices && precomputedIndexes.serviceCandidateIndicesByType) {
+          const invalidated = invalidateCandidatePoolEntries(
+            serviceActivePool,
+            mapGlobalCandidateIndicesToLocal(
+              precomputedIndexes.serviceCandidateIndicesByType[bestCandidate.typeIndex] ?? [],
+              serviceGlobalToLocalCandidateIndices
+            )
+          );
+          if (profileCounters) {
+            profileCounters.servicePhase.candidateInvalidations += invalidated;
+            profileCounters.servicePhase.typeInvalidations += invalidated;
+          }
+        }
+      }
       if (profileCounters) profileCounters.servicePhase.placements++;
     }
   }
@@ -888,24 +1178,41 @@ function solveOne(
   const residentials: ResidentialPlacement[] = [];
   const residentialTypeIndices: number[] = [];
   const populations: number[] = [];
+  const residentialActivePool = createActiveCandidatePool(anyResidentialCandidates.length);
+  if (occupied.size > 0) {
+    const invalidated = invalidateCandidatePoolEntries(
+      residentialActivePool,
+      collectIndexedCandidatesForCells(occupied, precomputedIndexes.residentialCandidatesByOccupiedCell)
+    );
+    if (profileCounters) profileCounters.residentialPhase.candidateInvalidations += invalidated;
+  }
+  if (useTypes && remainingAvail && precomputedIndexes.residentialCandidateIndicesByType) {
+    for (let typeIndex = 0; typeIndex < remainingAvail.length; typeIndex++) {
+      if (remainingAvail[typeIndex] > 0) continue;
+      const invalidated = invalidateCandidatePoolEntries(
+        residentialActivePool,
+        precomputedIndexes.residentialCandidateIndicesByType[typeIndex] ?? []
+      );
+      if (profileCounters) {
+        profileCounters.residentialPhase.candidateInvalidations += invalidated;
+        profileCounters.residentialPhase.typeInvalidations += invalidated;
+      }
+    }
+  }
   for (;;) {
     if (maxResidentials !== undefined && residentials.length >= maxResidentials) break;
     let best: ResidentialCandidatesList[0] | null = null;
+    let bestCandidateIndex = -1;
     let bestProbe: RoadConnectionProbe | null = null;
     let bestPop = -1;
-    for (let candidateIndex = 0; candidateIndex < anyResidentialCandidates.length; candidateIndex++) {
+    for (const candidateIndex of residentialActivePool.activeIndices) {
       const cand = anyResidentialCandidates[candidateIndex];
       maybeStop?.();
       if (profileCounters) profileCounters.residentialPhase.candidateScans++;
-      if (useTypes && remainingAvail) {
-        const ti = getCandidateTypeIndex(cand);
-        if (remainingAvail[ti] <= 0) continue;
-      }
       if (roads.size === 0) {
         if (profileCounters) profileCounters.roads.row0Checks++;
         if (!placementLeavesRow0RoadCellAvailable(G, occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
       }
-      if (overlaps(occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
       if (profileCounters) profileCounters.residentialPhase.canConnectChecks++;
       const probe = probeRoadConnection(occupied, cand.r, cand.c, cand.rows, cand.cols);
       if (!probe) continue;
@@ -918,21 +1225,45 @@ function solveOne(
       ) {
         bestPop = pop;
         best = cand;
+        bestCandidateIndex = candidateIndex;
         bestProbe = probe;
       }
     }
-    if (best == null || bestPop < 0) break;
+    if (best == null || bestCandidateIndex < 0 || bestPop < 0) break;
+    const newlyOccupiedKeys = collectNewlyOccupiedKeys(
+      occupied,
+      bestProbe,
+      residentialFootprint(best.r, best.c, best.rows, best.cols)
+    );
     if (profileCounters) profileCounters.roads.ensureConnectedCalls++;
     if (!bestProbe) break;
     if (profileCounters) profileCounters.roads.probeReuses++;
     applyRoadConnectionProbe(roads, bestProbe);
-    for (const k of roads) occupied.add(k);
-    for (const k of residentialFootprint(best.r, best.c, best.rows, best.cols)) occupied.add(k);
+    for (const k of newlyOccupiedKeys) occupied.add(k);
     residentials.push({ r: best.r, c: best.c, rows: best.rows, cols: best.cols });
     const bestTypeIndex = getCandidateTypeIndex(best);
     residentialTypeIndices.push(bestTypeIndex);
     populations.push(bestPop);
-    if (useTypes && remainingAvail && bestTypeIndex >= 0) remainingAvail[bestTypeIndex]--;
+    {
+      const invalidated = invalidateCandidatePoolEntries(
+        residentialActivePool,
+        collectIndexedCandidatesForCells(newlyOccupiedKeys, precomputedIndexes.residentialCandidatesByOccupiedCell)
+      );
+      if (profileCounters) profileCounters.residentialPhase.candidateInvalidations += invalidated;
+    }
+    if (useTypes && remainingAvail && bestTypeIndex >= 0) {
+      remainingAvail[bestTypeIndex]--;
+      if (remainingAvail[bestTypeIndex] <= 0 && precomputedIndexes.residentialCandidateIndicesByType) {
+        const invalidated = invalidateCandidatePoolEntries(
+          residentialActivePool,
+          precomputedIndexes.residentialCandidateIndicesByType[bestTypeIndex] ?? []
+        );
+        if (profileCounters) {
+          profileCounters.residentialPhase.candidateInvalidations += invalidated;
+          profileCounters.residentialPhase.typeInvalidations += invalidated;
+        }
+      }
+    }
     if (profileCounters) profileCounters.residentialPhase.placements++;
   }
 
@@ -1092,6 +1423,32 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
   if (profileCounters) profileCounters.precompute.residentialCandidates += residentialCandidateStats.length;
   const residentialScoringGroups = buildResidentialScoringGroups(residentialCandidateStats, profileCounters);
   const serviceCoverageGroupsByKey = buildServiceCoverageIndex(serviceCandidates, residentialScoringGroups, profileCounters);
+  const precomputedIndexes: GreedyPrecomputedIndexes = {
+    serviceCandidateIndicesByKey: new Map(
+      serviceCandidates.map((candidate, candidateIndex) => [serviceCandidateKey(candidate), candidateIndex])
+    ),
+    serviceCandidatesByOccupiedCell: buildFootprintCandidateIndex(serviceCandidates, (candidate) => serviceFootprint(candidate)),
+    residentialGroupsByOccupiedCell: buildResidentialGroupCellIndex(residentialScoringGroups),
+    serviceCandidateIndicesByResidentialGroup: buildServiceCoverageReverseIndex(
+      serviceCandidates,
+      serviceCoverageGroupsByKey,
+      residentialScoringGroups.length
+    ),
+    serviceCandidateIndicesByType: useServiceTypes
+      ? buildTypedCandidateIndex(serviceCandidates.length, (candidateIndex) => serviceCandidates[candidateIndex].typeIndex, params.serviceTypes!.length)
+      : null,
+    residentialCandidatesByOccupiedCell: buildFootprintCandidateIndex(
+      anyResidentialCandidates,
+      (candidate) => residentialFootprint(candidate.r, candidate.c, candidate.rows, candidate.cols)
+    ),
+    residentialCandidateIndicesByType: useTypes
+      ? buildTypedCandidateIndex(
+          anyResidentialCandidates.length,
+          (candidateIndex) => getCandidateTypeIndex(anyResidentialCandidates[candidateIndex]),
+          params.residentialTypes!.length
+        )
+      : null,
+  };
   const initialResidentialAvail = useTypes ? params.residentialTypes!.map((type) => type.avail) : null;
   const initialResidentialGroupBoosts = Array.from({ length: residentialScoringGroups.length }, () => 0);
   const serviceScores = new Map<string, number>();
@@ -1121,6 +1478,7 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     serviceCoverageGroupsByKey,
     anyResidentialCandidates,
     residentialCandidatesForLocal,
+    precomputedIndexes,
     maxResidentials,
     useServiceTypes,
     useTypes,

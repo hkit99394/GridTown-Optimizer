@@ -2325,6 +2325,91 @@ function testGreedyAdaptiveCapSearchMatchesBestExplicitCap() {
   assert.equal(adaptive.greedyProfile.counters.attempts.refineCaps > 0, true);
 }
 
+function testGreedyIncrementalInvalidationPreservesBenchmarkOutputs() {
+  const expectations = {
+    "typed-housing-baseline": { totalPopulation: 110, serviceCount: 0, residentialCount: 2 },
+    "compact-service-single": { totalPopulation: 370, serviceCount: 1, residentialCount: 2 },
+    "cap-sweep-mixed": { totalPopulation: 440, serviceCount: 1, residentialCount: 3 },
+    "bridge-connectivity-heavy": { totalPopulation: 400, serviceCount: 1, residentialCount: 3 },
+    "typed-footprint-pressure": { totalPopulation: 450, serviceCount: 2, residentialCount: 4 },
+    "adaptive-cap-search-wide": { totalPopulation: 754, serviceCount: 2, residentialCount: 6 },
+    "crowded-invalidation-heavy": { totalPopulation: 711, serviceCount: 1, residentialCount: 6 },
+  };
+
+  for (const [name, expected] of Object.entries(expectations)) {
+    const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, { names: [name] });
+    const benchmark = result.results[0];
+
+    assert.equal(benchmark.name, name);
+    assert.equal(benchmark.totalPopulation, expected.totalPopulation);
+    assert.equal(benchmark.serviceCount, expected.serviceCount);
+    assert.equal(benchmark.residentialCount, expected.residentialCount);
+  }
+}
+
+function testGreedyIncrementalInvalidationCounters() {
+  const crowdedBenchmarkResult = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
+    names: ["crowded-invalidation-heavy"],
+  });
+  assert.equal(crowdedBenchmarkResult.caseCount, 1);
+  assert.deepEqual(crowdedBenchmarkResult.selectedCaseNames, ["crowded-invalidation-heavy"]);
+  assert.equal(crowdedBenchmarkResult.results[0].name, "crowded-invalidation-heavy");
+  assert.match(formatGreedyBenchmarkSuite(crowdedBenchmarkResult), /crowded-invalidation-heavy/);
+  assert.match(formatGreedyBenchmarkSuite(crowdedBenchmarkResult), /invalidation=/);
+
+  const crowdedBenchmarkCase = DEFAULT_GREEDY_BENCHMARK_CORPUS.find((entry) => entry.name === "crowded-invalidation-heavy");
+  const focusedCrowdedParams = structuredClone(crowdedBenchmarkCase.params);
+  focusedCrowdedParams.maxServices = 1;
+  focusedCrowdedParams.greedy = {
+    ...focusedCrowdedParams.greedy,
+    localSearch: false,
+    restarts: 1,
+    serviceRefineIterations: 0,
+    profile: true,
+  };
+  const focusedCrowdedSolution = solveGreedy(
+    crowdedBenchmarkCase.grid.map((row) => [...row]),
+    focusedCrowdedParams
+  );
+  const focusedCrowdedCounters = focusedCrowdedSolution.greedyProfile.counters;
+
+  assert.equal(focusedCrowdedSolution.totalPopulation, 579);
+  assert.equal(focusedCrowdedSolution.services.length, 1);
+  assert.equal(focusedCrowdedSolution.residentials.length, 5);
+  assert.equal(focusedCrowdedCounters.attempts.serviceCaps, 1);
+  assert.equal(focusedCrowdedCounters.attempts.restarts, 0);
+  assert.equal(focusedCrowdedCounters.attempts.localSearchIterations, 0);
+  assert.equal(focusedCrowdedCounters.servicePhase.fixedPlacements, 0);
+  assert.equal(focusedCrowdedCounters.servicePhase.candidateInvalidations > 0, true);
+  assert.equal(focusedCrowdedCounters.servicePhase.scoreDirtyMarks > 0, true);
+  assert.equal(focusedCrowdedCounters.servicePhase.scoreRecomputes > 0, true);
+  assert.equal(focusedCrowdedCounters.residentialPhase.candidateInvalidations > 0, true);
+  assert.equal(
+    focusedCrowdedCounters.servicePhase.candidateScans <
+      focusedCrowdedCounters.precompute.serviceCandidates
+        * Math.max(1, focusedCrowdedCounters.servicePhase.placements),
+    true
+  );
+  assert.equal(focusedCrowdedCounters.servicePhase.candidateScans < 500, true);
+  assert.equal(focusedCrowdedCounters.residentialPhase.candidateScans < 800, true);
+
+  const typedResult = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
+    names: ["typed-availability-pressure"],
+  });
+  const typedCounters = typedResult.results[0].greedyProfile.counters;
+
+  assert.equal(typedCounters.servicePhase.typeInvalidations > 0, true);
+  assert.equal(typedCounters.residentialPhase.typeInvalidations > 0, true);
+
+  const fixedServiceResult = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
+    names: ["compact-service-single"],
+  });
+  const fixedServiceCounters = fixedServiceResult.results[0].greedyProfile.counters;
+
+  assert.equal(fixedServiceCounters.attempts.serviceRefineTrials > 0, true);
+  assert.equal(fixedServiceCounters.servicePhase.fixedPlacements > 0, true);
+}
+
 function testGreedyTypedFootprintPressureBenchmarkCase() {
   const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
     names: ["typed-footprint-pressure"],
@@ -4016,6 +4101,8 @@ async function main() {
   testGreedySmallUpperKeepsFullCapSweep();
   testGreedyAdaptiveCapSearchWideBenchmarkCase();
   testGreedyAdaptiveCapSearchMatchesBestExplicitCap();
+  testGreedyIncrementalInvalidationPreservesBenchmarkOutputs();
+  testGreedyIncrementalInvalidationCounters();
   testGreedyTypedFootprintPressureBenchmarkCase();
   testGreedyTypedAvailabilityPressureBenchmarkCase();
   testGreedyGroupedServiceScoringLeavesUntypedBenchmarkUndiscounted();

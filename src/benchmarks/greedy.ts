@@ -252,6 +252,9 @@ export function formatGreedyBenchmarkSuite(result: GreedyBenchmarkSuiteResult): 
       lines.push(
         `  cap-search=evaluated:${counters.attempts.serviceCaps} coarse:${counters.attempts.coarseCaps} refine:${counters.attempts.refineCaps} skipped:${counters.attempts.capsSkipped} restart-caps:${counters.attempts.restartCaps}`
       );
+      lines.push(
+        `  invalidation=svc-invalid:${counters.servicePhase.candidateInvalidations} svc-type:${counters.servicePhase.typeInvalidations} svc-dirty:${counters.servicePhase.scoreDirtyMarks} svc-rescore:${counters.servicePhase.scoreRecomputes} res-invalid:${counters.residentialPhase.candidateInvalidations} res-type:${counters.residentialPhase.typeInvalidations}`
+      );
     } else {
       lines.push("  profile=disabled");
     }
@@ -485,6 +488,40 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 10,
         serviceExactMaxCombinations: 96,
+      },
+    },
+  },
+  {
+    name: "crowded-invalidation-heavy",
+    description: "Dense mixed case that should invalidate overlapping service and residential candidates aggressively.",
+    grid: [
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+    ],
+    params: {
+      optimizer: "greedy",
+      serviceTypes: [
+        { rows: 1, cols: 1, bonus: 36, range: 1, avail: 2 },
+        { rows: 2, cols: 2, bonus: 62, range: 1, avail: 2 },
+      ],
+      residentialTypes: [
+        { w: 2, h: 2, min: 70, max: 130, avail: 5 },
+        { w: 2, h: 3, min: 105, max: 185, avail: 3 },
+      ],
+      greedy: {
+        localSearch: true,
+        randomSeed: 59,
+        restarts: 2,
+        serviceRefineIterations: 1,
+        serviceRefineCandidateLimit: 10,
+        exhaustiveServiceSearch: false,
+        serviceExactPoolLimit: 8,
+        serviceExactMaxCombinations: 64,
       },
     },
   },

@@ -344,15 +344,21 @@ export interface GreedyProfileCounters {
   servicePhase: {
     candidateScans: number;
     canConnectChecks: number;
+    candidateInvalidations: number;
+    typeInvalidations: number;
     groupedScoreLookups: number;
     groupedScoreGroupEvaluations: number;
     availabilityDiscountedGroups: number;
+    scoreDirtyMarks: number;
+    scoreRecomputes: number;
     placements: number;
     fixedPlacements: number;
   };
   residentialPhase: {
     candidateScans: number;
     canConnectChecks: number;
+    candidateInvalidations: number;
+    typeInvalidations: number;
     placements: number;
     populationCacheLookups: number;
   };

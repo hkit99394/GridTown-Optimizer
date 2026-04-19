@@ -7,6 +7,7 @@ import { existsSync } from "node:fs";
 import type { Grid } from "../core/types.js";
 import type {
   GreedyOptions,
+  GreedyProfileCounters,
   ServicePlacement,
   ServiceCandidate,
   ResidentialPlacement,
@@ -57,12 +58,14 @@ interface GreedySolveContext {
   useServiceTypes: boolean;
   useTypes: boolean;
   localSearch: boolean;
+  profileCounters?: GreedyProfileCounters;
   maybeStop?: () => void;
 }
 interface SolveOneOptions {
   maxServices: number | undefined;
   initialRoadSeed?: Set<string>;
   fixedServices?: ServiceCandidate[];
+  profileCounters?: GreedyProfileCounters;
 }
 
 class GreedyStopError extends Error {
@@ -75,6 +78,48 @@ type RandomSource = () => number;
 type NormalizedGreedyOptions = Omit<Required<GreedyOptions>, "randomSeed"> & {
   randomSeed?: number;
 };
+
+function createGreedyProfileCounters(): GreedyProfileCounters {
+  return {
+    precompute: {
+      serviceCandidates: 0,
+      residentialCandidates: 0,
+      serviceCoveragePairs: 0,
+      serviceStaticScores: 0,
+    },
+    attempts: {
+      serviceCaps: 0,
+      restarts: 0,
+      serviceRefineTrials: 0,
+      exhaustiveTrials: 0,
+      localSearchIterations: 0,
+    },
+    servicePhase: {
+      candidateScans: 0,
+      canConnectChecks: 0,
+      placements: 0,
+      fixedPlacements: 0,
+    },
+    residentialPhase: {
+      candidateScans: 0,
+      canConnectChecks: 0,
+      placements: 0,
+    },
+    localSearch: {
+      candidateScans: 0,
+      canConnectChecks: 0,
+      placements: 0,
+      moveChecks: 0,
+      addChecks: 0,
+    },
+    roads: {
+      canConnectChecks: 0,
+      ensureConnectedCalls: 0,
+      row0Checks: 0,
+      fallbackRoads: 0,
+    },
+  };
+}
 
 function createSeededRandom(seed: number): RandomSource {
   let state = seed >>> 0;
@@ -145,6 +190,7 @@ function getGreedyOptions(params: SolverParams): NormalizedGreedyOptions {
   return {
     localSearch: greedy.localSearch ?? params.localSearch ?? true,
     ...(randomSeed !== undefined ? { randomSeed } : {}),
+    profile: greedy.profile ?? false,
     restarts: greedy.restarts ?? params.restarts ?? 1,
     serviceRefineIterations: greedy.serviceRefineIterations ?? params.serviceRefineIterations ?? 2,
     serviceRefineCandidateLimit: greedy.serviceRefineCandidateLimit ?? params.serviceRefineCandidateLimit ?? 40,
@@ -202,7 +248,8 @@ function marginalPopulationGain(base: number, max: number, currentBoost: number,
 
 function buildServiceCoverageIndex(
   serviceCandidates: ServiceCandidate[],
-  residentialCandidateStats: ResidentialCandidateStat[]
+  residentialCandidateStats: ResidentialCandidateStat[],
+  profileCounters?: GreedyProfileCounters
 ): Map<string, number[]> {
   const coverageByKey = new Map<string, number[]>();
   for (const service of serviceCandidates) {
@@ -222,6 +269,9 @@ function buildServiceCoverageIndex(
       coveredIndices.push(index);
     }
     coverageByKey.set(key, coveredIndices);
+    if (profileCounters) {
+      profileCounters.precompute.serviceCoveragePairs += coveredIndices.length;
+    }
   }
   return coverageByKey;
 }
@@ -229,13 +279,17 @@ function buildServiceCoverageIndex(
 function computeServiceStaticScore(
   service: ServiceCandidate,
   residentialCandidateStats: ResidentialCandidateStat[],
-  serviceCoverageByKey: Map<string, number[]>
+  serviceCoverageByKey: Map<string, number[]>,
+  profileCounters?: GreedyProfileCounters
 ): number {
   const coveredIndices = serviceCoverageByKey.get(serviceCandidateKey(service)) ?? [];
   let score = 0;
   for (const index of coveredIndices) {
     const residential = residentialCandidateStats[index];
     score += marginalPopulationGain(residential.base, residential.max, 0, service.bonus);
+  }
+  if (profileCounters) {
+    profileCounters.precompute.serviceStaticScores++;
   }
   return score;
 }
@@ -284,6 +338,7 @@ function solveOne(
     maxServices,
     initialRoadSeed,
     fixedServices,
+    profileCounters,
   } = options;
   const roads = new Set<string>(initialRoadSeed ?? []);
   const occupied = new Set<string>();
@@ -301,6 +356,7 @@ function solveOne(
     for (const s of serviceSource) {
       maybeStop?.();
       if (maxServices !== undefined && services.length >= maxServices) break;
+      if (profileCounters) profileCounters.servicePhase.fixedPlacements++;
       const placement = materializeServicePlacement(s);
       if (useServiceTypes && remainingServiceAvail) {
         if (remainingServiceAvail[s.typeIndex] <= 0) {
@@ -313,6 +369,7 @@ function solveOne(
       if (overlaps(occupied, placement.r, placement.c, placement.rows, placement.cols)) {
         return null;
       }
+      if (profileCounters) profileCounters.roads.ensureConnectedCalls++;
       if (!ensureBuildingConnectedToRoads(G, roads, occupied, placement.r, placement.c, placement.rows, placement.cols)) {
         return null;
       }
@@ -327,6 +384,7 @@ function solveOne(
         currentResidentialBoosts[index] += s.bonus;
       }
       if (useServiceTypes && remainingServiceAvail) remainingServiceAvail[s.typeIndex]--;
+      if (profileCounters) profileCounters.servicePhase.placements++;
     }
   } else {
     const serviceOrderIndex = new Map<string, number>();
@@ -343,11 +401,17 @@ function solveOne(
       let bestOrderIndex = Infinity;
       for (const service of serviceSource) {
         maybeStop?.();
+        if (profileCounters) profileCounters.servicePhase.candidateScans++;
         const key = serviceCandidateKey(service);
         const placement = materializeServicePlacement(service);
         if (useServiceTypes && remainingServiceAvail && remainingServiceAvail[service.typeIndex] <= 0) continue;
-        if (roads.size === 0 && !placementLeavesRow0RoadCellAvailable(G, occupied, placement.r, placement.c, placement.rows, placement.cols)) continue;
+        if (roads.size === 0) {
+          if (profileCounters) profileCounters.roads.row0Checks++;
+          if (!placementLeavesRow0RoadCellAvailable(G, occupied, placement.r, placement.c, placement.rows, placement.cols)) continue;
+        }
         if (overlaps(occupied, placement.r, placement.c, placement.rows, placement.cols)) continue;
+        if (profileCounters) profileCounters.servicePhase.canConnectChecks++;
+        if (profileCounters) profileCounters.roads.canConnectChecks++;
         if (!canConnectToRoads(G, roads, occupied, placement.r, placement.c, placement.rows, placement.cols)) continue;
         const score = computeServiceMarginalScore(
           service,
@@ -367,6 +431,7 @@ function solveOne(
       if (!bestCandidate || bestScore <= 0) break;
 
       const placement = materializeServicePlacement(bestCandidate);
+      if (profileCounters) profileCounters.roads.ensureConnectedCalls++;
       if (!ensureBuildingConnectedToRoads(G, roads, occupied, placement.r, placement.c, placement.rows, placement.cols)) {
         break;
       }
@@ -381,6 +446,7 @@ function solveOne(
         currentResidentialBoosts[index] += bestCandidate.bonus;
       }
       if (useServiceTypes && remainingServiceAvail) remainingServiceAvail[bestCandidate.typeIndex]--;
+      if (profileCounters) profileCounters.servicePhase.placements++;
     }
   }
   if (fixedServices && services.length !== fixedServices.length) return null;
@@ -407,13 +473,19 @@ function solveOne(
     let bestPop = -1;
     for (const cand of anyResidentialCandidates) {
       maybeStop?.();
+      if (profileCounters) profileCounters.residentialPhase.candidateScans++;
       if (useTypes && remainingAvail) {
         const ti = getCandidateTypeIndex(cand);
         if (remainingAvail[ti] <= 0) continue;
       }
-      if (roads.size === 0 && !placementLeavesRow0RoadCellAvailable(G, occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
-      if (overlaps(occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
-      if (!canConnectToRoads(G, roads, occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
+        if (roads.size === 0) {
+          if (profileCounters) profileCounters.roads.row0Checks++;
+          if (!placementLeavesRow0RoadCellAvailable(G, occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
+        }
+        if (overlaps(occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
+        if (profileCounters) profileCounters.residentialPhase.canConnectChecks++;
+        if (profileCounters) profileCounters.roads.canConnectChecks++;
+        if (!canConnectToRoads(G, roads, occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
       const pop = effectivePop(cand, effectZones, serviceBonuses, getCandidateTypeIndex(cand));
       if (pop > bestPop) {
         bestPop = pop;
@@ -421,13 +493,15 @@ function solveOne(
       }
     }
     if (best == null || bestPop < 0) break;
-    ensureBuildingConnectedToRoads(G, roads, occupied, best.r, best.c, best.rows, best.cols);
+      if (profileCounters) profileCounters.roads.ensureConnectedCalls++;
+      ensureBuildingConnectedToRoads(G, roads, occupied, best.r, best.c, best.rows, best.cols);
     for (const k of roads) occupied.add(k);
     for (const k of residentialFootprint(best.r, best.c, best.rows, best.cols)) occupied.add(k);
     residentials.push({ r: best.r, c: best.c, rows: best.rows, cols: best.cols });
     const bestTypeIndex = getCandidateTypeIndex(best);
     residentialTypeIndices.push(bestTypeIndex);
     if (useTypes && remainingAvail && bestTypeIndex >= 0) remainingAvail[bestTypeIndex]--;
+    if (profileCounters) profileCounters.residentialPhase.placements++;
   }
 
   const populations = residentials.map((res, i) =>
@@ -451,6 +525,7 @@ function solveOne(
       params,
       useTypes ? remainingAvail : null,
       maxResidentials,
+      profileCounters,
       maybeStop
     );
   }
@@ -469,14 +544,17 @@ function solveOne(
   if (roadsValid.size === 0) {
     const fallbackRoad = findAvailableRow0RoadCell(G, occupiedBuildings);
     if (!fallbackRoad) return null;
+    if (profileCounters) profileCounters.roads.fallbackRoads++;
     roadsValid.add(fallbackRoad);
   }
 
   for (const s of services) {
     const normalized = normalizeServicePlacement(s);
+    if (profileCounters) profileCounters.roads.ensureConnectedCalls++;
     ensureBuildingConnectedToRoads(G, roadsValid, occupiedBuildings, normalized.r, normalized.c, normalized.rows, normalized.cols);
   }
   for (const r of residentials) {
+    if (profileCounters) profileCounters.roads.ensureConnectedCalls++;
     ensureBuildingConnectedToRoads(G, roadsValid, occupiedBuildings, r.r, r.c, r.rows, r.cols);
   }
 
@@ -524,6 +602,7 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
   const {
     localSearch,
     randomSeed,
+    profile,
     restarts,
     serviceRefineIterations,
     serviceRefineCandidateLimit,
@@ -533,6 +612,7 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     stopFilePath,
     snapshotFilePath,
   } = getGreedyOptions(params);
+  const profileCounters = profile ? createGreedyProfileCounters() : undefined;
   const { maxServices, maxResidentials } = getBuildingLimits(params);
   const useServiceTypes = (params.serviceTypes?.length ?? 0) > 0;
   const useTypes = (params.residentialTypes?.length ?? 0) > 0;
@@ -559,7 +639,13 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     }
   };
 
+  const finalizeProfile = (solution: Solution): Solution => {
+    if (!profileCounters) return solution;
+    return { ...solution, greedyProfile: { counters: structuredClone(profileCounters) } };
+  };
+
   const serviceCandidates = enumerateServiceCandidates(G, params);
+  if (profileCounters) profileCounters.precompute.serviceCandidates += serviceCandidates.length;
   const residentialCandidateStats = anyResidentialCandidates.map((residential) => ({
     r: residential.r,
     c: residential.c,
@@ -567,11 +653,15 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     cols: residential.cols,
     ...getResidentialBaseMax(params, residential.rows, residential.cols, getCandidateTypeIndex(residential)),
   }));
-  const serviceCoverageByKey = buildServiceCoverageIndex(serviceCandidates, residentialCandidateStats);
+  if (profileCounters) profileCounters.precompute.residentialCandidates += residentialCandidateStats.length;
+  const serviceCoverageByKey = buildServiceCoverageIndex(serviceCandidates, residentialCandidateStats, profileCounters);
   const serviceScores = new Map<string, number>();
   for (const s of serviceCandidates) {
     maybeStop();
-    serviceScores.set(serviceCandidateKey(s), computeServiceStaticScore(s, residentialCandidateStats, serviceCoverageByKey));
+    serviceScores.set(
+      serviceCandidateKey(s),
+      computeServiceStaticScore(s, residentialCandidateStats, serviceCoverageByKey, profileCounters)
+    );
   }
   const serviceOrderSorted = [...serviceCandidates].sort(
     (a, b) => (serviceScores.get(serviceCandidateKey(b)) ?? 0) - (serviceScores.get(serviceCandidateKey(a)) ?? 0)
@@ -581,18 +671,19 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     params,
     residentialCandidateStats,
     serviceCoverageByKey,
-    anyResidentialCandidates,
-    residentialCandidatesForLocal,
-    maxResidentials,
-    useServiceTypes,
-    useTypes,
-    localSearch,
-    maybeStop,
+      anyResidentialCandidates,
+      residentialCandidatesForLocal,
+      maxResidentials,
+      useServiceTypes,
+      useTypes,
+      localSearch,
+      profileCounters,
+      maybeStop,
   };
   const solveWithOrder = (
     serviceOrder: ServiceCandidate[],
     options: SolveOneOptions
-  ): Solution | null => solveOne({ ...baseSolveContext, serviceOrder }, options);
+  ): Solution | null => solveOne({ ...baseSolveContext, serviceOrder }, { ...options, profileCounters });
 
   // If user does not cap services, sweep service count and keep best.
   // This avoids over-placing services (which can block residentials and reduce population).
@@ -607,11 +698,13 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
 
   try {
     for (let capIndex = 0; capIndex < serviceCaps.length; capIndex++) {
+      if (profileCounters) profileCounters.attempts.serviceCaps++;
       const cap = serviceCaps[capIndex];
       maybeStop();
       let bestForCap = solveWithOrder(serviceOrderSorted, { maxServices: cap });
       updateBest(bestForCap);
       for (let r = 1; r < restarts; r++) {
+        if (profileCounters) profileCounters.attempts.restarts++;
         maybeStop();
         const order = shuffle(
           serviceOrderSorted,
@@ -629,6 +722,7 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
           let improved = false;
           for (const roadSeed of collectRow0AnchorRefinementSeeds(refined)) {
             maybeStop();
+            if (profileCounters) profileCounters.attempts.serviceRefineTrials++;
             const trial = solveWithOrder(serviceOrderSorted, {
               maxServices: cap,
               initialRoadSeed: roadSeed,
@@ -688,6 +782,7 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
       const combos = combinationsOfK(pool.length, best.services.length, comboCap);
       for (const idxs of combos) {
         maybeStop();
+        if (profileCounters) profileCounters.attempts.exhaustiveTrials++;
         const forced = idxs.map((i) => pool[i]);
         const trial = solveWithOrder(serviceOrderSorted, {
           maxServices: best.services.length,
@@ -701,13 +796,13 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     }
   } catch (error) {
     if (error instanceof GreedyStopError) {
-      if (error.bestSolution) return error.bestSolution;
+      if (error.bestSolution) return finalizeProfile(error.bestSolution);
       throw error;
     }
     throw error;
   }
 
-  return best;
+  return finalizeProfile(best as Solution);
 }
 
 function localSearchImprove(
@@ -725,6 +820,7 @@ function localSearchImprove(
   params: SolverParams,
   remainingAvail: number[] | null,
   maxResidentials: number | undefined,
+  profileCounters?: GreedyProfileCounters,
   maybeStop?: () => void
 ): number {
   const useTypes = remainingAvail !== null && residentialCandidates.length > 0 && "typeIndex" in residentialCandidates[0];
@@ -756,6 +852,7 @@ function localSearchImprove(
 
   for (let iter = 0; iter < maxIter; iter++) {
     maybeStop?.();
+    if (profileCounters) profileCounters.attempts.localSearchIterations++;
     let bestMove: MoveChoice | null = null;
     let bestMoveDelta = 0;
     let bestAdd: AddChoice | null = null;
@@ -770,6 +867,7 @@ function localSearchImprove(
       for (const k of residentialFootprint(res.r, res.c, res.rows, res.cols)) othersOccupied.delete(k);
       for (const cand of residentialCandidates) {
         maybeStop?.();
+        if (profileCounters) profileCounters.localSearch.candidateScans++;
         const candidateTypeIndex = getCandidateTypeIndex(cand);
         const samePlacement =
           cand.r === res.r
@@ -780,8 +878,14 @@ function localSearchImprove(
         if (useTypes && remainingAvail) {
           if (candidateTypeIndex !== resType && remainingAvail[candidateTypeIndex] <= 0) continue;
         }
-        if (roads.size === 0 && !placementLeavesRow0RoadCellAvailable(G, othersOccupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
+        if (roads.size === 0) {
+          if (profileCounters) profileCounters.roads.row0Checks++;
+          if (!placementLeavesRow0RoadCellAvailable(G, othersOccupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
+        }
         if (overlaps(othersOccupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
+        if (profileCounters) profileCounters.localSearch.moveChecks++;
+        if (profileCounters) profileCounters.localSearch.canConnectChecks++;
+        if (profileCounters) profileCounters.roads.canConnectChecks++;
         if (!canConnectToRoads(G, roads, othersOccupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
         const newPop = popFor(cand);
         const delta = newPop - currentPop;
@@ -803,12 +907,19 @@ function localSearchImprove(
     if (maxResidentials === undefined || residentials.length < maxResidentials) {
       for (const cand of residentialCandidates) {
         maybeStop?.();
+        if (profileCounters) profileCounters.localSearch.candidateScans++;
         const candidateTypeIndex = getCandidateTypeIndex(cand);
         if (useTypes && remainingAvail) {
           if (remainingAvail[candidateTypeIndex] <= 0) continue;
         }
-        if (roads.size === 0 && !placementLeavesRow0RoadCellAvailable(G, occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
+        if (roads.size === 0) {
+          if (profileCounters) profileCounters.roads.row0Checks++;
+          if (!placementLeavesRow0RoadCellAvailable(G, occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
+        }
         if (overlaps(occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
+        if (profileCounters) profileCounters.localSearch.addChecks++;
+        if (profileCounters) profileCounters.localSearch.canConnectChecks++;
+        if (profileCounters) profileCounters.roads.canConnectChecks++;
         if (!canConnectToRoads(G, roads, occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
         const addPop = popFor(cand);
         if (addPop > bestAddDelta) {
@@ -828,6 +939,7 @@ function localSearchImprove(
     if (bestAddDelta > bestMoveDelta && bestAdd) {
       const { candidate, candidateTypeIndex, addPop } = bestAdd;
       totalPopulation += addPop;
+      if (profileCounters) profileCounters.roads.ensureConnectedCalls++;
       ensureBuildingConnectedToRoads(G, roads, occupied, candidate.r, candidate.c, candidate.rows, candidate.cols);
       for (const k of roads) occupied.add(k);
       for (const k of residentialFootprint(candidate.r, candidate.c, candidate.rows, candidate.cols)) occupied.add(k);
@@ -835,6 +947,7 @@ function localSearchImprove(
       residentialTypeIndices.push(candidateTypeIndex);
       populations.push(addPop);
       if (useTypes && remainingAvail && candidateTypeIndex >= 0) remainingAvail[candidateTypeIndex]--;
+      if (profileCounters) profileCounters.localSearch.placements++;
       continue;
     }
 
@@ -847,6 +960,7 @@ function localSearchImprove(
         currentResidential.cols
       )) occupied.delete(k);
       if (useTypes && remainingAvail && bestMove.currentTypeIndex >= 0) remainingAvail[bestMove.currentTypeIndex]++;
+      if (profileCounters) profileCounters.roads.ensureConnectedCalls++;
       ensureBuildingConnectedToRoads(
         G,
         roads,
@@ -873,6 +987,7 @@ function localSearchImprove(
       residentialTypeIndices[bestMove.residentialIndex] = bestMove.candidateTypeIndex;
       populations[bestMove.residentialIndex] = bestMove.newPop;
       totalPopulation = totalPopulation - bestMove.currentPop + bestMove.newPop;
+      if (profileCounters) profileCounters.localSearch.placements++;
       continue;
     }
   }

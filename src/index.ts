@@ -8,6 +8,13 @@ export { solveGreedy } from "./greedy/solver.js";
 export { solveCpSat, solveCpSatAsync, startCpSatSolve } from "./cp-sat/solver.js";
 export { solveLns } from "./lns/solver.js";
 export {
+  createGreedyBenchmarkSnapshot,
+  DEFAULT_GREEDY_BENCHMARK_CORPUS,
+  DEFAULT_GREEDY_BENCHMARK_OPTIONS,
+  formatGreedyBenchmarkSuite,
+  listGreedyBenchmarkCaseNames,
+  normalizeGreedyBenchmarkOptions,
+  runGreedyBenchmarkSuite,
   DEFAULT_CP_SAT_BENCHMARK_CORPUS,
   DEFAULT_CP_SAT_BENCHMARK_OPTIONS,
   formatCpSatBenchmarkSuite,
@@ -41,6 +48,8 @@ export type {
   CpSatWarmStartServicePlacement,
   CpSatWarmStartResidentialPlacement,
   GreedyOptions,
+  GreedyProfile,
+  GreedyProfileCounters,
   LnsOptions,
   CpSatNeighborhoodWindow,
   SolverParams,
@@ -79,6 +88,12 @@ export type {
   SolutionMapValidationResult,
 } from "./core/index.js";
 export type {
+  GreedyBenchmarkCase,
+  GreedyBenchmarkRunOptions,
+  GreedyBenchmarkCaseResult,
+  GreedyBenchmarkSnapshot,
+  GreedyBenchmarkSnapshotCaseResult,
+  GreedyBenchmarkSuiteResult,
   CpSatBenchmarkCase,
   CpSatBenchmarkRunOptions,
   CpSatBenchmarkProgressSample,

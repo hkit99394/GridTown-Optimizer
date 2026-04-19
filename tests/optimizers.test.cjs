@@ -5,13 +5,20 @@ const os = require("node:os");
 const path = require("node:path");
 
 const {
+  createGreedyBenchmarkSnapshot,
+  DEFAULT_GREEDY_BENCHMARK_CORPUS,
+  DEFAULT_GREEDY_BENCHMARK_OPTIONS,
   DEFAULT_CP_SAT_BENCHMARK_CORPUS,
   DEFAULT_CP_SAT_BENCHMARK_OPTIONS,
   getOptimizerAdapter,
+  formatGreedyBenchmarkSuite,
+  listGreedyBenchmarkCaseNames,
   listOptimizerAdapters,
+  normalizeGreedyBenchmarkOptions,
   resolveOptimizerName,
   listCpSatBenchmarkCaseNames,
   normalizeCpSatBenchmarkOptions,
+  runGreedyBenchmarkSuite,
   runCpSatBenchmarkSuite,
   solve,
   solveAsync,
@@ -1630,6 +1637,93 @@ async function testCpSatBenchmarkCorpusHelpers() {
   );
 }
 
+function testGreedyBenchmarkCorpusHelpers() {
+  const names = DEFAULT_GREEDY_BENCHMARK_CORPUS.map((entry) => entry.name);
+  assert.equal(new Set(names).size, names.length);
+  assert.deepEqual(listGreedyBenchmarkCaseNames(), names);
+
+  const normalized = normalizeGreedyBenchmarkOptions(
+    {
+      localSearch: false,
+      restarts: 4,
+    },
+    {
+      randomSeed: 13,
+    }
+  );
+
+  assert.equal(normalized.localSearch, false);
+  assert.equal(normalized.profile, true);
+  assert.equal(normalized.randomSeed, 13);
+  assert.equal(normalized.restarts, 4);
+  assert.equal(normalized.serviceRefineIterations, DEFAULT_GREEDY_BENCHMARK_OPTIONS.serviceRefineIterations);
+  assert.equal(
+    normalized.serviceRefineCandidateLimit,
+    DEFAULT_GREEDY_BENCHMARK_OPTIONS.serviceRefineCandidateLimit
+  );
+  assert.equal(normalized.exhaustiveServiceSearch, false);
+  assert.equal(normalized.serviceExactPoolLimit, DEFAULT_GREEDY_BENCHMARK_OPTIONS.serviceExactPoolLimit);
+  assert.equal(
+    normalized.serviceExactMaxCombinations,
+    DEFAULT_GREEDY_BENCHMARK_OPTIONS.serviceExactMaxCombinations
+  );
+
+  assert.throws(
+    () => runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, { names: ["missing-case"] }),
+    /Unknown greedy benchmark case\(s\): missing-case/
+  );
+
+  const legacyResult = runGreedyBenchmarkSuite(
+    [
+      {
+        name: "legacy-top-level",
+        description: "Legacy top-level greedy options stay consistent in benchmarks.",
+        grid: [
+          [1, 1, 1, 1],
+          [1, 1, 1, 1],
+          [1, 1, 1, 1],
+          [1, 1, 1, 1],
+        ],
+        params: {
+          optimizer: "greedy",
+          residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
+          availableBuildings: { services: 0, residentials: 1 },
+          localSearch: false,
+          restarts: 4,
+          serviceRefineIterations: 0,
+          serviceRefineCandidateLimit: 3,
+          exhaustiveServiceSearch: false,
+          serviceExactPoolLimit: 3,
+          serviceExactMaxCombinations: 12,
+        },
+      },
+    ],
+    undefined
+  );
+
+  assert.equal(legacyResult.results[0].greedyOptions.localSearch, false);
+  assert.equal(legacyResult.results[0].greedyOptions.restarts, 4);
+}
+
+function testGreedyBenchmarkSuite() {
+  const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
+    names: ["cap-sweep-mixed"],
+  });
+  const snapshot = createGreedyBenchmarkSnapshot(result);
+
+  assert.equal(result.caseCount, 1);
+  assert.deepEqual(result.selectedCaseNames, ["cap-sweep-mixed"]);
+  assert.equal(result.results[0].name, "cap-sweep-mixed");
+  assert.equal(result.results[0].greedyOptions.profile, true);
+  assert(result.results[0].wallClockSeconds >= 0);
+  assert(result.results[0].greedyProfile);
+  assert(result.results[0].greedyProfile.counters.precompute.serviceCandidates > 0);
+  assert(result.results[0].greedyProfile.counters.attempts.serviceCaps > 0);
+  assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
+  assert.equal(Object.hasOwn(snapshot.results[0], "wallClockSeconds"), false);
+  assert.match(formatGreedyBenchmarkSuite(result), /cap-sweep-mixed/);
+}
+
 async function maybeTestCpSatBenchmarkSuite() {
   const pythonExecutable = resolveCpSatPython();
   if (!pythonExecutable) {
@@ -2698,6 +2792,54 @@ function testGreedySupportsShapedServices() {
   assert.match(brokenValidation.errors.join("\n"), /does not match configured service type/);
 }
 
+function testGreedyProfilingIsAdditive() {
+  const grid = [
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+  ];
+  const params = {
+    serviceTypes: [{ rows: 2, cols: 2, bonus: 45, range: 1, avail: 1 }],
+    residentialTypes: [{ w: 2, h: 2, min: 60, max: 120, avail: 4 }],
+    availableBuildings: { services: 1, residentials: 2 },
+    greedy: {
+      localSearch: true,
+      randomSeed: 29,
+      restarts: 2,
+      serviceRefineIterations: 1,
+      serviceRefineCandidateLimit: 8,
+      exhaustiveServiceSearch: false,
+      serviceExactPoolLimit: 8,
+      serviceExactMaxCombinations: 32,
+    },
+  };
+
+  const withoutProfile = solveGreedy(grid, params);
+  const withProfile = solveGreedy(grid, {
+    ...params,
+    greedy: {
+      ...params.greedy,
+      profile: true,
+    },
+  });
+
+  assert.equal(withoutProfile.greedyProfile, undefined);
+  assert(withProfile.greedyProfile);
+  assert.equal(withProfile.totalPopulation, withoutProfile.totalPopulation);
+  assert.deepEqual(withProfile.services, withoutProfile.services);
+  assert.deepEqual(withProfile.serviceTypeIndices, withoutProfile.serviceTypeIndices);
+  assert.deepEqual(withProfile.servicePopulationIncreases, withoutProfile.servicePopulationIncreases);
+  assert.deepEqual(withProfile.residentials, withoutProfile.residentials);
+  assert.deepEqual(withProfile.residentialTypeIndices, withoutProfile.residentialTypeIndices);
+  assert.deepEqual(withProfile.populations, withoutProfile.populations);
+  assert.deepEqual([...withProfile.roads].sort(), [...withoutProfile.roads].sort());
+  assert(withProfile.greedyProfile.counters.precompute.serviceCandidates > 0);
+  assert(withProfile.greedyProfile.counters.residentialPhase.candidateScans > 0);
+}
+
 function maybeTestCpSatCandidateReductionHelpers() {
   const pythonExecutable = resolveCpSatPython();
   if (!pythonExecutable) {
@@ -3021,6 +3163,9 @@ async function main() {
   await testAutoAsyncPreservesCancelledStopReasonAfterCpSatReturns();
   await testAutoAsyncStageErrorKeepsIncumbentWithExplicitStopReason();
   testAutoSyncWallClockCapStopsRunningLnsStage();
+  testGreedyProfilingIsAdditive();
+  testGreedyBenchmarkCorpusHelpers();
+  testGreedyBenchmarkSuite();
   await testCpSatBenchmarkCorpusHelpers();
   await maybeTestCpSatBenchmarkSuite();
   await maybeTestCpSatWarmStartContinuation();

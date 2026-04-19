@@ -12,6 +12,7 @@
     "solve:greedy": "tsc && node dist/cli.js greedy",
     "solve:cp-sat": "tsc && node dist/cli.js cp-sat",
     "solve:lns": "tsc && node dist/cli.js lns",
+    "benchmark:greedy": "npm run build && node dist/greedyBenchmarkCli.js",
     "benchmark:cp-sat": "npm run build && node dist/cpSatBenchmarkCli.js",
     "setup:cp-sat": "bash scripts/setup-cp-sat.sh",
     "test": "npm run build && node tests/review-findings.test.cjs && node tests/web-server-routes.test.cjs && node tests/optimizers.test.cjs"

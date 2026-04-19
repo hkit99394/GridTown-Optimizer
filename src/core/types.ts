@@ -297,6 +297,8 @@ export interface GreedyOptions {
   localSearch?: boolean;
   /** Fixed seed for reproducible greedy restart shuffling. */
   randomSeed?: number;
+  /** Collect phase-level profiling counters without changing solver behavior. */
+  profile?: boolean;
   /** Number of restarts with different service order; take best solution (default 1) */
   restarts?: number;
   /** Service-position refinement passes after restarts (default 2) */
@@ -313,6 +315,50 @@ export interface GreedyOptions {
   stopFilePath?: string;
   /** Internal best-snapshot path used by the local web server. */
   snapshotFilePath?: string;
+}
+
+export interface GreedyProfileCounters {
+  precompute: {
+    serviceCandidates: number;
+    residentialCandidates: number;
+    serviceCoveragePairs: number;
+    serviceStaticScores: number;
+  };
+  attempts: {
+    serviceCaps: number;
+    restarts: number;
+    serviceRefineTrials: number;
+    exhaustiveTrials: number;
+    localSearchIterations: number;
+  };
+  servicePhase: {
+    candidateScans: number;
+    canConnectChecks: number;
+    placements: number;
+    fixedPlacements: number;
+  };
+  residentialPhase: {
+    candidateScans: number;
+    canConnectChecks: number;
+    placements: number;
+  };
+  localSearch: {
+    candidateScans: number;
+    canConnectChecks: number;
+    placements: number;
+    moveChecks: number;
+    addChecks: number;
+  };
+  roads: {
+    canConnectChecks: number;
+    ensureConnectedCalls: number;
+    row0Checks: number;
+    fallbackRoads: number;
+  };
+}
+
+export interface GreedyProfile {
+  counters: GreedyProfileCounters;
 }
 
 export interface LnsOptions {
@@ -402,6 +448,8 @@ export interface Solution {
   cpSatTelemetry?: CpSatTelemetry;
   /** Portfolio summary when CP-SAT used multi-run portfolio search. */
   cpSatPortfolio?: CpSatPortfolioSummary;
+  /** Optional greedy profiling counters collected only when profiling is enabled. */
+  greedyProfile?: GreedyProfile;
   /** True when a run was stopped early and this solution is the best feasible result found so far. */
   stoppedByUser?: boolean;
   roads: Set<string>;

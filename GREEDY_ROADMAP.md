@@ -14,7 +14,7 @@ This roadmap is intentionally not about turning `greedy` into a full exact solve
 
 The current greedy path already does more than a single-pass construction heuristic.
 
-What exists today in [src/solver.ts](./src/solver.ts):
+What exists today in [src/greedy/solver.ts](./src/greedy/solver.ts):
 - full candidate enumeration for service and residential placements
 - static service scoring plus dynamic marginal service rescoring
 - residential fill after service placement
@@ -63,6 +63,10 @@ Concrete work:
 - add lightweight counters around candidate enumeration, connectivity checks, service scans, residential scans, and local-search passes
 - add a fixed greedy benchmark corpus and a small summary format for incumbent quality and wall-clock cost
 - keep the current optimizer regression suite as the correctness safety net
+
+Shipped measurement surface:
+- `greedy.profile` emits counter groups for `precompute`, `attempts`, `servicePhase`, `residentialPhase`, `localSearch`, and `roads`
+- `npm run benchmark:greedy` runs a fixed greedy corpus and supports `--list` plus a stable `--json` snapshot that omits timestamps and wall-clock noise
 
 ### 2. Cache connectivity and path reuse inside greedy iterations
 

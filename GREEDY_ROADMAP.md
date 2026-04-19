@@ -398,6 +398,14 @@ Options:
 Why this is later:
 - these changes are higher risk and should come after measurement plus the lower-risk runtime wins
 
+Shipped bounded slice:
+- `src/greedy/solver.ts` now supports an opt-in `greedy.serviceLookaheadCandidates` reranker in the main explicit non-`fixedServices` service loop
+- the Step 14 path first keeps the existing marginal-score pass, then reranks only the top-N already-feasible service candidates with a bounded sequential residential refill simulation capped at two placements
+- the refill simulation replays row-0 reservation checks, exact road-path blocking, overlap invalidation, and typed residential availability on scratch state; deferred-road mode and `fixedServices` still skip the reranker entirely
+- equal lookahead totals still fall back to the current marginal score and `compareServiceTieBreaks(...)`, so enabling the flag does not introduce a new tie policy
+- `benchmark:greedy` now carries the isolated `step14-service-lookahead-reranker` case plus a `step14=` profile line, and the current bounded slice improves that case from `240` to `275` with the feature enabled while keeping the flag-off baseline unchanged
+- `tests/optimizers.test.cjs` now covers Step 14 corpus isolation, flag-off parity, enabled-case improvement, and benchmark option normalization for `serviceLookaheadCandidates`
+
 ### 15. Decide whether greedy should stay standalone or become more explicitly hybrid
 
 Expected impact: Strategic

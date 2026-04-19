@@ -4,6 +4,12 @@ import { solveGreedy } from "../greedy/solver.js";
 
 import type { GreedyOptions, GreedyProfile, Grid, SolverParams } from "../core/types.js";
 
+export interface GreedyServiceLookaheadBenchmarkOptions {
+  serviceLookaheadCandidates?: number;
+}
+
+export type GreedyBenchmarkOptions = GreedyOptions & GreedyServiceLookaheadBenchmarkOptions;
+
 export interface GreedyBenchmarkCase {
   name: string;
   description: string;
@@ -13,7 +19,7 @@ export interface GreedyBenchmarkCase {
 
 export interface GreedyBenchmarkRunOptions {
   names?: string[];
-  greedy?: Partial<GreedyOptions>;
+  greedy?: Partial<GreedyBenchmarkOptions>;
 }
 
 export interface GreedyBenchmarkCaseResult {
@@ -25,7 +31,7 @@ export interface GreedyBenchmarkCaseResult {
   roadCount: number;
   serviceCount: number;
   residentialCount: number;
-  greedyOptions: GreedyOptions;
+  greedyOptions: GreedyBenchmarkOptions;
   greedyProfile: GreedyProfile | null;
   wallClockSeconds: number;
 }
@@ -84,14 +90,14 @@ function cloneSolverParams(params: SolverParams): SolverParams {
   return structuredClone(params);
 }
 
-function cloneGreedyOptions(options: GreedyOptions): GreedyOptions {
+function cloneGreedyOptions(options: GreedyBenchmarkOptions): GreedyBenchmarkOptions {
   return structuredClone(options);
 }
 
 export function normalizeGreedyBenchmarkOptions(
-  greedy: GreedyOptions | undefined,
-  overrides: Partial<GreedyOptions> | undefined
-): GreedyOptions {
+  greedy: GreedyBenchmarkOptions | undefined,
+  overrides: Partial<GreedyBenchmarkOptions> | undefined
+): GreedyBenchmarkOptions {
   const merged = { ...(greedy ?? {}), ...(overrides ?? {}) };
   return {
     ...merged,
@@ -116,26 +122,29 @@ export function normalizeGreedyBenchmarkOptions(
   };
 }
 
-function buildBenchmarkParams(benchmarkCase: GreedyBenchmarkCase, overrides?: Partial<GreedyOptions>): SolverParams {
+function buildBenchmarkParams(
+  benchmarkCase: GreedyBenchmarkCase,
+  overrides?: Partial<GreedyBenchmarkOptions>
+): SolverParams {
   const params = cloneSolverParams(benchmarkCase.params);
+  const benchmarkGreedy = (params.greedy ?? {}) as GreedyBenchmarkOptions;
   const normalizedGreedy = normalizeGreedyBenchmarkOptions(
     {
-      localSearch: params.greedy?.localSearch ?? params.localSearch,
-      localSearchServiceMoves: params.greedy?.localSearchServiceMoves,
-      localSearchServiceCandidateLimit: params.greedy?.localSearchServiceCandidateLimit,
-      deferRoadCommitment: params.greedy?.deferRoadCommitment,
-      profile: params.greedy?.profile,
-      randomSeed: params.greedy?.randomSeed,
-      restarts: params.greedy?.restarts ?? params.restarts,
-      serviceRefineIterations: params.greedy?.serviceRefineIterations ?? params.serviceRefineIterations,
-      serviceRefineCandidateLimit:
-        params.greedy?.serviceRefineCandidateLimit ?? params.serviceRefineCandidateLimit,
-      exhaustiveServiceSearch: params.greedy?.exhaustiveServiceSearch ?? params.exhaustiveServiceSearch,
-      serviceExactPoolLimit: params.greedy?.serviceExactPoolLimit ?? params.serviceExactPoolLimit,
-      serviceExactMaxCombinations:
-        params.greedy?.serviceExactMaxCombinations ?? params.serviceExactMaxCombinations,
-      stopFilePath: params.greedy?.stopFilePath,
-      snapshotFilePath: params.greedy?.snapshotFilePath,
+      ...benchmarkGreedy,
+      localSearch: benchmarkGreedy.localSearch ?? params.localSearch,
+      localSearchServiceMoves: benchmarkGreedy.localSearchServiceMoves,
+      localSearchServiceCandidateLimit: benchmarkGreedy.localSearchServiceCandidateLimit,
+      deferRoadCommitment: benchmarkGreedy.deferRoadCommitment,
+      profile: benchmarkGreedy.profile,
+      randomSeed: benchmarkGreedy.randomSeed,
+      restarts: benchmarkGreedy.restarts ?? params.restarts,
+      serviceRefineIterations: benchmarkGreedy.serviceRefineIterations ?? params.serviceRefineIterations,
+      serviceRefineCandidateLimit: benchmarkGreedy.serviceRefineCandidateLimit ?? params.serviceRefineCandidateLimit,
+      exhaustiveServiceSearch: benchmarkGreedy.exhaustiveServiceSearch ?? params.exhaustiveServiceSearch,
+      serviceExactPoolLimit: benchmarkGreedy.serviceExactPoolLimit ?? params.serviceExactPoolLimit,
+      serviceExactMaxCombinations: benchmarkGreedy.serviceExactMaxCombinations ?? params.serviceExactMaxCombinations,
+      stopFilePath: benchmarkGreedy.stopFilePath,
+      snapshotFilePath: benchmarkGreedy.snapshotFilePath,
     },
     overrides
   );
@@ -279,6 +288,9 @@ export function formatGreedyBenchmarkSuite(result: GreedyBenchmarkSuiteResult): 
       );
       lines.push(
         `  step13=geometry:${counters.precompute.geometryCacheEntries} occupancy-scratch:${counters.localSearch.occupancyScratchReuses} road-scratch:${counters.roads.scratchProbeCalls}`
+      );
+      lines.push(
+        `  step14=lookahead:${counters.servicePhase.lookaheadEvaluations} res-scans:${counters.servicePhase.lookaheadResidentialScans} wins:${counters.servicePhase.lookaheadWins}`
       );
     } else {
       lines.push("  profile=disabled");
@@ -683,6 +695,130 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
         serviceExactPoolLimit: 6,
         serviceExactMaxCombinations: 64,
       },
+    },
+  },
+  {
+    name: "step14-service-lookahead-reranker",
+    description: "Isolated Step 14 case where service lookahead should improve the greedy incumbent without service local search, refinement, or exhaustive reruns.",
+    grid: [
+      [0, 1, 1, 1, 1, 1],
+      [1, 1, 1, 0, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+      [0, 1, 1, 0, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 0, 1, 1, 0],
+    ],
+    params: {
+      optimizer: "greedy",
+      serviceTypes: [
+        { rows: 1, cols: 1, bonus: 35, range: 1, avail: 2 },
+        { rows: 2, cols: 2, bonus: 55, range: 1, avail: 1 },
+        { rows: 1, cols: 2, bonus: 45, range: 1, avail: 1 },
+      ],
+      residentialTypes: [
+        { w: 2, h: 2, min: 60, max: 120, avail: 5 },
+        { w: 2, h: 3, min: 90, max: 170, avail: 3 },
+      ],
+      greedy: {
+        localSearch: true,
+        localSearchServiceMoves: false,
+        randomSeed: 13,
+        restarts: 1,
+        serviceRefineIterations: 0,
+        serviceRefineCandidateLimit: 4,
+        exhaustiveServiceSearch: false,
+        serviceExactPoolLimit: 6,
+        serviceExactMaxCombinations: 64,
+        serviceLookaheadCandidates: 4,
+      } as GreedyBenchmarkOptions,
+    },
+  },
+  {
+    name: "step14-deterministic-lookahead-ties",
+    description: "Symmetric Step 14 tie case where lookahead should stay deterministic while picking a tied service/residential refill layout.",
+    grid: [
+      [1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1],
+    ],
+    params: {
+      optimizer: "greedy",
+      serviceTypes: [{ rows: 1, cols: 1, bonus: 40, range: 1, avail: 1 }],
+      residentialTypes: [{ w: 2, h: 2, min: 60, max: 120, avail: 2 }],
+      greedy: {
+        localSearch: false,
+        localSearchServiceMoves: false,
+        randomSeed: 7,
+        restarts: 1,
+        serviceRefineIterations: 0,
+        serviceRefineCandidateLimit: 4,
+        exhaustiveServiceSearch: false,
+        serviceExactPoolLimit: 4,
+        serviceExactMaxCombinations: 32,
+        serviceLookaheadCandidates: 4,
+      } as GreedyBenchmarkOptions,
+    },
+  },
+  {
+    name: "step14-row0-path-null-reservation",
+    description: "Step 14 row-0 edge case where lookahead should keep a path:null top-row service and reserve exactly one anchor road cell for the refill.",
+    grid: [
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+    ],
+    params: {
+      optimizer: "greedy",
+      serviceTypes: [{ rows: 1, cols: 1, bonus: 40, range: 1, avail: 1 }],
+      residentialTypes: [
+        { w: 2, h: 2, min: 60, max: 120, avail: 2 },
+        { w: 2, h: 3, min: 90, max: 170, avail: 1 },
+      ],
+      greedy: {
+        localSearch: false,
+        localSearchServiceMoves: false,
+        randomSeed: 7,
+        restarts: 1,
+        serviceRefineIterations: 0,
+        serviceRefineCandidateLimit: 4,
+        exhaustiveServiceSearch: false,
+        serviceExactPoolLimit: 4,
+        serviceExactMaxCombinations: 32,
+        serviceLookaheadCandidates: 4,
+      } as GreedyBenchmarkOptions,
+    },
+  },
+  {
+    name: "step14-scarce-type-sequential-refill",
+    description: "Step 14 scarce-type case where lookahead should spend one premium typed refill before falling back to the cheaper sequential refill.",
+    grid: [
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+    ],
+    params: {
+      optimizer: "greedy",
+      serviceTypes: [{ rows: 1, cols: 1, bonus: 35, range: 1, avail: 2 }],
+      residentialTypes: [
+        { w: 2, h: 2, min: 60, max: 120, avail: 1 },
+        { w: 2, h: 2, min: 60, max: 90, avail: 3 },
+      ],
+      greedy: {
+        localSearch: false,
+        localSearchServiceMoves: false,
+        randomSeed: 7,
+        restarts: 1,
+        serviceRefineIterations: 0,
+        serviceRefineCandidateLimit: 4,
+        exhaustiveServiceSearch: false,
+        serviceExactPoolLimit: 4,
+        serviceExactMaxCombinations: 32,
+        serviceLookaheadCandidates: 4,
+      } as GreedyBenchmarkOptions,
     },
   },
   {

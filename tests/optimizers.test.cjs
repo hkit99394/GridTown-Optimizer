@@ -2219,6 +2219,65 @@ async function testCpSatBenchmarkCorpusHelpers() {
   );
 }
 
+const STEP14_GREEDY_BENCHMARK_NAME = "step14-service-lookahead-reranker";
+const STEP14_DETERMINISTIC_TIES_BENCHMARK_NAME = "step14-deterministic-lookahead-ties";
+const STEP14_ROW0_PATH_NULL_BENCHMARK_NAME = "step14-row0-path-null-reservation";
+const STEP14_SCARCE_REFILL_BENCHMARK_NAME = "step14-scarce-type-sequential-refill";
+const GREEDY_SERVICE_LOOKAHEAD_CANDIDATES_OPTION = "serviceLookaheadCandidates";
+
+function getRequiredGreedyBenchmarkCase(name) {
+  const benchmarkCase = DEFAULT_GREEDY_BENCHMARK_CORPUS.find((entry) => entry.name === name);
+  assert.ok(benchmarkCase, `Missing greedy benchmark case: ${name}`);
+  return benchmarkCase;
+}
+
+function withPatchedGreedySolver(solveGreedyImpl, callback) {
+  const solverModule = require("../dist/greedy/solver.js");
+  const originalSolveGreedy = solverModule.solveGreedy;
+  solverModule.solveGreedy = solveGreedyImpl;
+
+  try {
+    return callback();
+  } finally {
+    solverModule.solveGreedy = originalSolveGreedy;
+  }
+}
+
+function runGreedyServiceLookaheadBenchmarkPair(name, solveGreedyImpl) {
+  const benchmarkName = name ?? STEP14_GREEDY_BENCHMARK_NAME;
+  const runPair = () => {
+    const baseline = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
+      names: [benchmarkName],
+      greedy: { [GREEDY_SERVICE_LOOKAHEAD_CANDIDATES_OPTION]: undefined },
+    });
+    const enabled = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
+      names: [benchmarkName],
+    });
+    return { baseline, enabled };
+  };
+
+  return solveGreedyImpl ? withPatchedGreedySolver(solveGreedyImpl, runPair) : runPair();
+}
+
+function solveGreedyBenchmarkCase(name, greedyOverrides) {
+  const benchmarkCase = getRequiredGreedyBenchmarkCase(name);
+  const params = structuredClone(benchmarkCase.params);
+  params.greedy = {
+    ...(params.greedy ?? {}),
+    ...(greedyOverrides ?? {}),
+    profile: true,
+  };
+
+  return {
+    benchmarkCase,
+    params,
+    solution: solveGreedy(
+      benchmarkCase.grid.map((row) => [...row]),
+      params
+    ),
+  };
+}
+
 function testGreedyBenchmarkCorpusHelpers() {
   const names = DEFAULT_GREEDY_BENCHMARK_CORPUS.map((entry) => entry.name);
   assert.equal(new Set(names).size, names.length);
@@ -2243,12 +2302,20 @@ function testGreedyBenchmarkCorpusHelpers() {
     normalized.serviceRefineCandidateLimit,
     DEFAULT_GREEDY_BENCHMARK_OPTIONS.serviceRefineCandidateLimit
   );
+  assert.equal(normalized.serviceLookaheadCandidates, undefined);
   assert.equal(normalized.exhaustiveServiceSearch, false);
   assert.equal(normalized.serviceExactPoolLimit, DEFAULT_GREEDY_BENCHMARK_OPTIONS.serviceExactPoolLimit);
   assert.equal(
     normalized.serviceExactMaxCombinations,
     DEFAULT_GREEDY_BENCHMARK_OPTIONS.serviceExactMaxCombinations
   );
+
+  const normalizedLookahead = normalizeGreedyBenchmarkOptions(
+    undefined,
+    { [GREEDY_SERVICE_LOOKAHEAD_CANDIDATES_OPTION]: 4 }
+  );
+
+  assert.equal(normalizedLookahead.serviceLookaheadCandidates, 4);
 
   assert.throws(
     () => runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, { names: ["missing-case"] }),
@@ -2287,6 +2354,281 @@ function testGreedyBenchmarkCorpusHelpers() {
   assert.equal(legacyResult.results[0].greedyOptions.restarts, 4);
 }
 
+function testGreedyStep14ServiceLookaheadBenchmarkCaseIsolated() {
+  const benchmarkCase = getRequiredGreedyBenchmarkCase(STEP14_GREEDY_BENCHMARK_NAME);
+  const greedy = benchmarkCase.params.greedy ?? {};
+
+  assert.equal(listGreedyBenchmarkCaseNames().includes(STEP14_GREEDY_BENCHMARK_NAME), true);
+  assert.match(benchmarkCase.description, /Step 14/i);
+  assert.equal(greedy.serviceLookaheadCandidates, 4);
+  assert.equal(greedy.localSearch, true);
+  assert.equal(greedy.localSearchServiceMoves, false);
+  assert.equal(greedy.serviceRefineIterations, 0);
+  assert.equal(greedy.exhaustiveServiceSearch, false);
+}
+
+function testGreedyStep14FollowUpBenchmarkCasesStayIsolated() {
+  for (const name of [
+    STEP14_DETERMINISTIC_TIES_BENCHMARK_NAME,
+    STEP14_ROW0_PATH_NULL_BENCHMARK_NAME,
+    STEP14_SCARCE_REFILL_BENCHMARK_NAME,
+  ]) {
+    const benchmarkCase = getRequiredGreedyBenchmarkCase(name);
+    const greedy = benchmarkCase.params.greedy ?? {};
+
+    assert.equal(listGreedyBenchmarkCaseNames().includes(name), true);
+    assert.match(benchmarkCase.description, /Step 14/i);
+    assert.equal(greedy.serviceLookaheadCandidates, 4);
+    assert.equal(greedy.localSearch, false);
+    assert.equal(greedy.localSearchServiceMoves, false);
+    assert.equal(greedy.serviceRefineIterations, 0);
+    assert.equal(greedy.exhaustiveServiceSearch, false);
+  }
+}
+
+function testGreedyServiceLookaheadIsOffByDefaultAndLeavesCorpusUnchangedWhenOff() {
+  const { baseline } = runGreedyServiceLookaheadBenchmarkPair(STEP14_GREEDY_BENCHMARK_NAME);
+  const untouchedCorpusCase = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
+    names: ["compact-service-single"],
+  });
+
+  assert.deepEqual(baseline.selectedCaseNames, [STEP14_GREEDY_BENCHMARK_NAME]);
+  assert.equal(baseline.results[0].greedyOptions.serviceLookaheadCandidates, undefined);
+  assert.equal(baseline.results[0].totalPopulation, 240);
+  assert.equal(baseline.results[0].serviceCount, 1);
+  assert.equal(baseline.results[0].greedyProfile.counters.servicePhase.lookaheadEvaluations, 0);
+  assert.equal(baseline.results[0].greedyProfile.counters.servicePhase.lookaheadWins, 0);
+  assert.deepEqual(untouchedCorpusCase.selectedCaseNames, ["compact-service-single"]);
+  assert.equal(untouchedCorpusCase.results[0].greedyOptions.serviceLookaheadCandidates, undefined);
+  assert.equal(untouchedCorpusCase.results[0].greedyProfile.counters.servicePhase.lookaheadEvaluations, 0);
+}
+
+function testGreedyStep14ServiceLookaheadBenchmarkCaseImprovesWhenEnabled() {
+  const { baseline, enabled } = runGreedyServiceLookaheadBenchmarkPair(STEP14_GREEDY_BENCHMARK_NAME);
+
+  assert.deepEqual(baseline.selectedCaseNames, [STEP14_GREEDY_BENCHMARK_NAME]);
+  assert.deepEqual(enabled.selectedCaseNames, [STEP14_GREEDY_BENCHMARK_NAME]);
+  assert.equal(baseline.results[0].greedyOptions.serviceLookaheadCandidates, undefined);
+  assert.equal(enabled.results[0].greedyOptions.serviceLookaheadCandidates, 4);
+  assert.equal(baseline.results[0].totalPopulation, 240);
+  assert.equal(enabled.results[0].totalPopulation, 275);
+  assert.equal(enabled.results[0].serviceCount, 2);
+  assert.equal(enabled.results[0].totalPopulation > baseline.results[0].totalPopulation, true);
+  assert.equal(enabled.results[0].greedyProfile.counters.servicePhase.lookaheadEvaluations > 0, true);
+  assert.equal(enabled.results[0].greedyProfile.counters.servicePhase.lookaheadWins > 0, true);
+}
+
+function testGreedyStep14DeterministicLookaheadTieBenchmarkCase() {
+  const { baseline, enabled } = runGreedyServiceLookaheadBenchmarkPair(STEP14_DETERMINISTIC_TIES_BENCHMARK_NAME);
+  const baselineSolve = solveGreedyBenchmarkCase(
+    STEP14_DETERMINISTIC_TIES_BENCHMARK_NAME,
+    { [GREEDY_SERVICE_LOOKAHEAD_CANDIDATES_OPTION]: undefined }
+  );
+  const firstEnabledSolve = solveGreedyBenchmarkCase(STEP14_DETERMINISTIC_TIES_BENCHMARK_NAME);
+  const secondEnabledSolve = solveGreedyBenchmarkCase(STEP14_DETERMINISTIC_TIES_BENCHMARK_NAME);
+  const firstValidation = validateSolution({
+    grid: firstEnabledSolve.benchmarkCase.grid,
+    solution: firstEnabledSolve.solution,
+    params: firstEnabledSolve.params,
+  });
+  const secondValidation = validateSolution({
+    grid: secondEnabledSolve.benchmarkCase.grid,
+    solution: secondEnabledSolve.solution,
+    params: secondEnabledSolve.params,
+  });
+
+  assert.equal(enabled.caseCount, 1);
+  assert.deepEqual(enabled.selectedCaseNames, [STEP14_DETERMINISTIC_TIES_BENCHMARK_NAME]);
+  assert.equal(enabled.results[0].name, STEP14_DETERMINISTIC_TIES_BENCHMARK_NAME);
+  assert.equal(baseline.results[0].totalPopulation, 200);
+  assert.equal(enabled.results[0].totalPopulation, 200);
+  assert.equal(enabled.results[0].serviceCount, 1);
+  assert.equal(enabled.results[0].residentialCount, 2);
+  assert.equal(enabled.results[0].greedyProfile.counters.servicePhase.lookaheadEvaluations, 20);
+  assert.equal(enabled.results[0].greedyProfile.counters.servicePhase.lookaheadWins, 1);
+  assert.deepEqual(baselineSolve.solution.services, [
+    { r: 2, c: 2, rows: 1, cols: 1, range: 1 },
+  ]);
+  assert.deepEqual(firstEnabledSolve.solution.services, [
+    { r: 1, c: 1, rows: 1, cols: 1, range: 1 },
+  ]);
+  assert.deepEqual(firstEnabledSolve.solution.residentials, [
+    { r: 0, c: 2, rows: 2, cols: 2 },
+    { r: 2, c: 0, rows: 2, cols: 2 },
+  ]);
+  assert.deepEqual(firstEnabledSolve.solution.populations, [100, 100]);
+  assert.deepEqual([...firstEnabledSolve.solution.roads].sort(), ["0,0", "0,1", "1,0"]);
+  assert.notDeepEqual(firstEnabledSolve.solution.services, baselineSolve.solution.services);
+  assert.deepEqual(secondEnabledSolve.solution.services, firstEnabledSolve.solution.services);
+  assert.deepEqual(secondEnabledSolve.solution.residentials, firstEnabledSolve.solution.residentials);
+  assert.deepEqual(secondEnabledSolve.solution.populations, firstEnabledSolve.solution.populations);
+  assert.deepEqual([...secondEnabledSolve.solution.roads].sort(), [...firstEnabledSolve.solution.roads].sort());
+  assert.equal(firstValidation.valid, true);
+  assert.equal(secondValidation.valid, true);
+  assert.match(formatGreedyBenchmarkSuite(enabled), /step14=/);
+}
+
+function testGreedyStep14Row0PathNullReservationBenchmarkCase() {
+  const { baseline, enabled } = runGreedyServiceLookaheadBenchmarkPair(STEP14_ROW0_PATH_NULL_BENCHMARK_NAME);
+  const baselineSolve = solveGreedyBenchmarkCase(
+    STEP14_ROW0_PATH_NULL_BENCHMARK_NAME,
+    { [GREEDY_SERVICE_LOOKAHEAD_CANDIDATES_OPTION]: undefined }
+  );
+  const enabledSolve = solveGreedyBenchmarkCase(STEP14_ROW0_PATH_NULL_BENCHMARK_NAME);
+  const baselineValidation = validateSolution({
+    grid: baselineSolve.benchmarkCase.grid,
+    solution: baselineSolve.solution,
+    params: baselineSolve.params,
+  });
+  const enabledValidation = validateSolution({
+    grid: enabledSolve.benchmarkCase.grid,
+    solution: enabledSolve.solution,
+    params: enabledSolve.params,
+  });
+
+  assert.equal(enabled.caseCount, 1);
+  assert.deepEqual(enabled.selectedCaseNames, [STEP14_ROW0_PATH_NULL_BENCHMARK_NAME]);
+  assert.equal(baseline.results[0].totalPopulation, 230);
+  assert.equal(enabled.results[0].totalPopulation, 230);
+  assert.equal(enabled.results[0].serviceCount, 1);
+  assert.equal(enabled.results[0].residentialCount, 2);
+  assert.equal(enabled.results[0].greedyProfile.counters.servicePhase.lookaheadEvaluations, 36);
+  assert.equal(enabled.results[0].greedyProfile.counters.servicePhase.lookaheadWins, 4);
+  assert.deepEqual(baselineSolve.solution.services, [
+    { r: 1, c: 1, rows: 1, cols: 1, range: 1 },
+  ]);
+  assert.deepEqual(enabledSolve.solution.services, [
+    { r: 0, c: 1, rows: 1, cols: 1, range: 1 },
+  ]);
+  assert.deepEqual([...baselineSolve.solution.roads].sort(), ["0,0", "0,1", "1,0"]);
+  assert.deepEqual([...enabledSolve.solution.roads].sort(), ["0,0"]);
+  assert.deepEqual(enabledSolve.solution.residentials, [
+    { r: 0, c: 2, rows: 3, cols: 2 },
+    { r: 1, c: 0, rows: 2, cols: 2 },
+  ]);
+  assert.equal(enabledSolve.solution.services[0].r, 0);
+  assert.equal(enabledSolve.solution.roads.size < baselineSolve.solution.roads.size, true);
+  assert.equal(baselineValidation.valid, true);
+  assert.equal(enabledValidation.valid, true);
+}
+
+function testGreedyStep14ScarceTypeSequentialRefillBenchmarkCase() {
+  const { baseline, enabled } = runGreedyServiceLookaheadBenchmarkPair(STEP14_SCARCE_REFILL_BENCHMARK_NAME);
+  const baselineSolve = solveGreedyBenchmarkCase(
+    STEP14_SCARCE_REFILL_BENCHMARK_NAME,
+    { [GREEDY_SERVICE_LOOKAHEAD_CANDIDATES_OPTION]: undefined }
+  );
+  const enabledSolve = solveGreedyBenchmarkCase(STEP14_SCARCE_REFILL_BENCHMARK_NAME);
+  const baselineValidation = validateSolution({
+    grid: baselineSolve.benchmarkCase.grid,
+    solution: baselineSolve.solution,
+    params: baselineSolve.params,
+  });
+  const enabledValidation = validateSolution({
+    grid: enabledSolve.benchmarkCase.grid,
+    solution: enabledSolve.solution,
+    params: enabledSolve.params,
+  });
+
+  assert.equal(enabled.caseCount, 1);
+  assert.deepEqual(enabled.selectedCaseNames, [STEP14_SCARCE_REFILL_BENCHMARK_NAME]);
+  assert.equal(baseline.results[0].totalPopulation, 185);
+  assert.equal(enabled.results[0].totalPopulation, 210);
+  assert.equal(enabled.results[0].serviceCount, 2);
+  assert.equal(enabled.results[0].residentialCount, 2);
+  assert.equal(enabled.results[0].greedyProfile.counters.servicePhase.lookaheadEvaluations, 84);
+  assert.equal(enabled.results[0].greedyProfile.counters.servicePhase.lookaheadWins, 3);
+  assert.deepEqual(enabledSolve.solution.services, [
+    { r: 1, c: 2, rows: 1, cols: 1, range: 1 },
+    { r: 1, c: 0, rows: 1, cols: 1, range: 1 },
+  ]);
+  assert.deepEqual(enabledSolve.solution.residentialTypeIndices, [0, 1]);
+  assert.deepEqual(enabledSolve.solution.populations, [120, 90]);
+  assert.equal(
+    enabledSolve.solution.residentialTypeIndices.filter((typeIndex) => typeIndex === 0).length,
+    1
+  );
+  assert.equal(
+    enabledSolve.solution.residentialTypeIndices.filter((typeIndex) => typeIndex === 1).length,
+    1
+  );
+  assert.deepEqual(baselineSolve.solution.residentialTypeIndices, [0, 1]);
+  assert.deepEqual(baselineSolve.solution.populations, [95, 90]);
+  assert.equal(enabledSolve.solution.totalPopulation > baselineSolve.solution.totalPopulation, true);
+  assert.equal(baselineValidation.valid, true);
+  assert.equal(enabledValidation.valid, true);
+}
+
+function testGreedyStep14LookaheadCapsRefillDepthWhenMaxResidentialsIsOne() {
+  const grid = [
+    [0, 1, 1, 1, 1, 1],
+    [1, 1, 1, 0, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+    [0, 1, 1, 0, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 0, 1, 1, 0],
+  ];
+  const enabledParams = {
+    optimizer: "greedy",
+    serviceTypes: [
+      { rows: 1, cols: 1, bonus: 35, range: 1, avail: 2 },
+      { rows: 2, cols: 2, bonus: 55, range: 1, avail: 1 },
+      { rows: 1, cols: 2, bonus: 45, range: 1, avail: 1 },
+    ],
+    residentialTypes: [
+      { w: 2, h: 2, min: 60, max: 120, avail: 5 },
+      { w: 2, h: 3, min: 90, max: 170, avail: 3 },
+    ],
+    availableBuildings: { residentials: 1 },
+    greedy: {
+      localSearch: false,
+      localSearchServiceMoves: false,
+      randomSeed: 13,
+      restarts: 1,
+      serviceRefineIterations: 0,
+      serviceRefineCandidateLimit: 4,
+      exhaustiveServiceSearch: false,
+      serviceExactPoolLimit: 6,
+      serviceExactMaxCombinations: 64,
+      serviceLookaheadCandidates: 4,
+      profile: true,
+    },
+  };
+  const baselineParams = structuredClone(enabledParams);
+  baselineParams.greedy = {
+    ...baselineParams.greedy,
+    serviceLookaheadCandidates: undefined,
+  };
+
+  const baseline = solveGreedy(
+    grid.map((row) => [...row]),
+    baselineParams
+  );
+  const enabled = solveGreedy(
+    grid.map((row) => [...row]),
+    enabledParams
+  );
+  const validation = validateSolution({ grid, solution: enabled, params: enabledParams });
+
+  assert.equal(baseline.totalPopulation, 170);
+  assert.equal(enabled.totalPopulation, 170);
+  assert.equal(enabled.residentials.length, 1);
+  assert.deepEqual(enabled.services, [
+    { r: 4, c: 3, rows: 2, cols: 2, range: 1 },
+    { r: 2, c: 3, rows: 1, cols: 1, range: 1 },
+    { r: 3, c: 1, rows: 1, cols: 1, range: 1 },
+  ]);
+  assert.deepEqual(enabled.serviceTypeIndices, [1, 0, 0]);
+  assert.deepEqual(enabled.residentials, [
+    { r: 1, c: 4, rows: 3, cols: 2 },
+  ]);
+  assert.deepEqual(enabled.residentialTypeIndices, [1]);
+  assert.deepEqual(enabled.populations, [170]);
+  assert.equal(enabled.greedyProfile.counters.servicePhase.lookaheadEvaluations > 0, true);
+  assert.equal(enabled.greedyProfile.counters.servicePhase.lookaheadWins > 0, true);
+  assert.equal(validation.valid, true);
+}
+
 function testGreedyBenchmarkSuite() {
   const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
     names: ["cap-sweep-mixed"],
@@ -2311,6 +2653,7 @@ function testGreedyBenchmarkSuite() {
   assert.match(formatGreedyBenchmarkSuite(result), /local-service=/);
   assert.match(formatGreedyBenchmarkSuite(result), /cap-search=/);
   assert.match(formatGreedyBenchmarkSuite(result), /step13=/);
+  assert.match(formatGreedyBenchmarkSuite(result), /step14=/);
 }
 
 function testGreedyDeterministicTieBreakBenchmarkCase() {
@@ -2546,6 +2889,9 @@ function testGreedyIncrementalInvalidationPreservesBenchmarkOutputs() {
     "adaptive-cap-search-wide": { totalPopulation: 812, serviceCount: 2, residentialCount: 6 },
     "crowded-invalidation-heavy": { totalPopulation: 711, serviceCount: 1, residentialCount: 6 },
     "service-local-neighborhood": { totalPopulation: 290, serviceCount: 1, residentialCount: 3 },
+    "step14-deterministic-lookahead-ties": { totalPopulation: 200, serviceCount: 1, residentialCount: 2 },
+    "step14-row0-path-null-reservation": { totalPopulation: 230, serviceCount: 1, residentialCount: 2 },
+    "step14-scarce-type-sequential-refill": { totalPopulation: 210, serviceCount: 2, residentialCount: 2 },
   };
 
   for (const [name, expected] of Object.entries(expectations)) {
@@ -4563,6 +4909,14 @@ async function main() {
   await testAutoAsyncClampsHeavyGreedyStageSettings();
   testGreedyProfilingIsAdditive();
   testGreedyBenchmarkCorpusHelpers();
+  testGreedyStep14ServiceLookaheadBenchmarkCaseIsolated();
+  testGreedyStep14FollowUpBenchmarkCasesStayIsolated();
+  testGreedyServiceLookaheadIsOffByDefaultAndLeavesCorpusUnchangedWhenOff();
+  testGreedyStep14ServiceLookaheadBenchmarkCaseImprovesWhenEnabled();
+  testGreedyStep14DeterministicLookaheadTieBenchmarkCase();
+  testGreedyStep14Row0PathNullReservationBenchmarkCase();
+  testGreedyStep14ScarceTypeSequentialRefillBenchmarkCase();
+  testGreedyStep14LookaheadCapsRefillDepthWhenMaxResidentialsIsOne();
   testGreedyBenchmarkSuite();
   testGreedyDeterministicTieBreakBenchmarkCase();
   testGreedyConnectivityHeavyBenchmarkCase();

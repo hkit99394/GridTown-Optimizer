@@ -301,6 +301,8 @@ export interface GreedyOptions {
   localSearchServiceMoves?: boolean;
   /** Maximum ranked service candidates considered by bounded service neighborhoods per iteration (default 6). */
   localSearchServiceCandidateLimit?: number;
+  /** Experimental Step 14 reranker: top-N service candidates to rescore with a bounded residential refill lookahead. Default 0/off. */
+  serviceLookaheadCandidates?: number;
   /** Prototype deferred road commitment during the main greedy construction pass (default false). */
   deferRoadCommitment?: boolean;
   /** Fixed seed for reproducible greedy restart shuffling. */
@@ -354,6 +356,9 @@ export interface GreedyProfileCounters {
   servicePhase: {
     candidateScans: number;
     canConnectChecks: number;
+    lookaheadEvaluations: number;
+    lookaheadResidentialScans: number;
+    lookaheadWins: number;
     candidateInvalidations: number;
     typeInvalidations: number;
     groupedScoreLookups: number;

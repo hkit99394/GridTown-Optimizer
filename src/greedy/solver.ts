@@ -102,6 +102,7 @@ interface GreedySolveContext {
   useServiceTypes: boolean;
   useTypes: boolean;
   localSearch: boolean;
+  serviceLookaheadCandidates: number;
   profileCounters?: GreedyProfileCounters;
   maybeStop?: () => void;
 }
@@ -153,6 +154,9 @@ function createGreedyProfileCounters(): GreedyProfileCounters {
     servicePhase: {
       candidateScans: 0,
       canConnectChecks: 0,
+      lookaheadEvaluations: 0,
+      lookaheadResidentialScans: 0,
+      lookaheadWins: 0,
       candidateInvalidations: 0,
       typeInvalidations: 0,
       groupedScoreLookups: 0,
@@ -242,6 +246,10 @@ const LOCAL_SEARCH_SERVICE_NEIGHBORHOOD = {
   maxAddTrialsPerIteration: 8,
   maxSwapTrialsPerIteration: 12,
   maxRealizationAttemptsPerIteration: 3,
+};
+
+const SERVICE_LOOKAHEAD = {
+  residentialDepth: 2,
 };
 
 const EXHAUSTIVE_FIXED_SERVICE_EVALUATION = {
@@ -355,6 +363,7 @@ function getGreedyOptions(params: SolverParams): NormalizedGreedyOptions {
     localSearch: greedy.localSearch ?? params.localSearch ?? true,
     localSearchServiceMoves: greedy.localSearchServiceMoves ?? true,
     localSearchServiceCandidateLimit: greedy.localSearchServiceCandidateLimit ?? 6,
+    serviceLookaheadCandidates: greedy.serviceLookaheadCandidates ?? 0,
     deferRoadCommitment: greedy.deferRoadCommitment ?? false,
     ...(randomSeed !== undefined ? { randomSeed } : {}),
     profile: greedy.profile ?? false,
@@ -920,6 +929,49 @@ function buildResidentialPopulationCache(
   return cache;
 }
 
+type ServiceLookaheadCandidate = {
+  service: ServiceCandidate;
+  candidateIndex: number;
+  score: number;
+  probe: ConnectivityProbe;
+};
+
+type ServiceLookaheadEvaluation = {
+  totalScore: number;
+  refillScore: number;
+};
+
+function compareServiceLookaheadCandidates(
+  left: ServiceLookaheadCandidate,
+  right: ServiceLookaheadCandidate
+): number {
+  if (left.score !== right.score) return right.score - left.score;
+  return compareServiceTieBreaks(left.service, left.probe, right.service, right.probe);
+}
+
+function pushBoundedServiceLookaheadCandidate(
+  shortlist: ServiceLookaheadCandidate[],
+  limit: number,
+  entry: ServiceLookaheadCandidate
+): void {
+  if (limit <= 0 || entry.score <= 0) return;
+  shortlist.push(entry);
+  shortlist.sort(compareServiceLookaheadCandidates);
+  if (shortlist.length > limit) shortlist.length = limit;
+}
+
+function compareServiceLookaheadEvaluations(
+  leftEntry: ServiceLookaheadCandidate,
+  left: ServiceLookaheadEvaluation,
+  rightEntry: ServiceLookaheadCandidate,
+  right: ServiceLookaheadEvaluation
+): number {
+  if (left.totalScore !== right.totalScore) return right.totalScore - left.totalScore;
+  if (left.refillScore !== right.refillScore) return right.refillScore - left.refillScore;
+  if (leftEntry.score !== rightEntry.score) return rightEntry.score - leftEntry.score;
+  return compareServiceTieBreaks(leftEntry.service, leftEntry.probe, rightEntry.service, rightEntry.probe);
+}
+
 type ActiveCandidatePool = {
   activeIndices: number[];
   positions: number[];
@@ -1155,6 +1207,7 @@ function solveOne(
     useServiceTypes,
     useTypes,
     localSearch,
+    serviceLookaheadCandidates,
     maybeStop,
   } = context;
   const {
@@ -1171,6 +1224,7 @@ function solveOne(
     ? computeRow0ReachableEmptyFrontier(G, occupied)
     : null;
   const explicitRoadProbeScratch = createRoadProbeScratch(G);
+  const lookaheadRoadProbeScratch = createRoadProbeScratch(G);
   if (useDeferredRoadCommitment && profileCounters) {
     profileCounters.roads.deferredFrontierRecomputes++;
   }
@@ -1213,9 +1267,137 @@ function solveOne(
     if (!roadProbe) return null;
     return { kind: "explicit", roadCost: roadProbe.path?.length ?? 0, roadProbe };
   };
+  const evaluateServiceLookahead = (
+    entry: ServiceLookaheadCandidate
+  ): ServiceLookaheadEvaluation => {
+    if (entry.probe.kind !== "explicit") {
+      return {
+        totalScore: entry.score,
+        refillScore: 0,
+      };
+    }
+    if (profileCounters) profileCounters.servicePhase.lookaheadEvaluations++;
+
+    const roadsScratch = new Set(roads);
+    const occupiedScratch = new Set(occupied);
+    const placement = materializeServicePlacement(entry.service);
+    const footprintKeys = getCachedServiceFootprintKeys(precomputedIndexes, entry.service);
+    const newlyOccupiedKeys = collectNewlyOccupiedKeysForPlacement(
+      occupiedScratch,
+      entry.probe.roadProbe,
+      placement,
+      footprintKeys
+    );
+    applyRoadConnectionProbe(roadsScratch, entry.probe.roadProbe);
+    for (const key of newlyOccupiedKeys) occupiedScratch.add(key);
+
+    const futureEffectZones = [...effectZones, getCachedServiceEffectZoneSet(G, precomputedIndexes, entry.service)];
+    const futureBonuses = [...serviceBonuses, entry.service.bonus];
+    const remainingResidentialAvail = useTypes && remainingAvail ? [...remainingAvail] : null;
+    const lookaheadDepth = Math.min(
+      SERVICE_LOOKAHEAD.residentialDepth,
+      maxResidentials ?? SERVICE_LOOKAHEAD.residentialDepth
+    );
+
+    let refillScore = 0;
+    for (let depth = 0; depth < lookaheadDepth; depth++) {
+      maybeStop?.();
+      let bestResidential: ResidentialCandidatesList[0] | null = null;
+      let bestResidentialIndex = -1;
+      let bestResidentialProbe: RoadConnectionProbe | null = null;
+      let bestResidentialPop = -1;
+
+      for (let candidateIndex = 0; candidateIndex < anyResidentialCandidates.length; candidateIndex++) {
+        maybeStop?.();
+        const candidate = anyResidentialCandidates[candidateIndex];
+        if (profileCounters) profileCounters.servicePhase.lookaheadResidentialScans++;
+        const candidateTypeIndex = getCandidateTypeIndex(candidate);
+        if (remainingResidentialAvail && candidateTypeIndex >= 0 && remainingResidentialAvail[candidateTypeIndex] <= 0) {
+          continue;
+        }
+        if (roadsScratch.size === 0) {
+          if (profileCounters) profileCounters.roads.row0Checks++;
+          if (!placementLeavesRow0RoadCellAvailable(G, occupiedScratch, candidate.r, candidate.c, candidate.rows, candidate.cols)) {
+            continue;
+          }
+        }
+        const candidateFootprintKeys = precomputedIndexes.residentialCandidateFootprintKeys[candidateIndex];
+        if (
+          candidateFootprintKeys
+            ? overlapsCachedFootprint(occupiedScratch, candidateFootprintKeys)
+            : overlaps(occupiedScratch, candidate.r, candidate.c, candidate.rows, candidate.cols)
+        ) {
+          continue;
+        }
+        if (profileCounters) {
+          profileCounters.roads.canConnectChecks++;
+          profileCounters.roads.probeCalls++;
+          profileCounters.roads.scratchProbeCalls++;
+        }
+        const probe = probeBuildingConnectedToRoads(
+          G,
+          roadsScratch,
+          occupiedScratch,
+          candidate.r,
+          candidate.c,
+          candidate.rows,
+          candidate.cols,
+          lookaheadRoadProbeScratch
+        );
+        if (!probe) continue;
+        const pop = computeResidentialPopulation(
+          params,
+          candidate,
+          futureEffectZones,
+          futureBonuses,
+          candidateTypeIndex
+        );
+        if (
+          pop > bestResidentialPop
+          || (pop === bestResidentialPop && pop >= 0 && bestResidential !== null && bestResidentialProbe !== null
+            && compareResidentialTieBreaks(params, candidate, probe, bestResidential, bestResidentialProbe) < 0)
+        ) {
+          bestResidential = candidate;
+          bestResidentialIndex = candidateIndex;
+          bestResidentialPop = pop;
+          bestResidentialProbe = probe;
+        }
+      }
+
+      if (!bestResidential || bestResidentialIndex < 0 || bestResidentialPop <= 0 || !bestResidentialProbe) break;
+
+      const candidateFootprintKeys =
+        precomputedIndexes.residentialCandidateFootprintKeys[bestResidentialIndex];
+      const residentialNewlyOccupiedKeys = collectNewlyOccupiedKeysForPlacement(
+        occupiedScratch,
+        bestResidentialProbe,
+        bestResidential,
+        candidateFootprintKeys
+      );
+      applyRoadConnectionProbe(roadsScratch, bestResidentialProbe);
+      for (const key of residentialNewlyOccupiedKeys) occupiedScratch.add(key);
+      const candidateTypeIndex = getCandidateTypeIndex(bestResidential);
+      if (remainingResidentialAvail && candidateTypeIndex >= 0) {
+        remainingResidentialAvail[candidateTypeIndex] -= 1;
+      }
+      refillScore += bestResidentialPop;
+    }
+
+    return {
+      totalScore: refillScore,
+      refillScore,
+    };
+  };
   const serviceOrderGlobalCandidateIndices = !fixedServices
     ? serviceSource.map((candidate) => precomputedIndexes.serviceCandidateIndicesByKey.get(serviceCandidateKey(candidate)) ?? -1)
     : null;
+  const enableServiceLookahead =
+    serviceLookaheadCandidates > 1
+    && !useDeferredRoadCommitment
+    && !fixedServices
+    && (maxResidentials === undefined || maxResidentials > 0)
+    && anyResidentialCandidates.length > 0
+    && residentialScoringGroups.length > 0;
   const serviceGlobalToLocalCandidateIndices = !fixedServices && serviceOrderGlobalCandidateIndices
     ? Array.from({ length: serviceOrder.length }, () => -1)
     : null;
@@ -1319,6 +1501,7 @@ function solveOne(
       let bestCandidateIndex = -1;
       let bestProbe: ConnectivityProbe | null = null;
       let bestScore = 0;
+      const lookaheadShortlist: ServiceLookaheadCandidate[] = [];
       for (const candidateIndex of serviceActivePool.activeIndices) {
         maybeStop?.();
         if (profileCounters) profileCounters.servicePhase.candidateScans++;
@@ -1348,6 +1531,18 @@ function solveOne(
           if (profileCounters) profileCounters.servicePhase.scoreRecomputes++;
         }
         const score = serviceScoreCache[candidateIndex] ?? 0;
+        if (enableServiceLookahead) {
+          pushBoundedServiceLookaheadCandidate(
+            lookaheadShortlist,
+            serviceLookaheadCandidates,
+            {
+              service,
+              candidateIndex,
+              score,
+              probe,
+            }
+          );
+        }
         if (
           score > bestScore
           || (score === bestScore && score > 0 && bestCandidate !== null
@@ -1358,6 +1553,37 @@ function solveOne(
           bestCandidateIndex = candidateIndex;
           bestScore = score;
           bestProbe = probe;
+        }
+      }
+
+      if (
+        enableServiceLookahead
+        && lookaheadShortlist.length > 1
+        && bestCandidate !== null
+        && bestProbe !== null
+      ) {
+        let lookaheadBestEntry = lookaheadShortlist[0]!;
+        let lookaheadBestEvaluation = evaluateServiceLookahead(lookaheadBestEntry);
+        for (const entry of lookaheadShortlist.slice(1)) {
+          const evaluation = evaluateServiceLookahead(entry);
+          if (
+            compareServiceLookaheadEvaluations(
+              entry,
+              evaluation,
+              lookaheadBestEntry,
+              lookaheadBestEvaluation
+            ) < 0
+          ) {
+            lookaheadBestEntry = entry;
+            lookaheadBestEvaluation = evaluation;
+          }
+        }
+        if (lookaheadBestEntry.candidateIndex !== bestCandidateIndex) {
+          bestCandidate = lookaheadBestEntry.service;
+          bestCandidateIndex = lookaheadBestEntry.candidateIndex;
+          bestProbe = lookaheadBestEntry.probe;
+          bestScore = lookaheadBestEntry.score;
+          if (profileCounters) profileCounters.servicePhase.lookaheadWins++;
         }
       }
 
@@ -1694,6 +1920,7 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     localSearch,
     localSearchServiceMoves,
     localSearchServiceCandidateLimit,
+    serviceLookaheadCandidates,
     deferRoadCommitment,
     randomSeed,
     profile,
@@ -1828,6 +2055,7 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     useServiceTypes,
     useTypes,
     localSearch,
+    serviceLookaheadCandidates,
     profileCounters,
     maybeStop,
   };

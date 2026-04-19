@@ -82,6 +82,107 @@ function sortedResidentialTypeIndices(types: ResidentialTypeSetting[]): number[]
 }
 
 type PlacementPrototype = { r: number; c: number; rows: number; cols: number };
+type FootprintGeometrySource = { r: number; c: number; rows: number; cols: number };
+
+export interface FootprintGeometryCache {
+  footprintKeysByIndex: readonly (readonly string[])[];
+}
+
+export interface ServiceGeometryCache extends FootprintGeometryCache {
+  effectZoneKeysByIndex: readonly (readonly string[])[];
+}
+
+const rectangleCellKeyCache = new Map<string, readonly string[]>();
+const serviceEffectZoneKeyCacheByGrid = new WeakMap<Grid, Map<string, readonly string[]>>();
+
+function rectangleKey(r: number, c: number, rows: number, cols: number): string {
+  return `${r},${c},${rows},${cols}`;
+}
+
+function getOrBuildRectangleCellKeys(
+  r: number,
+  c: number,
+  rows: number,
+  cols: number
+): readonly string[] {
+  const key = rectangleKey(r, c, rows, cols);
+  const cached = rectangleCellKeyCache.get(key);
+  if (cached) return cached;
+  const cells = Object.freeze(rectangleCells(r, c, rows, cols));
+  rectangleCellKeyCache.set(key, cells);
+  return cells;
+}
+
+function serviceEffectZoneKey(service: Required<ServicePlacement>): string {
+  return `${service.r},${service.c},${service.rows},${service.cols},${service.range}`;
+}
+
+function getServiceEffectZoneCache(G: Grid): Map<string, readonly string[]> {
+  let cache = serviceEffectZoneKeyCacheByGrid.get(G);
+  if (!cache) {
+    cache = new Map();
+    serviceEffectZoneKeyCacheByGrid.set(G, cache);
+  }
+  return cache;
+}
+
+function getOrBuildServiceEffectZoneKeys(
+  G: Grid,
+  service: Required<ServicePlacement>
+): readonly string[] {
+  const cache = getServiceEffectZoneCache(G);
+  const key = serviceEffectZoneKey(service);
+  const cached = cache.get(key);
+  if (cached) return cached;
+
+  const H = height(G);
+  const W = width(G);
+  const zone: string[] = [];
+  const rMin = Math.max(0, service.r - service.range);
+  const rMax = Math.min(H - 1, service.r + service.rows - 1 + service.range);
+  const cMin = Math.max(0, service.c - service.range);
+  const cMax = Math.min(W - 1, service.c + service.cols - 1 + service.range);
+  for (let rr = rMin; rr <= rMax; rr++) {
+    for (let cc = cMin; cc <= cMax; cc++) {
+      const inFootprint = rr >= service.r
+        && rr < service.r + service.rows
+        && cc >= service.c
+        && cc < service.c + service.cols;
+      if (inFootprint) continue;
+      if (isAllowed(G, rr, cc)) zone.push(cellKey(rr, cc));
+    }
+  }
+  const frozenZone = Object.freeze(zone);
+  cache.set(key, frozenZone);
+  return frozenZone;
+}
+
+export function buildFootprintGeometryCache<T extends FootprintGeometrySource>(
+  placements: readonly T[]
+): FootprintGeometryCache {
+  return {
+    footprintKeysByIndex: Object.freeze(placements.map((placement) =>
+      getOrBuildRectangleCellKeys(placement.r, placement.c, placement.rows, placement.cols)
+    )),
+  };
+}
+
+export function buildServiceGeometryCache<T extends ServicePlacement>(
+  G: Grid,
+  services: readonly T[]
+): ServiceGeometryCache {
+  const footprintKeysByIndex = Object.freeze(services.map((service) => {
+    const placement = normalizeServicePlacement(service);
+    return getOrBuildRectangleCellKeys(placement.r, placement.c, placement.rows, placement.cols);
+  }));
+  const effectZoneKeysByIndex = Object.freeze(services.map((service) =>
+    getOrBuildServiceEffectZoneKeys(G, normalizeServicePlacement(service))
+  ));
+  return {
+    footprintKeysByIndex,
+    effectZoneKeysByIndex,
+  };
+}
 
 function enumerateValidPlacementsForDimensions(
   G: Grid,
@@ -119,35 +220,20 @@ function enumerateValidPlacementsForDimensions(
  * around the footprint rectangle, excluding footprint cells.
  */
 export function buildServiceEffectZoneSet(G: Grid, service: ServicePlacement): Set<string> {
-  const { r, c, rows, cols, range } = normalizeServicePlacement(service);
-  const H = height(G);
-  const W = width(G);
-  const zone = new Set<string>();
-  const rMin = Math.max(0, r - range);
-  const rMax = Math.min(H - 1, r + rows - 1 + range);
-  const cMin = Math.max(0, c - range);
-  const cMax = Math.min(W - 1, c + cols - 1 + range);
-  for (let rr = rMin; rr <= rMax; rr++) {
-    for (let cc = cMin; cc <= cMax; cc++) {
-      const inFootprint = rr >= r && rr < r + rows && cc >= c && cc < c + cols;
-      if (inFootprint) continue;
-      if (isAllowed(G, rr, cc)) zone.add(cellKey(rr, cc));
-    }
-  }
-  return zone;
+  return new Set(getOrBuildServiceEffectZoneKeys(G, normalizeServicePlacement(service)));
 }
 
 export function serviceEffectZone(G: Grid, service: ServicePlacement): string[] {
-  return [...buildServiceEffectZoneSet(G, service)];
+  return [...getOrBuildServiceEffectZoneKeys(G, normalizeServicePlacement(service))];
 }
 
 export function serviceFootprint(service: ServicePlacement): string[] {
   const { r, c, rows, cols } = normalizeServicePlacement(service);
-  return rectangleCells(r, c, rows, cols);
+  return [...getOrBuildRectangleCellKeys(r, c, rows, cols)];
 }
 
 export function residentialFootprint(r: number, c: number, rows: number, cols: number): string[] {
-  return rectangleCells(r, c, rows, cols);
+  return [...getOrBuildRectangleCellKeys(r, c, rows, cols)];
 }
 
 /** All valid service placements from configured service types. */

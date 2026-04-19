@@ -18,6 +18,7 @@ import type {
 } from "../core/types.js";
 import {
   applyRoadConnectionProbe,
+  createRoadProbeScratch,
   computeRow0ReachableEmptyFrontier,
   ensureBuildingConnectedToRoads,
   materializeDeferredRoadNetwork,
@@ -30,6 +31,8 @@ import {
 } from "../core/roads.js";
 import { applyDeterministicDominanceUpgrades } from "../core/dominanceUpgrades.js";
 import {
+  buildFootprintGeometryCache,
+  buildServiceGeometryCache,
   enumerateServiceCandidates,
   enumerateResidentialCandidates,
   enumerateResidentialCandidatesFromTypes,
@@ -37,6 +40,7 @@ import {
   overlaps,
   isBoostedByService,
   normalizeServicePlacement,
+  serviceFootprint,
 } from "../core/buildings.js";
 import { collectRow0AnchorRefinementSeeds, placementLeavesRow0RoadCellAvailable } from "./row0Anchors.js";
 import { getBuildingLimits, getResidentialBaseMax, NO_TYPE_INDEX } from "../core/rules.js";
@@ -76,10 +80,13 @@ type MaybeStop = (() => void) | undefined;
 interface GreedyPrecomputedIndexes {
   serviceCandidateIndicesByKey: Map<string, number>;
   serviceCandidatesByOccupiedCell: Map<string, number[]>;
+  serviceFootprintKeysByCandidate: readonly (readonly string[])[];
+  serviceEffectZoneSetsByCandidate: readonly Set<string>[];
   residentialGroupsByOccupiedCell: Map<string, number[]>;
   serviceCandidateIndicesByResidentialGroup: number[][];
   serviceCandidateIndicesByType: number[][] | null;
   residentialCandidatesByOccupiedCell: Map<string, number[]>;
+  residentialCandidateFootprintKeys: readonly (readonly string[])[];
   residentialCandidateIndicesByType: number[][] | null;
 }
 interface GreedySolveContext {
@@ -121,6 +128,7 @@ function createGreedyProfileCounters(): GreedyProfileCounters {
     precompute: {
       serviceCandidates: 0,
       residentialCandidates: 0,
+      geometryCacheEntries: 0,
       residentialScoringGroups: 0,
       residentialScoringVariantsCollapsed: 0,
       serviceCoveragePairs: 0,
@@ -167,6 +175,7 @@ function createGreedyProfileCounters(): GreedyProfileCounters {
       candidateScans: 0,
       canConnectChecks: 0,
       placements: 0,
+      occupancyScratchReuses: 0,
       moveChecks: 0,
       addChecks: 0,
       serviceRemoveChecks: 0,
@@ -180,6 +189,7 @@ function createGreedyProfileCounters(): GreedyProfileCounters {
       ensureConnectedCalls: 0,
       probeCalls: 0,
       probeReuses: 0,
+      scratchProbeCalls: 0,
       row0Checks: 0,
       fallbackRoads: 0,
       deferredFrontierRecomputes: 0,
@@ -422,6 +432,13 @@ function forEachPlacementCell(
   forEachRectangleCell(placement.r, placement.c, placement.rows, placement.cols, (r, c) => visit(cellKey(r, c)));
 }
 
+function forEachCachedPlacementCell(
+  footprintKeys: readonly string[],
+  visit: (key: string) => void
+): void {
+  for (const key of footprintKeys) visit(key);
+}
+
 function addPlacementCellsToSet(
   target: Set<string>,
   placement: { r: number; c: number; rows: number; cols: number }
@@ -429,11 +446,53 @@ function addPlacementCellsToSet(
   forEachPlacementCell(placement, (key) => target.add(key));
 }
 
+function addCachedPlacementCellsToSet(target: Set<string>, footprintKeys: readonly string[]): void {
+  forEachCachedPlacementCell(footprintKeys, (key) => target.add(key));
+}
+
 function deletePlacementCellsFromSet(
   target: Set<string>,
   placement: { r: number; c: number; rows: number; cols: number }
 ): void {
   forEachPlacementCell(placement, (key) => target.delete(key));
+}
+
+function overlapsCachedFootprint(occupied: Set<string>, footprintKeys: readonly string[]): boolean {
+  for (const key of footprintKeys) {
+    if (occupied.has(key)) return true;
+  }
+  return false;
+}
+
+function createOccupancyScratch(base: Set<string>): OccupancyScratch {
+  return {
+    cells: new Set(base),
+    addedKeys: new Set(),
+    removedKeys: new Set(),
+  };
+}
+
+function resetOccupancyScratch(scratch: OccupancyScratch): void {
+  for (const key of scratch.addedKeys) {
+    scratch.cells.delete(key);
+  }
+  for (const key of scratch.removedKeys) {
+    scratch.cells.add(key);
+  }
+  scratch.addedKeys.clear();
+  scratch.removedKeys.clear();
+}
+
+function deleteKeysFromOccupancyScratch(scratch: OccupancyScratch, footprintKeys: readonly string[]): void {
+  for (const key of footprintKeys) {
+    if (!scratch.cells.has(key)) continue;
+    scratch.cells.delete(key);
+    if (scratch.addedKeys.has(key)) {
+      scratch.addedKeys.delete(key);
+    } else {
+      scratch.removedKeys.add(key);
+    }
+  }
 }
 
 function isBetterSearchSolution(candidate: Solution | null, incumbent: Solution | null): boolean {
@@ -866,6 +925,12 @@ type ActiveCandidatePool = {
   positions: number[];
 };
 
+type OccupancyScratch = {
+  cells: Set<string>;
+  addedKeys: Set<string>;
+  removedKeys: Set<string>;
+};
+
 function createActiveCandidatePool(candidateCount: number): ActiveCandidatePool {
   return {
     activeIndices: Array.from({ length: candidateCount }, (_, index) => index),
@@ -907,12 +972,27 @@ function buildFootprintCandidateIndex<T>(
   return byCell;
 }
 
-function buildResidentialGroupCellIndex(
-  groups: ResidentialScoringGroup[]
+function buildFootprintCandidateIndexFromKeys(
+  footprintKeysByCandidate: readonly (readonly string[])[]
 ): Map<string, number[]> {
-  return buildFootprintCandidateIndex(groups, (group, visit) =>
-    forEachRectangleCell(group.r, group.c, group.rows, group.cols, (r, c) => visit(cellKey(r, c)))
-  );
+  const byCell = new Map<string, number[]>();
+  for (let candidateIndex = 0; candidateIndex < footprintKeysByCandidate.length; candidateIndex++) {
+    for (const cellKey of footprintKeysByCandidate[candidateIndex] ?? []) {
+      const existing = byCell.get(cellKey);
+      if (existing) {
+        existing.push(candidateIndex);
+      } else {
+        byCell.set(cellKey, [candidateIndex]);
+      }
+    }
+  }
+  return byCell;
+}
+
+function buildResidentialGroupCellIndex(
+  footprintKeysByGroup: readonly (readonly string[])[]
+): Map<string, number[]> {
+  return buildFootprintCandidateIndexFromKeys(footprintKeysByGroup);
 }
 
 function buildServiceCoverageReverseIndex(
@@ -1013,7 +1093,8 @@ function collectServiceCandidatesForResidentialGroups(
 function collectNewlyOccupiedKeysForPlacement(
   occupied: Set<string>,
   probe: RoadConnectionProbe | null,
-  placement: { r: number; c: number; rows: number; cols: number }
+  placement: { r: number; c: number; rows: number; cols: number },
+  footprintKeys?: readonly string[]
 ): string[] {
   const newlyOccupied = new Set<string>();
   if (probe?.path) {
@@ -1022,10 +1103,39 @@ function collectNewlyOccupiedKeysForPlacement(
       if (!occupied.has(key)) newlyOccupied.add(key);
     }
   }
-  forEachPlacementCell(placement, (key) => {
+  const visitFootprintKey = footprintKeys
+    ? (visit: (key: string) => void) => forEachCachedPlacementCell(footprintKeys, visit)
+    : (visit: (key: string) => void) => forEachPlacementCell(placement, visit);
+  visitFootprintKey((key) => {
     if (!occupied.has(key)) newlyOccupied.add(key);
   });
   return [...newlyOccupied];
+}
+
+function getServiceCandidatePrecomputedIndex(
+  precomputedIndexes: GreedyPrecomputedIndexes,
+  candidate: ServiceCandidate
+): number {
+  return precomputedIndexes.serviceCandidateIndicesByKey.get(serviceCandidateKey(candidate)) ?? -1;
+}
+
+function getCachedServiceEffectZoneSet(
+  G: Grid,
+  precomputedIndexes: GreedyPrecomputedIndexes,
+  candidate: ServiceCandidate
+): Set<string> {
+  const precomputedIndex = getServiceCandidatePrecomputedIndex(precomputedIndexes, candidate);
+  return precomputedIndex >= 0
+    ? precomputedIndexes.serviceEffectZoneSetsByCandidate[precomputedIndex]!
+    : buildServiceEffectZoneSet(G, candidate);
+}
+
+function getCachedServiceFootprintKeys(
+  precomputedIndexes: GreedyPrecomputedIndexes,
+  candidate: ServiceCandidate
+): readonly string[] | undefined {
+  const precomputedIndex = getServiceCandidatePrecomputedIndex(precomputedIndexes, candidate);
+  return precomputedIndex >= 0 ? precomputedIndexes.serviceFootprintKeysByCandidate[precomputedIndex] : undefined;
 }
 
 function solveOne(
@@ -1060,6 +1170,7 @@ function solveOne(
   let deferredFrontier = useDeferredRoadCommitment
     ? computeRow0ReachableEmptyFrontier(G, occupied)
     : null;
+  const explicitRoadProbeScratch = createRoadProbeScratch(G);
   if (useDeferredRoadCommitment && profileCounters) {
     profileCounters.roads.deferredFrontierRecomputes++;
   }
@@ -1088,7 +1199,17 @@ function solveOne(
       if (!frontierProbe) return null;
       return { kind: "deferred", roadCost: frontierProbe.distance, frontierProbe };
     }
-    const roadProbe = probeBuildingConnectedToRoads(G, roads, snapshotOccupied, r, c, rows, cols);
+    if (profileCounters) profileCounters.roads.scratchProbeCalls++;
+    const roadProbe = probeBuildingConnectedToRoads(
+      G,
+      roads,
+      snapshotOccupied,
+      r,
+      c,
+      rows,
+      cols,
+      explicitRoadProbeScratch
+    );
     if (!roadProbe) return null;
     return { kind: "explicit", roadCost: roadProbe.path?.length ?? 0, roadProbe };
   };
@@ -1141,6 +1262,7 @@ function solveOne(
       if (maxServices !== undefined && services.length >= maxServices) break;
       if (profileCounters) profileCounters.servicePhase.fixedPlacements++;
       const placement = materializeServicePlacement(s);
+      const cachedFootprintKeys = getCachedServiceFootprintKeys(precomputedIndexes, s);
       if (useServiceTypes && remainingServiceAvail) {
         if (remainingServiceAvail[s.typeIndex] <= 0) {
           return null;
@@ -1163,11 +1285,15 @@ function solveOne(
       }
       applyRoadConnectionProbe(roads, probe.roadProbe);
       for (const k of roads) occupied.add(k);
-      addPlacementCellsToSet(occupied, placement);
+      if (cachedFootprintKeys) {
+        addCachedPlacementCellsToSet(occupied, cachedFootprintKeys);
+      } else {
+        addPlacementCellsToSet(occupied, placement);
+      }
       services.push(placement);
       serviceTypeIndices.push(s.typeIndex);
       serviceBonuses.push(s.bonus);
-      effectZones.push(buildServiceEffectZoneSet(G, placement));
+      effectZones.push(getCachedServiceEffectZoneSet(G, precomputedIndexes, s));
       const coveredGroupIndices = serviceCoverageGroupsByKey.get(serviceCandidateKey(s)) ?? [];
       for (const groupIndex of coveredGroupIndices) {
         currentResidentialGroupBoosts[groupIndex] += s.bonus;
@@ -1238,10 +1364,12 @@ function solveOne(
       if (!bestCandidate || bestCandidateIndex < 0 || bestScore <= 0) break;
 
       const placement = materializeServicePlacement(bestCandidate);
+      const cachedFootprintKeys = precomputedIndexes.serviceFootprintKeysByCandidate[serviceOrderGlobalCandidateIndices[bestCandidateIndex] ?? -1];
       const newlyOccupiedKeys = collectNewlyOccupiedKeysForPlacement(
         occupied,
         useDeferredRoadCommitment ? null : bestProbe?.kind === "explicit" ? bestProbe.roadProbe : null,
-        placement
+        placement,
+        cachedFootprintKeys
       );
       if (!bestProbe) {
         break;
@@ -1262,7 +1390,7 @@ function solveOne(
       services.push(placement);
       serviceTypeIndices.push(bestCandidate.typeIndex);
       serviceBonuses.push(bestCandidate.bonus);
-      effectZones.push(buildServiceEffectZoneSet(G, placement));
+      effectZones.push(getCachedServiceEffectZoneSet(G, precomputedIndexes, bestCandidate));
       const coveredGroupIndices = serviceCoverageGroupsByKey.get(serviceCandidateKey(bestCandidate)) ?? [];
       for (const groupIndex of coveredGroupIndices) {
         currentResidentialGroupBoosts[groupIndex] += bestCandidate.bonus;
@@ -1394,7 +1522,8 @@ function solveOne(
     const newlyOccupiedKeys = collectNewlyOccupiedKeysForPlacement(
       occupied,
       useDeferredRoadCommitment ? null : bestProbe?.kind === "explicit" ? bestProbe.roadProbe : null,
-      best
+      best,
+      precomputedIndexes.residentialCandidateFootprintKeys[bestCandidateIndex]
     );
     if (!bestProbe) break;
     if (!useDeferredRoadCommitment) {
@@ -1448,7 +1577,8 @@ function solveOne(
       [
         ...services.map((service) => normalizeServicePlacement(service)),
         ...residentials,
-      ]
+      ],
+      explicitRoadProbeScratch
     );
     if (!materializedRoads) {
       if (profileCounters) profileCounters.roads.deferredReconstructionFailures++;
@@ -1481,7 +1611,8 @@ function solveOne(
       useTypes ? remainingAvail : null,
       maxResidentials,
       profileCounters,
-      maybeStop
+      maybeStop,
+      explicitRoadProbeScratch
     );
   }
 
@@ -1502,11 +1633,20 @@ function solveOne(
   for (const s of services) {
     const normalized = normalizeServicePlacement(s);
     if (profileCounters) profileCounters.roads.ensureConnectedCalls++;
-    ensureBuildingConnectedToRoads(G, roadsValid, occupiedBuildings, normalized.r, normalized.c, normalized.rows, normalized.cols);
+    ensureBuildingConnectedToRoads(
+      G,
+      roadsValid,
+      occupiedBuildings,
+      normalized.r,
+      normalized.c,
+      normalized.rows,
+      normalized.cols,
+      explicitRoadProbeScratch
+    );
   }
   for (const r of residentials) {
     if (profileCounters) profileCounters.roads.ensureConnectedCalls++;
-    ensureBuildingConnectedToRoads(G, roadsValid, occupiedBuildings, r.r, r.c, r.rows, r.cols);
+    ensureBuildingConnectedToRoads(G, roadsValid, occupiedBuildings, r.r, r.c, r.rows, r.cols, explicitRoadProbeScratch);
   }
 
   // No road may overlap any building cell.
@@ -1605,6 +1745,8 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
 
   const serviceCandidates = enumerateServiceCandidates(G, params);
   if (profileCounters) profileCounters.precompute.serviceCandidates += serviceCandidates.length;
+  const serviceGeometryCache = buildServiceGeometryCache(G, serviceCandidates);
+  const serviceEffectZoneSetsByCandidate = serviceGeometryCache.effectZoneKeysByIndex.map((keys) => new Set(keys));
   const residentialCandidateStats = anyResidentialCandidates.map((residential) => ({
     r: residential.r,
     c: residential.c,
@@ -1614,16 +1756,24 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     ...getResidentialBaseMax(params, residential.rows, residential.cols, getCandidateTypeIndex(residential)),
   }));
   if (profileCounters) profileCounters.precompute.residentialCandidates += residentialCandidateStats.length;
+  const residentialCandidateGeometryCache = buildFootprintGeometryCache(anyResidentialCandidates);
   const residentialScoringGroups = buildResidentialScoringGroups(residentialCandidateStats, profileCounters);
+  const residentialGroupGeometryCache = buildFootprintGeometryCache(residentialScoringGroups);
+  if (profileCounters) {
+    profileCounters.precompute.geometryCacheEntries += serviceGeometryCache.footprintKeysByIndex.length;
+    profileCounters.precompute.geometryCacheEntries += serviceEffectZoneSetsByCandidate.length;
+    profileCounters.precompute.geometryCacheEntries += residentialCandidateGeometryCache.footprintKeysByIndex.length;
+    profileCounters.precompute.geometryCacheEntries += residentialGroupGeometryCache.footprintKeysByIndex.length;
+  }
   const serviceCoverageGroupsByKey = buildServiceCoverageIndex(serviceCandidates, residentialScoringGroups, profileCounters);
   const precomputedIndexes: GreedyPrecomputedIndexes = {
     serviceCandidateIndicesByKey: new Map(
       serviceCandidates.map((candidate, candidateIndex) => [serviceCandidateKey(candidate), candidateIndex])
     ),
-    serviceCandidatesByOccupiedCell: buildFootprintCandidateIndex(serviceCandidates, (candidate, visit) =>
-      forEachPlacementCell(candidate, visit)
-    ),
-    residentialGroupsByOccupiedCell: buildResidentialGroupCellIndex(residentialScoringGroups),
+    serviceCandidatesByOccupiedCell: buildFootprintCandidateIndexFromKeys(serviceGeometryCache.footprintKeysByIndex),
+    serviceFootprintKeysByCandidate: serviceGeometryCache.footprintKeysByIndex,
+    serviceEffectZoneSetsByCandidate: serviceEffectZoneSetsByCandidate,
+    residentialGroupsByOccupiedCell: buildResidentialGroupCellIndex(residentialGroupGeometryCache.footprintKeysByIndex),
     serviceCandidateIndicesByResidentialGroup: buildServiceCoverageReverseIndex(
       serviceCandidates,
       serviceCoverageGroupsByKey,
@@ -1632,9 +1782,10 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     serviceCandidateIndicesByType: useServiceTypes
       ? buildTypedCandidateIndex(serviceCandidates.length, (candidateIndex) => serviceCandidates[candidateIndex].typeIndex, params.serviceTypes!.length)
       : null,
-    residentialCandidatesByOccupiedCell: buildFootprintCandidateIndex(anyResidentialCandidates, (candidate, visit) =>
-      forEachPlacementCell(candidate, visit)
+    residentialCandidatesByOccupiedCell: buildFootprintCandidateIndexFromKeys(
+      residentialCandidateGeometryCache.footprintKeysByIndex
     ),
+    residentialCandidateFootprintKeys: residentialCandidateGeometryCache.footprintKeysByIndex,
     residentialCandidateIndicesByType: useTypes
       ? buildTypedCandidateIndex(
           anyResidentialCandidates.length,
@@ -1976,6 +2127,7 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
   };
 
   const relocationProbe = { kind: "explicit", roadCost: 0, roadProbe: { path: null } } as const;
+  const serviceNeighborhoodRoadProbeScratch = createRoadProbeScratch(G);
 
   type ServiceRelocationMove = {
     serviceIndex: number;
@@ -2017,9 +2169,20 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
 
     for (const service of forcedServices) {
       const placement = materializeServicePlacement(service);
-      if (overlaps(occupiedBuildings, placement.r, placement.c, placement.rows, placement.cols)) return null;
-      addPlacementCellsToSet(occupiedBuildings, placement);
-      effectZones.push(buildServiceEffectZoneSet(G, placement));
+      const cachedFootprintKeys = getCachedServiceFootprintKeys(precomputedIndexes, service);
+      if (
+        cachedFootprintKeys
+          ? overlapsCachedFootprint(occupiedBuildings, cachedFootprintKeys)
+          : overlaps(occupiedBuildings, placement.r, placement.c, placement.rows, placement.cols)
+      ) {
+        return null;
+      }
+      if (cachedFootprintKeys) {
+        addCachedPlacementCellsToSet(occupiedBuildings, cachedFootprintKeys);
+      } else {
+        addPlacementCellsToSet(occupiedBuildings, placement);
+      }
+      effectZones.push(getCachedServiceEffectZoneSet(G, precomputedIndexes, service));
       serviceBonuses.push(service.bonus);
       if (service.typeIndex >= 0 && service.typeIndex < serviceTypeUsage.length) {
         serviceTypeUsage[service.typeIndex] += 1;
@@ -2079,6 +2242,7 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
       for (const service of incumbent.services) {
         addPlacementCellsToSet(incumbentOccupiedBuildings, service);
       }
+      const occupancyScratch = createOccupancyScratch(incumbentOccupiedBuildings);
       const incumbentServiceKeys = new Set(incumbentServices.map((candidate) => serviceCandidateKey(candidate)));
       const remainingAvailForIncumbent = useTypes && params.residentialTypes
         ? params.residentialTypes.map((type) => type.avail)
@@ -2110,8 +2274,14 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
           serviceOrderSorted.filter((candidate) => candidate.typeIndex !== currentChoice.typeIndex)
             .slice(0, Math.min(localSearchServiceCandidateLimit, serviceOrderSorted.length)),
         ];
-        const occupiedWithoutCurrent = new Set(incumbentOccupiedBuildings);
-        deletePlacementCellsFromSet(occupiedWithoutCurrent, incumbent.services[serviceIndex]);
+        resetOccupancyScratch(occupancyScratch);
+        const currentChoiceFootprintKeys = getCachedServiceFootprintKeys(precomputedIndexes, currentChoice);
+        deleteKeysFromOccupancyScratch(
+          occupancyScratch,
+          currentChoiceFootprintKeys ?? serviceFootprint(currentChoice)
+        );
+        const occupiedWithoutCurrent = occupancyScratch.cells;
+        if (profileCounters) profileCounters.localSearch.occupancyScratchReuses++;
         const currentResidentialGroupBoostsWithoutCurrent = [...currentResidentialGroupBoosts];
         for (const groupIndex of serviceCoverageGroupsByKey.get(serviceCandidateKey(currentChoice)) ?? []) {
           currentResidentialGroupBoostsWithoutCurrent[groupIndex] -= currentChoice.bonus;
@@ -2123,11 +2293,19 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
             if (swapTrials >= maxSwapTrialsThisIteration) break;
             if (serviceCandidateKey(candidate) === serviceCandidateKey(currentChoice)) continue;
             if (incumbentServiceKeys.has(serviceCandidateKey(candidate))) continue;
-            if (overlaps(occupiedWithoutCurrent, candidate.r, candidate.c, candidate.rows, candidate.cols)) continue;
+            const candidateFootprintKeys = getCachedServiceFootprintKeys(precomputedIndexes, candidate);
+            if (
+              candidateFootprintKeys
+                ? overlapsCachedFootprint(occupiedWithoutCurrent, candidateFootprintKeys)
+                : overlaps(occupiedWithoutCurrent, candidate.r, candidate.c, candidate.rows, candidate.cols)
+            ) {
+              continue;
+            }
             if (profileCounters) profileCounters.localSearch.serviceSwapChecks++;
             if (profileCounters) profileCounters.localSearch.canConnectChecks++;
             if (profileCounters) profileCounters.roads.canConnectChecks++;
             if (profileCounters) profileCounters.roads.probeCalls++;
+            if (profileCounters) profileCounters.roads.scratchProbeCalls++;
             swapTrials++;
             const probe = probeBuildingConnectedToRoads(
               G,
@@ -2136,7 +2314,8 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
               candidate.r,
               candidate.c,
               candidate.rows,
-              candidate.cols
+              candidate.cols,
+              serviceNeighborhoodRoadProbeScratch
             );
             if (!probe) continue;
             const forcedServices = [...incumbentServices];
@@ -2341,7 +2520,8 @@ function localSearchImprove(
   remainingAvail: number[] | null,
   maxResidentials: number | undefined,
   profileCounters?: GreedyProfileCounters,
-  maybeStop?: () => void
+  maybeStop?: () => void,
+  explicitRoadProbeScratch = createRoadProbeScratch(G)
 ): number {
   const useTypes = remainingAvail !== null && residentialCandidates.length > 0 && "typeIndex" in residentialCandidates[0];
   const maxIter = 20;
@@ -2370,7 +2550,17 @@ function localSearchImprove(
   ): RoadConnectionProbe | null => {
     if (profileCounters) profileCounters.roads.canConnectChecks++;
     if (profileCounters) profileCounters.roads.probeCalls++;
-    return probeBuildingConnectedToRoads(G, roads, snapshotOccupied, r, c, rows, cols);
+    if (profileCounters) profileCounters.roads.scratchProbeCalls++;
+    return probeBuildingConnectedToRoads(
+      G,
+      roads,
+      snapshotOccupied,
+      r,
+      c,
+      rows,
+      cols,
+      explicitRoadProbeScratch
+    );
   };
 
   for (let iter = 0; iter < maxIter; iter++) {

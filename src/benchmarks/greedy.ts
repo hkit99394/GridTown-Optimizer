@@ -254,7 +254,7 @@ export function formatGreedyBenchmarkSuite(result: GreedyBenchmarkSuiteResult): 
     );
     if (counters) {
       lines.push(
-        `  scans=svc:${counters.servicePhase.candidateScans} res:${counters.residentialPhase.candidateScans} local:${counters.localSearch.candidateScans} roads(connect=${counters.roads.canConnectChecks}, ensure=${counters.roads.ensureConnectedCalls}, probes=${counters.roads.probeCalls}, reuse=${counters.roads.probeReuses})`
+        `  scans=svc:${counters.servicePhase.candidateScans} res:${counters.residentialPhase.candidateScans} local:${counters.localSearch.candidateScans} roads(connect=${counters.roads.canConnectChecks}, ensure=${counters.roads.ensureConnectedCalls}, probes=${counters.roads.probeCalls}, reuse=${counters.roads.probeReuses}, scratch=${counters.roads.scratchProbeCalls})`
       );
       lines.push(
         `  grouped-score=groups:${counters.precompute.residentialScoringGroups} collapsed:${counters.precompute.residentialScoringVariantsCollapsed} coverage:${counters.precompute.serviceCoverageGroups} static-evals:${counters.precompute.serviceStaticScoreGroupEvaluations} phase-lookups:${counters.servicePhase.groupedScoreLookups} discounted:${counters.precompute.serviceStaticAvailabilityDiscountedGroups + counters.servicePhase.availabilityDiscountedGroups}`
@@ -276,6 +276,9 @@ export function formatGreedyBenchmarkSuite(result: GreedyBenchmarkSuiteResult): 
       );
       lines.push(
         `  deferred-roads=frontier:${counters.roads.deferredFrontierRecomputes} rebuild-steps:${counters.roads.deferredReconstructionSteps} rebuild-failures:${counters.roads.deferredReconstructionFailures}`
+      );
+      lines.push(
+        `  step13=geometry:${counters.precompute.geometryCacheEntries} occupancy-scratch:${counters.localSearch.occupancyScratchReuses} road-scratch:${counters.roads.scratchProbeCalls}`
       );
     } else {
       lines.push("  profile=disabled");

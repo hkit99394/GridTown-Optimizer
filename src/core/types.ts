@@ -329,6 +329,7 @@ export interface GreedyProfileCounters {
   precompute: {
     serviceCandidates: number;
     residentialCandidates: number;
+    geometryCacheEntries: number;
     residentialScoringGroups: number;
     residentialScoringVariantsCollapsed: number;
     serviceCoveragePairs: number;
@@ -375,6 +376,7 @@ export interface GreedyProfileCounters {
     candidateScans: number;
     canConnectChecks: number;
     placements: number;
+    occupancyScratchReuses: number;
     moveChecks: number;
     addChecks: number;
     serviceRemoveChecks: number;
@@ -388,6 +390,7 @@ export interface GreedyProfileCounters {
     ensureConnectedCalls: number;
     probeCalls: number;
     probeReuses: number;
+    scratchProbeCalls: number;
     row0Checks: number;
     fallbackRoads: number;
     deferredFrontierRecomputes: number;

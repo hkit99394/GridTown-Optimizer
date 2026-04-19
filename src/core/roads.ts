@@ -50,6 +50,68 @@ export function hasAvailableRow0RoadCell(G: Grid, blocked: Set<string>): boolean
   return findAvailableRow0RoadCell(G, blocked) !== null;
 }
 
+export interface RoadProbeScratch {
+  height: number;
+  width: number;
+  cellKeys: string[];
+  blockedStamp: Int32Array;
+  visitedStamp: Int32Array;
+  parentIndex: Int32Array;
+  queue: Int32Array;
+  blockedGeneration: number;
+  visitedGeneration: number;
+}
+
+function nextScratchGeneration(stamps: Int32Array, current: number): number {
+  const next = current + 1;
+  if (next >= 0x7fffffff) {
+    stamps.fill(0);
+    return 1;
+  }
+  return next;
+}
+
+function scratchCellIndex(scratch: RoadProbeScratch, r: number, c: number): number {
+  return r * scratch.width + c;
+}
+
+function roadProbeScratchMatchesGrid(G: Grid, scratch: RoadProbeScratch): boolean {
+  return scratch.height === height(G) && scratch.width === width(G);
+}
+
+function hasAvailableRow0RoadCellWithScratch(
+  G: Grid,
+  scratch: RoadProbeScratch,
+  blockedGeneration: number
+): boolean {
+  const W = width(G);
+  for (let c = 0; c < W; c++) {
+    if (!isAllowed(G, 0, c)) continue;
+    if (scratch.blockedStamp[scratchCellIndex(scratch, 0, c)] !== blockedGeneration) return true;
+  }
+  return false;
+}
+
+export function createRoadProbeScratch(G: Grid): RoadProbeScratch {
+  const H = height(G);
+  const W = width(G);
+  return {
+    height: H,
+    width: W,
+    cellKeys: Array.from({ length: H * W }, (_, index) => {
+      const r = Math.floor(index / W);
+      const c = index % W;
+      return cellKey(r, c);
+    }),
+    blockedStamp: new Int32Array(H * W),
+    visitedStamp: new Int32Array(H * W),
+    parentIndex: new Int32Array(H * W),
+    queue: new Int32Array(H * W),
+    blockedGeneration: 0,
+    visitedGeneration: 0,
+  };
+}
+
 /** BFS from start cells to any cell in targets; only allowed cells. Exclude cells in blockSet (e.g. building footprint). Returns path from start to first target, or null. */
 function bfsPathToTargets(
   G: Grid,
@@ -98,6 +160,57 @@ function bfsPathToTargets(
   return null;
 }
 
+function bfsPathToTargetsWithScratch(
+  G: Grid,
+  startCells: [number, number][],
+  scratch: RoadProbeScratch,
+  blockedGeneration: number,
+  targetRoads: Set<string> | null
+): [number, number][] | null {
+  const usesExplicitRoadTargets = targetRoads !== null;
+  scratch.visitedGeneration = nextScratchGeneration(scratch.visitedStamp, scratch.visitedGeneration);
+  const visitedGeneration = scratch.visitedGeneration;
+  let queueLength = 0;
+  let queueIndex = 0;
+
+  for (const [r, c] of startCells) {
+    const startIndex = scratchCellIndex(scratch, r, c);
+    if (scratch.visitedStamp[startIndex] === visitedGeneration) continue;
+    scratch.visitedStamp[startIndex] = visitedGeneration;
+    scratch.parentIndex[startIndex] = -1;
+    scratch.queue[queueLength++] = startIndex;
+  }
+
+  while (queueIndex < queueLength) {
+    const currentIndex = scratch.queue[queueIndex++]!;
+    const r = Math.floor(currentIndex / scratch.width);
+    const c = currentIndex - r * scratch.width;
+    const key = scratch.cellKeys[currentIndex];
+    if ((usesExplicitRoadTargets && targetRoads.has(key)) || (!usesExplicitRoadTargets && r === 0)) {
+      const path: [number, number][] = [];
+      let pathIndex = currentIndex;
+      while (pathIndex >= 0) {
+        const pathRow = Math.floor(pathIndex / scratch.width);
+        const pathCol = pathIndex - pathRow * scratch.width;
+        path.push([pathRow, pathCol]);
+        pathIndex = scratch.parentIndex[pathIndex] ?? -1;
+      }
+      path.reverse();
+      return path;
+    }
+    forEachOrthogonalNeighbor(G, r, c, (r2, c2) => {
+      if (!isAllowed(G, r2, c2)) return;
+      const nextIndex = scratchCellIndex(scratch, r2, c2);
+      if (scratch.blockedStamp[nextIndex] === blockedGeneration) return;
+      if (scratch.visitedStamp[nextIndex] === visitedGeneration) return;
+      scratch.visitedStamp[nextIndex] = visitedGeneration;
+      scratch.parentIndex[nextIndex] = currentIndex;
+      scratch.queue[queueLength++] = nextIndex;
+    });
+  }
+  return null;
+}
+
 function buildingTouchesRoadAnchorRow(r: number): boolean {
   return r === 0;
 }
@@ -122,16 +235,34 @@ function buildRoadConnectionProbe(
   r: number,
   c: number,
   rows: number,
-  cols: number
+  cols: number,
+  scratch?: RoadProbeScratch
 ): RoadConnectionProbe | null {
   if (buildingTouchesRoadAnchorRow(r)) {
     return { path: null };
   }
 
+  const useScratch = scratch && roadProbeScratchMatchesGrid(G, scratch) ? scratch : null;
   const border = rectangleBorderCells(r, c, rows, cols);
-  const blockSet = new Set<string>();
-  for (const k of occupied) if (!roads.has(k)) blockSet.add(k);
-  forEachRectangleCell(r, c, rows, cols, (rr, cc) => blockSet.add(cellKey(rr, cc)));
+  const blockSet = useScratch ? null : new Set<string>();
+  let blockedGeneration = -1;
+  if (useScratch) {
+    useScratch.blockedGeneration = nextScratchGeneration(useScratch.blockedStamp, useScratch.blockedGeneration);
+    blockedGeneration = useScratch.blockedGeneration;
+    for (const key of occupied) {
+      if (roads.has(key)) continue;
+      const { r: occupiedRow, c: occupiedCol } = cellFromKey(key);
+      useScratch.blockedStamp[scratchCellIndex(useScratch, occupiedRow, occupiedCol)] = blockedGeneration;
+    }
+    forEachRectangleCell(r, c, rows, cols, (rr, cc) => {
+      useScratch.blockedStamp[scratchCellIndex(useScratch, rr, cc)] = blockedGeneration;
+    });
+  } else {
+    for (const key of occupied) {
+      if (!roads.has(key)) blockSet!.add(key);
+    }
+    forEachRectangleCell(r, c, rows, cols, (rr, cc) => blockSet!.add(cellKey(rr, cc)));
+  }
   const startCells: [number, number][] = [];
   let touchesRoad = false;
   for (const [br, bc] of border) {
@@ -141,18 +272,28 @@ function buildRoadConnectionProbe(
       touchesRoad = true;
       continue;
     }
-    if (!blockSet.has(key)) {
+    const blocked = useScratch
+      ? useScratch.blockedStamp[scratchCellIndex(useScratch, br, bc)] === blockedGeneration
+      : blockSet!.has(key);
+    if (!blocked) {
       startCells.push([br, bc]);
     }
   }
   if (touchesRoad) {
     return { path: null };
   }
-  if (roads.size === 0 && !hasAvailableRow0RoadCell(G, blockSet)) {
+  if (
+    roads.size === 0
+    && !(useScratch
+      ? hasAvailableRow0RoadCellWithScratch(G, useScratch, blockedGeneration)
+      : hasAvailableRow0RoadCell(G, blockSet!))
+  ) {
     return null;
   }
 
-  const path = bfsPathToTargets(G, startCells, blockSet, roads.size > 0 ? roads : null);
+  const path = useScratch
+    ? bfsPathToTargetsWithScratch(G, startCells, useScratch, blockedGeneration, roads.size > 0 ? roads : null)
+    : bfsPathToTargets(G, startCells, blockSet!, roads.size > 0 ? roads : null);
   if (!path) return null;
   return { path };
 }
@@ -234,9 +375,10 @@ export function ensureBuildingConnectedToRoads(
   r: number,
   c: number,
   rows: number,
-  cols: number
+  cols: number,
+  scratch?: RoadProbeScratch
 ): boolean {
-  const probe = buildRoadConnectionProbe(G, roads, occupied, r, c, rows, cols);
+  const probe = buildRoadConnectionProbe(G, roads, occupied, r, c, rows, cols, scratch);
   if (!probe) return false;
   applyRoadConnectionProbe(roads, probe);
   return true;
@@ -303,9 +445,10 @@ export function canConnectToRoads(
   r: number,
   c: number,
   rows: number,
-  cols: number
+  cols: number,
+  scratch?: RoadProbeScratch
 ): boolean {
-  return buildRoadConnectionProbe(G, roads, occupied, r, c, rows, cols) !== null;
+  return buildRoadConnectionProbe(G, roads, occupied, r, c, rows, cols, scratch) !== null;
 }
 
 /** Probe road connectivity for a building and return the connection path when one is needed. */
@@ -316,9 +459,10 @@ export function probeBuildingConnectedToRoads(
   r: number,
   c: number,
   rows: number,
-  cols: number
+  cols: number,
+  scratch?: RoadProbeScratch
 ): RoadConnectionProbe | null {
-  return buildRoadConnectionProbe(G, roads, occupied, r, c, rows, cols);
+  return buildRoadConnectionProbe(G, roads, occupied, r, c, rows, cols, scratch);
 }
 
 type BuildingPlacementForRoadMaterialization = {
@@ -332,7 +476,8 @@ export function materializeDeferredRoadNetwork(
   G: Grid,
   initialRoadSeed: Set<string> | undefined,
   occupiedBuildings: Set<string>,
-  buildings: BuildingPlacementForRoadMaterialization[]
+  buildings: BuildingPlacementForRoadMaterialization[],
+  scratch?: RoadProbeScratch
 ): Set<string> | null {
   const roads = roadsConnectedToRow0(G, new Set<string>(initialRoadSeed ?? []));
   if (roads.size === 0) {
@@ -356,7 +501,8 @@ export function materializeDeferredRoadNetwork(
         building.r,
         building.c,
         building.rows,
-        building.cols
+        building.cols,
+        scratch
       );
       if (!probe) continue;
       const cost = probe.path?.length ?? 0;

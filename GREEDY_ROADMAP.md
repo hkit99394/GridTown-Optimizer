@@ -379,6 +379,13 @@ Concrete work:
 Why this is later:
 - these changes touch correctness-sensitive mutation paths, so they need stronger helper-level aliasing and rollback tests first
 
+Shipped bounded slice:
+- `src/core/buildings.ts` now caches rectangle footprint keys and service effect-zone keys behind the existing helper APIs, so repeated footprint/effect-zone reads stop rebuilding the same geometry while the public `string[]` / `Set<string>` surface stays intact
+- `src/core/roads.ts` now supports a reusable `RoadProbeScratch` workspace for explicit-road BFS probes, threaded through `probeBuildingConnectedToRoads`, `canConnectToRoads`, `ensureBuildingConnectedToRoads`, and deferred-road materialization without changing caller-visible behavior
+- `src/greedy/solver.ts` now reuses one explicit-road scratch workspace across service scans, residential scans, Step 12 service relocations, deferred-road reconstruction, local search, and final road validation; it also reuses cached candidate/group footprint keys plus a rollback-safe occupancy scratch in the bounded service neighborhood
+- `greedy.profile` now exposes `geometryCacheEntries`, `occupancyScratchReuses`, and `scratchProbeCalls`, and `benchmark:greedy` prints a `step13=` summary line so the runtime-only refactor stays visible in the fixed corpus
+- `tests/optimizers.test.cjs` now keeps helper-level parity guards for geometry caches and reusable road-probe scratch repeatability, while the fixed corpus still holds `geometry-occupancy-hot-path` at `1000`
+
 ### 14. Explore a stronger greedy search policy
 
 Expected impact: Potentially very high quality gain, higher heuristic risk

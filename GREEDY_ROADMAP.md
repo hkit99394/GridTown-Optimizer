@@ -154,6 +154,13 @@ Guardrail:
 - keep the service scoring proxy cheap enough to preserve greedy as a fast seed builder
 - do not accidentally turn the scoring path into a full lookahead solve
 
+Shipped bounded slice:
+- `src/greedy/solver.ts` now groups typed residential variants by exact footprint for service scoring, so same-footprint alternatives contribute through one realizable scoring group instead of being summed independently
+- grouped service scoring now applies a local per-type availability-pressure multiplier when a service covers more premium typed groups than the configured `avail` can realize
+- grouped footprints now also drive the service-coverage index used by greedy scoring, reducing duplicate same-footprint work in the service-ranking path
+- `greedy.profile` now exposes grouped-scoring counters for collapsed variants, grouped coverage, grouped score evaluations, and availability-discounted groups
+- `benchmark:greedy` now includes `typed-footprint-pressure` and `typed-availability-pressure` so Step 5 stays visible in the fixed corpus
+
 ### 6. Rework service-cap sweep and restart policy
 
 Expected impact: High runtime gain, moderate heuristic risk
@@ -174,6 +181,13 @@ Concrete work:
 
 Guardrail:
 - do not regress the current useful behavior of avoiding obvious service over-placement when no explicit cap is given
+
+Shipped bounded slice:
+- `src/greedy/solver.ts` now keeps explicit `maxServices` behavior unchanged, while no-cap solves switch to deterministic coarse-to-fine cap search once `inferredUpper > 6`
+- the adaptive path probes coarse caps at the endpoints and quarter splits first, then refines around the best two coarse caps instead of sweeping every value in `0..upper`
+- small `inferredUpper` cases still keep the old full sweep as a guardrail, so tiny service pools do not lose coverage from the bounded search
+- shuffled restarts and row-0 anchor refinement now run only on refine caps; coarse probes are baseline-only so low-diversification restart spend no longer multiplies across the whole cap range
+- `greedy.profile` now exposes `coarseCaps`, `refineCaps`, `capsSkipped`, and `restartCaps`, and `benchmark:greedy` includes `adaptive-cap-search-wide` plus a `cap-search=` summary line in the fixed corpus output
 
 ### 7. Replace full rescans with incremental candidate invalidation
 

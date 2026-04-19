@@ -177,7 +177,9 @@
       if (!gridElement) return;
       const cols = Number(gridElement.dataset.cols || 0);
       if (!cols) return;
-      const frame = gridElement.parentElement;
+      const frame = typeof gridElement.closest === "function"
+        ? (gridElement.closest(".matrix-frame, .grid-frame") || gridElement.parentElement)
+        : gridElement.parentElement;
       const layoutMode = gridElement.dataset.layoutMode || "adaptive";
       const { size, gap } = getMatrixMetrics(cols, frame?.clientWidth ?? 0, layoutMode);
       gridElement.style.setProperty("--matrix-cell-size", `${size}px`);

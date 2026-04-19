@@ -321,13 +321,22 @@ export interface GreedyProfileCounters {
   precompute: {
     serviceCandidates: number;
     residentialCandidates: number;
+    residentialScoringGroups: number;
+    residentialScoringVariantsCollapsed: number;
     serviceCoveragePairs: number;
+    serviceCoverageGroups: number;
     serviceStaticScores: number;
+    serviceStaticScoreGroupEvaluations: number;
+    serviceStaticAvailabilityDiscountedGroups: number;
     residentialPopulationCacheEntries: number;
   };
   attempts: {
     serviceCaps: number;
+    coarseCaps: number;
+    refineCaps: number;
+    capsSkipped: number;
     restarts: number;
+    restartCaps: number;
     serviceRefineTrials: number;
     exhaustiveTrials: number;
     localSearchIterations: number;
@@ -335,6 +344,9 @@ export interface GreedyProfileCounters {
   servicePhase: {
     candidateScans: number;
     canConnectChecks: number;
+    groupedScoreLookups: number;
+    groupedScoreGroupEvaluations: number;
+    availabilityDiscountedGroups: number;
     placements: number;
     fixedPlacements: number;
   };

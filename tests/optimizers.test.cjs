@@ -487,7 +487,7 @@ function testAutoSyncWallClockCapKeepsExplicitStopReasonWhenLnsThrows() {
   }
 }
 
-function testAutoSyncGreedyStageBudgetAllowsLaterStages() {
+function testAutoSyncGreedyCanRunPastFormerStageBudget() {
   const solverModule = require("../dist/greedy/solver.js");
   const lnsModule = require("../dist/lns/solver.js");
   const cpSatModule = require("../dist/cp-sat/solver.js");
@@ -495,19 +495,21 @@ function testAutoSyncGreedyStageBudgetAllowsLaterStages() {
   const originalSolveLns = lnsModule.solveLns;
   const originalSolveCpSat = cpSatModule.solveCpSat;
   let observedGreedyStopFilePath = null;
+  let greedyStoppedByUser = null;
   let lnsCalled = false;
   let cpSatCalled = false;
 
   solverModule.solveGreedy = (grid, params) => {
     observedGreedyStopFilePath = params.greedy.stopFilePath;
     const startedAt = Date.now();
-    while (!fs.existsSync(observedGreedyStopFilePath) && Date.now() - startedAt < 5000) {
-      // Busy-wait until auto's greedy-stage budget interrupts stage 0.
+    while (Date.now() - startedAt < 1500 && !fs.existsSync(observedGreedyStopFilePath)) {
+      // Busy-wait past the old 1s auto greedy-stage budget without triggering the shared stop file.
     }
+    greedyStoppedByUser = fs.existsSync(observedGreedyStopFilePath);
     return buildMockSolution({
       optimizer: "greedy",
       totalPopulation: 100,
-      stoppedByUser: fs.existsSync(observedGreedyStopFilePath),
+      stoppedByUser: greedyStoppedByUser,
     });
   };
   lnsModule.solveLns = () => {
@@ -530,13 +532,14 @@ function testAutoSyncGreedyStageBudgetAllowsLaterStages() {
     const elapsedMs = Date.now() - startedAt;
 
     assert.equal(typeof observedGreedyStopFilePath, "string");
+    assert.equal(greedyStoppedByUser, false);
     assert.equal(lnsCalled, true);
     assert.equal(cpSatCalled, true);
     assert.equal(solution.totalPopulation, 120);
     assert.equal(solution.activeOptimizer, "cp-sat");
     assert.equal(solution.autoStage.activeStage, "cp-sat");
     assert.equal(solution.autoStage.stopReason, "optimal");
-    assert.ok(elapsedMs >= 900 && elapsedMs < 4000);
+    assert.ok(elapsedMs >= 1400 && elapsedMs < 4000);
   } finally {
     solverModule.solveGreedy = originalSolveGreedy;
     lnsModule.solveLns = originalSolveLns;
@@ -544,7 +547,7 @@ function testAutoSyncGreedyStageBudgetAllowsLaterStages() {
   }
 }
 
-async function testAutoAsyncGreedyStageBudgetAllowsLaterStages() {
+async function testAutoAsyncGreedyCanRunPastFormerStageBudget() {
   const greedyBridgeModule = require("../dist/greedy/bridge.js");
   const lnsBridgeModule = require("../dist/lns/bridge.js");
   const cpSatModule = require("../dist/cp-sat/solver.js");
@@ -559,6 +562,10 @@ async function testAutoAsyncGreedyStageBudgetAllowsLaterStages() {
   greedyBridgeModule.startGreedySolve = () => {
     const snapshot = buildMockSolution({ optimizer: "greedy", totalPopulation: 100 });
     let cancelled = false;
+    const timer = setTimeout(() => {
+      if (cancelled) return;
+      greedyResolve({ ...snapshot, stoppedByUser: false });
+    }, 1500);
     return {
       promise: new Promise((resolve) => {
         greedyResolve = resolve;
@@ -567,6 +574,7 @@ async function testAutoAsyncGreedyStageBudgetAllowsLaterStages() {
         if (cancelled) return;
         cancelled = true;
         greedyCancelCalled = true;
+        clearTimeout(timer);
         greedyResolve({ ...snapshot, stoppedByUser: true });
       },
       getLatestSnapshot: () => snapshot,
@@ -620,14 +628,14 @@ async function testAutoAsyncGreedyStageBudgetAllowsLaterStages() {
     }).promise;
     const elapsedMs = Date.now() - startedAt;
 
-    assert.equal(greedyCancelCalled, true);
+    assert.equal(greedyCancelCalled, false);
     assert.equal(lnsStarted, true);
     assert.equal(cpSatStarted, true);
     assert.equal(solution.totalPopulation, 120);
     assert.equal(solution.activeOptimizer, "cp-sat");
     assert.equal(solution.autoStage.activeStage, "cp-sat");
     assert.equal(solution.autoStage.stopReason, "optimal");
-    assert.ok(elapsedMs >= 900 && elapsedMs < 4000);
+    assert.ok(elapsedMs >= 1400 && elapsedMs < 4000);
   } finally {
     greedyBridgeModule.startGreedySolve = originalStartGreedySolve;
     lnsBridgeModule.startLnsSolve = originalStartLnsSolve;
@@ -2069,6 +2077,7 @@ function testGreedyBenchmarkSuite() {
   assert.equal(Object.hasOwn(snapshot.results[0], "wallClockSeconds"), false);
   assert.match(formatGreedyBenchmarkSuite(result), /cap-sweep-mixed/);
   assert.match(formatGreedyBenchmarkSuite(result), /pop-cache=/);
+  assert.match(formatGreedyBenchmarkSuite(result), /cap-search=/);
 }
 
 function testGreedyDeterministicTieBreakBenchmarkCase() {
@@ -2099,6 +2108,279 @@ function testGreedyConnectivityHeavyBenchmarkCase() {
   assert.equal(result.results[0].totalPopulation > 0, true);
   assert.match(formatGreedyBenchmarkSuite(result), /bridge-connectivity-heavy/);
   assert.match(formatGreedyBenchmarkSuite(result), /reuse=/);
+}
+
+function inferredPositiveServiceUpper(params) {
+  const types = params.serviceTypes ?? [];
+  const positiveBonuses = types.reduce(
+    (sum, type) => sum + (type.bonus > 0 ? Math.max(0, type.avail) : 0),
+    0
+  );
+  const totalAvail = types.reduce((sum, type) => sum + Math.max(0, type.avail), 0);
+  return positiveBonuses > 0 ? Math.min(totalAvail, positiveBonuses) : totalAvail;
+}
+
+function testGreedyExplicitCapBypassesAdaptiveCapSearch() {
+  const grid = Array.from({ length: 8 }, () => Array.from({ length: 8 }, () => 1));
+  const params = {
+    optimizer: "greedy",
+    serviceTypes: [
+      { rows: 1, cols: 1, bonus: 32, range: 1, avail: 5 },
+      { rows: 2, cols: 2, bonus: 58, range: 1, avail: 3 },
+    ],
+    residentialTypes: [
+      { w: 2, h: 2, min: 60, max: 120, avail: 8 },
+      { w: 2, h: 3, min: 95, max: 175, avail: 4 },
+    ],
+    availableBuildings: { services: 3 },
+    greedy: {
+      localSearch: false,
+      randomSeed: 53,
+      restarts: 3,
+      serviceRefineIterations: 0,
+      serviceRefineCandidateLimit: 8,
+      exhaustiveServiceSearch: false,
+      serviceExactPoolLimit: 8,
+      serviceExactMaxCombinations: 64,
+      profile: true,
+    },
+  };
+
+  const solution = solveGreedy(grid, params);
+  const counters = solution.greedyProfile.counters.attempts;
+
+  assert.equal(counters.serviceCaps, 1);
+  assert.equal(counters.coarseCaps, 0);
+  assert.equal(counters.refineCaps, 0);
+  assert.equal(counters.capsSkipped, 0);
+}
+
+function testGreedySmallUpperKeepsFullCapSweep() {
+  const benchmarkCase = DEFAULT_GREEDY_BENCHMARK_CORPUS.find((entry) => entry.name === "cap-sweep-mixed");
+  const solution = solveGreedy(
+    benchmarkCase.grid.map((row) => [...row]),
+    structuredClone({
+      ...benchmarkCase.params,
+      greedy: {
+        ...benchmarkCase.params.greedy,
+        profile: true,
+      },
+    })
+  );
+  const counters = solution.greedyProfile.counters.attempts;
+  const upper = inferredPositiveServiceUpper(benchmarkCase.params);
+
+  assert.equal(upper <= 6, true);
+  assert.equal(counters.serviceCaps, upper + 1);
+  assert.equal(counters.coarseCaps, 0);
+  assert.equal(counters.refineCaps, 0);
+  assert.equal(counters.capsSkipped, 0);
+}
+
+function testGreedyAdaptiveCapSearchWideBenchmarkCase() {
+  const benchmarkCase = DEFAULT_GREEDY_BENCHMARK_CORPUS.find((entry) => entry.name === "adaptive-cap-search-wide");
+  const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
+    names: ["adaptive-cap-search-wide"],
+  });
+  const counters = result.results[0].greedyProfile.counters.attempts;
+  const upper = inferredPositiveServiceUpper(benchmarkCase.params);
+
+  assert.equal(result.caseCount, 1);
+  assert.deepEqual(result.selectedCaseNames, ["adaptive-cap-search-wide"]);
+  assert.equal(result.results[0].name, "adaptive-cap-search-wide");
+  assert.equal(upper > 6, true);
+  assert.equal(counters.serviceCaps < upper + 1, true);
+  assert.equal(counters.coarseCaps > 0, true);
+  assert.equal(counters.refineCaps > 0, true);
+  assert.equal(counters.refineCaps <= counters.serviceCaps, true);
+  assert.equal(counters.capsSkipped > 0, true);
+  assert.equal(counters.serviceCaps + counters.capsSkipped, upper + 1);
+  assert.equal(counters.restartCaps < counters.serviceCaps, true);
+  assert.match(formatGreedyBenchmarkSuite(result), /adaptive-cap-search-wide/);
+  assert.match(formatGreedyBenchmarkSuite(result), /cap-search=/);
+}
+
+function testGreedyAdaptiveCapSearchMatchesBestExplicitCap() {
+  const grid = Array.from({ length: 7 }, () => Array.from({ length: 7 }, () => 1));
+  const params = {
+    optimizer: "greedy",
+    serviceTypes: [
+      { rows: 1, cols: 1, bonus: 28, range: 1, avail: 5 },
+      { rows: 2, cols: 2, bonus: 50, range: 1, avail: 2 },
+    ],
+    residentialTypes: [
+      { w: 2, h: 2, min: 60, max: 120, avail: 6 },
+      { w: 2, h: 3, min: 95, max: 175, avail: 3 },
+    ],
+    greedy: {
+      localSearch: false,
+      randomSeed: 59,
+      restarts: 2,
+      serviceRefineIterations: 0,
+      serviceRefineCandidateLimit: 8,
+      exhaustiveServiceSearch: false,
+      serviceExactPoolLimit: 8,
+      serviceExactMaxCombinations: 64,
+    },
+  };
+  const upper = inferredPositiveServiceUpper(params);
+  let bestExplicit = null;
+  let bestExplicitCap = null;
+
+  for (let cap = 0; cap <= upper; cap++) {
+    const candidate = solveGreedy(
+      grid.map((row) => [...row]),
+      structuredClone({
+        ...params,
+        availableBuildings: { services: cap },
+      })
+    );
+    if (!bestExplicit || candidate.totalPopulation > bestExplicit.totalPopulation) {
+      bestExplicit = candidate;
+      bestExplicitCap = cap;
+    }
+  }
+
+  const adaptive = solveGreedy(
+    grid.map((row) => [...row]),
+    structuredClone({
+      ...params,
+      greedy: {
+        ...params.greedy,
+        profile: true,
+      },
+    })
+  );
+
+  assert.equal(upper > 6, true);
+  assert.notEqual(bestExplicitCap, 0);
+  assert.notEqual(bestExplicitCap, upper);
+  assert.equal(adaptive.totalPopulation, bestExplicit.totalPopulation);
+  assert.equal(adaptive.greedyProfile.counters.attempts.coarseCaps > 0, true);
+  assert.equal(adaptive.greedyProfile.counters.attempts.refineCaps > 0, true);
+}
+
+function testGreedyTypedFootprintPressureBenchmarkCase() {
+  const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
+    names: ["typed-footprint-pressure"],
+  });
+  const benchmarkCase = DEFAULT_GREEDY_BENCHMARK_CORPUS.find((entry) => entry.name === "typed-footprint-pressure");
+  const solution = solveGreedy(
+    benchmarkCase.grid.map((row) => [...row]),
+    structuredClone(benchmarkCase.params)
+  );
+
+  assert.equal(result.caseCount, 1);
+  assert.deepEqual(result.selectedCaseNames, ["typed-footprint-pressure"]);
+  assert.equal(result.results[0].name, "typed-footprint-pressure");
+  assert.equal(result.results[0].totalPopulation, 450);
+  assert.equal(result.results[0].serviceCount, 2);
+  assert.equal(solution.totalPopulation, 450);
+  assert.deepEqual(solution.serviceTypeIndices, [1, 0]);
+  assert.deepEqual(solution.services, [
+    { r: 2, c: 3, rows: 1, cols: 1, range: 2 },
+    { r: 3, c: 3, rows: 1, cols: 1, range: 1 },
+  ]);
+  assert.deepEqual(solution.residentialTypeIndices, [2, 2, 0, 1]);
+  assert.deepEqual(solution.populations, [150, 150, 75, 75]);
+  assert(result.results[0].greedyProfile);
+  assert.equal(result.results[0].greedyProfile.counters.precompute.residentialScoringGroups > 0, true);
+  assert.equal(result.results[0].greedyProfile.counters.precompute.residentialScoringVariantsCollapsed > 0, true);
+  assert.equal(result.results[0].greedyProfile.counters.precompute.serviceCoverageGroups > 0, true);
+  assert.equal(result.results[0].greedyProfile.counters.servicePhase.groupedScoreLookups > 0, true);
+  assert.match(formatGreedyBenchmarkSuite(result), /typed-footprint-pressure/);
+  assert.match(formatGreedyBenchmarkSuite(result), /grouped-score=/);
+}
+
+function testGreedyTypedAvailabilityPressureBenchmarkCase() {
+  const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
+    names: ["typed-availability-pressure"],
+  });
+  const benchmarkCase = DEFAULT_GREEDY_BENCHMARK_CORPUS.find((entry) => entry.name === "typed-availability-pressure");
+  const solution = solveGreedy(
+    benchmarkCase.grid.map((row) => [...row]),
+    structuredClone(benchmarkCase.params)
+  );
+  const counters = result.results[0].greedyProfile.counters;
+
+  assert.equal(result.caseCount, 1);
+  assert.deepEqual(result.selectedCaseNames, ["typed-availability-pressure"]);
+  assert.equal(result.results[0].name, "typed-availability-pressure");
+  assert.equal(result.results[0].totalPopulation, 615);
+  assert.equal(result.results[0].serviceCount, 2);
+  assert.equal(solution.totalPopulation, 615);
+  assert.deepEqual(solution.serviceTypeIndices, [0, 0]);
+  assert.deepEqual(solution.services, [
+    { r: 3, c: 4, rows: 1, cols: 1, range: 2 },
+    { r: 3, c: 2, rows: 1, cols: 1, range: 2 },
+  ]);
+  assert.deepEqual(solution.residentialTypeIndices, [0, 1, 1, 1, 1]);
+  assert.deepEqual(solution.populations, [175, 110, 110, 110, 110]);
+  assert(result.results[0].greedyProfile);
+  assert.equal(counters.servicePhase.availabilityDiscountedGroups > 0, true);
+  assert.equal(
+    counters.precompute.serviceStaticAvailabilityDiscountedGroups + counters.servicePhase.availabilityDiscountedGroups > 0,
+    true
+  );
+  assert.match(formatGreedyBenchmarkSuite(result), /typed-availability-pressure/);
+  assert.match(formatGreedyBenchmarkSuite(result), /discounted:/);
+}
+
+function testGreedyGroupedServiceScoringLeavesUntypedBenchmarkUndiscounted() {
+  const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
+    names: ["compact-service-single"],
+  });
+  const counters = result.results[0].greedyProfile.counters;
+
+  assert.equal(result.caseCount, 1);
+  assert.deepEqual(result.selectedCaseNames, ["compact-service-single"]);
+  assert.equal(counters.precompute.residentialScoringVariantsCollapsed, 0);
+  assert.equal(counters.precompute.serviceStaticAvailabilityDiscountedGroups, 0);
+  assert.equal(counters.servicePhase.availabilityDiscountedGroups, 0);
+}
+
+function testGreedyGroupedServiceScoringDiscountsLimitedFallbackTypes() {
+  const grid = [
+    [1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1],
+  ];
+  const params = {
+    optimizer: "greedy",
+    serviceTypes: [{ rows: 1, cols: 1, bonus: 65, range: 2, avail: 2 }],
+    residentialTypes: [
+      { w: 2, h: 2, min: 45, max: 180, avail: 1 },
+      { w: 2, h: 2, min: 45, max: 90, avail: 1 },
+    ],
+    availableBuildings: { services: 2, residentials: 5 },
+    greedy: {
+      localSearch: true,
+      randomSeed: 41,
+      restarts: 2,
+      serviceRefineIterations: 1,
+      serviceRefineCandidateLimit: 8,
+      exhaustiveServiceSearch: false,
+      serviceExactPoolLimit: 8,
+      serviceExactMaxCombinations: 64,
+      profile: true,
+    },
+  };
+
+  const solution = solveGreedy(grid, params);
+
+  assert.equal(solution.totalPopulation, 265);
+  assert.deepEqual(solution.serviceTypeIndices, [0, 0]);
+  assert.deepEqual(solution.services, [
+    { r: 2, c: 3, rows: 1, cols: 1, range: 2 },
+    { r: 1, c: 0, rows: 1, cols: 1, range: 2 },
+  ]);
+  assert.deepEqual(solution.residentialTypeIndices, [0, 1]);
+  assert.deepEqual(solution.populations, [175, 90]);
+  assert(solution.greedyProfile);
+  assert.equal(solution.greedyProfile.counters.servicePhase.availabilityDiscountedGroups > 0, true);
 }
 
 async function maybeTestCpSatBenchmarkSuite() {
@@ -3656,14 +3938,22 @@ async function main() {
   await testAutoAsyncRecoveredCpSatSnapshotKeepsCompletedMetadata();
   testAutoSyncWallClockCapStopsRunningLnsStage();
   testAutoSyncWallClockCapKeepsExplicitStopReasonWhenLnsThrows();
-  testAutoSyncGreedyStageBudgetAllowsLaterStages();
-  await testAutoAsyncGreedyStageBudgetAllowsLaterStages();
+  testAutoSyncGreedyCanRunPastFormerStageBudget();
+  await testAutoAsyncGreedyCanRunPastFormerStageBudget();
   testAutoClampsHeavyGreedyStageSettings();
   testGreedyProfilingIsAdditive();
   testGreedyBenchmarkCorpusHelpers();
   testGreedyBenchmarkSuite();
   testGreedyDeterministicTieBreakBenchmarkCase();
   testGreedyConnectivityHeavyBenchmarkCase();
+  testGreedyExplicitCapBypassesAdaptiveCapSearch();
+  testGreedySmallUpperKeepsFullCapSweep();
+  testGreedyAdaptiveCapSearchWideBenchmarkCase();
+  testGreedyAdaptiveCapSearchMatchesBestExplicitCap();
+  testGreedyTypedFootprintPressureBenchmarkCase();
+  testGreedyTypedAvailabilityPressureBenchmarkCase();
+  testGreedyGroupedServiceScoringLeavesUntypedBenchmarkUndiscounted();
+  testGreedyGroupedServiceScoringDiscountsLimitedFallbackTypes();
   await testCpSatBenchmarkCorpusHelpers();
   await maybeTestCpSatBenchmarkSuite();
   await maybeTestCpSatWarmStartContinuation();

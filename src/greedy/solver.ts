@@ -46,14 +46,35 @@ type ResidentialCandidateStat = {
   cols: number;
   base: number;
   max: number;
+  typeIndex: number;
+};
+type ResidentialScoringVariant = {
+  base: number;
+  max: number;
+  typeIndex: number;
+};
+type ResidentialScoringGroup = {
+  r: number;
+  c: number;
+  rows: number;
+  cols: number;
+  variants: ResidentialScoringVariant[];
+};
+type CapSearchPhase = "full" | "coarse" | "refine";
+type CapResult = {
+  cap: number;
+  phase: CapSearchPhase;
+  solution: Solution | null;
+  totalPopulation: number;
+  serviceCount: number;
 };
 type MaybeStop = (() => void) | undefined;
 interface GreedySolveContext {
   grid: Grid;
   params: SolverParams;
   serviceOrder: ServiceCandidate[];
-  residentialCandidateStats: ResidentialCandidateStat[];
-  serviceCoverageByKey: Map<string, number[]>;
+  residentialScoringGroups: ResidentialScoringGroup[];
+  serviceCoverageGroupsByKey: Map<string, number[]>;
   anyResidentialCandidates: ResidentialCandidatesList;
   residentialCandidatesForLocal: ResidentialCandidatesList;
   maxResidentials: number | undefined;
@@ -86,13 +107,22 @@ function createGreedyProfileCounters(): GreedyProfileCounters {
     precompute: {
       serviceCandidates: 0,
       residentialCandidates: 0,
+      residentialScoringGroups: 0,
+      residentialScoringVariantsCollapsed: 0,
       serviceCoveragePairs: 0,
+      serviceCoverageGroups: 0,
       serviceStaticScores: 0,
+      serviceStaticScoreGroupEvaluations: 0,
+      serviceStaticAvailabilityDiscountedGroups: 0,
       residentialPopulationCacheEntries: 0,
     },
     attempts: {
       serviceCaps: 0,
+      coarseCaps: 0,
+      refineCaps: 0,
+      capsSkipped: 0,
       restarts: 0,
+      restartCaps: 0,
       serviceRefineTrials: 0,
       exhaustiveTrials: 0,
       localSearchIterations: 0,
@@ -100,6 +130,9 @@ function createGreedyProfileCounters(): GreedyProfileCounters {
     servicePhase: {
       candidateScans: 0,
       canConnectChecks: 0,
+      groupedScoreLookups: 0,
+      groupedScoreGroupEvaluations: 0,
+      availabilityDiscountedGroups: 0,
       placements: 0,
       fixedPlacements: 0,
     },
@@ -139,8 +172,8 @@ function createSeededRandom(seed: number): RandomSource {
   };
 }
 
-function deriveSeed(baseSeed: number, capIndex: number, restartIndex: number): number {
-  let mixed = (baseSeed ^ Math.imul(capIndex + 1, 0x9e3779b1)) >>> 0;
+function deriveSeed(baseSeed: number, cap: number, restartIndex: number): number {
+  let mixed = (baseSeed ^ Math.imul(cap + 1, 0x9e3779b1)) >>> 0;
   mixed = (mixed ^ Math.imul(restartIndex + 1, 0x85ebca6b)) >>> 0;
   return mixed >>> 0;
 }
@@ -152,6 +185,44 @@ function shuffle<T>(a: T[], random: RandomSource = Math.random): T[] {
     [out[i], out[j]] = [out[j], out[i]];
   }
   return out;
+}
+
+function dedupeSortedNumbers(values: number[]): number[] {
+  return [...new Set(values)].sort((a, b) => a - b);
+}
+
+function inclusiveCapBand(center: number, upper: number, radius: number): number[] {
+  const out: number[] = [];
+  for (let cap = Math.max(0, center - radius); cap <= Math.min(upper, center + radius); cap++) {
+    out.push(cap);
+  }
+  return out;
+}
+
+function buildAdaptiveServiceCapPlan(inferredUpper: number): {
+  coarseCaps: number[];
+  refineCaps: number[];
+  usesAdaptiveSearch: boolean;
+} {
+  if (inferredUpper <= 6) {
+    return {
+      coarseCaps: Array.from({ length: inferredUpper + 1 }, (_, index) => index),
+      refineCaps: [],
+      usesAdaptiveSearch: false,
+    };
+  }
+
+  return {
+    coarseCaps: dedupeSortedNumbers([
+      0,
+      inferredUpper,
+      Math.floor(inferredUpper / 4),
+      Math.floor(inferredUpper / 2),
+      Math.ceil((3 * inferredUpper) / 4),
+    ]),
+    refineCaps: [],
+    usesAdaptiveSearch: true,
+  };
 }
 
 function combinationsOfK(n: number, k: number, maxCount: number): number[][] {
@@ -255,9 +326,56 @@ function marginalPopulationGain(base: number, max: number, currentBoost: number,
   return Math.max(0, boostedPopulation - currentPopulation);
 }
 
+function residentialScoringGroupKey(
+  residential: Pick<ResidentialCandidateStat, "r" | "c" | "rows" | "cols">
+): string {
+  return [residential.r, residential.c, residential.rows, residential.cols].join(",");
+}
+
+function buildResidentialScoringGroups(
+  residentialCandidateStats: ResidentialCandidateStat[],
+  profileCounters?: GreedyProfileCounters
+): ResidentialScoringGroup[] {
+  const groupsByKey = new Map<string, ResidentialScoringGroup>();
+  for (const residential of residentialCandidateStats) {
+    const key = residentialScoringGroupKey(residential);
+    let group = groupsByKey.get(key);
+    if (!group) {
+      group = {
+        r: residential.r,
+        c: residential.c,
+        rows: residential.rows,
+        cols: residential.cols,
+        variants: [],
+      };
+      groupsByKey.set(key, group);
+    }
+    group.variants.push({
+      base: residential.base,
+      max: residential.max,
+      typeIndex: residential.typeIndex,
+    });
+  }
+
+  const groups = [...groupsByKey.values()];
+  for (const group of groups) {
+    group.variants.sort(
+      (a, b) => b.max - a.max || b.base - a.base || a.typeIndex - b.typeIndex
+    );
+  }
+  if (profileCounters) {
+    profileCounters.precompute.residentialScoringGroups += groups.length;
+    profileCounters.precompute.residentialScoringVariantsCollapsed += Math.max(
+      0,
+      residentialCandidateStats.length - groups.length
+    );
+  }
+  return groups;
+}
+
 function buildServiceCoverageIndex(
   serviceCandidates: ServiceCandidate[],
-  residentialCandidateStats: ResidentialCandidateStat[],
+  residentialScoringGroups: ResidentialScoringGroup[],
   profileCounters?: GreedyProfileCounters
 ): Map<string, number[]> {
   const coverageByKey = new Map<string, number[]>();
@@ -270,59 +388,220 @@ function buildServiceCoverageIndex(
       cols: service.cols + 2 * service.range,
     };
     const footprint = { r: service.r, c: service.c, rows: service.rows, cols: service.cols };
-    const coveredIndices: number[] = [];
-    for (let index = 0; index < residentialCandidateStats.length; index++) {
-      const residential = residentialCandidateStats[index];
+    const coveredGroupIndices: number[] = [];
+    for (let index = 0; index < residentialScoringGroups.length; index++) {
+      const residential = residentialScoringGroups[index];
       if (rectanglesOverlap(footprint, residential)) continue;
       if (!rectanglesOverlap(effectBounds, residential)) continue;
-      coveredIndices.push(index);
+      coveredGroupIndices.push(index);
+      if (profileCounters) {
+        profileCounters.precompute.serviceCoveragePairs += residential.variants.length;
+      }
     }
-    coverageByKey.set(key, coveredIndices);
+    coverageByKey.set(key, coveredGroupIndices);
     if (profileCounters) {
-      profileCounters.precompute.serviceCoveragePairs += coveredIndices.length;
+      profileCounters.precompute.serviceCoverageGroups += coveredGroupIndices.length;
     }
   }
   return coverageByKey;
 }
 
-function computeServiceStaticScore(
+function buildServiceAvailabilityPressureByType(
   service: ServiceCandidate,
-  residentialCandidateStats: ResidentialCandidateStat[],
-  serviceCoverageByKey: Map<string, number[]>,
-  profileCounters?: GreedyProfileCounters
-): number {
-  const coveredIndices = serviceCoverageByKey.get(serviceCandidateKey(service)) ?? [];
-  let score = 0;
-  for (const index of coveredIndices) {
-    const residential = residentialCandidateStats[index];
-    score += marginalPopulationGain(residential.base, residential.max, 0, service.bonus);
+  coveredGroupIndices: number[],
+  residentialScoringGroups: ResidentialScoringGroup[],
+  currentResidentialGroupBoosts: number[],
+  remainingAvail: number[] | null,
+  occupied: Set<string> | null
+): Map<number, number> | null {
+  if (!remainingAvail || coveredGroupIndices.length === 0) return null;
+  const groupOptions: {
+    typeIndex: number;
+    gain: number;
+    max: number;
+    base: number;
+  }[][] = [];
+  const activeTypeIndices = new Set<number>();
+  for (const groupIndex of coveredGroupIndices) {
+    const group = residentialScoringGroups[groupIndex];
+    if (occupied && overlaps(occupied, group.r, group.c, group.rows, group.cols)) continue;
+    const currentBoost = currentResidentialGroupBoosts[groupIndex] ?? 0;
+    const demandOptions: {
+      typeIndex: number;
+      gain: number;
+      max: number;
+      base: number;
+    }[] = [];
+    for (const variant of group.variants) {
+      const typeIndex = variant.typeIndex;
+      if (typeIndex < 0 || typeIndex >= remainingAvail.length) continue;
+      if ((remainingAvail[typeIndex] ?? 0) <= 0) continue;
+      const gain = marginalPopulationGain(variant.base, variant.max, currentBoost, service.bonus);
+      if (gain <= 0) continue;
+      demandOptions.push({
+        typeIndex,
+        gain,
+        max: variant.max,
+        base: variant.base,
+      });
+      activeTypeIndices.add(typeIndex);
+    }
+    if (demandOptions.length === 0) continue;
+    groupOptions.push(demandOptions);
   }
+
+  if (groupOptions.length === 0 || activeTypeIndices.size === 0) return null;
+  const multipliers = new Map<number, number>();
+  for (const typeIndex of activeTypeIndices) {
+    multipliers.set(typeIndex, 1);
+  }
+
+  for (let iteration = 0; iteration < 3; iteration++) {
+    const typeDemandCounts = new Map<number, number>();
+    for (const options of groupOptions) {
+      let chosen = options[0];
+      let chosenWeightedGain = options[0].gain * (multipliers.get(options[0].typeIndex) ?? 1);
+      for (let index = 1; index < options.length; index++) {
+        const option = options[index];
+        const weightedGain = option.gain * (multipliers.get(option.typeIndex) ?? 1);
+        if (
+          weightedGain > chosenWeightedGain
+          || (weightedGain === chosenWeightedGain && (
+            option.gain > chosen.gain
+            || (option.gain === chosen.gain && (
+              option.max > chosen.max
+              || (option.max === chosen.max && (
+                option.base > chosen.base
+                || (option.base === chosen.base && option.typeIndex < chosen.typeIndex)
+              ))
+            ))
+          ))
+        ) {
+          chosen = option;
+          chosenWeightedGain = weightedGain;
+        }
+      }
+      typeDemandCounts.set(chosen.typeIndex, (typeDemandCounts.get(chosen.typeIndex) ?? 0) + 1);
+    }
+    let changed = false;
+    for (const typeIndex of activeTypeIndices) {
+      const demandCount = typeDemandCounts.get(typeIndex) ?? 0;
+      const available = remainingAvail[typeIndex] ?? 0;
+      const nextMultiplier = available <= 0 ? 0 : demandCount <= 0 ? 1 : Math.min(1, available / demandCount);
+      if (Math.abs((multipliers.get(typeIndex) ?? 1) - nextMultiplier) > 1e-9) {
+        changed = true;
+      }
+      multipliers.set(typeIndex, nextMultiplier);
+    }
+    if (!changed) break;
+  }
+  return multipliers;
+}
+
+function computeServiceGroupedScore(
+  service: ServiceCandidate,
+  occupied: Set<string> | null,
+  currentResidentialGroupBoosts: number[],
+  residentialScoringGroups: ResidentialScoringGroup[],
+  serviceCoverageGroupsByKey: Map<string, number[]>,
+  remainingAvail: number[] | null,
+  profileCounters: GreedyProfileCounters | undefined,
+  phase: "precompute" | "servicePhase"
+): number {
+  const coveredGroupIndices = serviceCoverageGroupsByKey.get(serviceCandidateKey(service)) ?? [];
   if (profileCounters) {
-    profileCounters.precompute.serviceStaticScores++;
+    if (phase === "precompute") {
+      profileCounters.precompute.serviceStaticScores++;
+      profileCounters.precompute.serviceStaticScoreGroupEvaluations += coveredGroupIndices.length;
+    } else {
+      profileCounters.servicePhase.groupedScoreLookups++;
+      profileCounters.servicePhase.groupedScoreGroupEvaluations += coveredGroupIndices.length;
+    }
+  }
+
+  const availabilityPressureByType = buildServiceAvailabilityPressureByType(
+    service,
+    coveredGroupIndices,
+    residentialScoringGroups,
+    currentResidentialGroupBoosts,
+    remainingAvail,
+    occupied
+  );
+
+  let score = 0;
+  for (const groupIndex of coveredGroupIndices) {
+    const residential = residentialScoringGroups[groupIndex];
+    if (occupied && overlaps(occupied, residential.r, residential.c, residential.rows, residential.cols)) continue;
+    const currentBoost = currentResidentialGroupBoosts[groupIndex] ?? 0;
+    let bestWeightedGain = 0;
+    let bestWeightedGainDiscounted = false;
+    for (const variant of residential.variants) {
+      const rawGain = marginalPopulationGain(variant.base, variant.max, currentBoost, service.bonus);
+      if (rawGain <= 0) continue;
+      let availabilityMultiplier = 1;
+      if (availabilityPressureByType && variant.typeIndex >= 0) {
+        availabilityMultiplier = availabilityPressureByType.get(variant.typeIndex) ?? 1;
+      }
+      if (availabilityMultiplier <= 0) continue;
+      const weightedGain = rawGain * availabilityMultiplier;
+      if (weightedGain > bestWeightedGain) {
+        bestWeightedGain = weightedGain;
+        bestWeightedGainDiscounted = availabilityMultiplier < 1;
+      }
+    }
+    if (bestWeightedGain > 0) {
+      score += bestWeightedGain;
+      if (bestWeightedGainDiscounted && profileCounters) {
+        if (phase === "precompute") {
+          profileCounters.precompute.serviceStaticAvailabilityDiscountedGroups++;
+        } else {
+          profileCounters.servicePhase.availabilityDiscountedGroups++;
+        }
+      }
+    }
   }
   return score;
+}
+
+function computeServiceStaticScore(
+  service: ServiceCandidate,
+  currentResidentialGroupBoosts: number[],
+  residentialScoringGroups: ResidentialScoringGroup[],
+  serviceCoverageGroupsByKey: Map<string, number[]>,
+  remainingAvail: number[] | null,
+  profileCounters?: GreedyProfileCounters
+): number {
+  return computeServiceGroupedScore(
+    service,
+    null,
+    currentResidentialGroupBoosts,
+    residentialScoringGroups,
+    serviceCoverageGroupsByKey,
+    remainingAvail,
+    profileCounters,
+    "precompute"
+  );
 }
 
 function computeServiceMarginalScore(
   service: ServiceCandidate,
   occupied: Set<string>,
-  currentResidentialBoosts: number[],
-  residentialCandidateStats: ResidentialCandidateStat[],
-  serviceCoverageByKey: Map<string, number[]>
+  currentResidentialGroupBoosts: number[],
+  residentialScoringGroups: ResidentialScoringGroup[],
+  serviceCoverageGroupsByKey: Map<string, number[]>,
+  remainingAvail: number[] | null,
+  profileCounters?: GreedyProfileCounters
 ): number {
-  const coveredIndices = serviceCoverageByKey.get(serviceCandidateKey(service)) ?? [];
-  let score = 0;
-  for (const index of coveredIndices) {
-    const residential = residentialCandidateStats[index];
-    if (overlaps(occupied, residential.r, residential.c, residential.rows, residential.cols)) continue;
-    score += marginalPopulationGain(
-      residential.base,
-      residential.max,
-      currentResidentialBoosts[index] ?? 0,
-      service.bonus
-    );
-  }
-  return score;
+  return computeServiceGroupedScore(
+    service,
+    occupied,
+    currentResidentialGroupBoosts,
+    residentialScoringGroups,
+    serviceCoverageGroupsByKey,
+    remainingAvail,
+    profileCounters,
+    "servicePhase"
+  );
 }
 
 function countRow0FootprintCells(placement: { r: number; c: number; rows: number; cols: number }): number {
@@ -445,8 +724,8 @@ function solveOne(
     grid: G,
     params,
     serviceOrder,
-    residentialCandidateStats,
-    serviceCoverageByKey,
+    residentialScoringGroups,
+    serviceCoverageGroupsByKey,
     anyResidentialCandidates,
     residentialCandidatesForLocal,
     maxResidentials,
@@ -471,7 +750,7 @@ function solveOne(
   const serviceTypeIndices: number[] = [];
   const serviceBonuses: number[] = [];
   const effectZones: Set<string>[] = [];
-  const currentResidentialBoosts = Array.from({ length: residentialCandidateStats.length }, () => 0);
+  const currentResidentialGroupBoosts = Array.from({ length: residentialScoringGroups.length }, () => 0);
   const serviceSource = fixedServices ?? serviceOrder;
   const probeRoadConnection = (
     snapshotOccupied: Set<string>,
@@ -514,9 +793,9 @@ function solveOne(
       serviceTypeIndices.push(s.typeIndex);
       serviceBonuses.push(s.bonus);
       effectZones.push(new Set(serviceEffectZone(G, placement)));
-      const coveredIndices = serviceCoverageByKey.get(serviceCandidateKey(s)) ?? [];
-      for (const index of coveredIndices) {
-        currentResidentialBoosts[index] += s.bonus;
+      const coveredGroupIndices = serviceCoverageGroupsByKey.get(serviceCandidateKey(s)) ?? [];
+      for (const groupIndex of coveredGroupIndices) {
+        currentResidentialGroupBoosts[groupIndex] += s.bonus;
       }
       if (useServiceTypes && remainingServiceAvail) remainingServiceAvail[s.typeIndex]--;
       if (profileCounters) profileCounters.servicePhase.placements++;
@@ -545,9 +824,11 @@ function solveOne(
         const score = computeServiceMarginalScore(
           service,
           occupied,
-          currentResidentialBoosts,
-          residentialCandidateStats,
-          serviceCoverageByKey
+          currentResidentialGroupBoosts,
+          residentialScoringGroups,
+          serviceCoverageGroupsByKey,
+          remainingAvail,
+          profileCounters
         );
         if (
           score > bestScore
@@ -576,9 +857,9 @@ function solveOne(
       serviceTypeIndices.push(bestCandidate.typeIndex);
       serviceBonuses.push(bestCandidate.bonus);
       effectZones.push(new Set(serviceEffectZone(G, placement)));
-      const coveredIndices = serviceCoverageByKey.get(serviceCandidateKey(bestCandidate)) ?? [];
-      for (const index of coveredIndices) {
-        currentResidentialBoosts[index] += bestCandidate.bonus;
+      const coveredGroupIndices = serviceCoverageGroupsByKey.get(serviceCandidateKey(bestCandidate)) ?? [];
+      for (const groupIndex of coveredGroupIndices) {
+        currentResidentialGroupBoosts[groupIndex] += bestCandidate.bonus;
       }
       if (useServiceTypes && remainingServiceAvail) remainingServiceAvail[bestCandidate.typeIndex]--;
       if (profileCounters) profileCounters.servicePhase.placements++;
@@ -805,26 +1086,39 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     c: residential.c,
     rows: residential.rows,
     cols: residential.cols,
+    typeIndex: getCandidateTypeIndex(residential),
     ...getResidentialBaseMax(params, residential.rows, residential.cols, getCandidateTypeIndex(residential)),
   }));
   if (profileCounters) profileCounters.precompute.residentialCandidates += residentialCandidateStats.length;
-  const serviceCoverageByKey = buildServiceCoverageIndex(serviceCandidates, residentialCandidateStats, profileCounters);
+  const residentialScoringGroups = buildResidentialScoringGroups(residentialCandidateStats, profileCounters);
+  const serviceCoverageGroupsByKey = buildServiceCoverageIndex(serviceCandidates, residentialScoringGroups, profileCounters);
+  const initialResidentialAvail = useTypes ? params.residentialTypes!.map((type) => type.avail) : null;
+  const initialResidentialGroupBoosts = Array.from({ length: residentialScoringGroups.length }, () => 0);
   const serviceScores = new Map<string, number>();
   for (const s of serviceCandidates) {
     maybeStop();
     serviceScores.set(
       serviceCandidateKey(s),
-      computeServiceStaticScore(s, residentialCandidateStats, serviceCoverageByKey, profileCounters)
+      computeServiceStaticScore(
+        s,
+        initialResidentialGroupBoosts,
+        residentialScoringGroups,
+        serviceCoverageGroupsByKey,
+        initialResidentialAvail,
+        profileCounters
+      )
     );
   }
   const serviceOrderSorted = [...serviceCandidates].sort(
-    (a, b) => (serviceScores.get(serviceCandidateKey(b)) ?? 0) - (serviceScores.get(serviceCandidateKey(a)) ?? 0)
+    (a, b) =>
+      (serviceScores.get(serviceCandidateKey(b)) ?? 0) - (serviceScores.get(serviceCandidateKey(a)) ?? 0)
+      || serviceCandidateKey(a).localeCompare(serviceCandidateKey(b))
   );
   const baseSolveContext: Omit<GreedySolveContext, "serviceOrder"> = {
     grid: G,
     params,
-    residentialCandidateStats,
-    serviceCoverageByKey,
+    residentialScoringGroups,
+    serviceCoverageGroupsByKey,
     anyResidentialCandidates,
     residentialCandidatesForLocal,
     maxResidentials,
@@ -841,6 +1135,104 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     solveOne({ ...baseSolveContext, serviceOrder }, { ...options, profileCounters })
   );
 
+  const compareCapResults = (a: CapResult, b: CapResult): number =>
+    b.totalPopulation - a.totalPopulation
+    || a.serviceCount - b.serviceCount
+    || a.cap - b.cap;
+
+  const summarizeCapResult = (cap: number, phase: CapSearchPhase, solution: Solution | null): CapResult => ({
+    cap,
+    phase,
+    solution,
+    totalPopulation: solution?.totalPopulation ?? -1,
+    serviceCount: solution?.services.length ?? Number.POSITIVE_INFINITY,
+  });
+
+  const runCapRestarts = (
+    cap: number,
+    phase: CapSearchPhase,
+    bestForCap: Solution | null,
+    restartBudget: number
+  ): Solution | null => {
+    if (restartBudget <= 1) return bestForCap;
+    if (profileCounters) profileCounters.attempts.restartCaps++;
+    let nextBest = bestForCap;
+    for (let restartIndex = 1; restartIndex < restartBudget; restartIndex++) {
+      if (profileCounters) profileCounters.attempts.restarts++;
+      maybeStop();
+      const order = shuffle(
+        serviceOrderSorted,
+        randomSeed === undefined ? Math.random : createSeededRandom(deriveSeed(randomSeed, cap, restartIndex))
+      );
+      const trial = solveWithOrder(order, { maxServices: cap });
+      if (trial && (!nextBest || trial.totalPopulation > nextBest.totalPopulation)) {
+        nextBest = trial;
+        updateBest(nextBest);
+      }
+    }
+    return nextBest;
+  };
+
+  const runCapAnchorRefinement = (cap: number, bestForCap: Solution | null): Solution | null => {
+    if (!bestForCap) return bestForCap;
+    let refined = bestForCap;
+    for (let pass = 0; pass < 2; pass++) {
+      let improved = false;
+      for (const roadSeed of collectRow0AnchorRefinementSeeds(refined)) {
+        maybeStop();
+        if (profileCounters) profileCounters.attempts.serviceRefineTrials++;
+        const trial = solveWithOrder(serviceOrderSorted, {
+          maxServices: cap,
+          initialRoadSeed: roadSeed,
+        });
+        if (trial && trial.totalPopulation > refined.totalPopulation) {
+          refined = trial;
+          improved = true;
+          updateBest(refined);
+        }
+      }
+      if (!improved) break;
+    }
+    return refined;
+  };
+
+  const evaluateNewCap = (
+    cap: number,
+    phase: CapSearchPhase,
+    restartBudget: number,
+    allowAnchorRefinement: boolean
+  ): Solution | null => {
+    if (profileCounters) {
+      profileCounters.attempts.serviceCaps++;
+      if (phase === "coarse") profileCounters.attempts.coarseCaps++;
+      if (phase === "refine") profileCounters.attempts.refineCaps++;
+    }
+    maybeStop();
+    let bestForCap = solveWithOrder(serviceOrderSorted, { maxServices: cap });
+    updateBest(bestForCap);
+    bestForCap = runCapRestarts(cap, phase, bestForCap, restartBudget);
+    if (allowAnchorRefinement) {
+      bestForCap = runCapAnchorRefinement(cap, bestForCap);
+    }
+    updateBest(bestForCap);
+    return bestForCap;
+  };
+
+  const refineExistingCap = (
+    cap: number,
+    phase: CapSearchPhase,
+    bestForCap: Solution | null,
+    restartBudget: number,
+    allowAnchorRefinement: boolean
+  ): Solution | null => {
+    let refined = runCapRestarts(cap, phase, bestForCap, restartBudget);
+    if (allowAnchorRefinement) {
+      refined = runCapAnchorRefinement(cap, refined);
+    }
+    updateBest(refined);
+    return refined;
+  };
+
   // If user does not cap services, sweep service count and keep best.
   // This avoids over-placing services (which can block residentials and reduce population).
   const explicitServiceCap = maxServices;
@@ -850,50 +1242,68 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
   );
   const totalServiceAvail = (params.serviceTypes ?? []).reduce((sum, type) => sum + Math.max(0, type.avail), 0);
   const inferredUpper = explicitServiceCap ?? (positiveBonuses > 0 ? Math.min(totalServiceAvail, positiveBonuses) : totalServiceAvail);
-  const serviceCaps = explicitServiceCap !== undefined ? [explicitServiceCap] : Array.from({ length: inferredUpper + 1 }, (_, i) => i);
+  const capPlan = explicitServiceCap !== undefined
+    ? { coarseCaps: [explicitServiceCap], refineCaps: [], usesAdaptiveSearch: false }
+    : buildAdaptiveServiceCapPlan(inferredUpper);
 
   try {
-    for (let capIndex = 0; capIndex < serviceCaps.length; capIndex++) {
-      if (profileCounters) profileCounters.attempts.serviceCaps++;
-      const cap = serviceCaps[capIndex];
-      maybeStop();
-      let bestForCap = solveWithOrder(serviceOrderSorted, { maxServices: cap });
-      updateBest(bestForCap);
-      for (let r = 1; r < restarts; r++) {
-        if (profileCounters) profileCounters.attempts.restarts++;
-        maybeStop();
-        const order = shuffle(
-          serviceOrderSorted,
-          randomSeed === undefined ? Math.random : createSeededRandom(deriveSeed(randomSeed, capIndex, r))
-        );
-        const sol = solveWithOrder(order, { maxServices: cap });
-        if (sol && (!bestForCap || sol.totalPopulation > bestForCap.totalPopulation)) {
-          bestForCap = sol;
-          updateBest(bestForCap);
-        }
+    const capResultsByCap = new Map<number, CapResult>();
+    const evaluatedCaps = new Set<number>();
+
+    if (explicitServiceCap !== undefined || !capPlan.usesAdaptiveSearch) {
+      for (const cap of capPlan.coarseCaps) {
+        const solution = evaluateNewCap(cap, "full", restarts, true);
+        evaluatedCaps.add(cap);
+        capResultsByCap.set(cap, summarizeCapResult(cap, "full", solution));
       }
-      if (bestForCap) {
-        let refined = bestForCap;
-        for (let pass = 0; pass < 2; pass++) {
-          let improved = false;
-          for (const roadSeed of collectRow0AnchorRefinementSeeds(refined)) {
-            maybeStop();
-            if (profileCounters) profileCounters.attempts.serviceRefineTrials++;
-            const trial = solveWithOrder(serviceOrderSorted, {
-              maxServices: cap,
-              initialRoadSeed: roadSeed,
-            });
-            if (trial && trial.totalPopulation > refined.totalPopulation) {
-              refined = trial;
-              improved = true;
-              updateBest(refined);
-            }
-          }
-          if (!improved) break;
-        }
-        bestForCap = refined;
+    } else {
+      for (const cap of capPlan.coarseCaps) {
+        const solution = evaluateNewCap(cap, "coarse", 1, false);
+        evaluatedCaps.add(cap);
+        capResultsByCap.set(cap, summarizeCapResult(cap, "coarse", solution));
       }
-      updateBest(bestForCap);
+
+      const coarseResults = [...capResultsByCap.values()]
+        .filter((entry) => entry.phase === "coarse")
+        .sort(compareCapResults);
+      const focusCaps = new Set(coarseResults.slice(0, 2).map((entry) => entry.cap));
+      const refineCaps = dedupeSortedNumbers(
+        [...focusCaps].flatMap((cap) => inclusiveCapBand(cap, inferredUpper, 2))
+      );
+      const refineCapSet = new Set(refineCaps);
+
+      for (const cap of refineCaps) {
+        if (evaluatedCaps.has(cap)) {
+          if (profileCounters) profileCounters.attempts.refineCaps++;
+          const current = capResultsByCap.get(cap)?.solution ?? null;
+          capResultsByCap.set(cap, summarizeCapResult(cap, "refine", current));
+          continue;
+        }
+        const solution = evaluateNewCap(cap, "refine", 1, false);
+        evaluatedCaps.add(cap);
+        capResultsByCap.set(cap, summarizeCapResult(cap, "refine", solution));
+      }
+
+      const restartFocusCaps = dedupeSortedNumbers([
+        ...[...capResultsByCap.values()]
+          .filter((entry) => refineCapSet.has(entry.cap))
+          .sort(compareCapResults)
+          .slice(0, 2)
+          .map((entry) => entry.cap),
+        ...[...focusCaps].flatMap((cap) =>
+          inclusiveCapBand(cap, inferredUpper, 1).filter((neighbor) => neighbor > 0)
+        ),
+      ]);
+
+      for (const cap of restartFocusCaps) {
+        const current = capResultsByCap.get(cap)?.solution ?? null;
+        const refined = refineExistingCap(cap, "refine", current, restarts, true);
+        capResultsByCap.set(cap, summarizeCapResult(cap, "refine", refined));
+      }
+
+      if (profileCounters) {
+        profileCounters.attempts.capsSkipped += Math.max(0, inferredUpper + 1 - evaluatedCaps.size);
+      }
     }
     if (!best) throw new Error("No feasible solution found.");
 

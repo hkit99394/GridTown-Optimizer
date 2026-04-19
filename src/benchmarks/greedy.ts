@@ -241,10 +241,16 @@ export function formatGreedyBenchmarkSuite(result: GreedyBenchmarkSuiteResult): 
         `  scans=svc:${counters.servicePhase.candidateScans} res:${counters.residentialPhase.candidateScans} local:${counters.localSearch.candidateScans} roads(connect=${counters.roads.canConnectChecks}, ensure=${counters.roads.ensureConnectedCalls}, probes=${counters.roads.probeCalls}, reuse=${counters.roads.probeReuses})`
       );
       lines.push(
+        `  grouped-score=groups:${counters.precompute.residentialScoringGroups} collapsed:${counters.precompute.residentialScoringVariantsCollapsed} coverage:${counters.precompute.serviceCoverageGroups} static-evals:${counters.precompute.serviceStaticScoreGroupEvaluations} phase-lookups:${counters.servicePhase.groupedScoreLookups} discounted:${counters.precompute.serviceStaticAvailabilityDiscountedGroups + counters.servicePhase.availabilityDiscountedGroups}`
+      );
+      lines.push(
         `  pop-cache=entries:${counters.precompute.residentialPopulationCacheEntries} res-lookups:${counters.residentialPhase.populationCacheLookups} local-lookups:${counters.localSearch.populationCacheLookups}`
       );
       lines.push(
         `  attempts=caps:${counters.attempts.serviceCaps} restarts:${counters.attempts.restarts} refine:${counters.attempts.serviceRefineTrials} exhaustive:${counters.attempts.exhaustiveTrials}`
+      );
+      lines.push(
+        `  cap-search=evaluated:${counters.attempts.serviceCaps} coarse:${counters.attempts.coarseCaps} refine:${counters.attempts.refineCaps} skipped:${counters.attempts.capsSkipped} restart-caps:${counters.attempts.restartCaps}`
       );
     } else {
       lines.push("  profile=disabled");
@@ -378,6 +384,107 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 8,
         serviceExactMaxCombinations: 64,
+      },
+    },
+  },
+  {
+    name: "typed-footprint-pressure",
+    description: "Typed 2x2 variants share footprints, and a second service keeps the dynamic grouped scorer hot.",
+    grid: [
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+    ],
+    params: {
+      optimizer: "greedy",
+      serviceTypes: [
+        { rows: 1, cols: 1, bonus: 55, range: 1, avail: 1 },
+        { rows: 1, cols: 1, bonus: 40, range: 2, avail: 1 },
+      ],
+      residentialTypes: [
+        { w: 2, h: 2, min: 35, max: 150, avail: 1 },
+        { w: 2, h: 2, min: 35, max: 95, avail: 4 },
+        { w: 2, h: 3, min: 80, max: 150, avail: 2 },
+      ],
+      availableBuildings: { services: 2, residentials: 4 },
+      greedy: {
+        localSearch: true,
+        randomSeed: 37,
+        restarts: 2,
+        serviceRefineIterations: 1,
+        serviceRefineCandidateLimit: 8,
+        exhaustiveServiceSearch: false,
+        serviceExactPoolLimit: 8,
+        serviceExactMaxCombinations: 64,
+      },
+    },
+  },
+  {
+    name: "typed-availability-pressure",
+    description: "Low-availability premium typed housing should stay discounted across repeated service rescoring.",
+    grid: [
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+    ],
+    params: {
+      optimizer: "greedy",
+      serviceTypes: [{ rows: 1, cols: 1, bonus: 65, range: 2, avail: 2 }],
+      residentialTypes: [
+        { w: 2, h: 2, min: 45, max: 180, avail: 1 },
+        { w: 2, h: 2, min: 45, max: 110, avail: 6 },
+      ],
+      availableBuildings: { services: 2, residentials: 5 },
+      greedy: {
+        localSearch: true,
+        randomSeed: 41,
+        restarts: 2,
+        serviceRefineIterations: 1,
+        serviceRefineCandidateLimit: 8,
+        exhaustiveServiceSearch: false,
+        serviceExactPoolLimit: 8,
+        serviceExactMaxCombinations: 64,
+      },
+    },
+  },
+  {
+    name: "adaptive-cap-search-wide",
+    description: "Wide service availability case that should use coarse-to-fine cap search instead of a full sweep.",
+    grid: [
+      [1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1],
+    ],
+    params: {
+      optimizer: "greedy",
+      serviceTypes: [
+        { rows: 1, cols: 1, bonus: 32, range: 1, avail: 5 },
+        { rows: 2, cols: 2, bonus: 58, range: 1, avail: 3 },
+      ],
+      residentialTypes: [
+        { w: 2, h: 2, min: 60, max: 120, avail: 8 },
+        { w: 2, h: 3, min: 95, max: 175, avail: 4 },
+      ],
+      greedy: {
+        localSearch: true,
+        randomSeed: 47,
+        restarts: 3,
+        serviceRefineIterations: 1,
+        serviceRefineCandidateLimit: 12,
+        exhaustiveServiceSearch: false,
+        serviceExactPoolLimit: 10,
+        serviceExactMaxCombinations: 96,
       },
     },
   },

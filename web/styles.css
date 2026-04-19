@@ -972,7 +972,7 @@ details.payload-preview pre {
 
 .map-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+  grid-template-columns: 1fr;
   gap: 16px;
   align-items: start;
   margin-top: 16px;
@@ -984,8 +984,7 @@ details.payload-preview pre {
 
 .map-stack {
   position: relative;
-  width: max-content;
-  max-width: 100%;
+  width: 100%;
 }
 
 .map-overlay {
@@ -1045,10 +1044,15 @@ details.payload-preview pre {
   display: grid;
   gap: 14px;
   align-content: start;
+  max-width: 100%;
   padding: 16px;
   border: 1px solid var(--line);
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.94);
+}
+
+.result-grid {
+  padding: 14px;
 }
 
 .map-detail-panel h4 {
@@ -1277,6 +1281,12 @@ textarea:focus {
   display: grid;
   place-items: center start;
   min-height: 120px;
+}
+
+@media (min-width: 1480px) {
+  .map-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(250px, 300px);
+  }
 }
 
 @media (max-width: 1260px) {

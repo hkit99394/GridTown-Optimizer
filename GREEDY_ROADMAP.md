@@ -360,6 +360,13 @@ Concrete work:
 Guardrail:
 - preserve exact service type accounting, explicit road validity, and deterministic seeded behavior
 
+Shipped bounded slice:
+- `src/greedy/solver.ts` now evaluates Step 12 service neighborhoods as direct same-type relocations instead of running `remove`/`add`/`swap` through the Step 9 fixed-service evaluator for every trial
+- relocation candidates are scored against the incumbent occupancy and grouped residential upside with the current service removed from the boost state, then only the top-ranked few are exact-realized through the existing fixed-service solve path
+- the direct path now samples candidates per service type instead of from the global top-N pool, which avoids starving lower-ranked incumbent types during relocation search
+- `tests/optimizers.test.cjs` keeps `service-local-neighborhood` as the main guardrail and now asserts the Step 12 path still improves the `240` baseline to `290`, keeps `fixedServiceRealizationTrials === 0`, and exercises swaps without re-enabling add/remove moves
+- the broader fixed corpus currently lands `adaptive-cap-search-wide` at `812` and `geometry-occupancy-hot-path` at `1000` under the shipped Step 12 slice
+
 ### 13. Introduce candidate geometry caches and tested scratch workspaces
 
 Expected impact: Medium runtime gain, moderate refactor risk

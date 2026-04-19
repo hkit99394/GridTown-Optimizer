@@ -238,7 +238,7 @@ export function formatGreedyBenchmarkSuite(result: GreedyBenchmarkSuiteResult): 
     );
     if (counters) {
       lines.push(
-        `  scans=svc:${counters.servicePhase.candidateScans} res:${counters.residentialPhase.candidateScans} local:${counters.localSearch.candidateScans} roads(connect=${counters.roads.canConnectChecks}, ensure=${counters.roads.ensureConnectedCalls})`
+        `  scans=svc:${counters.servicePhase.candidateScans} res:${counters.residentialPhase.candidateScans} local:${counters.localSearch.candidateScans} roads(connect=${counters.roads.canConnectChecks}, ensure=${counters.roads.ensureConnectedCalls}, probes=${counters.roads.probeCalls}, reuse=${counters.roads.probeReuses})`
       );
       lines.push(
         `  attempts=caps:${counters.attempts.serviceCaps} restarts:${counters.attempts.restarts} refine:${counters.attempts.serviceRefineTrials} exhaustive:${counters.attempts.exhaustiveTrials}`
@@ -338,6 +338,40 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
         restarts: 2,
         serviceRefineIterations: 1,
         serviceRefineCandidateLimit: 10,
+        exhaustiveServiceSearch: false,
+        serviceExactPoolLimit: 8,
+        serviceExactMaxCombinations: 64,
+      },
+    },
+  },
+  {
+    name: "bridge-connectivity-heavy",
+    description: "Deterministic mixed case that keeps connectivity probes hot across a bridge corridor.",
+    grid: [
+      [1, 1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 0, 0, 0, 1, 1, 1],
+      [1, 1, 1, 0, 0, 0, 1, 1, 1],
+      [1, 1, 1, 0, 0, 0, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 0, 0, 0, 1, 1, 1],
+      [1, 1, 1, 0, 0, 0, 1, 1, 1],
+      [1, 1, 1, 0, 0, 0, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1, 1],
+    ],
+    params: {
+      optimizer: "greedy",
+      serviceTypes: [{ rows: 2, cols: 2, bonus: 60, range: 2, avail: 1 }],
+      residentialTypes: [
+        { w: 2, h: 2, min: 80, max: 160, avail: 2 },
+        { w: 2, h: 3, min: 120, max: 220, avail: 1 },
+      ],
+      availableBuildings: { services: 1, residentials: 3 },
+      greedy: {
+        localSearch: true,
+        randomSeed: 23,
+        restarts: 2,
+        serviceRefineIterations: 1,
+        serviceRefineCandidateLimit: 8,
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 8,
         serviceExactMaxCombinations: 64,

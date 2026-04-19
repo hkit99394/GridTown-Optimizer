@@ -1724,6 +1724,22 @@ function testGreedyBenchmarkSuite() {
   assert.match(formatGreedyBenchmarkSuite(result), /cap-sweep-mixed/);
 }
 
+function testGreedyConnectivityHeavyBenchmarkCase() {
+  const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
+    names: ["bridge-connectivity-heavy"],
+  });
+
+  assert.equal(result.caseCount, 1);
+  assert.deepEqual(result.selectedCaseNames, ["bridge-connectivity-heavy"]);
+  assert.equal(result.results[0].name, "bridge-connectivity-heavy");
+  assert.equal(result.results[0].greedyProfile.counters.roads.canConnectChecks > 0, true);
+  assert.equal(result.results[0].greedyProfile.counters.roads.probeCalls > 0, true);
+  assert.equal(result.results[0].greedyProfile.counters.roads.probeReuses > 0, true);
+  assert.equal(result.results[0].totalPopulation > 0, true);
+  assert.match(formatGreedyBenchmarkSuite(result), /bridge-connectivity-heavy/);
+  assert.match(formatGreedyBenchmarkSuite(result), /reuse=/);
+}
+
 async function maybeTestCpSatBenchmarkSuite() {
   const pythonExecutable = resolveCpSatPython();
   if (!pythonExecutable) {
@@ -2754,6 +2770,27 @@ function testTopRowBuildingCountsAsRoadConnected() {
   assert.equal(validation.valid, true);
 }
 
+function testGreedyRespectsTopRowConnectivityShortcut() {
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+  ];
+  const params = {
+    residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
+    availableBuildings: { residentials: 1, services: 0 },
+    greedy: { localSearch: false, restarts: 1, exhaustiveServiceSearch: false },
+  };
+
+  const solution = solveGreedy(grid, params);
+  const validation = validateSolution({ grid, solution, params });
+
+  assert.equal(solution.residentials[0].r, 0);
+  assert.equal(solution.roads.size > 0, true);
+  assert.equal(validation.valid, true);
+}
+
 function testGreedySupportsShapedServices() {
   const grid = [
     [1, 1, 1, 1, 1, 1],
@@ -3166,6 +3203,7 @@ async function main() {
   testGreedyProfilingIsAdditive();
   testGreedyBenchmarkCorpusHelpers();
   testGreedyBenchmarkSuite();
+  testGreedyConnectivityHeavyBenchmarkCase();
   await testCpSatBenchmarkCorpusHelpers();
   await maybeTestCpSatBenchmarkSuite();
   await maybeTestCpSatWarmStartContinuation();
@@ -3187,6 +3225,7 @@ async function main() {
   testSolutionValidator();
   testSolutionMapValidatorRejectsRoadsNotConnectedToRow0();
   testTopRowBuildingCountsAsRoadConnected();
+  testGreedyRespectsTopRowConnectivityShortcut();
   testGreedySupportsShapedServices();
   testLnsNeighborhoodWindowsEscalateWhenStagnating();
   testLnsRunsFinalEscalationWithinConfiguredBudget();

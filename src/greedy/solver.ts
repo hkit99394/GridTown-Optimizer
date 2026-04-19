@@ -16,8 +16,9 @@ import type {
   Solution,
 } from "../core/types.js";
 import {
+  applyRoadConnectionProbe,
   ensureBuildingConnectedToRoads,
-  canConnectToRoads,
+  probeBuildingConnectedToRoads,
   roadsConnectedToRow0,
   isAdjacentToRoads,
   findAvailableRow0RoadCell,
@@ -115,6 +116,8 @@ function createGreedyProfileCounters(): GreedyProfileCounters {
     roads: {
       canConnectChecks: 0,
       ensureConnectedCalls: 0,
+      probeCalls: 0,
+      probeReuses: 0,
       row0Checks: 0,
       fallbackRoads: 0,
     },
@@ -181,6 +184,7 @@ function getCandidateTypeIndex(candidate: ResidentialPlacement | ResidentialCand
 }
 
 type ResidentialCandidatesList = (ResidentialPlacement | ResidentialCandidate)[];
+type RoadConnectionProbe = NonNullable<ReturnType<typeof probeBuildingConnectedToRoads>>;
 
 function getGreedyOptions(params: SolverParams): NormalizedGreedyOptions {
   const greedy = params.greedy ?? {};
@@ -352,6 +356,17 @@ function solveOne(
   const effectZones: Set<string>[] = [];
   const currentResidentialBoosts = Array.from({ length: residentialCandidateStats.length }, () => 0);
   const serviceSource = fixedServices ?? serviceOrder;
+  const probeRoadConnection = (
+    snapshotOccupied: Set<string>,
+    r: number,
+    c: number,
+    rows: number,
+    cols: number
+  ): RoadConnectionProbe | null => {
+    if (profileCounters) profileCounters.roads.canConnectChecks++;
+    if (profileCounters) profileCounters.roads.probeCalls++;
+    return probeBuildingConnectedToRoads(G, roads, snapshotOccupied, r, c, rows, cols);
+  };
   if (fixedServices) {
     for (const s of serviceSource) {
       maybeStop?.();
@@ -369,10 +384,13 @@ function solveOne(
       if (overlaps(occupied, placement.r, placement.c, placement.rows, placement.cols)) {
         return null;
       }
-      if (profileCounters) profileCounters.roads.ensureConnectedCalls++;
-      if (!ensureBuildingConnectedToRoads(G, roads, occupied, placement.r, placement.c, placement.rows, placement.cols)) {
+      if (profileCounters) profileCounters.servicePhase.canConnectChecks++;
+      const probe = probeRoadConnection(occupied, placement.r, placement.c, placement.rows, placement.cols);
+      if (!probe) {
         return null;
       }
+      if (profileCounters) profileCounters.roads.ensureConnectedCalls++;
+      applyRoadConnectionProbe(roads, probe);
       for (const k of roads) occupied.add(k);
       for (const k of serviceFootprint(placement)) occupied.add(k);
       services.push(placement);
@@ -397,6 +415,7 @@ function solveOne(
       if (maxServices !== undefined && services.length >= maxServices) break;
 
       let bestCandidate: ServiceCandidate | null = null;
+      let bestProbe: RoadConnectionProbe | null = null;
       let bestScore = 0;
       let bestOrderIndex = Infinity;
       for (const service of serviceSource) {
@@ -411,8 +430,8 @@ function solveOne(
         }
         if (overlaps(occupied, placement.r, placement.c, placement.rows, placement.cols)) continue;
         if (profileCounters) profileCounters.servicePhase.canConnectChecks++;
-        if (profileCounters) profileCounters.roads.canConnectChecks++;
-        if (!canConnectToRoads(G, roads, occupied, placement.r, placement.c, placement.rows, placement.cols)) continue;
+        const probe = probeRoadConnection(occupied, placement.r, placement.c, placement.rows, placement.cols);
+        if (!probe) continue;
         const score = computeServiceMarginalScore(
           service,
           occupied,
@@ -425,6 +444,7 @@ function solveOne(
           bestCandidate = service;
           bestScore = score;
           bestOrderIndex = orderIndex;
+          bestProbe = probe;
         }
       }
 
@@ -432,9 +452,11 @@ function solveOne(
 
       const placement = materializeServicePlacement(bestCandidate);
       if (profileCounters) profileCounters.roads.ensureConnectedCalls++;
-      if (!ensureBuildingConnectedToRoads(G, roads, occupied, placement.r, placement.c, placement.rows, placement.cols)) {
+      if (!bestProbe) {
         break;
       }
+      if (profileCounters) profileCounters.roads.probeReuses++;
+      applyRoadConnectionProbe(roads, bestProbe);
       for (const k of roads) occupied.add(k);
       for (const k of serviceFootprint(placement)) occupied.add(k);
       services.push(placement);
@@ -470,6 +492,7 @@ function solveOne(
   for (;;) {
     if (maxResidentials !== undefined && residentials.length >= maxResidentials) break;
     let best: ResidentialCandidatesList[0] | null = null;
+    let bestProbe: RoadConnectionProbe | null = null;
     let bestPop = -1;
     for (const cand of anyResidentialCandidates) {
       maybeStop?.();
@@ -478,23 +501,26 @@ function solveOne(
         const ti = getCandidateTypeIndex(cand);
         if (remainingAvail[ti] <= 0) continue;
       }
-        if (roads.size === 0) {
-          if (profileCounters) profileCounters.roads.row0Checks++;
-          if (!placementLeavesRow0RoadCellAvailable(G, occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
-        }
-        if (overlaps(occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
-        if (profileCounters) profileCounters.residentialPhase.canConnectChecks++;
-        if (profileCounters) profileCounters.roads.canConnectChecks++;
-        if (!canConnectToRoads(G, roads, occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
+      if (roads.size === 0) {
+        if (profileCounters) profileCounters.roads.row0Checks++;
+        if (!placementLeavesRow0RoadCellAvailable(G, occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
+      }
+      if (overlaps(occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
+      if (profileCounters) profileCounters.residentialPhase.canConnectChecks++;
+      const probe = probeRoadConnection(occupied, cand.r, cand.c, cand.rows, cand.cols);
+      if (!probe) continue;
       const pop = effectivePop(cand, effectZones, serviceBonuses, getCandidateTypeIndex(cand));
       if (pop > bestPop) {
         bestPop = pop;
         best = cand;
+        bestProbe = probe;
       }
     }
     if (best == null || bestPop < 0) break;
-      if (profileCounters) profileCounters.roads.ensureConnectedCalls++;
-      ensureBuildingConnectedToRoads(G, roads, occupied, best.r, best.c, best.rows, best.cols);
+    if (profileCounters) profileCounters.roads.ensureConnectedCalls++;
+    if (!bestProbe) break;
+    if (profileCounters) profileCounters.roads.probeReuses++;
+    applyRoadConnectionProbe(roads, bestProbe);
     for (const k of roads) occupied.add(k);
     for (const k of residentialFootprint(best.r, best.c, best.rows, best.cols)) occupied.add(k);
     residentials.push({ r: best.r, c: best.c, rows: best.rows, cols: best.cols });
@@ -841,6 +867,18 @@ function localSearchImprove(
     addPop: number;
   };
 
+  const probeRoadConnection = (
+    snapshotOccupied: Set<string>,
+    r: number,
+    c: number,
+    rows: number,
+    cols: number
+  ): RoadConnectionProbe | null => {
+    if (profileCounters) profileCounters.roads.canConnectChecks++;
+    if (profileCounters) profileCounters.roads.probeCalls++;
+    return probeBuildingConnectedToRoads(G, roads, snapshotOccupied, r, c, rows, cols);
+  };
+
   function popFor(cand: ResidentialPlacement | ResidentialCandidate): number {
     const { base, max } = getResidentialBaseMax(params, cand.rows, cand.cols, getCandidateTypeIndex(cand));
     let sum = base;
@@ -855,8 +893,10 @@ function localSearchImprove(
     if (profileCounters) profileCounters.attempts.localSearchIterations++;
     let bestMove: MoveChoice | null = null;
     let bestMoveDelta = 0;
+    let bestMoveProbe: RoadConnectionProbe | null = null;
     let bestAdd: AddChoice | null = null;
     let bestAddDelta = 0;
+    let bestAddProbe: RoadConnectionProbe | null = null;
 
     for (let i = 0; i < residentials.length; i++) {
       maybeStop?.();
@@ -885,8 +925,8 @@ function localSearchImprove(
         if (overlaps(othersOccupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
         if (profileCounters) profileCounters.localSearch.moveChecks++;
         if (profileCounters) profileCounters.localSearch.canConnectChecks++;
-        if (profileCounters) profileCounters.roads.canConnectChecks++;
-        if (!canConnectToRoads(G, roads, othersOccupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
+        const probe = probeRoadConnection(othersOccupied, cand.r, cand.c, cand.rows, cand.cols);
+        if (!probe) continue;
         const newPop = popFor(cand);
         const delta = newPop - currentPop;
         if (delta > bestMoveDelta) {
@@ -900,6 +940,7 @@ function localSearchImprove(
             newPop,
           };
           bestMoveDelta = delta;
+          bestMoveProbe = probe;
         }
       }
     }
@@ -919,8 +960,8 @@ function localSearchImprove(
         if (overlaps(occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
         if (profileCounters) profileCounters.localSearch.addChecks++;
         if (profileCounters) profileCounters.localSearch.canConnectChecks++;
-        if (profileCounters) profileCounters.roads.canConnectChecks++;
-        if (!canConnectToRoads(G, roads, occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
+        const probe = probeRoadConnection(occupied, cand.r, cand.c, cand.rows, cand.cols);
+        if (!probe) continue;
         const addPop = popFor(cand);
         if (addPop > bestAddDelta) {
           bestAdd = {
@@ -930,6 +971,7 @@ function localSearchImprove(
             addPop,
           };
           bestAddDelta = addPop;
+          bestAddProbe = probe;
         }
       }
     }
@@ -940,7 +982,9 @@ function localSearchImprove(
       const { candidate, candidateTypeIndex, addPop } = bestAdd;
       totalPopulation += addPop;
       if (profileCounters) profileCounters.roads.ensureConnectedCalls++;
-      ensureBuildingConnectedToRoads(G, roads, occupied, candidate.r, candidate.c, candidate.rows, candidate.cols);
+      if (!bestAddProbe) break;
+      if (profileCounters) profileCounters.roads.probeReuses++;
+      applyRoadConnectionProbe(roads, bestAddProbe);
       for (const k of roads) occupied.add(k);
       for (const k of residentialFootprint(candidate.r, candidate.c, candidate.rows, candidate.cols)) occupied.add(k);
       residentials.push({ r: candidate.r, c: candidate.c, rows: candidate.rows, cols: candidate.cols });
@@ -961,15 +1005,9 @@ function localSearchImprove(
       )) occupied.delete(k);
       if (useTypes && remainingAvail && bestMove.currentTypeIndex >= 0) remainingAvail[bestMove.currentTypeIndex]++;
       if (profileCounters) profileCounters.roads.ensureConnectedCalls++;
-      ensureBuildingConnectedToRoads(
-        G,
-        roads,
-        occupied,
-        bestMove.candidate.r,
-        bestMove.candidate.c,
-        bestMove.candidate.rows,
-        bestMove.candidate.cols
-      );
+      if (!bestMoveProbe) break;
+      if (profileCounters) profileCounters.roads.probeReuses++;
+      applyRoadConnectionProbe(roads, bestMoveProbe);
       for (const k of roads) occupied.add(k);
       for (const k of residentialFootprint(
         bestMove.candidate.r,

@@ -102,6 +102,53 @@ function buildingTouchesRoadAnchorRow(r: number): boolean {
   return r === 0;
 }
 
+export interface RoadConnectionProbe {
+  path: [number, number][] | null;
+}
+
+function buildRoadConnectionProbe(
+  G: Grid,
+  roads: Set<string>,
+  occupied: Set<string>,
+  r: number,
+  c: number,
+  rows: number,
+  cols: number
+): RoadConnectionProbe | null {
+  if (buildingTouchesRoadAnchorRow(r)) {
+    return { path: null };
+  }
+
+  const border = rectangleBorderCells(r, c, rows, cols);
+  for (const [br, bc] of border) {
+    if (roads.has(cellKey(br, bc))) {
+      return { path: null };
+    }
+  }
+
+  const blockSet = new Set<string>();
+  for (const k of occupied) if (!roads.has(k)) blockSet.add(k);
+  for (const k of rectangleCells(r, c, rows, cols)) blockSet.add(k);
+  const targets = roads.size > 0 ? roads : availableRow0RoadTargets(G, blockSet);
+  if (targets.size === 0) return null;
+
+  const path = bfsPathToTargets(
+    G,
+    border.filter(([br, bc]) => isAllowed(G, br, bc) && !blockSet.has(cellKey(br, bc))),
+    targets,
+    blockSet
+  );
+  if (!path) return null;
+  return { path };
+}
+
+export function applyRoadConnectionProbe(roads: Set<string>, probe: RoadConnectionProbe): void {
+  if (!probe.path) return;
+  for (const [pr, pc] of probe.path) {
+    roads.add(cellKey(pr, pc));
+  }
+}
+
 /**
  * Check if the rectangle (r, c, rows, cols) is adjacent to road set R.
  * If not, try to find a path from the rectangle's border to R using allowed cells (excluding occupied).
@@ -116,27 +163,9 @@ export function ensureBuildingConnectedToRoads(
   rows: number,
   cols: number
 ): boolean {
-  if (buildingTouchesRoadAnchorRow(r)) return true;
-  const border = rectangleBorderCells(r, c, rows, cols);
-  for (const [br, bc] of border) {
-    if (!isAllowed(G, br, bc)) continue;
-    if (roads.has(cellKey(br, bc))) return true;
-  }
-  const blockSet = new Set<string>();
-  for (const k of occupied) if (!roads.has(k)) blockSet.add(k);
-  for (const k of rectangleCells(r, c, rows, cols)) blockSet.add(k);
-  const targets = roads.size > 0 ? roads : availableRow0RoadTargets(G, blockSet);
-  if (targets.size === 0) return false;
-  const path = bfsPathToTargets(
-    G,
-    border.filter(([br, bc]) => isAllowed(G, br, bc) && !blockSet.has(cellKey(br, bc))),
-    targets,
-    blockSet
-  );
-  if (!path) return false;
-  for (const [pr, pc] of path) {
-    roads.add(cellKey(pr, pc));
-  }
+  const probe = buildRoadConnectionProbe(G, roads, occupied, r, c, rows, cols);
+  if (!probe) return false;
+  applyRoadConnectionProbe(roads, probe);
   return true;
 }
 
@@ -199,21 +228,18 @@ export function canConnectToRoads(
   rows: number,
   cols: number
 ): boolean {
-  if (buildingTouchesRoadAnchorRow(r)) return true;
-  const border = rectangleBorderCells(r, c, rows, cols);
-  for (const [br, bc] of border) {
-    if (roads.has(cellKey(br, bc))) return true;
-  }
-  const blockSet = new Set<string>();
-  for (const k of occupied) if (!roads.has(k)) blockSet.add(k);
-  for (const k of rectangleCells(r, c, rows, cols)) blockSet.add(k);
-  const targets = roads.size > 0 ? roads : availableRow0RoadTargets(G, blockSet);
-  if (targets.size === 0) return false;
-  const path = bfsPathToTargets(
-    G,
-    border.filter(([br, bc]) => isAllowed(G, br, bc) && !blockSet.has(cellKey(br, bc))),
-    targets,
-    blockSet
-  );
-  return path !== null;
+  return buildRoadConnectionProbe(G, roads, occupied, r, c, rows, cols) !== null;
+}
+
+/** Probe road connectivity for a building and return the connection path when one is needed. */
+export function probeBuildingConnectedToRoads(
+  G: Grid,
+  roads: Set<string>,
+  occupied: Set<string>,
+  r: number,
+  c: number,
+  rows: number,
+  cols: number
+): RoadConnectionProbe | null {
+  return buildRoadConnectionProbe(G, roads, occupied, r, c, rows, cols);
 }

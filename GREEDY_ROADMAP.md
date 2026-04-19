@@ -82,6 +82,11 @@ Concrete work:
 - reuse that cache during residential candidate scans
 - avoid recomputing equivalent BFS work between `canConnectToRoads` and `ensureBuildingConnectedToRoads`
 
+Shipped bounded slice:
+- `src/core/roads.ts` now uses one shared connection probe for both `canConnectToRoads` and `ensureBuildingConnectedToRoads`
+- `src/greedy/solver.ts` now reuses the winning probe inside service, residential, and local-search scans so selected placements do not rerun the same connectivity search
+- `benchmark:greedy` now includes `bridge-connectivity-heavy` to keep probe reuse measurable in a deterministic corridor-style case
+
 Guardrail:
 - preserve the current row-0 connectivity guarantees and post-solve validation behavior
 

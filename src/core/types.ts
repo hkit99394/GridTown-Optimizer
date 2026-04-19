@@ -352,6 +352,8 @@ export interface GreedyProfileCounters {
   roads: {
     canConnectChecks: number;
     ensureConnectedCalls: number;
+    probeCalls: number;
+    probeReuses: number;
     row0Checks: number;
     fallbackRoads: number;
   };

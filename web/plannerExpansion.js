@@ -107,6 +107,9 @@
       if (request.params.optimizer === "lns" && !state.lns.useDisplayedSeed) {
         return request;
       }
+      if (request.params.optimizer === "auto" && !state.cpSat.useDisplayedHint && !state.lns.useDisplayedSeed) {
+        return request;
+      }
 
       const payload = buildComparisonDisplayedLayoutCheckpointPayload();
       if (!payload) return request;
@@ -121,6 +124,19 @@
           ...(request.params.lns ?? {}),
           seedHint: cloneJson(payload),
         };
+      } else if (request.params.optimizer === "auto") {
+        if (state.cpSat.useDisplayedHint) {
+          request.params.cpSat = {
+            ...(request.params.cpSat ?? {}),
+            warmStartHint: cloneJson(payload),
+          };
+        }
+        if (state.lns.useDisplayedSeed) {
+          request.params.lns = {
+            ...(request.params.lns ?? {}),
+            seedHint: cloneJson(payload),
+          };
+        }
       }
 
       return request;

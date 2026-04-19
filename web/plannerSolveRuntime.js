@@ -1,4 +1,96 @@
 (function attachPlannerSolveRuntime(globalObject) {
+  const AUTO_QUALITY_PATH_LABEL = "recommended quality path";
+  const GREEDY_MODE_LABEL = "fast standalone seed / advanced mode";
+
+  function normalizeProgressElapsedMs(value) {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) return 0;
+    return Math.max(0, Math.round(numericValue));
+  }
+
+  function readAutoStage(payload) {
+    return payload?.solution?.autoStage ?? payload?.stats?.autoStage ?? payload?.autoStage ?? null;
+  }
+
+  function buildSolveProgressLogEntry(payload, options = {}) {
+    if (!payload?.solution && typeof payload?.bestTotalPopulation !== "number") return null;
+
+    const telemetry = payload?.solution?.cpSatTelemetry ?? null;
+    const autoStage = readAutoStage(payload);
+    const totalPopulation =
+      typeof payload?.stats?.totalPopulation === "number"
+        ? payload.stats.totalPopulation
+        : typeof payload?.solution?.totalPopulation === "number"
+          ? payload.solution.totalPopulation
+          : typeof payload?.bestTotalPopulation === "number"
+            ? payload.bestTotalPopulation
+            : null;
+
+    return {
+      capturedAt: typeof options.capturedAt === "string" && options.capturedAt.trim()
+        ? options.capturedAt
+        : new Date().toISOString(),
+      elapsedMs: normalizeProgressElapsedMs(options.elapsedMs),
+      source: options.source === "final-result" ? "final-result" : "live-snapshot",
+      optimizer: payload?.stats?.optimizer ?? payload?.solution?.optimizer ?? payload?.optimizer ?? options.fallbackOptimizer ?? null,
+      ...(
+        (payload?.stats?.activeOptimizer ?? payload?.solution?.activeOptimizer ?? payload?.activeOptimizer)
+          ? {
+              activeOptimizer:
+                payload?.stats?.activeOptimizer
+                ?? payload?.solution?.activeOptimizer
+                ?? payload?.activeOptimizer,
+            }
+          : {}
+      ),
+      ...(autoStage ? { autoStage } : {}),
+      hasFeasibleSolution: true,
+      totalPopulation,
+      cpSatStatus: payload?.solution?.cpSatStatus ?? payload?.stats?.cpSatStatus ?? null,
+      bestPopulationUpperBound:
+        typeof telemetry?.bestPopulationUpperBound === "number" ? telemetry.bestPopulationUpperBound : null,
+      populationGapUpperBound:
+        typeof telemetry?.populationGapUpperBound === "number" ? telemetry.populationGapUpperBound : null,
+      solveWallTimeSeconds:
+        typeof telemetry?.solveWallTimeSeconds === "number" ? telemetry.solveWallTimeSeconds : null,
+      lastImprovementAtSeconds:
+        typeof telemetry?.lastImprovementAtSeconds === "number" ? telemetry.lastImprovementAtSeconds : null,
+      secondsSinceLastImprovement:
+        typeof telemetry?.secondsSinceLastImprovement === "number" ? telemetry.secondsSinceLastImprovement : null,
+      note: null,
+    };
+  }
+
+  function appendSolveProgressLog(logEntries, payload, options = {}) {
+    const entry = buildSolveProgressLogEntry(payload, options);
+    if (!entry) return Array.isArray(logEntries) ? logEntries.slice() : [];
+    const nextEntries = Array.isArray(logEntries) ? logEntries.slice() : [];
+    const lastEntry = nextEntries[nextEntries.length - 1];
+
+    if (
+      lastEntry
+      && lastEntry.elapsedMs === entry.elapsedMs
+      && lastEntry.source === entry.source
+      && lastEntry.optimizer === entry.optimizer
+      && lastEntry.activeOptimizer === entry.activeOptimizer
+      && lastEntry.hasFeasibleSolution === entry.hasFeasibleSolution
+      && lastEntry.totalPopulation === entry.totalPopulation
+      && lastEntry.cpSatStatus === entry.cpSatStatus
+      && lastEntry.bestPopulationUpperBound === entry.bestPopulationUpperBound
+      && lastEntry.populationGapUpperBound === entry.populationGapUpperBound
+      && lastEntry.solveWallTimeSeconds === entry.solveWallTimeSeconds
+      && lastEntry.lastImprovementAtSeconds === entry.lastImprovementAtSeconds
+      && lastEntry.secondsSinceLastImprovement === entry.secondsSinceLastImprovement
+      && JSON.stringify(lastEntry.autoStage ?? null) === JSON.stringify(entry.autoStage ?? null)
+    ) {
+      nextEntries[nextEntries.length - 1] = entry;
+      return nextEntries;
+    }
+
+    nextEntries.push(entry);
+    return nextEntries;
+  }
+
   function createSolveRuntime(options) {
     const {
       state,
@@ -20,6 +112,7 @@
     const {
       buildSolveRequest,
       clearExpansionAdvice,
+      ensureCpSatRandomSeed,
       getDisplayedLayoutCheckpoint,
       getOptimizerLabel,
       renderResults,
@@ -97,9 +190,22 @@
       state.solveTimerHandle = globalObject.setInterval(syncSolveTimer, 250);
     }
 
+    function clearManualEditState(options = {}) {
+      const { resetMode = false } = options;
+      state.layoutEditor.edited = false;
+      state.layoutEditor.pendingValidation = false;
+      state.layoutEditor.status = "";
+      if (resetMode) {
+        state.layoutEditor.mode = "inspect";
+        state.layoutEditor.pendingPlacement = null;
+      }
+    }
+
     function buildSolveProgressMessage(payload) {
       const optimizer = payload.optimizer || state.optimizer;
       const optimizerLabel = getOptimizerLabel(optimizer);
+      const autoStage = readAutoStage(payload);
+      const activeOptimizer = payload.activeOptimizer || payload.solution?.activeOptimizer || payload.stats?.activeOptimizer || null;
       const bestLabel =
         typeof payload.bestTotalPopulation === "number"
           ? ` Best so far: ${Number(payload.bestTotalPopulation).toLocaleString()}.`
@@ -107,6 +213,9 @@
 
       if (state.isStopping) {
         if (payload.hasFeasibleSolution) {
+          if (optimizer === "auto") {
+            return `Stop requested. Finalizing Auto${activeOptimizer ? ` (${getOptimizerLabel(activeOptimizer)})` : ""}.${bestLabel}`;
+          }
           return optimizer === "cp-sat"
             ? `Stop requested. Finalizing the best feasible ${optimizerLabel} result.${bestLabel}`
             : optimizer === "lns"
@@ -117,6 +226,14 @@
       }
 
       if (payload.hasFeasibleSolution) {
+        if (optimizer === "auto") {
+          const cycleLabel = autoStage?.cycleIndex > 0 ? `Cycle ${autoStage.cycleIndex}. ` : "";
+          const weakCycleLabel =
+            typeof autoStage?.consecutiveWeakCycles === "number"
+              ? `Weak cycles: ${autoStage.consecutiveWeakCycles}. `
+              : "";
+          return `Running ${optimizerLabel} solver. ${cycleLabel}${activeOptimizer ? `${getOptimizerLabel(activeOptimizer)} stage is active. ` : ""}${weakCycleLabel}${bestLabel.trim()}`.trim();
+        }
         return optimizer === "cp-sat"
           ? `Running ${optimizerLabel} solver. Feasible solution found and still improving.${bestLabel}`
           : optimizer === "lns"
@@ -125,28 +242,38 @@
                 ? `Running ${optimizerLabel} solver. Displayed seed is ready and neighborhood repairs are still improving.${bestLabel}`
                 : `Running ${optimizerLabel} solver. Greedy seed is ready and neighborhood repairs are still improving.${bestLabel}`
             )
-            : `Running ${optimizerLabel} solver. Search is still improving.${bestLabel}`;
+            : `Running ${optimizerLabel} solver. ${GREEDY_MODE_LABEL} is still improving.${bestLabel}`;
       }
 
       if (optimizer === "cp-sat") {
         return `Running ${optimizerLabel} solver. Searching for the first feasible solution...`;
+      }
+      if (optimizer === "auto") {
+        return "Running Auto solver. Starting the greedy seed stage before LNS and bounded CP-SAT improve it...";
       }
       if (optimizer === "lns") {
         return state.lns.useDisplayedSeed && getDisplayedLayoutCheckpoint()
           ? `Running ${optimizerLabel} solver. Loading the displayed seed before neighborhood repair...`
           : `Running ${optimizerLabel} solver. Building the greedy seed before neighborhood repair...`;
       }
-      return `Running ${optimizerLabel} solver. Searching for an initial result...`;
+      return `Running ${optimizerLabel} solver. Searching for a fast seed...`;
     }
 
     function applyRunningSnapshot(payload) {
       if (!payload?.solution || payload.jobStatus !== "running") return;
       clearExpansionAdvice();
-      state.result = payload;
+      state.solveProgressLog = appendSolveProgressLog(state.solveProgressLog, payload, {
+        elapsedMs: state.solveTimerElapsedMs,
+        fallbackOptimizer: state.optimizer,
+        source: "live-snapshot",
+      });
+      state.result = {
+        ...payload,
+        progressLog: state.solveProgressLog.slice(),
+      };
       state.resultIsLiveSnapshot = true;
       state.resultError = "";
-      state.layoutEditor.edited = false;
-      state.layoutEditor.status = "";
+      clearManualEditState();
       setResultElapsed(state.solveTimerElapsedMs);
       renderResults();
     }
@@ -220,32 +347,49 @@
     }
 
     async function runSolve() {
+      if (state.layoutEditor.isApplying) {
+        setSolveState("Wait for layout validation to finish before starting a new solve.");
+        return;
+      }
       state.isSolving = true;
       state.isStopping = false;
       state.activeSolveRequestId = createSolveRequestId();
       state.resultIsLiveSnapshot = false;
       state.resultError = "";
-      state.layoutEditor.mode = "inspect";
-      state.layoutEditor.pendingPlacement = null;
-      state.layoutEditor.status = "";
+      state.solveProgressLog = [];
+      clearManualEditState({ resetMode: true });
       clearExpansionAdvice();
       try {
         startSolveTimer();
+        if (state.optimizer === "cp-sat") {
+          ensureCpSatRandomSeed();
+        }
         const request = buildSolveRequest();
         state.resultContext = request;
         if (state.optimizer === "cp-sat") {
           const timeLimitSeconds = request.params.cpSat?.timeLimitSeconds;
+          const noImprovementTimeoutSeconds = request.params.cpSat?.noImprovementTimeoutSeconds;
+          const randomSeed = request.params.cpSat?.randomSeed;
+          const runCaps = [];
+          if (timeLimitSeconds) {
+            runCaps.push(`${timeLimitSeconds}s max runtime`);
+          }
+          if (noImprovementTimeoutSeconds) {
+            runCaps.push(`${noImprovementTimeoutSeconds}s no-improvement cutoff`);
+          }
           setSolveState(
-            timeLimitSeconds
-              ? `Running CP-SAT solver with a ${timeLimitSeconds}s limit...`
-              : "Running CP-SAT solver until it finishes or you stop it..."
+            runCaps.length > 0
+              ? `Running CP-SAT solver with seed ${randomSeed ?? "auto"}, ${runCaps.join(", ")}...`
+              : `Running CP-SAT solver with seed ${randomSeed ?? "auto"} until it finishes or you stop it...`
           );
         } else if (state.optimizer === "lns") {
           setSolveState(
             `${state.lns.useDisplayedSeed && getDisplayedLayoutCheckpoint() ? "Running LNS from the displayed seed" : "Running LNS from a greedy seed"} with ${request.params.lns.iterations} neighborhood repairs and a ${request.params.lns.repairTimeLimitSeconds}s repair cap...`
           );
+        } else if (state.optimizer === "auto") {
+          setSolveState(`Running Auto solver. This is the ${AUTO_QUALITY_PATH_LABEL}: Greedy seeds the run, then LNS and bounded CP-SAT continue improving the incumbent...`);
         } else {
-          setSolveState("Running greedy solver...");
+          setSolveState(`Running Greedy solver in ${GREEDY_MODE_LABEL}...`);
         }
         const startResponse = await fetch("/api/solve/start", {
           method: "POST",
@@ -263,13 +407,18 @@
         }
         const payload = await waitForSolveResult(state.activeSolveRequestId);
 
-        state.result = payload;
+        state.solveProgressLog = appendSolveProgressLog(state.solveProgressLog, payload, {
+          elapsedMs: state.solveTimerElapsedMs,
+          fallbackOptimizer: state.optimizer,
+          source: "final-result",
+        });
+        state.result = {
+          ...payload,
+          progressLog: state.solveProgressLog.slice(),
+        };
         state.resultIsLiveSnapshot = false;
         state.resultError = "";
-        state.layoutEditor.edited = false;
-        state.layoutEditor.status = "";
-        state.layoutEditor.mode = "inspect";
-        state.layoutEditor.pendingPlacement = null;
+        clearManualEditState({ resetMode: true });
         state.selectedMapCell = null;
         pauseSolveTimer();
         setResultElapsed(state.solveTimerElapsedMs);
@@ -279,14 +428,16 @@
             ? payload.message
             : stoppedByUser
               ? `Stopped early. Showing the best ${getOptimizerLabel(payload.stats.optimizer)} result found${payload.stats.cpSatStatus ? ` (${payload.stats.cpSatStatus})` : ""}.`
-              : `Solved with ${getOptimizerLabel(payload.stats.optimizer)}${payload.stats.cpSatStatus ? ` (${payload.stats.cpSatStatus})` : ""}.`
+              : payload.stats.optimizer === "auto"
+                ? `Solved with Auto${payload.stats.activeOptimizer ? ` (final ${getOptimizerLabel(payload.stats.activeOptimizer)} stage)` : ""}.`
+                : `Solved with ${getOptimizerLabel(payload.stats.optimizer)}${payload.stats.cpSatStatus ? ` (${payload.stats.cpSatStatus})` : ""}.`
         );
       } catch (error) {
         state.result = null;
         state.resultIsLiveSnapshot = false;
         state.resultError = error instanceof Error ? error.message : "Unknown solve error.";
-        state.layoutEditor.edited = false;
-        state.layoutEditor.status = "";
+        state.solveProgressLog = [];
+        clearManualEditState();
         pauseSolveTimer();
         setResultElapsed(state.solveTimerElapsedMs);
         setSolveState(/stopped/i.test(state.resultError) ? "Solver stopped." : "Solver run failed.");
@@ -309,6 +460,8 @@
   }
 
   globalObject.CityBuilderSolveRuntime = Object.freeze({
+    appendSolveProgressLog,
+    buildSolveProgressLogEntry,
     createSolveRuntime,
   });
 })(window);

@@ -310,6 +310,10 @@
                         <button type="button" data-layout-edit-mode="erase">Erase</button>
                         <button type="button" data-layout-edit-mode="move">Move</button>
                       </div>
+                      <div class="actions-row compact-actions">
+                        <button id="rotatePendingPlacementButton" type="button" class="button ghost">Rotate 90°</button>
+                        <button id="validateEditedLayoutButton" type="button" class="button ghost">Validate layout</button>
+                      </div>
                       <p id="layoutEditorStatus" class="status-text" aria-live="polite">
                         Run or load a layout to edit it.
                       </p>
@@ -320,7 +324,7 @@
                           <div
                             id="resultMapGrid"
                             class="grid-editor result-grid"
-                            data-layout-mode="comfortable"
+                            data-layout-mode="adaptive"
                             aria-label="Solved layout map"
                           ></div>
                           <div id="resultOverlay" class="map-overlay" aria-hidden="true"></div>
@@ -412,7 +416,7 @@
                 </article>
                 <article class="metric-card accent">
                   <span class="metric-label">Active solver</span>
-                  <strong id="summaryOptimizer">Greedy</strong>
+                  <strong id="summaryOptimizer">Auto</strong>
                 </article>
               </div>
             </section>
@@ -425,14 +429,61 @@
                 </div>
               </div>
 
+              <div class="solver-callout">
+                Recommended quality path: use Auto when overall answer quality matters most. Greedy stays available as
+                the fast standalone seed / advanced mode, and LNS or bounded CP-SAT can spend more time improving
+                that seed.
+              </div>
+
+              <div id="runtimePresetButtons" class="runtime-preset-grid">
+                <button type="button" class="button secondary compact" data-runtime-preset="fast-greedy">
+                  Fast Greedy
+                </button>
+                <button type="button" class="button secondary compact" data-runtime-preset="lns-improve">
+                  LNS Improve
+                </button>
+                <button type="button" class="button secondary compact" data-runtime-preset="bounded-cp-sat">
+                  Bounded CP-SAT
+                </button>
+              </div>
+
+              <p id="runtimePresetStatus" class="status-text" aria-live="polite">
+                Presets keep Greedy, LNS, and bounded CP-SAT one click away.
+                Auto remains the recommended quality path.
+              </p>
+
               <div class="segmented segmented-wide" id="solverToggle">
+                <button type="button" data-optimizer="auto">Auto</button>
                 <button type="button" data-optimizer="greedy">Greedy</button>
                 <button type="button" data-optimizer="lns">LNS</button>
                 <button type="button" data-optimizer="cp-sat">CP-SAT</button>
               </div>
 
               <div class="solver-panels">
+                <section id="autoPanel" class="solver-panel">
+                  <div class="notice info">
+                    Auto is the recommended quality path. It reuses the Greedy, LNS, and CP-SAT controls below as
+                    stage defaults: Greedy seeds the run, LNS repairs neighborhoods, and bounded CP-SAT polishes the
+                    incumbent.
+                  </div>
+                  <div class="form-grid">
+                    <label class="field">
+                      <span>Global cap (seconds, optional)</span>
+                      <input
+                        id="autoWallClockLimitSeconds"
+                        type="number"
+                        min="1"
+                        step="1"
+                        placeholder="Blank = unlimited"
+                      />
+                    </label>
+                  </div>
+                </section>
                 <section id="greedyPanel" class="solver-panel">
+                  <div class="notice info">
+                    Greedy is the fast standalone seed / advanced mode. Use it for the quickest legal layout or direct
+                    seed-quality inspection; use Auto when overall quality matters more than staying purely heuristic.
+                  </div>
                   <div class="form-grid two-up">
                     <label class="check-field">
                       <input id="greedyLocalSearch" type="checkbox" />
@@ -445,6 +496,10 @@
                     <label class="field">
                       <span>Restarts</span>
                       <input id="greedyRestarts" type="number" min="1" step="1" />
+                    </label>
+                    <label class="field">
+                      <span>Random seed</span>
+                      <input id="greedyRandomSeed" type="number" min="0" step="1" placeholder="Blank = random" />
                     </label>
                     <label class="field">
                       <span>Refine passes</span>
@@ -467,8 +522,8 @@
 
                 <section id="lnsPanel" class="solver-panel" hidden>
                   <div class="solver-callout">
-                    LNS builds a greedy seed first, then repairs one neighborhood at a time with CP-SAT. It is the
-                    fastest improvement-oriented mode in the planner, but it still needs the Python OR-Tools backend.
+                    LNS is the manual improvement mode. It starts from a greedy or displayed seed, then repairs one
+                    neighborhood at a time with CP-SAT. It still needs the Python OR-Tools backend.
                   </div>
                   <div class="form-grid two-up">
                     <label class="field">
@@ -533,8 +588,22 @@
                       />
                     </label>
                     <label class="field">
+                      <span>Random seed</span>
+                      <input id="cpSatRandomSeed" type="number" min="0" step="1" placeholder="Blank = auto-fill on solve" />
+                    </label>
+                    <label class="field">
                       <span>Workers</span>
                       <input id="cpSatNumWorkers" type="number" min="1" step="1" />
+                    </label>
+                    <label class="field">
+                      <span>No-improvement cutoff (seconds)</span>
+                      <input
+                        id="cpSatNoImprovementTimeoutSeconds"
+                        type="number"
+                        min="1"
+                        step="1"
+                        placeholder="Blank = disabled"
+                      />
                     </label>
                     <label class="check-field">
                       <input id="cpSatLogSearchProgress" type="checkbox" />

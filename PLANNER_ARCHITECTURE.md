@@ -127,17 +127,47 @@ Owns:
 
 ### `src/webServerRequestHandler.ts`
 
-HTTP routing and request handling.
+Thin backend composition layer.
 
 Owns:
-- static asset serving
-- request-body parsing limits
+- constructing the planner route pipeline
+- binding `SolveJobManager` into route handlers
+- delegating API requests vs static asset requests
+- top-level error translation for the local web server
+
+### `src/webServerApiRoutes.ts`
+
+Planner API route handlers.
+
+Owns:
 - `/api/health`
 - `/api/solve`
 - `/api/layout/evaluate`
 - `/api/solve/start`
 - `/api/solve/status`
 - `/api/solve/cancel`
+- immediate solve disconnect handling
+- solve-job response shaping for route-level metadata
+
+### `src/webServerTransport.ts`
+
+HTTP transport helpers shared by planner routes.
+
+Owns:
+- request-body parsing limits
+- JSON parsing and validation helpers
+- JSON/text response helpers
+- error-to-status translation
+- client disconnect monitoring
+
+### `src/webServerStatic.ts`
+
+Planner static asset serving.
+
+Owns:
+- static asset path map
+- content-type lookup
+- static file reads for the local planner
 
 ### `src/webServerHttp.ts`
 
@@ -166,6 +196,25 @@ Owns:
 - optimizer lookup
 - sync/background solver adapter selection
 
+### `src/lnsNeighborhoods.ts`
+
+LNS neighborhood planning.
+
+Owns:
+- anchor ranking for weak services, upgrade headroom, and frontier congestion
+- repair-window generation
+- neighborhood escalation after stagnant iterations
+- neighborhood-window selection policy
+
+### `src/solutionSerialization.ts`
+
+Shared solution persistence helpers.
+
+Owns:
+- serializing `Solution` objects for HTTP and worker boundaries
+- materializing serialized solutions back into `Set`-backed runtime objects
+- snapshot file writes for long-running solver flows
+
 ## Placement Rules
 
 When adding a new behavior:
@@ -176,9 +225,17 @@ When adding a new behavior:
 - If it changes solve lifecycle or polling, put it in `plannerSolveRuntime.js`.
 - If it changes compare-addition behavior, put it in `plannerExpansion.js`.
 - If it changes result display, map interaction, or manual editing, put it in `plannerResults.js`.
-- If it changes HTTP routes or request parsing, keep `webServer.ts` thin and update `webServerRequestHandler.ts` / `webServerHttp.ts`.
+- If it changes planner API behavior, update `webServerApiRoutes.ts`.
+- If it changes body parsing, response writing, or disconnect handling, update `webServerTransport.ts`.
+- If it changes static asset wiring, update `webServerStatic.ts`.
+- If it changes LNS anchor ranking or repair-window escalation, update `lnsNeighborhoods.ts`.
+- If it changes how solutions cross process or file boundaries, update `solutionSerialization.ts`.
+- Keep `webServer.ts` and `webServerRequestHandler.ts` thin.
 
 ## Current Follow-Up
 
 `web/app.js` is now mainly bootstrap and controller wiring.
-The next cleanup, if needed later, would be finer-grained separation of any future shell-level coordination that grows beyond action availability and solve-status updates.
+The next cleanup, if needed later, would be finer-grained separation of the largest solver and result-editing hotspot files:
+- `src/solver.ts`
+- `src/lnsSolver.ts`
+- `web/plannerResults.js`

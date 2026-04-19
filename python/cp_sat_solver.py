@@ -94,6 +94,15 @@ class GateAccessAnalysis:
     residential_region_coefficients_by_gate: dict[int, dict[int, int]]
 
 
+@dataclass(frozen=True)
+class ResolvedWarmStartSelection:
+    solution: dict[str, Any]
+    selected_road_ids: set[int]
+    selected_service_ids: set[int]
+    selected_residential_ids: set[int]
+    residential_population_by_key: dict[str, int]
+
+
 def fail(message: str) -> None:
     print(message, file=sys.stderr)
     raise SystemExit(1)
@@ -301,23 +310,45 @@ def residential_type_orientations(residential_type):
     )
 
 
+def collect_orientation_dimensions(building_types, orientation_fn):
+    return [dimension for building_type in building_types for dimension in orientation_fn(building_type)]
+
+
+def enumerate_placements_for_types(grid, blocked_prefix_sum, building_types, orientation_fn):
+    return enumerate_valid_placements(grid, blocked_prefix_sum, collect_orientation_dimensions(building_types, orientation_fn))
+
+
+def iter_active_type_orientations(building_types, orientation_fn):
+    for building_type in building_types:
+        if int(building_type.get("avail", 0)) <= 0:
+            continue
+        yield from orientation_fn(building_type)
+
+
+def add_protected_reachable_border_cells(protected, grid, reachable_allowed, placement_map, dimensions):
+    for rows, cols in dimensions:
+        for placement in placement_map.get(f"{rows}x{cols}", []):
+            if touches_road_anchor_row(placement):
+                continue
+            for cell in rectangle_border_cells(grid, placement["r"], placement["c"], rows, cols):
+                if cell in reachable_allowed:
+                    protected.add(cell)
+
+
 def build_candidate_placement_maps(grid, params) -> CandidatePlacementMaps:
     blocked_prefix_sum = build_blocked_prefix_sum(grid)
     service_types = params.get("serviceTypes") or []
-    service_placement_map = enumerate_valid_placements(
-        grid,
-        blocked_prefix_sum,
-        [dimension for service_type in service_types for dimension in service_type_orientations(service_type)],
-    )
+    service_placement_map = enumerate_placements_for_types(grid, blocked_prefix_sum, service_types, service_type_orientations)
 
     residential_types = params.get("residentialTypes")
     residential_placement_map = {}
     fallback_residential_placement_map = {}
     if residential_types:
-        residential_placement_map = enumerate_valid_placements(
+        residential_placement_map = enumerate_placements_for_types(
             grid,
             blocked_prefix_sum,
-            [dimension for residential_type in residential_types for dimension in residential_type_orientations(residential_type)],
+            residential_types,
+            residential_type_orientations,
         )
     else:
         fallback_residential_placement_map = enumerate_valid_placements(grid, blocked_prefix_sum, [(2, 2), (2, 3)])
@@ -327,52 +358,56 @@ def build_candidate_placement_maps(grid, params) -> CandidatePlacementMaps:
         residential=residential_placement_map,
         fallback_residential=fallback_residential_placement_map,
     )
+
+
 def collect_protected_road_cells(grid, params, reachable_allowed, placement_maps: CandidatePlacementMaps):
     protected = {(0, c) for c in range(len(grid[0])) if (0, c) in reachable_allowed}
     service_types = params.get("serviceTypes") or []
-    for service_type in service_types:
-        if int(service_type.get("avail", 0)) <= 0:
-            continue
-        for rows, cols in service_type_orientations(service_type):
-            for placement in placement_maps.service.get(f"{rows}x{cols}", []):
-                if touches_road_anchor_row(placement):
-                    continue
-                for cell in rectangle_border_cells(grid, placement["r"], placement["c"], rows, cols):
-                    if cell in reachable_allowed:
-                        protected.add(cell)
+    add_protected_reachable_border_cells(
+        protected,
+        grid,
+        reachable_allowed,
+        placement_maps.service,
+        iter_active_type_orientations(service_types, service_type_orientations),
+    )
 
     residential_types = params.get("residentialTypes")
     if residential_types:
-        for residential_type in residential_types:
-            if int(residential_type.get("avail", 0)) <= 0:
-                continue
-            for rows, cols in residential_type_orientations(residential_type):
-                for placement in placement_maps.residential.get(f"{rows}x{cols}", []):
-                    if touches_road_anchor_row(placement):
-                        continue
-                    for cell in rectangle_border_cells(grid, placement["r"], placement["c"], rows, cols):
-                        if cell in reachable_allowed:
-                            protected.add(cell)
+        add_protected_reachable_border_cells(
+            protected,
+            grid,
+            reachable_allowed,
+            placement_maps.residential,
+            iter_active_type_orientations(residential_types, residential_type_orientations),
+        )
     else:
-        for rows, cols in ((2, 2), (2, 3)):
-            for placement in placement_maps.fallback_residential.get(f"{rows}x{cols}", []):
-                if touches_road_anchor_row(placement):
-                    continue
-                for cell in rectangle_border_cells(grid, placement["r"], placement["c"], rows, cols):
-                    if cell in reachable_allowed:
-                        protected.add(cell)
+        add_protected_reachable_border_cells(
+            protected,
+            grid,
+            reachable_allowed,
+            placement_maps.fallback_residential,
+            ((2, 2), (2, 3)),
+        )
 
     return protected
 
 
-def trim_road_eligible_cells(grid, reachable_allowed, protected_cells):
-    neighbors = {
+def build_reachable_neighbor_map(grid, reachable_allowed):
+    return {
         cell: [neighbor for neighbor in orthogonal_neighbors(grid, cell[0], cell[1]) if neighbor in reachable_allowed]
         for cell in reachable_allowed
     }
+
+
+def is_prunable_road_cell(cell, protected_cells, degrees):
+    return cell not in protected_cells and degrees[cell] <= 1
+
+
+def trim_road_eligible_cells(grid, reachable_allowed, protected_cells):
+    neighbors = build_reachable_neighbor_map(grid, reachable_allowed)
     degrees = {cell: len(adjacent) for cell, adjacent in neighbors.items()}
     removed = set()
-    queue = [cell for cell in reachable_allowed if cell not in protected_cells and degrees[cell] <= 1]
+    queue = [cell for cell in reachable_allowed if is_prunable_road_cell(cell, protected_cells, degrees)]
     index = 0
 
     while index < len(queue):
@@ -380,14 +415,14 @@ def trim_road_eligible_cells(grid, reachable_allowed, protected_cells):
         index += 1
         if cell in removed or cell in protected_cells:
             continue
-        if degrees[cell] > 1:
+        if not is_prunable_road_cell(cell, protected_cells, degrees):
             continue
         removed.add(cell)
         for neighbor in neighbors[cell]:
             if neighbor in removed:
                 continue
             degrees[neighbor] -= 1
-            if neighbor not in protected_cells and degrees[neighbor] <= 1:
+            if is_prunable_road_cell(neighbor, protected_cells, degrees):
                 queue.append(neighbor)
 
     return reachable_allowed - removed
@@ -556,17 +591,17 @@ def add_occupancy_constraints(model, cell_count, road_vars, service_vars, servic
         model.Add(sum(occupancy_terms[cell_id]) + road_vars[cell_id] <= 1)
 
 
+def add_candidate_border_access_constraints(model, road_vars, placement_vars, candidates):
+    for candidate_index, variable in enumerate(placement_vars):
+        candidate = candidates[candidate_index]
+        if touches_road_anchor_row(candidate):
+            continue
+        model.Add(sum(road_vars[cell_id] for cell_id in candidate["border"]) >= variable)
+
+
 def add_border_access_constraints(model, road_vars, service_vars, service_candidates, residential_vars, residential_candidates):
-    for candidate_index, variable in enumerate(service_vars):
-        border = service_candidates[candidate_index]["border"]
-        if touches_road_anchor_row(service_candidates[candidate_index]):
-            continue
-        model.Add(sum(road_vars[cell_id] for cell_id in border) >= variable)
-    for candidate_index, variable in enumerate(residential_vars):
-        border = residential_candidates[candidate_index]["border"]
-        if touches_road_anchor_row(residential_candidates[candidate_index]):
-            continue
-        model.Add(sum(road_vars[cell_id] for cell_id in border) >= variable)
+    add_candidate_border_access_constraints(model, road_vars, service_vars, service_candidates)
+    add_candidate_border_access_constraints(model, road_vars, residential_vars, residential_candidates)
 
 
 def build_border_access_capacity_coefficients(cell_count, candidates):
@@ -581,19 +616,45 @@ def build_border_access_capacity_coefficients(cell_count, candidates):
     return non_anchor_candidate_indices, coefficients
 
 
+def iter_positive_capacity_terms(coefficients):
+    items = coefficients.items() if isinstance(coefficients, dict) else enumerate(coefficients)
+    for cell_id, coefficient in items:
+        if coefficient > 0:
+            yield cell_id, coefficient
+
+
+def add_capacity_upper_bound_constraint(model, road_vars, lhs_terms, coefficients):
+    model.Add(
+        sum(lhs_terms)
+        <= sum(coefficient * road_vars[cell_id] for cell_id, coefficient in iter_positive_capacity_terms(coefficients))
+    )
+
+
+def merge_sparse_capacity_coefficients(*coefficient_maps):
+    combined_coefficients = defaultdict(int)
+    for coefficient_map in coefficient_maps:
+        for cell_id, coefficient in coefficient_map.items():
+            combined_coefficients[cell_id] += coefficient
+    return combined_coefficients
+
+
 def add_aggregated_border_capacity_constraints(model, road_vars, service_vars, service_candidates, residential_vars, residential_candidates):
     service_indices, service_coefficients = build_border_access_capacity_coefficients(len(road_vars), service_candidates)
     if service_indices:
-        model.Add(
-            sum(service_vars[candidate_index] for candidate_index in service_indices)
-            <= sum(coefficient * road_vars[cell_id] for cell_id, coefficient in enumerate(service_coefficients) if coefficient > 0)
+        add_capacity_upper_bound_constraint(
+            model,
+            road_vars,
+            [service_vars[candidate_index] for candidate_index in service_indices],
+            service_coefficients,
         )
 
     residential_indices, residential_coefficients = build_border_access_capacity_coefficients(len(road_vars), residential_candidates)
     if residential_indices:
-        model.Add(
-            sum(residential_vars[candidate_index] for candidate_index in residential_indices)
-            <= sum(coefficient * road_vars[cell_id] for cell_id, coefficient in enumerate(residential_coefficients) if coefficient > 0)
+        add_capacity_upper_bound_constraint(
+            model,
+            road_vars,
+            [residential_vars[candidate_index] for candidate_index in residential_indices],
+            residential_coefficients,
         )
 
     combined_indices = [(service_vars, candidate_index) for candidate_index in service_indices] + [
@@ -603,10 +664,18 @@ def add_aggregated_border_capacity_constraints(model, road_vars, service_vars, s
         combined_coefficients = [
             service_coefficients[cell_id] + residential_coefficients[cell_id] for cell_id in range(len(road_vars))
         ]
-        model.Add(
-            sum(variable_list[candidate_index] for variable_list, candidate_index in combined_indices)
-            <= sum(coefficient * road_vars[cell_id] for cell_id, coefficient in enumerate(combined_coefficients) if coefficient > 0)
+        add_capacity_upper_bound_constraint(
+            model,
+            road_vars,
+            [variable_list[candidate_index] for variable_list, candidate_index in combined_indices],
+            combined_coefficients,
         )
+
+
+def add_gate_presence_constraints(model, road_vars, placement_vars, gate_requirements):
+    for candidate_index, gate_ids in gate_requirements.items():
+        for gate_id in gate_ids:
+            model.Add(placement_vars[candidate_index] <= road_vars[gate_id])
 
 
 def add_gate_implied_access_constraints(
@@ -616,53 +685,41 @@ def add_gate_implied_access_constraints(
     residential_vars,
     gate_access_analysis: GateAccessAnalysis,
 ):
-    for candidate_index, gate_ids in gate_access_analysis.service_gate_requirements.items():
-        for gate_id in gate_ids:
-            model.Add(service_vars[candidate_index] <= road_vars[gate_id])
-
-    for candidate_index, gate_ids in gate_access_analysis.residential_gate_requirements.items():
-        for gate_id in gate_ids:
-            model.Add(residential_vars[candidate_index] <= road_vars[gate_id])
+    add_gate_presence_constraints(model, road_vars, service_vars, gate_access_analysis.service_gate_requirements)
+    add_gate_presence_constraints(model, road_vars, residential_vars, gate_access_analysis.residential_gate_requirements)
 
     for gate_id in gate_access_analysis.gate_downstream_cells:
         gated_service_indices = gate_access_analysis.service_candidate_indices_by_gate.get(gate_id, [])
         if gated_service_indices:
             service_coefficients = gate_access_analysis.service_region_coefficients_by_gate.get(gate_id, {})
-            model.Add(
-                sum(service_vars[candidate_index] for candidate_index in gated_service_indices)
-                <= sum(
-                    coefficient * road_vars[cell_id]
-                    for cell_id, coefficient in service_coefficients.items()
-                )
+            add_capacity_upper_bound_constraint(
+                model,
+                road_vars,
+                [service_vars[candidate_index] for candidate_index in gated_service_indices],
+                service_coefficients,
             )
 
         gated_residential_indices = gate_access_analysis.residential_candidate_indices_by_gate.get(gate_id, [])
         if gated_residential_indices:
             residential_coefficients = gate_access_analysis.residential_region_coefficients_by_gate.get(gate_id, {})
-            model.Add(
-                sum(residential_vars[candidate_index] for candidate_index in gated_residential_indices)
-                <= sum(
-                    coefficient * road_vars[cell_id]
-                    for cell_id, coefficient in residential_coefficients.items()
-                )
+            add_capacity_upper_bound_constraint(
+                model,
+                road_vars,
+                [residential_vars[candidate_index] for candidate_index in gated_residential_indices],
+                residential_coefficients,
             )
 
         if gated_service_indices or gated_residential_indices:
-            combined_coefficients = defaultdict(int)
-            for cell_id, coefficient in gate_access_analysis.service_region_coefficients_by_gate.get(gate_id, {}).items():
-                combined_coefficients[cell_id] += coefficient
-            for cell_id, coefficient in gate_access_analysis.residential_region_coefficients_by_gate.get(
-                gate_id, {}
-            ).items():
-                combined_coefficients[cell_id] += coefficient
-
-            model.Add(
-                sum(service_vars[candidate_index] for candidate_index in gated_service_indices)
-                + sum(residential_vars[candidate_index] for candidate_index in gated_residential_indices)
-                <= sum(
-                    coefficient * road_vars[cell_id]
-                    for cell_id, coefficient in combined_coefficients.items()
-                )
+            combined_coefficients = merge_sparse_capacity_coefficients(
+                gate_access_analysis.service_region_coefficients_by_gate.get(gate_id, {}),
+                gate_access_analysis.residential_region_coefficients_by_gate.get(gate_id, {}),
+            )
+            add_capacity_upper_bound_constraint(
+                model,
+                road_vars,
+                [service_vars[candidate_index] for candidate_index in gated_service_indices]
+                + [residential_vars[candidate_index] for candidate_index in gated_residential_indices],
+                combined_coefficients,
             )
 
 
@@ -674,18 +731,7 @@ def add_road_support_constraints(model, road_vars, road_neighbor_ids, root_vars)
         model.Add(variable <= sum(support_terms))
 
 
-def add_flow_connectivity_constraints(
-    model,
-    grid,
-    id_to_cell,
-    cell_to_id,
-    road_eligible_ids,
-    road_vars,
-    road_neighbor_ids,
-    root_vars,
-    eligible_row0_ids,
-    total_roads,
-):
+def build_directed_flow_network(model, grid, id_to_cell, cell_to_id, road_eligible_ids, road_vars):
     directed_edges = []
     directed_edge_vars = {}
     incoming = defaultdict(list)
@@ -709,6 +755,10 @@ def add_flow_connectivity_constraints(
             outgoing[cell_id].append(flow_var)
             incoming[neighbor_id].append(flow_var)
 
+    return directed_edges, directed_edge_vars, incoming, outgoing
+
+
+def add_opposing_flow_constraints(model, road_neighbor_ids, road_eligible_ids, directed_edge_vars, total_roads):
     for cell_id, neighbor_id in undirected_adjacent_pairs(road_neighbor_ids):
         if cell_id not in road_eligible_ids or neighbor_id not in road_eligible_ids:
             continue
@@ -716,24 +766,53 @@ def add_flow_connectivity_constraints(
         backward = directed_edge_vars[(neighbor_id, cell_id)]
         model.Add(forward + backward <= total_roads - 1)
 
+
+def create_root_supply_variables(model, eligible_row0_ids, root_vars, cell_count, total_roads):
     root_supply = {}
     for cell_id in eligible_row0_ids:
         supply_var = model.NewIntVar(0, cell_count, f"root_supply_{cell_id}")
         model.Add(supply_var <= cell_count * root_vars[cell_id])
         root_supply[cell_id] = supply_var
     model.Add(sum(root_supply.values()) == total_roads)
+    return root_supply
 
-    for cell_id in range(cell_count):
-        inflow = sum(incoming[cell_id])
+
+def add_flow_balance_constraints(model, road_vars, incoming, outgoing, root_vars, root_supply, total_roads):
+    for cell_id, road_var in enumerate(road_vars):
+        base_inflow = sum(incoming[cell_id])
         if cell_id in root_vars:
-            model.Add(sum(incoming[cell_id]) == 0).OnlyEnforceIf(root_vars[cell_id])
-        if cell_id in root_supply:
-            inflow += root_supply[cell_id]
+            model.Add(base_inflow == 0).OnlyEnforceIf(root_vars[cell_id])
+        inflow = base_inflow + root_supply[cell_id] if cell_id in root_supply else base_inflow
         model.Add(inflow <= total_roads)
-        model.Add(inflow == sum(outgoing[cell_id]) + road_vars[cell_id])
+        model.Add(inflow == sum(outgoing[cell_id]) + road_var)
         if cell_id not in root_supply:
-            model.Add(inflow >= road_vars[cell_id])
+            model.Add(inflow >= road_var)
 
+
+def add_flow_connectivity_constraints(
+    model,
+    grid,
+    id_to_cell,
+    cell_to_id,
+    road_eligible_ids,
+    road_vars,
+    road_neighbor_ids,
+    root_vars,
+    eligible_row0_ids,
+    total_roads,
+):
+    cell_count = len(road_vars)
+    directed_edges, directed_edge_vars, incoming, outgoing = build_directed_flow_network(
+        model,
+        grid,
+        id_to_cell,
+        cell_to_id,
+        road_eligible_ids,
+        road_vars,
+    )
+    add_opposing_flow_constraints(model, road_neighbor_ids, road_eligible_ids, directed_edge_vars, total_roads)
+    root_supply = create_root_supply_variables(model, eligible_row0_ids, root_vars, cell_count, total_roads)
+    add_flow_balance_constraints(model, road_vars, incoming, outgoing, root_vars, root_supply, total_roads)
     return directed_edges
 
 
@@ -843,6 +922,52 @@ def annotate_residential_population_upper_bounds(params, service_candidates, res
     return residential_candidates
 
 
+def build_residential_population_boost_expression(service_vars, service_candidates, service_cover_sets, candidate_cells):
+    boost_terms = []
+    for service_index, cover_zone in enumerate(service_cover_sets):
+        bonus = int(service_candidates[service_index]["bonus"] or 0)
+        if bonus == 0 or not (candidate_cells & cover_zone):
+            continue
+        boost_terms.append(bonus * service_vars[service_index])
+    return sum(boost_terms) if boost_terms else 0
+
+
+def create_residential_population_variables(
+    model,
+    service_vars,
+    service_candidates,
+    residential_vars,
+    residential_candidates,
+):
+    service_cover_sets = [candidate["effect_zone"] for candidate in service_candidates]
+    populations = []
+    for candidate_index, candidate in enumerate(residential_candidates):
+        population_upper_bound = int(candidate.get("populationUpperBound", candidate["max"]))
+        pop_var = model.NewIntVar(0, population_upper_bound, f"population_{candidate_index}")
+        boost_expr = build_residential_population_boost_expression(
+            service_vars,
+            service_candidates,
+            service_cover_sets,
+            set(candidate["cells"]),
+        )
+        model.Add(pop_var <= population_upper_bound * residential_vars[candidate_index])
+        model.Add(pop_var <= candidate["base"] * residential_vars[candidate_index] + boost_expr)
+        populations.append(pop_var)
+    return populations
+
+
+def create_summed_model_variable(model, upper_bound, name, terms):
+    total_var = model.NewIntVar(0, upper_bound, name)
+    model.Add(total_var == sum(terms))
+    return total_var
+
+
+def add_population_objective(model, cell_count, service_candidate_count, total_population, total_roads, total_services):
+    objective_policy = build_objective_policy(cell_count, service_candidate_count)
+    model.Maximize(total_population * objective_policy.population_weight - total_roads - total_services)
+    return objective_policy
+
+
 def add_population_model_and_objective(
     model,
     cell_count,
@@ -850,35 +975,31 @@ def add_population_model_and_objective(
     service_candidates,
     residential_vars,
     residential_candidates,
-    road_vars,
     total_roads,
     total_population_upper_bound,
 ):
-    service_cover_sets = [candidate["effect_zone"] for candidate in service_candidates]
-    populations = []
-    for candidate_index, candidate in enumerate(residential_candidates):
-        population_upper_bound = int(candidate.get("populationUpperBound", candidate["max"]))
-        pop_var = model.NewIntVar(0, population_upper_bound, f"population_{candidate_index}")
-        boost_terms = []
-        candidate_cells = set(candidate["cells"])
-        for service_index, cover_zone in enumerate(service_cover_sets):
-            bonus = int(service_candidates[service_index]["bonus"] or 0)
-            if bonus == 0 or not (candidate_cells & cover_zone):
-                continue
-            boost_terms.append(bonus * service_vars[service_index])
-        boost_expr = sum(boost_terms) if boost_terms else 0
-        model.Add(pop_var <= population_upper_bound * residential_vars[candidate_index])
-        model.Add(pop_var <= candidate["base"] * residential_vars[candidate_index] + boost_expr)
-        populations.append(pop_var)
-
-    total_population = model.NewIntVar(0, total_population_upper_bound, "total_population")
-    model.Add(total_population == sum(populations))
-
-    total_services = model.NewIntVar(0, len(service_candidates), "total_services")
-    model.Add(total_services == sum(service_vars))
-
-    objective_policy = build_objective_policy(cell_count, len(service_candidates))
-    model.Maximize(total_population * objective_policy.population_weight - total_roads - total_services)
+    populations = create_residential_population_variables(
+        model,
+        service_vars,
+        service_candidates,
+        residential_vars,
+        residential_candidates,
+    )
+    total_population = create_summed_model_variable(
+        model,
+        total_population_upper_bound,
+        "total_population",
+        populations,
+    )
+    total_services = create_summed_model_variable(model, len(service_candidates), "total_services", service_vars)
+    objective_policy = add_population_objective(
+        model,
+        cell_count,
+        len(service_candidates),
+        total_population,
+        total_roads,
+        total_services,
+    )
     return populations, total_population, total_services, objective_policy
 
 
@@ -902,35 +1023,43 @@ def prune_dominated_service_candidates(candidates, params):
     if not always_available_types:
         return candidates
 
-    candidates_by_signature = defaultdict(list)
-    for candidate in candidates:
-        signature = (candidate["r"], candidate["c"], candidate["rows"], candidate["cols"])
-        candidates_by_signature[signature].append(candidate)
-
     pruned = []
-    for group in candidates_by_signature.values():
+    for group in group_service_candidates_by_signature(candidates).values():
         for candidate in group:
-            dominated = False
-            for other in group:
-                if other is candidate:
-                    continue
-                if other["typeIndex"] not in always_available_types:
-                    continue
-                if other["bonus"] < candidate["bonus"]:
-                    continue
-                if not other["effect_zone"].issuperset(candidate["effect_zone"]):
-                    continue
-                if (
-                    other["bonus"] > candidate["bonus"]
-                    or other["effect_zone"] != candidate["effect_zone"]
-                    or other["typeIndex"] < candidate["typeIndex"]
-                ):
-                    dominated = True
-                    break
-            if not dominated:
+            if not is_dominated_service_candidate(candidate, group, always_available_types):
                 pruned.append(candidate)
 
     return pruned
+
+
+def service_candidate_signature(candidate):
+    return (candidate["r"], candidate["c"], candidate["rows"], candidate["cols"])
+
+
+def group_service_candidates_by_signature(candidates):
+    candidates_by_signature = defaultdict(list)
+    for candidate in candidates:
+        candidates_by_signature[service_candidate_signature(candidate)].append(candidate)
+    return candidates_by_signature
+
+
+def is_dominated_service_candidate(candidate, group, always_available_types):
+    for other in group:
+        if other is candidate:
+            continue
+        if other["typeIndex"] not in always_available_types:
+            continue
+        if other["bonus"] < candidate["bonus"]:
+            continue
+        if not other["effect_zone"].issuperset(candidate["effect_zone"]):
+            continue
+        if (
+            other["bonus"] > candidate["bonus"]
+            or other["effect_zone"] != candidate["effect_zone"]
+            or other["typeIndex"] < candidate["typeIndex"]
+        ):
+            return True
+    return False
 
 
 def service_type_priority(service_type):
@@ -948,10 +1077,8 @@ def residential_type_priority(residential_type):
     return int(residential_type["max"]) / area + int(residential_type["min"]) / area / 10
 
 
-def enumerate_service_candidates(grid, params, cell_to_id, placement_map):
-    candidates = []
-    service_types = params.get("serviceTypes") or []
-    type_order = sorted(
+def build_service_type_order(service_types):
+    return sorted(
         range(len(service_types)),
         key=lambda index: (
             -service_type_priority(service_types[index]),
@@ -962,7 +1089,66 @@ def enumerate_service_candidates(grid, params, cell_to_id, placement_map):
             index,
         ),
     )
-    for type_index in type_order:
+
+
+def materialize_candidate_geometry(grid, cell_to_id, placement, rows, cols):
+    r = int(placement["r"])
+    c = int(placement["c"])
+    cells = rectangle_cells(r, c, rows, cols)
+    if not all(cell in cell_to_id for cell in cells):
+        return None
+
+    border = [cell_to_id[cell] for cell in rectangle_border_cells(grid, r, c, rows, cols) if cell in cell_to_id]
+    if not border and not touches_road_anchor_row(placement):
+        return None
+
+    return {
+        "r": r,
+        "c": c,
+        "rows": rows,
+        "cols": cols,
+        "cells": [cell_to_id[cell] for cell in cells],
+        "border": sorted(set(border)),
+    }
+
+
+def build_service_candidate(grid, cell_to_id, placement, rows, cols, type_index, effect_range, bonus):
+    candidate = materialize_candidate_geometry(grid, cell_to_id, placement, rows, cols)
+    if candidate is None:
+        return None
+
+    candidate["range"] = effect_range
+    candidate["typeIndex"] = type_index
+    candidate["bonus"] = bonus
+    candidate["effect_zone"] = {
+        cell_to_id[cell]
+        for cell in service_effect_zone(grid, candidate["r"], candidate["c"], rows, cols, effect_range)
+        if cell in cell_to_id
+    }
+    return candidate
+
+
+def resolve_candidate_max_population(configured_max, base_population, total_bonus_upper_bound):
+    if configured_max is None:
+        return int(base_population) + total_bonus_upper_bound
+    return int(configured_max)
+
+
+def build_residential_candidate(grid, cell_to_id, placement, rows, cols, type_index, base_population, max_population):
+    candidate = materialize_candidate_geometry(grid, cell_to_id, placement, rows, cols)
+    if candidate is None:
+        return None
+
+    candidate["typeIndex"] = type_index
+    candidate["base"] = int(base_population)
+    candidate["max"] = int(max_population)
+    return candidate
+
+
+def enumerate_service_candidates(grid, params, cell_to_id, placement_map):
+    candidates = []
+    service_types = params.get("serviceTypes") or []
+    for type_index in build_service_type_order(service_types):
         service_type = service_types[type_index]
         avail = int(service_type["avail"])
         if avail <= 0:
@@ -971,28 +1157,18 @@ def enumerate_service_candidates(grid, params, cell_to_id, placement_map):
         bonus = int(service_type["bonus"])
         for rows, cols in service_type_orientations(service_type):
             for placement in placement_map.get(f"{rows}x{cols}", []):
-                r = placement["r"]
-                c = placement["c"]
-                cells = rectangle_cells(r, c, rows, cols)
-                if not all(cell in cell_to_id for cell in cells):
-                    continue
-                border = [cell_to_id[cell] for cell in rectangle_border_cells(grid, r, c, rows, cols) if cell in cell_to_id]
-                if not border and not touches_road_anchor_row(placement):
-                    continue
-                candidates.append(
-                    {
-                        "r": r,
-                        "c": c,
-                        "rows": rows,
-                        "cols": cols,
-                        "range": effect_range,
-                        "typeIndex": type_index,
-                        "bonus": bonus,
-                        "cells": [cell_to_id[cell] for cell in cells],
-                        "border": sorted(set(border)),
-                        "effect_zone": {cell_to_id[cell] for cell in service_effect_zone(grid, r, c, rows, cols, effect_range) if cell in cell_to_id},
-                    }
+                candidate = build_service_candidate(
+                    grid,
+                    cell_to_id,
+                    placement,
+                    rows,
+                    cols,
+                    type_index,
+                    effect_range,
+                    bonus,
                 )
+                if candidate is not None:
+                    candidates.append(candidate)
     return prune_dominated_service_candidates(candidates, params)
 
 
@@ -1005,32 +1181,26 @@ def enumerate_residential_candidates(grid, params, cell_to_id, total_bonus_upper
             avail = int(residential_type.get("avail", 0))
             if avail <= 0:
                 continue
+            base_population = int(residential_type["min"])
+            max_population = resolve_candidate_max_population(
+                residential_type.get("max"),
+                base_population,
+                total_bonus_upper_bound,
+            )
             for rows, cols in residential_type_orientations(residential_type):
                 for placement in placement_map.get(f"{rows}x{cols}", []):
-                    r = placement["r"]
-                    c = placement["c"]
-                    cells = rectangle_cells(r, c, rows, cols)
-                    if not all(cell in cell_to_id for cell in cells):
-                        continue
-                    border = [cell_to_id[cell] for cell in rectangle_border_cells(grid, r, c, rows, cols) if cell in cell_to_id]
-                    if not border and not touches_road_anchor_row(placement):
-                        continue
-                    max_pop = residential_type.get("max")
-                    if max_pop is None:
-                        max_pop = int(residential_type["min"]) + total_bonus_upper_bound
-                    candidates.append(
-                        {
-                            "r": r,
-                            "c": c,
-                            "rows": rows,
-                            "cols": cols,
-                            "typeIndex": type_index,
-                            "base": int(residential_type["min"]),
-                            "max": int(max_pop),
-                            "cells": [cell_to_id[cell] for cell in cells],
-                            "border": sorted(set(border)),
-                        }
+                    candidate = build_residential_candidate(
+                        grid,
+                        cell_to_id,
+                        placement,
+                        rows,
+                        cols,
+                        type_index,
+                        base_population,
+                        max_population,
                     )
+                    if candidate is not None:
+                        candidates.append(candidate)
         return candidates
 
     settings = params.get("residentialSettings") or {}
@@ -1042,33 +1212,20 @@ def enumerate_residential_candidates(grid, params, cell_to_id, total_bonus_upper
         key = f"{rows}x{cols}"
         size_setting = settings.get(key) or {}
         base = int(size_setting.get("min", base_pop))
-        max_pop = size_setting.get("max", fallback_max)
-        if max_pop is None:
-            max_pop = base + total_bonus_upper_bound
-        else:
-            max_pop = int(max_pop)
+        max_pop = resolve_candidate_max_population(size_setting.get("max", fallback_max), base, total_bonus_upper_bound)
         for placement in placement_map.get(f"{rows}x{cols}", []):
-            r = placement["r"]
-            c = placement["c"]
-            cells = rectangle_cells(r, c, rows, cols)
-            if not all(cell in cell_to_id for cell in cells):
-                continue
-            border = [cell_to_id[cell] for cell in rectangle_border_cells(grid, r, c, rows, cols) if cell in cell_to_id]
-            if not border and not touches_road_anchor_row(placement):
-                continue
-            candidates.append(
-                {
-                    "r": r,
-                    "c": c,
-                    "rows": rows,
-                    "cols": cols,
-                    "typeIndex": NO_RESIDENTIAL_TYPE,
-                    "base": base,
-                    "max": max_pop,
-                    "cells": [cell_to_id[cell] for cell in cells],
-                    "border": sorted(set(border)),
-                }
+            candidate = build_residential_candidate(
+                grid,
+                cell_to_id,
+                placement,
+                rows,
+                cols,
+                NO_RESIDENTIAL_TYPE,
+                base,
+                max_pop,
             )
+            if candidate is not None:
+                candidates.append(candidate)
     return candidates
 
 
@@ -1114,6 +1271,125 @@ def rectangle_intersects_window(candidate, neighborhood_window) -> bool:
     return candidate_top < bottom and candidate_bottom > top and candidate_left < right and candidate_right > left
 
 
+def extract_warm_start_hint_payloads(warm_start_hint):
+    solution = warm_start_hint.get("solution") or {}
+    road_keys = {
+        str(key)
+        for key in (warm_start_hint.get("roads") or warm_start_hint.get("roadKeys") or solution.get("roads") or [])
+    }
+    service_keys = {str(key) for key in warm_start_hint.get("serviceCandidateKeys") or []}
+    residential_keys = {str(key) for key in warm_start_hint.get("residentialCandidateKeys") or []}
+    service_hints = list(warm_start_hint.get("services") or solution.get("services") or [])
+    residential_hints = list(warm_start_hint.get("residentials") or solution.get("residentials") or [])
+    return solution, road_keys, service_keys, residential_keys, service_hints, residential_hints
+
+
+def build_residential_population_lookup(residential_hints):
+    residential_population_by_key = {}
+    for residential in residential_hints:
+        key = residential_candidate_key(residential)
+        residential_population_by_key[key] = int(residential.get("population", 0))
+    return residential_population_by_key
+
+
+def resolve_warm_start_selection(built: BuiltCpSatModel, warm_start_hint) -> ResolvedWarmStartSelection:
+    (
+        solution,
+        road_keys,
+        service_keys,
+        residential_keys,
+        service_hints,
+        residential_hints,
+    ) = extract_warm_start_hint_payloads(warm_start_hint)
+    selected_road_ids, selected_service_ids, selected_residential_ids = resolve_warm_start_hint_indices(
+        built,
+        road_keys,
+        service_keys,
+        residential_keys,
+        service_hints,
+        residential_hints,
+    )
+    return ResolvedWarmStartSelection(
+        solution=solution,
+        selected_road_ids=selected_road_ids,
+        selected_service_ids=selected_service_ids,
+        selected_residential_ids=selected_residential_ids,
+        residential_population_by_key=build_residential_population_lookup(residential_hints),
+    )
+
+
+def hinted_root_id_from_selected_roads(built: BuiltCpSatModel, selected_road_ids):
+    return next((cell_id for cell_id in built.row0_ids if cell_id in selected_road_ids), None)
+
+
+def resolve_warm_start_hint_indices(
+    built: BuiltCpSatModel,
+    road_keys,
+    service_keys,
+    residential_keys,
+    service_hints,
+    residential_hints,
+):
+    road_lookup = {f"{r},{c}": idx for idx, (r, c) in enumerate(built.allowed_cells)}
+    service_lookup = {
+        service_candidate_key(candidate): candidate_index
+        for candidate_index, candidate in enumerate(built.service_candidates)
+    }
+    residential_lookup = {
+        residential_candidate_key(candidate): candidate_index
+        for candidate_index, candidate in enumerate(built.residential_candidates)
+    }
+
+    selected_road_ids = {road_lookup[key] for key in road_keys if key in road_lookup}
+    selected_service_ids = select_hint_candidate_indices(service_hints, built.service_candidates, "service")
+    selected_service_ids.update({service_lookup[key] for key in service_keys if key in service_lookup})
+    selected_residential_ids = select_hint_candidate_indices(residential_hints, built.residential_candidates, "residential")
+    selected_residential_ids.update({residential_lookup[key] for key in residential_keys if key in residential_lookup})
+    return selected_road_ids, selected_service_ids, selected_residential_ids
+
+
+def create_road_network_variables(model, grid, allowed_cells, row0_ids, road_eligible_ids, id_to_cell, cell_to_id):
+    cell_count = len(allowed_cells)
+    road_vars = [model.NewBoolVar(f"road_{idx}") for idx in range(cell_count)]
+    for cell_id in range(cell_count):
+        if cell_id not in road_eligible_ids:
+            model.Add(road_vars[cell_id] == 0)
+
+    root_vars = {idx: model.NewBoolVar(f"root_{idx}") for idx in row0_ids if idx in road_eligible_ids}
+    model.Add(sum(root_vars.values()) == 1)
+    for idx, root_var in root_vars.items():
+        model.Add(root_var <= road_vars[idx])
+
+    eligible_row0_ids = [cell_id for cell_id in row0_ids if cell_id in road_eligible_ids]
+    for position, cell_id in enumerate(eligible_row0_ids):
+        for earlier_cell_id in eligible_row0_ids[:position]:
+            model.Add(root_vars[cell_id] + road_vars[earlier_cell_id] <= 1)
+
+    total_roads = model.NewIntVar(1, cell_count, "total_roads")
+    model.Add(total_roads == sum(road_vars))
+    road_neighbor_ids = build_road_neighbor_ids(grid, id_to_cell, cell_to_id, road_eligible_ids)
+    return road_vars, root_vars, eligible_row0_ids, total_roads, road_neighbor_ids
+
+
+def create_building_selection_variables(model, params, service_candidates, residential_candidates):
+    service_vars = [model.NewBoolVar(f"service_{candidate_index}") for candidate_index in range(len(service_candidates))]
+    max_services = infer_max_services(params)
+    if max_services is not None:
+        model.Add(sum(service_vars) <= max_services)
+    add_per_type_availability_constraints(model, service_vars, service_candidates, params.get("serviceTypes") or [])
+
+    residential_vars = [model.NewBoolVar(f"residential_{index}") for index in range(len(residential_candidates))]
+    available = params.get("availableBuildings") or {}
+    max_residentials = available.get("residentials", params.get("maxResidentials"))
+    if max_residentials is not None:
+        model.Add(sum(residential_vars) <= int(max_residentials))
+    residential_types = params.get("residentialTypes") or []
+    if residential_types:
+        add_per_type_availability_constraints(model, residential_vars, residential_candidates, residential_types)
+
+    return service_vars, residential_vars
+
+
 def build_model(grid, params) -> BuiltCpSatModel:
     if not grid or not grid[0]:
         fail("Grid must be non-empty.")
@@ -1138,23 +1414,15 @@ def build_model(grid, params) -> BuiltCpSatModel:
 
     model = cp_model.CpModel()
     cell_count = len(allowed_cells)
-    road_vars = [model.NewBoolVar(f"road_{idx}") for idx in range(cell_count)]
-    for cell_id in range(cell_count):
-        if cell_id not in road_eligible_ids:
-            model.Add(road_vars[cell_id] == 0)
-
-    root_vars = {idx: model.NewBoolVar(f"root_{idx}") for idx in row0_ids if idx in road_eligible_ids}
-    model.Add(sum(root_vars.values()) == 1)
-    for idx, root_var in root_vars.items():
-        model.Add(root_var <= road_vars[idx])
-    eligible_row0_ids = [cell_id for cell_id in row0_ids if cell_id in road_eligible_ids]
-    for position, cell_id in enumerate(eligible_row0_ids):
-        for earlier_cell_id in eligible_row0_ids[:position]:
-            model.Add(root_vars[cell_id] + road_vars[earlier_cell_id] <= 1)
-
-    total_roads = model.NewIntVar(1, cell_count, "total_roads")
-    model.Add(total_roads == sum(road_vars))
-    road_neighbor_ids = build_road_neighbor_ids(grid, id_to_cell, cell_to_id, road_eligible_ids)
+    road_vars, root_vars, eligible_row0_ids, total_roads, road_neighbor_ids = create_road_network_variables(
+        model,
+        grid,
+        allowed_cells,
+        row0_ids,
+        road_eligible_ids,
+        id_to_cell,
+        cell_to_id,
+    )
     gate_access_analysis = analyze_gate_access_constraints(
         road_eligible_ids,
         road_neighbor_ids,
@@ -1163,20 +1431,12 @@ def build_model(grid, params) -> BuiltCpSatModel:
         residential_candidates,
     )
 
-    service_vars = [model.NewBoolVar(f"service_{candidate_index}") for candidate_index in range(len(service_candidates))]
-    max_services = infer_max_services(params)
-    if max_services is not None:
-        model.Add(sum(service_vars) <= max_services)
-    add_per_type_availability_constraints(model, service_vars, service_candidates, params.get("serviceTypes") or [])
-
-    residential_vars = [model.NewBoolVar(f"residential_{index}") for index in range(len(residential_candidates))]
-    available = params.get("availableBuildings") or {}
-    max_residentials = available.get("residentials", params.get("maxResidentials"))
-    if max_residentials is not None:
-        model.Add(sum(residential_vars) <= int(max_residentials))
-    residential_types = params.get("residentialTypes") or []
-    if residential_types:
-        add_per_type_availability_constraints(model, residential_vars, residential_candidates, residential_types)
+    service_vars, residential_vars = create_building_selection_variables(
+        model,
+        params,
+        service_candidates,
+        residential_candidates,
+    )
 
     add_occupancy_constraints(model, cell_count, road_vars, service_vars, service_candidates, residential_vars, residential_candidates)
     add_border_access_constraints(model, road_vars, service_vars, service_candidates, residential_vars, residential_candidates)
@@ -1210,7 +1470,6 @@ def build_model(grid, params) -> BuiltCpSatModel:
         service_candidates,
         residential_vars,
         residential_candidates,
-        road_vars,
         total_roads,
         total_population_upper_bound,
     )
@@ -1293,6 +1552,107 @@ def apply_objective_lower_bound(model, built: BuiltCpSatModel, objective_lower_b
     model.Add(built.total_population >= lower_bound)
 
 
+def normalize_optional_positive_seconds(timeout_seconds):
+    if timeout_seconds in (None, ""):
+        return None
+    timeout_seconds = float(timeout_seconds)
+    if timeout_seconds <= 0:
+        return None
+    return timeout_seconds
+
+
+def configure_solver_hint_parameters(solver, warm_start_hint):
+    if not warm_start_hint:
+        return
+    repair_hint = warm_start_hint.get("repairHint")
+    if repair_hint not in (None, ""):
+        solver.parameters.repair_hint = bool(repair_hint)
+    fix_variables = warm_start_hint.get("fixVariablesToHintedValue")
+    if fix_variables not in (None, ""):
+        solver.parameters.fix_variables_to_their_hinted_value = bool(fix_variables)
+    hint_conflict_limit = warm_start_hint.get("hintConflictLimit")
+    if hint_conflict_limit not in (None, ""):
+        solver.parameters.hint_conflict_limit = int(hint_conflict_limit)
+
+
+def install_stop_signal_handlers(request_stop):
+    install_signal_handlers = threading.current_thread() is threading.main_thread()
+    previous_sigterm = signal.getsignal(signal.SIGTERM) if install_signal_handlers else None
+    previous_sigint = signal.getsignal(signal.SIGINT) if install_signal_handlers else None
+    if install_signal_handlers:
+        signal.signal(signal.SIGTERM, request_stop)
+        signal.signal(signal.SIGINT, request_stop)
+    return install_signal_handlers, previous_sigterm, previous_sigint
+
+
+def restore_stop_signal_handlers(install_signal_handlers, previous_sigterm, previous_sigint):
+    if not install_signal_handlers:
+        return
+    signal.signal(signal.SIGTERM, previous_sigterm)
+    signal.signal(signal.SIGINT, previous_sigint)
+
+
+def build_feasible_snapshot_payload(solution, built: BuiltCpSatModel, telemetry: CpSatTelemetry, stopped_by_user: bool):
+    return build_snapshot_response(
+        solution,
+        built,
+        "FEASIBLE",
+        telemetry,
+        stopped_by_user=stopped_by_user,
+    )
+
+
+def write_feasible_snapshot(snapshot_file_path, solution, built: BuiltCpSatModel, telemetry: CpSatTelemetry, stopped_by_user: bool):
+    if not snapshot_file_path:
+        return
+    write_snapshot(
+        snapshot_file_path,
+        build_feasible_snapshot_payload(solution, built, telemetry, stopped_by_user),
+    )
+
+
+def telemetry_objective_value_as_int(telemetry: CpSatTelemetry):
+    if telemetry.incumbent_objective_value is None:
+        return None
+    return int(round(telemetry.incumbent_objective_value))
+
+
+def build_completed_cp_sat_result(solver, built: BuiltCpSatModel, status_name: str, telemetry: CpSatTelemetry, stopped_by_user: bool):
+    response = build_solution_response(solver, built, status_name, telemetry)
+    response["stoppedByUser"] = stopped_by_user
+    return CpSatSolveResult(
+        status=status_name,
+        feasible=True,
+        objective_value=int(solver.ObjectiveValue()),
+        total_population=response["totalPopulation"],
+        response=response,
+        telemetry=telemetry,
+    )
+
+
+def build_interrupted_cp_sat_result(solution, built: BuiltCpSatModel, telemetry: CpSatTelemetry, stopped_by_user: bool):
+    response = build_feasible_snapshot_payload(solution, built, telemetry, stopped_by_user)
+    return CpSatSolveResult(
+        status="FEASIBLE",
+        feasible=True,
+        objective_value=telemetry_objective_value_as_int(telemetry),
+        total_population=response["totalPopulation"],
+        response=response,
+        telemetry=telemetry,
+    )
+
+
+def build_unsolved_cp_sat_result(status_name: str, telemetry: CpSatTelemetry):
+    return CpSatSolveResult(
+        status=status_name,
+        feasible=False,
+        objective_value=None,
+        total_population=None,
+        response=None,
+        telemetry=telemetry,
+    )
+
+
 def solve_single_cp_sat(grid, params, cp_sat_options, progress_emitter=None):
     built = build_model(grid, params)
     model = built.model
@@ -1304,8 +1664,12 @@ def solve_single_cp_sat(grid, params, cp_sat_options, progress_emitter=None):
     configure_solver_parameters(solver, cp_sat_options)
     stop_requested = False
     stopped_by_user = False
+    stopped_for_no_improvement = False
     stop_file_path = cp_sat_options.get("stopFilePath")
     snapshot_file_path = cp_sat_options.get("snapshotFilePath")
+    no_improvement_timeout_seconds = normalize_optional_positive_seconds(cp_sat_options.get("noImprovementTimeoutSeconds"))
+    no_improvement_timer = None
+    solve_finished = False
 
     def request_stop(_signum, _frame):
         nonlocal stop_requested
@@ -1313,6 +1677,29 @@ def solve_single_cp_sat(grid, params, cp_sat_options, progress_emitter=None):
 
     def should_stop() -> bool:
         return stop_requested or (bool(stop_file_path) and os.path.exists(stop_file_path))
+
+    def cancel_no_improvement_timer():
+        nonlocal no_improvement_timer
+        if no_improvement_timer is None:
+            return
+        no_improvement_timer.cancel()
+        no_improvement_timer = None
+
+    def stop_for_no_improvement():
+        nonlocal stopped_for_no_improvement
+        if no_improvement_timeout_seconds is None or solve_finished or should_stop() or stopped_for_no_improvement:
+            return
+        stopped_for_no_improvement = True
+        solver.StopSearch()
+
+    def schedule_no_improvement_timer():
+        nonlocal no_improvement_timer
+        if no_improvement_timeout_seconds is None:
+            return
+        cancel_no_improvement_timer()
+        no_improvement_timer = threading.Timer(no_improvement_timeout_seconds, stop_for_no_improvement)
+        no_improvement_timer.daemon = True
+        no_improvement_timer.start()
 
     class SnapshotTelemetryCollector(CpSatTelemetryCollector):
         def __init__(self):
@@ -1329,38 +1716,24 @@ def solve_single_cp_sat(grid, params, cp_sat_options, progress_emitter=None):
             super().on_solution_callback()
             self.latest_solution = collect_solution(self.Value, built)
             if snapshot_file_path:
-                write_snapshot(
+                write_feasible_snapshot(
                     snapshot_file_path,
-                    {
-                        **self.latest_solution,
-                        "status": "FEASIBLE",
-                        "stoppedByUser": False,
-                    },
+                    self.latest_solution,
+                    built,
+                    self.current_telemetry(),
+                    stopped_by_user=False,
                 )
             if should_stop():
                 stopped_by_user = True
                 self.StopSearch()
+                return
+            schedule_no_improvement_timer()
 
     telemetry_collector = SnapshotTelemetryCollector()
-    if warm_start_hint:
-        repair_hint = warm_start_hint.get("repairHint")
-        if repair_hint not in (None, ""):
-            solver.parameters.repair_hint = bool(repair_hint)
-        fix_variables = warm_start_hint.get("fixVariablesToHintedValue")
-        if fix_variables not in (None, ""):
-            solver.parameters.fix_variables_to_their_hinted_value = bool(fix_variables)
-        hint_conflict_limit = warm_start_hint.get("hintConflictLimit")
-        if hint_conflict_limit not in (None, ""):
-            solver.parameters.hint_conflict_limit = int(hint_conflict_limit)
+    configure_solver_hint_parameters(solver, warm_start_hint)
 
-    install_signal_handlers = threading.current_thread() is threading.main_thread()
-    previous_sigterm = signal.getsignal(signal.SIGTERM) if install_signal_handlers else None
-    previous_sigint = signal.getsignal(signal.SIGINT) if install_signal_handlers else None
+    install_signal_handlers, previous_sigterm, previous_sigint = install_stop_signal_handlers(request_stop)
     try:
-        if install_signal_handlers:
-            signal.signal(signal.SIGTERM, request_stop)
-            signal.signal(signal.SIGINT, request_stop)
-
         def best_bound_callback(bound):
             nonlocal stopped_by_user
             if should_stop():
@@ -1369,6 +1742,14 @@ def solve_single_cp_sat(grid, params, cp_sat_options, progress_emitter=None):
                 return
             if progress_emitter is not None:
                 telemetry_collector.on_best_bound_callback(bound)
+            if snapshot_file_path and telemetry_collector.latest_solution is not None:
+                write_feasible_snapshot(
+                    snapshot_file_path,
+                    telemetry_collector.latest_solution,
+                    built,
+                    telemetry_collector.current_telemetry(),
+                    stopped_by_user=False,
+                )
 
         solver.best_bound_callback = best_bound_callback
         if progress_emitter is not None and bool(cp_sat_options.get("logSearchProgress", False)):
@@ -1376,9 +1757,9 @@ def solve_single_cp_sat(grid, params, cp_sat_options, progress_emitter=None):
 
         status = solver.Solve(model, telemetry_collector)
     finally:
-        if install_signal_handlers:
-            signal.signal(signal.SIGTERM, previous_sigterm)
-            signal.signal(signal.SIGINT, previous_sigint)
+        solve_finished = True
+        cancel_no_improvement_timer()
+        restore_stop_signal_handlers(install_signal_handlers, previous_sigterm, previous_sigint)
 
     status_name = solver_status_name(status)
     telemetry = collect_cp_sat_telemetry(
@@ -1390,45 +1771,25 @@ def solve_single_cp_sat(grid, params, cp_sat_options, progress_emitter=None):
     )
 
     if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
-        response = build_solution_response(solver, built, status_name, telemetry)
-        response["stoppedByUser"] = stopped_by_user
-        return CpSatSolveResult(
-            status=status_name,
-            feasible=True,
-            objective_value=int(solver.ObjectiveValue()),
-            total_population=response["totalPopulation"],
-            response=response,
-            telemetry=telemetry,
-        )
+        return build_completed_cp_sat_result(solver, built, status_name, telemetry, stopped_by_user)
 
     if stopped_by_user and telemetry_collector.latest_solution is not None:
-        response = build_snapshot_response(
+        return build_interrupted_cp_sat_result(
             telemetry_collector.latest_solution,
             built,
-            "FEASIBLE",
             telemetry,
             stopped_by_user=True,
         )
-        objective_value = None
-        if telemetry.incumbent_objective_value is not None:
-            objective_value = int(round(telemetry.incumbent_objective_value))
-        return CpSatSolveResult(
-            status="FEASIBLE",
-            feasible=True,
-            objective_value=objective_value,
-            total_population=response["totalPopulation"],
-            response=response,
-            telemetry=telemetry,
+
+    if stopped_for_no_improvement and telemetry_collector.latest_solution is not None:
+        return build_interrupted_cp_sat_result(
+            telemetry_collector.latest_solution,
+            built,
+            telemetry,
+            stopped_by_user=False,
         )
 
-    return CpSatSolveResult(
-        status=status_name,
-        feasible=False,
-        objective_value=None,
-        total_population=None,
-        response=None,
-        telemetry=telemetry,
-    )
+    return build_unsolved_cp_sat_result(status_name, telemetry)
 
 def portfolio_worker_task(grid, params, worker_option, worker_index):
     solve_result = solve_single_cp_sat(grid, params, worker_option)
@@ -1500,60 +1861,36 @@ def solve_cp_sat_portfolio(grid, params, cp_sat_options, progress_emitter=None):
 def apply_warm_start_hints(model, built: BuiltCpSatModel, warm_start_hint):
     if not warm_start_hint:
         return
-
-    solution = warm_start_hint.get("solution") or {}
-    road_keys = {
-        str(key)
-        for key in (warm_start_hint.get("roads") or warm_start_hint.get("roadKeys") or solution.get("roads") or [])
-    }
-    service_keys = {str(key) for key in warm_start_hint.get("serviceCandidateKeys") or []}
-    residential_keys = {str(key) for key in warm_start_hint.get("residentialCandidateKeys") or []}
-    service_hints = list(warm_start_hint.get("services") or solution.get("services") or [])
-    residential_hints = list(warm_start_hint.get("residentials") or solution.get("residentials") or [])
-    residential_population_by_key = {}
-    for residential in residential_hints:
-        key = residential_candidate_key(residential)
-        residential_population_by_key[key] = int(residential.get("population", 0))
-
-    road_lookup = {f"{r},{c}": idx for idx, (r, c) in enumerate(built.allowed_cells)}
-    service_lookup = {
-        service_candidate_key(candidate): candidate_index
-        for candidate_index, candidate in enumerate(built.service_candidates)
-    }
-    residential_lookup = {
-        residential_candidate_key(candidate): candidate_index
-        for candidate_index, candidate in enumerate(built.residential_candidates)
-    }
-
-    selected_road_ids = {road_lookup[key] for key in road_keys if key in road_lookup}
-    selected_service_ids = select_hint_candidate_indices(service_hints, built.service_candidates, "service")
-    selected_service_ids.update({service_lookup[key] for key in service_keys if key in service_lookup})
-    selected_residential_ids = select_hint_candidate_indices(residential_hints, built.residential_candidates, "residential")
-    selected_residential_ids.update({residential_lookup[key] for key in residential_keys if key in residential_lookup})
+    warm_start_selection = resolve_warm_start_selection(built, warm_start_hint)
 
     for cell_id, variable in enumerate(built.road_vars):
-        model.AddHint(variable, 1 if cell_id in selected_road_ids else 0)
+        model.AddHint(variable, 1 if cell_id in warm_start_selection.selected_road_ids else 0)
 
-    hinted_root_id = next((cell_id for cell_id in built.row0_ids if cell_id in selected_road_ids), None)
+    hinted_root_id = hinted_root_id_from_selected_roads(built, warm_start_selection.selected_road_ids)
     if hinted_root_id is not None:
         for cell_id, variable in built.root_vars.items():
             model.AddHint(variable, 1 if cell_id == hinted_root_id else 0)
 
     for candidate_index, variable in enumerate(built.service_vars):
-        model.AddHint(variable, 1 if candidate_index in selected_service_ids else 0)
+        model.AddHint(variable, 1 if candidate_index in warm_start_selection.selected_service_ids else 0)
 
     for candidate_index, variable in enumerate(built.residential_vars):
-        model.AddHint(variable, 1 if candidate_index in selected_residential_ids else 0)
+        model.AddHint(variable, 1 if candidate_index in warm_start_selection.selected_residential_ids else 0)
         candidate = built.residential_candidates[candidate_index]
         key = residential_candidate_key(candidate)
-        population = residential_population_by_key.get(key, 0)
+        population = warm_start_selection.residential_population_by_key.get(key, 0)
         model.AddHint(built.populations[candidate_index], population)
 
-    if selected_road_ids:
-        model.AddHint(built.total_roads, len(selected_road_ids))
-    if selected_service_ids or service_hints or service_keys:
-        model.AddHint(built.total_services, len(selected_service_ids))
-    hinted_total_population = warm_start_hint.get("totalPopulation", solution.get("totalPopulation"))
+    if warm_start_selection.selected_road_ids:
+        model.AddHint(built.total_roads, len(warm_start_selection.selected_road_ids))
+    if (
+        warm_start_selection.selected_service_ids
+        or warm_start_hint.get("services")
+        or warm_start_hint.get("serviceCandidateKeys")
+        or warm_start_selection.solution.get("services")
+    ):
+        model.AddHint(built.total_services, len(warm_start_selection.selected_service_ids))
+    hinted_total_population = warm_start_hint.get("totalPopulation", warm_start_selection.solution.get("totalPopulation"))
     if hinted_total_population is not None:
         hinted_total_population = int(hinted_total_population)
         hinted_total_population = max(0, min(hinted_total_population, built.total_population_upper_bound))
@@ -1577,34 +1914,7 @@ def apply_local_neighborhood_fixing(model, built: BuiltCpSatModel, warm_start_hi
     if rows <= 0 or cols <= 0:
         return
 
-    solution = warm_start_hint.get("solution") or {}
-    road_keys = {
-        str(key)
-        for key in (warm_start_hint.get("roads") or warm_start_hint.get("roadKeys") or solution.get("roads") or [])
-    }
-    service_keys = {str(key) for key in warm_start_hint.get("serviceCandidateKeys") or []}
-    residential_keys = {str(key) for key in warm_start_hint.get("residentialCandidateKeys") or []}
-    service_hints = list(warm_start_hint.get("services") or solution.get("services") or [])
-    residential_hints = list(warm_start_hint.get("residentials") or solution.get("residentials") or [])
-
-    road_lookup = {f"{r},{c}": idx for idx, (r, c) in enumerate(built.allowed_cells)}
-    selected_road_ids = {road_lookup[key] for key in road_keys if key in road_lookup}
-    selected_service_ids = select_hint_candidate_indices(service_hints, built.service_candidates, "service")
-    selected_service_ids.update(
-        {
-            candidate_index
-            for candidate_index, candidate in enumerate(built.service_candidates)
-            if service_candidate_key(candidate) in service_keys
-        }
-    )
-    selected_residential_ids = select_hint_candidate_indices(residential_hints, built.residential_candidates, "residential")
-    selected_residential_ids.update(
-        {
-            candidate_index
-            for candidate_index, candidate in enumerate(built.residential_candidates)
-            if residential_candidate_key(candidate) in residential_keys
-        }
-    )
+    warm_start_selection = resolve_warm_start_selection(built, warm_start_hint)
 
     top = int(neighborhood_window.get("top", 0))
     left = int(neighborhood_window.get("left", 0))
@@ -1615,24 +1925,27 @@ def apply_local_neighborhood_fixing(model, built: BuiltCpSatModel, warm_start_hi
         r, c = built.allowed_cells[cell_id]
         if top <= r < bottom and left <= c < right:
             continue
-        model.Add(variable == (1 if cell_id in selected_road_ids else 0))
+        model.Add(variable == (1 if cell_id in warm_start_selection.selected_road_ids else 0))
 
-    hinted_root_id = next((cell_id for cell_id in built.row0_ids if cell_id in selected_road_ids), None)
+    hinted_root_id = hinted_root_id_from_selected_roads(built, warm_start_selection.selected_road_ids)
     if hinted_root_id is not None:
         for cell_id, variable in built.root_vars.items():
+            r, c = built.allowed_cells[cell_id]
+            if top <= r < bottom and left <= c < right:
+                continue
             model.Add(variable == (1 if cell_id == hinted_root_id else 0))
 
     for candidate_index, variable in enumerate(built.service_vars):
         candidate = built.service_candidates[candidate_index]
         if rectangle_intersects_window(candidate, neighborhood_window):
             continue
-        model.Add(variable == (1 if candidate_index in selected_service_ids else 0))
+        model.Add(variable == (1 if candidate_index in warm_start_selection.selected_service_ids else 0))
 
     for candidate_index, variable in enumerate(built.residential_vars):
         candidate = built.residential_candidates[candidate_index]
         if rectangle_intersects_window(candidate, neighborhood_window):
             continue
-        model.Add(variable == (1 if candidate_index in selected_residential_ids else 0))
+        model.Add(variable == (1 if candidate_index in warm_start_selection.selected_residential_ids else 0))
 
 
 def solve():

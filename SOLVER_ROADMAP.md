@@ -2,167 +2,177 @@
 
 ## Goal
 
-Maximize solution quality per minute, not just eventual optimality.
+Maximize solution quality per minute while keeping the solver workflow reliable, observable, and easy to use from the planner.
 
-The target runtime strategy is still:
+The target runtime strategy is:
 
 1. Get a strong incumbent fast with `greedy`
 2. Improve that incumbent cheaply with `LNS`
-3. Use `CP-SAT` as a bounded deep-improvement pass
+3. Use `CP-SAT` as a bounded deep-improvement or proof pass
+4. Wrap that staged flow in a planner-visible `auto` controller that can hand a stalled exact run back to `LNS` and then return to `CP-SAT`
+5. Make that incumbent-first flow the planner default, not just an expert workflow
 
 ## Current Status
 
 ### Done
 
-#### 1. LNS is shipped
+#### 1. The three-stage solver stack is shipped
 
 Status: Completed
 
 What exists today:
-- `LNS` is available in the backend and the planner UI.
-- It can start from a greedy incumbent or from the displayed output as a seed.
-- It fixes everything outside the active neighborhood and repairs the window with CP-SAT.
-- It keeps the best known incumbent and supports stop / snapshot flow.
+- `greedy`, `LNS`, and `CP-SAT` are all available in the backend, CLI, and planner.
+- `LNS` can start from either a greedy incumbent or a displayed saved-layout seed.
+- `LNS` keeps the best known incumbent, supports stop / snapshot recovery, and treats recoverable repair misses as `no improvement` instead of a full run failure.
+- `CP-SAT` supports bounded exact runs, continuation hints, lower bounds, no-improvement cutoffs, and the async solve path used by the runtime-facing integrations.
 
-Important implementation notes:
-- LNS repair currently forces CP-SAT to a single worker because the local OR-Tools runtime was crashing in the multi-worker hint-repair path.
-- LNS also includes deterministic same-cell upgrade passes for dominant service and residential replacements before and after repair.
-- Repair misses are treated as `no improvement`, not a full LNS failure, when a recoverable incumbent is available.
-
-#### 2. Solver architecture foundation is in place
+#### 2. Incumbent-first planner workflow scaffolding is in place
 
 Status: Completed
 
 What exists today:
-- optimizer registry / dispatch boundary
-- shared background solve runner pattern
-- web job management with snapshot recovery
-- planner UI support for `greedy`, `LNS`, and `CP-SAT`
+- planner runtime presets for `Fast Greedy`, `LNS Improve`, and `Bounded CP-SAT`
+- automatic reuse of displayed layouts as the default `LNS` seed or `CP-SAT` hint when fingerprints match
+- background solve jobs with live snapshots, stop support, and persisted progress logs
 
-This is enough to keep extending the solver stack without reopening the earlier integration problems.
+This means the intended `greedy -> LNS -> bounded CP-SAT` flow is already supported in the product, even though it is not yet enforced as the main default runtime policy.
+
+#### 3. Reproducibility and exact-run visibility are shipped
+
+Status: Completed
+
+What exists today:
+- `greedy.randomSeed` support in the solver, CLI, and planner
+- streamed `CP-SAT` telemetry for incumbent, best bound, gap, wall time, and time since last improvement
+- planner and CLI progress surfaces for long exact runs
+- a fixed `CP-SAT` benchmark corpus plus async benchmark harness for reproducible comparisons
+
+This removes a lot of the earlier guesswork around runtime tuning.
+
+#### 4. LNS neighborhood selection is much stronger than the original baseline
+
+Status: Completed
+
+What exists today:
+- focused anchors for weak services, high-headroom residentials, and frontier congestion
+- adaptive escalation from local windows to larger repair bands and final broad repair passes
+- row-0-aware repair windows so anchor connectivity can still be repaired
+- deterministic same-cell service and residential upgrade passes around repair
+
+What is still not done:
+- time-based LNS stopping
+- explicit budget partitioning between seed construction, focused repair, and escalated repair
+
+#### 5. Solver input hardening for reusable LNS seeds is now in place
+
+Status: Completed in the current branch
+
+What exists today:
+- shared `solverInputValidation` helpers now materialize and validate client-supplied `LNS` seed hints in one place
+- malformed seed payloads fail with typed `Invalid solver input:` errors
+- invalid-but-well-formed seeds are rejected before solve execution
+- web solve routes preserve those failures as clean `400` responses instead of generic internal errors
+
+This is important because saved layouts are now a real runtime input, not just a UI convenience.
 
 ## Next Priorities
 
-### 1. Change the default runtime policy
+### 1. Ship an `auto` solver and make it the default runtime policy
 
 Expected impact: Highest near-term
 
 Why:
-- long CP-SAT runs without incumbent improvement are poor quality-per-minute
-- the planner should bias toward fast useful answers, not long silent searches
+- the solver stack now has all the pieces needed for staged incumbent-first solving, but users still have to drive the handoff manually
+- long `CP-SAT` runs can still get trapped in a stale incumbent basin where a fresh `LNS` pass is a better next move than more exact time
+- the best product experience is one solve button that owns the sequence instead of asking the user to choose the next stage
 
-Target policy:
-- `greedy` first
-- `LNS` second
-- `CP-SAT` only with a short budget or no-improvement cutoff
-
-Concrete work:
-- add recommended presets in the planner
-- add a no-improvement timeout for CP-SAT runs
-- make the default path favor incumbent-first solving
-
-### 2. Make greedy reproducible with a seed
-
-Expected impact: High for measurement quality
-
-Why:
-- greedy restarts still use unseeded randomness
-- without reproducibility, it is hard to compare runtime policies, LNS changes, or CP-SAT tuning fairly
+Target v1 policy:
+- start with `greedy -> LNS -> CP-SAT`
+- after that, keep alternating `LNS -> CP-SAT` while either stage produces a meaningful improvement
+- evaluate improvement at the cycle level, not per-stage, so `LNS` plus `CP-SAT` can count together
+- stop after two consecutive weak `LNS -> CP-SAT` cycles whose combined improvement is less than `0.5%`
+- also stop on `OPTIMAL`, user cancel, or a global wall-clock safety cap
+- generate a fresh random seed for every stochastic stage run and persist those generated seeds in the progress log
 
 Concrete work:
-- add `randomSeed` support for greedy restart shuffling
-- expose it in CLI and planner state
-- use it in solver benchmarks and regression comparisons
+- add optimizer `auto` to the shared type system, registry, planner, and CLI
+- implement a background-first stage orchestrator instead of trying to splice `LNS` into one `CP-SAT` process
+- reuse `LNS` seed hints plus `CP-SAT` warm starts / lower bounds between stages
+- add stage-aware progress surfaces, runtime messages, and persisted solve-log metadata
+- make `auto` the main planner path and keep raw `CP-SAT` as an advanced exact mode
 
-### 3. Expose CP-SAT progress signals
+### 2. Finish LNS stopping and budget policy
 
 Expected impact: High
 
 Why:
-- a long CP-SAT run can look stalled even when it is improving bounds
-- we need to distinguish `no new incumbent` from `no progress at all`
-
-Metrics to expose:
-- best bound
-- incumbent value
-- gap
-- time since last incumbent improvement
+- neighborhood ranking and escalation are already much better, but run control is still mostly iteration-count based
+- quality-per-minute depends on spending repair time where it is still productive
 
 Concrete work:
-- extend CP-SAT status reporting
-- thread those metrics through the job API
-- show them in the planner while a run is active
+- add `stop after no improvement for T seconds` to `LNS`
+- split budget intentionally between greedy seeding, focused windows, and escalated windows
+- expose clearer per-iteration outcome summaries in runtime status surfaces
+- compare LNS budget policies on the benchmark corpus instead of tuning by anecdote
 
-### 4. Improve LNS neighborhoods and stopping rules
-
-Expected impact: High
-
-Why:
-- LNS is working, but current neighborhoods are still fairly simple
-- current stopping is iteration-based and can miss better quality-per-minute policies
-
-Targets:
-- prioritize weak residential clusters with the largest `max - current` gap
-- prioritize service-heavy low-payoff districts
-- prioritize road-dense low-population regions
-- add adaptive windows after each improvement
-- stop after no improvement for `T` seconds, not only after `N` stale neighborhoods
-- split budget more intentionally between seeding and repair
-
-### 5. Expose richer CP-SAT search parameters
+### 3. Expose shipped single-machine CP-SAT portfolio search in the planner
 
 Expected impact: Medium-high
 
 Why:
-- before building portfolio or distributed orchestration, we should use more of the official CP-SAT search surface
+- single-machine portfolio search already exists in the exact solver, async APIs, CLI, and benchmark harness
+- the planner still presents only the single-run `CP-SAT` workflow cleanly
 
-Candidates:
-- relative / absolute gap limits
-- worker allocation controls
-- shared-tree style settings where stable
-- safer LNS-related CP-SAT settings that do not reintroduce the local crash path
+Concrete work:
+- planner controls for worker count, explicit seeds, and per-worker budget
+- aggregated worker progress and selected-worker summaries in the result UI
+- coordinator-side stop rules for lagging workers
 
-## Later Priorities
-
-### 6. Add single-machine CP-SAT portfolio search
+### 4. Extend typed validation to the rest of the reusable solver inputs
 
 Expected impact: Medium-high
 
 Why:
-- several short CP-SAT jobs with different seeds / parameter mixes may beat one long run
-- this is still much cheaper than true distributed solving
+- reusable planner state now includes manual layouts, `CP-SAT` hints, saved solutions, and increasingly rich runtime options
+- the new `LNS` seed validation path is the right pattern, but it only covers one class of reusable inputs so far
 
-Important prerequisite:
-- this needs a portfolio coordinator, not just more workers
-- today one request maps to one background solve handle, so `shared best incumbent` and aggregated progress are not available yet
+Concrete work:
+- validate `CP-SAT` warm-start / continuation payloads with the same typed error model
+- validate more reusable saved-layout and manual-layout payloads at the API boundary
+- keep planner-side reuse flows aligned with backend validation rules so failures stay explainable
 
-Planned shape:
-- 2-4 parallel workers
-- shared best incumbent at the coordinator layer
-- stop laggards on timeout or no-improvement
-- expose aggregated best result and worker progress in the API
-
-### 7. Split the greedy solver into reusable phases
+### 5. Split the greedy solver into cleaner reusable phases
 
 Expected impact: Medium
 
 Why:
-- LNS and future metaheuristics should be able to reuse construction, scoring, and repair logic more directly
-- today the solver still carries a lot of flow in one large implementation
+- reproducibility is in place, but the greedy flow still owns a lot of policy in one implementation
+- future metaheuristics and learned-guidance work want clearer reuse seams
 
 Desired seams:
 - candidate enumeration
-- greedy construction
+- constructive placement
 - local improvement
 - snapshot / finalization
+- phase-level measurement hooks
 
-### 8. Consider multi-machine distributed CP-SAT last
+## Later Priorities
+
+### 6. Keep distributed CP-SAT behind single-machine portfolio and workflow improvements
 
 Expected impact: Low near-term, high implementation cost
 
 Why:
-- it is the most complex path
-- the likely better near-term return is still `LNS + better runtime policy + portfolio CP-SAT`
+- the likely better near-term return is still better runtime policy, stronger `LNS`, and planner-visible portfolio search
+- distributed exact solving adds the most operational complexity for the least immediate product leverage
+
+### 7. Keep learned guidance separate from the core runtime roadmap
+
+Expected impact: Strategic, not near-term
+
+Why:
+- the solver stack is finally measurable enough to support learned guidance work
+- that work should stay tracked in [LEARNED_GUIDANCE_ROADMAP.md](./LEARNED_GUIDANCE_ROADMAP.md), not mixed into the runtime-execution roadmap
 
 ## LNS Follow-Up Plan
 
@@ -181,13 +191,14 @@ Delivered:
 
 ### Phase B: Better neighborhoods
 
-Status: Next
+Status: Done for the baseline target
 
-Targets:
-- weak residential clusters
-- service-heavy low-payoff districts
-- road-dense low-population regions
-- adaptive windows after each improvement
+Delivered:
+- weak residential cluster targeting
+- service-heavy low-payoff anchor targeting
+- road / frontier congestion targeting
+- adaptive neighborhood escalation after stagnation
+- broad final repair passes within the configured stale budget
 
 ### Phase C: Better stopping and budgeting
 
@@ -196,19 +207,28 @@ Status: Next
 Targets:
 - stop after `N` non-improving neighborhoods
 - stop after no improvement for `T` seconds
-- budget split between seed and repair phases
+- intentional budget split between seed and repair phases
+
+Note:
+- the `N`-based stale-iteration stop already exists
+- the missing piece is a stronger time-based runtime policy layered on top
 
 ### Phase D: Better run visibility
 
-Status: Next
+Status: Partially done
 
-Targets:
-- incumbent improvement history during the run
-- better LNS progress messaging
-- clearer explanation of whether the run started from greedy or a displayed seed
+Delivered:
+- clearer planner messaging about greedy seed vs displayed seed
+- live best-so-far progress log updates
+- exact-run bound / gap / improvement-lag visibility
+
+Remaining:
+- clearer per-neighborhood `LNS` progress summaries
+- better explanation of why a repair step was skipped, neutral, or improving
 
 ## Notes
 
-- CP-SAT warm starts are useful, but they are still global solves unless we explicitly fix the outside-of-neighborhood assignment.
-- The current local OR-Tools runtime has a known crash path around `repair_hint` / multi-worker repair, so roadmap work should preserve the current safer LNS repair behavior unless that runtime issue is proven fixed.
-- Distributed solving should stay a later optimization layer, not the first answer to quality-per-minute.
+- `CP-SAT` warm starts are still global solves unless we explicitly fix the outside-of-neighborhood assignment.
+- The current local OR-Tools runtime still has a known crash path around `repair_hint` plus multi-worker repair, so roadmap work should preserve the safer current `LNS` repair behavior unless that runtime issue is proven fixed.
+- After `auto` is shipped, the next exact-solver UX step is planner-visible single-machine portfolio search, not distributed solving.
+- Input validation now matters as much as solver quality because the planner reuses more serialized solver state across runs.

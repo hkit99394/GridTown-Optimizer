@@ -24,11 +24,12 @@
       getOptimizerLabel,
       refreshResultOverlay,
       renderExpansionAdvice,
+      setSolveState,
       updatePayloadPreview,
     } = callbacks;
 
     function applySolveRequestToPlanner(request, options = {}) {
-      const { preserveCpSatRuntime = true, optimizer = "cp-sat" } = options;
+      const { preserveCpSatRuntime = true, optimizer = "auto" } = options;
       if (!isGridLike(request?.grid) || typeof request?.params !== "object" || request.params == null) {
         throw new Error("That saved layout does not include a usable planner configuration.");
       }
@@ -51,6 +52,7 @@
       if (params.greedy) {
         state.greedy = {
           ...state.greedy,
+          randomSeed: "",
           ...params.greedy,
         };
       }
@@ -60,14 +62,24 @@
           ...params.lns,
         };
       }
+      state.auto = {
+        ...(state.auto ?? { wallClockLimitSeconds: "" }),
+        wallClockLimitSeconds: params.auto?.wallClockLimitSeconds != null ? String(params.auto.wallClockLimitSeconds) : "",
+      };
 
       if (!preserveCpSatRuntime && params.cpSat) {
         state.cpSat = {
           ...state.cpSat,
+          randomSeed: "",
           ...(params.cpSat.timeLimitSeconds != null ? { timeLimitSeconds: String(params.cpSat.timeLimitSeconds) } : {}),
+          ...(params.cpSat.noImprovementTimeoutSeconds != null
+            ? { noImprovementTimeoutSeconds: String(params.cpSat.noImprovementTimeoutSeconds) }
+            : {}),
+          ...(params.cpSat.randomSeed != null ? { randomSeed: String(params.cpSat.randomSeed) } : {}),
           ...(params.cpSat.numWorkers != null ? { numWorkers: params.cpSat.numWorkers } : {}),
           ...(params.cpSat.logSearchProgress != null ? { logSearchProgress: Boolean(params.cpSat.logSearchProgress) } : {}),
           ...(params.cpSat.pythonExecutable != null ? { pythonExecutable: String(params.cpSat.pythonExecutable) } : {}),
+          ...(params.cpSat.useDisplayedHint != null ? { useDisplayedHint: Boolean(params.cpSat.useDisplayedHint) } : {}),
         };
       }
 
@@ -97,12 +109,16 @@
 
     function setOptimizer(optimizer) {
       state.optimizer = normalizeOptimizer(optimizer);
+      const showAutoPanels = state.optimizer === "auto";
       for (const button of elements.solverToggle.querySelectorAll("button")) {
         button.classList.toggle("active", button.dataset.optimizer === state.optimizer);
       }
-      elements.greedyPanel.hidden = state.optimizer !== "greedy";
-      elements.lnsPanel.hidden = state.optimizer !== "lns";
-      elements.cpSatPanel.hidden = state.optimizer !== "cp-sat";
+      if (elements.autoPanel) {
+        elements.autoPanel.hidden = !showAutoPanels;
+      }
+      elements.greedyPanel.hidden = !showAutoPanels && state.optimizer !== "greedy";
+      elements.lnsPanel.hidden = !showAutoPanels && state.optimizer !== "lns";
+      elements.cpSatPanel.hidden = !showAutoPanels && state.optimizer !== "cp-sat";
       syncSolverFields();
       updateSummary();
     }
@@ -161,7 +177,9 @@
       if (!gridElement) return;
       const cols = Number(gridElement.dataset.cols || 0);
       if (!cols) return;
-      const frame = gridElement.parentElement;
+      const frame = typeof gridElement.closest === "function"
+        ? (gridElement.closest(".matrix-frame, .grid-frame") || gridElement.parentElement)
+        : gridElement.parentElement;
       const layoutMode = gridElement.dataset.layoutMode || "adaptive";
       const { size, gap } = getMatrixMetrics(cols, frame?.clientWidth ?? 0, layoutMode);
       gridElement.style.setProperty("--matrix-cell-size", `${size}px`);
@@ -256,8 +274,69 @@
       updatePayloadPreview();
     }
 
+    function applyRuntimePreset(kind) {
+      const defaultNeighborhoodRows = Math.max(1, Math.ceil(state.grid.length / 2));
+      const defaultNeighborhoodCols = Math.max(1, Math.ceil((state.grid[0]?.length ?? 1) / 2));
+
+      if (kind === "fast-greedy") {
+        state.greedy = {
+          ...state.greedy,
+          localSearch: true,
+          restarts: 8,
+          serviceRefineIterations: 2,
+          serviceRefineCandidateLimit: 40,
+          exhaustiveServiceSearch: false,
+          serviceExactPoolLimit: 16,
+          serviceExactMaxCombinations: 4000,
+        };
+        elements.runtimePresetStatus.textContent =
+          'Applied "Fast Greedy": fast standalone seed settings for quick legal layouts, seed-quality checks, or standalone heuristic runs.';
+      } else if (kind === "lns-improve") {
+        state.lns = {
+          ...state.lns,
+          iterations: 16,
+          maxNoImprovementIterations: 4,
+          neighborhoodRows: defaultNeighborhoodRows,
+          neighborhoodCols: defaultNeighborhoodCols,
+          repairTimeLimitSeconds: 5,
+          useDisplayedSeed: true,
+        };
+        elements.runtimePresetStatus.textContent =
+          'Applied "LNS Improve": use the displayed layout as the seed and spend the budget on neighborhood repair.';
+      } else if (kind === "bounded-cp-sat") {
+        state.cpSat = {
+          ...state.cpSat,
+          timeLimitSeconds: "30",
+          noImprovementTimeoutSeconds: "10",
+          numWorkers: 8,
+          useDisplayedHint: true,
+        };
+        elements.runtimePresetStatus.textContent =
+          'Applied "Bounded CP-SAT": 30s max runtime with a 10s no-improvement cutoff and displayed-layout hinting.';
+      } else {
+        return;
+      }
+
+      const optimizer =
+        kind === "fast-greedy" ? "greedy"
+        : kind === "lns-improve" ? "lns"
+        : "cp-sat";
+      setOptimizer(optimizer);
+      syncSolverFields();
+      updateSummary();
+      updatePayloadPreview();
+      if (!state.isSolving) {
+        setSolveState?.(`${elements.runtimePresetStatus.textContent}`);
+      }
+    }
+
     function syncSolverFields() {
+      if (elements.autoWallClockLimitSeconds) {
+        elements.autoWallClockLimitSeconds.value = state.auto?.wallClockLimitSeconds ?? "";
+      }
+
       elements.greedyLocalSearch.checked = state.greedy.localSearch;
+      elements.greedyRandomSeed.value = state.greedy.randomSeed === "" ? "" : String(state.greedy.randomSeed ?? "");
       elements.greedyRestarts.value = String(state.greedy.restarts);
       elements.greedyServiceRefineIterations.value = String(state.greedy.serviceRefineIterations);
       elements.greedyServiceRefineCandidateLimit.value = String(state.greedy.serviceRefineCandidateLimit);
@@ -276,6 +355,8 @@
       elements.lnsUseDisplayedSeed.checked = Boolean(state.lns.useDisplayedSeed);
 
       elements.cpSatTimeLimitSeconds.value = state.cpSat.timeLimitSeconds;
+      elements.cpSatNoImprovementTimeoutSeconds.value = state.cpSat.noImprovementTimeoutSeconds;
+      elements.cpSatRandomSeed.value = state.cpSat.randomSeed === "" ? "" : String(state.cpSat.randomSeed ?? "");
       elements.cpSatNumWorkers.value = String(state.cpSat.numWorkers);
       elements.cpSatLogSearchProgress.checked = state.cpSat.logSearchProgress;
       elements.cpSatPythonExecutable.value = state.cpSat.pythonExecutable;
@@ -303,6 +384,7 @@
           <td><input type="number" min="0" step="1" value="${escapeHtml(entry.bonus)}" data-collection="serviceTypes" data-index="${index}" data-field="bonus" /></td>
           <td><input type="text" value="${escapeHtml(entry.size)}" data-collection="serviceTypes" data-index="${index}" data-field="size" /></td>
           <td><input type="text" value="${escapeHtml(entry.effective)}" data-collection="serviceTypes" data-index="${index}" data-field="effective" /></td>
+          <td><input type="number" min="0" step="1" value="${escapeHtml(entry.avail ?? "1")}" data-collection="serviceTypes" data-index="${index}" data-field="avail" /></td>
           <td class="catalog-action-cell"><button type="button" class="button ghost compact" data-action="remove-service" data-index="${index}">Remove</button></td>
         </tr>
       `).join("");
@@ -317,6 +399,7 @@
                 <th>Bonus</th>
                 <th>Size</th>
                 <th>Effective</th>
+                <th>Avail</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -453,6 +536,7 @@
       applyMatrixLayout,
       applyPaint,
       applyPreset,
+      applyRuntimePreset,
       applySolveRequestToPlanner,
       countAllowedCells,
       handleCatalogClick,

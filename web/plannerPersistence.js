@@ -52,6 +52,36 @@
       globalObject.localStorage.setItem(storageKey, JSON.stringify(entries));
     }
 
+    const PENDING_MANUAL_LAYOUT_ERROR =
+      "Manual edits are pending validation. Use Validate layout when you're ready.";
+
+    function isManualLayoutResult(result) {
+      return Boolean(result?.solution?.manualLayout || result?.stats?.manualLayout);
+    }
+
+    function hasPendingManualLayoutValidation(result) {
+      if (!isManualLayoutResult(result) || result?.validation?.valid === true) return false;
+      return Array.isArray(result?.validation?.errors)
+        && result.validation.errors.includes(PENDING_MANUAL_LAYOUT_ERROR);
+    }
+
+    function readSavedLayoutPendingValidation(entry) {
+      if (entry?.layoutEditorPendingValidation === true) return true;
+      if (entry?.layoutEditorPendingValidation === false) return false;
+      return hasPendingManualLayoutValidation(entry?.result);
+    }
+
+    function resetLayoutEditorForLoadedResult(pendingValidation) {
+      state.selectedMapBuilding = null;
+      state.selectedMapCell = null;
+      state.layoutEditor.mode = "inspect";
+      state.layoutEditor.pendingPlacement = null;
+      state.layoutEditor.edited = false;
+      state.layoutEditor.pendingValidation = pendingValidation;
+      state.layoutEditor.status = "";
+      state.layoutEditor.isApplying = false;
+    }
+
     function populateSavedSelect(selectElement, entries, placeholder, labelBuilder = null) {
       selectElement.innerHTML = "";
 
@@ -99,6 +129,7 @@
         greedy: cloneJson(state.greedy),
         cpSat: cloneJson(state.cpSat),
         lns: cloneJson(state.lns),
+        auto: cloneJson(state.auto ?? { wallClockLimitSeconds: "" }),
       };
     }
 
@@ -106,10 +137,16 @@
       state.grid = isGridLike(snapshot?.grid) ? cloneGrid(snapshot.grid) : cloneGrid(sampleGrid);
       state.optimizer = normalizeOptimizer(snapshot?.optimizer);
       state.serviceTypes = Array.isArray(snapshot?.serviceTypes)
-        ? snapshot.serviceTypes.map((entry) => ({ ...entry }))
+        ? snapshot.serviceTypes.map((entry) => ({
+          avail: entry?.avail ?? "1",
+          ...entry,
+        }))
         : defaultServiceTypes.map((entry) => ({ ...entry }));
       state.residentialTypes = Array.isArray(snapshot?.residentialTypes)
-        ? snapshot.residentialTypes.map((entry) => ({ ...entry }))
+        ? snapshot.residentialTypes.map((entry) => ({
+          avail: entry?.avail ?? "1",
+          ...entry,
+        }))
         : defaultResidentialTypes.map((entry) => ({ ...entry }));
       state.availableBuildings = {
         services: snapshot?.availableBuildings?.services ?? "",
@@ -117,15 +154,21 @@
       };
       state.greedy = {
         ...state.greedy,
+        randomSeed: "",
         ...(snapshot?.greedy ?? {}),
       };
       state.cpSat = {
         ...state.cpSat,
+        randomSeed: "",
         ...(snapshot?.cpSat ?? {}),
       };
       state.lns = {
         ...state.lns,
         ...(snapshot?.lns ?? {}),
+      };
+      state.auto = {
+        ...(state.auto ?? { wallClockLimitSeconds: "" }),
+        ...(snapshot?.auto ?? {}),
       };
     }
 
@@ -213,6 +256,13 @@
       const existingIndex = entries.findIndex((entry) => entry.name.toLowerCase() === name.toLowerCase());
       const id = existingIndex >= 0 ? entries[existingIndex].id : createSavedEntryId();
       const elapsedMs = normalizeElapsedMs(state.resultElapsedMs || state.solveTimerElapsedMs);
+      let continueCpSat = null;
+      let continuationStatus = "";
+      try {
+        continueCpSat = buildCpSatWarmStartCheckpoint(state.result, state.resultContext, elapsedMs);
+      } catch (error) {
+        continuationStatus = error instanceof Error ? ` ${error.message}` : "";
+      }
       const nextEntry = {
         id,
         name,
@@ -220,7 +270,8 @@
         result: cloneJson(state.result),
         resultContext: cloneJson(state.resultContext),
         elapsedMs,
-        continueCpSat: buildCpSatWarmStartCheckpoint(state.result, state.resultContext, elapsedMs),
+        layoutEditorPendingValidation: Boolean(state.layoutEditor.pendingValidation),
+        ...(continueCpSat ? { continueCpSat } : {}),
       };
       if (existingIndex >= 0) {
         entries[existingIndex] = nextEntry;
@@ -230,7 +281,9 @@
       writeStoredEntries(LAYOUT_STORAGE_KEY, entries);
       refreshSavedLayoutOptions(id);
       elements.layoutStorageName.value = name;
-      elements.layoutStorageStatus.textContent = `Saved layout "${name}" with elapsed ${formatElapsedTime(elapsedMs)}.`;
+      elements.layoutStorageStatus.textContent = continueCpSat
+        ? `Saved layout "${name}" with elapsed ${formatElapsedTime(elapsedMs)}.`
+        : `Saved layout "${name}" with elapsed ${formatElapsedTime(elapsedMs)}.${continuationStatus}`;
     }
 
     function loadSelectedLayout() {
@@ -251,13 +304,9 @@
       }
       clearExpansionAdvice();
       const loadedResultContext = cloneJson(entry.resultContext);
-      state.selectedMapBuilding = null;
-      state.selectedMapCell = null;
-      state.layoutEditor.mode = "inspect";
-      state.layoutEditor.pendingPlacement = null;
-      state.layoutEditor.edited = false;
-      state.layoutEditor.status = "";
+      resetLayoutEditorForLoadedResult(readSavedLayoutPendingValidation(entry));
       state.result = cloneJson(entry.result);
+      state.solveProgressLog = Array.isArray(entry.result?.progressLog) ? cloneJson(entry.result.progressLog) : [];
       state.resultIsLiveSnapshot = false;
       state.resultContext = loadedResultContext;
       state.resultError = "";

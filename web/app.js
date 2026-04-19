@@ -14,18 +14,18 @@ const SAMPLE_GRID = [
 ];
 
 const DEFAULT_SERVICE_TYPES = [
-  { name: "Elementary School", bonus: "126", size: "2x2", effective: "12x12" },
-  { name: "Town Bank", bonus: "224", size: "2x2", effective: "12x12" },
-  { name: "Health Clinic", bonus: "108", size: "2x2", effective: "10x10" },
-  { name: "Gas Station", bonus: "118", size: "2x2", effective: "12x12" },
-  { name: "Townsquare", bonus: "115", size: "2x2", effective: "10x10" },
-  { name: "Fire Station", bonus: "204", size: "2x2", effective: "10x10" },
-  { name: "Mining Museum", bonus: "224", size: "2x2", effective: "12x12" },
-  { name: "Square", bonus: "364", size: "2x3", effective: "10x11" },
-  { name: "Park", bonus: "215", size: "2x3", effective: "12x13" },
-  { name: "Congress Center", bonus: "270", size: "4x2", effective: "14x12" },
-  { name: "Cinema", bonus: "189", size: "2x2", effective: "10x10" },
-  { name: "Supermarket", bonus: "386", size: "3x2", effective: "13x12" },
+  { name: "Elementary School", bonus: "126", size: "2x2", effective: "12x12", avail: "1" },
+  { name: "Town Bank", bonus: "224", size: "2x2", effective: "12x12", avail: "1" },
+  { name: "Health Clinic", bonus: "108", size: "2x2", effective: "10x10", avail: "1" },
+  { name: "Gas Station", bonus: "118", size: "2x2", effective: "12x12", avail: "1" },
+  { name: "Townsquare", bonus: "115", size: "2x2", effective: "10x10", avail: "1" },
+  { name: "Fire Station", bonus: "204", size: "2x2", effective: "10x10", avail: "1" },
+  { name: "Mining Museum", bonus: "224", size: "2x2", effective: "12x12", avail: "1" },
+  { name: "Square", bonus: "364", size: "2x3", effective: "10x11", avail: "1" },
+  { name: "Park", bonus: "215", size: "2x3", effective: "12x13", avail: "1" },
+  { name: "Congress Center", bonus: "270", size: "4x2", effective: "14x12", avail: "1" },
+  { name: "Cinema", bonus: "189", size: "2x2", effective: "10x10", avail: "1" },
+  { name: "Supermarket", bonus: "386", size: "3x2", effective: "13x12", avail: "1" },
 ];
 
 const DEFAULT_RESIDENTIAL_TYPES = [
@@ -114,7 +114,7 @@ const { createPlannerWorkbenchController } = plannerModules.workbench;
 const state = {
   grid: cloneGrid(SAMPLE_GRID),
   paintMode: "toggle",
-  optimizer: "greedy",
+  optimizer: "auto",
   serviceTypes: DEFAULT_SERVICE_TYPES.map((entry) => ({ ...entry })),
   residentialTypes: DEFAULT_RESIDENTIAL_TYPES.map((entry) => ({ ...entry })),
   availableBuildings: {
@@ -123,6 +123,7 @@ const state = {
   },
   greedy: {
     localSearch: true,
+    randomSeed: "",
     restarts: 20,
     serviceRefineIterations: 4,
     serviceRefineCandidateLimit: 60,
@@ -132,6 +133,8 @@ const state = {
   },
   cpSat: {
     timeLimitSeconds: "",
+    noImprovementTimeoutSeconds: "",
+    randomSeed: "",
     numWorkers: 8,
     logSearchProgress: false,
     pythonExecutable: "",
@@ -144,6 +147,9 @@ const state = {
     neighborhoodCols: 8,
     repairTimeLimitSeconds: 5,
     useDisplayedSeed: true,
+  },
+  auto: {
+    wallClockLimitSeconds: "",
   },
   isPainting: false,
   isSolving: false,
@@ -158,6 +164,7 @@ const state = {
   resultError: "",
   resultContext: null,
   resultElapsedMs: 0,
+  solveProgressLog: [],
   selectedMapBuilding: null,
   selectedMapCell: null,
   layoutEditor: {
@@ -165,6 +172,7 @@ const state = {
     pendingPlacement: null,
     isApplying: false,
     edited: false,
+    pendingValidation: false,
     status: "",
   },
   expansionAdvice: {
@@ -184,6 +192,10 @@ const elements = {
   gridStats: document.querySelector("#gridStats"),
   paintModeToggle: document.querySelector("#paintModeToggle"),
   solverToggle: document.querySelector("#solverToggle"),
+  runtimePresetButtons: document.querySelector("#runtimePresetButtons"),
+  runtimePresetStatus: document.querySelector("#runtimePresetStatus"),
+  autoPanel: document.querySelector("#autoPanel"),
+  autoWallClockLimitSeconds: document.querySelector("#autoWallClockLimitSeconds"),
   greedyPanel: document.querySelector("#greedyPanel"),
   lnsPanel: document.querySelector("#lnsPanel"),
   cpSatPanel: document.querySelector("#cpSatPanel"),
@@ -222,6 +234,8 @@ const elements = {
   resultResidentialCount: document.querySelector("#resultResidentialCount"),
   resultElapsed: document.querySelector("#resultElapsed"),
   resultSolverStatus: document.querySelector("#resultSolverStatus"),
+  resultProgressSummary: document.querySelector("#resultProgressSummary"),
+  resultProgressLog: document.querySelector("#resultProgressLog"),
   expansionNextService: document.querySelector("#expansionNextService"),
   expansionNextResidential: document.querySelector("#expansionNextResidential"),
   compareExpansionButton: document.querySelector("#compareExpansionButton"),
@@ -238,6 +252,8 @@ const elements = {
   resultMapGrid: document.querySelector("#resultMapGrid"),
   resultOverlay: document.querySelector("#resultOverlay"),
   layoutEditModeToggle: document.querySelector("#layoutEditModeToggle"),
+  rotatePendingPlacementButton: document.querySelector("#rotatePendingPlacementButton"),
+  validateEditedLayoutButton: document.querySelector("#validateEditedLayoutButton"),
   layoutEditorStatus: document.querySelector("#layoutEditorStatus"),
   selectedBuildingTitle: document.querySelector("#selectedBuildingTitle"),
   selectedBuildingSummary: document.querySelector("#selectedBuildingSummary"),
@@ -257,6 +273,7 @@ const elements = {
   deleteLayoutButton: document.querySelector("#deleteLayoutButton"),
   layoutStorageStatus: document.querySelector("#layoutStorageStatus"),
   greedyLocalSearch: document.querySelector("#greedyLocalSearch"),
+  greedyRandomSeed: document.querySelector("#greedyRandomSeed"),
   greedyRestarts: document.querySelector("#greedyRestarts"),
   greedyServiceRefineIterations: document.querySelector("#greedyServiceRefineIterations"),
   greedyServiceRefineCandidateLimit: document.querySelector("#greedyServiceRefineCandidateLimit"),
@@ -273,6 +290,8 @@ const elements = {
   lnsPythonExecutable: document.querySelector("#lnsPythonExecutable"),
   lnsUseDisplayedSeed: document.querySelector("#lnsUseDisplayedSeed"),
   cpSatTimeLimitSeconds: document.querySelector("#cpSatTimeLimitSeconds"),
+  cpSatNoImprovementTimeoutSeconds: document.querySelector("#cpSatNoImprovementTimeoutSeconds"),
+  cpSatRandomSeed: document.querySelector("#cpSatRandomSeed"),
   cpSatNumWorkers: document.querySelector("#cpSatNumWorkers"),
   cpSatLogSearchProgress: document.querySelector("#cpSatLogSearchProgress"),
   cpSatPythonExecutable: document.querySelector("#cpSatPythonExecutable"),
@@ -314,11 +333,13 @@ function clearRenderedResultState() {
   state.result = null;
   state.resultIsLiveSnapshot = false;
   state.resultError = "";
+  state.solveProgressLog = [];
   state.selectedMapBuilding = null;
   state.selectedMapCell = null;
   state.layoutEditor.mode = "inspect";
   state.layoutEditor.pendingPlacement = null;
   state.layoutEditor.edited = false;
+  state.layoutEditor.pendingValidation = false;
   state.layoutEditor.status = "";
   state.layoutEditor.isApplying = false;
   clearExpansionAdvice();
@@ -372,6 +393,7 @@ workbenchController = createPlannerWorkbenchController({
     getOptimizerLabel: shellController.getOptimizerLabel,
     refreshResultOverlay: () => resultsController?.refreshResultOverlay(),
     renderExpansionAdvice: () => expansionAdviceController?.renderExpansionAdvice(),
+    setSolveState: shellController.setSolveState,
     updatePayloadPreview: () => requestBuilderController?.updatePayloadPreview(),
   },
 });
@@ -432,6 +454,7 @@ const solveRuntimeController = createSolveRuntime({
   callbacks: {
     buildSolveRequest: requestBuilderController.buildSolveRequest,
     clearExpansionAdvice,
+    ensureCpSatRandomSeed: requestBuilderController.ensureCpSatRandomSeed,
     getDisplayedLayoutCheckpoint: requestBuilderController.getDisplayedLayoutCheckpoint,
     getOptimizerLabel: shellController.getOptimizerLabel,
     renderResults: resultsController.renderResults,
@@ -509,6 +532,14 @@ function init() {
     requestBuilderController.updatePayloadPreview();
   });
 
+  elements.runtimePresetButtons.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const button = target.closest("button");
+    if (!(button instanceof HTMLButtonElement) || !button.dataset.runtimePreset) return;
+    workbenchController.applyRuntimePreset(button.dataset.runtimePreset);
+  });
+
   elements.resizeGridButton.addEventListener("click", () => {
     const rows = clampInteger(elements.gridRows.value, state.grid.length, 1);
     const cols = clampInteger(elements.gridCols.value, state.grid[0].length, 1);
@@ -542,7 +573,7 @@ function init() {
   });
 
   elements.addServiceTypeButton.addEventListener("click", () => {
-    state.serviceTypes.push({ name: "", bonus: "100", size: "2x2", effective: "10x10" });
+    state.serviceTypes.push({ name: "", bonus: "100", size: "2x2", effective: "10x10", avail: "1" });
     workbenchController.renderServiceTypes();
     requestBuilderController.updatePayloadPreview();
   });
@@ -563,6 +594,7 @@ function init() {
 
   const greedyBindings = [
     ["greedyLocalSearch", "localSearch", "checkbox"],
+    ["greedyRandomSeed", "randomSeed", "number"],
     ["greedyRestarts", "restarts", "number"],
     ["greedyServiceRefineIterations", "serviceRefineIterations", "number"],
     ["greedyServiceRefineCandidateLimit", "serviceRefineCandidateLimit", "number"],
@@ -611,8 +643,17 @@ function init() {
     requestBuilderController.updatePayloadPreview();
   });
 
+  if (elements.autoWallClockLimitSeconds) {
+    elements.autoWallClockLimitSeconds.addEventListener("input", () => {
+      state.auto.wallClockLimitSeconds = elements.autoWallClockLimitSeconds.value;
+      requestBuilderController.updatePayloadPreview();
+    });
+  }
+
   const cpSatBindings = [
     ["cpSatTimeLimitSeconds", "timeLimitSeconds", "number"],
+    ["cpSatNoImprovementTimeoutSeconds", "noImprovementTimeoutSeconds", "number"],
+    ["cpSatRandomSeed", "randomSeed", "number"],
     ["cpSatNumWorkers", "numWorkers", "number"],
     ["cpSatLogSearchProgress", "logSearchProgress", "checkbox"],
     ["cpSatPythonExecutable", "pythonExecutable", "text"],
@@ -659,6 +700,8 @@ function init() {
   elements.layoutEditModeToggle.addEventListener("click", resultsController.handleLayoutEditToggleClick);
   elements.remainingServiceList.addEventListener("click", resultsController.handleRemainingPlacementClick);
   elements.remainingResidentialList.addEventListener("click", resultsController.handleRemainingPlacementClick);
+  elements.rotatePendingPlacementButton.addEventListener("click", resultsController.handleRotatePendingPlacementAction);
+  elements.validateEditedLayoutButton.addEventListener("click", resultsController.handleValidateEditedLayoutAction);
   elements.moveSelectedBuildingButton.addEventListener("click", resultsController.handleMoveSelectedAction);
   elements.removeSelectedBuildingButton.addEventListener("click", resultsController.handleRemoveSelectedAction);
   elements.resultMapGrid.addEventListener("click", resultsController.handleResultMapClick);

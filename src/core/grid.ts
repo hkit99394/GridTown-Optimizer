@@ -61,28 +61,102 @@ const ORTH: [number, number][] = [
   [0, 1],
 ];
 
-/** Orthogonal neighbors (r, c) in bounds */
-export function orthogonalNeighbors(G: Grid, r: number, c: number): [number, number][] {
+export function forEachOrthogonalNeighbor(
+  G: Grid,
+  r: number,
+  c: number,
+  visit: (r: number, c: number) => void
+): void {
   const H = height(G);
   const W = width(G);
-  const out: [number, number][] = [];
   for (const [dr, dc] of ORTH) {
     const r2 = r + dr;
     const c2 = c + dc;
-    if (r2 >= 0 && r2 < H && c2 >= 0 && c2 < W) out.push([r2, c2]);
+    if (r2 >= 0 && r2 < H && c2 >= 0 && c2 < W) {
+      visit(r2, c2);
+    }
   }
+}
+
+/** Orthogonal neighbors (r, c) in bounds */
+export function orthogonalNeighbors(G: Grid, r: number, c: number): [number, number][] {
+  const out: [number, number][] = [];
+  forEachOrthogonalNeighbor(G, r, c, (r2, c2) => out.push([r2, c2]));
   return out;
+}
+
+export function forEachRectangleCell(
+  r: number,
+  c: number,
+  rows: number,
+  cols: number,
+  visit: (r: number, c: number) => void
+): void {
+  for (let i = 0; i < rows; i++) {
+    for (let j = 0; j < cols; j++) {
+      visit(r + i, c + j);
+    }
+  }
+}
+
+export function rectangleSomeCell(
+  r: number,
+  c: number,
+  rows: number,
+  cols: number,
+  predicate: (r: number, c: number) => boolean
+): boolean {
+  for (let i = 0; i < rows; i++) {
+    for (let j = 0; j < cols; j++) {
+      if (predicate(r + i, c + j)) return true;
+    }
+  }
+  return false;
+}
+
+export function rectangleCountCells(
+  r: number,
+  c: number,
+  rows: number,
+  cols: number,
+  predicate: (r: number, c: number) => boolean
+): number {
+  let count = 0;
+  forEachRectangleCell(r, c, rows, cols, (rr, cc) => {
+    if (predicate(rr, cc)) count++;
+  });
+  return count;
 }
 
 /** All cells in rectangle [r, r+rows) × [c, c+cols) */
 export function rectangleCells(r: number, c: number, rows: number, cols: number): string[] {
-  const keys: string[] = [];
-  for (let i = 0; i < rows; i++) {
-    for (let j = 0; j < cols; j++) {
-      keys.push(cellKey(r + i, c + j));
-    }
-  }
+  const keys = Array<string>(Math.max(0, rows * cols));
+  let index = 0;
+  forEachRectangleCell(r, c, rows, cols, (rr, cc) => {
+    keys[index++] = cellKey(rr, cc);
+  });
   return keys;
+}
+
+export function forEachRectangleBorderCell(
+  r: number,
+  c: number,
+  rows: number,
+  cols: number,
+  visit: (r: number, c: number) => void
+): void {
+  const top = r - 1;
+  const bottom = r + rows;
+  const left = c - 1;
+  const right = c + cols;
+  for (let cc = c; cc < c + cols; cc++) {
+    visit(top, cc);
+    visit(bottom, cc);
+  }
+  for (let rr = r; rr < r + rows; rr++) {
+    visit(rr, left);
+    visit(rr, right);
+  }
 }
 
 /** Cells that are orthogonally adjacent to the rectangle (outside it) */
@@ -92,22 +166,7 @@ export function rectangleBorderCells(
   rows: number,
   cols: number
 ): [number, number][] {
-  const set = new Set<string>();
-  for (let i = 0; i < rows; i++) {
-    for (let j = 0; j < cols; j++) {
-      const r0 = r + i;
-      const c0 = c + j;
-      for (const [dr, dc] of ORTH) {
-        const r1 = r0 + dr;
-        const c1 = c0 + dc;
-        if (r1 < r || r1 >= r + rows || c1 < c || c1 >= c + cols) {
-          set.add(cellKey(r1, c1));
-        }
-      }
-    }
-  }
-  return [...set].map((k) => {
-    const [a, b] = k.split(",").map(Number);
-    return [a, b] as [number, number];
-  });
+  const out: [number, number][] = [];
+  forEachRectangleBorderCell(r, c, rows, cols, (rr, cc) => out.push([rr, cc]));
+  return out;
 }

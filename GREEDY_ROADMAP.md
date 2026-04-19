@@ -27,6 +27,23 @@ What exists today in [src/greedy/solver.ts](./src/greedy/solver.ts):
 
 This makes `greedy` a strong baseline, but it also means the implementation now pays for repeated rescans and repeated road-connectivity work inside the hottest loops.
 
+## Review Update
+
+After the shipped Steps 1-11, the greedy path is much stronger and better instrumented than the original roadmap baseline. The current implementation now has:
+- measured phase-level behavior through the fixed benchmark corpus
+- grouped typed-residential service scoring
+- adaptive cap search
+- deferred-road construction as an opt-in experiment
+- bounded fixed-service seed/order completeness
+- bounded service neighborhoods on top of residential local search
+- lower-allocation geometry and road-probe helpers behind the current public APIs
+
+The biggest remaining practical gaps are now narrower and more specific:
+- Step 10 service neighborhoods still improve incumbents by calling the bounded forced-set evaluator, which is effective but coarser and more expensive than a direct delta-scored service relocation path
+- `localSearchImprove()` still allocates fresh occupancy snapshots for residential move scans, which is now one of the more obvious remaining hot allocations in the greedy path
+- explicit-road probing still rebuilds block-state views per probe and still pays the cost of string-key `Set` semantics internally, even after the Step 11 helper refactor
+- the roadmap should now focus less on generic “speed up greedy somehow” work and more on replacing the remaining expensive fallback mechanisms with narrower, purpose-built neighborhoods and scratch-state helpers
+
 ## Main Bottlenecks
 
 The biggest near-term issue is not candidate generation itself. The main cost comes from repeated inner-loop work:
@@ -277,13 +294,6 @@ Shipped bounded slice:
 - refinement uses a richer forced-set budget than exhaustive search so service-swap trials can explore more legal realizations without letting exhaustive combination search explode combinatorially
 - `greedy.profile` now exposes `fixedServiceRealizationTrials`, and the fixed corpus includes `fixed-service-realization-complete` plus focused regressions for a seed-sensitive single-service case and a multi-service refine case
 
-Shipped bounded slice:
-- `src/greedy/solver.ts` now evaluates `fixedServices` refinement and exhaustive trials as the best bounded legal realization of a forced service set, not just the single incoming service order
-- the forced-set evaluator tries a bounded mix of incumbent order, rank order, row-major order, reversals, and small-set permutations, then retries the strongest realizations across a bounded row-0 seed pool built from successful reruns plus representative row-0 anchors
-- both the service-refinement swap path and the exhaustive top-pool path now call that shared evaluator, so forced service sets get the same bounded seed/order completeness policy in both places
-- `greedy.profile` now exposes `attempts.fixedServiceRealizationTrials`, and `benchmark:greedy` includes a `fixed-set:` counter so the extra bounded search stays visible in the fixed corpus
-- `tests/optimizers.test.cjs` and the `fixed-service-realization-complete` benchmark case now assert that the bounded forced-set evaluator can recover a stronger legal realization than the no-refinement/no-exhaustive baseline
-
 ### 10. Strengthen local search beyond residential-only moves
 
 Expected impact: High solution-quality gain
@@ -322,7 +332,47 @@ Concrete work:
 - reduce temporary `Set` creation in repeated helper calls
 - collapse repeated rectangle normalization in hot loops
 
-### 12. Explore a stronger greedy search policy
+Shipped bounded slice:
+- `src/core/grid.ts` now exposes visitor-style rectangle and neighbor helpers so hot callers can iterate footprint and border cells without allocating temporary arrays first
+- `src/core/buildings.ts` now uses those helpers for `overlaps`, service-boost checks, and `buildServiceEffectZoneSet()`, while keeping the existing array-returning compatibility APIs in place
+- `src/core/roads.ts`, `src/greedy/solver.ts`, and `src/greedy/row0Anchors.ts` now use the lower-allocation helpers in the explicit-road probe path and the hottest occupancy update loops, while preserving `Set<string>` road/building semantics and the existing public solution shape
+- this slice intentionally does not change cell-key representation, deferred-road semantics, or local-search snapshot handling; it is a semantics-preserving runtime refactor behind the current helper APIs
+- `tests/optimizers.test.cjs` now includes helper-level parity checks for rectangle iteration, effect-zone construction, and representative edge-border road probes, while the fixed greedy benchmark corpus continues to guard solution outputs
+
+Guardrail:
+- keep the public helper surface stable for now; land lower-allocation internals before considering a wider occupancy representation change
+
+### 12. Replace forced-set service neighborhoods with direct relocation scoring
+
+Expected impact: Medium-high quality/runtime gain
+
+Why:
+- the current Step 10 service-neighborhood slice works by sending `remove`/`add`/`swap` candidates back through the bounded forced-set evaluator
+- that is a good first correctness slice, but it still pays near-refinement costs per accepted or rejected service-neighborhood trial
+- it also does not reuse the already available residential population cache or current placed-residential state directly
+
+Concrete work:
+- replace the current forced-set-based service local search with a direct same-type relocation neighborhood scored against the current placed residential set
+- rebuild explicit roads and refresh service exposure/population caches only after an accepted relocation instead of per rejected neighborhood trial
+- keep the existing candidate caps and deterministic tie-breakers, but make the service-neighborhood budget adaptive to incumbent size
+- compare `localSearchServiceMoves: false` versus the direct relocation path on the fixed corpus before widening neighborhoods further
+
+Guardrail:
+- preserve exact service type accounting, explicit road validity, and deterministic seeded behavior
+
+### 13. Introduce candidate geometry caches and tested scratch workspaces
+
+Expected impact: Medium runtime gain, moderate refactor risk
+
+Concrete work:
+- cache candidate footprint/effect-zone cell keys or ids behind the current helper boundaries so repeated greedy passes stop recomputing the same geometry
+- add reusable scratch occupancy / BFS workspaces with explicit rollback tests for local-search scans and road probes
+- keep public `Set<string>` and serialization surfaces unchanged while moving only the internal hot loops onto scratch-state helpers
+
+Why this is later:
+- these changes touch correctness-sensitive mutation paths, so they need stronger helper-level aliasing and rollback tests first
+
+### 14. Explore a stronger greedy search policy
 
 Expected impact: Potentially very high quality gain, higher heuristic risk
 
@@ -334,7 +384,7 @@ Options:
 Why this is later:
 - these changes are higher risk and should come after measurement plus the lower-risk runtime wins
 
-### 13. Decide whether greedy should stay standalone or become more explicitly hybrid
+### 15. Decide whether greedy should stay standalone or become more explicitly hybrid
 
 Expected impact: Strategic
 
@@ -358,7 +408,11 @@ Decision point:
 8. Prototype deferred road commitment with row-0-reachable empty-space checks plus explicit road reconstruction.
 9. Make fixed-service refinement and exhaustive evaluation seed/order-complete.
 10. Extend local search to include service neighborhoods.
-11. Revisit deeper redesigns only after the above is measured.
+11. Reduce allocation pressure in hot geometry and occupancy helpers.
+12. Replace forced-set service neighborhoods with direct delta-scored service relocations.
+13. Add candidate geometry caches and tested scratch workspaces.
+14. Explore stronger greedy search policy changes only after the above is measured.
+15. Revisit the standalone-vs-hybrid role of greedy after the above is measured.
 
 ## Success Metrics
 

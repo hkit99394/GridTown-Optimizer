@@ -1,4 +1,4 @@
-import { normalizeServicePlacement, residentialFootprint, serviceEffectZone } from "./buildings.js";
+import { buildServiceEffectZoneSet, normalizeServicePlacement, residentialFootprint } from "./buildings.js";
 import { compatibleResidentialTypeIndices, getResidentialBaseMax, NO_TYPE_INDEX } from "./rules.js";
 
 import type { Grid, ServiceTypeSetting, Solution, SolverParams } from "./types.js";
@@ -34,7 +34,7 @@ function countResidentialTypeUsage(solution: Solution, typeCount: number): numbe
 }
 
 function computeResidentialBoostsForSolution(G: Grid, solution: Solution): number[] {
-  const effectZones = solution.services.map((service) => new Set(serviceEffectZone(G, service)));
+  const effectZones = solution.services.map((service) => buildServiceEffectZoneSet(G, service));
   return solution.residentials.map((residential) => {
     const footprint = residentialFootprint(residential.r, residential.c, residential.rows, residential.cols);
     let boost = 0;

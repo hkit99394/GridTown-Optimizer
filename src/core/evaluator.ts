@@ -16,7 +16,7 @@ import { isAllowed } from "./grid.js";
 import {
   serviceFootprint,
   residentialFootprint,
-  serviceEffectZone,
+  buildServiceEffectZoneSet,
   normalizeServicePlacement,
 } from "./buildings.js";
 import { isAdjacentToRoads, roadsConnectedToRow0 } from "./roads.js";
@@ -37,7 +37,7 @@ function computeResidentialBoosts(
   services: EvaluatedServicePlacement[],
   residentials: { r: number; c: number; rows: number; cols: number }[]
 ): number[] {
-  const effectZones = services.map((s) => new Set(serviceEffectZone(grid, s)));
+  const effectZones = services.map((s) => buildServiceEffectZoneSet(grid, s));
   return residentials.map((res) => {
     let boost = 0;
     const foot = residentialFootprint(res.r, res.c, res.rows, res.cols);

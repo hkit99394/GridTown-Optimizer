@@ -36,9 +36,23 @@ const { buildNeighborhoodWindows } = require("../dist/lns/solver.js");
 const { applyDeterministicDominanceUpgrades } = require("../dist/core/dominanceUpgrades.js");
 const {
   materializeDeferredRoadNetwork,
+  probeBuildingConnectedToRoads,
   roadSeedRow0Candidates,
   roadSeedRow0RepresentativeCandidates,
 } = require("../dist/core/roads.js");
+const {
+  forEachRectangleBorderCell,
+  forEachRectangleCell,
+  rectangleBorderCells,
+  rectangleCells,
+} = require("../dist/core/grid.js");
+const {
+  buildServiceEffectZoneSet,
+  countServiceBoost,
+  isBoostedByService,
+  overlaps,
+  serviceEffectZone,
+} = require("../dist/core/buildings.js");
 
 function testOptimizerRegistry() {
   assert.equal(resolveOptimizerName(undefined), "greedy");
@@ -53,6 +67,54 @@ function testOptimizerRegistry() {
     listOptimizerAdapters().map((adapter) => adapter.name).sort(),
     ["auto", "cp-sat", "greedy", "lns"]
   );
+}
+
+function testGeometryHelperVisitorParity() {
+  const rectangleKeys = [];
+  forEachRectangleCell(1, 2, 2, 3, (r, c) => rectangleKeys.push(`${r},${c}`));
+  assert.deepEqual(rectangleKeys, rectangleCells(1, 2, 2, 3));
+
+  const borderKeys = [];
+  forEachRectangleBorderCell(1, 2, 2, 3, (r, c) => borderKeys.push(`${r},${c}`));
+  const expectedBorder = rectangleBorderCells(1, 2, 2, 3).map(([r, c]) => `${r},${c}`);
+  assert.deepEqual([...new Set(borderKeys)].sort(), [...expectedBorder].sort());
+}
+
+function testBuildingGeometryHelpersParity() {
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 0, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+  ];
+  const service = { r: 1, c: 0, rows: 1, cols: 2, range: 1 };
+  const zoneSet = buildServiceEffectZoneSet(grid, service);
+  const zoneArray = serviceEffectZone(grid, service);
+
+  assert.deepEqual([...zoneSet].sort(), [...zoneArray].sort());
+  assert.equal(countServiceBoost(zoneSet, 0, 0, 2, 2), 2);
+  assert.equal(isBoostedByService(zoneSet, 0, 0, 2, 2), true);
+  assert.equal(isBoostedByService(zoneSet, 3, 3, 1, 1), false);
+
+  const occupied = new Set(["0,0", "1,1", "2,2"]);
+  assert.equal(overlaps(occupied, 0, 0, 2, 2), true);
+  assert.equal(overlaps(occupied, 0, 2, 1, 2), false);
+}
+
+function testRoadProbePreservesEdgeBorderConnectivity() {
+  const grid = [
+    [1, 1, 1],
+    [1, 1, 1],
+    [1, 1, 1],
+  ];
+  const roads = new Set(["0,2"]);
+  const occupied = new Set(roads);
+  const adjacentProbe = probeBuildingConnectedToRoads(grid, roads, occupied, 1, 2, 1, 1);
+  const bridgeProbe = probeBuildingConnectedToRoads(grid, roads, occupied, 1, 1, 1, 1);
+
+  assert.deepEqual(adjacentProbe, { path: null });
+  assert.equal((bridgeProbe?.path?.length ?? 0) > 0, true);
+  assert.deepEqual(bridgeProbe?.path?.at(-1), [0, 2]);
 }
 
 async function maybeTestAutoOptimizer() {
@@ -2180,6 +2242,44 @@ function testGreedyConnectivityHeavyBenchmarkCase() {
   assert.match(formatGreedyBenchmarkSuite(result), /reuse=/);
 }
 
+function testGridRectangleBorderCellsPreserveExpectedRing() {
+  assert.deepEqual(rectangleBorderCells(2, 3, 2, 3), [
+    [1, 3],
+    [4, 3],
+    [1, 4],
+    [4, 4],
+    [1, 5],
+    [4, 5],
+    [2, 2],
+    [2, 6],
+    [3, 2],
+    [3, 6],
+  ]);
+  assert.deepEqual(rectangleBorderCells(0, 0, 1, 1), [
+    [-1, 0],
+    [1, 0],
+    [0, -1],
+    [0, 1],
+  ]);
+}
+
+function testGreedyGeometryOccupancyHotPathBenchmarkCase() {
+  const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
+    names: ["geometry-occupancy-hot-path"],
+  });
+
+  assert.equal(result.caseCount, 1);
+  assert.deepEqual(result.selectedCaseNames, ["geometry-occupancy-hot-path"]);
+  assert.equal(result.results[0].name, "geometry-occupancy-hot-path");
+  assert.equal(result.results[0].totalPopulation, 1000);
+  assert.equal(result.results[0].serviceCount, 4);
+  assert.equal(result.results[0].residentialCount, 6);
+  assert.equal(result.results[0].greedyProfile.counters.servicePhase.candidateScans > 0, true);
+  assert.equal(result.results[0].greedyProfile.counters.residentialPhase.candidateScans > 0, true);
+  assert.equal(result.results[0].greedyProfile.counters.roads.probeCalls > 0, true);
+  assert.match(formatGreedyBenchmarkSuite(result), /geometry-occupancy-hot-path/);
+}
+
 function inferredPositiveServiceUpper(params) {
   const types = params.serviceTypes ?? [];
   const positiveBonuses = types.reduce(
@@ -2336,6 +2436,7 @@ function testGreedyIncrementalInvalidationPreservesBenchmarkOutputs() {
     "compact-service-single": { totalPopulation: 370, serviceCount: 1, residentialCount: 2 },
     "cap-sweep-mixed": { totalPopulation: 440, serviceCount: 1, residentialCount: 3 },
     "bridge-connectivity-heavy": { totalPopulation: 400, serviceCount: 1, residentialCount: 3 },
+    "geometry-occupancy-hot-path": { totalPopulation: 1000, serviceCount: 4, residentialCount: 6 },
     "typed-footprint-pressure": { totalPopulation: 450, serviceCount: 2, residentialCount: 4 },
     "adaptive-cap-search-wide": { totalPopulation: 848, serviceCount: 1, residentialCount: 6 },
     "crowded-invalidation-heavy": { totalPopulation: 711, serviceCount: 1, residentialCount: 6 },
@@ -2655,6 +2756,7 @@ function testGreedyServiceLocalNeighborhoodBenchmarkCase() {
   assert.equal(improvedSolution.totalPopulation, 300);
   assert.equal(baselineSolution.totalPopulation, 240);
   assert.equal(improvedSolution.totalPopulation > baselineSolution.totalPopulation, true);
+  assert.equal(improvedSolution.greedyProfile.counters.attempts.fixedServiceRealizationTrials, 0);
   assert.equal(counters.serviceNeighborhoodImprovements > 0, true);
   assert.equal(counters.serviceAddChecks > 0 || counters.serviceSwapChecks > 0 || counters.serviceRemoveChecks > 0, true);
   assert.match(formatGreedyBenchmarkSuite(result), /service-local-neighborhood/);
@@ -2713,8 +2815,8 @@ function testGreedyTypedAvailabilityPressureBenchmarkCase() {
   assert.deepEqual(solution.serviceTypeIndices, [0, 0]);
   assert.equal(solution.services.length, 2);
   assert.deepEqual(solution.services, [
-    { r: 3, c: 2, rows: 1, cols: 1, range: 2 },
-    { r: 2, c: 4, rows: 1, cols: 1, range: 2 },
+    { r: 2, c: 3, rows: 1, cols: 1, range: 2 },
+    { r: 3, c: 3, rows: 1, cols: 1, range: 2 },
   ]);
   assert.deepEqual(solution.residentialTypeIndices, [0, 1, 1, 1, 1]);
   assert.deepEqual(solution.populations, [175, 110, 110, 110, 110]);
@@ -2776,8 +2878,8 @@ function testGreedyGroupedServiceScoringDiscountsLimitedFallbackTypes() {
   assert.equal(solution.totalPopulation, 265);
   assert.deepEqual(solution.serviceTypeIndices, [0, 0]);
   assert.deepEqual(solution.services, [
+    { r: 2, c: 3, rows: 1, cols: 1, range: 2 },
     { r: 2, c: 2, rows: 1, cols: 1, range: 2 },
-    { r: 1, c: 0, rows: 1, cols: 1, range: 2 },
   ]);
   assert.deepEqual(solution.residentialTypeIndices, [0, 1]);
   assert.deepEqual(solution.populations, [175, 90]);
@@ -4307,6 +4409,10 @@ print(json.dumps({
 }
 
 async function main() {
+  testOptimizerRegistry();
+  testGeometryHelperVisitorParity();
+  testBuildingGeometryHelpersParity();
+  testRoadProbePreservesEdgeBorderConnectivity();
   testGreedyDispatcher();
   testGreedyRandomSeedIsDeterministic();
   testGreedyExploresAllAllowedRowZeroSeeds();
@@ -4349,6 +4455,8 @@ async function main() {
   testGreedyBenchmarkSuite();
   testGreedyDeterministicTieBreakBenchmarkCase();
   testGreedyConnectivityHeavyBenchmarkCase();
+  testGridRectangleBorderCellsPreserveExpectedRing();
+  testGreedyGeometryOccupancyHotPathBenchmarkCase();
   testGreedyExplicitCapBypassesAdaptiveCapSearch();
   testGreedySmallUpperKeepsFullCapSweep();
   testGreedyAdaptiveCapSearchWideBenchmarkCase();

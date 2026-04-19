@@ -413,6 +413,42 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
     },
   },
   {
+    name: "geometry-occupancy-hot-path",
+    description: "Larger mixed case that keeps rectangle overlap, border, effect-zone, and road probes hot.",
+    grid: [
+      [1, 1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 0, 1, 1, 0, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 0, 1, 1, 0, 1, 1, 0, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 0, 1, 1, 0, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 0, 1, 1, 1, 1, 1, 0, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1, 1],
+    ],
+    params: {
+      optimizer: "greedy",
+      serviceTypes: [
+        { rows: 1, cols: 1, bonus: 40, range: 1, avail: 3 },
+        { rows: 2, cols: 2, bonus: 70, range: 2, avail: 2 },
+      ],
+      residentialTypes: [
+        { w: 2, h: 2, min: 70, max: 130, avail: 7 },
+        { w: 2, h: 3, min: 110, max: 200, avail: 4 },
+      ],
+      greedy: {
+        localSearch: true,
+        randomSeed: 71,
+        restarts: 2,
+        serviceRefineIterations: 1,
+        serviceRefineCandidateLimit: 10,
+        exhaustiveServiceSearch: false,
+        serviceExactPoolLimit: 8,
+        serviceExactMaxCombinations: 64,
+      },
+    },
+  },
+  {
     name: "typed-footprint-pressure",
     description: "Typed 2x2 variants share footprints, and a second service keeps the dynamic grouped scorer hot.",
     grid: [

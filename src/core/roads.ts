@@ -3,10 +3,16 @@
  */
 
 import type { Grid } from "./types.js";
-import { cellKey } from "./types.js";
-import { height, width, isAllowed, orthogonalNeighbors } from "./grid.js";
-import { rectangleBorderCells } from "./grid.js";
-import { rectangleCells } from "./grid.js";
+import { cellFromKey, cellKey } from "./types.js";
+import {
+  forEachOrthogonalNeighbor,
+  forEachRectangleBorderCell,
+  forEachRectangleCell,
+  rectangleBorderCells,
+  height,
+  width,
+  isAllowed,
+} from "./grid.js";
 
 /** Road seed: exactly one allowed cell in row 0 (first found). Satisfies "at least one road in row 0". */
 export function roadSeedRow0(G: Grid): Set<string> {
@@ -30,20 +36,14 @@ export function roadSeedRow0RepresentativeCandidates(G: Grid, limit: number): Se
   return roadSeedRow0Candidates(G);
 }
 
-function availableRow0RoadTargets(G: Grid, blocked: Set<string>): Set<string> {
-  const targets = new Set<string>();
+export function findAvailableRow0RoadCell(G: Grid, blocked: Set<string>): string | null {
   const W = width(G);
   for (let c = 0; c < W; c++) {
     if (!isAllowed(G, 0, c)) continue;
     const key = cellKey(0, c);
-    if (blocked.has(key)) continue;
-    targets.add(key);
+    if (!blocked.has(key)) return key;
   }
-  return targets;
-}
-
-export function findAvailableRow0RoadCell(G: Grid, blocked: Set<string>): string | null {
-  return availableRow0RoadTargets(G, blocked).values().next().value ?? null;
+  return null;
 }
 
 export function hasAvailableRow0RoadCell(G: Grid, blocked: Set<string>): boolean {
@@ -54,14 +54,14 @@ export function hasAvailableRow0RoadCell(G: Grid, blocked: Set<string>): boolean
 function bfsPathToTargets(
   G: Grid,
   startCells: [number, number][],
-  targets: Set<string>,
-  blockSet: Set<string>
+  blockSet: Set<string>,
+  targetRoads: Set<string> | null
 ): [number, number][] | null {
-  const H = height(G);
-  const W = width(G);
   const visited = new Set<string>();
   const parent = new Map<string, [number, number]>();
   const queue: [number, number][] = [...startCells];
+  let queueIndex = 0;
+  const usesExplicitRoadTargets = targetRoads !== null;
 
   for (const [r, c] of startCells) {
     const k = cellKey(r, c);
@@ -69,10 +69,10 @@ function bfsPathToTargets(
     parent.set(k, [-1, -1]);
   }
 
-  while (queue.length > 0) {
-    const [r, c] = queue.shift()!;
+  while (queueIndex < queue.length) {
+    const [r, c] = queue[queueIndex++]!;
     const k = cellKey(r, c);
-    if (targets.has(k)) {
+    if ((usesExplicitRoadTargets && targetRoads.has(k)) || (!usesExplicitRoadTargets && r === 0)) {
       const path: [number, number][] = [];
       let cr = r,
         cc = c;
@@ -86,14 +86,14 @@ function bfsPathToTargets(
       path.reverse();
       return path;
     }
-    for (const [r2, c2] of orthogonalNeighbors(G, r, c)) {
-      if (!isAllowed(G, r2, c2)) continue;
+    forEachOrthogonalNeighbor(G, r, c, (r2, c2) => {
+      if (!isAllowed(G, r2, c2)) return;
       const k2 = cellKey(r2, c2);
-      if (blockSet.has(k2) || visited.has(k2)) continue;
+      if (blockSet.has(k2) || visited.has(k2)) return;
       visited.add(k2);
       parent.set(k2, [r, c]);
       queue.push([r2, c2]);
-    }
+    });
   }
   return null;
 }
@@ -129,24 +129,30 @@ function buildRoadConnectionProbe(
   }
 
   const border = rectangleBorderCells(r, c, rows, cols);
-  for (const [br, bc] of border) {
-    if (roads.has(cellKey(br, bc))) {
-      return { path: null };
-    }
-  }
-
   const blockSet = new Set<string>();
   for (const k of occupied) if (!roads.has(k)) blockSet.add(k);
-  for (const k of rectangleCells(r, c, rows, cols)) blockSet.add(k);
-  const targets = roads.size > 0 ? roads : availableRow0RoadTargets(G, blockSet);
-  if (targets.size === 0) return null;
+  forEachRectangleCell(r, c, rows, cols, (rr, cc) => blockSet.add(cellKey(rr, cc)));
+  const startCells: [number, number][] = [];
+  let touchesRoad = false;
+  for (const [br, bc] of border) {
+    if (!isAllowed(G, br, bc)) continue;
+    const key = cellKey(br, bc);
+    if (roads.has(key)) {
+      touchesRoad = true;
+      continue;
+    }
+    if (!blockSet.has(key)) {
+      startCells.push([br, bc]);
+    }
+  }
+  if (touchesRoad) {
+    return { path: null };
+  }
+  if (roads.size === 0 && !hasAvailableRow0RoadCell(G, blockSet)) {
+    return null;
+  }
 
-  const path = bfsPathToTargets(
-    G,
-    border.filter(([br, bc]) => isAllowed(G, br, bc) && !blockSet.has(cellKey(br, bc))),
-    targets,
-    blockSet
-  );
+  const path = bfsPathToTargets(G, startCells, blockSet, roads.size > 0 ? roads : null);
   if (!path) return null;
   return { path };
 }
@@ -158,6 +164,7 @@ export function computeRow0ReachableEmptyFrontier(
   const reachable = new Set<string>();
   const distanceByKey = new Map<string, number>();
   const queue: [number, number][] = [];
+  let queueIndex = 0;
   const W = width(G);
   for (let c = 0; c < W; c++) {
     if (!isAllowed(G, 0, c)) continue;
@@ -168,17 +175,17 @@ export function computeRow0ReachableEmptyFrontier(
     queue.push([0, c]);
   }
 
-  while (queue.length > 0) {
-    const [r, c] = queue.shift()!;
+  while (queueIndex < queue.length) {
+    const [r, c] = queue[queueIndex++]!;
     const currentDistance = distanceByKey.get(cellKey(r, c)) ?? 0;
-    for (const [r2, c2] of orthogonalNeighbors(G, r, c)) {
-      if (!isAllowed(G, r2, c2)) continue;
+    forEachOrthogonalNeighbor(G, r, c, (r2, c2) => {
+      if (!isAllowed(G, r2, c2)) return;
       const nextKey = cellKey(r2, c2);
-      if (blocked.has(nextKey) || reachable.has(nextKey)) continue;
+      if (blocked.has(nextKey) || reachable.has(nextKey)) return;
       reachable.add(nextKey);
       distanceByKey.set(nextKey, currentDistance + 1);
       queue.push([r2, c2]);
-    }
+    });
   }
 
   return { reachable, distanceByKey };
@@ -197,13 +204,13 @@ export function probeBuildingConnectedToRow0ReachableEmptyFrontier(
   }
 
   let bestDistance = Number.POSITIVE_INFINITY;
-  for (const [br, bc] of rectangleBorderCells(r, c, rows, cols)) {
-    if (!isAllowed(G, br, bc)) continue;
+  forEachRectangleBorderCell(r, c, rows, cols, (br, bc) => {
+    if (!isAllowed(G, br, bc)) return;
     const key = cellKey(br, bc);
-    if (!frontier.reachable.has(key)) continue;
+    if (!frontier.reachable.has(key)) return;
     const distance = frontier.distanceByKey.get(key) ?? Number.POSITIVE_INFINITY;
     if (distance < bestDistance) bestDistance = distance;
-  }
+  });
   if (!Number.isFinite(bestDistance)) return null;
   return { distance: bestDistance };
 }
@@ -241,23 +248,27 @@ export function ensureBuildingConnectedToRoads(
  */
 export function roadsConnectedToRow0(G: Grid, roads: Set<string>): Set<string> {
   const inRow0 = new Set<string>();
+  const queue: [number, number][] = [];
   for (const k of roads) {
-    const [r] = k.split(",").map(Number);
-    if (r === 0) inRow0.add(k);
+    const { r, c } = cellFromKey(k);
+    if (r === 0) {
+      inRow0.add(k);
+      queue.push([r, c]);
+    }
   }
   if (inRow0.size === 0) return new Set();
 
   const reachable = new Set<string>(inRow0);
-  const queue = [...inRow0].map((k) => k.split(",").map(Number) as [number, number]);
-  while (queue.length > 0) {
-    const [r, c] = queue.shift()!;
-    for (const [r2, c2] of orthogonalNeighbors(G, r, c)) {
-      if (!isAllowed(G, r2, c2)) continue;
+  let queueIndex = 0;
+  while (queueIndex < queue.length) {
+    const [r, c] = queue[queueIndex++]!;
+    forEachOrthogonalNeighbor(G, r, c, (r2, c2) => {
+      if (!isAllowed(G, r2, c2)) return;
       const k2 = cellKey(r2, c2);
-      if (!roads.has(k2) || reachable.has(k2)) continue;
+      if (!roads.has(k2) || reachable.has(k2)) return;
       reachable.add(k2);
       queue.push([r2, c2]);
-    }
+    });
   }
   return reachable;
 }
@@ -277,11 +288,11 @@ export function isAdjacentToRoads(
   cols: number
 ): boolean {
   if (buildingTouchesRoadAnchorRow(r)) return true;
-  const border = rectangleBorderCells(r, c, rows, cols);
-  for (const [br, bc] of border) {
-    if (roads.has(cellKey(br, bc))) return true;
-  }
-  return false;
+  let adjacent = false;
+  forEachRectangleBorderCell(r, c, rows, cols, (br, bc) => {
+    if (!adjacent && roads.has(cellKey(br, bc))) adjacent = true;
+  });
+  return adjacent;
 }
 
 /** Check if we can connect this building to roads (either already adjacent or path exists on allowed cells). Does NOT modify roads. */

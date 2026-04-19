@@ -12,7 +12,9 @@ export function cellKey(r: number, c: number): string {
 }
 
 export function cellFromKey(key: string): Cell {
-  const [r, c] = key.split(",").map(Number);
+  const comma = key.indexOf(",");
+  const r = Number(key.slice(0, comma));
+  const c = Number(key.slice(comma + 1));
   return { r, c };
 }
 

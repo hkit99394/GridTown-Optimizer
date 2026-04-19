@@ -3,9 +3,10 @@
  */
 
 import {
+  cellKey,
+  forEachRectangleCell,
   hasAvailableRow0RoadCell,
   normalizeServicePlacement,
-  residentialFootprint,
 } from "../core/index.js";
 import type { Grid, Solution } from "../core/index.js";
 
@@ -19,7 +20,7 @@ export function placementLeavesRow0RoadCellAvailable(
 ): boolean {
   if (r !== 0) return true;
   const blocked = new Set<string>(occupied);
-  for (const key of residentialFootprint(r, c, rows, cols)) blocked.add(key);
+  forEachRectangleCell(r, c, rows, cols, (rr, cc) => blocked.add(cellKey(rr, cc)));
   return hasAvailableRow0RoadCell(G, blocked);
 }
 

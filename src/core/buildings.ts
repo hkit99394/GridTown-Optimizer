@@ -13,8 +13,16 @@ import type {
   ServiceTypeSetting,
   SolverParams,
 } from "./types.js";
-import { buildBlockedPrefixSum, height, width, isAllowed, rectangleBlockedCount } from "./grid.js";
-import { rectangleCells, rectangleBorderCells } from "./grid.js";
+import {
+  buildBlockedPrefixSum,
+  height,
+  width,
+  isAllowed,
+  rectangleBlockedCount,
+  rectangleCells,
+  rectangleCountCells,
+  rectangleSomeCell,
+} from "./grid.js";
 import { normalizeSize } from "./rules.js";
 
 export function normalizeServicePlacement(service: ServicePlacement): Required<ServicePlacement> {
@@ -110,11 +118,11 @@ function enumerateValidPlacementsForDimensions(
  * Effect zone for a service: all allowed cells within its configured outward range
  * around the footprint rectangle, excluding footprint cells.
  */
-export function serviceEffectZone(G: Grid, service: ServicePlacement): string[] {
+export function buildServiceEffectZoneSet(G: Grid, service: ServicePlacement): Set<string> {
   const { r, c, rows, cols, range } = normalizeServicePlacement(service);
   const H = height(G);
   const W = width(G);
-  const zone: string[] = [];
+  const zone = new Set<string>();
   const rMin = Math.max(0, r - range);
   const rMax = Math.min(H - 1, r + rows - 1 + range);
   const cMin = Math.max(0, c - range);
@@ -123,10 +131,14 @@ export function serviceEffectZone(G: Grid, service: ServicePlacement): string[] 
     for (let cc = cMin; cc <= cMax; cc++) {
       const inFootprint = rr >= r && rr < r + rows && cc >= c && cc < c + cols;
       if (inFootprint) continue;
-      if (isAllowed(G, rr, cc)) zone.push(cellKey(rr, cc));
+      if (isAllowed(G, rr, cc)) zone.add(cellKey(rr, cc));
     }
   }
   return zone;
+}
+
+export function serviceEffectZone(G: Grid, service: ServicePlacement): string[] {
+  return [...buildServiceEffectZoneSet(G, service)];
 }
 
 export function serviceFootprint(service: ServicePlacement): string[] {
@@ -224,8 +236,7 @@ export function enumerateResidentialCandidatesFromTypes(
 
 /** Check if footprint of (r, c, rows, cols) overlaps with occupied set */
 export function overlaps(occupied: Set<string>, r: number, c: number, rows: number, cols: number): boolean {
-  const cells = rectangleCells(r, c, rows, cols);
-  return cells.some((k) => occupied.has(k));
+  return rectangleSomeCell(r, c, rows, cols, (rr, cc) => occupied.has(cellKey(rr, cc)));
 }
 
 /** Count how many cells of the residential footprint fall inside the effect zone set */
@@ -236,8 +247,7 @@ export function countServiceBoost(
   rows: number,
   cols: number
 ): number {
-  const foot = residentialFootprint(r, c, rows, cols);
-  return foot.filter((k) => effectZoneCells.has(k)).length;
+  return rectangleCountCells(r, c, rows, cols, (rr, cc) => effectZoneCells.has(cellKey(rr, cc)));
 }
 
 /** Whether any cell of residential footprint is in effect zone (binary: boosted or not per service) */
@@ -248,6 +258,5 @@ export function isBoostedByService(
   rows: number,
   cols: number
 ): boolean {
-  const foot = residentialFootprint(r, c, rows, cols);
-  return foot.some((k) => effectZoneCells.has(k));
+  return rectangleSomeCell(r, c, rows, cols, (rr, cc) => effectZoneCells.has(cellKey(rr, cc)));
 }

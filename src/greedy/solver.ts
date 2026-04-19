@@ -4,6 +4,7 @@
 
 import { existsSync } from "node:fs";
 
+import { cellKey } from "../core/types.js";
 import type { Grid } from "../core/types.js";
 import type {
   GreedyOptions,
@@ -32,9 +33,7 @@ import {
   enumerateServiceCandidates,
   enumerateResidentialCandidates,
   enumerateResidentialCandidatesFromTypes,
-  serviceEffectZone,
-  serviceFootprint,
-  residentialFootprint,
+  buildServiceEffectZoneSet,
   overlaps,
   isBoostedByService,
   normalizeServicePlacement,
@@ -42,6 +41,7 @@ import {
 import { collectRow0AnchorRefinementSeeds, placementLeavesRow0RoadCellAvailable } from "./row0Anchors.js";
 import { getBuildingLimits, getResidentialBaseMax, NO_TYPE_INDEX } from "../core/rules.js";
 import { writeSolutionSnapshot } from "../core/solutionSerialization.js";
+import { forEachRectangleCell } from "../core/grid.js";
 
 type ResidentialCandidateStat = {
   r: number;
@@ -223,12 +223,6 @@ const SERVICE_REFINE_FIXED_SERVICE_EVALUATION = {
   maxOrders: 6,
   maxSeededOrders: 2,
   maxSeeds: 4,
-};
-
-const LOCAL_SEARCH_SERVICE_FIXED_SERVICE_EVALUATION = {
-  maxOrders: 4,
-  maxSeededOrders: 1,
-  maxSeeds: 2,
 };
 
 const LOCAL_SEARCH_SERVICE_NEIGHBORHOOD = {
@@ -418,6 +412,27 @@ function stableResidentialPlacementKey(
     candidate.cols,
     getCandidateTypeIndex(candidate),
   ].join(",");
+}
+
+function forEachPlacementCell(
+  placement: { r: number; c: number; rows: number; cols: number },
+  visit: (key: string) => void
+): void {
+  forEachRectangleCell(placement.r, placement.c, placement.rows, placement.cols, (r, c) => visit(cellKey(r, c)));
+}
+
+function addPlacementCellsToSet(
+  target: Set<string>,
+  placement: { r: number; c: number; rows: number; cols: number }
+): void {
+  forEachPlacementCell(placement, (key) => target.add(key));
+}
+
+function deletePlacementCellsFromSet(
+  target: Set<string>,
+  placement: { r: number; c: number; rows: number; cols: number }
+): void {
+  forEachPlacementCell(placement, (key) => target.delete(key));
 }
 
 function isBetterSearchSolution(candidate: Solution | null, incumbent: Solution | null): boolean {
@@ -875,18 +890,18 @@ function removeActiveCandidate(pool: ActiveCandidatePool, candidateIndex: number
 
 function buildFootprintCandidateIndex<T>(
   candidates: readonly T[],
-  footprintKeys: (candidate: T) => string[]
+  visitFootprintKeys: (candidate: T, visit: (cellKey: string) => void) => void
 ): Map<string, number[]> {
   const byCell = new Map<string, number[]>();
   for (let candidateIndex = 0; candidateIndex < candidates.length; candidateIndex++) {
-    for (const cellKey of footprintKeys(candidates[candidateIndex])) {
+    visitFootprintKeys(candidates[candidateIndex], (cellKey) => {
       const existing = byCell.get(cellKey);
       if (existing) {
         existing.push(candidateIndex);
       } else {
         byCell.set(cellKey, [candidateIndex]);
       }
-    }
+    });
   }
   return byCell;
 }
@@ -894,8 +909,8 @@ function buildFootprintCandidateIndex<T>(
 function buildResidentialGroupCellIndex(
   groups: ResidentialScoringGroup[]
 ): Map<string, number[]> {
-  return buildFootprintCandidateIndex(groups, (group) =>
-    residentialFootprint(group.r, group.c, group.rows, group.cols)
+  return buildFootprintCandidateIndex(groups, (group, visit) =>
+    forEachRectangleCell(group.r, group.c, group.rows, group.cols, (r, c) => visit(cellKey(r, c)))
   );
 }
 
@@ -994,21 +1009,21 @@ function collectServiceCandidatesForResidentialGroups(
   return [...affected];
 }
 
-function collectNewlyOccupiedKeys(
+function collectNewlyOccupiedKeysForPlacement(
   occupied: Set<string>,
   probe: RoadConnectionProbe | null,
-  footprintKeys: Iterable<string>
+  placement: { r: number; c: number; rows: number; cols: number }
 ): string[] {
   const newlyOccupied = new Set<string>();
   if (probe?.path) {
     for (const [r, c] of probe.path) {
-      const key = `${r},${c}`;
+      const key = cellKey(r, c);
       if (!occupied.has(key)) newlyOccupied.add(key);
     }
   }
-  for (const key of footprintKeys) {
+  forEachPlacementCell(placement, (key) => {
     if (!occupied.has(key)) newlyOccupied.add(key);
-  }
+  });
   return [...newlyOccupied];
 }
 
@@ -1147,11 +1162,11 @@ function solveOne(
       }
       applyRoadConnectionProbe(roads, probe.roadProbe);
       for (const k of roads) occupied.add(k);
-      for (const k of serviceFootprint(placement)) occupied.add(k);
+      addPlacementCellsToSet(occupied, placement);
       services.push(placement);
       serviceTypeIndices.push(s.typeIndex);
       serviceBonuses.push(s.bonus);
-      effectZones.push(new Set(serviceEffectZone(G, placement)));
+      effectZones.push(buildServiceEffectZoneSet(G, placement));
       const coveredGroupIndices = serviceCoverageGroupsByKey.get(serviceCandidateKey(s)) ?? [];
       for (const groupIndex of coveredGroupIndices) {
         currentResidentialGroupBoosts[groupIndex] += s.bonus;
@@ -1222,13 +1237,11 @@ function solveOne(
       if (!bestCandidate || bestCandidateIndex < 0 || bestScore <= 0) break;
 
       const placement = materializeServicePlacement(bestCandidate);
-      const newlyOccupiedKeys = useDeferredRoadCommitment
-        ? [...serviceFootprint(placement)]
-        : collectNewlyOccupiedKeys(
-            occupied,
-            bestProbe?.kind === "explicit" ? bestProbe.roadProbe : null,
-            serviceFootprint(placement)
-          );
+      const newlyOccupiedKeys = collectNewlyOccupiedKeysForPlacement(
+        occupied,
+        useDeferredRoadCommitment ? null : bestProbe?.kind === "explicit" ? bestProbe.roadProbe : null,
+        placement
+      );
       if (!bestProbe) {
         break;
       }
@@ -1248,7 +1261,7 @@ function solveOne(
       services.push(placement);
       serviceTypeIndices.push(bestCandidate.typeIndex);
       serviceBonuses.push(bestCandidate.bonus);
-      effectZones.push(new Set(serviceEffectZone(G, placement)));
+      effectZones.push(buildServiceEffectZoneSet(G, placement));
       const coveredGroupIndices = serviceCoverageGroupsByKey.get(serviceCandidateKey(bestCandidate)) ?? [];
       for (const groupIndex of coveredGroupIndices) {
         currentResidentialGroupBoosts[groupIndex] += bestCandidate.bonus;
@@ -1377,13 +1390,11 @@ function solveOne(
       }
     }
     if (best == null || bestCandidateIndex < 0 || bestPop < 0) break;
-    const newlyOccupiedKeys = useDeferredRoadCommitment
-      ? [...residentialFootprint(best.r, best.c, best.rows, best.cols)]
-      : collectNewlyOccupiedKeys(
-          occupied,
-          bestProbe?.kind === "explicit" ? bestProbe.roadProbe : null,
-          residentialFootprint(best.r, best.c, best.rows, best.cols)
-        );
+    const newlyOccupiedKeys = collectNewlyOccupiedKeysForPlacement(
+      occupied,
+      useDeferredRoadCommitment ? null : bestProbe?.kind === "explicit" ? bestProbe.roadProbe : null,
+      best
+    );
     if (!bestProbe) break;
     if (!useDeferredRoadCommitment) {
       if (profileCounters) profileCounters.roads.ensureConnectedCalls++;
@@ -1427,12 +1438,8 @@ function solveOne(
 
   if (useDeferredRoadCommitment) {
     const occupiedBuildings = new Set<string>();
-    for (const s of services) {
-      for (const k of serviceFootprint(s)) occupiedBuildings.add(k);
-    }
-    for (const r of residentials) {
-      for (const k of residentialFootprint(r.r, r.c, r.rows, r.cols)) occupiedBuildings.add(k);
-    }
+    for (const s of services) addPlacementCellsToSet(occupiedBuildings, s);
+    for (const r of residentials) addPlacementCellsToSet(occupiedBuildings, r);
     const materializedRoads = materializeDeferredRoadNetwork(
       G,
       initialRoadSeed,
@@ -1478,12 +1485,8 @@ function solveOne(
   }
 
   const occupiedBuildings = new Set<string>();
-  for (const s of services) {
-    for (const k of serviceFootprint(s)) occupiedBuildings.add(k);
-  }
-  for (const r of residentials) {
-    for (const k of residentialFootprint(r.r, r.c, r.rows, r.cols)) occupiedBuildings.add(k);
-  }
+  for (const s of services) addPlacementCellsToSet(occupiedBuildings, s);
+  for (const r of residentials) addPlacementCellsToSet(occupiedBuildings, r);
 
   // Keep only roads connected to row 0, then re-ensure each placed building
   // is connected to that network (robust against any stray/disconnected roads).
@@ -1616,7 +1619,9 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     serviceCandidateIndicesByKey: new Map(
       serviceCandidates.map((candidate, candidateIndex) => [serviceCandidateKey(candidate), candidateIndex])
     ),
-    serviceCandidatesByOccupiedCell: buildFootprintCandidateIndex(serviceCandidates, (candidate) => serviceFootprint(candidate)),
+    serviceCandidatesByOccupiedCell: buildFootprintCandidateIndex(serviceCandidates, (candidate, visit) =>
+      forEachPlacementCell(candidate, visit)
+    ),
     residentialGroupsByOccupiedCell: buildResidentialGroupCellIndex(residentialScoringGroups),
     serviceCandidateIndicesByResidentialGroup: buildServiceCoverageReverseIndex(
       serviceCandidates,
@@ -1626,9 +1631,8 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     serviceCandidateIndicesByType: useServiceTypes
       ? buildTypedCandidateIndex(serviceCandidates.length, (candidateIndex) => serviceCandidates[candidateIndex].typeIndex, params.serviceTypes!.length)
       : null,
-    residentialCandidatesByOccupiedCell: buildFootprintCandidateIndex(
-      anyResidentialCandidates,
-      (candidate) => residentialFootprint(candidate.r, candidate.c, candidate.rows, candidate.cols)
+    residentialCandidatesByOccupiedCell: buildFootprintCandidateIndex(anyResidentialCandidates, (candidate, visit) =>
+      forEachPlacementCell(candidate, visit)
     ),
     residentialCandidateIndicesByType: useTypes
       ? buildTypedCandidateIndex(
@@ -1951,6 +1955,47 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
   const materializeCurrentServiceSet = (solution: Solution): ServiceCandidate[] =>
     solution.services.map((_, index) => materializeChosenServiceCandidate(solution, index));
 
+  const currentRoadSeedFromSolution = (solution: Solution): Set<string> | undefined => {
+    const seed = new Set<string>();
+    for (const key of solution.roads) {
+      if (key.startsWith("0,")) seed.add(key);
+    }
+    return seed.size > 0 ? seed : undefined;
+  };
+
+  const buildServiceNeighborhoodSolution = (
+    incumbent: Solution,
+    candidateServices: ServiceCandidate[]
+  ): Solution | null => {
+    const serviceTypeUsage = new Array((params.serviceTypes ?? []).length).fill(0);
+    const occupiedBuildings = new Set<string>();
+    for (const residential of incumbent.residentials) {
+      addPlacementCellsToSet(occupiedBuildings, residential);
+    }
+
+    for (const service of candidateServices) {
+      if (overlaps(occupiedBuildings, service.r, service.c, service.rows, service.cols)) {
+        return null;
+      }
+      if (service.typeIndex >= 0 && service.typeIndex < serviceTypeUsage.length) {
+        serviceTypeUsage[service.typeIndex] += 1;
+      }
+    }
+
+    const serviceTypes = params.serviceTypes ?? [];
+    for (let typeIndex = 0; typeIndex < serviceTypeUsage.length; typeIndex++) {
+      if (serviceTypeUsage[typeIndex] > (serviceTypes[typeIndex]?.avail ?? 0)) {
+        return null;
+      }
+    }
+
+    return solveWithOrder(serviceOrderSorted, {
+      maxServices: candidateServices.length,
+      fixedServices: candidateServices,
+      initialRoadSeed: currentRoadSeedFromSolution(incumbent),
+    });
+  };
+
   const runBoundedServiceLocalSearch = (initialBest: Solution): Solution => {
     if (!localSearch || !localSearchServiceMoves) return initialBest;
     if (serviceOrderSorted.length === 0) return initialBest;
@@ -1976,11 +2021,7 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
           if (profileCounters) profileCounters.localSearch.serviceRemoveChecks++;
           removeTrials++;
           const forced = incumbentServices.filter((_, index) => index !== serviceIndex);
-          const trial = evaluateForcedServiceSet(
-            forced,
-            forced.length,
-            LOCAL_SEARCH_SERVICE_FIXED_SERVICE_EVALUATION
-          );
+          const trial = buildServiceNeighborhoodSolution(incumbent, forced);
           if (isBetterSearchSolution(trial, iterationBest)) {
             iterationBest = trial as Solution;
           }
@@ -1996,11 +2037,7 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
           if (profileCounters) profileCounters.localSearch.serviceAddChecks++;
           addTrials++;
           const forced = [...incumbentServices, candidate];
-          const trial = evaluateForcedServiceSet(
-            forced,
-            forced.length,
-            LOCAL_SEARCH_SERVICE_FIXED_SERVICE_EVALUATION
-          );
+          const trial = buildServiceNeighborhoodSolution(incumbent, forced);
           if (isBetterSearchSolution(trial, iterationBest)) {
             iterationBest = trial as Solution;
           }
@@ -2021,11 +2058,7 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
             swapTrials++;
             const forced = [...incumbentServices];
             forced[serviceIndex] = candidate;
-            const trial = evaluateForcedServiceSet(
-              forced,
-              forced.length,
-              LOCAL_SEARCH_SERVICE_FIXED_SERVICE_EVALUATION
-            );
+            const trial = buildServiceNeighborhoodSolution(incumbent, forced);
             if (isBetterSearchSolution(trial, iterationBest)) {
               iterationBest = trial as Solution;
             }
@@ -2239,7 +2272,7 @@ function localSearchImprove(
       const currentPop = populations[i];
       const resType = residentialTypeIndices[i] ?? NO_TYPE_INDEX;
       const othersOccupied = new Set(occupied);
-      for (const k of residentialFootprint(res.r, res.c, res.rows, res.cols)) othersOccupied.delete(k);
+      deletePlacementCellsFromSet(othersOccupied, res);
       for (let candidateIndex = 0; candidateIndex < residentialCandidates.length; candidateIndex++) {
         const cand = residentialCandidates[candidateIndex];
         maybeStop?.();
@@ -2333,7 +2366,7 @@ function localSearchImprove(
       if (profileCounters) profileCounters.roads.probeReuses++;
       applyRoadConnectionProbe(roads, bestAddProbe);
       for (const k of roads) occupied.add(k);
-      for (const k of residentialFootprint(candidate.r, candidate.c, candidate.rows, candidate.cols)) occupied.add(k);
+      addPlacementCellsToSet(occupied, candidate);
       residentials.push({ r: candidate.r, c: candidate.c, rows: candidate.rows, cols: candidate.cols });
       residentialTypeIndices.push(candidateTypeIndex);
       populations.push(addPop);
@@ -2344,24 +2377,14 @@ function localSearchImprove(
 
     if (bestMove) {
       const currentResidential = residentials[bestMove.residentialIndex];
-      for (const k of residentialFootprint(
-        currentResidential.r,
-        currentResidential.c,
-        currentResidential.rows,
-        currentResidential.cols
-      )) occupied.delete(k);
+      deletePlacementCellsFromSet(occupied, currentResidential);
       if (useTypes && remainingAvail && bestMove.currentTypeIndex >= 0) remainingAvail[bestMove.currentTypeIndex]++;
       if (profileCounters) profileCounters.roads.ensureConnectedCalls++;
       if (!bestMoveProbe) break;
       if (profileCounters) profileCounters.roads.probeReuses++;
       applyRoadConnectionProbe(roads, bestMoveProbe);
       for (const k of roads) occupied.add(k);
-      for (const k of residentialFootprint(
-        bestMove.candidate.r,
-        bestMove.candidate.c,
-        bestMove.candidate.rows,
-        bestMove.candidate.cols
-      )) occupied.add(k);
+      addPlacementCellsToSet(occupied, bestMove.candidate);
       if (useTypes && remainingAvail && bestMove.candidateTypeIndex >= 0) remainingAvail[bestMove.candidateTypeIndex]--;
       residentials[bestMove.residentialIndex] = {
         r: bestMove.candidate.r,

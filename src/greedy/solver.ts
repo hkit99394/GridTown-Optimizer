@@ -22,6 +22,7 @@ import {
   materializeDeferredRoadNetwork,
   probeBuildingConnectedToRoads,
   probeBuildingConnectedToRow0ReachableEmptyFrontier,
+  roadSeedRow0RepresentativeCandidates,
   roadsConnectedToRow0,
   isAdjacentToRoads,
   findAvailableRow0RoadCell,
@@ -138,6 +139,7 @@ function createGreedyProfileCounters(): GreedyProfileCounters {
       restartCaps: 0,
       serviceRefineTrials: 0,
       exhaustiveTrials: 0,
+      fixedServiceRealizationTrials: 0,
       localSearchIterations: 0,
     },
     servicePhase: {
@@ -213,6 +215,18 @@ function dedupeSortedNumbers(values: number[]): number[] {
   return [...new Set(values)].sort((a, b) => a - b);
 }
 
+const SERVICE_REFINE_FIXED_SERVICE_EVALUATION = {
+  maxOrders: 6,
+  maxSeededOrders: 2,
+  maxSeeds: 4,
+};
+
+const EXHAUSTIVE_FIXED_SERVICE_EVALUATION = {
+  maxOrders: 4,
+  maxSeededOrders: 1,
+  maxSeeds: 3,
+};
+
 function inclusiveCapBand(center: number, upper: number, radius: number): number[] {
   const out: number[] = [];
   for (let cap = Math.max(0, center - radius); cap <= Math.min(upper, center + radius); cap++) {
@@ -266,6 +280,26 @@ function combinationsOfK(n: number, k: number, maxCount: number): number[][] {
   }
   if (k === 0) return [[]];
   if (k < 0 || k > n) return [];
+  dfs(0);
+  return out;
+}
+
+function permutationsOfItems<T>(items: T[], maxCount: number): T[][] {
+  const out: T[][] = [];
+  const working = [...items];
+  function dfs(start: number): void {
+    if (out.length >= maxCount) return;
+    if (start >= working.length) {
+      out.push([...working]);
+      return;
+    }
+    for (let index = start; index < working.length; index++) {
+      [working[start], working[index]] = [working[index], working[start]];
+      dfs(start + 1);
+      [working[start], working[index]] = [working[index], working[start]];
+      if (out.length >= maxCount) return;
+    }
+  }
   dfs(0);
   return out;
 }
@@ -339,6 +373,53 @@ function materializeChosenServiceCandidate(solution: Solution, index: number): S
     typeIndex: solution.serviceTypeIndices[index] ?? NO_TYPE_INDEX,
     bonus: solution.servicePopulationIncreases[index] ?? 0,
   };
+}
+
+function stableServicePlacementKey(candidate: ServicePlacement | ServiceCandidate): string {
+  const placement = normalizeServicePlacement(candidate);
+  return [
+    placement.r,
+    placement.c,
+    placement.rows,
+    placement.cols,
+    placement.range,
+    "typeIndex" in candidate ? candidate.typeIndex : NO_TYPE_INDEX,
+    "bonus" in candidate ? candidate.bonus : 0,
+  ].join(",");
+}
+
+function stableResidentialPlacementKey(
+  candidate: ResidentialPlacement | ResidentialCandidate
+): string {
+  return [
+    candidate.r,
+    candidate.c,
+    candidate.rows,
+    candidate.cols,
+    getCandidateTypeIndex(candidate),
+  ].join(",");
+}
+
+function isBetterSearchSolution(candidate: Solution | null, incumbent: Solution | null): boolean {
+  if (!candidate) return false;
+  if (!incumbent) return true;
+  if (candidate.totalPopulation !== incumbent.totalPopulation) {
+    return candidate.totalPopulation > incumbent.totalPopulation;
+  }
+  if (candidate.roads.size !== incumbent.roads.size) {
+    return candidate.roads.size < incumbent.roads.size;
+  }
+  const candidateServiceKey = candidate.services.map(stableServicePlacementKey).join("|");
+  const incumbentServiceKey = incumbent.services.map(stableServicePlacementKey).join("|");
+  if (candidateServiceKey !== incumbentServiceKey) {
+    return candidateServiceKey < incumbentServiceKey;
+  }
+  const candidateResidentialKey = candidate.residentials.map(stableResidentialPlacementKey).join("|");
+  const incumbentResidentialKey = incumbent.residentials.map(stableResidentialPlacementKey).join("|");
+  if (candidateResidentialKey !== incumbentResidentialKey) {
+    return candidateResidentialKey < incumbentResidentialKey;
+  }
+  return [...candidate.roads].sort().join("|") < [...incumbent.roads].sort().join("|");
 }
 
 function rectanglesOverlap(
@@ -1578,6 +1659,161 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
   ): Solution | null => finalizeDominanceCandidate(
     solveOne({ ...baseSolveContext, serviceOrder }, { ...options, profileCounters })
   );
+  const serviceOrderRankByKey = new Map(
+    serviceOrderSorted.map((candidate, index) => [serviceCandidateKey(candidate), index])
+  );
+
+  const compareForcedServiceByRank = (left: ServiceCandidate, right: ServiceCandidate): number =>
+    (serviceOrderRankByKey.get(serviceCandidateKey(left)) ?? Number.POSITIVE_INFINITY)
+      - (serviceOrderRankByKey.get(serviceCandidateKey(right)) ?? Number.POSITIVE_INFINITY)
+    || compareServiceTieBreaks(
+      left,
+      { kind: "explicit", roadCost: 0, roadProbe: { path: null } },
+      right,
+      { kind: "explicit", roadCost: 0, roadProbe: { path: null } }
+    );
+
+  const compareForcedServiceRowMajor = (left: ServiceCandidate, right: ServiceCandidate): number =>
+    left.r - right.r
+    || left.c - right.c
+    || left.rows - right.rows
+    || left.cols - right.cols
+    || left.range - right.range
+    || left.typeIndex - right.typeIndex
+    || left.bonus - right.bonus
+    || serviceCandidateKey(left).localeCompare(serviceCandidateKey(right));
+
+  const buildForcedServiceOrders = (
+    forcedServices: ServiceCandidate[],
+    maxOrders: number
+  ): ServiceCandidate[][] => {
+    if (forcedServices.length === 0 || maxOrders <= 0) return [forcedServices];
+    const orders: ServiceCandidate[][] = [];
+    const seenKeys = new Set<string>();
+    const addOrder = (order: ServiceCandidate[]): void => {
+      if (orders.length >= maxOrders) return;
+      const key = order.map((candidate) => serviceCandidateKey(candidate)).join("|");
+      if (seenKeys.has(key)) return;
+      seenKeys.add(key);
+      orders.push([...order]);
+    };
+
+    const ranked = [...forcedServices].sort(compareForcedServiceByRank);
+    const rowMajor = [...forcedServices].sort(compareForcedServiceRowMajor);
+
+    addOrder(forcedServices);
+    addOrder(ranked);
+    addOrder([...ranked].reverse());
+    addOrder(rowMajor);
+    addOrder([...rowMajor].reverse());
+
+    if (forcedServices.length <= 3) {
+      for (const permutation of permutationsOfItems(ranked, maxOrders)) {
+        addOrder(permutation);
+      }
+    }
+
+    for (let shift = 1; shift < ranked.length && orders.length < maxOrders; shift++) {
+      addOrder([...ranked.slice(shift), ...ranked.slice(0, shift)]);
+    }
+
+    return orders;
+  };
+
+  const collectForcedServiceSeeds = (
+    successfulSolutions: Solution[],
+    maxSeeds: number
+  ): (Set<string> | undefined)[] => {
+    const seeds: (Set<string> | undefined)[] = [undefined];
+    if (maxSeeds <= 0) return seeds;
+    const seenKeys = new Set<string>(["<none>"]);
+    const addSeed = (seed: Set<string>): void => {
+      if (seeds.length > maxSeeds) return;
+      const key = [...seed].sort().join("|");
+      if (seenKeys.has(key)) return;
+      seenKeys.add(key);
+      seeds.push(new Set(seed));
+    };
+
+    for (const solution of successfulSolutions) {
+      for (const seed of collectRow0AnchorRefinementSeeds(solution)) {
+        addSeed(seed);
+        if (seeds.length > maxSeeds) return seeds;
+      }
+    }
+
+    for (const fallbackSeed of roadSeedRow0RepresentativeCandidates(G, maxSeeds)) {
+      addSeed(fallbackSeed);
+      if (seeds.length > maxSeeds) break;
+    }
+
+    return seeds;
+  };
+
+  type FixedServiceEvaluationBudget = {
+    maxOrders: number;
+    maxSeededOrders: number;
+    maxSeeds: number;
+  };
+
+  const evaluateForcedServiceSet = (
+    forcedServices: ServiceCandidate[],
+    maxForcedServices: number,
+    budget: FixedServiceEvaluationBudget
+  ): Solution | null => {
+    const orders = buildForcedServiceOrders(forcedServices, budget.maxOrders);
+    const baseResults: { order: ServiceCandidate[]; solution: Solution | null }[] = [];
+    let bestForced: Solution | null = null;
+
+    for (const order of orders) {
+      maybeStop();
+      if (profileCounters) profileCounters.attempts.fixedServiceRealizationTrials++;
+      const trial = solveWithOrder(serviceOrderSorted, {
+        maxServices: maxForcedServices,
+        fixedServices: order,
+      });
+      baseResults.push({ order, solution: trial });
+      if (isBetterSearchSolution(trial, bestForced)) {
+        bestForced = trial;
+        updateBest(bestForced);
+      }
+    }
+
+    const successfulBaseResults = baseResults
+      .filter((entry): entry is { order: ServiceCandidate[]; solution: Solution } => entry.solution !== null)
+      .sort((left, right) => (
+        isBetterSearchSolution(left.solution, right.solution)
+          ? -1
+          : isBetterSearchSolution(right.solution, left.solution)
+            ? 1
+            : 0
+      ));
+    if (successfulBaseResults.length === 0) return bestForced;
+
+    const seeds = collectForcedServiceSeeds(
+      successfulBaseResults.slice(0, budget.maxSeededOrders).map((entry) => entry.solution),
+      budget.maxSeeds
+    );
+
+    for (const { order } of successfulBaseResults.slice(0, budget.maxSeededOrders)) {
+      for (const seed of seeds) {
+        if (!seed) continue;
+        maybeStop();
+        if (profileCounters) profileCounters.attempts.fixedServiceRealizationTrials++;
+        const trial = solveWithOrder(serviceOrderSorted, {
+          maxServices: maxForcedServices,
+          fixedServices: order,
+          initialRoadSeed: seed,
+        });
+        if (isBetterSearchSolution(trial, bestForced)) {
+          bestForced = trial;
+          updateBest(bestForced);
+        }
+      }
+    }
+
+    return bestForced;
+  };
 
   const compareCapResults = (a: CapResult, b: CapResult): number =>
     b.totalPopulation - a.totalPopulation
@@ -1767,10 +2003,11 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
           if (best.services.some((s, idx) => idx !== i && sameServicePlacement(s, cand))) continue;
           const forced = best.services.map((_, idx) => materializeChosenServiceCandidate(best!, idx));
           forced[i] = cand;
-          const trial = solveWithOrder(serviceOrderSorted, {
-            maxServices: best.services.length,
-            fixedServices: forced,
-          });
+          const trial = evaluateForcedServiceSet(
+            forced,
+            best.services.length,
+            SERVICE_REFINE_FIXED_SERVICE_EVALUATION
+          );
           if (trial && trial.totalPopulation > localBest.totalPopulation) {
             localBest = trial;
           }
@@ -1794,10 +2031,11 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
         maybeStop();
         if (profileCounters) profileCounters.attempts.exhaustiveTrials++;
         const forced = idxs.map((i) => pool[i]);
-        const trial = solveWithOrder(serviceOrderSorted, {
-          maxServices: best.services.length,
-          fixedServices: forced,
-        });
+        const trial = evaluateForcedServiceSet(
+          forced,
+          best.services.length,
+          EXHAUSTIVE_FIXED_SERVICE_EVALUATION
+        );
         if (trial && trial.totalPopulation > best.totalPopulation) {
           best = trial;
           updateBest(best);

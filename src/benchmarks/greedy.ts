@@ -253,7 +253,7 @@ export function formatGreedyBenchmarkSuite(result: GreedyBenchmarkSuiteResult): 
         `  pop-cache=entries:${counters.precompute.residentialPopulationCacheEntries} res-lookups:${counters.residentialPhase.populationCacheLookups} local-lookups:${counters.localSearch.populationCacheLookups}`
       );
       lines.push(
-        `  attempts=caps:${counters.attempts.serviceCaps} restarts:${counters.attempts.restarts} refine:${counters.attempts.serviceRefineTrials} exhaustive:${counters.attempts.exhaustiveTrials}`
+        `  attempts=caps:${counters.attempts.serviceCaps} restarts:${counters.attempts.restarts} refine:${counters.attempts.serviceRefineTrials} exhaustive:${counters.attempts.exhaustiveTrials} fixed-set:${counters.attempts.fixedServiceRealizationTrials}`
       );
       lines.push(
         `  cap-search=evaluated:${counters.attempts.serviceCaps} coarse:${counters.attempts.coarseCaps} refine:${counters.attempts.refineCaps} skipped:${counters.attempts.capsSkipped} restart-caps:${counters.attempts.restartCaps}`
@@ -562,6 +562,40 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 6,
         serviceExactMaxCombinations: 32,
+      },
+    },
+  },
+  {
+    name: "fixed-service-realization-complete",
+    description: "Refinement/exhaustive reruns should evaluate a forced service set across bounded orders and row-0 seeds.",
+    grid: [
+      [0, 1, 1, 1, 1, 1],
+      [1, 1, 1, 0, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+      [0, 1, 1, 0, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 0, 1, 1, 0],
+    ],
+    params: {
+      optimizer: "greedy",
+      serviceTypes: [
+        { rows: 1, cols: 1, bonus: 35, range: 1, avail: 2 },
+        { rows: 2, cols: 2, bonus: 55, range: 1, avail: 1 },
+        { rows: 1, cols: 2, bonus: 45, range: 1, avail: 1 },
+      ],
+      residentialTypes: [
+        { w: 2, h: 2, min: 60, max: 120, avail: 5 },
+        { w: 2, h: 3, min: 90, max: 170, avail: 3 },
+      ],
+      greedy: {
+        localSearch: false,
+        randomSeed: 13,
+        restarts: 1,
+        serviceRefineIterations: 1,
+        serviceRefineCandidateLimit: 8,
+        exhaustiveServiceSearch: true,
+        serviceExactPoolLimit: 6,
+        serviceExactMaxCombinations: 64,
       },
     },
   },

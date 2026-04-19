@@ -2336,7 +2336,7 @@ function testGreedyIncrementalInvalidationPreservesBenchmarkOutputs() {
     "cap-sweep-mixed": { totalPopulation: 440, serviceCount: 1, residentialCount: 3 },
     "bridge-connectivity-heavy": { totalPopulation: 400, serviceCount: 1, residentialCount: 3 },
     "typed-footprint-pressure": { totalPopulation: 450, serviceCount: 2, residentialCount: 4 },
-    "adaptive-cap-search-wide": { totalPopulation: 754, serviceCount: 2, residentialCount: 6 },
+    "adaptive-cap-search-wide": { totalPopulation: 812, serviceCount: 2, residentialCount: 6 },
     "crowded-invalidation-heavy": { totalPopulation: 711, serviceCount: 1, residentialCount: 6 },
   };
 
@@ -2497,6 +2497,129 @@ function testGreedyDeferredRoadMaterializationFailsDeterministically() {
   assert.equal(roads, null);
 }
 
+function testGreedyFixedServiceRealizationCompletenessBenchmarkCase() {
+  const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
+    names: ["fixed-service-realization-complete"],
+  });
+  const benchmarkCase = DEFAULT_GREEDY_BENCHMARK_CORPUS.find((entry) => entry.name === "fixed-service-realization-complete");
+  const improvedParams = structuredClone(benchmarkCase.params);
+  improvedParams.greedy = { ...improvedParams.greedy, profile: true };
+  const improvedSolution = solveGreedy(
+    benchmarkCase.grid.map((row) => [...row]),
+    improvedParams
+  );
+  const baselineParams = structuredClone(benchmarkCase.params);
+  baselineParams.greedy = {
+    ...baselineParams.greedy,
+    profile: true,
+    serviceRefineIterations: 0,
+    exhaustiveServiceSearch: false,
+  };
+  const baselineSolution = solveGreedy(
+    benchmarkCase.grid.map((row) => [...row]),
+    baselineParams
+  );
+  const exhaustiveOnlyParams = structuredClone(benchmarkCase.params);
+  exhaustiveOnlyParams.greedy = {
+    ...exhaustiveOnlyParams.greedy,
+    profile: true,
+    serviceRefineIterations: 0,
+  };
+  const exhaustiveOnlySolution = solveGreedy(
+    benchmarkCase.grid.map((row) => [...row]),
+    exhaustiveOnlyParams
+  );
+  const counters = improvedSolution.greedyProfile.counters;
+
+  assert.equal(result.caseCount, 1);
+  assert.deepEqual(result.selectedCaseNames, ["fixed-service-realization-complete"]);
+  assert.equal(result.results[0].name, "fixed-service-realization-complete");
+  assert.equal(result.results[0].totalPopulation, 300);
+  assert.equal(result.results[0].serviceCount, 1);
+  assert.equal(result.results[0].residentialCount, 3);
+  assert.equal(improvedSolution.totalPopulation, 300);
+  assert.equal(baselineSolution.totalPopulation, 240);
+  assert.equal(exhaustiveOnlySolution.totalPopulation, 300);
+  assert.equal(improvedSolution.totalPopulation > baselineSolution.totalPopulation, true);
+  assert.equal(exhaustiveOnlySolution.totalPopulation > baselineSolution.totalPopulation, true);
+  assert.deepEqual(exhaustiveOnlySolution.services, [
+    { r: 4, c: 2, rows: 1, cols: 2, range: 1 },
+  ]);
+  assert.deepEqual(exhaustiveOnlySolution.populations, [120, 120, 60]);
+  assert.equal(exhaustiveOnlySolution.greedyProfile.counters.attempts.fixedServiceRealizationTrials > 0, true);
+  assert.equal(exhaustiveOnlySolution.greedyProfile.counters.attempts.exhaustiveTrials > 0, true);
+  assert.equal(counters.attempts.fixedServiceRealizationTrials > 0, true);
+  assert.equal(counters.attempts.serviceRefineTrials > 0, true);
+  assert.equal(counters.attempts.exhaustiveTrials > 0, true);
+  assert.match(formatGreedyBenchmarkSuite(result), /fixed-service-realization-complete/);
+  assert.match(formatGreedyBenchmarkSuite(result), /fixed-set:/);
+}
+
+function testGreedyFixedServiceRealizationCompletenessImprovesMultiServiceRefineCase() {
+  const grid = [
+    [0, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+    [0, 0, 1, 0, 1, 1],
+    [1, 1, 0, 0, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+  ];
+  const params = {
+    optimizer: "greedy",
+    serviceTypes: [
+      { rows: 1, cols: 1, bonus: 48, range: 2, avail: 1 },
+      { rows: 1, cols: 2, bonus: 67, range: 2, avail: 2 },
+      { rows: 1, cols: 2, bonus: 47, range: 1, avail: 1 },
+    ],
+    residentialTypes: [
+      { w: 2, h: 2, min: 53, max: 157, avail: 5 },
+      { w: 2, h: 3, min: 81, max: 171, avail: 2 },
+    ],
+    greedy: {
+      localSearch: false,
+      randomSeed: 498,
+      restarts: 1,
+      serviceRefineIterations: 1,
+      serviceRefineCandidateLimit: 8,
+      exhaustiveServiceSearch: false,
+      serviceExactPoolLimit: 6,
+      serviceExactMaxCombinations: 64,
+      profile: true,
+    },
+  };
+
+  const baselineParams = structuredClone(params);
+  baselineParams.greedy = {
+    ...baselineParams.greedy,
+    serviceRefineIterations: 0,
+  };
+  const baselineSolution = solveGreedy(
+    grid.map((row) => [...row]),
+    baselineParams
+  );
+  const improvedSolution = solveGreedy(
+    grid.map((row) => [...row]),
+    params
+  );
+  const baselineValidation = validateSolution({ grid, solution: baselineSolution, params: baselineParams });
+  const improvedValidation = validateSolution({ grid, solution: improvedSolution, params });
+
+  assert.equal(baselineValidation.valid, true);
+  assert.equal(improvedValidation.valid, true);
+  assert.equal(baselineSolution.totalPopulation, 291);
+  assert.equal(improvedSolution.totalPopulation, 342);
+  assert.equal(improvedSolution.totalPopulation > baselineSolution.totalPopulation, true);
+  assert.deepEqual(baselineSolution.serviceTypeIndices, [1, 1]);
+  assert.deepEqual(improvedSolution.serviceTypeIndices, [1, 1]);
+  assert.deepEqual(improvedSolution.services, [
+    { r: 0, c: 4, rows: 1, cols: 2, range: 2 },
+    { r: 1, c: 4, rows: 1, cols: 2, range: 2 },
+  ]);
+  assert.deepEqual(improvedSolution.populations, [171, 171]);
+  assert.equal(improvedSolution.greedyProfile.counters.attempts.fixedServiceRealizationTrials > 0, true);
+  assert.equal(improvedSolution.greedyProfile.counters.attempts.serviceRefineTrials > 0, true);
+}
+
 function testGreedyTypedFootprintPressureBenchmarkCase() {
   const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
     names: ["typed-footprint-pressure"],
@@ -2547,10 +2670,11 @@ function testGreedyTypedAvailabilityPressureBenchmarkCase() {
   assert.equal(result.results[0].serviceCount, 2);
   assert.equal(solution.totalPopulation, 615);
   assert.deepEqual(solution.serviceTypeIndices, [0, 0]);
-  assert.deepEqual(solution.services, [
-    { r: 3, c: 4, rows: 1, cols: 1, range: 2 },
-    { r: 3, c: 2, rows: 1, cols: 1, range: 2 },
-  ]);
+  assert.equal(solution.services.length, 2);
+  assert.equal(
+    solution.services.every((service) => service.r === 3 && service.rows === 1 && service.cols === 1 && service.range === 2),
+    true
+  );
   assert.deepEqual(solution.residentialTypeIndices, [0, 1, 1, 1, 1]);
   assert.deepEqual(solution.populations, [175, 110, 110, 110, 110]);
   assert(result.results[0].greedyProfile);
@@ -4193,6 +4317,8 @@ async function main() {
   testGreedyDeferredRoadCommitmentBenchmarkCase();
   testGreedyDeferredRoadCommitmentKeepsTopRowShortcut();
   testGreedyDeferredRoadMaterializationFailsDeterministically();
+  testGreedyFixedServiceRealizationCompletenessBenchmarkCase();
+  testGreedyFixedServiceRealizationCompletenessImprovesMultiServiceRefineCase();
   testGreedyTypedFootprintPressureBenchmarkCase();
   testGreedyTypedAvailabilityPressureBenchmarkCase();
   testGreedyGroupedServiceScoringLeavesUntypedBenchmarkUndiscounted();

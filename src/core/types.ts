@@ -341,6 +341,7 @@ export interface GreedyProfileCounters {
     restartCaps: number;
     serviceRefineTrials: number;
     exhaustiveTrials: number;
+    fixedServiceRealizationTrials: number;
     localSearchIterations: number;
   };
   servicePhase: {

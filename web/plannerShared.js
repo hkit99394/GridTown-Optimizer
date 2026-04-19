@@ -340,7 +340,9 @@
   }
 
   function normalizeOptimizer(optimizer) {
-    return optimizer === "auto" || optimizer === "cp-sat" || optimizer === "lns" ? optimizer : "auto";
+    return optimizer === "auto" || optimizer === "greedy" || optimizer === "cp-sat" || optimizer === "lns"
+      ? optimizer
+      : "auto";
   }
 
   function parsePair(value, separator, label) {

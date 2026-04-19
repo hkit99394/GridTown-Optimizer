@@ -271,6 +271,19 @@ Guardrail:
 - control combinatorial growth carefully; this path should stay bounded and measurable
 - prefer coarse completeness first, then deeper search only if benchmarks justify it
 
+Shipped bounded slice:
+- `src/greedy/solver.ts` now treats `fixedServices` refinement and exhaustive reruns as “best legal realization of this forced service set,” not just “evaluate the provided order once”
+- forced-service evaluation now runs through one bounded helper that tries a deduped order set first, then replays the strongest successful orders across a bounded row-0 seed set derived from the existing anchor helpers plus representative row-0 seeds
+- refinement uses a richer forced-set budget than exhaustive search so service-swap trials can explore more legal realizations without letting exhaustive combination search explode combinatorially
+- `greedy.profile` now exposes `fixedServiceRealizationTrials`, and the fixed corpus includes `fixed-service-realization-complete` plus focused regressions for a seed-sensitive single-service case and a multi-service refine case
+
+Shipped bounded slice:
+- `src/greedy/solver.ts` now evaluates `fixedServices` refinement and exhaustive trials as the best bounded legal realization of a forced service set, not just the single incoming service order
+- the forced-set evaluator tries a bounded mix of incumbent order, rank order, row-major order, reversals, and small-set permutations, then retries the strongest realizations across a bounded row-0 seed pool built from successful reruns plus representative row-0 anchors
+- both the service-refinement swap path and the exhaustive top-pool path now call that shared evaluator, so forced service sets get the same bounded seed/order completeness policy in both places
+- `greedy.profile` now exposes `attempts.fixedServiceRealizationTrials`, and `benchmark:greedy` includes a `fixed-set:` counter so the extra bounded search stays visible in the fixed corpus
+- `tests/optimizers.test.cjs` and the `fixed-service-realization-complete` benchmark case now assert that the bounded forced-set evaluator can recover a stronger legal realization than the no-refinement/no-exhaustive baseline
+
 ### 10. Strengthen local search beyond residential-only moves
 
 Expected impact: High solution-quality gain

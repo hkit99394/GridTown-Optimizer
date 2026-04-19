@@ -35,6 +35,8 @@ The biggest near-term issue is not candidate generation itself. The main cost co
 - repeated `ensureBuildingConnectedToRoads` work after a winner is selected
 - repeated population scoring for residential candidates after the service set is fixed
 - repeated full rescans of candidate lists after each placement
+- low-diversification restart effort, because many restarts only reshuffle service order and that order often matters only on close score ties
+- runtime and memory inflation from same-footprint typed residential expansion, which enlarges candidate lists, service-coverage indexes, and residential/local-search rescans
 - expensive runtime multiplication from service-cap sweep, restarts, anchor refinement, service refinement, and optional exhaustive service search
 
 The main quality limitation is that service choice still uses a shallow proxy for future value. It estimates residential upside, but it does not reason much about:
@@ -120,11 +122,13 @@ Why:
 - the current service proxy scores covered residential candidates independently
 - typed residential enumeration creates same-footprint variants per type, but only one of those variants can actually be realized at a given placement
 - scarce residential type availability can make the current service score materially over-optimistic
+- the same expansion also increases candidate, indexing, and rescan cost before it causes ranking mistakes
 
 Concrete work:
 - collapse mutually exclusive same-footprint typed residential variants into one realizability-aware scoring group
 - discount or cap proxy upside when multiple covered typed candidates compete for the same footprint
 - incorporate residential availability pressure into service scoring so rare high-value types are not counted as if they were unlimited
+- let footprint-level grouping feed runtime improvements too, so service coverage and residential rescans operate on grouped realizations instead of all same-footprint variants
 - add benchmark cases that specifically exercise same-footprint multi-type and low-availability ranking behavior
 
 Guardrail:
@@ -138,6 +142,7 @@ Expected impact: High runtime gain, moderate heuristic risk
 Why:
 - solving every cap from `0..inferredUpper` multiplies runtime quickly
 - each cap can also trigger restarts and anchor refinement
+- many restart attempts currently explore only shallow diversity because they mostly perturb service ordering, and that ordering often changes outcomes only on score ties
 
 Concrete work:
 - replace exhaustive cap sweep with adaptive exploration around promising service counts
@@ -145,7 +150,7 @@ Concrete work:
 - refine locally around the best sampled cap or best small band instead of assuming one directional move is enough
 - avoid treating cap search like binary search; population vs service cap is not monotonic and may not even be unimodal because extra services can both increase coverage and damage packing
 - add early stopping after a configurable no-improvement band across caps
-- reduce or rebalance restart count when the sorted baseline is already stable
+- reduce or rebalance restart count when the sorted baseline is already stable, and add stronger diversification than simple service-order shuffles
 - make restart effort proportional to grid size and available service pool complexity
 
 Guardrail:
@@ -248,9 +253,9 @@ Decision point:
 1. Add profiling counters and a fixed benchmark slice.
 2. Implement connectivity caching and path reuse.
 3. Cache residential population after the service phase.
-4. Make service scoring footprint-aware and availability-aware for typed residential candidates.
-5. Add better tie-breakers and deterministic same-footprint upgrades.
-6. Rework cap sweep and restart policy.
+4. Rework cap sweep and restart policy.
+5. Make service scoring footprint-aware and availability-aware for typed residential candidates.
+6. Add better tie-breakers and deterministic same-footprint upgrades.
 7. Introduce incremental candidate invalidation.
 8. Make fixed-service refinement and exhaustive evaluation seed/order-complete.
 9. Extend local search to include service neighborhoods.

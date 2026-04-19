@@ -5,9 +5,9 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 const { solve } = require("../dist/index.js");
-const { evaluateLayout } = require("../dist/evaluator.js");
-const { buildManualLayoutResponse, buildSolveResponse } = require("../dist/webServerHttp.js");
-const { SolveProgressLogWriter } = require("../dist/solveProgressLog.js");
+const { evaluateLayout } = require("../dist/core/evaluator.js");
+const { buildManualLayoutResponse, buildSolveResponse } = require("../dist/server/http/contracts.js");
+const { SolveProgressLogWriter } = require("../dist/runtime/jobs/solveProgressLog.js");
 
 function createFakeDomElement(overrides = {}) {
   return {
@@ -1571,6 +1571,94 @@ function testPlannerRequestBuilderTreatsBlankAutoCapAsUnlimited() {
   assert.equal(cappedRequest.params.auto.wallClockLimitSeconds, 90);
 }
 
+function testPlannerRequestBuilderUsesBoundedGreedyProfileForAuto() {
+  const plannerShared = loadPlannerSharedModule();
+  const plannerRequestBuilder = loadPlannerRequestBuilderModule();
+  const state = {
+    optimizer: "auto",
+    auto: {
+      wallClockLimitSeconds: "",
+    },
+    grid: [
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+    ],
+    serviceTypes: [],
+    residentialTypes: [
+      plannerShared.serializeResidentialTypeForCatalog({ w: 2, h: 2, min: 10, max: 10, avail: 1 }),
+    ],
+    availableBuildings: {
+      services: "1",
+      residentials: "1",
+    },
+    greedy: {
+      localSearch: true,
+      randomSeed: "17",
+      restarts: 20,
+      serviceRefineIterations: 4,
+      serviceRefineCandidateLimit: 60,
+      exhaustiveServiceSearch: true,
+      serviceExactPoolLimit: 22,
+      serviceExactMaxCombinations: 12000,
+    },
+    cpSat: {
+      timeLimitSeconds: "",
+      noImprovementTimeoutSeconds: "",
+      randomSeed: "",
+      numWorkers: 8,
+      logSearchProgress: false,
+      pythonExecutable: "",
+      useDisplayedHint: false,
+    },
+    lns: {
+      iterations: 1,
+      maxNoImprovementIterations: 1,
+      neighborhoodRows: 2,
+      neighborhoodCols: 2,
+      repairTimeLimitSeconds: 1,
+      useDisplayedSeed: false,
+    },
+    result: null,
+    resultContext: null,
+    resultElapsedMs: 0,
+  };
+  const elements = {
+    cpSatRandomSeed: { value: "" },
+    cpSatHintStatus: { textContent: "" },
+    lnsSeedStatus: { textContent: "" },
+    payloadPreview: { textContent: "" },
+    layoutStorageName: { value: "" },
+  };
+  const controller = plannerRequestBuilder.createPlannerRequestBuilderController({
+    state,
+    elements,
+    helpers: {
+      buildCpSatContinuationModelInput: plannerShared.buildCpSatContinuationModelInput,
+      buildCpSatWarmStartCheckpoint: plannerShared.buildCpSatWarmStartCheckpoint,
+      clampInteger: plannerShared.clampInteger,
+      cloneGrid: plannerShared.cloneGrid,
+      cloneJson: plannerShared.cloneJson,
+      computeCpSatModelFingerprint: plannerShared.computeCpSatModelFingerprint,
+      getSavedLayoutElapsedMs: plannerShared.getSavedLayoutElapsedMs,
+      readOptionalInteger: plannerShared.readOptionalInteger,
+      parseResidentialCatalogEntry: plannerShared.parseResidentialCatalogEntry,
+      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry,
+    },
+  });
+
+  const request = controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false });
+  assert.equal(request.params.greedy.localSearch, true);
+  assert.equal(request.params.greedy.randomSeed, 17);
+  assert.equal(request.params.greedy.restarts, 8);
+  assert.equal(request.params.greedy.serviceRefineIterations, 2);
+  assert.equal(request.params.greedy.serviceRefineCandidateLimit, 40);
+  assert.equal(request.params.greedy.exhaustiveServiceSearch, false);
+  assert.equal(request.params.greedy.serviceExactPoolLimit, 16);
+  assert.equal(request.params.greedy.serviceExactMaxCombinations, 4000);
+}
+
 function testPlannerSolveProgressLogCapturesSnapshotAndFinalResult() {
   const runtimeModule = loadPlannerSolveRuntimeModule();
   const logAfterSnapshot = runtimeModule.appendSolveProgressLog([], {
@@ -1787,6 +1875,7 @@ testPlannerRequestBuilderSkipsInvalidDisplayedLayoutContinuation();
 testPlannerRequestBuilderSkipsLegacyDisplayedLayoutContinuationWithoutValidation();
 testPlannerRequestBuilderIncludesHintAndSeedForAuto();
 testPlannerRequestBuilderTreatsBlankAutoCapAsUnlimited();
+testPlannerRequestBuilderUsesBoundedGreedyProfileForAuto();
 testPlannerSolveProgressLogCapturesSnapshotAndFinalResult();
 testFilesystemSolveLogTracksSolverClockAcrossHeartbeats();
 

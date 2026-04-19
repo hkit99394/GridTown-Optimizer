@@ -2,11 +2,11 @@
  * Public library entry point.
  */
 
-export { solve, solveAsync } from "./solve.js";
-export { describeAutoStopReason, solveAuto, startAutoSolve } from "./autoSolver.js";
-export { solveGreedy } from "./solver.js";
-export { solveCpSat, solveCpSatAsync, startCpSatSolve } from "./cpSatSolver.js";
-export { solveLns } from "./lnsSolver.js";
+export { solve, solveAsync } from "./runtime/solve.js";
+export { describeAutoStopReason, solveAuto, startAutoSolve } from "./auto/index.js";
+export { solveGreedy } from "./greedy/solver.js";
+export { solveCpSat, solveCpSatAsync, startCpSatSolve } from "./cp-sat/solver.js";
+export { solveLns } from "./lns/solver.js";
 export {
   DEFAULT_CP_SAT_BENCHMARK_CORPUS,
   DEFAULT_CP_SAT_BENCHMARK_OPTIONS,
@@ -14,10 +14,9 @@ export {
   listCpSatBenchmarkCaseNames,
   normalizeCpSatBenchmarkOptions,
   runCpSatBenchmarkSuite,
-} from "./cpSatBenchmark.js";
-export { evaluateLayout, validateSolution } from "./evaluator.js";
-export { formatSolutionMap, renderSolutionMap, validateSolutionMap } from "./map.js";
-export { getOptimizerAdapter, listOptimizerAdapters, resolveOptimizerName } from "./optimizerRegistry.js";
+} from "./benchmarks/index.js";
+export { evaluateLayout, formatSolutionMap, renderSolutionMap, validateSolution, validateSolutionMap } from "./core/index.js";
+export { getOptimizerAdapter, listOptimizerAdapters, resolveOptimizerName } from "./runtime/optimizerRegistry.js";
 
 export type {
   Grid,
@@ -77,12 +76,12 @@ export type {
   CpSatContinuationResumePolicy,
   CpSatContinuationCheckpoint,
   SavedLayoutRecord,
-} from "./types.js";
-export type { SolutionMapValidationResult } from "./map.js";
+  SolutionMapValidationResult,
+} from "./core/index.js";
 export type {
   CpSatBenchmarkCase,
   CpSatBenchmarkRunOptions,
   CpSatBenchmarkProgressSample,
   CpSatBenchmarkCaseResult,
   CpSatBenchmarkSuiteResult,
-} from "./cpSatBenchmark.js";
+} from "./benchmarks/index.js";

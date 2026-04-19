@@ -5,10 +5,10 @@ const os = require("node:os");
 const path = require("node:path");
 const { Readable } = require("node:stream");
 
-const optimizerRegistry = require("../dist/optimizerRegistry.js");
-const { SolveJobManager } = require("../dist/solveJobManager.js");
-const { SolverInputError } = require("../dist/solverInputValidation.js");
-const { createPlannerRequestHandler } = require("../dist/webServerRequestHandler.js");
+const optimizerRegistry = require("../dist/runtime/dispatch/optimizerRegistry.js");
+const { SolveJobManager } = require("../dist/runtime/jobs/solveJobManager.js");
+const { SolverInputError } = require("../dist/core/solverInputValidation.js");
+const { createPlannerRequestHandler } = require("../dist/server/http/requestHandler.js");
 const { solve } = require("../dist/index.js");
 
 function createMockRequest(method, url, body = "") {

@@ -245,13 +245,39 @@
       };
     }
 
+    function buildGreedyPayload(optimizer) {
+      const randomSeed = readOptionalInteger(state.greedy.randomSeed, 0);
+      const payload = {
+        localSearch: Boolean(state.greedy.localSearch),
+        ...(randomSeed !== undefined ? { randomSeed } : {}),
+        restarts: clampInteger(state.greedy.restarts, optimizer === "auto" ? 8 : 1, 1),
+        serviceRefineIterations: clampInteger(state.greedy.serviceRefineIterations, optimizer === "auto" ? 2 : 0, 0),
+        serviceRefineCandidateLimit: clampInteger(state.greedy.serviceRefineCandidateLimit, optimizer === "auto" ? 40 : 1, 1),
+        exhaustiveServiceSearch: optimizer === "auto" ? false : Boolean(state.greedy.exhaustiveServiceSearch),
+        serviceExactPoolLimit: clampInteger(state.greedy.serviceExactPoolLimit, optimizer === "auto" ? 16 : 1, 1),
+        serviceExactMaxCombinations: clampInteger(state.greedy.serviceExactMaxCombinations, optimizer === "auto" ? 4000 : 1, 1),
+      };
+
+      if (optimizer !== "auto") {
+        return payload;
+      }
+
+      return {
+        ...payload,
+        restarts: Math.min(payload.restarts, 8),
+        serviceRefineIterations: Math.min(payload.serviceRefineIterations, 2),
+        serviceRefineCandidateLimit: Math.min(payload.serviceRefineCandidateLimit, 40),
+        serviceExactPoolLimit: Math.min(payload.serviceExactPoolLimit, 16),
+        serviceExactMaxCombinations: Math.min(payload.serviceExactMaxCombinations, 4000),
+      };
+    }
+
     function buildSolveRequest(options = {}) {
       const { hintMismatch = "error", includeWarmStartHint = true, includeLnsSeed = true } = options;
       const autoWallClockLimitSeconds = readOptionalInteger(state.auto?.wallClockLimitSeconds ?? "", 1);
       const timeLimitSeconds = readOptionalInteger(state.cpSat.timeLimitSeconds, 1);
       const noImprovementTimeoutSeconds = readOptionalInteger(state.cpSat.noImprovementTimeoutSeconds, 1);
       const cpSatRandomSeed = readOptionalInteger(state.cpSat.randomSeed, 0);
-      const greedyRandomSeed = readOptionalInteger(state.greedy.randomSeed, 0);
       const defaultNeighborhoodRows = Math.max(1, Math.ceil(state.grid.length / 2));
       const defaultNeighborhoodCols = Math.max(1, Math.ceil((state.grid[0]?.length ?? 1) / 2));
       const grid = cloneGrid(state.grid);
@@ -259,16 +285,7 @@
         optimizer: state.optimizer,
         serviceTypes: state.serviceTypes.map((entry, index) => parseServiceCatalogEntry(entry, index)),
         residentialTypes: state.residentialTypes.map((entry, index) => parseResidentialCatalogEntry(entry, index)),
-        greedy: {
-          localSearch: Boolean(state.greedy.localSearch),
-          ...(greedyRandomSeed !== undefined ? { randomSeed: greedyRandomSeed } : {}),
-          restarts: clampInteger(state.greedy.restarts, 1, 1),
-          serviceRefineIterations: clampInteger(state.greedy.serviceRefineIterations, 0, 0),
-          serviceRefineCandidateLimit: clampInteger(state.greedy.serviceRefineCandidateLimit, 1, 1),
-          exhaustiveServiceSearch: Boolean(state.greedy.exhaustiveServiceSearch),
-          serviceExactPoolLimit: clampInteger(state.greedy.serviceExactPoolLimit, 1, 1),
-          serviceExactMaxCombinations: clampInteger(state.greedy.serviceExactMaxCombinations, 1, 1),
-        },
+        greedy: buildGreedyPayload(state.optimizer),
         cpSat: {
           numWorkers: clampInteger(state.cpSat.numWorkers, 8, 1),
           logSearchProgress: Boolean(state.cpSat.logSearchProgress),

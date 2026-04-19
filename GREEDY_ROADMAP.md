@@ -123,10 +123,15 @@ Why:
 Concrete work:
 - add service tie-breakers for lower road cost, stronger row-0 anchor preservation, and lower layout fragmentation
 - add residential tie-breakers for better packing efficiency and lower future blocking cost
-- port deterministic same-footprint service and residential type upgrades from [src/lnsSolver.ts](./src/lnsSolver.ts)
+- port deterministic same-footprint service and residential type upgrades from [src/lns/solver.ts](./src/lns/solver.ts)
 
 Guardrail:
 - keep tie-breaks deterministic when seeds and inputs are fixed
+
+Shipped bounded slice:
+- `src/greedy/solver.ts` now keeps primary service score and residential population ordering unchanged, then resolves equal-score ties with deterministic probe-cost and footprint-aware comparators while preserving row-0 preference only on the service side
+- `src/core/dominanceUpgrades.ts` now holds the shared same-footprint typed-upgrade post-pass used by both greedy and LNS
+- `benchmark:greedy` now includes `deterministic-tie-breaks` so Step 4 behavior stays visible in the fixed corpus
 
 ### 5. Make service scoring footprint-aware and availability-aware for typed residential candidates
 

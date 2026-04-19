@@ -23,6 +23,7 @@ import {
   isAdjacentToRoads,
   findAvailableRow0RoadCell,
 } from "../core/roads.js";
+import { applyDeterministicDominanceUpgrades } from "../core/dominanceUpgrades.js";
 import {
   enumerateServiceCandidates,
   enumerateResidentialCandidates,
@@ -188,6 +189,7 @@ function getCandidateTypeIndex(candidate: ResidentialPlacement | ResidentialCand
 
 type ResidentialCandidatesList = (ResidentialPlacement | ResidentialCandidate)[];
 type RoadConnectionProbe = NonNullable<ReturnType<typeof probeBuildingConnectedToRoads>>;
+type ResidentialCandidateLike = ResidentialPlacement | ResidentialCandidate;
 
 function getGreedyOptions(params: SolverParams): NormalizedGreedyOptions {
   const greedy = params.greedy ?? {};
@@ -323,6 +325,85 @@ function computeServiceMarginalScore(
   return score;
 }
 
+function countRow0FootprintCells(placement: { r: number; c: number; rows: number; cols: number }): number {
+  return placement.r === 0 ? placement.cols : 0;
+}
+
+function footprintArea(placement: { rows: number; cols: number }): number {
+  return placement.rows * placement.cols;
+}
+
+function footprintPerimeter(placement: { rows: number; cols: number }): number {
+  return 2 * (placement.rows + placement.cols);
+}
+
+function compareServiceTieBreaks(
+  a: ServiceCandidate,
+  aProbe: RoadConnectionProbe,
+  b: ServiceCandidate,
+  bProbe: RoadConnectionProbe
+): number {
+  const aRow0Cells = countRow0FootprintCells(a);
+  const bRow0Cells = countRow0FootprintCells(b);
+  if (aRow0Cells !== bRow0Cells) return aRow0Cells - bRow0Cells;
+
+  const aRoadCost = aProbe.path?.length ?? 0;
+  const bRoadCost = bProbe.path?.length ?? 0;
+  if (aRoadCost !== bRoadCost) return aRoadCost - bRoadCost;
+
+  const aArea = footprintArea(a);
+  const bArea = footprintArea(b);
+  if (aArea !== bArea) return aArea - bArea;
+
+  const aPerimeter = footprintPerimeter(a);
+  const bPerimeter = footprintPerimeter(b);
+  if (aPerimeter !== bPerimeter) return aPerimeter - bPerimeter;
+
+  if (a.r !== b.r) return a.r - b.r;
+  if (a.c !== b.c) return a.c - b.c;
+  if (a.rows !== b.rows) return a.rows - b.rows;
+  if (a.cols !== b.cols) return a.cols - b.cols;
+  if (a.range !== b.range) return b.range - a.range;
+  if (a.bonus !== b.bonus) return b.bonus - a.bonus;
+
+  return serviceCandidateKey(a).localeCompare(serviceCandidateKey(b));
+}
+
+function residentialCandidateKey(candidate: ResidentialCandidateLike): string {
+  return [getCandidateTypeIndex(candidate), candidate.r, candidate.c, candidate.rows, candidate.cols].join(",");
+}
+
+function compareResidentialTieBreaks(
+  params: SolverParams,
+  a: ResidentialCandidateLike,
+  aProbe: RoadConnectionProbe,
+  b: ResidentialCandidateLike,
+  bProbe: RoadConnectionProbe
+): number {
+  const aRoadCost = aProbe.path?.length ?? 0;
+  const bRoadCost = bProbe.path?.length ?? 0;
+  if (aRoadCost !== bRoadCost) return aRoadCost - bRoadCost;
+
+  const aArea = footprintArea(a);
+  const bArea = footprintArea(b);
+  if (aArea !== bArea) return aArea - bArea;
+
+  const aPerimeter = footprintPerimeter(a);
+  const bPerimeter = footprintPerimeter(b);
+  if (aPerimeter !== bPerimeter) return aPerimeter - bPerimeter;
+
+  if (a.r !== b.r) return a.r - b.r;
+  if (a.c !== b.c) return a.c - b.c;
+  const aTypeIndex = getCandidateTypeIndex(a);
+  const bTypeIndex = getCandidateTypeIndex(b);
+  const aStats = getResidentialBaseMax(params, a.rows, a.cols, aTypeIndex);
+  const bStats = getResidentialBaseMax(params, b.rows, b.cols, bTypeIndex);
+  if (aStats.max !== bStats.max) return bStats.max - aStats.max;
+  if (aStats.base !== bStats.base) return bStats.base - aStats.base;
+
+  return residentialCandidateKey(a).localeCompare(residentialCandidateKey(b));
+}
+
 function computeResidentialPopulation(
   params: SolverParams,
   residential: { r: number; c: number; rows: number; cols: number },
@@ -441,11 +522,6 @@ function solveOne(
       if (profileCounters) profileCounters.servicePhase.placements++;
     }
   } else {
-    const serviceOrderIndex = new Map<string, number>();
-    for (let index = 0; index < serviceSource.length; index++) {
-      serviceOrderIndex.set(serviceCandidateKey(serviceSource[index]), index);
-    }
-
     for (;;) {
       maybeStop?.();
       if (maxServices !== undefined && services.length >= maxServices) break;
@@ -453,11 +529,9 @@ function solveOne(
       let bestCandidate: ServiceCandidate | null = null;
       let bestProbe: RoadConnectionProbe | null = null;
       let bestScore = 0;
-      let bestOrderIndex = Infinity;
       for (const service of serviceSource) {
         maybeStop?.();
         if (profileCounters) profileCounters.servicePhase.candidateScans++;
-        const key = serviceCandidateKey(service);
         const placement = materializeServicePlacement(service);
         if (useServiceTypes && remainingServiceAvail && remainingServiceAvail[service.typeIndex] <= 0) continue;
         if (roads.size === 0) {
@@ -475,11 +549,14 @@ function solveOne(
           residentialCandidateStats,
           serviceCoverageByKey
         );
-        const orderIndex = serviceOrderIndex.get(key) ?? Infinity;
-        if (score > bestScore || (score === bestScore && score > 0 && orderIndex < bestOrderIndex)) {
+        if (
+          score > bestScore
+          || (score === bestScore && score > 0 && bestCandidate !== null
+            && bestProbe !== null
+            && compareServiceTieBreaks(service, probe, bestCandidate, bestProbe) < 0)
+        ) {
           bestCandidate = service;
           bestScore = score;
-          bestOrderIndex = orderIndex;
           bestProbe = probe;
         }
       }
@@ -553,7 +630,11 @@ function solveOne(
       if (!probe) continue;
       if (profileCounters) profileCounters.residentialPhase.populationCacheLookups++;
       const pop = residentialPopulationCache[candidateIndex] ?? -1;
-      if (pop > bestPop) {
+      if (
+        pop > bestPop
+        || (pop === bestPop && pop >= 0 && best !== null && bestProbe !== null
+          && compareResidentialTieBreaks(params, cand, probe, best, bestProbe) < 0)
+      ) {
         bestPop = pop;
         best = cand;
         bestProbe = probe;
@@ -712,6 +793,11 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     return { ...solution, greedyProfile: { counters: structuredClone(profileCounters) } };
   };
 
+  const finalizeDominanceCandidate = (candidate: Solution | null): Solution | null => {
+    if (!candidate) return null;
+    return applyDeterministicDominanceUpgrades(G, params, candidate);
+  };
+
   const serviceCandidates = enumerateServiceCandidates(G, params);
   if (profileCounters) profileCounters.precompute.serviceCandidates += serviceCandidates.length;
   const residentialCandidateStats = anyResidentialCandidates.map((residential) => ({
@@ -739,19 +825,21 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     params,
     residentialCandidateStats,
     serviceCoverageByKey,
-      anyResidentialCandidates,
-      residentialCandidatesForLocal,
-      maxResidentials,
-      useServiceTypes,
-      useTypes,
-      localSearch,
-      profileCounters,
-      maybeStop,
+    anyResidentialCandidates,
+    residentialCandidatesForLocal,
+    maxResidentials,
+    useServiceTypes,
+    useTypes,
+    localSearch,
+    profileCounters,
+    maybeStop,
   };
   const solveWithOrder = (
     serviceOrder: ServiceCandidate[],
     options: SolveOneOptions
-  ): Solution | null => solveOne({ ...baseSolveContext, serviceOrder }, { ...options, profileCounters });
+  ): Solution | null => finalizeDominanceCandidate(
+    solveOne({ ...baseSolveContext, serviceOrder }, { ...options, profileCounters })
+  );
 
   // If user does not cap services, sweep service count and keep best.
   // This avoids over-placing services (which can block residentials and reduce population).
@@ -965,7 +1053,11 @@ function localSearchImprove(
         if (profileCounters) profileCounters.localSearch.populationCacheLookups++;
         const newPop = residentialPopulationCache[candidateIndex] ?? -1;
         const delta = newPop - currentPop;
-        if (delta > bestMoveDelta) {
+        if (
+          delta > bestMoveDelta
+          || (delta === bestMoveDelta && delta > 0 && bestMove !== null && bestMoveProbe !== null
+            && compareResidentialTieBreaks(params, cand, probe, bestMove.candidate, bestMoveProbe) < 0)
+        ) {
           bestMove = {
             kind: "move",
             residentialIndex: i,
@@ -1001,7 +1093,11 @@ function localSearchImprove(
         if (!probe) continue;
         if (profileCounters) profileCounters.localSearch.populationCacheLookups++;
         const addPop = residentialPopulationCache[candidateIndex] ?? -1;
-        if (addPop > bestAddDelta) {
+        if (
+          addPop > bestAddDelta
+          || (addPop === bestAddDelta && addPop > 0 && bestAdd !== null && bestAddProbe !== null
+            && compareResidentialTieBreaks(params, cand, probe, bestAdd.candidate, bestAddProbe) < 0)
+        ) {
           bestAdd = {
             kind: "add",
             candidate: cand,

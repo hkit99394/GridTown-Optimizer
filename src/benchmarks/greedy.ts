@@ -381,4 +381,30 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
       },
     },
   },
+  {
+    name: "deterministic-tie-breaks",
+    description: "Tie-heavy case that exercises deterministic residential tie resolution in the fixed benchmark corpus.",
+    grid: [
+      [1, 1, 0, 0],
+      [1, 1, 1, 1],
+      [0, 0, 1, 1],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+    ],
+    params: {
+      optimizer: "greedy",
+      residentialTypes: [{ w: 2, h: 2, min: 40, max: 40, avail: 1 }],
+      availableBuildings: { services: 0, residentials: 1 },
+      greedy: {
+        localSearch: false,
+        randomSeed: 31,
+        restarts: 1,
+        serviceRefineIterations: 0,
+        serviceRefineCandidateLimit: 4,
+        exhaustiveServiceSearch: false,
+        serviceExactPoolLimit: 4,
+        serviceExactMaxCombinations: 16,
+      },
+    },
+  },
 ]);

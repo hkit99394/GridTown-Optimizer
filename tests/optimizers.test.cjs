@@ -33,6 +33,7 @@ const {
 } = require("../dist/index.js");
 const { parseCpSatRawSolution } = require("../dist/cp-sat/solver.js");
 const { buildNeighborhoodWindows } = require("../dist/lns/solver.js");
+const { applyDeterministicDominanceUpgrades } = require("../dist/core/dominanceUpgrades.js");
 const { roadSeedRow0Candidates, roadSeedRow0RepresentativeCandidates } = require("../dist/core/roads.js");
 
 function testOptimizerRegistry() {
@@ -1728,6 +1729,20 @@ function testGreedyBenchmarkSuite() {
   assert.match(formatGreedyBenchmarkSuite(result), /pop-cache=/);
 }
 
+function testGreedyDeterministicTieBreakBenchmarkCase() {
+  const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
+    names: ["deterministic-tie-breaks"],
+  });
+
+  assert.equal(result.caseCount, 1);
+  assert.deepEqual(result.selectedCaseNames, ["deterministic-tie-breaks"]);
+  assert.equal(result.results[0].serviceCount, 0);
+  assert.equal(result.results[0].residentialCount, 1);
+  assert.equal(result.results[0].totalPopulation, 40);
+  assert(result.results[0].greedyProfile);
+  assert.match(formatGreedyBenchmarkSuite(result), /deterministic-tie-breaks/);
+}
+
 function testGreedyConnectivityHeavyBenchmarkCase() {
   const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
     names: ["bridge-connectivity-heavy"],
@@ -2618,6 +2633,35 @@ function testLnsDeterministicServiceUpgrade() {
   }
 }
 
+function testDeterministicDominanceServiceUpgradeHelper() {
+  const grid = Array.from({ length: 6 }, () => Array.from({ length: 6 }, () => 1));
+  const params = {
+    optimizer: "greedy",
+    serviceTypes: [
+      { rows: 2, cols: 2, bonus: 118, range: 5, avail: 1 },
+      { rows: 2, cols: 2, bonus: 480, range: 5, avail: 1 },
+    ],
+    residentialTypes: [{ w: 2, h: 2, min: 100, max: 600, avail: 1 }],
+    availableBuildings: { services: 1, residentials: 1 },
+  };
+  const solution = applyDeterministicDominanceUpgrades(grid, params, {
+    optimizer: "greedy",
+    roads: new Set(["0,0", "0,1", "0,2", "0,3", "0,4", "0,5", "1,0", "2,0", "3,0", "4,0", "5,0"]),
+    services: [{ r: 1, c: 1, rows: 2, cols: 2, range: 5 }],
+    serviceTypeIndices: [0],
+    servicePopulationIncreases: [118],
+    residentials: [{ r: 3, c: 1, rows: 2, cols: 2 }],
+    residentialTypeIndices: [0],
+    populations: [218],
+    totalPopulation: 218,
+  });
+
+  assert.equal(solution.serviceTypeIndices[0], 1);
+  assert.equal(solution.servicePopulationIncreases[0], 480);
+  assert.equal(solution.totalPopulation, 580);
+  assert.equal(solution.populations[0], 580);
+}
+
 function testLnsDeterministicResidentialUpgrade() {
   const tempDir = fs.mkdtempSync(path.join(process.cwd(), "tmp-lns-res-upgrade-"));
   const stopFilePath = path.join(tempDir, "stop-now");
@@ -2686,6 +2730,34 @@ function testLnsDeterministicResidentialUpgrade() {
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true });
   }
+}
+
+function testDeterministicDominanceResidentialUpgradeHelper() {
+  const grid = Array.from({ length: 6 }, () => Array.from({ length: 6 }, () => 1));
+  const params = {
+    optimizer: "greedy",
+    serviceTypes: [{ rows: 2, cols: 2, bonus: 480, range: 5, avail: 1 }],
+    residentialTypes: [
+      { w: 2, h: 2, min: 100, max: 400, avail: 1 },
+      { w: 2, h: 2, min: 100, max: 700, avail: 1 },
+    ],
+    availableBuildings: { services: 1, residentials: 1 },
+  };
+  const solution = applyDeterministicDominanceUpgrades(grid, params, {
+    optimizer: "greedy",
+    roads: new Set(["0,0", "0,1", "0,2", "0,3", "0,4", "0,5", "1,0", "2,0", "3,0", "4,0", "5,0"]),
+    services: [{ r: 1, c: 1, rows: 2, cols: 2, range: 5 }],
+    serviceTypeIndices: [0],
+    servicePopulationIncreases: [480],
+    residentials: [{ r: 3, c: 1, rows: 2, cols: 2 }],
+    residentialTypeIndices: [0],
+    populations: [400],
+    totalPopulation: 400,
+  });
+
+  assert.equal(solution.residentialTypeIndices[0], 1);
+  assert.equal(solution.totalPopulation, 580);
+  assert.equal(solution.populations[0], 580);
 }
 
 function testSolutionValidator() {
@@ -3242,6 +3314,7 @@ async function main() {
   testGreedyProfilingIsAdditive();
   testGreedyBenchmarkCorpusHelpers();
   testGreedyBenchmarkSuite();
+  testGreedyDeterministicTieBreakBenchmarkCase();
   testGreedyConnectivityHeavyBenchmarkCase();
   await testCpSatBenchmarkCorpusHelpers();
   await maybeTestCpSatBenchmarkSuite();
@@ -3274,7 +3347,9 @@ async function main() {
   testLnsRejectsMalformedSeedHintFields();
   maybeTestLnsExploresMultipleRowZeroSeeds();
   maybeTestLnsCanRepairRowZeroAnchorLayouts();
+  testDeterministicDominanceServiceUpgradeHelper();
   testLnsDeterministicServiceUpgrade();
+  testDeterministicDominanceResidentialUpgradeHelper();
   testLnsDeterministicResidentialUpgrade();
 
   console.log("Optimizer backend tests passed.");

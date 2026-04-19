@@ -1,4 +1,7 @@
 (function attachPlannerSolveRuntime(globalObject) {
+  const AUTO_QUALITY_PATH_LABEL = "recommended quality path";
+  const GREEDY_MODE_LABEL = "fast standalone seed / advanced mode";
+
   function normalizeProgressElapsedMs(value) {
     const numericValue = Number(value);
     if (!Number.isFinite(numericValue)) return 0;
@@ -187,6 +190,17 @@
       state.solveTimerHandle = globalObject.setInterval(syncSolveTimer, 250);
     }
 
+    function clearManualEditState(options = {}) {
+      const { resetMode = false } = options;
+      state.layoutEditor.edited = false;
+      state.layoutEditor.pendingValidation = false;
+      state.layoutEditor.status = "";
+      if (resetMode) {
+        state.layoutEditor.mode = "inspect";
+        state.layoutEditor.pendingPlacement = null;
+      }
+    }
+
     function buildSolveProgressMessage(payload) {
       const optimizer = payload.optimizer || state.optimizer;
       const optimizerLabel = getOptimizerLabel(optimizer);
@@ -228,21 +242,21 @@
                 ? `Running ${optimizerLabel} solver. Displayed seed is ready and neighborhood repairs are still improving.${bestLabel}`
                 : `Running ${optimizerLabel} solver. Greedy seed is ready and neighborhood repairs are still improving.${bestLabel}`
             )
-            : `Running ${optimizerLabel} solver. Search is still improving.${bestLabel}`;
+            : `Running ${optimizerLabel} solver. ${GREEDY_MODE_LABEL} is still improving.${bestLabel}`;
       }
 
       if (optimizer === "cp-sat") {
         return `Running ${optimizerLabel} solver. Searching for the first feasible solution...`;
       }
       if (optimizer === "auto") {
-        return "Running Auto solver. Starting the greedy seed stage...";
+        return "Running Auto solver. Starting the greedy seed stage before LNS and bounded CP-SAT improve it...";
       }
       if (optimizer === "lns") {
         return state.lns.useDisplayedSeed && getDisplayedLayoutCheckpoint()
           ? `Running ${optimizerLabel} solver. Loading the displayed seed before neighborhood repair...`
           : `Running ${optimizerLabel} solver. Building the greedy seed before neighborhood repair...`;
       }
-      return `Running ${optimizerLabel} solver. Searching for an initial result...`;
+      return `Running ${optimizerLabel} solver. Searching for a fast seed...`;
     }
 
     function applyRunningSnapshot(payload) {
@@ -259,8 +273,7 @@
       };
       state.resultIsLiveSnapshot = true;
       state.resultError = "";
-      state.layoutEditor.edited = false;
-      state.layoutEditor.status = "";
+      clearManualEditState();
       setResultElapsed(state.solveTimerElapsedMs);
       renderResults();
     }
@@ -334,15 +347,17 @@
     }
 
     async function runSolve() {
+      if (state.layoutEditor.isApplying) {
+        setSolveState("Wait for layout validation to finish before starting a new solve.");
+        return;
+      }
       state.isSolving = true;
       state.isStopping = false;
       state.activeSolveRequestId = createSolveRequestId();
       state.resultIsLiveSnapshot = false;
       state.resultError = "";
       state.solveProgressLog = [];
-      state.layoutEditor.mode = "inspect";
-      state.layoutEditor.pendingPlacement = null;
-      state.layoutEditor.status = "";
+      clearManualEditState({ resetMode: true });
       clearExpansionAdvice();
       try {
         startSolveTimer();
@@ -372,9 +387,9 @@
             `${state.lns.useDisplayedSeed && getDisplayedLayoutCheckpoint() ? "Running LNS from the displayed seed" : "Running LNS from a greedy seed"} with ${request.params.lns.iterations} neighborhood repairs and a ${request.params.lns.repairTimeLimitSeconds}s repair cap...`
           );
         } else if (state.optimizer === "auto") {
-          setSolveState("Running Auto solver. Greedy seed, LNS repair, and bounded CP-SAT passes will be orchestrated automatically...");
+          setSolveState(`Running Auto solver. This is the ${AUTO_QUALITY_PATH_LABEL}: Greedy seeds the run, then LNS and bounded CP-SAT continue improving the incumbent...`);
         } else {
-          setSolveState("Running greedy solver...");
+          setSolveState(`Running Greedy solver in ${GREEDY_MODE_LABEL}...`);
         }
         const startResponse = await fetch("/api/solve/start", {
           method: "POST",
@@ -403,10 +418,7 @@
         };
         state.resultIsLiveSnapshot = false;
         state.resultError = "";
-        state.layoutEditor.edited = false;
-        state.layoutEditor.status = "";
-        state.layoutEditor.mode = "inspect";
-        state.layoutEditor.pendingPlacement = null;
+        clearManualEditState({ resetMode: true });
         state.selectedMapCell = null;
         pauseSolveTimer();
         setResultElapsed(state.solveTimerElapsedMs);
@@ -425,8 +437,7 @@
         state.resultIsLiveSnapshot = false;
         state.resultError = error instanceof Error ? error.message : "Unknown solve error.";
         state.solveProgressLog = [];
-        state.layoutEditor.edited = false;
-        state.layoutEditor.status = "";
+        clearManualEditState();
         pauseSolveTimer();
         setResultElapsed(state.solveTimerElapsedMs);
         setSolveState(/stopped/i.test(state.resultError) ? "Solver stopped." : "Solver run failed.");

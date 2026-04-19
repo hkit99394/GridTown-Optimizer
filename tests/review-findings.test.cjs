@@ -34,113 +34,105 @@ function createFakeDomElement(overrides = {}) {
   };
 }
 
+function loadBrowserModule(relativePath, options = {}) {
+  const {
+    window = {},
+    context: extraContext = {},
+  } = options;
+  const source = fs.readFileSync(path.resolve(__dirname, relativePath), "utf8");
+  const sandbox = {
+    window,
+    JSON,
+    Math,
+    Date,
+    Array,
+    Object,
+    Number,
+    String,
+    Boolean,
+    RegExp,
+    Set,
+    Map,
+    Promise,
+    ...extraContext,
+  };
+  vm.createContext(sandbox);
+  vm.runInContext(source, sandbox);
+  return sandbox.window;
+}
+
 function loadPlannerSharedModule() {
-  const source = fs.readFileSync(path.resolve(__dirname, "../web/plannerShared.js"), "utf8");
-  const context = {
+  return loadBrowserModule("../web/plannerShared.js", {
     window: {
       setTimeout,
       clearTimeout,
     },
-    JSON,
-    Math,
-    Date,
-    Array,
-    Object,
-    Number,
-    String,
-    Boolean,
-    RegExp,
-    Set,
-    Map,
-    Promise,
-  };
-  vm.createContext(context);
-  vm.runInContext(source, context);
-  return context.window.CityBuilderShared;
+  }).CityBuilderShared;
 }
 
 function loadPlannerRequestBuilderModule(crypto = undefined) {
-  const source = fs.readFileSync(path.resolve(__dirname, "../web/plannerRequestBuilder.js"), "utf8");
-  const context = {
+  return loadBrowserModule("../web/plannerRequestBuilder.js", {
     window: {
       crypto,
     },
-    JSON,
-    Math,
-    Date,
-    Array,
-    Object,
-    Number,
-    String,
-    Boolean,
-    RegExp,
-    Set,
-    Map,
-    Promise,
-    Uint32Array,
-    Error,
-  };
-  vm.createContext(context);
-  vm.runInContext(source, context);
-  return context.window.CityBuilderRequestBuilder;
+    context: {
+      Uint32Array,
+      Error,
+    },
+  }).CityBuilderRequestBuilder;
 }
 
 function loadPlannerWorkbenchModule() {
-  const source = fs.readFileSync(path.resolve(__dirname, "../web/plannerWorkbench.js"), "utf8");
   class ResizeObserver {
     observe() {}
     disconnect() {}
   }
-  const context = {
+  return loadBrowserModule("../web/plannerWorkbench.js", {
     window: {},
-    document: {
-      createElement() {
-        return createFakeDomElement();
+    context: {
+      document: {
+        createElement() {
+          return createFakeDomElement();
+        },
       },
+      ResizeObserver,
     },
-    JSON,
-    Math,
-    Date,
-    Array,
-    Object,
-    Number,
-    String,
-    Boolean,
-    RegExp,
-    Set,
-    Map,
-    Promise,
-    ResizeObserver,
-  };
-  vm.createContext(context);
-  vm.runInContext(source, context);
-  return context.window.CityBuilderWorkbench;
+  }).CityBuilderWorkbench;
 }
 
 function loadPlannerSolveRuntimeModule() {
-  const source = fs.readFileSync(path.resolve(__dirname, "../web/plannerSolveRuntime.js"), "utf8");
-  const context = {
+  return loadBrowserModule("../web/plannerSolveRuntime.js", {
     window: {
       clearInterval,
       setInterval,
     },
-    JSON,
-    Math,
-    Date,
-    Array,
-    Object,
-    Number,
-    String,
-    Boolean,
-    RegExp,
-    Set,
-    Map,
-    Promise,
-    Error,
-  };
-  vm.createContext(context);
-  vm.runInContext(source, context);
-  return context.window.CityBuilderSolveRuntime;
+    context: {
+      Error,
+    },
+  }).CityBuilderSolveRuntime;
+}
+
+function loadPlannerShellModule() {
+  return loadBrowserModule("../web/plannerShell.js").CityBuilderShell;
+}
+
+function loadPlannerResultsModule() {
+  return loadBrowserModule("../web/plannerResults.js").CityBuilderResults;
+}
+
+function loadPlannerPersistenceModule(localStorage = undefined) {
+  return loadBrowserModule("../web/plannerPersistence.js", {
+    window: {
+      localStorage,
+    },
+    context: {
+      document: {
+        createElement() {
+          return createFakeDomElement();
+        },
+      },
+    },
+  }).CityBuilderPersistence;
 }
 
 function testDistinctResidentialTypes() {
@@ -911,6 +903,484 @@ function testPlannerRuntimePresetAppliesBoundedCpSatPolicy() {
   assert.equal(solveStateMessage.includes("Bounded CP-SAT"), true);
   assert.equal(payloadPreviewUpdates > 0, true);
   assert.equal(controller.countAllowedCells(), 8);
+}
+
+function testPlannerShellRequiresManualValidationBeforeContinuationReuse() {
+  const plannerShell = loadPlannerShellModule();
+  const state = {
+    isSolving: false,
+    activeSolveRequestId: "",
+    isStopping: false,
+    result: { solution: {}, stats: {}, validation: { valid: false, errors: [] } },
+    resultContext: { grid: [[1]], params: {} },
+    layoutEditor: {
+      isApplying: false,
+      pendingValidation: true,
+      pendingPlacement: { canRotate: true },
+    },
+    expansionAdvice: {
+      isRunning: false,
+    },
+  };
+  const elements = {
+    solveButton: { disabled: false, textContent: "" },
+    stopSolveButton: { disabled: false },
+    loadConfigButton: { disabled: false },
+    loadLayoutButton: { disabled: false },
+    saveLayoutButton: { disabled: false },
+    lnsUseDisplayedSeed: { disabled: false },
+    cpSatUseDisplayedHint: { disabled: false },
+    expansionNextService: { disabled: false },
+    expansionNextResidential: { disabled: false },
+    compareExpansionButton: { disabled: false },
+    moveSelectedBuildingButton: { disabled: false },
+    removeSelectedBuildingButton: { disabled: false },
+    rotatePendingPlacementButton: { disabled: true },
+    validateEditedLayoutButton: { disabled: true },
+    layoutEditModeToggle: {
+      querySelectorAll() {
+        return [];
+      },
+    },
+    remainingServiceList: {
+      querySelectorAll() {
+        return [];
+      },
+    },
+    remainingResidentialList: {
+      querySelectorAll() {
+        return [];
+      },
+    },
+    solveStatus: { textContent: "" },
+  };
+  const controller = plannerShell.createPlannerShellController({
+    state,
+    elements,
+    callbacks: {
+      hasSelectedBuilding() {
+        return false;
+      },
+      readExpansionCandidateFlags() {
+        return { hasAnyCandidate: true };
+      },
+    },
+  });
+
+  controller.syncActionAvailability();
+
+  assert.equal(elements.rotatePendingPlacementButton.disabled, false);
+  assert.equal(elements.validateEditedLayoutButton.disabled, false);
+  assert.equal(elements.solveButton.disabled, false);
+  assert.equal(elements.lnsUseDisplayedSeed.disabled, true);
+  assert.equal(elements.cpSatUseDisplayedHint.disabled, true);
+  assert.equal(elements.compareExpansionButton.disabled, true);
+
+  state.layoutEditor.isApplying = true;
+  controller.syncActionAvailability();
+
+  assert.equal(elements.solveButton.disabled, true);
+  assert.equal(elements.loadConfigButton.disabled, true);
+  assert.equal(elements.loadLayoutButton.disabled, true);
+  assert.equal(elements.saveLayoutButton.disabled, true);
+
+  state.layoutEditor.isApplying = false;
+
+  state.layoutEditor.pendingValidation = false;
+  controller.syncActionAvailability();
+
+  assert.equal(elements.validateEditedLayoutButton.disabled, true);
+  assert.equal(elements.lnsUseDisplayedSeed.disabled, false);
+  assert.equal(elements.cpSatUseDisplayedHint.disabled, false);
+
+  state.layoutEditor.pendingPlacement = null;
+  controller.syncActionAvailability();
+
+  assert.equal(elements.rotatePendingPlacementButton.disabled, true);
+
+  state.result.solution.manualLayout = true;
+  state.result.stats.manualLayout = true;
+  controller.syncActionAvailability();
+
+  assert.equal(elements.lnsUseDisplayedSeed.disabled, true);
+  assert.equal(elements.cpSatUseDisplayedHint.disabled, true);
+}
+
+function testPlannerPersistenceRestoresLegacyReviewedInvalidLayoutWithoutPendingFlag() {
+  const storage = new Map();
+  const localStorage = {
+    getItem(key) {
+      return storage.has(key) ? storage.get(key) : null;
+    },
+    setItem(key, value) {
+      storage.set(key, String(value));
+    },
+  };
+  const plannerPersistence = loadPlannerPersistenceModule(localStorage);
+  const constants = {
+    CONFIG_STORAGE_KEY: "configs",
+    LAYOUT_STORAGE_KEY: "layouts",
+    defaultResidentialTypes: [],
+    defaultServiceTypes: [],
+    sampleGrid: [[1]],
+  };
+  const state = {
+    isSolving: false,
+    selectedMapBuilding: null,
+    selectedMapCell: null,
+    layoutEditor: {
+      mode: "inspect",
+      pendingPlacement: null,
+      isApplying: true,
+      edited: false,
+      pendingValidation: false,
+      status: "",
+    },
+    result: null,
+    resultContext: null,
+    solveProgressLog: [],
+    resultIsLiveSnapshot: false,
+    resultError: "",
+    optimizer: "greedy",
+  };
+  const elements = {
+    savedLayoutsSelect: createFakeDomElement({ value: "layout-1" }),
+    layoutStorageName: createFakeDomElement(),
+    layoutStorageStatus: createFakeDomElement(),
+    savedConfigsSelect: createFakeDomElement(),
+    configStorageName: createFakeDomElement(),
+    configStorageStatus: createFakeDomElement(),
+  };
+  const persistence = plannerPersistence.createPlannerPersistence({
+    state,
+    elements,
+    constants,
+    helpers: {
+      buildCpSatWarmStartCheckpoint() {
+        return null;
+      },
+      cloneGrid(value) {
+        return JSON.parse(JSON.stringify(value));
+      },
+      cloneJson(value) {
+        return JSON.parse(JSON.stringify(value));
+      },
+      createSavedEntryId() {
+        return "saved-id";
+      },
+      formatElapsedTime(value) {
+        return String(value);
+      },
+      formatSavedTimestamp(value) {
+        return String(value);
+      },
+      getSavedLayoutElapsedMs(entry) {
+        return entry.elapsedMs ?? 0;
+      },
+      isGridLike(value) {
+        return Array.isArray(value);
+      },
+      normalizeElapsedMs(value) {
+        return Number(value) || 0;
+      },
+      normalizeOptimizer(value) {
+        return value === "auto" || value === "lns" || value === "cp-sat" ? value : "greedy";
+      },
+    },
+    callbacks: {
+      applySolveRequestToPlanner() {},
+      clearExpansionAdvice() {},
+      clearRenderedResultState() {},
+      renderResults() {},
+      resetSolveTimer() {},
+      setResultElapsed() {},
+      setSolveState() {},
+      syncPlannerFromState() {},
+    },
+  });
+
+  localStorage.setItem(constants.LAYOUT_STORAGE_KEY, JSON.stringify([
+    {
+      id: "layout-1",
+      name: "Reviewed invalid layout",
+      savedAt: "2026-04-19T00:00:00.000Z",
+      elapsedMs: 123,
+      result: {
+        solution: {
+          manualLayout: true,
+          roads: [],
+          services: [],
+          serviceTypeIndices: [],
+          servicePopulationIncreases: [],
+          residentials: [],
+          residentialTypeIndices: [],
+          populations: [],
+          totalPopulation: 0,
+        },
+        stats: {
+          manualLayout: true,
+          optimizer: undefined,
+          totalPopulation: 0,
+          roadCount: 0,
+          serviceCount: 0,
+          residentialCount: 0,
+        },
+        validation: {
+          valid: false,
+          errors: ["Invalid layout"],
+        },
+      },
+      resultContext: {
+        grid: [[1]],
+        params: {
+          optimizer: "greedy",
+        },
+      },
+    },
+  ]));
+
+  persistence.loadSelectedLayout();
+
+  assert.equal(state.layoutEditor.pendingValidation, false);
+  assert.equal(state.layoutEditor.isApplying, false);
+}
+
+function testPlannerPersistenceRestoresLegacyPendingValidationLayoutWithoutFlag() {
+  const storage = new Map();
+  const localStorage = {
+    getItem(key) {
+      return storage.has(key) ? storage.get(key) : null;
+    },
+    setItem(key, value) {
+      storage.set(key, String(value));
+    },
+  };
+  const plannerPersistence = loadPlannerPersistenceModule(localStorage);
+  const constants = {
+    CONFIG_STORAGE_KEY: "configs",
+    LAYOUT_STORAGE_KEY: "layouts",
+    defaultResidentialTypes: [],
+    defaultServiceTypes: [],
+    sampleGrid: [[1]],
+  };
+  const state = {
+    isSolving: false,
+    selectedMapBuilding: null,
+    selectedMapCell: null,
+    layoutEditor: {
+      mode: "inspect",
+      pendingPlacement: null,
+      edited: false,
+      pendingValidation: false,
+      status: "",
+    },
+    result: null,
+    resultContext: null,
+    solveProgressLog: [],
+    resultIsLiveSnapshot: false,
+    resultError: "",
+    optimizer: "greedy",
+  };
+  const elements = {
+    savedLayoutsSelect: createFakeDomElement({ value: "layout-1" }),
+    layoutStorageName: createFakeDomElement(),
+    layoutStorageStatus: createFakeDomElement(),
+    savedConfigsSelect: createFakeDomElement(),
+    configStorageName: createFakeDomElement(),
+    configStorageStatus: createFakeDomElement(),
+  };
+  const persistence = plannerPersistence.createPlannerPersistence({
+    state,
+    elements,
+    constants,
+    helpers: {
+      buildCpSatWarmStartCheckpoint() {
+        return null;
+      },
+      cloneGrid(value) {
+        return JSON.parse(JSON.stringify(value));
+      },
+      cloneJson(value) {
+        return JSON.parse(JSON.stringify(value));
+      },
+      createSavedEntryId() {
+        return "saved-id";
+      },
+      formatElapsedTime(value) {
+        return String(value);
+      },
+      formatSavedTimestamp(value) {
+        return String(value);
+      },
+      getSavedLayoutElapsedMs(entry) {
+        return entry.elapsedMs ?? 0;
+      },
+      isGridLike(value) {
+        return Array.isArray(value);
+      },
+      normalizeElapsedMs(value) {
+        return Number(value) || 0;
+      },
+      normalizeOptimizer(value) {
+        return value === "auto" || value === "lns" || value === "cp-sat" ? value : "greedy";
+      },
+    },
+    callbacks: {
+      applySolveRequestToPlanner() {},
+      clearExpansionAdvice() {},
+      clearRenderedResultState() {},
+      renderResults() {},
+      resetSolveTimer() {},
+      setResultElapsed() {},
+      setSolveState() {},
+      syncPlannerFromState() {},
+    },
+  });
+
+  localStorage.setItem(constants.LAYOUT_STORAGE_KEY, JSON.stringify([
+    {
+      id: "layout-1",
+      name: "Pending invalid layout",
+      savedAt: "2026-04-19T00:00:00.000Z",
+      elapsedMs: 123,
+      result: {
+        solution: {
+          manualLayout: true,
+          roads: [],
+          services: [],
+          serviceTypeIndices: [],
+          servicePopulationIncreases: [],
+          residentials: [],
+          residentialTypeIndices: [],
+          populations: [],
+          totalPopulation: 0,
+        },
+        stats: {
+          manualLayout: true,
+          optimizer: undefined,
+          totalPopulation: 0,
+          roadCount: 0,
+          serviceCount: 0,
+          residentialCount: 0,
+        },
+        validation: {
+          valid: false,
+          errors: ["Manual edits are pending validation. Use Validate layout when you're ready."],
+        },
+      },
+      resultContext: {
+        grid: [[1]],
+        params: {
+          optimizer: "greedy",
+        },
+      },
+    },
+  ]));
+
+  persistence.loadSelectedLayout();
+
+  assert.equal(state.layoutEditor.pendingValidation, true);
+}
+
+function testPlannerResultsRotatePendingPlacementUpdatesFootprint() {
+  const plannerResults = loadPlannerResultsModule();
+  const state = {
+    isSolving: false,
+    grid: [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
+    result: {
+      solution: {
+        roads: [],
+        services: [],
+        serviceTypeIndices: [],
+        servicePopulationIncreases: [],
+        residentials: [],
+        residentialTypeIndices: [],
+        populations: [],
+        totalPopulation: 0,
+      },
+      stats: {
+        manualLayout: false,
+      },
+      validation: {
+        valid: true,
+        errors: [],
+      },
+    },
+    resultContext: {
+      grid: [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
+      params: {
+        serviceTypes: [{ name: "Depot", rows: 2, cols: 3, range: 1, bonus: 10, avail: 1 }],
+        residentialTypes: [],
+      },
+    },
+    solveProgressLog: [],
+    resultIsLiveSnapshot: false,
+    resultError: "",
+    selectedMapBuilding: null,
+    selectedMapCell: null,
+    layoutEditor: {
+      mode: "inspect",
+      pendingPlacement: null,
+      isApplying: false,
+      edited: false,
+      pendingValidation: false,
+      status: "",
+    },
+  };
+  const modeButtons = [
+    createFakeDomElement({ dataset: { layoutEditMode: "inspect" } }),
+    createFakeDomElement({ dataset: { layoutEditMode: "place-service" } }),
+  ];
+  const elements = {
+    layoutEditModeToggle: {
+      querySelectorAll() {
+        return modeButtons;
+      },
+    },
+    layoutEditorStatus: createFakeDomElement(),
+    rotatePendingPlacementButton: createFakeDomElement(),
+  };
+  const controller = plannerResults.createPlannerResultsController({
+    state,
+    elements,
+    helpers: {
+      cloneJson(value) {
+        return JSON.parse(JSON.stringify(value));
+      },
+      formatElapsedTime(value) {
+        return String(value);
+      },
+    },
+    callbacks: {
+      applyMatrixLayout() {},
+      clearExpansionAdvice() {},
+      getOptimizerLabel(value) {
+        return String(value);
+      },
+      renderExpansionAdvice() {},
+      setSolveState() {},
+      syncActionAvailability() {},
+    },
+  });
+
+  controller.setLayoutEditMode("place-service", {
+    kind: "service",
+    typeIndex: 0,
+    name: "Depot",
+    rows: 2,
+    cols: 3,
+    rotated: false,
+    canRotate: true,
+  });
+
+  assert.match(elements.layoutEditorStatus.textContent, /Depot \(2x3\)/);
+  assert.equal(elements.rotatePendingPlacementButton.textContent, "Rotate 90°");
+
+  controller.handleRotatePendingPlacementAction();
+
+  assert.equal(state.layoutEditor.pendingPlacement.rotated, true);
+  assert.match(elements.layoutEditorStatus.textContent, /Depot \(3x2\)/);
+  assert.equal(elements.rotatePendingPlacementButton.textContent, "Use original orientation");
 }
 
 function testManualLayoutResponseClearsSolverMetadata() {
@@ -1867,6 +2337,10 @@ testPlannerAutoFillsCpSatRandomSeed();
 testPlannerBuildSolveRequestIncludesCpSatNoImprovementTimeout();
 testPlannerSavedLayoutRestoreRoundTripsHintSeedToggles();
 testPlannerRuntimePresetAppliesBoundedCpSatPolicy();
+testPlannerShellRequiresManualValidationBeforeContinuationReuse();
+testPlannerPersistenceRestoresLegacyReviewedInvalidLayoutWithoutPendingFlag();
+testPlannerPersistenceRestoresLegacyPendingValidationLayoutWithoutFlag();
+testPlannerResultsRotatePendingPlacementUpdatesFootprint();
 testManualLayoutResponseClearsSolverMetadata();
 testBuildCpSatWarmStartCheckpointRejectsInvalidLayouts();
 testBuildCpSatWarmStartCheckpointRejectsLegacyLayoutsWithoutValidation();

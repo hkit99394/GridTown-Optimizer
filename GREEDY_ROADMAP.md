@@ -29,20 +29,22 @@ This makes `greedy` a strong baseline, but it also means the implementation now 
 
 ## Review Update
 
-After the shipped Steps 1-11, the greedy path is much stronger and better instrumented than the original roadmap baseline. The current implementation now has:
+After the shipped Steps 1-15 bounded slices, the greedy path is much stronger and better instrumented than the original roadmap baseline. The current implementation now has:
 - measured phase-level behavior through the fixed benchmark corpus
 - grouped typed-residential service scoring
 - adaptive cap search
 - deferred-road construction as an opt-in experiment
 - bounded fixed-service seed/order completeness
-- bounded service neighborhoods on top of residential local search
+- direct service-relocation neighborhoods on top of residential local search
 - lower-allocation geometry and road-probe helpers behind the current public APIs
+- bounded service-add lookahead in the main explicit greedy service loop
+- an explicit product posture where `auto` is the recommended quality path and `greedy` is the fast seed / advanced standalone mode
 
 The biggest remaining practical gaps are now narrower and more specific:
-- Step 10 service neighborhoods still improve incumbents by calling the bounded forced-set evaluator, which is effective but coarser and more expensive than a direct delta-scored service relocation path
 - `localSearchImprove()` still allocates fresh occupancy snapshots for residential move scans, which is now one of the more obvious remaining hot allocations in the greedy path
 - explicit-road probing still rebuilds block-state views per probe and still pays the cost of string-key `Set` semantics internally, even after the Step 11 helper refactor
-- the roadmap should now focus less on generic “speed up greedy somehow” work and more on replacing the remaining expensive fallback mechanisms with narrower, purpose-built neighborhoods and scratch-state helpers
+- Step 14 lookahead is intentionally narrow: it only reranks the top-N explicit non-`fixedServices` candidates, and it still does not widen greedy into a fuller multi-step search policy
+- the roadmap should now focus less on generic “speed up greedy somehow” work and more on replacing the remaining expensive fallback mechanisms with narrower scratch-state helpers and on making `auto` / `LNS` follow-on improvement do the deeper search work
 
 ## Main Bottlenecks
 
@@ -50,22 +52,20 @@ The biggest near-term issue is not candidate generation itself. The main cost co
 
 - repeated `canConnectToRoads` checks while scanning service and residential candidates
 - repeated `ensureBuildingConnectedToRoads` work after a winner is selected
-- repeated population scoring for residential candidates after the service set is fixed
-- repeated full rescans of candidate lists after each placement
-- low-diversification restart effort, because many restarts only reshuffle service order and that order often matters only on close score ties
-- runtime and memory inflation from same-footprint typed residential expansion, which enlarges candidate lists, service-coverage indexes, and residential/local-search rescans
-- expensive runtime multiplication from service-cap sweep, restarts, anchor refinement, service refinement, and optional exhaustive service search
+- residual residential move/add rescans inside `localSearchImprove()`
+- runtime and memory inflation from same-footprint typed residential expansion, which still enlarges candidate lists and residential/local-search rescans even though service scoring is now grouped
+- remaining runtime multiplication from bounded cap search, refinement, service neighborhoods, and optional exhaustive or fixed-service reevaluation passes
 
-The main quality limitation is that service choice still uses a shallow proxy for future value. It estimates residential upside, but it does not reason much about:
+The main quality limitation is that service choice still uses a bounded proxy for future value. It now has grouped service scoring plus a bounded lookahead reranker, but it still does not reason much about:
 - road length
 - packing fragmentation
 - row-0 anchor quality
 - downstream placement opportunity cost
 - premature road commitment that can occupy corridor cells needed by better later buildings
 
-There are also two specific quality gaps in the current implementation:
-- the typed-residential service scoring proxy can over-count mutually exclusive same-footprint variants and scarce-type upside
-- the `fixedServices` refinement and exhaustive paths do not fully explore row-0 seed or service-permutation effects when evaluating a forced service set
+There are also two specific residual limitations in the current implementation:
+- the Step 14 lookahead path is intentionally bounded and explicit-road-only, so deferred-road mode and `fixedServices` reruns still fall back to the simpler service-selection policy
+- fixed-service completeness is now bounded rather than exhaustive, so refinement and exhaustive evaluation still trade completeness for measured runtime caps
 
 ## Roadmap By Impact
 
@@ -414,9 +414,20 @@ Why:
 - the product path increasingly values best answer within time budget, not purity of a single heuristic
 - `LNS` already treats greedy as a seed generator
 
-Decision point:
-- either keep investing in greedy as a stronger standalone heuristic
-- or intentionally keep greedy lightweight and shift deeper improvement effort into short neighborhood-improvement phases
+Decision:
+- keep `greedy` available as a standalone optimizer for fast incumbent building, benchmarking, and manual heuristic tuning
+- make the product posture explicitly hybrid: `auto` is the recommended quality path, while `greedy` is the fast seed / advanced mode
+- prefer spending deeper improvement budget in `LNS`, bounded `CP-SAT`, and `auto` follow-on stages unless a greedy change clearly improves seed quality per second
+
+User-facing framing:
+- `Auto` is the recommended mode when overall answer quality matters more than keeping the run purely standalone or heuristic
+- `Greedy` is the fast seed / advanced mode when you want the quickest legal layout, direct heuristic inspection, or manual tuning
+- `LNS` is the manual improvement mode that starts from a greedy or displayed seed
+- `CP-SAT` is the bounded polish pass, usually strongest after a seed already exists
+
+Shipped bounded slice:
+- roadmap and planner copy now describe `auto` as the recommended quality path and `greedy` as the fast seed / advanced mode
+- this step intentionally does not change solver policy; it only makes the product decision explicit in docs and user-facing text
 
 ## Recommended Implementation Order
 
@@ -434,7 +445,7 @@ Decision point:
 12. Replace forced-set service neighborhoods with direct delta-scored service relocations.
 13. Add candidate geometry caches and tested scratch workspaces.
 14. Explore stronger greedy search policy changes only after the above is measured.
-15. Revisit the standalone-vs-hybrid role of greedy after the above is measured.
+15. Lock the hybrid product posture after the above is measured and keep greedy framed as the fast seed / advanced mode.
 
 ## Success Metrics
 
@@ -459,4 +470,4 @@ Secondary metrics:
 - If greedy experiments with deferred or implicit road candidates, always reconstruct and validate an explicit final road set before returning a solution.
 - Prefer deterministic tie-break behavior when a seed is provided.
 - Avoid broad structural refactors until profiling proves they matter.
-- Treat greedy as part of the staged solver workflow, not as an isolated algorithm.
+- Treat greedy as the fast seed and advanced standalone mode within the staged solver workflow, not as the primary quality path.

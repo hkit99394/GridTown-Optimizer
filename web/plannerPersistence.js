@@ -52,6 +52,36 @@
       globalObject.localStorage.setItem(storageKey, JSON.stringify(entries));
     }
 
+    const PENDING_MANUAL_LAYOUT_ERROR =
+      "Manual edits are pending validation. Use Validate layout when you're ready.";
+
+    function isManualLayoutResult(result) {
+      return Boolean(result?.solution?.manualLayout || result?.stats?.manualLayout);
+    }
+
+    function hasPendingManualLayoutValidation(result) {
+      if (!isManualLayoutResult(result) || result?.validation?.valid === true) return false;
+      return Array.isArray(result?.validation?.errors)
+        && result.validation.errors.includes(PENDING_MANUAL_LAYOUT_ERROR);
+    }
+
+    function readSavedLayoutPendingValidation(entry) {
+      if (entry?.layoutEditorPendingValidation === true) return true;
+      if (entry?.layoutEditorPendingValidation === false) return false;
+      return hasPendingManualLayoutValidation(entry?.result);
+    }
+
+    function resetLayoutEditorForLoadedResult(pendingValidation) {
+      state.selectedMapBuilding = null;
+      state.selectedMapCell = null;
+      state.layoutEditor.mode = "inspect";
+      state.layoutEditor.pendingPlacement = null;
+      state.layoutEditor.edited = false;
+      state.layoutEditor.pendingValidation = pendingValidation;
+      state.layoutEditor.status = "";
+      state.layoutEditor.isApplying = false;
+    }
+
     function populateSavedSelect(selectElement, entries, placeholder, labelBuilder = null) {
       selectElement.innerHTML = "";
 
@@ -240,6 +270,7 @@
         result: cloneJson(state.result),
         resultContext: cloneJson(state.resultContext),
         elapsedMs,
+        layoutEditorPendingValidation: Boolean(state.layoutEditor.pendingValidation),
         ...(continueCpSat ? { continueCpSat } : {}),
       };
       if (existingIndex >= 0) {
@@ -273,12 +304,7 @@
       }
       clearExpansionAdvice();
       const loadedResultContext = cloneJson(entry.resultContext);
-      state.selectedMapBuilding = null;
-      state.selectedMapCell = null;
-      state.layoutEditor.mode = "inspect";
-      state.layoutEditor.pendingPlacement = null;
-      state.layoutEditor.edited = false;
-      state.layoutEditor.status = "";
+      resetLayoutEditorForLoadedResult(readSavedLayoutPendingValidation(entry));
       state.result = cloneJson(entry.result);
       state.solveProgressLog = Array.isArray(entry.result?.progressLog) ? cloneJson(entry.result.progressLog) : [];
       state.resultIsLiveSnapshot = false;

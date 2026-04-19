@@ -94,6 +94,38 @@ function cloneGreedyOptions(options: GreedyBenchmarkOptions): GreedyBenchmarkOpt
   return structuredClone(options);
 }
 
+function inheritGreedyBenchmarkOptions(params: SolverParams): GreedyBenchmarkOptions {
+  const benchmarkGreedy = (params.greedy ?? {}) as GreedyBenchmarkOptions;
+  return {
+    ...benchmarkGreedy,
+    localSearch: benchmarkGreedy.localSearch ?? params.localSearch,
+    restarts: benchmarkGreedy.restarts ?? params.restarts,
+    serviceRefineIterations: benchmarkGreedy.serviceRefineIterations ?? params.serviceRefineIterations,
+    serviceRefineCandidateLimit: benchmarkGreedy.serviceRefineCandidateLimit ?? params.serviceRefineCandidateLimit,
+    exhaustiveServiceSearch: benchmarkGreedy.exhaustiveServiceSearch ?? params.exhaustiveServiceSearch,
+    serviceExactPoolLimit: benchmarkGreedy.serviceExactPoolLimit ?? params.serviceExactPoolLimit,
+    serviceExactMaxCombinations: benchmarkGreedy.serviceExactMaxCombinations ?? params.serviceExactMaxCombinations,
+  };
+}
+
+function applyNormalizedGreedyBenchmarkParams(
+  params: SolverParams,
+  greedy: GreedyBenchmarkOptions
+): SolverParams {
+  return {
+    ...params,
+    optimizer: "greedy",
+    greedy,
+    localSearch: greedy.localSearch,
+    restarts: greedy.restarts,
+    serviceRefineIterations: greedy.serviceRefineIterations,
+    serviceRefineCandidateLimit: greedy.serviceRefineCandidateLimit,
+    exhaustiveServiceSearch: greedy.exhaustiveServiceSearch,
+    serviceExactPoolLimit: greedy.serviceExactPoolLimit,
+    serviceExactMaxCombinations: greedy.serviceExactMaxCombinations,
+  };
+}
+
 export function normalizeGreedyBenchmarkOptions(
   greedy: GreedyBenchmarkOptions | undefined,
   overrides: Partial<GreedyBenchmarkOptions> | undefined
@@ -127,39 +159,8 @@ function buildBenchmarkParams(
   overrides?: Partial<GreedyBenchmarkOptions>
 ): SolverParams {
   const params = cloneSolverParams(benchmarkCase.params);
-  const benchmarkGreedy = (params.greedy ?? {}) as GreedyBenchmarkOptions;
-  const normalizedGreedy = normalizeGreedyBenchmarkOptions(
-    {
-      ...benchmarkGreedy,
-      localSearch: benchmarkGreedy.localSearch ?? params.localSearch,
-      localSearchServiceMoves: benchmarkGreedy.localSearchServiceMoves,
-      localSearchServiceCandidateLimit: benchmarkGreedy.localSearchServiceCandidateLimit,
-      deferRoadCommitment: benchmarkGreedy.deferRoadCommitment,
-      profile: benchmarkGreedy.profile,
-      randomSeed: benchmarkGreedy.randomSeed,
-      restarts: benchmarkGreedy.restarts ?? params.restarts,
-      serviceRefineIterations: benchmarkGreedy.serviceRefineIterations ?? params.serviceRefineIterations,
-      serviceRefineCandidateLimit: benchmarkGreedy.serviceRefineCandidateLimit ?? params.serviceRefineCandidateLimit,
-      exhaustiveServiceSearch: benchmarkGreedy.exhaustiveServiceSearch ?? params.exhaustiveServiceSearch,
-      serviceExactPoolLimit: benchmarkGreedy.serviceExactPoolLimit ?? params.serviceExactPoolLimit,
-      serviceExactMaxCombinations: benchmarkGreedy.serviceExactMaxCombinations ?? params.serviceExactMaxCombinations,
-      stopFilePath: benchmarkGreedy.stopFilePath,
-      snapshotFilePath: benchmarkGreedy.snapshotFilePath,
-    },
-    overrides
-  );
-  return {
-    ...params,
-    optimizer: "greedy",
-    greedy: normalizedGreedy,
-    localSearch: normalizedGreedy.localSearch,
-    restarts: normalizedGreedy.restarts,
-    serviceRefineIterations: normalizedGreedy.serviceRefineIterations,
-    serviceRefineCandidateLimit: normalizedGreedy.serviceRefineCandidateLimit,
-    exhaustiveServiceSearch: normalizedGreedy.exhaustiveServiceSearch,
-    serviceExactPoolLimit: normalizedGreedy.serviceExactPoolLimit,
-    serviceExactMaxCombinations: normalizedGreedy.serviceExactMaxCombinations,
-  };
+  const normalizedGreedy = normalizeGreedyBenchmarkOptions(inheritGreedyBenchmarkOptions(params), overrides);
+  return applyNormalizedGreedyBenchmarkParams(params, normalizedGreedy);
 }
 
 function validateBenchmarkCorpus(corpus: readonly GreedyBenchmarkCase[]): void {

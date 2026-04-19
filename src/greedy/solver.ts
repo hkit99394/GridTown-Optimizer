@@ -941,6 +941,29 @@ type ServiceLookaheadEvaluation = {
   refillScore: number;
 };
 
+function probeExplicitRoadConnection(
+  grid: Grid,
+  roads: Set<string>,
+  occupied: Set<string>,
+  placement: { r: number; c: number; rows: number; cols: number },
+  scratch: ReturnType<typeof createRoadProbeScratch>,
+  profileCounters?: GreedyProfileCounters
+): RoadConnectionProbe | null {
+  if (profileCounters) profileCounters.roads.canConnectChecks++;
+  if (profileCounters) profileCounters.roads.probeCalls++;
+  if (profileCounters) profileCounters.roads.scratchProbeCalls++;
+  return probeBuildingConnectedToRoads(
+    grid,
+    roads,
+    occupied,
+    placement.r,
+    placement.c,
+    placement.rows,
+    placement.cols,
+    scratch
+  );
+}
+
 function compareServiceLookaheadCandidates(
   left: ServiceLookaheadCandidate,
   right: ServiceLookaheadCandidate
@@ -1244,8 +1267,6 @@ function solveOne(
     rows: number,
     cols: number
   ): ConnectivityProbe | null => {
-    if (profileCounters) profileCounters.roads.canConnectChecks++;
-    if (profileCounters) profileCounters.roads.probeCalls++;
     if (useDeferredRoadCommitment) {
       const frontierProbe = deferredFrontier
         ? probeBuildingConnectedToRow0ReachableEmptyFrontier(G, deferredFrontier, r, c, rows, cols)
@@ -1253,16 +1274,13 @@ function solveOne(
       if (!frontierProbe) return null;
       return { kind: "deferred", roadCost: frontierProbe.distance, frontierProbe };
     }
-    if (profileCounters) profileCounters.roads.scratchProbeCalls++;
-    const roadProbe = probeBuildingConnectedToRoads(
+    const roadProbe = probeExplicitRoadConnection(
       G,
       roads,
       snapshotOccupied,
-      r,
-      c,
-      rows,
-      cols,
-      explicitRoadProbeScratch
+      { r, c, rows, cols },
+      explicitRoadProbeScratch,
+      profileCounters
     );
     if (!roadProbe) return null;
     return { kind: "explicit", roadCost: roadProbe.path?.length ?? 0, roadProbe };
@@ -1329,20 +1347,13 @@ function solveOne(
         ) {
           continue;
         }
-        if (profileCounters) {
-          profileCounters.roads.canConnectChecks++;
-          profileCounters.roads.probeCalls++;
-          profileCounters.roads.scratchProbeCalls++;
-        }
-        const probe = probeBuildingConnectedToRoads(
+        const probe = probeExplicitRoadConnection(
           G,
           roadsScratch,
           occupiedScratch,
-          candidate.r,
-          candidate.c,
-          candidate.rows,
-          candidate.cols,
-          lookaheadRoadProbeScratch
+          candidate,
+          lookaheadRoadProbeScratch,
+          profileCounters
         );
         if (!probe) continue;
         const pop = computeResidentialPopulation(
@@ -2531,19 +2542,14 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
             }
             if (profileCounters) profileCounters.localSearch.serviceSwapChecks++;
             if (profileCounters) profileCounters.localSearch.canConnectChecks++;
-            if (profileCounters) profileCounters.roads.canConnectChecks++;
-            if (profileCounters) profileCounters.roads.probeCalls++;
-            if (profileCounters) profileCounters.roads.scratchProbeCalls++;
             swapTrials++;
-            const probe = probeBuildingConnectedToRoads(
+            const probe = probeExplicitRoadConnection(
               G,
               incumbent.roads,
               occupiedWithoutCurrent,
-              candidate.r,
-              candidate.c,
-              candidate.rows,
-              candidate.cols,
-              serviceNeighborhoodRoadProbeScratch
+              candidate,
+              serviceNeighborhoodRoadProbeScratch,
+              profileCounters
             );
             if (!probe) continue;
             const forcedServices = [...incumbentServices];
@@ -2775,21 +2781,15 @@ function localSearchImprove(
     c: number,
     rows: number,
     cols: number
-  ): RoadConnectionProbe | null => {
-    if (profileCounters) profileCounters.roads.canConnectChecks++;
-    if (profileCounters) profileCounters.roads.probeCalls++;
-    if (profileCounters) profileCounters.roads.scratchProbeCalls++;
-    return probeBuildingConnectedToRoads(
+  ): RoadConnectionProbe | null =>
+    probeExplicitRoadConnection(
       G,
       roads,
       snapshotOccupied,
-      r,
-      c,
-      rows,
-      cols,
-      explicitRoadProbeScratch
+      { r, c, rows, cols },
+      explicitRoadProbeScratch,
+      profileCounters
     );
-  };
 
   for (let iter = 0; iter < maxIter; iter++) {
     maybeStop?.();

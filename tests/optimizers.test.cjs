@@ -2223,7 +2223,13 @@ const STEP14_GREEDY_BENCHMARK_NAME = "step14-service-lookahead-reranker";
 const STEP14_DETERMINISTIC_TIES_BENCHMARK_NAME = "step14-deterministic-lookahead-ties";
 const STEP14_ROW0_PATH_NULL_BENCHMARK_NAME = "step14-row0-path-null-reservation";
 const STEP14_SCARCE_REFILL_BENCHMARK_NAME = "step14-scarce-type-sequential-refill";
+const STEP14_FOLLOW_UP_BENCHMARK_NAMES = [
+  STEP14_DETERMINISTIC_TIES_BENCHMARK_NAME,
+  STEP14_ROW0_PATH_NULL_BENCHMARK_NAME,
+  STEP14_SCARCE_REFILL_BENCHMARK_NAME,
+];
 const GREEDY_SERVICE_LOOKAHEAD_CANDIDATES_OPTION = "serviceLookaheadCandidates";
+const GREEDY_LOOKAHEAD_DISABLED = { [GREEDY_SERVICE_LOOKAHEAD_CANDIDATES_OPTION]: undefined };
 
 function getRequiredGreedyBenchmarkCase(name) {
   const benchmarkCase = DEFAULT_GREEDY_BENCHMARK_CORPUS.find((entry) => entry.name === name);
@@ -2248,7 +2254,7 @@ function runGreedyServiceLookaheadBenchmarkPair(name, solveGreedyImpl) {
   const runPair = () => {
     const baseline = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
       names: [benchmarkName],
-      greedy: { [GREEDY_SERVICE_LOOKAHEAD_CANDIDATES_OPTION]: undefined },
+      greedy: GREEDY_LOOKAHEAD_DISABLED,
     });
     const enabled = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
       names: [benchmarkName],
@@ -2276,6 +2282,42 @@ function solveGreedyBenchmarkCase(name, greedyOverrides) {
       params
     ),
   };
+}
+
+function solveValidatedGreedyBenchmarkCase(name, greedyOverrides) {
+  const solved = solveGreedyBenchmarkCase(name, greedyOverrides);
+  return {
+    ...solved,
+    validation: validateSolution({
+      grid: solved.benchmarkCase.grid,
+      solution: solved.solution,
+      params: solved.params,
+    }),
+  };
+}
+
+function sortedRoads(solution) {
+  return [...solution.roads].sort();
+}
+
+function assertStep14BenchmarkIsolation(name, expectedLocalSearch) {
+  const benchmarkCase = getRequiredGreedyBenchmarkCase(name);
+  const greedy = benchmarkCase.params.greedy ?? {};
+
+  assert.equal(listGreedyBenchmarkCaseNames().includes(name), true);
+  assert.match(benchmarkCase.description, /Step 14/i);
+  assert.equal(greedy.serviceLookaheadCandidates, 4);
+  assert.equal(greedy.localSearch, expectedLocalSearch);
+  assert.equal(greedy.localSearchServiceMoves, false);
+  assert.equal(greedy.serviceRefineIterations, 0);
+  assert.equal(greedy.exhaustiveServiceSearch, false);
+
+  return benchmarkCase;
+}
+
+function assertLookaheadCounters(result, evaluations, wins) {
+  assert.equal(result.greedyProfile.counters.servicePhase.lookaheadEvaluations, evaluations);
+  assert.equal(result.greedyProfile.counters.servicePhase.lookaheadWins, wins);
 }
 
 function testGreedyBenchmarkCorpusHelpers() {
@@ -2355,34 +2397,12 @@ function testGreedyBenchmarkCorpusHelpers() {
 }
 
 function testGreedyStep14ServiceLookaheadBenchmarkCaseIsolated() {
-  const benchmarkCase = getRequiredGreedyBenchmarkCase(STEP14_GREEDY_BENCHMARK_NAME);
-  const greedy = benchmarkCase.params.greedy ?? {};
-
-  assert.equal(listGreedyBenchmarkCaseNames().includes(STEP14_GREEDY_BENCHMARK_NAME), true);
-  assert.match(benchmarkCase.description, /Step 14/i);
-  assert.equal(greedy.serviceLookaheadCandidates, 4);
-  assert.equal(greedy.localSearch, true);
-  assert.equal(greedy.localSearchServiceMoves, false);
-  assert.equal(greedy.serviceRefineIterations, 0);
-  assert.equal(greedy.exhaustiveServiceSearch, false);
+  assertStep14BenchmarkIsolation(STEP14_GREEDY_BENCHMARK_NAME, true);
 }
 
 function testGreedyStep14FollowUpBenchmarkCasesStayIsolated() {
-  for (const name of [
-    STEP14_DETERMINISTIC_TIES_BENCHMARK_NAME,
-    STEP14_ROW0_PATH_NULL_BENCHMARK_NAME,
-    STEP14_SCARCE_REFILL_BENCHMARK_NAME,
-  ]) {
-    const benchmarkCase = getRequiredGreedyBenchmarkCase(name);
-    const greedy = benchmarkCase.params.greedy ?? {};
-
-    assert.equal(listGreedyBenchmarkCaseNames().includes(name), true);
-    assert.match(benchmarkCase.description, /Step 14/i);
-    assert.equal(greedy.serviceLookaheadCandidates, 4);
-    assert.equal(greedy.localSearch, false);
-    assert.equal(greedy.localSearchServiceMoves, false);
-    assert.equal(greedy.serviceRefineIterations, 0);
-    assert.equal(greedy.exhaustiveServiceSearch, false);
+  for (const name of STEP14_FOLLOW_UP_BENCHMARK_NAMES) {
+    assertStep14BenchmarkIsolation(name, false);
   }
 }
 
@@ -2422,20 +2442,10 @@ function testGreedyStep14DeterministicLookaheadTieBenchmarkCase() {
   const { baseline, enabled } = runGreedyServiceLookaheadBenchmarkPair(STEP14_DETERMINISTIC_TIES_BENCHMARK_NAME);
   const baselineSolve = solveGreedyBenchmarkCase(
     STEP14_DETERMINISTIC_TIES_BENCHMARK_NAME,
-    { [GREEDY_SERVICE_LOOKAHEAD_CANDIDATES_OPTION]: undefined }
+    GREEDY_LOOKAHEAD_DISABLED
   );
-  const firstEnabledSolve = solveGreedyBenchmarkCase(STEP14_DETERMINISTIC_TIES_BENCHMARK_NAME);
-  const secondEnabledSolve = solveGreedyBenchmarkCase(STEP14_DETERMINISTIC_TIES_BENCHMARK_NAME);
-  const firstValidation = validateSolution({
-    grid: firstEnabledSolve.benchmarkCase.grid,
-    solution: firstEnabledSolve.solution,
-    params: firstEnabledSolve.params,
-  });
-  const secondValidation = validateSolution({
-    grid: secondEnabledSolve.benchmarkCase.grid,
-    solution: secondEnabledSolve.solution,
-    params: secondEnabledSolve.params,
-  });
+  const firstEnabledSolve = solveValidatedGreedyBenchmarkCase(STEP14_DETERMINISTIC_TIES_BENCHMARK_NAME);
+  const secondEnabledSolve = solveValidatedGreedyBenchmarkCase(STEP14_DETERMINISTIC_TIES_BENCHMARK_NAME);
 
   assert.equal(enabled.caseCount, 1);
   assert.deepEqual(enabled.selectedCaseNames, [STEP14_DETERMINISTIC_TIES_BENCHMARK_NAME]);
@@ -2444,8 +2454,7 @@ function testGreedyStep14DeterministicLookaheadTieBenchmarkCase() {
   assert.equal(enabled.results[0].totalPopulation, 200);
   assert.equal(enabled.results[0].serviceCount, 1);
   assert.equal(enabled.results[0].residentialCount, 2);
-  assert.equal(enabled.results[0].greedyProfile.counters.servicePhase.lookaheadEvaluations, 20);
-  assert.equal(enabled.results[0].greedyProfile.counters.servicePhase.lookaheadWins, 1);
+  assertLookaheadCounters(enabled.results[0], 20, 1);
   assert.deepEqual(baselineSolve.solution.services, [
     { r: 2, c: 2, rows: 1, cols: 1, range: 1 },
   ]);
@@ -2457,34 +2466,24 @@ function testGreedyStep14DeterministicLookaheadTieBenchmarkCase() {
     { r: 2, c: 0, rows: 2, cols: 2 },
   ]);
   assert.deepEqual(firstEnabledSolve.solution.populations, [100, 100]);
-  assert.deepEqual([...firstEnabledSolve.solution.roads].sort(), ["0,0", "0,1", "1,0"]);
+  assert.deepEqual(sortedRoads(firstEnabledSolve.solution), ["0,0", "0,1", "1,0"]);
   assert.notDeepEqual(firstEnabledSolve.solution.services, baselineSolve.solution.services);
   assert.deepEqual(secondEnabledSolve.solution.services, firstEnabledSolve.solution.services);
   assert.deepEqual(secondEnabledSolve.solution.residentials, firstEnabledSolve.solution.residentials);
   assert.deepEqual(secondEnabledSolve.solution.populations, firstEnabledSolve.solution.populations);
-  assert.deepEqual([...secondEnabledSolve.solution.roads].sort(), [...firstEnabledSolve.solution.roads].sort());
-  assert.equal(firstValidation.valid, true);
-  assert.equal(secondValidation.valid, true);
+  assert.deepEqual(sortedRoads(secondEnabledSolve.solution), sortedRoads(firstEnabledSolve.solution));
+  assert.equal(firstEnabledSolve.validation.valid, true);
+  assert.equal(secondEnabledSolve.validation.valid, true);
   assert.match(formatGreedyBenchmarkSuite(enabled), /step14=/);
 }
 
 function testGreedyStep14Row0PathNullReservationBenchmarkCase() {
   const { baseline, enabled } = runGreedyServiceLookaheadBenchmarkPair(STEP14_ROW0_PATH_NULL_BENCHMARK_NAME);
-  const baselineSolve = solveGreedyBenchmarkCase(
+  const baselineSolve = solveValidatedGreedyBenchmarkCase(
     STEP14_ROW0_PATH_NULL_BENCHMARK_NAME,
-    { [GREEDY_SERVICE_LOOKAHEAD_CANDIDATES_OPTION]: undefined }
+    GREEDY_LOOKAHEAD_DISABLED
   );
-  const enabledSolve = solveGreedyBenchmarkCase(STEP14_ROW0_PATH_NULL_BENCHMARK_NAME);
-  const baselineValidation = validateSolution({
-    grid: baselineSolve.benchmarkCase.grid,
-    solution: baselineSolve.solution,
-    params: baselineSolve.params,
-  });
-  const enabledValidation = validateSolution({
-    grid: enabledSolve.benchmarkCase.grid,
-    solution: enabledSolve.solution,
-    params: enabledSolve.params,
-  });
+  const enabledSolve = solveValidatedGreedyBenchmarkCase(STEP14_ROW0_PATH_NULL_BENCHMARK_NAME);
 
   assert.equal(enabled.caseCount, 1);
   assert.deepEqual(enabled.selectedCaseNames, [STEP14_ROW0_PATH_NULL_BENCHMARK_NAME]);
@@ -2492,43 +2491,32 @@ function testGreedyStep14Row0PathNullReservationBenchmarkCase() {
   assert.equal(enabled.results[0].totalPopulation, 230);
   assert.equal(enabled.results[0].serviceCount, 1);
   assert.equal(enabled.results[0].residentialCount, 2);
-  assert.equal(enabled.results[0].greedyProfile.counters.servicePhase.lookaheadEvaluations, 36);
-  assert.equal(enabled.results[0].greedyProfile.counters.servicePhase.lookaheadWins, 4);
+  assertLookaheadCounters(enabled.results[0], 36, 4);
   assert.deepEqual(baselineSolve.solution.services, [
     { r: 1, c: 1, rows: 1, cols: 1, range: 1 },
   ]);
   assert.deepEqual(enabledSolve.solution.services, [
     { r: 0, c: 1, rows: 1, cols: 1, range: 1 },
   ]);
-  assert.deepEqual([...baselineSolve.solution.roads].sort(), ["0,0", "0,1", "1,0"]);
-  assert.deepEqual([...enabledSolve.solution.roads].sort(), ["0,0"]);
+  assert.deepEqual(sortedRoads(baselineSolve.solution), ["0,0", "0,1", "1,0"]);
+  assert.deepEqual(sortedRoads(enabledSolve.solution), ["0,0"]);
   assert.deepEqual(enabledSolve.solution.residentials, [
     { r: 0, c: 2, rows: 3, cols: 2 },
     { r: 1, c: 0, rows: 2, cols: 2 },
   ]);
   assert.equal(enabledSolve.solution.services[0].r, 0);
   assert.equal(enabledSolve.solution.roads.size < baselineSolve.solution.roads.size, true);
-  assert.equal(baselineValidation.valid, true);
-  assert.equal(enabledValidation.valid, true);
+  assert.equal(baselineSolve.validation.valid, true);
+  assert.equal(enabledSolve.validation.valid, true);
 }
 
 function testGreedyStep14ScarceTypeSequentialRefillBenchmarkCase() {
   const { baseline, enabled } = runGreedyServiceLookaheadBenchmarkPair(STEP14_SCARCE_REFILL_BENCHMARK_NAME);
-  const baselineSolve = solveGreedyBenchmarkCase(
+  const baselineSolve = solveValidatedGreedyBenchmarkCase(
     STEP14_SCARCE_REFILL_BENCHMARK_NAME,
-    { [GREEDY_SERVICE_LOOKAHEAD_CANDIDATES_OPTION]: undefined }
+    GREEDY_LOOKAHEAD_DISABLED
   );
-  const enabledSolve = solveGreedyBenchmarkCase(STEP14_SCARCE_REFILL_BENCHMARK_NAME);
-  const baselineValidation = validateSolution({
-    grid: baselineSolve.benchmarkCase.grid,
-    solution: baselineSolve.solution,
-    params: baselineSolve.params,
-  });
-  const enabledValidation = validateSolution({
-    grid: enabledSolve.benchmarkCase.grid,
-    solution: enabledSolve.solution,
-    params: enabledSolve.params,
-  });
+  const enabledSolve = solveValidatedGreedyBenchmarkCase(STEP14_SCARCE_REFILL_BENCHMARK_NAME);
 
   assert.equal(enabled.caseCount, 1);
   assert.deepEqual(enabled.selectedCaseNames, [STEP14_SCARCE_REFILL_BENCHMARK_NAME]);
@@ -2536,8 +2524,7 @@ function testGreedyStep14ScarceTypeSequentialRefillBenchmarkCase() {
   assert.equal(enabled.results[0].totalPopulation, 210);
   assert.equal(enabled.results[0].serviceCount, 2);
   assert.equal(enabled.results[0].residentialCount, 2);
-  assert.equal(enabled.results[0].greedyProfile.counters.servicePhase.lookaheadEvaluations, 84);
-  assert.equal(enabled.results[0].greedyProfile.counters.servicePhase.lookaheadWins, 3);
+  assertLookaheadCounters(enabled.results[0], 84, 3);
   assert.deepEqual(enabledSolve.solution.services, [
     { r: 1, c: 2, rows: 1, cols: 1, range: 1 },
     { r: 1, c: 0, rows: 1, cols: 1, range: 1 },
@@ -2555,8 +2542,8 @@ function testGreedyStep14ScarceTypeSequentialRefillBenchmarkCase() {
   assert.deepEqual(baselineSolve.solution.residentialTypeIndices, [0, 1]);
   assert.deepEqual(baselineSolve.solution.populations, [95, 90]);
   assert.equal(enabledSolve.solution.totalPopulation > baselineSolve.solution.totalPopulation, true);
-  assert.equal(baselineValidation.valid, true);
-  assert.equal(enabledValidation.valid, true);
+  assert.equal(baselineSolve.validation.valid, true);
+  assert.equal(enabledSolve.validation.valid, true);
 }
 
 function testGreedyStep14LookaheadCapsRefillDepthWhenMaxResidentialsIsOne() {

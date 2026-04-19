@@ -1,5 +1,8 @@
 /**
  * Example CLI runner for local experimentation.
+ *
+ * Product framing: `auto` is the recommended quality path, and `greedy`
+ * stays the fast standalone seed / advanced mode.
  */
 
 import type { Grid, OptimizerName } from "../core/types.js";
@@ -79,6 +82,19 @@ function readCliGreedyRandomSeed(): number | undefined {
     }
   }
   return undefined;
+}
+
+function describeOptimizerRole(optimizer: OptimizerName): string {
+  if (optimizer === "auto") {
+    return "Recommended quality path. Greedy seeds the run, then LNS and bounded CP-SAT continue improving the incumbent.";
+  }
+  if (optimizer === "lns") {
+    return "Manual improvement mode. Starts from a greedy seed, then repairs neighborhoods with CP-SAT.";
+  }
+  if (optimizer === "cp-sat") {
+    return "Bounded polish mode. Usually strongest after a seed already exists.";
+  }
+  return "Fast standalone seed / advanced mode. Best for quick legal layouts, seed-quality checks, and heuristic inspection.";
 }
 
 export async function runExample(): Promise<void> {
@@ -176,6 +192,7 @@ export async function runExample(): Promise<void> {
 
   console.log("=== City Builder Solution ===\n");
   console.log("Optimizer:", solution.optimizer ?? optimizer);
+  console.log("Optimizer role:", describeOptimizerRole(solution.optimizer ?? optimizer));
   if (solution.activeOptimizer) console.log("Active stage:", solution.activeOptimizer);
   if (solution.autoStage?.generatedSeeds.length) {
     console.log(

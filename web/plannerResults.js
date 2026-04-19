@@ -18,6 +18,25 @@
       setSolveState,
       syncActionAvailability,
     } = callbacks;
+    const PENDING_MANUAL_VALIDATION_MESSAGE = "Manual edits are pending validation. Validate the layout when you're ready.";
+    const INVALID_MANUAL_LAYOUT_MESSAGE =
+      "Manual layout has validation errors. Fix them, then validate again before reusing it as a seed or hint.";
+    const PENDING_MANUAL_LAYOUT_ERROR =
+      "Manual edits are pending validation. Use Validate layout when you're ready.";
+    const PLACEMENT_MODE_STATUS_PREFIX = "Click the map to set its top-left cell.";
+
+    function hasEditableLayoutContext() {
+      return Boolean(state.result && state.resultContext);
+    }
+
+    function isLayoutEditBusy() {
+      return Boolean(state.isSolving || state.layoutEditor.isApplying);
+    }
+
+    function setLayoutEditorStatus(message) {
+      state.layoutEditor.status = message;
+      renderLayoutEditorControls();
+    }
 
     function lookupServiceName(typeIndex) {
       const type = state.resultContext?.params?.serviceTypes?.[typeIndex];
@@ -63,6 +82,80 @@
       return `${selected.kind === "service" ? "S" : "R"}${selected.index + 1}`;
     }
 
+    function swapPlacementDimensions(placement) {
+      return {
+        ...placement,
+        rows: placement.cols,
+        cols: placement.rows,
+      };
+    }
+
+    function buildPendingPlacementDefinition(kind, typeIndex, name) {
+      if (kind === "service") {
+        const type = state.resultContext?.params?.serviceTypes?.[typeIndex];
+        if (!type) throw new Error("That service type is no longer available in the current settings.");
+        return {
+          kind,
+          typeIndex,
+          name,
+          rows: Number(type.rows),
+          cols: Number(type.cols),
+          rotated: false,
+          canRotate: (type.allowRotation ?? true) && Number(type.rows) !== Number(type.cols),
+        };
+      }
+
+      const type = state.resultContext?.params?.residentialTypes?.[typeIndex];
+      if (!type) throw new Error("That residential type is no longer available in the current settings.");
+      return {
+        kind,
+        typeIndex,
+        name,
+        rows: Number(type.h),
+        cols: Number(type.w),
+        rotated: false,
+        canRotate: Number(type.h) !== Number(type.w),
+      };
+    }
+
+    function readPendingPlacementFootprint(pendingPlacement) {
+      if (!pendingPlacement) return null;
+      return pendingPlacement.rotated
+        ? { rows: pendingPlacement.cols, cols: pendingPlacement.rows }
+        : { rows: pendingPlacement.rows, cols: pendingPlacement.cols };
+    }
+
+    function getManualLayoutState() {
+      const manualLayout = Boolean(
+        state.layoutEditor.edited
+        || state.result?.solution?.manualLayout
+        || state.result?.stats?.manualLayout
+      );
+      const pendingValidation = Boolean(manualLayout && state.layoutEditor.pendingValidation);
+      const hasValidationErrors = Boolean(
+        manualLayout
+        && state.result?.validation?.valid === false
+        && !pendingValidation
+      );
+      return {
+        manualLayout,
+        pendingValidation,
+        hasValidationErrors,
+      };
+    }
+
+    function isManualLayoutResult() {
+      return getManualLayoutState().manualLayout;
+    }
+
+    function hasPendingManualValidation() {
+      return getManualLayoutState().pendingValidation;
+    }
+
+    function hasManualLayoutValidationErrors() {
+      return getManualLayoutState().hasValidationErrors;
+    }
+
     function setLayoutEditMode(mode, pendingPlacement = null) {
       state.layoutEditor.mode = mode;
       state.layoutEditor.pendingPlacement = pendingPlacement;
@@ -70,6 +163,7 @@
       if (mode === "inspect") {
         state.selectedMapCell = null;
       }
+      syncActionAvailability();
       renderLayoutEditorControls();
     }
 
@@ -77,21 +171,23 @@
       if (!elements.layoutEditModeToggle || !elements.layoutEditorStatus) return;
       const pendingPlacement = state.layoutEditor.pendingPlacement;
       const selectedLabel = getSelectedPlacementLabel();
+      const pendingFootprint = readPendingPlacementFootprint(pendingPlacement);
 
       for (const button of elements.layoutEditModeToggle.querySelectorAll("button")) {
         button.classList.toggle("active", button.dataset.layoutEditMode === state.layoutEditor.mode);
       }
+      if (elements.rotatePendingPlacementButton) {
+        elements.rotatePendingPlacementButton.textContent = pendingPlacement?.rotated ? "Use original orientation" : "Rotate 90°";
+      }
 
       let message = state.layoutEditor.status;
       if (!message) {
-        if (!state.result || !state.resultContext) {
+        if (!hasEditableLayoutContext()) {
           message = "Run or load a layout to edit it.";
         } else if (state.layoutEditor.isApplying) {
-          message = "Re-evaluating the edited layout...";
-        } else if (state.layoutEditor.mode === "place-service" && pendingPlacement) {
-          message = `Placing ${pendingPlacement.name}. Click the map to set its top-left cell.`;
-        } else if (state.layoutEditor.mode === "place-residential" && pendingPlacement) {
-          message = `Placing ${pendingPlacement.name}. Click the map to set its top-left cell.`;
+          message = "Validating the edited layout...";
+        } else if ((state.layoutEditor.mode === "place-service" || state.layoutEditor.mode === "place-residential") && pendingPlacement) {
+          message = `Placing ${pendingPlacement.name} (${pendingFootprint?.rows}x${pendingFootprint?.cols}). ${PLACEMENT_MODE_STATUS_PREFIX}`;
         } else if (state.layoutEditor.mode === "road") {
           message = "Road mode: click an empty allowed cell to add road, or an existing road cell to remove it.";
         } else if (state.layoutEditor.mode === "erase") {
@@ -100,6 +196,10 @@
           message = selectedLabel
             ? `Move mode: click a new top-left cell for ${selectedLabel}.`
             : "Move mode: select a building first, then click its new top-left cell.";
+        } else if (hasPendingManualValidation()) {
+          message = PENDING_MANUAL_VALIDATION_MESSAGE;
+        } else if (hasManualLayoutValidationErrors()) {
+          message = INVALID_MANUAL_LAYOUT_MESSAGE;
         } else if (state.layoutEditor.edited) {
           message = "Manual edits are active. This displayed layout can be reused as an LNS seed or CP-SAT hint.";
         } else {
@@ -168,32 +268,34 @@
       });
     }
 
-    function buildServicePlacementForType(typeIndex, row, col) {
+    function buildServicePlacementForType(typeIndex, row, col, rotated = false) {
       const type = state.resultContext?.params?.serviceTypes?.[typeIndex];
       if (!type) throw new Error("That service type is no longer available in the current settings.");
+      const basePlacement = {
+        r: row,
+        c: col,
+        rows: Number(type.rows),
+        cols: Number(type.cols),
+        range: Number(type.range),
+      };
       return {
-        placement: {
-          r: row,
-          c: col,
-          rows: Number(type.rows),
-          cols: Number(type.cols),
-          range: Number(type.range),
-        },
+        placement: rotated ? swapPlacementDimensions(basePlacement) : basePlacement,
         bonus: Number(type.bonus ?? 0),
         name: type.name || `Service Type ${typeIndex + 1}`,
       };
     }
 
-    function buildResidentialPlacementForType(typeIndex, row, col) {
+    function buildResidentialPlacementForType(typeIndex, row, col, rotated = false) {
       const type = state.resultContext?.params?.residentialTypes?.[typeIndex];
       if (!type) throw new Error("That residential type is no longer available in the current settings.");
+      const basePlacement = {
+        r: row,
+        c: col,
+        rows: Number(type.h),
+        cols: Number(type.w),
+      };
       return {
-        placement: {
-          r: row,
-          c: col,
-          rows: Number(type.h),
-          cols: Number(type.w),
-        },
+        placement: rotated ? swapPlacementDimensions(basePlacement) : basePlacement,
         population: Number(type.min ?? 0),
         name: type.name || `Residential Type ${typeIndex + 1}`,
       };
@@ -206,7 +308,7 @@
 
       const { message = "Manual layout updated.", selectedBuilding = null, selectedCell = null, keepMode = false } = options;
       state.layoutEditor.isApplying = true;
-      state.layoutEditor.status = "Re-evaluating the edited layout...";
+      state.layoutEditor.status = "Validating the edited layout...";
       syncActionAvailability();
       renderLayoutEditorControls();
 
@@ -230,24 +332,14 @@
           throw new Error(payload.error || "Failed to evaluate the edited layout.");
         }
 
-        clearExpansionAdvice();
-        state.solveProgressLog = [];
-        state.result = {
-          ...payload,
-          progressLog: [],
-        };
-        state.resultIsLiveSnapshot = false;
-        state.resultError = "";
-        state.selectedMapBuilding = selectedBuilding;
-        state.selectedMapCell = selectedCell;
-        state.layoutEditor.edited = true;
-        state.layoutEditor.status = message;
-        if (!keepMode) {
-          state.layoutEditor.mode = "inspect";
-          state.layoutEditor.pendingPlacement = null;
-        }
-        setSolveState(message);
-        renderResults();
+        commitEditedLayoutResult(payload, {
+          message: payload.validation?.valid === true
+            ? message
+            : "Layout validation completed. Review the reported issues before using this layout as a seed or hint.",
+          selectedBuilding,
+          selectedCell,
+          keepMode,
+        });
       } finally {
         state.layoutEditor.isApplying = false;
         syncActionAvailability();
@@ -260,6 +352,99 @@
         throw new Error("Run or load a layout before editing it.");
       }
       return cloneJson(state.result.solution);
+    }
+
+    function sumRecordedResidentialPopulation(solution) {
+      return (solution?.populations ?? []).reduce((sum, population) => {
+        const numericPopulation = Number(population);
+        return Number.isFinite(numericPopulation) ? sum + numericPopulation : sum;
+      }, 0);
+    }
+
+    function buildPendingManualLayoutResult(nextSolution) {
+      const normalizedSolution = {
+        ...nextSolution,
+        optimizer: undefined,
+        activeOptimizer: undefined,
+        autoStage: undefined,
+        manualLayout: true,
+        cpSatStatus: undefined,
+        cpSatObjectivePolicy: undefined,
+        cpSatTelemetry: undefined,
+        cpSatPortfolio: undefined,
+        stoppedByUser: false,
+        totalPopulation: sumRecordedResidentialPopulation(nextSolution),
+      };
+
+      return {
+        solution: normalizedSolution,
+        validation: {
+          valid: false,
+          errors: [PENDING_MANUAL_LAYOUT_ERROR],
+          recomputedPopulations: [],
+          recomputedTotalPopulation: normalizedSolution.totalPopulation,
+          mapRows: [],
+          mapText: "",
+        },
+        stats: {
+          optimizer: normalizedSolution.optimizer,
+          activeOptimizer: normalizedSolution.activeOptimizer,
+          autoStage: normalizedSolution.autoStage,
+          manualLayout: true,
+          cpSatStatus: null,
+          stoppedByUser: false,
+          totalPopulation: normalizedSolution.totalPopulation,
+          roadCount: normalizedSolution.roads?.length ?? 0,
+          serviceCount: normalizedSolution.services?.length ?? 0,
+          residentialCount: normalizedSolution.residentials?.length ?? 0,
+        },
+      };
+    }
+
+    function commitEditedLayoutResult(nextResult, options = {}) {
+      const {
+        message = "Manual layout updated.",
+        selectedBuilding = null,
+        selectedCell = null,
+        keepMode = false,
+        pendingValidation = false,
+      } = options;
+
+      clearExpansionAdvice();
+      state.solveProgressLog = [];
+      state.result = {
+        ...nextResult,
+        progressLog: [],
+      };
+      state.resultIsLiveSnapshot = false;
+      state.resultError = "";
+      state.selectedMapBuilding = selectedBuilding;
+      state.selectedMapCell = selectedBuilding ? null : selectedCell;
+      state.layoutEditor.edited = true;
+      state.layoutEditor.pendingValidation = pendingValidation;
+      state.layoutEditor.status = message;
+      if (!keepMode) {
+        state.layoutEditor.mode = "inspect";
+        state.layoutEditor.pendingPlacement = null;
+      }
+      setSolveState(message);
+      renderResults();
+    }
+
+    function applyEditedLayoutLocally(nextSolution, options = {}) {
+      const {
+        message = "Manual layout updated.",
+        selectedBuilding = null,
+        selectedCell = null,
+        keepMode = false,
+      } = options;
+      commitEditedLayoutResult(buildPendingManualLayoutResult(nextSolution), {
+        message: `${message} Validate the layout when you're ready.`,
+        selectedBuilding,
+        selectedCell,
+        keepMode,
+        pendingValidation: true,
+      });
     }
 
     function removePlacementFromSolution(solution, selection) {
@@ -277,7 +462,14 @@
       }
     }
 
-    async function toggleManualRoad(row, col) {
+    function focusSelectedPlacement(selection, message) {
+      state.selectedMapBuilding = selection;
+      state.selectedMapCell = null;
+      state.layoutEditor.status = message;
+      renderResults();
+    }
+
+    function toggleManualRoad(row, col) {
       const grid = state.resultContext?.grid ?? state.grid;
       if (grid?.[row]?.[col] !== 1) {
         throw new Error("Roads can only be edited on allowed cells.");
@@ -295,19 +487,19 @@
         roads.add(key);
       }
       nextSolution.roads = Array.from(roads);
-      await evaluateEditedLayout(nextSolution, {
+      applyEditedLayoutLocally(nextSolution, {
         message: roads.has(key) ? `Added road at (${row}, ${col}).` : `Removed road at (${row}, ${col}).`,
         selectedCell: { r: row, c: col },
         keepMode: true,
       });
     }
 
-    async function eraseAtCell(row, col) {
+    function eraseAtCell(row, col) {
       const selected = findBuildingAtCell(state.result?.solution, row, col);
       if (selected) {
         const nextSolution = cloneEditableSolution();
         removePlacementFromSolution(nextSolution, selected);
-        await evaluateEditedLayout(nextSolution, {
+        applyEditedLayoutLocally(nextSolution, {
           message: `Removed ${selected.kind === "service" ? "service" : "residential"} ${selected.kind === "service" ? "S" : "R"}${selected.index + 1}.`,
           selectedCell: { r: row, c: col },
           keepMode: true,
@@ -321,14 +513,14 @@
         throw new Error("There is no road or building at that cell to erase.");
       }
       nextSolution.roads = (nextSolution.roads ?? []).filter((roadKey) => roadKey !== key);
-      await evaluateEditedLayout(nextSolution, {
+      applyEditedLayoutLocally(nextSolution, {
         message: `Removed road at (${row}, ${col}).`,
         selectedCell: { r: row, c: col },
         keepMode: true,
       });
     }
 
-    async function placePendingBuilding(row, col) {
+    function placePendingBuilding(row, col) {
       const pending = state.layoutEditor.pendingPlacement;
       if (!pending) {
         throw new Error("Choose a remaining building to place first.");
@@ -338,32 +530,32 @@
       const nextSolution = cloneEditableSolution();
 
       if (pending.kind === "service") {
-        const candidate = buildServicePlacementForType(pending.typeIndex, row, col);
+        const candidate = buildServicePlacementForType(pending.typeIndex, row, col, Boolean(pending.rotated));
         ensurePlacementFitsGrid(grid, candidate.placement);
         ensurePlacementIsClear(nextSolution, candidate.placement);
         nextSolution.services.push(candidate.placement);
         nextSolution.serviceTypeIndices.push(pending.typeIndex);
         nextSolution.servicePopulationIncreases.push(candidate.bonus);
-        await evaluateEditedLayout(nextSolution, {
+        applyEditedLayoutLocally(nextSolution, {
           message: `Placed ${pending.name} at (${row}, ${col}).`,
           selectedBuilding: { kind: "service", index: nextSolution.services.length - 1 },
         });
         return;
       }
 
-      const candidate = buildResidentialPlacementForType(pending.typeIndex, row, col);
+      const candidate = buildResidentialPlacementForType(pending.typeIndex, row, col, Boolean(pending.rotated));
       ensurePlacementFitsGrid(grid, candidate.placement);
       ensurePlacementIsClear(nextSolution, candidate.placement);
       nextSolution.residentials.push(candidate.placement);
       nextSolution.residentialTypeIndices.push(pending.typeIndex);
       nextSolution.populations.push(candidate.population);
-      await evaluateEditedLayout(nextSolution, {
+      applyEditedLayoutLocally(nextSolution, {
         message: `Placed ${pending.name} at (${row}, ${col}).`,
         selectedBuilding: { kind: "residential", index: nextSolution.residentials.length - 1 },
       });
     }
 
-    async function moveSelectedBuilding(row, col) {
+    function moveSelectedBuilding(row, col) {
       const currentSolution = state.result?.solution;
       const currentSelection = getSelectedMapPlacement(currentSolution);
       const clickedSelection = findBuildingAtCell(currentSolution, row, col);
@@ -372,10 +564,10 @@
         if (!clickedSelection) {
           throw new Error("Select a building first, then click its new top-left cell.");
         }
-        state.selectedMapBuilding = clickedSelection;
-        state.selectedMapCell = null;
-        state.layoutEditor.status = `Selected ${clickedSelection.kind === "service" ? "S" : "R"}${clickedSelection.index + 1}. Click its new top-left cell next.`;
-        renderResults();
+        focusSelectedPlacement(
+          clickedSelection,
+          `Selected ${clickedSelection.kind === "service" ? "S" : "R"}${clickedSelection.index + 1}. Click its new top-left cell next.`
+        );
         return;
       }
 
@@ -383,10 +575,10 @@
         clickedSelection
         && (clickedSelection.kind !== currentSelection.kind || clickedSelection.index !== currentSelection.index)
       ) {
-        state.selectedMapBuilding = clickedSelection;
-        state.selectedMapCell = null;
-        state.layoutEditor.status = `Selected ${clickedSelection.kind === "service" ? "S" : "R"}${clickedSelection.index + 1}. Click its new top-left cell next.`;
-        renderResults();
+        focusSelectedPlacement(
+          clickedSelection,
+          `Selected ${clickedSelection.kind === "service" ? "S" : "R"}${clickedSelection.index + 1}. Click its new top-left cell next.`
+        );
         return;
       }
 
@@ -414,7 +606,7 @@
         nextSolution.residentials[selection.index] = nextPlacement;
       }
 
-      await evaluateEditedLayout(nextSolution, {
+      applyEditedLayoutLocally(nextSolution, {
         message: `Moved ${selection.kind === "service" ? "S" : "R"}${selection.index + 1} to (${row}, ${col}).`,
         selectedBuilding: { kind: selection.kind, index: selection.index },
         keepMode: true,
@@ -518,6 +710,7 @@
 
       const selected = getSelectedMapPlacement(solution);
       const selectedCell = getSelectedMapCell();
+      const pendingManualValidation = hasPendingManualValidation();
       if (!selected && !selectedCell) {
         elements.selectedBuildingTitle.textContent = "Building detail";
         elements.selectedBuildingSummary.textContent = solution
@@ -583,14 +776,20 @@
       elements.selectedBuildingTitle.textContent = name;
       elements.selectedBuildingSummary.textContent = isService
         ? `${buildingId} is a service placement covering ${placement.rows}x${placement.cols} with range ${placement.range}.`
-        : `${buildingId} is a residential placement contributing ${solution.populations?.[selected.index] ?? 0} population.`;
+        : pendingManualValidation
+          ? `${buildingId} is a residential placement with population pending validation.`
+          : `${buildingId} is a residential placement contributing ${solution.populations?.[selected.index] ?? 0} population.`;
       elements.selectedBuildingId.textContent = buildingId;
       elements.selectedBuildingCategory.textContent = isService ? "Service" : "Residential";
       elements.selectedBuildingPosition.textContent = `Row ${placement.r}, Col ${placement.c}`;
       elements.selectedBuildingFootprint.textContent = `${placement.rows}x${placement.cols}`;
       elements.selectedBuildingEffect.textContent = isService
-        ? `+${solution.servicePopulationIncreases?.[selected.index] ?? 0} population, range ${placement.range}, type bonus ${type?.bonus ?? 0}`
-        : `${solution.populations?.[selected.index] ?? 0} population, type range ${type?.min ?? 0}-${type?.max ?? 0}`;
+        ? pendingManualValidation
+          ? `Service effect pending validation, range ${placement.range}, type bonus ${type?.bonus ?? 0}`
+          : `+${solution.servicePopulationIncreases?.[selected.index] ?? 0} population, range ${placement.range}, type bonus ${type?.bonus ?? 0}`
+        : pendingManualValidation
+          ? `Population pending validation, type range ${type?.min ?? 0}-${type?.max ?? 0}`
+          : `${solution.populations?.[selected.index] ?? 0} population, type range ${type?.min ?? 0}-${type?.max ?? 0}`;
       elements.selectedBuildingAvailability.textContent =
         `${availability.remaining} left of ${availability.totalAvailable} for this type`;
       elements.selectedBuildingFacts.hidden = false;
@@ -806,6 +1005,7 @@
 
     function createSolvedMapHoverLabels(solution, rows, cols) {
       const labels = Array.from({ length: rows }, () => Array.from({ length: cols }, () => ""));
+      const pendingManualValidation = hasPendingManualValidation();
 
       solution.services.forEach((service, index) => {
         const name = lookupServiceName(solution.serviceTypeIndices[index] ?? -1);
@@ -823,7 +1023,7 @@
         const name = lookupResidentialName(solution.residentialTypeIndices[index] ?? -1);
         const population = solution.populations[index];
         const hoverLabel =
-          population != null
+          !pendingManualValidation && population != null
             ? `${name} (R${index + 1}, pop ${population})`
             : `${name} (R${index + 1})`;
         for (let dr = 0; dr < residential.rows; dr += 1) {
@@ -1033,7 +1233,10 @@
 
       const { solution, stats, validation } = state.result;
       state.selectedMapBuilding = getSelectedMapPlacement(solution)?.kind ? state.selectedMapBuilding : null;
-      const manualLayout = Boolean(state.layoutEditor.edited || solution.manualLayout || stats.manualLayout);
+      const {
+        manualLayout,
+        pendingValidation: pendingManualValidation,
+      } = getManualLayoutState();
       const stoppedByUser = Boolean(solution.stoppedByUser || stats.stoppedByUser);
       const liveSnapshot = Boolean(state.isSolving && state.resultIsLiveSnapshot);
       const solvedGrid = state.resultContext?.grid ?? state.grid;
@@ -1047,12 +1250,14 @@
           ? "Showing the best validated layout found so far while the solver keeps running. The first live capture appears as soon as an incumbent is available, then refreshes every 1 minute."
           : `The latest running snapshot needs review: ${validation.errors.join(" ")}`;
       } else if (manualLayout) {
-        elements.resultBadge.textContent = validation.valid ? "Manual" : "Manual review";
-        elements.resultBadge.className = `result-badge ${validation.valid ? "success" : "error"}`;
-        elements.validationNotice.className = `notice ${validation.valid ? "info" : "error"}`;
-        elements.validationNotice.textContent = validation.valid
-          ? "This layout was manually edited and revalidated for the current grid and settings."
-          : validation.errors.join(" ");
+        elements.resultBadge.textContent = pendingManualValidation ? "Edited" : validation.valid ? "Manual" : "Manual review";
+        elements.resultBadge.className = `result-badge ${pendingManualValidation ? "idle" : validation.valid ? "success" : "error"}`;
+        elements.validationNotice.className = `notice ${pendingManualValidation || validation.valid ? "info" : "error"}`;
+        elements.validationNotice.textContent = pendingManualValidation
+          ? "Manual edits are pending validation. The map and counts reflect your edits, but legality and population will update only after you validate the layout."
+          : validation.valid
+            ? "This layout was manually edited and revalidated for the current grid and settings."
+            : validation.errors.join(" ");
       } else {
         elements.resultBadge.textContent = validation.valid ? (stoppedByUser ? "Stopped" : "Validated") : "Needs review";
         elements.resultBadge.className = `result-badge ${validation.valid ? "success" : "error"}`;
@@ -1066,7 +1271,7 @@
           : validation.errors.join(" ");
       }
 
-      elements.resultPopulation.textContent = Number(stats.totalPopulation).toLocaleString();
+      elements.resultPopulation.textContent = pendingManualValidation ? "Pending" : Number(stats.totalPopulation).toLocaleString();
       elements.resultRoadCount.textContent = String(stats.roadCount);
       elements.resultServiceCount.textContent = String(stats.serviceCount);
       elements.resultResidentialCount.textContent = String(stats.residentialCount);
@@ -1077,7 +1282,7 @@
           ? `Auto -> ${getOptimizerLabel(stats.activeOptimizer)}`
           : null;
       elements.resultSolverStatus.textContent = manualLayout
-        ? "manual edit"
+        ? (pendingManualValidation ? "manual edit (pending validation)" : "manual edit")
         : liveSnapshot
           ? `${autoStageStatus || stats.cpSatStatus || getOptimizerLabel(stats.optimizer)} (live)${cpSatSeedStatus}`
           : (
@@ -1095,7 +1300,12 @@
           const typeLabel = lookupServiceName(solution.serviceTypeIndices[index] ?? -1);
           item.textContent =
             `${typeLabel} (S${index + 1}) at (${service.r}, ${service.c}) `
-            + `${service.rows}x${service.cols}, range ${service.range}, +${solution.servicePopulationIncreases[index] ?? 0}`;
+            + `${service.rows}x${service.cols}, range ${service.range}, `
+            + (
+              pendingManualValidation
+                ? "effect pending validation"
+                : `+${solution.servicePopulationIncreases[index] ?? 0}`
+            );
           elements.serviceResultList.append(item);
         });
       }
@@ -1109,7 +1319,12 @@
           const typeLabel = lookupResidentialName(solution.residentialTypeIndices[index] ?? -1);
           item.textContent =
             `${typeLabel} (R${index + 1}) at (${residential.r}, ${residential.c}) `
-            + `${residential.rows}x${residential.cols}, pop ${solution.populations[index] ?? 0}`;
+            + `${residential.rows}x${residential.cols}, `
+            + (
+              pendingManualValidation
+                ? "population pending validation"
+                : `pop ${solution.populations[index] ?? 0}`
+            );
           elements.residentialResultList.append(item);
         });
       }
@@ -1140,7 +1355,7 @@
     }
 
     function handleLayoutEditToggleClick(event) {
-      if (state.isSolving || state.layoutEditor.isApplying || !state.result || !state.resultContext) return;
+      if (isLayoutEditBusy() || !hasEditableLayoutContext()) return;
       const target = event.target;
       if (!(target instanceof Element)) return;
       const button = target.closest("button[data-layout-edit-mode]");
@@ -1149,7 +1364,7 @@
     }
 
     function handleRemainingPlacementClick(event) {
-      if (state.isSolving || state.layoutEditor.isApplying || !state.result || !state.resultContext) return;
+      if (isLayoutEditBusy() || !hasEditableLayoutContext()) return;
       const target = event.target;
       if (!(target instanceof Element)) return;
       const button = target.closest("button[data-action]");
@@ -1158,43 +1373,74 @@
       const name = String(button.dataset.name ?? "").trim() || "Selected building";
       if (!Number.isInteger(typeIndex) || typeIndex < 0) return;
       if (button.dataset.action === "place-remaining-service") {
-        setLayoutEditMode("place-service", { kind: "service", typeIndex, name });
+        setLayoutEditMode("place-service", buildPendingPlacementDefinition("service", typeIndex, name));
       } else if (button.dataset.action === "place-remaining-residential") {
-        setLayoutEditMode("place-residential", { kind: "residential", typeIndex, name });
+        setLayoutEditMode("place-residential", buildPendingPlacementDefinition("residential", typeIndex, name));
       }
     }
 
+    function handleRotatePendingPlacementAction() {
+      if (isLayoutEditBusy() || !hasEditableLayoutContext()) return;
+      const pendingPlacement = state.layoutEditor.pendingPlacement;
+      if (!pendingPlacement?.canRotate) return;
+      state.layoutEditor.pendingPlacement = {
+        ...pendingPlacement,
+        rotated: !pendingPlacement.rotated,
+      };
+      state.layoutEditor.status = "";
+      renderLayoutEditorControls();
+      syncActionAvailability();
+    }
+
     function handleMoveSelectedAction() {
-      if (state.isSolving || state.layoutEditor.isApplying || !state.result || !state.resultContext) return;
+      if (isLayoutEditBusy() || !hasEditableLayoutContext()) return;
       if (!hasSelectedBuilding()) {
-        state.layoutEditor.status = "Select a building first, then use Move selected.";
-        renderLayoutEditorControls();
+        setLayoutEditorStatus("Select a building first, then use Move selected.");
         return;
       }
       setLayoutEditMode("move");
     }
 
-    async function handleRemoveSelectedAction() {
-      if (state.isSolving || state.layoutEditor.isApplying || !state.result || !state.resultContext) return;
+    function handleRemoveSelectedAction() {
+      if (isLayoutEditBusy() || !hasEditableLayoutContext()) return;
       const selected = getSelectedMapPlacement(state.result?.solution);
       if (!selected) {
-        state.layoutEditor.status = "Select a building first, then use Remove selected.";
-        renderLayoutEditorControls();
+        setLayoutEditorStatus("Select a building first, then use Remove selected.");
         return;
       }
       try {
         const nextSolution = cloneEditableSolution();
         removePlacementFromSolution(nextSolution, selected);
-        await evaluateEditedLayout(nextSolution, {
+        applyEditedLayoutLocally(nextSolution, {
           message: `Removed ${selected.kind === "service" ? "S" : "R"}${selected.index + 1}.`,
         });
       } catch (error) {
-        state.layoutEditor.status = error instanceof Error ? error.message : "Failed to remove the selected building.";
-        renderLayoutEditorControls();
+        setLayoutEditorStatus(error instanceof Error ? error.message : "Failed to remove the selected building.");
       }
     }
 
-    async function handleResultMapClick(event) {
+    async function handleValidateEditedLayoutAction() {
+      if (isLayoutEditBusy() || !hasEditableLayoutContext()) return;
+      if (!state.layoutEditor.pendingValidation) {
+        setLayoutEditorStatus(state.layoutEditor.edited
+          ? "This manual layout is already validated."
+          : "Make a manual edit first, then validate the layout.");
+        return;
+      }
+
+      try {
+        await evaluateEditedLayout(cloneEditableSolution(), {
+          message: "Manual layout validated.",
+          selectedBuilding: state.selectedMapBuilding,
+          selectedCell: state.selectedMapCell,
+          keepMode: true,
+        });
+      } catch (error) {
+        setLayoutEditorStatus(error instanceof Error ? error.message : "Failed to validate the edited layout.");
+      }
+    }
+
+    function handleResultMapClick(event) {
       const target = event.target;
       if (!(target instanceof Element) || !state.result?.solution) return;
       const cell = target.closest(".grid-cell");
@@ -1208,19 +1454,19 @@
           if (state.layoutEditor.mode !== "inspect") return;
         }
         if (state.layoutEditor.mode === "road") {
-          await toggleManualRoad(row, col);
+          toggleManualRoad(row, col);
           return;
         }
         if (state.layoutEditor.mode === "erase") {
-          await eraseAtCell(row, col);
+          eraseAtCell(row, col);
           return;
         }
         if (state.layoutEditor.mode === "move") {
-          await moveSelectedBuilding(row, col);
+          moveSelectedBuilding(row, col);
           return;
         }
         if (state.layoutEditor.mode === "place-service" || state.layoutEditor.mode === "place-residential") {
-          await placePendingBuilding(row, col);
+          placePendingBuilding(row, col);
           return;
         }
 
@@ -1230,8 +1476,7 @@
         renderSolvedMap(state.resultContext?.grid ?? state.grid, state.result.solution);
         renderLayoutEditorControls();
       } catch (error) {
-        state.layoutEditor.status = error instanceof Error ? error.message : "Failed to apply that manual edit.";
-        renderLayoutEditorControls();
+        setLayoutEditorStatus(error instanceof Error ? error.message : "Failed to apply that manual edit.");
       }
     }
 
@@ -1241,6 +1486,8 @@
       handleMoveSelectedAction,
       handleRemainingPlacementClick,
       handleRemoveSelectedAction,
+      handleRotatePendingPlacementAction,
+      handleValidateEditedLayoutAction,
       handleResultMapClick,
       hasSelectedBuilding,
       refreshResultOverlay,

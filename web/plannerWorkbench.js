@@ -290,7 +290,7 @@
           serviceExactMaxCombinations: 4000,
         };
         elements.runtimePresetStatus.textContent =
-          'Applied "Fast Greedy": quick incumbent-first settings with lighter restarts and no exhaustive service pass.';
+          'Applied "Fast Greedy": fast standalone seed settings for quick legal layouts, seed-quality checks, or standalone heuristic runs.';
       } else if (kind === "lns-improve") {
         state.lns = {
           ...state.lns,
@@ -302,7 +302,7 @@
           useDisplayedSeed: true,
         };
         elements.runtimePresetStatus.textContent =
-          'Applied "LNS Improve": use the displayed layout as the default seed and spend the budget on neighborhood repair.';
+          'Applied "LNS Improve": use the displayed layout as the seed and spend the budget on neighborhood repair.';
       } else if (kind === "bounded-cp-sat") {
         state.cpSat = {
           ...state.cpSat,

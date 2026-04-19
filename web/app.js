@@ -172,6 +172,7 @@ const state = {
     pendingPlacement: null,
     isApplying: false,
     edited: false,
+    pendingValidation: false,
     status: "",
   },
   expansionAdvice: {
@@ -251,6 +252,8 @@ const elements = {
   resultMapGrid: document.querySelector("#resultMapGrid"),
   resultOverlay: document.querySelector("#resultOverlay"),
   layoutEditModeToggle: document.querySelector("#layoutEditModeToggle"),
+  rotatePendingPlacementButton: document.querySelector("#rotatePendingPlacementButton"),
+  validateEditedLayoutButton: document.querySelector("#validateEditedLayoutButton"),
   layoutEditorStatus: document.querySelector("#layoutEditorStatus"),
   selectedBuildingTitle: document.querySelector("#selectedBuildingTitle"),
   selectedBuildingSummary: document.querySelector("#selectedBuildingSummary"),
@@ -336,6 +339,7 @@ function clearRenderedResultState() {
   state.layoutEditor.mode = "inspect";
   state.layoutEditor.pendingPlacement = null;
   state.layoutEditor.edited = false;
+  state.layoutEditor.pendingValidation = false;
   state.layoutEditor.status = "";
   state.layoutEditor.isApplying = false;
   clearExpansionAdvice();
@@ -696,6 +700,8 @@ function init() {
   elements.layoutEditModeToggle.addEventListener("click", resultsController.handleLayoutEditToggleClick);
   elements.remainingServiceList.addEventListener("click", resultsController.handleRemainingPlacementClick);
   elements.remainingResidentialList.addEventListener("click", resultsController.handleRemainingPlacementClick);
+  elements.rotatePendingPlacementButton.addEventListener("click", resultsController.handleRotatePendingPlacementAction);
+  elements.validateEditedLayoutButton.addEventListener("click", resultsController.handleValidateEditedLayoutAction);
   elements.moveSelectedBuildingButton.addEventListener("click", resultsController.handleMoveSelectedAction);
   elements.removeSelectedBuildingButton.addEventListener("click", resultsController.handleRemoveSelectedAction);
   elements.resultMapGrid.addEventListener("click", resultsController.handleResultMapClick);

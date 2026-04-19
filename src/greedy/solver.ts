@@ -87,6 +87,7 @@ function createGreedyProfileCounters(): GreedyProfileCounters {
       residentialCandidates: 0,
       serviceCoveragePairs: 0,
       serviceStaticScores: 0,
+      residentialPopulationCacheEntries: 0,
     },
     attempts: {
       serviceCaps: 0,
@@ -105,6 +106,7 @@ function createGreedyProfileCounters(): GreedyProfileCounters {
       candidateScans: 0,
       canConnectChecks: 0,
       placements: 0,
+      populationCacheLookups: 0,
     },
     localSearch: {
       candidateScans: 0,
@@ -112,6 +114,7 @@ function createGreedyProfileCounters(): GreedyProfileCounters {
       placements: 0,
       moveChecks: 0,
       addChecks: 0,
+      populationCacheLookups: 0,
     },
     roads: {
       canConnectChecks: 0,
@@ -320,6 +323,39 @@ function computeServiceMarginalScore(
   return score;
 }
 
+function computeResidentialPopulation(
+  params: SolverParams,
+  residential: { r: number; c: number; rows: number; cols: number },
+  effectZoneSets: Set<string>[],
+  bonuses: number[],
+  typeIndex: number
+): number {
+  const { base, max } = getResidentialBaseMax(params, residential.rows, residential.cols, typeIndex);
+  let sum = base;
+  for (let i = 0; i < effectZoneSets.length; i++) {
+    if (isBoostedByService(effectZoneSets[i], residential.r, residential.c, residential.rows, residential.cols)) {
+      sum += bonuses[i] ?? 0;
+    }
+  }
+  return Math.min(Math.max(sum, base), max);
+}
+
+function buildResidentialPopulationCache(
+  params: SolverParams,
+  residentialCandidates: ResidentialCandidatesList,
+  effectZoneSets: Set<string>[],
+  bonuses: number[],
+  profileCounters?: GreedyProfileCounters
+): number[] {
+  const cache = residentialCandidates.map((candidate) =>
+    computeResidentialPopulation(params, candidate, effectZoneSets, bonuses, getCandidateTypeIndex(candidate))
+  );
+  if (profileCounters) {
+    profileCounters.precompute.residentialPopulationCacheEntries += cache.length;
+  }
+  return cache;
+}
+
 function solveOne(
   context: GreedySolveContext,
   options: SolveOneOptions
@@ -473,28 +509,34 @@ function solveOne(
   }
   if (fixedServices && services.length !== fixedServices.length) return null;
 
-  function effectivePop(
-    res: ResidentialPlacement,
-    effectZoneSets: Set<string>[],
-    bonuses: number[],
-    typeIndex: number
-  ): number {
-    const { base, max } = getResidentialBaseMax(params, res.rows, res.cols, typeIndex);
-    let sum = base;
-    for (let i = 0; i < effectZoneSets.length; i++) {
-      if (isBoostedByService(effectZoneSets[i], res.r, res.c, res.rows, res.cols)) sum += bonuses[i] ?? 0;
-    }
-    return Math.min(Math.max(sum, base), max);
-  }
+  const residentialPopulationCache = buildResidentialPopulationCache(
+    params,
+    anyResidentialCandidates,
+    effectZones,
+    serviceBonuses,
+    profileCounters
+  );
+  const residentialPopulationCacheForLocal =
+    residentialCandidatesForLocal === anyResidentialCandidates
+      ? residentialPopulationCache
+      : buildResidentialPopulationCache(
+          params,
+          residentialCandidatesForLocal,
+          effectZones,
+          serviceBonuses,
+          profileCounters
+        );
 
   const residentials: ResidentialPlacement[] = [];
   const residentialTypeIndices: number[] = [];
+  const populations: number[] = [];
   for (;;) {
     if (maxResidentials !== undefined && residentials.length >= maxResidentials) break;
     let best: ResidentialCandidatesList[0] | null = null;
     let bestProbe: RoadConnectionProbe | null = null;
     let bestPop = -1;
-    for (const cand of anyResidentialCandidates) {
+    for (let candidateIndex = 0; candidateIndex < anyResidentialCandidates.length; candidateIndex++) {
+      const cand = anyResidentialCandidates[candidateIndex];
       maybeStop?.();
       if (profileCounters) profileCounters.residentialPhase.candidateScans++;
       if (useTypes && remainingAvail) {
@@ -509,7 +551,8 @@ function solveOne(
       if (profileCounters) profileCounters.residentialPhase.canConnectChecks++;
       const probe = probeRoadConnection(occupied, cand.r, cand.c, cand.rows, cand.cols);
       if (!probe) continue;
-      const pop = effectivePop(cand, effectZones, serviceBonuses, getCandidateTypeIndex(cand));
+      if (profileCounters) profileCounters.residentialPhase.populationCacheLookups++;
+      const pop = residentialPopulationCache[candidateIndex] ?? -1;
       if (pop > bestPop) {
         bestPop = pop;
         best = cand;
@@ -526,13 +569,11 @@ function solveOne(
     residentials.push({ r: best.r, c: best.c, rows: best.rows, cols: best.cols });
     const bestTypeIndex = getCandidateTypeIndex(best);
     residentialTypeIndices.push(bestTypeIndex);
+    populations.push(bestPop);
     if (useTypes && remainingAvail && bestTypeIndex >= 0) remainingAvail[bestTypeIndex]--;
     if (profileCounters) profileCounters.residentialPhase.placements++;
   }
 
-  const populations = residentials.map((res, i) =>
-    effectivePop(res, effectZones, serviceBonuses, residentialTypeIndices[i] ?? NO_TYPE_INDEX)
-  );
   let totalPopulation = populations.reduce((a, b) => a + b, 0);
 
   if (localSearch) {
@@ -548,6 +589,7 @@ function solveOne(
       populations,
       totalPopulation,
       residentialCandidatesForLocal,
+      residentialPopulationCacheForLocal,
       params,
       useTypes ? remainingAvail : null,
       maxResidentials,
@@ -843,6 +885,7 @@ function localSearchImprove(
   populations: number[],
   totalPopulation: number,
   residentialCandidates: ResidentialPlacement[] | ResidentialCandidate[],
+  residentialPopulationCache: number[],
   params: SolverParams,
   remainingAvail: number[] | null,
   maxResidentials: number | undefined,
@@ -879,15 +922,6 @@ function localSearchImprove(
     return probeBuildingConnectedToRoads(G, roads, snapshotOccupied, r, c, rows, cols);
   };
 
-  function popFor(cand: ResidentialPlacement | ResidentialCandidate): number {
-    const { base, max } = getResidentialBaseMax(params, cand.rows, cand.cols, getCandidateTypeIndex(cand));
-    let sum = base;
-    for (let j = 0; j < effectZones.length; j++) {
-      if (isBoostedByService(effectZones[j], cand.r, cand.c, cand.rows, cand.cols)) sum += serviceBonuses[j] ?? 0;
-    }
-    return Math.min(Math.max(sum, base), max);
-  }
-
   for (let iter = 0; iter < maxIter; iter++) {
     maybeStop?.();
     if (profileCounters) profileCounters.attempts.localSearchIterations++;
@@ -905,7 +939,8 @@ function localSearchImprove(
       const resType = residentialTypeIndices[i] ?? NO_TYPE_INDEX;
       const othersOccupied = new Set(occupied);
       for (const k of residentialFootprint(res.r, res.c, res.rows, res.cols)) othersOccupied.delete(k);
-      for (const cand of residentialCandidates) {
+      for (let candidateIndex = 0; candidateIndex < residentialCandidates.length; candidateIndex++) {
+        const cand = residentialCandidates[candidateIndex];
         maybeStop?.();
         if (profileCounters) profileCounters.localSearch.candidateScans++;
         const candidateTypeIndex = getCandidateTypeIndex(cand);
@@ -927,7 +962,8 @@ function localSearchImprove(
         if (profileCounters) profileCounters.localSearch.canConnectChecks++;
         const probe = probeRoadConnection(othersOccupied, cand.r, cand.c, cand.rows, cand.cols);
         if (!probe) continue;
-        const newPop = popFor(cand);
+        if (profileCounters) profileCounters.localSearch.populationCacheLookups++;
+        const newPop = residentialPopulationCache[candidateIndex] ?? -1;
         const delta = newPop - currentPop;
         if (delta > bestMoveDelta) {
           bestMove = {
@@ -946,7 +982,8 @@ function localSearchImprove(
     }
 
     if (maxResidentials === undefined || residentials.length < maxResidentials) {
-      for (const cand of residentialCandidates) {
+      for (let candidateIndex = 0; candidateIndex < residentialCandidates.length; candidateIndex++) {
+        const cand = residentialCandidates[candidateIndex];
         maybeStop?.();
         if (profileCounters) profileCounters.localSearch.candidateScans++;
         const candidateTypeIndex = getCandidateTypeIndex(cand);
@@ -962,7 +999,8 @@ function localSearchImprove(
         if (profileCounters) profileCounters.localSearch.canConnectChecks++;
         const probe = probeRoadConnection(occupied, cand.r, cand.c, cand.rows, cand.cols);
         if (!probe) continue;
-        const addPop = popFor(cand);
+        if (profileCounters) profileCounters.localSearch.populationCacheLookups++;
+        const addPop = residentialPopulationCache[candidateIndex] ?? -1;
         if (addPop > bestAddDelta) {
           bestAdd = {
             kind: "add",

@@ -241,6 +241,9 @@ export function formatGreedyBenchmarkSuite(result: GreedyBenchmarkSuiteResult): 
         `  scans=svc:${counters.servicePhase.candidateScans} res:${counters.residentialPhase.candidateScans} local:${counters.localSearch.candidateScans} roads(connect=${counters.roads.canConnectChecks}, ensure=${counters.roads.ensureConnectedCalls}, probes=${counters.roads.probeCalls}, reuse=${counters.roads.probeReuses})`
       );
       lines.push(
+        `  pop-cache=entries:${counters.precompute.residentialPopulationCacheEntries} res-lookups:${counters.residentialPhase.populationCacheLookups} local-lookups:${counters.localSearch.populationCacheLookups}`
+      );
+      lines.push(
         `  attempts=caps:${counters.attempts.serviceCaps} restarts:${counters.attempts.restarts} refine:${counters.attempts.serviceRefineTrials} exhaustive:${counters.attempts.exhaustiveTrials}`
       );
     } else {

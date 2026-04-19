@@ -1719,9 +1719,13 @@ function testGreedyBenchmarkSuite() {
   assert(result.results[0].greedyProfile);
   assert(result.results[0].greedyProfile.counters.precompute.serviceCandidates > 0);
   assert(result.results[0].greedyProfile.counters.attempts.serviceCaps > 0);
+  assert(result.results[0].greedyProfile.counters.precompute.residentialPopulationCacheEntries > 0);
+  assert(result.results[0].greedyProfile.counters.residentialPhase.populationCacheLookups > 0);
+  assert(result.results[0].greedyProfile.counters.localSearch.populationCacheLookups > 0);
   assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
   assert.equal(Object.hasOwn(snapshot.results[0], "wallClockSeconds"), false);
   assert.match(formatGreedyBenchmarkSuite(result), /cap-sweep-mixed/);
+  assert.match(formatGreedyBenchmarkSuite(result), /pop-cache=/);
 }
 
 function testGreedyConnectivityHeavyBenchmarkCase() {
@@ -2829,6 +2833,41 @@ function testGreedySupportsShapedServices() {
   assert.match(brokenValidation.errors.join("\n"), /does not match configured service type/);
 }
 
+function testGreedyResidentialPopulationCacheRespectsTypedVariants() {
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+  ];
+  const params = {
+    residentialTypes: [
+      { w: 2, h: 2, min: 10, max: 10, avail: 1 },
+      { w: 2, h: 2, min: 100, max: 100, avail: 1 },
+    ],
+    availableBuildings: { residentials: 2, services: 0 },
+    greedy: {
+      localSearch: false,
+      randomSeed: 31,
+      restarts: 1,
+      serviceRefineIterations: 0,
+      serviceRefineCandidateLimit: 4,
+      exhaustiveServiceSearch: false,
+      serviceExactPoolLimit: 4,
+      serviceExactMaxCombinations: 16,
+      profile: true,
+    },
+  };
+
+  const solution = solveGreedy(grid, params);
+
+  assert.equal(solution.totalPopulation, 110);
+  assert.deepEqual([...solution.populations].sort((a, b) => a - b), [10, 100]);
+  assert(solution.greedyProfile);
+  assert(solution.greedyProfile.counters.precompute.residentialPopulationCacheEntries > 0);
+  assert(solution.greedyProfile.counters.residentialPhase.populationCacheLookups > 0);
+}
+
 function testGreedyProfilingIsAdditive() {
   const grid = [
     [1, 1, 1, 1, 1, 1],
@@ -3227,6 +3266,7 @@ async function main() {
   testTopRowBuildingCountsAsRoadConnected();
   testGreedyRespectsTopRowConnectivityShortcut();
   testGreedySupportsShapedServices();
+  testGreedyResidentialPopulationCacheRespectsTypedVariants();
   testLnsNeighborhoodWindowsEscalateWhenStagnating();
   testLnsRunsFinalEscalationWithinConfiguredBudget();
   maybeTestLnsOptimizer();

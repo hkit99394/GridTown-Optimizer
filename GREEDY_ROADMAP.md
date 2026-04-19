@@ -104,6 +104,11 @@ Concrete work:
 - reuse the same cached scoring in residential local search
 - invalidate or recompute only when a move actually changes the relevant service exposure model
 
+Shipped bounded slice:
+- `src/greedy/solver.ts` now builds a per-`solveOne` residential population cache immediately after the service phase settles
+- the cache is reused during both residential fill and `localSearchImprove`, while availability and overlap checks remain live
+- `benchmark:greedy` now reports `pop-cache` counters so cache entries and lookup volume stay visible on fixed benchmark cases
+
 Guardrail:
 - typed residential availability and population caps must stay exact
 

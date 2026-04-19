@@ -323,6 +323,7 @@ export interface GreedyProfileCounters {
     residentialCandidates: number;
     serviceCoveragePairs: number;
     serviceStaticScores: number;
+    residentialPopulationCacheEntries: number;
   };
   attempts: {
     serviceCaps: number;
@@ -341,6 +342,7 @@ export interface GreedyProfileCounters {
     candidateScans: number;
     canConnectChecks: number;
     placements: number;
+    populationCacheLookups: number;
   };
   localSearch: {
     candidateScans: number;
@@ -348,6 +350,7 @@ export interface GreedyProfileCounters {
     placements: number;
     moveChecks: number;
     addChecks: number;
+    populationCacheLookups: number;
   };
   roads: {
     canConnectChecks: number;

@@ -605,6 +605,21 @@ async function testRecoveredAutoFailureNormalizesTerminalMetadata() {
       ],
     },
   };
+  const recoveredSolution = {
+    ...streamedSolution,
+    activeOptimizer: "lns",
+    autoStage: {
+      ...streamedSolution.autoStage,
+      activeStage: null,
+      stageIndex: 2,
+      cycleIndex: 1,
+      stopReason: null,
+      generatedSeeds: [
+        { stage: "greedy", stageIndex: 1, cycleIndex: 0, randomSeed: 11 },
+        { stage: "lns", stageIndex: 2, cycleIndex: 1, randomSeed: 13 },
+      ],
+    },
+  };
 
   optimizerRegistry.getOptimizerAdapter = () => ({
     name: "auto",
@@ -612,19 +627,25 @@ async function testRecoveredAutoFailureNormalizesTerminalMetadata() {
       throw new Error("Recovered-auto route test should use the background adapter.");
     },
     startBackgroundSolve() {
+      let latestSnapshot = streamedSolution;
       return {
-        promise: Promise.reject(new Error("Auto backend exited after streaming a feasible incumbent.")),
+        promise: new Promise((resolve, reject) => {
+          setTimeout(() => {
+            latestSnapshot = recoveredSolution;
+            reject(new Error("Auto backend exited after streaming a feasible incumbent."));
+          }, 30);
+        }),
         cancel() {},
         getLatestSnapshot() {
-          return streamedSolution;
+          return latestSnapshot;
         },
         getLatestSnapshotState() {
           return {
             hasFeasibleSolution: true,
-            totalPopulation: streamedSolution.totalPopulation,
-            activeOptimizer: streamedSolution.activeOptimizer,
-            autoStage: streamedSolution.autoStage,
-            cpSatStatus: streamedSolution.cpSatStatus,
+            totalPopulation: latestSnapshot.totalPopulation,
+            activeOptimizer: latestSnapshot.activeOptimizer,
+            autoStage: latestSnapshot.autoStage,
+            cpSatStatus: latestSnapshot.cpSatStatus,
           };
         },
       };
@@ -653,15 +674,18 @@ async function testRecoveredAutoFailureNormalizesTerminalMetadata() {
     assert.equal(finalPayload.message, "Auto kept the best available incumbent after a later stage ended without a usable result.");
     assert.equal(finalPayload.stats.activeOptimizer, "cp-sat");
     assert.equal(finalPayload.stats.autoStage.activeStage, "cp-sat");
+    assert.equal(finalPayload.stats.autoStage.stageIndex, 3);
     assert.equal(finalPayload.stats.autoStage.stopReason, "stage-error");
     assert.equal(finalPayload.solution.activeOptimizer, "cp-sat");
     assert.equal(finalPayload.solution.autoStage.activeStage, "cp-sat");
+    assert.equal(finalPayload.solution.autoStage.stageIndex, 3);
     assert.equal(finalPayload.solution.autoStage.stopReason, "stage-error");
 
     const persistedLog = JSON.parse(fs.readFileSync(startResult.payload.progressLogFilePath, "utf8"));
     assert.equal(persistedLog.message, "Auto kept the best available incumbent after a later stage ended without a usable result.");
     assert.equal(persistedLog.finalResult.solution.activeOptimizer, "cp-sat");
     assert.equal(persistedLog.finalResult.solution.autoStage.activeStage, "cp-sat");
+    assert.equal(persistedLog.finalResult.solution.autoStage.stageIndex, 3);
     assert.equal(persistedLog.finalResult.solution.autoStage.stopReason, "stage-error");
   } finally {
     optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;

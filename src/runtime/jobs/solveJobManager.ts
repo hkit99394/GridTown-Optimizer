@@ -1,10 +1,13 @@
 import { describeAutoStopReason } from "../../auto/solver.js";
 import type {
+  AutoSolveStageMetadata,
+  AutoStageOptimizerName,
   AutoSolveStopReason,
   BackgroundSolveHandle,
   BackgroundSolveSnapshotState,
   Grid,
   OptimizerName,
+  SolveProgressLogEntry,
   Solution,
   SolverParams,
 } from "../../core/types.js";
@@ -74,19 +77,133 @@ function buildCompletedSolveMessage(job: SolveJob, solution: Solution): string |
   return describeAutoStopReason(solution.autoStage?.stopReason);
 }
 
-function normalizeRecoveredAutoSolution(job: SolveJob, solution: Solution): Solution {
+function latestGeneratedAutoStage(
+  autoStage: AutoSolveStageMetadata | SolveProgressLogEntry["autoStage"] | null | undefined
+): AutoStageOptimizerName | null {
+  const stage = autoStage?.generatedSeeds?.[autoStage.generatedSeeds.length - 1]?.stage ?? null;
+  return stage === "greedy" || stage === "lns" || stage === "cp-sat" ? stage : null;
+}
+
+function autoStageCompletenessScore(
+  autoStage: AutoSolveStageMetadata | SolveProgressLogEntry["autoStage"] | null | undefined
+): number {
+  if (!autoStage) return -1;
+  return (autoStage.activeStage ? 4 : 0)
+    + (autoStage.stopReason ? 2 : 0)
+    + (autoStage.generatedSeeds?.length ?? 0);
+}
+
+function compareAutoStageRecency(
+  left: AutoSolveStageMetadata | SolveProgressLogEntry["autoStage"] | null | undefined,
+  right: AutoSolveStageMetadata | SolveProgressLogEntry["autoStage"] | null | undefined
+): number {
+  const leftStageIndex = left?.stageIndex ?? -1;
+  const rightStageIndex = right?.stageIndex ?? -1;
+  if (leftStageIndex !== rightStageIndex) return leftStageIndex - rightStageIndex;
+
+  const leftCycleIndex = left?.cycleIndex ?? -1;
+  const rightCycleIndex = right?.cycleIndex ?? -1;
+  if (leftCycleIndex !== rightCycleIndex) return leftCycleIndex - rightCycleIndex;
+
+  const leftSeedCount = left?.generatedSeeds?.length ?? -1;
+  const rightSeedCount = right?.generatedSeeds?.length ?? -1;
+  if (leftSeedCount !== rightSeedCount) return leftSeedCount - rightSeedCount;
+
+  return autoStageCompletenessScore(left) - autoStageCompletenessScore(right);
+}
+
+function pickPreferredAutoStage(
+  left: AutoSolveStageMetadata | SolveProgressLogEntry["autoStage"] | null | undefined,
+  right: AutoSolveStageMetadata | SolveProgressLogEntry["autoStage"] | null | undefined
+): AutoSolveStageMetadata | SolveProgressLogEntry["autoStage"] | null {
+  if (!left) return right ?? null;
+  if (!right) return left;
+  return compareAutoStageRecency(left, right) >= 0 ? left : right;
+}
+
+function pickFallbackAutoStage(
+  preferredAutoStage: AutoSolveStageMetadata | SolveProgressLogEntry["autoStage"] | null,
+  ...candidates: Array<AutoSolveStageMetadata | SolveProgressLogEntry["autoStage"] | null | undefined>
+): AutoSolveStageMetadata | SolveProgressLogEntry["autoStage"] | null {
+  let fallback: AutoSolveStageMetadata | SolveProgressLogEntry["autoStage"] | null = null;
+  for (const candidate of candidates) {
+    if (!candidate || candidate === preferredAutoStage) continue;
+    fallback = pickPreferredAutoStage(fallback, candidate);
+  }
+  return fallback;
+}
+
+function resolveRecoveredAutoActiveStage(
+  solution: Solution,
+  snapshotState: SolveJobSnapshotState | null,
+  lastEntry: SolveProgressLogEntry | null
+): AutoStageOptimizerName | null {
+  const preferredAutoStage = pickPreferredAutoStage(
+    pickPreferredAutoStage(solution.autoStage ?? null, snapshotState?.autoStage ?? null),
+    lastEntry?.autoStage ?? null
+  );
+  return preferredAutoStage?.activeStage
+    ?? latestGeneratedAutoStage(preferredAutoStage)
+    ?? (solution.cpSatStatus ? "cp-sat" : null)
+    ?? (snapshotState?.cpSatStatus ? "cp-sat" : null)
+    ?? (lastEntry?.cpSatStatus ? "cp-sat" : null)
+    ?? snapshotState?.activeOptimizer
+    ?? lastEntry?.activeOptimizer
+    ?? solution.activeOptimizer
+    ?? lastEntry?.autoStage?.activeStage
+    ?? null;
+}
+
+function normalizeTerminalAutoSolution(job: SolveJob, solution: Solution): Solution {
   if (job.optimizer !== "auto") return solution;
 
   const lastEntry = job.progressLogWriter.getLastEntry();
-  const activeStage =
-    solution.activeOptimizer
-    ?? solution.autoStage?.activeStage
-    ?? lastEntry?.activeOptimizer
-    ?? lastEntry?.autoStage?.activeStage
-    ?? null;
+  const snapshotState = job.handle?.getLatestSnapshotState() ?? null;
+  const preferredAutoStage = pickPreferredAutoStage(
+    pickPreferredAutoStage(solution.autoStage ?? null, snapshotState?.autoStage ?? null),
+    lastEntry?.autoStage ?? null
+  );
+  const fallbackAutoStage = pickFallbackAutoStage(
+    preferredAutoStage,
+    solution.autoStage ?? null,
+    snapshotState?.autoStage ?? null,
+    lastEntry?.autoStage ?? null
+  );
+  const activeStage = resolveRecoveredAutoActiveStage(solution, snapshotState, lastEntry);
   const stopReason: AutoSolveStopReason =
     solution.autoStage?.stopReason
-    ?? (job.cancelRequested || solution.stoppedByUser ? "cancelled" : "stage-error");
+    ?? preferredAutoStage?.stopReason
+    ?? fallbackAutoStage?.stopReason
+    ?? lastEntry?.autoStage?.stopReason
+    ?? snapshotState?.autoStage?.stopReason
+    ?? (job.cancelRequested || solution.stoppedByUser ? "cancelled" : null)
+    ?? (activeStage === "cp-sat" && solution.cpSatStatus === "OPTIMAL" ? "optimal" : null)
+    ?? (activeStage === "cp-sat" && snapshotState?.cpSatStatus === "OPTIMAL" ? "optimal" : null)
+    ?? (activeStage === "cp-sat" && lastEntry?.cpSatStatus === "OPTIMAL" ? "optimal" : null)
+    ?? "stage-error";
+  const stageIndex =
+    preferredAutoStage?.stageIndex
+    ?? fallbackAutoStage?.stageIndex
+    ?? snapshotState?.autoStage?.stageIndex
+    ?? solution.autoStage?.stageIndex
+    ?? lastEntry?.autoStage?.stageIndex
+    ?? 0;
+  const cycleIndex =
+    preferredAutoStage?.cycleIndex
+    ?? fallbackAutoStage?.cycleIndex
+    ?? snapshotState?.autoStage?.cycleIndex
+    ?? solution.autoStage?.cycleIndex
+    ?? lastEntry?.autoStage?.cycleIndex
+    ?? 0;
+  const generatedSeeds =
+    (preferredAutoStage?.generatedSeeds?.length ?? 0) > 0
+      ? (preferredAutoStage?.generatedSeeds ?? [])
+      : (fallbackAutoStage?.generatedSeeds?.length ?? 0) > 0
+        ? (fallbackAutoStage?.generatedSeeds ?? [])
+        : (snapshotState?.autoStage?.generatedSeeds
+            ?? solution.autoStage?.generatedSeeds
+            ?? lastEntry?.autoStage?.generatedSeeds
+            ?? []);
 
   return {
     ...solution,
@@ -97,13 +214,23 @@ function normalizeRecoveredAutoSolution(job: SolveJob, solution: Solution): Solu
       ...(solution.autoStage ?? {}),
       requestedOptimizer: solution.autoStage?.requestedOptimizer ?? lastEntry?.autoStage?.requestedOptimizer ?? "auto",
       activeStage,
-      stageIndex: solution.autoStage?.stageIndex ?? lastEntry?.autoStage?.stageIndex ?? 0,
-      cycleIndex: solution.autoStage?.cycleIndex ?? lastEntry?.autoStage?.cycleIndex ?? 0,
+      stageIndex,
+      cycleIndex,
       consecutiveWeakCycles:
-        solution.autoStage?.consecutiveWeakCycles ?? lastEntry?.autoStage?.consecutiveWeakCycles ?? 0,
+        preferredAutoStage?.consecutiveWeakCycles
+        ?? fallbackAutoStage?.consecutiveWeakCycles
+        ?? snapshotState?.autoStage?.consecutiveWeakCycles
+        ?? solution.autoStage?.consecutiveWeakCycles
+        ?? lastEntry?.autoStage?.consecutiveWeakCycles
+        ?? 0,
       lastCycleImprovementRatio:
-        solution.autoStage?.lastCycleImprovementRatio ?? lastEntry?.autoStage?.lastCycleImprovementRatio ?? null,
-      generatedSeeds: solution.autoStage?.generatedSeeds ?? lastEntry?.autoStage?.generatedSeeds ?? [],
+        preferredAutoStage?.lastCycleImprovementRatio
+        ?? fallbackAutoStage?.lastCycleImprovementRatio
+        ?? snapshotState?.autoStage?.lastCycleImprovementRatio
+        ?? solution.autoStage?.lastCycleImprovementRatio
+        ?? lastEntry?.autoStage?.lastCycleImprovementRatio
+        ?? null,
+      generatedSeeds,
       stopReason,
     },
     stoppedByUser: job.cancelRequested ? true : Boolean(solution.stoppedByUser),
@@ -165,6 +292,7 @@ export class SolveJobManager {
 
     void handle.promise
       .then((solution) => {
+        solution = normalizeTerminalAutoSolution(job, solution);
         const status = solution.stoppedByUser || job.cancelRequested ? "stopped" : "completed";
         const message = status === "stopped"
           ? "Solve was stopped by user. Showing the best feasible result found so far."
@@ -178,7 +306,7 @@ export class SolveJobManager {
             ...recoveredSolution,
             stoppedByUser: job.cancelRequested ? true : Boolean(recoveredSolution.stoppedByUser),
           };
-          solution = normalizeRecoveredAutoSolution(job, solution);
+          solution = normalizeTerminalAutoSolution(job, solution);
           const status = job.cancelRequested ? "stopped" : "completed";
           const message = job.cancelRequested
             ? "Solve was stopped by user. Showing the best feasible result found so far."

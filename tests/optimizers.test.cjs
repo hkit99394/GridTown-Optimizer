@@ -683,6 +683,71 @@ function testAutoClampsHeavyGreedyStageSettings() {
   }
 }
 
+async function testAutoAsyncClampsHeavyGreedyStageSettings() {
+  const greedyBridgeModule = require("../dist/greedy/bridge.js");
+  const lnsBridgeModule = require("../dist/lns/bridge.js");
+  const cpSatModule = require("../dist/cp-sat/solver.js");
+  const originalStartGreedySolve = greedyBridgeModule.startGreedySolve;
+  const originalStartLnsSolve = lnsBridgeModule.startLnsSolve;
+  const originalStartCpSatSolve = cpSatModule.startCpSatSolve;
+  let capturedGreedyOptions = null;
+
+  const buildBackgroundHandle = (solution) => ({
+    promise: Promise.resolve(solution),
+    cancel() {},
+    getLatestSnapshot: () => solution,
+    getLatestSnapshotState: () => ({
+      hasFeasibleSolution: true,
+      totalPopulation: solution.totalPopulation,
+      activeOptimizer: solution.optimizer,
+      autoStage: null,
+      cpSatStatus: solution.cpSatStatus ?? null,
+    }),
+  });
+
+  greedyBridgeModule.startGreedySolve = (grid, params) => {
+    capturedGreedyOptions = params.greedy;
+    return buildBackgroundHandle(buildMockSolution({ optimizer: "greedy", totalPopulation: 100 }));
+  };
+  lnsBridgeModule.startLnsSolve = () => buildBackgroundHandle(buildMockSolution({ optimizer: "lns", totalPopulation: 120 }));
+  cpSatModule.startCpSatSolve = () => buildBackgroundHandle(buildMockSolution({
+    optimizer: "cp-sat",
+    totalPopulation: 120,
+    cpSatStatus: "OPTIMAL",
+  }));
+
+  try {
+    const solution = await startAutoSolve([[1, 1], [1, 1]], {
+      optimizer: "auto",
+      greedy: {
+        localSearch: true,
+        restarts: 20,
+        serviceRefineIterations: 4,
+        serviceRefineCandidateLimit: 60,
+        exhaustiveServiceSearch: true,
+        serviceExactPoolLimit: 22,
+        serviceExactMaxCombinations: 12000,
+      },
+      lns: { iterations: 1, maxNoImprovementIterations: 1, neighborhoodRows: 2, neighborhoodCols: 2, repairTimeLimitSeconds: 1 },
+      cpSat: { timeLimitSeconds: 1, noImprovementTimeoutSeconds: 1, numWorkers: 1 },
+      auto: { wallClockLimitSeconds: 10 },
+    }).promise;
+
+    assert.equal(solution.optimizer, "auto");
+    assert.ok(capturedGreedyOptions);
+    assert.equal(capturedGreedyOptions.restarts, 4);
+    assert.equal(capturedGreedyOptions.serviceRefineIterations, 1);
+    assert.equal(capturedGreedyOptions.serviceRefineCandidateLimit, 24);
+    assert.equal(capturedGreedyOptions.exhaustiveServiceSearch, false);
+    assert.equal(capturedGreedyOptions.serviceExactPoolLimit, 8);
+    assert.equal(capturedGreedyOptions.serviceExactMaxCombinations, 512);
+  } finally {
+    greedyBridgeModule.startGreedySolve = originalStartGreedySolve;
+    lnsBridgeModule.startLnsSolve = originalStartLnsSolve;
+    cpSatModule.startCpSatSolve = originalStartCpSatSolve;
+  }
+}
+
 function resolveCpSatPython() {
   const venvPython = path.resolve(__dirname, "../.venv-cp-sat/bin/python");
   const candidates = [fs.existsSync(venvPython) ? venvPython : null, process.env.CITY_BUILDER_CP_SAT_PYTHON || null, "python3"].filter(
@@ -3941,6 +4006,7 @@ async function main() {
   testAutoSyncGreedyCanRunPastFormerStageBudget();
   await testAutoAsyncGreedyCanRunPastFormerStageBudget();
   testAutoClampsHeavyGreedyStageSettings();
+  await testAutoAsyncClampsHeavyGreedyStageSettings();
   testGreedyProfilingIsAdditive();
   testGreedyBenchmarkCorpusHelpers();
   testGreedyBenchmarkSuite();

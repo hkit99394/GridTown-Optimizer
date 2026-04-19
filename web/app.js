@@ -58,7 +58,7 @@ const DEFAULT_RESIDENTIAL_TYPES = [
 const CONFIG_STORAGE_KEY = "city-builder:planner-configs:v1";
 const LAYOUT_STORAGE_KEY = "city-builder:planner-layouts:v1";
 const SOLVE_STATUS_POLL_INTERVAL_MS = 1000;
-const LIVE_SNAPSHOT_REFRESH_INTERVAL_MS = 60 * 1000;
+const LIVE_SNAPSHOT_REFRESH_INTERVAL_MS = 5 * 1000;
 const COMPARISON_PROGRESS_HINT_INTERVAL_MS = 60 * 1000;
 
 const plannerModules = {

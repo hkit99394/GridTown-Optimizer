@@ -6,14 +6,21 @@ import { createServer } from "node:http";
 import { resolve } from "node:path";
 
 import { createPlannerRequestHandler } from "../server/index.js";
+import { SolveJobManager } from "../runtime/jobs/solveJobManager.js";
 
 const PORT = Number(process.env.PORT ?? 4173);
-const WEB_ROOT = resolve(__dirname, "../../web");
+const PROJECT_ROOT = resolve(__dirname, "../..");
+const WEB_ROOT = resolve(PROJECT_ROOT, "web");
+const PROGRESS_LOG_ROOT = resolve(PROJECT_ROOT, "artifacts", "solve-progress");
 
 const server = createServer(createPlannerRequestHandler({
   webRoot: WEB_ROOT,
+  solveJobManager: new SolveJobManager({
+    progressLogRoot: PROGRESS_LOG_ROOT,
+  }),
 }));
 
 server.listen(PORT, () => {
   console.log(`City Builder web planner running at http://localhost:${PORT}`);
+  console.log(`Solve progress logs will be written to ${PROGRESS_LOG_ROOT}`);
 });

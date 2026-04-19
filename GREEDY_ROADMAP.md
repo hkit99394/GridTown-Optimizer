@@ -12,20 +12,23 @@ This roadmap is intentionally not about turning `greedy` into a full exact solve
 
 ## Current Status
 
-The current greedy path already does more than a single-pass construction heuristic.
+The current greedy path is no longer a simple construction heuristic. The shipped bounded slices in this roadmap have already turned it into a measured, staged heuristic with stronger post-construction improvement and better runtime instrumentation.
 
 What exists today in [src/greedy/solver.ts](./src/greedy/solver.ts):
 - full candidate enumeration for service and residential placements
-- static service scoring plus dynamic marginal service rescoring
+- grouped typed-residential service scoring plus dynamic marginal service rescoring
 - residential fill after service placement
-- service-cap sweep when no explicit service cap is provided
+- adaptive cap search when no explicit service cap is provided
 - restart support via shuffled service order and deterministic random seeds
 - row-0 anchor refinement reruns
-- residential-only local search
-- service refinement and optional exhaustive top-pool search
+- residential local search plus bounded service neighborhoods
+- direct service-relocation neighborhoods on top of that local-search pass
+- bounded service-add lookahead in the main explicit greedy service loop
+- optional deferred-road construction as an experiment
+- service refinement and optional bounded exhaustive top-pool search
 - stop-file handling and best-so-far snapshot persistence
 
-This makes `greedy` a strong baseline, but it also means the implementation now pays for repeated rescans and repeated road-connectivity work inside the hottest loops.
+This makes `greedy` a strong standalone baseline and a much better seed builder for `auto` and `LNS`, but it also means the implementation still pays for some expensive fallback paths and hot-loop helper overhead.
 
 ## Review Update
 
@@ -46,7 +49,9 @@ The biggest remaining practical gaps are now narrower and more specific:
 - Step 14 lookahead is intentionally narrow: it only reranks the top-N explicit non-`fixedServices` candidates, and it still does not widen greedy into a fuller multi-step search policy
 - the roadmap should now focus less on generic “speed up greedy somehow” work and more on replacing the remaining expensive fallback mechanisms with narrower scratch-state helpers and on making `auto` / `LNS` follow-on improvement do the deeper search work
 
-## Main Bottlenecks
+All 15 roadmap steps below are now shipped as bounded slices. What remains after this document is follow-up optimization work, not unchecked roadmap items.
+
+## Remaining Bottlenecks
 
 The biggest near-term issue is not candidate generation itself. The main cost comes from repeated inner-loop work:
 
@@ -67,7 +72,13 @@ There are also two specific residual limitations in the current implementation:
 - the Step 14 lookahead path is intentionally bounded and explicit-road-only, so deferred-road mode and `fixedServices` reruns still fall back to the simpler service-selection policy
 - fixed-service completeness is now bounded rather than exhaustive, so refinement and exhaustive evaluation still trade completeness for measured runtime caps
 
-## Roadmap By Impact
+## Shipped Steps By Impact
+
+These sections are kept as the implementation record for the shipped bounded slices. They are still ordered by impact/topic, not as a list of remaining open tasks.
+
+Within each step:
+- `Expected impact`, `Why`, `Concrete work`, and `Guardrail` preserve the original design rationale.
+- `Shipped bounded slice` records what actually landed.
 
 ### 1. Add measurement before changing heuristic policy
 
@@ -317,7 +328,7 @@ Shipped bounded slice:
 - the service-neighborhood budget is intentionally small and fixed so Step 10 improves incumbent quality without letting local search dominate default greedy runtime
 - `greedy.profile` now exposes `localSearch` service-neighborhood counters, and `benchmark:greedy` includes `service-local-neighborhood` plus a `local-service=` summary line so the new slice stays visible in the fixed corpus
 
-## Later Priorities
+## Additional Shipped Steps
 
 ### 11. Reduce allocation pressure in hot geometry and occupancy helpers
 
@@ -376,7 +387,7 @@ Concrete work:
 - add reusable scratch occupancy / BFS workspaces with explicit rollback tests for local-search scans and road probes
 - keep public `Set<string>` and serialization surfaces unchanged while moving only the internal hot loops onto scratch-state helpers
 
-Why this is later:
+Original rationale for sequencing:
 - these changes touch correctness-sensitive mutation paths, so they need stronger helper-level aliasing and rollback tests first
 
 Shipped bounded slice:
@@ -395,7 +406,7 @@ Options:
 - limited lookahead where candidate service additions trigger a cheap residential refill estimate
 - interleaved service and residential construction instead of strict services-first then residentials
 
-Why this is later:
+Original rationale for sequencing:
 - these changes are higher risk and should come after measurement plus the lower-risk runtime wins
 
 Shipped bounded slice:
@@ -429,7 +440,9 @@ Shipped bounded slice:
 - roadmap and planner copy now describe `auto` as the recommended quality path and `greedy` as the fast seed / advanced mode
 - this step intentionally does not change solver policy; it only makes the product decision explicit in docs and user-facing text
 
-## Recommended Implementation Order
+## Historical Implementation Order
+
+This is the order the roadmap recommended while the work was still in flight. It is preserved here as historical guidance; it is not a list of remaining tasks.
 
 1. Add profiling counters and a fixed benchmark slice.
 2. Implement connectivity caching and path reuse.

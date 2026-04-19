@@ -301,6 +301,12 @@ Concrete work:
 Guardrail:
 - preserve the role of greedy as a fast seed builder; do not let local search dominate total runtime by default
 
+Shipped bounded slice:
+- `src/greedy/solver.ts` now keeps the existing residential move/add loop inside `localSearchImprove()`, then adds one bounded top-level service neighborhood pass under the same `greedy.localSearch` flag
+- the first slice evaluates deterministic `remove`, `add`, and `swap` service neighbors against the incumbent using the existing bounded forced-service evaluator, instead of widening local search into a second full cap/restart solve
+- the service-neighborhood budget is intentionally small and fixed so Step 10 improves incumbent quality without letting local search dominate default greedy runtime
+- `greedy.profile` now exposes `localSearch` service-neighborhood counters, and `benchmark:greedy` includes `service-local-neighborhood` plus a `local-service=` summary line so the new slice stays visible in the fixed corpus
+
 ## Later Priorities
 
 ### 11. Reduce allocation pressure in hot geometry and occupancy helpers

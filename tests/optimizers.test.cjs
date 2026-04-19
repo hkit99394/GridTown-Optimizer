@@ -2146,6 +2146,7 @@ function testGreedyBenchmarkSuite() {
   assert.equal(Object.hasOwn(snapshot.results[0], "wallClockSeconds"), false);
   assert.match(formatGreedyBenchmarkSuite(result), /cap-sweep-mixed/);
   assert.match(formatGreedyBenchmarkSuite(result), /pop-cache=/);
+  assert.match(formatGreedyBenchmarkSuite(result), /local-service=/);
   assert.match(formatGreedyBenchmarkSuite(result), /cap-search=/);
 }
 
@@ -2336,8 +2337,9 @@ function testGreedyIncrementalInvalidationPreservesBenchmarkOutputs() {
     "cap-sweep-mixed": { totalPopulation: 440, serviceCount: 1, residentialCount: 3 },
     "bridge-connectivity-heavy": { totalPopulation: 400, serviceCount: 1, residentialCount: 3 },
     "typed-footprint-pressure": { totalPopulation: 450, serviceCount: 2, residentialCount: 4 },
-    "adaptive-cap-search-wide": { totalPopulation: 812, serviceCount: 2, residentialCount: 6 },
+    "adaptive-cap-search-wide": { totalPopulation: 848, serviceCount: 1, residentialCount: 6 },
     "crowded-invalidation-heavy": { totalPopulation: 711, serviceCount: 1, residentialCount: 6 },
+    "service-local-neighborhood": { totalPopulation: 300, serviceCount: 1, residentialCount: 3 },
   };
 
   for (const [name, expected] of Object.entries(expectations)) {
@@ -2545,7 +2547,7 @@ function testGreedyFixedServiceRealizationCompletenessBenchmarkCase() {
   assert.deepEqual(exhaustiveOnlySolution.services, [
     { r: 4, c: 2, rows: 1, cols: 2, range: 1 },
   ]);
-  assert.deepEqual(exhaustiveOnlySolution.populations, [120, 120, 60]);
+  assert.deepEqual(exhaustiveOnlySolution.populations, [135, 105, 60]);
   assert.equal(exhaustiveOnlySolution.greedyProfile.counters.attempts.fixedServiceRealizationTrials > 0, true);
   assert.equal(exhaustiveOnlySolution.greedyProfile.counters.attempts.exhaustiveTrials > 0, true);
   assert.equal(counters.attempts.fixedServiceRealizationTrials > 0, true);
@@ -2620,6 +2622,45 @@ function testGreedyFixedServiceRealizationCompletenessImprovesMultiServiceRefine
   assert.equal(improvedSolution.greedyProfile.counters.attempts.serviceRefineTrials > 0, true);
 }
 
+function testGreedyServiceLocalNeighborhoodBenchmarkCase() {
+  const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
+    names: ["service-local-neighborhood"],
+  });
+  const benchmarkCase = DEFAULT_GREEDY_BENCHMARK_CORPUS.find((entry) => entry.name === "service-local-neighborhood");
+  const improvedParams = structuredClone(benchmarkCase.params);
+  improvedParams.greedy = { ...improvedParams.greedy, profile: true };
+  const improvedSolution = solveGreedy(
+    benchmarkCase.grid.map((row) => [...row]),
+    improvedParams
+  );
+  const baselineParams = structuredClone(benchmarkCase.params);
+  baselineParams.greedy = {
+    ...baselineParams.greedy,
+    profile: true,
+    localSearch: true,
+    localSearchServiceMoves: false,
+  };
+  const baselineSolution = solveGreedy(
+    benchmarkCase.grid.map((row) => [...row]),
+    baselineParams
+  );
+  const counters = improvedSolution.greedyProfile.counters.localSearch;
+
+  assert.equal(result.caseCount, 1);
+  assert.deepEqual(result.selectedCaseNames, ["service-local-neighborhood"]);
+  assert.equal(result.results[0].name, "service-local-neighborhood");
+  assert.equal(result.results[0].totalPopulation, 300);
+  assert.equal(result.results[0].serviceCount, 1);
+  assert.equal(result.results[0].residentialCount, 3);
+  assert.equal(improvedSolution.totalPopulation, 300);
+  assert.equal(baselineSolution.totalPopulation, 240);
+  assert.equal(improvedSolution.totalPopulation > baselineSolution.totalPopulation, true);
+  assert.equal(counters.serviceNeighborhoodImprovements > 0, true);
+  assert.equal(counters.serviceAddChecks > 0 || counters.serviceSwapChecks > 0 || counters.serviceRemoveChecks > 0, true);
+  assert.match(formatGreedyBenchmarkSuite(result), /service-local-neighborhood/);
+  assert.match(formatGreedyBenchmarkSuite(result), /local-service=/);
+}
+
 function testGreedyTypedFootprintPressureBenchmarkCase() {
   const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
     names: ["typed-footprint-pressure"],
@@ -2671,10 +2712,10 @@ function testGreedyTypedAvailabilityPressureBenchmarkCase() {
   assert.equal(solution.totalPopulation, 615);
   assert.deepEqual(solution.serviceTypeIndices, [0, 0]);
   assert.equal(solution.services.length, 2);
-  assert.equal(
-    solution.services.every((service) => service.r === 3 && service.rows === 1 && service.cols === 1 && service.range === 2),
-    true
-  );
+  assert.deepEqual(solution.services, [
+    { r: 3, c: 2, rows: 1, cols: 1, range: 2 },
+    { r: 2, c: 4, rows: 1, cols: 1, range: 2 },
+  ]);
   assert.deepEqual(solution.residentialTypeIndices, [0, 1, 1, 1, 1]);
   assert.deepEqual(solution.populations, [175, 110, 110, 110, 110]);
   assert(result.results[0].greedyProfile);
@@ -2735,7 +2776,7 @@ function testGreedyGroupedServiceScoringDiscountsLimitedFallbackTypes() {
   assert.equal(solution.totalPopulation, 265);
   assert.deepEqual(solution.serviceTypeIndices, [0, 0]);
   assert.deepEqual(solution.services, [
-    { r: 2, c: 3, rows: 1, cols: 1, range: 2 },
+    { r: 2, c: 2, rows: 1, cols: 1, range: 2 },
     { r: 1, c: 0, rows: 1, cols: 1, range: 2 },
   ]);
   assert.deepEqual(solution.residentialTypeIndices, [0, 1]);
@@ -4319,6 +4360,7 @@ async function main() {
   testGreedyDeferredRoadMaterializationFailsDeterministically();
   testGreedyFixedServiceRealizationCompletenessBenchmarkCase();
   testGreedyFixedServiceRealizationCompletenessImprovesMultiServiceRefineCase();
+  testGreedyServiceLocalNeighborhoodBenchmarkCase();
   testGreedyTypedFootprintPressureBenchmarkCase();
   testGreedyTypedAvailabilityPressureBenchmarkCase();
   testGreedyGroupedServiceScoringLeavesUntypedBenchmarkUndiscounted();

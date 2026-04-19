@@ -169,6 +169,10 @@ function createGreedyProfileCounters(): GreedyProfileCounters {
       placements: 0,
       moveChecks: 0,
       addChecks: 0,
+      serviceRemoveChecks: 0,
+      serviceAddChecks: 0,
+      serviceSwapChecks: 0,
+      serviceNeighborhoodImprovements: 0,
       populationCacheLookups: 0,
     },
     roads: {
@@ -219,6 +223,20 @@ const SERVICE_REFINE_FIXED_SERVICE_EVALUATION = {
   maxOrders: 6,
   maxSeededOrders: 2,
   maxSeeds: 4,
+};
+
+const LOCAL_SEARCH_SERVICE_FIXED_SERVICE_EVALUATION = {
+  maxOrders: 4,
+  maxSeededOrders: 1,
+  maxSeeds: 2,
+};
+
+const LOCAL_SEARCH_SERVICE_NEIGHBORHOOD = {
+  maxIterations: 2,
+  candidateLimit: 6,
+  maxRemoveTrialsPerIteration: 4,
+  maxAddTrialsPerIteration: 8,
+  maxSwapTrialsPerIteration: 12,
 };
 
 const EXHAUSTIVE_FIXED_SERVICE_EVALUATION = {
@@ -330,6 +348,8 @@ function getGreedyOptions(params: SolverParams): NormalizedGreedyOptions {
     : undefined;
   return {
     localSearch: greedy.localSearch ?? params.localSearch ?? true,
+    localSearchServiceMoves: greedy.localSearchServiceMoves ?? true,
+    localSearchServiceCandidateLimit: greedy.localSearchServiceCandidateLimit ?? 6,
     deferRoadCommitment: greedy.deferRoadCommitment ?? false,
     ...(randomSeed !== undefined ? { randomSeed } : {}),
     profile: greedy.profile ?? false,
@@ -1528,6 +1548,8 @@ function solveOne(
 export function solveGreedy(G: Grid, params: SolverParams): Solution {
   const {
     localSearch,
+    localSearchServiceMoves,
+    localSearchServiceCandidateLimit,
     deferRoadCommitment,
     randomSeed,
     profile,
@@ -1926,6 +1948,101 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     ? { coarseCaps: [explicitServiceCap], refineCaps: [], usesAdaptiveSearch: false }
     : buildAdaptiveServiceCapPlan(inferredUpper);
 
+  const materializeCurrentServiceSet = (solution: Solution): ServiceCandidate[] =>
+    solution.services.map((_, index) => materializeChosenServiceCandidate(solution, index));
+
+  const runBoundedServiceLocalSearch = (initialBest: Solution): Solution => {
+    if (!localSearch || !localSearchServiceMoves) return initialBest;
+    if (serviceOrderSorted.length === 0) return initialBest;
+
+    const neighborhoodPool = serviceOrderSorted.slice(
+      0,
+      Math.min(localSearchServiceCandidateLimit, serviceOrderSorted.length)
+    );
+    let incumbent = initialBest;
+
+    for (let iteration = 0; iteration < LOCAL_SEARCH_SERVICE_NEIGHBORHOOD.maxIterations; iteration++) {
+      maybeStop();
+      const incumbentServices = materializeCurrentServiceSet(incumbent);
+      let iterationBest = incumbent;
+      let removeTrials = 0;
+      let addTrials = 0;
+      let swapTrials = 0;
+
+      if (incumbentServices.length > 0) {
+        for (let serviceIndex = 0; serviceIndex < incumbentServices.length; serviceIndex++) {
+          maybeStop();
+          if (removeTrials >= LOCAL_SEARCH_SERVICE_NEIGHBORHOOD.maxRemoveTrialsPerIteration) break;
+          if (profileCounters) profileCounters.localSearch.serviceRemoveChecks++;
+          removeTrials++;
+          const forced = incumbentServices.filter((_, index) => index !== serviceIndex);
+          const trial = evaluateForcedServiceSet(
+            forced,
+            forced.length,
+            LOCAL_SEARCH_SERVICE_FIXED_SERVICE_EVALUATION
+          );
+          if (isBetterSearchSolution(trial, iterationBest)) {
+            iterationBest = trial as Solution;
+          }
+        }
+      }
+
+      if (incumbentServices.length < inferredUpper) {
+        const incumbentServiceKeys = new Set(incumbentServices.map((candidate) => serviceCandidateKey(candidate)));
+        for (const candidate of neighborhoodPool) {
+          maybeStop();
+          if (addTrials >= LOCAL_SEARCH_SERVICE_NEIGHBORHOOD.maxAddTrialsPerIteration) break;
+          if (incumbentServiceKeys.has(serviceCandidateKey(candidate))) continue;
+          if (profileCounters) profileCounters.localSearch.serviceAddChecks++;
+          addTrials++;
+          const forced = [...incumbentServices, candidate];
+          const trial = evaluateForcedServiceSet(
+            forced,
+            forced.length,
+            LOCAL_SEARCH_SERVICE_FIXED_SERVICE_EVALUATION
+          );
+          if (isBetterSearchSolution(trial, iterationBest)) {
+            iterationBest = trial as Solution;
+          }
+        }
+      }
+
+      if (incumbentServices.length > 0) {
+        const incumbentServiceKeys = new Set(incumbentServices.map((candidate) => serviceCandidateKey(candidate)));
+        for (let serviceIndex = 0; serviceIndex < incumbentServices.length; serviceIndex++) {
+          maybeStop();
+          const currentChoice = incumbentServices[serviceIndex];
+          for (const candidate of neighborhoodPool) {
+            maybeStop();
+            if (swapTrials >= LOCAL_SEARCH_SERVICE_NEIGHBORHOOD.maxSwapTrialsPerIteration) break;
+            if (serviceCandidateKey(candidate) === serviceCandidateKey(currentChoice)) continue;
+            if (incumbentServiceKeys.has(serviceCandidateKey(candidate))) continue;
+            if (profileCounters) profileCounters.localSearch.serviceSwapChecks++;
+            swapTrials++;
+            const forced = [...incumbentServices];
+            forced[serviceIndex] = candidate;
+            const trial = evaluateForcedServiceSet(
+              forced,
+              forced.length,
+              LOCAL_SEARCH_SERVICE_FIXED_SERVICE_EVALUATION
+            );
+            if (isBetterSearchSolution(trial, iterationBest)) {
+              iterationBest = trial as Solution;
+            }
+          }
+          if (swapTrials >= LOCAL_SEARCH_SERVICE_NEIGHBORHOOD.maxSwapTrialsPerIteration) break;
+        }
+      }
+
+      if (!isBetterSearchSolution(iterationBest, incumbent)) break;
+      incumbent = iterationBest;
+      updateBest(incumbent);
+      if (profileCounters) profileCounters.localSearch.serviceNeighborhoodImprovements++;
+    }
+
+    return incumbent;
+  };
+
   try {
     const capResultsByCap = new Map<number, CapResult>();
     const evaluatedCaps = new Set<number>();
@@ -1986,6 +2103,10 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
       }
     }
     if (!best) throw new Error("No feasible solution found.");
+
+    if (localSearch) {
+      best = runBoundedServiceLocalSearch(best);
+    }
 
     const refineIters = serviceRefineIterations;
     const refineLimit = Math.min(serviceRefineCandidateLimit, serviceOrderSorted.length);

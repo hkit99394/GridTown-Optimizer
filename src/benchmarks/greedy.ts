@@ -47,6 +47,8 @@ export interface GreedyBenchmarkSnapshot {
 
 export const DEFAULT_GREEDY_BENCHMARK_OPTIONS = Object.freeze({
   localSearch: true,
+  localSearchServiceMoves: true,
+  localSearchServiceCandidateLimit: 6,
   deferRoadCommitment: false,
   profile: true,
   randomSeed: 7,
@@ -60,6 +62,8 @@ export const DEFAULT_GREEDY_BENCHMARK_OPTIONS = Object.freeze({
   Pick<
     GreedyOptions,
     | "localSearch"
+    | "localSearchServiceMoves"
+    | "localSearchServiceCandidateLimit"
     | "deferRoadCommitment"
     | "profile"
     | "randomSeed"
@@ -92,6 +96,10 @@ export function normalizeGreedyBenchmarkOptions(
   return {
     ...merged,
     localSearch: merged.localSearch ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.localSearch,
+    localSearchServiceMoves:
+      merged.localSearchServiceMoves ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.localSearchServiceMoves,
+    localSearchServiceCandidateLimit:
+      merged.localSearchServiceCandidateLimit ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.localSearchServiceCandidateLimit,
     deferRoadCommitment: merged.deferRoadCommitment ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.deferRoadCommitment,
     profile: merged.profile ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.profile,
     randomSeed: merged.randomSeed ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.randomSeed,
@@ -113,6 +121,8 @@ function buildBenchmarkParams(benchmarkCase: GreedyBenchmarkCase, overrides?: Pa
   const normalizedGreedy = normalizeGreedyBenchmarkOptions(
     {
       localSearch: params.greedy?.localSearch ?? params.localSearch,
+      localSearchServiceMoves: params.greedy?.localSearchServiceMoves,
+      localSearchServiceCandidateLimit: params.greedy?.localSearchServiceCandidateLimit,
       deferRoadCommitment: params.greedy?.deferRoadCommitment,
       profile: params.greedy?.profile,
       randomSeed: params.greedy?.randomSeed,
@@ -251,6 +261,9 @@ export function formatGreedyBenchmarkSuite(result: GreedyBenchmarkSuiteResult): 
       );
       lines.push(
         `  pop-cache=entries:${counters.precompute.residentialPopulationCacheEntries} res-lookups:${counters.residentialPhase.populationCacheLookups} local-lookups:${counters.localSearch.populationCacheLookups}`
+      );
+      lines.push(
+        `  local-service=remove:${counters.localSearch.serviceRemoveChecks} add:${counters.localSearch.serviceAddChecks} swap:${counters.localSearch.serviceSwapChecks} improvements:${counters.localSearch.serviceNeighborhoodImprovements}`
       );
       lines.push(
         `  attempts=caps:${counters.attempts.serviceCaps} restarts:${counters.attempts.restarts} refine:${counters.attempts.serviceRefineTrials} exhaustive:${counters.attempts.exhaustiveTrials} fixed-set:${counters.attempts.fixedServiceRealizationTrials}`
@@ -594,6 +607,40 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
         serviceRefineIterations: 1,
         serviceRefineCandidateLimit: 8,
         exhaustiveServiceSearch: true,
+        serviceExactPoolLimit: 6,
+        serviceExactMaxCombinations: 64,
+      },
+    },
+  },
+  {
+    name: "service-local-neighborhood",
+    description: "Bounded service local search should improve the incumbent even when coarse service refinement is disabled.",
+    grid: [
+      [0, 1, 1, 1, 1, 1],
+      [1, 1, 1, 0, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+      [0, 1, 1, 0, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 0, 1, 1, 0],
+    ],
+    params: {
+      optimizer: "greedy",
+      serviceTypes: [
+        { rows: 1, cols: 1, bonus: 35, range: 1, avail: 2 },
+        { rows: 2, cols: 2, bonus: 55, range: 1, avail: 1 },
+        { rows: 1, cols: 2, bonus: 45, range: 1, avail: 1 },
+      ],
+      residentialTypes: [
+        { w: 2, h: 2, min: 60, max: 120, avail: 5 },
+        { w: 2, h: 3, min: 90, max: 170, avail: 3 },
+      ],
+      greedy: {
+        localSearch: true,
+        randomSeed: 13,
+        restarts: 1,
+        serviceRefineIterations: 0,
+        serviceRefineCandidateLimit: 8,
+        exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 6,
         serviceExactMaxCombinations: 64,
       },

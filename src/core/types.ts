@@ -293,8 +293,12 @@ export interface CpSatOptions {
 }
 
 export interface GreedyOptions {
-  /** Run local search to improve solution (default true) */
+  /** Run bounded local search to improve the greedy seed (residential neighborhoods plus bounded service neighborhoods). */
   localSearch?: boolean;
+  /** Allow bounded service remove/add/swap neighborhoods around the incumbent after greedy construction (default true). */
+  localSearchServiceMoves?: boolean;
+  /** Maximum ranked service candidates considered by bounded service neighborhoods per iteration (default 6). */
+  localSearchServiceCandidateLimit?: number;
   /** Prototype deferred road commitment during the main greedy construction pass (default false). */
   deferRoadCommitment?: boolean;
   /** Fixed seed for reproducible greedy restart shuffling. */
@@ -371,6 +375,10 @@ export interface GreedyProfileCounters {
     placements: number;
     moveChecks: number;
     addChecks: number;
+    serviceRemoveChecks: number;
+    serviceAddChecks: number;
+    serviceSwapChecks: number;
+    serviceNeighborhoodImprovements: number;
     populationCacheLookups: number;
   };
   roads: {

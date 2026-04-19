@@ -1,5 +1,6 @@
 import { describeAutoStopReason } from "../../auto/solver.js";
 import type {
+  AutoSolveStopReason,
   BackgroundSolveHandle,
   BackgroundSolveSnapshotState,
   Grid,
@@ -73,6 +74,42 @@ function buildCompletedSolveMessage(job: SolveJob, solution: Solution): string |
   return describeAutoStopReason(solution.autoStage?.stopReason);
 }
 
+function normalizeRecoveredAutoSolution(job: SolveJob, solution: Solution): Solution {
+  if (job.optimizer !== "auto") return solution;
+
+  const lastEntry = job.progressLogWriter.getLastEntry();
+  const activeStage =
+    solution.activeOptimizer
+    ?? solution.autoStage?.activeStage
+    ?? lastEntry?.activeOptimizer
+    ?? lastEntry?.autoStage?.activeStage
+    ?? null;
+  const stopReason: AutoSolveStopReason =
+    solution.autoStage?.stopReason
+    ?? (job.cancelRequested || solution.stoppedByUser ? "cancelled" : "stage-error");
+
+  return {
+    ...solution,
+    optimizer: "auto",
+    ...(activeStage ? { activeOptimizer: activeStage } : {}),
+    autoStage: {
+      ...(lastEntry?.autoStage ?? {}),
+      ...(solution.autoStage ?? {}),
+      requestedOptimizer: solution.autoStage?.requestedOptimizer ?? lastEntry?.autoStage?.requestedOptimizer ?? "auto",
+      activeStage,
+      stageIndex: solution.autoStage?.stageIndex ?? lastEntry?.autoStage?.stageIndex ?? 0,
+      cycleIndex: solution.autoStage?.cycleIndex ?? lastEntry?.autoStage?.cycleIndex ?? 0,
+      consecutiveWeakCycles:
+        solution.autoStage?.consecutiveWeakCycles ?? lastEntry?.autoStage?.consecutiveWeakCycles ?? 0,
+      lastCycleImprovementRatio:
+        solution.autoStage?.lastCycleImprovementRatio ?? lastEntry?.autoStage?.lastCycleImprovementRatio ?? null,
+      generatedSeeds: solution.autoStage?.generatedSeeds ?? lastEntry?.autoStage?.generatedSeeds ?? [],
+      stopReason,
+    },
+    stoppedByUser: job.cancelRequested ? true : Boolean(solution.stoppedByUser),
+  };
+}
+
 export class SolveJobManager {
   private readonly jobs = new Map<string, SolveJob>();
   private readonly progressLogRoot?: string;
@@ -137,15 +174,16 @@ export class SolveJobManager {
       .catch((error) => {
         const recoveredSolution = job.handle?.getLatestSnapshot() ?? null;
         if (recoveredSolution) {
-          const solution = {
+          let solution: Solution = {
             ...recoveredSolution,
             stoppedByUser: job.cancelRequested ? true : Boolean(recoveredSolution.stoppedByUser),
           };
+          solution = normalizeRecoveredAutoSolution(job, solution);
           const status = job.cancelRequested ? "stopped" : "completed";
           const message = job.cancelRequested
             ? "Solve was stopped by user. Showing the best feasible result found so far."
-            : (job.optimizer === "auto" && solution.autoStage?.stopReason
-                ? describeAutoStopReason(solution.autoStage.stopReason)
+            : (job.optimizer === "auto"
+                ? (describeAutoStopReason(solution.autoStage?.stopReason) ?? buildRecoveredSolveMessage(job, error))
                 : buildRecoveredSolveMessage(job, error));
           this.finalizeJobWithSolution(job, solution, status, message);
           return;

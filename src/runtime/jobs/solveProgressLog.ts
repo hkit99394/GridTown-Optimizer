@@ -99,7 +99,43 @@ function syncSerializedSolutionToFinalEntry(
   solution: SerializedSolution,
   finalEntry: SolveProgressLogEntry | null
 ): SerializedSolution {
-  if (!solution.cpSatTelemetry || !finalEntry?.hasFeasibleSolution) return solution;
+  if (!finalEntry?.hasFeasibleSolution) return solution;
+
+  let syncedSolution: SerializedSolution = solution;
+
+  if (solution.autoStage || solution.activeOptimizer || finalEntry.autoStage || finalEntry.activeOptimizer) {
+    const activeOptimizer =
+      solution.activeOptimizer
+      ?? finalEntry.activeOptimizer
+      ?? finalEntry.autoStage?.activeStage
+      ?? undefined;
+    const resolvedActiveStage = solution.autoStage?.activeStage ?? activeOptimizer ?? finalEntry.autoStage?.activeStage ?? null;
+    const autoStage = solution.autoStage || finalEntry.autoStage
+      ? {
+          ...(finalEntry.autoStage ?? {}),
+          ...(solution.autoStage ?? {}),
+          requestedOptimizer: solution.autoStage?.requestedOptimizer ?? finalEntry.autoStage?.requestedOptimizer ?? "auto",
+          activeStage: resolvedActiveStage,
+          stageIndex: solution.autoStage?.stageIndex ?? finalEntry.autoStage?.stageIndex ?? 0,
+          cycleIndex: solution.autoStage?.cycleIndex ?? finalEntry.autoStage?.cycleIndex ?? 0,
+          consecutiveWeakCycles:
+            solution.autoStage?.consecutiveWeakCycles ?? finalEntry.autoStage?.consecutiveWeakCycles ?? 0,
+          lastCycleImprovementRatio:
+            solution.autoStage?.lastCycleImprovementRatio ?? finalEntry.autoStage?.lastCycleImprovementRatio ?? null,
+          generatedSeeds: solution.autoStage?.generatedSeeds ?? finalEntry.autoStage?.generatedSeeds ?? [],
+          ...(solution.autoStage?.stopReason == null && finalEntry.autoStage?.stopReason != null
+            ? { stopReason: finalEntry.autoStage.stopReason }
+            : {}),
+        }
+      : undefined;
+    syncedSolution = {
+      ...syncedSolution,
+      ...(activeOptimizer ? { activeOptimizer } : {}),
+      ...(autoStage ? { autoStage } : {}),
+    };
+  }
+
+  if (!solution.cpSatTelemetry) return syncedSolution;
 
   const currentTelemetry = solution.cpSatTelemetry;
   const currentSolveWallTimeSeconds =
@@ -116,7 +152,7 @@ function syncSerializedSolutionToFinalEntry(
         ?? currentTelemetry.userTimeSeconds;
 
   return {
-    ...solution,
+    ...syncedSolution,
     cpSatStatus: finalEntry.cpSatStatus ?? solution.cpSatStatus,
     cpSatTelemetry: {
       ...currentTelemetry,

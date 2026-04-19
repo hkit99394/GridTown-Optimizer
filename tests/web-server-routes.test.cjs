@@ -573,6 +573,101 @@ async function testSolveStatusIncludesAutoStageMetadata(handler) {
   }
 }
 
+async function testRecoveredAutoFailureNormalizesTerminalMetadata() {
+  const solvePayload = buildTinySolvePayload();
+  const progressLogRoot = fs.mkdtempSync(path.join(os.tmpdir(), "planner-route-auto-recovery-"));
+  const handler = createPlannerRequestHandler({
+    webRoot: path.resolve(__dirname, "../web"),
+    solveJobManager: new SolveJobManager({
+      progressLogRoot,
+      progressLogIntervalMs: 10,
+      progressLogPollIntervalMs: 5,
+    }),
+  });
+  const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+  const streamedSolution = {
+    ...solve(solvePayload.grid, solvePayload.params),
+    optimizer: "auto",
+    activeOptimizer: "cp-sat",
+    cpSatStatus: "FEASIBLE",
+    autoStage: {
+      requestedOptimizer: "auto",
+      activeStage: "cp-sat",
+      stageIndex: 3,
+      cycleIndex: 1,
+      consecutiveWeakCycles: 0,
+      lastCycleImprovementRatio: null,
+      stopReason: null,
+      generatedSeeds: [
+        { stage: "greedy", stageIndex: 1, cycleIndex: 0, randomSeed: 11 },
+        { stage: "lns", stageIndex: 2, cycleIndex: 1, randomSeed: 13 },
+        { stage: "cp-sat", stageIndex: 3, cycleIndex: 1, randomSeed: 17 },
+      ],
+    },
+  };
+
+  optimizerRegistry.getOptimizerAdapter = () => ({
+    name: "auto",
+    solve() {
+      throw new Error("Recovered-auto route test should use the background adapter.");
+    },
+    startBackgroundSolve() {
+      return {
+        promise: Promise.reject(new Error("Auto backend exited after streaming a feasible incumbent.")),
+        cancel() {},
+        getLatestSnapshot() {
+          return streamedSolution;
+        },
+        getLatestSnapshotState() {
+          return {
+            hasFeasibleSolution: true,
+            totalPopulation: streamedSolution.totalPopulation,
+            activeOptimizer: streamedSolution.activeOptimizer,
+            autoStage: streamedSolution.autoStage,
+            cpSatStatus: streamedSolution.cpSatStatus,
+          };
+        },
+      };
+    },
+  });
+
+  try {
+    const requestId = "route-test-auto-recovery";
+    const startResult = await invoke(handler, {
+      method: "POST",
+      url: "/api/solve/start",
+      json: {
+        ...solvePayload,
+        params: {
+          ...solvePayload.params,
+          optimizer: "auto",
+        },
+        requestId,
+      },
+    });
+
+    assert.equal(startResult.statusCode, 202);
+    const finalPayload = await waitForSolve(handler, requestId);
+
+    assert.equal(finalPayload.jobStatus, "completed");
+    assert.equal(finalPayload.message, "Auto kept the best available incumbent after a later stage ended without a usable result.");
+    assert.equal(finalPayload.stats.activeOptimizer, "cp-sat");
+    assert.equal(finalPayload.stats.autoStage.activeStage, "cp-sat");
+    assert.equal(finalPayload.stats.autoStage.stopReason, "stage-error");
+    assert.equal(finalPayload.solution.activeOptimizer, "cp-sat");
+    assert.equal(finalPayload.solution.autoStage.activeStage, "cp-sat");
+    assert.equal(finalPayload.solution.autoStage.stopReason, "stage-error");
+
+    const persistedLog = JSON.parse(fs.readFileSync(startResult.payload.progressLogFilePath, "utf8"));
+    assert.equal(persistedLog.message, "Auto kept the best available incumbent after a later stage ended without a usable result.");
+    assert.equal(persistedLog.finalResult.solution.activeOptimizer, "cp-sat");
+    assert.equal(persistedLog.finalResult.solution.autoStage.activeStage, "cp-sat");
+    assert.equal(persistedLog.finalResult.solution.autoStage.stopReason, "stage-error");
+  } finally {
+    optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
+  }
+}
+
 async function testStartSolveRejectsInvalidLnsSeedHint(handler) {
   const solvePayload = buildTinySolvePayload();
   const result = await invoke(handler, {
@@ -674,6 +769,7 @@ async function main() {
   await testLayoutEvaluateRejectsMalformedSerializedSolutions(handler);
   await testBackgroundSolveRoutes(handler);
   await testSolveStatusIncludesAutoStageMetadata(handler);
+  await testRecoveredAutoFailureNormalizesTerminalMetadata();
   await testStartSolveRejectsInvalidLnsSeedHint(handler);
   await testCancelMissingSolveRoute(handler);
   await testCompletedSolveJobsExpire();

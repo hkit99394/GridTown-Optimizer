@@ -29,19 +29,21 @@ import type {
 
 const DEFAULT_WEAK_CYCLE_IMPROVEMENT_THRESHOLD = 0.005;
 const DEFAULT_MAX_CONSECUTIVE_WEAK_CYCLES = 2;
+const DEFAULT_GREEDY_STAGE_TIME_LIMIT_SECONDS = 30;
 const DEFAULT_CP_SAT_STAGE_TIME_LIMIT_SECONDS = 30;
 const DEFAULT_CP_SAT_STAGE_NO_IMPROVEMENT_TIMEOUT_SECONDS = 10;
-const AUTO_GREEDY_STAGE_RESTART_CAP = 8;
-const AUTO_GREEDY_STAGE_REFINE_ITERATION_CAP = 2;
-const AUTO_GREEDY_STAGE_REFINE_CANDIDATE_CAP = 40;
-const AUTO_GREEDY_STAGE_EXACT_POOL_CAP = 16;
-const AUTO_GREEDY_STAGE_EXACT_COMBINATION_CAP = 4000;
+const AUTO_GREEDY_STAGE_RESTART_CAP = 4;
+const AUTO_GREEDY_STAGE_REFINE_ITERATION_CAP = 1;
+const AUTO_GREEDY_STAGE_REFINE_CANDIDATE_CAP = 24;
+const AUTO_GREEDY_STAGE_EXACT_POOL_CAP = 8;
+const AUTO_GREEDY_STAGE_EXACT_COMBINATION_CAP = 512;
 const MAX_STAGE_RANDOM_SEED = 0x7fffffff;
 
 interface NormalizedAutoOptions {
   wallClockLimitSeconds: number | null;
   weakCycleImprovementThreshold: number;
   maxConsecutiveWeakCycles: number;
+  greedyStageTimeLimitSeconds: number;
   cpSatStageTimeLimitSeconds: number;
   cpSatStageNoImprovementTimeoutSeconds: number;
 }
@@ -61,6 +63,11 @@ type StageStarter = (grid: Grid, params: SolverParams) => BackgroundSolveHandle;
 interface SyncAutoStopController {
   stopFilePath: string;
   currentStopReason: () => AutoSolveStopReason | null;
+  cleanup: () => void;
+}
+
+interface SyncStageStopController {
+  stopFilePath: string;
   cleanup: () => void;
 }
 
@@ -118,6 +125,7 @@ function normalizeAutoOptions(params: SolverParams): NormalizedAutoOptions {
       1,
       Math.floor(auto.maxConsecutiveWeakCycles ?? DEFAULT_MAX_CONSECUTIVE_WEAK_CYCLES)
     ),
+    greedyStageTimeLimitSeconds: DEFAULT_GREEDY_STAGE_TIME_LIMIT_SECONDS,
     cpSatStageTimeLimitSeconds: Math.max(
       1,
       Math.floor(auto.cpSatStageTimeLimitSeconds ?? DEFAULT_CP_SAT_STAGE_TIME_LIMIT_SECONDS)
@@ -245,18 +253,24 @@ function shouldRecoverAutoStageError(stage: AutoStageOptimizerName, incumbent: S
   return stage !== "greedy" && Boolean(incumbent);
 }
 
+function recoverableStageStopReason(
+  state: AutoRuntimeState,
+  stopReasonOverride: AutoSolveStopReason | null = null
+): AutoSolveStopReason {
+  return state.stopReason ?? stopReasonOverride ?? "stage-error";
+}
+
 function applyRecoverableStageError(
   stage: AutoStageOptimizerName,
   incumbent: Solution | null,
   state: AutoRuntimeState,
-  error: unknown
+  error: unknown,
+  stopReasonOverride: AutoSolveStopReason | null = null
 ): null {
   if (!shouldRecoverAutoStageError(stage, incumbent)) {
     throw error;
   }
-  if (!state.stopReason) {
-    state.stopReason = "stage-error";
-  }
+  state.stopReason = recoverableStageStopReason(state, stopReasonOverride);
   return null;
 }
 
@@ -317,6 +331,38 @@ function createSyncAutoStopController(deadlineAtMs: number | null, params: Solve
       if (!existsSync(stopFilePath)) return null;
       return "wall-clock-cap";
     },
+    cleanup: () => {
+      try {
+        timerProcess.kill();
+      } catch {}
+      rmSync(tempDirectory, { recursive: true, force: true });
+    },
+  };
+}
+
+function createSyncStageStopController(
+  delayMs: number | null,
+  upstreamStopFilePaths: string[] = []
+): SyncStageStopController {
+  if (delayMs === null && upstreamStopFilePaths.length === 0) {
+    return {
+      stopFilePath: "",
+      cleanup: () => {},
+    };
+  }
+
+  const tempDirectory = mkdtempSync(join(tmpdir(), "city-builder-auto-stage-stop-"));
+  const stopFilePath = join(tempDirectory, "stop");
+  const delayArg = delayMs === null ? "null" : String(Math.max(0, Math.floor(delayMs)));
+  const timerProcess = spawn(
+    process.execPath,
+    ["-e", SYNC_AUTO_STOP_WATCHER_SCRIPT, stopFilePath, delayArg, JSON.stringify(upstreamStopFilePaths)],
+    { stdio: "ignore" }
+  );
+  timerProcess.unref();
+
+  return {
+    stopFilePath,
     cleanup: () => {
       try {
         timerProcess.kill();
@@ -483,6 +529,21 @@ function remainingSeconds(deadlineAtMs: number | null): number | null {
   return Math.max(0, Math.floor((deadlineAtMs - Date.now()) / 1000));
 }
 
+function deadlineStopReason(deadlineAtMs: number | null): AutoSolveStopReason | null {
+  if (deadlineAtMs === null || Date.now() < deadlineAtMs) return null;
+  return "wall-clock-cap";
+}
+
+function greedyStageTimeLimitMs(options: NormalizedAutoOptions, deadlineAtMs: number | null): number | null {
+  const globalCapSeconds = options.wallClockLimitSeconds;
+  const stageCapSeconds = globalCapSeconds === null
+    ? options.greedyStageTimeLimitSeconds
+    : Math.max(1, Math.min(options.greedyStageTimeLimitSeconds, Math.floor(globalCapSeconds / 4) || 1));
+  const stageCapMs = stageCapSeconds * 1000;
+  if (deadlineAtMs === null) return stageCapMs;
+  return Math.max(1, Math.min(stageCapMs, Math.max(0, deadlineAtMs - Date.now())));
+}
+
 function buildSnapshotState(snapshot: Solution | null): BackgroundSolveSnapshotState {
   return {
     hasFeasibleSolution: Boolean(snapshot),
@@ -524,6 +585,15 @@ async function runBackgroundStage(
 
   const stageParams = stageSeedParams(params, stage, incumbentRef.current, generatedSeed, options, secondsRemaining);
   const handle = startBackgroundSolve(G, stageParams);
+  const stageTimeLimitMs = stage === "greedy" ? greedyStageTimeLimitMs(options, deadlineAtMs) : null;
+  let greedyStageTimedOut = false;
+  const stageTimer = stageTimeLimitMs === null
+    ? null
+    : setTimeout(() => {
+        greedyStageTimedOut = true;
+        handle.cancel();
+      }, stageTimeLimitMs);
+  stageTimer?.unref?.();
   currentHandleRef.current = handle;
 
   try {
@@ -531,9 +601,21 @@ async function runBackgroundStage(
     return stripAutoMetadata(solution);
   } catch (error) {
     const recovered = handle.getLatestSnapshot();
-    if (recovered) return stripAutoMetadata(recovered);
-    return applyRecoverableStageError(stage, incumbentRef.current, state, error);
+    const explicitStopReason = state.stopReason ?? deadlineStopReason(deadlineAtMs);
+    if (recovered) {
+      if (explicitStopReason) {
+        applyRecoverableStageError(stage, incumbentRef.current, state, error, explicitStopReason);
+      }
+      return stripAutoMetadata(recovered);
+    }
+    if (stage === "greedy" && greedyStageTimedOut && !explicitStopReason) {
+      return null;
+    }
+    return applyRecoverableStageError(stage, incumbentRef.current, state, error, explicitStopReason);
   } finally {
+    if (stageTimer) {
+      clearTimeout(stageTimer);
+    }
     currentHandleRef.current = null;
   }
 }
@@ -546,10 +628,8 @@ function syncStageSolve(G: Grid, params: SolverParams, stage: AutoStageOptimizer
 
 function finalizeAutoSolution(incumbent: Solution, state: AutoRuntimeState): Solution {
   const stoppedByUser = state.stopReason === "cancelled";
-  return decorateAutoSolution(incumbent, {
-    ...state,
-    activeStage: null,
-  }, null, stoppedByUser);
+  const finalActiveStage = state.activeStage ?? solutionStageName(incumbent);
+  return decorateAutoSolution(incumbent, state, finalActiveStage, stoppedByUser);
 }
 
 function chooseInitialIncumbent(
@@ -640,6 +720,12 @@ export function solveAuto(G: Grid, params: SolverParams): Solution {
         cycleIndex,
         randomSeed: generatedSeed,
       });
+      const stageStopController = stage === "greedy"
+        ? createSyncStageStopController(
+            greedyStageTimeLimitMs(options, deadlineAtMs),
+            stopController.stopFilePath ? [stopController.stopFilePath] : []
+          )
+        : { stopFilePath: "", cleanup: () => {} };
       const stageParams = stageSeedParams(
         params,
         stage,
@@ -647,13 +733,34 @@ export function solveAuto(G: Grid, params: SolverParams): Solution {
         generatedSeed,
         options,
         secondsRemaining,
-        stopController.stopFilePath
+        stage === "greedy" ? stageStopController.stopFilePath : stopController.stopFilePath
       );
       let solution: Solution | null;
       try {
-        solution = stripAutoMetadata(syncStageSolve(G, stageParams, stage));
+        const stageScopedParams = stage === "greedy"
+          ? {
+              ...stageParams,
+              greedy: {
+                ...(stageParams.greedy ?? {}),
+                stopFilePath: stageStopController.stopFilePath,
+              },
+            }
+          : stageParams;
+        solution = stripAutoMetadata(syncStageSolve(G, stageScopedParams, stage));
       } catch (error) {
-        return applyRecoverableStageError(stage, incumbent, state, error);
+        const explicitStopReason = stopController.currentStopReason() ?? deadlineStopReason(deadlineAtMs);
+        if (stage === "greedy" && stageStopController.stopFilePath && existsSync(stageStopController.stopFilePath) && !explicitStopReason) {
+          return null;
+        }
+        return applyRecoverableStageError(
+          stage,
+          incumbent,
+          state,
+          error,
+          explicitStopReason
+        );
+      } finally {
+        stageStopController.cleanup();
       }
       const stopReasonAfterStage = stopController.currentStopReason();
       if (stopReasonAfterStage && !state.stopReason) {
@@ -830,7 +937,6 @@ export function startAutoSolve(G: Grid, params: SolverParams): BackgroundSolveHa
       if (wallClockTimer) {
         clearTimeout(wallClockTimer);
       }
-      state.activeStage = null;
     }
   })();
 

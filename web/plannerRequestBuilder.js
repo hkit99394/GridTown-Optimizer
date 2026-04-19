@@ -250,12 +250,12 @@
       const payload = {
         localSearch: Boolean(state.greedy.localSearch),
         ...(randomSeed !== undefined ? { randomSeed } : {}),
-        restarts: clampInteger(state.greedy.restarts, optimizer === "auto" ? 8 : 1, 1),
-        serviceRefineIterations: clampInteger(state.greedy.serviceRefineIterations, optimizer === "auto" ? 2 : 0, 0),
-        serviceRefineCandidateLimit: clampInteger(state.greedy.serviceRefineCandidateLimit, optimizer === "auto" ? 40 : 1, 1),
+        restarts: clampInteger(state.greedy.restarts, optimizer === "auto" ? 4 : 1, 1),
+        serviceRefineIterations: clampInteger(state.greedy.serviceRefineIterations, optimizer === "auto" ? 1 : 0, 0),
+        serviceRefineCandidateLimit: clampInteger(state.greedy.serviceRefineCandidateLimit, optimizer === "auto" ? 24 : 1, 1),
         exhaustiveServiceSearch: optimizer === "auto" ? false : Boolean(state.greedy.exhaustiveServiceSearch),
-        serviceExactPoolLimit: clampInteger(state.greedy.serviceExactPoolLimit, optimizer === "auto" ? 16 : 1, 1),
-        serviceExactMaxCombinations: clampInteger(state.greedy.serviceExactMaxCombinations, optimizer === "auto" ? 4000 : 1, 1),
+        serviceExactPoolLimit: clampInteger(state.greedy.serviceExactPoolLimit, optimizer === "auto" ? 8 : 1, 1),
+        serviceExactMaxCombinations: clampInteger(state.greedy.serviceExactMaxCombinations, optimizer === "auto" ? 512 : 1, 1),
       };
 
       if (optimizer !== "auto") {
@@ -264,11 +264,11 @@
 
       return {
         ...payload,
-        restarts: Math.min(payload.restarts, 8),
-        serviceRefineIterations: Math.min(payload.serviceRefineIterations, 2),
-        serviceRefineCandidateLimit: Math.min(payload.serviceRefineCandidateLimit, 40),
-        serviceExactPoolLimit: Math.min(payload.serviceExactPoolLimit, 16),
-        serviceExactMaxCombinations: Math.min(payload.serviceExactMaxCombinations, 4000),
+        restarts: Math.min(payload.restarts, 4),
+        serviceRefineIterations: Math.min(payload.serviceRefineIterations, 1),
+        serviceRefineCandidateLimit: Math.min(payload.serviceRefineCandidateLimit, 24),
+        serviceExactPoolLimit: Math.min(payload.serviceExactPoolLimit, 8),
+        serviceExactMaxCombinations: Math.min(payload.serviceExactMaxCombinations, 512),
       };
     }
 

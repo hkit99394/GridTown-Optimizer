@@ -42,12 +42,12 @@ const DEFAULT_PARAMS = {
 
 const AUTO_GREEDY_PARAMS = {
   localSearch: true,
-  restarts: 8,
-  serviceRefineIterations: 2,
-  serviceRefineCandidateLimit: 40,
+  restarts: 4,
+  serviceRefineIterations: 1,
+  serviceRefineCandidateLimit: 24,
   exhaustiveServiceSearch: false,
-  serviceExactPoolLimit: 16,
-  serviceExactMaxCombinations: 4000,
+  serviceExactPoolLimit: 8,
+  serviceExactMaxCombinations: 512,
 };
 
 function readCliArgs(): string[] {

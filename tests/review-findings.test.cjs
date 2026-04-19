@@ -1651,12 +1651,12 @@ function testPlannerRequestBuilderUsesBoundedGreedyProfileForAuto() {
   const request = controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false });
   assert.equal(request.params.greedy.localSearch, true);
   assert.equal(request.params.greedy.randomSeed, 17);
-  assert.equal(request.params.greedy.restarts, 8);
-  assert.equal(request.params.greedy.serviceRefineIterations, 2);
-  assert.equal(request.params.greedy.serviceRefineCandidateLimit, 40);
+  assert.equal(request.params.greedy.restarts, 4);
+  assert.equal(request.params.greedy.serviceRefineIterations, 1);
+  assert.equal(request.params.greedy.serviceRefineCandidateLimit, 24);
   assert.equal(request.params.greedy.exhaustiveServiceSearch, false);
-  assert.equal(request.params.greedy.serviceExactPoolLimit, 16);
-  assert.equal(request.params.greedy.serviceExactMaxCombinations, 4000);
+  assert.equal(request.params.greedy.serviceExactPoolLimit, 8);
+  assert.equal(request.params.greedy.serviceExactMaxCombinations, 512);
 }
 
 function testPlannerSolveProgressLogCapturesSnapshotAndFinalResult() {

@@ -1,6 +1,14 @@
+import { describeAutoStopReason } from "./autoSolver.js";
 import { getOptimizerAdapter } from "./optimizerRegistry.js";
 import { SolveProgressLogWriter } from "./solveProgressLog.js";
-import type { BackgroundSolveHandle, Grid, OptimizerName, Solution, SolverParams } from "./types.js";
+import type {
+  BackgroundSolveHandle,
+  BackgroundSolveSnapshotState,
+  Grid,
+  OptimizerName,
+  Solution,
+  SolverParams,
+} from "./types.js";
 
 export type SolveJobStatus = "running" | "completed" | "stopped" | "failed";
 
@@ -35,10 +43,7 @@ export interface SolveJob {
   progressLogIntervalHandle: NodeJS.Timeout | null;
 }
 
-export interface SolveJobSnapshotState {
-  hasFeasibleSolution: boolean;
-  totalPopulation: number | null;
-}
+export type SolveJobSnapshotState = BackgroundSolveSnapshotState;
 
 export interface SolveJobStatusView {
   job: SolveJob;
@@ -48,6 +53,9 @@ export interface SolveJobStatusView {
 
 function buildRecoveredSolveMessage(job: SolveJob, error: unknown): string {
   const rawMessage = error instanceof Error ? error.message : "Unknown solver error.";
+  if (job.optimizer === "auto") {
+    return "Auto kept the best available incumbent from the most recent completed stage.";
+  }
   if (
     job.optimizer === "lns"
     && /No feasible solution found with CP-SAT\. Status: UNKNOWN\./.test(rawMessage)
@@ -58,6 +66,11 @@ function buildRecoveredSolveMessage(job: SolveJob, error: unknown): string {
     return "LNS kept the best available solution after a repair step ended early.";
   }
   return "Showing the best available solution captured before the solver stopped progressing.";
+}
+
+function buildCompletedSolveMessage(job: SolveJob, solution: Solution): string | null {
+  if (job.optimizer !== "auto") return null;
+  return describeAutoStopReason(solution.autoStage?.stopReason);
 }
 
 export class SolveJobManager {
@@ -118,7 +131,7 @@ export class SolveJobManager {
         const status = solution.stoppedByUser || job.cancelRequested ? "stopped" : "completed";
         const message = status === "stopped"
           ? "Solve was stopped by user. Showing the best feasible result found so far."
-          : null;
+          : buildCompletedSolveMessage(job, solution);
         this.finalizeJobWithSolution(job, solution, status, message);
       })
       .catch((error) => {
@@ -287,9 +300,11 @@ export class SolveJobManager {
       const shouldAppendImmediately = !lastEntry
         || !lastEntry.hasFeasibleSolution
         || lastEntry.totalPopulation !== snapshot.totalPopulation
+        || (lastEntry.activeOptimizer ?? null) !== (snapshot.activeOptimizer ?? null)
         || lastEntry.cpSatStatus !== (snapshot.cpSatStatus ?? null)
         || lastEntry.bestPopulationUpperBound !== bestPopulationUpperBound
-        || lastEntry.populationGapUpperBound !== populationGapUpperBound;
+        || lastEntry.populationGapUpperBound !== populationGapUpperBound
+        || JSON.stringify(lastEntry.autoStage ?? null) !== JSON.stringify(snapshot.autoStage ?? null);
 
       const shouldAppendHeartbeat = !shouldAppendImmediately
         && (!lastEntry || elapsedMs - lastEntry.elapsedMs >= this.progressLogIntervalMs);

@@ -11,6 +11,7 @@
     } = callbacks;
 
     function getOptimizerLabel(optimizer) {
+      if (optimizer === "auto") return "Auto";
       if (optimizer === "cp-sat") return "CP-SAT";
       if (optimizer === "lns") return "LNS";
       return "Greedy";

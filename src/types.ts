@@ -78,7 +78,47 @@ export interface ServiceTypeSetting {
   allowRotation?: boolean;
 }
 
-export type OptimizerName = "greedy" | "cp-sat" | "lns";
+export type OptimizerName = "auto" | "greedy" | "cp-sat" | "lns";
+
+export type AutoStageOptimizerName = Exclude<OptimizerName, "auto">;
+
+export type AutoSolveStopReason =
+  | "completed-plan"
+  | "weak-cycle-limit"
+  | "optimal"
+  | "cancelled"
+  | "wall-clock-cap";
+
+export interface AutoOptions {
+  /** Optional global wall-clock safety cap for the outer auto policy. Omit for no outer cap. */
+  wallClockLimitSeconds?: number;
+  /** Minimum combined improvement ratio for an LNS -> CP-SAT cycle to count as meaningful. Defaults to 0.5%. */
+  weakCycleImprovementThreshold?: number;
+  /** Stop after this many consecutive weak cycles. Defaults to 2. */
+  maxConsecutiveWeakCycles?: number;
+  /** Default CP-SAT stage runtime when auto is driving exact passes. Defaults to 30 seconds. */
+  cpSatStageTimeLimitSeconds?: number;
+  /** Default CP-SAT no-improvement cutoff when auto is driving exact passes. Defaults to 10 seconds. */
+  cpSatStageNoImprovementTimeoutSeconds?: number;
+}
+
+export interface AutoSolveGeneratedSeed {
+  stage: AutoStageOptimizerName;
+  stageIndex: number;
+  cycleIndex: number;
+  randomSeed: number;
+}
+
+export interface AutoSolveStageMetadata {
+  requestedOptimizer: "auto";
+  activeStage: AutoStageOptimizerName | null;
+  stageIndex: number;
+  cycleIndex: number;
+  consecutiveWeakCycles: number;
+  lastCycleImprovementRatio: number | null;
+  stopReason?: AutoSolveStopReason | null;
+  generatedSeeds: AutoSolveGeneratedSeed[];
+}
 
 /** Stable semantic key for a road cell in persisted snapshots: "r,c". */
 export type PersistedRoadKey = string;
@@ -296,6 +336,8 @@ export interface LnsOptions {
 export interface SolverParams {
   /** Optimizer backend. Defaults to greedy. */
   optimizer?: OptimizerName;
+  /** Auto-orchestration options, used when optimizer = "auto". */
+  auto?: AutoOptions;
   /** CP-SAT backend options, used when optimizer = "cp-sat". */
   cpSat?: CpSatOptions;
   /** Greedy-only tuning knobs. Ignored by the CP-SAT backend. */
@@ -345,6 +387,10 @@ export interface SolverParams {
 
 export interface Solution {
   optimizer?: OptimizerName;
+  /** Active inner stage when a meta-optimizer is orchestrating multiple backends. */
+  activeOptimizer?: AutoStageOptimizerName;
+  /** Metadata for staged auto solves. Omitted for single-stage runs. */
+  autoStage?: AutoSolveStageMetadata;
   /** True when the layout was manually edited and then revalidated outside a solver run. */
   manualLayout?: boolean;
   /** CP-SAT backend status such as OPTIMAL or FEASIBLE; omitted for non-CP-SAT solvers. */
@@ -375,6 +421,8 @@ export interface Solution {
 export interface BackgroundSolveSnapshotState {
   hasFeasibleSolution: boolean;
   totalPopulation: number | null;
+  activeOptimizer?: AutoStageOptimizerName | null;
+  autoStage?: AutoSolveStageMetadata | null;
   cpSatStatus?: string | null;
 }
 
@@ -400,6 +448,8 @@ export interface SolveRequestPayload {
 /** Solver summary returned by the local web server for display and persistence. */
 export interface SolveResponseStats {
   optimizer?: OptimizerName;
+  activeOptimizer?: AutoStageOptimizerName;
+  autoStage?: AutoSolveStageMetadata;
   manualLayout: boolean;
   cpSatStatus: string | null;
   stoppedByUser: boolean;
@@ -425,6 +475,8 @@ export interface SolveProgressLogEntry {
   elapsedMs: number;
   source: "live-snapshot" | "final-result";
   optimizer: OptimizerName | null;
+  activeOptimizer?: AutoStageOptimizerName | null;
+  autoStage?: AutoSolveStageMetadata | null;
   hasFeasibleSolution: boolean;
   totalPopulation: number | null;
   cpSatStatus: string | null;

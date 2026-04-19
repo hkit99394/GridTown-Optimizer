@@ -6,6 +6,7 @@
  * resolve the same adapter instead of branching independently.
  */
 
+import { solveAuto, startAutoSolve } from "./autoSolver.js";
 import { solveCpSat, startCpSatSolve } from "./cpSatSolver.js";
 import { startGreedySolve } from "./greedyBridge.js";
 import { startLnsSolve } from "./lnsBridge.js";
@@ -21,6 +22,11 @@ export interface OptimizerAdapter {
 }
 
 const optimizerAdapters: Record<OptimizerName, OptimizerAdapter> = {
+  auto: {
+    name: "auto",
+    solve: solveAuto,
+    startBackgroundSolve: startAutoSolve,
+  },
   greedy: {
     name: "greedy",
     solve: solveGreedy,
@@ -42,7 +48,7 @@ export function resolveOptimizerName(
   value: Pick<SolverParams, "optimizer"> | OptimizerName | null | undefined
 ): OptimizerName {
   const candidate = typeof value === "string" ? value : value?.optimizer;
-  if (candidate === "cp-sat" || candidate === "lns") return candidate;
+  if (candidate === "auto" || candidate === "cp-sat" || candidate === "lns") return candidate;
   return "greedy";
 }
 

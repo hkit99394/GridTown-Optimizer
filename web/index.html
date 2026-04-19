@@ -447,12 +447,31 @@
               </p>
 
               <div class="segmented segmented-wide" id="solverToggle">
+                <button type="button" data-optimizer="auto">Auto</button>
                 <button type="button" data-optimizer="greedy">Greedy</button>
                 <button type="button" data-optimizer="lns">LNS</button>
                 <button type="button" data-optimizer="cp-sat">CP-SAT</button>
               </div>
 
               <div class="solver-panels">
+                <section id="autoPanel" class="solver-panel">
+                  <div class="notice info">
+                    Auto runs the full incumbent-first policy: greedy seed, LNS repair, then bounded CP-SAT passes.
+                    The Greedy, LNS, and CP-SAT controls below act as the stage settings Auto will reuse.
+                  </div>
+                  <div class="form-grid">
+                    <label class="field">
+                      <span>Global cap (seconds, optional)</span>
+                      <input
+                        id="autoWallClockLimitSeconds"
+                        type="number"
+                        min="1"
+                        step="1"
+                        placeholder="Blank = unlimited"
+                      />
+                    </label>
+                  </div>
+                </section>
                 <section id="greedyPanel" class="solver-panel">
                   <div class="form-grid two-up">
                     <label class="check-field">

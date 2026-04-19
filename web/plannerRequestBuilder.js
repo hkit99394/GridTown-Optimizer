@@ -130,16 +130,17 @@
       const sourceLabel = getDisplayedLayoutSourceLabel();
       const population = Number(checkpoint.incumbent?.objective?.value ?? 0).toLocaleString();
       let message = `Using ${sourceLabel} as the default ${defaultLabel}. Best population ${population}.`;
+      const optimizerUsesContinuation = state.optimizer === activeOptimizer || state.optimizer === "auto";
 
       try {
         const currentFingerprint = buildCurrentModelFingerprint(previewRequestOptions);
-        if (state.optimizer !== activeOptimizer) {
+        if (!optimizerUsesContinuation) {
           message = `${sourceLabel} is ready as the default ${readyLabel}. Switch to ${activeOptimizer === "cp-sat" ? "CP-SAT" : "LNS"} to use it.`;
         } else if (currentFingerprint !== checkpoint.compatibility.modelFingerprint) {
           message = `${sourceLabel} is displayed, but the current grid or building settings no longer match it for ${mismatchLabel}.`;
         }
       } catch {
-        if (state.optimizer !== activeOptimizer) {
+        if (!optimizerUsesContinuation) {
           message = `${sourceLabel} is ready as the default ${readyLabel}. Switch to ${activeOptimizer === "cp-sat" ? "CP-SAT" : "LNS"} to use it.`;
         } else {
           message = `${sourceLabel} is displayed. Finish the current inputs to use it as a ${defaultLabel}.`;
@@ -188,7 +189,7 @@
         hintMismatch,
         mismatchMessage,
       } = options;
-      if (params.optimizer !== optimizer || !enabled) return undefined;
+      if ((params.optimizer !== optimizer && params.optimizer !== "auto") || !enabled) return undefined;
 
       const checkpoint = getDisplayedLayoutCheckpoint();
       if (!checkpoint) return undefined;
@@ -246,6 +247,7 @@
 
     function buildSolveRequest(options = {}) {
       const { hintMismatch = "error", includeWarmStartHint = true, includeLnsSeed = true } = options;
+      const autoWallClockLimitSeconds = readOptionalInteger(state.auto?.wallClockLimitSeconds ?? "", 1);
       const timeLimitSeconds = readOptionalInteger(state.cpSat.timeLimitSeconds, 1);
       const noImprovementTimeoutSeconds = readOptionalInteger(state.cpSat.noImprovementTimeoutSeconds, 1);
       const cpSatRandomSeed = readOptionalInteger(state.cpSat.randomSeed, 0);
@@ -284,6 +286,13 @@
           repairTimeLimitSeconds: clampInteger(state.lns.repairTimeLimitSeconds, 5, 1),
           useDisplayedSeed: Boolean(state.lns.useDisplayedSeed),
         },
+        ...(autoWallClockLimitSeconds !== undefined
+          ? {
+              auto: {
+                wallClockLimitSeconds: autoWallClockLimitSeconds,
+              },
+            }
+          : {}),
       };
 
       const maxServices = readOptionalInteger(state.availableBuildings.services, 1);
@@ -294,14 +303,14 @@
         if (maxResidentials !== undefined) params.availableBuildings.residentials = maxResidentials;
       }
 
-      if (includeWarmStartHint && params.optimizer === "cp-sat") {
+      if (includeWarmStartHint && (params.optimizer === "cp-sat" || params.optimizer === "auto")) {
         const warmStartHint = buildCpSatWarmStartHintPayload(grid, params, hintMismatch);
         if (warmStartHint) {
           params.cpSat.warmStartHint = warmStartHint;
         }
       }
 
-      if (includeLnsSeed && params.optimizer === "lns") {
+      if (includeLnsSeed && (params.optimizer === "lns" || params.optimizer === "auto")) {
         const seedHint = buildLnsSeedPayload(grid, params, hintMismatch);
         if (seedHint) {
           params.lns.seedHint = seedHint;

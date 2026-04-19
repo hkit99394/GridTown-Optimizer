@@ -490,6 +490,89 @@ async function testBackgroundSolveRoutes(handler) {
   assert.equal(persistedLog.entries[persistedLog.entries.length - 1].source, "final-result");
 }
 
+async function testSolveStatusIncludesAutoStageMetadata(handler) {
+  const solvePayload = buildTinySolvePayload();
+  const backgroundSolution = {
+    ...solve(solvePayload.grid, solvePayload.params),
+    optimizer: "auto",
+    activeOptimizer: "lns",
+    autoStage: {
+      requestedOptimizer: "auto",
+      activeStage: "lns",
+      stageIndex: 2,
+      cycleIndex: 1,
+      consecutiveWeakCycles: 0,
+      lastCycleImprovementRatio: null,
+      stopReason: null,
+      generatedSeeds: [
+        { stage: "greedy", stageIndex: 1, cycleIndex: 0, randomSeed: 11 },
+        { stage: "lns", stageIndex: 2, cycleIndex: 1, randomSeed: 13 },
+      ],
+    },
+  };
+  const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+  const handlePromiseDeferred = createDeferred();
+
+  optimizerRegistry.getOptimizerAdapter = () => ({
+    name: "auto",
+    solve() {
+      throw new Error("Status route test should use the background adapter.");
+    },
+    startBackgroundSolve() {
+      return {
+        promise: handlePromiseDeferred.promise,
+        cancel() {},
+        getLatestSnapshot() {
+          return backgroundSolution;
+        },
+        getLatestSnapshotState() {
+          return {
+            hasFeasibleSolution: true,
+            totalPopulation: backgroundSolution.totalPopulation,
+            activeOptimizer: backgroundSolution.activeOptimizer,
+            autoStage: backgroundSolution.autoStage,
+            cpSatStatus: null,
+          };
+        },
+      };
+    },
+  });
+
+  try {
+    const requestId = "route-test-auto-status";
+    const startResult = await invoke(handler, {
+      method: "POST",
+      url: "/api/solve/start",
+      json: {
+        ...solvePayload,
+        params: {
+          ...solvePayload.params,
+          optimizer: "auto",
+        },
+        requestId,
+      },
+    });
+
+    assert.equal(startResult.statusCode, 202);
+    assert.equal(startResult.payload.optimizer, "auto");
+
+    const statusResult = await invoke(handler, {
+      method: "GET",
+      url: `/api/solve/status?${new URLSearchParams({ requestId }).toString()}`,
+    });
+
+    assert.equal(statusResult.statusCode, 200);
+    assert.equal(statusResult.payload.activeOptimizer, "lns");
+    assert.equal(statusResult.payload.autoStage.stageIndex, 2);
+    assert.equal(statusResult.payload.autoStage.generatedSeeds.length, 2);
+
+    handlePromiseDeferred.resolve(backgroundSolution);
+    await waitForSolve(handler, requestId);
+  } finally {
+    optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
+  }
+}
+
 async function testStartSolveRejectsInvalidLnsSeedHint(handler) {
   const solvePayload = buildTinySolvePayload();
   const result = await invoke(handler, {
@@ -590,6 +673,7 @@ async function main() {
   await testLayoutEvaluateRoute(handler);
   await testLayoutEvaluateRejectsMalformedSerializedSolutions(handler);
   await testBackgroundSolveRoutes(handler);
+  await testSolveStatusIncludesAutoStageMetadata(handler);
   await testStartSolveRejectsInvalidLnsSeedHint(handler);
   await testCancelMissingSolveRoute(handler);
   await testCompletedSolveJobsExpire();

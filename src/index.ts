@@ -3,6 +3,7 @@
  */
 
 export { solve, solveAsync } from "./solve.js";
+export { describeAutoStopReason, solveAuto, startAutoSolve } from "./autoSolver.js";
 export { solveGreedy } from "./solver.js";
 export { solveCpSat, solveCpSatAsync, startCpSatSolve } from "./cpSatSolver.js";
 export { solveLns } from "./lnsSolver.js";
@@ -23,6 +24,11 @@ export type {
   BackgroundSolveHandle,
   BackgroundSolveSnapshotState,
   OptimizerName,
+  AutoOptions,
+  AutoStageOptimizerName,
+  AutoSolveStopReason,
+  AutoSolveGeneratedSeed,
+  AutoSolveStageMetadata,
   CpSatOptions,
   CpSatObjectivePolicy,
   CpSatTelemetry,

@@ -5,10 +5,15 @@
     return Math.max(0, Math.round(numericValue));
   }
 
+  function readAutoStage(payload) {
+    return payload?.solution?.autoStage ?? payload?.stats?.autoStage ?? payload?.autoStage ?? null;
+  }
+
   function buildSolveProgressLogEntry(payload, options = {}) {
     if (!payload?.solution && typeof payload?.bestTotalPopulation !== "number") return null;
 
     const telemetry = payload?.solution?.cpSatTelemetry ?? null;
+    const autoStage = readAutoStage(payload);
     const totalPopulation =
       typeof payload?.stats?.totalPopulation === "number"
         ? payload.stats.totalPopulation
@@ -25,6 +30,17 @@
       elapsedMs: normalizeProgressElapsedMs(options.elapsedMs),
       source: options.source === "final-result" ? "final-result" : "live-snapshot",
       optimizer: payload?.stats?.optimizer ?? payload?.solution?.optimizer ?? payload?.optimizer ?? options.fallbackOptimizer ?? null,
+      ...(
+        (payload?.stats?.activeOptimizer ?? payload?.solution?.activeOptimizer ?? payload?.activeOptimizer)
+          ? {
+              activeOptimizer:
+                payload?.stats?.activeOptimizer
+                ?? payload?.solution?.activeOptimizer
+                ?? payload?.activeOptimizer,
+            }
+          : {}
+      ),
+      ...(autoStage ? { autoStage } : {}),
       hasFeasibleSolution: true,
       totalPopulation,
       cpSatStatus: payload?.solution?.cpSatStatus ?? payload?.stats?.cpSatStatus ?? null,
@@ -53,6 +69,7 @@
       && lastEntry.elapsedMs === entry.elapsedMs
       && lastEntry.source === entry.source
       && lastEntry.optimizer === entry.optimizer
+      && lastEntry.activeOptimizer === entry.activeOptimizer
       && lastEntry.hasFeasibleSolution === entry.hasFeasibleSolution
       && lastEntry.totalPopulation === entry.totalPopulation
       && lastEntry.cpSatStatus === entry.cpSatStatus
@@ -61,6 +78,7 @@
       && lastEntry.solveWallTimeSeconds === entry.solveWallTimeSeconds
       && lastEntry.lastImprovementAtSeconds === entry.lastImprovementAtSeconds
       && lastEntry.secondsSinceLastImprovement === entry.secondsSinceLastImprovement
+      && JSON.stringify(lastEntry.autoStage ?? null) === JSON.stringify(entry.autoStage ?? null)
     ) {
       nextEntries[nextEntries.length - 1] = entry;
       return nextEntries;
@@ -172,6 +190,8 @@
     function buildSolveProgressMessage(payload) {
       const optimizer = payload.optimizer || state.optimizer;
       const optimizerLabel = getOptimizerLabel(optimizer);
+      const autoStage = readAutoStage(payload);
+      const activeOptimizer = payload.activeOptimizer || payload.solution?.activeOptimizer || payload.stats?.activeOptimizer || null;
       const bestLabel =
         typeof payload.bestTotalPopulation === "number"
           ? ` Best so far: ${Number(payload.bestTotalPopulation).toLocaleString()}.`
@@ -179,6 +199,9 @@
 
       if (state.isStopping) {
         if (payload.hasFeasibleSolution) {
+          if (optimizer === "auto") {
+            return `Stop requested. Finalizing Auto${activeOptimizer ? ` (${getOptimizerLabel(activeOptimizer)})` : ""}.${bestLabel}`;
+          }
           return optimizer === "cp-sat"
             ? `Stop requested. Finalizing the best feasible ${optimizerLabel} result.${bestLabel}`
             : optimizer === "lns"
@@ -189,6 +212,14 @@
       }
 
       if (payload.hasFeasibleSolution) {
+        if (optimizer === "auto") {
+          const cycleLabel = autoStage?.cycleIndex > 0 ? `Cycle ${autoStage.cycleIndex}. ` : "";
+          const weakCycleLabel =
+            typeof autoStage?.consecutiveWeakCycles === "number"
+              ? `Weak cycles: ${autoStage.consecutiveWeakCycles}. `
+              : "";
+          return `Running ${optimizerLabel} solver. ${cycleLabel}${activeOptimizer ? `${getOptimizerLabel(activeOptimizer)} stage is active. ` : ""}${weakCycleLabel}${bestLabel.trim()}`.trim();
+        }
         return optimizer === "cp-sat"
           ? `Running ${optimizerLabel} solver. Feasible solution found and still improving.${bestLabel}`
           : optimizer === "lns"
@@ -202,6 +233,9 @@
 
       if (optimizer === "cp-sat") {
         return `Running ${optimizerLabel} solver. Searching for the first feasible solution...`;
+      }
+      if (optimizer === "auto") {
+        return "Running Auto solver. Starting the greedy seed stage...";
       }
       if (optimizer === "lns") {
         return state.lns.useDisplayedSeed && getDisplayedLayoutCheckpoint()
@@ -337,6 +371,8 @@
           setSolveState(
             `${state.lns.useDisplayedSeed && getDisplayedLayoutCheckpoint() ? "Running LNS from the displayed seed" : "Running LNS from a greedy seed"} with ${request.params.lns.iterations} neighborhood repairs and a ${request.params.lns.repairTimeLimitSeconds}s repair cap...`
           );
+        } else if (state.optimizer === "auto") {
+          setSolveState("Running Auto solver. Greedy seed, LNS repair, and bounded CP-SAT passes will be orchestrated automatically...");
         } else {
           setSolveState("Running greedy solver...");
         }
@@ -380,7 +416,9 @@
             ? payload.message
             : stoppedByUser
               ? `Stopped early. Showing the best ${getOptimizerLabel(payload.stats.optimizer)} result found${payload.stats.cpSatStatus ? ` (${payload.stats.cpSatStatus})` : ""}.`
-              : `Solved with ${getOptimizerLabel(payload.stats.optimizer)}${payload.stats.cpSatStatus ? ` (${payload.stats.cpSatStatus})` : ""}.`
+              : payload.stats.optimizer === "auto"
+                ? `Solved with Auto${payload.stats.activeOptimizer ? ` (final ${getOptimizerLabel(payload.stats.activeOptimizer)} stage)` : ""}.`
+                : `Solved with ${getOptimizerLabel(payload.stats.optimizer)}${payload.stats.cpSatStatus ? ` (${payload.stats.cpSatStatus})` : ""}.`
         );
       } catch (error) {
         state.result = null;

@@ -36,6 +36,8 @@ function buildSolveJobResponseBase(job: {
 function buildCancelRequestedMessage(optimizer: string): string {
   return optimizer === "cp-sat"
     ? "Stop requested. Finalizing the current CP-SAT run and preserving the best feasible solution found so far."
+    : optimizer === "auto"
+      ? "Stop requested. Finalizing the current auto stage and preserving the best incumbent found so far."
     : optimizer === "lns"
       ? "Stop requested. Finalizing the current LNS run and preserving the best solution found so far."
       : "Stop requested. Finalizing the current greedy run and preserving the best result found so far.";
@@ -209,6 +211,8 @@ export function handleSolveStatus(
       ...buildSolveJobResponseBase(job),
       hasFeasibleSolution: snapshotState.hasFeasibleSolution,
       bestTotalPopulation: snapshotState.totalPopulation,
+      activeOptimizer: snapshotState.activeOptimizer ?? null,
+      autoStage: snapshotState.autoStage ?? null,
       liveSnapshot: true,
       ...(job.message ? { message: job.message } : {}),
       ...buildSolveResponse(job.grid, job.params, liveSnapshot),
@@ -220,6 +224,8 @@ export function handleSolveStatus(
     ...buildSolveJobResponseBase(job),
     hasFeasibleSolution: snapshotState.hasFeasibleSolution,
     bestTotalPopulation: snapshotState.totalPopulation,
+    activeOptimizer: snapshotState.activeOptimizer ?? null,
+    autoStage: snapshotState.autoStage ?? null,
   }, method === "HEAD");
   return true;
 }

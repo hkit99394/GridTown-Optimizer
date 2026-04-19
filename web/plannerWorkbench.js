@@ -29,7 +29,7 @@
     } = callbacks;
 
     function applySolveRequestToPlanner(request, options = {}) {
-      const { preserveCpSatRuntime = true, optimizer = "cp-sat" } = options;
+      const { preserveCpSatRuntime = true, optimizer = "auto" } = options;
       if (!isGridLike(request?.grid) || typeof request?.params !== "object" || request.params == null) {
         throw new Error("That saved layout does not include a usable planner configuration.");
       }
@@ -62,6 +62,10 @@
           ...params.lns,
         };
       }
+      state.auto = {
+        ...(state.auto ?? { wallClockLimitSeconds: "" }),
+        wallClockLimitSeconds: params.auto?.wallClockLimitSeconds != null ? String(params.auto.wallClockLimitSeconds) : "",
+      };
 
       if (!preserveCpSatRuntime && params.cpSat) {
         state.cpSat = {
@@ -105,12 +109,16 @@
 
     function setOptimizer(optimizer) {
       state.optimizer = normalizeOptimizer(optimizer);
+      const showAutoPanels = state.optimizer === "auto";
       for (const button of elements.solverToggle.querySelectorAll("button")) {
         button.classList.toggle("active", button.dataset.optimizer === state.optimizer);
       }
-      elements.greedyPanel.hidden = state.optimizer !== "greedy";
-      elements.lnsPanel.hidden = state.optimizer !== "lns";
-      elements.cpSatPanel.hidden = state.optimizer !== "cp-sat";
+      if (elements.autoPanel) {
+        elements.autoPanel.hidden = !showAutoPanels;
+      }
+      elements.greedyPanel.hidden = !showAutoPanels && state.optimizer !== "greedy";
+      elements.lnsPanel.hidden = !showAutoPanels && state.optimizer !== "lns";
+      elements.cpSatPanel.hidden = !showAutoPanels && state.optimizer !== "cp-sat";
       syncSolverFields();
       updateSummary();
     }
@@ -321,6 +329,10 @@
     }
 
     function syncSolverFields() {
+      if (elements.autoWallClockLimitSeconds) {
+        elements.autoWallClockLimitSeconds.value = state.auto?.wallClockLimitSeconds ?? "";
+      }
+
       elements.greedyLocalSearch.checked = state.greedy.localSearch;
       elements.greedyRandomSeed.value = state.greedy.randomSeed === "" ? "" : String(state.greedy.randomSeed ?? "");
       elements.greedyRestarts.value = String(state.greedy.restarts);

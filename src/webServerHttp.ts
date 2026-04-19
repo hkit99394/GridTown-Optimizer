@@ -127,6 +127,8 @@ export function buildSolveResponse(grid: Grid, params: SolverParams, solution: S
     },
     stats: {
       optimizer: solution.optimizer,
+      activeOptimizer: solution.activeOptimizer,
+      autoStage: solution.autoStage,
       manualLayout: Boolean(solution.manualLayout),
       cpSatStatus: solution.cpSatStatus ?? null,
       stoppedByUser: Boolean(solution.stoppedByUser),
@@ -166,6 +168,8 @@ export function buildManualLayoutResponse(grid: Grid, params: SolverParams, solu
     },
     stats: {
       optimizer: normalizedSolution.optimizer,
+      activeOptimizer: normalizedSolution.activeOptimizer,
+      autoStage: normalizedSolution.autoStage,
       manualLayout: Boolean(normalizedSolution.manualLayout),
       cpSatStatus: normalizedSolution.cpSatStatus ?? null,
       stoppedByUser: Boolean(normalizedSolution.stoppedByUser),

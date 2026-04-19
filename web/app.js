@@ -114,7 +114,7 @@ const { createPlannerWorkbenchController } = plannerModules.workbench;
 const state = {
   grid: cloneGrid(SAMPLE_GRID),
   paintMode: "toggle",
-  optimizer: "greedy",
+  optimizer: "auto",
   serviceTypes: DEFAULT_SERVICE_TYPES.map((entry) => ({ ...entry })),
   residentialTypes: DEFAULT_RESIDENTIAL_TYPES.map((entry) => ({ ...entry })),
   availableBuildings: {
@@ -147,6 +147,9 @@ const state = {
     neighborhoodCols: 8,
     repairTimeLimitSeconds: 5,
     useDisplayedSeed: true,
+  },
+  auto: {
+    wallClockLimitSeconds: "",
   },
   isPainting: false,
   isSolving: false,
@@ -190,6 +193,8 @@ const elements = {
   solverToggle: document.querySelector("#solverToggle"),
   runtimePresetButtons: document.querySelector("#runtimePresetButtons"),
   runtimePresetStatus: document.querySelector("#runtimePresetStatus"),
+  autoPanel: document.querySelector("#autoPanel"),
+  autoWallClockLimitSeconds: document.querySelector("#autoWallClockLimitSeconds"),
   greedyPanel: document.querySelector("#greedyPanel"),
   lnsPanel: document.querySelector("#lnsPanel"),
   cpSatPanel: document.querySelector("#cpSatPanel"),
@@ -633,6 +638,13 @@ function init() {
     state.lns.useDisplayedSeed = elements.lnsUseDisplayedSeed.checked;
     requestBuilderController.updatePayloadPreview();
   });
+
+  if (elements.autoWallClockLimitSeconds) {
+    elements.autoWallClockLimitSeconds.addEventListener("input", () => {
+      state.auto.wallClockLimitSeconds = elements.autoWallClockLimitSeconds.value;
+      requestBuilderController.updatePayloadPreview();
+    });
+  }
 
   const cpSatBindings = [
     ["cpSatTimeLimitSeconds", "timeLimitSeconds", "number"],

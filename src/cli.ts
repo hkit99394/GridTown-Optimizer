@@ -4,7 +4,7 @@
 
 import type { Grid, OptimizerName } from "./types.js";
 import { normalizeServicePlacement } from "./buildings.js";
-import { formatSolutionMap, solveAsync, validateSolutionMap } from "./index.js";
+import { describeAutoStopReason, formatSolutionMap, solveAsync, startAutoSolve, validateSolutionMap } from "./index.js";
 
 const DEFAULT_PARAMS = {
   serviceTypes: [
@@ -45,11 +45,12 @@ function readCliArgs(): string[] {
 function readCliOptimizer(): OptimizerName {
   const value = readCliArgs().find((arg) => {
     const trimmed = arg.trim();
-    return trimmed === "greedy" || trimmed === "lns" || trimmed === "cp-sat";
+    return trimmed === "auto" || trimmed === "greedy" || trimmed === "lns" || trimmed === "cp-sat";
   });
+  if (value === "auto") return "auto";
   if (value === "cp-sat") return "cp-sat";
   if (value === "lns") return "lns";
-  return "greedy";
+  return "auto";
 }
 
 function readCliGreedyRandomSeed(): number | undefined {
@@ -94,40 +95,85 @@ async function runExample(): Promise<void> {
       ...(greedyRandomSeed !== undefined ? { randomSeed: greedyRandomSeed } : {}),
     },
   };
-  const solution = await solveAsync(
-    grid,
-    params,
-    optimizer === "cp-sat"
-      ? {
-          onProgress: (update) => {
-            if (update.kind === "portfolio-worker-complete" && update.worker) {
-              console.log(
-                "[CP-SAT progress]",
-                `worker=${update.worker.workerIndex}`,
-                `status=${update.worker.status}`,
-                `population=${update.worker.totalPopulation ?? "n/a"}`
-              );
-              return;
-            }
-            if (!update.telemetry) {
-              return;
-            }
-            console.log(
-              "[CP-SAT progress]",
-              `kind=${update.kind}`,
-              `wall=${update.telemetry.solveWallTimeSeconds.toFixed(3)}s`,
-              `pop=${update.telemetry.incumbentPopulation ?? "n/a"}`,
-              `bound=${update.telemetry.bestPopulationUpperBound ?? "n/a"}`,
-              `gap=${update.telemetry.populationGapUpperBound ?? "n/a"}`
-            );
-          },
+  const solution = optimizer === "auto"
+    ? await (async () => {
+        const handle = startAutoSolve(grid, params);
+        let lastStage = "";
+        let lastStageIndex = -1;
+        let lastCycleIndex = -1;
+        const progressTicker = setInterval(() => {
+          const snapshot = handle.getLatestSnapshot();
+          const autoStage = snapshot?.autoStage;
+          const activeStage = snapshot?.activeOptimizer;
+          if (!snapshot || !autoStage || !activeStage) return;
+          if (autoStage.stageIndex === lastStageIndex && autoStage.cycleIndex === lastCycleIndex && activeStage === lastStage) {
+            return;
+          }
+          lastStage = activeStage;
+          lastStageIndex = autoStage.stageIndex;
+          lastCycleIndex = autoStage.cycleIndex;
+          const cycleLabel = autoStage.cycleIndex > 0 ? `cycle=${autoStage.cycleIndex}` : "initial";
+          const generatedSeed = autoStage.generatedSeeds[autoStage.generatedSeeds.length - 1]?.randomSeed;
+          console.log(
+            "[AUTO progress]",
+            `stage=${autoStage.stageIndex}`,
+            cycleLabel,
+            `optimizer=${activeStage}`,
+            `seed=${generatedSeed ?? "n/a"}`,
+            `best=${snapshot.totalPopulation}`
+          );
+        }, 500);
+        progressTicker.unref?.();
+        try {
+          return await handle.promise;
+        } finally {
+          clearInterval(progressTicker);
         }
-      : undefined
-  );
+      })()
+    : await solveAsync(
+        grid,
+        params,
+        optimizer === "cp-sat"
+          ? {
+              onProgress: (update) => {
+                if (update.kind === "portfolio-worker-complete" && update.worker) {
+                  console.log(
+                    "[CP-SAT progress]",
+                    `worker=${update.worker.workerIndex}`,
+                    `status=${update.worker.status}`,
+                    `population=${update.worker.totalPopulation ?? "n/a"}`
+                  );
+                  return;
+                }
+                if (!update.telemetry) {
+                  return;
+                }
+                console.log(
+                  "[CP-SAT progress]",
+                  `kind=${update.kind}`,
+                  `wall=${update.telemetry.solveWallTimeSeconds.toFixed(3)}s`,
+                  `pop=${update.telemetry.incumbentPopulation ?? "n/a"}`,
+                  `bound=${update.telemetry.bestPopulationUpperBound ?? "n/a"}`,
+                  `gap=${update.telemetry.populationGapUpperBound ?? "n/a"}`
+                );
+              },
+            }
+          : undefined
+      );
   const validation = validateSolutionMap({ grid, solution, params });
 
   console.log("=== City Builder Solution ===\n");
   console.log("Optimizer:", solution.optimizer ?? optimizer);
+  if (solution.activeOptimizer) console.log("Active stage:", solution.activeOptimizer);
+  if (solution.autoStage?.generatedSeeds.length) {
+    console.log(
+      "Auto seeds:",
+      solution.autoStage.generatedSeeds.map((seed) => `${seed.stage}@${seed.stageIndex}:${seed.randomSeed}`).join(", ")
+    );
+  }
+  if (solution.autoStage?.stopReason) {
+    console.log("Auto stop reason:", describeAutoStopReason(solution.autoStage.stopReason) ?? solution.autoStage.stopReason);
+  }
   if (params.greedy.randomSeed !== undefined) console.log("Greedy random seed:", params.greedy.randomSeed);
   if (solution.cpSatStatus) console.log("CP-SAT status:", solution.cpSatStatus);
   if (solution.cpSatObjectivePolicy) console.log("CP-SAT objective:", solution.cpSatObjectivePolicy.summary);

@@ -718,6 +718,21 @@
         const sourceLabel = entry.source === "final-result" ? "Final" : "Snapshot";
         const optimizerLabel = entry.optimizer ? getOptimizerLabel(entry.optimizer) : "Solver";
         parts.push(`${sourceLabel} ${optimizerLabel}`);
+        if (entry.optimizer === "auto" && entry.activeOptimizer) {
+          parts.push(`stage ${getOptimizerLabel(entry.activeOptimizer)}`);
+        }
+        if (entry.autoStage?.cycleIndex > 0) {
+          parts.push(`cycle ${entry.autoStage.cycleIndex}`);
+        }
+        if (entry.autoStage?.generatedSeeds?.length) {
+          const lastSeed = entry.autoStage.generatedSeeds[entry.autoStage.generatedSeeds.length - 1];
+          if (lastSeed?.randomSeed != null) {
+            parts.push(`seed ${lastSeed.randomSeed}`);
+          }
+        }
+        if (entry.autoStage?.stopReason) {
+          parts.push(`stop ${entry.autoStage.stopReason}`);
+        }
         if (typeof entry.totalPopulation === "number") {
           parts.push(`${Number(entry.totalPopulation).toLocaleString()} population`);
         }
@@ -1057,14 +1072,18 @@
       elements.resultResidentialCount.textContent = String(stats.residentialCount);
       elements.resultElapsed.textContent = formatElapsedTime(state.resultElapsedMs);
       const cpSatSeedStatus = manualLayout ? "" : formatCpSatSeedStatus(solution);
+      const autoStageStatus =
+        stats.optimizer === "auto" && stats.activeOptimizer
+          ? `Auto -> ${getOptimizerLabel(stats.activeOptimizer)}`
+          : null;
       elements.resultSolverStatus.textContent = manualLayout
         ? "manual edit"
         : liveSnapshot
-          ? `${stats.cpSatStatus || getOptimizerLabel(stats.optimizer)} (live)${cpSatSeedStatus}`
+          ? `${autoStageStatus || stats.cpSatStatus || getOptimizerLabel(stats.optimizer)} (live)${cpSatSeedStatus}`
           : (
             stoppedByUser && stats.cpSatStatus
               ? `${stats.cpSatStatus} (stopped)${cpSatSeedStatus}`
-              : `${stats.cpSatStatus || (stats.optimizer ?? "n/a")}${cpSatSeedStatus}`
+              : `${stats.cpSatStatus || autoStageStatus || (stats.optimizer ?? "n/a")}${cpSatSeedStatus}`
           );
 
       elements.serviceResultList.innerHTML = "";

@@ -7,7 +7,7 @@ import type { Grid, OptimizerName, SerializedSolution, Solution, SolveProgressLo
 type PersistedSolveStatus = "running" | "completed" | "stopped" | "failed";
 
 interface SolveProgressLogDocument {
-  version: 1;
+  version: 2;
   requestId: string;
   optimizer: OptimizerName;
   createdAt: string;
@@ -175,6 +175,8 @@ function buildProgressEntry(
     elapsedMs,
     source: options.source,
     optimizer: solution.optimizer ?? optimizer,
+    ...(solution.activeOptimizer ? { activeOptimizer: solution.activeOptimizer } : {}),
+    ...(solution.autoStage ? { autoStage: solution.autoStage } : {}),
     hasFeasibleSolution: true,
     totalPopulation: typeof solution.totalPopulation === "number" ? solution.totalPopulation : null,
     cpSatStatus: solution.cpSatStatus ?? null,
@@ -194,6 +196,7 @@ function entriesMatch(left: SolveProgressLogEntry | undefined, right: SolveProgr
   return left.elapsedMs === right.elapsedMs
     && left.source === right.source
     && left.optimizer === right.optimizer
+    && (left.activeOptimizer ?? null) === (right.activeOptimizer ?? null)
     && left.hasFeasibleSolution === right.hasFeasibleSolution
     && left.totalPopulation === right.totalPopulation
     && left.cpSatStatus === right.cpSatStatus
@@ -202,6 +205,7 @@ function entriesMatch(left: SolveProgressLogEntry | undefined, right: SolveProgr
     && left.solveWallTimeSeconds === right.solveWallTimeSeconds
     && left.lastImprovementAtSeconds === right.lastImprovementAtSeconds
     && left.secondsSinceLastImprovement === right.secondsSinceLastImprovement
+    && JSON.stringify(left.autoStage ?? null) === JSON.stringify(right.autoStage ?? null)
     && (left.note ?? null) === (right.note ?? null);
 }
 
@@ -221,7 +225,7 @@ export class SolveProgressLogWriter {
     this.filePath = join(rootDirectory, `${timestamp}-${safeRequestId}.json`);
     this.optimizer = options.optimizer;
     this.document = {
-      version: 1,
+      version: 2,
       requestId: options.requestId,
       optimizer: options.optimizer,
       createdAt: new Date(options.createdAtMs).toISOString(),

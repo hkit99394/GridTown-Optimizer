@@ -26,7 +26,7 @@ export function isSolverInputErrorMessage(message: string): boolean {
 }
 
 function resolveOptimizerName(params: Pick<SolverParams, "optimizer"> | null | undefined): SolverParams["optimizer"] | "greedy" {
-  if (params?.optimizer === "cp-sat" || params?.optimizer === "lns") return params.optimizer;
+  if (params?.optimizer === "auto" || params?.optimizer === "cp-sat" || params?.optimizer === "lns") return params.optimizer;
   return "greedy";
 }
 
@@ -186,6 +186,7 @@ export function materializeValidLnsSeedSolution(
 }
 
 export function assertValidSolveInputs(G: Grid, params: SolverParams): void {
-  if (resolveOptimizerName(params) !== "lns") return;
+  const optimizer = resolveOptimizerName(params);
+  if (optimizer !== "lns" && optimizer !== "auto") return;
   materializeValidLnsSeedSolution(G, params, params.lns?.seedHint);
 }

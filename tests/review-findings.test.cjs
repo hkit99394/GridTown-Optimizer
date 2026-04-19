@@ -6,7 +6,7 @@ const vm = require("node:vm");
 
 const { solve } = require("../dist/index.js");
 const { evaluateLayout } = require("../dist/evaluator.js");
-const { buildManualLayoutResponse } = require("../dist/webServerHttp.js");
+const { buildManualLayoutResponse, buildSolveResponse } = require("../dist/webServerHttp.js");
 const { SolveProgressLogWriter } = require("../dist/solveProgressLog.js");
 
 function createFakeDomElement(overrides = {}) {
@@ -1393,6 +1393,184 @@ function testPlannerRequestBuilderSkipsLegacyDisplayedLayoutContinuationWithoutV
   assert.equal(lnsRequest.params.lns.seedHint, undefined);
 }
 
+function testPlannerRequestBuilderIncludesHintAndSeedForAuto() {
+  const plannerShared = loadPlannerSharedModule();
+  const plannerRequestBuilder = loadPlannerRequestBuilderModule();
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+  ];
+  const params = {
+    optimizer: "auto",
+    serviceTypes: [],
+    residentialTypes: [{ name: "Residential 1", w: 2, h: 2, min: 10, max: 10, avail: 1 }],
+    availableBuildings: { residentials: 1, services: 1 },
+    cpSat: {},
+    lns: {},
+  };
+  const validResult = buildSolveResponse(grid, { ...params, optimizer: "greedy" }, solve(grid, { ...params, optimizer: "greedy" }));
+
+  const state = {
+    optimizer: "auto",
+    grid,
+    serviceTypes: [],
+    residentialTypes: [
+      plannerShared.serializeResidentialTypeForCatalog({ w: 2, h: 2, min: 10, max: 10, avail: 1 }),
+    ],
+    availableBuildings: {
+      services: "1",
+      residentials: "1",
+    },
+    greedy: {
+      localSearch: false,
+      randomSeed: "",
+      restarts: 1,
+      serviceRefineIterations: 0,
+      serviceRefineCandidateLimit: 1,
+      exhaustiveServiceSearch: false,
+      serviceExactPoolLimit: 1,
+      serviceExactMaxCombinations: 1,
+    },
+    cpSat: {
+      timeLimitSeconds: "",
+      noImprovementTimeoutSeconds: "",
+      randomSeed: "",
+      numWorkers: 8,
+      logSearchProgress: false,
+      pythonExecutable: "",
+      useDisplayedHint: true,
+    },
+    lns: {
+      iterations: 1,
+      maxNoImprovementIterations: 1,
+      neighborhoodRows: 2,
+      neighborhoodCols: 2,
+      repairTimeLimitSeconds: 1,
+      useDisplayedSeed: true,
+    },
+    result: validResult,
+    resultContext: { grid, params },
+    resultElapsedMs: 0,
+  };
+  const elements = {
+    cpSatRandomSeed: { value: "" },
+    cpSatHintStatus: { textContent: "" },
+    lnsSeedStatus: { textContent: "" },
+    payloadPreview: { textContent: "" },
+    layoutStorageName: { value: "" },
+  };
+  const controller = plannerRequestBuilder.createPlannerRequestBuilderController({
+    state,
+    elements,
+    helpers: {
+      buildCpSatContinuationModelInput: plannerShared.buildCpSatContinuationModelInput,
+      buildCpSatWarmStartCheckpoint: plannerShared.buildCpSatWarmStartCheckpoint,
+      clampInteger: plannerShared.clampInteger,
+      cloneGrid: plannerShared.cloneGrid,
+      cloneJson: plannerShared.cloneJson,
+      computeCpSatModelFingerprint: plannerShared.computeCpSatModelFingerprint,
+      getSavedLayoutElapsedMs: plannerShared.getSavedLayoutElapsedMs,
+      readOptionalInteger: plannerShared.readOptionalInteger,
+      parseResidentialCatalogEntry: plannerShared.parseResidentialCatalogEntry,
+      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry,
+    },
+  });
+
+  const request = controller.buildSolveRequest({ hintMismatch: "ignore" });
+  assert.equal(request.params.optimizer, "auto");
+  assert.ok(request.params.cpSat.warmStartHint);
+  assert.ok(request.params.lns.seedHint);
+}
+
+function testPlannerRequestBuilderTreatsBlankAutoCapAsUnlimited() {
+  const plannerShared = loadPlannerSharedModule();
+  const plannerRequestBuilder = loadPlannerRequestBuilderModule();
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+  ];
+
+  const state = {
+    optimizer: "auto",
+    auto: {
+      wallClockLimitSeconds: "",
+    },
+    grid,
+    serviceTypes: [],
+    residentialTypes: [
+      plannerShared.serializeResidentialTypeForCatalog({ w: 2, h: 2, min: 10, max: 10, avail: 1 }),
+    ],
+    availableBuildings: {
+      services: "1",
+      residentials: "1",
+    },
+    greedy: {
+      localSearch: false,
+      randomSeed: "",
+      restarts: 1,
+      serviceRefineIterations: 0,
+      serviceRefineCandidateLimit: 1,
+      exhaustiveServiceSearch: false,
+      serviceExactPoolLimit: 1,
+      serviceExactMaxCombinations: 1,
+    },
+    cpSat: {
+      timeLimitSeconds: "",
+      noImprovementTimeoutSeconds: "",
+      randomSeed: "",
+      numWorkers: 8,
+      logSearchProgress: false,
+      pythonExecutable: "",
+      useDisplayedHint: false,
+    },
+    lns: {
+      iterations: 1,
+      maxNoImprovementIterations: 1,
+      neighborhoodRows: 2,
+      neighborhoodCols: 2,
+      repairTimeLimitSeconds: 1,
+      useDisplayedSeed: false,
+    },
+    result: null,
+    resultContext: null,
+    resultElapsedMs: 0,
+  };
+  const elements = {
+    cpSatRandomSeed: { value: "" },
+    cpSatHintStatus: { textContent: "" },
+    lnsSeedStatus: { textContent: "" },
+    payloadPreview: { textContent: "" },
+    layoutStorageName: { value: "" },
+  };
+  const controller = plannerRequestBuilder.createPlannerRequestBuilderController({
+    state,
+    elements,
+    helpers: {
+      buildCpSatContinuationModelInput: plannerShared.buildCpSatContinuationModelInput,
+      buildCpSatWarmStartCheckpoint: plannerShared.buildCpSatWarmStartCheckpoint,
+      clampInteger: plannerShared.clampInteger,
+      cloneGrid: plannerShared.cloneGrid,
+      cloneJson: plannerShared.cloneJson,
+      computeCpSatModelFingerprint: plannerShared.computeCpSatModelFingerprint,
+      getSavedLayoutElapsedMs: plannerShared.getSavedLayoutElapsedMs,
+      readOptionalInteger: plannerShared.readOptionalInteger,
+      parseResidentialCatalogEntry: plannerShared.parseResidentialCatalogEntry,
+      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry,
+    },
+  });
+
+  const unlimitedRequest = controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false });
+  assert.equal(unlimitedRequest.params.auto, undefined);
+
+  state.auto.wallClockLimitSeconds = "90";
+  const cappedRequest = controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false });
+  assert.equal(cappedRequest.params.auto.wallClockLimitSeconds, 90);
+}
+
 function testPlannerSolveProgressLogCapturesSnapshotAndFinalResult() {
   const runtimeModule = loadPlannerSolveRuntimeModule();
   const logAfterSnapshot = runtimeModule.appendSolveProgressLog([], {
@@ -1607,6 +1785,8 @@ testBuildCpSatWarmStartCheckpointRejectsLegacyLayoutsWithoutValidation();
 testPlannerRequestBuilderSkipsLegacySavedCheckpointWithoutValidation();
 testPlannerRequestBuilderSkipsInvalidDisplayedLayoutContinuation();
 testPlannerRequestBuilderSkipsLegacyDisplayedLayoutContinuationWithoutValidation();
+testPlannerRequestBuilderIncludesHintAndSeedForAuto();
+testPlannerRequestBuilderTreatsBlankAutoCapAsUnlimited();
 testPlannerSolveProgressLogCapturesSnapshotAndFinalResult();
 testFilesystemSolveLogTracksSolverClockAcrossHeartbeats();
 

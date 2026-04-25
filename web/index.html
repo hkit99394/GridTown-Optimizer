@@ -445,6 +445,9 @@
                 <button type="button" class="button secondary compact" data-runtime-preset="bounded-cp-sat">
                   Bounded CP-SAT
                 </button>
+                <button type="button" class="button secondary compact" data-runtime-preset="portfolio-cp-sat">
+                  Portfolio CP-SAT
+                </button>
               </div>
 
               <p id="runtimePresetStatus" class="status-text" aria-live="polite">
@@ -604,6 +607,36 @@
                     <label class="field full-width">
                       <span>Python executable (optional)</span>
                       <input id="cpSatPythonExecutable" type="text" placeholder=".venv-cp-sat/bin/python" />
+                    </label>
+                  </div>
+                  <div class="notice info">
+                    Portfolio CP-SAT launches up to four exact paths inside a bounded per-worker budget. Internal
+                    worker lanes are capped at eight total.
+                  </div>
+                  <div class="form-grid two-up">
+                    <label class="check-field">
+                      <input id="cpSatPortfolioEnabled" type="checkbox" />
+                      <span>Run portfolio search</span>
+                    </label>
+                    <label class="check-field">
+                      <input id="cpSatPortfolioRandomizeSearch" type="checkbox" />
+                      <span>Randomize worker search</span>
+                    </label>
+                    <label class="field">
+                      <span>Portfolio workers</span>
+                      <input id="cpSatPortfolioWorkerCount" type="number" min="1" max="4" step="1" />
+                    </label>
+                    <label class="field">
+                      <span>Per-worker limit (seconds)</span>
+                      <input id="cpSatPortfolioPerWorkerTimeLimitSeconds" type="number" min="1" step="1" />
+                    </label>
+                    <label class="field">
+                      <span>CP-SAT workers per path</span>
+                      <input id="cpSatPortfolioPerWorkerNumWorkers" type="number" min="1" max="4" step="1" />
+                    </label>
+                    <label class="field">
+                      <span>Explicit worker seeds (optional)</span>
+                      <input id="cpSatPortfolioRandomSeeds" type="text" placeholder="11, 29, 47" />
                     </label>
                   </div>
                   <div class="actions-row compact-actions">

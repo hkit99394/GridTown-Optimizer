@@ -1,4 +1,12 @@
 (function attachPlannerRequestBuilder(globalObject) {
+  const CP_SAT_PORTFOLIO_DEFAULT_WORKERS = 3;
+  const CP_SAT_RANDOM_SEED_MAX = 0x7fffffff;
+  const CP_SAT_PORTFOLIO_MAX_WORKERS = 4;
+  const CP_SAT_PORTFOLIO_DEFAULT_PER_WORKER_SECONDS = 30;
+  const CP_SAT_PORTFOLIO_MAX_TOTAL_WORKER_THREADS = 8;
+  const CP_SAT_PORTFOLIO_MAX_PER_WORKER_THREADS = 4;
+  const CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS = 8 * 60 * 60;
+
   function createPlannerRequestBuilderController(options) {
     const {
       state,
@@ -285,6 +293,71 @@
         : "auto";
     }
 
+    function parseCpSatPortfolioRandomSeeds(value) {
+      const seedText = String(value ?? "").trim();
+      if (!seedText) return undefined;
+
+      const tokens = seedText.split(/[\s,;]+/).filter(Boolean);
+      if (tokens.length > CP_SAT_PORTFOLIO_MAX_WORKERS) {
+        throw new Error(`CP-SAT portfolio supports at most ${CP_SAT_PORTFOLIO_MAX_WORKERS} explicit seeds.`);
+      }
+
+      const seeds = tokens.map((token, index) => {
+        if (!/^\d+$/.test(token)) {
+          throw new Error(`CP-SAT portfolio seed ${index + 1} must be an integer >= 0.`);
+        }
+        const seed = Number(token);
+        if (!Number.isSafeInteger(seed) || seed > CP_SAT_RANDOM_SEED_MAX) {
+          throw new Error(`CP-SAT portfolio seed ${index + 1} is too large.`);
+        }
+        return seed;
+      });
+      if (new Set(seeds).size !== seeds.length) {
+        throw new Error("CP-SAT portfolio explicit seeds must be unique.");
+      }
+      return seeds;
+    }
+
+    function buildCpSatPortfolioPayload(optimizer, outerTimeLimitSeconds) {
+      const portfolio = state.cpSat.portfolio ?? {};
+      if (optimizer !== "cp-sat" || !portfolio.enabled) return undefined;
+
+      const randomSeeds = parseCpSatPortfolioRandomSeeds(portfolio.randomSeeds);
+      const workerCount = Math.min(
+        randomSeeds?.length ?? clampInteger(portfolio.workerCount, CP_SAT_PORTFOLIO_DEFAULT_WORKERS, 1),
+        CP_SAT_PORTFOLIO_MAX_WORKERS
+      );
+      const maxPerWorkerThreads = Math.max(
+        1,
+        Math.min(
+          CP_SAT_PORTFOLIO_MAX_PER_WORKER_THREADS,
+          Math.floor(CP_SAT_PORTFOLIO_MAX_TOTAL_WORKER_THREADS / workerCount)
+        )
+      );
+      const perWorkerNumWorkers = Math.min(
+        clampInteger(portfolio.perWorkerNumWorkers, 1, 1),
+        maxPerWorkerThreads
+      );
+      const requestedPerWorkerTimeLimitSeconds =
+        readOptionalInteger(portfolio.perWorkerTimeLimitSeconds, 1)
+        ?? outerTimeLimitSeconds
+        ?? CP_SAT_PORTFOLIO_DEFAULT_PER_WORKER_SECONDS;
+      const maxPerWorkerTimeLimitSeconds = Math.max(
+        1,
+        Math.floor(CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS / (workerCount * perWorkerNumWorkers))
+      );
+      const perWorkerTimeLimitSeconds = Math.min(requestedPerWorkerTimeLimitSeconds, maxPerWorkerTimeLimitSeconds);
+
+      return {
+        workerCount,
+        ...(randomSeeds ? { randomSeeds } : {}),
+        totalCpuBudgetSeconds: CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS,
+        perWorkerTimeLimitSeconds,
+        perWorkerNumWorkers,
+        randomizeSearch: portfolio.randomizeSearch !== false,
+      };
+    }
+
     function buildSolveRequest(options = {}) {
       const { hintMismatch = "error", includeWarmStartHint = true, includeLnsSeed = true } = options;
       const optimizer = normalizeRequestOptimizer(state.optimizer);
@@ -323,6 +396,10 @@
             }
           : {}),
       };
+      const cpSatPortfolio = buildCpSatPortfolioPayload(optimizer, timeLimitSeconds);
+      if (cpSatPortfolio) {
+        params.cpSat.portfolio = cpSatPortfolio;
+      }
 
       const maxServices = readOptionalInteger(state.availableBuildings.services, 1);
       const maxResidentials = readOptionalInteger(state.availableBuildings.residentials, 1);

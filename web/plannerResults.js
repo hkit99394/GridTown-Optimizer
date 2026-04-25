@@ -863,8 +863,23 @@
         const selectedWorker = portfolioWorkers.find(
           (worker) => worker.workerIndex === solution.cpSatPortfolio?.selectedWorkerIndex
         );
-        if (Number.isInteger(selectedWorker?.randomSeed)) {
-          return `, selected seed ${selectedWorker.randomSeed}`;
+        const feasibleWorkers = portfolioWorkers.filter((worker) => worker.feasible);
+        const populations = feasibleWorkers
+          .map((worker) => (Number.isFinite(worker.totalPopulation) ? Number(worker.totalPopulation) : null))
+          .filter((population) => population !== null);
+        const populationSpread = populations.length > 1
+          ? Math.max(...populations) - Math.min(...populations)
+          : null;
+        const selectedLabel =
+          `selected worker ${Number(selectedWorker?.workerIndex ?? 0) + 1}/${solution.cpSatPortfolio?.workerCount ?? portfolioWorkers.length}`;
+        const seedLabel = Number.isInteger(selectedWorker?.randomSeed) ? ` seed ${selectedWorker.randomSeed}` : "";
+        const feasibleLabel = `, ${feasibleWorkers.length}/${portfolioWorkers.length} feasible`;
+        const spreadLabel = populationSpread !== null ? `, spread ${populationSpread.toLocaleString()}` : "";
+        if (selectedWorker) {
+          return `, ${selectedLabel}${seedLabel}${feasibleLabel}${spreadLabel}`;
+        }
+        if (feasibleWorkers.length > 0) {
+          return `, ${feasibleWorkers.length}/${portfolioWorkers.length} feasible workers${spreadLabel}`;
         }
         const workerSeeds = portfolioWorkers
           .map((worker) => (Number.isInteger(worker.randomSeed) ? worker.randomSeed : null))

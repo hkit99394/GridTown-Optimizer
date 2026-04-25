@@ -1809,10 +1809,13 @@ def portfolio_worker_task(grid, params, worker_option, worker_index):
 def solve_cp_sat_portfolio(grid, params, cp_sat_options, progress_emitter=None):
     worker_options = build_portfolio_worker_options(cp_sat_options)
     snapshot_file_path = cp_sat_options.get("snapshotFilePath")
+    stop_file_path = cp_sat_options.get("stopFilePath")
     best_snapshot_result = None
+    completed_results = []
 
     def on_worker_result(result):
-        nonlocal best_snapshot_result
+        nonlocal best_snapshot_result, completed_results
+        completed_results.append(result)
         if progress_emitter is not None:
             progress_emitter(progress_payload("portfolio-worker-complete", worker=result.summary))
         if snapshot_file_path and result.solve_result.response is not None:
@@ -1821,11 +1824,35 @@ def solve_cp_sat_portfolio(grid, params, cp_sat_options, progress_emitter=None):
                 candidate_is_better = select_best_portfolio_result([best_snapshot_result, result]) is result
             if candidate_is_better:
                 best_snapshot_result = result
+                completed_by_index = {
+                    completed.summary.worker_index: completed
+                    for completed in completed_results
+                }
+                worker_summaries = []
+                for worker_index, worker_option in enumerate(worker_options):
+                    completed = completed_by_index.get(worker_index)
+                    if completed is not None:
+                        worker_summaries.append(portfolio_worker_summary_payload(completed.summary))
+                    else:
+                        worker_summaries.append({
+                            "workerIndex": worker_index,
+                            "randomSeed": worker_option.get("randomSeed"),
+                            "randomizeSearch": bool(worker_option.get("randomizeSearch", False)),
+                            "numWorkers": int(worker_option.get("numWorkers", 1)),
+                            "status": "RUNNING",
+                            "feasible": False,
+                            "totalPopulation": None,
+                        })
                 write_snapshot(
                     snapshot_file_path,
                     {
                         **result.solve_result.response,
-                        "stoppedByUser": False,
+                        "portfolio": {
+                            "workerCount": len(worker_options),
+                            "selectedWorkerIndex": best_snapshot_result.summary.worker_index,
+                            "workers": worker_summaries,
+                        },
+                        "stoppedByUser": bool(stop_file_path and os.path.exists(stop_file_path)),
                     },
                 )
 

@@ -572,7 +572,7 @@ function testPlannerBuildSolveRequestIncludesCpSatNoImprovementTimeout() {
   assert.equal(Object.prototype.hasOwnProperty.call(request.params.lns, "useDisplayedSeed"), false);
 }
 
-function testPlannerSavedLayoutRestoreRoundTripsHintSeedToggles() {
+function testPlannerSavedLayoutRestoreRoundTripsHintSeedTogglesAndPortfolio() {
   const plannerShared = loadPlannerSharedModule();
   const plannerRequestBuilder = loadPlannerRequestBuilderModule();
   const plannerWorkbench = loadPlannerWorkbenchModule();
@@ -611,6 +611,14 @@ function testPlannerSavedLayoutRestoreRoundTripsHintSeedToggles() {
         logSearchProgress: false,
         pythonExecutable: "",
         useDisplayedHint: false,
+        portfolio: {
+          enabled: true,
+          workerCount: "4",
+          randomSeeds: "17, 23, 29",
+          perWorkerTimeLimitSeconds: "12",
+          perWorkerNumWorkers: "99",
+          randomizeSearch: false,
+        },
       },
       lns: {
         iterations: 1,
@@ -648,6 +656,12 @@ function testPlannerSavedLayoutRestoreRoundTripsHintSeedToggles() {
   const savedRequest = requestBuilderController.buildSolveRequest();
   assert.equal(Object.prototype.hasOwnProperty.call(savedRequest.params.cpSat, "useDisplayedHint"), false);
   assert.equal(Object.prototype.hasOwnProperty.call(savedRequest.params.lns, "useDisplayedSeed"), false);
+  assert.equal(savedRequest.params.cpSat.portfolio.workerCount, 3);
+  assert.deepEqual(Array.from(savedRequest.params.cpSat.portfolio.randomSeeds), [17, 23, 29]);
+  assert.equal(savedRequest.params.cpSat.portfolio.totalCpuBudgetSeconds, 28800);
+  assert.equal(savedRequest.params.cpSat.portfolio.perWorkerTimeLimitSeconds, 12);
+  assert.equal(savedRequest.params.cpSat.portfolio.perWorkerNumWorkers, 2);
+  assert.equal(savedRequest.params.cpSat.portfolio.randomizeSearch, false);
 
   const restoredState = {
     optimizer: "greedy",
@@ -677,6 +691,14 @@ function testPlannerSavedLayoutRestoreRoundTripsHintSeedToggles() {
       logSearchProgress: false,
       pythonExecutable: "",
       useDisplayedHint: true,
+      portfolio: {
+        enabled: false,
+        workerCount: 3,
+        randomSeeds: "",
+        perWorkerTimeLimitSeconds: "30",
+        perWorkerNumWorkers: 1,
+        randomizeSearch: true,
+      },
     },
     lns: {
       iterations: 12,
@@ -730,6 +752,12 @@ function testPlannerSavedLayoutRestoreRoundTripsHintSeedToggles() {
       cpSatLogSearchProgress: createFakeDomElement(),
       cpSatPythonExecutable: createFakeDomElement(),
       cpSatUseDisplayedHint: createFakeDomElement(),
+      cpSatPortfolioEnabled: createFakeDomElement(),
+      cpSatPortfolioWorkerCount: createFakeDomElement(),
+      cpSatPortfolioRandomSeeds: createFakeDomElement(),
+      cpSatPortfolioPerWorkerTimeLimitSeconds: createFakeDomElement(),
+      cpSatPortfolioPerWorkerNumWorkers: createFakeDomElement(),
+      cpSatPortfolioRandomizeSearch: createFakeDomElement(),
       maxServices: createFakeDomElement(),
       maxResidentials: createFakeDomElement(),
       serviceList: createFakeDomElement(),
@@ -774,6 +802,12 @@ function testPlannerSavedLayoutRestoreRoundTripsHintSeedToggles() {
 
   assert.equal(restoredState.cpSat.useDisplayedHint, true);
   assert.equal(restoredState.lns.useDisplayedSeed, true);
+  assert.equal(restoredState.cpSat.portfolio.enabled, true);
+  assert.equal(restoredState.cpSat.portfolio.workerCount, 3);
+  assert.equal(restoredState.cpSat.portfolio.randomSeeds, "17, 23, 29");
+  assert.equal(restoredState.cpSat.portfolio.perWorkerTimeLimitSeconds, "12");
+  assert.equal(restoredState.cpSat.portfolio.perWorkerNumWorkers, 2);
+  assert.equal(restoredState.cpSat.portfolio.randomizeSearch, false);
 }
 
 function testPlannerRuntimePresetAppliesBoundedCpSatPolicy() {
@@ -2704,6 +2738,127 @@ function testPlannerRequestBuilderUsesBoundedGreedyProfileForAuto() {
   assert.equal(normalizedRequest.params.greedy.exhaustiveServiceSearch, false);
 }
 
+function testPlannerRequestBuilderKeepsPortfolioStandaloneOnly() {
+  const plannerShared = loadPlannerSharedModule();
+  const plannerRequestBuilder = loadPlannerRequestBuilderModule();
+  const state = {
+    optimizer: "auto",
+    auto: {
+      wallClockLimitSeconds: "",
+    },
+    grid: [
+      [1, 1],
+      [1, 1],
+    ],
+    serviceTypes: [],
+    residentialTypes: [
+      plannerShared.serializeResidentialTypeForCatalog({ w: 2, h: 2, min: 10, max: 10, avail: 1 }),
+    ],
+    availableBuildings: {
+      services: "0",
+      residentials: "1",
+    },
+    greedy: {
+      localSearch: false,
+      randomSeed: "",
+      restarts: 1,
+      serviceRefineIterations: 0,
+      serviceRefineCandidateLimit: 1,
+      exhaustiveServiceSearch: false,
+      serviceExactPoolLimit: 1,
+      serviceExactMaxCombinations: 1,
+    },
+    cpSat: {
+      timeLimitSeconds: "",
+      noImprovementTimeoutSeconds: "",
+      randomSeed: "31",
+      numWorkers: 8,
+      logSearchProgress: false,
+      pythonExecutable: "",
+      useDisplayedHint: false,
+      portfolio: {
+        enabled: true,
+        workerCount: "3",
+        randomSeeds: "31, 32, 33",
+        perWorkerTimeLimitSeconds: "",
+        perWorkerNumWorkers: "1",
+        randomizeSearch: true,
+      },
+    },
+    lns: {
+      iterations: 1,
+      maxNoImprovementIterations: 1,
+      neighborhoodRows: 2,
+      neighborhoodCols: 2,
+      repairTimeLimitSeconds: 1,
+      useDisplayedSeed: false,
+    },
+    result: null,
+    resultContext: null,
+    resultElapsedMs: 0,
+  };
+  const controller = plannerRequestBuilder.createPlannerRequestBuilderController({
+    state,
+    elements: {
+      cpSatRandomSeed: createFakeDomElement(),
+      cpSatHintStatus: createFakeDomElement(),
+      lnsSeedStatus: createFakeDomElement(),
+      payloadPreview: createFakeDomElement(),
+      layoutStorageName: createFakeDomElement(),
+    },
+    helpers: {
+      buildCpSatContinuationModelInput: plannerShared.buildCpSatContinuationModelInput,
+      buildCpSatWarmStartCheckpoint: plannerShared.buildCpSatWarmStartCheckpoint,
+      clampInteger: plannerShared.clampInteger,
+      cloneGrid: plannerShared.cloneGrid,
+      cloneJson: plannerShared.cloneJson,
+      computeCpSatModelFingerprint: plannerShared.computeCpSatModelFingerprint,
+      getSavedLayoutElapsedMs: plannerShared.getSavedLayoutElapsedMs,
+      readOptionalInteger: plannerShared.readOptionalInteger,
+      parseResidentialCatalogEntry: plannerShared.parseResidentialCatalogEntry,
+      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry,
+    },
+  });
+
+  const autoRequest = controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false });
+  assert.equal(autoRequest.params.cpSat.portfolio, undefined);
+
+  state.optimizer = "lns";
+  const lnsRequest = controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false });
+  assert.equal(lnsRequest.params.cpSat.portfolio, undefined);
+
+  state.optimizer = "cp-sat";
+  const cpSatRequest = controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false });
+  assert.equal(cpSatRequest.params.cpSat.portfolio.workerCount, 3);
+  assert.deepEqual(Array.from(cpSatRequest.params.cpSat.portfolio.randomSeeds), [31, 32, 33]);
+  assert.equal(cpSatRequest.params.cpSat.portfolio.totalCpuBudgetSeconds, 28800);
+  assert.equal(cpSatRequest.params.cpSat.portfolio.perWorkerTimeLimitSeconds, 30);
+  assert.equal(cpSatRequest.params.cpSat.portfolio.perWorkerNumWorkers, 1);
+  assert.equal(cpSatRequest.params.cpSat.portfolio.randomizeSearch, true);
+
+  state.cpSat.portfolio.randomSeeds = "";
+  state.cpSat.portfolio.workerCount = "4";
+  state.cpSat.portfolio.perWorkerNumWorkers = "2";
+  state.cpSat.portfolio.perWorkerTimeLimitSeconds = "99999";
+  const cappedRequest = controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false });
+  assert.equal(cappedRequest.params.cpSat.portfolio.perWorkerTimeLimitSeconds, 3600);
+  assert.equal(cappedRequest.params.cpSat.portfolio.perWorkerNumWorkers, 2);
+
+  state.cpSat.portfolio.perWorkerTimeLimitSeconds = "30";
+  state.cpSat.portfolio.perWorkerNumWorkers = "1";
+  state.cpSat.portfolio.randomSeeds = "1, 2, 1";
+  assert.throws(
+    () => controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false }),
+    /explicit seeds must be unique/
+  );
+
+  state.cpSat.portfolio.randomSeeds = "1, 2, 3, 4, 5";
+  assert.throws(
+    () => controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false }),
+    /supports at most 4 explicit seeds/
+  );
+}
+
 function testPlannerSolveProgressLogCapturesSnapshotAndFinalResult() {
   const runtimeModule = loadPlannerSolveRuntimeModule();
   const logAfterSnapshot = runtimeModule.appendSolveProgressLog([], {
@@ -2911,7 +3066,7 @@ async function main() {
   testPlannerServiceAvailabilityRoundTrip();
   testPlannerAutoFillsCpSatRandomSeed();
   testPlannerBuildSolveRequestIncludesCpSatNoImprovementTimeout();
-  testPlannerSavedLayoutRestoreRoundTripsHintSeedToggles();
+  testPlannerSavedLayoutRestoreRoundTripsHintSeedTogglesAndPortfolio();
   testPlannerRuntimePresetAppliesBoundedCpSatPolicy();
   testPlannerAutoMarksIgnoredSeedControlsUnavailable();
   testPlannerShellRequiresManualValidationBeforeContinuationReuse();
@@ -2931,6 +3086,7 @@ async function main() {
   await testPlannerExpansionOmitsStaleComparisonHint();
   testPlannerRequestBuilderTreatsBlankAutoCapAsUnlimited();
   testPlannerRequestBuilderUsesBoundedGreedyProfileForAuto();
+  testPlannerRequestBuilderKeepsPortfolioStandaloneOnly();
   testPlannerSolveProgressLogCapturesSnapshotAndFinalResult();
   testFilesystemSolveLogTracksSolverClockAcrossHeartbeats();
 

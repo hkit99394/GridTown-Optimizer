@@ -1,4 +1,11 @@
 (function attachPlannerWorkbench(globalObject) {
+  const CP_SAT_PORTFOLIO_DEFAULT_WORKERS = 3;
+  const CP_SAT_PORTFOLIO_MAX_WORKERS = 4;
+  const CP_SAT_PORTFOLIO_DEFAULT_PER_WORKER_SECONDS = 30;
+  const CP_SAT_PORTFOLIO_MAX_TOTAL_WORKER_THREADS = 8;
+  const CP_SAT_PORTFOLIO_MAX_PER_WORKER_THREADS = 4;
+  const CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS = 8 * 60 * 60;
+
   function createPlannerWorkbenchController(options) {
     const {
       state,
@@ -27,6 +34,35 @@
       setSolveState,
       updatePayloadPreview,
     } = callbacks;
+
+    function getDefaultCpSatPortfolioState() {
+      return {
+        enabled: false,
+        workerCount: CP_SAT_PORTFOLIO_DEFAULT_WORKERS,
+        randomSeeds: "",
+        perWorkerTimeLimitSeconds: String(CP_SAT_PORTFOLIO_DEFAULT_PER_WORKER_SECONDS),
+        perWorkerNumWorkers: 1,
+        randomizeSearch: true,
+      };
+    }
+
+    function applyCpSatPortfolioRequestToState(portfolio) {
+      if (!portfolio) return {};
+      return {
+        portfolio: {
+          ...getDefaultCpSatPortfolioState(),
+          ...state.cpSat.portfolio,
+          enabled: true,
+          ...(portfolio.workerCount != null ? { workerCount: portfolio.workerCount } : {}),
+          ...(Array.isArray(portfolio.randomSeeds) ? { randomSeeds: portfolio.randomSeeds.join(", ") } : {}),
+          ...(portfolio.perWorkerTimeLimitSeconds != null
+            ? { perWorkerTimeLimitSeconds: String(portfolio.perWorkerTimeLimitSeconds) }
+            : {}),
+          ...(portfolio.perWorkerNumWorkers != null ? { perWorkerNumWorkers: portfolio.perWorkerNumWorkers } : {}),
+          ...(portfolio.randomizeSearch != null ? { randomizeSearch: Boolean(portfolio.randomizeSearch) } : {}),
+        },
+      };
+    }
 
     function applySolveRequestToPlanner(request, options = {}) {
       const { preserveCpSatRuntime = true, optimizer = "auto" } = options;
@@ -80,6 +116,7 @@
           ...(params.cpSat.logSearchProgress != null ? { logSearchProgress: Boolean(params.cpSat.logSearchProgress) } : {}),
           ...(params.cpSat.pythonExecutable != null ? { pythonExecutable: String(params.cpSat.pythonExecutable) } : {}),
           ...(params.cpSat.useDisplayedHint != null ? { useDisplayedHint: Boolean(params.cpSat.useDisplayedHint) } : {}),
+          ...applyCpSatPortfolioRequestToState(params.cpSat.portfolio),
         };
       }
 
@@ -310,9 +347,34 @@
           noImprovementTimeoutSeconds: "10",
           numWorkers: 8,
           useDisplayedHint: true,
+          portfolio: {
+            ...getDefaultCpSatPortfolioState(),
+            ...state.cpSat.portfolio,
+            enabled: false,
+          },
         };
         elements.runtimePresetStatus.textContent =
           'Applied "Bounded CP-SAT": 30s max runtime with a 10s no-improvement cutoff and displayed-layout hinting.';
+      } else if (kind === "portfolio-cp-sat") {
+        state.cpSat = {
+          ...state.cpSat,
+          timeLimitSeconds: "30",
+          noImprovementTimeoutSeconds: "10",
+          numWorkers: 8,
+          useDisplayedHint: true,
+          portfolio: {
+            ...getDefaultCpSatPortfolioState(),
+            ...state.cpSat.portfolio,
+            enabled: true,
+            workerCount: 3,
+            randomSeeds: "",
+            perWorkerTimeLimitSeconds: "30",
+            perWorkerNumWorkers: 1,
+            randomizeSearch: true,
+          },
+        };
+        elements.runtimePresetStatus.textContent =
+          'Applied "Portfolio CP-SAT": three randomized exact paths with 30s per-worker caps and one internal worker each.';
       } else {
         return;
       }
@@ -397,9 +459,71 @@
       elements.cpSatLogSearchProgress.checked = state.cpSat.logSearchProgress;
       elements.cpSatPythonExecutable.value = state.cpSat.pythonExecutable;
       elements.cpSatUseDisplayedHint.checked = Boolean(state.cpSat.useDisplayedHint);
+      syncCpSatPortfolioFields(autoOwnsStageSeeds);
 
       elements.maxServices.value = state.availableBuildings.services;
       elements.maxResidentials.value = state.availableBuildings.residentials;
+    }
+
+    function syncCpSatPortfolioFields(autoOwnsStageSeeds) {
+      const portfolio = {
+        ...getDefaultCpSatPortfolioState(),
+        ...(state.cpSat.portfolio ?? {}),
+      };
+      const portfolioActive = !autoOwnsStageSeeds && Boolean(portfolio.enabled);
+      const disabled = !portfolioActive;
+      const workerCount = Math.max(1, Math.min(Number(portfolio.workerCount) || CP_SAT_PORTFOLIO_DEFAULT_WORKERS, CP_SAT_PORTFOLIO_MAX_WORKERS));
+      const maxPerWorkerThreads = Math.max(
+        1,
+        Math.min(
+          CP_SAT_PORTFOLIO_MAX_PER_WORKER_THREADS,
+          Math.floor(CP_SAT_PORTFOLIO_MAX_TOTAL_WORKER_THREADS / workerCount)
+        )
+      );
+      const perWorkerNumWorkers = Math.max(1, Math.min(Number(portfolio.perWorkerNumWorkers) || 1, maxPerWorkerThreads));
+      const maxPerWorkerSeconds = Math.max(
+        1,
+        Math.floor(CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS / (workerCount * perWorkerNumWorkers))
+      );
+
+      if (elements.cpSatPortfolioEnabled) {
+        elements.cpSatPortfolioEnabled.checked = portfolioActive;
+        elements.cpSatPortfolioEnabled.disabled = autoOwnsStageSeeds;
+        elements.cpSatPortfolioEnabled.title = autoOwnsStageSeeds
+          ? "Auto keeps portfolio off so LNS repair stages do not fan out into extra CP-SAT workers."
+          : "";
+      }
+      if (elements.cpSatPortfolioWorkerCount) {
+        elements.cpSatPortfolioWorkerCount.value = String(portfolio.workerCount);
+        elements.cpSatPortfolioWorkerCount.max = String(CP_SAT_PORTFOLIO_MAX_WORKERS);
+        elements.cpSatPortfolioWorkerCount.disabled = disabled;
+      }
+      if (elements.cpSatPortfolioRandomSeeds) {
+        elements.cpSatPortfolioRandomSeeds.value = portfolio.randomSeeds ?? "";
+        elements.cpSatPortfolioRandomSeeds.disabled = disabled || autoOwnsStageSeeds;
+        elements.cpSatPortfolioRandomSeeds.placeholder = `Optional, max ${CP_SAT_PORTFOLIO_MAX_WORKERS}`;
+        elements.cpSatPortfolioRandomSeeds.title = autoOwnsStageSeeds
+          ? "Auto derives CP-SAT stage seeds from its generated stage seed."
+          : `Comma or space separated seeds. At most ${CP_SAT_PORTFOLIO_MAX_WORKERS}.`;
+      }
+      if (elements.cpSatPortfolioPerWorkerTimeLimitSeconds) {
+        elements.cpSatPortfolioPerWorkerTimeLimitSeconds.value = portfolio.perWorkerTimeLimitSeconds ?? "";
+        elements.cpSatPortfolioPerWorkerTimeLimitSeconds.max = String(maxPerWorkerSeconds);
+        elements.cpSatPortfolioPerWorkerTimeLimitSeconds.disabled = disabled;
+        elements.cpSatPortfolioPerWorkerTimeLimitSeconds.title =
+          `Capped at ${maxPerWorkerSeconds}s here so the portfolio stays inside the ${CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS}s total CPU budget.`;
+      }
+      if (elements.cpSatPortfolioPerWorkerNumWorkers) {
+        elements.cpSatPortfolioPerWorkerNumWorkers.value = String(portfolio.perWorkerNumWorkers);
+        elements.cpSatPortfolioPerWorkerNumWorkers.max = String(maxPerWorkerThreads);
+        elements.cpSatPortfolioPerWorkerNumWorkers.disabled = disabled;
+        elements.cpSatPortfolioPerWorkerNumWorkers.title =
+          `Capped at ${maxPerWorkerThreads} here so portfolio CPU lanes stay at ${CP_SAT_PORTFOLIO_MAX_TOTAL_WORKER_THREADS} or fewer.`;
+      }
+      if (elements.cpSatPortfolioRandomizeSearch) {
+        elements.cpSatPortfolioRandomizeSearch.checked = portfolio.randomizeSearch !== false;
+        elements.cpSatPortfolioRandomizeSearch.disabled = disabled;
+      }
     }
 
     function renderServiceTypes() {

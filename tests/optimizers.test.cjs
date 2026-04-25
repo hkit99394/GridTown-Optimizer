@@ -2224,7 +2224,67 @@ results = module.run_portfolio_workers(
     [{"randomSeed": 7}, {"randomSeed": 9}],
     lambda grid, params, worker_option, worker_index: {"workerIndex": worker_index, "seed": worker_option["randomSeed"]},
 )
-print(json.dumps(results))
+
+try:
+    module.build_portfolio_worker_options({"portfolio": {"workerCount": 2}})
+    missing_budget_error = None
+except ValueError as error:
+    missing_budget_error = str(error)
+
+try:
+    module.build_portfolio_worker_options({
+        "portfolio": {
+            "workerCount": 4,
+            "perWorkerNumWorkers": 3,
+            "perWorkerTimeLimitSeconds": 30,
+        }
+    })
+    worker_thread_error = None
+except ValueError as error:
+    worker_thread_error = str(error)
+
+try:
+    module.build_portfolio_worker_options({
+        "portfolio": {
+            "workerCount": 8,
+            "perWorkerNumWorkers": 1,
+            "perWorkerTimeLimitSeconds": 4000,
+        }
+    })
+    cpu_budget_error = None
+except ValueError as error:
+    cpu_budget_error = str(error)
+
+try:
+    module.build_portfolio_worker_options({
+        "timeLimitSeconds": 10,
+        "portfolio": {
+            "randomSeeds": [1, 2, 3, 4, 5, 6, 7, 8, 9],
+        }
+    })
+    too_many_seeds_error = None
+except ValueError as error:
+    too_many_seeds_error = str(error)
+
+try:
+    module.build_portfolio_worker_options({
+        "timeLimitSeconds": 10,
+        "portfolio": {
+            "randomSeeds": [11, 11],
+        }
+    })
+    duplicate_seeds_error = None
+except ValueError as error:
+    duplicate_seeds_error = str(error)
+
+print(json.dumps({
+    "results": results,
+    "missingBudgetError": missing_budget_error,
+    "workerThreadError": worker_thread_error,
+    "cpuBudgetError": cpu_budget_error,
+    "tooManySeedsError": too_many_seeds_error,
+    "duplicateSeedsError": duplicate_seeds_error,
+}))
 `;
 
   const result = childProcess.spawnSync("python3", ["-c", command], {
@@ -2235,10 +2295,15 @@ print(json.dumps(results))
   }
 
   const payload = JSON.parse(result.stdout);
-  assert.deepEqual(payload, [
+  assert.deepEqual(payload.results, [
     { workerIndex: 0, seed: 7 },
     { workerIndex: 1, seed: 9 },
   ]);
+  assert.match(payload.missingBudgetError, /requires timeLimitSeconds/);
+  assert.match(payload.workerThreadError, /exceeding the 8 worker portfolio limit/);
+  assert.match(payload.cpuBudgetError, /exceeding the 28800\.0 second portfolio budget/);
+  assert.match(payload.tooManySeedsError, /must contain between 1 and 8 seeds/);
+  assert.match(payload.duplicateSeedsError, /must not contain duplicate seeds/);
 }
 
 async function maybeTestCpSatPortfolioSolve() {

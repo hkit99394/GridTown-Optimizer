@@ -20,7 +20,7 @@ User-facing solver mode policy:
 | `greedy` | fast legal layouts and seed-quality inspection | quickest standalone heuristic baseline | no | when overall answer quality matters more than speed |
 | `LNS` | improving the current displayed or greedy-seeded layout | bounded neighborhood repair around an incumbent | yes | when there is no useful incumbent or when exact proof/bounds matter most |
 | `CP-SAT` | bounded exact improvement, proof, and diagnostics | single exact run with optional warm start and progress bounds | yes, as a hint when compatible | when a fast first incumbent is more important than deeper exact search |
-| `CP-SAT portfolio` | advanced exact search inside one machine budget | multiple exact-search paths competing within explicit guardrails | yes, as hints per worker when compatible | before worker caps, stop propagation, and CPU budget rules are enforced |
+| `CP-SAT portfolio` | advanced exact search inside one machine budget | multiple exact-search paths competing within explicit guardrails | yes, as hints per worker when compatible | when the staged `auto` flow or a single exact run is easier to reason about |
 
 ## Current Status
 
@@ -98,6 +98,7 @@ What exists today:
 Maintenance watchpoints:
 - keep planner-side checkpoint compatibility checks aligned with backend validation whenever new reusable payload fields are added
 - preserve typed `400` behavior for direct API callers, not only planner-generated requests
+- decide whether `cpSat.pythonExecutable` / `cpSat.scriptPath` should remain accepted over HTTP if the planner server is ever exposed beyond a trusted local machine
 
 #### 6. Greedy runtime guardrails are shipped
 
@@ -151,6 +152,26 @@ What exists today:
 - LNS repair outcome and snapshot bookkeeping is centralized so future policy changes do not need to duplicate per-branch telemetry logic
 - `benchmark:lns` runs a fixed LNS benchmark corpus and reports quality, wall-clock cost, stop reason, budget settings, and outcome counts
 
+#### 10. Guarded CP-SAT portfolio initiation is shipped
+
+Status: Completed for the current local single-machine portfolio contract
+
+What exists today:
+- direct API/runtime requests validate `cpSat.portfolio` before backend launch
+- portfolio is accepted only for explicit `optimizer: "cp-sat"` requests, not `auto` or `LNS`
+- API/runtime guardrails cap portfolio workers/seeds at 8, reject duplicate or out-of-range seeds, require a per-worker or outer time budget, cap aggregate CP-SAT worker lanes at 8, and cap total worker CPU budget at 28,800 seconds
+- Python portfolio helper validation mirrors the public guardrails and now rejects invalid values instead of silently trimming or clamping them
+- planner initiation exposes a bounded Portfolio CP-SAT preset and controls for worker count, explicit seeds, per-worker time, per-worker CP-SAT workers, and randomized search
+- planner-generated portfolio payloads are standalone-CP-SAT-only, include the total CPU budget, cap planner-visible paths at 4, and keep internal worker lanes at 8 or fewer
+- background CP-SAT cancellation escalates to the Python process group, so portfolio child workers are included in forced termination
+- live portfolio snapshots preserve the full worker summary shape, including completed workers, pending workers, selected worker, and stopped state
+- result summaries identify the selected portfolio worker, seed, feasible-worker count, and population spread when portfolio metadata is available
+
+Maintenance watchpoints:
+- add a dedicated OS-level orphan-process regression test for portfolio cancellation before increasing any portfolio fan-out limits
+- keep planner and backend portfolio constants aligned whenever the safe local machine budget changes
+- richer live-worker UX can still be improved, but full planner initiation no longer depends on it
+
 ## Remaining Priorities
 
 Impact factor scale:
@@ -159,59 +180,33 @@ Impact factor scale:
 - `3.0 / 5`: medium leverage or enabling work for later improvements
 - below `3.0 / 5`: strategic or high-cost work with lower near-term return
 
-### 1. Add CP-SAT portfolio guardrails, then expose full planner initiation
+### 1. Add cross-mode benchmark scorecards and unified progress language
 
 Priority: 1
-Impact factor: `4.25 / 5`
-
-Why this is first:
-- single-machine portfolio search already exists in the backend, Python runtime, and result model
-- the remaining product value is real, but it depends on operational guardrails first
-- planner controls should expose portfolio only as a bounded exact-search strategy, not as raw process fan-out
-
-Concrete work:
-- define max workers/seeds, total CPU budget, per-worker budget, and oversubscription behavior
-- ensure stop propagation cancels lagging workers and does not leave orphaned Python processes
-- add coordinator-side stop rules for lagging workers
-- planner controls for worker count, explicit seeds, and per-worker budget after portfolio guardrails are in place
-- aggregated worker progress and selected-worker summaries in the result UI
-- clarify single-run `CP-SAT` vs portfolio `CP-SAT` in user terms: one exact path vs multiple exact paths inside the same budget
-
-Acceptance criteria:
-- portfolio stop/cancel tests prove no orphaned worker processes remain
-- planner initiation is capped by safe defaults and clear maximums
-- result UI explains selected worker, worker spread, and whether portfolio was worth the extra CPU
-
-Note:
-- the planner already shows some post-run portfolio result details, but it does not yet provide full portfolio initiation or live worker UX
-
-### 2. Add cross-mode benchmark scorecards and unified progress language
-
-Priority: 2
 Impact factor: `3.75 / 5`
 
-Why this is second:
+Why this is first:
 - users choosing between modes need equal-budget comparisons, not just individual optimizer telemetry
 - benchmarks are already partly shipped, but planner-facing visibility is still thin
-- shared progress language makes `auto`, `greedy`, `LNS`, and `CP-SAT` easier to compare during and after a run
+- shared progress language makes `auto`, `greedy`, `LNS`, single-run `CP-SAT`, and portfolio `CP-SAT` easier to compare during and after a run
 
 Concrete work:
 - add equal-budget scorecards for `auto`, `greedy`, `LNS`, single-run `CP-SAT`, and portfolio `CP-SAT`
 - report quality after common budgets such as 5s, 30s, and 2m where applicable
 - track win rate vs `auto`, variance by seed, and behavior by grid/problem-size band
-- define one shared progress vocabulary: current score, best score, active stage, reuse source, elapsed time, time since improvement, stop reason, and exact gap where available
+- define one shared progress vocabulary: current score, best score, active stage, reuse source, elapsed time, time since improvement, stop reason, exact gap where available, and portfolio worker summary where available
 - surface the same vocabulary in planner status, persisted progress logs, and benchmark summaries
 
 Acceptance criteria:
 - a user can choose a mode from the roadmap/planner without knowing implementation internals
 - benchmark output supports mode-selection decisions, not just solver debugging
 
-### 3. Split the greedy solver into cleaner reusable phases
+### 2. Split the greedy solver into cleaner reusable phases
 
-Priority: 3
+Priority: 2
 Impact factor: `3.0 / 5`
 
-Why this is third:
+Why this is second:
 - reproducibility and instrumentation are already in place, but the greedy policy surface is still concentrated in one large implementation
 - future metaheuristics and learned-guidance work want clearer reuse seams
 - a full refactor is enabling work, but phase-level measurement hooks are needed earlier for LNS and `auto` budgeting
@@ -229,24 +224,24 @@ Near-term slice:
 
 ## Later Priorities
 
-### 4. Keep distributed CP-SAT behind single-machine portfolio and workflow improvements
+### 3. Keep distributed CP-SAT behind single-machine portfolio and workflow improvements
 
-Priority: 4
+Priority: 3
 Impact factor: `1.5 / 5`
 
 Why:
-- the better near-term return is still better runtime policy, stronger `LNS`, and planner-visible single-machine portfolio search
+- the better near-term return is still measurement, workflow polish, and single-machine portfolio hardening
 - distributed exact solving adds the most operational complexity for the least immediate product leverage
 
-### 5. Keep learned guidance separate from the core runtime roadmap
+### 4. Keep learned guidance separate from the core runtime roadmap
 
-Priority: Separate gated track, after priorities 1 through 3 for core product work
+Priority: Separate gated track, after priorities 1 and 2 plus the portfolio cancellation regression
 Impact factor: `2.0 / 5` near-term product leverage, higher long-term strategic upside
 
 Why:
 - learned guidance is a real fit for search control around `greedy`, `LNS`, and `CP-SAT`, especially for re-ranking and later `LNS` control
 - full RL is not the next production lever; the relevant AlphaGo / AlphaZero lesson is policy / value guidance around exact search, not end-to-end self-play
-- the deterministic solver still has higher-ROI unfinished work, especially guarded portfolio exposure and equal-budget scorecards
+- the deterministic solver still has higher-ROI unfinished work, especially equal-budget scorecards and cleaner greedy phase boundaries
 - that work should stay tracked in [LEARNED_GUIDANCE_ROADMAP.md](./LEARNED_GUIDANCE_ROADMAP.md), not mixed into the runtime-execution roadmap
 
 Ordering inside the learned-guidance track:
@@ -263,9 +258,9 @@ Ordering inside the learned-guidance track:
 
 If all remaining work is ranked in one combined near-term ordering, the recommended order is:
 
-1. add `CP-SAT` portfolio guardrails, then expose full planner initiation
-2. add cross-mode benchmark scorecards and unified progress language
-3. add greedy phase-level measurement hooks, then split the greedy solver into cleaner reusable phases
+1. add cross-mode benchmark scorecards and unified progress language
+2. add greedy phase-level measurement hooks, then split the greedy solver into cleaner reusable phases
+3. add the portfolio orphan-process cancellation regression before raising portfolio limits
 4. build the learned-guidance foundation: shared traces and equal-budget benchmarks
 5. run learned-guidance ablations
 6. try low-risk learned guidance: greedy service re-ranking and `LNS` window re-ranking
@@ -273,11 +268,10 @@ If all remaining work is ranked in one combined near-term ordering, the recommen
 8. treat contextual bandits and full RL as gated research after earlier learned stages already win
 
 Why this order:
-- item 1 is now the highest direct algorithmic quality-per-minute work
-- item 2 has strong exact-solver upside, but only after guardrails make portfolio search safe to expose
-- item 3 turns shipped telemetry and benchmarks into user-facing mode-selection evidence
-- item 4 creates cleaner seams for both deterministic and learned follow-on work
-- items 5 through 9 depend on a more stable deterministic baseline, better measurement discipline, and more expensive labels
+- item 1 turns shipped telemetry and benchmarks into user-facing mode-selection evidence
+- item 2 creates cleaner seams for both deterministic and learned follow-on work
+- item 3 protects the guarded portfolio contract before any future fan-out increase
+- items 4 through 8 depend on a more stable deterministic baseline, better measurement discipline, and more expensive labels
 - full RL currently has the lowest near-term product leverage per unit complexity
 
 ## LNS Follow-Up Plan
@@ -334,7 +328,7 @@ Delivered:
 
 - `CP-SAT` warm starts are still global solves unless we explicitly fix the outside-of-neighborhood assignment.
 - The current local OR-Tools runtime still has a known crash path around `repair_hint` plus multi-worker repair, so planner/runtime messaging should not imply user-controlled multi-worker `LNS` repair until that runtime issue is proven fixed.
-- With `auto` shipped, the next exact-solver UX step is guarded planner-visible single-machine portfolio search, not distributed solving.
+- Guarded planner-visible single-machine portfolio search is shipped; the next solver UX step is equal-budget evidence for choosing between modes, not distributed solving.
 - Solver input/output validation is now a shipped safeguard; treat new solver-facing payload fields as validation work before exposing them in the planner.
 - AlphaGo / AlphaZero-style ideas transfer here only in the narrow sense of policy / value guidance over the existing search stack; full RL remains a gated research path.
 - Input validation now matters as much as solver quality because the planner reuses more serialized solver state across runs.

@@ -141,6 +141,14 @@ const state = {
     logSearchProgress: false,
     pythonExecutable: "",
     useDisplayedHint: true,
+    portfolio: {
+      enabled: false,
+      workerCount: 3,
+      randomSeeds: "",
+      perWorkerTimeLimitSeconds: "30",
+      perWorkerNumWorkers: 1,
+      randomizeSearch: true,
+    },
   },
   lns: {
     iterations: 12,
@@ -296,6 +304,12 @@ const elements = {
   cpSatLogSearchProgress: document.querySelector("#cpSatLogSearchProgress"),
   cpSatPythonExecutable: document.querySelector("#cpSatPythonExecutable"),
   cpSatUseDisplayedHint: document.querySelector("#cpSatUseDisplayedHint"),
+  cpSatPortfolioEnabled: document.querySelector("#cpSatPortfolioEnabled"),
+  cpSatPortfolioWorkerCount: document.querySelector("#cpSatPortfolioWorkerCount"),
+  cpSatPortfolioRandomSeeds: document.querySelector("#cpSatPortfolioRandomSeeds"),
+  cpSatPortfolioPerWorkerTimeLimitSeconds: document.querySelector("#cpSatPortfolioPerWorkerTimeLimitSeconds"),
+  cpSatPortfolioPerWorkerNumWorkers: document.querySelector("#cpSatPortfolioPerWorkerNumWorkers"),
+  cpSatPortfolioRandomizeSearch: document.querySelector("#cpSatPortfolioRandomizeSearch"),
   lnsSeedStatus: document.querySelector("#lnsSeedStatus"),
   cpSatHintStatus: document.querySelector("#cpSatHintStatus"),
   resizeGridButton: document.querySelector("#resizeGridButton"),
@@ -663,6 +677,29 @@ function init() {
   elements.cpSatUseDisplayedHint.addEventListener("change", () => {
     state.cpSat.useDisplayedHint = elements.cpSatUseDisplayedHint.checked;
     requestBuilderController.updatePayloadPreview();
+  });
+
+  elements.cpSatPortfolioEnabled.addEventListener("change", () => {
+    state.cpSat.portfolio.enabled = elements.cpSatPortfolioEnabled.checked;
+    workbenchController.syncSolverFields();
+    requestBuilderController.updatePayloadPreview();
+  });
+
+  const cpSatPortfolioBindings = [
+    ["cpSatPortfolioWorkerCount", "workerCount", "number"],
+    ["cpSatPortfolioRandomSeeds", "randomSeeds", "text"],
+    ["cpSatPortfolioPerWorkerTimeLimitSeconds", "perWorkerTimeLimitSeconds", "number"],
+    ["cpSatPortfolioPerWorkerNumWorkers", "perWorkerNumWorkers", "number"],
+    ["cpSatPortfolioRandomizeSearch", "randomizeSearch", "checkbox"],
+  ];
+
+  cpSatPortfolioBindings.forEach(([elementKey, stateKey, inputType]) => {
+    elements[elementKey].addEventListener("input", () => {
+      state.cpSat.portfolio[stateKey] =
+        inputType === "checkbox" ? elements[elementKey].checked : elements[elementKey].value;
+      workbenchController.syncSolverFields();
+      requestBuilderController.updatePayloadPreview();
+    });
   });
 
   elements.maxServices.addEventListener("input", () => {

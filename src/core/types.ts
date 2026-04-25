@@ -202,6 +202,8 @@ export interface CpSatPortfolioOptions {
   workerCount?: number;
   /** Explicit per-worker random seeds. Overrides workerCount when provided. */
   randomSeeds?: number[];
+  /** Optional cap on total worker CPU seconds: workers * per-worker CP-SAT workers * per-worker time. */
+  totalCpuBudgetSeconds?: number;
   /** Per-worker time limit override. Defaults to the outer timeLimitSeconds. */
   perWorkerTimeLimitSeconds?: number;
   /** Per-worker deterministic time override. Defaults to the outer maxDeterministicTime. */

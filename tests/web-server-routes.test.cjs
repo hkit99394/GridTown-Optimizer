@@ -616,7 +616,16 @@ async function testImmediateSolveRejectsInvalidCpSatOptionsBeforeStartingBackend
   const cases = [
     {
       cpSat: { numWorkers: 0 },
-      expectedError: "Invalid solver input: CP-SAT runtime option cpSat.numWorkers must be an integer >= 1.",
+      expectedError: "Invalid solver input: CP-SAT runtime option cpSat.numWorkers must be an integer between 1 and 64.",
+    },
+    {
+      cpSat: { randomSeed: 2147483648 },
+      expectedError: "Invalid solver input: CP-SAT runtime option cpSat.randomSeed must be an integer between 0 and 2147483647.",
+    },
+    {
+      cpSat: { timeLimitSeconds: 86401 },
+      expectedError:
+        "Invalid solver input: CP-SAT runtime option cpSat.timeLimitSeconds must be a finite number > 0 and <= 86400.",
     },
     {
       cpSat: {
@@ -625,7 +634,86 @@ async function testImmediateSolveRejectsInvalidCpSatOptionsBeforeStartingBackend
           randomSeeds: [11, "bad"],
         },
       },
-      expectedError: "Invalid solver input: CP-SAT portfolio option cpSat.portfolio.randomSeeds[1] must be an integer >= 0.",
+      expectedError:
+        "Invalid solver input: CP-SAT portfolio option cpSat.portfolio.randomSeeds[1] must be an integer between 0 and 2147483647.",
+    },
+    {
+      cpSat: {
+        numWorkers: 1,
+        timeLimitSeconds: 30,
+        portfolio: {
+          randomSeeds: [2147483648],
+        },
+      },
+      expectedError:
+        "Invalid solver input: CP-SAT portfolio option cpSat.portfolio.randomSeeds[0] must be an integer between 0 and 2147483647.",
+    },
+    {
+      cpSat: {
+        numWorkers: 1,
+        timeLimitSeconds: 30,
+        portfolio: {
+          workerCount: 9,
+        },
+      },
+      expectedError:
+        "Invalid solver input: CP-SAT portfolio option cpSat.portfolio.workerCount must be an integer between 1 and 8.",
+    },
+    {
+      cpSat: {
+        numWorkers: 1,
+        timeLimitSeconds: 30,
+        portfolio: {
+          randomSeeds: [],
+        },
+      },
+      expectedError:
+        "Invalid solver input: CP-SAT portfolio option cpSat.portfolio.randomSeeds must contain between 1 and 8 seeds.",
+    },
+    {
+      cpSat: {
+        numWorkers: 1,
+        timeLimitSeconds: 30,
+        portfolio: {
+          randomSeeds: [11, 11],
+        },
+      },
+      expectedError:
+        "Invalid solver input: CP-SAT portfolio option cpSat.portfolio.randomSeeds must not contain duplicate seeds.",
+    },
+    {
+      cpSat: {
+        numWorkers: 1,
+        portfolio: {
+          workerCount: 2,
+        },
+      },
+      expectedError:
+        "Invalid solver input: CP-SAT portfolio option cpSat.portfolio requires cpSat.timeLimitSeconds or CP-SAT portfolio option cpSat.portfolio.perWorkerTimeLimitSeconds.",
+    },
+    {
+      cpSat: {
+        numWorkers: 1,
+        portfolio: {
+          workerCount: 4,
+          perWorkerNumWorkers: 3,
+          perWorkerTimeLimitSeconds: 30,
+        },
+      },
+      expectedError:
+        "Invalid solver input: CP-SAT portfolio option cpSat.portfolio requests 12 parallel CP-SAT workers, exceeding the 8 worker portfolio limit.",
+    },
+    {
+      cpSat: {
+        numWorkers: 1,
+        portfolio: {
+          workerCount: 8,
+          perWorkerNumWorkers: 1,
+          perWorkerTimeLimitSeconds: 4000,
+        },
+      },
+      expectedError:
+        "Invalid solver input: CP-SAT portfolio option cpSat.portfolio requests 32000 total CPU seconds, exceeding the 28800 second portfolio budget.",
     },
     {
       cpSat: {
@@ -705,6 +793,35 @@ async function testImmediateSolveRejectsInvalidCpSatOptionsBeforeStartingBackend
       assert.equal(result.statusCode, 400);
       assert.equal(result.payload.ok, false);
       assert.equal(result.payload.error, testCase.expectedError);
+      assert.equal(optimizerAdapterRequested, false);
+    }
+
+    for (const optimizer of ["auto", "lns"]) {
+      const result = await invoke(handler, {
+        method: "POST",
+        url: "/api/solve",
+        json: {
+          ...solvePayload,
+          params: {
+            ...solvePayload.params,
+            optimizer,
+            cpSat: {
+              timeLimitSeconds: 30,
+              portfolio: {
+                workerCount: 2,
+                perWorkerNumWorkers: 1,
+              },
+            },
+          },
+        },
+      });
+
+      assert.equal(result.statusCode, 400);
+      assert.equal(result.payload.ok, false);
+      assert.equal(
+        result.payload.error,
+        'Invalid solver input: CP-SAT portfolio option cpSat.portfolio is only supported when optimizer is "cp-sat".'
+      );
       assert.equal(optimizerAdapterRequested, false);
     }
   } finally {
@@ -1466,7 +1583,7 @@ async function testStartSolveRejectsInvalidCpSatOptionsBeforeStartingJob(handler
     assert.equal(result.payload.ok, false);
     assert.equal(
       result.payload.error,
-      "Invalid solver input: CP-SAT portfolio option cpSat.portfolio.perWorkerNumWorkers must be an integer >= 1."
+      "Invalid solver input: CP-SAT portfolio option cpSat.portfolio.perWorkerNumWorkers must be an integer between 1 and 64."
     );
     assert.equal(optimizerAdapterRequested, false);
 

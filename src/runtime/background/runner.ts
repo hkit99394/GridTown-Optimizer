@@ -54,6 +54,7 @@ export function startJsonBackgroundSolve<TRaw>(config: JsonBackgroundSolverConfi
   const request = config.buildRequest({ stopFilePath, snapshotFilePath });
   const child = spawn(config.command, config.args, {
     stdio: ["pipe", "pipe", "pipe"],
+    detached: process.platform !== "win32",
   });
   const bufferLimitBytes = config.bufferLimitBytes ?? DEFAULT_BUFFER_LIMIT;
 
@@ -87,10 +88,23 @@ export function startJsonBackgroundSolve<TRaw>(config: JsonBackgroundSolverConfi
     return config.materializeSolution(raw, stoppedByUser);
   };
 
+  const killChildProcessGroup = (signal: NodeJS.Signals): void => {
+    if (child.exitCode != null || child.signalCode != null) return;
+    try {
+      if (process.platform !== "win32" && typeof child.pid === "number") {
+        process.kill(-child.pid, signal);
+        return;
+      }
+    } catch {
+      // Fall back to killing the direct child below.
+    }
+    child.kill(signal);
+  };
+
   const scheduleForcedTermination = (): void => {
     if (forcedTerminationTimer) return;
     forcedTerminationTimer = setTimeout(() => {
-      if (child.exitCode == null && child.signalCode == null) child.kill("SIGKILL");
+      killChildProcessGroup("SIGKILL");
     }, 5000);
     forcedTerminationTimer.unref?.();
   };
@@ -101,7 +115,7 @@ export function startJsonBackgroundSolve<TRaw>(config: JsonBackgroundSolverConfi
     try {
       writeFileSync(stopFilePath, "stop\n");
     } catch {
-      child.kill("SIGTERM");
+      killChildProcessGroup("SIGTERM");
     }
     scheduleForcedTermination();
   };

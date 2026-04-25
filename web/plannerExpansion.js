@@ -12,7 +12,9 @@
       SOLVE_STATUS_POLL_INTERVAL_MS,
     } = constants;
     const {
+      buildCpSatContinuationModelInput,
       cloneJson,
+      computeCpSatModelFingerprint,
       createSolveRequestId,
       delay,
       parseResidentialCatalogEntry,
@@ -86,9 +88,14 @@
       };
     }
 
-    function buildComparisonDisplayedLayoutCheckpointPayload() {
+    function checkpointMatchesComparisonRequest(checkpoint, request) {
+      const currentFingerprint = computeCpSatModelFingerprint(buildCpSatContinuationModelInput(request));
+      return currentFingerprint === checkpoint.compatibility.modelFingerprint;
+    }
+
+    function buildComparisonDisplayedLayoutCheckpointPayload(request) {
       const checkpoint = getDisplayedLayoutCheckpoint();
-      if (!checkpoint) return null;
+      if (!checkpoint || !checkpointMatchesComparisonRequest(checkpoint, request)) return null;
       return {
         sourceName: `${getDisplayedLayoutSourceLabel()} (comparison baseline)`,
         modelFingerprint: checkpoint.compatibility.modelFingerprint,
@@ -111,7 +118,7 @@
         return request;
       }
 
-      const payload = buildComparisonDisplayedLayoutCheckpointPayload();
+      const payload = buildComparisonDisplayedLayoutCheckpointPayload(request);
       if (!payload) return request;
 
       if (request.params.optimizer === "cp-sat") {

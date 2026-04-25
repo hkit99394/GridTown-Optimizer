@@ -613,6 +613,18 @@ async function testImmediateSolveRejectsInvalidCpSatOptionsBeforeStartingBackend
       cpSat: {
         numWorkers: 1,
         warmStartHint: {
+          roadKeys: ["0,0"],
+          serviceCandidateKeys: [],
+          residentialCandidateKeys: [],
+        },
+      },
+      expectedError:
+        "Invalid solver input: CP-SAT warm-start hint cpSat.warmStartHint.modelFingerprint is required for hint-only reusable payloads.",
+    },
+    {
+      cpSat: {
+        numWorkers: 1,
+        warmStartHint: {
           solution: {
             roads: [],
             services: [],

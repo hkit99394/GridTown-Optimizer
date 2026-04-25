@@ -406,7 +406,9 @@ expansionAdviceController = createExpansionAdviceController({
     SOLVE_STATUS_POLL_INTERVAL_MS,
   },
   helpers: {
+    buildCpSatContinuationModelInput,
     cloneJson,
+    computeCpSatModelFingerprint,
     createSolveRequestId,
     delay,
     parseResidentialCatalogEntry,

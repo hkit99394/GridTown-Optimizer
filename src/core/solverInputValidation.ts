@@ -18,6 +18,16 @@ const GREEDY_MAX_SERVICE_CANDIDATE_LIMIT = 2_000;
 const GREEDY_MAX_SERVICE_EXACT_POOL_LIMIT = 64;
 const GREEDY_MAX_SERVICE_EXACT_COMBINATIONS = 100_000;
 const GREEDY_MAX_TIME_LIMIT_SECONDS = 24 * 60 * 60;
+const CP_SAT_HINT_ONLY_REUSABLE_KEYS = [
+  "roadKeys",
+  "roads",
+  "serviceCandidateKeys",
+  "residentialCandidateKeys",
+  "services",
+  "residentials",
+  "neighborhoodWindow",
+  "fixOutsideNeighborhoodToHintedValue",
+] as const;
 
 export class SolverInputError extends Error {
   constructor(detail: string) {
@@ -419,18 +429,37 @@ function assertValidReusableSolution(
   }
 }
 
+function hasHintOnlyCpSatReusablePayload(hint: Record<string, unknown>): boolean {
+  if (hint.solution !== undefined) return false;
+  return CP_SAT_HINT_ONLY_REUSABLE_KEYS.some((key) => hint[key] !== undefined);
+}
+
+function assertMatchingCpSatWarmStartFingerprint(
+  G: Grid,
+  params: SolverParams,
+  hint: Record<string, unknown>,
+  path: string
+): void {
+  if (typeof hint.modelFingerprint !== "string") {
+    throw new SolverInputError(`${path}.modelFingerprint is required for hint-only reusable payloads.`);
+  }
+  const expectedFingerprint = computeCpSatRequestFingerprint(G, params);
+  if (hint.modelFingerprint !== expectedFingerprint) {
+    throw new SolverInputError(`${path} is stale for the current grid or building settings.`);
+  }
+}
+
 function assertValidCpSatReusableInputs(G: Grid, params: SolverParams): void {
   const cpSatValue = (params as Record<string, unknown>).cpSat;
   if (!isRecord(cpSatValue) || cpSatValue.warmStartHint === undefined) return;
   const hint = cpSatValue.warmStartHint;
 
-  if (isRecord(hint) && !(hint.roads instanceof Set) && typeof hint.modelFingerprint === "string") {
-    const expectedFingerprint = computeCpSatRequestFingerprint(G, params);
-    if (hint.modelFingerprint !== expectedFingerprint) {
-      throw new SolverInputError(
-        "CP-SAT warm-start hint cpSat.warmStartHint is stale for the current grid or building settings."
-      );
-    }
+  if (
+    isRecord(hint)
+    && !(hint.roads instanceof Set)
+    && (typeof hint.modelFingerprint === "string" || hasHintOnlyCpSatReusablePayload(hint))
+  ) {
+    assertMatchingCpSatWarmStartFingerprint(G, params, hint, "CP-SAT warm-start hint cpSat.warmStartHint");
   }
 
   const solution = materializeCpSatWarmStartReusableSolution(

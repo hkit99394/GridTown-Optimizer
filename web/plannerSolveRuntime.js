@@ -1,6 +1,6 @@
 (function attachPlannerSolveRuntime(globalObject) {
   const AUTO_QUALITY_PATH_LABEL = "recommended quality path";
-  const GREEDY_MODE_LABEL = "fast standalone seed / advanced mode";
+  const GREEDY_MODE_LABEL = "heavy standalone heuristic / advanced inspection mode";
 
   function normalizeProgressElapsedMs(value) {
     const numericValue = Number(value);
@@ -249,14 +249,14 @@
         return `Running ${optimizerLabel} solver. Searching for the first feasible solution...`;
       }
       if (optimizer === "auto") {
-        return "Running Auto solver. Starting the greedy seed stage before LNS and bounded CP-SAT improve it...";
+        return "Running Auto solver. Starting the capped fast Greedy seed stage before LNS and bounded CP-SAT improve it...";
       }
       if (optimizer === "lns") {
         return state.lns.useDisplayedSeed && getDisplayedLayoutCheckpoint()
           ? `Running ${optimizerLabel} solver. Loading the displayed seed before neighborhood repair...`
           : `Running ${optimizerLabel} solver. Building the greedy seed before neighborhood repair...`;
       }
-      return `Running ${optimizerLabel} solver. Searching for a fast seed...`;
+      return `Running ${optimizerLabel} solver. Running the heavy standalone heuristic search...`;
     }
 
     function applyRunningSnapshot(payload) {
@@ -387,7 +387,7 @@
             `${state.lns.useDisplayedSeed && getDisplayedLayoutCheckpoint() ? "Running LNS from the displayed seed" : "Running LNS from a greedy seed"} with ${request.params.lns.iterations} neighborhood repairs and a ${request.params.lns.repairTimeLimitSeconds}s repair cap...`
           );
         } else if (state.optimizer === "auto") {
-          setSolveState(`Running Auto solver. This is the ${AUTO_QUALITY_PATH_LABEL}: Greedy seeds the run, then LNS and bounded CP-SAT continue improving the incumbent...`);
+          setSolveState(`Running Auto solver. This is the ${AUTO_QUALITY_PATH_LABEL}: a capped fast Greedy seed starts the run, then LNS and bounded CP-SAT continue improving the incumbent...`);
         } else {
           setSolveState(`Running Greedy solver in ${GREEDY_MODE_LABEL}...`);
         }

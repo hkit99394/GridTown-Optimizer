@@ -2377,17 +2377,24 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     return refined;
   };
 
-  // If user does not cap services, sweep service count and keep best.
-  // This avoids over-placing services (which can block residentials and reduce population).
+  // Sweep service count and keep the best legal layout. Explicit service caps
+  // are maxima, so lower counts remain eligible when extra services block housing.
   const explicitServiceCap = maxServices;
   const positiveBonuses = (params.serviceTypes ?? []).reduce(
     (sum, type) => sum + (type.bonus > 0 ? Math.max(0, type.avail) : 0),
     0
   );
   const totalServiceAvail = (params.serviceTypes ?? []).reduce((sum, type) => sum + Math.max(0, type.avail), 0);
-  const inferredUpper = explicitServiceCap ?? (positiveBonuses > 0 ? Math.min(totalServiceAvail, positiveBonuses) : totalServiceAvail);
+  const serviceAvailabilityUpper = positiveBonuses > 0 ? Math.min(totalServiceAvail, positiveBonuses) : totalServiceAvail;
+  const inferredUpper = explicitServiceCap !== undefined
+    ? Math.min(explicitServiceCap, serviceAvailabilityUpper)
+    : serviceAvailabilityUpper;
   const capPlan = explicitServiceCap !== undefined
-    ? { coarseCaps: [explicitServiceCap], refineCaps: [], usesAdaptiveSearch: false }
+    ? {
+        coarseCaps: Array.from({ length: inferredUpper + 1 }, (_, cap) => cap),
+        refineCaps: [],
+        usesAdaptiveSearch: false,
+      }
     : buildAdaptiveServiceCapPlan(inferredUpper);
 
   const materializeCurrentServiceSet = (solution: Solution): ServiceCandidate[] =>
@@ -2416,6 +2423,7 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
   const serviceNeighborhoodRoadProbeScratch = createRoadProbeScratch(G);
 
   type ServiceRelocationMove = {
+    kind: "remove" | "add" | "swap";
     serviceIndex: number;
     candidate: ServiceCandidate;
     forcedServices: ServiceCandidate[];
@@ -2433,6 +2441,9 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     || left.forcedServices.length - right.forcedServices.length
     || right.estimatedFutureScore - left.estimatedFutureScore
     || left.estimatedRoadCost - right.estimatedRoadCost
+    || (left.kind === right.kind ? 0 : (
+      left.kind === "remove" ? -1 : right.kind === "remove" ? 1 : left.kind === "add" ? -1 : 1
+    ))
     || left.serviceIndex - right.serviceIndex
     || compareServiceTieBreaks(left.candidate, relocationProbe, right.candidate, relocationProbe)
     || left.orderedServiceKey.localeCompare(right.orderedServiceKey);
@@ -2505,7 +2516,8 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     for (let iteration = 0; iteration < LOCAL_SEARCH_SERVICE_NEIGHBORHOOD.maxIterations; iteration++) {
       maybeStop();
       const incumbentServices = materializeCurrentServiceSet(incumbent);
-      if (incumbentServices.length === 0) break;
+      const canAddService = incumbentServices.length < inferredUpper;
+      if (incumbentServices.length === 0 && !canAddService) break;
       const perTypeNeighborhoodLimit = Math.min(
         serviceOrderSorted.length,
         Math.max(
@@ -2530,6 +2542,12 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
       }
       const occupancyScratch = createOccupancyScratch(incumbentOccupiedBuildings);
       const incumbentServiceKeys = new Set(incumbentServices.map((candidate) => serviceCandidateKey(candidate)));
+      const incumbentServiceTypeUsage = new Array((params.serviceTypes ?? []).length).fill(0);
+      for (const service of incumbentServices) {
+        if (service.typeIndex >= 0 && service.typeIndex < incumbentServiceTypeUsage.length) {
+          incumbentServiceTypeUsage[service.typeIndex] += 1;
+        }
+      }
       const remainingAvailForIncumbent = useTypes && params.residentialTypes
         ? params.residentialTypes.map((type) => type.avail)
         : null;
@@ -2550,6 +2568,87 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
       let iterationBest = incumbent;
       let swapTrials = 0;
       const candidateMoves: ServiceRelocationMove[] = [];
+      const removalMoves: ServiceRelocationMove[] = [];
+
+      for (let serviceIndex = 0; serviceIndex < incumbentServices.length; serviceIndex++) {
+        maybeStop();
+        if (profileCounters) profileCounters.localSearch.serviceRemoveChecks++;
+        const removedService = incumbentServices[serviceIndex];
+        const forcedServices = incumbentServices.filter((_, index) => index !== serviceIndex);
+        const scoredMove = scoreDirectServiceRelocationMove(incumbent, forcedServices);
+        if (!scoredMove) continue;
+        removalMoves.push({
+          kind: "remove",
+          serviceIndex,
+          candidate: removedService,
+          forcedServices,
+          estimatedTotalPopulation: scoredMove.estimatedTotalPopulation,
+          estimatedFutureScore: 0,
+          estimatedRoadCost: 0,
+          orderedServiceKey: scoredMove.orderedServiceKey,
+        });
+      }
+      removalMoves.sort(compareServiceRelocationMoves);
+      candidateMoves.push(
+        ...removalMoves.slice(0, LOCAL_SEARCH_SERVICE_NEIGHBORHOOD.maxRemoveTrialsPerIteration)
+      );
+
+      if (canAddService) {
+        let addTrials = 0;
+        for (const candidate of serviceOrderSorted) {
+          maybeStop();
+          if (addTrials >= LOCAL_SEARCH_SERVICE_NEIGHBORHOOD.maxAddTrialsPerIteration) break;
+          if (incumbentServiceKeys.has(serviceCandidateKey(candidate))) continue;
+          if (
+            candidate.typeIndex >= 0
+            && candidate.typeIndex < incumbentServiceTypeUsage.length
+            && (incumbentServiceTypeUsage[candidate.typeIndex] ?? 0) >= (params.serviceTypes?.[candidate.typeIndex]?.avail ?? 0)
+          ) {
+            continue;
+          }
+          const candidateFootprintKeys = getCachedServiceFootprintKeys(precomputedIndexes, candidate);
+          if (
+            candidateFootprintKeys
+              ? overlapsCachedFootprint(incumbentOccupiedBuildings, candidateFootprintKeys)
+              : overlaps(incumbentOccupiedBuildings, candidate.r, candidate.c, candidate.rows, candidate.cols)
+          ) {
+            continue;
+          }
+          if (profileCounters) profileCounters.localSearch.serviceAddChecks++;
+          if (profileCounters) profileCounters.localSearch.canConnectChecks++;
+          addTrials++;
+          const probe = probeExplicitRoadConnection(
+            G,
+            incumbent.roads,
+            incumbentOccupiedBuildings,
+            candidate,
+            serviceNeighborhoodRoadProbeScratch,
+            profileCounters
+          );
+          if (!probe) continue;
+          const forcedServices = [...incumbentServices, candidate];
+          const scoredMove = scoreDirectServiceRelocationMove(incumbent, forcedServices);
+          if (!scoredMove) continue;
+          const estimatedFutureScore = computeServiceMarginalScore(
+            candidate,
+            incumbentOccupiedBuildings,
+            currentResidentialGroupBoosts,
+            residentialScoringGroups,
+            serviceCoverageGroupsByKey,
+            remainingAvailForIncumbent
+          );
+          candidateMoves.push({
+            kind: "add",
+            serviceIndex: incumbentServices.length,
+            candidate,
+            forcedServices,
+            estimatedTotalPopulation: scoredMove.estimatedTotalPopulation,
+            estimatedFutureScore,
+            estimatedRoadCost: probe.path?.length ?? 0,
+            orderedServiceKey: scoredMove.orderedServiceKey,
+          });
+        }
+      }
 
       for (let serviceIndex = 0; serviceIndex < incumbentServices.length; serviceIndex++) {
         maybeStop();
@@ -2612,6 +2711,7 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
               remainingAvailForIncumbent
             );
             candidateMoves.push({
+              kind: "swap",
               serviceIndex,
               candidate,
               forcedServices,
@@ -2628,19 +2728,33 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
       }
 
       candidateMoves.sort(compareServiceRelocationMoves);
-      const realizationBudget = Math.min(
+      const baseRealizationBudget = Math.min(
         candidateMoves.length,
         Math.max(
           LOCAL_SEARCH_SERVICE_NEIGHBORHOOD.maxRealizationAttemptsPerIteration,
           localSearchServiceCandidateLimit
         )
       );
-      for (const move of candidateMoves.slice(0, realizationBudget)) {
+      const realizationMoves = candidateMoves.slice(0, baseRealizationBudget);
+      const selectedMoveKeys = new Set(
+        realizationMoves.map((move) => `${move.kind}:${move.serviceIndex}:${move.orderedServiceKey}`)
+      );
+      const guaranteedRealizationBudget = baseRealizationBudget
+        + LOCAL_SEARCH_SERVICE_NEIGHBORHOOD.maxRemoveTrialsPerIteration
+        + LOCAL_SEARCH_SERVICE_NEIGHBORHOOD.maxAddTrialsPerIteration;
+      for (const move of candidateMoves) {
+        if (move.kind === "swap") continue;
+        if (realizationMoves.length >= guaranteedRealizationBudget) break;
+        const key = `${move.kind}:${move.serviceIndex}:${move.orderedServiceKey}`;
+        if (selectedMoveKeys.has(key)) continue;
+        selectedMoveKeys.add(key);
+        realizationMoves.push(move);
+      }
+      for (const move of realizationMoves) {
         maybeStop();
         const trial = realizeAcceptedServiceNeighborhoodMove(incumbent, move.forcedServices);
         if (isBetterSearchSolution(trial, iterationBest)) {
           iterationBest = trial as Solution;
-          break;
         }
       }
 
@@ -2714,10 +2828,6 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     }
     if (!best) throw new Error("No feasible solution found.");
 
-    if (localSearch) {
-      best = runBoundedServiceLocalSearch(best);
-    }
-
     const refineIters = serviceRefineIterations;
     const refineLimit = Math.min(serviceRefineCandidateLimit, serviceOrderSorted.length);
     const refinePool = serviceOrderSorted.slice(0, refineLimit);
@@ -2771,6 +2881,14 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
           best = trial;
           updateBest(best);
         }
+      }
+    }
+
+    if (localSearch) {
+      const serviceLocalBest = runBoundedServiceLocalSearch(best);
+      if (isBetterSearchSolution(serviceLocalBest, best)) {
+        best = serviceLocalBest;
+        updateBest(best);
       }
     }
   } catch (error) {

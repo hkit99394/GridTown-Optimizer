@@ -1,10 +1,14 @@
 import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 
-import { assertValidSolveInputs } from "../../core/solverInputValidation.js";
+import {
+  assertValidLayoutEvaluateInputs,
+  assertValidSolveInputs,
+} from "../../core/solverInputValidation.js";
 import { getOptimizerAdapter, resolveOptimizerName } from "../../runtime/dispatch/optimizerRegistry.js";
 import { SolveJobManager } from "../../runtime/jobs/solveJobManager.js";
 import {
+  assertValidSerializedSolutionPayload,
   buildManualLayoutResponse,
   buildSolveResponse,
   isCancelSolveRequest,
@@ -128,6 +132,8 @@ export async function handleLayoutEvaluate(
   );
   if (!payload) return true;
 
+  assertValidLayoutEvaluateInputs(payload.grid, payload.params);
+  assertValidSerializedSolutionPayload(payload.solution, "Manual layout solution");
   const solution = materializeSerializedSolution(payload.solution);
   sendJson(res, 200, {
     ok: true,

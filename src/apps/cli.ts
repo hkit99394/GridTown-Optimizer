@@ -1,8 +1,9 @@
 /**
  * Example CLI runner for local experimentation.
  *
- * Product framing: `auto` is the recommended quality path, and `greedy`
- * stays the fast standalone seed / advanced mode.
+ * Product framing: `auto` is the recommended quality path and owns the capped
+ * fast Greedy seed stage; standalone `greedy` is the heavy heuristic /
+ * advanced inspection mode.
  */
 
 import type { Grid, OptimizerName } from "../core/types.js";
@@ -31,6 +32,8 @@ const DEFAULT_PARAMS = {
     { w: 2, h: 2, min: 280, max: 840, avail: 2 },
     { w: 2, h: 2, min: 300, max: 900, avail: 2 },
   ],
+  // Standalone Greedy mirrors the heavy UI profile. Auto uses AUTO_GREEDY_PARAMS
+  // below when it only needs a capped fast seed stage.
   greedy: {
     localSearch: true,
     randomSeed: undefined,
@@ -86,7 +89,7 @@ function readCliGreedyRandomSeed(): number | undefined {
 
 function describeOptimizerRole(optimizer: OptimizerName): string {
   if (optimizer === "auto") {
-    return "Recommended quality path. Greedy seeds the run, then LNS and bounded CP-SAT continue improving the incumbent.";
+    return "Recommended quality path. A capped fast Greedy seed starts the run, then LNS and bounded CP-SAT continue improving the incumbent.";
   }
   if (optimizer === "lns") {
     return "Manual improvement mode. Starts from a greedy seed, then repairs neighborhoods with CP-SAT.";
@@ -94,7 +97,7 @@ function describeOptimizerRole(optimizer: OptimizerName): string {
   if (optimizer === "cp-sat") {
     return "Bounded polish mode. Usually strongest after a seed already exists.";
   }
-  return "Fast standalone seed / advanced mode. Best for quick legal layouts, seed-quality checks, and heuristic inspection.";
+  return "Heavy standalone heuristic / advanced inspection mode. Best for Greedy-only quality checks and heuristic tuning.";
 }
 
 export async function runExample(): Promise<void> {

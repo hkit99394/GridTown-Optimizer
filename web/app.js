@@ -121,6 +121,8 @@ const state = {
     services: "",
     residentials: "",
   },
+  // Standalone Greedy intentionally uses the heavy heuristic profile; Auto clamps
+  // these values when it only needs a fast seed stage.
   greedy: {
     localSearch: true,
     randomSeed: "",

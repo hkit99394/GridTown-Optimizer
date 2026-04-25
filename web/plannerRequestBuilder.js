@@ -71,10 +71,17 @@
       if (entry?.result?.validation?.valid !== true) {
         return null;
       }
-      if (entry?.continueCpSat) {
+      const rebuiltCheckpoint = tryBuildCheckpoint(entry?.result, entry?.resultContext, getSavedLayoutElapsedMs(entry)).checkpoint;
+      if (!rebuiltCheckpoint) return null;
+      if (
+        entry?.continueCpSat?.kind === "city-builder.cp-sat-checkpoint"
+        && entry.continueCpSat.version === 1
+        && entry.continueCpSat.compatibility?.modelFingerprint === rebuiltCheckpoint.compatibility?.modelFingerprint
+        && entry.continueCpSat.compatibility?.candidateUniverseHash === rebuiltCheckpoint.compatibility?.candidateUniverseHash
+      ) {
         return cloneJson(entry.continueCpSat);
       }
-      return tryBuildCheckpoint(entry?.result, entry?.resultContext, getSavedLayoutElapsedMs(entry)).checkpoint;
+      return rebuiltCheckpoint;
     }
 
     function getDisplayedLayoutCheckpointState() {

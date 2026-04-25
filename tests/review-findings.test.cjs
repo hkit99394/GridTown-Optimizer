@@ -1665,6 +1665,117 @@ function testPlannerRequestBuilderSkipsLegacySavedCheckpointWithoutValidation() 
   assert.equal(controller.getSavedLayoutCheckpoint(legacySavedEntry), null);
 }
 
+function testPlannerRequestBuilderRebuildsStaleSavedCheckpoint() {
+  const plannerShared = loadPlannerSharedModule();
+  const plannerRequestBuilder = loadPlannerRequestBuilderModule();
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+  ];
+  const params = {
+    optimizer: "cp-sat",
+    residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
+    availableBuildings: { residentials: 1, services: 0 },
+    cpSat: {},
+    lns: {},
+  };
+  const validManualResult = buildManualLayoutResponse(grid, params, {
+    roads: new Set(["0,3"]),
+    services: [],
+    serviceTypeIndices: [],
+    servicePopulationIncreases: [],
+    residentials: [
+      { r: 0, c: 0, rows: 2, cols: 2 },
+    ],
+    residentialTypeIndices: [0],
+    populations: [10],
+    totalPopulation: 10,
+  });
+  const checkpoint = plannerShared.buildCpSatWarmStartCheckpoint(validManualResult, { grid, params }, 0);
+  const staleCheckpoint = plannerShared.cloneJson(checkpoint);
+  staleCheckpoint.compatibility.modelFingerprint = "fnv1a:00000000";
+  staleCheckpoint.compatibility.candidateUniverseHash = "fnv1a:00000000";
+
+  const controller = plannerRequestBuilder.createPlannerRequestBuilderController({
+    state: {
+      optimizer: "cp-sat",
+      grid,
+      serviceTypes: [],
+      residentialTypes: [
+        plannerShared.serializeResidentialTypeForCatalog({ w: 2, h: 2, min: 10, max: 10, avail: 1 }),
+      ],
+      availableBuildings: {
+        services: "0",
+        residentials: "1",
+      },
+      greedy: {
+        localSearch: false,
+        randomSeed: "",
+        restarts: 1,
+        serviceRefineIterations: 0,
+        serviceRefineCandidateLimit: 1,
+        exhaustiveServiceSearch: false,
+        serviceExactPoolLimit: 1,
+        serviceExactMaxCombinations: 1,
+      },
+      cpSat: {
+        timeLimitSeconds: "",
+        noImprovementTimeoutSeconds: "",
+        randomSeed: "",
+        numWorkers: 8,
+        logSearchProgress: false,
+        pythonExecutable: "",
+        useDisplayedHint: false,
+      },
+      lns: {
+        iterations: 1,
+        maxNoImprovementIterations: 1,
+        neighborhoodRows: 2,
+        neighborhoodCols: 2,
+        repairTimeLimitSeconds: 1,
+        useDisplayedSeed: false,
+      },
+      result: null,
+      resultContext: null,
+      resultElapsedMs: 0,
+    },
+    elements: {
+      cpSatRandomSeed: { value: "" },
+      cpSatHintStatus: { textContent: "" },
+      lnsSeedStatus: { textContent: "" },
+      payloadPreview: { textContent: "" },
+      layoutStorageName: { value: "" },
+    },
+    helpers: {
+      buildCpSatContinuationModelInput: plannerShared.buildCpSatContinuationModelInput,
+      buildCpSatWarmStartCheckpoint: plannerShared.buildCpSatWarmStartCheckpoint,
+      clampInteger: plannerShared.clampInteger,
+      cloneGrid: plannerShared.cloneGrid,
+      cloneJson: plannerShared.cloneJson,
+      computeCpSatModelFingerprint: plannerShared.computeCpSatModelFingerprint,
+      getSavedLayoutElapsedMs: plannerShared.getSavedLayoutElapsedMs,
+      readOptionalInteger: plannerShared.readOptionalInteger,
+      parseResidentialCatalogEntry: plannerShared.parseResidentialCatalogEntry,
+      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry,
+    },
+  });
+
+  const savedCheckpoint = controller.getSavedLayoutCheckpoint({
+    id: "stale-layout",
+    name: "Stale Layout",
+    savedAt: "2026-04-18T09:00:00.000Z",
+    elapsedMs: 0,
+    result: validManualResult,
+    resultContext: { grid, params },
+    continueCpSat: staleCheckpoint,
+  });
+
+  assert.equal(savedCheckpoint.compatibility.modelFingerprint, checkpoint.compatibility.modelFingerprint);
+  assert.equal(savedCheckpoint.compatibility.candidateUniverseHash, checkpoint.compatibility.candidateUniverseHash);
+}
+
 function testPlannerRequestBuilderSkipsInvalidDisplayedLayoutContinuation() {
   const plannerShared = loadPlannerSharedModule();
   const plannerRequestBuilder = loadPlannerRequestBuilderModule();
@@ -2372,6 +2483,7 @@ testManualLayoutResponseReportsOutOfBoundsRoads();
 testBuildCpSatWarmStartCheckpointRejectsInvalidLayouts();
 testBuildCpSatWarmStartCheckpointRejectsLegacyLayoutsWithoutValidation();
 testPlannerRequestBuilderSkipsLegacySavedCheckpointWithoutValidation();
+testPlannerRequestBuilderRebuildsStaleSavedCheckpoint();
 testPlannerRequestBuilderSkipsInvalidDisplayedLayoutContinuation();
 testPlannerRequestBuilderSkipsLegacyDisplayedLayoutContinuationWithoutValidation();
 testPlannerRequestBuilderIncludesHintAndSeedForAuto();

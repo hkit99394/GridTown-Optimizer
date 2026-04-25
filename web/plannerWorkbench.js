@@ -278,19 +278,19 @@
       const defaultNeighborhoodRows = Math.max(1, Math.ceil(state.grid.length / 2));
       const defaultNeighborhoodCols = Math.max(1, Math.ceil((state.grid[0]?.length ?? 1) / 2));
 
-      if (kind === "fast-greedy") {
+      if (kind === "heavy-greedy") {
         state.greedy = {
           ...state.greedy,
           localSearch: true,
-          restarts: 8,
-          serviceRefineIterations: 2,
-          serviceRefineCandidateLimit: 40,
-          exhaustiveServiceSearch: false,
-          serviceExactPoolLimit: 16,
-          serviceExactMaxCombinations: 4000,
+          restarts: 20,
+          serviceRefineIterations: 4,
+          serviceRefineCandidateLimit: 60,
+          exhaustiveServiceSearch: true,
+          serviceExactPoolLimit: 22,
+          serviceExactMaxCombinations: 12000,
         };
         elements.runtimePresetStatus.textContent =
-          'Applied "Fast Greedy": fast standalone seed settings for quick legal layouts, seed-quality checks, or standalone heuristic runs.';
+          'Applied "Heavy Greedy": standalone heuristic settings with deeper service refinement and exact service search.';
       } else if (kind === "lns-improve") {
         state.lns = {
           ...state.lns,
@@ -318,7 +318,7 @@
       }
 
       const optimizer =
-        kind === "fast-greedy" ? "greedy"
+        kind === "heavy-greedy" ? "greedy"
         : kind === "lns-improve" ? "lns"
         : "cp-sat";
       setOptimizer(optimizer);

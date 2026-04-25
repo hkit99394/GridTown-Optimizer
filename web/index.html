@@ -430,14 +430,14 @@
               </div>
 
               <div class="solver-callout">
-                Recommended quality path: use Auto when overall answer quality matters most. Greedy stays available as
-                the fast standalone seed / advanced mode, and LNS or bounded CP-SAT can spend more time improving
-                that seed.
+                Recommended quality path: use Auto when overall answer quality matters most. Auto starts with a capped
+                fast Greedy seed, then LNS and bounded CP-SAT spend the deeper improvement budget. Standalone Greedy
+                stays available as the heavy heuristic / advanced inspection mode.
               </div>
 
               <div id="runtimePresetButtons" class="runtime-preset-grid">
-                <button type="button" class="button secondary compact" data-runtime-preset="fast-greedy">
-                  Fast Greedy
+                <button type="button" class="button secondary compact" data-runtime-preset="heavy-greedy">
+                  Heavy Greedy
                 </button>
                 <button type="button" class="button secondary compact" data-runtime-preset="lns-improve">
                   LNS Improve
@@ -462,9 +462,8 @@
               <div class="solver-panels">
                 <section id="autoPanel" class="solver-panel">
                   <div class="notice info">
-                    Auto is the recommended quality path. It reuses the Greedy, LNS, and CP-SAT controls below as
-                    stage defaults: Greedy seeds the run, LNS repairs neighborhoods, and bounded CP-SAT polishes the
-                    incumbent.
+                    Auto is the recommended quality path. It uses a capped fast Greedy seed stage, then LNS repairs
+                    neighborhoods and bounded CP-SAT polishes the incumbent.
                   </div>
                   <div class="form-grid">
                     <label class="field">
@@ -481,8 +480,8 @@
                 </section>
                 <section id="greedyPanel" class="solver-panel">
                   <div class="notice info">
-                    Greedy is the fast standalone seed / advanced mode. Use it for the quickest legal layout or direct
-                    seed-quality inspection; use Auto when overall quality matters more than staying purely heuristic.
+                    Greedy is the heavy standalone heuristic / advanced inspection mode. Use Auto when you want the
+                    fast seed stage plus LNS and bounded CP-SAT follow-on improvement.
                   </div>
                   <div class="form-grid two-up">
                     <label class="check-field">

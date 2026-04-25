@@ -72,7 +72,7 @@ Preferred configuration is typed `residentialTypes`. Legacy `residentialSettings
 `auto` is the recommended quality path.
 
 In this project it:
-- starts with a fast greedy incumbent
+- starts with a capped fast greedy incumbent
 - improves it with `LNS`
 - follows with bounded `CP-SAT` polishing
 - keeps alternating bounded `LNS` and `CP-SAT` while meaningful improvement continues
@@ -81,7 +81,7 @@ Use this when overall answer quality matters more than keeping the run purely st
 
 ### `greedy`
 
-The greedy solver is the fast standalone seed / advanced mode.
+The greedy solver is the heavy standalone heuristic / advanced inspection mode.
 
 It uses:
 - service candidate ranking
@@ -90,7 +90,7 @@ It uses:
 - local improvement
 - optional bounded exhaustive search over top service layouts
 
-Use this when you want fast iteration and a strong incumbent quickly.
+Use standalone `greedy` when you want Greedy-only quality checks or heuristic tuning. Use `auto` when you want the fast seed stage plus follow-on improvement.
 
 ### `lns`
 
@@ -574,7 +574,7 @@ type ResidentialTypeSetting = {
 
 ### Greedy options
 
-Prefer the nested `greedy` object for new code:
+Prefer the nested `greedy` object for new code. The web app and CLI use this heavier standalone Greedy profile by default; `auto` clamps the Greedy stage separately when it only needs a fast seed.
 
 ```ts
 greedy: {

@@ -306,6 +306,27 @@ function buildTinySolvePayload() {
   };
 }
 
+function buildWarmStartHintFromSolution(solution, overrides = {}) {
+  return {
+    ...overrides,
+    solution: {
+      roads: Array.from(solution.roads),
+      services: solution.services.map((service, index) => ({
+        ...service,
+        typeIndex: solution.serviceTypeIndices[index],
+        bonus: solution.servicePopulationIncreases[index],
+      })),
+      residentials: solution.residentials.map((residential, index) => ({
+        ...residential,
+        typeIndex: solution.residentialTypeIndices[index],
+        population: solution.populations[index],
+      })),
+      populations: [...solution.populations],
+      totalPopulation: solution.totalPopulation,
+    },
+  };
+}
+
 async function testHealthRoute(handler) {
   const result = await invoke(handler, { method: "GET", url: "/api/health" });
   assert.equal(result.statusCode, 200);
@@ -495,8 +516,59 @@ async function testImmediateSolveRejectsMalformedLnsSeedFields(handler) {
   assert.equal(result.payload.error, "Invalid solver input: LNS seed hint solution.residentials[0].r must be an integer >= 0.");
 }
 
+async function testImmediateSolveRejectsStaleLnsSeedHintBeforeStartingBackend(handler) {
+  const solvePayload = buildTinySolvePayload();
+  const reusableSolution = solve(solvePayload.grid, solvePayload.params);
+  const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+  let optimizerAdapterRequested = false;
+
+  optimizerRegistry.getOptimizerAdapter = () => {
+    optimizerAdapterRequested = true;
+    return {
+      name: "lns",
+      solve() {
+        throw new Error("Immediate solves should use the non-blocking background adapter.");
+      },
+      startBackgroundSolve() {
+        throw new Error("Stale LNS seed should be rejected before starting the backend.");
+      },
+    };
+  };
+
+  try {
+    const result = await invoke(handler, {
+      method: "POST",
+      url: "/api/solve",
+      json: {
+        ...solvePayload,
+        params: {
+          ...solvePayload.params,
+          optimizer: "lns",
+          lns: {
+            iterations: 1,
+            maxNoImprovementIterations: 1,
+            neighborhoodRows: 2,
+            neighborhoodCols: 2,
+            seedHint: buildWarmStartHintFromSolution(reusableSolution, {
+              modelFingerprint: "fnv1a:00000000",
+            }),
+          },
+        },
+      },
+    });
+
+    assert.equal(result.statusCode, 400);
+    assert.equal(result.payload.ok, false);
+    assert.equal(result.payload.error, "Invalid solver input: LNS seed hint is stale for the current grid or building settings.");
+    assert.equal(optimizerAdapterRequested, false);
+  } finally {
+    optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
+  }
+}
+
 async function testImmediateSolveRejectsInvalidCpSatOptionsBeforeStartingBackend(handler) {
   const solvePayload = buildTinySolvePayload();
+  const reusableSolution = solve(solvePayload.grid, solvePayload.params);
   const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
   let optimizerAdapterRequested = false;
 
@@ -530,6 +602,16 @@ async function testImmediateSolveRejectsInvalidCpSatOptionsBeforeStartingBackend
     {
       cpSat: {
         numWorkers: 1,
+        warmStartHint: buildWarmStartHintFromSolution(reusableSolution, {
+          modelFingerprint: "fnv1a:00000000",
+        }),
+      },
+      expectedError:
+        "Invalid solver input: CP-SAT warm-start hint cpSat.warmStartHint is stale for the current grid or building settings.",
+    },
+    {
+      cpSat: {
+        numWorkers: 1,
         warmStartHint: {
           solution: {
             roads: [],
@@ -544,6 +626,24 @@ async function testImmediateSolveRejectsInvalidCpSatOptionsBeforeStartingBackend
       },
       expectedError:
         "Invalid solver input: CP-SAT warm-start hint cpSat.warmStartHint.solution.residentials[0].typeIndex must be an integer >= -1.",
+    },
+    {
+      cpSat: {
+        numWorkers: 1,
+        warmStartHint: {
+          solution: {
+            roads: [],
+            services: [],
+            residentials: [
+              { r: 0, c: 0, rows: 2, cols: 2, typeIndex: 0, population: 100 },
+            ],
+            populations: [100],
+            totalPopulation: 100,
+          },
+        },
+      },
+      expectedError:
+        "Invalid solver input: CP-SAT warm-start hint cpSat.warmStartHint.solution is invalid: Road network does not touch row 0.",
     },
   ];
 
@@ -736,7 +836,62 @@ async function testLayoutEvaluateRejectsMalformedSerializedSolutions(handler) {
   assert.equal(result.payload.ok, false);
   assert.equal(
     result.payload.error,
-    "Invalid layout-evaluate payload. Expected { grid, params, solution } with a rectangular 0/1 grid."
+    "Invalid solver input: Manual layout solution.roads[0] must be a road key like \"r,c\"."
+  );
+}
+
+async function testLayoutEvaluateReportsWellFormedInvalidManualLayout(handler) {
+  const solvePayload = buildTinySolvePayload();
+  const solved = solve(solvePayload.grid, solvePayload.params);
+  const serializedSolution = {
+    ...solved,
+    roads: [],
+  };
+
+  const result = await invoke(handler, {
+    method: "POST",
+    url: "/api/layout/evaluate",
+    json: {
+      ...solvePayload,
+      solution: serializedSolution,
+    },
+  });
+
+  assert.equal(result.statusCode, 200);
+  assert.equal(result.payload.ok, true);
+  assert.equal(result.payload.validation.valid, false);
+  assert.match(result.payload.validation.errors.join("\n"), /Road network does not touch row 0/);
+  assert.equal(result.payload.solution.manualLayout, true);
+}
+
+async function testLayoutEvaluateRejectsInvalidProblemDefinition(handler) {
+  const solvePayload = buildTinySolvePayload();
+  const solved = solve(solvePayload.grid, solvePayload.params);
+  const serializedSolution = {
+    ...solved,
+    roads: Array.from(solved.roads),
+  };
+
+  const result = await invoke(handler, {
+    method: "POST",
+    url: "/api/layout/evaluate",
+    json: {
+      ...solvePayload,
+      params: {
+        ...solvePayload.params,
+        residentialTypes: [
+          { ...solvePayload.params.residentialTypes[0], avail: "1" },
+        ],
+      },
+      solution: serializedSolution,
+    },
+  });
+
+  assert.equal(result.statusCode, 400);
+  assert.equal(result.payload.ok, false);
+  assert.equal(
+    result.payload.error,
+    "Invalid solver input: Problem definition residentialTypes[0].avail must be an integer >= 0."
   );
 }
 
@@ -1062,6 +1217,71 @@ async function testStartSolveRejectsInvalidCpSatOptionsBeforeStartingJob(handler
   }
 }
 
+async function testStartSolveRejectsInvalidCpSatWarmStartBeforeStartingJob(handler) {
+  const solvePayload = buildTinySolvePayload();
+  const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+  let optimizerAdapterRequested = false;
+
+  optimizerRegistry.getOptimizerAdapter = () => {
+    optimizerAdapterRequested = true;
+    return {
+      name: "cp-sat",
+      solve() {
+        throw new Error("Background solve route test should use the background adapter.");
+      },
+      startBackgroundSolve() {
+        throw new Error("Invalid CP-SAT warm start should be rejected before starting a solve job.");
+      },
+    };
+  };
+
+  try {
+    const requestId = "invalid-cp-sat-reusable-layout";
+    const result = await invoke(handler, {
+      method: "POST",
+      url: "/api/solve/start",
+      json: {
+        ...solvePayload,
+        requestId,
+        params: {
+          ...solvePayload.params,
+          optimizer: "cp-sat",
+          cpSat: {
+            numWorkers: 1,
+            warmStartHint: {
+              solution: {
+                roads: [],
+                services: [],
+                residentials: [
+                  { r: 0, c: 0, rows: 2, cols: 2, typeIndex: 0, population: 100 },
+                ],
+                populations: [100],
+                totalPopulation: 100,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    assert.equal(result.statusCode, 400);
+    assert.equal(result.payload.ok, false);
+    assert.equal(
+      result.payload.error,
+      "Invalid solver input: CP-SAT warm-start hint cpSat.warmStartHint.solution is invalid: Road network does not touch row 0."
+    );
+    assert.equal(optimizerAdapterRequested, false);
+
+    const statusResult = await invoke(handler, {
+      method: "GET",
+      url: `/api/solve/status?${new URLSearchParams({ requestId }).toString()}`,
+    });
+    assert.equal(statusResult.statusCode, 404);
+  } finally {
+    optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
+  }
+}
+
 async function testStartSolveRejectsInvalidGreedyOptionsBeforeStartingJob(handler) {
   const solvePayload = buildTinySolvePayload();
   const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
@@ -1181,6 +1401,7 @@ async function main() {
   await testImmediateSolveBackendJsonErrorsReturnInternalServerError(handler);
   await testImmediateSolveRejectsInvalidLnsSeedHint(handler);
   await testImmediateSolveRejectsMalformedLnsSeedFields(handler);
+  await testImmediateSolveRejectsStaleLnsSeedHintBeforeStartingBackend(handler);
   await testImmediateSolveRejectsInvalidCpSatOptionsBeforeStartingBackend(handler);
   await testImmediateSolveRejectsInvalidGreedyOptionsBeforeStartingBackend(handler);
   await testImmediateSolvePreservesTypedSolverInputErrors(handler);
@@ -1189,11 +1410,14 @@ async function main() {
   await testImmediateSolveRejectsBackgroundSolveAtCapacity();
   await testLayoutEvaluateRoute(handler);
   await testLayoutEvaluateRejectsMalformedSerializedSolutions(handler);
+  await testLayoutEvaluateReportsWellFormedInvalidManualLayout(handler);
+  await testLayoutEvaluateRejectsInvalidProblemDefinition(handler);
   await testBackgroundSolveRoutes(handler);
   await testSolveStatusIncludesAutoStageMetadata(handler);
   await testRecoveredAutoFailureNormalizesTerminalMetadata();
   await testStartSolveRejectsInvalidLnsSeedHint(handler);
   await testStartSolveRejectsInvalidCpSatOptionsBeforeStartingJob(handler);
+  await testStartSolveRejectsInvalidCpSatWarmStartBeforeStartingJob(handler);
   await testStartSolveRejectsInvalidGreedyOptionsBeforeStartingJob(handler);
   await testCancelMissingSolveRoute(handler);
   await testCompletedSolveJobsExpire();

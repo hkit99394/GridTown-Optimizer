@@ -2760,8 +2760,8 @@ function testGreedyGeometryOccupancyHotPathBenchmarkCase() {
   assert.equal(result.caseCount, 1);
   assert.deepEqual(result.selectedCaseNames, ["geometry-occupancy-hot-path"]);
   assert.equal(result.results[0].name, "geometry-occupancy-hot-path");
-  assert.equal(result.results[0].totalPopulation, 1000);
-  assert.equal(result.results[0].serviceCount, 4);
+  assert.equal(result.results[0].totalPopulation, 1030);
+  assert.equal(result.results[0].serviceCount, 5);
   assert.equal(result.results[0].residentialCount, 6);
   assert.equal(result.results[0].greedyProfile.counters.servicePhase.candidateScans > 0, true);
   assert.equal(result.results[0].greedyProfile.counters.residentialPhase.candidateScans > 0, true);
@@ -2783,7 +2783,33 @@ function inferredPositiveServiceUpper(params) {
   return positiveBonuses > 0 ? Math.min(totalAvail, positiveBonuses) : totalAvail;
 }
 
-function testGreedyExplicitCapBypassesAdaptiveCapSearch() {
+function testGreedyExplicitServiceCapIsMaximum() {
+  const grid = Array.from({ length: 4 }, () => Array.from({ length: 4 }, () => 1));
+  const params = {
+    optimizer: "greedy",
+    serviceTypes: [{ rows: 2, cols: 2, bonus: 50, range: 1, avail: 1 }],
+    residentialTypes: [{ w: 2, h: 2, min: 100, max: 150, avail: 4 }],
+    availableBuildings: { services: 1 },
+    greedy: {
+      localSearch: false,
+      restarts: 1,
+      serviceRefineIterations: 0,
+      exhaustiveServiceSearch: false,
+      profile: true,
+    },
+  };
+
+  const solution = solveGreedy(grid, params);
+  const validation = validateSolution({ grid, solution, params });
+
+  assert.equal(validation.valid, true);
+  assert.equal(solution.totalPopulation, 200);
+  assert.equal(solution.services.length, 0);
+  assert.equal(solution.residentials.length, 2);
+  assert.equal(solution.greedyProfile.counters.attempts.serviceCaps, 2);
+}
+
+function testGreedyExplicitCapSweepsAllAllowedLowerCaps() {
   const grid = Array.from({ length: 8 }, () => Array.from({ length: 8 }, () => 1));
   const params = {
     optimizer: "greedy",
@@ -2812,7 +2838,7 @@ function testGreedyExplicitCapBypassesAdaptiveCapSearch() {
   const solution = solveGreedy(grid, params);
   const counters = solution.greedyProfile.counters.attempts;
 
-  assert.equal(counters.serviceCaps, 1);
+  assert.equal(counters.serviceCaps, 4);
   assert.equal(counters.coarseCaps, 0);
   assert.equal(counters.refineCaps, 0);
   assert.equal(counters.capsSkipped, 0);
@@ -2929,11 +2955,11 @@ function testGreedyIncrementalInvalidationPreservesBenchmarkOutputs() {
     "compact-service-single": { totalPopulation: 370, serviceCount: 1, residentialCount: 2 },
     "cap-sweep-mixed": { totalPopulation: 440, serviceCount: 1, residentialCount: 3 },
     "bridge-connectivity-heavy": { totalPopulation: 400, serviceCount: 1, residentialCount: 3 },
-    "geometry-occupancy-hot-path": { totalPopulation: 1000, serviceCount: 4, residentialCount: 6 },
+    "geometry-occupancy-hot-path": { totalPopulation: 1030, serviceCount: 5, residentialCount: 6 },
     "typed-footprint-pressure": { totalPopulation: 450, serviceCount: 2, residentialCount: 4 },
-    "adaptive-cap-search-wide": { totalPopulation: 812, serviceCount: 2, residentialCount: 6 },
-    "crowded-invalidation-heavy": { totalPopulation: 711, serviceCount: 1, residentialCount: 6 },
-    "service-local-neighborhood": { totalPopulation: 290, serviceCount: 1, residentialCount: 3 },
+    "adaptive-cap-search-wide": { totalPopulation: 848, serviceCount: 1, residentialCount: 6 },
+    "crowded-invalidation-heavy": { totalPopulation: 747, serviceCount: 2, residentialCount: 6 },
+    "service-local-neighborhood": { totalPopulation: 295, serviceCount: 2, residentialCount: 3 },
     "step14-deterministic-lookahead-ties": { totalPopulation: 200, serviceCount: 1, residentialCount: 2 },
     "step14-row0-path-null-reservation": { totalPopulation: 230, serviceCount: 1, residentialCount: 2 },
     "step14-scarce-type-sequential-refill": { totalPopulation: 210, serviceCount: 2, residentialCount: 2 },
@@ -2979,7 +3005,7 @@ function testGreedyIncrementalInvalidationCounters() {
   assert.equal(focusedCrowdedSolution.totalPopulation, 579);
   assert.equal(focusedCrowdedSolution.services.length, 1);
   assert.equal(focusedCrowdedSolution.residentials.length, 5);
-  assert.equal(focusedCrowdedCounters.attempts.serviceCaps, 1);
+  assert.equal(focusedCrowdedCounters.attempts.serviceCaps, 2);
   assert.equal(focusedCrowdedCounters.attempts.restarts, 0);
   assert.equal(focusedCrowdedCounters.attempts.localSearchIterations, 0);
   assert.equal(focusedCrowdedCounters.servicePhase.fixedPlacements, 0);
@@ -2994,7 +3020,7 @@ function testGreedyIncrementalInvalidationCounters() {
     true
   );
   assert.equal(focusedCrowdedCounters.servicePhase.candidateScans < 500, true);
-  assert.equal(focusedCrowdedCounters.residentialPhase.candidateScans < 800, true);
+  assert.equal(focusedCrowdedCounters.residentialPhase.candidateScans < 3000, true);
 
   const typedResult = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
     names: ["typed-availability-pressure"],
@@ -3246,17 +3272,17 @@ function testGreedyServiceLocalNeighborhoodBenchmarkCase() {
   assert.equal(result.caseCount, 1);
   assert.deepEqual(result.selectedCaseNames, ["service-local-neighborhood"]);
   assert.equal(result.results[0].name, "service-local-neighborhood");
-  assert.equal(result.results[0].totalPopulation, 290);
-  assert.equal(result.results[0].serviceCount, 1);
+  assert.equal(result.results[0].totalPopulation, 295);
+  assert.equal(result.results[0].serviceCount, 2);
   assert.equal(result.results[0].residentialCount, 3);
-  assert.equal(improvedSolution.totalPopulation, 290);
+  assert.equal(improvedSolution.totalPopulation, 295);
   assert.equal(baselineSolution.totalPopulation, 240);
   assert.equal(improvedSolution.totalPopulation > baselineSolution.totalPopulation, true);
   assert.equal(improvedSolution.greedyProfile.counters.attempts.fixedServiceRealizationTrials, 0);
   assert.equal(improvedSolution.greedyProfile.counters.localSearch.occupancyScratchReuses > 0, true);
   assert.equal(improvedSolution.greedyProfile.counters.roads.scratchProbeCalls > 0, true);
-  assert.equal(counters.serviceRemoveChecks, 0);
-  assert.equal(counters.serviceAddChecks, 0);
+  assert.equal(counters.serviceRemoveChecks > 0, true);
+  assert.equal(counters.serviceAddChecks > 0, true);
   assert.equal(counters.serviceSwapChecks > 0, true);
   assert.equal(counters.serviceNeighborhoodImprovements > 0, true);
   assert.match(formatGreedyBenchmarkSuite(result), /service-local-neighborhood/);
@@ -3317,7 +3343,7 @@ function testGreedyTypedAvailabilityPressureBenchmarkCase() {
   assert.equal(solution.services.length, 2);
   assert.deepEqual(solution.services, [
     { r: 3, c: 2, rows: 1, cols: 1, range: 2 },
-    { r: 2, c: 4, rows: 1, cols: 1, range: 2 },
+    { r: 3, c: 3, rows: 1, cols: 1, range: 2 },
   ]);
   assert.deepEqual(solution.residentialTypeIndices, [0, 1, 1, 1, 1]);
   assert.deepEqual(solution.populations, [175, 110, 110, 110, 110]);
@@ -3379,8 +3405,8 @@ function testGreedyGroupedServiceScoringDiscountsLimitedFallbackTypes() {
   assert.equal(solution.totalPopulation, 265);
   assert.deepEqual(solution.serviceTypeIndices, [0, 0]);
   assert.deepEqual(solution.services, [
+    { r: 2, c: 3, rows: 1, cols: 1, range: 2 },
     { r: 2, c: 2, rows: 1, cols: 1, range: 2 },
-    { r: 1, c: 0, rows: 1, cols: 1, range: 2 },
   ]);
   assert.deepEqual(solution.residentialTypeIndices, [0, 1]);
   assert.deepEqual(solution.populations, [175, 90]);
@@ -4971,7 +4997,8 @@ async function main() {
   testBuildingGeometryCachesParity();
   testGreedyGeometryOccupancyHotPathBenchmarkCase();
   testRoadProbeScratchRepeatability();
-  testGreedyExplicitCapBypassesAdaptiveCapSearch();
+  testGreedyExplicitServiceCapIsMaximum();
+  testGreedyExplicitCapSweepsAllAllowedLowerCaps();
   testGreedySmallUpperKeepsFullCapSweep();
   testGreedyAdaptiveCapSearchWideBenchmarkCase();
   testGreedyAdaptiveCapSearchMatchesBestExplicitCap();

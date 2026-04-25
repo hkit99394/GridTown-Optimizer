@@ -3,6 +3,7 @@ import {
   serializeSolution,
 } from "../../core/solutionSerialization.js";
 import { validateSolutionMap } from "../../core/map.js";
+import { assertValidSerializedSolutionPayload } from "../../core/solverInputValidation.js";
 import type { Grid, SerializedSolution, Solution, SolverParams } from "../../core/types.js";
 
 export interface SolveRequest {
@@ -14,7 +15,7 @@ export interface SolveRequest {
 export interface LayoutEvaluateRequest {
   grid: Grid;
   params: SolverParams;
-  solution: SerializedSolution;
+  solution: unknown;
 }
 
 export interface CancelSolveRequest {
@@ -103,9 +104,14 @@ export function isSerializedSolution(value: unknown): value is SerializedSolutio
 export function isLayoutEvaluateRequest(value: unknown): value is LayoutEvaluateRequest {
   if (typeof value !== "object" || value === null) return false;
   const candidate = value as Partial<LayoutEvaluateRequest>;
-  return isGrid(candidate.grid) && typeof candidate.params === "object" && candidate.params !== null && isSerializedSolution(candidate.solution);
+  return isGrid(candidate.grid)
+    && typeof candidate.params === "object"
+    && candidate.params !== null
+    && typeof candidate.solution === "object"
+    && candidate.solution !== null;
 }
 
+export { assertValidSerializedSolutionPayload };
 export { materializeSerializedSolution };
 
 export function buildSolveResponsePayload(grid: Grid, params: SolverParams, solution: Solution) {
@@ -155,6 +161,7 @@ export function buildManualLayoutResponse(grid: Grid, params: SolverParams, solu
     cpSatTelemetry: undefined,
     cpSatPortfolio: undefined,
     stoppedByUser: false,
+    stoppedByTimeLimit: false,
     populations: [...initialValidation.recomputedPopulations],
     totalPopulation: initialValidation.recomputedTotalPopulation,
   };
@@ -177,6 +184,7 @@ export function buildManualLayoutResponse(grid: Grid, params: SolverParams, solu
       manualLayout: Boolean(normalizedSolution.manualLayout),
       cpSatStatus: normalizedSolution.cpSatStatus ?? null,
       stoppedByUser: Boolean(normalizedSolution.stoppedByUser),
+      stoppedByTimeLimit: Boolean(normalizedSolution.stoppedByTimeLimit),
       totalPopulation: normalizedSolution.totalPopulation,
       roadCount: normalizedSolution.roads.size,
       serviceCount: normalizedSolution.services.length,

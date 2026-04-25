@@ -41,7 +41,7 @@ After the shipped Steps 1-15 bounded slices, the greedy path is much stronger an
 - direct service-relocation neighborhoods on top of residential local search
 - lower-allocation geometry and road-probe helpers behind the current public APIs
 - bounded service-add lookahead in the main explicit greedy service loop
-- an explicit product posture where `auto` is the recommended quality path and `greedy` is the fast seed / advanced standalone mode
+- an explicit product posture where `auto` is the recommended quality path with a capped fast Greedy seed stage, while standalone `greedy` is the heavy heuristic / advanced inspection mode
 
 The biggest remaining practical gaps are now narrower and more specific:
 - `localSearchImprove()` still allocates fresh occupancy snapshots for residential move scans, which is now one of the more obvious remaining hot allocations in the greedy path
@@ -180,7 +180,7 @@ Concrete work:
 - add benchmark cases that specifically exercise same-footprint multi-type and low-availability ranking behavior
 
 Guardrail:
-- keep the service scoring proxy cheap enough to preserve greedy as a fast seed builder
+- keep the service scoring proxy cheap enough for Auto's capped fast Greedy seed stage
 - do not accidentally turn the scoring path into a full lookahead solve
 
 Shipped bounded slice:
@@ -320,7 +320,7 @@ Concrete work:
 - keep stop responsiveness and snapshot safety intact during longer local-improvement phases
 
 Guardrail:
-- preserve the role of greedy as a fast seed builder; do not let local search dominate total runtime by default
+- preserve Auto's capped fast Greedy seed role; keep standalone Greedy's heavier local search bounded and measurable
 
 Shipped bounded slice:
 - `src/greedy/solver.ts` now keeps the existing residential move/add loop inside `localSearchImprove()`, then adds one bounded top-level service neighborhood pass under the same `greedy.localSearch` flag
@@ -375,8 +375,8 @@ Shipped bounded slice:
 - `src/greedy/solver.ts` now evaluates Step 12 service neighborhoods as direct same-type relocations instead of running `remove`/`add`/`swap` through the Step 9 fixed-service evaluator for every trial
 - relocation candidates are scored against the incumbent occupancy and grouped residential upside with the current service removed from the boost state, then only the top-ranked few are exact-realized through the existing fixed-service solve path
 - the direct path now samples candidates per service type instead of from the global top-N pool, which avoids starving lower-ranked incumbent types during relocation search
-- `tests/optimizers.test.cjs` keeps `service-local-neighborhood` as the main guardrail and now asserts the Step 12 path still improves the `240` baseline to `290`, keeps `fixedServiceRealizationTrials === 0`, and exercises swaps without re-enabling add/remove moves
-- the broader fixed corpus currently lands `adaptive-cap-search-wide` at `812` and `geometry-occupancy-hot-path` at `1000` under the shipped Step 12 slice
+- `tests/optimizers.test.cjs` keeps `service-local-neighborhood` as the main guardrail and now asserts the Step 12 path improves the `240` baseline to `295`, keeps `fixedServiceRealizationTrials === 0`, and exercises remove/add/swap service neighborhoods
+- the broader fixed corpus currently lands `adaptive-cap-search-wide` at `848` and `geometry-occupancy-hot-path` at `1030` under the shipped Step 12 slice
 
 ### 13. Introduce candidate geometry caches and tested scratch workspaces
 
@@ -395,7 +395,7 @@ Shipped bounded slice:
 - `src/core/roads.ts` now supports a reusable `RoadProbeScratch` workspace for explicit-road BFS probes, threaded through `probeBuildingConnectedToRoads`, `canConnectToRoads`, `ensureBuildingConnectedToRoads`, and deferred-road materialization without changing caller-visible behavior
 - `src/greedy/solver.ts` now reuses one explicit-road scratch workspace across service scans, residential scans, Step 12 service relocations, deferred-road reconstruction, local search, and final road validation; it also reuses cached candidate/group footprint keys plus a rollback-safe occupancy scratch in the bounded service neighborhood
 - `greedy.profile` now exposes `geometryCacheEntries`, `occupancyScratchReuses`, and `scratchProbeCalls`, and `benchmark:greedy` prints a `step13=` summary line so the runtime-only refactor stays visible in the fixed corpus
-- `tests/optimizers.test.cjs` now keeps helper-level parity guards for geometry caches and reusable road-probe scratch repeatability, while the fixed corpus still holds `geometry-occupancy-hot-path` at `1000`
+- `tests/optimizers.test.cjs` now keeps helper-level parity guards for geometry caches and reusable road-probe scratch repeatability, while the fixed corpus now holds `geometry-occupancy-hot-path` at `1030`
 
 ### 14. Explore a stronger greedy search policy
 
@@ -426,18 +426,18 @@ Why:
 - `LNS` already treats greedy as a seed generator
 
 Decision:
-- keep `greedy` available as a standalone optimizer for fast incumbent building, benchmarking, and manual heuristic tuning
-- make the product posture explicitly hybrid: `auto` is the recommended quality path, while `greedy` is the fast seed / advanced mode
+- keep `greedy` available as a standalone optimizer for deeper heuristic benchmarking and manual tuning
+- make the product posture explicitly hybrid: `auto` is the recommended quality path with a capped fast Greedy seed stage, while standalone `greedy` is the heavy heuristic / advanced inspection mode
 - prefer spending deeper improvement budget in `LNS`, bounded `CP-SAT`, and `auto` follow-on stages unless a greedy change clearly improves seed quality per second
 
 User-facing framing:
 - `Auto` is the recommended mode when overall answer quality matters more than keeping the run purely standalone or heuristic
-- `Greedy` is the fast seed / advanced mode when you want the quickest legal layout, direct heuristic inspection, or manual tuning
+- `Greedy` is the heavy standalone heuristic / advanced inspection mode for Greedy-only quality checks or manual tuning
 - `LNS` is the manual improvement mode that starts from a greedy or displayed seed
 - `CP-SAT` is the bounded polish pass, usually strongest after a seed already exists
 
 Shipped bounded slice:
-- roadmap and planner copy now describe `auto` as the recommended quality path and `greedy` as the fast seed / advanced mode
+- roadmap and planner copy now describe `auto` as the recommended quality path with the fast Greedy seed stage, and standalone `greedy` as the heavy heuristic / advanced inspection mode
 - this step intentionally does not change solver policy; it only makes the product decision explicit in docs and user-facing text
 
 ## Historical Implementation Order
@@ -458,7 +458,7 @@ This is the order the roadmap recommended while the work was still in flight. It
 12. Replace forced-set service neighborhoods with direct delta-scored service relocations.
 13. Add candidate geometry caches and tested scratch workspaces.
 14. Explore stronger greedy search policy changes only after the above is measured.
-15. Lock the hybrid product posture after the above is measured and keep greedy framed as the fast seed / advanced mode.
+15. Lock the hybrid product posture after the above is measured and keep the fast seed framed as Auto's first stage, with standalone Greedy as the heavy heuristic / advanced inspection mode.
 
 ## Success Metrics
 
@@ -483,4 +483,4 @@ Secondary metrics:
 - If greedy experiments with deferred or implicit road candidates, always reconstruct and validate an explicit final road set before returning a solution.
 - Prefer deterministic tie-break behavior when a seed is provided.
 - Avoid broad structural refactors until profiling proves they matter.
-- Treat greedy as the fast seed and advanced standalone mode within the staged solver workflow, not as the primary quality path.
+- Treat Auto as the owner of the capped fast Greedy seed stage, and standalone Greedy as the heavy heuristic / advanced inspection mode rather than the primary quality path.

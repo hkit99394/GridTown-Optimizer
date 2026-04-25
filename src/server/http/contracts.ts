@@ -135,6 +135,7 @@ export function buildSolveResponse(grid: Grid, params: SolverParams, solution: S
       manualLayout: Boolean(solution.manualLayout),
       cpSatStatus: solution.cpSatStatus ?? null,
       stoppedByUser: Boolean(solution.stoppedByUser),
+      stoppedByTimeLimit: Boolean(solution.stoppedByTimeLimit),
       totalPopulation: solution.totalPopulation,
       roadCount: solution.roads.size,
       serviceCount: solution.services.length,

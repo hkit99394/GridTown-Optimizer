@@ -83,6 +83,7 @@ function sortedResidentialTypeIndices(types: ResidentialTypeSetting[]): number[]
 
 type PlacementPrototype = { r: number; c: number; rows: number; cols: number };
 type FootprintGeometrySource = { r: number; c: number; rows: number; cols: number };
+type StopCheck = () => void;
 
 export interface FootprintGeometryCache {
   footprintKeysByIndex: readonly (readonly string[])[];
@@ -158,26 +159,32 @@ function getOrBuildServiceEffectZoneKeys(
 }
 
 export function buildFootprintGeometryCache<T extends FootprintGeometrySource>(
-  placements: readonly T[]
+  placements: readonly T[],
+  maybeStop?: StopCheck
 ): FootprintGeometryCache {
+  const footprintKeysByIndex: readonly string[][] = placements.map((placement) => {
+    maybeStop?.();
+    return [...getOrBuildRectangleCellKeys(placement.r, placement.c, placement.rows, placement.cols)];
+  });
   return {
-    footprintKeysByIndex: Object.freeze(placements.map((placement) =>
-      getOrBuildRectangleCellKeys(placement.r, placement.c, placement.rows, placement.cols)
-    )),
+    footprintKeysByIndex: Object.freeze(footprintKeysByIndex),
   };
 }
 
 export function buildServiceGeometryCache<T extends ServicePlacement>(
   G: Grid,
-  services: readonly T[]
+  services: readonly T[],
+  maybeStop?: StopCheck
 ): ServiceGeometryCache {
   const footprintKeysByIndex = Object.freeze(services.map((service) => {
+    maybeStop?.();
     const placement = normalizeServicePlacement(service);
     return getOrBuildRectangleCellKeys(placement.r, placement.c, placement.rows, placement.cols);
   }));
-  const effectZoneKeysByIndex = Object.freeze(services.map((service) =>
-    getOrBuildServiceEffectZoneKeys(G, normalizeServicePlacement(service))
-  ));
+  const effectZoneKeysByIndex = Object.freeze(services.map((service) => {
+    maybeStop?.();
+    return getOrBuildServiceEffectZoneKeys(G, normalizeServicePlacement(service));
+  }));
   return {
     footprintKeysByIndex,
     effectZoneKeysByIndex,
@@ -187,7 +194,8 @@ export function buildServiceGeometryCache<T extends ServicePlacement>(
 function enumerateValidPlacementsForDimensions(
   G: Grid,
   blockedPrefixSum: number[][],
-  dimensions: [number, number][]
+  dimensions: [number, number][],
+  maybeStop?: StopCheck
 ): Map<string, PlacementPrototype[]> {
   const H = height(G);
   const W = width(G);
@@ -195,6 +203,7 @@ function enumerateValidPlacementsForDimensions(
   const seen = new Set<string>();
 
   for (const [rows, cols] of dimensions) {
+    maybeStop?.();
     const key = `${rows}x${cols}`;
     if (seen.has(key)) continue;
     seen.add(key);
@@ -204,6 +213,7 @@ function enumerateValidPlacementsForDimensions(
       continue;
     }
     for (let r = 0; r <= H - rows; r++) {
+      maybeStop?.();
       for (let c = 0; c <= W - cols; c++) {
         if (rectangleBlockedCount(blockedPrefixSum, r, c, rows, cols) !== 0) continue;
         placements.push({ r, c, rows, cols });
@@ -237,17 +247,19 @@ export function residentialFootprint(r: number, c: number, rows: number, cols: n
 }
 
 /** All valid service placements from configured service types. */
-export function enumerateServiceCandidates(G: Grid, params: SolverParams): ServiceCandidate[] {
+export function enumerateServiceCandidates(G: Grid, params: SolverParams, maybeStop?: StopCheck): ServiceCandidate[] {
   const out: ServiceCandidate[] = [];
   const types = params.serviceTypes ?? [];
   const blockedPrefixSum = buildBlockedPrefixSum(G);
   const placementMap = enumerateValidPlacementsForDimensions(
     G,
     blockedPrefixSum,
-    types.flatMap((type) => serviceTypeOrientations(type))
+    types.flatMap((type) => serviceTypeOrientations(type)),
+    maybeStop
   );
 
   for (const typeIndex of sortedServiceTypeIndices(types)) {
+    maybeStop?.();
     const type = types[typeIndex];
     if (type.avail <= 0) continue;
     for (const [rows, cols] of serviceTypeOrientations(type)) {
@@ -268,7 +280,7 @@ export function enumerateServiceCandidates(G: Grid, params: SolverParams): Servi
 }
 
 /** All valid 2×2 and 2×3 residential placements (legacy, no types) */
-export function enumerateResidentialCandidates(G: Grid): ResidentialPlacement[] {
+export function enumerateResidentialCandidates(G: Grid, maybeStop?: StopCheck): ResidentialPlacement[] {
   const out: ResidentialPlacement[] = [];
   const blockedPrefixSum = buildBlockedPrefixSum(G);
   const placementMap = enumerateValidPlacementsForDimensions(
@@ -277,12 +289,14 @@ export function enumerateResidentialCandidates(G: Grid): ResidentialPlacement[] 
     [
       [2, 2],
       [2, 3],
-    ]
+    ],
+    maybeStop
   );
   for (const [rows, cols] of [
     [2, 2],
     [2, 3],
   ] as [number, number][]) {
+    maybeStop?.();
     for (const placement of placementMap.get(`${rows}x${cols}`) ?? []) {
       out.push({ r: placement.r, c: placement.c, rows, cols });
     }
@@ -293,7 +307,8 @@ export function enumerateResidentialCandidates(G: Grid): ResidentialPlacement[] 
 /** All valid residential placements from types; each type allows (w×h) and (h×w) when w ≠ h */
 export function enumerateResidentialCandidatesFromTypes(
   G: Grid,
-  types: ResidentialTypeSetting[]
+  types: ResidentialTypeSetting[],
+  maybeStop?: StopCheck
 ): ResidentialCandidate[] {
   const out: ResidentialCandidate[] = [];
   const blockedPrefixSum = buildBlockedPrefixSum(G);
@@ -304,10 +319,12 @@ export function enumerateResidentialCandidatesFromTypes(
       const dimensions: [number, number][] = [[type.h, type.w]];
       if (type.w !== type.h) dimensions.push([type.w, type.h]);
       return dimensions;
-    })
+    }),
+    maybeStop
   );
 
   for (const typeIndex of sortedResidentialTypeIndices(types)) {
+    maybeStop?.();
     const { w, h } = types[typeIndex];
     const orientations: [number, number][] = [[h, w]];
     if (w !== h) orientations.push([w, h]);

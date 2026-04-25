@@ -307,6 +307,8 @@ export interface GreedyOptions {
   deferRoadCommitment?: boolean;
   /** Fixed seed for reproducible greedy restart shuffling. */
   randomSeed?: number;
+  /** Optional wall-clock budget in seconds for raw greedy solves. Omit for no greedy-specific cap. */
+  timeLimitSeconds?: number;
   /** Collect phase-level profiling counters without changing solver behavior. */
   profile?: boolean;
   /** Number of restarts with different service order; take best solution (default 1) */
@@ -499,6 +501,8 @@ export interface Solution {
   greedyProfile?: GreedyProfile;
   /** True when a run was stopped early and this solution is the best feasible result found so far. */
   stoppedByUser?: boolean;
+  /** True when a greedy wall-clock budget stopped the run and this is the best feasible result found so far. */
+  stoppedByTimeLimit?: boolean;
   roads: Set<string>;
   services: ServicePlacement[];
   /** Service type index per placement; -1 only for manual solutions without configured service types */
@@ -549,6 +553,7 @@ export interface SolveResponseStats {
   manualLayout: boolean;
   cpSatStatus: string | null;
   stoppedByUser: boolean;
+  stoppedByTimeLimit: boolean;
   totalPopulation: number;
   roadCount: number;
   serviceCount: number;

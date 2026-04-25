@@ -572,6 +572,68 @@ async function testImmediateSolveRejectsInvalidCpSatOptionsBeforeStartingBackend
   }
 }
 
+async function testImmediateSolveRejectsInvalidGreedyOptionsBeforeStartingBackend(handler) {
+  const solvePayload = buildTinySolvePayload();
+  const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+  let optimizerAdapterRequested = false;
+
+  optimizerRegistry.getOptimizerAdapter = () => {
+    optimizerAdapterRequested = true;
+    return {
+      name: "greedy",
+      solve() {
+        throw new Error("Immediate solves should use the non-blocking background adapter.");
+      },
+      startBackgroundSolve() {
+        throw new Error("Invalid greedy input should be rejected before starting the backend.");
+      },
+    };
+  };
+
+  const cases = [
+    {
+      greedy: "fast",
+      expectedError: "Invalid solver input: Greedy options greedy must be an object.",
+    },
+    {
+      greedy: { restarts: 0 },
+      expectedError: "Invalid solver input: Greedy option greedy.restarts must be an integer between 1 and 100.",
+    },
+    {
+      greedy: { serviceLookaheadCandidates: "many" },
+      expectedError:
+        "Invalid solver input: Greedy option greedy.serviceLookaheadCandidates must be an integer between 0 and 2000.",
+    },
+    {
+      greedy: { timeLimitSeconds: 0 },
+      expectedError: "Invalid solver input: Greedy option greedy.timeLimitSeconds must be a finite number > 0 and <= 86400.",
+    },
+  ];
+
+  try {
+    for (const testCase of cases) {
+      const result = await invoke(handler, {
+        method: "POST",
+        url: "/api/solve",
+        json: {
+          ...solvePayload,
+          params: {
+            ...solvePayload.params,
+            greedy: testCase.greedy,
+          },
+        },
+      });
+
+      assert.equal(result.statusCode, 400);
+      assert.equal(result.payload.ok, false);
+      assert.equal(result.payload.error, testCase.expectedError);
+      assert.equal(optimizerAdapterRequested, false);
+    }
+  } finally {
+    optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
+  }
+}
+
 async function testImmediateSolvePreservesTypedSolverInputErrors(handler) {
   const solvePayload = buildTinySolvePayload();
   const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
@@ -1000,6 +1062,57 @@ async function testStartSolveRejectsInvalidCpSatOptionsBeforeStartingJob(handler
   }
 }
 
+async function testStartSolveRejectsInvalidGreedyOptionsBeforeStartingJob(handler) {
+  const solvePayload = buildTinySolvePayload();
+  const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+  let optimizerAdapterRequested = false;
+
+  optimizerRegistry.getOptimizerAdapter = () => {
+    optimizerAdapterRequested = true;
+    return {
+      name: "greedy",
+      solve() {
+        throw new Error("Background solve route test should use the background adapter.");
+      },
+      startBackgroundSolve() {
+        throw new Error("Invalid greedy input should be rejected before starting a solve job.");
+      },
+    };
+  };
+
+  try {
+    const requestId = "invalid-greedy-options";
+    const result = await invoke(handler, {
+      method: "POST",
+      url: "/api/solve/start",
+      json: {
+        ...solvePayload,
+        requestId,
+        params: {
+          ...solvePayload.params,
+          serviceExactMaxCombinations: 0,
+        },
+      },
+    });
+
+    assert.equal(result.statusCode, 400);
+    assert.equal(result.payload.ok, false);
+    assert.equal(
+      result.payload.error,
+      "Invalid solver input: Legacy greedy option serviceExactMaxCombinations must be an integer between 1 and 100000."
+    );
+    assert.equal(optimizerAdapterRequested, false);
+
+    const statusResult = await invoke(handler, {
+      method: "GET",
+      url: `/api/solve/status?${new URLSearchParams({ requestId }).toString()}`,
+    });
+    assert.equal(statusResult.statusCode, 404);
+  } finally {
+    optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
+  }
+}
+
 async function testCancelMissingSolveRoute(handler) {
   const result = await invoke(handler, {
     method: "POST",
@@ -1069,6 +1182,7 @@ async function main() {
   await testImmediateSolveRejectsInvalidLnsSeedHint(handler);
   await testImmediateSolveRejectsMalformedLnsSeedFields(handler);
   await testImmediateSolveRejectsInvalidCpSatOptionsBeforeStartingBackend(handler);
+  await testImmediateSolveRejectsInvalidGreedyOptionsBeforeStartingBackend(handler);
   await testImmediateSolvePreservesTypedSolverInputErrors(handler);
   await testImmediateSolveCancelsOnDisconnect(handler);
   await testBackgroundSolveRejectsImmediateSolveAtCapacity();
@@ -1080,6 +1194,7 @@ async function main() {
   await testRecoveredAutoFailureNormalizesTerminalMetadata();
   await testStartSolveRejectsInvalidLnsSeedHint(handler);
   await testStartSolveRejectsInvalidCpSatOptionsBeforeStartingJob(handler);
+  await testStartSolveRejectsInvalidGreedyOptionsBeforeStartingJob(handler);
   await testCancelMissingSolveRoute(handler);
   await testCompletedSolveJobsExpire();
 

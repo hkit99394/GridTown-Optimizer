@@ -947,6 +947,13 @@
         if (entry.autoStage?.stopReason) {
           parts.push(`stop ${entry.autoStage.stopReason}`);
         }
+        if (entry.lnsNeighborhoodStatus) {
+          const lnsImprovement = Number(entry.lnsNeighborhoodImprovement ?? 0);
+          parts.push(`LNS ${entry.lnsNeighborhoodStatus}${lnsImprovement > 0 ? ` +${lnsImprovement}` : ""}`);
+        }
+        if (entry.lnsStopReason && entry.lnsStopReason !== "running") {
+          parts.push(`LNS stop ${entry.lnsStopReason}`);
+        }
         if (typeof entry.totalPopulation === "number") {
           parts.push(`${Number(entry.totalPopulation).toLocaleString()} population`);
         }
@@ -966,6 +973,9 @@
         });
         if (improvementLabel !== null) {
           parts.push(`last improvement ${improvementLabel}s ago`);
+        }
+        if (entry.note && !parts.includes(entry.note)) {
+          parts.push(entry.note);
         }
 
         detail.textContent = parts.join(" • ");

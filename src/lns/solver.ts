@@ -3,6 +3,7 @@
  */
 
 import { existsSync } from "node:fs";
+import { performance } from "node:perf_hooks";
 
 import { applyDeterministicDominanceUpgrades } from "../core/dominanceUpgrades.js";
 import { normalizeServicePlacement } from "../core/buildings.js";
@@ -11,33 +12,129 @@ import { height, width } from "../core/grid.js";
 import { buildNeighborhoodWindows, selectNeighborhoodWindow } from "./neighborhoods.js";
 import { NO_TYPE_INDEX } from "../core/rules.js";
 import { writeSolutionSnapshot } from "../core/solutionSerialization.js";
-import { materializeValidLnsSeedSolution } from "../core/solverInputValidation.js";
+import { assertValidLnsOptions, materializeValidLnsSeedSolution } from "../core/solverInputValidation.js";
 import { solveGreedy } from "../greedy/solver.js";
 
 import type {
   CpSatNeighborhoodWindow,
   CpSatWarmStartHint,
   Grid,
+  LnsNeighborhoodOutcome,
+  LnsNeighborhoodOutcomeStatus,
+  LnsRepairPhase,
+  LnsStopReason,
+  LnsTelemetry,
   LnsOptions,
   Solution,
   SolverParams,
 } from "../core/types.js";
 
-type NormalizedLnsOptions = Omit<Required<LnsOptions>, "seedHint"> & {
+type NormalizedLnsOptions = {
+  iterations: number;
+  maxNoImprovementIterations: number;
+  wallClockLimitSeconds: number | null;
+  noImprovementTimeoutSeconds: number | null;
+  seedTimeLimitSeconds: number | null;
+  neighborhoodRows: number;
+  neighborhoodCols: number;
+  repairTimeLimitSeconds: number;
+  focusedRepairTimeLimitSeconds: number;
+  escalatedRepairTimeLimitSeconds: number;
   seedHint?: CpSatWarmStartHint;
+  stopFilePath: string;
+  snapshotFilePath: string;
 };
+
+interface InitialLnsIncumbent {
+  solution: Solution;
+  seedSource: LnsTelemetry["seedSource"];
+  seedWallClockSeconds: number;
+}
+
+interface LnsRepairAttempt {
+  iteration: number;
+  phase: LnsRepairPhase;
+  window: CpSatNeighborhoodWindow;
+  stagnantIterationsBefore: number;
+  staleSecondsBefore: number;
+  repairTimeLimitSeconds: number;
+  populationBefore: number;
+  startedAtMs: number | null;
+}
+
+const DEFAULT_LNS_ITERATIONS = 12;
+const DEFAULT_LNS_MAX_NO_IMPROVEMENT_ITERATIONS = 4;
+const DEFAULT_LNS_REPAIR_TIME_LIMIT_SECONDS = 5;
+
+function positiveIntegerOrDefault(value: unknown, fallback: number): number {
+  return typeof value === "number" && Number.isInteger(value) && value > 0 ? value : fallback;
+}
+
+function positiveFiniteNumberOrDefault(value: unknown, fallback: number): number {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+function optionalPositiveFiniteNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : null;
+}
+
+function clampRepairBudgetToDeadline(repairTimeLimitSeconds: number, deadlineAtMs: number | null): number {
+  if (deadlineAtMs === null) return repairTimeLimitSeconds;
+  const remainingSeconds = (deadlineAtMs - performance.now()) / 1000;
+  if (remainingSeconds <= 0) return 0;
+  return Math.min(repairTimeLimitSeconds, remainingSeconds);
+}
+
+function getStaleSeconds(lastImprovementAtMs: number): number {
+  return Math.max(0, (performance.now() - lastImprovementAtMs) / 1000);
+}
+
+function getEscalationTrigger(options: Pick<NormalizedLnsOptions, "maxNoImprovementIterations">): number {
+  return Math.max(1, Math.ceil(options.maxNoImprovementIterations / 2));
+}
+
+function getRepairPhase(
+  stagnantIterations: number,
+  options: Pick<NormalizedLnsOptions, "maxNoImprovementIterations">
+): LnsRepairPhase {
+  return stagnantIterations + 1 >= getEscalationTrigger(options) ? "escalated" : "focused";
+}
 
 function getLnsOptions(G: Grid, params: SolverParams): NormalizedLnsOptions {
   const H = height(G);
   const W = width(G);
   const lns = params.lns ?? {};
   const repairableRows = H > 1 ? H - 1 : H;
+  const repairTimeLimitSeconds = positiveFiniteNumberOrDefault(
+    lns.repairTimeLimitSeconds,
+    positiveFiniteNumberOrDefault(params.cpSat?.timeLimitSeconds, DEFAULT_LNS_REPAIR_TIME_LIMIT_SECONDS)
+  );
+  const wallClockLimitSeconds = optionalPositiveFiniteNumber(lns.wallClockLimitSeconds)
+    ?? optionalPositiveFiniteNumber(lns.timeLimitSeconds);
   return {
-    iterations: Math.max(1, lns.iterations ?? 12),
-    maxNoImprovementIterations: Math.max(1, lns.maxNoImprovementIterations ?? 4),
-    neighborhoodRows: Math.max(1, Math.min(repairableRows || 1, lns.neighborhoodRows ?? Math.max(4, Math.ceil(H / 2)))),
-    neighborhoodCols: Math.max(1, Math.min(W || 1, lns.neighborhoodCols ?? Math.max(4, Math.ceil(W / 2)))),
-    repairTimeLimitSeconds: Math.max(1, lns.repairTimeLimitSeconds ?? params.cpSat?.timeLimitSeconds ?? 5),
+    iterations: positiveIntegerOrDefault(lns.iterations, DEFAULT_LNS_ITERATIONS),
+    maxNoImprovementIterations: positiveIntegerOrDefault(
+      lns.maxNoImprovementIterations,
+      DEFAULT_LNS_MAX_NO_IMPROVEMENT_ITERATIONS
+    ),
+    wallClockLimitSeconds,
+    noImprovementTimeoutSeconds: optionalPositiveFiniteNumber(lns.noImprovementTimeoutSeconds),
+    seedTimeLimitSeconds: optionalPositiveFiniteNumber(lns.seedTimeLimitSeconds)
+      ?? (wallClockLimitSeconds === null ? null : Math.max(0.1, Math.min(wallClockLimitSeconds * 0.2, repairTimeLimitSeconds))),
+    neighborhoodRows: Math.max(
+      1,
+      Math.min(repairableRows || 1, positiveIntegerOrDefault(lns.neighborhoodRows, Math.max(4, Math.ceil(H / 2))))
+    ),
+    neighborhoodCols: Math.max(
+      1,
+      Math.min(W || 1, positiveIntegerOrDefault(lns.neighborhoodCols, Math.max(4, Math.ceil(W / 2))))
+    ),
+    repairTimeLimitSeconds,
+    focusedRepairTimeLimitSeconds: positiveFiniteNumberOrDefault(lns.focusedRepairTimeLimitSeconds, repairTimeLimitSeconds),
+    escalatedRepairTimeLimitSeconds: positiveFiniteNumberOrDefault(
+      lns.escalatedRepairTimeLimitSeconds,
+      repairTimeLimitSeconds
+    ),
     seedHint: lns.seedHint,
     stopFilePath: lns.stopFilePath ?? "",
     snapshotFilePath: lns.snapshotFilePath ?? "",
@@ -105,49 +202,207 @@ function isRecoverableRepairFailure(error: unknown): boolean {
   return /No feasible solution found with CP-SAT\./.test(error.message);
 }
 
-function buildInitialLnsIncumbent(G: Grid, params: SolverParams): Solution {
+function buildInitialLnsIncumbent(G: Grid, params: SolverParams, options: NormalizedLnsOptions): InitialLnsIncumbent {
+  const startedAt = performance.now();
   const seededIncumbent = materializeValidLnsSeedSolution(G, params, params.lns?.seedHint);
-  const initialIncumbent = seededIncumbent ?? {
-    ...solveGreedy(G, { ...params, optimizer: "greedy" }),
+  if (seededIncumbent) {
+    return {
+      solution: applyDeterministicDominanceUpgrades(G, params, seededIncumbent),
+      seedSource: "hint",
+      seedWallClockSeconds: (performance.now() - startedAt) / 1000,
+    };
+  }
+
+  const initialIncumbent = {
+    ...solveGreedy(G, {
+      ...params,
+      optimizer: "greedy",
+      greedy: {
+        ...(params.greedy ?? {}),
+        ...(options.seedTimeLimitSeconds !== null ? { timeLimitSeconds: options.seedTimeLimitSeconds } : {}),
+      },
+    }),
     optimizer: "lns" as const,
   };
-  return applyDeterministicDominanceUpgrades(G, params, initialIncumbent);
-}
-
-function materializeStoppedLnsSolution(incumbent: Solution): Solution {
   return {
-    ...incumbent,
-    optimizer: "lns",
-    stoppedByUser: true,
+    solution: applyDeterministicDominanceUpgrades(G, params, initialIncumbent),
+    seedSource: "greedy",
+    seedWallClockSeconds: (performance.now() - startedAt) / 1000,
   };
 }
 
-function materializeCompletedLnsSolution(incumbent: Solution): Solution {
+function buildLnsTelemetry(
+  stopReason: LnsStopReason,
+  options: NormalizedLnsOptions,
+  initialIncumbent: InitialLnsIncumbent,
+  startedAtMs: number,
+  stagnantIterations: number,
+  outcomes: LnsTelemetry["outcomes"]
+): LnsTelemetry {
+  return {
+    stopReason,
+    seedSource: initialIncumbent.seedSource,
+    seedWallClockSeconds: initialIncumbent.seedWallClockSeconds,
+    wallClockLimitSeconds: options.wallClockLimitSeconds,
+    noImprovementTimeoutSeconds: options.noImprovementTimeoutSeconds,
+    focusedRepairTimeLimitSeconds: options.focusedRepairTimeLimitSeconds,
+    escalatedRepairTimeLimitSeconds: options.escalatedRepairTimeLimitSeconds,
+    iterationsStarted: outcomes.filter((outcome) => outcome.status !== "skipped-budget").length,
+    iterationsCompleted: outcomes.filter((outcome) => outcome.status !== "skipped-budget" && outcome.status !== "stopped").length,
+    improvingIterations: outcomes.filter((outcome) => outcome.status === "improved").length,
+    neutralIterations: outcomes.filter((outcome) => outcome.status === "neutral").length,
+    recoverableFailures: outcomes.filter((outcome) => outcome.status === "recoverable-failure").length,
+    skippedIterations: outcomes.filter((outcome) => outcome.status === "skipped-budget" || outcome.status === "stopped").length,
+    finalStagnantIterations: stagnantIterations,
+    elapsedSeconds: (performance.now() - startedAtMs) / 1000,
+    outcomes: [...outcomes],
+  };
+}
+
+function materializeLnsSolution(
+  incumbent: Solution,
+  telemetry: LnsTelemetry,
+  stoppedByUser = false
+): Solution {
+  const solutionStoppedByUser = stoppedByUser || Boolean(incumbent.stoppedByUser);
   return {
     ...incumbent,
     optimizer: "lns",
+    lnsTelemetry: telemetry,
+    ...(solutionStoppedByUser ? { stoppedByUser: true } : {}),
+  };
+}
+
+function writeLnsSnapshot(
+  options: NormalizedLnsOptions,
+  incumbent: Solution,
+  telemetry: LnsTelemetry
+): void {
+  if (!options.snapshotFilePath) return;
+  writeSolutionSnapshot(options.snapshotFilePath, materializeLnsSolution(incumbent, telemetry));
+}
+
+function buildRepairAttempt(input: Omit<LnsRepairAttempt, "startedAtMs"> & { startedAtMs?: number | null }): LnsRepairAttempt {
+  return {
+    ...input,
+    startedAtMs: input.startedAtMs ?? null,
+  };
+}
+
+function buildRepairOutcome(
+  attempt: LnsRepairAttempt,
+  status: LnsNeighborhoodOutcomeStatus,
+  populationAfter: number,
+  improvement = 0,
+  cpSatStatus?: string | null
+): LnsNeighborhoodOutcome {
+  return {
+    iteration: attempt.iteration,
+    phase: attempt.phase,
+    window: attempt.window,
+    stagnantIterationsBefore: attempt.stagnantIterationsBefore,
+    staleSecondsBefore: attempt.staleSecondsBefore,
+    repairTimeLimitSeconds: attempt.repairTimeLimitSeconds,
+    wallClockSeconds: attempt.startedAtMs === null ? 0 : (performance.now() - attempt.startedAtMs) / 1000,
+    populationBefore: attempt.populationBefore,
+    populationAfter,
+    improvement,
+    status,
+    ...(cpSatStatus !== undefined ? { cpSatStatus } : {}),
   };
 }
 
 export function solveLns(G: Grid, params: SolverParams): Solution {
+  assertValidLnsOptions(params);
+  const startedAtMs = performance.now();
   const options = getLnsOptions(G, params);
+  const deadlineAtMs = options.wallClockLimitSeconds === null ? null : startedAtMs + options.wallClockLimitSeconds * 1000;
+  const outcomes: LnsTelemetry["outcomes"] = [];
 
-  let incumbent = buildInitialLnsIncumbent(G, params);
-
-  if (options.snapshotFilePath) writeSolutionSnapshot(options.snapshotFilePath, incumbent);
-
+  const initialIncumbent = buildInitialLnsIncumbent(G, params, options);
+  let incumbent = initialIncumbent.solution;
   let stagnantIterations = 0;
+  let lastImprovementAtMs = performance.now();
+
+  const buildTelemetry = (stopReason: LnsStopReason): LnsTelemetry =>
+    buildLnsTelemetry(stopReason, options, initialIncumbent, startedAtMs, stagnantIterations, outcomes);
+
+  const writeRunningSnapshot = (): void => writeLnsSnapshot(options, incumbent, buildTelemetry("running"));
+
+  const finish = (stopReason: LnsStopReason, stoppedByUser = false): Solution => {
+    const telemetry = buildTelemetry(stopReason);
+    writeLnsSnapshot(options, incumbent, telemetry);
+    return materializeLnsSolution(incumbent, telemetry, stoppedByUser);
+  };
+
+  writeRunningSnapshot();
+
+  if (shouldStop(options.stopFilePath)) {
+    return finish("cancelled", true);
+  }
+  if (deadlineAtMs !== null && performance.now() >= deadlineAtMs) {
+    return finish("wall-clock-limit");
+  }
+
   for (let iteration = 0; iteration < options.iterations; iteration++) {
     if (shouldStop(options.stopFilePath)) {
-      return materializeStoppedLnsSolution(incumbent);
+      return finish("cancelled", true);
     }
 
-    if (stagnantIterations >= options.maxNoImprovementIterations) break;
+    if (deadlineAtMs !== null && performance.now() >= deadlineAtMs) {
+      return finish("wall-clock-limit");
+    }
+
+    if (
+      options.noImprovementTimeoutSeconds !== null
+      && getStaleSeconds(lastImprovementAtMs) >= options.noImprovementTimeoutSeconds
+    ) {
+      return finish("stale-time-limit");
+    }
+
+    if (stagnantIterations >= options.maxNoImprovementIterations) {
+      return finish("stale-iteration-limit");
+    }
 
     const windows = buildNeighborhoodWindows(G, params, incumbent, options, stagnantIterations + 1);
-    if (windows.length === 0) break;
+    if (windows.length === 0) {
+      return finish("no-neighborhoods");
+    }
 
     const neighborhoodWindow = selectNeighborhoodWindow(windows, iteration, stagnantIterations, options);
+    const phase = getRepairPhase(stagnantIterations, options);
+    const configuredRepairTimeLimitSeconds = phase === "escalated"
+      ? options.escalatedRepairTimeLimitSeconds
+      : options.focusedRepairTimeLimitSeconds;
+    const repairTimeLimitSeconds = clampRepairBudgetToDeadline(configuredRepairTimeLimitSeconds, deadlineAtMs);
+    const populationBefore = incumbent.totalPopulation;
+    const staleSecondsBefore = getStaleSeconds(lastImprovementAtMs);
+
+    if (repairTimeLimitSeconds <= 0) {
+      outcomes.push(buildRepairOutcome(buildRepairAttempt({
+        iteration,
+        phase,
+        window: neighborhoodWindow,
+        stagnantIterationsBefore: stagnantIterations,
+        staleSecondsBefore,
+        repairTimeLimitSeconds: 0,
+        populationBefore,
+      }), "skipped-budget", populationBefore));
+      writeRunningSnapshot();
+      return finish("wall-clock-limit");
+    }
+
+    const repairStartedAtMs = performance.now();
+    const attempt = buildRepairAttempt({
+      iteration,
+      phase,
+      window: neighborhoodWindow,
+      stagnantIterationsBefore: stagnantIterations,
+      staleSecondsBefore,
+      repairTimeLimitSeconds,
+      populationBefore,
+      startedAtMs: repairStartedAtMs,
+    });
     try {
       const candidate = solveCpSat(G, {
         ...params,
@@ -157,7 +412,7 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
           // LNS repair is safer with a single worker; multi-worker repair_hint-style
           // search has been crashing in the local OR-Tools runtime.
           numWorkers: 1,
-          timeLimitSeconds: options.repairTimeLimitSeconds,
+          timeLimitSeconds: repairTimeLimitSeconds,
           stopFilePath: options.stopFilePath || undefined,
           warmStartHint: buildWarmStartHint(incumbent, neighborhoodWindow),
         },
@@ -168,22 +423,38 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
           ...candidate,
           optimizer: "lns",
         });
+        const populationAfter = incumbent.totalPopulation;
+        outcomes.push(
+          buildRepairOutcome(attempt, "improved", populationAfter, populationAfter - populationBefore, candidate.cpSatStatus ?? null)
+        );
         stagnantIterations = 0;
-        if (options.snapshotFilePath) writeSolutionSnapshot(options.snapshotFilePath, incumbent);
+        lastImprovementAtMs = performance.now();
+        writeRunningSnapshot();
         continue;
       }
+      outcomes.push(buildRepairOutcome(attempt, "neutral", candidate.totalPopulation, 0, candidate.cpSatStatus ?? null));
       stagnantIterations += 1;
+      writeRunningSnapshot();
     } catch (error) {
       if (shouldStop(options.stopFilePath)) {
-        return materializeStoppedLnsSolution(incumbent);
+        outcomes.push(buildRepairOutcome(attempt, "stopped", populationBefore));
+        return finish("cancelled", true);
       }
       if (isRecoverableRepairFailure(error)) {
+        outcomes.push(buildRepairOutcome(attempt, "recoverable-failure", populationBefore));
         stagnantIterations += 1;
+        writeRunningSnapshot();
         continue;
       }
       throw error;
     }
   }
 
-  return materializeCompletedLnsSolution(incumbent);
+  if (
+    options.noImprovementTimeoutSeconds !== null
+    && getStaleSeconds(lastImprovementAtMs) >= options.noImprovementTimeoutSeconds
+  ) {
+    return finish("stale-time-limit");
+  }
+  return finish(stagnantIterations >= options.maxNoImprovementIterations ? "stale-iteration-limit" : "iteration-limit");
 }

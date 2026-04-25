@@ -5,6 +5,16 @@ const os = require("node:os");
 const path = require("node:path");
 
 const {
+  createLnsBenchmarkSnapshot,
+  DEFAULT_LNS_BENCHMARK_CORPUS,
+  DEFAULT_LNS_BENCHMARK_OPTIONS,
+  formatLnsBenchmarkSuite,
+  listLnsBenchmarkCaseNames,
+  normalizeLnsBenchmarkOptions,
+  runLnsBenchmarkSuite,
+} = require("../dist/benchmarks/index.js");
+
+const {
   createGreedyBenchmarkSnapshot,
   DEFAULT_GREEDY_BENCHMARK_CORPUS,
   DEFAULT_GREEDY_BENCHMARK_OPTIONS,
@@ -698,6 +708,43 @@ function testAutoSyncWallClockCapKeepsExplicitStopReasonWhenLnsThrows() {
   } finally {
     solverModule.solveGreedy = originalSolveGreedy;
     lnsModule.solveLns = originalSolveLns;
+  }
+}
+
+function testAutoSyncPassesTotalBudgetToLnsStage() {
+  const solverModule = require("../dist/greedy/solver.js");
+  const lnsModule = require("../dist/lns/solver.js");
+  const cpSatModule = require("../dist/cp-sat/solver.js");
+  const originalSolveGreedy = solverModule.solveGreedy;
+  const originalSolveLns = lnsModule.solveLns;
+  const originalSolveCpSat = cpSatModule.solveCpSat;
+  let observedLnsOptions = null;
+
+  solverModule.solveGreedy = () => buildMockSolution({ optimizer: "greedy", totalPopulation: 100 });
+  lnsModule.solveLns = (_grid, params) => {
+    observedLnsOptions = params.lns;
+    return buildMockSolution({ optimizer: "lns", totalPopulation: 120 });
+  };
+  cpSatModule.solveCpSat = () => buildMockSolution({ optimizer: "cp-sat", totalPopulation: 120, cpSatStatus: "OPTIMAL" });
+
+  try {
+    const solution = solveAuto([[1, 1], [1, 1]], {
+      optimizer: "auto",
+      lns: { iterations: 4, maxNoImprovementIterations: 4, repairTimeLimitSeconds: 5 },
+      cpSat: { timeLimitSeconds: 5, noImprovementTimeoutSeconds: 5, numWorkers: 1 },
+      auto: { wallClockLimitSeconds: 10 },
+    });
+
+    assert.equal(solution.autoStage.stopReason, "optimal");
+    assert(observedLnsOptions);
+    assert.equal(typeof observedLnsOptions.wallClockLimitSeconds, "number");
+    assert.ok(observedLnsOptions.wallClockLimitSeconds > 0);
+    assert.ok(observedLnsOptions.wallClockLimitSeconds <= 10);
+    assert.ok(observedLnsOptions.repairTimeLimitSeconds <= observedLnsOptions.wallClockLimitSeconds);
+  } finally {
+    solverModule.solveGreedy = originalSolveGreedy;
+    lnsModule.solveLns = originalSolveLns;
+    cpSatModule.solveCpSat = originalSolveCpSat;
   }
 }
 
@@ -2324,6 +2371,89 @@ async function testCpSatBenchmarkCorpusHelpers() {
     () => runCpSatBenchmarkSuite(DEFAULT_CP_SAT_BENCHMARK_CORPUS, { names: ["missing-case"] }),
     /Unknown CP-SAT benchmark case\(s\): missing-case/
   );
+}
+
+function testLnsBenchmarkCorpusHelpers() {
+  const names = DEFAULT_LNS_BENCHMARK_CORPUS.map((entry) => entry.name);
+  assert.equal(new Set(names).size, names.length);
+  assert.deepEqual(listLnsBenchmarkCaseNames(), names);
+
+  const normalized = normalizeLnsBenchmarkOptions(
+    {
+      iterations: 4,
+      wallClockLimitSeconds: 20,
+    },
+    {
+      neighborhoodRows: 5,
+      repairTimeLimitSeconds: 2,
+    }
+  );
+
+  assert.equal(normalized.iterations, 4);
+  assert.equal(normalized.maxNoImprovementIterations, DEFAULT_LNS_BENCHMARK_OPTIONS.maxNoImprovementIterations);
+  assert.equal(normalized.wallClockLimitSeconds, 20);
+  assert.equal(normalized.neighborhoodRows, 5);
+  assert.equal(normalized.neighborhoodCols, DEFAULT_LNS_BENCHMARK_OPTIONS.neighborhoodCols);
+  assert.equal(normalized.repairTimeLimitSeconds, 2);
+
+  assert.throws(
+    () => runLnsBenchmarkSuite(DEFAULT_LNS_BENCHMARK_CORPUS, { names: ["missing-case"] }),
+    /Unknown LNS benchmark case\(s\): missing-case/
+  );
+
+  const lnsModule = require("../dist/lns/solver.js");
+  const originalSolveLns = lnsModule.solveLns;
+  let observedParams = null;
+
+  lnsModule.solveLns = (grid, params) => {
+    observedParams = params;
+    grid[0][0] = 0;
+    return buildMockSolution({ optimizer: "lns", totalPopulation: 77, cpSatStatus: "FEASIBLE" });
+  };
+
+  try {
+    const result = runLnsBenchmarkSuite(DEFAULT_LNS_BENCHMARK_CORPUS, {
+      names: ["typed-housing-single"],
+      lns: {
+        iterations: 3,
+        wallClockLimitSeconds: 20,
+      },
+      cpSat: {
+        randomSeed: 29,
+        numWorkers: 1,
+      },
+      greedy: {
+        randomSeed: 31,
+        profile: true,
+      },
+    });
+
+    assert.equal(result.caseCount, 1);
+    assert.deepEqual(result.selectedCaseNames, ["typed-housing-single"]);
+    assert.equal(result.results[0].name, "typed-housing-single");
+    assert.equal(result.results[0].totalPopulation, 77);
+    assert.equal(result.results[0].roadCount, 1);
+    assert.equal(result.results[0].residentialCount, 1);
+    assert.equal(result.results[0].cpSatStatus, "FEASIBLE");
+    assert.equal(result.results[0].lnsOptions.iterations, 3);
+    assert.equal(result.results[0].lnsOptions.wallClockLimitSeconds, 20);
+    assert.equal(result.results[0].cpSatOptions.randomSeed, 29);
+    assert.equal(result.results[0].greedyOptions.randomSeed, 31);
+    assert(result.results[0].wallClockSeconds >= 0);
+    assert.equal(DEFAULT_LNS_BENCHMARK_CORPUS[0].grid[0][0], 1);
+
+    assert.equal(observedParams.optimizer, "lns");
+    assert.equal(observedParams.lns.iterations, 3);
+    assert.equal(observedParams.lns.maxNoImprovementIterations, DEFAULT_LNS_BENCHMARK_OPTIONS.maxNoImprovementIterations);
+    assert.equal(observedParams.cpSat.randomSeed, 29);
+    assert.equal(observedParams.greedy.randomSeed, 31);
+
+    const snapshot = createLnsBenchmarkSnapshot(result);
+    assert.equal(Object.hasOwn(snapshot.results[0], "wallClockSeconds"), false);
+    assert.match(formatLnsBenchmarkSuite(result), /=== LNS Benchmark Suite ===/);
+  } finally {
+    lnsModule.solveLns = originalSolveLns;
+  }
 }
 
 const STEP14_GREEDY_BENCHMARK_NAME = "step14-service-lookahead-reranker";
@@ -4266,6 +4396,149 @@ function testLnsRunsFinalEscalationWithinConfiguredBudget() {
   assert.deepEqual(seenWindows[seenWindows.length - 1], { top: 0, left: 0, rows: 8, cols: 10 });
 }
 
+function testLnsTelemetryRecordsRepairPolicyAndOutcomes() {
+  const cpSatModule = require("../dist/cp-sat/solver.js");
+  const originalSolveCpSat = cpSatModule.solveCpSat;
+  const seenRepairBudgets = [];
+  let attempts = 0;
+
+  cpSatModule.solveCpSat = (_grid, params) => {
+    attempts += 1;
+    const improved = attempts === 2;
+    seenRepairBudgets.push(params.cpSat.timeLimitSeconds);
+    return {
+      optimizer: "cp-sat",
+      cpSatStatus: "FEASIBLE",
+      roads: new Set(["0,0", "1,0"]),
+      services: [],
+      serviceTypeIndices: [],
+      servicePopulationIncreases: [],
+      residentials: improved ? [{ r: 1, c: 1, rows: 2, cols: 2 }] : [],
+      residentialTypeIndices: improved ? [0] : [],
+      populations: improved ? [10] : [],
+      totalPopulation: improved ? 10 : 0,
+    };
+  };
+
+  try {
+    const grid = Array.from({ length: 6 }, () => Array.from({ length: 6 }, () => 1));
+    const solution = solveLns(grid, {
+      optimizer: "lns",
+      residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
+      availableBuildings: { residentials: 1, services: 0 },
+      lns: {
+        iterations: 2,
+        maxNoImprovementIterations: 4,
+        focusedRepairTimeLimitSeconds: 2,
+        escalatedRepairTimeLimitSeconds: 3,
+        neighborhoodRows: 3,
+        neighborhoodCols: 3,
+        seedHint: {
+          solution: {
+            roads: ["0,0"],
+            services: [],
+            residentials: [],
+            populations: [],
+            totalPopulation: 0,
+          },
+        },
+      },
+    });
+
+    assert.equal(solution.optimizer, "lns");
+    assert.equal(solution.totalPopulation, 10);
+    assert.deepEqual(seenRepairBudgets, [2, 3]);
+    assert.equal(solution.lnsTelemetry.seedSource, "hint");
+    assert.equal(solution.lnsTelemetry.stopReason, "iteration-limit");
+    assert.equal(solution.lnsTelemetry.outcomes.length, 2);
+    assert.equal(solution.lnsTelemetry.outcomes[0].phase, "focused");
+    assert.equal(solution.lnsTelemetry.outcomes[0].status, "neutral");
+    assert.equal(solution.lnsTelemetry.outcomes[1].phase, "escalated");
+    assert.equal(solution.lnsTelemetry.outcomes[1].status, "improved");
+    assert.equal(solution.lnsTelemetry.improvingIterations, 1);
+    assert.equal(solution.lnsTelemetry.neutralIterations, 1);
+  } finally {
+    cpSatModule.solveCpSat = originalSolveCpSat;
+  }
+}
+
+function testLnsStopsAfterNoImprovementTimeout() {
+  const cpSatModule = require("../dist/cp-sat/solver.js");
+  const originalSolveCpSat = cpSatModule.solveCpSat;
+  let attempts = 0;
+
+  cpSatModule.solveCpSat = () => {
+    attempts += 1;
+    const startedAt = Date.now();
+    while (Date.now() - startedAt < 5) {
+      // Keep the synchronous fake repair running long enough for the stale timer.
+    }
+    return {
+      optimizer: "cp-sat",
+      cpSatStatus: "FEASIBLE",
+      roads: new Set(["0,0"]),
+      services: [],
+      serviceTypeIndices: [],
+      servicePopulationIncreases: [],
+      residentials: [],
+      residentialTypeIndices: [],
+      populations: [],
+      totalPopulation: 0,
+    };
+  };
+
+  try {
+    const grid = Array.from({ length: 4 }, () => Array.from({ length: 4 }, () => 1));
+    const solution = solveLns(grid, {
+      optimizer: "lns",
+      lns: {
+        iterations: 10,
+        maxNoImprovementIterations: 10,
+        noImprovementTimeoutSeconds: 0.001,
+        repairTimeLimitSeconds: 1,
+        seedHint: {
+          solution: {
+            roads: ["0,0"],
+            services: [],
+            residentials: [],
+            populations: [],
+            totalPopulation: 0,
+          },
+        },
+      },
+    });
+
+    assert.equal(attempts, 1);
+    assert.equal(solution.lnsTelemetry.stopReason, "stale-time-limit");
+    assert.equal(solution.lnsTelemetry.outcomes[0].status, "neutral");
+  } finally {
+    cpSatModule.solveCpSat = originalSolveCpSat;
+  }
+}
+
+function testLnsRejectsMalformedScalarOptions() {
+  const grid = Array.from({ length: 4 }, () => Array.from({ length: 4 }, () => 1));
+  assert.throws(
+    () =>
+      solveLns(grid, {
+        optimizer: "lns",
+        lns: {
+          iterations: "many",
+          seedHint: {
+            solution: {
+              roads: ["0,0"],
+              services: [],
+              residentials: [],
+              populations: [],
+              totalPopulation: 0,
+            },
+          },
+        },
+      }),
+    /Invalid solver input: LNS option lns\.iterations must be an integer between 1 and 10000\./
+  );
+}
+
 function testLnsDeterministicServiceUpgrade() {
   const tempDir = fs.mkdtempSync(path.join(process.cwd(), "tmp-lns-upgrade-"));
   const stopFilePath = path.join(tempDir, "stop-now");
@@ -5028,6 +5301,7 @@ async function main() {
   await testAutoAsyncRecoveredCpSatSnapshotKeepsCompletedMetadata();
   testAutoSyncWallClockCapStopsRunningLnsStage();
   testAutoSyncWallClockCapKeepsExplicitStopReasonWhenLnsThrows();
+  testAutoSyncPassesTotalBudgetToLnsStage();
   testAutoSyncGreedyCanRunPastFormerStageBudget();
   await testAutoAsyncGreedyCanRunPastFormerStageBudget();
   testAutoClampsHeavyGreedyStageSettings();
@@ -5067,6 +5341,7 @@ async function main() {
   testGreedyGroupedServiceScoringLeavesUntypedBenchmarkUndiscounted();
   testGreedyGroupedServiceScoringDiscountsLimitedFallbackTypes();
   await testCpSatBenchmarkCorpusHelpers();
+  testLnsBenchmarkCorpusHelpers();
   await maybeTestCpSatBenchmarkSuite();
   await maybeTestCpSatWarmStartContinuation();
   await maybeTestCpSatPortfolioSolve();
@@ -5092,6 +5367,9 @@ async function main() {
   testGreedyResidentialPopulationCacheRespectsTypedVariants();
   testLnsNeighborhoodWindowsEscalateWhenStagnating();
   testLnsRunsFinalEscalationWithinConfiguredBudget();
+  testLnsTelemetryRecordsRepairPolicyAndOutcomes();
+  testLnsStopsAfterNoImprovementTimeout();
+  testLnsRejectsMalformedScalarOptions();
   maybeTestLnsOptimizer();
   testLnsRejectsInvalidSeedHint();
   testLnsRejectsMalformedSeedHintFields();

@@ -425,18 +425,82 @@ export interface LnsOptions {
   iterations?: number;
   /** Stop after this many consecutive non-improving neighborhoods. */
   maxNoImprovementIterations?: number;
+  /** Total LNS wall-clock budget in seconds, including seed construction. Omit for no LNS-specific wall-clock cap. */
+  wallClockLimitSeconds?: number;
+  /** Alias for wallClockLimitSeconds for callers that use the same naming as raw Greedy and CP-SAT. */
+  timeLimitSeconds?: number;
+  /** Stop after this many seconds without an improving neighborhood. Omit to rely on iteration-based stopping. */
+  noImprovementTimeoutSeconds?: number;
+  /** Optional greedy seed construction budget in seconds when no saved seed is provided. */
+  seedTimeLimitSeconds?: number;
   /** Height of each repair neighborhood. Defaults to about half the grid height. */
   neighborhoodRows?: number;
   /** Width of each repair neighborhood. Defaults to about half the grid width. */
   neighborhoodCols?: number;
   /** Per-neighborhood CP-SAT repair budget in seconds. */
   repairTimeLimitSeconds?: number;
+  /** Per-neighborhood budget for focused repair attempts before escalation. Defaults to repairTimeLimitSeconds. */
+  focusedRepairTimeLimitSeconds?: number;
+  /** Per-neighborhood budget for escalated repair attempts. Defaults to repairTimeLimitSeconds. */
+  escalatedRepairTimeLimitSeconds?: number;
   /** Optional saved-layout seed used instead of rebuilding the initial greedy incumbent. */
   seedHint?: CpSatWarmStartHint;
   /** Internal stop-token path used by the local web server. */
   stopFilePath?: string;
   /** Internal best-snapshot path used by the local web server. */
   snapshotFilePath?: string;
+}
+
+export type LnsRepairPhase = "focused" | "escalated";
+
+export type LnsNeighborhoodOutcomeStatus =
+  | "improved"
+  | "neutral"
+  | "recoverable-failure"
+  | "skipped-budget"
+  | "stopped";
+
+export type LnsStopReason =
+  | "running"
+  | "iteration-limit"
+  | "stale-iteration-limit"
+  | "stale-time-limit"
+  | "wall-clock-limit"
+  | "no-neighborhoods"
+  | "cancelled";
+
+export interface LnsNeighborhoodOutcome {
+  iteration: number;
+  phase: LnsRepairPhase;
+  window: CpSatNeighborhoodWindow;
+  stagnantIterationsBefore: number;
+  staleSecondsBefore: number;
+  repairTimeLimitSeconds: number;
+  wallClockSeconds: number;
+  populationBefore: number;
+  populationAfter: number;
+  improvement: number;
+  status: LnsNeighborhoodOutcomeStatus;
+  cpSatStatus?: string | null;
+}
+
+export interface LnsTelemetry {
+  stopReason: LnsStopReason;
+  seedSource: "greedy" | "hint";
+  seedWallClockSeconds: number;
+  wallClockLimitSeconds: number | null;
+  noImprovementTimeoutSeconds: number | null;
+  focusedRepairTimeLimitSeconds: number;
+  escalatedRepairTimeLimitSeconds: number;
+  iterationsStarted: number;
+  iterationsCompleted: number;
+  improvingIterations: number;
+  neutralIterations: number;
+  recoverableFailures: number;
+  skippedIterations: number;
+  finalStagnantIterations: number;
+  elapsedSeconds: number;
+  outcomes: LnsNeighborhoodOutcome[];
 }
 
 export interface SolverParams {
@@ -509,6 +573,8 @@ export interface Solution {
   cpSatPortfolio?: CpSatPortfolioSummary;
   /** Optional greedy profiling counters collected only when profiling is enabled. */
   greedyProfile?: GreedyProfile;
+  /** LNS run summary and per-neighborhood outcomes when the LNS backend produced this solution. */
+  lnsTelemetry?: LnsTelemetry;
   /** True when a run was stopped early and this solution is the best feasible result found so far. */
   stoppedByUser?: boolean;
   /** True when a greedy wall-clock budget stopped the run and this is the best feasible result found so far. */
@@ -562,6 +628,7 @@ export interface SolveResponseStats {
   autoStage?: AutoSolveStageMetadata;
   manualLayout: boolean;
   cpSatStatus: string | null;
+  lnsTelemetry?: LnsTelemetry;
   stoppedByUser: boolean;
   stoppedByTimeLimit: boolean;
   totalPopulation: number;
@@ -591,6 +658,10 @@ export interface SolveProgressLogEntry {
   hasFeasibleSolution: boolean;
   totalPopulation: number | null;
   cpSatStatus: string | null;
+  lnsStopReason?: LnsStopReason | null;
+  lnsNeighborhoodStatus?: LnsNeighborhoodOutcomeStatus | null;
+  lnsNeighborhoodImprovement?: number | null;
+  lnsNeighborhoodsCompleted?: number | null;
   bestPopulationUpperBound: number | null;
   populationGapUpperBound: number | null;
   solveWallTimeSeconds: number | null;

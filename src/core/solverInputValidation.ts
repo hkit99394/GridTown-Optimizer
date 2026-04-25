@@ -23,6 +23,9 @@ const AUTO_MAX_WALL_CLOCK_LIMIT_SECONDS = 24 * 60 * 60;
 const AUTO_MAX_WEAK_CYCLE_IMPROVEMENT_THRESHOLD = 1;
 const AUTO_MAX_CONSECUTIVE_WEAK_CYCLES = 100;
 const AUTO_MAX_STAGE_TIME_LIMIT_SECONDS = 24 * 60 * 60;
+const LNS_MAX_ITERATIONS = 10_000;
+const LNS_MAX_NEIGHBORHOOD_DIMENSION = 10_000;
+const LNS_MAX_TIME_LIMIT_SECONDS = 24 * 60 * 60;
 const CP_SAT_HINT_ONLY_REUSABLE_KEYS = [
   "roadKeys",
   "roads",
@@ -976,12 +979,99 @@ function assertValidGreedyOptions(params: SolverParams): void {
   );
 }
 
+export function assertValidLnsOptions(params: SolverParams): void {
+  const lnsValue = (params as Record<string, unknown>).lns;
+  if (lnsValue === undefined) return;
+
+  const lns = requireValidationRecord(lnsValue, "LNS options lns");
+  requireOptionalIntegerInRange(
+    lns,
+    "iterations",
+    "LNS option lns.iterations",
+    1,
+    LNS_MAX_ITERATIONS
+  );
+  requireOptionalIntegerInRange(
+    lns,
+    "maxNoImprovementIterations",
+    "LNS option lns.maxNoImprovementIterations",
+    1,
+    LNS_MAX_ITERATIONS
+  );
+  requireOptionalFiniteNumberInRange(
+    lns,
+    "wallClockLimitSeconds",
+    "LNS option lns.wallClockLimitSeconds",
+    0,
+    LNS_MAX_TIME_LIMIT_SECONDS
+  );
+  requireOptionalFiniteNumberInRange(
+    lns,
+    "timeLimitSeconds",
+    "LNS option lns.timeLimitSeconds",
+    0,
+    LNS_MAX_TIME_LIMIT_SECONDS
+  );
+  requireOptionalFiniteNumberInRange(
+    lns,
+    "noImprovementTimeoutSeconds",
+    "LNS option lns.noImprovementTimeoutSeconds",
+    0,
+    LNS_MAX_TIME_LIMIT_SECONDS
+  );
+  requireOptionalFiniteNumberInRange(
+    lns,
+    "seedTimeLimitSeconds",
+    "LNS option lns.seedTimeLimitSeconds",
+    0,
+    LNS_MAX_TIME_LIMIT_SECONDS
+  );
+  requireOptionalIntegerInRange(
+    lns,
+    "neighborhoodRows",
+    "LNS option lns.neighborhoodRows",
+    1,
+    LNS_MAX_NEIGHBORHOOD_DIMENSION
+  );
+  requireOptionalIntegerInRange(
+    lns,
+    "neighborhoodCols",
+    "LNS option lns.neighborhoodCols",
+    1,
+    LNS_MAX_NEIGHBORHOOD_DIMENSION
+  );
+  requireOptionalFiniteNumberInRange(
+    lns,
+    "repairTimeLimitSeconds",
+    "LNS option lns.repairTimeLimitSeconds",
+    0,
+    LNS_MAX_TIME_LIMIT_SECONDS
+  );
+  requireOptionalFiniteNumberInRange(
+    lns,
+    "focusedRepairTimeLimitSeconds",
+    "LNS option lns.focusedRepairTimeLimitSeconds",
+    0,
+    LNS_MAX_TIME_LIMIT_SECONDS
+  );
+  requireOptionalFiniteNumberInRange(
+    lns,
+    "escalatedRepairTimeLimitSeconds",
+    "LNS option lns.escalatedRepairTimeLimitSeconds",
+    0,
+    LNS_MAX_TIME_LIMIT_SECONDS
+  );
+  requireOptionalString(lns, "stopFilePath", "LNS runtime option lns.stopFilePath");
+  requireOptionalString(lns, "snapshotFilePath", "LNS runtime option lns.snapshotFilePath");
+}
+
 export function assertValidSolveInputs(G: Grid, params: SolverParams): void {
   assertValidProblemDefinition(params);
   const optimizer = resolveOptimizerName(params);
   assertValidAutoOptions(params);
   assertValidCpSatOptions(params);
   assertValidGreedyOptions(params);
+  assertValidLnsOptions(params);
   assertValidCpSatReusableInputs(G, params);
   if (optimizer !== "lns" && optimizer !== "auto") return;
   materializeValidLnsSeedSolution(G, params, params.lns?.seedHint);

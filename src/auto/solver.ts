@@ -460,6 +460,7 @@ function stageSeedParams(
         seedHint: incumbent ? solutionToLnsSeedHint(incumbent) : params.lns?.seedHint,
         ...(remainingSeconds !== null
           ? {
+              wallClockLimitSeconds: remainingSeconds,
               repairTimeLimitSeconds: Math.max(
                 1,
                 Math.min(params.lns?.repairTimeLimitSeconds ?? params.cpSat?.timeLimitSeconds ?? 5, remainingSeconds)

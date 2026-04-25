@@ -77,9 +77,7 @@ What exists today:
 - deterministic same-cell service and residential upgrade passes around repair
 
 What is still not done:
-- time-based LNS stopping
-- explicit budget partitioning between seed construction, focused repair, and escalated repair
-- clearer per-neighborhood runtime summaries
+- cross-mode scorecards that compare LNS policy changes against `auto`, standalone `greedy`, and CP-SAT under equal budgets
 
 #### 5. Reusable solver-state hardening is shipped
 
@@ -136,6 +134,23 @@ What exists today:
 - result summaries use generated Auto stage seeds instead of stale standalone CP-SAT seed settings
 - README documents the default optimizer contract, Auto options, generated stage seeds, and Auto result metadata
 
+#### 9. LNS stopping, budget policy, and benchmark support are shipped
+
+Status: Completed for the current deterministic LNS runtime policy
+
+What exists today:
+- `LNS` accepts a total wall-clock stage budget through `lns.wallClockLimitSeconds` or the `lns.timeLimitSeconds` alias
+- `LNS` supports `lns.noImprovementTimeoutSeconds` for stale-time stopping in addition to stale-iteration stopping
+- greedy seed construction can be capped with `lns.seedTimeLimitSeconds`
+- focused and escalated repair attempts can use separate budgets via `lns.focusedRepairTimeLimitSeconds` and `lns.escalatedRepairTimeLimitSeconds`
+- malformed `lns` option payloads fail with typed `Invalid solver input:` errors before backend launch, and direct `solveLns(...)` calls share the same scalar validation
+- `auto` passes a total remaining stage budget into LNS instead of only capping each repair attempt
+- `solution.lnsTelemetry` reports stop reason, seed source, elapsed time, focused/escalated budgets, stale state, and per-neighborhood outcomes
+- background snapshots and progress logs include LNS repair status so the planner can distinguish improving, neutral, skipped, stopped, and stale-ended repairs
+- terminal LNS snapshots carry the final stop reason, including cancellation, stale-time, stale-iteration, wall-clock, and no-neighborhood exits
+- LNS repair outcome and snapshot bookkeeping is centralized so future policy changes do not need to duplicate per-branch telemetry logic
+- `benchmark:lns` runs a fixed LNS benchmark corpus and reports quality, wall-clock cost, stop reason, budget settings, and outcome counts
+
 ## Remaining Priorities
 
 Impact factor scale:
@@ -144,35 +159,12 @@ Impact factor scale:
 - `3.0 / 5`: medium leverage or enabling work for later improvements
 - below `3.0 / 5`: strategic or high-cost work with lower near-term return
 
-### 1. Finish LNS stopping, budget policy, and benchmark support
+### 1. Add CP-SAT portfolio guardrails, then expose full planner initiation
 
 Priority: 1
-Impact factor: `4.5 / 5`
-
-Why this is first:
-- `auto` is already shipped, so the strongest algorithmic win is improving the quality-per-minute of the stage it calls most often
-- LNS still stops mostly on iteration counts rather than on time-aware productivity signals
-- better LNS budgeting improves both manual `LNS` runs and every `auto` cycle that depends on LNS repair quality
-- LNS policy tuning needs an explicit benchmark harness before more knobs are added
-
-Concrete work:
-- add `stop after no improvement for T seconds` to `LNS`
-- split budget intentionally between greedy seeding, focused windows, and escalated repair
-- add `benchmark:lns` or fold LNS cases into a shared optimizer benchmark harness
-- compare LNS budget policies on fixed benchmark cases instead of tuning by anecdote
-- expose per-neighborhood outcome summaries in runtime status surfaces
-
-Acceptance criteria:
-- LNS benchmark output reports quality, wall-clock cost, stale-stop reason, and per-neighborhood outcomes
-- `auto` quality-per-minute improves or becomes more stable on the benchmark corpus
-- planner progress can say why an LNS repair was skipped, neutral, improving, or stopped
-
-### 2. Add CP-SAT portfolio guardrails, then expose full planner initiation
-
-Priority: 2
 Impact factor: `4.25 / 5`
 
-Why this is second:
+Why this is first:
 - single-machine portfolio search already exists in the backend, Python runtime, and result model
 - the remaining product value is real, but it depends on operational guardrails first
 - planner controls should expose portfolio only as a bounded exact-search strategy, not as raw process fan-out
@@ -193,12 +185,12 @@ Acceptance criteria:
 Note:
 - the planner already shows some post-run portfolio result details, but it does not yet provide full portfolio initiation or live worker UX
 
-### 3. Add cross-mode benchmark scorecards and unified progress language
+### 2. Add cross-mode benchmark scorecards and unified progress language
 
-Priority: 3
+Priority: 2
 Impact factor: `3.75 / 5`
 
-Why this is third:
+Why this is second:
 - users choosing between modes need equal-budget comparisons, not just individual optimizer telemetry
 - benchmarks are already partly shipped, but planner-facing visibility is still thin
 - shared progress language makes `auto`, `greedy`, `LNS`, and `CP-SAT` easier to compare during and after a run
@@ -214,12 +206,12 @@ Acceptance criteria:
 - a user can choose a mode from the roadmap/planner without knowing implementation internals
 - benchmark output supports mode-selection decisions, not just solver debugging
 
-### 4. Split the greedy solver into cleaner reusable phases
+### 3. Split the greedy solver into cleaner reusable phases
 
-Priority: 4
+Priority: 3
 Impact factor: `3.0 / 5`
 
-Why this is fourth:
+Why this is third:
 - reproducibility and instrumentation are already in place, but the greedy policy surface is still concentrated in one large implementation
 - future metaheuristics and learned-guidance work want clearer reuse seams
 - a full refactor is enabling work, but phase-level measurement hooks are needed earlier for LNS and `auto` budgeting
@@ -237,28 +229,28 @@ Near-term slice:
 
 ## Later Priorities
 
-### 5. Keep distributed CP-SAT behind single-machine portfolio and workflow improvements
+### 4. Keep distributed CP-SAT behind single-machine portfolio and workflow improvements
 
-Priority: 5
+Priority: 4
 Impact factor: `1.5 / 5`
 
 Why:
 - the better near-term return is still better runtime policy, stronger `LNS`, and planner-visible single-machine portfolio search
 - distributed exact solving adds the most operational complexity for the least immediate product leverage
 
-### 6. Keep learned guidance separate from the core runtime roadmap
+### 5. Keep learned guidance separate from the core runtime roadmap
 
-Priority: Separate gated track, after priorities 1 through 4 for core product work
+Priority: Separate gated track, after priorities 1 through 3 for core product work
 Impact factor: `2.0 / 5` near-term product leverage, higher long-term strategic upside
 
 Why:
 - learned guidance is a real fit for search control around `greedy`, `LNS`, and `CP-SAT`, especially for re-ranking and later `LNS` control
 - full RL is not the next production lever; the relevant AlphaGo / AlphaZero lesson is policy / value guidance around exact search, not end-to-end self-play
-- the deterministic solver still has higher-ROI unfinished work, especially `LNS` stopping / budgeting and guarded portfolio exposure
+- the deterministic solver still has higher-ROI unfinished work, especially guarded portfolio exposure and equal-budget scorecards
 - that work should stay tracked in [LEARNED_GUIDANCE_ROADMAP.md](./LEARNED_GUIDANCE_ROADMAP.md), not mixed into the runtime-execution roadmap
 
 Ordering inside the learned-guidance track:
-- first: shared traces, equal-budget benchmarks, and `LNS` benchmark support
+- first: shared traces and equal-budget benchmarks
 - second: ablations of current heuristic lift
 - third: greedy service re-ranking
 - fourth: `LNS` window re-ranking
@@ -271,15 +263,14 @@ Ordering inside the learned-guidance track:
 
 If all remaining work is ranked in one combined near-term ordering, the recommended order is:
 
-1. finish deterministic `LNS` stopping, budget policy, and benchmark support
-2. add `CP-SAT` portfolio guardrails, then expose full planner initiation
-3. add cross-mode benchmark scorecards and unified progress language
-4. add greedy phase-level measurement hooks, then split the greedy solver into cleaner reusable phases
-5. build the learned-guidance foundation: shared traces, equal-budget benchmarks, and `LNS` benchmark support
-6. run learned-guidance ablations
-7. try low-risk learned guidance: greedy service re-ranking and `LNS` window re-ranking
-8. only then consider value-guided seeds if seed quality becomes a measured bottleneck
-9. treat contextual bandits and full RL as gated research after earlier learned stages already win
+1. add `CP-SAT` portfolio guardrails, then expose full planner initiation
+2. add cross-mode benchmark scorecards and unified progress language
+3. add greedy phase-level measurement hooks, then split the greedy solver into cleaner reusable phases
+4. build the learned-guidance foundation: shared traces and equal-budget benchmarks
+5. run learned-guidance ablations
+6. try low-risk learned guidance: greedy service re-ranking and `LNS` window re-ranking
+7. only then consider value-guided seeds if seed quality becomes a measured bottleneck
+8. treat contextual bandits and full RL as gated research after earlier learned stages already win
 
 Why this order:
 - item 1 is now the highest direct algorithmic quality-per-minute work
@@ -317,7 +308,7 @@ Delivered:
 
 ### Phase C: Better stopping and budgeting
 
-Status: Current highest algorithmic priority
+Status: Completed for the current deterministic policy
 
 Targets:
 - stop after `N` non-improving neighborhoods
@@ -326,20 +317,18 @@ Targets:
 
 Note:
 - the `N`-based stale-iteration stop already exists
-- the missing piece is a stronger time-based runtime policy layered on top
+- the time-based runtime policy is now layered on top through LNS wall-clock, stale-time, seed, focused-repair, and escalated-repair budgets
 
 ### Phase D: Better run visibility
 
-Status: Partially done
+Status: Completed for the current planner/progress-log surfaces
 
 Delivered:
 - clearer planner messaging about greedy seed vs displayed seed
 - live best-so-far progress log updates
 - exact-run bound / gap / improvement-lag visibility
-
-Remaining:
-- clearer per-neighborhood `LNS` progress summaries
-- better explanation of why a repair step was skipped, neutral, or improving
+- per-neighborhood `LNS` progress summaries through `solution.lnsTelemetry`
+- planner and persisted progress-log language for skipped, neutral, improving, stopped, stale-ended, and budget-ended LNS repair attempts
 
 ## Notes
 

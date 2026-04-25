@@ -28,8 +28,18 @@ function parseSerializedSolution(stdout: string): SerializedSolution {
 }
 
 function materializeSolution(raw: SerializedSolution): Solution {
+  const stoppedByUser = Boolean(raw.stoppedByUser);
   return {
     ...raw,
+    ...(raw.lnsTelemetry && stoppedByUser
+      ? {
+          lnsTelemetry: {
+            ...raw.lnsTelemetry,
+            stopReason: "cancelled",
+          },
+        }
+      : {}),
+    stoppedByUser,
     roads: new Set(raw.roads),
   };
 }

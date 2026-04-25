@@ -88,6 +88,25 @@ function roundTelemetrySeconds(value: number | null): number | null {
   return Math.round(value * 1000) / 1000;
 }
 
+function getLastLnsOutcome(solution: Solution): NonNullable<Solution["lnsTelemetry"]>["outcomes"][number] | null {
+  const outcomes = solution.lnsTelemetry?.outcomes;
+  if (!outcomes?.length) return null;
+  return outcomes[outcomes.length - 1];
+}
+
+function buildLnsProgressNote(solution: Solution): string | null {
+  const telemetry = solution.lnsTelemetry;
+  if (!telemetry) return null;
+  const latestOutcome = getLastLnsOutcome(solution);
+  if (!latestOutcome) {
+    return telemetry.stopReason === "running"
+      ? `LNS seeded from ${telemetry.seedSource}.`
+      : `LNS stopped: ${telemetry.stopReason}.`;
+  }
+  const improvement = latestOutcome.improvement > 0 ? ` +${latestOutcome.improvement}` : "";
+  return `LNS ${latestOutcome.status}${improvement} in ${latestOutcome.phase} neighborhood ${latestOutcome.iteration + 1}. Stop: ${telemetry.stopReason}.`;
+}
+
 function serializeSolutionForLog(solution: Solution): SerializedSolution {
   return {
     ...solution,
@@ -177,6 +196,16 @@ function buildProgressEntry(
   }
 ): SolveProgressLogEntry {
   const telemetry = solution.cpSatTelemetry;
+  const lastLnsOutcome = getLastLnsOutcome(solution);
+  const lnsProgressFields = solution.lnsTelemetry
+    ? {
+        lnsStopReason: solution.lnsTelemetry.stopReason,
+        lnsNeighborhoodStatus: lastLnsOutcome?.status ?? null,
+        lnsNeighborhoodImprovement:
+          typeof lastLnsOutcome?.improvement === "number" ? lastLnsOutcome.improvement : null,
+        lnsNeighborhoodsCompleted: solution.lnsTelemetry.iterationsCompleted,
+      }
+    : {};
   const elapsedMs = normalizeElapsedMs(options.elapsedMs);
   const lastImprovementAtSeconds =
     typeof telemetry?.lastImprovementAtSeconds === "number" ? telemetry.lastImprovementAtSeconds : null;
@@ -216,6 +245,7 @@ function buildProgressEntry(
     hasFeasibleSolution: true,
     totalPopulation: typeof solution.totalPopulation === "number" ? solution.totalPopulation : null,
     cpSatStatus: solution.cpSatStatus ?? null,
+    ...lnsProgressFields,
     bestPopulationUpperBound:
       typeof telemetry?.bestPopulationUpperBound === "number" ? telemetry.bestPopulationUpperBound : null,
     populationGapUpperBound:
@@ -223,7 +253,7 @@ function buildProgressEntry(
     solveWallTimeSeconds: roundTelemetrySeconds(solveWallTimeSeconds),
     lastImprovementAtSeconds: roundTelemetrySeconds(lastImprovementAtSeconds),
     secondsSinceLastImprovement: roundTelemetrySeconds(secondsSinceLastImprovement),
-    note: null,
+    note: buildLnsProgressNote(solution),
   };
 }
 
@@ -236,6 +266,10 @@ function entriesMatch(left: SolveProgressLogEntry | undefined, right: SolveProgr
     && left.hasFeasibleSolution === right.hasFeasibleSolution
     && left.totalPopulation === right.totalPopulation
     && left.cpSatStatus === right.cpSatStatus
+    && (left.lnsStopReason ?? null) === (right.lnsStopReason ?? null)
+    && (left.lnsNeighborhoodStatus ?? null) === (right.lnsNeighborhoodStatus ?? null)
+    && (left.lnsNeighborhoodImprovement ?? null) === (right.lnsNeighborhoodImprovement ?? null)
+    && (left.lnsNeighborhoodsCompleted ?? null) === (right.lnsNeighborhoodsCompleted ?? null)
     && left.bestPopulationUpperBound === right.bestPopulationUpperBound
     && left.populationGapUpperBound === right.populationGapUpperBound
     && left.solveWallTimeSeconds === right.solveWallTimeSeconds

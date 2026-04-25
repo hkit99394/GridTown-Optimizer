@@ -849,6 +849,73 @@ async function testSolveRoutesRejectInvalidAutoOptionsBeforeStartingBackend(hand
   }
 }
 
+async function testSolveRoutesRejectInvalidLnsOptionsBeforeStartingBackend(handler) {
+  const solvePayload = buildTinySolvePayload();
+  const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+  let optimizerAdapterRequested = false;
+
+  optimizerRegistry.getOptimizerAdapter = () => {
+    optimizerAdapterRequested = true;
+    return {
+      name: "lns",
+      solve() {
+        throw new Error("Invalid LNS input should be rejected before starting the backend.");
+      },
+      startBackgroundSolve() {
+        throw new Error("Invalid LNS input should be rejected before starting the backend.");
+      },
+    };
+  };
+
+  const cases = [
+    {
+      url: "/api/solve",
+      lns: "repair",
+      expectedError: "Invalid solver input: LNS options lns must be an object.",
+    },
+    {
+      url: "/api/solve/start",
+      lns: { iterations: 0 },
+      expectedError: "Invalid solver input: LNS option lns.iterations must be an integer between 1 and 10000.",
+    },
+    {
+      url: "/api/solve",
+      lns: { wallClockLimitSeconds: 0 },
+      expectedError:
+        "Invalid solver input: LNS option lns.wallClockLimitSeconds must be a finite number > 0 and <= 86400.",
+    },
+    {
+      url: "/api/solve/start",
+      lns: { stopFilePath: false },
+      expectedError: "Invalid solver input: LNS runtime option lns.stopFilePath must be a string.",
+    },
+  ];
+
+  try {
+    for (const testCase of cases) {
+      const result = await invoke(handler, {
+        method: "POST",
+        url: testCase.url,
+        json: {
+          ...solvePayload,
+          params: {
+            ...solvePayload.params,
+            optimizer: "lns",
+            lns: testCase.lns,
+          },
+        },
+      });
+
+      assert.equal(result.statusCode, 400);
+      assert.equal(result.payload.ok, false);
+      assert.equal(result.payload.error, testCase.expectedError);
+      assert.equal(optimizerAdapterRequested, false);
+    }
+  } finally {
+    optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
+  }
+}
+
 async function testImmediateSolvePreservesTypedSolverInputErrors(handler) {
   const solvePayload = buildTinySolvePayload();
   const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
@@ -1601,6 +1668,7 @@ async function main() {
   await testImmediateSolveRejectsInvalidCpSatOptionsBeforeStartingBackend(handler);
   await testImmediateSolveRejectsInvalidGreedyOptionsBeforeStartingBackend(handler);
   await testSolveRoutesRejectInvalidAutoOptionsBeforeStartingBackend(handler);
+  await testSolveRoutesRejectInvalidLnsOptionsBeforeStartingBackend(handler);
   await testImmediateSolvePreservesTypedSolverInputErrors(handler);
   await testImmediateSolveCancelsOnDisconnect(handler);
   await testBackgroundSolveRejectsImmediateSolveAtCapacity();

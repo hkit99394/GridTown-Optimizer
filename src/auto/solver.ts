@@ -100,31 +100,37 @@ const timer = delayMsArg === "null"
   : setTimeout(triggerStop, Math.max(0, Number(delayMsArg) || 0));
 `;
 
+function finiteNumberOrDefault(value: unknown, fallback: number): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function positiveIntegerOrDefault(value: unknown, fallback: number): number {
+  return Math.max(1, Math.floor(finiteNumberOrDefault(value, fallback)));
+}
+
 function normalizeAutoOptions(params: SolverParams): NormalizedAutoOptions {
   const auto = params.auto ?? {};
-  const wallClockLimitSeconds =
-    typeof auto.wallClockLimitSeconds === "number" && Number.isFinite(auto.wallClockLimitSeconds)
-      ? Math.max(1, Math.floor(auto.wallClockLimitSeconds))
-      : null;
+  const configuredWallClockLimitSeconds = finiteNumberOrDefault(auto.wallClockLimitSeconds, Number.NaN);
+  const wallClockLimitSeconds = configuredWallClockLimitSeconds > 0
+    ? Math.max(1, Math.floor(configuredWallClockLimitSeconds))
+    : null;
   return {
     wallClockLimitSeconds,
     weakCycleImprovementThreshold: Math.max(
       0,
-      Number.isFinite(auto.weakCycleImprovementThreshold)
-        ? Number(auto.weakCycleImprovementThreshold)
-        : DEFAULT_WEAK_CYCLE_IMPROVEMENT_THRESHOLD
+      finiteNumberOrDefault(auto.weakCycleImprovementThreshold, DEFAULT_WEAK_CYCLE_IMPROVEMENT_THRESHOLD)
     ),
-    maxConsecutiveWeakCycles: Math.max(
-      1,
-      Math.floor(auto.maxConsecutiveWeakCycles ?? DEFAULT_MAX_CONSECUTIVE_WEAK_CYCLES)
+    maxConsecutiveWeakCycles: positiveIntegerOrDefault(
+      auto.maxConsecutiveWeakCycles,
+      DEFAULT_MAX_CONSECUTIVE_WEAK_CYCLES
     ),
-    cpSatStageTimeLimitSeconds: Math.max(
-      1,
-      Math.floor(auto.cpSatStageTimeLimitSeconds ?? DEFAULT_CP_SAT_STAGE_TIME_LIMIT_SECONDS)
+    cpSatStageTimeLimitSeconds: positiveIntegerOrDefault(
+      auto.cpSatStageTimeLimitSeconds,
+      DEFAULT_CP_SAT_STAGE_TIME_LIMIT_SECONDS
     ),
-    cpSatStageNoImprovementTimeoutSeconds: Math.max(
-      1,
-      Math.floor(auto.cpSatStageNoImprovementTimeoutSeconds ?? DEFAULT_CP_SAT_STAGE_NO_IMPROVEMENT_TIMEOUT_SECONDS)
+    cpSatStageNoImprovementTimeoutSeconds: positiveIntegerOrDefault(
+      auto.cpSatStageNoImprovementTimeoutSeconds,
+      DEFAULT_CP_SAT_STAGE_NO_IMPROVEMENT_TIMEOUT_SECONDS
     ),
   };
 }

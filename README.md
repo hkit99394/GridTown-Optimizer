@@ -69,7 +69,7 @@ Preferred configuration is typed `residentialTypes`. Legacy `residentialSettings
 
 ### `auto`
 
-`auto` is the recommended quality path.
+`auto` is the recommended quality path and the default optimizer for omitted `params.optimizer` values in the public runtime, HTTP API, example CLI, and web planner.
 
 In this project it:
 - starts with a capped fast greedy incumbent
@@ -78,6 +78,8 @@ In this project it:
 - keeps alternating bounded `LNS` and `CP-SAT` while meaningful improvement continues
 
 Use this when overall answer quality matters more than keeping the run purely standalone or heuristic.
+
+Auto owns orchestration details. It generates per-stage random seeds and reports them in `solution.autoStage.generatedSeeds`; standalone `greedy.randomSeed` and `cpSat.randomSeed` are only honored by direct Greedy/CP-SAT runs.
 
 ### `greedy`
 
@@ -574,7 +576,7 @@ type ResidentialTypeSetting = {
 
 ### Greedy options
 
-Prefer the nested `greedy` object for new code. The web app and CLI use this heavier standalone Greedy profile by default; `auto` clamps the Greedy stage separately when it only needs a fast seed.
+Prefer the nested `greedy` object for new code. When users choose standalone Greedy, the web app and CLI use this heavier inspection profile; `auto` clamps the Greedy stage separately when it only needs a fast seed.
 
 ```ts
 greedy: {
@@ -585,6 +587,20 @@ greedy: {
   exhaustiveServiceSearch: true,
   serviceExactPoolLimit: 22,
   serviceExactMaxCombinations: 12000,
+}
+```
+
+### Auto options
+
+All `auto` fields are optional. Omit `auto` or pass `{}` to use runtime defaults.
+
+```ts
+auto: {
+  wallClockLimitSeconds?: number;
+  weakCycleImprovementThreshold?: number;
+  maxConsecutiveWeakCycles?: number;
+  cpSatStageTimeLimitSeconds?: number;
+  cpSatStageNoImprovementTimeoutSeconds?: number;
 }
 ```
 
@@ -617,6 +633,8 @@ cpSat: {
 
 A `Solution` contains:
 - `optimizer`
+- `activeOptimizer`
+- `autoStage`
 - `cpSatStatus`
 - `cpSatObjectivePolicy`
 - `cpSatTelemetry`
@@ -661,6 +679,8 @@ Road cells are encoded as `"r,c"` strings inside the `Set`.
 - `CP-SAT` requires a working Python runtime plus OR-Tools.
 - If you omit `cpSat.timeLimitSeconds`, the CP-SAT backend runs until it finishes or is stopped.
 - If you omit `auto.wallClockLimitSeconds`, the outer `auto` policy has no global cap.
+- If you omit `params.optimizer`, runtime dispatch resolves it to `auto`.
+- `auto` generates per-stage seeds; use `solution.autoStage.generatedSeeds` to inspect the actual Greedy, LNS, and CP-SAT stage seeds.
 - In the web planner, stopping `CP-SAT` or `LNS` early preserves the best feasible result found so far when one exists.
 - In the web planner, stopping `auto` preserves the best incumbent found so far.
 - `LNS` currently uses CP-SAT as the neighborhood repair engine.

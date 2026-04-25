@@ -331,18 +331,49 @@
     }
 
     function syncSolverFields() {
+      const autoOwnsStageSeeds = state.optimizer === "auto";
+
       if (elements.autoWallClockLimitSeconds) {
         elements.autoWallClockLimitSeconds.value = state.auto?.wallClockLimitSeconds ?? "";
       }
 
       elements.greedyLocalSearch.checked = state.greedy.localSearch;
-      elements.greedyRandomSeed.value = state.greedy.randomSeed === "" ? "" : String(state.greedy.randomSeed ?? "");
+      elements.greedyRandomSeed.disabled = autoOwnsStageSeeds;
+      elements.greedyRandomSeed.title = autoOwnsStageSeeds
+        ? "Auto generates per-stage seeds and ignores standalone Greedy seeds."
+        : "";
+      elements.greedyRandomSeed.placeholder = autoOwnsStageSeeds ? "Auto generates stage seeds" : "Blank = random";
+      elements.greedyRandomSeed.value = autoOwnsStageSeeds
+        ? ""
+        : (state.greedy.randomSeed === "" ? "" : String(state.greedy.randomSeed ?? ""));
       elements.greedyRestarts.value = String(state.greedy.restarts);
+      elements.greedyRestarts.max = autoOwnsStageSeeds ? "4" : "";
+      elements.greedyRestarts.title = autoOwnsStageSeeds ? "Auto caps the Greedy seed stage at 4 restarts." : "";
       elements.greedyServiceRefineIterations.value = String(state.greedy.serviceRefineIterations);
+      elements.greedyServiceRefineIterations.max = autoOwnsStageSeeds ? "1" : "";
+      elements.greedyServiceRefineIterations.title = autoOwnsStageSeeds
+        ? "Auto caps the Greedy seed stage at 1 service-refinement pass."
+        : "";
       elements.greedyServiceRefineCandidateLimit.value = String(state.greedy.serviceRefineCandidateLimit);
-      elements.greedyExhaustiveServiceSearch.checked = state.greedy.exhaustiveServiceSearch;
+      elements.greedyServiceRefineCandidateLimit.max = autoOwnsStageSeeds ? "24" : "";
+      elements.greedyServiceRefineCandidateLimit.title = autoOwnsStageSeeds
+        ? "Auto caps the Greedy seed stage at 24 service-refinement candidates."
+        : "";
+      elements.greedyExhaustiveServiceSearch.checked = autoOwnsStageSeeds ? false : state.greedy.exhaustiveServiceSearch;
+      elements.greedyExhaustiveServiceSearch.disabled = autoOwnsStageSeeds;
+      elements.greedyExhaustiveServiceSearch.title = autoOwnsStageSeeds
+        ? "Auto always disables exhaustive service search during the fast Greedy seed stage."
+        : "";
       elements.greedyServiceExactPoolLimit.value = String(state.greedy.serviceExactPoolLimit);
+      elements.greedyServiceExactPoolLimit.max = autoOwnsStageSeeds ? "8" : "";
+      elements.greedyServiceExactPoolLimit.title = autoOwnsStageSeeds
+        ? "Auto caps the Greedy seed stage at an exact service pool of 8."
+        : "";
       elements.greedyServiceExactMaxCombinations.value = String(state.greedy.serviceExactMaxCombinations);
+      elements.greedyServiceExactMaxCombinations.max = autoOwnsStageSeeds ? "512" : "";
+      elements.greedyServiceExactMaxCombinations.title = autoOwnsStageSeeds
+        ? "Auto caps the Greedy seed stage at 512 exact service combinations."
+        : "";
 
       elements.lnsIterations.value = String(state.lns.iterations);
       elements.lnsMaxNoImprovementIterations.value = String(state.lns.maxNoImprovementIterations);
@@ -354,7 +385,14 @@
 
       elements.cpSatTimeLimitSeconds.value = state.cpSat.timeLimitSeconds;
       elements.cpSatNoImprovementTimeoutSeconds.value = state.cpSat.noImprovementTimeoutSeconds;
-      elements.cpSatRandomSeed.value = state.cpSat.randomSeed === "" ? "" : String(state.cpSat.randomSeed ?? "");
+      elements.cpSatRandomSeed.disabled = autoOwnsStageSeeds;
+      elements.cpSatRandomSeed.title = autoOwnsStageSeeds
+        ? "Auto generates per-stage seeds and ignores standalone CP-SAT seeds."
+        : "";
+      elements.cpSatRandomSeed.placeholder = autoOwnsStageSeeds ? "Auto generates stage seeds" : "Blank = auto-fill on solve";
+      elements.cpSatRandomSeed.value = autoOwnsStageSeeds
+        ? ""
+        : (state.cpSat.randomSeed === "" ? "" : String(state.cpSat.randomSeed ?? ""));
       elements.cpSatNumWorkers.value = String(state.cpSat.numWorkers);
       elements.cpSatLogSearchProgress.checked = state.cpSat.logSearchProgress;
       elements.cpSatPythonExecutable.value = state.cpSat.pythonExecutable;

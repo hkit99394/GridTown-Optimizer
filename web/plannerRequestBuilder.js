@@ -253,7 +253,7 @@
     }
 
     function buildGreedyPayload(optimizer) {
-      const randomSeed = readOptionalInteger(state.greedy.randomSeed, 0);
+      const randomSeed = optimizer === "auto" ? undefined : readOptionalInteger(state.greedy.randomSeed, 0);
       const payload = {
         localSearch: Boolean(state.greedy.localSearch),
         ...(randomSeed !== undefined ? { randomSeed } : {}),
@@ -279,8 +279,15 @@
       };
     }
 
+    function normalizeRequestOptimizer(optimizer) {
+      return optimizer === "auto" || optimizer === "greedy" || optimizer === "cp-sat" || optimizer === "lns"
+        ? optimizer
+        : "auto";
+    }
+
     function buildSolveRequest(options = {}) {
       const { hintMismatch = "error", includeWarmStartHint = true, includeLnsSeed = true } = options;
+      const optimizer = normalizeRequestOptimizer(state.optimizer);
       const autoWallClockLimitSeconds = readOptionalInteger(state.auto?.wallClockLimitSeconds ?? "", 1);
       const timeLimitSeconds = readOptionalInteger(state.cpSat.timeLimitSeconds, 1);
       const noImprovementTimeoutSeconds = readOptionalInteger(state.cpSat.noImprovementTimeoutSeconds, 1);
@@ -289,14 +296,14 @@
       const defaultNeighborhoodCols = Math.max(1, Math.ceil((state.grid[0]?.length ?? 1) / 2));
       const grid = cloneGrid(state.grid);
       const params = {
-        optimizer: state.optimizer,
+        optimizer,
         serviceTypes: state.serviceTypes.map((entry, index) => parseServiceCatalogEntry(entry, index)),
         residentialTypes: state.residentialTypes.map((entry, index) => parseResidentialCatalogEntry(entry, index)),
-        greedy: buildGreedyPayload(state.optimizer),
+        greedy: buildGreedyPayload(optimizer),
         cpSat: {
           numWorkers: clampInteger(state.cpSat.numWorkers, 8, 1),
           logSearchProgress: Boolean(state.cpSat.logSearchProgress),
-          ...(cpSatRandomSeed !== undefined ? { randomSeed: cpSatRandomSeed } : {}),
+          ...(optimizer !== "auto" && cpSatRandomSeed !== undefined ? { randomSeed: cpSatRandomSeed } : {}),
           ...(timeLimitSeconds !== undefined ? { timeLimitSeconds } : {}),
           ...(noImprovementTimeoutSeconds !== undefined ? { noImprovementTimeoutSeconds } : {}),
           ...(state.cpSat.pythonExecutable.trim() ? { pythonExecutable: state.cpSat.pythonExecutable.trim() } : {}),

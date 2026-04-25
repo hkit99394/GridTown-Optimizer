@@ -82,6 +82,16 @@ export interface ServiceTypeSetting {
 
 export type OptimizerName = "auto" | "greedy" | "cp-sat" | "lns";
 
+export function isOptimizerName(value: unknown): value is OptimizerName {
+  return value === "auto" || value === "greedy" || value === "cp-sat" || value === "lns";
+}
+
+/** Fallback when a raw backend/API request omits `params.optimizer`. */
+export const OMITTED_SOLVER_OPTIMIZER: OptimizerName = "auto";
+
+/** Recommended default for interactive planner and CLI entry points. */
+export const RECOMMENDED_INTERACTIVE_OPTIMIZER: OptimizerName = "auto";
+
 export type AutoStageOptimizerName = Exclude<OptimizerName, "auto">;
 
 export type AutoSolveStopReason =
@@ -430,7 +440,7 @@ export interface LnsOptions {
 }
 
 export interface SolverParams {
-  /** Optimizer backend. Defaults to greedy. */
+  /** Optimizer backend. Defaults to auto. */
   optimizer?: OptimizerName;
   /** Auto-orchestration options, used when optimizer = "auto". */
   auto?: AutoOptions;

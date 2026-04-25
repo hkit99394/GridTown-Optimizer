@@ -28,6 +28,8 @@ function createFakeDomElement(overrides = {}) {
       return [];
     },
     classList: {
+      add() {},
+      remove() {},
       toggle() {},
     },
     ...overrides,
@@ -126,8 +128,8 @@ function loadPlannerShellModule() {
   return loadBrowserModule("../web/plannerShell.js").CityBuilderShell;
 }
 
-function loadPlannerResultsModule() {
-  return loadBrowserModule("../web/plannerResults.js").CityBuilderResults;
+function loadPlannerResultsModule(options = {}) {
+  return loadBrowserModule("../web/plannerResults.js", options).CityBuilderResults;
 }
 
 function loadPlannerPersistenceModule(localStorage = undefined) {
@@ -153,6 +155,7 @@ function testDistinctResidentialTypes() {
     [1, 1, 1, 1],
   ];
   const params = {
+    optimizer: "greedy",
     residentialTypes: [
       { w: 2, h: 2, min: 10, max: 10, avail: 1 },
       { w: 2, h: 2, min: 100, max: 100, avail: 1 },
@@ -184,7 +187,10 @@ function testNoRowZeroRoadThrows() {
     [1, 1, 1],
   ];
 
-  assert.throws(() => solve(grid, { basePop: 10, maxPop: 10, greedy: { localSearch: false } }), /No feasible solution found/);
+  assert.throws(
+    () => solve(grid, { optimizer: "greedy", basePop: 10, maxPop: 10, greedy: { localSearch: false } }),
+    /No feasible solution found/
+  );
 }
 
 function testEvaluatorHonorsCountCaps() {
@@ -224,6 +230,7 @@ function testResidentialCapStillAppliesWithTypedResidentials() {
     [1, 1, 1, 1],
   ];
   const params = {
+    optimizer: "greedy",
     residentialTypes: [
       { w: 2, h: 2, min: 10, max: 10, avail: 2 },
       { w: 2, h: 2, min: 20, max: 20, avail: 2 },
@@ -246,6 +253,7 @@ function testNamedBuildingTypesAreAccepted() {
     [1, 1, 1, 1],
   ];
   const params = {
+    optimizer: "greedy",
     serviceTypes: [{ name: "Health Clinic", rows: 2, cols: 2, bonus: 40, range: 1, avail: 1 }],
     residentialTypes: [{ name: "The Aurora", w: 2, h: 2, min: 100, max: 140, avail: 1 }],
     availableBuildings: { residentials: 1, services: 1 },
@@ -795,7 +803,7 @@ function testPlannerRuntimePresetAppliesBoundedCpSatPolicy() {
     cpSat: {
       timeLimitSeconds: "",
       noImprovementTimeoutSeconds: "",
-      randomSeed: "",
+      randomSeed: "31",
       numWorkers: 2,
       logSearchProgress: false,
       pythonExecutable: "",
@@ -913,6 +921,146 @@ function testPlannerRuntimePresetAppliesBoundedCpSatPolicy() {
   assert.equal(solveStateMessage.includes("Bounded CP-SAT"), true);
   assert.equal(payloadPreviewUpdates > 0, true);
   assert.equal(controller.countAllowedCells(), 8);
+}
+
+function testPlannerAutoMarksIgnoredSeedControlsUnavailable() {
+  const plannerWorkbench = loadPlannerWorkbenchModule();
+  const state = {
+    grid: [[1, 1]],
+    optimizer: "auto",
+    serviceTypes: [],
+    residentialTypes: [],
+    availableBuildings: {
+      services: "",
+      residentials: "",
+    },
+    greedy: {
+      localSearch: true,
+      randomSeed: "17",
+      restarts: 20,
+      serviceRefineIterations: 4,
+      serviceRefineCandidateLimit: 60,
+      exhaustiveServiceSearch: true,
+      serviceExactPoolLimit: 22,
+      serviceExactMaxCombinations: 12000,
+    },
+    cpSat: {
+      timeLimitSeconds: "",
+      noImprovementTimeoutSeconds: "",
+      randomSeed: "31",
+      numWorkers: 8,
+      logSearchProgress: false,
+      pythonExecutable: "",
+      useDisplayedHint: true,
+    },
+    lns: {
+      iterations: 1,
+      maxNoImprovementIterations: 1,
+      neighborhoodRows: 1,
+      neighborhoodCols: 1,
+      repairTimeLimitSeconds: 1,
+      useDisplayedSeed: true,
+    },
+    auto: {
+      wallClockLimitSeconds: "",
+    },
+    expansionAdvice: {
+      nextServiceText: "",
+      nextResidentialText: "",
+    },
+  };
+  const elements = {
+    solverToggle: createFakeDomElement(),
+    autoPanel: createFakeDomElement(),
+    greedyPanel: createFakeDomElement(),
+    lnsPanel: createFakeDomElement(),
+    cpSatPanel: createFakeDomElement(),
+    autoWallClockLimitSeconds: createFakeDomElement(),
+    greedyLocalSearch: createFakeDomElement(),
+    greedyRandomSeed: createFakeDomElement(),
+    greedyRestarts: createFakeDomElement(),
+    greedyServiceRefineIterations: createFakeDomElement(),
+    greedyServiceRefineCandidateLimit: createFakeDomElement(),
+    greedyExhaustiveServiceSearch: createFakeDomElement(),
+    greedyServiceExactPoolLimit: createFakeDomElement(),
+    greedyServiceExactMaxCombinations: createFakeDomElement(),
+    lnsIterations: createFakeDomElement(),
+    lnsMaxNoImprovementIterations: createFakeDomElement(),
+    lnsNeighborhoodRows: createFakeDomElement(),
+    lnsNeighborhoodCols: createFakeDomElement(),
+    lnsRepairTimeLimitSeconds: createFakeDomElement(),
+    lnsPythonExecutable: createFakeDomElement(),
+    lnsUseDisplayedSeed: createFakeDomElement(),
+    cpSatTimeLimitSeconds: createFakeDomElement(),
+    cpSatNoImprovementTimeoutSeconds: createFakeDomElement(),
+    cpSatRandomSeed: createFakeDomElement(),
+    cpSatNumWorkers: createFakeDomElement(),
+    cpSatLogSearchProgress: createFakeDomElement(),
+    cpSatPythonExecutable: createFakeDomElement(),
+    cpSatUseDisplayedHint: createFakeDomElement(),
+    maxServices: createFakeDomElement(),
+    maxResidentials: createFakeDomElement(),
+    summaryGridSize: createFakeDomElement(),
+    summaryAllowedCells: createFakeDomElement(),
+    summaryServiceTypes: createFakeDomElement(),
+    summaryResidentialTypes: createFakeDomElement(),
+    summaryOptimizer: createFakeDomElement(),
+  };
+  const controller = plannerWorkbench.createPlannerWorkbenchController({
+    state,
+    elements,
+    constants: {
+      sampleGrid: [[1]],
+    },
+    helpers: {
+      cloneGrid(grid) {
+        return JSON.parse(JSON.stringify(grid));
+      },
+      createGrid(rows, cols, value) {
+        return Array.from({ length: rows }, () => Array.from({ length: cols }, () => value));
+      },
+      escapeHtml(value) {
+        return String(value);
+      },
+      isGridLike(value) {
+        return Array.isArray(value);
+      },
+      normalizeOptimizer(value) {
+        return value === "auto" || value === "cp-sat" || value === "lns" ? value : "greedy";
+      },
+      parseCatalogImportText() {
+        return {};
+      },
+      serializeResidentialTypeForCatalog(entry) {
+        return entry;
+      },
+      serializeServiceTypeForCatalog(entry) {
+        return entry;
+      },
+    },
+    callbacks: {
+      getOptimizerLabel(optimizer) {
+        return optimizer === "auto" ? "Auto" : optimizer;
+      },
+      refreshResultOverlay() {},
+      renderExpansionAdvice() {},
+      setSolveState() {},
+      updatePayloadPreview() {},
+    },
+  });
+
+  controller.syncSolverFields();
+
+  assert.equal(elements.greedyRandomSeed.disabled, true);
+  assert.equal(elements.greedyRandomSeed.value, "");
+  assert.match(elements.greedyRandomSeed.title, /Auto generates/);
+  assert.equal(elements.cpSatRandomSeed.disabled, true);
+  assert.equal(elements.cpSatRandomSeed.value, "");
+  assert.match(elements.cpSatRandomSeed.title, /Auto generates/);
+  assert.equal(elements.greedyExhaustiveServiceSearch.checked, false);
+  assert.equal(elements.greedyExhaustiveServiceSearch.disabled, true);
+  assert.equal(elements.greedyRestarts.max, "4");
+  assert.equal(elements.greedyServiceExactMaxCombinations.max, "512");
 }
 
 function testPlannerShellRequiresManualValidationBeforeContinuationReuse() {
@@ -1391,6 +1539,137 @@ function testPlannerResultsRotatePendingPlacementUpdatesFootprint() {
   assert.equal(state.layoutEditor.pendingPlacement.rotated, true);
   assert.match(elements.layoutEditorStatus.textContent, /Depot \(3x2\)/);
   assert.equal(elements.rotatePendingPlacementButton.textContent, "Use original orientation");
+}
+
+function testPlannerResultsShowsAutoGeneratedSeedSummary() {
+  const plannerResults = loadPlannerResultsModule({
+    window: {
+      getComputedStyle() {
+        return {
+          getPropertyValue() {
+            return "";
+          },
+          paddingLeft: "0",
+          paddingTop: "0",
+        };
+      },
+    },
+    context: {
+      document: {
+        createElement() {
+          return createFakeDomElement();
+        },
+      },
+    },
+  });
+  const autoStage = {
+    requestedOptimizer: "auto",
+    activeStage: "cp-sat",
+    stageIndex: 3,
+    cycleIndex: 1,
+    consecutiveWeakCycles: 0,
+    lastCycleImprovementRatio: 0.1,
+    stopReason: "completed-plan",
+    generatedSeeds: [
+      { stage: "greedy", stageIndex: 1, cycleIndex: 0, randomSeed: 11 },
+      { stage: "lns", stageIndex: 2, cycleIndex: 1, randomSeed: 13 },
+      { stage: "cp-sat", stageIndex: 3, cycleIndex: 1, randomSeed: 17 },
+    ],
+  };
+  const state = {
+    isSolving: false,
+    grid: [[1, 1]],
+    result: {
+      solution: {
+        optimizer: "auto",
+        activeOptimizer: "cp-sat",
+        autoStage,
+        roads: ["0,0"],
+        services: [],
+        serviceTypeIndices: [],
+        servicePopulationIncreases: [],
+        residentials: [],
+        residentialTypeIndices: [],
+        populations: [],
+        totalPopulation: 0,
+      },
+      stats: {
+        optimizer: "auto",
+        activeOptimizer: "cp-sat",
+        autoStage,
+        manualLayout: false,
+        cpSatStatus: null,
+        stoppedByUser: false,
+        stoppedByTimeLimit: false,
+        totalPopulation: 0,
+        roadCount: 1,
+        serviceCount: 0,
+        residentialCount: 0,
+      },
+      validation: {
+        valid: true,
+        errors: [],
+      },
+    },
+    resultContext: {
+      grid: [[1, 1]],
+      params: {
+        optimizer: "auto",
+        cpSat: { randomSeed: 999 },
+        serviceTypes: [],
+        residentialTypes: [],
+      },
+    },
+    solveProgressLog: [],
+    resultIsLiveSnapshot: false,
+    resultError: "",
+    resultElapsedMs: 1000,
+    selectedMapBuilding: null,
+    selectedMapCell: null,
+    layoutEditor: {
+      mode: "inspect",
+      pendingPlacement: null,
+      isApplying: false,
+      edited: false,
+      pendingValidation: false,
+      status: "",
+    },
+  };
+  const elements = new Proxy({}, {
+    get(target, key) {
+      if (!target[key]) target[key] = createFakeDomElement();
+      return target[key];
+    },
+  });
+  const controller = plannerResults.createPlannerResultsController({
+    state,
+    elements,
+    helpers: {
+      cloneJson(value) {
+        return JSON.parse(JSON.stringify(value));
+      },
+      formatElapsedTime(value) {
+        return `${value}ms`;
+      },
+    },
+    callbacks: {
+      applyMatrixLayout() {},
+      clearExpansionAdvice() {},
+      getOptimizerLabel(value) {
+        return value === "cp-sat" ? "CP-SAT" : value === "auto" ? "Auto" : String(value);
+      },
+      renderExpansionAdvice() {},
+      setSolveState() {},
+      syncActionAvailability() {},
+    },
+  });
+
+  controller.renderResults();
+
+  assert.match(elements.resultSolverStatus.textContent, /Auto -> CP-SAT/);
+  assert.match(elements.resultSolverStatus.textContent, /generated 3 stage seeds/);
+  assert.match(elements.resultSolverStatus.textContent, /latest CP-SAT 17/);
+  assert.doesNotMatch(elements.resultSolverStatus.textContent, /999/);
 }
 
 function testManualLayoutResponseClearsSolverMetadata() {
@@ -2409,13 +2688,20 @@ function testPlannerRequestBuilderUsesBoundedGreedyProfileForAuto() {
 
   const request = controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false });
   assert.equal(request.params.greedy.localSearch, true);
-  assert.equal(request.params.greedy.randomSeed, 17);
+  assert.equal(request.params.greedy.randomSeed, undefined);
+  assert.equal(request.params.cpSat.randomSeed, undefined);
   assert.equal(request.params.greedy.restarts, 4);
   assert.equal(request.params.greedy.serviceRefineIterations, 1);
   assert.equal(request.params.greedy.serviceRefineCandidateLimit, 24);
   assert.equal(request.params.greedy.exhaustiveServiceSearch, false);
   assert.equal(request.params.greedy.serviceExactPoolLimit, 8);
   assert.equal(request.params.greedy.serviceExactMaxCombinations, 512);
+
+  state.optimizer = "legacy-or-missing";
+  const normalizedRequest = controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false });
+  assert.equal(normalizedRequest.params.optimizer, "auto");
+  assert.equal(normalizedRequest.params.greedy.restarts, 4);
+  assert.equal(normalizedRequest.params.greedy.exhaustiveServiceSearch, false);
 }
 
 function testPlannerSolveProgressLogCapturesSnapshotAndFinalResult() {
@@ -2627,10 +2913,12 @@ async function main() {
   testPlannerBuildSolveRequestIncludesCpSatNoImprovementTimeout();
   testPlannerSavedLayoutRestoreRoundTripsHintSeedToggles();
   testPlannerRuntimePresetAppliesBoundedCpSatPolicy();
+  testPlannerAutoMarksIgnoredSeedControlsUnavailable();
   testPlannerShellRequiresManualValidationBeforeContinuationReuse();
   testPlannerPersistenceRestoresLegacyReviewedInvalidLayoutWithoutPendingFlag();
   testPlannerPersistenceRestoresLegacyPendingValidationLayoutWithoutFlag();
   testPlannerResultsRotatePendingPlacementUpdatesFootprint();
+  testPlannerResultsShowsAutoGeneratedSeedSummary();
   testManualLayoutResponseClearsSolverMetadata();
   testManualLayoutResponseReportsOutOfBoundsRoads();
   testBuildCpSatWarmStartCheckpointRejectsInvalidLayouts();

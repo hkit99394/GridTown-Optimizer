@@ -6,8 +6,9 @@
 import { validateSolution } from "./evaluator.js";
 import { computeCpSatRequestFingerprint } from "./cpSatContinuation.js";
 import { NO_TYPE_INDEX } from "./rules.js";
+import { isOptimizerName, OMITTED_SOLVER_OPTIMIZER } from "./types.js";
 
-import type { CpSatWarmStartHint, Grid, SerializedSolution, Solution, SolverParams } from "./types.js";
+import type { CpSatWarmStartHint, Grid, OptimizerName, SerializedSolution, Solution, SolverParams } from "./types.js";
 
 export const SOLVER_INPUT_ERROR_PREFIX = "Invalid solver input:";
 
@@ -18,6 +19,10 @@ const GREEDY_MAX_SERVICE_CANDIDATE_LIMIT = 2_000;
 const GREEDY_MAX_SERVICE_EXACT_POOL_LIMIT = 64;
 const GREEDY_MAX_SERVICE_EXACT_COMBINATIONS = 100_000;
 const GREEDY_MAX_TIME_LIMIT_SECONDS = 24 * 60 * 60;
+const AUTO_MAX_WALL_CLOCK_LIMIT_SECONDS = 24 * 60 * 60;
+const AUTO_MAX_WEAK_CYCLE_IMPROVEMENT_THRESHOLD = 1;
+const AUTO_MAX_CONSECUTIVE_WEAK_CYCLES = 100;
+const AUTO_MAX_STAGE_TIME_LIMIT_SECONDS = 24 * 60 * 60;
 const CP_SAT_HINT_ONLY_REUSABLE_KEYS = [
   "roadKeys",
   "roads",
@@ -44,9 +49,8 @@ export function isSolverInputErrorMessage(message: string): boolean {
   return message.includes(SOLVER_INPUT_ERROR_PREFIX);
 }
 
-function resolveOptimizerName(params: Pick<SolverParams, "optimizer"> | null | undefined): SolverParams["optimizer"] | "greedy" {
-  if (params?.optimizer === "auto" || params?.optimizer === "cp-sat" || params?.optimizer === "lns") return params.optimizer;
-  return "greedy";
+function resolveOptimizerName(params: Pick<SolverParams, "optimizer"> | null | undefined): OptimizerName {
+  return isOptimizerName(params?.optimizer) ? params.optimizer : OMITTED_SOLVER_OPTIMIZER;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -810,6 +814,49 @@ function assertValidCpSatOptions(params: SolverParams): void {
   }
 }
 
+function assertValidAutoOptions(params: SolverParams): void {
+  const autoValue = (params as Record<string, unknown>).auto;
+  if (autoValue === undefined) return;
+
+  const auto = requireValidationRecord(autoValue, "Auto options auto");
+  requireOptionalFiniteNumberInRange(
+    auto,
+    "wallClockLimitSeconds",
+    "Auto option auto.wallClockLimitSeconds",
+    0,
+    AUTO_MAX_WALL_CLOCK_LIMIT_SECONDS
+  );
+  requireOptionalFiniteNumberInRange(
+    auto,
+    "weakCycleImprovementThreshold",
+    "Auto option auto.weakCycleImprovementThreshold",
+    0,
+    AUTO_MAX_WEAK_CYCLE_IMPROVEMENT_THRESHOLD,
+    true
+  );
+  requireOptionalIntegerInRange(
+    auto,
+    "maxConsecutiveWeakCycles",
+    "Auto option auto.maxConsecutiveWeakCycles",
+    1,
+    AUTO_MAX_CONSECUTIVE_WEAK_CYCLES
+  );
+  requireOptionalFiniteNumberInRange(
+    auto,
+    "cpSatStageTimeLimitSeconds",
+    "Auto option auto.cpSatStageTimeLimitSeconds",
+    0,
+    AUTO_MAX_STAGE_TIME_LIMIT_SECONDS
+  );
+  requireOptionalFiniteNumberInRange(
+    auto,
+    "cpSatStageNoImprovementTimeoutSeconds",
+    "Auto option auto.cpSatStageNoImprovementTimeoutSeconds",
+    0,
+    AUTO_MAX_STAGE_TIME_LIMIT_SECONDS
+  );
+}
+
 function assertValidGreedyOptions(params: SolverParams): void {
   const paramsRecord = params as Record<string, unknown>;
   const greedyValue = paramsRecord.greedy;
@@ -932,6 +979,7 @@ function assertValidGreedyOptions(params: SolverParams): void {
 export function assertValidSolveInputs(G: Grid, params: SolverParams): void {
   assertValidProblemDefinition(params);
   const optimizer = resolveOptimizerName(params);
+  assertValidAutoOptions(params);
   assertValidCpSatOptions(params);
   assertValidGreedyOptions(params);
   assertValidCpSatReusableInputs(G, params);

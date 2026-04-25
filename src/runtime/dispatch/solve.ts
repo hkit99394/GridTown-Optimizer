@@ -4,7 +4,7 @@
 
 import { startAutoSolve } from "../../auto/solver.js";
 import { solveCpSatAsync } from "../../cp-sat/solver.js";
-import { getOptimizerAdapter } from "./optimizerRegistry.js";
+import { getOptimizerAdapter, resolveOptimizerName } from "./optimizerRegistry.js";
 
 import type { CpSatAsyncOptions, Grid, Solution, SolverParams } from "../../core/types.js";
 
@@ -17,10 +17,11 @@ export async function solveAsync(
   params: SolverParams,
   cpSatAsyncOptions?: CpSatAsyncOptions
 ): Promise<Solution> {
-  if ((params.optimizer ?? "greedy") === "cp-sat") {
+  const optimizer = resolveOptimizerName(params);
+  if (optimizer === "cp-sat") {
     return solveCpSatAsync(grid, params, cpSatAsyncOptions);
   }
-  if ((params.optimizer ?? "greedy") === "auto") {
+  if (optimizer === "auto") {
     return startAutoSolve(grid, params).promise;
   }
   return getOptimizerAdapter(params).solve(grid, params);

@@ -12,6 +12,7 @@ import { startGreedySolve } from "../../greedy/bridge.js";
 import { startLnsSolve } from "../../lns/bridge.js";
 import { solveLns } from "../../lns/solver.js";
 import { solveGreedy } from "../../greedy/solver.js";
+import { isOptimizerName, OMITTED_SOLVER_OPTIMIZER } from "../../core/types.js";
 
 import type { BackgroundSolveHandle, Grid, OptimizerName, Solution, SolverParams } from "../../core/types.js";
 
@@ -48,8 +49,7 @@ export function resolveOptimizerName(
   value: Pick<SolverParams, "optimizer"> | OptimizerName | null | undefined
 ): OptimizerName {
   const candidate = typeof value === "string" ? value : value?.optimizer;
-  if (candidate === "auto" || candidate === "cp-sat" || candidate === "lns") return candidate;
-  return "greedy";
+  return isOptimizerName(candidate) ? candidate : OMITTED_SOLVER_OPTIMIZER;
 }
 
 export function getOptimizerAdapter(

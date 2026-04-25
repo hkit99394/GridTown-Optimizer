@@ -463,7 +463,8 @@
                 <section id="autoPanel" class="solver-panel">
                   <div class="notice info">
                     Auto is the recommended quality path. It uses a capped fast Greedy seed stage, then LNS repairs
-                    neighborhoods and bounded CP-SAT polishes the incumbent.
+                    neighborhoods and bounded CP-SAT polishes the incumbent. Auto generates per-stage random seeds;
+                    standalone Greedy and CP-SAT seed fields are disabled in this mode.
                   </div>
                   <div class="form-grid">
                     <label class="field">

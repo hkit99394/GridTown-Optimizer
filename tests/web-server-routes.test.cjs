@@ -297,6 +297,7 @@ function buildTinySolvePayload() {
       [1, 1, 1, 1],
     ],
     params: {
+      optimizer: "greedy",
       residentialTypes: [
         { name: "Test Residence", w: 2, h: 2, min: 100, max: 100, avail: 1 },
       ],
@@ -478,6 +479,33 @@ async function testImmediateSolveRejectsInvalidLnsSeedHint(handler) {
   assert.equal(result.statusCode, 400);
   assert.equal(result.payload.ok, false);
   assert.equal(result.payload.error, "Invalid solver input: LNS seed hint is missing the saved solution payload.");
+
+  const { optimizer, ...paramsWithoutOptimizer } = solvePayload.params;
+  assert.equal(optimizer, "greedy");
+  const omittedOptimizerResult = await invoke(handler, {
+    method: "POST",
+    url: "/api/solve",
+    json: {
+      ...solvePayload,
+      params: {
+        ...paramsWithoutOptimizer,
+        lns: {
+          iterations: 1,
+          maxNoImprovementIterations: 1,
+          neighborhoodRows: 2,
+          neighborhoodCols: 2,
+          seedHint: {},
+        },
+      },
+    },
+  });
+
+  assert.equal(omittedOptimizerResult.statusCode, 400);
+  assert.equal(omittedOptimizerResult.payload.ok, false);
+  assert.equal(
+    omittedOptimizerResult.payload.error,
+    "Invalid solver input: LNS seed hint is missing the saved solution payload."
+  );
 }
 
 async function testImmediateSolveRejectsMalformedLnsSeedFields(handler) {
@@ -746,6 +774,81 @@ async function testImmediateSolveRejectsInvalidGreedyOptionsBeforeStartingBacken
   }
 }
 
+async function testSolveRoutesRejectInvalidAutoOptionsBeforeStartingBackend(handler) {
+  const solvePayload = buildTinySolvePayload();
+  const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+  let optimizerAdapterRequested = false;
+
+  optimizerRegistry.getOptimizerAdapter = () => {
+    optimizerAdapterRequested = true;
+    return {
+      name: "auto",
+      solve() {
+        throw new Error("Invalid auto input should be rejected before starting the backend.");
+      },
+      startBackgroundSolve() {
+        throw new Error("Invalid auto input should be rejected before starting the backend.");
+      },
+    };
+  };
+
+  const cases = [
+    {
+      url: "/api/solve",
+      auto: "fast",
+      expectedError: "Invalid solver input: Auto options auto must be an object.",
+    },
+    {
+      url: "/api/solve/start",
+      auto: { wallClockLimitSeconds: 0 },
+      expectedError:
+        "Invalid solver input: Auto option auto.wallClockLimitSeconds must be a finite number > 0 and <= 86400.",
+    },
+    {
+      url: "/api/solve/start",
+      auto: { weakCycleImprovementThreshold: -0.1 },
+      expectedError:
+        "Invalid solver input: Auto option auto.weakCycleImprovementThreshold must be a finite number >= 0 and <= 1.",
+    },
+    {
+      url: "/api/solve",
+      auto: { maxConsecutiveWeakCycles: 0 },
+      expectedError:
+        "Invalid solver input: Auto option auto.maxConsecutiveWeakCycles must be an integer between 1 and 100.",
+    },
+    {
+      url: "/api/solve",
+      auto: { cpSatStageTimeLimitSeconds: "30" },
+      expectedError:
+        "Invalid solver input: Auto option auto.cpSatStageTimeLimitSeconds must be a finite number > 0 and <= 86400.",
+    },
+  ];
+
+  try {
+    for (const testCase of cases) {
+      const result = await invoke(handler, {
+        method: "POST",
+        url: testCase.url,
+        json: {
+          ...solvePayload,
+          params: {
+            ...solvePayload.params,
+            optimizer: "auto",
+            auto: testCase.auto,
+          },
+        },
+      });
+
+      assert.equal(result.statusCode, 400);
+      assert.equal(result.payload.ok, false);
+      assert.equal(result.payload.error, testCase.expectedError);
+      assert.equal(optimizerAdapterRequested, false);
+    }
+  } finally {
+    optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
+  }
+}
+
 async function testImmediateSolvePreservesTypedSolverInputErrors(handler) {
   const solvePayload = buildTinySolvePayload();
   const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
@@ -941,6 +1044,87 @@ async function testBackgroundSolveRoutes(handler) {
   assert.equal(persistedLog.entries[0].hasFeasibleSolution, false);
   assert.equal(persistedLog.entries[0].totalPopulation, null);
   assert.equal(persistedLog.entries[persistedLog.entries.length - 1].source, "final-result");
+}
+
+async function testStartSolveDefaultsOmittedOptimizerToAuto(handler) {
+  const solvePayload = buildTinySolvePayload();
+  const { optimizer, ...paramsWithoutOptimizer } = solvePayload.params;
+  assert.equal(optimizer, "greedy");
+  const autoStage = {
+    requestedOptimizer: "auto",
+    activeStage: "greedy",
+    stageIndex: 1,
+    cycleIndex: 0,
+    consecutiveWeakCycles: 0,
+    lastCycleImprovementRatio: null,
+    stopReason: "completed-plan",
+    generatedSeeds: [
+      { stage: "greedy", stageIndex: 1, cycleIndex: 0, randomSeed: 11 },
+    ],
+  };
+  const backgroundSolution = {
+    ...solve(solvePayload.grid, solvePayload.params),
+    optimizer: "auto",
+    activeOptimizer: "greedy",
+    autoStage,
+  };
+  const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+  let adapterRequest = null;
+
+  optimizerRegistry.getOptimizerAdapter = (params) => {
+    adapterRequest = params;
+    return {
+      name: "auto",
+      solve() {
+        throw new Error("Default optimizer route test should use the background adapter.");
+      },
+      startBackgroundSolve() {
+        return {
+          promise: Promise.resolve(backgroundSolution),
+          cancel() {},
+          getLatestSnapshot() {
+            return backgroundSolution;
+          },
+          getLatestSnapshotState() {
+            return {
+              hasFeasibleSolution: true,
+              totalPopulation: backgroundSolution.totalPopulation,
+              activeOptimizer: backgroundSolution.activeOptimizer,
+              autoStage: backgroundSolution.autoStage,
+              cpSatStatus: null,
+            };
+          },
+        };
+      },
+    };
+  };
+
+  try {
+    const requestId = "route-test-default-auto";
+    const startResult = await invoke(handler, {
+      method: "POST",
+      url: "/api/solve/start",
+      json: {
+        grid: solvePayload.grid,
+        params: paramsWithoutOptimizer,
+        requestId,
+      },
+    });
+
+    assert.equal(startResult.statusCode, 202);
+    assert.equal(startResult.payload.optimizer, "auto");
+    assert.equal(adapterRequest.optimizer, undefined);
+
+    const finalPayload = await waitForSolve(handler, requestId);
+    assert.equal(finalPayload.stats.optimizer, "auto");
+    assert.equal(finalPayload.stats.activeOptimizer, "greedy");
+
+    const persistedLog = JSON.parse(fs.readFileSync(startResult.payload.progressLogFilePath, "utf8"));
+    assert.equal(persistedLog.optimizer, "auto");
+    assert.equal(persistedLog.input.params.optimizer, undefined);
+  } finally {
+    optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
+  }
 }
 
 async function testSolveStatusIncludesAutoStageMetadata(handler) {
@@ -1416,6 +1600,7 @@ async function main() {
   await testImmediateSolveRejectsStaleLnsSeedHintBeforeStartingBackend(handler);
   await testImmediateSolveRejectsInvalidCpSatOptionsBeforeStartingBackend(handler);
   await testImmediateSolveRejectsInvalidGreedyOptionsBeforeStartingBackend(handler);
+  await testSolveRoutesRejectInvalidAutoOptionsBeforeStartingBackend(handler);
   await testImmediateSolvePreservesTypedSolverInputErrors(handler);
   await testImmediateSolveCancelsOnDisconnect(handler);
   await testBackgroundSolveRejectsImmediateSolveAtCapacity();
@@ -1425,6 +1610,7 @@ async function main() {
   await testLayoutEvaluateReportsWellFormedInvalidManualLayout(handler);
   await testLayoutEvaluateRejectsInvalidProblemDefinition(handler);
   await testBackgroundSolveRoutes(handler);
+  await testStartSolveDefaultsOmittedOptimizerToAuto(handler);
   await testSolveStatusIncludesAutoStageMetadata(handler);
   await testRecoveredAutoFailureNormalizesTerminalMetadata();
   await testStartSolveRejectsInvalidLnsSeedHint(handler);

@@ -841,7 +841,22 @@
       });
     }
 
-    function formatCpSatSeedStatus(solution) {
+    function formatAutoSeedStatus(solution) {
+      const generatedSeeds = Array.isArray(solution?.autoStage?.generatedSeeds)
+        ? solution.autoStage.generatedSeeds
+        : [];
+      if (generatedSeeds.length === 0) return "";
+      const latestSeed = generatedSeeds[generatedSeeds.length - 1];
+      const latestStage = latestSeed?.stage ? getOptimizerLabel(latestSeed.stage) : "stage";
+      return Number.isInteger(latestSeed?.randomSeed)
+        ? `, generated ${generatedSeeds.length} stage seeds (latest ${latestStage} ${latestSeed.randomSeed})`
+        : `, generated ${generatedSeeds.length} stage seeds`;
+    }
+
+    function formatCpSatSeedStatus(solution, stats) {
+      if (stats?.optimizer === "auto" || solution?.optimizer === "auto") {
+        return formatAutoSeedStatus(solution);
+      }
       const configuredSeed = state.resultContext?.params?.cpSat?.randomSeed;
       const portfolioWorkers = solution?.cpSatPortfolio?.workers ?? [];
       if (portfolioWorkers.length > 0) {
@@ -1276,7 +1291,7 @@
       elements.resultServiceCount.textContent = String(stats.serviceCount);
       elements.resultResidentialCount.textContent = String(stats.residentialCount);
       elements.resultElapsed.textContent = formatElapsedTime(state.resultElapsedMs);
-      const cpSatSeedStatus = manualLayout ? "" : formatCpSatSeedStatus(solution);
+      const cpSatSeedStatus = manualLayout ? "" : formatCpSatSeedStatus(solution, stats);
       const autoStageStatus =
         stats.optimizer === "auto" && stats.activeOptimizer
           ? `Auto -> ${getOptimizerLabel(stats.activeOptimizer)}`

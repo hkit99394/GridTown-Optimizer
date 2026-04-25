@@ -23,6 +23,7 @@ export {
   runCpSatBenchmarkSuite,
 } from "./benchmarks/index.js";
 export { evaluateLayout, formatSolutionMap, renderSolutionMap, validateSolution, validateSolutionMap } from "./core/index.js";
+export { OMITTED_SOLVER_OPTIMIZER, RECOMMENDED_INTERACTIVE_OPTIMIZER } from "./core/index.js";
 export { getOptimizerAdapter, listOptimizerAdapters, resolveOptimizerName } from "./runtime/optimizerRegistry.js";
 
 export type {

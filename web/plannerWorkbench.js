@@ -349,8 +349,6 @@
       elements.lnsNeighborhoodRows.value = String(state.lns.neighborhoodRows);
       elements.lnsNeighborhoodCols.value = String(state.lns.neighborhoodCols);
       elements.lnsRepairTimeLimitSeconds.value = String(state.lns.repairTimeLimitSeconds);
-      elements.lnsNumWorkers.value = String(state.cpSat.numWorkers);
-      elements.lnsLogSearchProgress.checked = state.cpSat.logSearchProgress;
       elements.lnsPythonExecutable.value = state.cpSat.pythonExecutable;
       elements.lnsUseDisplayedSeed.checked = Boolean(state.lns.useDisplayedSeed);
 

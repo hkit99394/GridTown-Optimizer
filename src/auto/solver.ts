@@ -421,12 +421,20 @@ function stageSeedParams(
 ): SolverParams {
   if (stage === "greedy") {
     const greedy = buildAutoGreedyStageOptions(params);
+    const configuredGreedyTimeLimit =
+      typeof greedy.timeLimitSeconds === "number" && Number.isFinite(greedy.timeLimitSeconds) && greedy.timeLimitSeconds > 0
+        ? greedy.timeLimitSeconds
+        : undefined;
+    const greedyTimeLimitSeconds = remainingSeconds === null
+      ? configuredGreedyTimeLimit
+      : Math.max(1, Math.min(configuredGreedyTimeLimit ?? remainingSeconds, remainingSeconds));
     return {
       ...params,
       optimizer: "greedy",
       greedy: {
         ...greedy,
         ...(sharedStopFilePath ? { stopFilePath: sharedStopFilePath } : {}),
+        ...(greedyTimeLimitSeconds !== undefined ? { timeLimitSeconds: greedyTimeLimitSeconds } : {}),
         randomSeed: generatedSeed,
       },
     };

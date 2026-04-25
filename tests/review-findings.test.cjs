@@ -550,8 +550,8 @@ function testPlannerBuildSolveRequestIncludesCpSatNoImprovementTimeout() {
   const request = controller.buildSolveRequest();
   assert.equal(request.params.cpSat.timeLimitSeconds, 30);
   assert.equal(request.params.cpSat.noImprovementTimeoutSeconds, 10);
-  assert.equal(request.params.cpSat.useDisplayedHint, false);
-  assert.equal(request.params.lns.useDisplayedSeed, false);
+  assert.equal(Object.prototype.hasOwnProperty.call(request.params.cpSat, "useDisplayedHint"), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(request.params.lns, "useDisplayedSeed"), false);
 }
 
 function testPlannerSavedLayoutRestoreRoundTripsHintSeedToggles() {
@@ -628,8 +628,8 @@ function testPlannerSavedLayoutRestoreRoundTripsHintSeedToggles() {
   });
 
   const savedRequest = requestBuilderController.buildSolveRequest();
-  assert.equal(savedRequest.params.cpSat.useDisplayedHint, false);
-  assert.equal(savedRequest.params.lns.useDisplayedSeed, false);
+  assert.equal(Object.prototype.hasOwnProperty.call(savedRequest.params.cpSat, "useDisplayedHint"), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(savedRequest.params.lns, "useDisplayedSeed"), false);
 
   const restoredState = {
     optimizer: "greedy",
@@ -754,8 +754,8 @@ function testPlannerSavedLayoutRestoreRoundTripsHintSeedToggles() {
     optimizer: savedRequest.params.optimizer,
   });
 
-  assert.equal(restoredState.cpSat.useDisplayedHint, false);
-  assert.equal(restoredState.lns.useDisplayedSeed, false);
+  assert.equal(restoredState.cpSat.useDisplayedHint, true);
+  assert.equal(restoredState.lns.useDisplayedSeed, true);
 }
 
 function testPlannerRuntimePresetAppliesBoundedCpSatPolicy() {
@@ -1455,6 +1455,32 @@ function testManualLayoutResponseClearsSolverMetadata() {
   assert.equal(response.stats.manualLayout, true);
   assert.equal(response.stats.cpSatStatus, null);
   assert.equal(response.stats.stoppedByUser, false);
+}
+
+function testManualLayoutResponseReportsOutOfBoundsRoads() {
+  const response = buildManualLayoutResponse(
+    [[1]],
+    {},
+    {
+      roads: new Set(["2,2"]),
+      services: [],
+      serviceTypeIndices: [],
+      servicePopulationIncreases: [],
+      residentials: [],
+      residentialTypeIndices: [],
+      populations: [],
+      totalPopulation: 0,
+    }
+  );
+
+  assert.equal(response.validation.valid, false);
+  assert.match(response.validation.errors.join("\n"), /Road cell \(2,2\) is not allowed/);
+  assert.deepEqual(response.validation.mapRows, [
+    "   0",
+    " 0 .",
+    "",
+    "Legend: # blocked  R road  S service  H residential  . empty",
+  ]);
 }
 
 function testBuildCpSatWarmStartCheckpointRejectsInvalidLayouts() {
@@ -2342,6 +2368,7 @@ testPlannerPersistenceRestoresLegacyReviewedInvalidLayoutWithoutPendingFlag();
 testPlannerPersistenceRestoresLegacyPendingValidationLayoutWithoutFlag();
 testPlannerResultsRotatePendingPlacementUpdatesFootprint();
 testManualLayoutResponseClearsSolverMetadata();
+testManualLayoutResponseReportsOutOfBoundsRoads();
 testBuildCpSatWarmStartCheckpointRejectsInvalidLayouts();
 testBuildCpSatWarmStartCheckpointRejectsLegacyLayoutsWithoutValidation();
 testPlannerRequestBuilderSkipsLegacySavedCheckpointWithoutValidation();

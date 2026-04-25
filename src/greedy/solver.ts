@@ -76,7 +76,7 @@ type CapResult = {
   totalPopulation: number;
   serviceCount: number;
 };
-type MaybeStop = (() => void) | undefined;
+type MaybeStop = ((force?: boolean) => void) | undefined;
 interface GreedyPrecomputedIndexes {
   serviceCandidateIndicesByKey: Map<string, number>;
   serviceCandidatesByOccupiedCell: Map<string, number[]>;
@@ -114,14 +114,26 @@ interface SolveOneOptions {
 }
 
 class GreedyStopError extends Error {
-  constructor(readonly bestSolution: Solution | null) {
-    super(bestSolution ? "Greedy solve was stopped." : "Greedy solve was stopped before finding a feasible solution.");
+  constructor(
+    readonly bestSolution: Solution | null,
+    readonly reason: "cancelled" | "time-limit"
+  ) {
+    super(
+      bestSolution
+        ? (reason === "time-limit" ? "Greedy solve reached its time limit." : "Greedy solve was stopped.")
+        : (
+            reason === "time-limit"
+              ? "Greedy solve reached its time limit before finding a feasible solution."
+              : "Greedy solve was stopped before finding a feasible solution."
+          )
+    );
   }
 }
 
 type RandomSource = () => number;
-type NormalizedGreedyOptions = Omit<Required<GreedyOptions>, "randomSeed"> & {
+type NormalizedGreedyOptions = Omit<Required<GreedyOptions>, "randomSeed" | "timeLimitSeconds"> & {
   randomSeed?: number;
+  timeLimitSeconds?: number;
 };
 
 function createGreedyProfileCounters(): GreedyProfileCounters {
@@ -359,6 +371,10 @@ function getGreedyOptions(params: SolverParams): NormalizedGreedyOptions {
   const randomSeed = typeof greedy.randomSeed === "number" && Number.isInteger(greedy.randomSeed)
     ? greedy.randomSeed
     : undefined;
+  const timeLimitSeconds =
+    typeof greedy.timeLimitSeconds === "number" && Number.isFinite(greedy.timeLimitSeconds) && greedy.timeLimitSeconds > 0
+      ? greedy.timeLimitSeconds
+      : undefined;
   return {
     localSearch: greedy.localSearch ?? params.localSearch ?? true,
     localSearchServiceMoves: greedy.localSearchServiceMoves ?? true,
@@ -367,6 +383,7 @@ function getGreedyOptions(params: SolverParams): NormalizedGreedyOptions {
     deferRoadCommitment: greedy.deferRoadCommitment ?? false,
     ...(randomSeed !== undefined ? { randomSeed } : {}),
     profile: greedy.profile ?? false,
+    ...(timeLimitSeconds !== undefined ? { timeLimitSeconds } : {}),
     restarts: greedy.restarts ?? params.restarts ?? 1,
     serviceRefineIterations: greedy.serviceRefineIterations ?? params.serviceRefineIterations ?? 2,
     serviceRefineCandidateLimit: greedy.serviceRefineCandidateLimit ?? params.serviceRefineCandidateLimit ?? 40,
@@ -547,10 +564,12 @@ function residentialScoringGroupKey(
 
 function buildResidentialScoringGroups(
   residentialCandidateStats: ResidentialCandidateStat[],
-  profileCounters?: GreedyProfileCounters
+  profileCounters?: GreedyProfileCounters,
+  maybeStop?: MaybeStop
 ): ResidentialScoringGroup[] {
   const groupsByKey = new Map<string, ResidentialScoringGroup>();
   for (const residential of residentialCandidateStats) {
+    maybeStop?.();
     const key = residentialScoringGroupKey(residential);
     let group = groupsByKey.get(key);
     if (!group) {
@@ -589,10 +608,12 @@ function buildResidentialScoringGroups(
 function buildServiceCoverageIndex(
   serviceCandidates: ServiceCandidate[],
   residentialScoringGroups: ResidentialScoringGroup[],
-  profileCounters?: GreedyProfileCounters
+  profileCounters?: GreedyProfileCounters,
+  maybeStop?: MaybeStop
 ): Map<string, number[]> {
   const coverageByKey = new Map<string, number[]>();
   for (const service of serviceCandidates) {
+    maybeStop?.();
     const key = serviceCandidateKey(service);
     const effectBounds = {
       r: service.r - service.range,
@@ -603,6 +624,7 @@ function buildServiceCoverageIndex(
     const footprint = { r: service.r, c: service.c, rows: service.rows, cols: service.cols };
     const coveredGroupIndices: number[] = [];
     for (let index = 0; index < residentialScoringGroups.length; index++) {
+      maybeStop?.();
       const residential = residentialScoringGroups[index];
       if (rectanglesOverlap(footprint, residential)) continue;
       if (!rectanglesOverlap(effectBounds, residential)) continue;
@@ -1935,6 +1957,7 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     deferRoadCommitment,
     randomSeed,
     profile,
+    timeLimitSeconds,
     restarts,
     serviceRefineIterations,
     serviceRefineCandidateLimit,
@@ -1948,19 +1971,20 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
   const { maxServices, maxResidentials } = getBuildingLimits(params);
   const useServiceTypes = (params.serviceTypes?.length ?? 0) > 0;
   const useTypes = (params.residentialTypes?.length ?? 0) > 0;
-  const residentialCandidatesLegacy = useTypes ? [] : enumerateResidentialCandidates(G);
-  const residentialCandidatesFromTypes = useTypes ? enumerateResidentialCandidatesFromTypes(G, params.residentialTypes!) : [];
-  const anyResidentialCandidates = useTypes ? residentialCandidatesFromTypes : residentialCandidatesLegacy;
-  const residentialCandidatesForLocal = useTypes ? residentialCandidatesFromTypes : residentialCandidatesLegacy;
   let best: Solution | null = null;
   let stopCounter = 0;
+  const startedAtMs = Date.now();
+  const deadlineAtMs = timeLimitSeconds === undefined ? null : startedAtMs + timeLimitSeconds * 1000;
 
-  const maybeStop = (): void => {
+  const maybeStop = (force = false): void => {
+    if (deadlineAtMs !== null && Date.now() >= deadlineAtMs) {
+      throw new GreedyStopError(best ? { ...best, stoppedByTimeLimit: true } : null, "time-limit");
+    }
     if (!stopFilePath) return;
     stopCounter += 1;
-    if (stopCounter % 128 !== 0) return;
+    if (!force && stopCounter % 128 !== 0) return;
     if (!existsSync(stopFilePath)) return;
-    throw new GreedyStopError(best ? { ...best, stoppedByUser: true } : null);
+    throw new GreedyStopError(best ? { ...best, stoppedByUser: true } : null, "cancelled");
   };
 
   const updateBest = (candidate: Solution | null): void => {
@@ -1981,10 +2005,22 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     return applyDeterministicDominanceUpgrades(G, params, candidate);
   };
 
-  const serviceCandidates = enumerateServiceCandidates(G, params);
+  maybeStop(true);
+  const residentialCandidatesLegacy = useTypes ? [] : enumerateResidentialCandidates(G, maybeStop);
+  maybeStop(true);
+  const residentialCandidatesFromTypes = useTypes
+    ? enumerateResidentialCandidatesFromTypes(G, params.residentialTypes!, maybeStop)
+    : [];
+  maybeStop(true);
+  const anyResidentialCandidates = useTypes ? residentialCandidatesFromTypes : residentialCandidatesLegacy;
+  const residentialCandidatesForLocal = useTypes ? residentialCandidatesFromTypes : residentialCandidatesLegacy;
+  const serviceCandidates = enumerateServiceCandidates(G, params, maybeStop);
+  maybeStop(true);
   if (profileCounters) profileCounters.precompute.serviceCandidates += serviceCandidates.length;
-  const serviceGeometryCache = buildServiceGeometryCache(G, serviceCandidates);
+  const serviceGeometryCache = buildServiceGeometryCache(G, serviceCandidates, maybeStop);
+  maybeStop(true);
   const serviceEffectZoneSetsByCandidate = serviceGeometryCache.effectZoneKeysByIndex.map((keys) => new Set(keys));
+  maybeStop(true);
   const residentialCandidateStats = anyResidentialCandidates.map((residential) => ({
     r: residential.r,
     c: residential.c,
@@ -1993,17 +2029,27 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     typeIndex: getCandidateTypeIndex(residential),
     ...getResidentialBaseMax(params, residential.rows, residential.cols, getCandidateTypeIndex(residential)),
   }));
+  maybeStop(true);
   if (profileCounters) profileCounters.precompute.residentialCandidates += residentialCandidateStats.length;
-  const residentialCandidateGeometryCache = buildFootprintGeometryCache(anyResidentialCandidates);
-  const residentialScoringGroups = buildResidentialScoringGroups(residentialCandidateStats, profileCounters);
-  const residentialGroupGeometryCache = buildFootprintGeometryCache(residentialScoringGroups);
+  const residentialCandidateGeometryCache = buildFootprintGeometryCache(anyResidentialCandidates, maybeStop);
+  maybeStop(true);
+  const residentialScoringGroups = buildResidentialScoringGroups(residentialCandidateStats, profileCounters, maybeStop);
+  maybeStop(true);
+  const residentialGroupGeometryCache = buildFootprintGeometryCache(residentialScoringGroups, maybeStop);
+  maybeStop(true);
   if (profileCounters) {
     profileCounters.precompute.geometryCacheEntries += serviceGeometryCache.footprintKeysByIndex.length;
     profileCounters.precompute.geometryCacheEntries += serviceEffectZoneSetsByCandidate.length;
     profileCounters.precompute.geometryCacheEntries += residentialCandidateGeometryCache.footprintKeysByIndex.length;
     profileCounters.precompute.geometryCacheEntries += residentialGroupGeometryCache.footprintKeysByIndex.length;
   }
-  const serviceCoverageGroupsByKey = buildServiceCoverageIndex(serviceCandidates, residentialScoringGroups, profileCounters);
+  const serviceCoverageGroupsByKey = buildServiceCoverageIndex(
+    serviceCandidates,
+    residentialScoringGroups,
+    profileCounters,
+    maybeStop
+  );
+  maybeStop(true);
   const precomputedIndexes: GreedyPrecomputedIndexes = {
     serviceCandidateIndicesByKey: new Map(
       serviceCandidates.map((candidate, candidateIndex) => [serviceCandidateKey(candidate), candidateIndex])
@@ -2032,6 +2078,7 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
         )
       : null,
   };
+  maybeStop(true);
   const initialResidentialAvail = useTypes ? params.residentialTypes!.map((type) => type.avail) : null;
   const initialResidentialGroupBoosts = Array.from({ length: residentialScoringGroups.length }, () => 0);
   const serviceScores = new Map<string, number>();

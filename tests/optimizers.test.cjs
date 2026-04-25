@@ -1022,6 +1022,64 @@ function testGreedyRandomSeedIsDeterministic() {
   assert.deepEqual(first.populations, second.populations);
 }
 
+function testGreedyStopFileCancelsBeforePrecompute() {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "greedy-stop-precompute-"));
+  const stopFilePath = path.join(tempDir, "stop-now");
+  fs.writeFileSync(stopFilePath, "stop");
+
+  try {
+    const grid = Array.from({ length: 8 }, () => Array.from({ length: 8 }, () => 1));
+    assert.throws(
+      () => solveGreedy(grid, {
+        residentialTypes: [{ w: 2, h: 2, min: 100, max: 100, avail: 4 }],
+        availableBuildings: { services: 0, residentials: 4 },
+        greedy: {
+          localSearch: false,
+          restarts: 1,
+          stopFilePath,
+        },
+      }),
+      /Greedy solve was stopped before finding a feasible solution\./
+    );
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+}
+
+function testGreedyWallClockBudgetStopsWithBestSolution() {
+  const originalDateNow = Date.now;
+  let dateNowCalls = 0;
+  Date.now = () => {
+    dateNowCalls += 1;
+    return dateNowCalls < 100 ? 1000 : 3000;
+  };
+
+  try {
+    const grid = [
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+    ];
+    const solution = solveGreedy(grid, {
+      residentialTypes: [{ w: 2, h: 2, min: 100, max: 100, avail: 1 }],
+      availableBuildings: { services: 0, residentials: 1 },
+      greedy: {
+        localSearch: false,
+        restarts: 3000,
+        timeLimitSeconds: 1,
+      },
+    });
+
+    assert.equal(solution.totalPopulation, 100);
+    assert.equal(solution.stoppedByTimeLimit, true);
+    assert.equal(solution.stoppedByUser, undefined);
+    assert.equal(dateNowCalls >= 100, true);
+  } finally {
+    Date.now = originalDateNow;
+  }
+}
+
 function testGreedyExploresAllAllowedRowZeroSeeds() {
   const grid = [
     [1, 0, 1, 0],
@@ -4859,6 +4917,8 @@ async function main() {
   testRoadProbeScratchWorkspaceResetsBetweenCalls();
   testGreedyDispatcher();
   testGreedyRandomSeedIsDeterministic();
+  testGreedyStopFileCancelsBeforePrecompute();
+  testGreedyWallClockBudgetStopsWithBestSolution();
   testGreedyExploresAllAllowedRowZeroSeeds();
   testGreedyExploresMultipleRowZeroSeedsWithinOneComponent();
   testGreedyExploresWideRowZeroAnchors();

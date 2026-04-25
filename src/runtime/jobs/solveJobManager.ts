@@ -20,6 +20,7 @@ const DEFAULT_PROGRESS_LOG_INTERVAL_MS = 60 * 1000;
 const DEFAULT_PROGRESS_LOG_POLL_INTERVAL_MS = 5 * 1000;
 const DEFAULT_COMPLETED_JOB_RETENTION_MS = 15 * 60 * 1000;
 const DEFAULT_MAX_RETAINED_COMPLETED_JOBS = 64;
+const DEFAULT_MAX_RUNNING_SOLVES = 1;
 
 export interface SolveJobManagerOptions {
   progressLogRoot?: string;
@@ -27,6 +28,7 @@ export interface SolveJobManagerOptions {
   progressLogPollIntervalMs?: number;
   completedJobRetentionMs?: number;
   maxRetainedCompletedJobs?: number;
+  maxRunningSolves?: number;
 }
 
 export interface SolveJob {
@@ -53,6 +55,10 @@ export interface SolveJobStatusView {
   job: SolveJob;
   snapshotState: SolveJobSnapshotState;
   liveSnapshot: Solution | null;
+}
+
+export interface SolveAdmissionLease {
+  release(): void;
 }
 
 function buildRecoveredSolveMessage(job: SolveJob, error: unknown): string {
@@ -244,6 +250,8 @@ export class SolveJobManager {
   private readonly progressLogPollIntervalMs: number;
   private readonly completedJobRetentionMs: number;
   private readonly maxRetainedCompletedJobs: number;
+  private readonly maxRunningSolves: number;
+  private runningImmediateSolves = 0;
 
   constructor(options: SolveJobManagerOptions = {}) {
     this.progressLogRoot = options.progressLogRoot;
@@ -251,6 +259,38 @@ export class SolveJobManager {
     this.progressLogPollIntervalMs = options.progressLogPollIntervalMs ?? DEFAULT_PROGRESS_LOG_POLL_INTERVAL_MS;
     this.completedJobRetentionMs = Math.max(0, options.completedJobRetentionMs ?? DEFAULT_COMPLETED_JOB_RETENTION_MS);
     this.maxRetainedCompletedJobs = Math.max(1, options.maxRetainedCompletedJobs ?? DEFAULT_MAX_RETAINED_COMPLETED_JOBS);
+    const requestedMaxRunningSolves = options.maxRunningSolves ?? DEFAULT_MAX_RUNNING_SOLVES;
+    this.maxRunningSolves = Number.isFinite(requestedMaxRunningSolves)
+      ? Math.max(1, Math.floor(requestedMaxRunningSolves))
+      : DEFAULT_MAX_RUNNING_SOLVES;
+  }
+
+  getRunningSolveCount(excludedRequestId?: string): number {
+    this.pruneJobs();
+    let runningSolveCount = this.runningImmediateSolves;
+    for (const [requestId, job] of this.jobs) {
+      if (requestId === excludedRequestId) continue;
+      if (job.status === "running") runningSolveCount += 1;
+    }
+    return runningSolveCount;
+  }
+
+  canStartSolve(excludedRequestId?: string): boolean {
+    return this.getRunningSolveCount(excludedRequestId) < this.maxRunningSolves;
+  }
+
+  tryAcquireImmediateSolve(): SolveAdmissionLease | null {
+    if (!this.canStartSolve()) return null;
+
+    this.runningImmediateSolves += 1;
+    let released = false;
+    return {
+      release: () => {
+        if (released) return;
+        released = true;
+        this.runningImmediateSolves = Math.max(0, this.runningImmediateSolves - 1);
+      },
+    };
   }
 
   start(grid: Grid, params: SolverParams, requestId: string): SolveJob {

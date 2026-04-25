@@ -108,6 +108,153 @@ async function testImmediateSolveCancelsOnDisconnect(handler) {
   }
 }
 
+async function testBackgroundSolveRejectsImmediateSolveAtCapacity() {
+  const progressLogRoot = fs.mkdtempSync(path.join(os.tmpdir(), "planner-route-capacity-background-"));
+  const handler = createPlannerRequestHandler({
+    webRoot: path.resolve(__dirname, "../web"),
+    solveJobManager: new SolveJobManager({
+      progressLogRoot,
+      progressLogIntervalMs: 10,
+      progressLogPollIntervalMs: 5,
+      maxRunningSolves: 1,
+    }),
+  });
+  const solvePayload = buildTinySolvePayload();
+  const backgroundSolution = solve(solvePayload.grid, solvePayload.params);
+  const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+  const handlePromiseDeferred = createDeferred();
+  const startBackgroundSolveDeferred = createDeferred();
+  let startBackgroundSolveCalls = 0;
+
+  optimizerRegistry.getOptimizerAdapter = () => ({
+    name: "greedy",
+    solve() {
+      throw new Error("Capacity route test should use the background adapter.");
+    },
+    startBackgroundSolve() {
+      startBackgroundSolveCalls += 1;
+      startBackgroundSolveDeferred.resolve();
+      return {
+        promise: handlePromiseDeferred.promise,
+        cancel() {},
+        getLatestSnapshot() {
+          return null;
+        },
+        getLatestSnapshotState() {
+          return {
+            hasFeasibleSolution: false,
+            totalPopulation: null,
+          };
+        },
+      };
+    },
+  });
+
+  try {
+    const requestId = "capacity-background-running";
+    const startResult = await invoke(handler, {
+      method: "POST",
+      url: "/api/solve/start",
+      json: {
+        ...solvePayload,
+        requestId,
+      },
+    });
+    assert.equal(startResult.statusCode, 202);
+    await startBackgroundSolveDeferred.promise;
+
+    const immediateResult = await invoke(handler, {
+      method: "POST",
+      url: "/api/solve",
+      json: solvePayload,
+    });
+
+    assert.equal(immediateResult.statusCode, 429);
+    assert.equal(immediateResult.payload.ok, false);
+    assert.match(immediateResult.payload.error, /Another solve is already running/);
+    assert.equal(startBackgroundSolveCalls, 1);
+
+    handlePromiseDeferred.resolve(backgroundSolution);
+    await waitForSolve(handler, requestId);
+  } finally {
+    handlePromiseDeferred.resolve(backgroundSolution);
+    optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
+  }
+}
+
+async function testImmediateSolveRejectsBackgroundSolveAtCapacity() {
+  const progressLogRoot = fs.mkdtempSync(path.join(os.tmpdir(), "planner-route-capacity-immediate-"));
+  const handler = createPlannerRequestHandler({
+    webRoot: path.resolve(__dirname, "../web"),
+    solveJobManager: new SolveJobManager({
+      progressLogRoot,
+      progressLogIntervalMs: 10,
+      progressLogPollIntervalMs: 5,
+      maxRunningSolves: 1,
+    }),
+  });
+  const solvePayload = buildTinySolvePayload();
+  const backgroundSolution = solve(solvePayload.grid, solvePayload.params);
+  const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+  const handlePromiseDeferred = createDeferred();
+  const startBackgroundSolveDeferred = createDeferred();
+  let startBackgroundSolveCalls = 0;
+
+  optimizerRegistry.getOptimizerAdapter = () => ({
+    name: "greedy",
+    solve() {
+      throw new Error("Capacity route test should use the background adapter.");
+    },
+    startBackgroundSolve() {
+      startBackgroundSolveCalls += 1;
+      startBackgroundSolveDeferred.resolve();
+      return {
+        promise: handlePromiseDeferred.promise,
+        cancel() {},
+        getLatestSnapshot() {
+          return null;
+        },
+        getLatestSnapshotState() {
+          return {
+            hasFeasibleSolution: false,
+            totalPopulation: null,
+          };
+        },
+      };
+    },
+  });
+
+  try {
+    const req = createMockRequest("POST", "/api/solve", JSON.stringify(solvePayload));
+    const res = createMockResponse();
+    const pending = handler(req, res);
+    await startBackgroundSolveDeferred.promise;
+    await waitForNextTurn();
+
+    const startResult = await invoke(handler, {
+      method: "POST",
+      url: "/api/solve/start",
+      json: {
+        ...solvePayload,
+        requestId: "capacity-immediate-running",
+      },
+    });
+
+    assert.equal(startResult.statusCode, 429);
+    assert.equal(startResult.payload.ok, false);
+    assert.match(startResult.payload.error, /Another solve is already running/);
+    assert.equal(startBackgroundSolveCalls, 1);
+
+    handlePromiseDeferred.resolve(backgroundSolution);
+    await pending;
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.writableEnded, true);
+  } finally {
+    handlePromiseDeferred.resolve(backgroundSolution);
+    optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
+  }
+}
+
 async function invoke(handler, { method = "GET", url = "/", json = undefined, body = undefined }) {
   const payloadBody = json === undefined ? (body ?? "") : JSON.stringify(json);
   const req = createMockRequest(method, url, payloadBody);
@@ -346,6 +493,145 @@ async function testImmediateSolveRejectsMalformedLnsSeedFields(handler) {
   assert.equal(result.statusCode, 400);
   assert.equal(result.payload.ok, false);
   assert.equal(result.payload.error, "Invalid solver input: LNS seed hint solution.residentials[0].r must be an integer >= 0.");
+}
+
+async function testImmediateSolveRejectsInvalidCpSatOptionsBeforeStartingBackend(handler) {
+  const solvePayload = buildTinySolvePayload();
+  const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+  let optimizerAdapterRequested = false;
+
+  optimizerRegistry.getOptimizerAdapter = () => {
+    optimizerAdapterRequested = true;
+    return {
+      name: "cp-sat",
+      solve() {
+        throw new Error("Immediate solves should use the non-blocking background adapter.");
+      },
+      startBackgroundSolve() {
+        throw new Error("Invalid CP-SAT input should be rejected before starting the backend.");
+      },
+    };
+  };
+
+  const cases = [
+    {
+      cpSat: { numWorkers: 0 },
+      expectedError: "Invalid solver input: CP-SAT runtime option cpSat.numWorkers must be an integer >= 1.",
+    },
+    {
+      cpSat: {
+        numWorkers: 1,
+        portfolio: {
+          randomSeeds: [11, "bad"],
+        },
+      },
+      expectedError: "Invalid solver input: CP-SAT portfolio option cpSat.portfolio.randomSeeds[1] must be an integer >= 0.",
+    },
+    {
+      cpSat: {
+        numWorkers: 1,
+        warmStartHint: {
+          solution: {
+            roads: [],
+            services: [],
+            residentials: [
+              { r: 0, c: 0, rows: 2, cols: 2, population: 100 },
+            ],
+            populations: [100],
+            totalPopulation: 100,
+          },
+        },
+      },
+      expectedError:
+        "Invalid solver input: CP-SAT warm-start hint cpSat.warmStartHint.solution.residentials[0].typeIndex must be an integer >= -1.",
+    },
+  ];
+
+  try {
+    for (const testCase of cases) {
+      const result = await invoke(handler, {
+        method: "POST",
+        url: "/api/solve",
+        json: {
+          ...solvePayload,
+          params: {
+            ...solvePayload.params,
+            optimizer: "cp-sat",
+            cpSat: testCase.cpSat,
+          },
+        },
+      });
+
+      assert.equal(result.statusCode, 400);
+      assert.equal(result.payload.ok, false);
+      assert.equal(result.payload.error, testCase.expectedError);
+      assert.equal(optimizerAdapterRequested, false);
+    }
+  } finally {
+    optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
+  }
+}
+
+async function testImmediateSolveRejectsInvalidGreedyOptionsBeforeStartingBackend(handler) {
+  const solvePayload = buildTinySolvePayload();
+  const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+  let optimizerAdapterRequested = false;
+
+  optimizerRegistry.getOptimizerAdapter = () => {
+    optimizerAdapterRequested = true;
+    return {
+      name: "greedy",
+      solve() {
+        throw new Error("Immediate solves should use the non-blocking background adapter.");
+      },
+      startBackgroundSolve() {
+        throw new Error("Invalid greedy input should be rejected before starting the backend.");
+      },
+    };
+  };
+
+  const cases = [
+    {
+      greedy: "fast",
+      expectedError: "Invalid solver input: Greedy options greedy must be an object.",
+    },
+    {
+      greedy: { restarts: 0 },
+      expectedError: "Invalid solver input: Greedy option greedy.restarts must be an integer between 1 and 100.",
+    },
+    {
+      greedy: { serviceLookaheadCandidates: "many" },
+      expectedError:
+        "Invalid solver input: Greedy option greedy.serviceLookaheadCandidates must be an integer between 0 and 2000.",
+    },
+    {
+      greedy: { timeLimitSeconds: 0 },
+      expectedError: "Invalid solver input: Greedy option greedy.timeLimitSeconds must be a finite number > 0 and <= 86400.",
+    },
+  ];
+
+  try {
+    for (const testCase of cases) {
+      const result = await invoke(handler, {
+        method: "POST",
+        url: "/api/solve",
+        json: {
+          ...solvePayload,
+          params: {
+            ...solvePayload.params,
+            greedy: testCase.greedy,
+          },
+        },
+      });
+
+      assert.equal(result.statusCode, 400);
+      assert.equal(result.payload.ok, false);
+      assert.equal(result.payload.error, testCase.expectedError);
+      assert.equal(optimizerAdapterRequested, false);
+    }
+  } finally {
+    optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
+  }
 }
 
 async function testImmediateSolvePreservesTypedSolverInputErrors(handler) {
@@ -719,6 +1005,114 @@ async function testStartSolveRejectsInvalidLnsSeedHint(handler) {
   assert.equal(result.payload.error, "Invalid solver input: LNS seed hint is missing the saved solution payload.");
 }
 
+async function testStartSolveRejectsInvalidCpSatOptionsBeforeStartingJob(handler) {
+  const solvePayload = buildTinySolvePayload();
+  const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+  let optimizerAdapterRequested = false;
+
+  optimizerRegistry.getOptimizerAdapter = () => {
+    optimizerAdapterRequested = true;
+    return {
+      name: "cp-sat",
+      solve() {
+        throw new Error("Background solve route test should use the background adapter.");
+      },
+      startBackgroundSolve() {
+        throw new Error("Invalid CP-SAT input should be rejected before starting a solve job.");
+      },
+    };
+  };
+
+  try {
+    const requestId = "invalid-cp-sat-options";
+    const result = await invoke(handler, {
+      method: "POST",
+      url: "/api/solve/start",
+      json: {
+        ...solvePayload,
+        requestId,
+        params: {
+          ...solvePayload.params,
+          optimizer: "cp-sat",
+          cpSat: {
+            numWorkers: 1,
+            portfolio: {
+              perWorkerNumWorkers: 0,
+            },
+          },
+        },
+      },
+    });
+
+    assert.equal(result.statusCode, 400);
+    assert.equal(result.payload.ok, false);
+    assert.equal(
+      result.payload.error,
+      "Invalid solver input: CP-SAT portfolio option cpSat.portfolio.perWorkerNumWorkers must be an integer >= 1."
+    );
+    assert.equal(optimizerAdapterRequested, false);
+
+    const statusResult = await invoke(handler, {
+      method: "GET",
+      url: `/api/solve/status?${new URLSearchParams({ requestId }).toString()}`,
+    });
+    assert.equal(statusResult.statusCode, 404);
+  } finally {
+    optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
+  }
+}
+
+async function testStartSolveRejectsInvalidGreedyOptionsBeforeStartingJob(handler) {
+  const solvePayload = buildTinySolvePayload();
+  const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+  let optimizerAdapterRequested = false;
+
+  optimizerRegistry.getOptimizerAdapter = () => {
+    optimizerAdapterRequested = true;
+    return {
+      name: "greedy",
+      solve() {
+        throw new Error("Background solve route test should use the background adapter.");
+      },
+      startBackgroundSolve() {
+        throw new Error("Invalid greedy input should be rejected before starting a solve job.");
+      },
+    };
+  };
+
+  try {
+    const requestId = "invalid-greedy-options";
+    const result = await invoke(handler, {
+      method: "POST",
+      url: "/api/solve/start",
+      json: {
+        ...solvePayload,
+        requestId,
+        params: {
+          ...solvePayload.params,
+          serviceExactMaxCombinations: 0,
+        },
+      },
+    });
+
+    assert.equal(result.statusCode, 400);
+    assert.equal(result.payload.ok, false);
+    assert.equal(
+      result.payload.error,
+      "Invalid solver input: Legacy greedy option serviceExactMaxCombinations must be an integer between 1 and 100000."
+    );
+    assert.equal(optimizerAdapterRequested, false);
+
+    const statusResult = await invoke(handler, {
+      method: "GET",
+      url: `/api/solve/status?${new URLSearchParams({ requestId }).toString()}`,
+    });
+    assert.equal(statusResult.statusCode, 404);
+  } finally {
+    optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
+  }
+}
+
 async function testCancelMissingSolveRoute(handler) {
   const result = await invoke(handler, {
     method: "POST",
@@ -787,14 +1181,20 @@ async function main() {
   await testImmediateSolveBackendJsonErrorsReturnInternalServerError(handler);
   await testImmediateSolveRejectsInvalidLnsSeedHint(handler);
   await testImmediateSolveRejectsMalformedLnsSeedFields(handler);
+  await testImmediateSolveRejectsInvalidCpSatOptionsBeforeStartingBackend(handler);
+  await testImmediateSolveRejectsInvalidGreedyOptionsBeforeStartingBackend(handler);
   await testImmediateSolvePreservesTypedSolverInputErrors(handler);
   await testImmediateSolveCancelsOnDisconnect(handler);
+  await testBackgroundSolveRejectsImmediateSolveAtCapacity();
+  await testImmediateSolveRejectsBackgroundSolveAtCapacity();
   await testLayoutEvaluateRoute(handler);
   await testLayoutEvaluateRejectsMalformedSerializedSolutions(handler);
   await testBackgroundSolveRoutes(handler);
   await testSolveStatusIncludesAutoStageMetadata(handler);
   await testRecoveredAutoFailureNormalizesTerminalMetadata();
   await testStartSolveRejectsInvalidLnsSeedHint(handler);
+  await testStartSolveRejectsInvalidCpSatOptionsBeforeStartingJob(handler);
+  await testStartSolveRejectsInvalidGreedyOptionsBeforeStartingJob(handler);
   await testCancelMissingSolveRoute(handler);
   await testCompletedSolveJobsExpire();
 

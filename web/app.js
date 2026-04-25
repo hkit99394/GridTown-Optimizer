@@ -285,8 +285,6 @@ const elements = {
   lnsNeighborhoodRows: document.querySelector("#lnsNeighborhoodRows"),
   lnsNeighborhoodCols: document.querySelector("#lnsNeighborhoodCols"),
   lnsRepairTimeLimitSeconds: document.querySelector("#lnsRepairTimeLimitSeconds"),
-  lnsNumWorkers: document.querySelector("#lnsNumWorkers"),
-  lnsLogSearchProgress: document.querySelector("#lnsLogSearchProgress"),
   lnsPythonExecutable: document.querySelector("#lnsPythonExecutable"),
   lnsUseDisplayedSeed: document.querySelector("#lnsUseDisplayedSeed"),
   cpSatTimeLimitSeconds: document.querySelector("#cpSatTimeLimitSeconds"),
@@ -625,17 +623,9 @@ function init() {
     });
   });
 
-  const lnsCpSatBindings = [
-    ["lnsNumWorkers", "numWorkers", "number"],
-    ["lnsLogSearchProgress", "logSearchProgress", "checkbox"],
-    ["lnsPythonExecutable", "pythonExecutable", "text"],
-  ];
-
-  lnsCpSatBindings.forEach(([elementKey, stateKey, inputType]) => {
-    elements[elementKey].addEventListener("input", () => {
-      state.cpSat[stateKey] = inputType === "checkbox" ? elements[elementKey].checked : elements[elementKey].value;
-      requestBuilderController.updatePayloadPreview();
-    });
+  elements.lnsPythonExecutable.addEventListener("input", () => {
+    state.cpSat.pythonExecutable = elements.lnsPythonExecutable.value;
+    requestBuilderController.updatePayloadPreview();
   });
 
   elements.lnsUseDisplayedSeed.addEventListener("change", () => {

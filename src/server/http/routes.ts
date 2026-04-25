@@ -43,6 +43,13 @@ function buildCancelRequestedMessage(optimizer: string): string {
         : "Stop requested. Finalizing the current greedy run and preserving the best result found so far.";
 }
 
+function sendSolveCapacityFull(res: ServerResponse<IncomingMessage>): void {
+  sendJson(res, 429, {
+    ok: false,
+    error: "Another solve is already running. Stop the running solve or wait for it to finish before starting a new one.",
+  });
+}
+
 export function handlePlannerHealth(
   req: IncomingMessage,
   res: ServerResponse<IncomingMessage>
@@ -57,7 +64,8 @@ export function handlePlannerHealth(
 
 export async function handleImmediateSolve(
   req: IncomingMessage,
-  res: ServerResponse<IncomingMessage>
+  res: ServerResponse<IncomingMessage>,
+  solveJobManager: SolveJobManager
 ): Promise<boolean> {
   if (req.method !== "POST") return false;
   const url = new URL(req.url ?? "/", "http://localhost");
@@ -72,24 +80,34 @@ export async function handleImmediateSolve(
   if (!payload) return true;
 
   assertValidSolveInputs(payload.grid, payload.params);
-  const handle = getOptimizerAdapter(payload.params).startBackgroundSolve(payload.grid, payload.params);
-  const disconnectMonitor = monitorClientDisconnect(req, res, () => {
-    handle.cancel();
-  });
+  const solveLease = solveJobManager.tryAcquireImmediateSolve();
+  if (!solveLease) {
+    sendSolveCapacityFull(res);
+    return true;
+  }
 
   try {
-    const solution = await handle.promise;
-    if (disconnectMonitor.isDisconnected()) return true;
-
-    sendJson(res, 200, {
-      ok: true,
-      ...buildSolveResponse(payload.grid, payload.params, solution),
+    const handle = getOptimizerAdapter(payload.params).startBackgroundSolve(payload.grid, payload.params);
+    const disconnectMonitor = monitorClientDisconnect(req, res, () => {
+      handle.cancel();
     });
-  } catch (error) {
-    if (disconnectMonitor.isDisconnected()) return true;
-    throw error;
+
+    try {
+      const solution = await handle.promise;
+      if (disconnectMonitor.isDisconnected()) return true;
+
+      sendJson(res, 200, {
+        ok: true,
+        ...buildSolveResponse(payload.grid, payload.params, solution),
+      });
+    } catch (error) {
+      if (disconnectMonitor.isDisconnected()) return true;
+      throw error;
+    } finally {
+      disconnectMonitor.dispose();
+    }
   } finally {
-    disconnectMonitor.dispose();
+    solveLease.release();
   }
   return true;
 }
@@ -145,6 +163,10 @@ export async function handleStartSolve(
       ok: false,
       error: "A solve with this request ID is already running.",
     });
+    return true;
+  }
+  if (!solveJobManager.canStartSolve()) {
+    sendSolveCapacityFull(res);
     return true;
   }
 

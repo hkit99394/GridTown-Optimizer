@@ -26,7 +26,7 @@ export function createPlannerRequestHandler(options: PlannerRequestHandlerOption
   const solveJobManager = options.solveJobManager ?? new SolveJobManager();
   const routeHandlers: PlannerRouteHandler[] = [
     handlePlannerHealth,
-    handleImmediateSolve,
+    (req, res) => handleImmediateSolve(req, res, solveJobManager),
     handleLayoutEvaluate,
     (req, res) => handleStartSolve(req, res, solveJobManager),
     (req, res) => handleSolveStatus(req, res, solveJobManager),

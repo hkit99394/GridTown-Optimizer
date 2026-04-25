@@ -289,7 +289,6 @@
         cpSat: {
           numWorkers: clampInteger(state.cpSat.numWorkers, 8, 1),
           logSearchProgress: Boolean(state.cpSat.logSearchProgress),
-          useDisplayedHint: Boolean(state.cpSat.useDisplayedHint),
           ...(cpSatRandomSeed !== undefined ? { randomSeed: cpSatRandomSeed } : {}),
           ...(timeLimitSeconds !== undefined ? { timeLimitSeconds } : {}),
           ...(noImprovementTimeoutSeconds !== undefined ? { noImprovementTimeoutSeconds } : {}),
@@ -301,7 +300,6 @@
           neighborhoodRows: clampInteger(state.lns.neighborhoodRows, defaultNeighborhoodRows, 1),
           neighborhoodCols: clampInteger(state.lns.neighborhoodCols, defaultNeighborhoodCols, 1),
           repairTimeLimitSeconds: clampInteger(state.lns.repairTimeLimitSeconds, 5, 1),
-          useDisplayedSeed: Boolean(state.lns.useDisplayedSeed),
         },
         ...(autoWallClockLimitSeconds !== undefined
           ? {

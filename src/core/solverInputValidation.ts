@@ -38,8 +38,18 @@ function isInteger(value: unknown, minimum = 0): value is number {
   return typeof value === "number" && Number.isInteger(value) && value >= minimum;
 }
 
+function isFiniteNumber(value: unknown, minimum: number, allowMinimum: boolean): value is number {
+  return typeof value === "number"
+    && Number.isFinite(value)
+    && (allowMinimum ? value >= minimum : value > minimum);
+}
+
 function describeMinimum(minimum: number): string {
   return `an integer >= ${minimum}`;
+}
+
+function describeNumberMinimum(minimum: number, allowMinimum: boolean): string {
+  return `a finite number ${allowMinimum ? ">=" : ">"} ${minimum}`;
 }
 
 function requireRecord(value: unknown, path: string): Record<string, unknown> {
@@ -61,6 +71,196 @@ function requireInteger(value: unknown, path: string, minimum = 0): number {
     throw new SolverInputError(`LNS seed hint ${path} must be ${describeMinimum(minimum)}.`);
   }
   return value;
+}
+
+function requireValidationRecord(value: unknown, path: string): Record<string, unknown> {
+  if (!isRecord(value) || Array.isArray(value)) {
+    throw new SolverInputError(`${path} must be an object.`);
+  }
+  return value;
+}
+
+function requireOptionalBoolean(parent: Record<string, unknown>, key: string, path: string): void {
+  const value = parent[key];
+  if (value !== undefined && typeof value !== "boolean") {
+    throw new SolverInputError(`${path} must be a boolean.`);
+  }
+}
+
+function requireOptionalString(parent: Record<string, unknown>, key: string, path: string): void {
+  const value = parent[key];
+  if (value !== undefined && typeof value !== "string") {
+    throw new SolverInputError(`${path} must be a string.`);
+  }
+}
+
+function requireOptionalFiniteNumber(
+  parent: Record<string, unknown>,
+  key: string,
+  path: string,
+  minimum: number,
+  allowMinimum = false
+): void {
+  const value = parent[key];
+  if (value !== undefined && !isFiniteNumber(value, minimum, allowMinimum)) {
+    throw new SolverInputError(`${path} must be ${describeNumberMinimum(minimum, allowMinimum)}.`);
+  }
+}
+
+function requireOptionalIntegerForValidation(
+  parent: Record<string, unknown>,
+  key: string,
+  path: string,
+  minimum = 0
+): void {
+  const value = parent[key];
+  if (value !== undefined && !isInteger(value, minimum)) {
+    throw new SolverInputError(`${path} must be ${describeMinimum(minimum)}.`);
+  }
+}
+
+function requireValidationInteger(parent: Record<string, unknown>, key: string, path: string, minimum = 0): void {
+  const value = parent[key];
+  if (!isInteger(value, minimum)) {
+    throw new SolverInputError(`${path} must be ${describeMinimum(minimum)}.`);
+  }
+}
+
+function requireValidationArray(value: unknown, path: string): unknown[] {
+  if (!Array.isArray(value)) {
+    throw new SolverInputError(`${path} must be an array.`);
+  }
+  return value;
+}
+
+function requireOptionalRoadKeys(parent: Record<string, unknown>, key: string, path: string): void {
+  const value = parent[key];
+  if (value === undefined) return;
+  requireValidationArray(value, path).forEach((entry, index) => {
+    if (!isRoadKey(entry)) {
+      throw new SolverInputError(`${path}[${index}] must be a road key like "r,c".`);
+    }
+  });
+}
+
+function requireCandidateKeys(
+  parent: Record<string, unknown>,
+  key: string,
+  path: string,
+  kind: "service" | "residential"
+): void {
+  const value = parent[key];
+  if (value === undefined) return;
+  const keyPattern = new RegExp(`^${kind}:-?\\d+:\\d+:\\d+:[1-9]\\d*:[1-9]\\d*$`);
+  requireValidationArray(value, path).forEach((entry, index) => {
+    if (typeof entry !== "string" || !keyPattern.test(entry)) {
+      throw new SolverInputError(`${path}[${index}] must be a ${kind} candidate key.`);
+    }
+  });
+}
+
+function assertValidCpSatWarmStartService(value: unknown, path: string, requireTypedMetadata: boolean): void {
+  const service = requireValidationRecord(value, path);
+  requireValidationInteger(service, "r", `${path}.r`);
+  requireValidationInteger(service, "c", `${path}.c`);
+  requireValidationInteger(service, "rows", `${path}.rows`, 1);
+  requireValidationInteger(service, "cols", `${path}.cols`, 1);
+  requireValidationInteger(service, "range", `${path}.range`);
+  if (requireTypedMetadata) {
+    requireValidationInteger(service, "typeIndex", `${path}.typeIndex`, NO_TYPE_INDEX);
+    requireValidationInteger(service, "bonus", `${path}.bonus`);
+  } else {
+    requireOptionalIntegerForValidation(service, "typeIndex", `${path}.typeIndex`, NO_TYPE_INDEX);
+    requireOptionalIntegerForValidation(service, "bonus", `${path}.bonus`);
+  }
+}
+
+function assertValidCpSatWarmStartResidential(value: unknown, path: string, requirePopulation: boolean): void {
+  const residential = requireValidationRecord(value, path);
+  requireValidationInteger(residential, "r", `${path}.r`);
+  requireValidationInteger(residential, "c", `${path}.c`);
+  requireValidationInteger(residential, "rows", `${path}.rows`, 1);
+  requireValidationInteger(residential, "cols", `${path}.cols`, 1);
+  requireValidationInteger(residential, "typeIndex", `${path}.typeIndex`, NO_TYPE_INDEX);
+  if (requirePopulation) {
+    requireValidationInteger(residential, "population", `${path}.population`);
+  } else {
+    requireOptionalIntegerForValidation(residential, "population", `${path}.population`);
+  }
+}
+
+function assertValidCpSatNeighborhoodWindow(value: unknown, path: string): void {
+  const window = requireValidationRecord(value, path);
+  requireValidationInteger(window, "top", `${path}.top`);
+  requireValidationInteger(window, "left", `${path}.left`);
+  requireValidationInteger(window, "rows", `${path}.rows`, 1);
+  requireValidationInteger(window, "cols", `${path}.cols`, 1);
+}
+
+function assertValidCpSatWarmStartSolution(value: unknown, path: string): void {
+  const solution = requireValidationRecord(value, path);
+  requireOptionalRoadKeys(solution, "roads", `${path}.roads`);
+  const services = solution.services === undefined
+    ? undefined
+    : requireValidationArray(solution.services, `${path}.services`);
+  services?.forEach((service, index) => {
+    assertValidCpSatWarmStartService(service, `${path}.services[${index}]`, true);
+  });
+  const residentials = solution.residentials === undefined
+    ? undefined
+    : requireValidationArray(solution.residentials, `${path}.residentials`);
+  residentials?.forEach((residential, index) => {
+    assertValidCpSatWarmStartResidential(residential, `${path}.residentials[${index}]`, true);
+  });
+  const populations = solution.populations === undefined
+    ? undefined
+    : requireValidationArray(solution.populations, `${path}.populations`);
+  populations?.forEach((population, index) => {
+    if (!isInteger(population)) {
+      throw new SolverInputError(`${path}.populations[${index}] must be ${describeMinimum(0)}.`);
+    }
+  });
+  if (populations !== undefined && residentials !== undefined && populations.length !== residentials.length) {
+    throw new SolverInputError(`${path}.populations must match ${path}.residentials length.`);
+  }
+  requireOptionalIntegerForValidation(solution, "totalPopulation", `${path}.totalPopulation`);
+}
+
+function assertValidCpSatWarmStartHint(value: unknown, path: string): void {
+  if (isRecord(value) && value.roads instanceof Set) return;
+
+  const hint = requireValidationRecord(value, path);
+  requireOptionalString(hint, "sourceName", `${path}.sourceName`);
+  requireOptionalString(hint, "modelFingerprint", `${path}.modelFingerprint`);
+  requireOptionalRoadKeys(hint, "roadKeys", `${path}.roadKeys`);
+  requireOptionalRoadKeys(hint, "roads", `${path}.roads`);
+  requireCandidateKeys(hint, "serviceCandidateKeys", `${path}.serviceCandidateKeys`, "service");
+  requireCandidateKeys(hint, "residentialCandidateKeys", `${path}.residentialCandidateKeys`, "residential");
+  requireOptionalIntegerForValidation(hint, "totalPopulation", `${path}.totalPopulation`);
+  requireOptionalIntegerForValidation(hint, "objectiveLowerBound", `${path}.objectiveLowerBound`);
+  requireOptionalBoolean(hint, "preferStrictImprove", `${path}.preferStrictImprove`);
+  requireOptionalBoolean(hint, "repairHint", `${path}.repairHint`);
+  requireOptionalBoolean(hint, "fixVariablesToHintedValue", `${path}.fixVariablesToHintedValue`);
+  requireOptionalIntegerForValidation(hint, "hintConflictLimit", `${path}.hintConflictLimit`);
+  requireOptionalBoolean(hint, "fixOutsideNeighborhoodToHintedValue", `${path}.fixOutsideNeighborhoodToHintedValue`);
+
+  if (hint.neighborhoodWindow !== undefined) {
+    assertValidCpSatNeighborhoodWindow(hint.neighborhoodWindow, `${path}.neighborhoodWindow`);
+  }
+  if (hint.solution !== undefined) {
+    assertValidCpSatWarmStartSolution(hint.solution, `${path}.solution`);
+  }
+
+  const services = hint.services === undefined ? undefined : requireValidationArray(hint.services, `${path}.services`);
+  services?.forEach((service, index) => {
+    assertValidCpSatWarmStartService(service, `${path}.services[${index}]`, false);
+  });
+  const residentials = hint.residentials === undefined
+    ? undefined
+    : requireValidationArray(hint.residentials, `${path}.residentials`);
+  residentials?.forEach((residential, index) => {
+    assertValidCpSatWarmStartResidential(residential, `${path}.residentials[${index}]`, false);
+  });
 }
 
 function isRoadKey(value: unknown): value is string {
@@ -185,8 +385,60 @@ export function materializeValidLnsSeedSolution(
   return incumbent;
 }
 
+function assertValidCpSatPortfolioOptions(value: unknown, path: string): void {
+  const portfolio = requireValidationRecord(value, path);
+  requireOptionalIntegerForValidation(portfolio, "workerCount", `${path}.workerCount`, 1);
+  if (portfolio.randomSeeds !== undefined) {
+    requireValidationArray(portfolio.randomSeeds, `${path}.randomSeeds`).forEach((seed, index) => {
+      if (!isInteger(seed)) {
+        throw new SolverInputError(`${path}.randomSeeds[${index}] must be ${describeMinimum(0)}.`);
+      }
+    });
+  }
+  requireOptionalFiniteNumber(portfolio, "perWorkerTimeLimitSeconds", `${path}.perWorkerTimeLimitSeconds`, 0);
+  requireOptionalFiniteNumber(portfolio, "perWorkerMaxDeterministicTime", `${path}.perWorkerMaxDeterministicTime`, 0);
+  requireOptionalIntegerForValidation(portfolio, "perWorkerNumWorkers", `${path}.perWorkerNumWorkers`, 1);
+  requireOptionalBoolean(portfolio, "randomizeSearch", `${path}.randomizeSearch`);
+}
+
+function assertValidCpSatOptions(params: SolverParams): void {
+  const cpSatValue = (params as Record<string, unknown>).cpSat;
+  if (cpSatValue === undefined) return;
+
+  const cpSat = requireValidationRecord(cpSatValue, "CP-SAT options cpSat");
+  requireOptionalString(cpSat, "pythonExecutable", "CP-SAT runtime option cpSat.pythonExecutable");
+  requireOptionalString(cpSat, "scriptPath", "CP-SAT runtime option cpSat.scriptPath");
+  requireOptionalFiniteNumber(cpSat, "timeLimitSeconds", "CP-SAT runtime option cpSat.timeLimitSeconds", 0);
+  requireOptionalFiniteNumber(cpSat, "maxDeterministicTime", "CP-SAT runtime option cpSat.maxDeterministicTime", 0);
+  requireOptionalIntegerForValidation(cpSat, "numWorkers", "CP-SAT runtime option cpSat.numWorkers", 1);
+  requireOptionalIntegerForValidation(cpSat, "randomSeed", "CP-SAT runtime option cpSat.randomSeed");
+  requireOptionalBoolean(cpSat, "randomizeSearch", "CP-SAT runtime option cpSat.randomizeSearch");
+  requireOptionalFiniteNumber(cpSat, "relativeGapLimit", "CP-SAT runtime option cpSat.relativeGapLimit", 0, true);
+  requireOptionalFiniteNumber(cpSat, "absoluteGapLimit", "CP-SAT runtime option cpSat.absoluteGapLimit", 0, true);
+  requireOptionalFiniteNumber(
+    cpSat,
+    "noImprovementTimeoutSeconds",
+    "CP-SAT runtime option cpSat.noImprovementTimeoutSeconds",
+    0
+  );
+  requireOptionalIntegerForValidation(cpSat, "objectiveLowerBound", "CP-SAT runtime option cpSat.objectiveLowerBound");
+  requireOptionalBoolean(cpSat, "streamProgress", "CP-SAT runtime option cpSat.streamProgress");
+  requireOptionalFiniteNumber(cpSat, "progressIntervalSeconds", "CP-SAT runtime option cpSat.progressIntervalSeconds", 0, true);
+  requireOptionalBoolean(cpSat, "logSearchProgress", "CP-SAT runtime option cpSat.logSearchProgress");
+  requireOptionalString(cpSat, "stopFilePath", "CP-SAT runtime option cpSat.stopFilePath");
+  requireOptionalString(cpSat, "snapshotFilePath", "CP-SAT runtime option cpSat.snapshotFilePath");
+
+  if (cpSat.warmStartHint !== undefined) {
+    assertValidCpSatWarmStartHint(cpSat.warmStartHint, "CP-SAT warm-start hint cpSat.warmStartHint");
+  }
+  if (cpSat.portfolio !== undefined) {
+    assertValidCpSatPortfolioOptions(cpSat.portfolio, "CP-SAT portfolio option cpSat.portfolio");
+  }
+}
+
 export function assertValidSolveInputs(G: Grid, params: SolverParams): void {
   const optimizer = resolveOptimizerName(params);
+  assertValidCpSatOptions(params);
   if (optimizer !== "lns" && optimizer !== "auto") return;
   materializeValidLnsSeedSolution(G, params, params.lns?.seedHint);
 }

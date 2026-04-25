@@ -17,6 +17,13 @@ export interface SolutionMapValidationResult extends SolutionValidationResult {
   mapText: string;
 }
 
+function paintCell(cell: string[][], r: number, c: number, value: string): void {
+  if (r < 0 || r >= cell.length) return;
+  const row = cell[r];
+  if (!row || c < 0 || c >= row.length) return;
+  row[c] = value;
+}
+
 /** Render ASCII map: # = blocked, R = road, S = service, H = residential, . = empty allowed */
 export function renderSolutionMap(grid: Grid, solution: Solution): string[] {
   const h = height(grid);
@@ -31,20 +38,20 @@ export function renderSolutionMap(grid: Grid, solution: Solution): string[] {
 
   for (const key of solution.roads) {
     const [r, c] = key.split(",").map(Number);
-    cell[r][c] = "R";
+    paintCell(cell, r, c, "R");
   }
   for (const service of solution.services) {
     const normalized = normalizeServicePlacement(service);
     for (let dr = 0; dr < normalized.rows; dr++) {
       for (let dc = 0; dc < normalized.cols; dc++) {
-        cell[normalized.r + dr][normalized.c + dc] = "S";
+        paintCell(cell, normalized.r + dr, normalized.c + dc, "S");
       }
     }
   }
   for (const residential of solution.residentials) {
     for (let dr = 0; dr < residential.rows; dr++) {
       for (let dc = 0; dc < residential.cols; dc++) {
-        cell[residential.r + dr][residential.c + dc] = "H";
+        paintCell(cell, residential.r + dr, residential.c + dc, "H");
       }
     }
   }

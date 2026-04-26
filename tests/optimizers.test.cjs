@@ -3936,6 +3936,65 @@ function testGreedyServiceLocalNeighborhoodBenchmarkCase() {
   assert.match(formatGreedyBenchmarkSuite(result), /step13=/);
 }
 
+function testGreedyResidualServiceBundleRepairAddsServiceAndRefillsResidentials() {
+  const grid = [
+    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1],
+  ];
+  const params = {
+    optimizer: "greedy",
+    serviceTypes: [{ rows: 1, cols: 1, bonus: 20, range: 1, avail: 2 }],
+    residentialTypes: [{ w: 2, h: 2, min: 80, max: 120, avail: 3 }],
+    availableBuildings: { services: 2, residentials: 3 },
+    greedy: {
+      localSearch: true,
+      localSearchServiceMoves: true,
+      randomSeed: 1,
+      restarts: 1,
+      serviceRefineIterations: 0,
+      serviceRefineCandidateLimit: 4,
+      exhaustiveServiceSearch: false,
+      serviceExactPoolLimit: 4,
+      serviceExactMaxCombinations: 16,
+      profile: true,
+    },
+  };
+  const baselineParams = structuredClone(params);
+  baselineParams.greedy = {
+    ...baselineParams.greedy,
+    localSearchServiceMoves: false,
+  };
+
+  const baseline = solveGreedy(
+    grid.map((row) => [...row]),
+    baselineParams
+  );
+  const repaired = solveGreedy(
+    grid.map((row) => [...row]),
+    params
+  );
+  const validation = validateSolution({ grid, solution: repaired, params });
+  const overlaps = (a, b) =>
+    a.r < b.r + b.rows && a.r + a.rows > b.r && a.c < b.c + b.cols && a.c + a.cols > b.c;
+
+  assert.equal(validation.valid, true);
+  assert.equal(baseline.totalPopulation, 240);
+  assert.equal(baseline.services.length, 0);
+  assert.equal(repaired.totalPopulation, 280);
+  assert.equal(repaired.totalPopulation > baseline.totalPopulation, true);
+  assert.deepEqual(repaired.services, [
+    { r: 1, c: 1, rows: 1, cols: 1, range: 1 },
+  ]);
+  assert.deepEqual(repaired.serviceTypeIndices, [0]);
+  assert.deepEqual(repaired.populations, [100, 100, 80]);
+  assert.equal(baseline.residentials.some((residential) => overlaps(repaired.services[0], residential)), true);
+  assert.equal(repaired.greedyProfile.counters.localSearch.serviceAddChecks > 0, true);
+  assert.equal(repaired.greedyProfile.counters.localSearch.serviceNeighborhoodImprovements > 0, true);
+}
+
 function testGreedyTypedFootprintPressureBenchmarkCase() {
   const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
     names: ["typed-footprint-pressure"],
@@ -5896,6 +5955,7 @@ async function main() {
   testGreedyFixedServiceRealizationCompletenessBenchmarkCase();
   testGreedyFixedServiceRealizationCompletenessImprovesMultiServiceRefineCase();
   testGreedyServiceLocalNeighborhoodBenchmarkCase();
+  testGreedyResidualServiceBundleRepairAddsServiceAndRefillsResidentials();
   testGreedyTypedFootprintPressureBenchmarkCase();
   testGreedyTypedAvailabilityPressureBenchmarkCase();
   testGreedyGroupedServiceScoringLeavesUntypedBenchmarkUndiscounted();

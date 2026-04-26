@@ -170,6 +170,14 @@ type ServiceRelocationMove = {
   estimatedRoadCost: number;
   orderedServiceKey: string;
 };
+type ResidualServiceBundleTrial = {
+  candidate: ServiceCandidate;
+  forcedServices: ServiceCandidate[];
+  displacedResidentialCount: number;
+  estimatedTotalPopulation: number;
+  estimatedFutureScore: number;
+  orderedServiceKey: string;
+};
 
 class GreedyStopError extends Error {
   constructor(
@@ -2614,6 +2622,225 @@ function runGreedyServiceNeighborhoodSearch(options: {
   return incumbent;
 }
 
+function solutionRow0RoadSeed(solution: Solution): Set<string> | undefined {
+  const seed = new Set<string>();
+  for (const key of solution.roads) {
+    if (key.startsWith("0,")) seed.add(key);
+  }
+  return seed.size > 0 ? seed : undefined;
+}
+
+function solutionServiceCandidates(solution: Solution): ServiceCandidate[] {
+  return solution.services.map((_, index) => materializeChosenServiceCandidate(solution, index));
+}
+
+function runGreedyResidualServiceBundleRepair(options: {
+  initialBest: Solution;
+  G: Grid;
+  params: SolverParams;
+  localSearch: boolean;
+  localSearchServiceMoves: boolean;
+  localSearchServiceCandidateLimit: number;
+  inferredUpper: number;
+  useTypes: boolean;
+  serviceOrderSorted: ServiceCandidate[];
+  residentialScoringGroups: ResidentialScoringGroup[];
+  serviceCoverageGroupsByKey: Map<string, number[]>;
+  precomputedIndexes: GreedyPrecomputedIndexes;
+  solveWithOrder: GreedySolveAttempt;
+  updateBest: GreedyBestUpdater;
+  profileCounters?: GreedyProfileCounters;
+  maybeStop: MaybeStop;
+}): Solution {
+  const {
+    initialBest,
+    G,
+    params,
+    localSearch,
+    localSearchServiceMoves,
+    localSearchServiceCandidateLimit,
+    inferredUpper,
+    useTypes,
+    serviceOrderSorted,
+    residentialScoringGroups,
+    serviceCoverageGroupsByKey,
+    precomputedIndexes,
+    solveWithOrder,
+    updateBest,
+    profileCounters,
+    maybeStop,
+  } = options;
+  if (!localSearch || !localSearchServiceMoves) return initialBest;
+  if (initialBest.services.length >= inferredUpper) return initialBest;
+  if (initialBest.residentials.length === 0 || serviceOrderSorted.length === 0) return initialBest;
+
+  const incumbentServices = solutionServiceCandidates(initialBest);
+  const incumbentServiceKeys = new Set(incumbentServices.map((service) => serviceCandidateKey(service)));
+  const incumbentServiceTypeUsage = new Array((params.serviceTypes ?? []).length).fill(0);
+  for (const service of incumbentServices) {
+    if (service.typeIndex >= 0 && service.typeIndex < incumbentServiceTypeUsage.length) {
+      incumbentServiceTypeUsage[service.typeIndex] += 1;
+    }
+  }
+
+  const occupiedServices = new Set<string>();
+  for (const service of incumbentServices) {
+    const footprintKeys = getCachedServiceFootprintKeys(precomputedIndexes, service);
+    if (footprintKeys) {
+      addCachedPlacementCellsToSet(occupiedServices, footprintKeys);
+    } else {
+      addPlacementCellsToSet(occupiedServices, service);
+    }
+  }
+
+  const currentResidentialGroupBoosts = Array.from({ length: residentialScoringGroups.length }, () => 0);
+  const incumbentEffectZones: Set<string>[] = [];
+  const incumbentServiceBonuses: number[] = [];
+  for (const service of incumbentServices) {
+    incumbentEffectZones.push(getCachedServiceEffectZoneSet(G, precomputedIndexes, service));
+    incumbentServiceBonuses.push(service.bonus);
+    const coveredGroupIndices = serviceCoverageGroupsByKey.get(serviceCandidateKey(service)) ?? [];
+    for (const groupIndex of coveredGroupIndices) {
+      currentResidentialGroupBoosts[groupIndex] += service.bonus;
+    }
+  }
+
+  const remainingAvailForIncumbent = useTypes && params.residentialTypes
+    ? params.residentialTypes.map((type) => type.avail)
+    : null;
+  if (remainingAvailForIncumbent) {
+    for (const typeIndex of initialBest.residentialTypeIndices) {
+      if (typeIndex >= 0 && typeIndex < remainingAvailForIncumbent.length) {
+        remainingAvailForIncumbent[typeIndex] = Math.max(0, remainingAvailForIncumbent[typeIndex] - 1);
+      }
+    }
+  }
+
+  const trialLimit = Math.max(
+    1,
+    Math.min(
+      serviceOrderSorted.length,
+      Math.max(localSearchServiceCandidateLimit, LOCAL_SEARCH_SERVICE_NEIGHBORHOOD.maxAddTrialsPerIteration)
+    )
+  );
+  const scanLimit = Math.min(
+    serviceOrderSorted.length,
+    Math.max(trialLimit, localSearchServiceCandidateLimit * 4, 16)
+  );
+  const trials: ResidualServiceBundleTrial[] = [];
+  const repairProbe = { kind: "explicit", roadCost: 0, roadProbe: { path: null } } as const;
+
+  for (const candidate of serviceOrderSorted.slice(0, scanLimit)) {
+    maybeStop?.();
+    if (trials.length >= trialLimit) break;
+    if (candidate.bonus <= 0) continue;
+    if (incumbentServiceKeys.has(serviceCandidateKey(candidate))) continue;
+    if (
+      candidate.typeIndex >= 0
+      && candidate.typeIndex < incumbentServiceTypeUsage.length
+      && (incumbentServiceTypeUsage[candidate.typeIndex] ?? 0) >= (params.serviceTypes?.[candidate.typeIndex]?.avail ?? 0)
+    ) {
+      continue;
+    }
+    const candidateFootprintKeys = getCachedServiceFootprintKeys(precomputedIndexes, candidate);
+    if (
+      candidateFootprintKeys
+        ? overlapsCachedFootprint(occupiedServices, candidateFootprintKeys)
+        : overlaps(occupiedServices, candidate.r, candidate.c, candidate.rows, candidate.cols)
+    ) {
+      continue;
+    }
+
+    const displacedResidentialIndices: number[] = [];
+    for (let index = 0; index < initialBest.residentials.length; index++) {
+      if (rectanglesOverlap(candidate, initialBest.residentials[index])) {
+        displacedResidentialIndices.push(index);
+      }
+    }
+    if (displacedResidentialIndices.length === 0) continue;
+
+    if (profileCounters) profileCounters.localSearch.serviceAddChecks++;
+    const displacedResidentialIndexSet = new Set(displacedResidentialIndices);
+    const occupiedAfterDisplacement = new Set(occupiedServices);
+    for (let index = 0; index < initialBest.residentials.length; index++) {
+      if (displacedResidentialIndexSet.has(index)) continue;
+      addPlacementCellsToSet(occupiedAfterDisplacement, initialBest.residentials[index]);
+    }
+
+    const futureEffectZones = [
+      ...incumbentEffectZones,
+      getCachedServiceEffectZoneSet(G, precomputedIndexes, candidate),
+    ];
+    const futureServiceBonuses = [...incumbentServiceBonuses, candidate.bonus];
+    let estimatedKeptPopulation = 0;
+    const remainingAvailAfterDisplacement = remainingAvailForIncumbent
+      ? [...remainingAvailForIncumbent]
+      : null;
+    if (remainingAvailAfterDisplacement) {
+      for (const index of displacedResidentialIndices) {
+        const typeIndex = initialBest.residentialTypeIndices[index] ?? NO_TYPE_INDEX;
+        if (typeIndex >= 0 && typeIndex < remainingAvailAfterDisplacement.length) {
+          remainingAvailAfterDisplacement[typeIndex] += 1;
+        }
+      }
+    }
+    for (let index = 0; index < initialBest.residentials.length; index++) {
+      if (displacedResidentialIndexSet.has(index)) continue;
+      estimatedKeptPopulation += computeResidentialPopulation(
+        params,
+        initialBest.residentials[index],
+        futureEffectZones,
+        futureServiceBonuses,
+        initialBest.residentialTypeIndices[index] ?? NO_TYPE_INDEX
+      );
+    }
+    const estimatedFutureScore = computeServiceMarginalScore(
+      candidate,
+      occupiedAfterDisplacement,
+      currentResidentialGroupBoosts,
+      residentialScoringGroups,
+      serviceCoverageGroupsByKey,
+      remainingAvailAfterDisplacement
+    );
+    const forcedServices = [...incumbentServices, candidate];
+    trials.push({
+      candidate,
+      forcedServices,
+      displacedResidentialCount: displacedResidentialIndices.length,
+      estimatedTotalPopulation: estimatedKeptPopulation + estimatedFutureScore,
+      estimatedFutureScore,
+      orderedServiceKey: forcedServices.map((service) => stableServicePlacementKey(service)).join("|"),
+    });
+  }
+
+  trials.sort((left, right) =>
+    right.estimatedTotalPopulation - left.estimatedTotalPopulation
+    || right.estimatedFutureScore - left.estimatedFutureScore
+    || left.displacedResidentialCount - right.displacedResidentialCount
+    || compareServiceTieBreaks(left.candidate, repairProbe, right.candidate, repairProbe)
+    || left.orderedServiceKey.localeCompare(right.orderedServiceKey)
+  );
+
+  let best = initialBest;
+  const initialRoadSeed = solutionRow0RoadSeed(initialBest);
+  for (const trialEntry of trials) {
+    maybeStop?.();
+    const trial = solveWithOrder(serviceOrderSorted, {
+      maxServices: trialEntry.forcedServices.length,
+      fixedServices: trialEntry.forcedServices,
+      initialRoadSeed,
+    });
+    if (trial && trial.totalPopulation > best.totalPopulation) {
+      best = trial;
+      updateBest(best);
+    }
+  }
+  if (best.totalPopulation > initialBest.totalPopulation && profileCounters) {
+    profileCounters.localSearch.serviceNeighborhoodImprovements++;
+  }
+  return best;
+}
+
 function createGreedyForcedServiceEvaluator(options: {
   G: Grid;
   serviceOrderSorted: ServiceCandidate[];
@@ -3016,24 +3243,44 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
 
     if (localSearch) {
       incumbent = best;
-      const serviceLocalBest = runProfiledPhase("serviceNeighborhoodSearch", () => runGreedyServiceNeighborhoodSearch({
-        initialBest: incumbent,
-        G,
-        params,
-        localSearch,
-        localSearchServiceMoves,
-        localSearchServiceCandidateLimit,
-        inferredUpper,
-        useTypes,
-        serviceOrderSorted,
-        residentialScoringGroups,
-        serviceCoverageGroupsByKey,
-        precomputedIndexes,
-        solveWithOrder,
-        updateBest,
-        profileCounters,
-        maybeStop,
-      }));
+      const serviceLocalBest = runProfiledPhase("serviceNeighborhoodSearch", () => {
+        const neighborhoodBest = runGreedyServiceNeighborhoodSearch({
+          initialBest: incumbent,
+          G,
+          params,
+          localSearch,
+          localSearchServiceMoves,
+          localSearchServiceCandidateLimit,
+          inferredUpper,
+          useTypes,
+          serviceOrderSorted,
+          residentialScoringGroups,
+          serviceCoverageGroupsByKey,
+          precomputedIndexes,
+          solveWithOrder,
+          updateBest,
+          profileCounters,
+          maybeStop,
+        });
+        return runGreedyResidualServiceBundleRepair({
+          initialBest: neighborhoodBest,
+          G,
+          params,
+          localSearch,
+          localSearchServiceMoves,
+          localSearchServiceCandidateLimit,
+          inferredUpper,
+          useTypes,
+          serviceOrderSorted,
+          residentialScoringGroups,
+          serviceCoverageGroupsByKey,
+          precomputedIndexes,
+          solveWithOrder,
+          updateBest,
+          profileCounters,
+          maybeStop,
+        });
+      });
       if (isBetterSearchSolution(serviceLocalBest, best)) {
         best = serviceLocalBest;
         updateBest(best);

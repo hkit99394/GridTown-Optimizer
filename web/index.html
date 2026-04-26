@@ -288,6 +288,30 @@
                     </div>
                   </section>
 
+                  <details id="greedyDiagnosticsBlock" class="result-block result-details" hidden>
+                    <summary class="result-details-summary">
+                      <div class="drawer-head">
+                        <div>
+                          <p class="eyebrow">Diagnostics</p>
+                          <h3>Why not placed?</h3>
+                        </div>
+                      </div>
+                    </summary>
+                    <div class="result-details-body">
+                      <p id="greedyDiagnosticsSummary" class="status-text"></p>
+                      <div class="placement-columns diagnostic-columns">
+                        <div>
+                          <h4>Services</h4>
+                          <ul id="greedyDiagnosticsServiceList" class="progress-log diagnostic-list"></ul>
+                        </div>
+                        <div>
+                          <h4>Residentials</h4>
+                          <ul id="greedyDiagnosticsResidentialList" class="progress-log diagnostic-list"></ul>
+                        </div>
+                      </div>
+                    </div>
+                  </details>
+
                   <section class="result-block">
                     <div class="drawer-head">
                       <div>
@@ -495,6 +519,10 @@
                     <label class="check-field">
                       <input id="greedyExhaustiveServiceSearch" type="checkbox" />
                       <span>Try exhaustive service search</span>
+                    </label>
+                    <label class="check-field">
+                      <input id="greedyDiagnostics" type="checkbox" />
+                      <span>Show why-not-placed diagnostics</span>
                     </label>
                     <label class="field">
                       <span>Restarts</span>

@@ -359,6 +359,8 @@ export interface GreedyOptions {
   timeLimitSeconds?: number;
   /** Collect phase-level profiling counters without changing solver behavior. */
   profile?: boolean;
+  /** Emit a bounded post-solve "why not placed?" diagnostic report. Default false. */
+  diagnostics?: boolean;
   /** Number of restarts with different service order; take best solution (default 1) */
   restarts?: number;
   /** Service-position refinement passes after restarts (default 2) */
@@ -375,6 +377,64 @@ export interface GreedyOptions {
   stopFilePath?: string;
   /** Internal best-snapshot path used by the local web server. */
   snapshotFilePath?: string;
+}
+
+export type GreedyPlacementDiagnosticReason =
+  | "blocked-footprint"
+  | "no-road-path"
+  | "no-service-coverage"
+  | "base-only"
+  | "availability-cap"
+  | "lower-score-no-improvement";
+
+export interface GreedyDiagnosticAvailabilityEntry {
+  typeIndex: number;
+  name?: string;
+  available: number;
+  used: number;
+  remaining: number;
+}
+
+export interface GreedyDiagnosticOverallAvailability {
+  limit: number | null;
+  used: number;
+  remaining: number | null;
+}
+
+export interface GreedyDiagnosticExample {
+  kind: "service" | "residential";
+  reason: GreedyPlacementDiagnosticReason;
+  reasons: GreedyPlacementDiagnosticReason[];
+  r: number;
+  c: number;
+  rows: number;
+  cols: number;
+  typeIndex: number;
+  typeName?: string;
+  score?: number;
+  population?: number;
+  basePopulation?: number;
+  maxPopulation?: number;
+}
+
+export interface GreedyDiagnosticKindReport {
+  candidateLimit: number;
+  candidatesScanned: number;
+  candidatesSkippedAsPlaced: number;
+  truncated: boolean;
+  placedCount: number;
+  overallAvailability: GreedyDiagnosticOverallAvailability;
+  availabilityByType: GreedyDiagnosticAvailabilityEntry[];
+  reasonCounts: Partial<Record<GreedyPlacementDiagnosticReason, number>>;
+  examplesByReason: Partial<Record<GreedyPlacementDiagnosticReason, GreedyDiagnosticExample[]>>;
+}
+
+export interface GreedyDiagnostics {
+  version: 1;
+  candidateLimit: number;
+  examplesPerReason: number;
+  services: GreedyDiagnosticKindReport;
+  residentials: GreedyDiagnosticKindReport;
 }
 
 export interface GreedyProfileCounters {
@@ -633,6 +693,8 @@ export interface Solution {
   cpSatPortfolio?: CpSatPortfolioSummary;
   /** Optional greedy profiling counters collected only when profiling is enabled. */
   greedyProfile?: GreedyProfile;
+  /** Optional bounded "why not placed?" report for final greedy candidates. */
+  greedyDiagnostics?: GreedyDiagnostics;
   /** LNS run summary and per-neighborhood outcomes when the LNS backend produced this solution. */
   lnsTelemetry?: LnsTelemetry;
   /** True when a run was stopped early and this solution is the best feasible result found so far. */

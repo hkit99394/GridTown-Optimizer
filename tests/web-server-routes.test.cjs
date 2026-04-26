@@ -865,6 +865,10 @@ async function testImmediateSolveRejectsInvalidGreedyOptionsBeforeStartingBacken
       greedy: { timeLimitSeconds: 0 },
       expectedError: "Invalid solver input: Greedy option greedy.timeLimitSeconds must be a finite number > 0 and <= 86400.",
     },
+    {
+      greedy: { diagnostics: "yes" },
+      expectedError: "Invalid solver input: Greedy option greedy.diagnostics must be a boolean.",
+    },
   ];
 
   try {

@@ -24,6 +24,22 @@
     const PENDING_MANUAL_LAYOUT_ERROR =
       "Manual edits are pending validation. Use Validate layout when you're ready.";
     const PLACEMENT_MODE_STATUS_PREFIX = "Click the map to set its top-left cell.";
+    const DIAGNOSTIC_REASON_ORDER = [
+      "blocked-footprint",
+      "no-road-path",
+      "no-service-coverage",
+      "base-only",
+      "availability-cap",
+      "lower-score-no-improvement",
+    ];
+    const DIAGNOSTIC_REASON_LABELS = {
+      "blocked-footprint": "Blocked footprint",
+      "no-road-path": "No road path",
+      "no-service-coverage": "No service coverage",
+      "base-only": "Base population only",
+      "availability-cap": "Availability cap",
+      "lower-score-no-improvement": "Lower score / no improvement",
+    };
 
     function hasEditableLayoutContext() {
       return Boolean(state.result && state.resultContext);
@@ -841,6 +857,96 @@
       });
     }
 
+    function formatDiagnosticCount(value) {
+      return Number(value ?? 0).toLocaleString();
+    }
+
+    function formatDiagnosticExample(example) {
+      const idPrefix = example.kind === "service" ? "S" : "R";
+      const typeName = example.typeName
+        || (example.kind === "service" ? lookupServiceName(example.typeIndex) : lookupResidentialName(example.typeIndex));
+      const parts = [
+        `${typeName || `${idPrefix} type ${Number(example.typeIndex ?? -1) + 1}`} at (${example.r}, ${example.c})`,
+        `${example.rows}x${example.cols}`,
+      ];
+      if (typeof example.score === "number" && Number.isFinite(example.score)) {
+        parts.push(`score ${formatDiagnosticCount(example.score)}`);
+      }
+      if (typeof example.population === "number" && Number.isFinite(example.population)) {
+        parts.push(`pop ${formatDiagnosticCount(example.population)}`);
+      }
+      if (typeof example.basePopulation === "number" && Number.isFinite(example.basePopulation)) {
+        parts.push(`base ${formatDiagnosticCount(example.basePopulation)}`);
+      }
+      return parts.join(", ");
+    }
+
+    function renderDiagnosticKindReport(listElement, report, emptyLabel) {
+      if (!listElement) return;
+      listElement.innerHTML = "";
+
+      const reasonEntries = DIAGNOSTIC_REASON_ORDER
+        .map((reason) => ({
+          reason,
+          count: Number(report?.reasonCounts?.[reason] ?? 0),
+          examples: Array.isArray(report?.examplesByReason?.[reason]) ? report.examplesByReason[reason] : [],
+        }))
+        .filter((entry) => entry.count > 0);
+
+      if (reasonEntries.length === 0) {
+        listElement.innerHTML = `<li>${emptyLabel}</li>`;
+        return;
+      }
+
+      reasonEntries.forEach((entry) => {
+        const item = document.createElement("li");
+        const stamp = document.createElement("strong");
+        stamp.className = "progress-log-stamp";
+        stamp.textContent = `${DIAGNOSTIC_REASON_LABELS[entry.reason]}: ${formatDiagnosticCount(entry.count)}`;
+
+        const detail = document.createElement("span");
+        detail.className = "progress-log-detail";
+        const examples = entry.examples.map(formatDiagnosticExample);
+        detail.textContent = examples.length > 0
+          ? `Examples: ${examples.join(" | ")}`
+          : "No bounded examples were captured for this reason.";
+
+        item.append(stamp, detail);
+        listElement.append(item);
+      });
+    }
+
+    function renderGreedyDiagnostics(solution, options = {}) {
+      if (!elements.greedyDiagnosticsBlock) return;
+      const diagnostics = solution?.greedyDiagnostics;
+      if (!diagnostics || options.manualLayout || options.liveSnapshot) {
+        elements.greedyDiagnosticsBlock.hidden = true;
+        return;
+      }
+
+      elements.greedyDiagnosticsBlock.hidden = false;
+      const serviceScanned = diagnostics.services?.candidatesScanned ?? 0;
+      const residentialScanned = diagnostics.residentials?.candidatesScanned ?? 0;
+      const truncated = diagnostics.services?.truncated || diagnostics.residentials?.truncated;
+      if (elements.greedyDiagnosticsSummary) {
+        elements.greedyDiagnosticsSummary.textContent =
+          `Scanned ${formatDiagnosticCount(serviceScanned)} unplaced service candidates and `
+          + `${formatDiagnosticCount(residentialScanned)} unplaced residential candidates`
+          + `${truncated ? `, capped at ${formatDiagnosticCount(diagnostics.candidateLimit)} per category` : ""}.`;
+      }
+
+      renderDiagnosticKindReport(
+        elements.greedyDiagnosticsServiceList,
+        diagnostics.services,
+        "No service blockers were recorded."
+      );
+      renderDiagnosticKindReport(
+        elements.greedyDiagnosticsResidentialList,
+        diagnostics.residentials,
+        "No residential blockers were recorded."
+      );
+    }
+
     function formatAutoSeedStatus(solution) {
       const generatedSeeds = Array.isArray(solution?.autoStage?.generatedSeeds)
         ? solution.autoStage.generatedSeeds
@@ -1281,6 +1387,7 @@
         elements.residentialResultList.innerHTML = "<li>No residential placements available.</li>";
         elements.remainingServiceList.innerHTML = "<li>No service availability to show.</li>";
         elements.remainingResidentialList.innerHTML = "<li>No residential availability to show.</li>";
+        renderGreedyDiagnostics(null);
         elements.resultMapGrid.innerHTML = "";
         delete elements.resultMapGrid.dataset.cols;
         clearResultOverlay();
@@ -1307,6 +1414,7 @@
         }
         elements.remainingServiceList.innerHTML = "<li>No service availability to show.</li>";
         elements.remainingResidentialList.innerHTML = "<li>No residential availability to show.</li>";
+        renderGreedyDiagnostics(null);
         elements.resultMapGrid.innerHTML = "";
         delete elements.resultMapGrid.dataset.cols;
         clearResultOverlay();
@@ -1430,6 +1538,7 @@
       );
 
       renderProgressLog({ liveSnapshot, manualLayout });
+      renderGreedyDiagnostics(solution, { liveSnapshot, manualLayout });
       renderSolvedMap(solvedGrid, solution);
       renderLayoutEditorControls();
       renderExpansionAdvice();

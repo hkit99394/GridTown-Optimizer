@@ -1149,6 +1149,10 @@ async function testPublicSolverDispatchValidatesInputs() {
     () => solve(grid, { optimizer: "greedy", greedy: { restarts: 0 } }),
     /Invalid solver input: Greedy option greedy\.restarts must be an integer between 1 and 100\./
   );
+  assert.throws(
+    () => solve(grid, { optimizer: "greedy", greedy: { diagnostics: "yes" } }),
+    /Invalid solver input: Greedy option greedy\.diagnostics must be a boolean\./
+  );
   await assert.rejects(
     () => solveAsync(grid, { optimizer: "greedy", greedy: { restarts: 0 } }),
     /Invalid solver input: Greedy option greedy\.restarts must be an integer between 1 and 100\./
@@ -5584,6 +5588,87 @@ function testGreedyProfilingIsAdditive() {
   );
 }
 
+function testGreedyDiagnosticsAreOptInDeterministicAndAdditive() {
+  const grid = Array.from({ length: 7 }, () => Array.from({ length: 7 }, () => 1));
+  const params = {
+    optimizer: "greedy",
+    serviceTypes: [{ rows: 1, cols: 1, bonus: 20, range: 1, avail: 2 }],
+    residentialTypes: [{ w: 2, h: 2, min: 10, max: 40, avail: 20 }],
+    availableBuildings: { services: 1, residentials: 2 },
+    greedy: {
+      localSearch: false,
+      restarts: 1,
+      serviceRefineIterations: 0,
+      exhaustiveServiceSearch: false,
+    },
+  };
+
+  const withoutDiagnostics = solveGreedy(grid, params);
+  const withDiagnostics = solveGreedy(grid, {
+    ...params,
+    greedy: { ...params.greedy, diagnostics: true },
+  });
+  const repeated = solveGreedy(grid, {
+    ...params,
+    greedy: { ...params.greedy, diagnostics: true },
+  });
+
+  assert.equal(withoutDiagnostics.greedyDiagnostics, undefined);
+  assert(withDiagnostics.greedyDiagnostics);
+  assert.deepEqual(withDiagnostics.greedyDiagnostics, repeated.greedyDiagnostics);
+  assert.equal(withDiagnostics.totalPopulation, withoutDiagnostics.totalPopulation);
+  assert.deepEqual(withDiagnostics.services, withoutDiagnostics.services);
+  assert.deepEqual(withDiagnostics.serviceTypeIndices, withoutDiagnostics.serviceTypeIndices);
+  assert.deepEqual(withDiagnostics.residentials, withoutDiagnostics.residentials);
+  assert.deepEqual(withDiagnostics.residentialTypeIndices, withoutDiagnostics.residentialTypeIndices);
+  assert.deepEqual(withDiagnostics.populations, withoutDiagnostics.populations);
+  assert.equal(withDiagnostics.greedyDiagnostics.candidateLimit, 2000);
+  assert.equal(withDiagnostics.greedyDiagnostics.examplesPerReason, 3);
+
+  const serviceReasons = withDiagnostics.greedyDiagnostics.services.reasonCounts;
+  const residentialReasons = withDiagnostics.greedyDiagnostics.residentials.reasonCounts;
+  assert.equal(serviceReasons["availability-cap"] > 0, true);
+  assert.equal(serviceReasons["blocked-footprint"] > 0, true);
+  assert.equal(serviceReasons["no-road-path"] > 0, true);
+  assert.equal(serviceReasons["lower-score-no-improvement"] > 0, true);
+  assert.equal(residentialReasons["availability-cap"] > 0, true);
+  assert.equal(residentialReasons["blocked-footprint"] > 0, true);
+  assert.equal(residentialReasons["no-road-path"] > 0, true);
+  assert.equal(residentialReasons["base-only"] > 0, true);
+  assert.equal(
+    withDiagnostics.greedyDiagnostics.services.examplesByReason["lower-score-no-improvement"].length <= 3,
+    true
+  );
+  assert.equal(withDiagnostics.greedyDiagnostics.services.overallAvailability.remaining, 0);
+  assert.equal(withDiagnostics.greedyDiagnostics.residentials.overallAvailability.remaining, 0);
+}
+
+function testGreedyDiagnosticsReportsNoServiceCoverage() {
+  const grid = Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => 1));
+  const params = {
+    optimizer: "greedy",
+    serviceTypes: [{ rows: 1, cols: 1, bonus: 50, range: 0, avail: 2 }],
+    residentialTypes: [{ w: 2, h: 2, min: 10, max: 40, avail: 2 }],
+    availableBuildings: { services: 2, residentials: 1 },
+    greedy: {
+      localSearch: false,
+      restarts: 1,
+      serviceRefineIterations: 0,
+      exhaustiveServiceSearch: false,
+      diagnostics: true,
+    },
+  };
+
+  const solution = solveGreedy(grid, params);
+  const diagnostics = solution.greedyDiagnostics;
+
+  assert(diagnostics);
+  assert.equal(solution.services.length, 0);
+  assert.equal(diagnostics.services.reasonCounts["no-service-coverage"] > 0, true);
+  assert.equal(diagnostics.services.examplesByReason["no-service-coverage"][0].score, 0);
+  assert.equal(diagnostics.services.overallAvailability.remaining, 2);
+}
+
 function maybeTestCpSatCandidateReductionHelpers() {
   const pythonExecutable = resolveCpSatPython();
   if (!pythonExecutable) {
@@ -5926,6 +6011,8 @@ async function main() {
   testAutoClampsHeavyGreedyStageSettings();
   await testAutoAsyncClampsHeavyGreedyStageSettings();
   testGreedyProfilingIsAdditive();
+  testGreedyDiagnosticsAreOptInDeterministicAndAdditive();
+  testGreedyDiagnosticsReportsNoServiceCoverage();
   testGreedyBenchmarkCorpusHelpers();
   testGreedyStep14ServiceLookaheadBenchmarkCaseIsolated();
   testGreedyStep14FollowUpBenchmarkCasesStayIsolated();

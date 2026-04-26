@@ -269,6 +269,7 @@
         serviceRefineIterations: clampInteger(state.greedy.serviceRefineIterations, optimizer === "auto" ? 1 : 0, 0),
         serviceRefineCandidateLimit: clampInteger(state.greedy.serviceRefineCandidateLimit, optimizer === "auto" ? 24 : 1, 1),
         exhaustiveServiceSearch: optimizer === "auto" ? false : Boolean(state.greedy.exhaustiveServiceSearch),
+        diagnostics: optimizer === "greedy" && Boolean(state.greedy.diagnostics),
         serviceExactPoolLimit: clampInteger(state.greedy.serviceExactPoolLimit, optimizer === "auto" ? 8 : 1, 1),
         serviceExactMaxCombinations: clampInteger(state.greedy.serviceExactMaxCombinations, optimizer === "auto" ? 512 : 1, 1),
       };

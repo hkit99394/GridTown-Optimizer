@@ -1018,6 +1018,7 @@ function assertValidGreedyOptions(params: SolverParams): void {
       GREEDY_RANDOM_SEED_MAX
     );
     requireOptionalBoolean(greedy, "profile", "Greedy option greedy.profile");
+    requireOptionalBoolean(greedy, "diagnostics", "Greedy option greedy.diagnostics");
     requireOptionalFiniteNumberInRange(
       greedy,
       "timeLimitSeconds",

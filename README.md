@@ -204,6 +204,7 @@ The planner now includes:
 - service and residential catalog editing
 - collapsible catalog import
 - solver-specific control panels for `auto`, `greedy`, `LNS`, and `CP-SAT`
+- standalone Greedy diagnostics with a collapsible "why not placed?" result report
 - saved input setups
 - saved solved layouts
 - automatic `LNS` seeding and `CP-SAT` hinting from the displayed output when the displayed layout is validated and model-compatible
@@ -613,6 +614,7 @@ Prefer the nested `greedy` object for new code. When users choose standalone Gre
 ```ts
 greedy: {
   localSearch: true,
+  diagnostics: false,
   restarts: 20,
   serviceRefineIterations: 4,
   serviceRefineCandidateLimit: 60,
@@ -621,6 +623,8 @@ greedy: {
   serviceExactMaxCombinations: 12000,
 }
 ```
+
+Set `greedy.diagnostics: true` to include `solution.greedyDiagnostics`, a bounded post-solve report that scans final unplaced candidates and groups "why not placed?" examples by blocked footprint, missing road path, no service coverage / base-only residential population, availability caps, and lower-score/no-improvement outcomes.
 
 ### Auto options
 
@@ -675,6 +679,7 @@ A `Solution` contains:
 - `cpSatTelemetry`
 - `cpSatPortfolio`
 - `greedyProfile`, when Greedy profiling was enabled directly or by a seed stage
+- `greedyDiagnostics`, when `greedy.diagnostics` was enabled for a standalone Greedy run
 - `lnsTelemetry`, including `seedTimeLimitSeconds` and `seedWallClockSeconds`
 - `stoppedByUser`
 - `roads: Set<string>`

@@ -426,6 +426,13 @@
       elements.greedyExhaustiveServiceSearch.title = autoOwnsStageSeeds
         ? "Auto always disables exhaustive service search during the fast Greedy seed stage."
         : "";
+      if (elements.greedyDiagnostics) {
+        elements.greedyDiagnostics.checked = autoOwnsStageSeeds ? false : Boolean(state.greedy.diagnostics);
+        elements.greedyDiagnostics.disabled = autoOwnsStageSeeds;
+        elements.greedyDiagnostics.title = autoOwnsStageSeeds
+          ? "Diagnostics are emitted only by standalone Greedy runs."
+          : "";
+      }
       elements.greedyServiceExactPoolLimit.value = String(state.greedy.serviceExactPoolLimit);
       elements.greedyServiceExactPoolLimit.max = autoOwnsStageSeeds ? "8" : "";
       elements.greedyServiceExactPoolLimit.title = autoOwnsStageSeeds

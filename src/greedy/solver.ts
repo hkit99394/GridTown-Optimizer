@@ -104,7 +104,7 @@ interface GreedySolveContext {
   localSearch: boolean;
   serviceLookaheadCandidates: number;
   profileCounters?: GreedyProfileCounters;
-  maybeStop?: () => void;
+  maybeStop?: MaybeStop;
 }
 interface SolveOneOptions {
   maxServices: number | undefined;
@@ -112,6 +112,51 @@ interface SolveOneOptions {
   fixedServices?: ServiceCandidate[];
   profileCounters?: GreedyProfileCounters;
 }
+interface GreedyPreparedInputs {
+  serviceCandidates: ServiceCandidate[];
+  serviceOrderSorted: ServiceCandidate[];
+  baseSolveContext: Omit<GreedySolveContext, "serviceOrder">;
+}
+type GreedySolveAttempt = (serviceOrder: ServiceCandidate[], options: SolveOneOptions) => Solution | null;
+type GreedyBestUpdater = (candidate: Solution | null) => void;
+type FixedServiceEvaluationBudget = {
+  maxOrders: number;
+  maxSeededOrders: number;
+  maxSeeds: number;
+};
+type GreedyForcedServiceEvaluator = (
+  forcedServices: ServiceCandidate[],
+  maxForcedServices: number,
+  budget: FixedServiceEvaluationBudget
+) => Solution | null;
+interface GreedyServiceCapPolicy {
+  explicitServiceCap: number | undefined;
+  inferredUpper: number;
+  capPlan: ReturnType<typeof buildAdaptiveServiceCapPlan>;
+}
+type GreedyCapEvaluator = (
+  cap: number,
+  phase: CapSearchPhase,
+  restartBudget: number,
+  allowAnchorRefinement: boolean
+) => Solution | null;
+type GreedyExistingCapRefiner = (
+  cap: number,
+  phase: CapSearchPhase,
+  bestForCap: Solution | null,
+  restartBudget: number,
+  allowAnchorRefinement: boolean
+) => Solution | null;
+type ServiceRelocationMove = {
+  kind: "remove" | "add" | "swap";
+  serviceIndex: number;
+  candidate: ServiceCandidate;
+  forcedServices: ServiceCandidate[];
+  estimatedTotalPopulation: number;
+  estimatedFutureScore: number;
+  estimatedRoadCost: number;
+  orderedServiceKey: string;
+};
 
 class GreedyStopError extends Error {
   constructor(
@@ -1948,79 +1993,45 @@ function solveOne(
   };
 }
 
-export function solveGreedy(G: Grid, params: SolverParams): Solution {
+function prepareGreedyInputs(
+  G: Grid,
+  params: SolverParams,
+  options: {
+    maxResidentials: number | undefined;
+    useServiceTypes: boolean;
+    useTypes: boolean;
+    localSearch: boolean;
+    serviceLookaheadCandidates: number;
+    profileCounters?: GreedyProfileCounters;
+    maybeStop: MaybeStop;
+  }
+): GreedyPreparedInputs {
   const {
+    maxResidentials,
+    useServiceTypes,
+    useTypes,
     localSearch,
-    localSearchServiceMoves,
-    localSearchServiceCandidateLimit,
     serviceLookaheadCandidates,
-    deferRoadCommitment,
-    randomSeed,
-    profile,
-    timeLimitSeconds,
-    restarts,
-    serviceRefineIterations,
-    serviceRefineCandidateLimit,
-    exhaustiveServiceSearch,
-    serviceExactPoolLimit,
-    serviceExactMaxCombinations,
-    stopFilePath,
-    snapshotFilePath,
-  } = getGreedyOptions(params);
-  const profileCounters = profile ? createGreedyProfileCounters() : undefined;
-  const { maxServices, maxResidentials } = getBuildingLimits(params);
-  const useServiceTypes = (params.serviceTypes?.length ?? 0) > 0;
-  const useTypes = (params.residentialTypes?.length ?? 0) > 0;
-  let best: Solution | null = null;
-  let stopCounter = 0;
-  const startedAtMs = Date.now();
-  const deadlineAtMs = timeLimitSeconds === undefined ? null : startedAtMs + timeLimitSeconds * 1000;
+    profileCounters,
+    maybeStop,
+  } = options;
 
-  const maybeStop = (force = false): void => {
-    if (deadlineAtMs !== null && Date.now() >= deadlineAtMs) {
-      throw new GreedyStopError(best ? { ...best, stoppedByTimeLimit: true } : null, "time-limit");
-    }
-    if (!stopFilePath) return;
-    stopCounter += 1;
-    if (!force && stopCounter % 128 !== 0) return;
-    if (!existsSync(stopFilePath)) return;
-    throw new GreedyStopError(best ? { ...best, stoppedByUser: true } : null, "cancelled");
-  };
-
-  const updateBest = (candidate: Solution | null): void => {
-    if (!candidate) return;
-    if (!best || candidate.totalPopulation > best.totalPopulation) {
-      best = candidate;
-      if (snapshotFilePath) writeSolutionSnapshot(snapshotFilePath, best);
-    }
-  };
-
-  const finalizeProfile = (solution: Solution): Solution => {
-    if (!profileCounters) return solution;
-    return { ...solution, greedyProfile: { counters: structuredClone(profileCounters) } };
-  };
-
-  const finalizeDominanceCandidate = (candidate: Solution | null): Solution | null => {
-    if (!candidate) return null;
-    return applyDeterministicDominanceUpgrades(G, params, candidate);
-  };
-
-  maybeStop(true);
+  maybeStop?.(true);
   const residentialCandidatesLegacy = useTypes ? [] : enumerateResidentialCandidates(G, maybeStop);
-  maybeStop(true);
+  maybeStop?.(true);
   const residentialCandidatesFromTypes = useTypes
     ? enumerateResidentialCandidatesFromTypes(G, params.residentialTypes!, maybeStop)
     : [];
-  maybeStop(true);
+  maybeStop?.(true);
   const anyResidentialCandidates = useTypes ? residentialCandidatesFromTypes : residentialCandidatesLegacy;
   const residentialCandidatesForLocal = useTypes ? residentialCandidatesFromTypes : residentialCandidatesLegacy;
   const serviceCandidates = enumerateServiceCandidates(G, params, maybeStop);
-  maybeStop(true);
+  maybeStop?.(true);
   if (profileCounters) profileCounters.precompute.serviceCandidates += serviceCandidates.length;
   const serviceGeometryCache = buildServiceGeometryCache(G, serviceCandidates, maybeStop);
-  maybeStop(true);
+  maybeStop?.(true);
   const serviceEffectZoneSetsByCandidate = serviceGeometryCache.effectZoneKeysByIndex.map((keys) => new Set(keys));
-  maybeStop(true);
+  maybeStop?.(true);
   const residentialCandidateStats = anyResidentialCandidates.map((residential) => ({
     r: residential.r,
     c: residential.c,
@@ -2029,14 +2040,14 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     typeIndex: getCandidateTypeIndex(residential),
     ...getResidentialBaseMax(params, residential.rows, residential.cols, getCandidateTypeIndex(residential)),
   }));
-  maybeStop(true);
+  maybeStop?.(true);
   if (profileCounters) profileCounters.precompute.residentialCandidates += residentialCandidateStats.length;
   const residentialCandidateGeometryCache = buildFootprintGeometryCache(anyResidentialCandidates, maybeStop);
-  maybeStop(true);
+  maybeStop?.(true);
   const residentialScoringGroups = buildResidentialScoringGroups(residentialCandidateStats, profileCounters, maybeStop);
-  maybeStop(true);
+  maybeStop?.(true);
   const residentialGroupGeometryCache = buildFootprintGeometryCache(residentialScoringGroups, maybeStop);
-  maybeStop(true);
+  maybeStop?.(true);
   if (profileCounters) {
     profileCounters.precompute.geometryCacheEntries += serviceGeometryCache.footprintKeysByIndex.length;
     profileCounters.precompute.geometryCacheEntries += serviceEffectZoneSetsByCandidate.length;
@@ -2049,7 +2060,7 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     profileCounters,
     maybeStop
   );
-  maybeStop(true);
+  maybeStop?.(true);
   const precomputedIndexes: GreedyPrecomputedIndexes = {
     serviceCandidateIndicesByKey: new Map(
       serviceCandidates.map((candidate, candidateIndex) => [serviceCandidateKey(candidate), candidateIndex])
@@ -2064,7 +2075,11 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
       residentialScoringGroups.length
     ),
     serviceCandidateIndicesByType: useServiceTypes
-      ? buildTypedCandidateIndex(serviceCandidates.length, (candidateIndex) => serviceCandidates[candidateIndex].typeIndex, params.serviceTypes!.length)
+      ? buildTypedCandidateIndex(
+          serviceCandidates.length,
+          (candidateIndex) => serviceCandidates[candidateIndex].typeIndex,
+          params.serviceTypes!.length
+        )
       : null,
     residentialCandidatesByOccupiedCell: buildFootprintCandidateIndexFromKeys(
       residentialCandidateGeometryCache.footprintKeysByIndex
@@ -2078,12 +2093,12 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
         )
       : null,
   };
-  maybeStop(true);
+  maybeStop?.(true);
   const initialResidentialAvail = useTypes ? params.residentialTypes!.map((type) => type.avail) : null;
   const initialResidentialGroupBoosts = Array.from({ length: residentialScoringGroups.length }, () => 0);
   const serviceScores = new Map<string, number>();
   for (const s of serviceCandidates) {
-    maybeStop();
+    maybeStop?.();
     serviceScores.set(
       serviceCandidateKey(s),
       computeServiceStaticScore(
@@ -2101,28 +2116,668 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
       (serviceScores.get(serviceCandidateKey(b)) ?? 0) - (serviceScores.get(serviceCandidateKey(a)) ?? 0)
       || serviceCandidateKey(a).localeCompare(serviceCandidateKey(b))
   );
-  const baseSolveContext: Omit<GreedySolveContext, "serviceOrder"> = {
-    grid: G,
-    params,
-    residentialScoringGroups,
-    serviceCoverageGroupsByKey,
-    anyResidentialCandidates,
-    residentialCandidatesForLocal,
-    precomputedIndexes,
-    maxResidentials,
-    useServiceTypes,
-    useTypes,
-    localSearch,
-    serviceLookaheadCandidates,
+  return {
+    serviceCandidates,
+    serviceOrderSorted,
+    baseSolveContext: {
+      grid: G,
+      params,
+      residentialScoringGroups,
+      serviceCoverageGroupsByKey,
+      anyResidentialCandidates,
+      residentialCandidatesForLocal,
+      precomputedIndexes,
+      maxResidentials,
+      useServiceTypes,
+      useTypes,
+      localSearch,
+      serviceLookaheadCandidates,
+      profileCounters,
+      maybeStop,
+    },
+  };
+}
+
+function createGreedySolveAttempt(
+  G: Grid,
+  params: SolverParams,
+  baseSolveContext: Omit<GreedySolveContext, "serviceOrder">,
+  profileCounters: GreedyProfileCounters | undefined
+): GreedySolveAttempt {
+  return (serviceOrder, options) => {
+    const candidate = solveOne({ ...baseSolveContext, serviceOrder }, { ...options, profileCounters });
+    return candidate ? applyDeterministicDominanceUpgrades(G, params, candidate) : null;
+  };
+}
+
+function compareCapResults(a: CapResult, b: CapResult): number {
+  return b.totalPopulation - a.totalPopulation
+    || a.serviceCount - b.serviceCount
+    || a.cap - b.cap;
+}
+
+function summarizeCapResult(cap: number, phase: CapSearchPhase, solution: Solution | null): CapResult {
+  return {
+    cap,
+    phase,
+    solution,
+    totalPopulation: solution?.totalPopulation ?? -1,
+    serviceCount: solution?.services.length ?? Number.POSITIVE_INFINITY,
+  };
+}
+
+function buildGreedyServiceCapPolicy(params: SolverParams, maxServices: number | undefined): GreedyServiceCapPolicy {
+  // Explicit service caps are maxima, so lower counts remain eligible when extra services block housing.
+  const explicitServiceCap = maxServices;
+  const positiveBonuses = (params.serviceTypes ?? []).reduce(
+    (sum, type) => sum + (type.bonus > 0 ? Math.max(0, type.avail) : 0),
+    0
+  );
+  const totalServiceAvail = (params.serviceTypes ?? []).reduce((sum, type) => sum + Math.max(0, type.avail), 0);
+  const serviceAvailabilityUpper = positiveBonuses > 0 ? Math.min(totalServiceAvail, positiveBonuses) : totalServiceAvail;
+  const inferredUpper = explicitServiceCap !== undefined
+    ? Math.min(explicitServiceCap, serviceAvailabilityUpper)
+    : serviceAvailabilityUpper;
+  const capPlan = explicitServiceCap !== undefined
+    ? {
+        coarseCaps: Array.from({ length: inferredUpper + 1 }, (_, cap) => cap),
+        refineCaps: [],
+        usesAdaptiveSearch: false,
+      }
+    : buildAdaptiveServiceCapPlan(inferredUpper);
+  return {
+    explicitServiceCap,
+    inferredUpper,
+    capPlan,
+  };
+}
+
+function runGreedyServiceCapSearch(options: {
+  policy: GreedyServiceCapPolicy;
+  restarts: number;
+  profileCounters?: GreedyProfileCounters;
+  evaluateNewCap: GreedyCapEvaluator;
+  refineExistingCap: GreedyExistingCapRefiner;
+}): void {
+  const {
+    policy,
+    restarts,
+    profileCounters,
+    evaluateNewCap,
+    refineExistingCap,
+  } = options;
+  const { explicitServiceCap, inferredUpper, capPlan } = policy;
+  const capResultsByCap = new Map<number, CapResult>();
+  const evaluatedCaps = new Set<number>();
+
+  if (explicitServiceCap !== undefined || !capPlan.usesAdaptiveSearch) {
+    for (const cap of capPlan.coarseCaps) {
+      const solution = evaluateNewCap(cap, "full", restarts, true);
+      evaluatedCaps.add(cap);
+      capResultsByCap.set(cap, summarizeCapResult(cap, "full", solution));
+    }
+    return;
+  }
+
+  for (const cap of capPlan.coarseCaps) {
+    const solution = evaluateNewCap(cap, "coarse", 1, false);
+    evaluatedCaps.add(cap);
+    capResultsByCap.set(cap, summarizeCapResult(cap, "coarse", solution));
+  }
+
+  const coarseResults = [...capResultsByCap.values()]
+    .filter((entry) => entry.phase === "coarse")
+    .sort(compareCapResults);
+  const focusCaps = new Set(coarseResults.slice(0, 2).map((entry) => entry.cap));
+  const refineCaps = dedupeSortedNumbers(
+    [...focusCaps].flatMap((cap) => inclusiveCapBand(cap, inferredUpper, 2))
+  );
+  const refineCapSet = new Set(refineCaps);
+
+  for (const cap of refineCaps) {
+    if (evaluatedCaps.has(cap)) {
+      if (profileCounters) profileCounters.attempts.refineCaps++;
+      const current = capResultsByCap.get(cap)?.solution ?? null;
+      capResultsByCap.set(cap, summarizeCapResult(cap, "refine", current));
+      continue;
+    }
+    const solution = evaluateNewCap(cap, "refine", 1, false);
+    evaluatedCaps.add(cap);
+    capResultsByCap.set(cap, summarizeCapResult(cap, "refine", solution));
+  }
+
+  const restartFocusCaps = dedupeSortedNumbers([
+    ...[...capResultsByCap.values()]
+      .filter((entry) => refineCapSet.has(entry.cap))
+      .sort(compareCapResults)
+      .slice(0, 2)
+      .map((entry) => entry.cap),
+    ...[...focusCaps].flatMap((cap) =>
+      inclusiveCapBand(cap, inferredUpper, 1).filter((neighbor) => neighbor > 0)
+    ),
+  ]);
+
+  for (const cap of restartFocusCaps) {
+    const current = capResultsByCap.get(cap)?.solution ?? null;
+    const refined = refineExistingCap(cap, "refine", current, restarts, true);
+    capResultsByCap.set(cap, summarizeCapResult(cap, "refine", refined));
+  }
+
+  if (profileCounters) {
+    profileCounters.attempts.capsSkipped += Math.max(0, inferredUpper + 1 - evaluatedCaps.size);
+  }
+}
+
+function runGreedyServiceRefinement(options: {
+  initialBest: Solution;
+  serviceRefineIterations: number;
+  serviceRefineCandidateLimit: number;
+  serviceOrderSorted: ServiceCandidate[];
+  evaluateForcedServiceSet: GreedyForcedServiceEvaluator;
+  updateBest: GreedyBestUpdater;
+  maybeStop: MaybeStop;
+}): Solution {
+  const {
+    initialBest,
+    serviceRefineIterations,
+    serviceRefineCandidateLimit,
+    serviceOrderSorted,
+    evaluateForcedServiceSet,
+    updateBest,
+    maybeStop,
+  } = options;
+  let best = initialBest;
+  const refineLimit = Math.min(serviceRefineCandidateLimit, serviceOrderSorted.length);
+  const refinePool = serviceOrderSorted.slice(0, refineLimit);
+  for (let iter = 0; iter < serviceRefineIterations; iter++) {
+    maybeStop?.();
+    let improved = false;
+    for (let i = 0; i < best.services.length; i++) {
+      maybeStop?.();
+      let localBest: Solution = best;
+      for (const cand of refinePool) {
+        maybeStop?.();
+        const currentChoice = materializeChosenServiceCandidate(best, i);
+        if (serviceCandidateKey(cand) === serviceCandidateKey(currentChoice)) continue;
+        if (best.services.some((s, idx) => idx !== i && sameServicePlacement(s, cand))) continue;
+        const forced = best.services.map((_, idx) => materializeChosenServiceCandidate(best, idx));
+        forced[i] = cand;
+        const trial = evaluateForcedServiceSet(
+          forced,
+          best.services.length,
+          SERVICE_REFINE_FIXED_SERVICE_EVALUATION
+        );
+        if (trial && trial.totalPopulation > localBest.totalPopulation) {
+          localBest = trial;
+        }
+      }
+      if (localBest.totalPopulation > best.totalPopulation) {
+        best = localBest;
+        updateBest(best);
+        improved = true;
+      }
+    }
+    if (!improved) break;
+  }
+  return best;
+}
+
+function runGreedyExhaustiveServiceSearch(options: {
+  initialBest: Solution;
+  enabled: boolean;
+  serviceExactPoolLimit: number;
+  serviceExactMaxCombinations: number;
+  serviceOrderSorted: ServiceCandidate[];
+  evaluateForcedServiceSet: GreedyForcedServiceEvaluator;
+  updateBest: GreedyBestUpdater;
+  profileCounters?: GreedyProfileCounters;
+  maybeStop: MaybeStop;
+}): Solution {
+  const {
+    initialBest,
+    enabled,
+    serviceExactPoolLimit,
+    serviceExactMaxCombinations,
+    serviceOrderSorted,
+    evaluateForcedServiceSet,
+    updateBest,
     profileCounters,
     maybeStop,
+  } = options;
+  let best = initialBest;
+  if (!enabled) return best;
+
+  const poolLimit = Math.max(0, Math.min(serviceExactPoolLimit, serviceOrderSorted.length));
+  const comboCap = Math.max(1, serviceExactMaxCombinations);
+  const pool = serviceOrderSorted.slice(0, poolLimit);
+  const combos = combinationsOfK(pool.length, best.services.length, comboCap);
+  for (const idxs of combos) {
+    maybeStop?.();
+    if (profileCounters) profileCounters.attempts.exhaustiveTrials++;
+    const forced = idxs.map((i) => pool[i]);
+    const trial = evaluateForcedServiceSet(
+      forced,
+      best.services.length,
+      EXHAUSTIVE_FIXED_SERVICE_EVALUATION
+    );
+    if (trial && trial.totalPopulation > best.totalPopulation) {
+      best = trial;
+      updateBest(best);
+    }
+  }
+  return best;
+}
+
+function runGreedyServiceNeighborhoodSearch(options: {
+  initialBest: Solution;
+  G: Grid;
+  params: SolverParams;
+  localSearch: boolean;
+  localSearchServiceMoves: boolean;
+  localSearchServiceCandidateLimit: number;
+  inferredUpper: number;
+  useTypes: boolean;
+  serviceOrderSorted: ServiceCandidate[];
+  residentialScoringGroups: ResidentialScoringGroup[];
+  serviceCoverageGroupsByKey: Map<string, number[]>;
+  precomputedIndexes: GreedyPrecomputedIndexes;
+  solveWithOrder: GreedySolveAttempt;
+  updateBest: GreedyBestUpdater;
+  profileCounters?: GreedyProfileCounters;
+  maybeStop: MaybeStop;
+}): Solution {
+  const {
+    initialBest,
+    G,
+    params,
+    localSearch,
+    localSearchServiceMoves,
+    localSearchServiceCandidateLimit,
+    inferredUpper,
+    useTypes,
+    serviceOrderSorted,
+    residentialScoringGroups,
+    serviceCoverageGroupsByKey,
+    precomputedIndexes,
+    solveWithOrder,
+    updateBest,
+    profileCounters,
+    maybeStop,
+  } = options;
+  if (!localSearch || !localSearchServiceMoves) return initialBest;
+  if (serviceOrderSorted.length === 0) return initialBest;
+
+  const materializeCurrentServiceSet = (solution: Solution): ServiceCandidate[] =>
+    solution.services.map((_, index) => materializeChosenServiceCandidate(solution, index));
+
+  const currentRoadSeedFromSolution = (solution: Solution): Set<string> | undefined => {
+    const seed = new Set<string>();
+    for (const key of solution.roads) {
+      if (key.startsWith("0,")) seed.add(key);
+    }
+    return seed.size > 0 ? seed : undefined;
   };
-  const solveWithOrder = (
-    serviceOrder: ServiceCandidate[],
-    options: SolveOneOptions
-  ): Solution | null => finalizeDominanceCandidate(
-    solveOne({ ...baseSolveContext, serviceOrder }, { ...options, profileCounters })
-  );
+
+  const realizeAcceptedServiceNeighborhoodMove = (
+    incumbent: Solution,
+    candidateServices: ServiceCandidate[]
+  ): Solution | null => {
+    return solveWithOrder(serviceOrderSorted, {
+      maxServices: candidateServices.length,
+      fixedServices: candidateServices,
+      initialRoadSeed: currentRoadSeedFromSolution(incumbent),
+    });
+  };
+
+  const relocationProbe = { kind: "explicit", roadCost: 0, roadProbe: { path: null } } as const;
+  const serviceNeighborhoodRoadProbeScratch = createRoadProbeScratch(G);
+
+  const compareServiceRelocationMoves = (
+    left: ServiceRelocationMove,
+    right: ServiceRelocationMove
+  ): number =>
+    right.estimatedTotalPopulation - left.estimatedTotalPopulation
+    || left.forcedServices.length - right.forcedServices.length
+    || right.estimatedFutureScore - left.estimatedFutureScore
+    || left.estimatedRoadCost - right.estimatedRoadCost
+    || (left.kind === right.kind ? 0 : (
+      left.kind === "remove" ? -1 : right.kind === "remove" ? 1 : left.kind === "add" ? -1 : 1
+    ))
+    || left.serviceIndex - right.serviceIndex
+    || compareServiceTieBreaks(left.candidate, relocationProbe, right.candidate, relocationProbe)
+    || left.orderedServiceKey.localeCompare(right.orderedServiceKey);
+
+  const scoreDirectServiceRelocationMove = (
+    incumbent: Solution,
+    forcedServices: ServiceCandidate[]
+  ): {
+    estimatedTotalPopulation: number;
+    orderedServiceKey: string;
+  } | null => {
+    const serviceTypeUsage = new Array((params.serviceTypes ?? []).length).fill(0);
+    const occupiedBuildings = new Set<string>();
+    const effectZones: Set<string>[] = [];
+    const serviceBonuses: number[] = [];
+
+    for (const residential of incumbent.residentials) {
+      addPlacementCellsToSet(occupiedBuildings, residential);
+    }
+
+    for (const service of forcedServices) {
+      const placement = materializeServicePlacement(service);
+      const cachedFootprintKeys = getCachedServiceFootprintKeys(precomputedIndexes, service);
+      if (
+        cachedFootprintKeys
+          ? overlapsCachedFootprint(occupiedBuildings, cachedFootprintKeys)
+          : overlaps(occupiedBuildings, placement.r, placement.c, placement.rows, placement.cols)
+      ) {
+        return null;
+      }
+      if (cachedFootprintKeys) {
+        addCachedPlacementCellsToSet(occupiedBuildings, cachedFootprintKeys);
+      } else {
+        addPlacementCellsToSet(occupiedBuildings, placement);
+      }
+      effectZones.push(getCachedServiceEffectZoneSet(G, precomputedIndexes, service));
+      serviceBonuses.push(service.bonus);
+      if (service.typeIndex >= 0 && service.typeIndex < serviceTypeUsage.length) {
+        serviceTypeUsage[service.typeIndex] += 1;
+      }
+    }
+
+    const serviceTypes = params.serviceTypes ?? [];
+    for (let typeIndex = 0; typeIndex < serviceTypeUsage.length; typeIndex++) {
+      if (serviceTypeUsage[typeIndex] > (serviceTypes[typeIndex]?.avail ?? 0)) return null;
+    }
+
+    let estimatedTotalPopulation = 0;
+    for (let residentialIndex = 0; residentialIndex < incumbent.residentials.length; residentialIndex++) {
+      estimatedTotalPopulation += computeResidentialPopulation(
+        params,
+        incumbent.residentials[residentialIndex],
+        effectZones,
+        serviceBonuses,
+        incumbent.residentialTypeIndices[residentialIndex] ?? NO_TYPE_INDEX
+      );
+    }
+
+    return {
+      estimatedTotalPopulation,
+      orderedServiceKey: forcedServices.map((service) => stableServicePlacementKey(service)).join("|"),
+    };
+  };
+
+  let incumbent = initialBest;
+  for (let iteration = 0; iteration < LOCAL_SEARCH_SERVICE_NEIGHBORHOOD.maxIterations; iteration++) {
+    maybeStop?.();
+    const incumbentServices = materializeCurrentServiceSet(incumbent);
+    const canAddService = incumbentServices.length < inferredUpper;
+    if (incumbentServices.length === 0 && !canAddService) break;
+    const perTypeNeighborhoodLimit = Math.min(
+      serviceOrderSorted.length,
+      Math.max(
+        LOCAL_SEARCH_SERVICE_NEIGHBORHOOD.candidateLimit,
+        localSearchServiceCandidateLimit,
+        incumbentServices.length + 1
+      )
+    );
+    const maxSwapTrialsThisIteration = Math.min(
+      incumbentServices.length * perTypeNeighborhoodLimit,
+      Math.max(
+        LOCAL_SEARCH_SERVICE_NEIGHBORHOOD.maxSwapTrialsPerIteration,
+        incumbentServices.length * Math.max(2, perTypeNeighborhoodLimit)
+      )
+    );
+    const incumbentOccupiedBuildings = new Set<string>();
+    for (const residential of incumbent.residentials) {
+      addPlacementCellsToSet(incumbentOccupiedBuildings, residential);
+    }
+    for (const service of incumbent.services) {
+      addPlacementCellsToSet(incumbentOccupiedBuildings, service);
+    }
+    const occupancyScratch = createOccupancyScratch(incumbentOccupiedBuildings);
+    const incumbentServiceKeys = new Set(incumbentServices.map((candidate) => serviceCandidateKey(candidate)));
+    const incumbentServiceTypeUsage = new Array((params.serviceTypes ?? []).length).fill(0);
+    for (const service of incumbentServices) {
+      if (service.typeIndex >= 0 && service.typeIndex < incumbentServiceTypeUsage.length) {
+        incumbentServiceTypeUsage[service.typeIndex] += 1;
+      }
+    }
+    const remainingAvailForIncumbent = useTypes && params.residentialTypes
+      ? params.residentialTypes.map((type) => type.avail)
+      : null;
+    if (remainingAvailForIncumbent) {
+      for (const typeIndex of incumbent.residentialTypeIndices) {
+        if (typeIndex >= 0 && typeIndex < remainingAvailForIncumbent.length) {
+          remainingAvailForIncumbent[typeIndex] = Math.max(0, remainingAvailForIncumbent[typeIndex] - 1);
+        }
+      }
+    }
+    const currentResidentialGroupBoosts = Array.from({ length: residentialScoringGroups.length }, () => 0);
+    for (const service of incumbentServices) {
+      const coveredGroupIndices = serviceCoverageGroupsByKey.get(serviceCandidateKey(service)) ?? [];
+      for (const groupIndex of coveredGroupIndices) {
+        currentResidentialGroupBoosts[groupIndex] += service.bonus;
+      }
+    }
+    let iterationBest = incumbent;
+    let swapTrials = 0;
+    const candidateMoves: ServiceRelocationMove[] = [];
+    const removalMoves: ServiceRelocationMove[] = [];
+
+    for (let serviceIndex = 0; serviceIndex < incumbentServices.length; serviceIndex++) {
+      maybeStop?.();
+      if (profileCounters) profileCounters.localSearch.serviceRemoveChecks++;
+      const removedService = incumbentServices[serviceIndex];
+      const forcedServices = incumbentServices.filter((_, index) => index !== serviceIndex);
+      const scoredMove = scoreDirectServiceRelocationMove(incumbent, forcedServices);
+      if (!scoredMove) continue;
+      removalMoves.push({
+        kind: "remove",
+        serviceIndex,
+        candidate: removedService,
+        forcedServices,
+        estimatedTotalPopulation: scoredMove.estimatedTotalPopulation,
+        estimatedFutureScore: 0,
+        estimatedRoadCost: 0,
+        orderedServiceKey: scoredMove.orderedServiceKey,
+      });
+    }
+    removalMoves.sort(compareServiceRelocationMoves);
+    candidateMoves.push(
+      ...removalMoves.slice(0, LOCAL_SEARCH_SERVICE_NEIGHBORHOOD.maxRemoveTrialsPerIteration)
+    );
+
+    if (canAddService) {
+      let addTrials = 0;
+      for (const candidate of serviceOrderSorted) {
+        maybeStop?.();
+        if (addTrials >= LOCAL_SEARCH_SERVICE_NEIGHBORHOOD.maxAddTrialsPerIteration) break;
+        if (incumbentServiceKeys.has(serviceCandidateKey(candidate))) continue;
+        if (
+          candidate.typeIndex >= 0
+          && candidate.typeIndex < incumbentServiceTypeUsage.length
+          && (incumbentServiceTypeUsage[candidate.typeIndex] ?? 0) >= (params.serviceTypes?.[candidate.typeIndex]?.avail ?? 0)
+        ) {
+          continue;
+        }
+        const candidateFootprintKeys = getCachedServiceFootprintKeys(precomputedIndexes, candidate);
+        if (
+          candidateFootprintKeys
+            ? overlapsCachedFootprint(incumbentOccupiedBuildings, candidateFootprintKeys)
+            : overlaps(incumbentOccupiedBuildings, candidate.r, candidate.c, candidate.rows, candidate.cols)
+        ) {
+          continue;
+        }
+        if (profileCounters) profileCounters.localSearch.serviceAddChecks++;
+        if (profileCounters) profileCounters.localSearch.canConnectChecks++;
+        addTrials++;
+        const probe = probeExplicitRoadConnection(
+          G,
+          incumbent.roads,
+          incumbentOccupiedBuildings,
+          candidate,
+          serviceNeighborhoodRoadProbeScratch,
+          profileCounters
+        );
+        if (!probe) continue;
+        const forcedServices = [...incumbentServices, candidate];
+        const scoredMove = scoreDirectServiceRelocationMove(incumbent, forcedServices);
+        if (!scoredMove) continue;
+        const estimatedFutureScore = computeServiceMarginalScore(
+          candidate,
+          incumbentOccupiedBuildings,
+          currentResidentialGroupBoosts,
+          residentialScoringGroups,
+          serviceCoverageGroupsByKey,
+          remainingAvailForIncumbent
+        );
+        candidateMoves.push({
+          kind: "add",
+          serviceIndex: incumbentServices.length,
+          candidate,
+          forcedServices,
+          estimatedTotalPopulation: scoredMove.estimatedTotalPopulation,
+          estimatedFutureScore,
+          estimatedRoadCost: probe.path?.length ?? 0,
+          orderedServiceKey: scoredMove.orderedServiceKey,
+        });
+      }
+    }
+
+    for (let serviceIndex = 0; serviceIndex < incumbentServices.length; serviceIndex++) {
+      maybeStop?.();
+      const currentChoice = incumbentServices[serviceIndex];
+      const candidatePasses = [
+        serviceOrderSorted.filter((candidate) => candidate.typeIndex === currentChoice.typeIndex)
+          .slice(0, perTypeNeighborhoodLimit),
+        serviceOrderSorted.filter((candidate) => candidate.typeIndex !== currentChoice.typeIndex)
+          .slice(0, Math.min(localSearchServiceCandidateLimit, serviceOrderSorted.length)),
+      ];
+      resetOccupancyScratch(occupancyScratch);
+      const currentChoiceFootprintKeys = getCachedServiceFootprintKeys(precomputedIndexes, currentChoice);
+      deleteKeysFromOccupancyScratch(
+        occupancyScratch,
+        currentChoiceFootprintKeys ?? serviceFootprint(currentChoice)
+      );
+      const occupiedWithoutCurrent = occupancyScratch.cells;
+      if (profileCounters) profileCounters.localSearch.occupancyScratchReuses++;
+      const currentResidentialGroupBoostsWithoutCurrent = [...currentResidentialGroupBoosts];
+      for (const groupIndex of serviceCoverageGroupsByKey.get(serviceCandidateKey(currentChoice)) ?? []) {
+        currentResidentialGroupBoostsWithoutCurrent[groupIndex] -= currentChoice.bonus;
+      }
+
+      for (const candidatePool of candidatePasses) {
+        for (const candidate of candidatePool) {
+          maybeStop?.();
+          if (swapTrials >= maxSwapTrialsThisIteration) break;
+          if (serviceCandidateKey(candidate) === serviceCandidateKey(currentChoice)) continue;
+          if (incumbentServiceKeys.has(serviceCandidateKey(candidate))) continue;
+          const candidateFootprintKeys = getCachedServiceFootprintKeys(precomputedIndexes, candidate);
+          if (
+            candidateFootprintKeys
+              ? overlapsCachedFootprint(occupiedWithoutCurrent, candidateFootprintKeys)
+              : overlaps(occupiedWithoutCurrent, candidate.r, candidate.c, candidate.rows, candidate.cols)
+          ) {
+            continue;
+          }
+          if (profileCounters) profileCounters.localSearch.serviceSwapChecks++;
+          if (profileCounters) profileCounters.localSearch.canConnectChecks++;
+          swapTrials++;
+          const probe = probeExplicitRoadConnection(
+            G,
+            incumbent.roads,
+            occupiedWithoutCurrent,
+            candidate,
+            serviceNeighborhoodRoadProbeScratch,
+            profileCounters
+          );
+          if (!probe) continue;
+          const forcedServices = [...incumbentServices];
+          forcedServices[serviceIndex] = candidate;
+          const scoredMove = scoreDirectServiceRelocationMove(incumbent, forcedServices);
+          if (!scoredMove) continue;
+          const estimatedFutureScore = computeServiceMarginalScore(
+            candidate,
+            occupiedWithoutCurrent,
+            currentResidentialGroupBoostsWithoutCurrent,
+            residentialScoringGroups,
+            serviceCoverageGroupsByKey,
+            remainingAvailForIncumbent
+          );
+          candidateMoves.push({
+            kind: "swap",
+            serviceIndex,
+            candidate,
+            forcedServices,
+            estimatedTotalPopulation: scoredMove.estimatedTotalPopulation,
+            estimatedFutureScore,
+            estimatedRoadCost: probe.path?.length ?? 0,
+            orderedServiceKey: scoredMove.orderedServiceKey,
+          });
+        }
+        if (swapTrials >= maxSwapTrialsThisIteration) break;
+      }
+
+      if (swapTrials >= maxSwapTrialsThisIteration) break;
+    }
+
+    candidateMoves.sort(compareServiceRelocationMoves);
+    const baseRealizationBudget = Math.min(
+      candidateMoves.length,
+      Math.max(
+        LOCAL_SEARCH_SERVICE_NEIGHBORHOOD.maxRealizationAttemptsPerIteration,
+        localSearchServiceCandidateLimit
+      )
+    );
+    const realizationMoves = candidateMoves.slice(0, baseRealizationBudget);
+    const selectedMoveKeys = new Set(
+      realizationMoves.map((move) => `${move.kind}:${move.serviceIndex}:${move.orderedServiceKey}`)
+    );
+    const guaranteedRealizationBudget = baseRealizationBudget
+      + LOCAL_SEARCH_SERVICE_NEIGHBORHOOD.maxRemoveTrialsPerIteration
+      + LOCAL_SEARCH_SERVICE_NEIGHBORHOOD.maxAddTrialsPerIteration;
+    for (const move of candidateMoves) {
+      if (move.kind === "swap") continue;
+      if (realizationMoves.length >= guaranteedRealizationBudget) break;
+      const key = `${move.kind}:${move.serviceIndex}:${move.orderedServiceKey}`;
+      if (selectedMoveKeys.has(key)) continue;
+      selectedMoveKeys.add(key);
+      realizationMoves.push(move);
+    }
+    for (const move of realizationMoves) {
+      maybeStop?.();
+      const trial = realizeAcceptedServiceNeighborhoodMove(incumbent, move.forcedServices);
+      if (isBetterSearchSolution(trial, iterationBest)) {
+        iterationBest = trial as Solution;
+      }
+    }
+
+    if (!isBetterSearchSolution(iterationBest, incumbent)) break;
+    incumbent = iterationBest;
+    updateBest(incumbent);
+    if (profileCounters) profileCounters.localSearch.serviceNeighborhoodImprovements++;
+  }
+
+  return incumbent;
+}
+
+function createGreedyForcedServiceEvaluator(options: {
+  G: Grid;
+  serviceOrderSorted: ServiceCandidate[];
+  solveWithOrder: GreedySolveAttempt;
+  updateBest: GreedyBestUpdater;
+  profileCounters?: GreedyProfileCounters;
+  maybeStop: MaybeStop;
+}): GreedyForcedServiceEvaluator {
+  const {
+    G,
+    serviceOrderSorted,
+    solveWithOrder,
+    updateBest,
+    profileCounters,
+    maybeStop,
+  } = options;
   const serviceOrderRankByKey = new Map(
     serviceOrderSorted.map((candidate, index) => [serviceCandidateKey(candidate), index])
   );
@@ -2214,23 +2869,13 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     return seeds;
   };
 
-  type FixedServiceEvaluationBudget = {
-    maxOrders: number;
-    maxSeededOrders: number;
-    maxSeeds: number;
-  };
-
-  const evaluateForcedServiceSet = (
-    forcedServices: ServiceCandidate[],
-    maxForcedServices: number,
-    budget: FixedServiceEvaluationBudget
-  ): Solution | null => {
+  return (forcedServices, maxForcedServices, budget) => {
     const orders = buildForcedServiceOrders(forcedServices, budget.maxOrders);
     const baseResults: { order: ServiceCandidate[]; solution: Solution | null }[] = [];
     let bestForced: Solution | null = null;
 
     for (const order of orders) {
-      maybeStop();
+      maybeStop?.();
       if (profileCounters) profileCounters.attempts.fixedServiceRealizationTrials++;
       const trial = solveWithOrder(serviceOrderSorted, {
         maxServices: maxForcedServices,
@@ -2262,7 +2907,7 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     for (const { order } of successfulBaseResults.slice(0, budget.maxSeededOrders)) {
       for (const seed of seeds) {
         if (!seed) continue;
-        maybeStop();
+        maybeStop?.();
         if (profileCounters) profileCounters.attempts.fixedServiceRealizationTrials++;
         const trial = solveWithOrder(serviceOrderSorted, {
           maxServices: maxForcedServices,
@@ -2278,18 +2923,83 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
 
     return bestForced;
   };
+}
 
-  const compareCapResults = (a: CapResult, b: CapResult): number =>
-    b.totalPopulation - a.totalPopulation
-    || a.serviceCount - b.serviceCount
-    || a.cap - b.cap;
+export function solveGreedy(G: Grid, params: SolverParams): Solution {
+  const {
+    localSearch,
+    localSearchServiceMoves,
+    localSearchServiceCandidateLimit,
+    serviceLookaheadCandidates,
+    deferRoadCommitment,
+    randomSeed,
+    profile,
+    timeLimitSeconds,
+    restarts,
+    serviceRefineIterations,
+    serviceRefineCandidateLimit,
+    exhaustiveServiceSearch,
+    serviceExactPoolLimit,
+    serviceExactMaxCombinations,
+    stopFilePath,
+    snapshotFilePath,
+  } = getGreedyOptions(params);
+  const profileCounters = profile ? createGreedyProfileCounters() : undefined;
+  const { maxServices, maxResidentials } = getBuildingLimits(params);
+  const useServiceTypes = (params.serviceTypes?.length ?? 0) > 0;
+  const useTypes = (params.residentialTypes?.length ?? 0) > 0;
+  let best: Solution | null = null;
+  let stopCounter = 0;
+  const startedAtMs = Date.now();
+  const deadlineAtMs = timeLimitSeconds === undefined ? null : startedAtMs + timeLimitSeconds * 1000;
 
-  const summarizeCapResult = (cap: number, phase: CapSearchPhase, solution: Solution | null): CapResult => ({
-    cap,
-    phase,
-    solution,
-    totalPopulation: solution?.totalPopulation ?? -1,
-    serviceCount: solution?.services.length ?? Number.POSITIVE_INFINITY,
+  const maybeStop = (force = false): void => {
+    if (deadlineAtMs !== null && Date.now() >= deadlineAtMs) {
+      throw new GreedyStopError(best ? { ...best, stoppedByTimeLimit: true } : null, "time-limit");
+    }
+    if (!stopFilePath) return;
+    stopCounter += 1;
+    if (!force && stopCounter % 128 !== 0) return;
+    if (!existsSync(stopFilePath)) return;
+    throw new GreedyStopError(best ? { ...best, stoppedByUser: true } : null, "cancelled");
+  };
+
+  const updateBest = (candidate: Solution | null): void => {
+    if (!candidate) return;
+    if (!best || candidate.totalPopulation > best.totalPopulation) {
+      best = candidate;
+      if (snapshotFilePath) writeSolutionSnapshot(snapshotFilePath, best);
+    }
+  };
+
+  const finalizeProfile = (solution: Solution): Solution => {
+    if (!profileCounters) return solution;
+    return { ...solution, greedyProfile: { counters: structuredClone(profileCounters) } };
+  };
+
+  const preparedInputs = prepareGreedyInputs(G, params, {
+    maxResidentials,
+    useServiceTypes,
+    useTypes,
+    localSearch,
+    serviceLookaheadCandidates,
+    profileCounters,
+    maybeStop,
+  });
+  const { serviceOrderSorted, baseSolveContext } = preparedInputs;
+  const {
+    residentialScoringGroups,
+    serviceCoverageGroupsByKey,
+    precomputedIndexes,
+  } = baseSolveContext;
+  const solveWithOrder = createGreedySolveAttempt(G, params, baseSolveContext, profileCounters);
+  const evaluateForcedServiceSet = createGreedyForcedServiceEvaluator({
+    G,
+    serviceOrderSorted,
+    solveWithOrder,
+    updateBest,
+    profileCounters,
+    maybeStop,
   });
 
   const runCapRestarts = (
@@ -2377,515 +3087,59 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     return refined;
   };
 
-  // Sweep service count and keep the best legal layout. Explicit service caps
-  // are maxima, so lower counts remain eligible when extra services block housing.
-  const explicitServiceCap = maxServices;
-  const positiveBonuses = (params.serviceTypes ?? []).reduce(
-    (sum, type) => sum + (type.bonus > 0 ? Math.max(0, type.avail) : 0),
-    0
-  );
-  const totalServiceAvail = (params.serviceTypes ?? []).reduce((sum, type) => sum + Math.max(0, type.avail), 0);
-  const serviceAvailabilityUpper = positiveBonuses > 0 ? Math.min(totalServiceAvail, positiveBonuses) : totalServiceAvail;
-  const inferredUpper = explicitServiceCap !== undefined
-    ? Math.min(explicitServiceCap, serviceAvailabilityUpper)
-    : serviceAvailabilityUpper;
-  const capPlan = explicitServiceCap !== undefined
-    ? {
-        coarseCaps: Array.from({ length: inferredUpper + 1 }, (_, cap) => cap),
-        refineCaps: [],
-        usesAdaptiveSearch: false,
-      }
-    : buildAdaptiveServiceCapPlan(inferredUpper);
-
-  const materializeCurrentServiceSet = (solution: Solution): ServiceCandidate[] =>
-    solution.services.map((_, index) => materializeChosenServiceCandidate(solution, index));
-
-  const currentRoadSeedFromSolution = (solution: Solution): Set<string> | undefined => {
-    const seed = new Set<string>();
-    for (const key of solution.roads) {
-      if (key.startsWith("0,")) seed.add(key);
-    }
-    return seed.size > 0 ? seed : undefined;
-  };
-
-  const realizeAcceptedServiceNeighborhoodMove = (
-    incumbent: Solution,
-    candidateServices: ServiceCandidate[]
-  ): Solution | null => {
-    return solveWithOrder(serviceOrderSorted, {
-      maxServices: candidateServices.length,
-      fixedServices: candidateServices,
-      initialRoadSeed: currentRoadSeedFromSolution(incumbent),
-    });
-  };
-
-  const relocationProbe = { kind: "explicit", roadCost: 0, roadProbe: { path: null } } as const;
-  const serviceNeighborhoodRoadProbeScratch = createRoadProbeScratch(G);
-
-  type ServiceRelocationMove = {
-    kind: "remove" | "add" | "swap";
-    serviceIndex: number;
-    candidate: ServiceCandidate;
-    forcedServices: ServiceCandidate[];
-    estimatedTotalPopulation: number;
-    estimatedFutureScore: number;
-    estimatedRoadCost: number;
-    orderedServiceKey: string;
-  };
-
-  const compareServiceRelocationMoves = (
-    left: ServiceRelocationMove,
-    right: ServiceRelocationMove
-  ): number =>
-    right.estimatedTotalPopulation - left.estimatedTotalPopulation
-    || left.forcedServices.length - right.forcedServices.length
-    || right.estimatedFutureScore - left.estimatedFutureScore
-    || left.estimatedRoadCost - right.estimatedRoadCost
-    || (left.kind === right.kind ? 0 : (
-      left.kind === "remove" ? -1 : right.kind === "remove" ? 1 : left.kind === "add" ? -1 : 1
-    ))
-    || left.serviceIndex - right.serviceIndex
-    || compareServiceTieBreaks(left.candidate, relocationProbe, right.candidate, relocationProbe)
-    || left.orderedServiceKey.localeCompare(right.orderedServiceKey);
-
-  const scoreDirectServiceRelocationMove = (
-    incumbent: Solution,
-    forcedServices: ServiceCandidate[]
-  ): {
-    estimatedTotalPopulation: number;
-    orderedServiceKey: string;
-  } | null => {
-    const serviceTypeUsage = new Array((params.serviceTypes ?? []).length).fill(0);
-    const occupiedBuildings = new Set<string>();
-    const effectZones: Set<string>[] = [];
-    const serviceBonuses: number[] = [];
-
-    for (const residential of incumbent.residentials) {
-      addPlacementCellsToSet(occupiedBuildings, residential);
-    }
-
-    for (const service of forcedServices) {
-      const placement = materializeServicePlacement(service);
-      const cachedFootprintKeys = getCachedServiceFootprintKeys(precomputedIndexes, service);
-      if (
-        cachedFootprintKeys
-          ? overlapsCachedFootprint(occupiedBuildings, cachedFootprintKeys)
-          : overlaps(occupiedBuildings, placement.r, placement.c, placement.rows, placement.cols)
-      ) {
-        return null;
-      }
-      if (cachedFootprintKeys) {
-        addCachedPlacementCellsToSet(occupiedBuildings, cachedFootprintKeys);
-      } else {
-        addPlacementCellsToSet(occupiedBuildings, placement);
-      }
-      effectZones.push(getCachedServiceEffectZoneSet(G, precomputedIndexes, service));
-      serviceBonuses.push(service.bonus);
-      if (service.typeIndex >= 0 && service.typeIndex < serviceTypeUsage.length) {
-        serviceTypeUsage[service.typeIndex] += 1;
-      }
-    }
-
-    const serviceTypes = params.serviceTypes ?? [];
-    for (let typeIndex = 0; typeIndex < serviceTypeUsage.length; typeIndex++) {
-      if (serviceTypeUsage[typeIndex] > (serviceTypes[typeIndex]?.avail ?? 0)) return null;
-    }
-
-    let estimatedTotalPopulation = 0;
-    for (let residentialIndex = 0; residentialIndex < incumbent.residentials.length; residentialIndex++) {
-      estimatedTotalPopulation += computeResidentialPopulation(
-        params,
-        incumbent.residentials[residentialIndex],
-        effectZones,
-        serviceBonuses,
-        incumbent.residentialTypeIndices[residentialIndex] ?? NO_TYPE_INDEX
-      );
-    }
-
-    return {
-      estimatedTotalPopulation,
-      orderedServiceKey: forcedServices.map((service) => stableServicePlacementKey(service)).join("|"),
-    };
-  };
-
-  const runBoundedServiceLocalSearch = (initialBest: Solution): Solution => {
-    if (!localSearch || !localSearchServiceMoves) return initialBest;
-    if (serviceOrderSorted.length === 0) return initialBest;
-    let incumbent = initialBest;
-
-    for (let iteration = 0; iteration < LOCAL_SEARCH_SERVICE_NEIGHBORHOOD.maxIterations; iteration++) {
-      maybeStop();
-      const incumbentServices = materializeCurrentServiceSet(incumbent);
-      const canAddService = incumbentServices.length < inferredUpper;
-      if (incumbentServices.length === 0 && !canAddService) break;
-      const perTypeNeighborhoodLimit = Math.min(
-        serviceOrderSorted.length,
-        Math.max(
-          LOCAL_SEARCH_SERVICE_NEIGHBORHOOD.candidateLimit,
-          localSearchServiceCandidateLimit,
-          incumbentServices.length + 1
-        )
-      );
-      const maxSwapTrialsThisIteration = Math.min(
-        incumbentServices.length * perTypeNeighborhoodLimit,
-        Math.max(
-          LOCAL_SEARCH_SERVICE_NEIGHBORHOOD.maxSwapTrialsPerIteration,
-          incumbentServices.length * Math.max(2, perTypeNeighborhoodLimit)
-        )
-      );
-      const incumbentOccupiedBuildings = new Set<string>();
-      for (const residential of incumbent.residentials) {
-        addPlacementCellsToSet(incumbentOccupiedBuildings, residential);
-      }
-      for (const service of incumbent.services) {
-        addPlacementCellsToSet(incumbentOccupiedBuildings, service);
-      }
-      const occupancyScratch = createOccupancyScratch(incumbentOccupiedBuildings);
-      const incumbentServiceKeys = new Set(incumbentServices.map((candidate) => serviceCandidateKey(candidate)));
-      const incumbentServiceTypeUsage = new Array((params.serviceTypes ?? []).length).fill(0);
-      for (const service of incumbentServices) {
-        if (service.typeIndex >= 0 && service.typeIndex < incumbentServiceTypeUsage.length) {
-          incumbentServiceTypeUsage[service.typeIndex] += 1;
-        }
-      }
-      const remainingAvailForIncumbent = useTypes && params.residentialTypes
-        ? params.residentialTypes.map((type) => type.avail)
-        : null;
-      if (remainingAvailForIncumbent) {
-        for (const typeIndex of incumbent.residentialTypeIndices) {
-          if (typeIndex >= 0 && typeIndex < remainingAvailForIncumbent.length) {
-            remainingAvailForIncumbent[typeIndex] = Math.max(0, remainingAvailForIncumbent[typeIndex] - 1);
-          }
-        }
-      }
-      const currentResidentialGroupBoosts = Array.from({ length: residentialScoringGroups.length }, () => 0);
-      for (const service of incumbentServices) {
-        const coveredGroupIndices = serviceCoverageGroupsByKey.get(serviceCandidateKey(service)) ?? [];
-        for (const groupIndex of coveredGroupIndices) {
-          currentResidentialGroupBoosts[groupIndex] += service.bonus;
-        }
-      }
-      let iterationBest = incumbent;
-      let swapTrials = 0;
-      const candidateMoves: ServiceRelocationMove[] = [];
-      const removalMoves: ServiceRelocationMove[] = [];
-
-      for (let serviceIndex = 0; serviceIndex < incumbentServices.length; serviceIndex++) {
-        maybeStop();
-        if (profileCounters) profileCounters.localSearch.serviceRemoveChecks++;
-        const removedService = incumbentServices[serviceIndex];
-        const forcedServices = incumbentServices.filter((_, index) => index !== serviceIndex);
-        const scoredMove = scoreDirectServiceRelocationMove(incumbent, forcedServices);
-        if (!scoredMove) continue;
-        removalMoves.push({
-          kind: "remove",
-          serviceIndex,
-          candidate: removedService,
-          forcedServices,
-          estimatedTotalPopulation: scoredMove.estimatedTotalPopulation,
-          estimatedFutureScore: 0,
-          estimatedRoadCost: 0,
-          orderedServiceKey: scoredMove.orderedServiceKey,
-        });
-      }
-      removalMoves.sort(compareServiceRelocationMoves);
-      candidateMoves.push(
-        ...removalMoves.slice(0, LOCAL_SEARCH_SERVICE_NEIGHBORHOOD.maxRemoveTrialsPerIteration)
-      );
-
-      if (canAddService) {
-        let addTrials = 0;
-        for (const candidate of serviceOrderSorted) {
-          maybeStop();
-          if (addTrials >= LOCAL_SEARCH_SERVICE_NEIGHBORHOOD.maxAddTrialsPerIteration) break;
-          if (incumbentServiceKeys.has(serviceCandidateKey(candidate))) continue;
-          if (
-            candidate.typeIndex >= 0
-            && candidate.typeIndex < incumbentServiceTypeUsage.length
-            && (incumbentServiceTypeUsage[candidate.typeIndex] ?? 0) >= (params.serviceTypes?.[candidate.typeIndex]?.avail ?? 0)
-          ) {
-            continue;
-          }
-          const candidateFootprintKeys = getCachedServiceFootprintKeys(precomputedIndexes, candidate);
-          if (
-            candidateFootprintKeys
-              ? overlapsCachedFootprint(incumbentOccupiedBuildings, candidateFootprintKeys)
-              : overlaps(incumbentOccupiedBuildings, candidate.r, candidate.c, candidate.rows, candidate.cols)
-          ) {
-            continue;
-          }
-          if (profileCounters) profileCounters.localSearch.serviceAddChecks++;
-          if (profileCounters) profileCounters.localSearch.canConnectChecks++;
-          addTrials++;
-          const probe = probeExplicitRoadConnection(
-            G,
-            incumbent.roads,
-            incumbentOccupiedBuildings,
-            candidate,
-            serviceNeighborhoodRoadProbeScratch,
-            profileCounters
-          );
-          if (!probe) continue;
-          const forcedServices = [...incumbentServices, candidate];
-          const scoredMove = scoreDirectServiceRelocationMove(incumbent, forcedServices);
-          if (!scoredMove) continue;
-          const estimatedFutureScore = computeServiceMarginalScore(
-            candidate,
-            incumbentOccupiedBuildings,
-            currentResidentialGroupBoosts,
-            residentialScoringGroups,
-            serviceCoverageGroupsByKey,
-            remainingAvailForIncumbent
-          );
-          candidateMoves.push({
-            kind: "add",
-            serviceIndex: incumbentServices.length,
-            candidate,
-            forcedServices,
-            estimatedTotalPopulation: scoredMove.estimatedTotalPopulation,
-            estimatedFutureScore,
-            estimatedRoadCost: probe.path?.length ?? 0,
-            orderedServiceKey: scoredMove.orderedServiceKey,
-          });
-        }
-      }
-
-      for (let serviceIndex = 0; serviceIndex < incumbentServices.length; serviceIndex++) {
-        maybeStop();
-        const currentChoice = incumbentServices[serviceIndex];
-        const candidatePasses = [
-          serviceOrderSorted.filter((candidate) => candidate.typeIndex === currentChoice.typeIndex)
-            .slice(0, perTypeNeighborhoodLimit),
-          serviceOrderSorted.filter((candidate) => candidate.typeIndex !== currentChoice.typeIndex)
-            .slice(0, Math.min(localSearchServiceCandidateLimit, serviceOrderSorted.length)),
-        ];
-        resetOccupancyScratch(occupancyScratch);
-        const currentChoiceFootprintKeys = getCachedServiceFootprintKeys(precomputedIndexes, currentChoice);
-        deleteKeysFromOccupancyScratch(
-          occupancyScratch,
-          currentChoiceFootprintKeys ?? serviceFootprint(currentChoice)
-        );
-        const occupiedWithoutCurrent = occupancyScratch.cells;
-        if (profileCounters) profileCounters.localSearch.occupancyScratchReuses++;
-        const currentResidentialGroupBoostsWithoutCurrent = [...currentResidentialGroupBoosts];
-        for (const groupIndex of serviceCoverageGroupsByKey.get(serviceCandidateKey(currentChoice)) ?? []) {
-          currentResidentialGroupBoostsWithoutCurrent[groupIndex] -= currentChoice.bonus;
-        }
-
-        for (const candidatePool of candidatePasses) {
-          for (const candidate of candidatePool) {
-            maybeStop();
-            if (swapTrials >= maxSwapTrialsThisIteration) break;
-            if (serviceCandidateKey(candidate) === serviceCandidateKey(currentChoice)) continue;
-            if (incumbentServiceKeys.has(serviceCandidateKey(candidate))) continue;
-            const candidateFootprintKeys = getCachedServiceFootprintKeys(precomputedIndexes, candidate);
-            if (
-              candidateFootprintKeys
-                ? overlapsCachedFootprint(occupiedWithoutCurrent, candidateFootprintKeys)
-                : overlaps(occupiedWithoutCurrent, candidate.r, candidate.c, candidate.rows, candidate.cols)
-            ) {
-              continue;
-            }
-            if (profileCounters) profileCounters.localSearch.serviceSwapChecks++;
-            if (profileCounters) profileCounters.localSearch.canConnectChecks++;
-            swapTrials++;
-            const probe = probeExplicitRoadConnection(
-              G,
-              incumbent.roads,
-              occupiedWithoutCurrent,
-              candidate,
-              serviceNeighborhoodRoadProbeScratch,
-              profileCounters
-            );
-            if (!probe) continue;
-            const forcedServices = [...incumbentServices];
-            forcedServices[serviceIndex] = candidate;
-            const scoredMove = scoreDirectServiceRelocationMove(incumbent, forcedServices);
-            if (!scoredMove) continue;
-            const estimatedFutureScore = computeServiceMarginalScore(
-              candidate,
-              occupiedWithoutCurrent,
-              currentResidentialGroupBoostsWithoutCurrent,
-              residentialScoringGroups,
-              serviceCoverageGroupsByKey,
-              remainingAvailForIncumbent
-            );
-            candidateMoves.push({
-              kind: "swap",
-              serviceIndex,
-              candidate,
-              forcedServices,
-              estimatedTotalPopulation: scoredMove.estimatedTotalPopulation,
-              estimatedFutureScore,
-              estimatedRoadCost: probe.path?.length ?? 0,
-              orderedServiceKey: scoredMove.orderedServiceKey,
-            });
-          }
-          if (swapTrials >= maxSwapTrialsThisIteration) break;
-        }
-
-        if (swapTrials >= maxSwapTrialsThisIteration) break;
-      }
-
-      candidateMoves.sort(compareServiceRelocationMoves);
-      const baseRealizationBudget = Math.min(
-        candidateMoves.length,
-        Math.max(
-          LOCAL_SEARCH_SERVICE_NEIGHBORHOOD.maxRealizationAttemptsPerIteration,
-          localSearchServiceCandidateLimit
-        )
-      );
-      const realizationMoves = candidateMoves.slice(0, baseRealizationBudget);
-      const selectedMoveKeys = new Set(
-        realizationMoves.map((move) => `${move.kind}:${move.serviceIndex}:${move.orderedServiceKey}`)
-      );
-      const guaranteedRealizationBudget = baseRealizationBudget
-        + LOCAL_SEARCH_SERVICE_NEIGHBORHOOD.maxRemoveTrialsPerIteration
-        + LOCAL_SEARCH_SERVICE_NEIGHBORHOOD.maxAddTrialsPerIteration;
-      for (const move of candidateMoves) {
-        if (move.kind === "swap") continue;
-        if (realizationMoves.length >= guaranteedRealizationBudget) break;
-        const key = `${move.kind}:${move.serviceIndex}:${move.orderedServiceKey}`;
-        if (selectedMoveKeys.has(key)) continue;
-        selectedMoveKeys.add(key);
-        realizationMoves.push(move);
-      }
-      for (const move of realizationMoves) {
-        maybeStop();
-        const trial = realizeAcceptedServiceNeighborhoodMove(incumbent, move.forcedServices);
-        if (isBetterSearchSolution(trial, iterationBest)) {
-          iterationBest = trial as Solution;
-        }
-      }
-
-      if (!isBetterSearchSolution(iterationBest, incumbent)) break;
-      incumbent = iterationBest;
-      updateBest(incumbent);
-      if (profileCounters) profileCounters.localSearch.serviceNeighborhoodImprovements++;
-    }
-
-    return incumbent;
-  };
+  const { explicitServiceCap, inferredUpper, capPlan } = buildGreedyServiceCapPolicy(params, maxServices);
 
   try {
-    const capResultsByCap = new Map<number, CapResult>();
-    const evaluatedCaps = new Set<number>();
-
-    if (explicitServiceCap !== undefined || !capPlan.usesAdaptiveSearch) {
-      for (const cap of capPlan.coarseCaps) {
-        const solution = evaluateNewCap(cap, "full", restarts, true);
-        evaluatedCaps.add(cap);
-        capResultsByCap.set(cap, summarizeCapResult(cap, "full", solution));
-      }
-    } else {
-      for (const cap of capPlan.coarseCaps) {
-        const solution = evaluateNewCap(cap, "coarse", 1, false);
-        evaluatedCaps.add(cap);
-        capResultsByCap.set(cap, summarizeCapResult(cap, "coarse", solution));
-      }
-
-      const coarseResults = [...capResultsByCap.values()]
-        .filter((entry) => entry.phase === "coarse")
-        .sort(compareCapResults);
-      const focusCaps = new Set(coarseResults.slice(0, 2).map((entry) => entry.cap));
-      const refineCaps = dedupeSortedNumbers(
-        [...focusCaps].flatMap((cap) => inclusiveCapBand(cap, inferredUpper, 2))
-      );
-      const refineCapSet = new Set(refineCaps);
-
-      for (const cap of refineCaps) {
-        if (evaluatedCaps.has(cap)) {
-          if (profileCounters) profileCounters.attempts.refineCaps++;
-          const current = capResultsByCap.get(cap)?.solution ?? null;
-          capResultsByCap.set(cap, summarizeCapResult(cap, "refine", current));
-          continue;
-        }
-        const solution = evaluateNewCap(cap, "refine", 1, false);
-        evaluatedCaps.add(cap);
-        capResultsByCap.set(cap, summarizeCapResult(cap, "refine", solution));
-      }
-
-      const restartFocusCaps = dedupeSortedNumbers([
-        ...[...capResultsByCap.values()]
-          .filter((entry) => refineCapSet.has(entry.cap))
-          .sort(compareCapResults)
-          .slice(0, 2)
-          .map((entry) => entry.cap),
-        ...[...focusCaps].flatMap((cap) =>
-          inclusiveCapBand(cap, inferredUpper, 1).filter((neighbor) => neighbor > 0)
-        ),
-      ]);
-
-      for (const cap of restartFocusCaps) {
-        const current = capResultsByCap.get(cap)?.solution ?? null;
-        const refined = refineExistingCap(cap, "refine", current, restarts, true);
-        capResultsByCap.set(cap, summarizeCapResult(cap, "refine", refined));
-      }
-
-      if (profileCounters) {
-        profileCounters.attempts.capsSkipped += Math.max(0, inferredUpper + 1 - evaluatedCaps.size);
-      }
-    }
+    runGreedyServiceCapSearch({
+      policy: { explicitServiceCap, inferredUpper, capPlan },
+      restarts,
+      profileCounters,
+      evaluateNewCap,
+      refineExistingCap,
+    });
     if (!best) throw new Error("No feasible solution found.");
 
-    const refineIters = serviceRefineIterations;
-    const refineLimit = Math.min(serviceRefineCandidateLimit, serviceOrderSorted.length);
-    const refinePool = serviceOrderSorted.slice(0, refineLimit);
-    for (let iter = 0; iter < refineIters; iter++) {
-      maybeStop();
-      let improved = false;
-      for (let i = 0; i < best.services.length; i++) {
-        maybeStop();
-        let localBest: Solution = best;
-        for (const cand of refinePool) {
-          maybeStop();
-          const currentChoice = materializeChosenServiceCandidate(best, i);
-          if (serviceCandidateKey(cand) === serviceCandidateKey(currentChoice)) continue;
-          if (best.services.some((s, idx) => idx !== i && sameServicePlacement(s, cand))) continue;
-          const forced = best.services.map((_, idx) => materializeChosenServiceCandidate(best!, idx));
-          forced[i] = cand;
-          const trial = evaluateForcedServiceSet(
-            forced,
-            best.services.length,
-            SERVICE_REFINE_FIXED_SERVICE_EVALUATION
-          );
-          if (trial && trial.totalPopulation > localBest.totalPopulation) {
-            localBest = trial;
-          }
-        }
-        if (localBest.totalPopulation > best.totalPopulation) {
-          best = localBest;
-          updateBest(best);
-          improved = true;
-        }
-      }
-      if (!improved) break;
-    }
+    best = runGreedyServiceRefinement({
+      initialBest: best,
+      serviceRefineIterations,
+      serviceRefineCandidateLimit,
+      serviceOrderSorted,
+      evaluateForcedServiceSet,
+      updateBest,
+      maybeStop,
+    });
 
-    // Optional exhaustive search over service layouts from top-ranked pool.
-    if (exhaustiveServiceSearch && best.services.length >= 0) {
-      const poolLimit = Math.max(0, Math.min(serviceExactPoolLimit, serviceOrderSorted.length));
-      const comboCap = Math.max(1, serviceExactMaxCombinations);
-      const pool = serviceOrderSorted.slice(0, poolLimit);
-      const combos = combinationsOfK(pool.length, best.services.length, comboCap);
-      for (const idxs of combos) {
-        maybeStop();
-        if (profileCounters) profileCounters.attempts.exhaustiveTrials++;
-        const forced = idxs.map((i) => pool[i]);
-        const trial = evaluateForcedServiceSet(
-          forced,
-          best.services.length,
-          EXHAUSTIVE_FIXED_SERVICE_EVALUATION
-        );
-        if (trial && trial.totalPopulation > best.totalPopulation) {
-          best = trial;
-          updateBest(best);
-        }
-      }
-    }
+    best = runGreedyExhaustiveServiceSearch({
+      initialBest: best,
+      enabled: exhaustiveServiceSearch,
+      serviceExactPoolLimit,
+      serviceExactMaxCombinations,
+      serviceOrderSorted,
+      evaluateForcedServiceSet,
+      updateBest,
+      profileCounters,
+      maybeStop,
+    });
 
     if (localSearch) {
-      const serviceLocalBest = runBoundedServiceLocalSearch(best);
+      const serviceLocalBest = runGreedyServiceNeighborhoodSearch({
+        initialBest: best,
+        G,
+        params,
+        localSearch,
+        localSearchServiceMoves,
+        localSearchServiceCandidateLimit,
+        inferredUpper,
+        useTypes,
+        serviceOrderSorted,
+        residentialScoringGroups,
+        serviceCoverageGroupsByKey,
+        precomputedIndexes,
+        solveWithOrder,
+        updateBest,
+        profileCounters,
+        maybeStop,
+      });
       if (isBetterSearchSolution(serviceLocalBest, best)) {
         best = serviceLocalBest;
         updateBest(best);

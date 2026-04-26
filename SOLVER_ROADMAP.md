@@ -187,6 +187,25 @@ Maintenance watchpoints:
 - future solver modes should plug into `buildSolverProgressSummary(...)` and the cross-mode benchmark runner instead of adding one-off progress prose
 - default scorecard cases are enough for mode-selection regression and workflow evidence, not broad statistical claims about all maps
 
+#### 12. Greedy solver phase boundaries are cleaner
+
+Status: Completed for the current internal structural split
+
+What exists today:
+- `solveGreedy(...)` now acts as a thinner orchestrator around named internal phases instead of carrying the full greedy policy inline
+- candidate enumeration, geometry/index precompute, service-order scoring, and solve-context creation are isolated in `prepareGreedyInputs(...)`
+- dominance-upgraded construction attempts are isolated behind `createGreedySolveAttempt(...)`
+- forced-service realization, seeded forced-service retries, and forced-service ordering are isolated behind `createGreedyForcedServiceEvaluator(...)`
+- service-cap planning and coarse/refine/restart cap search are isolated behind `buildGreedyServiceCapPolicy(...)` and `runGreedyServiceCapSearch(...)`
+- post-construction improvement is split into `runGreedyServiceRefinement(...)`, `runGreedyExhaustiveServiceSearch(...)`, and `runGreedyServiceNeighborhoodSearch(...)`
+- the public `solveGreedy(G, params)` API, stop/snapshot behavior, random-seed restart behavior, profile counter names, and solution semantics are unchanged
+- `npm test` and `benchmark:greedy -- --json` pass after the split
+
+Maintenance watchpoints:
+- the current split is internal to [src/greedy/solver.ts](./src/greedy/solver.ts); moving stable helpers into separate `src/greedy/*` modules should wait until the phase boundaries settle
+- future profile schema changes should keep existing counter groups compatible or explicitly document benchmark snapshot changes
+- avoid mixing heuristic-policy tuning into future mechanical module extraction work
+
 ## Remaining Priorities
 
 Impact factor scale:
@@ -195,25 +214,25 @@ Impact factor scale:
 - `3.0 / 5`: medium leverage or enabling work for later improvements
 - below `3.0 / 5`: strategic or high-cost work with lower near-term return
 
-### 1. Split the greedy solver into cleaner reusable phases
+### 1. Add greedy phase timing / quality counters and decide on file-level module extraction
 
 Priority: 1
 Impact factor: `3.0 / 5`
 
 Why this is first:
-- reproducibility and instrumentation are already in place, but the greedy policy surface is still concentrated in one large implementation
+- reproducibility and counter instrumentation are already in place, and the first internal phase split has landed
+- the greedy implementation is still physically concentrated in one large file, so the next extraction should be guided by evidence instead of aesthetics
 - future metaheuristics and learned-guidance work want clearer reuse seams
-- a full refactor is enabling work, but phase-level measurement hooks are needed earlier for LNS and `auto` budgeting
+- phase-level measurement hooks are still needed for LNS and `auto` seed-budget decisions
 
 Desired seams:
-- candidate enumeration
-- constructive placement
-- local improvement
-- snapshot / finalization
-- phase-level measurement hooks
+- per-phase elapsed time and quality deltas for precompute, constructive cap search, forced-service realization, service refinement, exhaustive service search, residential local search, and bounded service neighborhoods
+- a stable phase summary that can be reused by greedy benchmarks, LNS seed-budget policy, and `auto` stage reporting
+- optional file-level modules for stable helpers once the measured boundaries prove useful
 
 Near-term slice:
-- add phase-level timing and quality counters before attempting a broad greedy refactor
+- add phase-level timing and quality counters on top of the new internal phase helpers
+- keep benchmark snapshot compatibility explicit if the `greedyProfile` schema changes
 - use those counters to inform LNS seed budget partitioning
 
 ## Later Priorities
@@ -235,7 +254,7 @@ Impact factor: `2.0 / 5` near-term product leverage, higher long-term strategic 
 Why:
 - learned guidance is a real fit for search control around `greedy`, `LNS`, and `CP-SAT`, especially for re-ranking and later `LNS` control
 - full RL is not the next production lever; the relevant AlphaGo / AlphaZero lesson is policy / value guidance around exact search, not end-to-end self-play
-- the deterministic solver still has higher-ROI unfinished work, especially cleaner greedy phase boundaries
+- the deterministic solver still has higher-ROI unfinished work, especially greedy phase measurement and budget evidence
 - that work should stay tracked in [LEARNED_GUIDANCE_ROADMAP.md](./LEARNED_GUIDANCE_ROADMAP.md), not mixed into the runtime-execution roadmap
 
 Ordering inside the learned-guidance track:
@@ -252,7 +271,7 @@ Ordering inside the learned-guidance track:
 
 If all remaining work is ranked in one combined near-term ordering, the recommended order is:
 
-1. add greedy phase-level measurement hooks, then split the greedy solver into cleaner reusable phases
+1. add greedy phase-level measurement hooks on top of the shipped internal phase split, then optionally move stable helpers into separate greedy modules
 2. add the portfolio orphan-process cancellation regression before raising portfolio limits
 3. build the learned-guidance foundation on top of the shipped shared traces and equal-budget scorecards
 4. run learned-guidance ablations
@@ -261,7 +280,7 @@ If all remaining work is ranked in one combined near-term ordering, the recommen
 7. treat contextual bandits and full RL as gated research after earlier learned stages already win
 
 Why this order:
-- item 1 creates cleaner seams for both deterministic and learned follow-on work
+- item 1 turns the new greedy seams into measured evidence for both deterministic and learned follow-on work
 - item 2 protects the guarded portfolio contract before any future fan-out increase
 - items 3 through 7 depend on the shipped scorecard discipline, a more stable deterministic baseline, and more expensive labels
 - full RL currently has the lowest near-term product leverage per unit complexity

@@ -385,22 +385,21 @@ export function ensureBuildingConnectedToRoads(
 }
 
 /**
- * Keep only road cells that are connected to row 0 (at least one road cell with r=0).
+ * Keep only one connected road component anchored at row 0.
  * Returns a new Set; does not modify the input.
  */
 export function roadsConnectedToRow0(G: Grid, roads: Set<string>): Set<string> {
-  const inRow0 = new Set<string>();
-  const queue: [number, number][] = [];
+  let anchor: [number, number] | null = null;
   for (const k of roads) {
     const { r, c } = cellFromKey(k);
     if (r === 0) {
-      inRow0.add(k);
-      queue.push([r, c]);
+      if (!anchor || c < anchor[1]) anchor = [r, c];
     }
   }
-  if (inRow0.size === 0) return new Set();
+  if (!anchor) return new Set();
 
-  const reachable = new Set<string>(inRow0);
+  const reachable = new Set<string>([cellKey(anchor[0], anchor[1])]);
+  const queue: [number, number][] = [anchor];
   let queueIndex = 0;
   while (queueIndex < queue.length) {
     const [r, c] = queue[queueIndex++]!;

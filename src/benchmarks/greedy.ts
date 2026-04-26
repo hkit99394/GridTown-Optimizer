@@ -3,7 +3,14 @@ import { performance } from "node:perf_hooks";
 import { buildSolverProgressSummary, formatSolverProgressSummary } from "../core/progress.js";
 import { solveGreedy } from "../greedy/solver.js";
 
-import type { GreedyOptions, GreedyProfile, Grid, SolverParams, SolverProgressSummary } from "../core/types.js";
+import type {
+  GreedyOptions,
+  GreedyProfile,
+  GreedyProfilePhaseSummary,
+  Grid,
+  SolverParams,
+  SolverProgressSummary,
+} from "../core/types.js";
 
 export interface GreedyServiceLookaheadBenchmarkOptions {
   serviceLookaheadCandidates?: number;
@@ -45,7 +52,14 @@ export interface GreedyBenchmarkSuiteResult {
   results: GreedyBenchmarkCaseResult[];
 }
 
-export interface GreedyBenchmarkSnapshotCaseResult extends Omit<GreedyBenchmarkCaseResult, "wallClockSeconds"> {}
+type GreedyBenchmarkSnapshotProfile = Omit<GreedyProfile, "phases"> & {
+  phases: Array<Omit<GreedyProfilePhaseSummary, "elapsedMs">>;
+};
+
+export interface GreedyBenchmarkSnapshotCaseResult
+  extends Omit<GreedyBenchmarkCaseResult, "wallClockSeconds" | "greedyProfile"> {
+  greedyProfile: GreedyBenchmarkSnapshotProfile | null;
+}
 
 export interface GreedyBenchmarkSnapshot {
   caseCount: number;
@@ -253,8 +267,24 @@ export function createGreedyBenchmarkSnapshot(result: GreedyBenchmarkSuiteResult
   return {
     caseCount: result.caseCount,
     selectedCaseNames: [...result.selectedCaseNames],
-    results: result.results.map(({ wallClockSeconds: _wallClockSeconds, ...benchmark }) => benchmark),
+    results: result.results.map(({ wallClockSeconds: _wallClockSeconds, greedyProfile, progressSummary, ...benchmark }) => ({
+      ...benchmark,
+      progressSummary: {
+        ...progressSummary,
+        elapsedTimeSeconds: null,
+      },
+      greedyProfile: greedyProfile
+        ? {
+            counters: structuredClone(greedyProfile.counters),
+            phases: greedyProfile.phases.map(({ elapsedMs: _elapsedMs, ...phase }) => ({ ...phase })),
+          }
+        : null,
+    })),
   };
+}
+
+function formatProfilePhaseSummary(phase: GreedyProfilePhaseSummary): string {
+  return `${phase.name}:${phase.runs}x/${phase.elapsedMs.toFixed(3)}ms/best+${phase.bestPopulationDelta}/candidate+${phase.candidatePopulationDelta}`;
 }
 
 export function formatGreedyBenchmarkSuite(result: GreedyBenchmarkSuiteResult): string {
@@ -286,6 +316,9 @@ export function formatGreedyBenchmarkSuite(result: GreedyBenchmarkSuiteResult): 
       );
       lines.push(
         `  attempts=caps:${counters.attempts.serviceCaps} restarts:${counters.attempts.restarts} refine:${counters.attempts.serviceRefineTrials} exhaustive:${counters.attempts.exhaustiveTrials} fixed-set:${counters.attempts.fixedServiceRealizationTrials}`
+      );
+      lines.push(
+        `  phases=${benchmark.greedyProfile?.phases.map(formatProfilePhaseSummary).join(", ") ?? "n/a"}`
       );
       lines.push(
         `  cap-search=evaluated:${counters.attempts.serviceCaps} coarse:${counters.attempts.coarseCaps} refine:${counters.attempts.refineCaps} skipped:${counters.attempts.capsSkipped} restart-caps:${counters.attempts.restartCaps}`

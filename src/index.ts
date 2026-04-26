@@ -76,6 +76,8 @@ export type {
   GreedyOptions,
   GreedyProfile,
   GreedyProfileCounters,
+  GreedyProfilePhaseName,
+  GreedyProfilePhaseSummary,
   LnsOptions,
   CpSatNeighborhoodWindow,
   SolverParams,

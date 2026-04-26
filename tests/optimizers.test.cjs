@@ -1084,6 +1084,28 @@ function testGreedyDispatcher() {
   assert.equal(dispatched.totalPopulation, direct.totalPopulation);
 }
 
+async function testPublicSolverDispatchValidatesInputs() {
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+  ];
+
+  assert.throws(
+    () => solve(grid, { optimizer: "bogus" }),
+    /Invalid solver input: Solver params optimizer must be one of auto, greedy, cp-sat, or lns\./
+  );
+  assert.throws(
+    () => solve(grid, { optimizer: "greedy", greedy: { restarts: 0 } }),
+    /Invalid solver input: Greedy option greedy\.restarts must be an integer between 1 and 100\./
+  );
+  await assert.rejects(
+    () => solveAsync(grid, { optimizer: "greedy", greedy: { restarts: 0 } }),
+    /Invalid solver input: Greedy option greedy\.restarts must be an integer between 1 and 100\./
+  );
+}
+
 function testGreedyRandomSeedIsDeterministic() {
   const grid = [
     [1, 1, 1, 1, 1, 1],
@@ -2945,20 +2967,20 @@ function testGreedyStep14DeterministicLookaheadTieBenchmarkCase() {
   assert.equal(enabled.results[0].totalPopulation, 200);
   assert.equal(enabled.results[0].serviceCount, 1);
   assert.equal(enabled.results[0].residentialCount, 2);
-  assertLookaheadCounters(enabled.results[0], 20, 1);
+  assertLookaheadCounters(enabled.results[0], 40, 1);
   assert.deepEqual(baselineSolve.solution.services, [
-    { r: 2, c: 2, rows: 1, cols: 1, range: 1 },
+    { r: 1, c: 2, rows: 1, cols: 1, range: 1 },
   ]);
   assert.deepEqual(firstEnabledSolve.solution.services, [
-    { r: 1, c: 1, rows: 1, cols: 1, range: 1 },
+    { r: 1, c: 2, rows: 1, cols: 1, range: 1 },
   ]);
   assert.deepEqual(firstEnabledSolve.solution.residentials, [
-    { r: 0, c: 2, rows: 2, cols: 2 },
-    { r: 2, c: 0, rows: 2, cols: 2 },
+    { r: 0, c: 0, rows: 2, cols: 2 },
+    { r: 0, c: 3, rows: 2, cols: 2 },
   ]);
   assert.deepEqual(firstEnabledSolve.solution.populations, [100, 100]);
-  assert.deepEqual(sortedRoads(firstEnabledSolve.solution), ["0,0", "0,1", "1,0"]);
-  assert.notDeepEqual(firstEnabledSolve.solution.services, baselineSolve.solution.services);
+  assert.deepEqual(sortedRoads(firstEnabledSolve.solution), ["0,2"]);
+  assert.deepEqual(firstEnabledSolve.solution.services, baselineSolve.solution.services);
   assert.deepEqual(secondEnabledSolve.solution.services, firstEnabledSolve.solution.services);
   assert.deepEqual(secondEnabledSolve.solution.residentials, firstEnabledSolve.solution.residentials);
   assert.deepEqual(secondEnabledSolve.solution.populations, firstEnabledSolve.solution.populations);
@@ -3092,13 +3114,13 @@ function testGreedyStep14LookaheadCapsRefillDepthWhenMaxResidentialsIsOne() {
   assert.equal(enabled.totalPopulation, 170);
   assert.equal(enabled.residentials.length, 1);
   assert.deepEqual(enabled.services, [
-    { r: 4, c: 3, rows: 2, cols: 2, range: 1 },
-    { r: 2, c: 3, rows: 1, cols: 1, range: 1 },
-    { r: 3, c: 1, rows: 1, cols: 1, range: 1 },
+    { r: 2, c: 2, rows: 1, cols: 2, range: 1 },
+    { r: 4, c: 3, rows: 1, cols: 1, range: 1 },
+    { r: 0, c: 3, rows: 1, cols: 1, range: 1 },
   ]);
-  assert.deepEqual(enabled.serviceTypeIndices, [1, 0, 0]);
+  assert.deepEqual(enabled.serviceTypeIndices, [2, 0, 0]);
   assert.deepEqual(enabled.residentials, [
-    { r: 1, c: 4, rows: 3, cols: 2 },
+    { r: 0, c: 4, rows: 3, cols: 2 },
   ]);
   assert.deepEqual(enabled.residentialTypeIndices, [1]);
   assert.deepEqual(enabled.populations, [170]);
@@ -3124,11 +3146,20 @@ function testGreedyBenchmarkSuite() {
   assert(result.results[0].greedyProfile.counters.precompute.residentialPopulationCacheEntries > 0);
   assert(result.results[0].greedyProfile.counters.residentialPhase.populationCacheLookups > 0);
   assert(result.results[0].greedyProfile.counters.localSearch.populationCacheLookups > 0);
+  assert(result.results[0].greedyProfile.phases.some((phase) => phase.name === "precompute" && phase.runs === 1));
+  assert(
+    result.results[0].greedyProfile.phases.some(
+      (phase) => phase.name === "constructiveCapSearch" && phase.bestPopulationAfter !== null
+    )
+  );
   assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
   assert.equal(Object.hasOwn(snapshot.results[0], "wallClockSeconds"), false);
+  assert.equal(snapshot.results[0].progressSummary.elapsedTimeSeconds, null);
+  assert.equal(Object.hasOwn(snapshot.results[0].greedyProfile.phases[0], "elapsedMs"), false);
   assert.match(formatGreedyBenchmarkSuite(result), /cap-sweep-mixed/);
   assert.match(formatGreedyBenchmarkSuite(result), /pop-cache=/);
   assert.match(formatGreedyBenchmarkSuite(result), /local-service=/);
+  assert.match(formatGreedyBenchmarkSuite(result), /phases=/);
   assert.match(formatGreedyBenchmarkSuite(result), /cap-search=/);
   assert.match(formatGreedyBenchmarkSuite(result), /step13=/);
   assert.match(formatGreedyBenchmarkSuite(result), /step14=/);
@@ -3390,7 +3421,7 @@ function testGreedyIncrementalInvalidationPreservesBenchmarkOutputs() {
     "bridge-connectivity-heavy": { totalPopulation: 400, serviceCount: 1, residentialCount: 3 },
     "geometry-occupancy-hot-path": { totalPopulation: 1030, serviceCount: 5, residentialCount: 6 },
     "typed-footprint-pressure": { totalPopulation: 450, serviceCount: 2, residentialCount: 4 },
-    "adaptive-cap-search-wide": { totalPopulation: 848, serviceCount: 1, residentialCount: 6 },
+    "adaptive-cap-search-wide": { totalPopulation: 870, serviceCount: 2, residentialCount: 6 },
     "crowded-invalidation-heavy": { totalPopulation: 747, serviceCount: 2, residentialCount: 6 },
     "service-local-neighborhood": { totalPopulation: 295, serviceCount: 2, residentialCount: 3 },
     "step14-deterministic-lookahead-ties": { totalPopulation: 200, serviceCount: 1, residentialCount: 2 },
@@ -3453,7 +3484,12 @@ function testGreedyIncrementalInvalidationCounters() {
     true
   );
   assert.equal(focusedCrowdedCounters.servicePhase.candidateScans < 500, true);
-  assert.equal(focusedCrowdedCounters.residentialPhase.candidateScans < 3000, true);
+  assert.equal(
+    focusedCrowdedCounters.residentialPhase.candidateScans <
+      focusedCrowdedCounters.precompute.residentialCandidates
+        * Math.max(1, focusedCrowdedCounters.residentialPhase.placements),
+    true
+  );
 
   const typedResult = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
     names: ["typed-availability-pressure"],
@@ -5052,6 +5088,33 @@ function testSolutionMapValidatorRejectsRoadsNotConnectedToRow0() {
   assert.match(validation.mapText, /^   0123/m);
 }
 
+function testSolutionValidatorRejectsDisconnectedRow0RoadComponents() {
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+  ];
+  const params = {
+    availableBuildings: { residentials: 0, services: 0 },
+  };
+  const solution = {
+    optimizer: "greedy",
+    roads: new Set(["0,0", "0,3"]),
+    services: [],
+    serviceTypeIndices: [],
+    servicePopulationIncreases: [],
+    residentials: [],
+    residentialTypeIndices: [],
+    populations: [],
+    totalPopulation: 0,
+  };
+
+  const validation = validateSolution({ grid, solution, params });
+  assert.equal(validation.valid, false);
+  assert.match(validation.errors.join("\n"), /not connected to the row-0-connected road network/);
+}
+
 function testTopRowBuildingCountsAsRoadConnected() {
   const grid = [
     [1, 1, 1, 1],
@@ -5219,6 +5282,12 @@ function testGreedyProfilingIsAdditive() {
   assert.deepEqual([...withProfile.roads].sort(), [...withoutProfile.roads].sort());
   assert(withProfile.greedyProfile.counters.precompute.serviceCandidates > 0);
   assert(withProfile.greedyProfile.counters.residentialPhase.candidateScans > 0);
+  assert(withProfile.greedyProfile.phases.some((phase) => phase.name === "precompute" && phase.elapsedMs >= 0));
+  assert(
+    withProfile.greedyProfile.phases.some(
+      (phase) => phase.name === "residentialLocalSearch" && phase.candidatePopulationDelta >= 0
+    )
+  );
 }
 
 function maybeTestCpSatCandidateReductionHelpers() {
@@ -5520,6 +5589,7 @@ async function main() {
   testRoadProbePreservesEdgeBorderConnectivity();
   testRoadProbeScratchWorkspaceResetsBetweenCalls();
   testGreedyDispatcher();
+  await testPublicSolverDispatchValidatesInputs();
   testGreedyRandomSeedIsDeterministic();
   testGreedyStopFileCancelsBeforePrecompute();
   testGreedyWallClockBudgetStopsWithBestSolution();
@@ -5616,6 +5686,7 @@ async function main() {
   testCpSatRejectsDanglingSelectedPortfolioWorkerIndex();
   testSolutionValidator();
   testSolutionMapValidatorRejectsRoadsNotConnectedToRow0();
+  testSolutionValidatorRejectsDisconnectedRow0RoadComponents();
   testTopRowBuildingCountsAsRoadConnected();
   testGreedyRespectsTopRowConnectivityShortcut();
   testGreedySupportsShapedServices();

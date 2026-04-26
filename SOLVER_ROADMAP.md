@@ -206,6 +206,28 @@ Maintenance watchpoints:
 - future profile schema changes should keep existing counter groups compatible or explicitly document benchmark snapshot changes
 - avoid mixing heuristic-policy tuning into future mechanical module extraction work
 
+#### 13. Greedy phase timing / quality counters are shipped
+
+Status: Completed for the current profiling contract
+
+What exists today:
+- `greedy.profile` now returns `greedyProfile.phases` alongside the existing `greedyProfile.counters`
+- fixed phase summaries cover precompute, constructive cap search, forced-service realization, service refinement, exhaustive service search, residential local search, and service-neighborhood search
+- each phase records run count, elapsed milliseconds, best incumbent before/after, best-population delta, candidate-population delta, and improvement count
+- the constructive cap-search phase treats the first feasible incumbent as a quality gain, so seed-quality contribution is visible instead of appearing as zero delta
+- greedy benchmark text output includes a compact phase summary line
+- greedy benchmark JSON snapshots strip volatile per-phase `elapsedMs` while preserving stable phase quality counters
+
+Module extraction decision:
+- broad file-level extraction is intentionally deferred
+- the current measured boundaries are useful, but the search phases still share private caches, tie-breakers, candidate indexes, road probes, and typed-building helpers inside [src/greedy/solver.ts](./src/greedy/solver.ts)
+- extracting those helpers now would force unstable internal APIs and create mechanical churn before the phase measurements show which boundaries are worth stabilizing
+
+Maintenance watchpoints:
+- phase elapsed values are inclusive and some nested phase timings are intentionally not additive to total greedy wall time
+- use the new phase counters to guide `LNS` seed-budget policy and `auto` seed-stage reporting before extracting larger modules
+- if the profiler itself grows, a small `src/greedy/profile.ts` extraction is reasonable; search-policy extraction should wait for evidence from benchmarks
+
 ## Remaining Priorities
 
 Impact factor scale:
@@ -214,47 +236,28 @@ Impact factor scale:
 - `3.0 / 5`: medium leverage or enabling work for later improvements
 - below `3.0 / 5`: strategic or high-cost work with lower near-term return
 
-### 1. Add greedy phase timing / quality counters and decide on file-level module extraction
-
-Priority: 1
-Impact factor: `3.0 / 5`
-
-Why this is first:
-- reproducibility and counter instrumentation are already in place, and the first internal phase split has landed
-- the greedy implementation is still physically concentrated in one large file, so the next extraction should be guided by evidence instead of aesthetics
-- future metaheuristics and learned-guidance work want clearer reuse seams
-- phase-level measurement hooks are still needed for LNS and `auto` seed-budget decisions
-
-Desired seams:
-- per-phase elapsed time and quality deltas for precompute, constructive cap search, forced-service realization, service refinement, exhaustive service search, residential local search, and bounded service neighborhoods
-- a stable phase summary that can be reused by greedy benchmarks, LNS seed-budget policy, and `auto` stage reporting
-- optional file-level modules for stable helpers once the measured boundaries prove useful
-
-Near-term slice:
-- add phase-level timing and quality counters on top of the new internal phase helpers
-- keep benchmark snapshot compatibility explicit if the `greedyProfile` schema changes
-- use those counters to inform LNS seed budget partitioning
+No near-term deterministic runtime item is currently ranked above the later priorities below. The next work should use the shipped phase profile data to choose budget-policy or extraction follow-ups with evidence.
 
 ## Later Priorities
 
-### 2. Keep distributed CP-SAT behind single-machine portfolio and workflow improvements
+### 1. Keep distributed CP-SAT behind single-machine portfolio and workflow improvements
 
-Priority: 2
+Priority: 1 among later items
 Impact factor: `1.5 / 5`
 
 Why:
 - the better near-term return is still measurement, workflow polish, and single-machine portfolio hardening
 - distributed exact solving adds the most operational complexity for the least immediate product leverage
 
-### 3. Keep learned guidance separate from the core runtime roadmap
+### 2. Keep learned guidance separate from the core runtime roadmap
 
-Priority: Separate gated track, after priority 1 plus the portfolio cancellation regression
+Priority: Separate gated track, after greedy phase profiling plus the portfolio cancellation regression
 Impact factor: `2.0 / 5` near-term product leverage, higher long-term strategic upside
 
 Why:
 - learned guidance is a real fit for search control around `greedy`, `LNS`, and `CP-SAT`, especially for re-ranking and later `LNS` control
 - full RL is not the next production lever; the relevant AlphaGo / AlphaZero lesson is policy / value guidance around exact search, not end-to-end self-play
-- the deterministic solver still has higher-ROI unfinished work, especially greedy phase measurement and budget evidence
+- the deterministic solver still has higher-ROI measurement work, especially turning greedy phase data into budget evidence
 - that work should stay tracked in [LEARNED_GUIDANCE_ROADMAP.md](./LEARNED_GUIDANCE_ROADMAP.md), not mixed into the runtime-execution roadmap
 
 Ordering inside the learned-guidance track:
@@ -271,18 +274,19 @@ Ordering inside the learned-guidance track:
 
 If all remaining work is ranked in one combined near-term ordering, the recommended order is:
 
-1. add greedy phase-level measurement hooks on top of the shipped internal phase split, then optionally move stable helpers into separate greedy modules
-2. add the portfolio orphan-process cancellation regression before raising portfolio limits
-3. build the learned-guidance foundation on top of the shipped shared traces and equal-budget scorecards
-4. run learned-guidance ablations
-5. try low-risk learned guidance: greedy service re-ranking and `LNS` window re-ranking
-6. only then consider value-guided seeds if seed quality becomes a measured bottleneck
-7. treat contextual bandits and full RL as gated research after earlier learned stages already win
+1. add the portfolio orphan-process cancellation regression before raising portfolio limits
+2. use greedy phase profile data to tune or justify `LNS` seed-budget and `auto` seed-stage policy changes
+3. optionally extract only profiler or demonstrably stable greedy helpers after phase data proves the boundary
+4. build the learned-guidance foundation on top of the shipped shared traces and equal-budget scorecards
+5. run learned-guidance ablations
+6. try low-risk learned guidance: greedy service re-ranking and `LNS` window re-ranking
+7. only then consider value-guided seeds if seed quality becomes a measured bottleneck
+8. treat contextual bandits and full RL as gated research after earlier learned stages already win
 
 Why this order:
-- item 1 turns the new greedy seams into measured evidence for both deterministic and learned follow-on work
-- item 2 protects the guarded portfolio contract before any future fan-out increase
-- items 3 through 7 depend on the shipped scorecard discipline, a more stable deterministic baseline, and more expensive labels
+- item 1 protects the guarded portfolio contract before any future fan-out increase
+- items 2 and 3 turn the shipped greedy phase data into measured evidence before policy or extraction churn
+- items 4 through 8 depend on the shipped scorecard discipline, a more stable deterministic baseline, and more expensive labels
 - full RL currently has the lowest near-term product leverage per unit complexity
 
 ## LNS Follow-Up Plan

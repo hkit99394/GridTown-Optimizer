@@ -439,8 +439,29 @@ export interface GreedyProfileCounters {
   };
 }
 
+export type GreedyProfilePhaseName =
+  | "precompute"
+  | "constructiveCapSearch"
+  | "forcedServiceRealization"
+  | "serviceRefinement"
+  | "exhaustiveServiceSearch"
+  | "residentialLocalSearch"
+  | "serviceNeighborhoodSearch";
+
+export interface GreedyProfilePhaseSummary {
+  name: GreedyProfilePhaseName;
+  runs: number;
+  elapsedMs: number;
+  bestPopulationBefore: number | null;
+  bestPopulationAfter: number | null;
+  bestPopulationDelta: number;
+  candidatePopulationDelta: number;
+  improvements: number;
+}
+
 export interface GreedyProfile {
   counters: GreedyProfileCounters;
+  phases: GreedyProfilePhaseSummary[];
 }
 
 export interface LnsOptions {

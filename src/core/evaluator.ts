@@ -12,6 +12,7 @@ import type {
   SolverParams,
   EvaluatedServicePlacement,
 } from "./types.js";
+import { cellFromKey } from "./types.js";
 import { isAllowed } from "./grid.js";
 import {
   serviceFootprint,
@@ -30,6 +31,24 @@ import {
 
 function clamp(v: number, lo: number, hi: number): number {
   return Math.min(Math.max(v, lo), hi);
+}
+
+function compareCellKeys(a: string, b: string): number {
+  const cellA = cellFromKey(a);
+  const cellB = cellFromKey(b);
+  return cellA.r - cellB.r || cellA.c - cellB.c;
+}
+
+function formatCellKey(key: string): string {
+  const { r, c } = cellFromKey(key);
+  return `(${r},${c})`;
+}
+
+function summarizeCellKeys(keys: string[], limit = 12): string {
+  const sorted = [...keys].sort(compareCellKeys);
+  const shown = sorted.slice(0, limit).map(formatCellKey).join(", ");
+  const hiddenCount = sorted.length - limit;
+  return hiddenCount > 0 ? `${shown}, and ${hiddenCount} more` : shown;
 }
 
 function computeResidentialBoosts(
@@ -180,7 +199,11 @@ export function evaluateLayout(input: LayoutEvaluationInput): LayoutEvaluationRe
     errors.push("Road network does not touch row 0.");
   }
   if (connected.size !== roads.size) {
-    errors.push("Some road cells are not connected to the row-0-connected road network.");
+    const disconnectedRoads = [...roads].filter((key) => !connected.has(key));
+    const disconnectedSummary = disconnectedRoads.length > 0
+      ? ` Disconnected road cells: ${summarizeCellKeys(disconnectedRoads)}.`
+      : "";
+    errors.push(`Some road cells are not connected to any row-0-connected road component.${disconnectedSummary}`);
   }
 
   // Building-road adjacency.

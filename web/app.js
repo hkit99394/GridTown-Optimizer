@@ -126,6 +126,10 @@ const state = {
   greedy: {
     localSearch: true,
     randomSeed: "",
+    timeLimitSeconds: "",
+    profile: false,
+    densityTieBreaker: false,
+    densityTieBreakerTolerancePercent: "2",
     restarts: 20,
     serviceRefineIterations: 4,
     serviceRefineCandidateLimit: 60,
@@ -140,7 +144,6 @@ const state = {
     randomSeed: "",
     numWorkers: 8,
     logSearchProgress: false,
-    pythonExecutable: "",
     useDisplayedHint: true,
     portfolio: {
       enabled: false,
@@ -175,6 +178,7 @@ const state = {
   resultError: "",
   resultContext: null,
   resultElapsedMs: 0,
+  resultHeatmapEnabled: false,
   solveProgressLog: [],
   selectedMapBuilding: null,
   selectedMapCell: null,
@@ -262,6 +266,7 @@ const elements = {
   remainingResidentialList: document.querySelector("#remainingResidentialList"),
   resultMapGrid: document.querySelector("#resultMapGrid"),
   resultOverlay: document.querySelector("#resultOverlay"),
+  resultHeatmapToggle: document.querySelector("#resultHeatmapToggle"),
   layoutEditModeToggle: document.querySelector("#layoutEditModeToggle"),
   rotatePendingPlacementButton: document.querySelector("#rotatePendingPlacementButton"),
   validateEditedLayoutButton: document.querySelector("#validateEditedLayoutButton"),
@@ -285,6 +290,10 @@ const elements = {
   layoutStorageStatus: document.querySelector("#layoutStorageStatus"),
   greedyLocalSearch: document.querySelector("#greedyLocalSearch"),
   greedyRandomSeed: document.querySelector("#greedyRandomSeed"),
+  greedyTimeLimitSeconds: document.querySelector("#greedyTimeLimitSeconds"),
+  greedyProfile: document.querySelector("#greedyProfile"),
+  greedyDensityTieBreaker: document.querySelector("#greedyDensityTieBreaker"),
+  greedyDensityTieBreakerTolerancePercent: document.querySelector("#greedyDensityTieBreakerTolerancePercent"),
   greedyRestarts: document.querySelector("#greedyRestarts"),
   greedyServiceRefineIterations: document.querySelector("#greedyServiceRefineIterations"),
   greedyServiceRefineCandidateLimit: document.querySelector("#greedyServiceRefineCandidateLimit"),
@@ -301,14 +310,12 @@ const elements = {
   lnsNeighborhoodRows: document.querySelector("#lnsNeighborhoodRows"),
   lnsNeighborhoodCols: document.querySelector("#lnsNeighborhoodCols"),
   lnsRepairTimeLimitSeconds: document.querySelector("#lnsRepairTimeLimitSeconds"),
-  lnsPythonExecutable: document.querySelector("#lnsPythonExecutable"),
   lnsUseDisplayedSeed: document.querySelector("#lnsUseDisplayedSeed"),
   cpSatTimeLimitSeconds: document.querySelector("#cpSatTimeLimitSeconds"),
   cpSatNoImprovementTimeoutSeconds: document.querySelector("#cpSatNoImprovementTimeoutSeconds"),
   cpSatRandomSeed: document.querySelector("#cpSatRandomSeed"),
   cpSatNumWorkers: document.querySelector("#cpSatNumWorkers"),
   cpSatLogSearchProgress: document.querySelector("#cpSatLogSearchProgress"),
-  cpSatPythonExecutable: document.querySelector("#cpSatPythonExecutable"),
   cpSatUseDisplayedHint: document.querySelector("#cpSatUseDisplayedHint"),
   cpSatPortfolioEnabled: document.querySelector("#cpSatPortfolioEnabled"),
   cpSatPortfolioWorkerCount: document.querySelector("#cpSatPortfolioWorkerCount"),
@@ -446,6 +453,9 @@ expansionAdviceController = createExpansionAdviceController({
 resultsController = createPlannerResultsController({
   state,
   elements,
+  constants: {
+    LIVE_SNAPSHOT_REFRESH_INTERVAL_MS,
+  },
   helpers: {
     cloneJson,
     formatElapsedTime,
@@ -617,6 +627,10 @@ function init() {
   const greedyBindings = [
     ["greedyLocalSearch", "localSearch", "checkbox"],
     ["greedyRandomSeed", "randomSeed", "number"],
+    ["greedyTimeLimitSeconds", "timeLimitSeconds", "number"],
+    ["greedyProfile", "profile", "checkbox"],
+    ["greedyDensityTieBreaker", "densityTieBreaker", "checkbox"],
+    ["greedyDensityTieBreakerTolerancePercent", "densityTieBreakerTolerancePercent", "number"],
     ["greedyRestarts", "restarts", "number"],
     ["greedyServiceRefineIterations", "serviceRefineIterations", "number"],
     ["greedyServiceRefineCandidateLimit", "serviceRefineCandidateLimit", "number"],
@@ -648,11 +662,6 @@ function init() {
     });
   });
 
-  elements.lnsPythonExecutable.addEventListener("input", () => {
-    state.cpSat.pythonExecutable = elements.lnsPythonExecutable.value;
-    requestBuilderController.updatePayloadPreview();
-  });
-
   elements.lnsUseDisplayedSeed.addEventListener("change", () => {
     state.lns.useDisplayedSeed = elements.lnsUseDisplayedSeed.checked;
     requestBuilderController.updatePayloadPreview();
@@ -671,7 +680,6 @@ function init() {
     ["cpSatRandomSeed", "randomSeed", "number"],
     ["cpSatNumWorkers", "numWorkers", "number"],
     ["cpSatLogSearchProgress", "logSearchProgress", "checkbox"],
-    ["cpSatPythonExecutable", "pythonExecutable", "text"],
   ];
 
   cpSatBindings.forEach(([elementKey, stateKey, inputType]) => {
@@ -743,6 +751,13 @@ function init() {
   elements.moveSelectedBuildingButton.addEventListener("click", resultsController.handleMoveSelectedAction);
   elements.removeSelectedBuildingButton.addEventListener("click", resultsController.handleRemoveSelectedAction);
   elements.resultMapGrid.addEventListener("click", resultsController.handleResultMapClick);
+  if (elements.resultHeatmapToggle) {
+    elements.resultHeatmapToggle.checked = Boolean(state.resultHeatmapEnabled);
+    elements.resultHeatmapToggle.addEventListener("change", () => {
+      state.resultHeatmapEnabled = elements.resultHeatmapToggle.checked;
+      resultsController.renderResults();
+    });
+  }
 
   elements.compareExpansionButton.addEventListener("click", () => {
     expansionAdviceController.compareExpansionOptions();

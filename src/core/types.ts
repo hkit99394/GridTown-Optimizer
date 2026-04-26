@@ -353,6 +353,10 @@ export interface GreedyOptions {
   serviceLookaheadCandidates?: number;
   /** Prototype deferred road commitment during the main greedy construction pass (default false). */
   deferRoadCommitment?: boolean;
+  /** Prefer more central high-population candidates when Greedy scores are close. Default false. */
+  densityTieBreaker?: boolean;
+  /** Population/score window for density tie-breaking, expressed as a percent. Default 2. */
+  densityTieBreakerTolerancePercent?: number;
   /** Fixed seed for reproducible greedy restart shuffling. */
   randomSeed?: number;
   /** Optional wall-clock budget in seconds for raw greedy solves. Omit for no greedy-specific cap. */

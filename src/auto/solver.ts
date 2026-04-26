@@ -164,6 +164,8 @@ function buildAutoGreedyStageOptions(params: SolverParams): NonNullable<SolverPa
     ...greedy,
     localSearch: greedy.localSearch ?? params.localSearch ?? true,
     profile: greedy.profile ?? true,
+    densityTieBreaker: false,
+    densityTieBreakerTolerancePercent: 0,
     restarts: Math.max(
       1,
       Math.min(greedy.restarts ?? params.restarts ?? AUTO_GREEDY_STAGE_RESTART_CAP, AUTO_GREEDY_STAGE_RESTART_CAP)

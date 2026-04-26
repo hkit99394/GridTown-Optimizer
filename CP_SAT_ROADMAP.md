@@ -4,11 +4,14 @@
 
 Strengthen `CP-SAT` as the exact/global solver.
 
-This roadmap is intentionally not about quality-per-minute. The focus is:
+This roadmap supports the product target, but it is not the first place to chase quality-per-minute. `CP-SAT` is most valuable when it supplies exact improvement, proof, upper bounds, warm-start polishing, and reliable labels for benchmark/replay work.
+
+The focus is:
 - stronger exact search
 - clearer exact-run visibility
 - stable long-running execution
 - scalable search orchestration
+- trustworthy bound/label generation for `auto`, `LNS`, and learned-guidance experiments
 
 ## Current Status
 
@@ -31,6 +34,8 @@ Detailed delivered notes live in [CP_SAT_ROADMAP_DELIVERED.md](./CP_SAT_ROADMAP_
 
 ### 1. Deepen async and portfolio failure-mode coverage
 
+Impact on target: high confidence / medium direct quality
+
 Why it matters:
 - async and portfolio paths are shipped, but more edge-case coverage will make them safer to evolve
 - this is the main confidence gap before increasing single-machine fan-out or starting distributed orchestration
@@ -43,11 +48,31 @@ Scope:
 - malformed streamed progress payloads
 - async child-process failure paths
 
-### 2. Distributed CP-SAT
+### 2. Use CP-SAT as a label and replay engine
+
+Impact on target: high enabling value
+
+Why it matters:
+- learned ranking and better `LNS` control need trustworthy labels for "what would have happened if we repaired this different window?"
+- CP-SAT already owns exact repair, warm starts, objective lower bounds, and progress telemetry
+- replay workloads can use CPU parallelism while still reporting total CPU budget beside wall-clock time
+
+Scope:
+- counterfactual `LNS` window replay under equal repair budgets
+- seed-quality comparisons for warm starts and objective lower bounds
+- exact upper-bound and gap export into shared traces
+- benchmark-safe replay harness that keeps final validation through the existing evaluator
+
+Guardrails:
+- do not let label generation leak holdout cases into model selection
+- always record wall-clock and CPU budget for parallel replay
+- keep `CP-SAT` labels tied to the exact model fingerprint and validated solution shape
+
+### 3. Distributed CP-SAT
 
 Priority note:
 - this has the highest remaining exact-search compute ceiling, but not the highest near-term product leverage
-- [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md) keeps distributed solving behind single-machine portfolio hardening, workflow improvements, and cancellation confidence
+- [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md) keeps distributed solving behind shared traces, deterministic feature work, single-machine portfolio hardening, workflow improvements, and cancellation confidence
 - treat distributed CP-SAT as the next orchestration tier after local portfolio execution is demonstrably safe
 
 Why it matters:
@@ -69,3 +94,5 @@ Core requirements:
 - Do not change the exact objective implicitly while tuning the model.
 - Prefer async CP-SAT integration for new work.
 - Do not raise portfolio fan-out limits or begin distributed orchestration before cancellation and degraded-worker behavior have dedicated coverage.
+- Do not use CP-SAT parallelism as a headline win unless the scorecard reports CPU budget as well as wall-clock.
+- Treat building connectivity-shadow scoring as a heuristic/planner feature first; CP-SAT already models exact feasibility and should mainly provide labels, proofs, and validation for it.

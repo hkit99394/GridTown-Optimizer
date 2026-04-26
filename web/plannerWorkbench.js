@@ -114,7 +114,6 @@
           ...(params.cpSat.randomSeed != null ? { randomSeed: String(params.cpSat.randomSeed) } : {}),
           ...(params.cpSat.numWorkers != null ? { numWorkers: params.cpSat.numWorkers } : {}),
           ...(params.cpSat.logSearchProgress != null ? { logSearchProgress: Boolean(params.cpSat.logSearchProgress) } : {}),
-          ...(params.cpSat.pythonExecutable != null ? { pythonExecutable: String(params.cpSat.pythonExecutable) } : {}),
           ...(params.cpSat.useDisplayedHint != null ? { useDisplayedHint: Boolean(params.cpSat.useDisplayedHint) } : {}),
           ...applyCpSatPortfolioRequestToState(params.cpSat.portfolio),
         };
@@ -140,7 +139,9 @@
     function setPaintMode(mode) {
       state.paintMode = mode;
       for (const button of elements.paintModeToggle.querySelectorAll("button")) {
-        button.classList.toggle("active", button.dataset.paintMode === mode);
+        const isActive = button.dataset.paintMode === mode;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-pressed", String(isActive));
       }
     }
 
@@ -148,7 +149,9 @@
       state.optimizer = normalizeOptimizer(optimizer);
       const showAutoPanels = state.optimizer === "auto";
       for (const button of elements.solverToggle.querySelectorAll("button")) {
-        button.classList.toggle("active", button.dataset.optimizer === state.optimizer);
+        const isActive = button.dataset.optimizer === state.optimizer;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-pressed", String(isActive));
       }
       if (elements.autoPanel) {
         elements.autoPanel.hidden = !showAutoPanels;
@@ -158,6 +161,16 @@
       elements.cpSatPanel.hidden = !showAutoPanels && state.optimizer !== "cp-sat";
       syncSolverFields();
       updateSummary();
+    }
+
+    function setInputMax(element, max) {
+      if (!element) return;
+      if (max === null || max === undefined || max === "") {
+        element.max = "";
+        element.removeAttribute?.("max");
+        return;
+      }
+      element.max = String(max);
     }
 
     function updateGridDimensionInputs() {
@@ -408,16 +421,28 @@
       elements.greedyRandomSeed.value = autoOwnsStageSeeds
         ? ""
         : (state.greedy.randomSeed === "" ? "" : String(state.greedy.randomSeed ?? ""));
+      if (elements.greedyTimeLimitSeconds) {
+        elements.greedyTimeLimitSeconds.disabled = autoOwnsStageSeeds;
+        elements.greedyTimeLimitSeconds.title = autoOwnsStageSeeds
+          ? "Auto uses its global cap and per-stage budgets instead of standalone Greedy time limits."
+          : "";
+        elements.greedyTimeLimitSeconds.placeholder = autoOwnsStageSeeds
+          ? "Auto uses stage budgets"
+          : "Blank = unlimited";
+        elements.greedyTimeLimitSeconds.value = autoOwnsStageSeeds
+          ? ""
+          : (state.greedy.timeLimitSeconds === "" ? "" : String(state.greedy.timeLimitSeconds ?? ""));
+      }
       elements.greedyRestarts.value = String(state.greedy.restarts);
-      elements.greedyRestarts.max = autoOwnsStageSeeds ? "4" : "";
+      setInputMax(elements.greedyRestarts, autoOwnsStageSeeds ? 4 : "");
       elements.greedyRestarts.title = autoOwnsStageSeeds ? "Auto caps the Greedy seed stage at 4 restarts." : "";
       elements.greedyServiceRefineIterations.value = String(state.greedy.serviceRefineIterations);
-      elements.greedyServiceRefineIterations.max = autoOwnsStageSeeds ? "1" : "";
+      setInputMax(elements.greedyServiceRefineIterations, autoOwnsStageSeeds ? 1 : "");
       elements.greedyServiceRefineIterations.title = autoOwnsStageSeeds
         ? "Auto caps the Greedy seed stage at 1 service-refinement pass."
         : "";
       elements.greedyServiceRefineCandidateLimit.value = String(state.greedy.serviceRefineCandidateLimit);
-      elements.greedyServiceRefineCandidateLimit.max = autoOwnsStageSeeds ? "24" : "";
+      setInputMax(elements.greedyServiceRefineCandidateLimit, autoOwnsStageSeeds ? 24 : "");
       elements.greedyServiceRefineCandidateLimit.title = autoOwnsStageSeeds
         ? "Auto caps the Greedy seed stage at 24 service-refinement candidates."
         : "";
@@ -426,6 +451,31 @@
       elements.greedyExhaustiveServiceSearch.title = autoOwnsStageSeeds
         ? "Auto always disables exhaustive service search during the fast Greedy seed stage."
         : "";
+      if (elements.greedyProfile) {
+        elements.greedyProfile.checked = autoOwnsStageSeeds ? false : Boolean(state.greedy.profile);
+        elements.greedyProfile.disabled = autoOwnsStageSeeds;
+        elements.greedyProfile.title = autoOwnsStageSeeds
+          ? "Standalone Greedy profile collection is not exposed while Auto owns the seed stage."
+          : "";
+      }
+      if (elements.greedyDensityTieBreaker) {
+        elements.greedyDensityTieBreaker.checked = autoOwnsStageSeeds ? false : Boolean(state.greedy.densityTieBreaker);
+        elements.greedyDensityTieBreaker.disabled = autoOwnsStageSeeds;
+        elements.greedyDensityTieBreaker.title = autoOwnsStageSeeds
+          ? "Auto owns the Greedy seed policy, so center-density tie-breaking is standalone Greedy only."
+          : "";
+      }
+      if (elements.greedyDensityTieBreakerTolerancePercent) {
+        elements.greedyDensityTieBreakerTolerancePercent.value = autoOwnsStageSeeds
+          ? ""
+          : state.greedy.densityTieBreakerTolerancePercent === ""
+            ? ""
+            : String(state.greedy.densityTieBreakerTolerancePercent ?? "2");
+        elements.greedyDensityTieBreakerTolerancePercent.disabled = autoOwnsStageSeeds;
+        elements.greedyDensityTieBreakerTolerancePercent.title = autoOwnsStageSeeds
+          ? "Auto uses a fixed seed policy instead of standalone density tie-breaking."
+          : "";
+      }
       if (elements.greedyDiagnostics) {
         elements.greedyDiagnostics.checked = autoOwnsStageSeeds ? false : Boolean(state.greedy.diagnostics);
         elements.greedyDiagnostics.disabled = autoOwnsStageSeeds;
@@ -434,12 +484,12 @@
           : "";
       }
       elements.greedyServiceExactPoolLimit.value = String(state.greedy.serviceExactPoolLimit);
-      elements.greedyServiceExactPoolLimit.max = autoOwnsStageSeeds ? "8" : "";
+      setInputMax(elements.greedyServiceExactPoolLimit, autoOwnsStageSeeds ? 8 : "");
       elements.greedyServiceExactPoolLimit.title = autoOwnsStageSeeds
         ? "Auto caps the Greedy seed stage at an exact service pool of 8."
         : "";
       elements.greedyServiceExactMaxCombinations.value = String(state.greedy.serviceExactMaxCombinations);
-      elements.greedyServiceExactMaxCombinations.max = autoOwnsStageSeeds ? "512" : "";
+      setInputMax(elements.greedyServiceExactMaxCombinations, autoOwnsStageSeeds ? 512 : "");
       elements.greedyServiceExactMaxCombinations.title = autoOwnsStageSeeds
         ? "Auto caps the Greedy seed stage at 512 exact service combinations."
         : "";
@@ -449,7 +499,6 @@
       elements.lnsNeighborhoodRows.value = String(state.lns.neighborhoodRows);
       elements.lnsNeighborhoodCols.value = String(state.lns.neighborhoodCols);
       elements.lnsRepairTimeLimitSeconds.value = String(state.lns.repairTimeLimitSeconds);
-      elements.lnsPythonExecutable.value = state.cpSat.pythonExecutable;
       elements.lnsUseDisplayedSeed.checked = Boolean(state.lns.useDisplayedSeed);
 
       elements.cpSatTimeLimitSeconds.value = state.cpSat.timeLimitSeconds;
@@ -464,7 +513,6 @@
         : (state.cpSat.randomSeed === "" ? "" : String(state.cpSat.randomSeed ?? ""));
       elements.cpSatNumWorkers.value = String(state.cpSat.numWorkers);
       elements.cpSatLogSearchProgress.checked = state.cpSat.logSearchProgress;
-      elements.cpSatPythonExecutable.value = state.cpSat.pythonExecutable;
       elements.cpSatUseDisplayedHint.checked = Boolean(state.cpSat.useDisplayedHint);
       syncCpSatPortfolioFields(autoOwnsStageSeeds);
 

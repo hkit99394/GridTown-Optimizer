@@ -15,6 +15,7 @@ import {
   isLayoutEvaluateRequest,
   isSolveRequest,
   materializeSerializedSolution,
+  sanitizeSolveRequest,
 } from "./contracts.js";
 import { monitorClientDisconnect, readValidatedJsonBody, sendJson } from "./transport.js";
 
@@ -75,7 +76,7 @@ export async function handleImmediateSolve(
   const url = new URL(req.url ?? "/", "http://localhost");
   if (url.pathname !== "/api/solve") return false;
 
-  const payload = await readValidatedJsonBody<SolveRequest>(
+  let payload = await readValidatedJsonBody<SolveRequest>(
     req,
     res,
     isSolveRequest,
@@ -83,6 +84,7 @@ export async function handleImmediateSolve(
   );
   if (!payload) return true;
 
+  payload = sanitizeSolveRequest(payload);
   assertValidSolveInputs(payload.grid, payload.params);
   const solveLease = solveJobManager.tryAcquireImmediateSolve();
   if (!solveLease) {
@@ -124,7 +126,7 @@ export async function handleLayoutEvaluate(
   const url = new URL(req.url ?? "/", "http://localhost");
   if (url.pathname !== "/api/layout/evaluate") return false;
 
-  const payload = await readValidatedJsonBody<LayoutEvaluateRequest>(
+  let payload = await readValidatedJsonBody<LayoutEvaluateRequest>(
     req,
     res,
     isLayoutEvaluateRequest,
@@ -132,6 +134,7 @@ export async function handleLayoutEvaluate(
   );
   if (!payload) return true;
 
+  payload = sanitizeSolveRequest(payload);
   assertValidLayoutEvaluateInputs(payload.grid, payload.params);
   assertValidSerializedSolutionPayload(payload.solution, "Manual layout solution");
   const solution = materializeSerializedSolution(payload.solution);
@@ -151,7 +154,7 @@ export async function handleStartSolve(
   const url = new URL(req.url ?? "/", "http://localhost");
   if (url.pathname !== "/api/solve/start") return false;
 
-  const payload = await readValidatedJsonBody<SolveRequest>(
+  let payload = await readValidatedJsonBody<SolveRequest>(
     req,
     res,
     isSolveRequest,
@@ -159,6 +162,7 @@ export async function handleStartSolve(
   );
   if (!payload) return true;
 
+  payload = sanitizeSolveRequest(payload);
   assertValidSolveInputs(payload.grid, payload.params);
   const requestId = typeof payload.requestId === "string" && payload.requestId.trim()
     ? payload.requestId.trim()

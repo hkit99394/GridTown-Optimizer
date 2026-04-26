@@ -2,6 +2,11 @@
 
 This file keeps the completed CP-SAT roadmap work out of the main roadmap so [CP_SAT_ROADMAP.md](./CP_SAT_ROADMAP.md) stays short and current.
 
+Target alignment:
+- the delivered CP-SAT work is now treated as exact improvement, proof, and label-generation infrastructure for the broader target of maximizing population per wall-clock budget
+- future priority ordering lives in [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md) and [CP_SAT_ROADMAP.md](./CP_SAT_ROADMAP.md), not in this delivery record
+- portfolio and worker-count wins should always be reported with CPU budget beside wall-clock time
+
 ## Delivered Work
 
 ### 1. Exact-safe candidate reduction

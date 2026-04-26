@@ -587,6 +587,10 @@ function testPlannerBuildSolveRequestEnablesGreedyDiagnosticsOnlyForStandaloneGr
     greedy: {
       localSearch: true,
       randomSeed: "",
+      timeLimitSeconds: "3900",
+      profile: true,
+      densityTieBreaker: true,
+      densityTieBreakerTolerancePercent: "2.5",
       restarts: 1,
       serviceRefineIterations: 0,
       serviceRefineCandidateLimit: 1,
@@ -639,13 +643,28 @@ function testPlannerBuildSolveRequestEnablesGreedyDiagnosticsOnlyForStandaloneGr
     },
   });
 
-  assert.equal(controller.buildSolveRequest().params.greedy.diagnostics, true);
+  const greedyRequest = controller.buildSolveRequest();
+  assert.equal(greedyRequest.params.greedy.diagnostics, true);
+  assert.equal(greedyRequest.params.greedy.profile, true);
+  assert.equal(greedyRequest.params.greedy.timeLimitSeconds, 3900);
+  assert.equal(greedyRequest.params.greedy.densityTieBreaker, true);
+  assert.equal(greedyRequest.params.greedy.densityTieBreakerTolerancePercent, 2.5);
 
   state.optimizer = "auto";
-  assert.equal(controller.buildSolveRequest({ includeWarmStartHint: false, includeLnsSeed: false }).params.greedy.diagnostics, false);
+  const autoRequest = controller.buildSolveRequest({ includeWarmStartHint: false, includeLnsSeed: false });
+  assert.equal(autoRequest.params.greedy.diagnostics, false);
+  assert.equal(autoRequest.params.greedy.profile, false);
+  assert.equal(autoRequest.params.greedy.timeLimitSeconds, undefined);
+  assert.equal(autoRequest.params.greedy.densityTieBreaker, false);
+  assert.equal(autoRequest.params.greedy.densityTieBreakerTolerancePercent, undefined);
 
   state.optimizer = "cp-sat";
-  assert.equal(controller.buildSolveRequest({ includeWarmStartHint: false }).params.greedy.diagnostics, false);
+  const cpSatRequest = controller.buildSolveRequest({ includeWarmStartHint: false });
+  assert.equal(cpSatRequest.params.greedy.diagnostics, false);
+  assert.equal(cpSatRequest.params.greedy.profile, false);
+  assert.equal(cpSatRequest.params.greedy.timeLimitSeconds, undefined);
+  assert.equal(cpSatRequest.params.greedy.densityTieBreaker, false);
+  assert.equal(cpSatRequest.params.greedy.densityTieBreakerTolerancePercent, undefined);
 }
 
 function testPlannerSavedLayoutRestoreRoundTripsHintSeedTogglesAndPortfolio() {
@@ -1047,6 +1066,10 @@ function testPlannerAutoMarksIgnoredSeedControlsUnavailable() {
     greedy: {
       localSearch: true,
       randomSeed: "17",
+      timeLimitSeconds: "3900",
+      profile: true,
+      densityTieBreaker: true,
+      densityTieBreakerTolerancePercent: "2.5",
       restarts: 20,
       serviceRefineIterations: 4,
       serviceRefineCandidateLimit: 60,
@@ -1088,6 +1111,10 @@ function testPlannerAutoMarksIgnoredSeedControlsUnavailable() {
     autoWallClockLimitSeconds: createFakeDomElement(),
     greedyLocalSearch: createFakeDomElement(),
     greedyRandomSeed: createFakeDomElement(),
+    greedyTimeLimitSeconds: createFakeDomElement(),
+    greedyProfile: createFakeDomElement(),
+    greedyDensityTieBreaker: createFakeDomElement(),
+    greedyDensityTieBreakerTolerancePercent: createFakeDomElement(),
     greedyRestarts: createFakeDomElement(),
     greedyServiceRefineIterations: createFakeDomElement(),
     greedyServiceRefineCandidateLimit: createFakeDomElement(),
@@ -1164,6 +1191,15 @@ function testPlannerAutoMarksIgnoredSeedControlsUnavailable() {
   assert.equal(elements.greedyRandomSeed.disabled, true);
   assert.equal(elements.greedyRandomSeed.value, "");
   assert.match(elements.greedyRandomSeed.title, /Auto generates/);
+  assert.equal(elements.greedyTimeLimitSeconds.disabled, true);
+  assert.equal(elements.greedyTimeLimitSeconds.value, "");
+  assert.match(elements.greedyTimeLimitSeconds.title, /Auto uses/);
+  assert.equal(elements.greedyProfile.checked, false);
+  assert.equal(elements.greedyProfile.disabled, true);
+  assert.equal(elements.greedyDensityTieBreaker.checked, false);
+  assert.equal(elements.greedyDensityTieBreaker.disabled, true);
+  assert.equal(elements.greedyDensityTieBreakerTolerancePercent.disabled, true);
+  assert.equal(elements.greedyDensityTieBreakerTolerancePercent.value, "");
   assert.equal(elements.cpSatRandomSeed.disabled, true);
   assert.equal(elements.cpSatRandomSeed.value, "");
   assert.match(elements.cpSatRandomSeed.title, /Auto generates/);
@@ -1171,6 +1207,20 @@ function testPlannerAutoMarksIgnoredSeedControlsUnavailable() {
   assert.equal(elements.greedyExhaustiveServiceSearch.disabled, true);
   assert.equal(elements.greedyRestarts.max, "4");
   assert.equal(elements.greedyServiceExactMaxCombinations.max, "512");
+
+  state.optimizer = "greedy";
+  controller.syncSolverFields();
+
+  assert.equal(elements.greedyTimeLimitSeconds.disabled, false);
+  assert.equal(elements.greedyTimeLimitSeconds.value, "3900");
+  assert.equal(elements.greedyProfile.checked, true);
+  assert.equal(elements.greedyProfile.disabled, false);
+  assert.equal(elements.greedyDensityTieBreaker.checked, true);
+  assert.equal(elements.greedyDensityTieBreaker.disabled, false);
+  assert.equal(elements.greedyDensityTieBreakerTolerancePercent.disabled, false);
+  assert.equal(elements.greedyDensityTieBreakerTolerancePercent.value, "2.5");
+  assert.equal(elements.greedyRestarts.max, "");
+  assert.equal(elements.greedyServiceExactMaxCombinations.max, "");
 }
 
 function testPlannerShellRequiresManualValidationBeforeContinuationReuse() {
@@ -1965,6 +2015,150 @@ function testPlannerResultsShowsGreedyDiagnosticsReport() {
   assert.equal(elements.greedyDiagnosticsResidentialList.children.length, 1);
   assert.match(elements.greedyDiagnosticsServiceList.children[0].children[0].textContent, /No service coverage: 1/);
   assert.match(elements.greedyDiagnosticsResidentialList.children[0].children[0].textContent, /Base population only: 1/);
+}
+
+function testPlannerResultsAppliesServiceValueHeatmap() {
+  function createRecordingElement(overrides = {}) {
+    return createFakeDomElement({
+      attributes: {},
+      children: [],
+      style: {
+        setProperty(name, value) {
+          this[name] = value;
+        },
+      },
+      append(...children) {
+        this.children.push(...children);
+      },
+      appendChild(child) {
+        this.children.push(child);
+      },
+      setAttribute(name, value) {
+        this.attributes[name] = String(value);
+      },
+      ...overrides,
+    });
+  }
+
+  const plannerResults = loadPlannerResultsModule({
+    window: {
+      getComputedStyle() {
+        return {
+          getPropertyValue() {
+            return "";
+          },
+          paddingLeft: "0",
+          paddingTop: "0",
+        };
+      },
+    },
+    context: {
+      document: {
+        createElement() {
+          return createRecordingElement();
+        },
+      },
+    },
+  });
+  const state = {
+    isSolving: false,
+    grid: [[1, 1, 1], [1, 1, 1]],
+    result: {
+      solution: {
+        optimizer: "greedy",
+        roads: [],
+        services: [{ r: 0, c: 0, rows: 1, cols: 1, range: 1 }],
+        serviceTypeIndices: [0],
+        servicePopulationIncreases: [20],
+        residentials: [{ r: 1, c: 1, rows: 1, cols: 1 }],
+        residentialTypeIndices: [0],
+        populations: [30],
+        totalPopulation: 30,
+      },
+      stats: {
+        optimizer: "greedy",
+        manualLayout: false,
+        cpSatStatus: null,
+        stoppedByUser: false,
+        stoppedByTimeLimit: false,
+        totalPopulation: 30,
+        roadCount: 0,
+        serviceCount: 1,
+        residentialCount: 1,
+      },
+      validation: {
+        valid: true,
+        errors: [],
+      },
+    },
+    resultContext: {
+      grid: [[1, 1, 1], [1, 1, 1]],
+      params: {
+        optimizer: "greedy",
+        serviceTypes: [{ name: "Clinic", bonus: 20, rows: 1, cols: 1, range: 1, avail: 1 }],
+        residentialTypes: [{ name: "House", w: 1, h: 1, min: 10, max: 30, avail: 1 }],
+      },
+    },
+    solveProgressLog: [],
+    resultIsLiveSnapshot: false,
+    resultError: "",
+    resultElapsedMs: 1000,
+    resultHeatmapEnabled: true,
+    selectedMapBuilding: null,
+    selectedMapCell: null,
+    layoutEditor: {
+      mode: "inspect",
+      pendingPlacement: null,
+      isApplying: false,
+      edited: false,
+      pendingValidation: false,
+      status: "",
+    },
+  };
+  const elements = new Proxy({}, {
+    get(target, key) {
+      if (!target[key]) target[key] = createRecordingElement();
+      return target[key];
+    },
+  });
+  const controller = plannerResults.createPlannerResultsController({
+    state,
+    elements,
+    helpers: {
+      cloneJson(value) {
+        return JSON.parse(JSON.stringify(value));
+      },
+      formatElapsedTime(value) {
+        return `${value}ms`;
+      },
+    },
+    callbacks: {
+      applyMatrixLayout() {},
+      clearExpansionAdvice() {},
+      getOptimizerLabel(value) {
+        return value === "greedy" ? "Greedy" : String(value);
+      },
+      renderExpansionAdvice() {},
+      setSolveState() {},
+      syncActionAvailability() {},
+    },
+  });
+
+  controller.renderResults();
+
+  const findCell = (row, col) =>
+    elements.resultMapGrid.children.find((cell) => cell.dataset.r === String(row) && cell.dataset.c === String(col));
+  const serviceCell = findCell(0, 0);
+  const coveredCell = findCell(0, 1);
+  const farCell = findCell(1, 2);
+
+  assert.doesNotMatch(serviceCell.className, /heatmap-cell/);
+  assert.match(coveredCell.className, /heatmap-cell/);
+  assert.equal(coveredCell.dataset.serviceValue, "20");
+  assert.equal(coveredCell.style["--heatmap-warm-alpha"], "0.76");
+  assert.match(coveredCell.title, /service value \+20/);
+  assert.match(coveredCell.attributes["aria-label"], /service value \+20/);
+  assert.doesNotMatch(farCell.className, /heatmap-cell/);
 }
 
 function testManualLayoutResponseClearsSolverMetadata() {
@@ -2929,6 +3123,8 @@ function testPlannerRequestBuilderUsesBoundedGreedyProfileForAuto() {
     greedy: {
       localSearch: true,
       randomSeed: "17",
+      densityTieBreaker: true,
+      densityTieBreakerTolerancePercent: "2.5",
       restarts: 20,
       serviceRefineIterations: 4,
       serviceRefineCandidateLimit: 60,
@@ -2984,6 +3180,10 @@ function testPlannerRequestBuilderUsesBoundedGreedyProfileForAuto() {
   const request = controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false });
   assert.equal(request.params.greedy.localSearch, true);
   assert.equal(request.params.greedy.randomSeed, undefined);
+  assert.equal(request.params.greedy.timeLimitSeconds, undefined);
+  assert.equal(request.params.greedy.profile, false);
+  assert.equal(request.params.greedy.densityTieBreaker, false);
+  assert.equal(request.params.greedy.densityTieBreakerTolerancePercent, undefined);
   assert.equal(request.params.cpSat.randomSeed, undefined);
   assert.equal(request.params.greedy.restarts, 4);
   assert.equal(request.params.greedy.serviceRefineIterations, 1);
@@ -3359,6 +3559,7 @@ async function main() {
   testPlannerResultsRotatePendingPlacementUpdatesFootprint();
   testPlannerResultsShowsAutoGeneratedSeedSummary();
   testPlannerResultsShowsGreedyDiagnosticsReport();
+  testPlannerResultsAppliesServiceValueHeatmap();
   testManualLayoutResponseClearsSolverMetadata();
   testManualLayoutResponseReportsOutOfBoundsRoads();
   testBuildCpSatWarmStartCheckpointRejectsInvalidLayouts();

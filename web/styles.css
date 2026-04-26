@@ -100,25 +100,25 @@ a {
   z-index: 1;
   max-width: 1720px;
   margin: 0 auto;
-  padding: 26px 24px 56px;
+  padding: 16px 24px 56px;
 }
 
 .cockpit-header {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
-  gap: 18px;
+  grid-template-columns: 1fr;
+  gap: 10px;
   align-items: stretch;
-  padding: 10px 6px 22px;
+  padding: 0 0 14px;
 }
 
 .cockpit-title {
-  padding: 24px 24px 22px;
+  padding: 16px 18px;
   border: 1px solid var(--line);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 250, 248, 0.92)),
     linear-gradient(135deg, rgba(15, 102, 80, 0.08), transparent 50%);
-  box-shadow: var(--shadow);
+  box-shadow: 0 14px 38px rgba(16, 25, 29, 0.08);
 }
 
 .cockpit-title h1,
@@ -126,22 +126,22 @@ a {
 .module-head h3,
 .result-block h4 {
   margin: 0;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
 }
 
 .cockpit-title h1 {
-  max-width: 13ch;
-  font-size: clamp(2.5rem, 4.5vw, 4.9rem);
-  line-height: 0.93;
-  letter-spacing: -0.055em;
+  max-width: none;
+  font-size: clamp(1.8rem, 3vw, 2.65rem);
+  line-height: 1.05;
+  letter-spacing: 0;
 }
 
 .hero-copy {
-  max-width: 860px;
-  margin: 16px 0 0;
+  max-width: 780px;
+  margin: 8px 0 0;
   color: var(--muted);
-  font-size: 1.04rem;
-  line-height: 1.7;
+  font-size: 0.98rem;
+  line-height: 1.45;
 }
 
 .eyebrow {
@@ -166,7 +166,7 @@ a {
 }
 
 .command-strip {
-  margin-top: 18px;
+  margin-top: 12px;
 }
 
 .command-chip,
@@ -186,7 +186,7 @@ a {
 }
 
 .jump-row {
-  margin-top: 16px;
+  margin-top: 12px;
 }
 
 .jump-link {
@@ -204,7 +204,8 @@ a {
 
 .telemetry-panel {
   display: grid;
-  gap: 12px;
+  grid-template-columns: minmax(180px, 0.72fr) minmax(0, 2.4fr);
+  gap: 10px;
 }
 
 .telemetry-card,
@@ -219,11 +220,11 @@ details.payload-preview,
 }
 
 .telemetry-card {
-  padding: 18px;
+  padding: 12px;
 }
 
 .telemetry-status {
-  min-height: 172px;
+  min-height: 0;
   display: grid;
   align-content: start;
   background:
@@ -234,21 +235,21 @@ details.payload-preview,
 .telemetry-status strong {
   display: block;
   margin-top: 2px;
-  font-size: clamp(2.1rem, 4vw, 3.3rem);
-  line-height: 0.95;
-  letter-spacing: -0.05em;
+  font-size: clamp(1.25rem, 2vw, 1.6rem);
+  line-height: 1;
+  letter-spacing: 0;
 }
 
 .telemetry-status p:last-child {
-  margin: 14px 0 0;
+  margin: 8px 0 0;
   color: var(--muted);
-  line-height: 1.6;
+  line-height: 1.4;
 }
 
 .telemetry-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .telemetry-card.accent {
@@ -269,14 +270,15 @@ details.payload-preview,
 
 .telemetry-card strong {
   display: block;
-  margin-top: 8px;
-  font-size: 1.02rem;
+  margin-top: 6px;
+  font-size: 0.98rem;
+  line-height: 1.15;
 }
 
 .telemetry-card p {
-  margin: 8px 0 0;
+  margin: 6px 0 0;
   color: var(--muted);
-  line-height: 1.55;
+  line-height: 1.38;
 }
 
 .cockpit-grid {
@@ -436,23 +438,39 @@ details.payload-preview {
 
 .grid-cell.allowed,
 .grid-cell.empty {
-  background: var(--grid-allow);
+  --cell-base-bg: var(--grid-allow);
+  background: var(--cell-base-bg);
 }
 
 .grid-cell.blocked {
-  background: var(--grid-block);
+  --cell-base-bg: var(--grid-block);
+  background: var(--cell-base-bg);
 }
 
 .grid-cell.road {
-  background: var(--grid-road);
+  --cell-base-bg: var(--grid-road);
+  background: var(--cell-base-bg);
 }
 
 .grid-cell.service {
-  background: var(--grid-service);
+  --cell-base-bg: var(--grid-service);
+  background: var(--cell-base-bg);
 }
 
 .grid-cell.residential {
-  background: var(--grid-residential);
+  --cell-base-bg: var(--grid-residential);
+  background: var(--cell-base-bg);
+}
+
+.result-grid .grid-cell.heatmap-cell {
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 225, 92, var(--heatmap-warm-alpha, 0.3)),
+      rgba(198, 74, 48, var(--heatmap-hot-alpha, 0.3))
+    ),
+    var(--cell-base-bg);
+  border-color: rgba(137, 58, 38, var(--heatmap-border-alpha, 0.35));
 }
 
 .result-grid .grid-cell {
@@ -1295,6 +1313,10 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 
+  .telemetry-panel {
+    grid-template-columns: 1fr;
+  }
+
   #controlStage {
     position: static;
     max-height: none;
@@ -1318,7 +1340,20 @@ textarea:focus {
 
 @media (max-width: 780px) {
   .page-shell {
-    padding-inline: 16px;
+    padding: 12px 16px 44px;
+  }
+
+  .cockpit-header {
+    gap: 8px;
+    padding-bottom: 10px;
+  }
+
+  .cockpit-title h1 {
+    font-size: 1.65rem;
+  }
+
+  .hero-copy {
+    font-size: 0.94rem;
   }
 
   .cockpit-title,
@@ -1362,6 +1397,44 @@ textarea:focus {
     display: grid;
   }
 
+  .command-strip {
+    display: none;
+  }
+
+  .jump-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .jump-link {
+    min-height: 36px;
+    width: 100%;
+  }
+
+  .telemetry-panel {
+    gap: 8px;
+  }
+
+  .telemetry-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .telemetry-card {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .telemetry-card strong {
+    margin-top: 4px;
+    font-size: 0.9rem;
+  }
+
+  .telemetry-card p:not(.eyebrow) {
+    display: none;
+  }
+
   .result-storage-inline-row {
     grid-template-columns: 1fr;
   }
@@ -1394,10 +1467,6 @@ textarea:focus {
 
   .button,
   .segmented button {
-    width: 100%;
-  }
-
-  .jump-link {
     width: 100%;
   }
 

@@ -19,6 +19,7 @@ const GREEDY_MAX_SERVICE_CANDIDATE_LIMIT = 2_000;
 const GREEDY_MAX_SERVICE_EXACT_POOL_LIMIT = 64;
 const GREEDY_MAX_SERVICE_EXACT_COMBINATIONS = 100_000;
 const GREEDY_MAX_TIME_LIMIT_SECONDS = 24 * 60 * 60;
+const GREEDY_MAX_DENSITY_TIE_BREAKER_TOLERANCE_PERCENT = 100;
 const AUTO_MAX_WALL_CLOCK_LIMIT_SECONDS = 24 * 60 * 60;
 const AUTO_MAX_WEAK_CYCLE_IMPROVEMENT_THRESHOLD = 1;
 const AUTO_MAX_CONSECUTIVE_WEAK_CYCLES = 100;
@@ -1010,6 +1011,15 @@ function assertValidGreedyOptions(params: SolverParams): void {
       GREEDY_MAX_SERVICE_CANDIDATE_LIMIT
     );
     requireOptionalBoolean(greedy, "deferRoadCommitment", "Greedy option greedy.deferRoadCommitment");
+    requireOptionalBoolean(greedy, "densityTieBreaker", "Greedy option greedy.densityTieBreaker");
+    requireOptionalFiniteNumberInRange(
+      greedy,
+      "densityTieBreakerTolerancePercent",
+      "Greedy option greedy.densityTieBreakerTolerancePercent",
+      0,
+      GREEDY_MAX_DENSITY_TIE_BREAKER_TOLERANCE_PERCENT,
+      true
+    );
     requireOptionalIntegerInRange(
       greedy,
       "randomSeed",

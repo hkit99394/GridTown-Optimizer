@@ -932,6 +932,8 @@ function testAutoClampsHeavyGreedyStageSettings() {
         serviceRefineIterations: 4,
         serviceRefineCandidateLimit: 60,
         exhaustiveServiceSearch: true,
+        densityTieBreaker: true,
+        densityTieBreakerTolerancePercent: 25,
         serviceExactPoolLimit: 22,
         serviceExactMaxCombinations: 12000,
       },
@@ -946,6 +948,8 @@ function testAutoClampsHeavyGreedyStageSettings() {
     assert.equal(capturedGreedyOptions.serviceRefineIterations, 1);
     assert.equal(capturedGreedyOptions.serviceRefineCandidateLimit, 24);
     assert.equal(capturedGreedyOptions.exhaustiveServiceSearch, false);
+    assert.equal(capturedGreedyOptions.densityTieBreaker, false);
+    assert.equal(capturedGreedyOptions.densityTieBreakerTolerancePercent, 0);
     assert.equal(capturedGreedyOptions.serviceExactPoolLimit, 8);
     assert.equal(capturedGreedyOptions.serviceExactMaxCombinations, 512);
     assert.equal(capturedGreedyOptions.profile, true);
@@ -1001,6 +1005,8 @@ async function testAutoAsyncClampsHeavyGreedyStageSettings() {
         serviceRefineIterations: 4,
         serviceRefineCandidateLimit: 60,
         exhaustiveServiceSearch: true,
+        densityTieBreaker: true,
+        densityTieBreakerTolerancePercent: 25,
         serviceExactPoolLimit: 22,
         serviceExactMaxCombinations: 12000,
       },
@@ -1015,6 +1021,8 @@ async function testAutoAsyncClampsHeavyGreedyStageSettings() {
     assert.equal(capturedGreedyOptions.serviceRefineIterations, 1);
     assert.equal(capturedGreedyOptions.serviceRefineCandidateLimit, 24);
     assert.equal(capturedGreedyOptions.exhaustiveServiceSearch, false);
+    assert.equal(capturedGreedyOptions.densityTieBreaker, false);
+    assert.equal(capturedGreedyOptions.densityTieBreakerTolerancePercent, 0);
     assert.equal(capturedGreedyOptions.serviceExactPoolLimit, 8);
     assert.equal(capturedGreedyOptions.serviceExactMaxCombinations, 512);
     assert.equal(capturedGreedyOptions.profile, true);
@@ -5386,7 +5394,7 @@ function testSolutionMapValidatorRejectsRoadsNotConnectedToRow0() {
   assert.match(validation.mapText, /^   0123/m);
 }
 
-function testSolutionValidatorRejectsDisconnectedRow0RoadComponents() {
+function testSolutionValidatorAllowsMultipleRow0AnchoredRoadComponents() {
   const grid = [
     [1, 1, 1, 1],
     [1, 1, 1, 1],
@@ -5409,8 +5417,35 @@ function testSolutionValidatorRejectsDisconnectedRow0RoadComponents() {
   };
 
   const validation = validateSolution({ grid, solution, params });
+  assert.equal(validation.valid, true);
+}
+
+function testSolutionValidatorRejectsRoadComponentsWithoutRow0Anchor() {
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+  ];
+  const params = {
+    availableBuildings: { residentials: 0, services: 0 },
+  };
+  const solution = {
+    optimizer: "greedy",
+    roads: new Set(["0,0", "1,3"]),
+    services: [],
+    serviceTypeIndices: [],
+    servicePopulationIncreases: [],
+    residentials: [],
+    residentialTypeIndices: [],
+    populations: [],
+    totalPopulation: 0,
+  };
+
+  const validation = validateSolution({ grid, solution, params });
   assert.equal(validation.valid, false);
-  assert.match(validation.errors.join("\n"), /not connected to the row-0-connected road network/);
+  assert.match(validation.errors.join("\n"), /not connected to any row-0-connected road component/);
+  assert.match(validation.errors.join("\n"), /Disconnected road cells: \(1,3\)\./);
 }
 
 function testTopRowBuildingCountsAsRoadConnected() {
@@ -5586,6 +5621,58 @@ function testGreedyProfilingIsAdditive() {
       (phase) => phase.name === "residentialLocalSearch" && phase.candidatePopulationDelta >= 0
     )
   );
+}
+
+function testGreedyDensityTieBreakerPrefersCentralNearTies() {
+  const grid = Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => 1));
+  const params = {
+    optimizer: "greedy",
+    serviceTypes: [],
+    residentialTypes: [{ w: 1, h: 1, min: 10, max: 10, avail: 1 }],
+    greedy: {
+      localSearch: false,
+      restarts: 1,
+      serviceRefineIterations: 0,
+      exhaustiveServiceSearch: false,
+      densityTieBreaker: true,
+      densityTieBreakerTolerancePercent: 0,
+    },
+  };
+
+  const solution = solveGreedy(grid, params);
+
+  assert.equal(solution.totalPopulation, 10);
+  assert.deepEqual(solution.residentials, [{ r: 2, c: 2, rows: 1, cols: 1 }]);
+  assert.equal(solution.validation?.valid, undefined);
+}
+
+function testGreedyDensityTieBreakerIsOptIn() {
+  const grid = Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => 1));
+  const params = {
+    optimizer: "greedy",
+    serviceTypes: [],
+    residentialTypes: [{ w: 1, h: 1, min: 10, max: 10, avail: 1 }],
+    greedy: {
+      localSearch: false,
+      restarts: 1,
+      serviceRefineIterations: 0,
+      exhaustiveServiceSearch: false,
+    },
+  };
+
+  const withoutDensity = solveGreedy(grid, params);
+  const withDensity = solveGreedy(grid, {
+    ...params,
+    greedy: {
+      ...params.greedy,
+      densityTieBreaker: true,
+      densityTieBreakerTolerancePercent: 2.5,
+    },
+  });
+
+  assert.deepEqual(withoutDensity.residentials, [{ r: 0, c: 0, rows: 1, cols: 1 }]);
+  assert.deepEqual(withDensity.residentials, [{ r: 2, c: 2, rows: 1, cols: 1 }]);
+  assert.equal(withDensity.totalPopulation, withoutDensity.totalPopulation);
 }
 
 function testGreedyDiagnosticsAreOptInDeterministicAndAdditive() {
@@ -6011,6 +6098,8 @@ async function main() {
   testAutoClampsHeavyGreedyStageSettings();
   await testAutoAsyncClampsHeavyGreedyStageSettings();
   testGreedyProfilingIsAdditive();
+  testGreedyDensityTieBreakerPrefersCentralNearTies();
+  testGreedyDensityTieBreakerIsOptIn();
   testGreedyDiagnosticsAreOptInDeterministicAndAdditive();
   testGreedyDiagnosticsReportsNoServiceCoverage();
   testGreedyBenchmarkCorpusHelpers();
@@ -6069,7 +6158,8 @@ async function main() {
   testCpSatRejectsDanglingSelectedPortfolioWorkerIndex();
   testSolutionValidator();
   testSolutionMapValidatorRejectsRoadsNotConnectedToRow0();
-  testSolutionValidatorRejectsDisconnectedRow0RoadComponents();
+  testSolutionValidatorAllowsMultipleRow0AnchoredRoadComponents();
+  testSolutionValidatorRejectsRoadComponentsWithoutRow0Anchor();
   testTopRowBuildingCountsAsRoadConnected();
   testGreedyRespectsTopRowConnectivityShortcut();
   testGreedySupportsShapedServices();

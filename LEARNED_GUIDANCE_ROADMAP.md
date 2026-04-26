@@ -4,12 +4,15 @@
 
 Improve solution quality per minute by adding learned guidance on top of the existing solver stack.
 
+The target is not model accuracy by itself. A learned feature only matters when it improves **population at fixed wall-clock budgets** or reaches the same population faster than the deterministic baseline.
+
 This roadmap is intentionally about `hybrid search`, not replacing the current solvers. The target shape is:
 
 1. deterministic candidate generation and legality checks
-2. learned ranking / value guidance over those candidates
-3. `LNS` and `CP-SAT` as the hard-improvement engines
-4. exact final validation and scoring
+2. deterministic feature extraction over those candidates, including opportunity and connectivity-shadow features
+3. learned ranking / value guidance over candidates only after traces and ablations justify it
+4. `LNS` and `CP-SAT` as the hard-improvement engines
+5. exact final validation and scoring
 
 ## Non-Goals
 
@@ -17,6 +20,7 @@ This roadmap is not about:
 - replacing [src/core/evaluator.ts](./src/core/evaluator.ts) as the source of truth for legality and population
 - replacing [src/cp-sat/solver.ts](./src/cp-sat/solver.ts) as the exact repair / global solve path
 - learning road connectivity or shortest-path logic that is already solved cleanly with graph algorithms
+- treating roads as blockers in the training target; the future blocker is building footprints that remove cells from row-0-reachable empty space
 - training a raw cell-by-cell end-to-end RL agent as the first milestone
 
 ## Principles
@@ -28,6 +32,8 @@ This roadmap is not about:
 - Only pursue full RL after cheaper learned baselines already win.
 - Keep learned logic behind feature flags and preserve deterministic fallback behavior.
 - Compare approaches under equal wall-clock and equal solver-budget constraints.
+- Prefer deterministic features such as connectivity shadow and opportunity cost before introducing model behavior.
+- Report CPU budget beside wall-clock whenever parallel data collection or portfolio search is involved.
 
 ## Current Status
 
@@ -53,6 +59,8 @@ Relevant docs:
 - a stable JSONL trace schema shared across optimizer benchmark runs
 - trace export from the existing benchmark CLIs without changing solver behavior
 - a development / holdout benchmark split before any learned model selection
+- deterministic feature extraction for candidate opportunity, residential headroom, service marginal value, and building connectivity shadow
+- counterfactual replay data for `LNS` windows before training an `LNS` window ranker
 - ablation data showing where the current heuristic lift actually comes from
 
 ## AlphaGo / AlphaZero Feasibility
@@ -75,6 +83,7 @@ What does not transfer well:
 Gates before any RL work:
 - add shared traces on top of the shipped benchmark and progress-summary surfaces
 - create a development / holdout split for benchmark and replay data
+- add deterministic opportunity and connectivity-shadow features so models do not have to rediscover graph facts
 - keep reusable `CP-SAT` input validation aligned with any new learned seed or hint payloads
 - beat deterministic baselines with supervised reranking or bandits under equal wall-clock on holdout cases
 
@@ -85,17 +94,18 @@ Gates before any RL work:
 The current recommended order inside the learned-guidance track is:
 
 1. measurement foundation and shared cross-optimizer traces
-2. baseline ablations
-3. learned greedy service re-ranking
-4. learned `LNS` window re-ranking
-5. counterfactual `LNS` replay data
-6. value-guided seed experiments, only if seed quality becomes a measured bottleneck
-7. contextual bandits for `LNS` control, only if re-ranking already wins
-8. full RL, research-only and only if all earlier gates are cleared
+2. deterministic feature foundation, especially building connectivity shadow
+3. baseline ablations
+4. counterfactual `LNS` replay data
+5. learned greedy service re-ranking
+6. learned `LNS` window re-ranking
+7. value-guided seed experiments, only if seed quality becomes a measured bottleneck
+8. contextual bandits for `LNS` control, only if re-ranking already wins
+9. full RL, research-only and only if all earlier gates are cleared
 
 Why this order:
-- phases 0 through 4 reduce uncertainty and create reusable data at the lowest experimentation cost
-- phases 5 through 8 depend on a more stable solver policy, better reusable-input validation, and more expensive labels
+- phases 0 through 3 reduce uncertainty and create reusable data at the lowest experimentation cost
+- later phases depend on a more stable solver policy, better reusable-input validation, and more expensive labels
 
 ### Phase 0: Measurement Foundation
 
@@ -112,7 +122,10 @@ Concrete work:
 - emit JSONL traces for solver milestones:
   - seed built
   - restart completed
+  - candidate scored
+  - candidate skipped or selected
   - local-search improvement
+  - neighborhood windows generated
   - neighborhood window chosen
   - repair completed
   - incumbent improved
@@ -128,15 +141,53 @@ Deliverables:
 Exit criteria:
 - we can compare all optimizers under equal time budgets and export the decision trace for each run
 - we can plot incumbent quality over time for `greedy`, `LNS`, `CP-SAT`, and `auto`
+- we can inspect chosen-vs-available decisions without rerunning the solver
 - every reported result is validated by the exact evaluator
 
-### Phase 1: Baseline Ablation
+### Phase 1: Deterministic Feature Foundation
 
 Status: After Phase 0
 
 Why:
+- learned models should not have to rediscover graph reachability or basic opportunity cost
+- the strongest near-term feature is building connectivity shadow: how much future row-0-reachable empty space and placement value a candidate footprint disconnects
+- the same feature is useful for Greedy scoring, `LNS` anchor selection, planner heatmaps, and later learned ranking
+
+Definition:
+- consider all allowed cells that are not occupied by building footprints as the future road-candidate graph
+- roads are support cells, not the blocker
+- for a candidate building, remove its footprint from the graph and recompute row-0 reachability
+- the raw shadow is the set of newly unreachable empty cells
+- the weighted shadow adds lost residential/service candidate value, residential headroom, service marginal value, and narrow-gate/articulation penalties
+
+Concrete work:
+- add deterministic feature extraction for:
+  - residential headroom
+  - service marginal value
+  - candidate connectivity shadow
+  - candidate footprint fragmentation / articulation pressure
+  - post-placement candidate loss by service and residential type
+- expose the same feature payload in traces, benchmark summaries, and planner explainability maps
+- keep the feature computation flaggable until benchmark evidence shows where it should be used in scoring
+
+Deliverables:
+- reusable connectivity-shadow / opportunity feature module
+- fixed gate/corridor benchmark cases
+- planner map or table that shows disconnected opportunity after a candidate placement
+
+Exit criteria:
+- feature extraction is deterministic and validated against the same grid/building rules as the solver
+- enabling a connectivity-shadow scoring penalty or tie-break improves or preserves population per second on holdout cases
+- traces can use these features as inputs for later learned ranking
+
+### Phase 2: Baseline Ablation
+
+Status: After Phases 0-1
+
+Why:
 - before adding learning, we need to isolate which existing pieces already provide the most lift
 - `LNS` currently mixes seed generation, deterministic upgrades, and exact repair
+- the new connectivity-shadow feature must be measured as a deterministic feature before it becomes an ML input
 - without ablations, learned lift will be easy to overclaim
 
 Concrete work:
@@ -145,9 +196,13 @@ Concrete work:
   - local search
   - service refinement
   - exhaustive service search
+  - service lookahead
+  - deferred connectivity
+  - connectivity-shadow scoring / tie-breaks
 - benchmark `LNS` with and without:
   - deterministic dominance upgrades
   - current neighborhood ordering
+  - connectivity-shadow anchor/window features
   - CP-SAT repair
 - measure the marginal value of `warmStartHint` and `objectiveLowerBound` on `CP-SAT`
 
@@ -159,7 +214,32 @@ Exit criteria:
 - we know which components are worth learning around
 - we know which components should remain deterministic
 
-### Phase 2: Learned Greedy Service Re-Ranking
+### Phase 3: Counterfactual Label Collection For LNS
+
+Status: Before learned `LNS` window re-ranking
+
+Why:
+- logging only the chosen window produces selection-biased data
+- `LNS` labels are expensive because a useful label requires bounded `CP-SAT` repair
+- learned window re-ranking should not start until we have at least a small trustworthy counterfactual dataset
+
+Concrete work:
+- sample incumbent states from benchmark runs
+- replay multiple candidate windows from the same state
+- keep CP-SAT repair budgets equal across replayed windows
+- store actual downstream improvement for each replayed window
+- include deterministic features such as headroom, service marginal value, and connectivity shadow for each replayed window
+
+Deliverables:
+- a small but trustworthy labeled replay dataset
+- train / validation / holdout splits that prevent benchmark leakage
+- parallel replay runner if CPU-budget accounting remains explicit
+
+Exit criteria:
+- offline ranking quality is stable on held-out states
+- the dataset is large enough to support window re-ranking experiments without obvious label collapse
+
+### Phase 4: Learned Greedy Service Re-Ranking
 
 Status: First ML milestone
 
@@ -167,12 +247,14 @@ Why:
 - this is cheaper than `LNS`-guided learning
 - it creates many labeled decisions per run
 - it is easier to benchmark than CP-SAT-backed neighborhood repair
+- it can reuse the deterministic service marginal-value and connectivity-shadow features
 
 Target:
 - learn to re-rank service candidates in the greedy construction path
 
 Concrete work:
 - log greedy construction states and service candidate features
+- include connectivity shadow, candidate loss, and residential headroom features
 - train a lightweight offline model in a separate research path, for example under `python/ml/`
 - start with supervised ranking, not RL
 - integrate the scorer behind a feature flag such as `greedy.learnedServiceRanking`
@@ -187,7 +269,7 @@ Exit criteria:
 - worst-decile performance does not regress materially
 - final solutions still validate exactly
 
-### Phase 3: Learned LNS Window Re-Ranking
+### Phase 5: Learned LNS Window Re-Ranking
 
 Status: Second ML milestone
 
@@ -195,6 +277,7 @@ Why:
 - `LNS` is already the closest analogue to policy-guided search
 - the code already separates window generation from repair
 - re-ranking is much lower risk than replacing neighborhood construction outright
+- counterfactual replay data should exist before this phase starts
 
 Important constraint:
 - keep the current `buildNeighborhoodWindows(...)` control path deterministic
@@ -207,6 +290,7 @@ Target:
 Concrete work:
 - log incumbent state, candidate windows, chosen window, repair budget, and outcome
 - add a feature-flagged `rerankNeighborhoodWindows(...)` stage
+- train and evaluate from counterfactual replay labels, not only chosen-window logs
 - compare baseline ordering vs learned ordering under the same CP-SAT budget
 
 Deliverables:
@@ -219,29 +303,7 @@ Exit criteria:
 - learned re-ranking improves `time-to-strong-incumbent`
 - deterministic fallback remains unchanged and existing baseline tests remain valid
 
-### Phase 4: Counterfactual Label Collection For LNS
-
-Status: Required before stronger LNS learning
-
-Why:
-- logging only the chosen window produces selection-biased data
-- we need some counterfactual evidence for windows the baseline did not pick
-
-Concrete work:
-- sample incumbent states from benchmark runs
-- replay multiple candidate windows from the same state
-- keep CP-SAT repair budgets equal across replayed windows
-- store actual downstream improvement for each replayed window
-
-Deliverables:
-- a small but trustworthy labeled replay dataset
-- train / validation / holdout splits that prevent benchmark leakage
-
-Exit criteria:
-- offline ranking quality is stable on held-out states
-- the dataset is large enough to support window re-ranking experiments without obvious label collapse
-
-### Phase 5: Value Model And CP-SAT Warm Starts
+### Phase 6: Value Model And CP-SAT Warm Starts
 
 Status: Later, and only if seed quality becomes a measured bottleneck
 
@@ -267,7 +329,7 @@ Deliverables:
 Exit criteria:
 - learned seeds improve incumbent quality or time-to-quality under equal `CP-SAT` budgets
 
-### Phase 6: Contextual Bandits Or RL
+### Phase 7: Contextual Bandits Or RL
 
 Status: Research-only, only after earlier phases prove value
 
@@ -306,6 +368,7 @@ Additional gates:
 ### Core runtime integration
 
 - [src/core/types.ts](./src/core/types.ts): shared event, trace, and benchmark types
+- [src/core/roads.ts](./src/core/roads.ts) or a sibling core module: deterministic connectivity-shadow and row-0-reachability opportunity features
 - [src/runtime/solve.ts](./src/runtime/solve.ts): common solver callback / instrumentation entry point
 - [src/greedy/solver.ts](./src/greedy/solver.ts): greedy trace emission and optional learned service re-ranking hook
 - [src/lns/solver.ts](./src/lns/solver.ts): `LNS` trace emission and optional learned window re-ranking hook
@@ -361,12 +424,13 @@ Every milestone should clear all of the following before the next phase begins:
 The recommended sequence is:
 
 1. measurement foundation and shared traces
-2. ablations
-3. learned greedy service re-ranking
-4. learned `LNS` window re-ranking
-5. counterfactual `LNS` replay data
-6. value-guided warm starts only if seed quality becomes a measured bottleneck
-7. contextual bandits only if re-ranking already wins
-8. full RL only as gated research after earlier phases already win
+2. deterministic feature foundation, especially building connectivity shadow
+3. ablations
+4. counterfactual `LNS` replay data
+5. learned greedy service re-ranking
+6. learned `LNS` window re-ranking
+7. value-guided warm starts only if seed quality becomes a measured bottleneck
+8. contextual bandits only if re-ranking already wins
+9. full RL only as gated research after earlier phases already win
 
 This keeps the project grounded in the strengths of the current solver stack while still leaving room for Go-style learned guidance where it can actually help.

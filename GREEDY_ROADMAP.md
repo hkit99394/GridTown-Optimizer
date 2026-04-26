@@ -9,6 +9,7 @@ This roadmap is intentionally not about turning `greedy` into a full exact solve
 - lower runtime variance on larger grids
 - cleaner reuse as the seed phase for `auto` and `LNS`
 - safer measurement and iteration on heuristic changes
+- deterministic opportunity-cost features that improve population per wall-clock without replacing validation
 
 ## Current Status
 
@@ -44,6 +45,7 @@ After the shipped Steps 1-15 bounded slices, the greedy path is much stronger an
 - an explicit product posture where `auto` is the recommended quality path with a capped fast Greedy seed stage, while standalone `greedy` is the heavy heuristic / advanced inspection mode
 
 The biggest remaining practical gaps are now narrower and more specific:
+- Greedy can see whether a candidate is immediately connectable, but it does not yet assign a value-weighted penalty for a building footprint that disconnects future row-0-reachable empty space
 - `localSearchImprove()` still allocates fresh occupancy snapshots for residential move scans, which is now one of the more obvious remaining hot allocations in the greedy path
 - explicit-road probing still rebuilds block-state views per probe and still pays the cost of string-key `Set` semantics internally, even after the Step 11 helper refactor
 - Step 14 lookahead is intentionally narrow: it only reranks the top-N explicit non-`fixedServices` candidates, and it still does not widen greedy into a fuller multi-step search policy
@@ -55,11 +57,39 @@ All 15 roadmap steps below are now shipped as bounded slices. The sections below
 
 These are the only greedy-specific items that currently look worth considering before handing deeper improvement budget to `auto` and `LNS`:
 
-1. Replace residual `localSearchImprove()` occupancy snapshot allocation with rollback-safe scratch state.
-2. Reduce explicit-road probe overhead further by reusing block-state views and moving more internal hot loops away from string-key `Set` semantics.
-3. Use phase profile data to decide whether `auto` should spend more or less of its budget on the fast Greedy seed stage.
-4. Keep `greedy.serviceLookaheadCandidates` and `greedy.deferRoadCommitment` opt-in until the fixed corpus shows broad, repeatable gains.
-5. Extract only stable profiler or scratch-helper modules after benchmark evidence shows the boundary is worth preserving.
+1. Add value-weighted building connectivity-shadow scoring as a flaggable feature.
+2. Replace residual `localSearchImprove()` occupancy snapshot allocation with rollback-safe scratch state.
+3. Reduce explicit-road probe overhead further by reusing block-state views and moving more internal hot loops away from string-key `Set` semantics.
+4. Use phase profile and trace data to decide whether `auto` should spend more or less of its budget on the fast Greedy seed stage.
+5. Keep `greedy.serviceLookaheadCandidates` and `greedy.deferRoadCommitment` opt-in until the fixed corpus shows broad, repeatable gains.
+6. Extract only stable profiler, feature, or scratch-helper modules after benchmark evidence shows the boundary is worth preserving.
+
+### 1. Building connectivity-shadow scoring
+
+Impact: highest remaining Greedy quality-per-minute opportunity
+
+Why:
+- roads themselves are not the scarce blocker; roads can be materialized on any still-empty allowed cell
+- building footprints are the blocker because they remove cells from the future row-0-reachable empty-space graph
+- a candidate that covers a narrow gate can make many future cells or high-value placements unreachable even if the candidate is legal right now
+
+Definition:
+- current future road-candidate graph = allowed cells minus placed building footprints
+- roots = graph cells reachable from row `0`
+- candidate shadow = cells and candidate placements that become unreachable after temporarily removing the candidate building footprint
+- weighted shadow = raw lost empty cells plus lost service/residential opportunity, residential headroom, service marginal value, and articulation/gate pressure
+
+Concrete work:
+- add a reusable shadow computation that can run after candidate precompute and after accepted placements
+- start with full recomputation for correctness; add incremental maintenance only if profiling proves it is hot
+- expose raw and weighted shadow values in `greedy.profile` / future trace events
+- use the penalty first as a tie-break or bounded soft penalty, not as a hard rejection rule
+- add focused corridor, single-gate, and disconnected-opportunity benchmarks
+
+Guardrail:
+- do not reject high-population placements purely because they disconnect low-value space
+- every returned solution must still include explicit roads and pass the strict evaluator
+- keep the feature behind an option until equal-budget scorecards show downstream benefit to `auto` and `LNS`
 
 ## Residual Bottlenecks
 
@@ -76,7 +106,7 @@ The main quality limitation is that service choice still uses a bounded proxy fo
 - packing fragmentation
 - row-0 anchor quality
 - downstream placement opportunity cost
-- premature road commitment that can occupy corridor cells needed by better later buildings
+- building-induced connectivity shadow: a footprint can remove a gate cell from the future road-candidate graph and make valuable empty space unreachable
 
 There are also two specific residual limitations in the current implementation:
 - the Step 14 lookahead path is intentionally bounded and explicit-road-only, so deferred-road mode and `fixedServices` reruns still fall back to the simpler service-selection policy
@@ -164,8 +194,8 @@ Why:
 - same-footprint stronger-type upgrades already exist in `LNS` and can improve greedy output cheaply
 
 Concrete work:
-- add service tie-breakers for lower road cost, stronger row-0 anchor preservation, and lower layout fragmentation
-- add residential tie-breakers for better packing efficiency and lower future blocking cost
+- add service tie-breakers for lower explicit road cost, stronger row-0 anchor preservation, lower layout fragmentation, and lower building connectivity shadow
+- add residential tie-breakers for better packing efficiency and lower future building-induced connectivity shadow
 - port deterministic same-footprint service and residential type upgrades from [src/lns/solver.ts](./src/lns/solver.ts)
 
 Guardrail:
@@ -264,18 +294,20 @@ Expected impact: Medium-high quality improvement, medium heuristic risk
 
 Why:
 - the current greedy path materializes the selected connection path immediately after each accepted placement
-- those committed road cells then become occupied cells that can block later service or residential placements
-- on corridor or choke-point maps, a locally cheap early road path can shrink the later packing frontier more than the current scoring or tie-breakers account for
+- the deeper issue is not that roads are blockers; it is that placed building footprints consume cells that future roads might need as gates
+- deferred road commitment was a first step toward evaluating placements against row-0-reachable empty space rather than against already-materialized road paths
+- on corridor or choke-point maps, a locally attractive building can shrink the later reachable empty-space frontier more than the current scoring or tie-breakers account for
 - row-0 buildings already have a simpler rule and should keep it: if a building footprint touches row `0`, it passes connectivity immediately without any extra empty-cell or BFS check
 
 Concrete work:
 - introduce a temporary row-0-reachable empty-space frontier for greedy construction, distinct from the final explicit road set
 - during service and residential candidate scans, treat a non-row-0 building as connectable when at least one adjacent empty allowed cell can reach row `0` through empty allowed cells
 - do not immediately occupy the winning connection path during the main construction loop; only occupy the building footprint while the deferred-connectivity model remains consistent
+- measure the candidate's connectivity shadow: which empty cells and candidate placements become unreachable because the building footprint was accepted
 - keep row-0 buildings as automatic pass-through candidates in both construction and validation planning
 - add a bounded post-pass that materializes an explicit connected road set for the chosen buildings, preferably sharing paths across buildings instead of replaying one shortest path per building independently
 - validate the reconstructed roads with the existing evaluator and reject or repair any deferred layout that cannot be realized as a legal explicit road network
-- add focused benchmarks for narrow corridors, single-gate regions, and packing-heavy maps where early road occupation currently blocks later buildings
+- add focused benchmarks for narrow corridors, single-gate regions, and packing-heavy maps where early building footprints cut off future row-0-reachable road candidates
 
 First bounded slice:
 - gate the experiment behind a greedy option so the current explicit-road construction path remains the default while the deferred policy is measured
@@ -426,7 +458,7 @@ Original rationale for sequencing:
 Shipped bounded slice:
 - `src/greedy/solver.ts` now supports an opt-in `greedy.serviceLookaheadCandidates` reranker in the main explicit non-`fixedServices` service loop
 - the Step 14 path first keeps the existing marginal-score pass, then reranks only the top-N already-feasible service candidates with a bounded sequential residential refill simulation capped at two placements
-- the refill simulation replays row-0 reservation checks, exact road-path blocking, overlap invalidation, and typed residential availability on scratch state; deferred-road mode and `fixedServices` still skip the reranker entirely
+- the refill simulation replays row-0 reservation checks, exact connectivity/path feasibility, overlap invalidation, and typed residential availability on scratch state; deferred-road mode and `fixedServices` still skip the reranker entirely
 - equal lookahead totals still fall back to the current marginal score and `compareServiceTieBreaks(...)`, so enabling the flag does not introduce a new tie policy
 - `benchmark:greedy` now carries the isolated `step14-service-lookahead-reranker` case plus a `step14=` profile line, and the current bounded slice improves that case from `240` to `275` with the feature enabled while keeping the flag-off baseline unchanged
 - `tests/optimizers.test.cjs` now covers Step 14 corpus isolation, flag-off parity, enabled-case improvement, and benchmark option normalization for `serviceLookaheadCandidates`

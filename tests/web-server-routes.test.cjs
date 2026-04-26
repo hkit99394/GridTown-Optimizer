@@ -11,11 +11,11 @@ const { SolverInputError } = require("../dist/core/solverInputValidation.js");
 const { createPlannerRequestHandler } = require("../dist/server/http/requestHandler.js");
 const { solve } = require("../dist/index.js");
 
-function createMockRequest(method, url, body = "") {
+function createMockRequest(method, url, body = "", headers = undefined) {
   const stream = Readable.from(body ? [Buffer.from(body)] : []);
   stream.method = method;
   stream.url = url;
-  stream.headers = body ? { "content-type": "application/json" } : {};
+  stream.headers = headers ?? (body ? { "content-type": "application/json" } : {});
   return stream;
 }
 
@@ -255,9 +255,9 @@ async function testImmediateSolveRejectsBackgroundSolveAtCapacity() {
   }
 }
 
-async function invoke(handler, { method = "GET", url = "/", json = undefined, body = undefined }) {
+async function invoke(handler, { method = "GET", url = "/", json = undefined, body = undefined, headers = undefined }) {
   const payloadBody = json === undefined ? (body ?? "") : JSON.stringify(json);
-  const req = createMockRequest(method, url, payloadBody);
+  const req = createMockRequest(method, url, payloadBody, headers);
   const res = createMockResponse();
   await handler(req, res);
   let payload = null;
@@ -357,6 +357,112 @@ async function testMethodNotAllowed(handler) {
   assert.equal(result.statusCode, 405);
   assert.equal(result.payload.ok, false);
   assert.equal(result.payload.error, "Method not allowed.");
+}
+
+async function testJsonRoutesRejectNonJsonContentType(handler) {
+  const result = await invoke(handler, {
+    method: "POST",
+    url: "/api/solve",
+    json: buildTinySolvePayload(),
+    headers: {
+      "content-type": "text/plain",
+      host: "127.0.0.1:4173",
+    },
+  });
+
+  assert.equal(result.statusCode, 415);
+  assert.equal(result.payload.ok, false);
+  assert.match(result.payload.error, /Content-Type: application\/json/);
+}
+
+async function testJsonRoutesRejectCrossOrigin(handler) {
+  const result = await invoke(handler, {
+    method: "POST",
+    url: "/api/solve",
+    json: buildTinySolvePayload(),
+    headers: {
+      "content-type": "application/json",
+      host: "127.0.0.1:4173",
+      origin: "https://example.invalid",
+    },
+  });
+
+  assert.equal(result.statusCode, 403);
+  assert.equal(result.payload.ok, false);
+  assert.match(result.payload.error, /cross-origin/);
+}
+
+async function testHttpSolveStripsLocalRuntimePathOptions(handler) {
+  const solvePayload = buildTinySolvePayload();
+  const backgroundSolution = solve(solvePayload.grid, solvePayload.params);
+  const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+  let capturedParams = null;
+
+  optimizerRegistry.getOptimizerAdapter = (params) => ({
+    name: "greedy",
+    solve() {
+      throw new Error("HTTP solve sanitization test should use the background adapter.");
+    },
+    startBackgroundSolve(_grid, paramsFromStart) {
+      capturedParams = paramsFromStart ?? params;
+      return {
+        promise: Promise.resolve(backgroundSolution),
+        cancel() {},
+        getLatestSnapshot() {
+          return null;
+        },
+        getLatestSnapshotState() {
+          return {
+            hasFeasibleSolution: false,
+            totalPopulation: null,
+          };
+        },
+      };
+    },
+  });
+
+  try {
+    const result = await invoke(handler, {
+      method: "POST",
+      url: "/api/solve",
+      json: {
+        ...solvePayload,
+        params: {
+          ...solvePayload.params,
+          cpSat: {
+            pythonExecutable: "/tmp/evil-python",
+            scriptPath: "/tmp/evil.py",
+            stopFilePath: "/tmp/stop",
+            snapshotFilePath: "/tmp/snapshot.json",
+            numWorkers: 1,
+          },
+          greedy: {
+            ...solvePayload.params.greedy,
+            stopFilePath: "/tmp/greedy-stop",
+            snapshotFilePath: "/tmp/greedy-snapshot.json",
+          },
+          lns: {
+            stopFilePath: "/tmp/lns-stop",
+            snapshotFilePath: "/tmp/lns-snapshot.json",
+          },
+        },
+      },
+    });
+
+    assert.equal(result.statusCode, 200);
+    assert.equal(result.payload.ok, true);
+    assert.equal(capturedParams.cpSat.pythonExecutable, undefined);
+    assert.equal(capturedParams.cpSat.scriptPath, undefined);
+    assert.equal(capturedParams.cpSat.stopFilePath, undefined);
+    assert.equal(capturedParams.cpSat.snapshotFilePath, undefined);
+    assert.equal(capturedParams.cpSat.numWorkers, 1);
+    assert.equal(capturedParams.greedy.stopFilePath, undefined);
+    assert.equal(capturedParams.greedy.snapshotFilePath, undefined);
+    assert.equal(capturedParams.lns.stopFilePath, undefined);
+    assert.equal(capturedParams.lns.snapshotFilePath, undefined);
+  } finally {
+    optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
+  }
 }
 
 async function testImmediateSolveRoute(handler) {
@@ -1781,6 +1887,9 @@ async function main() {
   await testStaticPlannerModules(handler);
   await testUnexpectedStaticServerErrorsReturnInternalServerError();
   await testMethodNotAllowed(handler);
+  await testJsonRoutesRejectNonJsonContentType(handler);
+  await testJsonRoutesRejectCrossOrigin(handler);
+  await testHttpSolveStripsLocalRuntimePathOptions(handler);
   await testImmediateSolveRoute(handler);
   await testImmediateSolveBackendJsonErrorsReturnInternalServerError(handler);
   await testImmediateSolveRejectsInvalidLnsSeedHint(handler);

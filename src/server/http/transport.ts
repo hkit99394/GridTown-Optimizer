@@ -11,6 +11,11 @@ export interface ClientDisconnectMonitor {
 
 export type JsonPayloadValidator<T> = (payload: unknown) => payload is T;
 
+interface JsonRequestGuardError {
+  statusCode: number;
+  message: string;
+}
+
 export function sendJson(
   res: ServerResponse<IncomingMessage>,
   statusCode: number,
@@ -100,12 +105,68 @@ export async function readJsonBody(req: IncomingMessage): Promise<unknown> {
   }
 }
 
+function normalizeHeaderValue(value: string | string[] | undefined): string {
+  return Array.isArray(value) ? (value[0] ?? "") : (value ?? "");
+}
+
+function isJsonContentType(value: string): boolean {
+  const mediaType = value.split(";")[0]?.trim().toLowerCase() ?? "";
+  return mediaType === "application/json" || mediaType.endsWith("+json");
+}
+
+function readRequestHost(req: IncomingMessage): string {
+  const host = normalizeHeaderValue(req.headers.host).trim().toLowerCase();
+  return host;
+}
+
+function isTrustedBrowserOrigin(req: IncomingMessage, originValue: string): boolean {
+  if (!originValue.trim()) return true;
+  const requestHost = readRequestHost(req);
+  if (!requestHost) return false;
+
+  try {
+    const origin = new URL(originValue);
+    if (origin.protocol !== "http:" && origin.protocol !== "https:") return false;
+    return origin.host.toLowerCase() === requestHost;
+  } catch {
+    return false;
+  }
+}
+
+function validateJsonRequest(req: IncomingMessage): JsonRequestGuardError | null {
+  if (!isJsonContentType(normalizeHeaderValue(req.headers["content-type"]))) {
+    return {
+      statusCode: 415,
+      message: "Unsupported media type. JSON endpoints require Content-Type: application/json.",
+    };
+  }
+
+  const origin = normalizeHeaderValue(req.headers.origin);
+  if (origin && !isTrustedBrowserOrigin(req, origin)) {
+    return {
+      statusCode: 403,
+      message: "Forbidden cross-origin planner request.",
+    };
+  }
+
+  return null;
+}
+
 export async function readValidatedJsonBody<T>(
   req: IncomingMessage,
   res: ServerResponse<IncomingMessage>,
   validate: JsonPayloadValidator<T>,
   invalidError: string
 ): Promise<T | null> {
+  const guardError = validateJsonRequest(req);
+  if (guardError) {
+    sendJson(res, guardError.statusCode, {
+      ok: false,
+      error: guardError.message,
+    });
+    return null;
+  }
+
   const payload = await readJsonBody(req);
   if (!validate(payload)) {
     sendJson(res, 400, {

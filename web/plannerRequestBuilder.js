@@ -260,11 +260,32 @@
       };
     }
 
+    function readOptionalFiniteNumber(value, min = 0) {
+      if (value === "" || value == null) return undefined;
+      const number = Number(value);
+      if (!Number.isFinite(number)) return undefined;
+      return Math.max(min, number);
+    }
+
+    function clampOptionalFiniteNumber(value, min, max) {
+      const number = readOptionalFiniteNumber(value, min);
+      return number === undefined ? undefined : Math.min(max, number);
+    }
+
     function buildGreedyPayload(optimizer) {
       const randomSeed = optimizer === "auto" ? undefined : readOptionalInteger(state.greedy.randomSeed, 0);
+      const timeLimitSeconds = optimizer === "greedy" ? readOptionalInteger(state.greedy.timeLimitSeconds, 1) : undefined;
+      const densityTieBreaker = optimizer === "greedy" && Boolean(state.greedy.densityTieBreaker);
+      const densityTieBreakerTolerancePercent = densityTieBreaker
+        ? clampOptionalFiniteNumber(state.greedy.densityTieBreakerTolerancePercent, 0, 100)
+        : undefined;
       const payload = {
         localSearch: Boolean(state.greedy.localSearch),
         ...(randomSeed !== undefined ? { randomSeed } : {}),
+        ...(timeLimitSeconds !== undefined ? { timeLimitSeconds } : {}),
+        profile: optimizer === "greedy" && Boolean(state.greedy.profile),
+        densityTieBreaker,
+        ...(densityTieBreakerTolerancePercent !== undefined ? { densityTieBreakerTolerancePercent } : {}),
         restarts: clampInteger(state.greedy.restarts, optimizer === "auto" ? 4 : 1, 1),
         serviceRefineIterations: clampInteger(state.greedy.serviceRefineIterations, optimizer === "auto" ? 1 : 0, 0),
         serviceRefineCandidateLimit: clampInteger(state.greedy.serviceRefineCandidateLimit, optimizer === "auto" ? 24 : 1, 1),
@@ -380,7 +401,6 @@
           ...(optimizer !== "auto" && cpSatRandomSeed !== undefined ? { randomSeed: cpSatRandomSeed } : {}),
           ...(timeLimitSeconds !== undefined ? { timeLimitSeconds } : {}),
           ...(noImprovementTimeoutSeconds !== undefined ? { noImprovementTimeoutSeconds } : {}),
-          ...(state.cpSat.pythonExecutable.trim() ? { pythonExecutable: state.cpSat.pythonExecutable.trim() } : {}),
         },
         lns: {
           iterations: clampInteger(state.lns.iterations, 12, 1),

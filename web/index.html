@@ -11,10 +11,9 @@
       <header class="cockpit-header">
         <div class="cockpit-title">
           <p class="eyebrow">Operations Cockpit</p>
-          <h1>Command the grid, tune the solver, and keep every saved layout in a live console.</h1>
+          <h1>City Builder Planner</h1>
           <p class="hero-copy">
-            This preview keeps the full planner workflow intact, but it presents the UI as a bright command surface:
-            dense controls up front, hard-edged status panels, and a full-width result bay for the final output.
+            Edit the sector map, tune the catalogs, and launch solver runs from the same workbench.
           </p>
           <div class="command-strip" aria-label="Planner capabilities">
             <span class="command-chip">Grid editor</span>
@@ -34,29 +33,29 @@
           <section class="telemetry-card telemetry-status">
             <p class="eyebrow">System state</p>
             <strong>Ready</strong>
-            <p>Rows, catalogs, and solver parameters stay live while you switch modes or reuse stored layouts.</p>
+            <p>Rows, catalogs, solver parameters, and saved layouts stay synchronized.</p>
           </section>
 
           <section class="telemetry-grid" aria-label="Planner telemetry">
             <article class="telemetry-card">
               <span class="telemetry-label">Input</span>
               <strong>Grid + catalog</strong>
-              <p>Editable in-place with resize, presets, and import.</p>
+              <p>Resize, paint, and import inventory tables.</p>
             </article>
             <article class="telemetry-card">
               <span class="telemetry-label">Solver</span>
               <strong>Greedy / CP-SAT</strong>
-              <p>Toggle strategies, tune caps, and stop runs manually.</p>
+              <p>Pick strategies, tune caps, and stop runs.</p>
             </article>
             <article class="telemetry-card">
               <span class="telemetry-label">Output</span>
               <strong>Metrics + map</strong>
-              <p>Review validation, placements, overlays, and saved layouts.</p>
+              <p>Inspect validation, placements, and maps.</p>
             </article>
             <article class="telemetry-card accent">
               <span class="telemetry-label">Hinting</span>
               <strong>Layout reuse</strong>
-              <p>Saved layouts can become CP-SAT hints instantly.</p>
+              <p>Reuse saved layouts as solver hints.</p>
             </article>
           </section>
         </aside>
@@ -97,7 +96,7 @@
                     <span class="paint-label">Paint mode</span>
                     <p id="gridStats" class="grid-stats"></p>
                   </div>
-                  <div class="segmented" id="paintModeToggle" role="tablist" aria-label="Paint mode">
+                  <div class="segmented" id="paintModeToggle" role="group" aria-label="Paint mode">
                     <button type="button" data-paint-mode="toggle">Toggle</button>
                     <button type="button" data-paint-mode="allow">Allow</button>
                     <button type="button" data-paint-mode="block">Block</button>
@@ -326,9 +325,20 @@
                       <span class="legend-chip"><span class="legend-swatch residential"></span>Residential</span>
                       <span class="legend-chip"><span class="legend-swatch blocked"></span>Blocked</span>
                       <span class="legend-chip"><span class="legend-swatch overlay"></span>Building IDs</span>
+                      <span class="legend-chip">
+                        <span
+                          class="legend-swatch"
+                          style="background: linear-gradient(145deg, rgba(255, 225, 92, 0.72), rgba(198, 74, 48, 0.78));"
+                        ></span>
+                        Service value
+                      </span>
                     </div>
                     <div class="editor-toolbar">
-                      <div class="segmented segmented-wide" id="layoutEditModeToggle" role="tablist" aria-label="Layout edit mode">
+                      <label class="check-field">
+                        <input id="resultHeatmapToggle" type="checkbox" />
+                        <span>Show service value heatmap</span>
+                      </label>
+                      <div class="segmented segmented-wide" id="layoutEditModeToggle" role="group" aria-label="Layout edit mode">
                         <button type="button" data-layout-edit-mode="inspect">Inspect</button>
                         <button type="button" data-layout-edit-mode="road">Road</button>
                         <button type="button" data-layout-edit-mode="erase">Erase</button>
@@ -479,7 +489,7 @@
                 Auto remains the recommended quality path.
               </p>
 
-              <div class="segmented segmented-wide" id="solverToggle">
+              <div class="segmented segmented-wide" id="solverToggle" role="group" aria-label="Optimizer">
                 <button type="button" data-optimizer="auto">Auto</button>
                 <button type="button" data-optimizer="greedy">Greedy</button>
                 <button type="button" data-optimizer="lns">LNS</button>
@@ -521,6 +531,14 @@
                       <span>Try exhaustive service search</span>
                     </label>
                     <label class="check-field">
+                      <input id="greedyProfile" type="checkbox" />
+                      <span>Collect phase profile</span>
+                    </label>
+                    <label class="check-field">
+                      <input id="greedyDensityTieBreaker" type="checkbox" />
+                      <span>Prefer center-density ties</span>
+                    </label>
+                    <label class="check-field">
                       <input id="greedyDiagnostics" type="checkbox" />
                       <span>Show why-not-placed diagnostics</span>
                     </label>
@@ -531,6 +549,14 @@
                     <label class="field">
                       <span>Random seed</span>
                       <input id="greedyRandomSeed" type="number" min="0" step="1" placeholder="Blank = random" />
+                    </label>
+                    <label class="field">
+                      <span>Time limit (seconds, optional)</span>
+                      <input id="greedyTimeLimitSeconds" type="number" min="1" step="1" placeholder="Blank = unlimited" />
+                    </label>
+                    <label class="field">
+                      <span>Density tolerance (%)</span>
+                      <input id="greedyDensityTieBreakerTolerancePercent" type="number" min="0" max="100" step="0.5" />
                     </label>
                     <label class="field">
                       <span>Refine passes</span>
@@ -554,7 +580,8 @@
                 <section id="lnsPanel" class="solver-panel" hidden>
                   <div class="solver-callout">
                     LNS is the manual improvement mode. It starts from a greedy or displayed seed, then repairs one
-                    neighborhood at a time with CP-SAT. It still needs the Python OR-Tools backend.
+                    neighborhood at a time with CP-SAT. Configure the Python OR-Tools backend with
+                    <code>npm run setup:cp-sat</code> or <code>CITY_BUILDER_CP_SAT_PYTHON</code>.
                   </div>
                   <div class="form-grid two-up">
                     <label class="field">
@@ -576,10 +603,6 @@
                     <label class="field">
                       <span>Repair time limit (seconds)</span>
                       <input id="lnsRepairTimeLimitSeconds" type="number" min="1" step="1" />
-                    </label>
-                    <label class="field full-width">
-                      <span>Python executable (optional)</span>
-                      <input id="lnsPythonExecutable" type="text" placeholder=".venv-cp-sat/bin/python" />
                     </label>
                   </div>
                   <div class="actions-row compact-actions">
@@ -631,10 +654,6 @@
                     <label class="check-field">
                       <input id="cpSatLogSearchProgress" type="checkbox" />
                       <span>Log search progress</span>
-                    </label>
-                    <label class="field full-width">
-                      <span>Python executable (optional)</span>
-                      <input id="cpSatPythonExecutable" type="text" placeholder=".venv-cp-sat/bin/python" />
                     </label>
                   </div>
                   <div class="notice info">

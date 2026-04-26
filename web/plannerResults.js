@@ -3,9 +3,13 @@
     const {
       state,
       elements,
+      constants = {},
       helpers,
       callbacks,
     } = options;
+    const {
+      LIVE_SNAPSHOT_REFRESH_INTERVAL_MS = 5 * 1000,
+    } = constants;
     const {
       cloneJson,
       formatElapsedTime,
@@ -40,6 +44,16 @@
       "availability-cap": "Availability cap",
       "lower-score-no-improvement": "Lower score / no improvement",
     };
+
+    function formatLiveSnapshotRefreshCadence() {
+      const seconds = Math.max(1, Math.round(LIVE_SNAPSHOT_REFRESH_INTERVAL_MS / 1000));
+      if (seconds < 60) {
+        return `${seconds} second${seconds === 1 ? "" : "s"}`;
+      }
+
+      const minutes = Math.round(seconds / 60);
+      return `${minutes} minute${minutes === 1 ? "" : "s"}`;
+    }
 
     function hasEditableLayoutContext() {
       return Boolean(state.result && state.resultContext);
@@ -190,7 +204,9 @@
       const pendingFootprint = readPendingPlacementFootprint(pendingPlacement);
 
       for (const button of elements.layoutEditModeToggle.querySelectorAll("button")) {
-        button.classList.toggle("active", button.dataset.layoutEditMode === state.layoutEditor.mode);
+        const isActive = button.dataset.layoutEditMode === state.layoutEditor.mode;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-pressed", String(isActive));
       }
       if (elements.rotatePendingPlacementButton) {
         elements.rotatePendingPlacementButton.textContent = pendingPlacement?.rotated ? "Use original orientation" : "Rotate 90°";
@@ -659,6 +675,30 @@
       return null;
     }
 
+    function isCellInsidePlacement(placement, row, col) {
+      return Boolean(
+        placement
+        && row >= placement.r
+        && row < placement.r + placement.rows
+        && col >= placement.c
+        && col < placement.c + placement.cols
+      );
+    }
+
+    function isCellInsideServiceEffect(service, row, col) {
+      return Boolean(
+        service
+        && row >= service.r - service.range
+        && row <= service.r + service.rows - 1 + service.range
+        && col >= service.c - service.range
+        && col <= service.c + service.cols - 1 + service.range
+      );
+    }
+
+    function isCellInsideAnyServiceFootprint(solution, row, col) {
+      return (solution?.services ?? []).some((service) => isCellInsidePlacement(service, row, col));
+    }
+
     function getSolvedCellKind(grid, solution, row, col) {
       if (grid?.[row]?.[col] !== 1) return "blocked";
       if (findBuildingAtCell(solution, row, col)?.kind === "service") return "service";
@@ -672,19 +712,7 @@
       if (!grid?.length || grid[row]?.[col] !== 1 || !solution) return [];
 
       return (solution.services ?? []).flatMap((service, index) => {
-        const inFootprint =
-          row >= service.r
-          && row < service.r + service.rows
-          && col >= service.c
-          && col < service.c + service.cols;
-        if (inFootprint) return [];
-
-        const inEffect =
-          row >= service.r - service.range
-          && row <= service.r + service.rows - 1 + service.range
-          && col >= service.c - service.range
-          && col <= service.c + service.cols - 1 + service.range;
-        if (!inEffect) return [];
+        if (isCellInsidePlacement(service, row, col) || !isCellInsideServiceEffect(service, row, col)) return [];
 
         return [{
           id: `S${index + 1}`,
@@ -692,6 +720,44 @@
           bonus: Number(solution.servicePopulationIncreases?.[index] ?? 0),
         }];
       });
+    }
+
+    function createServiceValueHeatmap(grid, solution) {
+      const values = grid.map((row) => row.map(() => 0));
+      let maxValue = 0;
+      if (!solution) return { values, maxValue };
+
+      for (let row = 0; row < grid.length; row += 1) {
+        for (let col = 0; col < (grid[row]?.length ?? 0); col += 1) {
+          if (grid[row][col] !== 1 || isCellInsideAnyServiceFootprint(solution, row, col)) continue;
+          const value = (solution.services ?? []).reduce((sum, service, index) => {
+            if (!isCellInsideServiceEffect(service, row, col)) return sum;
+            const bonus = Number(solution.servicePopulationIncreases?.[index] ?? 0);
+            return Number.isFinite(bonus) && bonus > 0 ? sum + bonus : sum;
+          }, 0);
+          values[row][col] = value;
+          maxValue = Math.max(maxValue, value);
+        }
+      }
+
+      return { values, maxValue };
+    }
+
+    function formatServiceValue(value) {
+      return Number(value).toLocaleString();
+    }
+
+    function applyServiceValueHeatmapStyle(cell, value, maxValue) {
+      if (!(value > 0) || !(maxValue > 0)) return;
+      const intensity = Math.max(0.18, Math.min(1, value / maxValue));
+      const warmAlpha = (0.26 + intensity * 0.5).toFixed(2);
+      const hotAlpha = (0.18 + intensity * 0.52).toFixed(2);
+      const borderAlpha = (0.26 + intensity * 0.4).toFixed(2);
+      cell.className += " heatmap-cell";
+      cell.dataset.serviceValue = String(value);
+      cell.style.setProperty("--heatmap-warm-alpha", warmAlpha);
+      cell.style.setProperty("--heatmap-hot-alpha", hotAlpha);
+      cell.style.setProperty("--heatmap-border-alpha", borderAlpha);
     }
 
     function countPlacementsByType(typeIndices, typeCount) {
@@ -1329,6 +1395,7 @@
       const matrix = createSolvedMapMatrix(grid, solution);
       const cols = matrix[0]?.length ?? 0;
       const hoverLabels = createSolvedMapHoverLabels(solution, matrix.length, cols);
+      const heatmap = state.resultHeatmapEnabled ? createServiceValueHeatmap(grid, solution) : null;
       state.selectedMapBuilding = getSelectedMapPlacement(solution)?.kind ? state.selectedMapBuilding : null;
       state.selectedMapCell = getSelectedMapCell(grid);
       elements.resultMapGrid.innerHTML = "";
@@ -1338,12 +1405,15 @@
         for (let c = 0; c < cols; c += 1) {
           const kind = matrix[r][c];
           const hoverLabel = hoverLabels[r]?.[c] || "";
+          const serviceValue = heatmap?.values?.[r]?.[c] ?? 0;
+          const serviceValueLabel = serviceValue > 0 ? `, service value +${formatServiceValue(serviceValue)}` : "";
           const cell = document.createElement("div");
           cell.className = `grid-cell ${kind}`;
           cell.dataset.r = String(r);
           cell.dataset.c = String(c);
-          cell.setAttribute("aria-label", describeSolvedCell(kind, r, c, hoverLabel));
-          cell.title = hoverLabel || `(${r}, ${c}) ${kind}`;
+          cell.setAttribute("aria-label", `${describeSolvedCell(kind, r, c, hoverLabel)}${serviceValueLabel}`);
+          cell.title = `${hoverLabel || `(${r}, ${c}) ${kind}`}${serviceValueLabel}`;
+          applyServiceValueHeatmapStyle(cell, serviceValue, heatmap?.maxValue ?? 0);
           if (kind === "service" || kind === "residential") {
             cell.classList.add("selectable");
           }
@@ -1440,7 +1510,7 @@
         elements.resultBadge.className = `result-badge ${validation.valid ? "running" : "error"}`;
         elements.validationNotice.className = `notice ${validation.valid ? "info" : "error"}`;
         elements.validationNotice.textContent = validation.valid
-          ? "Showing the best validated layout found so far while the solver keeps running. The first live capture appears as soon as an incumbent is available, then refreshes every 1 minute."
+          ? `Showing the best validated layout found so far while the solver keeps running. The first live capture appears as soon as an incumbent is available, then refreshes every ${formatLiveSnapshotRefreshCadence()}.`
           : `The latest running snapshot needs review: ${validation.errors.join(" ")}`;
       } else if (manualLayout) {
         elements.resultBadge.textContent = pendingManualValidation ? "Edited" : validation.valid ? "Manual" : "Manual review";

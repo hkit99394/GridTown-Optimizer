@@ -23,6 +23,17 @@ export interface CancelSolveRequest {
   requestId: string;
 }
 
+const LOCAL_RUNTIME_CP_SAT_KEYS = new Set([
+  "pythonExecutable",
+  "scriptPath",
+  "stopFilePath",
+  "snapshotFilePath",
+]);
+const LOCAL_RUNTIME_SOLVER_KEYS = new Set([
+  "stopFilePath",
+  "snapshotFilePath",
+]);
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -110,6 +121,46 @@ export function isLayoutEvaluateRequest(value: unknown): value is LayoutEvaluate
     && candidate.params !== null
     && typeof candidate.solution === "object"
     && candidate.solution !== null;
+}
+
+function stripKeysFromRecord<T>(value: T, keysToStrip: Set<string>): T {
+  if (!isRecord(value)) return value;
+
+  let changed = false;
+  const next: Record<string, unknown> = {};
+  for (const [key, entryValue] of Object.entries(value)) {
+    if (keysToStrip.has(key) && typeof entryValue === "string") {
+      changed = true;
+      continue;
+    }
+    next[key] = entryValue;
+  }
+  return changed ? (next as T) : value;
+}
+
+export function sanitizePlannerSolverParams(params: SolverParams): SolverParams {
+  if (!isRecord(params)) return params;
+
+  const cpSat = stripKeysFromRecord(params.cpSat, LOCAL_RUNTIME_CP_SAT_KEYS);
+  const greedy = stripKeysFromRecord(params.greedy, LOCAL_RUNTIME_SOLVER_KEYS);
+  const lns = stripKeysFromRecord(params.lns, LOCAL_RUNTIME_SOLVER_KEYS);
+  if (cpSat === params.cpSat && greedy === params.greedy && lns === params.lns) {
+    return params;
+  }
+
+  return {
+    ...params,
+    ...(cpSat === undefined ? {} : { cpSat }),
+    ...(greedy === undefined ? {} : { greedy }),
+    ...(lns === undefined ? {} : { lns }),
+  } as SolverParams;
+}
+
+export function sanitizeSolveRequest<T extends SolveRequest | LayoutEvaluateRequest>(payload: T): T {
+  return {
+    ...payload,
+    params: sanitizePlannerSolverParams(payload.params),
+  };
 }
 
 export { assertValidSerializedSolutionPayload };

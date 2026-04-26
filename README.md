@@ -31,9 +31,8 @@ The solver must place:
 - residential buildings on allowed rectangular footprints
 
 Subject to these core rules:
-- roads must form one connected network
-- the road network must touch row `0`
-- every building must connect to the road network
+- every road component must touch row `0`
+- every building must connect to a row-0-connected road component
 - buildings touching row `0` are treated as road-connected automatically
 - buildings cannot overlap each other or roads
 - service buildings have their own footprint, bonus, range, and availability
@@ -208,7 +207,7 @@ The planner now includes:
 - saved input setups
 - saved solved layouts
 - automatic `LNS` seeding and `CP-SAT` hinting from the displayed output when the displayed layout is validated and model-compatible
-- result review with validation, placements, remaining availability, and solved map overlays
+- result review with validation, placements, remaining availability, solved map overlays, and an optional service-value heatmap
 - manual layout editing on the solved map:
   - add remaining buildings
   - move buildings
@@ -479,10 +478,11 @@ From code:
 ```ts
 import { runCpSatBenchmarkSuite } from "./dist/index.js";
 
+process.env.CITY_BUILDER_CP_SAT_PYTHON ??= ".venv-cp-sat/bin/python";
+
 const result = await runCpSatBenchmarkSuite(undefined, {
   names: ["typed-housing-single", "typed-housing-portfolio"],
   cpSat: {
-    pythonExecutable: ".venv-cp-sat/bin/python",
     timeLimitSeconds: 10,
     maxDeterministicTime: 10,
     numWorkers: 1,
@@ -614,7 +614,11 @@ Prefer the nested `greedy` object for new code. When users choose standalone Gre
 ```ts
 greedy: {
   localSearch: true,
+  profile: false,
   diagnostics: false,
+  timeLimitSeconds: 3900,
+  densityTieBreaker: false,
+  densityTieBreakerTolerancePercent: 2,
   restarts: 20,
   serviceRefineIterations: 4,
   serviceRefineCandidateLimit: 60,
@@ -625,6 +629,8 @@ greedy: {
 ```
 
 Set `greedy.diagnostics: true` to include `solution.greedyDiagnostics`, a bounded post-solve report that scans final unplaced candidates and groups "why not placed?" examples by blocked footprint, missing road path, no service coverage / base-only residential population, availability caps, and lower-score/no-improvement outcomes.
+
+Set `greedy.densityTieBreaker: true` to prefer more central high-value placements when Greedy scores are within `greedy.densityTieBreakerTolerancePercent` of each other. The web planner exposes this only for standalone Greedy; Auto keeps its fixed Greedy seed-stage ranking policy.
 
 ### Auto options
 

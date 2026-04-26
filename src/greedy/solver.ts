@@ -370,6 +370,8 @@ function getGreedyOptions(params: SolverParams): NormalizedGreedyOptions {
     localSearchServiceCandidateLimit: greedy.localSearchServiceCandidateLimit ?? 6,
     serviceLookaheadCandidates: greedy.serviceLookaheadCandidates ?? 0,
     deferRoadCommitment: greedy.deferRoadCommitment ?? false,
+    densityTieBreaker: greedy.densityTieBreaker ?? false,
+    densityTieBreakerTolerancePercent: greedy.densityTieBreakerTolerancePercent ?? 2,
     ...(randomSeed !== undefined ? { randomSeed } : {}),
     profile: greedy.profile ?? false,
     diagnostics: greedy.diagnostics ?? false,
@@ -917,6 +919,69 @@ function compareResidentialTieBreaks(
   return residentialCandidateKey(a).localeCompare(residentialCandidateKey(b));
 }
 
+function computePlacementDensityScore(
+  G: Grid,
+  placement: { r: number; c: number; rows: number; cols: number },
+  populationWeight: number
+): number {
+  if (populationWeight <= 0 || G.length === 0 || (G[0]?.length ?? 0) === 0) return 0;
+  const rows = G.length;
+  const cols = G[0]?.length ?? 0;
+  const centerR = (rows - 1) / 2;
+  const centerC = (cols - 1) / 2;
+  const placementCenterR = placement.r + (placement.rows - 1) / 2;
+  const placementCenterC = placement.c + (placement.cols - 1) / 2;
+  const distanceSquared =
+    (placementCenterR - centerR) * (placementCenterR - centerR)
+    + (placementCenterC - centerC) * (placementCenterC - centerC);
+  const maxDistanceSquared =
+    centerR * centerR
+    + centerC * centerC;
+  if (maxDistanceSquared <= 0) return populationWeight;
+  const centrality = 1 - Math.min(1, distanceSquared / maxDistanceSquared);
+  return populationWeight * centrality;
+}
+
+function computeSolutionDensityScore(G: Grid, solution: Solution): number {
+  return solution.residentials.reduce((sum, residential, index) => {
+    return sum + computePlacementDensityScore(G, residential, solution.populations[index] ?? 0);
+  }, 0);
+}
+
+function isBetterDensityAwareSearchSolution(
+  G: Grid,
+  candidate: Solution | null,
+  incumbent: Solution | null
+): boolean {
+  if (!candidate) return false;
+  if (!incumbent) return true;
+  if (candidate.totalPopulation !== incumbent.totalPopulation) {
+    return candidate.totalPopulation > incumbent.totalPopulation;
+  }
+  const candidateDensity = computeSolutionDensityScore(G, candidate);
+  const incumbentDensity = computeSolutionDensityScore(G, incumbent);
+  if (Math.abs(candidateDensity - incumbentDensity) > 1e-9) {
+    return candidateDensity > incumbentDensity;
+  }
+  return isBetterSearchSolution(candidate, incumbent);
+}
+
+function compareDensityAwareScore(
+  candidateScore: number,
+  candidateDensityScore: number,
+  incumbentScore: number,
+  incumbentDensityScore: number,
+  toleranceRatio: number
+): number {
+  const scale = Math.max(1, Math.abs(candidateScore), Math.abs(incumbentScore));
+  if (Math.abs(candidateScore - incumbentScore) <= scale * toleranceRatio) {
+    const densityDelta = candidateDensityScore - incumbentDensityScore;
+    if (Math.abs(densityDelta) > 1e-9) return densityDelta > 0 ? 1 : -1;
+  }
+  if (candidateScore !== incumbentScore) return candidateScore > incumbentScore ? 1 : -1;
+  return 0;
+}
+
 function computeResidentialPopulation(
   params: SolverParams,
   residential: { r: number; c: number; rows: number; cols: number },
@@ -1227,6 +1292,11 @@ function solveOne(
   const lookaheadRoadProbeScratch = createRoadProbeScratch(G);
   const remainingServiceAvail = useServiceTypes ? params.serviceTypes!.map((t) => t.avail) : null;
   const remainingAvail = useTypes ? params.residentialTypes!.map((t) => t.avail) : null;
+  const densityTieBreaker = Boolean(params.greedy?.densityTieBreaker);
+  const densityTieBreakerToleranceRatio =
+    densityTieBreaker && typeof params.greedy?.densityTieBreakerTolerancePercent === "number"
+      ? Math.max(0, params.greedy.densityTieBreakerTolerancePercent) / 100
+      : (densityTieBreaker ? 0.02 : 0);
 
   const services: ServicePlacement[] = [];
   const serviceTypeIndices: number[] = [];
@@ -1467,6 +1537,7 @@ function solveOne(
       let bestCandidateIndex = -1;
       let bestProbe: ConnectivityProbe | null = null;
       let bestScore = 0;
+      let bestDensityScore = Number.NEGATIVE_INFINITY;
       const lookaheadShortlist: ServiceLookaheadCandidate[] = [];
       for (const candidateIndex of serviceActivePool.activeIndices) {
         maybeStop?.();
@@ -1497,6 +1568,9 @@ function solveOne(
           if (profileCounters) profileCounters.servicePhase.scoreRecomputes++;
         }
         const score = serviceScoreCache[candidateIndex] ?? 0;
+        const densityScore = densityTieBreaker
+          ? computePlacementDensityScore(G, service, score)
+          : 0;
         if (enableServiceLookahead) {
           pushBoundedServiceLookaheadCandidate(
             lookaheadShortlist,
@@ -1509,15 +1583,25 @@ function solveOne(
             }
           );
         }
+        const scoreComparison = bestCandidate === null
+          ? (score > 0 ? 1 : -1)
+          : compareDensityAwareScore(
+              score,
+              densityScore,
+              bestScore,
+              bestDensityScore,
+              densityTieBreakerToleranceRatio
+            );
         if (
-          score > bestScore
-          || (score === bestScore && score > 0 && bestCandidate !== null
+          scoreComparison > 0
+          || (scoreComparison === 0 && score > 0 && bestCandidate !== null
             && bestProbe !== null
             && compareServiceTieBreaks(service, probe, bestCandidate, bestProbe) < 0)
         ) {
           bestCandidate = service;
           bestCandidateIndex = candidateIndex;
           bestScore = score;
+          bestDensityScore = densityScore;
           bestProbe = probe;
         }
       }
@@ -1679,6 +1763,7 @@ function solveOne(
     let bestCandidateIndex = -1;
     let bestProbe: ConnectivityProbe | null = null;
     let bestPop = -1;
+    let bestDensityScore = Number.NEGATIVE_INFINITY;
     for (const candidateIndex of residentialActivePool.activeIndices) {
       const cand = anyResidentialCandidates[candidateIndex];
       maybeStop?.();
@@ -1692,12 +1777,25 @@ function solveOne(
       if (!probe) continue;
       if (profileCounters) profileCounters.residentialPhase.populationCacheLookups++;
       const pop = residentialPopulationCache[candidateIndex] ?? -1;
+      const densityScore = densityTieBreaker
+        ? computePlacementDensityScore(G, cand, pop)
+        : 0;
+      const scoreComparison = best === null
+        ? 1
+        : compareDensityAwareScore(
+            pop,
+            densityScore,
+            bestPop,
+            bestDensityScore,
+            densityTieBreakerToleranceRatio
+          );
       if (
-        pop > bestPop
-        || (pop === bestPop && pop >= 0 && best !== null && bestProbe !== null
+        scoreComparison > 0
+        || (scoreComparison === 0 && pop >= 0 && best !== null && bestProbe !== null
           && compareResidentialTieBreaks(params, cand, probe, best, bestProbe) < 0)
       ) {
         bestPop = pop;
+        bestDensityScore = densityScore;
         best = cand;
         bestCandidateIndex = candidateIndex;
         bestProbe = probe;
@@ -1825,7 +1923,7 @@ function solveOne(
     }
   }
 
-  // Roads must be one connected component that is reachable from row 0.
+  // Every explicit road component must be reachable from row 0.
   const roadsReachable = roadsConnectedToRow0(G, roadsValid);
   if (roadsReachable.size !== roadsValid.size) {
     throw new Error("Invalid solution: found road cells not connected to row 0.");
@@ -3469,6 +3567,7 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     localSearchServiceCandidateLimit,
     serviceLookaheadCandidates,
     deferRoadCommitment,
+    densityTieBreaker,
     randomSeed,
     profile,
     diagnostics,
@@ -3505,7 +3604,10 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
 
   const updateBest = (candidate: Solution | null): void => {
     if (!candidate) return;
-    if (isBetterSearchSolution(candidate, best)) {
+    const isBetterCandidate = densityTieBreaker
+      ? isBetterDensityAwareSearchSolution(G, candidate, best)
+      : isBetterSearchSolution(candidate, best);
+    if (isBetterCandidate) {
       best = candidate;
       if (snapshotFilePath) writeSolutionSnapshot(snapshotFilePath, best);
     }

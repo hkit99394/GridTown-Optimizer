@@ -464,12 +464,61 @@ export function probeBuildingConnectedToRoads(
   return buildRoadConnectionProbe(G, roads, occupied, r, c, rows, cols, scratch);
 }
 
-type BuildingPlacementForRoadMaterialization = {
+export type BuildingPlacementForRoadMaterialization = {
   r: number;
   c: number;
   rows: number;
   cols: number;
 };
+
+function compareRoadPruneCandidates(leftKey: string, rightKey: string): number {
+  const left = cellFromKey(leftKey);
+  const right = cellFromKey(rightKey);
+  const leftTouchesAnchor = left.r === 0;
+  const rightTouchesAnchor = right.r === 0;
+  if (leftTouchesAnchor !== rightTouchesAnchor) return leftTouchesAnchor ? 1 : -1;
+  if (left.r !== right.r) return right.r - left.r;
+  return left.c - right.c;
+}
+
+function roadSetHasSingleRow0ConnectedComponent(G: Grid, roads: Set<string>): boolean {
+  const connectedRoads = roadsConnectedToRow0(G, roads);
+  if (connectedRoads.size === 0 || connectedRoads.size !== roads.size) return false;
+  return true;
+}
+
+function allBuildingsHaveRoadAccess(
+  roads: Set<string>,
+  buildings: readonly BuildingPlacementForRoadMaterialization[]
+): boolean {
+  return buildings.every((building) =>
+    isAdjacentToRoads(roads, building.r, building.c, building.rows, building.cols)
+  );
+}
+
+/** Remove final road cells that are not required for row-0 road connectivity or building access. */
+export function pruneRedundantRoads(
+  G: Grid,
+  roads: Set<string>,
+  buildings: readonly BuildingPlacementForRoadMaterialization[]
+): Set<string> {
+  let pruned = roadsConnectedToRow0(G, roads);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    const candidates = [...pruned].sort(compareRoadPruneCandidates);
+    for (const key of candidates) {
+      const candidateRoads = new Set(pruned);
+      candidateRoads.delete(key);
+      if (!roadSetHasSingleRow0ConnectedComponent(G, candidateRoads)) continue;
+      if (!allBuildingsHaveRoadAccess(candidateRoads, buildings)) continue;
+      pruned = candidateRoads;
+      changed = true;
+      break;
+    }
+  }
+  return pruned;
+}
 
 export function materializeDeferredRoadNetwork(
   G: Grid,
@@ -529,5 +578,5 @@ export function materializeDeferredRoadNetwork(
     pending.splice(bestIndex, 1);
   }
 
-  return roads;
+  return pruneRedundantRoads(G, roads, buildings);
 }

@@ -1,4 +1,5 @@
 export * from "./buildings.js";
+export * from "./decisionTrace.js";
 export * from "./dominanceUpgrades.js";
 export * from "./evaluator.js";
 export * from "./grid.js";

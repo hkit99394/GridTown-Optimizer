@@ -44,6 +44,7 @@ import {
   roadsConnectedToRow0,
   isAdjacentToRoads,
   findAvailableRow0RoadCell,
+  pruneRedundantRoads,
 } from "../core/roads.js";
 import { applyDeterministicDominanceUpgrades } from "../core/dominanceUpgrades.js";
 import {
@@ -1886,10 +1887,12 @@ function solveOne(
   const occupiedBuildings = new Set<string>();
   for (const s of services) addPlacementCellsToSet(occupiedBuildings, s);
   for (const r of residentials) addPlacementCellsToSet(occupiedBuildings, r);
+  const normalizedServices = services.map((service) => normalizeServicePlacement(service));
+  const roadConnectedBuildings = [...normalizedServices, ...residentials];
 
   // Keep only roads connected to row 0, then re-ensure each placed building
   // is connected to that network (robust against any stray/disconnected roads).
-  const roadsValid = roadsConnectedToRow0(G, roads);
+  let roadsValid = roadsConnectedToRow0(G, roads);
   if (roadsValid.size === 0) {
     const fallbackRoad = findAvailableRow0RoadCell(G, occupiedBuildings);
     if (!fallbackRoad) return null;
@@ -1897,8 +1900,7 @@ function solveOne(
     roadsValid.add(fallbackRoad);
   }
 
-  for (const s of services) {
-    const normalized = normalizeServicePlacement(s);
+  for (const normalized of normalizedServices) {
     if (profileCounters) profileCounters.roads.ensureConnectedCalls++;
     ensureBuildingConnectedToRoads(
       G,
@@ -1916,6 +1918,8 @@ function solveOne(
     ensureBuildingConnectedToRoads(G, roadsValid, occupiedBuildings, r.r, r.c, r.rows, r.cols, explicitRoadProbeScratch);
   }
 
+  roadsValid = pruneRedundantRoads(G, roadsValid, roadConnectedBuildings);
+
   // No road may overlap any building cell.
   for (const k of occupiedBuildings) {
     if (roadsValid.has(k)) {
@@ -1930,10 +1934,11 @@ function solveOne(
   }
 
   // Hard post-condition: every building must be adjacent to at least one road cell.
-  for (const s of services) {
-    const normalized = normalizeServicePlacement(s);
+  for (let index = 0; index < services.length; index++) {
+    const service = services[index]!;
+    const normalized = normalizedServices[index]!;
     if (!isAdjacentToRoads(roadsValid, normalized.r, normalized.c, normalized.rows, normalized.cols)) {
-      throw new Error(`Invalid solution: service at (${s.r}, ${s.c}) is not connected to roads.`);
+      throw new Error(`Invalid solution: service at (${service.r}, ${service.c}) is not connected to roads.`);
     }
   }
   for (const r of residentials) {

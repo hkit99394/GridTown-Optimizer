@@ -1,5 +1,6 @@
 import {
   DEFAULT_CROSS_MODE_BENCHMARK_MODES,
+  formatCrossModeBenchmarkDecisionTraceJsonl,
   formatCrossModeBenchmarkSuite,
   listCrossModeBenchmarkCaseNames,
   runCrossModeBenchmarkSuite,
@@ -9,6 +10,7 @@ import type { CrossModeBenchmarkMode } from "../benchmarks/index.js";
 
 interface ParsedBenchmarkArgs {
   json: boolean;
+  traceJsonl: boolean;
   list: boolean;
   names: string[];
   modes?: CrossModeBenchmarkMode[];
@@ -54,6 +56,7 @@ function parseNumberList(value: string, label: string): number[] {
 function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   const names: string[] = [];
   let json = false;
+  let traceJsonl = false;
   let list = false;
   let modes: CrossModeBenchmarkMode[] | undefined;
   let budgetSeconds: number | undefined;
@@ -63,6 +66,10 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   for (const arg of argv) {
     if (arg === "--json") {
       json = true;
+      continue;
+    }
+    if (arg === "--trace-jsonl") {
+      traceJsonl = true;
       continue;
     }
     if (arg === "--list") {
@@ -88,7 +95,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     names.push(arg);
   }
 
-  return { json, list, names, modes, budgetSeconds, budgetsSeconds, seeds };
+  return { json, traceJsonl, list, names, modes, budgetSeconds, budgetsSeconds, seeds };
 }
 
 export async function runCrossModeBenchmarkCli(): Promise<void> {
@@ -108,6 +115,11 @@ export async function runCrossModeBenchmarkCli(): Promise<void> {
 
   if (args.json) {
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    return;
+  }
+
+  if (args.traceJsonl) {
+    process.stdout.write(formatCrossModeBenchmarkDecisionTraceJsonl(result));
     return;
   }
 

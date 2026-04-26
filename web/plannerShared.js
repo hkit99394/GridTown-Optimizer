@@ -249,6 +249,30 @@
     return normalizeElapsedMs(entry?.elapsedMs ?? entry?.resultElapsedMs ?? entry?.result?.stats?.elapsedMs ?? 0);
   }
 
+  function readFiniteNumber(value) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
+  }
+
+  function getSavedLayoutPopulation(entry) {
+    const directPopulation =
+      readFiniteNumber(entry?.result?.validation?.recomputedTotalPopulation)
+      ?? readFiniteNumber(entry?.result?.stats?.totalPopulation)
+      ?? readFiniteNumber(entry?.result?.solution?.totalPopulation)
+      ?? readFiniteNumber(entry?.continueCpSat?.incumbent?.objective?.value);
+    if (directPopulation !== null) {
+      return Math.max(0, Math.round(directPopulation));
+    }
+
+    const populations = entry?.result?.solution?.populations;
+    if (!Array.isArray(populations)) return null;
+    const summedPopulation = populations.reduce((sum, population) => {
+      const number = readFiniteNumber(population);
+      return number === null ? sum : sum + number;
+    }, 0);
+    return Math.max(0, Math.round(summedPopulation));
+  }
+
   function escapeHtml(value) {
     return String(value)
       .replaceAll("&", "&amp;")
@@ -422,6 +446,7 @@
     formatElapsedTime,
     formatSavedTimestamp,
     getSavedLayoutElapsedMs,
+    getSavedLayoutPopulation,
     hashString,
     isGridLike,
     normalizeElapsedMs,

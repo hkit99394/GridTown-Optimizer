@@ -13,6 +13,7 @@ const {
   DEFAULT_CROSS_MODE_BENCHMARK_SEEDS,
   DEFAULT_LNS_BENCHMARK_CORPUS,
   DEFAULT_LNS_BENCHMARK_OPTIONS,
+  formatCrossModeBenchmarkDecisionTraceJsonl,
   formatCrossModeBenchmarkSuite,
   formatLnsBenchmarkSuite,
   listCrossModeBenchmarkCaseNames,
@@ -38,8 +39,12 @@ const {
   resolveOptimizerName,
   listCpSatBenchmarkCaseNames,
   normalizeCpSatBenchmarkOptions,
+  buildDecisionTraceFromSolution,
+  buildTimeToQualityScorecard,
+  parseDecisionTraceJsonl,
   runGreedyBenchmarkSuite,
   runCpSatBenchmarkSuite,
+  serializeDecisionTraceJsonl,
   solve,
   solveAsync,
   solveAuto,
@@ -58,6 +63,7 @@ const { applyDeterministicDominanceUpgrades } = require("../dist/core/dominanceU
 const {
   createRoadProbeScratch,
   materializeDeferredRoadNetwork,
+  pruneRedundantRoads,
   probeBuildingConnectedToRoads,
   roadSeedRow0Candidates,
   roadSeedRow0RepresentativeCandidates,
@@ -243,6 +249,23 @@ function testRoadProbeScratchWorkspaceResetsBetweenCalls() {
 
   assert.deepEqual(blockedProbeWithScratch, blockedProbeWithoutScratch);
   assert.deepEqual(clearProbeWithScratch, clearProbeWithoutScratch);
+}
+
+function testRoadPruningDropsConnectorsOnlyNeededByRowZeroBuildings() {
+  const grid = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+  ];
+  const roads = new Set(["0,0", "1,0", "2,0", "0,1"]);
+  const buildings = [
+    { r: 0, c: 2, rows: 1, cols: 1 },
+    { r: 1, c: 1, rows: 1, cols: 1 },
+  ];
+
+  const pruned = pruneRedundantRoads(grid, roads, buildings);
+
+  assert.deepEqual([...pruned].sort(), ["0,1"]);
 }
 
 async function maybeTestAutoOptimizer() {
@@ -2857,7 +2880,22 @@ async function testCrossModeBenchmarkHelpers() {
           skippedIterations: 0,
           finalStagnantIterations: 1,
           elapsedSeconds: 1,
-          outcomes: [],
+          outcomes: [
+            {
+              iteration: 0,
+              phase: "focused",
+              window: { top: 0, left: 0, rows: 2, cols: 2 },
+              stagnantIterationsBefore: 0,
+              staleSecondsBefore: 0,
+              repairTimeLimitSeconds: 1,
+              wallClockSeconds: 0.1,
+              populationBefore: modeScores[context.mode],
+              populationAfter: modeScores[context.mode],
+              improvement: 0,
+              status: "neutral",
+              cpSatStatus: "FEASIBLE",
+            },
+          ],
         };
       }
       if (context.mode === "cp-sat-portfolio") {
@@ -2906,14 +2944,87 @@ async function testCrossModeBenchmarkHelpers() {
     mocked.cases[0].results.find((entry) => entry.mode === "cp-sat-portfolio").progressSummary.portfolioWorkerSummary.feasibleWorkers,
     1
   );
+  const mockedAuto = mocked.cases[0].results.find((entry) => entry.mode === "auto");
+  const mockedLns = mocked.cases[0].results.find((entry) => entry.mode === "lns");
+  const mockedPortfolio = mocked.cases[0].results.find((entry) => entry.mode === "cp-sat-portfolio");
+  assert(mockedAuto.decisionTrace.some((event) => event.kind === "auto-stage"));
+  assert(mockedAuto.decisionTrace.some((event) => event.kind === "greedy-phase"));
+  assert(mockedLns.decisionTrace.some((event) => event.kind === "lns-neighborhood"));
+  assert(mockedPortfolio.decisionTrace.some((event) => event.kind === "cp-sat-progress"));
+  assert.equal(mockedAuto.timeToQuality.bestScore, 10);
+  assert.equal(mockedLns.timeToQuality.finalScore, 8);
+  assert.equal(mockedAuto.timeToQuality.timeCheckpoints.find((entry) => entry.elapsedMs === 5000).bestScore, 10);
+  assert.equal(mockedAuto.timeToQuality.qualityTargets.find((entry) => entry.ratio === 1).reachedScore, 10);
+  assert.match(mockedPortfolio.checkpointReason, /CP-SAT portfolio worker|CP-SAT FEASIBLE/);
+  const lnsTraceJsonl = serializeDecisionTraceJsonl(mockedLns.decisionTrace);
+  assert.equal(parseDecisionTraceJsonl(lnsTraceJsonl).length, mockedLns.decisionTrace.length);
+  assert.match(formatCrossModeBenchmarkDecisionTraceJsonl(mocked), /"schemaVersion":1/);
+  const zeroElapsedTrace = buildDecisionTraceFromSolution(
+    {
+      ...buildMockSolution({ optimizer: "cp-sat", totalPopulation: 5, cpSatStatus: "FEASIBLE" }),
+      cpSatTelemetry: {
+        solveWallTimeSeconds: 3,
+        userTimeSeconds: 3,
+        solutionCount: 1,
+        incumbentObjectiveValue: 5,
+        bestObjectiveBound: 5,
+        objectiveGap: 0,
+        incumbentPopulation: 5,
+        bestPopulationUpperBound: 5,
+        populationGapUpperBound: 0,
+        lastImprovementAtSeconds: 0,
+        secondsSinceLastImprovement: 3,
+        numBranches: 0,
+        numConflicts: 0,
+      },
+    },
+    { elapsedTimeSeconds: 0 }
+  );
+  assert.equal(zeroElapsedTrace.find((event) => event.kind === "checkpoint").elapsedMs, 0);
+  const cumulativeScorecard = buildTimeToQualityScorecard(
+    [
+      {
+        schemaVersion: 1,
+        runId: "synthetic",
+        sequence: 0,
+        eventId: "synthetic:0000",
+        elapsedMs: 1000,
+        optimizer: "greedy",
+        activeStage: "greedy",
+        kind: "checkpoint",
+        decision: "improved",
+        reason: "Synthetic improvement.",
+        score: { before: null, after: 20, best: 20, delta: 20, upperBound: null, gap: null },
+      },
+      {
+        schemaVersion: 1,
+        runId: "synthetic",
+        sequence: 1,
+        eventId: "synthetic:0001",
+        elapsedMs: 2000,
+        optimizer: "greedy",
+        activeStage: "greedy",
+        kind: "checkpoint",
+        decision: "stalled",
+        reason: "Synthetic lower side event.",
+        score: { before: 20, after: 10, best: 10, delta: -10, upperBound: null, gap: null },
+      },
+    ],
+    { finalElapsedMs: 3000, finalScore: 10, timeCheckpointsMs: [2500, Number.NaN], qualityTargetRatios: [1] }
+  );
+  assert.equal(cumulativeScorecard.timeCheckpoints.length, 1);
+  assert.equal(cumulativeScorecard.timeCheckpoints[0].bestScore, 20);
+  assert.equal(cumulativeScorecard.qualityTargets[0].reachedAtMs, 1000);
 
   const formatted = formatCrossModeBenchmarkSuite(result);
   assert.match(formatted, /=== Cross-Mode Benchmark Scorecard ===/);
   assert.match(formatted, /Equal wall-clock budgets: 3s per mode/);
   assert.match(formatted, /progress=current=/);
+  assert.match(formatted, /quality=first-feasible=/);
   const mockedFormatted = formatCrossModeBenchmarkSuite(mocked);
   assert.match(mockedFormatted, /seed-policy=.*lns-seed-limit:2\.000s/);
   assert.match(mockedFormatted, /seed-policy=.*auto-greedy-seed-limit:3\.000s/);
+  assert.match(mockedFormatted, /reason=/);
 
   await assert.rejects(
     () => runCrossModeBenchmarkSuite([benchmarkCase], { names: ["missing-case"], modes: ["greedy"] }),
@@ -3156,7 +3267,7 @@ function testGreedyStep14DeterministicLookaheadTieBenchmarkCase() {
   assert.equal(enabled.results[0].totalPopulation, 200);
   assert.equal(enabled.results[0].serviceCount, 1);
   assert.equal(enabled.results[0].residentialCount, 2);
-  assertLookaheadCounters(enabled.results[0], 40, 1);
+  assertLookaheadCounters(enabled.results[0], 36, 1);
   assert.deepEqual(baselineSolve.solution.services, [
     { r: 1, c: 2, rows: 1, cols: 1, range: 1 },
   ]);
@@ -3200,7 +3311,7 @@ function testGreedyStep14Row0PathNullReservationBenchmarkCase() {
   assert.deepEqual(enabledSolve.solution.services, [
     { r: 0, c: 1, rows: 1, cols: 1, range: 1 },
   ]);
-  assert.deepEqual(sortedRoads(baselineSolve.solution), ["0,0", "0,1", "1,0"]);
+  assert.deepEqual(sortedRoads(baselineSolve.solution), ["0,0", "1,0"]);
   assert.deepEqual(sortedRoads(enabledSolve.solution), ["0,0"]);
   assert.deepEqual(enabledSolve.solution.residentials, [
     { r: 0, c: 2, rows: 3, cols: 2 },
@@ -3226,7 +3337,7 @@ function testGreedyStep14ScarceTypeSequentialRefillBenchmarkCase() {
   assert.equal(enabled.results[0].totalPopulation, 210);
   assert.equal(enabled.results[0].serviceCount, 2);
   assert.equal(enabled.results[0].residentialCount, 2);
-  assertLookaheadCounters(enabled.results[0], 84, 3);
+  assertLookaheadCounters(enabled.results[0], 56, 2);
   assert.deepEqual(enabledSolve.solution.services, [
     { r: 1, c: 2, rows: 1, cols: 1, range: 1 },
     { r: 1, c: 0, rows: 1, cols: 1, range: 1 },
@@ -3303,13 +3414,12 @@ function testGreedyStep14LookaheadCapsRefillDepthWhenMaxResidentialsIsOne() {
   assert.equal(enabled.totalPopulation, 170);
   assert.equal(enabled.residentials.length, 1);
   assert.deepEqual(enabled.services, [
-    { r: 2, c: 2, rows: 1, cols: 2, range: 1 },
-    { r: 4, c: 3, rows: 1, cols: 1, range: 1 },
-    { r: 0, c: 3, rows: 1, cols: 1, range: 1 },
+    { r: 2, c: 3, rows: 1, cols: 2, range: 1 },
+    { r: 2, c: 0, rows: 1, cols: 1, range: 1 },
   ]);
-  assert.deepEqual(enabled.serviceTypeIndices, [2, 0, 0]);
+  assert.deepEqual(enabled.serviceTypeIndices, [2, 0]);
   assert.deepEqual(enabled.residentials, [
-    { r: 0, c: 4, rows: 3, cols: 2 },
+    { r: 2, c: 1, rows: 3, cols: 2 },
   ]);
   assert.deepEqual(enabled.residentialTypeIndices, [1]);
   assert.deepEqual(enabled.populations, [170]);
@@ -3606,7 +3716,7 @@ function testGreedyIncrementalInvalidationPreservesBenchmarkOutputs() {
   const expectations = {
     "typed-housing-baseline": { totalPopulation: 110, serviceCount: 0, residentialCount: 2 },
     "compact-service-single": { totalPopulation: 370, serviceCount: 1, residentialCount: 2 },
-    "cap-sweep-mixed": { totalPopulation: 440, serviceCount: 1, residentialCount: 3 },
+    "cap-sweep-mixed": { totalPopulation: 460, serviceCount: 2, residentialCount: 3 },
     "bridge-connectivity-heavy": { totalPopulation: 400, serviceCount: 1, residentialCount: 3 },
     "geometry-occupancy-hot-path": { totalPopulation: 1030, serviceCount: 5, residentialCount: 6 },
     "typed-footprint-pressure": { totalPopulation: 450, serviceCount: 2, residentialCount: 4 },
@@ -3725,11 +3835,11 @@ function testGreedyDeferredRoadCommitmentBenchmarkCase() {
   assert.deepEqual(result.selectedCaseNames, ["deferred-road-packing-gain"]);
   assert.equal(result.results[0].name, "deferred-road-packing-gain");
   assert.equal(result.results[0].totalPopulation, 260);
-  assert.equal(result.results[0].roadCount, 4);
+  assert.equal(result.results[0].roadCount, 3);
   assert.equal(result.results[0].serviceCount, 1);
   assert.equal(result.results[0].residentialCount, 2);
   assert.equal(deferredSolution.totalPopulation, 260);
-  assert.equal(deferredSolution.roads.size, 4);
+  assert.equal(deferredSolution.roads.size, 3);
   assert.equal(explicitSolution.totalPopulation, 180);
   assert.equal(explicitSolution.roads.size, 2);
   assert.equal(deferredSolution.totalPopulation > explicitSolution.totalPopulation, true);
@@ -6054,6 +6164,7 @@ async function main() {
   testBuildingGeometryHelpersParity();
   testRoadProbePreservesEdgeBorderConnectivity();
   testRoadProbeScratchWorkspaceResetsBetweenCalls();
+  testRoadPruningDropsConnectorsOnlyNeededByRowZeroBuildings();
   testGreedyDispatcher();
   await testPublicSolverDispatchValidatesInputs();
   testGreedyRandomSeedIsDeterministic();

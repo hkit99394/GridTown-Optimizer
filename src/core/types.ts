@@ -288,6 +288,82 @@ export interface SolverProgressSummary {
   portfolioWorkerSummary: SolverProgressPortfolioSummary | null;
 }
 
+export type SolverDecisionTraceKind =
+  | "checkpoint"
+  | "greedy-phase"
+  | "lns-neighborhood"
+  | "cp-sat-progress"
+  | "auto-stage";
+
+export type SolverDecisionTraceDecision =
+  | "started"
+  | "improved"
+  | "stalled"
+  | "bounded"
+  | "stopped"
+  | "failed";
+
+export type SolverDecisionTraceEvidenceValue = string | number | boolean | null;
+
+export interface SolverDecisionTraceScore {
+  before: number | null;
+  after: number | null;
+  best: number | null;
+  delta: number | null;
+  upperBound: number | null;
+  gap: number | null;
+}
+
+export interface SolverDecisionTraceStage {
+  stageIndex?: number;
+  cycleIndex?: number;
+  phase?: string;
+  iteration?: number;
+}
+
+export interface SolverDecisionTraceEvent {
+  schemaVersion: 1;
+  runId: string;
+  sequence: number;
+  eventId: string;
+  elapsedMs: number;
+  optimizer: OptimizerName;
+  activeStage: OptimizerName | AutoStageOptimizerName | null;
+  kind: SolverDecisionTraceKind;
+  decision: SolverDecisionTraceDecision;
+  reason: string;
+  score: SolverDecisionTraceScore;
+  stage?: SolverDecisionTraceStage;
+  evidence?: Record<string, SolverDecisionTraceEvidenceValue>;
+}
+
+export interface SolverElapsedScoreCheckpoint {
+  elapsedMs: number;
+  bestScore: number | null;
+  scoreDeltaToBest: number | null;
+  scoreRatioToBest: number | null;
+  reached: boolean;
+}
+
+export interface SolverQualityTargetCheckpoint {
+  ratio: number;
+  targetScore: number | null;
+  reachedAtMs: number | null;
+  reachedScore: number | null;
+}
+
+export interface SolverTimeToQualityScorecard {
+  finalElapsedMs: number;
+  finalScore: number | null;
+  bestScore: number | null;
+  firstFeasibleAtMs: number | null;
+  firstImprovementAtMs: number | null;
+  bestScoreAtMs: number | null;
+  improvementCount: number;
+  timeCheckpoints: SolverElapsedScoreCheckpoint[];
+  qualityTargets: SolverQualityTargetCheckpoint[];
+}
+
 export type CpSatProgressKind = "incumbent" | "bound" | "portfolio-worker-complete";
 
 export interface CpSatProgressUpdate {

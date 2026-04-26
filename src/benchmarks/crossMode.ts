@@ -1,5 +1,12 @@
 import { performance } from "node:perf_hooks";
 
+import {
+  buildDecisionTraceFromSolution,
+  buildTimeToQualityScorecard,
+  formatTimeToQualityScorecard,
+  serializeDecisionTraceJsonl,
+  summarizeDecisionTraceReason,
+} from "../core/decisionTrace.js";
 import { buildSolverProgressSummary, formatSolverProgressSummary } from "../core/progress.js";
 import { solveAsync } from "../runtime/solve.js";
 import { normalizeCpSatBenchmarkOptions } from "./cpSat.js";
@@ -16,7 +23,9 @@ import type {
   OptimizerName,
   Solution,
   SolverParams,
+  SolverDecisionTraceEvent,
   SolverProgressSummary,
+  SolverTimeToQualityScorecard,
 } from "../core/types.js";
 
 export type CrossModeBenchmarkMode = OptimizerName | "cp-sat-portfolio";
@@ -88,6 +97,9 @@ export interface CrossModeBenchmarkModeResult {
   autoGreedySeedProfilePhaseCount: number;
   stoppedByUser: boolean;
   progressSummary: SolverProgressSummary;
+  decisionTrace: SolverDecisionTraceEvent[];
+  timeToQuality: SolverTimeToQualityScorecard;
+  checkpointReason: string;
 }
 
 export interface CrossModeBenchmarkCaseScorecard {
@@ -133,6 +145,12 @@ export interface CrossModeBenchmarkSuiteResult {
   cases: CrossModeBenchmarkCaseScorecard[];
   modeSummaries: CrossModeBenchmarkModeSummary[];
   problemSizeSummaries: CrossModeBenchmarkProblemSizeSummary[];
+}
+
+interface CrossModeBenchmarkTraceArtifacts {
+  decisionTrace: SolverDecisionTraceEvent[];
+  timeToQuality: SolverTimeToQualityScorecard;
+  checkpointReason: string;
 }
 
 export const DEFAULT_CROSS_MODE_BENCHMARK_BUDGET_SECONDS = 5;
@@ -437,6 +455,32 @@ async function defaultCrossModeSolve(
   return solveAsync(grid, params);
 }
 
+function buildCrossModeBenchmarkTraceArtifacts(
+  benchmarkCase: CrossModeBenchmarkCase,
+  mode: CrossModeBenchmarkMode,
+  optimizer: OptimizerName,
+  solution: Solution,
+  options: {
+    budgetSeconds: number;
+    seed: number;
+    wallClockSeconds: number;
+  }
+): CrossModeBenchmarkTraceArtifacts {
+  const decisionTrace = buildDecisionTraceFromSolution(solution, {
+    runId: `${benchmarkCase.name}:${mode}:budget-${options.budgetSeconds}:seed-${options.seed}`,
+    optimizer,
+    elapsedTimeSeconds: options.wallClockSeconds,
+  });
+  return {
+    decisionTrace,
+    timeToQuality: buildTimeToQualityScorecard(decisionTrace, {
+      finalElapsedMs: options.wallClockSeconds * 1000,
+      finalScore: solution.totalPopulation,
+    }),
+    checkpointReason: summarizeDecisionTraceReason(decisionTrace),
+  };
+}
+
 async function runCrossModeBenchmarkCase(
   benchmarkCase: CrossModeBenchmarkCase,
   modes: readonly CrossModeBenchmarkMode[],
@@ -468,10 +512,16 @@ async function runCrossModeBenchmarkCase(
       fallbackOptimizer: params.optimizer ?? modeToOptimizer(mode),
       params,
     });
+    const optimizer = params.optimizer ?? modeToOptimizer(mode);
+    const traceArtifacts = buildCrossModeBenchmarkTraceArtifacts(benchmarkCase, mode, optimizer, solution, {
+      budgetSeconds,
+      seed,
+      wallClockSeconds,
+    });
 
     rawResults.push({
       mode,
-      optimizer: params.optimizer ?? modeToOptimizer(mode),
+      optimizer,
       label: MODE_LABELS[mode],
       problemSizeBand,
       budgetSeconds,
@@ -498,6 +548,7 @@ async function runCrossModeBenchmarkCase(
       autoGreedySeedProfilePhaseCount: solution.autoStage?.greedySeedStage?.phases?.length ?? 0,
       stoppedByUser: Boolean(solution.stoppedByUser),
       progressSummary,
+      ...traceArtifacts,
     });
   }
 
@@ -629,6 +680,16 @@ export async function runCrossModeBenchmarkSuite(
   };
 }
 
+export function collectCrossModeBenchmarkDecisionTraceEvents(
+  result: CrossModeBenchmarkSuiteResult
+): SolverDecisionTraceEvent[] {
+  return result.cases.flatMap((scorecard) => scorecard.results.flatMap((benchmark) => benchmark.decisionTrace));
+}
+
+export function formatCrossModeBenchmarkDecisionTraceJsonl(result: CrossModeBenchmarkSuiteResult): string {
+  return serializeDecisionTraceJsonl(collectCrossModeBenchmarkDecisionTraceEvents(result));
+}
+
 function formatScoreDelta(value: number | null): string {
   if (value === null) return "n/a";
   return value === 0 ? "best" : `-${Number(value).toLocaleString()}`;
@@ -679,6 +740,10 @@ export function formatCrossModeBenchmarkSuite(result: CrossModeBenchmarkSuiteRes
         `  ${benchmark.label}: rank=${benchmark.rank} score=${benchmark.totalPopulation} delta=${formatScoreDelta(benchmark.scoreDeltaToBest)} win-vs-auto=${benchmark.winVsAuto} auto-delta=${formatScoreDeltaVsAuto(benchmark.scoreDeltaVsAuto)} wall=${benchmark.wallClockSeconds.toFixed(3)}s cpu-budget=${benchmark.workerCpuBudgetSeconds}s roads=${benchmark.roadCount} services=${benchmark.serviceCount} residentials=${benchmark.residentialCount}`
       );
       lines.push(`    progress=${formatSolverProgressSummary(benchmark.progressSummary)}`);
+      lines.push(
+        `    quality=${formatTimeToQualityScorecard(benchmark.timeToQuality)} trace-events=${benchmark.decisionTrace.length}`
+      );
+      lines.push(`    reason=${benchmark.checkpointReason}`);
       const seedPolicyEvidence = formatSeedPolicyEvidence(benchmark);
       if (seedPolicyEvidence) {
         lines.push(`    seed-policy=${seedPolicyEvidence}`);

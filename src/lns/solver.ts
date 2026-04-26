@@ -219,6 +219,7 @@ function buildInitialLnsIncumbent(G: Grid, params: SolverParams, options: Normal
       optimizer: "greedy",
       greedy: {
         ...(params.greedy ?? {}),
+        profile: params.greedy?.profile ?? true,
         ...(options.seedTimeLimitSeconds !== null ? { timeLimitSeconds: options.seedTimeLimitSeconds } : {}),
       },
     }),
@@ -243,6 +244,7 @@ function buildLnsTelemetry(
     stopReason,
     seedSource: initialIncumbent.seedSource,
     seedWallClockSeconds: initialIncumbent.seedWallClockSeconds,
+    seedTimeLimitSeconds: options.seedTimeLimitSeconds,
     wallClockLimitSeconds: options.wallClockLimitSeconds,
     noImprovementTimeoutSeconds: options.noImprovementTimeoutSeconds,
     focusedRepairTimeLimitSeconds: options.focusedRepairTimeLimitSeconds,

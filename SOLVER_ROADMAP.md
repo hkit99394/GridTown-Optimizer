@@ -226,7 +226,9 @@ Module extraction decision:
 
 Maintenance watchpoints:
 - phase elapsed values are inclusive and some nested phase timings are intentionally not additive to total greedy wall time
-- use the new phase counters to guide `LNS` seed-budget policy and `auto` seed-stage reporting before extracting larger modules
+- `LNS` telemetry now reports the configured greedy seed budget beside actual seed wall time, and `autoStage.greedySeedStage` reports the applied fast-seed caps plus phase timing when profiling is available
+- `benchmark:lns` and the cross-mode scorecard now surface seed-budget / seed-wall evidence so `LNS` seed caps and Auto Greedy seed-stage caps can be tuned only when fixed-corpus data justifies it
+- keep using those seed-budget and phase-profile fields to justify future `LNS` seed-budget or `auto` seed-stage policy changes before extracting larger modules
 - if the profiler itself grows, a small `src/greedy/profile.ts` extraction is reasonable; search-policy extraction should wait for evidence from benchmarks
 
 ## Remaining Priorities
@@ -275,7 +277,7 @@ Ordering inside the learned-guidance track:
 
 If all remaining work is ranked in one combined near-term ordering, the recommended order is:
 
-1. use greedy phase profile data to tune or justify `LNS` seed-budget and `auto` seed-stage policy changes
+1. keep running benchmark evidence over the shipped seed-budget / phase-profile fields before changing `LNS` seed-budget or `auto` seed-stage policy
 2. optionally extract only profiler or demonstrably stable greedy helpers after phase data proves the boundary
 3. add the learned-guidance trace foundation on top of the shipped benchmark and equal-budget scorecard surfaces
 4. run learned-guidance ablations
@@ -284,7 +286,8 @@ If all remaining work is ranked in one combined near-term ordering, the recommen
 7. treat contextual bandits and full RL as gated research after earlier learned stages already win
 
 Why this order:
-- items 1 and 2 turn the shipped greedy phase data into measured evidence before policy or extraction churn
+- item 1 keeps the 20% `LNS` seed cap and Auto Greedy caps unchanged until fixed-corpus evidence shows seed construction is the bottleneck
+- item 2 turns phase data into measured extraction evidence before structural churn
 - items 3 through 7 depend on the shipped scorecard discipline, a shared trace/export layer, a more stable deterministic baseline, and more expensive labels
 - keep the portfolio orphan-process cancellation regression passing before any future fan-out increase
 - full RL currently has the lowest near-term product leverage per unit complexity

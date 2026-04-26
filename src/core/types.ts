@@ -124,6 +124,20 @@ export interface AutoSolveGeneratedSeed {
   randomSeed: number;
 }
 
+export interface AutoGreedySeedStageSummary {
+  timeLimitSeconds: number | null;
+  localSearch: boolean | null;
+  restarts: number | null;
+  serviceRefineIterations: number | null;
+  serviceRefineCandidateLimit: number | null;
+  exhaustiveServiceSearch: boolean | null;
+  serviceExactPoolLimit: number | null;
+  serviceExactMaxCombinations: number | null;
+  totalPopulation: number | null;
+  elapsedSeconds: number | null;
+  phases?: GreedyProfilePhaseSummary[];
+}
+
 export interface AutoSolveStageMetadata {
   requestedOptimizer: "auto";
   activeStage: AutoStageOptimizerName | null;
@@ -133,6 +147,7 @@ export interface AutoSolveStageMetadata {
   lastCycleImprovementRatio: number | null;
   stopReason?: AutoSolveStopReason | null;
   generatedSeeds: AutoSolveGeneratedSeed[];
+  greedySeedStage?: AutoGreedySeedStageSummary | null;
 }
 
 /** Stable semantic key for a road cell in persisted snapshots: "r,c". */
@@ -532,6 +547,7 @@ export interface LnsTelemetry {
   stopReason: LnsStopReason;
   seedSource: "greedy" | "hint";
   seedWallClockSeconds: number;
+  seedTimeLimitSeconds: number | null;
   wallClockLimitSeconds: number | null;
   noImprovementTimeoutSeconds: number | null;
   focusedRepairTimeLimitSeconds: number;

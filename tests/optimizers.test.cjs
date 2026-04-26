@@ -948,6 +948,12 @@ function testAutoClampsHeavyGreedyStageSettings() {
     assert.equal(capturedGreedyOptions.exhaustiveServiceSearch, false);
     assert.equal(capturedGreedyOptions.serviceExactPoolLimit, 8);
     assert.equal(capturedGreedyOptions.serviceExactMaxCombinations, 512);
+    assert.equal(capturedGreedyOptions.profile, true);
+    assert.equal(solution.autoStage.greedySeedStage.restarts, 4);
+    assert.equal(solution.autoStage.greedySeedStage.serviceRefineIterations, 1);
+    assert.equal(solution.autoStage.greedySeedStage.exhaustiveServiceSearch, false);
+    assert.equal(solution.autoStage.greedySeedStage.totalPopulation, 100);
+    assert.equal(typeof solution.autoStage.greedySeedStage.elapsedSeconds, "number");
   } finally {
     solverModule.solveGreedy = originalSolveGreedy;
   }
@@ -1011,6 +1017,12 @@ async function testAutoAsyncClampsHeavyGreedyStageSettings() {
     assert.equal(capturedGreedyOptions.exhaustiveServiceSearch, false);
     assert.equal(capturedGreedyOptions.serviceExactPoolLimit, 8);
     assert.equal(capturedGreedyOptions.serviceExactMaxCombinations, 512);
+    assert.equal(capturedGreedyOptions.profile, true);
+    assert.equal(solution.autoStage.greedySeedStage.restarts, 4);
+    assert.equal(solution.autoStage.greedySeedStage.serviceRefineIterations, 1);
+    assert.equal(solution.autoStage.greedySeedStage.exhaustiveServiceSearch, false);
+    assert.equal(solution.autoStage.greedySeedStage.totalPopulation, 100);
+    assert.equal(typeof solution.autoStage.greedySeedStage.elapsedSeconds, "number");
   } finally {
     greedyBridgeModule.startGreedySolve = originalStartGreedySolve;
     lnsBridgeModule.startLnsSolve = originalStartLnsSolve;
@@ -2787,13 +2799,40 @@ async function testCrossModeBenchmarkHelpers() {
           lastCycleImprovementRatio: null,
           stopReason: "wall-clock-cap",
           generatedSeeds: [{ stage: "greedy", stageIndex: 1, cycleIndex: 0, randomSeed: context.seed }],
+          greedySeedStage: {
+            timeLimitSeconds: 3,
+            localSearch: true,
+            restarts: 4,
+            serviceRefineIterations: 1,
+            serviceRefineCandidateLimit: 30,
+            exhaustiveServiceSearch: false,
+            serviceExactPoolLimit: 25,
+            serviceExactMaxCombinations: 2000,
+            totalPopulation: modeScores[context.mode],
+            elapsedSeconds: 0.1,
+            phases: [
+              {
+                name: "constructiveCapSearch",
+                runs: 1,
+                elapsedMs: 4,
+                bestPopulationBefore: 0,
+                bestPopulationAfter: modeScores[context.mode],
+                bestPopulationDelta: modeScores[context.mode],
+                candidatePopulationBefore: 0,
+                candidatePopulationAfter: modeScores[context.mode],
+                candidatePopulationDelta: modeScores[context.mode],
+                improvements: 1,
+              },
+            ],
+          },
         };
       }
       if (context.mode === "lns") {
         solution.lnsTelemetry = {
           stopReason: "iteration-limit",
           seedSource: "greedy",
-          seedWallClockSeconds: 0,
+          seedTimeLimitSeconds: 2,
+          seedWallClockSeconds: 0.2,
           wallClockLimitSeconds: 3,
           noImprovementTimeoutSeconds: null,
           focusedRepairTimeLimitSeconds: 1,
@@ -2842,6 +2881,11 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(mocked.cases[0].results.find((entry) => entry.mode === "greedy").winVsAuto, "win");
   assert.equal(mocked.cases[0].results.find((entry) => entry.mode === "lns").winVsAuto, "loss");
   assert.equal(mocked.cases[0].results.find((entry) => entry.mode === "cp-sat-portfolio").winVsAuto, "tie");
+  assert.equal(mocked.cases[0].results.find((entry) => entry.mode === "lns").lnsSeedTimeLimitSeconds, 2);
+  assert.equal(mocked.cases[0].results.find((entry) => entry.mode === "lns").lnsSeedWallClockSeconds, 0.2);
+  assert.equal(mocked.cases[0].results.find((entry) => entry.mode === "auto").autoGreedySeedTimeLimitSeconds, 3);
+  assert.equal(mocked.cases[0].results.find((entry) => entry.mode === "auto").autoGreedySeedElapsedSeconds, 0.1);
+  assert.equal(mocked.cases[0].results.find((entry) => entry.mode === "auto").autoGreedySeedProfilePhaseCount, 1);
   assert.equal(mocked.cases[0].results.find((entry) => entry.mode === "cp-sat-portfolio").workerCpuBudgetSeconds, 6);
   assert.equal(mocked.modeSummaries.find((entry) => entry.mode === "greedy").winRateVsAuto, 1);
   assert.equal(mocked.modeSummaries.find((entry) => entry.mode === "lns").winRateVsAuto, 0);
@@ -2855,6 +2899,9 @@ async function testCrossModeBenchmarkHelpers() {
   assert.match(formatted, /=== Cross-Mode Benchmark Scorecard ===/);
   assert.match(formatted, /Equal wall-clock budgets: 3s per mode/);
   assert.match(formatted, /progress=current=/);
+  const mockedFormatted = formatCrossModeBenchmarkSuite(mocked);
+  assert.match(mockedFormatted, /seed-policy=.*lns-seed-limit:2\.000s/);
+  assert.match(mockedFormatted, /seed-policy=.*auto-greedy-seed-limit:3\.000s/);
 
   await assert.rejects(
     () => runCrossModeBenchmarkSuite([benchmarkCase], { names: ["missing-case"], modes: ["greedy"] }),
@@ -4870,6 +4917,7 @@ function testLnsTelemetryRecordsRepairPolicyAndOutcomes() {
     assert.deepEqual(seenRepairBudgets, [2, 3]);
     assert.equal(solution.lnsTelemetry.seedSource, "hint");
     assert.equal(solution.lnsTelemetry.stopReason, "iteration-limit");
+    assert.equal(solution.lnsTelemetry.seedTimeLimitSeconds, null);
     assert.equal(solution.lnsTelemetry.outcomes.length, 2);
     assert.equal(solution.lnsTelemetry.outcomes[0].phase, "focused");
     assert.equal(solution.lnsTelemetry.outcomes[0].status, "neutral");
@@ -4877,6 +4925,63 @@ function testLnsTelemetryRecordsRepairPolicyAndOutcomes() {
     assert.equal(solution.lnsTelemetry.outcomes[1].status, "improved");
     assert.equal(solution.lnsTelemetry.improvingIterations, 1);
     assert.equal(solution.lnsTelemetry.neutralIterations, 1);
+  } finally {
+    cpSatModule.solveCpSat = originalSolveCpSat;
+  }
+}
+
+function testLnsGreedySeedReportsBudgetAndProfile() {
+  const cpSatModule = require("../dist/cp-sat/solver.js");
+  const originalSolveCpSat = cpSatModule.solveCpSat;
+
+  cpSatModule.solveCpSat = (_grid, params) => ({
+    optimizer: "cp-sat",
+    cpSatStatus: "FEASIBLE",
+    roads: new Set(params.cpSat.warmStartHint.solution.roads),
+    services: [],
+    serviceTypeIndices: [],
+    servicePopulationIncreases: [],
+    residentials: params.cpSat.warmStartHint.solution.residentials.map((residential) => ({
+      r: residential.r,
+      c: residential.c,
+      rows: residential.rows,
+      cols: residential.cols,
+    })),
+    residentialTypeIndices: [...params.cpSat.warmStartHint.solution.residentials.map((residential) => residential.typeIndex)],
+    populations: [...params.cpSat.warmStartHint.solution.populations],
+    totalPopulation: params.cpSat.warmStartHint.solution.totalPopulation,
+  });
+
+  try {
+    const grid = Array.from({ length: 4 }, () => Array.from({ length: 4 }, () => 1));
+    const solution = solveLns(grid, {
+      optimizer: "lns",
+      residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
+      availableBuildings: { residentials: 1, services: 0 },
+      greedy: {
+        localSearch: false,
+        restarts: 1,
+        serviceRefineIterations: 0,
+        serviceRefineCandidateLimit: 1,
+        exhaustiveServiceSearch: false,
+        serviceExactPoolLimit: 1,
+        serviceExactMaxCombinations: 1,
+      },
+      lns: {
+        iterations: 1,
+        maxNoImprovementIterations: 1,
+        wallClockLimitSeconds: 10,
+        repairTimeLimitSeconds: 2,
+        neighborhoodRows: 2,
+        neighborhoodCols: 2,
+      },
+    });
+
+    assert.equal(solution.lnsTelemetry.seedSource, "greedy");
+    assert.equal(solution.lnsTelemetry.seedTimeLimitSeconds, 2);
+    assert.equal(solution.lnsTelemetry.seedWallClockSeconds >= 0, true);
+    assert(solution.greedyProfile);
+    assert(solution.greedyProfile.phases.some((phase) => phase.name === "constructiveCapSearch" && phase.runs > 0));
   } finally {
     cpSatModule.solveCpSat = originalSolveCpSat;
   }
@@ -5825,6 +5930,7 @@ async function main() {
   testLnsNeighborhoodWindowsEscalateWhenStagnating();
   testLnsRunsFinalEscalationWithinConfiguredBudget();
   testLnsTelemetryRecordsRepairPolicyAndOutcomes();
+  testLnsGreedySeedReportsBudgetAndProfile();
   testLnsStopsAfterNoImprovementTimeout();
   testLnsRejectsMalformedScalarOptions();
   maybeTestLnsOptimizer();

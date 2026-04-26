@@ -403,7 +403,7 @@ const portfolio = await solveAsync(grid, {
 
 ### Run the benchmark corpus
 
-The repository includes fixed benchmark corpora for `greedy`, `LNS`, and `CP-SAT`, plus a cross-mode scorecard for equal-budget comparisons.
+The repository includes fixed benchmark corpora for `greedy`, `LNS`, and `CP-SAT`, plus a cross-mode scorecard for equal-budget comparisons. Scorecard rows include seed-policy evidence for `LNS` seed budget/wall time and Auto Greedy seed-stage budget/wall time when those stages run.
 
 Run the greedy suite:
 
@@ -629,6 +629,7 @@ All `auto` fields are optional. Omit `auto` or pass `{}` to use runtime defaults
 ```ts
 auto: {
   wallClockLimitSeconds?: number;
+  randomSeed?: number;
   weakCycleImprovementThreshold?: number;
   maxConsecutiveWeakCycles?: number;
   cpSatStageTimeLimitSeconds?: number;
@@ -644,6 +645,7 @@ lns: {
   maxNoImprovementIterations: 4,
   neighborhoodRows: 6,
   neighborhoodCols: 8,
+  seedTimeLimitSeconds: 2,
   repairTimeLimitSeconds: 5,
 }
 ```
@@ -667,10 +669,13 @@ A `Solution` contains:
 - `optimizer`
 - `activeOptimizer`
 - `autoStage`
+- `autoStage.greedySeedStage`, when `auto` has run its Greedy seed stage, reports the applied Greedy caps plus seed population, elapsed seconds, and phase timings when profiling is available
 - `cpSatStatus`
 - `cpSatObjectivePolicy`
 - `cpSatTelemetry`
 - `cpSatPortfolio`
+- `greedyProfile`, when Greedy profiling was enabled directly or by a seed stage
+- `lnsTelemetry`, including `seedTimeLimitSeconds` and `seedWallClockSeconds`
 - `stoppedByUser`
 - `roads: Set<string>`
 - `services`

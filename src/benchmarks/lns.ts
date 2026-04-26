@@ -10,6 +10,7 @@ import type {
   CpSatTelemetry,
   GreedyOptions,
   GreedyProfile,
+  GreedyProfilePhaseSummary,
   Grid,
   LnsOptions,
   LnsTelemetry,
@@ -98,6 +99,14 @@ function cloneCpSatOptions(options: CpSatOptions): CpSatOptions {
 
 function cloneGreedyOptions(options: GreedyOptions): GreedyOptions {
   return structuredClone(options);
+}
+
+function formatSeconds(value: number | null | undefined): string {
+  return typeof value === "number" && Number.isFinite(value) ? `${value.toFixed(3)}s` : "n/a";
+}
+
+function formatProfilePhaseSummary(phase: GreedyProfilePhaseSummary): string {
+  return `${phase.name}:${phase.runs}x/${phase.elapsedMs.toFixed(3)}ms/best+${phase.bestPopulationDelta}/candidate+${phase.candidatePopulationDelta}`;
 }
 
 function inheritGreedyBenchmarkOptions(params: SolverParams): GreedyOptions {
@@ -265,7 +274,7 @@ export function formatLnsBenchmarkSuite(result: LnsBenchmarkSuiteResult): string
     );
     lines.push(`  progress=${formatSolverProgressSummary(benchmark.progressSummary)}`);
     lines.push(
-      `  lns=iterations:${benchmark.lnsOptions.iterations} no-improve:${benchmark.lnsOptions.maxNoImprovementIterations} window:${benchmark.lnsOptions.neighborhoodRows}x${benchmark.lnsOptions.neighborhoodCols} repair:${benchmark.lnsOptions.repairTimeLimitSeconds}s`
+      `  lns=iterations:${benchmark.lnsOptions.iterations} no-improve:${benchmark.lnsOptions.maxNoImprovementIterations} window:${benchmark.lnsOptions.neighborhoodRows}x${benchmark.lnsOptions.neighborhoodCols} repair:${benchmark.lnsOptions.repairTimeLimitSeconds}s seed-limit:${formatSeconds(benchmark.lnsTelemetry?.seedTimeLimitSeconds)}`
     );
     if (benchmark.cpSatStatus || telemetry) {
       lines.push(
@@ -274,8 +283,11 @@ export function formatLnsBenchmarkSuite(result: LnsBenchmarkSuiteResult): string
     }
     if (benchmark.lnsTelemetry) {
       lines.push(
-        `  telemetry=stop:${benchmark.lnsTelemetry.stopReason} seed:${benchmark.lnsTelemetry.seedSource} outcomes:${benchmark.lnsTelemetry.outcomes.length} improved:${benchmark.lnsTelemetry.improvingIterations} neutral:${benchmark.lnsTelemetry.neutralIterations} recoverable:${benchmark.lnsTelemetry.recoverableFailures}`
+        `  telemetry=stop:${benchmark.lnsTelemetry.stopReason} seed:${benchmark.lnsTelemetry.seedSource} seed-wall:${formatSeconds(benchmark.lnsTelemetry.seedWallClockSeconds)} outcomes:${benchmark.lnsTelemetry.outcomes.length} improved:${benchmark.lnsTelemetry.improvingIterations} neutral:${benchmark.lnsTelemetry.neutralIterations} recoverable:${benchmark.lnsTelemetry.recoverableFailures}`
       );
+    }
+    if (benchmark.greedyProfile?.phases.length) {
+      lines.push(`  seed-phases=${benchmark.greedyProfile.phases.map(formatProfilePhaseSummary).join(", ")}`);
     }
   }
 

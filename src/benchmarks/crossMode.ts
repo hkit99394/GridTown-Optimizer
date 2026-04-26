@@ -79,7 +79,13 @@ export interface CrossModeBenchmarkModeResult {
   residentialCount: number;
   cpSatStatus: string | null;
   lnsStopReason: string | null;
+  lnsSeedTimeLimitSeconds: number | null;
+  lnsSeedWallClockSeconds: number | null;
+  lnsSeedProfilePhaseCount: number;
   autoStopReason: string | null;
+  autoGreedySeedTimeLimitSeconds: number | null;
+  autoGreedySeedElapsedSeconds: number | null;
+  autoGreedySeedProfilePhaseCount: number;
   stoppedByUser: boolean;
   progressSummary: SolverProgressSummary;
 }
@@ -483,7 +489,13 @@ async function runCrossModeBenchmarkCase(
       residentialCount: solution.residentials.length,
       cpSatStatus: solution.cpSatStatus ?? null,
       lnsStopReason: solution.lnsTelemetry?.stopReason ?? null,
+      lnsSeedTimeLimitSeconds: solution.lnsTelemetry?.seedTimeLimitSeconds ?? null,
+      lnsSeedWallClockSeconds: solution.lnsTelemetry?.seedWallClockSeconds ?? null,
+      lnsSeedProfilePhaseCount: mode === "lns" ? (solution.greedyProfile?.phases.length ?? 0) : 0,
       autoStopReason: solution.autoStage?.stopReason ?? null,
+      autoGreedySeedTimeLimitSeconds: solution.autoStage?.greedySeedStage?.timeLimitSeconds ?? null,
+      autoGreedySeedElapsedSeconds: solution.autoStage?.greedySeedStage?.elapsedSeconds ?? null,
+      autoGreedySeedProfilePhaseCount: solution.autoStage?.greedySeedStage?.phases?.length ?? 0,
       stoppedByUser: Boolean(solution.stoppedByUser),
       progressSummary,
     });
@@ -628,6 +640,25 @@ function formatScoreDeltaVsAuto(value: number | null): string {
   return Number(value).toLocaleString();
 }
 
+function formatSeconds(value: number | null): string {
+  return typeof value === "number" && Number.isFinite(value) ? `${value.toFixed(3)}s` : "n/a";
+}
+
+function formatSeedPolicyEvidence(benchmark: CrossModeBenchmarkModeResult): string | null {
+  const details: string[] = [];
+  if (benchmark.lnsSeedTimeLimitSeconds !== null || benchmark.lnsSeedWallClockSeconds !== null) {
+    details.push(
+      `lns-seed-limit:${formatSeconds(benchmark.lnsSeedTimeLimitSeconds)} lns-seed-wall:${formatSeconds(benchmark.lnsSeedWallClockSeconds)} lns-seed-phases:${benchmark.lnsSeedProfilePhaseCount}`
+    );
+  }
+  if (benchmark.autoGreedySeedTimeLimitSeconds !== null || benchmark.autoGreedySeedElapsedSeconds !== null) {
+    details.push(
+      `auto-greedy-seed-limit:${formatSeconds(benchmark.autoGreedySeedTimeLimitSeconds)} auto-greedy-seed-wall:${formatSeconds(benchmark.autoGreedySeedElapsedSeconds)} auto-greedy-seed-phases:${benchmark.autoGreedySeedProfilePhaseCount}`
+    );
+  }
+  return details.length > 0 ? details.join(" ") : null;
+}
+
 export function formatCrossModeBenchmarkSuite(result: CrossModeBenchmarkSuiteResult): string {
   const lines: string[] = [];
   lines.push("=== Cross-Mode Benchmark Scorecard ===");
@@ -648,6 +679,10 @@ export function formatCrossModeBenchmarkSuite(result: CrossModeBenchmarkSuiteRes
         `  ${benchmark.label}: rank=${benchmark.rank} score=${benchmark.totalPopulation} delta=${formatScoreDelta(benchmark.scoreDeltaToBest)} win-vs-auto=${benchmark.winVsAuto} auto-delta=${formatScoreDeltaVsAuto(benchmark.scoreDeltaVsAuto)} wall=${benchmark.wallClockSeconds.toFixed(3)}s cpu-budget=${benchmark.workerCpuBudgetSeconds}s roads=${benchmark.roadCount} services=${benchmark.serviceCount} residentials=${benchmark.residentialCount}`
       );
       lines.push(`    progress=${formatSolverProgressSummary(benchmark.progressSummary)}`);
+      const seedPolicyEvidence = formatSeedPolicyEvidence(benchmark);
+      if (seedPolicyEvidence) {
+        lines.push(`    seed-policy=${seedPolicyEvidence}`);
+      }
     }
   }
 

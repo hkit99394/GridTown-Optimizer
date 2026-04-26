@@ -15,6 +15,7 @@ import { solveGreedy } from "../greedy/solver.js";
 
 import type {
   AutoOptions,
+  AutoGreedySeedStageSummary,
   AutoSolveGeneratedSeed,
   AutoSolveStageMetadata,
   AutoSolveStopReason,
@@ -55,6 +56,7 @@ interface AutoRuntimeState {
   lastCycleImprovementRatio: number | null;
   stopReason: AutoSolveStopReason | null;
   generatedSeeds: AutoSolveGeneratedSeed[];
+  greedySeedStage: AutoGreedySeedStageSummary | null;
 }
 
 type StageStarter = (grid: Grid, params: SolverParams) => BackgroundSolveHandle;
@@ -161,6 +163,7 @@ function buildAutoGreedyStageOptions(params: SolverParams): NonNullable<SolverPa
   return {
     ...greedy,
     localSearch: greedy.localSearch ?? params.localSearch ?? true,
+    profile: greedy.profile ?? true,
     restarts: Math.max(
       1,
       Math.min(greedy.restarts ?? params.restarts ?? AUTO_GREEDY_STAGE_RESTART_CAP, AUTO_GREEDY_STAGE_RESTART_CAP)
@@ -195,6 +198,64 @@ function buildAutoGreedyStageOptions(params: SolverParams): NonNullable<SolverPa
       )
     ),
   };
+}
+
+function optionalPositiveNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : null;
+}
+
+function optionalNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function optionalBoolean(value: unknown): boolean | null {
+  return typeof value === "boolean" ? value : null;
+}
+
+function cloneGreedySeedStageSummary(
+  summary: AutoGreedySeedStageSummary | null
+): AutoGreedySeedStageSummary | null {
+  if (!summary) return null;
+  return {
+    ...summary,
+    ...(summary.phases ? { phases: summary.phases.map((phase) => ({ ...phase })) } : {}),
+  };
+}
+
+function buildGreedySeedStageSummary(
+  stageParams: SolverParams,
+  solution: Solution | null,
+  elapsedSeconds: number | null
+): AutoGreedySeedStageSummary {
+  const greedy = stageParams.greedy ?? {};
+  return {
+    timeLimitSeconds: optionalPositiveNumber(greedy.timeLimitSeconds),
+    localSearch: optionalBoolean(greedy.localSearch),
+    restarts: optionalNumber(greedy.restarts),
+    serviceRefineIterations: optionalNumber(greedy.serviceRefineIterations),
+    serviceRefineCandidateLimit: optionalNumber(greedy.serviceRefineCandidateLimit),
+    exhaustiveServiceSearch: optionalBoolean(greedy.exhaustiveServiceSearch),
+    serviceExactPoolLimit: optionalNumber(greedy.serviceExactPoolLimit),
+    serviceExactMaxCombinations: optionalNumber(greedy.serviceExactMaxCombinations),
+    totalPopulation: solution?.totalPopulation ?? null,
+    elapsedSeconds,
+    ...(solution?.greedyProfile?.phases
+      ? { phases: solution.greedyProfile.phases.map((phase) => ({ ...phase })) }
+      : {}),
+  };
+}
+
+function recordGreedySeedStageSummary(
+  state: AutoRuntimeState,
+  stageParams: SolverParams,
+  solution: Solution | null,
+  startedAtMs: number
+): void {
+  state.greedySeedStage = buildGreedySeedStageSummary(
+    stageParams,
+    solution,
+    Math.max(0, Date.now() - startedAtMs) / 1000
+  );
 }
 
 function stripAutoMetadata(solution: Solution): Solution {
@@ -364,7 +425,7 @@ function calculateImprovementRatio(baselinePopulation: number | null, nextPopula
 }
 
 function buildAutoStageMetadata(state: AutoRuntimeState): AutoSolveStageMetadata {
-  return {
+  const metadata: AutoSolveStageMetadata = {
     requestedOptimizer: "auto",
     activeStage: state.activeStage,
     stageIndex: state.stageIndex,
@@ -374,6 +435,11 @@ function buildAutoStageMetadata(state: AutoRuntimeState): AutoSolveStageMetadata
     stopReason: state.stopReason ?? null,
     generatedSeeds: state.generatedSeeds.map((seed) => ({ ...seed })),
   };
+  const greedySeedStage = cloneGreedySeedStageSummary(state.greedySeedStage);
+  if (greedySeedStage) {
+    metadata.greedySeedStage = greedySeedStage;
+  }
+  return metadata;
 }
 
 function decorateAutoSolution(
@@ -567,20 +633,32 @@ async function runBackgroundStage(
   });
 
   const stageParams = stageSeedParams(params, stage, incumbentRef.current, generatedSeed, options, secondsRemaining);
+  const stageStartedAtMs = Date.now();
   const handle = startBackgroundSolve(G, stageParams);
   currentHandleRef.current = handle;
 
   try {
     const solution = await handle.promise;
-    return stripAutoMetadata(solution);
+    const strippedSolution = stripAutoMetadata(solution);
+    if (stage === "greedy") {
+      recordGreedySeedStageSummary(state, stageParams, strippedSolution, stageStartedAtMs);
+    }
+    return strippedSolution;
   } catch (error) {
     const recovered = handle.getLatestSnapshot();
     const explicitStopReason = state.stopReason ?? deadlineStopReason(deadlineAtMs);
     if (recovered) {
+      const strippedRecovered = stripAutoMetadata(recovered);
+      if (stage === "greedy") {
+        recordGreedySeedStageSummary(state, stageParams, strippedRecovered, stageStartedAtMs);
+      }
       if (explicitStopReason) {
         applyRecoverableStageError(stage, incumbentRef.current, state, error, explicitStopReason);
       }
-      return stripAutoMetadata(recovered);
+      return strippedRecovered;
+    }
+    if (stage === "greedy") {
+      recordGreedySeedStageSummary(state, stageParams, null, stageStartedAtMs);
     }
     return applyRecoverableStageError(stage, incumbentRef.current, state, error, explicitStopReason);
   } finally {
@@ -659,6 +737,7 @@ export function solveAuto(G: Grid, params: SolverParams): Solution {
     lastCycleImprovementRatio: null,
     stopReason: null,
     generatedSeeds: [],
+    greedySeedStage: null,
   };
   const startedAtMs = Date.now();
   const deadlineAtMs = options.wallClockLimitSeconds === null ? null : startedAtMs + options.wallClockLimitSeconds * 1000;
@@ -698,10 +777,17 @@ export function solveAuto(G: Grid, params: SolverParams): Solution {
         secondsRemaining,
         stopController.stopFilePath
       );
+      const stageStartedAtMs = Date.now();
       let solution: Solution | null;
       try {
         solution = stripAutoMetadata(syncStageSolve(G, stageParams, stage));
+        if (stage === "greedy") {
+          recordGreedySeedStageSummary(state, stageParams, solution, stageStartedAtMs);
+        }
       } catch (error) {
+        if (stage === "greedy") {
+          recordGreedySeedStageSummary(state, stageParams, null, stageStartedAtMs);
+        }
         const explicitStopReason = stopController.currentStopReason() ?? deadlineStopReason(deadlineAtMs);
         return applyRecoverableStageError(
           stage,
@@ -782,6 +868,7 @@ export function startAutoSolve(G: Grid, params: SolverParams): BackgroundSolveHa
     lastCycleImprovementRatio: null,
     stopReason: null,
     generatedSeeds: [],
+    greedySeedStage: null,
   };
   const startedAtMs = Date.now();
   const deadlineAtMs = options.wallClockLimitSeconds === null ? null : startedAtMs + options.wallClockLimitSeconds * 1000;

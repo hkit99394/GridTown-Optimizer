@@ -27,32 +27,39 @@ Delivered summary:
 
 Detailed delivered notes live in [CP_SAT_ROADMAP_DELIVERED.md](./CP_SAT_ROADMAP_DELIVERED.md).
 
-## Remaining Work By Impact
+## Remaining Work By Product Priority
 
-### 1. Distributed CP-SAT
+### 1. Deepen async and portfolio failure-mode coverage
 
 Why it matters:
-- this has the highest remaining compute ceiling
-- it is now justified because single-machine exact solving, async execution, and measurement are already in place
-- it is the only remaining item that can materially expand exact-search coverage beyond one host
+- async and portfolio paths are shipped, but more edge-case coverage will make them safer to evolve
+- this is the main confidence gap before increasing single-machine fan-out or starting distributed orchestration
+- it protects the exact-solver contract that `auto`, planner reuse, and portfolio summaries now depend on
+
+Scope:
+- keep the OS-level orphan-process cancellation regression for portfolio worker trees green
+- interruption and cancellation cases
+- broken worker and degraded pool execution
+- malformed streamed progress payloads
+- async child-process failure paths
+
+### 2. Distributed CP-SAT
+
+Priority note:
+- this has the highest remaining exact-search compute ceiling, but not the highest near-term product leverage
+- [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md) keeps distributed solving behind single-machine portfolio hardening, workflow improvements, and cancellation confidence
+- treat distributed CP-SAT as the next orchestration tier after local portfolio execution is demonstrably safe
+
+Why it matters:
+- it can materially expand exact-search coverage beyond one host
+- the single-machine exact foundation, async execution, and measurement are already in place
+- it gives exact search more ceiling once the local lifecycle risks are lower
 
 Core requirements:
 - coordinator for multi-worker or multi-machine exact runs
 - shared incumbent and bound reporting
 - worker lifecycle, cancellation, and degraded-mode handling
 - stable final result selection and exact-run summary
-
-### 2. Deepen async and portfolio failure-mode coverage
-
-Why it matters:
-- async and portfolio paths are shipped, but more edge-case coverage will make them safer to evolve
-- this is the main confidence gap after distributed search
-
-Scope:
-- interruption and cancellation cases
-- broken worker and degraded pool execution
-- malformed streamed progress payloads
-- async child-process failure paths
 
 ## Guardrails
 
@@ -61,3 +68,4 @@ Scope:
 - Treat residential pruning conservatively unless dominance is proven.
 - Do not change the exact objective implicitly while tuning the model.
 - Prefer async CP-SAT integration for new work.
+- Do not raise portfolio fan-out limits or begin distributed orchestration before cancellation and degraded-worker behavior have dedicated coverage.

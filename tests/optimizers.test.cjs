@@ -53,6 +53,7 @@ const {
 } = require("../dist/index.js");
 const { parseCpSatRawSolution } = require("../dist/cp-sat/solver.js");
 const { buildNeighborhoodWindows } = require("../dist/lns/solver.js");
+const { startJsonBackgroundSolve } = require("../dist/runtime/index.js");
 const { applyDeterministicDominanceUpgrades } = require("../dist/core/dominanceUpgrades.js");
 const {
   createRoadProbeScratch,
@@ -1060,6 +1061,42 @@ function buildMockSolution({
 
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForFile(filePath, timeoutMs = 1000) {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    if (fs.existsSync(filePath)) return;
+    await delay(20);
+  }
+  assert.fail(`Timed out waiting for ${filePath}.`);
+}
+
+function readFileIfPresent(filePath) {
+  try {
+    return fs.readFileSync(filePath, "utf8");
+  } catch {
+    return "";
+  }
+}
+
+async function waitForHeartbeatToStop(heartbeatPath, timeoutMs = 1500) {
+  const startedAt = Date.now();
+  let previousHeartbeat = readFileIfPresent(heartbeatPath);
+  let stableSince = Date.now();
+
+  while (Date.now() - startedAt < timeoutMs) {
+    await delay(30);
+    const currentHeartbeat = readFileIfPresent(heartbeatPath);
+    if (currentHeartbeat === previousHeartbeat) {
+      if (Date.now() - stableSince >= 150) return;
+      continue;
+    }
+    previousHeartbeat = currentHeartbeat;
+    stableSince = Date.now();
+  }
+
+  assert.fail("Background child process kept writing heartbeats after cancellation.");
 }
 
 function testGreedyDispatcher() {
@@ -2334,6 +2371,99 @@ print(json.dumps({
   assert.match(payload.cpuBudgetError, /exceeding the 28800\.0 second portfolio budget/);
   assert.match(payload.tooManySeedsError, /must contain between 1 and 8 seeds/);
   assert.match(payload.duplicateSeedsError, /must not contain duplicate seeds/);
+}
+
+async function testBackgroundSolveCancellationKillsProcessGroupChildren() {
+  if (process.platform === "win32") {
+    console.log("Skipping process-group cancellation regression on Windows.");
+    return;
+  }
+
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "city-builder-bg-cancel-"));
+  const childScriptPath = path.join(tempDir, "heartbeat-child.cjs");
+  const parentScriptPath = path.join(tempDir, "portfolio-parent.cjs");
+  const childPidFilePath = path.join(tempDir, "child.pid");
+  const heartbeatPath = path.join(tempDir, "heartbeat.txt");
+  let childPid = null;
+  let heartbeatStopped = false;
+
+  fs.writeFileSync(
+    childScriptPath,
+    `
+const fs = require("node:fs");
+const heartbeatPath = process.argv[2];
+setInterval(() => {
+  try {
+    fs.writeFileSync(heartbeatPath, String(Date.now()));
+  } catch {}
+}, 20);
+setInterval(() => {}, 1000);
+`,
+    "utf8"
+  );
+  fs.writeFileSync(
+    parentScriptPath,
+    `
+const { spawn } = require("node:child_process");
+const fs = require("node:fs");
+const childScriptPath = process.argv[2];
+let input = "";
+process.stdin.setEncoding("utf8");
+process.stdin.on("data", (chunk) => {
+  input += chunk;
+});
+process.stdin.on("end", () => {
+  const request = JSON.parse(input || "{}");
+  const child = spawn(process.execPath, [childScriptPath, request.heartbeatPath], {
+    stdio: "ignore",
+  });
+  fs.writeFileSync(request.childPidFilePath, String(child.pid));
+  setInterval(() => {}, 1000);
+});
+`,
+    "utf8"
+  );
+
+  try {
+    const handle = startJsonBackgroundSolve({
+      solverLabel: "Test CP-SAT portfolio",
+      stopDirectoryPrefix: "city-builder-bg-cancel-test-",
+      command: process.execPath,
+      args: [parentScriptPath, childScriptPath],
+      buildRequest: ({ stopFilePath, snapshotFilePath }) => ({
+        stopFilePath,
+        snapshotFilePath,
+        childPidFilePath,
+        heartbeatPath,
+      }),
+      parseRaw: JSON.parse,
+      materializeSolution: () => buildMockSolution({ optimizer: "cp-sat", stoppedByUser: true }),
+      getSnapshotState: () => ({
+        hasFeasibleSolution: false,
+        totalPopulation: null,
+      }),
+      stoppedBeforeFeasibleMessage: "Test portfolio solve stopped before feasible.",
+      noSolutionMessage: "Test portfolio solve returned no solution.",
+      forcedTerminationDelayMs: 40,
+    });
+
+    await waitForFile(childPidFilePath);
+    await waitForFile(heartbeatPath);
+    childPid = Number(fs.readFileSync(childPidFilePath, "utf8"));
+    assert.equal(Number.isInteger(childPid) && childPid > 0, true);
+
+    handle.cancel();
+    await assert.rejects(handle.promise, /Test portfolio solve stopped before feasible/);
+    await waitForHeartbeatToStop(heartbeatPath);
+    heartbeatStopped = true;
+  } finally {
+    if (!heartbeatStopped && Number.isInteger(childPid)) {
+      try {
+        process.kill(childPid, "SIGKILL");
+      } catch {}
+    }
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
 }
 
 async function maybeTestCpSatPortfolioSolve() {
@@ -5610,6 +5740,7 @@ async function main() {
   maybeTestCpSatSnapshotWritesTelemetry();
   maybeTestCpSatPortfolioOptionHelpers();
   testCpSatPortfolioExecutorFallbackHelpers();
+  await testBackgroundSolveCancellationKillsProcessGroupChildren();
   maybeTestCpSatPopulationUpperBoundHelpers();
   maybeTestCpSatResidentialPopulationUpperBoundHelpers();
   await maybeTestCpSatOptimizer();

@@ -161,11 +161,12 @@ What exists today:
 - planner initiation exposes a bounded Portfolio CP-SAT preset and controls for worker count, explicit seeds, per-worker time, per-worker CP-SAT workers, and randomized search
 - planner-generated portfolio payloads are standalone-CP-SAT-only, include the total CPU budget, cap planner-visible paths at 4, and keep internal worker lanes at 8 or fewer
 - background CP-SAT cancellation escalates to the Python process group, so portfolio child workers are included in forced termination
+- the background runner has an OS-level regression that verifies forced process-group cancellation stops child worker processes, guarding portfolio orphan cleanup
 - live portfolio snapshots preserve the full worker summary shape, including completed workers, pending workers, selected worker, and stopped state
 - result summaries identify the selected portfolio worker, seed, feasible-worker count, and population spread when portfolio metadata is available
 
 Maintenance watchpoints:
-- add a dedicated OS-level orphan-process regression test for portfolio cancellation before increasing any portfolio fan-out limits
+- keep the OS-level orphan-process cancellation regression green before increasing any portfolio fan-out limits
 - keep planner and backend portfolio constants aligned whenever the safe local machine budget changes
 - richer live-worker UX can still be improved, but full planner initiation no longer depends on it
 
@@ -274,19 +275,18 @@ Ordering inside the learned-guidance track:
 
 If all remaining work is ranked in one combined near-term ordering, the recommended order is:
 
-1. add the portfolio orphan-process cancellation regression before raising portfolio limits
-2. use greedy phase profile data to tune or justify `LNS` seed-budget and `auto` seed-stage policy changes
-3. optionally extract only profiler or demonstrably stable greedy helpers after phase data proves the boundary
-4. build the learned-guidance foundation on top of the shipped shared traces and equal-budget scorecards
-5. run learned-guidance ablations
-6. try low-risk learned guidance: greedy service re-ranking and `LNS` window re-ranking
-7. only then consider value-guided seeds if seed quality becomes a measured bottleneck
-8. treat contextual bandits and full RL as gated research after earlier learned stages already win
+1. use greedy phase profile data to tune or justify `LNS` seed-budget and `auto` seed-stage policy changes
+2. optionally extract only profiler or demonstrably stable greedy helpers after phase data proves the boundary
+3. add the learned-guidance trace foundation on top of the shipped benchmark and equal-budget scorecard surfaces
+4. run learned-guidance ablations
+5. try low-risk learned guidance: greedy service re-ranking and `LNS` window re-ranking
+6. only then consider value-guided seeds if seed quality becomes a measured bottleneck
+7. treat contextual bandits and full RL as gated research after earlier learned stages already win
 
 Why this order:
-- item 1 protects the guarded portfolio contract before any future fan-out increase
-- items 2 and 3 turn the shipped greedy phase data into measured evidence before policy or extraction churn
-- items 4 through 8 depend on the shipped scorecard discipline, a more stable deterministic baseline, and more expensive labels
+- items 1 and 2 turn the shipped greedy phase data into measured evidence before policy or extraction churn
+- items 3 through 7 depend on the shipped scorecard discipline, a shared trace/export layer, a more stable deterministic baseline, and more expensive labels
+- keep the portfolio orphan-process cancellation regression passing before any future fan-out increase
 - full RL currently has the lowest near-term product leverage per unit complexity
 
 ## LNS Follow-Up Plan

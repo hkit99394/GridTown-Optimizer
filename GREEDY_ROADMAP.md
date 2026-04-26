@@ -49,11 +49,21 @@ The biggest remaining practical gaps are now narrower and more specific:
 - Step 14 lookahead is intentionally narrow: it only reranks the top-N explicit non-`fixedServices` candidates, and it still does not widen greedy into a fuller multi-step search policy
 - the roadmap should now focus less on generic “speed up greedy somehow” work and more on replacing the remaining expensive fallback mechanisms with narrower scratch-state helpers and on making `auto` / `LNS` follow-on improvement do the deeper search work
 
-All 15 roadmap steps below are now shipped as bounded slices. What remains after this document is follow-up optimization work, not unchecked roadmap items.
+All 15 roadmap steps below are now shipped as bounded slices. The sections below are retained as a delivery record. New work should come from the focused follow-up backlog, not by treating the historical steps as still open.
 
-## Remaining Bottlenecks
+## Focused Follow-Up Backlog
 
-The biggest near-term issue is not candidate generation itself. The main cost comes from repeated inner-loop work:
+These are the only greedy-specific items that currently look worth considering before handing deeper improvement budget to `auto` and `LNS`:
+
+1. Replace residual `localSearchImprove()` occupancy snapshot allocation with rollback-safe scratch state.
+2. Reduce explicit-road probe overhead further by reusing block-state views and moving more internal hot loops away from string-key `Set` semantics.
+3. Use phase profile data to decide whether `auto` should spend more or less of its budget on the fast Greedy seed stage.
+4. Keep `greedy.serviceLookaheadCandidates` and `greedy.deferRoadCommitment` opt-in until the fixed corpus shows broad, repeatable gains.
+5. Extract only stable profiler or scratch-helper modules after benchmark evidence shows the boundary is worth preserving.
+
+## Residual Bottlenecks
+
+The biggest remaining issue is not candidate generation itself. The main cost comes from repeated inner-loop work:
 
 - repeated `canConnectToRoads` checks while scanning service and residential candidates
 - repeated `ensureBuildingConnectedToRoads` work after a winner is selected
@@ -71,6 +81,10 @@ The main quality limitation is that service choice still uses a bounded proxy fo
 There are also two specific residual limitations in the current implementation:
 - the Step 14 lookahead path is intentionally bounded and explicit-road-only, so deferred-road mode and `fixedServices` reruns still fall back to the simpler service-selection policy
 - fixed-service completeness is now bounded rather than exhaustive, so refinement and exhaustive evaluation still trade completeness for measured runtime caps
+
+Decision rule:
+- make new greedy work prove either better seed quality per second for `auto` / `LNS`, or a meaningful standalone `greedy` runtime reduction on the fixed corpus
+- keep broader service-search policy changes behind flags until equal-budget scorecards show they help downstream modes, not only isolated greedy cases
 
 ## Shipped Steps By Impact
 

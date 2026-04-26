@@ -31,6 +31,7 @@ export interface JsonBackgroundSolverConfig<TRaw> {
   bufferLimitBytes?: number;
   launchContext?: string;
   readStoppedByUser?: (raw: TRaw) => boolean;
+  forcedTerminationDelayMs?: number;
 }
 
 function appendBufferedOutput(
@@ -57,6 +58,7 @@ export function startJsonBackgroundSolve<TRaw>(config: JsonBackgroundSolverConfi
     detached: process.platform !== "win32",
   });
   const bufferLimitBytes = config.bufferLimitBytes ?? DEFAULT_BUFFER_LIMIT;
+  const forcedTerminationDelayMs = Math.max(0, config.forcedTerminationDelayMs ?? 5000);
 
   let stdout = "";
   let stderr = "";
@@ -105,7 +107,7 @@ export function startJsonBackgroundSolve<TRaw>(config: JsonBackgroundSolverConfi
     if (forcedTerminationTimer) return;
     forcedTerminationTimer = setTimeout(() => {
       killChildProcessGroup("SIGKILL");
-    }, 5000);
+    }, forcedTerminationDelayMs);
     forcedTerminationTimer.unref?.();
   };
 

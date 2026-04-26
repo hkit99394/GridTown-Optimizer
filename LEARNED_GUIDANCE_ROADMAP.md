@@ -37,6 +37,9 @@ This roadmap is not about:
 - `LNS` already has a strong hybrid shape: seed, neighborhood selection, exact repair, incumbent acceptance.
 - `CP-SAT` already supports warm starts and bounded continuation.
 - exact layout validation and population scoring are already centralized.
+- fixed benchmark CLIs exist for `greedy`, `LNS`, and `CP-SAT`.
+- `benchmark:scorecard` already compares `auto`, `greedy`, `LNS`, single-run `CP-SAT`, and portfolio `CP-SAT` under matched wall-clock budgets.
+- shared progress summaries already expose current score, best score, active stage, reuse source, stop reason, exact gap, and portfolio worker context across planner, HTTP, and benchmark surfaces.
 
 Relevant docs:
 - [README.md](./README.md)
@@ -44,12 +47,12 @@ Relevant docs:
 - [CP_SAT_ROADMAP.md](./CP_SAT_ROADMAP.md)
 - [ALGORITHM.md](./ALGORITHM.md)
 
-### What is missing
+### What still needs to be added
 
-- a generic benchmark and event layer for `greedy`, `LNS`, and `CP-SAT`
-- equal-budget measurement for incumbent-quality-over-time across all optimizers
 - trace logging that is rich enough to support offline learning
-- a shipped `LNS` benchmark / export path that matches the existing `greedy` and `CP-SAT` suites
+- a stable JSONL trace schema shared across optimizer benchmark runs
+- trace export from the existing benchmark CLIs without changing solver behavior
+- a development / holdout benchmark split before any learned model selection
 - ablation data showing where the current heuristic lift actually comes from
 
 ## AlphaGo / AlphaZero Feasibility
@@ -70,9 +73,9 @@ What does not transfer well:
 - raw cell-by-cell generation or attempts to replace `CP-SAT`
 
 Gates before any RL work:
-- finish deterministic `LNS` stopping and budget policy in [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md)
-- add shared traces and a reusable `LNS` benchmark / export path
-- close reusable `CP-SAT` input validation gaps
+- add shared traces on top of the shipped benchmark and progress-summary surfaces
+- create a development / holdout split for benchmark and replay data
+- keep reusable `CP-SAT` input validation aligned with any new learned seed or hint payloads
 - beat deterministic baselines with supervised reranking or bandits under equal wall-clock on holdout cases
 
 ## Roadmap
@@ -99,13 +102,13 @@ Why this order:
 Status: First
 
 Why:
-- the repo already has `greedy` and `CP-SAT` benchmark support, but it still lacks a shared cross-optimizer trace layer and a shipped `LNS` benchmark path
-- `greedy` and `LNS` do not yet expose enough common progress events to support fair learning experiments
-- success metrics like `time-to-first-improvement` and `time-to-best-incumbent` are not consistently measurable yet
+- the repo already has per-optimizer benchmark CLIs plus a cross-mode equal-budget scorecard
+- learned guidance still needs a shared trace layer that records decision states and incumbent-quality-over-time, not only final benchmark summaries
+- success metrics like `time-to-first-improvement`, `time-to-best-incumbent`, and chosen-vs-available decision quality are not consistently exportable yet
 
 Concrete work:
 - add shared optimizer run events to [src/core/types.ts](./src/core/types.ts)
-- add a generic benchmark / trace runner for `greedy`, `LNS`, and `CP-SAT`
+- add trace-export support to the existing `greedy`, `LNS`, `CP-SAT`, and scorecard benchmark runners
 - emit JSONL traces for solver milestones:
   - seed built
   - restart completed
@@ -118,18 +121,18 @@ Concrete work:
 - record final validation using [src/core/evaluator.ts](./src/core/evaluator.ts)
 
 Deliverables:
-- a reusable benchmark CLI for all optimizers
+- JSONL trace export from the existing benchmark CLIs
 - a stable trace schema
 - a benchmark corpus split for development vs holdout evaluation
 
 Exit criteria:
-- we can compare all optimizers under equal time budgets
-- we can plot incumbent quality over time for `greedy`, `LNS`, and `CP-SAT`
+- we can compare all optimizers under equal time budgets and export the decision trace for each run
+- we can plot incumbent quality over time for `greedy`, `LNS`, `CP-SAT`, and `auto`
 - every reported result is validated by the exact evaluator
 
 ### Phase 1: Baseline Ablation
 
-Status: First
+Status: After Phase 0
 
 Why:
 - before adding learning, we need to isolate which existing pieces already provide the most lift
@@ -294,9 +297,9 @@ Exit criteria:
 - the added complexity is justified by measured gains, not only by research interest
 
 Additional gates:
-- deterministic `LNS` stopping and budget policy has stabilized
-- shared traces and a shipped `LNS` benchmark path exist
-- reusable `CP-SAT` checkpoint and hint inputs are validated well enough for learned seed experiments
+- shared traces exist on top of the shipped benchmark paths
+- benchmark and replay data have a development / holdout split
+- reusable `CP-SAT` checkpoint and hint inputs remain validated well enough for learned seed experiments
 
 ## File Placement Guidance
 
@@ -350,8 +353,8 @@ Every milestone should clear all of the following before the next phase begins:
 - Selection bias is a real risk for offline LNS data.
 - The shipped benchmark corpora are enough for regression and ablation, not strong ML generalization claims by themselves.
 - The strongest learned component may turn out to be ranking or budget allocation, not full RL.
-- The deterministic solver policy is still moving, especially around `LNS` stopping and budgeting.
-- Reusable `CP-SAT` input validation is not fully finished yet.
+- The deterministic solver policy can still move around budget tuning, so learned experiments should pin solver settings and seeds.
+- Reusable `CP-SAT` input validation must stay aligned with any new learned seed or hint payloads.
 
 ## Summary
 

@@ -181,7 +181,9 @@ Available scripts from [package.json](./package.json):
 - `npm run solve:lns`
 - `npm run solve:cp-sat`
 - `npm run benchmark:greedy`
+- `npm run benchmark:lns`
 - `npm run benchmark:cp-sat`
+- `npm run benchmark:scorecard`
 - `npm run setup:cp-sat`
 - `npm test`
 
@@ -401,7 +403,7 @@ const portfolio = await solveAsync(grid, {
 
 ### Run the benchmark corpus
 
-The repository includes both a fixed greedy benchmark corpus and a fixed CP-SAT benchmark corpus.
+The repository includes fixed benchmark corpora for `greedy`, `LNS`, and `CP-SAT`, plus a cross-mode scorecard for equal-budget comparisons.
 
 Run the greedy suite:
 
@@ -419,6 +421,24 @@ List the available greedy case names:
 
 ```bash
 npm run benchmark:greedy -- --list
+```
+
+Run the LNS suite:
+
+```bash
+npm run benchmark:lns
+```
+
+Run one named LNS case and emit JSON:
+
+```bash
+npm run benchmark:lns -- --json compact-service-repair
+```
+
+List the available LNS case names:
+
+```bash
+npm run benchmark:lns -- --list
 ```
 
 The repository also includes a fixed CP-SAT benchmark corpus plus an async benchmark harness for reproducible exact-run comparisons.
@@ -439,6 +459,18 @@ List the available case names:
 
 ```bash
 npm run benchmark:cp-sat -- --list
+```
+
+Run the cross-mode scorecard:
+
+```bash
+npm run benchmark:scorecard
+```
+
+Run a named scorecard case with JSON output:
+
+```bash
+npm run benchmark:scorecard -- --json compact-service-repair
 ```
 
 From code:

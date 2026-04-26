@@ -2893,6 +2893,17 @@ function testPlannerSolveProgressLogCapturesSnapshotAndFinalResult() {
     hasFeasibleSolution: true,
     totalPopulation: 1234,
     cpSatStatus: "FEASIBLE",
+    progressSummary: {
+      currentScore: 1234,
+      bestScore: 1234,
+      activeStage: "cp-sat",
+      reuseSource: null,
+      elapsedTimeSeconds: 60,
+      timeSinceImprovementSeconds: 4.5,
+      stopReason: null,
+      exactGap: 66,
+      portfolioWorkerSummary: null,
+    },
     bestPopulationUpperBound: 1300,
     populationGapUpperBound: 66,
     solveWallTimeSeconds: null,
@@ -2930,6 +2941,17 @@ function testPlannerSolveProgressLogCapturesSnapshotAndFinalResult() {
   assert.equal(logAfterFinal[1].cpSatStatus, "OPTIMAL");
   assert.equal(logAfterFinal[1].bestPopulationUpperBound, 1250);
   assert.equal(logAfterFinal[1].populationGapUpperBound, 0);
+  assert.deepEqual(JSON.parse(JSON.stringify(logAfterFinal[1].progressSummary)), {
+    currentScore: 1250,
+    bestScore: 1250,
+    activeStage: "cp-sat",
+    reuseSource: null,
+    elapsedTimeSeconds: 90,
+    timeSinceImprovementSeconds: 0.2,
+    stopReason: null,
+    exactGap: 0,
+    portfolioWorkerSummary: null,
+  });
 }
 
 function testFilesystemSolveLogTracksSolverClockAcrossHeartbeats() {

@@ -15,6 +15,7 @@
     "benchmark:greedy": "npm run build && node dist/greedyBenchmarkCli.js",
     "benchmark:cp-sat": "npm run build && node dist/cpSatBenchmarkCli.js",
     "benchmark:lns": "npm run build && node dist/lnsBenchmarkCli.js",
+    "benchmark:scorecard": "npm run build && node dist/crossModeBenchmarkCli.js",
     "setup:cp-sat": "bash scripts/setup-cp-sat.sh",
     "test": "npm run build && node tests/review-findings.test.cjs && node tests/web-server-routes.test.cjs && node tests/optimizers.test.cjs"
   },

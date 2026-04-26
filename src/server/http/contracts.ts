@@ -3,6 +3,7 @@ import {
   serializeSolution,
 } from "../../core/solutionSerialization.js";
 import { validateSolutionMap } from "../../core/map.js";
+import { buildSolverProgressSummary } from "../../core/progress.js";
 import { assertValidSerializedSolutionPayload } from "../../core/solverInputValidation.js";
 import type { Grid, SerializedSolution, Solution, SolverParams } from "../../core/types.js";
 
@@ -141,6 +142,7 @@ export function buildSolveResponse(grid: Grid, params: SolverParams, solution: S
       manualLayout: Boolean(solution.manualLayout),
       cpSatStatus: solution.cpSatStatus ?? null,
       lnsTelemetry: solution.lnsTelemetry,
+      progressSummary: buildSolverProgressSummary(solution, { params }),
       stoppedByUser: Boolean(solution.stoppedByUser),
       stoppedByTimeLimit: Boolean(solution.stoppedByTimeLimit),
       totalPopulation: solution.totalPopulation,
@@ -186,6 +188,7 @@ export function buildManualLayoutResponse(grid: Grid, params: SolverParams, solu
       manualLayout: Boolean(normalizedSolution.manualLayout),
       cpSatStatus: normalizedSolution.cpSatStatus ?? null,
       lnsTelemetry: normalizedSolution.lnsTelemetry,
+      progressSummary: buildSolverProgressSummary(normalizedSolution, { params }),
       stoppedByUser: Boolean(normalizedSolution.stoppedByUser),
       stoppedByTimeLimit: Boolean(normalizedSolution.stoppedByTimeLimit),
       totalPopulation: normalizedSolution.totalPopulation,

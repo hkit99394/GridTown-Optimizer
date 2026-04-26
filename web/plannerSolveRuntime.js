@@ -21,6 +21,82 @@
     return outcomes.length ? outcomes[outcomes.length - 1] : null;
   }
 
+  function finiteNumberOrNull(value) {
+    return typeof value === "number" && Number.isFinite(value) ? value : null;
+  }
+
+  function buildPortfolioProgressSummary(portfolio) {
+    const workers = Array.isArray(portfolio?.workers) ? portfolio.workers : [];
+    if (!portfolio || workers.length === 0) return null;
+    return {
+      workerCount: portfolio.workerCount ?? workers.length,
+      completedWorkers: workers.length,
+      feasibleWorkers: workers.filter((worker) => worker.feasible).length,
+      selectedWorkerIndex: portfolio.selectedWorkerIndex ?? null,
+    };
+  }
+
+  function buildProgressSummary(payload, totalPopulation, elapsedMs) {
+    if (payload?.stats?.progressSummary) return payload.stats.progressSummary;
+    const telemetry = payload?.solution?.cpSatTelemetry ?? null;
+    const autoStage = readAutoStage(payload);
+    const lnsTelemetry = readLnsTelemetry(payload);
+    const latestLnsOutcome = readLatestLnsOutcome(lnsTelemetry);
+    const cpSatStatus = payload?.solution?.cpSatStatus ?? payload?.stats?.cpSatStatus ?? null;
+    const currentScore =
+      finiteNumberOrNull(latestLnsOutcome?.populationAfter)
+      ?? finiteNumberOrNull(telemetry?.incumbentPopulation)
+      ?? totalPopulation;
+    const lnsSeedSource = lnsTelemetry?.seedSource ?? null;
+    const reuseSource = lnsSeedSource === "greedy"
+      ? "greedy-seed"
+      : lnsSeedSource;
+    return {
+      currentScore,
+      bestScore: totalPopulation,
+      activeStage:
+        payload?.stats?.activeOptimizer
+        ?? payload?.solution?.activeOptimizer
+        ?? autoStage?.activeStage
+        ?? payload?.stats?.optimizer
+        ?? payload?.solution?.optimizer
+        ?? payload?.optimizer
+        ?? null,
+      reuseSource,
+      elapsedTimeSeconds:
+        finiteNumberOrNull(telemetry?.solveWallTimeSeconds)
+        ?? Math.max(0, normalizeProgressElapsedMs(elapsedMs) / 1000),
+      timeSinceImprovementSeconds: finiteNumberOrNull(telemetry?.secondsSinceLastImprovement),
+      stopReason:
+        autoStage?.stopReason
+        ?? (lnsTelemetry?.stopReason && lnsTelemetry.stopReason !== "running" ? lnsTelemetry.stopReason : null)
+        ?? null,
+      exactGap: finiteNumberOrNull(telemetry?.populationGapUpperBound),
+      portfolioWorkerSummary: buildPortfolioProgressSummary(payload?.solution?.cpSatPortfolio),
+    };
+  }
+
+  function formatProgressMessageSuffix(summary) {
+    if (!summary) return "";
+    const parts = [];
+    if (typeof summary.bestScore === "number") {
+      parts.push(`best ${Number(summary.bestScore).toLocaleString()}`);
+    }
+    if (summary.activeStage) {
+      parts.push(`stage ${summary.activeStage}`);
+    }
+    if (summary.reuseSource) {
+      parts.push(`reuse ${summary.reuseSource}`);
+    }
+    if (typeof summary.exactGap === "number") {
+      parts.push(`gap ${Number(summary.exactGap).toLocaleString()}`);
+    }
+    if (typeof summary.timeSinceImprovementSeconds === "number") {
+      parts.push(`${summary.timeSinceImprovementSeconds.toFixed(1)}s since improvement`);
+    }
+    return parts.length ? ` ${parts.join("; ")}.` : "";
+  }
+
   function buildLnsProgressNote(lnsTelemetry) {
     if (!lnsTelemetry) return null;
     const latestOutcome = readLatestLnsOutcome(lnsTelemetry);
@@ -57,7 +133,8 @@
           ? payload.solution.totalPopulation
           : typeof payload?.bestTotalPopulation === "number"
             ? payload.bestTotalPopulation
-            : null;
+          : null;
+    const progressSummary = buildProgressSummary(payload, totalPopulation, options.elapsedMs);
 
     return {
       capturedAt: typeof options.capturedAt === "string" && options.capturedAt.trim()
@@ -81,6 +158,7 @@
       totalPopulation,
       cpSatStatus: payload?.solution?.cpSatStatus ?? payload?.stats?.cpSatStatus ?? null,
       ...lnsProgressFields,
+      progressSummary,
       bestPopulationUpperBound:
         typeof telemetry?.bestPopulationUpperBound === "number" ? telemetry.bestPopulationUpperBound : null,
       populationGapUpperBound:
@@ -114,6 +192,7 @@
       && (lastEntry.lnsNeighborhoodStatus ?? null) === (entry.lnsNeighborhoodStatus ?? null)
       && (lastEntry.lnsNeighborhoodImprovement ?? null) === (entry.lnsNeighborhoodImprovement ?? null)
       && (lastEntry.lnsNeighborhoodsCompleted ?? null) === (entry.lnsNeighborhoodsCompleted ?? null)
+      && JSON.stringify(lastEntry.progressSummary ?? null) === JSON.stringify(entry.progressSummary ?? null)
       && lastEntry.bestPopulationUpperBound === entry.bestPopulationUpperBound
       && lastEntry.populationGapUpperBound === entry.populationGapUpperBound
       && lastEntry.solveWallTimeSeconds === entry.solveWallTimeSeconds
@@ -246,6 +325,18 @@
       const lnsTelemetry = readLnsTelemetry(payload);
       const latestLnsOutcome = readLatestLnsOutcome(lnsTelemetry);
       const activeOptimizer = payload.activeOptimizer || payload.solution?.activeOptimizer || payload.stats?.activeOptimizer || null;
+      const progressSuffix = formatProgressMessageSuffix(
+        payload?.stats?.progressSummary
+        ?? buildProgressSummary(
+          payload,
+          typeof payload.bestTotalPopulation === "number"
+            ? payload.bestTotalPopulation
+            : typeof payload?.stats?.totalPopulation === "number"
+              ? payload.stats.totalPopulation
+              : null,
+          state.solveTimerElapsedMs
+        )
+      );
       const bestLabel =
         typeof payload.bestTotalPopulation === "number"
           ? ` Best so far: ${Number(payload.bestTotalPopulation).toLocaleString()}.`
@@ -254,13 +345,13 @@
       if (state.isStopping) {
         if (payload.hasFeasibleSolution) {
           if (optimizer === "auto") {
-            return `Stop requested. Finalizing Auto${activeOptimizer ? ` (${getOptimizerLabel(activeOptimizer)})` : ""}.${bestLabel}`;
+            return `Stop requested. Finalizing Auto${activeOptimizer ? ` (${getOptimizerLabel(activeOptimizer)})` : ""}.${bestLabel}${progressSuffix}`;
           }
           return optimizer === "cp-sat"
-            ? `Stop requested. Finalizing the best feasible ${optimizerLabel} result.${bestLabel}`
+            ? `Stop requested. Finalizing the best feasible ${optimizerLabel} result.${bestLabel}${progressSuffix}`
             : optimizer === "lns"
-              ? `Stop requested. Finalizing the best ${optimizerLabel} result found after neighborhood repair.${bestLabel}`
-              : `Stop requested. Finalizing the best ${optimizerLabel} result found so far.${bestLabel}`;
+              ? `Stop requested. Finalizing the best ${optimizerLabel} result found after neighborhood repair.${bestLabel}${progressSuffix}`
+              : `Stop requested. Finalizing the best ${optimizerLabel} result found so far.${bestLabel}${progressSuffix}`;
         }
         return `Stop requested. Waiting for ${optimizerLabel} to stop. No result has been found yet.`;
       }
@@ -272,19 +363,19 @@
             typeof autoStage?.consecutiveWeakCycles === "number"
               ? `Weak cycles: ${autoStage.consecutiveWeakCycles}. `
               : "";
-          return `Running ${optimizerLabel} solver. ${cycleLabel}${activeOptimizer ? `${getOptimizerLabel(activeOptimizer)} stage is active. ` : ""}${weakCycleLabel}${bestLabel.trim()}`.trim();
+          return `Running ${optimizerLabel} solver. ${cycleLabel}${activeOptimizer ? `${getOptimizerLabel(activeOptimizer)} stage is active. ` : ""}${weakCycleLabel}${bestLabel.trim()}${progressSuffix}`.trim();
         }
         return optimizer === "cp-sat"
-          ? `Running ${optimizerLabel} solver. Feasible solution found and still improving.${bestLabel}`
+          ? `Running ${optimizerLabel} solver. Feasible solution found and still improving.${bestLabel}${progressSuffix}`
           : optimizer === "lns"
             ? (
               latestLnsOutcome
-                ? `Running ${optimizerLabel} solver. Last ${latestLnsOutcome.phase} repair was ${latestLnsOutcome.status}.${bestLabel}`
+                ? `Running ${optimizerLabel} solver. Last ${latestLnsOutcome.phase} repair was ${latestLnsOutcome.status}.${bestLabel}${progressSuffix}`
                 : state.lns.useDisplayedSeed && getDisplayedLayoutCheckpoint()
-                  ? `Running ${optimizerLabel} solver. Displayed seed is ready and neighborhood repairs are starting.${bestLabel}`
-                  : `Running ${optimizerLabel} solver. Greedy seed is ready and neighborhood repairs are starting.${bestLabel}`
+                  ? `Running ${optimizerLabel} solver. Displayed seed is ready and neighborhood repairs are starting.${bestLabel}${progressSuffix}`
+                  : `Running ${optimizerLabel} solver. Greedy seed is ready and neighborhood repairs are starting.${bestLabel}${progressSuffix}`
             )
-            : `Running ${optimizerLabel} solver. ${GREEDY_MODE_LABEL} is still improving.${bestLabel}`;
+            : `Running ${optimizerLabel} solver. ${GREEDY_MODE_LABEL} is still improving.${bestLabel}${progressSuffix}`;
       }
 
       if (optimizer === "cp-sat") {

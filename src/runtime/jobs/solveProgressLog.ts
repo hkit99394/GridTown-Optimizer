@@ -2,6 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 import { renderSolutionMap } from "../../core/map.js";
+import { buildEmptySolverProgressSummary, buildSolverProgressSummary } from "../../core/progress.js";
 import type { Grid, OptimizerName, SerializedSolution, Solution, SolveProgressLogEntry, SolverParams } from "../../core/types.js";
 
 type PersistedSolveStatus = "running" | "completed" | "stopped" | "failed";
@@ -193,6 +194,7 @@ function buildProgressEntry(
   options: AppendProgressLogEntryOptions,
   state: {
     solveStartedAtElapsedMs: number | null;
+    params: SolverParams;
   }
 ): SolveProgressLogEntry {
   const telemetry = solution.cpSatTelemetry;
@@ -233,6 +235,21 @@ function buildProgressEntry(
     );
   }
 
+  const roundedSolveWallTimeSeconds = roundTelemetrySeconds(solveWallTimeSeconds);
+  const roundedLastImprovementAtSeconds = roundTelemetrySeconds(lastImprovementAtSeconds);
+  const roundedSecondsSinceLastImprovement = roundTelemetrySeconds(secondsSinceLastImprovement);
+  const progressSolution: Solution = telemetry
+    ? {
+        ...solution,
+        cpSatTelemetry: {
+          ...telemetry,
+          solveWallTimeSeconds: roundedSolveWallTimeSeconds ?? telemetry.solveWallTimeSeconds,
+          secondsSinceLastImprovement:
+            roundedSecondsSinceLastImprovement ?? telemetry.secondsSinceLastImprovement,
+        },
+      }
+    : solution;
+
   return {
     capturedAt: typeof options.capturedAt === "string" && options.capturedAt.trim()
       ? options.capturedAt
@@ -246,13 +263,18 @@ function buildProgressEntry(
     totalPopulation: typeof solution.totalPopulation === "number" ? solution.totalPopulation : null,
     cpSatStatus: solution.cpSatStatus ?? null,
     ...lnsProgressFields,
+    progressSummary: buildSolverProgressSummary(progressSolution, {
+      elapsedTimeSeconds: elapsedMs / 1000,
+      fallbackOptimizer: optimizer,
+      params: state.params,
+    }),
     bestPopulationUpperBound:
       typeof telemetry?.bestPopulationUpperBound === "number" ? telemetry.bestPopulationUpperBound : null,
     populationGapUpperBound:
       typeof telemetry?.populationGapUpperBound === "number" ? telemetry.populationGapUpperBound : null,
-    solveWallTimeSeconds: roundTelemetrySeconds(solveWallTimeSeconds),
-    lastImprovementAtSeconds: roundTelemetrySeconds(lastImprovementAtSeconds),
-    secondsSinceLastImprovement: roundTelemetrySeconds(secondsSinceLastImprovement),
+    solveWallTimeSeconds: roundedSolveWallTimeSeconds,
+    lastImprovementAtSeconds: roundedLastImprovementAtSeconds,
+    secondsSinceLastImprovement: roundedSecondsSinceLastImprovement,
     note: buildLnsProgressNote(solution),
   };
 }
@@ -270,6 +292,7 @@ function entriesMatch(left: SolveProgressLogEntry | undefined, right: SolveProgr
     && (left.lnsNeighborhoodStatus ?? null) === (right.lnsNeighborhoodStatus ?? null)
     && (left.lnsNeighborhoodImprovement ?? null) === (right.lnsNeighborhoodImprovement ?? null)
     && (left.lnsNeighborhoodsCompleted ?? null) === (right.lnsNeighborhoodsCompleted ?? null)
+    && JSON.stringify(left.progressSummary ?? null) === JSON.stringify(right.progressSummary ?? null)
     && left.bestPopulationUpperBound === right.bestPopulationUpperBound
     && left.populationGapUpperBound === right.populationGapUpperBound
     && left.solveWallTimeSeconds === right.solveWallTimeSeconds
@@ -336,6 +359,7 @@ export class SolveProgressLogWriter {
 
     const entry = buildProgressEntry(solution, this.optimizer, options, {
       solveStartedAtElapsedMs: this.solveStartedAtElapsedMs,
+      params: this.document.input.params,
     });
     const lastEntry = this.document.entries[this.document.entries.length - 1];
     if (entriesMatch(lastEntry, entry)) {
@@ -358,6 +382,7 @@ export class SolveProgressLogWriter {
       hasFeasibleSolution: false,
       totalPopulation: null,
       cpSatStatus: null,
+      progressSummary: buildEmptySolverProgressSummary(this.optimizer, normalizeElapsedMs(options.elapsedMs) / 1000),
       bestPopulationUpperBound: null,
       populationGapUpperBound: null,
       solveWallTimeSeconds: null,

@@ -1,8 +1,9 @@
 import { performance } from "node:perf_hooks";
 
+import { buildSolverProgressSummary, formatSolverProgressSummary } from "../core/progress.js";
 import { solveGreedy } from "../greedy/solver.js";
 
-import type { GreedyOptions, GreedyProfile, Grid, SolverParams } from "../core/types.js";
+import type { GreedyOptions, GreedyProfile, Grid, SolverParams, SolverProgressSummary } from "../core/types.js";
 
 export interface GreedyServiceLookaheadBenchmarkOptions {
   serviceLookaheadCandidates?: number;
@@ -33,6 +34,7 @@ export interface GreedyBenchmarkCaseResult {
   residentialCount: number;
   greedyOptions: GreedyBenchmarkOptions;
   greedyProfile: GreedyProfile | null;
+  progressSummary: SolverProgressSummary;
   wallClockSeconds: number;
 }
 
@@ -207,6 +209,7 @@ function runGreedyBenchmarkCase(
   const startedAt = performance.now();
   const solution = solveGreedy(cloneGrid(benchmarkCase.grid), params);
   const finishedAt = performance.now();
+  const wallClockSeconds = (finishedAt - startedAt) / 1000;
 
   return {
     name: benchmarkCase.name,
@@ -219,7 +222,12 @@ function runGreedyBenchmarkCase(
     residentialCount: solution.residentials.length,
     greedyOptions: cloneGreedyOptions(params.greedy ?? {}),
     greedyProfile: solution.greedyProfile ?? null,
-    wallClockSeconds: (finishedAt - startedAt) / 1000,
+    progressSummary: buildSolverProgressSummary(solution, {
+      elapsedTimeSeconds: wallClockSeconds,
+      fallbackOptimizer: "greedy",
+      params,
+    }),
+    wallClockSeconds,
   };
 }
 
@@ -262,6 +270,7 @@ export function formatGreedyBenchmarkSuite(result: GreedyBenchmarkSuiteResult): 
     lines.push(
       `  population=${benchmark.totalPopulation} wall=${benchmark.wallClockSeconds.toFixed(3)}s roads=${benchmark.roadCount} services=${benchmark.serviceCount} residentials=${benchmark.residentialCount}`
     );
+    lines.push(`  progress=${formatSolverProgressSummary(benchmark.progressSummary)}`);
     if (counters) {
       lines.push(
         `  scans=svc:${counters.servicePhase.candidateScans} res:${counters.residentialPhase.candidateScans} local:${counters.localSearch.candidateScans} roads(connect=${counters.roads.canConnectChecks}, ensure=${counters.roads.ensureConnectedCalls}, probes=${counters.roads.probeCalls}, reuse=${counters.roads.probeReuses}, scratch=${counters.roads.scratchProbeCalls})`

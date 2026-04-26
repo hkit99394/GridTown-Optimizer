@@ -76,9 +76,6 @@ What exists today:
 - row-0-aware repair windows so anchor connectivity can still be repaired
 - deterministic same-cell service and residential upgrade passes around repair
 
-What is still not done:
-- cross-mode scorecards that compare LNS policy changes against `auto`, standalone `greedy`, and CP-SAT under equal budgets
-
 #### 5. Reusable solver-state hardening is shipped
 
 Status: Completed for the current reusable-input contract
@@ -172,6 +169,24 @@ Maintenance watchpoints:
 - keep planner and backend portfolio constants aligned whenever the safe local machine budget changes
 - richer live-worker UX can still be improved, but full planner initiation no longer depends on it
 
+#### 11. Cross-mode benchmark scorecards and unified progress language are shipped
+
+Status: Completed for the current local benchmark and planner-progress contract
+
+What exists today:
+- `benchmark:scorecard` runs a cross-mode scorecard over `auto`, `greedy`, `LNS`, single-run `CP-SAT`, and portfolio `CP-SAT`
+- scorecards use equal wall-clock budgets, default checkpoints of 5s, 30s, and 120s, and repeated seeds for variance tracking
+- scorecards report win / loss / tie against `auto`, score deltas, mode summaries, problem-size-band summaries, and portfolio worker CPU budget
+- `auto.randomSeed` gives scorecards reproducible generated stage seeds while keeping random Auto stage seeds as the default interactive behavior
+- shared `progressSummary` language now covers current score, best score, active stage, reuse source, elapsed time, time since improvement, stop reason, exact gap, and portfolio worker summary
+- planner status/progress rows, persisted progress logs, HTTP solve stats, and benchmark summaries all surface the same vocabulary
+- per-mode benchmark outputs for `greedy`, `LNS`, and `CP-SAT` include the shared progress summary without dropping their existing optimizer-specific telemetry
+
+Maintenance watchpoints:
+- scorecards are local wall-clock measurements, so portfolio CPU budget must stay visible beside wall time when comparing modes
+- future solver modes should plug into `buildSolverProgressSummary(...)` and the cross-mode benchmark runner instead of adding one-off progress prose
+- default scorecard cases are enough for mode-selection regression and workflow evidence, not broad statistical claims about all maps
+
 ## Remaining Priorities
 
 Impact factor scale:
@@ -180,33 +195,12 @@ Impact factor scale:
 - `3.0 / 5`: medium leverage or enabling work for later improvements
 - below `3.0 / 5`: strategic or high-cost work with lower near-term return
 
-### 1. Add cross-mode benchmark scorecards and unified progress language
+### 1. Split the greedy solver into cleaner reusable phases
 
 Priority: 1
-Impact factor: `3.75 / 5`
-
-Why this is first:
-- users choosing between modes need equal-budget comparisons, not just individual optimizer telemetry
-- benchmarks are already partly shipped, but planner-facing visibility is still thin
-- shared progress language makes `auto`, `greedy`, `LNS`, single-run `CP-SAT`, and portfolio `CP-SAT` easier to compare during and after a run
-
-Concrete work:
-- add equal-budget scorecards for `auto`, `greedy`, `LNS`, single-run `CP-SAT`, and portfolio `CP-SAT`
-- report quality after common budgets such as 5s, 30s, and 2m where applicable
-- track win rate vs `auto`, variance by seed, and behavior by grid/problem-size band
-- define one shared progress vocabulary: current score, best score, active stage, reuse source, elapsed time, time since improvement, stop reason, exact gap where available, and portfolio worker summary where available
-- surface the same vocabulary in planner status, persisted progress logs, and benchmark summaries
-
-Acceptance criteria:
-- a user can choose a mode from the roadmap/planner without knowing implementation internals
-- benchmark output supports mode-selection decisions, not just solver debugging
-
-### 2. Split the greedy solver into cleaner reusable phases
-
-Priority: 2
 Impact factor: `3.0 / 5`
 
-Why this is second:
+Why this is first:
 - reproducibility and instrumentation are already in place, but the greedy policy surface is still concentrated in one large implementation
 - future metaheuristics and learned-guidance work want clearer reuse seams
 - a full refactor is enabling work, but phase-level measurement hooks are needed earlier for LNS and `auto` budgeting
@@ -224,24 +218,24 @@ Near-term slice:
 
 ## Later Priorities
 
-### 3. Keep distributed CP-SAT behind single-machine portfolio and workflow improvements
+### 2. Keep distributed CP-SAT behind single-machine portfolio and workflow improvements
 
-Priority: 3
+Priority: 2
 Impact factor: `1.5 / 5`
 
 Why:
 - the better near-term return is still measurement, workflow polish, and single-machine portfolio hardening
 - distributed exact solving adds the most operational complexity for the least immediate product leverage
 
-### 4. Keep learned guidance separate from the core runtime roadmap
+### 3. Keep learned guidance separate from the core runtime roadmap
 
-Priority: Separate gated track, after priorities 1 and 2 plus the portfolio cancellation regression
+Priority: Separate gated track, after priority 1 plus the portfolio cancellation regression
 Impact factor: `2.0 / 5` near-term product leverage, higher long-term strategic upside
 
 Why:
 - learned guidance is a real fit for search control around `greedy`, `LNS`, and `CP-SAT`, especially for re-ranking and later `LNS` control
 - full RL is not the next production lever; the relevant AlphaGo / AlphaZero lesson is policy / value guidance around exact search, not end-to-end self-play
-- the deterministic solver still has higher-ROI unfinished work, especially equal-budget scorecards and cleaner greedy phase boundaries
+- the deterministic solver still has higher-ROI unfinished work, especially cleaner greedy phase boundaries
 - that work should stay tracked in [LEARNED_GUIDANCE_ROADMAP.md](./LEARNED_GUIDANCE_ROADMAP.md), not mixed into the runtime-execution roadmap
 
 Ordering inside the learned-guidance track:
@@ -258,20 +252,18 @@ Ordering inside the learned-guidance track:
 
 If all remaining work is ranked in one combined near-term ordering, the recommended order is:
 
-1. add cross-mode benchmark scorecards and unified progress language
-2. add greedy phase-level measurement hooks, then split the greedy solver into cleaner reusable phases
-3. add the portfolio orphan-process cancellation regression before raising portfolio limits
-4. build the learned-guidance foundation: shared traces and equal-budget benchmarks
-5. run learned-guidance ablations
-6. try low-risk learned guidance: greedy service re-ranking and `LNS` window re-ranking
-7. only then consider value-guided seeds if seed quality becomes a measured bottleneck
-8. treat contextual bandits and full RL as gated research after earlier learned stages already win
+1. add greedy phase-level measurement hooks, then split the greedy solver into cleaner reusable phases
+2. add the portfolio orphan-process cancellation regression before raising portfolio limits
+3. build the learned-guidance foundation on top of the shipped shared traces and equal-budget scorecards
+4. run learned-guidance ablations
+5. try low-risk learned guidance: greedy service re-ranking and `LNS` window re-ranking
+6. only then consider value-guided seeds if seed quality becomes a measured bottleneck
+7. treat contextual bandits and full RL as gated research after earlier learned stages already win
 
 Why this order:
-- item 1 turns shipped telemetry and benchmarks into user-facing mode-selection evidence
-- item 2 creates cleaner seams for both deterministic and learned follow-on work
-- item 3 protects the guarded portfolio contract before any future fan-out increase
-- items 4 through 8 depend on a more stable deterministic baseline, better measurement discipline, and more expensive labels
+- item 1 creates cleaner seams for both deterministic and learned follow-on work
+- item 2 protects the guarded portfolio contract before any future fan-out increase
+- items 3 through 7 depend on the shipped scorecard discipline, a more stable deterministic baseline, and more expensive labels
 - full RL currently has the lowest near-term product leverage per unit complexity
 
 ## LNS Follow-Up Plan
@@ -328,7 +320,7 @@ Delivered:
 
 - `CP-SAT` warm starts are still global solves unless we explicitly fix the outside-of-neighborhood assignment.
 - The current local OR-Tools runtime still has a known crash path around `repair_hint` plus multi-worker repair, so planner/runtime messaging should not imply user-controlled multi-worker `LNS` repair until that runtime issue is proven fixed.
-- Guarded planner-visible single-machine portfolio search is shipped; the next solver UX step is equal-budget evidence for choosing between modes, not distributed solving.
+- Guarded planner-visible single-machine portfolio search and equal-budget scorecards are shipped; distributed solving should stay behind single-machine workflow and cancellation hardening.
 - Solver input/output validation is now a shipped safeguard; treat new solver-facing payload fields as validation work before exposing them in the planner.
 - AlphaGo / AlphaZero-style ideas transfer here only in the narrow sense of policy / value guidance over the existing search stack; full RL remains a gated research path.
 - Input validation now matters as much as solver quality because the planner reuses more serialized solver state across runs.

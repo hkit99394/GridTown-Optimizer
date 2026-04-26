@@ -5,12 +5,20 @@ const os = require("node:os");
 const path = require("node:path");
 
 const {
+  buildCrossModeBenchmarkParams,
   createLnsBenchmarkSnapshot,
+  DEFAULT_CROSS_MODE_BENCHMARK_BUDGETS_SECONDS,
+  DEFAULT_CROSS_MODE_BENCHMARK_CORPUS,
+  DEFAULT_CROSS_MODE_BENCHMARK_MODES,
+  DEFAULT_CROSS_MODE_BENCHMARK_SEEDS,
   DEFAULT_LNS_BENCHMARK_CORPUS,
   DEFAULT_LNS_BENCHMARK_OPTIONS,
+  formatCrossModeBenchmarkSuite,
   formatLnsBenchmarkSuite,
+  listCrossModeBenchmarkCaseNames,
   listLnsBenchmarkCaseNames,
   normalizeLnsBenchmarkOptions,
+  runCrossModeBenchmarkSuite,
   runLnsBenchmarkSuite,
 } = require("../dist/benchmarks/index.js");
 
@@ -2519,6 +2527,187 @@ function testLnsBenchmarkCorpusHelpers() {
   } finally {
     lnsModule.solveLns = originalSolveLns;
   }
+}
+
+async function testCrossModeBenchmarkHelpers() {
+  const names = DEFAULT_CROSS_MODE_BENCHMARK_CORPUS.map((entry) => entry.name);
+  assert.deepEqual(DEFAULT_CROSS_MODE_BENCHMARK_BUDGETS_SECONDS, [5, 30, 120]);
+  assert.deepEqual(DEFAULT_CROSS_MODE_BENCHMARK_SEEDS, [7, 19, 37]);
+  assert.deepEqual(DEFAULT_CROSS_MODE_BENCHMARK_MODES, ["auto", "greedy", "lns", "cp-sat", "cp-sat-portfolio"]);
+  assert.equal(new Set(names).size, names.length);
+  assert.deepEqual(listCrossModeBenchmarkCaseNames(), names);
+
+  const benchmarkCase = {
+    name: "mock-scorecard",
+    description: "Mock scorecard case for equal-budget mode option checks.",
+    problemSizeBand: "tiny",
+    grid: [
+      [1, 1, 1],
+      [1, 1, 1],
+      [1, 1, 1],
+    ],
+    params: {
+      residentialTypes: [{ w: 1, h: 1, min: 1, max: 1, avail: 1 }],
+      availableBuildings: { residentials: 1, services: 0 },
+    },
+  };
+
+  const greedyParams = buildCrossModeBenchmarkParams(benchmarkCase, "greedy", { budgetSeconds: 3, seeds: [5] });
+  assert.equal(greedyParams.optimizer, "greedy");
+  assert.equal(greedyParams.greedy.timeLimitSeconds, 3);
+  assert.equal(greedyParams.greedy.randomSeed, 5);
+
+  const autoParams = buildCrossModeBenchmarkParams(benchmarkCase, "auto", { budgetSeconds: 3, seeds: [5] });
+  assert.equal(autoParams.optimizer, "auto");
+  assert.equal(autoParams.auto.wallClockLimitSeconds, 3);
+  assert.equal(autoParams.auto.randomSeed, 5);
+  assert.equal(autoParams.lns.wallClockLimitSeconds, 3);
+  assert.equal(autoParams.cpSat.timeLimitSeconds, 3);
+  assert.equal(autoParams.cpSat.portfolio, undefined);
+
+  const portfolioParams = buildCrossModeBenchmarkParams(benchmarkCase, "cp-sat-portfolio", {
+    budgetSeconds: 3,
+    seeds: [5],
+    portfolio: { workerCount: 2 },
+  });
+  assert.equal(portfolioParams.optimizer, "cp-sat");
+  assert.equal(portfolioParams.cpSat.timeLimitSeconds, 3);
+  assert.equal(portfolioParams.cpSat.maxDeterministicTime, 3);
+  assert.equal(portfolioParams.cpSat.portfolio.workerCount, 2);
+  assert.deepEqual(portfolioParams.cpSat.portfolio.randomSeeds, [5, 106]);
+  assert.equal(portfolioParams.cpSat.portfolio.totalCpuBudgetSeconds, 6);
+
+  const result = await runCrossModeBenchmarkSuite([benchmarkCase], {
+    modes: ["greedy"],
+    budgetsSeconds: [3],
+    seeds: [5],
+    greedy: {
+      localSearch: false,
+      restarts: 1,
+      serviceRefineIterations: 0,
+      serviceRefineCandidateLimit: 1,
+      exhaustiveServiceSearch: false,
+      serviceExactPoolLimit: 1,
+      serviceExactMaxCombinations: 1,
+    },
+  });
+
+  assert.equal(result.caseCount, 1);
+  assert.deepEqual(result.selectedCaseNames, ["mock-scorecard"]);
+  assert.deepEqual(result.budgetsSeconds, [3]);
+  assert.deepEqual(result.seeds, [5]);
+  assert.deepEqual(result.modes, ["greedy"]);
+  assert.equal(result.cases.length, 1);
+  assert.equal(result.cases[0].results.length, 1);
+  assert.equal(result.cases[0].results[0].mode, "greedy");
+  assert.equal(result.cases[0].results[0].winVsAuto, "no-auto");
+  assert.equal(result.cases[0].results[0].scoreDeltaVsAuto, null);
+  assert.equal(result.cases[0].results[0].progressSummary.activeStage, "greedy");
+  assert.equal(result.modeSummaries[0].mode, "greedy");
+  assert.equal(result.problemSizeSummaries[0].problemSizeBand, "tiny");
+
+  const mocked = await runCrossModeBenchmarkSuite([benchmarkCase], {
+    modes: ["auto", "greedy", "lns", "cp-sat-portfolio"],
+    budgetsSeconds: [3],
+    seeds: [5, 11],
+    portfolio: { workerCount: 2 },
+    solve: async (_grid, params, context) => {
+      const seedBonus = context.seed === 11 ? 1 : 0;
+      const modeScores = {
+        auto: 10 + seedBonus,
+        greedy: 12 + seedBonus,
+        lns: 8 + seedBonus,
+        "cp-sat-portfolio": 10 + seedBonus,
+      };
+      const solution = buildMockSolution({
+        optimizer: params.optimizer,
+        totalPopulation: modeScores[context.mode],
+        cpSatStatus: params.optimizer === "cp-sat" ? "FEASIBLE" : undefined,
+      });
+      if (context.mode === "auto") {
+        solution.activeOptimizer = "lns";
+        solution.autoStage = {
+          requestedOptimizer: "auto",
+          activeStage: "lns",
+          stageIndex: 2,
+          cycleIndex: 1,
+          consecutiveWeakCycles: 0,
+          lastCycleImprovementRatio: null,
+          stopReason: "wall-clock-cap",
+          generatedSeeds: [{ stage: "greedy", stageIndex: 1, cycleIndex: 0, randomSeed: context.seed }],
+        };
+      }
+      if (context.mode === "lns") {
+        solution.lnsTelemetry = {
+          stopReason: "iteration-limit",
+          seedSource: "greedy",
+          seedWallClockSeconds: 0,
+          wallClockLimitSeconds: 3,
+          noImprovementTimeoutSeconds: null,
+          focusedRepairTimeLimitSeconds: 1,
+          escalatedRepairTimeLimitSeconds: 1,
+          iterationsStarted: 1,
+          iterationsCompleted: 1,
+          improvingIterations: 0,
+          neutralIterations: 1,
+          recoverableFailures: 0,
+          skippedIterations: 0,
+          finalStagnantIterations: 1,
+          elapsedSeconds: 1,
+          outcomes: [],
+        };
+      }
+      if (context.mode === "cp-sat-portfolio") {
+        solution.cpSatTelemetry = {
+          solveWallTimeSeconds: 1,
+          userTimeSeconds: 1,
+          solutionCount: 1,
+          incumbentObjectiveValue: modeScores[context.mode],
+          bestObjectiveBound: modeScores[context.mode] + 2,
+          objectiveGap: 2,
+          incumbentPopulation: modeScores[context.mode],
+          bestPopulationUpperBound: modeScores[context.mode] + 2,
+          populationGapUpperBound: 2,
+          lastImprovementAtSeconds: 0.5,
+          secondsSinceLastImprovement: 0.5,
+          numBranches: 0,
+          numConflicts: 0,
+        };
+        solution.cpSatPortfolio = {
+          workerCount: 2,
+          selectedWorkerIndex: 1,
+          workers: [
+            { workerIndex: 0, randomSeed: context.seed, randomizeSearch: true, numWorkers: 1, status: "UNKNOWN", feasible: false, totalPopulation: null },
+            { workerIndex: 1, randomSeed: context.seed + 101, randomizeSearch: true, numWorkers: 1, status: "FEASIBLE", feasible: true, totalPopulation: modeScores[context.mode] },
+          ],
+        };
+      }
+      return solution;
+    },
+  });
+
+  assert.equal(mocked.cases.length, 2);
+  assert.equal(mocked.cases[0].results.find((entry) => entry.mode === "greedy").winVsAuto, "win");
+  assert.equal(mocked.cases[0].results.find((entry) => entry.mode === "lns").winVsAuto, "loss");
+  assert.equal(mocked.cases[0].results.find((entry) => entry.mode === "cp-sat-portfolio").winVsAuto, "tie");
+  assert.equal(mocked.cases[0].results.find((entry) => entry.mode === "cp-sat-portfolio").workerCpuBudgetSeconds, 6);
+  assert.equal(mocked.modeSummaries.find((entry) => entry.mode === "greedy").winRateVsAuto, 1);
+  assert.equal(mocked.modeSummaries.find((entry) => entry.mode === "lns").winRateVsAuto, 0);
+  assert.equal(mocked.modeSummaries.find((entry) => entry.mode === "greedy").populationStdDev, 0.5);
+  assert.equal(
+    mocked.cases[0].results.find((entry) => entry.mode === "cp-sat-portfolio").progressSummary.portfolioWorkerSummary.feasibleWorkers,
+    1
+  );
+
+  const formatted = formatCrossModeBenchmarkSuite(result);
+  assert.match(formatted, /=== Cross-Mode Benchmark Scorecard ===/);
+  assert.match(formatted, /Equal wall-clock budgets: 3s per mode/);
+  assert.match(formatted, /progress=current=/);
+
+  await assert.rejects(
+    () => runCrossModeBenchmarkSuite([benchmarkCase], { names: ["missing-case"], modes: ["greedy"] }),
+    /Unknown cross-mode benchmark case\(s\): missing-case/
+  );
 }
 
 const STEP14_GREEDY_BENCHMARK_NAME = "step14-service-lookahead-reranker";
@@ -5407,6 +5596,7 @@ async function main() {
   testGreedyGroupedServiceScoringDiscountsLimitedFallbackTypes();
   await testCpSatBenchmarkCorpusHelpers();
   testLnsBenchmarkCorpusHelpers();
+  await testCrossModeBenchmarkHelpers();
   await maybeTestCpSatBenchmarkSuite();
   await maybeTestCpSatWarmStartContinuation();
   await maybeTestCpSatPortfolioSolve();

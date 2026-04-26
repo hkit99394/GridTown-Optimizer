@@ -897,6 +897,48 @@
       return Number(value).toLocaleString(undefined, { maximumFractionDigits });
     }
 
+    function formatProgressSummaryParts(summary) {
+      if (!summary) return [];
+      const parts = [];
+      const currentScore = formatProgressLogNumber(summary.currentScore);
+      const bestScore = formatProgressLogNumber(summary.bestScore);
+      if (currentScore !== null) {
+        parts.push(`current ${currentScore}`);
+      }
+      if (bestScore !== null && bestScore !== currentScore) {
+        parts.push(`best ${bestScore}`);
+      }
+      if (summary.activeStage) {
+        parts.push(`stage ${getOptimizerLabel(summary.activeStage)}`);
+      }
+      if (summary.reuseSource) {
+        parts.push(`reuse ${summary.reuseSource}`);
+      }
+      const elapsed = formatProgressLogNumber(summary.elapsedTimeSeconds, { maximumFractionDigits: 1 });
+      if (elapsed !== null) {
+        parts.push(`elapsed ${elapsed}s`);
+      }
+      const sinceImprovement = formatProgressLogNumber(summary.timeSinceImprovementSeconds, {
+        maximumFractionDigits: 1,
+      });
+      if (sinceImprovement !== null) {
+        parts.push(`last improvement ${sinceImprovement}s ago`);
+      }
+      if (summary.stopReason) {
+        parts.push(`stop ${summary.stopReason}`);
+      }
+      const gap = formatProgressLogNumber(summary.exactGap);
+      if (gap !== null) {
+        parts.push(`gap <= ${gap}`);
+      }
+      if (summary.portfolioWorkerSummary) {
+        parts.push(
+          `portfolio ${summary.portfolioWorkerSummary.feasibleWorkers}/${summary.portfolioWorkerSummary.workerCount} feasible`
+        );
+      }
+      return parts;
+    }
+
     function getResultProgressLogEntries() {
       return Array.isArray(state.result?.progressLog)
         ? state.result.progressLog
@@ -947,7 +989,10 @@
         const sourceLabel = entry.source === "final-result" ? "Final" : "Snapshot";
         const optimizerLabel = entry.optimizer ? getOptimizerLabel(entry.optimizer) : "Solver";
         parts.push(`${sourceLabel} ${optimizerLabel}`);
-        if (entry.optimizer === "auto" && entry.activeOptimizer) {
+        const summaryParts = formatProgressSummaryParts(entry.progressSummary);
+        if (summaryParts.length > 0) {
+          parts.push(...summaryParts);
+        } else if (entry.optimizer === "auto" && entry.activeOptimizer) {
           parts.push(`stage ${getOptimizerLabel(entry.activeOptimizer)}`);
         }
         if (entry.autoStage?.cycleIndex > 0) {
@@ -959,31 +1004,31 @@
             parts.push(`seed ${lastSeed.randomSeed}`);
           }
         }
-        if (entry.autoStage?.stopReason) {
+        if (!entry.progressSummary?.stopReason && entry.autoStage?.stopReason) {
           parts.push(`stop ${entry.autoStage.stopReason}`);
         }
         if (entry.lnsNeighborhoodStatus) {
           const lnsImprovement = Number(entry.lnsNeighborhoodImprovement ?? 0);
           parts.push(`LNS ${entry.lnsNeighborhoodStatus}${lnsImprovement > 0 ? ` +${lnsImprovement}` : ""}`);
         }
-        if (entry.lnsStopReason && entry.lnsStopReason !== "running") {
+        if (!entry.progressSummary?.stopReason && entry.lnsStopReason && entry.lnsStopReason !== "running") {
           parts.push(`LNS stop ${entry.lnsStopReason}`);
         }
-        if (typeof entry.totalPopulation === "number") {
+        if (!entry.progressSummary && typeof entry.totalPopulation === "number") {
           parts.push(`${Number(entry.totalPopulation).toLocaleString()} population`);
         }
         if (entry.cpSatStatus) {
           parts.push(entry.cpSatStatus);
         }
-        const boundLabel = formatProgressLogNumber(entry.bestPopulationUpperBound);
+        const boundLabel = entry.progressSummary ? null : formatProgressLogNumber(entry.bestPopulationUpperBound);
         if (boundLabel !== null) {
           parts.push(`bound <= ${boundLabel}`);
         }
-        const gapLabel = formatProgressLogNumber(entry.populationGapUpperBound);
+        const gapLabel = entry.progressSummary ? null : formatProgressLogNumber(entry.populationGapUpperBound);
         if (gapLabel !== null) {
           parts.push(`gap <= ${gapLabel}`);
         }
-        const improvementLabel = formatProgressLogNumber(entry.secondsSinceLastImprovement, {
+        const improvementLabel = entry.progressSummary ? null : formatProgressLogNumber(entry.secondsSinceLastImprovement, {
           maximumFractionDigits: 1,
         });
         if (improvementLabel !== null) {

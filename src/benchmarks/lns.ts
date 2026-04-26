@@ -1,5 +1,6 @@
 import { performance } from "node:perf_hooks";
 
+import { buildSolverProgressSummary, formatSolverProgressSummary } from "../core/progress.js";
 import { solveLns } from "../lns/solver.js";
 import { normalizeCpSatBenchmarkOptions } from "./cpSat.js";
 import { normalizeGreedyBenchmarkOptions } from "./greedy.js";
@@ -13,6 +14,7 @@ import type {
   LnsOptions,
   LnsTelemetry,
   SolverParams,
+  SolverProgressSummary,
 } from "../core/types.js";
 
 export interface LnsBenchmarkCase {
@@ -46,6 +48,7 @@ export interface LnsBenchmarkCaseResult {
   cpSatTelemetry: CpSatTelemetry | null;
   greedyProfile: GreedyProfile | null;
   lnsTelemetry: LnsTelemetry | null;
+  progressSummary: SolverProgressSummary;
   wallClockSeconds: number;
 }
 
@@ -193,6 +196,7 @@ function runLnsBenchmarkCase(benchmarkCase: LnsBenchmarkCase, options?: LnsBench
   const startedAt = performance.now();
   const solution = solveLns(cloneGrid(benchmarkCase.grid), params);
   const finishedAt = performance.now();
+  const wallClockSeconds = (finishedAt - startedAt) / 1000;
 
   return {
     name: benchmarkCase.name,
@@ -211,7 +215,12 @@ function runLnsBenchmarkCase(benchmarkCase: LnsBenchmarkCase, options?: LnsBench
     cpSatTelemetry: solution.cpSatTelemetry ?? null,
     greedyProfile: solution.greedyProfile ?? null,
     lnsTelemetry: solution.lnsTelemetry ?? null,
-    wallClockSeconds: (finishedAt - startedAt) / 1000,
+    progressSummary: buildSolverProgressSummary(solution, {
+      elapsedTimeSeconds: wallClockSeconds,
+      fallbackOptimizer: "lns",
+      params,
+    }),
+    wallClockSeconds,
   };
 }
 
@@ -254,6 +263,7 @@ export function formatLnsBenchmarkSuite(result: LnsBenchmarkSuiteResult): string
     lines.push(
       `  population=${benchmark.totalPopulation} wall=${benchmark.wallClockSeconds.toFixed(3)}s roads=${benchmark.roadCount} services=${benchmark.serviceCount} residentials=${benchmark.residentialCount} stopped=${benchmark.stoppedByUser}`
     );
+    lines.push(`  progress=${formatSolverProgressSummary(benchmark.progressSummary)}`);
     lines.push(
       `  lns=iterations:${benchmark.lnsOptions.iterations} no-improve:${benchmark.lnsOptions.maxNoImprovementIterations} window:${benchmark.lnsOptions.neighborhoodRows}x${benchmark.lnsOptions.neighborhoodCols} repair:${benchmark.lnsOptions.repairTimeLimitSeconds}s`
     );

@@ -40,6 +40,7 @@ const MAX_STAGE_RANDOM_SEED = 0x7fffffff;
 
 interface NormalizedAutoOptions {
   wallClockLimitSeconds: number | null;
+  randomSeed: number | null;
   weakCycleImprovementThreshold: number;
   maxConsecutiveWeakCycles: number;
   cpSatStageTimeLimitSeconds: number;
@@ -116,6 +117,10 @@ function normalizeAutoOptions(params: SolverParams): NormalizedAutoOptions {
     : null;
   return {
     wallClockLimitSeconds,
+    randomSeed:
+      typeof auto.randomSeed === "number" && Number.isInteger(auto.randomSeed) && auto.randomSeed >= 0
+        ? Math.min(auto.randomSeed, MAX_STAGE_RANDOM_SEED)
+        : null,
     weakCycleImprovementThreshold: Math.max(
       0,
       finiteNumberOrDefault(auto.weakCycleImprovementThreshold, DEFAULT_WEAK_CYCLE_IMPROVEMENT_THRESHOLD)
@@ -137,6 +142,18 @@ function normalizeAutoOptions(params: SolverParams): NormalizedAutoOptions {
 
 function generateRandomSeed(): number {
   return randomInt(1, MAX_STAGE_RANDOM_SEED);
+}
+
+function createAutoStageSeedGenerator(randomSeed: number | null): () => number {
+  if (randomSeed === null) {
+    return generateRandomSeed;
+  }
+
+  let state = randomSeed >>> 0;
+  return () => {
+    state = (Math.imul(1664525, state) + 1013904223) >>> 0;
+    return (state % MAX_STAGE_RANDOM_SEED) + 1;
+  };
 }
 
 function buildAutoGreedyStageOptions(params: SolverParams): NonNullable<SolverParams["greedy"]> {
@@ -529,6 +546,7 @@ async function runBackgroundStage(
   stage: AutoStageOptimizerName,
   cycleIndex: number,
   startBackgroundSolve: StageStarter,
+  nextStageSeed: () => number,
   deadlineAtMs: number | null
 ): Promise<Solution | null> {
   const secondsRemaining = remainingSeconds(deadlineAtMs);
@@ -540,7 +558,7 @@ async function runBackgroundStage(
   state.stageIndex += 1;
   state.cycleIndex = cycleIndex;
   state.activeStage = stage;
-  const generatedSeed = generateRandomSeed();
+  const generatedSeed = nextStageSeed();
   state.generatedSeeds.push({
     stage,
     stageIndex: state.stageIndex,
@@ -645,6 +663,7 @@ export function solveAuto(G: Grid, params: SolverParams): Solution {
   const startedAtMs = Date.now();
   const deadlineAtMs = options.wallClockLimitSeconds === null ? null : startedAtMs + options.wallClockLimitSeconds * 1000;
   const stopController = createSyncAutoStopController(deadlineAtMs, params);
+  const nextStageSeed = createAutoStageSeedGenerator(options.randomSeed);
 
   try {
     const runStage = (stage: AutoStageOptimizerName, cycleIndex: number, incumbent: Solution | null): Solution | null => {
@@ -663,7 +682,7 @@ export function solveAuto(G: Grid, params: SolverParams): Solution {
       state.stageIndex += 1;
       state.cycleIndex = cycleIndex;
       state.activeStage = stage;
-      const generatedSeed = generateRandomSeed();
+      const generatedSeed = nextStageSeed();
       state.generatedSeeds.push({
         stage,
         stageIndex: state.stageIndex,
@@ -768,6 +787,7 @@ export function startAutoSolve(G: Grid, params: SolverParams): BackgroundSolveHa
   const deadlineAtMs = options.wallClockLimitSeconds === null ? null : startedAtMs + options.wallClockLimitSeconds * 1000;
   const incumbentRef: { current: Solution | null } = { current: null };
   const currentHandleRef: { current: BackgroundSolveHandle | null } = { current: null };
+  const nextStageSeed = createAutoStageSeedGenerator(options.randomSeed);
 
   const requestStop = (stopReason: AutoSolveStopReason): void => {
     if (state.stopReason) return;
@@ -794,6 +814,7 @@ export function startAutoSolve(G: Grid, params: SolverParams): BackgroundSolveHa
         "greedy",
         0,
         startGreedySolve,
+        nextStageSeed,
         deadlineAtMs
       );
       incumbentRef.current = chooseInitialIncumbent(G, params, greedySolution);
@@ -817,6 +838,7 @@ export function startAutoSolve(G: Grid, params: SolverParams): BackgroundSolveHa
           "lns",
           cycleIndex,
           startLnsSolve,
+          nextStageSeed,
           deadlineAtMs
         );
         incumbentRef.current = pickBetterSolution(incumbentRef.current, lnsSolution);
@@ -832,6 +854,7 @@ export function startAutoSolve(G: Grid, params: SolverParams): BackgroundSolveHa
           "cp-sat",
           cycleIndex,
           startCpSatSolve,
+          nextStageSeed,
           deadlineAtMs
         );
         incumbentRef.current = pickBetterSolution(incumbentRef.current, cpSatSolution);

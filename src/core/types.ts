@@ -105,6 +105,8 @@ export type AutoSolveStopReason =
 export interface AutoOptions {
   /** Optional global wall-clock safety cap for the outer auto policy. Omit for no outer cap. */
   wallClockLimitSeconds?: number;
+  /** Optional seed for reproducible Auto stage-seed generation. Omit for random stage seeds. */
+  randomSeed?: number;
   /** Minimum combined improvement ratio for an LNS -> CP-SAT cycle to count as meaningful. Defaults to 0.5%. */
   weakCycleImprovementThreshold?: number;
   /** Stop after this many consecutive weak cycles. Defaults to 2. */
@@ -250,6 +252,25 @@ export interface CpSatPortfolioSummary {
   workerCount: number;
   selectedWorkerIndex: number | null;
   workers: CpSatPortfolioWorkerSummary[];
+}
+
+export interface SolverProgressPortfolioSummary {
+  workerCount: number;
+  completedWorkers: number;
+  feasibleWorkers: number;
+  selectedWorkerIndex: number | null;
+}
+
+export interface SolverProgressSummary {
+  currentScore: number | null;
+  bestScore: number | null;
+  activeStage: OptimizerName | AutoStageOptimizerName | null;
+  reuseSource: string | null;
+  elapsedTimeSeconds: number | null;
+  timeSinceImprovementSeconds: number | null;
+  stopReason: string | null;
+  exactGap: number | null;
+  portfolioWorkerSummary: SolverProgressPortfolioSummary | null;
 }
 
 export type CpSatProgressKind = "incumbent" | "bound" | "portfolio-worker-complete";
@@ -631,6 +652,7 @@ export interface SolveResponseStats {
   manualLayout: boolean;
   cpSatStatus: string | null;
   lnsTelemetry?: LnsTelemetry;
+  progressSummary?: SolverProgressSummary;
   stoppedByUser: boolean;
   stoppedByTimeLimit: boolean;
   totalPopulation: number;
@@ -664,6 +686,7 @@ export interface SolveProgressLogEntry {
   lnsNeighborhoodStatus?: LnsNeighborhoodOutcomeStatus | null;
   lnsNeighborhoodImprovement?: number | null;
   lnsNeighborhoodsCompleted?: number | null;
+  progressSummary?: SolverProgressSummary;
   bestPopulationUpperBound: number | null;
   populationGapUpperBound: number | null;
   solveWallTimeSeconds: number | null;

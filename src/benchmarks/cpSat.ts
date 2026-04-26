@@ -1,5 +1,6 @@
 import { performance } from "node:perf_hooks";
 
+import { buildSolverProgressSummary, formatSolverProgressSummary } from "../core/progress.js";
 import { solveAsync } from "../runtime/solve.js";
 
 import type {
@@ -10,6 +11,7 @@ import type {
   CpSatTelemetry,
   Grid,
   SolverParams,
+  SolverProgressSummary,
 } from "../core/types.js";
 
 export interface CpSatBenchmarkCase {
@@ -41,6 +43,7 @@ export interface CpSatBenchmarkCaseResult {
   cpSatObjectiveSummary: string | null;
   cpSatOptions: CpSatOptions;
   progressTimeline: CpSatBenchmarkProgressSample[];
+  progressSummary: SolverProgressSummary;
   wallClockSeconds: number;
 }
 
@@ -226,6 +229,7 @@ async function runCpSatBenchmarkCase(
     buildBenchmarkAsyncOptions(params, options, timeline, startedAt)
   );
   const finishedAt = performance.now();
+  const wallClockSeconds = (finishedAt - startedAt) / 1000;
 
   return {
     name: benchmarkCase.name,
@@ -238,7 +242,12 @@ async function runCpSatBenchmarkCase(
     cpSatObjectiveSummary: solution.cpSatObjectivePolicy?.summary ?? null,
     cpSatOptions: cloneCpSatOptions(params.cpSat ?? {}),
     progressTimeline: timeline,
-    wallClockSeconds: (finishedAt - startedAt) / 1000,
+    progressSummary: buildSolverProgressSummary(solution, {
+      elapsedTimeSeconds: wallClockSeconds,
+      fallbackOptimizer: "cp-sat",
+      params,
+    }),
+    wallClockSeconds,
   };
 }
 
@@ -293,6 +302,7 @@ export function formatCpSatBenchmarkSuite(result: CpSatBenchmarkSuiteResult): st
         } branches=${benchmark.cpSatTelemetry.numBranches} conflicts=${benchmark.cpSatTelemetry.numConflicts}`
       );
     }
+    lines.push(`  progress-summary=${formatSolverProgressSummary(benchmark.progressSummary)}`);
     lines.push(`  progress=${formatProgressPreview(benchmark.progressTimeline)}`);
   }
   return lines.join("\n");

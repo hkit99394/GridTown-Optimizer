@@ -14,6 +14,7 @@ import type {
   GreedyPlacementDiagnosticReason,
   GreedyProfileCounters,
   GreedyProfilePhaseName,
+  GreedyRoadOpportunityCounterfactualReason,
   ServicePlacement,
   ServiceCandidate,
   ResidentialPlacement,
@@ -35,7 +36,7 @@ import {
   GreedyAttemptState,
   probeExplicitRoadConnection,
 } from "./attemptState.js";
-import type { ConnectivityProbe, RoadConnectionProbe } from "./attemptState.js";
+import type { ConnectivityProbe, PlacementRect, RoadConnectionProbe } from "./attemptState.js";
 import {
   CONNECTIVITY_SHADOW_DECISION_TRACE_LIMIT,
   buildConnectivityShadowBaselineGuardParams,
@@ -49,6 +50,15 @@ import {
   servicePlacementTrace,
 } from "./connectivityShadowScoring.js";
 import type { ConnectivityShadowDecisionRecorder } from "./connectivityShadowScoring.js";
+import {
+  ROAD_OPPORTUNITY_COUNTERFACTUAL_TRACE_LIMIT,
+  ROAD_OPPORTUNITY_TRACE_LIMIT,
+  createRoadOpportunityRecorder,
+  recordRoadOpportunityPlacement,
+  recordRoadOpportunityPlacementFromOccupiedBuildings,
+  roadOpportunityHasTraceCapacity,
+} from "./roadOpportunity.js";
+import type { RoadOpportunityCounterfactualCandidate, RoadOpportunityRecorder } from "./roadOpportunity.js";
 import {
   applyRoadConnectionProbe,
   createRoadProbeScratch,
@@ -164,6 +174,7 @@ interface GreedySolveContext {
   recordProfilePhase?: GreedyProfilePhaseRecorder;
   maybeStop?: MaybeStop;
   recordConnectivityShadowDecision?: ConnectivityShadowDecisionRecorder;
+  recordRoadOpportunity?: RoadOpportunityRecorder;
 }
 interface SolveOneOptions {
   maxServices: number | undefined;
@@ -215,6 +226,10 @@ type ServiceRelocationMove = {
   estimatedFutureScore: number;
   estimatedRoadCost: number;
   orderedServiceKey: string;
+  traceKey?: string;
+  traceProbe?: ConnectivityProbe;
+  traceFootprintKeys?: readonly string[];
+  traceOccupiedBuildings?: Set<string>;
 };
 type ResidualServiceBundleTrial = {
   candidate: ServiceCandidate;
@@ -446,6 +461,24 @@ function deletePlacementCellsFromSet(
   placement: { r: number; c: number; rows: number; cols: number }
 ): void {
   forEachPlacementCell(placement, (key) => target.delete(key));
+}
+
+function toExplicitConnectivityProbe(probe: RoadConnectionProbe): ConnectivityProbe {
+  return { kind: "explicit", roadCost: probe.path?.length ?? 0, roadProbe: probe };
+}
+
+function buildLocalSearchBuildingOccupancy(
+  services: readonly ServicePlacement[],
+  residentials: readonly ResidentialPlacement[],
+  excludedResidentialIndex = -1
+): Set<string> {
+  const occupiedBuildings = new Set<string>();
+  for (const service of services) addPlacementCellsToSet(occupiedBuildings, service);
+  for (let index = 0; index < residentials.length; index++) {
+    if (index === excludedResidentialIndex) continue;
+    addPlacementCellsToSet(occupiedBuildings, residentials[index]);
+  }
+  return occupiedBuildings;
 }
 
 function overlapsCachedFootprint(occupied: Set<string>, footprintKeys: readonly string[]): boolean {
@@ -836,6 +869,27 @@ type ServiceLookaheadEvaluation = {
   refillScore: number;
 };
 
+const ROAD_OPPORTUNITY_COUNTERFACTUAL_POOL_LIMIT = ROAD_OPPORTUNITY_COUNTERFACTUAL_TRACE_LIMIT * 4;
+
+type RoadOpportunityCandidatePoolEntry<TCandidate> = {
+  key: string;
+  candidate: TCandidate;
+  candidateIndex: number;
+  placement: PlacementRect;
+  probe: ConnectivityProbe;
+  footprintKeys?: readonly string[];
+  occupiedBuildings?: Set<string>;
+  score: number;
+  typeIndex?: number;
+  bonus?: number;
+  range?: number;
+  moveKind?: RoadOpportunityCounterfactualCandidate["moveKind"];
+};
+type RoadOpportunityCandidatePools<TCandidate> = {
+  score: RoadOpportunityCandidatePoolEntry<TCandidate>[];
+  cheapRoad: RoadOpportunityCandidatePoolEntry<TCandidate>[];
+};
+
 function compareServiceLookaheadCandidates(
   left: ServiceLookaheadCandidate,
   right: ServiceLookaheadCandidate
@@ -865,6 +919,164 @@ function compareServiceLookaheadEvaluations(
   if (left.refillScore !== right.refillScore) return right.refillScore - left.refillScore;
   if (leftEntry.score !== rightEntry.score) return rightEntry.score - leftEntry.score;
   return compareServiceTieBreaks(leftEntry.service, leftEntry.probe, rightEntry.service, rightEntry.probe);
+}
+
+function compareRoadOpportunityScorePoolEntries<TCandidate>(
+  left: RoadOpportunityCandidatePoolEntry<TCandidate>,
+  right: RoadOpportunityCandidatePoolEntry<TCandidate>
+): number {
+  if (left.score !== right.score) return right.score - left.score;
+  if (left.probe.roadCost !== right.probe.roadCost) return left.probe.roadCost - right.probe.roadCost;
+  return left.key.localeCompare(right.key);
+}
+
+function compareRoadOpportunityCheapPoolEntries<TCandidate>(
+  left: RoadOpportunityCandidatePoolEntry<TCandidate>,
+  right: RoadOpportunityCandidatePoolEntry<TCandidate>
+): number {
+  if (left.probe.roadCost !== right.probe.roadCost) return left.probe.roadCost - right.probe.roadCost;
+  if (left.score !== right.score) return right.score - left.score;
+  return left.key.localeCompare(right.key);
+}
+
+function pushBoundedRoadOpportunityCandidate<TCandidate>(
+  pool: RoadOpportunityCandidatePoolEntry<TCandidate>[],
+  entry: RoadOpportunityCandidatePoolEntry<TCandidate>,
+  compare: (
+    left: RoadOpportunityCandidatePoolEntry<TCandidate>,
+    right: RoadOpportunityCandidatePoolEntry<TCandidate>
+  ) => number
+): void {
+  const existingIndex = pool.findIndex((candidate) => candidate.key === entry.key);
+  if (existingIndex >= 0) {
+    pool[existingIndex] = entry;
+  } else {
+    pool.push(entry);
+  }
+  pool.sort(compare);
+  if (pool.length > ROAD_OPPORTUNITY_COUNTERFACTUAL_POOL_LIMIT) {
+    pool.length = ROAD_OPPORTUNITY_COUNTERFACTUAL_POOL_LIMIT;
+  }
+}
+
+function createRoadOpportunityCandidatePools<TCandidate>(): RoadOpportunityCandidatePools<TCandidate> {
+  return { score: [], cheapRoad: [] };
+}
+
+function pushRoadOpportunityCandidate<TCandidate>(
+  pools: RoadOpportunityCandidatePools<TCandidate>,
+  entry: RoadOpportunityCandidatePoolEntry<TCandidate>
+): void {
+  pushBoundedRoadOpportunityCandidate(pools.score, entry, compareRoadOpportunityScorePoolEntries);
+  pushBoundedRoadOpportunityCandidate(pools.cheapRoad, entry, compareRoadOpportunityCheapPoolEntries);
+}
+
+function mergeRoadOpportunityCandidatePools<TCandidate>(
+  pools: readonly RoadOpportunityCandidatePoolEntry<TCandidate>[][]
+): RoadOpportunityCandidatePoolEntry<TCandidate>[] {
+  const byKey = new Map<string, RoadOpportunityCandidatePoolEntry<TCandidate>>();
+  for (const pool of pools) {
+    for (const entry of pool) {
+      if (!byKey.has(entry.key)) byKey.set(entry.key, entry);
+    }
+  }
+  return [...byKey.values()];
+}
+
+function classifyRoadOpportunityCounterfactual(options: {
+  candidateScore: number;
+  chosenScore: number;
+  candidateRoadCost: number;
+  chosenRoadCost: number;
+  lookaheadDisplaced: boolean;
+}): GreedyRoadOpportunityCounterfactualReason | null {
+  const { candidateScore, chosenScore, candidateRoadCost, chosenRoadCost, lookaheadDisplaced } = options;
+  if (lookaheadDisplaced) return "lookahead-rejected";
+  if (candidateScore > chosenScore) return "higher-score-rejected";
+  if (candidateScore === chosenScore) return "same-score-tie";
+
+  const scoreWindow = Math.max(1, Math.ceil(Math.max(1, Math.abs(chosenScore)) * 0.1));
+  if (candidateScore >= chosenScore - scoreWindow) return "near-score";
+  if (candidateRoadCost < chosenRoadCost && candidateScore >= 0) return "lower-road-cost";
+
+  return null;
+}
+
+function compareSelectedRoadOpportunityCounterfactuals(
+  left: RoadOpportunityCounterfactualCandidate & { key: string },
+  right: RoadOpportunityCounterfactualCandidate & { key: string },
+  chosenScore: number,
+  chosenRoadCost: number
+): number {
+  const reasonRank: Record<GreedyRoadOpportunityCounterfactualReason, number> = {
+    "lookahead-rejected": 0,
+    "higher-score-rejected": 1,
+    "same-score-tie": 2,
+    "near-score": 3,
+    "lower-road-cost": 4,
+  };
+  if (reasonRank[left.reason] !== reasonRank[right.reason]) {
+    return reasonRank[left.reason] - reasonRank[right.reason];
+  }
+
+  const leftScoreDelta = Math.abs(left.score - chosenScore);
+  const rightScoreDelta = Math.abs(right.score - chosenScore);
+  if (leftScoreDelta !== rightScoreDelta) return leftScoreDelta - rightScoreDelta;
+
+  const leftRoadDelta = Math.abs(left.probe.roadCost - chosenRoadCost);
+  const rightRoadDelta = Math.abs(right.probe.roadCost - chosenRoadCost);
+  if (leftRoadDelta !== rightRoadDelta) return leftRoadDelta - rightRoadDelta;
+
+  return left.key.localeCompare(right.key);
+}
+
+function selectRoadOpportunityCounterfactuals<TCandidate>(options: {
+  pools: RoadOpportunityCandidatePools<TCandidate>;
+  chosenKey: string;
+  chosenCandidate: TCandidate;
+  chosenProbe: ConnectivityProbe;
+  chosenScore: number;
+  compareTieBreaks: (candidate: TCandidate, probe: ConnectivityProbe, chosen: TCandidate, chosenProbe: ConnectivityProbe) => number;
+  isLookaheadDisplaced?: (entry: RoadOpportunityCandidatePoolEntry<TCandidate>) => boolean;
+}): RoadOpportunityCounterfactualCandidate[] {
+  const selected: Array<RoadOpportunityCounterfactualCandidate & { key: string }> = [];
+  for (const entry of mergeRoadOpportunityCandidatePools([options.pools.score, options.pools.cheapRoad])) {
+    if (entry.key === options.chosenKey) continue;
+    const lookaheadDisplaced = options.isLookaheadDisplaced?.(entry) ?? false;
+    const reason = classifyRoadOpportunityCounterfactual({
+      candidateScore: entry.score,
+      chosenScore: options.chosenScore,
+      candidateRoadCost: entry.probe.roadCost,
+      chosenRoadCost: options.chosenProbe.roadCost,
+      lookaheadDisplaced,
+    });
+    if (!reason) continue;
+    const tieBreakComparison = options.compareTieBreaks(
+      entry.candidate,
+      entry.probe,
+      options.chosenCandidate,
+      options.chosenProbe
+    );
+    selected.push({
+      key: entry.key,
+      reason,
+      placement: entry.placement,
+      probe: entry.probe,
+      footprintKeys: entry.footprintKeys,
+      occupiedBuildings: entry.occupiedBuildings,
+      score: entry.score,
+      tieBreakComparison,
+      ...(entry.typeIndex === undefined ? {} : { typeIndex: entry.typeIndex }),
+      ...(entry.bonus === undefined ? {} : { bonus: entry.bonus }),
+      ...(entry.range === undefined ? {} : { range: entry.range }),
+      ...(entry.moveKind === undefined ? {} : { moveKind: entry.moveKind }),
+    });
+  }
+
+  selected.sort((left, right) =>
+    compareSelectedRoadOpportunityCounterfactuals(left, right, options.chosenScore, options.chosenProbe.roadCost)
+  );
+  return selected.slice(0, ROAD_OPPORTUNITY_COUNTERFACTUAL_TRACE_LIMIT);
 }
 
 type OccupancyScratch = {
@@ -953,6 +1165,7 @@ function solveOne(
     serviceLookaheadCandidates,
     recordProfilePhase,
     recordConnectivityShadowDecision,
+    recordRoadOpportunity,
     maybeStop,
   } = context;
   const {
@@ -1183,11 +1396,24 @@ function solveOne(
       if (probe.kind !== "explicit") {
         return null;
       }
+      recordRoadOpportunityPlacement({
+        attemptState,
+        placement,
+        probe,
+        phase: "service",
+        footprintKeys: cachedFootprintKeys,
+        profileCounters,
+        record: recordRoadOpportunity,
+        typeIndex: s.typeIndex,
+        bonus: s.bonus,
+        range: s.range,
+      });
       attemptState.commitExplicitPlacement({
         probe: probe.roadProbe,
         placement,
         footprintKeys: cachedFootprintKeys,
         countProbeReuse: false,
+        recordConnectivityShadow: false,
       });
       services.push(placement);
       serviceTypeIndices.push(s.typeIndex);
@@ -1221,6 +1447,8 @@ function solveOne(
       let bestDensityScore = Number.NEGATIVE_INFINITY;
       let bestConnectivityShadowPenalty: number | null = null;
       const lookaheadShortlist: ServiceLookaheadCandidate[] = [];
+      const collectRoadOpportunityCounterfactuals = roadOpportunityHasTraceCapacity(recordRoadOpportunity, "service");
+      const serviceRoadOpportunityPools = createRoadOpportunityCandidatePools<ServiceCandidate>();
       for (const candidateIndex of serviceActivePool.activeIndices) {
         maybeStop?.();
         if (profileCounters) profileCounters.servicePhase.candidateScans++;
@@ -1253,6 +1481,22 @@ function solveOne(
         const densityScore = densityTieBreaker
           ? computePlacementDensityScore(G, service, score)
           : 0;
+        const serviceFootprintKeys = precomputedIndexes.serviceFootprintKeysByCandidate[globalCandidateIndex];
+        if (collectRoadOpportunityCounterfactuals && score > 0) {
+          const roadOpportunityEntry: RoadOpportunityCandidatePoolEntry<ServiceCandidate> = {
+            key: serviceCandidateKey(service),
+            candidate: service,
+            candidateIndex,
+            placement,
+            probe,
+            footprintKeys: serviceFootprintKeys,
+            score,
+            typeIndex: service.typeIndex,
+            bonus: service.bonus,
+            range: service.range,
+          };
+          pushRoadOpportunityCandidate(serviceRoadOpportunityPools, roadOpportunityEntry);
+        }
         if (enableServiceLookahead) {
           pushBoundedServiceLookaheadCandidate(
             lookaheadShortlist,
@@ -1333,6 +1577,8 @@ function solveOne(
         }
       }
 
+      let lookaheadDisplacedCandidateIndex = -1;
+      const preLookaheadBestCandidateIndex = bestCandidateIndex;
       if (
         enableServiceLookahead
         && lookaheadShortlist.length > 1
@@ -1360,6 +1606,7 @@ function solveOne(
           bestCandidateIndex = lookaheadBestEntry.candidateIndex;
           bestProbe = lookaheadBestEntry.probe;
           bestScore = lookaheadBestEntry.score;
+          lookaheadDisplacedCandidateIndex = preLookaheadBestCandidateIndex;
           if (profileCounters) profileCounters.servicePhase.lookaheadWins++;
         }
       }
@@ -1376,9 +1623,35 @@ function solveOne(
         placement,
         cachedFootprintKeys
       );
+      const counterfactuals = collectRoadOpportunityCounterfactuals
+        ? selectRoadOpportunityCounterfactuals({
+            pools: serviceRoadOpportunityPools,
+            chosenKey: serviceCandidateKey(bestCandidate),
+            chosenCandidate: bestCandidate,
+            chosenProbe: bestProbe,
+            chosenScore: bestScore,
+            compareTieBreaks: compareServiceTieBreaks,
+            isLookaheadDisplaced: (entry) => entry.candidateIndex === lookaheadDisplacedCandidateIndex,
+          })
+        : undefined;
+      recordRoadOpportunityPlacement({
+        attemptState,
+        placement,
+        probe: bestProbe,
+        phase: "service",
+        footprintKeys: cachedFootprintKeys,
+        profileCounters,
+        record: recordRoadOpportunity,
+        score: bestScore,
+        counterfactuals,
+        typeIndex: bestCandidate.typeIndex,
+        bonus: bestCandidate.bonus,
+        range: bestCandidate.range,
+      });
       const committedKeys = attemptState.commitPlacement(bestProbe, placement, {
         footprintKeys: cachedFootprintKeys,
         newlyOccupiedKeys,
+        recordConnectivityShadow: false,
       });
       if (!committedKeys) {
         break;
@@ -1492,6 +1765,8 @@ function solveOne(
     let bestPop = -1;
     let bestDensityScore = Number.NEGATIVE_INFINITY;
     let bestConnectivityShadowPenalty: number | null = null;
+    const collectRoadOpportunityCounterfactuals = roadOpportunityHasTraceCapacity(recordRoadOpportunity, "residential");
+    const residentialRoadOpportunityPools = createRoadOpportunityCandidatePools<ResidentialCandidatesList[0]>();
     for (const candidateIndex of residentialActivePool.activeIndices) {
       const cand = anyResidentialCandidates[candidateIndex];
       maybeStop?.();
@@ -1508,6 +1783,20 @@ function solveOne(
       const densityScore = densityTieBreaker
         ? computePlacementDensityScore(G, cand, pop)
         : 0;
+      const residentialFootprintKeys = precomputedIndexes.residentialCandidateFootprintKeys[candidateIndex];
+      if (collectRoadOpportunityCounterfactuals && pop >= 0) {
+        const roadOpportunityEntry: RoadOpportunityCandidatePoolEntry<ResidentialCandidatesList[0]> = {
+          key: stableResidentialPlacementKey(cand),
+          candidate: cand,
+          candidateIndex,
+          placement: cand,
+          probe,
+          footprintKeys: residentialFootprintKeys,
+          score: pop,
+          typeIndex: getCandidateTypeIndex(cand),
+        };
+        pushRoadOpportunityCandidate(residentialRoadOpportunityPools, roadOpportunityEntry);
+      }
       const scoreComparison = best === null
         ? 1
         : compareDensityAwareScore(
@@ -1577,15 +1866,39 @@ function solveOne(
       best,
       residentialFootprintKeys
     );
+    const bestTypeIndex = getCandidateTypeIndex(best);
+    const counterfactuals = collectRoadOpportunityCounterfactuals
+      ? selectRoadOpportunityCounterfactuals({
+          pools: residentialRoadOpportunityPools,
+          chosenKey: stableResidentialPlacementKey(best),
+          chosenCandidate: best,
+          chosenProbe: bestProbe,
+          chosenScore: bestPop,
+          compareTieBreaks: (candidate, probe, chosen, chosenProbe) =>
+            compareResidentialTieBreaks(params, candidate, probe, chosen, chosenProbe),
+        })
+      : undefined;
+    recordRoadOpportunityPlacement({
+      attemptState,
+      placement: best,
+      probe: bestProbe,
+      phase: "residential",
+      footprintKeys: residentialFootprintKeys,
+      profileCounters,
+      record: recordRoadOpportunity,
+      score: bestPop,
+      counterfactuals,
+      typeIndex: bestTypeIndex,
+    });
     const committedKeys = attemptState.commitPlacement(bestProbe, best, {
       footprintKeys: residentialFootprintKeys,
       newlyOccupiedKeys,
+      recordConnectivityShadow: false,
     });
     if (!committedKeys) {
       break;
     }
     residentials.push({ r: best.r, c: best.c, rows: best.rows, cols: best.cols });
-    const bestTypeIndex = getCandidateTypeIndex(best);
     residentialTypeIndices.push(bestTypeIndex);
     populations.push(bestPop);
     {
@@ -1638,6 +1951,7 @@ function solveOne(
         useTypes ? remainingAvail : null,
         maxResidentials,
         profileCounters,
+        recordRoadOpportunity,
         maybeStop,
         explicitRoadProbeScratch
       );
@@ -1740,6 +2054,7 @@ function prepareGreedyInputs(
     profileCounters?: GreedyProfileCounters;
     recordProfilePhase?: GreedyProfilePhaseRecorder;
     recordConnectivityShadowDecision?: ConnectivityShadowDecisionRecorder;
+    recordRoadOpportunity?: RoadOpportunityRecorder;
     maybeStop: MaybeStop;
   }
 ): GreedyPreparedInputs {
@@ -1752,6 +2067,7 @@ function prepareGreedyInputs(
     profileCounters,
     recordProfilePhase,
     recordConnectivityShadowDecision,
+    recordRoadOpportunity,
     maybeStop,
   } = options;
 
@@ -1874,6 +2190,7 @@ function prepareGreedyInputs(
       profileCounters,
       recordProfilePhase,
       recordConnectivityShadowDecision,
+      recordRoadOpportunity,
       maybeStop,
     },
   };
@@ -2560,6 +2877,7 @@ function runGreedyServiceNeighborhoodSearch(options: {
   solveWithOrder: GreedySolveAttempt;
   updateBest: GreedyBestUpdater;
   profileCounters?: GreedyProfileCounters;
+  recordRoadOpportunity?: RoadOpportunityRecorder;
   maybeStop: MaybeStop;
 }): Solution {
   const {
@@ -2578,6 +2896,7 @@ function runGreedyServiceNeighborhoodSearch(options: {
     solveWithOrder,
     updateBest,
     profileCounters,
+    recordRoadOpportunity,
     maybeStop,
   } = options;
   if (!localSearch || !localSearchServiceMoves) return initialBest;
@@ -2740,6 +3059,8 @@ function runGreedyServiceNeighborhoodSearch(options: {
     let swapTrials = 0;
     const candidateMoves: ServiceRelocationMove[] = [];
     const removalMoves: ServiceRelocationMove[] = [];
+    const collectRoadOpportunityCounterfactuals = roadOpportunityHasTraceCapacity(recordRoadOpportunity, "service-neighborhood");
+    const serviceRoadOpportunityPools = createRoadOpportunityCandidatePools<ServiceCandidate>();
 
     for (let serviceIndex = 0; serviceIndex < incumbentServices.length; serviceIndex++) {
       maybeStop?.();
@@ -2808,6 +3129,25 @@ function runGreedyServiceNeighborhoodSearch(options: {
           serviceCoverageGroupsByKey,
           remainingAvailForIncumbent
         );
+        const traceProbe = toExplicitConnectivityProbe(probe);
+        const traceKey = `add:${serviceCandidateKey(candidate)}:${scoredMove.orderedServiceKey}`;
+        const traceEntry: RoadOpportunityCandidatePoolEntry<ServiceCandidate> = {
+          key: traceKey,
+          candidate,
+          candidateIndex: incumbentServices.length,
+          placement: materializeServicePlacement(candidate),
+          probe: traceProbe,
+          footprintKeys: candidateFootprintKeys,
+          occupiedBuildings: new Set(incumbentOccupiedBuildings),
+          score: scoredMove.estimatedTotalPopulation,
+          typeIndex: candidate.typeIndex,
+          bonus: candidate.bonus,
+          range: candidate.range,
+          moveKind: "service-add",
+        };
+        if (collectRoadOpportunityCounterfactuals) {
+          pushRoadOpportunityCandidate(serviceRoadOpportunityPools, traceEntry);
+        }
         candidateMoves.push({
           kind: "add",
           serviceIndex: incumbentServices.length,
@@ -2817,6 +3157,10 @@ function runGreedyServiceNeighborhoodSearch(options: {
           estimatedFutureScore,
           estimatedRoadCost: probe.path?.length ?? 0,
           orderedServiceKey: scoredMove.orderedServiceKey,
+          traceKey,
+          traceProbe,
+          traceFootprintKeys: candidateFootprintKeys,
+          traceOccupiedBuildings: traceEntry.occupiedBuildings,
         });
       }
     }
@@ -2881,6 +3225,25 @@ function runGreedyServiceNeighborhoodSearch(options: {
             serviceCoverageGroupsByKey,
             remainingAvailForIncumbent
           );
+          const traceProbe = toExplicitConnectivityProbe(probe);
+          const traceKey = `swap:${serviceIndex}:${serviceCandidateKey(candidate)}:${scoredMove.orderedServiceKey}`;
+          const traceEntry: RoadOpportunityCandidatePoolEntry<ServiceCandidate> = {
+            key: traceKey,
+            candidate,
+            candidateIndex: serviceIndex,
+            placement: materializeServicePlacement(candidate),
+            probe: traceProbe,
+            footprintKeys: candidateFootprintKeys,
+            occupiedBuildings: new Set(occupiedWithoutCurrent),
+            score: scoredMove.estimatedTotalPopulation,
+            typeIndex: candidate.typeIndex,
+            bonus: candidate.bonus,
+            range: candidate.range,
+            moveKind: "service-swap",
+          };
+          if (collectRoadOpportunityCounterfactuals) {
+            pushRoadOpportunityCandidate(serviceRoadOpportunityPools, traceEntry);
+          }
           candidateMoves.push({
             kind: "swap",
             serviceIndex,
@@ -2890,6 +3253,10 @@ function runGreedyServiceNeighborhoodSearch(options: {
             estimatedFutureScore,
             estimatedRoadCost: probe.path?.length ?? 0,
             orderedServiceKey: scoredMove.orderedServiceKey,
+            traceKey,
+            traceProbe,
+            traceFootprintKeys: candidateFootprintKeys,
+            traceOccupiedBuildings: traceEntry.occupiedBuildings,
           });
         }
         if (swapTrials >= maxSwapTrialsThisIteration) break;
@@ -2921,15 +3288,49 @@ function runGreedyServiceNeighborhoodSearch(options: {
       selectedMoveKeys.add(key);
       realizationMoves.push(move);
     }
+    let iterationBestMove: ServiceRelocationMove | null = null;
     for (const move of realizationMoves) {
       maybeStop?.();
       const trial = realizeAcceptedServiceNeighborhoodMove(incumbent, move.forcedServices);
       if (isBetterSearchSolution(trial, iterationBest)) {
         iterationBest = trial as Solution;
+        iterationBestMove = move;
       }
     }
 
     if (!isBetterSearchSolution(iterationBest, incumbent)) break;
+    if (
+      iterationBestMove?.traceProbe
+      && iterationBestMove.traceKey
+      && iterationBestMove.traceOccupiedBuildings
+    ) {
+      const counterfactuals = collectRoadOpportunityCounterfactuals
+        ? selectRoadOpportunityCounterfactuals({
+            pools: serviceRoadOpportunityPools,
+            chosenKey: iterationBestMove.traceKey,
+            chosenCandidate: iterationBestMove.candidate,
+            chosenProbe: iterationBestMove.traceProbe,
+            chosenScore: iterationBestMove.estimatedTotalPopulation,
+            compareTieBreaks: compareServiceTieBreaks,
+          })
+        : undefined;
+      recordRoadOpportunityPlacementFromOccupiedBuildings({
+        grid: G,
+        occupiedBuildings: iterationBestMove.traceOccupiedBuildings,
+        placement: materializeServicePlacement(iterationBestMove.candidate),
+        probe: iterationBestMove.traceProbe,
+        phase: "service-neighborhood",
+        footprintKeys: iterationBestMove.traceFootprintKeys,
+        profileCounters,
+        record: recordRoadOpportunity,
+        score: iterationBestMove.estimatedTotalPopulation,
+        counterfactuals,
+        typeIndex: iterationBestMove.candidate.typeIndex,
+        bonus: iterationBestMove.candidate.bonus,
+        range: iterationBestMove.candidate.range,
+        moveKind: iterationBestMove.kind === "add" ? "service-add" : "service-swap",
+      });
+    }
     incumbent = iterationBest;
     updateBest(incumbent);
     if (profileCounters) profileCounters.localSearch.serviceNeighborhoodImprovements++;
@@ -3363,6 +3764,10 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     decisions: connectivityShadowDecisions,
     recordDecision: recordConnectivityShadowDecision,
   } = createConnectivityShadowDecisionRecorder(profile);
+  const {
+    traces: roadOpportunityTraces,
+    recordRoadOpportunity,
+  } = createRoadOpportunityRecorder(profile);
   const { maxServices, maxResidentials } = getBuildingLimits(params);
   const useServiceTypes = (params.serviceTypes?.length ?? 0) > 0;
   const useTypes = (params.residentialTypes?.length ?? 0) > 0;
@@ -3413,6 +3818,7 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     profileCounters,
     recordProfilePhase,
     recordConnectivityShadowDecision,
+    recordRoadOpportunity,
     maybeStop,
   }));
   const { serviceOrderSorted, baseSolveContext } = preparedInputs;
@@ -3445,6 +3851,8 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
         phases: structuredClone(profilePhases ?? []),
         connectivityShadowDecisions: structuredClone(connectivityShadowDecisions ?? []),
         connectivityShadowDecisionTraceLimit: CONNECTIVITY_SHADOW_DECISION_TRACE_LIMIT,
+        roadOpportunityTraces: structuredClone(roadOpportunityTraces ?? []),
+        roadOpportunityTraceLimit: ROAD_OPPORTUNITY_TRACE_LIMIT,
       },
     };
   };
@@ -3624,6 +4032,7 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
           solveWithOrder,
           updateBest,
           profileCounters,
+          recordRoadOpportunity,
           maybeStop,
         });
         return runGreedyResidualServiceBundleRepair({
@@ -3678,6 +4087,7 @@ function localSearchImprove(
   remainingAvail: number[] | null,
   maxResidentials: number | undefined,
   profileCounters?: GreedyProfileCounters,
+  recordRoadOpportunity?: RoadOpportunityRecorder,
   maybeStop?: () => void,
   explicitRoadProbeScratch = createRoadProbeScratch(G)
 ): number {
@@ -3691,12 +4101,18 @@ function localSearchImprove(
     currentTypeIndex: number;
     currentPop: number;
     newPop: number;
+    key: string;
+    probe: ConnectivityProbe;
+    occupiedBuildings: Set<string>;
   };
   type AddChoice = {
     kind: "add";
     candidate: ResidentialPlacement | ResidentialCandidate;
     candidateTypeIndex: number;
     addPop: number;
+    key: string;
+    probe: ConnectivityProbe;
+    occupiedBuildings: Set<string>;
   };
 
   const probeRoadConnection = (
@@ -3725,6 +4141,9 @@ function localSearchImprove(
     let bestAdd: AddChoice | null = null;
     let bestAddDelta = 0;
     let bestAddProbe: RoadConnectionProbe | null = null;
+    const collectRoadOpportunityCounterfactuals = roadOpportunityHasTraceCapacity(recordRoadOpportunity, "residential-local-search");
+    const residentialRoadOpportunityPools =
+      createRoadOpportunityCandidatePools<ResidentialPlacement | ResidentialCandidate>();
 
     for (let i = 0; i < residentials.length; i++) {
       maybeStop?.();
@@ -3762,6 +4181,25 @@ function localSearchImprove(
         if (profileCounters) profileCounters.localSearch.populationCacheLookups++;
         const newPop = residentialPopulationCache[candidateIndex] ?? -1;
         const delta = newPop - currentPop;
+        const traceProbe = toExplicitConnectivityProbe(probe);
+        const traceKey = `move:${i}:${candidateIndex}:${stableResidentialPlacementKey(cand)}:${candidateTypeIndex}`;
+        const traceOccupiedBuildings = delta > 0 && (profileCounters || recordRoadOpportunity)
+          ? buildLocalSearchBuildingOccupancy(services, residentials, i)
+          : undefined;
+        if (collectRoadOpportunityCounterfactuals && delta > 0 && traceOccupiedBuildings) {
+          const roadOpportunityEntry: RoadOpportunityCandidatePoolEntry<ResidentialPlacement | ResidentialCandidate> = {
+            key: traceKey,
+            candidate: cand,
+            candidateIndex,
+            placement: cand,
+            probe: traceProbe,
+            occupiedBuildings: new Set(traceOccupiedBuildings),
+            score: delta,
+            typeIndex: candidateTypeIndex,
+            moveKind: "residential-move",
+          };
+          pushRoadOpportunityCandidate(residentialRoadOpportunityPools, roadOpportunityEntry);
+        }
         if (
           delta > bestMoveDelta
           || (delta === bestMoveDelta && delta > 0 && bestMove !== null && bestMoveProbe !== null
@@ -3775,6 +4213,9 @@ function localSearchImprove(
             currentTypeIndex: resType,
             currentPop,
             newPop,
+            key: traceKey,
+            probe: traceProbe,
+            occupiedBuildings: traceOccupiedBuildings ?? buildLocalSearchBuildingOccupancy(services, residentials, i),
           };
           bestMoveDelta = delta;
           bestMoveProbe = probe;
@@ -3802,6 +4243,25 @@ function localSearchImprove(
         if (!probe) continue;
         if (profileCounters) profileCounters.localSearch.populationCacheLookups++;
         const addPop = residentialPopulationCache[candidateIndex] ?? -1;
+        const traceProbe = toExplicitConnectivityProbe(probe);
+        const traceKey = `add:${candidateIndex}:${stableResidentialPlacementKey(cand)}:${candidateTypeIndex}`;
+        const traceOccupiedBuildings = addPop > 0 && (profileCounters || recordRoadOpportunity)
+          ? buildLocalSearchBuildingOccupancy(services, residentials)
+          : undefined;
+        if (collectRoadOpportunityCounterfactuals && addPop > 0 && traceOccupiedBuildings) {
+          const roadOpportunityEntry: RoadOpportunityCandidatePoolEntry<ResidentialPlacement | ResidentialCandidate> = {
+            key: traceKey,
+            candidate: cand,
+            candidateIndex,
+            placement: cand,
+            probe: traceProbe,
+            occupiedBuildings: new Set(traceOccupiedBuildings),
+            score: addPop,
+            typeIndex: candidateTypeIndex,
+            moveKind: "residential-add",
+          };
+          pushRoadOpportunityCandidate(residentialRoadOpportunityPools, roadOpportunityEntry);
+        }
         if (
           addPop > bestAddDelta
           || (addPop === bestAddDelta && addPop > 0 && bestAdd !== null && bestAddProbe !== null
@@ -3812,6 +4272,9 @@ function localSearchImprove(
             candidate: cand,
             candidateTypeIndex,
             addPop,
+            key: traceKey,
+            probe: traceProbe,
+            occupiedBuildings: traceOccupiedBuildings ?? buildLocalSearchBuildingOccupancy(services, residentials),
           };
           bestAddDelta = addPop;
           bestAddProbe = probe;
@@ -3825,6 +4288,30 @@ function localSearchImprove(
       const { candidate, candidateTypeIndex, addPop } = bestAdd;
       totalPopulation += addPop;
       if (!bestAddProbe) break;
+      const counterfactuals = collectRoadOpportunityCounterfactuals
+        ? selectRoadOpportunityCounterfactuals({
+            pools: residentialRoadOpportunityPools,
+            chosenKey: bestAdd.key,
+            chosenCandidate: bestAdd.candidate,
+            chosenProbe: bestAdd.probe,
+            chosenScore: bestAddDelta,
+            compareTieBreaks: (candidate, probe, chosen, chosenProbe) =>
+              compareResidentialTieBreaks(params, candidate, probe, chosen, chosenProbe),
+          })
+        : undefined;
+      recordRoadOpportunityPlacementFromOccupiedBuildings({
+        grid: G,
+        occupiedBuildings: bestAdd.occupiedBuildings,
+        placement: candidate,
+        probe: bestAdd.probe,
+        phase: "residential-local-search",
+        profileCounters,
+        record: recordRoadOpportunity,
+        score: bestAddDelta,
+        counterfactuals,
+        typeIndex: candidateTypeIndex,
+        moveKind: "residential-add",
+      });
       commitExplicitRoadConnectedPlacement({
         roads,
         occupied,
@@ -3842,6 +4329,30 @@ function localSearchImprove(
 
     if (bestMove) {
       const currentResidential = residentials[bestMove.residentialIndex];
+      const counterfactuals = collectRoadOpportunityCounterfactuals
+        ? selectRoadOpportunityCounterfactuals({
+            pools: residentialRoadOpportunityPools,
+            chosenKey: bestMove.key,
+            chosenCandidate: bestMove.candidate,
+            chosenProbe: bestMove.probe,
+            chosenScore: bestMoveDelta,
+            compareTieBreaks: (candidate, probe, chosen, chosenProbe) =>
+              compareResidentialTieBreaks(params, candidate, probe, chosen, chosenProbe),
+          })
+        : undefined;
+      recordRoadOpportunityPlacementFromOccupiedBuildings({
+        grid: G,
+        occupiedBuildings: bestMove.occupiedBuildings,
+        placement: bestMove.candidate,
+        probe: bestMove.probe,
+        phase: "residential-local-search",
+        profileCounters,
+        record: recordRoadOpportunity,
+        score: bestMoveDelta,
+        counterfactuals,
+        typeIndex: bestMove.candidateTypeIndex,
+        moveKind: "residential-move",
+      });
       deletePlacementCellsFromSet(occupied, currentResidential);
       if (useTypes && remainingAvail && bestMove.currentTypeIndex >= 0) remainingAvail[bestMove.currentTypeIndex]++;
       if (!bestMoveProbe) break;

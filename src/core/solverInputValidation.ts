@@ -27,6 +27,14 @@ const AUTO_MAX_STAGE_TIME_LIMIT_SECONDS = 24 * 60 * 60;
 const LNS_MAX_ITERATIONS = 10_000;
 const LNS_MAX_NEIGHBORHOOD_DIMENSION = 10_000;
 const LNS_MAX_TIME_LIMIT_SECONDS = 24 * 60 * 60;
+const LNS_NEIGHBORHOOD_ANCHOR_POLICIES = [
+  "ranked",
+  "sliding-only",
+  "weak-service-first",
+  "residential-opportunity-first",
+  "frontier-congestion-first",
+  "placed-buildings-first",
+] as const;
 const CP_SAT_MAX_TIME_LIMIT_SECONDS = 24 * 60 * 60;
 const CP_SAT_MAX_NUM_WORKERS = 64;
 const CP_SAT_RANDOM_SEED_MAX = 0x7fffffff;
@@ -132,6 +140,19 @@ function requireOptionalString(parent: Record<string, unknown>, key: string, pat
   const value = parent[key];
   if (value !== undefined && typeof value !== "string") {
     throw new SolverInputError(`${path} must be a string.`);
+  }
+}
+
+function requireOptionalStringInSet(
+  parent: Record<string, unknown>,
+  key: string,
+  path: string,
+  allowed: readonly string[]
+): void {
+  const value = parent[key];
+  if (value === undefined) return;
+  if (typeof value !== "string" || !allowed.includes(value)) {
+    throw new SolverInputError(`${path} must be one of: ${allowed.join(", ")}.`);
   }
 }
 
@@ -1184,6 +1205,12 @@ export function assertValidLnsOptions(params: SolverParams): void {
     "LNS option lns.neighborhoodCols",
     1,
     LNS_MAX_NEIGHBORHOOD_DIMENSION
+  );
+  requireOptionalStringInSet(
+    lns,
+    "neighborhoodAnchorPolicy",
+    "LNS option lns.neighborhoodAnchorPolicy",
+    LNS_NEIGHBORHOOD_ANCHOR_POLICIES
   );
   requireOptionalFiniteNumberInRange(
     lns,

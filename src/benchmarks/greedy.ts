@@ -7,6 +7,8 @@ import type {
   GreedyOptions,
   GreedyProfile,
   GreedyProfilePhaseSummary,
+  GreedyRoadOpportunityCounterfactualTrace,
+  GreedyRoadOpportunityTrace,
   Grid,
   SolverParams,
   SolverProgressSummary,
@@ -279,6 +281,8 @@ export function createGreedyBenchmarkSnapshot(result: GreedyBenchmarkSuiteResult
             phases: greedyProfile.phases.map(({ elapsedMs: _elapsedMs, ...phase }) => ({ ...phase })),
             connectivityShadowDecisions: structuredClone(greedyProfile.connectivityShadowDecisions ?? []),
             connectivityShadowDecisionTraceLimit: greedyProfile.connectivityShadowDecisionTraceLimit,
+            roadOpportunityTraces: structuredClone(greedyProfile.roadOpportunityTraces ?? []),
+            roadOpportunityTraceLimit: greedyProfile.roadOpportunityTraceLimit,
           }
         : null,
     })),
@@ -307,6 +311,46 @@ function formatPlacementTrace(placement: {
   return `r${placement.r}c${placement.c} ${placement.rows}x${placement.cols} road:${placement.roadCost}${extras.length ? ` ${extras.join(" ")}` : ""}`;
 }
 
+function formatSignedNumber(value: number): string {
+  return value >= 0 ? `+${value}` : String(value);
+}
+
+function formatRoadOpportunityTrace(trace: GreedyRoadOpportunityTrace): string {
+  const extras = [
+    trace.score === undefined ? null : `score:${trace.score}`,
+    trace.typeIndex === undefined ? null : `type:${trace.typeIndex}`,
+    trace.bonus === undefined ? null : `bonus:${trace.bonus}`,
+    trace.range === undefined ? null : `range:${trace.range}`,
+    trace.moveKind === undefined ? null : `move:${trace.moveKind}`,
+    `counterfactuals:${trace.counterfactuals?.length ?? 0}`,
+  ].filter((entry): entry is string => entry !== null);
+  return `${trace.phase} r${trace.r}c${trace.c} ${trace.rows}x${trace.cols} road:${trace.roadCost} reachable:${trace.reachableBefore}->${trace.reachableAfter} lost:${trace.lostCells} footprint:${trace.footprintCells} disconnected:${trace.disconnectedCells}${extras.length ? ` ${extras.join(" ")}` : ""}`;
+}
+
+function formatRoadOpportunityCounterfactual(counterfactual: GreedyRoadOpportunityCounterfactualTrace): string {
+  const extras = [
+    counterfactual.typeIndex === undefined ? null : `type:${counterfactual.typeIndex}`,
+    counterfactual.bonus === undefined ? null : `bonus:${counterfactual.bonus}`,
+    counterfactual.range === undefined ? null : `range:${counterfactual.range}`,
+    counterfactual.moveKind === undefined ? null : `move:${counterfactual.moveKind}`,
+    counterfactual.tieBreakComparison === undefined ? null : `tie:${counterfactual.tieBreakComparison}`,
+  ].filter((entry): entry is string => entry !== null);
+  return `reason:${counterfactual.reason} rejected:r${counterfactual.r}c${counterfactual.c} ${counterfactual.rows}x${counterfactual.cols} road:${counterfactual.roadCost} score:${counterfactual.score} score-delta:${formatSignedNumber(counterfactual.scoreDelta)} road-delta:${formatSignedNumber(counterfactual.roadCostDelta)} reachable:${counterfactual.reachableBefore}->${counterfactual.reachableAfter} lost:${counterfactual.lostCells} footprint:${counterfactual.footprintCells} disconnected:${counterfactual.disconnectedCells}${extras.length ? ` ${extras.join(" ")}` : ""}`;
+}
+
+function selectRoadOpportunityTraceSamples(
+  traces: readonly GreedyRoadOpportunityTrace[],
+  limit: number
+): GreedyRoadOpportunityTrace[] {
+  const localSearchTraces = traces.filter((trace) =>
+    trace.phase === "service-neighborhood" || trace.phase === "residential-local-search"
+  );
+  const constructiveTraces = traces.filter((trace) =>
+    trace.phase !== "service-neighborhood" && trace.phase !== "residential-local-search"
+  );
+  return [...localSearchTraces, ...constructiveTraces].slice(0, limit);
+}
+
 export function formatGreedyBenchmarkSuite(result: GreedyBenchmarkSuiteResult): string {
   const lines: string[] = [];
   lines.push("=== Greedy Benchmark Suite ===");
@@ -322,6 +366,11 @@ export function formatGreedyBenchmarkSuite(result: GreedyBenchmarkSuiteResult): 
     );
     lines.push(`  progress=${formatSolverProgressSummary(benchmark.progressSummary)}`);
     if (counters) {
+      const roadOpportunityCounterfactualCount =
+        benchmark.greedyProfile?.roadOpportunityTraces?.reduce(
+          (sum, trace) => sum + (trace.counterfactuals?.length ?? 0),
+          0
+        ) ?? 0;
       lines.push(
         `  scans=svc:${counters.servicePhase.candidateScans} res:${counters.residentialPhase.candidateScans} local:${counters.localSearch.candidateScans} roads(connect=${counters.roads.canConnectChecks}, ensure=${counters.roads.ensureConnectedCalls}, probes=${counters.roads.probeCalls}, reuse=${counters.roads.probeReuses}, scratch=${counters.roads.scratchProbeCalls})`
       );
@@ -359,6 +408,15 @@ export function formatGreedyBenchmarkSuite(result: GreedyBenchmarkSuiteResult): 
         lines.push(
           `  shadow-decision=${decision.phase} score:${decision.score} chosen:[${formatPlacementTrace(decision.chosen)}] rejected:[${formatPlacementTrace(decision.rejected)}] penalties:cand=${decision.candidateShadowPenalty} inc=${decision.incumbentShadowPenalty}`
         );
+      }
+      lines.push(
+        `  road-opportunity=checks:${counters.roads.roadOpportunityChecks} lost:${counters.roads.roadOpportunityLostCells} footprint:${counters.roads.roadOpportunityFootprintCells} disconnected:${counters.roads.roadOpportunityDisconnectedCells} max-lost:${counters.roads.roadOpportunityMaxLostCells} max-disconnected:${counters.roads.roadOpportunityMaxDisconnectedCells} trace:${benchmark.greedyProfile?.roadOpportunityTraces?.length ?? 0}/${benchmark.greedyProfile?.roadOpportunityTraceLimit ?? 0} counterfactuals:${roadOpportunityCounterfactualCount}`
+      );
+      for (const trace of selectRoadOpportunityTraceSamples(benchmark.greedyProfile?.roadOpportunityTraces ?? [], 5)) {
+        lines.push(`  road-opportunity-placement=${formatRoadOpportunityTrace(trace)}`);
+        for (const counterfactual of trace.counterfactuals?.slice(0, 3) ?? []) {
+          lines.push(`  road-opportunity-counterfactual=${formatRoadOpportunityCounterfactual(counterfactual)}`);
+        }
       }
       lines.push(
         `  step13=geometry:${counters.precompute.geometryCacheEntries} occupancy-scratch:${counters.localSearch.occupancyScratchReuses} road-scratch:${counters.roads.scratchProbeCalls}`

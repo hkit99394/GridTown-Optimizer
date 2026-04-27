@@ -17,6 +17,7 @@ Core reference docs:
 - [LEARNED_GUIDANCE_ROADMAP.md](./LEARNED_GUIDANCE_ROADMAP.md): roadmap for ML / RL-style learned guidance over the current solver stack
 - [PLANNER_ARCHITECTURE.md](./PLANNER_ARCHITECTURE.md): current web/backend module boundaries
 - [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md): overall solver roadmap
+- [SOLVER_ABLATION_DECISIONS.md](./SOLVER_ABLATION_DECISIONS.md): deterministic ablation gate decisions before model training
 - [CP_SAT_ROADMAP.md](./CP_SAT_ROADMAP.md): CP-SAT-specific roadmap
 
 ## Problem Summary
@@ -424,6 +425,15 @@ npm run benchmark:greedy -- --connectivity-shadow-ablation --no-profile
 npm run benchmark:greedy -- --connectivity-shadow-ablation --profile service-local-neighborhood geometry-occupancy-hot-path
 ```
 
+Run the deterministic Greedy ordering/phase ablation matrix before trying learned ranking:
+
+```bash
+npm run benchmark:greedy -- --deterministic-ablation --no-profile
+npm run benchmark:greedy -- --ordering-ablation --ablation-variants=baseline,no-service-neighborhood,connectivity-shadow-scoring service-local-neighborhood
+npm run benchmark:greedy -- --deterministic-ablation --seeds=7,19 --ablation-variants=baseline,no-local-search service-local-neighborhood
+npm run benchmark:greedy -- --deterministic-ablation --gate-report --json --ablation-variants=baseline,no-local-search service-local-neighborhood
+```
+
 List the available greedy case names:
 
 ```bash
@@ -441,6 +451,39 @@ Run one named LNS case and emit JSON:
 ```bash
 npm run benchmark:lns -- --json compact-service-repair
 ```
+
+Run the deterministic LNS neighborhood-anchor/window ablation matrix:
+
+```bash
+npm run benchmark:lns -- --neighborhood-ablation
+npm run benchmark:lns -- --neighborhood-ablation --ablation-variants=baseline,sliding-only,small-2x2 compact-service-repair
+npm run benchmark:lns -- --neighborhood-ablation --ablation-variants=baseline,sliding-only,weak-service-first seeded-service-anchor-pressure
+npm run benchmark:lns -- --neighborhood-ablation --seeds=7,19 --ablation-variants=baseline,sliding-only compact-service-repair
+npm run benchmark:lns -- --neighborhood-ablation --gate-report --json --ablation-variants=baseline,sliding-only,weak-service-first seeded-service-anchor-pressure
+```
+
+When `--seeds` is provided, each Greedy or LNS ablation case is repeated once per seed; baseline and variants within a case/seed comparison receive the same unique integer seed in the solver-supported `0..2147483647` range.
+Repeated-seed ablation summaries include stability-gate fields: win/regression/unchanged rates, best/worst population-delta case and seed labels, and for LNS the number/rate of variants whose first repair window, full window sequence, or anchor-coordinate sequence moved from the matched baseline.
+Ablation `--json` output uses snapshot-friendly artifacts that omit generated timestamps and volatile wall-clock fields.
+`--gate-report` turns the matrix into a stable promote/keep-baseline/learning-target/blocked-regression report and defaults to seeds `7,19,37` when no `--seeds` list is provided.
+LNS repeated-seed ablations rotate variant execution order by default to reduce wall-time order bias; use `--no-rotate-variant-run-order` for fixed execution order.
+
+Collect bounded counterfactual LNS window replay labels before learned window re-ranking:
+
+```bash
+npm run benchmark:lns -- --window-replay-labels --json --seeds=7 --max-windows=4 --repair-time=0.25 seeded-service-anchor-pressure
+```
+
+Window replay labels evaluate multiple candidate repair windows from the same incumbent with an equal CP-SAT repair budget and emit stable JSON snapshots with per-window signed population deltas, usability flags, validation results, and deterministic features.
+
+Build the low-risk learned-ranking label bundle with protected development/holdout splits before any model training:
+
+```bash
+npm run benchmark:labels
+npm run benchmark:labels -- --json --seeds=7,19,37 --max-windows=8 --repair-time=1
+```
+
+The combined label bundle includes Greedy connectivity-shadow ordering labels, Greedy road-opportunity near-miss labels, split-aware LNS replay labels, schema/audit metadata, and leakage checks. It does not train a model or change solver defaults.
 
 List the available LNS case names:
 
@@ -659,6 +702,8 @@ greedy: {
 Set `greedy.diagnostics: true` to include `solution.greedyDiagnostics`, a bounded post-solve report that scans final unplaced candidates and groups "why not placed?" examples by blocked footprint, missing road path, no service coverage / base-only residential population, availability caps, and lower-score/no-improvement outcomes.
 
 When `greedy.profile` is enabled, Greedy counters include `roads.connectivityShadow*` fields. These measure how many row-0-reachable empty cells each committed building footprint removes, separating cells consumed by the footprint from downstream cells disconnected by that placement. Profile output also includes bounded connectivity-shadow tie-break samples showing the candidate, incumbent, chosen placement, rejected placement, road cost, and shadow penalty. The benchmark formatter prints this as `connectivity-shadow=...` and `connectivity-shadow-scoring=...`.
+
+The same profile includes `roads.roadOpportunity*` counters and bounded `roadOpportunityTraces` for accepted constructive service/residential placements plus accepted residential local-search and service-neighborhood moves. These traces pair the accepted placement's road cost with row-0-reachable frontier before/after counts, total lost cells, footprint cells, and downstream disconnected cells. Constructive and local-search traces can include bounded near-miss counterfactuals showing rejected candidates with their score, road-cost delta, move kind, and frontier loss. The benchmark formatter prints this as `road-opportunity=...` plus sample `road-opportunity-placement=...` and `road-opportunity-counterfactual=...` rows.
 
 Set `greedy.connectivityShadowScoring: true` to use that signal as an opt-in placement tie-breaker: when normal Greedy scores tie inside a bounded cheap-road window, candidates that disconnect fewer future row-0-reachable cells are preferred. The option keeps the normal Greedy result when the shadow-scored result does not beat it on population and road count. The default is `false`, so profiling alone does not change placement choices.
 

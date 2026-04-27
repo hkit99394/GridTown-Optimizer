@@ -1,0 +1,279 @@
+{
+  "schemaVersion": 1,
+  "reportType": "deterministic-ablation-gate",
+  "suites": [
+    {
+      "suite": "lns-neighborhood",
+      "caseCount": 4,
+      "seedCount": 3,
+      "comparisonCount": 12,
+      "seeds": [
+        7,
+        19,
+        37
+      ],
+      "selectedCaseNames": [
+        "typed-housing-single",
+        "compact-service-repair",
+        "seeded-service-anchor-pressure",
+        "row0-anchor-repair"
+      ],
+      "variants": [
+        "baseline",
+        "sliding-only",
+        "weak-service-first",
+        "residential-opportunity-first",
+        "frontier-congestion-first",
+        "placed-buildings-first",
+        "small-2x2",
+        "wide-4x4"
+      ],
+      "decisions": [
+        {
+          "suite": "lns-neighborhood",
+          "variantName": "baseline",
+          "decision": "keep-baseline",
+          "nextAction": "Keep the current baseline as the comparison reference.",
+          "reasons": [
+            "Baseline variant is the reference behavior."
+          ],
+          "evidence": {
+            "caseCount": 4,
+            "seedCount": 3,
+            "comparisonCount": 12,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "worstPopulationDeltaVsBaseline": 0,
+            "winRate": 0,
+            "regressionRate": 0,
+            "unchangedRate": 1,
+            "meanWallClockSeconds": 1.0578622568333353,
+            "meanWallClockDeltaVsBaselineSeconds": 0,
+            "bestPopulationDeltaCaseName": "typed-housing-single",
+            "bestPopulationDeltaSeed": 7,
+            "worstPopulationDeltaCaseName": "typed-housing-single",
+            "worstPopulationDeltaSeed": 7,
+            "firstWindowMovementRate": 0,
+            "windowSequenceMovementRate": 0,
+            "anchorCoordinateMovementRate": 0
+          }
+        },
+        {
+          "suite": "lns-neighborhood",
+          "variantName": "sliding-only",
+          "decision": "blocked-regression",
+          "nextAction": "Do not promote; inspect the worst case/seed and add pressure coverage before retrying.",
+          "reasons": [
+            "Regression evidence exists: regression-rate=25.0%, worst-delta=-100."
+          ],
+          "evidence": {
+            "caseCount": 4,
+            "seedCount": 3,
+            "comparisonCount": 12,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": -100,
+            "bestPopulationDeltaVsBaseline": 0,
+            "worstPopulationDeltaVsBaseline": -100,
+            "winRate": 0,
+            "regressionRate": 0.25,
+            "unchangedRate": 0.75,
+            "meanWallClockSeconds": 1.029468631833333,
+            "meanWallClockDeltaVsBaselineSeconds": -0.028393625000002132,
+            "bestPopulationDeltaCaseName": "typed-housing-single",
+            "bestPopulationDeltaSeed": 7,
+            "worstPopulationDeltaCaseName": "seeded-service-anchor-pressure",
+            "worstPopulationDeltaSeed": 7,
+            "firstWindowMovementRate": 1,
+            "windowSequenceMovementRate": 1,
+            "anchorCoordinateMovementRate": 1
+          }
+        },
+        {
+          "suite": "lns-neighborhood",
+          "variantName": "weak-service-first",
+          "decision": "learning-target",
+          "nextAction": "Collect counterfactual LNS window replay labels before learned window ranking.",
+          "reasons": [
+            "Window choice changed without population lift: first-window-move-rate=50.0%, window-sequence-move-rate=50.0%, anchor-coordinate-move-rate=50.0%."
+          ],
+          "evidence": {
+            "caseCount": 4,
+            "seedCount": 3,
+            "comparisonCount": 12,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "worstPopulationDeltaVsBaseline": 0,
+            "winRate": 0,
+            "regressionRate": 0,
+            "unchangedRate": 1,
+            "meanWallClockSeconds": 1.0425124375833323,
+            "meanWallClockDeltaVsBaselineSeconds": -0.015349819250002847,
+            "bestPopulationDeltaCaseName": "typed-housing-single",
+            "bestPopulationDeltaSeed": 7,
+            "worstPopulationDeltaCaseName": "typed-housing-single",
+            "worstPopulationDeltaSeed": 7,
+            "firstWindowMovementRate": 0.5,
+            "windowSequenceMovementRate": 0.5,
+            "anchorCoordinateMovementRate": 0.5
+          }
+        },
+        {
+          "suite": "lns-neighborhood",
+          "variantName": "residential-opportunity-first",
+          "decision": "learning-target",
+          "nextAction": "Collect counterfactual LNS window replay labels before learned window ranking.",
+          "reasons": [
+            "Window choice changed without population lift: first-window-move-rate=100.0%, window-sequence-move-rate=100.0%, anchor-coordinate-move-rate=100.0%."
+          ],
+          "evidence": {
+            "caseCount": 4,
+            "seedCount": 3,
+            "comparisonCount": 12,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "worstPopulationDeltaVsBaseline": 0,
+            "winRate": 0,
+            "regressionRate": 0,
+            "unchangedRate": 1,
+            "meanWallClockSeconds": 1.0606486075000008,
+            "meanWallClockDeltaVsBaselineSeconds": 0.002786350666665688,
+            "bestPopulationDeltaCaseName": "typed-housing-single",
+            "bestPopulationDeltaSeed": 7,
+            "worstPopulationDeltaCaseName": "typed-housing-single",
+            "worstPopulationDeltaSeed": 7,
+            "firstWindowMovementRate": 1,
+            "windowSequenceMovementRate": 1,
+            "anchorCoordinateMovementRate": 1
+          }
+        },
+        {
+          "suite": "lns-neighborhood",
+          "variantName": "frontier-congestion-first",
+          "decision": "learning-target",
+          "nextAction": "Collect counterfactual LNS window replay labels before learned window ranking.",
+          "reasons": [
+            "Window choice changed without population lift: first-window-move-rate=50.0%, window-sequence-move-rate=50.0%, anchor-coordinate-move-rate=50.0%."
+          ],
+          "evidence": {
+            "caseCount": 4,
+            "seedCount": 3,
+            "comparisonCount": 12,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "worstPopulationDeltaVsBaseline": 0,
+            "winRate": 0,
+            "regressionRate": 0,
+            "unchangedRate": 1,
+            "meanWallClockSeconds": 1.0461735730000008,
+            "meanWallClockDeltaVsBaselineSeconds": -0.011688683833334537,
+            "bestPopulationDeltaCaseName": "typed-housing-single",
+            "bestPopulationDeltaSeed": 7,
+            "worstPopulationDeltaCaseName": "typed-housing-single",
+            "worstPopulationDeltaSeed": 7,
+            "firstWindowMovementRate": 0.5,
+            "windowSequenceMovementRate": 0.5,
+            "anchorCoordinateMovementRate": 0.5
+          }
+        },
+        {
+          "suite": "lns-neighborhood",
+          "variantName": "placed-buildings-first",
+          "decision": "keep-baseline",
+          "nextAction": "Keep baseline and expand pressure cases before adding learned guidance.",
+          "reasons": [
+            "No repeated population win was observed."
+          ],
+          "evidence": {
+            "caseCount": 4,
+            "seedCount": 3,
+            "comparisonCount": 12,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "worstPopulationDeltaVsBaseline": 0,
+            "winRate": 0,
+            "regressionRate": 0,
+            "unchangedRate": 1,
+            "meanWallClockSeconds": 1.0603992084999974,
+            "meanWallClockDeltaVsBaselineSeconds": 0.0025369516666620684,
+            "bestPopulationDeltaCaseName": "typed-housing-single",
+            "bestPopulationDeltaSeed": 7,
+            "worstPopulationDeltaCaseName": "typed-housing-single",
+            "worstPopulationDeltaSeed": 7,
+            "firstWindowMovementRate": 0,
+            "windowSequenceMovementRate": 0,
+            "anchorCoordinateMovementRate": 0
+          }
+        },
+        {
+          "suite": "lns-neighborhood",
+          "variantName": "small-2x2",
+          "decision": "learning-target",
+          "nextAction": "Collect counterfactual LNS window replay labels before learned window ranking.",
+          "reasons": [
+            "Window choice changed without population lift: first-window-move-rate=100.0%, window-sequence-move-rate=100.0%, anchor-coordinate-move-rate=50.0%."
+          ],
+          "evidence": {
+            "caseCount": 4,
+            "seedCount": 3,
+            "comparisonCount": 12,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "worstPopulationDeltaVsBaseline": 0,
+            "winRate": 0,
+            "regressionRate": 0,
+            "unchangedRate": 1,
+            "meanWallClockSeconds": 1.0562047014166678,
+            "meanWallClockDeltaVsBaselineSeconds": -0.001657555416667807,
+            "bestPopulationDeltaCaseName": "typed-housing-single",
+            "bestPopulationDeltaSeed": 7,
+            "worstPopulationDeltaCaseName": "typed-housing-single",
+            "worstPopulationDeltaSeed": 7,
+            "firstWindowMovementRate": 1,
+            "windowSequenceMovementRate": 1,
+            "anchorCoordinateMovementRate": 0.5
+          }
+        },
+        {
+          "suite": "lns-neighborhood",
+          "variantName": "wide-4x4",
+          "decision": "learning-target",
+          "nextAction": "Collect counterfactual LNS window replay labels before learned window ranking.",
+          "reasons": [
+            "Window choice changed without population lift: first-window-move-rate=100.0%, window-sequence-move-rate=100.0%, anchor-coordinate-move-rate=100.0%."
+          ],
+          "evidence": {
+            "caseCount": 4,
+            "seedCount": 3,
+            "comparisonCount": 12,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "worstPopulationDeltaVsBaseline": 0,
+            "winRate": 0,
+            "regressionRate": 0,
+            "unchangedRate": 1,
+            "meanWallClockSeconds": 1.0543545309999995,
+            "meanWallClockDeltaVsBaselineSeconds": -0.0035077258333355197,
+            "bestPopulationDeltaCaseName": "typed-housing-single",
+            "bestPopulationDeltaSeed": 7,
+            "worstPopulationDeltaCaseName": "typed-housing-single",
+            "worstPopulationDeltaSeed": 7,
+            "firstWindowMovementRate": 1,
+            "windowSequenceMovementRate": 1,
+            "anchorCoordinateMovementRate": 1
+          }
+        }
+      ]
+    }
+  ],
+  "nextActions": [
+    "Keep blocked variants out of defaults and inspect their worst case/seed evidence.",
+    "Collect counterfactual LNS window replay labels before learned window ranking."
+  ]
+}

@@ -633,6 +633,12 @@ export interface GreedyProfileCounters {
     connectivityShadowScoreWins: number;
     connectivityShadowScoreLosses: number;
     connectivityShadowScoreNeutral: number;
+    roadOpportunityChecks: number;
+    roadOpportunityLostCells: number;
+    roadOpportunityFootprintCells: number;
+    roadOpportunityDisconnectedCells: number;
+    roadOpportunityMaxLostCells: number;
+    roadOpportunityMaxDisconnectedCells: number;
   };
 }
 
@@ -660,6 +666,67 @@ export interface GreedyConnectivityShadowDecisionTrace {
   incumbentShadowPenalty: number;
 }
 
+export type GreedyRoadOpportunityPhase =
+  | "service"
+  | "residential"
+  | "service-neighborhood"
+  | "residential-local-search";
+
+export type GreedyRoadOpportunityMoveKind =
+  | "residential-add"
+  | "residential-move"
+  | "service-add"
+  | "service-swap";
+
+export type GreedyRoadOpportunityCounterfactualReason =
+  | "same-score-tie"
+  | "near-score"
+  | "lower-road-cost"
+  | "higher-score-rejected"
+  | "lookahead-rejected";
+
+export interface GreedyRoadOpportunityCounterfactualTrace {
+  reason: GreedyRoadOpportunityCounterfactualReason;
+  r: number;
+  c: number;
+  rows: number;
+  cols: number;
+  roadCost: number;
+  score: number;
+  scoreDelta: number;
+  roadCostDelta: number;
+  reachableBefore: number;
+  reachableAfter: number;
+  lostCells: number;
+  footprintCells: number;
+  disconnectedCells: number;
+  tieBreakComparison?: number;
+  typeIndex?: number;
+  bonus?: number;
+  range?: number;
+  moveKind?: GreedyRoadOpportunityMoveKind;
+}
+
+export interface GreedyRoadOpportunityTrace {
+  phase: GreedyRoadOpportunityPhase;
+  r: number;
+  c: number;
+  rows: number;
+  cols: number;
+  roadCost: number;
+  score?: number;
+  reachableBefore: number;
+  reachableAfter: number;
+  lostCells: number;
+  footprintCells: number;
+  disconnectedCells: number;
+  typeIndex?: number;
+  bonus?: number;
+  range?: number;
+  moveKind?: GreedyRoadOpportunityMoveKind;
+  counterfactuals?: GreedyRoadOpportunityCounterfactualTrace[];
+}
+
 export type GreedyProfilePhaseName =
   | "precompute"
   | "constructiveCapSearch"
@@ -685,7 +752,17 @@ export interface GreedyProfile {
   phases: GreedyProfilePhaseSummary[];
   connectivityShadowDecisions?: GreedyConnectivityShadowDecisionTrace[];
   connectivityShadowDecisionTraceLimit?: number;
+  roadOpportunityTraces?: GreedyRoadOpportunityTrace[];
+  roadOpportunityTraceLimit?: number;
 }
+
+export type LnsNeighborhoodAnchorPolicy =
+  | "ranked"
+  | "sliding-only"
+  | "weak-service-first"
+  | "residential-opportunity-first"
+  | "frontier-congestion-first"
+  | "placed-buildings-first";
 
 export interface LnsOptions {
   /** Number of neighborhood-repair attempts to run after the greedy seed. */
@@ -704,6 +781,8 @@ export interface LnsOptions {
   neighborhoodRows?: number;
   /** Width of each repair neighborhood. Defaults to about half the grid width. */
   neighborhoodCols?: number;
+  /** Deterministic policy used to rank or suppress LNS repair-window anchors. Default ranked. */
+  neighborhoodAnchorPolicy?: LnsNeighborhoodAnchorPolicy;
   /** Per-neighborhood CP-SAT repair budget in seconds. */
   repairTimeLimitSeconds?: number;
   /** Per-neighborhood budget for focused repair attempts before escalation. Defaults to repairTimeLimitSeconds. */

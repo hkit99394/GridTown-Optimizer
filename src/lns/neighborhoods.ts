@@ -14,7 +14,13 @@ import {
   getResidentialBaseMax,
   NO_TYPE_INDEX,
 } from "../core/index.js";
-import type { CpSatNeighborhoodWindow, Grid, Solution, SolverParams } from "../core/index.js";
+import type {
+  CpSatNeighborhoodWindow,
+  Grid,
+  LnsNeighborhoodAnchorPolicy,
+  Solution,
+  SolverParams,
+} from "../core/index.js";
 import { cellFromKey, cellKey } from "../core/index.js";
 
 export interface NeighborhoodAnchor {
@@ -32,6 +38,7 @@ export interface LnsNeighborhoodOptions {
   maxNoImprovementIterations: number;
   neighborhoodRows: number;
   neighborhoodCols: number;
+  neighborhoodAnchorPolicy?: LnsNeighborhoodAnchorPolicy;
 }
 
 function getLargeNeighborhoodTrigger(options: Pick<LnsNeighborhoodOptions, "maxNoImprovementIterations">): number {
@@ -422,6 +429,7 @@ export function buildNeighborhoodWindows(
 ): CpSatNeighborhoodWindow[] {
   const windows = new Map<string, CpSatNeighborhoodWindow>();
   const focusedAnchorLimit = Math.max(3, options.maxNoImprovementIterations * 2);
+  const anchorPolicy = options.neighborhoodAnchorPolicy ?? "ranked";
 
   const weakResidentials = incumbent.residentials
     .map((residential, index) => ({
@@ -430,26 +438,35 @@ export function buildNeighborhoodWindows(
     }))
     .sort((a, b) => a.population - b.population);
 
-  const focusedAnchors = interleaveAnchors([
-    buildWeakServiceAnchors(G, params, incumbent, focusedAnchorLimit),
-    buildResidentialOpportunityAnchors(params, incumbent, focusedAnchorLimit),
-    buildFrontierCongestionAnchors(G, incumbent, focusedAnchorLimit),
-  ]);
+  const weakServiceAnchors = buildWeakServiceAnchors(G, params, incumbent, focusedAnchorLimit);
+  const residentialOpportunityAnchors = buildResidentialOpportunityAnchors(params, incumbent, focusedAnchorLimit);
+  const frontierCongestionAnchors = buildFrontierCongestionAnchors(G, incumbent, focusedAnchorLimit);
+  const focusedAnchors = anchorPolicy === "ranked"
+    ? interleaveAnchors([weakServiceAnchors, residentialOpportunityAnchors, frontierCongestionAnchors])
+    : anchorPolicy === "weak-service-first"
+      ? weakServiceAnchors
+      : anchorPolicy === "residential-opportunity-first"
+        ? residentialOpportunityAnchors
+        : anchorPolicy === "frontier-congestion-first"
+          ? frontierCongestionAnchors
+          : [];
 
   addEscalatedNeighborhoodWindows(windows, G, focusedAnchors, weakResidentials, options, stagnantIterations);
 
   addClampedWindowsForAnchors(windows, G, focusedAnchors, [
     { rows: options.neighborhoodRows, cols: options.neighborhoodCols },
   ]);
-  addClampedWindowsForAnchors(
-    windows,
-    G,
-    incumbent.services.map((service) => normalizeServicePlacement(service)),
-    [{ rows: options.neighborhoodRows, cols: options.neighborhoodCols }]
-  );
-  addClampedWindowsForAnchors(windows, G, weakResidentials, [
-    { rows: options.neighborhoodRows, cols: options.neighborhoodCols },
-  ]);
+  if (anchorPolicy === "ranked" || anchorPolicy === "placed-buildings-first") {
+    addClampedWindowsForAnchors(
+      windows,
+      G,
+      incumbent.services.map((service) => normalizeServicePlacement(service)),
+      [{ rows: options.neighborhoodRows, cols: options.neighborhoodCols }]
+    );
+    addClampedWindowsForAnchors(windows, G, weakResidentials, [
+      { rows: options.neighborhoodRows, cols: options.neighborhoodCols },
+    ]);
+  }
 
   addSlidingNeighborhoodWindows(windows, G, options.neighborhoodRows, options.neighborhoodCols);
 

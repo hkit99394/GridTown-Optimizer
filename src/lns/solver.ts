@@ -21,6 +21,7 @@ import type {
   Grid,
   LnsNeighborhoodOutcome,
   LnsNeighborhoodOutcomeStatus,
+  LnsNeighborhoodAnchorPolicy,
   LnsRepairPhase,
   LnsStopReason,
   LnsTelemetry,
@@ -37,6 +38,7 @@ type NormalizedLnsOptions = {
   seedTimeLimitSeconds: number | null;
   neighborhoodRows: number;
   neighborhoodCols: number;
+  neighborhoodAnchorPolicy: LnsNeighborhoodAnchorPolicy;
   repairTimeLimitSeconds: number;
   focusedRepairTimeLimitSeconds: number;
   escalatedRepairTimeLimitSeconds: number;
@@ -65,6 +67,14 @@ interface LnsRepairAttempt {
 const DEFAULT_LNS_ITERATIONS = 12;
 const DEFAULT_LNS_MAX_NO_IMPROVEMENT_ITERATIONS = 4;
 const DEFAULT_LNS_REPAIR_TIME_LIMIT_SECONDS = 5;
+const LNS_NEIGHBORHOOD_ANCHOR_POLICIES = new Set<LnsNeighborhoodAnchorPolicy>([
+  "ranked",
+  "sliding-only",
+  "weak-service-first",
+  "residential-opportunity-first",
+  "frontier-congestion-first",
+  "placed-buildings-first",
+]);
 
 function positiveIntegerOrDefault(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isInteger(value) && value > 0 ? value : fallback;
@@ -76,6 +86,12 @@ function positiveFiniteNumberOrDefault(value: unknown, fallback: number): number
 
 function optionalPositiveFiniteNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : null;
+}
+
+function lnsNeighborhoodAnchorPolicyOrDefault(value: unknown): LnsNeighborhoodAnchorPolicy {
+  return typeof value === "string" && LNS_NEIGHBORHOOD_ANCHOR_POLICIES.has(value as LnsNeighborhoodAnchorPolicy)
+    ? value as LnsNeighborhoodAnchorPolicy
+    : "ranked";
 }
 
 function clampRepairBudgetToDeadline(repairTimeLimitSeconds: number, deadlineAtMs: number | null): number {
@@ -129,6 +145,7 @@ function getLnsOptions(G: Grid, params: SolverParams): NormalizedLnsOptions {
       1,
       Math.min(W || 1, positiveIntegerOrDefault(lns.neighborhoodCols, Math.max(4, Math.ceil(W / 2))))
     ),
+    neighborhoodAnchorPolicy: lnsNeighborhoodAnchorPolicyOrDefault(lns.neighborhoodAnchorPolicy),
     repairTimeLimitSeconds,
     focusedRepairTimeLimitSeconds: positiveFiniteNumberOrDefault(lns.focusedRepairTimeLimitSeconds, repairTimeLimitSeconds),
     escalatedRepairTimeLimitSeconds: positiveFiniteNumberOrDefault(
@@ -153,7 +170,7 @@ function residentialCandidateKey(solution: Solution, index: number): string {
   return `residential:${typeIndex}:${residential.r}:${residential.c}:${residential.rows}:${residential.cols}`;
 }
 
-function buildWarmStartHint(solution: Solution, neighborhoodWindow: CpSatNeighborhoodWindow): CpSatWarmStartHint {
+export function buildLnsWarmStartHint(solution: Solution, neighborhoodWindow: CpSatNeighborhoodWindow): CpSatWarmStartHint {
   const roadKeys = Array.from(solution.roads);
   return {
     sourceName: "lns-incumbent",
@@ -417,7 +434,7 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
           numWorkers: 1,
           timeLimitSeconds: repairTimeLimitSeconds,
           stopFilePath: options.stopFilePath || undefined,
-          warmStartHint: buildWarmStartHint(incumbent, neighborhoodWindow),
+          warmStartHint: buildLnsWarmStartHint(incumbent, neighborhoodWindow),
         },
       });
 

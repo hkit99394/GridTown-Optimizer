@@ -5,8 +5,16 @@ const os = require("node:os");
 const path = require("node:path");
 
 const {
+  buildDeterministicAblationGateReport,
   buildCrossModeBenchmarkParams,
+  collectGreedyOrderingLabelsFromBenchmarkSuite,
+  createLearnedRankingLabelSnapshot,
+  DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS,
+  DEFAULT_LEARNED_RANKING_LABEL_SPLITS,
+  createGreedyConnectivityShadowOrderingLabelSnapshot,
   createLnsBenchmarkSnapshot,
+  createLnsNeighborhoodAblationSnapshot,
+  createLnsWindowReplaySnapshot,
   DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS,
   DEFAULT_CROSS_MODE_BUDGET_ABLATION_POLICIES,
   DEFAULT_CROSS_MODE_BENCHMARK_BUDGETS_SECONDS,
@@ -15,32 +23,49 @@ const {
   DEFAULT_CROSS_MODE_BENCHMARK_SEEDS,
   DEFAULT_LNS_BENCHMARK_CORPUS,
   DEFAULT_LNS_BENCHMARK_OPTIONS,
+  DEFAULT_LNS_NEIGHBORHOOD_ABLATION_CASE_NAMES,
+  DEFAULT_LNS_NEIGHBORHOOD_ABLATION_VARIANTS,
   formatCrossModeBenchmarkBudgetAblations,
   formatCrossModeBenchmarkDecisionTraceJsonl,
+  formatDeterministicAblationGateReport,
   formatCrossModeBenchmarkSuite,
+  formatGreedyConnectivityShadowOrderingLabels,
+  formatLearnedRankingLabelSuite,
+  formatLnsNeighborhoodAblation,
   formatLnsBenchmarkSuite,
+  formatLnsWindowReplayLabels,
   listCrossModeBenchmarkCaseNames,
+  listGreedyConnectivityShadowOrderingLabelCaseNames,
+  listLnsNeighborhoodAblationCaseNames,
   listLnsBenchmarkCaseNames,
   normalizeLnsBenchmarkOptions,
   runCrossModeBenchmarkBudgetAblations,
   runCrossModeBenchmarkSuite,
+  runGreedyConnectivityShadowOrderingLabels,
+  runLearnedRankingLabelSuite,
+  runLnsNeighborhoodAblation,
+  runLnsWindowReplayLabels,
   runLnsBenchmarkSuite,
 } = require("../dist/benchmarks/index.js");
 
 const {
   createGreedyBenchmarkSnapshot,
+  createGreedyDeterministicAblationSnapshot,
   DEFAULT_GREEDY_BENCHMARK_CORPUS,
   DEFAULT_GREEDY_BENCHMARK_OPTIONS,
   DEFAULT_GREEDY_CONNECTIVITY_SHADOW_SCORING_ABLATION_CASE_NAMES,
   DEFAULT_GREEDY_CONNECTIVITY_SHADOW_SCORING_ABLATION_CORPUS,
+  DEFAULT_GREEDY_DETERMINISTIC_ABLATION_CASE_NAMES,
   DEFAULT_CP_SAT_BENCHMARK_CORPUS,
   DEFAULT_CP_SAT_BENCHMARK_OPTIONS,
   OMITTED_SOLVER_OPTIMIZER,
   RECOMMENDED_INTERACTIVE_OPTIMIZER,
   getOptimizerAdapter,
   formatGreedyConnectivityShadowScoringAblation,
+  formatGreedyDeterministicAblation,
   formatGreedyBenchmarkSuite,
   listGreedyConnectivityShadowScoringAblationCaseNames,
+  listGreedyDeterministicAblationCaseNames,
   listGreedyBenchmarkCaseNames,
   listOptimizerAdapters,
   normalizeGreedyBenchmarkOptions,
@@ -51,6 +76,7 @@ const {
   buildTimeToQualityScorecard,
   parseDecisionTraceJsonl,
   runGreedyConnectivityShadowScoringAblation,
+  runGreedyDeterministicAblation,
   runGreedyBenchmarkSuite,
   runCpSatBenchmarkSuite,
   runCrossModeBenchmarkBudgetAblations: runCrossModeBenchmarkBudgetAblationsFromIndex,
@@ -71,6 +97,10 @@ const { buildNeighborhoodWindows } = require("../dist/lns/solver.js");
 const { startJsonBackgroundSolve } = require("../dist/runtime/index.js");
 const { applyDeterministicDominanceUpgrades } = require("../dist/core/dominanceUpgrades.js");
 const { GreedyAttemptState } = require("../dist/greedy/attemptState.js");
+const {
+  createRoadOpportunityRecorder,
+  recordRoadOpportunityPlacementFromOccupiedBuildings,
+} = require("../dist/greedy/roadOpportunity.js");
 const {
   computeRow0ReachableEmptyFrontier,
   createRoadProbeScratch,
@@ -1425,6 +1455,302 @@ function testGreedyConnectivityShadowScoringIsOptInTieBreaker() {
   }
 }
 
+function testGreedyConnectivityShadowOrderingLabelRunner() {
+  const labelCase = {
+    name: "shadow-label-fixture",
+    description: "Small fixture for connectivity-shadow ordering labels.",
+    grid: [
+      [1, 1],
+      [1, 0],
+      [1, 0],
+    ],
+    params: {
+      optimizer: "greedy",
+      residentialTypes: [
+        { w: 1, h: 1, min: 10, max: 10, avail: 1 },
+      ],
+      availableBuildings: { services: 0, residentials: 1 },
+      greedy: {
+        localSearch: false,
+        restarts: 1,
+        serviceRefineIterations: 0,
+        exhaustiveServiceSearch: false,
+      },
+    },
+  };
+
+  const result = runGreedyConnectivityShadowOrderingLabels([labelCase], {
+    seeds: [7],
+    maxLabelsPerCase: 1,
+  });
+  const repeatedSnapshot = createGreedyConnectivityShadowOrderingLabelSnapshot(
+    runGreedyConnectivityShadowOrderingLabels([labelCase], {
+      seeds: [7],
+      maxLabelsPerCase: 1,
+    })
+  );
+  const snapshot = createGreedyConnectivityShadowOrderingLabelSnapshot(result);
+  const formatted = formatGreedyConnectivityShadowOrderingLabels(result);
+  const benchmarkCase = result.cases[0];
+  const label = benchmarkCase.labels[0];
+
+  assert.equal(listGreedyConnectivityShadowOrderingLabelCaseNames().includes("row0-corridor-repair-pressure"), true);
+  assert.equal(result.caseCount, 1);
+  assert.equal(result.seedCount, 1);
+  assert.equal(result.comparisonCount, 1);
+  assert.deepEqual(result.seeds, [7]);
+  assert.deepEqual(result.selectedCaseNames, ["shadow-label-fixture"]);
+  assert.equal(result.maxLabelsPerCase, 1);
+  assert.equal(result.labelCount, 1);
+  assert.equal(benchmarkCase.seed, 7);
+  assert.equal(benchmarkCase.traceCount >= 1, true);
+  assert.equal(benchmarkCase.labelCount, 1);
+  assert.equal(benchmarkCase.greedyOptions.connectivityShadowScoring, true);
+  assert.equal(benchmarkCase.greedyOptions.profile, true);
+  assert.equal(benchmarkCase.greedyOptions.randomSeed, 7);
+  assert.equal(label.caseName, "shadow-label-fixture");
+  assert.equal(label.seed, 7);
+  assert.equal(label.labelIndex, 0);
+  assert.equal(label.phase, "residential");
+  assert.equal(label.score, 10);
+  assert.equal(label.preferred, "candidate");
+  assert.equal(label.shadowPenaltyMargin, Math.abs(label.features.shadowPenaltyDelta));
+  assert.equal(label.features.shadowPenaltyDelta < 0, true);
+  assert.equal(label.features.roadCostDelta, 0);
+  assert.deepEqual(label.chosen, label.candidate);
+  assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
+  assert.deepEqual(repeatedSnapshot, snapshot);
+  assert.match(formatted, /=== Greedy Connectivity-Shadow Ordering Labels ===/);
+  assert.match(formatted, /preferred=candidate/);
+}
+
+function testLearnedRankingLabelSuite() {
+  const greedyFixtureSuite = {
+    generatedAt: "2026-04-27T00:00:00.000Z",
+    caseCount: 1,
+    selectedCaseNames: ["label-fixture"],
+    results: [
+      {
+        name: "label-fixture",
+        description: "Synthetic profile label fixture.",
+        gridRows: 3,
+        gridCols: 3,
+        totalPopulation: 10,
+        roadCount: 1,
+        serviceCount: 0,
+        residentialCount: 1,
+        greedyOptions: {},
+        progressSummary: {},
+        wallClockSeconds: 0,
+        greedyProfile: {
+          connectivityShadowDecisions: [
+            {
+              phase: "residential",
+              score: 10,
+              candidate: { r: 0, c: 1, rows: 1, cols: 1, roadCost: 0, typeIndex: 0 },
+              incumbent: { r: 1, c: 1, rows: 1, cols: 1, roadCost: 1, typeIndex: 0 },
+              chosen: { r: 0, c: 1, rows: 1, cols: 1, roadCost: 0, typeIndex: 0 },
+              rejected: { r: 1, c: 1, rows: 1, cols: 1, roadCost: 1, typeIndex: 0 },
+              candidateShadowPenalty: 1,
+              incumbentShadowPenalty: 5,
+            },
+          ],
+          roadOpportunityTraces: [
+            {
+              phase: "residential",
+              r: 0,
+              c: 1,
+              rows: 1,
+              cols: 1,
+              roadCost: 0,
+              score: 10,
+              reachableBefore: 3,
+              reachableAfter: 2,
+              lostCells: 1,
+              footprintCells: 1,
+              disconnectedCells: 0,
+              typeIndex: 0,
+              counterfactuals: [
+                {
+                  reason: "same-score-tie",
+                  r: 1,
+                  c: 1,
+                  rows: 1,
+                  cols: 1,
+                  roadCost: 1,
+                  score: 10,
+                  scoreDelta: 0,
+                  roadCostDelta: 1,
+                  reachableBefore: 3,
+                  reachableAfter: 1,
+                  lostCells: 2,
+                  footprintCells: 1,
+                  disconnectedCells: 1,
+                  typeIndex: 0,
+                },
+              ],
+            },
+          ],
+        },
+      },
+    ],
+  };
+  const orderingLabels = collectGreedyOrderingLabelsFromBenchmarkSuite(greedyFixtureSuite, "development", 7);
+
+  assert.equal(DEFAULT_LEARNED_RANKING_LABEL_SPLITS.length, 2);
+  assert.equal(orderingLabels.length, 2);
+  assert.equal(orderingLabels[0].source, "connectivity-shadow-decision");
+  assert.equal(orderingLabels[0].target, "lower-connectivity-shadow");
+  assert.equal(orderingLabels[0].margin, 4);
+  assert.equal(orderingLabels[1].source, "road-opportunity-counterfactual");
+  assert.equal(orderingLabels[1].target, "accepted-near-miss");
+  assert.equal(orderingLabels[1].margin, 1);
+
+  const result = runLearnedRankingLabelSuite({
+    seeds: [7],
+    splitConfigs: [
+      {
+        split: "development",
+        greedyCaseNames: ["typed-housing-baseline"],
+        lnsCaseNames: ["typed-housing-single"],
+      },
+      {
+        split: "holdout",
+        greedyCaseNames: ["deterministic-tie-breaks"],
+        lnsCaseNames: ["row0-anchor-repair"],
+      },
+    ],
+    greedyCorpus: DEFAULT_GREEDY_BENCHMARK_CORPUS,
+    lnsCorpus: DEFAULT_LNS_BENCHMARK_CORPUS,
+    maxWindows: 1,
+    repairTimeLimitSeconds: 0.1,
+  });
+  const snapshot = createLearnedRankingLabelSnapshot(result);
+  const formatted = formatLearnedRankingLabelSuite(result);
+
+  assert.equal(result.schemaVersion, 1);
+  assert.equal(result.audit.learnedModel, null);
+  assert.equal(result.audit.lnsReplay.cpSatNumWorkers, 1);
+  assert.equal(result.leakage.protectedHoldout, true);
+  assert.deepEqual(result.leakage.greedyOverlap, []);
+  assert.deepEqual(result.leakage.lnsOverlap, []);
+  assert.equal(result.lns.labelCount, 2);
+  assert.equal(result.lns.splits[0].usableLabelCount, 1);
+  assert.equal(result.lns.splits[0].replay.schemaVersion, 1);
+  assert.equal(result.lns.splits[0].replay.cases[0].labels[0].usable, true);
+  assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
+  assert.match(formatted, /Low-Risk Learned Ranking Labels/);
+  assert.match(formatted, /protected-holdout=true/);
+  assert.match(formatted, /learned-model=none/);
+  assert.throws(
+    () => runLearnedRankingLabelSuite({
+      splitConfigs: [
+        {
+          split: "development",
+          greedyCaseNames: ["typed-housing-baseline"],
+          lnsCaseNames: ["typed-housing-single"],
+        },
+        {
+          split: "holdout",
+          greedyCaseNames: ["typed-housing-baseline"],
+          lnsCaseNames: ["row0-anchor-repair"],
+        },
+      ],
+      greedyCorpus: DEFAULT_GREEDY_BENCHMARK_CORPUS,
+      lnsCorpus: DEFAULT_LNS_BENCHMARK_CORPUS,
+    }),
+    /development\/holdout split overlap is not allowed/
+  );
+}
+
+function testGreedyRoadOpportunityCounterfactualsAreBoundedAndObservational() {
+  const grid = [
+    [1, 1],
+    [1, 0],
+    [1, 0],
+  ];
+  const baseParams = {
+    optimizer: "greedy",
+    residentialTypes: [
+      { w: 1, h: 1, min: 10, max: 10, avail: 1 },
+    ],
+    availableBuildings: { services: 0, residentials: 1 },
+    greedy: {
+      localSearch: false,
+      restarts: 1,
+      serviceRefineIterations: 0,
+      exhaustiveServiceSearch: false,
+    },
+  };
+
+  const baseline = solveGreedy(grid, structuredClone(baseParams));
+  const profiled = solveGreedy(grid, {
+    ...structuredClone(baseParams),
+    greedy: {
+      ...baseParams.greedy,
+      profile: true,
+    },
+  });
+  const trace = profiled.greedyProfile.roadOpportunityTraces.find((entry) =>
+    entry.phase === "residential" && (entry.counterfactuals?.length ?? 0) > 0
+  );
+
+  assert.deepEqual(profiled.residentials, baseline.residentials);
+  assert.deepEqual([...profiled.roads].sort(), [...baseline.roads].sort());
+  assert.equal(profiled.totalPopulation, baseline.totalPopulation);
+  assert(trace);
+  assert.equal(trace.score, 10);
+  assert(trace.counterfactuals.length <= 3);
+
+  const counterfactual = trace.counterfactuals.find((entry) => entry.reason === "same-score-tie");
+  assert(counterfactual);
+  assert.equal(counterfactual.score, 10);
+  assert.equal(counterfactual.scoreDelta, 0);
+  assert.equal(counterfactual.roadCostDelta, counterfactual.roadCost - trace.roadCost);
+  assert.equal(counterfactual.lostCells, counterfactual.reachableBefore - counterfactual.reachableAfter);
+}
+
+function testRoadOpportunityLocalSearchMeasurementUsesPostRemoveOccupancy() {
+  const grid = [
+    [1],
+    [1],
+    [1],
+  ];
+  const { traces, recordRoadOpportunity } = createRoadOpportunityRecorder(true);
+  const probe = { kind: "explicit", roadCost: 0, roadProbe: { path: null } };
+
+  for (let index = 0; index < 80; index++) {
+    recordRoadOpportunityPlacementFromOccupiedBuildings({
+      grid,
+      occupiedBuildings: new Set(),
+      placement: { r: 1, c: 0, rows: 1, cols: 1 },
+      probe,
+      phase: "residential",
+      record: recordRoadOpportunity,
+      score: 10,
+    });
+  }
+
+  recordRoadOpportunityPlacementFromOccupiedBuildings({
+    grid,
+    occupiedBuildings: new Set(),
+    placement: { r: 2, c: 0, rows: 1, cols: 1 },
+    probe,
+    phase: "residential-local-search",
+    record: recordRoadOpportunity,
+    score: 10,
+    moveKind: "residential-move",
+  });
+
+  const localTrace = traces.find((entry) => entry.phase === "residential-local-search");
+  assert.equal(traces.filter((entry) => entry.phase === "residential").length, 64);
+  assert(localTrace);
+  assert.equal(localTrace.moveKind, "residential-move");
+  assert.equal(localTrace.reachableBefore, 3);
+  assert.equal(localTrace.reachableAfter, 2);
+  assert.equal(localTrace.lostCells, 1);
+}
+
 function testGreedyStopFileCancelsBeforePrecompute() {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "greedy-stop-precompute-"));
   const stopFilePath = path.join(tempDir, "stop-now");
@@ -1680,6 +2006,19 @@ function testLnsNeighborhoodWindowsPrioritizeWeakServicesAndUpgradeHeadroom() {
   assert.ok(indexOfWindow(strongServiceWindow) > indexOfWindow(weakServiceWindow));
   assert.ok(indexOfWindow(highHeadroomResidentialWindow) >= 0);
   assert.ok(indexOfWindow(highHeadroomResidentialWindow) < indexOfWindow(saturatedResidentialWindow));
+
+  const slidingOnlyWindows = buildNeighborhoodWindows(grid, params, incumbent, {
+    iterations: 3,
+    maxNoImprovementIterations: 2,
+    neighborhoodRows: 3,
+    neighborhoodCols: 3,
+    neighborhoodAnchorPolicy: "sliding-only",
+    repairTimeLimitSeconds: 1,
+    stopFilePath: "",
+    snapshotFilePath: "",
+  });
+
+  assert.notDeepEqual(slidingOnlyWindows[0], weakServiceWindow);
 }
 
 function testLnsNeighborhoodWindowsEscalateWhenStagnating() {
@@ -2841,6 +3180,7 @@ async function testCpSatBenchmarkCorpusHelpers() {
 function testLnsBenchmarkCorpusHelpers() {
   const names = DEFAULT_LNS_BENCHMARK_CORPUS.map((entry) => entry.name);
   assert.equal(new Set(names).size, names.length);
+  assert(names.includes("seeded-service-anchor-pressure"));
   assert.deepEqual(listLnsBenchmarkCaseNames(), names);
 
   const normalized = normalizeLnsBenchmarkOptions(
@@ -2918,6 +3258,425 @@ function testLnsBenchmarkCorpusHelpers() {
     assert.match(formatLnsBenchmarkSuite(result), /=== LNS Benchmark Suite ===/);
   } finally {
     lnsModule.solveLns = originalSolveLns;
+  }
+}
+
+function testLnsNeighborhoodAblationRunner() {
+  const ablationCase = {
+    name: "lns-neighborhood-ablation-fixture",
+    description: "Small fixture for deterministic LNS neighborhood matrix comparisons.",
+    grid: [
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+    ],
+    params: {
+      optimizer: "lns",
+      residentialTypes: [{ w: 2, h: 2, min: 10, max: 100, avail: 1 }],
+      availableBuildings: { residentials: 1, services: 0 },
+      greedy: {
+        localSearch: false,
+        randomSeed: 7,
+        restarts: 1,
+        serviceRefineIterations: 0,
+        serviceRefineCandidateLimit: 4,
+        exhaustiveServiceSearch: false,
+        serviceExactPoolLimit: 4,
+        serviceExactMaxCombinations: 16,
+      },
+    },
+  };
+  const variants = DEFAULT_LNS_NEIGHBORHOOD_ABLATION_VARIANTS.filter((variant) =>
+    variant.name === "baseline" || variant.name === "small-2x2"
+  );
+  const lnsModule = require("../dist/lns/solver.js");
+  const originalSolveLns = lnsModule.solveLns;
+  const observedRuns = [];
+
+  lnsModule.solveLns = (grid, params) => {
+    observedRuns.push({
+      window: `${params.lns.neighborhoodRows}x${params.lns.neighborhoodCols}`,
+      greedySeed: params.greedy.randomSeed,
+      cpSatSeed: params.cpSat.randomSeed,
+    });
+    grid[0][0] = 0;
+    return {
+      ...buildMockSolution({
+        optimizer: "lns",
+        totalPopulation: params.lns.neighborhoodRows === 2 ? 90 : 70,
+        cpSatStatus: "FEASIBLE",
+      }),
+      lnsTelemetry: {
+        stopReason: "iteration-limit",
+        seedSource: "greedy",
+        seedWallClockSeconds: 0,
+        seedTimeLimitSeconds: null,
+        wallClockLimitSeconds: null,
+        noImprovementTimeoutSeconds: null,
+        focusedRepairTimeLimitSeconds: 1,
+        escalatedRepairTimeLimitSeconds: 1,
+        iterationsStarted: 1,
+        iterationsCompleted: 1,
+        improvingIterations: params.lns.neighborhoodRows === 2 ? 1 : 0,
+        neutralIterations: params.lns.neighborhoodRows === 2 ? 0 : 1,
+        recoverableFailures: 0,
+        skippedIterations: 0,
+        finalStagnantIterations: 0,
+        outcomes: [
+          {
+            iteration: 0,
+            phase: "focused",
+            window: { top: 1, left: 0, rows: params.lns.neighborhoodRows, cols: params.lns.neighborhoodCols },
+            stagnantIterationsBefore: 0,
+            staleSecondsBefore: 0,
+            repairTimeLimitSeconds: 1,
+            wallClockSeconds: 0,
+            populationBefore: 70,
+            populationAfter: params.lns.neighborhoodRows === 2 ? 90 : 70,
+            improvement: params.lns.neighborhoodRows === 2 ? 20 : 0,
+            status: params.lns.neighborhoodRows === 2 ? "improved" : "neutral",
+          },
+        ],
+      },
+    };
+  };
+
+  try {
+    const result = runLnsNeighborhoodAblation([ablationCase], { variants });
+    const formatted = formatLnsNeighborhoodAblation(result);
+    const snapshot = createLnsNeighborhoodAblationSnapshot(result);
+    const benchmarkCase = result.cases[0];
+    const baselineSummary = result.variantSummaries.find((entry) => entry.variantName === "baseline");
+    const smallWindowSummary = result.variantSummaries.find((entry) => entry.variantName === "small-2x2");
+    const smallWindow = benchmarkCase.variants.find((entry) => entry.variantName === "small-2x2");
+
+    assert.equal(DEFAULT_LNS_NEIGHBORHOOD_ABLATION_CASE_NAMES.includes("compact-service-repair"), true);
+    assert.equal(listLnsNeighborhoodAblationCaseNames().includes("row0-anchor-repair"), true);
+    assert.equal(result.caseCount, 1);
+    assert.equal(result.seedCount, 1);
+    assert.equal(result.comparisonCount, 1);
+    assert.deepEqual(result.selectedCaseNames, ["lns-neighborhood-ablation-fixture"]);
+    assert.deepEqual(result.variants, ["baseline", "small-2x2"]);
+    assert.deepEqual(result.variantExecutionOrders, [
+      { seed: null, variants: ["baseline", "small-2x2"] },
+    ]);
+    assert.deepEqual(snapshot.variantExecutionOrders, result.variantExecutionOrders);
+    assert.deepEqual(observedRuns.map((entry) => entry.window), ["3x3", "2x2"]);
+    assert.equal(result.coverage.caseCount, 1);
+    assert.equal(result.coverage.seedCount, 1);
+    assert.equal(result.coverage.comparisonCount, 1);
+    assert.equal(result.coverage.runCount, 2);
+    assert.equal(result.coverage.variantCount, 2);
+    assert.equal(result.coverage.gridCellCount, 16);
+    assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
+    assert.equal(Object.hasOwn(snapshot.variantSummaries[0], "meanWallClockSeconds"), false);
+    assert.equal(Object.hasOwn(snapshot.cases[0].baseline, "wallClockSeconds"), false);
+    assert.equal(benchmarkCase.baseline.totalPopulation, 70);
+    assert.equal(benchmarkCase.baseline.populationDeltaVsBaseline, 0);
+    assert.equal(benchmarkCase.baseline.lnsOptions.neighborhoodAnchorPolicy, "ranked");
+    assert.equal(baselineSummary.winRate, 0);
+    assert.equal(baselineSummary.regressionRate, 0);
+    assert.equal(baselineSummary.unchangedRate, 1);
+    assert.equal(baselineSummary.worstPopulationDeltaVsBaseline, 0);
+    assert.equal(baselineSummary.worstPopulationDeltaCaseName, "lns-neighborhood-ablation-fixture");
+    assert.equal(baselineSummary.worstPopulationDeltaSeed, null);
+    assert.equal(baselineSummary.firstWindowMovementCount, 0);
+    assert.equal(baselineSummary.firstWindowMovementRate, 0);
+    assert.equal(smallWindow.totalPopulation, 90);
+    assert.equal(smallWindow.populationDeltaVsBaseline, 20);
+    assert.equal(smallWindowSummary.improvedCaseCount, 1);
+    assert.equal(smallWindowSummary.regressedCaseCount, 0);
+    assert.equal(smallWindowSummary.unchangedCaseCount, 0);
+    assert.equal(smallWindowSummary.winRate, 1);
+    assert.equal(smallWindowSummary.regressionRate, 0);
+    assert.equal(smallWindowSummary.unchangedRate, 0);
+    assert.equal(smallWindowSummary.worstPopulationDeltaVsBaseline, 20);
+    assert.equal(smallWindowSummary.bestPopulationDeltaCaseName, "lns-neighborhood-ablation-fixture");
+    assert.equal(smallWindowSummary.bestPopulationDeltaSeed, null);
+    assert.equal(smallWindowSummary.firstWindowMovementCount, 1);
+    assert.equal(smallWindowSummary.firstWindowMovementRate, 1);
+    assert.equal(smallWindowSummary.windowSequenceMovementCount, 1);
+    assert.equal(smallWindowSummary.windowSequenceMovementRate, 1);
+    assert.equal(smallWindowSummary.anchorCoordinateMovementCount, 0);
+    assert.equal(smallWindowSummary.anchorCoordinateMovementRate, 0);
+    assert.equal(smallWindow.lnsOptions.neighborhoodRows, 2);
+    assert.equal(smallWindow.lnsOptions.neighborhoodCols, 2);
+    assert.equal(smallWindow.improvingIterations, 1);
+    assert.equal(smallWindow.outcomes[0].window.rows, 2);
+    assert.equal(smallWindow.outcomes[0].status, "improved");
+    assert.match(formatted, /=== LNS Neighborhood Ablation Matrix ===/);
+    assert.match(formatted, /small-2x2=population:90/);
+    assert.match(formatted, /window:2x2/);
+    assert.match(formatted, /win-rate=100\.0%/);
+    assert.match(formatted, /first-window-moved=1\/1/);
+    assert.match(formatted, /first-window:1:0:2x2\/improved\/\+20/);
+
+    observedRuns.length = 0;
+    const seededResult = runLnsNeighborhoodAblation([ablationCase], { variants, seeds: [7, 19] });
+    const seededFormatted = formatLnsNeighborhoodAblation(seededResult);
+
+    assert.deepEqual(seededResult.seeds, [7, 19]);
+    assert.equal(seededResult.caseCount, 1);
+    assert.equal(seededResult.seedCount, 2);
+    assert.equal(seededResult.comparisonCount, 2);
+    assert.deepEqual(seededResult.selectedCaseNames, ["lns-neighborhood-ablation-fixture"]);
+    assert.deepEqual(seededResult.cases.map((entry) => entry.seed), [7, 19]);
+    assert.deepEqual(seededResult.variantExecutionOrders, [
+      { seed: 7, variants: ["baseline", "small-2x2"] },
+      { seed: 19, variants: ["small-2x2", "baseline"] },
+    ]);
+    assert.deepEqual(
+      seededResult.cases.map((entry) => entry.variants.map((variant) => variant.variantName)),
+      [
+        ["baseline", "small-2x2"],
+        ["baseline", "small-2x2"],
+      ]
+    );
+    assert.equal(seededResult.coverage.caseCount, 1);
+    assert.equal(seededResult.coverage.seedCount, 2);
+    assert.equal(seededResult.coverage.comparisonCount, 2);
+    assert.equal(seededResult.coverage.runCount, 4);
+    assert.equal(seededResult.variantSummaries[0].caseCount, 1);
+    assert.equal(seededResult.variantSummaries[0].seedCount, 2);
+    assert.equal(seededResult.variantSummaries[0].comparisonCount, 2);
+    assert.equal(seededResult.variantSummaries[0].unchangedRate, 1);
+    assert.equal(seededResult.variantSummaries[1].winRate, 1);
+    assert.equal(seededResult.variantSummaries[1].firstWindowMovementCount, 2);
+    assert.equal(seededResult.variantSummaries[1].firstWindowMovementRate, 1);
+    assert.deepEqual(
+      observedRuns.map((entry) => `${entry.greedySeed}/${entry.cpSatSeed}/${entry.window}`),
+      ["7/7/3x3", "7/7/2x2", "19/19/2x2", "19/19/3x3"]
+    );
+    for (const seededCase of seededResult.cases) {
+      for (const variant of seededCase.variants) {
+        assert.equal(variant.seed, seededCase.seed);
+      }
+    }
+    assert.match(seededFormatted, /Seeds: 7, 19/);
+    assert.match(seededFormatted, /comparisons=2/);
+
+    assert.throws(
+      () => runLnsNeighborhoodAblation([ablationCase], {
+        variants: [{ name: "small-2x2", description: "Invalid missing baseline.", lns: { neighborhoodRows: 2 } }],
+      }),
+      /must include the baseline variant/
+    );
+    assert.throws(
+      () => runLnsNeighborhoodAblation([ablationCase], {
+        variantNames: ["small-2x2", "small-2x2"],
+      }),
+      /requested variants must use unique names/
+    );
+    assert.throws(
+      () => runLnsNeighborhoodAblation([ablationCase], { variants, seeds: [7.5] }),
+      /must contain only integer seeds between 0 and 2147483647/
+    );
+    assert.throws(
+      () => runLnsNeighborhoodAblation([ablationCase], { variants, seeds: [2147483648] }),
+      /must contain only integer seeds between 0 and 2147483647/
+    );
+    assert.throws(
+      () => runLnsNeighborhoodAblation([ablationCase], { variants, seeds: [7, 7] }),
+      /must not contain duplicate seeds/
+    );
+  } finally {
+    lnsModule.solveLns = originalSolveLns;
+  }
+}
+
+function testLnsNeighborhoodAblationWindowSequenceMovement() {
+  const ablationCase = {
+    name: "lns-window-sequence-movement-fixture",
+    description: "Small fixture for later-window movement tracking.",
+    grid: [
+      [1, 1, 1],
+      [1, 1, 1],
+      [1, 1, 1],
+    ],
+    params: {
+      optimizer: "lns",
+      residentialTypes: [{ w: 1, h: 1, min: 10, max: 10, avail: 1 }],
+      availableBuildings: { residentials: 1, services: 0 },
+    },
+  };
+  const variants = [
+    { name: "baseline", description: "Baseline ranked anchors.", lns: { neighborhoodAnchorPolicy: "ranked" } },
+    { name: "weak-service-first", description: "Alternative anchors.", lns: { neighborhoodAnchorPolicy: "weak-service-first" } },
+  ];
+  const lnsModule = require("../dist/lns/solver.js");
+  const originalSolveLns = lnsModule.solveLns;
+
+  lnsModule.solveLns = (_grid, params) => {
+    const shifted = params.lns.neighborhoodAnchorPolicy === "weak-service-first";
+    const windows = shifted
+      ? [{ top: 0, left: 0, rows: 3, cols: 3 }, { top: 2, left: 2, rows: 3, cols: 3 }]
+      : [{ top: 0, left: 0, rows: 3, cols: 3 }, { top: 1, left: 1, rows: 3, cols: 3 }];
+    return {
+      ...buildMockSolution({ optimizer: "lns", totalPopulation: 70, cpSatStatus: "FEASIBLE" }),
+      lnsTelemetry: {
+        stopReason: "iteration-limit",
+        seedSource: "greedy",
+        seedWallClockSeconds: 0,
+        seedTimeLimitSeconds: null,
+        wallClockLimitSeconds: null,
+        noImprovementTimeoutSeconds: null,
+        focusedRepairTimeLimitSeconds: 1,
+        escalatedRepairTimeLimitSeconds: 1,
+        iterationsStarted: 2,
+        iterationsCompleted: 2,
+        improvingIterations: 0,
+        neutralIterations: 2,
+        recoverableFailures: 0,
+        skippedIterations: 0,
+        finalStagnantIterations: 2,
+        outcomes: windows.map((window, iteration) => ({
+          iteration,
+          phase: "focused",
+          window,
+          stagnantIterationsBefore: iteration,
+          staleSecondsBefore: 0,
+          repairTimeLimitSeconds: 1,
+          wallClockSeconds: 0,
+          populationBefore: 70,
+          populationAfter: 70,
+          improvement: 0,
+          status: "neutral",
+        })),
+      },
+    };
+  };
+
+  try {
+    const result = runLnsNeighborhoodAblation([ablationCase], { variants });
+    const summary = result.variantSummaries.find((entry) => entry.variantName === "weak-service-first");
+
+    assert.equal(summary.firstWindowMovementCount, 0);
+    assert.equal(summary.firstWindowMovementRate, 0);
+    assert.equal(summary.windowSequenceMovementCount, 1);
+    assert.equal(summary.windowSequenceMovementRate, 1);
+    assert.equal(summary.anchorCoordinateMovementCount, 1);
+    assert.equal(summary.anchorCoordinateMovementRate, 1);
+    assert.match(formatLnsNeighborhoodAblation(result), /window-sequence-moved=1\/1/);
+    assert.match(formatLnsNeighborhoodAblation(result), /anchor-coordinate-moved=1\/1/);
+  } finally {
+    lnsModule.solveLns = originalSolveLns;
+  }
+}
+
+function testLnsSeededServiceAnchorPressureBenchmarkCase() {
+  const result = runLnsNeighborhoodAblation(undefined, {
+    names: ["seeded-service-anchor-pressure"],
+    variantNames: ["sliding-only", "weak-service-first"],
+  });
+  const seededSnapshot = createLnsNeighborhoodAblationSnapshot(runLnsNeighborhoodAblation(undefined, {
+    names: ["seeded-service-anchor-pressure"],
+    variantNames: ["sliding-only", "weak-service-first"],
+    seeds: [7],
+  }));
+  const repeatedSeededSnapshot = createLnsNeighborhoodAblationSnapshot(runLnsNeighborhoodAblation(undefined, {
+    names: ["seeded-service-anchor-pressure"],
+    variantNames: ["sliding-only", "weak-service-first"],
+    seeds: [7],
+  }));
+  const benchmarkCase = result.cases[0];
+  const slidingOnly = benchmarkCase.variants.find((entry) => entry.variantName === "sliding-only");
+  const weakServiceFirst = benchmarkCase.variants.find((entry) => entry.variantName === "weak-service-first");
+
+  assert.deepEqual(repeatedSeededSnapshot, seededSnapshot);
+  assert.equal(result.caseCount, 1);
+  assert.deepEqual(result.selectedCaseNames, ["seeded-service-anchor-pressure"]);
+  assert.equal(benchmarkCase.baseline.totalPopulation, 200);
+  assert.equal(slidingOnly.totalPopulation, 100);
+  assert.equal(slidingOnly.populationDeltaVsBaseline, -100);
+  assert.equal(weakServiceFirst.totalPopulation, 200);
+  assert.equal(benchmarkCase.baseline.outcomes[0].window.left, 3);
+  assert.equal(slidingOnly.outcomes[0].window.left, 0);
+  assert.equal(weakServiceFirst.outcomes[0].status, "improved");
+}
+
+function testLnsWindowReplayLabelRunner() {
+  const cpSatModule = require("../dist/cp-sat/solver.js");
+  const originalSolveCpSat = cpSatModule.solveCpSat;
+  const observedRepairs = [];
+
+  cpSatModule.solveCpSat = (_grid, params) => {
+    const window = params.cpSat.warmStartHint.neighborhoodWindow;
+    observedRepairs.push({
+      timeLimitSeconds: params.cpSat.timeLimitSeconds,
+      fixOutsideNeighborhoodToHintedValue: params.cpSat.warmStartHint.fixOutsideNeighborhoodToHintedValue,
+      window: { ...window },
+      incumbentPopulation: params.cpSat.warmStartHint.solution.totalPopulation,
+    });
+    return buildMockSolution({
+      optimizer: "cp-sat",
+      totalPopulation: window.top === 1 && window.left === 3 ? 200 : 90,
+      cpSatStatus: "FEASIBLE",
+    });
+  };
+
+  try {
+    const result = runLnsWindowReplayLabels(undefined, {
+      names: ["seeded-service-anchor-pressure"],
+      seeds: [7],
+      maxWindows: 2,
+      repairTimeLimitSeconds: 0.25,
+    });
+    const repeatedSnapshot = createLnsWindowReplaySnapshot(runLnsWindowReplayLabels(undefined, {
+      names: ["seeded-service-anchor-pressure"],
+      seeds: [7],
+      maxWindows: 2,
+      repairTimeLimitSeconds: 0.25,
+    }));
+    const snapshot = createLnsWindowReplaySnapshot(result);
+    const formatted = formatLnsWindowReplayLabels(result);
+    const benchmarkCase = result.cases[0];
+    const selectedLabel = benchmarkCase.labels.find((label) => label.selectedByBaseline);
+    const regressedLabel = benchmarkCase.labels.find((label) => !label.selectedByBaseline);
+
+    assert.equal(result.caseCount, 1);
+    assert.equal(result.seedCount, 1);
+    assert.equal(result.comparisonCount, 1);
+    assert.deepEqual(result.seeds, [7]);
+    assert.deepEqual(result.selectedCaseNames, ["seeded-service-anchor-pressure"]);
+    assert.equal(result.maxWindows, 2);
+    assert.equal(result.repairTimeLimitSeconds, 0.25);
+    assert.equal(result.labelCount, 2);
+    assert.equal(benchmarkCase.incumbentPopulation, 100);
+    assert.equal(benchmarkCase.replayedWindowCount, 2);
+    assert.equal(benchmarkCase.candidateWindowCount >= 2, true);
+    assert.equal(selectedLabel.window.left, 3);
+    assert.equal(selectedLabel.populationDelta, 100);
+    assert.equal(selectedLabel.improvement, 100);
+    assert.equal(selectedLabel.status, "invalid");
+    assert.equal(selectedLabel.usable, false);
+    assert.equal(regressedLabel.populationDelta, -10);
+    assert.equal(regressedLabel.improvement, 0);
+    assert.equal(regressedLabel.status, "invalid");
+    assert.equal(regressedLabel.usable, false);
+    assert.equal(selectedLabel.features.selectedByBaseline, true);
+    assert.equal(selectedLabel.features.area, 9);
+    assert.equal(typeof selectedLabel.validation.valid, "boolean");
+    assert.equal(selectedLabel.validation.recomputedTotalPopulation >= 0, true);
+    assert.equal(selectedLabel.features.serviceCountInside >= 1, true);
+    assert.equal(selectedLabel.features.residentialHeadroomInside >= 0, true);
+    assert.deepEqual(
+      observedRepairs.slice(0, 2).map((entry) => entry.timeLimitSeconds),
+      [0.25, 0.25]
+    );
+    assert.equal(observedRepairs[0].fixOutsideNeighborhoodToHintedValue, true);
+    assert.equal(observedRepairs[0].incumbentPopulation, 100);
+    assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
+    assert.equal(snapshot.schemaVersion, 1);
+    assert.equal(Object.hasOwn(snapshot.cases[0].labels[0], "wallClockSeconds"), false);
+    assert.deepEqual(repeatedSnapshot, snapshot);
+    assert.match(formatted, /=== LNS Window Replay Labels ===/);
+    assert.match(formatted, /delta=\+100/);
+    assert.match(formatted, /delta=-10/);
+    assert.match(formatted, /usable=false/);
+    assert.match(formatted, /improvement=\+100/);
+  } finally {
+    cpSatModule.solveCpSat = originalSolveCpSat;
   }
 }
 
@@ -3857,6 +4616,242 @@ function testGreedyConnectivityShadowScoringAblationRunner() {
   assert.match(formatted, /connectivity-shadow=connectivityShadowScoring:true/);
 }
 
+function testGreedyDeterministicAblationRunner() {
+  const ablationCase = {
+    name: "deterministic-ablation-fixture",
+    description: "Small fixture for deterministic Greedy variant comparisons.",
+    grid: [
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+    ],
+    params: {
+      optimizer: "greedy",
+      serviceTypes: [{ rows: 1, cols: 1, bonus: 30, range: 1, avail: 1 }],
+      residentialTypes: [{ w: 1, h: 1, min: 10, max: 40, avail: 3 }],
+      availableBuildings: { services: 1, residentials: 3 },
+      greedy: {
+        localSearch: true,
+        localSearchServiceMoves: true,
+        randomSeed: 11,
+        restarts: 2,
+        serviceRefineIterations: 1,
+        serviceRefineCandidateLimit: 4,
+        exhaustiveServiceSearch: false,
+        serviceExactPoolLimit: 4,
+        serviceExactMaxCombinations: 16,
+        profile: true,
+      },
+    },
+  };
+  const variants = [
+    { name: "baseline", description: "Baseline fixture settings.", greedy: {} },
+    { name: "no-local-search", description: "Disable all local search.", greedy: { localSearch: false, localSearchServiceMoves: false } },
+    { name: "deferred-roads", description: "Enable deferred road commitment.", greedy: { deferRoadCommitment: true } },
+  ];
+
+  const result = runGreedyDeterministicAblation([ablationCase], { variants });
+  const formatted = formatGreedyDeterministicAblation(result);
+  const snapshot = createGreedyDeterministicAblationSnapshot(result);
+  const benchmarkCase = result.cases[0];
+  const baselineSummary = result.variantSummaries.find((entry) => entry.variantName === "baseline");
+  const noLocalSearch = benchmarkCase.variants.find((entry) => entry.variantName === "no-local-search");
+
+  assert.equal(DEFAULT_GREEDY_DETERMINISTIC_ABLATION_CASE_NAMES.includes("step14-service-lookahead-reranker"), true);
+  assert.equal(listGreedyDeterministicAblationCaseNames().includes("row0-corridor-repair-pressure"), true);
+  assert.equal(result.caseCount, 1);
+  assert.equal(result.seedCount, 1);
+  assert.equal(result.comparisonCount, 1);
+  assert.deepEqual(result.seeds, []);
+  assert.deepEqual(result.selectedCaseNames, ["deterministic-ablation-fixture"]);
+  assert.deepEqual(result.variants, ["baseline", "no-local-search", "deferred-roads"]);
+  assert.equal(result.coverage.caseCount, 1);
+  assert.equal(result.coverage.seedCount, 1);
+  assert.equal(result.coverage.comparisonCount, 1);
+  assert.equal(result.coverage.runCount, 3);
+  assert.equal(result.coverage.variantCount, 3);
+  assert.equal(result.coverage.gridCellCount, 16);
+  assert.equal(result.coverage.profileEnabledRuns, 0);
+  assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
+  assert.equal(Object.hasOwn(snapshot.variantSummaries[0], "meanWallClockSeconds"), false);
+  assert.equal(Object.hasOwn(snapshot.cases[0].baseline, "wallClockSeconds"), false);
+  assert.equal(benchmarkCase.baseline.greedyOptions.profile, false);
+  assert.equal(benchmarkCase.baseline.populationDeltaVsBaseline, 0);
+  assert.equal(baselineSummary.meanPopulationDeltaVsBaseline, 0);
+  assert.equal(baselineSummary.winRate, 0);
+  assert.equal(baselineSummary.regressionRate, 0);
+  assert.equal(baselineSummary.unchangedRate, 1);
+  assert.equal(baselineSummary.worstPopulationDeltaVsBaseline, 0);
+  assert.equal(baselineSummary.worstPopulationDeltaCaseName, "deterministic-ablation-fixture");
+  assert.equal(baselineSummary.worstPopulationDeltaSeed, null);
+  assert.equal(baselineSummary.bestPopulationDeltaCaseName, "deterministic-ablation-fixture");
+  assert.equal(baselineSummary.bestPopulationDeltaSeed, null);
+  assert.equal(noLocalSearch.greedyOptions.localSearch, false);
+  assert.equal(
+    noLocalSearch.populationDeltaVsBaseline,
+    noLocalSearch.totalPopulation - benchmarkCase.baseline.totalPopulation
+  );
+  assert.match(formatted, /=== Greedy Deterministic Ablation Matrix ===/);
+  assert.match(formatted, /Seeds: case-default/);
+  assert.match(formatted, /worst-decile=/);
+  assert.match(formatted, /win-rate=0\.0%/);
+  assert.match(formatted, /unchanged-rate=100\.0%/);
+  assert.match(formatted, /worst-case=deterministic-ablation-fixture\/case-default/);
+  assert.match(formatted, /no-local-search=population:/);
+
+  const seededResult = runGreedyDeterministicAblation([ablationCase], { variants, seeds: [7, 19] });
+  const seededFormatted = formatGreedyDeterministicAblation(seededResult);
+  assert.deepEqual(seededResult.seeds, [7, 19]);
+  assert.equal(seededResult.seedCount, 2);
+  assert.equal(seededResult.caseCount, 1);
+  assert.equal(seededResult.comparisonCount, 2);
+  assert.deepEqual(seededResult.selectedCaseNames, ["deterministic-ablation-fixture"]);
+  assert.equal(seededResult.coverage.caseCount, 1);
+  assert.equal(seededResult.coverage.seedCount, 2);
+  assert.equal(seededResult.coverage.comparisonCount, 2);
+  assert.equal(seededResult.coverage.runCount, 6);
+  assert.equal(seededResult.variantSummaries[0].caseCount, 1);
+  assert.equal(seededResult.variantSummaries[0].seedCount, 2);
+  assert.equal(seededResult.variantSummaries[0].comparisonCount, 2);
+  assert.equal(seededResult.variantSummaries[0].unchangedRate, 1);
+  assert.equal(seededResult.variantSummaries[0].worstPopulationDeltaSeed, 7);
+  assert.equal(seededResult.variantSummaries[0].bestPopulationDeltaSeed, 7);
+  assert.deepEqual(seededResult.cases.map((entry) => entry.seed), [7, 19]);
+  assert.deepEqual(
+    seededResult.cases.flatMap((entry) => entry.variants.map((variant) => variant.greedyOptions.randomSeed)),
+    [7, 7, 7, 19, 19, 19]
+  );
+  for (const seededCase of seededResult.cases) {
+    for (const variant of seededCase.variants) {
+      assert.equal(variant.seed, seededCase.seed);
+      assert.equal(variant.greedyOptions.randomSeed, seededCase.seed);
+    }
+  }
+  assert.match(seededFormatted, /Seeds: 7, 19/);
+  assert.match(seededFormatted, /comparisons=2/);
+  assert.throws(
+    () => runGreedyDeterministicAblation([ablationCase], {
+      variants: [{ name: "no-local-search", description: "Invalid missing baseline.", greedy: { localSearch: false } }],
+    }),
+    /must include the baseline variant/
+  );
+  assert.throws(
+    () => runGreedyDeterministicAblation([ablationCase], {
+      variantNames: ["no-local-search", "no-local-search"],
+    }),
+    /requested variants must use unique names/
+  );
+  assert.throws(
+    () => runGreedyDeterministicAblation([ablationCase], { variants, seeds: [7.5] }),
+    /must contain only integer seeds between 0 and 2147483647/
+  );
+  assert.throws(
+    () => runGreedyDeterministicAblation([ablationCase], { variants, seeds: [4294967297] }),
+    /must contain only integer seeds between 0 and 2147483647/
+  );
+  assert.throws(
+    () => runGreedyDeterministicAblation([ablationCase], { variants, seeds: [7, 7] }),
+    /must not contain duplicate seeds/
+  );
+}
+
+function testDeterministicAblationGateReport() {
+  const summary = (variantName, overrides = {}) => ({
+    variantName,
+    caseCount: 2,
+    seedCount: 2,
+    comparisonCount: 4,
+    medianPopulationDeltaVsBaseline: 0,
+    worstDecilePopulationDeltaVsBaseline: 0,
+    bestPopulationDeltaVsBaseline: 0,
+    worstPopulationDeltaVsBaseline: 0,
+    winRate: 0,
+    regressionRate: 0,
+    unchangedRate: 1,
+    bestPopulationDeltaCaseName: "case-a",
+    bestPopulationDeltaSeed: 7,
+    worstPopulationDeltaCaseName: "case-a",
+    worstPopulationDeltaSeed: 7,
+    ...overrides,
+  });
+  const greedySuite = {
+    caseCount: 2,
+    seedCount: 2,
+    comparisonCount: 4,
+    seeds: [7, 19],
+    selectedCaseNames: ["case-a", "case-b"],
+    variants: ["baseline", "candidate", "target", "bad"],
+    variantSummaries: [
+      summary("baseline"),
+      summary("candidate", {
+        medianPopulationDeltaVsBaseline: 10,
+        bestPopulationDeltaVsBaseline: 20,
+        winRate: 0.75,
+        unchangedRate: 0.25,
+      }),
+      summary("target", {
+        bestPopulationDeltaVsBaseline: 10,
+        winRate: 0.25,
+        unchangedRate: 0.75,
+      }),
+      summary("bad", {
+        worstDecilePopulationDeltaVsBaseline: -5,
+        worstPopulationDeltaVsBaseline: -5,
+        bestPopulationDeltaVsBaseline: 20,
+        winRate: 0.25,
+        regressionRate: 0.25,
+        unchangedRate: 0.5,
+      }),
+    ],
+  };
+  const lnsSuite = {
+    caseCount: 1,
+    seedCount: 2,
+    comparisonCount: 2,
+    seeds: [7, 19],
+    selectedCaseNames: ["lns-case"],
+    variants: ["baseline", "moved-window"],
+    variantSummaries: [
+      summary("baseline", {
+        caseCount: 1,
+        comparisonCount: 2,
+        firstWindowMovementRate: 0,
+        windowSequenceMovementRate: 0,
+        anchorCoordinateMovementRate: 0,
+      }),
+      summary("moved-window", {
+        caseCount: 1,
+        comparisonCount: 2,
+        firstWindowMovementRate: 0,
+        windowSequenceMovementRate: 1,
+        anchorCoordinateMovementRate: 1,
+      }),
+    ],
+  };
+
+  const report = buildDeterministicAblationGateReport({ greedy: greedySuite, lns: lnsSuite });
+  const formatted = formatDeterministicAblationGateReport(report);
+  const greedyDecisions = report.suites.find((entry) => entry.suite === "greedy-deterministic").decisions;
+  const lnsDecisions = report.suites.find((entry) => entry.suite === "lns-neighborhood").decisions;
+
+  assert.deepEqual(DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS, [7, 19, 37]);
+  assert.equal(report.reportType, "deterministic-ablation-gate");
+  assert.equal(Object.hasOwn(report, "generatedAt"), false);
+  assert.equal(greedyDecisions.find((entry) => entry.variantName === "baseline").decision, "keep-baseline");
+  assert.equal(greedyDecisions.find((entry) => entry.variantName === "candidate").decision, "safe-deterministic-candidate");
+  assert.equal(greedyDecisions.find((entry) => entry.variantName === "target").decision, "learning-target");
+  assert.equal(greedyDecisions.find((entry) => entry.variantName === "bad").decision, "blocked-regression");
+  assert.equal(lnsDecisions.find((entry) => entry.variantName === "moved-window").decision, "learning-target");
+  assert.match(formatted, /Deterministic Ablation Gate Report/);
+  assert.match(formatted, /candidate: safe-deterministic-candidate/);
+  assert.match(formatted, /Collect counterfactual LNS window replay labels/);
+  assert.throws(
+    () => buildDeterministicAblationGateReport({}),
+    /requires at least one suite result/
+  );
+}
+
 function testGreedyStep14ServiceLookaheadBenchmarkCaseIsolated() {
   assertStep14BenchmarkIsolation(STEP14_GREEDY_BENCHMARK_NAME, true);
 }
@@ -4095,6 +5090,18 @@ function testGreedyBenchmarkSuite() {
   assert(result.results[0].greedyProfile.counters.localSearch.populationCacheLookups > 0);
   assert(result.results[0].greedyProfile.counters.roads.connectivityShadowChecks > 0);
   assert(result.results[0].greedyProfile.counters.roads.connectivityShadowLostCells > 0);
+  assert(result.results[0].greedyProfile.counters.roads.roadOpportunityChecks > 0);
+  assert(
+    result.results[0].greedyProfile.counters.roads.roadOpportunityLostCells
+      >= result.results[0].greedyProfile.counters.roads.roadOpportunityFootprintCells
+  );
+  assert(result.results[0].greedyProfile.roadOpportunityTraces.length > 0);
+  assert.equal(result.results[0].greedyProfile.roadOpportunityTraces[0].reachableBefore >= 0, true);
+  assert.equal(
+    result.results[0].greedyProfile.roadOpportunityTraces[0].lostCells,
+    result.results[0].greedyProfile.roadOpportunityTraces[0].reachableBefore
+      - result.results[0].greedyProfile.roadOpportunityTraces[0].reachableAfter
+  );
   assert(
     result.results[0].greedyProfile.counters.roads.connectivityShadowLostCells
       >= result.results[0].greedyProfile.counters.roads.connectivityShadowFootprintCells
@@ -4116,6 +5123,8 @@ function testGreedyBenchmarkSuite() {
   assert.match(formatGreedyBenchmarkSuite(result), /cap-search=/);
   assert.match(formatGreedyBenchmarkSuite(result), /connectivity-shadow=/);
   assert.match(formatGreedyBenchmarkSuite(result), /connectivity-shadow-scoring=/);
+  assert.match(formatGreedyBenchmarkSuite(result), /road-opportunity=/);
+  assert.match(formatGreedyBenchmarkSuite(result), /counterfactuals:/);
   assert.match(formatGreedyBenchmarkSuite(result), /step13=/);
   assert.match(formatGreedyBenchmarkSuite(result), /step14=/);
 }
@@ -4132,20 +5141,98 @@ function runGreedyBenchmarkCliJson(args) {
   return JSON.parse(result.stdout);
 }
 
+function runLnsBenchmarkCli(args) {
+  const cliPath = path.join(__dirname, "..", "dist", "lnsBenchmarkCli.js");
+  const result = childProcess.spawnSync(process.execPath, [cliPath, ...args], {
+    cwd: path.join(__dirname, ".."),
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "LNS benchmark CLI failed.");
+  }
+  return result.stdout;
+}
+
 function testGreedyBenchmarkCliConnectivityShadowFlags() {
   const benchmarkName = "deterministic-tie-breaks";
   const defaultRun = runGreedyBenchmarkCliJson(["--no-profile", benchmarkName]);
   const disabledRun = runGreedyBenchmarkCliJson(["--no-connectivity-shadow-scoring", "--no-profile", benchmarkName]);
   const enabledRun = runGreedyBenchmarkCliJson(["--connectivity-shadow-scoring", "--no-profile", benchmarkName]);
+  const labelRun = runGreedyBenchmarkCliJson([
+    "--connectivity-shadow-labels",
+    "--seeds=7",
+    "--max-labels=1",
+    benchmarkName,
+  ]);
 
   assert.deepEqual(defaultRun.selectedCaseNames, [benchmarkName]);
   assert.deepEqual(disabledRun.selectedCaseNames, [benchmarkName]);
   assert.deepEqual(enabledRun.selectedCaseNames, [benchmarkName]);
+  assert.deepEqual(labelRun.selectedCaseNames, [benchmarkName]);
   assert.equal(defaultRun.results[0].greedyOptions.connectivityShadowScoring, undefined);
   assert.equal(disabledRun.results[0].greedyOptions.connectivityShadowScoring, false);
   assert.equal(enabledRun.results[0].greedyOptions.connectivityShadowScoring, true);
   assert.equal(enabledRun.results[0].greedyOptions.profile, false);
   assert.equal(disabledRun.results[0].totalPopulation, defaultRun.results[0].totalPopulation);
+  assert.equal(labelRun.seedCount, 1);
+  assert.deepEqual(labelRun.seeds, [7]);
+  assert.equal(labelRun.maxLabelsPerCase, 1);
+  assert.equal(labelRun.cases[0].greedyOptions.connectivityShadowScoring, true);
+  assert.equal(labelRun.cases[0].greedyOptions.profile, true);
+  assert.equal(Object.hasOwn(labelRun, "generatedAt"), false);
+}
+
+function testGreedyBenchmarkCliDeterministicAblationFlags() {
+  const benchmarkName = "step14-service-lookahead-reranker";
+  const result = runGreedyBenchmarkCliJson([
+    "--deterministic-ablation",
+    "--ablation-variants=no-local-search",
+    "--seeds=7,19",
+    benchmarkName,
+  ]);
+
+  assert.deepEqual(result.selectedCaseNames, [benchmarkName]);
+  assert.deepEqual(result.variants, ["baseline", "no-local-search"]);
+  assert.deepEqual(result.seeds, [7, 19]);
+  assert.equal(result.caseCount, 1);
+  assert.equal(result.seedCount, 2);
+  assert.equal(result.comparisonCount, 2);
+  assert.equal(result.coverage.runCount, 4);
+  assert.deepEqual(result.cases.map((entry) => entry.seed), [7, 19]);
+  assert.equal(result.cases[0].baseline.greedyOptions.profile, false);
+  assert.equal(result.cases[0].variants[1].greedyOptions.localSearch, false);
+  assert.equal(result.cases[1].baseline.greedyOptions.randomSeed, 19);
+
+  const gateReport = runGreedyBenchmarkCliJson([
+    "--deterministic-ablation",
+    "--gate-report",
+    "--ablation-variants=no-local-search",
+    benchmarkName,
+  ]);
+  assert.equal(gateReport.reportType, "deterministic-ablation-gate");
+  assert.deepEqual(gateReport.suites[0].seeds, [7, 19, 37]);
+  assert.equal(gateReport.suites[0].suite, "greedy-deterministic");
+  assert.equal(Object.hasOwn(gateReport, "generatedAt"), false);
+}
+
+function testLnsBenchmarkCliNeighborhoodAblationSeedListParsing() {
+  const output = runLnsBenchmarkCli(["--list", "--neighborhood-ablation", "--seeds=7,19"]);
+
+  assert.match(output, /compact-service-repair/);
+  assert.match(output, /row0-anchor-repair/);
+
+  const gateReport = JSON.parse(runLnsBenchmarkCli([
+    "--json",
+    "--neighborhood-ablation",
+    "--gate-report",
+    "--seeds=7",
+    "--ablation-variants=baseline,sliding-only",
+    "seeded-service-anchor-pressure",
+  ]));
+  assert.equal(gateReport.reportType, "deterministic-ablation-gate");
+  assert.equal(gateReport.suites[0].suite, "lns-neighborhood");
+  assert.deepEqual(gateReport.suites[0].seeds, [7]);
+  assert.equal(Object.hasOwn(gateReport, "generatedAt"), false);
 }
 
 function testGreedyDeterministicTieBreakBenchmarkCase() {
@@ -4720,6 +5807,10 @@ function testGreedyServiceLocalNeighborhoodBenchmarkCase() {
     baselineParams
   );
   const counters = improvedSolution.greedyProfile.counters.localSearch;
+  const serviceRoadOpportunityTraces = improvedSolution.greedyProfile.roadOpportunityTraces.filter(
+    (trace) => trace.phase === "service-neighborhood"
+  );
+  const serviceAddTrace = serviceRoadOpportunityTraces.find((trace) => trace.moveKind === "service-add");
 
   assert.equal(result.caseCount, 1);
   assert.deepEqual(result.selectedCaseNames, ["service-local-neighborhood"]);
@@ -4737,8 +5828,17 @@ function testGreedyServiceLocalNeighborhoodBenchmarkCase() {
   assert.equal(counters.serviceAddChecks > 0, true);
   assert.equal(counters.serviceSwapChecks > 0, true);
   assert.equal(counters.serviceNeighborhoodImprovements > 0, true);
+  assert.equal(serviceRoadOpportunityTraces.length > 0, true);
+  assert(serviceAddTrace);
+  assert.equal((serviceAddTrace.counterfactuals?.length ?? 0) > 0, true);
+  assert.equal(serviceAddTrace.lostCells, serviceAddTrace.reachableBefore - serviceAddTrace.reachableAfter);
+  assert.equal(
+    serviceAddTrace.counterfactuals.some((counterfactual) => counterfactual.moveKind !== undefined),
+    true
+  );
   assert.match(formatGreedyBenchmarkSuite(result), /service-local-neighborhood/);
   assert.match(formatGreedyBenchmarkSuite(result), /local-service=/);
+  assert.match(formatGreedyBenchmarkSuite(result), /move:service-add/);
   assert.match(formatGreedyBenchmarkSuite(result), /step13=/);
 }
 
@@ -6856,6 +7956,10 @@ async function main() {
   await testPublicSolverDispatchValidatesInputs();
   testGreedyRandomSeedIsDeterministic();
   testGreedyConnectivityShadowScoringIsOptInTieBreaker();
+  testGreedyConnectivityShadowOrderingLabelRunner();
+  testLearnedRankingLabelSuite();
+  testGreedyRoadOpportunityCounterfactualsAreBoundedAndObservational();
+  testRoadOpportunityLocalSearchMeasurementUsesPostRemoveOccupancy();
   testGreedyStopFileCancelsBeforePrecompute();
   testGreedyWallClockBudgetStopsWithBestSolution();
   testGreedyExploresAllAllowedRowZeroSeeds();
@@ -6903,7 +8007,11 @@ async function main() {
   testGreedyDiagnosticsReportsNoServiceCoverage();
   testGreedyBenchmarkCorpusHelpers();
   testGreedyConnectivityShadowScoringAblationRunner();
+  testGreedyDeterministicAblationRunner();
+  testDeterministicAblationGateReport();
   testGreedyBenchmarkCliConnectivityShadowFlags();
+  testGreedyBenchmarkCliDeterministicAblationFlags();
+  testLnsBenchmarkCliNeighborhoodAblationSeedListParsing();
   testGreedyStep14ServiceLookaheadBenchmarkCaseIsolated();
   testGreedyStep14FollowUpBenchmarkCasesStayIsolated();
   testGreedyServiceLookaheadIsOffByDefaultAndLeavesCorpusUnchangedWhenOff();
@@ -6939,6 +8047,10 @@ async function main() {
   testGreedyGroupedServiceScoringDiscountsLimitedFallbackTypes();
   await testCpSatBenchmarkCorpusHelpers();
   testLnsBenchmarkCorpusHelpers();
+  testLnsNeighborhoodAblationRunner();
+  testLnsNeighborhoodAblationWindowSequenceMovement();
+  testLnsSeededServiceAnchorPressureBenchmarkCase();
+  testLnsWindowReplayLabelRunner();
   await testCrossModeBenchmarkHelpers();
   await maybeTestCpSatBenchmarkSuite();
   await maybeTestCpSatWarmStartContinuation();

@@ -228,6 +228,7 @@ export class GreedyAttemptState {
     options: {
       footprintKeys?: readonly string[];
       newlyOccupiedKeys?: readonly string[];
+      recordConnectivityShadow?: boolean;
     } = {}
   ): string[] | null {
     if (this.useDeferredRoadCommitment) {
@@ -235,7 +236,9 @@ export class GreedyAttemptState {
       const occupiedKeys = options.newlyOccupiedKeys
         ? [...options.newlyOccupiedKeys]
         : this.collectNewlyOccupiedKeys(null, placement, options.footprintKeys);
-      this.recordConnectivityShadow(placement, options.footprintKeys);
+      if (options.recordConnectivityShadow !== false) {
+        this.recordConnectivityShadow(placement, options.footprintKeys);
+      }
       this.commitDeferredPlacement(occupiedKeys, placement, options.footprintKeys);
       return occupiedKeys;
     }
@@ -249,6 +252,7 @@ export class GreedyAttemptState {
       placement,
       footprintKeys: options.footprintKeys,
       newlyOccupiedKeys: occupiedKeys,
+      recordConnectivityShadow: options.recordConnectivityShadow,
     });
   }
 

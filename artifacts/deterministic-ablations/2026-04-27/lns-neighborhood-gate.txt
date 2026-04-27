@@ -1,0 +1,29 @@
+=== Deterministic Ablation Gate Report ===
+- lns-neighborhood: cases=4 seeds=3 comparisons=12 variants=baseline, sliding-only, weak-service-first, residential-opportunity-first, frontier-congestion-first, placed-buildings-first, small-2x2, wide-4x4
+  baseline: keep-baseline win-rate=0.0% regression-rate=0.0% median-delta=0 worst-delta=0 best-delta=0 wall-mean=1.058s wall-delta-mean=0.000s first-window-move-rate=0.0% window-sequence-move-rate=0.0% anchor-coordinate-move-rate=0.0%
+    next: Keep the current baseline as the comparison reference.
+    reason: Baseline variant is the reference behavior.
+  sliding-only: blocked-regression win-rate=0.0% regression-rate=25.0% median-delta=0 worst-delta=-100 best-delta=0 wall-mean=1.029s wall-delta-mean=-0.028s first-window-move-rate=100.0% window-sequence-move-rate=100.0% anchor-coordinate-move-rate=100.0%
+    next: Do not promote; inspect the worst case/seed and add pressure coverage before retrying.
+    reason: Regression evidence exists: regression-rate=25.0%, worst-delta=-100.
+  weak-service-first: learning-target win-rate=0.0% regression-rate=0.0% median-delta=0 worst-delta=0 best-delta=0 wall-mean=1.043s wall-delta-mean=-0.015s first-window-move-rate=50.0% window-sequence-move-rate=50.0% anchor-coordinate-move-rate=50.0%
+    next: Collect counterfactual LNS window replay labels before learned window ranking.
+    reason: Window choice changed without population lift: first-window-move-rate=50.0%, window-sequence-move-rate=50.0%, anchor-coordinate-move-rate=50.0%.
+  residential-opportunity-first: learning-target win-rate=0.0% regression-rate=0.0% median-delta=0 worst-delta=0 best-delta=0 wall-mean=1.061s wall-delta-mean=0.003s first-window-move-rate=100.0% window-sequence-move-rate=100.0% anchor-coordinate-move-rate=100.0%
+    next: Collect counterfactual LNS window replay labels before learned window ranking.
+    reason: Window choice changed without population lift: first-window-move-rate=100.0%, window-sequence-move-rate=100.0%, anchor-coordinate-move-rate=100.0%.
+  frontier-congestion-first: learning-target win-rate=0.0% regression-rate=0.0% median-delta=0 worst-delta=0 best-delta=0 wall-mean=1.046s wall-delta-mean=-0.012s first-window-move-rate=50.0% window-sequence-move-rate=50.0% anchor-coordinate-move-rate=50.0%
+    next: Collect counterfactual LNS window replay labels before learned window ranking.
+    reason: Window choice changed without population lift: first-window-move-rate=50.0%, window-sequence-move-rate=50.0%, anchor-coordinate-move-rate=50.0%.
+  placed-buildings-first: keep-baseline win-rate=0.0% regression-rate=0.0% median-delta=0 worst-delta=0 best-delta=0 wall-mean=1.060s wall-delta-mean=0.003s first-window-move-rate=0.0% window-sequence-move-rate=0.0% anchor-coordinate-move-rate=0.0%
+    next: Keep baseline and expand pressure cases before adding learned guidance.
+    reason: No repeated population win was observed.
+  small-2x2: learning-target win-rate=0.0% regression-rate=0.0% median-delta=0 worst-delta=0 best-delta=0 wall-mean=1.056s wall-delta-mean=-0.002s first-window-move-rate=100.0% window-sequence-move-rate=100.0% anchor-coordinate-move-rate=50.0%
+    next: Collect counterfactual LNS window replay labels before learned window ranking.
+    reason: Window choice changed without population lift: first-window-move-rate=100.0%, window-sequence-move-rate=100.0%, anchor-coordinate-move-rate=50.0%.
+  wide-4x4: learning-target win-rate=0.0% regression-rate=0.0% median-delta=0 worst-delta=0 best-delta=0 wall-mean=1.054s wall-delta-mean=-0.004s first-window-move-rate=100.0% window-sequence-move-rate=100.0% anchor-coordinate-move-rate=100.0%
+    next: Collect counterfactual LNS window replay labels before learned window ranking.
+    reason: Window choice changed without population lift: first-window-move-rate=100.0%, window-sequence-move-rate=100.0%, anchor-coordinate-move-rate=100.0%.
+Next actions:
+- Keep blocked variants out of defaults and inspect their worst case/seed evidence.
+- Collect counterfactual LNS window replay labels before learned window ranking.

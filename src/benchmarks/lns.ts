@@ -355,6 +355,56 @@ export const DEFAULT_LNS_BENCHMARK_CORPUS: readonly LnsBenchmarkCase[] = Object.
     },
   },
   {
+    name: "seeded-service-anchor-pressure",
+    description: "Seeded LNS case where ranked service anchors find a service move that sliding windows miss.",
+    grid: [
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+    ],
+    params: {
+      optimizer: "lns",
+      serviceTypes: [{ rows: 2, cols: 2, bonus: 100, range: 1, avail: 1 }],
+      residentialTypes: [{ w: 2, h: 2, min: 100, max: 300, avail: 1 }],
+      availableBuildings: { services: 1, residentials: 1 },
+      lns: {
+        iterations: 1,
+        maxNoImprovementIterations: 4,
+        neighborhoodRows: 3,
+        neighborhoodCols: 3,
+        repairTimeLimitSeconds: 0.5,
+        focusedRepairTimeLimitSeconds: 0.5,
+        escalatedRepairTimeLimitSeconds: 0.5,
+        seedHint: {
+          sourceName: "seeded-service-anchor-pressure",
+          solution: {
+            roads: ["0,0", "0,1", "0,2", "0,3", "0,4", "0,5", "1,3", "2,3", "3,3", "4,3", "5,3"],
+            services: [{ r: 1, c: 4, rows: 2, cols: 2, range: 1, typeIndex: 0, bonus: 100 }],
+            residentials: [{ r: 4, c: 4, rows: 2, cols: 2, typeIndex: 0, population: 100 }],
+            populations: [100],
+            totalPopulation: 100,
+          },
+        },
+      },
+      cpSat: {
+        timeLimitSeconds: 0.5,
+      },
+      greedy: {
+        localSearch: false,
+        randomSeed: 31,
+        restarts: 1,
+        serviceRefineIterations: 0,
+        serviceRefineCandidateLimit: 4,
+        exhaustiveServiceSearch: false,
+        serviceExactPoolLimit: 4,
+        serviceExactMaxCombinations: 16,
+      },
+    },
+  },
+  {
     name: "row0-anchor-repair",
     description: "Sparse row-zero access case that exercises LNS repair around road anchors.",
     grid: [

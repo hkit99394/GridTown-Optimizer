@@ -1,0 +1,35 @@
+=== Deterministic Ablation Gate Report ===
+- greedy-deterministic: cases=9 seeds=3 comparisons=27 variants=baseline, no-restarts, no-local-search, no-service-neighborhood, no-service-refinement, no-exhaustive-service-search, no-service-lookahead, explicit-roads, deferred-roads, connectivity-shadow-scoring
+  baseline: keep-baseline win-rate=0.0% regression-rate=0.0% median-delta=0 worst-delta=0 best-delta=0 wall-mean=0.061s wall-delta-mean=0.000s
+    next: Keep the current baseline as the comparison reference.
+    reason: Baseline variant is the reference behavior.
+  no-restarts: keep-baseline win-rate=0.0% regression-rate=0.0% median-delta=0 worst-delta=0 best-delta=0 wall-mean=0.051s wall-delta-mean=-0.010s
+    next: Keep baseline and expand pressure cases before adding learned guidance.
+    reason: No repeated population win was observed.
+  no-local-search: blocked-regression win-rate=0.0% regression-rate=33.3% median-delta=0 worst-delta=-55 best-delta=0 wall-mean=0.099s wall-delta-mean=0.038s
+    next: Do not promote; inspect the worst case/seed and add pressure coverage before retrying.
+    reason: Regression evidence exists: regression-rate=33.3%, worst-delta=-55.
+  no-service-neighborhood: blocked-regression win-rate=0.0% regression-rate=33.3% median-delta=0 worst-delta=-55 best-delta=0 wall-mean=0.046s wall-delta-mean=-0.015s
+    next: Do not promote; inspect the worst case/seed and add pressure coverage before retrying.
+    reason: Regression evidence exists: regression-rate=33.3%, worst-delta=-55.
+  no-service-refinement: keep-baseline win-rate=0.0% regression-rate=0.0% median-delta=0 worst-delta=0 best-delta=0 wall-mean=0.035s wall-delta-mean=-0.026s
+    next: Keep baseline and expand pressure cases before adding learned guidance.
+    reason: No repeated population win was observed.
+  no-exhaustive-service-search: keep-baseline win-rate=0.0% regression-rate=0.0% median-delta=0 worst-delta=0 best-delta=0 wall-mean=0.047s wall-delta-mean=-0.014s
+    next: Keep baseline and expand pressure cases before adding learned guidance.
+    reason: No repeated population win was observed.
+  no-service-lookahead: blocked-regression win-rate=0.0% regression-rate=11.1% median-delta=0 worst-delta=-35 best-delta=0 wall-mean=0.048s wall-delta-mean=-0.014s
+    next: Do not promote; inspect the worst case/seed and add pressure coverage before retrying.
+    reason: Regression evidence exists: regression-rate=11.1%, worst-delta=-35.
+  explicit-roads: blocked-regression win-rate=0.0% regression-rate=11.1% median-delta=0 worst-delta=-80 best-delta=0 wall-mean=0.048s wall-delta-mean=-0.014s
+    next: Do not promote; inspect the worst case/seed and add pressure coverage before retrying.
+    reason: Regression evidence exists: regression-rate=11.1%, worst-delta=-80.
+  deferred-roads: blocked-regression win-rate=0.0% regression-rate=77.8% median-delta=-65 worst-delta=-310 best-delta=0 wall-mean=0.008s wall-delta-mean=-0.053s
+    next: Do not promote; inspect the worst case/seed and add pressure coverage before retrying.
+    reason: Regression evidence exists: regression-rate=77.8%, worst-delta=-310.
+  connectivity-shadow-scoring: learning-target win-rate=33.3% regression-rate=0.0% median-delta=0 worst-delta=0 best-delta=+115 wall-mean=0.158s wall-delta-mean=0.097s
+    next: Collect ordering labels before trying learned Greedy ranking.
+    reason: Has isolated wins but not enough repeated lift for deterministic promotion: best-delta=+115.
+Next actions:
+- Keep blocked variants out of defaults and inspect their worst case/seed evidence.
+- Collect Greedy ordering labels for variants with isolated wins but weak repeatability.

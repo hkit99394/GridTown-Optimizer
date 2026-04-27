@@ -159,6 +159,60 @@ Reviewed through 2026-04-27.
 - The eight-case profile-off ablation now reports total population delta `+80`, one improved case, no regressions, seven unchanged cases, and total road delta `0`.
 - Conclusion: the opt-in path is now population/road-safe on the focused corpus, but remains default-off because the guard can run the normal Greedy path as a fallback and therefore may spend extra CPU.
 
+### 22. Road Opportunity Profile Instrumentation And Constructive Counterfactuals
+
+- Added `roads.roadOpportunity*` profile counters and bounded `roadOpportunityTraces` for accepted constructive service/residential placements.
+- Road opportunity traces pair the accepted placement's road cost with row-0-reachable frontier before/after counts, total lost cells, footprint-consumed cells, and downstream disconnected cells.
+- The implementation reuses the same pre-commit connectivity-shadow measurement for both connectivity-shadow and road-opportunity profile counters at instrumented commit sites, avoiding duplicate profile-only frontier scans.
+- Constructive placement traces now include bounded near-miss counterfactuals selected from high-score and low-road-cost candidate pools, without changing placement scoring.
+- Greedy benchmark text reports `road-opportunity=...` plus sample `road-opportunity-placement=...` and `road-opportunity-counterfactual=...` rows.
+- Focused profile output on `service-local-neighborhood` and `geometry-occupancy-hot-path` now exposes large downstream losses, including geometry placements that disconnect far more cells than their footprint consumes.
+
+### 23. Road Opportunity Local-Search Move Counterfactuals
+
+- Extended road-opportunity traces to accepted residential local-search add/move placements and service-neighborhood add/swap placements.
+- Local-search traces carry `moveKind` metadata so accepted move families and near-miss alternatives can be separated in benchmark output.
+- Residential local-search traces measure against building-only post-remove occupancy instead of the constructive attempt-state helper.
+- Service-neighborhood swap traces measure against the occupied state after removing the replaced service; add traces measure against the incumbent building occupancy.
+- The recorder reserves bounded trace capacity for local-search phases so constructive placements cannot crowd out later move traces.
+- Focused tests cover local-search post-remove measurement, bounded constructive/local trace capacity, service-neighborhood trace emission, move-kind formatting, and profiling remaining observational.
+
+### 24. Greedy And LNS Deterministic Ablation Matrices
+
+- Added a Greedy deterministic ablation runner for restarts, local search, service neighborhoods/refinement/exact search, service lookahead, deferred roads, and connectivity-shadow scoring.
+- Greedy deterministic ablations default profiling off for cleaner timing while still allowing callers to opt into diagnostic profile runs.
+- Added an LNS neighborhood ablation runner with explicit anchor-policy switches for ranked anchors, sliding-only fallback, weak-service anchors, residential-opportunity anchors, frontier-congestion anchors, placed-building anchors, and fixed window-size variants.
+- The Greedy and LNS benchmark CLIs expose the matrices with `--deterministic-ablation` / `--ordering-ablation` and `--neighborhood-ablation`, plus `--ablation-variants=...` for focused slices.
+- Ablation summaries report median, worst-decile, best-case, population deltas versus baseline, wall-clock deltas, coverage counts, and per-case variant details.
+- Greedy and LNS ablation CLIs support `--seeds=...`, pairing every variant against the same case/seed baseline and reporting seed/comparison coverage.
+- Repeated-seed ablation summaries now include stability-gate metrics: win/regression/unchanged rates, best/worst population-delta case+seed labels, and LNS first-window, full-window-sequence, and anchor-coordinate movement counts/rates versus the matched baseline.
+- Ablation JSON output now uses snapshot-friendly artifacts that omit generated timestamps and volatile wall-clock timing fields; explicit seeds are validated against the solver-supported random-seed range before a matrix run starts.
+- Greedy and LNS ablations expose `--gate-report` for stable promote/keep-baseline/learning-target/blocked-regression reports, defaulting to seeds `7,19,37` when no explicit seed list is provided.
+- LNS repeated-seed ablations rotate variant execution order by default to reduce wall-time order bias while keeping result rows in normalized variant order.
+- LNS benchmark CLI exposes `--window-replay-labels` for bounded counterfactual replay of multiple candidate repair windows from the same incumbent under an equal CP-SAT repair budget, with stable JSON snapshots for label collection before learned window ranking.
+- LNS neighborhood ablations include per-repair outcome/window summaries and a seeded service-anchor pressure case where ranked service anchors improve population while sliding-only misses the repair window.
+
+### 25. Deterministic Ablation Evidence Gate
+
+- Closed the deterministic ablation priority as an evidence gate before model training.
+- Persisted the closeout decision table in [SOLVER_ABLATION_DECISIONS.md](SOLVER_ABLATION_DECISIONS.md).
+- Persisted the generated evidence bundle under `artifacts/deterministic-ablations/2026-04-27/`.
+- Greedy evidence covers 9 cases, 10 variants, seeds `7,19,37`, 27 comparisons, and 270 runs.
+- LNS evidence covers 4 cases, 8 variants, seeds `7,19,37`, 12 comparisons, and 96 runs.
+- LNS replay evidence includes 84 equal-budget counterfactual window labels.
+- No deterministic variant was promoted. Blocked variants remain out of defaults, Greedy connectivity-shadow scoring is an ordering-label target, and LNS anchor/window variants require replay labels before learned ranking.
+
+### 26. Low-Risk Learned Ranking Labels
+
+- Closed the low-risk learned ranking label priority as a label-collection gate before any model training.
+- Added Greedy connectivity-shadow ordering labels with seed support, max-label caps, stable snapshots, text formatting, and `--connectivity-shadow-labels` CLI support.
+- Added a combined `benchmark:labels` runner that packages Greedy ordering labels, Greedy road-opportunity near-miss labels, and split-aware LNS replay labels.
+- The combined label bundle records schema version, seeds, split assignments, leakage checks, audit metadata, Greedy source counts, and LNS usable/status counts.
+- LNS replay labels now include signed population deltas, validation results, `usable` flags, schema version, and an `invalid` status so illegal replay outputs are quarantined from training data instead of silently becoming labels.
+- Persisted the generated evidence bundle under `artifacts/learned-ranking-labels/2026-04-27/`.
+- The closeout bundle contains 4,593 Greedy labels and 84 LNS replay labels across seeds `7,19,37`, with protected development/holdout splits and no case overlap.
+- No learned model was trained and no solver defaults changed; learned ranking remains gated on held-out offline metrics and equal-budget online benchmarks.
+
 ## Maintenance Watchpoints
 
 - Keep deterministic benchmark seeds stable when changing solver scoring.

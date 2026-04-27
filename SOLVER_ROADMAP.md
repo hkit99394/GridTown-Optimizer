@@ -37,57 +37,47 @@ Completed solver work has moved to [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_
 
 Current reviewed baseline as of 2026-04-27:
 
-- `greedy`, `LNS`, `CP-SAT`, and `auto` are available through the backend/planner path.
-- `auto` follows the staged `greedy -> LNS -> CP-SAT` quality workflow.
-- Benchmark and reproducibility support exists for exact-run comparison.
+- `greedy`, `LNS`, `CP-SAT`, and `auto` are available through backend, planner, and CLI flows.
+- `auto` follows the incumbent-first `greedy -> LNS -> CP-SAT` workflow and protects CP-SAT reserve time from LNS seed/repair overruns.
+- Cross-mode progress, decision traces, JSONL export, time-to-quality scorecards, and budget-policy signals are available for reproducible comparison.
 - LNS has deterministic/probabilistic neighborhoods, improvement guards, and budget controls.
-- Greedy has phase boundaries, runtime guardrails, and phase-level quality/timing counters.
-- Solve admission, route safety, and reusable solver-state hardening are in place.
-- CP-SAT portfolio initiation is guarded and no longer competes with the default path by accident.
-- Cross-mode progress, unified decision traces, JSONL trace export, time-to-quality scorecards, and budget-policy signals are available.
-- Auto records per-stage run summaries, preserves final-stage LNS/CP-SAT trace detail, and protects the CP-SAT reserve from LNS seed/repair overruns.
-- Cross-mode budget ablation sweeps can compare named Auto/LNS seed, repair, and CP-SAT reserve policies with policy-scoped trace output, optional harder coverage cases, and separate Auto/LNS baseline deltas.
-- Final Greedy road materialization prunes redundant support roads while preserving row-0 connectivity and building access.
-- Greedy profile counters now measure building connectivity shadow: row-0-reachable empty cells lost by each committed building footprint, split into footprint consumption and downstream disconnection.
-- Greedy has an opt-in, baseline-guarded `connectivityShadowScoring` tie-breaker that prefers equal-score placements with lower building-induced row-0 connectivity shadow inside a bounded cheap-road window; defaults remain unchanged.
-- Planner saved-layout selection surfaces saved population so layout choices are score-oriented.
+- Greedy has phase guardrails, profile counters, final road cleanup, connectivity-shadow traces, guarded opt-in connectivity-shadow scoring, and road-opportunity constructive/local-search counterfactuals.
+- Planner saved-layout selection surfaces saved population so layout choices stay score-oriented.
 
 ## Active Priorities
 
-Impact scale: `5` is most significant for population per minute; lower scores are more speculative or dependent on earlier work.
+Impact scale: `5` is most significant for population per minute; lower scores are more speculative or dependent on earlier work. Rank is the recommended execution order, not raw impact order; instrumentation can stay ahead of higher-impact experiments when it creates the labels or safety evidence those experiments need.
 
-Current ablation note as of 2026-04-27: the corrected 5s/30s, seed `7`, earlier three-case default sweep tied all built-in policies on Auto, LNS, and best population before `row0-corridor-repair-pressure` was added to the default corpus. The runner also has an opt-in `--coverage-corpus` that combines the current default corpus with selected harder Greedy/LNS pressure cases; keep the baseline policy until coverage-corpus seeds at 5s/30s, followed only by selective 120s probes, produce a population win rather than only lower stage elapsed time.
+Current status notes:
 
-Coverage-corpus slice as of 2026-04-27: `--coverage-corpus --modes=auto,lns --budgets=5,30 --seeds=19 typed-footprint-pressure deferred-road-packing-gain service-local-neighborhood row0-anchor-repair` kept `baseline` as the best Auto policy. `repair-heavy` tied baseline on Auto and LNS means, while `seed-light` lost Auto population at 5s (`-27.5`) despite a 30s LNS mean lift (`+5`), and `cp-sat-reserve-heavy` lost 5s Auto population (`-14.5`). No selective 120s probe is justified from this slice alone.
-
-Additional 5s pressure slices as of 2026-04-27: adding `row0-corridor-repair-pressure` and running seed `19` across Auto/Greedy/LNS kept `baseline` and `repair-heavy` tied on Auto/LNS population, while `seed-light` and `cp-sat-reserve-heavy` regressed. Running seed `37` across Auto/LNS kept `baseline` best, with `repair-heavy` tied, `seed-light` lower by `-11` Auto mean, and `cp-sat-reserve-heavy` lower by `-3` Auto mean. No 5s evidence supports changing the default policy.
-
-Targeted 30s repair-heavy probe as of 2026-04-27: `row0-corridor-repair-pressure`, seed `37`, Auto/LNS, `baseline` versus `repair-heavy` tied at `275` Auto/LNS mean population. `repair-heavy` reached the same score faster, but the promotion gate is population, so keep `baseline` and skip 120s from this evidence.
-
-Remaining 30s coverage-corpus slice as of 2026-04-27: `--coverage-corpus --modes=auto,lns --budgets=30 --seeds=37 --ablation-policies=baseline,seed-light,repair-heavy,cp-sat-reserve-heavy typed-footprint-pressure deferred-road-packing-gain service-local-neighborhood row0-anchor-repair` (`32` mode-runs, `960` budgeted mode-seconds) kept `baseline` as the top Auto policy. `seed-light` and `cp-sat-reserve-heavy` tied baseline on Auto mean (`320`) while lifting standalone LNS mean by `+12.5`; `repair-heavy` lifted standalone LNS by `+12.5` but regressed Auto mean by `-5`. This does not justify a selective 120s probe or default policy change.
-
-Connectivity-shadow calibrated Greedy ablation as of 2026-04-27: the Greedy benchmark CLI has `--connectivity-shadow-ablation` plus `--profile`/`--no-profile` for reproducible slices, and profile output records bounded shadow tie-break samples. The initial focused slice improved `service-local-neighborhood` by `+100`, regressed `geometry-occupancy-hot-path` by `-30`, and increased road count on tied-population cases. Calibration now limits shadow tie-breaks to a cheap-road window and keeps the normal Greedy result whenever the shadow-scored result does not beat it on population and road count. The eight-case profile-off slice now shows total population delta `+80`, no population regressions, `geometry-occupancy-hot-path` unchanged, and total road delta `0`. Keep the option default-off because the guard can spend extra CPU; use it as an experimental quality path rather than the default seed policy.
+- Auto/LNS budget policy: keep `baseline`. Recent 5s/30s coverage slices did not produce an Auto population win for non-baseline policies, so 120s probes stay gated.
+- Connectivity-shadow scoring: keep default-off. The guarded opt-in path is population/road-safe on the focused corpus but can spend extra CPU.
+- Road opportunity traces: constructive and local-search chosen-vs-near-miss counterfactuals are available, including accepted residential local-search and service-neighborhood move kinds.
+- Deterministic ablations before model training are closed as an evidence gate; see [SOLVER_ABLATION_DECISIONS.md](SOLVER_ABLATION_DECISIONS.md). No deterministic variant is ready for default promotion. Blocked variants stay out of defaults, Greedy connectivity-shadow scoring is a label target, and LNS anchor/window variants require counterfactual replay labels before learned ranking.
+- Low-risk learned ranking labels are closed as a label-collection gate; see `artifacts/learned-ranking-labels/2026-04-27/`. The bundle contains split-protected Greedy ordering labels and LNS replay labels with schema/audit metadata, but no model was trained and no defaults changed.
 
 | Rank | Priority | Impact | Summary | Success Signal |
 | --- | --- | ---: | --- | --- |
-| 1 | Road opportunity-cost instrumentation | 3.5 | Explain road and building choices in terms of remaining row-0-reachable space, not just current road length. | Traces identify placements that preserve or destroy future connection options. |
-| 2 | Deterministic ablations before model training | 4.0 | Run controlled heuristics experiments before learned ranking. | We know which features and phases actually move population. |
-| 3 | Held Auto/LNS policy ablations | 3.5 | Keep baseline after the 5s/30s coverage slices; run 120s only if future cases show a real population win. | New evidence beats baseline on Auto/LNS population without extra wall-clock. |
-| 4 | Low-risk learned ranking | 3.0 | Start with service ordering or LNS window ordering only after trace and ablation gates pass. | Model ranking beats deterministic baseline on held-out maps. |
-| 5 | Planner explainability maps | 3.0 | Add opportunity/risk maps for placement and connectivity decisions. | Humans can inspect why a placement is attractive or dangerous. |
-| 6 | CPU parallelism and portfolio work | 2.5 | Use parallelism only where CPU-normalized benchmarks prove wall-clock gain. | Higher population per wall-clock without hiding wasted CPU. |
+| 1 | Low-risk learned ranking | 3.0 | Start with service ordering or LNS window ordering only after trace, labels, and ablation gates pass. | Model ranking beats deterministic baseline on held-out maps. |
+| 2 | Planner explainability maps | 3.0 | Add opportunity/risk maps for placement and connectivity decisions. | Humans can inspect why a placement is attractive or dangerous. |
+| 3 | CPU parallelism and portfolio work | 2.5 | Use parallelism only where CPU-normalized benchmarks prove wall-clock gain. | Higher population per wall-clock without hiding wasted CPU. |
+
+## Gated Priorities
+
+These are not next actions. They need the trigger in the first column before moving back into the active table.
+
+| Trigger | Priority | Impact | Summary | Success Signal |
+| --- | --- | ---: | --- | --- |
+| Future pressure cases show a population win over baseline | Auto/LNS policy ablations | 3.5 | Keep baseline after the 5s/30s coverage slices; run 120s only when a new focused slice beats baseline on population. | New evidence beats baseline on Auto/LNS population without extra wall-clock. |
 
 ## Combined Ordering
 
-1. Instrument road opportunity cost in terms of remaining row-0-reachable space.
-2. Run ablations for Greedy ordering, LNS neighborhoods, and Auto budgets.
-3. Keep Auto/LNS policy ablations on hold unless future pressure cases show a population win over baseline.
-4. Try learned Greedy service re-ranking if traces show ordering mistakes.
-5. Add counterfactual LNS labels, then try learned LNS window re-ranking.
-6. Add CPU portfolio or replay parallelism only with CPU-normalized benchmark wins.
-7. Add planner explainability maps once the underlying metrics are stable.
-8. Consider value-guided seeds if seed quality is proven to bottleneck LNS.
-9. Keep distributed CP-SAT, bandits, and full RL for later.
+1. Try learned Greedy service re-ranking only if held-out labels and benchmarks justify it.
+2. Try learned LNS window re-ranking only after replay labels are trustworthy.
+3. Add CPU portfolio or replay parallelism only with CPU-normalized benchmark wins.
+4. Add planner explainability maps once the underlying metrics are stable.
+5. Consider value-guided seeds if seed quality is proven to bottleneck LNS.
+6. Keep distributed CP-SAT, bandits, and full RL for later.
 
 ## Discipline
 

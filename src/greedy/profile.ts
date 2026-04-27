@@ -115,6 +115,12 @@ export function createGreedyProfileCounters(): GreedyProfileCounters {
       connectivityShadowScoreWins: 0,
       connectivityShadowScoreLosses: 0,
       connectivityShadowScoreNeutral: 0,
+      roadOpportunityChecks: 0,
+      roadOpportunityLostCells: 0,
+      roadOpportunityFootprintCells: 0,
+      roadOpportunityDisconnectedCells: 0,
+      roadOpportunityMaxLostCells: 0,
+      roadOpportunityMaxDisconnectedCells: 0,
     },
   };
 }

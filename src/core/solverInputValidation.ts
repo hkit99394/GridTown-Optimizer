@@ -979,6 +979,14 @@ function assertValidAutoOptions(params: SolverParams): void {
   );
   requireOptionalFiniteNumberInRange(
     auto,
+    "cpSatStageReserveRatio",
+    "Auto option auto.cpSatStageReserveRatio",
+    0,
+    1,
+    true
+  );
+  requireOptionalFiniteNumberInRange(
+    auto,
     "cpSatStageNoImprovementTimeoutSeconds",
     "Auto option auto.cpSatStageNoImprovementTimeoutSeconds",
     0,

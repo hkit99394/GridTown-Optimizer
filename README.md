@@ -473,6 +473,20 @@ Run a named scorecard case with JSON output:
 npm run benchmark:scorecard -- --json compact-service-repair
 ```
 
+Run the Auto/LNS budget ablation sweep:
+
+```bash
+npm run benchmark:scorecard -- --budget-ablation --modes=auto,greedy,lns,cp-sat --budgets=5,30 --seeds=7,19
+```
+
+Start with a narrow matrix before adding `120` second probes; corrected LNS budget policies can legitimately consume the requested budget.
+
+Emit policy-scoped decision traces for the same ablation runner:
+
+```bash
+npm run benchmark:scorecard -- --budget-ablation --trace-jsonl --ablation-policies=baseline,seed-light --budgets=5 --seeds=7
+```
+
 From code:
 
 ```ts
@@ -643,6 +657,7 @@ auto: {
   weakCycleImprovementThreshold?: number;
   maxConsecutiveWeakCycles?: number;
   cpSatStageTimeLimitSeconds?: number;
+  cpSatStageReserveRatio?: number;
   cpSatStageNoImprovementTimeoutSeconds?: number;
 }
 ```

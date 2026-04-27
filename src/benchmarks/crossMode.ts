@@ -15,6 +15,7 @@ import { normalizeLnsBenchmarkOptions } from "./lns.js";
 
 import type {
   AutoOptions,
+  AutoStageOptimizerName,
   CpSatOptions,
   CpSatPortfolioOptions,
   Grid,
@@ -60,6 +61,7 @@ export interface CrossModeBenchmarkSolveContext {
   mode: CrossModeBenchmarkMode;
   budgetSeconds: number;
   seed: number;
+  budgetAblationPolicyName?: string;
 }
 
 export type CrossModeBenchmarkSolve = (
@@ -89,6 +91,7 @@ export interface CrossModeBenchmarkRunOptions {
   budgetSeconds?: number;
   budgetsSeconds?: number[];
   seeds?: number[];
+  budgetAblationPolicy?: CrossModeBenchmarkBudgetAblationPolicy;
   auto?: Partial<AutoOptions>;
   greedy?: Partial<GreedyOptions>;
   lns?: Partial<LnsOptions>;
@@ -185,6 +188,10 @@ export interface CrossModeBenchmarkBudgetPolicySignal {
   reason: string;
   autoStopReason: string | null;
   autoGreedySeedElapsedSeconds: number | null;
+  autoLnsStageElapsedSeconds: number | null;
+  autoLnsStageImprovement: number | null;
+  autoCpSatStageElapsedSeconds: number | null;
+  autoCpSatStageImprovement: number | null;
   lnsScoreDeltaVsAuto: number | null;
   lnsSeedWallClockSeconds: number | null;
 }
@@ -205,6 +212,17 @@ export interface CrossModeBenchmarkSuiteResult {
   budgetPolicySignals: CrossModeBenchmarkBudgetPolicySignal[];
 }
 
+export interface CrossModeBenchmarkBudgetAblationPolicy {
+  name: string;
+  description: string;
+  auto?: Partial<AutoOptions>;
+  lns?: Partial<LnsOptions>;
+  lnsSeedBudgetRatio?: number;
+  lnsRepairBudgetRatio?: number;
+  lnsEscalatedRepairBudgetRatio?: number;
+  autoCpSatStageReserveRatio?: number;
+}
+
 interface CrossModeBenchmarkTraceArtifacts {
   decisionTrace: SolverDecisionTraceEvent[];
   timeToQuality: SolverTimeToQualityScorecard;
@@ -222,6 +240,10 @@ export const DEFAULT_CROSS_MODE_BENCHMARK_MODES = Object.freeze([
   "cp-sat",
   "cp-sat-portfolio",
 ] satisfies CrossModeBenchmarkMode[]);
+
+const TRACE_TUNED_LNS_MAX_ITERATIONS = 24;
+const TRACE_TUNED_LNS_SMALL_BUDGET_SECONDS = 5;
+const TRACE_TUNED_LNS_MEDIUM_BUDGET_SECONDS = 30;
 
 const MODE_LABELS: Record<CrossModeBenchmarkMode, string> = {
   auto: "Auto",
@@ -248,8 +270,11 @@ function inferProblemSizeBand(benchmarkCase: CrossModeBenchmarkCase): CrossModeP
 }
 
 function normalizeBudgetSeconds(value: number | undefined): number {
-  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+  if (value === undefined) {
     return DEFAULT_CROSS_MODE_BENCHMARK_BUDGET_SECONDS;
+  }
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+    throw new Error("Cross-mode benchmark budget seconds must be a finite number greater than 0.");
   }
   return Math.max(1, Math.round(value * 1000) / 1000);
 }
@@ -354,12 +379,120 @@ function buildBudgetedCpSatOptions(
   });
 }
 
+function positiveFiniteNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : null;
+}
+
+function positiveInteger(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value > 0 ? value : null;
+}
+
+function firstPositiveFiniteNumber(...values: unknown[]): number | null {
+  for (const value of values) {
+    const normalized = positiveFiniteNumber(value);
+    if (normalized !== null) return normalized;
+  }
+  return null;
+}
+
+function firstPositiveInteger(...values: unknown[]): number | null {
+  for (const value of values) {
+    const normalized = positiveInteger(value);
+    if (normalized !== null) return normalized;
+  }
+  return null;
+}
+
+function ratioBudgetSeconds(value: unknown, budgetSeconds: number): number | null {
+  return typeof value === "number" && Number.isFinite(value) && value > 0
+    ? Math.max(0.001, Math.min(budgetSeconds, budgetSeconds * value))
+    : null;
+}
+
+function budgetAblationLnsOptions(
+  policy: CrossModeBenchmarkBudgetAblationPolicy | undefined,
+  budgetSeconds: number
+): Partial<LnsOptions> {
+  if (!policy) return {};
+  const seedTimeLimitSeconds = ratioBudgetSeconds(policy.lnsSeedBudgetRatio, budgetSeconds);
+  const repairTimeLimitSeconds = ratioBudgetSeconds(policy.lnsRepairBudgetRatio, budgetSeconds);
+  const escalatedRepairTimeLimitSeconds = ratioBudgetSeconds(policy.lnsEscalatedRepairBudgetRatio, budgetSeconds);
+  return {
+    ...(policy.lns ?? {}),
+    ...(seedTimeLimitSeconds !== null ? { seedTimeLimitSeconds } : {}),
+    ...(repairTimeLimitSeconds !== null
+      ? {
+          repairTimeLimitSeconds,
+          focusedRepairTimeLimitSeconds: repairTimeLimitSeconds,
+        }
+      : {}),
+    ...(escalatedRepairTimeLimitSeconds !== null ? { escalatedRepairTimeLimitSeconds } : {}),
+  };
+}
+
+function budgetAblationAutoOptions(policy: CrossModeBenchmarkBudgetAblationPolicy | undefined): Partial<AutoOptions> {
+  if (!policy) return {};
+  return {
+    ...(policy.auto ?? {}),
+    ...(typeof policy.autoCpSatStageReserveRatio === "number" && Number.isFinite(policy.autoCpSatStageReserveRatio)
+      ? { cpSatStageReserveRatio: Math.max(0, Math.min(1, policy.autoCpSatStageReserveRatio)) }
+      : {}),
+  };
+}
+
+function defaultTraceTunedLnsRepairBudgetSeconds(budgetSeconds: number): number {
+  if (budgetSeconds <= TRACE_TUNED_LNS_SMALL_BUDGET_SECONDS) return 1;
+  if (budgetSeconds <= TRACE_TUNED_LNS_MEDIUM_BUDGET_SECONDS) return 2;
+  return 5;
+}
+
+function defaultTraceTunedLnsEscalatedRepairBudgetSeconds(
+  budgetSeconds: number,
+  repairTimeLimitSeconds: number
+): number {
+  if (budgetSeconds <= TRACE_TUNED_LNS_SMALL_BUDGET_SECONDS) return repairTimeLimitSeconds;
+  return Math.min(repairTimeLimitSeconds * 2, Math.max(repairTimeLimitSeconds, budgetSeconds * 0.1));
+}
+
 function buildBudgetedLnsOptions(params: SolverParams, options: CrossModeBenchmarkRunOptions, budgetSeconds: number): LnsOptions {
-  return normalizeLnsBenchmarkOptions(params.lns, {
+  const overrideLns = {
     ...(options.lns ?? {}),
+    ...budgetAblationLnsOptions(options.budgetAblationPolicy, budgetSeconds),
+  };
+  const explicitRepairTimeLimitSeconds = firstPositiveFiniteNumber(overrideLns.repairTimeLimitSeconds);
+  const repairTimeLimitSeconds = Math.min(
+    explicitRepairTimeLimitSeconds ?? defaultTraceTunedLnsRepairBudgetSeconds(budgetSeconds),
+    budgetSeconds
+  );
+  const seedTimeLimitSeconds = Math.min(
+    firstPositiveFiniteNumber(overrideLns.seedTimeLimitSeconds)
+      ?? Math.max(0.1, Math.min(budgetSeconds * 0.2, repairTimeLimitSeconds)),
+    budgetSeconds
+  );
+  const repairBudgetSeconds = Math.max(0, budgetSeconds - seedTimeLimitSeconds);
+  const policyIterations = Math.max(
+    1,
+    Math.min(TRACE_TUNED_LNS_MAX_ITERATIONS, Math.floor(repairBudgetSeconds / repairTimeLimitSeconds))
+  );
+  const iterations = firstPositiveInteger(overrideLns.iterations) ?? policyIterations;
+  const explicitFocusedRepair = firstPositiveFiniteNumber(overrideLns.focusedRepairTimeLimitSeconds);
+  const explicitEscalatedRepair = firstPositiveFiniteNumber(overrideLns.escalatedRepairTimeLimitSeconds);
+  return normalizeLnsBenchmarkOptions(params.lns, {
+    ...overrideLns,
     wallClockLimitSeconds: budgetSeconds,
     timeLimitSeconds: budgetSeconds,
-    repairTimeLimitSeconds: Math.min(options.lns?.repairTimeLimitSeconds ?? params.lns?.repairTimeLimitSeconds ?? 1, budgetSeconds),
+    seedTimeLimitSeconds,
+    iterations,
+    maxNoImprovementIterations: firstPositiveInteger(overrideLns.maxNoImprovementIterations) ?? iterations,
+    repairTimeLimitSeconds,
+    focusedRepairTimeLimitSeconds: Math.min(explicitFocusedRepair ?? repairTimeLimitSeconds, budgetSeconds),
+    escalatedRepairTimeLimitSeconds: Math.min(
+      explicitEscalatedRepair
+        ?? (explicitRepairTimeLimitSeconds === null
+          ? defaultTraceTunedLnsEscalatedRepairBudgetSeconds(budgetSeconds, repairTimeLimitSeconds)
+          : repairTimeLimitSeconds),
+      budgetSeconds
+    ),
   });
 }
 
@@ -378,6 +511,7 @@ export function buildCrossModeBenchmarkParams(
     ? buildPortfolioOptions(options, budgetSeconds, seed)
     : undefined;
   const cpSat = buildBudgetedCpSatOptions(baseWithGreedy, options, budgetSeconds, seed, portfolio);
+  const autoPolicyOverrides = budgetAblationAutoOptions(options.budgetAblationPolicy);
 
   if (mode === "greedy") {
     return {
@@ -402,9 +536,13 @@ export function buildCrossModeBenchmarkParams(
       auto: {
         ...(baseWithGreedy.auto ?? {}),
         ...(options.auto ?? {}),
+        ...autoPolicyOverrides,
         wallClockLimitSeconds: budgetSeconds,
         randomSeed: seed,
-        cpSatStageTimeLimitSeconds: Math.min(options.auto?.cpSatStageTimeLimitSeconds ?? budgetSeconds, budgetSeconds),
+        cpSatStageTimeLimitSeconds: Math.min(
+          autoPolicyOverrides.cpSatStageTimeLimitSeconds ?? options.auto?.cpSatStageTimeLimitSeconds ?? budgetSeconds,
+          budgetSeconds
+        ),
       },
       cpSat: withoutPortfolio(cpSat),
       lns: buildBudgetedLnsOptions(baseWithGreedy, options, budgetSeconds),
@@ -602,10 +740,12 @@ function buildCrossModeBenchmarkTraceArtifacts(
     budgetSeconds: number;
     seed: number;
     wallClockSeconds: number;
+    policyName?: string;
   }
 ): CrossModeBenchmarkTraceArtifacts {
+  const policySegment = options.policyName ? `:policy-${options.policyName.replace(/[^a-zA-Z0-9_-]/g, "_")}` : "";
   const decisionTrace = buildDecisionTraceFromSolution(solution, {
-    runId: `${benchmarkCase.name}:${mode}:budget-${options.budgetSeconds}:seed-${options.seed}`,
+    runId: `${benchmarkCase.name}:${mode}${policySegment}:budget-${options.budgetSeconds}:seed-${options.seed}`,
     optimizer,
     elapsedTimeSeconds: options.wallClockSeconds,
   });
@@ -642,6 +782,7 @@ async function runCrossModeBenchmarkCase(
       mode,
       budgetSeconds,
       seed,
+      ...(options.budgetAblationPolicy?.name ? { budgetAblationPolicyName: options.budgetAblationPolicy.name } : {}),
     });
     const finishedAt = performance.now();
     const wallClockSeconds = (finishedAt - startedAt) / 1000;
@@ -655,6 +796,7 @@ async function runCrossModeBenchmarkCase(
       budgetSeconds,
       seed,
       wallClockSeconds,
+      policyName: options.budgetAblationPolicy?.name,
     });
 
     rawResults.push({
@@ -801,6 +943,16 @@ function recommendationForBestMode(
 function buildBudgetPolicyReason(
   signal: Omit<CrossModeBenchmarkBudgetPolicySignal, "reason">
 ): string {
+  const stageEvidence = [
+    signal.autoLnsStageElapsedSeconds !== null
+      ? `Auto LNS used ${formatSeconds(signal.autoLnsStageElapsedSeconds)} for +${signal.autoLnsStageImprovement ?? "n/a"} accepted population`
+      : null,
+    signal.autoCpSatStageElapsedSeconds !== null
+      ? `Auto CP-SAT used ${formatSeconds(signal.autoCpSatStageElapsedSeconds)} for +${signal.autoCpSatStageImprovement ?? "n/a"} accepted population`
+      : null,
+  ].filter((entry): entry is string => entry !== null).join("; ");
+  const stageSuffix = stageEvidence ? ` ${stageEvidence}.` : "";
+
   if (signal.autoScore === null) {
     return "No Auto run is present for this budget; add Auto before comparing budget policy.";
   }
@@ -808,10 +960,20 @@ function buildBudgetPolicyReason(
     return "Insufficient score data to compare Auto against the best mode.";
   }
   if (signal.autoDeltaToBest <= 0) {
-    return `Auto matched the best score ${signal.bestScore ?? "n/a"} at ${signal.budgetSeconds}s.`;
+    return `Auto matched the best score ${signal.bestScore ?? "n/a"} at ${signal.budgetSeconds}s.${stageSuffix}`;
   }
   const label = MODE_LABELS[signal.bestMode];
-  return `${label} beat Auto by ${signal.autoDeltaToBest} population at ${signal.budgetSeconds}s; inspect trace timing before changing policy.`;
+  return `${label} beat Auto by ${signal.autoDeltaToBest} population at ${signal.budgetSeconds}s; inspect trace timing before changing policy.${stageSuffix}`;
+}
+
+function numberEvidence(result: CrossModeBenchmarkModeResult, stage: AutoStageOptimizerName, key: string): number | null {
+  const event = [...result.decisionTrace].reverse().find((entry) =>
+    entry.kind === "auto-stage"
+    && entry.activeStage === stage
+    && typeof entry.evidence?.[key] === "number"
+  );
+  const value = event?.evidence?.[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 function buildBudgetPolicySignals(
@@ -834,6 +996,10 @@ function buildBudgetPolicySignals(
       recommendation: recommendationForBestMode(best?.mode ?? null, autoDeltaToBest),
       autoStopReason: auto?.autoStopReason ?? null,
       autoGreedySeedElapsedSeconds: auto?.autoGreedySeedElapsedSeconds ?? null,
+      autoLnsStageElapsedSeconds: auto ? numberEvidence(auto, "lns", "elapsedSeconds") : null,
+      autoLnsStageImprovement: auto ? numberEvidence(auto, "lns", "improvement") : null,
+      autoCpSatStageElapsedSeconds: auto ? numberEvidence(auto, "cp-sat", "elapsedSeconds") : null,
+      autoCpSatStageImprovement: auto ? numberEvidence(auto, "cp-sat", "improvement") : null,
       lnsScoreDeltaVsAuto: auto && lns ? lns.totalPopulation - auto.totalPopulation : null,
       lnsSeedWallClockSeconds: lns?.lnsSeedWallClockSeconds ?? null,
     };
@@ -939,6 +1105,8 @@ function formatBudgetPolicySignal(signal: CrossModeBenchmarkBudgetPolicySignal):
     `best=${best}`,
     `auto-gap=${formatPopulationGap(signal.autoDeltaToBest)}`,
     `lns-vs-auto=${formatScoreDeltaVsAuto(signal.lnsScoreDeltaVsAuto)}`,
+    `auto-lns=${formatSeconds(signal.autoLnsStageElapsedSeconds)}/+${formatPopulationGap(signal.autoLnsStageImprovement)}`,
+    `auto-cp-sat=${formatSeconds(signal.autoCpSatStageElapsedSeconds)}/+${formatPopulationGap(signal.autoCpSatStageImprovement)}`,
     `reason=${signal.reason}`,
   ].join(" ");
 }

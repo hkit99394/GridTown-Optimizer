@@ -1049,6 +1049,12 @@ async function testSolveRoutesRejectInvalidAutoOptionsBeforeStartingBackend(hand
       expectedError:
         "Invalid solver input: Auto option auto.cpSatStageTimeLimitSeconds must be a finite number > 0 and <= 86400.",
     },
+    {
+      url: "/api/solve",
+      auto: { cpSatStageReserveRatio: 2 },
+      expectedError:
+        "Invalid solver input: Auto option auto.cpSatStageReserveRatio must be a finite number >= 0 and <= 1.",
+    },
   ];
 
   try {

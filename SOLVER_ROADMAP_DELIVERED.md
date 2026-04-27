@@ -90,6 +90,33 @@ Reviewed through 2026-04-27.
 - Population is read from validation totals, result stats, solution totals, or residential population sums when needed.
 - Saved-layout ordering and load behavior remain unchanged; the displayed selector metadata is now aligned with the solver goal.
 
+### 14. Auto/LNS Budget And Trace Hardening
+
+- Auto now records per-stage run summaries with start time, elapsed time, candidate population, accepted population, improvement, random seed, and stage status evidence.
+- Auto LNS stages reserve time for the following CP-SAT stage and cap LNS seed, focused repair, and escalated repair budgets so they cannot consume that reserve.
+- LNS passes the shared stop file into its internal greedy seed solve, so wall-clock and cancellation stops can interrupt seed generation.
+- Auto decision traces now keep detailed final-stage LNS neighborhood and CP-SAT progress events with stage-start offsets instead of only coarse Auto stage completion events.
+- Cross-mode budget policy signals use structured Auto stage evidence instead of matching human-readable reason text.
+- Regression coverage checks Auto stage run metadata, LNS budget caps, Auto LNS trace detail, and CP-SAT last-improvement trace timing.
+
+### 15. Cross-Mode Budget Ablation Runner
+
+- Cross-mode benchmarks can now run named budget-ablation policies over the same cases, budgets, seeds, and modes.
+- Built-in ablation policies compare the baseline, lighter LNS seed spending, heavier LNS repair spending, and heavier Auto CP-SAT reserve spending.
+- `auto.cpSatStageReserveRatio` is configurable and validated so CP-SAT reserve allocation can be compared directly.
+- Ablation text, JSON, and JSONL trace output are available through the scorecard CLI with `--budget-ablation` and `--ablation-policies=...`.
+- Ablation trace run IDs include the policy name, so traces from multiple policies can be compared without event ID collisions.
+- Ablation summaries include per-budget checkpoint rows so 5s, 30s, and 120s regressions are visible instead of being hidden by aggregate means.
+- Auto stage summaries preserve LNS seed/repair counters and CP-SAT timing fields for trace-driven policy analysis even when a later stage wins the final incumbent.
+
+### 16. Initial Auto/LNS Budget Ablation Review
+
+- The corrected default-case, seed `7`, 5s/30s sweep was executed and all built-in policies tied on Auto, LNS, and best population, so the baseline policy remains the recommended default.
+- Cross-mode LNS benchmark budgeting now lets the benchmark budget policy set seed, repair, focused repair, escalated repair, iteration, and no-improvement caps instead of inheriting corpus caps that mask policy differences.
+- CP-SAT decision traces now separate incumbent improvement time from terminal status, bound, and gap timing so budget analysis does not treat proof evidence as if it happened at first incumbent time.
+- Ablation baseline selection now resolves a named `baseline` policy even when callers pass policies out of order, and explicit missing baseline names fail before any expensive suite execution.
+- Regression coverage checks default corpus LNS budget materialization at 5s/30s/120s, out-of-order baseline deltas, per-budget summaries, and CP-SAT terminal trace timing.
+
 ## Maintenance Watchpoints
 
 - Keep deterministic benchmark seeds stable when changing solver scoring.
@@ -97,3 +124,6 @@ Reviewed through 2026-04-27.
 - Keep distributed or portfolio solving behind proof that single-machine policy is no longer the bottleneck.
 - Keep learned guidance separate from core runtime correctness until traces and labels are strong enough.
 - Keep final road pruning conservative: population and validity must not depend on the removed roads.
+- Keep Auto budget slicing honest: LNS seed and repair work must not spend the CP-SAT reserve unless a future trace-backed policy explicitly changes that.
+- Keep ablation matrices small by default; expand cases, modes, budgets, or policies only when the previous sweep gives a clear signal.
+- Keep long ablation runs staged and timeout-bounded; the corrected 30s LNS budget can legitimately consume far more wall-clock than the previous capped corpus setup.

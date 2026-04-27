@@ -113,6 +113,8 @@ export interface AutoOptions {
   maxConsecutiveWeakCycles?: number;
   /** Default CP-SAT stage runtime when auto is driving exact passes. Defaults to 30 seconds. */
   cpSatStageTimeLimitSeconds?: number;
+  /** Share of the global Auto budget reserved for each CP-SAT stage after LNS. Defaults to 20%. */
+  cpSatStageReserveRatio?: number;
   /** Default CP-SAT no-improvement cutoff when auto is driving exact passes. Defaults to 10 seconds. */
   cpSatStageNoImprovementTimeoutSeconds?: number;
 }
@@ -138,6 +140,33 @@ export interface AutoGreedySeedStageSummary {
   phases?: GreedyProfilePhaseSummary[];
 }
 
+export interface AutoStageRunSummary {
+  stage: AutoStageOptimizerName;
+  stageIndex: number;
+  cycleIndex: number;
+  randomSeed: number;
+  startedAtSeconds: number;
+  elapsedSeconds: number;
+  completedAtSeconds: number;
+  populationBefore: number | null;
+  candidatePopulation: number | null;
+  acceptedPopulation: number | null;
+  improvement: number | null;
+  cpSatStatus?: string | null;
+  cpSatSolveWallTimeSeconds?: number | null;
+  cpSatLastImprovementAtSeconds?: number | null;
+  cpSatPopulationGapUpperBound?: number | null;
+  lnsStopReason?: string | null;
+  lnsSeedTimeLimitSeconds?: number | null;
+  lnsSeedWallClockSeconds?: number | null;
+  lnsFocusedRepairTimeLimitSeconds?: number | null;
+  lnsEscalatedRepairTimeLimitSeconds?: number | null;
+  lnsIterationsStarted?: number | null;
+  lnsIterationsCompleted?: number | null;
+  lnsImprovingIterations?: number | null;
+  lnsNeutralIterations?: number | null;
+}
+
 export interface AutoSolveStageMetadata {
   requestedOptimizer: "auto";
   activeStage: AutoStageOptimizerName | null;
@@ -147,6 +176,7 @@ export interface AutoSolveStageMetadata {
   lastCycleImprovementRatio: number | null;
   stopReason?: AutoSolveStopReason | null;
   generatedSeeds: AutoSolveGeneratedSeed[];
+  stageRuns?: AutoStageRunSummary[];
   greedySeedStage?: AutoGreedySeedStageSummary | null;
 }
 

@@ -17,6 +17,7 @@ import type {
   AutoOptions,
   AutoGreedySeedStageSummary,
   AutoSolveGeneratedSeed,
+  AutoStageRunSummary,
   AutoSolveStageMetadata,
   AutoSolveStopReason,
   AutoStageOptimizerName,
@@ -37,6 +38,8 @@ const AUTO_GREEDY_STAGE_REFINE_ITERATION_CAP = 1;
 const AUTO_GREEDY_STAGE_REFINE_CANDIDATE_CAP = 24;
 const AUTO_GREEDY_STAGE_EXACT_POOL_CAP = 8;
 const AUTO_GREEDY_STAGE_EXACT_COMBINATION_CAP = 512;
+const AUTO_CP_SAT_STAGE_RESERVE_RATIO = 0.2;
+const AUTO_MIN_CP_SAT_STAGE_RESERVE_SECONDS = 1;
 const MAX_STAGE_RANDOM_SEED = 0x7fffffff;
 
 interface NormalizedAutoOptions {
@@ -45,6 +48,7 @@ interface NormalizedAutoOptions {
   weakCycleImprovementThreshold: number;
   maxConsecutiveWeakCycles: number;
   cpSatStageTimeLimitSeconds: number;
+  cpSatStageReserveRatio: number;
   cpSatStageNoImprovementTimeoutSeconds: number;
 }
 
@@ -56,10 +60,19 @@ interface AutoRuntimeState {
   lastCycleImprovementRatio: number | null;
   stopReason: AutoSolveStopReason | null;
   generatedSeeds: AutoSolveGeneratedSeed[];
+  stageRuns: AutoStageRunSummary[];
   greedySeedStage: AutoGreedySeedStageSummary | null;
 }
 
 type StageStarter = (grid: Grid, params: SolverParams) => BackgroundSolveHandle;
+
+interface AutoLnsStageBudget {
+  wallClockLimitSeconds: number | null;
+  seedTimeLimitSeconds?: number;
+  repairTimeLimitSeconds: number;
+  focusedRepairTimeLimitSeconds: number;
+  escalatedRepairTimeLimitSeconds: number;
+}
 
 interface SyncAutoStopController {
   stopFilePath: string;
@@ -111,11 +124,16 @@ function positiveIntegerOrDefault(value: unknown, fallback: number): number {
   return Math.max(1, Math.floor(finiteNumberOrDefault(value, fallback)));
 }
 
+function positiveNumberOrDefault(value: unknown, fallback: number): number {
+  const normalized = finiteNumberOrDefault(value, fallback);
+  return normalized > 0 ? Math.max(0.001, normalized) : fallback;
+}
+
 function normalizeAutoOptions(params: SolverParams): NormalizedAutoOptions {
   const auto = params.auto ?? {};
   const configuredWallClockLimitSeconds = finiteNumberOrDefault(auto.wallClockLimitSeconds, Number.NaN);
   const wallClockLimitSeconds = configuredWallClockLimitSeconds > 0
-    ? Math.max(1, Math.floor(configuredWallClockLimitSeconds))
+    ? Math.max(0.001, configuredWallClockLimitSeconds)
     : null;
   return {
     wallClockLimitSeconds,
@@ -131,11 +149,18 @@ function normalizeAutoOptions(params: SolverParams): NormalizedAutoOptions {
       auto.maxConsecutiveWeakCycles,
       DEFAULT_MAX_CONSECUTIVE_WEAK_CYCLES
     ),
-    cpSatStageTimeLimitSeconds: positiveIntegerOrDefault(
+    cpSatStageTimeLimitSeconds: positiveNumberOrDefault(
       auto.cpSatStageTimeLimitSeconds,
       DEFAULT_CP_SAT_STAGE_TIME_LIMIT_SECONDS
     ),
-    cpSatStageNoImprovementTimeoutSeconds: positiveIntegerOrDefault(
+    cpSatStageReserveRatio: Math.max(
+      0,
+      Math.min(
+        1,
+        finiteNumberOrDefault(auto.cpSatStageReserveRatio, AUTO_CP_SAT_STAGE_RESERVE_RATIO)
+      )
+    ),
+    cpSatStageNoImprovementTimeoutSeconds: positiveNumberOrDefault(
       auto.cpSatStageNoImprovementTimeoutSeconds,
       DEFAULT_CP_SAT_STAGE_NO_IMPROVEMENT_TIMEOUT_SECONDS
     ),
@@ -247,6 +272,24 @@ function buildGreedySeedStageSummary(
   };
 }
 
+function elapsedSecondsSince(startedAtMs: number): number {
+  return Math.max(0, Date.now() - startedAtMs) / 1000;
+}
+
+function createAutoRuntimeState(): AutoRuntimeState {
+  return {
+    activeStage: null,
+    stageIndex: 0,
+    cycleIndex: 0,
+    consecutiveWeakCycles: 0,
+    lastCycleImprovementRatio: null,
+    stopReason: null,
+    generatedSeeds: [],
+    stageRuns: [],
+    greedySeedStage: null,
+  };
+}
+
 function recordGreedySeedStageSummary(
   state: AutoRuntimeState,
   stageParams: SolverParams,
@@ -256,8 +299,79 @@ function recordGreedySeedStageSummary(
   state.greedySeedStage = buildGreedySeedStageSummary(
     stageParams,
     solution,
-    Math.max(0, Date.now() - startedAtMs) / 1000
+    elapsedSecondsSince(startedAtMs)
   );
+}
+
+function acceptedStagePopulation(candidatePopulation: number | null, baselinePopulation: number | null): number | null {
+  if (candidatePopulation === null) return baselinePopulation;
+  if (baselinePopulation === null) return candidatePopulation;
+  return Math.max(baselinePopulation, candidatePopulation);
+}
+
+function buildCpSatStageRunEvidence(solution: Solution | null): Partial<AutoStageRunSummary> {
+  if (!solution) return {};
+  const telemetry = solution.cpSatTelemetry;
+  return {
+    ...(solution.cpSatStatus !== undefined ? { cpSatStatus: solution.cpSatStatus ?? null } : {}),
+    ...(telemetry
+      ? {
+          cpSatSolveWallTimeSeconds: telemetry.solveWallTimeSeconds,
+          cpSatLastImprovementAtSeconds: telemetry.lastImprovementAtSeconds,
+          cpSatPopulationGapUpperBound: telemetry.populationGapUpperBound,
+        }
+      : {}),
+  };
+}
+
+function buildLnsStageRunEvidence(solution: Solution | null): Partial<AutoStageRunSummary> {
+  const telemetry = solution?.lnsTelemetry;
+  if (!telemetry) return {};
+  return {
+    lnsStopReason: telemetry.stopReason,
+    lnsSeedTimeLimitSeconds: telemetry.seedTimeLimitSeconds,
+    lnsSeedWallClockSeconds: telemetry.seedWallClockSeconds,
+    lnsFocusedRepairTimeLimitSeconds: telemetry.focusedRepairTimeLimitSeconds,
+    lnsEscalatedRepairTimeLimitSeconds: telemetry.escalatedRepairTimeLimitSeconds,
+    lnsIterationsStarted: telemetry.iterationsStarted,
+    lnsIterationsCompleted: telemetry.iterationsCompleted,
+    lnsImprovingIterations: telemetry.improvingIterations,
+    lnsNeutralIterations: telemetry.neutralIterations,
+  };
+}
+
+function recordAutoStageRunSummary(
+  state: AutoRuntimeState,
+  stage: AutoStageOptimizerName,
+  randomSeed: number,
+  solution: Solution | null,
+  incumbentBeforeStage: Solution | null,
+  autoStartedAtMs: number,
+  stageStartedAtMs: number
+): void {
+  const startedAtSeconds = Math.max(0, stageStartedAtMs - autoStartedAtMs) / 1000;
+  const completedAtSeconds = elapsedSecondsSince(autoStartedAtMs);
+  const elapsedSeconds = Math.max(0, completedAtSeconds - startedAtSeconds);
+  const candidatePopulation = solution?.totalPopulation ?? null;
+  const baselinePopulation = incumbentBeforeStage?.totalPopulation ?? null;
+  const acceptedPopulation = acceptedStagePopulation(candidatePopulation, baselinePopulation);
+  state.stageRuns.push({
+    stage,
+    stageIndex: state.stageIndex,
+    cycleIndex: state.cycleIndex,
+    randomSeed,
+    startedAtSeconds,
+    elapsedSeconds,
+    completedAtSeconds,
+    populationBefore: baselinePopulation,
+    candidatePopulation,
+    acceptedPopulation,
+    improvement: acceptedPopulation === null || baselinePopulation === null
+      ? null
+      : Math.max(0, acceptedPopulation - baselinePopulation),
+    ...buildCpSatStageRunEvidence(solution),
+    ...buildLnsStageRunEvidence(solution),
+  });
 }
 
 function stripAutoMetadata(solution: Solution): Solution {
@@ -325,6 +439,63 @@ function maxNumericValue(...values: Array<number | null | undefined>): number | 
     best = best === undefined ? value : Math.max(best, value);
   }
   return best;
+}
+
+function reservedCpSatStageSeconds(options: NormalizedAutoOptions, remainingSeconds: number): number {
+  if (
+    options.wallClockLimitSeconds === null
+    || options.cpSatStageReserveRatio <= 0
+    || remainingSeconds <= AUTO_MIN_CP_SAT_STAGE_RESERVE_SECONDS
+  ) {
+    return 0;
+  }
+  const budgetScaledReserve = options.wallClockLimitSeconds * options.cpSatStageReserveRatio;
+  return Math.min(
+    options.cpSatStageTimeLimitSeconds,
+    Math.max(AUTO_MIN_CP_SAT_STAGE_RESERVE_SECONDS, budgetScaledReserve),
+    Math.max(0, remainingSeconds - AUTO_MIN_CP_SAT_STAGE_RESERVE_SECONDS)
+  );
+}
+
+function budgetedAutoLnsStageSeconds(options: NormalizedAutoOptions, remainingSeconds: number): number {
+  const cpSatReserveSeconds = reservedCpSatStageSeconds(options, remainingSeconds);
+  return Math.max(0.001, remainingSeconds - cpSatReserveSeconds);
+}
+
+function capPositiveSeconds(value: number, limit: number): number {
+  return Math.max(0.001, Math.min(value, limit));
+}
+
+function buildAutoLnsStageBudget(
+  params: SolverParams,
+  options: NormalizedAutoOptions,
+  remainingSeconds: number | null
+): AutoLnsStageBudget {
+  const wallClockLimitSeconds = remainingSeconds === null
+    ? null
+    : budgetedAutoLnsStageSeconds(options, remainingSeconds);
+  const configuredRepairTimeLimitSeconds = params.lns?.repairTimeLimitSeconds ?? params.cpSat?.timeLimitSeconds ?? 5;
+  const repairTimeLimitSeconds = wallClockLimitSeconds === null
+    ? configuredRepairTimeLimitSeconds
+    : capPositiveSeconds(configuredRepairTimeLimitSeconds, wallClockLimitSeconds);
+  const configuredSeedTimeLimitSeconds = optionalPositiveNumber(params.lns?.seedTimeLimitSeconds);
+  const seedTimeLimitSeconds = wallClockLimitSeconds !== null && configuredSeedTimeLimitSeconds !== null
+    ? capPositiveSeconds(configuredSeedTimeLimitSeconds, wallClockLimitSeconds)
+    : undefined;
+  const focusedRepairTimeLimitSeconds = wallClockLimitSeconds === null && params.lns?.focusedRepairTimeLimitSeconds !== undefined
+    ? params.lns.focusedRepairTimeLimitSeconds
+    : capPositiveSeconds(params.lns?.focusedRepairTimeLimitSeconds ?? repairTimeLimitSeconds, repairTimeLimitSeconds);
+  const escalatedRepairTimeLimitSeconds = wallClockLimitSeconds === null && params.lns?.escalatedRepairTimeLimitSeconds !== undefined
+    ? params.lns.escalatedRepairTimeLimitSeconds
+    : capPositiveSeconds(params.lns?.escalatedRepairTimeLimitSeconds ?? repairTimeLimitSeconds, repairTimeLimitSeconds);
+
+  return {
+    wallClockLimitSeconds,
+    ...(seedTimeLimitSeconds !== undefined ? { seedTimeLimitSeconds } : {}),
+    repairTimeLimitSeconds,
+    focusedRepairTimeLimitSeconds,
+    escalatedRepairTimeLimitSeconds,
+  };
 }
 
 function shouldRecoverAutoStageError(stage: AutoStageOptimizerName, incumbent: Solution | null): boolean {
@@ -436,6 +607,7 @@ function buildAutoStageMetadata(state: AutoRuntimeState): AutoSolveStageMetadata
     lastCycleImprovementRatio: state.lastCycleImprovementRatio,
     stopReason: state.stopReason ?? null,
     generatedSeeds: state.generatedSeeds.map((seed) => ({ ...seed })),
+    stageRuns: state.stageRuns.map((run) => ({ ...run })),
   };
   const greedySeedStage = cloneGreedySeedStageSummary(state.greedySeedStage);
   if (greedySeedStage) {
@@ -518,7 +690,7 @@ function stageSeedParams(
         : undefined;
     const greedyTimeLimitSeconds = remainingSeconds === null
       ? configuredGreedyTimeLimit
-      : Math.max(1, Math.min(configuredGreedyTimeLimit ?? remainingSeconds, remainingSeconds));
+      : Math.max(0.001, Math.min(configuredGreedyTimeLimit ?? remainingSeconds, remainingSeconds));
     return {
       ...params,
       optimizer: "greedy",
@@ -532,6 +704,7 @@ function stageSeedParams(
   }
 
   if (stage === "lns") {
+    const lnsBudget = buildAutoLnsStageBudget(params, options, remainingSeconds);
     return {
       ...params,
       optimizer: "lns",
@@ -543,15 +716,17 @@ function stageSeedParams(
         ...(params.lns ?? {}),
         ...(sharedStopFilePath ? { stopFilePath: sharedStopFilePath } : {}),
         seedHint: incumbent ? solutionToLnsSeedHint(incumbent) : params.lns?.seedHint,
-        ...(remainingSeconds !== null
+        ...(lnsBudget.wallClockLimitSeconds !== null
           ? {
-              wallClockLimitSeconds: remainingSeconds,
-              repairTimeLimitSeconds: Math.max(
-                1,
-                Math.min(params.lns?.repairTimeLimitSeconds ?? params.cpSat?.timeLimitSeconds ?? 5, remainingSeconds)
-              ),
+              wallClockLimitSeconds: lnsBudget.wallClockLimitSeconds,
+              repairTimeLimitSeconds: lnsBudget.repairTimeLimitSeconds,
             }
-          : {}),
+          : {
+              repairTimeLimitSeconds: lnsBudget.repairTimeLimitSeconds,
+            }),
+        ...(lnsBudget.seedTimeLimitSeconds !== undefined ? { seedTimeLimitSeconds: lnsBudget.seedTimeLimitSeconds } : {}),
+        focusedRepairTimeLimitSeconds: lnsBudget.focusedRepairTimeLimitSeconds,
+        escalatedRepairTimeLimitSeconds: lnsBudget.escalatedRepairTimeLimitSeconds,
       },
     };
   }
@@ -562,7 +737,7 @@ function stageSeedParams(
   const warmStartHint = incumbent ? buildAutoCpSatWarmStartHint(incumbent, params.cpSat?.warmStartHint) : params.cpSat?.warmStartHint;
   const cappedTimeLimit = remainingSeconds === null
     ? configuredTimeLimit
-    : Math.max(1, Math.min(configuredTimeLimit, remainingSeconds));
+    : Math.max(0.001, Math.min(configuredTimeLimit, remainingSeconds));
   const objectiveLowerBound = maxNumericValue(
     params.cpSat?.objectiveLowerBound,
     cloneWarmStartHint(warmStartHint)?.objectiveLowerBound,
@@ -577,7 +752,7 @@ function stageSeedParams(
       ...(sharedStopFilePath ? { stopFilePath: sharedStopFilePath } : {}),
       randomSeed: generatedSeed,
       timeLimitSeconds: cappedTimeLimit,
-      noImprovementTimeoutSeconds: Math.max(1, Math.min(configuredNoImprovementTimeout, cappedTimeLimit)),
+      noImprovementTimeoutSeconds: Math.max(0.001, Math.min(configuredNoImprovementTimeout, cappedTimeLimit)),
       ...(warmStartHint ? { warmStartHint } : {}),
       ...(objectiveLowerBound !== undefined ? { objectiveLowerBound } : {}),
     },
@@ -586,7 +761,7 @@ function stageSeedParams(
 
 function remainingSeconds(deadlineAtMs: number | null): number | null {
   if (deadlineAtMs === null) return null;
-  return Math.max(0, Math.floor((deadlineAtMs - Date.now()) / 1000));
+  return Math.max(0, (deadlineAtMs - Date.now()) / 1000);
 }
 
 function deadlineStopReason(deadlineAtMs: number | null): AutoSolveStopReason | null {
@@ -615,6 +790,7 @@ async function runBackgroundStage(
   cycleIndex: number,
   startBackgroundSolve: StageStarter,
   nextStageSeed: () => number,
+  autoStartedAtMs: number,
   deadlineAtMs: number | null
 ): Promise<Solution | null> {
   const secondsRemaining = remainingSeconds(deadlineAtMs);
@@ -635,6 +811,7 @@ async function runBackgroundStage(
   });
 
   const stageParams = stageSeedParams(params, stage, incumbentRef.current, generatedSeed, options, secondsRemaining);
+  const incumbentBeforeStage = incumbentRef.current;
   const stageStartedAtMs = Date.now();
   const handle = startBackgroundSolve(G, stageParams);
   currentHandleRef.current = handle;
@@ -642,6 +819,15 @@ async function runBackgroundStage(
   try {
     const solution = await handle.promise;
     const strippedSolution = stripAutoMetadata(solution);
+    recordAutoStageRunSummary(
+      state,
+      stage,
+      generatedSeed,
+      strippedSolution,
+      incumbentBeforeStage,
+      autoStartedAtMs,
+      stageStartedAtMs
+    );
     if (stage === "greedy") {
       recordGreedySeedStageSummary(state, stageParams, strippedSolution, stageStartedAtMs);
     }
@@ -651,6 +837,15 @@ async function runBackgroundStage(
     const explicitStopReason = state.stopReason ?? deadlineStopReason(deadlineAtMs);
     if (recovered) {
       const strippedRecovered = stripAutoMetadata(recovered);
+      recordAutoStageRunSummary(
+        state,
+        stage,
+        generatedSeed,
+        strippedRecovered,
+        incumbentBeforeStage,
+        autoStartedAtMs,
+        stageStartedAtMs
+      );
       if (stage === "greedy") {
         recordGreedySeedStageSummary(state, stageParams, strippedRecovered, stageStartedAtMs);
       }
@@ -662,6 +857,15 @@ async function runBackgroundStage(
     if (stage === "greedy") {
       recordGreedySeedStageSummary(state, stageParams, null, stageStartedAtMs);
     }
+    recordAutoStageRunSummary(
+      state,
+      stage,
+      generatedSeed,
+      null,
+      incumbentBeforeStage,
+      autoStartedAtMs,
+      stageStartedAtMs
+    );
     return applyRecoverableStageError(stage, incumbentRef.current, state, error, explicitStopReason);
   } finally {
     currentHandleRef.current = null;
@@ -731,16 +935,7 @@ export function describeAutoStopReason(stopReason: AutoSolveStopReason | null | 
 
 export function solveAuto(G: Grid, params: SolverParams): Solution {
   const options = normalizeAutoOptions(params);
-  const state: AutoRuntimeState = {
-    activeStage: null,
-    stageIndex: 0,
-    cycleIndex: 0,
-    consecutiveWeakCycles: 0,
-    lastCycleImprovementRatio: null,
-    stopReason: null,
-    generatedSeeds: [],
-    greedySeedStage: null,
-  };
+  const state = createAutoRuntimeState();
   const startedAtMs = Date.now();
   const deadlineAtMs = options.wallClockLimitSeconds === null ? null : startedAtMs + options.wallClockLimitSeconds * 1000;
   const stopController = createSyncAutoStopController(deadlineAtMs, params);
@@ -779,10 +974,20 @@ export function solveAuto(G: Grid, params: SolverParams): Solution {
         secondsRemaining,
         stopController.stopFilePath
       );
+      const incumbentBeforeStage = incumbent;
       const stageStartedAtMs = Date.now();
       let solution: Solution | null;
       try {
         solution = stripAutoMetadata(syncStageSolve(G, stageParams, stage));
+        recordAutoStageRunSummary(
+          state,
+          stage,
+          generatedSeed,
+          solution,
+          incumbentBeforeStage,
+          startedAtMs,
+          stageStartedAtMs
+        );
         if (stage === "greedy") {
           recordGreedySeedStageSummary(state, stageParams, solution, stageStartedAtMs);
         }
@@ -790,6 +995,15 @@ export function solveAuto(G: Grid, params: SolverParams): Solution {
         if (stage === "greedy") {
           recordGreedySeedStageSummary(state, stageParams, null, stageStartedAtMs);
         }
+        recordAutoStageRunSummary(
+          state,
+          stage,
+          generatedSeed,
+          null,
+          incumbentBeforeStage,
+          startedAtMs,
+          stageStartedAtMs
+        );
         const explicitStopReason = stopController.currentStopReason() ?? deadlineStopReason(deadlineAtMs);
         return applyRecoverableStageError(
           stage,
@@ -862,16 +1076,7 @@ export function solveAuto(G: Grid, params: SolverParams): Solution {
 
 export function startAutoSolve(G: Grid, params: SolverParams): BackgroundSolveHandle {
   const options = normalizeAutoOptions(params);
-  const state: AutoRuntimeState = {
-    activeStage: null,
-    stageIndex: 0,
-    cycleIndex: 0,
-    consecutiveWeakCycles: 0,
-    lastCycleImprovementRatio: null,
-    stopReason: null,
-    generatedSeeds: [],
-    greedySeedStage: null,
-  };
+  const state = createAutoRuntimeState();
   const startedAtMs = Date.now();
   const deadlineAtMs = options.wallClockLimitSeconds === null ? null : startedAtMs + options.wallClockLimitSeconds * 1000;
   const incumbentRef: { current: Solution | null } = { current: null };
@@ -904,6 +1109,7 @@ export function startAutoSolve(G: Grid, params: SolverParams): BackgroundSolveHa
         0,
         startGreedySolve,
         nextStageSeed,
+        startedAtMs,
         deadlineAtMs
       );
       incumbentRef.current = chooseInitialIncumbent(G, params, greedySolution);
@@ -928,6 +1134,7 @@ export function startAutoSolve(G: Grid, params: SolverParams): BackgroundSolveHa
           cycleIndex,
           startLnsSolve,
           nextStageSeed,
+          startedAtMs,
           deadlineAtMs
         );
         incumbentRef.current = pickBetterSolution(incumbentRef.current, lnsSolution);
@@ -944,6 +1151,7 @@ export function startAutoSolve(G: Grid, params: SolverParams): BackgroundSolveHa
           cycleIndex,
           startCpSatSolve,
           nextStageSeed,
+          startedAtMs,
           deadlineAtMs
         );
         incumbentRef.current = pickBetterSolution(incumbentRef.current, cpSatSolution);

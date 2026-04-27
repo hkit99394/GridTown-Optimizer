@@ -1,4 +1,5 @@
 import type {
+  AutoStageRunSummary,
   AutoStageOptimizerName,
   GreedyProfilePhaseSummary,
   LnsNeighborhoodOutcome,
@@ -182,7 +183,8 @@ function lnsDecision(outcome: LnsNeighborhoodOutcome): SolverDecisionTraceDecisi
 function appendLnsEvents(
   builder: DecisionTraceBuilder,
   solution: Solution,
-  activeStage: OptimizerName | AutoStageOptimizerName | null
+  activeStage: OptimizerName | AutoStageOptimizerName | null,
+  elapsedMsOffset = 0
 ): void {
   const telemetry = solution.lnsTelemetry;
   if (!telemetry) return;
@@ -190,7 +192,7 @@ function appendLnsEvents(
   const seedElapsedMs = millisecondsFromSeconds(telemetry.seedWallClockSeconds);
   const seedPopulation = telemetry.outcomes[0]?.populationBefore ?? solution.totalPopulation;
   builder.push({
-    elapsedMs: seedElapsedMs,
+    elapsedMs: elapsedMsOffset + seedElapsedMs,
     activeStage,
     kind: "checkpoint",
     decision: "started",
@@ -211,7 +213,7 @@ function appendLnsEvents(
     elapsedMs += millisecondsFromSeconds(outcome.wallClockSeconds);
     const decision = lnsDecision(outcome);
     builder.push({
-      elapsedMs,
+      elapsedMs: elapsedMsOffset + elapsedMs,
       activeStage,
       kind: "lns-neighborhood",
       decision,
@@ -243,7 +245,8 @@ function appendCpSatEvents(
   builder: DecisionTraceBuilder,
   solution: Solution,
   activeStage: OptimizerName | AutoStageOptimizerName | null,
-  finalElapsedMs: number
+  finalElapsedMs: number,
+  elapsedMsOffset = 0
 ): void {
   const portfolio = solution.cpSatPortfolio;
   if (portfolio?.workers.length) {
@@ -275,43 +278,95 @@ function appendCpSatEvents(
   const telemetry = solution.cpSatTelemetry;
   if (!telemetry && !solution.cpSatStatus) return;
 
-  const elapsedMs = telemetry ? millisecondsFromSeconds(telemetry.solveWallTimeSeconds) : finalElapsedMs;
   const incumbent = telemetry?.incumbentPopulation ?? solution.totalPopulation;
   const upperBound = telemetry?.bestPopulationUpperBound ?? null;
   const gap = telemetry?.populationGapUpperBound ?? null;
+  const evidence: NonNullable<SolverDecisionTraceEvent["evidence"]> = telemetry
+    ? {
+        status: solution.cpSatStatus ?? null,
+        solutionCount: telemetry.solutionCount,
+        solveWallTimeSeconds: telemetry.solveWallTimeSeconds,
+        numBranches: telemetry.numBranches,
+        numConflicts: telemetry.numConflicts,
+        lastImprovementAtSeconds: telemetry.lastImprovementAtSeconds,
+        secondsSinceLastImprovement: telemetry.secondsSinceLastImprovement,
+      }
+    : {
+        status: solution.cpSatStatus ?? null,
+      };
+  const hasIncumbentImprovement = Boolean(telemetry && telemetry.solutionCount > 0 && incumbent > 0);
+  if (telemetry && hasIncumbentImprovement) {
+    builder.push({
+      elapsedMs: Math.max(elapsedMsOffset + millisecondsFromSeconds(telemetry.lastImprovementAtSeconds), 0),
+      activeStage,
+      kind: "cp-sat-progress",
+      decision: "improved",
+      reason: `CP-SAT found incumbent population ${incumbent}.`,
+      score: score({
+        after: incumbent,
+        best: incumbent,
+      }),
+      evidence,
+    });
+  }
   const decision: SolverDecisionTraceDecision =
     gap !== null || upperBound !== null
       ? "bounded"
       : incumbent > 0
         ? "improved"
         : "stalled";
+  const terminalDecision: SolverDecisionTraceDecision = hasIncumbentImprovement && decision === "improved"
+    ? "stalled"
+    : decision;
+  const terminalElapsedMs = telemetry ? millisecondsFromSeconds(telemetry.solveWallTimeSeconds) : finalElapsedMs;
   builder.push({
-    elapsedMs: Math.max(elapsedMs, 0),
+    elapsedMs: Math.max((telemetry ? elapsedMsOffset : 0) + terminalElapsedMs, 0),
     activeStage,
     kind: "cp-sat-progress",
-    decision,
+    decision: terminalDecision,
     reason: gap !== null
       ? `CP-SAT ${solution.cpSatStatus ?? "finished"} with population gap ${gap}.`
       : `CP-SAT ${solution.cpSatStatus ?? "finished"} with incumbent population ${incumbent}.`,
     score: score({
+      before: hasIncumbentImprovement ? incumbent : null,
       after: incumbent,
       best: incumbent,
       upperBound,
       gap,
     }),
-    evidence: telemetry
-      ? {
-          status: solution.cpSatStatus ?? null,
-          solutionCount: telemetry.solutionCount,
-          numBranches: telemetry.numBranches,
-          numConflicts: telemetry.numConflicts,
-          lastImprovementAtSeconds: telemetry.lastImprovementAtSeconds,
-          secondsSinceLastImprovement: telemetry.secondsSinceLastImprovement,
-        }
-      : {
-          status: solution.cpSatStatus ?? null,
-        },
+    evidence,
   });
+}
+
+function autoStageRunDecision(run: AutoStageRunSummary): SolverDecisionTraceDecision {
+  if ((run.improvement ?? 0) > 0) return "improved";
+  return run.candidatePopulation === null ? "failed" : "stalled";
+}
+
+function autoStageRunEvidence(run: AutoStageRunSummary): NonNullable<SolverDecisionTraceEvent["evidence"]> {
+  return {
+    randomSeed: run.randomSeed,
+    startedAtSeconds: run.startedAtSeconds,
+    elapsedSeconds: run.elapsedSeconds,
+    completedAtSeconds: run.completedAtSeconds,
+    populationBefore: run.populationBefore,
+    candidatePopulation: run.candidatePopulation,
+    acceptedPopulation: run.acceptedPopulation,
+    improvement: run.improvement,
+    cpSatStatus: run.cpSatStatus ?? null,
+    cpSatSolveWallTimeSeconds: run.cpSatSolveWallTimeSeconds ?? null,
+    cpSatLastImprovementAtSeconds: run.cpSatLastImprovementAtSeconds ?? null,
+    cpSatPopulationGapUpperBound: run.cpSatPopulationGapUpperBound ?? null,
+    lnsStopReason: run.lnsStopReason ?? null,
+    lnsSeedTimeLimitSeconds: run.lnsSeedTimeLimitSeconds ?? null,
+    lnsSeedWallClockSeconds: run.lnsSeedWallClockSeconds ?? null,
+    lnsFocusedRepairTimeLimitSeconds: run.lnsFocusedRepairTimeLimitSeconds ?? null,
+    lnsEscalatedRepairTimeLimitSeconds: run.lnsEscalatedRepairTimeLimitSeconds ?? null,
+    lnsIterationsStarted: run.lnsIterationsStarted ?? null,
+    lnsIterationsCompleted: run.lnsIterationsCompleted ?? null,
+    lnsImprovingIterations: run.lnsImprovingIterations ?? null,
+    lnsNeutralIterations: run.lnsNeutralIterations ?? null,
+  };
 }
 
 function appendAutoEvents(
@@ -321,10 +376,12 @@ function appendAutoEvents(
 ): void {
   const autoStage = solution.autoStage;
   if (!autoStage) return;
+  const stageRunByIndex = new Map((autoStage.stageRuns ?? []).map((run) => [run.stageIndex, run]));
 
   for (const seed of [...autoStage.generatedSeeds].sort((left, right) => left.stageIndex - right.stageIndex)) {
+    const startedAtSeconds = stageRunByIndex.get(seed.stageIndex)?.startedAtSeconds ?? 0;
     builder.push({
-      elapsedMs: 0,
+      elapsedMs: millisecondsFromSeconds(startedAtSeconds),
       activeStage: seed.stage,
       kind: "auto-stage",
       decision: "started",
@@ -363,6 +420,27 @@ function appendAutoEvents(
     appendGreedyPhaseEvents(builder, greedySeed.phases, "greedy");
   }
 
+  for (const run of [...(autoStage.stageRuns ?? [])].sort((left, right) => left.stageIndex - right.stageIndex)) {
+    if (run.stage === "greedy" && greedySeed) continue;
+    builder.push({
+      elapsedMs: millisecondsFromSeconds(run.completedAtSeconds),
+      activeStage: run.stage,
+      kind: "auto-stage",
+      decision: autoStageRunDecision(run),
+      reason: `Auto ${run.stage} stage ${run.stageIndex} completed with candidate population ${run.candidatePopulation ?? "n/a"}.`,
+      score: score({
+        before: run.populationBefore,
+        after: run.acceptedPopulation,
+        best: run.acceptedPopulation,
+      }),
+      stage: {
+        stageIndex: run.stageIndex,
+        cycleIndex: run.cycleIndex,
+      },
+      evidence: autoStageRunEvidence(run),
+    });
+  }
+
   if (autoStage.stopReason) {
     builder.push({
       elapsedMs: finalElapsedMs,
@@ -386,6 +464,13 @@ function appendAutoEvents(
   }
 }
 
+function autoDetailOffsetMs(solution: Solution, stage: AutoStageOptimizerName): number {
+  const matchingRun = [...(solution.autoStage?.stageRuns ?? [])]
+    .filter((run) => run.stage === stage && run.candidatePopulation === solution.totalPopulation)
+    .sort((left, right) => right.stageIndex - left.stageIndex)[0];
+  return millisecondsFromSeconds(matchingRun?.startedAtSeconds);
+}
+
 function resolveFinalElapsedMs(solution: Solution, options: BuildDecisionTraceOptions): number {
   return optionalMillisecondsFromSeconds(options.elapsedTimeSeconds)
     ?? optionalMillisecondsFromSeconds(solution.cpSatTelemetry?.solveWallTimeSeconds)
@@ -407,8 +492,19 @@ export function buildDecisionTraceFromSolution(
   if (!solution.autoStage?.greedySeedStage?.phases?.length) {
     appendGreedyPhaseEvents(builder, solution.greedyProfile?.phases, activeStage);
   }
-  appendLnsEvents(builder, solution, activeStage);
-  appendCpSatEvents(builder, solution, activeStage, finalElapsedMs);
+  if (optimizer === "auto") {
+    appendLnsEvents(builder, solution, solution.lnsTelemetry ? "lns" : activeStage, autoDetailOffsetMs(solution, "lns"));
+    appendCpSatEvents(
+      builder,
+      solution,
+      solution.cpSatTelemetry || solution.cpSatStatus || solution.cpSatPortfolio ? "cp-sat" : activeStage,
+      finalElapsedMs,
+      autoDetailOffsetMs(solution, "cp-sat")
+    );
+  } else {
+    appendLnsEvents(builder, solution, activeStage);
+    appendCpSatEvents(builder, solution, activeStage, finalElapsedMs);
+  }
 
   if (options.includeFinalCheckpoint ?? true) {
     const previousBest = Math.max(
@@ -539,7 +635,7 @@ export function buildTimeToQualityScorecard(
 }
 
 export function summarizeDecisionTraceReason(events: readonly SolverDecisionTraceEvent[]): string {
-  const rankedDecision = ["improved", "bounded", "stopped", "failed", "stalled", "started"];
+  const rankedDecision = ["bounded", "improved", "stopped", "failed", "stalled", "started"];
   for (const decision of rankedDecision) {
     const event = [...events].reverse().find((candidate) => candidate.decision === decision);
     if (event) return event.reason;

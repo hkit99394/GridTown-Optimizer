@@ -7,18 +7,21 @@ const path = require("node:path");
 const {
   buildCrossModeBenchmarkParams,
   createLnsBenchmarkSnapshot,
+  DEFAULT_CROSS_MODE_BUDGET_ABLATION_POLICIES,
   DEFAULT_CROSS_MODE_BENCHMARK_BUDGETS_SECONDS,
   DEFAULT_CROSS_MODE_BENCHMARK_CORPUS,
   DEFAULT_CROSS_MODE_BENCHMARK_MODES,
   DEFAULT_CROSS_MODE_BENCHMARK_SEEDS,
   DEFAULT_LNS_BENCHMARK_CORPUS,
   DEFAULT_LNS_BENCHMARK_OPTIONS,
+  formatCrossModeBenchmarkBudgetAblations,
   formatCrossModeBenchmarkDecisionTraceJsonl,
   formatCrossModeBenchmarkSuite,
   formatLnsBenchmarkSuite,
   listCrossModeBenchmarkCaseNames,
   listLnsBenchmarkCaseNames,
   normalizeLnsBenchmarkOptions,
+  runCrossModeBenchmarkBudgetAblations,
   runCrossModeBenchmarkSuite,
   runLnsBenchmarkSuite,
 } = require("../dist/benchmarks/index.js");
@@ -44,6 +47,7 @@ const {
   parseDecisionTraceJsonl,
   runGreedyBenchmarkSuite,
   runCpSatBenchmarkSuite,
+  runCrossModeBenchmarkBudgetAblations: runCrossModeBenchmarkBudgetAblationsFromIndex,
   serializeDecisionTraceJsonl,
   solve,
   solveAsync,
@@ -755,7 +759,7 @@ function testAutoSyncWallClockCapKeepsExplicitStopReasonWhenLnsThrows() {
   }
 }
 
-function testAutoSyncPassesTotalBudgetToLnsStage() {
+function testAutoSyncReservesCpSatBudgetBeforeLnsStage() {
   const solverModule = require("../dist/greedy/solver.js");
   const lnsModule = require("../dist/lns/solver.js");
   const cpSatModule = require("../dist/cp-sat/solver.js");
@@ -774,17 +778,39 @@ function testAutoSyncPassesTotalBudgetToLnsStage() {
   try {
     const solution = solveAuto([[1, 1], [1, 1]], {
       optimizer: "auto",
-      lns: { iterations: 4, maxNoImprovementIterations: 4, repairTimeLimitSeconds: 5 },
+      lns: {
+        iterations: 4,
+        maxNoImprovementIterations: 4,
+        seedTimeLimitSeconds: 5,
+        repairTimeLimitSeconds: 5,
+        focusedRepairTimeLimitSeconds: 5,
+        escalatedRepairTimeLimitSeconds: 5,
+      },
       cpSat: { timeLimitSeconds: 5, noImprovementTimeoutSeconds: 5, numWorkers: 1 },
-      auto: { wallClockLimitSeconds: 10 },
+      auto: { wallClockLimitSeconds: 2.5 },
     });
 
     assert.equal(solution.autoStage.stopReason, "optimal");
     assert(observedLnsOptions);
     assert.equal(typeof observedLnsOptions.wallClockLimitSeconds, "number");
-    assert.ok(observedLnsOptions.wallClockLimitSeconds > 0);
-    assert.ok(observedLnsOptions.wallClockLimitSeconds <= 10);
+    assert.ok(observedLnsOptions.wallClockLimitSeconds > 1);
+    assert.ok(observedLnsOptions.wallClockLimitSeconds < 2);
+    assert.ok(observedLnsOptions.seedTimeLimitSeconds <= observedLnsOptions.wallClockLimitSeconds);
     assert.ok(observedLnsOptions.repairTimeLimitSeconds <= observedLnsOptions.wallClockLimitSeconds);
+    assert.ok(observedLnsOptions.focusedRepairTimeLimitSeconds <= observedLnsOptions.repairTimeLimitSeconds);
+    assert.ok(observedLnsOptions.escalatedRepairTimeLimitSeconds <= observedLnsOptions.repairTimeLimitSeconds);
+    assert.deepEqual(solution.autoStage.stageRuns.map((run) => run.stage), ["greedy", "lns", "cp-sat"]);
+    assert.equal(solution.autoStage.stageRuns[1].improvement, 20);
+    assert.equal(solution.autoStage.stageRuns[2].improvement, 0);
+    assert.equal(solution.autoStage.stageRuns[2].cpSatStatus, "OPTIMAL");
+    assert.equal(typeof solution.autoStage.stageRuns[1].elapsedSeconds, "number");
+    const trace = buildDecisionTraceFromSolution(solution, { optimizer: "auto" });
+    assert(trace.some((event) =>
+      event.kind === "auto-stage"
+      && event.activeStage === "lns"
+      && event.reason.includes("completed")
+      && event.evidence.improvement === 20
+    ));
   } finally {
     solverModule.solveGreedy = originalSolveGreedy;
     lnsModule.solveLns = originalSolveLns;
@@ -2745,6 +2771,7 @@ async function testCrossModeBenchmarkHelpers() {
   assert.deepEqual(DEFAULT_CROSS_MODE_BENCHMARK_BUDGETS_SECONDS, [5, 30, 120]);
   assert.deepEqual(DEFAULT_CROSS_MODE_BENCHMARK_SEEDS, [7, 19, 37]);
   assert.deepEqual(DEFAULT_CROSS_MODE_BENCHMARK_MODES, ["auto", "greedy", "lns", "cp-sat", "cp-sat-portfolio"]);
+  assert.equal(typeof runCrossModeBenchmarkBudgetAblationsFromIndex, "function");
   assert.equal(new Set(names).size, names.length);
   assert.deepEqual(listCrossModeBenchmarkCaseNames(), names);
 
@@ -2775,6 +2802,110 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(autoParams.lns.wallClockLimitSeconds, 3);
   assert.equal(autoParams.cpSat.timeLimitSeconds, 3);
   assert.equal(autoParams.cpSat.portfolio, undefined);
+  assert.deepEqual(DEFAULT_CROSS_MODE_BUDGET_ABLATION_POLICIES.map((policy) => policy.name), [
+    "baseline",
+    "seed-light",
+    "repair-heavy",
+    "cp-sat-reserve-heavy",
+  ]);
+  assert.throws(
+    () => buildCrossModeBenchmarkParams(benchmarkCase, "greedy", { budgetSeconds: -1, seeds: [5] }),
+    /budget seconds must be a finite number greater than 0/
+  );
+
+  const tunedLnsParams = buildCrossModeBenchmarkParams(benchmarkCase, "lns", { budgetSeconds: 30, seeds: [5] });
+  assert.equal(tunedLnsParams.lns.wallClockLimitSeconds, 30);
+  assert.equal(tunedLnsParams.lns.seedTimeLimitSeconds, 2);
+  assert.equal(tunedLnsParams.lns.repairTimeLimitSeconds, 2);
+  assert.equal(tunedLnsParams.lns.focusedRepairTimeLimitSeconds, 2);
+  assert.equal(tunedLnsParams.lns.escalatedRepairTimeLimitSeconds, 3);
+  assert.equal(tunedLnsParams.lns.iterations, 14);
+  assert.equal(tunedLnsParams.lns.maxNoImprovementIterations, 14);
+
+  const expectedAblationLnsPolicies = [
+    {
+      budgetSeconds: 5,
+      seedTimeLimitSeconds: 1,
+      repairTimeLimitSeconds: 1,
+      focusedRepairTimeLimitSeconds: 1,
+      escalatedRepairTimeLimitSeconds: 1,
+      iterations: 4,
+      maxNoImprovementIterations: 4,
+    },
+    {
+      budgetSeconds: 30,
+      seedTimeLimitSeconds: 2,
+      repairTimeLimitSeconds: 2,
+      focusedRepairTimeLimitSeconds: 2,
+      escalatedRepairTimeLimitSeconds: 3,
+      iterations: 14,
+      maxNoImprovementIterations: 14,
+    },
+    {
+      budgetSeconds: 120,
+      seedTimeLimitSeconds: 5,
+      repairTimeLimitSeconds: 5,
+      focusedRepairTimeLimitSeconds: 5,
+      escalatedRepairTimeLimitSeconds: 10,
+      iterations: 23,
+      maxNoImprovementIterations: 23,
+    },
+  ];
+  for (const corpusCase of DEFAULT_CROSS_MODE_BENCHMARK_CORPUS) {
+    const ablationLnsPolicies = DEFAULT_CROSS_MODE_BENCHMARK_BUDGETS_SECONDS.map((budgetSeconds) => {
+      const params = buildCrossModeBenchmarkParams(corpusCase, "lns", { budgetSeconds, seeds: [5] });
+      return {
+        budgetSeconds,
+        seedTimeLimitSeconds: params.lns.seedTimeLimitSeconds,
+        repairTimeLimitSeconds: params.lns.repairTimeLimitSeconds,
+        focusedRepairTimeLimitSeconds: params.lns.focusedRepairTimeLimitSeconds,
+        escalatedRepairTimeLimitSeconds: params.lns.escalatedRepairTimeLimitSeconds,
+        iterations: params.lns.iterations,
+        maxNoImprovementIterations: params.lns.maxNoImprovementIterations,
+      };
+    });
+    assert.deepEqual(ablationLnsPolicies, expectedAblationLnsPolicies);
+  }
+
+  const explicitLnsParams = buildCrossModeBenchmarkParams(benchmarkCase, "lns", {
+    budgetSeconds: 30,
+    seeds: [5],
+    lns: {
+      seedTimeLimitSeconds: 5,
+      repairTimeLimitSeconds: 7,
+      focusedRepairTimeLimitSeconds: 4,
+      escalatedRepairTimeLimitSeconds: 6,
+      iterations: 3,
+      maxNoImprovementIterations: 2,
+    },
+  });
+  assert.equal(explicitLnsParams.lns.seedTimeLimitSeconds, 5);
+  assert.equal(explicitLnsParams.lns.repairTimeLimitSeconds, 7);
+  assert.equal(explicitLnsParams.lns.focusedRepairTimeLimitSeconds, 4);
+  assert.equal(explicitLnsParams.lns.escalatedRepairTimeLimitSeconds, 6);
+  assert.equal(explicitLnsParams.lns.iterations, 3);
+  assert.equal(explicitLnsParams.lns.maxNoImprovementIterations, 2);
+
+  const seedLightPolicy = DEFAULT_CROSS_MODE_BUDGET_ABLATION_POLICIES.find((policy) => policy.name === "seed-light");
+  const seedLightParams = buildCrossModeBenchmarkParams(benchmarkCase, "lns", {
+    budgetSeconds: 20,
+    seeds: [5],
+    budgetAblationPolicy: seedLightPolicy,
+  });
+  assert.equal(seedLightParams.lns.seedTimeLimitSeconds, 1);
+  assert.equal(seedLightParams.lns.repairTimeLimitSeconds, 2);
+  assert.equal(seedLightParams.lns.focusedRepairTimeLimitSeconds, 2);
+  assert.equal(seedLightParams.lns.escalatedRepairTimeLimitSeconds, 3);
+
+  const reserveHeavyPolicy = DEFAULT_CROSS_MODE_BUDGET_ABLATION_POLICIES.find((policy) => policy.name === "cp-sat-reserve-heavy");
+  const reserveHeavyParams = buildCrossModeBenchmarkParams(benchmarkCase, "auto", {
+    budgetSeconds: 20,
+    seeds: [5],
+    budgetAblationPolicy: reserveHeavyPolicy,
+  });
+  assert.equal(reserveHeavyParams.auto.cpSatStageReserveRatio, 0.35);
+  assert.equal(reserveHeavyParams.lns.seedTimeLimitSeconds, 1);
+  assert.equal(reserveHeavyParams.lns.repairTimeLimitSeconds, 2);
 
   const portfolioParams = buildCrossModeBenchmarkParams(benchmarkCase, "cp-sat-portfolio", {
     budgetSeconds: 3,
@@ -2851,6 +2982,35 @@ async function testCrossModeBenchmarkHelpers() {
           lastCycleImprovementRatio: null,
           stopReason: "wall-clock-cap",
           generatedSeeds: [{ stage: "greedy", stageIndex: 1, cycleIndex: 0, randomSeed: context.seed }],
+          stageRuns: [
+            {
+              stage: "greedy",
+              stageIndex: 1,
+              cycleIndex: 0,
+              randomSeed: context.seed,
+              startedAtSeconds: 0,
+              elapsedSeconds: 0.1,
+              completedAtSeconds: 0.1,
+              populationBefore: null,
+              candidatePopulation: modeScores[context.mode],
+              acceptedPopulation: modeScores[context.mode],
+              improvement: null,
+            },
+            {
+              stage: "lns",
+              stageIndex: 2,
+              cycleIndex: 1,
+              randomSeed: context.seed + 1,
+              startedAtSeconds: 0.1,
+              elapsedSeconds: 1.1,
+              completedAtSeconds: 1.2,
+              populationBefore: modeScores[context.mode],
+              candidatePopulation: modeScores[context.mode],
+              acceptedPopulation: modeScores[context.mode],
+              improvement: 0,
+              lnsStopReason: "iteration-limit",
+            },
+          ],
           greedySeedStage: {
             timeLimitSeconds: 3,
             localSearch: true,
@@ -2877,6 +3037,40 @@ async function testCrossModeBenchmarkHelpers() {
               },
             ],
           },
+        };
+        solution.lnsTelemetry = {
+          stopReason: "iteration-limit",
+          seedSource: "hint",
+          seedTimeLimitSeconds: 0.2,
+          seedWallClockSeconds: 0.2,
+          wallClockLimitSeconds: 1.1,
+          noImprovementTimeoutSeconds: null,
+          focusedRepairTimeLimitSeconds: 1,
+          escalatedRepairTimeLimitSeconds: 1,
+          iterationsStarted: 1,
+          iterationsCompleted: 1,
+          improvingIterations: 0,
+          neutralIterations: 1,
+          recoverableFailures: 0,
+          skippedIterations: 0,
+          finalStagnantIterations: 1,
+          elapsedSeconds: 0.3,
+          outcomes: [
+            {
+              iteration: 0,
+              phase: "focused",
+              window: { top: 0, left: 0, rows: 2, cols: 2 },
+              stagnantIterationsBefore: 0,
+              staleSecondsBefore: 0,
+              repairTimeLimitSeconds: 1,
+              wallClockSeconds: 0.1,
+              populationBefore: modeScores[context.mode],
+              populationAfter: modeScores[context.mode],
+              improvement: 0,
+              status: "neutral",
+              cpSatStatus: "FEASIBLE",
+            },
+          ],
         };
       }
       if (context.mode === "lns") {
@@ -2961,7 +3155,10 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(mocked.budgetPolicySignals[0].recommendation, "shift-auto-budget-to-greedy");
   assert.equal(mocked.budgetPolicySignals[0].autoDeltaToBest, 2);
   assert.equal(mocked.budgetPolicySignals[0].lnsScoreDeltaVsAuto, -2);
+  assert.equal(mocked.budgetPolicySignals[0].autoLnsStageElapsedSeconds, 1.1);
+  assert.equal(mocked.budgetPolicySignals[0].autoLnsStageImprovement, 0);
   assert.match(mocked.budgetPolicySignals[0].reason, /Greedy beat Auto by 2 population/);
+  assert.match(mocked.budgetPolicySignals[0].reason, /Auto LNS used 1\.100s/);
   assert.equal(
     mocked.cases[0].results.find((entry) => entry.mode === "cp-sat-portfolio").progressSummary.portfolioWorkerSummary.feasibleWorkers,
     1
@@ -2976,6 +3173,10 @@ async function testCrossModeBenchmarkHelpers() {
   assert.match(mockedLns.budgetAllocationSignal.reason, /small share/);
   assert(mockedAuto.decisionTrace.some((event) => event.kind === "auto-stage"));
   assert(mockedAuto.decisionTrace.some((event) => event.kind === "greedy-phase"));
+  const mockedAutoLnsNeighborhood = mockedAuto.decisionTrace.find((event) => event.kind === "lns-neighborhood");
+  assert(mockedAutoLnsNeighborhood);
+  assert.equal(mockedAutoLnsNeighborhood.activeStage, "lns");
+  assert.equal(mockedAutoLnsNeighborhood.elapsedMs, 400);
   assert(mockedLns.decisionTrace.some((event) => event.kind === "lns-neighborhood"));
   assert(mockedPortfolio.decisionTrace.some((event) => event.kind === "cp-sat-progress"));
   assert.equal(mockedAuto.timeToQuality.bestScore, 10);
@@ -3007,6 +3208,12 @@ async function testCrossModeBenchmarkHelpers() {
     },
     { elapsedTimeSeconds: 0 }
   );
+  const zeroElapsedCpSatProgressEvents = zeroElapsedTrace.filter((event) => event.kind === "cp-sat-progress");
+  assert.equal(zeroElapsedCpSatProgressEvents[0].elapsedMs, 0);
+  assert.equal(zeroElapsedCpSatProgressEvents[0].evidence.solveWallTimeSeconds, 3);
+  const terminalCpSatProgress = zeroElapsedCpSatProgressEvents.find((event) => event.decision === "bounded");
+  assert(terminalCpSatProgress);
+  assert.equal(terminalCpSatProgress.elapsedMs, 3000);
   assert.equal(zeroElapsedTrace.find((event) => event.kind === "checkpoint").elapsedMs, 0);
   const cumulativeScorecard = buildTimeToQualityScorecard(
     [
@@ -3057,6 +3264,82 @@ async function testCrossModeBenchmarkHelpers() {
   assert.match(mockedFormatted, /recommendation=shift-auto-budget-to-greedy/);
   assert.match(mockedFormatted, /auto-gap=2/);
   assert.match(mockedFormatted, /reason=/);
+
+  const ablations = await runCrossModeBenchmarkBudgetAblations([benchmarkCase], {
+    modes: ["auto", "lns"],
+    budgetsSeconds: [3],
+    seeds: [5],
+    policies: [
+      { name: "baseline", description: "Mock baseline." },
+      {
+        name: "reserve-heavy",
+        description: "Mock reserve-heavy policy.",
+        autoCpSatStageReserveRatio: 0.35,
+        lnsSeedBudgetRatio: 0.1,
+        lnsRepairBudgetRatio: 0.2,
+      },
+    ],
+    solve: async (_grid, params, context) => {
+      const reserveBonus = params.auto?.cpSatStageReserveRatio === 0.35 ? 5 : 0;
+      const totalPopulation = context.mode === "auto" ? 10 + reserveBonus : 9;
+      return buildMockSolution({ optimizer: params.optimizer, totalPopulation });
+    },
+  });
+  assert.equal(ablations.policies.length, 2);
+  assert.equal(ablations.baselinePolicyName, "baseline");
+  assert.equal(ablations.bestPolicyName, "reserve-heavy");
+  assert.equal(ablations.policies[0].meanAutoPopulation, 10);
+  assert.equal(ablations.policies[1].meanAutoPopulation, 15);
+  assert.equal(ablations.policies[1].deltaVsBaselineMeanBestPopulation, 5);
+  assert.equal(ablations.policies[1].budgetSummaries.length, 1);
+  assert.equal(ablations.policies[1].budgetSummaries[0].budgetSeconds, 3);
+  assert.equal(ablations.policies[1].budgetSummaries[0].meanAutoPopulation, 15);
+  assert.equal(ablations.policies[1].budgetSummaries[0].deltaVsBaselineMeanBestPopulation, 5);
+  assert(
+    ablations.policies[1].suite.cases[0].results
+      .find((entry) => entry.mode === "auto")
+      .decisionTrace.some((event) => event.runId.includes("policy-reserve-heavy"))
+  );
+  const ablationText = formatCrossModeBenchmarkBudgetAblations(ablations);
+  assert.match(ablationText, /=== Cross-Mode Budget Ablations ===/);
+  assert.match(ablationText, /reserve-heavy/);
+  assert.match(ablationText, /delta-vs-baseline=\+5/);
+  assert.match(ablationText, /budget=3s cases=1 mean-best=15\.0/);
+
+  const reorderedAblations = await runCrossModeBenchmarkBudgetAblations([benchmarkCase], {
+    modes: ["auto"],
+    budgetsSeconds: [3],
+    seeds: [5],
+    policies: [
+      {
+        name: "reserve-heavy",
+        description: "Mock reserve-heavy policy.",
+        autoCpSatStageReserveRatio: 0.35,
+      },
+      { name: "baseline", description: "Mock baseline." },
+    ],
+    solve: async (_grid, params) => {
+      const reserveBonus = params.auto?.cpSatStageReserveRatio === 0.35 ? 5 : 0;
+      return buildMockSolution({ optimizer: params.optimizer, totalPopulation: 10 + reserveBonus });
+    },
+  });
+  assert.equal(reorderedAblations.baselinePolicyName, "baseline");
+  assert.equal(reorderedAblations.policies[0].policyName, "reserve-heavy");
+  assert.equal(reorderedAblations.policies[0].deltaVsBaselineMeanBestPopulation, 5);
+  assert.equal(reorderedAblations.policies[1].deltaVsBaselineMeanBestPopulation, 0);
+  await assert.rejects(
+    () => runCrossModeBenchmarkBudgetAblations([benchmarkCase], {
+      modes: ["auto"],
+      budgetsSeconds: [3],
+      seeds: [5],
+      baselinePolicyName: "missing-baseline",
+      policies: [{ name: "baseline", description: "Mock baseline." }],
+      solve: async () => {
+        throw new Error("baseline validation should run before suite execution");
+      },
+    }),
+    /baseline policy not found: missing-baseline/
+  );
 
   await assert.rejects(
     () => runCrossModeBenchmarkSuite([benchmarkCase], { names: ["missing-case"], modes: ["greedy"] }),
@@ -6236,7 +6519,7 @@ async function main() {
   await testAutoAsyncRecoveredCpSatSnapshotKeepsCompletedMetadata();
   testAutoSyncWallClockCapStopsRunningLnsStage();
   testAutoSyncWallClockCapKeepsExplicitStopReasonWhenLnsThrows();
-  testAutoSyncPassesTotalBudgetToLnsStage();
+  testAutoSyncReservesCpSatBudgetBeforeLnsStage();
   testAutoSyncGreedyCanRunPastFormerStageBudget();
   await testAutoAsyncGreedyCanRunPastFormerStageBudget();
   testAutoClampsHeavyGreedyStageSettings();

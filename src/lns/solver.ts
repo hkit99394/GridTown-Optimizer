@@ -221,6 +221,7 @@ function buildInitialLnsIncumbent(G: Grid, params: SolverParams, options: Normal
         ...(params.greedy ?? {}),
         profile: params.greedy?.profile ?? true,
         ...(options.seedTimeLimitSeconds !== null ? { timeLimitSeconds: options.seedTimeLimitSeconds } : {}),
+        ...(options.stopFilePath ? { stopFilePath: options.stopFilePath } : {}),
       },
     }),
     optimizer: "lns" as const,

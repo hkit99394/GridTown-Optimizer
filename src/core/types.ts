@@ -1009,6 +1009,7 @@ export interface LayoutEvaluationResult {
   errors: string[];
   populations: EvaluatedResidentialResult[];
   totalPopulation: number;
+  boosts: number[];
 }
 
 /** Input payload for full solution validation */

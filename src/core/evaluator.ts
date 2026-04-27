@@ -29,6 +29,10 @@ import {
   normalizeSize,
 } from "./rules.js";
 
+export interface SolutionValidationOptions {
+  ignoreReportedPopulation?: boolean;
+}
+
 function clamp(v: number, lo: number, hi: number): number {
   return Math.min(Math.max(v, lo), hi);
 }
@@ -269,6 +273,7 @@ export function evaluateLayout(input: LayoutEvaluationInput): LayoutEvaluationRe
     errors,
     populations: popRows,
     totalPopulation,
+    boosts,
   };
 }
 
@@ -373,7 +378,10 @@ function recomputeSolutionPopulations(solution: Solution, params: SolverParams, 
   });
 }
 
-export function validateSolution(input: SolutionValidationInput): SolutionValidationResult {
+export function validateSolution(
+  input: SolutionValidationInput,
+  options: SolutionValidationOptions = {}
+): SolutionValidationResult {
   const { grid, solution, params } = input;
   const errors: string[] = [];
 
@@ -382,7 +390,7 @@ export function validateSolution(input: SolutionValidationInput): SolutionValida
       `Solution reports ${solution.servicePopulationIncreases.length} service bonuses for ${solution.services.length} services.`
     );
   }
-  if (solution.populations.length !== solution.residentials.length) {
+  if (!options.ignoreReportedPopulation && solution.populations.length !== solution.residentials.length) {
     errors.push(
       `Solution reports ${solution.populations.length} residential populations for ${solution.residentials.length} residentials.`
     );
@@ -405,14 +413,13 @@ export function validateSolution(input: SolutionValidationInput): SolutionValida
 
   for (const error of layoutEvaluation.errors) errors.push(error);
 
-  const boosts = computeResidentialBoosts(grid, services, solution.residentials);
   const recomputedPopulations =
     solution.residentialTypeIndices.length === solution.residentials.length
-      ? recomputeSolutionPopulations(solution, params, boosts)
+      ? recomputeSolutionPopulations(solution, params, layoutEvaluation.boosts)
       : layoutEvaluation.populations.map((row) => row.population);
   const recomputedTotalPopulation = recomputedPopulations.reduce((sum, population) => sum + population, 0);
 
-  if (solution.populations.length === recomputedPopulations.length) {
+  if (!options.ignoreReportedPopulation && solution.populations.length === recomputedPopulations.length) {
     for (let i = 0; i < recomputedPopulations.length; i++) {
       if (solution.populations[i] !== recomputedPopulations[i]) {
         errors.push(
@@ -422,7 +429,7 @@ export function validateSolution(input: SolutionValidationInput): SolutionValida
     }
   }
 
-  if (solution.totalPopulation !== recomputedTotalPopulation) {
+  if (!options.ignoreReportedPopulation && solution.totalPopulation !== recomputedTotalPopulation) {
     errors.push(
       `Solution reports total population ${solution.totalPopulation}, expected ${recomputedTotalPopulation}.`
     );

@@ -163,6 +163,8 @@ export type {
   CrossModeBenchmarkMode,
   CrossModeProblemSizeBand,
   CrossModeWinVsAuto,
+  CrossModeBudgetAllocationSignal,
+  CrossModeBudgetAllocationSignalKind,
   CrossModeBenchmarkCase,
   CrossModeBenchmarkSolveContext,
   CrossModeBenchmarkSolve,
@@ -171,5 +173,7 @@ export type {
   CrossModeBenchmarkCaseScorecard,
   CrossModeBenchmarkModeSummary,
   CrossModeBenchmarkProblemSizeSummary,
+  CrossModeBenchmarkBudgetPolicySignal,
+  CrossModeBudgetPolicyRecommendation,
   CrossModeBenchmarkSuiteResult,
 } from "./benchmarks/index.js";

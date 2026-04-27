@@ -364,10 +364,16 @@
           throw new Error(payload.error || "Failed to evaluate the edited layout.");
         }
 
+        const submittedRoadCount = new Set(Array.isArray(nextSolution.roads) ? nextSolution.roads : []).size;
+        const validatedRoadCount = new Set(Array.isArray(payload.solution?.roads) ? payload.solution.roads : []).size;
+        const removedRoadCount = Math.max(0, submittedRoadCount - validatedRoadCount);
+        const roadCleanupMessage = removedRoadCount > 0
+          ? ` Removed ${removedRoadCount} unnecessary road cell${removedRoadCount === 1 ? "" : "s"}.`
+          : "";
         commitEditedLayoutResult(payload, {
           message: payload.validation?.valid === true
-            ? message
-            : "Layout validation completed. Review the reported issues before using this layout as a seed or hint.",
+            ? `${message}${roadCleanupMessage}`
+            : `Layout validation completed.${roadCleanupMessage} Review the reported issues before using this layout as a seed or hint.`,
           selectedBuilding,
           selectedCell,
           keepMode,
@@ -1375,8 +1381,16 @@
       elements.resultOverlay.innerHTML = "";
     }
 
+    function isServiceValueHeatmapVisible() {
+      return Boolean(state.resultHeatmapEnabled);
+    }
+
     function refreshResultOverlay() {
       if (!state.result?.solution || !elements.resultMapGrid.dataset.cols) {
+        clearResultOverlay();
+        return;
+      }
+      if (isServiceValueHeatmapVisible()) {
         clearResultOverlay();
         return;
       }
@@ -1395,7 +1409,8 @@
       const matrix = createSolvedMapMatrix(grid, solution);
       const cols = matrix[0]?.length ?? 0;
       const hoverLabels = createSolvedMapHoverLabels(solution, matrix.length, cols);
-      const heatmap = state.resultHeatmapEnabled ? createServiceValueHeatmap(grid, solution) : null;
+      const showServiceValueHeatmap = isServiceValueHeatmapVisible();
+      const heatmap = showServiceValueHeatmap ? createServiceValueHeatmap(grid, solution) : null;
       state.selectedMapBuilding = getSelectedMapPlacement(solution)?.kind ? state.selectedMapBuilding : null;
       state.selectedMapCell = getSelectedMapCell(grid);
       elements.resultMapGrid.innerHTML = "";
@@ -1404,17 +1419,18 @@
       for (let r = 0; r < matrix.length; r += 1) {
         for (let c = 0; c < cols; c += 1) {
           const kind = matrix[r][c];
-          const hoverLabel = hoverLabels[r]?.[c] || "";
+          const visualKind = showServiceValueHeatmap && kind !== "blocked" ? "empty" : kind;
+          const hoverLabel = showServiceValueHeatmap ? "" : (hoverLabels[r]?.[c] || "");
           const serviceValue = heatmap?.values?.[r]?.[c] ?? 0;
           const serviceValueLabel = serviceValue > 0 ? `, service value +${formatServiceValue(serviceValue)}` : "";
           const cell = document.createElement("div");
-          cell.className = `grid-cell ${kind}`;
+          cell.className = `grid-cell ${visualKind}`;
           cell.dataset.r = String(r);
           cell.dataset.c = String(c);
-          cell.setAttribute("aria-label", `${describeSolvedCell(kind, r, c, hoverLabel)}${serviceValueLabel}`);
-          cell.title = `${hoverLabel || `(${r}, ${c}) ${kind}`}${serviceValueLabel}`;
+          cell.setAttribute("aria-label", `${describeSolvedCell(visualKind, r, c, hoverLabel)}${serviceValueLabel}`);
+          cell.title = `${hoverLabel || `(${r}, ${c}) ${visualKind}`}${serviceValueLabel}`;
           applyServiceValueHeatmapStyle(cell, serviceValue, heatmap?.maxValue ?? 0);
-          if (kind === "service" || kind === "residential") {
+          if (!showServiceValueHeatmap && (kind === "service" || kind === "residential")) {
             cell.classList.add("selectable");
           }
           if (state.selectedMapCell?.r === r && state.selectedMapCell?.c === c) {
@@ -1425,7 +1441,11 @@
       }
 
       applyMatrixLayout(elements.resultMapGrid);
-      renderBuildingOverlay(solution);
+      if (showServiceValueHeatmap) {
+        clearResultOverlay();
+      } else {
+        renderBuildingOverlay(solution);
+      }
       renderSelectedBuildingDetail(solution);
     }
 

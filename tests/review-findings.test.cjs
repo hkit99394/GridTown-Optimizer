@@ -2176,7 +2176,7 @@ function testPlannerResultsAppliesServiceValueHeatmap() {
     result: {
       solution: {
         optimizer: "greedy",
-        roads: [],
+        roads: ["1,0"],
         services: [{ r: 0, c: 0, rows: 1, cols: 1, range: 1 }],
         serviceTypeIndices: [0],
         servicePopulationIncreases: [20],
@@ -2192,7 +2192,7 @@ function testPlannerResultsAppliesServiceValueHeatmap() {
         stoppedByUser: false,
         stoppedByTimeLimit: false,
         totalPopulation: 30,
-        roadCount: 0,
+        roadCount: 1,
         serviceCount: 1,
         residentialCount: 1,
       },
@@ -2260,15 +2260,29 @@ function testPlannerResultsAppliesServiceValueHeatmap() {
     elements.resultMapGrid.children.find((cell) => cell.dataset.r === String(row) && cell.dataset.c === String(col));
   const serviceCell = findCell(0, 0);
   const coveredCell = findCell(0, 1);
+  const roadCell = findCell(1, 0);
+  const residentialCell = findCell(1, 1);
   const farCell = findCell(1, 2);
 
+  assert.match(serviceCell.className, /empty/);
+  assert.doesNotMatch(serviceCell.className, /service/);
   assert.doesNotMatch(serviceCell.className, /heatmap-cell/);
+  assert.doesNotMatch(serviceCell.title, /Clinic|service/);
   assert.match(coveredCell.className, /heatmap-cell/);
   assert.equal(coveredCell.dataset.serviceValue, "20");
   assert.equal(coveredCell.style["--heatmap-warm-alpha"], "0.76");
   assert.match(coveredCell.title, /service value \+20/);
   assert.match(coveredCell.attributes["aria-label"], /service value \+20/);
+  assert.match(roadCell.className, /empty/);
+  assert.doesNotMatch(roadCell.className, /road/);
+  assert.match(roadCell.className, /heatmap-cell/);
+  assert.doesNotMatch(roadCell.title, /road/);
+  assert.match(residentialCell.className, /empty/);
+  assert.doesNotMatch(residentialCell.className, /residential/);
+  assert.match(residentialCell.className, /heatmap-cell/);
+  assert.doesNotMatch(residentialCell.title, /House|residential/);
   assert.doesNotMatch(farCell.className, /heatmap-cell/);
+  assert.equal(elements.resultOverlay.children.length, 0);
 }
 
 function testManualLayoutResponseClearsSolverMetadata() {
@@ -2343,6 +2357,35 @@ function testManualLayoutResponseClearsSolverMetadata() {
   assert.equal(response.stats.manualLayout, true);
   assert.equal(response.stats.cpSatStatus, null);
   assert.equal(response.stats.stoppedByUser, false);
+}
+
+function testManualLayoutResponseCleansRedundantRoads() {
+  const response = buildManualLayoutResponse(
+    [
+      [1, 1, 1],
+      [1, 1, 1],
+      [1, 1, 1],
+    ],
+    {
+      residentialTypes: [{ name: "House", w: 1, h: 1, min: 10, max: 10, avail: 1 }],
+      availableBuildings: { residentials: 1, services: 0 },
+    },
+    {
+      roads: new Set(["0,1", "1,1", "2,1", "2,0"]),
+      services: [],
+      serviceTypeIndices: [],
+      servicePopulationIncreases: [],
+      residentials: [{ r: 2, c: 2, rows: 1, cols: 1 }],
+      residentialTypeIndices: [0],
+      populations: [0],
+      totalPopulation: 0,
+    }
+  );
+
+  assert.equal(response.validation.valid, true);
+  assert.deepEqual([...response.solution.roads].sort(), ["0,1", "1,1", "2,1"]);
+  assert.equal(response.stats.roadCount, 3);
+  assert.equal(response.stats.totalPopulation, 10);
 }
 
 function testManualLayoutResponseReportsOutOfBoundsRoads() {
@@ -3672,6 +3715,7 @@ async function main() {
   testPlannerResultsShowsGreedyDiagnosticsReport();
   testPlannerResultsAppliesServiceValueHeatmap();
   testManualLayoutResponseClearsSolverMetadata();
+  testManualLayoutResponseCleansRedundantRoads();
   testManualLayoutResponseReportsOutOfBoundsRoads();
   testBuildCpSatWarmStartCheckpointRejectsInvalidLayouts();
   testBuildCpSatWarmStartCheckpointRejectsLegacyLayoutsWithoutValidation();

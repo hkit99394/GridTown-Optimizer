@@ -2,10 +2,16 @@ import {
   materializeSerializedSolution,
   serializeSolution,
 } from "../../core/solutionSerialization.js";
+import { normalizeServicePlacement } from "../../core/buildings.js";
+import { isAllowed } from "../../core/grid.js";
 import { validateSolutionMap } from "../../core/map.js";
 import { buildSolverProgressSummary } from "../../core/progress.js";
+import { pruneRedundantRoads } from "../../core/roads.js";
 import { assertValidSerializedSolutionPayload } from "../../core/solverInputValidation.js";
+import { cellFromKey, cellKey } from "../../core/types.js";
 import type { Grid, SerializedSolution, Solution, SolverParams } from "../../core/types.js";
+import type { SolutionValidationOptions } from "../../core/evaluator.js";
+import type { BuildingPlacementForRoadMaterialization } from "../../core/roads.js";
 
 export interface SolveRequest {
   grid: Grid;
@@ -166,12 +172,17 @@ export function sanitizeSolveRequest<T extends SolveRequest | LayoutEvaluateRequ
 export { assertValidSerializedSolutionPayload };
 export { materializeSerializedSolution };
 
-export function buildSolveResponsePayload(grid: Grid, params: SolverParams, solution: Solution) {
+export function buildSolveResponsePayload(
+  grid: Grid,
+  params: SolverParams,
+  solution: Solution,
+  options: SolutionValidationOptions = {}
+) {
   return validateSolutionMap({
     grid,
     solution,
     params,
-  });
+  }, options);
 }
 
 export function buildSolveResponse(grid: Grid, params: SolverParams, solution: Solution) {
@@ -204,10 +215,73 @@ export function buildSolveResponse(grid: Grid, params: SolverParams, solution: S
   };
 }
 
-export function buildManualLayoutResponse(grid: Grid, params: SolverParams, solution: Solution) {
-  const initialValidation = buildSolveResponsePayload(grid, params, solution);
-  const normalizedSolution: Solution = {
+function addPlacementCellsForCleanup(
+  grid: Grid,
+  occupiedCells: Set<string>,
+  placement: BuildingPlacementForRoadMaterialization
+): boolean {
+  for (let rowOffset = 0; rowOffset < placement.rows; rowOffset += 1) {
+    for (let colOffset = 0; colOffset < placement.cols; colOffset += 1) {
+      const row = placement.r + rowOffset;
+      const col = placement.c + colOffset;
+      if (!isAllowed(grid, row, col)) return false;
+      const key = cellKey(row, col);
+      if (occupiedCells.has(key)) return false;
+      occupiedCells.add(key);
+    }
+  }
+  return true;
+}
+
+function collectRoadCleanupBuildings(
+  grid: Grid,
+  solution: Solution
+): BuildingPlacementForRoadMaterialization[] | null {
+  const buildingCells = new Set<string>();
+  const buildings: BuildingPlacementForRoadMaterialization[] = [];
+
+  for (const service of solution.services) {
+    const placement = normalizeServicePlacement(service);
+    if (!addPlacementCellsForCleanup(grid, buildingCells, placement)) return null;
+    buildings.push(placement);
+  }
+
+  for (const residential of solution.residentials) {
+    if (!addPlacementCellsForCleanup(grid, buildingCells, residential)) return null;
+    buildings.push(residential);
+  }
+
+  for (const roadKey of solution.roads) {
+    const { r, c } = cellFromKey(roadKey);
+    if (!isAllowed(grid, r, c)) return null;
+    if (buildingCells.has(roadKey)) return null;
+  }
+
+  return buildings;
+}
+
+function cleanManualLayoutRoads(grid: Grid, solution: Solution): Solution {
+  const buildings = collectRoadCleanupBuildings(grid, solution);
+  if (!buildings) return solution;
+
+  const cleanedRoads = pruneRedundantRoads(grid, solution.roads, buildings);
+  if (cleanedRoads.size === solution.roads.size && [...cleanedRoads].every((roadKey) => solution.roads.has(roadKey))) {
+    return solution;
+  }
+
+  return {
     ...solution,
+    roads: cleanedRoads,
+  };
+}
+
+export function buildManualLayoutResponse(grid: Grid, params: SolverParams, solution: Solution) {
+  const cleanedSolution = cleanManualLayoutRoads(grid, solution);
+  const validation = buildSolveResponsePayload(grid, params, cleanedSolution, {
+    ignoreReportedPopulation: true,
+  });
+  const normalizedSolution: Solution = {
+    ...cleanedSolution,
     optimizer: undefined,
     manualLayout: true,
     cpSatStatus: undefined,
@@ -217,10 +291,9 @@ export function buildManualLayoutResponse(grid: Grid, params: SolverParams, solu
     lnsTelemetry: undefined,
     stoppedByUser: false,
     stoppedByTimeLimit: false,
-    populations: [...initialValidation.recomputedPopulations],
-    totalPopulation: initialValidation.recomputedTotalPopulation,
+    populations: [...validation.recomputedPopulations],
+    totalPopulation: validation.recomputedTotalPopulation,
   };
-  const validation = buildSolveResponsePayload(grid, params, normalizedSolution);
 
   return {
     solution: serializeSolution(normalizedSolution),

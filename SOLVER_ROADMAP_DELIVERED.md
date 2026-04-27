@@ -4,6 +4,8 @@ This file keeps completed solver-roadmap work out of the main roadmap. The activ
 
 ## Delivered Work
 
+Reviewed through 2026-04-27.
+
 ### 1. Full Solver Stack
 
 - `greedy`, `LNS`, `CP-SAT`, and `auto` are available across backend, planner, and CLI flows.
@@ -65,9 +67,33 @@ This file keeps completed solver-roadmap work out of the main roadmap. The activ
 - Benchmarks can compare LNS behavior across runs.
 - LNS remains the main improvement engine after Greedy.
 
+### 11. Shared Decision Traces And Time-To-Quality Scorecards
+
+- Greedy, LNS, CP-SAT, CP-SAT portfolio, and Auto now feed a common decision-trace event model.
+- Trace events capture checkpoints, stage transitions, phase outcomes, neighborhood outcomes, CP-SAT progress, score deltas, upper bounds, and compact evidence fields.
+- Cross-mode benchmark results include `decisionTrace`, `timeToQuality`, and a summarized checkpoint reason per mode.
+- Time-to-quality scorecards report first feasible time, first improvement time, best score time, fixed checkpoint scores, and quality target reach times.
+- Cross-mode benchmark CLI supports JSONL trace export with `--trace-jsonl`.
+- Cross-mode scorecards now include per-mode `budgetAllocationSignal` data and suite-level `budgetPolicySignals` so Auto/LNS budget tuning can start from measured trace evidence.
+
+### 12. Road Finalization And Row-0 Anchor Cleanup
+
+- Greedy finalization now prunes redundant road cells after connectivity is ensured.
+- Deferred road materialization uses the same pruning pass before returning the final road set.
+- Buildings that touch row `0` are treated as connected by the anchor rule and no longer keep connector roads alive.
+- The pruning pass preserves a single row-0-connected explicit road network and verifies every non-row-0 building still has road access.
+- Regression coverage checks that row-0-connected buildings do not force unnecessary road cells, and benchmark snapshots were updated for lower final road counts.
+
+### 13. Planner Saved-Layout Score Visibility
+
+- Saved-layout dropdown entries now show saved population rather than elapsed time.
+- Population is read from validation totals, result stats, solution totals, or residential population sums when needed.
+- Saved-layout ordering and load behavior remain unchanged; the displayed selector metadata is now aligned with the solver goal.
+
 ## Maintenance Watchpoints
 
 - Keep deterministic benchmark seeds stable when changing solver scoring.
 - Keep CP-SAT repair experiments guarded because `repair_hint` plus multi-worker repair previously caused instability.
 - Keep distributed or portfolio solving behind proof that single-machine policy is no longer the bottleneck.
 - Keep learned guidance separate from core runtime correctness until traces and labels are strong enough.
+- Keep final road pruning conservative: population and validity must not depend on the removed roads.

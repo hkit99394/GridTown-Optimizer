@@ -503,11 +503,12 @@ export function pruneRedundantRoads(
   buildings: readonly BuildingPlacementForRoadMaterialization[]
 ): Set<string> {
   let pruned = roadsConnectedToRow0(G, roads);
+  const candidates = [...pruned].sort(compareRoadPruneCandidates);
   let changed = true;
   while (changed) {
     changed = false;
-    const candidates = [...pruned].sort(compareRoadPruneCandidates);
     for (const key of candidates) {
+      if (!pruned.has(key)) continue;
       const candidateRoads = new Set(pruned);
       candidateRoads.delete(key);
       if (!roadSetHasSingleRow0ConnectedComponent(G, candidateRoads)) continue;

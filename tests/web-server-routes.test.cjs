@@ -1224,6 +1224,42 @@ async function testLayoutEvaluateRoute(handler) {
   assert.equal(result.payload.stats.cpSatStatus, null);
 }
 
+async function testLayoutEvaluateCleansRedundantRoads(handler) {
+  const result = await invoke(handler, {
+    method: "POST",
+    url: "/api/layout/evaluate",
+    json: {
+      grid: [
+        [1, 1, 1],
+        [1, 1, 1],
+        [1, 1, 1],
+      ],
+      params: {
+        optimizer: "greedy",
+        residentialTypes: [{ name: "House", w: 1, h: 1, min: 10, max: 10, avail: 1 }],
+        availableBuildings: { residentials: 1, services: 0 },
+      },
+      solution: {
+        roads: ["0,1", "1,1", "2,1", "2,0"],
+        services: [],
+        serviceTypeIndices: [],
+        servicePopulationIncreases: [],
+        residentials: [{ r: 2, c: 2, rows: 1, cols: 1 }],
+        residentialTypeIndices: [0],
+        populations: [0],
+        totalPopulation: 0,
+      },
+    },
+  });
+
+  assert.equal(result.statusCode, 200);
+  assert.equal(result.payload.ok, true);
+  assert.equal(result.payload.validation.valid, true);
+  assert.deepEqual([...result.payload.solution.roads].sort(), ["0,1", "1,1", "2,1"]);
+  assert.equal(result.payload.stats.roadCount, 3);
+  assert.equal(result.payload.stats.totalPopulation, 10);
+}
+
 async function testLayoutEvaluateRejectsMalformedSerializedSolutions(handler) {
   const solvePayload = buildTinySolvePayload();
   const solved = solve(solvePayload.grid, solvePayload.params);
@@ -1904,6 +1940,7 @@ async function main() {
   await testBackgroundSolveRejectsImmediateSolveAtCapacity();
   await testImmediateSolveRejectsBackgroundSolveAtCapacity();
   await testLayoutEvaluateRoute(handler);
+  await testLayoutEvaluateCleansRedundantRoads(handler);
   await testLayoutEvaluateRejectsMalformedSerializedSolutions(handler);
   await testLayoutEvaluateReportsWellFormedInvalidManualLayout(handler);
   await testLayoutEvaluateRejectsInvalidProblemDefinition(handler);

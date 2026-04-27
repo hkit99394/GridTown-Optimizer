@@ -268,6 +268,18 @@ function testRoadPruningDropsConnectorsOnlyNeededByRowZeroBuildings() {
   assert.deepEqual([...pruned].sort(), ["0,1"]);
 }
 
+function testRoadPruningRevisitsCandidatesAfterDependentRoadRemoval() {
+  const grid = [
+    [1, 1],
+    [1, 1],
+  ];
+  const roads = new Set(["0,0", "1,0", "1,1"]);
+
+  const pruned = pruneRedundantRoads(grid, roads, []);
+
+  assert.deepEqual([...pruned].sort(), ["0,0"]);
+}
+
 async function maybeTestAutoOptimizer() {
   const pythonExecutable = resolveCpSatPython();
   if (!pythonExecutable) return;
@@ -2802,8 +2814,13 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(result.cases[0].results[0].winVsAuto, "no-auto");
   assert.equal(result.cases[0].results[0].scoreDeltaVsAuto, null);
   assert.equal(result.cases[0].results[0].progressSummary.activeStage, "greedy");
+  assert.equal(typeof result.cases[0].results[0].budgetAllocationSignal.budgetUtilizationRatio, "number");
+  assert.equal(result.cases[0].results[0].budgetAllocationSignal.scoreDeltaVsAuto, null);
   assert.equal(result.modeSummaries[0].mode, "greedy");
   assert.equal(result.problemSizeSummaries[0].problemSizeBand, "tiny");
+  assert.equal(result.budgetPolicySignals.length, 1);
+  assert.equal(result.budgetPolicySignals[0].caseName, "mock-scorecard");
+  assert.equal(result.budgetPolicySignals[0].recommendation, "add-auto-baseline");
 
   const mocked = await runCrossModeBenchmarkSuite([benchmarkCase], {
     modes: ["auto", "greedy", "lns", "cp-sat-portfolio"],
@@ -2940,6 +2957,11 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(mocked.modeSummaries.find((entry) => entry.mode === "greedy").winRateVsAuto, 1);
   assert.equal(mocked.modeSummaries.find((entry) => entry.mode === "lns").winRateVsAuto, 0);
   assert.equal(mocked.modeSummaries.find((entry) => entry.mode === "greedy").populationStdDev, 0.5);
+  assert.equal(mocked.budgetPolicySignals.length, 2);
+  assert.equal(mocked.budgetPolicySignals[0].recommendation, "shift-auto-budget-to-greedy");
+  assert.equal(mocked.budgetPolicySignals[0].autoDeltaToBest, 2);
+  assert.equal(mocked.budgetPolicySignals[0].lnsScoreDeltaVsAuto, -2);
+  assert.match(mocked.budgetPolicySignals[0].reason, /Greedy beat Auto by 2 population/);
   assert.equal(
     mocked.cases[0].results.find((entry) => entry.mode === "cp-sat-portfolio").progressSummary.portfolioWorkerSummary.feasibleWorkers,
     1
@@ -2947,6 +2969,11 @@ async function testCrossModeBenchmarkHelpers() {
   const mockedAuto = mocked.cases[0].results.find((entry) => entry.mode === "auto");
   const mockedLns = mocked.cases[0].results.find((entry) => entry.mode === "lns");
   const mockedPortfolio = mocked.cases[0].results.find((entry) => entry.mode === "cp-sat-portfolio");
+  assert.equal(mockedAuto.budgetAllocationSignal.scoreDeltaVsAuto, 0);
+  assert.equal(mockedLns.budgetAllocationSignal.scoreDeltaVsAuto, -2);
+  assert.equal(mockedLns.budgetAllocationSignal.signal, "under-used-budget");
+  assert(mockedLns.budgetAllocationSignal.budgetRemainingSeconds > 2);
+  assert.match(mockedLns.budgetAllocationSignal.reason, /small share/);
   assert(mockedAuto.decisionTrace.some((event) => event.kind === "auto-stage"));
   assert(mockedAuto.decisionTrace.some((event) => event.kind === "greedy-phase"));
   assert(mockedLns.decisionTrace.some((event) => event.kind === "lns-neighborhood"));
@@ -3021,9 +3048,14 @@ async function testCrossModeBenchmarkHelpers() {
   assert.match(formatted, /Equal wall-clock budgets: 3s per mode/);
   assert.match(formatted, /progress=current=/);
   assert.match(formatted, /quality=first-feasible=/);
+  assert.match(formatted, /budget-signal=/);
   const mockedFormatted = formatCrossModeBenchmarkSuite(mocked);
   assert.match(mockedFormatted, /seed-policy=.*lns-seed-limit:2\.000s/);
   assert.match(mockedFormatted, /seed-policy=.*auto-greedy-seed-limit:3\.000s/);
+  assert.match(mockedFormatted, /budget-signal=under-used-budget/);
+  assert.match(mockedFormatted, /Budget policy signals:/);
+  assert.match(mockedFormatted, /recommendation=shift-auto-budget-to-greedy/);
+  assert.match(mockedFormatted, /auto-gap=2/);
   assert.match(mockedFormatted, /reason=/);
 
   await assert.rejects(
@@ -6165,6 +6197,7 @@ async function main() {
   testRoadProbePreservesEdgeBorderConnectivity();
   testRoadProbeScratchWorkspaceResetsBetweenCalls();
   testRoadPruningDropsConnectorsOnlyNeededByRowZeroBuildings();
+  testRoadPruningRevisitsCandidatesAfterDependentRoadRemoval();
   testGreedyDispatcher();
   await testPublicSolverDispatchValidatesInputs();
   testGreedyRandomSeedIsDeterministic();

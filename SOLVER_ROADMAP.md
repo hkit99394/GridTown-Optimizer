@@ -35,7 +35,7 @@ The default quality path stays incumbent-first:
 
 Completed solver work has moved to [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED.md).
 
-Current shipped baseline:
+Current reviewed baseline as of 2026-04-27:
 
 - `greedy`, `LNS`, `CP-SAT`, and `auto` are available through the backend/planner path.
 - `auto` follows the staged `greedy -> LNS -> CP-SAT` quality workflow.
@@ -44,7 +44,9 @@ Current shipped baseline:
 - Greedy has phase boundaries, runtime guardrails, and phase-level quality/timing counters.
 - Solve admission, route safety, and reusable solver-state hardening are in place.
 - CP-SAT portfolio initiation is guarded and no longer competes with the default path by accident.
-- Cross-mode progress and benchmark scorecards are available.
+- Cross-mode progress, unified decision traces, JSONL trace export, time-to-quality scorecards, and budget-policy signals are available.
+- Final Greedy road materialization prunes redundant support roads while preserving row-0 connectivity and building access.
+- Planner saved-layout selection surfaces saved population so layout choices are score-oriented.
 
 ## Active Priorities
 
@@ -52,20 +54,20 @@ Impact scale: `5` is most significant for population per minute; lower scores ar
 
 | Rank | Priority | Impact | Summary | Success Signal |
 | --- | --- | ---: | --- | --- |
-| 1 | Shared decision traces and time-to-quality scorecards | 5.0 | Add unified JSONL traces for Greedy, LNS, CP-SAT, and Auto decisions. | We can explain why population improved or stalled at each checkpoint. |
+| 1 | Tune Auto and LNS budget policy from traces | 5.0 | Use decision traces, scorecards, and budget signals to reallocate time between Greedy, LNS, CP-SAT, restarts, and neighborhoods. | Better 5s/30s/120s checkpoint population without more wall-clock time. |
 | 2 | Building connectivity-shadow analysis | 4.5 | Measure how each proposed building placement reduces future feasible connected cells. | Placement scoring avoids buildings that isolate high-value future space. |
 | 3 | Deterministic ablations before model training | 4.0 | Run controlled heuristics experiments before learned ranking. | We know which features and phases actually move population. |
-| 4 | Tune Auto and LNS budget policy from traces | 4.0 | Reallocate time between Greedy, LNS, CP-SAT, restarts, and neighborhoods. | Better checkpoint population without more wall-clock time. |
-| 5 | Low-risk learned ranking | 3.0 | Start with service ordering or LNS window ordering only after trace gates pass. | Model ranking beats deterministic baseline on held-out maps. |
+| 4 | Road opportunity-cost instrumentation | 3.5 | Explain road and building choices in terms of remaining row-0-reachable space, not just current road length. | Traces identify placements that preserve or destroy future connection options. |
+| 5 | Low-risk learned ranking | 3.0 | Start with service ordering or LNS window ordering only after trace and ablation gates pass. | Model ranking beats deterministic baseline on held-out maps. |
 | 6 | Planner explainability maps | 3.0 | Add opportunity/risk maps for placement and connectivity decisions. | Humans can inspect why a placement is attractive or dangerous. |
 | 7 | CPU parallelism and portfolio work | 2.5 | Use parallelism only where CPU-normalized benchmarks prove wall-clock gain. | Higher population per wall-clock without hiding wasted CPU. |
 
 ## Combined Ordering
 
-1. Add shared decision traces and time-to-quality scorecards.
+1. Use decision traces and time-to-quality scorecards to tune Auto and LNS budget allocation.
 2. Add deterministic building connectivity-shadow / opportunity-cost maps.
 3. Run ablations for Greedy ordering, LNS neighborhoods, and Auto budgets.
-4. Tune Auto and LNS budget allocation from trace results.
+4. Instrument road opportunity cost in terms of remaining row-0-reachable space.
 5. Try learned Greedy service re-ranking if traces show ordering mistakes.
 6. Add counterfactual LNS labels, then try learned LNS window re-ranking.
 7. Add CPU portfolio or replay parallelism only with CPU-normalized benchmark wins.
@@ -77,6 +79,8 @@ Impact scale: `5` is most significant for population per minute; lower scores ar
 
 - Roads are support cells, not blockers. The real blocker is building placement that prevents future buildings or available cells from reaching row `0`.
 - Any available cell can be treated as a road candidate until a building occupies it.
+- Buildings that touch row `0` are already connected by the anchor rule and must not keep unnecessary connector roads alive.
+- Final road cleanup should remove support roads that do not affect row-0 road connectivity or building access.
 - Connectivity cost should estimate building-induced loss of feasible connected area, not road commitment alone.
 - Learned guidance is not ready until traces show repeated, explainable ranking mistakes and enough counterfactual labels exist.
 - CPU parallelism is useful only when measured against wall-clock and CPU-second cost.

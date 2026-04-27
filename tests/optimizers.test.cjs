@@ -1383,28 +1383,46 @@ function testGreedyConnectivityShadowScoringIsOptInTieBreaker() {
       profile: true,
     },
   });
+  const snapshotDir = fs.mkdtempSync(path.join(os.tmpdir(), "greedy-shadow-snapshot-"));
+  const snapshotFilePath = path.join(snapshotDir, "snapshot.json");
 
-  assert.deepEqual(defaultSolution.residentials, [{ r: 0, c: 0, rows: 1, cols: 1 }]);
-  assert.deepEqual(explicitOff.residentials, defaultSolution.residentials);
-  assert.deepEqual(profiledDefault.residentials, defaultSolution.residentials);
-  assert.deepEqual([...explicitOff.roads].sort(), [...defaultSolution.roads].sort());
-  assert.equal(defaultSolution.totalPopulation, enabled.totalPopulation);
-  assert.deepEqual(enabled.residentials, [{ r: 0, c: 1, rows: 1, cols: 1 }]);
-  assert.deepEqual([...enabled.roads].sort(), ["0,0"]);
-  assert.deepEqual(enabledProfiled.residentials, enabled.residentials);
-  assert(enabledProfiled.greedyProfile.counters.roads.connectivityShadowScoreTies > 0);
-  assert(enabledProfiled.greedyProfile.counters.roads.connectivityShadowScoreWins > 0);
-  assert(enabledProfiled.greedyProfile.connectivityShadowDecisions.length > 0);
-  assert.equal(enabledProfiled.greedyProfile.connectivityShadowDecisions[0].phase, "residential");
-  assert.deepEqual(enabledProfiled.greedyProfile.connectivityShadowDecisions[0].chosen, {
-    r: 0,
-    c: 1,
-    rows: 1,
-    cols: 1,
-    roadCost: 0,
-    typeIndex: 0,
-  });
-  assert.equal(validateSolution({ grid, solution: enabled, params: baseParams }).valid, true);
+  try {
+    const snapshotted = solveGreedy(grid, {
+      ...structuredClone(baseParams),
+      greedy: {
+        ...baseParams.greedy,
+        connectivityShadowScoring: true,
+        snapshotFilePath,
+      },
+    });
+    const snapshot = JSON.parse(fs.readFileSync(snapshotFilePath, "utf8"));
+
+    assert.deepEqual(defaultSolution.residentials, [{ r: 0, c: 0, rows: 1, cols: 1 }]);
+    assert.deepEqual(explicitOff.residentials, defaultSolution.residentials);
+    assert.deepEqual(profiledDefault.residentials, defaultSolution.residentials);
+    assert.deepEqual([...explicitOff.roads].sort(), [...defaultSolution.roads].sort());
+    assert.equal(defaultSolution.totalPopulation, enabled.totalPopulation);
+    assert.deepEqual(enabled.residentials, [{ r: 0, c: 1, rows: 1, cols: 1 }]);
+    assert.deepEqual([...enabled.roads].sort(), ["0,0"]);
+    assert.deepEqual(enabledProfiled.residentials, enabled.residentials);
+    assert(enabledProfiled.greedyProfile.counters.roads.connectivityShadowScoreTies > 0);
+    assert(enabledProfiled.greedyProfile.counters.roads.connectivityShadowScoreWins > 0);
+    assert(enabledProfiled.greedyProfile.connectivityShadowDecisions.length > 0);
+    assert.equal(enabledProfiled.greedyProfile.connectivityShadowDecisions[0].phase, "residential");
+    assert.deepEqual(enabledProfiled.greedyProfile.connectivityShadowDecisions[0].chosen, {
+      r: 0,
+      c: 1,
+      rows: 1,
+      cols: 1,
+      roadCost: 0,
+      typeIndex: 0,
+    });
+    assert.deepEqual(snapshotted.residentials, enabled.residentials);
+    assert.deepEqual(snapshot.residentials, enabled.residentials);
+    assert.equal(validateSolution({ grid, solution: enabled, params: baseParams }).valid, true);
+  } finally {
+    fs.rmSync(snapshotDir, { recursive: true, force: true });
+  }
 }
 
 function testGreedyStopFileCancelsBeforePrecompute() {

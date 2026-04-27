@@ -136,6 +136,13 @@ Reviewed through 2026-04-27.
 - Greedy benchmark text reports `connectivity-shadow=...` so placement isolation pressure is visible before it affects scoring.
 - Regression coverage checks a sparse row-0 corridor shadow case and verifies Greedy benchmark profile output includes the new counters.
 
+### 19. Connectivity-Shadow Tie-Breaker
+
+- Added default-off `greedy.connectivityShadowScoring` so Greedy can prefer equal-score placements that preserve more row-0-reachable future space.
+- Candidate scoring uses the same building-only shadow model as profiling, but computes it independently of `greedy.profile` so profiling alone never changes placement behavior.
+- Shadow comparison is deliberately lazy and tie-only: candidate shadow is computed only after normal Greedy score/density comparison ties, avoiding a full-frontier BFS on every candidate scan.
+- Regression coverage checks default/off/profile behavior remains unchanged and that the opt-in tie-breaker chooses the less-disconnecting placement on a sparse row-0 corridor case.
+
 ## Maintenance Watchpoints
 
 - Keep deterministic benchmark seeds stable when changing solver scoring.
@@ -143,7 +150,7 @@ Reviewed through 2026-04-27.
 - Keep distributed or portfolio solving behind proof that single-machine policy is no longer the bottleneck.
 - Keep learned guidance separate from core runtime correctness until traces and labels are strong enough.
 - Keep final road pruning conservative: population and validity must not depend on the removed roads.
-- Keep connectivity-shadow scoring changes gated by profile evidence; the current metric is instrumentation and should not change placement decisions by itself.
+- Keep connectivity-shadow scoring default-off until benchmark evidence shows population-safe gains; `greedy.profile` must remain observational and must not affect placement choices.
 - Keep Auto budget slicing honest: LNS seed and repair work may use the Auto LNS stage slice, but must not spend the CP-SAT reserve unless a future trace-backed policy explicitly changes that.
 - Keep ablation matrices small by default; expand cases, modes, budgets, or policies only when the previous sweep gives a clear signal.
 - Keep long ablation runs staged and timeout-bounded; the corrected 30s LNS budget can legitimately consume far more wall-clock than the previous capped corpus setup.

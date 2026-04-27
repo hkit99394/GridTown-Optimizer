@@ -1028,6 +1028,7 @@ function assertValidGreedyOptions(params: SolverParams): void {
       GREEDY_MAX_DENSITY_TIE_BREAKER_TOLERANCE_PERCENT,
       true
     );
+    requireOptionalBoolean(greedy, "connectivityShadowScoring", "Greedy option greedy.connectivityShadowScoring");
     requireOptionalIntegerInRange(
       greedy,
       "randomSeed",

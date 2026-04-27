@@ -463,6 +463,8 @@ export interface GreedyOptions {
   densityTieBreaker?: boolean;
   /** Population/score window for density tie-breaking, expressed as a percent. Default 2. */
   densityTieBreakerTolerancePercent?: number;
+  /** Prefer placements with lower building-induced row-0 connectivity shadow when Greedy scores tie. Default false. */
+  connectivityShadowScoring?: boolean;
   /** Fixed seed for reproducible greedy restart shuffling. */
   randomSeed?: number;
   /** Optional wall-clock budget in seconds for raw greedy solves. Omit for no greedy-specific cap. */

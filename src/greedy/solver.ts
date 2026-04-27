@@ -258,6 +258,7 @@ const SERVICE_LOOKAHEAD = {
 
 const GREEDY_DIAGNOSTIC_CANDIDATE_LIMIT = 2_000;
 const GREEDY_DIAGNOSTIC_EXAMPLES_PER_REASON = 3;
+const CONNECTIVITY_SHADOW_FOOTPRINT_PENALTY_WEIGHT = 0.125;
 
 const EXHAUSTIVE_FIXED_SERVICE_EVALUATION = {
   maxOrders: 4,
@@ -373,6 +374,7 @@ function getGreedyOptions(params: SolverParams): NormalizedGreedyOptions {
     deferRoadCommitment: greedy.deferRoadCommitment ?? false,
     densityTieBreaker: greedy.densityTieBreaker ?? false,
     densityTieBreakerTolerancePercent: greedy.densityTieBreakerTolerancePercent ?? 2,
+    connectivityShadowScoring: greedy.connectivityShadowScoring ?? false,
     ...(randomSeed !== undefined ? { randomSeed } : {}),
     profile: greedy.profile ?? false,
     diagnostics: greedy.diagnostics ?? false,
@@ -983,6 +985,20 @@ function compareDensityAwareScore(
   return 0;
 }
 
+function computeConnectivityShadowPenalty(
+  attemptState: GreedyAttemptState,
+  placement: { r: number; c: number; rows: number; cols: number },
+  footprintKeys?: readonly string[]
+): number {
+  const shadow = attemptState.measureConnectivityShadow(placement, footprintKeys);
+  return shadow.disconnectedCells + shadow.footprintCells * CONNECTIVITY_SHADOW_FOOTPRINT_PENALTY_WEIGHT;
+}
+
+function compareConnectivityShadowPenalty(candidatePenalty: number, incumbentPenalty: number): number {
+  if (Math.abs(candidatePenalty - incumbentPenalty) <= 1e-9) return 0;
+  return candidatePenalty < incumbentPenalty ? 1 : -1;
+}
+
 function computeResidentialPopulation(
   params: SolverParams,
   residential: { r: number; c: number; rows: number; cols: number },
@@ -1298,6 +1314,7 @@ function solveOne(
     densityTieBreaker && typeof params.greedy?.densityTieBreakerTolerancePercent === "number"
       ? Math.max(0, params.greedy.densityTieBreakerTolerancePercent) / 100
       : (densityTieBreaker ? 0.02 : 0);
+  const connectivityShadowScoring = Boolean(params.greedy?.connectivityShadowScoring);
 
   const services: ServicePlacement[] = [];
   const serviceTypeIndices: number[] = [];
@@ -1539,6 +1556,7 @@ function solveOne(
       let bestProbe: ConnectivityProbe | null = null;
       let bestScore = 0;
       let bestDensityScore = Number.NEGATIVE_INFINITY;
+      let bestConnectivityShadowPenalty: number | null = null;
       const lookaheadShortlist: ServiceLookaheadCandidate[] = [];
       for (const candidateIndex of serviceActivePool.activeIndices) {
         maybeStop?.();
@@ -1593,9 +1611,33 @@ function solveOne(
               bestDensityScore,
               densityTieBreakerToleranceRatio
             );
+        let candidateConnectivityShadowPenalty: number | null = null;
+        let connectivityShadowComparison = 0;
+        if (scoreComparison === 0 && score > 0 && connectivityShadowScoring && bestCandidate !== null) {
+          const serviceFootprintKeys = precomputedIndexes.serviceFootprintKeysByCandidate[globalCandidateIndex];
+          candidateConnectivityShadowPenalty = computeConnectivityShadowPenalty(
+            attemptState,
+            placement,
+            serviceFootprintKeys
+          );
+          if (bestConnectivityShadowPenalty === null) {
+            const bestGlobalCandidateIndex = serviceOrderGlobalCandidateIndices[bestCandidateIndex] ?? -1;
+            const bestFootprintKeys = precomputedIndexes.serviceFootprintKeysByCandidate[bestGlobalCandidateIndex];
+            bestConnectivityShadowPenalty = computeConnectivityShadowPenalty(
+              attemptState,
+              materializeServicePlacement(bestCandidate),
+              bestFootprintKeys
+            );
+          }
+          connectivityShadowComparison = compareConnectivityShadowPenalty(
+            candidateConnectivityShadowPenalty,
+            bestConnectivityShadowPenalty
+          );
+        }
         if (
           scoreComparison > 0
-          || (scoreComparison === 0 && score > 0 && bestCandidate !== null
+          || connectivityShadowComparison > 0
+          || (scoreComparison === 0 && connectivityShadowComparison === 0 && score > 0 && bestCandidate !== null
             && bestProbe !== null
             && compareServiceTieBreaks(service, probe, bestCandidate, bestProbe) < 0)
         ) {
@@ -1603,6 +1645,9 @@ function solveOne(
           bestCandidateIndex = candidateIndex;
           bestScore = score;
           bestDensityScore = densityScore;
+          bestConnectivityShadowPenalty = connectivityShadowComparison !== 0
+            ? candidateConnectivityShadowPenalty
+            : null;
           bestProbe = probe;
         }
       }
@@ -1765,6 +1810,7 @@ function solveOne(
     let bestProbe: ConnectivityProbe | null = null;
     let bestPop = -1;
     let bestDensityScore = Number.NEGATIVE_INFINITY;
+    let bestConnectivityShadowPenalty: number | null = null;
     for (const candidateIndex of residentialActivePool.activeIndices) {
       const cand = anyResidentialCandidates[candidateIndex];
       maybeStop?.();
@@ -1790,13 +1836,35 @@ function solveOne(
             bestDensityScore,
             densityTieBreakerToleranceRatio
           );
+      let candidateConnectivityShadowPenalty: number | null = null;
+      let connectivityShadowComparison = 0;
+      if (scoreComparison === 0 && pop >= 0 && connectivityShadowScoring && best !== null) {
+        const residentialFootprintKeys = precomputedIndexes.residentialCandidateFootprintKeys[candidateIndex];
+        candidateConnectivityShadowPenalty = computeConnectivityShadowPenalty(
+          attemptState,
+          cand,
+          residentialFootprintKeys
+        );
+        if (bestConnectivityShadowPenalty === null) {
+          const bestFootprintKeys = precomputedIndexes.residentialCandidateFootprintKeys[bestCandidateIndex];
+          bestConnectivityShadowPenalty = computeConnectivityShadowPenalty(attemptState, best, bestFootprintKeys);
+        }
+        connectivityShadowComparison = compareConnectivityShadowPenalty(
+          candidateConnectivityShadowPenalty,
+          bestConnectivityShadowPenalty
+        );
+      }
       if (
         scoreComparison > 0
-        || (scoreComparison === 0 && pop >= 0 && best !== null && bestProbe !== null
+        || connectivityShadowComparison > 0
+        || (scoreComparison === 0 && connectivityShadowComparison === 0 && pop >= 0 && best !== null && bestProbe !== null
           && compareResidentialTieBreaks(params, cand, probe, best, bestProbe) < 0)
       ) {
         bestPop = pop;
         bestDensityScore = densityScore;
+        bestConnectivityShadowPenalty = connectivityShadowComparison !== 0
+          ? candidateConnectivityShadowPenalty
+          : null;
         best = cand;
         bestCandidateIndex = candidateIndex;
         bestProbe = probe;

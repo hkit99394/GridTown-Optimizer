@@ -1329,6 +1329,58 @@ function testGreedyRandomSeedIsDeterministic() {
   assert.deepEqual(first.populations, second.populations);
 }
 
+function testGreedyConnectivityShadowScoringIsOptInTieBreaker() {
+  const grid = [
+    [1, 1],
+    [1, 0],
+    [1, 0],
+  ];
+  const baseParams = {
+    optimizer: "greedy",
+    residentialTypes: [
+      { w: 1, h: 1, min: 10, max: 10, avail: 1 },
+    ],
+    availableBuildings: { services: 0, residentials: 1 },
+    greedy: {
+      localSearch: false,
+      restarts: 1,
+      serviceRefineIterations: 0,
+      exhaustiveServiceSearch: false,
+    },
+  };
+  const defaultSolution = solveGreedy(grid, structuredClone(baseParams));
+  const explicitOff = solveGreedy(grid, {
+    ...structuredClone(baseParams),
+    greedy: {
+      ...baseParams.greedy,
+      connectivityShadowScoring: false,
+    },
+  });
+  const profiledDefault = solveGreedy(grid, {
+    ...structuredClone(baseParams),
+    greedy: {
+      ...baseParams.greedy,
+      profile: true,
+    },
+  });
+  const enabled = solveGreedy(grid, {
+    ...structuredClone(baseParams),
+    greedy: {
+      ...baseParams.greedy,
+      connectivityShadowScoring: true,
+    },
+  });
+
+  assert.deepEqual(defaultSolution.residentials, [{ r: 0, c: 0, rows: 1, cols: 1 }]);
+  assert.deepEqual(explicitOff.residentials, defaultSolution.residentials);
+  assert.deepEqual(profiledDefault.residentials, defaultSolution.residentials);
+  assert.deepEqual([...explicitOff.roads].sort(), [...defaultSolution.roads].sort());
+  assert.equal(defaultSolution.totalPopulation, enabled.totalPopulation);
+  assert.deepEqual(enabled.residentials, [{ r: 0, c: 1, rows: 1, cols: 1 }]);
+  assert.deepEqual([...enabled.roads].sort(), ["0,0"]);
+  assert.equal(validateSolution({ grid, solution: enabled, params: baseParams }).valid, true);
+}
+
 function testGreedyStopFileCancelsBeforePrecompute() {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "greedy-stop-precompute-"));
   const stopFilePath = path.join(tempDir, "stop-now");
@@ -6666,6 +6718,7 @@ async function main() {
   testGreedyDispatcher();
   await testPublicSolverDispatchValidatesInputs();
   testGreedyRandomSeedIsDeterministic();
+  testGreedyConnectivityShadowScoringIsOptInTieBreaker();
   testGreedyStopFileCancelsBeforePrecompute();
   testGreedyWallClockBudgetStopsWithBestSolution();
   testGreedyExploresAllAllowedRowZeroSeeds();

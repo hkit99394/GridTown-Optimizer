@@ -15,6 +15,7 @@ import {
   probeBuildingConnectedToRoads,
   probeBuildingConnectedToRow0ReachableEmptyFrontier,
 } from "../core/roads.js";
+import type { BuildingConnectivityShadow } from "../core/roads.js";
 import type { RoadConnectionProbe } from "../core/roads.js";
 import { normalizeServicePlacement } from "../core/buildings.js";
 import { forEachRectangleCell } from "../core/grid.js";
@@ -187,6 +188,18 @@ export class GreedyAttemptState {
     return collectNewlyOccupiedKeysForPlacement(this.occupied, probe, placement, footprintKeys);
   }
 
+  measureConnectivityShadow(placement: PlacementRect, footprintKeys?: readonly string[]): BuildingConnectivityShadow {
+    return this.useDeferredRoadCommitment && this.deferredFrontier
+      ? measureBuildingConnectivityShadowFromFrontier(
+          this.grid,
+          this.occupiedBuildings,
+          this.deferredFrontier,
+          placement,
+          footprintKeys
+        )
+      : measureBuildingConnectivityShadow(this.grid, this.occupiedBuildings, placement, footprintKeys);
+  }
+
   commitExplicitPlacement(options: {
     probe: RoadConnectionProbe;
     placement: PlacementRect;
@@ -278,15 +291,7 @@ export class GreedyAttemptState {
 
   private recordConnectivityShadow(placement: PlacementRect, footprintKeys?: readonly string[]): void {
     if (!this.profileCounters) return;
-    const shadow = this.useDeferredRoadCommitment && this.deferredFrontier
-      ? measureBuildingConnectivityShadowFromFrontier(
-          this.grid,
-          this.occupiedBuildings,
-          this.deferredFrontier,
-          placement,
-          footprintKeys
-        )
-      : measureBuildingConnectivityShadow(this.grid, this.occupiedBuildings, placement, footprintKeys);
+    const shadow = this.measureConnectivityShadow(placement, footprintKeys);
     const counters = this.profileCounters.roads;
     counters.connectivityShadowChecks++;
     counters.connectivityShadowLostCells += shadow.lostCells;

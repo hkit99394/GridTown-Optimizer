@@ -639,6 +639,7 @@ greedy: {
   timeLimitSeconds: 3900,
   densityTieBreaker: false,
   densityTieBreakerTolerancePercent: 2,
+  connectivityShadowScoring: false,
   restarts: 20,
   serviceRefineIterations: 4,
   serviceRefineCandidateLimit: 60,
@@ -650,7 +651,9 @@ greedy: {
 
 Set `greedy.diagnostics: true` to include `solution.greedyDiagnostics`, a bounded post-solve report that scans final unplaced candidates and groups "why not placed?" examples by blocked footprint, missing road path, no service coverage / base-only residential population, availability caps, and lower-score/no-improvement outcomes.
 
-When `greedy.profile` is enabled, Greedy counters include `roads.connectivityShadow*` fields. These measure how many row-0-reachable empty cells each committed building footprint removes, separating cells consumed by the footprint from downstream cells disconnected by that placement. The benchmark formatter prints this as `connectivity-shadow=...`; it is instrumentation only and does not change scoring yet.
+When `greedy.profile` is enabled, Greedy counters include `roads.connectivityShadow*` fields. These measure how many row-0-reachable empty cells each committed building footprint removes, separating cells consumed by the footprint from downstream cells disconnected by that placement. The benchmark formatter prints this as `connectivity-shadow=...`.
+
+Set `greedy.connectivityShadowScoring: true` to use that signal as an opt-in placement tie-breaker: when normal Greedy scores tie, candidates that disconnect fewer future row-0-reachable cells are preferred. The default is `false`, so profiling alone does not change placement choices.
 
 Set `greedy.densityTieBreaker: true` to prefer more central high-value placements when Greedy scores are within `greedy.densityTieBreakerTolerancePercent` of each other. The web planner exposes this only for standalone Greedy; Auto keeps its fixed Greedy seed-stage ranking policy.
 

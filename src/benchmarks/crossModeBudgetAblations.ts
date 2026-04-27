@@ -1,4 +1,6 @@
 import { serializeDecisionTraceJsonl } from "../core/decisionTrace.js";
+import { DEFAULT_GREEDY_BENCHMARK_CORPUS } from "./greedy.js";
+import { DEFAULT_LNS_BENCHMARK_CORPUS } from "./lns.js";
 import {
   collectCrossModeBenchmarkDecisionTraceEvents,
   DEFAULT_CROSS_MODE_BENCHMARK_BUDGET_SECONDS,
@@ -16,6 +18,7 @@ import type {
   CrossModeBenchmarkModeResult,
   CrossModeBenchmarkRunOptions,
   CrossModeBenchmarkSuiteResult,
+  CrossModeProblemSizeBand,
   CrossModeBudgetPolicyRecommendation,
 } from "./crossMode.js";
 import type { SolverDecisionTraceEvent } from "../core/types.js";
@@ -33,6 +36,8 @@ export interface CrossModeBenchmarkBudgetAblationBudgetSummary {
   meanLnsPopulation: number | null;
   meanAutoDeltaToBest: number | null;
   deltaVsBaselineMeanBestPopulation: number | null;
+  deltaVsBaselineMeanAutoPopulation: number | null;
+  deltaVsBaselineMeanLnsPopulation: number | null;
   recommendationCounts: Record<CrossModeBudgetPolicyRecommendation, number>;
 }
 
@@ -47,6 +52,8 @@ export interface CrossModeBenchmarkBudgetAblationPolicyResult {
   meanAutoLnsStageElapsedSeconds: number | null;
   meanAutoCpSatStageElapsedSeconds: number | null;
   deltaVsBaselineMeanBestPopulation: number | null;
+  deltaVsBaselineMeanAutoPopulation: number | null;
+  deltaVsBaselineMeanLnsPopulation: number | null;
   budgetSummaries: CrossModeBenchmarkBudgetAblationBudgetSummary[];
   recommendationCounts: Record<CrossModeBudgetPolicyRecommendation, number>;
 }
@@ -101,6 +108,16 @@ export const DEFAULT_CROSS_MODE_BUDGET_ABLATION_POLICIES = Object.freeze([
   },
 ] satisfies CrossModeBenchmarkBudgetAblationPolicy[]);
 
+const GREEDY_COVERAGE_CASE_NAMES = Object.freeze([
+  "typed-footprint-pressure",
+  "deferred-road-packing-gain",
+  "service-local-neighborhood",
+] satisfies string[]);
+
+const LNS_COVERAGE_CASE_NAMES = Object.freeze([
+  "row0-anchor-repair",
+] satisfies string[]);
+
 const MODE_LABELS: Record<CrossModeBenchmarkMode, string> = {
   auto: "Auto",
   greedy: "Greedy",
@@ -117,6 +134,36 @@ function meanOrNull(values: ReadonlyArray<number | null | undefined>): number | 
   const finiteValues = values.filter((value): value is number => typeof value === "number" && Number.isFinite(value));
   return finiteValues.length ? mean(finiteValues) : null;
 }
+
+function inferCoverageProblemSizeBand(benchmarkCase: CrossModeBenchmarkCase): CrossModeProblemSizeBand {
+  const cells = benchmarkCase.grid.length * (benchmarkCase.grid[0]?.length ?? 0);
+  if (cells <= 16) return "tiny";
+  if (cells <= 36) return "small";
+  return "medium";
+}
+
+function selectCoverageCases(
+  corpus: readonly CrossModeBenchmarkCase[],
+  names: readonly string[]
+): CrossModeBenchmarkCase[] {
+  const byName = new Map(corpus.map((benchmarkCase) => [benchmarkCase.name, benchmarkCase]));
+  return names.map((name) => {
+    const benchmarkCase = byName.get(name);
+    if (!benchmarkCase) {
+      throw new Error(`Cross-mode budget ablation coverage case not found: ${name}.`);
+    }
+    return {
+      ...benchmarkCase,
+      problemSizeBand: benchmarkCase.problemSizeBand ?? inferCoverageProblemSizeBand(benchmarkCase),
+    };
+  });
+}
+
+export const DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS: readonly CrossModeBenchmarkCase[] = Object.freeze([
+  ...DEFAULT_CROSS_MODE_BENCHMARK_CORPUS,
+  ...selectCoverageCases(DEFAULT_GREEDY_BENCHMARK_CORPUS, GREEDY_COVERAGE_CASE_NAMES),
+  ...selectCoverageCases(DEFAULT_LNS_BENCHMARK_CORPUS, LNS_COVERAGE_CASE_NAMES),
+]);
 
 function normalizeBudgetAblationPolicies(
   policies: readonly CrossModeBenchmarkBudgetAblationPolicy[] | undefined
@@ -173,25 +220,51 @@ function meanBestPopulationByBudget(suite: CrossModeBenchmarkSuiteResult): Map<n
   return byBudget;
 }
 
+function meanModePopulationByBudget(
+  suite: CrossModeBenchmarkSuiteResult,
+  mode: CrossModeBenchmarkMode
+): Map<number, number | null> {
+  const byBudget = new Map<number, number | null>();
+  const scorecardBuckets = scorecardsByBudget(suite);
+  for (const budgetSeconds of suite.budgetsSeconds) {
+    const scorecards = scorecardBuckets.get(budgetSeconds) ?? [];
+    byBudget.set(
+      budgetSeconds,
+      meanOrNull(modeResultsInScorecards(scorecards, mode).map((result) => result.totalPopulation))
+    );
+  }
+  return byBudget;
+}
+
+function deltaFromBaseline(value: number | null, baseline: number | null): number | null {
+  return value === null || baseline === null ? null : value - baseline;
+}
+
 function summarizeBudget(
   budgetSeconds: number,
   scorecards: readonly CrossModeBenchmarkCaseScorecard[],
   signals: readonly CrossModeBenchmarkBudgetPolicySignal[],
-  baselineMeanBestPopulation: number | null
+  baselineMeanBestPopulation: number | null,
+  baselineMeanAutoPopulation: number | null,
+  baselineMeanLnsPopulation: number | null
 ): CrossModeBenchmarkBudgetAblationBudgetSummary {
   const autoResults = modeResultsInScorecards(scorecards, "auto");
   const lnsResults = modeResultsInScorecards(scorecards, "lns");
   const meanBestPopulation = meanOrNull(scorecards.map((scorecard) => scorecard.bestScore)) ?? 0;
+  const meanAutoPopulation = meanOrNull(autoResults.map((result) => result.totalPopulation));
+  const meanLnsPopulation = meanOrNull(lnsResults.map((result) => result.totalPopulation));
   return {
     budgetSeconds,
     caseCount: scorecards.length,
     meanBestPopulation,
-    meanAutoPopulation: meanOrNull(autoResults.map((result) => result.totalPopulation)),
-    meanLnsPopulation: meanOrNull(lnsResults.map((result) => result.totalPopulation)),
+    meanAutoPopulation,
+    meanLnsPopulation,
     meanAutoDeltaToBest: meanOrNull(signals.map((signal) => signal.autoDeltaToBest)),
     deltaVsBaselineMeanBestPopulation: baselineMeanBestPopulation === null
       ? null
       : meanBestPopulation - baselineMeanBestPopulation,
+    deltaVsBaselineMeanAutoPopulation: deltaFromBaseline(meanAutoPopulation, baselineMeanAutoPopulation),
+    deltaVsBaselineMeanLnsPopulation: deltaFromBaseline(meanLnsPopulation, baselineMeanLnsPopulation),
     recommendationCounts: countRecommendations(signals),
   };
 }
@@ -227,7 +300,9 @@ function modeResultsInScorecards(
 
 function summarizeBudgets(
   suite: CrossModeBenchmarkSuiteResult,
-  baselineMeanBestPopulationByBudget: ReadonlyMap<number, number>
+  baselineMeanBestPopulationByBudget: ReadonlyMap<number, number>,
+  baselineMeanAutoPopulationByBudget: ReadonlyMap<number, number | null>,
+  baselineMeanLnsPopulationByBudget: ReadonlyMap<number, number | null>
 ): CrossModeBenchmarkBudgetAblationBudgetSummary[] {
   const scorecardBuckets = scorecardsByBudget(suite);
   const signalBuckets = signalsByBudget(suite);
@@ -236,7 +311,9 @@ function summarizeBudgets(
       budgetSeconds,
       scorecardBuckets.get(budgetSeconds) ?? [],
       signalBuckets.get(budgetSeconds) ?? [],
-      baselineMeanBestPopulationByBudget.get(budgetSeconds) ?? null
+      baselineMeanBestPopulationByBudget.get(budgetSeconds) ?? null,
+      baselineMeanAutoPopulationByBudget.get(budgetSeconds) ?? null,
+      baselineMeanLnsPopulationByBudget.get(budgetSeconds) ?? null
     )
   );
 }
@@ -245,25 +322,38 @@ function summarizeBudgetAblationPolicy(
   policy: CrossModeBenchmarkBudgetAblationPolicy,
   suite: CrossModeBenchmarkSuiteResult,
   baselineMeanBestPopulation: number | null,
-  baselineMeanBestPopulationByBudget: ReadonlyMap<number, number>
+  baselineMeanAutoPopulation: number | null,
+  baselineMeanLnsPopulation: number | null,
+  baselineMeanBestPopulationByBudget: ReadonlyMap<number, number>,
+  baselineMeanAutoPopulationByBudget: ReadonlyMap<number, number | null>,
+  baselineMeanLnsPopulationByBudget: ReadonlyMap<number, number | null>
 ): CrossModeBenchmarkBudgetAblationPolicyResult {
   const autoResults = modeResults(suite, "auto");
   const lnsResults = modeResults(suite, "lns");
   const meanBestPopulation = meanOrNull(suite.cases.map((scorecard) => scorecard.bestScore)) ?? 0;
+  const meanAutoPopulation = meanOrNull(autoResults.map((result) => result.totalPopulation));
+  const meanLnsPopulation = meanOrNull(lnsResults.map((result) => result.totalPopulation));
   return {
     policyName: policy.name,
     description: policy.description,
     suite,
     meanBestPopulation,
-    meanAutoPopulation: meanOrNull(autoResults.map((result) => result.totalPopulation)),
-    meanLnsPopulation: meanOrNull(lnsResults.map((result) => result.totalPopulation)),
+    meanAutoPopulation,
+    meanLnsPopulation,
     meanAutoDeltaToBest: meanOrNull(suite.budgetPolicySignals.map((signal) => signal.autoDeltaToBest)),
     meanAutoLnsStageElapsedSeconds: meanOrNull(suite.budgetPolicySignals.map((signal) => signal.autoLnsStageElapsedSeconds)),
     meanAutoCpSatStageElapsedSeconds: meanOrNull(suite.budgetPolicySignals.map((signal) => signal.autoCpSatStageElapsedSeconds)),
     deltaVsBaselineMeanBestPopulation: baselineMeanBestPopulation === null
       ? null
       : meanBestPopulation - baselineMeanBestPopulation,
-    budgetSummaries: summarizeBudgets(suite, baselineMeanBestPopulationByBudget),
+    deltaVsBaselineMeanAutoPopulation: deltaFromBaseline(meanAutoPopulation, baselineMeanAutoPopulation),
+    deltaVsBaselineMeanLnsPopulation: deltaFromBaseline(meanLnsPopulation, baselineMeanLnsPopulation),
+    budgetSummaries: summarizeBudgets(
+      suite,
+      baselineMeanBestPopulationByBudget,
+      baselineMeanAutoPopulationByBudget,
+      baselineMeanLnsPopulationByBudget
+    ),
     recommendationCounts: countRecommendations(suite.budgetPolicySignals),
   };
 }
@@ -315,11 +405,32 @@ export async function runCrossModeBenchmarkBudgetAblations(
   const baselineMeanBestPopulation = baseline
     ? meanOrNull(baseline.suite.cases.map((scorecard) => scorecard.bestScore)) ?? 0
     : null;
+  const baselineMeanAutoPopulation = baseline
+    ? meanOrNull(modeResults(baseline.suite, "auto").map((result) => result.totalPopulation))
+    : null;
+  const baselineMeanLnsPopulation = baseline
+    ? meanOrNull(modeResults(baseline.suite, "lns").map((result) => result.totalPopulation))
+    : null;
   const baselineMeanBestPopulationByBudget = baseline
     ? meanBestPopulationByBudget(baseline.suite)
     : new Map<number, number>();
+  const baselineMeanAutoPopulationByBudget = baseline
+    ? meanModePopulationByBudget(baseline.suite, "auto")
+    : new Map<number, number | null>();
+  const baselineMeanLnsPopulationByBudget = baseline
+    ? meanModePopulationByBudget(baseline.suite, "lns")
+    : new Map<number, number | null>();
   const policyResults = policySuites.map(({ policy, suite }) =>
-    summarizeBudgetAblationPolicy(policy, suite, baselineMeanBestPopulation, baselineMeanBestPopulationByBudget)
+    summarizeBudgetAblationPolicy(
+      policy,
+      suite,
+      baselineMeanBestPopulation,
+      baselineMeanAutoPopulation,
+      baselineMeanLnsPopulation,
+      baselineMeanBestPopulationByBudget,
+      baselineMeanAutoPopulationByBudget,
+      baselineMeanLnsPopulationByBudget
+    )
   );
 
   const firstSuite = policyResults[0]?.suite;
@@ -373,6 +484,18 @@ function formatRecommendationCounts(counts: Record<CrossModeBudgetPolicyRecommen
   return populated.length ? populated.join(",") : "none";
 }
 
+function countScorecards(result: CrossModeBenchmarkBudgetAblationSuiteResult): number {
+  return result.policies.reduce((sum, policy) => sum + policy.suite.cases.length, 0);
+}
+
+function countModeRuns(result: CrossModeBenchmarkBudgetAblationSuiteResult): number {
+  return result.policies.reduce(
+    (sum, policy) =>
+      sum + policy.suite.cases.reduce((policySum, scorecard) => policySum + scorecard.results.length, 0),
+    0
+  );
+}
+
 export function formatCrossModeBenchmarkBudgetAblations(
   result: CrossModeBenchmarkBudgetAblationSuiteResult
 ): string {
@@ -383,6 +506,7 @@ export function formatCrossModeBenchmarkBudgetAblations(
   lines.push(`Modes: ${result.modes.map((mode) => MODE_LABELS[mode]).join(", ")}`);
   lines.push(`Equal wall-clock budgets: ${result.budgetsSeconds.join(", ")}s per mode`);
   lines.push(`Seeds: ${result.seeds.join(", ")}`);
+  lines.push(`Coverage: policies=${result.policies.length} scorecards=${countScorecards(result)} mode-runs=${countModeRuns(result)}`);
   lines.push(`Baseline policy: ${result.baselinePolicyName ?? "n/a"}`);
   lines.push(`Best policy by Auto mean population when present: ${result.bestPolicyName ?? "n/a"}`);
   lines.push("");
@@ -390,14 +514,14 @@ export function formatCrossModeBenchmarkBudgetAblations(
   for (const policy of result.policies) {
     lines.push(`- ${policy.policyName}: ${policy.description}`);
     lines.push(
-      `  mean-best=${policy.meanBestPopulation.toFixed(1)} delta-vs-baseline=${formatScoreDeltaVsAuto(policy.deltaVsBaselineMeanBestPopulation)} mean-auto=${policy.meanAutoPopulation === null ? "n/a" : policy.meanAutoPopulation.toFixed(1)} mean-lns=${policy.meanLnsPopulation === null ? "n/a" : policy.meanLnsPopulation.toFixed(1)} mean-auto-gap=${formatPopulationGap(policy.meanAutoDeltaToBest)}`
+      `  mean-best=${policy.meanBestPopulation.toFixed(1)} delta-vs-baseline=${formatScoreDeltaVsAuto(policy.deltaVsBaselineMeanBestPopulation)} mean-auto=${policy.meanAutoPopulation === null ? "n/a" : policy.meanAutoPopulation.toFixed(1)} auto-delta-vs-baseline=${formatScoreDeltaVsAuto(policy.deltaVsBaselineMeanAutoPopulation)} mean-lns=${policy.meanLnsPopulation === null ? "n/a" : policy.meanLnsPopulation.toFixed(1)} lns-delta-vs-baseline=${formatScoreDeltaVsAuto(policy.deltaVsBaselineMeanLnsPopulation)} mean-auto-gap=${formatPopulationGap(policy.meanAutoDeltaToBest)}`
     );
     lines.push(
       `  auto-stage-mean=lns:${formatSeconds(policy.meanAutoLnsStageElapsedSeconds)} cp-sat:${formatSeconds(policy.meanAutoCpSatStageElapsedSeconds)} recommendations=${formatRecommendationCounts(policy.recommendationCounts)}`
     );
     for (const budget of policy.budgetSummaries) {
       lines.push(
-        `  budget=${budget.budgetSeconds}s cases=${budget.caseCount} mean-best=${budget.meanBestPopulation.toFixed(1)} delta-vs-baseline=${formatScoreDeltaVsAuto(budget.deltaVsBaselineMeanBestPopulation)} mean-auto=${budget.meanAutoPopulation === null ? "n/a" : budget.meanAutoPopulation.toFixed(1)} mean-lns=${budget.meanLnsPopulation === null ? "n/a" : budget.meanLnsPopulation.toFixed(1)} mean-auto-gap=${formatPopulationGap(budget.meanAutoDeltaToBest)} recommendations=${formatRecommendationCounts(budget.recommendationCounts)}`
+        `  budget=${budget.budgetSeconds}s cases=${budget.caseCount} mean-best=${budget.meanBestPopulation.toFixed(1)} delta-vs-baseline=${formatScoreDeltaVsAuto(budget.deltaVsBaselineMeanBestPopulation)} mean-auto=${budget.meanAutoPopulation === null ? "n/a" : budget.meanAutoPopulation.toFixed(1)} auto-delta-vs-baseline=${formatScoreDeltaVsAuto(budget.deltaVsBaselineMeanAutoPopulation)} mean-lns=${budget.meanLnsPopulation === null ? "n/a" : budget.meanLnsPopulation.toFixed(1)} lns-delta-vs-baseline=${formatScoreDeltaVsAuto(budget.deltaVsBaselineMeanLnsPopulation)} mean-auto-gap=${formatPopulationGap(budget.meanAutoDeltaToBest)} recommendations=${formatRecommendationCounts(budget.recommendationCounts)}`
       );
     }
   }

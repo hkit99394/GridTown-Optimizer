@@ -46,7 +46,7 @@ Current reviewed baseline as of 2026-04-27:
 - CP-SAT portfolio initiation is guarded and no longer competes with the default path by accident.
 - Cross-mode progress, unified decision traces, JSONL trace export, time-to-quality scorecards, and budget-policy signals are available.
 - Auto records per-stage run summaries, preserves final-stage LNS/CP-SAT trace detail, and protects the CP-SAT reserve from LNS seed/repair overruns.
-- Cross-mode budget ablation sweeps can compare named Auto/LNS seed, repair, and CP-SAT reserve policies with policy-scoped trace output.
+- Cross-mode budget ablation sweeps can compare named Auto/LNS seed, repair, and CP-SAT reserve policies with policy-scoped trace output, optional harder coverage cases, and separate Auto/LNS baseline deltas.
 - Final Greedy road materialization prunes redundant support roads while preserving row-0 connectivity and building access.
 - Planner saved-layout selection surfaces saved population so layout choices are score-oriented.
 
@@ -54,11 +54,11 @@ Current reviewed baseline as of 2026-04-27:
 
 Impact scale: `5` is most significant for population per minute; lower scores are more speculative or dependent on earlier work.
 
-Current ablation note as of 2026-04-27: the corrected 5s/30s, seed `7`, default-case sweep ties all built-in policies on Auto, LNS, and best population. Keep the baseline policy until expanded seeds, 120s probes, or harder ablation cases produce a population win rather than only lower stage elapsed time. The next ablation work should focus on coverage, not another policy tweak.
+Current ablation note as of 2026-04-27: the corrected 5s/30s, seed `7`, pre-coverage default-case sweep tied all built-in policies on Auto, LNS, and best population. The runner now has an opt-in `--coverage-corpus` with harder sparse and repair-pressure cases; keep the baseline policy until coverage-corpus seeds at 5s/30s, followed only by selective 120s probes, produce a population win rather than only lower stage elapsed time.
 
 | Rank | Priority | Impact | Summary | Success Signal |
 | --- | --- | ---: | --- | --- |
-| 1 | Expand Auto/LNS budget ablation coverage | 5.0 | Add or select harder cases, run the remaining fixed seeds, and use selective 120s probes only after 5s/30s shows signal. | A policy beats baseline on checkpoint population without more wall-clock time, or the matrix proves baseline should remain. |
+| 1 | Execute coverage-corpus Auto/LNS budget ablations | 5.0 | Run the `--coverage-corpus` matrix on remaining fixed seeds at 5s/30s, then use selective 120s probes only after 5s/30s shows signal. | A policy beats baseline on checkpoint Auto/LNS population without more wall-clock time, or the matrix proves baseline should remain. |
 | 2 | Building connectivity-shadow analysis | 4.5 | Measure how each proposed building placement reduces future feasible connected cells. | Placement scoring avoids buildings that isolate high-value future space. |
 | 3 | Deterministic ablations before model training | 4.0 | Run controlled heuristics experiments before learned ranking. | We know which features and phases actually move population. |
 | 4 | Road opportunity-cost instrumentation | 3.5 | Explain road and building choices in terms of remaining row-0-reachable space, not just current road length. | Traces identify placements that preserve or destroy future connection options. |
@@ -68,7 +68,7 @@ Current ablation note as of 2026-04-27: the corrected 5s/30s, seed `7`, default-
 
 ## Combined Ordering
 
-1. Expand Auto/LNS budget ablations beyond the saturated default seed-7 cases and compare policy traces, scorecards, and checkpoint populations.
+1. Execute Auto/LNS budget ablations on the coverage corpus beyond the saturated pre-coverage default seed-7 cases and compare policy traces, scorecards, and checkpoint populations.
 2. Add deterministic building connectivity-shadow / opportunity-cost maps.
 3. Run ablations for Greedy ordering, LNS neighborhoods, and Auto budgets.
 4. Instrument road opportunity cost in terms of remaining row-0-reachable space.

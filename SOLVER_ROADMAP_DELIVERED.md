@@ -117,6 +117,14 @@ Reviewed through 2026-04-27.
 - Ablation baseline selection now resolves a named `baseline` policy even when callers pass policies out of order, and explicit missing baseline names fail before any expensive suite execution.
 - Regression coverage checks default corpus LNS budget materialization at 5s/30s/120s, out-of-order baseline deltas, per-budget summaries, and CP-SAT terminal trace timing.
 
+### 17. Auto/LNS Ablation Coverage Expansion
+
+- Added a sparse row-zero `row0-corridor-repair-pressure` cross-mode case so budget ablations include a connectivity-pressure scenario that is not already saturated by the dense default maps.
+- Added an opt-in `--coverage-corpus` scorecard corpus that combines the default cross-mode cases with selected harder Greedy and LNS benchmark cases for budget-policy probes.
+- Ablation text and JSON summaries now report policy count, scorecard count, mode-run count, and separate best-score, Auto, and LNS deltas versus the resolved baseline policy.
+- Auto LNS stage budgeting now allows focused and escalated repair caps to exceed the normal repair pass cap when a policy requests it, while still respecting the remaining Auto LNS stage wall-clock slice and preserving the CP-SAT reserve.
+- Regression coverage checks the new coverage corpus, coverage reporting, explicit Auto/LNS baseline deltas, and escalated repair caps inside Auto stage budgeting.
+
 ## Maintenance Watchpoints
 
 - Keep deterministic benchmark seeds stable when changing solver scoring.
@@ -124,6 +132,6 @@ Reviewed through 2026-04-27.
 - Keep distributed or portfolio solving behind proof that single-machine policy is no longer the bottleneck.
 - Keep learned guidance separate from core runtime correctness until traces and labels are strong enough.
 - Keep final road pruning conservative: population and validity must not depend on the removed roads.
-- Keep Auto budget slicing honest: LNS seed and repair work must not spend the CP-SAT reserve unless a future trace-backed policy explicitly changes that.
+- Keep Auto budget slicing honest: LNS seed and repair work may use the Auto LNS stage slice, but must not spend the CP-SAT reserve unless a future trace-backed policy explicitly changes that.
 - Keep ablation matrices small by default; expand cases, modes, budgets, or policies only when the previous sweep gives a clear signal.
 - Keep long ablation runs staged and timeout-bounded; the corrected 30s LNS budget can legitimately consume far more wall-clock than the previous capped corpus setup.

@@ -479,7 +479,13 @@ Run the Auto/LNS budget ablation sweep:
 npm run benchmark:scorecard -- --budget-ablation --modes=auto,greedy,lns,cp-sat --budgets=5,30 --seeds=7,19
 ```
 
-Start with a narrow matrix before adding `120` second probes; corrected LNS budget policies can legitimately consume the requested budget.
+Use the harder ablation coverage corpus when the default cases saturate:
+
+```bash
+npm run benchmark:scorecard -- --budget-ablation --coverage-corpus --modes=auto,greedy,lns --budgets=5,30 --seeds=7,19
+```
+
+Start with a narrow matrix before adding `120` second probes; corrected LNS budget policies can legitimately consume the requested budget. Ablation summaries report total coverage plus best-score, Auto, and LNS deltas versus the baseline policy so unrelated mode winners do not hide Auto/LNS movement.
 
 Emit policy-scoped decision traces for the same ablation runner:
 

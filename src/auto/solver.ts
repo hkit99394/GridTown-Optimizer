@@ -482,12 +482,13 @@ function buildAutoLnsStageBudget(
   const seedTimeLimitSeconds = wallClockLimitSeconds !== null && configuredSeedTimeLimitSeconds !== null
     ? capPositiveSeconds(configuredSeedTimeLimitSeconds, wallClockLimitSeconds)
     : undefined;
+  const repairVariantLimitSeconds = wallClockLimitSeconds ?? repairTimeLimitSeconds;
   const focusedRepairTimeLimitSeconds = wallClockLimitSeconds === null && params.lns?.focusedRepairTimeLimitSeconds !== undefined
     ? params.lns.focusedRepairTimeLimitSeconds
-    : capPositiveSeconds(params.lns?.focusedRepairTimeLimitSeconds ?? repairTimeLimitSeconds, repairTimeLimitSeconds);
+    : capPositiveSeconds(params.lns?.focusedRepairTimeLimitSeconds ?? repairTimeLimitSeconds, repairVariantLimitSeconds);
   const escalatedRepairTimeLimitSeconds = wallClockLimitSeconds === null && params.lns?.escalatedRepairTimeLimitSeconds !== undefined
     ? params.lns.escalatedRepairTimeLimitSeconds
-    : capPositiveSeconds(params.lns?.escalatedRepairTimeLimitSeconds ?? repairTimeLimitSeconds, repairTimeLimitSeconds);
+    : capPositiveSeconds(params.lns?.escalatedRepairTimeLimitSeconds ?? repairTimeLimitSeconds, repairVariantLimitSeconds);
 
   return {
     wallClockLimitSeconds,

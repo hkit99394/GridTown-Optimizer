@@ -7,6 +7,7 @@ const path = require("node:path");
 const {
   buildCrossModeBenchmarkParams,
   createLnsBenchmarkSnapshot,
+  DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS,
   DEFAULT_CROSS_MODE_BUDGET_ABLATION_POLICIES,
   DEFAULT_CROSS_MODE_BENCHMARK_BUDGETS_SECONDS,
   DEFAULT_CROSS_MODE_BENCHMARK_CORPUS,
@@ -782,9 +783,9 @@ function testAutoSyncReservesCpSatBudgetBeforeLnsStage() {
         iterations: 4,
         maxNoImprovementIterations: 4,
         seedTimeLimitSeconds: 5,
-        repairTimeLimitSeconds: 5,
-        focusedRepairTimeLimitSeconds: 5,
-        escalatedRepairTimeLimitSeconds: 5,
+        repairTimeLimitSeconds: 0.5,
+        focusedRepairTimeLimitSeconds: 0.75,
+        escalatedRepairTimeLimitSeconds: 1.25,
       },
       cpSat: { timeLimitSeconds: 5, noImprovementTimeoutSeconds: 5, numWorkers: 1 },
       auto: { wallClockLimitSeconds: 2.5 },
@@ -797,8 +798,12 @@ function testAutoSyncReservesCpSatBudgetBeforeLnsStage() {
     assert.ok(observedLnsOptions.wallClockLimitSeconds < 2);
     assert.ok(observedLnsOptions.seedTimeLimitSeconds <= observedLnsOptions.wallClockLimitSeconds);
     assert.ok(observedLnsOptions.repairTimeLimitSeconds <= observedLnsOptions.wallClockLimitSeconds);
-    assert.ok(observedLnsOptions.focusedRepairTimeLimitSeconds <= observedLnsOptions.repairTimeLimitSeconds);
-    assert.ok(observedLnsOptions.escalatedRepairTimeLimitSeconds <= observedLnsOptions.repairTimeLimitSeconds);
+    assert.equal(observedLnsOptions.repairTimeLimitSeconds, 0.5);
+    assert.equal(observedLnsOptions.focusedRepairTimeLimitSeconds, 0.75);
+    assert.equal(observedLnsOptions.escalatedRepairTimeLimitSeconds, 1.25);
+    assert.ok(observedLnsOptions.focusedRepairTimeLimitSeconds <= observedLnsOptions.wallClockLimitSeconds);
+    assert.ok(observedLnsOptions.escalatedRepairTimeLimitSeconds <= observedLnsOptions.wallClockLimitSeconds);
+    assert.ok(observedLnsOptions.escalatedRepairTimeLimitSeconds > observedLnsOptions.repairTimeLimitSeconds);
     assert.deepEqual(solution.autoStage.stageRuns.map((run) => run.stage), ["greedy", "lns", "cp-sat"]);
     assert.equal(solution.autoStage.stageRuns[1].improvement, 20);
     assert.equal(solution.autoStage.stageRuns[2].improvement, 0);
@@ -2773,7 +2778,16 @@ async function testCrossModeBenchmarkHelpers() {
   assert.deepEqual(DEFAULT_CROSS_MODE_BENCHMARK_MODES, ["auto", "greedy", "lns", "cp-sat", "cp-sat-portfolio"]);
   assert.equal(typeof runCrossModeBenchmarkBudgetAblationsFromIndex, "function");
   assert.equal(new Set(names).size, names.length);
+  assert(names.includes("row0-corridor-repair-pressure"));
   assert.deepEqual(listCrossModeBenchmarkCaseNames(), names);
+
+  const ablationCoverageCase = DEFAULT_CROSS_MODE_BENCHMARK_CORPUS.find(
+    (entry) => entry.name === "row0-corridor-repair-pressure"
+  );
+  assert.equal(ablationCoverageCase.problemSizeBand, "small");
+  assert.equal(ablationCoverageCase.grid.length, 6);
+  assert.equal(ablationCoverageCase.params.serviceTypes.length, 2);
+  assert.equal(ablationCoverageCase.params.residentialTypes.length, 2);
 
   const benchmarkCase = {
     name: "mock-scorecard",
@@ -2808,6 +2822,16 @@ async function testCrossModeBenchmarkHelpers() {
     "repair-heavy",
     "cp-sat-reserve-heavy",
   ]);
+  const coverageNames = DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS.map((entry) => entry.name);
+  assert.equal(new Set(coverageNames).size, coverageNames.length);
+  assert(coverageNames.includes("typed-footprint-pressure"));
+  assert(coverageNames.includes("deferred-road-packing-gain"));
+  assert(coverageNames.includes("service-local-neighborhood"));
+  assert(coverageNames.includes("row0-anchor-repair"));
+  assert.deepEqual(
+    listCrossModeBenchmarkCaseNames(DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS),
+    coverageNames
+  );
   assert.throws(
     () => buildCrossModeBenchmarkParams(benchmarkCase, "greedy", { budgetSeconds: -1, seeds: [5] }),
     /budget seconds must be a finite number greater than 0/
@@ -3291,10 +3315,14 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(ablations.policies[0].meanAutoPopulation, 10);
   assert.equal(ablations.policies[1].meanAutoPopulation, 15);
   assert.equal(ablations.policies[1].deltaVsBaselineMeanBestPopulation, 5);
+  assert.equal(ablations.policies[1].deltaVsBaselineMeanAutoPopulation, 5);
+  assert.equal(ablations.policies[1].deltaVsBaselineMeanLnsPopulation, 0);
   assert.equal(ablations.policies[1].budgetSummaries.length, 1);
   assert.equal(ablations.policies[1].budgetSummaries[0].budgetSeconds, 3);
   assert.equal(ablations.policies[1].budgetSummaries[0].meanAutoPopulation, 15);
   assert.equal(ablations.policies[1].budgetSummaries[0].deltaVsBaselineMeanBestPopulation, 5);
+  assert.equal(ablations.policies[1].budgetSummaries[0].deltaVsBaselineMeanAutoPopulation, 5);
+  assert.equal(ablations.policies[1].budgetSummaries[0].deltaVsBaselineMeanLnsPopulation, 0);
   assert(
     ablations.policies[1].suite.cases[0].results
       .find((entry) => entry.mode === "auto")
@@ -3302,8 +3330,11 @@ async function testCrossModeBenchmarkHelpers() {
   );
   const ablationText = formatCrossModeBenchmarkBudgetAblations(ablations);
   assert.match(ablationText, /=== Cross-Mode Budget Ablations ===/);
+  assert.match(ablationText, /Coverage: policies=2 scorecards=2 mode-runs=4/);
   assert.match(ablationText, /reserve-heavy/);
   assert.match(ablationText, /delta-vs-baseline=\+5/);
+  assert.match(ablationText, /auto-delta-vs-baseline=\+5/);
+  assert.match(ablationText, /lns-delta-vs-baseline=0/);
   assert.match(ablationText, /budget=3s cases=1 mean-best=15\.0/);
 
   const reorderedAblations = await runCrossModeBenchmarkBudgetAblations([benchmarkCase], {
@@ -3326,6 +3357,8 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(reorderedAblations.baselinePolicyName, "baseline");
   assert.equal(reorderedAblations.policies[0].policyName, "reserve-heavy");
   assert.equal(reorderedAblations.policies[0].deltaVsBaselineMeanBestPopulation, 5);
+  assert.equal(reorderedAblations.policies[0].deltaVsBaselineMeanAutoPopulation, 5);
+  assert.equal(reorderedAblations.policies[0].deltaVsBaselineMeanLnsPopulation, null);
   assert.equal(reorderedAblations.policies[1].deltaVsBaselineMeanBestPopulation, 0);
   await assert.rejects(
     () => runCrossModeBenchmarkBudgetAblations([benchmarkCase], {

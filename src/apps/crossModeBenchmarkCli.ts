@@ -1,4 +1,5 @@
 import {
+  DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS,
   DEFAULT_CROSS_MODE_BUDGET_ABLATION_POLICIES,
   DEFAULT_CROSS_MODE_BENCHMARK_MODES,
   formatCrossModeBenchmarkBudgetAblationDecisionTraceJsonl,
@@ -16,6 +17,7 @@ interface ParsedBenchmarkArgs {
   json: boolean;
   traceJsonl: boolean;
   budgetAblations: boolean;
+  coverageCorpus: boolean;
   list: boolean;
   names: string[];
   modes?: CrossModeBenchmarkMode[];
@@ -90,6 +92,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let json = false;
   let traceJsonl = false;
   let budgetAblations = false;
+  let coverageCorpus = false;
   let list = false;
   let modes: CrossModeBenchmarkMode[] | undefined;
   let ablationPolicyNames: string[] | undefined;
@@ -108,6 +111,10 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     }
     if (arg === "--budget-ablation" || arg === "--budget-ablations") {
       budgetAblations = true;
+      continue;
+    }
+    if (arg === "--coverage-corpus") {
+      coverageCorpus = true;
       continue;
     }
     if (arg === "--list") {
@@ -138,18 +145,31 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     names.push(arg);
   }
 
-  return { json, traceJsonl, budgetAblations, list, names, modes, ablationPolicyNames, budgetSeconds, budgetsSeconds, seeds };
+  return {
+    json,
+    traceJsonl,
+    budgetAblations,
+    coverageCorpus,
+    list,
+    names,
+    modes,
+    ablationPolicyNames,
+    budgetSeconds,
+    budgetsSeconds,
+    seeds,
+  };
 }
 
 export async function runCrossModeBenchmarkCli(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
+  const corpus = args.coverageCorpus ? DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS : undefined;
   if (args.list) {
-    process.stdout.write(`${listCrossModeBenchmarkCaseNames().join("\n")}\n`);
+    process.stdout.write(`${listCrossModeBenchmarkCaseNames(corpus).join("\n")}\n`);
     return;
   }
 
   if (args.budgetAblations) {
-    const result = await runCrossModeBenchmarkBudgetAblations(undefined, {
+    const result = await runCrossModeBenchmarkBudgetAblations(corpus, {
       names: args.names.length > 0 ? args.names : undefined,
       modes: args.modes,
       policies: selectAblationPolicies(args.ablationPolicyNames),
@@ -172,7 +192,7 @@ export async function runCrossModeBenchmarkCli(): Promise<void> {
     return;
   }
 
-  const result = await runCrossModeBenchmarkSuite(undefined, {
+  const result = await runCrossModeBenchmarkSuite(corpus, {
     names: args.names.length > 0 ? args.names : undefined,
     modes: args.modes,
     budgetSeconds: args.budgetSeconds,

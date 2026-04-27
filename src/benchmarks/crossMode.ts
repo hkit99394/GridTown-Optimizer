@@ -1287,4 +1287,44 @@ export const DEFAULT_CROSS_MODE_BENCHMARK_CORPUS: readonly CrossModeBenchmarkCas
       },
     },
   },
+  {
+    name: "row0-corridor-repair-pressure",
+    description: "Sparse row-zero access case with competing service footprints for Auto/LNS budget ablations.",
+    problemSizeBand: "small",
+    grid: [
+      [1, 0, 1, 1, 0, 1],
+      [1, 1, 1, 0, 1, 1],
+      [1, 0, 1, 1, 1, 0],
+      [1, 1, 1, 0, 1, 1],
+      [0, 1, 1, 1, 1, 1],
+      [1, 1, 0, 1, 1, 1],
+    ],
+    params: {
+      serviceTypes: [
+        { rows: 1, cols: 2, bonus: 55, range: 1, avail: 1 },
+        { rows: 2, cols: 2, bonus: 120, range: 2, avail: 1 },
+      ],
+      residentialTypes: [
+        { w: 2, h: 2, min: 80, max: 220, avail: 2 },
+        { w: 2, h: 3, min: 140, max: 360, avail: 1 },
+      ],
+      availableBuildings: { services: 2, residentials: 3 },
+      greedy: {
+        localSearch: true,
+        restarts: 3,
+        serviceRefineIterations: 1,
+        serviceRefineCandidateLimit: 12,
+        exhaustiveServiceSearch: false,
+        serviceExactPoolLimit: 8,
+        serviceExactMaxCombinations: 80,
+      },
+      lns: {
+        iterations: 2,
+        maxNoImprovementIterations: 2,
+        neighborhoodRows: 3,
+        neighborhoodCols: 4,
+        repairTimeLimitSeconds: 1,
+      },
+    },
+  },
 ]);

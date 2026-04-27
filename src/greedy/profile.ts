@@ -105,6 +105,12 @@ export function createGreedyProfileCounters(): GreedyProfileCounters {
       deferredFrontierRecomputes: 0,
       deferredReconstructionSteps: 0,
       deferredReconstructionFailures: 0,
+      connectivityShadowChecks: 0,
+      connectivityShadowLostCells: 0,
+      connectivityShadowFootprintCells: 0,
+      connectivityShadowDisconnectedCells: 0,
+      connectivityShadowMaxLostCells: 0,
+      connectivityShadowMaxDisconnectedCells: 0,
     },
   };
 }

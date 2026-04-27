@@ -10,6 +10,7 @@ import {
   computeRow0ReachableEmptyFrontier,
   createRoadProbeScratch,
   materializeDeferredRoadNetwork,
+  measureBuildingConnectivityShadow,
   probeBuildingConnectedToRoads,
   probeBuildingConnectedToRow0ReachableEmptyFrontier,
 } from "../core/roads.js";
@@ -127,6 +128,7 @@ export class GreedyAttemptState {
   readonly roads: Set<string>;
   readonly occupied: Set<string>;
   readonly explicitRoadProbeScratch: ReturnType<typeof createRoadProbeScratch>;
+  private readonly occupiedBuildings: Set<string>;
   private deferredFrontier: ReturnType<typeof computeRow0ReachableEmptyFrontier> | null;
 
   constructor(
@@ -137,6 +139,7 @@ export class GreedyAttemptState {
   ) {
     this.roads = useDeferredRoadCommitment ? new Set<string>() : new Set<string>(initialRoadSeed ?? []);
     this.occupied = new Set<string>();
+    this.occupiedBuildings = new Set<string>();
     for (const key of this.roads) this.occupied.add(key);
     this.deferredFrontier = useDeferredRoadCommitment
       ? computeRow0ReachableEmptyFrontier(grid, this.occupied)
@@ -189,13 +192,20 @@ export class GreedyAttemptState {
     footprintKeys?: readonly string[];
     newlyOccupiedKeys?: readonly string[];
     countProbeReuse?: boolean;
+    recordConnectivityShadow?: boolean;
   }): string[] {
-    return commitExplicitRoadConnectedPlacement({
+    const { recordConnectivityShadow = true, ...commitOptions } = options;
+    if (recordConnectivityShadow) {
+      this.recordConnectivityShadow(commitOptions.placement, commitOptions.footprintKeys);
+    }
+    const committedKeys = commitExplicitRoadConnectedPlacement({
       roads: this.roads,
       occupied: this.occupied,
       profileCounters: this.profileCounters,
-      ...options,
+      ...commitOptions,
     });
+    this.addPlacementToOccupiedBuildings(commitOptions.placement, commitOptions.footprintKeys);
+    return committedKeys;
   }
 
   commitPlacement(
@@ -212,7 +222,8 @@ export class GreedyAttemptState {
       : this.collectNewlyOccupiedKeys(roadProbe, placement, options.footprintKeys);
 
     if (this.useDeferredRoadCommitment) {
-      this.commitDeferredPlacement(occupiedKeys);
+      this.recordConnectivityShadow(placement, options.footprintKeys);
+      this.commitDeferredPlacement(occupiedKeys, placement, options.footprintKeys);
       return occupiedKeys;
     }
     if (probe.kind !== "explicit") return null;
@@ -251,7 +262,9 @@ export class GreedyAttemptState {
     this.roads.clear();
     for (const key of materializedRoads) this.roads.add(key);
     this.occupied.clear();
+    this.occupiedBuildings.clear();
     for (const key of occupiedBuildings) this.occupied.add(key);
+    for (const key of occupiedBuildings) this.occupiedBuildings.add(key);
     for (const key of this.roads) this.occupied.add(key);
     if (this.profileCounters) {
       this.profileCounters.roads.deferredReconstructionSteps += services.length + residentials.length;
@@ -259,8 +272,35 @@ export class GreedyAttemptState {
     return true;
   }
 
-  private commitDeferredPlacement(newlyOccupiedKeys: readonly string[]): void {
+  private recordConnectivityShadow(placement: PlacementRect, footprintKeys?: readonly string[]): void {
+    if (!this.profileCounters) return;
+    const shadow = measureBuildingConnectivityShadow(this.grid, this.occupiedBuildings, placement, footprintKeys);
+    const counters = this.profileCounters.roads;
+    counters.connectivityShadowChecks++;
+    counters.connectivityShadowLostCells += shadow.lostCells;
+    counters.connectivityShadowFootprintCells += shadow.footprintCells;
+    counters.connectivityShadowDisconnectedCells += shadow.disconnectedCells;
+    counters.connectivityShadowMaxLostCells = Math.max(counters.connectivityShadowMaxLostCells, shadow.lostCells);
+    counters.connectivityShadowMaxDisconnectedCells = Math.max(
+      counters.connectivityShadowMaxDisconnectedCells,
+      shadow.disconnectedCells
+    );
+  }
+
+  private addPlacementToOccupiedBuildings(placement: PlacementRect, footprintKeys?: readonly string[]): void {
+    const visit = footprintKeys
+      ? (add: (key: string) => void) => forEachCachedPlacementCell(footprintKeys, add)
+      : (add: (key: string) => void) => forEachPlacementCell(placement, add);
+    visit((key) => this.occupiedBuildings.add(key));
+  }
+
+  private commitDeferredPlacement(
+    newlyOccupiedKeys: readonly string[],
+    placement: PlacementRect,
+    footprintKeys?: readonly string[]
+  ): void {
     for (const key of newlyOccupiedKeys) this.occupied.add(key);
+    this.addPlacementToOccupiedBuildings(placement, footprintKeys);
     this.deferredFrontier = computeRow0ReachableEmptyFrontier(this.grid, this.occupied);
     if (this.profileCounters) this.profileCounters.roads.deferredFrontierRecomputes++;
   }

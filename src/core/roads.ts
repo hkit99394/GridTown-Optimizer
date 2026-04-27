@@ -220,6 +220,14 @@ export interface Row0ReachableEmptyFrontier {
   distanceByKey: Map<string, number>;
 }
 
+export interface BuildingConnectivityShadow {
+  reachableBefore: number;
+  reachableAfter: number;
+  lostCells: number;
+  footprintCells: number;
+  disconnectedCells: number;
+}
+
 export interface DeferredRoadFrontierProbe {
   distance: number;
 }
@@ -330,6 +338,45 @@ export function computeRow0ReachableEmptyFrontier(
   }
 
   return { reachable, distanceByKey };
+}
+
+export function measureBuildingConnectivityShadow(
+  G: Grid,
+  blockedBuildings: Set<string>,
+  placement: { r: number; c: number; rows: number; cols: number },
+  footprintKeys?: readonly string[]
+): BuildingConnectivityShadow {
+  const before = computeRow0ReachableEmptyFrontier(G, blockedBuildings).reachable;
+  const afterBlocked = new Set(blockedBuildings);
+  const placementFootprintKeys = new Set<string>();
+  const visitFootprint = footprintKeys
+    ? (visit: (key: string) => void) => {
+        for (const key of footprintKeys) visit(key);
+      }
+    : (visit: (key: string) => void) =>
+        forEachRectangleCell(placement.r, placement.c, placement.rows, placement.cols, (r, c) => visit(cellKey(r, c)));
+  visitFootprint((key) => {
+    placementFootprintKeys.add(key);
+    afterBlocked.add(key);
+  });
+
+  const after = computeRow0ReachableEmptyFrontier(G, afterBlocked).reachable;
+  let lostCells = 0;
+  for (const key of before) {
+    if (!after.has(key)) lostCells++;
+  }
+  let footprintCells = 0;
+  for (const key of placementFootprintKeys) {
+    if (before.has(key)) footprintCells++;
+  }
+
+  return {
+    reachableBefore: before.size,
+    reachableAfter: after.size,
+    lostCells,
+    footprintCells,
+    disconnectedCells: Math.max(0, lostCells - footprintCells),
+  };
 }
 
 export function probeBuildingConnectedToRow0ReachableEmptyFrontier(

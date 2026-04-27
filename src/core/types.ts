@@ -621,6 +621,12 @@ export interface GreedyProfileCounters {
     deferredFrontierRecomputes: number;
     deferredReconstructionSteps: number;
     deferredReconstructionFailures: number;
+    connectivityShadowChecks: number;
+    connectivityShadowLostCells: number;
+    connectivityShadowFootprintCells: number;
+    connectivityShadowDisconnectedCells: number;
+    connectivityShadowMaxLostCells: number;
+    connectivityShadowMaxDisconnectedCells: number;
   };
 }
 

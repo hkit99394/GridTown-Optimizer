@@ -966,14 +966,15 @@ function buildBudgetPolicyReason(
   return `${label} beat Auto by ${signal.autoDeltaToBest} population at ${signal.budgetSeconds}s; inspect trace timing before changing policy.${stageSuffix}`;
 }
 
-function numberEvidence(result: CrossModeBenchmarkModeResult, stage: AutoStageOptimizerName, key: string): number | null {
-  const event = [...result.decisionTrace].reverse().find((entry) =>
-    entry.kind === "auto-stage"
-    && entry.activeStage === stage
-    && typeof entry.evidence?.[key] === "number"
-  );
-  const value = event?.evidence?.[key];
-  return typeof value === "number" && Number.isFinite(value) ? value : null;
+function sumNumberEvidence(result: CrossModeBenchmarkModeResult, stage: AutoStageOptimizerName, key: string): number | null {
+  const values = result.decisionTrace
+    .flatMap((entry) => {
+      const value = entry.kind === "auto-stage" && entry.activeStage === stage
+        ? entry.evidence?.[key]
+        : undefined;
+      return typeof value === "number" && Number.isFinite(value) ? [value] : [];
+    });
+  return values.length === 0 ? null : roundSignalValue(values.reduce((sum, value) => sum + value, 0));
 }
 
 function buildBudgetPolicySignals(
@@ -996,10 +997,10 @@ function buildBudgetPolicySignals(
       recommendation: recommendationForBestMode(best?.mode ?? null, autoDeltaToBest),
       autoStopReason: auto?.autoStopReason ?? null,
       autoGreedySeedElapsedSeconds: auto?.autoGreedySeedElapsedSeconds ?? null,
-      autoLnsStageElapsedSeconds: auto ? numberEvidence(auto, "lns", "elapsedSeconds") : null,
-      autoLnsStageImprovement: auto ? numberEvidence(auto, "lns", "improvement") : null,
-      autoCpSatStageElapsedSeconds: auto ? numberEvidence(auto, "cp-sat", "elapsedSeconds") : null,
-      autoCpSatStageImprovement: auto ? numberEvidence(auto, "cp-sat", "improvement") : null,
+      autoLnsStageElapsedSeconds: auto ? sumNumberEvidence(auto, "lns", "elapsedSeconds") : null,
+      autoLnsStageImprovement: auto ? sumNumberEvidence(auto, "lns", "improvement") : null,
+      autoCpSatStageElapsedSeconds: auto ? sumNumberEvidence(auto, "cp-sat", "elapsedSeconds") : null,
+      autoCpSatStageImprovement: auto ? sumNumberEvidence(auto, "cp-sat", "improvement") : null,
       lnsScoreDeltaVsAuto: auto && lns ? lns.totalPopulation - auto.totalPopulation : null,
       lnsSeedWallClockSeconds: lns?.lnsSeedWallClockSeconds ?? null,
     };

@@ -650,6 +650,8 @@ greedy: {
 
 Set `greedy.diagnostics: true` to include `solution.greedyDiagnostics`, a bounded post-solve report that scans final unplaced candidates and groups "why not placed?" examples by blocked footprint, missing road path, no service coverage / base-only residential population, availability caps, and lower-score/no-improvement outcomes.
 
+When `greedy.profile` is enabled, Greedy counters include `roads.connectivityShadow*` fields. These measure how many row-0-reachable empty cells each committed building footprint removes, separating cells consumed by the footprint from downstream cells disconnected by that placement. The benchmark formatter prints this as `connectivity-shadow=...`; it is instrumentation only and does not change scoring yet.
+
 Set `greedy.densityTieBreaker: true` to prefer more central high-value placements when Greedy scores are within `greedy.densityTieBreakerTolerancePercent` of each other. The web planner exposes this only for standalone Greedy; Auto keeps its fixed Greedy seed-stage ranking policy.
 
 ### Auto options

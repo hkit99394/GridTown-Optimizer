@@ -330,6 +330,9 @@ export function formatGreedyBenchmarkSuite(result: GreedyBenchmarkSuiteResult): 
         `  deferred-roads=frontier:${counters.roads.deferredFrontierRecomputes} rebuild-steps:${counters.roads.deferredReconstructionSteps} rebuild-failures:${counters.roads.deferredReconstructionFailures}`
       );
       lines.push(
+        `  connectivity-shadow=checks:${counters.roads.connectivityShadowChecks} lost:${counters.roads.connectivityShadowLostCells} footprint:${counters.roads.connectivityShadowFootprintCells} disconnected:${counters.roads.connectivityShadowDisconnectedCells} max-lost:${counters.roads.connectivityShadowMaxLostCells} max-disconnected:${counters.roads.connectivityShadowMaxDisconnectedCells}`
+      );
+      lines.push(
         `  step13=geometry:${counters.precompute.geometryCacheEntries} occupancy-scratch:${counters.localSearch.occupancyScratchReuses} road-scratch:${counters.roads.scratchProbeCalls}`
       );
       lines.push(

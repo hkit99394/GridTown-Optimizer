@@ -58,6 +58,11 @@ export interface CrossModeBenchmarkBudgetAblationPolicyResult {
   recommendationCounts: Record<CrossModeBudgetPolicyRecommendation, number>;
 }
 
+export type CrossModeBenchmarkBudgetAblationRankingBasis =
+  | "mean-auto-population"
+  | "mean-lns-population"
+  | "mean-best-population";
+
 export interface CrossModeBenchmarkBudgetAblationSuiteResult {
   generatedAt: string;
   budgetSeconds: number;
@@ -67,6 +72,11 @@ export interface CrossModeBenchmarkBudgetAblationSuiteResult {
   selectedCaseNames: string[];
   modes: CrossModeBenchmarkMode[];
   baselinePolicyName: string | null;
+  topPolicyName: string | null;
+  topPolicyRankingBasis: CrossModeBenchmarkBudgetAblationRankingBasis;
+  topPolicyTiedPolicyNames: string[];
+  budgetedModeSeconds: number;
+  /** Backward-compatible alias for topPolicyName. Prefer topPolicyName plus topPolicyTiedPolicyNames for new code. */
   bestPolicyName: string | null;
   policies: CrossModeBenchmarkBudgetAblationPolicyResult[];
 }
@@ -358,8 +368,60 @@ function summarizeBudgetAblationPolicy(
   };
 }
 
-function budgetAblationRankingScore(policy: CrossModeBenchmarkBudgetAblationPolicyResult): number {
-  return policy.meanAutoPopulation ?? policy.meanBestPopulation;
+function budgetAblationRankingBasis(
+  policies: readonly CrossModeBenchmarkBudgetAblationPolicyResult[]
+): CrossModeBenchmarkBudgetAblationRankingBasis {
+  if (policies.some((policy) => policy.meanAutoPopulation !== null)) return "mean-auto-population";
+  if (policies.some((policy) => policy.meanLnsPopulation !== null)) return "mean-lns-population";
+  return "mean-best-population";
+}
+
+function budgetAblationRankingScore(
+  policy: CrossModeBenchmarkBudgetAblationPolicyResult,
+  basis: CrossModeBenchmarkBudgetAblationRankingBasis
+): number {
+  if (basis === "mean-auto-population") return policy.meanAutoPopulation ?? Number.NEGATIVE_INFINITY;
+  if (basis === "mean-lns-population") return policy.meanLnsPopulation ?? Number.NEGATIVE_INFINITY;
+  return policy.meanBestPopulation;
+}
+
+function compareBudgetAblationPolicyResults(
+  left: CrossModeBenchmarkBudgetAblationPolicyResult,
+  right: CrossModeBenchmarkBudgetAblationPolicyResult,
+  basis: CrossModeBenchmarkBudgetAblationRankingBasis,
+  baselinePolicyName: string | null
+): number {
+  const scoreDelta = budgetAblationRankingScore(right, basis) - budgetAblationRankingScore(left, basis);
+  if (Math.abs(scoreDelta) > 1e-9) return scoreDelta;
+  if (left.policyName === baselinePolicyName && right.policyName !== baselinePolicyName) return -1;
+  if (right.policyName === baselinePolicyName && left.policyName !== baselinePolicyName) return 1;
+  return left.policyName.localeCompare(right.policyName);
+}
+
+function topPolicyTiedNames(
+  policies: readonly CrossModeBenchmarkBudgetAblationPolicyResult[],
+  basis: CrossModeBenchmarkBudgetAblationRankingBasis,
+  topPolicy: CrossModeBenchmarkBudgetAblationPolicyResult | null
+): string[] {
+  if (!topPolicy) return [];
+  const topScore = budgetAblationRankingScore(topPolicy, basis);
+  return policies
+    .filter((policy) => Math.abs(budgetAblationRankingScore(policy, basis) - topScore) <= 1e-9)
+    .map((policy) => policy.policyName);
+}
+
+function countBudgetedModeSecondsInSuite(suite: CrossModeBenchmarkSuiteResult): number {
+  return suite.cases.reduce(
+    (suiteSum, scorecard) =>
+      suiteSum + scorecard.results.reduce((scorecardSum, modeResult) => scorecardSum + modeResult.budgetSeconds, 0),
+    0
+  );
+}
+
+function countBudgetedModeSecondsInPolicies(
+  policies: readonly CrossModeBenchmarkBudgetAblationPolicyResult[]
+): number {
+  return policies.reduce((sum, policy) => sum + countBudgetedModeSecondsInSuite(policy.suite), 0);
 }
 
 function resolveBaselinePolicyName(
@@ -434,9 +496,11 @@ export async function runCrossModeBenchmarkBudgetAblations(
   );
 
   const firstSuite = policyResults[0]?.suite;
-  const bestPolicy = [...policyResults].sort((left, right) =>
-    budgetAblationRankingScore(right) - budgetAblationRankingScore(left) || left.policyName.localeCompare(right.policyName)
+  const topPolicyRankingBasis = budgetAblationRankingBasis(policyResults);
+  const topPolicy = [...policyResults].sort((left, right) =>
+    compareBudgetAblationPolicyResults(left, right, topPolicyRankingBasis, baseline?.policy.name ?? null)
   )[0] ?? null;
+  const topPolicyName = topPolicy?.policyName ?? null;
   return {
     generatedAt: new Date().toISOString(),
     budgetSeconds: firstSuite?.budgetSeconds ?? DEFAULT_CROSS_MODE_BENCHMARK_BUDGET_SECONDS,
@@ -446,7 +510,11 @@ export async function runCrossModeBenchmarkBudgetAblations(
     selectedCaseNames: firstSuite?.selectedCaseNames ?? [],
     modes,
     baselinePolicyName: baseline?.policy.name ?? null,
-    bestPolicyName: bestPolicy?.policyName ?? null,
+    topPolicyName,
+    topPolicyRankingBasis,
+    topPolicyTiedPolicyNames: topPolicyTiedNames(policyResults, topPolicyRankingBasis, topPolicy),
+    budgetedModeSeconds: countBudgetedModeSecondsInPolicies(policyResults),
+    bestPolicyName: topPolicyName,
     policies: policyResults,
   };
 }
@@ -496,6 +564,12 @@ function countModeRuns(result: CrossModeBenchmarkBudgetAblationSuiteResult): num
   );
 }
 
+function formatRankingBasis(basis: CrossModeBenchmarkBudgetAblationRankingBasis): string {
+  if (basis === "mean-auto-population") return "Auto mean population";
+  if (basis === "mean-lns-population") return "LNS mean population";
+  return "best mean population";
+}
+
 export function formatCrossModeBenchmarkBudgetAblations(
   result: CrossModeBenchmarkBudgetAblationSuiteResult
 ): string {
@@ -506,9 +580,11 @@ export function formatCrossModeBenchmarkBudgetAblations(
   lines.push(`Modes: ${result.modes.map((mode) => MODE_LABELS[mode]).join(", ")}`);
   lines.push(`Equal wall-clock budgets: ${result.budgetsSeconds.join(", ")}s per mode`);
   lines.push(`Seeds: ${result.seeds.join(", ")}`);
-  lines.push(`Coverage: policies=${result.policies.length} scorecards=${countScorecards(result)} mode-runs=${countModeRuns(result)}`);
+  lines.push(`Coverage: policies=${result.policies.length} scorecards=${countScorecards(result)} mode-runs=${countModeRuns(result)} budgeted-mode-seconds=${result.budgetedModeSeconds}`);
   lines.push(`Baseline policy: ${result.baselinePolicyName ?? "n/a"}`);
-  lines.push(`Best policy by Auto mean population when present: ${result.bestPolicyName ?? "n/a"}`);
+  lines.push(
+    `Top policy by ${formatRankingBasis(result.topPolicyRankingBasis)}: ${result.topPolicyName ?? "n/a"} tied=${result.topPolicyTiedPolicyNames.join(",") || "none"} (ties prefer baseline; inspect budget signals before promotion)`
+  );
   lines.push("");
 
   for (const policy of result.policies) {

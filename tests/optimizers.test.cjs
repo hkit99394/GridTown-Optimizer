@@ -68,6 +68,7 @@ const { applyDeterministicDominanceUpgrades } = require("../dist/core/dominanceU
 const {
   createRoadProbeScratch,
   materializeDeferredRoadNetwork,
+  measureBuildingConnectivityShadow,
   pruneRedundantRoads,
   probeBuildingConnectedToRoads,
   roadSeedRow0Candidates,
@@ -254,6 +255,24 @@ function testRoadProbeScratchWorkspaceResetsBetweenCalls() {
 
   assert.deepEqual(blockedProbeWithScratch, blockedProbeWithoutScratch);
   assert.deepEqual(clearProbeWithScratch, clearProbeWithoutScratch);
+}
+
+function testBuildingConnectivityShadowMeasuresDisconnectedReachableCells() {
+  const grid = [
+    [1, 1, 1],
+    [0, 1, 0],
+    [0, 1, 0],
+  ];
+
+  const shadow = measureBuildingConnectivityShadow(grid, new Set(), { r: 0, c: 1, rows: 1, cols: 1 });
+
+  assert.deepEqual(shadow, {
+    reachableBefore: 5,
+    reachableAfter: 2,
+    lostCells: 3,
+    footprintCells: 1,
+    disconnectedCells: 2,
+  });
 }
 
 function testRoadPruningDropsConnectorsOnlyNeededByRowZeroBuildings() {
@@ -3034,6 +3053,48 @@ async function testCrossModeBenchmarkHelpers() {
               improvement: 0,
               lnsStopReason: "iteration-limit",
             },
+            {
+              stage: "lns",
+              stageIndex: 3,
+              cycleIndex: 2,
+              randomSeed: context.seed + 2,
+              startedAtSeconds: 1.2,
+              elapsedSeconds: 0.4,
+              completedAtSeconds: 1.6,
+              populationBefore: modeScores[context.mode],
+              candidatePopulation: modeScores[context.mode],
+              acceptedPopulation: modeScores[context.mode],
+              improvement: 0,
+              lnsStopReason: "iteration-limit",
+            },
+            {
+              stage: "cp-sat",
+              stageIndex: 4,
+              cycleIndex: 2,
+              randomSeed: context.seed + 3,
+              startedAtSeconds: 1.6,
+              elapsedSeconds: 0.2,
+              completedAtSeconds: 1.8,
+              populationBefore: modeScores[context.mode],
+              candidatePopulation: modeScores[context.mode],
+              acceptedPopulation: modeScores[context.mode],
+              improvement: 1,
+              cpSatStatus: "FEASIBLE",
+            },
+            {
+              stage: "cp-sat",
+              stageIndex: 5,
+              cycleIndex: 3,
+              randomSeed: context.seed + 4,
+              startedAtSeconds: 1.8,
+              elapsedSeconds: 0.5,
+              completedAtSeconds: 2.3,
+              populationBefore: modeScores[context.mode],
+              candidatePopulation: modeScores[context.mode],
+              acceptedPopulation: modeScores[context.mode],
+              improvement: 2,
+              cpSatStatus: "FEASIBLE",
+            },
           ],
           greedySeedStage: {
             timeLimitSeconds: 3,
@@ -3179,10 +3240,13 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(mocked.budgetPolicySignals[0].recommendation, "shift-auto-budget-to-greedy");
   assert.equal(mocked.budgetPolicySignals[0].autoDeltaToBest, 2);
   assert.equal(mocked.budgetPolicySignals[0].lnsScoreDeltaVsAuto, -2);
-  assert.equal(mocked.budgetPolicySignals[0].autoLnsStageElapsedSeconds, 1.1);
+  assert.equal(mocked.budgetPolicySignals[0].autoLnsStageElapsedSeconds, 1.5);
   assert.equal(mocked.budgetPolicySignals[0].autoLnsStageImprovement, 0);
+  assert.equal(mocked.budgetPolicySignals[0].autoCpSatStageElapsedSeconds, 0.7);
+  assert.equal(mocked.budgetPolicySignals[0].autoCpSatStageImprovement, 3);
   assert.match(mocked.budgetPolicySignals[0].reason, /Greedy beat Auto by 2 population/);
-  assert.match(mocked.budgetPolicySignals[0].reason, /Auto LNS used 1\.100s/);
+  assert.match(mocked.budgetPolicySignals[0].reason, /Auto LNS used 1\.500s/);
+  assert.match(mocked.budgetPolicySignals[0].reason, /Auto CP-SAT used 0\.700s for \+3/);
   assert.equal(
     mocked.cases[0].results.find((entry) => entry.mode === "cp-sat-portfolio").progressSummary.portfolioWorkerSummary.feasibleWorkers,
     1
@@ -3200,7 +3264,7 @@ async function testCrossModeBenchmarkHelpers() {
   const mockedAutoLnsNeighborhood = mockedAuto.decisionTrace.find((event) => event.kind === "lns-neighborhood");
   assert(mockedAutoLnsNeighborhood);
   assert.equal(mockedAutoLnsNeighborhood.activeStage, "lns");
-  assert.equal(mockedAutoLnsNeighborhood.elapsedMs, 400);
+  assert.equal(mockedAutoLnsNeighborhood.elapsedMs, 1500);
   assert(mockedLns.decisionTrace.some((event) => event.kind === "lns-neighborhood"));
   assert(mockedPortfolio.decisionTrace.some((event) => event.kind === "cp-sat-progress"));
   assert.equal(mockedAuto.timeToQuality.bestScore, 10);
@@ -3323,6 +3387,7 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(ablations.policies[1].budgetSummaries[0].deltaVsBaselineMeanBestPopulation, 5);
   assert.equal(ablations.policies[1].budgetSummaries[0].deltaVsBaselineMeanAutoPopulation, 5);
   assert.equal(ablations.policies[1].budgetSummaries[0].deltaVsBaselineMeanLnsPopulation, 0);
+  assert.equal(ablations.budgetedModeSeconds, 12);
   assert(
     ablations.policies[1].suite.cases[0].results
       .find((entry) => entry.mode === "auto")
@@ -3330,7 +3395,7 @@ async function testCrossModeBenchmarkHelpers() {
   );
   const ablationText = formatCrossModeBenchmarkBudgetAblations(ablations);
   assert.match(ablationText, /=== Cross-Mode Budget Ablations ===/);
-  assert.match(ablationText, /Coverage: policies=2 scorecards=2 mode-runs=4/);
+  assert.match(ablationText, /Coverage: policies=2 scorecards=2 mode-runs=4 budgeted-mode-seconds=12/);
   assert.match(ablationText, /reserve-heavy/);
   assert.match(ablationText, /delta-vs-baseline=\+5/);
   assert.match(ablationText, /auto-delta-vs-baseline=\+5/);
@@ -3360,6 +3425,46 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(reorderedAblations.policies[0].deltaVsBaselineMeanAutoPopulation, 5);
   assert.equal(reorderedAblations.policies[0].deltaVsBaselineMeanLnsPopulation, null);
   assert.equal(reorderedAblations.policies[1].deltaVsBaselineMeanBestPopulation, 0);
+
+  const tiedAblations = await runCrossModeBenchmarkBudgetAblations([benchmarkCase], {
+    modes: ["auto"],
+    budgetsSeconds: [3],
+    seeds: [5],
+    policies: [
+      { name: "aaa-tie", description: "Alphabetically first tied policy." },
+      { name: "baseline", description: "Mock baseline." },
+    ],
+    solve: async (_grid, params) => buildMockSolution({ optimizer: params.optimizer, totalPopulation: 10 }),
+  });
+  assert.equal(tiedAblations.baselinePolicyName, "baseline");
+  assert.equal(tiedAblations.bestPolicyName, "baseline");
+  assert.equal(tiedAblations.topPolicyName, "baseline");
+  assert.equal(tiedAblations.topPolicyRankingBasis, "mean-auto-population");
+  assert.deepEqual(tiedAblations.topPolicyTiedPolicyNames, ["aaa-tie", "baseline"]);
+  assert.match(formatCrossModeBenchmarkBudgetAblations(tiedAblations), /tied=aaa-tie,baseline/);
+
+  const lnsOnlyAblations = await runCrossModeBenchmarkBudgetAblations([benchmarkCase], {
+    modes: ["greedy", "lns"],
+    budgetsSeconds: [3],
+    seeds: [5],
+    policies: [
+      { name: "baseline", description: "Mock baseline." },
+      { name: "lns-win", description: "Mock LNS improvement." },
+    ],
+    solve: async (_grid, params, context) => {
+      const totalPopulation = context.mode === "greedy"
+        ? 20
+        : context.budgetAblationPolicyName === "lns-win"
+          ? 15
+          : 10;
+      return buildMockSolution({ optimizer: params.optimizer, totalPopulation });
+    },
+  });
+  assert.equal(lnsOnlyAblations.topPolicyRankingBasis, "mean-lns-population");
+  assert.equal(lnsOnlyAblations.topPolicyName, "lns-win");
+  assert.equal(lnsOnlyAblations.bestPolicyName, "lns-win");
+  assert.deepEqual(lnsOnlyAblations.topPolicyTiedPolicyNames, ["lns-win"]);
+
   await assert.rejects(
     () => runCrossModeBenchmarkBudgetAblations([benchmarkCase], {
       modes: ["auto"],
@@ -3793,6 +3898,12 @@ function testGreedyBenchmarkSuite() {
   assert(result.results[0].greedyProfile.counters.precompute.residentialPopulationCacheEntries > 0);
   assert(result.results[0].greedyProfile.counters.residentialPhase.populationCacheLookups > 0);
   assert(result.results[0].greedyProfile.counters.localSearch.populationCacheLookups > 0);
+  assert(result.results[0].greedyProfile.counters.roads.connectivityShadowChecks > 0);
+  assert(result.results[0].greedyProfile.counters.roads.connectivityShadowLostCells > 0);
+  assert(
+    result.results[0].greedyProfile.counters.roads.connectivityShadowLostCells
+      >= result.results[0].greedyProfile.counters.roads.connectivityShadowFootprintCells
+  );
   assert(result.results[0].greedyProfile.phases.some((phase) => phase.name === "precompute" && phase.runs === 1));
   assert(
     result.results[0].greedyProfile.phases.some(
@@ -3808,6 +3919,7 @@ function testGreedyBenchmarkSuite() {
   assert.match(formatGreedyBenchmarkSuite(result), /local-service=/);
   assert.match(formatGreedyBenchmarkSuite(result), /phases=/);
   assert.match(formatGreedyBenchmarkSuite(result), /cap-search=/);
+  assert.match(formatGreedyBenchmarkSuite(result), /connectivity-shadow=/);
   assert.match(formatGreedyBenchmarkSuite(result), /step13=/);
   assert.match(formatGreedyBenchmarkSuite(result), /step14=/);
 }
@@ -6512,6 +6624,7 @@ async function main() {
   testBuildingGeometryHelpersParity();
   testRoadProbePreservesEdgeBorderConnectivity();
   testRoadProbeScratchWorkspaceResetsBetweenCalls();
+  testBuildingConnectivityShadowMeasuresDisconnectedReachableCells();
   testRoadPruningDropsConnectorsOnlyNeededByRowZeroBuildings();
   testRoadPruningRevisitsCandidatesAfterDependentRoadRemoval();
   testGreedyDispatcher();

@@ -65,10 +65,13 @@ const { parseCpSatRawSolution } = require("../dist/cp-sat/solver.js");
 const { buildNeighborhoodWindows } = require("../dist/lns/solver.js");
 const { startJsonBackgroundSolve } = require("../dist/runtime/index.js");
 const { applyDeterministicDominanceUpgrades } = require("../dist/core/dominanceUpgrades.js");
+const { GreedyAttemptState } = require("../dist/greedy/attemptState.js");
 const {
+  computeRow0ReachableEmptyFrontier,
   createRoadProbeScratch,
   materializeDeferredRoadNetwork,
   measureBuildingConnectivityShadow,
+  measureBuildingConnectivityShadowFromFrontier,
   pruneRedundantRoads,
   probeBuildingConnectedToRoads,
   roadSeedRow0Candidates,
@@ -263,8 +266,16 @@ function testBuildingConnectivityShadowMeasuresDisconnectedReachableCells() {
     [0, 1, 0],
     [0, 1, 0],
   ];
+  const blockedBuildings = new Set();
 
-  const shadow = measureBuildingConnectivityShadow(grid, new Set(), { r: 0, c: 1, rows: 1, cols: 1 });
+  const placement = { r: 0, c: 1, rows: 1, cols: 1 };
+  const shadow = measureBuildingConnectivityShadow(grid, blockedBuildings, placement);
+  const shadowFromFrontier = measureBuildingConnectivityShadowFromFrontier(
+    grid,
+    blockedBuildings,
+    computeRow0ReachableEmptyFrontier(grid, blockedBuildings),
+    placement
+  );
 
   assert.deepEqual(shadow, {
     reachableBefore: 5,
@@ -273,6 +284,30 @@ function testBuildingConnectivityShadowMeasuresDisconnectedReachableCells() {
     footprintCells: 1,
     disconnectedCells: 2,
   });
+  assert.deepEqual(shadowFromFrontier, shadow);
+}
+
+function testGreedyAttemptStateRejectsMismatchedProbeKind() {
+  const grid = [
+    [1, 1],
+    [1, 1],
+  ];
+  const placement = { r: 1, c: 0, rows: 1, cols: 1 };
+
+  const deferredAttempt = new GreedyAttemptState(grid, undefined, true);
+  assert.equal(
+    deferredAttempt.commitPlacement({ kind: "explicit", roadCost: 0, roadProbe: { path: null } }, placement),
+    null
+  );
+  assert.equal(deferredAttempt.occupied.size, 0);
+
+  const explicitAttempt = new GreedyAttemptState(grid, new Set(["0,0"]), false);
+  assert.equal(
+    explicitAttempt.commitPlacement({ kind: "deferred", roadCost: 0, frontierProbe: { distance: 0 } }, placement),
+    null
+  );
+  assert.equal(explicitAttempt.occupied.size, 1);
+  assert.equal(explicitAttempt.occupied.has("0,0"), true);
 }
 
 function testRoadPruningDropsConnectorsOnlyNeededByRowZeroBuildings() {
@@ -6625,6 +6660,7 @@ async function main() {
   testRoadProbePreservesEdgeBorderConnectivity();
   testRoadProbeScratchWorkspaceResetsBetweenCalls();
   testBuildingConnectivityShadowMeasuresDisconnectedReachableCells();
+  testGreedyAttemptStateRejectsMismatchedProbeKind();
   testRoadPruningDropsConnectorsOnlyNeededByRowZeroBuildings();
   testRoadPruningRevisitsCandidatesAfterDependentRoadRemoval();
   testGreedyDispatcher();

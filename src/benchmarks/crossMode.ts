@@ -15,7 +15,6 @@ import { normalizeLnsBenchmarkOptions } from "./lns.js";
 
 import type {
   AutoOptions,
-  AutoStageOptimizerName,
   CpSatOptions,
   CpSatPortfolioOptions,
   Grid,
@@ -966,15 +965,45 @@ function buildBudgetPolicyReason(
   return `${label} beat Auto by ${signal.autoDeltaToBest} population at ${signal.budgetSeconds}s; inspect trace timing before changing policy.${stageSuffix}`;
 }
 
-function sumNumberEvidence(result: CrossModeBenchmarkModeResult, stage: AutoStageOptimizerName, key: string): number | null {
-  const values = result.decisionTrace
-    .flatMap((entry) => {
-      const value = entry.kind === "auto-stage" && entry.activeStage === stage
-        ? entry.evidence?.[key]
-        : undefined;
-      return typeof value === "number" && Number.isFinite(value) ? [value] : [];
-    });
-  return values.length === 0 ? null : roundSignalValue(values.reduce((sum, value) => sum + value, 0));
+type AutoStageEvidenceSummary = Pick<
+  CrossModeBenchmarkBudgetPolicySignal,
+  | "autoLnsStageElapsedSeconds"
+  | "autoLnsStageImprovement"
+  | "autoCpSatStageElapsedSeconds"
+  | "autoCpSatStageImprovement"
+>;
+
+function addFiniteEvidence(total: number | null, value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? (total ?? 0) + value : total;
+}
+
+function roundEvidenceTotal(value: number | null): number | null {
+  return value === null ? null : roundSignalValue(value);
+}
+
+function summarizeAutoStageEvidence(result: CrossModeBenchmarkModeResult | null): AutoStageEvidenceSummary {
+  let lnsElapsedSeconds: number | null = null;
+  let lnsImprovement: number | null = null;
+  let cpSatElapsedSeconds: number | null = null;
+  let cpSatImprovement: number | null = null;
+
+  for (const entry of result?.decisionTrace ?? []) {
+    if (entry.kind !== "auto-stage") continue;
+    if (entry.activeStage === "lns") {
+      lnsElapsedSeconds = addFiniteEvidence(lnsElapsedSeconds, entry.evidence?.elapsedSeconds);
+      lnsImprovement = addFiniteEvidence(lnsImprovement, entry.evidence?.improvement);
+    } else if (entry.activeStage === "cp-sat") {
+      cpSatElapsedSeconds = addFiniteEvidence(cpSatElapsedSeconds, entry.evidence?.elapsedSeconds);
+      cpSatImprovement = addFiniteEvidence(cpSatImprovement, entry.evidence?.improvement);
+    }
+  }
+
+  return {
+    autoLnsStageElapsedSeconds: roundEvidenceTotal(lnsElapsedSeconds),
+    autoLnsStageImprovement: roundEvidenceTotal(lnsImprovement),
+    autoCpSatStageElapsedSeconds: roundEvidenceTotal(cpSatElapsedSeconds),
+    autoCpSatStageImprovement: roundEvidenceTotal(cpSatImprovement),
+  };
 }
 
 function buildBudgetPolicySignals(
@@ -985,6 +1014,7 @@ function buildBudgetPolicySignals(
     const lns = scorecard.results.find((result) => result.mode === "lns") ?? null;
     const best = [...scorecard.results].sort(compareModeResults)[0] ?? null;
     const autoDeltaToBest = auto && best ? best.totalPopulation - auto.totalPopulation : null;
+    const autoStageEvidence = summarizeAutoStageEvidence(auto);
     const partial = {
       caseName: scorecard.name,
       problemSizeBand: scorecard.problemSizeBand,
@@ -997,10 +1027,7 @@ function buildBudgetPolicySignals(
       recommendation: recommendationForBestMode(best?.mode ?? null, autoDeltaToBest),
       autoStopReason: auto?.autoStopReason ?? null,
       autoGreedySeedElapsedSeconds: auto?.autoGreedySeedElapsedSeconds ?? null,
-      autoLnsStageElapsedSeconds: auto ? sumNumberEvidence(auto, "lns", "elapsedSeconds") : null,
-      autoLnsStageImprovement: auto ? sumNumberEvidence(auto, "lns", "improvement") : null,
-      autoCpSatStageElapsedSeconds: auto ? sumNumberEvidence(auto, "cp-sat", "elapsedSeconds") : null,
-      autoCpSatStageImprovement: auto ? sumNumberEvidence(auto, "cp-sat", "improvement") : null,
+      ...autoStageEvidence,
       lnsScoreDeltaVsAuto: auto && lns ? lns.totalPopulation - auto.totalPopulation : null,
       lnsSeedWallClockSeconds: lns?.lnsSeedWallClockSeconds ?? null,
     };

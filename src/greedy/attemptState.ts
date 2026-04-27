@@ -11,6 +11,7 @@ import {
   createRoadProbeScratch,
   materializeDeferredRoadNetwork,
   measureBuildingConnectivityShadow,
+  measureBuildingConnectivityShadowFromFrontier,
   probeBuildingConnectedToRoads,
   probeBuildingConnectedToRow0ReachableEmptyFrontier,
 } from "../core/roads.js";
@@ -216,17 +217,20 @@ export class GreedyAttemptState {
       newlyOccupiedKeys?: readonly string[];
     } = {}
   ): string[] | null {
-    const roadProbe = probe.kind === "explicit" ? probe.roadProbe : null;
-    const occupiedKeys = options.newlyOccupiedKeys
-      ? [...options.newlyOccupiedKeys]
-      : this.collectNewlyOccupiedKeys(roadProbe, placement, options.footprintKeys);
-
     if (this.useDeferredRoadCommitment) {
+      if (probe.kind !== "deferred") return null;
+      const occupiedKeys = options.newlyOccupiedKeys
+        ? [...options.newlyOccupiedKeys]
+        : this.collectNewlyOccupiedKeys(null, placement, options.footprintKeys);
       this.recordConnectivityShadow(placement, options.footprintKeys);
       this.commitDeferredPlacement(occupiedKeys, placement, options.footprintKeys);
       return occupiedKeys;
     }
+
     if (probe.kind !== "explicit") return null;
+    const occupiedKeys = options.newlyOccupiedKeys
+      ? [...options.newlyOccupiedKeys]
+      : this.collectNewlyOccupiedKeys(probe.roadProbe, placement, options.footprintKeys);
     return this.commitExplicitPlacement({
       probe: probe.roadProbe,
       placement,
@@ -274,7 +278,15 @@ export class GreedyAttemptState {
 
   private recordConnectivityShadow(placement: PlacementRect, footprintKeys?: readonly string[]): void {
     if (!this.profileCounters) return;
-    const shadow = measureBuildingConnectivityShadow(this.grid, this.occupiedBuildings, placement, footprintKeys);
+    const shadow = this.useDeferredRoadCommitment && this.deferredFrontier
+      ? measureBuildingConnectivityShadowFromFrontier(
+          this.grid,
+          this.occupiedBuildings,
+          this.deferredFrontier,
+          placement,
+          footprintKeys
+        )
+      : measureBuildingConnectivityShadow(this.grid, this.occupiedBuildings, placement, footprintKeys);
     const counters = this.profileCounters.roads;
     counters.connectivityShadowChecks++;
     counters.connectivityShadowLostCells += shadow.lostCells;

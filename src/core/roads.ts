@@ -346,7 +346,24 @@ export function measureBuildingConnectivityShadow(
   placement: { r: number; c: number; rows: number; cols: number },
   footprintKeys?: readonly string[]
 ): BuildingConnectivityShadow {
-  const before = computeRow0ReachableEmptyFrontier(G, blockedBuildings).reachable;
+  return measureBuildingConnectivityShadowFromFrontier(
+    G,
+    blockedBuildings,
+    computeRow0ReachableEmptyFrontier(G, blockedBuildings),
+    placement,
+    footprintKeys
+  );
+}
+
+/** Reuses a frontier computed from the same blockedBuildings set. */
+export function measureBuildingConnectivityShadowFromFrontier(
+  G: Grid,
+  blockedBuildings: Set<string>,
+  beforeFrontier: Row0ReachableEmptyFrontier,
+  placement: { r: number; c: number; rows: number; cols: number },
+  footprintKeys?: readonly string[]
+): BuildingConnectivityShadow {
+  const before = beforeFrontier.reachable;
   const afterBlocked = new Set(blockedBuildings);
   const placementFootprintKeys = new Set<string>();
   const visitFootprint = footprintKeys

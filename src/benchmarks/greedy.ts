@@ -277,6 +277,8 @@ export function createGreedyBenchmarkSnapshot(result: GreedyBenchmarkSuiteResult
         ? {
             counters: structuredClone(greedyProfile.counters),
             phases: greedyProfile.phases.map(({ elapsedMs: _elapsedMs, ...phase }) => ({ ...phase })),
+            connectivityShadowDecisions: structuredClone(greedyProfile.connectivityShadowDecisions ?? []),
+            connectivityShadowDecisionTraceLimit: greedyProfile.connectivityShadowDecisionTraceLimit,
           }
         : null,
     })),
@@ -285,6 +287,24 @@ export function createGreedyBenchmarkSnapshot(result: GreedyBenchmarkSuiteResult
 
 function formatProfilePhaseSummary(phase: GreedyProfilePhaseSummary): string {
   return `${phase.name}:${phase.runs}x/${phase.elapsedMs.toFixed(3)}ms/best+${phase.bestPopulationDelta}/candidate+${phase.candidatePopulationDelta}`;
+}
+
+function formatPlacementTrace(placement: {
+  r: number;
+  c: number;
+  rows: number;
+  cols: number;
+  roadCost: number;
+  typeIndex?: number;
+  bonus?: number;
+  range?: number;
+}): string {
+  const extras = [
+    placement.typeIndex === undefined ? null : `type:${placement.typeIndex}`,
+    placement.bonus === undefined ? null : `bonus:${placement.bonus}`,
+    placement.range === undefined ? null : `range:${placement.range}`,
+  ].filter((entry): entry is string => entry !== null);
+  return `r${placement.r}c${placement.c} ${placement.rows}x${placement.cols} road:${placement.roadCost}${extras.length ? ` ${extras.join(" ")}` : ""}`;
 }
 
 export function formatGreedyBenchmarkSuite(result: GreedyBenchmarkSuiteResult): string {
@@ -332,6 +352,14 @@ export function formatGreedyBenchmarkSuite(result: GreedyBenchmarkSuiteResult): 
       lines.push(
         `  connectivity-shadow=checks:${counters.roads.connectivityShadowChecks} lost:${counters.roads.connectivityShadowLostCells} footprint:${counters.roads.connectivityShadowFootprintCells} disconnected:${counters.roads.connectivityShadowDisconnectedCells} max-lost:${counters.roads.connectivityShadowMaxLostCells} max-disconnected:${counters.roads.connectivityShadowMaxDisconnectedCells}`
       );
+      lines.push(
+        `  connectivity-shadow-scoring=ties:${counters.roads.connectivityShadowScoreTies} wins:${counters.roads.connectivityShadowScoreWins} losses:${counters.roads.connectivityShadowScoreLosses} neutral:${counters.roads.connectivityShadowScoreNeutral} trace:${benchmark.greedyProfile?.connectivityShadowDecisions?.length ?? 0}/${benchmark.greedyProfile?.connectivityShadowDecisionTraceLimit ?? 0}`
+      );
+      for (const decision of benchmark.greedyProfile?.connectivityShadowDecisions?.slice(0, 5) ?? []) {
+        lines.push(
+          `  shadow-decision=${decision.phase} score:${decision.score} chosen:[${formatPlacementTrace(decision.chosen)}] rejected:[${formatPlacementTrace(decision.rejected)}] penalties:cand=${decision.candidateShadowPenalty} inc=${decision.incumbentShadowPenalty}`
+        );
+      }
       lines.push(
         `  step13=geometry:${counters.precompute.geometryCacheEntries} occupancy-scratch:${counters.localSearch.occupancyScratchReuses} road-scratch:${counters.roads.scratchProbeCalls}`
       );

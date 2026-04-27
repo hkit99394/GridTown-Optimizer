@@ -3,3 +3,4 @@ export * from "./cpSat.js";
 export * from "./lns.js";
 export * from "./crossMode.js";
 export * from "./crossModeBudgetAblations.js";
+export * from "./greedyConnectivityShadowAblations.js";

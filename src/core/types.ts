@@ -629,7 +629,35 @@ export interface GreedyProfileCounters {
     connectivityShadowDisconnectedCells: number;
     connectivityShadowMaxLostCells: number;
     connectivityShadowMaxDisconnectedCells: number;
+    connectivityShadowScoreTies: number;
+    connectivityShadowScoreWins: number;
+    connectivityShadowScoreLosses: number;
+    connectivityShadowScoreNeutral: number;
   };
+}
+
+export type GreedyConnectivityShadowDecisionPhase = "service" | "residential";
+
+export interface GreedyConnectivityShadowPlacementTrace {
+  r: number;
+  c: number;
+  rows: number;
+  cols: number;
+  roadCost: number;
+  typeIndex?: number;
+  bonus?: number;
+  range?: number;
+}
+
+export interface GreedyConnectivityShadowDecisionTrace {
+  phase: GreedyConnectivityShadowDecisionPhase;
+  score: number;
+  candidate: GreedyConnectivityShadowPlacementTrace;
+  incumbent: GreedyConnectivityShadowPlacementTrace;
+  chosen: GreedyConnectivityShadowPlacementTrace;
+  rejected: GreedyConnectivityShadowPlacementTrace;
+  candidateShadowPenalty: number;
+  incumbentShadowPenalty: number;
 }
 
 export type GreedyProfilePhaseName =
@@ -655,6 +683,8 @@ export interface GreedyProfilePhaseSummary {
 export interface GreedyProfile {
   counters: GreedyProfileCounters;
   phases: GreedyProfilePhaseSummary[];
+  connectivityShadowDecisions?: GreedyConnectivityShadowDecisionTrace[];
+  connectivityShadowDecisionTraceLimit?: number;
 }
 
 export interface LnsOptions {

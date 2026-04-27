@@ -31,12 +31,16 @@ const {
   createGreedyBenchmarkSnapshot,
   DEFAULT_GREEDY_BENCHMARK_CORPUS,
   DEFAULT_GREEDY_BENCHMARK_OPTIONS,
+  DEFAULT_GREEDY_CONNECTIVITY_SHADOW_SCORING_ABLATION_CASE_NAMES,
+  DEFAULT_GREEDY_CONNECTIVITY_SHADOW_SCORING_ABLATION_CORPUS,
   DEFAULT_CP_SAT_BENCHMARK_CORPUS,
   DEFAULT_CP_SAT_BENCHMARK_OPTIONS,
   OMITTED_SOLVER_OPTIMIZER,
   RECOMMENDED_INTERACTIVE_OPTIMIZER,
   getOptimizerAdapter,
+  formatGreedyConnectivityShadowScoringAblation,
   formatGreedyBenchmarkSuite,
+  listGreedyConnectivityShadowScoringAblationCaseNames,
   listGreedyBenchmarkCaseNames,
   listOptimizerAdapters,
   normalizeGreedyBenchmarkOptions,
@@ -46,6 +50,7 @@ const {
   buildDecisionTraceFromSolution,
   buildTimeToQualityScorecard,
   parseDecisionTraceJsonl,
+  runGreedyConnectivityShadowScoringAblation,
   runGreedyBenchmarkSuite,
   runCpSatBenchmarkSuite,
   runCrossModeBenchmarkBudgetAblations: runCrossModeBenchmarkBudgetAblationsFromIndex,
@@ -1370,6 +1375,14 @@ function testGreedyConnectivityShadowScoringIsOptInTieBreaker() {
       connectivityShadowScoring: true,
     },
   });
+  const enabledProfiled = solveGreedy(grid, {
+    ...structuredClone(baseParams),
+    greedy: {
+      ...baseParams.greedy,
+      connectivityShadowScoring: true,
+      profile: true,
+    },
+  });
 
   assert.deepEqual(defaultSolution.residentials, [{ r: 0, c: 0, rows: 1, cols: 1 }]);
   assert.deepEqual(explicitOff.residentials, defaultSolution.residentials);
@@ -1378,6 +1391,19 @@ function testGreedyConnectivityShadowScoringIsOptInTieBreaker() {
   assert.equal(defaultSolution.totalPopulation, enabled.totalPopulation);
   assert.deepEqual(enabled.residentials, [{ r: 0, c: 1, rows: 1, cols: 1 }]);
   assert.deepEqual([...enabled.roads].sort(), ["0,0"]);
+  assert.deepEqual(enabledProfiled.residentials, enabled.residentials);
+  assert(enabledProfiled.greedyProfile.counters.roads.connectivityShadowScoreTies > 0);
+  assert(enabledProfiled.greedyProfile.counters.roads.connectivityShadowScoreWins > 0);
+  assert(enabledProfiled.greedyProfile.connectivityShadowDecisions.length > 0);
+  assert.equal(enabledProfiled.greedyProfile.connectivityShadowDecisions[0].phase, "residential");
+  assert.deepEqual(enabledProfiled.greedyProfile.connectivityShadowDecisions[0].chosen, {
+    r: 0,
+    c: 1,
+    rows: 1,
+    cols: 1,
+    roadCost: 0,
+    typeIndex: 0,
+  });
   assert.equal(validateSolution({ grid, solution: enabled, params: baseParams }).valid, true);
 }
 
@@ -3749,6 +3775,70 @@ function testGreedyBenchmarkCorpusHelpers() {
   assert.equal(legacyResult.results[0].greedyOptions.restarts, 4);
 }
 
+function testGreedyConnectivityShadowScoringAblationRunner() {
+  const ablationCase = {
+    name: "shadow-ablation-fixture",
+    description: "Small fixture for baseline vs opt-in connectivity-shadow scoring.",
+    grid: [
+      [1, 1, 1],
+      [1, 1, 1],
+      [1, 1, 1],
+    ],
+    params: {
+      optimizer: "greedy",
+      residentialTypes: [{ w: 1, h: 1, min: 10, max: 10, avail: 2 }],
+      availableBuildings: { services: 0, residentials: 2 },
+      greedy: {
+        localSearch: false,
+        randomSeed: 11,
+        restarts: 1,
+        serviceRefineIterations: 0,
+        serviceRefineCandidateLimit: 1,
+        exhaustiveServiceSearch: false,
+        serviceExactPoolLimit: 1,
+        serviceExactMaxCombinations: 1,
+        profile: true,
+      },
+    },
+  };
+
+  const result = runGreedyConnectivityShadowScoringAblation([ablationCase]);
+  const formatted = formatGreedyConnectivityShadowScoringAblation(result);
+
+  assert.equal(DEFAULT_GREEDY_CONNECTIVITY_SHADOW_SCORING_ABLATION_CASE_NAMES.includes("row0-corridor-repair-pressure"), true);
+  assert.equal(
+    DEFAULT_GREEDY_CONNECTIVITY_SHADOW_SCORING_ABLATION_CORPUS.some((entry) => entry.name === "row0-corridor-repair-pressure"),
+    true
+  );
+  assert.equal(listGreedyConnectivityShadowScoringAblationCaseNames().includes("bridge-connectivity-heavy"), true);
+  assert.equal(result.caseCount, 1);
+  assert.deepEqual(result.selectedCaseNames, ["shadow-ablation-fixture"]);
+  assert.deepEqual(result.variants, ["baseline", "connectivity-shadow"]);
+  assert.equal(result.coverage.caseCount, 1);
+  assert.equal(result.coverage.runCount, 2);
+  assert.equal(result.coverage.variantCount, 2);
+  assert.equal(result.coverage.gridCellCount, 9);
+  assert.equal(result.coverage.profileEnabledRuns, 2);
+  assert.equal(result.cases[0].baseline.connectivityShadowScoring, false);
+  assert.equal(result.cases[0].connectivityShadow.connectivityShadowScoring, true);
+  assert.equal(result.cases[0].baseline.greedyOptions.connectivityShadowScoring, false);
+  assert.equal(result.cases[0].connectivityShadow.greedyOptions.connectivityShadowScoring, true);
+  assert.equal(
+    result.cases[0].populationDelta,
+    result.cases[0].connectivityShadow.totalPopulation - result.cases[0].baseline.totalPopulation
+  );
+  assert.equal(
+    result.cases[0].wallClockDeltaSeconds,
+    result.cases[0].connectivityShadow.wallClockSeconds - result.cases[0].baseline.wallClockSeconds
+  );
+  assert.match(formatted, /=== Greedy Connectivity-Shadow Scoring Ablation ===/);
+  assert.match(formatted, /Coverage: cases=1 runs=2 variants=2 grid-cells=9/);
+  assert.match(formatted, /Population delta:/);
+  assert.match(formatted, /wall-delta=/);
+  assert.match(formatted, /baseline=connectivityShadowScoring:false/);
+  assert.match(formatted, /connectivity-shadow=connectivityShadowScoring:true/);
+}
+
 function testGreedyStep14ServiceLookaheadBenchmarkCaseIsolated() {
   assertStep14BenchmarkIsolation(STEP14_GREEDY_BENCHMARK_NAME, true);
 }
@@ -4007,8 +4097,37 @@ function testGreedyBenchmarkSuite() {
   assert.match(formatGreedyBenchmarkSuite(result), /phases=/);
   assert.match(formatGreedyBenchmarkSuite(result), /cap-search=/);
   assert.match(formatGreedyBenchmarkSuite(result), /connectivity-shadow=/);
+  assert.match(formatGreedyBenchmarkSuite(result), /connectivity-shadow-scoring=/);
   assert.match(formatGreedyBenchmarkSuite(result), /step13=/);
   assert.match(formatGreedyBenchmarkSuite(result), /step14=/);
+}
+
+function runGreedyBenchmarkCliJson(args) {
+  const cliPath = path.join(__dirname, "..", "dist", "greedyBenchmarkCli.js");
+  const result = childProcess.spawnSync(process.execPath, [cliPath, "--json", ...args], {
+    cwd: path.join(__dirname, ".."),
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Greedy benchmark CLI failed.");
+  }
+  return JSON.parse(result.stdout);
+}
+
+function testGreedyBenchmarkCliConnectivityShadowFlags() {
+  const benchmarkName = "deterministic-tie-breaks";
+  const defaultRun = runGreedyBenchmarkCliJson(["--no-profile", benchmarkName]);
+  const disabledRun = runGreedyBenchmarkCliJson(["--no-connectivity-shadow-scoring", "--no-profile", benchmarkName]);
+  const enabledRun = runGreedyBenchmarkCliJson(["--connectivity-shadow-scoring", "--no-profile", benchmarkName]);
+
+  assert.deepEqual(defaultRun.selectedCaseNames, [benchmarkName]);
+  assert.deepEqual(disabledRun.selectedCaseNames, [benchmarkName]);
+  assert.deepEqual(enabledRun.selectedCaseNames, [benchmarkName]);
+  assert.equal(defaultRun.results[0].greedyOptions.connectivityShadowScoring, undefined);
+  assert.equal(disabledRun.results[0].greedyOptions.connectivityShadowScoring, false);
+  assert.equal(enabledRun.results[0].greedyOptions.connectivityShadowScoring, true);
+  assert.equal(enabledRun.results[0].greedyOptions.profile, false);
+  assert.equal(disabledRun.results[0].totalPopulation, defaultRun.results[0].totalPopulation);
 }
 
 function testGreedyDeterministicTieBreakBenchmarkCase() {
@@ -6765,6 +6884,8 @@ async function main() {
   testGreedyDiagnosticsAreOptInDeterministicAndAdditive();
   testGreedyDiagnosticsReportsNoServiceCoverage();
   testGreedyBenchmarkCorpusHelpers();
+  testGreedyConnectivityShadowScoringAblationRunner();
+  testGreedyBenchmarkCliConnectivityShadowFlags();
   testGreedyStep14ServiceLookaheadBenchmarkCaseIsolated();
   testGreedyStep14FollowUpBenchmarkCasesStayIsolated();
   testGreedyServiceLookaheadIsOffByDefaultAndLeavesCorpusUnchangedWhenOff();

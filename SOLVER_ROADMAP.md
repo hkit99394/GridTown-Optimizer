@@ -49,7 +49,7 @@ Current reviewed baseline as of 2026-04-27:
 - Cross-mode budget ablation sweeps can compare named Auto/LNS seed, repair, and CP-SAT reserve policies with policy-scoped trace output, optional harder coverage cases, and separate Auto/LNS baseline deltas.
 - Final Greedy road materialization prunes redundant support roads while preserving row-0 connectivity and building access.
 - Greedy profile counters now measure building connectivity shadow: row-0-reachable empty cells lost by each committed building footprint, split into footprint consumption and downstream disconnection.
-- Greedy has an opt-in `connectivityShadowScoring` tie-breaker that prefers equal-score placements with lower building-induced row-0 connectivity shadow; defaults remain unchanged.
+- Greedy has an opt-in, baseline-guarded `connectivityShadowScoring` tie-breaker that prefers equal-score placements with lower building-induced row-0 connectivity shadow inside a bounded cheap-road window; defaults remain unchanged.
 - Planner saved-layout selection surfaces saved population so layout choices are score-oriented.
 
 ## Active Priorities
@@ -66,30 +66,28 @@ Targeted 30s repair-heavy probe as of 2026-04-27: `row0-corridor-repair-pressure
 
 Remaining 30s coverage-corpus slice as of 2026-04-27: `--coverage-corpus --modes=auto,lns --budgets=30 --seeds=37 --ablation-policies=baseline,seed-light,repair-heavy,cp-sat-reserve-heavy typed-footprint-pressure deferred-road-packing-gain service-local-neighborhood row0-anchor-repair` (`32` mode-runs, `960` budgeted mode-seconds) kept `baseline` as the top Auto policy. `seed-light` and `cp-sat-reserve-heavy` tied baseline on Auto mean (`320`) while lifting standalone LNS mean by `+12.5`; `repair-heavy` lifted standalone LNS by `+12.5` but regressed Auto mean by `-5`. This does not justify a selective 120s probe or default policy change.
 
-Connectivity-shadow scoring first slice as of 2026-04-27: `greedy.connectivityShadowScoring` is available as a default-off tie-breaker. It measures candidate shadow independently of `greedy.profile`, counts only building footprints as blockers, and only computes candidate shadow on normal-score ties to avoid turning every candidate scan into a full-frontier BFS. Next work is ablation/calibration on pressure cases before any default promotion or primary-score penalty.
+Connectivity-shadow calibrated Greedy ablation as of 2026-04-27: the Greedy benchmark CLI has `--connectivity-shadow-ablation` plus `--profile`/`--no-profile` for reproducible slices, and profile output records bounded shadow tie-break samples. The initial focused slice improved `service-local-neighborhood` by `+100`, regressed `geometry-occupancy-hot-path` by `-30`, and increased road count on tied-population cases. Calibration now limits shadow tie-breaks to a cheap-road window and keeps the normal Greedy result whenever the shadow-scored result does not beat it on population and road count. The eight-case profile-off slice now shows total population delta `+80`, no population regressions, `geometry-occupancy-hot-path` unchanged, and total road delta `0`. Keep the option default-off because the guard can spend extra CPU; use it as an experimental quality path rather than the default seed policy.
 
 | Rank | Priority | Impact | Summary | Success Signal |
 | --- | --- | ---: | --- | --- |
-| 1 | Connectivity-shadow scoring ablations | 4.5 | Evaluate the default-off tie-breaker on pressure cases, then decide whether stronger scoring or phase-specific weights are justified. | Opt-in scoring preserves benchmark population and improves at least one connectivity-pressure case before any default promotion. |
-| 2 | Road opportunity-cost instrumentation | 3.5 | Explain road and building choices in terms of remaining row-0-reachable space, not just current road length. | Traces identify placements that preserve or destroy future connection options. |
-| 3 | Deterministic ablations before model training | 4.0 | Run controlled heuristics experiments before learned ranking. | We know which features and phases actually move population. |
-| 4 | Held Auto/LNS policy ablations | 3.5 | Keep baseline after the 5s/30s coverage slices; run 120s only if future cases show a real population win. | New evidence beats baseline on Auto/LNS population without extra wall-clock. |
-| 5 | Low-risk learned ranking | 3.0 | Start with service ordering or LNS window ordering only after trace and ablation gates pass. | Model ranking beats deterministic baseline on held-out maps. |
-| 6 | Planner explainability maps | 3.0 | Add opportunity/risk maps for placement and connectivity decisions. | Humans can inspect why a placement is attractive or dangerous. |
-| 7 | CPU parallelism and portfolio work | 2.5 | Use parallelism only where CPU-normalized benchmarks prove wall-clock gain. | Higher population per wall-clock without hiding wasted CPU. |
+| 1 | Road opportunity-cost instrumentation | 3.5 | Explain road and building choices in terms of remaining row-0-reachable space, not just current road length. | Traces identify placements that preserve or destroy future connection options. |
+| 2 | Deterministic ablations before model training | 4.0 | Run controlled heuristics experiments before learned ranking. | We know which features and phases actually move population. |
+| 3 | Held Auto/LNS policy ablations | 3.5 | Keep baseline after the 5s/30s coverage slices; run 120s only if future cases show a real population win. | New evidence beats baseline on Auto/LNS population without extra wall-clock. |
+| 4 | Low-risk learned ranking | 3.0 | Start with service ordering or LNS window ordering only after trace and ablation gates pass. | Model ranking beats deterministic baseline on held-out maps. |
+| 5 | Planner explainability maps | 3.0 | Add opportunity/risk maps for placement and connectivity decisions. | Humans can inspect why a placement is attractive or dangerous. |
+| 6 | CPU parallelism and portfolio work | 2.5 | Use parallelism only where CPU-normalized benchmarks prove wall-clock gain. | Higher population per wall-clock without hiding wasted CPU. |
 
 ## Combined Ordering
 
-1. Benchmark and calibrate the default-off connectivity-shadow placement tie-breaker before promoting or strengthening it.
-2. Instrument road opportunity cost in terms of remaining row-0-reachable space.
-3. Run ablations for Greedy ordering, LNS neighborhoods, and Auto budgets.
-4. Keep Auto/LNS policy ablations on hold unless future pressure cases show a population win over baseline.
-5. Try learned Greedy service re-ranking if traces show ordering mistakes.
-6. Add counterfactual LNS labels, then try learned LNS window re-ranking.
-7. Add CPU portfolio or replay parallelism only with CPU-normalized benchmark wins.
-8. Add planner explainability maps once the underlying metrics are stable.
-9. Consider value-guided seeds if seed quality is proven to bottleneck LNS.
-10. Keep distributed CP-SAT, bandits, and full RL for later.
+1. Instrument road opportunity cost in terms of remaining row-0-reachable space.
+2. Run ablations for Greedy ordering, LNS neighborhoods, and Auto budgets.
+3. Keep Auto/LNS policy ablations on hold unless future pressure cases show a population win over baseline.
+4. Try learned Greedy service re-ranking if traces show ordering mistakes.
+5. Add counterfactual LNS labels, then try learned LNS window re-ranking.
+6. Add CPU portfolio or replay parallelism only with CPU-normalized benchmark wins.
+7. Add planner explainability maps once the underlying metrics are stable.
+8. Consider value-guided seeds if seed quality is proven to bottleneck LNS.
+9. Keep distributed CP-SAT, bandits, and full RL for later.
 
 ## Discipline
 

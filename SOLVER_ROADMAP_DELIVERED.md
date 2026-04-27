@@ -143,6 +143,22 @@ Reviewed through 2026-04-27.
 - Shadow comparison is deliberately lazy and tie-only: candidate shadow is computed only after normal Greedy score/density comparison ties, avoiding a full-frontier BFS on every candidate scan.
 - Regression coverage checks default/off/profile behavior remains unchanged and that the opt-in tie-breaker chooses the less-disconnecting placement on a sparse row-0 corridor case.
 
+### 20. Connectivity-Shadow Ablation Harness
+
+- Added a Greedy benchmark ablation runner exposed by `--connectivity-shadow-ablation`, with supporting flags `--connectivity-shadow-scoring`, `--no-connectivity-shadow-scoring`, `--profile`, and `--no-profile`.
+- Regression coverage verifies the CLI can toggle the option, keeps explicit-off population aligned with default, and can disable profiling for cleaner timing runs.
+- Ran a focused profile-off Greedy slice across eight pressure/hot-path cases. Explicit off matched default population. Opt-in shadow scoring improved `service-local-neighborhood` by `+100`, but regressed `geometry-occupancy-hot-path` by `-30` and increased road count on several tied-population cases.
+- Conclusion: keep `greedy.connectivityShadowScoring` default-off and treat this as evidence for calibration, not promotion.
+
+### 21. Connectivity-Shadow Calibration Guard
+
+- Greedy profile output now records bounded connectivity-shadow tie-break samples with phase, score, candidate placement, incumbent placement, chosen/rejected placement, road cost, and shadow penalty.
+- The diagnostic slice showed the `geometry-occupancy-hot-path` regression came from residential shadow choices that preferred lower shadow at expensive road costs, while the useful `service-local-neighborhood` gain needed some bounded residential shadow choices.
+- Calibrated shadow scoring to run only inside a bounded cheap-road window, then guard the final opt-in result against the normal Greedy result using the existing population and road-count solution comparator.
+- The focused profile-on slice now improves `service-local-neighborhood` by `+80`, keeps `geometry-occupancy-hot-path` unchanged, and has total road delta `0`.
+- The eight-case profile-off ablation now reports total population delta `+80`, one improved case, no regressions, seven unchanged cases, and total road delta `0`.
+- Conclusion: the opt-in path is now population/road-safe on the focused corpus, but remains default-off because the guard can run the normal Greedy path as a fallback and therefore may spend extra CPU.
+
 ## Maintenance Watchpoints
 
 - Keep deterministic benchmark seeds stable when changing solver scoring.
@@ -150,7 +166,7 @@ Reviewed through 2026-04-27.
 - Keep distributed or portfolio solving behind proof that single-machine policy is no longer the bottleneck.
 - Keep learned guidance separate from core runtime correctness until traces and labels are strong enough.
 - Keep final road pruning conservative: population and validity must not depend on the removed roads.
-- Keep connectivity-shadow scoring default-off until benchmark evidence shows population-safe gains; `greedy.profile` must remain observational and must not affect placement choices.
+- Keep connectivity-shadow scoring default-off until wider benchmark evidence shows the guarded opt-in CPU cost is worth the population gain; `greedy.profile` must remain observational and must not affect placement choices.
 - Keep Auto budget slicing honest: LNS seed and repair work may use the Auto LNS stage slice, but must not spend the CP-SAT reserve unless a future trace-backed policy explicitly changes that.
 - Keep ablation matrices small by default; expand cases, modes, budgets, or policies only when the previous sweep gives a clear signal.
 - Keep long ablation runs staged and timeout-bounded; the corrected 30s LNS budget can legitimately consume far more wall-clock than the previous capped corpus setup.

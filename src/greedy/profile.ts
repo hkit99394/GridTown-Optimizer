@@ -111,6 +111,10 @@ export function createGreedyProfileCounters(): GreedyProfileCounters {
       connectivityShadowDisconnectedCells: 0,
       connectivityShadowMaxLostCells: 0,
       connectivityShadowMaxDisconnectedCells: 0,
+      connectivityShadowScoreTies: 0,
+      connectivityShadowScoreWins: 0,
+      connectivityShadowScoreLosses: 0,
+      connectivityShadowScoreNeutral: 0,
     },
   };
 }

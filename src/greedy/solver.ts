@@ -8,6 +8,8 @@ import { cellKey } from "../core/types.js";
 import type { Grid } from "../core/types.js";
 import type {
   GreedyDiagnostics,
+  GreedyConnectivityShadowDecisionTrace,
+  GreedyConnectivityShadowPlacementTrace,
   GreedyDiagnosticExample,
   GreedyDiagnosticKindReport,
   GreedyOptions,
@@ -123,6 +125,7 @@ interface GreedySolveContext {
   profileCounters?: GreedyProfileCounters;
   recordProfilePhase?: GreedyProfilePhaseRecorder;
   maybeStop?: MaybeStop;
+  recordConnectivityShadowDecision?: (decision: GreedyConnectivityShadowDecisionTrace) => void;
 }
 interface SolveOneOptions {
   maxServices: number | undefined;
@@ -259,6 +262,9 @@ const SERVICE_LOOKAHEAD = {
 const GREEDY_DIAGNOSTIC_CANDIDATE_LIMIT = 2_000;
 const GREEDY_DIAGNOSTIC_EXAMPLES_PER_REASON = 3;
 const CONNECTIVITY_SHADOW_FOOTPRINT_PENALTY_WEIGHT = 0.125;
+const CONNECTIVITY_SHADOW_DECISION_TRACE_LIMIT = 80;
+const CONNECTIVITY_SHADOW_MAX_ROAD_COST_DELTA = 4;
+const CONNECTIVITY_SHADOW_MAX_ROAD_COST = 4;
 
 const EXHAUSTIVE_FIXED_SERVICE_EVALUATION = {
   maxOrders: 4,
@@ -999,6 +1005,83 @@ function compareConnectivityShadowPenalty(candidatePenalty: number, incumbentPen
   return candidatePenalty < incumbentPenalty ? 1 : -1;
 }
 
+function tieBreakRoadCost(probe: TieBreakProbe): number {
+  return "roadCost" in probe ? probe.roadCost : (probe.path?.length ?? 0);
+}
+
+function canUseConnectivityShadowTieBreak(candidateProbe: TieBreakProbe, incumbentProbe: TieBreakProbe): boolean {
+  const candidateRoadCost = tieBreakRoadCost(candidateProbe);
+  const incumbentRoadCost = tieBreakRoadCost(incumbentProbe);
+  return Math.max(candidateRoadCost, incumbentRoadCost) <= CONNECTIVITY_SHADOW_MAX_ROAD_COST
+    && Math.abs(candidateRoadCost - incumbentRoadCost) <= CONNECTIVITY_SHADOW_MAX_ROAD_COST_DELTA;
+}
+
+function servicePlacementTrace(
+  service: ServiceCandidate,
+  probe: TieBreakProbe
+): GreedyConnectivityShadowPlacementTrace {
+  return {
+    r: service.r,
+    c: service.c,
+    rows: service.rows,
+    cols: service.cols,
+    roadCost: tieBreakRoadCost(probe),
+    typeIndex: service.typeIndex,
+    bonus: service.bonus,
+    range: service.range,
+  };
+}
+
+function residentialPlacementTrace(
+  residential: ResidentialCandidateLike,
+  probe: TieBreakProbe
+): GreedyConnectivityShadowPlacementTrace {
+  return {
+    r: residential.r,
+    c: residential.c,
+    rows: residential.rows,
+    cols: residential.cols,
+    roadCost: tieBreakRoadCost(probe),
+    typeIndex: getCandidateTypeIndex(residential),
+  };
+}
+
+function recordConnectivityShadowTieDecision(options: {
+  record?: (decision: GreedyConnectivityShadowDecisionTrace) => void;
+  profileCounters?: GreedyProfileCounters;
+  phase: GreedyConnectivityShadowDecisionTrace["phase"];
+  score: number;
+  candidate: GreedyConnectivityShadowPlacementTrace;
+  incumbent: GreedyConnectivityShadowPlacementTrace;
+  candidateShadowPenalty: number;
+  incumbentShadowPenalty: number;
+  comparison: number;
+}): void {
+  const { profileCounters, comparison } = options;
+  if (profileCounters) {
+    profileCounters.roads.connectivityShadowScoreTies++;
+    if (comparison > 0) {
+      profileCounters.roads.connectivityShadowScoreWins++;
+    } else if (comparison < 0) {
+      profileCounters.roads.connectivityShadowScoreLosses++;
+    } else {
+      profileCounters.roads.connectivityShadowScoreNeutral++;
+    }
+  }
+  if (comparison === 0 || !options.record) return;
+  const candidateWon = comparison > 0;
+  options.record({
+    phase: options.phase,
+    score: options.score,
+    candidate: options.candidate,
+    incumbent: options.incumbent,
+    chosen: candidateWon ? options.candidate : options.incumbent,
+    rejected: candidateWon ? options.incumbent : options.candidate,
+    candidateShadowPenalty: options.candidateShadowPenalty,
+    incumbentShadowPenalty: options.incumbentShadowPenalty,
+  });
+}
+
 function computeResidentialPopulation(
   params: SolverParams,
   residential: { r: number; c: number; rows: number; cols: number },
@@ -1290,6 +1373,7 @@ function solveOne(
     localSearch,
     serviceLookaheadCandidates,
     recordProfilePhase,
+    recordConnectivityShadowDecision,
     maybeStop,
   } = context;
   const {
@@ -1613,7 +1697,14 @@ function solveOne(
             );
         let candidateConnectivityShadowPenalty: number | null = null;
         let connectivityShadowComparison = 0;
-        if (scoreComparison === 0 && score > 0 && connectivityShadowScoring && bestCandidate !== null) {
+        if (
+          scoreComparison === 0
+          && score > 0
+          && connectivityShadowScoring
+          && bestCandidate !== null
+          && bestProbe !== null
+          && canUseConnectivityShadowTieBreak(probe, bestProbe)
+        ) {
           const serviceFootprintKeys = precomputedIndexes.serviceFootprintKeysByCandidate[globalCandidateIndex];
           candidateConnectivityShadowPenalty = computeConnectivityShadowPenalty(
             attemptState,
@@ -1633,6 +1724,17 @@ function solveOne(
             candidateConnectivityShadowPenalty,
             bestConnectivityShadowPenalty
           );
+          recordConnectivityShadowTieDecision({
+            record: recordConnectivityShadowDecision,
+            profileCounters,
+            phase: "service",
+            score,
+            candidate: servicePlacementTrace(service, probe),
+            incumbent: servicePlacementTrace(bestCandidate, bestProbe),
+            candidateShadowPenalty: candidateConnectivityShadowPenalty,
+            incumbentShadowPenalty: bestConnectivityShadowPenalty,
+            comparison: connectivityShadowComparison,
+          });
         }
         if (
           scoreComparison > 0
@@ -1838,7 +1940,14 @@ function solveOne(
           );
       let candidateConnectivityShadowPenalty: number | null = null;
       let connectivityShadowComparison = 0;
-      if (scoreComparison === 0 && pop >= 0 && connectivityShadowScoring && best !== null) {
+      if (
+        scoreComparison === 0
+        && pop >= 0
+        && connectivityShadowScoring
+        && best !== null
+        && bestProbe !== null
+        && canUseConnectivityShadowTieBreak(probe, bestProbe)
+      ) {
         const residentialFootprintKeys = precomputedIndexes.residentialCandidateFootprintKeys[candidateIndex];
         candidateConnectivityShadowPenalty = computeConnectivityShadowPenalty(
           attemptState,
@@ -1853,6 +1962,17 @@ function solveOne(
           candidateConnectivityShadowPenalty,
           bestConnectivityShadowPenalty
         );
+        recordConnectivityShadowTieDecision({
+          record: recordConnectivityShadowDecision,
+          profileCounters,
+          phase: "residential",
+          score: pop,
+          candidate: residentialPlacementTrace(cand, probe),
+          incumbent: residentialPlacementTrace(best, bestProbe),
+          candidateShadowPenalty: candidateConnectivityShadowPenalty,
+          incumbentShadowPenalty: bestConnectivityShadowPenalty,
+          comparison: connectivityShadowComparison,
+        });
       }
       if (
         scoreComparison > 0
@@ -2040,6 +2160,7 @@ function prepareGreedyInputs(
     serviceLookaheadCandidates: number;
     profileCounters?: GreedyProfileCounters;
     recordProfilePhase?: GreedyProfilePhaseRecorder;
+    recordConnectivityShadowDecision?: (decision: GreedyConnectivityShadowDecisionTrace) => void;
     maybeStop: MaybeStop;
   }
 ): GreedyPreparedInputs {
@@ -2051,6 +2172,7 @@ function prepareGreedyInputs(
     serviceLookaheadCandidates,
     profileCounters,
     recordProfilePhase,
+    recordConnectivityShadowDecision,
     maybeStop,
   } = options;
 
@@ -2172,6 +2294,7 @@ function prepareGreedyInputs(
       serviceLookaheadCandidates,
       profileCounters,
       recordProfilePhase,
+      recordConnectivityShadowDecision,
       maybeStop,
     },
   };
@@ -3641,6 +3764,7 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     serviceLookaheadCandidates,
     deferRoadCommitment,
     densityTieBreaker,
+    connectivityShadowScoring,
     randomSeed,
     profile,
     diagnostics,
@@ -3656,6 +3780,14 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
   } = getGreedyOptions(params);
   const profileCounters = profile ? createGreedyProfileCounters() : undefined;
   const profilePhases = profile ? createGreedyProfilePhaseSummaries() : undefined;
+  const connectivityShadowDecisions: GreedyConnectivityShadowDecisionTrace[] | undefined = profile ? [] : undefined;
+  const recordConnectivityShadowDecision = connectivityShadowDecisions
+    ? (decision: GreedyConnectivityShadowDecisionTrace): void => {
+        if (connectivityShadowDecisions.length < CONNECTIVITY_SHADOW_DECISION_TRACE_LIMIT) {
+          connectivityShadowDecisions.push(decision);
+        }
+      }
+    : undefined;
   const { maxServices, maxResidentials } = getBuildingLimits(params);
   const useServiceTypes = (params.serviceTypes?.length ?? 0) > 0;
   const useTypes = (params.residentialTypes?.length ?? 0) > 0;
@@ -3705,6 +3837,7 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     serviceLookaheadCandidates,
     profileCounters,
     recordProfilePhase,
+    recordConnectivityShadowDecision,
     maybeStop,
   }));
   const { serviceOrderSorted, baseSolveContext } = preparedInputs;
@@ -3735,8 +3868,23 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
       greedyProfile: {
         counters: structuredClone(profileCounters),
         phases: structuredClone(profilePhases ?? []),
+        connectivityShadowDecisions: structuredClone(connectivityShadowDecisions ?? []),
+        connectivityShadowDecisionTraceLimit: CONNECTIVITY_SHADOW_DECISION_TRACE_LIMIT,
       },
     };
+  };
+  const applyConnectivityShadowBaselineGuard = (solution: Solution): Solution => {
+    if (!connectivityShadowScoring) return solution;
+    const baselineParams = structuredClone(params);
+    baselineParams.greedy = {
+      ...(baselineParams.greedy ?? {}),
+      connectivityShadowScoring: false,
+    };
+    const baseline = solveGreedy(G.map((row) => [...row]), baselineParams);
+    if (solution.totalPopulation !== baseline.totalPopulation) {
+      return solution.totalPopulation > baseline.totalPopulation ? solution : baseline;
+    }
+    return solution.roads.size <= baseline.roads.size ? solution : baseline;
   };
 
   const evaluateForcedServiceSet = createGreedyForcedServiceEvaluator({
@@ -3921,13 +4069,13 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     }
   } catch (error) {
     if (error instanceof GreedyStopError) {
-      if (error.bestSolution) return finalizeGreedySolution(error.bestSolution);
+      if (error.bestSolution) return applyConnectivityShadowBaselineGuard(finalizeGreedySolution(error.bestSolution));
       throw error;
     }
     throw error;
   }
 
-  return finalizeGreedySolution(best as Solution);
+  return applyConnectivityShadowBaselineGuard(finalizeGreedySolution(best as Solution));
 }
 
 function localSearchImprove(

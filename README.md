@@ -417,6 +417,13 @@ Run one named greedy case and emit JSON:
 npm run benchmark:greedy -- --json cap-sweep-mixed
 ```
 
+Compare the default-off connectivity-shadow tie-breaker with profiling disabled for cleaner wall-clock readings, or enable profiling on a focused diagnostic slice:
+
+```bash
+npm run benchmark:greedy -- --connectivity-shadow-ablation --no-profile
+npm run benchmark:greedy -- --connectivity-shadow-ablation --profile service-local-neighborhood geometry-occupancy-hot-path
+```
+
 List the available greedy case names:
 
 ```bash
@@ -651,9 +658,9 @@ greedy: {
 
 Set `greedy.diagnostics: true` to include `solution.greedyDiagnostics`, a bounded post-solve report that scans final unplaced candidates and groups "why not placed?" examples by blocked footprint, missing road path, no service coverage / base-only residential population, availability caps, and lower-score/no-improvement outcomes.
 
-When `greedy.profile` is enabled, Greedy counters include `roads.connectivityShadow*` fields. These measure how many row-0-reachable empty cells each committed building footprint removes, separating cells consumed by the footprint from downstream cells disconnected by that placement. The benchmark formatter prints this as `connectivity-shadow=...`.
+When `greedy.profile` is enabled, Greedy counters include `roads.connectivityShadow*` fields. These measure how many row-0-reachable empty cells each committed building footprint removes, separating cells consumed by the footprint from downstream cells disconnected by that placement. Profile output also includes bounded connectivity-shadow tie-break samples showing the candidate, incumbent, chosen placement, rejected placement, road cost, and shadow penalty. The benchmark formatter prints this as `connectivity-shadow=...` and `connectivity-shadow-scoring=...`.
 
-Set `greedy.connectivityShadowScoring: true` to use that signal as an opt-in placement tie-breaker: when normal Greedy scores tie, candidates that disconnect fewer future row-0-reachable cells are preferred. The default is `false`, so profiling alone does not change placement choices.
+Set `greedy.connectivityShadowScoring: true` to use that signal as an opt-in placement tie-breaker: when normal Greedy scores tie inside a bounded cheap-road window, candidates that disconnect fewer future row-0-reachable cells are preferred. The option keeps the normal Greedy result when the shadow-scored result does not beat it on population and road count. The default is `false`, so profiling alone does not change placement choices.
 
 Set `greedy.densityTieBreaker: true` to prefer more central high-value placements when Greedy scores are within `greedy.densityTieBreakerTolerancePercent` of each other. The web planner exposes this only for standalone Greedy; Auto keeps its fixed Greedy seed-stage ranking policy.
 

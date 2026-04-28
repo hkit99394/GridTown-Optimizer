@@ -9,6 +9,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import type { BackgroundSolveHandle, BackgroundSolveSnapshotState, Solution } from "../../core/types.js";
+import type { ChildProcessWithoutNullStreams } from "node:child_process";
 
 const DEFAULT_BUFFER_LIMIT = 16 * 1024 * 1024;
 
@@ -48,15 +49,21 @@ function appendBufferedOutput(
   return next;
 }
 
+function spawnBackgroundSolverProcess(command: string, args: string[]): ChildProcessWithoutNullStreams {
+  return spawn(command, args, {
+    stdio: ["pipe", "pipe", "pipe"],
+    detached: process.platform !== "win32",
+  });
+}
+
+function buildLaunchErrorMessage(solverLabel: string, launchContext: string | undefined, error: Error): string {
+  return `Failed to launch ${solverLabel} backend${launchContext ? ` ${launchContext}` : ""}: ${error.message}`;
+}
+
 export function startJsonBackgroundSolve<TRaw>(config: JsonBackgroundSolverConfig<TRaw>): BackgroundSolveHandle {
   const tempStopDirectory = mkdtempSync(join(tmpdir(), config.stopDirectoryPrefix));
   const stopFilePath = join(tempStopDirectory, "stop");
   const snapshotFilePath = join(tempStopDirectory, "snapshot.json");
-  const request = config.buildRequest({ stopFilePath, snapshotFilePath });
-  const child = spawn(config.command, config.args, {
-    stdio: ["pipe", "pipe", "pipe"],
-    detached: process.platform !== "win32",
-  });
   const bufferLimitBytes = config.bufferLimitBytes ?? DEFAULT_BUFFER_LIMIT;
   const forcedTerminationDelayMs = Math.max(0, config.forcedTerminationDelayMs ?? 5000);
 
@@ -73,6 +80,22 @@ export function startJsonBackgroundSolve<TRaw>(config: JsonBackgroundSolverConfi
     cleanedUp = true;
     rmSync(tempStopDirectory, { recursive: true, force: true });
   };
+
+  let request: unknown;
+  try {
+    request = config.buildRequest({ stopFilePath, snapshotFilePath });
+  } catch (error) {
+    cleanupTempDirectory();
+    throw error;
+  }
+
+  let child: ChildProcessWithoutNullStreams;
+  try {
+    child = spawnBackgroundSolverProcess(config.command, config.args);
+  } catch (error) {
+    cleanupTempDirectory();
+    throw new Error(buildLaunchErrorMessage(config.solverLabel, config.launchContext, error as Error));
+  }
 
   const readLatestSnapshotRaw = (): TRaw | null => {
     if (!existsSync(snapshotFilePath)) return latestSnapshotRaw;
@@ -125,13 +148,7 @@ export function startJsonBackgroundSolve<TRaw>(config: JsonBackgroundSolverConfi
   const promise = new Promise<Solution>((resolvePromise, rejectPromise) => {
     child.once("error", (error) => {
       cleanupTempDirectory();
-      rejectPromise(
-        new Error(
-          `Failed to launch ${config.solverLabel} backend${
-            config.launchContext ? ` ${config.launchContext}` : ""
-          }: ${error.message}`
-        )
-      );
+      rejectPromise(new Error(buildLaunchErrorMessage(config.solverLabel, config.launchContext, error)));
     });
 
     child.stdout.on("data", (chunk) => {

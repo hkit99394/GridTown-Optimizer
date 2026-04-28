@@ -3,7 +3,14 @@ import { buildBenchmarkSeedRunPlan, formatBenchmarkSeeds } from "./benchmarkSeed
 import {
   buildBenchmarkSuiteMetadata,
   countBenchmarkMatches,
+  dedupeBenchmarkCases,
+  formatBenchmarkDecimal as formatDecimal,
+  formatBenchmarkRate as formatRate,
+  formatBenchmarkSeconds as formatSeconds,
+  formatBenchmarkSeedCase as formatSeedCase,
+  formatBenchmarkSignedNumber as formatSigned,
   listBenchmarkCaseNames,
+  selectBenchmarkCasesByName,
   selectBenchmarkVariants,
   summarizeBenchmarkVariantMetrics,
   sumBenchmarkBy,
@@ -193,33 +200,17 @@ export const DEFAULT_GREEDY_DETERMINISTIC_ABLATION_CASE_NAMES = Object.freeze([
   "row0-corridor-repair-pressure",
 ] satisfies string[]);
 
-function dedupeCases(corpora: readonly (readonly GreedyBenchmarkCase[])[]): GreedyBenchmarkCase[] {
-  const byName = new Map<string, GreedyBenchmarkCase>();
-  for (const corpus of corpora) {
-    for (const benchmarkCase of corpus) {
-      if (!byName.has(benchmarkCase.name)) {
-        byName.set(benchmarkCase.name, benchmarkCase);
-      }
-    }
-  }
-  return [...byName.values()];
-}
-
 function selectDefaultAblationCases(corpus: readonly GreedyBenchmarkCase[]): GreedyBenchmarkCase[] {
-  const byName = new Map(corpus.map((benchmarkCase) => [benchmarkCase.name, benchmarkCase]));
-  return DEFAULT_GREEDY_DETERMINISTIC_ABLATION_CASE_NAMES.map((name) => {
-    const benchmarkCase = byName.get(name);
-    if (!benchmarkCase) {
-      throw new Error(`Greedy deterministic ablation case not found: ${name}.`);
-    }
-    return benchmarkCase;
+  return selectBenchmarkCasesByName(corpus, DEFAULT_GREEDY_DETERMINISTIC_ABLATION_CASE_NAMES, {
+    caseLabel: "Greedy deterministic ablation",
+    corpusLabel: "Greedy deterministic ablation",
   });
 }
 
 export const DEFAULT_GREEDY_DETERMINISTIC_ABLATION_CORPUS: readonly GreedyBenchmarkCase[] =
   Object.freeze(
     selectDefaultAblationCases(
-      dedupeCases([
+      dedupeBenchmarkCases([
         DEFAULT_GREEDY_BENCHMARK_CORPUS,
         DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS,
       ])
@@ -384,27 +375,6 @@ export function runGreedyDeterministicAblation(
     variantSummaries: variants.map((variant) => buildVariantSummary(variant, cases, selectedCaseNames.length, seedRuns.length)),
     cases,
   };
-}
-
-function formatSigned(value: number): string {
-  return value > 0 ? `+${Number(value).toLocaleString()}` : Number(value).toLocaleString();
-}
-
-function formatSeconds(value: number): string {
-  return `${value.toFixed(3)}s`;
-}
-
-function formatDecimal(value: number): string {
-  return Number.isInteger(value) ? Number(value).toLocaleString() : value.toFixed(1);
-}
-
-function formatRate(value: number): string {
-  return `${(value * 100).toFixed(1)}%`;
-}
-
-function formatSeedCase(caseName: string | null, seed: number | null): string {
-  if (!caseName) return "n/a";
-  return seed === null ? `${caseName}/case-default` : `${caseName}/seed:${seed}`;
 }
 
 function snapshotVariantResult(

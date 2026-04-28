@@ -24,6 +24,7 @@ import {
   benchmarkGeneratedAt,
   cloneBenchmarkGrid,
   cloneBenchmarkSolverParams,
+  formatBenchmarkSignedNumber as formatSigned,
   inheritGreedyBenchmarkOptions,
   listBenchmarkCaseNames,
   nonNegativeIntegerOrDefault,
@@ -416,10 +417,6 @@ function selectReplayWindowPlans(
   }
 
   return [...selected.values()];
-}
-
-function formatSigned(value: number): string {
-  return value > 0 ? `+${Number(value).toLocaleString()}` : Number(value).toLocaleString();
 }
 
 export function runLnsWindowReplayLabels(

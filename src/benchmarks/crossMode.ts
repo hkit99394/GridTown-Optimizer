@@ -15,6 +15,10 @@ import {
   cloneBenchmarkGrid,
   cloneBenchmarkSolverParams,
   countBenchmarkMatches,
+  formatBenchmarkRate as formatRatio,
+  formatNullableBenchmarkNumber as formatPopulationGap,
+  formatNullableBenchmarkSeconds as formatSeconds,
+  formatNullableBenchmarkSignedNumber as formatScoreDeltaVsAuto,
   listBenchmarkCaseNames,
   meanBenchmarkValue,
   observedCpSatWorkerCpuSeconds,
@@ -1175,24 +1179,6 @@ export function formatCrossModeBenchmarkDecisionTraceJsonl(result: CrossModeBenc
 function formatScoreDelta(value: number | null): string {
   if (value === null) return "n/a";
   return value === 0 ? "best" : `-${Number(value).toLocaleString()}`;
-}
-
-function formatScoreDeltaVsAuto(value: number | null): string {
-  if (value === null) return "n/a";
-  if (value > 0) return `+${Number(value).toLocaleString()}`;
-  return Number(value).toLocaleString();
-}
-
-function formatPopulationGap(value: number | null): string {
-  return value === null ? "n/a" : Number(value).toLocaleString();
-}
-
-function formatSeconds(value: number | null): string {
-  return typeof value === "number" && Number.isFinite(value) ? `${value.toFixed(3)}s` : "n/a";
-}
-
-function formatRatio(value: number): string {
-  return `${(value * 100).toFixed(1)}%`;
 }
 
 function formatBudgetAllocationSignal(signal: CrossModeBudgetAllocationSignal): string {

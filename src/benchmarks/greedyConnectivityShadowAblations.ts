@@ -2,8 +2,12 @@ import { DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS } from "./crossModeB
 import {
   buildBenchmarkSuiteMetadata,
   countBenchmarkMatches,
+  dedupeBenchmarkCases,
+  formatNullableBenchmarkNumber as formatNullable,
+  formatNullableBenchmarkSignedNumber as formatSigned,
   listBenchmarkCaseNames,
   meanBenchmarkValue,
+  selectBenchmarkCasesByName,
   sumBenchmarkBy,
   sumBenchmarkValues,
 } from "./benchmarkOptions.js";
@@ -103,33 +107,17 @@ export const DEFAULT_GREEDY_CONNECTIVITY_SHADOW_SCORING_ABLATION_CASE_NAMES = Ob
   "typed-availability-pressure",
 ] satisfies string[]);
 
-function dedupeCases(corpora: readonly (readonly GreedyBenchmarkCase[])[]): GreedyBenchmarkCase[] {
-  const byName = new Map<string, GreedyBenchmarkCase>();
-  for (const corpus of corpora) {
-    for (const benchmarkCase of corpus) {
-      if (!byName.has(benchmarkCase.name)) {
-        byName.set(benchmarkCase.name, benchmarkCase);
-      }
-    }
-  }
-  return [...byName.values()];
-}
-
 function selectDefaultAblationCases(corpus: readonly GreedyBenchmarkCase[]): GreedyBenchmarkCase[] {
-  const byName = new Map(corpus.map((benchmarkCase) => [benchmarkCase.name, benchmarkCase]));
-  return DEFAULT_GREEDY_CONNECTIVITY_SHADOW_SCORING_ABLATION_CASE_NAMES.map((name) => {
-    const benchmarkCase = byName.get(name);
-    if (!benchmarkCase) {
-      throw new Error(`Greedy connectivity-shadow ablation case not found: ${name}.`);
-    }
-    return benchmarkCase;
+  return selectBenchmarkCasesByName(corpus, DEFAULT_GREEDY_CONNECTIVITY_SHADOW_SCORING_ABLATION_CASE_NAMES, {
+    caseLabel: "Greedy connectivity-shadow ablation",
+    corpusLabel: "Greedy connectivity-shadow ablation",
   });
 }
 
 export const DEFAULT_GREEDY_CONNECTIVITY_SHADOW_SCORING_ABLATION_CORPUS: readonly GreedyBenchmarkCase[] =
   Object.freeze(
     selectDefaultAblationCases(
-      dedupeCases([
+      dedupeBenchmarkCases([
         DEFAULT_GREEDY_BENCHMARK_CORPUS,
         DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS,
       ])
@@ -259,15 +247,6 @@ export function runGreedyConnectivityShadowScoringAblation(
     totalRoadDelta: sumBenchmarkBy(cases, (entry) => entry.roadDelta),
     cases,
   };
-}
-
-function formatSigned(value: number | null): string {
-  if (value === null) return "n/a";
-  return value > 0 ? `+${Number(value).toLocaleString()}` : Number(value).toLocaleString();
-}
-
-function formatNullable(value: number | null): string {
-  return value === null ? "n/a" : Number(value).toLocaleString();
 }
 
 function formatVariant(variant: GreedyConnectivityShadowScoringAblationVariantResult): string {

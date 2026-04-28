@@ -76,10 +76,11 @@ export function readSerializedBackgroundStoppedByUser(raw: SerializedSolution): 
 export function startSerializedSolutionBackgroundSolve(
   config: SerializedBackgroundSolverConfig
 ): BackgroundSolveHandle {
+  const { materializeSolution, ...backgroundConfig } = config;
   return startJsonBackgroundSolve<SerializedSolution>({
-    ...config,
-    parseRaw: (stdout) => parseSerializedBackgroundSolution(stdout, config.solverLabel),
-    materializeSolution: config.materializeSolution ?? materializeSerializedBackgroundSolution,
+    ...backgroundConfig,
+    parseRaw: (stdout) => parseSerializedBackgroundSolution(stdout, backgroundConfig.solverLabel),
+    materializeSolution: materializeSolution ?? materializeSerializedBackgroundSolution,
     getSnapshotState: buildSerializedBackgroundSnapshotState,
     readStoppedByUser: readSerializedBackgroundStoppedByUser,
   });
@@ -107,11 +108,12 @@ function buildSerializedSolverRequest(
 export function startSerializedSolutionSolverProcess(
   config: SerializedSolverProcessConfig
 ): BackgroundSolveHandle {
+  const { grid, params, solverOptionKey, workerScriptPath, ...backgroundConfig } = config;
   return startSerializedSolutionBackgroundSolve({
-    ...config,
+    ...backgroundConfig,
     command: process.execPath,
-    args: [config.workerScriptPath],
+    args: [workerScriptPath],
     buildRequest: (paths) =>
-      buildSerializedSolverRequest(config.grid, config.params, config.solverOptionKey, paths),
+      buildSerializedSolverRequest(grid, params, solverOptionKey, paths),
   });
 }

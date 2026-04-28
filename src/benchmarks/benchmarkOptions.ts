@@ -103,6 +103,11 @@ export function meanBenchmarkValue(values: readonly number[]): number {
   return values.length === 0 ? 0 : sumBenchmarkValues(values) / values.length;
 }
 
+export function meanNullableBenchmarkValue(values: ReadonlyArray<number | null | undefined>): number | null {
+  const finiteValues = values.filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+  return finiteValues.length ? meanBenchmarkValue(finiteValues) : null;
+}
+
 export function percentileBenchmarkValue(values: readonly number[], percentileValue: number): number {
   if (values.length === 0) return 0;
   const sorted = [...values].sort((left, right) => left - right);
@@ -117,12 +122,62 @@ export function benchmarkRatio(count: number, total: number): number {
   return total === 0 ? 0 : count / total;
 }
 
+export function formatBenchmarkSignedNumber(value: number): string {
+  return value > 0 ? `+${Number(value).toLocaleString()}` : Number(value).toLocaleString();
+}
+
+export function formatNullableBenchmarkSignedNumber(value: number | null): string {
+  return value === null ? "n/a" : formatBenchmarkSignedNumber(value);
+}
+
+export function formatNullableBenchmarkNumber(value: number | null): string {
+  return value === null ? "n/a" : Number(value).toLocaleString();
+}
+
+export function formatBenchmarkSeconds(value: number): string {
+  return `${value.toFixed(3)}s`;
+}
+
+export function formatNullableBenchmarkSeconds(value: number | null | undefined): string {
+  return typeof value === "number" && Number.isFinite(value) ? formatBenchmarkSeconds(value) : "n/a";
+}
+
+export function formatBenchmarkDecimal(value: number): string {
+  return Number.isInteger(value) ? Number(value).toLocaleString() : value.toFixed(1);
+}
+
+export function formatBenchmarkRate(value: number): string {
+  return `${(value * 100).toFixed(1)}%`;
+}
+
+export function formatBenchmarkSeedCase(caseName: string | null, seed: number | null): string {
+  if (!caseName) return "n/a";
+  return seed === null ? `${caseName}/case-default` : `${caseName}/seed:${seed}`;
+}
+
 export function uniqueBenchmarkValues<T>(values: readonly T[]): T[] {
   return [...new Set(values)];
 }
 
 export function uniqueBenchmarkValuesBy<T, TValue>(values: readonly T[], selector: (value: T) => TValue): TValue[] {
   return uniqueBenchmarkValues(values.map(selector));
+}
+
+export function groupBenchmarkValuesBy<T, TValue>(
+  values: readonly T[],
+  selector: (value: T) => TValue
+): Map<TValue, T[]> {
+  const groups = new Map<TValue, T[]>();
+  for (const value of values) {
+    const key = selector(value);
+    const group = groups.get(key);
+    if (group) {
+      group.push(value);
+    } else {
+      groups.set(key, [value]);
+    }
+  }
+  return groups;
 }
 
 export function benchmarkGeneratedAt(): string {
@@ -387,6 +442,20 @@ export function listBenchmarkCaseNames<TCase extends NamedBenchmarkCase>(
 ): string[] {
   assertUniqueBenchmarkCaseNames(corpus, labels);
   return corpus.map((benchmarkCase) => benchmarkCase.name);
+}
+
+export function dedupeBenchmarkCases<TCase extends NamedBenchmarkCase>(
+  corpora: readonly (readonly TCase[])[]
+): TCase[] {
+  const byName = new Map<string, TCase>();
+  for (const corpus of corpora) {
+    for (const benchmarkCase of corpus) {
+      if (!byName.has(benchmarkCase.name)) {
+        byName.set(benchmarkCase.name, benchmarkCase);
+      }
+    }
+  }
+  return [...byName.values()];
 }
 
 export function positiveIntegerOrDefault(value: number | undefined, fallback: number): number {

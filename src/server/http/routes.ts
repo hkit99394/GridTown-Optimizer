@@ -19,7 +19,7 @@ import { buildManualLayoutResponse, buildSolveResponse } from "./solutionRespons
 import { monitorClientDisconnect, readValidatedJsonBody, sendJson } from "./transport.js";
 
 import type { CancelSolveRequest, LayoutEvaluateRequest, SolveRequest } from "./contracts.js";
-import type { Solution } from "../../core/types.js";
+import type { SerializedSolution, Solution } from "../../core/types.js";
 
 function buildSolveJobResponseBase(job: {
   requestId: string;
@@ -62,15 +62,68 @@ function sendSolveCapacityFull(res: ServerResponse<IncomingMessage>): void {
   });
 }
 
+function requestUrl(req: IncomingMessage): URL {
+  return new URL(req.url ?? "/", "http://localhost");
+}
+
+function isPostRoute(req: IncomingMessage, pathname: string): boolean {
+  return req.method === "POST" && requestUrl(req).pathname === pathname;
+}
+
+function matchGetOrHeadRoute(
+  req: IncomingMessage,
+  pathname: string
+): { url: URL; headOnly: boolean } | null {
+  const method = req.method ?? "GET";
+  if (method !== "GET" && method !== "HEAD") return null;
+  const url = requestUrl(req);
+  return url.pathname === pathname ? { url, headOnly: method === "HEAD" } : null;
+}
+
+async function readSolvePayload(
+  req: IncomingMessage,
+  res: ServerResponse<IncomingMessage>
+): Promise<SolveRequest | null> {
+  const payload = await readValidatedJsonBody<SolveRequest>(
+    req,
+    res,
+    isSolveRequest,
+    "Invalid solve payload. Expected { grid, params } with a rectangular 0/1 grid."
+  );
+  if (!payload) return null;
+
+  const sanitized = sanitizeSolveRequest(payload);
+  assertValidSolveInputs(sanitized.grid, sanitized.params);
+  return sanitized;
+}
+
+async function readLayoutEvaluatePayload(
+  req: IncomingMessage,
+  res: ServerResponse<IncomingMessage>
+): Promise<(LayoutEvaluateRequest & { solution: SerializedSolution }) | null> {
+  const payload = await readValidatedJsonBody<LayoutEvaluateRequest>(
+    req,
+    res,
+    isLayoutEvaluateRequest,
+    "Invalid layout-evaluate payload. Expected { grid, params, solution } with a rectangular 0/1 grid."
+  );
+  if (!payload) return null;
+
+  const sanitized = sanitizeSolveRequest(payload);
+  assertValidLayoutEvaluateInputs(sanitized.grid, sanitized.params);
+  const solution = sanitized.solution;
+  assertValidSerializedSolutionPayload(solution, "Manual layout solution");
+  return { ...sanitized, solution };
+}
+
 export function handlePlannerHealth(
   req: IncomingMessage,
   res: ServerResponse<IncomingMessage>
 ): boolean {
-  const method = req.method ?? "GET";
-  const url = new URL(req.url ?? "/", "http://localhost");
-  if ((method !== "GET" && method !== "HEAD") || url.pathname !== "/api/health") return false;
+  const route = matchGetOrHeadRoute(req, "/api/health");
+  if (!route) return false;
 
-  sendJson(res, 200, { ok: true }, method === "HEAD");
+  sendJson(res, 200, { ok: true }, route.headOnly);
   return true;
 }
 
@@ -79,20 +132,11 @@ export async function handleImmediateSolve(
   res: ServerResponse<IncomingMessage>,
   solveJobManager: SolveJobManager
 ): Promise<boolean> {
-  if (req.method !== "POST") return false;
-  const url = new URL(req.url ?? "/", "http://localhost");
-  if (url.pathname !== "/api/solve") return false;
+  if (!isPostRoute(req, "/api/solve")) return false;
 
-  let payload = await readValidatedJsonBody<SolveRequest>(
-    req,
-    res,
-    isSolveRequest,
-    "Invalid solve payload. Expected { grid, params } with a rectangular 0/1 grid."
-  );
+  const payload = await readSolvePayload(req, res);
   if (!payload) return true;
 
-  payload = sanitizeSolveRequest(payload);
-  assertValidSolveInputs(payload.grid, payload.params);
   const solveLease = solveJobManager.tryAcquireImmediateSolve();
   if (!solveLease) {
     sendSolveCapacityFull(res);
@@ -129,21 +173,11 @@ export async function handleLayoutEvaluate(
   req: IncomingMessage,
   res: ServerResponse<IncomingMessage>
 ): Promise<boolean> {
-  if (req.method !== "POST") return false;
-  const url = new URL(req.url ?? "/", "http://localhost");
-  if (url.pathname !== "/api/layout/evaluate") return false;
+  if (!isPostRoute(req, "/api/layout/evaluate")) return false;
 
-  let payload = await readValidatedJsonBody<LayoutEvaluateRequest>(
-    req,
-    res,
-    isLayoutEvaluateRequest,
-    "Invalid layout-evaluate payload. Expected { grid, params, solution } with a rectangular 0/1 grid."
-  );
+  const payload = await readLayoutEvaluatePayload(req, res);
   if (!payload) return true;
 
-  payload = sanitizeSolveRequest(payload);
-  assertValidLayoutEvaluateInputs(payload.grid, payload.params);
-  assertValidSerializedSolutionPayload(payload.solution, "Manual layout solution");
   const solution = materializeSerializedSolution(payload.solution);
   sendJson(res, 200, {
     ok: true,
@@ -157,20 +191,11 @@ export async function handleStartSolve(
   res: ServerResponse<IncomingMessage>,
   solveJobManager: SolveJobManager
 ): Promise<boolean> {
-  if (req.method !== "POST") return false;
-  const url = new URL(req.url ?? "/", "http://localhost");
-  if (url.pathname !== "/api/solve/start") return false;
+  if (!isPostRoute(req, "/api/solve/start")) return false;
 
-  let payload = await readValidatedJsonBody<SolveRequest>(
-    req,
-    res,
-    isSolveRequest,
-    "Invalid solve payload. Expected { grid, params } with a rectangular 0/1 grid."
-  );
+  const payload = await readSolvePayload(req, res);
   if (!payload) return true;
 
-  payload = sanitizeSolveRequest(payload);
-  assertValidSolveInputs(payload.grid, payload.params);
   const requestId = typeof payload.requestId === "string" && payload.requestId.trim()
     ? payload.requestId.trim()
     : randomUUID();
@@ -203,18 +228,16 @@ export function handleSolveStatus(
   res: ServerResponse<IncomingMessage>,
   solveJobManager: SolveJobManager
 ): boolean {
-  const method = req.method ?? "GET";
-  if (method !== "GET" && method !== "HEAD") return false;
-  const url = new URL(req.url ?? "/", "http://localhost");
-  if (url.pathname !== "/api/solve/status") return false;
+  const route = matchGetOrHeadRoute(req, "/api/solve/status");
+  if (!route) return false;
 
-  const requestId = url.searchParams.get("requestId")?.trim() ?? "";
-  const includeSnapshot = ["1", "true", "yes"].includes((url.searchParams.get("includeSnapshot") ?? "").toLowerCase());
+  const requestId = route.url.searchParams.get("requestId")?.trim() ?? "";
+  const includeSnapshot = ["1", "true", "yes"].includes((route.url.searchParams.get("includeSnapshot") ?? "").toLowerCase());
   if (!requestId) {
     sendJson(res, 400, {
       ok: false,
       error: "Missing requestId query parameter.",
-    }, method === "HEAD");
+    }, route.headOnly);
     return true;
   }
 
@@ -223,7 +246,7 @@ export function handleSolveStatus(
     sendJson(res, 404, {
       ok: false,
       error: "No solve job was found for that request.",
-    }, method === "HEAD");
+    }, route.headOnly);
     return true;
   }
   const { job, snapshotState, liveSnapshot } = jobStatus;
@@ -235,7 +258,7 @@ export function handleSolveStatus(
       ...(job.message ? { message: job.message } : {}),
       ...(progressEntry ? { progressEntry } : {}),
       ...buildSolveResponse(job.grid, job.params, job.solution),
-    }, method === "HEAD");
+    }, route.headOnly);
     return true;
   }
 
@@ -243,7 +266,7 @@ export function handleSolveStatus(
     sendJson(res, 200, {
       ...buildSolveJobResponseBase(job),
       error: job.error ?? (job.status === "stopped" ? "Solve was stopped." : "Solve failed."),
-    }, method === "HEAD");
+    }, route.headOnly);
     return true;
   }
 
@@ -259,7 +282,7 @@ export function handleSolveStatus(
       liveSnapshot: true,
       ...(job.message ? { message: job.message } : {}),
       ...buildSolveResponse(job.grid, job.params, liveSnapshot),
-    }, method === "HEAD");
+    }, route.headOnly);
     return true;
   }
 
@@ -271,7 +294,7 @@ export function handleSolveStatus(
     activeOptimizer: snapshotState.activeOptimizer ?? null,
     autoStage: snapshotState.autoStage ?? null,
     ...(progressEntry ? { progressEntry } : {}),
-  }, method === "HEAD");
+  }, route.headOnly);
   return true;
 }
 
@@ -280,9 +303,7 @@ export async function handleCancelSolve(
   res: ServerResponse<IncomingMessage>,
   solveJobManager: SolveJobManager
 ): Promise<boolean> {
-  if (req.method !== "POST") return false;
-  const url = new URL(req.url ?? "/", "http://localhost");
-  if (url.pathname !== "/api/solve/cancel") return false;
+  if (!isPostRoute(req, "/api/solve/cancel")) return false;
 
   const payload = await readValidatedJsonBody<CancelSolveRequest>(
     req,

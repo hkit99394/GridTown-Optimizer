@@ -1,5 +1,6 @@
 import {
   countBenchmarkMatches,
+  groupBenchmarkValuesBy,
   sumBenchmarkBy,
   uniqueBenchmarkValues,
   uniqueBenchmarkValuesBy,
@@ -100,15 +101,9 @@ function buildLnsReplayLabelSplitScaleReadiness<Split extends string>(
   split: LnsReplayLabelScaleSplitInput<Split>,
   thresholds: LnsReplayLabelScaleThresholds
 ): LnsReplayLabelSplitScaleReadiness<Split> {
-  const familyCases = new Map<LnsReplayPressureFamilyLabel, LnsWindowReplaySnapshot["cases"][number][]>();
-  for (const benchmarkCase of split.replay.cases) {
-    const pressureFamily = benchmarkCase.pressureFamily;
-    const cases = familyCases.get(pressureFamily) ?? [];
-    cases.push(benchmarkCase);
-    familyCases.set(pressureFamily, cases);
-  }
-
-  const families = [...familyCases.entries()]
+  const families = [
+    ...groupBenchmarkValuesBy(split.replay.cases, (benchmarkCase) => benchmarkCase.pressureFamily).entries(),
+  ]
     .map(([pressureFamily, cases]) => summarizeLnsReplayFamily(pressureFamily, cases))
     .sort((left, right) => left.pressureFamily.localeCompare(right.pressureFamily));
   const usableLabelCount = sumBenchmarkBy(families, (family) => family.usableLabelCount);

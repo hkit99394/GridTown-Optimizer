@@ -450,7 +450,8 @@ function assertValidReusableSolution(
   G: Grid,
   params: SolverParams,
   solution: Solution,
-  context: string
+  context: string,
+  fallbackDetail = "the reusable layout is not valid for the current grid and building settings."
 ): void {
   const validation = validateSolution({
     grid: G,
@@ -460,7 +461,7 @@ function assertValidReusableSolution(
   if (!validation.valid) {
     const detail = validation.errors.length
       ? validation.errors.join(" ")
-      : "the reusable layout is not valid for the current grid and building settings.";
+      : fallbackDetail;
     throw new SolverInputError(`${context} is invalid: ${detail}`);
   }
 }
@@ -627,17 +628,13 @@ export function materializeValidLnsSeedSolution(
   const incumbent = materializeLnsSeedSolution(seedHint);
   if (!incumbent) return null;
 
-  const seedValidation = validateSolution({
-    grid: G,
-    solution: incumbent,
+  assertValidReusableSolution(
+    G,
     params,
-  });
-  if (!seedValidation.valid) {
-    const detail = seedValidation.errors.length
-      ? seedValidation.errors.join(" ")
-      : "LNS seed hint does not describe a valid layout.";
-    throw new SolverInputError(`LNS seed hint is invalid: ${detail}`);
-  }
+    incumbent,
+    "LNS seed hint",
+    "LNS seed hint does not describe a valid layout."
+  );
   return incumbent;
 }
 
@@ -748,13 +745,7 @@ function assertValidResidentialSetting(value: unknown, path: string): void {
 export function assertValidProblemDefinition(params: SolverParams): void {
   const paramsRecord = requireValidationRecord(params, "Solver params");
   const optimizer = paramsRecord.optimizer;
-  if (
-    optimizer !== undefined
-    && optimizer !== "auto"
-    && optimizer !== "greedy"
-    && optimizer !== "cp-sat"
-    && optimizer !== "lns"
-  ) {
+  if (optimizer !== undefined && !isOptimizerName(optimizer)) {
     throw new SolverInputError("Solver params optimizer must be one of auto, greedy, cp-sat, or lns.");
   }
 

@@ -3056,6 +3056,35 @@ print(json.dumps({
   assert.match(payload.duplicateSeedsError, /must not contain duplicate seeds/);
 }
 
+function testBackgroundSolveCleansTempDirectoryWhenRequestBuildFails() {
+  const stopDirectoryPrefix = `city-builder-bg-request-failure-${process.pid}-${Date.now()}-`;
+
+  assert.throws(
+    () =>
+      startJsonBackgroundSolve({
+        solverLabel: "Test request builder",
+        stopDirectoryPrefix,
+        command: process.execPath,
+        args: ["-e", ""],
+        buildRequest: () => {
+          throw new Error("request construction failed");
+        },
+        parseRaw: JSON.parse,
+        materializeSolution: () => buildMockSolution({ optimizer: "cp-sat" }),
+        getSnapshotState: () => ({
+          hasFeasibleSolution: false,
+          totalPopulation: null,
+        }),
+        stoppedBeforeFeasibleMessage: "Test request builder stopped before feasible.",
+        noSolutionMessage: "Test request builder returned no solution.",
+      }),
+    /request construction failed/
+  );
+
+  const leakedDirectories = fs.readdirSync(os.tmpdir()).filter((name) => name.startsWith(stopDirectoryPrefix));
+  assert.deepEqual(leakedDirectories, []);
+}
+
 async function testBackgroundSolveCancellationKillsProcessGroupChildren() {
   if (process.platform === "win32") {
     console.log("Skipping process-group cancellation regression on Windows.");
@@ -8260,6 +8289,7 @@ async function main() {
   maybeTestCpSatSnapshotWritesTelemetry();
   maybeTestCpSatPortfolioOptionHelpers();
   testCpSatPortfolioExecutorFallbackHelpers();
+  testBackgroundSolveCleansTempDirectoryWhenRequestBuildFails();
   await testBackgroundSolveCancellationKillsProcessGroupChildren();
   maybeTestCpSatPopulationUpperBoundHelpers();
   maybeTestCpSatResidentialPopulationUpperBoundHelpers();

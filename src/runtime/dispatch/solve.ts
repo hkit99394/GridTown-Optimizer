@@ -2,10 +2,8 @@
  * Shared optimizer dispatcher.
  */
 
-import { startAutoSolve } from "../../auto/solver.js";
-import { solveCpSatAsync } from "../../cp-sat/solver.js";
 import { assertValidSolveInputs } from "../../core/solverInputValidation.js";
-import { getOptimizerAdapter, resolveOptimizerName } from "./optimizerRegistry.js";
+import { getOptimizerAdapter } from "./optimizerRegistry.js";
 
 import type { CpSatAsyncOptions, Grid, Solution, SolverParams } from "../../core/types.js";
 
@@ -20,12 +18,6 @@ export async function solveAsync(
   cpSatAsyncOptions?: CpSatAsyncOptions
 ): Promise<Solution> {
   assertValidSolveInputs(grid, params);
-  const optimizer = resolveOptimizerName(params);
-  if (optimizer === "cp-sat") {
-    return solveCpSatAsync(grid, params, cpSatAsyncOptions);
-  }
-  if (optimizer === "auto") {
-    return startAutoSolve(grid, params).promise;
-  }
-  return getOptimizerAdapter(params).solve(grid, params);
+  const adapter = getOptimizerAdapter(params);
+  return adapter.solveAsync?.(grid, params, cpSatAsyncOptions) ?? adapter.solve(grid, params);
 }

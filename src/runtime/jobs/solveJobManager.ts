@@ -7,7 +7,7 @@ import type {
   SolverParams,
 } from "../../core/types.js";
 import { getOptimizerAdapter, type OptimizerFinalizationContext } from "../dispatch/optimizerRegistry.js";
-import { SolveProgressLogWriter } from "./solveProgressLog.js";
+import { progressLogSolutionSampleChanged, SolveProgressLogWriter } from "./solveProgressLog.js";
 
 export type SolveJobStatus = "running" | "completed" | "stopped" | "failed";
 
@@ -337,22 +337,7 @@ export class SolveJobManager {
         return;
       }
 
-      const bestPopulationUpperBound = snapshot.cpSatTelemetry?.bestPopulationUpperBound ?? null;
-      const populationGapUpperBound = snapshot.cpSatTelemetry?.populationGapUpperBound ?? null;
-      const lnsOutcomes = snapshot.lnsTelemetry?.outcomes ?? [];
-      const latestLnsOutcome = lnsOutcomes.length ? lnsOutcomes[lnsOutcomes.length - 1] : null;
-      const shouldAppendImmediately = !lastEntry
-        || !lastEntry.hasFeasibleSolution
-        || lastEntry.totalPopulation !== snapshot.totalPopulation
-        || (lastEntry.activeOptimizer ?? null) !== (snapshot.activeOptimizer ?? null)
-        || lastEntry.cpSatStatus !== (snapshot.cpSatStatus ?? null)
-        || lastEntry.bestPopulationUpperBound !== bestPopulationUpperBound
-        || lastEntry.populationGapUpperBound !== populationGapUpperBound
-        || (lastEntry.lnsStopReason ?? null) !== (snapshot.lnsTelemetry?.stopReason ?? null)
-        || (lastEntry.lnsNeighborhoodStatus ?? null) !== (latestLnsOutcome?.status ?? null)
-        || (lastEntry.lnsNeighborhoodImprovement ?? null) !== (latestLnsOutcome?.improvement ?? null)
-        || (lastEntry.lnsNeighborhoodsCompleted ?? null) !== (snapshot.lnsTelemetry?.iterationsCompleted ?? null)
-        || JSON.stringify(lastEntry.autoStage ?? null) !== JSON.stringify(snapshot.autoStage ?? null);
+      const shouldAppendImmediately = progressLogSolutionSampleChanged(lastEntry, snapshot);
 
       const shouldAppendHeartbeat = !shouldAppendImmediately
         && (!lastEntry || elapsedMs - lastEntry.elapsedMs >= this.progressLogIntervalMs);

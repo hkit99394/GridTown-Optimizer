@@ -1,6 +1,7 @@
 import { buildBenchmarkSeedRunPlan, formatBenchmarkSeeds } from "./benchmarkSeeds.js";
 import {
   buildBenchmarkSuiteMetadata,
+  formatBenchmarkSignedNumber as formatSigned,
   listBenchmarkCaseNames,
   positiveIntegerOrDefault,
   sumBenchmarkBy,
@@ -288,10 +289,6 @@ function formatPlacement(placement: GreedyConnectivityShadowPlacementTrace): str
     placement.range === undefined ? null : `range:${placement.range}`,
   ].filter((entry): entry is string => entry !== null);
   return `r${placement.r}c${placement.c} ${placement.rows}x${placement.cols} road:${placement.roadCost}${extras.length ? ` ${extras.join(" ")}` : ""}`;
-}
-
-function formatSigned(value: number): string {
-  return value > 0 ? `+${Number(value).toLocaleString()}` : Number(value).toLocaleString();
 }
 
 export function formatGreedyConnectivityShadowOrderingLabels(

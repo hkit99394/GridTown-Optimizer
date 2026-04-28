@@ -12,7 +12,7 @@ import { formatSolutionMap, validateSolutionMap } from "../core/index.js";
 import { solveAsync } from "../runtime/solve.js";
 import { describeAutoStopReason, startAutoSolve } from "../auto/index.js";
 import { startCpSatSolve } from "../cp-sat/solver.js";
-import { readNamedOptionValue } from "./cliParsing.js";
+import { parseExampleCliArgs } from "./exampleCliArgs.js";
 
 const DEFAULT_PARAMS = {
   serviceTypes: [
@@ -57,65 +57,6 @@ const AUTO_GREEDY_PARAMS = {
   serviceExactPoolLimit: 8,
   serviceExactMaxCombinations: 512,
 };
-
-const DEFAULT_CLI_CP_SAT_PARAMS = {
-  timeLimitSeconds: 30,
-  noImprovementTimeoutSeconds: 15,
-  numWorkers: 8,
-};
-
-interface ParsedExampleCliArgs {
-  optimizer: OptimizerName;
-  greedyRandomSeed?: number;
-  cpSatOptions?: typeof DEFAULT_CLI_CP_SAT_PARAMS;
-}
-
-function readCliOptimizer(argv: readonly string[]): OptimizerName {
-  const value = argv.find((arg) => {
-    const trimmed = arg.trim();
-    return trimmed === "auto" || trimmed === "greedy" || trimmed === "lns" || trimmed === "cp-sat";
-  });
-  if (value === "auto") return "auto";
-  if (value === "cp-sat") return "cp-sat";
-  if (value === "lns") return "lns";
-  return "auto";
-}
-
-function readCliGreedyRandomSeed(argv: readonly string[]): number | undefined {
-  const value = Number.parseInt(readNamedOptionValue(argv, "greedy-seed") ?? "", 10);
-  return Number.isInteger(value) ? value : undefined;
-}
-
-function readNumericCliOption(argv: readonly string[], longName: string, fallback: number): number {
-  const value = Number(readNamedOptionValue(argv, longName) ?? "");
-  return Number.isFinite(value) && value > 0 ? value : fallback;
-}
-
-function readIntegerCliOption(argv: readonly string[], longName: string, fallback: number): number {
-  return Math.floor(readNumericCliOption(argv, longName, fallback));
-}
-
-function readCliCpSatOptions(argv: readonly string[]): typeof DEFAULT_CLI_CP_SAT_PARAMS {
-  return {
-    timeLimitSeconds: readNumericCliOption(argv, "cp-sat-time-limit", DEFAULT_CLI_CP_SAT_PARAMS.timeLimitSeconds),
-    noImprovementTimeoutSeconds: readNumericCliOption(
-      argv,
-      "cp-sat-no-improvement-timeout",
-      DEFAULT_CLI_CP_SAT_PARAMS.noImprovementTimeoutSeconds
-    ),
-    numWorkers: readIntegerCliOption(argv, "cp-sat-workers", DEFAULT_CLI_CP_SAT_PARAMS.numWorkers),
-  };
-}
-
-function parseExampleCliArgs(argv: readonly string[] = process.argv.slice(2)): ParsedExampleCliArgs {
-  const optimizer = readCliOptimizer(argv);
-  const greedyRandomSeed = readCliGreedyRandomSeed(argv);
-  return {
-    optimizer,
-    ...(greedyRandomSeed !== undefined ? { greedyRandomSeed } : {}),
-    ...(optimizer === "cp-sat" ? { cpSatOptions: readCliCpSatOptions(argv) } : {}),
-  };
-}
 
 function describeOptimizerRole(optimizer: OptimizerName): string {
   if (optimizer === "auto") {

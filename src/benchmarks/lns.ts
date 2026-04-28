@@ -10,6 +10,7 @@ import {
   cloneBenchmarkGrid,
   cloneBenchmarkOptions,
   cloneBenchmarkSolverParams,
+  formatNullableBenchmarkSeconds as formatSeconds,
   inheritGreedyBenchmarkOptions,
   listBenchmarkCaseNames,
   selectBenchmarkCasesByName,
@@ -115,10 +116,6 @@ export const DEFAULT_LNS_BENCHMARK_OPTIONS: Readonly<Required<
   neighborhoodCols: 3,
   repairTimeLimitSeconds: 1,
 });
-
-function formatSeconds(value: number | null | undefined): string {
-  return typeof value === "number" && Number.isFinite(value) ? `${value.toFixed(3)}s` : "n/a";
-}
 
 function formatProfilePhaseSummary(phase: GreedyProfilePhaseSummary): string {
   return `${phase.name}:${phase.runs}x/${phase.elapsedMs.toFixed(3)}ms/best+${phase.bestPopulationDelta}/candidate+${phase.candidatePopulationDelta}`;
@@ -403,13 +400,9 @@ export const DEFAULT_LNS_REPLAY_LABEL_CASE_NAMES = Object.freeze([
 ] satisfies string[]);
 
 function selectReplayLabelCases(corpus: readonly LnsBenchmarkCase[]): LnsBenchmarkCase[] {
-  const byName = new Map(corpus.map((benchmarkCase) => [benchmarkCase.name, benchmarkCase]));
-  return DEFAULT_LNS_REPLAY_LABEL_CASE_NAMES.map((name) => {
-    const benchmarkCase = byName.get(name);
-    if (!benchmarkCase) {
-      throw new Error(`LNS replay label case not found: ${name}.`);
-    }
-    return benchmarkCase;
+  return selectBenchmarkCasesByName(corpus, DEFAULT_LNS_REPLAY_LABEL_CASE_NAMES, {
+    caseLabel: "LNS replay label",
+    corpusLabel: "LNS replay label",
   });
 }
 

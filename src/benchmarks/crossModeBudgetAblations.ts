@@ -1,5 +1,14 @@
 import { serializeDecisionTraceJsonl } from "../core/decisionTrace.js";
-import { benchmarkGeneratedAt, meanBenchmarkValue, sumBenchmarkBy } from "./benchmarkOptions.js";
+import {
+  benchmarkGeneratedAt,
+  formatNullableBenchmarkNumber as formatPopulationGap,
+  formatNullableBenchmarkSeconds as formatSeconds,
+  formatNullableBenchmarkSignedNumber as formatScoreDeltaVsAuto,
+  groupBenchmarkValuesBy,
+  meanNullableBenchmarkValue,
+  selectBenchmarkCasesByName,
+  sumBenchmarkBy,
+} from "./benchmarkOptions.js";
 import { DEFAULT_GREEDY_BENCHMARK_CORPUS } from "./greedy.js";
 import { DEFAULT_LNS_BENCHMARK_CORPUS } from "./lns.js";
 import {
@@ -138,11 +147,6 @@ const MODE_LABELS: Record<CrossModeBenchmarkMode, string> = {
   "cp-sat-portfolio": "CP-SAT portfolio",
 };
 
-function meanOrNull(values: ReadonlyArray<number | null | undefined>): number | null {
-  const finiteValues = values.filter((value): value is number => typeof value === "number" && Number.isFinite(value));
-  return finiteValues.length ? meanBenchmarkValue(finiteValues) : null;
-}
-
 function inferCoverageProblemSizeBand(benchmarkCase: CrossModeBenchmarkCase): CrossModeProblemSizeBand {
   const cells = benchmarkCase.grid.length * (benchmarkCase.grid[0]?.length ?? 0);
   if (cells <= 16) return "tiny";
@@ -154,12 +158,10 @@ function selectCoverageCases(
   corpus: readonly CrossModeBenchmarkCase[],
   names: readonly string[]
 ): CrossModeBenchmarkCase[] {
-  const byName = new Map(corpus.map((benchmarkCase) => [benchmarkCase.name, benchmarkCase]));
-  return names.map((name) => {
-    const benchmarkCase = byName.get(name);
-    if (!benchmarkCase) {
-      throw new Error(`Cross-mode budget ablation coverage case not found: ${name}.`);
-    }
+  return selectBenchmarkCasesByName(corpus, names, {
+    caseLabel: "cross-mode budget ablation coverage",
+    corpusLabel: "Cross-mode budget ablation coverage",
+  }).map((benchmarkCase) => {
     return {
       ...benchmarkCase,
       problemSizeBand: benchmarkCase.problemSizeBand ?? inferCoverageProblemSizeBand(benchmarkCase),
@@ -240,7 +242,10 @@ function meanBestPopulationByBudget(suite: CrossModeBenchmarkSuiteResult): Map<n
   const scorecardBuckets = scorecardsByBudget(suite);
   for (const budgetSeconds of suite.budgetsSeconds) {
     const scorecards = scorecardBuckets.get(budgetSeconds) ?? [];
-    byBudget.set(budgetSeconds, meanOrNull(scorecards.map((scorecard) => scorecard.bestScore)) ?? 0);
+    byBudget.set(
+      budgetSeconds,
+      meanNullableBenchmarkValue(scorecards.map((scorecard) => scorecard.bestScore)) ?? 0
+    );
   }
   return byBudget;
 }
@@ -255,7 +260,9 @@ function meanModePopulationByBudget(
     const scorecards = scorecardBuckets.get(budgetSeconds) ?? [];
     byBudget.set(
       budgetSeconds,
-      meanOrNull(modeResultsInScorecards(scorecards, mode).map((result) => result.totalPopulation))
+      meanNullableBenchmarkValue(
+        modeResultsInScorecards(scorecards, mode).map((result) => result.totalPopulation)
+      )
     );
   }
   return byBudget;
@@ -275,16 +282,17 @@ function summarizeBudget(
 ): CrossModeBenchmarkBudgetAblationBudgetSummary {
   const autoResults = modeResultsInScorecards(scorecards, "auto");
   const lnsResults = modeResultsInScorecards(scorecards, "lns");
-  const meanBestPopulation = meanOrNull(scorecards.map((scorecard) => scorecard.bestScore)) ?? 0;
-  const meanAutoPopulation = meanOrNull(autoResults.map((result) => result.totalPopulation));
-  const meanLnsPopulation = meanOrNull(lnsResults.map((result) => result.totalPopulation));
+  const meanBestPopulation =
+    meanNullableBenchmarkValue(scorecards.map((scorecard) => scorecard.bestScore)) ?? 0;
+  const meanAutoPopulation = meanNullableBenchmarkValue(autoResults.map((result) => result.totalPopulation));
+  const meanLnsPopulation = meanNullableBenchmarkValue(lnsResults.map((result) => result.totalPopulation));
   return {
     budgetSeconds,
     caseCount: scorecards.length,
     meanBestPopulation,
     meanAutoPopulation,
     meanLnsPopulation,
-    meanAutoDeltaToBest: meanOrNull(signals.map((signal) => signal.autoDeltaToBest)),
+    meanAutoDeltaToBest: meanNullableBenchmarkValue(signals.map((signal) => signal.autoDeltaToBest)),
     deltaVsBaselineMeanBestPopulation: baselineMeanBestPopulation === null
       ? null
       : meanBestPopulation - baselineMeanBestPopulation,
@@ -295,23 +303,11 @@ function summarizeBudget(
 }
 
 function scorecardsByBudget(suite: CrossModeBenchmarkSuiteResult): Map<number, CrossModeBenchmarkCaseScorecard[]> {
-  const byBudget = new Map<number, CrossModeBenchmarkCaseScorecard[]>();
-  for (const scorecard of suite.cases) {
-    const scorecards = byBudget.get(scorecard.budgetSeconds) ?? [];
-    scorecards.push(scorecard);
-    byBudget.set(scorecard.budgetSeconds, scorecards);
-  }
-  return byBudget;
+  return groupBenchmarkValuesBy(suite.cases, (scorecard) => scorecard.budgetSeconds);
 }
 
 function signalsByBudget(suite: CrossModeBenchmarkSuiteResult): Map<number, CrossModeBenchmarkBudgetPolicySignal[]> {
-  const byBudget = new Map<number, CrossModeBenchmarkBudgetPolicySignal[]>();
-  for (const signal of suite.budgetPolicySignals) {
-    const signals = byBudget.get(signal.budgetSeconds) ?? [];
-    signals.push(signal);
-    byBudget.set(signal.budgetSeconds, signals);
-  }
-  return byBudget;
+  return groupBenchmarkValuesBy(suite.budgetPolicySignals, (signal) => signal.budgetSeconds);
 }
 
 function modeResultsInScorecards(
@@ -355,9 +351,10 @@ function summarizeBudgetAblationPolicy(
 ): CrossModeBenchmarkBudgetAblationPolicyResult {
   const autoResults = modeResults(suite, "auto");
   const lnsResults = modeResults(suite, "lns");
-  const meanBestPopulation = meanOrNull(suite.cases.map((scorecard) => scorecard.bestScore)) ?? 0;
-  const meanAutoPopulation = meanOrNull(autoResults.map((result) => result.totalPopulation));
-  const meanLnsPopulation = meanOrNull(lnsResults.map((result) => result.totalPopulation));
+  const meanBestPopulation =
+    meanNullableBenchmarkValue(suite.cases.map((scorecard) => scorecard.bestScore)) ?? 0;
+  const meanAutoPopulation = meanNullableBenchmarkValue(autoResults.map((result) => result.totalPopulation));
+  const meanLnsPopulation = meanNullableBenchmarkValue(lnsResults.map((result) => result.totalPopulation));
   return {
     policyName: policy.name,
     description: policy.description,
@@ -365,9 +362,15 @@ function summarizeBudgetAblationPolicy(
     meanBestPopulation,
     meanAutoPopulation,
     meanLnsPopulation,
-    meanAutoDeltaToBest: meanOrNull(suite.budgetPolicySignals.map((signal) => signal.autoDeltaToBest)),
-    meanAutoLnsStageElapsedSeconds: meanOrNull(suite.budgetPolicySignals.map((signal) => signal.autoLnsStageElapsedSeconds)),
-    meanAutoCpSatStageElapsedSeconds: meanOrNull(suite.budgetPolicySignals.map((signal) => signal.autoCpSatStageElapsedSeconds)),
+    meanAutoDeltaToBest: meanNullableBenchmarkValue(
+      suite.budgetPolicySignals.map((signal) => signal.autoDeltaToBest)
+    ),
+    meanAutoLnsStageElapsedSeconds: meanNullableBenchmarkValue(
+      suite.budgetPolicySignals.map((signal) => signal.autoLnsStageElapsedSeconds)
+    ),
+    meanAutoCpSatStageElapsedSeconds: meanNullableBenchmarkValue(
+      suite.budgetPolicySignals.map((signal) => signal.autoCpSatStageElapsedSeconds)
+    ),
     deltaVsBaselineMeanBestPopulation: baselineMeanBestPopulation === null
       ? null
       : meanBestPopulation - baselineMeanBestPopulation,
@@ -480,13 +483,13 @@ export async function runCrossModeBenchmarkBudgetAblations(
 
   const baseline = policySuites.find((entry) => entry.policy.name === resolvedBaselinePolicyName) ?? null;
   const baselineMeanBestPopulation = baseline
-    ? meanOrNull(baseline.suite.cases.map((scorecard) => scorecard.bestScore)) ?? 0
+    ? meanNullableBenchmarkValue(baseline.suite.cases.map((scorecard) => scorecard.bestScore)) ?? 0
     : null;
   const baselineMeanAutoPopulation = baseline
-    ? meanOrNull(modeResults(baseline.suite, "auto").map((result) => result.totalPopulation))
+    ? meanNullableBenchmarkValue(modeResults(baseline.suite, "auto").map((result) => result.totalPopulation))
     : null;
   const baselineMeanLnsPopulation = baseline
-    ? meanOrNull(modeResults(baseline.suite, "lns").map((result) => result.totalPopulation))
+    ? meanNullableBenchmarkValue(modeResults(baseline.suite, "lns").map((result) => result.totalPopulation))
     : null;
   const baselineMeanBestPopulationByBudget = baseline
     ? meanBestPopulationByBudget(baseline.suite)
@@ -544,20 +547,6 @@ export function formatCrossModeBenchmarkBudgetAblationDecisionTraceJsonl(
   result: CrossModeBenchmarkBudgetAblationSuiteResult
 ): string {
   return serializeDecisionTraceJsonl(collectCrossModeBenchmarkBudgetAblationDecisionTraceEvents(result));
-}
-
-function formatScoreDeltaVsAuto(value: number | null): string {
-  if (value === null) return "n/a";
-  if (value > 0) return `+${Number(value).toLocaleString()}`;
-  return Number(value).toLocaleString();
-}
-
-function formatPopulationGap(value: number | null): string {
-  return value === null ? "n/a" : Number(value).toLocaleString();
-}
-
-function formatSeconds(value: number | null): string {
-  return typeof value === "number" && Number.isFinite(value) ? `${value.toFixed(3)}s` : "n/a";
 }
 
 function formatRecommendationCounts(counts: Record<CrossModeBudgetPolicyRecommendation, number>): string {

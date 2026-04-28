@@ -13,7 +13,7 @@ import {
   solveAuto,
   startAutoSolve,
 } from "../../auto/solver.js";
-import { solveCpSat, startCpSatSolve } from "../../cp-sat/solver.js";
+import { solveCpSat, solveCpSatAsync, startCpSatSolve } from "../../cp-sat/solver.js";
 import { startGreedySolve } from "../../greedy/bridge.js";
 import { startLnsSolve } from "../../lns/bridge.js";
 import { solveLns } from "../../lns/solver.js";
@@ -23,6 +23,7 @@ import { isOptimizerName, OMITTED_SOLVER_OPTIMIZER } from "../../core/types.js";
 import type {
   BackgroundSolveHandle,
   BackgroundSolveSnapshotState,
+  CpSatAsyncOptions,
   Grid,
   OptimizerName,
   Solution,
@@ -39,6 +40,7 @@ export interface OptimizerFinalizationContext {
 export interface OptimizerAdapter {
   name: OptimizerName;
   solve: (grid: Grid, params: SolverParams) => Solution;
+  solveAsync?: (grid: Grid, params: SolverParams, cpSatAsyncOptions?: CpSatAsyncOptions) => Promise<Solution>;
   startBackgroundSolve: (grid: Grid, params: SolverParams) => BackgroundSolveHandle;
   normalizeTerminalSolution?: (solution: Solution, context: OptimizerFinalizationContext) => Solution;
   describeCompletedSolution?: (solution: Solution) => string | null;
@@ -61,6 +63,7 @@ const optimizerAdapters: Record<OptimizerName, OptimizerAdapter> = {
   auto: {
     name: "auto",
     solve: solveAuto,
+    solveAsync: (grid, params) => startAutoSolve(grid, params).promise,
     startBackgroundSolve: startAutoSolve,
     normalizeTerminalSolution: normalizeAutoTerminalSolution,
     describeCompletedSolution: describeAutoCompletedSolution,
@@ -75,6 +78,7 @@ const optimizerAdapters: Record<OptimizerName, OptimizerAdapter> = {
   "cp-sat": {
     name: "cp-sat",
     solve: solveCpSat,
+    solveAsync: (grid, params, cpSatAsyncOptions) => solveCpSatAsync(grid, params, cpSatAsyncOptions),
     startBackgroundSolve: startCpSatSolve,
     describeRecoveredSolution: describeDefaultRecoveredSolution,
   },

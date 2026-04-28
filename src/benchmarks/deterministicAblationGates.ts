@@ -1,4 +1,9 @@
-import { uniqueBenchmarkValues } from "./benchmarkOptions.js";
+import {
+  formatBenchmarkRate as formatRate,
+  formatBenchmarkSeconds as formatSeconds,
+  formatBenchmarkSignedNumber as formatSigned,
+  uniqueBenchmarkValues,
+} from "./benchmarkOptions.js";
 
 import type {
   GreedyDeterministicAblationSuiteResult,
@@ -79,18 +84,6 @@ type VariantSummary =
 
 function isLnsVariantSummary(summary: VariantSummary): summary is LnsNeighborhoodAblationVariantSummary {
   return "firstWindowMovementRate" in summary;
-}
-
-function formatSigned(value: number): string {
-  return value > 0 ? `+${Number(value).toLocaleString()}` : Number(value).toLocaleString();
-}
-
-function formatRate(value: number): string {
-  return `${(value * 100).toFixed(1)}%`;
-}
-
-function formatSeconds(value: number): string {
-  return `${value.toFixed(3)}s`;
 }
 
 function evidenceFromSummary(summary: VariantSummary): DeterministicAblationGateEvidence {

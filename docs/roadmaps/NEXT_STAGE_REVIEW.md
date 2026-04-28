@@ -79,7 +79,7 @@ Interpretation:
 - The current LNS replay label bundle has no useful holdout improvement signal yet: the 36 holdout replay labels are usable but neutral. That blocks any claim that an LNS ranker can generalize.
 - The default benchmark corpus is small and easy to saturate. It is useful for regression but not enough to decide GPU, learned ranking, portfolio, or long-running improvement policies.
 - Auto spends time on LNS/CP-SAT even when the best score is already found early on saturated cases. This is acceptable for quality mode, but it suggests the improvement loop should learn case classes and saturation signals before retuning budgets.
-- There is no durable experiment registry yet: artifacts exist, but there is no single catalog that links dataset fingerprint, solver commit, model version, benchmark suite, holdout status, and promotion decision.
+- The experiment registry is seeded at `artifacts/experiments/index.jsonl`, but it still needs validation/check tooling, append helpers, hardware completeness rules, and backfill quality checks before promotion decisions depend on it.
 - There is no trained model path yet. Labels exist, but there is no `python/ml/` experiment scaffold, offline metric report, or feature-flagged scorer interface.
 
 ## GPU Assessment

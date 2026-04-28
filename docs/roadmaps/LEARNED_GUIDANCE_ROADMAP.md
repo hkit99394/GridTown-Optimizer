@@ -87,10 +87,10 @@ What does not transfer well:
 - cheap rollout assumptions, because one useful `LNS` label may cost a bounded `CP-SAT` repair run
 - raw cell-by-cell generation or attempts to replace `CP-SAT`
 
-Gates before any RL work:
-- add shared traces on top of the shipped benchmark and progress-summary surfaces
-- create a development / holdout split for benchmark and replay data
-- add deterministic opportunity and connectivity-shadow features so models do not have to rediscover graph facts
+Remaining gates before any RL work:
+- extend the delivered trace layer with richer chosen-vs-available offline-learning state capture
+- expand development / holdout splits for generated benchmark and replay data by case family and seed
+- harden deterministic opportunity and connectivity-shadow feature payloads so models do not have to rediscover graph facts
 - keep reusable `CP-SAT` input validation aligned with any new learned seed or hint payloads
 - beat deterministic baselines with supervised reranking or bandits under equal wall-clock on holdout cases
 
@@ -120,8 +120,8 @@ Status: Delivered for benchmark comparison; partial for offline-learning traces
 
 Why:
 - the repo already has per-optimizer benchmark CLIs plus a cross-mode equal-budget scorecard
-- learned guidance still needs a shared trace layer that records decision states and incumbent-quality-over-time, not only final benchmark summaries
-- success metrics like `time-to-first-improvement`, `time-to-best-incumbent`, and chosen-vs-available decision quality are not consistently exportable yet
+- benchmark-level traces, JSONL export, and time-to-quality scorecards are delivered for solver comparison
+- learned guidance still needs richer chosen-vs-available decision state capture for offline training, generated-case split discipline, and registry metadata before promotion decisions depend on those artifacts
 
 Original scope:
 - add shared optimizer run events to [src/core/types.ts](../../src/core/types.ts)
@@ -242,9 +242,9 @@ Delivered artifacts:
 
 - `artifacts/deterministic-ablations/2026-04-27/`
 
-Future deliverables:
-- an ablation matrix with median, worst-decile, and best-case outcomes
-- a short write-up on where current solver quality-per-minute is coming from
+Future re-run deliverables:
+- refreshed ablation matrices with median, worst-decile, and best-case outcomes when solver scoring changes
+- a short update on whether current solver quality-per-minute sources changed enough to reopen a default-promotion gate
 
 Exit criteria:
 - we know which components are worth learning around

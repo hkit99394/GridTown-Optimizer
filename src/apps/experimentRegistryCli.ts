@@ -12,7 +12,8 @@ import {
   validateExperimentRegistryEntry,
   validateExperimentRegistryFile,
 } from "../benchmarks/experimentRegistry.js";
-import { parseNumberList, readInlineOptionValue } from "./cliParsing.js";
+import { applyInlineOptionHandlers, isCliFlag, parseNumberList } from "./cliParsing.js";
+import { runCliMain } from "./cliEntrypoint.js";
 import { writeCliJson, writeCliText } from "./cliOutput.js";
 
 import type {
@@ -142,6 +143,87 @@ function parseArgs(argv: string[]): ParsedRegistryArgs {
   let gpuDriver: string | undefined;
   let gpuMemoryBytes: number | undefined;
   let hardwareNotes: string | undefined;
+  const inlineOptions: Record<string, (value: string) => void> = {
+    registry: (value) => {
+      registryPath = value;
+    },
+    entry: (value) => {
+      entryPath = value;
+    },
+    "indexed-at": (value) => {
+      indexedAt = value;
+    },
+    "indexed-git-commit": (value) => {
+      indexedGitCommit = value;
+    },
+    "artifact-git-commit": (value) => {
+      artifactGitCommit = value === "null" || value === "none" ? null : value;
+    },
+    branch: (value) => {
+      branch = value;
+    },
+    "generated-at": (value) => {
+      generatedAt = value;
+    },
+    "run-id": (value) => {
+      runId = value;
+    },
+    "artifact-type": (value) => {
+      artifactType = value;
+    },
+    command: (value) => {
+      commands.push(value);
+    },
+    "artifact-path": (value) => {
+      artifactPaths.push(value);
+    },
+    case: (value) => {
+      const currentCases = Array.isArray(cases) ? cases : [];
+      cases = [...currentCases, value];
+    },
+    cases: (value) => {
+      cases = JSON.parse(value) as unknown;
+    },
+    "case-family": (value) => {
+      caseFamilies.push(value);
+    },
+    seeds: (value) => {
+      seeds = parseNumberList(value, "--seeds");
+    },
+    "split-status": (value) => {
+      splitStatus = value === "null" ? null : JSON.parse(value) as unknown;
+    },
+    budget: (value) => {
+      budget = JSON.parse(value) as unknown;
+    },
+    hardware: (value) => {
+      hardware = JSON.parse(value) as unknown;
+    },
+    model: (value) => {
+      model = value === "null" ? null : JSON.parse(value) as unknown;
+    },
+    decision: (value) => {
+      decision = value;
+    },
+    summary: (value) => {
+      summary = value;
+    },
+    "gpu-model": (value) => {
+      gpuModel = value;
+    },
+    "gpu-runtime": (value) => {
+      gpuRuntime = value;
+    },
+    "gpu-driver": (value) => {
+      gpuDriver = value;
+    },
+    "gpu-memory-bytes": (value) => {
+      gpuMemoryBytes = parseNumber(value, "GPU memory bytes");
+    },
+    "hardware-notes": (value) => {
+      hardwareNotes = value;
+    },
+  };
 
   const args = [...argv];
   if (args.length > 0 && !args[0].startsWith("--")) {
@@ -154,156 +236,27 @@ function parseArgs(argv: string[]): ParsedRegistryArgs {
   }
 
   for (const arg of args) {
-    let value: string | undefined;
-    if (arg === "--dry-run") {
+    if (isCliFlag(arg, "--dry-run")) {
       dryRun = true;
       continue;
     }
-    if (arg === "--json") {
+    if (isCliFlag(arg, "--json")) {
       json = true;
       continue;
     }
-    if (arg === "--strict" || arg === "--strict-metadata") {
+    if (isCliFlag(arg, "--strict", "--strict-metadata")) {
       strict = true;
       continue;
     }
-    if (arg === "--allow-historical") {
+    if (isCliFlag(arg, "--allow-historical")) {
       allowHistorical = true;
       continue;
     }
-    if (arg === "--no-artifacts") {
+    if (isCliFlag(arg, "--no-artifacts")) {
       validateArtifactPaths = false;
       continue;
     }
-    value = readInlineOptionValue(arg, "registry");
-    if (value !== undefined) {
-      registryPath = value;
-      continue;
-    }
-    value = readInlineOptionValue(arg, "entry");
-    if (value !== undefined) {
-      entryPath = value;
-      continue;
-    }
-    value = readInlineOptionValue(arg, "indexed-at");
-    if (value !== undefined) {
-      indexedAt = value;
-      continue;
-    }
-    value = readInlineOptionValue(arg, "indexed-git-commit");
-    if (value !== undefined) {
-      indexedGitCommit = value;
-      continue;
-    }
-    value = readInlineOptionValue(arg, "artifact-git-commit");
-    if (value !== undefined) {
-      artifactGitCommit = value === "null" || value === "none" ? null : value;
-      continue;
-    }
-    value = readInlineOptionValue(arg, "branch");
-    if (value !== undefined) {
-      branch = value;
-      continue;
-    }
-    value = readInlineOptionValue(arg, "generated-at");
-    if (value !== undefined) {
-      generatedAt = value;
-      continue;
-    }
-    value = readInlineOptionValue(arg, "run-id");
-    if (value !== undefined) {
-      runId = value;
-      continue;
-    }
-    value = readInlineOptionValue(arg, "artifact-type");
-    if (value !== undefined) {
-      artifactType = value;
-      continue;
-    }
-    value = readInlineOptionValue(arg, "command");
-    if (value !== undefined) {
-      commands.push(value);
-      continue;
-    }
-    value = readInlineOptionValue(arg, "artifact-path");
-    if (value !== undefined) {
-      artifactPaths.push(value);
-      continue;
-    }
-    value = readInlineOptionValue(arg, "case");
-    if (value !== undefined) {
-      const currentCases = Array.isArray(cases) ? cases : [];
-      cases = [...currentCases, value];
-      continue;
-    }
-    value = readInlineOptionValue(arg, "cases");
-    if (value !== undefined) {
-      cases = JSON.parse(value) as unknown;
-      continue;
-    }
-    value = readInlineOptionValue(arg, "case-family");
-    if (value !== undefined) {
-      caseFamilies.push(value);
-      continue;
-    }
-    value = readInlineOptionValue(arg, "seeds");
-    if (value !== undefined) {
-      seeds = parseNumberList(value, "--seeds");
-      continue;
-    }
-    value = readInlineOptionValue(arg, "split-status");
-    if (value !== undefined) {
-      splitStatus = value === "null" ? null : JSON.parse(value) as unknown;
-      continue;
-    }
-    value = readInlineOptionValue(arg, "budget");
-    if (value !== undefined) {
-      budget = JSON.parse(value) as unknown;
-      continue;
-    }
-    value = readInlineOptionValue(arg, "hardware");
-    if (value !== undefined) {
-      hardware = JSON.parse(value) as unknown;
-      continue;
-    }
-    value = readInlineOptionValue(arg, "model");
-    if (value !== undefined) {
-      model = value === "null" ? null : JSON.parse(value) as unknown;
-      continue;
-    }
-    value = readInlineOptionValue(arg, "decision");
-    if (value !== undefined) {
-      decision = value;
-      continue;
-    }
-    value = readInlineOptionValue(arg, "summary");
-    if (value !== undefined) {
-      summary = value;
-      continue;
-    }
-    value = readInlineOptionValue(arg, "gpu-model");
-    if (value !== undefined) {
-      gpuModel = value;
-      continue;
-    }
-    value = readInlineOptionValue(arg, "gpu-runtime");
-    if (value !== undefined) {
-      gpuRuntime = value;
-      continue;
-    }
-    value = readInlineOptionValue(arg, "gpu-driver");
-    if (value !== undefined) {
-      gpuDriver = value;
-      continue;
-    }
-    value = readInlineOptionValue(arg, "gpu-memory-bytes");
-    if (value !== undefined) {
-      gpuMemoryBytes = parseNumber(value, "GPU memory bytes");
-      continue;
-    }
-    value = readInlineOptionValue(arg, "hardware-notes");
-    if (value !== undefined) {
-      hardwareNotes = value;
+    if (applyInlineOptionHandlers(arg, inlineOptions)) {
       continue;
     }
     throw new Error(`Unknown experiment registry argument: ${arg}`);
@@ -521,13 +474,10 @@ export function runExperimentRegistryCli(argv = process.argv.slice(2)): void {
   writeCliText(`Appended experiment registry entry '${appended.runId}' to ${args.registryPath}.`);
 }
 
-try {
-  runExperimentRegistryCli();
-} catch (error) {
+runCliMain(runExperimentRegistryCli, (error) => {
   if (error instanceof ExperimentRegistryValidationError) {
     process.stderr.write(`${formatExperimentRegistryIssues(error.issues)}\n`);
   } else {
     console.error(error);
   }
-  process.exitCode = 1;
-}
+});

@@ -4,12 +4,14 @@ import {
   runLearnedRankingLabelSuite,
 } from "../benchmarks/index.js";
 import {
+  applyInlineOptionHandlers,
+  isCliFlag,
   parseNonNegativeInteger,
   parseNumberList,
   parsePositiveInteger,
   parsePositiveNumber,
-  readInlineOptionValue,
 } from "./cliParsing.js";
+import { runCliMain } from "./cliEntrypoint.js";
 import { writeCliJsonOrText } from "./cliOutput.js";
 
 interface ParsedLabelArgs {
@@ -26,34 +28,30 @@ function parseArgs(argv: string[]): ParsedLabelArgs {
   let maxWindows: number | undefined;
   let explorationWindowCount: number | undefined;
   let repairTimeLimitSeconds: number | undefined;
+  const inlineOptions: Record<string, (value: string) => void> = {
+    seeds: (value) => {
+      seeds = parseNumberList(value, "seeds");
+    },
+    "max-windows": (value) => {
+      maxWindows = parsePositiveInteger(value, "max windows");
+    },
+    "exploration-windows": (value) => {
+      explorationWindowCount = parseNonNegativeInteger(value, "exploration windows");
+    },
+    "repair-time": (value) => {
+      repairTimeLimitSeconds = parsePositiveNumber(value, "repair time");
+    },
+  };
 
   for (const arg of argv) {
-    let value: string | undefined;
-    if (arg === "--json") {
+    if (isCliFlag(arg, "--json")) {
       json = true;
       continue;
     }
-    value = readInlineOptionValue(arg, "seeds");
-    if (value !== undefined) {
-      seeds = parseNumberList(value, "seeds");
+    if (applyInlineOptionHandlers(arg, inlineOptions)) {
       continue;
     }
-    value = readInlineOptionValue(arg, "max-windows");
-    if (value !== undefined) {
-      maxWindows = parsePositiveInteger(value, "max windows");
-      continue;
-    }
-    value = readInlineOptionValue(arg, "exploration-windows");
-    if (value !== undefined) {
-      explorationWindowCount = parseNonNegativeInteger(value, "exploration windows");
-      continue;
-    }
-    if (arg === "--pressure-corpus") {
-      continue;
-    }
-    value = readInlineOptionValue(arg, "repair-time");
-    if (value !== undefined) {
-      repairTimeLimitSeconds = parsePositiveNumber(value, "repair time");
+    if (isCliFlag(arg, "--pressure-corpus")) {
       continue;
     }
     throw new Error(`Unknown learned-ranking label argument: ${arg}`);
@@ -76,9 +74,4 @@ export function runLearnedRankingLabelCli(): void {
   );
 }
 
-try {
-  runLearnedRankingLabelCli();
-} catch (error) {
-  console.error(error);
-  process.exitCode = 1;
-}
+runCliMain(runLearnedRankingLabelCli);

@@ -1,6 +1,7 @@
 import { buildBenchmarkSeedRunPlan, formatBenchmarkSeeds } from "./benchmarkSeeds.js";
 import {
   benchmarkRatio,
+  buildBenchmarkVariantCoverage,
   buildBenchmarkSuiteMetadata,
   countBenchmarkMatches,
   formatBenchmarkDecimal as formatDecimal,
@@ -11,8 +12,9 @@ import {
   listBenchmarkCaseNames,
   selectBenchmarkCasesByName,
   selectBenchmarkVariants,
+  snapshotBenchmarkVariantResult,
+  snapshotBenchmarkVariantSummary,
   summarizeBenchmarkVariantMetrics,
-  sumBenchmarkBy,
   uniqueBenchmarkValuesBy,
 } from "./benchmarkOptions.js";
 import {
@@ -26,7 +28,12 @@ import type {
   LnsBenchmarkRunOptions,
 } from "./lns.js";
 import type { LnsOptions } from "../core/types.js";
-import type { BenchmarkVariantSummaryMetrics } from "./benchmarkOptions.js";
+import type {
+  BenchmarkVariantCoverageMetrics,
+  BenchmarkVariantResultSnapshot,
+  BenchmarkVariantSummaryMetrics,
+  BenchmarkVariantSummarySnapshot,
+} from "./benchmarkOptions.js";
 
 export type LnsNeighborhoodAblationVariantName =
   | "baseline"
@@ -109,14 +116,7 @@ export interface LnsNeighborhoodAblationVariantSummary
   anchorCoordinateMovementRate: number;
 }
 
-export interface LnsNeighborhoodAblationCoverage {
-  caseCount: number;
-  seedCount: number;
-  comparisonCount: number;
-  variantCount: number;
-  runCount: number;
-  gridCellCount: number;
-}
+export interface LnsNeighborhoodAblationCoverage extends BenchmarkVariantCoverageMetrics {}
 
 export interface LnsNeighborhoodAblationVariantExecutionOrder {
   seed: number | null;
@@ -138,10 +138,7 @@ export interface LnsNeighborhoodAblationSuiteResult {
 }
 
 export interface LnsNeighborhoodAblationSnapshotVariantResult
-  extends Omit<
-    LnsNeighborhoodAblationVariantResult,
-    "wallClockSeconds" | "wallClockDeltaVsBaselineSeconds"
-  > {}
+  extends BenchmarkVariantResultSnapshot<LnsNeighborhoodAblationVariantResult> {}
 
 export interface LnsNeighborhoodAblationSnapshotCaseResult
   extends Omit<LnsNeighborhoodAblationCaseResult, "baseline" | "variants"> {
@@ -150,10 +147,7 @@ export interface LnsNeighborhoodAblationSnapshotCaseResult
 }
 
 export interface LnsNeighborhoodAblationSnapshotVariantSummary
-  extends Omit<
-    LnsNeighborhoodAblationVariantSummary,
-    "meanWallClockSeconds" | "meanWallClockDeltaVsBaselineSeconds"
-  > {}
+  extends BenchmarkVariantSummarySnapshot<LnsNeighborhoodAblationVariantSummary> {}
 
 export interface LnsNeighborhoodAblationSnapshot
   extends Omit<LnsNeighborhoodAblationSuiteResult, "generatedAt" | "variantSummaries" | "cases"> {
@@ -357,15 +351,7 @@ function buildCoverage(
   caseCount: number,
   seedCount: number
 ): LnsNeighborhoodAblationCoverage {
-  const variants = cases.flatMap((entry) => entry.variants);
-  return {
-    caseCount,
-    seedCount,
-    comparisonCount: cases.length,
-    variantCount: cases[0]?.variants.length ?? 0,
-    runCount: variants.length,
-    gridCellCount: sumBenchmarkBy(cases, (entry) => entry.gridCells),
-  };
+  return buildBenchmarkVariantCoverage(cases, caseCount, seedCount);
 }
 
 export function listLnsNeighborhoodAblationCaseNames(
@@ -469,28 +455,6 @@ export function runLnsNeighborhoodAblation(
   };
 }
 
-function snapshotVariantResult(
-  result: LnsNeighborhoodAblationVariantResult
-): LnsNeighborhoodAblationSnapshotVariantResult {
-  const {
-    wallClockSeconds: _wallClockSeconds,
-    wallClockDeltaVsBaselineSeconds: _wallClockDeltaVsBaselineSeconds,
-    ...snapshot
-  } = result;
-  return snapshot;
-}
-
-function snapshotVariantSummary(
-  summary: LnsNeighborhoodAblationVariantSummary
-): LnsNeighborhoodAblationSnapshotVariantSummary {
-  const {
-    meanWallClockSeconds: _meanWallClockSeconds,
-    meanWallClockDeltaVsBaselineSeconds: _meanWallClockDeltaVsBaselineSeconds,
-    ...snapshot
-  } = summary;
-  return snapshot;
-}
-
 export function createLnsNeighborhoodAblationSnapshot(
   result: LnsNeighborhoodAblationSuiteResult
 ): LnsNeighborhoodAblationSnapshot {
@@ -506,11 +470,11 @@ export function createLnsNeighborhoodAblationSnapshot(
       variants: [...entry.variants],
     })),
     coverage: { ...result.coverage },
-    variantSummaries: result.variantSummaries.map(snapshotVariantSummary),
+    variantSummaries: result.variantSummaries.map(snapshotBenchmarkVariantSummary),
     cases: result.cases.map((benchmarkCase) => ({
       ...benchmarkCase,
-      baseline: snapshotVariantResult(benchmarkCase.baseline),
-      variants: benchmarkCase.variants.map(snapshotVariantResult),
+      baseline: snapshotBenchmarkVariantResult(benchmarkCase.baseline),
+      variants: benchmarkCase.variants.map(snapshotBenchmarkVariantResult),
     })),
   };
 }

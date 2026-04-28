@@ -1,6 +1,7 @@
 import { DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS } from "./crossModeBudgetAblations.js";
 import { buildBenchmarkSeedRunPlan, formatBenchmarkSeeds } from "./benchmarkSeeds.js";
 import {
+  buildBenchmarkVariantCoverage,
   buildBenchmarkSuiteMetadata,
   countBenchmarkMatches,
   dedupeBenchmarkCases,
@@ -12,8 +13,9 @@ import {
   listBenchmarkCaseNames,
   selectBenchmarkCasesByName,
   selectBenchmarkVariants,
+  snapshotBenchmarkVariantResult,
+  snapshotBenchmarkVariantSummary,
   summarizeBenchmarkVariantMetrics,
-  sumBenchmarkBy,
   uniqueBenchmarkValuesBy,
 } from "./benchmarkOptions.js";
 import {
@@ -27,7 +29,12 @@ import type {
   GreedyBenchmarkOptions,
   GreedyBenchmarkRunOptions,
 } from "./greedy.js";
-import type { BenchmarkVariantSummaryMetrics } from "./benchmarkOptions.js";
+import type {
+  BenchmarkVariantCoverageMetrics,
+  BenchmarkVariantResultSnapshot,
+  BenchmarkVariantSummaryMetrics,
+  BenchmarkVariantSummarySnapshot,
+} from "./benchmarkOptions.js";
 
 export type GreedyDeterministicAblationVariantName =
   | "baseline"
@@ -87,13 +94,7 @@ export interface GreedyDeterministicAblationVariantSummary
   description: string;
 }
 
-export interface GreedyDeterministicAblationCoverage {
-  caseCount: number;
-  seedCount: number;
-  comparisonCount: number;
-  variantCount: number;
-  runCount: number;
-  gridCellCount: number;
+export interface GreedyDeterministicAblationCoverage extends BenchmarkVariantCoverageMetrics {
   profileEnabledRuns: number;
 }
 
@@ -111,10 +112,7 @@ export interface GreedyDeterministicAblationSuiteResult {
 }
 
 export interface GreedyDeterministicAblationSnapshotVariantResult
-  extends Omit<
-    GreedyDeterministicAblationVariantResult,
-    "wallClockSeconds" | "wallClockDeltaVsBaselineSeconds"
-  > {}
+  extends BenchmarkVariantResultSnapshot<GreedyDeterministicAblationVariantResult> {}
 
 export interface GreedyDeterministicAblationSnapshotCaseResult
   extends Omit<GreedyDeterministicAblationCaseResult, "baseline" | "variants"> {
@@ -123,10 +121,7 @@ export interface GreedyDeterministicAblationSnapshotCaseResult
 }
 
 export interface GreedyDeterministicAblationSnapshotVariantSummary
-  extends Omit<
-    GreedyDeterministicAblationVariantSummary,
-    "meanWallClockSeconds" | "meanWallClockDeltaVsBaselineSeconds"
-  > {}
+  extends BenchmarkVariantSummarySnapshot<GreedyDeterministicAblationVariantSummary> {}
 
 export interface GreedyDeterministicAblationSnapshot
   extends Omit<GreedyDeterministicAblationSuiteResult, "generatedAt" | "variantSummaries" | "cases"> {
@@ -264,14 +259,10 @@ function buildCoverage(
   caseCount: number,
   seedCount: number
 ): GreedyDeterministicAblationCoverage {
+  const coverage = buildBenchmarkVariantCoverage(cases, caseCount, seedCount);
   const variants = cases.flatMap((entry) => entry.variants);
   return {
-    caseCount,
-    seedCount,
-    comparisonCount: cases.length,
-    variantCount: cases[0]?.variants.length ?? 0,
-    runCount: variants.length,
-    gridCellCount: sumBenchmarkBy(cases, (entry) => entry.gridCells),
+    ...coverage,
     profileEnabledRuns: countBenchmarkMatches(variants, (entry) => entry.profileEnabled),
   };
 }
@@ -377,28 +368,6 @@ export function runGreedyDeterministicAblation(
   };
 }
 
-function snapshotVariantResult(
-  result: GreedyDeterministicAblationVariantResult
-): GreedyDeterministicAblationSnapshotVariantResult {
-  const {
-    wallClockSeconds: _wallClockSeconds,
-    wallClockDeltaVsBaselineSeconds: _wallClockDeltaVsBaselineSeconds,
-    ...snapshot
-  } = result;
-  return snapshot;
-}
-
-function snapshotVariantSummary(
-  summary: GreedyDeterministicAblationVariantSummary
-): GreedyDeterministicAblationSnapshotVariantSummary {
-  const {
-    meanWallClockSeconds: _meanWallClockSeconds,
-    meanWallClockDeltaVsBaselineSeconds: _meanWallClockDeltaVsBaselineSeconds,
-    ...snapshot
-  } = summary;
-  return snapshot;
-}
-
 export function createGreedyDeterministicAblationSnapshot(
   result: GreedyDeterministicAblationSuiteResult
 ): GreedyDeterministicAblationSnapshot {
@@ -410,11 +379,11 @@ export function createGreedyDeterministicAblationSnapshot(
     selectedCaseNames: [...result.selectedCaseNames],
     variants: [...result.variants],
     coverage: { ...result.coverage },
-    variantSummaries: result.variantSummaries.map(snapshotVariantSummary),
+    variantSummaries: result.variantSummaries.map(snapshotBenchmarkVariantSummary),
     cases: result.cases.map((benchmarkCase) => ({
       ...benchmarkCase,
-      baseline: snapshotVariantResult(benchmarkCase.baseline),
-      variants: benchmarkCase.variants.map(snapshotVariantResult),
+      baseline: snapshotBenchmarkVariantResult(benchmarkCase.baseline),
+      variants: benchmarkCase.variants.map(snapshotBenchmarkVariantResult),
     })),
   };
 }

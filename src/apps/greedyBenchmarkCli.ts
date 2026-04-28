@@ -19,11 +19,14 @@ import {
   runGreedyBenchmarkSuite,
 } from "../benchmarks/index.js";
 import {
+  applyInlineOptionHandlers,
+  countEnabledCliModes,
+  isCliFlag,
   parseNameList,
   parseNumberList,
   parsePositiveInteger,
-  readInlineOptionValue,
 } from "./cliParsing.js";
+import { runCliMain } from "./cliEntrypoint.js";
 import { optionalCliNames, writeCliJson, writeCliJsonOrText, writeCliList, writeCliText } from "./cliOutput.js";
 import type {
   GreedyBenchmarkOptions,
@@ -56,69 +59,62 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let ablationVariantNames: GreedyDeterministicAblationVariantName[] | undefined;
   let seeds: number[] | undefined;
   let maxLabelsPerCase: number | undefined;
-
-  for (const arg of argv) {
-    let value: string | undefined;
-    if (arg === "--json") {
-      json = true;
-      continue;
-    }
-    if (arg === "--list") {
-      list = true;
-      continue;
-    }
-    if (arg === "--gate-report" || arg === "--ablation-gate-report") {
-      gateReport = true;
-      continue;
-    }
-    if (arg === "--connectivity-shadow-ablation" || arg === "--connectivity-shadow-ablations") {
-      connectivityShadowAblation = true;
-      continue;
-    }
-    if (arg === "--connectivity-shadow-labels" || arg === "--connectivity-shadow-label") {
-      connectivityShadowLabels = true;
-      continue;
-    }
-    if (
-      arg === "--deterministic-ablation"
-      || arg === "--deterministic-ablations"
-      || arg === "--ordering-ablation"
-      || arg === "--ordering-ablations"
-    ) {
-      deterministicAblation = true;
-      continue;
-    }
-    value = readInlineOptionValue(arg, "ablation-variants");
-    if (value !== undefined) {
+  const inlineOptions: Record<string, (value: string) => void> = {
+    "ablation-variants": (value) => {
       ablationVariantNames = parseNameList(
         value,
         "ablation variant"
       ) as GreedyDeterministicAblationVariantName[];
-      continue;
-    }
-    value = readInlineOptionValue(arg, "seeds");
-    if (value !== undefined) {
+    },
+    seeds: (value) => {
       seeds = parseNumberList(value, "seeds");
-      continue;
-    }
-    value = readInlineOptionValue(arg, "max-labels");
-    if (value !== undefined) {
+    },
+    "max-labels": (value) => {
       maxLabelsPerCase = parsePositiveInteger(value, "max labels");
+    },
+  };
+
+  for (const arg of argv) {
+    if (isCliFlag(arg, "--json")) {
+      json = true;
       continue;
     }
-    if (arg === "--connectivity-shadow-scoring") {
+    if (isCliFlag(arg, "--list")) {
+      list = true;
+      continue;
+    }
+    if (isCliFlag(arg, "--gate-report", "--ablation-gate-report")) {
+      gateReport = true;
+      continue;
+    }
+    if (isCliFlag(arg, "--connectivity-shadow-ablation", "--connectivity-shadow-ablations")) {
+      connectivityShadowAblation = true;
+      continue;
+    }
+    if (isCliFlag(arg, "--connectivity-shadow-labels", "--connectivity-shadow-label")) {
+      connectivityShadowLabels = true;
+      continue;
+    }
+    if (isCliFlag(arg, "--deterministic-ablation", "--deterministic-ablations", "--ordering-ablation", "--ordering-ablations")) {
+      deterministicAblation = true;
+      continue;
+    }
+    if (applyInlineOptionHandlers(arg, inlineOptions)) {
+      continue;
+    }
+    if (isCliFlag(arg, "--connectivity-shadow-scoring")) {
       greedy.connectivityShadowScoring = true;
       continue;
     }
-    if (arg === "--no-connectivity-shadow-scoring") {
+    if (isCliFlag(arg, "--no-connectivity-shadow-scoring")) {
       greedy.connectivityShadowScoring = false;
       continue;
     }
-    if (arg === "--profile") {
+    if (isCliFlag(arg, "--profile")) {
       greedy.profile = true;
       continue;
     }
-    if (arg === "--no-profile") {
+    if (isCliFlag(arg, "--no-profile")) {
       greedy.profile = false;
       continue;
     }
@@ -142,11 +138,11 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
 
 export function runGreedyBenchmarkCli(): void {
   const args = parseArgs(process.argv.slice(2));
-  const modeCount = [
+  const modeCount = countEnabledCliModes([
     args.connectivityShadowAblation,
     args.connectivityShadowLabels,
     args.deterministicAblation,
-  ].filter(Boolean).length;
+  ]);
   if (modeCount > 1) {
     throw new Error("Choose only one of --connectivity-shadow-ablation, --connectivity-shadow-labels, or --deterministic-ablation.");
   }
@@ -223,9 +219,4 @@ export function runGreedyBenchmarkCli(): void {
   writeCliJsonOrText(args.json, () => createGreedyBenchmarkSnapshot(result), () => formatGreedyBenchmarkSuite(result));
 }
 
-try {
-  runGreedyBenchmarkCli();
-} catch (error) {
-  console.error(error);
-  process.exitCode = 1;
-}
+runCliMain(runGreedyBenchmarkCli);

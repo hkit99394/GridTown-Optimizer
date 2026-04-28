@@ -135,36 +135,45 @@ export class SolveJobManager {
     const optimizer = optimizerAdapter.name;
     const handle = optimizerAdapter.startBackgroundSolve(grid, params);
     const createdAt = Date.now();
-    const progressLogWriter = new SolveProgressLogWriter({
-      rootDirectory: this.progressLogRoot,
-      requestId,
-      optimizer,
-      grid,
-      params,
-      createdAtMs: createdAt,
-    });
-    const job: SolveJob = {
-      requestId,
-      optimizer,
-      grid,
-      params,
-      status: "running",
-      cancelRequested: false,
-      handle,
-      solution: null,
-      message: null,
-      error: null,
-      createdAt,
-      progressLogFilePath: progressLogWriter.filePath,
-      progressLogWriter,
-      progressLogIntervalHandle: null,
-    };
 
-    this.jobs.set(requestId, job);
-    job.progressLogWriter.appendPendingSample({
-      elapsedMs: 0,
-    });
-    job.progressLogIntervalHandle = this.startProgressLogTicker(job);
+    let job: SolveJob;
+    try {
+      const progressLogWriter = new SolveProgressLogWriter({
+        rootDirectory: this.progressLogRoot,
+        requestId,
+        optimizer,
+        grid,
+        params,
+        createdAtMs: createdAt,
+      });
+      job = {
+        requestId,
+        optimizer,
+        grid,
+        params,
+        status: "running",
+        cancelRequested: false,
+        handle,
+        solution: null,
+        message: null,
+        error: null,
+        createdAt,
+        progressLogFilePath: progressLogWriter.filePath,
+        progressLogWriter,
+        progressLogIntervalHandle: null,
+      };
+
+      this.jobs.set(requestId, job);
+      job.progressLogWriter.appendPendingSample({
+        elapsedMs: 0,
+      });
+      job.progressLogIntervalHandle = this.startProgressLogTicker(job);
+    } catch (error) {
+      void handle.promise.catch(() => undefined);
+      handle.cancel();
+      this.jobs.delete(requestId);
+      throw error;
+    }
 
     void handle.promise
       .then((solution) => {
@@ -195,7 +204,7 @@ export class SolveJobManager {
           job,
           job.cancelRequested ? "stopped" : "failed",
           job.cancelRequested ? "Solve was stopped before a feasible solution was found." : null,
-          error instanceof Error ? error.message : "Unknown CP-SAT error."
+          error instanceof Error ? error.message : "Unknown solver error."
         );
       })
       .finally(() => {

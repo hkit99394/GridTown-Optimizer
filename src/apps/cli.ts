@@ -12,6 +12,7 @@ import { formatSolutionMap, validateSolutionMap } from "../core/index.js";
 import { solveAsync } from "../runtime/solve.js";
 import { describeAutoStopReason, startAutoSolve } from "../auto/index.js";
 import { startCpSatSolve } from "../cp-sat/solver.js";
+import { runCliMain } from "./cliEntrypoint.js";
 import { parseExampleCliArgs } from "./exampleCliArgs.js";
 
 const DEFAULT_PARAMS = {
@@ -238,7 +239,4 @@ async function runCpSatExampleSolve(grid: Grid, params: SolverParams) {
   }
 }
 
-void runExample().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+runCliMain(runExample);

@@ -25,6 +25,24 @@ export function readInlineOptionValue(arg: string, longName: string): string | u
   return arg.startsWith(prefix) ? arg.slice(prefix.length) : undefined;
 }
 
+export function isCliFlag(arg: string, ...names: string[]): boolean {
+  return names.includes(arg);
+}
+
+export function applyInlineOptionHandlers(arg: string, handlers: Readonly<Record<string, (value: string) => void>>): boolean {
+  if (!arg.startsWith("--")) return false;
+  const separatorIndex = arg.indexOf("=");
+  if (separatorIndex < 0) return false;
+  const handler = handlers[arg.slice(2, separatorIndex)];
+  if (handler === undefined) return false;
+  handler(arg.slice(separatorIndex + 1));
+  return true;
+}
+
+export function countEnabledCliModes(values: readonly boolean[]): number {
+  return values.filter(Boolean).length;
+}
+
 export function parseNumberList(value: string, label: string): number[] {
   const parts = value
     .split(",")

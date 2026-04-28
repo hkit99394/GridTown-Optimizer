@@ -32,3 +32,9 @@ export function reportJsonSolverWorkerError(solverLabel: string, error: unknown)
   console.error(error instanceof Error ? error.message : `Unknown ${solverLabel} worker error.`);
   process.exitCode = 1;
 }
+
+export function runJsonSolverWorkerCli(solverLabel: string, solve: SyncSolver): void {
+  void runJsonSolverWorker(solve).catch((error: unknown) => {
+    reportJsonSolverWorkerError(solverLabel, error);
+  });
+}

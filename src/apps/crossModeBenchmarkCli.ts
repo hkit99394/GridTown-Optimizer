@@ -10,11 +10,13 @@ import {
   runCrossModeBenchmarkSuite,
 } from "../benchmarks/index.js";
 import {
+  applyInlineOptionHandlers,
+  isCliFlag,
   parseNameList,
   parseNumberList,
   parsePositiveNumber,
-  readInlineOptionValue,
 } from "./cliParsing.js";
+import { runCliMain } from "./cliEntrypoint.js";
 import {
   optionalCliNames,
   writeCliJson,
@@ -64,56 +66,50 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let budgetSeconds: number | undefined;
   let budgetsSeconds: number[] | undefined;
   let seeds: number[] | undefined;
-
-  for (const arg of argv) {
-    let value: string | undefined;
-    if (arg === "--json") {
-      json = true;
-      continue;
-    }
-    if (arg === "--trace-jsonl") {
-      traceJsonl = true;
-      continue;
-    }
-    if (arg === "--budget-ablation" || arg === "--budget-ablations") {
-      budgetAblations = true;
-      continue;
-    }
-    if (arg === "--coverage-corpus") {
-      coverageCorpus = true;
-      continue;
-    }
-    if (arg === "--list") {
-      list = true;
-      continue;
-    }
-    value = readInlineOptionValue(arg, "modes");
-    if (value !== undefined) {
+  const inlineOptions: Record<string, (value: string) => void> = {
+    modes: (value) => {
       modes = parseModes(value);
-      continue;
-    }
-    value = readInlineOptionValue(arg, "ablation-policies");
-    if (value !== undefined) {
+    },
+    "ablation-policies": (value) => {
       ablationPolicyNames = parseNameList(
         value,
         "name for cross-mode benchmark --ablation-policies"
       );
       budgetAblations = true;
-      continue;
-    }
-    value = readInlineOptionValue(arg, "budget");
-    if (value !== undefined) {
+    },
+    budget: (value) => {
       budgetSeconds = parsePositiveNumber(value, "cross-mode benchmark --budget");
-      continue;
-    }
-    value = readInlineOptionValue(arg, "budgets");
-    if (value !== undefined) {
+    },
+    budgets: (value) => {
       budgetsSeconds = parseNumberList(value, "cross-mode benchmark --budgets");
+    },
+    seeds: (value) => {
+      seeds = parseNumberList(value, "cross-mode benchmark --seeds");
+    },
+  };
+
+  for (const arg of argv) {
+    if (isCliFlag(arg, "--json")) {
+      json = true;
       continue;
     }
-    value = readInlineOptionValue(arg, "seeds");
-    if (value !== undefined) {
-      seeds = parseNumberList(value, "cross-mode benchmark --seeds");
+    if (isCliFlag(arg, "--trace-jsonl")) {
+      traceJsonl = true;
+      continue;
+    }
+    if (isCliFlag(arg, "--budget-ablation", "--budget-ablations")) {
+      budgetAblations = true;
+      continue;
+    }
+    if (isCliFlag(arg, "--coverage-corpus")) {
+      coverageCorpus = true;
+      continue;
+    }
+    if (isCliFlag(arg, "--list")) {
+      list = true;
+      continue;
+    }
+    if (applyInlineOptionHandlers(arg, inlineOptions)) {
       continue;
     }
     names.push(arg);
@@ -182,7 +178,4 @@ export async function runCrossModeBenchmarkCli(): Promise<void> {
   writeCliJsonOrText(args.json, result, () => formatCrossModeBenchmarkSuite(result));
 }
 
-void runCrossModeBenchmarkCli().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+runCliMain(runCrossModeBenchmarkCli);

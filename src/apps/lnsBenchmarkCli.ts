@@ -16,13 +16,15 @@ import {
   runLnsBenchmarkSuite,
 } from "../benchmarks/index.js";
 import {
+  applyInlineOptionHandlers,
+  isCliFlag,
   parseNameList,
   parseNonNegativeInteger,
   parseNumberList,
   parsePositiveInteger,
   parsePositiveNumber,
-  readInlineOptionValue,
 } from "./cliParsing.js";
+import { runCliMain } from "./cliEntrypoint.js";
 import { optionalCliNames, writeCliJson, writeCliJsonOrText, writeCliList, writeCliText } from "./cliOutput.js";
 import type {
   LnsNeighborhoodAblationVariantName,
@@ -56,72 +58,61 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let maxWindows: number | undefined;
   let explorationWindowCount: number | undefined;
   let repairTimeLimitSeconds: number | undefined;
-
-  for (const arg of argv) {
-    let value: string | undefined;
-    if (arg === "--json") {
-      json = true;
-      continue;
-    }
-    if (arg === "--list") {
-      list = true;
-      continue;
-    }
-    if (arg === "--gate-report" || arg === "--ablation-gate-report") {
-      gateReport = true;
-      continue;
-    }
-    if (arg === "--window-replay-labels" || arg === "--window-replay-label") {
-      windowReplayLabels = true;
-      continue;
-    }
-    if (arg === "--pressure-corpus") {
-      windowReplayLabels = true;
-      continue;
-    }
-    if (arg === "--rotate-variant-run-order") {
-      rotateVariantRunOrder = true;
-      continue;
-    }
-    if (arg === "--no-rotate-variant-run-order") {
-      rotateVariantRunOrder = false;
-      continue;
-    }
-    if (
-      arg === "--neighborhood-ablation"
-      || arg === "--neighborhood-ablations"
-      || arg === "--deterministic-ablation"
-      || arg === "--deterministic-ablations"
-    ) {
-      neighborhoodAblation = true;
-      continue;
-    }
-    value = readInlineOptionValue(arg, "ablation-variants");
-    if (value !== undefined) {
+  const inlineOptions: Record<string, (value: string) => void> = {
+    "ablation-variants": (value) => {
       ablationVariantNames = parseNameList(
         value,
         "ablation variant"
       ) as LnsNeighborhoodAblationVariantName[];
-      continue;
-    }
-    value = readInlineOptionValue(arg, "seeds");
-    if (value !== undefined) {
+    },
+    seeds: (value) => {
       seeds = parseNumberList(value, "seeds");
-      continue;
-    }
-    value = readInlineOptionValue(arg, "max-windows");
-    if (value !== undefined) {
+    },
+    "max-windows": (value) => {
       maxWindows = parsePositiveInteger(value, "--max-windows");
-      continue;
-    }
-    value = readInlineOptionValue(arg, "exploration-windows");
-    if (value !== undefined) {
+    },
+    "exploration-windows": (value) => {
       explorationWindowCount = parseNonNegativeInteger(value, "--exploration-windows");
+    },
+    "repair-time": (value) => {
+      repairTimeLimitSeconds = parsePositiveNumber(value, "--repair-time");
+    },
+  };
+
+  for (const arg of argv) {
+    if (isCliFlag(arg, "--json")) {
+      json = true;
       continue;
     }
-    value = readInlineOptionValue(arg, "repair-time");
-    if (value !== undefined) {
-      repairTimeLimitSeconds = parsePositiveNumber(value, "--repair-time");
+    if (isCliFlag(arg, "--list")) {
+      list = true;
+      continue;
+    }
+    if (isCliFlag(arg, "--gate-report", "--ablation-gate-report")) {
+      gateReport = true;
+      continue;
+    }
+    if (isCliFlag(arg, "--window-replay-labels", "--window-replay-label")) {
+      windowReplayLabels = true;
+      continue;
+    }
+    if (isCliFlag(arg, "--pressure-corpus")) {
+      windowReplayLabels = true;
+      continue;
+    }
+    if (isCliFlag(arg, "--rotate-variant-run-order")) {
+      rotateVariantRunOrder = true;
+      continue;
+    }
+    if (isCliFlag(arg, "--no-rotate-variant-run-order")) {
+      rotateVariantRunOrder = false;
+      continue;
+    }
+    if (isCliFlag(arg, "--neighborhood-ablation", "--neighborhood-ablations", "--deterministic-ablation", "--deterministic-ablations")) {
+      neighborhoodAblation = true;
+      continue;
+    }
+    if (applyInlineOptionHandlers(arg, inlineOptions)) {
       continue;
     }
     names.push(arg);
@@ -207,9 +198,4 @@ export function runLnsBenchmarkCli(): void {
   writeCliJsonOrText(args.json, () => createLnsBenchmarkSnapshot(result), () => formatLnsBenchmarkSuite(result));
 }
 
-try {
-  runLnsBenchmarkCli();
-} catch (error) {
-  console.error(error);
-  process.exitCode = 1;
-}
+runCliMain(runLnsBenchmarkCli);

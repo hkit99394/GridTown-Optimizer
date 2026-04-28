@@ -68,6 +68,26 @@ export interface BenchmarkVariantSummaryMetrics<TName extends string = string> {
   bestPopulationDeltaSeed: number | null;
 }
 
+export interface BenchmarkVariantCoverageMetrics {
+  caseCount: number;
+  seedCount: number;
+  comparisonCount: number;
+  variantCount: number;
+  runCount: number;
+  gridCellCount: number;
+}
+
+export interface BenchmarkVariantCoverageCase<TVariant = unknown> {
+  gridCells: number;
+  variants: readonly TVariant[];
+}
+
+export type BenchmarkVariantResultSnapshot<TResult extends BenchmarkVariantResultMetrics> =
+  Omit<TResult, "wallClockSeconds" | "wallClockDeltaVsBaselineSeconds">;
+
+export type BenchmarkVariantSummarySnapshot<TSummary extends BenchmarkVariantSummaryMetrics> =
+  Omit<TSummary, "meanWallClockSeconds" | "meanWallClockDeltaVsBaselineSeconds">;
+
 export type BenchmarkOptionsWithDefaults<TOptions extends object, TDefaults extends Partial<TOptions>> =
   TOptions & { [K in keyof TDefaults]-?: NonNullable<TDefaults[K]> };
 
@@ -348,6 +368,44 @@ export function summarizeBenchmarkVariantMetrics<
     bestPopulationDeltaCaseName: bestDeltaLabel.caseName,
     bestPopulationDeltaSeed: bestDeltaLabel.seed,
   };
+}
+
+export function buildBenchmarkVariantCoverage<TVariant>(
+  cases: readonly BenchmarkVariantCoverageCase<TVariant>[],
+  caseCount: number,
+  seedCount: number
+): BenchmarkVariantCoverageMetrics {
+  const variants = cases.flatMap((entry) => entry.variants);
+  return {
+    caseCount,
+    seedCount,
+    comparisonCount: cases.length,
+    variantCount: cases[0]?.variants.length ?? 0,
+    runCount: variants.length,
+    gridCellCount: sumBenchmarkBy(cases, (entry) => entry.gridCells),
+  };
+}
+
+export function snapshotBenchmarkVariantResult<TResult extends BenchmarkVariantResultMetrics>(
+  result: TResult
+): BenchmarkVariantResultSnapshot<TResult> {
+  const {
+    wallClockSeconds: _wallClockSeconds,
+    wallClockDeltaVsBaselineSeconds: _wallClockDeltaVsBaselineSeconds,
+    ...snapshot
+  } = result;
+  return snapshot;
+}
+
+export function snapshotBenchmarkVariantSummary<TSummary extends BenchmarkVariantSummaryMetrics>(
+  summary: TSummary
+): BenchmarkVariantSummarySnapshot<TSummary> {
+  const {
+    meanWallClockSeconds: _meanWallClockSeconds,
+    meanWallClockDeltaVsBaselineSeconds: _meanWallClockDeltaVsBaselineSeconds,
+    ...snapshot
+  } = summary;
+  return snapshot;
 }
 
 export function safePopulationRate(population: number, seconds: number | null): number | null {

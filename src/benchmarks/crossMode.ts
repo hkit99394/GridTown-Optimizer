@@ -1473,7 +1473,7 @@ export const DEFAULT_CROSS_MODE_BENCHMARK_CORPUS: readonly CrossModeBenchmarkCas
   },
   {
     name: "row0-corridor-repair-pressure",
-    description: "Sparse row-zero access case with competing service footprints for Auto/LNS budget ablations.",
+    description: "Sparse road-anchor access case with competing service footprints for Auto/LNS budget ablations.",
     problemSizeBand: "small",
     grid: [
       [1, 0, 1, 1, 0, 1],

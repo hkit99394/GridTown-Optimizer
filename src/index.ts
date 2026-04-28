@@ -86,12 +86,16 @@ export {
   runCrossModeBenchmarkSuite,
 } from "./benchmarks/index.js";
 export {
+  assertValidLayout,
+  assertValidLayoutConstraints,
   buildDecisionTraceFromSolution,
   buildEmptySolverProgressSummary,
   buildSolverProgressSummary,
   buildTimeToQualityScorecard,
   evaluateLayout,
   formatSolutionMap,
+  formatLayoutEvaluationErrors,
+  formatLayoutValidationErrors,
   formatSolverProgressSummary,
   formatTimeToQualityScorecard,
   buildPlannerExplainabilityMap,
@@ -99,6 +103,7 @@ export {
   renderSolutionMap,
   serializeDecisionTraceJsonl,
   summarizeDecisionTraceReason,
+  validateLayoutConstraints,
   validateSolution,
   validateSolutionMap,
 } from "./core/index.js";

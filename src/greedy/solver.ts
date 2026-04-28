@@ -65,10 +65,10 @@ import {
   ensureBuildingConnectedToRoads,
   roadSeedRow0RepresentativeCandidates,
   roadsConnectedToRow0,
-  isAdjacentToRoads,
   findAvailableRow0RoadCell,
   pruneRedundantRoads,
 } from "../core/roads.js";
+import { assertValidLayoutConstraints } from "../core/evaluator.js";
 import {
   buildFootprintCandidateIndexFromKeys,
   buildTypedCandidateIndex,
@@ -1971,7 +1971,7 @@ function solveOne(
   const normalizedServices = services.map((service) => normalizeServicePlacement(service));
   const roadConnectedBuildings = [...normalizedServices, ...residentials];
 
-  // Keep only roads connected to row 0, then re-ensure each placed building
+  // Keep only roads connected to the anchor boundary, then re-ensure each placed building
   // is connected to that network (robust against any stray/disconnected roads).
   let roadsValid = roadsConnectedToRow0(G, roads);
   if (roadsValid.size === 0) {
@@ -2001,34 +2001,17 @@ function solveOne(
 
   roadsValid = pruneRedundantRoads(G, roadsValid, roadConnectedBuildings);
 
-  // No road may overlap any building cell.
-  for (const k of occupiedBuildings) {
-    if (roadsValid.has(k)) {
-      throw new Error(`Invalid solution: road overlaps building at cell ${k}.`);
-    }
-  }
+  assertValidLayoutConstraints({
+    grid: G,
+    roads: roadsValid,
+    services: services.map((service, index) => ({
+      ...service,
+      bonus: serviceBonuses[index] ?? 0,
+    })),
+    residentials,
+    params,
+  }, "Invalid greedy layout");
 
-  // Every explicit road component must be reachable from row 0.
-  const roadsReachable = roadsConnectedToRow0(G, roadsValid);
-  if (roadsReachable.size !== roadsValid.size) {
-    throw new Error("Invalid solution: found road cells not connected to row 0.");
-  }
-
-  // Hard post-condition: every building must be adjacent to at least one road cell.
-  for (let index = 0; index < services.length; index++) {
-    const service = services[index]!;
-    const normalized = normalizedServices[index]!;
-    if (!isAdjacentToRoads(roadsValid, normalized.r, normalized.c, normalized.rows, normalized.cols)) {
-      throw new Error(`Invalid solution: service at (${service.r}, ${service.c}) is not connected to roads.`);
-    }
-  }
-  for (const r of residentials) {
-    if (!isAdjacentToRoads(roadsValid, r.r, r.c, r.rows, r.cols)) {
-      throw new Error(
-        `Invalid solution: residential at (${r.r}, ${r.c}) size ${r.rows}x${r.cols} is not connected to roads.`
-      );
-    }
-  }
   return {
     optimizer: "greedy",
     roads: roadsValid,
@@ -3342,7 +3325,8 @@ function runGreedyServiceNeighborhoodSearch(options: {
 function solutionRow0RoadSeed(solution: Solution): Set<string> | undefined {
   const seed = new Set<string>();
   for (const key of solution.roads) {
-    if (key.startsWith("0,")) seed.add(key);
+    const [rowText, colText] = key.split(",");
+    if (Number(rowText) === 0 || Number(colText) === 0) seed.add(key);
   }
   return seed.size > 0 ? seed : undefined;
 }

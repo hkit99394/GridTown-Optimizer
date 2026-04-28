@@ -197,11 +197,11 @@ function testDistinctResidentialTypes() {
   assert.equal(evaluation.valid, true);
 }
 
-function testNoRowZeroRoadThrows() {
+function testNoRoadAnchorBoundaryThrows() {
   const grid = [
     [0, 0, 0],
-    [1, 1, 1],
-    [1, 1, 1],
+    [0, 1, 1],
+    [0, 1, 1],
   ];
 
   assert.throws(
@@ -359,6 +359,8 @@ function testIndexImportHasNoSideEffects() {
     const api = require(indexPath);
     assert.equal(typeof api.solve, "function");
     assert.equal(typeof api.evaluateLayout, "function");
+    assert.equal(typeof api.validateLayoutConstraints, "function");
+    assert.equal(typeof api.assertValidLayoutConstraints, "function");
     assert.deepEqual(calls, []);
     delete require.cache[indexPath];
   } finally {
@@ -2681,7 +2683,7 @@ function testPlannerResultsAppliesConnectivityRiskMap() {
       },
     },
   });
-  const grid = [[1, 1, 0], [0, 1, 0], [0, 1, 1]];
+  const grid = [[0, 0, 0, 0], [1, 1, 1, 0], [1, 0, 1, 1]];
   const state = {
     isSolving: false,
     grid,
@@ -2770,16 +2772,13 @@ function testPlannerResultsAppliesConnectivityRiskMap() {
 
   const findCell = (row, col) =>
     elements.resultMapGrid.children.find((cell) => cell.dataset.r === String(row) && cell.dataset.c === String(col));
-  const rowZeroChoke = findCell(0, 1);
-  const middleChoke = findCell(1, 1);
-  const safeAnchor = findCell(0, 0);
-  const blockedCell = findCell(0, 2);
+  const leftColumnChoke = findCell(1, 1);
+  const safeAnchor = findCell(2, 0);
+  const blockedCell = findCell(0, 1);
 
-  assert.match(rowZeroChoke.className, /connectivity-risk-heatmap-cell/);
-  assert.equal(rowZeroChoke.dataset.connectivityRisk, "3");
-  assert.match(rowZeroChoke.title, /connectivity risk 3 cells/);
-  assert.match(middleChoke.className, /connectivity-risk-heatmap-cell/);
-  assert.equal(middleChoke.dataset.connectivityRisk, "2");
+  assert.match(leftColumnChoke.className, /connectivity-risk-heatmap-cell/);
+  assert.equal(leftColumnChoke.dataset.connectivityRisk, "3");
+  assert.match(leftColumnChoke.title, /connectivity risk 3 cells/);
   assert.doesNotMatch(safeAnchor.className, /heatmap-cell/);
   assert.doesNotMatch(blockedCell.className, /heatmap-cell/);
   assert.equal(elements.resultOverlay.children.length, 0);
@@ -2883,8 +2882,8 @@ function testManualLayoutResponseCleansRedundantRoads() {
   );
 
   assert.equal(response.validation.valid, true);
-  assert.deepEqual([...response.solution.roads].sort(), ["0,1", "1,1", "2,1"]);
-  assert.equal(response.stats.roadCount, 3);
+  assert.deepEqual([...response.solution.roads].sort(), ["2,0", "2,1"]);
+  assert.equal(response.stats.roadCount, 2);
   assert.equal(response.stats.totalPopulation, 10);
 }
 
@@ -4257,7 +4256,7 @@ function testFilesystemSolveLogTracksSolverClockAcrossHeartbeats() {
 
 async function main() {
   testDistinctResidentialTypes();
-  testNoRowZeroRoadThrows();
+  testNoRoadAnchorBoundaryThrows();
   testEvaluatorHonorsCountCaps();
   testResidentialCapStillAppliesWithTypedResidentials();
   testNamedBuildingTypesAreAccepted();

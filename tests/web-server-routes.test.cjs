@@ -895,7 +895,7 @@ async function testImmediateSolveRejectsInvalidCpSatOptionsBeforeStartingBackend
         },
       },
       expectedError:
-        "Invalid solver input: CP-SAT warm-start hint cpSat.warmStartHint.solution is invalid: Road network does not touch row 0.",
+        "Invalid solver input: CP-SAT warm-start hint cpSat.warmStartHint.solution is invalid: Road network does not touch row 0 or column 0.",
     },
   ];
 
@@ -1280,8 +1280,8 @@ async function testLayoutEvaluateCleansRedundantRoads(handler) {
   assert.equal(result.statusCode, 200);
   assert.equal(result.payload.ok, true);
   assert.equal(result.payload.validation.valid, true);
-  assert.deepEqual([...result.payload.solution.roads].sort(), ["0,1", "1,1", "2,1"]);
-  assert.equal(result.payload.stats.roadCount, 3);
+  assert.deepEqual([...result.payload.solution.roads].sort(), ["2,0", "2,1"]);
+  assert.equal(result.payload.stats.roadCount, 2);
   assert.equal(result.payload.stats.totalPopulation, 10);
 }
 
@@ -1330,7 +1330,7 @@ async function testLayoutEvaluateReportsWellFormedInvalidManualLayout(handler) {
   assert.equal(result.statusCode, 200);
   assert.equal(result.payload.ok, true);
   assert.equal(result.payload.validation.valid, false);
-  assert.match(result.payload.validation.errors.join("\n"), /Road network does not touch row 0/);
+  assert.match(result.payload.validation.errors.join("\n"), /Road network does not touch row 0 or column 0/);
   assert.equal(result.payload.solution.manualLayout, true);
 }
 
@@ -1830,7 +1830,7 @@ async function testStartSolveRejectsInvalidCpSatWarmStartBeforeStartingJob(handl
     assert.equal(result.payload.ok, false);
     assert.equal(
       result.payload.error,
-      "Invalid solver input: CP-SAT warm-start hint cpSat.warmStartHint.solution is invalid: Road network does not touch row 0."
+      "Invalid solver input: CP-SAT warm-start hint cpSat.warmStartHint.solution is invalid: Road network does not touch row 0 or column 0."
     );
     assert.equal(optimizerAdapterRequested, false);
 

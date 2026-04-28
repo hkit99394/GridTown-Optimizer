@@ -406,7 +406,7 @@ export const DEFAULT_LNS_BENCHMARK_CORPUS: readonly LnsBenchmarkCase[] = Object.
   },
   {
     name: "row0-anchor-repair",
-    description: "Sparse row-zero access case that exercises LNS repair around road anchors.",
+    description: "Sparse road-anchor access case that exercises LNS repair around road anchors.",
     grid: [
       [1, 0, 1, 0],
       [0, 0, 1, 1],

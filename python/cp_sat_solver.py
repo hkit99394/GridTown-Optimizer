@@ -58,7 +58,7 @@ class CandidatePlacementMaps:
 class BuiltCpSatModel:
     model: Any
     allowed_cells: list[tuple[int, int]]
-    row0_ids: list[int]
+    anchor_ids: list[int]
     road_vars: list[Any]
     root_vars: dict[int, Any]
     service_vars: list[Any]
@@ -180,13 +180,19 @@ def orthogonal_neighbors(grid, r: int, c: int):
             yield (r2, c2)
 
 
-def reachable_allowed_from_row0(grid):
-    row0_cells = [(0, c) for c in range(len(grid[0])) if is_allowed(grid, 0, c)]
-    if not row0_cells:
+def road_anchor_cells(grid):
+    anchors = [(0, c) for c in range(len(grid[0])) if is_allowed(grid, 0, c)]
+    anchors.extend((r, 0) for r in range(1, len(grid)) if is_allowed(grid, r, 0))
+    return anchors
+
+
+def reachable_allowed_from_road_anchors(grid):
+    anchor_cells = road_anchor_cells(grid)
+    if not anchor_cells:
         return set()
 
-    visited = set(row0_cells)
-    queue = list(row0_cells)
+    visited = set(anchor_cells)
+    queue = list(anchor_cells)
     index = 0
     while index < len(queue):
         r, c = queue[index]
@@ -288,8 +294,8 @@ def infer_service_slot_cap(params, service_types):
     return min(int(max_services), total_available)
 
 
-def touches_road_anchor_row(candidate):
-    return int(candidate["r"]) == 0
+def touches_road_anchor_boundary(candidate):
+    return int(candidate["r"]) == 0 or int(candidate["c"]) == 0
 
 
 def service_type_orientations(service_type):
@@ -328,7 +334,7 @@ def iter_active_type_orientations(building_types, orientation_fn):
 def add_protected_reachable_border_cells(protected, grid, reachable_allowed, placement_map, dimensions):
     for rows, cols in dimensions:
         for placement in placement_map.get(f"{rows}x{cols}", []):
-            if touches_road_anchor_row(placement):
+            if touches_road_anchor_boundary(placement):
                 continue
             for cell in rectangle_border_cells(grid, placement["r"], placement["c"], rows, cols):
                 if cell in reachable_allowed:
@@ -361,7 +367,7 @@ def build_candidate_placement_maps(grid, params) -> CandidatePlacementMaps:
 
 
 def collect_protected_road_cells(grid, params, reachable_allowed, placement_maps: CandidatePlacementMaps):
-    protected = {(0, c) for c in range(len(grid[0])) if (0, c) in reachable_allowed}
+    protected = {cell for cell in road_anchor_cells(grid) if cell in reachable_allowed}
     service_types = params.get("serviceTypes") or []
     add_protected_reachable_border_cells(
         protected,
@@ -467,8 +473,8 @@ def build_road_neighbor_ids(grid, id_to_cell, cell_to_id, road_eligible_ids):
     return road_neighbor_ids
 
 
-def compute_reachable_road_ids_without_gate(road_neighbor_ids, road_eligible_ids, eligible_row0_ids, blocked_gate_id):
-    start_ids = [cell_id for cell_id in eligible_row0_ids if cell_id != blocked_gate_id]
+def compute_reachable_road_ids_without_gate(road_neighbor_ids, road_eligible_ids, eligible_anchor_ids, blocked_gate_id):
+    start_ids = [cell_id for cell_id in eligible_anchor_ids if cell_id != blocked_gate_id]
     visited = set(start_ids)
     queue = list(start_ids)
     index = 0
@@ -483,12 +489,12 @@ def compute_reachable_road_ids_without_gate(road_neighbor_ids, road_eligible_ids
     return visited
 
 
-def compute_gate_downstream_cells(road_neighbor_ids, road_eligible_ids, eligible_row0_ids):
+def compute_gate_downstream_cells(road_neighbor_ids, road_eligible_ids, eligible_anchor_ids):
     road_eligible_ids = set(road_eligible_ids)
     gate_downstream_cells = {}
     for gate_id in road_eligible_ids:
         reachable_without_gate = compute_reachable_road_ids_without_gate(
-            road_neighbor_ids, road_eligible_ids, eligible_row0_ids, gate_id
+            road_neighbor_ids, road_eligible_ids, eligible_anchor_ids, gate_id
         )
         downstream = road_eligible_ids - reachable_without_gate - {gate_id}
         if downstream:
@@ -500,7 +506,7 @@ def compute_candidate_gate_requirements(candidates, gate_downstream_cells, road_
     road_eligible_ids = set(road_eligible_ids)
     gate_requirements = defaultdict(list)
     for candidate_index, candidate in enumerate(candidates):
-        if touches_road_anchor_row(candidate):
+        if touches_road_anchor_boundary(candidate):
             continue
         viable_border = {cell_id for cell_id in candidate["border"] if cell_id in road_eligible_ids}
         if not viable_border:
@@ -521,8 +527,8 @@ def build_gate_regional_capacity_coefficients(candidates, gate_candidate_indices
     return coefficients
 
 
-def analyze_gate_access_constraints(road_eligible_ids, road_neighbor_ids, eligible_row0_ids, service_candidates, residential_candidates):
-    gate_downstream_cells = compute_gate_downstream_cells(road_neighbor_ids, road_eligible_ids, eligible_row0_ids)
+def analyze_gate_access_constraints(road_eligible_ids, road_neighbor_ids, eligible_anchor_ids, service_candidates, residential_candidates):
+    gate_downstream_cells = compute_gate_downstream_cells(road_neighbor_ids, road_eligible_ids, eligible_anchor_ids)
     service_gate_requirements = compute_candidate_gate_requirements(service_candidates, gate_downstream_cells, road_eligible_ids)
     residential_gate_requirements = compute_candidate_gate_requirements(
         residential_candidates, gate_downstream_cells, road_eligible_ids
@@ -594,7 +600,7 @@ def add_occupancy_constraints(model, cell_count, road_vars, service_vars, servic
 def add_candidate_border_access_constraints(model, road_vars, placement_vars, candidates):
     for candidate_index, variable in enumerate(placement_vars):
         candidate = candidates[candidate_index]
-        if touches_road_anchor_row(candidate):
+        if touches_road_anchor_boundary(candidate):
             continue
         model.Add(sum(road_vars[cell_id] for cell_id in candidate["border"]) >= variable)
 
@@ -608,7 +614,7 @@ def build_border_access_capacity_coefficients(cell_count, candidates):
     coefficients = [0] * cell_count
     non_anchor_candidate_indices = []
     for candidate_index, candidate in enumerate(candidates):
-        if touches_road_anchor_row(candidate):
+        if touches_road_anchor_boundary(candidate):
             continue
         non_anchor_candidate_indices.append(candidate_index)
         for cell_id in candidate["border"]:
@@ -767,9 +773,9 @@ def add_opposing_flow_constraints(model, road_neighbor_ids, road_eligible_ids, d
         model.Add(forward + backward <= total_roads - 1)
 
 
-def create_root_supply_variables(model, eligible_row0_ids, root_vars, cell_count, total_roads):
+def create_root_supply_variables(model, eligible_anchor_ids, root_vars, cell_count, total_roads):
     root_supply = {}
-    for cell_id in eligible_row0_ids:
+    for cell_id in eligible_anchor_ids:
         supply_var = model.NewIntVar(0, cell_count, f"root_supply_{cell_id}")
         model.Add(supply_var <= cell_count * root_vars[cell_id])
         root_supply[cell_id] = supply_var
@@ -798,7 +804,7 @@ def add_flow_connectivity_constraints(
     road_vars,
     road_neighbor_ids,
     root_vars,
-    eligible_row0_ids,
+    eligible_anchor_ids,
     total_roads,
 ):
     cell_count = len(road_vars)
@@ -811,7 +817,7 @@ def add_flow_connectivity_constraints(
         road_vars,
     )
     add_opposing_flow_constraints(model, road_neighbor_ids, road_eligible_ids, directed_edge_vars, total_roads)
-    root_supply = create_root_supply_variables(model, eligible_row0_ids, root_vars, cell_count, total_roads)
+    root_supply = create_root_supply_variables(model, eligible_anchor_ids, root_vars, cell_count, total_roads)
     add_flow_balance_constraints(model, road_vars, incoming, outgoing, root_vars, root_supply, total_roads)
     return directed_edges
 
@@ -1099,7 +1105,7 @@ def materialize_candidate_geometry(grid, cell_to_id, placement, rows, cols):
         return None
 
     border = [cell_to_id[cell] for cell in rectangle_border_cells(grid, r, c, rows, cols) if cell in cell_to_id]
-    if not border and not touches_road_anchor_row(placement):
+    if not border and not touches_road_anchor_boundary(placement):
         return None
 
     return {
@@ -1319,7 +1325,7 @@ def resolve_warm_start_selection(built: BuiltCpSatModel, warm_start_hint) -> Res
 
 
 def hinted_root_id_from_selected_roads(built: BuiltCpSatModel, selected_road_ids):
-    return next((cell_id for cell_id in built.row0_ids if cell_id in selected_road_ids), None)
+    return next((cell_id for cell_id in built.anchor_ids if cell_id in selected_road_ids), None)
 
 
 def resolve_warm_start_hint_indices(
@@ -1348,27 +1354,27 @@ def resolve_warm_start_hint_indices(
     return selected_road_ids, selected_service_ids, selected_residential_ids
 
 
-def create_road_network_variables(model, grid, allowed_cells, row0_ids, road_eligible_ids, id_to_cell, cell_to_id):
+def create_road_network_variables(model, grid, allowed_cells, anchor_ids, road_eligible_ids, id_to_cell, cell_to_id):
     cell_count = len(allowed_cells)
     road_vars = [model.NewBoolVar(f"road_{idx}") for idx in range(cell_count)]
     for cell_id in range(cell_count):
         if cell_id not in road_eligible_ids:
             model.Add(road_vars[cell_id] == 0)
 
-    root_vars = {idx: model.NewBoolVar(f"root_{idx}") for idx in row0_ids if idx in road_eligible_ids}
+    root_vars = {idx: model.NewBoolVar(f"root_{idx}") for idx in anchor_ids if idx in road_eligible_ids}
     model.Add(sum(root_vars.values()) == 1)
     for idx, root_var in root_vars.items():
         model.Add(root_var <= road_vars[idx])
 
-    eligible_row0_ids = [cell_id for cell_id in row0_ids if cell_id in road_eligible_ids]
-    for position, cell_id in enumerate(eligible_row0_ids):
-        for earlier_cell_id in eligible_row0_ids[:position]:
+    eligible_anchor_ids = [cell_id for cell_id in anchor_ids if cell_id in road_eligible_ids]
+    for position, cell_id in enumerate(eligible_anchor_ids):
+        for earlier_cell_id in eligible_anchor_ids[:position]:
             model.Add(root_vars[cell_id] + road_vars[earlier_cell_id] <= 1)
 
     total_roads = model.NewIntVar(1, cell_count, "total_roads")
     model.Add(total_roads == sum(road_vars))
     road_neighbor_ids = build_road_neighbor_ids(grid, id_to_cell, cell_to_id, road_eligible_ids)
-    return road_vars, root_vars, eligible_row0_ids, total_roads, road_neighbor_ids
+    return road_vars, root_vars, eligible_anchor_ids, total_roads, road_neighbor_ids
 
 
 def create_building_selection_variables(model, params, service_candidates, residential_candidates):
@@ -1394,15 +1400,15 @@ def build_model(grid, params) -> BuiltCpSatModel:
     if not grid or not grid[0]:
         fail("Grid must be non-empty.")
 
-    reachable_allowed = reachable_allowed_from_row0(grid)
+    reachable_allowed = reachable_allowed_from_road_anchors(grid)
     if not reachable_allowed:
-        fail("No feasible solution found: no allowed road cell exists in row 0.")
+        fail("No feasible solution found: no allowed road cell exists in row 0 or column 0.")
     placement_maps = build_candidate_placement_maps(grid, params)
     protected_road_cells = collect_protected_road_cells(grid, params, reachable_allowed, placement_maps)
     road_eligible_cells = trim_road_eligible_cells(grid, reachable_allowed, protected_road_cells)
 
     allowed_cells, cell_to_id, id_to_cell = index_reachable_allowed_cells(grid, reachable_allowed)
-    row0_ids = [idx for idx, (r, _) in enumerate(allowed_cells) if r == 0]
+    anchor_ids = [idx for idx, (r, c) in enumerate(allowed_cells) if r == 0 or c == 0]
     road_eligible_ids = {cell_to_id[cell] for cell in road_eligible_cells if cell in cell_to_id}
 
     service_candidates = enumerate_service_candidates(grid, params, cell_to_id, placement_maps.service)
@@ -1414,11 +1420,11 @@ def build_model(grid, params) -> BuiltCpSatModel:
 
     model = cp_model.CpModel()
     cell_count = len(allowed_cells)
-    road_vars, root_vars, eligible_row0_ids, total_roads, road_neighbor_ids = create_road_network_variables(
+    road_vars, root_vars, eligible_anchor_ids, total_roads, road_neighbor_ids = create_road_network_variables(
         model,
         grid,
         allowed_cells,
-        row0_ids,
+        anchor_ids,
         road_eligible_ids,
         id_to_cell,
         cell_to_id,
@@ -1426,7 +1432,7 @@ def build_model(grid, params) -> BuiltCpSatModel:
     gate_access_analysis = analyze_gate_access_constraints(
         road_eligible_ids,
         road_neighbor_ids,
-        eligible_row0_ids,
+        eligible_anchor_ids,
         service_candidates,
         residential_candidates,
     )
@@ -1460,7 +1466,7 @@ def build_model(grid, params) -> BuiltCpSatModel:
         road_vars,
         road_neighbor_ids,
         root_vars,
-        eligible_row0_ids,
+        eligible_anchor_ids,
         total_roads,
     )
     populations, total_population, total_services, objective_policy = add_population_model_and_objective(
@@ -1477,7 +1483,7 @@ def build_model(grid, params) -> BuiltCpSatModel:
     return BuiltCpSatModel(
         model=model,
         allowed_cells=allowed_cells,
-        row0_ids=row0_ids,
+        anchor_ids=anchor_ids,
         road_vars=road_vars,
         root_vars=root_vars,
         service_vars=service_vars,

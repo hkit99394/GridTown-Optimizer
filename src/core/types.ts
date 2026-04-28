@@ -465,7 +465,7 @@ export interface GreedyOptions {
   densityTieBreaker?: boolean;
   /** Population/score window for density tie-breaking, expressed as a percent. Default 2. */
   densityTieBreakerTolerancePercent?: number;
-  /** Prefer placements with lower building-induced row-0 connectivity shadow when Greedy scores tie. Default false. */
+  /** Prefer placements with lower building-induced road-anchor connectivity shadow when Greedy scores tie. Default false. */
   connectivityShadowScoring?: boolean;
   /** Fixed seed for reproducible greedy restart shuffling. */
   randomSeed?: number;
@@ -1176,6 +1176,12 @@ export interface LayoutEvaluationInput {
   services: EvaluatedServicePlacement[];
   residentials: ResidentialPlacement[];
   params: SolverParams;
+}
+
+/** Shared constraint-validation result for explicit layouts. */
+export interface LayoutConstraintValidationResult {
+  valid: boolean;
+  errors: string[];
 }
 
 /** Per-building scored result for manual layout evaluation */

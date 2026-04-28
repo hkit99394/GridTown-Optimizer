@@ -3,6 +3,7 @@
  */
 
 import type {
+  LayoutConstraintValidationResult,
   LayoutEvaluationInput,
   LayoutEvaluationResult,
   EvaluatedResidentialResult,
@@ -144,7 +145,7 @@ function assignGroupExact(
   return { ok: true, assignedPop };
 }
 
-export function evaluateLayout(input: LayoutEvaluationInput): LayoutEvaluationResult {
+export function validateLayoutConstraints(input: LayoutEvaluationInput): LayoutConstraintValidationResult {
   const { grid, roads, services, residentials, params } = input;
   const errors: string[] = [];
   const { maxServices, maxResidentials } = getBuildingLimits(params);
@@ -197,21 +198,21 @@ export function evaluateLayout(input: LayoutEvaluationInput): LayoutEvaluationRe
     }
   }
 
-  // Road connectivity to row 0.
+  // Road connectivity to row 0 or column 0.
   const connected = roadsConnectedToRow0(grid, roads);
   if (connected.size === 0) {
-    errors.push("Road network does not touch row 0.");
+    errors.push("Road network does not touch row 0 or column 0.");
   }
   if (connected.size !== roads.size) {
     const disconnectedRoads = [...roads].filter((key) => !connected.has(key));
     const disconnectedSummary = disconnectedRoads.length > 0
       ? ` Disconnected road cells: ${summarizeCellKeys(disconnectedRoads)}.`
       : "";
-    errors.push(`Some road cells are not connected to any row-0-connected road component.${disconnectedSummary}`);
+    errors.push(`Some road cells are not connected to any row-0-or-column-0-connected road component.${disconnectedSummary}`);
   }
 
   // Building-road adjacency.
-  // Buildings that cover row 0 are treated as connected to the road anchor.
+  // Buildings that cover row 0 or column 0 are treated as connected to the road anchor.
   for (const s of services) {
     const normalized = normalizeServicePlacement(s);
     if (!isAdjacentToRoads(roads, normalized.r, normalized.c, normalized.rows, normalized.cols)) {
@@ -223,6 +224,17 @@ export function evaluateLayout(input: LayoutEvaluationInput): LayoutEvaluationRe
       errors.push(`Residential at (${res.r},${res.c}) size ${res.rows}x${res.cols} is not adjacent to a road.`);
     }
   }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+  };
+}
+
+export function evaluateLayout(input: LayoutEvaluationInput): LayoutEvaluationResult {
+  const { grid, services, residentials, params } = input;
+  const constraintValidation = validateLayoutConstraints(input);
+  const errors = [...constraintValidation.errors];
 
   // Population computation.
   const boosts = computeResidentialBoosts(grid, services, residentials);
@@ -275,6 +287,35 @@ export function evaluateLayout(input: LayoutEvaluationInput): LayoutEvaluationRe
     totalPopulation,
     boosts,
   };
+}
+
+export function formatLayoutValidationErrors(
+  validation: Pick<LayoutConstraintValidationResult | LayoutEvaluationResult, "errors">
+): string {
+  return validation.errors.join(" ");
+}
+
+export function formatLayoutEvaluationErrors(evaluation: Pick<LayoutEvaluationResult, "errors">): string {
+  return formatLayoutValidationErrors(evaluation);
+}
+
+export function assertValidLayoutConstraints(
+  input: LayoutEvaluationInput,
+  messagePrefix = "Invalid layout"
+): LayoutConstraintValidationResult {
+  const validation = validateLayoutConstraints(input);
+  if (!validation.valid) {
+    throw new Error(`${messagePrefix}: ${formatLayoutValidationErrors(validation)}`);
+  }
+  return validation;
+}
+
+export function assertValidLayout(input: LayoutEvaluationInput, messagePrefix = "Invalid layout"): LayoutEvaluationResult {
+  const evaluation = evaluateLayout(input);
+  if (!evaluation.valid) {
+    throw new Error(`${messagePrefix}: ${formatLayoutValidationErrors(evaluation)}`);
+  }
+  return evaluation;
 }
 
 function validateServiceTypeAssignments(solution: Solution, params: SolverParams, errors: string[]): void {

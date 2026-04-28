@@ -32,9 +32,9 @@ The solver must place:
 - residential buildings on allowed rectangular footprints
 
 Subject to these core rules:
-- every road component must touch row `0`
-- every building must connect to a row-0-connected road component
-- buildings touching row `0` are treated as road-connected automatically
+- every road component must touch row `0` or column `0`
+- every building must connect to a row-0-or-column-0-connected road component
+- buildings touching row `0` or column `0` are treated as road-connected automatically
 - buildings cannot overlap each other or roads
 - service buildings have their own footprint, bonus, range, and availability
 - residential buildings have typed min/max population and availability
@@ -621,6 +621,8 @@ The public API is exposed from [src/index.ts](./src/index.ts):
 - `normalizeCpSatBenchmarkOptions`
 - `DEFAULT_CP_SAT_BENCHMARK_CORPUS`
 - `evaluateLayout`
+- `validateLayoutConstraints`
+- `assertValidLayoutConstraints`
 - `validateSolution`
 - `renderSolutionMap`
 - `formatSolutionMap`
@@ -707,11 +709,11 @@ greedy: {
 
 Set `greedy.diagnostics: true` to include `solution.greedyDiagnostics`, a bounded post-solve report that scans final unplaced candidates and groups "why not placed?" examples by blocked footprint, missing road path, no service coverage / base-only residential population, availability caps, and lower-score/no-improvement outcomes.
 
-When `greedy.profile` is enabled, Greedy counters include `roads.connectivityShadow*` fields. These measure how many row-0-reachable empty cells each committed building footprint removes, separating cells consumed by the footprint from downstream cells disconnected by that placement. Profile output also includes bounded connectivity-shadow tie-break samples showing the candidate, incumbent, chosen placement, rejected placement, road cost, and shadow penalty. The benchmark formatter prints this as `connectivity-shadow=...` and `connectivity-shadow-scoring=...`.
+When `greedy.profile` is enabled, Greedy counters include `roads.connectivityShadow*` fields. These measure how many anchor-reachable empty cells each committed building footprint removes, separating cells consumed by the footprint from downstream cells disconnected by that placement. Profile output also includes bounded connectivity-shadow tie-break samples showing the candidate, incumbent, chosen placement, rejected placement, road cost, and shadow penalty. The benchmark formatter prints this as `connectivity-shadow=...` and `connectivity-shadow-scoring=...`.
 
-The same profile includes `roads.roadOpportunity*` counters and bounded `roadOpportunityTraces` for accepted constructive service/residential placements plus accepted residential local-search and service-neighborhood moves. These traces pair the accepted placement's road cost with row-0-reachable frontier before/after counts, total lost cells, footprint cells, and downstream disconnected cells. Constructive and local-search traces can include bounded near-miss counterfactuals showing rejected candidates with their score, road-cost delta, move kind, and frontier loss. The benchmark formatter prints this as `road-opportunity=...` plus sample `road-opportunity-placement=...` and `road-opportunity-counterfactual=...` rows.
+The same profile includes `roads.roadOpportunity*` counters and bounded `roadOpportunityTraces` for accepted constructive service/residential placements plus accepted residential local-search and service-neighborhood moves. These traces pair the accepted placement's road cost with anchor-reachable frontier before/after counts, total lost cells, footprint cells, and downstream disconnected cells. Constructive and local-search traces can include bounded near-miss counterfactuals showing rejected candidates with their score, road-cost delta, move kind, and frontier loss. The benchmark formatter prints this as `road-opportunity=...` plus sample `road-opportunity-placement=...` and `road-opportunity-counterfactual=...` rows.
 
-Set `greedy.connectivityShadowScoring: true` to use that signal as an opt-in placement tie-breaker: when normal Greedy scores tie inside a bounded cheap-road window, candidates that disconnect fewer future row-0-reachable cells are preferred. The option keeps the normal Greedy result when the shadow-scored result does not beat it on population and road count. The default is `false`, so profiling alone does not change placement choices.
+Set `greedy.connectivityShadowScoring: true` to use that signal as an opt-in placement tie-breaker: when normal Greedy scores tie inside a bounded cheap-road window, candidates that disconnect fewer future anchor-reachable cells are preferred. The option keeps the normal Greedy result when the shadow-scored result does not beat it on population and road count. The default is `false`, so profiling alone does not change placement choices.
 
 Set `greedy.densityTieBreaker: true` to prefer more central high-value placements when Greedy scores are within `greedy.densityTieBreakerTolerancePercent` of each other. The web planner exposes this only for standalone Greedy; Auto keeps its fixed Greedy seed-stage ranking policy.
 
@@ -793,7 +795,7 @@ Road cells are encoded as `"r,c"` strings inside the `Set`.
 - [src/lns/solver.ts](./src/lns/solver.ts): LNS solver
 - [src/cp-sat/solver.ts](./src/cp-sat/solver.ts): TypeScript bridge for CP-SAT
 - [python/cp_sat_solver.py](./python/cp_sat_solver.py): OR-Tools CP-SAT model
-- [src/greedy/row0Anchors.ts](./src/greedy/row0Anchors.ts): greedy row-0 feasibility and anchor refinement helpers
+- [src/greedy/row0Anchors.ts](./src/greedy/row0Anchors.ts): greedy road-anchor feasibility and refinement helpers
 - [src/runtime/jobs/solveJobManager.ts](./src/runtime/jobs/solveJobManager.ts): background solve job lifecycle
 - [src/server/http/requestHandler.ts](./src/server/http/requestHandler.ts): planner request composition
 - [src/server/http/routes.ts](./src/server/http/routes.ts): planner API route handlers

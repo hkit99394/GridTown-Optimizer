@@ -886,16 +886,22 @@
       ];
     }
 
-    function floodReachableFromRowZero(grid, traversable, removedKey = null) {
+    function floodReachableFromAnchorBoundary(grid, traversable, removedKey = null) {
       const reachable = new Set();
       const queue = [];
-      const cols = grid[0]?.length ?? 0;
-      for (let col = 0; col < cols; col += 1) {
-        const key = `0,${col}`;
-        if (key !== removedKey && traversable.has(key)) {
+      const addAnchor = (row, col) => {
+        const key = `${row},${col}`;
+        if (key !== removedKey && traversable.has(key) && !reachable.has(key)) {
           reachable.add(key);
           queue.push(key);
         }
+      };
+      const cols = grid[0]?.length ?? 0;
+      for (let col = 0; col < cols; col += 1) {
+        addAnchor(0, col);
+      }
+      for (let row = 1; row < grid.length; row += 1) {
+        addAnchor(row, 0);
       }
 
       for (let index = 0; index < queue.length; index += 1) {
@@ -915,12 +921,12 @@
       const traversable = getTraversableCells(grid, solution);
       if (traversable.size === 0) return heatmap;
 
-      const baseReachable = floodReachableFromRowZero(grid, traversable);
+      const baseReachable = floodReachableFromAnchorBoundary(grid, traversable);
       if (baseReachable.size === 0) return heatmap;
 
       for (const key of baseReachable) {
         const [row, col] = key.split(",").map(Number);
-        const reachableWithoutCell = floodReachableFromRowZero(grid, traversable, key);
+        const reachableWithoutCell = floodReachableFromAnchorBoundary(grid, traversable, key);
         const lostReachableCells = Math.max(0, baseReachable.size - reachableWithoutCell.size - 1);
         if (lostReachableCells <= 0) continue;
         heatmap.values[row][col] = lostReachableCells;
@@ -948,8 +954,8 @@
             if (!(value > 0)) continue;
             heatmap.values[row][col] = value;
             heatmap.details[row][col] = cell.row0Reachable
-              ? `row-0 reachable at distance ${formatExplainabilityNumber(cell.row0Distance ?? 0)}`
-              : "not row-0 reachable";
+              ? `anchor reachable at distance ${formatExplainabilityNumber(cell.row0Distance ?? 0)}`
+              : "not anchor reachable";
             heatmap.maxValue = Math.max(heatmap.maxValue, map.maxServiceValue ?? value);
           } else if (mode === "placement-opportunity") {
             const residentialValue = Number(cell.residentialOpportunity ?? 0);
@@ -1067,7 +1073,7 @@
         );
       }
       if (cell.row0Reachable) {
-        parts.push(`row-0 distance ${formatExplainabilityNumber(cell.row0Distance ?? 0)}`);
+        parts.push(`anchor distance ${formatExplainabilityNumber(cell.row0Distance ?? 0)}`);
       }
       return parts.join("; ");
     }
@@ -1148,9 +1154,9 @@
               : "No nearby service bonus reaches this cell.";
         elements.selectedBuildingAvailability.textContent =
           kind === "empty"
-            ? (explainability?.row0Reachable ? "Open and row-0 reachable" : "Open cell")
+            ? (explainability?.row0Reachable ? "Open and anchor reachable" : "Open cell")
             : kind === "road"
-              ? (explainability?.row0Reachable ? "Occupied by row-0 reachable road" : "Occupied by road")
+              ? (explainability?.row0Reachable ? "Occupied by anchor reachable road" : "Occupied by road")
               : kind === "blocked"
                 ? "Not buildable"
                 : "Occupied by a building";

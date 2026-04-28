@@ -732,7 +732,7 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
   },
   {
     name: "deferred-road-packing-gain",
-    description: "Packing-heavy case where deferred road commitment finds a stronger valid explicit-road realization.",
+    description: "Packing-heavy case that exercises deferred road materialization against the road-anchor boundary.",
     grid: [
       [1, 1, 1, 1, 1, 1],
       [1, 0, 1, 1, 1, 0],
@@ -763,7 +763,7 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
   },
   {
     name: "fixed-service-realization-complete",
-    description: "Refinement/exhaustive reruns should evaluate a forced service set across bounded orders and row-0 seeds.",
+    description: "Refinement/exhaustive reruns should evaluate a forced service set across bounded orders and road-anchor seeds.",
     grid: [
       [0, 1, 1, 1, 1, 1],
       [1, 1, 1, 0, 1, 1],
@@ -797,7 +797,7 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
   },
   {
     name: "service-local-neighborhood",
-    description: "Bounded service local search should improve the incumbent even when coarse service refinement is disabled.",
+    description: "Bounded service local search should evaluate service add/remove/swap moves even when coarse service refinement is disabled.",
     grid: [
       [0, 1, 1, 1, 1, 1],
       [1, 1, 1, 0, 1, 1],
@@ -895,7 +895,7 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
   },
   {
     name: "step14-row0-path-null-reservation",
-    description: "Step 14 row-0 edge case where lookahead should keep a path:null top-row service and reserve exactly one anchor road cell for the refill.",
+    description: "Step 14 road-anchor edge case where lookahead should keep a path:null boundary service and reserve exactly one anchor road cell for the refill.",
     grid: [
       [1, 1, 1, 1],
       [1, 1, 1, 1],

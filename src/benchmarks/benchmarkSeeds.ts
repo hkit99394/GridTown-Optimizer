@@ -1,5 +1,12 @@
 export const MAX_BENCHMARK_RANDOM_SEED = 0x7fffffff;
 
+export type BenchmarkSeedRun = number | null;
+
+export interface BenchmarkSeedRunPlan {
+  seeds: number[];
+  seedRuns: BenchmarkSeedRun[];
+}
+
 export function normalizeBenchmarkSeeds(
   seeds: readonly number[] | undefined,
   label: string
@@ -19,6 +26,17 @@ export function normalizeBenchmarkSeeds(
     throw new Error(`${label} must not contain duplicate seeds.`);
   }
   return [...seeds];
+}
+
+export function buildBenchmarkSeedRunPlan(
+  seeds: readonly number[] | undefined,
+  label: string
+): BenchmarkSeedRunPlan {
+  const normalizedSeeds = normalizeBenchmarkSeeds(seeds, label) ?? [];
+  return {
+    seeds: normalizedSeeds,
+    seedRuns: normalizedSeeds.length ? normalizedSeeds : [null],
+  };
 }
 
 export function formatBenchmarkSeeds(seeds: readonly number[]): string {

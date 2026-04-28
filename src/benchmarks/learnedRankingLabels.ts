@@ -10,7 +10,9 @@ import {
 import { DEFAULT_LNS_REPLAY_LABEL_CORPUS } from "./lns.js";
 import {
   benchmarkGeneratedAt,
+  countBenchmarkMatches,
   nonNegativeIntegerOrDefault,
+  sumBenchmarkBy,
   uniqueBenchmarkValues,
 } from "./benchmarkOptions.js";
 import { buildLnsReplayLabelScaleReadiness } from "./lnsReplayLabelReadiness.js";
@@ -213,15 +215,14 @@ function emptySourceCounts(): Record<GreedyOrderingLabelSource, number> {
   };
 }
 
-function addSourceCounts(
-  left: Record<GreedyOrderingLabelSource, number>,
-  right: Record<GreedyOrderingLabelSource, number>
+function sumGreedySourceCounts(
+  splits: readonly GreedyOrderingLabelSplitResult[]
 ): Record<GreedyOrderingLabelSource, number> {
   return {
     "connectivity-shadow-decision":
-      left["connectivity-shadow-decision"] + right["connectivity-shadow-decision"],
+      sumBenchmarkBy(splits, (split) => split.sourceCounts["connectivity-shadow-decision"]),
     "road-opportunity-counterfactual":
-      left["road-opportunity-counterfactual"] + right["road-opportunity-counterfactual"],
+      sumBenchmarkBy(splits, (split) => split.sourceCounts["road-opportunity-counterfactual"]),
   };
 }
 
@@ -256,10 +257,9 @@ function countLnsStatuses(
 }
 
 function countUsableLnsLabels(replay: LnsWindowReplaySnapshot): number {
-  return replay.cases.reduce(
-    (caseTotal, benchmarkCase) =>
-      caseTotal + benchmarkCase.labels.filter((label) => label.usable).length,
-    0
+  return sumBenchmarkBy(
+    replay.cases,
+    (benchmarkCase) => countBenchmarkMatches(benchmarkCase.labels, (label) => label.usable)
   );
 }
 
@@ -519,10 +519,7 @@ export function runLearnedRankingLabelSuite(
     });
   }
 
-  const greedySourceCounts = greedySplits.reduce(
-    (counts, split) => addSourceCounts(counts, split.sourceCounts),
-    emptySourceCounts()
-  );
+  const greedySourceCounts = sumGreedySourceCounts(greedySplits);
 
   return {
     generatedAt: benchmarkGeneratedAt(),
@@ -545,12 +542,12 @@ export function runLearnedRankingLabelSuite(
       },
     },
     greedy: {
-      labelCount: greedySplits.reduce((total, split) => total + split.labelCount, 0),
+      labelCount: sumBenchmarkBy(greedySplits, (split) => split.labelCount),
       sourceCounts: greedySourceCounts,
       splits: greedySplits,
     },
     lns: {
-      labelCount: lnsSplits.reduce((total, split) => total + split.labelCount, 0),
+      labelCount: sumBenchmarkBy(lnsSplits, (split) => split.labelCount),
       scaleReadiness: buildLnsReplayLabelScaleReadiness(lnsSplits),
       splits: lnsSplits,
     },

@@ -14,6 +14,7 @@ import {
   buildBenchmarkSuiteMetadata,
   cloneBenchmarkGrid,
   cloneBenchmarkSolverParams,
+  countBenchmarkMatches,
   listBenchmarkCaseNames,
   meanBenchmarkValue,
   observedCpSatWorkerCpuSeconds,
@@ -21,6 +22,7 @@ import {
   safePopulationRate,
   selectBenchmarkCasesByName,
   uniqueBenchmarkValues,
+  uniqueBenchmarkValuesBy,
 } from "./benchmarkOptions.js";
 import { buildCpSatBenchmarkCpuPlan, normalizeCpSatBenchmarkOptions } from "./cpSat.js";
 import { normalizeGreedyBenchmarkOptions } from "./greedy.js";
@@ -904,8 +906,8 @@ function standardDeviation(values: readonly number[]): number {
 function summarizeMode(mode: CrossModeBenchmarkMode, results: readonly CrossModeBenchmarkModeResult[]): CrossModeBenchmarkModeSummary {
   const populations = results.map((result) => result.totalPopulation);
   const comparable = results.filter((result) => result.winVsAuto !== "baseline" && result.winVsAuto !== "no-auto");
-  const wins = comparable.filter((result) => result.winVsAuto === "win").length;
-  const ties = comparable.filter((result) => result.winVsAuto === "tie").length;
+  const wins = countBenchmarkMatches(comparable, (result) => result.winVsAuto === "win");
+  const ties = countBenchmarkMatches(comparable, (result) => result.winVsAuto === "tie");
   const deltas = results
     .map((result) => result.scoreDeltaVsAuto)
     .filter((value): value is number => typeof value === "number" && Number.isFinite(value));
@@ -928,9 +930,9 @@ function buildSummaries(cases: readonly CrossModeBenchmarkCaseScorecard[]): {
   problemSizeSummaries: CrossModeBenchmarkProblemSizeSummary[];
 } {
   const results = cases.flatMap((scorecard) => scorecard.results);
-  const modes = uniqueBenchmarkValues(results.map((result) => result.mode));
+  const modes = uniqueBenchmarkValuesBy(results, (result) => result.mode);
   const modeSummaries = modes.map((mode) => summarizeMode(mode, results.filter((result) => result.mode === mode)));
-  const problemSizeBands = uniqueBenchmarkValues(results.map((result) => result.problemSizeBand));
+  const problemSizeBands = uniqueBenchmarkValuesBy(results, (result) => result.problemSizeBand);
   const problemSizeSummaries = problemSizeBands.flatMap((problemSizeBand) =>
     modes.map((mode) => ({
       problemSizeBand,

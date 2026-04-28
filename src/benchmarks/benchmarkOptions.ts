@@ -26,6 +26,48 @@ export interface BenchmarkSuiteMetadata {
   selectedCaseNames: string[];
 }
 
+export interface BenchmarkVariantResultMetrics<TName extends string = string> {
+  variantName: TName;
+  seed: number | null;
+  totalPopulation: number;
+  populationDeltaVsBaseline: number;
+  wallClockSeconds: number;
+  wallClockDeltaVsBaselineSeconds: number;
+}
+
+export interface BenchmarkVariantCaseMetrics<TResult extends BenchmarkVariantResultMetrics = BenchmarkVariantResultMetrics> {
+  name: string;
+  variants: readonly TResult[];
+}
+
+export interface BenchmarkVariantSummaryMetrics<TName extends string = string> {
+  variantName: TName;
+  caseCount: number;
+  seedCount: number;
+  comparisonCount: number;
+  meanPopulation: number;
+  medianPopulation: number;
+  worstDecilePopulation: number;
+  bestPopulation: number;
+  meanPopulationDeltaVsBaseline: number;
+  medianPopulationDeltaVsBaseline: number;
+  worstDecilePopulationDeltaVsBaseline: number;
+  bestPopulationDeltaVsBaseline: number;
+  meanWallClockSeconds: number;
+  meanWallClockDeltaVsBaselineSeconds: number;
+  improvedCaseCount: number;
+  regressedCaseCount: number;
+  unchangedCaseCount: number;
+  winRate: number;
+  regressionRate: number;
+  unchangedRate: number;
+  worstPopulationDeltaVsBaseline: number;
+  worstPopulationDeltaCaseName: string | null;
+  worstPopulationDeltaSeed: number | null;
+  bestPopulationDeltaCaseName: string | null;
+  bestPopulationDeltaSeed: number | null;
+}
+
 export type BenchmarkOptionsWithDefaults<TOptions extends object, TDefaults extends Partial<TOptions>> =
   TOptions & { [K in keyof TDefaults]-?: NonNullable<TDefaults[K]> };
 
@@ -49,6 +91,14 @@ export function sumBenchmarkValues(values: readonly number[]): number {
   return values.reduce((total, value) => total + value, 0);
 }
 
+export function sumBenchmarkBy<T>(values: readonly T[], selector: (value: T) => number): number {
+  return values.reduce((total, value) => total + selector(value), 0);
+}
+
+export function countBenchmarkMatches<T>(values: readonly T[], predicate: (value: T) => boolean): number {
+  return values.reduce((total, value) => total + (predicate(value) ? 1 : 0), 0);
+}
+
 export function meanBenchmarkValue(values: readonly number[]): number {
   return values.length === 0 ? 0 : sumBenchmarkValues(values) / values.length;
 }
@@ -69,6 +119,10 @@ export function benchmarkRatio(count: number, total: number): number {
 
 export function uniqueBenchmarkValues<T>(values: readonly T[]): T[] {
   return [...new Set(values)];
+}
+
+export function uniqueBenchmarkValuesBy<T, TValue>(values: readonly T[], selector: (value: T) => TValue): TValue[] {
+  return uniqueBenchmarkValues(values.map(selector));
 }
 
 export function benchmarkGeneratedAt(): string {
@@ -147,6 +201,98 @@ export function selectBenchmarkVariants<
     );
   }
   return requestedNames.map((name) => byName.get(name)!);
+}
+
+function findBenchmarkVariantResult<
+  TName extends string,
+  TResult extends BenchmarkVariantResultMetrics<TName>,
+>(
+  variantName: TName,
+  entry: BenchmarkVariantCaseMetrics<TResult>,
+  missingResultMessage: string
+): TResult {
+  const result = entry.variants.find((candidate) => candidate.variantName === variantName);
+  if (!result) {
+    throw new Error(missingResultMessage);
+  }
+  return result;
+}
+
+function benchmarkVariantSeedCaseLabel<
+  TName extends string,
+  TResult extends BenchmarkVariantResultMetrics<TName>,
+>(
+  result: TResult | null,
+  cases: readonly BenchmarkVariantCaseMetrics<TResult>[]
+): { caseName: string | null; seed: number | null } {
+  if (!result) {
+    return { caseName: null, seed: null };
+  }
+  const match = cases.find((entry) =>
+    entry.variants.some((candidate) => candidate.variantName === result.variantName && candidate === result)
+  );
+  return {
+    caseName: match?.name ?? null,
+    seed: result.seed,
+  };
+}
+
+export function summarizeBenchmarkVariantMetrics<
+  TName extends string,
+  TResult extends BenchmarkVariantResultMetrics<TName>,
+>(
+  variantName: TName,
+  cases: readonly BenchmarkVariantCaseMetrics<TResult>[],
+  caseCount: number,
+  seedCount: number,
+  missingResultMessage: string
+): BenchmarkVariantSummaryMetrics<TName> {
+  const results = cases.map((entry) => findBenchmarkVariantResult(variantName, entry, missingResultMessage));
+  const populations = results.map((entry) => entry.totalPopulation);
+  const populationDeltas = results.map((entry) => entry.populationDeltaVsBaseline);
+  const improvedCaseCount = countBenchmarkMatches(results, (entry) => entry.populationDeltaVsBaseline > 0);
+  const regressedCaseCount = countBenchmarkMatches(results, (entry) => entry.populationDeltaVsBaseline < 0);
+  const unchangedCaseCount = countBenchmarkMatches(results, (entry) => entry.populationDeltaVsBaseline === 0);
+  const worstDeltaResult = results.reduce<TResult | null>(
+    (worst, entry) => (worst === null || entry.populationDeltaVsBaseline < worst.populationDeltaVsBaseline ? entry : worst),
+    null
+  );
+  const bestDeltaResult = results.reduce<TResult | null>(
+    (best, entry) => (best === null || entry.populationDeltaVsBaseline > best.populationDeltaVsBaseline ? entry : best),
+    null
+  );
+  const worstDeltaLabel = benchmarkVariantSeedCaseLabel(worstDeltaResult, cases);
+  const bestDeltaLabel = benchmarkVariantSeedCaseLabel(bestDeltaResult, cases);
+
+  return {
+    variantName,
+    caseCount,
+    seedCount,
+    comparisonCount: results.length,
+    meanPopulation: meanBenchmarkValue(populations),
+    medianPopulation: percentileBenchmarkValue(populations, 0.5),
+    worstDecilePopulation: percentileBenchmarkValue(populations, 0.1),
+    bestPopulation: populations.length ? Math.max(...populations) : 0,
+    meanPopulationDeltaVsBaseline: meanBenchmarkValue(populationDeltas),
+    medianPopulationDeltaVsBaseline: percentileBenchmarkValue(populationDeltas, 0.5),
+    worstDecilePopulationDeltaVsBaseline: percentileBenchmarkValue(populationDeltas, 0.1),
+    bestPopulationDeltaVsBaseline: populationDeltas.length ? Math.max(...populationDeltas) : 0,
+    meanWallClockSeconds: meanBenchmarkValue(results.map((entry) => entry.wallClockSeconds)),
+    meanWallClockDeltaVsBaselineSeconds: meanBenchmarkValue(
+      results.map((entry) => entry.wallClockDeltaVsBaselineSeconds)
+    ),
+    improvedCaseCount,
+    regressedCaseCount,
+    unchangedCaseCount,
+    winRate: benchmarkRatio(improvedCaseCount, results.length),
+    regressionRate: benchmarkRatio(regressedCaseCount, results.length),
+    unchangedRate: benchmarkRatio(unchangedCaseCount, results.length),
+    worstPopulationDeltaVsBaseline: populationDeltas.length ? Math.min(...populationDeltas) : 0,
+    worstPopulationDeltaCaseName: worstDeltaLabel.caseName,
+    worstPopulationDeltaSeed: worstDeltaLabel.seed,
+    bestPopulationDeltaCaseName: bestDeltaLabel.caseName,
+    bestPopulationDeltaSeed: bestDeltaLabel.seed,
+  };
 }
 
 export function safePopulationRate(population: number, seconds: number | null): number | null {

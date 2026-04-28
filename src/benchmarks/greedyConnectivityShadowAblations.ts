@@ -1,8 +1,10 @@
 import { DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS } from "./crossModeBudgetAblations.js";
 import {
   buildBenchmarkSuiteMetadata,
+  countBenchmarkMatches,
   listBenchmarkCaseNames,
   meanBenchmarkValue,
+  sumBenchmarkBy,
   sumBenchmarkValues,
 } from "./benchmarkOptions.js";
 import {
@@ -174,9 +176,12 @@ function buildCoverage(cases: readonly GreedyConnectivityShadowScoringAblationCa
     caseCount: cases.length,
     runCount: variants.length,
     variantCount: 2,
-    gridCellCount: sumBenchmarkValues(cases.map((entry) => entry.gridCells)),
-    profileEnabledRuns: variants.filter((entry) => entry.profileEnabled).length,
-    shadowObservedRuns: variants.filter((entry) => entry.shadowChecks !== null && entry.shadowChecks > 0).length,
+    gridCellCount: sumBenchmarkBy(cases, (entry) => entry.gridCells),
+    profileEnabledRuns: countBenchmarkMatches(variants, (entry) => entry.profileEnabled),
+    shadowObservedRuns: countBenchmarkMatches(
+      variants,
+      (entry) => entry.shadowChecks !== null && entry.shadowChecks > 0
+    ),
   };
 }
 
@@ -244,14 +249,14 @@ export function runGreedyConnectivityShadowScoringAblation(
     ...buildBenchmarkSuiteMetadata(cases.map((entry) => entry.name)),
     variants: ["baseline", "connectivity-shadow"],
     coverage: buildCoverage(cases),
-    improvedCaseCount: cases.filter((entry) => entry.populationDelta > 0).length,
-    regressedCaseCount: cases.filter((entry) => entry.populationDelta < 0).length,
-    unchangedCaseCount: cases.filter((entry) => entry.populationDelta === 0).length,
+    improvedCaseCount: countBenchmarkMatches(cases, (entry) => entry.populationDelta > 0),
+    regressedCaseCount: countBenchmarkMatches(cases, (entry) => entry.populationDelta < 0),
+    unchangedCaseCount: countBenchmarkMatches(cases, (entry) => entry.populationDelta === 0),
     totalPopulationDelta: sumBenchmarkValues(populationDeltas),
     meanPopulationDelta: meanBenchmarkValue(populationDeltas),
     bestPopulationDelta: populationDeltas.length ? Math.max(...populationDeltas) : 0,
     worstPopulationDelta: populationDeltas.length ? Math.min(...populationDeltas) : 0,
-    totalRoadDelta: sumBenchmarkValues(cases.map((entry) => entry.roadDelta)),
+    totalRoadDelta: sumBenchmarkBy(cases, (entry) => entry.roadDelta),
     cases,
   };
 }

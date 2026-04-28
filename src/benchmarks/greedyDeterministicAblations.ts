@@ -1,14 +1,13 @@
 import { DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS } from "./crossModeBudgetAblations.js";
-import { formatBenchmarkSeeds, normalizeBenchmarkSeeds } from "./benchmarkSeeds.js";
+import { buildBenchmarkSeedRunPlan, formatBenchmarkSeeds } from "./benchmarkSeeds.js";
 import {
-  benchmarkRatio,
   buildBenchmarkSuiteMetadata,
+  countBenchmarkMatches,
   listBenchmarkCaseNames,
-  meanBenchmarkValue,
-  percentileBenchmarkValue,
   selectBenchmarkVariants,
-  sumBenchmarkValues,
-  uniqueBenchmarkValues,
+  summarizeBenchmarkVariantMetrics,
+  sumBenchmarkBy,
+  uniqueBenchmarkValuesBy,
 } from "./benchmarkOptions.js";
 import {
   DEFAULT_GREEDY_BENCHMARK_CORPUS,
@@ -21,6 +20,7 @@ import type {
   GreedyBenchmarkOptions,
   GreedyBenchmarkRunOptions,
 } from "./greedy.js";
+import type { BenchmarkVariantSummaryMetrics } from "./benchmarkOptions.js";
 
 export type GreedyDeterministicAblationVariantName =
   | "baseline"
@@ -75,33 +75,9 @@ export interface GreedyDeterministicAblationCaseResult {
   variants: GreedyDeterministicAblationVariantResult[];
 }
 
-export interface GreedyDeterministicAblationVariantSummary {
-  variantName: GreedyDeterministicAblationVariantName;
+export interface GreedyDeterministicAblationVariantSummary
+  extends BenchmarkVariantSummaryMetrics<GreedyDeterministicAblationVariantName> {
   description: string;
-  caseCount: number;
-  seedCount: number;
-  comparisonCount: number;
-  meanPopulation: number;
-  medianPopulation: number;
-  worstDecilePopulation: number;
-  bestPopulation: number;
-  meanPopulationDeltaVsBaseline: number;
-  medianPopulationDeltaVsBaseline: number;
-  worstDecilePopulationDeltaVsBaseline: number;
-  bestPopulationDeltaVsBaseline: number;
-  meanWallClockSeconds: number;
-  meanWallClockDeltaVsBaselineSeconds: number;
-  improvedCaseCount: number;
-  regressedCaseCount: number;
-  unchangedCaseCount: number;
-  winRate: number;
-  regressionRate: number;
-  unchangedRate: number;
-  worstPopulationDeltaVsBaseline: number;
-  worstPopulationDeltaCaseName: string | null;
-  worstPopulationDeltaSeed: number | null;
-  bestPopulationDeltaCaseName: string | null;
-  bestPopulationDeltaSeed: number | null;
 }
 
 export interface GreedyDeterministicAblationCoverage {
@@ -250,20 +226,6 @@ export const DEFAULT_GREEDY_DETERMINISTIC_ABLATION_CORPUS: readonly GreedyBenchm
     )
   );
 
-function seedCaseLabel(
-  result: GreedyDeterministicAblationVariantResult,
-  cases: readonly GreedyDeterministicAblationCaseResult[]
-): { caseName: string | null; seed: number | null } {
-  const match = cases.find((entry) =>
-    entry.seed === result.seed
-    && entry.variants.some((candidate) => candidate.variantName === result.variantName && candidate === result)
-  );
-  return {
-    caseName: match?.name ?? null,
-    seed: result.seed,
-  };
-}
-
 function variantResult(
   variant: GreedyDeterministicAblationVariant,
   result: GreedyBenchmarkCaseResult,
@@ -294,55 +256,15 @@ function buildVariantSummary(
   caseCount: number,
   seedCount: number
 ): GreedyDeterministicAblationVariantSummary {
-  const results = cases.map((entry) => {
-    const result = entry.variants.find((candidate) => candidate.variantName === variant.name);
-    if (!result) {
-      throw new Error(`Greedy deterministic ablation variant result missing: ${variant.name}.`);
-    }
-    return result;
-  });
-  const populations = results.map((entry) => entry.totalPopulation);
-  const populationDeltas = results.map((entry) => entry.populationDeltaVsBaseline);
-  const improvedCaseCount = results.filter((entry) => entry.populationDeltaVsBaseline > 0).length;
-  const regressedCaseCount = results.filter((entry) => entry.populationDeltaVsBaseline < 0).length;
-  const unchangedCaseCount = results.filter((entry) => entry.populationDeltaVsBaseline === 0).length;
-  const worstDeltaResult = results.reduce<GreedyDeterministicAblationVariantResult | null>(
-    (worst, entry) => (worst === null || entry.populationDeltaVsBaseline < worst.populationDeltaVsBaseline ? entry : worst),
-    null
-  );
-  const bestDeltaResult = results.reduce<GreedyDeterministicAblationVariantResult | null>(
-    (best, entry) => (best === null || entry.populationDeltaVsBaseline > best.populationDeltaVsBaseline ? entry : best),
-    null
-  );
-  const worstDeltaLabel = worstDeltaResult ? seedCaseLabel(worstDeltaResult, cases) : { caseName: null, seed: null };
-  const bestDeltaLabel = bestDeltaResult ? seedCaseLabel(bestDeltaResult, cases) : { caseName: null, seed: null };
   return {
-    variantName: variant.name,
+    ...summarizeBenchmarkVariantMetrics(
+      variant.name,
+      cases,
+      caseCount,
+      seedCount,
+      `Greedy deterministic ablation variant result missing: ${variant.name}.`
+    ),
     description: variant.description,
-    caseCount,
-    seedCount,
-    comparisonCount: results.length,
-    meanPopulation: meanBenchmarkValue(populations),
-    medianPopulation: percentileBenchmarkValue(populations, 0.5),
-    worstDecilePopulation: percentileBenchmarkValue(populations, 0.1),
-    bestPopulation: populations.length ? Math.max(...populations) : 0,
-    meanPopulationDeltaVsBaseline: meanBenchmarkValue(populationDeltas),
-    medianPopulationDeltaVsBaseline: percentileBenchmarkValue(populationDeltas, 0.5),
-    worstDecilePopulationDeltaVsBaseline: percentileBenchmarkValue(populationDeltas, 0.1),
-    bestPopulationDeltaVsBaseline: populationDeltas.length ? Math.max(...populationDeltas) : 0,
-    meanWallClockSeconds: meanBenchmarkValue(results.map((entry) => entry.wallClockSeconds)),
-    meanWallClockDeltaVsBaselineSeconds: meanBenchmarkValue(results.map((entry) => entry.wallClockDeltaVsBaselineSeconds)),
-    improvedCaseCount,
-    regressedCaseCount,
-    unchangedCaseCount,
-    winRate: benchmarkRatio(improvedCaseCount, results.length),
-    regressionRate: benchmarkRatio(regressedCaseCount, results.length),
-    unchangedRate: benchmarkRatio(unchangedCaseCount, results.length),
-    worstPopulationDeltaVsBaseline: populationDeltas.length ? Math.min(...populationDeltas) : 0,
-    worstPopulationDeltaCaseName: worstDeltaLabel.caseName,
-    worstPopulationDeltaSeed: worstDeltaLabel.seed,
-    bestPopulationDeltaCaseName: bestDeltaLabel.caseName,
-    bestPopulationDeltaSeed: bestDeltaLabel.seed,
   };
 }
 
@@ -358,8 +280,8 @@ function buildCoverage(
     comparisonCount: cases.length,
     variantCount: cases[0]?.variants.length ?? 0,
     runCount: variants.length,
-    gridCellCount: sumBenchmarkValues(cases.map((entry) => entry.gridCells)),
-    profileEnabledRuns: variants.filter((entry) => entry.profileEnabled).length,
+    gridCellCount: sumBenchmarkBy(cases, (entry) => entry.gridCells),
+    profileEnabledRuns: countBenchmarkMatches(variants, (entry) => entry.profileEnabled),
   };
 }
 
@@ -400,8 +322,7 @@ export function runGreedyDeterministicAblation(
 ): GreedyDeterministicAblationSuiteResult {
   const names = options.names?.length ? options.names : undefined;
   const variants = normalizeVariants(options.variants, options.variantNames);
-  const seeds = normalizeBenchmarkSeeds(options.seeds, "Greedy deterministic ablation seeds") ?? [];
-  const seedRuns: readonly (number | null)[] = seeds.length ? seeds : [null];
+  const { seeds, seedRuns } = buildBenchmarkSeedRunPlan(options.seeds, "Greedy deterministic ablation seeds");
   const baseGreedy = {
     profile: false,
     ...(options.greedy ?? {}),
@@ -451,7 +372,7 @@ export function runGreedyDeterministicAblation(
     });
   });
 
-  const selectedCaseNames = baselineSelectedCaseNames(cases);
+  const selectedCaseNames = uniqueBenchmarkValuesBy(cases, (entry) => entry.name);
 
   return {
     ...buildBenchmarkSuiteMetadata(selectedCaseNames),
@@ -463,10 +384,6 @@ export function runGreedyDeterministicAblation(
     variantSummaries: variants.map((variant) => buildVariantSummary(variant, cases, selectedCaseNames.length, seedRuns.length)),
     cases,
   };
-}
-
-function baselineSelectedCaseNames(cases: readonly GreedyDeterministicAblationCaseResult[]): string[] {
-  return uniqueBenchmarkValues(cases.map((entry) => entry.name));
 }
 
 function formatSigned(value: number): string {

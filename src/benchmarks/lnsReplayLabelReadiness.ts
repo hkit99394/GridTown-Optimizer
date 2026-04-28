@@ -1,4 +1,9 @@
-import { uniqueBenchmarkValues } from "./benchmarkOptions.js";
+import {
+  countBenchmarkMatches,
+  sumBenchmarkBy,
+  uniqueBenchmarkValues,
+  uniqueBenchmarkValuesBy,
+} from "./benchmarkOptions.js";
 
 import type { LnsReplayPressureFamilyLabel } from "./lns.js";
 import type {
@@ -70,8 +75,8 @@ function summarizeLnsReplayFamily(
 ): LnsReplayLabelFamilyScaleSummary {
   const labels = cases.flatMap((benchmarkCase) => benchmarkCase.labels);
   const usableLabels = labels.filter((label) => label.usable);
-  const neutralUsableLabelCount = usableLabels.filter((label) => label.status === "neutral").length;
-  const nonNeutralUsableLabelCount = usableLabels.filter(lnsLabelIsNonNeutral).length;
+  const neutralUsableLabelCount = countBenchmarkMatches(usableLabels, (label) => label.status === "neutral");
+  const nonNeutralUsableLabelCount = countBenchmarkMatches(usableLabels, lnsLabelIsNonNeutral);
   const seeds = uniqueBenchmarkValues(
     cases
       .map((benchmarkCase) => benchmarkCase.seed)
@@ -81,7 +86,7 @@ function summarizeLnsReplayFamily(
 
   return {
     pressureFamily,
-    caseNames: uniqueBenchmarkValues(cases.map((benchmarkCase) => benchmarkCase.name)),
+    caseNames: uniqueBenchmarkValuesBy(cases, (benchmarkCase) => benchmarkCase.name),
     seeds,
     labelCount: labels.length,
     usableLabelCount: usableLabels.length,
@@ -106,9 +111,9 @@ function buildLnsReplayLabelSplitScaleReadiness<Split extends string>(
   const families = [...familyCases.entries()]
     .map(([pressureFamily, cases]) => summarizeLnsReplayFamily(pressureFamily, cases))
     .sort((left, right) => left.pressureFamily.localeCompare(right.pressureFamily));
-  const usableLabelCount = families.reduce((total, family) => total + family.usableLabelCount, 0);
-  const nonNeutralUsableLabelCount = families.reduce((total, family) => total + family.nonNeutralUsableLabelCount, 0);
-  const neutralUsableLabelCount = families.reduce((total, family) => total + family.neutralUsableLabelCount, 0);
+  const usableLabelCount = sumBenchmarkBy(families, (family) => family.usableLabelCount);
+  const nonNeutralUsableLabelCount = sumBenchmarkBy(families, (family) => family.nonNeutralUsableLabelCount);
+  const neutralUsableLabelCount = sumBenchmarkBy(families, (family) => family.neutralUsableLabelCount);
   const neutralLabelRatio = usableLabelCount === 0 ? 1 : neutralUsableLabelCount / usableLabelCount;
   const failedReasons: string[] = [];
 

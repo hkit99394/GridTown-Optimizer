@@ -1,9 +1,10 @@
-import { formatBenchmarkSeeds, normalizeBenchmarkSeeds } from "./benchmarkSeeds.js";
+import { buildBenchmarkSeedRunPlan, formatBenchmarkSeeds } from "./benchmarkSeeds.js";
 import {
   buildBenchmarkSuiteMetadata,
   listBenchmarkCaseNames,
   positiveIntegerOrDefault,
-  uniqueBenchmarkValues,
+  sumBenchmarkBy,
+  uniqueBenchmarkValuesBy,
 } from "./benchmarkOptions.js";
 import {
   DEFAULT_GREEDY_CONNECTIVITY_SHADOW_SCORING_ABLATION_CORPUS,
@@ -211,8 +212,10 @@ export function runGreedyConnectivityShadowOrderingLabels(
   corpus: readonly GreedyBenchmarkCase[] = DEFAULT_GREEDY_CONNECTIVITY_SHADOW_ORDERING_LABEL_CORPUS,
   options: GreedyConnectivityShadowOrderingLabelRunOptions = {}
 ): GreedyConnectivityShadowOrderingLabelSuiteResult {
-  const seeds = normalizeBenchmarkSeeds(options.seeds, "Greedy connectivity-shadow ordering label seeds") ?? [];
-  const seedRuns: readonly (number | null)[] = seeds.length ? seeds : [null];
+  const { seeds, seedRuns } = buildBenchmarkSeedRunPlan(
+    options.seeds,
+    "Greedy connectivity-shadow ordering label seeds"
+  );
   const maxLabelsPerCase = positiveIntegerOrDefault(options.maxLabelsPerCase, DEFAULT_MAX_LABELS_PER_CASE);
   const cases = seedRuns.flatMap((seed) => {
     const suite = runGreedyBenchmarkSuite(corpus, {
@@ -249,7 +252,7 @@ export function runGreedyConnectivityShadowOrderingLabels(
       };
     });
   });
-  const selectedCaseNames = uniqueBenchmarkValues(cases.map((benchmarkCase) => benchmarkCase.name));
+  const selectedCaseNames = uniqueBenchmarkValuesBy(cases, (benchmarkCase) => benchmarkCase.name);
 
   return {
     ...buildBenchmarkSuiteMetadata(selectedCaseNames),
@@ -257,7 +260,7 @@ export function runGreedyConnectivityShadowOrderingLabels(
     comparisonCount: cases.length,
     seeds,
     maxLabelsPerCase,
-    labelCount: cases.reduce((total, benchmarkCase) => total + benchmarkCase.labelCount, 0),
+    labelCount: sumBenchmarkBy(cases, (benchmarkCase) => benchmarkCase.labelCount),
     cases,
   };
 }

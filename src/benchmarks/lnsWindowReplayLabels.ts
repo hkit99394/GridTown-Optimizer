@@ -18,7 +18,7 @@ import {
 import { selectNeighborhoodWindow } from "../lns/neighborhoods.js";
 import { normalizeCpSatBenchmarkOptions } from "./cpSat.js";
 import { normalizeGreedyBenchmarkOptions } from "./greedy.js";
-import { normalizeBenchmarkSeeds } from "./benchmarkSeeds.js";
+import { buildBenchmarkSeedRunPlan } from "./benchmarkSeeds.js";
 import {
   applyNormalizedGreedyBenchmarkParams,
   benchmarkGeneratedAt,
@@ -30,7 +30,8 @@ import {
   positiveFiniteNumberOrDefault,
   positiveIntegerOrDefault,
   selectBenchmarkCasesByName,
-  uniqueBenchmarkValues,
+  sumBenchmarkBy,
+  uniqueBenchmarkValuesBy,
 } from "./benchmarkOptions.js";
 import {
   DEFAULT_LNS_REPLAY_LABEL_CORPUS,
@@ -426,8 +427,7 @@ export function runLnsWindowReplayLabels(
   options: LnsWindowReplayLabelRunOptions = {}
 ): LnsWindowReplaySuiteResult {
   const selectedCases = selectReplayCases(corpus, options.names);
-  const seeds = normalizeBenchmarkSeeds(options.seeds, "LNS window replay seeds") ?? [];
-  const seedRuns: readonly (number | null)[] = seeds.length ? seeds : [null];
+  const { seeds, seedRuns } = buildBenchmarkSeedRunPlan(options.seeds, "LNS window replay seeds");
   const maxWindows = positiveIntegerOrDefault(options.maxWindows, 8);
   const explorationWindowCount = nonNegativeIntegerOrDefault(options.explorationWindowCount, 0);
   const replayRepairTimeLimitSeconds = positiveFiniteNumberOrDefault(options.repairTimeLimitSeconds, 1);
@@ -488,11 +488,11 @@ export function runLnsWindowReplayLabels(
     comparisonCount: cases.length,
     seeds,
     selectedCaseNames: selectedCases.map((benchmarkCase) => benchmarkCase.name),
-    pressureFamilies: uniqueBenchmarkValues(selectedCases.map(getLnsReplayPressureFamily)),
+    pressureFamilies: uniqueBenchmarkValuesBy(selectedCases, getLnsReplayPressureFamily),
     maxWindows,
     explorationWindowCount,
     repairTimeLimitSeconds: replayRepairTimeLimitSeconds,
-    labelCount: cases.reduce((total, benchmarkCase) => total + benchmarkCase.labels.length, 0),
+    labelCount: sumBenchmarkBy(cases, (benchmarkCase) => benchmarkCase.labels.length),
     cases,
   };
 }

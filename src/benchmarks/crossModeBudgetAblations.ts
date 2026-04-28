@@ -1,5 +1,5 @@
 import { serializeDecisionTraceJsonl } from "../core/decisionTrace.js";
-import { benchmarkGeneratedAt, meanBenchmarkValue } from "./benchmarkOptions.js";
+import { benchmarkGeneratedAt, meanBenchmarkValue, sumBenchmarkBy } from "./benchmarkOptions.js";
 import { DEFAULT_GREEDY_BENCHMARK_CORPUS } from "./greedy.js";
 import { DEFAULT_LNS_BENCHMARK_CORPUS } from "./lns.js";
 import {
@@ -426,17 +426,16 @@ function topPolicyTiedNames(
 }
 
 function countBudgetedModeSecondsInSuite(suite: CrossModeBenchmarkSuiteResult): number {
-  return suite.cases.reduce(
-    (suiteSum, scorecard) =>
-      suiteSum + scorecard.results.reduce((scorecardSum, modeResult) => scorecardSum + modeResult.budgetSeconds, 0),
-    0
+  return sumBenchmarkBy(
+    suite.cases,
+    (scorecard) => sumBenchmarkBy(scorecard.results, (modeResult) => modeResult.budgetSeconds)
   );
 }
 
 function countBudgetedModeSecondsInPolicies(
   policies: readonly CrossModeBenchmarkBudgetAblationPolicyResult[]
 ): number {
-  return policies.reduce((sum, policy) => sum + countBudgetedModeSecondsInSuite(policy.suite), 0);
+  return sumBenchmarkBy(policies, (policy) => countBudgetedModeSecondsInSuite(policy.suite));
 }
 
 function resolveBaselinePolicyName(
@@ -569,14 +568,13 @@ function formatRecommendationCounts(counts: Record<CrossModeBudgetPolicyRecommen
 }
 
 function countScorecards(result: CrossModeBenchmarkBudgetAblationSuiteResult): number {
-  return result.policies.reduce((sum, policy) => sum + policy.suite.cases.length, 0);
+  return sumBenchmarkBy(result.policies, (policy) => policy.suite.cases.length);
 }
 
 function countModeRuns(result: CrossModeBenchmarkBudgetAblationSuiteResult): number {
-  return result.policies.reduce(
-    (sum, policy) =>
-      sum + policy.suite.cases.reduce((policySum, scorecard) => policySum + scorecard.results.length, 0),
-    0
+  return sumBenchmarkBy(
+    result.policies,
+    (policy) => sumBenchmarkBy(policy.suite.cases, (scorecard) => scorecard.results.length)
   );
 }
 

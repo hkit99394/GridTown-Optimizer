@@ -13,7 +13,7 @@ import {
   inheritGreedyBenchmarkOptions,
   listBenchmarkCaseNames,
   selectBenchmarkCasesByName,
-  uniqueBenchmarkValues,
+  uniqueBenchmarkValuesBy,
 } from "./benchmarkOptions.js";
 import { normalizeCpSatBenchmarkOptions } from "./cpSat.js";
 import { normalizeGreedyBenchmarkOptions } from "./greedy.js";
@@ -419,5 +419,5 @@ export const DEFAULT_LNS_REPLAY_LABEL_CORPUS: readonly LnsBenchmarkCase[] =
 export function listLnsReplayPressureFamilies(
   corpus: readonly LnsBenchmarkCase[] = DEFAULT_LNS_REPLAY_LABEL_CORPUS
 ): LnsReplayPressureFamilyLabel[] {
-  return uniqueBenchmarkValues(corpus.map(getLnsReplayPressureFamily));
+  return uniqueBenchmarkValuesBy(corpus, getLnsReplayPressureFamily);
 }

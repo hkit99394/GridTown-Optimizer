@@ -466,11 +466,29 @@ details.payload-preview {
   background:
     linear-gradient(
       145deg,
-      rgba(255, 225, 92, var(--heatmap-warm-alpha, 0.3)),
-      rgba(198, 74, 48, var(--heatmap-hot-alpha, 0.3))
+      rgba(var(--heatmap-warm-rgb, 255, 225, 92), var(--heatmap-warm-alpha, 0.3)),
+      rgba(var(--heatmap-hot-rgb, 198, 74, 48), var(--heatmap-hot-alpha, 0.3))
     ),
     var(--cell-base-bg);
-  border-color: rgba(137, 58, 38, var(--heatmap-border-alpha, 0.35));
+  border-color: rgba(var(--heatmap-border-rgb, 137, 58, 38), var(--heatmap-border-alpha, 0.35));
+}
+
+.result-grid .grid-cell.service-value-heatmap-cell {
+  --heatmap-warm-rgb: 255, 225, 92;
+  --heatmap-hot-rgb: 198, 74, 48;
+  --heatmap-border-rgb: 137, 58, 38;
+}
+
+.result-grid .grid-cell.placement-opportunity-heatmap-cell {
+  --heatmap-warm-rgb: 118, 209, 157;
+  --heatmap-hot-rgb: 21, 126, 134;
+  --heatmap-border-rgb: 15, 102, 80;
+}
+
+.result-grid .grid-cell.connectivity-risk-heatmap-cell {
+  --heatmap-warm-rgb: 246, 151, 90;
+  --heatmap-hot-rgb: 162, 74, 62;
+  --heatmap-border-rgb: 162, 74, 62;
 }
 
 .result-grid .grid-cell {
@@ -982,6 +1000,18 @@ details.payload-preview pre {
     linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(243, 237, 229, 0.96)),
     linear-gradient(145deg, rgba(15, 102, 80, 0.16), rgba(154, 93, 31, 0.16));
   border-color: rgba(17, 25, 29, 0.22);
+}
+
+.legend-swatch.service-value {
+  background: linear-gradient(145deg, rgba(255, 225, 92, 0.72), rgba(198, 74, 48, 0.78));
+}
+
+.legend-swatch.placement-opportunity {
+  background: linear-gradient(145deg, rgba(118, 209, 157, 0.76), rgba(21, 126, 134, 0.82));
+}
+
+.legend-swatch.connectivity-risk {
+  background: linear-gradient(145deg, rgba(246, 151, 90, 0.76), rgba(162, 74, 62, 0.84));
 }
 
 .matrix-frame {

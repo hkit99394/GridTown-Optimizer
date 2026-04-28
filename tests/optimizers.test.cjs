@@ -96,6 +96,7 @@ const { parseCpSatRawSolution } = require("../dist/cp-sat/solver.js");
 const { buildNeighborhoodWindows } = require("../dist/lns/solver.js");
 const { startJsonBackgroundSolve } = require("../dist/runtime/index.js");
 const { applyDeterministicDominanceUpgrades } = require("../dist/core/dominanceUpgrades.js");
+const { buildPlannerExplainabilityMap } = require("../dist/core/plannerExplainability.js");
 const { GreedyAttemptState } = require("../dist/greedy/attemptState.js");
 const {
   createRoadOpportunityRecorder,
@@ -234,6 +235,45 @@ function testBuildingGeometryCachesParity() {
     [...serviceGeometry.effectZoneKeysByIndex[0]].sort(),
     [...serviceEffectZone(grid, services[0])].sort()
   );
+}
+
+function testPlannerExplainabilityMapSummarizesOpportunityAndRisk() {
+  const grid = [
+    [1, 1, 1],
+    [0, 1, 0],
+    [1, 1, 1],
+  ];
+  const params = {
+    serviceTypes: [{ name: "Clinic", rows: 1, cols: 1, range: 1, bonus: 50, avail: 2 }],
+    residentialTypes: [{ name: "Studio", w: 1, h: 1, min: 10, max: 30, avail: 1 }],
+  };
+  const solution = {
+    roads: new Set(["1,1"]),
+    services: [{ r: 0, c: 0, rows: 1, cols: 1, range: 1 }],
+    serviceTypeIndices: [0],
+    servicePopulationIncreases: [50],
+    residentials: [],
+    residentialTypeIndices: [],
+    populations: [],
+    totalPopulation: 0,
+  };
+
+  const map = buildPlannerExplainabilityMap(grid, params, solution);
+
+  assert.equal(map.schemaVersion, 1);
+  assert.equal(map.rows, 3);
+  assert.equal(map.cols, 3);
+  assert.equal(map.cells.length, 3);
+  assert.equal(map.cells[0].length, 3);
+  assert.equal(map.cells[0][1].serviceValue, 50);
+  assert.equal(map.cells[0][1].residentialOpportunity, 30);
+  assert.equal(map.cells[0][1].bestServiceBonus, 50);
+  assert.equal(map.cells[1][1].occupiedKind, "road");
+  assert.equal(map.cells[1][1].connectivityFootprintCells, 1);
+  assert.ok(map.cells[1][1].connectivityDisconnectedCells > 0);
+  assert.equal(map.maxServiceValue, 50);
+  assert.equal(map.maxResidentialOpportunity, 30);
+  assert.ok(map.maxConnectivityDisconnectedCells > 0);
 }
 
 function testRoadProbePreservesEdgeBorderConnectivity() {
@@ -8025,6 +8065,7 @@ async function main() {
   testGreedyConnectivityHeavyBenchmarkCase();
   testGridRectangleBorderCellsPreserveExpectedRing();
   testBuildingGeometryCachesParity();
+  testPlannerExplainabilityMapSummarizesOpportunityAndRisk();
   testGreedyGeometryOccupancyHotPathBenchmarkCase();
   testRoadProbeScratchRepeatability();
   testGreedyExplicitServiceCapIsMaximum();

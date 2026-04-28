@@ -325,19 +325,22 @@
                       <span class="legend-chip"><span class="legend-swatch residential"></span>Residential</span>
                       <span class="legend-chip"><span class="legend-swatch blocked"></span>Blocked</span>
                       <span class="legend-chip"><span class="legend-swatch overlay"></span>Building IDs</span>
-                      <span class="legend-chip">
-                        <span
-                          class="legend-swatch"
-                          style="background: linear-gradient(145deg, rgba(255, 225, 92, 0.72), rgba(198, 74, 48, 0.78));"
-                        ></span>
-                        Service value
-                      </span>
+                      <span class="legend-chip"><span class="legend-swatch service-value"></span>Service value</span>
+                      <span class="legend-chip"><span class="legend-swatch placement-opportunity"></span>Placement opportunity</span>
+                      <span class="legend-chip"><span class="legend-swatch connectivity-risk"></span>Connectivity risk</span>
                     </div>
                     <div class="editor-toolbar">
-                      <label class="check-field">
-                        <input id="resultHeatmapToggle" type="checkbox" />
-                        <span>Show service value heatmap</span>
-                      </label>
+                      <div
+                        class="segmented segmented-wide"
+                        id="resultExplainabilityModeToggle"
+                        role="group"
+                        aria-label="Map explainability mode"
+                      >
+                        <button type="button" data-result-explainability-mode="layout">Layout</button>
+                        <button type="button" data-result-explainability-mode="service-value">Service value</button>
+                        <button type="button" data-result-explainability-mode="placement-opportunity">Placement opportunity</button>
+                        <button type="button" data-result-explainability-mode="connectivity-risk">Connectivity risk</button>
+                      </div>
                       <div class="segmented segmented-wide" id="layoutEditModeToggle" role="group" aria-label="Layout edit mode">
                         <button type="button" data-layout-edit-mode="inspect">Inspect</button>
                         <button type="button" data-layout-edit-mode="road">Road</button>

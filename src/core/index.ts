@@ -4,6 +4,7 @@ export * from "./dominanceUpgrades.js";
 export * from "./evaluator.js";
 export * from "./grid.js";
 export * from "./map.js";
+export * from "./plannerExplainability.js";
 export * from "./progress.js";
 export * from "./roads.js";
 export * from "./rules.js";

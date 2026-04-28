@@ -180,6 +180,7 @@ const state = {
   resultContext: null,
   resultElapsedMs: 0,
   resultHeatmapEnabled: false,
+  resultExplainabilityMode: "layout",
   solveProgressLog: [],
   selectedMapBuilding: null,
   selectedMapCell: null,
@@ -268,6 +269,7 @@ const elements = {
   resultMapGrid: document.querySelector("#resultMapGrid"),
   resultOverlay: document.querySelector("#resultOverlay"),
   resultHeatmapToggle: document.querySelector("#resultHeatmapToggle"),
+  resultExplainabilityModeToggle: document.querySelector("#resultExplainabilityModeToggle"),
   layoutEditModeToggle: document.querySelector("#layoutEditModeToggle"),
   rotatePendingPlacementButton: document.querySelector("#rotatePendingPlacementButton"),
   validateEditedLayoutButton: document.querySelector("#validateEditedLayoutButton"),
@@ -382,6 +384,29 @@ function clearExpansionAdvice() {
   state.expansionAdvice.status = "";
   state.expansionAdvice.result = null;
   state.expansionAdvice.error = "";
+}
+
+const RESULT_EXPLAINABILITY_MODES = new Set([
+  "layout",
+  "service-value",
+  "placement-opportunity",
+  "connectivity-risk",
+]);
+
+function normalizeResultExplainabilityMode(mode) {
+  return RESULT_EXPLAINABILITY_MODES.has(mode) ? mode : "layout";
+}
+
+function syncResultExplainabilityModeControl() {
+  if (!elements.resultExplainabilityModeToggle) return;
+  state.resultExplainabilityMode = normalizeResultExplainabilityMode(state.resultExplainabilityMode);
+  state.resultHeatmapEnabled = state.resultExplainabilityMode === "service-value";
+
+  for (const button of elements.resultExplainabilityModeToggle.querySelectorAll("button")) {
+    const isActive = button.dataset.resultExplainabilityMode === state.resultExplainabilityMode;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  }
 }
 
 requestBuilderController = createPlannerRequestBuilderController({
@@ -753,10 +778,22 @@ function init() {
   elements.moveSelectedBuildingButton.addEventListener("click", resultsController.handleMoveSelectedAction);
   elements.removeSelectedBuildingButton.addEventListener("click", resultsController.handleRemoveSelectedAction);
   elements.resultMapGrid.addEventListener("click", resultsController.handleResultMapClick);
-  if (elements.resultHeatmapToggle) {
+  if (elements.resultExplainabilityModeToggle) {
+    syncResultExplainabilityModeControl();
+    elements.resultExplainabilityModeToggle.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const button = target.closest("button[data-result-explainability-mode]");
+      if (!(button instanceof HTMLButtonElement)) return;
+      state.resultExplainabilityMode = normalizeResultExplainabilityMode(button.dataset.resultExplainabilityMode);
+      syncResultExplainabilityModeControl();
+      resultsController.renderResults();
+    });
+  } else if (elements.resultHeatmapToggle) {
     elements.resultHeatmapToggle.checked = Boolean(state.resultHeatmapEnabled);
     elements.resultHeatmapToggle.addEventListener("change", () => {
       state.resultHeatmapEnabled = elements.resultHeatmapToggle.checked;
+      state.resultExplainabilityMode = state.resultHeatmapEnabled ? "service-value" : "layout";
       resultsController.renderResults();
     });
   }

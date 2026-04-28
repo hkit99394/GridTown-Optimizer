@@ -997,6 +997,36 @@ export interface SolveResponseValidation {
   mapText: string;
 }
 
+export interface PlannerExplainabilityCell {
+  r: number;
+  c: number;
+  allowed: boolean;
+  occupiedKind: "service" | "residential" | "road" | null;
+  row0Reachable: boolean;
+  row0Distance: number | null;
+  serviceValue: number;
+  bestServiceBonus: number;
+  residentialOpportunity: number;
+  residentialHeadroom: number;
+  connectivityLostCells: number;
+  connectivityDisconnectedCells: number;
+  connectivityFootprintCells: number;
+}
+
+export interface PlannerExplainabilityMap {
+  schemaVersion: 1;
+  rows: number;
+  cols: number;
+  maxServiceValue: number;
+  maxBestServiceBonus: number;
+  maxResidentialOpportunity: number;
+  maxResidentialHeadroom: number;
+  maxConnectivityLostCells: number;
+  maxConnectivityDisconnectedCells: number;
+  row0ReachableCellCount: number;
+  cells: PlannerExplainabilityCell[][];
+}
+
 /** Chronological performance sample captured during a planner solve. */
 export interface SolveProgressLogEntry {
   capturedAt: string;
@@ -1026,6 +1056,7 @@ export interface SolveResponsePayload {
   solution: SerializedSolution;
   validation: SolveResponseValidation;
   stats: SolveResponseStats;
+  explainability?: PlannerExplainabilityMap;
   progressLog?: SolveProgressLogEntry[];
   progressLogFilePath?: string;
   message?: string;

@@ -213,6 +213,14 @@ Reviewed through 2026-04-27.
 - The closeout bundle contains 4,593 Greedy labels and 84 LNS replay labels across seeds `7,19,37`, with protected development/holdout splits and no case overlap.
 - No learned model was trained and no solver defaults changed; learned ranking remains gated on held-out offline metrics and equal-budget online benchmarks.
 
+### 27. Planner Explainability Maps
+
+- Solve and manual-layout HTTP responses now include a first-class planner explainability grid with schema version, dimensions, per-cell occupancy, row-0 reachability, service value, remaining service opportunity, residential opportunity, and connectivity-risk shadow metrics.
+- The web planner exposes layout, service-value, placement-opportunity, and connectivity-risk map modes from the solved-map toolbar.
+- Service-value mode preserves the existing flattened heatmap review behavior, while placement-opportunity and connectivity-risk modes keep building overlays visible so users can inspect attractive or dangerous cells in layout context.
+- Selected-cell detail now surfaces planner-map context such as service value, residential opportunity, best remaining service bonus, row-0 distance, and connectivity risk.
+- Regression coverage checks the backend response contract, the core explainability-map summary, and the planner heatmap modes.
+
 ## Maintenance Watchpoints
 
 - Keep deterministic benchmark seeds stable when changing solver scoring.

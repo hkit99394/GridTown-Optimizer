@@ -8,7 +8,7 @@ This project now includes:
 - an `LNS` solver that improves a seed layout with neighborhood CP-SAT repair
 - a `CP-SAT` solver backed by Google OR-Tools
 - strict validators and exact layout scoring
-- a local web planner with saved layouts, map inspection, and manual editing
+- a local web planner with saved layouts, map inspection, planner explainability maps, and manual editing
 
 Core reference docs:
 - [SPEC.md](./SPEC.md): formal problem statement
@@ -208,7 +208,7 @@ The planner now includes:
 - saved input setups
 - saved solved layouts
 - automatic `LNS` seeding and `CP-SAT` hinting from the displayed output when the displayed layout is validated and model-compatible
-- result review with validation, placements, remaining availability, solved map overlays, and an optional service-value heatmap
+- result review with validation, placements, remaining availability, solved map overlays, and planner explainability maps for service value, placement opportunity, and connectivity risk
 - manual layout editing on the solved map:
   - add remaining buildings
   - move buildings

@@ -44,6 +44,12 @@
       "availability-cap": "Availability cap",
       "lower-score-no-improvement": "Lower score / no improvement",
     };
+    const EXPLAINABILITY_MODE_LABELS = {
+      layout: "Layout",
+      "service-value": "Service value",
+      "placement-opportunity": "Placement opportunity",
+      "connectivity-risk": "Connectivity risk",
+    };
 
     function formatLiveSnapshotRefreshCadence() {
       const seconds = Math.max(1, Math.round(LIVE_SNAPSHOT_REFRESH_INTERVAL_MS / 1000));
@@ -749,21 +755,321 @@
       return { values, maxValue };
     }
 
-    function formatServiceValue(value) {
+    function normalizeExplainabilityMode() {
+      const mode = state.resultExplainabilityMode;
+      if (Object.prototype.hasOwnProperty.call(EXPLAINABILITY_MODE_LABELS, mode)) return mode;
+      return state.resultHeatmapEnabled ? "service-value" : "layout";
+    }
+
+    function createEmptyHeatmap(grid) {
+      return {
+        values: grid.map((row) => row.map(() => 0)),
+        details: grid.map((row) => row.map(() => "")),
+        maxValue: 0,
+      };
+    }
+
+    function getPlannerExplainabilityMap() {
+      const map = state.result?.explainability;
+      if (!map || !Array.isArray(map.cells)) return null;
+      return map;
+    }
+
+    function getPlannerExplainabilityCell(row, col) {
+      return getPlannerExplainabilityMap()?.cells?.[row]?.[col] ?? null;
+    }
+
+    function getPlacementBlockedCells(solution) {
+      const blocked = getOccupiedCells(solution);
+      for (const roadKey of solution?.roads ?? []) {
+        blocked.add(roadKey);
+      }
+      return blocked;
+    }
+
+    function placementFitsClearCells(grid, placement, blockedCells) {
+      if (!grid?.length || placement.r < 0 || placement.c < 0) return false;
+      if (placement.r + placement.rows > grid.length || placement.c + placement.cols > (grid[0]?.length ?? 0)) {
+        return false;
+      }
+
+      for (const cell of footprintCellsForPlacement(placement)) {
+        const key = `${cell.r},${cell.c}`;
+        if (grid[cell.r]?.[cell.c] !== 1 || blockedCells.has(key)) return false;
+      }
+      return true;
+    }
+
+    function getResidentialTypeOrientations(type) {
+      const rows = Number(type?.h ?? 0);
+      const cols = Number(type?.w ?? 0);
+      if (!(rows > 0) || !(cols > 0)) return [];
+      const orientations = [{ rows, cols }];
+      if (rows !== cols) {
+        orientations.push({ rows: cols, cols: rows });
+      }
+      return orientations;
+    }
+
+    function getServiceBoostForFootprint(solution, placement) {
+      if (!solution) return 0;
+      const footprint = footprintCellsForPlacement(placement);
+      return (solution.services ?? []).reduce((sum, service, index) => {
+        if (!footprint.some((cell) => isCellInsideServiceEffect(service, cell.r, cell.c))) return sum;
+        const bonus = Number(solution.servicePopulationIncreases?.[index] ?? 0);
+        return Number.isFinite(bonus) && bonus > 0 ? sum + bonus : sum;
+      }, 0);
+    }
+
+    function clampPopulationValue(minPopulation, maxPopulation, boost) {
+      const minValue = Number(minPopulation ?? 0);
+      const maxValue = Number(maxPopulation ?? minValue);
+      const boostValue = Number(boost ?? 0);
+      const safeMin = Number.isFinite(minValue) ? minValue : 0;
+      const safeMax = Number.isFinite(maxValue) ? maxValue : safeMin;
+      const boosted = safeMin + (Number.isFinite(boostValue) ? boostValue : 0);
+      return Math.min(Math.max(boosted, safeMin), safeMax);
+    }
+
+    function createPlacementOpportunityHeatmap(grid, solution) {
+      const heatmap = createEmptyHeatmap(grid);
+      const residentialTypes = state.resultContext?.params?.residentialTypes ?? [];
+      if (!solution || residentialTypes.length === 0) return heatmap;
+
+      const blockedCells = getPlacementBlockedCells(solution);
+
+      residentialTypes.forEach((type, typeIndex) => {
+        const availability = getTypeAvailabilitySummary("residential", typeIndex, solution);
+        if (availability.remaining <= 0) return;
+        const name = type?.name || `Residential Type ${typeIndex + 1}`;
+        for (const orientation of getResidentialTypeOrientations(type)) {
+          for (let row = 0; row < grid.length; row += 1) {
+            for (let col = 0; col < (grid[row]?.length ?? 0); col += 1) {
+              const placement = { r: row, c: col, rows: orientation.rows, cols: orientation.cols };
+              if (!placementFitsClearCells(grid, placement, blockedCells)) continue;
+              const boost = getServiceBoostForFootprint(solution, placement);
+              const value = clampPopulationValue(type.min, type.max, boost);
+              if (value <= (heatmap.values[row]?.[col] ?? 0)) continue;
+              heatmap.values[row][col] = value;
+              heatmap.details[row][col] =
+                `${name} ${orientation.rows}x${orientation.cols}, ${availability.remaining} left, `
+                + `${boost > 0 ? `service boost +${formatExplainabilityNumber(boost)}` : "base population only"}`;
+              heatmap.maxValue = Math.max(heatmap.maxValue, value);
+            }
+          }
+        }
+      });
+
+      return heatmap;
+    }
+
+    function getTraversableCells(grid, solution) {
+      const buildingCells = getOccupiedCells(solution);
+      const traversable = new Set();
+      for (let row = 0; row < grid.length; row += 1) {
+        for (let col = 0; col < (grid[row]?.length ?? 0); col += 1) {
+          const key = `${row},${col}`;
+          if (grid[row][col] === 1 && !buildingCells.has(key)) {
+            traversable.add(key);
+          }
+        }
+      }
+      return traversable;
+    }
+
+    function getNeighborCellKeys(row, col) {
+      return [
+        `${row - 1},${col}`,
+        `${row + 1},${col}`,
+        `${row},${col - 1}`,
+        `${row},${col + 1}`,
+      ];
+    }
+
+    function floodReachableFromRowZero(grid, traversable, removedKey = null) {
+      const reachable = new Set();
+      const queue = [];
+      const cols = grid[0]?.length ?? 0;
+      for (let col = 0; col < cols; col += 1) {
+        const key = `0,${col}`;
+        if (key !== removedKey && traversable.has(key)) {
+          reachable.add(key);
+          queue.push(key);
+        }
+      }
+
+      for (let index = 0; index < queue.length; index += 1) {
+        const [row, col] = queue[index].split(",").map(Number);
+        for (const nextKey of getNeighborCellKeys(row, col)) {
+          if (nextKey === removedKey || reachable.has(nextKey) || !traversable.has(nextKey)) continue;
+          reachable.add(nextKey);
+          queue.push(nextKey);
+        }
+      }
+
+      return reachable;
+    }
+
+    function createConnectivityRiskHeatmap(grid, solution) {
+      const heatmap = createEmptyHeatmap(grid);
+      const traversable = getTraversableCells(grid, solution);
+      if (traversable.size === 0) return heatmap;
+
+      const baseReachable = floodReachableFromRowZero(grid, traversable);
+      if (baseReachable.size === 0) return heatmap;
+
+      for (const key of baseReachable) {
+        const [row, col] = key.split(",").map(Number);
+        const reachableWithoutCell = floodReachableFromRowZero(grid, traversable, key);
+        const lostReachableCells = Math.max(0, baseReachable.size - reachableWithoutCell.size - 1);
+        if (lostReachableCells <= 0) continue;
+        heatmap.values[row][col] = lostReachableCells;
+        heatmap.details[row][col] =
+          `occupying this support cell would strand ${formatExplainabilityNumber(lostReachableCells)} reachable cell`
+          + `${lostReachableCells === 1 ? "" : "s"}`;
+        heatmap.maxValue = Math.max(heatmap.maxValue, lostReachableCells);
+      }
+
+      return heatmap;
+    }
+
+    function createBackendExplainabilityHeatmap(mode, grid) {
+      const map = getPlannerExplainabilityMap();
+      if (!map) return null;
+      const heatmap = createEmptyHeatmap(grid);
+
+      for (let row = 0; row < grid.length; row += 1) {
+        for (let col = 0; col < (grid[row]?.length ?? 0); col += 1) {
+          const cell = map.cells?.[row]?.[col];
+          if (!cell?.allowed) continue;
+
+          if (mode === "service-value") {
+            const value = Number(cell.serviceValue ?? 0);
+            if (!(value > 0)) continue;
+            heatmap.values[row][col] = value;
+            heatmap.details[row][col] = cell.row0Reachable
+              ? `row-0 reachable at distance ${formatExplainabilityNumber(cell.row0Distance ?? 0)}`
+              : "not row-0 reachable";
+            heatmap.maxValue = Math.max(heatmap.maxValue, map.maxServiceValue ?? value);
+          } else if (mode === "placement-opportunity") {
+            const residentialValue = Number(cell.residentialOpportunity ?? 0);
+            const serviceBonus = Number(cell.bestServiceBonus ?? 0);
+            const value = Math.max(residentialValue, serviceBonus);
+            if (!(value > 0)) continue;
+            heatmap.values[row][col] = value;
+            heatmap.details[row][col] = [
+              value > 0 ? `residential up to ${formatExplainabilityNumber(value)}` : "",
+              Number(cell.residentialHeadroom ?? 0) > 0
+                ? `headroom +${formatExplainabilityNumber(cell.residentialHeadroom)}`
+                : "",
+              serviceBonus > 0 ? `best remaining service +${formatExplainabilityNumber(serviceBonus)}` : "",
+            ].filter(Boolean).join(", ");
+            heatmap.maxValue = Math.max(
+              heatmap.maxValue,
+              map.maxResidentialOpportunity ?? value,
+              map.maxBestServiceBonus ?? serviceBonus
+            );
+          } else if (mode === "connectivity-risk") {
+            const disconnected = Number(cell.connectivityDisconnectedCells ?? 0);
+            const lost = Number(cell.connectivityLostCells ?? 0);
+            const footprint = Number(cell.connectivityFootprintCells ?? 0);
+            const value = disconnected || lost;
+            if (!(value > 0)) continue;
+            heatmap.values[row][col] = value;
+            heatmap.details[row][col] = [
+              disconnected > 0 ? `${formatExplainabilityNumber(disconnected)} disconnected` : "",
+              lost > 0 ? `${formatExplainabilityNumber(lost)} lost` : "",
+              footprint > 0 ? `${formatExplainabilityNumber(footprint)} footprint` : "",
+            ].filter(Boolean).join(", ");
+            heatmap.maxValue = Math.max(
+              heatmap.maxValue,
+              map.maxConnectivityDisconnectedCells ?? disconnected,
+              map.maxConnectivityLostCells ?? lost
+            );
+          }
+        }
+      }
+
+      return heatmap;
+    }
+
+    function createFallbackExplainabilityHeatmap(mode, grid, solution) {
+      if (mode === "service-value") {
+        return createServiceValueHeatmap(grid, solution);
+      }
+      if (mode === "placement-opportunity") {
+        return createPlacementOpportunityHeatmap(grid, solution);
+      }
+      if (mode === "connectivity-risk") {
+        return createConnectivityRiskHeatmap(grid, solution);
+      }
+      return createEmptyHeatmap(grid);
+    }
+
+    function createExplainabilityHeatmap(mode, grid, solution) {
+      return createBackendExplainabilityHeatmap(mode, grid) ?? createFallbackExplainabilityHeatmap(mode, grid, solution);
+    }
+
+    function formatExplainabilityNumber(value) {
       return Number(value).toLocaleString();
     }
 
-    function applyServiceValueHeatmapStyle(cell, value, maxValue) {
+    function describeExplainabilityValue(mode, value, detail = "") {
+      if (!(value > 0)) return "";
+      if (mode === "service-value") {
+        return `service value +${formatExplainabilityNumber(value)}${detail ? ` (${detail})` : ""}`;
+      }
+      if (mode === "placement-opportunity") {
+        return `placement opportunity ${formatExplainabilityNumber(value)} population${detail ? ` (${detail})` : ""}`;
+      }
+      if (mode === "connectivity-risk") {
+        return `connectivity risk ${formatExplainabilityNumber(value)} cell${value === 1 ? "" : "s"}${detail ? ` (${detail})` : ""}`;
+      }
+      return "";
+    }
+
+    function applyExplainabilityHeatmapStyle(cell, mode, value, maxValue) {
       if (!(value > 0) || !(maxValue > 0)) return;
       const intensity = Math.max(0.18, Math.min(1, value / maxValue));
       const warmAlpha = (0.26 + intensity * 0.5).toFixed(2);
       const hotAlpha = (0.18 + intensity * 0.52).toFixed(2);
       const borderAlpha = (0.26 + intensity * 0.4).toFixed(2);
-      cell.className += " heatmap-cell";
-      cell.dataset.serviceValue = String(value);
+      cell.className += ` heatmap-cell ${mode}-heatmap-cell`;
+      cell.dataset.explainabilityValue = String(value);
+      if (mode === "service-value") {
+        cell.dataset.serviceValue = String(value);
+      } else if (mode === "placement-opportunity") {
+        cell.dataset.placementOpportunity = String(value);
+      } else if (mode === "connectivity-risk") {
+        cell.dataset.connectivityRisk = String(value);
+      }
       cell.style.setProperty("--heatmap-warm-alpha", warmAlpha);
       cell.style.setProperty("--heatmap-hot-alpha", hotAlpha);
       cell.style.setProperty("--heatmap-border-alpha", borderAlpha);
+    }
+
+    function formatCellExplainability(cell) {
+      if (!cell) return "";
+      const parts = [];
+      if (cell.serviceValue > 0) {
+        parts.push(`service value +${formatExplainabilityNumber(cell.serviceValue)}`);
+      }
+      if (cell.residentialOpportunity > 0) {
+        parts.push(`residential up to ${formatExplainabilityNumber(cell.residentialOpportunity)}`);
+      }
+      if (cell.bestServiceBonus > 0) {
+        parts.push(`best remaining service +${formatExplainabilityNumber(cell.bestServiceBonus)}`);
+      }
+      if (cell.connectivityDisconnectedCells > 0 || cell.connectivityLostCells > 0) {
+        parts.push(
+          `connectivity risk ${formatExplainabilityNumber(cell.connectivityDisconnectedCells || cell.connectivityLostCells)} cell`
+          + `${(cell.connectivityDisconnectedCells || cell.connectivityLostCells) === 1 ? "" : "s"}`
+        );
+      }
+      if (cell.row0Reachable) {
+        parts.push(`row-0 distance ${formatExplainabilityNumber(cell.row0Distance ?? 0)}`);
+      }
+      return parts.join("; ");
     }
 
     function countPlacementsByType(typeIndices, typeCount) {
@@ -811,6 +1117,8 @@
       if (!selected && selectedCell) {
         const kind = getSolvedCellKind(state.resultContext?.grid ?? state.grid, solution, selectedCell.r, selectedCell.c);
         const coverage = getCellBonusCoverage(solution, selectedCell.r, selectedCell.c);
+        const explainability = getPlannerExplainabilityCell(selectedCell.r, selectedCell.c);
+        const explainabilityText = formatCellExplainability(explainability);
         const totalBonus = coverage.reduce((sum, entry) => sum + entry.bonus, 0);
         const sourceText = coverage.length
           ? coverage.map((entry) => `${entry.name} (${entry.id})`).join(", ")
@@ -826,7 +1134,8 @@
         elements.selectedBuildingSummary.textContent =
           kind === "blocked"
             ? "Blocked cells do not receive service bonus coverage."
-            : `Potential service bonus at this position is +${totalBonus} population from ${sourceText}.`;
+            : `Potential service bonus at this position is +${totalBonus} population from ${sourceText}.`
+              + `${explainabilityText ? ` Planner map: ${explainabilityText}.` : ""}`;
         elements.selectedBuildingId.textContent = `${selectedCell.r},${selectedCell.c}`;
         elements.selectedBuildingCategory.textContent = categoryLabel;
         elements.selectedBuildingPosition.textContent = `Row ${selectedCell.r}, Col ${selectedCell.c}`;
@@ -839,9 +1148,9 @@
               : "No nearby service bonus reaches this cell.";
         elements.selectedBuildingAvailability.textContent =
           kind === "empty"
-            ? "Open cell"
+            ? (explainability?.row0Reachable ? "Open and row-0 reachable" : "Open cell")
             : kind === "road"
-              ? "Occupied by road"
+              ? (explainability?.row0Reachable ? "Occupied by row-0 reachable road" : "Occupied by road")
               : kind === "blocked"
                 ? "Not buildable"
                 : "Occupied by a building";
@@ -1381,8 +1690,16 @@
       elements.resultOverlay.innerHTML = "";
     }
 
-    function isServiceValueHeatmapVisible() {
-      return Boolean(state.resultHeatmapEnabled);
+    function getActiveExplainabilityMode() {
+      return normalizeExplainabilityMode();
+    }
+
+    function isExplainabilityMapVisible() {
+      return getActiveExplainabilityMode() !== "layout";
+    }
+
+    function hidesBuildingOverlayForMode(mode = getActiveExplainabilityMode()) {
+      return mode === "service-value";
     }
 
     function refreshResultOverlay() {
@@ -1390,7 +1707,7 @@
         clearResultOverlay();
         return;
       }
-      if (isServiceValueHeatmapVisible()) {
+      if (hidesBuildingOverlayForMode()) {
         clearResultOverlay();
         return;
       }
@@ -1409,8 +1726,10 @@
       const matrix = createSolvedMapMatrix(grid, solution);
       const cols = matrix[0]?.length ?? 0;
       const hoverLabels = createSolvedMapHoverLabels(solution, matrix.length, cols);
-      const showServiceValueHeatmap = isServiceValueHeatmapVisible();
-      const heatmap = showServiceValueHeatmap ? createServiceValueHeatmap(grid, solution) : null;
+      const explainabilityMode = getActiveExplainabilityMode();
+      const showExplainabilityMap = explainabilityMode !== "layout";
+      const hideOverlayForMode = hidesBuildingOverlayForMode(explainabilityMode);
+      const heatmap = showExplainabilityMap ? createExplainabilityHeatmap(explainabilityMode, grid, solution) : null;
       state.selectedMapBuilding = getSelectedMapPlacement(solution)?.kind ? state.selectedMapBuilding : null;
       state.selectedMapCell = getSelectedMapCell(grid);
       elements.resultMapGrid.innerHTML = "";
@@ -1419,18 +1738,24 @@
       for (let r = 0; r < matrix.length; r += 1) {
         for (let c = 0; c < cols; c += 1) {
           const kind = matrix[r][c];
-          const visualKind = showServiceValueHeatmap && kind !== "blocked" ? "empty" : kind;
-          const hoverLabel = showServiceValueHeatmap ? "" : (hoverLabels[r]?.[c] || "");
-          const serviceValue = heatmap?.values?.[r]?.[c] ?? 0;
-          const serviceValueLabel = serviceValue > 0 ? `, service value +${formatServiceValue(serviceValue)}` : "";
+          const visualKind = hideOverlayForMode && kind !== "blocked" ? "empty" : kind;
+          const hoverLabel = hideOverlayForMode ? "" : (hoverLabels[r]?.[c] || "");
+          const explainabilityValue = heatmap?.values?.[r]?.[c] ?? 0;
+          const explainabilityDetail = heatmap?.details?.[r]?.[c] ?? "";
+          const explainabilityValueLabel = describeExplainabilityValue(
+            explainabilityMode,
+            explainabilityValue,
+            explainabilityDetail
+          );
+          const explainabilityLabel = explainabilityValueLabel ? `, ${explainabilityValueLabel}` : "";
           const cell = document.createElement("div");
           cell.className = `grid-cell ${visualKind}`;
           cell.dataset.r = String(r);
           cell.dataset.c = String(c);
-          cell.setAttribute("aria-label", `${describeSolvedCell(visualKind, r, c, hoverLabel)}${serviceValueLabel}`);
-          cell.title = `${hoverLabel || `(${r}, ${c}) ${visualKind}`}${serviceValueLabel}`;
-          applyServiceValueHeatmapStyle(cell, serviceValue, heatmap?.maxValue ?? 0);
-          if (!showServiceValueHeatmap && (kind === "service" || kind === "residential")) {
+          cell.setAttribute("aria-label", `${describeSolvedCell(visualKind, r, c, hoverLabel)}${explainabilityLabel}`);
+          cell.title = `${hoverLabel || `(${r}, ${c}) ${visualKind}`}${explainabilityLabel}`;
+          applyExplainabilityHeatmapStyle(cell, explainabilityMode, explainabilityValue, heatmap?.maxValue ?? 0);
+          if (!hideOverlayForMode && (kind === "service" || kind === "residential")) {
             cell.classList.add("selectable");
           }
           if (state.selectedMapCell?.r === r && state.selectedMapCell?.c === c) {
@@ -1441,7 +1766,7 @@
       }
 
       applyMatrixLayout(elements.resultMapGrid);
-      if (showServiceValueHeatmap) {
+      if (hideOverlayForMode) {
         clearResultOverlay();
       } else {
         renderBuildingOverlay(solution);

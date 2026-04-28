@@ -5,6 +5,7 @@ import {
 import { normalizeServicePlacement } from "../../core/buildings.js";
 import { isAllowed } from "../../core/grid.js";
 import { validateSolutionMap } from "../../core/map.js";
+import { buildPlannerExplainabilityMap } from "../../core/plannerExplainability.js";
 import { buildSolverProgressSummary } from "../../core/progress.js";
 import { pruneRedundantRoads } from "../../core/roads.js";
 import { assertValidSerializedSolutionPayload } from "../../core/solverInputValidation.js";
@@ -212,6 +213,7 @@ export function buildSolveResponse(grid: Grid, params: SolverParams, solution: S
       serviceCount: solution.services.length,
       residentialCount: solution.residentials.length,
     },
+    explainability: buildPlannerExplainabilityMap(grid, params, solution),
   };
 }
 
@@ -320,5 +322,6 @@ export function buildManualLayoutResponse(grid: Grid, params: SolverParams, solu
       serviceCount: normalizedSolution.services.length,
       residentialCount: normalizedSolution.residentials.length,
     },
+    explainability: buildPlannerExplainabilityMap(grid, params, normalizedSolution),
   };
 }

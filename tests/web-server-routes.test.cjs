@@ -307,6 +307,23 @@ function buildTinySolvePayload() {
   };
 }
 
+function assertPlannerExplainabilityPayload(payload, grid) {
+  assert.equal(payload.explainability.schemaVersion, 1);
+  assert.equal(payload.explainability.rows, grid.length);
+  assert.equal(payload.explainability.cols, grid[0].length);
+  assert.equal(payload.explainability.cells.length, grid.length);
+  assert.equal(payload.explainability.cells[0].length, grid[0].length);
+  const firstCell = payload.explainability.cells[0][0];
+  assert.equal(firstCell.r, 0);
+  assert.equal(firstCell.c, 0);
+  assert.equal(typeof firstCell.allowed, "boolean");
+  assert.equal(typeof firstCell.row0Reachable, "boolean");
+  assert.equal(typeof firstCell.serviceValue, "number");
+  assert.equal(typeof firstCell.residentialOpportunity, "number");
+  assert.equal(typeof firstCell.connectivityDisconnectedCells, "number");
+  assert.equal(typeof payload.explainability.row0ReachableCellCount, "number");
+}
+
 function buildWarmStartHintFromSolution(solution, overrides = {}) {
   return {
     ...overrides,
@@ -507,6 +524,7 @@ async function testImmediateSolveRoute(handler) {
     assert.equal(result.payload.ok, true);
     assert.equal(result.payload.stats.totalPopulation, 100);
     assert.equal(result.payload.solution.residentials.length, 1);
+    assertPlannerExplainabilityPayload(result.payload, solvePayload.grid);
     assert.equal(startBackgroundSolveCalled, true);
     assert.equal(solveCalled, false);
   } finally {
@@ -1228,6 +1246,7 @@ async function testLayoutEvaluateRoute(handler) {
   assert.equal(result.payload.solution.manualLayout, true);
   assert.equal(result.payload.stats.manualLayout, true);
   assert.equal(result.payload.stats.cpSatStatus, null);
+  assertPlannerExplainabilityPayload(result.payload, solvePayload.grid);
 }
 
 async function testLayoutEvaluateCleansRedundantRoads(handler) {

@@ -55,12 +55,11 @@ Current status notes:
 - Road opportunity traces: constructive and local-search chosen-vs-near-miss counterfactuals are available, including accepted residential local-search and service-neighborhood move kinds.
 - Deterministic ablations before model training are closed as an evidence gate; see [SOLVER_ABLATION_DECISIONS.md](SOLVER_ABLATION_DECISIONS.md). No deterministic variant is ready for default promotion. Blocked variants stay out of defaults, Greedy connectivity-shadow scoring is a label target, and LNS anchor/window variants require counterfactual replay labels before learned ranking.
 - Low-risk learned ranking labels are closed as a label-collection gate; see `artifacts/learned-ranking-labels/2026-04-27/`. The bundle contains split-protected Greedy ordering labels and LNS replay labels with schema/audit metadata, but no model was trained and no defaults changed.
+- Planner explainability maps are closed. Solve and manual-layout responses now include a first-class explainability grid, and the planner can switch between layout, service-value, placement-opportunity, and connectivity-risk map modes.
 
 | Rank | Priority | Impact | Summary | Success Signal |
 | --- | --- | ---: | --- | --- |
-| 1 | Low-risk learned ranking | 3.0 | Start with service ordering or LNS window ordering only after trace, labels, and ablation gates pass. | Model ranking beats deterministic baseline on held-out maps. |
-| 2 | Planner explainability maps | 3.0 | Add opportunity/risk maps for placement and connectivity decisions. | Humans can inspect why a placement is attractive or dangerous. |
-| 3 | CPU parallelism and portfolio work | 2.5 | Use parallelism only where CPU-normalized benchmarks prove wall-clock gain. | Higher population per wall-clock without hiding wasted CPU. |
+| 1 | CPU parallelism and portfolio work | 2.5 | Use parallelism only where CPU-normalized benchmarks prove wall-clock gain. | Higher population per wall-clock without hiding wasted CPU. |
 
 ## Gated Priorities
 
@@ -75,9 +74,8 @@ These are not next actions. They need the trigger in the first column before mov
 1. Try learned Greedy service re-ranking only if held-out labels and benchmarks justify it.
 2. Try learned LNS window re-ranking only after replay labels are trustworthy.
 3. Add CPU portfolio or replay parallelism only with CPU-normalized benchmark wins.
-4. Add planner explainability maps once the underlying metrics are stable.
-5. Consider value-guided seeds if seed quality is proven to bottleneck LNS.
-6. Keep distributed CP-SAT, bandits, and full RL for later.
+4. Consider value-guided seeds if seed quality is proven to bottleneck LNS.
+5. Keep distributed CP-SAT, bandits, and full RL for later.
 
 ## Discipline
 

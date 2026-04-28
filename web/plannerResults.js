@@ -952,9 +952,11 @@
           if (mode === "service-value") {
             const value = Number(cell.serviceValue ?? 0);
             if (!(value > 0)) continue;
+            const anchorReachable = cell.roadAnchorReachable;
+            const anchorDistance = cell.roadAnchorDistance ?? 0;
             heatmap.values[row][col] = value;
-            heatmap.details[row][col] = cell.row0Reachable
-              ? `anchor reachable at distance ${formatExplainabilityNumber(cell.row0Distance ?? 0)}`
+            heatmap.details[row][col] = anchorReachable
+              ? `anchor reachable at distance ${formatExplainabilityNumber(anchorDistance)}`
               : "not anchor reachable";
             heatmap.maxValue = Math.max(heatmap.maxValue, map.maxServiceValue ?? value);
           } else if (mode === "placement-opportunity") {
@@ -1072,8 +1074,9 @@
           + `${(cell.connectivityDisconnectedCells || cell.connectivityLostCells) === 1 ? "" : "s"}`
         );
       }
-      if (cell.row0Reachable) {
-        parts.push(`anchor distance ${formatExplainabilityNumber(cell.row0Distance ?? 0)}`);
+      const anchorReachable = cell.roadAnchorReachable;
+      if (anchorReachable) {
+        parts.push(`anchor distance ${formatExplainabilityNumber(cell.roadAnchorDistance ?? 0)}`);
       }
       return parts.join("; ");
     }
@@ -1152,11 +1155,12 @@
             : coverage.length
               ? `+${totalBonus} from ${coverage.map((entry) => `${entry.name} (${entry.id})`).join(", ")}`
               : "No nearby service bonus reaches this cell.";
+        const anchorReachable = Boolean(explainability?.roadAnchorReachable);
         elements.selectedBuildingAvailability.textContent =
           kind === "empty"
-            ? (explainability?.row0Reachable ? "Open and anchor reachable" : "Open cell")
+            ? (anchorReachable ? "Open and anchor reachable" : "Open cell")
             : kind === "road"
-              ? (explainability?.row0Reachable ? "Occupied by anchor reachable road" : "Occupied by road")
+              ? (anchorReachable ? "Occupied by anchor reachable road" : "Occupied by road")
               : kind === "blocked"
                 ? "Not buildable"
                 : "Occupied by a building";

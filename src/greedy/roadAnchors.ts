@@ -3,14 +3,18 @@
  */
 
 import {
+  buildingTouchesRoadAnchorBoundary,
+  cellFromKey,
   cellKey,
+  forEachRoadAnchorCellInRectangle,
   forEachRectangleCell,
-  hasAvailableRow0RoadCell,
+  hasAvailableRoadAnchorCell,
+  isRoadAnchorCell,
   normalizeServicePlacement,
 } from "../core/index.js";
 import type { Grid, Solution } from "../core/index.js";
 
-export function placementLeavesRow0RoadCellAvailable(
+export function placementLeavesRoadAnchorCellAvailable(
   G: Grid,
   occupied: Set<string>,
   r: number,
@@ -18,36 +22,28 @@ export function placementLeavesRow0RoadCellAvailable(
   rows: number,
   cols: number
 ): boolean {
-  if (r !== 0 && c !== 0) return true;
+  if (!buildingTouchesRoadAnchorBoundary(r, c)) return true;
   const blocked = new Set<string>(occupied);
   forEachRectangleCell(r, c, rows, cols, (rr, cc) => blocked.add(cellKey(rr, cc)));
-  return hasAvailableRow0RoadCell(G, blocked);
+  return hasAvailableRoadAnchorCell(G, blocked);
 }
 
-export function collectRow0AnchorRefinementSeeds(solution: Solution): Set<string>[] {
+export function collectRoadAnchorRefinementSeeds(solution: Solution): Set<string>[] {
   const seedKeys = new Set<string>();
   for (const key of solution.roads) {
-    const [rowText, colText] = key.split(",");
-    const row = Number(rowText);
-    const col = Number(colText);
-    if (row === 0 || col === 0) seedKeys.add(key);
+    const { r, c } = cellFromKey(key);
+    if (isRoadAnchorCell(r, c)) seedKeys.add(key);
   }
   for (const service of solution.services) {
     const normalized = normalizeServicePlacement(service);
-    if (normalized.r === 0) {
-      for (let c = normalized.c; c < normalized.c + normalized.cols; c++) seedKeys.add(`0,${c}`);
-    }
-    if (normalized.c === 0) {
-      for (let r = normalized.r; r < normalized.r + normalized.rows; r++) seedKeys.add(`${r},0`);
-    }
+    forEachRoadAnchorCellInRectangle(normalized.r, normalized.c, normalized.rows, normalized.cols, (r, c) => {
+      seedKeys.add(cellKey(r, c));
+    });
   }
   for (const residential of solution.residentials) {
-    if (residential.r === 0) {
-      for (let c = residential.c; c < residential.c + residential.cols; c++) seedKeys.add(`0,${c}`);
-    }
-    if (residential.c === 0) {
-      for (let r = residential.r; r < residential.r + residential.rows; r++) seedKeys.add(`${r},0`);
-    }
+    forEachRoadAnchorCellInRectangle(residential.r, residential.c, residential.rows, residential.cols, (r, c) => {
+      seedKeys.add(cellKey(r, c));
+    });
   }
   return [...seedKeys]
     .sort((left, right) => {

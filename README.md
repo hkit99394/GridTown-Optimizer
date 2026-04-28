@@ -11,14 +11,14 @@ This project now includes:
 - a local web planner with saved layouts, map inspection, planner explainability maps, and manual editing
 
 Core reference docs:
-- [SPEC.md](./SPEC.md): formal problem statement
-- [Requirement.md](./Requirement.md): product-level summary
-- [ALGORITHM.md](./ALGORITHM.md): heuristic design notes
-- [LEARNED_GUIDANCE_ROADMAP.md](./LEARNED_GUIDANCE_ROADMAP.md): roadmap for ML / RL-style learned guidance over the current solver stack
-- [PLANNER_ARCHITECTURE.md](./PLANNER_ARCHITECTURE.md): current web/backend module boundaries
-- [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md): overall solver roadmap
-- [SOLVER_ABLATION_DECISIONS.md](./SOLVER_ABLATION_DECISIONS.md): deterministic ablation gate decisions before model training
-- [CP_SAT_ROADMAP.md](./CP_SAT_ROADMAP.md): CP-SAT-specific roadmap
+- [SPEC.md](./docs/requirements/SPEC.md): formal problem statement
+- [Requirement.md](./docs/requirements/Requirement.md): product-level summary
+- [ALGORITHM.md](./docs/design/ALGORITHM.md): heuristic design notes
+- [LEARNED_GUIDANCE_ROADMAP.md](./docs/roadmaps/LEARNED_GUIDANCE_ROADMAP.md): roadmap for ML / RL-style learned guidance over the current solver stack
+- [PLANNER_ARCHITECTURE.md](./docs/design/PLANNER_ARCHITECTURE.md): current web/backend module boundaries
+- [SOLVER_ROADMAP.md](./docs/roadmaps/SOLVER_ROADMAP.md): overall solver roadmap
+- [SOLVER_ABLATION_DECISIONS.md](./docs/decisions/SOLVER_ABLATION_DECISIONS.md): deterministic ablation gate decisions before model training
+- [CP_SAT_ROADMAP.md](./docs/roadmaps/CP_SAT_ROADMAP.md): CP-SAT-specific roadmap
 
 ## Problem Summary
 
@@ -622,6 +622,7 @@ The public API is exposed from [src/index.ts](./src/index.ts):
 - `DEFAULT_CP_SAT_BENCHMARK_CORPUS`
 - `evaluateLayout`
 - `validateLayoutConstraints`
+- `assertValidLayout`
 - `assertValidLayoutConstraints`
 - `validateSolution`
 - `renderSolutionMap`
@@ -795,7 +796,7 @@ Road cells are encoded as `"r,c"` strings inside the `Set`.
 - [src/lns/solver.ts](./src/lns/solver.ts): LNS solver
 - [src/cp-sat/solver.ts](./src/cp-sat/solver.ts): TypeScript bridge for CP-SAT
 - [python/cp_sat_solver.py](./python/cp_sat_solver.py): OR-Tools CP-SAT model
-- [src/greedy/row0Anchors.ts](./src/greedy/row0Anchors.ts): greedy road-anchor feasibility and refinement helpers
+- [src/greedy/roadAnchors.ts](./src/greedy/roadAnchors.ts): greedy road-anchor feasibility and refinement helpers
 - [src/runtime/jobs/solveJobManager.ts](./src/runtime/jobs/solveJobManager.ts): background solve job lifecycle
 - [src/server/http/requestHandler.ts](./src/server/http/requestHandler.ts): planner request composition
 - [src/server/http/routes.ts](./src/server/http/routes.ts): planner API route handlers

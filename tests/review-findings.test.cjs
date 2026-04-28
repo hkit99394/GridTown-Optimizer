@@ -2357,14 +2357,14 @@ function testPlannerResultsUsesPlannerExplainabilityRiskLayer() {
   });
   const cells = [
     [
-      { r: 0, c: 0, allowed: true, occupiedKind: "service", row0Reachable: false, row0Distance: null, serviceValue: 0, bestServiceBonus: 0, residentialOpportunity: 0, residentialHeadroom: 0, connectivityLostCells: 0, connectivityDisconnectedCells: 0, connectivityFootprintCells: 0 },
-      { r: 0, c: 1, allowed: true, occupiedKind: null, row0Reachable: true, row0Distance: 0, serviceValue: 20, bestServiceBonus: 10, residentialOpportunity: 30, residentialHeadroom: 20, connectivityLostCells: 0, connectivityDisconnectedCells: 0, connectivityFootprintCells: 0 },
-      { r: 0, c: 2, allowed: true, occupiedKind: null, row0Reachable: true, row0Distance: 0, serviceValue: 0, bestServiceBonus: 40, residentialOpportunity: 0, residentialHeadroom: 0, connectivityLostCells: 0, connectivityDisconnectedCells: 0, connectivityFootprintCells: 0 },
+      { r: 0, c: 0, allowed: true, occupiedKind: "service", roadAnchorReachable: false, roadAnchorDistance: null, serviceValue: 0, bestServiceBonus: 0, residentialOpportunity: 0, residentialHeadroom: 0, connectivityLostCells: 0, connectivityDisconnectedCells: 0, connectivityFootprintCells: 0 },
+      { r: 0, c: 1, allowed: true, occupiedKind: null, roadAnchorReachable: true, roadAnchorDistance: 0, serviceValue: 20, bestServiceBonus: 10, residentialOpportunity: 30, residentialHeadroom: 20, connectivityLostCells: 0, connectivityDisconnectedCells: 0, connectivityFootprintCells: 0 },
+      { r: 0, c: 2, allowed: true, occupiedKind: null, roadAnchorReachable: true, roadAnchorDistance: 0, serviceValue: 0, bestServiceBonus: 40, residentialOpportunity: 0, residentialHeadroom: 0, connectivityLostCells: 0, connectivityDisconnectedCells: 0, connectivityFootprintCells: 0 },
     ],
     [
-      { r: 1, c: 0, allowed: true, occupiedKind: "road", row0Reachable: true, row0Distance: 1, serviceValue: 20, bestServiceBonus: 0, residentialOpportunity: 0, residentialHeadroom: 0, connectivityLostCells: 4, connectivityDisconnectedCells: 4, connectivityFootprintCells: 1 },
-      { r: 1, c: 1, allowed: true, occupiedKind: "residential", row0Reachable: false, row0Distance: null, serviceValue: 20, bestServiceBonus: 0, residentialOpportunity: 0, residentialHeadroom: 0, connectivityLostCells: 0, connectivityDisconnectedCells: 0, connectivityFootprintCells: 0 },
-      { r: 1, c: 2, allowed: true, occupiedKind: null, row0Reachable: true, row0Distance: 2, serviceValue: 0, bestServiceBonus: 0, residentialOpportunity: 0, residentialHeadroom: 0, connectivityLostCells: 0, connectivityDisconnectedCells: 0, connectivityFootprintCells: 0 },
+      { r: 1, c: 0, allowed: true, occupiedKind: "road", roadAnchorReachable: true, roadAnchorDistance: 1, serviceValue: 20, bestServiceBonus: 0, residentialOpportunity: 0, residentialHeadroom: 0, connectivityLostCells: 4, connectivityDisconnectedCells: 4, connectivityFootprintCells: 1 },
+      { r: 1, c: 1, allowed: true, occupiedKind: "residential", roadAnchorReachable: false, roadAnchorDistance: null, serviceValue: 20, bestServiceBonus: 0, residentialOpportunity: 0, residentialHeadroom: 0, connectivityLostCells: 0, connectivityDisconnectedCells: 0, connectivityFootprintCells: 0 },
+      { r: 1, c: 2, allowed: true, occupiedKind: null, roadAnchorReachable: true, roadAnchorDistance: 2, serviceValue: 0, bestServiceBonus: 0, residentialOpportunity: 0, residentialHeadroom: 0, connectivityLostCells: 0, connectivityDisconnectedCells: 0, connectivityFootprintCells: 0 },
     ],
   ];
   const state = {
@@ -2392,7 +2392,7 @@ function testPlannerResultsUsesPlannerExplainabilityRiskLayer() {
         maxResidentialHeadroom: 20,
         maxConnectivityLostCells: 4,
         maxConnectivityDisconnectedCells: 4,
-        row0ReachableCellCount: 4,
+        roadAnchorReachableCellCount: 4,
         cells,
       },
       stats: {

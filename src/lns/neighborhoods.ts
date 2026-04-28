@@ -81,7 +81,7 @@ function addWindow(
   dedupe.set(`${window.top}:${window.left}:${window.rows}:${window.cols}`, window);
 }
 
-function addRowZeroRepairWindows(
+function addRoadAnchorRepairWindows(
   windows: Map<string, CpSatNeighborhoodWindow>,
   G: Grid,
   rows: number,
@@ -137,7 +137,7 @@ function addSlidingNeighborhoodWindows(
     addWindow(windows, { top: Math.max(rowStart, H - rows), left, rows, cols });
   }
 
-  addRowZeroRepairWindows(windows, G, rows + rowStart, cols);
+  addRoadAnchorRepairWindows(windows, G, rows + rowStart, cols);
 }
 
 function interleaveAnchors(anchorGroups: NeighborhoodAnchor[][]): NeighborhoodAnchor[] {
@@ -372,7 +372,7 @@ function addEscalatedNeighborhoodWindows(
     rows: repairableRows,
     cols: verticalBandCols,
   });
-  addRowZeroRepairWindows(windows, G, topBandRows, verticalBandCols);
+  addRoadAnchorRepairWindows(windows, G, topBandRows, verticalBandCols);
 
   const horizontalStride = Math.max(1, Math.floor(horizontalBandRows / 2));
   for (let top = repairRowStart; top <= H - horizontalBandRows; top += horizontalStride) {

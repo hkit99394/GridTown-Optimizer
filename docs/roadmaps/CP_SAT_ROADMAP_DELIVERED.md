@@ -13,10 +13,10 @@ Target alignment:
 - faster placement precomputation
 - conservative dominated-service pruning
 - shared typed placement-map generation
-- disconnected non-row0 candidate-region reduction
+- disconnected non-anchor candidate-region reduction
 
 ### 2. Stronger road-connectivity formulation
-- row-0 reachability filtering
+- anchor-boundary reachability filtering
 - road-eligibility trimming
 - canonical root symmetry break
 - tighter inflow / anti-bidirectional-flow rules

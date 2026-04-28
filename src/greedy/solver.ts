@@ -1,5 +1,5 @@
 /**
- * Greedy solver + optional local search (see ALGORITHM.md)
+ * Greedy solver + optional local search (see docs/design/ALGORITHM.md)
  */
 
 import { existsSync } from "node:fs";
@@ -63,9 +63,9 @@ import {
   applyRoadConnectionProbe,
   createRoadProbeScratch,
   ensureBuildingConnectedToRoads,
-  roadSeedRow0RepresentativeCandidates,
-  roadsConnectedToRow0,
-  findAvailableRow0RoadCell,
+  roadAnchorRepresentativeSeedCandidates,
+  roadsConnectedToRoadAnchor,
+  findAvailableRoadAnchorCell,
   pruneRedundantRoads,
 } from "../core/roads.js";
 import { assertValidLayoutConstraints } from "../core/evaluator.js";
@@ -109,7 +109,7 @@ import {
   normalizeServicePlacement,
   serviceFootprint,
 } from "../core/buildings.js";
-import { collectRow0AnchorRefinementSeeds, placementLeavesRow0RoadCellAvailable } from "./row0Anchors.js";
+import { collectRoadAnchorRefinementSeeds, placementLeavesRoadAnchorCellAvailable } from "./roadAnchors.js";
 import { getBuildingLimits, getResidentialBaseMax, NO_TYPE_INDEX } from "../core/rules.js";
 import { writeSolutionSnapshot } from "../core/solutionSerialization.js";
 import { forEachRectangleCell } from "../core/grid.js";
@@ -1255,8 +1255,8 @@ function solveOne(
           continue;
         }
         if (roadsScratch.size === 0) {
-          if (profileCounters) profileCounters.roads.row0Checks++;
-          if (!placementLeavesRow0RoadCellAvailable(G, occupiedScratch, candidate.r, candidate.c, candidate.rows, candidate.cols)) {
+          if (profileCounters) profileCounters.roads.roadAnchorChecks++;
+          if (!placementLeavesRoadAnchorCellAvailable(G, occupiedScratch, candidate.r, candidate.c, candidate.rows, candidate.cols)) {
             continue;
           }
         }
@@ -1382,7 +1382,7 @@ function solveOne(
           return null;
         }
       }
-      if (roads.size === 0 && !placementLeavesRow0RoadCellAvailable(G, occupied, placement.r, placement.c, placement.rows, placement.cols)) {
+      if (roads.size === 0 && !placementLeavesRoadAnchorCellAvailable(G, occupied, placement.r, placement.c, placement.rows, placement.cols)) {
         return null;
       }
       if (overlaps(occupied, placement.r, placement.c, placement.rows, placement.cols)) {
@@ -1458,8 +1458,8 @@ function solveOne(
         const placement = materializeServicePlacement(service);
         if (useServiceTypes && remainingServiceAvail && remainingServiceAvail[service.typeIndex] <= 0) continue;
         if (roads.size === 0) {
-          if (profileCounters) profileCounters.roads.row0Checks++;
-          if (!placementLeavesRow0RoadCellAvailable(G, occupied, placement.r, placement.c, placement.rows, placement.cols)) continue;
+          if (profileCounters) profileCounters.roads.roadAnchorChecks++;
+          if (!placementLeavesRoadAnchorCellAvailable(G, occupied, placement.r, placement.c, placement.rows, placement.cols)) continue;
         }
         if (profileCounters) profileCounters.servicePhase.canConnectChecks++;
         const probe = probeRoadConnection(occupied, placement.r, placement.c, placement.rows, placement.cols);
@@ -1772,8 +1772,8 @@ function solveOne(
       maybeStop?.();
       if (profileCounters) profileCounters.residentialPhase.candidateScans++;
       if (roads.size === 0) {
-        if (profileCounters) profileCounters.roads.row0Checks++;
-        if (!placementLeavesRow0RoadCellAvailable(G, occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
+        if (profileCounters) profileCounters.roads.roadAnchorChecks++;
+        if (!placementLeavesRoadAnchorCellAvailable(G, occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
       }
       if (profileCounters) profileCounters.residentialPhase.canConnectChecks++;
       const probe = probeRoadConnection(occupied, cand.r, cand.c, cand.rows, cand.cols);
@@ -1973,9 +1973,9 @@ function solveOne(
 
   // Keep only roads connected to the anchor boundary, then re-ensure each placed building
   // is connected to that network (robust against any stray/disconnected roads).
-  let roadsValid = roadsConnectedToRow0(G, roads);
+  let roadsValid = roadsConnectedToRoadAnchor(G, roads);
   if (roadsValid.size === 0) {
-    const fallbackRoad = findAvailableRow0RoadCell(G, occupiedBuildings);
+    const fallbackRoad = findAvailableRoadAnchorCell(G, occupiedBuildings);
     if (!fallbackRoad) return null;
     if (profileCounters) profileCounters.roads.fallbackRoads++;
     roadsValid.add(fallbackRoad);
@@ -3322,7 +3322,7 @@ function runGreedyServiceNeighborhoodSearch(options: {
   return incumbent;
 }
 
-function solutionRow0RoadSeed(solution: Solution): Set<string> | undefined {
+function solutionRoadAnchorSeed(solution: Solution): Set<string> | undefined {
   const seed = new Set<string>();
   for (const key of solution.roads) {
     const [rowText, colText] = key.split(",");
@@ -3523,7 +3523,7 @@ function runGreedyResidualServiceBundleRepair(options: {
   );
 
   let best = initialBest;
-  const initialRoadSeed = solutionRow0RoadSeed(initialBest);
+  const initialRoadSeed = solutionRoadAnchorSeed(initialBest);
   for (const trialEntry of trials) {
     maybeStop?.();
     const trial = solveWithOrder(serviceOrderSorted, {
@@ -3639,13 +3639,13 @@ function createGreedyForcedServiceEvaluator(options: {
     };
 
     for (const solution of successfulSolutions) {
-      for (const seed of collectRow0AnchorRefinementSeeds(solution)) {
+      for (const seed of collectRoadAnchorRefinementSeeds(solution)) {
         addSeed(seed);
         if (seeds.length > maxSeeds) return seeds;
       }
     }
 
-    for (const fallbackSeed of roadSeedRow0RepresentativeCandidates(G, maxSeeds)) {
+    for (const fallbackSeed of roadAnchorRepresentativeSeedCandidates(G, maxSeeds)) {
       addSeed(fallbackSeed);
       if (seeds.length > maxSeeds) break;
     }
@@ -3903,7 +3903,7 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     let refined = bestForCap;
     for (let pass = 0; pass < 2; pass++) {
       let improved = false;
-      for (const roadSeed of collectRow0AnchorRefinementSeeds(refined)) {
+      for (const roadSeed of collectRoadAnchorRefinementSeeds(refined)) {
         maybeStop();
         if (profileCounters) profileCounters.attempts.serviceRefineTrials++;
         const trial = solveWithOrder(serviceOrderSorted, {
@@ -4154,8 +4154,8 @@ function localSearchImprove(
           if (candidateTypeIndex !== resType && remainingAvail[candidateTypeIndex] <= 0) continue;
         }
         if (roads.size === 0) {
-          if (profileCounters) profileCounters.roads.row0Checks++;
-          if (!placementLeavesRow0RoadCellAvailable(G, othersOccupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
+          if (profileCounters) profileCounters.roads.roadAnchorChecks++;
+          if (!placementLeavesRoadAnchorCellAvailable(G, othersOccupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
         }
         if (overlaps(othersOccupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
         if (profileCounters) profileCounters.localSearch.moveChecks++;
@@ -4217,8 +4217,8 @@ function localSearchImprove(
           if (remainingAvail[candidateTypeIndex] <= 0) continue;
         }
         if (roads.size === 0) {
-          if (profileCounters) profileCounters.roads.row0Checks++;
-          if (!placementLeavesRow0RoadCellAvailable(G, occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
+          if (profileCounters) profileCounters.roads.roadAnchorChecks++;
+          if (!placementLeavesRoadAnchorCellAvailable(G, occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
         }
         if (overlaps(occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
         if (profileCounters) profileCounters.localSearch.addChecks++;

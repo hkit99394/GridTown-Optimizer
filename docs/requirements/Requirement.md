@@ -19,7 +19,7 @@ Each residential size or residential type has its own min and max population, e.
 
 
 All buildings are placed on the allowed cells and must connect to roads.
-Any building whose footprint covers row index 0 is treated as connected to the road anchor automatically.
-Roads must be connected (one connected road network), and the road network must connect to row index 0 — at least one road cell lies in row 0 (any one).
+Any building whose footprint covers row index 0 or column index 0 is treated as connected to the road anchor automatically.
+Each road component must connect to the road-anchor boundary: at least one road cell in the component lies in row 0 or column 0.
 
 The goal is to maximize the Population of the city, provided the buildings and the roads.

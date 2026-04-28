@@ -104,15 +104,15 @@ const {
   recordRoadOpportunityPlacementFromOccupiedBuildings,
 } = require("../dist/greedy/roadOpportunity.js");
 const {
-  computeRow0ReachableEmptyFrontier,
+  computeRoadAnchorReachableEmptyFrontier,
   createRoadProbeScratch,
   materializeDeferredRoadNetwork,
   measureBuildingConnectivityShadow,
   measureBuildingConnectivityShadowFromFrontier,
   pruneRedundantRoads,
   probeBuildingConnectedToRoads,
-  roadSeedRow0Candidates,
-  roadSeedRow0RepresentativeCandidates,
+  roadAnchorSeedCandidates,
+  roadAnchorRepresentativeSeedCandidates,
 } = require("../dist/core/roads.js");
 const {
   forEachRectangleBorderCell,
@@ -267,6 +267,8 @@ function testPlannerExplainabilityMapSummarizesOpportunityAndRisk() {
   assert.equal(map.cells.length, 3);
   assert.equal(map.cells[0].length, 3);
   assert.equal(map.cells[0][1].serviceValue, 50);
+  assert.equal(map.cells[0][1].roadAnchorReachable, true);
+  assert.equal(map.cells[0][1].roadAnchorDistance, 0);
   assert.equal(map.cells[0][1].residentialOpportunity, 30);
   assert.equal(map.cells[0][1].bestServiceBonus, 50);
   assert.equal(map.cells[1][1].occupiedKind, "road");
@@ -275,6 +277,7 @@ function testPlannerExplainabilityMapSummarizesOpportunityAndRisk() {
   assert.equal(map.maxServiceValue, 50);
   assert.equal(map.maxResidentialOpportunity, 30);
   assert.ok(map.maxConnectivityDisconnectedCells > 0);
+  assert.equal(typeof map.roadAnchorReachableCellCount, "number");
 }
 
 function testRoadProbePreservesEdgeBorderConnectivity() {
@@ -349,7 +352,7 @@ function testBuildingConnectivityShadowMeasuresDisconnectedReachableCells() {
   const shadowFromFrontier = measureBuildingConnectivityShadowFromFrontier(
     grid,
     blockedBuildings,
-    computeRow0ReachableEmptyFrontier(grid, blockedBuildings),
+    computeRoadAnchorReachableEmptyFrontier(grid, blockedBuildings),
     placement
   );
 
@@ -386,7 +389,7 @@ function testGreedyAttemptStateRejectsMismatchedProbeKind() {
   assert.equal(explicitAttempt.occupied.has("0,0"), true);
 }
 
-function testRoadPruningDropsConnectorsOnlyNeededByRowZeroBuildings() {
+function testRoadPruningDropsConnectorsOnlyNeededByAnchorBoundaryBuildings() {
   const grid = [
     [1, 1, 1, 1],
     [1, 1, 1, 1],
@@ -1850,7 +1853,7 @@ function testGreedyWallClockBudgetStopsWithBestSolution() {
   }
 }
 
-function testGreedyExploresAllAllowedRowZeroSeeds() {
+function testGreedyExploresAllAllowedRoadAnchorSeeds() {
   const grid = [
     [1, 0, 1, 0],
     [0, 0, 1, 1],
@@ -1871,7 +1874,7 @@ function testGreedyExploresAllAllowedRowZeroSeeds() {
   assert.deepEqual([...solution.roads].sort(), ["0,2"]);
 }
 
-function testGreedyExploresMultipleRowZeroSeedsWithinOneComponent() {
+function testGreedyExploresMultipleRoadAnchorSeedsWithinOneComponent() {
   const grid = [
     [1, 1, 1, 0, 0],
     [1, 1, 0, 0, 0],
@@ -1893,7 +1896,7 @@ function testGreedyExploresMultipleRowZeroSeedsWithinOneComponent() {
   assert.deepEqual([...solution.roads].sort(), ["0,2"]);
 }
 
-function testGreedyExploresWideRowZeroAnchors() {
+function testGreedyExploresWideRoadAnchors() {
   const grid = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1],
@@ -1938,7 +1941,7 @@ function testGreedyExploresAnchorsBeyondLegacyRepresentativeCap() {
   assert.equal(solution.totalPopulation, 85);
 }
 
-function testRowZeroSeedCandidatesIncludeAllAllowedAnchorBoundaryCells() {
+function testRoadAnchorSeedCandidatesIncludeAllAllowedAnchorBoundaryCells() {
   const singleComponentGrid = [
     [1, 1, 1, 1],
     [1, 1, 1, 1],
@@ -1953,26 +1956,26 @@ function testRowZeroSeedCandidatesIncludeAllAllowedAnchorBoundaryCells() {
   ];
 
   assert.deepEqual(
-    roadSeedRow0Candidates(singleComponentGrid).map((seed) => [...seed][0]),
+    roadAnchorSeedCandidates(singleComponentGrid).map((seed) => [...seed][0]),
     ["0,0", "0,1", "0,2", "0,3", "1,0"]
   );
   assert.deepEqual(
-    roadSeedRow0Candidates(disconnectedComponentGrid).map((seed) => [...seed][0]),
+    roadAnchorSeedCandidates(disconnectedComponentGrid).map((seed) => [...seed][0]),
     ["0,0", "0,2", "0,3", "0,5", "1,0"]
   );
-  const wideSeeds = roadSeedRow0Candidates(wideComponentGrid).map((seed) => [...seed][0]);
+  const wideSeeds = roadAnchorSeedCandidates(wideComponentGrid).map((seed) => [...seed][0]);
   assert.equal(wideSeeds.length, 21);
   assert.equal(wideSeeds[0], "0,0");
   assert.equal(wideSeeds[wideSeeds.length - 1], "1,0");
 }
 
-function testRepresentativeRowZeroSeedCandidatesStayBoundaryExhaustive() {
+function testRepresentativeRoadAnchorSeedCandidatesStayBoundaryExhaustive() {
   const wideGrid = [
     Array.from({ length: 40 }, () => 1),
     Array.from({ length: 40 }, () => 1),
   ];
 
-  const representativeKeys = roadSeedRow0RepresentativeCandidates(wideGrid, 12)
+  const representativeKeys = roadAnchorRepresentativeSeedCandidates(wideGrid, 12)
     .map((seed) => [...seed][0]);
 
   assert.equal(representativeKeys.length, 41);
@@ -6855,7 +6858,7 @@ function testLnsRejectsMalformedSeedHintFields() {
   );
 }
 
-function maybeTestLnsExploresMultipleRowZeroSeeds() {
+function maybeTestLnsExploresMultipleRoadAnchorSeeds() {
   const pythonExecutable = resolveCpSatPython();
   if (!pythonExecutable) {
     return;
@@ -6892,7 +6895,7 @@ function maybeTestLnsExploresMultipleRowZeroSeeds() {
   assert.equal(validation.valid, true);
 }
 
-function maybeTestLnsCanRepairRowZeroAnchorLayouts() {
+function maybeTestLnsCanRepairRoadAnchorLayouts() {
   const pythonExecutable = resolveCpSatPython();
   if (!pythonExecutable) {
     return;
@@ -8171,7 +8174,7 @@ async function main() {
   testRoadProbeScratchWorkspaceResetsBetweenCalls();
   testBuildingConnectivityShadowMeasuresDisconnectedReachableCells();
   testGreedyAttemptStateRejectsMismatchedProbeKind();
-  testRoadPruningDropsConnectorsOnlyNeededByRowZeroBuildings();
+  testRoadPruningDropsConnectorsOnlyNeededByAnchorBoundaryBuildings();
   testRoadPruningRevisitsCandidatesAfterDependentRoadRemoval();
   testGreedyDispatcher();
   await testPublicSolverDispatchValidatesInputs();
@@ -8183,12 +8186,12 @@ async function main() {
   testRoadOpportunityLocalSearchMeasurementUsesPostRemoveOccupancy();
   testGreedyStopFileCancelsBeforePrecompute();
   testGreedyWallClockBudgetStopsWithBestSolution();
-  testGreedyExploresAllAllowedRowZeroSeeds();
-  testGreedyExploresMultipleRowZeroSeedsWithinOneComponent();
-  testGreedyExploresWideRowZeroAnchors();
+  testGreedyExploresAllAllowedRoadAnchorSeeds();
+  testGreedyExploresMultipleRoadAnchorSeedsWithinOneComponent();
+  testGreedyExploresWideRoadAnchors();
   testGreedyExploresAnchorsBeyondLegacyRepresentativeCap();
-  testRowZeroSeedCandidatesIncludeAllAllowedAnchorBoundaryCells();
-  testRepresentativeRowZeroSeedCandidatesStayBoundaryExhaustive();
+  testRoadAnchorSeedCandidatesIncludeAllAllowedAnchorBoundaryCells();
+  testRepresentativeRoadAnchorSeedCandidatesStayBoundaryExhaustive();
   testLnsNeighborhoodWindowsPrioritizeWeakServicesAndUpgradeHeadroom();
   maybeTestCpSatBackendJsonContractSmoke();
   maybeTestCpSatBackendStreamingProtocol();
@@ -8311,8 +8314,8 @@ async function main() {
   maybeTestLnsOptimizer();
   testLnsRejectsInvalidSeedHint();
   testLnsRejectsMalformedSeedHintFields();
-  maybeTestLnsExploresMultipleRowZeroSeeds();
-  maybeTestLnsCanRepairRowZeroAnchorLayouts();
+  maybeTestLnsExploresMultipleRoadAnchorSeeds();
+  maybeTestLnsCanRepairRoadAnchorLayouts();
   testDeterministicDominanceServiceUpgradeHelper();
   testLnsDeterministicServiceUpgrade();
   testDeterministicDominanceResidentialUpgradeHelper();

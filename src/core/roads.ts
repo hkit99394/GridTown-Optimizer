@@ -14,8 +14,24 @@ import {
   isAllowed,
 } from "./grid.js";
 
-function isRoadAnchorCell(r: number, c: number): boolean {
+export function isRoadAnchorCell(r: number, c: number): boolean {
   return r === 0 || c === 0;
+}
+
+export function forEachRoadAnchorCellInRectangle(
+  r: number,
+  c: number,
+  rows: number,
+  cols: number,
+  visit: (r: number, c: number) => void
+): void {
+  if (r === 0) {
+    for (let cc = c; cc < c + cols; cc++) visit(0, cc);
+  }
+  if (c === 0) {
+    const startRow = r === 0 ? 1 : r;
+    for (let rr = startRow; rr < r + rows; rr++) visit(rr, 0);
+  }
 }
 
 function forEachRoadAnchorCell(G: Grid, visit: (r: number, c: number) => void): void {
@@ -30,12 +46,12 @@ function forEachRoadAnchorCell(G: Grid, visit: (r: number, c: number) => void): 
 }
 
 /** Road seed: exactly one allowed anchor-boundary cell (first found). */
-export function roadSeedRow0(G: Grid): Set<string> {
-  return new Set(roadSeedRow0Candidates(G)[0] ?? []);
+export function roadAnchorSeed(G: Grid): Set<string> {
+  return new Set(roadAnchorSeedCandidates(G)[0] ?? []);
 }
 
 /** Candidate road seeds, one per allowed anchor-boundary cell. */
-export function roadSeedRow0Candidates(G: Grid): Set<string>[] {
+export function roadAnchorSeedCandidates(G: Grid): Set<string>[] {
   const seeds: Set<string>[] = [];
   forEachRoadAnchorCell(G, (r, c) => {
     if (!isAllowed(G, r, c)) return;
@@ -45,12 +61,12 @@ export function roadSeedRow0Candidates(G: Grid): Set<string>[] {
 }
 
 /** @deprecated Anchor correctness requires evaluating every allowed boundary seed. */
-export function roadSeedRow0RepresentativeCandidates(G: Grid, limit: number): Set<string>[] {
+export function roadAnchorRepresentativeSeedCandidates(G: Grid, limit: number): Set<string>[] {
   void limit;
-  return roadSeedRow0Candidates(G);
+  return roadAnchorSeedCandidates(G);
 }
 
-export function findAvailableRow0RoadCell(G: Grid, blocked: Set<string>): string | null {
+export function findAvailableRoadAnchorCell(G: Grid, blocked: Set<string>): string | null {
   let found: string | null = null;
   forEachRoadAnchorCell(G, (r, c) => {
     if (found !== null || !isAllowed(G, r, c)) return;
@@ -60,8 +76,8 @@ export function findAvailableRow0RoadCell(G: Grid, blocked: Set<string>): string
   return found;
 }
 
-export function hasAvailableRow0RoadCell(G: Grid, blocked: Set<string>): boolean {
-  return findAvailableRow0RoadCell(G, blocked) !== null;
+export function hasAvailableRoadAnchorCell(G: Grid, blocked: Set<string>): boolean {
+  return findAvailableRoadAnchorCell(G, blocked) !== null;
 }
 
 export interface RoadProbeScratch {
@@ -93,7 +109,7 @@ function roadProbeScratchMatchesGrid(G: Grid, scratch: RoadProbeScratch): boolea
   return scratch.height === height(G) && scratch.width === width(G);
 }
 
-function hasAvailableRow0RoadCellWithScratch(
+function hasAvailableRoadAnchorCellWithScratch(
   G: Grid,
   scratch: RoadProbeScratch,
   blockedGeneration: number
@@ -225,11 +241,11 @@ function bfsPathToTargetsWithScratch(
   return null;
 }
 
-function buildingTouchesRoadAnchorBoundary(r: number, c: number): boolean {
-  return r === 0 || c === 0;
+export function buildingTouchesRoadAnchorBoundary(r: number, c: number): boolean {
+  return isRoadAnchorCell(r, c);
 }
 
-export interface Row0ReachableEmptyFrontier {
+export interface RoadAnchorReachableEmptyFrontier {
   reachable: Set<string>;
   distanceByKey: Map<string, number>;
 }
@@ -307,8 +323,8 @@ function buildRoadConnectionProbe(
   if (
     roads.size === 0
     && !(useScratch
-      ? hasAvailableRow0RoadCellWithScratch(G, useScratch, blockedGeneration)
-      : hasAvailableRow0RoadCell(G, blockSet!))
+      ? hasAvailableRoadAnchorCellWithScratch(G, useScratch, blockedGeneration)
+      : hasAvailableRoadAnchorCell(G, blockSet!))
   ) {
     return null;
   }
@@ -320,10 +336,10 @@ function buildRoadConnectionProbe(
   return { path };
 }
 
-export function computeRow0ReachableEmptyFrontier(
+export function computeRoadAnchorReachableEmptyFrontier(
   G: Grid,
   blocked: Set<string>
-): Row0ReachableEmptyFrontier {
+): RoadAnchorReachableEmptyFrontier {
   const reachable = new Set<string>();
   const distanceByKey = new Map<string, number>();
   const queue: [number, number][] = [];
@@ -362,7 +378,7 @@ export function measureBuildingConnectivityShadow(
   return measureBuildingConnectivityShadowFromFrontier(
     G,
     blockedBuildings,
-    computeRow0ReachableEmptyFrontier(G, blockedBuildings),
+    computeRoadAnchorReachableEmptyFrontier(G, blockedBuildings),
     placement,
     footprintKeys
   );
@@ -372,7 +388,7 @@ export function measureBuildingConnectivityShadow(
 export function measureBuildingConnectivityShadowFromFrontier(
   G: Grid,
   blockedBuildings: Set<string>,
-  beforeFrontier: Row0ReachableEmptyFrontier,
+  beforeFrontier: RoadAnchorReachableEmptyFrontier,
   placement: { r: number; c: number; rows: number; cols: number },
   footprintKeys?: readonly string[]
 ): BuildingConnectivityShadow {
@@ -390,7 +406,7 @@ export function measureBuildingConnectivityShadowFromFrontier(
     afterBlocked.add(key);
   });
 
-  const after = computeRow0ReachableEmptyFrontier(G, afterBlocked).reachable;
+  const after = computeRoadAnchorReachableEmptyFrontier(G, afterBlocked).reachable;
   let lostCells = 0;
   for (const key of before) {
     if (!after.has(key)) lostCells++;
@@ -409,9 +425,9 @@ export function measureBuildingConnectivityShadowFromFrontier(
   };
 }
 
-export function probeBuildingConnectedToRow0ReachableEmptyFrontier(
+export function probeBuildingConnectedToRoadAnchorReachableEmptyFrontier(
   G: Grid,
-  frontier: Row0ReachableEmptyFrontier,
+  frontier: RoadAnchorReachableEmptyFrontier,
   r: number,
   c: number,
   rows: number,
@@ -465,7 +481,7 @@ export function ensureBuildingConnectedToRoads(
  * Keep every road component that is anchored by at least one row-0 or column-0 road cell.
  * Returns a new Set; does not modify the input.
  */
-export function roadsConnectedToRow0(G: Grid, roads: Set<string>): Set<string> {
+export function roadsConnectedToRoadAnchor(G: Grid, roads: Set<string>): Set<string> {
   const reachable = new Set<string>();
   const queue: [number, number][] = [];
   for (const k of roads) {
@@ -491,11 +507,11 @@ export function roadsConnectedToRow0(G: Grid, roads: Set<string>): Set<string> {
   return reachable;
 }
 
-/** @deprecated Use roadSeedRow0 instead. */
-export const roadSeedColumn0 = roadSeedRow0;
+/** @deprecated Use roadAnchorSeed instead. */
+export const roadSeedColumn0 = roadAnchorSeed;
 
-/** @deprecated Use roadsConnectedToRow0 instead. */
-export const roadsConnectedToColumn0 = roadsConnectedToRow0;
+/** @deprecated Use roadsConnectedToRoadAnchor instead. */
+export const roadsConnectedToColumn0 = roadsConnectedToRoadAnchor;
 
 /** Check if building at (r,c,rows,cols) is already adjacent to roads (no extension needed for connectivity) */
 export function isAdjacentToRoads(
@@ -558,8 +574,8 @@ function compareRoadPruneCandidates(leftKey: string, rightKey: string): number {
   return left.c - right.c;
 }
 
-function roadSetHasSingleRow0ConnectedComponent(G: Grid, roads: Set<string>): boolean {
-  const connectedRoads = roadsConnectedToRow0(G, roads);
+function roadSetHasSingleRoadAnchorConnectedComponent(G: Grid, roads: Set<string>): boolean {
+  const connectedRoads = roadsConnectedToRoadAnchor(G, roads);
   if (connectedRoads.size === 0 || connectedRoads.size !== roads.size) return false;
   return true;
 }
@@ -579,7 +595,7 @@ export function pruneRedundantRoads(
   roads: Set<string>,
   buildings: readonly BuildingPlacementForRoadMaterialization[]
 ): Set<string> {
-  let pruned = roadsConnectedToRow0(G, roads);
+  let pruned = roadsConnectedToRoadAnchor(G, roads);
   const candidates = [...pruned].sort(compareRoadPruneCandidates);
   let changed = true;
   while (changed) {
@@ -588,7 +604,7 @@ export function pruneRedundantRoads(
       if (!pruned.has(key)) continue;
       const candidateRoads = new Set(pruned);
       candidateRoads.delete(key);
-      if (!roadSetHasSingleRow0ConnectedComponent(G, candidateRoads)) continue;
+      if (!roadSetHasSingleRoadAnchorConnectedComponent(G, candidateRoads)) continue;
       if (!allBuildingsHaveRoadAccess(candidateRoads, buildings)) continue;
       pruned = candidateRoads;
       changed = true;
@@ -611,9 +627,9 @@ export function materializeDeferredRoadNetwork(
     if (!isAllowed(G, r, c) || occupiedBuildings.has(key)) continue;
     seed.add(key);
   }
-  const roads = roadsConnectedToRow0(G, seed);
+  const roads = roadsConnectedToRoadAnchor(G, seed);
   if (roads.size === 0) {
-    const fallbackRoad = findAvailableRow0RoadCell(G, occupiedBuildings);
+    const fallbackRoad = findAvailableRoadAnchorCell(G, occupiedBuildings);
     if (!fallbackRoad) return null;
     roads.add(fallbackRoad);
   }

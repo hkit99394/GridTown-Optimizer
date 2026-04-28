@@ -17,10 +17,10 @@ This roadmap is intentionally about `hybrid search`, not replacing the current s
 ## Non-Goals
 
 This roadmap is not about:
-- replacing [src/core/evaluator.ts](./src/core/evaluator.ts) as the source of truth for legality and population
-- replacing [src/cp-sat/solver.ts](./src/cp-sat/solver.ts) as the exact repair / global solve path
+- replacing [src/core/evaluator.ts](../../src/core/evaluator.ts) as the source of truth for legality and population
+- replacing [src/cp-sat/solver.ts](../../src/cp-sat/solver.ts) as the exact repair / global solve path
 - learning road connectivity or shortest-path logic that is already solved cleanly with graph algorithms
-- treating roads as blockers in the training target; the future blocker is building footprints that remove cells from row-0-reachable empty space
+- treating roads as blockers in the training target; the future blocker is building footprints that remove cells from anchor-reachable empty space
 - training a raw cell-by-cell end-to-end RL agent as the first milestone
 
 ## Principles
@@ -48,10 +48,10 @@ This roadmap is not about:
 - shared progress summaries already expose current score, best score, active stage, reuse source, stop reason, exact gap, and portfolio worker context across planner, HTTP, and benchmark surfaces.
 
 Relevant docs:
-- [README.md](./README.md)
+- [README.md](../../README.md)
 - [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md)
 - [CP_SAT_ROADMAP.md](./CP_SAT_ROADMAP.md)
-- [ALGORITHM.md](./ALGORITHM.md)
+- [ALGORITHM.md](../design/ALGORITHM.md)
 
 ### What still needs to be added
 
@@ -117,7 +117,7 @@ Why:
 - success metrics like `time-to-first-improvement`, `time-to-best-incumbent`, and chosen-vs-available decision quality are not consistently exportable yet
 
 Concrete work:
-- add shared optimizer run events to [src/core/types.ts](./src/core/types.ts)
+- add shared optimizer run events to [src/core/types.ts](../../src/core/types.ts)
 - add trace-export support to the existing `greedy`, `LNS`, `CP-SAT`, and scorecard benchmark runners
 - emit JSONL traces for solver milestones:
   - seed built
@@ -131,7 +131,7 @@ Concrete work:
   - incumbent improved
   - solver finished
 - make benchmark runs reproducible with explicit seeds where supported
-- record final validation using [src/core/evaluator.ts](./src/core/evaluator.ts)
+- record final validation using [src/core/evaluator.ts](../../src/core/evaluator.ts)
 
 Deliverables:
 - JSONL trace export from the existing benchmark CLIs
@@ -150,13 +150,13 @@ Status: After Phase 0
 
 Why:
 - learned models should not have to rediscover graph reachability or basic opportunity cost
-- the strongest near-term feature is building connectivity shadow: how much future row-0-reachable empty space and placement value a candidate footprint disconnects
+- the strongest near-term feature is building connectivity shadow: how much future anchor-reachable empty space and placement value a candidate footprint disconnects
 - the same feature is useful for Greedy scoring, `LNS` anchor selection, planner heatmaps, and later learned ranking
 
 Definition:
 - consider all allowed cells that are not occupied by building footprints as the future road-candidate graph
 - roads are support cells, not the blocker
-- for a candidate building, remove its footprint from the graph and recompute row-0 reachability
+- for a candidate building, remove its footprint from the graph and recompute reachability from row `0` or column `0`
 - the raw shadow is the set of newly unreachable empty cells
 - the weighted shadow adds lost residential/service candidate value, residential headroom, service marginal value, and narrow-gate/articulation penalties
 
@@ -367,16 +367,16 @@ Additional gates:
 
 ### Core runtime integration
 
-- [src/core/types.ts](./src/core/types.ts): shared event, trace, and benchmark types
-- [src/core/roads.ts](./src/core/roads.ts) or a sibling core module: deterministic connectivity-shadow and row-0-reachability opportunity features
-- [src/runtime/solve.ts](./src/runtime/solve.ts): common solver callback / instrumentation entry point
-- [src/greedy/solver.ts](./src/greedy/solver.ts): greedy trace emission and optional learned service re-ranking hook
-- [src/lns/solver.ts](./src/lns/solver.ts): `LNS` trace emission and optional learned window re-ranking hook
-- [src/cp-sat/solver.ts](./src/cp-sat/solver.ts): benchmark-safe warm-start comparisons and seed-quality reporting
+- [src/core/types.ts](../../src/core/types.ts): shared event, trace, and benchmark types
+- [src/core/roads.ts](../../src/core/roads.ts) or a sibling core module: deterministic connectivity-shadow and anchor-reachability opportunity features
+- [src/runtime/solve.ts](../../src/runtime/solve.ts): common solver callback / instrumentation entry point
+- [src/greedy/solver.ts](../../src/greedy/solver.ts): greedy trace emission and optional learned service re-ranking hook
+- [src/lns/solver.ts](../../src/lns/solver.ts): `LNS` trace emission and optional learned window re-ranking hook
+- [src/cp-sat/solver.ts](../../src/cp-sat/solver.ts): benchmark-safe warm-start comparisons and seed-quality reporting
 
 ### Benchmarking and research support
 
-- add a generic optimizer benchmark module next to [src/benchmarks/greedy.ts](./src/benchmarks/greedy.ts) and [src/benchmarks/cpSat.ts](./src/benchmarks/cpSat.ts)
+- add a generic optimizer benchmark module next to [src/benchmarks/greedy.ts](../../src/benchmarks/greedy.ts) and [src/benchmarks/cpSat.ts](../../src/benchmarks/cpSat.ts)
 - keep model-training code out of the main app path, for example under `python/ml/`
 - keep persisted traces as plain JSONL to stay easy to inspect and replay
 
@@ -388,7 +388,7 @@ Every milestone should clear all of the following before the next phase begins:
    compare under matched wall-clock and matched `CP-SAT` repair budgets
 
 2. Exact validation:
-   every reported solution must pass [src/core/evaluator.ts](./src/core/evaluator.ts)
+   every reported solution must pass [src/core/evaluator.ts](../../src/core/evaluator.ts)
 
 3. Repeated seeded runs:
    use repeated runs where randomness exists and report aggregate statistics

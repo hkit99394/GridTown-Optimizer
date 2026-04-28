@@ -47,7 +47,7 @@ export interface LnsWindowReplayLabelRunOptions {
 
 export interface LnsWindowReplayFeatures {
   area: number;
-  touchesRow0: boolean;
+  touchesRoadAnchorBoundary: boolean;
   roadCountInside: number;
   serviceCountInside: number;
   residentialCountInside: number;
@@ -285,7 +285,7 @@ function buildWindowFeatures(
 
   return {
     area: window.rows * window.cols,
-    touchesRow0: window.top === 0,
+    touchesRoadAnchorBoundary: window.top === 0 || window.left === 0,
     roadCountInside: [...incumbent.roads].filter((key) => roadInsideWindow(window, key)).length,
     serviceCountInside,
     residentialCountInside,

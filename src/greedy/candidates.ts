@@ -80,7 +80,7 @@ export function roadCostFromTieBreakProbe(probe: TieBreakProbe): number {
   return "roadCost" in probe ? probe.roadCost : (probe.path?.length ?? 0);
 }
 
-function countRow0FootprintCells(placement: { r: number; c: number; rows: number; cols: number }): number {
+function countTopBoundaryFootprintCells(placement: { r: number; c: number; rows: number; cols: number }): number {
   return placement.r === 0 ? placement.cols : 0;
 }
 
@@ -98,9 +98,9 @@ export function compareServiceTieBreaks(
   b: ServiceCandidate,
   bProbe: TieBreakProbe
 ): number {
-  const aRow0Cells = countRow0FootprintCells(a);
-  const bRow0Cells = countRow0FootprintCells(b);
-  if (aRow0Cells !== bRow0Cells) return aRow0Cells - bRow0Cells;
+  const aTopBoundaryCells = countTopBoundaryFootprintCells(a);
+  const bTopBoundaryCells = countTopBoundaryFootprintCells(b);
+  if (aTopBoundaryCells !== bTopBoundaryCells) return aTopBoundaryCells - bTopBoundaryCells;
 
   const aRoadCost = roadCostFromTieBreakProbe(aProbe);
   const bRoadCost = roadCostFromTieBreakProbe(bProbe);

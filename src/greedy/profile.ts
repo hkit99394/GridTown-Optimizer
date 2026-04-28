@@ -100,7 +100,7 @@ export function createGreedyProfileCounters(): GreedyProfileCounters {
       probeCalls: 0,
       probeReuses: 0,
       scratchProbeCalls: 0,
-      row0Checks: 0,
+      roadAnchorChecks: 0,
       fallbackRoads: 0,
       deferredFrontierRecomputes: 0,
       deferredReconstructionSteps: 0,

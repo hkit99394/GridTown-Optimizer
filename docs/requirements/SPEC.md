@@ -17,7 +17,7 @@ Maximization problem: choose a feasible placement of roads and buildings so that
 **Assumptions:**
 
 - Row index `r ∈ [0, H)` and column index `c ∈ [0, W)`.
-- Every road component must **touch row 0**: each connected component of road cells must contain at least one road cell with row index `r = 0`.
+- Every road component must **touch the road-anchor boundary**: each connected component of road cells must contain at least one road cell in row `0` or column `0`.
 - All coordinates in this spec use `(row, col)` or `(r, c)`.
 
 ---
@@ -32,8 +32,8 @@ Maximization problem: choose a feasible placement of roads and buildings so that
 ### 3.2 Roads
 
 - A **road** occupies a single allowed cell. Roads are placed on the grid.
-- **Connected component**: Road cells may form multiple orthogonally connected components; each component must be row-0-connected.
-- **Row 0**: Every connected road component must include **at least one cell in row index 0** (i.e. some road cell in that component has `r = 0`). The whole row need not be road.
+- **Connected component**: Road cells may form multiple orthogonally connected components; each component must be connected to the road-anchor boundary.
+- **Road-anchor boundary**: Every connected road component must include **at least one cell in row index 0 or column index 0** (i.e. some road cell in that component has `r = 0` or `c = 0`). The whole row or column need not be road.
 
 ### 3.3 Service building
 
@@ -77,11 +77,11 @@ A solution is **feasible** iff all of the following hold.
 
 3. **Road connectivity**  
    - Road cells may form multiple connected components (orthogonal moves only).
-   - Every road component has at least one road cell with row index `r = 0`.
+   - Every road component has at least one road cell with row index `r = 0` or column index `c = 0`.
 
 4. **Building–road connectivity**  
-   Every building must be **connected to a row-0-connected road component**: for each building, at least one cell of its footprint is **orthogonally adjacent** to some road cell.
-   Buildings whose footprint covers row index `r = 0` are treated as connected to the road anchor automatically.
+   Every building must be **connected to a road-anchor-connected road component**: for each building, at least one cell of its footprint is **orthogonally adjacent** to some road cell.
+   Buildings whose footprint covers row index `r = 0` or column index `c = 0` are treated as connected to the road anchor automatically.
 
 5. **No overlap with buildings**  
    Roads may be placed on allowed cells that are not part of any building; building footprints do not overlap with each other or with roads.
@@ -132,5 +132,5 @@ The solver returns a feasible `(R, S, Z)` and the corresponding `P`; goal is to 
 
 - **In:** Grid `G[H][W]` of 0/1 (allowed/not).
 - **Out:** Roads `R`, service buildings `S`, residential buildings `Z`, and total population `P`.
-- **Constraints:** All on allowed cells; buildings disjoint; roads connected and at least one road in row 0; every building adjacent to some road.
+- **Constraints:** All on allowed cells; buildings disjoint; every road component touches row `0` or column `0`; every building is adjacent to some road or touches the road-anchor boundary.
 - **Goal:** Maximize `P`.

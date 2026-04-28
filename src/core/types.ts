@@ -1,5 +1,5 @@
 /**
- * City Builder — type definitions (see SPEC.md)
+ * City Builder - type definitions (see docs/requirements/SPEC.md)
  */
 
 export type Grid = number[][];
@@ -620,7 +620,7 @@ export interface GreedyProfileCounters {
     probeCalls: number;
     probeReuses: number;
     scratchProbeCalls: number;
-    row0Checks: number;
+    roadAnchorChecks: number;
     fallbackRoads: number;
     deferredFrontierRecomputes: number;
     deferredReconstructionSteps: number;
@@ -1004,8 +1004,8 @@ export interface PlannerExplainabilityCell {
   c: number;
   allowed: boolean;
   occupiedKind: "service" | "residential" | "road" | null;
-  row0Reachable: boolean;
-  row0Distance: number | null;
+  roadAnchorReachable: boolean;
+  roadAnchorDistance: number | null;
   serviceValue: number;
   bestServiceBonus: number;
   residentialOpportunity: number;
@@ -1025,7 +1025,7 @@ export interface PlannerExplainabilityMap {
   maxResidentialHeadroom: number;
   maxConnectivityLostCells: number;
   maxConnectivityDisconnectedCells: number;
-  row0ReachableCellCount: number;
+  roadAnchorReachableCellCount: number;
   cells: PlannerExplainabilityCell[][];
 }
 

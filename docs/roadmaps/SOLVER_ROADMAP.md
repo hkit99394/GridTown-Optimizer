@@ -53,7 +53,7 @@ Current status notes:
 - Auto/LNS budget policy: keep `baseline`. Recent 5s/30s coverage slices did not produce an Auto population win for non-baseline policies, so 120s probes stay gated.
 - Connectivity-shadow scoring: keep default-off. The guarded opt-in path is population/road-safe on the focused corpus but can spend extra CPU.
 - Road opportunity traces: constructive and local-search chosen-vs-near-miss counterfactuals are available, including accepted residential local-search and service-neighborhood move kinds.
-- Deterministic ablations before model training are closed as an evidence gate; see [SOLVER_ABLATION_DECISIONS.md](SOLVER_ABLATION_DECISIONS.md). No deterministic variant is ready for default promotion. Blocked variants stay out of defaults, Greedy connectivity-shadow scoring is a label target, and LNS anchor/window variants require counterfactual replay labels before learned ranking.
+- Deterministic ablations before model training are closed as an evidence gate; see [SOLVER_ABLATION_DECISIONS.md](../decisions/SOLVER_ABLATION_DECISIONS.md). No deterministic variant is ready for default promotion. Blocked variants stay out of defaults, Greedy connectivity-shadow scoring is a label target, and LNS anchor/window variants require counterfactual replay labels before learned ranking.
 - Low-risk learned ranking labels are closed as a label-collection gate; see `artifacts/learned-ranking-labels/2026-04-27/`. The bundle contains split-protected Greedy ordering labels and LNS replay labels with schema/audit metadata, but no model was trained and no defaults changed.
 - Planner explainability maps are closed. Solve and manual-layout responses now include a first-class explainability grid, and the planner can switch between layout, service-value, placement-opportunity, and connectivity-risk map modes.
 - CPU parallelism and portfolio work is closed as a measurement/safety gate; see `artifacts/cp-sat-portfolio/2026-04-28/`. Portfolio workers now preserve parseable JSON when search logging is requested, expose per-worker telemetry, and scorecards report CPU-normalized portfolio-vs-single signals. The measured tiny paired run tied population while spending extra CPU budget, and the larger failed artifact remains no-promotion evidence.
@@ -80,10 +80,10 @@ These are not next actions. They need the trigger in the first column before mov
 
 ## Discipline
 
-- Roads are support cells, not blockers. The real blocker is building placement that prevents future buildings or available cells from reaching row `0`.
+- Roads are support cells, not blockers. The real blocker is building placement that prevents future buildings or available cells from reaching the road-anchor boundary.
 - Any available cell can be treated as a road candidate until a building occupies it.
-- Buildings that touch row `0` are already connected by the anchor rule and must not keep unnecessary connector roads alive.
-- Final road cleanup should remove support roads that do not affect row-0 road connectivity or building access.
+- Buildings that touch row `0` or column `0` are already connected by the anchor rule and must not keep unnecessary connector roads alive.
+- Final road cleanup should remove support roads that do not affect anchor-boundary road connectivity or building access.
 - Connectivity cost should estimate building-induced loss of feasible connected area, not road commitment alone.
 - Auto LNS stages must preserve any reserved CP-SAT time by capping seed and repair sub-budgets.
 - Learned guidance is not ready until traces show repeated, explainable ranking mistakes and enough counterfactual labels exist.

@@ -317,11 +317,11 @@ function assertPlannerExplainabilityPayload(payload, grid) {
   assert.equal(firstCell.r, 0);
   assert.equal(firstCell.c, 0);
   assert.equal(typeof firstCell.allowed, "boolean");
-  assert.equal(typeof firstCell.row0Reachable, "boolean");
+  assert.equal(typeof firstCell.roadAnchorReachable, "boolean");
   assert.equal(typeof firstCell.serviceValue, "number");
   assert.equal(typeof firstCell.residentialOpportunity, "number");
   assert.equal(typeof firstCell.connectivityDisconnectedCells, "number");
-  assert.equal(typeof payload.explainability.row0ReachableCellCount, "number");
+  assert.equal(typeof payload.explainability.roadAnchorReachableCellCount, "number");
 }
 
 function buildWarmStartHintFromSolution(solution, overrides = {}) {

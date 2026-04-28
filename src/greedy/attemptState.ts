@@ -7,13 +7,13 @@ import type {
 } from "../core/types.js";
 import {
   applyRoadConnectionProbe,
-  computeRow0ReachableEmptyFrontier,
+  computeRoadAnchorReachableEmptyFrontier,
   createRoadProbeScratch,
   materializeDeferredRoadNetwork,
   measureBuildingConnectivityShadow,
   measureBuildingConnectivityShadowFromFrontier,
   probeBuildingConnectedToRoads,
-  probeBuildingConnectedToRow0ReachableEmptyFrontier,
+  probeBuildingConnectedToRoadAnchorReachableEmptyFrontier,
 } from "../core/roads.js";
 import type { BuildingConnectivityShadow } from "../core/roads.js";
 import type { RoadConnectionProbe } from "../core/roads.js";
@@ -23,7 +23,7 @@ import { forEachRectangleCell } from "../core/grid.js";
 export type { RoadConnectionProbe } from "../core/roads.js";
 
 export type PlacementRect = { r: number; c: number; rows: number; cols: number };
-export type DeferredRoadFrontierProbe = NonNullable<ReturnType<typeof probeBuildingConnectedToRow0ReachableEmptyFrontier>>;
+export type DeferredRoadFrontierProbe = NonNullable<ReturnType<typeof probeBuildingConnectedToRoadAnchorReachableEmptyFrontier>>;
 export type ConnectivityProbe =
   | { kind: "explicit"; roadCost: number; roadProbe: RoadConnectionProbe }
   | { kind: "deferred"; roadCost: number; frontierProbe: DeferredRoadFrontierProbe };
@@ -131,7 +131,7 @@ export class GreedyAttemptState {
   readonly occupied: Set<string>;
   readonly explicitRoadProbeScratch: ReturnType<typeof createRoadProbeScratch>;
   private readonly occupiedBuildings: Set<string>;
-  private deferredFrontier: ReturnType<typeof computeRow0ReachableEmptyFrontier> | null;
+  private deferredFrontier: ReturnType<typeof computeRoadAnchorReachableEmptyFrontier> | null;
 
   constructor(
     private readonly grid: Grid,
@@ -144,7 +144,7 @@ export class GreedyAttemptState {
     this.occupiedBuildings = new Set<string>();
     for (const key of this.roads) this.occupied.add(key);
     this.deferredFrontier = useDeferredRoadCommitment
-      ? computeRow0ReachableEmptyFrontier(grid, this.occupied)
+      ? computeRoadAnchorReachableEmptyFrontier(grid, this.occupied)
       : null;
     this.explicitRoadProbeScratch = createRoadProbeScratch(grid);
     if (useDeferredRoadCommitment && profileCounters) {
@@ -155,7 +155,7 @@ export class GreedyAttemptState {
   probeRoadConnection(snapshotOccupied: Set<string>, placement: PlacementRect): ConnectivityProbe | null {
     if (this.useDeferredRoadCommitment) {
       const frontierProbe = this.deferredFrontier
-        ? probeBuildingConnectedToRow0ReachableEmptyFrontier(
+        ? probeBuildingConnectedToRoadAnchorReachableEmptyFrontier(
             this.grid,
             this.deferredFrontier,
             placement.r,
@@ -322,7 +322,7 @@ export class GreedyAttemptState {
   ): void {
     for (const key of newlyOccupiedKeys) this.occupied.add(key);
     this.addPlacementToOccupiedBuildings(placement, footprintKeys);
-    this.deferredFrontier = computeRow0ReachableEmptyFrontier(this.grid, this.occupied);
+    this.deferredFrontier = computeRoadAnchorReachableEmptyFrontier(this.grid, this.occupied);
     if (this.profileCounters) this.profileCounters.roads.deferredFrontierRecomputes++;
   }
 }

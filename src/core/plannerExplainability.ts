@@ -9,7 +9,7 @@ import {
   width,
 } from "./grid.js";
 import {
-  computeRow0ReachableEmptyFrontier,
+  computeRoadAnchorReachableEmptyFrontier,
   measureBuildingConnectivityShadowFromFrontier,
 } from "./roads.js";
 import { getResidentialBaseMax } from "./rules.js";
@@ -210,7 +210,7 @@ export function buildPlannerExplainabilityMap(
   const cols = width(grid);
   const occupiedKind = buildOccupiedKindMap(solution);
   const occupiedBuildings = buildBuildingOccupancy(solution);
-  const frontier = computeRow0ReachableEmptyFrontier(grid, occupiedBuildings);
+  const frontier = computeRoadAnchorReachableEmptyFrontier(grid, occupiedBuildings);
   const serviceValueByCell = buildServiceValueByCell(grid, solution);
   const remainingServiceTypes = buildRemainingServiceTypes(params, solution);
   const remainingResidentialTypes = buildRemainingResidentialTypes(params, solution);
@@ -228,7 +228,7 @@ export function buildPlannerExplainabilityMap(
       const key = cellKey(r, c);
       const allowed = isAllowed(grid, r, c);
       const occupied = occupiedKind.get(key) ?? null;
-      const row0Reachable = frontier.reachable.has(key);
+      const anchorReachable = frontier.reachable.has(key);
       const serviceValue = allowed ? (serviceValueByCell.get(key) ?? 0) : 0;
       const bestServiceBonus = allowed
         ? bestRemainingServiceBonusAt(grid, remainingServiceTypes, occupiedBuildings, r, c)
@@ -264,8 +264,8 @@ export function buildPlannerExplainabilityMap(
         c,
         allowed,
         occupiedKind: occupied,
-        row0Reachable,
-        row0Distance: row0Reachable ? (frontier.distanceByKey.get(key) ?? 0) : null,
+        roadAnchorReachable: anchorReachable,
+        roadAnchorDistance: anchorReachable ? (frontier.distanceByKey.get(key) ?? 0) : null,
         serviceValue,
         bestServiceBonus,
         residentialOpportunity: residential.maxPopulation,
@@ -288,7 +288,7 @@ export function buildPlannerExplainabilityMap(
     maxResidentialHeadroom,
     maxConnectivityLostCells,
     maxConnectivityDisconnectedCells,
-    row0ReachableCellCount: frontier.reachable.size,
+    roadAnchorReachableCellCount: frontier.reachable.size,
     cells,
   };
 }

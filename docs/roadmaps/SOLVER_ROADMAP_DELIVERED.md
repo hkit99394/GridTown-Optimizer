@@ -76,13 +76,13 @@ Reviewed through 2026-04-27.
 - Cross-mode benchmark CLI supports JSONL trace export with `--trace-jsonl`.
 - Cross-mode scorecards now include per-mode `budgetAllocationSignal` data and suite-level `budgetPolicySignals` so Auto/LNS budget tuning can start from measured trace evidence.
 
-### 12. Road Finalization And Row-0 Anchor Cleanup
+### 12. Road Finalization And Road-Anchor Cleanup
 
 - Greedy finalization now prunes redundant road cells after connectivity is ensured.
 - Deferred road materialization uses the same pruning pass before returning the final road set.
-- Buildings that touch row `0` are treated as connected by the anchor rule and no longer keep connector roads alive.
-- The pruning pass preserves a single row-0-connected explicit road network and verifies every non-row-0 building still has road access.
-- Regression coverage checks that row-0-connected buildings do not force unnecessary road cells, and benchmark snapshots were updated for lower final road counts.
+- Buildings that touch row `0` or column `0` are treated as connected by the anchor rule and no longer keep connector roads alive.
+- The pruning pass preserves an anchor-boundary-connected explicit road network and verifies every non-anchor building still has road access.
+- Regression coverage checks that anchor-boundary-connected buildings do not force unnecessary road cells, and benchmark snapshots were updated for lower final road counts.
 
 ### 13. Planner Saved-Layout Score Visibility
 
@@ -119,7 +119,7 @@ Reviewed through 2026-04-27.
 
 ### 17. Auto/LNS Ablation Coverage Expansion
 
-- Added a sparse row-zero `row0-corridor-repair-pressure` cross-mode case so budget ablations include a connectivity-pressure scenario that is not already saturated by the dense default maps.
+- Added a sparse anchor-boundary `row0-corridor-repair-pressure` cross-mode case so budget ablations include a connectivity-pressure scenario that is not already saturated by the dense default maps.
 - Added an opt-in `--coverage-corpus` scorecard corpus that combines the default cross-mode cases with selected harder Greedy and LNS benchmark cases for budget-policy probes.
 - Ablation text and JSON summaries now report policy count, scorecard count, mode-run count, and separate best-score, Auto, and LNS deltas versus the resolved baseline policy.
 - Ablation top-policy selection now prefers the baseline policy on population ties, labels the field as measured ranking rather than a promotion recommendation, exposes tied policy names for structured consumers, and uses LNS mean population for ranking when LNS is present without Auto.
@@ -131,17 +131,17 @@ Reviewed through 2026-04-27.
 
 ### 18. Connectivity-Shadow Instrumentation
 
-- Added a pure building connectivity-shadow metric that measures row-0-reachable empty cells before and after a committed building footprint.
+- Added a pure building connectivity-shadow metric that measures anchor-reachable empty cells before and after a committed building footprint.
 - Greedy profile counters now aggregate connectivity-shadow checks, total lost cells, footprint-consumed cells, downstream disconnected cells, and max per-placement losses.
 - Greedy benchmark text reports `connectivity-shadow=...` so placement isolation pressure is visible before it affects scoring.
-- Regression coverage checks a sparse row-0 corridor shadow case and verifies Greedy benchmark profile output includes the new counters.
+- Regression coverage checks a sparse anchor-corridor shadow case and verifies Greedy benchmark profile output includes the new counters.
 
 ### 19. Connectivity-Shadow Tie-Breaker
 
-- Added default-off `greedy.connectivityShadowScoring` so Greedy can prefer equal-score placements that preserve more row-0-reachable future space.
+- Added default-off `greedy.connectivityShadowScoring` so Greedy can prefer equal-score placements that preserve more anchor-reachable future space.
 - Candidate scoring uses the same building-only shadow model as profiling, but computes it independently of `greedy.profile` so profiling alone never changes placement behavior.
 - Shadow comparison is deliberately lazy and tie-only: candidate shadow is computed only after normal Greedy score/density comparison ties, avoiding a full-frontier BFS on every candidate scan.
-- Regression coverage checks default/off/profile behavior remains unchanged and that the opt-in tie-breaker chooses the less-disconnecting placement on a sparse row-0 corridor case.
+- Regression coverage checks default/off/profile behavior remains unchanged and that the opt-in tie-breaker chooses the less-disconnecting placement on a sparse anchor-corridor case.
 
 ### 20. Connectivity-Shadow Ablation Harness
 
@@ -162,7 +162,7 @@ Reviewed through 2026-04-27.
 ### 22. Road Opportunity Profile Instrumentation And Constructive Counterfactuals
 
 - Added `roads.roadOpportunity*` profile counters and bounded `roadOpportunityTraces` for accepted constructive service/residential placements.
-- Road opportunity traces pair the accepted placement's road cost with row-0-reachable frontier before/after counts, total lost cells, footprint-consumed cells, and downstream disconnected cells.
+- Road opportunity traces pair the accepted placement's road cost with anchor-reachable frontier before/after counts, total lost cells, footprint-consumed cells, and downstream disconnected cells.
 - The implementation reuses the same pre-commit connectivity-shadow measurement for both connectivity-shadow and road-opportunity profile counters at instrumented commit sites, avoiding duplicate profile-only frontier scans.
 - Constructive placement traces now include bounded near-miss counterfactuals selected from high-score and low-road-cost candidate pools, without changing placement scoring.
 - Greedy benchmark text reports `road-opportunity=...` plus sample `road-opportunity-placement=...` and `road-opportunity-counterfactual=...` rows.
@@ -195,7 +195,7 @@ Reviewed through 2026-04-27.
 ### 25. Deterministic Ablation Evidence Gate
 
 - Closed the deterministic ablation priority as an evidence gate before model training.
-- Persisted the closeout decision table in [SOLVER_ABLATION_DECISIONS.md](SOLVER_ABLATION_DECISIONS.md).
+- Persisted the closeout decision table in [SOLVER_ABLATION_DECISIONS.md](../decisions/SOLVER_ABLATION_DECISIONS.md).
 - Persisted the generated evidence bundle under `artifacts/deterministic-ablations/2026-04-27/`.
 - Greedy evidence covers 9 cases, 10 variants, seeds `7,19,37`, 27 comparisons, and 270 runs.
 - LNS evidence covers 4 cases, 8 variants, seeds `7,19,37`, 12 comparisons, and 96 runs.
@@ -215,10 +215,10 @@ Reviewed through 2026-04-27.
 
 ### 27. Planner Explainability Maps
 
-- Solve and manual-layout HTTP responses now include a first-class planner explainability grid with schema version, dimensions, per-cell occupancy, row-0 reachability, service value, remaining service opportunity, residential opportunity, and connectivity-risk shadow metrics.
+- Solve and manual-layout HTTP responses now include a first-class planner explainability grid with schema version, dimensions, per-cell occupancy, anchor reachability, service value, remaining service opportunity, residential opportunity, and connectivity-risk shadow metrics.
 - The web planner exposes layout, service-value, placement-opportunity, and connectivity-risk map modes from the solved-map toolbar.
 - Service-value mode preserves the existing flattened heatmap review behavior, while placement-opportunity and connectivity-risk modes keep building overlays visible so users can inspect attractive or dangerous cells in layout context.
-- Selected-cell detail now surfaces planner-map context such as service value, residential opportunity, best remaining service bonus, row-0 distance, and connectivity risk.
+- Selected-cell detail now surfaces planner-map context such as service value, residential opportunity, best remaining service bonus, anchor distance, and connectivity risk.
 - Regression coverage checks the backend response contract, the core explainability-map summary, and the planner heatmap modes.
 
 ### 28. CPU Parallelism And Portfolio Measurement

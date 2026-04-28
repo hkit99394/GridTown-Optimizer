@@ -21,7 +21,7 @@ import {
   buildServiceEffectZoneSet,
   normalizeServicePlacement,
 } from "./buildings.js";
-import { isAdjacentToRoads, roadsConnectedToRow0 } from "./roads.js";
+import { isAdjacentToRoads, roadsConnectedToRoadAnchor } from "./roads.js";
 import {
   compatibleResidentialTypeIndices,
   getBuildingLimits,
@@ -199,7 +199,7 @@ export function validateLayoutConstraints(input: LayoutEvaluationInput): LayoutC
   }
 
   // Road connectivity to row 0 or column 0.
-  const connected = roadsConnectedToRow0(grid, roads);
+  const connected = roadsConnectedToRoadAnchor(grid, roads);
   if (connected.size === 0) {
     errors.push("Road network does not touch row 0 or column 0.");
   }

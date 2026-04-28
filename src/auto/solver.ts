@@ -25,6 +25,7 @@ import type {
   BackgroundSolveSnapshotState,
   CpSatWarmStartHint,
   Grid,
+  SolveProgressLogEntry,
   Solution,
   SolverParams,
 } from "../core/types.js";
@@ -65,6 +66,22 @@ interface AutoRuntimeState {
 }
 
 type StageStarter = (grid: Grid, params: SolverParams) => BackgroundSolveHandle;
+
+type AutoStageRunner<TResult> = (
+  stage: AutoStageOptimizerName,
+  cycleIndex: number,
+  incumbent: Solution | null
+) => TResult;
+
+interface AutoPlanStateChangeHooks {
+  onIncumbentChange?: (incumbent: Solution | null) => void;
+}
+
+export interface AutoTerminalSolutionContext {
+  cancelRequested: boolean;
+  snapshotState?: BackgroundSolveSnapshotState | null;
+  lastProgressEntry?: SolveProgressLogEntry | null;
+}
 
 interface AutoLnsStageBudget {
   wallClockLimitSeconds: number | null;
@@ -683,6 +700,14 @@ function stageSeedParams(
   remainingSeconds: number | null,
   sharedStopFilePath?: string
 ): SolverParams {
+  const { portfolio: _portfolio, ...stageCpSatOptions } = params.cpSat ?? {};
+  const stageBaseParams: SolverParams = params.cpSat
+    ? {
+        ...params,
+        cpSat: stageCpSatOptions,
+      }
+    : params;
+
   if (stage === "greedy") {
     const greedy = buildAutoGreedyStageOptions(params);
     const configuredGreedyTimeLimit =
@@ -693,7 +718,7 @@ function stageSeedParams(
       ? configuredGreedyTimeLimit
       : Math.max(0.001, Math.min(configuredGreedyTimeLimit ?? remainingSeconds, remainingSeconds));
     return {
-      ...params,
+      ...stageBaseParams,
       optimizer: "greedy",
       greedy: {
         ...greedy,
@@ -707,10 +732,10 @@ function stageSeedParams(
   if (stage === "lns") {
     const lnsBudget = buildAutoLnsStageBudget(params, options, remainingSeconds);
     return {
-      ...params,
+      ...stageBaseParams,
       optimizer: "lns",
       cpSat: {
-        ...(params.cpSat ?? {}),
+        ...stageCpSatOptions,
         randomSeed: generatedSeed,
       },
       lns: {
@@ -732,24 +757,24 @@ function stageSeedParams(
     };
   }
 
-  const configuredTimeLimit = params.cpSat?.timeLimitSeconds ?? options.cpSatStageTimeLimitSeconds;
+  const configuredTimeLimit = stageCpSatOptions.timeLimitSeconds ?? options.cpSatStageTimeLimitSeconds;
   const configuredNoImprovementTimeout =
-    params.cpSat?.noImprovementTimeoutSeconds ?? options.cpSatStageNoImprovementTimeoutSeconds;
-  const warmStartHint = incumbent ? buildAutoCpSatWarmStartHint(incumbent, params.cpSat?.warmStartHint) : params.cpSat?.warmStartHint;
+    stageCpSatOptions.noImprovementTimeoutSeconds ?? options.cpSatStageNoImprovementTimeoutSeconds;
+  const warmStartHint = incumbent ? buildAutoCpSatWarmStartHint(incumbent, stageCpSatOptions.warmStartHint) : stageCpSatOptions.warmStartHint;
   const cappedTimeLimit = remainingSeconds === null
     ? configuredTimeLimit
     : Math.max(0.001, Math.min(configuredTimeLimit, remainingSeconds));
   const objectiveLowerBound = maxNumericValue(
-    params.cpSat?.objectiveLowerBound,
+    stageCpSatOptions.objectiveLowerBound,
     cloneWarmStartHint(warmStartHint)?.objectiveLowerBound,
     incumbent?.totalPopulation
   );
 
   return {
-    ...params,
+    ...stageBaseParams,
     optimizer: "cp-sat",
     cpSat: {
-      ...(params.cpSat ?? {}),
+      ...stageCpSatOptions,
       ...(sharedStopFilePath ? { stopFilePath: sharedStopFilePath } : {}),
       randomSeed: generatedSeed,
       timeLimitSeconds: cappedTimeLimit,
@@ -912,6 +937,138 @@ function advanceWeakCycleState(
   }
 }
 
+function initializeAutoPlanIncumbent(
+  G: Grid,
+  params: SolverParams,
+  greedySolution: Solution | null,
+  state: AutoRuntimeState,
+  hooks: AutoPlanStateChangeHooks = {}
+): Solution {
+  const incumbent = chooseInitialIncumbent(G, params, greedySolution);
+  hooks.onIncumbentChange?.(incumbent);
+  if (!incumbent) {
+    if (state.stopReason === "cancelled") {
+      throw new Error("Auto solve was stopped before finding a feasible solution.");
+    }
+    throw new Error("Auto solve did not find an initial incumbent.");
+  }
+  return incumbent;
+}
+
+function acceptAutoStageResult(
+  incumbent: Solution | null,
+  stageSolution: Solution | null,
+  hooks: AutoPlanStateChangeHooks = {}
+): Solution | null {
+  const nextIncumbent = pickBetterSolution(incumbent, stageSolution);
+  hooks.onIncumbentChange?.(nextIncumbent);
+  return nextIncumbent;
+}
+
+function shouldStopAfterAutoCpSatStage(cpSatSolution: Solution | null, incumbent: Solution | null): boolean {
+  return Boolean(
+    cpSatSolution?.cpSatStatus === "OPTIMAL"
+    && incumbent
+    && incumbent.totalPopulation === cpSatSolution.totalPopulation
+  );
+}
+
+function finalizeCompletedAutoPlan(incumbent: Solution | null, state: AutoRuntimeState): Solution {
+  if (!state.stopReason) {
+    state.stopReason = "completed-plan";
+  }
+
+  if (!incumbent) {
+    if (state.stopReason === "cancelled") {
+      throw new Error("Auto solve was stopped before finding a feasible solution.");
+    }
+    throw new Error("Auto solve did not find a feasible solution.");
+  }
+  return finalizeAutoSolution(incumbent, state);
+}
+
+function runSyncAutoPlan(
+  G: Grid,
+  params: SolverParams,
+  state: AutoRuntimeState,
+  options: NormalizedAutoOptions,
+  runStage: AutoStageRunner<Solution | null>,
+  hooks: AutoPlanStateChangeHooks = {}
+): Solution {
+  const greedySolution = runStage("greedy", 0, null);
+  let incumbent: Solution | null = initializeAutoPlanIncumbent(G, params, greedySolution, state, hooks);
+  if (state.stopReason) {
+    return finalizeAutoSolution(incumbent, state);
+  }
+
+  let cycleIndex = 1;
+  while (!state.stopReason) {
+    const cycleStart = incumbent;
+    const lnsSolution = runStage("lns", cycleIndex, incumbent);
+    incumbent = acceptAutoStageResult(incumbent, lnsSolution, hooks);
+    if (!incumbent || state.stopReason) break;
+
+    const cpSatSolution = runStage("cp-sat", cycleIndex, incumbent);
+    incumbent = acceptAutoStageResult(incumbent, cpSatSolution, hooks);
+    if (!incumbent || state.stopReason) break;
+
+    if (shouldStopAfterAutoCpSatStage(cpSatSolution, incumbent)) {
+      state.stopReason = "optimal";
+      break;
+    }
+
+    advanceWeakCycleState(cycleStart, incumbent, state, options);
+    if (state.consecutiveWeakCycles >= options.maxConsecutiveWeakCycles) {
+      state.stopReason = "weak-cycle-limit";
+      break;
+    }
+    cycleIndex += 1;
+  }
+
+  return finalizeCompletedAutoPlan(incumbent, state);
+}
+
+async function runBackgroundAutoPlan(
+  G: Grid,
+  params: SolverParams,
+  state: AutoRuntimeState,
+  options: NormalizedAutoOptions,
+  runStage: AutoStageRunner<Promise<Solution | null>>,
+  hooks: AutoPlanStateChangeHooks = {}
+): Promise<Solution> {
+  const greedySolution = await runStage("greedy", 0, null);
+  let incumbent: Solution | null = initializeAutoPlanIncumbent(G, params, greedySolution, state, hooks);
+  if (state.stopReason) {
+    return finalizeAutoSolution(incumbent, state);
+  }
+
+  let cycleIndex = 1;
+  while (!state.stopReason) {
+    const cycleStart = incumbent;
+    const lnsSolution = await runStage("lns", cycleIndex, incumbent);
+    incumbent = acceptAutoStageResult(incumbent, lnsSolution, hooks);
+    if (!incumbent || state.stopReason) break;
+
+    const cpSatSolution = await runStage("cp-sat", cycleIndex, incumbent);
+    incumbent = acceptAutoStageResult(incumbent, cpSatSolution, hooks);
+    if (!incumbent || state.stopReason) break;
+
+    if (shouldStopAfterAutoCpSatStage(cpSatSolution, incumbent)) {
+      state.stopReason = "optimal";
+      break;
+    }
+
+    advanceWeakCycleState(cycleStart, incumbent, state, options);
+    if (state.consecutiveWeakCycles >= options.maxConsecutiveWeakCycles) {
+      state.stopReason = "weak-cycle-limit";
+      break;
+    }
+    cycleIndex += 1;
+  }
+
+  return finalizeCompletedAutoPlan(incumbent, state);
+}
+
 export function describeAutoStopReason(stopReason: AutoSolveStopReason | null | undefined): string | null {
   if (stopReason === "optimal") {
     return "Auto stopped after CP-SAT proved the incumbent optimal.";
@@ -932,6 +1089,176 @@ export function describeAutoStopReason(stopReason: AutoSolveStopReason | null | 
     return "Auto completed its staged incumbent-first plan.";
   }
   return null;
+}
+
+function latestGeneratedAutoStage(
+  autoStage: AutoSolveStageMetadata | SolveProgressLogEntry["autoStage"] | null | undefined
+): AutoStageOptimizerName | null {
+  const stage = autoStage?.generatedSeeds?.[autoStage.generatedSeeds.length - 1]?.stage ?? null;
+  return stage === "greedy" || stage === "lns" || stage === "cp-sat" ? stage : null;
+}
+
+function autoStageCompletenessScore(
+  autoStage: AutoSolveStageMetadata | SolveProgressLogEntry["autoStage"] | null | undefined
+): number {
+  if (!autoStage) return -1;
+  return (autoStage.activeStage ? 4 : 0)
+    + (autoStage.stopReason ? 2 : 0)
+    + (autoStage.generatedSeeds?.length ?? 0);
+}
+
+function compareAutoStageRecency(
+  left: AutoSolveStageMetadata | SolveProgressLogEntry["autoStage"] | null | undefined,
+  right: AutoSolveStageMetadata | SolveProgressLogEntry["autoStage"] | null | undefined
+): number {
+  const leftStageIndex = left?.stageIndex ?? -1;
+  const rightStageIndex = right?.stageIndex ?? -1;
+  if (leftStageIndex !== rightStageIndex) return leftStageIndex - rightStageIndex;
+
+  const leftCycleIndex = left?.cycleIndex ?? -1;
+  const rightCycleIndex = right?.cycleIndex ?? -1;
+  if (leftCycleIndex !== rightCycleIndex) return leftCycleIndex - rightCycleIndex;
+
+  const leftSeedCount = left?.generatedSeeds?.length ?? -1;
+  const rightSeedCount = right?.generatedSeeds?.length ?? -1;
+  if (leftSeedCount !== rightSeedCount) return leftSeedCount - rightSeedCount;
+
+  return autoStageCompletenessScore(left) - autoStageCompletenessScore(right);
+}
+
+function pickPreferredAutoStage(
+  left: AutoSolveStageMetadata | SolveProgressLogEntry["autoStage"] | null | undefined,
+  right: AutoSolveStageMetadata | SolveProgressLogEntry["autoStage"] | null | undefined
+): AutoSolveStageMetadata | SolveProgressLogEntry["autoStage"] | null {
+  if (!left) return right ?? null;
+  if (!right) return left;
+  return compareAutoStageRecency(left, right) >= 0 ? left : right;
+}
+
+function pickFallbackAutoStage(
+  preferredAutoStage: AutoSolveStageMetadata | SolveProgressLogEntry["autoStage"] | null,
+  ...candidates: Array<AutoSolveStageMetadata | SolveProgressLogEntry["autoStage"] | null | undefined>
+): AutoSolveStageMetadata | SolveProgressLogEntry["autoStage"] | null {
+  let fallback: AutoSolveStageMetadata | SolveProgressLogEntry["autoStage"] | null = null;
+  for (const candidate of candidates) {
+    if (!candidate || candidate === preferredAutoStage) continue;
+    fallback = pickPreferredAutoStage(fallback, candidate);
+  }
+  return fallback;
+}
+
+function resolveRecoveredAutoActiveStage(
+  solution: Solution,
+  snapshotState: BackgroundSolveSnapshotState | null,
+  lastEntry: SolveProgressLogEntry | null
+): AutoStageOptimizerName | null {
+  const preferredAutoStage = pickPreferredAutoStage(
+    pickPreferredAutoStage(solution.autoStage ?? null, snapshotState?.autoStage ?? null),
+    lastEntry?.autoStage ?? null
+  );
+  return preferredAutoStage?.activeStage
+    ?? latestGeneratedAutoStage(preferredAutoStage)
+    ?? (solution.cpSatStatus ? "cp-sat" : null)
+    ?? (snapshotState?.cpSatStatus ? "cp-sat" : null)
+    ?? (lastEntry?.cpSatStatus ? "cp-sat" : null)
+    ?? snapshotState?.activeOptimizer
+    ?? lastEntry?.activeOptimizer
+    ?? solution.activeOptimizer
+    ?? lastEntry?.autoStage?.activeStage
+    ?? null;
+}
+
+export function normalizeAutoTerminalSolution(
+  solution: Solution,
+  context: AutoTerminalSolutionContext
+): Solution {
+  const lastEntry = context.lastProgressEntry ?? null;
+  const snapshotState = context.snapshotState ?? null;
+  const preferredAutoStage = pickPreferredAutoStage(
+    pickPreferredAutoStage(solution.autoStage ?? null, snapshotState?.autoStage ?? null),
+    lastEntry?.autoStage ?? null
+  );
+  const fallbackAutoStage = pickFallbackAutoStage(
+    preferredAutoStage,
+    solution.autoStage ?? null,
+    snapshotState?.autoStage ?? null,
+    lastEntry?.autoStage ?? null
+  );
+  const activeStage = resolveRecoveredAutoActiveStage(solution, snapshotState, lastEntry);
+  const stopReason: AutoSolveStopReason =
+    solution.autoStage?.stopReason
+    ?? preferredAutoStage?.stopReason
+    ?? fallbackAutoStage?.stopReason
+    ?? lastEntry?.autoStage?.stopReason
+    ?? snapshotState?.autoStage?.stopReason
+    ?? (context.cancelRequested || solution.stoppedByUser ? "cancelled" : null)
+    ?? (activeStage === "cp-sat" && solution.cpSatStatus === "OPTIMAL" ? "optimal" : null)
+    ?? (activeStage === "cp-sat" && snapshotState?.cpSatStatus === "OPTIMAL" ? "optimal" : null)
+    ?? (activeStage === "cp-sat" && lastEntry?.cpSatStatus === "OPTIMAL" ? "optimal" : null)
+    ?? "stage-error";
+  const stageIndex =
+    preferredAutoStage?.stageIndex
+    ?? fallbackAutoStage?.stageIndex
+    ?? snapshotState?.autoStage?.stageIndex
+    ?? solution.autoStage?.stageIndex
+    ?? lastEntry?.autoStage?.stageIndex
+    ?? 0;
+  const cycleIndex =
+    preferredAutoStage?.cycleIndex
+    ?? fallbackAutoStage?.cycleIndex
+    ?? snapshotState?.autoStage?.cycleIndex
+    ?? solution.autoStage?.cycleIndex
+    ?? lastEntry?.autoStage?.cycleIndex
+    ?? 0;
+  const generatedSeeds =
+    (preferredAutoStage?.generatedSeeds?.length ?? 0) > 0
+      ? (preferredAutoStage?.generatedSeeds ?? [])
+      : (fallbackAutoStage?.generatedSeeds?.length ?? 0) > 0
+        ? (fallbackAutoStage?.generatedSeeds ?? [])
+        : (snapshotState?.autoStage?.generatedSeeds
+            ?? solution.autoStage?.generatedSeeds
+            ?? lastEntry?.autoStage?.generatedSeeds
+            ?? []);
+
+  return {
+    ...solution,
+    optimizer: "auto",
+    ...(activeStage ? { activeOptimizer: activeStage } : {}),
+    autoStage: {
+      ...(lastEntry?.autoStage ?? {}),
+      ...(solution.autoStage ?? {}),
+      requestedOptimizer: solution.autoStage?.requestedOptimizer ?? lastEntry?.autoStage?.requestedOptimizer ?? "auto",
+      activeStage,
+      stageIndex,
+      cycleIndex,
+      consecutiveWeakCycles:
+        preferredAutoStage?.consecutiveWeakCycles
+        ?? fallbackAutoStage?.consecutiveWeakCycles
+        ?? snapshotState?.autoStage?.consecutiveWeakCycles
+        ?? solution.autoStage?.consecutiveWeakCycles
+        ?? lastEntry?.autoStage?.consecutiveWeakCycles
+        ?? 0,
+      lastCycleImprovementRatio:
+        preferredAutoStage?.lastCycleImprovementRatio
+        ?? fallbackAutoStage?.lastCycleImprovementRatio
+        ?? snapshotState?.autoStage?.lastCycleImprovementRatio
+        ?? solution.autoStage?.lastCycleImprovementRatio
+        ?? lastEntry?.autoStage?.lastCycleImprovementRatio
+        ?? null,
+      generatedSeeds,
+      stopReason,
+    },
+    stoppedByUser: context.cancelRequested ? true : Boolean(solution.stoppedByUser),
+  };
+}
+
+export function describeAutoCompletedSolution(solution: Solution): string | null {
+  return describeAutoStopReason(solution.autoStage?.stopReason);
+}
+
+export function describeAutoRecoveredSolution(solution: Solution): string {
+  return describeAutoStopReason(solution.autoStage?.stopReason)
+    ?? "Auto kept the best available incumbent from the most recent completed stage.";
 }
 
 export function solveAuto(G: Grid, params: SolverParams): Solution {
@@ -1021,55 +1348,7 @@ export function solveAuto(G: Grid, params: SolverParams): Solution {
       return solution;
     };
 
-    const greedySolution = runStage("greedy", 0, null);
-    let incumbent = chooseInitialIncumbent(G, params, greedySolution);
-    if (!incumbent) {
-      throw new Error("Auto solve did not find an initial incumbent.");
-    }
-
-    if (deadlineAtMs !== null && Date.now() >= deadlineAtMs) {
-      state.stopReason = "wall-clock-cap";
-      return finalizeAutoSolution(incumbent, state);
-    }
-
-    let cycleIndex = 1;
-    while (!state.stopReason) {
-      const cycleStart = incumbent;
-      const lnsSolution = runStage("lns", cycleIndex, incumbent);
-      incumbent = pickBetterSolution(incumbent, lnsSolution);
-      if (!incumbent) break;
-      if (state.stopReason) break;
-
-      const cpSatSolution = runStage("cp-sat", cycleIndex, incumbent);
-      incumbent = pickBetterSolution(incumbent, cpSatSolution);
-      if (!incumbent) break;
-      if (state.stopReason) break;
-
-      if (cpSatSolution?.cpSatStatus === "OPTIMAL" && incumbent.totalPopulation === cpSatSolution.totalPopulation) {
-        state.stopReason = "optimal";
-        break;
-      }
-
-      advanceWeakCycleState(cycleStart, incumbent, state, options);
-      if (state.consecutiveWeakCycles >= options.maxConsecutiveWeakCycles) {
-        state.stopReason = "weak-cycle-limit";
-        break;
-      }
-      if (deadlineAtMs !== null && Date.now() >= deadlineAtMs) {
-        state.stopReason = "wall-clock-cap";
-        break;
-      }
-      cycleIndex += 1;
-    }
-
-    if (!state.stopReason) {
-      state.stopReason = "completed-plan";
-    }
-
-    if (!incumbent) {
-      throw new Error("Auto solve did not keep a feasible incumbent.");
-    }
-    return finalizeAutoSolution(incumbent, state);
+    return runSyncAutoPlan(G, params, state, options, runStage);
   } finally {
     stopController.cleanup();
   }
@@ -1099,91 +1378,35 @@ export function startAutoSolve(G: Grid, params: SolverParams): BackgroundSolveHa
 
   const promise = (async () => {
     try {
-      const greedySolution = await runBackgroundStage(
-        G,
-        params,
-        state,
-        options,
-        incumbentRef,
-        currentHandleRef,
-        "greedy",
-        0,
-        startGreedySolve,
-        nextStageSeed,
-        startedAtMs,
-        deadlineAtMs
-      );
-      incumbentRef.current = chooseInitialIncumbent(G, params, greedySolution);
-      if (!incumbentRef.current) {
-        if (state.stopReason === "cancelled") {
-          throw new Error("Auto solve was stopped before finding a feasible solution.");
-        }
-        throw new Error("Auto solve did not find an initial incumbent.");
-      }
-
-      let cycleIndex = 1;
-      while (!state.stopReason) {
-        const cycleStart = incumbentRef.current;
-        const lnsSolution = await runBackgroundStage(
+      const runStage = (
+        stage: AutoStageOptimizerName,
+        cycleIndex: number,
+        incumbent: Solution | null
+      ): Promise<Solution | null> => {
+        incumbentRef.current = incumbent;
+        const startStageSolve =
+          stage === "greedy" ? startGreedySolve : stage === "lns" ? startLnsSolve : startCpSatSolve;
+        return runBackgroundStage(
           G,
           params,
           state,
           options,
           incumbentRef,
           currentHandleRef,
-          "lns",
+          stage,
           cycleIndex,
-          startLnsSolve,
+          startStageSolve,
           nextStageSeed,
           startedAtMs,
           deadlineAtMs
         );
-        incumbentRef.current = pickBetterSolution(incumbentRef.current, lnsSolution);
-        if (!incumbentRef.current || state.stopReason) break;
+      };
 
-        const cpSatSolution = await runBackgroundStage(
-          G,
-          params,
-          state,
-          options,
-          incumbentRef,
-          currentHandleRef,
-          "cp-sat",
-          cycleIndex,
-          startCpSatSolve,
-          nextStageSeed,
-          startedAtMs,
-          deadlineAtMs
-        );
-        incumbentRef.current = pickBetterSolution(incumbentRef.current, cpSatSolution);
-        if (!incumbentRef.current) break;
-        if (state.stopReason) break;
-
-        if (cpSatSolution?.cpSatStatus === "OPTIMAL" && incumbentRef.current.totalPopulation === cpSatSolution.totalPopulation) {
-          state.stopReason = "optimal";
-          break;
-        }
-
-        advanceWeakCycleState(cycleStart, incumbentRef.current, state, options);
-        if (state.consecutiveWeakCycles >= options.maxConsecutiveWeakCycles) {
-          state.stopReason = "weak-cycle-limit";
-          break;
-        }
-        cycleIndex += 1;
-      }
-
-      if (!incumbentRef.current) {
-        if (state.stopReason === "cancelled") {
-          throw new Error("Auto solve was stopped before finding a feasible solution.");
-        }
-        throw new Error("Auto solve did not find a feasible solution.");
-      }
-
-      if (!state.stopReason) {
-        state.stopReason = "completed-plan";
-      }
-
-      return finalizeAutoSolution(incumbentRef.current, state);
+      return runBackgroundAutoPlan(G, params, state, options, runStage, {
+        onIncumbentChange: (incumbent) => {
+          incumbentRef.current = incumbent;
+        },
+      });
     } finally {
       if (wallClockTimer) {
         clearTimeout(wallClockTimer);

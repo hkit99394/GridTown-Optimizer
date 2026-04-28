@@ -342,13 +342,12 @@ export class SolveProgressLogWriter {
     this.flush();
   }
 
-  appendSolutionSample(solution: Solution, options: AppendProgressLogEntryOptions): void {
+  private observeSolutionClock(solution: Solution, elapsedMs: number): void {
     const telemetrySolveWallTimeSeconds =
       typeof solution.cpSatTelemetry?.solveWallTimeSeconds === "number"
         && Number.isFinite(solution.cpSatTelemetry.solveWallTimeSeconds)
         ? solution.cpSatTelemetry.solveWallTimeSeconds
         : null;
-    const elapsedMs = normalizeElapsedMs(options.elapsedMs);
 
     if (telemetrySolveWallTimeSeconds !== null) {
       const solveStartedAtElapsedMs = Math.max(0, elapsedMs - Math.round(telemetrySolveWallTimeSeconds * 1000));
@@ -356,8 +355,42 @@ export class SolveProgressLogWriter {
         ? solveStartedAtElapsedMs
         : Math.min(this.solveStartedAtElapsedMs, solveStartedAtElapsedMs);
     }
+  }
 
-    const entry = buildProgressEntry(solution, this.optimizer, options, {
+  buildSolutionSample(solution: Solution, options: AppendProgressLogEntryOptions): SolveProgressLogEntry {
+    const elapsedMs = normalizeElapsedMs(options.elapsedMs);
+    const telemetrySolveWallTimeSeconds =
+      typeof solution.cpSatTelemetry?.solveWallTimeSeconds === "number"
+        && Number.isFinite(solution.cpSatTelemetry.solveWallTimeSeconds)
+        ? solution.cpSatTelemetry.solveWallTimeSeconds
+        : null;
+    const observedSolveStartedAtElapsedMs = telemetrySolveWallTimeSeconds === null
+      ? null
+      : Math.max(0, elapsedMs - Math.round(telemetrySolveWallTimeSeconds * 1000));
+    const solveStartedAtElapsedMs =
+      this.solveStartedAtElapsedMs === null
+        ? observedSolveStartedAtElapsedMs
+        : observedSolveStartedAtElapsedMs === null
+          ? this.solveStartedAtElapsedMs
+          : Math.min(this.solveStartedAtElapsedMs, observedSolveStartedAtElapsedMs);
+
+    return buildProgressEntry(solution, this.optimizer, {
+      ...options,
+      elapsedMs,
+    }, {
+      solveStartedAtElapsedMs,
+      params: this.document.input.params,
+    });
+  }
+
+  appendSolutionSample(solution: Solution, options: AppendProgressLogEntryOptions): void {
+    const elapsedMs = normalizeElapsedMs(options.elapsedMs);
+    this.observeSolutionClock(solution, elapsedMs);
+
+    const entry = buildProgressEntry(solution, this.optimizer, {
+      ...options,
+      elapsedMs,
+    }, {
       solveStartedAtElapsedMs: this.solveStartedAtElapsedMs,
       params: this.document.input.params,
     });

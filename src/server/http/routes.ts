@@ -6,20 +6,20 @@ import {
   assertValidSolveInputs,
 } from "../../core/solverInputValidation.js";
 import { getOptimizerAdapter, resolveOptimizerName } from "../../runtime/dispatch/optimizerRegistry.js";
-import { SolveJobManager } from "../../runtime/jobs/solveJobManager.js";
+import { SolveJobManager, type SolveJob } from "../../runtime/jobs/solveJobManager.js";
 import {
   assertValidSerializedSolutionPayload,
-  buildManualLayoutResponse,
-  buildSolveResponse,
   isCancelSolveRequest,
   isLayoutEvaluateRequest,
   isSolveRequest,
   materializeSerializedSolution,
   sanitizeSolveRequest,
 } from "./contracts.js";
+import { buildManualLayoutResponse, buildSolveResponse } from "./solutionResponse.js";
 import { monitorClientDisconnect, readValidatedJsonBody, sendJson } from "./transport.js";
 
 import type { CancelSolveRequest, LayoutEvaluateRequest, SolveRequest } from "./contracts.js";
+import type { Solution } from "../../core/types.js";
 
 function buildSolveJobResponseBase(job: {
   requestId: string;
@@ -46,6 +46,13 @@ function buildCancelRequestedMessage(optimizer: string): string {
       : optimizer === "lns"
         ? "Stop requested. Finalizing the current LNS run and preserving the best solution found so far."
         : "Stop requested. Finalizing the current greedy run and preserving the best result found so far.";
+}
+
+function buildLiveProgressEntry(job: SolveJob, solution: Solution) {
+  return job.progressLogWriter.buildSolutionSample(solution, {
+    elapsedMs: Date.now() - job.createdAt,
+    source: "live-snapshot",
+  });
 }
 
 function sendSolveCapacityFull(res: ServerResponse<IncomingMessage>): void {
@@ -222,9 +229,11 @@ export function handleSolveStatus(
   const { job, snapshotState, liveSnapshot } = jobStatus;
 
   if (job.solution) {
+    const progressEntry = job.progressLogWriter.getLastEntry();
     sendJson(res, 200, {
       ...buildSolveJobResponseBase(job),
       ...(job.message ? { message: job.message } : {}),
+      ...(progressEntry ? { progressEntry } : {}),
       ...buildSolveResponse(job.grid, job.params, job.solution),
     }, method === "HEAD");
     return true;
@@ -239,12 +248,14 @@ export function handleSolveStatus(
   }
 
   if (liveSnapshot) {
+    const progressEntry = buildLiveProgressEntry(job, liveSnapshot);
     sendJson(res, 200, {
       ...buildSolveJobResponseBase(job),
       hasFeasibleSolution: snapshotState.hasFeasibleSolution,
       bestTotalPopulation: snapshotState.totalPopulation,
       activeOptimizer: snapshotState.activeOptimizer ?? null,
       autoStage: snapshotState.autoStage ?? null,
+      progressEntry,
       liveSnapshot: true,
       ...(job.message ? { message: job.message } : {}),
       ...buildSolveResponse(job.grid, job.params, liveSnapshot),
@@ -252,12 +263,14 @@ export function handleSolveStatus(
     return true;
   }
 
+  const progressEntry = job.progressLogWriter.getLastEntry();
   sendJson(res, 200, {
     ...buildSolveJobResponseBase(job),
     hasFeasibleSolution: snapshotState.hasFeasibleSolution,
     bestTotalPopulation: snapshotState.totalPopulation,
     activeOptimizer: snapshotState.activeOptimizer ?? null,
     autoStage: snapshotState.autoStage ?? null,
+    ...(progressEntry ? { progressEntry } : {}),
   }, method === "HEAD");
   return true;
 }

@@ -117,15 +117,17 @@ Owns:
 
 ## Backend Modules
 
-### `src/webServer.ts`
+### `src/webServer.ts` and `src/apps/webServer.ts`
 
-Server bootstrap only.
+Local server entrypoints.
 
 Owns:
-- creating the HTTP server
-- binding the planner request handler
+- compatibility entry from the historical `dist/webServer.js` path
+- creating the HTTP server in `src/apps/webServer.ts`
+- binding `createPlannerRequestHandler`
+- wiring the progress-log root and solve-concurrency cap
 
-### `src/webServerRequestHandler.ts`
+### `src/server/http/requestHandler.ts`
 
 Thin backend composition layer.
 
@@ -135,7 +137,7 @@ Owns:
 - delegating API requests vs static asset requests
 - top-level error translation for the local web server
 
-### `src/webServerApiRoutes.ts`
+### `src/server/http/routes.ts`
 
 Planner API route handlers.
 
@@ -149,7 +151,33 @@ Owns:
 - immediate solve disconnect handling
 - solve-job response shaping for route-level metadata
 
-### `src/webServerTransport.ts`
+### `src/server/http/contracts.ts`
+
+Planner HTTP request contracts.
+
+Owns:
+- request payload interfaces
+- route payload shape guards
+- browser-supplied local runtime parameter sanitization
+- serialized solution payload assertions/materialization re-exports
+
+Does not own:
+- solver/manual-layout response assembly
+- route orchestration
+- request body parsing
+
+### `src/server/http/solutionResponse.ts`
+
+Planner response assembly.
+
+Owns:
+- solve/manual-layout response shaping
+- validation projection for the browser contract
+- stats projection for solver and manual-layout outputs
+- manual-layout road cleanup before evaluation
+- explainability-map attachment
+
+### `src/server/http/transport.ts`
 
 HTTP transport helpers shared by planner routes.
 
@@ -160,7 +188,7 @@ Owns:
 - error-to-status translation
 - client disconnect monitoring
 
-### `src/webServerStatic.ts`
+### `src/server/http/static.ts`
 
 Planner static asset serving.
 
@@ -169,16 +197,7 @@ Owns:
 - content-type lookup
 - static file reads for the local planner
 
-### `src/webServerHttp.ts`
-
-Shared HTTP payload helpers.
-
-Owns:
-- request shape validation
-- serialized solution materialization
-- solve/manual-layout response shaping
-
-### `src/solveJobManager.ts`
+### `src/runtime/jobs/solveJobManager.ts`
 
 Background solve job orchestration.
 
@@ -188,7 +207,17 @@ Owns:
 - snapshot recovery
 - status projections for the web API
 
-### `src/optimizerRegistry.ts`
+### `src/runtime/jobs/solveProgressLog.ts`
+
+Persistent solve-progress log writer.
+
+Owns:
+- progress-log document schema
+- pending, live-snapshot, and final-result samples
+- final solution serialization for long-running solve recovery/review
+- CP-SAT/LNS/Auto progress field normalization for persisted logs
+
+### `src/runtime/dispatch/optimizerRegistry.ts`
 
 Single optimizer dispatch boundary.
 
@@ -196,7 +225,9 @@ Owns:
 - optimizer lookup
 - sync/background solver adapter selection
 
-### `src/lnsNeighborhoods.ts`
+Compatibility wrappers remain at `src/runtime/optimizerRegistry.ts`, `src/runtime/solve.ts`, `src/runtime/solveJobManager.ts`, `src/runtime/solveProgressLog.ts`, and the old top-level CLI/server entrypoints. New code should prefer the canonical nested modules above unless it is preserving public import compatibility.
+
+### `src/lns/neighborhoods.ts`
 
 LNS neighborhood planning.
 
@@ -206,12 +237,12 @@ Owns:
 - neighborhood escalation after stagnant iterations
 - neighborhood-window selection policy
 
-### `src/solutionSerialization.ts`
+### `src/core/solutionSerialization.ts`
 
 Shared solution persistence helpers.
 
 Owns:
-- serializing `Solution` objects for HTTP and worker boundaries
+- serializing `Solution` objects for HTTP, logs, and worker boundaries
 - materializing serialized solutions back into `Set`-backed runtime objects
 - snapshot file writes for long-running solver flows
 
@@ -225,17 +256,27 @@ When adding a new behavior:
 - If it changes solve lifecycle or polling, put it in `plannerSolveRuntime.js`.
 - If it changes compare-addition behavior, put it in `plannerExpansion.js`.
 - If it changes result display, map interaction, or manual editing, put it in `plannerResults.js`.
-- If it changes planner API behavior, update `webServerApiRoutes.ts`.
-- If it changes body parsing, response writing, or disconnect handling, update `webServerTransport.ts`.
-- If it changes static asset wiring, update `webServerStatic.ts`.
-- If it changes LNS anchor ranking or repair-window escalation, update `lnsNeighborhoods.ts`.
-- If it changes how solutions cross process or file boundaries, update `solutionSerialization.ts`.
-- Keep `webServer.ts` and `webServerRequestHandler.ts` thin.
+- If it changes planner API routing behavior, update `src/server/http/routes.ts`.
+- If it changes request shape validation or browser runtime-parameter stripping, update `src/server/http/contracts.ts`.
+- If it changes solver/manual-layout response shape, stats, validation projection, or explainability attachment, update `src/server/http/solutionResponse.ts`.
+- If it changes body parsing, response writing, or disconnect handling, update `src/server/http/transport.ts`.
+- If it changes static asset wiring, update `src/server/http/static.ts`.
+- If it changes background job lifecycle, status recovery, or concurrency admission, update `src/runtime/jobs/solveJobManager.ts`.
+- If it changes persisted progress-log schema or sample projection, update `src/runtime/jobs/solveProgressLog.ts`.
+- If it changes optimizer dispatch, update `src/runtime/dispatch/optimizerRegistry.ts`.
+- If it changes LNS anchor ranking or repair-window escalation, update `src/lns/neighborhoods.ts`.
+- If it changes how solutions cross process, log, or file boundaries, update `src/core/solutionSerialization.ts`.
+- Keep `src/webServer.ts`, `src/apps/webServer.ts`, and `src/server/http/requestHandler.ts` thin.
 
 ## Current Follow-Up
 
-`web/app.js` is now mainly bootstrap and controller wiring.
-The next cleanup, if needed later, would be finer-grained separation of the largest solver and result-editing hotspot files:
-- `src/solver.ts`
-- `src/lnsSolver.ts`
-- `web/plannerResults.js`
+Reviewed on 2026-04-28:
+- Git status was clean before this pass.
+- Baseline `npm test` passed before refactoring.
+- Solver roadmap has no active default-changing priority; gated work should wait for new benchmark evidence.
+- Backend route contracts are now split from solver/manual-layout response assembly.
+
+The next cleanup candidates are the largest still-active hotspots:
+- `src/greedy/solver.ts`: split stable profiling, scratch-state, and local-search helpers only when benchmark evidence justifies the boundary.
+- `web/plannerResults.js`: separate manual-edit command state from rendering/overlay projection.
+- `src/auto/solver.ts`: isolate stage-budget policy and terminal metadata normalization if the Auto path changes again.

@@ -109,7 +109,19 @@
     return `LNS ${latestOutcome.status}${improvement} in ${latestOutcome.phase} neighborhood ${Number(latestOutcome.iteration ?? 0) + 1}. Stop: ${lnsTelemetry.stopReason}.`;
   }
 
+  function cloneProgressLogEntry(entry) {
+    try {
+      return JSON.parse(JSON.stringify(entry));
+    } catch {
+      return { ...entry };
+    }
+  }
+
   function buildSolveProgressLogEntry(payload, options = {}) {
+    if (payload?.progressEntry && typeof payload.progressEntry === "object") {
+      return cloneProgressLogEntry(payload.progressEntry);
+    }
+
     if (!payload?.solution && typeof payload?.bestTotalPopulation !== "number") return null;
 
     const telemetry = payload?.solution?.cpSatTelemetry ?? null;

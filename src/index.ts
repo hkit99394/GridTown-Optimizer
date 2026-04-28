@@ -102,7 +102,7 @@ export {
   validateSolution,
   validateSolutionMap,
 } from "./core/index.js";
-export { OMITTED_SOLVER_OPTIMIZER, RECOMMENDED_INTERACTIVE_OPTIMIZER } from "./core/index.js";
+export { CP_SAT_PORTFOLIO_CAPABILITY_LIMITS, OMITTED_SOLVER_OPTIMIZER, RECOMMENDED_INTERACTIVE_OPTIMIZER } from "./core/index.js";
 export { getOptimizerAdapter, listOptimizerAdapters, resolveOptimizerName } from "./runtime/optimizerRegistry.js";
 
 export type {
@@ -119,6 +119,7 @@ export type {
   AutoSolveStageMetadata,
   CpSatOptions,
   CpSatObjectivePolicy,
+  CpSatPortfolioCapabilityLimits,
   CpSatTelemetry,
   CpSatPortfolioOptions,
   CpSatPortfolioSummary,

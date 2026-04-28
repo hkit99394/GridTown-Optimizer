@@ -6,6 +6,7 @@
 import { validateSolution } from "./evaluator.js";
 import { computeCpSatRequestFingerprint } from "./cpSatContinuation.js";
 import { NO_TYPE_INDEX } from "./rules.js";
+import { CP_SAT_PORTFOLIO_CAPABILITY_LIMITS } from "./capabilities.js";
 import { isOptimizerName, OMITTED_SOLVER_OPTIMIZER } from "./types.js";
 
 import type { CpSatWarmStartHint, Grid, OptimizerName, SerializedSolution, Solution, SolverParams } from "./types.js";
@@ -38,9 +39,9 @@ const LNS_NEIGHBORHOOD_ANCHOR_POLICIES = [
 const CP_SAT_MAX_TIME_LIMIT_SECONDS = 24 * 60 * 60;
 const CP_SAT_MAX_NUM_WORKERS = 64;
 const CP_SAT_RANDOM_SEED_MAX = 0x7fffffff;
-const CP_SAT_PORTFOLIO_MAX_WORKERS = 8;
-const CP_SAT_PORTFOLIO_MAX_TOTAL_WORKER_THREADS = 8;
-const CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS = 8 * 60 * 60;
+const CP_SAT_PORTFOLIO_MAX_WORKERS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxWorkers;
+const CP_SAT_PORTFOLIO_MAX_TOTAL_WORKER_THREADS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxTotalWorkerThreads;
+const CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxTotalCpuBudgetSeconds;
 const CP_SAT_HINT_ONLY_REUSABLE_KEYS = [
   "roadKeys",
   "roads",

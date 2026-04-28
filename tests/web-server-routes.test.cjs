@@ -1558,6 +1558,16 @@ async function testSolveStatusIncludesAutoStageMetadata(handler) {
     assert.equal(statusResult.payload.autoStage.stageIndex, 2);
     assert.equal(statusResult.payload.autoStage.generatedSeeds.length, 2);
 
+    const snapshotStatusResult = await invoke(handler, {
+      method: "GET",
+      url: `/api/solve/status?${new URLSearchParams({ requestId, includeSnapshot: "1" }).toString()}`,
+    });
+
+    assert.equal(snapshotStatusResult.statusCode, 200);
+    assert.equal(snapshotStatusResult.payload.progressEntry.activeOptimizer, "lns");
+    assert.equal(snapshotStatusResult.payload.progressEntry.autoStage.stageIndex, 2);
+    assert.equal(snapshotStatusResult.payload.progressEntry.totalPopulation, backgroundSolution.totalPopulation);
+
     handlePromiseDeferred.resolve(backgroundSolution);
     await waitForSolve(handler, requestId);
   } finally {
@@ -1614,6 +1624,7 @@ async function testRecoveredAutoFailureNormalizesTerminalMetadata() {
   };
 
   optimizerRegistry.getOptimizerAdapter = () => ({
+    ...originalGetOptimizerAdapter("auto"),
     name: "auto",
     solve() {
       throw new Error("Recovered-auto route test should use the background adapter.");

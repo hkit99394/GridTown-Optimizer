@@ -1,10 +1,18 @@
 (function attachPlannerWorkbench(globalObject) {
-  const CP_SAT_PORTFOLIO_DEFAULT_WORKERS = 3;
-  const CP_SAT_PORTFOLIO_MAX_WORKERS = 4;
-  const CP_SAT_PORTFOLIO_DEFAULT_PER_WORKER_SECONDS = 30;
-  const CP_SAT_PORTFOLIO_MAX_TOTAL_WORKER_THREADS = 8;
-  const CP_SAT_PORTFOLIO_MAX_PER_WORKER_THREADS = 4;
-  const CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS = 8 * 60 * 60;
+  const CP_SAT_PORTFOLIO_CAPABILITY_LIMITS = globalObject.CityBuilderShared?.CP_SAT_PORTFOLIO_CAPABILITY_LIMITS ?? Object.freeze({
+    defaultWorkers: 3,
+    defaultPerWorkerTimeLimitSeconds: 30,
+    maxWorkers: 8,
+    maxTotalWorkerThreads: 8,
+    maxPerWorkerThreads: 4,
+    maxTotalCpuBudgetSeconds: 8 * 60 * 60,
+  });
+  const CP_SAT_PORTFOLIO_DEFAULT_WORKERS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.defaultWorkers;
+  const CP_SAT_PORTFOLIO_MAX_WORKERS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxWorkers;
+  const CP_SAT_PORTFOLIO_DEFAULT_PER_WORKER_SECONDS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.defaultPerWorkerTimeLimitSeconds;
+  const CP_SAT_PORTFOLIO_MAX_TOTAL_WORKER_THREADS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxTotalWorkerThreads;
+  const CP_SAT_PORTFOLIO_MAX_PER_WORKER_THREADS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxPerWorkerThreads;
+  const CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxTotalCpuBudgetSeconds;
 
   function createPlannerWorkbenchController(options) {
     const {

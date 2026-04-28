@@ -4,7 +4,7 @@ const os = require("node:os");
 const path = require("node:path");
 const vm = require("node:vm");
 
-const { solve } = require("../dist/index.js");
+const { CP_SAT_PORTFOLIO_CAPABILITY_LIMITS, solve } = require("../dist/index.js");
 const { evaluateLayout } = require("../dist/core/evaluator.js");
 const { buildManualLayoutResponse, buildSolveResponse } = require("../dist/server/http/contracts.js");
 const { SolveProgressLogWriter } = require("../dist/runtime/jobs/solveProgressLog.js");
@@ -76,6 +76,7 @@ function loadPlannerRequestBuilderModule(crypto = undefined) {
   return loadBrowserModule("../web/plannerRequestBuilder.js", {
     window: {
       crypto,
+      CityBuilderShared: loadPlannerSharedModule(),
     },
     context: {
       Uint32Array,
@@ -100,7 +101,9 @@ function loadPlannerWorkbenchModule() {
     disconnect() {}
   }
   return loadBrowserModule("../web/plannerWorkbench.js", {
-    window: {},
+    window: {
+      CityBuilderShared: loadPlannerSharedModule(),
+    },
     context: {
       document: {
         createElement() {
@@ -110,6 +113,20 @@ function loadPlannerWorkbenchModule() {
       ResizeObserver,
     },
   }).CityBuilderWorkbench;
+}
+
+function testCpSatPortfolioCapabilitiesAreExported() {
+  const plannerShared = loadPlannerSharedModule();
+  assert.equal(CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.defaultWorkers, 3);
+  assert.equal(CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.defaultPerWorkerTimeLimitSeconds, 30);
+  assert.equal(CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxWorkers, 8);
+  assert.equal(CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxTotalWorkerThreads, 8);
+  assert.equal(CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxPerWorkerThreads, 4);
+  assert.equal(CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxTotalCpuBudgetSeconds, 28800);
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(plannerShared.CP_SAT_PORTFOLIO_CAPABILITY_LIMITS)),
+    { ...CP_SAT_PORTFOLIO_CAPABILITY_LIMITS }
+  );
 }
 
 function loadPlannerSolveRuntimeModule() {
@@ -3949,10 +3966,15 @@ function testPlannerRequestBuilderKeepsPortfolioStandaloneOnly() {
     /explicit seeds must be unique/
   );
 
-  state.cpSat.portfolio.randomSeeds = "1, 2, 3, 4, 5";
+  state.cpSat.portfolio.randomSeeds = "1, 2, 3, 4, 5, 6, 7, 8";
+  const maxSeedRequest = controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false });
+  assert.equal(maxSeedRequest.params.cpSat.portfolio.workerCount, 8);
+  assert.deepEqual(Array.from(maxSeedRequest.params.cpSat.portfolio.randomSeeds), [1, 2, 3, 4, 5, 6, 7, 8]);
+
+  state.cpSat.portfolio.randomSeeds = "1, 2, 3, 4, 5, 6, 7, 8, 9";
   assert.throws(
     () => controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false }),
-    /supports at most 4 explicit seeds/
+    /supports at most 8 explicit seeds/
   );
 }
 
@@ -4049,6 +4071,66 @@ function testPlannerSolveProgressLogCapturesSnapshotAndFinalResult() {
     exactGap: 0,
     portfolioWorkerSummary: null,
   });
+}
+
+function testPlannerSolveProgressLogPrefersBackendProgressEntry() {
+  const runtimeModule = loadPlannerSolveRuntimeModule();
+  const progressEntry = {
+    capturedAt: "2026-04-14T12:00:00.000Z",
+    elapsedMs: 12000,
+    source: "live-snapshot",
+    optimizer: "auto",
+    activeOptimizer: "lns",
+    autoStage: {
+      requestedOptimizer: "auto",
+      activeStage: "lns",
+      stageIndex: 2,
+      cycleIndex: 1,
+      consecutiveWeakCycles: 0,
+      lastCycleImprovementRatio: null,
+      stopReason: null,
+      generatedSeeds: [
+        { stage: "greedy", stageIndex: 1, cycleIndex: 0, randomSeed: 11 },
+        { stage: "lns", stageIndex: 2, cycleIndex: 1, randomSeed: 13 },
+      ],
+    },
+    hasFeasibleSolution: true,
+    totalPopulation: 321,
+    cpSatStatus: null,
+    progressSummary: {
+      currentScore: 321,
+      bestScore: 321,
+      activeStage: "lns",
+      reuseSource: "greedy",
+      elapsedTimeSeconds: 12,
+      timeSinceImprovementSeconds: null,
+      stopReason: null,
+      exactGap: null,
+      portfolioWorkerSummary: null,
+    },
+    bestPopulationUpperBound: null,
+    populationGapUpperBound: null,
+    solveWallTimeSeconds: null,
+    lastImprovementAtSeconds: null,
+    secondsSinceLastImprovement: null,
+    note: "Backend canonical event.",
+  };
+  const log = runtimeModule.appendSolveProgressLog([], {
+    progressEntry,
+    solution: {
+      optimizer: "cp-sat",
+      totalPopulation: 999,
+      cpSatStatus: "OPTIMAL",
+    },
+  }, {
+    elapsedMs: 99999,
+    source: "final-result",
+  });
+
+  assert.equal(log.length, 1);
+  assert.deepEqual(JSON.parse(JSON.stringify(log[0])), progressEntry);
+  progressEntry.autoStage.stageIndex = 99;
+  assert.equal(log[0].autoStage.stageIndex, 2);
 }
 
 function testFilesystemSolveLogTracksSolverClockAcrossHeartbeats() {
@@ -4182,6 +4264,7 @@ async function main() {
   testGreedySkipsServicesWithZeroMarginalGain();
   testGreedyLocalSearchDoesNotRegressNontrivialSeed();
   testIndexImportHasNoSideEffects();
+  testCpSatPortfolioCapabilitiesAreExported();
   testPlannerServiceAvailabilityRoundTrip();
   testPlannerAutoFillsCpSatRandomSeed();
   testPlannerBuildSolveRequestIncludesCpSatNoImprovementTimeout();
@@ -4215,6 +4298,7 @@ async function main() {
   testPlannerRequestBuilderUsesBoundedGreedyProfileForAuto();
   testPlannerRequestBuilderKeepsPortfolioStandaloneOnly();
   testPlannerSolveProgressLogCapturesSnapshotAndFinalResult();
+  testPlannerSolveProgressLogPrefersBackendProgressEntry();
   testFilesystemSolveLogTracksSolverClockAcrossHeartbeats();
 
   console.log("All review finding regression tests passed.");

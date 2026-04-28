@@ -4,7 +4,7 @@ This file keeps completed solver-roadmap work out of the main roadmap. The activ
 
 ## Delivered Work
 
-Reviewed through 2026-04-27.
+Reviewed through 2026-04-28.
 
 ### 1. Full Solver Stack
 
@@ -230,6 +230,16 @@ Reviewed through 2026-04-27.
 - Cross-mode scorecards now report observed worker CPU seconds, population per CPU-budget second, and paired CP-SAT versus CP-SAT portfolio efficiency signals.
 - Persisted the closeout evidence under `artifacts/cp-sat-portfolio/2026-04-28/`. The tiny paired run tied population while spending extra CPU budget, so portfolio remains explicit-only and no solver defaults changed.
 
+### 29. Experiment Registry Hardening
+
+- Closed the experiment registry priority as an infrastructure gate for future promotion evidence.
+- Added TypeScript registry validation and append helpers with schema checks, duplicate `runId` detection, line-numbered JSONL issues, commit validation, seed and budget validation, artifact-path checks, hardware completeness checks, model metadata checks, and append-only duplicate protection.
+- Added an experiment registry CLI with `check`, `validate-entry`, and `append` commands plus a compatibility wrapper and npm scripts: `experiment-registry` and `experiment-registry:check`.
+- New appends are strict by default for promotion-grade metadata: current git commit, branch, artifact commit, exact command list, split status, budget, hardware, model, decision, case coverage, and seeds.
+- Default registry checks allow seeded historical entries to pass while reporting warning-only backfill gaps such as missing captured hardware, null artifact commits, or abbreviated commands.
+- Documented registry usage in `artifacts/experiments/README.md` and added focused regression coverage in `tests/experiment-registry.test.cjs`.
+- The seeded registry at `artifacts/experiments/index.jsonl` remains discoverable and append-only. No solver defaults changed.
+
 ## Maintenance Watchpoints
 
 - Keep deterministic benchmark seeds stable when changing solver scoring.
@@ -241,3 +251,4 @@ Reviewed through 2026-04-27.
 - Keep Auto budget slicing honest: LNS seed and repair work may use the Auto LNS stage slice, but must not spend the CP-SAT reserve unless a future trace-backed policy explicitly changes that.
 - Keep ablation matrices small by default; expand cases, modes, budgets, or policies only when the previous sweep gives a clear signal.
 - Keep long ablation runs staged and timeout-bounded; the corrected 30s LNS budget can legitimately consume far more wall-clock than the previous capped corpus setup.
+- Keep the experiment registry append-only; corrected metadata should use a suffixed `runId`, and promotion-grade decisions should rely on strict registry entries with captured hardware and exact commands.

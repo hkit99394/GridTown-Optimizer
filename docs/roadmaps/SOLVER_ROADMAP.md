@@ -43,6 +43,7 @@ Current reviewed baseline as of 2026-04-28:
 - LNS has deterministic/probabilistic neighborhoods, improvement guards, and budget controls.
 - Greedy has phase guardrails, profile counters, final road cleanup, connectivity-shadow traces, guarded opt-in connectivity-shadow scoring, and road-opportunity constructive/local-search counterfactuals.
 - Planner saved-layout selection surfaces saved population so layout choices stay score-oriented.
+- Experiment registry hardening is available through validation/check tooling, append helpers, and strict metadata gates for new benchmark and label artifacts.
 - The 2026-04-28 health check passed `npm test`; Auto matched the best population on all four 5s seed-7 default scorecard cases, so no solver default change is justified.
 
 ## Active Priorities
@@ -65,8 +66,8 @@ Current status notes:
 - Low-risk learned ranking labels are closed as a label-collection gate; see `artifacts/learned-ranking-labels/2026-04-27/`. The bundle contains 4,593 split-protected Greedy ordering labels and 84 usable LNS replay labels with schema/audit metadata, but no model was trained and no defaults changed.
 - Planner explainability maps are closed. Solve and manual-layout responses now include a first-class explainability grid, and the planner can switch between layout, service-value, placement-opportunity, and connectivity-risk map modes.
 - CPU parallelism and portfolio work is closed as a measurement/safety gate; see `artifacts/cp-sat-portfolio/2026-04-28/`. Portfolio workers now preserve parseable JSON when search logging is requested, expose per-worker telemetry, and scorecards report CPU-normalized portfolio-vs-single signals. The measured tiny paired run tied population while spending extra configured worker CPU budget.
-- Next-stage review is adopted as an infrastructure plan, not a solver-default promotion plan; see [NEXT_STAGE_REVIEW.md](NEXT_STAGE_REVIEW.md). Its first work is roadmap reconciliation, experiment registry hardening, and label-scale readiness gates.
-- Experiment registry seeding has started at `artifacts/experiments/index.jsonl`. Treat the registry as partial infrastructure: existing evidence is discoverable, but validation/check tooling, append helpers, hardware metadata coverage, and backfill quality checks still need to land before promotion decisions depend on it.
+- Next-stage review is adopted as an infrastructure plan, not a solver-default promotion plan; see [NEXT_STAGE_REVIEW.md](NEXT_STAGE_REVIEW.md). Roadmap reconciliation and experiment registry hardening are delivered; label-scale readiness gates remain active.
+- Experiment registry hardening is delivered as an infrastructure gate. `artifacts/experiments/index.jsonl` is checkable with warning-only historical gaps, new entries can be appended through the registry CLI/helper with strict promotion-grade metadata, and seeded evidence remains discoverable without changing solver defaults.
 - Roadmap reconciliation is delivered here: this roadmap now separates delivered, partial, needs-scale, and not-started work while keeping solver defaults unchanged.
 
 ## Status Snapshot
@@ -80,15 +81,14 @@ Current status notes:
 | LNS replay label coverage | needs-scale | 84 usable replay labels; holdout labels are usable but neutral in `artifacts/learned-ranking-labels/2026-04-27/` and [NEXT_STAGE_REVIEW.md](NEXT_STAGE_REVIEW.md) | Blocks LNS ranker training and online hooks. |
 | Generated pressure-case coverage | needs-scale | [NEXT_STAGE_REVIEW.md](NEXT_STAGE_REVIEW.md) notes the default benchmark corpus is useful for regression but too saturated for promotion decisions | Needed before LNS replay labels or Auto/LNS budget probes can support promotion decisions. |
 | CP-SAT portfolio telemetry and CPU-normalized scorecards | delivered | `artifacts/cp-sat-portfolio/2026-04-28/`, [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED.md), item 28 | Portfolio remains explicit-only; Auto does not route through it. |
-| Experiment registry seed | partial | `artifacts/experiments/index.jsonl` indexes deterministic ablations, learned labels, portfolio measurement, and health check artifacts | Registry is discoverability infrastructure only until validation/check tooling and metadata completeness land. |
+| Experiment registry hardening | delivered | [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED.md), item 29; `artifacts/experiments/index.jsonl`; `npm run experiment-registry:check` | No solver default change; future benchmark and label artifacts can be checked and appended with commit, command, split, budget, hardware, model, and decision metadata. |
 | Model training path | not-started | [NEXT_STAGE_REVIEW.md](NEXT_STAGE_REVIEW.md) lists no `python/ml/` scaffold, offline metric report, or trained model path | No learned model exists; no feature-flagged scorer or default promotion. |
 | Default promotion for learned guidance, portfolio, GPU, or budget policy changes | not-started | Health check and artifact decisions are `keep-auto-default`, `offline-diagnostics-only`, `keep-portfolio-explicit-only`, and `no-default-promotion` | Solver defaults remain unchanged. |
 
 | Rank | Priority | Impact | Summary | Success Signal |
 | --- | --- | ---: | --- | --- |
-| 1 | Experiment registry hardening | 3.0 | Build validation/check tooling, append helpers, and metadata completeness rules around the seeded registry. | New benchmark and label artifacts can be checked and appended with commit, command, split, budget, hardware, model, and decision metadata. |
-| 2 | LNS replay label and pressure-case scale-up | 4.0 | Grow replay labels and generated pressure cases across corridor, gate, footprint-pressure, and service-pressure families before training LNS rankers. | Protected development and holdout splits reach the label-scale gates for usable, non-neutral, and family-balanced replay labels. |
-| 3 | CPU-first Greedy offline ranker | 3.5 | Use the healthier Greedy label bundle for an offline diagnostic ranker before any runtime hook or promotion. | A small CPU model beats deterministic ordering, random ordering, and single-feature baselines on protected holdout without leaked case names. |
+| 1 | LNS replay label and pressure-case scale-up | 4.0 | Grow replay labels and generated pressure cases across corridor, gate, footprint-pressure, and service-pressure families before training LNS rankers. | Protected development and holdout splits reach the label-scale gates for usable, non-neutral, and family-balanced replay labels. |
+| 2 | CPU-first Greedy offline ranker | 3.5 | Use the healthier Greedy label bundle for an offline diagnostic ranker before any runtime hook or promotion. | A small CPU model beats deterministic ordering, random ordering, and single-feature baselines on protected holdout without leaked case names. |
 
 ## Gated Priorities
 
@@ -105,13 +105,12 @@ These are not next actions. They need the trigger in the first column before mov
 
 ## Combined Ordering
 
-1. Harden the seeded experiment registry with validation/check tooling, append helpers, and required metadata coverage.
-2. Scale LNS replay labels and generated pressure cases until protected splits have enough usable and non-neutral signal.
-3. Train a CPU-first Greedy offline ranker as a diagnostic, using deterministic, random, and single-feature baselines.
-4. Train an LNS offline ranker only after the replay label-scale gates pass.
-5. Add feature-flagged online Greedy/LNS ranking hooks only after offline holdout wins, with deterministic fallbacks and equal-budget A/B.
-6. Add GPU training or inference acceleration only after a CPU-first model is useful and a measured bottleneck exists.
-7. Revisit portfolio, distributed solving, or alternative GPU solvers only after the improvement loop can prove CPU-normalized wins.
+1. Scale LNS replay labels and generated pressure cases until protected splits have enough usable and non-neutral signal.
+2. Train a CPU-first Greedy offline ranker as a diagnostic, using deterministic, random, and single-feature baselines.
+3. Train an LNS offline ranker only after the replay label-scale gates pass.
+4. Add feature-flagged online Greedy/LNS ranking hooks only after offline holdout wins, with deterministic fallbacks and equal-budget A/B.
+5. Add GPU training or inference acceleration only after a CPU-first model is useful and a measured bottleneck exists.
+6. Revisit portfolio, distributed solving, or alternative GPU solvers only after the improvement loop can prove CPU-normalized wins.
 
 ## Discipline
 

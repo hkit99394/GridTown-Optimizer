@@ -84,7 +84,19 @@ export {
   runLearnedRankingLabelSuite,
   runCrossModeBenchmarkBudgetAblations,
   runCrossModeBenchmarkSuite,
+  EXPERIMENT_REGISTRY_SCHEMA_VERSION,
+  DEFAULT_EXPERIMENT_REGISTRY_PATH,
+  EXPERIMENT_REGISTRY_ARTIFACT_TYPES,
+  ExperimentRegistryValidationError,
+  appendExperimentRegistryEntry,
+  captureExperimentRegistryHardwareMetadata,
+  checkExperimentRegistryContent,
+  checkExperimentRegistryFile,
+  completeExperimentRegistryEntry,
+  formatExperimentRegistryIssues,
+  validateExperimentRegistryEntry,
 } from "./benchmarks/index.js";
+export * from "./benchmarks/experimentRegistry.js";
 export {
   assertValidLayout,
   assertValidLayoutConstraints,

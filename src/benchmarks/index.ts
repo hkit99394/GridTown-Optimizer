@@ -11,3 +11,4 @@ export * from "./lnsNeighborhoodAblations.js";
 export * from "./deterministicAblationGates.js";
 export * from "./lnsWindowReplayLabels.js";
 export * from "./learnedRankingLabels.js";
+export * from "./experimentRegistry.js";

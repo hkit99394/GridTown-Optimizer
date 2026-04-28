@@ -4,7 +4,6 @@ import {
   createLnsNeighborhoodAblationSnapshot,
   createLnsWindowReplaySnapshot,
   DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS,
-  DEFAULT_LNS_NEIGHBORHOOD_ABLATION_VARIANTS,
   formatDeterministicAblationGateReport,
   formatLnsNeighborhoodAblation,
   formatLnsBenchmarkSuite,
@@ -22,9 +21,10 @@ import {
   parseNumberList,
   parsePositiveInteger,
   parsePositiveNumber,
+  readInlineOptionValue,
 } from "./cliParsing.js";
+import { optionalCliNames, writeCliJson, writeCliJsonOrText, writeCliList, writeCliText } from "./cliOutput.js";
 import type {
-  LnsNeighborhoodAblationVariant,
   LnsNeighborhoodAblationVariantName,
 } from "../benchmarks/index.js";
 
@@ -58,6 +58,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let repairTimeLimitSeconds: number | undefined;
 
   for (const arg of argv) {
+    let value: string | undefined;
     if (arg === "--json") {
       json = true;
       continue;
@@ -95,30 +96,32 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
       neighborhoodAblation = true;
       continue;
     }
-    if (arg.startsWith("--ablation-variants=")) {
+    value = readInlineOptionValue(arg, "ablation-variants");
+    if (value !== undefined) {
       ablationVariantNames = parseNameList(
-        arg.slice("--ablation-variants=".length),
+        value,
         "ablation variant"
       ) as LnsNeighborhoodAblationVariantName[];
       continue;
     }
-    if (arg.startsWith("--seeds=")) {
-      seeds = parseNumberList(arg.slice("--seeds=".length), "seeds");
+    value = readInlineOptionValue(arg, "seeds");
+    if (value !== undefined) {
+      seeds = parseNumberList(value, "seeds");
       continue;
     }
-    if (arg.startsWith("--max-windows=")) {
-      maxWindows = parsePositiveInteger(arg.slice("--max-windows=".length), "--max-windows");
+    value = readInlineOptionValue(arg, "max-windows");
+    if (value !== undefined) {
+      maxWindows = parsePositiveInteger(value, "--max-windows");
       continue;
     }
-    if (arg.startsWith("--exploration-windows=")) {
-      explorationWindowCount = parseNonNegativeInteger(
-        arg.slice("--exploration-windows=".length),
-        "--exploration-windows"
-      );
+    value = readInlineOptionValue(arg, "exploration-windows");
+    if (value !== undefined) {
+      explorationWindowCount = parseNonNegativeInteger(value, "--exploration-windows");
       continue;
     }
-    if (arg.startsWith("--repair-time=")) {
-      repairTimeLimitSeconds = parsePositiveNumber(arg.slice("--repair-time=".length), "--repair-time");
+    value = readInlineOptionValue(arg, "repair-time");
+    if (value !== undefined) {
+      repairTimeLimitSeconds = parsePositiveNumber(value, "--repair-time");
       continue;
     }
     names.push(arg);
@@ -140,21 +143,6 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   };
 }
 
-function selectLnsNeighborhoodAblationVariants(
-  names: readonly LnsNeighborhoodAblationVariantName[] | undefined
-): readonly LnsNeighborhoodAblationVariant[] | undefined {
-  if (!names || names.length === 0) return undefined;
-  const byName = new Map(DEFAULT_LNS_NEIGHBORHOOD_ABLATION_VARIANTS.map((variant) => [variant.name, variant]));
-  const requested = ["baseline", ...names.filter((name) => name !== "baseline")] as LnsNeighborhoodAblationVariantName[];
-  const missing = requested.filter((name) => !byName.has(name));
-  if (missing.length > 0) {
-    throw new Error(
-      `Unknown LNS neighborhood ablation variant(s): ${missing.join(", ")}. Available variants: ${DEFAULT_LNS_NEIGHBORHOOD_ABLATION_VARIANTS.map((variant) => variant.name).join(", ")}.`
-    );
-  }
-  return requested.map((name) => byName.get(name) as LnsNeighborhoodAblationVariant);
-}
-
 export function runLnsBenchmarkCli(): void {
   const args = parseArgs(process.argv.slice(2));
   if (args.gateReport && !args.neighborhoodAblation) {
@@ -169,32 +157,29 @@ export function runLnsBenchmarkCli(): void {
       : args.windowReplayLabels
         ? listLnsWindowReplayCaseNames()
       : listLnsBenchmarkCaseNames();
-    process.stdout.write(`${names.join("\n")}\n`);
+    writeCliList(names);
     return;
   }
 
   if (args.windowReplayLabels) {
     const result = runLnsWindowReplayLabels(undefined, {
-      names: args.names.length > 0 ? args.names : undefined,
+      names: optionalCliNames(args.names),
       seeds: args.seeds,
       maxWindows: args.maxWindows,
       explorationWindowCount: args.explorationWindowCount,
       repairTimeLimitSeconds: args.repairTimeLimitSeconds,
     });
 
-    if (args.json) {
-      process.stdout.write(`${JSON.stringify(createLnsWindowReplaySnapshot(result), null, 2)}\n`);
-      return;
-    }
-
-    process.stdout.write(`${formatLnsWindowReplayLabels(result)}\n`);
+    writeCliJsonOrText(args.json, () => createLnsWindowReplaySnapshot(result), () =>
+      formatLnsWindowReplayLabels(result)
+    );
     return;
   }
 
   if (args.neighborhoodAblation) {
     const result = runLnsNeighborhoodAblation(undefined, {
-      names: args.names.length > 0 ? args.names : undefined,
-      variants: selectLnsNeighborhoodAblationVariants(args.ablationVariantNames),
+      names: optionalCliNames(args.names),
+      variantNames: args.ablationVariantNames,
       seeds: args.seeds ?? (args.gateReport ? DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS : undefined),
       rotateVariantRunOrder: args.rotateVariantRunOrder,
     });
@@ -202,32 +187,24 @@ export function runLnsBenchmarkCli(): void {
     if (args.gateReport) {
       const report = buildDeterministicAblationGateReport({ lns: result });
       if (args.json) {
-        process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+        writeCliJson(report);
         return;
       }
-      process.stdout.write(`${formatDeterministicAblationGateReport(report)}\n`);
+      writeCliText(formatDeterministicAblationGateReport(report));
       return;
     }
 
-    if (args.json) {
-      process.stdout.write(`${JSON.stringify(createLnsNeighborhoodAblationSnapshot(result), null, 2)}\n`);
-      return;
-    }
-
-    process.stdout.write(`${formatLnsNeighborhoodAblation(result)}\n`);
+    writeCliJsonOrText(args.json, () => createLnsNeighborhoodAblationSnapshot(result), () =>
+      formatLnsNeighborhoodAblation(result)
+    );
     return;
   }
 
   const result = runLnsBenchmarkSuite(undefined, {
-    names: args.names.length > 0 ? args.names : undefined,
+    names: optionalCliNames(args.names),
   });
 
-  if (args.json) {
-    process.stdout.write(`${JSON.stringify(createLnsBenchmarkSnapshot(result), null, 2)}\n`);
-    return;
-  }
-
-  process.stdout.write(`${formatLnsBenchmarkSuite(result)}\n`);
+  writeCliJsonOrText(args.json, () => createLnsBenchmarkSnapshot(result), () => formatLnsBenchmarkSuite(result));
 }
 
 try {

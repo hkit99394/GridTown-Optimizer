@@ -1,5 +1,10 @@
 import { formatBenchmarkSeeds, normalizeBenchmarkSeeds } from "./benchmarkSeeds.js";
-import { positiveIntegerOrDefault } from "./benchmarkOptions.js";
+import {
+  buildBenchmarkSuiteMetadata,
+  listBenchmarkCaseNames,
+  positiveIntegerOrDefault,
+  uniqueBenchmarkValues,
+} from "./benchmarkOptions.js";
 import {
   DEFAULT_GREEDY_CONNECTIVITY_SHADOW_SCORING_ABLATION_CORPUS,
 } from "./greedyConnectivityShadowAblations.js";
@@ -177,7 +182,10 @@ function labelFromDecision(options: {
 export function listGreedyConnectivityShadowOrderingLabelCaseNames(
   corpus: readonly GreedyBenchmarkCase[] = DEFAULT_GREEDY_CONNECTIVITY_SHADOW_ORDERING_LABEL_CORPUS
 ): string[] {
-  return corpus.map((benchmarkCase) => benchmarkCase.name);
+  return listBenchmarkCaseNames(corpus, {
+    caseLabel: "Greedy connectivity-shadow ordering label",
+    corpusLabel: "Greedy connectivity-shadow ordering label",
+  });
 }
 
 export function createGreedyConnectivityShadowOrderingLabelsFromDecisions(options: {
@@ -241,15 +249,13 @@ export function runGreedyConnectivityShadowOrderingLabels(
       };
     });
   });
-  const selectedCaseNames = [...new Set(cases.map((benchmarkCase) => benchmarkCase.name))];
+  const selectedCaseNames = uniqueBenchmarkValues(cases.map((benchmarkCase) => benchmarkCase.name));
 
   return {
-    generatedAt: new Date().toISOString(),
-    caseCount: selectedCaseNames.length,
+    ...buildBenchmarkSuiteMetadata(selectedCaseNames),
     seedCount: seedRuns.length,
     comparisonCount: cases.length,
     seeds,
-    selectedCaseNames,
     maxLabelsPerCase,
     labelCount: cases.reduce((total, benchmarkCase) => total + benchmarkCase.labelCount, 0),
     cases,

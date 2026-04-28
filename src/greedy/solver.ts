@@ -212,7 +212,6 @@ type GreedyCapEvaluator = (
 ) => Solution | null;
 type GreedyExistingCapRefiner = (
   cap: number,
-  phase: CapSearchPhase,
   bestForCap: Solution | null,
   restartBudget: number,
   allowAnchorRefinement: boolean
@@ -1939,8 +1938,6 @@ function solveOne(
         roads,
         occupied,
         services,
-        effectZones,
-        serviceBonuses,
         residentials,
         residentialTypeIndices,
         populations,
@@ -2735,7 +2732,7 @@ function runGreedyServiceCapSearch(options: {
 
   for (const cap of restartFocusCaps) {
     const current = capResultsByCap.get(cap)?.solution ?? null;
-    const refined = refineExistingCap(cap, "refine", current, restarts, true);
+    const refined = refineExistingCap(cap, current, restarts, true);
     capResultsByCap.set(cap, summarizeCapResult(cap, "refine", refined));
   }
 
@@ -3875,7 +3872,6 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
 
   const runCapRestarts = (
     cap: number,
-    phase: CapSearchPhase,
     bestForCap: Solution | null,
     restartBudget: number
   ): Solution | null => {
@@ -3935,7 +3931,7 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     maybeStop();
     let bestForCap = solveWithOrder(serviceOrderSorted, { maxServices: cap });
     updateBest(bestForCap);
-    bestForCap = runCapRestarts(cap, phase, bestForCap, restartBudget);
+    bestForCap = runCapRestarts(cap, bestForCap, restartBudget);
     if (allowAnchorRefinement && !deferRoadCommitment) {
       bestForCap = runCapAnchorRefinement(cap, bestForCap);
     }
@@ -3945,12 +3941,11 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
 
   const refineExistingCap = (
     cap: number,
-    phase: CapSearchPhase,
     bestForCap: Solution | null,
     restartBudget: number,
     allowAnchorRefinement: boolean
   ): Solution | null => {
-    let refined = runCapRestarts(cap, phase, bestForCap, restartBudget);
+    let refined = runCapRestarts(cap, bestForCap, restartBudget);
     if (allowAnchorRefinement && !deferRoadCommitment) {
       refined = runCapAnchorRefinement(cap, refined);
     }
@@ -4059,8 +4054,6 @@ function localSearchImprove(
   roads: Set<string>,
   occupied: Set<string>,
   services: ServicePlacement[],
-  effectZones: Set<string>[],
-  serviceBonuses: number[],
   residentials: ResidentialPlacement[],
   residentialTypeIndices: number[],
   populations: number[],

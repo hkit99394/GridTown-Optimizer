@@ -9,7 +9,20 @@ import {
 } from "../core/decisionTrace.js";
 import { buildSolverProgressSummary, formatSolverProgressSummary } from "../core/progress.js";
 import { solveAsync } from "../runtime/solve.js";
-import { normalizeCpSatBenchmarkOptions } from "./cpSat.js";
+import {
+  assertBenchmarkCasesSelected,
+  buildBenchmarkSuiteMetadata,
+  cloneBenchmarkGrid,
+  cloneBenchmarkSolverParams,
+  listBenchmarkCaseNames,
+  meanBenchmarkValue,
+  observedCpSatWorkerCpuSeconds,
+  roundBenchmarkMetric,
+  safePopulationRate,
+  selectBenchmarkCasesByName,
+  uniqueBenchmarkValues,
+} from "./benchmarkOptions.js";
+import { buildCpSatBenchmarkCpuPlan, normalizeCpSatBenchmarkOptions } from "./cpSat.js";
 import { normalizeGreedyBenchmarkOptions } from "./greedy.js";
 import { normalizeLnsBenchmarkOptions } from "./lns.js";
 
@@ -283,14 +296,6 @@ const MODE_LABELS: Record<CrossModeBenchmarkMode, string> = {
   "cp-sat-portfolio": "CP-SAT portfolio",
 };
 
-function cloneGrid(grid: Grid): Grid {
-  return grid.map((row) => [...row]);
-}
-
-function cloneSolverParams(params: SolverParams): SolverParams {
-  return structuredClone(params);
-}
-
 function inferProblemSizeBand(benchmarkCase: CrossModeBenchmarkCase): CrossModeProblemSizeBand {
   if (benchmarkCase.problemSizeBand) return benchmarkCase.problemSizeBand;
   const cells = benchmarkCase.grid.length * (benchmarkCase.grid[0]?.length ?? 0);
@@ -318,7 +323,7 @@ function normalizeBudgetList(options: CrossModeBenchmarkRunOptions): number[] {
   const budgets = requested
     .map((value) => normalizeBudgetSeconds(value))
     .filter((value) => value > 0);
-  return [...new Set(budgets)];
+  return uniqueBenchmarkValues(budgets);
 }
 
 function normalizeSeeds(seeds: readonly number[] | undefined): number[] {
@@ -329,7 +334,7 @@ function normalizeSeeds(seeds: readonly number[] | undefined): number[] {
   if (normalized.length === 0) {
     throw new Error("Cross-mode benchmark suite must include at least one non-negative seed.");
   }
-  return [...new Set(normalized)];
+  return uniqueBenchmarkValues(normalized);
 }
 
 function modeToOptimizer(mode: CrossModeBenchmarkMode): OptimizerName {
@@ -533,7 +538,7 @@ export function buildCrossModeBenchmarkParams(
 ): SolverParams {
   const budgetSeconds = normalizeBudgetSeconds(options.budgetSeconds);
   const seed = normalizeSeeds(options.seeds)[0] ?? DEFAULT_CROSS_MODE_BENCHMARK_SEEDS[0];
-  const params = cloneSolverParams(benchmarkCase.params);
+  const params = cloneBenchmarkSolverParams(benchmarkCase.params);
   const optimizer = modeToOptimizer(mode);
   const greedy = buildBudgetedGreedyOptions(params, options, budgetSeconds, seed);
   const baseWithGreedy = applyGreedyCompatibilityFields(params, greedy);
@@ -587,37 +592,14 @@ export function buildCrossModeBenchmarkParams(
 }
 
 function workerCpuBudgetSeconds(mode: CrossModeBenchmarkMode, cpSat: CpSatOptions, budgetSeconds: number): number {
-  if (mode === "cp-sat") {
-    const workerCount = cpSat.numWorkers ?? 1;
-    const timeLimitSeconds = cpSat.timeLimitSeconds ?? budgetSeconds;
-    return workerCount * timeLimitSeconds;
+  if (mode === "cp-sat" || mode === "cp-sat-portfolio") {
+    return buildCpSatBenchmarkCpuPlan(cpSat).workerCpuBudgetSeconds;
   }
-  if (mode !== "cp-sat-portfolio") return budgetSeconds;
-  const portfolio = cpSat.portfolio;
-  const workerCount = portfolio?.randomSeeds?.length ?? portfolio?.workerCount ?? 1;
-  const perWorkerNumWorkers = portfolio?.perWorkerNumWorkers ?? 1;
-  const perWorkerTimeLimitSeconds = portfolio?.perWorkerTimeLimitSeconds ?? budgetSeconds;
-  return workerCount * perWorkerNumWorkers * perWorkerTimeLimitSeconds;
+  return budgetSeconds;
 }
 
 function roundSignalValue(value: number): number {
-  return Math.round(value * 1000) / 1000;
-}
-
-function safePopulationRate(population: number, seconds: number | null): number | null {
-  return seconds !== null && seconds > 0 ? roundSignalValue(population / seconds) : null;
-}
-
-function observedWorkerCpuSeconds(solution: Solution): number | null {
-  const portfolioWorkerTimes = solution.cpSatPortfolio?.workers
-    .map((worker) => worker.telemetry?.userTimeSeconds)
-    .filter((value): value is number => typeof value === "number" && Number.isFinite(value));
-  if (portfolioWorkerTimes?.length) {
-    return roundSignalValue(portfolioWorkerTimes.reduce((sum, value) => sum + value, 0));
-  }
-  return typeof solution.cpSatTelemetry?.userTimeSeconds === "number"
-    ? roundSignalValue(solution.cpSatTelemetry.userTimeSeconds)
-    : null;
+  return roundBenchmarkMetric(value);
 }
 
 function millisecondsToSignalSeconds(value: number | null): number | null {
@@ -696,33 +678,14 @@ function buildCrossModeBudgetAllocationSignal(
   };
 }
 
-function validateBenchmarkCorpus(corpus: readonly CrossModeBenchmarkCase[]): void {
-  const names = corpus.map((benchmarkCase) => benchmarkCase.name);
-  if (new Set(names).size !== names.length) {
-    throw new Error("Cross-mode benchmark corpus must use unique case names.");
-  }
-}
-
 function selectBenchmarkCases(
   corpus: readonly CrossModeBenchmarkCase[],
   names: readonly string[] | undefined
 ): CrossModeBenchmarkCase[] {
-  validateBenchmarkCorpus(corpus);
-  if (!names || names.length === 0) {
-    return [...corpus];
-  }
-
-  const byName = new Map(corpus.map((benchmarkCase) => [benchmarkCase.name, benchmarkCase]));
-  const missing = names.filter((name) => !byName.has(name));
-  if (missing.length > 0) {
-    throw new Error(
-      `Unknown cross-mode benchmark case(s): ${missing.join(", ")}. Available cases: ${corpus
-        .map((benchmarkCase) => benchmarkCase.name)
-        .join(", ")}.`
-    );
-  }
-
-  return names.map((name) => byName.get(name) as CrossModeBenchmarkCase);
+  return selectBenchmarkCasesByName(corpus, names, {
+    caseLabel: "cross-mode benchmark",
+    corpusLabel: "Cross-mode benchmark",
+  });
 }
 
 function normalizeModes(modes: readonly CrossModeBenchmarkMode[] | undefined): CrossModeBenchmarkMode[] {
@@ -743,8 +706,10 @@ function normalizeModes(modes: readonly CrossModeBenchmarkMode[] | undefined): C
 export function listCrossModeBenchmarkCaseNames(
   corpus: readonly CrossModeBenchmarkCase[] = DEFAULT_CROSS_MODE_BENCHMARK_CORPUS
 ): string[] {
-  validateBenchmarkCorpus(corpus);
-  return corpus.map((benchmarkCase) => benchmarkCase.name);
+  return listBenchmarkCaseNames(corpus, {
+    caseLabel: "cross-mode benchmark",
+    corpusLabel: "Cross-mode benchmark",
+  });
 }
 
 function compareModeResults(left: CrossModeBenchmarkModeResult, right: CrossModeBenchmarkModeResult): number {
@@ -828,7 +793,7 @@ async function runCrossModeBenchmarkCase(
       seeds: [seed],
     });
     const startedAt = performance.now();
-    const solution = await solve(cloneGrid(benchmarkCase.grid), params, {
+    const solution = await solve(cloneBenchmarkGrid(benchmarkCase.grid), params, {
       benchmarkCase,
       mode,
       budgetSeconds,
@@ -850,7 +815,7 @@ async function runCrossModeBenchmarkCase(
       policyName: options.budgetAblationPolicy?.name,
     });
     const workerCpuBudgetSecondsValue = workerCpuBudgetSeconds(mode, params.cpSat ?? {}, budgetSeconds);
-    const observedWorkerCpuSecondsValue = observedWorkerCpuSeconds(solution);
+    const observedWorkerCpuSecondsValue = observedCpSatWorkerCpuSeconds(solution);
 
     rawResults.push({
       mode,
@@ -930,14 +895,10 @@ async function runCrossModeBenchmarkCase(
   };
 }
 
-function mean(values: readonly number[]): number {
-  return values.length === 0 ? 0 : values.reduce((sum, value) => sum + value, 0) / values.length;
-}
-
 function standardDeviation(values: readonly number[]): number {
   if (values.length <= 1) return 0;
-  const average = mean(values);
-  return Math.sqrt(mean(values.map((value) => (value - average) ** 2)));
+  const average = meanBenchmarkValue(values);
+  return Math.sqrt(meanBenchmarkValue(values.map((value) => (value - average) ** 2)));
 }
 
 function summarizeMode(mode: CrossModeBenchmarkMode, results: readonly CrossModeBenchmarkModeResult[]): CrossModeBenchmarkModeSummary {
@@ -952,13 +913,13 @@ function summarizeMode(mode: CrossModeBenchmarkMode, results: readonly CrossMode
     mode,
     label: MODE_LABELS[mode],
     runs: results.length,
-    meanPopulation: mean(populations),
+    meanPopulation: meanBenchmarkValue(populations),
     bestPopulation: populations.length ? Math.max(...populations) : 0,
     worstPopulation: populations.length ? Math.min(...populations) : 0,
     populationStdDev: standardDeviation(populations),
-    meanWallClockSeconds: mean(results.map((result) => result.wallClockSeconds)),
+    meanWallClockSeconds: meanBenchmarkValue(results.map((result) => result.wallClockSeconds)),
     winRateVsAuto: comparable.length ? (wins + ties * 0.5) / comparable.length : null,
-    meanScoreDeltaVsAuto: deltas.length ? mean(deltas) : null,
+    meanScoreDeltaVsAuto: deltas.length ? meanBenchmarkValue(deltas) : null,
   };
 }
 
@@ -967,9 +928,9 @@ function buildSummaries(cases: readonly CrossModeBenchmarkCaseScorecard[]): {
   problemSizeSummaries: CrossModeBenchmarkProblemSizeSummary[];
 } {
   const results = cases.flatMap((scorecard) => scorecard.results);
-  const modes = [...new Set(results.map((result) => result.mode))];
+  const modes = uniqueBenchmarkValues(results.map((result) => result.mode));
   const modeSummaries = modes.map((mode) => summarizeMode(mode, results.filter((result) => result.mode === mode)));
-  const problemSizeBands = [...new Set(results.map((result) => result.problemSizeBand))];
+  const problemSizeBands = uniqueBenchmarkValues(results.map((result) => result.problemSizeBand));
   const problemSizeSummaries = problemSizeBands.flatMap((problemSizeBand) =>
     modes.map((mode) => ({
       problemSizeBand,
@@ -1169,9 +1130,7 @@ export async function runCrossModeBenchmarkSuite(
   options: CrossModeBenchmarkRunOptions = {}
 ): Promise<CrossModeBenchmarkSuiteResult> {
   const selected = selectBenchmarkCases(corpus, options.names);
-  if (selected.length === 0) {
-    throw new Error("No cross-mode benchmark cases matched the requested names.");
-  }
+  assertBenchmarkCasesSelected(selected, "No cross-mode benchmark cases matched the requested names.");
   const budgetsSeconds = normalizeBudgetList(options);
   const seeds = normalizeSeeds(options.seeds);
   const modes = normalizeModes(options.modes);
@@ -1188,13 +1147,11 @@ export async function runCrossModeBenchmarkSuite(
   const portfolioEfficiencySignals = buildPortfolioEfficiencySignals(cases);
 
   return {
-    generatedAt: new Date().toISOString(),
+    ...buildBenchmarkSuiteMetadata(selected.map((benchmarkCase) => benchmarkCase.name)),
     budgetSeconds: budgetsSeconds[0] ?? DEFAULT_CROSS_MODE_BENCHMARK_BUDGET_SECONDS,
     budgetsSeconds,
     seeds,
     modeCount: modes.length,
-    caseCount: selected.length,
-    selectedCaseNames: selected.map((benchmarkCase) => benchmarkCase.name),
     modes,
     cases,
     budgetPolicySignals,

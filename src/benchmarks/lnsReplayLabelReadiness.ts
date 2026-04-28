@@ -1,3 +1,5 @@
+import { uniqueBenchmarkValues } from "./benchmarkOptions.js";
+
 import type { LnsReplayPressureFamilyLabel } from "./lns.js";
 import type {
   LnsWindowReplaySnapshot,
@@ -58,10 +60,6 @@ export const DEFAULT_LNS_REPLAY_LABEL_SCALE_THRESHOLDS: Readonly<LnsReplayLabelS
   maxNeutralLabelRatio: 0.85,
 });
 
-function unique(values: readonly string[]): string[] {
-  return [...new Set(values)];
-}
-
 function lnsLabelIsNonNeutral(label: LnsWindowReplaySnapshotLabel): boolean {
   return label.usable && (label.status === "improved" || label.status === "regressed");
 }
@@ -74,7 +72,7 @@ function summarizeLnsReplayFamily(
   const usableLabels = labels.filter((label) => label.usable);
   const neutralUsableLabelCount = usableLabels.filter((label) => label.status === "neutral").length;
   const nonNeutralUsableLabelCount = usableLabels.filter(lnsLabelIsNonNeutral).length;
-  const seeds = unique(
+  const seeds = uniqueBenchmarkValues(
     cases
       .map((benchmarkCase) => benchmarkCase.seed)
       .filter((seed): seed is number => seed !== null)
@@ -83,7 +81,7 @@ function summarizeLnsReplayFamily(
 
   return {
     pressureFamily,
-    caseNames: unique(cases.map((benchmarkCase) => benchmarkCase.name)),
+    caseNames: uniqueBenchmarkValues(cases.map((benchmarkCase) => benchmarkCase.name)),
     seeds,
     labelCount: labels.length,
     usableLabelCount: usableLabels.length,

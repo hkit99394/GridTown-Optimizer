@@ -1,3 +1,5 @@
+import { uniqueBenchmarkValues } from "./benchmarkOptions.js";
+
 import type {
   GreedyDeterministicAblationSuiteResult,
   GreedyDeterministicAblationVariantSummary,
@@ -223,10 +225,6 @@ function buildSuiteReport(
   };
 }
 
-function unique(values: readonly string[]): string[] {
-  return [...new Set(values)];
-}
-
 function nextActionsForSuites(suites: readonly DeterministicAblationGateSuiteReport[]): string[] {
   const decisions = suites.flatMap((suite) => suite.decisions);
   const actions: string[] = [];
@@ -245,7 +243,7 @@ function nextActionsForSuites(suites: readonly DeterministicAblationGateSuiteRep
   if (actions.length === 0) {
     actions.push("Keep deterministic baselines and expand pressure coverage before learned guidance.");
   }
-  return unique(actions);
+  return uniqueBenchmarkValues(actions);
 }
 
 export function buildDeterministicAblationGateReport(

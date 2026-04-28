@@ -29,37 +29,14 @@ const LOCAL_RUNTIME_SOLVER_KEYS = new Set([
   "snapshotFilePath",
 ]);
 
+const LOCAL_RUNTIME_PARAM_SECTIONS = [
+  { key: "cpSat", keysToStrip: LOCAL_RUNTIME_CP_SAT_KEYS },
+  { key: "greedy", keysToStrip: LOCAL_RUNTIME_SOLVER_KEYS },
+  { key: "lns", keysToStrip: LOCAL_RUNTIME_SOLVER_KEYS },
+] as const;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
-}
-
-function isInteger(value: unknown, minimum = 0): value is number {
-  return typeof value === "number" && Number.isInteger(value) && value >= minimum;
-}
-
-function isRoadKey(value: unknown): value is string {
-  if (typeof value !== "string") return false;
-  const parts = value.split(",");
-  if (parts.length !== 2) return false;
-  const [row, col] = parts.map(Number);
-  return Number.isInteger(row) && row >= 0 && Number.isInteger(col) && col >= 0;
-}
-
-function isSerializedServicePlacement(value: unknown): boolean {
-  if (!isRecord(value)) return false;
-  return isInteger(value.r)
-    && isInteger(value.c)
-    && isInteger(value.rows, 1)
-    && isInteger(value.cols, 1)
-    && isInteger(value.range);
-}
-
-function isSerializedResidentialPlacement(value: unknown): boolean {
-  if (!isRecord(value)) return false;
-  return isInteger(value.r)
-    && isInteger(value.c)
-    && isInteger(value.rows, 1)
-    && isInteger(value.cols, 1);
 }
 
 export function isGrid(value: unknown): value is Grid {
@@ -85,27 +62,12 @@ export function isCancelSolveRequest(value: unknown): value is CancelSolveReques
 }
 
 export function isSerializedSolution(value: unknown): value is SerializedSolution {
-  if (typeof value !== "object" || value === null) return false;
-  const candidate = value as Partial<SerializedSolution>;
-  return Array.isArray(candidate.roads)
-    && candidate.roads.every((road) => isRoadKey(road))
-    && Array.isArray(candidate.services)
-    && candidate.services.every((service) => isSerializedServicePlacement(service))
-    && Array.isArray(candidate.serviceTypeIndices)
-    && candidate.serviceTypeIndices.length === candidate.services.length
-    && candidate.serviceTypeIndices.every((typeIndex) => isInteger(typeIndex, -1))
-    && Array.isArray(candidate.servicePopulationIncreases)
-    && candidate.servicePopulationIncreases.length === candidate.services.length
-    && candidate.servicePopulationIncreases.every((bonus) => isInteger(bonus))
-    && Array.isArray(candidate.residentials)
-    && candidate.residentials.every((residential) => isSerializedResidentialPlacement(residential))
-    && Array.isArray(candidate.residentialTypeIndices)
-    && candidate.residentialTypeIndices.length === candidate.residentials.length
-    && candidate.residentialTypeIndices.every((typeIndex) => isInteger(typeIndex, -1))
-    && Array.isArray(candidate.populations)
-    && candidate.populations.length === candidate.residentials.length
-    && candidate.populations.every((population) => isInteger(population))
-    && isInteger(candidate.totalPopulation);
+  try {
+    assertValidSerializedSolutionPayload(value);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function isLayoutEvaluateRequest(value: unknown): value is LayoutEvaluateRequest {
@@ -136,19 +98,17 @@ function stripKeysFromRecord<T>(value: T, keysToStrip: Set<string>): T {
 export function sanitizePlannerSolverParams(params: SolverParams): SolverParams {
   if (!isRecord(params)) return params;
 
-  const cpSat = stripKeysFromRecord(params.cpSat, LOCAL_RUNTIME_CP_SAT_KEYS);
-  const greedy = stripKeysFromRecord(params.greedy, LOCAL_RUNTIME_SOLVER_KEYS);
-  const lns = stripKeysFromRecord(params.lns, LOCAL_RUNTIME_SOLVER_KEYS);
-  if (cpSat === params.cpSat && greedy === params.greedy && lns === params.lns) {
-    return params;
+  let changed = false;
+  const sanitizedParams: SolverParams = { ...params };
+  for (const { key, keysToStrip } of LOCAL_RUNTIME_PARAM_SECTIONS) {
+    const sanitized = stripKeysFromRecord(params[key], keysToStrip);
+    if (sanitized === params[key]) {
+      continue;
+    }
+    changed = true;
+    (sanitizedParams as Record<string, unknown>)[key] = sanitized;
   }
-
-  return {
-    ...params,
-    ...(cpSat === undefined ? {} : { cpSat }),
-    ...(greedy === undefined ? {} : { greedy }),
-    ...(lns === undefined ? {} : { lns }),
-  } as SolverParams;
+  return changed ? sanitizedParams : params;
 }
 
 export function sanitizeSolveRequest<T extends SolveRequest | LayoutEvaluateRequest>(payload: T): T {

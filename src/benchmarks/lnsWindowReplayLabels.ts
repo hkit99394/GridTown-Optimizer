@@ -20,9 +20,17 @@ import { normalizeCpSatBenchmarkOptions } from "./cpSat.js";
 import { normalizeGreedyBenchmarkOptions } from "./greedy.js";
 import { normalizeBenchmarkSeeds } from "./benchmarkSeeds.js";
 import {
+  applyNormalizedGreedyBenchmarkParams,
+  benchmarkGeneratedAt,
+  cloneBenchmarkGrid,
+  cloneBenchmarkSolverParams,
+  inheritGreedyBenchmarkOptions,
+  listBenchmarkCaseNames,
   nonNegativeIntegerOrDefault,
   positiveFiniteNumberOrDefault,
   positiveIntegerOrDefault,
+  selectBenchmarkCasesByName,
+  uniqueBenchmarkValues,
 } from "./benchmarkOptions.js";
 import {
   DEFAULT_LNS_REPLAY_LABEL_CORPUS,
@@ -135,66 +143,23 @@ export interface LnsWindowReplaySnapshot
   cases: LnsWindowReplaySnapshotCaseResult[];
 }
 
-function cloneGrid(grid: Grid): Grid {
-  return grid.map((row) => [...row]);
-}
-
-function cloneSolverParams(params: SolverParams): SolverParams {
-  return structuredClone(params);
-}
-
-function inheritGreedyBenchmarkOptions(params: SolverParams): GreedyOptions {
-  const benchmarkGreedy = params.greedy ?? {};
-  return {
-    ...benchmarkGreedy,
-    localSearch: benchmarkGreedy.localSearch ?? params.localSearch,
-    restarts: benchmarkGreedy.restarts ?? params.restarts,
-    serviceRefineIterations: benchmarkGreedy.serviceRefineIterations ?? params.serviceRefineIterations,
-    serviceRefineCandidateLimit: benchmarkGreedy.serviceRefineCandidateLimit ?? params.serviceRefineCandidateLimit,
-    exhaustiveServiceSearch: benchmarkGreedy.exhaustiveServiceSearch ?? params.exhaustiveServiceSearch,
-    serviceExactPoolLimit: benchmarkGreedy.serviceExactPoolLimit ?? params.serviceExactPoolLimit,
-    serviceExactMaxCombinations: benchmarkGreedy.serviceExactMaxCombinations ?? params.serviceExactMaxCombinations,
-  };
-}
-
-function applyNormalizedGreedyBenchmarkParams(params: SolverParams, greedy: GreedyOptions): SolverParams {
-  return {
-    ...params,
-    greedy,
-    localSearch: greedy.localSearch,
-    restarts: greedy.restarts,
-    serviceRefineIterations: greedy.serviceRefineIterations,
-    serviceRefineCandidateLimit: greedy.serviceRefineCandidateLimit,
-    exhaustiveServiceSearch: greedy.exhaustiveServiceSearch,
-    serviceExactPoolLimit: greedy.serviceExactPoolLimit,
-    serviceExactMaxCombinations: greedy.serviceExactMaxCombinations,
-  };
-}
-
 function selectReplayCases(
   corpus: readonly LnsBenchmarkCase[],
   names: readonly string[] | undefined
 ): LnsBenchmarkCase[] {
-  const caseNames = corpus.map((benchmarkCase) => benchmarkCase.name);
-  if (new Set(caseNames).size !== caseNames.length) {
-    throw new Error("LNS window replay corpus must use unique case names.");
-  }
-  if (!names?.length) return [...corpus];
-
-  const byName = new Map(corpus.map((benchmarkCase) => [benchmarkCase.name, benchmarkCase]));
-  const missing = names.filter((name) => !byName.has(name));
-  if (missing.length > 0) {
-    throw new Error(
-      `Unknown LNS window replay case(s): ${missing.join(", ")}. Available cases: ${caseNames.join(", ")}.`
-    );
-  }
-  return names.map((name) => byName.get(name)!);
+  return selectBenchmarkCasesByName(corpus, names, {
+    caseLabel: "LNS window replay",
+    corpusLabel: "LNS window replay",
+  });
 }
 
 export function listLnsWindowReplayCaseNames(
   corpus: readonly LnsBenchmarkCase[] = DEFAULT_LNS_REPLAY_LABEL_CORPUS
 ): string[] {
-  return selectReplayCases(corpus, undefined).map((benchmarkCase) => benchmarkCase.name);
+  return listBenchmarkCaseNames(corpus, {
+    caseLabel: "LNS window replay",
+    corpusLabel: "LNS window replay",
+  });
 }
 
 function buildReplayParams(
@@ -202,8 +167,8 @@ function buildReplayParams(
   seed: number | null,
   options: LnsWindowReplayLabelRunOptions
 ): SolverParams {
-  const params = cloneSolverParams(benchmarkCase.params);
-  const greedy = normalizeGreedyBenchmarkOptions(inheritGreedyBenchmarkOptions(params), {
+  const params = cloneBenchmarkSolverParams(benchmarkCase.params);
+  const greedy = normalizeGreedyBenchmarkOptions(inheritGreedyBenchmarkOptions<GreedyOptions>(params), {
     ...(options.greedy ?? {}),
     ...(seed !== null ? { randomSeed: seed } : {}),
   });
@@ -271,7 +236,6 @@ function sameWindow(left: CpSatNeighborhoodWindow | null, right: CpSatNeighborho
 
 function buildWindowFeatures(
   window: CpSatNeighborhoodWindow,
-  G: Grid,
   params: SolverParams,
   incumbent: Solution,
   selectedWindow: CpSatNeighborhoodWindow | null
@@ -345,7 +309,7 @@ function replayWindow(
   repairTimeLimitSeconds: number
 ): LnsWindowReplayLabel {
   const startedAtMs = performance.now();
-  const features = buildWindowFeatures(window, G, params, incumbent, selectedWindow);
+  const features = buildWindowFeatures(window, params, incumbent, selectedWindow);
   try {
     const candidate = solveCpSat(G, {
       ...params,
@@ -469,7 +433,7 @@ export function runLnsWindowReplayLabels(
   const replayRepairTimeLimitSeconds = positiveFiniteNumberOrDefault(options.repairTimeLimitSeconds, 1);
   const cases = seedRuns.flatMap((seed) =>
     selectedCases.map((benchmarkCase): LnsWindowReplayCaseResult => {
-      const G = cloneGrid(benchmarkCase.grid);
+      const G = cloneBenchmarkGrid(benchmarkCase.grid);
       const params = buildReplayParams(benchmarkCase, seed, options);
       const incumbent = buildInitialIncumbent(G, params);
       const lns = params.lns ?? {};
@@ -518,13 +482,13 @@ export function runLnsWindowReplayLabels(
 
   return {
     schemaVersion: 1,
-    generatedAt: new Date().toISOString(),
+    generatedAt: benchmarkGeneratedAt(),
     caseCount: selectedCases.length,
     seedCount: seedRuns.length,
     comparisonCount: cases.length,
     seeds,
     selectedCaseNames: selectedCases.map((benchmarkCase) => benchmarkCase.name),
-    pressureFamilies: [...new Set(selectedCases.map(getLnsReplayPressureFamily))],
+    pressureFamilies: uniqueBenchmarkValues(selectedCases.map(getLnsReplayPressureFamily)),
     maxWindows,
     explorationWindowCount,
     repairTimeLimitSeconds: replayRepairTimeLimitSeconds,

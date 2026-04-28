@@ -1,6 +1,5 @@
 import {
   DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS,
-  DEFAULT_CROSS_MODE_BUDGET_ABLATION_POLICIES,
   DEFAULT_CROSS_MODE_BENCHMARK_MODES,
   formatCrossModeBenchmarkBudgetAblationDecisionTraceJsonl,
   formatCrossModeBenchmarkBudgetAblations,
@@ -14,9 +13,18 @@ import {
   parseNameList,
   parseNumberList,
   parsePositiveNumber,
+  readInlineOptionValue,
 } from "./cliParsing.js";
+import {
+  optionalCliNames,
+  writeCliJson,
+  writeCliJsonOrText,
+  writeCliList,
+  writeCliRaw,
+  writeCliText,
+} from "./cliOutput.js";
 
-import type { CrossModeBenchmarkBudgetAblationPolicy, CrossModeBenchmarkMode } from "../benchmarks/index.js";
+import type { CrossModeBenchmarkMode } from "../benchmarks/index.js";
 
 interface ParsedBenchmarkArgs {
   json: boolean;
@@ -44,18 +52,6 @@ function parseModes(value: string): CrossModeBenchmarkMode[] {
   return modes as CrossModeBenchmarkMode[];
 }
 
-function selectAblationPolicies(names: string[] | undefined): CrossModeBenchmarkBudgetAblationPolicy[] | undefined {
-  if (!names?.length) return undefined;
-  const byName = new Map(DEFAULT_CROSS_MODE_BUDGET_ABLATION_POLICIES.map((policy) => [policy.name, policy]));
-  const missing = names.filter((name) => !byName.has(name));
-  if (missing.length > 0) {
-    throw new Error(
-      `Unknown cross-mode budget ablation policy(s): ${missing.join(", ")}. Available policies: ${DEFAULT_CROSS_MODE_BUDGET_ABLATION_POLICIES.map((policy) => policy.name).join(", ")}.`
-    );
-  }
-  return names.map((name) => byName.get(name) as CrossModeBenchmarkBudgetAblationPolicy);
-}
-
 function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   const names: string[] = [];
   let json = false;
@@ -70,6 +66,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let seeds: number[] | undefined;
 
   for (const arg of argv) {
+    let value: string | undefined;
     if (arg === "--json") {
       json = true;
       continue;
@@ -90,28 +87,33 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
       list = true;
       continue;
     }
-    if (arg.startsWith("--modes=")) {
-      modes = parseModes(arg.slice("--modes=".length));
+    value = readInlineOptionValue(arg, "modes");
+    if (value !== undefined) {
+      modes = parseModes(value);
       continue;
     }
-    if (arg.startsWith("--ablation-policies=")) {
+    value = readInlineOptionValue(arg, "ablation-policies");
+    if (value !== undefined) {
       ablationPolicyNames = parseNameList(
-        arg.slice("--ablation-policies=".length),
+        value,
         "name for cross-mode benchmark --ablation-policies"
       );
       budgetAblations = true;
       continue;
     }
-    if (arg.startsWith("--budget=")) {
-      budgetSeconds = parsePositiveNumber(arg.slice("--budget=".length), "cross-mode benchmark --budget");
+    value = readInlineOptionValue(arg, "budget");
+    if (value !== undefined) {
+      budgetSeconds = parsePositiveNumber(value, "cross-mode benchmark --budget");
       continue;
     }
-    if (arg.startsWith("--budgets=")) {
-      budgetsSeconds = parseNumberList(arg.slice("--budgets=".length), "cross-mode benchmark --budgets");
+    value = readInlineOptionValue(arg, "budgets");
+    if (value !== undefined) {
+      budgetsSeconds = parseNumberList(value, "cross-mode benchmark --budgets");
       continue;
     }
-    if (arg.startsWith("--seeds=")) {
-      seeds = parseNumberList(arg.slice("--seeds=".length), "cross-mode benchmark --seeds");
+    value = readInlineOptionValue(arg, "seeds");
+    if (value !== undefined) {
+      seeds = parseNumberList(value, "cross-mode benchmark --seeds");
       continue;
     }
     names.push(arg);
@@ -136,53 +138,48 @@ export async function runCrossModeBenchmarkCli(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   const corpus = args.coverageCorpus ? DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS : undefined;
   if (args.list) {
-    process.stdout.write(`${listCrossModeBenchmarkCaseNames(corpus).join("\n")}\n`);
+    writeCliList(listCrossModeBenchmarkCaseNames(corpus));
     return;
   }
 
   if (args.budgetAblations) {
     const result = await runCrossModeBenchmarkBudgetAblations(corpus, {
-      names: args.names.length > 0 ? args.names : undefined,
+      names: optionalCliNames(args.names),
       modes: args.modes,
-      policies: selectAblationPolicies(args.ablationPolicyNames),
+      policyNames: args.ablationPolicyNames,
       budgetSeconds: args.budgetSeconds,
       budgetsSeconds: args.budgetsSeconds,
       seeds: args.seeds,
     });
 
     if (args.json) {
-      process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+      writeCliJson(result);
       return;
     }
 
     if (args.traceJsonl) {
-      process.stdout.write(formatCrossModeBenchmarkBudgetAblationDecisionTraceJsonl(result));
+      writeCliRaw(formatCrossModeBenchmarkBudgetAblationDecisionTraceJsonl(result));
       return;
     }
 
-    process.stdout.write(`${formatCrossModeBenchmarkBudgetAblations(result)}\n`);
+    writeCliText(formatCrossModeBenchmarkBudgetAblations(result));
     return;
   }
 
   const result = await runCrossModeBenchmarkSuite(corpus, {
-    names: args.names.length > 0 ? args.names : undefined,
+    names: optionalCliNames(args.names),
     modes: args.modes,
     budgetSeconds: args.budgetSeconds,
     budgetsSeconds: args.budgetsSeconds,
     seeds: args.seeds,
   });
 
-  if (args.json) {
-    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-    return;
-  }
-
   if (args.traceJsonl) {
-    process.stdout.write(formatCrossModeBenchmarkDecisionTraceJsonl(result));
+    writeCliRaw(formatCrossModeBenchmarkDecisionTraceJsonl(result));
     return;
   }
 
-  process.stdout.write(`${formatCrossModeBenchmarkSuite(result)}\n`);
+  writeCliJsonOrText(args.json, result, () => formatCrossModeBenchmarkSuite(result));
 }
 
 void runCrossModeBenchmarkCli().catch((error) => {

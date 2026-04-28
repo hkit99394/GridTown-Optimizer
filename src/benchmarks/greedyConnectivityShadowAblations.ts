@@ -1,5 +1,11 @@
 import { DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS } from "./crossModeBudgetAblations.js";
 import {
+  buildBenchmarkSuiteMetadata,
+  listBenchmarkCaseNames,
+  meanBenchmarkValue,
+  sumBenchmarkValues,
+} from "./benchmarkOptions.js";
+import {
   DEFAULT_GREEDY_BENCHMARK_CORPUS,
   runGreedyBenchmarkSuite,
 } from "./greedy.js";
@@ -168,24 +174,19 @@ function buildCoverage(cases: readonly GreedyConnectivityShadowScoringAblationCa
     caseCount: cases.length,
     runCount: variants.length,
     variantCount: 2,
-    gridCellCount: cases.reduce((sum, entry) => sum + entry.gridCells, 0),
+    gridCellCount: sumBenchmarkValues(cases.map((entry) => entry.gridCells)),
     profileEnabledRuns: variants.filter((entry) => entry.profileEnabled).length,
     shadowObservedRuns: variants.filter((entry) => entry.shadowChecks !== null && entry.shadowChecks > 0).length,
   };
 }
 
-function sum(values: readonly number[]): number {
-  return values.reduce((total, value) => total + value, 0);
-}
-
-function mean(values: readonly number[]): number {
-  return values.length === 0 ? 0 : sum(values) / values.length;
-}
-
 export function listGreedyConnectivityShadowScoringAblationCaseNames(
   corpus: readonly GreedyBenchmarkCase[] = DEFAULT_GREEDY_CONNECTIVITY_SHADOW_SCORING_ABLATION_CORPUS
 ): string[] {
-  return corpus.map((benchmarkCase) => benchmarkCase.name);
+  return listBenchmarkCaseNames(corpus, {
+    caseLabel: "Greedy connectivity-shadow ablation",
+    corpusLabel: "Greedy connectivity-shadow ablation",
+  });
 }
 
 export function runGreedyConnectivityShadowScoringAblation(
@@ -240,19 +241,17 @@ export function runGreedyConnectivityShadowScoringAblation(
   const populationDeltas = cases.map((entry) => entry.populationDelta);
 
   return {
-    generatedAt: new Date().toISOString(),
-    caseCount: cases.length,
-    selectedCaseNames: cases.map((entry) => entry.name),
+    ...buildBenchmarkSuiteMetadata(cases.map((entry) => entry.name)),
     variants: ["baseline", "connectivity-shadow"],
     coverage: buildCoverage(cases),
     improvedCaseCount: cases.filter((entry) => entry.populationDelta > 0).length,
     regressedCaseCount: cases.filter((entry) => entry.populationDelta < 0).length,
     unchangedCaseCount: cases.filter((entry) => entry.populationDelta === 0).length,
-    totalPopulationDelta: sum(populationDeltas),
-    meanPopulationDelta: mean(populationDeltas),
+    totalPopulationDelta: sumBenchmarkValues(populationDeltas),
+    meanPopulationDelta: meanBenchmarkValue(populationDeltas),
     bestPopulationDelta: populationDeltas.length ? Math.max(...populationDeltas) : 0,
     worstPopulationDelta: populationDeltas.length ? Math.min(...populationDeltas) : 0,
-    totalRoadDelta: sum(cases.map((entry) => entry.roadDelta)),
+    totalRoadDelta: sumBenchmarkValues(cases.map((entry) => entry.roadDelta)),
     cases,
   };
 }

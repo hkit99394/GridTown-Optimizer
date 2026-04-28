@@ -2,6 +2,19 @@ import { performance } from "node:perf_hooks";
 
 import { buildSolverProgressSummary, formatSolverProgressSummary } from "../core/progress.js";
 import { solveLns } from "../lns/solver.js";
+import {
+  applyBenchmarkOptionDefaults,
+  applyNormalizedGreedyBenchmarkParams,
+  assertBenchmarkCasesSelected,
+  buildBenchmarkSuiteMetadata,
+  cloneBenchmarkGrid,
+  cloneBenchmarkOptions,
+  cloneBenchmarkSolverParams,
+  inheritGreedyBenchmarkOptions,
+  listBenchmarkCaseNames,
+  selectBenchmarkCasesByName,
+  uniqueBenchmarkValues,
+} from "./benchmarkOptions.js";
 import { normalizeCpSatBenchmarkOptions } from "./cpSat.js";
 import { normalizeGreedyBenchmarkOptions } from "./greedy.js";
 import { GENERATED_LNS_PRESSURE_CASES } from "./lnsPressureCases.js";
@@ -103,26 +116,6 @@ export const DEFAULT_LNS_BENCHMARK_OPTIONS: Readonly<Required<
   repairTimeLimitSeconds: 1,
 });
 
-function cloneGrid(grid: Grid): Grid {
-  return grid.map((row) => [...row]);
-}
-
-function cloneSolverParams(params: SolverParams): SolverParams {
-  return structuredClone(params);
-}
-
-function cloneLnsOptions(options: LnsOptions): LnsOptions {
-  return structuredClone(options);
-}
-
-function cloneCpSatOptions(options: CpSatOptions): CpSatOptions {
-  return structuredClone(options);
-}
-
-function cloneGreedyOptions(options: GreedyOptions): GreedyOptions {
-  return structuredClone(options);
-}
-
 function formatSeconds(value: number | null | undefined): string {
   return typeof value === "number" && Number.isFinite(value) ? `${value.toFixed(3)}s` : "n/a";
 }
@@ -131,53 +124,16 @@ function formatProfilePhaseSummary(phase: GreedyProfilePhaseSummary): string {
   return `${phase.name}:${phase.runs}x/${phase.elapsedMs.toFixed(3)}ms/best+${phase.bestPopulationDelta}/candidate+${phase.candidatePopulationDelta}`;
 }
 
-function inheritGreedyBenchmarkOptions(params: SolverParams): GreedyOptions {
-  const benchmarkGreedy = params.greedy ?? {};
-  return {
-    ...benchmarkGreedy,
-    localSearch: benchmarkGreedy.localSearch ?? params.localSearch,
-    restarts: benchmarkGreedy.restarts ?? params.restarts,
-    serviceRefineIterations: benchmarkGreedy.serviceRefineIterations ?? params.serviceRefineIterations,
-    serviceRefineCandidateLimit: benchmarkGreedy.serviceRefineCandidateLimit ?? params.serviceRefineCandidateLimit,
-    exhaustiveServiceSearch: benchmarkGreedy.exhaustiveServiceSearch ?? params.exhaustiveServiceSearch,
-    serviceExactPoolLimit: benchmarkGreedy.serviceExactPoolLimit ?? params.serviceExactPoolLimit,
-    serviceExactMaxCombinations: benchmarkGreedy.serviceExactMaxCombinations ?? params.serviceExactMaxCombinations,
-  };
-}
-
-function applyNormalizedGreedyBenchmarkParams(params: SolverParams, greedy: GreedyOptions): SolverParams {
-  return {
-    ...params,
-    greedy,
-    localSearch: greedy.localSearch,
-    restarts: greedy.restarts,
-    serviceRefineIterations: greedy.serviceRefineIterations,
-    serviceRefineCandidateLimit: greedy.serviceRefineCandidateLimit,
-    exhaustiveServiceSearch: greedy.exhaustiveServiceSearch,
-    serviceExactPoolLimit: greedy.serviceExactPoolLimit,
-    serviceExactMaxCombinations: greedy.serviceExactMaxCombinations,
-  };
-}
-
 export function normalizeLnsBenchmarkOptions(
   lns: LnsOptions | undefined,
   overrides: Partial<LnsOptions> | undefined
 ): LnsOptions {
-  const merged = { ...(lns ?? {}), ...(overrides ?? {}) };
-  return {
-    ...merged,
-    iterations: merged.iterations ?? DEFAULT_LNS_BENCHMARK_OPTIONS.iterations,
-    maxNoImprovementIterations:
-      merged.maxNoImprovementIterations ?? DEFAULT_LNS_BENCHMARK_OPTIONS.maxNoImprovementIterations,
-    neighborhoodRows: merged.neighborhoodRows ?? DEFAULT_LNS_BENCHMARK_OPTIONS.neighborhoodRows,
-    neighborhoodCols: merged.neighborhoodCols ?? DEFAULT_LNS_BENCHMARK_OPTIONS.neighborhoodCols,
-    repairTimeLimitSeconds: merged.repairTimeLimitSeconds ?? DEFAULT_LNS_BENCHMARK_OPTIONS.repairTimeLimitSeconds,
-  };
+  return applyBenchmarkOptionDefaults(lns, overrides, DEFAULT_LNS_BENCHMARK_OPTIONS);
 }
 
 function buildBenchmarkParams(benchmarkCase: LnsBenchmarkCase, options?: LnsBenchmarkRunOptions): SolverParams {
-  const params = cloneSolverParams(benchmarkCase.params);
-  const greedy = normalizeGreedyBenchmarkOptions(inheritGreedyBenchmarkOptions(params), options?.greedy);
+  const params = cloneBenchmarkSolverParams(benchmarkCase.params);
+  const greedy = normalizeGreedyBenchmarkOptions(inheritGreedyBenchmarkOptions<GreedyOptions>(params), options?.greedy);
   return {
     ...applyNormalizedGreedyBenchmarkParams(params, greedy),
     optimizer: "lns",
@@ -186,46 +142,29 @@ function buildBenchmarkParams(benchmarkCase: LnsBenchmarkCase, options?: LnsBenc
   };
 }
 
-function validateBenchmarkCorpus(corpus: readonly LnsBenchmarkCase[]): void {
-  const names = corpus.map((benchmarkCase) => benchmarkCase.name);
-  if (new Set(names).size !== names.length) {
-    throw new Error("LNS benchmark corpus must use unique case names.");
-  }
-}
-
 function selectBenchmarkCases(
   corpus: readonly LnsBenchmarkCase[],
   names: readonly string[] | undefined
 ): LnsBenchmarkCase[] {
-  validateBenchmarkCorpus(corpus);
-  if (!names || names.length === 0) {
-    return [...corpus];
-  }
-
-  const byName = new Map(corpus.map((benchmarkCase) => [benchmarkCase.name, benchmarkCase]));
-  const missing = names.filter((name) => !byName.has(name));
-  if (missing.length > 0) {
-    throw new Error(
-      `Unknown LNS benchmark case(s): ${missing.join(", ")}. Available cases: ${corpus
-        .map((benchmarkCase) => benchmarkCase.name)
-        .join(", ")}.`
-    );
-  }
-
-  return names.map((name) => byName.get(name) as LnsBenchmarkCase);
+  return selectBenchmarkCasesByName(corpus, names, {
+    caseLabel: "LNS benchmark",
+    corpusLabel: "LNS benchmark",
+  });
 }
 
 export function listLnsBenchmarkCaseNames(
   corpus: readonly LnsBenchmarkCase[] = DEFAULT_LNS_BENCHMARK_CORPUS
 ): string[] {
-  validateBenchmarkCorpus(corpus);
-  return corpus.map((benchmarkCase) => benchmarkCase.name);
+  return listBenchmarkCaseNames(corpus, {
+    caseLabel: "LNS benchmark",
+    corpusLabel: "LNS benchmark",
+  });
 }
 
 function runLnsBenchmarkCase(benchmarkCase: LnsBenchmarkCase, options?: LnsBenchmarkRunOptions): LnsBenchmarkCaseResult {
   const params = buildBenchmarkParams(benchmarkCase, options);
   const startedAt = performance.now();
-  const solution = solveLns(cloneGrid(benchmarkCase.grid), params);
+  const solution = solveLns(cloneBenchmarkGrid(benchmarkCase.grid), params);
   const finishedAt = performance.now();
   const wallClockSeconds = (finishedAt - startedAt) / 1000;
 
@@ -239,9 +178,9 @@ function runLnsBenchmarkCase(benchmarkCase: LnsBenchmarkCase, options?: LnsBench
     serviceCount: solution.services.length,
     residentialCount: solution.residentials.length,
     stoppedByUser: solution.stoppedByUser ?? false,
-    lnsOptions: cloneLnsOptions(params.lns ?? {}),
-    cpSatOptions: cloneCpSatOptions(params.cpSat ?? {}),
-    greedyOptions: cloneGreedyOptions(params.greedy ?? {}),
+    lnsOptions: cloneBenchmarkOptions(params.lns ?? {}),
+    cpSatOptions: cloneBenchmarkOptions(params.cpSat ?? {}),
+    greedyOptions: cloneBenchmarkOptions(params.greedy ?? {}),
     cpSatStatus: solution.cpSatStatus ?? null,
     cpSatTelemetry: solution.cpSatTelemetry ?? null,
     greedyProfile: solution.greedyProfile ?? null,
@@ -260,15 +199,11 @@ export function runLnsBenchmarkSuite(
   options?: LnsBenchmarkRunOptions
 ): LnsBenchmarkSuiteResult {
   const selected = selectBenchmarkCases(corpus, options?.names);
-  if (selected.length === 0) {
-    throw new Error("No LNS benchmark cases matched the requested names.");
-  }
+  assertBenchmarkCasesSelected(selected, "No LNS benchmark cases matched the requested names.");
 
   const results = selected.map((benchmarkCase) => runLnsBenchmarkCase(benchmarkCase, options));
   return {
-    generatedAt: new Date().toISOString(),
-    caseCount: results.length,
-    selectedCaseNames: results.map((result) => result.name),
+    ...buildBenchmarkSuiteMetadata(results.map((result) => result.name)),
     results,
   };
 }
@@ -484,5 +419,5 @@ export const DEFAULT_LNS_REPLAY_LABEL_CORPUS: readonly LnsBenchmarkCase[] =
 export function listLnsReplayPressureFamilies(
   corpus: readonly LnsBenchmarkCase[] = DEFAULT_LNS_REPLAY_LABEL_CORPUS
 ): LnsReplayPressureFamilyLabel[] {
-  return [...new Set(corpus.map(getLnsReplayPressureFamily))];
+  return uniqueBenchmarkValues(corpus.map(getLnsReplayPressureFamily));
 }

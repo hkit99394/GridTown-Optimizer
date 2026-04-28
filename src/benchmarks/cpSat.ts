@@ -2,6 +2,19 @@ import { performance } from "node:perf_hooks";
 
 import { buildSolverProgressSummary, formatSolverProgressSummary } from "../core/progress.js";
 import { solveAsync } from "../runtime/solve.js";
+import {
+  applyBenchmarkOptionDefaults,
+  assertBenchmarkCasesSelected,
+  buildBenchmarkSuiteMetadata,
+  cloneBenchmarkGrid,
+  cloneBenchmarkOptions,
+  cloneBenchmarkSolverParams,
+  listBenchmarkCaseNames,
+  observedCpSatWorkerCpuSeconds,
+  roundBenchmarkMetric,
+  safePopulationRate,
+  selectBenchmarkCasesByName,
+} from "./benchmarkOptions.js";
 
 import type {
   CpSatAsyncOptions,
@@ -10,7 +23,6 @@ import type {
   CpSatProgressUpdate,
   CpSatTelemetry,
   Grid,
-  Solution,
   SolverParams,
   SolverProgressSummary,
 } from "../core/types.js";
@@ -97,47 +109,15 @@ export const DEFAULT_CP_SAT_BENCHMARK_OPTIONS: Readonly<Required<
   logSearchProgress: false,
 });
 
-function cloneGrid(grid: Grid): Grid {
-  return grid.map((row) => [...row]);
-}
-
-function cloneSolverParams(params: SolverParams): SolverParams {
-  return structuredClone(params);
-}
-
-function cloneCpSatOptions(options: CpSatOptions): CpSatOptions {
-  return structuredClone(options);
-}
-
 function createSeedSequence(baseSeed: number, count: number): number[] {
   return Array.from({ length: count }, (_, index) => baseSeed + index * 101);
-}
-
-function roundBenchmarkSeconds(value: number): number {
-  return Math.round(value * 1000) / 1000;
-}
-
-function safePopulationRate(population: number, seconds: number | null): number | null {
-  return seconds !== null && seconds > 0 ? roundBenchmarkSeconds(population / seconds) : null;
-}
-
-function observedWorkerCpuSeconds(solution: Solution): number | null {
-  const portfolioWorkerTimes = solution.cpSatPortfolio?.workers
-    .map((worker) => worker.telemetry?.userTimeSeconds)
-    .filter((value): value is number => typeof value === "number" && Number.isFinite(value));
-  if (portfolioWorkerTimes?.length) {
-    return roundBenchmarkSeconds(portfolioWorkerTimes.reduce((sum, value) => sum + value, 0));
-  }
-  return typeof solution.cpSatTelemetry?.userTimeSeconds === "number"
-    ? roundBenchmarkSeconds(solution.cpSatTelemetry.userTimeSeconds)
-    : null;
 }
 
 export function buildCpSatBenchmarkCpuPlan(cpSat: CpSatOptions): CpSatBenchmarkCpuPlan {
   const wallClockBudgetSeconds = cpSat.timeLimitSeconds ?? DEFAULT_CP_SAT_BENCHMARK_OPTIONS.timeLimitSeconds;
   if (!cpSat.portfolio) {
     const perWorkerNumWorkers = cpSat.numWorkers ?? DEFAULT_CP_SAT_BENCHMARK_OPTIONS.numWorkers;
-    const workerCpuBudgetSeconds = roundBenchmarkSeconds(wallClockBudgetSeconds * perWorkerNumWorkers);
+    const workerCpuBudgetSeconds = roundBenchmarkMetric(wallClockBudgetSeconds * perWorkerNumWorkers);
     return {
       mode: "single",
       wallClockBudgetSeconds,
@@ -158,10 +138,10 @@ export function buildCpSatBenchmarkCpuPlan(cpSat: CpSatOptions): CpSatBenchmarkC
   const perWorkerNumWorkers = portfolio.perWorkerNumWorkers ?? 1;
   const perWorkerTimeLimitSeconds = portfolio.perWorkerTimeLimitSeconds ?? wallClockBudgetSeconds;
   const parallelWorkerCount = workerCount * perWorkerNumWorkers;
-  const workerCpuBudgetSeconds = roundBenchmarkSeconds(parallelWorkerCount * perWorkerTimeLimitSeconds);
+  const workerCpuBudgetSeconds = roundBenchmarkMetric(parallelWorkerCount * perWorkerTimeLimitSeconds);
   const totalCpuBudgetSeconds = portfolio.totalCpuBudgetSeconds ?? null;
   const cpuBudgetHeadroomSeconds =
-    totalCpuBudgetSeconds === null ? null : roundBenchmarkSeconds(totalCpuBudgetSeconds - workerCpuBudgetSeconds);
+    totalCpuBudgetSeconds === null ? null : roundBenchmarkMetric(totalCpuBudgetSeconds - workerCpuBudgetSeconds);
   return {
     mode: "portfolio",
     wallClockBudgetSeconds,
@@ -170,7 +150,7 @@ export function buildCpSatBenchmarkCpuPlan(cpSat: CpSatOptions): CpSatBenchmarkC
     perWorkerTimeLimitSeconds,
     parallelWorkerCount,
     workerCpuBudgetSeconds,
-    cpuBudgetMultiplier: roundBenchmarkSeconds(workerCpuBudgetSeconds / Math.max(wallClockBudgetSeconds, 0.001)),
+    cpuBudgetMultiplier: roundBenchmarkMetric(workerCpuBudgetSeconds / Math.max(wallClockBudgetSeconds, 0.001)),
     totalCpuBudgetSeconds,
     cpuBudgetHeadroomSeconds,
     admission:
@@ -211,7 +191,7 @@ function normalizeBenchmarkPortfolio(
     perWorkerMaxDeterministicTime,
     perWorkerNumWorkers,
     totalCpuBudgetSeconds:
-      portfolio.totalCpuBudgetSeconds ?? roundBenchmarkSeconds(randomSeeds.length * perWorkerNumWorkers * perWorkerTimeLimitSeconds),
+      portfolio.totalCpuBudgetSeconds ?? roundBenchmarkMetric(randomSeeds.length * perWorkerNumWorkers * perWorkerTimeLimitSeconds),
     randomizeSearch: portfolio.randomizeSearch ?? true,
   };
   assertCpSatBenchmarkCpuPlanAdmitted(buildCpSatBenchmarkCpuPlan({
@@ -227,31 +207,21 @@ export function normalizeCpSatBenchmarkOptions(
   cpSat: CpSatOptions | undefined,
   overrides: Partial<CpSatOptions> | undefined
 ): CpSatOptions {
-  const merged = { ...(cpSat ?? {}), ...(overrides ?? {}) };
-  const timeLimitSeconds = merged.timeLimitSeconds ?? DEFAULT_CP_SAT_BENCHMARK_OPTIONS.timeLimitSeconds;
-  const maxDeterministicTime = merged.maxDeterministicTime ?? DEFAULT_CP_SAT_BENCHMARK_OPTIONS.maxDeterministicTime;
-  const numWorkers = merged.numWorkers ?? DEFAULT_CP_SAT_BENCHMARK_OPTIONS.numWorkers;
-  const randomSeed = merged.randomSeed ?? DEFAULT_CP_SAT_BENCHMARK_OPTIONS.randomSeed;
-  const randomizeSearch = merged.randomizeSearch ?? DEFAULT_CP_SAT_BENCHMARK_OPTIONS.randomizeSearch;
-  const progressIntervalSeconds =
-    merged.progressIntervalSeconds ?? DEFAULT_CP_SAT_BENCHMARK_OPTIONS.progressIntervalSeconds;
-  const logSearchProgress = merged.logSearchProgress ?? DEFAULT_CP_SAT_BENCHMARK_OPTIONS.logSearchProgress;
+  const normalized = applyBenchmarkOptionDefaults(cpSat, overrides, DEFAULT_CP_SAT_BENCHMARK_OPTIONS);
 
   return {
-    ...merged,
-    timeLimitSeconds,
-    maxDeterministicTime,
-    numWorkers,
-    randomSeed,
-    randomizeSearch,
-    progressIntervalSeconds,
-    logSearchProgress,
-    portfolio: normalizeBenchmarkPortfolio(merged.portfolio, randomSeed, timeLimitSeconds, maxDeterministicTime),
+    ...normalized,
+    portfolio: normalizeBenchmarkPortfolio(
+      normalized.portfolio,
+      normalized.randomSeed,
+      normalized.timeLimitSeconds,
+      normalized.maxDeterministicTime
+    ),
   };
 }
 
 function buildBenchmarkParams(benchmarkCase: CpSatBenchmarkCase, overrides?: Partial<CpSatOptions>): SolverParams {
-  const params = cloneSolverParams(benchmarkCase.params);
+  const params = cloneBenchmarkSolverParams(benchmarkCase.params);
   return {
     ...params,
     optimizer: "cp-sat",
@@ -259,33 +229,14 @@ function buildBenchmarkParams(benchmarkCase: CpSatBenchmarkCase, overrides?: Par
   };
 }
 
-function validateBenchmarkCorpus(corpus: readonly CpSatBenchmarkCase[]): void {
-  const names = corpus.map((benchmarkCase) => benchmarkCase.name);
-  if (new Set(names).size !== names.length) {
-    throw new Error("CP-SAT benchmark corpus must use unique case names.");
-  }
-}
-
 function selectBenchmarkCases(
   corpus: readonly CpSatBenchmarkCase[],
   names: readonly string[] | undefined
 ): CpSatBenchmarkCase[] {
-  validateBenchmarkCorpus(corpus);
-  if (!names || names.length === 0) {
-    return [...corpus];
-  }
-
-  const byName = new Map(corpus.map((benchmarkCase) => [benchmarkCase.name, benchmarkCase]));
-  const missing = names.filter((name) => !byName.has(name));
-  if (missing.length > 0) {
-    throw new Error(
-      `Unknown CP-SAT benchmark case(s): ${missing.join(", ")}. Available cases: ${corpus
-        .map((benchmarkCase) => benchmarkCase.name)
-        .join(", ")}.`
-    );
-  }
-
-  return names.map((name) => byName.get(name) as CpSatBenchmarkCase);
+  return selectBenchmarkCasesByName(corpus, names, {
+    caseLabel: "CP-SAT benchmark",
+    corpusLabel: "CP-SAT benchmark",
+  });
 }
 
 function buildBenchmarkAsyncOptions(
@@ -307,8 +258,10 @@ function buildBenchmarkAsyncOptions(
 export function listCpSatBenchmarkCaseNames(
   corpus: readonly CpSatBenchmarkCase[] = DEFAULT_CP_SAT_BENCHMARK_CORPUS
 ): string[] {
-  validateBenchmarkCorpus(corpus);
-  return corpus.map((benchmarkCase) => benchmarkCase.name);
+  return listBenchmarkCaseNames(corpus, {
+    caseLabel: "CP-SAT benchmark",
+    corpusLabel: "CP-SAT benchmark",
+  });
 }
 
 function captureProgressTimeline(
@@ -338,13 +291,13 @@ async function runCpSatBenchmarkCase(
   const timeline: CpSatBenchmarkProgressSample[] = [];
   const startedAt = performance.now();
   const solution = await solveAsync(
-    cloneGrid(benchmarkCase.grid),
+    cloneBenchmarkGrid(benchmarkCase.grid),
     params,
     buildBenchmarkAsyncOptions(params, options, timeline, startedAt)
   );
   const finishedAt = performance.now();
   const wallClockSeconds = (finishedAt - startedAt) / 1000;
-  const observedWorkerCpuSecondsValue = observedWorkerCpuSeconds(solution);
+  const observedWorkerCpuSecondsValue = observedCpSatWorkerCpuSeconds(solution);
 
   return {
     name: benchmarkCase.name,
@@ -355,7 +308,7 @@ async function runCpSatBenchmarkCase(
     cpSatStatus: solution.cpSatStatus ?? null,
     cpSatTelemetry: solution.cpSatTelemetry ?? null,
     cpSatObjectiveSummary: solution.cpSatObjectivePolicy?.summary ?? null,
-    cpSatOptions: cloneCpSatOptions(cpSatOptions),
+    cpSatOptions: cloneBenchmarkOptions(cpSatOptions),
     cpSatCpuPlan,
     observedWorkerCpuSeconds: observedWorkerCpuSecondsValue,
     populationPerWorkerCpuBudgetSecond: safePopulationRate(solution.totalPopulation, cpSatCpuPlan.workerCpuBudgetSeconds),
@@ -375,9 +328,7 @@ export async function runCpSatBenchmarkSuite(
   options?: CpSatBenchmarkRunOptions
 ): Promise<CpSatBenchmarkSuiteResult> {
   const selected = selectBenchmarkCases(corpus, options?.names);
-  if (selected.length === 0) {
-    throw new Error("No CP-SAT benchmark cases matched the requested names.");
-  }
+  assertBenchmarkCasesSelected(selected, "No CP-SAT benchmark cases matched the requested names.");
 
   const results: CpSatBenchmarkCaseResult[] = [];
   for (const benchmarkCase of selected) {
@@ -385,9 +336,7 @@ export async function runCpSatBenchmarkSuite(
   }
 
   return {
-    generatedAt: new Date().toISOString(),
-    caseCount: results.length,
-    selectedCaseNames: results.map((result) => result.name),
+    ...buildBenchmarkSuiteMetadata(results.map((result) => result.name)),
     results,
   };
 }

@@ -8,7 +8,9 @@ import {
   parseNumberList,
   parsePositiveInteger,
   parsePositiveNumber,
+  readInlineOptionValue,
 } from "./cliParsing.js";
+import { writeCliJsonOrText } from "./cliOutput.js";
 
 interface ParsedLabelArgs {
   json: boolean;
@@ -26,30 +28,32 @@ function parseArgs(argv: string[]): ParsedLabelArgs {
   let repairTimeLimitSeconds: number | undefined;
 
   for (const arg of argv) {
+    let value: string | undefined;
     if (arg === "--json") {
       json = true;
       continue;
     }
-    if (arg.startsWith("--seeds=")) {
-      seeds = parseNumberList(arg.slice("--seeds=".length), "seeds");
+    value = readInlineOptionValue(arg, "seeds");
+    if (value !== undefined) {
+      seeds = parseNumberList(value, "seeds");
       continue;
     }
-    if (arg.startsWith("--max-windows=")) {
-      maxWindows = parsePositiveInteger(arg.slice("--max-windows=".length), "max windows");
+    value = readInlineOptionValue(arg, "max-windows");
+    if (value !== undefined) {
+      maxWindows = parsePositiveInteger(value, "max windows");
       continue;
     }
-    if (arg.startsWith("--exploration-windows=")) {
-      explorationWindowCount = parseNonNegativeInteger(
-        arg.slice("--exploration-windows=".length),
-        "exploration windows"
-      );
+    value = readInlineOptionValue(arg, "exploration-windows");
+    if (value !== undefined) {
+      explorationWindowCount = parseNonNegativeInteger(value, "exploration windows");
       continue;
     }
     if (arg === "--pressure-corpus") {
       continue;
     }
-    if (arg.startsWith("--repair-time=")) {
-      repairTimeLimitSeconds = parsePositiveNumber(arg.slice("--repair-time=".length), "repair time");
+    value = readInlineOptionValue(arg, "repair-time");
+    if (value !== undefined) {
+      repairTimeLimitSeconds = parsePositiveNumber(value, "repair time");
       continue;
     }
     throw new Error(`Unknown learned-ranking label argument: ${arg}`);
@@ -67,12 +71,9 @@ export function runLearnedRankingLabelCli(): void {
     repairTimeLimitSeconds: args.repairTimeLimitSeconds,
   });
 
-  if (args.json) {
-    process.stdout.write(`${JSON.stringify(createLearnedRankingLabelSnapshot(result), null, 2)}\n`);
-    return;
-  }
-
-  process.stdout.write(`${formatLearnedRankingLabelSuite(result)}\n`);
+  writeCliJsonOrText(args.json, () => createLearnedRankingLabelSnapshot(result), () =>
+    formatLearnedRankingLabelSuite(result)
+  );
 }
 
 try {

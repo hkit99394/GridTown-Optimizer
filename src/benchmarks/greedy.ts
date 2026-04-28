@@ -2,6 +2,18 @@ import { performance } from "node:perf_hooks";
 
 import { buildSolverProgressSummary, formatSolverProgressSummary } from "../core/progress.js";
 import { solveGreedy } from "../greedy/solver.js";
+import {
+  applyBenchmarkOptionDefaults,
+  applyNormalizedGreedyBenchmarkParams,
+  assertBenchmarkCasesSelected,
+  buildBenchmarkSuiteMetadata,
+  cloneBenchmarkGrid,
+  cloneBenchmarkOptions,
+  cloneBenchmarkSolverParams,
+  inheritGreedyBenchmarkOptions,
+  listBenchmarkCaseNames,
+  selectBenchmarkCasesByName,
+} from "./benchmarkOptions.js";
 
 import type {
   GreedyOptions,
@@ -100,121 +112,42 @@ export const DEFAULT_GREEDY_BENCHMARK_OPTIONS = Object.freeze({
   >
 >);
 
-function cloneGrid(grid: Grid): Grid {
-  return grid.map((row) => [...row]);
-}
-
-function cloneSolverParams(params: SolverParams): SolverParams {
-  return structuredClone(params);
-}
-
-function cloneGreedyOptions(options: GreedyBenchmarkOptions): GreedyBenchmarkOptions {
-  return structuredClone(options);
-}
-
-function inheritGreedyBenchmarkOptions(params: SolverParams): GreedyBenchmarkOptions {
-  const benchmarkGreedy = (params.greedy ?? {}) as GreedyBenchmarkOptions;
-  return {
-    ...benchmarkGreedy,
-    localSearch: benchmarkGreedy.localSearch ?? params.localSearch,
-    restarts: benchmarkGreedy.restarts ?? params.restarts,
-    serviceRefineIterations: benchmarkGreedy.serviceRefineIterations ?? params.serviceRefineIterations,
-    serviceRefineCandidateLimit: benchmarkGreedy.serviceRefineCandidateLimit ?? params.serviceRefineCandidateLimit,
-    exhaustiveServiceSearch: benchmarkGreedy.exhaustiveServiceSearch ?? params.exhaustiveServiceSearch,
-    serviceExactPoolLimit: benchmarkGreedy.serviceExactPoolLimit ?? params.serviceExactPoolLimit,
-    serviceExactMaxCombinations: benchmarkGreedy.serviceExactMaxCombinations ?? params.serviceExactMaxCombinations,
-  };
-}
-
-function applyNormalizedGreedyBenchmarkParams(
-  params: SolverParams,
-  greedy: GreedyBenchmarkOptions
-): SolverParams {
-  return {
-    ...params,
-    optimizer: "greedy",
-    greedy,
-    localSearch: greedy.localSearch,
-    restarts: greedy.restarts,
-    serviceRefineIterations: greedy.serviceRefineIterations,
-    serviceRefineCandidateLimit: greedy.serviceRefineCandidateLimit,
-    exhaustiveServiceSearch: greedy.exhaustiveServiceSearch,
-    serviceExactPoolLimit: greedy.serviceExactPoolLimit,
-    serviceExactMaxCombinations: greedy.serviceExactMaxCombinations,
-  };
-}
-
 export function normalizeGreedyBenchmarkOptions(
   greedy: GreedyBenchmarkOptions | undefined,
   overrides: Partial<GreedyBenchmarkOptions> | undefined
 ): GreedyBenchmarkOptions {
-  const merged = { ...(greedy ?? {}), ...(overrides ?? {}) };
-  return {
-    ...merged,
-    localSearch: merged.localSearch ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.localSearch,
-    localSearchServiceMoves:
-      merged.localSearchServiceMoves ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.localSearchServiceMoves,
-    localSearchServiceCandidateLimit:
-      merged.localSearchServiceCandidateLimit ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.localSearchServiceCandidateLimit,
-    deferRoadCommitment: merged.deferRoadCommitment ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.deferRoadCommitment,
-    profile: merged.profile ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.profile,
-    randomSeed: merged.randomSeed ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.randomSeed,
-    restarts: merged.restarts ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.restarts,
-    serviceRefineIterations:
-      merged.serviceRefineIterations ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.serviceRefineIterations,
-    serviceRefineCandidateLimit:
-      merged.serviceRefineCandidateLimit ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.serviceRefineCandidateLimit,
-    exhaustiveServiceSearch:
-      merged.exhaustiveServiceSearch ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.exhaustiveServiceSearch,
-    serviceExactPoolLimit: merged.serviceExactPoolLimit ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.serviceExactPoolLimit,
-    serviceExactMaxCombinations:
-      merged.serviceExactMaxCombinations ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.serviceExactMaxCombinations,
-  };
+  return applyBenchmarkOptionDefaults(greedy, overrides, DEFAULT_GREEDY_BENCHMARK_OPTIONS);
 }
 
 function buildBenchmarkParams(
   benchmarkCase: GreedyBenchmarkCase,
   overrides?: Partial<GreedyBenchmarkOptions>
 ): SolverParams {
-  const params = cloneSolverParams(benchmarkCase.params);
-  const normalizedGreedy = normalizeGreedyBenchmarkOptions(inheritGreedyBenchmarkOptions(params), overrides);
-  return applyNormalizedGreedyBenchmarkParams(params, normalizedGreedy);
-}
-
-function validateBenchmarkCorpus(corpus: readonly GreedyBenchmarkCase[]): void {
-  const names = corpus.map((benchmarkCase) => benchmarkCase.name);
-  if (new Set(names).size !== names.length) {
-    throw new Error("Greedy benchmark corpus must use unique case names.");
-  }
+  const params = cloneBenchmarkSolverParams(benchmarkCase.params);
+  const normalizedGreedy = normalizeGreedyBenchmarkOptions(
+    inheritGreedyBenchmarkOptions<GreedyBenchmarkOptions>(params),
+    overrides
+  );
+  return applyNormalizedGreedyBenchmarkParams(params, normalizedGreedy, "greedy");
 }
 
 function selectBenchmarkCases(
   corpus: readonly GreedyBenchmarkCase[],
   names: readonly string[] | undefined
 ): GreedyBenchmarkCase[] {
-  validateBenchmarkCorpus(corpus);
-  if (!names || names.length === 0) {
-    return [...corpus];
-  }
-
-  const byName = new Map(corpus.map((benchmarkCase) => [benchmarkCase.name, benchmarkCase]));
-  const missing = names.filter((name) => !byName.has(name));
-  if (missing.length > 0) {
-    throw new Error(
-      `Unknown greedy benchmark case(s): ${missing.join(", ")}. Available cases: ${corpus
-        .map((benchmarkCase) => benchmarkCase.name)
-        .join(", ")}.`
-    );
-  }
-
-  return names.map((name) => byName.get(name) as GreedyBenchmarkCase);
+  return selectBenchmarkCasesByName(corpus, names, {
+    caseLabel: "greedy benchmark",
+    corpusLabel: "Greedy benchmark",
+  });
 }
 
 export function listGreedyBenchmarkCaseNames(
   corpus: readonly GreedyBenchmarkCase[] = DEFAULT_GREEDY_BENCHMARK_CORPUS
 ): string[] {
-  validateBenchmarkCorpus(corpus);
-  return corpus.map((benchmarkCase) => benchmarkCase.name);
+  return listBenchmarkCaseNames(corpus, {
+    caseLabel: "greedy benchmark",
+    corpusLabel: "Greedy benchmark",
+  });
 }
 
 function runGreedyBenchmarkCase(
@@ -223,7 +156,7 @@ function runGreedyBenchmarkCase(
 ): GreedyBenchmarkCaseResult {
   const params = buildBenchmarkParams(benchmarkCase, options?.greedy);
   const startedAt = performance.now();
-  const solution = solveGreedy(cloneGrid(benchmarkCase.grid), params);
+  const solution = solveGreedy(cloneBenchmarkGrid(benchmarkCase.grid), params);
   const finishedAt = performance.now();
   const wallClockSeconds = (finishedAt - startedAt) / 1000;
 
@@ -236,7 +169,7 @@ function runGreedyBenchmarkCase(
     roadCount: solution.roads.size,
     serviceCount: solution.services.length,
     residentialCount: solution.residentials.length,
-    greedyOptions: cloneGreedyOptions(params.greedy ?? {}),
+    greedyOptions: cloneBenchmarkOptions(params.greedy ?? {}),
     greedyProfile: solution.greedyProfile ?? null,
     progressSummary: buildSolverProgressSummary(solution, {
       elapsedTimeSeconds: wallClockSeconds,
@@ -252,15 +185,11 @@ export function runGreedyBenchmarkSuite(
   options?: GreedyBenchmarkRunOptions
 ): GreedyBenchmarkSuiteResult {
   const selected = selectBenchmarkCases(corpus, options?.names);
-  if (selected.length === 0) {
-    throw new Error("No greedy benchmark cases matched the requested names.");
-  }
+  assertBenchmarkCasesSelected(selected, "No greedy benchmark cases matched the requested names.");
 
   const results = selected.map((benchmarkCase) => runGreedyBenchmarkCase(benchmarkCase, options));
   return {
-    generatedAt: new Date().toISOString(),
-    caseCount: results.length,
-    selectedCaseNames: results.map((result) => result.name),
+    ...buildBenchmarkSuiteMetadata(results.map((result) => result.name)),
     results,
   };
 }

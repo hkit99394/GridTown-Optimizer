@@ -14,7 +14,6 @@ import { solveLns } from "../lns/solver.js";
 import { solveGreedy } from "../greedy/solver.js";
 
 import type {
-  AutoOptions,
   AutoGreedySeedStageSummary,
   AutoSolveGeneratedSeed,
   AutoStageRunSummary,

@@ -1,6 +1,16 @@
 import { DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS } from "./crossModeBudgetAblations.js";
 import { formatBenchmarkSeeds, normalizeBenchmarkSeeds } from "./benchmarkSeeds.js";
 import {
+  benchmarkRatio,
+  buildBenchmarkSuiteMetadata,
+  listBenchmarkCaseNames,
+  meanBenchmarkValue,
+  percentileBenchmarkValue,
+  selectBenchmarkVariants,
+  sumBenchmarkValues,
+  uniqueBenchmarkValues,
+} from "./benchmarkOptions.js";
+import {
   DEFAULT_GREEDY_BENCHMARK_CORPUS,
   runGreedyBenchmarkSuite,
 } from "./greedy.js";
@@ -240,28 +250,6 @@ export const DEFAULT_GREEDY_DETERMINISTIC_ABLATION_CORPUS: readonly GreedyBenchm
     )
   );
 
-function sum(values: readonly number[]): number {
-  return values.reduce((total, value) => total + value, 0);
-}
-
-function mean(values: readonly number[]): number {
-  return values.length === 0 ? 0 : sum(values) / values.length;
-}
-
-function percentile(values: readonly number[], percentileValue: number): number {
-  if (values.length === 0) return 0;
-  const sorted = [...values].sort((left, right) => left - right);
-  const index = Math.max(
-    0,
-    Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * percentileValue))
-  );
-  return sorted[index]!;
-}
-
-function ratio(count: number, total: number): number {
-  return total === 0 ? 0 : count / total;
-}
-
 function seedCaseLabel(
   result: GreedyDeterministicAblationVariantResult,
   cases: readonly GreedyDeterministicAblationCaseResult[]
@@ -334,22 +322,22 @@ function buildVariantSummary(
     caseCount,
     seedCount,
     comparisonCount: results.length,
-    meanPopulation: mean(populations),
-    medianPopulation: percentile(populations, 0.5),
-    worstDecilePopulation: percentile(populations, 0.1),
+    meanPopulation: meanBenchmarkValue(populations),
+    medianPopulation: percentileBenchmarkValue(populations, 0.5),
+    worstDecilePopulation: percentileBenchmarkValue(populations, 0.1),
     bestPopulation: populations.length ? Math.max(...populations) : 0,
-    meanPopulationDeltaVsBaseline: mean(populationDeltas),
-    medianPopulationDeltaVsBaseline: percentile(populationDeltas, 0.5),
-    worstDecilePopulationDeltaVsBaseline: percentile(populationDeltas, 0.1),
+    meanPopulationDeltaVsBaseline: meanBenchmarkValue(populationDeltas),
+    medianPopulationDeltaVsBaseline: percentileBenchmarkValue(populationDeltas, 0.5),
+    worstDecilePopulationDeltaVsBaseline: percentileBenchmarkValue(populationDeltas, 0.1),
     bestPopulationDeltaVsBaseline: populationDeltas.length ? Math.max(...populationDeltas) : 0,
-    meanWallClockSeconds: mean(results.map((entry) => entry.wallClockSeconds)),
-    meanWallClockDeltaVsBaselineSeconds: mean(results.map((entry) => entry.wallClockDeltaVsBaselineSeconds)),
+    meanWallClockSeconds: meanBenchmarkValue(results.map((entry) => entry.wallClockSeconds)),
+    meanWallClockDeltaVsBaselineSeconds: meanBenchmarkValue(results.map((entry) => entry.wallClockDeltaVsBaselineSeconds)),
     improvedCaseCount,
     regressedCaseCount,
     unchangedCaseCount,
-    winRate: ratio(improvedCaseCount, results.length),
-    regressionRate: ratio(regressedCaseCount, results.length),
-    unchangedRate: ratio(unchangedCaseCount, results.length),
+    winRate: benchmarkRatio(improvedCaseCount, results.length),
+    regressionRate: benchmarkRatio(regressedCaseCount, results.length),
+    unchangedRate: benchmarkRatio(unchangedCaseCount, results.length),
     worstPopulationDeltaVsBaseline: populationDeltas.length ? Math.min(...populationDeltas) : 0,
     worstPopulationDeltaCaseName: worstDeltaLabel.caseName,
     worstPopulationDeltaSeed: worstDeltaLabel.seed,
@@ -370,7 +358,7 @@ function buildCoverage(
     comparisonCount: cases.length,
     variantCount: cases[0]?.variants.length ?? 0,
     runCount: variants.length,
-    gridCellCount: cases.reduce((total, entry) => total + entry.gridCells, 0),
+    gridCellCount: sumBenchmarkValues(cases.map((entry) => entry.gridCells)),
     profileEnabledRuns: variants.filter((entry) => entry.profileEnabled).length,
   };
 }
@@ -379,41 +367,27 @@ function normalizeVariants(
   variants: readonly GreedyDeterministicAblationVariant[] | undefined,
   variantNames: readonly GreedyDeterministicAblationVariantName[] | undefined
 ): readonly GreedyDeterministicAblationVariant[] {
-  const normalized = variants ?? DEFAULT_GREEDY_DETERMINISTIC_ABLATION_VARIANTS;
-  if (normalized.length === 0) {
-    throw new Error("Greedy deterministic ablations must include at least one variant.");
-  }
-  const names = normalized.map((variant) => variant.name);
-  if (!names.includes("baseline")) {
-    throw new Error("Greedy deterministic ablations must include the baseline variant.");
-  }
-  if (new Set(names).size !== names.length) {
-    throw new Error("Greedy deterministic ablation variants must use unique names.");
-  }
-  if (variantNames?.length) {
-    const byName = new Map(normalized.map((variant) => [variant.name, variant]));
-    const requestedNames: GreedyDeterministicAblationVariantName[] = [
-      "baseline",
-      ...variantNames.filter((name) => name !== "baseline"),
-    ];
-    if (new Set(requestedNames).size !== requestedNames.length) {
-      throw new Error("Greedy deterministic ablation requested variants must use unique names.");
-    }
-    const missing = requestedNames.filter((name) => !byName.has(name));
-    if (missing.length > 0) {
-      throw new Error(
-        `Unknown Greedy deterministic ablation variant(s): ${missing.join(", ")}. Available variants: ${names.join(", ")}.`
-      );
-    }
-    return requestedNames.map((name) => byName.get(name)!);
-  }
-  return normalized;
+  return selectBenchmarkVariants(
+    variants,
+    DEFAULT_GREEDY_DETERMINISTIC_ABLATION_VARIANTS,
+    variantNames,
+    {
+      suiteLabel: "Greedy deterministic ablations",
+      variantSetLabel: "Greedy deterministic ablation variants",
+      requestedVariantSetLabel: "Greedy deterministic ablation requested variants",
+      unknownVariantLabel: "Greedy deterministic ablation variant",
+    },
+    "baseline"
+  );
 }
 
 export function listGreedyDeterministicAblationCaseNames(
   corpus: readonly GreedyBenchmarkCase[] = DEFAULT_GREEDY_DETERMINISTIC_ABLATION_CORPUS
 ): string[] {
-  return corpus.map((benchmarkCase) => benchmarkCase.name);
+  return listBenchmarkCaseNames(corpus, {
+    caseLabel: "Greedy deterministic ablation",
+    corpusLabel: "Greedy deterministic ablation",
+  });
 }
 
 export function listGreedyDeterministicAblationVariantNames(): GreedyDeterministicAblationVariantName[] {
@@ -480,12 +454,10 @@ export function runGreedyDeterministicAblation(
   const selectedCaseNames = baselineSelectedCaseNames(cases);
 
   return {
-    generatedAt: new Date().toISOString(),
-    caseCount: selectedCaseNames.length,
+    ...buildBenchmarkSuiteMetadata(selectedCaseNames),
     seedCount: seedRuns.length,
     comparisonCount: cases.length,
     seeds,
-    selectedCaseNames,
     variants: variants.map((variant) => variant.name),
     coverage: buildCoverage(cases, selectedCaseNames.length, seedRuns.length),
     variantSummaries: variants.map((variant) => buildVariantSummary(variant, cases, selectedCaseNames.length, seedRuns.length)),
@@ -494,7 +466,7 @@ export function runGreedyDeterministicAblation(
 }
 
 function baselineSelectedCaseNames(cases: readonly GreedyDeterministicAblationCaseResult[]): string[] {
-  return [...new Set(cases.map((entry) => entry.name))];
+  return uniqueBenchmarkValues(cases.map((entry) => entry.name));
 }
 
 function formatSigned(value: number): string {

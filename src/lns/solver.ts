@@ -25,7 +25,6 @@ import type {
   LnsRepairPhase,
   LnsStopReason,
   LnsTelemetry,
-  LnsOptions,
   Solution,
   SolverParams,
 } from "../core/types.js";

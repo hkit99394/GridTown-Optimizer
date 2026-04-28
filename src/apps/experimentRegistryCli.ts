@@ -9,11 +9,11 @@ import {
   DEFAULT_EXPERIMENT_REGISTRY_PATH,
   ExperimentRegistryValidationError,
   formatExperimentRegistryIssues,
-  formatExperimentRegistryValidationReport,
   validateExperimentRegistryEntry,
   validateExperimentRegistryFile,
 } from "../benchmarks/experimentRegistry.js";
-import { parseNumberList } from "./cliParsing.js";
+import { parseNumberList, readInlineOptionValue } from "./cliParsing.js";
+import { writeCliJson, writeCliText } from "./cliOutput.js";
 
 import type {
   ExperimentRegistryCheckOptions,
@@ -154,6 +154,7 @@ function parseArgs(argv: string[]): ParsedRegistryArgs {
   }
 
   for (const arg of args) {
+    let value: string | undefined;
     if (arg === "--dry-run") {
       dryRun = true;
       continue;
@@ -174,113 +175,135 @@ function parseArgs(argv: string[]): ParsedRegistryArgs {
       validateArtifactPaths = false;
       continue;
     }
-    if (arg.startsWith("--registry=")) {
-      registryPath = arg.slice("--registry=".length);
+    value = readInlineOptionValue(arg, "registry");
+    if (value !== undefined) {
+      registryPath = value;
       continue;
     }
-    if (arg.startsWith("--entry=")) {
-      entryPath = arg.slice("--entry=".length);
+    value = readInlineOptionValue(arg, "entry");
+    if (value !== undefined) {
+      entryPath = value;
       continue;
     }
-    if (arg.startsWith("--indexed-at=")) {
-      indexedAt = arg.slice("--indexed-at=".length);
+    value = readInlineOptionValue(arg, "indexed-at");
+    if (value !== undefined) {
+      indexedAt = value;
       continue;
     }
-    if (arg.startsWith("--indexed-git-commit=")) {
-      indexedGitCommit = arg.slice("--indexed-git-commit=".length);
+    value = readInlineOptionValue(arg, "indexed-git-commit");
+    if (value !== undefined) {
+      indexedGitCommit = value;
       continue;
     }
-    if (arg.startsWith("--artifact-git-commit=")) {
-      const raw = arg.slice("--artifact-git-commit=".length);
-      artifactGitCommit = raw === "null" || raw === "none" ? null : raw;
+    value = readInlineOptionValue(arg, "artifact-git-commit");
+    if (value !== undefined) {
+      artifactGitCommit = value === "null" || value === "none" ? null : value;
       continue;
     }
-    if (arg.startsWith("--branch=")) {
-      branch = arg.slice("--branch=".length);
+    value = readInlineOptionValue(arg, "branch");
+    if (value !== undefined) {
+      branch = value;
       continue;
     }
-    if (arg.startsWith("--generated-at=")) {
-      generatedAt = arg.slice("--generated-at=".length);
+    value = readInlineOptionValue(arg, "generated-at");
+    if (value !== undefined) {
+      generatedAt = value;
       continue;
     }
-    if (arg.startsWith("--run-id=")) {
-      runId = arg.slice("--run-id=".length);
+    value = readInlineOptionValue(arg, "run-id");
+    if (value !== undefined) {
+      runId = value;
       continue;
     }
-    if (arg.startsWith("--artifact-type=")) {
-      artifactType = arg.slice("--artifact-type=".length);
+    value = readInlineOptionValue(arg, "artifact-type");
+    if (value !== undefined) {
+      artifactType = value;
       continue;
     }
-    if (arg.startsWith("--command=")) {
-      commands.push(arg.slice("--command=".length));
+    value = readInlineOptionValue(arg, "command");
+    if (value !== undefined) {
+      commands.push(value);
       continue;
     }
-    if (arg.startsWith("--artifact-path=")) {
-      artifactPaths.push(arg.slice("--artifact-path=".length));
+    value = readInlineOptionValue(arg, "artifact-path");
+    if (value !== undefined) {
+      artifactPaths.push(value);
       continue;
     }
-    if (arg.startsWith("--case=")) {
-      const caseName = arg.slice("--case=".length);
+    value = readInlineOptionValue(arg, "case");
+    if (value !== undefined) {
       const currentCases = Array.isArray(cases) ? cases : [];
-      cases = [...currentCases, caseName];
+      cases = [...currentCases, value];
       continue;
     }
-    if (arg.startsWith("--cases=")) {
-      cases = JSON.parse(arg.slice("--cases=".length)) as unknown;
+    value = readInlineOptionValue(arg, "cases");
+    if (value !== undefined) {
+      cases = JSON.parse(value) as unknown;
       continue;
     }
-    if (arg.startsWith("--case-family=")) {
-      caseFamilies.push(arg.slice("--case-family=".length));
+    value = readInlineOptionValue(arg, "case-family");
+    if (value !== undefined) {
+      caseFamilies.push(value);
       continue;
     }
-    if (arg.startsWith("--seeds=")) {
-      seeds = parseNumberList(arg.slice("--seeds=".length), "--seeds");
+    value = readInlineOptionValue(arg, "seeds");
+    if (value !== undefined) {
+      seeds = parseNumberList(value, "--seeds");
       continue;
     }
-    if (arg.startsWith("--split-status=")) {
-      const raw = arg.slice("--split-status=".length);
-      splitStatus = raw === "null" ? null : JSON.parse(raw) as unknown;
+    value = readInlineOptionValue(arg, "split-status");
+    if (value !== undefined) {
+      splitStatus = value === "null" ? null : JSON.parse(value) as unknown;
       continue;
     }
-    if (arg.startsWith("--budget=")) {
-      budget = JSON.parse(arg.slice("--budget=".length)) as unknown;
+    value = readInlineOptionValue(arg, "budget");
+    if (value !== undefined) {
+      budget = JSON.parse(value) as unknown;
       continue;
     }
-    if (arg.startsWith("--hardware=")) {
-      hardware = JSON.parse(arg.slice("--hardware=".length)) as unknown;
+    value = readInlineOptionValue(arg, "hardware");
+    if (value !== undefined) {
+      hardware = JSON.parse(value) as unknown;
       continue;
     }
-    if (arg.startsWith("--model=")) {
-      const raw = arg.slice("--model=".length);
-      model = raw === "null" ? null : JSON.parse(raw) as unknown;
+    value = readInlineOptionValue(arg, "model");
+    if (value !== undefined) {
+      model = value === "null" ? null : JSON.parse(value) as unknown;
       continue;
     }
-    if (arg.startsWith("--decision=")) {
-      decision = arg.slice("--decision=".length);
+    value = readInlineOptionValue(arg, "decision");
+    if (value !== undefined) {
+      decision = value;
       continue;
     }
-    if (arg.startsWith("--summary=")) {
-      summary = arg.slice("--summary=".length);
+    value = readInlineOptionValue(arg, "summary");
+    if (value !== undefined) {
+      summary = value;
       continue;
     }
-    if (arg.startsWith("--gpu-model=")) {
-      gpuModel = arg.slice("--gpu-model=".length);
+    value = readInlineOptionValue(arg, "gpu-model");
+    if (value !== undefined) {
+      gpuModel = value;
       continue;
     }
-    if (arg.startsWith("--gpu-runtime=")) {
-      gpuRuntime = arg.slice("--gpu-runtime=".length);
+    value = readInlineOptionValue(arg, "gpu-runtime");
+    if (value !== undefined) {
+      gpuRuntime = value;
       continue;
     }
-    if (arg.startsWith("--gpu-driver=")) {
-      gpuDriver = arg.slice("--gpu-driver=".length);
+    value = readInlineOptionValue(arg, "gpu-driver");
+    if (value !== undefined) {
+      gpuDriver = value;
       continue;
     }
-    if (arg.startsWith("--gpu-memory-bytes=")) {
-      gpuMemoryBytes = parseNumber(arg.slice("--gpu-memory-bytes=".length), "GPU memory bytes");
+    value = readInlineOptionValue(arg, "gpu-memory-bytes");
+    if (value !== undefined) {
+      gpuMemoryBytes = parseNumber(value, "GPU memory bytes");
       continue;
     }
-    if (arg.startsWith("--hardware-notes=")) {
-      hardwareNotes = arg.slice("--hardware-notes=".length);
+    value = readInlineOptionValue(arg, "hardware-notes");
+    if (value !== undefined) {
+      hardwareNotes = value;
       continue;
     }
     throw new Error(`Unknown experiment registry argument: ${arg}`);
@@ -376,26 +399,22 @@ function buildEntryFromArgs(args: ParsedRegistryArgs): Record<string, unknown> {
   };
 }
 
-function printJson(value: unknown): void {
-  process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
-}
-
 function printCheckResult(entries: ExperimentRegistryEntry[], issues: ExperimentRegistryIssue[], json: boolean): void {
   const errorCount = issues.filter((issue) => issue.severity !== "warning").length;
   const warningCount = issues.length - errorCount;
   if (json) {
-    printJson({ valid: errorCount === 0, entryCount: entries.length, errorCount, warningCount, issues });
+    writeCliJson({ valid: errorCount === 0, entryCount: entries.length, errorCount, warningCount, issues });
     return;
   }
   if (errorCount === 0 && warningCount === 0) {
-    process.stdout.write(`Experiment registry OK: ${entries.length} entr${entries.length === 1 ? "y" : "ies"}.\n`);
+    writeCliText(`Experiment registry OK: ${entries.length} entr${entries.length === 1 ? "y" : "ies"}.`);
     return;
   }
   const output = formatExperimentRegistryIssues(issues);
   if (errorCount > 0) {
     process.stderr.write(`${output}\n`);
   } else {
-    process.stdout.write(`${output}\n`);
+    writeCliText(output);
   }
 }
 
@@ -451,7 +470,7 @@ function assertNoDuplicateRunId(registryPath: string, entry: Record<string, unkn
 export function runExperimentRegistryCli(argv = process.argv.slice(2)): void {
   const args = parseArgs(argv);
   if (args.command === "help") {
-    process.stdout.write(`${usage()}\n`);
+    writeCliText(usage());
     return;
   }
 
@@ -486,7 +505,7 @@ export function runExperimentRegistryCli(argv = process.argv.slice(2)): void {
     assertNoDuplicateRunId(args.registryPath, completedEntry, appendOptions);
     const result = validateExperimentRegistryEntry(completedEntry, appendOptions);
     if (args.json) {
-      printJson({ valid: result.issues.length === 0, dryRun: true, entry: result.entry, issues: result.issues });
+      writeCliJson({ valid: result.issues.length === 0, dryRun: true, entry: result.entry, issues: result.issues });
     } else {
       printCheckResult(result.entry ? [result.entry] : [], result.issues, false);
     }
@@ -496,10 +515,10 @@ export function runExperimentRegistryCli(argv = process.argv.slice(2)): void {
 
   const appended = appendExperimentRegistryEntry(args.registryPath, completedEntry, appendOptions);
   if (args.json) {
-    printJson({ appended: true, entry: appended });
+    writeCliJson({ appended: true, entry: appended });
     return;
   }
-  process.stdout.write(`Appended experiment registry entry '${appended.runId}' to ${args.registryPath}.\n`);
+  writeCliText(`Appended experiment registry entry '${appended.runId}' to ${args.registryPath}.`);
 }
 
 try {

@@ -1,4 +1,5 @@
 import { serializeDecisionTraceJsonl } from "../core/decisionTrace.js";
+import { benchmarkGeneratedAt, meanBenchmarkValue } from "./benchmarkOptions.js";
 import { DEFAULT_GREEDY_BENCHMARK_CORPUS } from "./greedy.js";
 import { DEFAULT_LNS_BENCHMARK_CORPUS } from "./lns.js";
 import {
@@ -25,6 +26,7 @@ import type { SolverDecisionTraceEvent } from "../core/types.js";
 
 export interface CrossModeBenchmarkBudgetAblationRunOptions extends CrossModeBenchmarkRunOptions {
   policies?: readonly CrossModeBenchmarkBudgetAblationPolicy[];
+  policyNames?: readonly string[];
   baselinePolicyName?: string;
 }
 
@@ -136,13 +138,9 @@ const MODE_LABELS: Record<CrossModeBenchmarkMode, string> = {
   "cp-sat-portfolio": "CP-SAT portfolio",
 };
 
-function mean(values: readonly number[]): number {
-  return values.length === 0 ? 0 : values.reduce((sum, value) => sum + value, 0) / values.length;
-}
-
 function meanOrNull(values: ReadonlyArray<number | null | undefined>): number | null {
   const finiteValues = values.filter((value): value is number => typeof value === "number" && Number.isFinite(value));
-  return finiteValues.length ? mean(finiteValues) : null;
+  return finiteValues.length ? meanBenchmarkValue(finiteValues) : null;
 }
 
 function inferCoverageProblemSizeBand(benchmarkCase: CrossModeBenchmarkCase): CrossModeProblemSizeBand {
@@ -191,6 +189,23 @@ function normalizeBudgetAblationPolicies(
     throw new Error("Cross-mode budget ablations must include at least one named policy.");
   }
   return normalized;
+}
+
+function selectBudgetAblationPolicies(
+  policies: readonly CrossModeBenchmarkBudgetAblationPolicy[] | undefined,
+  policyNames: readonly string[] | undefined
+): CrossModeBenchmarkBudgetAblationPolicy[] {
+  const normalized = normalizeBudgetAblationPolicies(policies);
+  if (!policyNames?.length) return normalized;
+
+  const byName = new Map(normalized.map((policy) => [policy.name, policy]));
+  const missing = policyNames.filter((name) => !byName.has(name));
+  if (missing.length > 0) {
+    throw new Error(
+      `Unknown cross-mode budget ablation policy(s): ${missing.join(", ")}. Available policies: ${normalized.map((policy) => policy.name).join(", ")}.`
+    );
+  }
+  return policyNames.map((name) => byName.get(name) as CrossModeBenchmarkBudgetAblationPolicy);
 }
 
 function countRecommendations(
@@ -443,9 +458,10 @@ export async function runCrossModeBenchmarkBudgetAblations(
   corpus: readonly CrossModeBenchmarkCase[] = DEFAULT_CROSS_MODE_BENCHMARK_CORPUS,
   options: CrossModeBenchmarkBudgetAblationRunOptions = {}
 ): Promise<CrossModeBenchmarkBudgetAblationSuiteResult> {
-  const policies = normalizeBudgetAblationPolicies(options.policies);
+  const policies = selectBudgetAblationPolicies(options.policies, options.policyNames);
   const {
     policies: _policies,
+    policyNames: _policyNames,
     budgetAblationPolicy: _budgetAblationPolicy,
     baselinePolicyName,
     ...suiteOptions
@@ -502,7 +518,7 @@ export async function runCrossModeBenchmarkBudgetAblations(
   )[0] ?? null;
   const topPolicyName = topPolicy?.policyName ?? null;
   return {
-    generatedAt: new Date().toISOString(),
+    generatedAt: benchmarkGeneratedAt(),
     budgetSeconds: firstSuite?.budgetSeconds ?? DEFAULT_CROSS_MODE_BENCHMARK_BUDGET_SECONDS,
     budgetsSeconds: firstSuite?.budgetsSeconds ?? [],
     seeds: firstSuite?.seeds ?? [],

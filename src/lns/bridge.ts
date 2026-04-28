@@ -4,73 +4,39 @@
 
 import { resolve } from "node:path";
 
-import { startJsonBackgroundSolve } from "../runtime/index.js";
+import {
+  materializeSerializedBackgroundSolution,
+  startSerializedSolutionSolverProcess,
+} from "../runtime/background/serializedSolutionBridge.js";
 
-import type { BackgroundSolveHandle, Grid, Solution, SolverParams } from "../core/index.js";
-
-type SerializedSolution = Omit<Solution, "roads"> & { roads: string[] };
+import type { BackgroundSolveHandle, Grid, SerializedSolution, Solution, SolverParams } from "../core/index.js";
 
 export type LnsSolveHandle = BackgroundSolveHandle;
 
-function buildLnsRequest(G: Grid, params: SolverParams) {
+function materializeLnsSolution(raw: SerializedSolution, stoppedByUser: boolean): Solution {
+  const solution = materializeSerializedBackgroundSolution(raw, stoppedByUser);
   return {
-    grid: G,
-    params,
-  };
-}
-
-function parseSerializedSolution(stdout: string): SerializedSolution {
-  try {
-    return JSON.parse(stdout);
-  } catch (error) {
-    throw new Error(`LNS backend returned invalid JSON: ${(error as Error).message}`);
-  }
-}
-
-function materializeSolution(raw: SerializedSolution): Solution {
-  const stoppedByUser = Boolean(raw.stoppedByUser);
-  return {
-    ...raw,
-    ...(raw.lnsTelemetry && stoppedByUser
+    ...solution,
+    ...(solution.lnsTelemetry && solution.stoppedByUser
       ? {
           lnsTelemetry: {
-            ...raw.lnsTelemetry,
+            ...solution.lnsTelemetry,
             stopReason: "cancelled",
           },
         }
       : {}),
-    stoppedByUser,
-    roads: new Set(raw.roads),
   };
 }
 
 export function startLnsSolve(G: Grid, params: SolverParams): LnsSolveHandle {
-  const scriptPath = resolve(__dirname, "./worker.js");
-  return startJsonBackgroundSolve({
+  return startSerializedSolutionSolverProcess({
     solverLabel: "LNS",
     stopDirectoryPrefix: "city-builder-lns-stop-",
-    command: process.execPath,
-    args: [scriptPath],
-    buildRequest: ({ stopFilePath, snapshotFilePath }) =>
-      buildLnsRequest(G, {
-        ...params,
-        lns: {
-          ...(params.lns ?? {}),
-          stopFilePath,
-          snapshotFilePath,
-        },
-      }),
-    parseRaw: parseSerializedSolution,
-    materializeSolution: (raw, stoppedByUser) =>
-      materializeSolution({
-        ...raw,
-        stoppedByUser: stoppedByUser || Boolean(raw.stoppedByUser),
-      }),
-    getSnapshotState: (raw) => ({
-      hasFeasibleSolution: Boolean(raw),
-      totalPopulation: raw?.totalPopulation ?? null,
-    }),
-    readStoppedByUser: (raw) => Boolean(raw.stoppedByUser),
+    grid: G,
+    params,
+    solverOptionKey: "lns",
+    workerScriptPath: resolve(__dirname, "./worker.js"),
+    materializeSolution: materializeLnsSolution,
     stoppedBeforeFeasibleMessage: "LNS solve was stopped before finding a feasible solution.",
     noSolutionMessage: "LNS backend exited without returning a solution.",
   });

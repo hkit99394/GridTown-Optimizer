@@ -1,5 +1,15 @@
 import { formatBenchmarkSeeds, normalizeBenchmarkSeeds } from "./benchmarkSeeds.js";
 import {
+  benchmarkRatio,
+  buildBenchmarkSuiteMetadata,
+  listBenchmarkCaseNames,
+  meanBenchmarkValue,
+  percentileBenchmarkValue,
+  selectBenchmarkVariants,
+  sumBenchmarkValues,
+  uniqueBenchmarkValues,
+} from "./benchmarkOptions.js";
+import {
   DEFAULT_LNS_BENCHMARK_CORPUS,
   runLnsBenchmarkSuite,
 } from "./lns.js";
@@ -233,28 +243,6 @@ function selectDefaultAblationCases(corpus: readonly LnsBenchmarkCase[]): LnsBen
 export const DEFAULT_LNS_NEIGHBORHOOD_ABLATION_CORPUS: readonly LnsBenchmarkCase[] =
   Object.freeze(selectDefaultAblationCases(DEFAULT_LNS_BENCHMARK_CORPUS));
 
-function sum(values: readonly number[]): number {
-  return values.reduce((total, value) => total + value, 0);
-}
-
-function mean(values: readonly number[]): number {
-  return values.length === 0 ? 0 : sum(values) / values.length;
-}
-
-function percentile(values: readonly number[], percentileValue: number): number {
-  if (values.length === 0) return 0;
-  const sorted = [...values].sort((left, right) => left - right);
-  const index = Math.max(
-    0,
-    Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * percentileValue))
-  );
-  return sorted[index]!;
-}
-
-function ratio(count: number, total: number): number {
-  return total === 0 ? 0 : count / total;
-}
-
 function firstWindowMoved(
   baseline: LnsNeighborhoodAblationVariantResult,
   variant: LnsNeighborhoodAblationVariantResult
@@ -300,36 +288,18 @@ function normalizeVariants(
   variants: readonly LnsNeighborhoodAblationVariant[] | undefined,
   variantNames: readonly LnsNeighborhoodAblationVariantName[] | undefined
 ): readonly LnsNeighborhoodAblationVariant[] {
-  const baseVariants = variants ?? DEFAULT_LNS_NEIGHBORHOOD_ABLATION_VARIANTS;
-  if (baseVariants.length === 0) {
-    throw new Error("LNS neighborhood ablations must include at least one variant.");
-  }
-  const names = baseVariants.map((variant) => variant.name);
-  if (!names.includes("baseline")) {
-    throw new Error("LNS neighborhood ablations must include the baseline variant.");
-  }
-  if (new Set(names).size !== names.length) {
-    throw new Error("LNS neighborhood ablation variants must use unique names.");
-  }
-  if (!variantNames || variantNames.length === 0) {
-    return baseVariants;
-  }
-
-  const byName = new Map(baseVariants.map((variant) => [variant.name, variant]));
-  const requestedNames: LnsNeighborhoodAblationVariantName[] = [
-    "baseline",
-    ...variantNames.filter((name) => name !== "baseline"),
-  ];
-  if (new Set(requestedNames).size !== requestedNames.length) {
-    throw new Error("LNS neighborhood ablation requested variants must use unique names.");
-  }
-  const missing = requestedNames.filter((name) => !byName.has(name));
-  if (missing.length > 0) {
-    throw new Error(
-      `Unknown LNS neighborhood ablation variant(s): ${missing.join(", ")}. Available variants: ${names.join(", ")}.`
-    );
-  }
-  return requestedNames.map((name) => byName.get(name)!);
+  return selectBenchmarkVariants(
+    variants,
+    DEFAULT_LNS_NEIGHBORHOOD_ABLATION_VARIANTS,
+    variantNames,
+    {
+      suiteLabel: "LNS neighborhood ablations",
+      variantSetLabel: "LNS neighborhood ablation variants",
+      requestedVariantSetLabel: "LNS neighborhood ablation requested variants",
+      unknownVariantLabel: "LNS neighborhood ablation variant",
+    },
+    "baseline"
+  );
 }
 
 function rotateVariantOrder(
@@ -436,33 +406,33 @@ function buildVariantSummary(
     caseCount,
     seedCount,
     comparisonCount: results.length,
-    meanPopulation: mean(populations),
-    medianPopulation: percentile(populations, 0.5),
-    worstDecilePopulation: percentile(populations, 0.1),
+    meanPopulation: meanBenchmarkValue(populations),
+    medianPopulation: percentileBenchmarkValue(populations, 0.5),
+    worstDecilePopulation: percentileBenchmarkValue(populations, 0.1),
     bestPopulation: populations.length ? Math.max(...populations) : 0,
-    meanPopulationDeltaVsBaseline: mean(populationDeltas),
-    medianPopulationDeltaVsBaseline: percentile(populationDeltas, 0.5),
-    worstDecilePopulationDeltaVsBaseline: percentile(populationDeltas, 0.1),
+    meanPopulationDeltaVsBaseline: meanBenchmarkValue(populationDeltas),
+    medianPopulationDeltaVsBaseline: percentileBenchmarkValue(populationDeltas, 0.5),
+    worstDecilePopulationDeltaVsBaseline: percentileBenchmarkValue(populationDeltas, 0.1),
     bestPopulationDeltaVsBaseline: populationDeltas.length ? Math.max(...populationDeltas) : 0,
-    meanWallClockSeconds: mean(results.map((entry) => entry.wallClockSeconds)),
-    meanWallClockDeltaVsBaselineSeconds: mean(results.map((entry) => entry.wallClockDeltaVsBaselineSeconds)),
+    meanWallClockSeconds: meanBenchmarkValue(results.map((entry) => entry.wallClockSeconds)),
+    meanWallClockDeltaVsBaselineSeconds: meanBenchmarkValue(results.map((entry) => entry.wallClockDeltaVsBaselineSeconds)),
     improvedCaseCount,
     regressedCaseCount,
     unchangedCaseCount,
-    winRate: ratio(improvedCaseCount, results.length),
-    regressionRate: ratio(regressedCaseCount, results.length),
-    unchangedRate: ratio(unchangedCaseCount, results.length),
+    winRate: benchmarkRatio(improvedCaseCount, results.length),
+    regressionRate: benchmarkRatio(regressedCaseCount, results.length),
+    unchangedRate: benchmarkRatio(unchangedCaseCount, results.length),
     worstPopulationDeltaVsBaseline: populationDeltas.length ? Math.min(...populationDeltas) : 0,
     worstPopulationDeltaCaseName: worstDeltaLabel.caseName,
     worstPopulationDeltaSeed: worstDeltaLabel.seed,
     bestPopulationDeltaCaseName: bestDeltaLabel.caseName,
     bestPopulationDeltaSeed: bestDeltaLabel.seed,
     firstWindowMovementCount,
-    firstWindowMovementRate: ratio(firstWindowMovementCount, results.length),
+    firstWindowMovementRate: benchmarkRatio(firstWindowMovementCount, results.length),
     windowSequenceMovementCount,
-    windowSequenceMovementRate: ratio(windowSequenceMovementCount, results.length),
+    windowSequenceMovementRate: benchmarkRatio(windowSequenceMovementCount, results.length),
     anchorCoordinateMovementCount,
-    anchorCoordinateMovementRate: ratio(anchorCoordinateMovementCount, results.length),
+    anchorCoordinateMovementRate: benchmarkRatio(anchorCoordinateMovementCount, results.length),
   };
 }
 
@@ -478,14 +448,17 @@ function buildCoverage(
     comparisonCount: cases.length,
     variantCount: cases[0]?.variants.length ?? 0,
     runCount: variants.length,
-    gridCellCount: cases.reduce((total, entry) => total + entry.gridCells, 0),
+    gridCellCount: sumBenchmarkValues(cases.map((entry) => entry.gridCells)),
   };
 }
 
 export function listLnsNeighborhoodAblationCaseNames(
   corpus: readonly LnsBenchmarkCase[] = DEFAULT_LNS_NEIGHBORHOOD_ABLATION_CORPUS
 ): string[] {
-  return corpus.map((benchmarkCase) => benchmarkCase.name);
+  return listBenchmarkCaseNames(corpus, {
+    caseLabel: "LNS neighborhood ablation",
+    corpusLabel: "LNS neighborhood ablation",
+  });
 }
 
 export function listLnsNeighborhoodAblationVariantNames(): LnsNeighborhoodAblationVariantName[] {
@@ -563,15 +536,13 @@ export function runLnsNeighborhoodAblation(
     });
   });
 
-  const selectedCaseNames = [...new Set(cases.map((entry) => entry.name))];
+  const selectedCaseNames = uniqueBenchmarkValues(cases.map((entry) => entry.name));
 
   return {
-    generatedAt: new Date().toISOString(),
-    caseCount: selectedCaseNames.length,
+    ...buildBenchmarkSuiteMetadata(selectedCaseNames),
     seedCount: seedRuns.length,
     comparisonCount: cases.length,
     seeds,
-    selectedCaseNames,
     variants: variants.map((variant) => variant.name),
     variantExecutionOrders: variantExecutionOrders.map((entry) => ({
       seed: entry.seed,

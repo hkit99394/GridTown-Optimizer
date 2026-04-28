@@ -8,7 +8,11 @@ import {
   runLnsWindowReplayLabels,
 } from "./lnsWindowReplayLabels.js";
 import { DEFAULT_LNS_REPLAY_LABEL_CORPUS } from "./lns.js";
-import { nonNegativeIntegerOrDefault } from "./benchmarkOptions.js";
+import {
+  benchmarkGeneratedAt,
+  nonNegativeIntegerOrDefault,
+  uniqueBenchmarkValues,
+} from "./benchmarkOptions.js";
 import { buildLnsReplayLabelScaleReadiness } from "./lnsReplayLabelReadiness.js";
 import { DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS } from "./deterministicAblationGates.js";
 import { runGreedyBenchmarkSuite } from "./greedy.js";
@@ -398,13 +402,9 @@ export function collectGreedyOrderingLabelsFromBenchmarkSuite(
   return labels;
 }
 
-function unique(values: readonly string[]): string[] {
-  return [...new Set(values)];
-}
-
 function intersection(left: readonly string[], right: readonly string[]): string[] {
   const rightSet = new Set(right);
-  return unique(left.filter((entry) => rightSet.has(entry)));
+  return uniqueBenchmarkValues(left.filter((entry) => rightSet.has(entry)));
 }
 
 function validateSplitConfigs(splitConfigs: readonly LearnedRankingLabelSplitConfig[]): void {
@@ -422,10 +422,10 @@ function validateSplitConfigs(splitConfigs: readonly LearnedRankingLabelSplitCon
     if (config.lnsCaseNames.length === 0) {
       throw new Error(`Learned ranking ${config.split} split must include at least one LNS case.`);
     }
-    if (unique(config.greedyCaseNames).length !== config.greedyCaseNames.length) {
+    if (uniqueBenchmarkValues(config.greedyCaseNames).length !== config.greedyCaseNames.length) {
       throw new Error(`Learned ranking ${config.split} split has duplicate Greedy cases.`);
     }
-    if (unique(config.lnsCaseNames).length !== config.lnsCaseNames.length) {
+    if (uniqueBenchmarkValues(config.lnsCaseNames).length !== config.lnsCaseNames.length) {
       throw new Error(`Learned ranking ${config.split} split has duplicate LNS cases.`);
     }
   }
@@ -525,7 +525,7 @@ export function runLearnedRankingLabelSuite(
   );
 
   return {
-    generatedAt: new Date().toISOString(),
+    generatedAt: benchmarkGeneratedAt(),
     schemaVersion: 1,
     seeds: [...seeds],
     splitCount: splitConfigs.length,

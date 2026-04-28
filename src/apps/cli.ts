@@ -12,6 +12,7 @@ import { formatSolutionMap, validateSolutionMap } from "../core/index.js";
 import { solveAsync } from "../runtime/solve.js";
 import { describeAutoStopReason, startAutoSolve } from "../auto/index.js";
 import { startCpSatSolve } from "../cp-sat/solver.js";
+import { readNamedOptionValue } from "./cliParsing.js";
 
 const DEFAULT_PARAMS = {
   serviceTypes: [
@@ -63,12 +64,14 @@ const DEFAULT_CLI_CP_SAT_PARAMS = {
   numWorkers: 8,
 };
 
-function readCliArgs(): string[] {
-  return process.argv.slice(2);
+interface ParsedExampleCliArgs {
+  optimizer: OptimizerName;
+  greedyRandomSeed?: number;
+  cpSatOptions?: typeof DEFAULT_CLI_CP_SAT_PARAMS;
 }
 
-function readCliOptimizer(): OptimizerName {
-  const value = readCliArgs().find((arg) => {
+function readCliOptimizer(argv: readonly string[]): OptimizerName {
+  const value = argv.find((arg) => {
     const trimmed = arg.trim();
     return trimmed === "auto" || trimmed === "greedy" || trimmed === "lns" || trimmed === "cp-sat";
   });
@@ -78,51 +81,39 @@ function readCliOptimizer(): OptimizerName {
   return "auto";
 }
 
-function readCliGreedyRandomSeed(): number | undefined {
-  const args = readCliArgs();
-  for (let index = 0; index < args.length; index++) {
-    const arg = args[index].trim();
-    if (arg.startsWith("--greedy-seed=")) {
-      const value = Number.parseInt(arg.slice("--greedy-seed=".length), 10);
-      return Number.isInteger(value) ? value : undefined;
-    }
-    if (arg === "--greedy-seed") {
-      const value = Number.parseInt(args[index + 1] ?? "", 10);
-      return Number.isInteger(value) ? value : undefined;
-    }
-  }
-  return undefined;
+function readCliGreedyRandomSeed(argv: readonly string[]): number | undefined {
+  const value = Number.parseInt(readNamedOptionValue(argv, "greedy-seed") ?? "", 10);
+  return Number.isInteger(value) ? value : undefined;
 }
 
-function readNumericCliOption(longName: string, fallback: number): number {
-  const args = readCliArgs();
-  for (let index = 0; index < args.length; index += 1) {
-    const arg = args[index].trim();
-    const prefix = `--${longName}=`;
-    if (arg.startsWith(prefix)) {
-      const value = Number(arg.slice(prefix.length));
-      return Number.isFinite(value) && value > 0 ? value : fallback;
-    }
-    if (arg === `--${longName}`) {
-      const value = Number(args[index + 1] ?? "");
-      return Number.isFinite(value) && value > 0 ? value : fallback;
-    }
-  }
-  return fallback;
+function readNumericCliOption(argv: readonly string[], longName: string, fallback: number): number {
+  const value = Number(readNamedOptionValue(argv, longName) ?? "");
+  return Number.isFinite(value) && value > 0 ? value : fallback;
 }
 
-function readIntegerCliOption(longName: string, fallback: number): number {
-  return Math.floor(readNumericCliOption(longName, fallback));
+function readIntegerCliOption(argv: readonly string[], longName: string, fallback: number): number {
+  return Math.floor(readNumericCliOption(argv, longName, fallback));
 }
 
-function readCliCpSatOptions() {
+function readCliCpSatOptions(argv: readonly string[]): typeof DEFAULT_CLI_CP_SAT_PARAMS {
   return {
-    timeLimitSeconds: readNumericCliOption("cp-sat-time-limit", DEFAULT_CLI_CP_SAT_PARAMS.timeLimitSeconds),
+    timeLimitSeconds: readNumericCliOption(argv, "cp-sat-time-limit", DEFAULT_CLI_CP_SAT_PARAMS.timeLimitSeconds),
     noImprovementTimeoutSeconds: readNumericCliOption(
+      argv,
       "cp-sat-no-improvement-timeout",
       DEFAULT_CLI_CP_SAT_PARAMS.noImprovementTimeoutSeconds
     ),
-    numWorkers: readIntegerCliOption("cp-sat-workers", DEFAULT_CLI_CP_SAT_PARAMS.numWorkers),
+    numWorkers: readIntegerCliOption(argv, "cp-sat-workers", DEFAULT_CLI_CP_SAT_PARAMS.numWorkers),
+  };
+}
+
+function parseExampleCliArgs(argv: readonly string[] = process.argv.slice(2)): ParsedExampleCliArgs {
+  const optimizer = readCliOptimizer(argv);
+  const greedyRandomSeed = readCliGreedyRandomSeed(argv);
+  return {
+    optimizer,
+    ...(greedyRandomSeed !== undefined ? { greedyRandomSeed } : {}),
+    ...(optimizer === "cp-sat" ? { cpSatOptions: readCliCpSatOptions(argv) } : {}),
   };
 }
 
@@ -140,9 +131,7 @@ function describeOptimizerRole(optimizer: OptimizerName): string {
 }
 
 export async function runExample(): Promise<void> {
-  const optimizer = readCliOptimizer();
-  const greedyRandomSeed = readCliGreedyRandomSeed();
-  const cliCpSatOptions = optimizer === "cp-sat" ? readCliCpSatOptions() : undefined;
+  const { optimizer, greedyRandomSeed, cpSatOptions } = parseExampleCliArgs();
   const grid: Grid = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -165,7 +154,7 @@ export async function runExample(): Promise<void> {
       ...(optimizer === "auto" ? AUTO_GREEDY_PARAMS : DEFAULT_PARAMS.greedy),
       ...(greedyRandomSeed !== undefined ? { randomSeed: greedyRandomSeed } : {}),
     },
-    ...(cliCpSatOptions ? { cpSat: cliCpSatOptions } : {}),
+    ...(cpSatOptions ? { cpSat: cpSatOptions } : {}),
   };
   const solution = optimizer === "auto"
     ? await (async () => {

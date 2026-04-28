@@ -18,6 +18,11 @@ import {
   runGreedyDeterministicAblation,
   runGreedyBenchmarkSuite,
 } from "../benchmarks/index.js";
+import {
+  parseNameList,
+  parseNumberList,
+  parsePositiveInteger,
+} from "./cliParsing.js";
 import type {
   GreedyBenchmarkOptions,
   GreedyDeterministicAblationVariantName,
@@ -35,36 +40,6 @@ interface ParsedBenchmarkArgs {
   ablationVariantNames?: GreedyDeterministicAblationVariantName[];
   seeds?: number[];
   maxLabelsPerCase?: number;
-}
-
-function parseNameList(value: string, label: string): string[] {
-  const names = value
-    .split(",")
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0);
-  if (names.length === 0) {
-    throw new Error(`Expected at least one ${label}.`);
-  }
-  return names;
-}
-
-function parseNumberList(value: string, label: string): number[] {
-  const parts = value
-    .split(",")
-    .map((entry) => entry.trim());
-  const numbers = parts.map((entry) => Number(entry));
-  if (parts.length === 0 || parts.some((entry) => entry.length === 0) || numbers.some((number) => !Number.isFinite(number))) {
-    throw new Error(`Expected ${label} to contain only finite numbers.`);
-  }
-  return numbers;
-}
-
-function parsePositiveInteger(value: string, label: string): number {
-  const number = Number(value);
-  if (!Number.isInteger(number) || number <= 0) {
-    throw new Error(`Expected ${label} to be a positive integer.`);
-  }
-  return number;
 }
 
 function parseArgs(argv: string[]): ParsedBenchmarkArgs {

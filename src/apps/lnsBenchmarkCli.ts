@@ -11,10 +11,18 @@ import {
   formatLnsWindowReplayLabels,
   listLnsNeighborhoodAblationCaseNames,
   listLnsBenchmarkCaseNames,
+  listLnsWindowReplayCaseNames,
   runLnsNeighborhoodAblation,
   runLnsWindowReplayLabels,
   runLnsBenchmarkSuite,
 } from "../benchmarks/index.js";
+import {
+  parseNameList,
+  parseNonNegativeInteger,
+  parseNumberList,
+  parsePositiveInteger,
+  parsePositiveNumber,
+} from "./cliParsing.js";
 import type {
   LnsNeighborhoodAblationVariant,
   LnsNeighborhoodAblationVariantName,
@@ -31,29 +39,8 @@ interface ParsedBenchmarkArgs {
   seeds?: number[];
   rotateVariantRunOrder?: boolean;
   maxWindows?: number;
+  explorationWindowCount?: number;
   repairTimeLimitSeconds?: number;
-}
-
-function parseNameList(value: string, label: string): string[] {
-  const names = value
-    .split(",")
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0);
-  if (names.length === 0) {
-    throw new Error(`Expected at least one ${label}.`);
-  }
-  return names;
-}
-
-function parseNumberList(value: string, label: string): number[] {
-  const parts = value
-    .split(",")
-    .map((entry) => entry.trim());
-  const numbers = parts.map((entry) => Number(entry));
-  if (parts.length === 0 || parts.some((entry) => entry.length === 0) || numbers.some((number) => !Number.isFinite(number))) {
-    throw new Error(`Expected ${label} to contain only finite numbers.`);
-  }
-  return numbers;
 }
 
 function parseArgs(argv: string[]): ParsedBenchmarkArgs {
@@ -67,6 +54,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let seeds: number[] | undefined;
   let rotateVariantRunOrder: boolean | undefined;
   let maxWindows: number | undefined;
+  let explorationWindowCount: number | undefined;
   let repairTimeLimitSeconds: number | undefined;
 
   for (const arg of argv) {
@@ -83,6 +71,10 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
       continue;
     }
     if (arg === "--window-replay-labels" || arg === "--window-replay-label") {
+      windowReplayLabels = true;
+      continue;
+    }
+    if (arg === "--pressure-corpus") {
       windowReplayLabels = true;
       continue;
     }
@@ -115,17 +107,18 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
       continue;
     }
     if (arg.startsWith("--max-windows=")) {
-      maxWindows = Number(arg.slice("--max-windows=".length));
-      if (!Number.isInteger(maxWindows) || maxWindows <= 0) {
-        throw new Error("Expected --max-windows to be a positive integer.");
-      }
+      maxWindows = parsePositiveInteger(arg.slice("--max-windows=".length), "--max-windows");
+      continue;
+    }
+    if (arg.startsWith("--exploration-windows=")) {
+      explorationWindowCount = parseNonNegativeInteger(
+        arg.slice("--exploration-windows=".length),
+        "--exploration-windows"
+      );
       continue;
     }
     if (arg.startsWith("--repair-time=")) {
-      repairTimeLimitSeconds = Number(arg.slice("--repair-time=".length));
-      if (!Number.isFinite(repairTimeLimitSeconds) || repairTimeLimitSeconds <= 0) {
-        throw new Error("Expected --repair-time to be a positive finite number.");
-      }
+      repairTimeLimitSeconds = parsePositiveNumber(arg.slice("--repair-time=".length), "--repair-time");
       continue;
     }
     names.push(arg);
@@ -142,6 +135,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     seeds,
     rotateVariantRunOrder,
     maxWindows,
+    explorationWindowCount,
     repairTimeLimitSeconds,
   };
 }
@@ -172,6 +166,8 @@ export function runLnsBenchmarkCli(): void {
   if (args.list) {
     const names = args.neighborhoodAblation
       ? listLnsNeighborhoodAblationCaseNames()
+      : args.windowReplayLabels
+        ? listLnsWindowReplayCaseNames()
       : listLnsBenchmarkCaseNames();
     process.stdout.write(`${names.join("\n")}\n`);
     return;
@@ -182,6 +178,7 @@ export function runLnsBenchmarkCli(): void {
       names: args.names.length > 0 ? args.names : undefined,
       seeds: args.seeds,
       maxWindows: args.maxWindows,
+      explorationWindowCount: args.explorationWindowCount,
       repairTimeLimitSeconds: args.repairTimeLimitSeconds,
     });
 

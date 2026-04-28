@@ -240,6 +240,17 @@ Reviewed through 2026-04-28.
 - Documented registry usage in `artifacts/experiments/README.md` and added focused regression coverage in `tests/experiment-registry.test.cjs`.
 - The seeded registry at `artifacts/experiments/index.jsonl` remains discoverable and append-only. No solver defaults changed.
 
+### 30. LNS Replay Pressure Corpus And Readiness Reporting
+
+- Added an opt-in/default replay-label pressure corpus for LNS counterfactual window labels, separate from solver defaults.
+- Added generated pressure cases across corridor, gate, footprint-pressure, service-pressure, and anchor-service families so label collection is no longer limited to the original small LNS ablation corpus.
+- Replay labels now carry pressure-family metadata and distinguish baseline top-k windows from tail exploration windows, reducing pure selection bias while keeping the deterministic baseline ordering intact.
+- The LNS replay label CLI accepts `--pressure-corpus` and `--exploration-windows=...`; learned-ranking label collection accepts the same exploration-window option.
+- Learned-ranking label artifacts now include LNS replay scale-readiness reporting with the next-stage thresholds for family count, seeds per family, usable labels, non-neutral labels, per-family usable labels, and neutral-label ratio.
+- The default learned-label split now routes LNS replay collection through the pressure corpus and preserves case-name holdout protection while exposing pressure-family metadata for audit.
+- Regression coverage checks unique replay case names, five pressure families, snapshot stability, pressure-family fields, exploration-window labels, and readiness-gate reporting.
+- No learned model was trained and no solver defaults changed; the LNS ranker gate remains blocked until a generated artifact passes the readiness thresholds.
+
 ## Maintenance Watchpoints
 
 - Keep deterministic benchmark seeds stable when changing solver scoring.
@@ -252,3 +263,4 @@ Reviewed through 2026-04-28.
 - Keep ablation matrices small by default; expand cases, modes, budgets, or policies only when the previous sweep gives a clear signal.
 - Keep long ablation runs staged and timeout-bounded; the corrected 30s LNS budget can legitimately consume far more wall-clock than the previous capped corpus setup.
 - Keep the experiment registry append-only; corrected metadata should use a suffixed `runId`, and promotion-grade decisions should rely on strict registry entries with captured hardware and exact commands.
+- Keep LNS replay pressure cases as label-generation infrastructure until a strict registry artifact passes the readiness report; volume alone is not enough if non-neutral labels or holdout family balance are missing.

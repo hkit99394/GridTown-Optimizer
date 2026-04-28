@@ -7,10 +7,9 @@ import {
   createLnsWindowReplaySnapshot,
   runLnsWindowReplayLabels,
 } from "./lnsWindowReplayLabels.js";
-import {
-  DEFAULT_LNS_NEIGHBORHOOD_ABLATION_CASE_NAMES,
-  DEFAULT_LNS_NEIGHBORHOOD_ABLATION_CORPUS,
-} from "./lnsNeighborhoodAblations.js";
+import { DEFAULT_LNS_REPLAY_LABEL_CORPUS } from "./lns.js";
+import { nonNegativeIntegerOrDefault } from "./benchmarkOptions.js";
+import { buildLnsReplayLabelScaleReadiness } from "./lnsReplayLabelReadiness.js";
 import { DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS } from "./deterministicAblationGates.js";
 import { runGreedyBenchmarkSuite } from "./greedy.js";
 
@@ -21,6 +20,7 @@ import type {
 } from "./greedy.js";
 import type {
   LnsBenchmarkCase,
+  LnsReplayPressureFamilyLabel,
 } from "./lns.js";
 import type {
   CpSatOptions,
@@ -33,6 +33,18 @@ import type {
   LnsWindowReplaySnapshot,
   LnsWindowReplaySnapshotLabel,
 } from "./lnsWindowReplayLabels.js";
+import type { LnsReplayLabelScaleReadiness } from "./lnsReplayLabelReadiness.js";
+
+export {
+  DEFAULT_LNS_REPLAY_LABEL_SCALE_THRESHOLDS,
+  buildLnsReplayLabelScaleReadiness,
+} from "./lnsReplayLabelReadiness.js";
+export type {
+  LnsReplayLabelFamilyScaleSummary,
+  LnsReplayLabelScaleReadiness,
+  LnsReplayLabelScaleThresholds,
+  LnsReplayLabelSplitScaleReadiness,
+} from "./lnsReplayLabelReadiness.js";
 
 export type LearnedRankingLabelSplit = "development" | "holdout";
 
@@ -90,6 +102,7 @@ export interface GreedyOrderingLabelSplitResult {
 export interface LnsReplayLabelSplitResult {
   split: LearnedRankingLabelSplit;
   selectedCaseNames: string[];
+  pressureFamilies: LnsReplayPressureFamilyLabel[];
   seeds: number[];
   labelCount: number;
   usableLabelCount: number;
@@ -116,7 +129,8 @@ export interface LearnedRankingAuditMetadata {
   lnsReplay: {
     cpSatNumWorkers: 1;
     incumbentStatePolicy: "initial-incumbent";
-    candidateWindowPolicy: "baseline-ranked-top-k";
+    candidateWindowPolicy: "baseline-ranked-top-k" | "baseline-ranked-top-k-plus-tail-exploration";
+    explorationWindowCount: number;
   };
 }
 
@@ -133,6 +147,7 @@ export interface LearnedRankingLabelSuiteResult {
   };
   lns: {
     labelCount: number;
+    scaleReadiness: LnsReplayLabelScaleReadiness<LearnedRankingLabelSplit>;
     splits: LnsReplayLabelSplitResult[];
   };
   leakage: LearnedRankingLeakageReport;
@@ -151,6 +166,7 @@ export interface LearnedRankingLabelRunOptions {
   cpSat?: Partial<CpSatOptions>;
   maxWindows?: number;
   repairTimeLimitSeconds?: number;
+  explorationWindowCount?: number;
 }
 
 export const DEFAULT_LEARNED_RANKING_LABEL_SPLITS: readonly LearnedRankingLabelSplitConfig[] =
@@ -166,6 +182,8 @@ export const DEFAULT_LEARNED_RANKING_LABEL_SPLITS: readonly LearnedRankingLabelS
       lnsCaseNames: [
         "compact-service-repair",
         "seeded-service-anchor-pressure",
+        "lns-corridor-squeeze-pressure",
+        "lns-footprint-mix-pressure",
       ],
     },
     {
@@ -176,10 +194,11 @@ export const DEFAULT_LEARNED_RANKING_LABEL_SPLITS: readonly LearnedRankingLabelS
         || name === "typed-footprint-pressure"
         || name === "typed-availability-pressure"
       ),
-      lnsCaseNames: DEFAULT_LNS_NEIGHBORHOOD_ABLATION_CASE_NAMES.filter((name) =>
-        name === "typed-housing-single"
-        || name === "row0-anchor-repair"
-      ),
+      lnsCaseNames: [
+        "row0-anchor-repair",
+        "lns-gate-choke-pressure",
+        "lns-service-overlap-pressure",
+      ],
     },
   ]);
 
@@ -451,7 +470,8 @@ export function runLearnedRankingLabelSuite(
   const seeds = normalizeBenchmarkSeeds(options.seeds, "learned ranking label seeds")
     ?? [...DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS];
   const greedyCorpus = options.greedyCorpus ?? DEFAULT_GREEDY_DETERMINISTIC_ABLATION_CORPUS;
-  const lnsCorpus = options.lnsCorpus ?? DEFAULT_LNS_NEIGHBORHOOD_ABLATION_CORPUS;
+  const lnsCorpus = options.lnsCorpus ?? DEFAULT_LNS_REPLAY_LABEL_CORPUS;
+  const explorationWindowCount = nonNegativeIntegerOrDefault(options.explorationWindowCount, 0);
   const greedySplits: GreedyOrderingLabelSplitResult[] = [];
   const lnsSplits: LnsReplayLabelSplitResult[] = [];
 
@@ -483,12 +503,14 @@ export function runLearnedRankingLabelSuite(
       lns: options.lns,
       cpSat: options.cpSat,
       maxWindows: options.maxWindows,
+      explorationWindowCount,
       repairTimeLimitSeconds: options.repairTimeLimitSeconds,
     });
     const replaySnapshot = createLnsWindowReplaySnapshot(lnsReplay);
     lnsSplits.push({
       split: config.split,
       selectedCaseNames: [...config.lnsCaseNames],
+      pressureFamilies: [...replaySnapshot.pressureFamilies],
       seeds: [...seeds],
       labelCount: lnsReplay.labelCount,
       usableLabelCount: countUsableLnsLabels(replaySnapshot),
@@ -516,7 +538,10 @@ export function runLearnedRankingLabelSuite(
       lnsReplay: {
         cpSatNumWorkers: 1,
         incumbentStatePolicy: "initial-incumbent",
-        candidateWindowPolicy: "baseline-ranked-top-k",
+        candidateWindowPolicy: explorationWindowCount > 0
+          ? "baseline-ranked-top-k-plus-tail-exploration"
+          : "baseline-ranked-top-k",
+        explorationWindowCount,
       },
     },
     greedy: {
@@ -526,6 +551,7 @@ export function runLearnedRankingLabelSuite(
     },
     lns: {
       labelCount: lnsSplits.reduce((total, split) => total + split.labelCount, 0),
+      scaleReadiness: buildLnsReplayLabelScaleReadiness(lnsSplits),
       splits: lnsSplits,
     },
     leakage,
@@ -550,7 +576,7 @@ export function formatLearnedRankingLabelSuite(result: LearnedRankingLabelSuiteR
   lines.push(`Schema: ${result.schemaVersion}`);
   lines.push(`Seeds: ${result.seeds.join(", ")}`);
   lines.push(
-    `Audit: learned-model=${result.audit.learnedModel ?? "none"} greedy-profile=${result.audit.greedy.profile} greedy-connectivity-shadow=${result.audit.greedy.connectivityShadowScoring} lns-cp-sat-workers=${result.audit.lnsReplay.cpSatNumWorkers} lns-state=${result.audit.lnsReplay.incumbentStatePolicy} lns-windows=${result.audit.lnsReplay.candidateWindowPolicy}`
+    `Audit: learned-model=${result.audit.learnedModel ?? "none"} greedy-profile=${result.audit.greedy.profile} greedy-connectivity-shadow=${result.audit.greedy.connectivityShadowScoring} lns-cp-sat-workers=${result.audit.lnsReplay.cpSatNumWorkers} lns-state=${result.audit.lnsReplay.incumbentStatePolicy} lns-windows=${result.audit.lnsReplay.candidateWindowPolicy} lns-exploration=${result.audit.lnsReplay.explorationWindowCount}`
   );
   lines.push(
     `Leakage: protected-holdout=${result.leakage.protectedHoldout} greedy-overlap=${formatCaseList(result.leakage.greedyOverlap)} lns-overlap=${formatCaseList(result.leakage.lnsOverlap)}`
@@ -564,9 +590,15 @@ export function formatLearnedRankingLabelSuite(result: LearnedRankingLabelSuiteR
     );
   }
   lines.push(`LNS replay labels: total=${result.lns.labelCount}`);
+  lines.push(`LNS label-scale ready=${result.lns.scaleReadiness.passed}`);
+  for (const readiness of result.lns.scaleReadiness.splitReadiness) {
+    lines.push(
+      `- lns-scale ${readiness.split}: ready=${readiness.passed} families=${readiness.pressureFamilyCount} usable=${readiness.usableLabelCount} non-neutral=${readiness.nonNeutralUsableLabelCount} neutral-ratio=${readiness.neutralLabelRatio.toFixed(3)} failures=${readiness.failedReasons.length ? readiness.failedReasons.join("; ") : "none"}`
+    );
+  }
   for (const split of result.lns.splits) {
     lines.push(
-      `- lns ${split.split}: cases=${split.selectedCaseNames.join(", ")} labels=${split.labelCount} usable=${split.usableLabelCount} improved=${split.statusCounts.improved} neutral=${split.statusCounts.neutral} regressed=${split.statusCounts.regressed} invalid=${split.statusCounts.invalid} recoverable-failure=${split.statusCounts["recoverable-failure"]} repair=${split.replay.repairTimeLimitSeconds}s max-windows=${split.replay.maxWindows}`
+      `- lns ${split.split}: cases=${split.selectedCaseNames.join(", ")} families=${split.pressureFamilies.join(", ")} labels=${split.labelCount} usable=${split.usableLabelCount} improved=${split.statusCounts.improved} neutral=${split.statusCounts.neutral} regressed=${split.statusCounts.regressed} invalid=${split.statusCounts.invalid} recoverable-failure=${split.statusCounts["recoverable-failure"]} repair=${split.replay.repairTimeLimitSeconds}s max-windows=${split.replay.maxWindows} exploration=${split.replay.explorationWindowCount}`
     );
   }
   return lines.join("\n");

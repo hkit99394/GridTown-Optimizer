@@ -3,45 +3,26 @@ import {
   formatLearnedRankingLabelSuite,
   runLearnedRankingLabelSuite,
 } from "../benchmarks/index.js";
+import {
+  parseNonNegativeInteger,
+  parseNumberList,
+  parsePositiveInteger,
+  parsePositiveNumber,
+} from "./cliParsing.js";
 
 interface ParsedLabelArgs {
   json: boolean;
   seeds?: number[];
   maxWindows?: number;
+  explorationWindowCount?: number;
   repairTimeLimitSeconds?: number;
-}
-
-function parseNumberList(value: string, label: string): number[] {
-  const parts = value
-    .split(",")
-    .map((entry) => entry.trim());
-  const numbers = parts.map((entry) => Number(entry));
-  if (parts.length === 0 || parts.some((entry) => entry.length === 0) || numbers.some((number) => !Number.isFinite(number))) {
-    throw new Error(`Expected ${label} to contain only finite numbers.`);
-  }
-  return numbers;
-}
-
-function parsePositiveInteger(value: string, label: string): number {
-  const number = Number(value);
-  if (!Number.isInteger(number) || number <= 0) {
-    throw new Error(`Expected ${label} to be a positive integer.`);
-  }
-  return number;
-}
-
-function parsePositiveNumber(value: string, label: string): number {
-  const number = Number(value);
-  if (!Number.isFinite(number) || number <= 0) {
-    throw new Error(`Expected ${label} to be a positive number.`);
-  }
-  return number;
 }
 
 function parseArgs(argv: string[]): ParsedLabelArgs {
   let json = false;
   let seeds: number[] | undefined;
   let maxWindows: number | undefined;
+  let explorationWindowCount: number | undefined;
   let repairTimeLimitSeconds: number | undefined;
 
   for (const arg of argv) {
@@ -57,6 +38,16 @@ function parseArgs(argv: string[]): ParsedLabelArgs {
       maxWindows = parsePositiveInteger(arg.slice("--max-windows=".length), "max windows");
       continue;
     }
+    if (arg.startsWith("--exploration-windows=")) {
+      explorationWindowCount = parseNonNegativeInteger(
+        arg.slice("--exploration-windows=".length),
+        "exploration windows"
+      );
+      continue;
+    }
+    if (arg === "--pressure-corpus") {
+      continue;
+    }
     if (arg.startsWith("--repair-time=")) {
       repairTimeLimitSeconds = parsePositiveNumber(arg.slice("--repair-time=".length), "repair time");
       continue;
@@ -64,7 +55,7 @@ function parseArgs(argv: string[]): ParsedLabelArgs {
     throw new Error(`Unknown learned-ranking label argument: ${arg}`);
   }
 
-  return { json, seeds, maxWindows, repairTimeLimitSeconds };
+  return { json, seeds, maxWindows, explorationWindowCount, repairTimeLimitSeconds };
 }
 
 export function runLearnedRankingLabelCli(): void {
@@ -72,6 +63,7 @@ export function runLearnedRankingLabelCli(): void {
   const result = runLearnedRankingLabelSuite({
     seeds: args.seeds,
     maxWindows: args.maxWindows,
+    explorationWindowCount: args.explorationWindowCount,
     repairTimeLimitSeconds: args.repairTimeLimitSeconds,
   });
 

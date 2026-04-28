@@ -4,6 +4,7 @@ import { buildSolverProgressSummary, formatSolverProgressSummary } from "../core
 import { solveLns } from "../lns/solver.js";
 import { normalizeCpSatBenchmarkOptions } from "./cpSat.js";
 import { normalizeGreedyBenchmarkOptions } from "./greedy.js";
+import { GENERATED_LNS_PRESSURE_CASES } from "./lnsPressureCases.js";
 
 import type {
   CpSatOptions,
@@ -23,6 +24,27 @@ export interface LnsBenchmarkCase {
   description: string;
   grid: Grid;
   params: SolverParams;
+  pressureFamily?: LnsReplayPressureFamily;
+}
+
+export type LnsReplayPressureFamily =
+  | "baseline"
+  | "corridor"
+  | "gate"
+  | "footprint-pressure"
+  | "service-pressure"
+  | "anchor-service";
+
+export const UNCATEGORIZED_LNS_REPLAY_PRESSURE_FAMILY = "uncategorized" as const;
+
+export type LnsReplayPressureFamilyLabel =
+  | LnsReplayPressureFamily
+  | typeof UNCATEGORIZED_LNS_REPLAY_PRESSURE_FAMILY;
+
+export function getLnsReplayPressureFamily(
+  benchmarkCase: Pick<LnsBenchmarkCase, "pressureFamily">
+): LnsReplayPressureFamilyLabel {
+  return benchmarkCase.pressureFamily ?? UNCATEGORIZED_LNS_REPLAY_PRESSURE_FAMILY;
 }
 
 export interface LnsBenchmarkRunOptions {
@@ -298,6 +320,7 @@ export const DEFAULT_LNS_BENCHMARK_CORPUS: readonly LnsBenchmarkCase[] = Object.
   {
     name: "typed-housing-single",
     description: "Tiny LNS baseline seeded by greedy and repaired over compact residential windows.",
+    pressureFamily: "baseline",
     grid: [
       [1, 1, 1, 1],
       [1, 1, 1, 1],
@@ -326,6 +349,7 @@ export const DEFAULT_LNS_BENCHMARK_CORPUS: readonly LnsBenchmarkCase[] = Object.
   {
     name: "compact-service-repair",
     description: "Small mixed case for measuring service-aware neighborhood repair overhead.",
+    pressureFamily: "service-pressure",
     grid: [
       [1, 1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1, 1],
@@ -357,6 +381,7 @@ export const DEFAULT_LNS_BENCHMARK_CORPUS: readonly LnsBenchmarkCase[] = Object.
   {
     name: "seeded-service-anchor-pressure",
     description: "Seeded LNS case where ranked service anchors find a service move that sliding windows miss.",
+    pressureFamily: "anchor-service",
     grid: [
       [1, 1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1, 1],
@@ -407,6 +432,7 @@ export const DEFAULT_LNS_BENCHMARK_CORPUS: readonly LnsBenchmarkCase[] = Object.
   {
     name: "row0-anchor-repair",
     description: "Sparse road-anchor access case that exercises LNS repair around road anchors.",
+    pressureFamily: "corridor",
     grid: [
       [1, 0, 1, 0],
       [0, 0, 1, 1],
@@ -428,4 +454,35 @@ export const DEFAULT_LNS_BENCHMARK_CORPUS: readonly LnsBenchmarkCase[] = Object.
       },
     },
   },
+  ...GENERATED_LNS_PRESSURE_CASES,
 ]);
+
+export const DEFAULT_LNS_REPLAY_LABEL_CASE_NAMES = Object.freeze([
+  "compact-service-repair",
+  "seeded-service-anchor-pressure",
+  "row0-anchor-repair",
+  "lns-corridor-squeeze-pressure",
+  "lns-gate-choke-pressure",
+  "lns-footprint-mix-pressure",
+  "lns-service-overlap-pressure",
+] satisfies string[]);
+
+function selectReplayLabelCases(corpus: readonly LnsBenchmarkCase[]): LnsBenchmarkCase[] {
+  const byName = new Map(corpus.map((benchmarkCase) => [benchmarkCase.name, benchmarkCase]));
+  return DEFAULT_LNS_REPLAY_LABEL_CASE_NAMES.map((name) => {
+    const benchmarkCase = byName.get(name);
+    if (!benchmarkCase) {
+      throw new Error(`LNS replay label case not found: ${name}.`);
+    }
+    return benchmarkCase;
+  });
+}
+
+export const DEFAULT_LNS_REPLAY_LABEL_CORPUS: readonly LnsBenchmarkCase[] =
+  Object.freeze(selectReplayLabelCases(DEFAULT_LNS_BENCHMARK_CORPUS));
+
+export function listLnsReplayPressureFamilies(
+  corpus: readonly LnsBenchmarkCase[] = DEFAULT_LNS_REPLAY_LABEL_CORPUS
+): LnsReplayPressureFamilyLabel[] {
+  return [...new Set(corpus.map(getLnsReplayPressureFamily))];
+}

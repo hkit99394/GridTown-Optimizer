@@ -18,11 +18,17 @@ import {
 import { selectNeighborhoodWindow } from "../lns/neighborhoods.js";
 import { normalizeCpSatBenchmarkOptions } from "./cpSat.js";
 import { normalizeGreedyBenchmarkOptions } from "./greedy.js";
-import {
-  DEFAULT_LNS_NEIGHBORHOOD_ABLATION_CORPUS,
-} from "./lnsNeighborhoodAblations.js";
 import { normalizeBenchmarkSeeds } from "./benchmarkSeeds.js";
-import { normalizeLnsBenchmarkOptions } from "./lns.js";
+import {
+  nonNegativeIntegerOrDefault,
+  positiveFiniteNumberOrDefault,
+  positiveIntegerOrDefault,
+} from "./benchmarkOptions.js";
+import {
+  DEFAULT_LNS_REPLAY_LABEL_CORPUS,
+  getLnsReplayPressureFamily,
+  normalizeLnsBenchmarkOptions,
+} from "./lns.js";
 
 import type {
   CpSatNeighborhoodWindow,
@@ -33,12 +39,16 @@ import type {
   Solution,
   SolverParams,
 } from "../core/types.js";
-import type { LnsBenchmarkCase } from "./lns.js";
+import type {
+  LnsBenchmarkCase,
+  LnsReplayPressureFamilyLabel,
+} from "./lns.js";
 
 export interface LnsWindowReplayLabelRunOptions {
   names?: readonly string[];
   seeds?: readonly number[];
   maxWindows?: number;
+  explorationWindowCount?: number;
   repairTimeLimitSeconds?: number;
   lns?: Partial<LnsOptions>;
   cpSat?: Partial<CpSatOptions>;
@@ -58,8 +68,10 @@ export interface LnsWindowReplayFeatures {
 
 export interface LnsWindowReplayLabel {
   caseName: string;
+  pressureFamily: LnsReplayPressureFamilyLabel;
   seed: number | null;
   windowIndex: number;
+  selectionSource: "baseline-top-k" | "exploration-tail";
   window: CpSatNeighborhoodWindow;
   selectedByBaseline: boolean;
   incumbentPopulation: number;
@@ -83,6 +95,7 @@ type ReplayValidationSummary = LnsWindowReplayLabel["validation"];
 export interface LnsWindowReplayCaseResult {
   name: string;
   description: string;
+  pressureFamily: LnsReplayPressureFamilyLabel;
   seed: number | null;
   gridRows: number;
   gridCols: number;
@@ -101,7 +114,9 @@ export interface LnsWindowReplaySuiteResult {
   comparisonCount: number;
   seeds: number[];
   selectedCaseNames: string[];
+  pressureFamilies: LnsReplayPressureFamilyLabel[];
   maxWindows: number;
+  explorationWindowCount: number;
   repairTimeLimitSeconds: number;
   labelCount: number;
   cases: LnsWindowReplayCaseResult[];
@@ -156,14 +171,6 @@ function applyNormalizedGreedyBenchmarkParams(params: SolverParams, greedy: Gree
   };
 }
 
-function positiveIntegerOrDefault(value: number | undefined, fallback: number): number {
-  return typeof value === "number" && Number.isInteger(value) && value > 0 ? value : fallback;
-}
-
-function positiveFiniteNumberOrDefault(value: number | undefined, fallback: number): number {
-  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : fallback;
-}
-
 function selectReplayCases(
   corpus: readonly LnsBenchmarkCase[],
   names: readonly string[] | undefined
@@ -182,6 +189,12 @@ function selectReplayCases(
     );
   }
   return names.map((name) => byName.get(name)!);
+}
+
+export function listLnsWindowReplayCaseNames(
+  corpus: readonly LnsBenchmarkCase[] = DEFAULT_LNS_REPLAY_LABEL_CORPUS
+): string[] {
+  return selectReplayCases(corpus, undefined).map((benchmarkCase) => benchmarkCase.name);
 }
 
 function buildReplayParams(
@@ -322,10 +335,12 @@ function replayWindow(
   G: Grid,
   params: SolverParams,
   caseName: string,
+  pressureFamily: LnsReplayPressureFamilyLabel,
   seed: number | null,
   incumbent: Solution,
   window: CpSatNeighborhoodWindow,
   windowIndex: number,
+  selectionSource: LnsWindowReplayLabel["selectionSource"],
   selectedWindow: CpSatNeighborhoodWindow | null,
   repairTimeLimitSeconds: number
 ): LnsWindowReplayLabel {
@@ -347,8 +362,10 @@ function replayWindow(
     const status = validation.valid ? statusForPopulationDelta(populationDelta) : "invalid";
     return {
       caseName,
+      pressureFamily,
       seed,
       windowIndex,
+      selectionSource,
       window: { ...window },
       selectedByBaseline: features.selectedByBaseline,
       incumbentPopulation: incumbent.totalPopulation,
@@ -369,8 +386,10 @@ function replayWindow(
     }
     return {
       caseName,
+      pressureFamily,
       seed,
       windowIndex,
+      selectionSource,
       window: { ...window },
       selectedByBaseline: features.selectedByBaseline,
       incumbentPopulation: incumbent.totalPopulation,
@@ -388,18 +407,65 @@ function replayWindow(
   }
 }
 
+interface ReplayWindowPlan {
+  window: CpSatNeighborhoodWindow;
+  windowIndex: number;
+  selectionSource: LnsWindowReplayLabel["selectionSource"];
+}
+
+function replayWindowKey(window: CpSatNeighborhoodWindow): string {
+  return `${window.top}:${window.left}:${window.rows}:${window.cols}`;
+}
+
+function selectReplayWindowPlans(
+  windows: readonly CpSatNeighborhoodWindow[],
+  maxWindows: number,
+  explorationWindowCount: number
+): ReplayWindowPlan[] {
+  const selected = new Map<string, ReplayWindowPlan>();
+  for (const [windowIndex, window] of windows.slice(0, maxWindows).entries()) {
+    selected.set(replayWindowKey(window), {
+      window,
+      windowIndex,
+      selectionSource: "baseline-top-k",
+    });
+  }
+
+  if (explorationWindowCount <= 0 || windows.length <= maxWindows) {
+    return [...selected.values()];
+  }
+
+  const tail = windows.slice(maxWindows);
+  const stride = Math.max(1, Math.floor(tail.length / explorationWindowCount));
+  let explorationAdded = 0;
+  for (let index = tail.length - 1; index >= 0 && explorationAdded < explorationWindowCount; index -= stride) {
+    const window = tail[index];
+    const key = replayWindowKey(window);
+    if (selected.has(key)) continue;
+    selected.set(key, {
+      window,
+      windowIndex: maxWindows + index,
+      selectionSource: "exploration-tail",
+    });
+    explorationAdded++;
+  }
+
+  return [...selected.values()];
+}
+
 function formatSigned(value: number): string {
   return value > 0 ? `+${Number(value).toLocaleString()}` : Number(value).toLocaleString();
 }
 
 export function runLnsWindowReplayLabels(
-  corpus: readonly LnsBenchmarkCase[] = DEFAULT_LNS_NEIGHBORHOOD_ABLATION_CORPUS,
+  corpus: readonly LnsBenchmarkCase[] = DEFAULT_LNS_REPLAY_LABEL_CORPUS,
   options: LnsWindowReplayLabelRunOptions = {}
 ): LnsWindowReplaySuiteResult {
   const selectedCases = selectReplayCases(corpus, options.names);
   const seeds = normalizeBenchmarkSeeds(options.seeds, "LNS window replay seeds") ?? [];
   const seedRuns: readonly (number | null)[] = seeds.length ? seeds : [null];
   const maxWindows = positiveIntegerOrDefault(options.maxWindows, 8);
+  const explorationWindowCount = nonNegativeIntegerOrDefault(options.explorationWindowCount, 0);
   const replayRepairTimeLimitSeconds = positiveFiniteNumberOrDefault(options.repairTimeLimitSeconds, 1);
   const cases = seedRuns.flatMap((seed) =>
     selectedCases.map((benchmarkCase): LnsWindowReplayCaseResult => {
@@ -417,16 +483,19 @@ export function runLnsWindowReplayLabels(
       const selectedWindow = windows.length
         ? selectNeighborhoodWindow(windows, 0, 0, neighborhoodOptions)
         : null;
-      const replayWindows = windows.slice(0, maxWindows);
-      const labels = replayWindows.map((window, windowIndex) =>
+      const replayWindows = selectReplayWindowPlans(windows, maxWindows, explorationWindowCount);
+      const pressureFamily = getLnsReplayPressureFamily(benchmarkCase);
+      const labels = replayWindows.map(({ window, windowIndex, selectionSource }) =>
         replayWindow(
           G,
           params,
           benchmarkCase.name,
+          pressureFamily,
           seed,
           incumbent,
           window,
           windowIndex,
+          selectionSource,
           selectedWindow,
           replayRepairTimeLimitSeconds
         )
@@ -434,6 +503,7 @@ export function runLnsWindowReplayLabels(
       return {
         name: benchmarkCase.name,
         description: benchmarkCase.description,
+        pressureFamily,
         seed,
         gridRows: height(G),
         gridCols: width(G),
@@ -454,7 +524,9 @@ export function runLnsWindowReplayLabels(
     comparisonCount: cases.length,
     seeds,
     selectedCaseNames: selectedCases.map((benchmarkCase) => benchmarkCase.name),
+    pressureFamilies: [...new Set(selectedCases.map(getLnsReplayPressureFamily))],
     maxWindows,
+    explorationWindowCount,
     repairTimeLimitSeconds: replayRepairTimeLimitSeconds,
     labelCount: cases.reduce((total, benchmarkCase) => total + benchmarkCase.labels.length, 0),
     cases,
@@ -471,7 +543,9 @@ export function createLnsWindowReplaySnapshot(
     comparisonCount: result.comparisonCount,
     seeds: [...result.seeds],
     selectedCaseNames: [...result.selectedCaseNames],
+    pressureFamilies: [...result.pressureFamilies],
     maxWindows: result.maxWindows,
+    explorationWindowCount: result.explorationWindowCount,
     repairTimeLimitSeconds: result.repairTimeLimitSeconds,
     labelCount: result.labelCount,
     cases: result.cases.map((benchmarkCase) => ({
@@ -492,14 +566,16 @@ export function formatLnsWindowReplayLabels(result: LnsWindowReplaySuiteResult):
   lines.push(`Seeds: ${result.seeds.length ? result.seeds.join(", ") : "case-default"}`);
   lines.push(`Labels: ${result.labelCount}`);
   lines.push(`Max windows: ${result.maxWindows}`);
+  lines.push(`Exploration windows: ${result.explorationWindowCount}`);
+  lines.push(`Pressure families: ${result.pressureFamilies.join(", ")}`);
   for (const benchmarkCase of result.cases) {
     const seedLabel = benchmarkCase.seed === null ? "case-default" : benchmarkCase.seed;
     lines.push(
-      `- ${benchmarkCase.name} seed=${seedLabel}: incumbent=${benchmarkCase.incumbentPopulation} windows=${benchmarkCase.replayedWindowCount}/${benchmarkCase.candidateWindowCount} selected=${formatWindow(benchmarkCase.baselineSelectedWindow)}`
+      `- ${benchmarkCase.name} family=${benchmarkCase.pressureFamily} seed=${seedLabel}: incumbent=${benchmarkCase.incumbentPopulation} windows=${benchmarkCase.replayedWindowCount}/${benchmarkCase.candidateWindowCount} selected=${formatWindow(benchmarkCase.baselineSelectedWindow)}`
     );
     for (const label of benchmarkCase.labels) {
       lines.push(
-        `  window#${label.windowIndex} ${formatWindow(label.window)} selected=${label.selectedByBaseline} status=${label.status} usable=${label.usable} population=${label.totalPopulation} delta=${formatSigned(label.populationDelta)} improvement=+${label.improvement} repair=${label.repairTimeLimitSeconds}s valid=${label.validation.valid} features=area:${label.features.area} roads:${label.features.roadCountInside} services:${label.features.serviceCountInside} residentials:${label.features.residentialCountInside} headroom:${label.features.residentialHeadroomInside} service-bonus:${label.features.serviceBonusInside}`
+        `  window#${label.windowIndex} ${formatWindow(label.window)} source=${label.selectionSource} selected=${label.selectedByBaseline} status=${label.status} usable=${label.usable} population=${label.totalPopulation} delta=${formatSigned(label.populationDelta)} improvement=+${label.improvement} repair=${label.repairTimeLimitSeconds}s valid=${label.validation.valid} features=area:${label.features.area} roads:${label.features.roadCountInside} services:${label.features.serviceCountInside} residentials:${label.features.residentialCountInside} headroom:${label.features.residentialHeadroomInside} service-bonus:${label.features.serviceBonusInside}`
       );
     }
   }

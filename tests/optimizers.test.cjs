@@ -8,10 +8,14 @@ const {
   buildDeterministicAblationGateReport,
   buildCrossModeBenchmarkParams,
   buildCpSatBenchmarkCpuPlan,
+  buildLnsReplayLabelScaleReadiness,
   collectGreedyOrderingLabelsFromBenchmarkSuite,
   createLearnedRankingLabelSnapshot,
   DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS,
   DEFAULT_LEARNED_RANKING_LABEL_SPLITS,
+  DEFAULT_LNS_REPLAY_LABEL_CASE_NAMES,
+  DEFAULT_LNS_REPLAY_LABEL_CORPUS,
+  DEFAULT_LNS_REPLAY_LABEL_SCALE_THRESHOLDS,
   createGreedyConnectivityShadowOrderingLabelSnapshot,
   createLnsBenchmarkSnapshot,
   createLnsNeighborhoodAblationSnapshot,
@@ -37,8 +41,10 @@ const {
   formatLnsWindowReplayLabels,
   listCrossModeBenchmarkCaseNames,
   listGreedyConnectivityShadowOrderingLabelCaseNames,
+  listLnsReplayPressureFamilies,
   listLnsNeighborhoodAblationCaseNames,
   listLnsBenchmarkCaseNames,
+  listLnsWindowReplayCaseNames,
   normalizeLnsBenchmarkOptions,
   runCrossModeBenchmarkBudgetAblations,
   runCrossModeBenchmarkSuite,
@@ -1681,11 +1687,31 @@ function testLearnedRankingLabelSuite() {
   assert.equal(result.lns.labelCount, 2);
   assert.equal(result.lns.splits[0].usableLabelCount, 1);
   assert.equal(result.lns.splits[0].replay.schemaVersion, 1);
+  assert.deepEqual(result.lns.splits[0].pressureFamilies, ["anchor-service"]);
+  assert.deepEqual(result.lns.splits[0].replay.pressureFamilies, ["anchor-service"]);
+  assert.equal(result.lns.splits[0].replay.explorationWindowCount, 0);
+  assert.equal(result.lns.splits[0].replay.cases[0].pressureFamily, "anchor-service");
   assert.equal(result.lns.splits[0].replay.cases[0].labels[0].usable, true);
+  assert.equal(result.lns.splits[0].replay.cases[0].labels[0].pressureFamily, "anchor-service");
+  assert.equal(result.lns.splits[0].replay.cases[0].labels[0].selectionSource, "baseline-top-k");
+  assert.equal(result.lns.scaleReadiness.passed, false);
+  assert.equal(result.lns.scaleReadiness.thresholds.minPressureFamilies, DEFAULT_LNS_REPLAY_LABEL_SCALE_THRESHOLDS.minPressureFamilies);
+  assert.equal(result.lns.scaleReadiness.splitReadiness[0].failedReasons.length > 0, true);
+  assert.equal(buildLnsReplayLabelScaleReadiness(result.lns.splits, {
+    minPressureFamilies: 1,
+    minSeedsPerFamily: 1,
+    minUsableLabelsPerSplit: 0,
+    minNonNeutralLabelsPerSplit: 0,
+    minUsableLabelsPerFamily: 0,
+    maxNeutralLabelRatio: 1,
+  }).passed, true);
+  assert.equal(buildLnsReplayLabelScaleReadiness([]).passed, false);
   assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
+  assert.equal(snapshot.lns.scaleReadiness.passed, false);
   assert.match(formatted, /Low-Risk Learned Ranking Labels/);
   assert.match(formatted, /protected-holdout=true/);
   assert.match(formatted, /learned-model=none/);
+  assert.match(formatted, /LNS label-scale ready=false/);
   assert.throws(
     () => runLearnedRankingLabelSuite({
       splitConfigs: [
@@ -3307,9 +3333,21 @@ async function testCpSatBenchmarkCorpusHelpers() {
 
 function testLnsBenchmarkCorpusHelpers() {
   const names = DEFAULT_LNS_BENCHMARK_CORPUS.map((entry) => entry.name);
+  const replayNames = DEFAULT_LNS_REPLAY_LABEL_CORPUS.map((entry) => entry.name);
+  const pressureFamilies = listLnsReplayPressureFamilies();
   assert.equal(new Set(names).size, names.length);
   assert(names.includes("seeded-service-anchor-pressure"));
+  assert(names.includes("lns-corridor-squeeze-pressure"));
+  assert.deepEqual(replayNames, [...DEFAULT_LNS_REPLAY_LABEL_CASE_NAMES]);
+  assert.equal(new Set(replayNames).size, replayNames.length);
+  assert.equal(pressureFamilies.length >= 5, true);
+  assert(pressureFamilies.includes("corridor"));
+  assert(pressureFamilies.includes("gate"));
+  assert(pressureFamilies.includes("footprint-pressure"));
+  assert(pressureFamilies.includes("service-pressure"));
+  assert(pressureFamilies.includes("anchor-service"));
   assert.deepEqual(listLnsBenchmarkCaseNames(), names);
+  assert.deepEqual(listLnsWindowReplayCaseNames(), replayNames);
 
   const normalized = normalizeLnsBenchmarkOptions(
     {
@@ -3767,10 +3805,13 @@ function testLnsWindowReplayLabelRunner() {
     assert.equal(result.comparisonCount, 1);
     assert.deepEqual(result.seeds, [7]);
     assert.deepEqual(result.selectedCaseNames, ["seeded-service-anchor-pressure"]);
+    assert.deepEqual(result.pressureFamilies, ["anchor-service"]);
     assert.equal(result.maxWindows, 2);
+    assert.equal(result.explorationWindowCount, 0);
     assert.equal(result.repairTimeLimitSeconds, 0.25);
     assert.equal(result.labelCount, 2);
     assert.equal(benchmarkCase.incumbentPopulation, 100);
+    assert.equal(benchmarkCase.pressureFamily, "anchor-service");
     assert.equal(benchmarkCase.replayedWindowCount, 2);
     assert.equal(benchmarkCase.candidateWindowCount >= 2, true);
     assert.equal(selectedLabel.window.left, 3);
@@ -3783,6 +3824,8 @@ function testLnsWindowReplayLabelRunner() {
     assert.equal(regressedLabel.status, "invalid");
     assert.equal(regressedLabel.usable, false);
     assert.equal(selectedLabel.features.selectedByBaseline, true);
+    assert.equal(selectedLabel.pressureFamily, "anchor-service");
+    assert.equal(selectedLabel.selectionSource, "baseline-top-k");
     assert.equal(selectedLabel.features.area, 9);
     assert.equal(typeof selectedLabel.validation.valid, "boolean");
     assert.equal(selectedLabel.validation.recomputedTotalPopulation >= 0, true);
@@ -3796,9 +3839,23 @@ function testLnsWindowReplayLabelRunner() {
     assert.equal(observedRepairs[0].incumbentPopulation, 100);
     assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
     assert.equal(snapshot.schemaVersion, 1);
+    assert.deepEqual(snapshot.pressureFamilies, ["anchor-service"]);
     assert.equal(Object.hasOwn(snapshot.cases[0].labels[0], "wallClockSeconds"), false);
     assert.deepEqual(repeatedSnapshot, snapshot);
+    const explorationResult = runLnsWindowReplayLabels(undefined, {
+      names: ["seeded-service-anchor-pressure"],
+      seeds: [7],
+      maxWindows: 1,
+      explorationWindowCount: 1,
+      repairTimeLimitSeconds: 0.25,
+    });
+    assert.equal(explorationResult.explorationWindowCount, 1);
+    assert.equal(explorationResult.labelCount, 2);
+    const explorationLabel = explorationResult.cases[0].labels.find((label) => label.selectionSource === "exploration-tail");
+    assert(explorationLabel);
+    assert.equal(explorationLabel.windowIndex >= explorationResult.maxWindows, true);
     assert.match(formatted, /=== LNS Window Replay Labels ===/);
+    assert.match(formatted, /Pressure families: anchor-service/);
     assert.match(formatted, /delta=\+100/);
     assert.match(formatted, /delta=-10/);
     assert.match(formatted, /usable=false/);

@@ -1,4 +1,5 @@
 import { formatBenchmarkSeeds, normalizeBenchmarkSeeds } from "./benchmarkSeeds.js";
+import { positiveIntegerOrDefault } from "./benchmarkOptions.js";
 import {
   DEFAULT_GREEDY_CONNECTIVITY_SHADOW_SCORING_ABLATION_CORPUS,
 } from "./greedyConnectivityShadowAblations.js";
@@ -90,10 +91,6 @@ export const DEFAULT_GREEDY_CONNECTIVITY_SHADOW_ORDERING_LABEL_CORPUS =
   DEFAULT_GREEDY_CONNECTIVITY_SHADOW_SCORING_ABLATION_CORPUS;
 
 const DEFAULT_MAX_LABELS_PER_CASE = 80;
-
-function positiveIntegerOrDefault(value: number | undefined, fallback: number): number {
-  return typeof value === "number" && Number.isInteger(value) && value > 0 ? value : fallback;
-}
 
 function clonePlacement(
   placement: GreedyConnectivityShadowPlacementTrace

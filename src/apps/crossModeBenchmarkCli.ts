@@ -10,6 +10,11 @@ import {
   runCrossModeBenchmarkBudgetAblations,
   runCrossModeBenchmarkSuite,
 } from "../benchmarks/index.js";
+import {
+  parseNameList,
+  parseNumberList,
+  parsePositiveNumber,
+} from "./cliParsing.js";
 
 import type { CrossModeBenchmarkBudgetAblationPolicy, CrossModeBenchmarkMode } from "../benchmarks/index.js";
 
@@ -29,10 +34,7 @@ interface ParsedBenchmarkArgs {
 
 function parseModes(value: string): CrossModeBenchmarkMode[] {
   const knownModes = new Set<string>(DEFAULT_CROSS_MODE_BENCHMARK_MODES);
-  const modes = value
-    .split(",")
-    .map((mode) => mode.trim())
-    .filter((mode) => mode.length > 0);
+  const modes = parseNameList(value, "cross-mode benchmark --modes");
   const unknownModes = modes.filter((mode) => !knownModes.has(mode));
   if (unknownModes.length > 0) {
     throw new Error(
@@ -40,39 +42,6 @@ function parseModes(value: string): CrossModeBenchmarkMode[] {
     );
   }
   return modes as CrossModeBenchmarkMode[];
-}
-
-function parseBudget(value: string): number {
-  const budgetSeconds = Number(value);
-  if (!Number.isFinite(budgetSeconds) || budgetSeconds <= 0) {
-    throw new Error("Cross-mode benchmark --budget must be a positive number of seconds.");
-  }
-  return budgetSeconds;
-}
-
-function parseNumberList(value: string, label: string): number[] {
-  const parts = value
-    .split(",")
-    .map((part) => part.trim());
-  const numbers = parts.map((part) => Number(part));
-  if (numbers.length === 0) {
-    throw new Error(`Cross-mode benchmark --${label} must include at least one number.`);
-  }
-  if (parts.some((part) => part.length === 0) || numbers.some((number) => !Number.isFinite(number))) {
-    throw new Error(`Cross-mode benchmark --${label} must include only finite numbers.`);
-  }
-  return numbers;
-}
-
-function parseNameList(value: string, label: string): string[] {
-  const names = value
-    .split(",")
-    .map((part) => part.trim())
-    .filter((part) => part.length > 0);
-  if (names.length === 0) {
-    throw new Error(`Cross-mode benchmark --${label} must include at least one name.`);
-  }
-  return names;
 }
 
 function selectAblationPolicies(names: string[] | undefined): CrossModeBenchmarkBudgetAblationPolicy[] | undefined {
@@ -126,20 +95,23 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
       continue;
     }
     if (arg.startsWith("--ablation-policies=")) {
-      ablationPolicyNames = parseNameList(arg.slice("--ablation-policies=".length), "ablation-policies");
+      ablationPolicyNames = parseNameList(
+        arg.slice("--ablation-policies=".length),
+        "name for cross-mode benchmark --ablation-policies"
+      );
       budgetAblations = true;
       continue;
     }
     if (arg.startsWith("--budget=")) {
-      budgetSeconds = parseBudget(arg.slice("--budget=".length));
+      budgetSeconds = parsePositiveNumber(arg.slice("--budget=".length), "cross-mode benchmark --budget");
       continue;
     }
     if (arg.startsWith("--budgets=")) {
-      budgetsSeconds = parseNumberList(arg.slice("--budgets=".length), "budgets");
+      budgetsSeconds = parseNumberList(arg.slice("--budgets=".length), "cross-mode benchmark --budgets");
       continue;
     }
     if (arg.startsWith("--seeds=")) {
-      seeds = parseNumberList(arg.slice("--seeds=".length), "seeds");
+      seeds = parseNumberList(arg.slice("--seeds=".length), "cross-mode benchmark --seeds");
       continue;
     }
     names.push(arg);

@@ -13,6 +13,7 @@ import {
   validateExperimentRegistryEntry,
   validateExperimentRegistryFile,
 } from "../benchmarks/experimentRegistry.js";
+import { parseNumberList } from "./cliParsing.js";
 
 import type {
   ExperimentRegistryCheckOptions,
@@ -233,10 +234,7 @@ function parseArgs(argv: string[]): ParsedRegistryArgs {
       continue;
     }
     if (arg.startsWith("--seeds=")) {
-      seeds = arg
-        .slice("--seeds=".length)
-        .split(",")
-        .map((entry) => Number(entry.trim()));
+      seeds = parseNumberList(arg.slice("--seeds=".length), "--seeds");
       continue;
     }
     if (arg.startsWith("--split-status=")) {

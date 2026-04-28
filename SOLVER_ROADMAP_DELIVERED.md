@@ -221,6 +221,15 @@ Reviewed through 2026-04-27.
 - Selected-cell detail now surfaces planner-map context such as service value, residential opportunity, best remaining service bonus, row-0 distance, and connectivity risk.
 - Regression coverage checks the backend response contract, the core explainability-map summary, and the planner heatmap modes.
 
+### 28. CPU Parallelism And Portfolio Measurement
+
+- Closed CPU parallelism and portfolio work as a measurement/safety gate, not a default-promotion gate.
+- CP-SAT portfolio worker summaries now include per-worker telemetry so worker wall/user time, bounds, branches, conflicts, and solution counts can be audited after a feasible portfolio run.
+- Portfolio workers force OR-Tools search logging off inside the worker payload so `logSearchProgress` cannot corrupt the JSON result contract.
+- CP-SAT benchmark output now includes a CPU plan with wall-clock budget, parallel worker lanes, total worker CPU budget, budget headroom, and admission status.
+- Cross-mode scorecards now report observed worker CPU seconds, population per CPU-budget second, and paired CP-SAT versus CP-SAT portfolio efficiency signals.
+- Persisted the closeout evidence under `artifacts/cp-sat-portfolio/2026-04-28/`. The tiny paired run tied population while spending extra CPU budget, so portfolio remains explicit-only and no solver defaults changed.
+
 ## Maintenance Watchpoints
 
 - Keep deterministic benchmark seeds stable when changing solver scoring.

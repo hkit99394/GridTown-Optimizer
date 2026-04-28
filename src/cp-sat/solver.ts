@@ -170,6 +170,10 @@ function parseCpSatPortfolioWorkerSummary(value: unknown, index: number): CpSatP
       value.totalPopulation === null
         ? null
         : expectInteger(value.totalPopulation, `portfolio.workers[${index}].totalPopulation`),
+    telemetry:
+      value.telemetry === undefined || value.telemetry === null
+        ? null
+        : parseCpSatTelemetry(value.telemetry),
   };
 }
 

@@ -56,10 +56,11 @@ Current status notes:
 - Deterministic ablations before model training are closed as an evidence gate; see [SOLVER_ABLATION_DECISIONS.md](SOLVER_ABLATION_DECISIONS.md). No deterministic variant is ready for default promotion. Blocked variants stay out of defaults, Greedy connectivity-shadow scoring is a label target, and LNS anchor/window variants require counterfactual replay labels before learned ranking.
 - Low-risk learned ranking labels are closed as a label-collection gate; see `artifacts/learned-ranking-labels/2026-04-27/`. The bundle contains split-protected Greedy ordering labels and LNS replay labels with schema/audit metadata, but no model was trained and no defaults changed.
 - Planner explainability maps are closed. Solve and manual-layout responses now include a first-class explainability grid, and the planner can switch between layout, service-value, placement-opportunity, and connectivity-risk map modes.
+- CPU parallelism and portfolio work is closed as a measurement/safety gate; see `artifacts/cp-sat-portfolio/2026-04-28/`. Portfolio workers now preserve parseable JSON when search logging is requested, expose per-worker telemetry, and scorecards report CPU-normalized portfolio-vs-single signals. The measured tiny paired run tied population while spending extra CPU budget, and the larger failed artifact remains no-promotion evidence.
 
 | Rank | Priority | Impact | Summary | Success Signal |
 | --- | --- | ---: | --- | --- |
-| 1 | CPU parallelism and portfolio work | 2.5 | Use parallelism only where CPU-normalized benchmarks prove wall-clock gain. | Higher population per wall-clock without hiding wasted CPU. |
+| - | No active solver priority | - | Keep the default path on Auto/Greedy/LNS. Pull a gated item forward only when its trigger fires. | New evidence changes a gated decision without regressing population per wall-clock. |
 
 ## Gated Priorities
 
@@ -73,7 +74,7 @@ These are not next actions. They need the trigger in the first column before mov
 
 1. Try learned Greedy service re-ranking only if held-out labels and benchmarks justify it.
 2. Try learned LNS window re-ranking only after replay labels are trustworthy.
-3. Add CPU portfolio or replay parallelism only with CPU-normalized benchmark wins.
+3. Reconsider CPU portfolio or replay parallelism only with CPU-normalized benchmark wins.
 4. Consider value-guided seeds if seed quality is proven to bottleneck LNS.
 5. Keep distributed CP-SAT, bandits, and full RL for later.
 

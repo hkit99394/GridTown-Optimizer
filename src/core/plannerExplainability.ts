@@ -1,5 +1,4 @@
 import {
-  normalizeServicePlacement,
   residentialFootprint,
   serviceEffectZone,
   serviceFootprint,
@@ -26,6 +25,17 @@ import type {
 } from "./types.js";
 
 type OccupiedKind = PlannerExplainabilityCell["occupiedKind"];
+type Orientation = { rows: number; cols: number };
+
+interface RemainingServiceType {
+  type: ServiceTypeSetting;
+  orientations: Orientation[];
+}
+
+interface RemainingResidentialType {
+  typeIndex: number;
+  orientations: Orientation[];
+}
 
 function incrementCount(counts: Map<number, number>, typeIndex: number): void {
   if (!Number.isInteger(typeIndex) || typeIndex < 0) return;
@@ -46,7 +56,7 @@ function buildRemainingCounts<T extends { avail?: number }>(
   );
 }
 
-function serviceOrientations(type: ServiceTypeSetting): Array<{ rows: number; cols: number }> {
+function serviceOrientations(type: ServiceTypeSetting): Orientation[] {
   const orientations = [{ rows: type.rows, cols: type.cols }];
   if ((type.allowRotation ?? true) && type.rows !== type.cols) {
     orientations.push({ rows: type.cols, cols: type.rows });
@@ -54,12 +64,38 @@ function serviceOrientations(type: ServiceTypeSetting): Array<{ rows: number; co
   return orientations;
 }
 
-function residentialOrientations(type: { w: number; h: number }): Array<{ rows: number; cols: number }> {
+function residentialOrientations(type: { w: number; h: number }): Orientation[] {
   const orientations = [{ rows: type.h, cols: type.w }];
   if (type.h !== type.w) {
     orientations.push({ rows: type.w, cols: type.h });
   }
   return orientations;
+}
+
+function buildRemainingServiceTypes(params: SolverParams, solution: Solution): RemainingServiceType[] {
+  const serviceTypes = params.serviceTypes ?? [];
+  const remaining = buildRemainingCounts(serviceTypes, solution.serviceTypeIndices);
+  return serviceTypes.flatMap((type, index) => {
+    const count = remaining[index] ?? 0;
+    if (count <= 0) return [];
+    return [{
+      type,
+      orientations: serviceOrientations(type),
+    }];
+  });
+}
+
+function buildRemainingResidentialTypes(params: SolverParams, solution: Solution): RemainingResidentialType[] {
+  const residentialTypes = params.residentialTypes ?? [];
+  const remaining = buildRemainingCounts(residentialTypes, solution.residentialTypeIndices);
+  return residentialTypes.flatMap((type, typeIndex) => {
+    const count = remaining[typeIndex] ?? 0;
+    if (count <= 0) return [];
+    return [{
+      typeIndex,
+      orientations: residentialOrientations(type),
+    }];
+  });
 }
 
 function placementFitsTopLeft(
@@ -129,18 +165,14 @@ function buildServiceValueByCell(grid: Grid, solution: Solution): Map<string, nu
 
 function bestRemainingServiceBonusAt(
   grid: Grid,
-  params: SolverParams,
-  solution: Solution,
+  remainingServiceTypes: readonly RemainingServiceType[],
   occupiedBuildings: Set<string>,
   row: number,
   col: number
 ): number {
-  const remaining = buildRemainingCounts(params.serviceTypes, solution.serviceTypeIndices);
   let best = 0;
-  for (let typeIndex = 0; typeIndex < (params.serviceTypes?.length ?? 0); typeIndex += 1) {
-    if ((remaining[typeIndex] ?? 0) <= 0) continue;
-    const type = params.serviceTypes![typeIndex]!;
-    for (const orientation of serviceOrientations(type)) {
+  for (const { type, orientations } of remainingServiceTypes) {
+    for (const orientation of orientations) {
       if (!placementFitsTopLeft(grid, occupiedBuildings, row, col, orientation.rows, orientation.cols)) continue;
       best = Math.max(best, Number(type.bonus ?? 0));
     }
@@ -151,18 +183,15 @@ function bestRemainingServiceBonusAt(
 function bestRemainingResidentialOpportunityAt(
   grid: Grid,
   params: SolverParams,
-  solution: Solution,
+  remainingResidentialTypes: readonly RemainingResidentialType[],
   occupiedBuildings: Set<string>,
   row: number,
   col: number
 ): { maxPopulation: number; headroom: number } {
-  const remaining = buildRemainingCounts(params.residentialTypes, solution.residentialTypeIndices);
   let maxPopulation = 0;
   let headroom = 0;
-  for (let typeIndex = 0; typeIndex < (params.residentialTypes?.length ?? 0); typeIndex += 1) {
-    if ((remaining[typeIndex] ?? 0) <= 0) continue;
-    const type = params.residentialTypes![typeIndex]!;
-    for (const orientation of residentialOrientations(type)) {
+  for (const { typeIndex, orientations } of remainingResidentialTypes) {
+    for (const orientation of orientations) {
       if (!placementFitsTopLeft(grid, occupiedBuildings, row, col, orientation.rows, orientation.cols)) continue;
       const baseMax = getResidentialBaseMax(params, orientation.rows, orientation.cols, typeIndex);
       maxPopulation = Math.max(maxPopulation, baseMax.max);
@@ -183,6 +212,8 @@ export function buildPlannerExplainabilityMap(
   const occupiedBuildings = buildBuildingOccupancy(solution);
   const frontier = computeRow0ReachableEmptyFrontier(grid, occupiedBuildings);
   const serviceValueByCell = buildServiceValueByCell(grid, solution);
+  const remainingServiceTypes = buildRemainingServiceTypes(params, solution);
+  const remainingResidentialTypes = buildRemainingResidentialTypes(params, solution);
   let maxServiceValue = 0;
   let maxBestServiceBonus = 0;
   let maxResidentialOpportunity = 0;
@@ -200,10 +231,10 @@ export function buildPlannerExplainabilityMap(
       const row0Reachable = frontier.reachable.has(key);
       const serviceValue = allowed ? (serviceValueByCell.get(key) ?? 0) : 0;
       const bestServiceBonus = allowed
-        ? bestRemainingServiceBonusAt(grid, params, solution, occupiedBuildings, r, c)
+        ? bestRemainingServiceBonusAt(grid, remainingServiceTypes, occupiedBuildings, r, c)
         : 0;
       const residential = allowed
-        ? bestRemainingResidentialOpportunityAt(grid, params, solution, occupiedBuildings, r, c)
+        ? bestRemainingResidentialOpportunityAt(grid, params, remainingResidentialTypes, occupiedBuildings, r, c)
         : { maxPopulation: 0, headroom: 0 };
       const shadow = allowed && occupied !== "service" && occupied !== "residential"
         ? measureBuildingConnectivityShadowFromFrontier(

@@ -1,0 +1,33 @@
+=== Cross-Mode Benchmark Scorecard ===
+Generated: 2026-04-28T10:11:36.544Z
+Cases: 1
+Modes: CP-SAT, CP-SAT portfolio
+Equal wall-clock budgets: 5s per mode
+Seeds: 7
+
+- typed-housing-single: Tiny typed-housing case shared by all solver modes.
+  band=tiny budget=5s seed=7 best=110 winner=CP-SAT, CP-SAT portfolio grid=4x4
+  CP-SAT portfolio: rank=1 score=110 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.469s cpu-budget=15s observed-cpu=0.031s pop/cpu-budget=7.333 roads=1 services=0 residentials=2
+    progress=current=110 best=110 stage=cp-sat reuse=none elapsed=0.469s since-improve=0s stop=n/a gap=0 portfolio=3/3 feasible, selected=0
+    quality=first-feasible=0.011s first-improve=0.011s best=110@0.011s improvements=4 time-checkpoints=5.000s:110,30.000s:110,120.000s:110 quality-targets=50%:0.011s,90%:0.011s,100%:0.011s trace-events=6
+    budget-signal=under-used-budget use=9.4% unused=4.531s overrun=0.000s first-improve=0.011s best=0.011s after-best=0.458s improvements/s=8.529 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+  CP-SAT: rank=2 score=110 delta=best win-vs-auto=no-auto auto-delta=n/a wall=0.769s cpu-budget=5s observed-cpu=0.027s pop/cpu-budget=22.000 roads=1 services=0 residentials=2
+    progress=current=110 best=110 stage=cp-sat reuse=none elapsed=0.769s since-improve=0.001s stop=n/a gap=0
+    quality=first-feasible=0.026s first-improve=0.026s best=110@0.026s improvements=1 time-checkpoints=5.000s:110,30.000s:110,120.000s:110 quality-targets=50%:0.026s,90%:0.026s,100%:0.026s trace-events=3
+    budget-signal=under-used-budget use=15.4% unused=4.231s overrun=0.000s first-improve=0.026s best=0.026s after-best=0.743s improvements/s=1.300 auto-best-delta=n/a
+    reason=CP-SAT OPTIMAL with population gap 0.
+
+Mode summaries:
+- CP-SAT: runs=1 mean=110.0 best=110 worst=110 seed-stddev=0.0 win-rate-vs-auto=n/a
+- CP-SAT portfolio: runs=1 mean=110.0 best=110 worst=110 seed-stddev=0.0 win-rate-vs-auto=n/a
+
+Budget policy signals:
+- typed-housing-single budget=5s seed=7 recommendation=add-auto-baseline auto=n/a best=CP-SAT portfolio:110 auto-gap=n/a lns-vs-auto=n/a auto-lns=n/a/+n/a auto-cp-sat=n/a/+n/a reason=No Auto run is present for this budget; add Auto before comparing budget policy.
+
+Portfolio efficiency signals:
+- typed-housing-single budget=5s seed=7 recommendation=single-cp-sat single=110 portfolio=110 delta=0 wall-delta=-0.300s cpu-budget-delta=10.000s single-pop/cpu=22.000 portfolio-pop/cpu=7.333 cpu-eff-ratio=0.333 reason=Portfolio tied single CP-SAT on population, so extra CPU lanes are not justified by this run.
+
+Problem-size summaries:
+- tiny CP-SAT: mean=110.0 best=110 win-rate-vs-auto=n/a
+- tiny CP-SAT portfolio: mean=110.0 best=110 win-rate-vs-auto=n/a

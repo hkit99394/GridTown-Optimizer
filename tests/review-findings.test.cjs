@@ -2340,7 +2340,7 @@ function testPlannerResultsUsesPlannerExplainabilityRiskLayer() {
     [
       { r: 0, c: 0, allowed: true, occupiedKind: "service", row0Reachable: false, row0Distance: null, serviceValue: 0, bestServiceBonus: 0, residentialOpportunity: 0, residentialHeadroom: 0, connectivityLostCells: 0, connectivityDisconnectedCells: 0, connectivityFootprintCells: 0 },
       { r: 0, c: 1, allowed: true, occupiedKind: null, row0Reachable: true, row0Distance: 0, serviceValue: 20, bestServiceBonus: 10, residentialOpportunity: 30, residentialHeadroom: 20, connectivityLostCells: 0, connectivityDisconnectedCells: 0, connectivityFootprintCells: 0 },
-      { r: 0, c: 2, allowed: true, occupiedKind: null, row0Reachable: true, row0Distance: 0, serviceValue: 0, bestServiceBonus: 0, residentialOpportunity: 0, residentialHeadroom: 0, connectivityLostCells: 0, connectivityDisconnectedCells: 0, connectivityFootprintCells: 0 },
+      { r: 0, c: 2, allowed: true, occupiedKind: null, row0Reachable: true, row0Distance: 0, serviceValue: 0, bestServiceBonus: 40, residentialOpportunity: 0, residentialHeadroom: 0, connectivityLostCells: 0, connectivityDisconnectedCells: 0, connectivityFootprintCells: 0 },
     ],
     [
       { r: 1, c: 0, allowed: true, occupiedKind: "road", row0Reachable: true, row0Distance: 1, serviceValue: 20, bestServiceBonus: 0, residentialOpportunity: 0, residentialHeadroom: 0, connectivityLostCells: 4, connectivityDisconnectedCells: 4, connectivityFootprintCells: 1 },
@@ -2368,7 +2368,7 @@ function testPlannerResultsUsesPlannerExplainabilityRiskLayer() {
         rows: 2,
         cols: 3,
         maxServiceValue: 20,
-        maxBestServiceBonus: 10,
+        maxBestServiceBonus: 40,
         maxResidentialOpportunity: 30,
         maxResidentialHeadroom: 20,
         maxConnectivityLostCells: 4,
@@ -2461,6 +2461,17 @@ function testPlannerResultsUsesPlannerExplainabilityRiskLayer() {
   assert.equal(riskCell.dataset.connectivityRisk, "4");
   assert.match(riskCell.title, /connectivity risk 4 cells/);
   assert.equal(elements.resultOverlay.children.length, 2);
+
+  state.resultExplainabilityMode = "placement-opportunity";
+  elements.resultMapGrid.children = [];
+  elements.resultOverlay.children = [];
+  controller.renderResults();
+
+  const serviceOnlyCell = findCell(0, 2);
+  assert.match(serviceOnlyCell.className, /placement-opportunity-heatmap-cell/);
+  assert.equal(serviceOnlyCell.dataset.placementOpportunity, "40");
+  assert.match(serviceOnlyCell.title, /best remaining service \+40/);
+  assert.doesNotMatch(serviceOnlyCell.title, /residential up to 40/);
 }
 
 function testPlannerResultsAppliesPlacementOpportunityMap() {
@@ -2602,7 +2613,7 @@ function testPlannerResultsAppliesPlacementOpportunityMap() {
   assert.doesNotMatch(serviceCell.className, /heatmap-cell/);
   assert.match(coveredCell.className, /placement-opportunity-heatmap-cell/);
   assert.equal(coveredCell.dataset.placementOpportunity, "25");
-  assert.match(coveredCell.title, /placement opportunity 25 population/);
+  assert.match(coveredCell.title, /placement opportunity 25/);
   assert.match(coveredCell.title, /House 1x1/);
   assert.doesNotMatch(roadCell.className, /heatmap-cell/);
   assert.match(farCell.className, /placement-opportunity-heatmap-cell/);

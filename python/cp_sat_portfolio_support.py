@@ -157,6 +157,7 @@ def build_portfolio_worker_options(cp_sat_options):
         worker_option["randomSeed"] = int(seed)
         worker_option["randomizeSearch"] = randomize_search
         worker_option["timeLimitSeconds"] = per_worker_time_limit
+        worker_option["logSearchProgress"] = False
         if portfolio_options.get("perWorkerMaxDeterministicTime") is not None:
             per_worker_deterministic_time = _optional_positive_float(
                 portfolio_options,

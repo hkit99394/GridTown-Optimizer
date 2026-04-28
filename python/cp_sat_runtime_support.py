@@ -30,6 +30,7 @@ class CpSatPortfolioWorkerSummary:
     status: str
     feasible: bool
     total_population: int | None
+    telemetry: CpSatTelemetry | None = None
 
 
 @dataclass(frozen=True)
@@ -167,6 +168,7 @@ def portfolio_worker_summary_payload(summary: CpSatPortfolioWorkerSummary):
         "status": summary.status,
         "feasible": summary.feasible,
         "totalPopulation": summary.total_population,
+        "telemetry": telemetry_payload(summary.telemetry) if summary.telemetry is not None else None,
     }
 
 

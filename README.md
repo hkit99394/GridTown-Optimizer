@@ -164,6 +164,8 @@ CP-SAT:
 npm run solve:cp-sat
 ```
 
+The example CP-SAT command is bounded for local use: by default it runs with a 30 second wall-clock cap, a 15 second no-improvement stop, and 8 CP-SAT workers. Override with `-- --cp-sat-time-limit=60`, `-- --cp-sat-no-improvement-timeout=20`, or `-- --cp-sat-workers=4`.
+
 ### 5. Run tests
 
 ```bash
@@ -385,6 +387,8 @@ For single-machine portfolio search, CP-SAT also supports:
 - `portfolio.perWorkerNumWorkers`
 - `portfolio.randomizeSearch`
 
+Portfolio search is explicit-only. Each worker now reports its own CP-SAT telemetry, and portfolio worker search logging is suppressed internally so a requested `logSearchProgress` run still returns parseable JSON. Keep portfolio experiments behind CPU-normalized scorecards; do not treat a wall-clock tie as a win when it spends extra worker CPU budget.
+
 Example:
 
 ```ts
@@ -404,7 +408,7 @@ const portfolio = await solveAsync(grid, {
 
 ### Run the benchmark corpus
 
-The repository includes fixed benchmark corpora for `greedy`, `LNS`, and `CP-SAT`, plus a cross-mode scorecard for equal-budget comparisons. Scorecard rows include seed-policy evidence for `LNS` seed budget/wall time and Auto Greedy seed-stage budget/wall time when those stages run.
+The repository includes fixed benchmark corpora for `greedy`, `LNS`, and `CP-SAT`, plus a cross-mode scorecard for equal-budget comparisons. Scorecard rows include seed-policy evidence for `LNS` seed budget/wall time and Auto Greedy seed-stage budget/wall time when those stages run. CP-SAT portfolio rows also report worker CPU budget and observed worker CPU time so portfolio gains can be judged against CPU cost.
 
 Run the greedy suite:
 
@@ -516,6 +520,8 @@ Run the cross-mode scorecard:
 ```bash
 npm run benchmark:scorecard
 ```
+
+When `cp-sat` and `cp-sat-portfolio` are both present, the scorecard includes portfolio efficiency signals. A portfolio run is only a promotion candidate when it improves population per wall-clock without losing CPU-budget efficiency versus single CP-SAT.
 
 Run a named scorecard case with JSON output:
 
@@ -804,6 +810,7 @@ Road cells are encoded as `"r,c"` strings inside the `Set`.
 
 - `CP-SAT` requires a working Python runtime plus OR-Tools.
 - If you omit `cpSat.timeLimitSeconds`, the CP-SAT backend runs until it finishes or is stopped.
+- The `npm run solve:cp-sat` example supplies bounded CP-SAT defaults so local smoke runs return a feasible best-effort result instead of running indefinitely.
 - If you omit `auto.wallClockLimitSeconds`, the outer `auto` policy has no global cap.
 - If you omit `params.optimizer`, runtime dispatch resolves it to `auto`.
 - `auto` generates per-stage seeds; use `solution.autoStage.generatedSeeds` to inspect the actual Greedy, LNS, and CP-SAT stage seeds.

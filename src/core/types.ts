@@ -291,6 +291,8 @@ export interface CpSatPortfolioWorkerSummary {
   status: string;
   feasible: boolean;
   totalPopulation: number | null;
+  /** Per-worker CP-SAT telemetry. Null for still-running snapshot placeholders. */
+  telemetry: CpSatTelemetry | null;
 }
 
 export interface CpSatPortfolioSummary {

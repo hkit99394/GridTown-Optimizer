@@ -6,11 +6,12 @@
  * advanced inspection mode.
  */
 
-import type { Grid, OptimizerName } from "../core/types.js";
+import type { Grid, OptimizerName, SolverParams } from "../core/types.js";
 import { normalizeServicePlacement } from "../core/buildings.js";
 import { formatSolutionMap, validateSolutionMap } from "../core/index.js";
 import { solveAsync } from "../runtime/solve.js";
 import { describeAutoStopReason, startAutoSolve } from "../auto/index.js";
+import { startCpSatSolve } from "../cp-sat/solver.js";
 
 const DEFAULT_PARAMS = {
   serviceTypes: [
@@ -56,6 +57,12 @@ const AUTO_GREEDY_PARAMS = {
   serviceExactMaxCombinations: 512,
 };
 
+const DEFAULT_CLI_CP_SAT_PARAMS = {
+  timeLimitSeconds: 30,
+  noImprovementTimeoutSeconds: 15,
+  numWorkers: 8,
+};
+
 function readCliArgs(): string[] {
   return process.argv.slice(2);
 }
@@ -87,6 +94,38 @@ function readCliGreedyRandomSeed(): number | undefined {
   return undefined;
 }
 
+function readNumericCliOption(longName: string, fallback: number): number {
+  const args = readCliArgs();
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index].trim();
+    const prefix = `--${longName}=`;
+    if (arg.startsWith(prefix)) {
+      const value = Number(arg.slice(prefix.length));
+      return Number.isFinite(value) && value > 0 ? value : fallback;
+    }
+    if (arg === `--${longName}`) {
+      const value = Number(args[index + 1] ?? "");
+      return Number.isFinite(value) && value > 0 ? value : fallback;
+    }
+  }
+  return fallback;
+}
+
+function readIntegerCliOption(longName: string, fallback: number): number {
+  return Math.floor(readNumericCliOption(longName, fallback));
+}
+
+function readCliCpSatOptions() {
+  return {
+    timeLimitSeconds: readNumericCliOption("cp-sat-time-limit", DEFAULT_CLI_CP_SAT_PARAMS.timeLimitSeconds),
+    noImprovementTimeoutSeconds: readNumericCliOption(
+      "cp-sat-no-improvement-timeout",
+      DEFAULT_CLI_CP_SAT_PARAMS.noImprovementTimeoutSeconds
+    ),
+    numWorkers: readIntegerCliOption("cp-sat-workers", DEFAULT_CLI_CP_SAT_PARAMS.numWorkers),
+  };
+}
+
 function describeOptimizerRole(optimizer: OptimizerName): string {
   if (optimizer === "auto") {
     return "Recommended quality path. A capped fast Greedy seed starts the run, then LNS and bounded CP-SAT continue improving the incumbent.";
@@ -103,6 +142,7 @@ function describeOptimizerRole(optimizer: OptimizerName): string {
 export async function runExample(): Promise<void> {
   const optimizer = readCliOptimizer();
   const greedyRandomSeed = readCliGreedyRandomSeed();
+  const cliCpSatOptions = optimizer === "cp-sat" ? readCliCpSatOptions() : undefined;
   const grid: Grid = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -118,13 +158,14 @@ export async function runExample(): Promise<void> {
     [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
   ];
 
-  const params = {
+  const params: SolverParams = {
     ...DEFAULT_PARAMS,
     optimizer,
     greedy: {
       ...(optimizer === "auto" ? AUTO_GREEDY_PARAMS : DEFAULT_PARAMS.greedy),
       ...(greedyRandomSeed !== undefined ? { randomSeed: greedyRandomSeed } : {}),
     },
+    ...(cliCpSatOptions ? { cpSat: cliCpSatOptions } : {}),
   };
   const solution = optimizer === "auto"
     ? await (async () => {
@@ -161,36 +202,9 @@ export async function runExample(): Promise<void> {
           clearInterval(progressTicker);
         }
       })()
-    : await solveAsync(
-        grid,
-        params,
-        optimizer === "cp-sat"
-          ? {
-              onProgress: (update) => {
-                if (update.kind === "portfolio-worker-complete" && update.worker) {
-                  console.log(
-                    "[CP-SAT progress]",
-                    `worker=${update.worker.workerIndex}`,
-                    `status=${update.worker.status}`,
-                    `population=${update.worker.totalPopulation ?? "n/a"}`
-                  );
-                  return;
-                }
-                if (!update.telemetry) {
-                  return;
-                }
-                console.log(
-                  "[CP-SAT progress]",
-                  `kind=${update.kind}`,
-                  `wall=${update.telemetry.solveWallTimeSeconds.toFixed(3)}s`,
-                  `pop=${update.telemetry.incumbentPopulation ?? "n/a"}`,
-                  `bound=${update.telemetry.bestPopulationUpperBound ?? "n/a"}`,
-                  `gap=${update.telemetry.populationGapUpperBound ?? "n/a"}`
-                );
-              },
-            }
-          : undefined
-      );
+    : optimizer === "cp-sat"
+      ? await runCpSatExampleSolve(grid, params)
+      : await solveAsync(grid, params);
   const validation = validateSolutionMap({ grid, solution, params });
 
   console.log("=== City Builder Solution ===\n");
@@ -206,7 +220,15 @@ export async function runExample(): Promise<void> {
   if (solution.autoStage?.stopReason) {
     console.log("Auto stop reason:", describeAutoStopReason(solution.autoStage.stopReason) ?? solution.autoStage.stopReason);
   }
-  if (params.greedy.randomSeed !== undefined) console.log("Greedy random seed:", params.greedy.randomSeed);
+  if (params.greedy?.randomSeed !== undefined) console.log("Greedy random seed:", params.greedy.randomSeed);
+  if (params.cpSat) {
+    console.log(
+      "CP-SAT limits:",
+      `time=${params.cpSat.timeLimitSeconds ?? "none"}s,`,
+      `noImprovement=${params.cpSat.noImprovementTimeoutSeconds ?? "none"}s,`,
+      `workers=${params.cpSat.numWorkers ?? "default"}`
+    );
+  }
   if (solution.cpSatStatus) console.log("CP-SAT status:", solution.cpSatStatus);
   if (solution.cpSatObjectivePolicy) console.log("CP-SAT objective:", solution.cpSatObjectivePolicy.summary);
   if (solution.cpSatTelemetry) {
@@ -247,6 +269,43 @@ export async function runExample(): Promise<void> {
   }
   console.log("\n=== Map ===");
   console.log(formatSolutionMap(grid, solution));
+}
+
+async function runCpSatExampleSolve(grid: Grid, params: SolverParams) {
+  const handle = startCpSatSolve(grid, params);
+  let stopRequested = false;
+  let lastPopulation: number | null = null;
+  let lastStatus: string | null = null;
+
+  const requestStop = () => {
+    if (stopRequested) return;
+    stopRequested = true;
+    console.log("\nStopping CP-SAT after current feasible snapshot...");
+    handle.cancel();
+  };
+
+  process.once("SIGINT", requestStop);
+  process.once("SIGTERM", requestStop);
+
+  const progressTicker = setInterval(() => {
+    const snapshot = handle.getLatestSnapshot();
+    if (!snapshot) return;
+    const status = snapshot.cpSatStatus ?? null;
+    const population = snapshot.totalPopulation;
+    if (status === lastStatus && population === lastPopulation) return;
+    lastStatus = status;
+    lastPopulation = population;
+    console.log("[CP-SAT progress]", `status=${status ?? "snapshot"}`, `best=${population}`);
+  }, 1000);
+  progressTicker.unref?.();
+
+  try {
+    return await handle.promise;
+  } finally {
+    clearInterval(progressTicker);
+    process.removeListener("SIGINT", requestStop);
+    process.removeListener("SIGTERM", requestStop);
+  }
 }
 
 void runExample().catch((error) => {

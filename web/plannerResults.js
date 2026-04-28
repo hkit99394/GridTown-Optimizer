@@ -958,7 +958,7 @@
             if (!(value > 0)) continue;
             heatmap.values[row][col] = value;
             heatmap.details[row][col] = [
-              value > 0 ? `residential up to ${formatExplainabilityNumber(value)}` : "",
+              residentialValue > 0 ? `residential up to ${formatExplainabilityNumber(residentialValue)}` : "",
               Number(cell.residentialHeadroom ?? 0) > 0
                 ? `headroom +${formatExplainabilityNumber(cell.residentialHeadroom)}`
                 : "",
@@ -1020,7 +1020,7 @@
         return `service value +${formatExplainabilityNumber(value)}${detail ? ` (${detail})` : ""}`;
       }
       if (mode === "placement-opportunity") {
-        return `placement opportunity ${formatExplainabilityNumber(value)} population${detail ? ` (${detail})` : ""}`;
+        return `placement opportunity ${formatExplainabilityNumber(value)}${detail ? ` (${detail})` : ""}`;
       }
       if (mode === "connectivity-risk") {
         return `connectivity risk ${formatExplainabilityNumber(value)} cell${value === 1 ? "" : "s"}${detail ? ` (${detail})` : ""}`;

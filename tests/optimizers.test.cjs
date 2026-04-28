@@ -7,6 +7,7 @@ const path = require("node:path");
 const {
   buildDeterministicAblationGateReport,
   buildCrossModeBenchmarkParams,
+  buildCpSatBenchmarkCpuPlan,
   collectGreedyOrderingLabelsFromBenchmarkSuite,
   createLearnedRankingLabelSnapshot,
   DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS,
@@ -2805,6 +2806,7 @@ worker_options = module.build_portfolio_worker_options({
     "timeLimitSeconds": 12,
     "maxDeterministicTime": 6,
     "numWorkers": 8,
+    "logSearchProgress": True,
     "stopFilePath": "/tmp/shared-stop-token",
     "snapshotFilePath": "/tmp/shared-snapshot.json",
     "portfolio": {
@@ -2835,6 +2837,7 @@ print(json.dumps(worker_options))
       maxDeterministicTime: worker.maxDeterministicTime,
       numWorkers: worker.numWorkers,
       randomizeSearch: worker.randomizeSearch,
+      logSearchProgress: worker.logSearchProgress,
       stopFilePath: worker.stopFilePath,
       hasSnapshotFilePath: Object.prototype.hasOwnProperty.call(worker, "snapshotFilePath"),
       hasPortfolio: Object.prototype.hasOwnProperty.call(worker, "portfolio"),
@@ -2846,6 +2849,7 @@ print(json.dumps(worker_options))
         maxDeterministicTime: 1.5,
         numWorkers: 1,
         randomizeSearch: true,
+        logSearchProgress: false,
         stopFilePath: "/tmp/shared-stop-token",
         hasSnapshotFilePath: false,
         hasPortfolio: false,
@@ -2856,6 +2860,7 @@ print(json.dumps(worker_options))
         maxDeterministicTime: 1.5,
         numWorkers: 1,
         randomizeSearch: true,
+        logSearchProgress: false,
         stopFilePath: "/tmp/shared-stop-token",
         hasSnapshotFilePath: false,
         hasPortfolio: false,
@@ -3197,6 +3202,41 @@ async function testCpSatBenchmarkCorpusHelpers() {
   assert.equal(normalized.portfolio?.perWorkerTimeLimitSeconds, 12);
   assert.equal(normalized.portfolio?.perWorkerMaxDeterministicTime, DEFAULT_CP_SAT_BENCHMARK_OPTIONS.maxDeterministicTime);
   assert.equal(normalized.portfolio?.perWorkerNumWorkers, 1);
+  assert.equal(normalized.portfolio?.totalCpuBudgetSeconds, 24);
+
+  assert.deepEqual(buildCpSatBenchmarkCpuPlan(normalized), {
+    mode: "portfolio",
+    wallClockBudgetSeconds: 12,
+    workerCount: 2,
+    perWorkerNumWorkers: 1,
+    perWorkerTimeLimitSeconds: 12,
+    parallelWorkerCount: 2,
+    workerCpuBudgetSeconds: 24,
+    cpuBudgetMultiplier: 2,
+    totalCpuBudgetSeconds: 24,
+    cpuBudgetHeadroomSeconds: 0,
+    admission: "within-budget",
+  });
+
+  assert.deepEqual(
+    buildCpSatBenchmarkCpuPlan({
+      timeLimitSeconds: 5,
+      numWorkers: 4,
+    }),
+    {
+      mode: "single",
+      wallClockBudgetSeconds: 5,
+      workerCount: 1,
+      perWorkerNumWorkers: 4,
+      perWorkerTimeLimitSeconds: 5,
+      parallelWorkerCount: 4,
+      workerCpuBudgetSeconds: 20,
+      cpuBudgetMultiplier: 4,
+      totalCpuBudgetSeconds: null,
+      cpuBudgetHeadroomSeconds: null,
+      admission: "within-budget",
+    }
+  );
 
   const normalizedWithExplicitSeeds = normalizeCpSatBenchmarkOptions(
     {
@@ -3210,6 +3250,21 @@ async function testCpSatBenchmarkCorpusHelpers() {
 
   assert.equal(normalizedWithExplicitSeeds.portfolio?.workerCount, 3);
   assert.deepEqual(normalizedWithExplicitSeeds.portfolio?.randomSeeds, [2, 5, 8]);
+  assert.equal(normalizedWithExplicitSeeds.portfolio?.totalCpuBudgetSeconds, 30);
+
+  assert.throws(
+    () => normalizeCpSatBenchmarkOptions(
+      {
+        timeLimitSeconds: 5,
+        portfolio: {
+          workerCount: 3,
+          totalCpuBudgetSeconds: 10,
+        },
+      },
+      undefined
+    ),
+    /CP-SAT benchmark portfolio requests 15 total CPU seconds, exceeding the 10 second benchmark portfolio budget/
+  );
 
   await assert.rejects(
     () => runCpSatBenchmarkSuite(DEFAULT_CP_SAT_BENCHMARK_CORPUS, { names: ["missing-case"] }),
@@ -4202,6 +4257,57 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(mockedAuto.timeToQuality.timeCheckpoints.find((entry) => entry.elapsedMs === 5000).bestScore, 10);
   assert.equal(mockedAuto.timeToQuality.qualityTargets.find((entry) => entry.ratio === 1).reachedScore, 10);
   assert.match(mockedPortfolio.checkpointReason, /CP-SAT portfolio worker|CP-SAT FEASIBLE/);
+  assert.equal(mocked.portfolioEfficiencySignals.length, 0);
+
+  const telemetry = (population, userTimeSeconds = 1) => ({
+    solveWallTimeSeconds: userTimeSeconds,
+    userTimeSeconds,
+    solutionCount: 1,
+    incumbentObjectiveValue: population,
+    bestObjectiveBound: population,
+    objectiveGap: 0,
+    incumbentPopulation: population,
+    bestPopulationUpperBound: population,
+    populationGapUpperBound: 0,
+    lastImprovementAtSeconds: userTimeSeconds,
+    secondsSinceLastImprovement: 0,
+    numBranches: 0,
+    numConflicts: 0,
+  });
+  const portfolioCompared = await runCrossModeBenchmarkSuite([benchmarkCase], {
+    modes: ["cp-sat", "cp-sat-portfolio"],
+    budgetsSeconds: [3],
+    seeds: [5],
+    portfolio: { workerCount: 2 },
+    solve: async (_grid, params, context) => {
+      await delay(context.mode === "cp-sat" ? 5 : 1);
+      const totalPopulation = context.mode === "cp-sat-portfolio" ? 24 : 10;
+      const solution = buildMockSolution({
+        optimizer: params.optimizer,
+        totalPopulation,
+        cpSatStatus: "FEASIBLE",
+      });
+      solution.cpSatTelemetry = telemetry(totalPopulation, context.mode === "cp-sat" ? 2 : 1);
+      if (context.mode === "cp-sat-portfolio") {
+        solution.cpSatPortfolio = {
+          workerCount: 2,
+          selectedWorkerIndex: 1,
+          workers: [
+            { workerIndex: 0, randomSeed: context.seed, randomizeSearch: true, numWorkers: 1, status: "FEASIBLE", feasible: true, totalPopulation: 12, telemetry: telemetry(12, 1) },
+            { workerIndex: 1, randomSeed: context.seed + 101, randomizeSearch: true, numWorkers: 1, status: "FEASIBLE", feasible: true, totalPopulation, telemetry: telemetry(totalPopulation, 1) },
+          ],
+        };
+      }
+      return solution;
+    },
+  });
+  assert.equal(portfolioCompared.portfolioEfficiencySignals.length, 1);
+  assert.equal(portfolioCompared.portfolioEfficiencySignals[0].scoreDelta, 14);
+  assert.equal(portfolioCompared.portfolioEfficiencySignals[0].portfolioWorkerCpuBudgetSeconds, 6);
+  assert.equal(portfolioCompared.portfolioEfficiencySignals[0].portfolioObservedWorkerCpuSeconds, 2);
+  assert.equal(portfolioCompared.portfolioEfficiencySignals[0].cpuBudgetEfficiencyRatio, 1.2);
+  assert.equal(portfolioCompared.portfolioEfficiencySignals[0].recommendation, "portfolio-cpu-win");
+
   const lnsTraceJsonl = serializeDecisionTraceJsonl(mockedLns.decisionTrace);
   assert.equal(parseDecisionTraceJsonl(lnsTraceJsonl).length, mockedLns.decisionTrace.length);
   assert.match(formatCrossModeBenchmarkDecisionTraceJsonl(mocked), /"schemaVersion":1/);

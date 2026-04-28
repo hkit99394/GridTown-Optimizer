@@ -46,6 +46,10 @@ export type CrossModeBudgetPolicyRecommendation =
   | "shift-auto-budget-to-cp-sat"
   | "keep-portfolio-experimental"
   | "investigate-auto-loss";
+export type CrossModePortfolioEfficiencyRecommendation =
+  | "portfolio-cpu-win"
+  | "portfolio-wall-win-only"
+  | "single-cp-sat";
 
 export interface CrossModeBenchmarkCase {
   name: string;
@@ -114,6 +118,9 @@ export interface CrossModeBenchmarkModeResult {
   rank: number;
   wallClockSeconds: number;
   workerCpuBudgetSeconds: number;
+  observedWorkerCpuSeconds: number | null;
+  populationPerWorkerCpuBudgetSecond: number | null;
+  populationPerObservedCpuSecond: number | null;
   roadCount: number;
   serviceCount: number;
   residentialCount: number;
@@ -195,6 +202,29 @@ export interface CrossModeBenchmarkBudgetPolicySignal {
   lnsSeedWallClockSeconds: number | null;
 }
 
+export interface CrossModePortfolioEfficiencySignal {
+  caseName: string;
+  problemSizeBand: CrossModeProblemSizeBand;
+  budgetSeconds: number;
+  seed: number;
+  singleScore: number;
+  portfolioScore: number;
+  scoreDelta: number;
+  singleWallClockSeconds: number;
+  portfolioWallClockSeconds: number;
+  wallClockDeltaSeconds: number;
+  singleWorkerCpuBudgetSeconds: number;
+  portfolioWorkerCpuBudgetSeconds: number;
+  cpuBudgetDeltaSeconds: number;
+  singleObservedWorkerCpuSeconds: number | null;
+  portfolioObservedWorkerCpuSeconds: number | null;
+  singlePopulationPerCpuBudgetSecond: number | null;
+  portfolioPopulationPerCpuBudgetSecond: number | null;
+  cpuBudgetEfficiencyRatio: number | null;
+  recommendation: CrossModePortfolioEfficiencyRecommendation;
+  reason: string;
+}
+
 export interface CrossModeBenchmarkSuiteResult {
   generatedAt: string;
   /** Backward-compatible first budget. */
@@ -209,6 +239,7 @@ export interface CrossModeBenchmarkSuiteResult {
   modeSummaries: CrossModeBenchmarkModeSummary[];
   problemSizeSummaries: CrossModeBenchmarkProblemSizeSummary[];
   budgetPolicySignals: CrossModeBenchmarkBudgetPolicySignal[];
+  portfolioEfficiencySignals: CrossModePortfolioEfficiencySignal[];
 }
 
 export interface CrossModeBenchmarkBudgetAblationPolicy {
@@ -556,6 +587,11 @@ export function buildCrossModeBenchmarkParams(
 }
 
 function workerCpuBudgetSeconds(mode: CrossModeBenchmarkMode, cpSat: CpSatOptions, budgetSeconds: number): number {
+  if (mode === "cp-sat") {
+    const workerCount = cpSat.numWorkers ?? 1;
+    const timeLimitSeconds = cpSat.timeLimitSeconds ?? budgetSeconds;
+    return workerCount * timeLimitSeconds;
+  }
   if (mode !== "cp-sat-portfolio") return budgetSeconds;
   const portfolio = cpSat.portfolio;
   const workerCount = portfolio?.randomSeeds?.length ?? portfolio?.workerCount ?? 1;
@@ -566,6 +602,22 @@ function workerCpuBudgetSeconds(mode: CrossModeBenchmarkMode, cpSat: CpSatOption
 
 function roundSignalValue(value: number): number {
   return Math.round(value * 1000) / 1000;
+}
+
+function safePopulationRate(population: number, seconds: number | null): number | null {
+  return seconds !== null && seconds > 0 ? roundSignalValue(population / seconds) : null;
+}
+
+function observedWorkerCpuSeconds(solution: Solution): number | null {
+  const portfolioWorkerTimes = solution.cpSatPortfolio?.workers
+    .map((worker) => worker.telemetry?.userTimeSeconds)
+    .filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+  if (portfolioWorkerTimes?.length) {
+    return roundSignalValue(portfolioWorkerTimes.reduce((sum, value) => sum + value, 0));
+  }
+  return typeof solution.cpSatTelemetry?.userTimeSeconds === "number"
+    ? roundSignalValue(solution.cpSatTelemetry.userTimeSeconds)
+    : null;
 }
 
 function millisecondsToSignalSeconds(value: number | null): number | null {
@@ -797,6 +849,8 @@ async function runCrossModeBenchmarkCase(
       wallClockSeconds,
       policyName: options.budgetAblationPolicy?.name,
     });
+    const workerCpuBudgetSecondsValue = workerCpuBudgetSeconds(mode, params.cpSat ?? {}, budgetSeconds);
+    const observedWorkerCpuSecondsValue = observedWorkerCpuSeconds(solution);
 
     rawResults.push({
       mode,
@@ -807,7 +861,10 @@ async function runCrossModeBenchmarkCase(
       seed,
       totalPopulation: solution.totalPopulation,
       wallClockSeconds,
-      workerCpuBudgetSeconds: workerCpuBudgetSeconds(mode, params.cpSat ?? {}, budgetSeconds),
+      workerCpuBudgetSeconds: workerCpuBudgetSecondsValue,
+      observedWorkerCpuSeconds: observedWorkerCpuSecondsValue,
+      populationPerWorkerCpuBudgetSecond: safePopulationRate(solution.totalPopulation, workerCpuBudgetSecondsValue),
+      populationPerObservedCpuSecond: safePopulationRate(solution.totalPopulation, observedWorkerCpuSecondsValue),
       roadCount: solution.roads.size,
       serviceCount: solution.services.length,
       residentialCount: solution.residentials.length,
@@ -1038,6 +1095,75 @@ function buildBudgetPolicySignals(
   });
 }
 
+function buildPortfolioEfficiencyReason(signal: Omit<CrossModePortfolioEfficiencySignal, "reason">): string {
+  if (signal.recommendation === "portfolio-cpu-win") {
+    return `Portfolio beat single CP-SAT by ${signal.scoreDelta} population while matching wall-clock and CPU-budget efficiency.`;
+  }
+  if (signal.recommendation === "portfolio-wall-win-only") {
+    return `Portfolio beat single CP-SAT by ${signal.scoreDelta} population, but used CPU budget less efficiently; keep experimental.`;
+  }
+  if (signal.scoreDelta > 0) {
+    return `Portfolio improved population by ${signal.scoreDelta}, but did not meet the CPU-normalized wall-clock promotion gate.`;
+  }
+  if (signal.scoreDelta === 0) {
+    return "Portfolio tied single CP-SAT on population, so extra CPU lanes are not justified by this run.";
+  }
+  return `Single CP-SAT beat portfolio by ${Math.abs(signal.scoreDelta)} population.`;
+}
+
+function buildPortfolioEfficiencySignals(
+  cases: readonly CrossModeBenchmarkCaseScorecard[]
+): CrossModePortfolioEfficiencySignal[] {
+  const signals: CrossModePortfolioEfficiencySignal[] = [];
+  for (const scorecard of cases) {
+    const single = scorecard.results.find((result) => result.mode === "cp-sat") ?? null;
+    const portfolio = scorecard.results.find((result) => result.mode === "cp-sat-portfolio") ?? null;
+    if (!single || !portfolio) continue;
+
+    const scoreDelta = portfolio.totalPopulation - single.totalPopulation;
+    const wallClockDeltaSeconds = roundSignalValue(portfolio.wallClockSeconds - single.wallClockSeconds);
+    const cpuBudgetDeltaSeconds = roundSignalValue(portfolio.workerCpuBudgetSeconds - single.workerCpuBudgetSeconds);
+    const cpuBudgetEfficiencyRatio =
+      single.populationPerWorkerCpuBudgetSecond !== null
+      && single.populationPerWorkerCpuBudgetSecond > 0
+      && portfolio.populationPerWorkerCpuBudgetSecond !== null
+        ? roundSignalValue(portfolio.populationPerWorkerCpuBudgetSecond / single.populationPerWorkerCpuBudgetSecond)
+        : null;
+    const recommendation: CrossModePortfolioEfficiencyRecommendation =
+      scoreDelta > 0 && wallClockDeltaSeconds <= 0 && (cpuBudgetEfficiencyRatio ?? 0) >= 1
+        ? "portfolio-cpu-win"
+        : scoreDelta > 0 && wallClockDeltaSeconds <= 0
+          ? "portfolio-wall-win-only"
+          : "single-cp-sat";
+    const partial = {
+      caseName: scorecard.name,
+      problemSizeBand: scorecard.problemSizeBand,
+      budgetSeconds: scorecard.budgetSeconds,
+      seed: scorecard.seed,
+      singleScore: single.totalPopulation,
+      portfolioScore: portfolio.totalPopulation,
+      scoreDelta,
+      singleWallClockSeconds: roundSignalValue(single.wallClockSeconds),
+      portfolioWallClockSeconds: roundSignalValue(portfolio.wallClockSeconds),
+      wallClockDeltaSeconds,
+      singleWorkerCpuBudgetSeconds: roundSignalValue(single.workerCpuBudgetSeconds),
+      portfolioWorkerCpuBudgetSeconds: roundSignalValue(portfolio.workerCpuBudgetSeconds),
+      cpuBudgetDeltaSeconds,
+      singleObservedWorkerCpuSeconds: single.observedWorkerCpuSeconds,
+      portfolioObservedWorkerCpuSeconds: portfolio.observedWorkerCpuSeconds,
+      singlePopulationPerCpuBudgetSecond: single.populationPerWorkerCpuBudgetSecond,
+      portfolioPopulationPerCpuBudgetSecond: portfolio.populationPerWorkerCpuBudgetSecond,
+      cpuBudgetEfficiencyRatio,
+      recommendation,
+    };
+    signals.push({
+      ...partial,
+      reason: buildPortfolioEfficiencyReason(partial),
+    });
+  }
+  return signals;
+}
+
 export async function runCrossModeBenchmarkSuite(
   corpus: readonly CrossModeBenchmarkCase[] = DEFAULT_CROSS_MODE_BENCHMARK_CORPUS,
   options: CrossModeBenchmarkRunOptions = {}
@@ -1059,6 +1185,7 @@ export async function runCrossModeBenchmarkSuite(
   }
   const summaries = buildSummaries(cases);
   const budgetPolicySignals = buildBudgetPolicySignals(cases);
+  const portfolioEfficiencySignals = buildPortfolioEfficiencySignals(cases);
 
   return {
     generatedAt: new Date().toISOString(),
@@ -1071,6 +1198,7 @@ export async function runCrossModeBenchmarkSuite(
     modes,
     cases,
     budgetPolicySignals,
+    portfolioEfficiencySignals,
     ...summaries,
   };
 }
@@ -1139,6 +1267,24 @@ function formatBudgetPolicySignal(signal: CrossModeBenchmarkBudgetPolicySignal):
   ].join(" ");
 }
 
+function formatPortfolioEfficiencySignal(signal: CrossModePortfolioEfficiencySignal): string {
+  return [
+    `${signal.caseName}`,
+    `budget=${signal.budgetSeconds}s`,
+    `seed=${signal.seed}`,
+    `recommendation=${signal.recommendation}`,
+    `single=${signal.singleScore}`,
+    `portfolio=${signal.portfolioScore}`,
+    `delta=${formatScoreDeltaVsAuto(signal.scoreDelta)}`,
+    `wall-delta=${formatSeconds(signal.wallClockDeltaSeconds)}`,
+    `cpu-budget-delta=${formatSeconds(signal.cpuBudgetDeltaSeconds)}`,
+    `single-pop/cpu=${signal.singlePopulationPerCpuBudgetSecond === null ? "n/a" : signal.singlePopulationPerCpuBudgetSecond.toFixed(3)}`,
+    `portfolio-pop/cpu=${signal.portfolioPopulationPerCpuBudgetSecond === null ? "n/a" : signal.portfolioPopulationPerCpuBudgetSecond.toFixed(3)}`,
+    `cpu-eff-ratio=${signal.cpuBudgetEfficiencyRatio === null ? "n/a" : signal.cpuBudgetEfficiencyRatio.toFixed(3)}`,
+    `reason=${signal.reason}`,
+  ].join(" ");
+}
+
 function formatSeedPolicyEvidence(benchmark: CrossModeBenchmarkModeResult): string | null {
   const details: string[] = [];
   if (benchmark.lnsSeedTimeLimitSeconds !== null || benchmark.lnsSeedWallClockSeconds !== null) {
@@ -1171,7 +1317,7 @@ export function formatCrossModeBenchmarkSuite(result: CrossModeBenchmarkSuiteRes
     );
     for (const benchmark of [...scorecard.results].sort(compareModeResults)) {
       lines.push(
-        `  ${benchmark.label}: rank=${benchmark.rank} score=${benchmark.totalPopulation} delta=${formatScoreDelta(benchmark.scoreDeltaToBest)} win-vs-auto=${benchmark.winVsAuto} auto-delta=${formatScoreDeltaVsAuto(benchmark.scoreDeltaVsAuto)} wall=${benchmark.wallClockSeconds.toFixed(3)}s cpu-budget=${benchmark.workerCpuBudgetSeconds}s roads=${benchmark.roadCount} services=${benchmark.serviceCount} residentials=${benchmark.residentialCount}`
+        `  ${benchmark.label}: rank=${benchmark.rank} score=${benchmark.totalPopulation} delta=${formatScoreDelta(benchmark.scoreDeltaToBest)} win-vs-auto=${benchmark.winVsAuto} auto-delta=${formatScoreDeltaVsAuto(benchmark.scoreDeltaVsAuto)} wall=${benchmark.wallClockSeconds.toFixed(3)}s cpu-budget=${benchmark.workerCpuBudgetSeconds}s observed-cpu=${formatSeconds(benchmark.observedWorkerCpuSeconds)} pop/cpu-budget=${benchmark.populationPerWorkerCpuBudgetSecond === null ? "n/a" : benchmark.populationPerWorkerCpuBudgetSecond.toFixed(3)} roads=${benchmark.roadCount} services=${benchmark.serviceCount} residentials=${benchmark.residentialCount}`
       );
       lines.push(`    progress=${formatSolverProgressSummary(benchmark.progressSummary)}`);
       lines.push(
@@ -1198,6 +1344,16 @@ export function formatCrossModeBenchmarkSuite(result: CrossModeBenchmarkSuiteRes
   lines.push("Budget policy signals:");
   for (const signal of result.budgetPolicySignals) {
     lines.push(`- ${formatBudgetPolicySignal(signal)}`);
+  }
+
+  lines.push("");
+  lines.push("Portfolio efficiency signals:");
+  if (result.portfolioEfficiencySignals.length === 0) {
+    lines.push("- No paired CP-SAT / CP-SAT portfolio runs.");
+  } else {
+    for (const signal of result.portfolioEfficiencySignals) {
+      lines.push(`- ${formatPortfolioEfficiencySignal(signal)}`);
+    }
   }
 
   lines.push("");

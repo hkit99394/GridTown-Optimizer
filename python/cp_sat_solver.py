@@ -1802,6 +1802,7 @@ def portfolio_worker_task(grid, params, worker_option, worker_index):
             status=solve_result.status,
             feasible=solve_result.feasible,
             total_population=solve_result.total_population,
+            telemetry=solve_result.telemetry,
         ),
         solve_result=solve_result,
     )
@@ -1842,6 +1843,7 @@ def solve_cp_sat_portfolio(grid, params, cp_sat_options, progress_emitter=None):
                             "status": "RUNNING",
                             "feasible": False,
                             "totalPopulation": None,
+                            "telemetry": None,
                         })
                 write_snapshot(
                     snapshot_file_path,

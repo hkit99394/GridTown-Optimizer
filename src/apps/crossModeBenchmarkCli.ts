@@ -1,6 +1,7 @@
 import {
   DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS,
   DEFAULT_CROSS_MODE_BENCHMARK_MODES,
+  DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS,
   formatCrossModeBenchmarkBudgetAblationDecisionTraceJsonl,
   formatCrossModeBenchmarkBudgetAblations,
   formatCrossModeBenchmarkDecisionTraceJsonl,
@@ -33,6 +34,7 @@ interface ParsedBenchmarkArgs {
   traceJsonl: boolean;
   budgetAblations: boolean;
   coverageCorpus: boolean;
+  productCorpus: boolean;
   list: boolean;
   names: string[];
   modes?: CrossModeBenchmarkMode[];
@@ -60,6 +62,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let traceJsonl = false;
   let budgetAblations = false;
   let coverageCorpus = false;
+  let productCorpus = false;
   let list = false;
   let modes: CrossModeBenchmarkMode[] | undefined;
   let ablationPolicyNames: string[] | undefined;
@@ -105,6 +108,10 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
       coverageCorpus = true;
       continue;
     }
+    if (isCliFlag(arg, "--product-corpus")) {
+      productCorpus = true;
+      continue;
+    }
     if (isCliFlag(arg, "--list")) {
       list = true;
       continue;
@@ -120,6 +127,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     traceJsonl,
     budgetAblations,
     coverageCorpus,
+    productCorpus,
     list,
     names,
     modes,
@@ -132,7 +140,14 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
 
 export async function runCrossModeBenchmarkCli(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
-  const corpus = args.coverageCorpus ? DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS : undefined;
+  if (args.coverageCorpus && args.productCorpus) {
+    throw new Error("Use only one cross-mode corpus selector: --coverage-corpus or --product-corpus.");
+  }
+  const corpus = args.productCorpus
+    ? DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS
+    : args.coverageCorpus
+      ? DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS
+      : undefined;
   if (args.list) {
     writeCliList(listCrossModeBenchmarkCaseNames(corpus));
     return;

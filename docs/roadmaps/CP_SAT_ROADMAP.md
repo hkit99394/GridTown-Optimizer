@@ -29,28 +29,31 @@ Delivered summary:
 - benchmark corpus and reproducible harness
 - single-machine portfolio CP-SAT
 - road-semantics scorecard closeout with model-size telemetry
+- initial async and portfolio failure-mode regressions
 
 Detailed delivered notes live in [CP_SAT_ROADMAP_DELIVERED.md](./CP_SAT_ROADMAP_DELIVERED.md).
 
 ## Remaining Work By Product Priority
 
-Ordering note: this CP-SAT-specific list follows [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md) and [NEXT_STAGE_REVIEW.md](./NEXT_STAGE_REVIEW.md). Road-semantics scorecard closeout is now delivered; async/portfolio hardening is the next CP-SAT priority.
+Ordering note: this CP-SAT-specific list follows [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md) and [NEXT_STAGE_REVIEW.md](./NEXT_STAGE_REVIEW.md). Road-semantics scorecard closeout is delivered. The first async/portfolio failure-mode regression slice is delivered; the remaining CP-SAT priority is deeper cancellation/snapshot and worker-result coverage.
 
 ### 1. Deepen async and portfolio failure-mode coverage
 
 Impact on target: high confidence / medium direct quality
+
+Status: partial. The first OR-Tools-free regression slice covers malformed streamed progress, malformed portfolio-worker progress with backend termination, non-zero child-process diagnostics, blocked process-pool fallback, and `BrokenProcessPool` fallback.
 
 Why it matters:
 - async and portfolio paths are shipped, but more edge-case coverage will make them safer to evolve
 - this is the main confidence gap before increasing single-machine fan-out or starting distributed orchestration
 - it protects the exact-solver contract that `auto`, planner reuse, and portfolio summaries now depend on
 
-Scope:
+Remaining scope:
 - keep the OS-level orphan-process cancellation regression for portfolio worker trees green
 - interruption and cancellation cases
-- broken worker and degraded pool execution
-- malformed streamed progress payloads
-- async child-process failure paths
+- worker `future.result()` failure after sibling progress
+- portfolio cancellation snapshot propagation
+- no-final-result streamed-progress close path
 
 ### 2. Use CP-SAT as a label and replay engine
 

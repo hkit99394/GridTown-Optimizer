@@ -26,6 +26,7 @@ const {
   DEFAULT_CROSS_MODE_BENCHMARK_CORPUS,
   DEFAULT_CROSS_MODE_BENCHMARK_MODES,
   DEFAULT_CROSS_MODE_BENCHMARK_SEEDS,
+  DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS,
   DEFAULT_LNS_BENCHMARK_CORPUS,
   DEFAULT_LNS_BENCHMARK_OPTIONS,
   DEFAULT_LNS_NEIGHBORHOOD_ABLATION_CASE_NAMES,
@@ -3034,6 +3035,25 @@ results = module.run_portfolio_workers(
     lambda grid, params, worker_option, worker_index: {"workerIndex": worker_index, "seed": worker_option["randomSeed"]},
 )
 
+class BrokenProcessExecutor:
+    def __init__(self, *args, **kwargs):
+        pass
+    def __enter__(self):
+        return self
+    def __exit__(self, exc_type, exc, tb):
+        return False
+    def submit(self, *args, **kwargs):
+        raise module.BrokenProcessPool("process pool broke")
+
+module.concurrent.futures.ProcessPoolExecutor = BrokenProcessExecutor
+
+broken_results = module.run_portfolio_workers(
+    [[1]],
+    {"optimizer": "cp-sat"},
+    [{"randomSeed": 13}],
+    lambda grid, params, worker_option, worker_index: {"workerIndex": worker_index, "seed": worker_option["randomSeed"]},
+)
+
 try:
     module.build_portfolio_worker_options({"portfolio": {"workerCount": 2}})
     missing_budget_error = None
@@ -3088,6 +3108,7 @@ except ValueError as error:
 
 print(json.dumps({
     "results": results,
+    "brokenResults": broken_results,
     "missingBudgetError": missing_budget_error,
     "workerThreadError": worker_thread_error,
     "cpuBudgetError": cpu_budget_error,
@@ -3108,11 +3129,85 @@ print(json.dumps({
     { workerIndex: 0, seed: 7 },
     { workerIndex: 1, seed: 9 },
   ]);
+  assert.deepEqual(payload.brokenResults, [
+    { workerIndex: 0, seed: 13 },
+  ]);
   assert.match(payload.missingBudgetError, /requires timeLimitSeconds/);
   assert.match(payload.workerThreadError, /exceeding the 8 worker portfolio limit/);
   assert.match(payload.cpuBudgetError, /exceeding the 28800\.0 second portfolio budget/);
   assert.match(payload.tooManySeedsError, /must contain between 1 and 8 seeds/);
   assert.match(payload.duplicateSeedsError, /must not contain duplicate seeds/);
+}
+
+async function testCpSatAsyncRejectsMalformedStreamedProgress() {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "city-builder-cp-sat-malformed-stream-"));
+  const scriptPath = path.join(tempDir, "malformed-progress.cjs");
+  fs.writeFileSync(
+    scriptPath,
+    `
+process.stdin.resume();
+process.stdout.write(JSON.stringify({ event: "progress", kind: "not-a-progress-kind" }) + "\\n");
+setInterval(() => {}, 1000);
+`,
+    "utf8"
+  );
+
+  try {
+    await assert.rejects(
+      () => solveCpSatAsync(
+        [[1]],
+        {
+          optimizer: "cp-sat",
+          cpSat: {
+            pythonExecutable: process.execPath,
+            scriptPath,
+            streamProgress: true,
+          },
+          residentialTypes: [{ w: 1, h: 1, min: 1, max: 1, avail: 1 }],
+          availableBuildings: { residentials: 1, services: 0 },
+        },
+        {
+          onProgress: () => {},
+        }
+      ),
+      /progress.kind must be a known progress kind/
+    );
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+}
+
+async function testCpSatAsyncRejectsChildProcessFailureWithDiagnostics() {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "city-builder-cp-sat-child-failure-"));
+  const scriptPath = path.join(tempDir, "child-failure.cjs");
+  fs.writeFileSync(
+    scriptPath,
+    `
+const fs = require("node:fs");
+process.stdin.resume();
+fs.writeSync(1, "partial stdout");
+fs.writeSync(2, "child exploded");
+process.exit(3);
+`,
+    "utf8"
+  );
+
+  try {
+    await assert.rejects(
+      () => solveCpSatAsync([[1]], {
+        optimizer: "cp-sat",
+        cpSat: {
+          pythonExecutable: process.execPath,
+          scriptPath,
+        },
+        residentialTypes: [{ w: 1, h: 1, min: 1, max: 1, avail: 1 }],
+        availableBuildings: { residentials: 1, services: 0 },
+      }),
+      /CP-SAT backend failed with exit code 3\. stderr: child exploded stdout: partial stdout/
+    );
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
 }
 
 function testBackgroundSolveCleansTempDirectoryWhenRequestBuildFails() {
@@ -3233,6 +3328,80 @@ process.stdin.on("end", () => {
         process.kill(childPid, "SIGKILL");
       } catch {}
     }
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+}
+
+async function testCpSatAsyncRejectsMalformedPortfolioProgressAndStopsBackend() {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "city-builder-cp-sat-progress-"));
+  const scriptPath = path.join(tempDir, "malformed-portfolio-progress.cjs");
+  const terminatedPath = path.join(tempDir, "terminated.txt");
+
+  fs.writeFileSync(
+    scriptPath,
+    `
+const fs = require("node:fs");
+const terminatedPath = ${JSON.stringify(terminatedPath)};
+let input = "";
+
+process.on("SIGTERM", () => {
+  fs.writeFileSync(terminatedPath, "terminated\\n");
+  process.exit(0);
+});
+
+process.stdin.setEncoding("utf8");
+process.stdin.on("data", (chunk) => {
+  input += chunk;
+});
+process.stdin.on("end", () => {
+  JSON.parse(input || "{}");
+  process.stdout.write(JSON.stringify({
+    event: "progress",
+    kind: "portfolio-worker-complete",
+    worker: {
+      workerIndex: "0",
+      randomSeed: 17,
+      randomizeSearch: true,
+      numWorkers: 1,
+      status: "FEASIBLE",
+      feasible: true,
+      totalPopulation: 10,
+      telemetry: null,
+    },
+  }) + "\\n");
+  setInterval(() => {}, 1000);
+});
+`,
+    "utf8"
+  );
+
+  const progressUpdates = [];
+
+  try {
+    await assert.rejects(
+      () =>
+        solveCpSatAsync(
+          [[1, 1], [1, 1]],
+          {
+            optimizer: "cp-sat",
+            cpSat: {
+              pythonExecutable: process.execPath,
+              scriptPath,
+              streamProgress: true,
+              progressIntervalSeconds: 0,
+            },
+          },
+          {
+            onProgress: (update) => progressUpdates.push(update),
+            progressIntervalSeconds: 0,
+          }
+        ),
+      /CP-SAT backend returned invalid JSON: portfolio\.workers\[0\]\.workerIndex must be an integer/
+    );
+
+    assert.deepEqual(progressUpdates, []);
+    await waitForFile(terminatedPath);
+  } finally {
     fs.rmSync(tempDir, { recursive: true, force: true });
   }
 }
@@ -4025,6 +4194,38 @@ async function testCrossModeBenchmarkHelpers() {
     listCrossModeBenchmarkCaseNames(DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS),
     coverageNames
   );
+
+  const productNames = DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS.map((entry) => entry.name);
+  assert.equal(new Set(productNames).size, productNames.length);
+  assert.deepEqual(
+    listCrossModeBenchmarkCaseNames(DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS),
+    productNames
+  );
+  assert(productNames.includes("manual-layout-replay-warm-start"));
+  assert(productNames.includes("expansion-comparison-replay"));
+  assert(productNames.includes("multi-anchor-road-components"));
+  const productTags = new Set(DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS.flatMap((entry) => entry.workflowTags ?? []));
+  for (const tag of [
+    "solver-smoke",
+    "manual-layout-replay",
+    "expansion-comparison",
+    "corridor",
+    "gate",
+    "footprint-pressure",
+    "service-pressure",
+    "anchor-service",
+    "multi-anchor",
+  ]) {
+    assert(productTags.has(tag), `Expected product workflow corpus to include ${tag}.`);
+  }
+  assert(DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS.some((entry) => entry.split === "development"));
+  assert(DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS.some((entry) => entry.split === "holdout"));
+  const manualReplayCase = DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS.find(
+    (entry) => entry.name === "manual-layout-replay-warm-start"
+  );
+  assert.equal(manualReplayCase.params.lns.seedHint.sourceName, "manual-layout-replay");
+  assert.equal(manualReplayCase.params.cpSat.warmStartHint.sourceName, "manual-layout-replay");
+
   assert.throws(
     () => buildCrossModeBenchmarkParams(benchmarkCase, "greedy", { budgetSeconds: -1, seeds: [5] }),
     /budget seconds must be a finite number greater than 0/
@@ -4157,6 +4358,8 @@ async function testCrossModeBenchmarkHelpers() {
   assert.deepEqual(result.seeds, [5]);
   assert.deepEqual(result.modes, ["greedy"]);
   assert.equal(result.cases.length, 1);
+  assert.equal(result.cases[0].split, "development");
+  assert.deepEqual(result.cases[0].workflowTags, []);
   assert.equal(result.cases[0].results.length, 1);
   assert.equal(result.cases[0].results[0].mode, "greedy");
   assert.equal(result.cases[0].results[0].winVsAuto, "no-auto");
@@ -4169,6 +4372,25 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(result.budgetPolicySignals.length, 1);
   assert.equal(result.budgetPolicySignals[0].caseName, "mock-scorecard");
   assert.equal(result.budgetPolicySignals[0].recommendation, "add-auto-baseline");
+
+  const productWorkflowResult = await runCrossModeBenchmarkSuite(DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS, {
+    names: ["manual-layout-replay-warm-start"],
+    modes: ["greedy"],
+    budgetsSeconds: [1],
+    seeds: [7],
+    solve: (_grid, params, context) => buildMockSolution({
+      optimizer: params.optimizer,
+      totalPopulation: context.benchmarkCase.params.cpSat.warmStartHint.solution.totalPopulation,
+      roads: context.benchmarkCase.params.cpSat.warmStartHint.solution.roads,
+      residentials: context.benchmarkCase.params.cpSat.warmStartHint.solution.residentials,
+      services: context.benchmarkCase.params.cpSat.warmStartHint.solution.services,
+    }),
+  });
+  assert.equal(productWorkflowResult.caseCount, 1);
+  assert.equal(productWorkflowResult.selectedCaseNames[0], "manual-layout-replay-warm-start");
+  assert.equal(productWorkflowResult.cases[0].split, "development");
+  assert.deepEqual(productWorkflowResult.cases[0].workflowTags, ["manual-layout-replay"]);
+  assert.equal(productWorkflowResult.cases[0].bestScore, 160);
 
   const mocked = await runCrossModeBenchmarkSuite([benchmarkCase], {
     modes: ["auto", "greedy", "lns", "cp-sat-portfolio"],
@@ -8524,8 +8746,11 @@ async function main() {
   maybeTestCpSatSnapshotWritesTelemetry();
   maybeTestCpSatPortfolioOptionHelpers();
   testCpSatPortfolioExecutorFallbackHelpers();
+  await testCpSatAsyncRejectsMalformedStreamedProgress();
+  await testCpSatAsyncRejectsChildProcessFailureWithDiagnostics();
   testBackgroundSolveCleansTempDirectoryWhenRequestBuildFails();
   await testBackgroundSolveCancellationKillsProcessGroupChildren();
+  await testCpSatAsyncRejectsMalformedPortfolioProgressAndStopsBackend();
   maybeTestCpSatPopulationUpperBoundHelpers();
   maybeTestCpSatResidentialPopulationUpperBoundHelpers();
   await maybeTestCpSatOptimizer();

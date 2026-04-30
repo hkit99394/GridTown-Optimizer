@@ -50,6 +50,17 @@ import type {
 
 export type CrossModeBenchmarkMode = OptimizerName | "cp-sat-portfolio";
 export type CrossModeProblemSizeBand = "tiny" | "small" | "medium";
+export type CrossModeBenchmarkSplit = "development" | "holdout";
+export type CrossModeWorkflowTag =
+  | "solver-smoke"
+  | "manual-layout-replay"
+  | "expansion-comparison"
+  | "corridor"
+  | "gate"
+  | "footprint-pressure"
+  | "service-pressure"
+  | "anchor-service"
+  | "multi-anchor";
 export type CrossModeWinVsAuto = "baseline" | "win" | "loss" | "tie" | "no-auto";
 export type CrossModeBudgetAllocationSignalKind =
   | "insufficient-trace"
@@ -75,6 +86,8 @@ export interface CrossModeBenchmarkCase {
   name: string;
   description: string;
   problemSizeBand?: CrossModeProblemSizeBand;
+  split?: CrossModeBenchmarkSplit;
+  workflowTags?: readonly CrossModeWorkflowTag[];
   grid: Grid;
   params: SolverParams;
 }
@@ -192,6 +205,8 @@ export interface CrossModeBenchmarkCaseScorecard {
   name: string;
   description: string;
   problemSizeBand: CrossModeProblemSizeBand;
+  split: CrossModeBenchmarkSplit;
+  workflowTags: CrossModeWorkflowTag[];
   gridRows: number;
   gridCols: number;
   budgetSeconds: number;
@@ -947,6 +962,8 @@ async function runCrossModeBenchmarkCase(
     name: benchmarkCase.name,
     description: benchmarkCase.description,
     problemSizeBand,
+    split: benchmarkCase.split ?? "development",
+    workflowTags: [...(benchmarkCase.workflowTags ?? [])],
     gridRows: benchmarkCase.grid.length,
     gridCols: benchmarkCase.grid[0]?.length ?? 0,
     budgetSeconds,
@@ -1327,8 +1344,9 @@ export function formatCrossModeBenchmarkSuite(result: CrossModeBenchmarkSuiteRes
 
   for (const scorecard of result.cases) {
     lines.push(`- ${scorecard.name}: ${scorecard.description}`);
+    const workflowTags = scorecard.workflowTags.length ? scorecard.workflowTags.join(",") : "none";
     lines.push(
-      `  band=${scorecard.problemSizeBand} budget=${scorecard.budgetSeconds}s seed=${scorecard.seed} best=${scorecard.bestScore ?? "n/a"} winner=${scorecard.winnerModes.map((mode) => MODE_LABELS[mode]).join(", ") || "n/a"} grid=${scorecard.gridRows}x${scorecard.gridCols}`
+      `  band=${scorecard.problemSizeBand} split=${scorecard.split} workflow=${workflowTags} budget=${scorecard.budgetSeconds}s seed=${scorecard.seed} best=${scorecard.bestScore ?? "n/a"} winner=${scorecard.winnerModes.map((mode) => MODE_LABELS[mode]).join(", ") || "n/a"} grid=${scorecard.gridRows}x${scorecard.gridCols}`
     );
     for (const benchmark of [...scorecard.results].sort(compareModeResults)) {
       lines.push(

@@ -264,6 +264,15 @@ Reviewed through 2026-04-30.
 - Persisted the scorecard evidence under `artifacts/cp-sat-road-semantics/2026-04-30/` and registered it in `artifacts/experiments/index.jsonl`.
 - The 5s single-worker scorecard reached `OPTIMAL` on all six cases, including 200 population on `multi-anchor-road-components`.
 
+### 32. Product Workflow Corpus Seed And CP-SAT Failure Regressions
+
+- Added optional cross-mode case metadata for development/holdout split and workflow tags, and surfaced the metadata in JSON/text scorecards.
+- Added `DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS` with 10 cases covering solver smoke, manual-layout replay, expansion-comparison replay, corridor, gate, footprint-pressure, service-pressure, anchor-service, and multi-anchor workflows.
+- Added `--product-corpus` to the cross-mode benchmark CLI and guarded it against combining with `--coverage-corpus`.
+- Added reusable LNS seed and CP-SAT warm-start cases for manual-layout and expansion-comparison replay smoke coverage.
+- Added CP-SAT async/portfolio failure regressions for malformed streamed progress, malformed portfolio-worker progress with backend termination, non-zero child-process diagnostics, blocked process-pool fallback, and `BrokenProcessPool` fallback.
+- No solver defaults changed; promotion-grade product corpus runs still need fixed-budget dev/holdout artifacts and registry entries.
+
 ## Maintenance Watchpoints
 
 - Keep deterministic benchmark seeds stable when changing solver scoring.

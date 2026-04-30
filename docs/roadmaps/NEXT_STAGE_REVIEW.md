@@ -25,6 +25,7 @@ The default posture remains unchanged: keep `auto` as the recommended quality pa
 - `CP-SAT` is the exact backend. It supplies proof when status is `OPTIMAL`; bounded runs may return `FEASIBLE` with an incumbent and gap.
 - The local planner supports saved layouts, manual editing, layout validation, continuation hints, solved-map inspection, explainability maps, and expansion comparison.
 - Cross-mode benchmarks, deterministic ablations, learned-label artifacts, CP-SAT portfolio measurement, and an experiment registry already exist.
+- Cross-mode benchmarks now have an initial product-shaped corpus selector: `--product-corpus` lists 10 dev/holdout cases tagged for solver smoke, manual-layout replay, expansion comparison, corridor, gate, footprint-pressure, service-pressure, anchor-service, and multi-anchor coverage.
 
 ### Evidence Already Closed
 
@@ -151,14 +152,16 @@ Success signal:
 
 Goal: judge solver changes on the real planning loop, not only saturated smoke tests.
 
+Status: partial. The initial selectable corpus and scorecard metadata are delivered; promotion-grade dev/holdout runs and API-level workflow metrics are still open.
+
 Deliverables:
 
 - Keep the current default cross-mode cases as smoke tests.
-- Add 6-10 representative planner payloads.
-- Add manual-layout replay through `/api/layout/evaluate`.
-- Add expansion-comparison replay.
-- Add corridor, gate, footprint-pressure, service-overlap, anchor-service, and multi-anchor cases.
-- Preserve development and protected holdout splits.
+- Add 6-10 representative planner payloads. Initial 10-case `--product-corpus` selector delivered.
+- Add manual-layout replay through `/api/layout/evaluate`. Initial reusable-hint replay case delivered; API-level replay metrics remain.
+- Add expansion-comparison replay. Initial expansion replay case delivered; explicit expansion-comparison lift metrics remain.
+- Add corridor, gate, footprint-pressure, service-overlap, anchor-service, and multi-anchor cases. Initial tagged coverage delivered.
+- Preserve development and protected holdout splits. Initial case-level split metadata delivered.
 
 Metrics:
 
@@ -328,11 +331,11 @@ Any default-path solver change must satisfy:
 
 Recommended order:
 
-1. Build the product-shaped benchmark corpus.
+1. Run and register the initial product-shaped benchmark corpus, then add API-level workflow metrics.
 2. Add telemetry manifests and strict registry entries for solver/workflow runs.
 3. Implement adaptive LNS operators and operator weighting.
 4. Retune Auto budgets from scorecard evidence.
-5. Deepen async and portfolio failure-mode coverage before increasing CP-SAT orchestration complexity.
+5. Finish async and portfolio cancellation/snapshot and worker-result failure coverage before increasing CP-SAT orchestration complexity.
 6. Add exact small-window DP repair only if telemetry shows small-repair CP-SAT overhead or narrow-window bottlenecks.
 7. Explore service-master decomposition if pressure cases justify it.
 8. Scale LNS replay labels from adaptive operator outcomes.

@@ -2218,6 +2218,37 @@ async function maybeTestCpSatUsesColumnZeroRoadAnchor() {
   assert.equal([...solution.roads].some((key) => key.startsWith("0,")), false);
 }
 
+async function maybeTestCpSatAllowsMultiAnchorComponentsInOptimization() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const grid = [
+    [0, 1, 0, 0, 0, 1, 0],
+    [0, 1, 1, 0, 0, 1, 1],
+    [0, 1, 1, 0, 0, 1, 1],
+  ];
+  const baseParams = {
+    optimizer: "cp-sat",
+    cpSat: {
+      pythonExecutable,
+      timeLimitSeconds: 5,
+      numWorkers: 1,
+    },
+    residentialTypes: [{ w: 2, h: 2, min: 100, max: 100, avail: 2 }],
+    availableBuildings: { residentials: 2, services: 0 },
+  };
+
+  const aligned = await solveCpSatAsync(grid, baseParams);
+  const validation = validateSolution({ grid, solution: aligned, params: baseParams });
+
+  assert.match(aligned.cpSatStatus ?? "", /^(OPTIMAL|FEASIBLE)$/);
+  assert.equal(validation.valid, true);
+  assert.equal(aligned.totalPopulation, 200);
+  assert.deepEqual([...aligned.roads].sort(), ["0,1", "0,5"]);
+}
+
 function maybeTestCpSatSyncCompatibility() {
   const pythonExecutable = resolveCpSatPython();
   if (!pythonExecutable) {
@@ -8140,11 +8171,152 @@ print(json.dumps({
   }
 
   const payload = JSON.parse(result.stdout);
-  assert.deepEqual(payload.root_ids, [0]);
+  assert(payload.root_ids.length >= 1);
+  assert(payload.root_ids.every((cellId) => [0, 1].includes(cellId)));
   assert.deepEqual(payload.roads, [
     [0, 0],
     [0, 1],
   ]);
+}
+
+function maybeTestCpSatAllowsMultipleAnchoredRoadComponents() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const command = `
+import importlib.util
+import json
+
+spec = importlib.util.spec_from_file_location("cp_sat_solver", ${JSON.stringify(scriptPath)})
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+def solve_forced_roads(grid, forced_cells):
+    built = module.build_model(grid, {
+        "availableBuildings": {"services": 0, "residentials": 0},
+    })
+    forced_cells = {tuple(cell) for cell in forced_cells}
+    for cell_id, variable in enumerate(built.road_vars):
+        built.model.Add(variable == (1 if built.allowed_cells[cell_id] in forced_cells else 0))
+
+    solver = module.cp_model.CpSolver()
+    solver.parameters.num_search_workers = 1
+    status = solver.Solve(built.model)
+    feasible = status in (module.cp_model.OPTIMAL, module.cp_model.FEASIBLE)
+    return {
+        "status": solver.StatusName(status),
+        "feasible": feasible,
+        "roads": [
+            built.allowed_cells[cell_id]
+            for cell_id, variable in enumerate(built.road_vars)
+            if feasible and solver.Value(variable) == 1
+        ],
+        "root_cells": [
+            built.allowed_cells[cell_id]
+            for cell_id, variable in built.root_vars.items()
+            if feasible and solver.Value(variable) == 1
+        ],
+    }
+
+def inspect_multi_component_hinting():
+    grid = [
+        [1, 0, 1],
+        [1, 0, 1],
+    ]
+    params = {
+        "availableBuildings": {"services": 0, "residentials": 0},
+    }
+    built = module.build_model(grid, params)
+    selected_road_ids = {
+        cell_id
+        for cell_id, cell in enumerate(built.allowed_cells)
+        if cell in {(0, 0), (0, 2)}
+    }
+    hinted_root_cells = [
+        built.allowed_cells[cell_id]
+        for cell_id in sorted(module.hinted_root_ids_from_selected_roads(built, selected_road_ids))
+    ]
+
+    module.apply_warm_start_hints(built.model, built, {
+        "roads": ["0,0", "0,2"],
+    })
+    hint_proto = built.model.Proto().solution_hint
+    vars_to_values = dict(zip(hint_proto.vars, hint_proto.values))
+    selected_root_hints = [
+        built.allowed_cells[cell_id]
+        for cell_id, variable in built.root_vars.items()
+        if vars_to_values.get(variable.Index()) == 1
+    ]
+
+    fixed_built = module.build_model(grid, params)
+    module.apply_local_neighborhood_fixing(fixed_built.model, fixed_built, {
+        "roads": ["0,0", "0,2"],
+        "fixOutsideNeighborhoodToHintedValue": True,
+        "neighborhoodWindow": {"top": 1, "left": 0, "rows": 1, "cols": 1},
+    })
+    solver = module.cp_model.CpSolver()
+    solver.parameters.num_search_workers = 1
+    status = solver.Solve(fixed_built.model)
+
+    return {
+        "hinted_root_cells": hinted_root_cells,
+        "selected_root_hints": selected_root_hints,
+        "fixed_neighborhood_feasible": status in (module.cp_model.OPTIMAL, module.cp_model.FEASIBLE),
+    }
+
+anchored_components = solve_forced_roads(
+    [
+        [1, 0, 1],
+        [1, 0, 1],
+    ],
+    [(0, 0), (0, 2)],
+)
+unanchored_component = solve_forced_roads(
+    [
+        [1, 1, 1],
+        [1, 1, 1],
+        [1, 1, 1],
+    ],
+    [(0, 0), (2, 1), (2, 2)],
+)
+
+print(json.dumps({
+    "anchored_components": anchored_components,
+    "unanchored_component": unanchored_component,
+    "multi_component_hinting": inspect_multi_component_hinting(),
+}))
+`;
+
+  const result = childProcess.spawnSync(pythonExecutable, ["-c", command], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT multi-anchor road component constraints.");
+  }
+
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.anchored_components.feasible, true);
+  assert.deepEqual(payload.anchored_components.roads, [
+    [0, 0],
+    [0, 2],
+  ]);
+  assert.deepEqual(payload.anchored_components.root_cells, [
+    [0, 0],
+    [0, 2],
+  ]);
+  assert.equal(payload.unanchored_component.feasible, false);
+  assert.deepEqual(payload.multi_component_hinting.hinted_root_cells, [
+    [0, 0],
+    [0, 2],
+  ]);
+  assert.deepEqual(payload.multi_component_hinting.selected_root_hints, [
+    [0, 0],
+    [0, 2],
+  ]);
+  assert.equal(payload.multi_component_hinting.fixed_neighborhood_feasible, true);
 }
 
 function maybeTestCpSatRoadEligibilityReductionHelpers() {
@@ -8295,6 +8467,7 @@ async function main() {
   maybeTestCpSatResidentialPopulationUpperBoundHelpers();
   await maybeTestCpSatOptimizer();
   await maybeTestCpSatUsesColumnZeroRoadAnchor();
+  await maybeTestCpSatAllowsMultiAnchorComponentsInOptimization();
   maybeTestCpSatSyncCompatibility();
   await maybeTestCpSatAsyncOptimizer();
   await maybeTestAutoOptimizer();
@@ -8378,6 +8551,7 @@ async function main() {
   maybeTestCpSatCandidateReductionHelpers();
   maybeTestCpSatReachabilityReductionHelpers();
   maybeTestCpSatConnectivityHelperConstraints();
+  maybeTestCpSatAllowsMultipleAnchoredRoadComponents();
   maybeTestCpSatRoadEligibilityReductionHelpers();
   maybeTestCpSatDisallowsBidirectionalRoadFlow();
   testCpSatRejectsDuplicatePortfolioWorkerIndices();

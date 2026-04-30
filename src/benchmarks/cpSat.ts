@@ -463,6 +463,20 @@ export const DEFAULT_CP_SAT_BENCHMARK_CORPUS: readonly CpSatBenchmarkCase[] = Ob
     },
   },
   {
+    name: "multi-anchor-road-components",
+    description: "Disconnected anchor-valid road components should both remain usable under the aligned road formulation.",
+    grid: [
+      [0, 1, 0, 0, 0, 1, 0],
+      [0, 1, 1, 0, 0, 1, 1],
+      [0, 1, 1, 0, 0, 1, 1],
+    ],
+    params: {
+      optimizer: "cp-sat",
+      residentialTypes: [{ w: 2, h: 2, min: 100, max: 100, avail: 2 }],
+      availableBuildings: { residentials: 2, services: 0 },
+    },
+  },
+  {
     name: "typed-housing-portfolio",
     description: "Single-machine portfolio exact run on the tiny typed-housing case.",
     grid: [

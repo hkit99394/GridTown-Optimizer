@@ -70,7 +70,7 @@ The next stage is not "train first" or "add more modes." The next stage is:
 Reasoning:
 
 - The problem is a hybrid of rectangle packing, set packing, service/facility coverage, and road-network design.
-- CP-SAT is the right exact backend, but it must be semantically faithful before it becomes the source of truth for local repair and proof.
+- CP-SAT is the right exact backend, and its core road-connectivity formulation now matches the per-component anchor rule; wider scorecards still need to close out performance risk.
 - LNS already matches the research shape for this kind of problem; adaptive destroy/repair operators are likely higher leverage than another global solver mode.
 - Current learned labels are useful but too small, especially for LNS, to justify runtime model hooks.
 - Tiny saturated cases are useful smoke tests but weak promotion evidence.
@@ -90,7 +90,7 @@ Status vocabulary:
 
 | Rank | Priority | Status | Impact | Summary | Success Signal |
 | --- | --- | --- | ---: | --- | --- |
-| 1 | CP-SAT road-semantics alignment | active | 5.0 | Verify whether the Python CP-SAT model overconstrains roads by forcing one connected road tree where the spec permits multiple anchored components. Add a benchmark toggle and adversarial cases before changing defaults. | CP-SAT, TypeScript validation, and the formal spec agree on multi-anchor road-component feasibility; scorecards show no worst-family regression. |
+| 1 | CP-SAT road-semantics scorecard closeout | partial | 5.0 | Core alignment is delivered: CP-SAT now uses per-component anchored roads as its only road-connectivity formulation. Expand post-alignment scorecards before treating the change as fully closed. | CP-SAT, TypeScript validation, and the formal spec agree on multi-anchor road-component feasibility; scorecards show no worst-family regression. |
 | 2 | Product-shaped benchmark corpus | active | 4.5 | Extend cross-mode scorecards with planner payloads, manual-layout replay, expansion-comparison replay, corridor/gate/footprint/service-pressure cases, and multi-anchor adversarial cases. | Promotion decisions use fixed-seed dev/holdout corpora with 1s/5s/30s/120s budgets and strict registry entries. |
 | 3 | Solver telemetry manifests | active | 4.0 | Persist stage-level candidate counts, CP-SAT model size, first-feasible time, best-score time, status/gap, operator outcome, wall time, CPU budget, and hardware metadata. | Every benchmark and workflow run can explain where time was spent and why a candidate change did or did not improve. |
 | 4 | Adaptive LNS operator set | active | 4.5 | Add semantic destroy/repair operators beyond fixed rectangles: weak services, residential headroom clusters, service-overlap conflicts, road gates/chokes, frontier congestion, and random exploration windows. | Equal-budget LNS/Auto scorecards improve time-to-best or fixed-budget population without worst-decile regression. |
@@ -111,7 +111,7 @@ Status vocabulary:
 | Generated pressure-case coverage | partial | [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED.md), item 30 | Useful starting point, but promotion needs broader workflow and adversarial coverage. |
 | CP-SAT portfolio telemetry and CPU-normalized scorecards | delivered | `artifacts/cp-sat-portfolio/2026-04-28/` | Portfolio remains explicit-only; Auto does not route through it. |
 | Experiment registry hardening | delivered | `artifacts/experiments/index.jsonl`; `npm run experiment-registry:check` | Future artifacts can be checked and appended with strict metadata. |
-| CP-SAT road-semantics alignment | active | Formal spec and TS validator allow every anchored road component; Python CP-SAT needs targeted verification | Potential correctness and quality improvement; no default change until benchmarked. |
+| CP-SAT road-semantics alignment | partial | Core model, warm-start roots, removed legacy mode switch, and tiny benchmark case delivered on 2026-04-30; CP-SAT scores 200 on `multi-anchor-road-components` | Exact backend now matches the spec on the adversarial case; wider post-alignment scorecards still need to close promotion evidence. |
 | Adaptive LNS | active | Current LNS has ranked windows and replay labels but not operator scoring | Main next quality engine after model alignment and telemetry. |
 | Exact small-window DP repair | gated | Existing exact assignment DP shows the pattern is useful for bounded subproblems, but no LNS window DP exists | Candidate subroutine only; route tiny repairs to DP if telemetry proves CP-SAT overhead dominates. |
 | Model training path | gated | No `python/ml/` scaffold, offline metric report, trained model, or feature-flagged scorer is promoted | No learned default path. |
@@ -135,7 +135,7 @@ These are not next actions. Move them into the active table only after the trigg
 
 ## Combined Ordering
 
-1. Verify CP-SAT road semantics against the spec and TS evaluator.
+1. Close out CP-SAT road-semantics scorecards across smoke, corridor, gate, service-pressure, and multi-anchor cases.
 2. Add product-shaped workflow and adversarial benchmark coverage.
 3. Persist stage-level telemetry manifests for solver and workflow runs.
 4. Implement adaptive LNS operators and operator scoring.

@@ -6,7 +6,7 @@ Date: 2026-04-30
 
 The next stage should move away from a GPU/learned-ranking-first plan and toward a tighter solver-improvement loop:
 
-1. Confirm that CP-SAT, the TypeScript evaluator, and the formal spec encode the same road rules.
+1. Close out CP-SAT road-rule scorecards after the core formulation alignment.
 2. Make adaptive LNS the main improvement engine.
 3. Expand benchmarks around planner workflows and hard pressure cases.
 4. Use strict telemetry and registry evidence before changing defaults.
@@ -38,14 +38,15 @@ The default posture remains unchanged: keep `auto` as the recommended quality pa
   - 84 usable LNS replay labels.
   - Protected development/holdout splits.
 - CPU portfolio is closed as a measurement/safety gate. The latest tiny paired run tied population while using more configured worker CPU budget, so portfolio stays explicit-only.
+- CP-SAT road-semantics core alignment is delivered as of 2026-04-30. CP-SAT now uses one road-connectivity formulation: per-component anchored roads.
 
 ## Key Finding: CP-SAT Road Semantics
 
-The highest-leverage next investigation is CP-SAT road semantics.
+The highest-leverage next investigation was CP-SAT road semantics. The core mismatch is now confirmed and fixed; the remaining work is scorecard closeout.
 
 The formal spec permits multiple road components as long as every road component touches the road-anchor boundary. The TypeScript validation path follows that interpretation by accepting every road cell reachable from any row-0-or-column-0 road anchor.
 
-The Python CP-SAT model appears to use one root and one connected flow network for all selected road cells. That can be stricter than the spec if multiple independent anchored road components are legal. If confirmed, this is not just a performance tweak. It is a correctness and search-quality issue:
+The Python CP-SAT model used one root and one connected flow network for all selected road cells. That was stricter than the spec when multiple independent anchored road components are legal. This was not just a performance tweak. It was a correctness and search-quality issue:
 
 - It can reject layouts that the spec and evaluator accept.
 - It can force extra connector roads.
@@ -53,18 +54,23 @@ The Python CP-SAT model appears to use one root and one connected flow network f
 - It can make CP-SAT repairs less useful inside LNS.
 - It can skew benchmark decisions when CP-SAT is treated as the exact backend.
 
-Recommended action:
+Delivered action:
 
-1. Add small adversarial cases with two or more independently anchored road components.
-2. Verify CP-SAT feasibility and objective against the TypeScript evaluator.
-3. Introduce a guarded CP-SAT road-connectivity formulation toggle if the mismatch is confirmed.
-4. Benchmark old versus aligned formulation across tiny, small, corridor, gate, and multi-anchor pressure cases before changing defaults.
+1. Replaced the single-root CP-SAT formulation with the per-component anchored-road formulation.
+2. Removed the legacy `single-root` mode switch.
+3. Added focused forced-road, warm-start, local-neighborhood, and optimization regression coverage.
+4. Added `multi-anchor-road-components` to the CP-SAT benchmark corpus.
+
+Remaining action:
+
+1. Benchmark the aligned formulation across tiny, small, corridor, gate, service-pressure, and multi-anchor pressure cases.
+2. Watch branch/conflict, wall-clock, and model-size deltas on dense saturated cases.
 
 Success signal:
 
-- CP-SAT, the formal spec, and the TypeScript evaluator agree on feasibility.
-- The aligned formulation does not regress saturated smoke cases.
-- Multi-anchor adversarial cases either improve or expose a documented tradeoff.
+- CP-SAT, the formal spec, and the TypeScript evaluator agree on feasibility for adversarial multi-anchor cases.
+- CP-SAT scores 200 on `multi-anchor-road-components`.
+- Wider scorecards show no worst-family regression.
 
 ## Science And Engineering Assessment
 
@@ -127,12 +133,14 @@ Do not start with learned ranking. It should follow telemetry and label scale, n
 
 Goal: make exact repair/proof match the formal spec.
 
+Status: core implementation delivered; wider scorecard closeout remains.
+
 Deliverables:
 
-- Multi-anchor adversarial benchmark cases.
-- CP-SAT versus TypeScript evaluator feasibility comparison.
-- A guarded aligned-road formulation or documented proof that the current formulation is equivalent.
-- Scorecard for old versus aligned CP-SAT formulation.
+- Multi-anchor adversarial benchmark cases. Delivered for a focused CP-SAT case.
+- CP-SAT versus TypeScript evaluator feasibility comparison. Delivered in regression coverage.
+- An aligned road formulation that matches the per-component anchor rule. Delivered.
+- Scorecard for aligned CP-SAT formulation. Partial: focused multi-anchor comparison delivered; broader family scorecards remain.
 
 Success signal:
 
@@ -320,7 +328,7 @@ Any default-path solver change must satisfy:
 
 Recommended order:
 
-1. Verify CP-SAT road semantics and add adversarial tests.
+1. Close out CP-SAT road-semantics scorecards after the core alignment.
 2. Build the product-shaped benchmark corpus.
 3. Add telemetry manifests and strict registry entries for solver/workflow runs.
 4. Implement adaptive LNS operators and operator weighting.

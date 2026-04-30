@@ -20,6 +20,7 @@ The single-machine CP-SAT foundation is delivered.
 Delivered summary:
 - exact-safe candidate reduction
 - stronger connectivity and implied cuts
+- aligned per-component road-anchor connectivity
 - explicit audited objective
 - richer runtime parameters
 - warm-start and continuation support
@@ -32,7 +33,23 @@ Detailed delivered notes live in [CP_SAT_ROADMAP_DELIVERED.md](./CP_SAT_ROADMAP_
 
 ## Remaining Work By Product Priority
 
-### 1. Deepen async and portfolio failure-mode coverage
+Ordering note: this CP-SAT-specific list follows [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md) and [NEXT_STAGE_REVIEW.md](./NEXT_STAGE_REVIEW.md). Road-semantics scorecard closeout remains the first CP-SAT priority before async/portfolio hardening.
+
+### 1. Close out road-semantics scorecards
+
+Impact on target: high correctness / high quality on multi-anchor maps
+
+Current status:
+- delivered core model alignment on 2026-04-30
+- CP-SAT now has a single road-connectivity formulation: per-component anchored roads
+- the CP-SAT benchmark corpus includes `multi-anchor-road-components`
+- focused verification shows CP-SAT reaches 200 population on that case
+
+Remaining scope:
+- run post-alignment scorecards across tiny, corridor, gate, service-pressure, and multi-anchor families
+- watch model-size, branch/conflict, and wall-clock deltas on dense saturated cases
+
+### 2. Deepen async and portfolio failure-mode coverage
 
 Impact on target: high confidence / medium direct quality
 
@@ -48,7 +65,7 @@ Scope:
 - malformed streamed progress payloads
 - async child-process failure paths
 
-### 2. Use CP-SAT as a label and replay engine
+### 3. Use CP-SAT as a label and replay engine
 
 Impact on target: high enabling value
 
@@ -68,7 +85,7 @@ Guardrails:
 - always record wall-clock and CPU budget for parallel replay
 - keep `CP-SAT` labels tied to the exact model fingerprint and validated solution shape
 
-### 3. Distributed CP-SAT
+### 4. Distributed CP-SAT
 
 Priority note:
 - this has the highest remaining exact-search compute ceiling, but not the highest near-term product leverage

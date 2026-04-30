@@ -752,6 +752,11 @@ async function testImmediateSolveRejectsInvalidCpSatOptionsBeforeStartingBackend
         "Invalid solver input: CP-SAT runtime option cpSat.timeLimitSeconds must be a finite number > 0 and <= 86400.",
     },
     {
+      cpSat: { roadConnectivityMode: "single-root" },
+      expectedError:
+        "Invalid solver input: CP-SAT runtime option cpSat.roadConnectivityMode is no longer supported; CP-SAT always uses anchor-components road connectivity.",
+    },
+    {
       cpSat: {
         numWorkers: 1,
         portfolio: {

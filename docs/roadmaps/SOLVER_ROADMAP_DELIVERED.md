@@ -4,7 +4,7 @@ This file keeps completed solver-roadmap work out of the main roadmap. The activ
 
 ## Delivered Work
 
-Reviewed through 2026-04-28.
+Reviewed through 2026-04-30.
 
 ### 1. Full Solver Stack
 
@@ -250,6 +250,16 @@ Reviewed through 2026-04-28.
 - The default learned-label split now routes LNS replay collection through the pressure corpus and preserves case-name holdout protection while exposing pressure-family metadata for audit.
 - Regression coverage checks unique replay case names, five pressure families, snapshot stability, pressure-family fields, exploration-window labels, and readiness-gate reporting.
 - No learned model was trained and no solver defaults changed; the LNS ranker gate remains blocked until a generated artifact passes the readiness thresholds.
+
+### 31. CP-SAT Road-Semantics Core Alignment
+
+- Confirmed the spec/validator rule that road cells may form multiple components when every component touches row `0` or column `0`.
+- Replaced the CP-SAT-only single-root road-tree assumption with the aligned formulation that permits one root per anchored road component.
+- Removed the legacy `single-root` formulation and the `cpSat.roadConnectivityMode` option.
+- Updated CP-SAT warm-start hints and local-neighborhood fixing so multi-component hinted roads can keep roots per component.
+- Added focused tests for multi-anchor forced-road feasibility, unanchored component rejection, warm-start root hints, local-neighborhood fixing, removed-option validation, and an optimization case where CP-SAT scores 200.
+- Added `multi-anchor-road-components` to the CP-SAT benchmark corpus.
+- Wider post-alignment scorecards across pressure families remain the follow-up evidence gate.
 
 ## Maintenance Watchpoints
 

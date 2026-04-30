@@ -922,6 +922,11 @@ function assertValidCpSatOptions(params: SolverParams, optimizer: OptimizerName)
     0,
     CP_SAT_RANDOM_SEED_MAX
   );
+  if ("roadConnectivityMode" in cpSat) {
+    throw new SolverInputError(
+      "CP-SAT runtime option cpSat.roadConnectivityMode is no longer supported; CP-SAT always uses anchor-components road connectivity."
+    );
+  }
   requireOptionalBoolean(cpSat, "randomizeSearch", "CP-SAT runtime option cpSat.randomizeSearch");
   requireOptionalFiniteNumber(cpSat, "relativeGapLimit", "CP-SAT runtime option cpSat.relativeGapLimit", 0, true);
   requireOptionalFiniteNumber(cpSat, "absoluteGapLimit", "CP-SAT runtime option cpSat.absoluteGapLimit", 0, true);

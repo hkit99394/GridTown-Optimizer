@@ -79,6 +79,13 @@ Target alignment:
 - per-worker status summary
 - fallback from blocked process pools to threads
 
+### 12. Per-component road-anchor connectivity
+- aligned the CP-SAT road formulation with the formal rule that multiple road components are valid when each component touches row `0` or column `0`
+- removed the legacy single-root mode switch; CP-SAT now uses the aligned per-component anchor formulation
+- updated warm-start and local-neighborhood fixing so hinted multi-component road layouts can select roots per hinted component
+- added the `multi-anchor-road-components` CP-SAT benchmark case
+- verified CP-SAT reaches 200 population on the multi-anchor case
+
 ## Notes
 
 - The library now also exposes an async CP-SAT path through `solveAsync(...)` and `solveCpSatAsync(...)`.

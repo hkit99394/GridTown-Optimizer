@@ -1,8 +1,23 @@
 /**
  * Canonical benchmark package boundary.
  *
- * This temporarily re-exports the existing benchmark implementation while the
- * project migrates toward a workspace-style package layout.
+ * The implementation modules still live under `src/benchmarks` during the
+ * staged migration, but new consumers should depend on this package-shaped
+ * entry point.
  */
 
-export * from "../../benchmarks/index.js";
+export * from "../../benchmarks/greedy.js";
+export * from "../../benchmarks/benchmarkSeeds.js";
+export * from "../../benchmarks/cpSat.js";
+export * from "../../benchmarks/lns.js";
+export * from "../../benchmarks/crossMode.js";
+export * from "../../benchmarks/crossModeBudgetAblations.js";
+export * from "../../benchmarks/crossModeProductWorkflows.js";
+export * from "../../benchmarks/greedyConnectivityShadowAblations.js";
+export * from "../../benchmarks/greedyConnectivityShadowLabels.js";
+export * from "../../benchmarks/greedyDeterministicAblations.js";
+export * from "../../benchmarks/lnsNeighborhoodAblations.js";
+export * from "../../benchmarks/deterministicAblationGates.js";
+export * from "../../benchmarks/lnsWindowReplayLabels.js";
+export * from "../../benchmarks/learnedRankingLabels.js";
+export * from "../../benchmarks/experimentRegistry.js";

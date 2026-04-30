@@ -402,6 +402,8 @@ Started on 2026-04-30:
 - Added `src/packages/benchmarks/index.ts` as the canonical benchmark package
   boundary, with `src/benchmarkApi.ts` re-exporting from that package-shaped
   entrypoint.
+- Moved the benchmark export list to `src/packages/benchmarks/index.ts`; the
+  old `src/benchmarks/index.ts` now remains only as a compatibility wrapper.
 
 ## Current Follow-Up
 

@@ -1,0 +1,3094 @@
+{
+  "caseCount": 4,
+  "schemaVersion": 1,
+  "seedCount": 3,
+  "comparisonCount": 12,
+  "seeds": [
+    7,
+    19,
+    37
+  ],
+  "selectedCaseNames": [
+    "typed-housing-single",
+    "compact-service-repair",
+    "seeded-service-anchor-pressure",
+    "row0-anchor-repair"
+  ],
+  "maxWindows": 8,
+  "repairTimeLimitSeconds": 1,
+  "labelCount": 84,
+  "cases": [
+    {
+      "name": "typed-housing-single",
+      "description": "Tiny LNS baseline seeded by greedy and repaired over compact residential windows.",
+      "seed": 7,
+      "gridRows": 4,
+      "gridCols": 4,
+      "incumbentPopulation": 110,
+      "candidateWindowCount": 6,
+      "replayedWindowCount": 6,
+      "baselineSelectedWindow": {
+        "top": 1,
+        "left": 0,
+        "rows": 3,
+        "cols": 4
+      },
+      "labels": [
+        {
+          "caseName": "typed-housing-single",
+          "seed": 7,
+          "windowIndex": 0,
+          "window": {
+            "top": 1,
+            "left": 0,
+            "rows": 3,
+            "cols": 4
+          },
+          "selectedByBaseline": true,
+          "incumbentPopulation": 110,
+          "totalPopulation": 110,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 110
+          },
+          "features": {
+            "area": 12,
+            "touchesRow0": false,
+            "roadCountInside": 0,
+            "serviceCountInside": 0,
+            "residentialCountInside": 2,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": true
+          }
+        },
+        {
+          "caseName": "typed-housing-single",
+          "seed": 7,
+          "windowIndex": 1,
+          "window": {
+            "top": 0,
+            "left": 0,
+            "rows": 4,
+            "cols": 4
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 110,
+          "totalPopulation": 110,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 110
+          },
+          "features": {
+            "area": 16,
+            "touchesRow0": true,
+            "roadCountInside": 1,
+            "serviceCountInside": 0,
+            "residentialCountInside": 2,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "typed-housing-single",
+          "seed": 7,
+          "windowIndex": 2,
+          "window": {
+            "top": 1,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 110,
+          "totalPopulation": 110,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 110
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 0,
+            "serviceCountInside": 0,
+            "residentialCountInside": 2,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "typed-housing-single",
+          "seed": 7,
+          "windowIndex": 3,
+          "window": {
+            "top": 1,
+            "left": 0,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 110,
+          "totalPopulation": 110,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 110
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 0,
+            "serviceCountInside": 0,
+            "residentialCountInside": 2,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "typed-housing-single",
+          "seed": 7,
+          "windowIndex": 4,
+          "window": {
+            "top": 0,
+            "left": 0,
+            "rows": 4,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 110,
+          "totalPopulation": 110,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 110
+          },
+          "features": {
+            "area": 12,
+            "touchesRow0": true,
+            "roadCountInside": 1,
+            "serviceCountInside": 0,
+            "residentialCountInside": 2,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "typed-housing-single",
+          "seed": 7,
+          "windowIndex": 5,
+          "window": {
+            "top": 0,
+            "left": 1,
+            "rows": 4,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 110,
+          "totalPopulation": 110,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 110
+          },
+          "features": {
+            "area": 12,
+            "touchesRow0": true,
+            "roadCountInside": 1,
+            "serviceCountInside": 0,
+            "residentialCountInside": 2,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "compact-service-repair",
+      "description": "Small mixed case for measuring service-aware neighborhood repair overhead.",
+      "seed": 7,
+      "gridRows": 6,
+      "gridCols": 6,
+      "incumbentPopulation": 570,
+      "candidateWindowCount": 21,
+      "replayedWindowCount": 8,
+      "baselineSelectedWindow": {
+        "top": 1,
+        "left": 0,
+        "rows": 5,
+        "cols": 6
+      },
+      "labels": [
+        {
+          "caseName": "compact-service-repair",
+          "seed": 7,
+          "windowIndex": 0,
+          "window": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedByBaseline": true,
+          "incumbentPopulation": 570,
+          "totalPopulation": 570,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 570
+          },
+          "features": {
+            "area": 30,
+            "touchesRow0": false,
+            "roadCountInside": 4,
+            "serviceCountInside": 1,
+            "residentialCountInside": 3,
+            "residentialHeadroomInside": 50,
+            "serviceBonusInside": 80,
+            "selectedByBaseline": true
+          }
+        },
+        {
+          "caseName": "compact-service-repair",
+          "seed": 7,
+          "windowIndex": 1,
+          "window": {
+            "top": 0,
+            "left": 0,
+            "rows": 6,
+            "cols": 6
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 570,
+          "totalPopulation": 570,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 570
+          },
+          "features": {
+            "area": 36,
+            "touchesRow0": true,
+            "roadCountInside": 5,
+            "serviceCountInside": 1,
+            "residentialCountInside": 3,
+            "residentialHeadroomInside": 50,
+            "serviceBonusInside": 80,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "compact-service-repair",
+          "seed": 7,
+          "windowIndex": 2,
+          "window": {
+            "top": 2,
+            "left": 1,
+            "rows": 4,
+            "cols": 5
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 570,
+          "totalPopulation": 570,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 570
+          },
+          "features": {
+            "area": 20,
+            "touchesRow0": false,
+            "roadCountInside": 3,
+            "serviceCountInside": 1,
+            "residentialCountInside": 3,
+            "residentialHeadroomInside": 50,
+            "serviceBonusInside": 80,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "compact-service-repair",
+          "seed": 7,
+          "windowIndex": 3,
+          "window": {
+            "top": 1,
+            "left": 0,
+            "rows": 4,
+            "cols": 5
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 570,
+          "totalPopulation": 570,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 570
+          },
+          "features": {
+            "area": 20,
+            "touchesRow0": false,
+            "roadCountInside": 1,
+            "serviceCountInside": 1,
+            "residentialCountInside": 3,
+            "residentialHeadroomInside": 50,
+            "serviceBonusInside": 80,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "compact-service-repair",
+          "seed": 7,
+          "windowIndex": 4,
+          "window": {
+            "top": 1,
+            "left": 1,
+            "rows": 4,
+            "cols": 5
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 570,
+          "totalPopulation": 570,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 570
+          },
+          "features": {
+            "area": 20,
+            "touchesRow0": false,
+            "roadCountInside": 4,
+            "serviceCountInside": 1,
+            "residentialCountInside": 3,
+            "residentialHeadroomInside": 50,
+            "serviceBonusInside": 80,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "compact-service-repair",
+          "seed": 7,
+          "windowIndex": 5,
+          "window": {
+            "top": 3,
+            "left": 3,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 570,
+          "totalPopulation": 570,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 570
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 2,
+            "serviceCountInside": 1,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 80,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "compact-service-repair",
+          "seed": 7,
+          "windowIndex": 6,
+          "window": {
+            "top": 1,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 570,
+          "totalPopulation": 570,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 570
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 0,
+            "serviceCountInside": 0,
+            "residentialCountInside": 3,
+            "residentialHeadroomInside": 50,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "compact-service-repair",
+          "seed": 7,
+          "windowIndex": 7,
+          "window": {
+            "top": 2,
+            "left": 3,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 570,
+          "totalPopulation": 570,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 570
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 3,
+            "serviceCountInside": 1,
+            "residentialCountInside": 2,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 80,
+            "selectedByBaseline": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "seeded-service-anchor-pressure",
+      "description": "Seeded LNS case where ranked service anchors find a service move that sliding windows miss.",
+      "seed": 7,
+      "gridRows": 6,
+      "gridCols": 6,
+      "incumbentPopulation": 100,
+      "candidateWindowCount": 16,
+      "replayedWindowCount": 8,
+      "baselineSelectedWindow": {
+        "top": 1,
+        "left": 3,
+        "rows": 3,
+        "cols": 3
+      },
+      "labels": [
+        {
+          "caseName": "seeded-service-anchor-pressure",
+          "seed": 7,
+          "windowIndex": 0,
+          "window": {
+            "top": 1,
+            "left": 3,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": true,
+          "incumbentPopulation": 100,
+          "totalPopulation": 200,
+          "populationDelta": 100,
+          "improvement": 100,
+          "status": "improved",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 200
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 3,
+            "serviceCountInside": 1,
+            "residentialCountInside": 0,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 100,
+            "selectedByBaseline": true
+          }
+        },
+        {
+          "caseName": "seeded-service-anchor-pressure",
+          "seed": 7,
+          "windowIndex": 1,
+          "window": {
+            "top": 3,
+            "left": 3,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 100,
+          "totalPopulation": 200,
+          "populationDelta": 100,
+          "improvement": 100,
+          "status": "improved",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 200
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 3,
+            "serviceCountInside": 0,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 200,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "seeded-service-anchor-pressure",
+          "seed": 7,
+          "windowIndex": 2,
+          "window": {
+            "top": 2,
+            "left": 3,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 100,
+          "totalPopulation": 200,
+          "populationDelta": 100,
+          "improvement": 100,
+          "status": "improved",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 200
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 3,
+            "serviceCountInside": 1,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 200,
+            "serviceBonusInside": 100,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "seeded-service-anchor-pressure",
+          "seed": 7,
+          "windowIndex": 3,
+          "window": {
+            "top": 1,
+            "left": 2,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 100,
+          "totalPopulation": 200,
+          "populationDelta": 100,
+          "improvement": 100,
+          "status": "improved",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 200
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 3,
+            "serviceCountInside": 1,
+            "residentialCountInside": 0,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 100,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "seeded-service-anchor-pressure",
+          "seed": 7,
+          "windowIndex": 4,
+          "window": {
+            "top": 3,
+            "left": 2,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 100,
+          "totalPopulation": 200,
+          "populationDelta": 100,
+          "improvement": 100,
+          "status": "improved",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 200
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 3,
+            "serviceCountInside": 0,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 200,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "seeded-service-anchor-pressure",
+          "seed": 7,
+          "windowIndex": 5,
+          "window": {
+            "top": 2,
+            "left": 2,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 100,
+          "totalPopulation": 200,
+          "populationDelta": 100,
+          "improvement": 100,
+          "status": "improved",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 200
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 3,
+            "serviceCountInside": 1,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 200,
+            "serviceBonusInside": 100,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "seeded-service-anchor-pressure",
+          "seed": 7,
+          "windowIndex": 6,
+          "window": {
+            "top": 1,
+            "left": 0,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 100,
+          "totalPopulation": 100,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 100
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 0,
+            "serviceCountInside": 0,
+            "residentialCountInside": 0,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "seeded-service-anchor-pressure",
+          "seed": 7,
+          "windowIndex": 7,
+          "window": {
+            "top": 1,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 100,
+          "totalPopulation": 100,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 100
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 3,
+            "serviceCountInside": 0,
+            "residentialCountInside": 0,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "row0-anchor-repair",
+      "description": "Sparse row-zero access case that exercises LNS repair around road anchors.",
+      "seed": 7,
+      "gridRows": 3,
+      "gridCols": 4,
+      "incumbentPopulation": 10,
+      "candidateWindowCount": 6,
+      "replayedWindowCount": 6,
+      "baselineSelectedWindow": {
+        "top": 1,
+        "left": 0,
+        "rows": 2,
+        "cols": 4
+      },
+      "labels": [
+        {
+          "caseName": "row0-anchor-repair",
+          "seed": 7,
+          "windowIndex": 0,
+          "window": {
+            "top": 1,
+            "left": 0,
+            "rows": 2,
+            "cols": 4
+          },
+          "selectedByBaseline": true,
+          "incumbentPopulation": 10,
+          "totalPopulation": 10,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 10
+          },
+          "features": {
+            "area": 8,
+            "touchesRow0": false,
+            "roadCountInside": 0,
+            "serviceCountInside": 0,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": true
+          }
+        },
+        {
+          "caseName": "row0-anchor-repair",
+          "seed": 7,
+          "windowIndex": 1,
+          "window": {
+            "top": 0,
+            "left": 0,
+            "rows": 3,
+            "cols": 4
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 10,
+          "totalPopulation": 10,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 10
+          },
+          "features": {
+            "area": 12,
+            "touchesRow0": true,
+            "roadCountInside": 1,
+            "serviceCountInside": 0,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "row0-anchor-repair",
+          "seed": 7,
+          "windowIndex": 2,
+          "window": {
+            "top": 1,
+            "left": 1,
+            "rows": 2,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 10,
+          "totalPopulation": 10,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 10
+          },
+          "features": {
+            "area": 6,
+            "touchesRow0": false,
+            "roadCountInside": 0,
+            "serviceCountInside": 0,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "row0-anchor-repair",
+          "seed": 7,
+          "windowIndex": 3,
+          "window": {
+            "top": 1,
+            "left": 0,
+            "rows": 2,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 10,
+          "totalPopulation": 10,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 10
+          },
+          "features": {
+            "area": 6,
+            "touchesRow0": false,
+            "roadCountInside": 0,
+            "serviceCountInside": 0,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "row0-anchor-repair",
+          "seed": 7,
+          "windowIndex": 4,
+          "window": {
+            "top": 0,
+            "left": 0,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 10,
+          "totalPopulation": 10,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 10
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": true,
+            "roadCountInside": 1,
+            "serviceCountInside": 0,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "row0-anchor-repair",
+          "seed": 7,
+          "windowIndex": 5,
+          "window": {
+            "top": 0,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 10,
+          "totalPopulation": 10,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 10
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": true,
+            "roadCountInside": 1,
+            "serviceCountInside": 0,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "typed-housing-single",
+      "description": "Tiny LNS baseline seeded by greedy and repaired over compact residential windows.",
+      "seed": 19,
+      "gridRows": 4,
+      "gridCols": 4,
+      "incumbentPopulation": 110,
+      "candidateWindowCount": 6,
+      "replayedWindowCount": 6,
+      "baselineSelectedWindow": {
+        "top": 1,
+        "left": 0,
+        "rows": 3,
+        "cols": 4
+      },
+      "labels": [
+        {
+          "caseName": "typed-housing-single",
+          "seed": 19,
+          "windowIndex": 0,
+          "window": {
+            "top": 1,
+            "left": 0,
+            "rows": 3,
+            "cols": 4
+          },
+          "selectedByBaseline": true,
+          "incumbentPopulation": 110,
+          "totalPopulation": 110,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 110
+          },
+          "features": {
+            "area": 12,
+            "touchesRow0": false,
+            "roadCountInside": 0,
+            "serviceCountInside": 0,
+            "residentialCountInside": 2,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": true
+          }
+        },
+        {
+          "caseName": "typed-housing-single",
+          "seed": 19,
+          "windowIndex": 1,
+          "window": {
+            "top": 0,
+            "left": 0,
+            "rows": 4,
+            "cols": 4
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 110,
+          "totalPopulation": 110,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 110
+          },
+          "features": {
+            "area": 16,
+            "touchesRow0": true,
+            "roadCountInside": 1,
+            "serviceCountInside": 0,
+            "residentialCountInside": 2,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "typed-housing-single",
+          "seed": 19,
+          "windowIndex": 2,
+          "window": {
+            "top": 1,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 110,
+          "totalPopulation": 110,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 110
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 0,
+            "serviceCountInside": 0,
+            "residentialCountInside": 2,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "typed-housing-single",
+          "seed": 19,
+          "windowIndex": 3,
+          "window": {
+            "top": 1,
+            "left": 0,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 110,
+          "totalPopulation": 110,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 110
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 0,
+            "serviceCountInside": 0,
+            "residentialCountInside": 2,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "typed-housing-single",
+          "seed": 19,
+          "windowIndex": 4,
+          "window": {
+            "top": 0,
+            "left": 0,
+            "rows": 4,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 110,
+          "totalPopulation": 110,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 110
+          },
+          "features": {
+            "area": 12,
+            "touchesRow0": true,
+            "roadCountInside": 1,
+            "serviceCountInside": 0,
+            "residentialCountInside": 2,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "typed-housing-single",
+          "seed": 19,
+          "windowIndex": 5,
+          "window": {
+            "top": 0,
+            "left": 1,
+            "rows": 4,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 110,
+          "totalPopulation": 110,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 110
+          },
+          "features": {
+            "area": 12,
+            "touchesRow0": true,
+            "roadCountInside": 1,
+            "serviceCountInside": 0,
+            "residentialCountInside": 2,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "compact-service-repair",
+      "description": "Small mixed case for measuring service-aware neighborhood repair overhead.",
+      "seed": 19,
+      "gridRows": 6,
+      "gridCols": 6,
+      "incumbentPopulation": 570,
+      "candidateWindowCount": 21,
+      "replayedWindowCount": 8,
+      "baselineSelectedWindow": {
+        "top": 1,
+        "left": 0,
+        "rows": 5,
+        "cols": 6
+      },
+      "labels": [
+        {
+          "caseName": "compact-service-repair",
+          "seed": 19,
+          "windowIndex": 0,
+          "window": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedByBaseline": true,
+          "incumbentPopulation": 570,
+          "totalPopulation": 570,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 570
+          },
+          "features": {
+            "area": 30,
+            "touchesRow0": false,
+            "roadCountInside": 4,
+            "serviceCountInside": 1,
+            "residentialCountInside": 3,
+            "residentialHeadroomInside": 50,
+            "serviceBonusInside": 80,
+            "selectedByBaseline": true
+          }
+        },
+        {
+          "caseName": "compact-service-repair",
+          "seed": 19,
+          "windowIndex": 1,
+          "window": {
+            "top": 0,
+            "left": 0,
+            "rows": 6,
+            "cols": 6
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 570,
+          "totalPopulation": 570,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 570
+          },
+          "features": {
+            "area": 36,
+            "touchesRow0": true,
+            "roadCountInside": 5,
+            "serviceCountInside": 1,
+            "residentialCountInside": 3,
+            "residentialHeadroomInside": 50,
+            "serviceBonusInside": 80,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "compact-service-repair",
+          "seed": 19,
+          "windowIndex": 2,
+          "window": {
+            "top": 2,
+            "left": 1,
+            "rows": 4,
+            "cols": 5
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 570,
+          "totalPopulation": 570,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 570
+          },
+          "features": {
+            "area": 20,
+            "touchesRow0": false,
+            "roadCountInside": 3,
+            "serviceCountInside": 1,
+            "residentialCountInside": 3,
+            "residentialHeadroomInside": 50,
+            "serviceBonusInside": 80,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "compact-service-repair",
+          "seed": 19,
+          "windowIndex": 3,
+          "window": {
+            "top": 1,
+            "left": 0,
+            "rows": 4,
+            "cols": 5
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 570,
+          "totalPopulation": 570,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 570
+          },
+          "features": {
+            "area": 20,
+            "touchesRow0": false,
+            "roadCountInside": 1,
+            "serviceCountInside": 1,
+            "residentialCountInside": 3,
+            "residentialHeadroomInside": 50,
+            "serviceBonusInside": 80,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "compact-service-repair",
+          "seed": 19,
+          "windowIndex": 4,
+          "window": {
+            "top": 1,
+            "left": 1,
+            "rows": 4,
+            "cols": 5
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 570,
+          "totalPopulation": 570,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 570
+          },
+          "features": {
+            "area": 20,
+            "touchesRow0": false,
+            "roadCountInside": 4,
+            "serviceCountInside": 1,
+            "residentialCountInside": 3,
+            "residentialHeadroomInside": 50,
+            "serviceBonusInside": 80,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "compact-service-repair",
+          "seed": 19,
+          "windowIndex": 5,
+          "window": {
+            "top": 3,
+            "left": 3,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 570,
+          "totalPopulation": 570,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 570
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 2,
+            "serviceCountInside": 1,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 80,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "compact-service-repair",
+          "seed": 19,
+          "windowIndex": 6,
+          "window": {
+            "top": 1,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 570,
+          "totalPopulation": 570,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 570
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 0,
+            "serviceCountInside": 0,
+            "residentialCountInside": 3,
+            "residentialHeadroomInside": 50,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "compact-service-repair",
+          "seed": 19,
+          "windowIndex": 7,
+          "window": {
+            "top": 2,
+            "left": 3,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 570,
+          "totalPopulation": 570,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 570
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 3,
+            "serviceCountInside": 1,
+            "residentialCountInside": 2,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 80,
+            "selectedByBaseline": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "seeded-service-anchor-pressure",
+      "description": "Seeded LNS case where ranked service anchors find a service move that sliding windows miss.",
+      "seed": 19,
+      "gridRows": 6,
+      "gridCols": 6,
+      "incumbentPopulation": 100,
+      "candidateWindowCount": 16,
+      "replayedWindowCount": 8,
+      "baselineSelectedWindow": {
+        "top": 1,
+        "left": 3,
+        "rows": 3,
+        "cols": 3
+      },
+      "labels": [
+        {
+          "caseName": "seeded-service-anchor-pressure",
+          "seed": 19,
+          "windowIndex": 0,
+          "window": {
+            "top": 1,
+            "left": 3,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": true,
+          "incumbentPopulation": 100,
+          "totalPopulation": 200,
+          "populationDelta": 100,
+          "improvement": 100,
+          "status": "improved",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 200
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 3,
+            "serviceCountInside": 1,
+            "residentialCountInside": 0,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 100,
+            "selectedByBaseline": true
+          }
+        },
+        {
+          "caseName": "seeded-service-anchor-pressure",
+          "seed": 19,
+          "windowIndex": 1,
+          "window": {
+            "top": 3,
+            "left": 3,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 100,
+          "totalPopulation": 200,
+          "populationDelta": 100,
+          "improvement": 100,
+          "status": "improved",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 200
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 3,
+            "serviceCountInside": 0,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 200,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "seeded-service-anchor-pressure",
+          "seed": 19,
+          "windowIndex": 2,
+          "window": {
+            "top": 2,
+            "left": 3,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 100,
+          "totalPopulation": 200,
+          "populationDelta": 100,
+          "improvement": 100,
+          "status": "improved",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 200
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 3,
+            "serviceCountInside": 1,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 200,
+            "serviceBonusInside": 100,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "seeded-service-anchor-pressure",
+          "seed": 19,
+          "windowIndex": 3,
+          "window": {
+            "top": 1,
+            "left": 2,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 100,
+          "totalPopulation": 200,
+          "populationDelta": 100,
+          "improvement": 100,
+          "status": "improved",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 200
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 3,
+            "serviceCountInside": 1,
+            "residentialCountInside": 0,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 100,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "seeded-service-anchor-pressure",
+          "seed": 19,
+          "windowIndex": 4,
+          "window": {
+            "top": 3,
+            "left": 2,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 100,
+          "totalPopulation": 200,
+          "populationDelta": 100,
+          "improvement": 100,
+          "status": "improved",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 200
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 3,
+            "serviceCountInside": 0,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 200,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "seeded-service-anchor-pressure",
+          "seed": 19,
+          "windowIndex": 5,
+          "window": {
+            "top": 2,
+            "left": 2,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 100,
+          "totalPopulation": 200,
+          "populationDelta": 100,
+          "improvement": 100,
+          "status": "improved",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 200
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 3,
+            "serviceCountInside": 1,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 200,
+            "serviceBonusInside": 100,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "seeded-service-anchor-pressure",
+          "seed": 19,
+          "windowIndex": 6,
+          "window": {
+            "top": 1,
+            "left": 0,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 100,
+          "totalPopulation": 100,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 100
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 0,
+            "serviceCountInside": 0,
+            "residentialCountInside": 0,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "seeded-service-anchor-pressure",
+          "seed": 19,
+          "windowIndex": 7,
+          "window": {
+            "top": 1,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 100,
+          "totalPopulation": 100,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 100
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 3,
+            "serviceCountInside": 0,
+            "residentialCountInside": 0,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "row0-anchor-repair",
+      "description": "Sparse row-zero access case that exercises LNS repair around road anchors.",
+      "seed": 19,
+      "gridRows": 3,
+      "gridCols": 4,
+      "incumbentPopulation": 10,
+      "candidateWindowCount": 6,
+      "replayedWindowCount": 6,
+      "baselineSelectedWindow": {
+        "top": 1,
+        "left": 0,
+        "rows": 2,
+        "cols": 4
+      },
+      "labels": [
+        {
+          "caseName": "row0-anchor-repair",
+          "seed": 19,
+          "windowIndex": 0,
+          "window": {
+            "top": 1,
+            "left": 0,
+            "rows": 2,
+            "cols": 4
+          },
+          "selectedByBaseline": true,
+          "incumbentPopulation": 10,
+          "totalPopulation": 10,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 10
+          },
+          "features": {
+            "area": 8,
+            "touchesRow0": false,
+            "roadCountInside": 0,
+            "serviceCountInside": 0,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": true
+          }
+        },
+        {
+          "caseName": "row0-anchor-repair",
+          "seed": 19,
+          "windowIndex": 1,
+          "window": {
+            "top": 0,
+            "left": 0,
+            "rows": 3,
+            "cols": 4
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 10,
+          "totalPopulation": 10,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 10
+          },
+          "features": {
+            "area": 12,
+            "touchesRow0": true,
+            "roadCountInside": 1,
+            "serviceCountInside": 0,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "row0-anchor-repair",
+          "seed": 19,
+          "windowIndex": 2,
+          "window": {
+            "top": 1,
+            "left": 1,
+            "rows": 2,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 10,
+          "totalPopulation": 10,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 10
+          },
+          "features": {
+            "area": 6,
+            "touchesRow0": false,
+            "roadCountInside": 0,
+            "serviceCountInside": 0,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "row0-anchor-repair",
+          "seed": 19,
+          "windowIndex": 3,
+          "window": {
+            "top": 1,
+            "left": 0,
+            "rows": 2,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 10,
+          "totalPopulation": 10,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 10
+          },
+          "features": {
+            "area": 6,
+            "touchesRow0": false,
+            "roadCountInside": 0,
+            "serviceCountInside": 0,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "row0-anchor-repair",
+          "seed": 19,
+          "windowIndex": 4,
+          "window": {
+            "top": 0,
+            "left": 0,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 10,
+          "totalPopulation": 10,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 10
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": true,
+            "roadCountInside": 1,
+            "serviceCountInside": 0,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "row0-anchor-repair",
+          "seed": 19,
+          "windowIndex": 5,
+          "window": {
+            "top": 0,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 10,
+          "totalPopulation": 10,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 10
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": true,
+            "roadCountInside": 1,
+            "serviceCountInside": 0,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "typed-housing-single",
+      "description": "Tiny LNS baseline seeded by greedy and repaired over compact residential windows.",
+      "seed": 37,
+      "gridRows": 4,
+      "gridCols": 4,
+      "incumbentPopulation": 110,
+      "candidateWindowCount": 6,
+      "replayedWindowCount": 6,
+      "baselineSelectedWindow": {
+        "top": 1,
+        "left": 0,
+        "rows": 3,
+        "cols": 4
+      },
+      "labels": [
+        {
+          "caseName": "typed-housing-single",
+          "seed": 37,
+          "windowIndex": 0,
+          "window": {
+            "top": 1,
+            "left": 0,
+            "rows": 3,
+            "cols": 4
+          },
+          "selectedByBaseline": true,
+          "incumbentPopulation": 110,
+          "totalPopulation": 110,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 110
+          },
+          "features": {
+            "area": 12,
+            "touchesRow0": false,
+            "roadCountInside": 0,
+            "serviceCountInside": 0,
+            "residentialCountInside": 2,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": true
+          }
+        },
+        {
+          "caseName": "typed-housing-single",
+          "seed": 37,
+          "windowIndex": 1,
+          "window": {
+            "top": 0,
+            "left": 0,
+            "rows": 4,
+            "cols": 4
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 110,
+          "totalPopulation": 110,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 110
+          },
+          "features": {
+            "area": 16,
+            "touchesRow0": true,
+            "roadCountInside": 1,
+            "serviceCountInside": 0,
+            "residentialCountInside": 2,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "typed-housing-single",
+          "seed": 37,
+          "windowIndex": 2,
+          "window": {
+            "top": 1,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 110,
+          "totalPopulation": 110,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 110
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 0,
+            "serviceCountInside": 0,
+            "residentialCountInside": 2,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "typed-housing-single",
+          "seed": 37,
+          "windowIndex": 3,
+          "window": {
+            "top": 1,
+            "left": 0,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 110,
+          "totalPopulation": 110,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 110
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 0,
+            "serviceCountInside": 0,
+            "residentialCountInside": 2,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "typed-housing-single",
+          "seed": 37,
+          "windowIndex": 4,
+          "window": {
+            "top": 0,
+            "left": 0,
+            "rows": 4,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 110,
+          "totalPopulation": 110,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 110
+          },
+          "features": {
+            "area": 12,
+            "touchesRow0": true,
+            "roadCountInside": 1,
+            "serviceCountInside": 0,
+            "residentialCountInside": 2,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "typed-housing-single",
+          "seed": 37,
+          "windowIndex": 5,
+          "window": {
+            "top": 0,
+            "left": 1,
+            "rows": 4,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 110,
+          "totalPopulation": 110,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 110
+          },
+          "features": {
+            "area": 12,
+            "touchesRow0": true,
+            "roadCountInside": 1,
+            "serviceCountInside": 0,
+            "residentialCountInside": 2,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "compact-service-repair",
+      "description": "Small mixed case for measuring service-aware neighborhood repair overhead.",
+      "seed": 37,
+      "gridRows": 6,
+      "gridCols": 6,
+      "incumbentPopulation": 570,
+      "candidateWindowCount": 21,
+      "replayedWindowCount": 8,
+      "baselineSelectedWindow": {
+        "top": 1,
+        "left": 0,
+        "rows": 5,
+        "cols": 6
+      },
+      "labels": [
+        {
+          "caseName": "compact-service-repair",
+          "seed": 37,
+          "windowIndex": 0,
+          "window": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedByBaseline": true,
+          "incumbentPopulation": 570,
+          "totalPopulation": 570,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 570
+          },
+          "features": {
+            "area": 30,
+            "touchesRow0": false,
+            "roadCountInside": 4,
+            "serviceCountInside": 1,
+            "residentialCountInside": 3,
+            "residentialHeadroomInside": 50,
+            "serviceBonusInside": 80,
+            "selectedByBaseline": true
+          }
+        },
+        {
+          "caseName": "compact-service-repair",
+          "seed": 37,
+          "windowIndex": 1,
+          "window": {
+            "top": 0,
+            "left": 0,
+            "rows": 6,
+            "cols": 6
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 570,
+          "totalPopulation": 570,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 570
+          },
+          "features": {
+            "area": 36,
+            "touchesRow0": true,
+            "roadCountInside": 5,
+            "serviceCountInside": 1,
+            "residentialCountInside": 3,
+            "residentialHeadroomInside": 50,
+            "serviceBonusInside": 80,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "compact-service-repair",
+          "seed": 37,
+          "windowIndex": 2,
+          "window": {
+            "top": 2,
+            "left": 1,
+            "rows": 4,
+            "cols": 5
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 570,
+          "totalPopulation": 570,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 570
+          },
+          "features": {
+            "area": 20,
+            "touchesRow0": false,
+            "roadCountInside": 3,
+            "serviceCountInside": 1,
+            "residentialCountInside": 3,
+            "residentialHeadroomInside": 50,
+            "serviceBonusInside": 80,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "compact-service-repair",
+          "seed": 37,
+          "windowIndex": 3,
+          "window": {
+            "top": 1,
+            "left": 0,
+            "rows": 4,
+            "cols": 5
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 570,
+          "totalPopulation": 570,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 570
+          },
+          "features": {
+            "area": 20,
+            "touchesRow0": false,
+            "roadCountInside": 1,
+            "serviceCountInside": 1,
+            "residentialCountInside": 3,
+            "residentialHeadroomInside": 50,
+            "serviceBonusInside": 80,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "compact-service-repair",
+          "seed": 37,
+          "windowIndex": 4,
+          "window": {
+            "top": 1,
+            "left": 1,
+            "rows": 4,
+            "cols": 5
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 570,
+          "totalPopulation": 570,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 570
+          },
+          "features": {
+            "area": 20,
+            "touchesRow0": false,
+            "roadCountInside": 4,
+            "serviceCountInside": 1,
+            "residentialCountInside": 3,
+            "residentialHeadroomInside": 50,
+            "serviceBonusInside": 80,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "compact-service-repair",
+          "seed": 37,
+          "windowIndex": 5,
+          "window": {
+            "top": 3,
+            "left": 3,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 570,
+          "totalPopulation": 570,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 570
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 2,
+            "serviceCountInside": 1,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 80,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "compact-service-repair",
+          "seed": 37,
+          "windowIndex": 6,
+          "window": {
+            "top": 1,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 570,
+          "totalPopulation": 570,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 570
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 0,
+            "serviceCountInside": 0,
+            "residentialCountInside": 3,
+            "residentialHeadroomInside": 50,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "compact-service-repair",
+          "seed": 37,
+          "windowIndex": 7,
+          "window": {
+            "top": 2,
+            "left": 3,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 570,
+          "totalPopulation": 570,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 570
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 3,
+            "serviceCountInside": 1,
+            "residentialCountInside": 2,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 80,
+            "selectedByBaseline": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "seeded-service-anchor-pressure",
+      "description": "Seeded LNS case where ranked service anchors find a service move that sliding windows miss.",
+      "seed": 37,
+      "gridRows": 6,
+      "gridCols": 6,
+      "incumbentPopulation": 100,
+      "candidateWindowCount": 16,
+      "replayedWindowCount": 8,
+      "baselineSelectedWindow": {
+        "top": 1,
+        "left": 3,
+        "rows": 3,
+        "cols": 3
+      },
+      "labels": [
+        {
+          "caseName": "seeded-service-anchor-pressure",
+          "seed": 37,
+          "windowIndex": 0,
+          "window": {
+            "top": 1,
+            "left": 3,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": true,
+          "incumbentPopulation": 100,
+          "totalPopulation": 200,
+          "populationDelta": 100,
+          "improvement": 100,
+          "status": "improved",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 200
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 3,
+            "serviceCountInside": 1,
+            "residentialCountInside": 0,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 100,
+            "selectedByBaseline": true
+          }
+        },
+        {
+          "caseName": "seeded-service-anchor-pressure",
+          "seed": 37,
+          "windowIndex": 1,
+          "window": {
+            "top": 3,
+            "left": 3,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 100,
+          "totalPopulation": 200,
+          "populationDelta": 100,
+          "improvement": 100,
+          "status": "improved",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 200
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 3,
+            "serviceCountInside": 0,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 200,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "seeded-service-anchor-pressure",
+          "seed": 37,
+          "windowIndex": 2,
+          "window": {
+            "top": 2,
+            "left": 3,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 100,
+          "totalPopulation": 200,
+          "populationDelta": 100,
+          "improvement": 100,
+          "status": "improved",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 200
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 3,
+            "serviceCountInside": 1,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 200,
+            "serviceBonusInside": 100,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "seeded-service-anchor-pressure",
+          "seed": 37,
+          "windowIndex": 3,
+          "window": {
+            "top": 1,
+            "left": 2,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 100,
+          "totalPopulation": 200,
+          "populationDelta": 100,
+          "improvement": 100,
+          "status": "improved",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 200
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 3,
+            "serviceCountInside": 1,
+            "residentialCountInside": 0,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 100,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "seeded-service-anchor-pressure",
+          "seed": 37,
+          "windowIndex": 4,
+          "window": {
+            "top": 3,
+            "left": 2,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 100,
+          "totalPopulation": 200,
+          "populationDelta": 100,
+          "improvement": 100,
+          "status": "improved",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 200
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 3,
+            "serviceCountInside": 0,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 200,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "seeded-service-anchor-pressure",
+          "seed": 37,
+          "windowIndex": 5,
+          "window": {
+            "top": 2,
+            "left": 2,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 100,
+          "totalPopulation": 200,
+          "populationDelta": 100,
+          "improvement": 100,
+          "status": "improved",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 200
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 3,
+            "serviceCountInside": 1,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 200,
+            "serviceBonusInside": 100,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "seeded-service-anchor-pressure",
+          "seed": 37,
+          "windowIndex": 6,
+          "window": {
+            "top": 1,
+            "left": 0,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 100,
+          "totalPopulation": 100,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 100
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 0,
+            "serviceCountInside": 0,
+            "residentialCountInside": 0,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "seeded-service-anchor-pressure",
+          "seed": 37,
+          "windowIndex": 7,
+          "window": {
+            "top": 1,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 100,
+          "totalPopulation": 100,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 100
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": false,
+            "roadCountInside": 3,
+            "serviceCountInside": 0,
+            "residentialCountInside": 0,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "row0-anchor-repair",
+      "description": "Sparse row-zero access case that exercises LNS repair around road anchors.",
+      "seed": 37,
+      "gridRows": 3,
+      "gridCols": 4,
+      "incumbentPopulation": 10,
+      "candidateWindowCount": 6,
+      "replayedWindowCount": 6,
+      "baselineSelectedWindow": {
+        "top": 1,
+        "left": 0,
+        "rows": 2,
+        "cols": 4
+      },
+      "labels": [
+        {
+          "caseName": "row0-anchor-repair",
+          "seed": 37,
+          "windowIndex": 0,
+          "window": {
+            "top": 1,
+            "left": 0,
+            "rows": 2,
+            "cols": 4
+          },
+          "selectedByBaseline": true,
+          "incumbentPopulation": 10,
+          "totalPopulation": 10,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 10
+          },
+          "features": {
+            "area": 8,
+            "touchesRow0": false,
+            "roadCountInside": 0,
+            "serviceCountInside": 0,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": true
+          }
+        },
+        {
+          "caseName": "row0-anchor-repair",
+          "seed": 37,
+          "windowIndex": 1,
+          "window": {
+            "top": 0,
+            "left": 0,
+            "rows": 3,
+            "cols": 4
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 10,
+          "totalPopulation": 10,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 10
+          },
+          "features": {
+            "area": 12,
+            "touchesRow0": true,
+            "roadCountInside": 1,
+            "serviceCountInside": 0,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "row0-anchor-repair",
+          "seed": 37,
+          "windowIndex": 2,
+          "window": {
+            "top": 1,
+            "left": 1,
+            "rows": 2,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 10,
+          "totalPopulation": 10,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 10
+          },
+          "features": {
+            "area": 6,
+            "touchesRow0": false,
+            "roadCountInside": 0,
+            "serviceCountInside": 0,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "row0-anchor-repair",
+          "seed": 37,
+          "windowIndex": 3,
+          "window": {
+            "top": 1,
+            "left": 0,
+            "rows": 2,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 10,
+          "totalPopulation": 10,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 10
+          },
+          "features": {
+            "area": 6,
+            "touchesRow0": false,
+            "roadCountInside": 0,
+            "serviceCountInside": 0,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "row0-anchor-repair",
+          "seed": 37,
+          "windowIndex": 4,
+          "window": {
+            "top": 0,
+            "left": 0,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 10,
+          "totalPopulation": 10,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 10
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": true,
+            "roadCountInside": 1,
+            "serviceCountInside": 0,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        },
+        {
+          "caseName": "row0-anchor-repair",
+          "seed": 37,
+          "windowIndex": 5,
+          "window": {
+            "top": 0,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedByBaseline": false,
+          "incumbentPopulation": 10,
+          "totalPopulation": 10,
+          "populationDelta": 0,
+          "improvement": 0,
+          "status": "neutral",
+          "usable": true,
+          "cpSatStatus": "OPTIMAL",
+          "repairTimeLimitSeconds": 1,
+          "validation": {
+            "valid": true,
+            "recomputedTotalPopulation": 10
+          },
+          "features": {
+            "area": 9,
+            "touchesRow0": true,
+            "roadCountInside": 1,
+            "serviceCountInside": 0,
+            "residentialCountInside": 1,
+            "residentialHeadroomInside": 0,
+            "serviceBonusInside": 0,
+            "selectedByBaseline": false
+          }
+        }
+      ]
+    }
+  ]
+}

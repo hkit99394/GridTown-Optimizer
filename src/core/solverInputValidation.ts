@@ -4,9 +4,12 @@
  */
 
 import { validateSolution } from "./evaluator.js";
+import { computeCpSatRequestFingerprint } from "./cpSatContinuation.js";
 import { NO_TYPE_INDEX } from "./rules.js";
+import { CP_SAT_PORTFOLIO_CAPABILITY_LIMITS } from "./capabilities.js";
+import { isOptimizerName, OMITTED_SOLVER_OPTIMIZER } from "./types.js";
 
-import type { CpSatWarmStartHint, Grid, Solution, SolverParams } from "./types.js";
+import type { CpSatWarmStartHint, Grid, OptimizerName, SerializedSolution, Solution, SolverParams } from "./types.js";
 
 export const SOLVER_INPUT_ERROR_PREFIX = "Invalid solver input:";
 
@@ -17,6 +20,38 @@ const GREEDY_MAX_SERVICE_CANDIDATE_LIMIT = 2_000;
 const GREEDY_MAX_SERVICE_EXACT_POOL_LIMIT = 64;
 const GREEDY_MAX_SERVICE_EXACT_COMBINATIONS = 100_000;
 const GREEDY_MAX_TIME_LIMIT_SECONDS = 24 * 60 * 60;
+const GREEDY_MAX_DENSITY_TIE_BREAKER_TOLERANCE_PERCENT = 100;
+const AUTO_MAX_WALL_CLOCK_LIMIT_SECONDS = 24 * 60 * 60;
+const AUTO_MAX_WEAK_CYCLE_IMPROVEMENT_THRESHOLD = 1;
+const AUTO_MAX_CONSECUTIVE_WEAK_CYCLES = 100;
+const AUTO_MAX_STAGE_TIME_LIMIT_SECONDS = 24 * 60 * 60;
+const LNS_MAX_ITERATIONS = 10_000;
+const LNS_MAX_NEIGHBORHOOD_DIMENSION = 10_000;
+const LNS_MAX_TIME_LIMIT_SECONDS = 24 * 60 * 60;
+const LNS_NEIGHBORHOOD_ANCHOR_POLICIES = [
+  "ranked",
+  "sliding-only",
+  "weak-service-first",
+  "residential-opportunity-first",
+  "frontier-congestion-first",
+  "placed-buildings-first",
+] as const;
+const CP_SAT_MAX_TIME_LIMIT_SECONDS = 24 * 60 * 60;
+const CP_SAT_MAX_NUM_WORKERS = 64;
+const CP_SAT_RANDOM_SEED_MAX = 0x7fffffff;
+const CP_SAT_PORTFOLIO_MAX_WORKERS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxWorkers;
+const CP_SAT_PORTFOLIO_MAX_TOTAL_WORKER_THREADS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxTotalWorkerThreads;
+const CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxTotalCpuBudgetSeconds;
+const CP_SAT_HINT_ONLY_REUSABLE_KEYS = [
+  "roadKeys",
+  "roads",
+  "serviceCandidateKeys",
+  "residentialCandidateKeys",
+  "services",
+  "residentials",
+  "neighborhoodWindow",
+  "fixOutsideNeighborhoodToHintedValue",
+] as const;
 
 export class SolverInputError extends Error {
   constructor(detail: string) {
@@ -33,9 +68,8 @@ export function isSolverInputErrorMessage(message: string): boolean {
   return message.includes(SOLVER_INPUT_ERROR_PREFIX);
 }
 
-function resolveOptimizerName(params: Pick<SolverParams, "optimizer"> | null | undefined): SolverParams["optimizer"] | "greedy" {
-  if (params?.optimizer === "auto" || params?.optimizer === "cp-sat" || params?.optimizer === "lns") return params.optimizer;
-  return "greedy";
+function resolveOptimizerName(params: Pick<SolverParams, "optimizer"> | null | undefined): OptimizerName {
+  return isOptimizerName(params?.optimizer) ? params.optimizer : OMITTED_SOLVER_OPTIMIZER;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -110,6 +144,19 @@ function requireOptionalString(parent: Record<string, unknown>, key: string, pat
   }
 }
 
+function requireOptionalStringInSet(
+  parent: Record<string, unknown>,
+  key: string,
+  path: string,
+  allowed: readonly string[]
+): void {
+  const value = parent[key];
+  if (value === undefined) return;
+  if (typeof value !== "string" || !allowed.includes(value)) {
+    throw new SolverInputError(`${path} must be one of: ${allowed.join(", ")}.`);
+  }
+}
+
 function requireOptionalFiniteNumber(
   parent: Record<string, unknown>,
   key: string,
@@ -169,6 +216,13 @@ function requireValidationInteger(parent: Record<string, unknown>, key: string, 
   }
 }
 
+function requireValidationIntegerValue(value: unknown, path: string, minimum = 0): number {
+  if (!isInteger(value, minimum)) {
+    throw new SolverInputError(`${path} must be ${describeMinimum(minimum)}.`);
+  }
+  return value;
+}
+
 function requireValidationArray(value: unknown, path: string): unknown[] {
   if (!Array.isArray(value)) {
     throw new SolverInputError(`${path} must be an array.`);
@@ -176,14 +230,19 @@ function requireValidationArray(value: unknown, path: string): unknown[] {
   return value;
 }
 
-function requireOptionalRoadKeys(parent: Record<string, unknown>, key: string, path: string): void {
-  const value = parent[key];
-  if (value === undefined) return;
-  requireValidationArray(value, path).forEach((entry, index) => {
+function requireValidationRoadKeys(value: unknown, path: string): string[] {
+  return requireValidationArray(value, path).map((entry, index) => {
     if (!isRoadKey(entry)) {
       throw new SolverInputError(`${path}[${index}] must be a road key like "r,c".`);
     }
+    return entry;
   });
+}
+
+function requireOptionalRoadKeys(parent: Record<string, unknown>, key: string, path: string): void {
+  const value = parent[key];
+  if (value === undefined) return;
+  requireValidationRoadKeys(value, path);
 }
 
 function requireCandidateKeys(
@@ -306,6 +365,148 @@ function assertValidCpSatWarmStartHint(value: unknown, path: string): void {
   });
 }
 
+function materializeCpSatWarmStartReusableSolution(value: unknown, path: string): Solution | null {
+  if (isRecord(value) && value.roads instanceof Set) {
+    return value as unknown as Solution;
+  }
+  if (!isRecord(value) || value.solution === undefined) return null;
+
+  const hint = value;
+  const solution = requireValidationRecord(hint.solution, `${path}.solution`);
+  const rawServices = solution.services === undefined
+    ? []
+    : requireValidationArray(solution.services, `${path}.solution.services`);
+  const rawResidentials = solution.residentials === undefined
+    ? []
+    : requireValidationArray(solution.residentials, `${path}.solution.residentials`);
+  const serviceTypeIndices: number[] = [];
+  const servicePopulationIncreases: number[] = [];
+  const residentialTypeIndices: number[] = [];
+  const residentialPopulations: number[] = [];
+
+  const services = rawServices.map((entry, index) => {
+    const service = requireValidationRecord(entry, `${path}.solution.services[${index}]`);
+    serviceTypeIndices.push(requireValidationIntegerValue(
+      service.typeIndex,
+      `${path}.solution.services[${index}].typeIndex`,
+      NO_TYPE_INDEX
+    ));
+    servicePopulationIncreases.push(requireValidationIntegerValue(service.bonus, `${path}.solution.services[${index}].bonus`));
+    return {
+      r: requireValidationIntegerValue(service.r, `${path}.solution.services[${index}].r`),
+      c: requireValidationIntegerValue(service.c, `${path}.solution.services[${index}].c`),
+      rows: requireValidationIntegerValue(service.rows, `${path}.solution.services[${index}].rows`, 1),
+      cols: requireValidationIntegerValue(service.cols, `${path}.solution.services[${index}].cols`, 1),
+      range: requireValidationIntegerValue(service.range, `${path}.solution.services[${index}].range`),
+    };
+  });
+  const residentials = rawResidentials.map((entry, index) => {
+    const residential = requireValidationRecord(entry, `${path}.solution.residentials[${index}]`);
+    residentialTypeIndices.push(
+      requireValidationIntegerValue(residential.typeIndex, `${path}.solution.residentials[${index}].typeIndex`, NO_TYPE_INDEX)
+    );
+    residentialPopulations.push(requireValidationIntegerValue(residential.population, `${path}.solution.residentials[${index}].population`));
+    return {
+      r: requireValidationIntegerValue(residential.r, `${path}.solution.residentials[${index}].r`),
+      c: requireValidationIntegerValue(residential.c, `${path}.solution.residentials[${index}].c`),
+      rows: requireValidationIntegerValue(residential.rows, `${path}.solution.residentials[${index}].rows`, 1),
+      cols: requireValidationIntegerValue(residential.cols, `${path}.solution.residentials[${index}].cols`, 1),
+    };
+  });
+  const roadsSource = solution.roads ?? hint.roadKeys ?? hint.roads ?? [];
+  const roadsPath = solution.roads === undefined
+    ? hint.roadKeys === undefined
+      ? hint.roads === undefined
+        ? `${path}.solution.roads`
+        : `${path}.roads`
+      : `${path}.roadKeys`
+    : `${path}.solution.roads`;
+  const populations = solution.populations === undefined
+    ? residentialPopulations
+    : requireValidationArray(solution.populations, `${path}.solution.populations`).map((population, index) =>
+      requireValidationIntegerValue(population, `${path}.solution.populations[${index}]`)
+    );
+  if (populations.length !== residentials.length) {
+    throw new SolverInputError(`${path}.solution.populations must match ${path}.solution.residentials length.`);
+  }
+  const totalPopulation = solution.totalPopulation === undefined
+    ? populations.reduce((sum, population) => sum + population, 0)
+    : requireValidationIntegerValue(solution.totalPopulation, `${path}.solution.totalPopulation`);
+
+  return {
+    optimizer: "cp-sat",
+    roads: new Set(requireValidationRoadKeys(roadsSource, roadsPath)),
+    services,
+    serviceTypeIndices,
+    servicePopulationIncreases,
+    residentials,
+    residentialTypeIndices,
+    populations,
+    totalPopulation,
+  };
+}
+
+function assertValidReusableSolution(
+  G: Grid,
+  params: SolverParams,
+  solution: Solution,
+  context: string,
+  fallbackDetail = "the reusable layout is not valid for the current grid and building settings."
+): void {
+  const validation = validateSolution({
+    grid: G,
+    params,
+    solution,
+  });
+  if (!validation.valid) {
+    const detail = validation.errors.length
+      ? validation.errors.join(" ")
+      : fallbackDetail;
+    throw new SolverInputError(`${context} is invalid: ${detail}`);
+  }
+}
+
+function hasHintOnlyCpSatReusablePayload(hint: Record<string, unknown>): boolean {
+  if (hint.solution !== undefined) return false;
+  return CP_SAT_HINT_ONLY_REUSABLE_KEYS.some((key) => hint[key] !== undefined);
+}
+
+function assertMatchingCpSatWarmStartFingerprint(
+  G: Grid,
+  params: SolverParams,
+  hint: Record<string, unknown>,
+  path: string
+): void {
+  if (typeof hint.modelFingerprint !== "string") {
+    throw new SolverInputError(`${path}.modelFingerprint is required for hint-only reusable payloads.`);
+  }
+  const expectedFingerprint = computeCpSatRequestFingerprint(G, params);
+  if (hint.modelFingerprint !== expectedFingerprint) {
+    throw new SolverInputError(`${path} is stale for the current grid or building settings.`);
+  }
+}
+
+function assertValidCpSatReusableInputs(G: Grid, params: SolverParams): void {
+  const cpSatValue = (params as Record<string, unknown>).cpSat;
+  if (!isRecord(cpSatValue) || cpSatValue.warmStartHint === undefined) return;
+  const hint = cpSatValue.warmStartHint;
+
+  if (
+    isRecord(hint)
+    && !(hint.roads instanceof Set)
+    && (typeof hint.modelFingerprint === "string" || hasHintOnlyCpSatReusablePayload(hint))
+  ) {
+    assertMatchingCpSatWarmStartFingerprint(G, params, hint, "CP-SAT warm-start hint cpSat.warmStartHint");
+  }
+
+  const solution = materializeCpSatWarmStartReusableSolution(
+    hint,
+    "CP-SAT warm-start hint cpSat.warmStartHint"
+  );
+  if (!solution) return;
+  assertValidReusableSolution(G, params, solution, "CP-SAT warm-start hint cpSat.warmStartHint.solution");
+}
+
 function isRoadKey(value: unknown): value is string {
   if (typeof value !== "string") return false;
   const [row, col, ...rest] = value.split(",");
@@ -411,50 +612,316 @@ export function materializeValidLnsSeedSolution(
   params: SolverParams,
   seedHint?: CpSatWarmStartHint
 ): Solution | null {
+  if (seedHint) {
+    const seed = requireRecord(seedHint, "seedHint");
+    if (seed.modelFingerprint !== undefined) {
+      if (typeof seed.modelFingerprint !== "string") {
+        throw new SolverInputError("LNS seed hint modelFingerprint must be a string.");
+      }
+      const expectedFingerprint = computeCpSatRequestFingerprint(G, params);
+      if (seed.modelFingerprint !== expectedFingerprint) {
+        throw new SolverInputError("LNS seed hint is stale for the current grid or building settings.");
+      }
+    }
+  }
+
   const incumbent = materializeLnsSeedSolution(seedHint);
   if (!incumbent) return null;
 
-  const seedValidation = validateSolution({
-    grid: G,
-    solution: incumbent,
+  assertValidReusableSolution(
+    G,
     params,
-  });
-  if (!seedValidation.valid) {
-    const detail = seedValidation.errors.length
-      ? seedValidation.errors.join(" ")
-      : "LNS seed hint does not describe a valid layout.";
-    throw new SolverInputError(`LNS seed hint is invalid: ${detail}`);
-  }
+    incumbent,
+    "LNS seed hint",
+    "LNS seed hint does not describe a valid layout."
+  );
   return incumbent;
 }
 
-function assertValidCpSatPortfolioOptions(value: unknown, path: string): void {
-  const portfolio = requireValidationRecord(value, path);
-  requireOptionalIntegerForValidation(portfolio, "workerCount", `${path}.workerCount`, 1);
-  if (portfolio.randomSeeds !== undefined) {
-    requireValidationArray(portfolio.randomSeeds, `${path}.randomSeeds`).forEach((seed, index) => {
-      if (!isInteger(seed)) {
-        throw new SolverInputError(`${path}.randomSeeds[${index}] must be ${describeMinimum(0)}.`);
-      }
-    });
-  }
-  requireOptionalFiniteNumber(portfolio, "perWorkerTimeLimitSeconds", `${path}.perWorkerTimeLimitSeconds`, 0);
-  requireOptionalFiniteNumber(portfolio, "perWorkerMaxDeterministicTime", `${path}.perWorkerMaxDeterministicTime`, 0);
-  requireOptionalIntegerForValidation(portfolio, "perWorkerNumWorkers", `${path}.perWorkerNumWorkers`, 1);
-  requireOptionalBoolean(portfolio, "randomizeSearch", `${path}.randomizeSearch`);
+function assertValidSerializedServicePlacement(value: unknown, path: string): void {
+  const service = requireValidationRecord(value, path);
+  requireValidationInteger(service, "r", `${path}.r`);
+  requireValidationInteger(service, "c", `${path}.c`);
+  requireValidationInteger(service, "rows", `${path}.rows`, 1);
+  requireValidationInteger(service, "cols", `${path}.cols`, 1);
+  requireValidationInteger(service, "range", `${path}.range`);
 }
 
-function assertValidCpSatOptions(params: SolverParams): void {
+function assertValidSerializedResidentialPlacement(value: unknown, path: string): void {
+  const residential = requireValidationRecord(value, path);
+  requireValidationInteger(residential, "r", `${path}.r`);
+  requireValidationInteger(residential, "c", `${path}.c`);
+  requireValidationInteger(residential, "rows", `${path}.rows`, 1);
+  requireValidationInteger(residential, "cols", `${path}.cols`, 1);
+}
+
+export function assertValidSerializedSolutionPayload(
+  value: unknown,
+  path = "Serialized solution"
+): asserts value is SerializedSolution {
+  const solution = requireValidationRecord(value, path);
+  requireValidationRoadKeys(solution.roads, `${path}.roads`);
+  const services = requireValidationArray(solution.services, `${path}.services`);
+  services.forEach((service, index) => assertValidSerializedServicePlacement(service, `${path}.services[${index}]`));
+  const serviceTypeIndices = requireValidationArray(solution.serviceTypeIndices, `${path}.serviceTypeIndices`);
+  if (serviceTypeIndices.length !== services.length) {
+    throw new SolverInputError(`${path}.serviceTypeIndices must match ${path}.services length.`);
+  }
+  serviceTypeIndices.forEach((typeIndex, index) => {
+    if (!isInteger(typeIndex, NO_TYPE_INDEX)) {
+      throw new SolverInputError(`${path}.serviceTypeIndices[${index}] must be ${describeMinimum(NO_TYPE_INDEX)}.`);
+    }
+  });
+  const servicePopulationIncreases = requireValidationArray(
+    solution.servicePopulationIncreases,
+    `${path}.servicePopulationIncreases`
+  );
+  if (servicePopulationIncreases.length !== services.length) {
+    throw new SolverInputError(`${path}.servicePopulationIncreases must match ${path}.services length.`);
+  }
+  servicePopulationIncreases.forEach((bonus, index) => {
+    if (!isInteger(bonus)) {
+      throw new SolverInputError(`${path}.servicePopulationIncreases[${index}] must be ${describeMinimum(0)}.`);
+    }
+  });
+  const residentials = requireValidationArray(solution.residentials, `${path}.residentials`);
+  residentials.forEach((residential, index) =>
+    assertValidSerializedResidentialPlacement(residential, `${path}.residentials[${index}]`)
+  );
+  const residentialTypeIndices = requireValidationArray(solution.residentialTypeIndices, `${path}.residentialTypeIndices`);
+  if (residentialTypeIndices.length !== residentials.length) {
+    throw new SolverInputError(`${path}.residentialTypeIndices must match ${path}.residentials length.`);
+  }
+  residentialTypeIndices.forEach((typeIndex, index) => {
+    if (!isInteger(typeIndex, NO_TYPE_INDEX)) {
+      throw new SolverInputError(`${path}.residentialTypeIndices[${index}] must be ${describeMinimum(NO_TYPE_INDEX)}.`);
+    }
+  });
+  const populations = requireValidationArray(solution.populations, `${path}.populations`);
+  if (populations.length !== residentials.length) {
+    throw new SolverInputError(`${path}.populations must match ${path}.residentials length.`);
+  }
+  populations.forEach((population, index) => {
+    if (!isInteger(population)) {
+      throw new SolverInputError(`${path}.populations[${index}] must be ${describeMinimum(0)}.`);
+    }
+  });
+  requireValidationInteger(solution, "totalPopulation", `${path}.totalPopulation`);
+}
+
+function assertValidProblemDefinitionServiceType(value: unknown, path: string): void {
+  const service = requireValidationRecord(value, path);
+  requireOptionalString(service, "name", `${path}.name`);
+  requireValidationInteger(service, "rows", `${path}.rows`, 1);
+  requireValidationInteger(service, "cols", `${path}.cols`, 1);
+  requireValidationInteger(service, "bonus", `${path}.bonus`);
+  requireValidationInteger(service, "range", `${path}.range`);
+  requireValidationInteger(service, "avail", `${path}.avail`);
+  requireOptionalBoolean(service, "allowRotation", `${path}.allowRotation`);
+}
+
+function assertValidProblemDefinitionResidentialType(value: unknown, path: string): void {
+  const residential = requireValidationRecord(value, path);
+  requireOptionalString(residential, "name", `${path}.name`);
+  requireValidationInteger(residential, "w", `${path}.w`, 1);
+  requireValidationInteger(residential, "h", `${path}.h`, 1);
+  requireValidationInteger(residential, "min", `${path}.min`);
+  requireValidationInteger(residential, "max", `${path}.max`);
+  requireValidationInteger(residential, "avail", `${path}.avail`);
+  if (Number(residential.max) < Number(residential.min)) {
+    throw new SolverInputError(`${path}.max must be >= ${path}.min.`);
+  }
+}
+
+function assertValidResidentialSetting(value: unknown, path: string): void {
+  const setting = requireValidationRecord(value, path);
+  requireValidationInteger(setting, "min", `${path}.min`);
+  requireValidationInteger(setting, "max", `${path}.max`);
+  if (Number(setting.max) < Number(setting.min)) {
+    throw new SolverInputError(`${path}.max must be >= ${path}.min.`);
+  }
+}
+
+export function assertValidProblemDefinition(params: SolverParams): void {
+  const paramsRecord = requireValidationRecord(params, "Solver params");
+  const optimizer = paramsRecord.optimizer;
+  if (optimizer !== undefined && !isOptimizerName(optimizer)) {
+    throw new SolverInputError("Solver params optimizer must be one of auto, greedy, cp-sat, or lns.");
+  }
+
+  if (paramsRecord.serviceTypes !== undefined) {
+    requireValidationArray(paramsRecord.serviceTypes, "Problem definition serviceTypes").forEach((service, index) => {
+      assertValidProblemDefinitionServiceType(service, `Problem definition serviceTypes[${index}]`);
+    });
+  }
+  if (paramsRecord.residentialTypes !== undefined) {
+    requireValidationArray(paramsRecord.residentialTypes, "Problem definition residentialTypes").forEach((residential, index) => {
+      assertValidProblemDefinitionResidentialType(residential, `Problem definition residentialTypes[${index}]`);
+    });
+  }
+  if (paramsRecord.availableBuildings !== undefined) {
+    const availableBuildings = requireValidationRecord(paramsRecord.availableBuildings, "Problem definition availableBuildings");
+    requireOptionalIntegerForValidation(availableBuildings, "services", "Problem definition availableBuildings.services");
+    requireOptionalIntegerForValidation(availableBuildings, "residentials", "Problem definition availableBuildings.residentials");
+  }
+  requireOptionalIntegerForValidation(paramsRecord, "maxServices", "Problem definition maxServices");
+  requireOptionalIntegerForValidation(paramsRecord, "maxResidentials", "Problem definition maxResidentials");
+  requireOptionalIntegerForValidation(paramsRecord, "basePop", "Problem definition basePop");
+  requireOptionalIntegerForValidation(paramsRecord, "maxPop", "Problem definition maxPop");
+  if (
+    typeof paramsRecord.basePop === "number"
+    && typeof paramsRecord.maxPop === "number"
+    && paramsRecord.maxPop < paramsRecord.basePop
+  ) {
+    throw new SolverInputError("Problem definition maxPop must be >= basePop.");
+  }
+  if (paramsRecord.residentialSettings !== undefined) {
+    const settings = requireValidationRecord(paramsRecord.residentialSettings, "Problem definition residentialSettings");
+    for (const [key, setting] of Object.entries(settings)) {
+      if (!/^[1-9]\d*x[1-9]\d*$/.test(key)) {
+        throw new SolverInputError(`Problem definition residentialSettings key "${key}" must be like "2x3".`);
+      }
+      assertValidResidentialSetting(setting, `Problem definition residentialSettings.${key}`);
+    }
+  }
+}
+
+function getOptionalFinitePositiveNumber(parent: Record<string, unknown>, key: string): number | undefined {
+  const value = parent[key];
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : undefined;
+}
+
+function getOptionalIntegerInRange(parent: Record<string, unknown>, key: string, minimum: number, maximum: number): number | undefined {
+  const value = parent[key];
+  return Number.isInteger(value) && typeof value === "number" && value >= minimum && value <= maximum
+    ? value
+    : undefined;
+}
+
+function assertValidCpSatPortfolioOptions(value: unknown, path: string, cpSat: Record<string, unknown>): void {
+  const portfolio = requireValidationRecord(value, path);
+
+  requireOptionalIntegerInRange(
+    portfolio,
+    "workerCount",
+    `${path}.workerCount`,
+    1,
+    CP_SAT_PORTFOLIO_MAX_WORKERS
+  );
+
+  let randomSeedCount: number | undefined;
+  if (portfolio.randomSeeds !== undefined) {
+    const randomSeeds = requireValidationArray(portfolio.randomSeeds, `${path}.randomSeeds`);
+    if (randomSeeds.length === 0 || randomSeeds.length > CP_SAT_PORTFOLIO_MAX_WORKERS) {
+      throw new SolverInputError(`${path}.randomSeeds must contain between 1 and ${CP_SAT_PORTFOLIO_MAX_WORKERS} seeds.`);
+    }
+    randomSeeds.forEach((seed, index) => {
+      if (!isInteger(seed) || seed > CP_SAT_RANDOM_SEED_MAX) {
+        throw new SolverInputError(`${path}.randomSeeds[${index}] must be ${describeIntegerRange(0, CP_SAT_RANDOM_SEED_MAX)}.`);
+      }
+    });
+    if (new Set(randomSeeds).size !== randomSeeds.length) {
+      throw new SolverInputError(`${path}.randomSeeds must not contain duplicate seeds.`);
+    }
+    randomSeedCount = randomSeeds.length;
+  }
+
+  requireOptionalFiniteNumberInRange(
+    portfolio,
+    "totalCpuBudgetSeconds",
+    `${path}.totalCpuBudgetSeconds`,
+    0,
+    CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS
+  );
+  requireOptionalFiniteNumberInRange(
+    portfolio,
+    "perWorkerTimeLimitSeconds",
+    `${path}.perWorkerTimeLimitSeconds`,
+    0,
+    CP_SAT_MAX_TIME_LIMIT_SECONDS
+  );
+  requireOptionalFiniteNumberInRange(
+    portfolio,
+    "perWorkerMaxDeterministicTime",
+    `${path}.perWorkerMaxDeterministicTime`,
+    0,
+    CP_SAT_MAX_TIME_LIMIT_SECONDS
+  );
+  requireOptionalIntegerInRange(
+    portfolio,
+    "perWorkerNumWorkers",
+    `${path}.perWorkerNumWorkers`,
+    1,
+    CP_SAT_MAX_NUM_WORKERS
+  );
+  requireOptionalBoolean(portfolio, "randomizeSearch", `${path}.randomizeSearch`);
+
+  const resolvedWorkerCount = randomSeedCount
+    ?? getOptionalIntegerInRange(portfolio, "workerCount", 1, CP_SAT_PORTFOLIO_MAX_WORKERS)
+    ?? Math.min(4, CP_SAT_PORTFOLIO_MAX_WORKERS);
+  const perWorkerNumWorkers = getOptionalIntegerInRange(portfolio, "perWorkerNumWorkers", 1, CP_SAT_MAX_NUM_WORKERS) ?? 1;
+  const requestedWorkerThreads = resolvedWorkerCount * perWorkerNumWorkers;
+  if (requestedWorkerThreads > CP_SAT_PORTFOLIO_MAX_TOTAL_WORKER_THREADS) {
+    throw new SolverInputError(
+      `${path} requests ${requestedWorkerThreads} parallel CP-SAT workers, exceeding the ${CP_SAT_PORTFOLIO_MAX_TOTAL_WORKER_THREADS} worker portfolio limit.`
+    );
+  }
+
+  const perWorkerTimeLimitSeconds =
+    getOptionalFinitePositiveNumber(portfolio, "perWorkerTimeLimitSeconds")
+    ?? getOptionalFinitePositiveNumber(cpSat, "timeLimitSeconds");
+  if (perWorkerTimeLimitSeconds === undefined) {
+    throw new SolverInputError(`${path} requires cpSat.timeLimitSeconds or ${path}.perWorkerTimeLimitSeconds.`);
+  }
+
+  const configuredCpuBudget = getOptionalFinitePositiveNumber(portfolio, "totalCpuBudgetSeconds");
+  const cpuBudgetLimit = Math.min(
+    configuredCpuBudget ?? CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS,
+    CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS
+  );
+  const requestedCpuSeconds = resolvedWorkerCount * perWorkerNumWorkers * perWorkerTimeLimitSeconds;
+  if (requestedCpuSeconds > cpuBudgetLimit) {
+    throw new SolverInputError(
+      `${path} requests ${requestedCpuSeconds} total CPU seconds, exceeding the ${cpuBudgetLimit} second portfolio budget.`
+    );
+  }
+}
+
+function assertValidCpSatOptions(params: SolverParams, optimizer: OptimizerName): void {
   const cpSatValue = (params as Record<string, unknown>).cpSat;
   if (cpSatValue === undefined) return;
 
   const cpSat = requireValidationRecord(cpSatValue, "CP-SAT options cpSat");
   requireOptionalString(cpSat, "pythonExecutable", "CP-SAT runtime option cpSat.pythonExecutable");
   requireOptionalString(cpSat, "scriptPath", "CP-SAT runtime option cpSat.scriptPath");
-  requireOptionalFiniteNumber(cpSat, "timeLimitSeconds", "CP-SAT runtime option cpSat.timeLimitSeconds", 0);
-  requireOptionalFiniteNumber(cpSat, "maxDeterministicTime", "CP-SAT runtime option cpSat.maxDeterministicTime", 0);
-  requireOptionalIntegerForValidation(cpSat, "numWorkers", "CP-SAT runtime option cpSat.numWorkers", 1);
-  requireOptionalIntegerForValidation(cpSat, "randomSeed", "CP-SAT runtime option cpSat.randomSeed");
+  requireOptionalFiniteNumberInRange(
+    cpSat,
+    "timeLimitSeconds",
+    "CP-SAT runtime option cpSat.timeLimitSeconds",
+    0,
+    CP_SAT_MAX_TIME_LIMIT_SECONDS
+  );
+  requireOptionalFiniteNumberInRange(
+    cpSat,
+    "maxDeterministicTime",
+    "CP-SAT runtime option cpSat.maxDeterministicTime",
+    0,
+    CP_SAT_MAX_TIME_LIMIT_SECONDS
+  );
+  requireOptionalIntegerInRange(
+    cpSat,
+    "numWorkers",
+    "CP-SAT runtime option cpSat.numWorkers",
+    1,
+    CP_SAT_MAX_NUM_WORKERS
+  );
+  requireOptionalIntegerInRange(
+    cpSat,
+    "randomSeed",
+    "CP-SAT runtime option cpSat.randomSeed",
+    0,
+    CP_SAT_RANDOM_SEED_MAX
+  );
   requireOptionalBoolean(cpSat, "randomizeSearch", "CP-SAT runtime option cpSat.randomizeSearch");
   requireOptionalFiniteNumber(cpSat, "relativeGapLimit", "CP-SAT runtime option cpSat.relativeGapLimit", 0, true);
   requireOptionalFiniteNumber(cpSat, "absoluteGapLimit", "CP-SAT runtime option cpSat.absoluteGapLimit", 0, true);
@@ -475,8 +942,69 @@ function assertValidCpSatOptions(params: SolverParams): void {
     assertValidCpSatWarmStartHint(cpSat.warmStartHint, "CP-SAT warm-start hint cpSat.warmStartHint");
   }
   if (cpSat.portfolio !== undefined) {
-    assertValidCpSatPortfolioOptions(cpSat.portfolio, "CP-SAT portfolio option cpSat.portfolio");
+    if (optimizer !== "cp-sat") {
+      throw new SolverInputError('CP-SAT portfolio option cpSat.portfolio is only supported when optimizer is "cp-sat".');
+    }
+    assertValidCpSatPortfolioOptions(cpSat.portfolio, "CP-SAT portfolio option cpSat.portfolio", cpSat);
   }
+}
+
+function assertValidAutoOptions(params: SolverParams): void {
+  const autoValue = (params as Record<string, unknown>).auto;
+  if (autoValue === undefined) return;
+
+  const auto = requireValidationRecord(autoValue, "Auto options auto");
+  requireOptionalFiniteNumberInRange(
+    auto,
+    "wallClockLimitSeconds",
+    "Auto option auto.wallClockLimitSeconds",
+    0,
+    AUTO_MAX_WALL_CLOCK_LIMIT_SECONDS
+  );
+  requireOptionalIntegerInRange(
+    auto,
+    "randomSeed",
+    "Auto option auto.randomSeed",
+    0,
+    GREEDY_RANDOM_SEED_MAX
+  );
+  requireOptionalFiniteNumberInRange(
+    auto,
+    "weakCycleImprovementThreshold",
+    "Auto option auto.weakCycleImprovementThreshold",
+    0,
+    AUTO_MAX_WEAK_CYCLE_IMPROVEMENT_THRESHOLD,
+    true
+  );
+  requireOptionalIntegerInRange(
+    auto,
+    "maxConsecutiveWeakCycles",
+    "Auto option auto.maxConsecutiveWeakCycles",
+    1,
+    AUTO_MAX_CONSECUTIVE_WEAK_CYCLES
+  );
+  requireOptionalFiniteNumberInRange(
+    auto,
+    "cpSatStageTimeLimitSeconds",
+    "Auto option auto.cpSatStageTimeLimitSeconds",
+    0,
+    AUTO_MAX_STAGE_TIME_LIMIT_SECONDS
+  );
+  requireOptionalFiniteNumberInRange(
+    auto,
+    "cpSatStageReserveRatio",
+    "Auto option auto.cpSatStageReserveRatio",
+    0,
+    1,
+    true
+  );
+  requireOptionalFiniteNumberInRange(
+    auto,
+    "cpSatStageNoImprovementTimeoutSeconds",
+    "Auto option auto.cpSatStageNoImprovementTimeoutSeconds",
+    0,
+    AUTO_MAX_STAGE_TIME_LIMIT_SECONDS
+  );
 }
 
 function assertValidGreedyOptions(params: SolverParams): void {
@@ -504,6 +1032,16 @@ function assertValidGreedyOptions(params: SolverParams): void {
       GREEDY_MAX_SERVICE_CANDIDATE_LIMIT
     );
     requireOptionalBoolean(greedy, "deferRoadCommitment", "Greedy option greedy.deferRoadCommitment");
+    requireOptionalBoolean(greedy, "densityTieBreaker", "Greedy option greedy.densityTieBreaker");
+    requireOptionalFiniteNumberInRange(
+      greedy,
+      "densityTieBreakerTolerancePercent",
+      "Greedy option greedy.densityTieBreakerTolerancePercent",
+      0,
+      GREEDY_MAX_DENSITY_TIE_BREAKER_TOLERANCE_PERCENT,
+      true
+    );
+    requireOptionalBoolean(greedy, "connectivityShadowScoring", "Greedy option greedy.connectivityShadowScoring");
     requireOptionalIntegerInRange(
       greedy,
       "randomSeed",
@@ -512,6 +1050,7 @@ function assertValidGreedyOptions(params: SolverParams): void {
       GREEDY_RANDOM_SEED_MAX
     );
     requireOptionalBoolean(greedy, "profile", "Greedy option greedy.profile");
+    requireOptionalBoolean(greedy, "diagnostics", "Greedy option greedy.diagnostics");
     requireOptionalFiniteNumberInRange(
       greedy,
       "timeLimitSeconds",
@@ -598,10 +1137,110 @@ function assertValidGreedyOptions(params: SolverParams): void {
   );
 }
 
+export function assertValidLnsOptions(params: SolverParams): void {
+  const lnsValue = (params as Record<string, unknown>).lns;
+  if (lnsValue === undefined) return;
+
+  const lns = requireValidationRecord(lnsValue, "LNS options lns");
+  requireOptionalIntegerInRange(
+    lns,
+    "iterations",
+    "LNS option lns.iterations",
+    1,
+    LNS_MAX_ITERATIONS
+  );
+  requireOptionalIntegerInRange(
+    lns,
+    "maxNoImprovementIterations",
+    "LNS option lns.maxNoImprovementIterations",
+    1,
+    LNS_MAX_ITERATIONS
+  );
+  requireOptionalFiniteNumberInRange(
+    lns,
+    "wallClockLimitSeconds",
+    "LNS option lns.wallClockLimitSeconds",
+    0,
+    LNS_MAX_TIME_LIMIT_SECONDS
+  );
+  requireOptionalFiniteNumberInRange(
+    lns,
+    "timeLimitSeconds",
+    "LNS option lns.timeLimitSeconds",
+    0,
+    LNS_MAX_TIME_LIMIT_SECONDS
+  );
+  requireOptionalFiniteNumberInRange(
+    lns,
+    "noImprovementTimeoutSeconds",
+    "LNS option lns.noImprovementTimeoutSeconds",
+    0,
+    LNS_MAX_TIME_LIMIT_SECONDS
+  );
+  requireOptionalFiniteNumberInRange(
+    lns,
+    "seedTimeLimitSeconds",
+    "LNS option lns.seedTimeLimitSeconds",
+    0,
+    LNS_MAX_TIME_LIMIT_SECONDS
+  );
+  requireOptionalIntegerInRange(
+    lns,
+    "neighborhoodRows",
+    "LNS option lns.neighborhoodRows",
+    1,
+    LNS_MAX_NEIGHBORHOOD_DIMENSION
+  );
+  requireOptionalIntegerInRange(
+    lns,
+    "neighborhoodCols",
+    "LNS option lns.neighborhoodCols",
+    1,
+    LNS_MAX_NEIGHBORHOOD_DIMENSION
+  );
+  requireOptionalStringInSet(
+    lns,
+    "neighborhoodAnchorPolicy",
+    "LNS option lns.neighborhoodAnchorPolicy",
+    LNS_NEIGHBORHOOD_ANCHOR_POLICIES
+  );
+  requireOptionalFiniteNumberInRange(
+    lns,
+    "repairTimeLimitSeconds",
+    "LNS option lns.repairTimeLimitSeconds",
+    0,
+    LNS_MAX_TIME_LIMIT_SECONDS
+  );
+  requireOptionalFiniteNumberInRange(
+    lns,
+    "focusedRepairTimeLimitSeconds",
+    "LNS option lns.focusedRepairTimeLimitSeconds",
+    0,
+    LNS_MAX_TIME_LIMIT_SECONDS
+  );
+  requireOptionalFiniteNumberInRange(
+    lns,
+    "escalatedRepairTimeLimitSeconds",
+    "LNS option lns.escalatedRepairTimeLimitSeconds",
+    0,
+    LNS_MAX_TIME_LIMIT_SECONDS
+  );
+  requireOptionalString(lns, "stopFilePath", "LNS runtime option lns.stopFilePath");
+  requireOptionalString(lns, "snapshotFilePath", "LNS runtime option lns.snapshotFilePath");
+}
+
 export function assertValidSolveInputs(G: Grid, params: SolverParams): void {
+  assertValidProblemDefinition(params);
   const optimizer = resolveOptimizerName(params);
-  assertValidCpSatOptions(params);
+  assertValidAutoOptions(params);
+  assertValidCpSatOptions(params, optimizer);
   assertValidGreedyOptions(params);
+  assertValidLnsOptions(params);
+  assertValidCpSatReusableInputs(G, params);
   if (optimizer !== "lns" && optimizer !== "auto") return;
   materializeValidLnsSeedSolution(G, params, params.lns?.seedHint);
+}
+
+export function assertValidLayoutEvaluateInputs(_G: Grid, params: SolverParams): void {
+  assertValidProblemDefinition(params);
 }

@@ -1,0 +1,618 @@
+{
+  "generatedAt": "2026-04-28T10:11:21.355Z",
+  "budgetSeconds": 5,
+  "budgetsSeconds": [
+    5
+  ],
+  "seeds": [
+    7
+  ],
+  "modeCount": 2,
+  "caseCount": 1,
+  "selectedCaseNames": [
+    "typed-housing-single"
+  ],
+  "modes": [
+    "cp-sat",
+    "cp-sat-portfolio"
+  ],
+  "cases": [
+    {
+      "name": "typed-housing-single",
+      "description": "Tiny typed-housing case shared by all solver modes.",
+      "problemSizeBand": "tiny",
+      "gridRows": 4,
+      "gridCols": 4,
+      "budgetSeconds": 5,
+      "seed": 7,
+      "bestScore": 110,
+      "winnerModes": [
+        "cp-sat",
+        "cp-sat-portfolio"
+      ],
+      "results": [
+        {
+          "mode": "cp-sat",
+          "optimizer": "cp-sat",
+          "label": "CP-SAT",
+          "problemSizeBand": "tiny",
+          "budgetSeconds": 5,
+          "seed": 7,
+          "totalPopulation": 110,
+          "wallClockSeconds": 0.78508525,
+          "workerCpuBudgetSeconds": 5,
+          "observedWorkerCpuSeconds": 0.038,
+          "populationPerWorkerCpuBudgetSecond": 22,
+          "populationPerObservedCpuSecond": 2894.737,
+          "roadCount": 1,
+          "serviceCount": 0,
+          "residentialCount": 2,
+          "cpSatStatus": "OPTIMAL",
+          "lnsStopReason": null,
+          "lnsSeedTimeLimitSeconds": null,
+          "lnsSeedWallClockSeconds": null,
+          "lnsSeedProfilePhaseCount": 0,
+          "autoStopReason": null,
+          "autoGreedySeedTimeLimitSeconds": null,
+          "autoGreedySeedElapsedSeconds": null,
+          "autoGreedySeedProfilePhaseCount": 0,
+          "stoppedByUser": false,
+          "progressSummary": {
+            "currentScore": 110,
+            "bestScore": 110,
+            "activeStage": "cp-sat",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.785,
+            "timeSinceImprovementSeconds": 0.001,
+            "stopReason": null,
+            "exactGap": 0,
+            "portfolioWorkerSummary": null
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "typed-housing-single:cp-sat:budget-5:seed-7",
+              "sequence": 0,
+              "eventId": "typed-housing-single:cp-sat:budget-5:seed-7:0000:cp-sat-progress",
+              "optimizer": "cp-sat",
+              "activeStage": "cp-sat",
+              "kind": "cp-sat-progress",
+              "decision": "improved",
+              "reason": "CP-SAT found incumbent population 110.",
+              "score": {
+                "before": null,
+                "after": 110,
+                "best": 110,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "status": "OPTIMAL",
+                "solutionCount": 1,
+                "solveWallTimeSeconds": 0.037916000000000005,
+                "numBranches": 179,
+                "numConflicts": 0,
+                "lastImprovementAtSeconds": 0.037377,
+                "secondsSinceLastImprovement": 0.0005390000000000048
+              },
+              "elapsedMs": 37
+            },
+            {
+              "schemaVersion": 1,
+              "runId": "typed-housing-single:cp-sat:budget-5:seed-7",
+              "sequence": 1,
+              "eventId": "typed-housing-single:cp-sat:budget-5:seed-7:0001:cp-sat-progress",
+              "optimizer": "cp-sat",
+              "activeStage": "cp-sat",
+              "kind": "cp-sat-progress",
+              "decision": "bounded",
+              "reason": "CP-SAT OPTIMAL with population gap 0.",
+              "score": {
+                "before": 110,
+                "after": 110,
+                "best": 110,
+                "delta": 0,
+                "upperBound": 110,
+                "gap": 0
+              },
+              "evidence": {
+                "status": "OPTIMAL",
+                "solutionCount": 1,
+                "solveWallTimeSeconds": 0.037916000000000005,
+                "numBranches": 179,
+                "numConflicts": 0,
+                "lastImprovementAtSeconds": 0.037377,
+                "secondsSinceLastImprovement": 0.0005390000000000048
+              },
+              "elapsedMs": 38
+            },
+            {
+              "schemaVersion": 1,
+              "runId": "typed-housing-single:cp-sat:budget-5:seed-7",
+              "sequence": 2,
+              "eventId": "typed-housing-single:cp-sat:budget-5:seed-7:0002:checkpoint",
+              "optimizer": "cp-sat",
+              "activeStage": "cp-sat",
+              "kind": "checkpoint",
+              "decision": "stalled",
+              "reason": "cp-sat final incumbent population 110.",
+              "score": {
+                "before": 110,
+                "after": 110,
+                "best": 110,
+                "delta": 0,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 1,
+                "serviceCount": 0,
+                "residentialCount": 2
+              },
+              "elapsedMs": 785
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 785,
+            "finalScore": 110,
+            "bestScore": 110,
+            "firstFeasibleAtMs": 37,
+            "firstImprovementAtMs": 37,
+            "bestScoreAtMs": 37,
+            "improvementCount": 1,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 110,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 110,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 110,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 55,
+                "reachedAtMs": 37,
+                "reachedScore": 110
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 99,
+                "reachedAtMs": 37,
+                "reachedScore": 110
+              },
+              {
+                "ratio": 1,
+                "targetScore": 110,
+                "reachedAtMs": 37,
+                "reachedScore": 110
+              }
+            ]
+          },
+          "checkpointReason": "CP-SAT OPTIMAL with population gap 0.",
+          "scoreDeltaToBest": 0,
+          "scoreRatioToBest": 1,
+          "winVsAuto": "no-auto",
+          "rank": 2,
+          "scoreDeltaVsAuto": null,
+          "budgetAllocationSignal": {
+            "signal": "under-used-budget",
+            "budgetUtilizationRatio": 0.157,
+            "budgetRemainingSeconds": 4.215,
+            "budgetOverrunSeconds": 0,
+            "firstImprovementSeconds": 0.037,
+            "bestScoreSeconds": 0.037,
+            "secondsAfterBest": 0.748,
+            "improvementsPerSecond": 1.274,
+            "scoreDeltaVsAuto": null,
+            "autoBestScoreSecondsDelta": null,
+            "reason": "Observed wall time used only a small share of the configured benchmark budget."
+          }
+        },
+        {
+          "mode": "cp-sat-portfolio",
+          "optimizer": "cp-sat",
+          "label": "CP-SAT portfolio",
+          "problemSizeBand": "tiny",
+          "budgetSeconds": 5,
+          "seed": 7,
+          "totalPopulation": 110,
+          "wallClockSeconds": 0.47493816600000005,
+          "workerCpuBudgetSeconds": 15,
+          "observedWorkerCpuSeconds": 0.032,
+          "populationPerWorkerCpuBudgetSecond": 7.333,
+          "populationPerObservedCpuSecond": 3437.5,
+          "roadCount": 1,
+          "serviceCount": 0,
+          "residentialCount": 2,
+          "cpSatStatus": "OPTIMAL",
+          "lnsStopReason": null,
+          "lnsSeedTimeLimitSeconds": null,
+          "lnsSeedWallClockSeconds": null,
+          "lnsSeedProfilePhaseCount": 0,
+          "autoStopReason": null,
+          "autoGreedySeedTimeLimitSeconds": null,
+          "autoGreedySeedElapsedSeconds": null,
+          "autoGreedySeedProfilePhaseCount": 0,
+          "stoppedByUser": false,
+          "progressSummary": {
+            "currentScore": 110,
+            "bestScore": 110,
+            "activeStage": "cp-sat",
+            "reuseSource": null,
+            "elapsedTimeSeconds": 0.475,
+            "timeSinceImprovementSeconds": 0,
+            "stopReason": null,
+            "exactGap": 0,
+            "portfolioWorkerSummary": {
+              "workerCount": 3,
+              "completedWorkers": 3,
+              "feasibleWorkers": 3,
+              "selectedWorkerIndex": 0
+            }
+          },
+          "decisionTrace": [
+            {
+              "schemaVersion": 1,
+              "runId": "typed-housing-single:cp-sat-portfolio:budget-5:seed-7",
+              "sequence": 0,
+              "eventId": "typed-housing-single:cp-sat-portfolio:budget-5:seed-7:0000:cp-sat-progress",
+              "optimizer": "cp-sat",
+              "activeStage": "cp-sat",
+              "kind": "cp-sat-progress",
+              "decision": "improved",
+              "reason": "CP-SAT found incumbent population 110.",
+              "score": {
+                "before": null,
+                "after": 110,
+                "best": 110,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "status": "OPTIMAL",
+                "solutionCount": 1,
+                "solveWallTimeSeconds": 0.012100000000000001,
+                "numBranches": 179,
+                "numConflicts": 0,
+                "lastImprovementAtSeconds": 0.011959000000000001,
+                "secondsSinceLastImprovement": 0.0001410000000000005
+              },
+              "elapsedMs": 12
+            },
+            {
+              "schemaVersion": 1,
+              "runId": "typed-housing-single:cp-sat-portfolio:budget-5:seed-7",
+              "sequence": 1,
+              "eventId": "typed-housing-single:cp-sat-portfolio:budget-5:seed-7:0001:cp-sat-progress",
+              "optimizer": "cp-sat",
+              "activeStage": "cp-sat",
+              "kind": "cp-sat-progress",
+              "decision": "bounded",
+              "reason": "CP-SAT OPTIMAL with population gap 0.",
+              "score": {
+                "before": 110,
+                "after": 110,
+                "best": 110,
+                "delta": 0,
+                "upperBound": 110,
+                "gap": 0
+              },
+              "evidence": {
+                "status": "OPTIMAL",
+                "solutionCount": 1,
+                "solveWallTimeSeconds": 0.012100000000000001,
+                "numBranches": 179,
+                "numConflicts": 0,
+                "lastImprovementAtSeconds": 0.011959000000000001,
+                "secondsSinceLastImprovement": 0.0001410000000000005
+              },
+              "elapsedMs": 12
+            },
+            {
+              "schemaVersion": 1,
+              "runId": "typed-housing-single:cp-sat-portfolio:budget-5:seed-7",
+              "sequence": 2,
+              "eventId": "typed-housing-single:cp-sat-portfolio:budget-5:seed-7:0002:cp-sat-progress",
+              "optimizer": "cp-sat",
+              "activeStage": "cp-sat",
+              "kind": "cp-sat-progress",
+              "decision": "improved",
+              "reason": "CP-SAT portfolio worker 0 found population 110.",
+              "score": {
+                "before": null,
+                "after": 110,
+                "best": 110,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "workerIndex": 0,
+                "randomSeed": 7,
+                "randomizeSearch": true,
+                "numWorkers": 1,
+                "status": "OPTIMAL",
+                "selected": true
+              },
+              "elapsedMs": 475
+            },
+            {
+              "schemaVersion": 1,
+              "runId": "typed-housing-single:cp-sat-portfolio:budget-5:seed-7",
+              "sequence": 3,
+              "eventId": "typed-housing-single:cp-sat-portfolio:budget-5:seed-7:0003:cp-sat-progress",
+              "optimizer": "cp-sat",
+              "activeStage": "cp-sat",
+              "kind": "cp-sat-progress",
+              "decision": "improved",
+              "reason": "CP-SAT portfolio worker 1 found population 110.",
+              "score": {
+                "before": null,
+                "after": 110,
+                "best": 110,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "workerIndex": 1,
+                "randomSeed": 108,
+                "randomizeSearch": true,
+                "numWorkers": 1,
+                "status": "OPTIMAL",
+                "selected": false
+              },
+              "elapsedMs": 475
+            },
+            {
+              "schemaVersion": 1,
+              "runId": "typed-housing-single:cp-sat-portfolio:budget-5:seed-7",
+              "sequence": 4,
+              "eventId": "typed-housing-single:cp-sat-portfolio:budget-5:seed-7:0004:cp-sat-progress",
+              "optimizer": "cp-sat",
+              "activeStage": "cp-sat",
+              "kind": "cp-sat-progress",
+              "decision": "improved",
+              "reason": "CP-SAT portfolio worker 2 found population 110.",
+              "score": {
+                "before": null,
+                "after": 110,
+                "best": 110,
+                "delta": null,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "workerIndex": 2,
+                "randomSeed": 209,
+                "randomizeSearch": true,
+                "numWorkers": 1,
+                "status": "OPTIMAL",
+                "selected": false
+              },
+              "elapsedMs": 475
+            },
+            {
+              "schemaVersion": 1,
+              "runId": "typed-housing-single:cp-sat-portfolio:budget-5:seed-7",
+              "sequence": 5,
+              "eventId": "typed-housing-single:cp-sat-portfolio:budget-5:seed-7:0005:checkpoint",
+              "optimizer": "cp-sat",
+              "activeStage": "cp-sat",
+              "kind": "checkpoint",
+              "decision": "stalled",
+              "reason": "cp-sat final incumbent population 110.",
+              "score": {
+                "before": 110,
+                "after": 110,
+                "best": 110,
+                "delta": 0,
+                "upperBound": null,
+                "gap": null
+              },
+              "evidence": {
+                "stoppedByUser": false,
+                "stoppedByTimeLimit": false,
+                "roadCount": 1,
+                "serviceCount": 0,
+                "residentialCount": 2
+              },
+              "elapsedMs": 475
+            }
+          ],
+          "timeToQuality": {
+            "finalElapsedMs": 475,
+            "finalScore": 110,
+            "bestScore": 110,
+            "firstFeasibleAtMs": 12,
+            "firstImprovementAtMs": 12,
+            "bestScoreAtMs": 12,
+            "improvementCount": 4,
+            "timeCheckpoints": [
+              {
+                "elapsedMs": 5000,
+                "bestScore": 110,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 30000,
+                "bestScore": 110,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              },
+              {
+                "elapsedMs": 120000,
+                "bestScore": 110,
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "reached": true
+              }
+            ],
+            "qualityTargets": [
+              {
+                "ratio": 0.5,
+                "targetScore": 55,
+                "reachedAtMs": 12,
+                "reachedScore": 110
+              },
+              {
+                "ratio": 0.9,
+                "targetScore": 99,
+                "reachedAtMs": 12,
+                "reachedScore": 110
+              },
+              {
+                "ratio": 1,
+                "targetScore": 110,
+                "reachedAtMs": 12,
+                "reachedScore": 110
+              }
+            ]
+          },
+          "checkpointReason": "CP-SAT OPTIMAL with population gap 0.",
+          "scoreDeltaToBest": 0,
+          "scoreRatioToBest": 1,
+          "winVsAuto": "no-auto",
+          "rank": 1,
+          "scoreDeltaVsAuto": null,
+          "budgetAllocationSignal": {
+            "signal": "under-used-budget",
+            "budgetUtilizationRatio": 0.095,
+            "budgetRemainingSeconds": 4.525,
+            "budgetOverrunSeconds": 0,
+            "firstImprovementSeconds": 0.012,
+            "bestScoreSeconds": 0.012,
+            "secondsAfterBest": 0.463,
+            "improvementsPerSecond": 8.421,
+            "scoreDeltaVsAuto": null,
+            "autoBestScoreSecondsDelta": null,
+            "reason": "Observed wall time used only a small share of the configured benchmark budget."
+          }
+        }
+      ]
+    }
+  ],
+  "budgetPolicySignals": [
+    {
+      "caseName": "typed-housing-single",
+      "problemSizeBand": "tiny",
+      "budgetSeconds": 5,
+      "seed": 7,
+      "bestMode": "cp-sat-portfolio",
+      "bestScore": 110,
+      "autoScore": null,
+      "autoDeltaToBest": null,
+      "recommendation": "add-auto-baseline",
+      "autoStopReason": null,
+      "autoGreedySeedElapsedSeconds": null,
+      "autoLnsStageElapsedSeconds": null,
+      "autoLnsStageImprovement": null,
+      "autoCpSatStageElapsedSeconds": null,
+      "autoCpSatStageImprovement": null,
+      "lnsScoreDeltaVsAuto": null,
+      "lnsSeedWallClockSeconds": null,
+      "reason": "No Auto run is present for this budget; add Auto before comparing budget policy."
+    }
+  ],
+  "portfolioEfficiencySignals": [
+    {
+      "caseName": "typed-housing-single",
+      "problemSizeBand": "tiny",
+      "budgetSeconds": 5,
+      "seed": 7,
+      "singleScore": 110,
+      "portfolioScore": 110,
+      "scoreDelta": 0,
+      "singleWallClockSeconds": 0.785,
+      "portfolioWallClockSeconds": 0.475,
+      "wallClockDeltaSeconds": -0.31,
+      "singleWorkerCpuBudgetSeconds": 5,
+      "portfolioWorkerCpuBudgetSeconds": 15,
+      "cpuBudgetDeltaSeconds": 10,
+      "singleObservedWorkerCpuSeconds": 0.038,
+      "portfolioObservedWorkerCpuSeconds": 0.032,
+      "singlePopulationPerCpuBudgetSecond": 22,
+      "portfolioPopulationPerCpuBudgetSecond": 7.333,
+      "cpuBudgetEfficiencyRatio": 0.333,
+      "recommendation": "single-cp-sat",
+      "reason": "Portfolio tied single CP-SAT on population, so extra CPU lanes are not justified by this run."
+    }
+  ],
+  "modeSummaries": [
+    {
+      "mode": "cp-sat",
+      "label": "CP-SAT",
+      "runs": 1,
+      "meanPopulation": 110,
+      "bestPopulation": 110,
+      "worstPopulation": 110,
+      "populationStdDev": 0,
+      "meanWallClockSeconds": 0.78508525,
+      "winRateVsAuto": null,
+      "meanScoreDeltaVsAuto": null
+    },
+    {
+      "mode": "cp-sat-portfolio",
+      "label": "CP-SAT portfolio",
+      "runs": 1,
+      "meanPopulation": 110,
+      "bestPopulation": 110,
+      "worstPopulation": 110,
+      "populationStdDev": 0,
+      "meanWallClockSeconds": 0.47493816600000005,
+      "winRateVsAuto": null,
+      "meanScoreDeltaVsAuto": null
+    }
+  ],
+  "problemSizeSummaries": [
+    {
+      "problemSizeBand": "tiny",
+      "mode": "cp-sat",
+      "label": "CP-SAT",
+      "runs": 1,
+      "meanPopulation": 110,
+      "bestPopulation": 110,
+      "worstPopulation": 110,
+      "populationStdDev": 0,
+      "meanWallClockSeconds": 0.78508525,
+      "winRateVsAuto": null,
+      "meanScoreDeltaVsAuto": null
+    },
+    {
+      "problemSizeBand": "tiny",
+      "mode": "cp-sat-portfolio",
+      "label": "CP-SAT portfolio",
+      "runs": 1,
+      "meanPopulation": 110,
+      "bestPopulation": 110,
+      "worstPopulation": 110,
+      "populationStdDev": 0,
+      "meanWallClockSeconds": 0.47493816600000005,
+      "winRateVsAuto": null,
+      "meanScoreDeltaVsAuto": null
+    }
+  ]
+}

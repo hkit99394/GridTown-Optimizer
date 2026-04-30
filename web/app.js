@@ -93,6 +93,7 @@ const {
   formatElapsedTime,
   formatSavedTimestamp,
   getSavedLayoutElapsedMs,
+  getSavedLayoutPopulation,
   isGridLike,
   normalizeElapsedMs,
   normalizeOptimizer,
@@ -121,13 +122,20 @@ const state = {
     services: "",
     residentials: "",
   },
+  // Standalone Greedy intentionally uses the heavy heuristic profile; Auto clamps
+  // these values when it only needs a fast seed stage.
   greedy: {
     localSearch: true,
     randomSeed: "",
+    timeLimitSeconds: "",
+    profile: false,
+    densityTieBreaker: false,
+    densityTieBreakerTolerancePercent: "2",
     restarts: 20,
     serviceRefineIterations: 4,
     serviceRefineCandidateLimit: 60,
     exhaustiveServiceSearch: true,
+    diagnostics: false,
     serviceExactPoolLimit: 22,
     serviceExactMaxCombinations: 12000,
   },
@@ -137,8 +145,15 @@ const state = {
     randomSeed: "",
     numWorkers: 8,
     logSearchProgress: false,
-    pythonExecutable: "",
     useDisplayedHint: true,
+    portfolio: {
+      enabled: false,
+      workerCount: 3,
+      randomSeeds: "",
+      perWorkerTimeLimitSeconds: "30",
+      perWorkerNumWorkers: 1,
+      randomizeSearch: true,
+    },
   },
   lns: {
     iterations: 12,
@@ -164,6 +179,8 @@ const state = {
   resultError: "",
   resultContext: null,
   resultElapsedMs: 0,
+  resultHeatmapEnabled: false,
+  resultExplainabilityMode: "layout",
   solveProgressLog: [],
   selectedMapBuilding: null,
   selectedMapCell: null,
@@ -251,6 +268,8 @@ const elements = {
   remainingResidentialList: document.querySelector("#remainingResidentialList"),
   resultMapGrid: document.querySelector("#resultMapGrid"),
   resultOverlay: document.querySelector("#resultOverlay"),
+  resultHeatmapToggle: document.querySelector("#resultHeatmapToggle"),
+  resultExplainabilityModeToggle: document.querySelector("#resultExplainabilityModeToggle"),
   layoutEditModeToggle: document.querySelector("#layoutEditModeToggle"),
   rotatePendingPlacementButton: document.querySelector("#rotatePendingPlacementButton"),
   validateEditedLayoutButton: document.querySelector("#validateEditedLayoutButton"),
@@ -274,26 +293,39 @@ const elements = {
   layoutStorageStatus: document.querySelector("#layoutStorageStatus"),
   greedyLocalSearch: document.querySelector("#greedyLocalSearch"),
   greedyRandomSeed: document.querySelector("#greedyRandomSeed"),
+  greedyTimeLimitSeconds: document.querySelector("#greedyTimeLimitSeconds"),
+  greedyProfile: document.querySelector("#greedyProfile"),
+  greedyDensityTieBreaker: document.querySelector("#greedyDensityTieBreaker"),
+  greedyDensityTieBreakerTolerancePercent: document.querySelector("#greedyDensityTieBreakerTolerancePercent"),
   greedyRestarts: document.querySelector("#greedyRestarts"),
   greedyServiceRefineIterations: document.querySelector("#greedyServiceRefineIterations"),
   greedyServiceRefineCandidateLimit: document.querySelector("#greedyServiceRefineCandidateLimit"),
   greedyExhaustiveServiceSearch: document.querySelector("#greedyExhaustiveServiceSearch"),
+  greedyDiagnostics: document.querySelector("#greedyDiagnostics"),
   greedyServiceExactPoolLimit: document.querySelector("#greedyServiceExactPoolLimit"),
   greedyServiceExactMaxCombinations: document.querySelector("#greedyServiceExactMaxCombinations"),
+  greedyDiagnosticsBlock: document.querySelector("#greedyDiagnosticsBlock"),
+  greedyDiagnosticsSummary: document.querySelector("#greedyDiagnosticsSummary"),
+  greedyDiagnosticsServiceList: document.querySelector("#greedyDiagnosticsServiceList"),
+  greedyDiagnosticsResidentialList: document.querySelector("#greedyDiagnosticsResidentialList"),
   lnsIterations: document.querySelector("#lnsIterations"),
   lnsMaxNoImprovementIterations: document.querySelector("#lnsMaxNoImprovementIterations"),
   lnsNeighborhoodRows: document.querySelector("#lnsNeighborhoodRows"),
   lnsNeighborhoodCols: document.querySelector("#lnsNeighborhoodCols"),
   lnsRepairTimeLimitSeconds: document.querySelector("#lnsRepairTimeLimitSeconds"),
-  lnsPythonExecutable: document.querySelector("#lnsPythonExecutable"),
   lnsUseDisplayedSeed: document.querySelector("#lnsUseDisplayedSeed"),
   cpSatTimeLimitSeconds: document.querySelector("#cpSatTimeLimitSeconds"),
   cpSatNoImprovementTimeoutSeconds: document.querySelector("#cpSatNoImprovementTimeoutSeconds"),
   cpSatRandomSeed: document.querySelector("#cpSatRandomSeed"),
   cpSatNumWorkers: document.querySelector("#cpSatNumWorkers"),
   cpSatLogSearchProgress: document.querySelector("#cpSatLogSearchProgress"),
-  cpSatPythonExecutable: document.querySelector("#cpSatPythonExecutable"),
   cpSatUseDisplayedHint: document.querySelector("#cpSatUseDisplayedHint"),
+  cpSatPortfolioEnabled: document.querySelector("#cpSatPortfolioEnabled"),
+  cpSatPortfolioWorkerCount: document.querySelector("#cpSatPortfolioWorkerCount"),
+  cpSatPortfolioRandomSeeds: document.querySelector("#cpSatPortfolioRandomSeeds"),
+  cpSatPortfolioPerWorkerTimeLimitSeconds: document.querySelector("#cpSatPortfolioPerWorkerTimeLimitSeconds"),
+  cpSatPortfolioPerWorkerNumWorkers: document.querySelector("#cpSatPortfolioPerWorkerNumWorkers"),
+  cpSatPortfolioRandomizeSearch: document.querySelector("#cpSatPortfolioRandomizeSearch"),
   lnsSeedStatus: document.querySelector("#lnsSeedStatus"),
   cpSatHintStatus: document.querySelector("#cpSatHintStatus"),
   resizeGridButton: document.querySelector("#resizeGridButton"),
@@ -354,6 +386,29 @@ function clearExpansionAdvice() {
   state.expansionAdvice.error = "";
 }
 
+const RESULT_EXPLAINABILITY_MODES = new Set([
+  "layout",
+  "service-value",
+  "placement-opportunity",
+  "connectivity-risk",
+]);
+
+function normalizeResultExplainabilityMode(mode) {
+  return RESULT_EXPLAINABILITY_MODES.has(mode) ? mode : "layout";
+}
+
+function syncResultExplainabilityModeControl() {
+  if (!elements.resultExplainabilityModeToggle) return;
+  state.resultExplainabilityMode = normalizeResultExplainabilityMode(state.resultExplainabilityMode);
+  state.resultHeatmapEnabled = state.resultExplainabilityMode === "service-value";
+
+  for (const button of elements.resultExplainabilityModeToggle.querySelectorAll("button")) {
+    const isActive = button.dataset.resultExplainabilityMode === state.resultExplainabilityMode;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  }
+}
+
 requestBuilderController = createPlannerRequestBuilderController({
   state,
   elements,
@@ -404,7 +459,9 @@ expansionAdviceController = createExpansionAdviceController({
     SOLVE_STATUS_POLL_INTERVAL_MS,
   },
   helpers: {
+    buildCpSatContinuationModelInput,
     cloneJson,
+    computeCpSatModelFingerprint,
     createSolveRequestId,
     delay,
     parseResidentialCatalogEntry,
@@ -422,6 +479,9 @@ expansionAdviceController = createExpansionAdviceController({
 resultsController = createPlannerResultsController({
   state,
   elements,
+  constants: {
+    LIVE_SNAPSHOT_REFRESH_INTERVAL_MS,
+  },
   helpers: {
     cloneJson,
     formatElapsedTime,
@@ -478,6 +538,7 @@ const persistenceController = createPlannerPersistence({
     formatElapsedTime,
     formatSavedTimestamp,
     getSavedLayoutElapsedMs,
+    getSavedLayoutPopulation,
     isGridLike,
     normalizeElapsedMs,
     normalizeOptimizer,
@@ -593,10 +654,15 @@ function init() {
   const greedyBindings = [
     ["greedyLocalSearch", "localSearch", "checkbox"],
     ["greedyRandomSeed", "randomSeed", "number"],
+    ["greedyTimeLimitSeconds", "timeLimitSeconds", "number"],
+    ["greedyProfile", "profile", "checkbox"],
+    ["greedyDensityTieBreaker", "densityTieBreaker", "checkbox"],
+    ["greedyDensityTieBreakerTolerancePercent", "densityTieBreakerTolerancePercent", "number"],
     ["greedyRestarts", "restarts", "number"],
     ["greedyServiceRefineIterations", "serviceRefineIterations", "number"],
     ["greedyServiceRefineCandidateLimit", "serviceRefineCandidateLimit", "number"],
     ["greedyExhaustiveServiceSearch", "exhaustiveServiceSearch", "checkbox"],
+    ["greedyDiagnostics", "diagnostics", "checkbox"],
     ["greedyServiceExactPoolLimit", "serviceExactPoolLimit", "number"],
     ["greedyServiceExactMaxCombinations", "serviceExactMaxCombinations", "number"],
   ];
@@ -623,11 +689,6 @@ function init() {
     });
   });
 
-  elements.lnsPythonExecutable.addEventListener("input", () => {
-    state.cpSat.pythonExecutable = elements.lnsPythonExecutable.value;
-    requestBuilderController.updatePayloadPreview();
-  });
-
   elements.lnsUseDisplayedSeed.addEventListener("change", () => {
     state.lns.useDisplayedSeed = elements.lnsUseDisplayedSeed.checked;
     requestBuilderController.updatePayloadPreview();
@@ -646,7 +707,6 @@ function init() {
     ["cpSatRandomSeed", "randomSeed", "number"],
     ["cpSatNumWorkers", "numWorkers", "number"],
     ["cpSatLogSearchProgress", "logSearchProgress", "checkbox"],
-    ["cpSatPythonExecutable", "pythonExecutable", "text"],
   ];
 
   cpSatBindings.forEach(([elementKey, stateKey, inputType]) => {
@@ -659,6 +719,29 @@ function init() {
   elements.cpSatUseDisplayedHint.addEventListener("change", () => {
     state.cpSat.useDisplayedHint = elements.cpSatUseDisplayedHint.checked;
     requestBuilderController.updatePayloadPreview();
+  });
+
+  elements.cpSatPortfolioEnabled.addEventListener("change", () => {
+    state.cpSat.portfolio.enabled = elements.cpSatPortfolioEnabled.checked;
+    workbenchController.syncSolverFields();
+    requestBuilderController.updatePayloadPreview();
+  });
+
+  const cpSatPortfolioBindings = [
+    ["cpSatPortfolioWorkerCount", "workerCount", "number"],
+    ["cpSatPortfolioRandomSeeds", "randomSeeds", "text"],
+    ["cpSatPortfolioPerWorkerTimeLimitSeconds", "perWorkerTimeLimitSeconds", "number"],
+    ["cpSatPortfolioPerWorkerNumWorkers", "perWorkerNumWorkers", "number"],
+    ["cpSatPortfolioRandomizeSearch", "randomizeSearch", "checkbox"],
+  ];
+
+  cpSatPortfolioBindings.forEach(([elementKey, stateKey, inputType]) => {
+    elements[elementKey].addEventListener("input", () => {
+      state.cpSat.portfolio[stateKey] =
+        inputType === "checkbox" ? elements[elementKey].checked : elements[elementKey].value;
+      workbenchController.syncSolverFields();
+      requestBuilderController.updatePayloadPreview();
+    });
   });
 
   elements.maxServices.addEventListener("input", () => {
@@ -695,6 +778,25 @@ function init() {
   elements.moveSelectedBuildingButton.addEventListener("click", resultsController.handleMoveSelectedAction);
   elements.removeSelectedBuildingButton.addEventListener("click", resultsController.handleRemoveSelectedAction);
   elements.resultMapGrid.addEventListener("click", resultsController.handleResultMapClick);
+  if (elements.resultExplainabilityModeToggle) {
+    syncResultExplainabilityModeControl();
+    elements.resultExplainabilityModeToggle.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const button = target.closest("button[data-result-explainability-mode]");
+      if (!(button instanceof HTMLButtonElement)) return;
+      state.resultExplainabilityMode = normalizeResultExplainabilityMode(button.dataset.resultExplainabilityMode);
+      syncResultExplainabilityModeControl();
+      resultsController.renderResults();
+    });
+  } else if (elements.resultHeatmapToggle) {
+    elements.resultHeatmapToggle.checked = Boolean(state.resultHeatmapEnabled);
+    elements.resultHeatmapToggle.addEventListener("change", () => {
+      state.resultHeatmapEnabled = elements.resultHeatmapToggle.checked;
+      state.resultExplainabilityMode = state.resultHeatmapEnabled ? "service-value" : "layout";
+      resultsController.renderResults();
+    });
+  }
 
   elements.compareExpansionButton.addEventListener("click", () => {
     expansionAdviceController.compareExpansionOptions();

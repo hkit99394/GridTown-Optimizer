@@ -1,0 +1,316 @@
+{
+  "schemaVersion": 1,
+  "reportType": "deterministic-ablation-gate",
+  "suites": [
+    {
+      "suite": "greedy-deterministic",
+      "caseCount": 9,
+      "seedCount": 3,
+      "comparisonCount": 27,
+      "seeds": [
+        7,
+        19,
+        37
+      ],
+      "selectedCaseNames": [
+        "cap-sweep-mixed",
+        "fixed-service-realization-complete",
+        "service-local-neighborhood",
+        "step14-service-lookahead-reranker",
+        "deferred-road-packing-gain",
+        "geometry-occupancy-hot-path",
+        "typed-footprint-pressure",
+        "typed-availability-pressure",
+        "row0-corridor-repair-pressure"
+      ],
+      "variants": [
+        "baseline",
+        "no-restarts",
+        "no-local-search",
+        "no-service-neighborhood",
+        "no-service-refinement",
+        "no-exhaustive-service-search",
+        "no-service-lookahead",
+        "explicit-roads",
+        "deferred-roads",
+        "connectivity-shadow-scoring"
+      ],
+      "decisions": [
+        {
+          "suite": "greedy-deterministic",
+          "variantName": "baseline",
+          "decision": "keep-baseline",
+          "nextAction": "Keep the current baseline as the comparison reference.",
+          "reasons": [
+            "Baseline variant is the reference behavior."
+          ],
+          "evidence": {
+            "caseCount": 9,
+            "seedCount": 3,
+            "comparisonCount": 27,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "worstPopulationDeltaVsBaseline": 0,
+            "winRate": 0,
+            "regressionRate": 0,
+            "unchangedRate": 1,
+            "meanWallClockSeconds": 0.061161029333333415,
+            "meanWallClockDeltaVsBaselineSeconds": 0,
+            "bestPopulationDeltaCaseName": "cap-sweep-mixed",
+            "bestPopulationDeltaSeed": 7,
+            "worstPopulationDeltaCaseName": "cap-sweep-mixed",
+            "worstPopulationDeltaSeed": 7
+          }
+        },
+        {
+          "suite": "greedy-deterministic",
+          "variantName": "no-restarts",
+          "decision": "keep-baseline",
+          "nextAction": "Keep baseline and expand pressure cases before adding learned guidance.",
+          "reasons": [
+            "No repeated population win was observed."
+          ],
+          "evidence": {
+            "caseCount": 9,
+            "seedCount": 3,
+            "comparisonCount": 27,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "worstPopulationDeltaVsBaseline": 0,
+            "winRate": 0,
+            "regressionRate": 0,
+            "unchangedRate": 1,
+            "meanWallClockSeconds": 0.051442446074074236,
+            "meanWallClockDeltaVsBaselineSeconds": -0.009718583259259176,
+            "bestPopulationDeltaCaseName": "cap-sweep-mixed",
+            "bestPopulationDeltaSeed": 7,
+            "worstPopulationDeltaCaseName": "cap-sweep-mixed",
+            "worstPopulationDeltaSeed": 7
+          }
+        },
+        {
+          "suite": "greedy-deterministic",
+          "variantName": "no-local-search",
+          "decision": "blocked-regression",
+          "nextAction": "Do not promote; inspect the worst case/seed and add pressure coverage before retrying.",
+          "reasons": [
+            "Regression evidence exists: regression-rate=33.3%, worst-delta=-55."
+          ],
+          "evidence": {
+            "caseCount": 9,
+            "seedCount": 3,
+            "comparisonCount": 27,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": -55,
+            "bestPopulationDeltaVsBaseline": 0,
+            "worstPopulationDeltaVsBaseline": -55,
+            "winRate": 0,
+            "regressionRate": 0.3333333333333333,
+            "unchangedRate": 0.6666666666666666,
+            "meanWallClockSeconds": 0.09880670829629647,
+            "meanWallClockDeltaVsBaselineSeconds": 0.03764567896296303,
+            "bestPopulationDeltaCaseName": "fixed-service-realization-complete",
+            "bestPopulationDeltaSeed": 7,
+            "worstPopulationDeltaCaseName": "service-local-neighborhood",
+            "worstPopulationDeltaSeed": 7
+          }
+        },
+        {
+          "suite": "greedy-deterministic",
+          "variantName": "no-service-neighborhood",
+          "decision": "blocked-regression",
+          "nextAction": "Do not promote; inspect the worst case/seed and add pressure coverage before retrying.",
+          "reasons": [
+            "Regression evidence exists: regression-rate=33.3%, worst-delta=-55."
+          ],
+          "evidence": {
+            "caseCount": 9,
+            "seedCount": 3,
+            "comparisonCount": 27,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": -55,
+            "bestPopulationDeltaVsBaseline": 0,
+            "worstPopulationDeltaVsBaseline": -55,
+            "winRate": 0,
+            "regressionRate": 0.3333333333333333,
+            "unchangedRate": 0.6666666666666666,
+            "meanWallClockSeconds": 0.04628172522222216,
+            "meanWallClockDeltaVsBaselineSeconds": -0.01487930411111125,
+            "bestPopulationDeltaCaseName": "fixed-service-realization-complete",
+            "bestPopulationDeltaSeed": 7,
+            "worstPopulationDeltaCaseName": "service-local-neighborhood",
+            "worstPopulationDeltaSeed": 7
+          }
+        },
+        {
+          "suite": "greedy-deterministic",
+          "variantName": "no-service-refinement",
+          "decision": "keep-baseline",
+          "nextAction": "Keep baseline and expand pressure cases before adding learned guidance.",
+          "reasons": [
+            "No repeated population win was observed."
+          ],
+          "evidence": {
+            "caseCount": 9,
+            "seedCount": 3,
+            "comparisonCount": 27,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "worstPopulationDeltaVsBaseline": 0,
+            "winRate": 0,
+            "regressionRate": 0,
+            "unchangedRate": 1,
+            "meanWallClockSeconds": 0.03545130551851846,
+            "meanWallClockDeltaVsBaselineSeconds": -0.02570972381481495,
+            "bestPopulationDeltaCaseName": "cap-sweep-mixed",
+            "bestPopulationDeltaSeed": 7,
+            "worstPopulationDeltaCaseName": "cap-sweep-mixed",
+            "worstPopulationDeltaSeed": 7
+          }
+        },
+        {
+          "suite": "greedy-deterministic",
+          "variantName": "no-exhaustive-service-search",
+          "decision": "keep-baseline",
+          "nextAction": "Keep baseline and expand pressure cases before adding learned guidance.",
+          "reasons": [
+            "No repeated population win was observed."
+          ],
+          "evidence": {
+            "caseCount": 9,
+            "seedCount": 3,
+            "comparisonCount": 27,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "worstPopulationDeltaVsBaseline": 0,
+            "winRate": 0,
+            "regressionRate": 0,
+            "unchangedRate": 1,
+            "meanWallClockSeconds": 0.047182608111111135,
+            "meanWallClockDeltaVsBaselineSeconds": -0.013978421222222292,
+            "bestPopulationDeltaCaseName": "cap-sweep-mixed",
+            "bestPopulationDeltaSeed": 7,
+            "worstPopulationDeltaCaseName": "cap-sweep-mixed",
+            "worstPopulationDeltaSeed": 7
+          }
+        },
+        {
+          "suite": "greedy-deterministic",
+          "variantName": "no-service-lookahead",
+          "decision": "blocked-regression",
+          "nextAction": "Do not promote; inspect the worst case/seed and add pressure coverage before retrying.",
+          "reasons": [
+            "Regression evidence exists: regression-rate=11.1%, worst-delta=-35."
+          ],
+          "evidence": {
+            "caseCount": 9,
+            "seedCount": 3,
+            "comparisonCount": 27,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": -35,
+            "bestPopulationDeltaVsBaseline": 0,
+            "worstPopulationDeltaVsBaseline": -35,
+            "winRate": 0,
+            "regressionRate": 0.1111111111111111,
+            "unchangedRate": 0.8888888888888888,
+            "meanWallClockSeconds": 0.047601186629629616,
+            "meanWallClockDeltaVsBaselineSeconds": -0.013559842703703796,
+            "bestPopulationDeltaCaseName": "cap-sweep-mixed",
+            "bestPopulationDeltaSeed": 7,
+            "worstPopulationDeltaCaseName": "step14-service-lookahead-reranker",
+            "worstPopulationDeltaSeed": 7
+          }
+        },
+        {
+          "suite": "greedy-deterministic",
+          "variantName": "explicit-roads",
+          "decision": "blocked-regression",
+          "nextAction": "Do not promote; inspect the worst case/seed and add pressure coverage before retrying.",
+          "reasons": [
+            "Regression evidence exists: regression-rate=11.1%, worst-delta=-80."
+          ],
+          "evidence": {
+            "caseCount": 9,
+            "seedCount": 3,
+            "comparisonCount": 27,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": -80,
+            "bestPopulationDeltaVsBaseline": 0,
+            "worstPopulationDeltaVsBaseline": -80,
+            "winRate": 0,
+            "regressionRate": 0.1111111111111111,
+            "unchangedRate": 0.8888888888888888,
+            "meanWallClockSeconds": 0.047587811555555505,
+            "meanWallClockDeltaVsBaselineSeconds": -0.01357321777777791,
+            "bestPopulationDeltaCaseName": "cap-sweep-mixed",
+            "bestPopulationDeltaSeed": 7,
+            "worstPopulationDeltaCaseName": "deferred-road-packing-gain",
+            "worstPopulationDeltaSeed": 7
+          }
+        },
+        {
+          "suite": "greedy-deterministic",
+          "variantName": "deferred-roads",
+          "decision": "blocked-regression",
+          "nextAction": "Do not promote; inspect the worst case/seed and add pressure coverage before retrying.",
+          "reasons": [
+            "Regression evidence exists: regression-rate=77.8%, worst-delta=-310."
+          ],
+          "evidence": {
+            "caseCount": 9,
+            "seedCount": 3,
+            "comparisonCount": 27,
+            "medianPopulationDeltaVsBaseline": -65,
+            "worstDecilePopulationDeltaVsBaseline": -310,
+            "bestPopulationDeltaVsBaseline": 0,
+            "worstPopulationDeltaVsBaseline": -310,
+            "winRate": 0,
+            "regressionRate": 0.7777777777777778,
+            "unchangedRate": 0.2222222222222222,
+            "meanWallClockSeconds": 0.00843520518518532,
+            "meanWallClockDeltaVsBaselineSeconds": -0.05272582414814808,
+            "bestPopulationDeltaCaseName": "deferred-road-packing-gain",
+            "bestPopulationDeltaSeed": 7,
+            "worstPopulationDeltaCaseName": "geometry-occupancy-hot-path",
+            "worstPopulationDeltaSeed": 7
+          }
+        },
+        {
+          "suite": "greedy-deterministic",
+          "variantName": "connectivity-shadow-scoring",
+          "decision": "learning-target",
+          "nextAction": "Collect ordering labels before trying learned Greedy ranking.",
+          "reasons": [
+            "Has isolated wins but not enough repeated lift for deterministic promotion: best-delta=+115."
+          ],
+          "evidence": {
+            "caseCount": 9,
+            "seedCount": 3,
+            "comparisonCount": 27,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 115,
+            "worstPopulationDeltaVsBaseline": 0,
+            "winRate": 0.3333333333333333,
+            "regressionRate": 0,
+            "unchangedRate": 0.6666666666666666,
+            "meanWallClockSeconds": 0.1581851528518517,
+            "meanWallClockDeltaVsBaselineSeconds": 0.09702412351851827,
+            "bestPopulationDeltaCaseName": "cap-sweep-mixed",
+            "bestPopulationDeltaSeed": 7,
+            "worstPopulationDeltaCaseName": "step14-service-lookahead-reranker",
+            "worstPopulationDeltaSeed": 7
+          }
+        }
+      ]
+    }
+  ],
+  "nextActions": [
+    "Keep blocked variants out of defaults and inspect their worst case/seed evidence.",
+    "Collect Greedy ordering labels for variants with isolated wins but weak repeatability."
+  ]
+}

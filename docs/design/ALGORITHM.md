@@ -4,7 +4,7 @@
 
 The problem decomposes into:
 
-1. **Road network**: Ensure every placed building can be connected to the anchored road network (row 0).
+1. **Road network**: Ensure every placed building can be connected to the anchored road network (row 0 or column 0).
 2. **Building placement**: Place service and residential buildings on allowed cells without overlap, each adjacent to the road network, so that total population is maximized.
 
 We design a **two-phase approach**: first decide (or assume) a road network that supports connectivity; then place buildings subject to that network and optimize population.
@@ -14,7 +14,7 @@ We design a **two-phase approach**: first decide (or assume) a road network that
 ## 2. Notation
 
 - `G[r][c]`: 1 = allowed, 0 = blocked.
-- **Road anchor**: row `r = 0` (allowed cells only).
+- **Road anchor boundary**: row `r = 0` or column `c = 0` (allowed cells only).
 - **Service**: rectangular block `(rows_s × cols_s)` with its own population bonus and its own outward effect range `range_s`.
 - **Residential**: rectangular block `(rows_r × cols_r)` with its own population bounds; population = min(base + service bonuses, max_pop).
 
@@ -23,23 +23,23 @@ We design a **two-phase approach**: first decide (or assume) a road network that
 ## 3. Phase 1: Road Network
 
 **Goal:** A set of road cells `R` such that:
-- All cells in `R` are allowed and connected to the road anchor (row 0) via orthogonal moves on `R`.
+- All cells in `R` are allowed and connected to the road-anchor boundary via orthogonal moves on `R`.
 - Every cell that might host a building can be made adjacent to some road (we can build roads as needed when placing buildings).
 
 **Strategy A — Skeleton first (recommended for clarity):**
 
-1. Let `R` initially be all allowed cells in row 0 (the anchored road set).
-2. For each allowed cell `(r, c)` with `r > 0`, we need a path of road cells from `(r, c)` to the anchored road network. This is equivalent to ensuring the **allowed cells** form a graph and we mark a **spanning tree** (or forest) of “road” edges so that every allowed cell is either on the road or adjacent to a road.
-3. Simpler option: **road = row-0 anchor only**. Then we require every building to be placed so that at least one cell of its footprint is adjacent to row 0. That severely restricts placement.
-4. Better option: **extend roads** from row 0. Use BFS/DFS from the anchored road network: from each road cell, consider adjacent allowed cells; add them as road if needed to “reach” building sites. We can defer exact road placement to Phase 2 and only ensure **connectivity** of the allowed region to row 0.
-5. Buildings that touch row 0 may be treated as already connected to the road anchor, even if no explicit adjacent road cell is placed next to them.
+1. Let `R` initially be all allowed cells on row `0` or column `0` (the anchored road set).
+2. For each allowed non-anchor cell `(r, c)`, we need a path of road cells from `(r, c)` to the anchored road network. This is equivalent to ensuring the **allowed cells** form a graph and we mark a **spanning tree** (or forest) of “road” edges so that every allowed cell is either on the road or adjacent to a road.
+3. Simpler option: **road = anchor boundary only**. Then we require every building to be placed so that at least one cell of its footprint is adjacent to row `0` or column `0`. That severely restricts placement.
+4. Better option: **extend roads** from the anchor boundary. Use BFS/DFS from the anchored road network: from each road cell, consider adjacent allowed cells; add them as road if needed to “reach” building sites. We can defer exact road placement to Phase 2 and only ensure **connectivity** of the allowed region to row `0` or column `0`.
+5. Buildings that touch row `0` or column `0` may be treated as already connected to the road anchor, even if no explicit adjacent road cell is placed next to them.
 
 **Strategy B — Roads as needed (integrated with placement):**
 
-- Start with `R = { (0,c) : G[0][c] = 1 }`.
+- Start with `R = { (0,c) : G[0][c] = 1 } ∪ { (r,0) : r > 0 and G[r][0] = 1 }`.
 - When placing a building, require that the building’s footprint is orthogonally adjacent to at least one cell that is either (a) in `R`, or (b) can be added to `R` while keeping `R` connected to the road anchor. When we add such a cell, add it to `R` (and optionally add a shortest path of cells from that cell to current `R` so `R` stays connected).
 
-**Recommended for implementation:** Strategy B. Maintain `R` and a “road connectivity” structure (e.g. union-find or BFS from row 0). When placing a building at a rectangle `B`, check that some cell in `B` is adjacent to a cell that is either already in `R` or is allowed and, when added to `R`, keeps connectivity to row 0 (e.g. the cell is reachable from row 0 using only allowed cells). If we add a new road segment, add a minimal path from the building’s adjacent cell to current `R`.
+**Recommended for implementation:** Strategy B. Maintain `R` and a “road connectivity” structure (e.g. union-find or BFS from the anchor boundary). When placing a building at a rectangle `B`, check that some cell in `B` is adjacent to a cell that is either already in `R` or is allowed and, when added to `R`, keeps connectivity to row `0` or column `0` (e.g. the cell is reachable from the anchor boundary using only allowed cells). If we add a new road segment, add a minimal path from the building’s adjacent cell to current `R`.
 
 **Algorithm — Ensure road connectivity when adding a building at rectangle B:**
 
@@ -99,7 +99,7 @@ If grid is small:
 ## 5. End-to-end algorithm (recommended)
 
 ```
-1. R ← anchored road set (all allowed cells with r = 0).
+1. R ← anchored road set (all allowed cells with r = 0 or c = 0).
 
 2. Build list of all valid building placements:
    - Services: every configured service footprint `(rows_s × cols_s)` on allowed cells, with that service's own bonus and effect range.
@@ -126,7 +126,7 @@ If grid is small:
 ## 6. Data structures
 
 - **Grid:** `G[r][c]`; keep `H`, `W`.
-- **Road set:** `R` as set of `(r, c)`. Connectivity: either union-find over `R`, or “reachable from row 0” via BFS when adding new roads.
+- **Road set:** `R` as set of `(r, c)`. Connectivity: either union-find over `R`, or “reachable from row 0 or column 0” via BFS when adding new roads.
 - **Buildings:** List of rectangles (top-left `(r,c)` + size). For service: `(rows_s, cols_s, bonus_s, range_s)`. For residential: `(rows_r, cols_r, base_r, max_r)` or a typed residential record.
 - **Effect zones:** For each placed service, compute the expanded rectangle using that service’s own range `range_s`, excluding the footprint itself. For population computation, for each residential check if its footprint intersects any service effect zone.
 
@@ -144,11 +144,11 @@ If grid is small:
 
 | Step | Action |
 |------|--------|
-| 1 | Start with the anchored road set (row 0). |
+| 1 | Start with the anchored road set (row 0 or column 0). |
 | 2 | Enumerate all valid service and residential placements; mark connectable. |
 | 3 | Greedy place services (by coverage of residential potential). |
 | 4 | Greedy place residentials (by effective population); extend roads as needed. |
 | 5 | Optional: local search to improve total population. |
 | 6 | Return roads, buildings, total population. |
 
-This gives a clear, implementable procedure that respects the formal spec (allowed cells, connectivity to row 0, building–road adjacency, disjoint buildings) and aims to maximize total city population.
+This gives a clear, implementable procedure that respects the formal spec (allowed cells, connectivity to row 0 or column 0, building–road adjacency, disjoint buildings) and aims to maximize total city population.

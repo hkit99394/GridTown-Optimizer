@@ -22,7 +22,7 @@ import type {
   SolverParams,
   Solution,
 } from "../core/index.js";
-import { evaluateLayout, roadsConnectedToRow0 } from "../core/index.js";
+import { assertValidLayout } from "../core/index.js";
 import { startJsonBackgroundSolve } from "../runtime/index.js";
 
 interface CpSatResidentialPlacement {
@@ -170,6 +170,10 @@ function parseCpSatPortfolioWorkerSummary(value: unknown, index: number): CpSatP
       value.totalPopulation === null
         ? null
         : expectInteger(value.totalPopulation, `portfolio.workers[${index}].totalPopulation`),
+    telemetry:
+      value.telemetry === undefined || value.telemetry === null
+        ? null
+        : parseCpSatTelemetry(value.telemetry),
   };
 }
 
@@ -559,24 +563,13 @@ function decodeCpSatLayout(raw: CpSatRawSolution) {
 
 function validateCpSatLayout(G: Grid, params: SolverParams, raw: CpSatRawSolution): ReturnType<typeof decodeCpSatLayout> {
   const layout = decodeCpSatLayout(raw);
-  const connectedRoads = roadsConnectedToRow0(G, layout.roads);
-  if (connectedRoads.size === 0) {
-    throw new Error("CP-SAT backend produced an invalid layout: road network does not touch row 0.");
-  }
-  if (connectedRoads.size !== layout.roads.size) {
-    throw new Error("CP-SAT backend produced an invalid layout: some road cells are not connected to row 0.");
-  }
-
-  const evaluation = evaluateLayout({
+  assertValidLayout({
     grid: G,
     roads: layout.roads,
     services: layout.services,
     residentials: layout.residentials,
     params,
-  });
-  if (!evaluation.valid) {
-    throw new Error(`CP-SAT backend produced an invalid layout: ${evaluation.errors.join(" ")}`);
-  }
+  }, "CP-SAT backend produced an invalid layout");
   return layout;
 }
 

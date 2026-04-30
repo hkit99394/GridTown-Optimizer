@@ -1,4 +1,20 @@
 (function attachPlannerRequestBuilder(globalObject) {
+  const CP_SAT_PORTFOLIO_CAPABILITY_LIMITS = globalObject.CityBuilderShared?.CP_SAT_PORTFOLIO_CAPABILITY_LIMITS ?? Object.freeze({
+    defaultWorkers: 3,
+    defaultPerWorkerTimeLimitSeconds: 30,
+    maxWorkers: 8,
+    maxTotalWorkerThreads: 8,
+    maxPerWorkerThreads: 4,
+    maxTotalCpuBudgetSeconds: 8 * 60 * 60,
+  });
+  const CP_SAT_PORTFOLIO_DEFAULT_WORKERS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.defaultWorkers;
+  const CP_SAT_RANDOM_SEED_MAX = 0x7fffffff;
+  const CP_SAT_PORTFOLIO_MAX_WORKERS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxWorkers;
+  const CP_SAT_PORTFOLIO_DEFAULT_PER_WORKER_SECONDS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.defaultPerWorkerTimeLimitSeconds;
+  const CP_SAT_PORTFOLIO_MAX_TOTAL_WORKER_THREADS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxTotalWorkerThreads;
+  const CP_SAT_PORTFOLIO_MAX_PER_WORKER_THREADS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxPerWorkerThreads;
+  const CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxTotalCpuBudgetSeconds;
+
   function createPlannerRequestBuilderController(options) {
     const {
       state,
@@ -71,10 +87,17 @@
       if (entry?.result?.validation?.valid !== true) {
         return null;
       }
-      if (entry?.continueCpSat) {
+      const rebuiltCheckpoint = tryBuildCheckpoint(entry?.result, entry?.resultContext, getSavedLayoutElapsedMs(entry)).checkpoint;
+      if (!rebuiltCheckpoint) return null;
+      if (
+        entry?.continueCpSat?.kind === "city-builder.cp-sat-checkpoint"
+        && entry.continueCpSat.version === 1
+        && entry.continueCpSat.compatibility?.modelFingerprint === rebuiltCheckpoint.compatibility?.modelFingerprint
+        && entry.continueCpSat.compatibility?.candidateUniverseHash === rebuiltCheckpoint.compatibility?.candidateUniverseHash
+      ) {
         return cloneJson(entry.continueCpSat);
       }
-      return tryBuildCheckpoint(entry?.result, entry?.resultContext, getSavedLayoutElapsedMs(entry)).checkpoint;
+      return rebuiltCheckpoint;
     }
 
     function getDisplayedLayoutCheckpointState() {
@@ -245,15 +268,37 @@
       };
     }
 
+    function readOptionalFiniteNumber(value, min = 0) {
+      if (value === "" || value == null) return undefined;
+      const number = Number(value);
+      if (!Number.isFinite(number)) return undefined;
+      return Math.max(min, number);
+    }
+
+    function clampOptionalFiniteNumber(value, min, max) {
+      const number = readOptionalFiniteNumber(value, min);
+      return number === undefined ? undefined : Math.min(max, number);
+    }
+
     function buildGreedyPayload(optimizer) {
-      const randomSeed = readOptionalInteger(state.greedy.randomSeed, 0);
+      const randomSeed = optimizer === "auto" ? undefined : readOptionalInteger(state.greedy.randomSeed, 0);
+      const timeLimitSeconds = optimizer === "greedy" ? readOptionalInteger(state.greedy.timeLimitSeconds, 1) : undefined;
+      const densityTieBreaker = optimizer === "greedy" && Boolean(state.greedy.densityTieBreaker);
+      const densityTieBreakerTolerancePercent = densityTieBreaker
+        ? clampOptionalFiniteNumber(state.greedy.densityTieBreakerTolerancePercent, 0, 100)
+        : undefined;
       const payload = {
         localSearch: Boolean(state.greedy.localSearch),
         ...(randomSeed !== undefined ? { randomSeed } : {}),
+        ...(timeLimitSeconds !== undefined ? { timeLimitSeconds } : {}),
+        profile: optimizer === "greedy" && Boolean(state.greedy.profile),
+        densityTieBreaker,
+        ...(densityTieBreakerTolerancePercent !== undefined ? { densityTieBreakerTolerancePercent } : {}),
         restarts: clampInteger(state.greedy.restarts, optimizer === "auto" ? 4 : 1, 1),
         serviceRefineIterations: clampInteger(state.greedy.serviceRefineIterations, optimizer === "auto" ? 1 : 0, 0),
         serviceRefineCandidateLimit: clampInteger(state.greedy.serviceRefineCandidateLimit, optimizer === "auto" ? 24 : 1, 1),
         exhaustiveServiceSearch: optimizer === "auto" ? false : Boolean(state.greedy.exhaustiveServiceSearch),
+        diagnostics: optimizer === "greedy" && Boolean(state.greedy.diagnostics),
         serviceExactPoolLimit: clampInteger(state.greedy.serviceExactPoolLimit, optimizer === "auto" ? 8 : 1, 1),
         serviceExactMaxCombinations: clampInteger(state.greedy.serviceExactMaxCombinations, optimizer === "auto" ? 512 : 1, 1),
       };
@@ -272,8 +317,80 @@
       };
     }
 
+    function normalizeRequestOptimizer(optimizer) {
+      return optimizer === "auto" || optimizer === "greedy" || optimizer === "cp-sat" || optimizer === "lns"
+        ? optimizer
+        : "auto";
+    }
+
+    function parseCpSatPortfolioRandomSeeds(value) {
+      const seedText = String(value ?? "").trim();
+      if (!seedText) return undefined;
+
+      const tokens = seedText.split(/[\s,;]+/).filter(Boolean);
+      if (tokens.length > CP_SAT_PORTFOLIO_MAX_WORKERS) {
+        throw new Error(`CP-SAT portfolio supports at most ${CP_SAT_PORTFOLIO_MAX_WORKERS} explicit seeds.`);
+      }
+
+      const seeds = tokens.map((token, index) => {
+        if (!/^\d+$/.test(token)) {
+          throw new Error(`CP-SAT portfolio seed ${index + 1} must be an integer >= 0.`);
+        }
+        const seed = Number(token);
+        if (!Number.isSafeInteger(seed) || seed > CP_SAT_RANDOM_SEED_MAX) {
+          throw new Error(`CP-SAT portfolio seed ${index + 1} is too large.`);
+        }
+        return seed;
+      });
+      if (new Set(seeds).size !== seeds.length) {
+        throw new Error("CP-SAT portfolio explicit seeds must be unique.");
+      }
+      return seeds;
+    }
+
+    function buildCpSatPortfolioPayload(optimizer, outerTimeLimitSeconds) {
+      const portfolio = state.cpSat.portfolio ?? {};
+      if (optimizer !== "cp-sat" || !portfolio.enabled) return undefined;
+
+      const randomSeeds = parseCpSatPortfolioRandomSeeds(portfolio.randomSeeds);
+      const workerCount = Math.min(
+        randomSeeds?.length ?? clampInteger(portfolio.workerCount, CP_SAT_PORTFOLIO_DEFAULT_WORKERS, 1),
+        CP_SAT_PORTFOLIO_MAX_WORKERS
+      );
+      const maxPerWorkerThreads = Math.max(
+        1,
+        Math.min(
+          CP_SAT_PORTFOLIO_MAX_PER_WORKER_THREADS,
+          Math.floor(CP_SAT_PORTFOLIO_MAX_TOTAL_WORKER_THREADS / workerCount)
+        )
+      );
+      const perWorkerNumWorkers = Math.min(
+        clampInteger(portfolio.perWorkerNumWorkers, 1, 1),
+        maxPerWorkerThreads
+      );
+      const requestedPerWorkerTimeLimitSeconds =
+        readOptionalInteger(portfolio.perWorkerTimeLimitSeconds, 1)
+        ?? outerTimeLimitSeconds
+        ?? CP_SAT_PORTFOLIO_DEFAULT_PER_WORKER_SECONDS;
+      const maxPerWorkerTimeLimitSeconds = Math.max(
+        1,
+        Math.floor(CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS / (workerCount * perWorkerNumWorkers))
+      );
+      const perWorkerTimeLimitSeconds = Math.min(requestedPerWorkerTimeLimitSeconds, maxPerWorkerTimeLimitSeconds);
+
+      return {
+        workerCount,
+        ...(randomSeeds ? { randomSeeds } : {}),
+        totalCpuBudgetSeconds: CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS,
+        perWorkerTimeLimitSeconds,
+        perWorkerNumWorkers,
+        randomizeSearch: portfolio.randomizeSearch !== false,
+      };
+    }
+
     function buildSolveRequest(options = {}) {
       const { hintMismatch = "error", includeWarmStartHint = true, includeLnsSeed = true } = options;
+      const optimizer = normalizeRequestOptimizer(state.optimizer);
       const autoWallClockLimitSeconds = readOptionalInteger(state.auto?.wallClockLimitSeconds ?? "", 1);
       const timeLimitSeconds = readOptionalInteger(state.cpSat.timeLimitSeconds, 1);
       const noImprovementTimeoutSeconds = readOptionalInteger(state.cpSat.noImprovementTimeoutSeconds, 1);
@@ -282,17 +399,16 @@
       const defaultNeighborhoodCols = Math.max(1, Math.ceil((state.grid[0]?.length ?? 1) / 2));
       const grid = cloneGrid(state.grid);
       const params = {
-        optimizer: state.optimizer,
+        optimizer,
         serviceTypes: state.serviceTypes.map((entry, index) => parseServiceCatalogEntry(entry, index)),
         residentialTypes: state.residentialTypes.map((entry, index) => parseResidentialCatalogEntry(entry, index)),
-        greedy: buildGreedyPayload(state.optimizer),
+        greedy: buildGreedyPayload(optimizer),
         cpSat: {
           numWorkers: clampInteger(state.cpSat.numWorkers, 8, 1),
           logSearchProgress: Boolean(state.cpSat.logSearchProgress),
-          ...(cpSatRandomSeed !== undefined ? { randomSeed: cpSatRandomSeed } : {}),
+          ...(optimizer !== "auto" && cpSatRandomSeed !== undefined ? { randomSeed: cpSatRandomSeed } : {}),
           ...(timeLimitSeconds !== undefined ? { timeLimitSeconds } : {}),
           ...(noImprovementTimeoutSeconds !== undefined ? { noImprovementTimeoutSeconds } : {}),
-          ...(state.cpSat.pythonExecutable.trim() ? { pythonExecutable: state.cpSat.pythonExecutable.trim() } : {}),
         },
         lns: {
           iterations: clampInteger(state.lns.iterations, 12, 1),
@@ -309,6 +425,10 @@
             }
           : {}),
       };
+      const cpSatPortfolio = buildCpSatPortfolioPayload(optimizer, timeLimitSeconds);
+      if (cpSatPortfolio) {
+        params.cpSat.portfolio = cpSatPortfolio;
+      }
 
       const maxServices = readOptionalInteger(state.availableBuildings.services, 1);
       const maxResidentials = readOptionalInteger(state.availableBuildings.residentials, 1);

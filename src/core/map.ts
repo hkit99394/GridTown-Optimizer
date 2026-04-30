@@ -11,6 +11,7 @@ import type {
 import { height, width, isAllowed } from "./grid.js";
 import { normalizeServicePlacement } from "./buildings.js";
 import { validateSolution } from "./evaluator.js";
+import type { SolutionValidationOptions } from "./evaluator.js";
 
 export interface SolutionMapValidationResult extends SolutionValidationResult {
   mapRows: string[];
@@ -72,8 +73,11 @@ export function formatSolutionMap(grid: Grid, solution: Solution): string {
  * Validate a solution and return the rendered map alongside the validation result.
  * This is a convenience wrapper for validating the exact layout shown to users.
  */
-export function validateSolutionMap(input: SolutionValidationInput): SolutionMapValidationResult {
-  const validation = validateSolution(input);
+export function validateSolutionMap(
+  input: SolutionValidationInput,
+  options: SolutionValidationOptions = {}
+): SolutionMapValidationResult {
+  const validation = validateSolution(input, options);
   const mapRows = renderSolutionMap(input.grid, input.solution);
   return {
     ...validation,

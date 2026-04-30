@@ -1,4 +1,7 @@
 import { formatCpSatBenchmarkSuite, listCpSatBenchmarkCaseNames, runCpSatBenchmarkSuite } from "../benchmarks/index.js";
+import { runCliMain } from "./cliEntrypoint.js";
+import { isCliFlag } from "./cliParsing.js";
+import { optionalCliNames, writeCliJsonOrText, writeCliList } from "./cliOutput.js";
 
 interface ParsedBenchmarkArgs {
   json: boolean;
@@ -12,11 +15,11 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let list = false;
 
   for (const arg of argv) {
-    if (arg === "--json") {
+    if (isCliFlag(arg, "--json")) {
       json = true;
       continue;
     }
-    if (arg === "--list") {
+    if (isCliFlag(arg, "--list")) {
       list = true;
       continue;
     }
@@ -29,23 +32,14 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
 export async function runCpSatBenchmarkCli(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   if (args.list) {
-    process.stdout.write(`${listCpSatBenchmarkCaseNames().join("\n")}\n`);
+    writeCliList(listCpSatBenchmarkCaseNames());
     return;
   }
   const result = await runCpSatBenchmarkSuite(undefined, {
-    names: args.names.length > 0 ? args.names : undefined,
+    names: optionalCliNames(args.names),
     includeProgressTimeline: true,
   });
-
-  if (args.json) {
-    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-    return;
-  }
-
-  process.stdout.write(`${formatCpSatBenchmarkSuite(result)}\n`);
+  writeCliJsonOrText(args.json, result, () => formatCpSatBenchmarkSuite(result));
 }
 
-void runCpSatBenchmarkCli().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+runCliMain(runCpSatBenchmarkCli);

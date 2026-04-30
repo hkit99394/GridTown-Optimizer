@@ -14,8 +14,14 @@
     "solve:lns": "tsc && node dist/cli.js lns",
     "benchmark:greedy": "npm run build && node dist/greedyBenchmarkCli.js",
     "benchmark:cp-sat": "npm run build && node dist/cpSatBenchmarkCli.js",
+    "benchmark:lns": "npm run build && node dist/lnsBenchmarkCli.js",
+    "benchmark:labels": "npm run build && node dist/learnedRankingLabelCli.js",
+    "benchmark:scorecard": "npm run build && node dist/crossModeBenchmarkCli.js",
+    "experiment-registry": "npm run build && node dist/experimentRegistryCli.js",
+    "experiment-registry:check": "npm run build && node dist/experimentRegistryCli.js check",
     "setup:cp-sat": "bash scripts/setup-cp-sat.sh",
-    "test": "npm run build && node tests/review-findings.test.cjs && node tests/web-server-routes.test.cjs && node tests/optimizers.test.cjs"
+    "test:acceptance": "node tests/acceptance/city-builder-bdd.test.cjs",
+    "test": "npm run build && npm run test:acceptance && node tests/review-findings.test.cjs && node tests/experiment-registry.test.cjs && node tests/web-server-routes.test.cjs && node tests/optimizers.test.cjs"
   },
   "keywords": [],
   "author": "",

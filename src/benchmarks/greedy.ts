@@ -1,8 +1,30 @@
 import { performance } from "node:perf_hooks";
 
+import { buildSolverProgressSummary, formatSolverProgressSummary } from "../core/progress.js";
 import { solveGreedy } from "../greedy/solver.js";
+import {
+  applyBenchmarkOptionDefaults,
+  applyNormalizedGreedyBenchmarkParams,
+  assertBenchmarkCasesSelected,
+  buildBenchmarkSuiteMetadata,
+  cloneBenchmarkGrid,
+  cloneBenchmarkOptions,
+  cloneBenchmarkSolverParams,
+  inheritGreedyBenchmarkOptions,
+  listBenchmarkCaseNames,
+  selectBenchmarkCasesByName,
+} from "./benchmarkOptions.js";
 
-import type { GreedyOptions, GreedyProfile, Grid, SolverParams } from "../core/types.js";
+import type {
+  GreedyOptions,
+  GreedyProfile,
+  GreedyProfilePhaseSummary,
+  GreedyRoadOpportunityCounterfactualTrace,
+  GreedyRoadOpportunityTrace,
+  Grid,
+  SolverParams,
+  SolverProgressSummary,
+} from "../core/types.js";
 
 export interface GreedyServiceLookaheadBenchmarkOptions {
   serviceLookaheadCandidates?: number;
@@ -33,6 +55,7 @@ export interface GreedyBenchmarkCaseResult {
   residentialCount: number;
   greedyOptions: GreedyBenchmarkOptions;
   greedyProfile: GreedyProfile | null;
+  progressSummary: SolverProgressSummary;
   wallClockSeconds: number;
 }
 
@@ -43,7 +66,14 @@ export interface GreedyBenchmarkSuiteResult {
   results: GreedyBenchmarkCaseResult[];
 }
 
-export interface GreedyBenchmarkSnapshotCaseResult extends Omit<GreedyBenchmarkCaseResult, "wallClockSeconds"> {}
+type GreedyBenchmarkSnapshotProfile = Omit<GreedyProfile, "phases"> & {
+  phases: Array<Omit<GreedyProfilePhaseSummary, "elapsedMs">>;
+};
+
+export interface GreedyBenchmarkSnapshotCaseResult
+  extends Omit<GreedyBenchmarkCaseResult, "wallClockSeconds" | "greedyProfile"> {
+  greedyProfile: GreedyBenchmarkSnapshotProfile | null;
+}
 
 export interface GreedyBenchmarkSnapshot {
   caseCount: number;
@@ -82,121 +112,42 @@ export const DEFAULT_GREEDY_BENCHMARK_OPTIONS = Object.freeze({
   >
 >);
 
-function cloneGrid(grid: Grid): Grid {
-  return grid.map((row) => [...row]);
-}
-
-function cloneSolverParams(params: SolverParams): SolverParams {
-  return structuredClone(params);
-}
-
-function cloneGreedyOptions(options: GreedyBenchmarkOptions): GreedyBenchmarkOptions {
-  return structuredClone(options);
-}
-
-function inheritGreedyBenchmarkOptions(params: SolverParams): GreedyBenchmarkOptions {
-  const benchmarkGreedy = (params.greedy ?? {}) as GreedyBenchmarkOptions;
-  return {
-    ...benchmarkGreedy,
-    localSearch: benchmarkGreedy.localSearch ?? params.localSearch,
-    restarts: benchmarkGreedy.restarts ?? params.restarts,
-    serviceRefineIterations: benchmarkGreedy.serviceRefineIterations ?? params.serviceRefineIterations,
-    serviceRefineCandidateLimit: benchmarkGreedy.serviceRefineCandidateLimit ?? params.serviceRefineCandidateLimit,
-    exhaustiveServiceSearch: benchmarkGreedy.exhaustiveServiceSearch ?? params.exhaustiveServiceSearch,
-    serviceExactPoolLimit: benchmarkGreedy.serviceExactPoolLimit ?? params.serviceExactPoolLimit,
-    serviceExactMaxCombinations: benchmarkGreedy.serviceExactMaxCombinations ?? params.serviceExactMaxCombinations,
-  };
-}
-
-function applyNormalizedGreedyBenchmarkParams(
-  params: SolverParams,
-  greedy: GreedyBenchmarkOptions
-): SolverParams {
-  return {
-    ...params,
-    optimizer: "greedy",
-    greedy,
-    localSearch: greedy.localSearch,
-    restarts: greedy.restarts,
-    serviceRefineIterations: greedy.serviceRefineIterations,
-    serviceRefineCandidateLimit: greedy.serviceRefineCandidateLimit,
-    exhaustiveServiceSearch: greedy.exhaustiveServiceSearch,
-    serviceExactPoolLimit: greedy.serviceExactPoolLimit,
-    serviceExactMaxCombinations: greedy.serviceExactMaxCombinations,
-  };
-}
-
 export function normalizeGreedyBenchmarkOptions(
   greedy: GreedyBenchmarkOptions | undefined,
   overrides: Partial<GreedyBenchmarkOptions> | undefined
 ): GreedyBenchmarkOptions {
-  const merged = { ...(greedy ?? {}), ...(overrides ?? {}) };
-  return {
-    ...merged,
-    localSearch: merged.localSearch ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.localSearch,
-    localSearchServiceMoves:
-      merged.localSearchServiceMoves ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.localSearchServiceMoves,
-    localSearchServiceCandidateLimit:
-      merged.localSearchServiceCandidateLimit ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.localSearchServiceCandidateLimit,
-    deferRoadCommitment: merged.deferRoadCommitment ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.deferRoadCommitment,
-    profile: merged.profile ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.profile,
-    randomSeed: merged.randomSeed ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.randomSeed,
-    restarts: merged.restarts ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.restarts,
-    serviceRefineIterations:
-      merged.serviceRefineIterations ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.serviceRefineIterations,
-    serviceRefineCandidateLimit:
-      merged.serviceRefineCandidateLimit ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.serviceRefineCandidateLimit,
-    exhaustiveServiceSearch:
-      merged.exhaustiveServiceSearch ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.exhaustiveServiceSearch,
-    serviceExactPoolLimit: merged.serviceExactPoolLimit ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.serviceExactPoolLimit,
-    serviceExactMaxCombinations:
-      merged.serviceExactMaxCombinations ?? DEFAULT_GREEDY_BENCHMARK_OPTIONS.serviceExactMaxCombinations,
-  };
+  return applyBenchmarkOptionDefaults(greedy, overrides, DEFAULT_GREEDY_BENCHMARK_OPTIONS);
 }
 
 function buildBenchmarkParams(
   benchmarkCase: GreedyBenchmarkCase,
   overrides?: Partial<GreedyBenchmarkOptions>
 ): SolverParams {
-  const params = cloneSolverParams(benchmarkCase.params);
-  const normalizedGreedy = normalizeGreedyBenchmarkOptions(inheritGreedyBenchmarkOptions(params), overrides);
-  return applyNormalizedGreedyBenchmarkParams(params, normalizedGreedy);
-}
-
-function validateBenchmarkCorpus(corpus: readonly GreedyBenchmarkCase[]): void {
-  const names = corpus.map((benchmarkCase) => benchmarkCase.name);
-  if (new Set(names).size !== names.length) {
-    throw new Error("Greedy benchmark corpus must use unique case names.");
-  }
+  const params = cloneBenchmarkSolverParams(benchmarkCase.params);
+  const normalizedGreedy = normalizeGreedyBenchmarkOptions(
+    inheritGreedyBenchmarkOptions<GreedyBenchmarkOptions>(params),
+    overrides
+  );
+  return applyNormalizedGreedyBenchmarkParams(params, normalizedGreedy, "greedy");
 }
 
 function selectBenchmarkCases(
   corpus: readonly GreedyBenchmarkCase[],
   names: readonly string[] | undefined
 ): GreedyBenchmarkCase[] {
-  validateBenchmarkCorpus(corpus);
-  if (!names || names.length === 0) {
-    return [...corpus];
-  }
-
-  const byName = new Map(corpus.map((benchmarkCase) => [benchmarkCase.name, benchmarkCase]));
-  const missing = names.filter((name) => !byName.has(name));
-  if (missing.length > 0) {
-    throw new Error(
-      `Unknown greedy benchmark case(s): ${missing.join(", ")}. Available cases: ${corpus
-        .map((benchmarkCase) => benchmarkCase.name)
-        .join(", ")}.`
-    );
-  }
-
-  return names.map((name) => byName.get(name) as GreedyBenchmarkCase);
+  return selectBenchmarkCasesByName(corpus, names, {
+    caseLabel: "greedy benchmark",
+    corpusLabel: "Greedy benchmark",
+  });
 }
 
 export function listGreedyBenchmarkCaseNames(
   corpus: readonly GreedyBenchmarkCase[] = DEFAULT_GREEDY_BENCHMARK_CORPUS
 ): string[] {
-  validateBenchmarkCorpus(corpus);
-  return corpus.map((benchmarkCase) => benchmarkCase.name);
+  return listBenchmarkCaseNames(corpus, {
+    caseLabel: "greedy benchmark",
+    corpusLabel: "Greedy benchmark",
+  });
 }
 
 function runGreedyBenchmarkCase(
@@ -205,8 +156,9 @@ function runGreedyBenchmarkCase(
 ): GreedyBenchmarkCaseResult {
   const params = buildBenchmarkParams(benchmarkCase, options?.greedy);
   const startedAt = performance.now();
-  const solution = solveGreedy(cloneGrid(benchmarkCase.grid), params);
+  const solution = solveGreedy(cloneBenchmarkGrid(benchmarkCase.grid), params);
   const finishedAt = performance.now();
+  const wallClockSeconds = (finishedAt - startedAt) / 1000;
 
   return {
     name: benchmarkCase.name,
@@ -217,9 +169,14 @@ function runGreedyBenchmarkCase(
     roadCount: solution.roads.size,
     serviceCount: solution.services.length,
     residentialCount: solution.residentials.length,
-    greedyOptions: cloneGreedyOptions(params.greedy ?? {}),
+    greedyOptions: cloneBenchmarkOptions(params.greedy ?? {}),
     greedyProfile: solution.greedyProfile ?? null,
-    wallClockSeconds: (finishedAt - startedAt) / 1000,
+    progressSummary: buildSolverProgressSummary(solution, {
+      elapsedTimeSeconds: wallClockSeconds,
+      fallbackOptimizer: "greedy",
+      params,
+    }),
+    wallClockSeconds,
   };
 }
 
@@ -228,15 +185,11 @@ export function runGreedyBenchmarkSuite(
   options?: GreedyBenchmarkRunOptions
 ): GreedyBenchmarkSuiteResult {
   const selected = selectBenchmarkCases(corpus, options?.names);
-  if (selected.length === 0) {
-    throw new Error("No greedy benchmark cases matched the requested names.");
-  }
+  assertBenchmarkCasesSelected(selected, "No greedy benchmark cases matched the requested names.");
 
   const results = selected.map((benchmarkCase) => runGreedyBenchmarkCase(benchmarkCase, options));
   return {
-    generatedAt: new Date().toISOString(),
-    caseCount: results.length,
-    selectedCaseNames: results.map((result) => result.name),
+    ...buildBenchmarkSuiteMetadata(results.map((result) => result.name)),
     results,
   };
 }
@@ -245,8 +198,86 @@ export function createGreedyBenchmarkSnapshot(result: GreedyBenchmarkSuiteResult
   return {
     caseCount: result.caseCount,
     selectedCaseNames: [...result.selectedCaseNames],
-    results: result.results.map(({ wallClockSeconds: _wallClockSeconds, ...benchmark }) => benchmark),
+    results: result.results.map(({ wallClockSeconds: _wallClockSeconds, greedyProfile, progressSummary, ...benchmark }) => ({
+      ...benchmark,
+      progressSummary: {
+        ...progressSummary,
+        elapsedTimeSeconds: null,
+      },
+      greedyProfile: greedyProfile
+        ? {
+            counters: structuredClone(greedyProfile.counters),
+            phases: greedyProfile.phases.map(({ elapsedMs: _elapsedMs, ...phase }) => ({ ...phase })),
+            connectivityShadowDecisions: structuredClone(greedyProfile.connectivityShadowDecisions ?? []),
+            connectivityShadowDecisionTraceLimit: greedyProfile.connectivityShadowDecisionTraceLimit,
+            roadOpportunityTraces: structuredClone(greedyProfile.roadOpportunityTraces ?? []),
+            roadOpportunityTraceLimit: greedyProfile.roadOpportunityTraceLimit,
+          }
+        : null,
+    })),
   };
+}
+
+function formatProfilePhaseSummary(phase: GreedyProfilePhaseSummary): string {
+  return `${phase.name}:${phase.runs}x/${phase.elapsedMs.toFixed(3)}ms/best+${phase.bestPopulationDelta}/candidate+${phase.candidatePopulationDelta}`;
+}
+
+function formatPlacementTrace(placement: {
+  r: number;
+  c: number;
+  rows: number;
+  cols: number;
+  roadCost: number;
+  typeIndex?: number;
+  bonus?: number;
+  range?: number;
+}): string {
+  const extras = [
+    placement.typeIndex === undefined ? null : `type:${placement.typeIndex}`,
+    placement.bonus === undefined ? null : `bonus:${placement.bonus}`,
+    placement.range === undefined ? null : `range:${placement.range}`,
+  ].filter((entry): entry is string => entry !== null);
+  return `r${placement.r}c${placement.c} ${placement.rows}x${placement.cols} road:${placement.roadCost}${extras.length ? ` ${extras.join(" ")}` : ""}`;
+}
+
+function formatSignedNumber(value: number): string {
+  return value >= 0 ? `+${value}` : String(value);
+}
+
+function formatRoadOpportunityTrace(trace: GreedyRoadOpportunityTrace): string {
+  const extras = [
+    trace.score === undefined ? null : `score:${trace.score}`,
+    trace.typeIndex === undefined ? null : `type:${trace.typeIndex}`,
+    trace.bonus === undefined ? null : `bonus:${trace.bonus}`,
+    trace.range === undefined ? null : `range:${trace.range}`,
+    trace.moveKind === undefined ? null : `move:${trace.moveKind}`,
+    `counterfactuals:${trace.counterfactuals?.length ?? 0}`,
+  ].filter((entry): entry is string => entry !== null);
+  return `${trace.phase} r${trace.r}c${trace.c} ${trace.rows}x${trace.cols} road:${trace.roadCost} reachable:${trace.reachableBefore}->${trace.reachableAfter} lost:${trace.lostCells} footprint:${trace.footprintCells} disconnected:${trace.disconnectedCells}${extras.length ? ` ${extras.join(" ")}` : ""}`;
+}
+
+function formatRoadOpportunityCounterfactual(counterfactual: GreedyRoadOpportunityCounterfactualTrace): string {
+  const extras = [
+    counterfactual.typeIndex === undefined ? null : `type:${counterfactual.typeIndex}`,
+    counterfactual.bonus === undefined ? null : `bonus:${counterfactual.bonus}`,
+    counterfactual.range === undefined ? null : `range:${counterfactual.range}`,
+    counterfactual.moveKind === undefined ? null : `move:${counterfactual.moveKind}`,
+    counterfactual.tieBreakComparison === undefined ? null : `tie:${counterfactual.tieBreakComparison}`,
+  ].filter((entry): entry is string => entry !== null);
+  return `reason:${counterfactual.reason} rejected:r${counterfactual.r}c${counterfactual.c} ${counterfactual.rows}x${counterfactual.cols} road:${counterfactual.roadCost} score:${counterfactual.score} score-delta:${formatSignedNumber(counterfactual.scoreDelta)} road-delta:${formatSignedNumber(counterfactual.roadCostDelta)} reachable:${counterfactual.reachableBefore}->${counterfactual.reachableAfter} lost:${counterfactual.lostCells} footprint:${counterfactual.footprintCells} disconnected:${counterfactual.disconnectedCells}${extras.length ? ` ${extras.join(" ")}` : ""}`;
+}
+
+function selectRoadOpportunityTraceSamples(
+  traces: readonly GreedyRoadOpportunityTrace[],
+  limit: number
+): GreedyRoadOpportunityTrace[] {
+  const localSearchTraces = traces.filter((trace) =>
+    trace.phase === "service-neighborhood" || trace.phase === "residential-local-search"
+  );
+  const constructiveTraces = traces.filter((trace) =>
+    trace.phase !== "service-neighborhood" && trace.phase !== "residential-local-search"
+  );
+  return [...localSearchTraces, ...constructiveTraces].slice(0, limit);
 }
 
 export function formatGreedyBenchmarkSuite(result: GreedyBenchmarkSuiteResult): string {
@@ -262,7 +293,13 @@ export function formatGreedyBenchmarkSuite(result: GreedyBenchmarkSuiteResult): 
     lines.push(
       `  population=${benchmark.totalPopulation} wall=${benchmark.wallClockSeconds.toFixed(3)}s roads=${benchmark.roadCount} services=${benchmark.serviceCount} residentials=${benchmark.residentialCount}`
     );
+    lines.push(`  progress=${formatSolverProgressSummary(benchmark.progressSummary)}`);
     if (counters) {
+      const roadOpportunityCounterfactualCount =
+        benchmark.greedyProfile?.roadOpportunityTraces?.reduce(
+          (sum, trace) => sum + (trace.counterfactuals?.length ?? 0),
+          0
+        ) ?? 0;
       lines.push(
         `  scans=svc:${counters.servicePhase.candidateScans} res:${counters.residentialPhase.candidateScans} local:${counters.localSearch.candidateScans} roads(connect=${counters.roads.canConnectChecks}, ensure=${counters.roads.ensureConnectedCalls}, probes=${counters.roads.probeCalls}, reuse=${counters.roads.probeReuses}, scratch=${counters.roads.scratchProbeCalls})`
       );
@@ -279,6 +316,9 @@ export function formatGreedyBenchmarkSuite(result: GreedyBenchmarkSuiteResult): 
         `  attempts=caps:${counters.attempts.serviceCaps} restarts:${counters.attempts.restarts} refine:${counters.attempts.serviceRefineTrials} exhaustive:${counters.attempts.exhaustiveTrials} fixed-set:${counters.attempts.fixedServiceRealizationTrials}`
       );
       lines.push(
+        `  phases=${benchmark.greedyProfile?.phases.map(formatProfilePhaseSummary).join(", ") ?? "n/a"}`
+      );
+      lines.push(
         `  cap-search=evaluated:${counters.attempts.serviceCaps} coarse:${counters.attempts.coarseCaps} refine:${counters.attempts.refineCaps} skipped:${counters.attempts.capsSkipped} restart-caps:${counters.attempts.restartCaps}`
       );
       lines.push(
@@ -287,6 +327,26 @@ export function formatGreedyBenchmarkSuite(result: GreedyBenchmarkSuiteResult): 
       lines.push(
         `  deferred-roads=frontier:${counters.roads.deferredFrontierRecomputes} rebuild-steps:${counters.roads.deferredReconstructionSteps} rebuild-failures:${counters.roads.deferredReconstructionFailures}`
       );
+      lines.push(
+        `  connectivity-shadow=checks:${counters.roads.connectivityShadowChecks} lost:${counters.roads.connectivityShadowLostCells} footprint:${counters.roads.connectivityShadowFootprintCells} disconnected:${counters.roads.connectivityShadowDisconnectedCells} max-lost:${counters.roads.connectivityShadowMaxLostCells} max-disconnected:${counters.roads.connectivityShadowMaxDisconnectedCells}`
+      );
+      lines.push(
+        `  connectivity-shadow-scoring=ties:${counters.roads.connectivityShadowScoreTies} wins:${counters.roads.connectivityShadowScoreWins} losses:${counters.roads.connectivityShadowScoreLosses} neutral:${counters.roads.connectivityShadowScoreNeutral} trace:${benchmark.greedyProfile?.connectivityShadowDecisions?.length ?? 0}/${benchmark.greedyProfile?.connectivityShadowDecisionTraceLimit ?? 0}`
+      );
+      for (const decision of benchmark.greedyProfile?.connectivityShadowDecisions?.slice(0, 5) ?? []) {
+        lines.push(
+          `  shadow-decision=${decision.phase} score:${decision.score} chosen:[${formatPlacementTrace(decision.chosen)}] rejected:[${formatPlacementTrace(decision.rejected)}] penalties:cand=${decision.candidateShadowPenalty} inc=${decision.incumbentShadowPenalty}`
+        );
+      }
+      lines.push(
+        `  road-opportunity=checks:${counters.roads.roadOpportunityChecks} lost:${counters.roads.roadOpportunityLostCells} footprint:${counters.roads.roadOpportunityFootprintCells} disconnected:${counters.roads.roadOpportunityDisconnectedCells} max-lost:${counters.roads.roadOpportunityMaxLostCells} max-disconnected:${counters.roads.roadOpportunityMaxDisconnectedCells} trace:${benchmark.greedyProfile?.roadOpportunityTraces?.length ?? 0}/${benchmark.greedyProfile?.roadOpportunityTraceLimit ?? 0} counterfactuals:${roadOpportunityCounterfactualCount}`
+      );
+      for (const trace of selectRoadOpportunityTraceSamples(benchmark.greedyProfile?.roadOpportunityTraces ?? [], 5)) {
+        lines.push(`  road-opportunity-placement=${formatRoadOpportunityTrace(trace)}`);
+        for (const counterfactual of trace.counterfactuals?.slice(0, 3) ?? []) {
+          lines.push(`  road-opportunity-counterfactual=${formatRoadOpportunityCounterfactual(counterfactual)}`);
+        }
+      }
       lines.push(
         `  step13=geometry:${counters.precompute.geometryCacheEntries} occupancy-scratch:${counters.localSearch.occupancyScratchReuses} road-scratch:${counters.roads.scratchProbeCalls}`
       );
@@ -601,7 +661,7 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
   },
   {
     name: "deferred-road-packing-gain",
-    description: "Packing-heavy case where deferred road commitment finds a stronger valid explicit-road realization.",
+    description: "Packing-heavy case that exercises deferred road materialization against the road-anchor boundary.",
     grid: [
       [1, 1, 1, 1, 1, 1],
       [1, 0, 1, 1, 1, 0],
@@ -632,7 +692,7 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
   },
   {
     name: "fixed-service-realization-complete",
-    description: "Refinement/exhaustive reruns should evaluate a forced service set across bounded orders and row-0 seeds.",
+    description: "Refinement/exhaustive reruns should evaluate a forced service set across bounded orders and road-anchor seeds.",
     grid: [
       [0, 1, 1, 1, 1, 1],
       [1, 1, 1, 0, 1, 1],
@@ -666,7 +726,7 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
   },
   {
     name: "service-local-neighborhood",
-    description: "Bounded service local search should improve the incumbent even when coarse service refinement is disabled.",
+    description: "Bounded service local search should evaluate service add/remove/swap moves even when coarse service refinement is disabled.",
     grid: [
       [0, 1, 1, 1, 1, 1],
       [1, 1, 1, 0, 1, 1],
@@ -764,7 +824,7 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
   },
   {
     name: "step14-row0-path-null-reservation",
-    description: "Step 14 row-0 edge case where lookahead should keep a path:null top-row service and reserve exactly one anchor road cell for the refill.",
+    description: "Step 14 road-anchor edge case where lookahead should keep a path:null boundary service and reserve exactly one anchor road cell for the refill.",
     grid: [
       [1, 1, 1, 1],
       [1, 1, 1, 1],

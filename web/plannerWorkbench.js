@@ -1,4 +1,19 @@
 (function attachPlannerWorkbench(globalObject) {
+  const CP_SAT_PORTFOLIO_CAPABILITY_LIMITS = globalObject.CityBuilderShared?.CP_SAT_PORTFOLIO_CAPABILITY_LIMITS ?? Object.freeze({
+    defaultWorkers: 3,
+    defaultPerWorkerTimeLimitSeconds: 30,
+    maxWorkers: 8,
+    maxTotalWorkerThreads: 8,
+    maxPerWorkerThreads: 4,
+    maxTotalCpuBudgetSeconds: 8 * 60 * 60,
+  });
+  const CP_SAT_PORTFOLIO_DEFAULT_WORKERS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.defaultWorkers;
+  const CP_SAT_PORTFOLIO_MAX_WORKERS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxWorkers;
+  const CP_SAT_PORTFOLIO_DEFAULT_PER_WORKER_SECONDS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.defaultPerWorkerTimeLimitSeconds;
+  const CP_SAT_PORTFOLIO_MAX_TOTAL_WORKER_THREADS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxTotalWorkerThreads;
+  const CP_SAT_PORTFOLIO_MAX_PER_WORKER_THREADS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxPerWorkerThreads;
+  const CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxTotalCpuBudgetSeconds;
+
   function createPlannerWorkbenchController(options) {
     const {
       state,
@@ -27,6 +42,35 @@
       setSolveState,
       updatePayloadPreview,
     } = callbacks;
+
+    function getDefaultCpSatPortfolioState() {
+      return {
+        enabled: false,
+        workerCount: CP_SAT_PORTFOLIO_DEFAULT_WORKERS,
+        randomSeeds: "",
+        perWorkerTimeLimitSeconds: String(CP_SAT_PORTFOLIO_DEFAULT_PER_WORKER_SECONDS),
+        perWorkerNumWorkers: 1,
+        randomizeSearch: true,
+      };
+    }
+
+    function applyCpSatPortfolioRequestToState(portfolio) {
+      if (!portfolio) return {};
+      return {
+        portfolio: {
+          ...getDefaultCpSatPortfolioState(),
+          ...state.cpSat.portfolio,
+          enabled: true,
+          ...(portfolio.workerCount != null ? { workerCount: portfolio.workerCount } : {}),
+          ...(Array.isArray(portfolio.randomSeeds) ? { randomSeeds: portfolio.randomSeeds.join(", ") } : {}),
+          ...(portfolio.perWorkerTimeLimitSeconds != null
+            ? { perWorkerTimeLimitSeconds: String(portfolio.perWorkerTimeLimitSeconds) }
+            : {}),
+          ...(portfolio.perWorkerNumWorkers != null ? { perWorkerNumWorkers: portfolio.perWorkerNumWorkers } : {}),
+          ...(portfolio.randomizeSearch != null ? { randomizeSearch: Boolean(portfolio.randomizeSearch) } : {}),
+        },
+      };
+    }
 
     function applySolveRequestToPlanner(request, options = {}) {
       const { preserveCpSatRuntime = true, optimizer = "auto" } = options;
@@ -78,8 +122,8 @@
           ...(params.cpSat.randomSeed != null ? { randomSeed: String(params.cpSat.randomSeed) } : {}),
           ...(params.cpSat.numWorkers != null ? { numWorkers: params.cpSat.numWorkers } : {}),
           ...(params.cpSat.logSearchProgress != null ? { logSearchProgress: Boolean(params.cpSat.logSearchProgress) } : {}),
-          ...(params.cpSat.pythonExecutable != null ? { pythonExecutable: String(params.cpSat.pythonExecutable) } : {}),
           ...(params.cpSat.useDisplayedHint != null ? { useDisplayedHint: Boolean(params.cpSat.useDisplayedHint) } : {}),
+          ...applyCpSatPortfolioRequestToState(params.cpSat.portfolio),
         };
       }
 
@@ -103,7 +147,9 @@
     function setPaintMode(mode) {
       state.paintMode = mode;
       for (const button of elements.paintModeToggle.querySelectorAll("button")) {
-        button.classList.toggle("active", button.dataset.paintMode === mode);
+        const isActive = button.dataset.paintMode === mode;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-pressed", String(isActive));
       }
     }
 
@@ -111,7 +157,9 @@
       state.optimizer = normalizeOptimizer(optimizer);
       const showAutoPanels = state.optimizer === "auto";
       for (const button of elements.solverToggle.querySelectorAll("button")) {
-        button.classList.toggle("active", button.dataset.optimizer === state.optimizer);
+        const isActive = button.dataset.optimizer === state.optimizer;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-pressed", String(isActive));
       }
       if (elements.autoPanel) {
         elements.autoPanel.hidden = !showAutoPanels;
@@ -121,6 +169,16 @@
       elements.cpSatPanel.hidden = !showAutoPanels && state.optimizer !== "cp-sat";
       syncSolverFields();
       updateSummary();
+    }
+
+    function setInputMax(element, max) {
+      if (!element) return;
+      if (max === null || max === undefined || max === "") {
+        element.max = "";
+        element.removeAttribute?.("max");
+        return;
+      }
+      element.max = String(max);
     }
 
     function updateGridDimensionInputs() {
@@ -278,19 +336,19 @@
       const defaultNeighborhoodRows = Math.max(1, Math.ceil(state.grid.length / 2));
       const defaultNeighborhoodCols = Math.max(1, Math.ceil((state.grid[0]?.length ?? 1) / 2));
 
-      if (kind === "fast-greedy") {
+      if (kind === "heavy-greedy") {
         state.greedy = {
           ...state.greedy,
           localSearch: true,
-          restarts: 8,
-          serviceRefineIterations: 2,
-          serviceRefineCandidateLimit: 40,
-          exhaustiveServiceSearch: false,
-          serviceExactPoolLimit: 16,
-          serviceExactMaxCombinations: 4000,
+          restarts: 20,
+          serviceRefineIterations: 4,
+          serviceRefineCandidateLimit: 60,
+          exhaustiveServiceSearch: true,
+          serviceExactPoolLimit: 22,
+          serviceExactMaxCombinations: 12000,
         };
         elements.runtimePresetStatus.textContent =
-          'Applied "Fast Greedy": fast standalone seed settings for quick legal layouts, seed-quality checks, or standalone heuristic runs.';
+          'Applied "Heavy Greedy": standalone heuristic settings with deeper service refinement and exact service search.';
       } else if (kind === "lns-improve") {
         state.lns = {
           ...state.lns,
@@ -310,15 +368,40 @@
           noImprovementTimeoutSeconds: "10",
           numWorkers: 8,
           useDisplayedHint: true,
+          portfolio: {
+            ...getDefaultCpSatPortfolioState(),
+            ...state.cpSat.portfolio,
+            enabled: false,
+          },
         };
         elements.runtimePresetStatus.textContent =
           'Applied "Bounded CP-SAT": 30s max runtime with a 10s no-improvement cutoff and displayed-layout hinting.';
+      } else if (kind === "portfolio-cp-sat") {
+        state.cpSat = {
+          ...state.cpSat,
+          timeLimitSeconds: "30",
+          noImprovementTimeoutSeconds: "10",
+          numWorkers: 8,
+          useDisplayedHint: true,
+          portfolio: {
+            ...getDefaultCpSatPortfolioState(),
+            ...state.cpSat.portfolio,
+            enabled: true,
+            workerCount: 3,
+            randomSeeds: "",
+            perWorkerTimeLimitSeconds: "30",
+            perWorkerNumWorkers: 1,
+            randomizeSearch: true,
+          },
+        };
+        elements.runtimePresetStatus.textContent =
+          'Applied "Portfolio CP-SAT": three randomized exact paths with 30s per-worker caps and one internal worker each.';
       } else {
         return;
       }
 
       const optimizer =
-        kind === "fast-greedy" ? "greedy"
+        kind === "heavy-greedy" ? "greedy"
         : kind === "lns-improve" ? "lns"
         : "cp-sat";
       setOptimizer(optimizer);
@@ -331,37 +414,179 @@
     }
 
     function syncSolverFields() {
+      const autoOwnsStageSeeds = state.optimizer === "auto";
+
       if (elements.autoWallClockLimitSeconds) {
         elements.autoWallClockLimitSeconds.value = state.auto?.wallClockLimitSeconds ?? "";
       }
 
       elements.greedyLocalSearch.checked = state.greedy.localSearch;
-      elements.greedyRandomSeed.value = state.greedy.randomSeed === "" ? "" : String(state.greedy.randomSeed ?? "");
+      elements.greedyRandomSeed.disabled = autoOwnsStageSeeds;
+      elements.greedyRandomSeed.title = autoOwnsStageSeeds
+        ? "Auto generates per-stage seeds and ignores standalone Greedy seeds."
+        : "";
+      elements.greedyRandomSeed.placeholder = autoOwnsStageSeeds ? "Auto generates stage seeds" : "Blank = random";
+      elements.greedyRandomSeed.value = autoOwnsStageSeeds
+        ? ""
+        : (state.greedy.randomSeed === "" ? "" : String(state.greedy.randomSeed ?? ""));
+      if (elements.greedyTimeLimitSeconds) {
+        elements.greedyTimeLimitSeconds.disabled = autoOwnsStageSeeds;
+        elements.greedyTimeLimitSeconds.title = autoOwnsStageSeeds
+          ? "Auto uses its global cap and per-stage budgets instead of standalone Greedy time limits."
+          : "";
+        elements.greedyTimeLimitSeconds.placeholder = autoOwnsStageSeeds
+          ? "Auto uses stage budgets"
+          : "Blank = unlimited";
+        elements.greedyTimeLimitSeconds.value = autoOwnsStageSeeds
+          ? ""
+          : (state.greedy.timeLimitSeconds === "" ? "" : String(state.greedy.timeLimitSeconds ?? ""));
+      }
       elements.greedyRestarts.value = String(state.greedy.restarts);
+      setInputMax(elements.greedyRestarts, autoOwnsStageSeeds ? 4 : "");
+      elements.greedyRestarts.title = autoOwnsStageSeeds ? "Auto caps the Greedy seed stage at 4 restarts." : "";
       elements.greedyServiceRefineIterations.value = String(state.greedy.serviceRefineIterations);
+      setInputMax(elements.greedyServiceRefineIterations, autoOwnsStageSeeds ? 1 : "");
+      elements.greedyServiceRefineIterations.title = autoOwnsStageSeeds
+        ? "Auto caps the Greedy seed stage at 1 service-refinement pass."
+        : "";
       elements.greedyServiceRefineCandidateLimit.value = String(state.greedy.serviceRefineCandidateLimit);
-      elements.greedyExhaustiveServiceSearch.checked = state.greedy.exhaustiveServiceSearch;
+      setInputMax(elements.greedyServiceRefineCandidateLimit, autoOwnsStageSeeds ? 24 : "");
+      elements.greedyServiceRefineCandidateLimit.title = autoOwnsStageSeeds
+        ? "Auto caps the Greedy seed stage at 24 service-refinement candidates."
+        : "";
+      elements.greedyExhaustiveServiceSearch.checked = autoOwnsStageSeeds ? false : state.greedy.exhaustiveServiceSearch;
+      elements.greedyExhaustiveServiceSearch.disabled = autoOwnsStageSeeds;
+      elements.greedyExhaustiveServiceSearch.title = autoOwnsStageSeeds
+        ? "Auto always disables exhaustive service search during the fast Greedy seed stage."
+        : "";
+      if (elements.greedyProfile) {
+        elements.greedyProfile.checked = autoOwnsStageSeeds ? false : Boolean(state.greedy.profile);
+        elements.greedyProfile.disabled = autoOwnsStageSeeds;
+        elements.greedyProfile.title = autoOwnsStageSeeds
+          ? "Standalone Greedy profile collection is not exposed while Auto owns the seed stage."
+          : "";
+      }
+      if (elements.greedyDensityTieBreaker) {
+        elements.greedyDensityTieBreaker.checked = autoOwnsStageSeeds ? false : Boolean(state.greedy.densityTieBreaker);
+        elements.greedyDensityTieBreaker.disabled = autoOwnsStageSeeds;
+        elements.greedyDensityTieBreaker.title = autoOwnsStageSeeds
+          ? "Auto owns the Greedy seed policy, so center-density tie-breaking is standalone Greedy only."
+          : "";
+      }
+      if (elements.greedyDensityTieBreakerTolerancePercent) {
+        elements.greedyDensityTieBreakerTolerancePercent.value = autoOwnsStageSeeds
+          ? ""
+          : state.greedy.densityTieBreakerTolerancePercent === ""
+            ? ""
+            : String(state.greedy.densityTieBreakerTolerancePercent ?? "2");
+        elements.greedyDensityTieBreakerTolerancePercent.disabled = autoOwnsStageSeeds;
+        elements.greedyDensityTieBreakerTolerancePercent.title = autoOwnsStageSeeds
+          ? "Auto uses a fixed seed policy instead of standalone density tie-breaking."
+          : "";
+      }
+      if (elements.greedyDiagnostics) {
+        elements.greedyDiagnostics.checked = autoOwnsStageSeeds ? false : Boolean(state.greedy.diagnostics);
+        elements.greedyDiagnostics.disabled = autoOwnsStageSeeds;
+        elements.greedyDiagnostics.title = autoOwnsStageSeeds
+          ? "Diagnostics are emitted only by standalone Greedy runs."
+          : "";
+      }
       elements.greedyServiceExactPoolLimit.value = String(state.greedy.serviceExactPoolLimit);
+      setInputMax(elements.greedyServiceExactPoolLimit, autoOwnsStageSeeds ? 8 : "");
+      elements.greedyServiceExactPoolLimit.title = autoOwnsStageSeeds
+        ? "Auto caps the Greedy seed stage at an exact service pool of 8."
+        : "";
       elements.greedyServiceExactMaxCombinations.value = String(state.greedy.serviceExactMaxCombinations);
+      setInputMax(elements.greedyServiceExactMaxCombinations, autoOwnsStageSeeds ? 512 : "");
+      elements.greedyServiceExactMaxCombinations.title = autoOwnsStageSeeds
+        ? "Auto caps the Greedy seed stage at 512 exact service combinations."
+        : "";
 
       elements.lnsIterations.value = String(state.lns.iterations);
       elements.lnsMaxNoImprovementIterations.value = String(state.lns.maxNoImprovementIterations);
       elements.lnsNeighborhoodRows.value = String(state.lns.neighborhoodRows);
       elements.lnsNeighborhoodCols.value = String(state.lns.neighborhoodCols);
       elements.lnsRepairTimeLimitSeconds.value = String(state.lns.repairTimeLimitSeconds);
-      elements.lnsPythonExecutable.value = state.cpSat.pythonExecutable;
       elements.lnsUseDisplayedSeed.checked = Boolean(state.lns.useDisplayedSeed);
 
       elements.cpSatTimeLimitSeconds.value = state.cpSat.timeLimitSeconds;
       elements.cpSatNoImprovementTimeoutSeconds.value = state.cpSat.noImprovementTimeoutSeconds;
-      elements.cpSatRandomSeed.value = state.cpSat.randomSeed === "" ? "" : String(state.cpSat.randomSeed ?? "");
+      elements.cpSatRandomSeed.disabled = autoOwnsStageSeeds;
+      elements.cpSatRandomSeed.title = autoOwnsStageSeeds
+        ? "Auto generates per-stage seeds and ignores standalone CP-SAT seeds."
+        : "";
+      elements.cpSatRandomSeed.placeholder = autoOwnsStageSeeds ? "Auto generates stage seeds" : "Blank = auto-fill on solve";
+      elements.cpSatRandomSeed.value = autoOwnsStageSeeds
+        ? ""
+        : (state.cpSat.randomSeed === "" ? "" : String(state.cpSat.randomSeed ?? ""));
       elements.cpSatNumWorkers.value = String(state.cpSat.numWorkers);
       elements.cpSatLogSearchProgress.checked = state.cpSat.logSearchProgress;
-      elements.cpSatPythonExecutable.value = state.cpSat.pythonExecutable;
       elements.cpSatUseDisplayedHint.checked = Boolean(state.cpSat.useDisplayedHint);
+      syncCpSatPortfolioFields(autoOwnsStageSeeds);
 
       elements.maxServices.value = state.availableBuildings.services;
       elements.maxResidentials.value = state.availableBuildings.residentials;
+    }
+
+    function syncCpSatPortfolioFields(autoOwnsStageSeeds) {
+      const portfolio = {
+        ...getDefaultCpSatPortfolioState(),
+        ...(state.cpSat.portfolio ?? {}),
+      };
+      const portfolioActive = !autoOwnsStageSeeds && Boolean(portfolio.enabled);
+      const disabled = !portfolioActive;
+      const workerCount = Math.max(1, Math.min(Number(portfolio.workerCount) || CP_SAT_PORTFOLIO_DEFAULT_WORKERS, CP_SAT_PORTFOLIO_MAX_WORKERS));
+      const maxPerWorkerThreads = Math.max(
+        1,
+        Math.min(
+          CP_SAT_PORTFOLIO_MAX_PER_WORKER_THREADS,
+          Math.floor(CP_SAT_PORTFOLIO_MAX_TOTAL_WORKER_THREADS / workerCount)
+        )
+      );
+      const perWorkerNumWorkers = Math.max(1, Math.min(Number(portfolio.perWorkerNumWorkers) || 1, maxPerWorkerThreads));
+      const maxPerWorkerSeconds = Math.max(
+        1,
+        Math.floor(CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS / (workerCount * perWorkerNumWorkers))
+      );
+
+      if (elements.cpSatPortfolioEnabled) {
+        elements.cpSatPortfolioEnabled.checked = portfolioActive;
+        elements.cpSatPortfolioEnabled.disabled = autoOwnsStageSeeds;
+        elements.cpSatPortfolioEnabled.title = autoOwnsStageSeeds
+          ? "Auto keeps portfolio off so LNS repair stages do not fan out into extra CP-SAT workers."
+          : "";
+      }
+      if (elements.cpSatPortfolioWorkerCount) {
+        elements.cpSatPortfolioWorkerCount.value = String(portfolio.workerCount);
+        elements.cpSatPortfolioWorkerCount.max = String(CP_SAT_PORTFOLIO_MAX_WORKERS);
+        elements.cpSatPortfolioWorkerCount.disabled = disabled;
+      }
+      if (elements.cpSatPortfolioRandomSeeds) {
+        elements.cpSatPortfolioRandomSeeds.value = portfolio.randomSeeds ?? "";
+        elements.cpSatPortfolioRandomSeeds.disabled = disabled || autoOwnsStageSeeds;
+        elements.cpSatPortfolioRandomSeeds.placeholder = `Optional, max ${CP_SAT_PORTFOLIO_MAX_WORKERS}`;
+        elements.cpSatPortfolioRandomSeeds.title = autoOwnsStageSeeds
+          ? "Auto derives CP-SAT stage seeds from its generated stage seed."
+          : `Comma or space separated seeds. At most ${CP_SAT_PORTFOLIO_MAX_WORKERS}.`;
+      }
+      if (elements.cpSatPortfolioPerWorkerTimeLimitSeconds) {
+        elements.cpSatPortfolioPerWorkerTimeLimitSeconds.value = portfolio.perWorkerTimeLimitSeconds ?? "";
+        elements.cpSatPortfolioPerWorkerTimeLimitSeconds.max = String(maxPerWorkerSeconds);
+        elements.cpSatPortfolioPerWorkerTimeLimitSeconds.disabled = disabled;
+        elements.cpSatPortfolioPerWorkerTimeLimitSeconds.title =
+          `Capped at ${maxPerWorkerSeconds}s here so the portfolio stays inside the ${CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS}s total CPU budget.`;
+      }
+      if (elements.cpSatPortfolioPerWorkerNumWorkers) {
+        elements.cpSatPortfolioPerWorkerNumWorkers.value = String(portfolio.perWorkerNumWorkers);
+        elements.cpSatPortfolioPerWorkerNumWorkers.max = String(maxPerWorkerThreads);
+        elements.cpSatPortfolioPerWorkerNumWorkers.disabled = disabled;
+        elements.cpSatPortfolioPerWorkerNumWorkers.title =
+          `Capped at ${maxPerWorkerThreads} here so portfolio CPU lanes stay at ${CP_SAT_PORTFOLIO_MAX_TOTAL_WORKER_THREADS} or fewer.`;
+      }
+      if (elements.cpSatPortfolioRandomizeSearch) {
+        elements.cpSatPortfolioRandomizeSearch.checked = portfolio.randomizeSearch !== false;
+        elements.cpSatPortfolioRandomizeSearch.disabled = disabled;
+      }
     }
 
     function renderServiceTypes() {

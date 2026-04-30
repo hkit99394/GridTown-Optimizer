@@ -8,16 +8,17 @@ This project now includes:
 - an `LNS` solver that improves a seed layout with neighborhood CP-SAT repair
 - a `CP-SAT` solver backed by Google OR-Tools
 - strict validators and exact layout scoring
-- a local web planner with saved layouts, map inspection, and manual editing
+- a local web planner with saved layouts, map inspection, planner explainability maps, and manual editing
 
 Core reference docs:
-- [SPEC.md](./SPEC.md): formal problem statement
-- [Requirement.md](./Requirement.md): product-level summary
-- [ALGORITHM.md](./ALGORITHM.md): heuristic design notes
-- [LEARNED_GUIDANCE_ROADMAP.md](./LEARNED_GUIDANCE_ROADMAP.md): roadmap for ML / RL-style learned guidance over the current solver stack
-- [PLANNER_ARCHITECTURE.md](./PLANNER_ARCHITECTURE.md): current web/backend module boundaries
-- [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md): overall solver roadmap
-- [CP_SAT_ROADMAP.md](./CP_SAT_ROADMAP.md): CP-SAT-specific roadmap
+- [SPEC.md](./docs/requirements/SPEC.md): formal problem statement
+- [Requirement.md](./docs/requirements/Requirement.md): product-level summary
+- [ALGORITHM.md](./docs/design/ALGORITHM.md): heuristic design notes
+- [LEARNED_GUIDANCE_ROADMAP.md](./docs/roadmaps/LEARNED_GUIDANCE_ROADMAP.md): roadmap for ML / RL-style learned guidance over the current solver stack
+- [PLANNER_ARCHITECTURE.md](./docs/design/PLANNER_ARCHITECTURE.md): current web/backend module boundaries
+- [SOLVER_ROADMAP.md](./docs/roadmaps/SOLVER_ROADMAP.md): overall solver roadmap
+- [SOLVER_ABLATION_DECISIONS.md](./docs/decisions/SOLVER_ABLATION_DECISIONS.md): deterministic ablation gate decisions before model training
+- [CP_SAT_ROADMAP.md](./docs/roadmaps/CP_SAT_ROADMAP.md): CP-SAT-specific roadmap
 
 ## Problem Summary
 
@@ -31,10 +32,9 @@ The solver must place:
 - residential buildings on allowed rectangular footprints
 
 Subject to these core rules:
-- roads must form one connected network
-- the road network must touch row `0`
-- every building must connect to the road network
-- buildings touching row `0` are treated as road-connected automatically
+- every road component must touch row `0` or column `0`
+- every building must connect to a row-0-or-column-0-connected road component
+- buildings touching row `0` or column `0` are treated as road-connected automatically
 - buildings cannot overlap each other or roads
 - service buildings have their own footprint, bonus, range, and availability
 - residential buildings have typed min/max population and availability
@@ -69,19 +69,21 @@ Preferred configuration is typed `residentialTypes`. Legacy `residentialSettings
 
 ### `auto`
 
-`auto` is the recommended quality path.
+`auto` is the recommended quality path and the default optimizer for omitted `params.optimizer` values in the public runtime, HTTP API, example CLI, and web planner.
 
 In this project it:
-- starts with a fast greedy incumbent
+- starts with a capped fast greedy incumbent
 - improves it with `LNS`
 - follows with bounded `CP-SAT` polishing
 - keeps alternating bounded `LNS` and `CP-SAT` while meaningful improvement continues
 
 Use this when overall answer quality matters more than keeping the run purely standalone or heuristic.
 
+Auto owns orchestration details. It generates per-stage random seeds and reports them in `solution.autoStage.generatedSeeds`; standalone `greedy.randomSeed` and `cpSat.randomSeed` are only honored by direct Greedy/CP-SAT runs.
+
 ### `greedy`
 
-The greedy solver is the fast standalone seed / advanced mode.
+The greedy solver is the heavy standalone heuristic / advanced inspection mode.
 
 It uses:
 - service candidate ranking
@@ -90,7 +92,7 @@ It uses:
 - local improvement
 - optional bounded exhaustive search over top service layouts
 
-Use this when you want fast iteration and a strong incumbent quickly.
+Use standalone `greedy` when you want Greedy-only quality checks or heuristic tuning. Use `auto` when you want the fast seed stage plus follow-on improvement.
 
 ### `lns`
 
@@ -162,6 +164,8 @@ CP-SAT:
 npm run solve:cp-sat
 ```
 
+The example CP-SAT command is bounded for local use: by default it runs with a 30 second wall-clock cap, a 15 second no-improvement stop, and 8 CP-SAT workers. Override with `-- --cp-sat-time-limit=60`, `-- --cp-sat-no-improvement-timeout=20`, or `-- --cp-sat-workers=4`.
+
 ### 5. Run tests
 
 ```bash
@@ -179,7 +183,9 @@ Available scripts from [package.json](./package.json):
 - `npm run solve:lns`
 - `npm run solve:cp-sat`
 - `npm run benchmark:greedy`
+- `npm run benchmark:lns`
 - `npm run benchmark:cp-sat`
+- `npm run benchmark:scorecard`
 - `npm run setup:cp-sat`
 - `npm test`
 
@@ -200,10 +206,11 @@ The planner now includes:
 - service and residential catalog editing
 - collapsible catalog import
 - solver-specific control panels for `auto`, `greedy`, `LNS`, and `CP-SAT`
+- standalone Greedy diagnostics with a collapsible "why not placed?" result report
 - saved input setups
 - saved solved layouts
 - automatic `LNS` seeding and `CP-SAT` hinting from the displayed output when the displayed layout is validated and model-compatible
-- result review with validation, placements, remaining availability, and solved map overlays
+- result review with validation, placements, remaining availability, solved map overlays, and planner explainability maps for service value, placement opportunity, and connectivity risk
 - manual layout editing on the solved map:
   - add remaining buildings
   - move buildings
@@ -380,6 +387,8 @@ For single-machine portfolio search, CP-SAT also supports:
 - `portfolio.perWorkerNumWorkers`
 - `portfolio.randomizeSearch`
 
+Portfolio search is explicit-only. Each worker now reports its own CP-SAT telemetry, and portfolio worker search logging is suppressed internally so a requested `logSearchProgress` run still returns parseable JSON. Keep portfolio experiments behind CPU-normalized scorecards; do not treat a wall-clock tie as a win when it spends extra worker CPU budget.
+
 Example:
 
 ```ts
@@ -399,7 +408,7 @@ const portfolio = await solveAsync(grid, {
 
 ### Run the benchmark corpus
 
-The repository includes both a fixed greedy benchmark corpus and a fixed CP-SAT benchmark corpus.
+The repository includes fixed benchmark corpora for `greedy`, `LNS`, and `CP-SAT`, plus a cross-mode scorecard for equal-budget comparisons. Scorecard rows include seed-policy evidence for `LNS` seed budget/wall time and Auto Greedy seed-stage budget/wall time when those stages run. CP-SAT portfolio rows also report worker CPU budget and observed worker CPU time so portfolio gains can be judged against CPU cost.
 
 Run the greedy suite:
 
@@ -413,10 +422,77 @@ Run one named greedy case and emit JSON:
 npm run benchmark:greedy -- --json cap-sweep-mixed
 ```
 
+Compare the default-off connectivity-shadow tie-breaker with profiling disabled for cleaner wall-clock readings, or enable profiling on a focused diagnostic slice:
+
+```bash
+npm run benchmark:greedy -- --connectivity-shadow-ablation --no-profile
+npm run benchmark:greedy -- --connectivity-shadow-ablation --profile service-local-neighborhood geometry-occupancy-hot-path
+```
+
+Run the deterministic Greedy ordering/phase ablation matrix before trying learned ranking:
+
+```bash
+npm run benchmark:greedy -- --deterministic-ablation --no-profile
+npm run benchmark:greedy -- --ordering-ablation --ablation-variants=baseline,no-service-neighborhood,connectivity-shadow-scoring service-local-neighborhood
+npm run benchmark:greedy -- --deterministic-ablation --seeds=7,19 --ablation-variants=baseline,no-local-search service-local-neighborhood
+npm run benchmark:greedy -- --deterministic-ablation --gate-report --json --ablation-variants=baseline,no-local-search service-local-neighborhood
+```
+
 List the available greedy case names:
 
 ```bash
 npm run benchmark:greedy -- --list
+```
+
+Run the LNS suite:
+
+```bash
+npm run benchmark:lns
+```
+
+Run one named LNS case and emit JSON:
+
+```bash
+npm run benchmark:lns -- --json compact-service-repair
+```
+
+Run the deterministic LNS neighborhood-anchor/window ablation matrix:
+
+```bash
+npm run benchmark:lns -- --neighborhood-ablation
+npm run benchmark:lns -- --neighborhood-ablation --ablation-variants=baseline,sliding-only,small-2x2 compact-service-repair
+npm run benchmark:lns -- --neighborhood-ablation --ablation-variants=baseline,sliding-only,weak-service-first seeded-service-anchor-pressure
+npm run benchmark:lns -- --neighborhood-ablation --seeds=7,19 --ablation-variants=baseline,sliding-only compact-service-repair
+npm run benchmark:lns -- --neighborhood-ablation --gate-report --json --ablation-variants=baseline,sliding-only,weak-service-first seeded-service-anchor-pressure
+```
+
+When `--seeds` is provided, each Greedy or LNS ablation case is repeated once per seed; baseline and variants within a case/seed comparison receive the same unique integer seed in the solver-supported `0..2147483647` range.
+Repeated-seed ablation summaries include stability-gate fields: win/regression/unchanged rates, best/worst population-delta case and seed labels, and for LNS the number/rate of variants whose first repair window, full window sequence, or anchor-coordinate sequence moved from the matched baseline.
+Ablation `--json` output uses snapshot-friendly artifacts that omit generated timestamps and volatile wall-clock fields.
+`--gate-report` turns the matrix into a stable promote/keep-baseline/learning-target/blocked-regression report and defaults to seeds `7,19,37` when no `--seeds` list is provided.
+LNS repeated-seed ablations rotate variant execution order by default to reduce wall-time order bias; use `--no-rotate-variant-run-order` for fixed execution order.
+
+Collect bounded counterfactual LNS window replay labels before learned window re-ranking:
+
+```bash
+npm run benchmark:lns -- --window-replay-labels --json --seeds=7 --max-windows=4 --repair-time=0.25 seeded-service-anchor-pressure
+```
+
+Window replay labels evaluate multiple candidate repair windows from the same incumbent with an equal CP-SAT repair budget and emit stable JSON snapshots with per-window signed population deltas, usability flags, validation results, and deterministic features.
+
+Build the low-risk learned-ranking label bundle with protected development/holdout splits before any model training:
+
+```bash
+npm run benchmark:labels
+npm run benchmark:labels -- --json --seeds=7,19,37 --max-windows=8 --repair-time=1
+```
+
+The combined label bundle includes Greedy connectivity-shadow ordering labels, Greedy road-opportunity near-miss labels, split-aware LNS replay labels, schema/audit metadata, and leakage checks. It does not train a model or change solver defaults.
+
+List the available LNS case names:
+
+```bash
+npm run benchmark:lns -- --list
 ```
 
 The repository also includes a fixed CP-SAT benchmark corpus plus an async benchmark harness for reproducible exact-run comparisons.
@@ -439,15 +515,50 @@ List the available case names:
 npm run benchmark:cp-sat -- --list
 ```
 
+Run the cross-mode scorecard:
+
+```bash
+npm run benchmark:scorecard
+```
+
+When `cp-sat` and `cp-sat-portfolio` are both present, the scorecard includes portfolio efficiency signals. A portfolio run is only a promotion candidate when it improves population per wall-clock without losing CPU-budget efficiency versus single CP-SAT.
+
+Run a named scorecard case with JSON output:
+
+```bash
+npm run benchmark:scorecard -- --json compact-service-repair
+```
+
+Run the Auto/LNS budget ablation sweep:
+
+```bash
+npm run benchmark:scorecard -- --budget-ablation --modes=auto,greedy,lns,cp-sat --budgets=5,30 --seeds=7,19
+```
+
+Use the harder ablation coverage corpus when the default cases saturate:
+
+```bash
+npm run benchmark:scorecard -- --budget-ablation --coverage-corpus --modes=auto,greedy,lns --budgets=5,30 --seeds=7,19
+```
+
+Start with a narrow matrix before adding `120` second probes; corrected LNS budget policies can legitimately consume the requested budget. Ablation summaries report total coverage plus best-score, Auto, and LNS deltas versus the baseline policy so unrelated mode winners do not hide Auto/LNS movement.
+
+Emit policy-scoped decision traces for the same ablation runner:
+
+```bash
+npm run benchmark:scorecard -- --budget-ablation --trace-jsonl --ablation-policies=baseline,seed-light --budgets=5 --seeds=7
+```
+
 From code:
 
 ```ts
 import { runCpSatBenchmarkSuite } from "./dist/index.js";
 
+process.env.CITY_BUILDER_CP_SAT_PYTHON ??= ".venv-cp-sat/bin/python";
+
 const result = await runCpSatBenchmarkSuite(undefined, {
   names: ["typed-housing-single", "typed-housing-portfolio"],
   cpSat: {
-    pythonExecutable: ".venv-cp-sat/bin/python",
     timeLimitSeconds: 10,
     maxDeterministicTime: 10,
     numWorkers: 1,
@@ -510,6 +621,9 @@ The public API is exposed from [src/index.ts](./src/index.ts):
 - `normalizeCpSatBenchmarkOptions`
 - `DEFAULT_CP_SAT_BENCHMARK_CORPUS`
 - `evaluateLayout`
+- `validateLayoutConstraints`
+- `assertValidLayout`
+- `assertValidLayoutConstraints`
 - `validateSolution`
 - `renderSolutionMap`
 - `formatSolutionMap`
@@ -574,17 +688,49 @@ type ResidentialTypeSetting = {
 
 ### Greedy options
 
-Prefer the nested `greedy` object for new code:
+Prefer the nested `greedy` object for new code. When users choose standalone Greedy, the web app and CLI use this heavier inspection profile; `auto` clamps the Greedy stage separately when it only needs a fast seed.
 
 ```ts
 greedy: {
   localSearch: true,
+  profile: false,
+  diagnostics: false,
+  timeLimitSeconds: 3900,
+  densityTieBreaker: false,
+  densityTieBreakerTolerancePercent: 2,
+  connectivityShadowScoring: false,
   restarts: 20,
   serviceRefineIterations: 4,
   serviceRefineCandidateLimit: 60,
   exhaustiveServiceSearch: true,
   serviceExactPoolLimit: 22,
   serviceExactMaxCombinations: 12000,
+}
+```
+
+Set `greedy.diagnostics: true` to include `solution.greedyDiagnostics`, a bounded post-solve report that scans final unplaced candidates and groups "why not placed?" examples by blocked footprint, missing road path, no service coverage / base-only residential population, availability caps, and lower-score/no-improvement outcomes.
+
+When `greedy.profile` is enabled, Greedy counters include `roads.connectivityShadow*` fields. These measure how many anchor-reachable empty cells each committed building footprint removes, separating cells consumed by the footprint from downstream cells disconnected by that placement. Profile output also includes bounded connectivity-shadow tie-break samples showing the candidate, incumbent, chosen placement, rejected placement, road cost, and shadow penalty. The benchmark formatter prints this as `connectivity-shadow=...` and `connectivity-shadow-scoring=...`.
+
+The same profile includes `roads.roadOpportunity*` counters and bounded `roadOpportunityTraces` for accepted constructive service/residential placements plus accepted residential local-search and service-neighborhood moves. These traces pair the accepted placement's road cost with anchor-reachable frontier before/after counts, total lost cells, footprint cells, and downstream disconnected cells. Constructive and local-search traces can include bounded near-miss counterfactuals showing rejected candidates with their score, road-cost delta, move kind, and frontier loss. The benchmark formatter prints this as `road-opportunity=...` plus sample `road-opportunity-placement=...` and `road-opportunity-counterfactual=...` rows.
+
+Set `greedy.connectivityShadowScoring: true` to use that signal as an opt-in placement tie-breaker: when normal Greedy scores tie inside a bounded cheap-road window, candidates that disconnect fewer future anchor-reachable cells are preferred. The option keeps the normal Greedy result when the shadow-scored result does not beat it on population and road count. The default is `false`, so profiling alone does not change placement choices.
+
+Set `greedy.densityTieBreaker: true` to prefer more central high-value placements when Greedy scores are within `greedy.densityTieBreakerTolerancePercent` of each other. The web planner exposes this only for standalone Greedy; Auto keeps its fixed Greedy seed-stage ranking policy.
+
+### Auto options
+
+All `auto` fields are optional. Omit `auto` or pass `{}` to use runtime defaults.
+
+```ts
+auto: {
+  wallClockLimitSeconds?: number;
+  randomSeed?: number;
+  weakCycleImprovementThreshold?: number;
+  maxConsecutiveWeakCycles?: number;
+  cpSatStageTimeLimitSeconds?: number;
+  cpSatStageReserveRatio?: number;
+  cpSatStageNoImprovementTimeoutSeconds?: number;
 }
 ```
 
@@ -596,6 +742,7 @@ lns: {
   maxNoImprovementIterations: 4,
   neighborhoodRows: 6,
   neighborhoodCols: 8,
+  seedTimeLimitSeconds: 2,
   repairTimeLimitSeconds: 5,
 }
 ```
@@ -617,10 +764,16 @@ cpSat: {
 
 A `Solution` contains:
 - `optimizer`
+- `activeOptimizer`
+- `autoStage`
+- `autoStage.greedySeedStage`, when `auto` has run its Greedy seed stage, reports the applied Greedy caps plus seed population, elapsed seconds, and phase timings when profiling is available
 - `cpSatStatus`
 - `cpSatObjectivePolicy`
 - `cpSatTelemetry`
 - `cpSatPortfolio`
+- `greedyProfile`, when Greedy profiling was enabled directly or by a seed stage
+- `greedyDiagnostics`, when `greedy.diagnostics` was enabled for a standalone Greedy run
+- `lnsTelemetry`, including `seedTimeLimitSeconds` and `seedWallClockSeconds`
 - `stoppedByUser`
 - `roads: Set<string>`
 - `services`
@@ -643,11 +796,12 @@ Road cells are encoded as `"r,c"` strings inside the `Set`.
 - [src/lns/solver.ts](./src/lns/solver.ts): LNS solver
 - [src/cp-sat/solver.ts](./src/cp-sat/solver.ts): TypeScript bridge for CP-SAT
 - [python/cp_sat_solver.py](./python/cp_sat_solver.py): OR-Tools CP-SAT model
-- [src/greedy/row0Anchors.ts](./src/greedy/row0Anchors.ts): greedy row-0 feasibility and anchor refinement helpers
+- [src/greedy/roadAnchors.ts](./src/greedy/roadAnchors.ts): greedy road-anchor feasibility and refinement helpers
 - [src/runtime/jobs/solveJobManager.ts](./src/runtime/jobs/solveJobManager.ts): background solve job lifecycle
 - [src/server/http/requestHandler.ts](./src/server/http/requestHandler.ts): planner request composition
 - [src/server/http/routes.ts](./src/server/http/routes.ts): planner API route handlers
 - [src/server/http/contracts.ts](./src/server/http/contracts.ts): shared HTTP payload contracts
+- [src/server/http/solutionResponse.ts](./src/server/http/solutionResponse.ts): solve and manual-layout HTTP response shaping
 - [src/server/http/static.ts](./src/server/http/static.ts): local planner static asset serving
 - [src/benchmarks/greedy.ts](./src/benchmarks/greedy.ts): fixed greedy benchmark corpus and harness
 - [src/benchmarks/cpSat.ts](./src/benchmarks/cpSat.ts): fixed CP-SAT benchmark corpus and harness
@@ -660,7 +814,10 @@ Road cells are encoded as `"r,c"` strings inside the `Set`.
 
 - `CP-SAT` requires a working Python runtime plus OR-Tools.
 - If you omit `cpSat.timeLimitSeconds`, the CP-SAT backend runs until it finishes or is stopped.
+- The `npm run solve:cp-sat` example supplies bounded CP-SAT defaults so local smoke runs return a feasible best-effort result instead of running indefinitely.
 - If you omit `auto.wallClockLimitSeconds`, the outer `auto` policy has no global cap.
+- If you omit `params.optimizer`, runtime dispatch resolves it to `auto`.
+- `auto` generates per-stage seeds; use `solution.autoStage.generatedSeeds` to inspect the actual Greedy, LNS, and CP-SAT stage seeds.
 - In the web planner, stopping `CP-SAT` or `LNS` early preserves the best feasible result found so far when one exists.
 - In the web planner, stopping `auto` preserves the best incumbent found so far.
 - `LNS` currently uses CP-SAT as the neighborhood repair engine.

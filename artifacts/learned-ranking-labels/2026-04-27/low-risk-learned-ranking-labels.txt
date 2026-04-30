@@ -1,0 +1,12 @@
+=== Low-Risk Learned Ranking Labels ===
+Generated: 2026-04-27T22:05:28.722Z
+Schema: 1
+Seeds: 7, 19, 37
+Audit: learned-model=none greedy-profile=true greedy-connectivity-shadow=true lns-cp-sat-workers=1 lns-state=initial-incumbent lns-windows=baseline-ranked-top-k
+Leakage: protected-holdout=true greedy-overlap=none lns-overlap=none
+Greedy labels: total=4593 connectivity-shadow=888 road-opportunity=3705
+- greedy development: cases=cap-sweep-mixed, service-local-neighborhood, step14-service-lookahead-reranker, row0-corridor-repair-pressure labels=1995 connectivity-shadow=408 road-opportunity=1587
+- greedy holdout: cases=fixed-service-realization-complete, geometry-occupancy-hot-path, typed-footprint-pressure, typed-availability-pressure labels=2598 connectivity-shadow=480 road-opportunity=2118
+LNS replay labels: total=84
+- lns development: cases=compact-service-repair, seeded-service-anchor-pressure labels=48 usable=48 improved=18 neutral=30 regressed=0 invalid=0 recoverable-failure=0 repair=1s max-windows=8
+- lns holdout: cases=typed-housing-single, row0-anchor-repair labels=36 usable=36 improved=0 neutral=36 regressed=0 invalid=0 recoverable-failure=0 repair=1s max-windows=8

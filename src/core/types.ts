@@ -1,5 +1,5 @@
 /**
- * City Builder — type definitions (see SPEC.md)
+ * City Builder - type definitions (see docs/requirements/SPEC.md)
  */
 
 export type Grid = number[][];
@@ -82,6 +82,16 @@ export interface ServiceTypeSetting {
 
 export type OptimizerName = "auto" | "greedy" | "cp-sat" | "lns";
 
+export function isOptimizerName(value: unknown): value is OptimizerName {
+  return value === "auto" || value === "greedy" || value === "cp-sat" || value === "lns";
+}
+
+/** Fallback when a raw backend/API request omits `params.optimizer`. */
+export const OMITTED_SOLVER_OPTIMIZER: OptimizerName = "auto";
+
+/** Recommended default for interactive planner and CLI entry points. */
+export const RECOMMENDED_INTERACTIVE_OPTIMIZER: OptimizerName = "auto";
+
 export type AutoStageOptimizerName = Exclude<OptimizerName, "auto">;
 
 export type AutoSolveStopReason =
@@ -95,12 +105,16 @@ export type AutoSolveStopReason =
 export interface AutoOptions {
   /** Optional global wall-clock safety cap for the outer auto policy. Omit for no outer cap. */
   wallClockLimitSeconds?: number;
+  /** Optional seed for reproducible Auto stage-seed generation. Omit for random stage seeds. */
+  randomSeed?: number;
   /** Minimum combined improvement ratio for an LNS -> CP-SAT cycle to count as meaningful. Defaults to 0.5%. */
   weakCycleImprovementThreshold?: number;
   /** Stop after this many consecutive weak cycles. Defaults to 2. */
   maxConsecutiveWeakCycles?: number;
   /** Default CP-SAT stage runtime when auto is driving exact passes. Defaults to 30 seconds. */
   cpSatStageTimeLimitSeconds?: number;
+  /** Share of the global Auto budget reserved for each CP-SAT stage after LNS. Defaults to 20%. */
+  cpSatStageReserveRatio?: number;
   /** Default CP-SAT no-improvement cutoff when auto is driving exact passes. Defaults to 10 seconds. */
   cpSatStageNoImprovementTimeoutSeconds?: number;
 }
@@ -112,6 +126,47 @@ export interface AutoSolveGeneratedSeed {
   randomSeed: number;
 }
 
+export interface AutoGreedySeedStageSummary {
+  timeLimitSeconds: number | null;
+  localSearch: boolean | null;
+  restarts: number | null;
+  serviceRefineIterations: number | null;
+  serviceRefineCandidateLimit: number | null;
+  exhaustiveServiceSearch: boolean | null;
+  serviceExactPoolLimit: number | null;
+  serviceExactMaxCombinations: number | null;
+  totalPopulation: number | null;
+  elapsedSeconds: number | null;
+  phases?: GreedyProfilePhaseSummary[];
+}
+
+export interface AutoStageRunSummary {
+  stage: AutoStageOptimizerName;
+  stageIndex: number;
+  cycleIndex: number;
+  randomSeed: number;
+  startedAtSeconds: number;
+  elapsedSeconds: number;
+  completedAtSeconds: number;
+  populationBefore: number | null;
+  candidatePopulation: number | null;
+  acceptedPopulation: number | null;
+  improvement: number | null;
+  cpSatStatus?: string | null;
+  cpSatSolveWallTimeSeconds?: number | null;
+  cpSatLastImprovementAtSeconds?: number | null;
+  cpSatPopulationGapUpperBound?: number | null;
+  lnsStopReason?: string | null;
+  lnsSeedTimeLimitSeconds?: number | null;
+  lnsSeedWallClockSeconds?: number | null;
+  lnsFocusedRepairTimeLimitSeconds?: number | null;
+  lnsEscalatedRepairTimeLimitSeconds?: number | null;
+  lnsIterationsStarted?: number | null;
+  lnsIterationsCompleted?: number | null;
+  lnsImprovingIterations?: number | null;
+  lnsNeutralIterations?: number | null;
+}
+
 export interface AutoSolveStageMetadata {
   requestedOptimizer: "auto";
   activeStage: AutoStageOptimizerName | null;
@@ -121,6 +176,8 @@ export interface AutoSolveStageMetadata {
   lastCycleImprovementRatio: number | null;
   stopReason?: AutoSolveStopReason | null;
   generatedSeeds: AutoSolveGeneratedSeed[];
+  stageRuns?: AutoStageRunSummary[];
+  greedySeedStage?: AutoGreedySeedStageSummary | null;
 }
 
 /** Stable semantic key for a road cell in persisted snapshots: "r,c". */
@@ -192,6 +249,8 @@ export interface CpSatPortfolioOptions {
   workerCount?: number;
   /** Explicit per-worker random seeds. Overrides workerCount when provided. */
   randomSeeds?: number[];
+  /** Optional cap on total worker CPU seconds: workers * per-worker CP-SAT workers * per-worker time. */
+  totalCpuBudgetSeconds?: number;
   /** Per-worker time limit override. Defaults to the outer timeLimitSeconds. */
   perWorkerTimeLimitSeconds?: number;
   /** Per-worker deterministic time override. Defaults to the outer maxDeterministicTime. */
@@ -232,12 +291,109 @@ export interface CpSatPortfolioWorkerSummary {
   status: string;
   feasible: boolean;
   totalPopulation: number | null;
+  /** Per-worker CP-SAT telemetry. Null for still-running snapshot placeholders. */
+  telemetry: CpSatTelemetry | null;
 }
 
 export interface CpSatPortfolioSummary {
   workerCount: number;
   selectedWorkerIndex: number | null;
   workers: CpSatPortfolioWorkerSummary[];
+}
+
+export interface SolverProgressPortfolioSummary {
+  workerCount: number;
+  completedWorkers: number;
+  feasibleWorkers: number;
+  selectedWorkerIndex: number | null;
+}
+
+export interface SolverProgressSummary {
+  currentScore: number | null;
+  bestScore: number | null;
+  activeStage: OptimizerName | AutoStageOptimizerName | null;
+  reuseSource: string | null;
+  elapsedTimeSeconds: number | null;
+  timeSinceImprovementSeconds: number | null;
+  stopReason: string | null;
+  exactGap: number | null;
+  portfolioWorkerSummary: SolverProgressPortfolioSummary | null;
+}
+
+export type SolverDecisionTraceKind =
+  | "checkpoint"
+  | "greedy-phase"
+  | "lns-neighborhood"
+  | "cp-sat-progress"
+  | "auto-stage";
+
+export type SolverDecisionTraceDecision =
+  | "started"
+  | "improved"
+  | "stalled"
+  | "bounded"
+  | "stopped"
+  | "failed";
+
+export type SolverDecisionTraceEvidenceValue = string | number | boolean | null;
+
+export interface SolverDecisionTraceScore {
+  before: number | null;
+  after: number | null;
+  best: number | null;
+  delta: number | null;
+  upperBound: number | null;
+  gap: number | null;
+}
+
+export interface SolverDecisionTraceStage {
+  stageIndex?: number;
+  cycleIndex?: number;
+  phase?: string;
+  iteration?: number;
+}
+
+export interface SolverDecisionTraceEvent {
+  schemaVersion: 1;
+  runId: string;
+  sequence: number;
+  eventId: string;
+  elapsedMs: number;
+  optimizer: OptimizerName;
+  activeStage: OptimizerName | AutoStageOptimizerName | null;
+  kind: SolverDecisionTraceKind;
+  decision: SolverDecisionTraceDecision;
+  reason: string;
+  score: SolverDecisionTraceScore;
+  stage?: SolverDecisionTraceStage;
+  evidence?: Record<string, SolverDecisionTraceEvidenceValue>;
+}
+
+export interface SolverElapsedScoreCheckpoint {
+  elapsedMs: number;
+  bestScore: number | null;
+  scoreDeltaToBest: number | null;
+  scoreRatioToBest: number | null;
+  reached: boolean;
+}
+
+export interface SolverQualityTargetCheckpoint {
+  ratio: number;
+  targetScore: number | null;
+  reachedAtMs: number | null;
+  reachedScore: number | null;
+}
+
+export interface SolverTimeToQualityScorecard {
+  finalElapsedMs: number;
+  finalScore: number | null;
+  bestScore: number | null;
+  firstFeasibleAtMs: number | null;
+  firstImprovementAtMs: number | null;
+  bestScoreAtMs: number | null;
+  improvementCount: number;
+  timeCheckpoints: SolverElapsedScoreCheckpoint[];
+  qualityTargets: SolverQualityTargetCheckpoint[];
 }
 
 export type CpSatProgressKind = "incumbent" | "bound" | "portfolio-worker-complete";
@@ -305,12 +461,20 @@ export interface GreedyOptions {
   serviceLookaheadCandidates?: number;
   /** Prototype deferred road commitment during the main greedy construction pass (default false). */
   deferRoadCommitment?: boolean;
+  /** Prefer more central high-population candidates when Greedy scores are close. Default false. */
+  densityTieBreaker?: boolean;
+  /** Population/score window for density tie-breaking, expressed as a percent. Default 2. */
+  densityTieBreakerTolerancePercent?: number;
+  /** Prefer placements with lower building-induced road-anchor connectivity shadow when Greedy scores tie. Default false. */
+  connectivityShadowScoring?: boolean;
   /** Fixed seed for reproducible greedy restart shuffling. */
   randomSeed?: number;
   /** Optional wall-clock budget in seconds for raw greedy solves. Omit for no greedy-specific cap. */
   timeLimitSeconds?: number;
   /** Collect phase-level profiling counters without changing solver behavior. */
   profile?: boolean;
+  /** Emit a bounded post-solve "why not placed?" diagnostic report. Default false. */
+  diagnostics?: boolean;
   /** Number of restarts with different service order; take best solution (default 1) */
   restarts?: number;
   /** Service-position refinement passes after restarts (default 2) */
@@ -327,6 +491,64 @@ export interface GreedyOptions {
   stopFilePath?: string;
   /** Internal best-snapshot path used by the local web server. */
   snapshotFilePath?: string;
+}
+
+export type GreedyPlacementDiagnosticReason =
+  | "blocked-footprint"
+  | "no-road-path"
+  | "no-service-coverage"
+  | "base-only"
+  | "availability-cap"
+  | "lower-score-no-improvement";
+
+export interface GreedyDiagnosticAvailabilityEntry {
+  typeIndex: number;
+  name?: string;
+  available: number;
+  used: number;
+  remaining: number;
+}
+
+export interface GreedyDiagnosticOverallAvailability {
+  limit: number | null;
+  used: number;
+  remaining: number | null;
+}
+
+export interface GreedyDiagnosticExample {
+  kind: "service" | "residential";
+  reason: GreedyPlacementDiagnosticReason;
+  reasons: GreedyPlacementDiagnosticReason[];
+  r: number;
+  c: number;
+  rows: number;
+  cols: number;
+  typeIndex: number;
+  typeName?: string;
+  score?: number;
+  population?: number;
+  basePopulation?: number;
+  maxPopulation?: number;
+}
+
+export interface GreedyDiagnosticKindReport {
+  candidateLimit: number;
+  candidatesScanned: number;
+  candidatesSkippedAsPlaced: number;
+  truncated: boolean;
+  placedCount: number;
+  overallAvailability: GreedyDiagnosticOverallAvailability;
+  availabilityByType: GreedyDiagnosticAvailabilityEntry[];
+  reasonCounts: Partial<Record<GreedyPlacementDiagnosticReason, number>>;
+  examplesByReason: Partial<Record<GreedyPlacementDiagnosticReason, GreedyDiagnosticExample[]>>;
+}
+
+export interface GreedyDiagnostics {
+  version: 1;
+  candidateLimit: number;
+  examplesPerReason: number;
+  services: GreedyDiagnosticKindReport;
+  residentials: GreedyDiagnosticKindReport;
 }
 
 export interface GreedyProfileCounters {
@@ -398,29 +620,177 @@ export interface GreedyProfileCounters {
     probeCalls: number;
     probeReuses: number;
     scratchProbeCalls: number;
-    row0Checks: number;
+    roadAnchorChecks: number;
     fallbackRoads: number;
     deferredFrontierRecomputes: number;
     deferredReconstructionSteps: number;
     deferredReconstructionFailures: number;
+    connectivityShadowChecks: number;
+    connectivityShadowLostCells: number;
+    connectivityShadowFootprintCells: number;
+    connectivityShadowDisconnectedCells: number;
+    connectivityShadowMaxLostCells: number;
+    connectivityShadowMaxDisconnectedCells: number;
+    connectivityShadowScoreTies: number;
+    connectivityShadowScoreWins: number;
+    connectivityShadowScoreLosses: number;
+    connectivityShadowScoreNeutral: number;
+    roadOpportunityChecks: number;
+    roadOpportunityLostCells: number;
+    roadOpportunityFootprintCells: number;
+    roadOpportunityDisconnectedCells: number;
+    roadOpportunityMaxLostCells: number;
+    roadOpportunityMaxDisconnectedCells: number;
   };
+}
+
+export type GreedyConnectivityShadowDecisionPhase = "service" | "residential";
+
+export interface GreedyConnectivityShadowPlacementTrace {
+  r: number;
+  c: number;
+  rows: number;
+  cols: number;
+  roadCost: number;
+  typeIndex?: number;
+  bonus?: number;
+  range?: number;
+}
+
+export interface GreedyConnectivityShadowDecisionTrace {
+  phase: GreedyConnectivityShadowDecisionPhase;
+  score: number;
+  candidate: GreedyConnectivityShadowPlacementTrace;
+  incumbent: GreedyConnectivityShadowPlacementTrace;
+  chosen: GreedyConnectivityShadowPlacementTrace;
+  rejected: GreedyConnectivityShadowPlacementTrace;
+  candidateShadowPenalty: number;
+  incumbentShadowPenalty: number;
+}
+
+export type GreedyRoadOpportunityPhase =
+  | "service"
+  | "residential"
+  | "service-neighborhood"
+  | "residential-local-search";
+
+export type GreedyRoadOpportunityMoveKind =
+  | "residential-add"
+  | "residential-move"
+  | "service-add"
+  | "service-swap";
+
+export type GreedyRoadOpportunityCounterfactualReason =
+  | "same-score-tie"
+  | "near-score"
+  | "lower-road-cost"
+  | "higher-score-rejected"
+  | "lookahead-rejected";
+
+export interface GreedyRoadOpportunityCounterfactualTrace {
+  reason: GreedyRoadOpportunityCounterfactualReason;
+  r: number;
+  c: number;
+  rows: number;
+  cols: number;
+  roadCost: number;
+  score: number;
+  scoreDelta: number;
+  roadCostDelta: number;
+  reachableBefore: number;
+  reachableAfter: number;
+  lostCells: number;
+  footprintCells: number;
+  disconnectedCells: number;
+  tieBreakComparison?: number;
+  typeIndex?: number;
+  bonus?: number;
+  range?: number;
+  moveKind?: GreedyRoadOpportunityMoveKind;
+}
+
+export interface GreedyRoadOpportunityTrace {
+  phase: GreedyRoadOpportunityPhase;
+  r: number;
+  c: number;
+  rows: number;
+  cols: number;
+  roadCost: number;
+  score?: number;
+  reachableBefore: number;
+  reachableAfter: number;
+  lostCells: number;
+  footprintCells: number;
+  disconnectedCells: number;
+  typeIndex?: number;
+  bonus?: number;
+  range?: number;
+  moveKind?: GreedyRoadOpportunityMoveKind;
+  counterfactuals?: GreedyRoadOpportunityCounterfactualTrace[];
+}
+
+export type GreedyProfilePhaseName =
+  | "precompute"
+  | "constructiveCapSearch"
+  | "forcedServiceRealization"
+  | "serviceRefinement"
+  | "exhaustiveServiceSearch"
+  | "residentialLocalSearch"
+  | "serviceNeighborhoodSearch";
+
+export interface GreedyProfilePhaseSummary {
+  name: GreedyProfilePhaseName;
+  runs: number;
+  elapsedMs: number;
+  bestPopulationBefore: number | null;
+  bestPopulationAfter: number | null;
+  bestPopulationDelta: number;
+  candidatePopulationDelta: number;
+  improvements: number;
 }
 
 export interface GreedyProfile {
   counters: GreedyProfileCounters;
+  phases: GreedyProfilePhaseSummary[];
+  connectivityShadowDecisions?: GreedyConnectivityShadowDecisionTrace[];
+  connectivityShadowDecisionTraceLimit?: number;
+  roadOpportunityTraces?: GreedyRoadOpportunityTrace[];
+  roadOpportunityTraceLimit?: number;
 }
+
+export type LnsNeighborhoodAnchorPolicy =
+  | "ranked"
+  | "sliding-only"
+  | "weak-service-first"
+  | "residential-opportunity-first"
+  | "frontier-congestion-first"
+  | "placed-buildings-first";
 
 export interface LnsOptions {
   /** Number of neighborhood-repair attempts to run after the greedy seed. */
   iterations?: number;
   /** Stop after this many consecutive non-improving neighborhoods. */
   maxNoImprovementIterations?: number;
+  /** Total LNS wall-clock budget in seconds, including seed construction. Omit for no LNS-specific wall-clock cap. */
+  wallClockLimitSeconds?: number;
+  /** Alias for wallClockLimitSeconds for callers that use the same naming as raw Greedy and CP-SAT. */
+  timeLimitSeconds?: number;
+  /** Stop after this many seconds without an improving neighborhood. Omit to rely on iteration-based stopping. */
+  noImprovementTimeoutSeconds?: number;
+  /** Optional greedy seed construction budget in seconds when no saved seed is provided. */
+  seedTimeLimitSeconds?: number;
   /** Height of each repair neighborhood. Defaults to about half the grid height. */
   neighborhoodRows?: number;
   /** Width of each repair neighborhood. Defaults to about half the grid width. */
   neighborhoodCols?: number;
+  /** Deterministic policy used to rank or suppress LNS repair-window anchors. Default ranked. */
+  neighborhoodAnchorPolicy?: LnsNeighborhoodAnchorPolicy;
   /** Per-neighborhood CP-SAT repair budget in seconds. */
   repairTimeLimitSeconds?: number;
+  /** Per-neighborhood budget for focused repair attempts before escalation. Defaults to repairTimeLimitSeconds. */
+  focusedRepairTimeLimitSeconds?: number;
+  /** Per-neighborhood budget for escalated repair attempts. Defaults to repairTimeLimitSeconds. */
+  escalatedRepairTimeLimitSeconds?: number;
   /** Optional saved-layout seed used instead of rebuilding the initial greedy incumbent. */
   seedHint?: CpSatWarmStartHint;
   /** Internal stop-token path used by the local web server. */
@@ -429,8 +799,61 @@ export interface LnsOptions {
   snapshotFilePath?: string;
 }
 
+export type LnsRepairPhase = "focused" | "escalated";
+
+export type LnsNeighborhoodOutcomeStatus =
+  | "improved"
+  | "neutral"
+  | "recoverable-failure"
+  | "skipped-budget"
+  | "stopped";
+
+export type LnsStopReason =
+  | "running"
+  | "iteration-limit"
+  | "stale-iteration-limit"
+  | "stale-time-limit"
+  | "wall-clock-limit"
+  | "no-neighborhoods"
+  | "cancelled";
+
+export interface LnsNeighborhoodOutcome {
+  iteration: number;
+  phase: LnsRepairPhase;
+  window: CpSatNeighborhoodWindow;
+  stagnantIterationsBefore: number;
+  staleSecondsBefore: number;
+  repairTimeLimitSeconds: number;
+  wallClockSeconds: number;
+  populationBefore: number;
+  populationAfter: number;
+  improvement: number;
+  status: LnsNeighborhoodOutcomeStatus;
+  cpSatStatus?: string | null;
+}
+
+export interface LnsTelemetry {
+  stopReason: LnsStopReason;
+  seedSource: "greedy" | "hint";
+  seedWallClockSeconds: number;
+  seedTimeLimitSeconds: number | null;
+  wallClockLimitSeconds: number | null;
+  noImprovementTimeoutSeconds: number | null;
+  focusedRepairTimeLimitSeconds: number;
+  escalatedRepairTimeLimitSeconds: number;
+  iterationsStarted: number;
+  iterationsCompleted: number;
+  improvingIterations: number;
+  neutralIterations: number;
+  recoverableFailures: number;
+  skippedIterations: number;
+  finalStagnantIterations: number;
+  elapsedSeconds: number;
+  outcomes: LnsNeighborhoodOutcome[];
+}
+
 export interface SolverParams {
-  /** Optimizer backend. Defaults to greedy. */
+  /** Optimizer backend. Defaults to auto. */
   optimizer?: OptimizerName;
   /** Auto-orchestration options, used when optimizer = "auto". */
   auto?: AutoOptions;
@@ -499,6 +922,10 @@ export interface Solution {
   cpSatPortfolio?: CpSatPortfolioSummary;
   /** Optional greedy profiling counters collected only when profiling is enabled. */
   greedyProfile?: GreedyProfile;
+  /** Optional bounded "why not placed?" report for final greedy candidates. */
+  greedyDiagnostics?: GreedyDiagnostics;
+  /** LNS run summary and per-neighborhood outcomes when the LNS backend produced this solution. */
+  lnsTelemetry?: LnsTelemetry;
   /** True when a run was stopped early and this solution is the best feasible result found so far. */
   stoppedByUser?: boolean;
   /** True when a greedy wall-clock budget stopped the run and this is the best feasible result found so far. */
@@ -552,6 +979,8 @@ export interface SolveResponseStats {
   autoStage?: AutoSolveStageMetadata;
   manualLayout: boolean;
   cpSatStatus: string | null;
+  lnsTelemetry?: LnsTelemetry;
+  progressSummary?: SolverProgressSummary;
   stoppedByUser: boolean;
   stoppedByTimeLimit: boolean;
   totalPopulation: number;
@@ -570,6 +999,36 @@ export interface SolveResponseValidation {
   mapText: string;
 }
 
+export interface PlannerExplainabilityCell {
+  r: number;
+  c: number;
+  allowed: boolean;
+  occupiedKind: "service" | "residential" | "road" | null;
+  roadAnchorReachable: boolean;
+  roadAnchorDistance: number | null;
+  serviceValue: number;
+  bestServiceBonus: number;
+  residentialOpportunity: number;
+  residentialHeadroom: number;
+  connectivityLostCells: number;
+  connectivityDisconnectedCells: number;
+  connectivityFootprintCells: number;
+}
+
+export interface PlannerExplainabilityMap {
+  schemaVersion: 1;
+  rows: number;
+  cols: number;
+  maxServiceValue: number;
+  maxBestServiceBonus: number;
+  maxResidentialOpportunity: number;
+  maxResidentialHeadroom: number;
+  maxConnectivityLostCells: number;
+  maxConnectivityDisconnectedCells: number;
+  roadAnchorReachableCellCount: number;
+  cells: PlannerExplainabilityCell[][];
+}
+
 /** Chronological performance sample captured during a planner solve. */
 export interface SolveProgressLogEntry {
   capturedAt: string;
@@ -581,6 +1040,11 @@ export interface SolveProgressLogEntry {
   hasFeasibleSolution: boolean;
   totalPopulation: number | null;
   cpSatStatus: string | null;
+  lnsStopReason?: LnsStopReason | null;
+  lnsNeighborhoodStatus?: LnsNeighborhoodOutcomeStatus | null;
+  lnsNeighborhoodImprovement?: number | null;
+  lnsNeighborhoodsCompleted?: number | null;
+  progressSummary?: SolverProgressSummary;
   bestPopulationUpperBound: number | null;
   populationGapUpperBound: number | null;
   solveWallTimeSeconds: number | null;
@@ -594,6 +1058,7 @@ export interface SolveResponsePayload {
   solution: SerializedSolution;
   validation: SolveResponseValidation;
   stats: SolveResponseStats;
+  explainability?: PlannerExplainabilityMap;
   progressLog?: SolveProgressLogEntry[];
   progressLogFilePath?: string;
   message?: string;
@@ -713,6 +1178,12 @@ export interface LayoutEvaluationInput {
   params: SolverParams;
 }
 
+/** Shared constraint-validation result for explicit layouts. */
+export interface LayoutConstraintValidationResult {
+  valid: boolean;
+  errors: string[];
+}
+
 /** Per-building scored result for manual layout evaluation */
 export interface EvaluatedResidentialResult extends ResidentialPlacement {
   population: number;
@@ -724,6 +1195,7 @@ export interface LayoutEvaluationResult {
   errors: string[];
   populations: EvaluatedResidentialResult[];
   totalPopulation: number;
+  boosts: number[];
 }
 
 /** Input payload for full solution validation */

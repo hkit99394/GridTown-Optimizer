@@ -3,9 +3,13 @@
     const {
       state,
       elements,
+      constants = {},
       helpers,
       callbacks,
     } = options;
+    const {
+      LIVE_SNAPSHOT_REFRESH_INTERVAL_MS = 5 * 1000,
+    } = constants;
     const {
       cloneJson,
       formatElapsedTime,
@@ -24,6 +28,38 @@
     const PENDING_MANUAL_LAYOUT_ERROR =
       "Manual edits are pending validation. Use Validate layout when you're ready.";
     const PLACEMENT_MODE_STATUS_PREFIX = "Click the map to set its top-left cell.";
+    const DIAGNOSTIC_REASON_ORDER = [
+      "blocked-footprint",
+      "no-road-path",
+      "no-service-coverage",
+      "base-only",
+      "availability-cap",
+      "lower-score-no-improvement",
+    ];
+    const DIAGNOSTIC_REASON_LABELS = {
+      "blocked-footprint": "Blocked footprint",
+      "no-road-path": "No road path",
+      "no-service-coverage": "No service coverage",
+      "base-only": "Base population only",
+      "availability-cap": "Availability cap",
+      "lower-score-no-improvement": "Lower score / no improvement",
+    };
+    const EXPLAINABILITY_MODE_LABELS = {
+      layout: "Layout",
+      "service-value": "Service value",
+      "placement-opportunity": "Placement opportunity",
+      "connectivity-risk": "Connectivity risk",
+    };
+
+    function formatLiveSnapshotRefreshCadence() {
+      const seconds = Math.max(1, Math.round(LIVE_SNAPSHOT_REFRESH_INTERVAL_MS / 1000));
+      if (seconds < 60) {
+        return `${seconds} second${seconds === 1 ? "" : "s"}`;
+      }
+
+      const minutes = Math.round(seconds / 60);
+      return `${minutes} minute${minutes === 1 ? "" : "s"}`;
+    }
 
     function hasEditableLayoutContext() {
       return Boolean(state.result && state.resultContext);
@@ -174,7 +210,9 @@
       const pendingFootprint = readPendingPlacementFootprint(pendingPlacement);
 
       for (const button of elements.layoutEditModeToggle.querySelectorAll("button")) {
-        button.classList.toggle("active", button.dataset.layoutEditMode === state.layoutEditor.mode);
+        const isActive = button.dataset.layoutEditMode === state.layoutEditor.mode;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-pressed", String(isActive));
       }
       if (elements.rotatePendingPlacementButton) {
         elements.rotatePendingPlacementButton.textContent = pendingPlacement?.rotated ? "Use original orientation" : "Rotate 90°";
@@ -332,10 +370,16 @@
           throw new Error(payload.error || "Failed to evaluate the edited layout.");
         }
 
+        const submittedRoadCount = new Set(Array.isArray(nextSolution.roads) ? nextSolution.roads : []).size;
+        const validatedRoadCount = new Set(Array.isArray(payload.solution?.roads) ? payload.solution.roads : []).size;
+        const removedRoadCount = Math.max(0, submittedRoadCount - validatedRoadCount);
+        const roadCleanupMessage = removedRoadCount > 0
+          ? ` Removed ${removedRoadCount} unnecessary road cell${removedRoadCount === 1 ? "" : "s"}.`
+          : "";
         commitEditedLayoutResult(payload, {
           message: payload.validation?.valid === true
-            ? message
-            : "Layout validation completed. Review the reported issues before using this layout as a seed or hint.",
+            ? `${message}${roadCleanupMessage}`
+            : `Layout validation completed.${roadCleanupMessage} Review the reported issues before using this layout as a seed or hint.`,
           selectedBuilding,
           selectedCell,
           keepMode,
@@ -643,6 +687,30 @@
       return null;
     }
 
+    function isCellInsidePlacement(placement, row, col) {
+      return Boolean(
+        placement
+        && row >= placement.r
+        && row < placement.r + placement.rows
+        && col >= placement.c
+        && col < placement.c + placement.cols
+      );
+    }
+
+    function isCellInsideServiceEffect(service, row, col) {
+      return Boolean(
+        service
+        && row >= service.r - service.range
+        && row <= service.r + service.rows - 1 + service.range
+        && col >= service.c - service.range
+        && col <= service.c + service.cols - 1 + service.range
+      );
+    }
+
+    function isCellInsideAnyServiceFootprint(solution, row, col) {
+      return (solution?.services ?? []).some((service) => isCellInsidePlacement(service, row, col));
+    }
+
     function getSolvedCellKind(grid, solution, row, col) {
       if (grid?.[row]?.[col] !== 1) return "blocked";
       if (findBuildingAtCell(solution, row, col)?.kind === "service") return "service";
@@ -656,19 +724,7 @@
       if (!grid?.length || grid[row]?.[col] !== 1 || !solution) return [];
 
       return (solution.services ?? []).flatMap((service, index) => {
-        const inFootprint =
-          row >= service.r
-          && row < service.r + service.rows
-          && col >= service.c
-          && col < service.c + service.cols;
-        if (inFootprint) return [];
-
-        const inEffect =
-          row >= service.r - service.range
-          && row <= service.r + service.rows - 1 + service.range
-          && col >= service.c - service.range
-          && col <= service.c + service.cols - 1 + service.range;
-        if (!inEffect) return [];
+        if (isCellInsidePlacement(service, row, col) || !isCellInsideServiceEffect(service, row, col)) return [];
 
         return [{
           id: `S${index + 1}`,
@@ -676,6 +732,353 @@
           bonus: Number(solution.servicePopulationIncreases?.[index] ?? 0),
         }];
       });
+    }
+
+    function createServiceValueHeatmap(grid, solution) {
+      const values = grid.map((row) => row.map(() => 0));
+      let maxValue = 0;
+      if (!solution) return { values, maxValue };
+
+      for (let row = 0; row < grid.length; row += 1) {
+        for (let col = 0; col < (grid[row]?.length ?? 0); col += 1) {
+          if (grid[row][col] !== 1 || isCellInsideAnyServiceFootprint(solution, row, col)) continue;
+          const value = (solution.services ?? []).reduce((sum, service, index) => {
+            if (!isCellInsideServiceEffect(service, row, col)) return sum;
+            const bonus = Number(solution.servicePopulationIncreases?.[index] ?? 0);
+            return Number.isFinite(bonus) && bonus > 0 ? sum + bonus : sum;
+          }, 0);
+          values[row][col] = value;
+          maxValue = Math.max(maxValue, value);
+        }
+      }
+
+      return { values, maxValue };
+    }
+
+    function normalizeExplainabilityMode() {
+      const mode = state.resultExplainabilityMode;
+      if (Object.prototype.hasOwnProperty.call(EXPLAINABILITY_MODE_LABELS, mode)) return mode;
+      return state.resultHeatmapEnabled ? "service-value" : "layout";
+    }
+
+    function createEmptyHeatmap(grid) {
+      return {
+        values: grid.map((row) => row.map(() => 0)),
+        details: grid.map((row) => row.map(() => "")),
+        maxValue: 0,
+      };
+    }
+
+    function getPlannerExplainabilityMap() {
+      const map = state.result?.explainability;
+      if (!map || !Array.isArray(map.cells)) return null;
+      return map;
+    }
+
+    function getPlannerExplainabilityCell(row, col) {
+      return getPlannerExplainabilityMap()?.cells?.[row]?.[col] ?? null;
+    }
+
+    function getPlacementBlockedCells(solution) {
+      const blocked = getOccupiedCells(solution);
+      for (const roadKey of solution?.roads ?? []) {
+        blocked.add(roadKey);
+      }
+      return blocked;
+    }
+
+    function placementFitsClearCells(grid, placement, blockedCells) {
+      if (!grid?.length || placement.r < 0 || placement.c < 0) return false;
+      if (placement.r + placement.rows > grid.length || placement.c + placement.cols > (grid[0]?.length ?? 0)) {
+        return false;
+      }
+
+      for (const cell of footprintCellsForPlacement(placement)) {
+        const key = `${cell.r},${cell.c}`;
+        if (grid[cell.r]?.[cell.c] !== 1 || blockedCells.has(key)) return false;
+      }
+      return true;
+    }
+
+    function getResidentialTypeOrientations(type) {
+      const rows = Number(type?.h ?? 0);
+      const cols = Number(type?.w ?? 0);
+      if (!(rows > 0) || !(cols > 0)) return [];
+      const orientations = [{ rows, cols }];
+      if (rows !== cols) {
+        orientations.push({ rows: cols, cols: rows });
+      }
+      return orientations;
+    }
+
+    function getServiceBoostForFootprint(solution, placement) {
+      if (!solution) return 0;
+      const footprint = footprintCellsForPlacement(placement);
+      return (solution.services ?? []).reduce((sum, service, index) => {
+        if (!footprint.some((cell) => isCellInsideServiceEffect(service, cell.r, cell.c))) return sum;
+        const bonus = Number(solution.servicePopulationIncreases?.[index] ?? 0);
+        return Number.isFinite(bonus) && bonus > 0 ? sum + bonus : sum;
+      }, 0);
+    }
+
+    function clampPopulationValue(minPopulation, maxPopulation, boost) {
+      const minValue = Number(minPopulation ?? 0);
+      const maxValue = Number(maxPopulation ?? minValue);
+      const boostValue = Number(boost ?? 0);
+      const safeMin = Number.isFinite(minValue) ? minValue : 0;
+      const safeMax = Number.isFinite(maxValue) ? maxValue : safeMin;
+      const boosted = safeMin + (Number.isFinite(boostValue) ? boostValue : 0);
+      return Math.min(Math.max(boosted, safeMin), safeMax);
+    }
+
+    function createPlacementOpportunityHeatmap(grid, solution) {
+      const heatmap = createEmptyHeatmap(grid);
+      const residentialTypes = state.resultContext?.params?.residentialTypes ?? [];
+      if (!solution || residentialTypes.length === 0) return heatmap;
+
+      const blockedCells = getPlacementBlockedCells(solution);
+
+      residentialTypes.forEach((type, typeIndex) => {
+        const availability = getTypeAvailabilitySummary("residential", typeIndex, solution);
+        if (availability.remaining <= 0) return;
+        const name = type?.name || `Residential Type ${typeIndex + 1}`;
+        for (const orientation of getResidentialTypeOrientations(type)) {
+          for (let row = 0; row < grid.length; row += 1) {
+            for (let col = 0; col < (grid[row]?.length ?? 0); col += 1) {
+              const placement = { r: row, c: col, rows: orientation.rows, cols: orientation.cols };
+              if (!placementFitsClearCells(grid, placement, blockedCells)) continue;
+              const boost = getServiceBoostForFootprint(solution, placement);
+              const value = clampPopulationValue(type.min, type.max, boost);
+              if (value <= (heatmap.values[row]?.[col] ?? 0)) continue;
+              heatmap.values[row][col] = value;
+              heatmap.details[row][col] =
+                `${name} ${orientation.rows}x${orientation.cols}, ${availability.remaining} left, `
+                + `${boost > 0 ? `service boost +${formatExplainabilityNumber(boost)}` : "base population only"}`;
+              heatmap.maxValue = Math.max(heatmap.maxValue, value);
+            }
+          }
+        }
+      });
+
+      return heatmap;
+    }
+
+    function getTraversableCells(grid, solution) {
+      const buildingCells = getOccupiedCells(solution);
+      const traversable = new Set();
+      for (let row = 0; row < grid.length; row += 1) {
+        for (let col = 0; col < (grid[row]?.length ?? 0); col += 1) {
+          const key = `${row},${col}`;
+          if (grid[row][col] === 1 && !buildingCells.has(key)) {
+            traversable.add(key);
+          }
+        }
+      }
+      return traversable;
+    }
+
+    function getNeighborCellKeys(row, col) {
+      return [
+        `${row - 1},${col}`,
+        `${row + 1},${col}`,
+        `${row},${col - 1}`,
+        `${row},${col + 1}`,
+      ];
+    }
+
+    function floodReachableFromAnchorBoundary(grid, traversable, removedKey = null) {
+      const reachable = new Set();
+      const queue = [];
+      const addAnchor = (row, col) => {
+        const key = `${row},${col}`;
+        if (key !== removedKey && traversable.has(key) && !reachable.has(key)) {
+          reachable.add(key);
+          queue.push(key);
+        }
+      };
+      const cols = grid[0]?.length ?? 0;
+      for (let col = 0; col < cols; col += 1) {
+        addAnchor(0, col);
+      }
+      for (let row = 1; row < grid.length; row += 1) {
+        addAnchor(row, 0);
+      }
+
+      for (let index = 0; index < queue.length; index += 1) {
+        const [row, col] = queue[index].split(",").map(Number);
+        for (const nextKey of getNeighborCellKeys(row, col)) {
+          if (nextKey === removedKey || reachable.has(nextKey) || !traversable.has(nextKey)) continue;
+          reachable.add(nextKey);
+          queue.push(nextKey);
+        }
+      }
+
+      return reachable;
+    }
+
+    function createConnectivityRiskHeatmap(grid, solution) {
+      const heatmap = createEmptyHeatmap(grid);
+      const traversable = getTraversableCells(grid, solution);
+      if (traversable.size === 0) return heatmap;
+
+      const baseReachable = floodReachableFromAnchorBoundary(grid, traversable);
+      if (baseReachable.size === 0) return heatmap;
+
+      for (const key of baseReachable) {
+        const [row, col] = key.split(",").map(Number);
+        const reachableWithoutCell = floodReachableFromAnchorBoundary(grid, traversable, key);
+        const lostReachableCells = Math.max(0, baseReachable.size - reachableWithoutCell.size - 1);
+        if (lostReachableCells <= 0) continue;
+        heatmap.values[row][col] = lostReachableCells;
+        heatmap.details[row][col] =
+          `occupying this support cell would strand ${formatExplainabilityNumber(lostReachableCells)} reachable cell`
+          + `${lostReachableCells === 1 ? "" : "s"}`;
+        heatmap.maxValue = Math.max(heatmap.maxValue, lostReachableCells);
+      }
+
+      return heatmap;
+    }
+
+    function createBackendExplainabilityHeatmap(mode, grid) {
+      const map = getPlannerExplainabilityMap();
+      if (!map) return null;
+      const heatmap = createEmptyHeatmap(grid);
+
+      for (let row = 0; row < grid.length; row += 1) {
+        for (let col = 0; col < (grid[row]?.length ?? 0); col += 1) {
+          const cell = map.cells?.[row]?.[col];
+          if (!cell?.allowed) continue;
+
+          if (mode === "service-value") {
+            const value = Number(cell.serviceValue ?? 0);
+            if (!(value > 0)) continue;
+            const anchorReachable = cell.roadAnchorReachable;
+            const anchorDistance = cell.roadAnchorDistance ?? 0;
+            heatmap.values[row][col] = value;
+            heatmap.details[row][col] = anchorReachable
+              ? `anchor reachable at distance ${formatExplainabilityNumber(anchorDistance)}`
+              : "not anchor reachable";
+            heatmap.maxValue = Math.max(heatmap.maxValue, map.maxServiceValue ?? value);
+          } else if (mode === "placement-opportunity") {
+            const residentialValue = Number(cell.residentialOpportunity ?? 0);
+            const serviceBonus = Number(cell.bestServiceBonus ?? 0);
+            const value = Math.max(residentialValue, serviceBonus);
+            if (!(value > 0)) continue;
+            heatmap.values[row][col] = value;
+            heatmap.details[row][col] = [
+              residentialValue > 0 ? `residential up to ${formatExplainabilityNumber(residentialValue)}` : "",
+              Number(cell.residentialHeadroom ?? 0) > 0
+                ? `headroom +${formatExplainabilityNumber(cell.residentialHeadroom)}`
+                : "",
+              serviceBonus > 0 ? `best remaining service +${formatExplainabilityNumber(serviceBonus)}` : "",
+            ].filter(Boolean).join(", ");
+            heatmap.maxValue = Math.max(
+              heatmap.maxValue,
+              map.maxResidentialOpportunity ?? value,
+              map.maxBestServiceBonus ?? serviceBonus
+            );
+          } else if (mode === "connectivity-risk") {
+            const disconnected = Number(cell.connectivityDisconnectedCells ?? 0);
+            const lost = Number(cell.connectivityLostCells ?? 0);
+            const footprint = Number(cell.connectivityFootprintCells ?? 0);
+            const value = disconnected || lost;
+            if (!(value > 0)) continue;
+            heatmap.values[row][col] = value;
+            heatmap.details[row][col] = [
+              disconnected > 0 ? `${formatExplainabilityNumber(disconnected)} disconnected` : "",
+              lost > 0 ? `${formatExplainabilityNumber(lost)} lost` : "",
+              footprint > 0 ? `${formatExplainabilityNumber(footprint)} footprint` : "",
+            ].filter(Boolean).join(", ");
+            heatmap.maxValue = Math.max(
+              heatmap.maxValue,
+              map.maxConnectivityDisconnectedCells ?? disconnected,
+              map.maxConnectivityLostCells ?? lost
+            );
+          }
+        }
+      }
+
+      return heatmap;
+    }
+
+    function createFallbackExplainabilityHeatmap(mode, grid, solution) {
+      if (mode === "service-value") {
+        return createServiceValueHeatmap(grid, solution);
+      }
+      if (mode === "placement-opportunity") {
+        return createPlacementOpportunityHeatmap(grid, solution);
+      }
+      if (mode === "connectivity-risk") {
+        return createConnectivityRiskHeatmap(grid, solution);
+      }
+      return createEmptyHeatmap(grid);
+    }
+
+    function createExplainabilityHeatmap(mode, grid, solution) {
+      return createBackendExplainabilityHeatmap(mode, grid) ?? createFallbackExplainabilityHeatmap(mode, grid, solution);
+    }
+
+    function formatExplainabilityNumber(value) {
+      return Number(value).toLocaleString();
+    }
+
+    function describeExplainabilityValue(mode, value, detail = "") {
+      if (!(value > 0)) return "";
+      if (mode === "service-value") {
+        return `service value +${formatExplainabilityNumber(value)}${detail ? ` (${detail})` : ""}`;
+      }
+      if (mode === "placement-opportunity") {
+        return `placement opportunity ${formatExplainabilityNumber(value)}${detail ? ` (${detail})` : ""}`;
+      }
+      if (mode === "connectivity-risk") {
+        return `connectivity risk ${formatExplainabilityNumber(value)} cell${value === 1 ? "" : "s"}${detail ? ` (${detail})` : ""}`;
+      }
+      return "";
+    }
+
+    function applyExplainabilityHeatmapStyle(cell, mode, value, maxValue) {
+      if (!(value > 0) || !(maxValue > 0)) return;
+      const intensity = Math.max(0.18, Math.min(1, value / maxValue));
+      const warmAlpha = (0.26 + intensity * 0.5).toFixed(2);
+      const hotAlpha = (0.18 + intensity * 0.52).toFixed(2);
+      const borderAlpha = (0.26 + intensity * 0.4).toFixed(2);
+      cell.className += ` heatmap-cell ${mode}-heatmap-cell`;
+      cell.dataset.explainabilityValue = String(value);
+      if (mode === "service-value") {
+        cell.dataset.serviceValue = String(value);
+      } else if (mode === "placement-opportunity") {
+        cell.dataset.placementOpportunity = String(value);
+      } else if (mode === "connectivity-risk") {
+        cell.dataset.connectivityRisk = String(value);
+      }
+      cell.style.setProperty("--heatmap-warm-alpha", warmAlpha);
+      cell.style.setProperty("--heatmap-hot-alpha", hotAlpha);
+      cell.style.setProperty("--heatmap-border-alpha", borderAlpha);
+    }
+
+    function formatCellExplainability(cell) {
+      if (!cell) return "";
+      const parts = [];
+      if (cell.serviceValue > 0) {
+        parts.push(`service value +${formatExplainabilityNumber(cell.serviceValue)}`);
+      }
+      if (cell.residentialOpportunity > 0) {
+        parts.push(`residential up to ${formatExplainabilityNumber(cell.residentialOpportunity)}`);
+      }
+      if (cell.bestServiceBonus > 0) {
+        parts.push(`best remaining service +${formatExplainabilityNumber(cell.bestServiceBonus)}`);
+      }
+      if (cell.connectivityDisconnectedCells > 0 || cell.connectivityLostCells > 0) {
+        parts.push(
+          `connectivity risk ${formatExplainabilityNumber(cell.connectivityDisconnectedCells || cell.connectivityLostCells)} cell`
+          + `${(cell.connectivityDisconnectedCells || cell.connectivityLostCells) === 1 ? "" : "s"}`
+        );
+      }
+      const anchorReachable = cell.roadAnchorReachable;
+      if (anchorReachable) {
+        parts.push(`anchor distance ${formatExplainabilityNumber(cell.roadAnchorDistance ?? 0)}`);
+      }
+      return parts.join("; ");
     }
 
     function countPlacementsByType(typeIndices, typeCount) {
@@ -723,6 +1126,8 @@
       if (!selected && selectedCell) {
         const kind = getSolvedCellKind(state.resultContext?.grid ?? state.grid, solution, selectedCell.r, selectedCell.c);
         const coverage = getCellBonusCoverage(solution, selectedCell.r, selectedCell.c);
+        const explainability = getPlannerExplainabilityCell(selectedCell.r, selectedCell.c);
+        const explainabilityText = formatCellExplainability(explainability);
         const totalBonus = coverage.reduce((sum, entry) => sum + entry.bonus, 0);
         const sourceText = coverage.length
           ? coverage.map((entry) => `${entry.name} (${entry.id})`).join(", ")
@@ -738,7 +1143,8 @@
         elements.selectedBuildingSummary.textContent =
           kind === "blocked"
             ? "Blocked cells do not receive service bonus coverage."
-            : `Potential service bonus at this position is +${totalBonus} population from ${sourceText}.`;
+            : `Potential service bonus at this position is +${totalBonus} population from ${sourceText}.`
+              + `${explainabilityText ? ` Planner map: ${explainabilityText}.` : ""}`;
         elements.selectedBuildingId.textContent = `${selectedCell.r},${selectedCell.c}`;
         elements.selectedBuildingCategory.textContent = categoryLabel;
         elements.selectedBuildingPosition.textContent = `Row ${selectedCell.r}, Col ${selectedCell.c}`;
@@ -749,11 +1155,12 @@
             : coverage.length
               ? `+${totalBonus} from ${coverage.map((entry) => `${entry.name} (${entry.id})`).join(", ")}`
               : "No nearby service bonus reaches this cell.";
+        const anchorReachable = Boolean(explainability?.roadAnchorReachable);
         elements.selectedBuildingAvailability.textContent =
           kind === "empty"
-            ? "Open cell"
+            ? (anchorReachable ? "Open and anchor reachable" : "Open cell")
             : kind === "road"
-              ? "Occupied by road"
+              ? (anchorReachable ? "Occupied by anchor reachable road" : "Occupied by road")
               : kind === "blocked"
                 ? "Not buildable"
                 : "Occupied by a building";
@@ -841,15 +1248,135 @@
       });
     }
 
-    function formatCpSatSeedStatus(solution) {
+    function formatDiagnosticCount(value) {
+      return Number(value ?? 0).toLocaleString();
+    }
+
+    function formatDiagnosticExample(example) {
+      const idPrefix = example.kind === "service" ? "S" : "R";
+      const typeName = example.typeName
+        || (example.kind === "service" ? lookupServiceName(example.typeIndex) : lookupResidentialName(example.typeIndex));
+      const parts = [
+        `${typeName || `${idPrefix} type ${Number(example.typeIndex ?? -1) + 1}`} at (${example.r}, ${example.c})`,
+        `${example.rows}x${example.cols}`,
+      ];
+      if (typeof example.score === "number" && Number.isFinite(example.score)) {
+        parts.push(`score ${formatDiagnosticCount(example.score)}`);
+      }
+      if (typeof example.population === "number" && Number.isFinite(example.population)) {
+        parts.push(`pop ${formatDiagnosticCount(example.population)}`);
+      }
+      if (typeof example.basePopulation === "number" && Number.isFinite(example.basePopulation)) {
+        parts.push(`base ${formatDiagnosticCount(example.basePopulation)}`);
+      }
+      return parts.join(", ");
+    }
+
+    function renderDiagnosticKindReport(listElement, report, emptyLabel) {
+      if (!listElement) return;
+      listElement.innerHTML = "";
+
+      const reasonEntries = DIAGNOSTIC_REASON_ORDER
+        .map((reason) => ({
+          reason,
+          count: Number(report?.reasonCounts?.[reason] ?? 0),
+          examples: Array.isArray(report?.examplesByReason?.[reason]) ? report.examplesByReason[reason] : [],
+        }))
+        .filter((entry) => entry.count > 0);
+
+      if (reasonEntries.length === 0) {
+        listElement.innerHTML = `<li>${emptyLabel}</li>`;
+        return;
+      }
+
+      reasonEntries.forEach((entry) => {
+        const item = document.createElement("li");
+        const stamp = document.createElement("strong");
+        stamp.className = "progress-log-stamp";
+        stamp.textContent = `${DIAGNOSTIC_REASON_LABELS[entry.reason]}: ${formatDiagnosticCount(entry.count)}`;
+
+        const detail = document.createElement("span");
+        detail.className = "progress-log-detail";
+        const examples = entry.examples.map(formatDiagnosticExample);
+        detail.textContent = examples.length > 0
+          ? `Examples: ${examples.join(" | ")}`
+          : "No bounded examples were captured for this reason.";
+
+        item.append(stamp, detail);
+        listElement.append(item);
+      });
+    }
+
+    function renderGreedyDiagnostics(solution, options = {}) {
+      if (!elements.greedyDiagnosticsBlock) return;
+      const diagnostics = solution?.greedyDiagnostics;
+      if (!diagnostics || options.manualLayout || options.liveSnapshot) {
+        elements.greedyDiagnosticsBlock.hidden = true;
+        return;
+      }
+
+      elements.greedyDiagnosticsBlock.hidden = false;
+      const serviceScanned = diagnostics.services?.candidatesScanned ?? 0;
+      const residentialScanned = diagnostics.residentials?.candidatesScanned ?? 0;
+      const truncated = diagnostics.services?.truncated || diagnostics.residentials?.truncated;
+      if (elements.greedyDiagnosticsSummary) {
+        elements.greedyDiagnosticsSummary.textContent =
+          `Scanned ${formatDiagnosticCount(serviceScanned)} unplaced service candidates and `
+          + `${formatDiagnosticCount(residentialScanned)} unplaced residential candidates`
+          + `${truncated ? `, capped at ${formatDiagnosticCount(diagnostics.candidateLimit)} per category` : ""}.`;
+      }
+
+      renderDiagnosticKindReport(
+        elements.greedyDiagnosticsServiceList,
+        diagnostics.services,
+        "No service blockers were recorded."
+      );
+      renderDiagnosticKindReport(
+        elements.greedyDiagnosticsResidentialList,
+        diagnostics.residentials,
+        "No residential blockers were recorded."
+      );
+    }
+
+    function formatAutoSeedStatus(solution) {
+      const generatedSeeds = Array.isArray(solution?.autoStage?.generatedSeeds)
+        ? solution.autoStage.generatedSeeds
+        : [];
+      if (generatedSeeds.length === 0) return "";
+      const latestSeed = generatedSeeds[generatedSeeds.length - 1];
+      const latestStage = latestSeed?.stage ? getOptimizerLabel(latestSeed.stage) : "stage";
+      return Number.isInteger(latestSeed?.randomSeed)
+        ? `, generated ${generatedSeeds.length} stage seeds (latest ${latestStage} ${latestSeed.randomSeed})`
+        : `, generated ${generatedSeeds.length} stage seeds`;
+    }
+
+    function formatCpSatSeedStatus(solution, stats) {
+      if (stats?.optimizer === "auto" || solution?.optimizer === "auto") {
+        return formatAutoSeedStatus(solution);
+      }
       const configuredSeed = state.resultContext?.params?.cpSat?.randomSeed;
       const portfolioWorkers = solution?.cpSatPortfolio?.workers ?? [];
       if (portfolioWorkers.length > 0) {
         const selectedWorker = portfolioWorkers.find(
           (worker) => worker.workerIndex === solution.cpSatPortfolio?.selectedWorkerIndex
         );
-        if (Number.isInteger(selectedWorker?.randomSeed)) {
-          return `, selected seed ${selectedWorker.randomSeed}`;
+        const feasibleWorkers = portfolioWorkers.filter((worker) => worker.feasible);
+        const populations = feasibleWorkers
+          .map((worker) => (Number.isFinite(worker.totalPopulation) ? Number(worker.totalPopulation) : null))
+          .filter((population) => population !== null);
+        const populationSpread = populations.length > 1
+          ? Math.max(...populations) - Math.min(...populations)
+          : null;
+        const selectedLabel =
+          `selected worker ${Number(selectedWorker?.workerIndex ?? 0) + 1}/${solution.cpSatPortfolio?.workerCount ?? portfolioWorkers.length}`;
+        const seedLabel = Number.isInteger(selectedWorker?.randomSeed) ? ` seed ${selectedWorker.randomSeed}` : "";
+        const feasibleLabel = `, ${feasibleWorkers.length}/${portfolioWorkers.length} feasible`;
+        const spreadLabel = populationSpread !== null ? `, spread ${populationSpread.toLocaleString()}` : "";
+        if (selectedWorker) {
+          return `, ${selectedLabel}${seedLabel}${feasibleLabel}${spreadLabel}`;
+        }
+        if (feasibleWorkers.length > 0) {
+          return `, ${feasibleWorkers.length}/${portfolioWorkers.length} feasible workers${spreadLabel}`;
         }
         const workerSeeds = portfolioWorkers
           .map((worker) => (Number.isInteger(worker.randomSeed) ? worker.randomSeed : null))
@@ -865,6 +1392,48 @@
       if (typeof value !== "number" || !Number.isFinite(value)) return null;
       const { maximumFractionDigits = 0 } = options;
       return Number(value).toLocaleString(undefined, { maximumFractionDigits });
+    }
+
+    function formatProgressSummaryParts(summary) {
+      if (!summary) return [];
+      const parts = [];
+      const currentScore = formatProgressLogNumber(summary.currentScore);
+      const bestScore = formatProgressLogNumber(summary.bestScore);
+      if (currentScore !== null) {
+        parts.push(`current ${currentScore}`);
+      }
+      if (bestScore !== null && bestScore !== currentScore) {
+        parts.push(`best ${bestScore}`);
+      }
+      if (summary.activeStage) {
+        parts.push(`stage ${getOptimizerLabel(summary.activeStage)}`);
+      }
+      if (summary.reuseSource) {
+        parts.push(`reuse ${summary.reuseSource}`);
+      }
+      const elapsed = formatProgressLogNumber(summary.elapsedTimeSeconds, { maximumFractionDigits: 1 });
+      if (elapsed !== null) {
+        parts.push(`elapsed ${elapsed}s`);
+      }
+      const sinceImprovement = formatProgressLogNumber(summary.timeSinceImprovementSeconds, {
+        maximumFractionDigits: 1,
+      });
+      if (sinceImprovement !== null) {
+        parts.push(`last improvement ${sinceImprovement}s ago`);
+      }
+      if (summary.stopReason) {
+        parts.push(`stop ${summary.stopReason}`);
+      }
+      const gap = formatProgressLogNumber(summary.exactGap);
+      if (gap !== null) {
+        parts.push(`gap <= ${gap}`);
+      }
+      if (summary.portfolioWorkerSummary) {
+        parts.push(
+          `portfolio ${summary.portfolioWorkerSummary.feasibleWorkers}/${summary.portfolioWorkerSummary.workerCount} feasible`
+        );
+      }
+      return parts;
     }
 
     function getResultProgressLogEntries() {
@@ -917,7 +1486,10 @@
         const sourceLabel = entry.source === "final-result" ? "Final" : "Snapshot";
         const optimizerLabel = entry.optimizer ? getOptimizerLabel(entry.optimizer) : "Solver";
         parts.push(`${sourceLabel} ${optimizerLabel}`);
-        if (entry.optimizer === "auto" && entry.activeOptimizer) {
+        const summaryParts = formatProgressSummaryParts(entry.progressSummary);
+        if (summaryParts.length > 0) {
+          parts.push(...summaryParts);
+        } else if (entry.optimizer === "auto" && entry.activeOptimizer) {
           parts.push(`stage ${getOptimizerLabel(entry.activeOptimizer)}`);
         }
         if (entry.autoStage?.cycleIndex > 0) {
@@ -929,28 +1501,38 @@
             parts.push(`seed ${lastSeed.randomSeed}`);
           }
         }
-        if (entry.autoStage?.stopReason) {
+        if (!entry.progressSummary?.stopReason && entry.autoStage?.stopReason) {
           parts.push(`stop ${entry.autoStage.stopReason}`);
         }
-        if (typeof entry.totalPopulation === "number") {
+        if (entry.lnsNeighborhoodStatus) {
+          const lnsImprovement = Number(entry.lnsNeighborhoodImprovement ?? 0);
+          parts.push(`LNS ${entry.lnsNeighborhoodStatus}${lnsImprovement > 0 ? ` +${lnsImprovement}` : ""}`);
+        }
+        if (!entry.progressSummary?.stopReason && entry.lnsStopReason && entry.lnsStopReason !== "running") {
+          parts.push(`LNS stop ${entry.lnsStopReason}`);
+        }
+        if (!entry.progressSummary && typeof entry.totalPopulation === "number") {
           parts.push(`${Number(entry.totalPopulation).toLocaleString()} population`);
         }
         if (entry.cpSatStatus) {
           parts.push(entry.cpSatStatus);
         }
-        const boundLabel = formatProgressLogNumber(entry.bestPopulationUpperBound);
+        const boundLabel = entry.progressSummary ? null : formatProgressLogNumber(entry.bestPopulationUpperBound);
         if (boundLabel !== null) {
           parts.push(`bound <= ${boundLabel}`);
         }
-        const gapLabel = formatProgressLogNumber(entry.populationGapUpperBound);
+        const gapLabel = entry.progressSummary ? null : formatProgressLogNumber(entry.populationGapUpperBound);
         if (gapLabel !== null) {
           parts.push(`gap <= ${gapLabel}`);
         }
-        const improvementLabel = formatProgressLogNumber(entry.secondsSinceLastImprovement, {
+        const improvementLabel = entry.progressSummary ? null : formatProgressLogNumber(entry.secondsSinceLastImprovement, {
           maximumFractionDigits: 1,
         });
         if (improvementLabel !== null) {
           parts.push(`last improvement ${improvementLabel}s ago`);
+        }
+        if (entry.note && !parts.includes(entry.note)) {
+          parts.push(entry.note);
         }
 
         detail.textContent = parts.join(" • ");
@@ -1118,8 +1700,24 @@
       elements.resultOverlay.innerHTML = "";
     }
 
+    function getActiveExplainabilityMode() {
+      return normalizeExplainabilityMode();
+    }
+
+    function isExplainabilityMapVisible() {
+      return getActiveExplainabilityMode() !== "layout";
+    }
+
+    function hidesBuildingOverlayForMode(mode = getActiveExplainabilityMode()) {
+      return mode === "service-value";
+    }
+
     function refreshResultOverlay() {
       if (!state.result?.solution || !elements.resultMapGrid.dataset.cols) {
+        clearResultOverlay();
+        return;
+      }
+      if (hidesBuildingOverlayForMode()) {
         clearResultOverlay();
         return;
       }
@@ -1138,6 +1736,10 @@
       const matrix = createSolvedMapMatrix(grid, solution);
       const cols = matrix[0]?.length ?? 0;
       const hoverLabels = createSolvedMapHoverLabels(solution, matrix.length, cols);
+      const explainabilityMode = getActiveExplainabilityMode();
+      const showExplainabilityMap = explainabilityMode !== "layout";
+      const hideOverlayForMode = hidesBuildingOverlayForMode(explainabilityMode);
+      const heatmap = showExplainabilityMap ? createExplainabilityHeatmap(explainabilityMode, grid, solution) : null;
       state.selectedMapBuilding = getSelectedMapPlacement(solution)?.kind ? state.selectedMapBuilding : null;
       state.selectedMapCell = getSelectedMapCell(grid);
       elements.resultMapGrid.innerHTML = "";
@@ -1146,14 +1748,24 @@
       for (let r = 0; r < matrix.length; r += 1) {
         for (let c = 0; c < cols; c += 1) {
           const kind = matrix[r][c];
-          const hoverLabel = hoverLabels[r]?.[c] || "";
+          const visualKind = hideOverlayForMode && kind !== "blocked" ? "empty" : kind;
+          const hoverLabel = hideOverlayForMode ? "" : (hoverLabels[r]?.[c] || "");
+          const explainabilityValue = heatmap?.values?.[r]?.[c] ?? 0;
+          const explainabilityDetail = heatmap?.details?.[r]?.[c] ?? "";
+          const explainabilityValueLabel = describeExplainabilityValue(
+            explainabilityMode,
+            explainabilityValue,
+            explainabilityDetail
+          );
+          const explainabilityLabel = explainabilityValueLabel ? `, ${explainabilityValueLabel}` : "";
           const cell = document.createElement("div");
-          cell.className = `grid-cell ${kind}`;
+          cell.className = `grid-cell ${visualKind}`;
           cell.dataset.r = String(r);
           cell.dataset.c = String(c);
-          cell.setAttribute("aria-label", describeSolvedCell(kind, r, c, hoverLabel));
-          cell.title = hoverLabel || `(${r}, ${c}) ${kind}`;
-          if (kind === "service" || kind === "residential") {
+          cell.setAttribute("aria-label", `${describeSolvedCell(visualKind, r, c, hoverLabel)}${explainabilityLabel}`);
+          cell.title = `${hoverLabel || `(${r}, ${c}) ${visualKind}`}${explainabilityLabel}`;
+          applyExplainabilityHeatmapStyle(cell, explainabilityMode, explainabilityValue, heatmap?.maxValue ?? 0);
+          if (!hideOverlayForMode && (kind === "service" || kind === "residential")) {
             cell.classList.add("selectable");
           }
           if (state.selectedMapCell?.r === r && state.selectedMapCell?.c === c) {
@@ -1164,7 +1776,11 @@
       }
 
       applyMatrixLayout(elements.resultMapGrid);
-      renderBuildingOverlay(solution);
+      if (hideOverlayForMode) {
+        clearResultOverlay();
+      } else {
+        renderBuildingOverlay(solution);
+      }
       renderSelectedBuildingDetail(solution);
     }
 
@@ -1196,6 +1812,7 @@
         elements.residentialResultList.innerHTML = "<li>No residential placements available.</li>";
         elements.remainingServiceList.innerHTML = "<li>No service availability to show.</li>";
         elements.remainingResidentialList.innerHTML = "<li>No residential availability to show.</li>";
+        renderGreedyDiagnostics(null);
         elements.resultMapGrid.innerHTML = "";
         delete elements.resultMapGrid.dataset.cols;
         clearResultOverlay();
@@ -1222,6 +1839,7 @@
         }
         elements.remainingServiceList.innerHTML = "<li>No service availability to show.</li>";
         elements.remainingResidentialList.innerHTML = "<li>No residential availability to show.</li>";
+        renderGreedyDiagnostics(null);
         elements.resultMapGrid.innerHTML = "";
         delete elements.resultMapGrid.dataset.cols;
         clearResultOverlay();
@@ -1247,7 +1865,7 @@
         elements.resultBadge.className = `result-badge ${validation.valid ? "running" : "error"}`;
         elements.validationNotice.className = `notice ${validation.valid ? "info" : "error"}`;
         elements.validationNotice.textContent = validation.valid
-          ? "Showing the best validated layout found so far while the solver keeps running. The first live capture appears as soon as an incumbent is available, then refreshes every 1 minute."
+          ? `Showing the best validated layout found so far while the solver keeps running. The first live capture appears as soon as an incumbent is available, then refreshes every ${formatLiveSnapshotRefreshCadence()}.`
           : `The latest running snapshot needs review: ${validation.errors.join(" ")}`;
       } else if (manualLayout) {
         elements.resultBadge.textContent = pendingManualValidation ? "Edited" : validation.valid ? "Manual" : "Manual review";
@@ -1276,7 +1894,7 @@
       elements.resultServiceCount.textContent = String(stats.serviceCount);
       elements.resultResidentialCount.textContent = String(stats.residentialCount);
       elements.resultElapsed.textContent = formatElapsedTime(state.resultElapsedMs);
-      const cpSatSeedStatus = manualLayout ? "" : formatCpSatSeedStatus(solution);
+      const cpSatSeedStatus = manualLayout ? "" : formatCpSatSeedStatus(solution, stats);
       const autoStageStatus =
         stats.optimizer === "auto" && stats.activeOptimizer
           ? `Auto -> ${getOptimizerLabel(stats.activeOptimizer)}`
@@ -1345,6 +1963,7 @@
       );
 
       renderProgressLog({ liveSnapshot, manualLayout });
+      renderGreedyDiagnostics(solution, { liveSnapshot, manualLayout });
       renderSolvedMap(solvedGrid, solution);
       renderLayoutEditorControls();
       renderExpansionAdvice();

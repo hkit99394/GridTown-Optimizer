@@ -22,6 +22,15 @@
       formatElapsedTime,
       formatSavedTimestamp,
       getSavedLayoutElapsedMs,
+      getSavedLayoutPopulation = (entry) => {
+        const population = Number(
+          entry?.result?.validation?.recomputedTotalPopulation
+          ?? entry?.result?.stats?.totalPopulation
+          ?? entry?.result?.solution?.totalPopulation
+          ?? entry?.continueCpSat?.incumbent?.objective?.value
+        );
+        return Number.isFinite(population) ? Math.max(0, Math.round(population)) : null;
+      },
       isGridLike,
       normalizeElapsedMs,
       normalizeOptimizer,
@@ -112,7 +121,11 @@
         elements.savedLayoutsSelect,
         entries,
         "Select a saved layout",
-        (entry) => `${entry.name} • ${formatElapsedTime(getSavedLayoutElapsedMs(entry))} • ${formatSavedTimestamp(entry.savedAt)}`
+        (entry) => {
+          const population = getSavedLayoutPopulation(entry);
+          const populationLabel = population === null ? "Population n/a" : `Population ${Number(population).toLocaleString()}`;
+          return `${entry.name} • ${populationLabel} • ${formatSavedTimestamp(entry.savedAt)}`;
+        }
       );
       if (selectedId && entries.some((entry) => entry.id === selectedId)) {
         elements.savedLayoutsSelect.value = selectedId;

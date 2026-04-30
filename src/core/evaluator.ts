@@ -3,6 +3,7 @@
  */
 
 import type {
+  LayoutConstraintValidationResult,
   LayoutEvaluationInput,
   LayoutEvaluationResult,
   EvaluatedResidentialResult,
@@ -12,6 +13,7 @@ import type {
   SolverParams,
   EvaluatedServicePlacement,
 } from "./types.js";
+import { cellFromKey } from "./types.js";
 import { isAllowed } from "./grid.js";
 import {
   serviceFootprint,
@@ -19,7 +21,7 @@ import {
   buildServiceEffectZoneSet,
   normalizeServicePlacement,
 } from "./buildings.js";
-import { isAdjacentToRoads, roadsConnectedToRow0 } from "./roads.js";
+import { isAdjacentToRoads, roadsConnectedToRoadAnchor } from "./roads.js";
 import {
   compatibleResidentialTypeIndices,
   getBuildingLimits,
@@ -28,8 +30,30 @@ import {
   normalizeSize,
 } from "./rules.js";
 
+export interface SolutionValidationOptions {
+  ignoreReportedPopulation?: boolean;
+}
+
 function clamp(v: number, lo: number, hi: number): number {
   return Math.min(Math.max(v, lo), hi);
+}
+
+function compareCellKeys(a: string, b: string): number {
+  const cellA = cellFromKey(a);
+  const cellB = cellFromKey(b);
+  return cellA.r - cellB.r || cellA.c - cellB.c;
+}
+
+function formatCellKey(key: string): string {
+  const { r, c } = cellFromKey(key);
+  return `(${r},${c})`;
+}
+
+function summarizeCellKeys(keys: string[], limit = 12): string {
+  const sorted = [...keys].sort(compareCellKeys);
+  const shown = sorted.slice(0, limit).map(formatCellKey).join(", ");
+  const hiddenCount = sorted.length - limit;
+  return hiddenCount > 0 ? `${shown}, and ${hiddenCount} more` : shown;
 }
 
 function computeResidentialBoosts(
@@ -121,7 +145,7 @@ function assignGroupExact(
   return { ok: true, assignedPop };
 }
 
-export function evaluateLayout(input: LayoutEvaluationInput): LayoutEvaluationResult {
+export function validateLayoutConstraints(input: LayoutEvaluationInput): LayoutConstraintValidationResult {
   const { grid, roads, services, residentials, params } = input;
   const errors: string[] = [];
   const { maxServices, maxResidentials } = getBuildingLimits(params);
@@ -174,17 +198,21 @@ export function evaluateLayout(input: LayoutEvaluationInput): LayoutEvaluationRe
     }
   }
 
-  // Road connectivity to row 0.
-  const connected = roadsConnectedToRow0(grid, roads);
+  // Road connectivity to row 0 or column 0.
+  const connected = roadsConnectedToRoadAnchor(grid, roads);
   if (connected.size === 0) {
-    errors.push("Road network does not touch row 0.");
+    errors.push("Road network does not touch row 0 or column 0.");
   }
   if (connected.size !== roads.size) {
-    errors.push("Some road cells are not connected to the row-0-connected road network.");
+    const disconnectedRoads = [...roads].filter((key) => !connected.has(key));
+    const disconnectedSummary = disconnectedRoads.length > 0
+      ? ` Disconnected road cells: ${summarizeCellKeys(disconnectedRoads)}.`
+      : "";
+    errors.push(`Some road cells are not connected to any row-0-or-column-0-connected road component.${disconnectedSummary}`);
   }
 
   // Building-road adjacency.
-  // Buildings that cover row 0 are treated as connected to the road anchor.
+  // Buildings that cover row 0 or column 0 are treated as connected to the road anchor.
   for (const s of services) {
     const normalized = normalizeServicePlacement(s);
     if (!isAdjacentToRoads(roads, normalized.r, normalized.c, normalized.rows, normalized.cols)) {
@@ -196,6 +224,17 @@ export function evaluateLayout(input: LayoutEvaluationInput): LayoutEvaluationRe
       errors.push(`Residential at (${res.r},${res.c}) size ${res.rows}x${res.cols} is not adjacent to a road.`);
     }
   }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+  };
+}
+
+export function evaluateLayout(input: LayoutEvaluationInput): LayoutEvaluationResult {
+  const { grid, services, residentials, params } = input;
+  const constraintValidation = validateLayoutConstraints(input);
+  const errors = [...constraintValidation.errors];
 
   // Population computation.
   const boosts = computeResidentialBoosts(grid, services, residentials);
@@ -246,7 +285,37 @@ export function evaluateLayout(input: LayoutEvaluationInput): LayoutEvaluationRe
     errors,
     populations: popRows,
     totalPopulation,
+    boosts,
   };
+}
+
+export function formatLayoutValidationErrors(
+  validation: Pick<LayoutConstraintValidationResult | LayoutEvaluationResult, "errors">
+): string {
+  return validation.errors.join(" ");
+}
+
+export function formatLayoutEvaluationErrors(evaluation: Pick<LayoutEvaluationResult, "errors">): string {
+  return formatLayoutValidationErrors(evaluation);
+}
+
+export function assertValidLayoutConstraints(
+  input: LayoutEvaluationInput,
+  messagePrefix = "Invalid layout"
+): LayoutConstraintValidationResult {
+  const validation = validateLayoutConstraints(input);
+  if (!validation.valid) {
+    throw new Error(`${messagePrefix}: ${formatLayoutValidationErrors(validation)}`);
+  }
+  return validation;
+}
+
+export function assertValidLayout(input: LayoutEvaluationInput, messagePrefix = "Invalid layout"): LayoutEvaluationResult {
+  const evaluation = evaluateLayout(input);
+  if (!evaluation.valid) {
+    throw new Error(`${messagePrefix}: ${formatLayoutValidationErrors(evaluation)}`);
+  }
+  return evaluation;
 }
 
 function validateServiceTypeAssignments(solution: Solution, params: SolverParams, errors: string[]): void {
@@ -350,7 +419,10 @@ function recomputeSolutionPopulations(solution: Solution, params: SolverParams, 
   });
 }
 
-export function validateSolution(input: SolutionValidationInput): SolutionValidationResult {
+export function validateSolution(
+  input: SolutionValidationInput,
+  options: SolutionValidationOptions = {}
+): SolutionValidationResult {
   const { grid, solution, params } = input;
   const errors: string[] = [];
 
@@ -359,7 +431,7 @@ export function validateSolution(input: SolutionValidationInput): SolutionValida
       `Solution reports ${solution.servicePopulationIncreases.length} service bonuses for ${solution.services.length} services.`
     );
   }
-  if (solution.populations.length !== solution.residentials.length) {
+  if (!options.ignoreReportedPopulation && solution.populations.length !== solution.residentials.length) {
     errors.push(
       `Solution reports ${solution.populations.length} residential populations for ${solution.residentials.length} residentials.`
     );
@@ -382,14 +454,13 @@ export function validateSolution(input: SolutionValidationInput): SolutionValida
 
   for (const error of layoutEvaluation.errors) errors.push(error);
 
-  const boosts = computeResidentialBoosts(grid, services, solution.residentials);
   const recomputedPopulations =
     solution.residentialTypeIndices.length === solution.residentials.length
-      ? recomputeSolutionPopulations(solution, params, boosts)
+      ? recomputeSolutionPopulations(solution, params, layoutEvaluation.boosts)
       : layoutEvaluation.populations.map((row) => row.population);
   const recomputedTotalPopulation = recomputedPopulations.reduce((sum, population) => sum + population, 0);
 
-  if (solution.populations.length === recomputedPopulations.length) {
+  if (!options.ignoreReportedPopulation && solution.populations.length === recomputedPopulations.length) {
     for (let i = 0; i < recomputedPopulations.length; i++) {
       if (solution.populations[i] !== recomputedPopulations[i]) {
         errors.push(
@@ -399,7 +470,7 @@ export function validateSolution(input: SolutionValidationInput): SolutionValida
     }
   }
 
-  if (solution.totalPopulation !== recomputedTotalPopulation) {
+  if (!options.ignoreReportedPopulation && solution.totalPopulation !== recomputedTotalPopulation) {
     errors.push(
       `Solution reports total population ${solution.totalPopulation}, expected ${recomputedTotalPopulation}.`
     );

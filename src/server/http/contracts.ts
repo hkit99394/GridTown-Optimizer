@@ -1,9 +1,6 @@
-import {
-  materializeSerializedSolution,
-  serializeSolution,
-} from "../../core/solutionSerialization.js";
-import { validateSolutionMap } from "../../core/map.js";
-import type { Grid, SerializedSolution, Solution, SolverParams } from "../../core/types.js";
+import { materializeSerializedSolution } from "../../core/solutionSerialization.js";
+import { assertValidSerializedSolutionPayload } from "../../core/solverInputValidation.js";
+import type { Grid, SerializedSolution, SolverParams } from "../../core/types.js";
 
 export interface SolveRequest {
   grid: Grid;
@@ -14,44 +11,32 @@ export interface SolveRequest {
 export interface LayoutEvaluateRequest {
   grid: Grid;
   params: SolverParams;
-  solution: SerializedSolution;
+  solution: unknown;
 }
 
 export interface CancelSolveRequest {
   requestId: string;
 }
 
+const LOCAL_RUNTIME_CP_SAT_KEYS = new Set([
+  "pythonExecutable",
+  "scriptPath",
+  "stopFilePath",
+  "snapshotFilePath",
+]);
+const LOCAL_RUNTIME_SOLVER_KEYS = new Set([
+  "stopFilePath",
+  "snapshotFilePath",
+]);
+
+const LOCAL_RUNTIME_PARAM_SECTIONS = [
+  { key: "cpSat", keysToStrip: LOCAL_RUNTIME_CP_SAT_KEYS },
+  { key: "greedy", keysToStrip: LOCAL_RUNTIME_SOLVER_KEYS },
+  { key: "lns", keysToStrip: LOCAL_RUNTIME_SOLVER_KEYS },
+] as const;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
-}
-
-function isInteger(value: unknown, minimum = 0): value is number {
-  return typeof value === "number" && Number.isInteger(value) && value >= minimum;
-}
-
-function isRoadKey(value: unknown): value is string {
-  if (typeof value !== "string") return false;
-  const parts = value.split(",");
-  if (parts.length !== 2) return false;
-  const [row, col] = parts.map(Number);
-  return Number.isInteger(row) && row >= 0 && Number.isInteger(col) && col >= 0;
-}
-
-function isSerializedServicePlacement(value: unknown): boolean {
-  if (!isRecord(value)) return false;
-  return isInteger(value.r)
-    && isInteger(value.c)
-    && isInteger(value.rows, 1)
-    && isInteger(value.cols, 1)
-    && isInteger(value.range);
-}
-
-function isSerializedResidentialPlacement(value: unknown): boolean {
-  if (!isRecord(value)) return false;
-  return isInteger(value.r)
-    && isInteger(value.c)
-    && isInteger(value.rows, 1)
-    && isInteger(value.cols, 1);
 }
 
 export function isGrid(value: unknown): value is Grid {
@@ -77,110 +62,62 @@ export function isCancelSolveRequest(value: unknown): value is CancelSolveReques
 }
 
 export function isSerializedSolution(value: unknown): value is SerializedSolution {
-  if (typeof value !== "object" || value === null) return false;
-  const candidate = value as Partial<SerializedSolution>;
-  return Array.isArray(candidate.roads)
-    && candidate.roads.every((road) => isRoadKey(road))
-    && Array.isArray(candidate.services)
-    && candidate.services.every((service) => isSerializedServicePlacement(service))
-    && Array.isArray(candidate.serviceTypeIndices)
-    && candidate.serviceTypeIndices.length === candidate.services.length
-    && candidate.serviceTypeIndices.every((typeIndex) => isInteger(typeIndex, -1))
-    && Array.isArray(candidate.servicePopulationIncreases)
-    && candidate.servicePopulationIncreases.length === candidate.services.length
-    && candidate.servicePopulationIncreases.every((bonus) => isInteger(bonus))
-    && Array.isArray(candidate.residentials)
-    && candidate.residentials.every((residential) => isSerializedResidentialPlacement(residential))
-    && Array.isArray(candidate.residentialTypeIndices)
-    && candidate.residentialTypeIndices.length === candidate.residentials.length
-    && candidate.residentialTypeIndices.every((typeIndex) => isInteger(typeIndex, -1))
-    && Array.isArray(candidate.populations)
-    && candidate.populations.length === candidate.residentials.length
-    && candidate.populations.every((population) => isInteger(population))
-    && isInteger(candidate.totalPopulation);
+  try {
+    assertValidSerializedSolutionPayload(value);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function isLayoutEvaluateRequest(value: unknown): value is LayoutEvaluateRequest {
   if (typeof value !== "object" || value === null) return false;
   const candidate = value as Partial<LayoutEvaluateRequest>;
-  return isGrid(candidate.grid) && typeof candidate.params === "object" && candidate.params !== null && isSerializedSolution(candidate.solution);
+  return isGrid(candidate.grid)
+    && typeof candidate.params === "object"
+    && candidate.params !== null
+    && typeof candidate.solution === "object"
+    && candidate.solution !== null;
 }
 
+function stripKeysFromRecord<T>(value: T, keysToStrip: Set<string>): T {
+  if (!isRecord(value)) return value;
+
+  let changed = false;
+  const next: Record<string, unknown> = {};
+  for (const [key, entryValue] of Object.entries(value)) {
+    if (keysToStrip.has(key) && typeof entryValue === "string") {
+      changed = true;
+      continue;
+    }
+    next[key] = entryValue;
+  }
+  return changed ? (next as T) : value;
+}
+
+export function sanitizePlannerSolverParams(params: SolverParams): SolverParams {
+  if (!isRecord(params)) return params;
+
+  let changed = false;
+  const sanitizedParams: SolverParams = { ...params };
+  for (const { key, keysToStrip } of LOCAL_RUNTIME_PARAM_SECTIONS) {
+    const sanitized = stripKeysFromRecord(params[key], keysToStrip);
+    if (sanitized === params[key]) {
+      continue;
+    }
+    changed = true;
+    (sanitizedParams as Record<string, unknown>)[key] = sanitized;
+  }
+  return changed ? sanitizedParams : params;
+}
+
+export function sanitizeSolveRequest<T extends SolveRequest | LayoutEvaluateRequest>(payload: T): T {
+  return {
+    ...payload,
+    params: sanitizePlannerSolverParams(payload.params),
+  };
+}
+
+export { assertValidSerializedSolutionPayload };
 export { materializeSerializedSolution };
-
-export function buildSolveResponsePayload(grid: Grid, params: SolverParams, solution: Solution) {
-  return validateSolutionMap({
-    grid,
-    solution,
-    params,
-  });
-}
-
-export function buildSolveResponse(grid: Grid, params: SolverParams, solution: Solution) {
-  const validation = buildSolveResponsePayload(grid, params, solution);
-  return {
-    solution: serializeSolution(solution),
-    validation: {
-      valid: validation.valid,
-      errors: validation.errors,
-      recomputedPopulations: validation.recomputedPopulations,
-      recomputedTotalPopulation: validation.recomputedTotalPopulation,
-      mapRows: validation.mapRows,
-      mapText: validation.mapText,
-    },
-    stats: {
-      optimizer: solution.optimizer,
-      activeOptimizer: solution.activeOptimizer,
-      autoStage: solution.autoStage,
-      manualLayout: Boolean(solution.manualLayout),
-      cpSatStatus: solution.cpSatStatus ?? null,
-      stoppedByUser: Boolean(solution.stoppedByUser),
-      stoppedByTimeLimit: Boolean(solution.stoppedByTimeLimit),
-      totalPopulation: solution.totalPopulation,
-      roadCount: solution.roads.size,
-      serviceCount: solution.services.length,
-      residentialCount: solution.residentials.length,
-    },
-  };
-}
-
-export function buildManualLayoutResponse(grid: Grid, params: SolverParams, solution: Solution) {
-  const initialValidation = buildSolveResponsePayload(grid, params, solution);
-  const normalizedSolution: Solution = {
-    ...solution,
-    optimizer: undefined,
-    manualLayout: true,
-    cpSatStatus: undefined,
-    cpSatObjectivePolicy: undefined,
-    cpSatTelemetry: undefined,
-    cpSatPortfolio: undefined,
-    stoppedByUser: false,
-    populations: [...initialValidation.recomputedPopulations],
-    totalPopulation: initialValidation.recomputedTotalPopulation,
-  };
-  const validation = buildSolveResponsePayload(grid, params, normalizedSolution);
-
-  return {
-    solution: serializeSolution(normalizedSolution),
-    validation: {
-      valid: validation.valid,
-      errors: validation.errors,
-      recomputedPopulations: validation.recomputedPopulations,
-      recomputedTotalPopulation: validation.recomputedTotalPopulation,
-      mapRows: validation.mapRows,
-      mapText: validation.mapText,
-    },
-    stats: {
-      optimizer: normalizedSolution.optimizer,
-      activeOptimizer: normalizedSolution.activeOptimizer,
-      autoStage: normalizedSolution.autoStage,
-      manualLayout: Boolean(normalizedSolution.manualLayout),
-      cpSatStatus: normalizedSolution.cpSatStatus ?? null,
-      stoppedByUser: Boolean(normalizedSolution.stoppedByUser),
-      totalPopulation: normalizedSolution.totalPopulation,
-      roadCount: normalizedSolution.roads.size,
-      serviceCount: normalizedSolution.services.length,
-      residentialCount: normalizedSolution.residentials.length,
-    },
-  };
-}
+export { buildManualLayoutResponse, buildSolveResponse, buildSolveResponsePayload } from "./solutionResponse.js";

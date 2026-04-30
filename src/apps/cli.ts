@@ -1,15 +1,19 @@
 /**
  * Example CLI runner for local experimentation.
  *
- * Product framing: `auto` is the recommended quality path, and `greedy`
- * stays the fast standalone seed / advanced mode.
+ * Product framing: `auto` is the recommended quality path and owns the capped
+ * fast Greedy seed stage; standalone `greedy` is the heavy heuristic /
+ * advanced inspection mode.
  */
 
-import type { Grid, OptimizerName } from "../core/types.js";
+import type { Grid, OptimizerName, SolverParams } from "../core/types.js";
 import { normalizeServicePlacement } from "../core/buildings.js";
 import { formatSolutionMap, validateSolutionMap } from "../core/index.js";
 import { solveAsync } from "../runtime/solve.js";
 import { describeAutoStopReason, startAutoSolve } from "../auto/index.js";
+import { startCpSatSolve } from "../cp-sat/solver.js";
+import { runCliMain } from "./cliEntrypoint.js";
+import { parseExampleCliArgs } from "./exampleCliArgs.js";
 
 const DEFAULT_PARAMS = {
   serviceTypes: [
@@ -31,6 +35,8 @@ const DEFAULT_PARAMS = {
     { w: 2, h: 2, min: 280, max: 840, avail: 2 },
     { w: 2, h: 2, min: 300, max: 900, avail: 2 },
   ],
+  // Standalone Greedy mirrors the heavy UI profile. Auto uses AUTO_GREEDY_PARAMS
+  // below when it only needs a capped fast seed stage.
   greedy: {
     localSearch: true,
     randomSeed: undefined,
@@ -53,40 +59,9 @@ const AUTO_GREEDY_PARAMS = {
   serviceExactMaxCombinations: 512,
 };
 
-function readCliArgs(): string[] {
-  return process.argv.slice(2);
-}
-
-function readCliOptimizer(): OptimizerName {
-  const value = readCliArgs().find((arg) => {
-    const trimmed = arg.trim();
-    return trimmed === "auto" || trimmed === "greedy" || trimmed === "lns" || trimmed === "cp-sat";
-  });
-  if (value === "auto") return "auto";
-  if (value === "cp-sat") return "cp-sat";
-  if (value === "lns") return "lns";
-  return "auto";
-}
-
-function readCliGreedyRandomSeed(): number | undefined {
-  const args = readCliArgs();
-  for (let index = 0; index < args.length; index++) {
-    const arg = args[index].trim();
-    if (arg.startsWith("--greedy-seed=")) {
-      const value = Number.parseInt(arg.slice("--greedy-seed=".length), 10);
-      return Number.isInteger(value) ? value : undefined;
-    }
-    if (arg === "--greedy-seed") {
-      const value = Number.parseInt(args[index + 1] ?? "", 10);
-      return Number.isInteger(value) ? value : undefined;
-    }
-  }
-  return undefined;
-}
-
 function describeOptimizerRole(optimizer: OptimizerName): string {
   if (optimizer === "auto") {
-    return "Recommended quality path. Greedy seeds the run, then LNS and bounded CP-SAT continue improving the incumbent.";
+    return "Recommended quality path. A capped fast Greedy seed starts the run, then LNS and bounded CP-SAT continue improving the incumbent.";
   }
   if (optimizer === "lns") {
     return "Manual improvement mode. Starts from a greedy seed, then repairs neighborhoods with CP-SAT.";
@@ -94,12 +69,11 @@ function describeOptimizerRole(optimizer: OptimizerName): string {
   if (optimizer === "cp-sat") {
     return "Bounded polish mode. Usually strongest after a seed already exists.";
   }
-  return "Fast standalone seed / advanced mode. Best for quick legal layouts, seed-quality checks, and heuristic inspection.";
+  return "Heavy standalone heuristic / advanced inspection mode. Best for Greedy-only quality checks and heuristic tuning.";
 }
 
 export async function runExample(): Promise<void> {
-  const optimizer = readCliOptimizer();
-  const greedyRandomSeed = readCliGreedyRandomSeed();
+  const { optimizer, greedyRandomSeed, cpSatOptions } = parseExampleCliArgs();
   const grid: Grid = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -115,13 +89,14 @@ export async function runExample(): Promise<void> {
     [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
   ];
 
-  const params = {
+  const params: SolverParams = {
     ...DEFAULT_PARAMS,
     optimizer,
     greedy: {
       ...(optimizer === "auto" ? AUTO_GREEDY_PARAMS : DEFAULT_PARAMS.greedy),
       ...(greedyRandomSeed !== undefined ? { randomSeed: greedyRandomSeed } : {}),
     },
+    ...(cpSatOptions ? { cpSat: cpSatOptions } : {}),
   };
   const solution = optimizer === "auto"
     ? await (async () => {
@@ -158,36 +133,9 @@ export async function runExample(): Promise<void> {
           clearInterval(progressTicker);
         }
       })()
-    : await solveAsync(
-        grid,
-        params,
-        optimizer === "cp-sat"
-          ? {
-              onProgress: (update) => {
-                if (update.kind === "portfolio-worker-complete" && update.worker) {
-                  console.log(
-                    "[CP-SAT progress]",
-                    `worker=${update.worker.workerIndex}`,
-                    `status=${update.worker.status}`,
-                    `population=${update.worker.totalPopulation ?? "n/a"}`
-                  );
-                  return;
-                }
-                if (!update.telemetry) {
-                  return;
-                }
-                console.log(
-                  "[CP-SAT progress]",
-                  `kind=${update.kind}`,
-                  `wall=${update.telemetry.solveWallTimeSeconds.toFixed(3)}s`,
-                  `pop=${update.telemetry.incumbentPopulation ?? "n/a"}`,
-                  `bound=${update.telemetry.bestPopulationUpperBound ?? "n/a"}`,
-                  `gap=${update.telemetry.populationGapUpperBound ?? "n/a"}`
-                );
-              },
-            }
-          : undefined
-      );
+    : optimizer === "cp-sat"
+      ? await runCpSatExampleSolve(grid, params)
+      : await solveAsync(grid, params);
   const validation = validateSolutionMap({ grid, solution, params });
 
   console.log("=== City Builder Solution ===\n");
@@ -203,7 +151,15 @@ export async function runExample(): Promise<void> {
   if (solution.autoStage?.stopReason) {
     console.log("Auto stop reason:", describeAutoStopReason(solution.autoStage.stopReason) ?? solution.autoStage.stopReason);
   }
-  if (params.greedy.randomSeed !== undefined) console.log("Greedy random seed:", params.greedy.randomSeed);
+  if (params.greedy?.randomSeed !== undefined) console.log("Greedy random seed:", params.greedy.randomSeed);
+  if (params.cpSat) {
+    console.log(
+      "CP-SAT limits:",
+      `time=${params.cpSat.timeLimitSeconds ?? "none"}s,`,
+      `noImprovement=${params.cpSat.noImprovementTimeoutSeconds ?? "none"}s,`,
+      `workers=${params.cpSat.numWorkers ?? "default"}`
+    );
+  }
   if (solution.cpSatStatus) console.log("CP-SAT status:", solution.cpSatStatus);
   if (solution.cpSatObjectivePolicy) console.log("CP-SAT objective:", solution.cpSatObjectivePolicy.summary);
   if (solution.cpSatTelemetry) {
@@ -246,7 +202,41 @@ export async function runExample(): Promise<void> {
   console.log(formatSolutionMap(grid, solution));
 }
 
-void runExample().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+async function runCpSatExampleSolve(grid: Grid, params: SolverParams) {
+  const handle = startCpSatSolve(grid, params);
+  let stopRequested = false;
+  let lastPopulation: number | null = null;
+  let lastStatus: string | null = null;
+
+  const requestStop = () => {
+    if (stopRequested) return;
+    stopRequested = true;
+    console.log("\nStopping CP-SAT after current feasible snapshot...");
+    handle.cancel();
+  };
+
+  process.once("SIGINT", requestStop);
+  process.once("SIGTERM", requestStop);
+
+  const progressTicker = setInterval(() => {
+    const snapshot = handle.getLatestSnapshot();
+    if (!snapshot) return;
+    const status = snapshot.cpSatStatus ?? null;
+    const population = snapshot.totalPopulation;
+    if (status === lastStatus && population === lastPopulation) return;
+    lastStatus = status;
+    lastPopulation = population;
+    console.log("[CP-SAT progress]", `status=${status ?? "snapshot"}`, `best=${population}`);
+  }, 1000);
+  progressTicker.unref?.();
+
+  try {
+    return await handle.promise;
+  } finally {
+    clearInterval(progressTicker);
+    process.removeListener("SIGINT", requestStop);
+    process.removeListener("SIGTERM", requestStop);
+  }
+}
+
+runCliMain(runExample);

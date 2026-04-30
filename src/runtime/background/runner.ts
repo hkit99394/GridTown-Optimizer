@@ -9,12 +9,17 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import type { BackgroundSolveHandle, BackgroundSolveSnapshotState, Solution } from "../../core/types.js";
+import type { ChildProcessWithoutNullStreams } from "node:child_process";
 
 const DEFAULT_BUFFER_LIMIT = 16 * 1024 * 1024;
 
 interface SolverFilePaths {
   stopFilePath: string;
   snapshotFilePath: string;
+}
+
+interface SolverTempFiles extends SolverFilePaths {
+  directoryPath: string;
 }
 
 export interface JsonBackgroundSolverConfig<TRaw> {
@@ -31,6 +36,26 @@ export interface JsonBackgroundSolverConfig<TRaw> {
   bufferLimitBytes?: number;
   launchContext?: string;
   readStoppedByUser?: (raw: TRaw) => boolean;
+  forcedTerminationDelayMs?: number;
+}
+
+interface ClosedSolverState<TRaw> {
+  code: number | null;
+  signal: NodeJS.Signals | null;
+  stdout: string;
+  stderr: string;
+  stopRequested: boolean;
+  streamError: Error | null;
+  snapshotRaw: TRaw | null;
+}
+
+function createSolverTempFiles(stopDirectoryPrefix: string): SolverTempFiles {
+  const directoryPath = mkdtempSync(join(tmpdir(), stopDirectoryPrefix));
+  return {
+    directoryPath,
+    stopFilePath: join(directoryPath, "stop"),
+    snapshotFilePath: join(directoryPath, "snapshot.json"),
+  };
 }
 
 function appendBufferedOutput(
@@ -47,15 +72,89 @@ function appendBufferedOutput(
   return next;
 }
 
-export function startJsonBackgroundSolve<TRaw>(config: JsonBackgroundSolverConfig<TRaw>): BackgroundSolveHandle {
-  const tempStopDirectory = mkdtempSync(join(tmpdir(), config.stopDirectoryPrefix));
-  const stopFilePath = join(tempStopDirectory, "stop");
-  const snapshotFilePath = join(tempStopDirectory, "snapshot.json");
-  const request = config.buildRequest({ stopFilePath, snapshotFilePath });
-  const child = spawn(config.command, config.args, {
+function spawnBackgroundSolverProcess(command: string, args: string[]): ChildProcessWithoutNullStreams {
+  return spawn(command, args, {
     stdio: ["pipe", "pipe", "pipe"],
+    detached: process.platform !== "win32",
   });
+}
+
+function processStillRunning(child: ChildProcessWithoutNullStreams): boolean {
+  return child.exitCode == null && child.signalCode == null;
+}
+
+function buildLaunchErrorMessage(solverLabel: string, launchContext: string | undefined, error: Error): string {
+  return `Failed to launch ${solverLabel} backend${launchContext ? ` ${launchContext}` : ""}: ${error.message}`;
+}
+
+function buildSolverFailureMessage<TRaw>(
+  config: JsonBackgroundSolverConfig<TRaw>,
+  state: ClosedSolverState<TRaw>
+): string {
+  const trimmedStderr = state.stderr.trim();
+  const trimmedStdout = state.stdout.trim();
+  return `${config.solverLabel} backend failed with exit code ${state.code ?? "unknown"}${
+    state.signal ? ` (signal ${state.signal})` : ""
+  }.${trimmedStderr ? ` stderr: ${trimmedStderr}` : ""}${trimmedStdout ? ` stdout: ${trimmedStdout}` : ""}`;
+}
+
+function resolveClosedSolverSolution<TRaw>(
+  config: JsonBackgroundSolverConfig<TRaw>,
+  state: ClosedSolverState<TRaw>
+): Solution {
+  if (state.streamError) {
+    throw state.streamError;
+  }
+
+  if (state.code !== 0) {
+    if (state.stopRequested && state.snapshotRaw) {
+      return config.materializeSolution(state.snapshotRaw, true);
+    }
+    if (state.stopRequested) {
+      throw new Error(state.stderr.trim() || config.stoppedBeforeFeasibleMessage);
+    }
+    throw new Error(buildSolverFailureMessage(config, state));
+  }
+
+  try {
+    const trimmedStdout = state.stdout.trim();
+    const raw = trimmedStdout ? config.parseRaw(trimmedStdout) : state.snapshotRaw;
+    if (!raw) {
+      throw new Error(config.noSolutionMessage);
+    }
+    return config.materializeSolution(
+      raw,
+      state.stopRequested || Boolean(config.readStoppedByUser?.(raw))
+    );
+  } catch (error) {
+    if (state.stopRequested && state.snapshotRaw) {
+      try {
+        return config.materializeSolution(state.snapshotRaw, true);
+      } catch {
+        // Fall through to the original parse/materialization error below.
+      }
+    }
+    throw error;
+  }
+}
+
+function readSnapshotFileIfPresent<TRaw>(
+  snapshotFilePath: string,
+  parseRaw: (text: string) => TRaw,
+  fallback: TRaw | null
+): TRaw | null {
+  if (!existsSync(snapshotFilePath)) return fallback;
+  try {
+    return parseRaw(readFileSync(snapshotFilePath, "utf8"));
+  } catch {
+    return fallback;
+  }
+}
+
+export function startJsonBackgroundSolve<TRaw>(config: JsonBackgroundSolverConfig<TRaw>): BackgroundSolveHandle {
+  const tempFiles = createSolverTempFiles(config.stopDirectoryPrefix);
   const bufferLimitBytes = config.bufferLimitBytes ?? DEFAULT_BUFFER_LIMIT;
+  const forcedTerminationDelayMs = Math.max(0, config.forcedTerminationDelayMs ?? 5000);
 
   let stdout = "";
   let stderr = "";
@@ -68,16 +167,34 @@ export function startJsonBackgroundSolve<TRaw>(config: JsonBackgroundSolverConfi
   const cleanupTempDirectory = (): void => {
     if (cleanedUp) return;
     cleanedUp = true;
-    rmSync(tempStopDirectory, { recursive: true, force: true });
+    rmSync(tempFiles.directoryPath, { recursive: true, force: true });
   };
 
+  let request: unknown;
+  try {
+    request = config.buildRequest({
+      stopFilePath: tempFiles.stopFilePath,
+      snapshotFilePath: tempFiles.snapshotFilePath,
+    });
+  } catch (error) {
+    cleanupTempDirectory();
+    throw error;
+  }
+
+  let child: ChildProcessWithoutNullStreams;
+  try {
+    child = spawnBackgroundSolverProcess(config.command, config.args);
+  } catch (error) {
+    cleanupTempDirectory();
+    throw new Error(buildLaunchErrorMessage(config.solverLabel, config.launchContext, error as Error));
+  }
+
   const readLatestSnapshotRaw = (): TRaw | null => {
-    if (!existsSync(snapshotFilePath)) return latestSnapshotRaw;
-    try {
-      latestSnapshotRaw = config.parseRaw(readFileSync(snapshotFilePath, "utf8"));
-    } catch {
-      return latestSnapshotRaw;
-    }
+    latestSnapshotRaw = readSnapshotFileIfPresent(
+      tempFiles.snapshotFilePath,
+      config.parseRaw,
+      latestSnapshotRaw
+    );
     return latestSnapshotRaw;
   };
 
@@ -87,21 +204,34 @@ export function startJsonBackgroundSolve<TRaw>(config: JsonBackgroundSolverConfi
     return config.materializeSolution(raw, stoppedByUser);
   };
 
+  const killChildProcessGroup = (signal: NodeJS.Signals): void => {
+    if (!processStillRunning(child)) return;
+    try {
+      if (process.platform !== "win32" && typeof child.pid === "number") {
+        process.kill(-child.pid, signal);
+        return;
+      }
+    } catch {
+      // Fall back to killing the direct child below.
+    }
+    child.kill(signal);
+  };
+
   const scheduleForcedTermination = (): void => {
     if (forcedTerminationTimer) return;
     forcedTerminationTimer = setTimeout(() => {
-      if (child.exitCode == null && child.signalCode == null) child.kill("SIGKILL");
-    }, 5000);
+      killChildProcessGroup("SIGKILL");
+    }, forcedTerminationDelayMs);
     forcedTerminationTimer.unref?.();
   };
 
   const cancel = (): void => {
     stopRequested = true;
-    if (child.exitCode != null || child.signalCode != null) return;
+    if (!processStillRunning(child)) return;
     try {
-      writeFileSync(stopFilePath, "stop\n");
+      writeFileSync(tempFiles.stopFilePath, "stop\n");
     } catch {
-      child.kill("SIGTERM");
+      killChildProcessGroup("SIGTERM");
     }
     scheduleForcedTermination();
   };
@@ -109,13 +239,7 @@ export function startJsonBackgroundSolve<TRaw>(config: JsonBackgroundSolverConfi
   const promise = new Promise<Solution>((resolvePromise, rejectPromise) => {
     child.once("error", (error) => {
       cleanupTempDirectory();
-      rejectPromise(
-        new Error(
-          `Failed to launch ${config.solverLabel} backend${
-            config.launchContext ? ` ${config.launchContext}` : ""
-          }: ${error.message}`
-        )
-      );
+      rejectPromise(new Error(buildLaunchErrorMessage(config.solverLabel, config.launchContext, error)));
     });
 
     child.stdout.on("data", (chunk) => {
@@ -141,53 +265,17 @@ export function startJsonBackgroundSolve<TRaw>(config: JsonBackgroundSolverConfi
       const snapshotRaw = readLatestSnapshotRaw();
       cleanupTempDirectory();
 
-      if (streamError) {
-        rejectPromise(streamError);
-        return;
-      }
-
-      if (code !== 0) {
-        const trimmedStderr = stderr.trim();
-        const trimmedStdout = stdout.trim();
-        if (stopRequested && snapshotRaw) {
-          try {
-            resolvePromise(config.materializeSolution(snapshotRaw, true));
-            return;
-          } catch (error) {
-            rejectPromise(error as Error);
-            return;
-          }
-        }
-        if (stopRequested) {
-          rejectPromise(new Error(trimmedStderr || config.stoppedBeforeFeasibleMessage));
-          return;
-        }
-        rejectPromise(
-          new Error(
-            `${config.solverLabel} backend failed with exit code ${code ?? "unknown"}${
-              signal ? ` (signal ${signal})` : ""
-            }.${trimmedStderr ? ` stderr: ${trimmedStderr}` : ""}${trimmedStdout ? ` stdout: ${trimmedStdout}` : ""}`
-          )
-        );
-        return;
-      }
-
       try {
-        const trimmedStdout = stdout.trim();
-        const raw = trimmedStdout ? config.parseRaw(trimmedStdout) : snapshotRaw;
-        if (!raw) {
-          throw new Error(config.noSolutionMessage);
-        }
-        resolvePromise(config.materializeSolution(raw, stopRequested || Boolean(config.readStoppedByUser?.(raw))));
+        resolvePromise(resolveClosedSolverSolution(config, {
+          code,
+          signal,
+          stdout,
+          stderr,
+          stopRequested,
+          streamError,
+          snapshotRaw,
+        }));
       } catch (error) {
-        if (stopRequested && snapshotRaw) {
-          try {
-            resolvePromise(config.materializeSolution(snapshotRaw, true));
-            return;
-          } catch {
-            // Fall through to the original parse/materialization error below.
-          }
-        }
         rejectPromise(error as Error);
       }
     });

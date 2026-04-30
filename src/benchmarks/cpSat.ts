@@ -1,6 +1,20 @@
 import { performance } from "node:perf_hooks";
 
+import { buildSolverProgressSummary, formatSolverProgressSummary } from "../core/progress.js";
 import { solveAsync } from "../runtime/solve.js";
+import {
+  applyBenchmarkOptionDefaults,
+  assertBenchmarkCasesSelected,
+  buildBenchmarkSuiteMetadata,
+  cloneBenchmarkGrid,
+  cloneBenchmarkOptions,
+  cloneBenchmarkSolverParams,
+  listBenchmarkCaseNames,
+  observedCpSatWorkerCpuSeconds,
+  roundBenchmarkMetric,
+  safePopulationRate,
+  selectBenchmarkCasesByName,
+} from "./benchmarkOptions.js";
 
 import type {
   CpSatAsyncOptions,
@@ -10,6 +24,7 @@ import type {
   CpSatTelemetry,
   Grid,
   SolverParams,
+  SolverProgressSummary,
 } from "../core/types.js";
 
 export interface CpSatBenchmarkCase {
@@ -23,6 +38,23 @@ export interface CpSatBenchmarkRunOptions {
   names?: string[];
   includeProgressTimeline?: boolean;
   cpSat?: Partial<CpSatOptions>;
+}
+
+export type CpSatBenchmarkCpuPlanMode = "single" | "portfolio";
+export type CpSatBenchmarkCpuAdmission = "within-budget" | "over-budget";
+
+export interface CpSatBenchmarkCpuPlan {
+  mode: CpSatBenchmarkCpuPlanMode;
+  wallClockBudgetSeconds: number;
+  workerCount: number;
+  perWorkerNumWorkers: number;
+  perWorkerTimeLimitSeconds: number;
+  parallelWorkerCount: number;
+  workerCpuBudgetSeconds: number;
+  cpuBudgetMultiplier: number;
+  totalCpuBudgetSeconds: number | null;
+  cpuBudgetHeadroomSeconds: number | null;
+  admission: CpSatBenchmarkCpuAdmission;
 }
 
 export interface CpSatBenchmarkProgressSample {
@@ -40,7 +72,12 @@ export interface CpSatBenchmarkCaseResult {
   cpSatTelemetry: CpSatTelemetry | null;
   cpSatObjectiveSummary: string | null;
   cpSatOptions: CpSatOptions;
+  cpSatCpuPlan: CpSatBenchmarkCpuPlan;
+  observedWorkerCpuSeconds: number | null;
+  populationPerWorkerCpuBudgetSecond: number | null;
+  populationPerObservedCpuSecond: number | null;
   progressTimeline: CpSatBenchmarkProgressSample[];
+  progressSummary: SolverProgressSummary;
   wallClockSeconds: number;
 }
 
@@ -72,20 +109,64 @@ export const DEFAULT_CP_SAT_BENCHMARK_OPTIONS: Readonly<Required<
   logSearchProgress: false,
 });
 
-function cloneGrid(grid: Grid): Grid {
-  return grid.map((row) => [...row]);
-}
-
-function cloneSolverParams(params: SolverParams): SolverParams {
-  return structuredClone(params);
-}
-
-function cloneCpSatOptions(options: CpSatOptions): CpSatOptions {
-  return structuredClone(options);
-}
-
 function createSeedSequence(baseSeed: number, count: number): number[] {
   return Array.from({ length: count }, (_, index) => baseSeed + index * 101);
+}
+
+export function buildCpSatBenchmarkCpuPlan(cpSat: CpSatOptions): CpSatBenchmarkCpuPlan {
+  const wallClockBudgetSeconds = cpSat.timeLimitSeconds ?? DEFAULT_CP_SAT_BENCHMARK_OPTIONS.timeLimitSeconds;
+  if (!cpSat.portfolio) {
+    const perWorkerNumWorkers = cpSat.numWorkers ?? DEFAULT_CP_SAT_BENCHMARK_OPTIONS.numWorkers;
+    const workerCpuBudgetSeconds = roundBenchmarkMetric(wallClockBudgetSeconds * perWorkerNumWorkers);
+    return {
+      mode: "single",
+      wallClockBudgetSeconds,
+      workerCount: 1,
+      perWorkerNumWorkers,
+      perWorkerTimeLimitSeconds: wallClockBudgetSeconds,
+      parallelWorkerCount: perWorkerNumWorkers,
+      workerCpuBudgetSeconds,
+      cpuBudgetMultiplier: perWorkerNumWorkers,
+      totalCpuBudgetSeconds: null,
+      cpuBudgetHeadroomSeconds: null,
+      admission: "within-budget",
+    };
+  }
+
+  const portfolio = cpSat.portfolio;
+  const workerCount = portfolio.randomSeeds?.length ?? portfolio.workerCount ?? 1;
+  const perWorkerNumWorkers = portfolio.perWorkerNumWorkers ?? 1;
+  const perWorkerTimeLimitSeconds = portfolio.perWorkerTimeLimitSeconds ?? wallClockBudgetSeconds;
+  const parallelWorkerCount = workerCount * perWorkerNumWorkers;
+  const workerCpuBudgetSeconds = roundBenchmarkMetric(parallelWorkerCount * perWorkerTimeLimitSeconds);
+  const totalCpuBudgetSeconds = portfolio.totalCpuBudgetSeconds ?? null;
+  const cpuBudgetHeadroomSeconds =
+    totalCpuBudgetSeconds === null ? null : roundBenchmarkMetric(totalCpuBudgetSeconds - workerCpuBudgetSeconds);
+  return {
+    mode: "portfolio",
+    wallClockBudgetSeconds,
+    workerCount,
+    perWorkerNumWorkers,
+    perWorkerTimeLimitSeconds,
+    parallelWorkerCount,
+    workerCpuBudgetSeconds,
+    cpuBudgetMultiplier: roundBenchmarkMetric(workerCpuBudgetSeconds / Math.max(wallClockBudgetSeconds, 0.001)),
+    totalCpuBudgetSeconds,
+    cpuBudgetHeadroomSeconds,
+    admission:
+      totalCpuBudgetSeconds === null || workerCpuBudgetSeconds <= totalCpuBudgetSeconds + 1e-9
+        ? "within-budget"
+        : "over-budget",
+  };
+}
+
+function assertCpSatBenchmarkCpuPlanAdmitted(cpuPlan: CpSatBenchmarkCpuPlan): void {
+  if (cpuPlan.admission === "within-budget") {
+    return;
+  }
+  throw new Error(
+    `CP-SAT benchmark portfolio requests ${cpuPlan.workerCpuBudgetSeconds} total CPU seconds, exceeding the ${cpuPlan.totalCpuBudgetSeconds} second benchmark portfolio budget.`
+  );
 }
 
 function normalizeBenchmarkPortfolio(
@@ -98,46 +179,49 @@ function normalizeBenchmarkPortfolio(
     return undefined;
   }
   const workerCount = portfolio.randomSeeds?.length ?? portfolio.workerCount ?? 3;
-  return {
+  const randomSeeds = portfolio.randomSeeds ?? createSeedSequence(randomSeed, workerCount);
+  const perWorkerTimeLimitSeconds = portfolio.perWorkerTimeLimitSeconds ?? timeLimitSeconds;
+  const perWorkerMaxDeterministicTime = portfolio.perWorkerMaxDeterministicTime ?? maxDeterministicTime;
+  const perWorkerNumWorkers = portfolio.perWorkerNumWorkers ?? 1;
+  const normalized = {
     ...portfolio,
     workerCount,
-    randomSeeds: portfolio.randomSeeds ?? createSeedSequence(randomSeed, workerCount),
-    perWorkerTimeLimitSeconds: portfolio.perWorkerTimeLimitSeconds ?? timeLimitSeconds,
-    perWorkerMaxDeterministicTime: portfolio.perWorkerMaxDeterministicTime ?? maxDeterministicTime,
-    perWorkerNumWorkers: portfolio.perWorkerNumWorkers ?? 1,
+    randomSeeds,
+    perWorkerTimeLimitSeconds,
+    perWorkerMaxDeterministicTime,
+    perWorkerNumWorkers,
+    totalCpuBudgetSeconds:
+      portfolio.totalCpuBudgetSeconds ?? roundBenchmarkMetric(randomSeeds.length * perWorkerNumWorkers * perWorkerTimeLimitSeconds),
     randomizeSearch: portfolio.randomizeSearch ?? true,
   };
+  assertCpSatBenchmarkCpuPlanAdmitted(buildCpSatBenchmarkCpuPlan({
+    timeLimitSeconds,
+    maxDeterministicTime,
+    randomSeed,
+    portfolio: normalized,
+  }));
+  return normalized;
 }
 
 export function normalizeCpSatBenchmarkOptions(
   cpSat: CpSatOptions | undefined,
   overrides: Partial<CpSatOptions> | undefined
 ): CpSatOptions {
-  const merged = { ...(cpSat ?? {}), ...(overrides ?? {}) };
-  const timeLimitSeconds = merged.timeLimitSeconds ?? DEFAULT_CP_SAT_BENCHMARK_OPTIONS.timeLimitSeconds;
-  const maxDeterministicTime = merged.maxDeterministicTime ?? DEFAULT_CP_SAT_BENCHMARK_OPTIONS.maxDeterministicTime;
-  const numWorkers = merged.numWorkers ?? DEFAULT_CP_SAT_BENCHMARK_OPTIONS.numWorkers;
-  const randomSeed = merged.randomSeed ?? DEFAULT_CP_SAT_BENCHMARK_OPTIONS.randomSeed;
-  const randomizeSearch = merged.randomizeSearch ?? DEFAULT_CP_SAT_BENCHMARK_OPTIONS.randomizeSearch;
-  const progressIntervalSeconds =
-    merged.progressIntervalSeconds ?? DEFAULT_CP_SAT_BENCHMARK_OPTIONS.progressIntervalSeconds;
-  const logSearchProgress = merged.logSearchProgress ?? DEFAULT_CP_SAT_BENCHMARK_OPTIONS.logSearchProgress;
+  const normalized = applyBenchmarkOptionDefaults(cpSat, overrides, DEFAULT_CP_SAT_BENCHMARK_OPTIONS);
 
   return {
-    ...merged,
-    timeLimitSeconds,
-    maxDeterministicTime,
-    numWorkers,
-    randomSeed,
-    randomizeSearch,
-    progressIntervalSeconds,
-    logSearchProgress,
-    portfolio: normalizeBenchmarkPortfolio(merged.portfolio, randomSeed, timeLimitSeconds, maxDeterministicTime),
+    ...normalized,
+    portfolio: normalizeBenchmarkPortfolio(
+      normalized.portfolio,
+      normalized.randomSeed,
+      normalized.timeLimitSeconds,
+      normalized.maxDeterministicTime
+    ),
   };
 }
 
 function buildBenchmarkParams(benchmarkCase: CpSatBenchmarkCase, overrides?: Partial<CpSatOptions>): SolverParams {
-  const params = cloneSolverParams(benchmarkCase.params);
+  const params = cloneBenchmarkSolverParams(benchmarkCase.params);
   return {
     ...params,
     optimizer: "cp-sat",
@@ -145,33 +229,14 @@ function buildBenchmarkParams(benchmarkCase: CpSatBenchmarkCase, overrides?: Par
   };
 }
 
-function validateBenchmarkCorpus(corpus: readonly CpSatBenchmarkCase[]): void {
-  const names = corpus.map((benchmarkCase) => benchmarkCase.name);
-  if (new Set(names).size !== names.length) {
-    throw new Error("CP-SAT benchmark corpus must use unique case names.");
-  }
-}
-
 function selectBenchmarkCases(
   corpus: readonly CpSatBenchmarkCase[],
   names: readonly string[] | undefined
 ): CpSatBenchmarkCase[] {
-  validateBenchmarkCorpus(corpus);
-  if (!names || names.length === 0) {
-    return [...corpus];
-  }
-
-  const byName = new Map(corpus.map((benchmarkCase) => [benchmarkCase.name, benchmarkCase]));
-  const missing = names.filter((name) => !byName.has(name));
-  if (missing.length > 0) {
-    throw new Error(
-      `Unknown CP-SAT benchmark case(s): ${missing.join(", ")}. Available cases: ${corpus
-        .map((benchmarkCase) => benchmarkCase.name)
-        .join(", ")}.`
-    );
-  }
-
-  return names.map((name) => byName.get(name) as CpSatBenchmarkCase);
+  return selectBenchmarkCasesByName(corpus, names, {
+    caseLabel: "CP-SAT benchmark",
+    corpusLabel: "CP-SAT benchmark",
+  });
 }
 
 function buildBenchmarkAsyncOptions(
@@ -193,8 +258,10 @@ function buildBenchmarkAsyncOptions(
 export function listCpSatBenchmarkCaseNames(
   corpus: readonly CpSatBenchmarkCase[] = DEFAULT_CP_SAT_BENCHMARK_CORPUS
 ): string[] {
-  validateBenchmarkCorpus(corpus);
-  return corpus.map((benchmarkCase) => benchmarkCase.name);
+  return listBenchmarkCaseNames(corpus, {
+    caseLabel: "CP-SAT benchmark",
+    corpusLabel: "CP-SAT benchmark",
+  });
 }
 
 function captureProgressTimeline(
@@ -218,14 +285,19 @@ async function runCpSatBenchmarkCase(
   options?: CpSatBenchmarkRunOptions
 ): Promise<CpSatBenchmarkCaseResult> {
   const params = buildBenchmarkParams(benchmarkCase, options?.cpSat);
+  const cpSatOptions = params.cpSat ?? {};
+  const cpSatCpuPlan = buildCpSatBenchmarkCpuPlan(cpSatOptions);
+  assertCpSatBenchmarkCpuPlanAdmitted(cpSatCpuPlan);
   const timeline: CpSatBenchmarkProgressSample[] = [];
   const startedAt = performance.now();
   const solution = await solveAsync(
-    cloneGrid(benchmarkCase.grid),
+    cloneBenchmarkGrid(benchmarkCase.grid),
     params,
     buildBenchmarkAsyncOptions(params, options, timeline, startedAt)
   );
   const finishedAt = performance.now();
+  const wallClockSeconds = (finishedAt - startedAt) / 1000;
+  const observedWorkerCpuSecondsValue = observedCpSatWorkerCpuSeconds(solution);
 
   return {
     name: benchmarkCase.name,
@@ -236,9 +308,18 @@ async function runCpSatBenchmarkCase(
     cpSatStatus: solution.cpSatStatus ?? null,
     cpSatTelemetry: solution.cpSatTelemetry ?? null,
     cpSatObjectiveSummary: solution.cpSatObjectivePolicy?.summary ?? null,
-    cpSatOptions: cloneCpSatOptions(params.cpSat ?? {}),
+    cpSatOptions: cloneBenchmarkOptions(cpSatOptions),
+    cpSatCpuPlan,
+    observedWorkerCpuSeconds: observedWorkerCpuSecondsValue,
+    populationPerWorkerCpuBudgetSecond: safePopulationRate(solution.totalPopulation, cpSatCpuPlan.workerCpuBudgetSeconds),
+    populationPerObservedCpuSecond: safePopulationRate(solution.totalPopulation, observedWorkerCpuSecondsValue),
     progressTimeline: timeline,
-    wallClockSeconds: (finishedAt - startedAt) / 1000,
+    progressSummary: buildSolverProgressSummary(solution, {
+      elapsedTimeSeconds: wallClockSeconds,
+      fallbackOptimizer: "cp-sat",
+      params,
+    }),
+    wallClockSeconds,
   };
 }
 
@@ -247,9 +328,7 @@ export async function runCpSatBenchmarkSuite(
   options?: CpSatBenchmarkRunOptions
 ): Promise<CpSatBenchmarkSuiteResult> {
   const selected = selectBenchmarkCases(corpus, options?.names);
-  if (selected.length === 0) {
-    throw new Error("No CP-SAT benchmark cases matched the requested names.");
-  }
+  assertBenchmarkCasesSelected(selected, "No CP-SAT benchmark cases matched the requested names.");
 
   const results: CpSatBenchmarkCaseResult[] = [];
   for (const benchmarkCase of selected) {
@@ -257,9 +336,7 @@ export async function runCpSatBenchmarkSuite(
   }
 
   return {
-    generatedAt: new Date().toISOString(),
-    caseCount: results.length,
-    selectedCaseNames: results.map((result) => result.name),
+    ...buildBenchmarkSuiteMetadata(results.map((result) => result.name)),
     results,
   };
 }
@@ -271,6 +348,28 @@ function formatProgressPreview(timeline: CpSatBenchmarkProgressSample[]): string
   const first = timeline[0];
   const last = timeline[timeline.length - 1];
   return `${timeline.length} events, first=${first.update.kind}@${first.atSeconds.toFixed(2)}s, last=${last.update.kind}@${last.atSeconds.toFixed(2)}s`;
+}
+
+function formatCpuPlan(cpuPlan: CpSatBenchmarkCpuPlan): string {
+  const cap = cpuPlan.totalCpuBudgetSeconds === null ? "n/a" : `${cpuPlan.totalCpuBudgetSeconds}s`;
+  const headroom = cpuPlan.cpuBudgetHeadroomSeconds === null ? "n/a" : `${cpuPlan.cpuBudgetHeadroomSeconds}s`;
+  return [
+    cpuPlan.mode,
+    `worker-cpu=${cpuPlan.workerCpuBudgetSeconds}s`,
+    `parallel-workers=${cpuPlan.parallelWorkerCount}`,
+    `cpu/wall=${cpuPlan.cpuBudgetMultiplier.toFixed(3)}x`,
+    `cap=${cap}`,
+    `headroom=${headroom}`,
+    `admission=${cpuPlan.admission}`,
+  ].join(" ");
+}
+
+function formatNullableSeconds(value: number | null): string {
+  return value === null ? "n/a" : `${value.toFixed(3)}s`;
+}
+
+function formatNullableRate(value: number | null): string {
+  return value === null ? "n/a" : value.toFixed(3);
 }
 
 export function formatCpSatBenchmarkSuite(result: CpSatBenchmarkSuiteResult): string {
@@ -293,6 +392,15 @@ export function formatCpSatBenchmarkSuite(result: CpSatBenchmarkSuiteResult): st
         } branches=${benchmark.cpSatTelemetry.numBranches} conflicts=${benchmark.cpSatTelemetry.numConflicts}`
       );
     }
+    lines.push(`  progress-summary=${formatSolverProgressSummary(benchmark.progressSummary)}`);
+    lines.push(`  cpu-plan=${formatCpuPlan(benchmark.cpSatCpuPlan)}`);
+    lines.push(
+      `  cpu-efficiency=observed:${formatNullableSeconds(
+        benchmark.observedWorkerCpuSeconds
+      )} pop/budget-cpu:${formatNullableRate(
+        benchmark.populationPerWorkerCpuBudgetSecond
+      )} pop/observed-cpu:${formatNullableRate(benchmark.populationPerObservedCpuSecond)}`
+    );
     lines.push(`  progress=${formatProgressPreview(benchmark.progressTimeline)}`);
   }
   return lines.join("\n");

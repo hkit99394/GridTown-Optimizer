@@ -37,6 +37,7 @@
       "expansion-comparison-replay"
     ],
     "missingCaseNames": [],
+    "splitMismatches": [],
     "requiredModes": [
       "auto",
       "greedy",
@@ -54,13 +55,53 @@
       30,
       120
     ],
-    "expectedScorecardCount": 40,
+    "requiredSeeds": [
+      7,
+      19,
+      37
+    ],
+    "missingSeeds": [
+      19,
+      37
+    ],
+    "unexpectedSeeds": [],
+    "expectedScorecardCount": 120,
     "actualScorecardCount": 20,
     "missingScorecards": [
       {
         "caseName": "typed-housing-single",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 5,
+        "seed": 37
+      },
+      {
+        "caseName": "typed-housing-single",
         "budgetSeconds": 30,
         "seed": 7
+      },
+      {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 30,
+        "seed": 37
       },
       {
         "caseName": "typed-housing-single",
@@ -68,14 +109,84 @@
         "seed": 7
       },
       {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "typed-housing-single",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 5,
+        "seed": 37
+      },
+      {
         "caseName": "row0-corridor-repair-pressure",
         "budgetSeconds": 30,
         "seed": 7
       },
       {
         "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
         "budgetSeconds": 120,
         "seed": 7
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 5,
+        "seed": 37
       },
       {
         "caseName": "typed-footprint-pressure",
@@ -84,8 +195,48 @@
       },
       {
         "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "typed-footprint-pressure",
         "budgetSeconds": 120,
         "seed": 7
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 5,
+        "seed": 37
       },
       {
         "caseName": "service-local-neighborhood",
@@ -94,8 +245,48 @@
       },
       {
         "caseName": "service-local-neighborhood",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "service-local-neighborhood",
         "budgetSeconds": 120,
         "seed": 7
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 5,
+        "seed": 37
       },
       {
         "caseName": "seeded-service-anchor-pressure",
@@ -104,8 +295,48 @@
       },
       {
         "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
         "budgetSeconds": 120,
         "seed": 7
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 5,
+        "seed": 37
       },
       {
         "caseName": "road-semantics-gate-choke",
@@ -114,8 +345,48 @@
       },
       {
         "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
         "budgetSeconds": 120,
         "seed": 7
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 5,
+        "seed": 37
       },
       {
         "caseName": "road-semantics-service-pressure",
@@ -124,8 +395,48 @@
       },
       {
         "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
         "budgetSeconds": 120,
         "seed": 7
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 5,
+        "seed": 37
       },
       {
         "caseName": "multi-anchor-road-components",
@@ -134,8 +445,48 @@
       },
       {
         "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "multi-anchor-road-components",
         "budgetSeconds": 120,
         "seed": 7
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 5,
+        "seed": 37
       },
       {
         "caseName": "manual-layout-replay-warm-start",
@@ -144,8 +495,48 @@
       },
       {
         "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
         "budgetSeconds": 120,
         "seed": 7
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "budgetSeconds": 120,
+        "seed": 37
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 1,
+        "seed": 19
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 1,
+        "seed": 37
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 5,
+        "seed": 19
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 5,
+        "seed": 37
       },
       {
         "caseName": "expansion-comparison-replay",
@@ -154,14 +545,35 @@
       },
       {
         "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 30,
+        "seed": 19
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 30,
+        "seed": 37
+      },
+      {
+        "caseName": "expansion-comparison-replay",
         "budgetSeconds": 120,
         "seed": 7
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 120,
+        "seed": 19
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "budgetSeconds": 120,
+        "seed": 37
       }
     ],
     "scorecardsMissingModes": [],
     "minimumSeedCount": 3,
     "seedCount": 1,
     "fullCorpus": true,
+    "requiredSplitCoverage": true,
     "requiredModeCoverage": true,
     "requiredBudgetCoverage": false,
     "requiredSeedCoverage": false,
@@ -207,8 +619,8 @@
       "bestMode": "greedy",
       "autoScore": 110,
       "autoDeltaToBest": 0,
-      "timeToFirstFeasibleSeconds": 0.003,
-      "timeToBestSeconds": 0.003,
+      "timeToFirstFeasibleSeconds": 0.005,
+      "timeToBestSeconds": 0.005,
       "reuseSources": [
         "greedy-seed"
       ],
@@ -231,8 +643,8 @@
       "bestMode": "cp-sat",
       "autoScore": 330,
       "autoDeltaToBest": 0,
-      "timeToFirstFeasibleSeconds": 0.014,
-      "timeToBestSeconds": 0.014,
+      "timeToFirstFeasibleSeconds": 0.012,
+      "timeToBestSeconds": 0.012,
       "reuseSources": [
         "greedy-seed",
         "hint"
@@ -256,8 +668,8 @@
       "bestMode": "cp-sat",
       "autoScore": 330,
       "autoDeltaToBest": 0,
-      "timeToFirstFeasibleSeconds": 0.01,
-      "timeToBestSeconds": 0.01,
+      "timeToFirstFeasibleSeconds": 0.013,
+      "timeToBestSeconds": 0.013,
       "reuseSources": [
         "greedy-seed"
       ],
@@ -280,8 +692,8 @@
       "bestMode": "greedy",
       "autoScore": 505,
       "autoDeltaToBest": 0,
-      "timeToFirstFeasibleSeconds": 0.113,
-      "timeToBestSeconds": 0.113,
+      "timeToFirstFeasibleSeconds": 0.116,
+      "timeToBestSeconds": 0.116,
       "reuseSources": [
         "greedy-seed",
         "hint"
@@ -305,8 +717,8 @@
       "bestMode": "cp-sat",
       "autoScore": 505,
       "autoDeltaToBest": 20,
-      "timeToFirstFeasibleSeconds": 0.099,
-      "timeToBestSeconds": 0.099,
+      "timeToFirstFeasibleSeconds": 0.103,
+      "timeToBestSeconds": 0.103,
       "reuseSources": [
         "greedy-seed"
       ],
@@ -329,8 +741,8 @@
       "bestMode": "lns",
       "autoScore": 455,
       "autoDeltaToBest": 15,
-      "timeToFirstFeasibleSeconds": 0.04,
-      "timeToBestSeconds": 0.051,
+      "timeToFirstFeasibleSeconds": 0.049,
+      "timeToBestSeconds": 0.049,
       "reuseSources": [
         "greedy-seed",
         "hint"
@@ -355,8 +767,8 @@
       "bestMode": "cp-sat",
       "autoScore": 470,
       "autoDeltaToBest": 0,
-      "timeToFirstFeasibleSeconds": 0.042,
-      "timeToBestSeconds": 0.046,
+      "timeToFirstFeasibleSeconds": 0.052,
+      "timeToBestSeconds": 0.053,
       "reuseSources": [
         "greedy-seed"
       ],
@@ -404,7 +816,7 @@
       "autoScore": 200,
       "autoDeltaToBest": 0,
       "timeToFirstFeasibleSeconds": 0,
-      "timeToBestSeconds": 0.01,
+      "timeToBestSeconds": 0.008,
       "reuseSources": [
         "seeded-service-anchor-pressure"
       ],
@@ -424,15 +836,16 @@
       "budgetSeconds": 1,
       "seed": 7,
       "bestScore": 540,
-      "bestMode": "cp-sat",
+      "bestMode": "lns",
       "autoScore": 540,
       "autoDeltaToBest": 0,
-      "timeToFirstFeasibleSeconds": 0.016,
-      "timeToBestSeconds": 0.016,
+      "timeToFirstFeasibleSeconds": 0.022,
+      "timeToBestSeconds": 0.022,
       "reuseSources": [
         "greedy-seed"
       ],
       "cpSatStatuses": [
+        "FEASIBLE",
         "OPTIMAL"
       ],
       "minimumExactGap": 0,
@@ -475,8 +888,8 @@
       "bestMode": "greedy",
       "autoScore": 740,
       "autoDeltaToBest": 0,
-      "timeToFirstFeasibleSeconds": 0.078,
-      "timeToBestSeconds": 0.107,
+      "timeToFirstFeasibleSeconds": 0.086,
+      "timeToBestSeconds": 0.119,
       "reuseSources": [
         "greedy-seed",
         "hint"
@@ -500,8 +913,8 @@
       "bestMode": "greedy",
       "autoScore": 740,
       "autoDeltaToBest": 0,
-      "timeToFirstFeasibleSeconds": 0.078,
-      "timeToBestSeconds": 0.106,
+      "timeToFirstFeasibleSeconds": 0.086,
+      "timeToBestSeconds": 0.12,
       "reuseSources": [
         "greedy-seed"
       ],
@@ -574,7 +987,7 @@
       "autoScore": 240,
       "autoDeltaToBest": 0,
       "timeToFirstFeasibleSeconds": 0,
-      "timeToBestSeconds": 0.008,
+      "timeToBestSeconds": 0.007,
       "reuseSources": [
         "manual-layout-replay"
       ],
@@ -598,7 +1011,7 @@
       "autoScore": 240,
       "autoDeltaToBest": 0,
       "timeToFirstFeasibleSeconds": 0,
-      "timeToBestSeconds": 0.007,
+      "timeToBestSeconds": 0.006,
       "reuseSources": [
         "manual-layout-replay"
       ],
@@ -622,7 +1035,7 @@
       "autoScore": 745,
       "autoDeltaToBest": 35,
       "timeToFirstFeasibleSeconds": 0,
-      "timeToBestSeconds": 0.126,
+      "timeToBestSeconds": 0.135,
       "reuseSources": [
         "expansion-comparison-replay"
       ],
@@ -646,7 +1059,7 @@
       "autoScore": 780,
       "autoDeltaToBest": 0,
       "timeToFirstFeasibleSeconds": 0,
-      "timeToBestSeconds": 0.122,
+      "timeToBestSeconds": 0.133,
       "reuseSources": [
         "expansion-comparison-replay"
       ],

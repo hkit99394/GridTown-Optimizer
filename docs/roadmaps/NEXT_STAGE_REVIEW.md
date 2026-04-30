@@ -152,7 +152,7 @@ Success signal:
 
 Goal: judge solver changes on the real planning loop, not only saturated smoke tests.
 
-Status: partial. The initial selectable corpus, scorecard metadata, evidence-summary projection, artifact writer, strict registry-entry draft path, strict registry dry-run support, a `--product-promotion-matrix` preset, and direct `/api/layout/evaluate` replay metrics are delivered. Initial non-promotion evidence is registered as `product-corpus-scorecard-2026-04-30-initial-1s-5s-seed7-v2` under `artifacts/product-corpus/2026-04-30/initial-1s-5s-seed7-v2/`; promotion-grade dev/holdout artifact runs are still open and must be checkpointed before registry append.
+Status: partial. The initial selectable corpus, scorecard metadata, evidence-summary projection, artifact writer, strict registry-entry draft path, strict registry dry-run support, a `--product-promotion-matrix` preset, and direct `/api/layout/evaluate` replay metrics are delivered. Initial non-promotion evidence is registered as `product-corpus-scorecard-2026-04-30-initial-1s-5s-seed7-v2` under `artifacts/product-corpus/2026-04-30/initial-1s-5s-seed7-v2/`. A promotion-candidate dry-run artifact now exists under `artifacts/product-corpus/2026-04-30/promotion-1s-5s-30s-120s-seeds7-19-37/` with `protectedHoldout=true`; registry append is still pending until the artifact bundle is checkpointed with a truthful artifact commit.
 
 Deliverables:
 
@@ -161,7 +161,7 @@ Deliverables:
 - Add manual-layout replay through `/api/layout/evaluate`. Initial reusable-hint replay case and replay metric projection delivered.
 - Add expansion-comparison replay. Initial expansion replay case and replay metric projection delivered; broader expansion-choice lift evidence remains.
 - Add corridor, gate, footprint-pressure, service-pressure, anchor-service, and multi-anchor cases. Initial tagged coverage delivered; service-overlap remains future pressure coverage.
-- Preserve development and protected holdout splits. Initial case-level split metadata and strict registry draft/dry-run checks delivered; filtered runs are marked as partial, `--product-promotion-matrix` pins the required long-run modes/budgets/seeds, direct generated-artifact append is blocked until artifacts are checkpointed, and protected holdout requires full case, expected split, mode, budget, seed, and per-scorecard mode coverage.
+- Preserve development and protected holdout splits. Initial case-level split metadata and strict registry draft/dry-run checks delivered; filtered runs are marked as partial, `--product-promotion-matrix` pins the required long-run modes/budgets/seeds, direct generated-artifact append is blocked until artifacts are checkpointed, and protected holdout requires full case, expected split, mode, budget, fixed seed, and per-scorecard mode coverage.
 
 Metrics:
 

@@ -54,9 +54,6 @@ const {
   runLnsNeighborhoodAblation,
   runLnsWindowReplayLabels,
   runLnsBenchmarkSuite,
-} = require("../dist/benchmarks/index.js");
-
-const {
   createGreedyBenchmarkSnapshot,
   createGreedyDeterministicAblationSnapshot,
   DEFAULT_GREEDY_BENCHMARK_CORPUS,
@@ -67,9 +64,6 @@ const {
   DEFAULT_CP_SAT_BENCHMARK_CORPUS,
   DEFAULT_CP_SAT_BENCHMARK_OPTIONS,
   DEFAULT_CP_SAT_ROAD_SEMANTICS_SCORECARD_CASE_NAMES,
-  OMITTED_SOLVER_OPTIMIZER,
-  RECOMMENDED_INTERACTIVE_OPTIMIZER,
-  getOptimizerAdapter,
   formatGreedyConnectivityShadowScoringAblation,
   formatGreedyDeterministicAblation,
   formatCpSatBenchmarkSuite,
@@ -77,19 +71,24 @@ const {
   listGreedyConnectivityShadowScoringAblationCaseNames,
   listGreedyDeterministicAblationCaseNames,
   listGreedyBenchmarkCaseNames,
-  listOptimizerAdapters,
   normalizeGreedyBenchmarkOptions,
-  resolveOptimizerName,
   listCpSatBenchmarkCaseNames,
   normalizeCpSatBenchmarkOptions,
-  buildDecisionTraceFromSolution,
-  buildTimeToQualityScorecard,
-  parseDecisionTraceJsonl,
   runGreedyConnectivityShadowScoringAblation,
   runGreedyDeterministicAblation,
   runGreedyBenchmarkSuite,
   runCpSatBenchmarkSuite,
-  runCrossModeBenchmarkBudgetAblations: runCrossModeBenchmarkBudgetAblationsFromIndex,
+} = require("city-builder/benchmarks");
+
+const {
+  OMITTED_SOLVER_OPTIMIZER,
+  RECOMMENDED_INTERACTIVE_OPTIMIZER,
+  getOptimizerAdapter,
+  listOptimizerAdapters,
+  resolveOptimizerName,
+  buildDecisionTraceFromSolution,
+  buildTimeToQualityScorecard,
+  parseDecisionTraceJsonl,
   serializeDecisionTraceJsonl,
   solve,
   solveAsync,
@@ -101,7 +100,7 @@ const {
   startAutoSolve,
   validateSolution,
   validateSolutionMap,
-} = require("../dist/index.js");
+} = require("city-builder/solver");
 const { parseCpSatRawSolution } = require("../dist/cp-sat/solver.js");
 const { buildNeighborhoodWindows } = require("../dist/lns/solver.js");
 const { startJsonBackgroundSolve } = require("../dist/runtime/index.js");
@@ -4138,7 +4137,7 @@ async function testCrossModeBenchmarkHelpers() {
   assert.deepEqual(DEFAULT_CROSS_MODE_BENCHMARK_BUDGETS_SECONDS, [5, 30, 120]);
   assert.deepEqual(DEFAULT_CROSS_MODE_BENCHMARK_SEEDS, [7, 19, 37]);
   assert.deepEqual(DEFAULT_CROSS_MODE_BENCHMARK_MODES, ["auto", "greedy", "lns", "cp-sat", "cp-sat-portfolio"]);
-  assert.equal(typeof runCrossModeBenchmarkBudgetAblationsFromIndex, "function");
+  assert.equal(typeof runCrossModeBenchmarkBudgetAblations, "function");
   assert.equal(new Set(names).size, names.length);
   assert(names.includes("row0-corridor-repair-pressure"));
   assert.deepEqual(listCrossModeBenchmarkCaseNames(), names);

@@ -748,6 +748,9 @@ export function completeExperimentRegistryEntry(
   entry: Record<string, unknown>,
   metadata: ExperimentRegistryCompletionMetadata
 ): Record<string, unknown> {
+  const artifactGitCommit = Object.prototype.hasOwnProperty.call(entry, "artifactGitCommit")
+    ? entry.artifactGitCommit
+    : metadata.artifactGitCommit ?? null;
   return {
     ...entry,
     schemaVersion: entry.schemaVersion ?? EXPERIMENT_REGISTRY_SCHEMA_VERSION,
@@ -755,7 +758,7 @@ export function completeExperimentRegistryEntry(
     indexedAt: entry.indexedAt ?? metadata.indexedAt,
     indexedGitCommit: entry.indexedGitCommit ?? metadata.indexedGitCommit,
     branch: entry.branch ?? metadata.branch,
-    artifactGitCommit: entry.artifactGitCommit ?? metadata.artifactGitCommit ?? null,
+    artifactGitCommit,
     splitStatus: entry.splitStatus ?? null,
     hardware: entry.hardware ?? metadata.hardware ?? { captured: false, gpuUsed: false },
     model: entry.model ?? null,

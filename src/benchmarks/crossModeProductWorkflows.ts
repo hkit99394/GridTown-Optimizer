@@ -114,6 +114,9 @@ export interface CrossModeProductWorkflowPromotionCoverage {
   missingModes: CrossModeBenchmarkMode[];
   requiredBudgetsSeconds: number[];
   missingBudgetsSeconds: number[];
+  requiredSeeds: number[];
+  missingSeeds: number[];
+  unexpectedSeeds: number[];
   expectedScorecardCount: number;
   actualScorecardCount: number;
   missingScorecards: CrossModeProductWorkflowMissingScorecard[];
@@ -455,19 +458,21 @@ function buildPromotionCoverage(result: CrossModeBenchmarkSuiteResult): CrossMod
     .sort((left, right) => left.caseName.localeCompare(right.caseName));
   const missingModes = includesAllStrings(result.modes, PRODUCT_WORKFLOW_PROMOTION_MODES);
   const missingBudgetsSeconds = includesAllNumbers(result.budgetsSeconds, PRODUCT_WORKFLOW_PROMOTION_BUDGETS_SECONDS);
+  const missingSeeds = includesAllNumbers(result.seeds, PRODUCT_WORKFLOW_PROMOTION_SEEDS);
+  const unexpectedSeeds = includesAllNumbers(PRODUCT_WORKFLOW_PROMOTION_SEEDS, result.seeds);
   const seedCount = new Set(result.seeds).size;
   const scorecardsByKey = new Map(result.cases.map((scorecard) => [
     scorecardKey(scorecard.name, scorecard.budgetSeconds, scorecard.seed),
     scorecard,
   ]));
   const expectedScorecardCount =
-    requiredCaseNames.length * PRODUCT_WORKFLOW_PROMOTION_BUDGETS_SECONDS.length * result.seeds.length;
+    requiredCaseNames.length * PRODUCT_WORKFLOW_PROMOTION_BUDGETS_SECONDS.length * PRODUCT_WORKFLOW_PROMOTION_SEEDS.length;
   const missingScorecards: CrossModeProductWorkflowMissingScorecard[] = [];
   const scorecardsMissingModes: CrossModeProductWorkflowScorecardModeGap[] = [];
 
   for (const caseName of requiredCaseNames) {
     for (const budgetSeconds of PRODUCT_WORKFLOW_PROMOTION_BUDGETS_SECONDS) {
-      for (const seed of result.seeds) {
+      for (const seed of PRODUCT_WORKFLOW_PROMOTION_SEEDS) {
         const scorecard = scorecardsByKey.get(scorecardKey(caseName, budgetSeconds, seed));
         if (scorecard === undefined) {
           missingScorecards.push({ caseName, budgetSeconds, seed });
@@ -485,7 +490,7 @@ function buildPromotionCoverage(result: CrossModeBenchmarkSuiteResult): CrossMod
   const fullCorpus = missingCaseNames.length === 0;
   const requiredModeCoverage = missingModes.length === 0;
   const requiredBudgetCoverage = missingBudgetsSeconds.length === 0;
-  const requiredSeedCoverage = seedCount >= PRODUCT_WORKFLOW_PROMOTION_MINIMUM_SEED_COUNT;
+  const requiredSeedCoverage = missingSeeds.length === 0 && unexpectedSeeds.length === 0;
   const requiredSplitCoverage = splitMismatches.length === 0;
   const requiredScorecardCoverage = missingScorecards.length === 0 && result.cases.length === expectedScorecardCount;
   const requiredScorecardModeCoverage = scorecardsMissingModes.length === 0;
@@ -498,6 +503,9 @@ function buildPromotionCoverage(result: CrossModeBenchmarkSuiteResult): CrossMod
     missingModes,
     requiredBudgetsSeconds: [...PRODUCT_WORKFLOW_PROMOTION_BUDGETS_SECONDS],
     missingBudgetsSeconds,
+    requiredSeeds: [...PRODUCT_WORKFLOW_PROMOTION_SEEDS],
+    missingSeeds,
+    unexpectedSeeds,
     expectedScorecardCount,
     actualScorecardCount: result.cases.length,
     missingScorecards,

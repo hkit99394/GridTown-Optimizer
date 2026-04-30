@@ -268,6 +268,113 @@ When adding a new behavior:
 - If it changes how solutions cross process, log, or file boundaries, update `src/core/solutionSerialization.ts`.
 - Keep `src/webServer.ts`, `src/apps/webServer.ts`, and `src/server/http/requestHandler.ts` thin.
 
+## Future Workspace Split
+
+The current single TypeScript package is still the source of truth. If the
+project grows enough that build/test time, public API size, or ownership
+boundaries start slowing development, split it into a small workspace monorepo
+rather than separate repositories or independently deployed services.
+
+Target shape:
+
+```text
+apps/
+  planner-server/      local HTTP API and job orchestration
+  planner-web/         browser planner UI
+
+packages/
+  core/                grid, types, rules, validation, scoring, serialization
+  solvers/             greedy, LNS, CP-SAT, auto orchestration
+  runtime/             optimizer registry, background runner, solve jobs
+  benchmarks/          benchmark suites, labels, experiment registry
+
+tools/
+  cli/                 solve CLI and benchmark CLIs
+```
+
+Keep dependency direction strict:
+
+```text
+core
+  <- solvers
+  <- runtime
+  <- planner-server
+  <- benchmarks/tools
+```
+
+`core` must not import solvers, runtime, server, web, or benchmarks. This keeps
+the domain model reusable and makes the rest of the split mechanical instead of
+semantic.
+
+## Migration Plan
+
+1. Stabilize the public API.
+
+   Keep `src/index.ts` working as a compatibility facade while moving exports
+   behind clearer internal module boundaries. Avoid making file moves and API
+   changes in the same step.
+
+2. Split benchmarks first.
+
+   Move `src/benchmarks` and benchmark CLIs into a separate package or tool
+   area before moving solver code. Benchmarks are large, noisy, and useful to
+   isolate, but they are lower risk than the core solver path.
+
+3. Extract `core`.
+
+   Move `src/core` into `packages/core`. Solvers, runtime, server code, and
+   tests should consume it through package exports rather than deep relative
+   paths. This is the main architectural milestone.
+
+4. Group solvers.
+
+   Move `greedy`, `lns`, `cp-sat`, and `auto` into `packages/solvers`. Keep
+   them together initially because `auto` and `lns` intentionally compose the
+   other solvers.
+
+5. Separate runtime from server.
+
+   Move optimizer dispatch, background solving, solve jobs, and progress logs
+   into `packages/runtime`. The planner server should depend on runtime instead
+   of reaching directly into solver internals.
+
+6. Move apps last.
+
+   Move server entrypoints and HTTP modules into `apps/planner-server`, and move
+   browser planner files into `apps/planner-web` once the shared package
+   boundaries are stable.
+
+7. Add boundary checks.
+
+   Add lightweight tests or lint rules that reject imports against the intended
+   dependency direction. The split should be enforced by tooling, not just by
+   folder names.
+
+Success criteria:
+- `npm test` still covers solver correctness, HTTP routes, and benchmark
+  registry behavior after each migration stage.
+- Existing CLI and web entrypoints keep working through compatibility wrappers
+  until consumers are moved to the new package paths.
+- `core` remains free of runtime, server, browser, and benchmark imports.
+- The main public API stops exporting benchmark and experiment concerns by
+  default.
+
+## Migration Progress
+
+Started on 2026-04-30:
+- Added `src/solverApi.ts` as the dedicated solver/domain public entry point.
+- Added `src/benchmarkApi.ts` as the dedicated benchmark, label, and
+  experiment-registry public entry point.
+- Kept `src/index.ts` as a compatibility facade that re-exports both entry
+  points for existing consumers.
+- Added `tests/public-api.test.cjs` to verify the new entrypoints stay separate
+  while the root facade preserves compatibility.
+- Added package subpath exports for `city-builder`, `city-builder/solver`, and
+  `city-builder/benchmarks`.
+- Moved internal tests off the root compatibility facade where possible; solver
+  tests import `city-builder/solver`, while benchmark and registry tests import
+  `city-builder/benchmarks`.
+
 ## Current Follow-Up
 
 Reviewed on 2026-04-28:

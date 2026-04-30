@@ -4,7 +4,7 @@ const os = require("node:os");
 const path = require("node:path");
 const vm = require("node:vm");
 
-const { CP_SAT_PORTFOLIO_CAPABILITY_LIMITS, solve } = require("../dist/index.js");
+const { CP_SAT_PORTFOLIO_CAPABILITY_LIMITS, solve } = require("city-builder/solver");
 const { evaluateLayout } = require("../dist/core/evaluator.js");
 const { buildManualLayoutResponse, buildSolveResponse } = require("../dist/server/http/contracts.js");
 const { SolveProgressLogWriter } = require("../dist/runtime/jobs/solveProgressLog.js");
@@ -284,7 +284,7 @@ function testNamedBuildingTypesAreAccepted() {
 }
 
 function testGreedySkipsServicesWithZeroMarginalGain() {
-  const { solveGreedy } = require("../dist/index.js");
+  const { solveGreedy } = require("city-builder/solver");
   const grid = [
     [1, 1, 1, 1],
     [1, 1, 1, 1],
@@ -307,7 +307,7 @@ function testGreedySkipsServicesWithZeroMarginalGain() {
 }
 
 function testGreedyLocalSearchDoesNotRegressNontrivialSeed() {
-  const { solveGreedy } = require("../dist/index.js");
+  const { solveGreedy } = require("city-builder/solver");
   const grid = [
     [1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1],

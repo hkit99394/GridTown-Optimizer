@@ -3,6 +3,24 @@
   "version": "1.0.0",
   "description": "City builder optimizer - maximize population with roads, services, and residentials",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./solver": {
+      "types": "./dist/solverApi.d.ts",
+      "require": "./dist/solverApi.js",
+      "default": "./dist/solverApi.js"
+    },
+    "./benchmarks": {
+      "types": "./dist/benchmarkApi.d.ts",
+      "require": "./dist/benchmarkApi.js",
+      "default": "./dist/benchmarkApi.js"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "start": "node dist/cli.js",
@@ -21,7 +39,7 @@
     "experiment-registry:check": "npm run build && node dist/experimentRegistryCli.js check",
     "setup:cp-sat": "bash scripts/setup-cp-sat.sh",
     "test:acceptance": "node tests/acceptance/city-builder-bdd.test.cjs",
-    "test": "npm run build && npm run test:acceptance && node tests/review-findings.test.cjs && node tests/experiment-registry.test.cjs && node tests/product-corpus-registry.test.cjs && node tests/web-server-routes.test.cjs && node tests/optimizers.test.cjs"
+    "test": "npm run build && npm run test:acceptance && node tests/public-api.test.cjs && node tests/review-findings.test.cjs && node tests/experiment-registry.test.cjs && node tests/product-corpus-registry.test.cjs && node tests/web-server-routes.test.cjs && node tests/optimizers.test.cjs"
   },
   "keywords": [],
   "author": "",

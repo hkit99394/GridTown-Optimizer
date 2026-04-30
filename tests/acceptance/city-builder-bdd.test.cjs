@@ -1,6 +1,6 @@
 const assert = require("node:assert/strict");
 
-const { evaluateLayout, validateSolution } = require("../../dist/index.js");
+const { evaluateLayout, validateSolution } = require("city-builder/solver");
 
 function allowedGrid(rows, cols) {
   return Array.from({ length: rows }, () => Array.from({ length: cols }, () => 1));

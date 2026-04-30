@@ -10,7 +10,7 @@ const {
   completeExperimentRegistryEntry,
   formatExperimentRegistryIssues,
   validateExperimentRegistryEntry,
-} = require("../dist/benchmarks/index.js");
+} = require("city-builder/benchmarks");
 
 const repoRoot = path.join(__dirname, "..");
 const testCommit = "1234567890abcdef1234567890abcdef12345678";
@@ -117,6 +117,17 @@ function testAppendHelperAddsCommitCommandBudgetHardwareModelAndDecisionMetadata
   assert.equal(validation.valid, true, formatExperimentRegistryIssues(validation.issues));
 }
 
+function testCompleteEntryPreservesExplicitNullArtifactCommit() {
+  const entry = completeExperimentRegistryEntry(createBaseEntry({ artifactGitCommit: null }), {
+    indexedAt: "2026-04-28",
+    indexedGitCommit: testCommit,
+    branch: "features/registry-test",
+    artifactGitCommit: testCommit,
+  });
+
+  assert.equal(entry.artifactGitCommit, null);
+}
+
 function runRegistryCli(args, cwd) {
   const cliPath = path.join(repoRoot, "dist", "experimentRegistryCli.js");
   return childProcess.spawnSync(process.execPath, [cliPath, ...args], {
@@ -174,6 +185,7 @@ function testRegistryCliCanAppendAndCheckLabelArtifacts() {
 testSeedRegistryChecksWithoutShapeErrors();
 testStrictMetadataRulesForBenchmarkAndLabelEntries();
 testAppendHelperAddsCommitCommandBudgetHardwareModelAndDecisionMetadata();
+testCompleteEntryPreservesExplicitNullArtifactCommit();
 testRegistryCliCanAppendAndCheckLabelArtifacts();
 
 console.log("Experiment registry tests passed.");

@@ -9,7 +9,7 @@ const optimizerRegistry = require("../dist/runtime/dispatch/optimizerRegistry.js
 const { SolveJobManager } = require("../dist/runtime/jobs/solveJobManager.js");
 const { SolverInputError } = require("../dist/core/solverInputValidation.js");
 const { createPlannerRequestHandler } = require("../dist/server/http/requestHandler.js");
-const { solve } = require("../dist/index.js");
+const { solve } = require("city-builder/solver");
 
 function createMockRequest(method, url, body = "", headers = undefined) {
   const stream = Readable.from(body ? [Buffer.from(body)] : []);

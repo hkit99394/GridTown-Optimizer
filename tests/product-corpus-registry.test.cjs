@@ -16,7 +16,7 @@ const {
   PRODUCT_WORKFLOW_PROMOTION_SEEDS,
   runCrossModeBenchmarkSuite,
   validateExperimentRegistryEntry,
-} = require("../dist/benchmarks/index.js");
+} = require("city-builder/benchmarks");
 
 const repoRoot = path.join(__dirname, "..");
 const testCommit = "1234567890abcdef1234567890abcdef12345678";
@@ -177,6 +177,9 @@ async function testProductCorpusScorecardCarriesRegistryCoverageMetadata() {
   assert.equal(evidence.promotionCoverage.protectedHoldout, false);
   assert.deepEqual(evidence.promotionCoverage.missingModes, ["auto", "lns", "cp-sat"]);
   assert.deepEqual(evidence.promotionCoverage.missingBudgetsSeconds, [30, 120]);
+  assert.deepEqual(evidence.promotionCoverage.requiredSeeds, PRODUCT_WORKFLOW_PROMOTION_SEEDS);
+  assert.deepEqual(evidence.promotionCoverage.missingSeeds, [19, 37]);
+  assert.deepEqual(evidence.promotionCoverage.unexpectedSeeds, []);
   assert.deepEqual(
     evidence.replayMetrics.map((metric) => [metric.caseName, metric.sourceName, metric.reportedPopulation, metric.evaluatedPopulation]),
     [
@@ -293,7 +296,10 @@ async function testFullPromotionMatrixIsRequiredForProtectedHoldout() {
   assert.deepEqual(evidence.promotionCoverage.missingCaseNames, []);
   assert.deepEqual(evidence.promotionCoverage.missingModes, []);
   assert.deepEqual(evidence.promotionCoverage.missingBudgetsSeconds, []);
+  assert.deepEqual(evidence.promotionCoverage.missingSeeds, []);
+  assert.deepEqual(evidence.promotionCoverage.unexpectedSeeds, []);
   assert.equal(evidence.promotionCoverage.requiredSplitCoverage, true);
+  assert.equal(evidence.promotionCoverage.requiredSeedCoverage, true);
   assert.deepEqual(evidence.promotionCoverage.splitMismatches, []);
   assert.equal(evidence.promotionCoverage.expectedScorecardCount, expectedScorecardCount);
   assert.equal(evidence.promotionCoverage.actualScorecardCount, expectedScorecardCount);
@@ -318,6 +324,19 @@ async function testFullPromotionMatrixIsRequiredForProtectedHoldout() {
   assert.equal(metadataOnlyEvidence.promotionCoverage.expectedScorecardCount, 120);
   assert.equal(metadataOnlyEvidence.promotionCoverage.actualScorecardCount, 10);
   assert.equal(metadataOnlyEvidence.promotionCoverage.missingScorecards.length, 110);
+
+  const wrongSeedResult = {
+    ...result,
+    seeds: [7, 19, 41],
+    cases: result.cases.map((scorecard) => scorecard.seed === 37
+      ? { ...scorecard, seed: 41 }
+      : scorecard),
+  };
+  const wrongSeedEvidence = buildCrossModeProductWorkflowEvidenceSummary(wrongSeedResult);
+  assert.equal(wrongSeedEvidence.promotionCoverage.protectedHoldout, false);
+  assert.deepEqual(wrongSeedEvidence.promotionCoverage.missingSeeds, [37]);
+  assert.deepEqual(wrongSeedEvidence.promotionCoverage.unexpectedSeeds, [41]);
+  assert.equal(wrongSeedEvidence.promotionCoverage.requiredSeedCoverage, false);
 
   const missingModeResult = {
     ...result,

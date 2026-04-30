@@ -7,7 +7,7 @@
  */
 
 export * from "../../benchmarks/greedy.js";
-export * from "../../benchmarks/benchmarkSeeds.js";
+export * from "./benchmarkSeeds.js";
 export * from "../../benchmarks/cpSat.js";
 export * from "../../benchmarks/lns.js";
 export * from "../../benchmarks/crossMode.js";

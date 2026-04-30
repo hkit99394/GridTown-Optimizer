@@ -404,6 +404,8 @@ Started on 2026-04-30:
   entrypoint.
 - Moved the benchmark export list to `src/packages/benchmarks/index.ts`; the
   old `src/benchmarks/index.ts` now remains only as a compatibility wrapper.
+- Moved benchmark seed helpers to `src/packages/benchmarks/benchmarkSeeds.ts`,
+  leaving `src/benchmarks/benchmarkSeeds.ts` as a compatibility wrapper.
 
 ## Current Follow-Up
 

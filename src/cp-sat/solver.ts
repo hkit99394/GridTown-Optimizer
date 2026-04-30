@@ -10,6 +10,7 @@ import { spawn, spawnSync } from "node:child_process";
 import type {
   BackgroundSolveHandle,
   CpSatAsyncOptions,
+  CpSatModelSizeTelemetry,
   CpSatObjectivePolicy,
   CpSatProgressKind,
   CpSatProgressUpdate,
@@ -124,6 +125,25 @@ function parseCpSatObjectivePolicy(value: unknown): CpSatObjectivePolicy {
   };
 }
 
+function parseCpSatModelSizeTelemetry(value: unknown): CpSatModelSizeTelemetry {
+  if (!isRecord(value)) {
+    throw new Error("CP-SAT backend returned invalid JSON: telemetry.modelSize must be an object.");
+  }
+  return {
+    variableCount: expectInteger(value.variableCount, "telemetry.modelSize.variableCount"),
+    booleanVariableCount: expectInteger(value.booleanVariableCount, "telemetry.modelSize.booleanVariableCount"),
+    constraintCount: expectInteger(value.constraintCount, "telemetry.modelSize.constraintCount"),
+    allowedCellCount: expectInteger(value.allowedCellCount, "telemetry.modelSize.allowedCellCount"),
+    roadEligibleCellCount: expectInteger(value.roadEligibleCellCount, "telemetry.modelSize.roadEligibleCellCount"),
+    roadVariableCount: expectInteger(value.roadVariableCount, "telemetry.modelSize.roadVariableCount"),
+    rootVariableCount: expectInteger(value.rootVariableCount, "telemetry.modelSize.rootVariableCount"),
+    directedEdgeCount: expectInteger(value.directedEdgeCount, "telemetry.modelSize.directedEdgeCount"),
+    serviceCandidateCount: expectInteger(value.serviceCandidateCount, "telemetry.modelSize.serviceCandidateCount"),
+    residentialCandidateCount: expectInteger(value.residentialCandidateCount, "telemetry.modelSize.residentialCandidateCount"),
+    populationVariableCount: expectInteger(value.populationVariableCount, "telemetry.modelSize.populationVariableCount"),
+  };
+}
+
 function parseCpSatTelemetry(value: unknown): CpSatTelemetry {
   if (!isRecord(value)) {
     throw new Error("CP-SAT backend returned invalid JSON: telemetry must be an object.");
@@ -152,6 +172,10 @@ function parseCpSatTelemetry(value: unknown): CpSatTelemetry {
     ),
     numBranches: expectInteger(value.numBranches, "telemetry.numBranches"),
     numConflicts: expectInteger(value.numConflicts, "telemetry.numConflicts"),
+    modelSize:
+      value.modelSize === undefined || value.modelSize === null
+        ? null
+        : parseCpSatModelSizeTelemetry(value.modelSize),
   };
 }
 

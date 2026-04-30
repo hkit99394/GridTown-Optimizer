@@ -5,6 +5,21 @@ from ortools.sat.python import cp_model
 
 
 @dataclass(frozen=True)
+class CpSatModelSizeTelemetry:
+    variable_count: int
+    boolean_variable_count: int
+    constraint_count: int
+    allowed_cell_count: int
+    road_eligible_cell_count: int
+    road_variable_count: int
+    root_variable_count: int
+    directed_edge_count: int
+    service_candidate_count: int
+    residential_candidate_count: int
+    population_variable_count: int
+
+
+@dataclass(frozen=True)
 class CpSatTelemetry:
     solve_wall_time_seconds: float
     user_time_seconds: float
@@ -19,6 +34,7 @@ class CpSatTelemetry:
     seconds_since_last_improvement: float | None
     num_branches: int
     num_conflicts: int
+    model_size: CpSatModelSizeTelemetry | None
 
 
 @dataclass(frozen=True)
@@ -107,6 +123,7 @@ class CpSatTelemetryCollector(cp_model.CpSolverSolutionCallback):
             seconds_since_last_improvement=seconds_since_last_improvement,
             num_branches=int(self.NumBranches()),
             num_conflicts=int(self.NumConflicts()),
+            model_size=collect_cp_sat_model_size(self._built),
         )
 
     def _emit_progress(self, kind: str, force: bool):
@@ -141,6 +158,48 @@ def objective_policy_payload(policy):
     }
 
 
+def collect_cp_sat_model_size(built) -> CpSatModelSizeTelemetry | None:
+    if built is None:
+        return None
+    proto = built.model.Proto()
+    boolean_variable_count = sum(
+        1
+        for variable in proto.variables
+        if len(variable.domain) == 2 and variable.domain[0] == 0 and variable.domain[1] == 1
+    )
+    return CpSatModelSizeTelemetry(
+        variable_count=len(proto.variables),
+        boolean_variable_count=boolean_variable_count,
+        constraint_count=len(proto.constraints),
+        allowed_cell_count=len(built.allowed_cells),
+        road_eligible_cell_count=len(built.road_eligible_cells),
+        road_variable_count=len(built.road_vars),
+        root_variable_count=len(built.root_vars),
+        directed_edge_count=len(built.directed_edges),
+        service_candidate_count=len(built.service_candidates),
+        residential_candidate_count=len(built.residential_candidates),
+        population_variable_count=len(built.populations),
+    )
+
+
+def model_size_payload(model_size: CpSatModelSizeTelemetry | None):
+    if model_size is None:
+        return None
+    return {
+        "variableCount": model_size.variable_count,
+        "booleanVariableCount": model_size.boolean_variable_count,
+        "constraintCount": model_size.constraint_count,
+        "allowedCellCount": model_size.allowed_cell_count,
+        "roadEligibleCellCount": model_size.road_eligible_cell_count,
+        "roadVariableCount": model_size.road_variable_count,
+        "rootVariableCount": model_size.root_variable_count,
+        "directedEdgeCount": model_size.directed_edge_count,
+        "serviceCandidateCount": model_size.service_candidate_count,
+        "residentialCandidateCount": model_size.residential_candidate_count,
+        "populationVariableCount": model_size.population_variable_count,
+    }
+
+
 def telemetry_payload(telemetry: CpSatTelemetry):
     return {
         "solveWallTimeSeconds": telemetry.solve_wall_time_seconds,
@@ -156,6 +215,7 @@ def telemetry_payload(telemetry: CpSatTelemetry):
         "secondsSinceLastImprovement": telemetry.seconds_since_last_improvement,
         "numBranches": telemetry.num_branches,
         "numConflicts": telemetry.num_conflicts,
+        "modelSize": model_size_payload(telemetry.model_size),
     }
 
 
@@ -232,6 +292,7 @@ def collect_cp_sat_telemetry(solver, telemetry_collector: CpSatTelemetryCollecto
         seconds_since_last_improvement=seconds_since_last_improvement,
         num_branches=int(solver.NumBranches()),
         num_conflicts=int(solver.NumConflicts()),
+        model_size=collect_cp_sat_model_size(built),
     )
 
 

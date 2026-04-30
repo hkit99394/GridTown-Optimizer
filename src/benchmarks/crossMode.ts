@@ -8,6 +8,7 @@ import {
   summarizeDecisionTraceReason,
 } from "../core/decisionTrace.js";
 import { buildSolverProgressSummary, formatSolverProgressSummary } from "../core/progress.js";
+import { isAdjacentToRoads, isRoadAnchorCell, roadsConnectedToRoadAnchor } from "../core/roads.js";
 import { solveAsync } from "../runtime/solve.js";
 import {
   assertBenchmarkCasesSelected,
@@ -141,6 +142,7 @@ export interface CrossModeBenchmarkModeResult {
   populationPerWorkerCpuBudgetSecond: number | null;
   populationPerObservedCpuSecond: number | null;
   roadCount: number;
+  roadSemantics: CrossModeRoadSemanticsSummary;
   serviceCount: number;
   residentialCount: number;
   cpSatStatus: string | null;
@@ -158,6 +160,22 @@ export interface CrossModeBenchmarkModeResult {
   timeToQuality: SolverTimeToQualityScorecard;
   budgetAllocationSignal: CrossModeBudgetAllocationSignal;
   checkpointReason: string;
+}
+
+export type CrossModeRoadSemanticStatus =
+  | "anchor-connected"
+  | "empty"
+  | "no-anchor-touch"
+  | "disconnected";
+
+export interface CrossModeRoadSemanticsSummary {
+  status: CrossModeRoadSemanticStatus;
+  anchorRoadCount: number;
+  anchorConnectedRoadCount: number;
+  disconnectedRoadCount: number;
+  anchorConnectedRoadRatio: number | null;
+  roadAdjacentBuildingCount: number;
+  roadUnadjacentBuildingCount: number;
 }
 
 type CrossModeBenchmarkModeResultDraft = Omit<
@@ -781,6 +799,45 @@ function buildCrossModeBenchmarkTraceArtifacts(
   };
 }
 
+function buildRoadSemanticsSummary(grid: Grid, solution: Solution): CrossModeRoadSemanticsSummary {
+  const roads = solution.roads;
+  const connectedRoads = roadsConnectedToRoadAnchor(grid, roads);
+  const anchorRoadCount = [...roads].filter((key) => {
+    const [r, c] = key.split(",").map(Number);
+    return isRoadAnchorCell(r, c);
+  }).length;
+  const disconnectedRoadCount = Math.max(0, roads.size - connectedRoads.size);
+  const buildings = [
+    ...solution.services.map((service) => ({
+      r: service.r,
+      c: service.c,
+      rows: service.rows,
+      cols: service.cols,
+    })),
+    ...solution.residentials,
+  ];
+  const roadAdjacentBuildingCount = countBenchmarkMatches(buildings, (building) =>
+    isAdjacentToRoads(roads, building.r, building.c, building.rows, building.cols)
+  );
+  const status: CrossModeRoadSemanticStatus = roads.size === 0
+    ? "empty"
+    : anchorRoadCount === 0
+      ? "no-anchor-touch"
+      : disconnectedRoadCount > 0
+        ? "disconnected"
+        : "anchor-connected";
+
+  return {
+    status,
+    anchorRoadCount,
+    anchorConnectedRoadCount: connectedRoads.size,
+    disconnectedRoadCount,
+    anchorConnectedRoadRatio: safePopulationRate(connectedRoads.size, roads.size),
+    roadAdjacentBuildingCount,
+    roadUnadjacentBuildingCount: buildings.length - roadAdjacentBuildingCount,
+  };
+}
+
 async function runCrossModeBenchmarkCase(
   benchmarkCase: CrossModeBenchmarkCase,
   modes: readonly CrossModeBenchmarkMode[],
@@ -837,6 +894,7 @@ async function runCrossModeBenchmarkCase(
       populationPerWorkerCpuBudgetSecond: safePopulationRate(solution.totalPopulation, workerCpuBudgetSecondsValue),
       populationPerObservedCpuSecond: safePopulationRate(solution.totalPopulation, observedWorkerCpuSecondsValue),
       roadCount: solution.roads.size,
+      roadSemantics: buildRoadSemanticsSummary(benchmarkCase.grid, solution),
       serviceCount: solution.services.length,
       residentialCount: solution.residentials.length,
       cpSatStatus: solution.cpSatStatus ?? null,
@@ -1245,6 +1303,18 @@ function formatSeedPolicyEvidence(benchmark: CrossModeBenchmarkModeResult): stri
   return details.length > 0 ? details.join(" ") : null;
 }
 
+function formatRoadSemanticsSummary(summary: CrossModeRoadSemanticsSummary): string {
+  return [
+    summary.status,
+    `anchor-roads=${summary.anchorRoadCount}`,
+    `anchor-connected=${summary.anchorConnectedRoadCount}`,
+    `disconnected=${summary.disconnectedRoadCount}`,
+    `connected-ratio=${summary.anchorConnectedRoadRatio === null ? "n/a" : summary.anchorConnectedRoadRatio.toFixed(3)}`,
+    `adjacent-buildings=${summary.roadAdjacentBuildingCount}`,
+    `unadjacent-buildings=${summary.roadUnadjacentBuildingCount}`,
+  ].join(" ");
+}
+
 export function formatCrossModeBenchmarkSuite(result: CrossModeBenchmarkSuiteResult): string {
   const lines: string[] = [];
   lines.push("=== Cross-Mode Benchmark Scorecard ===");
@@ -1268,6 +1338,7 @@ export function formatCrossModeBenchmarkSuite(result: CrossModeBenchmarkSuiteRes
       lines.push(
         `    quality=${formatTimeToQualityScorecard(benchmark.timeToQuality)} trace-events=${benchmark.decisionTrace.length}`
       );
+      lines.push(`    road-semantics=${formatRoadSemanticsSummary(benchmark.roadSemantics)}`);
       lines.push(`    budget-signal=${formatBudgetAllocationSignal(benchmark.budgetAllocationSignal)}`);
       lines.push(`    reason=${benchmark.checkpointReason}`);
       const seedPolicyEvidence = formatSeedPolicyEvidence(benchmark);

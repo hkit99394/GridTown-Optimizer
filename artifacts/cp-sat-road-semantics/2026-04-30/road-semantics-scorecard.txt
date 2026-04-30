@@ -1,0 +1,52 @@
+=== CP-SAT Benchmark Suite ===
+Generated: 2026-04-30T19:48:08.663Z
+Cases: 6
+
+- typed-housing-single: Tiny exact baseline with two residential types and no services.
+  status=OPTIMAL population=110 wall=0.785s
+  bound=110 gap=0 branches=200 conflicts=0
+  model-size=vars=118 bools=41 constraints=269 allowed-cells=16 road-eligible=16 road-vars=16 roots=7 flow-edges=48 svc-candidates=0 res-candidates=18 pop-vars=18
+  progress-summary=current=110 best=110 stage=cp-sat reuse=none elapsed=0.785s since-improve=0.001s stop=n/a gap=0
+  cpu-plan=single worker-cpu=5s parallel-workers=1 cpu/wall=1.000x cap=n/a headroom=n/a admission=within-budget
+  cpu-efficiency=observed:0.012s pop/budget-cpu:22.000 pop/observed-cpu:9166.667
+  progress=2 events, first=bound@0.70s, last=incumbent@0.70s
+- road-semantics-corridor-pressure: Road-semantics scorecard case with narrow anchor access and mixed footprints.
+  status=OPTIMAL population=480 wall=0.633s
+  bound=480 gap=0 branches=2544 conflicts=124
+  model-size=vars=261 bools=122 constraints=561 allowed-cells=36 road-eligible=36 road-vars=36 roots=12 flow-edges=100 svc-candidates=50 res-candidates=24 pop-vars=24
+  progress-summary=current=480 best=480 stage=cp-sat reuse=none elapsed=0.633s since-improve=0.005s stop=n/a gap=0
+  cpu-plan=single worker-cpu=5s parallel-workers=1 cpu/wall=1.000x cap=n/a headroom=n/a admission=within-budget
+  cpu-efficiency=observed:0.084s pop/budget-cpu:96.000 pop/observed-cpu:5714.286
+  progress=6 events, first=bound@0.48s, last=incumbent@0.53s
+- road-semantics-gate-choke: Road-semantics scorecard case where a central choke point separates high-value placements.
+  status=OPTIMAL population=540 wall=0.581s
+  bound=540 gap=0 branches=1744 conflicts=32
+  model-size=vars=235 bools=102 constraints=511 allowed-cells=32 road-eligible=32 road-vars=32 roots=11 flow-edges=92 svc-candidates=32 res-candidates=27 pop-vars=27
+  progress-summary=current=540 best=540 stage=cp-sat reuse=none elapsed=0.581s since-improve=0.002s stop=n/a gap=0
+  cpu-plan=single worker-cpu=5s parallel-workers=1 cpu/wall=1.000x cap=n/a headroom=n/a admission=within-budget
+  cpu-efficiency=observed:0.045s pop/budget-cpu:108.000 pop/observed-cpu:12000.000
+  progress=3 events, first=bound@0.47s, last=incumbent@0.49s
+- road-semantics-service-pressure: Road-semantics scorecard case with overlapping service ranges and scarce premium housing.
+  status=OPTIMAL population=740 wall=2.144s
+  bound=740 gap=0 branches=36335 conflicts=2408
+  model-size=vars=407 bools=208 constraints=751 allowed-cells=36 road-eligible=36 road-vars=36 roots=11 flow-edges=120 svc-candidates=96 res-candidates=65 pop-vars=65
+  progress-summary=current=740 best=740 stage=cp-sat reuse=none elapsed=2.144s since-improve=1.047s stop=n/a gap=0
+  cpu-plan=single worker-cpu=5s parallel-workers=1 cpu/wall=1.000x cap=n/a headroom=n/a admission=within-budget
+  cpu-efficiency=observed:1.564s pop/budget-cpu:148.000 pop/observed-cpu:473.146
+  progress=6 events, first=bound@0.54s, last=incumbent@1.00s
+- multi-anchor-road-components: Disconnected anchor-valid road components should both remain usable under the aligned road formulation.
+  status=OPTIMAL population=200 wall=0.544s
+  bound=200 gap=0 branches=89 conflicts=0
+  model-size=vars=42 bools=14 constraints=126 allowed-cells=10 road-eligible=10 road-vars=10 roots=2 flow-edges=20 svc-candidates=0 res-candidates=2 pop-vars=2
+  progress-summary=current=200 best=200 stage=cp-sat reuse=none elapsed=0.544s since-improve=0s stop=n/a gap=0
+  cpu-plan=single worker-cpu=5s parallel-workers=1 cpu/wall=1.000x cap=n/a headroom=n/a admission=within-budget
+  cpu-efficiency=observed:0.007s pop/budget-cpu:40.000 pop/observed-cpu:28571.429
+  progress=3 events, first=bound@0.45s, last=incumbent@0.46s
+- road-semantics-dense-saturated: Dense saturated road-semantics scorecard case for model-size, branch, conflict, and wall-clock watchpoints.
+  status=OPTIMAL population=980 wall=3.383s
+  bound=980 gap=0 branches=62362 conflicts=3183
+  model-size=vars=332 bools=170 constraints=611 allowed-cells=30 road-eligible=30 road-vars=30 roots=10 flow-edges=98 svc-candidates=79 res-candidates=51 pop-vars=51
+  progress-summary=current=980 best=980 stage=cp-sat reuse=none elapsed=3.383s since-improve=2.106s stop=n/a gap=0
+  cpu-plan=single worker-cpu=5s parallel-workers=1 cpu/wall=1.000x cap=n/a headroom=n/a admission=within-budget
+  cpu-efficiency=observed:2.841s pop/budget-cpu:196.000 pop/observed-cpu:344.949
+  progress=15 events, first=bound@0.48s, last=incumbent@1.19s

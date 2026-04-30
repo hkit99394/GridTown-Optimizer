@@ -267,6 +267,20 @@ export interface CpSatObjectivePolicy {
   summary: string;
 }
 
+export interface CpSatModelSizeTelemetry {
+  variableCount: number;
+  booleanVariableCount: number;
+  constraintCount: number;
+  allowedCellCount: number;
+  roadEligibleCellCount: number;
+  roadVariableCount: number;
+  rootVariableCount: number;
+  directedEdgeCount: number;
+  serviceCandidateCount: number;
+  residentialCandidateCount: number;
+  populationVariableCount: number;
+}
+
 export interface CpSatTelemetry {
   solveWallTimeSeconds: number;
   userTimeSeconds: number;
@@ -281,6 +295,7 @@ export interface CpSatTelemetry {
   secondsSinceLastImprovement: number | null;
   numBranches: number;
   numConflicts: number;
+  modelSize: CpSatModelSizeTelemetry | null;
 }
 
 export interface CpSatPortfolioWorkerSummary {

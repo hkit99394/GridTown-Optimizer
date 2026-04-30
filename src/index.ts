@@ -43,6 +43,7 @@ export {
   runLnsBenchmarkSuite,
   DEFAULT_CP_SAT_BENCHMARK_CORPUS,
   DEFAULT_CP_SAT_BENCHMARK_OPTIONS,
+  DEFAULT_CP_SAT_ROAD_SEMANTICS_SCORECARD_CASE_NAMES,
   formatCpSatBenchmarkSuite,
   listCpSatBenchmarkCaseNames,
   normalizeCpSatBenchmarkOptions,

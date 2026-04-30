@@ -1,18 +1,46 @@
-import { formatCpSatBenchmarkSuite, listCpSatBenchmarkCaseNames, runCpSatBenchmarkSuite } from "../benchmarks/index.js";
+import {
+  DEFAULT_CP_SAT_ROAD_SEMANTICS_SCORECARD_CASE_NAMES,
+  formatCpSatBenchmarkSuite,
+  listCpSatBenchmarkCaseNames,
+  runCpSatBenchmarkSuite,
+} from "../benchmarks/index.js";
 import { runCliMain } from "./cliEntrypoint.js";
-import { isCliFlag } from "./cliParsing.js";
+import { applyInlineOptionHandlers, isCliFlag, parsePositiveInteger, parsePositiveNumber } from "./cliParsing.js";
 import { optionalCliNames, writeCliJsonOrText, writeCliList } from "./cliOutput.js";
+
+import type { CpSatOptions } from "../core/types.js";
 
 interface ParsedBenchmarkArgs {
   json: boolean;
   list: boolean;
+  roadSemanticsScorecard: boolean;
   names: string[];
+  cpSat: Partial<CpSatOptions>;
 }
 
 function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   const names: string[] = [];
   let json = false;
   let list = false;
+  let roadSemanticsScorecard = false;
+  const cpSat: Partial<CpSatOptions> = {};
+  const inlineOptions: Record<string, (value: string) => void> = {
+    "time-limit": (value) => {
+      cpSat.timeLimitSeconds = parsePositiveNumber(value, "CP-SAT benchmark --time-limit");
+    },
+    "deterministic-time": (value) => {
+      cpSat.maxDeterministicTime = parsePositiveNumber(value, "CP-SAT benchmark --deterministic-time");
+    },
+    workers: (value) => {
+      cpSat.numWorkers = parsePositiveInteger(value, "CP-SAT benchmark --workers");
+    },
+    seed: (value) => {
+      cpSat.randomSeed = parsePositiveInteger(value, "CP-SAT benchmark --seed");
+    },
+    "progress-interval": (value) => {
+      cpSat.progressIntervalSeconds = parsePositiveNumber(value, "CP-SAT benchmark --progress-interval");
+    },
+  };
 
   for (const arg of argv) {
     if (isCliFlag(arg, "--json")) {
@@ -23,21 +51,35 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
       list = true;
       continue;
     }
+    if (isCliFlag(arg, "--road-semantics-scorecard")) {
+      roadSemanticsScorecard = true;
+      continue;
+    }
+    if (applyInlineOptionHandlers(arg, inlineOptions)) {
+      continue;
+    }
     names.push(arg);
   }
 
-  return { json, list, names };
+  return { json, list, roadSemanticsScorecard, names, cpSat };
 }
 
 export async function runCpSatBenchmarkCli(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   if (args.list) {
-    writeCliList(listCpSatBenchmarkCaseNames());
+    writeCliList(args.roadSemanticsScorecard
+      ? DEFAULT_CP_SAT_ROAD_SEMANTICS_SCORECARD_CASE_NAMES
+      : listCpSatBenchmarkCaseNames());
     return;
   }
+  const selectedNames =
+    args.roadSemanticsScorecard && args.names.length === 0
+      ? [...DEFAULT_CP_SAT_ROAD_SEMANTICS_SCORECARD_CASE_NAMES]
+      : optionalCliNames(args.names);
   const result = await runCpSatBenchmarkSuite(undefined, {
-    names: optionalCliNames(args.names),
+    names: selectedNames,
     includeProgressTimeline: true,
+    cpSat: args.cpSat,
   });
   writeCliJsonOrText(args.json, result, () => formatCpSatBenchmarkSuite(result));
 }

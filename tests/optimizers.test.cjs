@@ -65,11 +65,13 @@ const {
   DEFAULT_GREEDY_DETERMINISTIC_ABLATION_CASE_NAMES,
   DEFAULT_CP_SAT_BENCHMARK_CORPUS,
   DEFAULT_CP_SAT_BENCHMARK_OPTIONS,
+  DEFAULT_CP_SAT_ROAD_SEMANTICS_SCORECARD_CASE_NAMES,
   OMITTED_SOLVER_OPTIMIZER,
   RECOMMENDED_INTERACTIVE_OPTIMIZER,
   getOptimizerAdapter,
   formatGreedyConnectivityShadowScoringAblation,
   formatGreedyDeterministicAblation,
+  formatCpSatBenchmarkSuite,
   formatGreedyBenchmarkSuite,
   listGreedyConnectivityShadowScoringAblationCaseNames,
   listGreedyDeterministicAblationCaseNames,
@@ -1267,19 +1269,25 @@ function buildMockSolution({
   totalPopulation = 0,
   cpSatStatus,
   stoppedByUser,
+  roads,
+  services,
+  residentials,
 } = {}) {
   const hasPopulation = totalPopulation > 0;
+  const resolvedRoads = roads ?? ["0,0"];
+  const resolvedServices = services ?? [];
+  const resolvedResidentials = residentials ?? (hasPopulation ? [{ r: 1, c: 1, rows: 2, cols: 2 }] : []);
   return {
     optimizer,
     ...(cpSatStatus ? { cpSatStatus } : {}),
     ...(stoppedByUser !== undefined ? { stoppedByUser } : {}),
-    roads: new Set(["0,0"]),
-    services: [],
-    serviceTypeIndices: [],
+    roads: new Set(resolvedRoads),
+    services: resolvedServices,
+    serviceTypeIndices: resolvedServices.map(() => -1),
     servicePopulationIncreases: [],
-    residentials: hasPopulation ? [{ r: 1, c: 1, rows: 2, cols: 2 }] : [],
-    residentialTypeIndices: hasPopulation ? [-1] : [],
-    populations: hasPopulation ? [totalPopulation] : [],
+    residentials: resolvedResidentials,
+    residentialTypeIndices: resolvedResidentials.map(() => -1),
+    populations: resolvedResidentials.length ? [totalPopulation, ...Array(Math.max(0, resolvedResidentials.length - 1)).fill(0)] : [],
     totalPopulation,
   };
 }
@@ -2385,6 +2393,12 @@ function maybeTestCpSatBackendJsonContractSmoke() {
   assert.equal(typeof payload.telemetry?.secondsSinceLastImprovement, "number");
   assert.equal(typeof payload.telemetry?.numBranches, "number");
   assert.equal(typeof payload.telemetry?.numConflicts, "number");
+  assert.equal(typeof payload.telemetry?.modelSize?.variableCount, "number");
+  assert.equal(typeof payload.telemetry?.modelSize?.booleanVariableCount, "number");
+  assert.equal(typeof payload.telemetry?.modelSize?.constraintCount, "number");
+  assert.equal(typeof payload.telemetry?.modelSize?.roadVariableCount, "number");
+  assert.equal(typeof payload.telemetry?.modelSize?.serviceCandidateCount, "number");
+  assert.equal(typeof payload.telemetry?.modelSize?.residentialCandidateCount, "number");
 }
 
 function maybeTestCpSatBackendStreamingProtocol() {
@@ -2666,6 +2680,19 @@ telemetry = module.CpSatTelemetry(
     seconds_since_last_improvement=0.45,
     num_branches=12,
     num_conflicts=1,
+    model_size=module.CpSatModelSizeTelemetry(
+        variable_count=30,
+        boolean_variable_count=24,
+        constraint_count=50,
+        allowed_cell_count=16,
+        road_eligible_cell_count=16,
+        road_variable_count=16,
+        root_variable_count=7,
+        directed_edge_count=24,
+        service_candidate_count=1,
+        residential_candidate_count=4,
+        population_variable_count=4,
+    ),
 )
 
 response = module.build_snapshot_response(
@@ -2697,6 +2724,7 @@ print(json.dumps(response))
   assert.equal(payload.totalPopulation, 40);
   assert.equal(payload.objectivePolicy.populationWeight, 17);
   assert.equal(payload.telemetry.incumbentPopulation, 40);
+  assert.equal(payload.telemetry.modelSize.variableCount, 30);
 }
 
 function maybeTestCpSatNoImprovementTimeoutHelpers() {
@@ -3297,6 +3325,17 @@ async function testCpSatBenchmarkCorpusHelpers() {
   const names = DEFAULT_CP_SAT_BENCHMARK_CORPUS.map((entry) => entry.name);
   assert.equal(new Set(names).size, names.length);
   assert.deepEqual(listCpSatBenchmarkCaseNames(), names);
+  assert.deepEqual([...DEFAULT_CP_SAT_ROAD_SEMANTICS_SCORECARD_CASE_NAMES], [
+    "typed-housing-single",
+    "road-semantics-corridor-pressure",
+    "road-semantics-gate-choke",
+    "road-semantics-service-pressure",
+    "multi-anchor-road-components",
+    "road-semantics-dense-saturated",
+  ]);
+  assert(DEFAULT_CP_SAT_ROAD_SEMANTICS_SCORECARD_CASE_NAMES.every((name) => names.includes(name)));
+  assert.equal(names.includes("typed-housing-portfolio"), true);
+  assert.equal(DEFAULT_CP_SAT_ROAD_SEMANTICS_SCORECARD_CASE_NAMES.includes("typed-housing-portfolio"), false);
 
   const normalized = normalizeCpSatBenchmarkOptions(
     {
@@ -4148,6 +4187,14 @@ async function testCrossModeBenchmarkHelpers() {
         optimizer: params.optimizer,
         totalPopulation: modeScores[context.mode],
         cpSatStatus: params.optimizer === "cp-sat" ? "FEASIBLE" : undefined,
+        roads: context.mode === "greedy"
+          ? ["0,1"]
+          : context.mode === "lns"
+            ? ["1,1"]
+            : context.mode === "cp-sat-portfolio"
+              ? ["0,0", "2,2"]
+              : ["0,0"],
+        residentials: [{ r: 1, c: 1, rows: 1, cols: 1 }],
       });
       if (context.mode === "auto") {
         solution.activeOptimizer = "lns";
@@ -4387,8 +4434,17 @@ async function testCrossModeBenchmarkHelpers() {
     1
   );
   const mockedAuto = mocked.cases[0].results.find((entry) => entry.mode === "auto");
+  const mockedGreedy = mocked.cases[0].results.find((entry) => entry.mode === "greedy");
   const mockedLns = mocked.cases[0].results.find((entry) => entry.mode === "lns");
   const mockedPortfolio = mocked.cases[0].results.find((entry) => entry.mode === "cp-sat-portfolio");
+  assert.equal(mockedGreedy.roadSemantics.status, "anchor-connected");
+  assert.equal(mockedGreedy.roadSemantics.anchorRoadCount, 1);
+  assert.equal(mockedGreedy.roadSemantics.anchorConnectedRoadRatio, 1);
+  assert.equal(mockedGreedy.roadSemantics.roadAdjacentBuildingCount, 1);
+  assert.equal(mockedLns.roadSemantics.status, "no-anchor-touch");
+  assert.equal(mockedLns.roadSemantics.anchorConnectedRoadCount, 0);
+  assert.equal(mockedPortfolio.roadSemantics.status, "disconnected");
+  assert.equal(mockedPortfolio.roadSemantics.disconnectedRoadCount, 1);
   assert.equal(mockedAuto.budgetAllocationSignal.scoreDeltaVsAuto, 0);
   assert.equal(mockedLns.budgetAllocationSignal.scoreDeltaVsAuto, -2);
   assert.equal(mockedLns.budgetAllocationSignal.signal, "under-used-budget");
@@ -4529,8 +4585,12 @@ async function testCrossModeBenchmarkHelpers() {
   assert.match(formatted, /Equal wall-clock budgets: 3s per mode/);
   assert.match(formatted, /progress=current=/);
   assert.match(formatted, /quality=first-feasible=/);
+  assert.match(formatted, /road-semantics=/);
   assert.match(formatted, /budget-signal=/);
   const mockedFormatted = formatCrossModeBenchmarkSuite(mocked);
+  assert.match(mockedFormatted, /road-semantics=anchor-connected anchor-roads=1 anchor-connected=1 disconnected=0/);
+  assert.match(mockedFormatted, /road-semantics=no-anchor-touch anchor-roads=0 anchor-connected=0/);
+  assert.match(mockedFormatted, /road-semantics=disconnected anchor-roads=1 anchor-connected=1 disconnected=1/);
   assert.match(mockedFormatted, /seed-policy=.*lns-seed-limit:2\.000s/);
   assert.match(mockedFormatted, /seed-policy=.*auto-greedy-seed-limit:3\.000s/);
   assert.match(mockedFormatted, /budget-signal=under-used-budget/);
@@ -6332,7 +6392,10 @@ async function maybeTestCpSatBenchmarkSuite() {
   assert.equal(result.results[0].cpSatOptions.randomSeed, 13);
   assert(result.results[0].wallClockSeconds >= 0);
   assert.equal(typeof result.results[0].cpSatTelemetry?.solveWallTimeSeconds, "number");
+  assert.equal(typeof result.results[0].cpSatTelemetry?.modelSize?.variableCount, "number");
+  assert.equal(typeof result.results[0].cpSatTelemetry?.modelSize?.constraintCount, "number");
   assert(result.results[0].progressTimeline.length > 0);
+  assert.match(formatCpSatBenchmarkSuite(result), /model-size=vars=/);
 
   const withoutTimeline = await runCpSatBenchmarkSuite(DEFAULT_CP_SAT_BENCHMARK_CORPUS, {
     names: ["compact-service-single"],

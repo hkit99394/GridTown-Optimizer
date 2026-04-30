@@ -6,10 +6,10 @@ Date: 2026-04-30
 
 The next stage should move away from a GPU/learned-ranking-first plan and toward a tighter solver-improvement loop:
 
-1. Close out CP-SAT road-rule scorecards after the core formulation alignment.
-2. Make adaptive LNS the main improvement engine.
-3. Expand benchmarks around planner workflows and hard pressure cases.
-4. Use strict telemetry and registry evidence before changing defaults.
+1. Make adaptive LNS the main improvement engine.
+2. Expand benchmarks around planner workflows and hard pressure cases.
+3. Deepen solver telemetry and registry evidence before changing defaults.
+4. Keep CP-SAT focused on exact repair, proof, labels, and failure-mode confidence.
 
 The current solver stack is already strong enough to improve incrementally: Greedy creates fast incumbents, LNS repairs neighborhoods, CP-SAT supplies exact repair/proof, and Auto preserves the best incumbent. The fastest route to better answers is not another mode. It is better model alignment, better neighborhoods, better measurement, and smaller evidence-backed changes.
 
@@ -38,11 +38,11 @@ The default posture remains unchanged: keep `auto` as the recommended quality pa
   - 84 usable LNS replay labels.
   - Protected development/holdout splits.
 - CPU portfolio is closed as a measurement/safety gate. The latest tiny paired run tied population while using more configured worker CPU budget, so portfolio stays explicit-only.
-- CP-SAT road-semantics core alignment is delivered as of 2026-04-30. CP-SAT now uses one road-connectivity formulation: per-component anchored roads.
+- CP-SAT road-semantics alignment and scorecard closeout are delivered as of 2026-04-30. CP-SAT now uses one road-connectivity formulation: per-component anchored roads, and the six-case scorecard reached `OPTIMAL` under a 5s single-worker budget.
 
 ## Key Finding: CP-SAT Road Semantics
 
-The highest-leverage next investigation was CP-SAT road semantics. The core mismatch is now confirmed and fixed; the remaining work is scorecard closeout.
+The highest-leverage next investigation was CP-SAT road semantics. The core mismatch is now confirmed, fixed, and scorecarded.
 
 The formal spec permits multiple road components as long as every road component touches the road-anchor boundary. The TypeScript validation path follows that interpretation by accepting every road cell reachable from any row-0-or-column-0 road anchor.
 
@@ -61,16 +61,17 @@ Delivered action:
 3. Added focused forced-road, warm-start, local-neighborhood, and optimization regression coverage.
 4. Added `multi-anchor-road-components` to the CP-SAT benchmark corpus.
 
-Remaining action:
+Delivered scorecard action:
 
-1. Benchmark the aligned formulation across tiny, small, corridor, gate, service-pressure, and multi-anchor pressure cases.
-2. Watch branch/conflict, wall-clock, and model-size deltas on dense saturated cases.
+1. Added CP-SAT benchmark coverage for tiny, corridor, gate, service-pressure, multi-anchor, and dense saturated road-semantics families.
+2. Added model-size telemetry alongside branch/conflict and wall-clock telemetry.
+3. Registered the evidence under `artifacts/cp-sat-road-semantics/2026-04-30/`.
 
 Success signal:
 
 - CP-SAT, the formal spec, and the TypeScript evaluator agree on feasibility for adversarial multi-anchor cases.
 - CP-SAT scores 200 on `multi-anchor-road-components`.
-- Wider scorecards show no worst-family regression.
+- Wider scorecards show no worst-family regression. The 2026-04-30 single-worker scorecard reached `OPTIMAL` on all six road-semantics cases.
 
 ## Science And Engineering Assessment
 
@@ -118,7 +119,6 @@ Do not start with learned ranking. It should follow telemetry and label scale, n
 
 ### Gaps
 
-- CP-SAT road connectivity may be stricter than the formal spec and TypeScript evaluator.
 - LNS still relies heavily on window selection rather than a broader adaptive destroy/repair operator set.
 - The default benchmark corpus is too small and too easy to saturate for promotion decisions.
 - Planner workflows are not yet first-class benchmark cases.
@@ -133,14 +133,14 @@ Do not start with learned ranking. It should follow telemetry and label scale, n
 
 Goal: make exact repair/proof match the formal spec.
 
-Status: core implementation delivered; wider scorecard closeout remains.
+Status: delivered.
 
 Deliverables:
 
 - Multi-anchor adversarial benchmark cases. Delivered for a focused CP-SAT case.
 - CP-SAT versus TypeScript evaluator feasibility comparison. Delivered in regression coverage.
 - An aligned road formulation that matches the per-component anchor rule. Delivered.
-- Scorecard for aligned CP-SAT formulation. Partial: focused multi-anchor comparison delivered; broader family scorecards remain.
+- Scorecard for aligned CP-SAT formulation. Delivered: `artifacts/cp-sat-road-semantics/2026-04-30/`.
 
 Success signal:
 
@@ -328,11 +328,11 @@ Any default-path solver change must satisfy:
 
 Recommended order:
 
-1. Close out CP-SAT road-semantics scorecards after the core alignment.
-2. Build the product-shaped benchmark corpus.
-3. Add telemetry manifests and strict registry entries for solver/workflow runs.
-4. Implement adaptive LNS operators and operator weighting.
-5. Retune Auto budgets from scorecard evidence.
+1. Build the product-shaped benchmark corpus.
+2. Add telemetry manifests and strict registry entries for solver/workflow runs.
+3. Implement adaptive LNS operators and operator weighting.
+4. Retune Auto budgets from scorecard evidence.
+5. Deepen async and portfolio failure-mode coverage before increasing CP-SAT orchestration complexity.
 6. Add exact small-window DP repair only if telemetry shows small-repair CP-SAT overhead or narrow-window bottlenecks.
 7. Explore service-master decomposition if pressure cases justify it.
 8. Scale LNS replay labels from adaptive operator outcomes.

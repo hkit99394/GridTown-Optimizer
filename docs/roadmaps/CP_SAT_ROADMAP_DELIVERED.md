@@ -86,6 +86,13 @@ Target alignment:
 - added the `multi-anchor-road-components` CP-SAT benchmark case
 - verified CP-SAT reaches 200 population on the multi-anchor case
 
+### 13. Road-semantics scorecard closeout
+- added CP-SAT scorecard coverage for tiny, corridor, gate, service-pressure, multi-anchor, and dense saturated road-semantics families
+- added model-size telemetry to CP-SAT result payloads and benchmark text output
+- registered the scorecard artifact at `artifacts/cp-sat-road-semantics/2026-04-30/`
+- the 5s single-worker scorecard reached `OPTIMAL` on all six cases, including 200 population on `multi-anchor-road-components`
+- no solver default changed; the next CP-SAT priority is async and portfolio failure-mode coverage
+
 ## Notes
 
 - The library now also exposes an async CP-SAT path through `solveAsync(...)` and `solveCpSatAsync(...)`.

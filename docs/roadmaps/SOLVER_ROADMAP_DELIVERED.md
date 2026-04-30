@@ -259,7 +259,10 @@ Reviewed through 2026-04-30.
 - Updated CP-SAT warm-start hints and local-neighborhood fixing so multi-component hinted roads can keep roots per component.
 - Added focused tests for multi-anchor forced-road feasibility, unanchored component rejection, warm-start root hints, local-neighborhood fixing, removed-option validation, and an optimization case where CP-SAT scores 200.
 - Added `multi-anchor-road-components` to the CP-SAT benchmark corpus.
-- Wider post-alignment scorecards across pressure families remain the follow-up evidence gate.
+- Added CP-SAT model-size telemetry to the solver payload and benchmark text output.
+- Added road-semantics scorecard cases for tiny, corridor, gate, service-pressure, multi-anchor, and dense saturated families.
+- Persisted the scorecard evidence under `artifacts/cp-sat-road-semantics/2026-04-30/` and registered it in `artifacts/experiments/index.jsonl`.
+- The 5s single-worker scorecard reached `OPTIMAL` on all six cases, including 200 population on `multi-anchor-road-components`.
 
 ## Maintenance Watchpoints
 

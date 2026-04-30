@@ -109,6 +109,15 @@ export const DEFAULT_CP_SAT_BENCHMARK_OPTIONS: Readonly<Required<
   logSearchProgress: false,
 });
 
+export const DEFAULT_CP_SAT_ROAD_SEMANTICS_SCORECARD_CASE_NAMES: readonly string[] = Object.freeze([
+  "typed-housing-single",
+  "road-semantics-corridor-pressure",
+  "road-semantics-gate-choke",
+  "road-semantics-service-pressure",
+  "multi-anchor-road-components",
+  "road-semantics-dense-saturated",
+]);
+
 function createSeedSequence(baseSeed: number, count: number): number[] {
   return Array.from({ length: count }, (_, index) => baseSeed + index * 101);
 }
@@ -372,6 +381,25 @@ function formatNullableRate(value: number | null): string {
   return value === null ? "n/a" : value.toFixed(3);
 }
 
+function formatModelSize(modelSize: CpSatTelemetry["modelSize"]): string {
+  if (!modelSize) {
+    return "n/a";
+  }
+  return [
+    `vars=${modelSize.variableCount}`,
+    `bools=${modelSize.booleanVariableCount}`,
+    `constraints=${modelSize.constraintCount}`,
+    `allowed-cells=${modelSize.allowedCellCount}`,
+    `road-eligible=${modelSize.roadEligibleCellCount}`,
+    `road-vars=${modelSize.roadVariableCount}`,
+    `roots=${modelSize.rootVariableCount}`,
+    `flow-edges=${modelSize.directedEdgeCount}`,
+    `svc-candidates=${modelSize.serviceCandidateCount}`,
+    `res-candidates=${modelSize.residentialCandidateCount}`,
+    `pop-vars=${modelSize.populationVariableCount}`,
+  ].join(" ");
+}
+
 export function formatCpSatBenchmarkSuite(result: CpSatBenchmarkSuiteResult): string {
   const lines: string[] = [];
   lines.push("=== CP-SAT Benchmark Suite ===");
@@ -391,6 +419,7 @@ export function formatCpSatBenchmarkSuite(result: CpSatBenchmarkSuiteResult): st
           benchmark.cpSatTelemetry.populationGapUpperBound ?? "n/a"
         } branches=${benchmark.cpSatTelemetry.numBranches} conflicts=${benchmark.cpSatTelemetry.numConflicts}`
       );
+      lines.push(`  model-size=${formatModelSize(benchmark.cpSatTelemetry.modelSize)}`);
     }
     lines.push(`  progress-summary=${formatSolverProgressSummary(benchmark.progressSummary)}`);
     lines.push(`  cpu-plan=${formatCpuPlan(benchmark.cpSatCpuPlan)}`);
@@ -463,6 +492,72 @@ export const DEFAULT_CP_SAT_BENCHMARK_CORPUS: readonly CpSatBenchmarkCase[] = Ob
     },
   },
   {
+    name: "road-semantics-corridor-pressure",
+    description: "Road-semantics scorecard case with narrow anchor access and mixed footprints.",
+    grid: [
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 0, 1, 1, 1, 0, 1],
+      [1, 0, 1, 1, 1, 0, 1],
+      [1, 1, 1, 0, 1, 1, 1],
+      [1, 1, 1, 0, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+    ],
+    params: {
+      optimizer: "cp-sat",
+      serviceTypes: [{ rows: 1, cols: 2, bonus: 60, range: 2, avail: 1 }],
+      residentialTypes: [
+        { w: 2, h: 2, min: 80, max: 180, avail: 2 },
+        { w: 2, h: 3, min: 140, max: 300, avail: 1 },
+      ],
+      availableBuildings: { services: 1, residentials: 3 },
+    },
+  },
+  {
+    name: "road-semantics-gate-choke",
+    description: "Road-semantics scorecard case where a central choke point separates high-value placements.",
+    grid: [
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 0, 1, 1, 1],
+      [1, 1, 0, 1, 1, 1],
+      [1, 1, 1, 1, 0, 1],
+      [1, 1, 1, 1, 0, 1],
+      [1, 1, 1, 1, 1, 1],
+    ],
+    params: {
+      optimizer: "cp-sat",
+      serviceTypes: [{ rows: 1, cols: 1, bonus: 70, range: 2, avail: 1 }],
+      residentialTypes: [
+        { w: 2, h: 2, min: 90, max: 190, avail: 2 },
+        { w: 3, h: 2, min: 150, max: 330, avail: 1 },
+      ],
+      availableBuildings: { services: 1, residentials: 3 },
+    },
+  },
+  {
+    name: "road-semantics-service-pressure",
+    description: "Road-semantics scorecard case with overlapping service ranges and scarce premium housing.",
+    grid: [
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+    ],
+    params: {
+      optimizer: "cp-sat",
+      serviceTypes: [
+        { rows: 1, cols: 1, bonus: 50, range: 1, avail: 1 },
+        { rows: 2, cols: 1, bonus: 90, range: 2, avail: 1 },
+      ],
+      residentialTypes: [
+        { w: 2, h: 2, min: 80, max: 220, avail: 2 },
+        { w: 2, h: 3, min: 160, max: 360, avail: 1 },
+      ],
+      availableBuildings: { services: 2, residentials: 3 },
+    },
+  },
+  {
     name: "multi-anchor-road-components",
     description: "Disconnected anchor-valid road components should both remain usable under the aligned road formulation.",
     grid: [
@@ -474,6 +569,29 @@ export const DEFAULT_CP_SAT_BENCHMARK_CORPUS: readonly CpSatBenchmarkCase[] = Ob
       optimizer: "cp-sat",
       residentialTypes: [{ w: 2, h: 2, min: 100, max: 100, avail: 2 }],
       availableBuildings: { residentials: 2, services: 0 },
+    },
+  },
+  {
+    name: "road-semantics-dense-saturated",
+    description: "Dense saturated road-semantics scorecard case for model-size, branch, conflict, and wall-clock watchpoints.",
+    grid: [
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+    ],
+    params: {
+      optimizer: "cp-sat",
+      serviceTypes: [
+        { rows: 1, cols: 1, bonus: 40, range: 1, avail: 2 },
+        { rows: 2, cols: 1, bonus: 80, range: 2, avail: 1 },
+      ],
+      residentialTypes: [
+        { w: 2, h: 2, min: 60, max: 180, avail: 3 },
+        { w: 2, h: 3, min: 140, max: 320, avail: 2 },
+      ],
+      availableBuildings: { services: 3, residentials: 5 },
     },
   },
   {

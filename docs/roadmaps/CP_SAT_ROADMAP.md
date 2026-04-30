@@ -28,28 +28,15 @@ Delivered summary:
 - async-first caller path
 - benchmark corpus and reproducible harness
 - single-machine portfolio CP-SAT
+- road-semantics scorecard closeout with model-size telemetry
 
 Detailed delivered notes live in [CP_SAT_ROADMAP_DELIVERED.md](./CP_SAT_ROADMAP_DELIVERED.md).
 
 ## Remaining Work By Product Priority
 
-Ordering note: this CP-SAT-specific list follows [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md) and [NEXT_STAGE_REVIEW.md](./NEXT_STAGE_REVIEW.md). Road-semantics scorecard closeout remains the first CP-SAT priority before async/portfolio hardening.
+Ordering note: this CP-SAT-specific list follows [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md) and [NEXT_STAGE_REVIEW.md](./NEXT_STAGE_REVIEW.md). Road-semantics scorecard closeout is now delivered; async/portfolio hardening is the next CP-SAT priority.
 
-### 1. Close out road-semantics scorecards
-
-Impact on target: high correctness / high quality on multi-anchor maps
-
-Current status:
-- delivered core model alignment on 2026-04-30
-- CP-SAT now has a single road-connectivity formulation: per-component anchored roads
-- the CP-SAT benchmark corpus includes `multi-anchor-road-components`
-- focused verification shows CP-SAT reaches 200 population on that case
-
-Remaining scope:
-- run post-alignment scorecards across tiny, corridor, gate, service-pressure, and multi-anchor families
-- watch model-size, branch/conflict, and wall-clock deltas on dense saturated cases
-
-### 2. Deepen async and portfolio failure-mode coverage
+### 1. Deepen async and portfolio failure-mode coverage
 
 Impact on target: high confidence / medium direct quality
 
@@ -65,7 +52,7 @@ Scope:
 - malformed streamed progress payloads
 - async child-process failure paths
 
-### 3. Use CP-SAT as a label and replay engine
+### 2. Use CP-SAT as a label and replay engine
 
 Impact on target: high enabling value
 
@@ -85,7 +72,7 @@ Guardrails:
 - always record wall-clock and CPU budget for parallel replay
 - keep `CP-SAT` labels tied to the exact model fingerprint and validated solution shape
 
-### 4. Distributed CP-SAT
+### 3. Distributed CP-SAT
 
 Priority note:
 - this has the highest remaining exact-search compute ceiling, but not the highest near-term product leverage
@@ -113,3 +100,4 @@ Core requirements:
 - Do not raise portfolio fan-out limits or begin distributed orchestration before cancellation and degraded-worker behavior have dedicated coverage.
 - Do not use CP-SAT parallelism as a headline win unless the scorecard reports CPU budget as well as wall-clock.
 - Treat building connectivity-shadow scoring as a heuristic/planner feature first; CP-SAT already models exact feasibility and should mainly provide labels, proofs, and validation for it.
+- Treat CP-SAT semantic gates as OR-Tools-enabled checks; a default test run that skips CP-SAT runtime coverage is not enough evidence by itself.

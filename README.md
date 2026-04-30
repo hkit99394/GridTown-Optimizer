@@ -541,6 +541,29 @@ Use the harder ablation coverage corpus when the default cases saturate:
 npm run benchmark:scorecard -- --budget-ablation --coverage-corpus --modes=auto,greedy,lns --budgets=5,30 --seeds=7,19
 ```
 
+Use the product-shaped workflow corpus when collecting evidence for promotion or regression decisions. This corpus keeps development and holdout cases explicit and tags planner-shaped workflows such as manual-layout replay, expansion comparison, corridor/gate pressure, service pressure, anchor-service, and multi-anchor road components:
+
+```bash
+npm run benchmark:scorecard -- --product-corpus --list
+npm run benchmark:scorecard -- --product-corpus --modes=auto,greedy,lns,cp-sat --budgets=1,5,30 --seeds=7,19 --json
+```
+
+Register product-corpus artifacts with split-aware `cases` metadata and workflow-tag `caseFamilies` so later checks can distinguish development tuning from protected holdout evidence:
+
+```json
+{
+  "cases": {
+    "development": ["manual-layout-replay-warm-start"],
+    "holdout": ["expansion-comparison-replay"]
+  },
+  "caseFamilies": ["manual-layout-replay", "expansion-comparison"],
+  "splitStatus": {
+    "protectedHoldout": true,
+    "notes": "Product-shaped scorecard with explicit development and holdout coverage."
+  }
+}
+```
+
 Start with a narrow matrix before adding `120` second probes; corrected LNS budget policies can legitimately consume the requested budget. Ablation summaries report total coverage plus best-score, Auto, and LNS deltas versus the baseline policy so unrelated mode winners do not hide Auto/LNS movement.
 
 Emit policy-scoped decision traces for the same ablation runner:

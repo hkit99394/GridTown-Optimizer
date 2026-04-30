@@ -270,8 +270,10 @@ Reviewed through 2026-04-30.
 - Added `DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS` with 10 cases covering solver smoke, manual-layout replay, expansion-comparison replay, corridor, gate, footprint-pressure, service-pressure, anchor-service, and multi-anchor workflows.
 - Added `--product-corpus` to the cross-mode benchmark CLI and guarded it against combining with `--coverage-corpus`.
 - Added reusable LNS seed and CP-SAT warm-start cases for manual-layout and expansion-comparison replay smoke coverage.
+- Added product workflow evidence-summary and registry-entry draft helpers that project split coverage, workflow tags, reuse source, timing, CP-SAT status/gap, expansion lift, and scorecard replay coverage into strict-registry-ready metadata.
+- Added product-corpus registry regression coverage and README guidance for split-aware `cases` metadata and workflow-tag `caseFamilies`.
 - Added CP-SAT async/portfolio failure regressions for malformed streamed progress, malformed portfolio-worker progress with backend termination, non-zero child-process diagnostics, blocked process-pool fallback, and `BrokenProcessPool` fallback.
-- No solver defaults changed; promotion-grade product corpus runs still need fixed-budget dev/holdout artifacts and registry entries.
+- No solver defaults changed; promotion-grade product corpus runs still need actual fixed-budget dev/holdout artifacts and appended registry entries.
 
 ## Maintenance Watchpoints
 

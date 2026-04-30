@@ -21,7 +21,7 @@
     "experiment-registry:check": "npm run build && node dist/experimentRegistryCli.js check",
     "setup:cp-sat": "bash scripts/setup-cp-sat.sh",
     "test:acceptance": "node tests/acceptance/city-builder-bdd.test.cjs",
-    "test": "npm run build && npm run test:acceptance && node tests/review-findings.test.cjs && node tests/experiment-registry.test.cjs && node tests/web-server-routes.test.cjs && node tests/optimizers.test.cjs"
+    "test": "npm run build && npm run test:acceptance && node tests/review-findings.test.cjs && node tests/experiment-registry.test.cjs && node tests/product-corpus-registry.test.cjs && node tests/web-server-routes.test.cjs && node tests/optimizers.test.cjs"
   },
   "keywords": [],
   "author": "",

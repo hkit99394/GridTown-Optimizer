@@ -152,7 +152,7 @@ Success signal:
 
 Goal: judge solver changes on the real planning loop, not only saturated smoke tests.
 
-Status: partial. The initial selectable corpus and scorecard metadata are delivered; promotion-grade dev/holdout runs and API-level workflow metrics are still open.
+Status: partial. The initial selectable corpus, scorecard metadata, evidence-summary projection, and strict registry-entry draft path are delivered; promotion-grade dev/holdout artifact runs and API-level workflow metrics are still open.
 
 Deliverables:
 
@@ -161,7 +161,7 @@ Deliverables:
 - Add manual-layout replay through `/api/layout/evaluate`. Initial reusable-hint replay case delivered; API-level replay metrics remain.
 - Add expansion-comparison replay. Initial expansion replay case delivered; explicit expansion-comparison lift metrics remain.
 - Add corridor, gate, footprint-pressure, service-overlap, anchor-service, and multi-anchor cases. Initial tagged coverage delivered.
-- Preserve development and protected holdout splits. Initial case-level split metadata delivered.
+- Preserve development and protected holdout splits. Initial case-level split metadata and strict registry draft checks delivered; filtered runs are marked as partial rather than protected holdout evidence.
 
 Metrics:
 
@@ -331,7 +331,7 @@ Any default-path solver change must satisfy:
 
 Recommended order:
 
-1. Run and register the initial product-shaped benchmark corpus, then add API-level workflow metrics.
+1. Run and register the initial product-shaped benchmark corpus with the strict registry draft helper, then add API-level workflow metrics.
 2. Add telemetry manifests and strict registry entries for solver/workflow runs.
 3. Implement adaptive LNS operators and operator weighting.
 4. Retune Auto budgets from scorecard evidence.

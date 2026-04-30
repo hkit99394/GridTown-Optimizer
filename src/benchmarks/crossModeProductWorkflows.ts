@@ -7,9 +7,47 @@ import { DEFAULT_LNS_BENCHMARK_CORPUS } from "./lns.js";
 import type {
   CrossModeBenchmarkCase,
   CrossModeBenchmarkSplit,
+  CrossModeBenchmarkSuiteResult,
   CrossModeProblemSizeBand,
   CrossModeWorkflowTag,
 } from "./crossMode.js";
+
+export interface CrossModeProductWorkflowRegistryEntryDraftOptions {
+  runId?: string;
+  commands: readonly string[];
+  artifactPaths: readonly string[];
+  decision?: string;
+  summary?: string;
+}
+
+export interface CrossModeProductWorkflowCaseMetric {
+  caseName: string;
+  split: CrossModeBenchmarkSplit;
+  workflowTags: CrossModeWorkflowTag[];
+  budgetSeconds: number;
+  seed: number;
+  bestScore: number | null;
+  bestMode: string | null;
+  autoScore: number | null;
+  autoDeltaToBest: number | null;
+  timeToFirstFeasibleSeconds: number | null;
+  timeToBestSeconds: number | null;
+  reuseSources: string[];
+  cpSatStatuses: string[];
+  minimumExactGap: number | null;
+  manualReplayCoverage: "not-applicable" | "scorecard-replay-case";
+  expansionComparisonLift: number | null;
+}
+
+export interface CrossModeProductWorkflowEvidenceSummary {
+  caseCount: number;
+  modeCount: number;
+  budgetsSeconds: number[];
+  seeds: number[];
+  splitCaseCounts: Record<CrossModeBenchmarkSplit, number>;
+  workflowTagCounts: Partial<Record<CrossModeWorkflowTag, number>>;
+  caseMetrics: CrossModeProductWorkflowCaseMetric[];
+}
 
 interface ProductWorkflowCaseSpec {
   corpus: readonly CrossModeBenchmarkCase[];
@@ -227,3 +265,155 @@ export const DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS: readonly CrossModeBench
   ...PRODUCT_WORKFLOW_CASE_SPECS.map(selectProductWorkflowCase),
   ...PRODUCT_WORKFLOW_REPLAY_CASES,
 ]);
+
+function dateSlug(value: string): string {
+  return value.slice(0, 10);
+}
+
+function caseNamesBySplit(result: Pick<CrossModeBenchmarkSuiteResult, "cases">): Record<CrossModeBenchmarkSplit, string[]> {
+  const splitCases: Record<CrossModeBenchmarkSplit, Set<string>> = {
+    development: new Set(),
+    holdout: new Set(),
+  };
+  for (const scorecard of result.cases) {
+    splitCases[scorecard.split].add(scorecard.name);
+  }
+  return {
+    development: [...splitCases.development],
+    holdout: [...splitCases.holdout],
+  };
+}
+
+function uniqueSorted(values: readonly string[]): string[] {
+  return [...new Set(values)].sort();
+}
+
+function nullableMin(values: readonly (number | null)[]): number | null {
+  const finiteValues = values.filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+  return finiteValues.length === 0 ? null : Math.min(...finiteValues);
+}
+
+function millisecondsToSeconds(value: number | null): number | null {
+  return value === null ? null : Number((value / 1000).toFixed(3));
+}
+
+function productWorkflowCaseFamilies(result: Pick<CrossModeBenchmarkSuiteResult, "cases">): string[] {
+  return uniqueSorted(result.cases.flatMap((scorecard) => scorecard.workflowTags));
+}
+
+function assertNonEmptyStringList(values: readonly string[], label: string): void {
+  if (values.length === 0 || values.some((value) => value.trim().length === 0)) {
+    throw new Error(`Product workflow registry ${label} must include at least one non-empty value.`);
+  }
+}
+
+export function buildCrossModeProductWorkflowEvidenceSummary(
+  result: CrossModeBenchmarkSuiteResult
+): CrossModeProductWorkflowEvidenceSummary {
+  const splitCases = caseNamesBySplit(result);
+  const tagCounts = Object.fromEntries(
+    productWorkflowCaseFamilies(result).map((tag) => [
+      tag,
+      result.cases.filter((scorecard) => scorecard.workflowTags.includes(tag as CrossModeWorkflowTag)).length,
+    ])
+  ) as Partial<Record<CrossModeWorkflowTag, number>>;
+
+  return {
+    caseCount: result.caseCount,
+    modeCount: result.modeCount,
+    budgetsSeconds: [...result.budgetsSeconds],
+    seeds: [...result.seeds],
+    splitCaseCounts: {
+      development: splitCases.development.length,
+      holdout: splitCases.holdout.length,
+    },
+    workflowTagCounts: tagCounts,
+    caseMetrics: result.cases.map((scorecard) => {
+      const bestResult = scorecard.results.find((entry) => entry.rank === 1) ?? null;
+      const autoResult = scorecard.results.find((entry) => entry.mode === "auto") ?? null;
+      const firstFeasibleMs = nullableMin(scorecard.results.map((entry) => entry.timeToQuality.firstFeasibleAtMs));
+      const bestScoreMs = nullableMin(scorecard.results.map((entry) => entry.timeToQuality.bestScoreAtMs));
+      const exactGap = nullableMin(scorecard.results.map((entry) => entry.progressSummary.exactGap));
+      const autoDeltaToBest =
+        scorecard.bestScore === null || autoResult === null ? null : scorecard.bestScore - autoResult.totalPopulation;
+      return {
+        caseName: scorecard.name,
+        split: scorecard.split,
+        workflowTags: [...scorecard.workflowTags],
+        budgetSeconds: scorecard.budgetSeconds,
+        seed: scorecard.seed,
+        bestScore: scorecard.bestScore,
+        bestMode: bestResult?.mode ?? null,
+        autoScore: autoResult?.totalPopulation ?? null,
+        autoDeltaToBest,
+        timeToFirstFeasibleSeconds: millisecondsToSeconds(firstFeasibleMs),
+        timeToBestSeconds: millisecondsToSeconds(bestScoreMs),
+        reuseSources: uniqueSorted(
+          scorecard.results
+            .map((entry) => entry.progressSummary.reuseSource)
+            .filter((entry): entry is string => entry !== null)
+        ),
+        cpSatStatuses: uniqueSorted(
+          scorecard.results
+            .map((entry) => entry.cpSatStatus)
+            .filter((entry): entry is string => entry !== null)
+        ),
+        minimumExactGap: exactGap,
+        manualReplayCoverage: scorecard.workflowTags.includes("manual-layout-replay")
+          ? "scorecard-replay-case"
+          : "not-applicable",
+        expansionComparisonLift: scorecard.workflowTags.includes("expansion-comparison") ? autoDeltaToBest : null,
+      };
+    }),
+  };
+}
+
+export function buildCrossModeProductWorkflowRegistryEntryDraft(
+  result: CrossModeBenchmarkSuiteResult,
+  options: CrossModeProductWorkflowRegistryEntryDraftOptions
+): Record<string, unknown> {
+  assertNonEmptyStringList([...options.commands], "commands");
+  assertNonEmptyStringList([...options.artifactPaths], "artifact paths");
+
+  const splitCases = caseNamesBySplit(result);
+  const caseFamilies = productWorkflowCaseFamilies(result);
+  const evidenceSummary = buildCrossModeProductWorkflowEvidenceSummary(result);
+  const protectedHoldout = splitCases.development.length > 0 && splitCases.holdout.length > 0;
+  return {
+    schemaVersion: 1,
+    runId: options.runId ?? `product-workflow-corpus-${dateSlug(result.generatedAt)}`,
+    artifactType: "benchmark",
+    generatedAt: result.generatedAt,
+    commands: [...options.commands],
+    artifactPaths: [...options.artifactPaths],
+    cases: splitCases,
+    caseFamilies,
+    seeds: [...result.seeds],
+    splitStatus: {
+      protectedHoldout,
+      splitField: "CrossModeBenchmarkCase.split",
+      developmentCaseCount: splitCases.development.length,
+      holdoutCaseCount: splitCases.holdout.length,
+      leakage: protectedHoldout ? "none" : "not-evaluated",
+      notes: protectedHoldout
+        ? "Product workflow corpus scorecard with case-level development/holdout split metadata."
+        : "Partial product workflow corpus scorecard; not protected holdout promotion evidence.",
+    },
+    budget: {
+      wallClockBudgetsSeconds: [...result.budgetsSeconds],
+      caseCount: result.caseCount,
+      modeCount: result.modes.length,
+      totalRuns: result.cases.reduce((sum, scorecard) => sum + scorecard.results.length, 0),
+    },
+    model: null,
+    decision: options.decision ?? "no-default-promotion",
+    summary: options.summary
+      ?? `Product workflow corpus scorecard over ${result.caseCount} cases, ${result.modes.length} modes, ${result.budgetsSeconds.length} budget(s), and ${result.seeds.length} seed(s).`,
+    summaryMetrics: {
+      splitCaseCounts: evidenceSummary.splitCaseCounts,
+      workflowTagCounts: evidenceSummary.workflowTagCounts,
+      modes: [...result.modes],
+      caseMetricCount: evidenceSummary.caseMetrics.length,
+    },
+  };
+}

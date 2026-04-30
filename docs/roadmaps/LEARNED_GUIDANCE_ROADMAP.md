@@ -29,6 +29,8 @@ This roadmap is not about:
 - Instrument first, train second.
 - Prefer supervised ranking or bandit-style guidance before full RL.
 - Use AlphaGo / AlphaZero as search-guidance inspiration, not as a self-play template.
+- Score variable-size candidate sets produced by deterministic enumerators; do not force the planner state into a fixed Go-board-like action vector.
+- Treat learned scores as search priorities only. They may reorder, defer, or allocate budget, but they must not permanently prune candidates unless an exact bound or dominance proof justifies it.
 - Only pursue full RL after cheaper learned baselines already win.
 - Keep learned logic behind feature flags and preserve deterministic fallback behavior.
 - Compare approaches under equal wall-clock and equal solver-budget constraints.
@@ -81,11 +83,13 @@ What transfers well:
 - policy / value guidance around exact legality, validation, and search
 - ranking which candidate, neighborhood, or seed to try next
 - learning the control layer while keeping `CP-SAT` and exact scoring deterministic
+- bootstrapping from search-improved labels, such as counterfactual `LNS` replay outcomes, as long as the search budget and data split are explicit
 
 What does not transfer well:
 - adversarial self-play assumptions
 - cheap rollout assumptions, because one useful `LNS` label may cost a bounded `CP-SAT` repair run
 - raw cell-by-cell generation or attempts to replace `CP-SAT`
+- irreversible learned pruning of branches, windows, or placements without exact solver evidence
 
 Remaining gates before any RL work:
 - extend the delivered trace layer with richer chosen-vs-available offline-learning state capture
@@ -457,9 +461,13 @@ Every milestone should clear all of the following before the next phase begins:
 6. Deterministic fallback:
    preserve the current non-ML path and keep it easy to compare against the learned path
 
+7. Attribution ablation:
+   compare the same search with learned ranking, deterministic ranking, random ranking, and single-feature ranking so extra search effort is not mistaken for model lift
+
 ## Guardrails
 
 - Do not replace exact scoring or legality with learned approximations.
+- Do not use learned value estimates as proof that a candidate, branch, or neighborhood is empty of better solutions.
 - Do not push learned logic into baseline deterministic helpers when tests depend on their ordering.
 - Do not call a scorer or budget allocator `RL` unless it actually uses an online reward-learning loop.
 - Prefer small, interpretable models before large deep models.

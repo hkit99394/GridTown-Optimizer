@@ -1,363 +1,334 @@
 # Next Stage Solver Review
 
-Date: 2026-04-28
+Date: 2026-04-30
 
 ## Executive Summary
 
-The solver stack is in a healthy measurement-first state. The project already has the important production pieces: Greedy, LNS, CP-SAT, Auto orchestration, exact validation, planner explainability, benchmark scorecards, deterministic ablation evidence, low-risk learned-ranking labels, and guarded CP-SAT portfolio execution.
+The next stage should move away from a GPU/learned-ranking-first plan and toward a tighter solver-improvement loop:
 
-The next stage should not promote GPU, portfolio, or learned ranking into the default path yet. The strongest next move is to build a long-running improvement loop that repeatedly gathers solver traces, produces counterfactual labels, trains small ranking policies offline, and only promotes a change when it beats the deterministic baseline on protected holdout cases under equal wall-clock and CPU-budget accounting.
+1. Confirm that CP-SAT, the TypeScript evaluator, and the formal spec encode the same road rules.
+2. Make adaptive LNS the main improvement engine.
+3. Expand benchmarks around planner workflows and hard pressure cases.
+4. Use strict telemetry and registry evidence before changing defaults.
 
-GPU should be treated as an accelerator for the research and replay workflow first, not as a direct replacement for the current OR-Tools CP-SAT path. Near-term GPU value is most plausible in batched feature extraction, offline model training, and possibly experimental MILP/LP-style solver comparisons. It is less plausible as a drop-in speedup for LNS repair, because the current LNS repair path intentionally uses single-worker CP-SAT for stability.
+The current solver stack is already strong enough to improve incrementally: Greedy creates fast incumbents, LNS repairs neighborhoods, CP-SAT supplies exact repair/proof, and Auto preserves the best incumbent. The fastest route to better answers is not another mode. It is better model alignment, better neighborhoods, better measurement, and smaller evidence-backed changes.
+
+The default posture remains unchanged: keep `auto` as the recommended quality path. Learned guidance, CP-SAT portfolio, GPU acceleration, distributed solving, and external solvers remain gated research tracks.
 
 ## Current Status
 
 ### Shipped Runtime
 
-- `auto` is the recommended quality path. It runs a Greedy seed, then repeated bounded LNS / CP-SAT cycles while improvement is still useful. CP-SAT portfolio options are stripped from Auto stage parameters, so portfolio remains an explicit `cp-sat` experiment path rather than part of Auto.
+- `auto` is the recommended quality path. It runs a Greedy seed, then bounded LNS / CP-SAT cycles while improvement remains useful.
 - `greedy` is a fast incumbent and diagnostics engine with restarts, local search, service ranking, final road cleanup, connectivity-shadow traces, and road-opportunity counterfactuals.
-- `LNS` is the main improvement engine. It starts from a validated seed, generates deterministic repair windows, fixes outside the window, and calls CP-SAT for exact repair.
-- `CP-SAT` is the exact model/backend. It provides proof when the result is `OPTIMAL`; bounded runs may return `FEASIBLE` without proof. It also supplies gap, upper-bound, warm-start, continuation, telemetry, async, and explicit portfolio support.
-- The local web planner exposes saved layouts, manual editing, solved-map inspection, and explainability maps.
+- `LNS` is the main improvement engine. It starts from a validated seed, generates repair windows, fixes outside a selected window, and calls CP-SAT for exact repair.
+- `CP-SAT` is the exact backend. It supplies proof when status is `OPTIMAL`; bounded runs may return `FEASIBLE` with an incumbent and gap.
+- The local planner supports saved layouts, manual editing, layout validation, continuation hints, solved-map inspection, explainability maps, and expansion comparison.
+- Cross-mode benchmarks, deterministic ablations, learned-label artifacts, CP-SAT portfolio measurement, and an experiment registry already exist.
 
 ### Evidence Already Closed
 
 - Deterministic ablations are closed as an evidence gate. No deterministic variant is ready for default promotion.
-- Connectivity-shadow scoring is a learning target, not a default. It produced isolated wins with no population regressions in the gate, but it has a positive wall-clock cost.
-- LNS anchor and window variants are learning targets because they move windows without population regressions, but they still require more counterfactual labels.
+- Connectivity-shadow scoring is a learning target, not a default. It produced isolated wins with no population regressions in the gate, but with positive wall-clock cost.
+- LNS anchor/window variants are learning targets because they move windows without population regressions, but the replay label volume is too small for model training.
 - Low-risk learned-ranking labels exist:
   - 4,593 Greedy labels.
   - 888 Greedy connectivity-shadow labels.
   - 3,705 Greedy road-opportunity near-miss labels.
   - 84 usable LNS replay labels.
   - Protected development/holdout splits.
-- CPU portfolio is closed as a measurement/safety gate. The latest tiny paired run tied population while using more configured worker CPU budget, so portfolio should stay explicit-only and should not be routed through Auto without CPU-normalized wins.
+- CPU portfolio is closed as a measurement/safety gate. The latest tiny paired run tied population while using more configured worker CPU budget, so portfolio stays explicit-only.
 
-### Fresh Health Check
+## Key Finding: CP-SAT Road Semantics
 
-Commands run during this review:
+The highest-leverage next investigation is CP-SAT road semantics.
 
-```bash
-npm test
-node dist/crossModeBenchmarkCli.js --modes=auto,greedy,lns,cp-sat --budgets=5 --seeds=7
-```
+The formal spec permits multiple road components as long as every road component touches the road-anchor boundary. The TypeScript validation path follows that interpretation by accepting every road cell reachable from any row-0-or-column-0 road anchor.
 
-Result:
+The Python CP-SAT model appears to use one root and one connected flow network for all selected road cells. That can be stricter than the spec if multiple independent anchored road components are legal. If confirmed, this is not just a performance tweak. It is a correctness and search-quality issue:
 
-- Test suite passed.
-- The 5s, seed-7, four-case scorecard kept the current `auto` posture:
-  - Auto matched the best score on all four default cases.
-  - Greedy lost only on `row0-corridor-repair-pressure`, scoring 260 versus the best 275.
-  - LNS and CP-SAT matched Auto on the default four-case sample.
-  - Auto's useful improvement happened on the corridor pressure case, where LNS added +15 accepted population.
+- It can reject layouts that the spec and evaluator accept.
+- It can force extra connector roads.
+- It can reduce feasible building space.
+- It can make CP-SAT repairs less useful inside LNS.
+- It can skew benchmark decisions when CP-SAT is treated as the exact backend.
 
-Artifact:
+Recommended action:
 
-- [health-check summary](../../artifacts/health-checks/2026-04-28/SUMMARY.md)
+1. Add small adversarial cases with two or more independently anchored road components.
+2. Verify CP-SAT feasibility and objective against the TypeScript evaluator.
+3. Introduce a guarded CP-SAT road-connectivity formulation toggle if the mismatch is confirmed.
+4. Benchmark old versus aligned formulation across tiny, small, corridor, gate, and multi-anchor pressure cases before changing defaults.
 
-Interpretation:
+Success signal:
 
-- The current default is safe and competitive on the default corpus.
-- The best next-stage leverage is not a broad default change.
-- The useful pressure case remains sparse anchor/corridor access, where Greedy can miss a repair that LNS/CP-SAT find.
+- CP-SAT, the formal spec, and the TypeScript evaluator agree on feasibility.
+- The aligned formulation does not regress saturated smoke cases.
+- Multi-anchor adversarial cases either improve or expose a documented tradeoff.
+
+## Science And Engineering Assessment
+
+### Problem Shape
+
+The solver is tackling a hybrid combinatorial optimization problem:
+
+- rectangle packing for service and residential footprints
+- weighted set packing for non-overlap and availability
+- maximum coverage / facility-location style service bonuses
+- connected or anchor-connected road-network design
+- bounded-time anytime search for interactive use
+
+This shape supports the current hybrid architecture. Greedy, LNS, and CP-SAT are not competing philosophies; they are complementary parts of one portfolio.
+
+### Algorithm Direction
+
+Best next algorithmic sequence:
+
+1. CP-SAT model alignment and strengthening.
+2. Adaptive LNS over semantic neighborhoods.
+3. Auto budget retuning from telemetry.
+4. Service-master decomposition experiments.
+5. Geometry-native CP-SAT or external exact solvers only as controlled research branches.
+
+Do not start with learned ranking. It should follow telemetry and label scale, not precede them.
+
+### Research Anchors
+
+- OR-Tools CP-SAT is appropriate for integer combinatorial optimization and reports `OPTIMAL`, `FEASIBLE`, and bounded-search status. Reference: [OR-Tools CP-SAT guide](https://developers.google.com/optimization/cp/cp_solver).
+- Adaptive Large Neighborhood Search is a strong fit for this solver shape because it combines multiple destroy/repair heuristics and rewards operators that improve. Reference: Ropke and Pisinger, [Adaptive Large Neighborhood Search](https://pubsonline.informs.org/doi/10.1287/trsc.1050.0135).
+- Learning for combinatorial optimization is useful only when trained and evaluated on representative distributions with protected holdout evidence. Reference: Bengio, Lodi, and Prouvost, [Machine learning for combinatorial optimization](https://www.sciencedirect.com/science/article/pii/S0377221720306895).
 
 ## Architecture Review
 
 ### Strengths
 
-- The solver contract is correctly incumbent-first. Greedy gives a fast feasible answer, LNS improves locally under bounded budgets, and CP-SAT supplies exact repair/proof.
-- The exact evaluator remains the source of truth for validity and population. This is the right boundary for any learned guidance.
-- Auto records stage summaries, random seeds, timing, candidate population, accepted population, and improvement, which gives enough structure to reason about budget allocation.
-- LNS telemetry records seed source, seed timing, repair budgets, repair outcomes, stale time, and improvement, which is a good base for counterfactual learning.
-- Portfolio code already accounts for worker counts, CPU budget, seeds, and total CPU-seconds. That is the right discipline before adding more parallelism.
-- The roadmap already contains strong guardrails: equal-budget comparisons, exact validation, protected holdout, deterministic fallback, and CPU-budget reporting.
+- The solver contract is correctly incumbent-first: fast feasible incumbent, bounded repair, exact polish/proof.
+- Exact validation remains deterministic and separate from heuristic or learned guidance.
+- Auto records stage summaries, random seeds, timing, accepted population, and improvement.
+- LNS telemetry records seed source, repair budgets, repair outcomes, stale time, and improvement.
+- Portfolio code already records worker counts, CPU budget, seeds, and CPU-normalized signals.
+- The planner exposes the actual user loop: solve, inspect, edit, validate, reuse, compare.
+- The benchmark and experiment registry are good foundations for promotion discipline.
 
 ### Gaps
 
-- The learned-guidance roadmap's early phases are now partially delivered, but the roadmap still reads as if measurement, trace export, ablations, and initial labels are future work. The next roadmap should distinguish `delivered`, `partial`, `needs scale`, and `not started`.
-- LNS replay labels are too small for model promotion. The 84 usable labels are enough for schema and sanity checks, not robust generalization.
-- The current LNS replay label bundle has no useful holdout improvement signal yet: the 36 holdout replay labels are usable but neutral. That blocks any claim that an LNS ranker can generalize.
-- The default benchmark corpus is small and easy to saturate. It is useful for regression but not enough to decide GPU, learned ranking, portfolio, or long-running improvement policies.
-- Auto spends time on LNS/CP-SAT even when the best score is already found early on saturated cases. This is acceptable for quality mode, but it suggests the improvement loop should learn case classes and saturation signals before retuning budgets.
-- The experiment registry is seeded at `artifacts/experiments/index.jsonl`, but it still needs validation/check tooling, append helpers, hardware completeness rules, and backfill quality checks before promotion decisions depend on it.
-- There is no trained model path yet. Labels exist, but there is no `python/ml/` experiment scaffold, offline metric report, or feature-flagged scorer interface.
+- CP-SAT road connectivity may be stricter than the formal spec and TypeScript evaluator.
+- LNS still relies heavily on window selection rather than a broader adaptive destroy/repair operator set.
+- The default benchmark corpus is too small and too easy to saturate for promotion decisions.
+- Planner workflows are not yet first-class benchmark cases.
+- Stage telemetry is useful but not yet complete enough to diagnose candidate counts, model size, first feasible time, and best-score time across every run.
+- LNS replay labels are too small and too neutral for model promotion.
+- There is no trained model path, model artifact, offline metric report, or feature-flagged scorer ready for runtime use.
+- Job state remains local-process memory; that is acceptable for a local planner but not for hosted multi-user scale.
 
-## GPU Assessment
+## Recommended Next-Stage Roadmap
 
-### What GPU Should Not Do First
+### Stage 1: CP-SAT Road-Semantics Alignment
 
-- Do not try to make OR-Tools CP-SAT itself "use the GPU" as the next milestone. The current CP-SAT runtime is CPU/thread/worker-oriented, and local repair is explicitly single-worker for stability.
-- Do not move legality, connectivity, scoring, or final validation to a model. Those should remain deterministic.
-- Do not start with full RL or raw cell-by-cell generation. The current search stack is too valuable to bypass.
+Goal: make exact repair/proof match the formal spec.
 
-### Where GPU Can Help Soon
+Deliverables:
 
-1. Offline training
+- Multi-anchor adversarial benchmark cases.
+- CP-SAT versus TypeScript evaluator feasibility comparison.
+- A guarded aligned-road formulation or documented proof that the current formulation is equivalent.
+- Scorecard for old versus aligned CP-SAT formulation.
 
-   Train small ranking/value models over Greedy and LNS candidate features. GPU is useful once label volume grows, especially for neural rankers or large batched feature tensors. Start with simple models first so a CPU baseline exists.
+Success signal:
 
-2. Batched feature extraction
+- Spec, evaluator, and CP-SAT agree on road feasibility.
+- Any formulation change improves or ties quality on relevant pressure families without invalid layouts.
 
-   Connectivity shadow and opportunity features are graph/grid-heavy. Most current cases are probably too small for GPU overhead to pay off, but a batched extractor can become worthwhile when generating thousands of replay states or larger pressure maps.
+### Stage 2: Product-Shaped Benchmark Corpus
 
-3. Parallel replay orchestration
+Goal: judge solver changes on the real planning loop, not only saturated smoke tests.
 
-   GPU does not directly accelerate CP-SAT repair, but the replay workflow can run CPU repair workers while GPU trains/ranks candidate windows. This keeps expensive exact labels and cheap model updates moving in parallel.
+Deliverables:
 
-4. Experimental alternative exact/relaxation backend
+- Keep the current default cross-mode cases as smoke tests.
+- Add 6-10 representative planner payloads.
+- Add manual-layout replay through `/api/layout/evaluate`.
+- Add expansion-comparison replay.
+- Add corridor, gate, footprint-pressure, service-overlap, anchor-service, and multi-anchor cases.
+- Preserve development and protected holdout splits.
 
-   NVIDIA cuOpt is a GPU-accelerated optimization library for MILP, LP, QP, and VRP. It could be explored as an experimental backend for a linearized relaxation or MILP variant, but that is a research branch. It should not replace the current CP-SAT path until it preserves exact layout semantics and beats the baseline under the same validation and budget gates.
+Metrics:
 
-### Recommended GPU Track
+- Feasible population at 1s, 5s, 30s, and 120s.
+- Time to first feasible.
+- Time to 95% of best known score.
+- Time to best.
+- CP-SAT gap/status.
+- Reuse success for LNS seed and CP-SAT warm start.
+- Manual-edit validation success.
+- Expansion comparison lift.
+- CPU-normalized efficiency for any parallel or portfolio run.
 
-Keep GPU as `research-accelerator`, with these gates:
+Success signal:
 
-- Phase G0: add hardware/runtime reporting to benchmark artifacts, including CPU model, logical cores, memory, GPU model, GPU memory, driver/runtime, and whether GPU was used.
-- Phase G1: build a CPU-first offline ranking baseline from existing labels.
-- Phase G2: add optional GPU training for the same feature schema and verify that model quality, not just training speed, improves enough to matter.
-- Phase G3: add GPU-assisted batch inference only after the scorer has an online win. The inference budget must be counted in wall-clock.
-- Phase G4: explore cuOpt or another GPU solver only as a separate adapter with a semantics-equivalent formulation, exact evaluator validation, CPU/GPU parity checks, and no default-path coupling.
+- Every solver-default proposal is backed by registered dev and holdout scorecards.
 
-Entry criteria for any GPU stage:
+### Stage 3: Telemetry Manifests
+
+Goal: make every improvement or regression explainable.
+
+Deliverables:
+
+- Per-run manifest with git commit, branch, command, case, seed, budget, hardware, and solver params.
+- Per-stage manifest for Auto, Greedy, LNS, and CP-SAT.
+- Candidate counts for services, residentials, roads, windows, and operators.
+- CP-SAT model-size metadata where available.
+- First-feasible time, best-score time, final status, final gap, wall time, CPU budget, and observed CPU time.
+- Registry append path for benchmark, workflow, label, and model artifacts.
+
+Success signal:
+
+- A failed solver experiment can be diagnosed from artifacts without rerunning locally.
+
+### Stage 4: Adaptive LNS
+
+Goal: make LNS the main time-to-good-solution engine.
+
+Deliverables:
+
+- Operator interface for semantic destroy/repair choices.
+- Initial operators:
+  - weak-service repair
+  - residential-headroom cluster repair
+  - frontier-congestion repair
+  - gate/choke repair
+  - service-overlap repair
+  - random exploration windows
+- Operator telemetry: attempts, feasible repairs, improvements, elapsed time, regression count, and family-level performance.
+- Simple adaptive weighting that rewards operators with useful recent improvement.
+
+Success signal:
+
+- Equal-budget LNS or Auto scorecards improve fixed-budget population or time-to-best without worst-decile regression.
+
+### Stage 5: Auto Budget Retuning
+
+Goal: tune orchestration only after telemetry identifies the bottleneck.
+
+Deliverables:
+
+- Budget ablations over product-shaped corpus.
+- Greedy seed budget, LNS repair budget, CP-SAT reserve, and no-improvement timeout comparisons.
+- Family-level policy recommendations.
+
+Success signal:
+
+- New Auto policy beats baseline on protected holdout or reaches equal population faster with no CPU-normalized regression.
+
+### Stage 6: Exact Small-Window DP Repair
+
+Goal: add dynamic programming only where it is naturally strong: tiny repair windows, narrow corridors, and exact oracle checks.
+
+Entry criteria:
+
+- Telemetry shows CP-SAT startup/model overhead dominates small LNS repair time, or corridor/narrow-window families need a faster exact repair path.
+
+Deliverables:
+
+- Bitmask or profile-DP repair prototype for bounded LNS windows.
+- Eligibility rules based on usable cell count, profile width, and typed availability state size.
+- Exact evaluator comparison against CP-SAT repair on the same windows.
+- Routing experiment that sends only eligible tiny repairs to DP and larger repairs to CP-SAT.
+- Regression tests using DP as a small-case oracle for CP-SAT road-semantics alignment.
+
+Success signal:
+
+- DP returns evaluator-valid layouts, beats CP-SAT wall time on eligible windows, and improves LNS/Auto time-to-best without larger-window regressions.
+
+### Stage 7: Service-Master Decomposition Experiment
+
+Goal: attack the strongest service/residential coupling if adaptive LNS is not enough.
+
+Deliverables:
+
+- Experimental service-layout master problem.
+- Residential packing plus road-repair subproblem.
+- No-good cuts or service-swap neighborhoods.
+- Scorecards focused on service-overlap and facility-coverage pressure cases.
+
+Success signal:
+
+- Experimental mode beats Auto on targeted pressure families while every final layout passes exact validation.
+
+## Gated Research Tracks
+
+### Learned Guidance
+
+Do not train or integrate runtime learned guidance until:
+
+- telemetry shows repeated ranking mistakes
+- labels cover enough non-neutral development and holdout cases
+- offline ranking beats deterministic, random, and single-feature baselines
+- online equal-budget A/B improves population or time-to-best without worst-decile regression
+
+Near-term learned work should stay offline.
+
+### GPU
+
+GPU is a research accelerator, not a direct solver replacement.
+
+Do not start GPU work until:
 
 - a CPU-first baseline exists
-- training, label generation, or inference cost is a measured bottleneck
-- GPU runtime metadata can be captured in artifacts
-- the batch-size break-even point is reported
+- training, label generation, feature extraction, or inference is a measured bottleneck
+- hardware/runtime metadata is captured in artifacts
+- batch-size break-even is reported
 
-## Recommended Long-Running Improvement Loop
+Possible future uses:
 
-The next stage should be an automated loop with a conservative promotion policy.
+- offline model training
+- batched feature extraction
+- batched inference after an online scorer win
+- alternative solver research under exact evaluator validation
 
-### 1. Capture
+### CP-SAT Portfolio
 
-Run scheduled benchmark/replay jobs over fixed corpora and pressure-case generators.
+Keep portfolio explicit-only until it improves wall-clock quality and CPU-normalized efficiency over single CP-SAT. The existing paired tiny run does not justify Auto integration.
 
-Collect:
+### Distributed Workers
 
-- solver commit and model fingerprint
-- input fingerprint
-- optimizer, mode, seed, budget, and runtime parameters
-- hardware metadata, including CPU, memory, optional GPU, driver/runtime, and whether GPU was used
-- Auto stage summaries
-- LNS window candidates and chosen window
-- Greedy candidate ordering traces
-- CP-SAT status, bound, gap, and telemetry
-- exact evaluator result
-- wall-clock, CPU-budget, observed CPU time, and optional GPU usage
+Do not split API and solver workers unless hosted or multi-user execution becomes a product target. If it does, move job state to a durable queue/status store before horizontal scaling.
 
-### 2. Label
+### External Exact Or Relaxation Solvers
 
-Generate labels without contaminating holdout cases.
+MILP, SCIP, Gurobi, cuOpt, or other exact/relaxation adapters may be useful science instruments. They should not become product dependencies unless they preserve exact semantics and beat CP-SAT/Auto under equal-budget validation.
 
-Greedy labels:
+### Dynamic Programming Beyond Small Windows
 
-- selected versus near-miss candidate
-- final downstream population delta where available
-- connectivity-shadow and road-opportunity features
+Do not make global DP a primary solver path. Full-grid DP would need to encode occupied cells, remaining typed availability, service coverage, road-anchor connectivity, and future packing space, which is too large for the target problem. Keep DP bounded to exact assignment, tiny-window repair, narrow-profile experiments, and correctness oracles.
 
-LNS labels:
+## Promotion Gates
 
-- replay multiple candidate windows from the same incumbent
-- keep repair budgets equal
-- record population delta, validity, CP-SAT status, and model fingerprint
-- keep invalid or timeout labels quarantined, not silently discarded
-- include random/exploration windows beyond baseline top-k so the ranker is not trained only on the current policy's near choices
-- include initial-incumbent, post-first-improvement, and post-stagnation states
-- replay more than one repair budget when budget allocation is part of the target decision
+Any default-path solver change must satisfy:
 
-### 3. Train
-
-Start with small, interpretable rankers:
-
-- logistic pairwise ranker
-- gradient-boosted trees
-- shallow neural ranker only after the above gives a useful baseline
-
-Targets:
-
-- Greedy service candidate re-ranking first
-- LNS window re-ranking second, blocked until replay labels have positive and negative holdout signal
-- value-guided seeds later only if seed quality becomes a measured bottleneck
-
-### 4. Evaluate
-
-Use two gates:
-
-- Offline gate: held-out ranking quality must beat deterministic order, a random baseline, and a single-feature baseline, with metrics reported by case family.
-- Online gate: feature-flagged solver must improve population at fixed wall-clock or reach the same population faster, with bounded worst-decile and family-level regressions.
-
-Report:
-
-- median delta
-- worst-decile delta
-- best-case delta
-- regression rate
-- wall-clock delta
-- CPU-budget delta
-- model inference overhead
-- paired seeded confidence interval or bootstrap summary
-
-Initial promotion thresholds:
-
-- at least 3 seeds and the 5s / 30s / 120s budget set for promotion candidates
+- exact validation passes for all final layouts
+- at least 3 fixed seeds
+- 1s / 5s / 30s / 120s budget reporting for promotion candidates
+- protected holdout scorecard
 - median population delta greater than 0, or equal population with at least 10% faster time-to-best
-- worst-decile population delta >= 0, unless an explicit reviewed exception is documented
-- regression rate <= 5% and no invalid final layouts
+- worst-decile population delta >= 0 unless an explicit reviewed exception is documented
+- regression rate <= 5%
 - CPU-budget efficiency no worse than 10% below baseline unless population improvement justifies it
-- model inference overhead <= 5% of the relevant wall-clock budget
-- all reported final solutions pass exact validation
-
-### 5. Promote Or Roll Back
-
-Only promote when:
-
-- exact validation passes
-- protected holdout improves or ties safely
-- deterministic fallback remains available
-- artifacts include model version, feature schema, training data fingerprint, benchmark command, and decision
-
-If a model fails:
-
-- keep the labels
-- mark the decision as `no-promotion`
-- use the failure to create targeted pressure cases
-
-## Next-Stage Roadmap
-
-### Stage 1: Roadmap Reconciliation
-
-Goal: make the docs reflect the real current state.
-
-Deliverables:
-
-- split learned-guidance items into delivered, partial, needs-scale, and not-started
-- mark this review as an adopted next-stage infrastructure plan or keep it explicitly proposal-only
-- add explicit promotion gates for GPU, learned rankers, and replay parallelism
-
-Success signal:
-
-- a new engineer can tell that traces, ablations, labels, and portfolio measurement exist, while model training and default promotion do not.
-
-### Stage 2: Experiment Registry
-
-Goal: make long-run improvement auditable.
-
-Deliverables:
-
-- `artifacts/experiments/index.jsonl`
-- schema for run ID, git commit, branch, dataset fingerprint, case list, solver params, split status, label/model fingerprint, hardware, summary metrics, and decision
-- helper to append benchmark and label-generation summaries
-- seed the registry with the deterministic ablation, learned-label, CP-SAT portfolio, and health-check artifacts already in the repo
-
-Success signal:
-
-- every future "should we promote this?" question can be answered from indexed artifacts instead of hunting through folders, and the existing 2026-04-27 / 2026-04-28 artifacts are discoverable from the registry.
-
-### Stage 3: Label Scale-Up
-
-Goal: grow labels where evidence says learning can help.
-
-Deliverables:
-
-- larger LNS replay corpus across generated corridor, gate, footprint-pressure, and service-pressure cases
-- split-protected replay states beyond initial incumbent only, such as post-first-improvement and post-stagnation states
-- model-fingerprint field tied to CP-SAT formulation and solver params
-- effective sample-size reporting by family and split
-
-Success signal:
-
-- LNS replay labels are large and diverse enough to train and evaluate a simple window ranker without label collapse:
-  - at least 5 pressure families
-  - at least 3 seeds per family
-  - at least 200 usable labels in each of development and holdout
-  - at least 50 non-neutral labels in each of development and holdout
-  - no family with fewer than 20 usable labels
-  - neutral-label ratio below 85% in both development and holdout
-
-### Stage 4A: Greedy Offline Ranking Baseline
-
-Goal: learn something small from the stronger Greedy label bundle before changing runtime behavior.
-
-Deliverables:
-
-- `python/ml/` training scaffold
-- feature schema loader for learned-ranking label bundles
-- pairwise Greedy ranker experiment
-- offline report with development and holdout metrics
-- deterministic-order, random, and single-feature baselines
-
-Success signal:
-
-- at least one small Greedy model beats deterministic ordering offline on holdout without relying on leaked case names.
-
-### Stage 4B: LNS Offline Ranking Baseline
-
-Goal: train an LNS ranker only after Stage 3 produces enough signal.
-
-Entry criteria:
-
-- Stage 3 label-scale gates are satisfied
-- holdout labels include non-neutral improvement/regression signal
-- replay data includes exploration windows beyond baseline top-k
-
-Deliverables:
-
-- LNS window ranker experiment
-- metrics by pressure family and incumbent-state type
-- top-1 regret, NDCG@K, and pairwise ranking metrics
-
-Success signal:
-
-- the LNS ranker beats deterministic ordering, random ordering, and simple hand-feature baselines on protected holdout.
-
-### Stage 5: Feature-Flagged Online A/B
-
-Goal: test learned guidance in the real solver loop.
-
-Deliverables:
-
-- `greedy.learnedServiceRanking` hook or equivalent scorer adapter
-- `lns.learnedWindowRanking` hook after window generation and before selection
-- deterministic fallback and model-load failure fallback
-- equal-budget online benchmark report
-
-Success signal:
-
-- learned scorer improves fixed-budget population or time-to-best on holdout pressure cases, with acceptable worst-decile behavior.
-
-### Stage 6: GPU Acceleration Track
-
-Goal: use GPU where it helps the workflow, not where it is fashionable.
-
-Entry criteria:
-
-- a CPU-first ranker has an offline or online win
-- training, label generation, or inference is a measured bottleneck
-- hardware/runtime metadata is recorded in artifacts
-
-Deliverables:
-
-- hardware metadata in scorecards and label artifacts
-- optional GPU training path for the offline rankers
-- batched inference benchmark once a scorer has an online win
-- optional experimental cuOpt adapter spike only if a MILP/relaxation formulation is explicitly chosen
-- CPU/GPU parity and batch-size break-even reports
-
-Success signal:
-
-- GPU reduces time-to-label, time-to-train, or online inference overhead enough to accelerate the improvement loop, while solver quality gates remain unchanged.
+- all benchmark, hardware, split, command, model, and decision metadata registered
 
 ## Priority Recommendation
 
 Recommended order:
 
-1. Reconcile docs and seed the experiment registry.
-2. Scale LNS replay labels and generated pressure cases.
-3. Train a CPU-first Greedy offline ranker as a diagnostic.
-4. Train an LNS offline ranker only after the label-scale gates pass.
-5. Add feature-flagged online Greedy/LNS rankers only after offline holdout wins.
-6. Add GPU training/inference acceleration only after the CPU baseline is useful and bottlenecked.
-7. Revisit portfolio/distributed/alternative GPU solvers only after the improvement loop can prove the bottleneck.
+1. Verify CP-SAT road semantics and add adversarial tests.
+2. Build the product-shaped benchmark corpus.
+3. Add telemetry manifests and strict registry entries for solver/workflow runs.
+4. Implement adaptive LNS operators and operator weighting.
+5. Retune Auto budgets from scorecard evidence.
+6. Add exact small-window DP repair only if telemetry shows small-repair CP-SAT overhead or narrow-window bottlenecks.
+7. Explore service-master decomposition if pressure cases justify it.
+8. Scale LNS replay labels from adaptive operator outcomes.
+9. Revisit learned rankers only after offline holdout and online equal-budget gates pass.
+10. Revisit GPU, portfolio, distributed solving, and external solvers only after a measured bottleneck and promotion-grade evidence exist.
 
-This keeps the project pointed at the real target: higher population per wall-clock minute, with exact validation and repeatable evidence.
+This keeps the project pointed at the real target: higher validated population per wall-clock minute, with fewer speculative detours.

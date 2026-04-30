@@ -1,11 +1,23 @@
-import { selectBenchmarkCasesByName } from "./benchmarkOptions.js";
+import {
+  cloneBenchmarkGrid,
+  cloneBenchmarkSolverParams,
+  selectBenchmarkCasesByName,
+} from "./benchmarkOptions.js";
 import { DEFAULT_CP_SAT_BENCHMARK_CORPUS } from "./cpSat.js";
 import { DEFAULT_CROSS_MODE_BENCHMARK_CORPUS } from "./crossMode.js";
 import { DEFAULT_GREEDY_BENCHMARK_CORPUS } from "./greedy.js";
 import { DEFAULT_LNS_BENCHMARK_CORPUS } from "./lns.js";
+import { materializeValidLnsSeedSolution } from "../core/solverInputValidation.js";
+import { buildManualLayoutResponse } from "../server/http/solutionResponse.js";
 
 import type {
+  CpSatWarmStartHint,
+  Solution,
+} from "../core/types.js";
+import type {
+  CrossModeBenchmarkCaseScorecard,
   CrossModeBenchmarkCase,
+  CrossModeBenchmarkMode,
   CrossModeBenchmarkSplit,
   CrossModeBenchmarkSuiteResult,
   CrossModeProblemSizeBand,
@@ -39,6 +51,46 @@ export interface CrossModeProductWorkflowCaseMetric {
   expansionComparisonLift: number | null;
 }
 
+export type CrossModeProductWorkflowReplayApiRoute = "/api/layout/evaluate";
+export type CrossModeProductWorkflowReplayTag = "manual-layout-replay" | "expansion-comparison";
+
+export interface CrossModeProductWorkflowReplayMetric {
+  caseName: string;
+  split: CrossModeBenchmarkSplit;
+  workflowTag: CrossModeProductWorkflowReplayTag;
+  apiRoute: CrossModeProductWorkflowReplayApiRoute;
+  sourceName: string;
+  valid: boolean;
+  validationErrorCount: number;
+  reportedPopulation: number;
+  evaluatedPopulation: number;
+  populationDeltaFromReported: number;
+  reportedRoadCount: number;
+  evaluatedRoadCount: number;
+  removedRoadCount: number;
+  bestScore: number | null;
+  bestScoreDeltaFromEvaluated: number | null;
+  autoScore: number | null;
+  autoScoreDeltaFromEvaluated: number | null;
+  expansionComparisonLift: number | null;
+}
+
+export interface CrossModeProductWorkflowPromotionCoverage {
+  requiredCaseNames: string[];
+  missingCaseNames: string[];
+  requiredModes: CrossModeBenchmarkMode[];
+  missingModes: CrossModeBenchmarkMode[];
+  requiredBudgetsSeconds: number[];
+  missingBudgetsSeconds: number[];
+  minimumSeedCount: number;
+  seedCount: number;
+  fullCorpus: boolean;
+  requiredModeCoverage: boolean;
+  requiredBudgetCoverage: boolean;
+  requiredSeedCoverage: boolean;
+  protectedHoldout: boolean;
+}
+
 export interface CrossModeProductWorkflowEvidenceSummary {
   caseCount: number;
   modeCount: number;
@@ -46,7 +98,14 @@ export interface CrossModeProductWorkflowEvidenceSummary {
   seeds: number[];
   splitCaseCounts: Record<CrossModeBenchmarkSplit, number>;
   workflowTagCounts: Partial<Record<CrossModeWorkflowTag, number>>;
+  promotionCoverage: CrossModeProductWorkflowPromotionCoverage;
   caseMetrics: CrossModeProductWorkflowCaseMetric[];
+  replayMetrics: CrossModeProductWorkflowReplayMetric[];
+}
+
+export interface CrossModeProductWorkflowReplayMetricOptions {
+  corpus?: readonly CrossModeBenchmarkCase[];
+  result?: CrossModeBenchmarkSuiteResult;
 }
 
 interface ProductWorkflowCaseSpec {
@@ -266,6 +325,15 @@ export const DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS: readonly CrossModeBench
   ...PRODUCT_WORKFLOW_REPLAY_CASES,
 ]);
 
+const PRODUCT_WORKFLOW_PROMOTION_BUDGETS_SECONDS = Object.freeze([1, 5, 30, 120]);
+const PRODUCT_WORKFLOW_PROMOTION_MINIMUM_SEED_COUNT = 3;
+const PRODUCT_WORKFLOW_PROMOTION_MODES = Object.freeze([
+  "auto",
+  "greedy",
+  "lns",
+  "cp-sat",
+] satisfies CrossModeBenchmarkMode[]);
+
 function dateSlug(value: string): string {
   return value.slice(0, 10);
 }
@@ -293,6 +361,11 @@ function nullableMin(values: readonly (number | null)[]): number | null {
   return finiteValues.length === 0 ? null : Math.min(...finiteValues);
 }
 
+function nullableMax(values: readonly (number | null)[]): number | null {
+  const finiteValues = values.filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+  return finiteValues.length === 0 ? null : Math.max(...finiteValues);
+}
+
 function millisecondsToSeconds(value: number | null): number | null {
   return value === null ? null : Number((value / 1000).toFixed(3));
 }
@@ -305,6 +378,156 @@ function assertNonEmptyStringList(values: readonly string[], label: string): voi
   if (values.length === 0 || values.some((value) => value.trim().length === 0)) {
     throw new Error(`Product workflow registry ${label} must include at least one non-empty value.`);
   }
+}
+
+function includesAllNumbers(values: readonly number[], required: readonly number[]): number[] {
+  const valueSet = new Set(values);
+  return required.filter((value) => !valueSet.has(value));
+}
+
+function includesAllStrings<T extends string>(values: readonly T[], required: readonly T[]): T[] {
+  const valueSet = new Set(values);
+  return required.filter((value) => !valueSet.has(value));
+}
+
+function buildPromotionCoverage(result: CrossModeBenchmarkSuiteResult): CrossModeProductWorkflowPromotionCoverage {
+  const requiredCaseNames = DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS.map((benchmarkCase) => benchmarkCase.name);
+  const selectedCaseNames = uniqueSorted(result.cases.map((scorecard) => scorecard.name));
+  const missingCaseNames = includesAllStrings(selectedCaseNames, requiredCaseNames);
+  const missingModes = includesAllStrings(result.modes, PRODUCT_WORKFLOW_PROMOTION_MODES);
+  const missingBudgetsSeconds = includesAllNumbers(result.budgetsSeconds, PRODUCT_WORKFLOW_PROMOTION_BUDGETS_SECONDS);
+  const seedCount = new Set(result.seeds).size;
+  const fullCorpus = missingCaseNames.length === 0;
+  const requiredModeCoverage = missingModes.length === 0;
+  const requiredBudgetCoverage = missingBudgetsSeconds.length === 0;
+  const requiredSeedCoverage = seedCount >= PRODUCT_WORKFLOW_PROMOTION_MINIMUM_SEED_COUNT;
+
+  return {
+    requiredCaseNames,
+    missingCaseNames,
+    requiredModes: [...PRODUCT_WORKFLOW_PROMOTION_MODES],
+    missingModes,
+    requiredBudgetsSeconds: [...PRODUCT_WORKFLOW_PROMOTION_BUDGETS_SECONDS],
+    missingBudgetsSeconds,
+    minimumSeedCount: PRODUCT_WORKFLOW_PROMOTION_MINIMUM_SEED_COUNT,
+    seedCount,
+    fullCorpus,
+    requiredModeCoverage,
+    requiredBudgetCoverage,
+    requiredSeedCoverage,
+    protectedHoldout: fullCorpus && requiredModeCoverage && requiredBudgetCoverage && requiredSeedCoverage,
+  };
+}
+
+function isSolutionWarmStartHint(value: unknown): value is Solution {
+  return typeof value === "object"
+    && value !== null
+    && "roads" in value
+    && value.roads instanceof Set;
+}
+
+function asReusableHint(value: unknown): CpSatWarmStartHint | null {
+  if (typeof value !== "object" || value === null || isSolutionWarmStartHint(value)) return null;
+  return value as CpSatWarmStartHint;
+}
+
+function replayTagForCase(benchmarkCase: CrossModeBenchmarkCase): CrossModeProductWorkflowReplayTag | null {
+  const tags = new Set(benchmarkCase.workflowTags ?? []);
+  if (tags.has("manual-layout-replay")) return "manual-layout-replay";
+  if (tags.has("expansion-comparison")) return "expansion-comparison";
+  return null;
+}
+
+function replayHintForCase(benchmarkCase: CrossModeBenchmarkCase): CpSatWarmStartHint | null {
+  return benchmarkCase.params.lns?.seedHint
+    ?? asReusableHint(benchmarkCase.params.cpSat?.warmStartHint)
+    ?? null;
+}
+
+function scorecardsByCase(
+  result: CrossModeBenchmarkSuiteResult | undefined,
+  caseName: string
+): CrossModeBenchmarkCaseScorecard[] {
+  return result?.cases.filter((scorecard) => scorecard.name === caseName) ?? [];
+}
+
+function bestAutoScore(scorecards: readonly CrossModeBenchmarkCaseScorecard[]): number | null {
+  return nullableMax(scorecards.map((scorecard) =>
+    nullableMax(scorecard.results
+      .filter((entry) => entry.mode === "auto")
+      .map((entry) => entry.totalPopulation))
+  ));
+}
+
+function bestScore(scorecards: readonly CrossModeBenchmarkCaseScorecard[]): number | null {
+  return nullableMax(scorecards.map((scorecard) => scorecard.bestScore));
+}
+
+function buildReplayMetric(
+  benchmarkCase: CrossModeBenchmarkCase,
+  replayTag: CrossModeProductWorkflowReplayTag,
+  hint: CpSatWarmStartHint,
+  scorecards: readonly CrossModeBenchmarkCaseScorecard[]
+): CrossModeProductWorkflowReplayMetric {
+  const grid = cloneBenchmarkGrid(benchmarkCase.grid);
+  const params = cloneBenchmarkSolverParams(benchmarkCase.params);
+  const solution = materializeValidLnsSeedSolution(grid, params, hint);
+  if (!solution) {
+    throw new Error(`Product workflow replay case '${benchmarkCase.name}' is missing a reusable solution hint.`);
+  }
+
+  const response = buildManualLayoutResponse(grid, params, solution);
+  const replayBestScore = bestScore(scorecards);
+  const replayAutoScore = bestAutoScore(scorecards);
+  const evaluatedPopulation = response.stats.totalPopulation;
+  const bestScoreDeltaFromEvaluated = replayBestScore === null ? null : replayBestScore - evaluatedPopulation;
+  const autoScoreDeltaFromEvaluated = replayAutoScore === null ? null : replayAutoScore - evaluatedPopulation;
+
+  return {
+    caseName: benchmarkCase.name,
+    split: benchmarkCase.split ?? "development",
+    workflowTag: replayTag,
+    apiRoute: "/api/layout/evaluate",
+    sourceName: hint.sourceName ?? replayTag,
+    valid: response.validation.valid,
+    validationErrorCount: response.validation.errors.length,
+    reportedPopulation: solution.totalPopulation,
+    evaluatedPopulation,
+    populationDeltaFromReported: evaluatedPopulation - solution.totalPopulation,
+    reportedRoadCount: solution.roads.size,
+    evaluatedRoadCount: response.solution.roads.length,
+    removedRoadCount: Math.max(0, solution.roads.size - response.solution.roads.length),
+    bestScore: replayBestScore,
+    bestScoreDeltaFromEvaluated,
+    autoScore: replayAutoScore,
+    autoScoreDeltaFromEvaluated,
+    expansionComparisonLift: replayTag === "expansion-comparison"
+      ? (autoScoreDeltaFromEvaluated ?? bestScoreDeltaFromEvaluated)
+      : null,
+  };
+}
+
+export function buildCrossModeProductWorkflowReplayMetrics(
+  options: CrossModeProductWorkflowReplayMetricOptions = {}
+): CrossModeProductWorkflowReplayMetric[] {
+  const corpus = options.corpus ?? DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS;
+  const selectedNames = options.result ? new Set(options.result.selectedCaseNames) : null;
+  const metrics: CrossModeProductWorkflowReplayMetric[] = [];
+
+  for (const benchmarkCase of corpus) {
+    if (selectedNames && !selectedNames.has(benchmarkCase.name)) continue;
+    const replayTag = replayTagForCase(benchmarkCase);
+    const hint = replayHintForCase(benchmarkCase);
+    if (!replayTag || !hint) continue;
+    metrics.push(buildReplayMetric(
+      benchmarkCase,
+      replayTag,
+      hint,
+      scorecardsByCase(options.result, benchmarkCase.name)
+    ));
+  }
+
+  return metrics;
 }
 
 export function buildCrossModeProductWorkflowEvidenceSummary(
@@ -328,6 +551,7 @@ export function buildCrossModeProductWorkflowEvidenceSummary(
       holdout: splitCases.holdout.length,
     },
     workflowTagCounts: tagCounts,
+    promotionCoverage: buildPromotionCoverage(result),
     caseMetrics: result.cases.map((scorecard) => {
       const bestResult = scorecard.results.find((entry) => entry.rank === 1) ?? null;
       const autoResult = scorecard.results.find((entry) => entry.mode === "auto") ?? null;
@@ -365,6 +589,7 @@ export function buildCrossModeProductWorkflowEvidenceSummary(
         expansionComparisonLift: scorecard.workflowTags.includes("expansion-comparison") ? autoDeltaToBest : null,
       };
     }),
+    replayMetrics: buildCrossModeProductWorkflowReplayMetrics({ result }),
   };
 }
 
@@ -378,7 +603,7 @@ export function buildCrossModeProductWorkflowRegistryEntryDraft(
   const splitCases = caseNamesBySplit(result);
   const caseFamilies = productWorkflowCaseFamilies(result);
   const evidenceSummary = buildCrossModeProductWorkflowEvidenceSummary(result);
-  const protectedHoldout = splitCases.development.length > 0 && splitCases.holdout.length > 0;
+  const protectedHoldout = evidenceSummary.promotionCoverage.protectedHoldout;
   return {
     schemaVersion: 1,
     runId: options.runId ?? `product-workflow-corpus-${dateSlug(result.generatedAt)}`,
@@ -394,9 +619,10 @@ export function buildCrossModeProductWorkflowRegistryEntryDraft(
       splitField: "CrossModeBenchmarkCase.split",
       developmentCaseCount: splitCases.development.length,
       holdoutCaseCount: splitCases.holdout.length,
+      promotionCoverage: evidenceSummary.promotionCoverage,
       leakage: protectedHoldout ? "none" : "not-evaluated",
       notes: protectedHoldout
-        ? "Product workflow corpus scorecard with case-level development/holdout split metadata."
+        ? "Product workflow corpus scorecard covers the full promotion matrix with explicit development/holdout split metadata."
         : "Partial product workflow corpus scorecard; not protected holdout promotion evidence.",
     },
     budget: {
@@ -414,6 +640,9 @@ export function buildCrossModeProductWorkflowRegistryEntryDraft(
       workflowTagCounts: evidenceSummary.workflowTagCounts,
       modes: [...result.modes],
       caseMetricCount: evidenceSummary.caseMetrics.length,
+      caseMetrics: evidenceSummary.caseMetrics,
+      replayMetricCount: evidenceSummary.replayMetrics.length,
+      replayMetrics: evidenceSummary.replayMetrics,
     },
   };
 }

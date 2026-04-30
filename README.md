@@ -548,7 +548,13 @@ npm run benchmark:scorecard -- --product-corpus --list
 npm run benchmark:scorecard -- --product-corpus --modes=auto,greedy,lns,cp-sat --budgets=1,5,30 --seeds=7,19 --json
 ```
 
-Register product-corpus artifacts with split-aware `cases` metadata and workflow-tag `caseFamilies` so later checks can distinguish development tuning from protected holdout evidence:
+Write product-corpus artifacts and a registry-entry draft in one repeatable run:
+
+```bash
+npm run benchmark:scorecard -- --product-corpus --product-artifact-dir=artifacts/product-corpus/2026-04-30 --product-run-id=product-corpus-scorecard-2026-04-30 --modes=auto,greedy,lns,cp-sat --budgets=1,5 --seeds=7 --json
+```
+
+The artifact writer emits `scorecard.json`, `scorecard.txt`, `evidence-summary.json`, and `registry-entry-draft.json`. Register product-corpus artifacts with split-aware `cases` metadata, workflow-tag `caseFamilies`, per-case evidence metrics, and replay metrics so later checks can distinguish development tuning from protected holdout evidence. `protectedHoldout` is only true for the full promotion matrix: all 10 product-corpus cases, `auto`, `greedy`, `lns`, and `cp-sat`, budgets `1,5,30,120`, and at least three seeds.
 
 ```json
 {
@@ -558,8 +564,8 @@ Register product-corpus artifacts with split-aware `cases` metadata and workflow
   },
   "caseFamilies": ["manual-layout-replay", "expansion-comparison"],
   "splitStatus": {
-    "protectedHoldout": true,
-    "notes": "Product-shaped scorecard with explicit development and holdout coverage."
+    "protectedHoldout": false,
+    "notes": "Partial product workflow corpus scorecard; not protected holdout promotion evidence."
   }
 }
 ```

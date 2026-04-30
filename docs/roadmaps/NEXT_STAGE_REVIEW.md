@@ -152,16 +152,16 @@ Success signal:
 
 Goal: judge solver changes on the real planning loop, not only saturated smoke tests.
 
-Status: partial. The initial selectable corpus, scorecard metadata, evidence-summary projection, and strict registry-entry draft path are delivered; promotion-grade dev/holdout artifact runs and API-level workflow metrics are still open.
+Status: partial. The initial selectable corpus, scorecard metadata, evidence-summary projection, artifact writer, strict registry-entry draft path, and direct `/api/layout/evaluate` replay metrics are delivered; promotion-grade dev/holdout artifact runs and registry append are still open.
 
 Deliverables:
 
 - Keep the current default cross-mode cases as smoke tests.
 - Add 6-10 representative planner payloads. Initial 10-case `--product-corpus` selector delivered.
-- Add manual-layout replay through `/api/layout/evaluate`. Initial reusable-hint replay case delivered; API-level replay metrics remain.
-- Add expansion-comparison replay. Initial expansion replay case delivered; explicit expansion-comparison lift metrics remain.
-- Add corridor, gate, footprint-pressure, service-overlap, anchor-service, and multi-anchor cases. Initial tagged coverage delivered.
-- Preserve development and protected holdout splits. Initial case-level split metadata and strict registry draft checks delivered; filtered runs are marked as partial rather than protected holdout evidence.
+- Add manual-layout replay through `/api/layout/evaluate`. Initial reusable-hint replay case and replay metric projection delivered.
+- Add expansion-comparison replay. Initial expansion replay case and replay metric projection delivered; broader expansion-choice lift evidence remains.
+- Add corridor, gate, footprint-pressure, service-pressure, anchor-service, and multi-anchor cases. Initial tagged coverage delivered; service-overlap remains future pressure coverage.
+- Preserve development and protected holdout splits. Initial case-level split metadata and strict registry draft checks delivered; filtered runs are marked as partial, and protected holdout requires full case, mode, budget, and seed coverage.
 
 Metrics:
 
@@ -331,7 +331,7 @@ Any default-path solver change must satisfy:
 
 Recommended order:
 
-1. Run and register the initial product-shaped benchmark corpus with the strict registry draft helper, then add API-level workflow metrics.
+1. Run and register the initial product-shaped benchmark corpus with the artifact writer and strict registry draft helper.
 2. Add telemetry manifests and strict registry entries for solver/workflow runs.
 3. Implement adaptive LNS operators and operator weighting.
 4. Retune Auto budgets from scorecard evidence.

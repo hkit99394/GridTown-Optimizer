@@ -91,7 +91,7 @@ Status vocabulary:
 
 | Rank | Priority | Status | Impact | Summary | Success Signal |
 | --- | --- | --- | ---: | --- | --- |
-| 1 | Product-shaped benchmark corpus | partial | 4.5 | Initial `--product-corpus` cross-mode selector now covers solver smoke, manual-layout replay, expansion-comparison replay, corridor/gate/footprint/service-pressure, anchor-service, and multi-anchor cases with dev/holdout metadata. Registry draft and evidence-summary helpers now project split, workflow, reuse, timing, CP-SAT status/gap, and lift metadata. Remaining work is actual registered multi-budget dev/holdout artifacts and API-level planner workflow replay metrics. | Promotion decisions use fixed-seed dev/holdout corpora with 1s/5s/30s/120s budgets and strict registry entries. |
+| 1 | Product-shaped benchmark corpus | partial | 4.5 | Initial `--product-corpus` cross-mode selector now covers solver smoke, manual-layout replay, expansion-comparison replay, corridor/gate/footprint/service-pressure, anchor-service, and multi-anchor cases with dev/holdout metadata. Artifact writing, registry drafts, evidence summaries, per-case metrics, and initial `/api/layout/evaluate` replay metrics are available. Remaining work is executing and appending promotion-grade multi-budget dev/holdout artifacts. | Promotion decisions use fixed-seed dev/holdout corpora with 1s/5s/30s/120s budgets and strict registry entries. |
 | 2 | Solver telemetry manifests | active | 4.0 | Persist stage-level candidate counts, CP-SAT model size, first-feasible time, best-score time, status/gap, operator outcome, wall time, CPU budget, and hardware metadata. | Every benchmark and workflow run can explain where time was spent and why a candidate change did or did not improve. |
 | 3 | Adaptive LNS operator set | active | 4.5 | Add semantic destroy/repair operators beyond fixed rectangles: weak services, residential headroom clusters, service-overlap conflicts, road gates/chokes, frontier congestion, and random exploration windows. | Equal-budget LNS/Auto scorecards improve time-to-best or fixed-budget population without worst-decile regression. |
 | 4 | Auto budget policy retuning | partial | 3.5 | Retune greedy seed, LNS repair, and CP-SAT reserve budgets only after telemetry and benchmark corpus identify a real bottleneck. | New budget policy beats baseline on protected scorecards or reaches equal population faster with CPU cost accounted for. |
@@ -109,7 +109,7 @@ Status vocabulary:
 | Deterministic Greedy/LNS ablation gates | delivered | [SOLVER_ABLATION_DECISIONS.md](../decisions/SOLVER_ABLATION_DECISIONS.md), `artifacts/deterministic-ablations/2026-04-27/` | No deterministic variant promoted; regressions remain blocked. |
 | Low-risk learned-ranking label bundle | delivered | `artifacts/learned-ranking-labels/2026-04-27/` | Offline diagnostics only; no model trained and no defaults changed. |
 | LNS replay label coverage | needs-scale | 84 usable replay labels in the 2026-04-27 bundle | Blocks learned LNS window ranking until scale and non-neutral holdout signal improve. |
-| Product-shaped benchmark corpus | partial | `node dist/crossModeBenchmarkCli.js --product-corpus --list` exposes 10 dev/holdout cases with workflow tags; product evidence helpers build strict-registry-ready split/case-family/budget metadata and weaker scorecard replay coverage metrics | Ready for fixed-seed artifact runs; promotion-grade registry entries and API-level workflow metrics still need to be captured. |
+| Product-shaped benchmark corpus | partial | `node dist/crossModeBenchmarkCli.js --product-corpus --list` exposes 10 dev/holdout cases with workflow tags; `--product-artifact-dir` writes scorecard, evidence summary, and registry-entry draft artifacts; protected holdout status now requires full case, mode, budget, and seed coverage | Ready for fixed-seed artifact runs and registry append; promotion-grade entries still need to be captured. |
 | Generated pressure-case coverage | partial | [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED.md), item 30 | Useful starting point, but promotion needs broader workflow and adversarial coverage. |
 | CP-SAT portfolio telemetry and CPU-normalized scorecards | delivered | `artifacts/cp-sat-portfolio/2026-04-28/` | Portfolio remains explicit-only; Auto does not route through it. |
 | Experiment registry hardening | delivered | `artifacts/experiments/index.jsonl`; `npm run experiment-registry:check` | Future artifacts can be checked and appended with strict metadata. |
@@ -138,7 +138,7 @@ These are not next actions. Move them into the active table only after the trigg
 
 ## Combined Ordering
 
-1. Run and register the initial product-shaped workflow/adversarial corpus across fixed budgets and seeds using the strict registry draft helper, then add API-level workflow metrics.
+1. Run and register the initial product-shaped workflow/adversarial corpus across fixed budgets and seeds using the artifact writer and strict registry draft helper.
 2. Persist stage-level telemetry manifests for solver and workflow runs.
 3. Implement adaptive LNS operators and operator scoring.
 4. Retune Auto budgets from evidence, not by intuition.

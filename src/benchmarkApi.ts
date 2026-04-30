@@ -5,5 +5,4 @@
  * solver/domain entry point so the future workspace split has a stable target.
  */
 
-export * from "./benchmarks/index.js";
-export * from "./benchmarks/experimentRegistry.js";
+export * from "./packages/benchmarks/index.js";

@@ -81,6 +81,21 @@ function testBenchmarkToolingUsesBenchmarkApiBoundary() {
   );
 }
 
+function testBenchmarkInternalsAreHiddenBehindBenchmarkApi() {
+  const srcDir = path.join(__dirname, "..", "src");
+  const directBenchmarkImportPattern = /(?:from|import)\s+["'](?:\.\/|\.\.\/|\.\.\/\.\.\/)?benchmarks\//;
+  const allowedRelativePaths = new Set([
+    "benchmarkApi.ts",
+    path.join("packages", "benchmarks", "index.ts"),
+  ]);
+  const offenders = listFiles(srcDir, (fileName) => fileName.endsWith(".ts"))
+    .filter((filePath) => !allowedRelativePaths.has(path.relative(srcDir, filePath)))
+    .filter((filePath) => !path.relative(srcDir, filePath).startsWith(`benchmarks${path.sep}`))
+    .filter((filePath) => directBenchmarkImportPattern.test(fs.readFileSync(filePath, "utf8")));
+
+  assert.deepEqual(offenders.map((filePath) => path.relative(srcDir, filePath)), []);
+}
+
 testSolverApiExposesDomainAndSolverSurface();
 testSolverApiDoesNotExposeBenchmarkSurface();
 testBenchmarkApiExposesBenchmarkSurface();
@@ -88,3 +103,4 @@ testBenchmarkApiDoesNotExposeSolverEntrypoints();
 testPackageSubpathsResolveToStableEntrypoints();
 testInternalTestsUseDedicatedEntrypoints();
 testBenchmarkToolingUsesBenchmarkApiBoundary();
+testBenchmarkInternalsAreHiddenBehindBenchmarkApi();

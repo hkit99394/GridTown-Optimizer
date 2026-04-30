@@ -397,6 +397,11 @@ Started on 2026-04-30:
 - Moved benchmark, learned-label, and experiment-registry CLI implementations
   from `src/apps` to `src/tools/cli`, leaving top-level compatibility wrappers
   for existing `dist/*Cli.js` paths.
+- Added a source-boundary guard so code outside `src/benchmarks` imports
+  benchmark internals only through `src/benchmarkApi.ts`.
+- Added `src/packages/benchmarks/index.ts` as the canonical benchmark package
+  boundary, with `src/benchmarkApi.ts` re-exporting from that package-shaped
+  entrypoint.
 
 ## Current Follow-Up
 

@@ -49,21 +49,30 @@ function testPackageSubpathsResolveToStableEntrypoints() {
   assert.equal(hasOwnExport(packageBenchmarkApi, "solve"), false);
 }
 
-function listTestFiles(dir) {
+function listFiles(dir, predicate) {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const entryPath = path.join(dir, entry.name);
-    if (entry.isDirectory()) return listTestFiles(entryPath);
-    return entry.isFile() && entry.name.endsWith(".cjs") ? [entryPath] : [];
+    if (entry.isDirectory()) return listFiles(entryPath, predicate);
+    return entry.isFile() && predicate(entry.name) ? [entryPath] : [];
   });
 }
 
 function testInternalTestsUseDedicatedEntrypoints() {
   const legacyEntrypointPattern = /require\(["'](?:\.\.\/)+(?:dist\/index\.js|dist\/benchmarks\/index\.js)["']\)/;
-  const offenders = listTestFiles(__dirname)
+  const offenders = listFiles(__dirname, (fileName) => fileName.endsWith(".cjs"))
     .filter((filePath) => path.basename(filePath) !== "public-api.test.cjs")
     .filter((filePath) => legacyEntrypointPattern.test(fs.readFileSync(filePath, "utf8")));
 
   assert.deepEqual(offenders.map((filePath) => path.relative(__dirname, filePath)), []);
+}
+
+function testBenchmarkAppsUseBenchmarkApiBoundary() {
+  const appsDir = path.join(__dirname, "..", "src", "apps");
+  const legacyBenchmarkImportPattern = /\.\.\/benchmarks\/(?:index|experimentRegistry)\.js/;
+  const offenders = listFiles(appsDir, (fileName) => fileName.endsWith(".ts"))
+    .filter((filePath) => legacyBenchmarkImportPattern.test(fs.readFileSync(filePath, "utf8")));
+
+  assert.deepEqual(offenders.map((filePath) => path.relative(path.join(__dirname, ".."), filePath)), []);
 }
 
 testSolverApiExposesDomainAndSolverSurface();
@@ -72,3 +81,4 @@ testBenchmarkApiExposesBenchmarkSurface();
 testBenchmarkApiDoesNotExposeSolverEntrypoints();
 testPackageSubpathsResolveToStableEntrypoints();
 testInternalTestsUseDedicatedEntrypoints();
+testBenchmarkAppsUseBenchmarkApiBoundary();

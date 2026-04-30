@@ -374,6 +374,9 @@ Started on 2026-04-30:
 - Moved internal tests off the root compatibility facade where possible; solver
   tests import `city-builder/solver`, while benchmark and registry tests import
   `city-builder/benchmarks`.
+- Routed benchmark CLI entrypoints through `src/benchmarkApi.ts` instead of
+  direct `src/benchmarks/*` imports, and added a source-boundary guard in
+  `tests/public-api.test.cjs`.
 
 ## Current Follow-Up
 

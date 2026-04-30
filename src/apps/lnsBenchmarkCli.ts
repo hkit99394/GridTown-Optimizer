@@ -14,7 +14,7 @@ import {
   runLnsNeighborhoodAblation,
   runLnsWindowReplayLabels,
   runLnsBenchmarkSuite,
-} from "../benchmarks/index.js";
+} from "../benchmarkApi.js";
 import {
   applyInlineOptionHandlers,
   isCliFlag,
@@ -28,7 +28,7 @@ import { runCliMain } from "./cliEntrypoint.js";
 import { optionalCliNames, writeCliJson, writeCliJsonOrText, writeCliList, writeCliText } from "./cliOutput.js";
 import type {
   LnsNeighborhoodAblationVariantName,
-} from "../benchmarks/index.js";
+} from "../benchmarkApi.js";
 
 interface ParsedBenchmarkArgs {
   json: boolean;

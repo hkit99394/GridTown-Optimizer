@@ -2,7 +2,7 @@ import {
   createLearnedRankingLabelSnapshot,
   formatLearnedRankingLabelSuite,
   runLearnedRankingLabelSuite,
-} from "../benchmarks/index.js";
+} from "../benchmarkApi.js";
 import {
   applyInlineOptionHandlers,
   isCliFlag,

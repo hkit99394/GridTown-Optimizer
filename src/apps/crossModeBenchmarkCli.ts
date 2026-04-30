@@ -23,7 +23,7 @@ import {
   runCrossModeBenchmarkSuite,
   validateExperimentRegistryEntry,
   validateExperimentRegistryFile,
-} from "../benchmarks/index.js";
+} from "../benchmarkApi.js";
 import {
   applyInlineOptionHandlers,
   isCliFlag,
@@ -45,7 +45,7 @@ import type {
   CrossModeBenchmarkMode,
   CrossModeBenchmarkSuiteResult,
   ExperimentRegistryEntry,
-} from "../benchmarks/index.js";
+} from "../benchmarkApi.js";
 
 interface ParsedBenchmarkArgs {
   json: boolean;

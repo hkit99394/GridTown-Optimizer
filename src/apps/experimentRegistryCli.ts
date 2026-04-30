@@ -11,7 +11,7 @@ import {
   formatExperimentRegistryIssues,
   validateExperimentRegistryEntry,
   validateExperimentRegistryFile,
-} from "../benchmarks/experimentRegistry.js";
+} from "../benchmarkApi.js";
 import { applyInlineOptionHandlers, isCliFlag, parseNumberList } from "./cliParsing.js";
 import { runCliMain } from "./cliEntrypoint.js";
 import { writeCliJson, writeCliText } from "./cliOutput.js";
@@ -20,7 +20,7 @@ import type {
   ExperimentRegistryCheckOptions,
   ExperimentRegistryEntry,
   ExperimentRegistryIssue,
-} from "../benchmarks/experimentRegistry.js";
+} from "../benchmarkApi.js";
 
 type RegistryCommand = "check" | "validate-entry" | "append" | "help";
 

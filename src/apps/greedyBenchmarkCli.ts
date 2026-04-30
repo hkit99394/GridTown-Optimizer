@@ -17,7 +17,7 @@ import {
   runGreedyConnectivityShadowOrderingLabels,
   runGreedyDeterministicAblation,
   runGreedyBenchmarkSuite,
-} from "../benchmarks/index.js";
+} from "../benchmarkApi.js";
 import {
   applyInlineOptionHandlers,
   countEnabledCliModes,
@@ -31,7 +31,7 @@ import { optionalCliNames, writeCliJson, writeCliJsonOrText, writeCliList, write
 import type {
   GreedyBenchmarkOptions,
   GreedyDeterministicAblationVariantName,
-} from "../benchmarks/index.js";
+} from "../benchmarkApi.js";
 
 interface ParsedBenchmarkArgs {
   json: boolean;

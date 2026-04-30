@@ -3,7 +3,7 @@ import {
   formatCpSatBenchmarkSuite,
   listCpSatBenchmarkCaseNames,
   runCpSatBenchmarkSuite,
-} from "../benchmarks/index.js";
+} from "../benchmarkApi.js";
 import { runCliMain } from "./cliEntrypoint.js";
 import { applyInlineOptionHandlers, isCliFlag, parsePositiveInteger, parsePositiveNumber } from "./cliParsing.js";
 import { optionalCliNames, writeCliJsonOrText, writeCliList } from "./cliOutput.js";

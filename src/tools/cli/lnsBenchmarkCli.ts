@@ -14,7 +14,7 @@ import {
   runLnsNeighborhoodAblation,
   runLnsWindowReplayLabels,
   runLnsBenchmarkSuite,
-} from "../benchmarkApi.js";
+} from "../../benchmarkApi.js";
 import {
   applyInlineOptionHandlers,
   isCliFlag,
@@ -23,12 +23,12 @@ import {
   parseNumberList,
   parsePositiveInteger,
   parsePositiveNumber,
-} from "./cliParsing.js";
-import { runCliMain } from "./cliEntrypoint.js";
-import { optionalCliNames, writeCliJson, writeCliJsonOrText, writeCliList, writeCliText } from "./cliOutput.js";
+} from "../../apps/cliParsing.js";
+import { runCliMain } from "../../apps/cliEntrypoint.js";
+import { optionalCliNames, writeCliJson, writeCliJsonOrText, writeCliList, writeCliText } from "../../apps/cliOutput.js";
 import type {
   LnsNeighborhoodAblationVariantName,
-} from "../benchmarkApi.js";
+} from "../../benchmarkApi.js";
 
 interface ParsedBenchmarkArgs {
   json: boolean;

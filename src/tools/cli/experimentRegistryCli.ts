@@ -11,16 +11,16 @@ import {
   formatExperimentRegistryIssues,
   validateExperimentRegistryEntry,
   validateExperimentRegistryFile,
-} from "../benchmarkApi.js";
-import { applyInlineOptionHandlers, isCliFlag, parseNumberList } from "./cliParsing.js";
-import { runCliMain } from "./cliEntrypoint.js";
-import { writeCliJson, writeCliText } from "./cliOutput.js";
+} from "../../benchmarkApi.js";
+import { applyInlineOptionHandlers, isCliFlag, parseNumberList } from "../../apps/cliParsing.js";
+import { runCliMain } from "../../apps/cliEntrypoint.js";
+import { writeCliJson, writeCliText } from "../../apps/cliOutput.js";
 
 import type {
   ExperimentRegistryCheckOptions,
   ExperimentRegistryEntry,
   ExperimentRegistryIssue,
-} from "../benchmarkApi.js";
+} from "../../benchmarkApi.js";
 
 type RegistryCommand = "check" | "validate-entry" | "append" | "help";
 

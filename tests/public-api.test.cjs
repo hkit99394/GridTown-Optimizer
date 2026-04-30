@@ -66,13 +66,19 @@ function testInternalTestsUseDedicatedEntrypoints() {
   assert.deepEqual(offenders.map((filePath) => path.relative(__dirname, filePath)), []);
 }
 
-function testBenchmarkAppsUseBenchmarkApiBoundary() {
+function testBenchmarkToolingUsesBenchmarkApiBoundary() {
   const appsDir = path.join(__dirname, "..", "src", "apps");
+  const toolsCliDir = path.join(__dirname, "..", "src", "tools", "cli");
+  const benchmarkAppNamePattern = /(?:BenchmarkCli|learnedRankingLabelCli|experimentRegistryCli)\.ts$/;
   const legacyBenchmarkImportPattern = /\.\.\/benchmarks\/(?:index|experimentRegistry)\.js/;
-  const offenders = listFiles(appsDir, (fileName) => fileName.endsWith(".ts"))
+  const appOffenders = listFiles(appsDir, (fileName) => benchmarkAppNamePattern.test(fileName));
+  const toolImportOffenders = listFiles(toolsCliDir, (fileName) => fileName.endsWith(".ts"))
     .filter((filePath) => legacyBenchmarkImportPattern.test(fs.readFileSync(filePath, "utf8")));
 
-  assert.deepEqual(offenders.map((filePath) => path.relative(path.join(__dirname, ".."), filePath)), []);
+  assert.deepEqual(
+    [...appOffenders, ...toolImportOffenders].map((filePath) => path.relative(path.join(__dirname, ".."), filePath)),
+    []
+  );
 }
 
 testSolverApiExposesDomainAndSolverSurface();
@@ -81,4 +87,4 @@ testBenchmarkApiExposesBenchmarkSurface();
 testBenchmarkApiDoesNotExposeSolverEntrypoints();
 testPackageSubpathsResolveToStableEntrypoints();
 testInternalTestsUseDedicatedEntrypoints();
-testBenchmarkAppsUseBenchmarkApiBoundary();
+testBenchmarkToolingUsesBenchmarkApiBoundary();

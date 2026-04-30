@@ -246,6 +246,22 @@ Owns:
 - materializing serialized solutions back into `Set`-backed runtime objects
 - snapshot file writes for long-running solver flows
 
+## Tool Modules
+
+### `src/tools/cli/*BenchmarkCli.ts`, `src/tools/cli/learnedRankingLabelCli.ts`, and `src/tools/cli/experimentRegistryCli.ts`
+
+Benchmark, label, and experiment-registry command implementations.
+
+Owns:
+- benchmark-specific argument parsing and command routing
+- benchmark scorecard, label, and registry command output formatting
+- importing benchmark functionality through `src/benchmarkApi.ts`
+
+Compatibility wrappers remain at the historical top-level CLI entrypoints such
+as `src/greedyBenchmarkCli.ts`, `src/crossModeBenchmarkCli.ts`, and
+`src/experimentRegistryCli.ts`. These wrappers should stay thin and only import
+the matching implementation under `src/tools/cli`.
+
 ## Placement Rules
 
 When adding a new behavior:
@@ -266,6 +282,7 @@ When adding a new behavior:
 - If it changes optimizer dispatch, update `src/runtime/dispatch/optimizerRegistry.ts`.
 - If it changes LNS anchor ranking or repair-window escalation, update `src/lns/neighborhoods.ts`.
 - If it changes how solutions cross process, log, or file boundaries, update `src/core/solutionSerialization.ts`.
+- If it changes benchmark CLI behavior, update the matching implementation in `src/tools/cli`.
 - Keep `src/webServer.ts`, `src/apps/webServer.ts`, and `src/server/http/requestHandler.ts` thin.
 
 ## Future Workspace Split
@@ -377,6 +394,9 @@ Started on 2026-04-30:
 - Routed benchmark CLI entrypoints through `src/benchmarkApi.ts` instead of
   direct `src/benchmarks/*` imports, and added a source-boundary guard in
   `tests/public-api.test.cjs`.
+- Moved benchmark, learned-label, and experiment-registry CLI implementations
+  from `src/apps` to `src/tools/cli`, leaving top-level compatibility wrappers
+  for existing `dist/*Cli.js` paths.
 
 ## Current Follow-Up
 

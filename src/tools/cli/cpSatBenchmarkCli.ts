@@ -3,12 +3,12 @@ import {
   formatCpSatBenchmarkSuite,
   listCpSatBenchmarkCaseNames,
   runCpSatBenchmarkSuite,
-} from "../benchmarkApi.js";
-import { runCliMain } from "./cliEntrypoint.js";
-import { applyInlineOptionHandlers, isCliFlag, parsePositiveInteger, parsePositiveNumber } from "./cliParsing.js";
-import { optionalCliNames, writeCliJsonOrText, writeCliList } from "./cliOutput.js";
+} from "../../benchmarkApi.js";
+import { runCliMain } from "../../apps/cliEntrypoint.js";
+import { applyInlineOptionHandlers, isCliFlag, parsePositiveInteger, parsePositiveNumber } from "../../apps/cliParsing.js";
+import { optionalCliNames, writeCliJsonOrText, writeCliList } from "../../apps/cliOutput.js";
 
-import type { CpSatOptions } from "../core/types.js";
+import type { CpSatOptions } from "../../core/types.js";
 
 interface ParsedBenchmarkArgs {
   json: boolean;

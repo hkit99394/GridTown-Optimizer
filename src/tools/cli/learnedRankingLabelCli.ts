@@ -2,7 +2,7 @@ import {
   createLearnedRankingLabelSnapshot,
   formatLearnedRankingLabelSuite,
   runLearnedRankingLabelSuite,
-} from "../benchmarkApi.js";
+} from "../../benchmarkApi.js";
 import {
   applyInlineOptionHandlers,
   isCliFlag,
@@ -10,9 +10,9 @@ import {
   parseNumberList,
   parsePositiveInteger,
   parsePositiveNumber,
-} from "./cliParsing.js";
-import { runCliMain } from "./cliEntrypoint.js";
-import { writeCliJsonOrText } from "./cliOutput.js";
+} from "../../apps/cliParsing.js";
+import { runCliMain } from "../../apps/cliEntrypoint.js";
+import { writeCliJsonOrText } from "../../apps/cliOutput.js";
 
 interface ParsedLabelArgs {
   json: boolean;

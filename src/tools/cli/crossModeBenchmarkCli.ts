@@ -23,15 +23,15 @@ import {
   runCrossModeBenchmarkSuite,
   validateExperimentRegistryEntry,
   validateExperimentRegistryFile,
-} from "../benchmarkApi.js";
+} from "../../benchmarkApi.js";
 import {
   applyInlineOptionHandlers,
   isCliFlag,
   parseNameList,
   parseNumberList,
   parsePositiveNumber,
-} from "./cliParsing.js";
-import { runCliMain } from "./cliEntrypoint.js";
+} from "../../apps/cliParsing.js";
+import { runCliMain } from "../../apps/cliEntrypoint.js";
 import {
   optionalCliNames,
   writeCliJson,
@@ -39,13 +39,13 @@ import {
   writeCliList,
   writeCliRaw,
   writeCliText,
-} from "./cliOutput.js";
+} from "../../apps/cliOutput.js";
 
 import type {
   CrossModeBenchmarkMode,
   CrossModeBenchmarkSuiteResult,
   ExperimentRegistryEntry,
-} from "../benchmarkApi.js";
+} from "../../benchmarkApi.js";
 
 interface ParsedBenchmarkArgs {
   json: boolean;

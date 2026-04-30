@@ -2,4 +2,4 @@
  * Experiment registry CLI compatibility wrapper.
  */
 
-import "./apps/experimentRegistryCli.js";
+import "./tools/cli/experimentRegistryCli.js";

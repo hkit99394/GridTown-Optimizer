@@ -17,7 +17,7 @@ import {
   runGreedyConnectivityShadowOrderingLabels,
   runGreedyDeterministicAblation,
   runGreedyBenchmarkSuite,
-} from "../benchmarkApi.js";
+} from "../../benchmarkApi.js";
 import {
   applyInlineOptionHandlers,
   countEnabledCliModes,
@@ -25,13 +25,13 @@ import {
   parseNameList,
   parseNumberList,
   parsePositiveInteger,
-} from "./cliParsing.js";
-import { runCliMain } from "./cliEntrypoint.js";
-import { optionalCliNames, writeCliJson, writeCliJsonOrText, writeCliList, writeCliText } from "./cliOutput.js";
+} from "../../apps/cliParsing.js";
+import { runCliMain } from "../../apps/cliEntrypoint.js";
+import { optionalCliNames, writeCliJson, writeCliJsonOrText, writeCliList, writeCliText } from "../../apps/cliOutput.js";
 import type {
   GreedyBenchmarkOptions,
   GreedyDeterministicAblationVariantName,
-} from "../benchmarkApi.js";
+} from "../../benchmarkApi.js";
 
 interface ParsedBenchmarkArgs {
   json: boolean;

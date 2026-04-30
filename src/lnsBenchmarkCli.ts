@@ -2,4 +2,4 @@
  * LNS benchmark CLI compatibility wrapper.
  */
 
-import "./apps/lnsBenchmarkCli.js";
+import "./tools/cli/lnsBenchmarkCli.js";

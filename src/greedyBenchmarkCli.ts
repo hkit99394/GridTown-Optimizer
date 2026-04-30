@@ -2,4 +2,4 @@
  * Greedy benchmark CLI compatibility wrapper.
  */
 
-import "./apps/greedyBenchmarkCli.js";
+import "./tools/cli/greedyBenchmarkCli.js";

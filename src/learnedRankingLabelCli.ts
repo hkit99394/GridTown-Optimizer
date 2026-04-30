@@ -2,4 +2,4 @@
  * Learned-ranking label CLI compatibility wrapper.
  */
 
-import "./apps/learnedRankingLabelCli.js";
+import "./tools/cli/learnedRankingLabelCli.js";

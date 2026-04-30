@@ -289,10 +289,20 @@ function validateCases(
     });
     return false;
   }
+  let caseCount = 0;
   for (const splitName of splitNames) {
-    if (!validateStringList(value[splitName], `cases.${splitName}`, issues, lineNumber, runId)) {
+    if (!validateStringList(value[splitName], `cases.${splitName}`, issues, lineNumber, runId, { allowEmpty: true })) {
       return false;
     }
+    caseCount += (value[splitName] as string[]).length;
+  }
+  if (caseCount === 0) {
+    issue(issues, "invalid-field", "Field 'cases' split object must contain at least one case across all splits.", {
+      lineNumber,
+      runId,
+      field: "cases",
+    });
+    return false;
   }
   return true;
 }

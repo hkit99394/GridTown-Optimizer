@@ -11,6 +11,9 @@ const {
   DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS,
   formatExperimentRegistryIssues,
   listCrossModeBenchmarkCaseNames,
+  PRODUCT_WORKFLOW_PROMOTION_BUDGETS_SECONDS,
+  PRODUCT_WORKFLOW_PROMOTION_MODES,
+  PRODUCT_WORKFLOW_PROMOTION_SEEDS,
   runCrossModeBenchmarkSuite,
   validateExperimentRegistryEntry,
 } = require("../dist/benchmarks/index.js");
@@ -101,6 +104,47 @@ function testProductCorpusCliListMatchesExportedCorpus() {
   );
 }
 
+function testProductPromotionMatrixFlagGuardsLongRunArgs() {
+  const cliPath = path.join(repoRoot, "dist", "crossModeBenchmarkCli.js");
+  const missingCorpus = childProcess.spawnSync(process.execPath, [cliPath, "--product-promotion-matrix", "--list"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+  });
+
+  assert.notEqual(missingCorpus.status, 0);
+  assert.match(missingCorpus.stderr, /--product-promotion-matrix requires --product-corpus/);
+
+  const listResult = childProcess.spawnSync(process.execPath, [
+    cliPath,
+    "--product-corpus",
+    "--product-promotion-matrix",
+    "--list",
+  ], {
+    cwd: repoRoot,
+    encoding: "utf8",
+  });
+
+  assert.equal(listResult.status, 0, listResult.stderr || listResult.stdout);
+  assert.deepEqual(
+    listResult.stdout.trim().split(/\r?\n/),
+    listCrossModeBenchmarkCaseNames(DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS)
+  );
+
+  const conflict = childProcess.spawnSync(process.execPath, [
+    cliPath,
+    "--product-corpus",
+    "--product-promotion-matrix",
+    "--modes=greedy",
+    "--list",
+  ], {
+    cwd: repoRoot,
+    encoding: "utf8",
+  });
+
+  assert.notEqual(conflict.status, 0);
+  assert.match(conflict.stderr, /--product-promotion-matrix cannot be combined/);
+}
+
 async function testProductCorpusScorecardCarriesRegistryCoverageMetadata() {
   const selectedNames = ["manual-layout-replay-warm-start", "expansion-comparison-replay"];
   const result = await runCrossModeBenchmarkSuite(DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS, {
@@ -140,6 +184,11 @@ async function testProductCorpusScorecardCarriesRegistryCoverageMetadata() {
       ["expansion-comparison-replay", "expansion-comparison-replay", 115, 115],
     ]
   );
+  assert.equal(evidence.replayMetrics[0].scorecardCount, 2);
+  assert.deepEqual(evidence.replayMetrics[0].budgetsSeconds, [1, 5]);
+  assert.deepEqual(evidence.replayMetrics[0].seeds, [7]);
+  assert.deepEqual(evidence.replayMetrics[0].modes, ["greedy"]);
+  assert.deepEqual(evidence.replayMetrics[0].bestScoreSource, { budgetSeconds: 1, seed: 7, mode: "greedy" });
   assert.equal(evidence.replayMetrics[0].validationErrorCount, 0);
   assert.equal(evidence.replayMetrics[1].expansionComparisonLift, -115);
 
@@ -184,6 +233,25 @@ async function testProductCorpusScorecardCarriesRegistryCoverageMetadata() {
     development: ["manual-layout-replay-warm-start"],
     holdout: [],
   });
+  const partialEntry = completeExperimentRegistryEntry(partialDraft, {
+    indexedAt: "2026-04-30",
+    indexedGitCommit: testCommit,
+    branch: "features/product-corpus-partial-registry-test",
+    artifactGitCommit: testCommit,
+    hardware: {
+      captured: true,
+      cpuModel: "Test CPU",
+      logicalCores: 8,
+      memoryGb: 16,
+      gpuUsed: false,
+    },
+  });
+  const partialValidation = validateExperimentRegistryEntry(partialEntry, {
+    rootDir: repoRoot,
+    strict: true,
+    validateArtifactPaths: false,
+  });
+  assert.equal(partialValidation.issues.length, 0, formatExperimentRegistryIssues(partialValidation.issues));
 
   const entry = completeExperimentRegistryEntry(draft, {
     indexedAt: "2026-04-30",
@@ -210,17 +278,28 @@ async function testProductCorpusScorecardCarriesRegistryCoverageMetadata() {
 
 async function testFullPromotionMatrixIsRequiredForProtectedHoldout() {
   const result = await runCrossModeBenchmarkSuite(DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS, {
-    modes: ["auto", "greedy", "lns", "cp-sat"],
-    budgetsSeconds: [1, 5, 30, 120],
-    seeds: [7, 19, 37],
+    modes: [...PRODUCT_WORKFLOW_PROMOTION_MODES],
+    budgetsSeconds: [...PRODUCT_WORKFLOW_PROMOTION_BUDGETS_SECONDS],
+    seeds: [...PRODUCT_WORKFLOW_PROMOTION_SEEDS],
     solve: () => emptySolution(),
   });
 
   const evidence = buildCrossModeProductWorkflowEvidenceSummary(result);
+  const expectedScorecardCount =
+    DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS.length
+    * PRODUCT_WORKFLOW_PROMOTION_BUDGETS_SECONDS.length
+    * PRODUCT_WORKFLOW_PROMOTION_SEEDS.length;
   assert.equal(evidence.promotionCoverage.protectedHoldout, true);
   assert.deepEqual(evidence.promotionCoverage.missingCaseNames, []);
   assert.deepEqual(evidence.promotionCoverage.missingModes, []);
   assert.deepEqual(evidence.promotionCoverage.missingBudgetsSeconds, []);
+  assert.equal(evidence.promotionCoverage.requiredSplitCoverage, true);
+  assert.deepEqual(evidence.promotionCoverage.splitMismatches, []);
+  assert.equal(evidence.promotionCoverage.expectedScorecardCount, expectedScorecardCount);
+  assert.equal(evidence.promotionCoverage.actualScorecardCount, expectedScorecardCount);
+  assert.deepEqual(evidence.promotionCoverage.missingScorecards, []);
+  assert.deepEqual(evidence.promotionCoverage.scorecardsMissingModes, []);
+  assert.equal(evidence.caseMetrics.length, expectedScorecardCount);
 
   const draft = buildCrossModeProductWorkflowRegistryEntryDraft(result, {
     commands: ["node dist/crossModeBenchmarkCli.js --product-corpus --modes=auto,greedy,lns,cp-sat --budgets=1,5,30,120 --seeds=7,19,37 --json"],
@@ -229,6 +308,49 @@ async function testFullPromotionMatrixIsRequiredForProtectedHoldout() {
   assert.equal(draft.splitStatus.protectedHoldout, true);
   assert.equal(draft.splitStatus.leakage, "none");
   assert.equal(draft.budget.totalRuns, 480);
+
+  const metadataOnlyResult = {
+    ...result,
+    cases: result.cases.filter((scorecard) => scorecard.budgetSeconds === 1 && scorecard.seed === 7),
+  };
+  const metadataOnlyEvidence = buildCrossModeProductWorkflowEvidenceSummary(metadataOnlyResult);
+  assert.equal(metadataOnlyEvidence.promotionCoverage.protectedHoldout, false);
+  assert.equal(metadataOnlyEvidence.promotionCoverage.expectedScorecardCount, 120);
+  assert.equal(metadataOnlyEvidence.promotionCoverage.actualScorecardCount, 10);
+  assert.equal(metadataOnlyEvidence.promotionCoverage.missingScorecards.length, 110);
+
+  const missingModeResult = {
+    ...result,
+    cases: result.cases.map((scorecard, index) => index === 0
+      ? { ...scorecard, results: scorecard.results.filter((entry) => entry.mode !== "cp-sat") }
+      : scorecard),
+  };
+  const missingModeEvidence = buildCrossModeProductWorkflowEvidenceSummary(missingModeResult);
+  assert.equal(missingModeEvidence.promotionCoverage.protectedHoldout, false);
+  assert.deepEqual(missingModeEvidence.promotionCoverage.scorecardsMissingModes, [
+    {
+      caseName: result.cases[0].name,
+      budgetSeconds: result.cases[0].budgetSeconds,
+      seed: result.cases[0].seed,
+      missingModes: ["cp-sat"],
+    },
+  ]);
+
+  const splitMismatchResult = {
+    ...result,
+    cases: result.cases.map((scorecard) => scorecard.name === "row0-corridor-repair-pressure"
+      ? { ...scorecard, split: "development" }
+      : scorecard),
+  };
+  const splitMismatchEvidence = buildCrossModeProductWorkflowEvidenceSummary(splitMismatchResult);
+  assert.equal(splitMismatchEvidence.promotionCoverage.protectedHoldout, false);
+  assert.deepEqual(splitMismatchEvidence.promotionCoverage.splitMismatches, [
+    {
+      caseName: "row0-corridor-repair-pressure",
+      expectedSplit: "holdout",
+      actualSplit: "development",
+    },
+  ]);
 }
 
 function testProductCorpusArtifactWriterCreatesRegistryDraft() {
@@ -244,6 +366,7 @@ function testProductCorpusArtifactWriterCreatesRegistryDraft() {
       `--product-artifact-dir=${artifactDir}`,
       "--product-run-id=product-corpus-artifact-cli-test",
       "--product-decision=benchmark-evidence-only",
+      "--product-summary=summary $HOME and 'quote'",
       "--modes=greedy",
       "--budgets=1",
       "--seeds=7",
@@ -270,6 +393,10 @@ function testProductCorpusArtifactWriterCreatesRegistryDraft() {
     assert.equal(scorecard.caseCount, 2);
     assert.deepEqual(evidence.splitCaseCounts, { development: 1, holdout: 1 });
     assert.equal(draft.splitStatus.protectedHoldout, false);
+    assert.equal(draft.summary, "summary $HOME and 'quote'");
+    assert(draft.commands[0].includes("'--product-summary=summary $HOME and "));
+    assert(draft.commands[0].includes("'\\''quote'\\'''"));
+    assert.equal(draft.commands[0].includes("\"--product-summary"), false);
     assert.deepEqual(draft.artifactPaths, [
       manifest.artifactPaths.scorecardJson,
       manifest.artifactPaths.scorecardText,
@@ -300,12 +427,77 @@ function testProductCorpusArtifactWriterCreatesRegistryDraft() {
   }
 }
 
+function testProductCorpusArtifactWriterValidatesRegistryEntryWithoutAppending() {
+  const artifactDir = "artifacts/tmp-product-corpus-register-test";
+  const registryPath = `${artifactDir}/index.jsonl`;
+  const absoluteArtifactDir = path.join(repoRoot, artifactDir);
+  fs.rmSync(absoluteArtifactDir, { recursive: true, force: true });
+
+  try {
+    const cliPath = path.join(repoRoot, "dist", "crossModeBenchmarkCli.js");
+    const dryRun = childProcess.spawnSync(process.execPath, [
+      cliPath,
+      "--product-corpus",
+      `--product-artifact-dir=${artifactDir}`,
+      "--product-run-id=product-corpus-register-cli-test",
+      "--product-register-dry-run",
+      `--product-registry=${registryPath}`,
+      "--modes=greedy",
+      "--budgets=1",
+      "--seeds=7",
+      "--json",
+      "manual-layout-replay-warm-start",
+    ], {
+      cwd: repoRoot,
+      encoding: "utf8",
+    });
+
+    assert.equal(dryRun.status, 0, dryRun.stderr || dryRun.stdout);
+    const dryRunManifest = JSON.parse(dryRun.stdout);
+    assert.deepEqual(dryRunManifest.registry, {
+      registryPath,
+      dryRun: true,
+      appended: false,
+      runId: "product-corpus-register-cli-test",
+    });
+    assert.equal(fs.existsSync(path.join(repoRoot, registryPath)), false);
+    const dryRunDraft = readJson(dryRunManifest.artifactPaths.registryEntryDraftJson);
+    assert.equal(dryRunDraft.commands[0].includes("--product-register-dry-run"), false);
+    assert.equal(dryRunDraft.commands[0].includes("--product-registry="), false);
+
+    const result = childProcess.spawnSync(process.execPath, [
+      cliPath,
+      "--product-corpus",
+      `--product-artifact-dir=${artifactDir}`,
+      "--product-run-id=product-corpus-register-cli-test",
+      "--product-register",
+      `--product-registry=${registryPath}`,
+      "--modes=greedy",
+      "--budgets=1",
+      "--seeds=7",
+      "--json",
+      "manual-layout-replay-warm-start",
+    ], {
+      cwd: repoRoot,
+      encoding: "utf8",
+    });
+
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /--product-register cannot append artifacts generated in the same command/);
+    assert.equal(fs.existsSync(path.join(repoRoot, registryPath)), false);
+  } finally {
+    fs.rmSync(absoluteArtifactDir, { recursive: true, force: true });
+  }
+}
+
 async function run() {
   testProductCorpusListingIsStableAndMetadataRich();
   testProductCorpusCliListMatchesExportedCorpus();
+  testProductPromotionMatrixFlagGuardsLongRunArgs();
   await testProductCorpusScorecardCarriesRegistryCoverageMetadata();
   await testFullPromotionMatrixIsRequiredForProtectedHoldout();
   testProductCorpusArtifactWriterCreatesRegistryDraft();
+  testProductCorpusArtifactWriterValidatesRegistryEntryWithoutAppending();
   console.log("Product corpus registry tests passed.");
 }
 

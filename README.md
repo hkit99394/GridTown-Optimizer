@@ -548,13 +548,26 @@ npm run benchmark:scorecard -- --product-corpus --list
 npm run benchmark:scorecard -- --product-corpus --modes=auto,greedy,lns,cp-sat --budgets=1,5,30 --seeds=7,19 --json
 ```
 
+Use the promotion-matrix preset for the long product-corpus evidence run:
+
+```bash
+npm run benchmark:scorecard -- --product-corpus --product-promotion-matrix --product-artifact-dir=artifacts/product-corpus/2026-04-30/promotion-1s-5s-30s-120s-seeds7-19-37 --product-run-id=product-corpus-scorecard-2026-04-30-promotion-1s-5s-30s-120s-seeds7-19-37 --product-register-dry-run --json
+```
+
 Write product-corpus artifacts and a registry-entry draft in one repeatable run:
 
 ```bash
 npm run benchmark:scorecard -- --product-corpus --product-artifact-dir=artifacts/product-corpus/2026-04-30 --product-run-id=product-corpus-scorecard-2026-04-30 --modes=auto,greedy,lns,cp-sat --budgets=1,5 --seeds=7 --json
 ```
 
-The artifact writer emits `scorecard.json`, `scorecard.txt`, `evidence-summary.json`, and `registry-entry-draft.json`. Register product-corpus artifacts with split-aware `cases` metadata, workflow-tag `caseFamilies`, per-case evidence metrics, and replay metrics so later checks can distinguish development tuning from protected holdout evidence. `protectedHoldout` is only true for the full promotion matrix: all 10 product-corpus cases, `auto`, `greedy`, `lns`, and `cp-sat`, budgets `1,5,30,120`, and at least three seeds.
+Validate the completed registry entry first without writing, then append it only after the artifact bundle is committed or otherwise checkpointed:
+
+```bash
+npm run benchmark:scorecard -- --product-corpus --product-artifact-dir=artifacts/product-corpus/2026-04-30 --product-run-id=product-corpus-scorecard-2026-04-30 --product-register-dry-run --modes=auto,greedy,lns,cp-sat --budgets=1,5 --seeds=7 --json
+npm run experiment-registry -- append --entry=artifacts/product-corpus/2026-04-30/registry-entry-draft.json
+```
+
+The artifact writer emits `scorecard.json`, `scorecard.txt`, `evidence-summary.json`, and `registry-entry-draft.json`. `--product-register-dry-run` completes that draft with git and hardware metadata and validates it with strict registry checks without appending; use `--product-registry=<path>` to target a temporary registry for validation. Direct `--product-register` append is blocked because generated artifacts cannot be honestly stamped with a commit until the artifact bundle has been checkpointed. `--product-promotion-matrix` expands to modes `auto,greedy,lns,cp-sat`, budgets `1,5,30,120`, and seeds `7,19,37`; it rejects explicit `--modes`, `--budget`, `--budgets`, or `--seeds` overrides. Register product-corpus artifacts with split-aware `cases` metadata, workflow-tag `caseFamilies`, per-case evidence metrics, and replay metrics so later checks can distinguish development tuning from protected holdout evidence. `protectedHoldout` is only true for the full promotion matrix: all 10 product-corpus cases with their expected development/holdout split, `auto`, `greedy`, `lns`, and `cp-sat`, budgets `1,5,30,120`, at least three seeds, complete scorecard matrix coverage, and required modes inside every required scorecard.
 
 ```json
 {

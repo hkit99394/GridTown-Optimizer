@@ -60,6 +60,10 @@ export interface CrossModeProductWorkflowReplayMetric {
   workflowTag: CrossModeProductWorkflowReplayTag;
   apiRoute: CrossModeProductWorkflowReplayApiRoute;
   sourceName: string;
+  scorecardCount: number;
+  budgetsSeconds: number[];
+  seeds: number[];
+  modes: CrossModeBenchmarkMode[];
   valid: boolean;
   validationErrorCount: number;
   reportedPopulation: number;
@@ -69,25 +73,60 @@ export interface CrossModeProductWorkflowReplayMetric {
   evaluatedRoadCount: number;
   removedRoadCount: number;
   bestScore: number | null;
+  bestScoreSource: CrossModeProductWorkflowReplayScoreSource | null;
   bestScoreDeltaFromEvaluated: number | null;
   autoScore: number | null;
+  autoScoreSource: CrossModeProductWorkflowReplayScoreSource | null;
   autoScoreDeltaFromEvaluated: number | null;
   expansionComparisonLift: number | null;
+}
+
+export interface CrossModeProductWorkflowReplayScoreSource {
+  budgetSeconds: number;
+  seed: number;
+  mode: CrossModeBenchmarkMode;
+}
+
+export interface CrossModeProductWorkflowMissingScorecard {
+  caseName: string;
+  budgetSeconds: number;
+  seed: number;
+}
+
+export interface CrossModeProductWorkflowScorecardModeGap {
+  caseName: string;
+  budgetSeconds: number;
+  seed: number;
+  missingModes: CrossModeBenchmarkMode[];
+}
+
+export interface CrossModeProductWorkflowSplitMismatch {
+  caseName: string;
+  expectedSplit: CrossModeBenchmarkSplit;
+  actualSplit: CrossModeBenchmarkSplit;
 }
 
 export interface CrossModeProductWorkflowPromotionCoverage {
   requiredCaseNames: string[];
   missingCaseNames: string[];
+  splitMismatches: CrossModeProductWorkflowSplitMismatch[];
   requiredModes: CrossModeBenchmarkMode[];
   missingModes: CrossModeBenchmarkMode[];
   requiredBudgetsSeconds: number[];
   missingBudgetsSeconds: number[];
+  expectedScorecardCount: number;
+  actualScorecardCount: number;
+  missingScorecards: CrossModeProductWorkflowMissingScorecard[];
+  scorecardsMissingModes: CrossModeProductWorkflowScorecardModeGap[];
   minimumSeedCount: number;
   seedCount: number;
   fullCorpus: boolean;
+  requiredSplitCoverage: boolean;
   requiredModeCoverage: boolean;
   requiredBudgetCoverage: boolean;
   requiredSeedCoverage: boolean;
+  requiredScorecardCoverage: boolean;
+  requiredScorecardModeCoverage: boolean;
   protectedHoldout: boolean;
 }
 
@@ -325,9 +364,10 @@ export const DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS: readonly CrossModeBench
   ...PRODUCT_WORKFLOW_REPLAY_CASES,
 ]);
 
-const PRODUCT_WORKFLOW_PROMOTION_BUDGETS_SECONDS = Object.freeze([1, 5, 30, 120]);
-const PRODUCT_WORKFLOW_PROMOTION_MINIMUM_SEED_COUNT = 3;
-const PRODUCT_WORKFLOW_PROMOTION_MODES = Object.freeze([
+export const PRODUCT_WORKFLOW_PROMOTION_BUDGETS_SECONDS = Object.freeze([1, 5, 30, 120]);
+export const PRODUCT_WORKFLOW_PROMOTION_SEEDS = Object.freeze([7, 19, 37]);
+export const PRODUCT_WORKFLOW_PROMOTION_MINIMUM_SEED_COUNT = 3;
+export const PRODUCT_WORKFLOW_PROMOTION_MODES = Object.freeze([
   "auto",
   "greedy",
   "lns",
@@ -356,14 +396,13 @@ function uniqueSorted(values: readonly string[]): string[] {
   return [...new Set(values)].sort();
 }
 
+function uniqueSortedNumbers(values: readonly number[]): number[] {
+  return [...new Set(values)].sort((left, right) => left - right);
+}
+
 function nullableMin(values: readonly (number | null)[]): number | null {
   const finiteValues = values.filter((value): value is number => typeof value === "number" && Number.isFinite(value));
   return finiteValues.length === 0 ? null : Math.min(...finiteValues);
-}
-
-function nullableMax(values: readonly (number | null)[]): number | null {
-  const finiteValues = values.filter((value): value is number => typeof value === "number" && Number.isFinite(value));
-  return finiteValues.length === 0 ? null : Math.max(...finiteValues);
 }
 
 function millisecondsToSeconds(value: number | null): number | null {
@@ -390,32 +429,95 @@ function includesAllStrings<T extends string>(values: readonly T[], required: re
   return required.filter((value) => !valueSet.has(value));
 }
 
+function scorecardKey(caseName: string, budgetSeconds: number, seed: number): string {
+  return `${caseName}\u0000${budgetSeconds}\u0000${seed}`;
+}
+
 function buildPromotionCoverage(result: CrossModeBenchmarkSuiteResult): CrossModeProductWorkflowPromotionCoverage {
   const requiredCaseNames = DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS.map((benchmarkCase) => benchmarkCase.name);
+  const requiredSplitByCaseName = new Map(DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS.map((benchmarkCase) => [
+    benchmarkCase.name,
+    benchmarkCase.split ?? "development",
+  ]));
   const selectedCaseNames = uniqueSorted(result.cases.map((scorecard) => scorecard.name));
   const missingCaseNames = includesAllStrings(selectedCaseNames, requiredCaseNames);
+  const splitMismatchesByCaseName = new Map<string, CrossModeProductWorkflowSplitMismatch>();
+  for (const scorecard of result.cases) {
+    const expectedSplit = requiredSplitByCaseName.get(scorecard.name);
+    if (expectedSplit === undefined || expectedSplit === scorecard.split) continue;
+    splitMismatchesByCaseName.set(scorecard.name, {
+      caseName: scorecard.name,
+      expectedSplit,
+      actualSplit: scorecard.split,
+    });
+  }
+  const splitMismatches = [...splitMismatchesByCaseName.values()]
+    .sort((left, right) => left.caseName.localeCompare(right.caseName));
   const missingModes = includesAllStrings(result.modes, PRODUCT_WORKFLOW_PROMOTION_MODES);
   const missingBudgetsSeconds = includesAllNumbers(result.budgetsSeconds, PRODUCT_WORKFLOW_PROMOTION_BUDGETS_SECONDS);
   const seedCount = new Set(result.seeds).size;
+  const scorecardsByKey = new Map(result.cases.map((scorecard) => [
+    scorecardKey(scorecard.name, scorecard.budgetSeconds, scorecard.seed),
+    scorecard,
+  ]));
+  const expectedScorecardCount =
+    requiredCaseNames.length * PRODUCT_WORKFLOW_PROMOTION_BUDGETS_SECONDS.length * result.seeds.length;
+  const missingScorecards: CrossModeProductWorkflowMissingScorecard[] = [];
+  const scorecardsMissingModes: CrossModeProductWorkflowScorecardModeGap[] = [];
+
+  for (const caseName of requiredCaseNames) {
+    for (const budgetSeconds of PRODUCT_WORKFLOW_PROMOTION_BUDGETS_SECONDS) {
+      for (const seed of result.seeds) {
+        const scorecard = scorecardsByKey.get(scorecardKey(caseName, budgetSeconds, seed));
+        if (scorecard === undefined) {
+          missingScorecards.push({ caseName, budgetSeconds, seed });
+          continue;
+        }
+        const resultModes = scorecard.results.map((entry) => entry.mode);
+        const missingResultModes = includesAllStrings(resultModes, PRODUCT_WORKFLOW_PROMOTION_MODES);
+        if (missingResultModes.length > 0) {
+          scorecardsMissingModes.push({ caseName, budgetSeconds, seed, missingModes: missingResultModes });
+        }
+      }
+    }
+  }
+
   const fullCorpus = missingCaseNames.length === 0;
   const requiredModeCoverage = missingModes.length === 0;
   const requiredBudgetCoverage = missingBudgetsSeconds.length === 0;
   const requiredSeedCoverage = seedCount >= PRODUCT_WORKFLOW_PROMOTION_MINIMUM_SEED_COUNT;
+  const requiredSplitCoverage = splitMismatches.length === 0;
+  const requiredScorecardCoverage = missingScorecards.length === 0 && result.cases.length === expectedScorecardCount;
+  const requiredScorecardModeCoverage = scorecardsMissingModes.length === 0;
 
   return {
     requiredCaseNames,
     missingCaseNames,
+    splitMismatches,
     requiredModes: [...PRODUCT_WORKFLOW_PROMOTION_MODES],
     missingModes,
     requiredBudgetsSeconds: [...PRODUCT_WORKFLOW_PROMOTION_BUDGETS_SECONDS],
     missingBudgetsSeconds,
+    expectedScorecardCount,
+    actualScorecardCount: result.cases.length,
+    missingScorecards,
+    scorecardsMissingModes,
     minimumSeedCount: PRODUCT_WORKFLOW_PROMOTION_MINIMUM_SEED_COUNT,
     seedCount,
     fullCorpus,
+    requiredSplitCoverage,
     requiredModeCoverage,
     requiredBudgetCoverage,
     requiredSeedCoverage,
-    protectedHoldout: fullCorpus && requiredModeCoverage && requiredBudgetCoverage && requiredSeedCoverage,
+    requiredScorecardCoverage,
+    requiredScorecardModeCoverage,
+    protectedHoldout: fullCorpus
+      && requiredSplitCoverage
+      && requiredModeCoverage
+      && requiredBudgetCoverage
+      && requiredSeedCoverage
+      && requiredScorecardCoverage
+      && requiredScorecardModeCoverage,
   };
 }
 
@@ -451,16 +553,52 @@ function scorecardsByCase(
   return result?.cases.filter((scorecard) => scorecard.name === caseName) ?? [];
 }
 
-function bestAutoScore(scorecards: readonly CrossModeBenchmarkCaseScorecard[]): number | null {
-  return nullableMax(scorecards.map((scorecard) =>
-    nullableMax(scorecard.results
-      .filter((entry) => entry.mode === "auto")
-      .map((entry) => entry.totalPopulation))
-  ));
+interface ReplayScoreSelection {
+  score: number;
+  source: CrossModeProductWorkflowReplayScoreSource;
 }
 
-function bestScore(scorecards: readonly CrossModeBenchmarkCaseScorecard[]): number | null {
-  return nullableMax(scorecards.map((scorecard) => scorecard.bestScore));
+function replayScoreSource(
+  scorecard: CrossModeBenchmarkCaseScorecard,
+  mode: CrossModeBenchmarkMode
+): CrossModeProductWorkflowReplayScoreSource {
+  return {
+    budgetSeconds: scorecard.budgetSeconds,
+    seed: scorecard.seed,
+    mode,
+  };
+}
+
+function bestAutoScore(scorecards: readonly CrossModeBenchmarkCaseScorecard[]): ReplayScoreSelection | null {
+  let best: ReplayScoreSelection | null = null;
+  for (const scorecard of scorecards) {
+    const autoResult = scorecard.results.find((entry) => entry.mode === "auto");
+    if (autoResult === undefined) continue;
+    if (best === null || autoResult.totalPopulation > best.score) {
+      best = {
+        score: autoResult.totalPopulation,
+        source: replayScoreSource(scorecard, "auto"),
+      };
+    }
+  }
+  return best;
+}
+
+function bestScore(scorecards: readonly CrossModeBenchmarkCaseScorecard[]): ReplayScoreSelection | null {
+  let best: ReplayScoreSelection | null = null;
+  for (const scorecard of scorecards) {
+    if (scorecard.bestScore === null) continue;
+    const bestResult = scorecard.results.find((entry) => entry.rank === 1)
+      ?? scorecard.results.find((entry) => entry.totalPopulation === scorecard.bestScore);
+    if (bestResult === undefined) continue;
+    if (best === null || scorecard.bestScore > best.score) {
+      best = {
+        score: scorecard.bestScore,
+        source: replayScoreSource(scorecard, bestResult.mode),
+      };
+    }
+  }
+  return best;
 }
 
 function buildReplayMetric(
@@ -480,8 +618,8 @@ function buildReplayMetric(
   const replayBestScore = bestScore(scorecards);
   const replayAutoScore = bestAutoScore(scorecards);
   const evaluatedPopulation = response.stats.totalPopulation;
-  const bestScoreDeltaFromEvaluated = replayBestScore === null ? null : replayBestScore - evaluatedPopulation;
-  const autoScoreDeltaFromEvaluated = replayAutoScore === null ? null : replayAutoScore - evaluatedPopulation;
+  const bestScoreDeltaFromEvaluated = replayBestScore === null ? null : replayBestScore.score - evaluatedPopulation;
+  const autoScoreDeltaFromEvaluated = replayAutoScore === null ? null : replayAutoScore.score - evaluatedPopulation;
 
   return {
     caseName: benchmarkCase.name,
@@ -489,6 +627,12 @@ function buildReplayMetric(
     workflowTag: replayTag,
     apiRoute: "/api/layout/evaluate",
     sourceName: hint.sourceName ?? replayTag,
+    scorecardCount: scorecards.length,
+    budgetsSeconds: uniqueSortedNumbers(scorecards.map((scorecard) => scorecard.budgetSeconds)),
+    seeds: uniqueSortedNumbers(scorecards.map((scorecard) => scorecard.seed)),
+    modes: uniqueSorted(scorecards.flatMap((scorecard) =>
+      scorecard.results.map((entry) => entry.mode)
+    )) as CrossModeBenchmarkMode[],
     valid: response.validation.valid,
     validationErrorCount: response.validation.errors.length,
     reportedPopulation: solution.totalPopulation,
@@ -497,9 +641,11 @@ function buildReplayMetric(
     reportedRoadCount: solution.roads.size,
     evaluatedRoadCount: response.solution.roads.length,
     removedRoadCount: Math.max(0, solution.roads.size - response.solution.roads.length),
-    bestScore: replayBestScore,
+    bestScore: replayBestScore?.score ?? null,
+    bestScoreSource: replayBestScore?.source ?? null,
     bestScoreDeltaFromEvaluated,
-    autoScore: replayAutoScore,
+    autoScore: replayAutoScore?.score ?? null,
+    autoScoreSource: replayAutoScore?.source ?? null,
     autoScoreDeltaFromEvaluated,
     expansionComparisonLift: replayTag === "expansion-comparison"
       ? (autoScoreDeltaFromEvaluated ?? bestScoreDeltaFromEvaluated)

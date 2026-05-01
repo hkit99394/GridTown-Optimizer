@@ -404,13 +404,23 @@ function testProductCorpusArtifactWriterCreatesRegistryDraft() {
     assert.equal(fs.existsSync(path.join(repoRoot, manifest.artifactPaths.scorecardJson)), true);
     assert.equal(fs.existsSync(path.join(repoRoot, manifest.artifactPaths.scorecardText)), true);
     assert.equal(fs.existsSync(path.join(repoRoot, manifest.artifactPaths.evidenceSummaryJson)), true);
+    assert.equal(fs.existsSync(path.join(repoRoot, manifest.artifactPaths.telemetryManifestJson)), true);
     assert.equal(fs.existsSync(path.join(repoRoot, manifest.artifactPaths.registryEntryDraftJson)), true);
 
     const scorecard = readJson(manifest.artifactPaths.scorecardJson);
     const evidence = readJson(manifest.artifactPaths.evidenceSummaryJson);
+    const telemetryManifest = readJson(manifest.artifactPaths.telemetryManifestJson);
     const draft = readJson(manifest.artifactPaths.registryEntryDraftJson);
     assert.equal(scorecard.caseCount, 2);
     assert.deepEqual(evidence.splitCaseCounts, { development: 1, holdout: 1 });
+    assert.equal(telemetryManifest.schemaVersion, 1);
+    assert.equal(telemetryManifest.source, "cross-mode-benchmark");
+    assert.equal(telemetryManifest.suite.caseCount, 2);
+    assert.equal(telemetryManifest.suite.totalRuns, 2);
+    assert.equal(telemetryManifest.hardware.captured, true);
+    assert.equal(typeof telemetryManifest.git.commit, "string");
+    assert.equal(telemetryManifest.runs[0].solverParams.greedy.timeLimitSeconds, 1);
+    assert.equal(typeof telemetryManifest.runs[0].timing.wallClockSeconds, "number");
     assert.equal(draft.splitStatus.protectedHoldout, false);
     assert.equal(draft.summary, "summary $HOME and 'quote'");
     assert(draft.commands[0].includes("'--product-summary=summary $HOME and "));
@@ -420,6 +430,7 @@ function testProductCorpusArtifactWriterCreatesRegistryDraft() {
       manifest.artifactPaths.scorecardJson,
       manifest.artifactPaths.scorecardText,
       manifest.artifactPaths.evidenceSummaryJson,
+      manifest.artifactPaths.telemetryManifestJson,
     ]);
 
     const entry = completeExperimentRegistryEntry(draft, {

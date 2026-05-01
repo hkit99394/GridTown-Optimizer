@@ -4,7 +4,9 @@ import path from "node:path";
 import {
   buildCrossModeProductWorkflowEvidenceSummary,
   buildCrossModeProductWorkflowRegistryEntryDraft,
+  buildCrossModeBenchmarkTelemetryManifest,
   buildExperimentRegistryEntry,
+  captureExperimentRegistryHardwareMetadata,
   DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS,
   DEFAULT_CROSS_MODE_BENCHMARK_MODES,
   DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS,
@@ -21,6 +23,7 @@ import {
   PRODUCT_WORKFLOW_PROMOTION_SEEDS,
   runCrossModeBenchmarkBudgetAblations,
   runCrossModeBenchmarkSuite,
+  resolveExperimentRegistryGitMetadata,
   validateExperimentRegistryEntry,
   validateExperimentRegistryFile,
 } from "../../benchmarkApi.js";
@@ -77,6 +80,7 @@ interface ProductArtifactManifest {
     scorecardJson: string;
     scorecardText: string;
     evidenceSummaryJson: string;
+    telemetryManifestJson: string;
     registryEntryDraftJson: string;
   };
   runId: unknown;
@@ -346,12 +350,19 @@ function writeProductArtifactBundle(
   const scorecardJson = artifactPath("scorecard.json");
   const scorecardText = artifactPath("scorecard.txt");
   const evidenceSummaryJson = artifactPath("evidence-summary.json");
+  const telemetryManifestJson = artifactPath("telemetry-manifest.json");
   const registryEntryDraftJson = artifactPath("registry-entry-draft.json");
   const evidenceSummary = buildCrossModeProductWorkflowEvidenceSummary(result);
+  const command = args.productRegistryCommand ?? defaultProductRegistryCommand(argv);
+  const telemetryManifest = buildCrossModeBenchmarkTelemetryManifest(result, {
+    command,
+    git: resolveExperimentRegistryGitMetadata(),
+    hardware: captureExperimentRegistryHardwareMetadata(),
+  });
   const registryEntryDraft = buildCrossModeProductWorkflowRegistryEntryDraft(result, {
     runId: args.productRunId,
-    commands: [args.productRegistryCommand ?? defaultProductRegistryCommand(argv)],
-    artifactPaths: [scorecardJson, scorecardText, evidenceSummaryJson],
+    commands: [command],
+    artifactPaths: [scorecardJson, scorecardText, evidenceSummaryJson, telemetryManifestJson],
     decision: args.productDecision,
     summary: args.productSummary,
   });
@@ -359,6 +370,7 @@ function writeProductArtifactBundle(
   writeJsonArtifact(absoluteArtifactPath("scorecard.json"), result);
   fs.writeFileSync(absoluteArtifactPath("scorecard.txt"), `${formatCrossModeBenchmarkSuite(result)}\n`);
   writeJsonArtifact(absoluteArtifactPath("evidence-summary.json"), evidenceSummary);
+  writeJsonArtifact(absoluteArtifactPath("telemetry-manifest.json"), telemetryManifest);
   writeJsonArtifact(absoluteArtifactPath("registry-entry-draft.json"), registryEntryDraft);
   const registry = args.productRegister || args.productRegisterDryRun
     ? registerProductArtifacts(registryEntryDraft, args)
@@ -370,6 +382,7 @@ function writeProductArtifactBundle(
       scorecardJson,
       scorecardText,
       evidenceSummaryJson,
+      telemetryManifestJson,
       registryEntryDraftJson,
     },
     runId: registryEntryDraft.runId,
@@ -389,6 +402,7 @@ function formatProductArtifactManifest(manifest: ProductArtifactManifest): strin
     `scorecard-json=${manifest.artifactPaths.scorecardJson}`,
     `scorecard-text=${manifest.artifactPaths.scorecardText}`,
     `evidence-summary=${manifest.artifactPaths.evidenceSummaryJson}`,
+    `telemetry-manifest=${manifest.artifactPaths.telemetryManifestJson}`,
     `registry-entry-draft=${manifest.artifactPaths.registryEntryDraftJson}`,
   ];
   if (manifest.registry !== undefined) {

@@ -91,7 +91,7 @@ Status vocabulary:
 
 | Rank | Priority | Status | Impact | Summary | Success Signal |
 | --- | --- | --- | ---: | --- | --- |
-| 1 | Solver telemetry manifests | active | 4.0 | Persist stage-level candidate counts, CP-SAT model size, first-feasible time, best-score time, status/gap, operator outcome, wall time, CPU budget, and hardware metadata. Full product-corpus evidence showed long quiet runs, so progress/checkpoint telemetry is now the next priority. | Every benchmark and workflow run can explain where time was spent and why a candidate change did or did not improve. |
+| 1 | Solver telemetry manifests | partial | 4.0 | Product-corpus artifact runs now emit `telemetry-manifest.json` with command, git, hardware, per-run solver params, wall/CPU timing, first-feasible and best-score timing, status/gap, candidate-count, CP-SAT model-size, and per-stage Auto/Greedy/LNS/CP-SAT records. Remaining work is to extend the manifest contract beyond product-corpus artifacts into every solver/workflow/label/model artifact path. | Every benchmark and workflow run can explain where time was spent and why a candidate change did or did not improve. |
 | 2 | Adaptive LNS operator set | active | 4.5 | Add semantic destroy/repair operators beyond fixed rectangles: weak services, residential headroom clusters, service-overlap conflicts, road gates/chokes, frontier congestion, and random exploration windows. | Equal-budget LNS/Auto scorecards improve time-to-best or fixed-budget population without worst-decile regression. |
 | 3 | Auto budget policy retuning | partial | 3.5 | Retune greedy seed, LNS repair, and CP-SAT reserve budgets in `src/packages/solvers/auto/stagePolicy.ts` only after telemetry and benchmark corpus identify a real bottleneck. | New budget policy beats baseline on protected scorecards or reaches equal population faster with CPU cost accounted for. |
 | 4 | CP-SAT async and portfolio failure-mode coverage | partial | 3.5 | Initial regressions cover malformed streamed progress, malformed portfolio-worker progress with backend stop, non-zero child-process diagnostics, and `BrokenProcessPool` thread fallback. Remaining work is deeper cancellation/snapshot and worker-result failure coverage. | Async and portfolio paths fail predictably, preserve incumbents where possible, and do not leave orphan work behind. |
@@ -136,7 +136,7 @@ These are not next actions. Move them into the active table only after the trigg
 
 ## Combined Ordering
 
-1. Persist stage-level telemetry manifests for solver and workflow runs.
+1. Extend the telemetry-manifest contract from product-corpus artifacts to all solver, workflow, label, and model artifact paths.
 2. Implement adaptive LNS operators and operator scoring.
 3. Retune Auto budgets from evidence, not by intuition.
 4. Finish CP-SAT async and portfolio cancellation/snapshot and worker-result failure coverage before increasing orchestration complexity.

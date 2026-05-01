@@ -32,6 +32,7 @@ import {
 import { buildCpSatBenchmarkCpuPlan, normalizeCpSatBenchmarkOptions } from "./cpSat.js";
 import { normalizeGreedyBenchmarkOptions } from "./greedy.js";
 import { normalizeLnsBenchmarkOptions } from "./lns.js";
+import { buildCrossModeRunTelemetry } from "./crossModeTelemetry.js";
 
 import type {
   AutoOptions,
@@ -47,6 +48,7 @@ import type {
   SolverProgressSummary,
   SolverTimeToQualityScorecard,
 } from "../core/index.js";
+import type { CrossModeBenchmarkRunTelemetry } from "./crossModeTelemetry.js";
 
 export type CrossModeBenchmarkMode = OptimizerName | "cp-sat-portfolio";
 export type CrossModeProblemSizeBand = "tiny" | "small" | "medium";
@@ -173,6 +175,7 @@ export interface CrossModeBenchmarkModeResult {
   timeToQuality: SolverTimeToQualityScorecard;
   budgetAllocationSignal: CrossModeBudgetAllocationSignal;
   checkpointReason: string;
+  telemetry: CrossModeBenchmarkRunTelemetry;
 }
 
 export type CrossModeRoadSemanticStatus =
@@ -894,6 +897,19 @@ async function runCrossModeBenchmarkCase(
     });
     const workerCpuBudgetSecondsValue = workerCpuBudgetSeconds(mode, params.cpSat ?? {}, budgetSeconds);
     const observedWorkerCpuSecondsValue = observedCpSatWorkerCpuSeconds(solution);
+    const telemetry = buildCrossModeRunTelemetry({
+      benchmarkCase,
+      mode,
+      params,
+      solution,
+      traceArtifacts,
+      problemSizeBand,
+      budgetSeconds,
+      seed,
+      wallClockSeconds,
+      workerCpuBudgetSeconds: workerCpuBudgetSecondsValue,
+      observedWorkerCpuSeconds: observedWorkerCpuSecondsValue,
+    });
 
     rawResults.push({
       mode,
@@ -923,6 +939,7 @@ async function runCrossModeBenchmarkCase(
       autoGreedySeedProfilePhaseCount: solution.autoStage?.greedySeedStage?.phases?.length ?? 0,
       stoppedByUser: Boolean(solution.stoppedByUser),
       progressSummary,
+      telemetry,
       ...traceArtifacts,
     });
   }

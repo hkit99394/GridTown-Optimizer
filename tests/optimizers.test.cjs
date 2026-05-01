@@ -7,6 +7,7 @@ const path = require("node:path");
 const {
   buildDeterministicAblationGateReport,
   buildCrossModeBenchmarkParams,
+  buildCrossModeBenchmarkTelemetryManifest,
   buildCpSatBenchmarkCpuPlan,
   buildLnsReplayLabelScaleReadiness,
   collectGreedyOrderingLabelsFromBenchmarkSuite,
@@ -4366,6 +4367,14 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(result.cases[0].results[0].progressSummary.activeStage, "greedy");
   assert.equal(typeof result.cases[0].results[0].budgetAllocationSignal.budgetUtilizationRatio, "number");
   assert.equal(result.cases[0].results[0].budgetAllocationSignal.scoreDeltaVsAuto, null);
+  assert.equal(result.cases[0].results[0].telemetry.schemaVersion, 1);
+  assert.equal(result.cases[0].results[0].telemetry.caseName, "mock-scorecard");
+  assert.equal(result.cases[0].results[0].telemetry.mode, "greedy");
+  assert.equal(result.cases[0].results[0].telemetry.budgetSeconds, 3);
+  assert.equal(result.cases[0].results[0].telemetry.seed, 5);
+  assert.equal(result.cases[0].results[0].telemetry.solverParams.greedy.timeLimitSeconds, 3);
+  assert.equal(typeof result.cases[0].results[0].telemetry.timing.wallClockSeconds, "number");
+  assert.equal(result.cases[0].results[0].telemetry.cpu.workerCpuBudgetSeconds, 3);
   assert.equal(result.modeSummaries[0].mode, "greedy");
   assert.equal(result.problemSizeSummaries[0].problemSizeBand, "tiny");
   assert.equal(result.budgetPolicySignals.length, 1);
@@ -4685,6 +4694,39 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(mockedAuto.timeToQuality.qualityTargets.find((entry) => entry.ratio === 1).reachedScore, 10);
   assert.match(mockedPortfolio.checkpointReason, /CP-SAT portfolio worker|CP-SAT FEASIBLE/);
   assert.equal(mocked.portfolioEfficiencySignals.length, 0);
+  assert.equal(mockedAuto.telemetry.stageCount, mockedAuto.telemetry.stages.length);
+  assert(mockedAuto.telemetry.stages.some((entry) => entry.kind === "auto-stage" && entry.stage === "lns"));
+  assert.equal(mockedAuto.telemetry.stages.find((entry) => entry.kind === "lns-neighborhood").operatorOutcome, "neutral");
+  assert.equal(mockedLns.telemetry.stages.find((entry) => entry.kind === "lns").candidateCounts.iterationsStarted, 1);
+  assert.equal(mockedPortfolio.telemetry.cpu.workerCpuBudgetSeconds, 6);
+  assert.equal(mockedPortfolio.telemetry.score.cpSatStatus, "FEASIBLE");
+  assert.equal(mockedPortfolio.telemetry.stages.filter((entry) => entry.kind === "cp-sat-portfolio-worker").length, 2);
+  const mockedTelemetryManifest = buildCrossModeBenchmarkTelemetryManifest(mocked, {
+    command: "node dist/crossModeBenchmarkCli.js --json",
+    git: {
+      commit: "1234567890abcdef1234567890abcdef12345678",
+      branch: "features/telemetry-manifest-test",
+    },
+    hardware: {
+      captured: true,
+      cpuModel: "Test CPU",
+      logicalCpuCount: 8,
+      memoryBytes: 16,
+      gpuUsed: false,
+    },
+  });
+  assert.equal(mockedTelemetryManifest.schemaVersion, 1);
+  assert.equal(mockedTelemetryManifest.source, "cross-mode-benchmark");
+  assert.equal(mockedTelemetryManifest.command, "node dist/crossModeBenchmarkCli.js --json");
+  assert.equal(mockedTelemetryManifest.git.branch, "features/telemetry-manifest-test");
+  assert.equal(mockedTelemetryManifest.hardware.cpuModel, "Test CPU");
+  assert.equal(mockedTelemetryManifest.suite.totalRuns, 8);
+  assert.equal(mockedTelemetryManifest.runs.length, 8);
+  assert(mockedTelemetryManifest.runs.some((entry) =>
+    entry.caseName === "mock-scorecard"
+    && entry.mode === "lns"
+    && entry.stages.some((stage) => stage.kind === "lns-neighborhood" && stage.operatorOutcome === "neutral")
+  ));
 
   const telemetry = (population, userTimeSeconds = 1) => ({
     solveWallTimeSeconds: userTimeSeconds,

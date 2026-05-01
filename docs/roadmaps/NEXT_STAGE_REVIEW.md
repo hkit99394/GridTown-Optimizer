@@ -183,6 +183,8 @@ Success signal:
 
 Goal: make every improvement or regression explainable.
 
+Status: partial. Product-corpus benchmark artifact bundles now include `telemetry-manifest.json` with command, git, hardware, per-run solver parameter summaries, wall/CPU timing, first-feasible and best-score timing, status/gap fields, candidate counts where available, CP-SAT model size where available, and per-stage Auto/Greedy/LNS/CP-SAT records. The remaining Stage 3 work is to make the same manifest contract universal across solver, workflow, label, and model artifacts.
+
 Deliverables:
 
 - Per-run manifest with git commit, branch, command, case, seed, budget, hardware, and solver params.
@@ -332,7 +334,7 @@ Any default-path solver change must satisfy:
 
 Recommended order:
 
-1. Add telemetry manifests and strict registry entries for solver/workflow runs.
+1. Extend telemetry manifests and strict registry entries from product-corpus artifacts to all solver/workflow runs.
 2. Implement adaptive LNS operators and operator weighting.
 3. Retune Auto budgets from scorecard evidence.
 4. Finish async and portfolio cancellation/snapshot and worker-result failure coverage before increasing CP-SAT orchestration complexity.

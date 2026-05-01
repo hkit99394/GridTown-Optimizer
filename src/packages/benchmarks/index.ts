@@ -12,6 +12,7 @@ export * from "./cpSat.js";
 export * from "./lns.js";
 export * from "./lnsPressureCases.js";
 export * from "./crossMode.js";
+export * from "./crossModeTelemetry.js";
 export * from "./crossModeBudgetAblations.js";
 export * from "./crossModeProductWorkflows.js";
 export * from "./greedyConnectivityShadowAblations.js";

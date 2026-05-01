@@ -282,6 +282,14 @@ Reviewed through 2026-04-30.
 - Added CP-SAT async/portfolio failure regressions for malformed streamed progress, malformed portfolio-worker progress with backend termination, non-zero child-process diagnostics, blocked process-pool fallback, and `BrokenProcessPool` fallback.
 - No solver defaults changed; the promotion-grade product corpus is now registered evidence for future solver decisions.
 
+### 33. Product-Corpus Telemetry Manifest Slice
+
+- Added per-run telemetry summaries to cross-mode benchmark results, including solver parameter summaries, wall-clock timing, first-feasible timing, best-score timing, final status/gap, CPU budget, observed CPU, and stage records.
+- Added stage telemetry for Auto stage runs, Greedy profile phases, LNS summary/outcomes, CP-SAT summaries, CP-SAT portfolio workers, candidate counts where available, and CP-SAT model-size metadata where available.
+- Product-corpus artifact bundles now write `telemetry-manifest.json` beside `scorecard.json`, `scorecard.txt`, `evidence-summary.json`, and `registry-entry-draft.json`.
+- The product-corpus registry draft includes `telemetry-manifest.json` in its artifact paths, so strict registry dry-runs validate the manifest as part of the evidence bundle.
+- No solver defaults changed; this is measurement infrastructure for explaining future regressions and long quiet benchmark runs.
+
 ## Maintenance Watchpoints
 
 - Keep deterministic benchmark seeds stable when changing solver scoring.

@@ -4,7 +4,7 @@ This file keeps completed solver-roadmap work out of the main roadmap. The activ
 
 ## Delivered Work
 
-Reviewed through 2026-05-01.
+Reviewed through 2026-05-02.
 
 ### 1. Full Solver Stack
 
@@ -378,12 +378,22 @@ Reviewed through 2026-05-01.
 - This closes the duplicate-runner SOLID cleanup without changing Auto stage order, budget policy, stop semantics, or solver defaults.
 - Regression coverage kept the focused Auto optimizer suite green.
 
+### 44. CPU-First Greedy Offline Ranker
+
+- Added a TypeScript-only CPU diagnostic ranker for Greedy ordering labels. The model is a small no-intercept pairwise linear perceptron over normalized placement features; it does not use case-name features.
+- The runner trains on protected development Greedy labels and evaluates protected holdout labels against deterministic-proxy, stable-random, and best single-feature baselines.
+- The seed-7 regression slice produces 1,559 Greedy labels, trains on 646 development labels, and reaches 0.7930 holdout accuracy versus 0.7667 deterministic-proxy, 0.5005 stable-random, and 0.6314 best single-feature.
+- Added `benchmark:greedy-ranker` / `dist/greedyOfflineRankerCli.js` with JSON/text output, model artifact output, telemetry manifest output, and strict model-experiment registry draft support.
+- Regression coverage checks protected holdout status, no runtime/default changes, model and dataset fingerprints, artifact writing, registry validation, and the offline baseline gate.
+- No runtime Greedy scorer was added and no solver default changed; feature-flagged learned Greedy re-ranking remains gated on online equal-budget benchmarks with inference overhead counted.
+
 ## Maintenance Watchpoints
 
 - Keep deterministic benchmark seeds stable when changing solver scoring.
 - Keep CP-SAT repair experiments guarded because `repair_hint` plus multi-worker repair previously caused instability.
 - Keep distributed or portfolio solving behind proof that single-machine policy is no longer the bottleneck.
 - Keep learned guidance separate from core runtime correctness until traces and labels are strong enough.
+- Keep the Greedy offline ranker as diagnostics-only until an online A/B artifact proves fixed-budget population or time-to-best improvement without worst-decile regression.
 - Keep final road pruning conservative: population and validity must not depend on the removed roads.
 - Keep connectivity-shadow scoring default-off until wider benchmark evidence shows the guarded opt-in CPU cost is worth the population gain; `greedy.profile` must remain observational and must not affect placement choices.
 - Keep Auto budget slicing honest: LNS seed and repair work may use the Auto LNS stage slice, but must not spend the CP-SAT reserve unless a future trace-backed policy explicitly changes that.

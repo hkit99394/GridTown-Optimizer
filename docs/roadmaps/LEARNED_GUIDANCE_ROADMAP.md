@@ -65,9 +65,9 @@ Some early roadmap items are now delivered as measurement gates, but none of the
 | Development / holdout splits | Delivered for low-risk label bundles | The first learned-ranking label artifact has split protection and no case overlap. Future generated cases need split by case family and seed, not only by case name. |
 | Deterministic feature foundation | Partial | Connectivity-shadow, road-opportunity traces, and planner explainability maps exist. Broader reusable feature payloads for all model candidates still need scale and schema hardening. |
 | Baseline ablations | Delivered as an evidence gate | Deterministic Greedy and LNS ablation gates closed with no default promotion. Connectivity-shadow and LNS window movement became learning targets. |
-| Greedy labels | Needs offline diagnostics | The first bundle contains 4,593 Greedy labels, including connectivity-shadow and road-opportunity near-miss labels. These are useful for diagnostics but include proxy labels, so they require single-feature and online A/B gates before runtime use. |
-| LNS replay labels | Needs scale | The first bundle contains 84 usable LNS replay labels. Holdout replay labels are currently neutral, so this is schema evidence rather than model evidence. |
-| Model training | Not started | No learned model has been trained, versioned, integrated, or benchmarked online. |
+| Greedy labels and offline ranker | Delivered for offline diagnostics | The CPU-first Greedy ranker trains on protected development labels and beats deterministic, stable-random, and best single-feature baselines on protected holdout. This is still diagnostics-only until online A/B gates pass. |
+| LNS replay labels | Scale-up infrastructure delivered | Replay labels now include adaptive operator name/score, five-family development/holdout coverage, and broader top-k plus tail exploration defaults. LNS model promotion still needs a strict generated artifact with enough non-neutral holdout signal. |
+| Model training | Partial / gated | A small CPU Greedy diagnostic model is trained and versioned through benchmark artifacts. No learned runtime scorer has been integrated, feature-flagged, or benchmarked online. |
 | GPU acceleration | Not started / gated | GPU should remain optional research infrastructure until a CPU-first model or label workflow is a measured bottleneck. |
 
 Next-stage execution details live in [NEXT_STAGE_REVIEW.md](./NEXT_STAGE_REVIEW.md).
@@ -298,7 +298,7 @@ Exit criteria:
 
 ### Phase 4: Learned Greedy Service Re-Ranking
 
-Status: First ML milestone; diagnostics only until offline holdout wins
+Status: Offline diagnostics delivered; runtime re-ranking gated on online evidence
 
 Why:
 - this is cheaper than `LNS`-guided learning
@@ -307,19 +307,25 @@ Why:
 - it can reuse the deterministic service marginal-value and connectivity-shadow features
 
 Target:
-- learn to re-rank service candidates in the greedy construction path
+- learn to re-rank Greedy construction candidates without replacing deterministic feasibility, validation, or final scoring
 
-Concrete work:
-- log greedy construction states and service candidate features
-- include connectivity shadow, candidate loss, and residential headroom features
-- train a lightweight offline model in a separate research path, for example under `python/ml/`
-- start with supervised ranking, not RL
-- integrate the scorer behind a feature flag such as `greedy.learnedServiceRanking`
+Delivered:
+- TypeScript-only CPU pairwise linear ranker over Greedy ordering labels
+- protected development/holdout split check with no case-name features
+- deterministic-proxy, stable-random, and best single-feature baselines
+- model artifact, telemetry manifest, and strict registry-draft helpers
+- seed-7 regression slice: 0.7930 holdout accuracy versus 0.7667 deterministic-proxy, 0.5005 stable-random, and 0.6314 best single-feature
+
+Remaining work:
+- richer service-specific candidate-state capture before runtime scoring
+- feature-flagged scorer adapter such as `greedy.learnedServiceRanking`
+- model-load fallback and inference-overhead accounting
+- online A/B benchmarks against the current hand-written ordering
 
 Deliverables:
-- a baseline learned service scorer
-- offline ranking metrics
-- online A/B benchmarks against the current hand-written ordering
+- offline diagnostic Greedy ranker and metrics: delivered
+- runtime scorer adapter: not started
+- online A/B benchmarks against the current hand-written ordering: not started
 
 Exit criteria:
 - at fixed wall-clock, the learned scorer beats the current greedy service ordering on median benchmark quality

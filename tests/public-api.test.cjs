@@ -231,6 +231,16 @@ function testScriptEntrypointWrappersRemain() {
       ].join("\n"),
     ],
     [
+      "greedyOfflineRankerCli.ts",
+      [
+        "/**",
+        " * Greedy offline ranker CLI compatibility wrapper.",
+        " */",
+        "",
+        `import "./tools/cli/greedyOfflineRankerCli.js";`,
+      ].join("\n"),
+    ],
+    [
       "experimentRegistryCli.ts",
       [
         "/**",

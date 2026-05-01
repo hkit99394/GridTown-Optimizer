@@ -14,7 +14,10 @@ const {
   buildLearnedRankingLabelRegistryEntryDraft,
   buildLearnedRankingLabelTelemetryManifest,
   buildLnsReplayLabelScaleReadiness,
+  buildGreedyOfflineRankerRegistryEntryDraft,
+  buildGreedyOfflineRankerTelemetryManifest,
   collectGreedyOrderingLabelsFromBenchmarkSuite,
+  createGreedyOfflineRankerSnapshot,
   createLearnedRankingLabelSnapshot,
   DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS,
   DEFAULT_LEARNED_RANKING_LABEL_SPLITS,
@@ -41,6 +44,7 @@ const {
   formatDeterministicAblationGateReport,
   formatCrossModeBenchmarkSuite,
   formatGreedyConnectivityShadowOrderingLabels,
+  formatGreedyOfflineRankerExperiment,
   formatLearnedRankingLabelSuite,
   formatLnsNeighborhoodAblation,
   formatLnsBenchmarkSuite,
@@ -55,6 +59,7 @@ const {
   runCrossModeBenchmarkBudgetAblations,
   runCrossModeBenchmarkSuite,
   runGreedyConnectivityShadowOrderingLabels,
+  runGreedyOfflineRankerExperiment,
   runLearnedRankingLabelSuite,
   runLnsNeighborhoodAblation,
   runLnsWindowReplayLabels,
@@ -1849,6 +1854,152 @@ function testLearnedRankingLabelSuite() {
     }),
     /development\/holdout split overlap is not allowed/
   );
+}
+
+function testGreedyOfflineRankerExperiment() {
+  const result = runGreedyOfflineRankerExperiment({
+    seeds: [7],
+    training: {
+      epochs: 8,
+    },
+  });
+  const snapshot = createGreedyOfflineRankerSnapshot(result);
+  const formatted = formatGreedyOfflineRankerExperiment(result);
+  const deterministicBaseline = result.evaluation.baselines.find((entry) => entry.name === "deterministic-proxy");
+  const randomBaseline = result.evaluation.baselines.find((entry) => entry.name === "stable-random");
+  const singleFeatureBaseline = result.evaluation.baselines.find((entry) => entry.name === "best-single-feature");
+
+  assert.equal(result.schemaVersion, 1);
+  assert.equal(result.audit.cpuOnly, true);
+  assert.equal(result.audit.runtimeDefaultChanged, false);
+  assert.equal(result.audit.solverDefaultChanged, false);
+  assert.equal(result.audit.usesCaseNameFeature, false);
+  assert.equal(result.leakage.protectedHoldout, true);
+  assert.deepEqual(result.leakage.greedyOverlap, []);
+  assert.equal(result.labels.labelCount, 1559);
+  assert.equal(result.evaluation.model.development.labelCount, 646);
+  assert.equal(result.evaluation.model.holdout.labelCount, 913);
+  assert.equal(result.model.modelType, "greedy-linear-pairwise-perceptron");
+  assert.equal(result.model.purpose, "offline-diagnostics-only");
+  assert.equal(result.model.intercept, 0);
+  assert.equal(result.model.trainedLabelCount, result.evaluation.model.development.labelCount);
+  assert.equal(result.model.featureNames.includes("lowerShadowPenalty"), true);
+  assert.equal(result.evaluation.summary.passed, true);
+  assert.equal(result.evaluation.summary.bestBaselineName, "deterministic-proxy");
+  assert.equal(result.evaluation.model.holdout.accuracy > deterministicBaseline.holdout.accuracy, true);
+  assert.equal(result.evaluation.model.holdout.accuracy > randomBaseline.holdout.accuracy, true);
+  assert.equal(result.evaluation.model.holdout.accuracy > singleFeatureBaseline.holdout.accuracy, true);
+  assert.equal(singleFeatureBaseline.selectedFeatureName, "lowerShadowPenalty");
+  assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
+  assert.equal(Object.hasOwn(snapshot.training, "wallClockSeconds"), false);
+  assert.match(result.datasetFingerprint, /^fnv1a:[0-9a-f]{8}$/);
+  assert.match(result.modelFingerprint, /^fnv1a:[0-9a-f]{8}$/);
+  assert.match(formatted, /CPU-First Greedy Offline Ranker/);
+  assert.match(formatted, /Gate: passed=true/);
+  assert.match(formatted, /offline diagnostics only/);
+
+  const telemetryManifest = buildGreedyOfflineRankerTelemetryManifest(result, {
+    command: "node dist/greedyOfflineRankerCli.js --seeds=7 --epochs=8",
+    git: {
+      commit: "1234567890abcdef1234567890abcdef12345678",
+      branch: "features/greedy-offline-ranker-test",
+    },
+    hardware: {
+      captured: true,
+      cpuModel: "Test CPU",
+      logicalCpuCount: 8,
+      memoryBytes: 16,
+      gpuUsed: false,
+    },
+  });
+  assert.equal(telemetryManifest.source, "model-experiment");
+  assert.equal(telemetryManifest.model.trained, true);
+  assert.equal(telemetryManifest.datasetFingerprint, result.datasetFingerprint);
+  assert.equal(telemetryManifest.modelFingerprint, result.modelFingerprint);
+  assert.equal(telemetryManifest.metrics.holdoutModelAccuracy, result.evaluation.model.holdout.accuracy);
+
+  const registryDraft = buildGreedyOfflineRankerRegistryEntryDraft(result, {
+    runId: "greedy-offline-ranker-test",
+    commands: ["node dist/greedyOfflineRankerCli.js --seeds=7 --epochs=8"],
+    artifactPaths: ["artifacts/greedy-ranker/model.json", "artifacts/greedy-ranker/telemetry-manifest.json"],
+  });
+  assert.equal(registryDraft.artifactType, "model-experiment");
+  assert.equal(registryDraft.decision, "offline-greedy-ranker-beats-baselines");
+  assert.equal(registryDraft.model.trained, true);
+  assert.equal(registryDraft.splitStatus.protectedHoldout, true);
+  assert.equal(registryDraft.summaryMetrics.holdoutModelAccuracy, result.evaluation.model.holdout.accuracy);
+  const completedRegistryEntry = buildExperimentRegistryEntry(registryDraft, {
+    rootDir: path.join(__dirname, "../.."),
+    gitMetadata: {
+      commit: "1234567890abcdef1234567890abcdef12345678",
+      branch: "features/greedy-offline-ranker-test",
+    },
+  });
+  const registryValidation = validateExperimentRegistryEntry(completedRegistryEntry, {
+    rootDir: path.join(__dirname, "../.."),
+    validateArtifactPaths: false,
+    strict: true,
+  });
+  assert.deepEqual(registryValidation.issues, []);
+
+  const repoRoot = path.join(__dirname, "../..");
+  const cliPath = path.join(repoRoot, "dist", "greedyOfflineRankerCli.js");
+  const artifactDir = `artifacts/tmp-greedy-offline-ranker-${process.pid}`;
+  const absoluteArtifactDir = path.join(repoRoot, artifactDir);
+  fs.rmSync(absoluteArtifactDir, { recursive: true, force: true });
+  try {
+    const artifactResult = childProcess.spawnSync(process.execPath, [
+      cliPath,
+      `--artifact-dir=${artifactDir}`,
+      "--seeds=7",
+      "--epochs=8",
+      "--ranker-run-id=tmp-greedy-offline-ranker-test",
+      "--ranker-register-dry-run",
+      "--json",
+    ], {
+      cwd: repoRoot,
+      encoding: "utf8",
+    });
+    assert.equal(artifactResult.status, 0, artifactResult.stderr || artifactResult.stdout);
+    const artifactManifest = JSON.parse(artifactResult.stdout);
+    assert.equal(artifactManifest.artifactDir, artifactDir);
+    assert.equal(artifactManifest.runId, "tmp-greedy-offline-ranker-test");
+    assert.equal(artifactManifest.passed, true);
+    assert.equal(artifactManifest.registry.appended, false);
+    assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.experimentJson)), true);
+    assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.experimentText)), true);
+    assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.modelJson)), true);
+    assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.telemetryManifestJson)), true);
+    assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.registryEntryDraftJson)), true);
+    const modelArtifact = JSON.parse(fs.readFileSync(path.join(repoRoot, artifactManifest.artifactPaths.modelJson), "utf8"));
+    const telemetryArtifact = JSON.parse(fs.readFileSync(
+      path.join(repoRoot, artifactManifest.artifactPaths.telemetryManifestJson),
+      "utf8"
+    ));
+    const draftArtifact = JSON.parse(fs.readFileSync(
+      path.join(repoRoot, artifactManifest.artifactPaths.registryEntryDraftJson),
+      "utf8"
+    ));
+    assert.equal(modelArtifact.trained, true);
+    assert.equal(telemetryArtifact.source, "model-experiment");
+    assert.equal(telemetryArtifact.modelFingerprint, artifactManifest.modelFingerprint);
+    assert.match(telemetryArtifact.command, /--artifact-dir=artifacts\/tmp-greedy-offline-ranker-/);
+    assert.equal(draftArtifact.artifactType, "model-experiment");
+    assert.equal(draftArtifact.model.trained, true);
+    assert.equal(draftArtifact.modelFingerprint, artifactManifest.modelFingerprint);
+
+    const registryGuard = childProcess.spawnSync(process.execPath, [
+      cliPath,
+      "--ranker-register-dry-run",
+    ], {
+      cwd: repoRoot,
+      encoding: "utf8",
+    });
+    assert.notEqual(registryGuard.status, 0);
+    assert.match(registryGuard.stderr, /--ranker-register-dry-run requires --artifact-dir/);
+  } finally {
+    fs.rmSync(absoluteArtifactDir, { recursive: true, force: true });
+  }
 }
 
 function testGreedyRoadOpportunityCounterfactualsAreBoundedAndObservational() {
@@ -9611,6 +9762,7 @@ async function runLnsOptimizerTests() {
 async function runBenchmarksOptimizerTests() {
   testGreedyConnectivityShadowOrderingLabelRunner();
   testLearnedRankingLabelSuite();
+  testGreedyOfflineRankerExperiment();
   testGreedyBenchmarkCorpusHelpers();
   testGreedyConnectivityShadowScoringAblationRunner();
   testGreedyDeterministicAblationRunner();

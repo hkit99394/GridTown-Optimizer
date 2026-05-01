@@ -44,6 +44,7 @@ The default posture remains unchanged: keep `auto` as the recommended quality pa
 - The service-master decomposition experiment is delivered as of 2026-05-01. Greedy now has an opt-in master/subproblem pass that enumerates bounded service layouts and realizes each through the existing fixed-service residential/road subproblem; the focused service-pressure benchmark improves from 465 to 555 population with exact validation.
 - LNS replay label scale-up is delivered as of 2026-05-01. Replay labels now carry adaptive-operator names/scores, the default learned-label replay settings collect broader top-k plus tail-exploration candidates, and development/holdout LNS splits have disjoint five-family pressure coverage. No learned ranker was trained or promoted.
 - Auto plan-runner duplication is closed as of 2026-05-02. Sync and background Auto execution now share the same stage loop while preserving the existing stage order, incumbent acceptance, weak-cycle stop policy, and default solver behavior.
+- CPU-first Greedy offline ranker is delivered as of 2026-05-02. The diagnostic TypeScript pairwise ranker trains on protected Greedy development labels and, on the seed-7 regression slice, reaches 0.7930 holdout accuracy versus 0.7667 deterministic-proxy, 0.5005 stable-random, and 0.6314 best single-feature. No runtime scorer was added or promoted.
 
 ## Key Finding: CP-SAT Road Semantics
 
@@ -102,7 +103,7 @@ Best next algorithmic sequence:
 4. Service-master decomposition experiments. Initial opt-in pass delivered; promotion remains gated on wider scorecards.
 5. Geometry-native CP-SAT or external exact solvers only as controlled research branches.
 
-Do not start runtime learned ranking yet. It should follow strict label artifacts, offline holdout wins, and equal-budget online evidence.
+Do not start runtime learned ranking yet. Greedy now has an offline holdout win, but runtime use still needs equal-budget online evidence with inference overhead counted; LNS still needs strict label artifacts and offline holdout wins.
 
 ### Research Anchors
 
@@ -364,7 +365,7 @@ Any default-path solver change must satisfy:
 Recommended order:
 
 1. Explore service-master decomposition if pressure cases justify it.
-2. Revisit learned rankers only after strict scale-up artifacts, offline holdout, and online equal-budget gates pass.
+2. Revisit runtime learned rankers only after offline artifacts are paired with online equal-budget gates.
 3. Revisit GPU, portfolio, distributed solving, and external solvers only after a measured bottleneck and promotion-grade evidence exists.
 
 This keeps the project pointed at the real target: higher validated population per wall-clock minute, with fewer speculative detours.

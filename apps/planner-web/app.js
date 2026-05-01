@@ -67,6 +67,7 @@ const plannerModules = {
   persistence: window.CityBuilderPersistence,
   solveRuntime: window.CityBuilderSolveRuntime,
   expansion: window.CityBuilderExpansion,
+  manualLayout: window.PlannerManualLayout,
   results: window.CityBuilderResults,
   requestBuilder: window.CityBuilderRequestBuilder,
   workbench: window.CityBuilderWorkbench,
@@ -74,7 +75,7 @@ const plannerModules = {
 
 if (Object.values(plannerModules).some((module) => !module)) {
   throw new Error(
-    "plannerShell.js, plannerShared.js, plannerPersistence.js, plannerSolveRuntime.js, plannerExpansion.js, plannerResults.js, plannerRequestBuilder.js, and plannerWorkbench.js must load before app.js"
+    "plannerShell.js, plannerShared.js, plannerPersistence.js, plannerSolveRuntime.js, plannerExpansion.js, plannerManualLayout.js, plannerResults.js, plannerRequestBuilder.js, and plannerWorkbench.js must load before app.js"
   );
 }
 

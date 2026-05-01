@@ -10,7 +10,6 @@ import type {
   GreedyDiagnostics,
   GreedyDiagnosticExample,
   GreedyDiagnosticKindReport,
-  GreedyOptions,
   GreedyPlacementDiagnosticReason,
   GreedyProfileCounters,
   GreedyProfilePhaseName,
@@ -113,6 +112,18 @@ import { collectRoadAnchorRefinementSeeds, placementLeavesRoadAnchorCellAvailabl
 import { getBuildingLimits, getResidentialBaseMax, NO_TYPE_INDEX } from "../../core/index.js";
 import { writeSolutionSnapshot } from "../../core/index.js";
 import { forEachRectangleCell } from "../../core/index.js";
+import {
+  GreedyStopError,
+  createSeededRandom,
+  deriveSeed,
+  getGreedyOptions,
+  shuffle,
+} from "./runtime.js";
+import {
+  buildGreedyServiceCapPolicy,
+  runGreedyServiceCapSearch,
+} from "./serviceCapSearch.js";
+import type { CapSearchPhase } from "./serviceCapSearch.js";
 
 type ResidentialCandidateStat = {
   r: number;
@@ -134,14 +145,6 @@ type ResidentialScoringGroup = {
   rows: number;
   cols: number;
   variants: ResidentialScoringVariant[];
-};
-type CapSearchPhase = "full" | "coarse" | "refine";
-type CapResult = {
-  cap: number;
-  phase: CapSearchPhase;
-  solution: Solution | null;
-  totalPopulation: number;
-  serviceCount: number;
 };
 type MaybeStop = ((force?: boolean) => void) | undefined;
 interface GreedyPrecomputedIndexes {
@@ -199,23 +202,6 @@ type GreedyForcedServiceEvaluator = (
   maxForcedServices: number,
   budget: FixedServiceEvaluationBudget
 ) => Solution | null;
-interface GreedyServiceCapPolicy {
-  explicitServiceCap: number | undefined;
-  inferredUpper: number;
-  capPlan: ReturnType<typeof buildAdaptiveServiceCapPlan>;
-}
-type GreedyCapEvaluator = (
-  cap: number,
-  phase: CapSearchPhase,
-  restartBudget: number,
-  allowAnchorRefinement: boolean
-) => Solution | null;
-type GreedyExistingCapRefiner = (
-  cap: number,
-  bestForCap: Solution | null,
-  restartBudget: number,
-  allowAnchorRefinement: boolean
-) => Solution | null;
 interface ResidentialLocalSearchState {
   grid: Grid;
   roads: Set<string>;
@@ -258,59 +244,6 @@ type ResidualServiceBundleTrial = {
   orderedServiceKey: string;
 };
 
-class GreedyStopError extends Error {
-  constructor(
-    readonly bestSolution: Solution | null,
-    readonly reason: "cancelled" | "time-limit"
-  ) {
-    super(
-      bestSolution
-        ? (reason === "time-limit" ? "Greedy solve reached its time limit." : "Greedy solve was stopped.")
-        : (
-            reason === "time-limit"
-              ? "Greedy solve reached its time limit before finding a feasible solution."
-              : "Greedy solve was stopped before finding a feasible solution."
-          )
-    );
-  }
-}
-
-type RandomSource = () => number;
-type NormalizedGreedyOptions = Omit<Required<GreedyOptions>, "randomSeed" | "timeLimitSeconds"> & {
-  randomSeed?: number;
-  timeLimitSeconds?: number;
-};
-
-function createSeededRandom(seed: number): RandomSource {
-  let state = seed >>> 0;
-  return () => {
-    state = (state + 0x6d2b79f5) >>> 0;
-    let next = state;
-    next = Math.imul(next ^ (next >>> 15), next | 1);
-    next ^= next + Math.imul(next ^ (next >>> 7), next | 61);
-    return ((next ^ (next >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function deriveSeed(baseSeed: number, cap: number, restartIndex: number): number {
-  let mixed = (baseSeed ^ Math.imul(cap + 1, 0x9e3779b1)) >>> 0;
-  mixed = (mixed ^ Math.imul(restartIndex + 1, 0x85ebca6b)) >>> 0;
-  return mixed >>> 0;
-}
-
-function shuffle<T>(a: T[], random: RandomSource = Math.random): T[] {
-  const out = [...a];
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(random() * (i + 1));
-    [out[i], out[j]] = [out[j], out[i]];
-  }
-  return out;
-}
-
-function dedupeSortedNumbers(values: number[]): number[] {
-  return [...new Set(values)].sort((a, b) => a - b);
-}
-
 const SERVICE_REFINE_FIXED_SERVICE_EVALUATION = {
   maxOrders: 6,
   maxSeededOrders: 2,
@@ -338,40 +271,6 @@ const EXHAUSTIVE_FIXED_SERVICE_EVALUATION = {
   maxSeededOrders: 1,
   maxSeeds: 3,
 };
-
-function inclusiveCapBand(center: number, upper: number, radius: number): number[] {
-  const out: number[] = [];
-  for (let cap = Math.max(0, center - radius); cap <= Math.min(upper, center + radius); cap++) {
-    out.push(cap);
-  }
-  return out;
-}
-
-function buildAdaptiveServiceCapPlan(inferredUpper: number): {
-  coarseCaps: number[];
-  refineCaps: number[];
-  usesAdaptiveSearch: boolean;
-} {
-  if (inferredUpper <= 6) {
-    return {
-      coarseCaps: Array.from({ length: inferredUpper + 1 }, (_, index) => index),
-      refineCaps: [],
-      usesAdaptiveSearch: false,
-    };
-  }
-
-  return {
-    coarseCaps: dedupeSortedNumbers([
-      0,
-      inferredUpper,
-      Math.floor(inferredUpper / 4),
-      Math.floor(inferredUpper / 2),
-      Math.ceil((3 * inferredUpper) / 4),
-    ]),
-    refineCaps: [],
-    usesAdaptiveSearch: true,
-  };
-}
 
 function combinationsOfK(n: number, k: number, maxCount: number): number[][] {
   const out: number[][] = [];
@@ -414,39 +313,6 @@ function permutationsOfItems<T>(items: T[], maxCount: number): T[][] {
   }
   dfs(0);
   return out;
-}
-
-function getGreedyOptions(params: SolverParams): NormalizedGreedyOptions {
-  const greedy = params.greedy ?? {};
-  const randomSeed = typeof greedy.randomSeed === "number" && Number.isInteger(greedy.randomSeed)
-    ? greedy.randomSeed
-    : undefined;
-  const timeLimitSeconds =
-    typeof greedy.timeLimitSeconds === "number" && Number.isFinite(greedy.timeLimitSeconds) && greedy.timeLimitSeconds > 0
-      ? greedy.timeLimitSeconds
-      : undefined;
-  return {
-    localSearch: greedy.localSearch ?? params.localSearch ?? true,
-    localSearchServiceMoves: greedy.localSearchServiceMoves ?? true,
-    localSearchServiceCandidateLimit: greedy.localSearchServiceCandidateLimit ?? 6,
-    serviceLookaheadCandidates: greedy.serviceLookaheadCandidates ?? 0,
-    deferRoadCommitment: greedy.deferRoadCommitment ?? false,
-    densityTieBreaker: greedy.densityTieBreaker ?? false,
-    densityTieBreakerTolerancePercent: greedy.densityTieBreakerTolerancePercent ?? 2,
-    connectivityShadowScoring: greedy.connectivityShadowScoring ?? false,
-    ...(randomSeed !== undefined ? { randomSeed } : {}),
-    profile: greedy.profile ?? false,
-    diagnostics: greedy.diagnostics ?? false,
-    ...(timeLimitSeconds !== undefined ? { timeLimitSeconds } : {}),
-    restarts: greedy.restarts ?? params.restarts ?? 1,
-    serviceRefineIterations: greedy.serviceRefineIterations ?? params.serviceRefineIterations ?? 2,
-    serviceRefineCandidateLimit: greedy.serviceRefineCandidateLimit ?? params.serviceRefineCandidateLimit ?? 40,
-    exhaustiveServiceSearch: greedy.exhaustiveServiceSearch ?? params.exhaustiveServiceSearch ?? false,
-    serviceExactPoolLimit: greedy.serviceExactPoolLimit ?? params.serviceExactPoolLimit ?? 22,
-    serviceExactMaxCombinations: greedy.serviceExactMaxCombinations ?? params.serviceExactMaxCombinations ?? 12000,
-    stopFilePath: greedy.stopFilePath ?? "",
-    snapshotFilePath: greedy.snapshotFilePath ?? "",
-  };
 }
 
 function forEachPlacementCell(
@@ -2689,124 +2555,6 @@ function buildGreedyDiagnostics(options: {
       residentialOverallLimit: resolveDiagnosticOverallLimit(maxResidentials, residentialAvailability),
     }),
   };
-}
-
-function compareCapResults(a: CapResult, b: CapResult): number {
-  return b.totalPopulation - a.totalPopulation
-    || a.serviceCount - b.serviceCount
-    || a.cap - b.cap;
-}
-
-function summarizeCapResult(cap: number, phase: CapSearchPhase, solution: Solution | null): CapResult {
-  return {
-    cap,
-    phase,
-    solution,
-    totalPopulation: solution?.totalPopulation ?? -1,
-    serviceCount: solution?.services.length ?? Number.POSITIVE_INFINITY,
-  };
-}
-
-function buildGreedyServiceCapPolicy(params: SolverParams, maxServices: number | undefined): GreedyServiceCapPolicy {
-  // Explicit service caps are maxima, so lower counts remain eligible when extra services block housing.
-  const explicitServiceCap = maxServices;
-  const positiveBonuses = (params.serviceTypes ?? []).reduce(
-    (sum, type) => sum + (type.bonus > 0 ? Math.max(0, type.avail) : 0),
-    0
-  );
-  const totalServiceAvail = (params.serviceTypes ?? []).reduce((sum, type) => sum + Math.max(0, type.avail), 0);
-  const serviceAvailabilityUpper = positiveBonuses > 0 ? Math.min(totalServiceAvail, positiveBonuses) : totalServiceAvail;
-  const inferredUpper = explicitServiceCap !== undefined
-    ? Math.min(explicitServiceCap, serviceAvailabilityUpper)
-    : serviceAvailabilityUpper;
-  const capPlan = explicitServiceCap !== undefined
-    ? {
-        coarseCaps: Array.from({ length: inferredUpper + 1 }, (_, cap) => cap),
-        refineCaps: [],
-        usesAdaptiveSearch: false,
-      }
-    : buildAdaptiveServiceCapPlan(inferredUpper);
-  return {
-    explicitServiceCap,
-    inferredUpper,
-    capPlan,
-  };
-}
-
-function runGreedyServiceCapSearch(options: {
-  policy: GreedyServiceCapPolicy;
-  restarts: number;
-  profileCounters?: GreedyProfileCounters;
-  evaluateNewCap: GreedyCapEvaluator;
-  refineExistingCap: GreedyExistingCapRefiner;
-}): void {
-  const {
-    policy,
-    restarts,
-    profileCounters,
-    evaluateNewCap,
-    refineExistingCap,
-  } = options;
-  const { explicitServiceCap, inferredUpper, capPlan } = policy;
-  const capResultsByCap = new Map<number, CapResult>();
-  const evaluatedCaps = new Set<number>();
-
-  if (explicitServiceCap !== undefined || !capPlan.usesAdaptiveSearch) {
-    for (const cap of capPlan.coarseCaps) {
-      const solution = evaluateNewCap(cap, "full", restarts, true);
-      evaluatedCaps.add(cap);
-      capResultsByCap.set(cap, summarizeCapResult(cap, "full", solution));
-    }
-    return;
-  }
-
-  for (const cap of capPlan.coarseCaps) {
-    const solution = evaluateNewCap(cap, "coarse", 1, false);
-    evaluatedCaps.add(cap);
-    capResultsByCap.set(cap, summarizeCapResult(cap, "coarse", solution));
-  }
-
-  const coarseResults = [...capResultsByCap.values()]
-    .filter((entry) => entry.phase === "coarse")
-    .sort(compareCapResults);
-  const focusCaps = new Set(coarseResults.slice(0, 2).map((entry) => entry.cap));
-  const refineCaps = dedupeSortedNumbers(
-    [...focusCaps].flatMap((cap) => inclusiveCapBand(cap, inferredUpper, 2))
-  );
-  const refineCapSet = new Set(refineCaps);
-
-  for (const cap of refineCaps) {
-    if (evaluatedCaps.has(cap)) {
-      if (profileCounters) profileCounters.attempts.refineCaps++;
-      const current = capResultsByCap.get(cap)?.solution ?? null;
-      capResultsByCap.set(cap, summarizeCapResult(cap, "refine", current));
-      continue;
-    }
-    const solution = evaluateNewCap(cap, "refine", 1, false);
-    evaluatedCaps.add(cap);
-    capResultsByCap.set(cap, summarizeCapResult(cap, "refine", solution));
-  }
-
-  const restartFocusCaps = dedupeSortedNumbers([
-    ...[...capResultsByCap.values()]
-      .filter((entry) => refineCapSet.has(entry.cap))
-      .sort(compareCapResults)
-      .slice(0, 2)
-      .map((entry) => entry.cap),
-    ...[...focusCaps].flatMap((cap) =>
-      inclusiveCapBand(cap, inferredUpper, 1).filter((neighbor) => neighbor > 0)
-    ),
-  ]);
-
-  for (const cap of restartFocusCaps) {
-    const current = capResultsByCap.get(cap)?.solution ?? null;
-    const refined = refineExistingCap(cap, current, restarts, true);
-    capResultsByCap.set(cap, summarizeCapResult(cap, "refine", refined));
-  }
-
-  if (profileCounters) {
-    profileCounters.attempts.capsSkipped += Math.max(0, inferredUpper + 1 - evaluatedCaps.size);
-  }
 }
 
 function runGreedyServiceRefinement(options: {

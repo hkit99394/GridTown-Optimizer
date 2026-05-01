@@ -149,11 +149,16 @@ function loadPlannerHeatmapsModule() {
   return loadBrowserModule("../apps/planner-web/plannerHeatmaps.js").PlannerHeatmaps;
 }
 
+function loadPlannerManualLayoutModule() {
+  return loadBrowserModule("../apps/planner-web/plannerManualLayout.js").PlannerManualLayout;
+}
+
 function loadPlannerResultsModule(options = {}) {
   return loadBrowserModule("../apps/planner-web/plannerResults.js", {
     ...options,
     window: {
       PlannerHeatmaps: loadPlannerHeatmapsModule(),
+      PlannerManualLayout: loadPlannerManualLayoutModule(),
       ...(options.window ?? {}),
     },
   }).CityBuilderResults;

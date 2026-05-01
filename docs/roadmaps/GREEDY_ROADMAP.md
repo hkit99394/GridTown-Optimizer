@@ -394,7 +394,7 @@ Shipped bounded slice:
 - `src/packages/core/buildings.ts` now uses those helpers for `overlaps`, service-boost checks, and `buildServiceEffectZoneSet()`, while keeping the existing array-returning compatibility APIs in place
 - `src/packages/core/roads.ts`, `src/packages/solvers/greedy/solver.ts`, and `src/packages/solvers/greedy/roadAnchors.ts` now use the lower-allocation helpers in the explicit-road probe path and the hottest occupancy update loops, while preserving `Set<string>` road/building semantics and the existing public solution shape
 - this slice intentionally does not change cell-key representation, deferred-road semantics, or local-search snapshot handling; it is a semantics-preserving runtime refactor behind the current helper APIs
-- `tests/optimizers.test.cjs` now includes helper-level parity checks for rectangle iteration, effect-zone construction, and representative edge-border road probes, while the fixed greedy benchmark corpus continues to guard solution outputs
+- `tests/optimizers/greedy.test.cjs` now runs helper-level parity checks for rectangle iteration, effect-zone construction, and representative edge-border road probes through the shared optimizer harness, while the fixed greedy benchmark corpus continues to guard solution outputs
 
 Guardrail:
 - keep the public helper surface stable for now; land lower-allocation internals before considering a wider occupancy representation change
@@ -421,7 +421,7 @@ Shipped bounded slice:
 - `src/packages/solvers/greedy/solver.ts` now evaluates Step 12 service neighborhoods as direct same-type relocations instead of running `remove`/`add`/`swap` through the Step 9 fixed-service evaluator for every trial
 - relocation candidates are scored against the incumbent occupancy and grouped residential upside with the current service removed from the boost state, then only the top-ranked few are exact-realized through the existing fixed-service solve path
 - the direct path now samples candidates per service type instead of from the global top-N pool, which avoids starving lower-ranked incumbent types during relocation search
-- `tests/optimizers.test.cjs` keeps `service-local-neighborhood` as the main guardrail and now asserts the Step 12 path improves the `240` baseline to `295`, keeps `fixedServiceRealizationTrials === 0`, and exercises remove/add/swap service neighborhoods
+- `tests/optimizers/benchmarks.test.cjs` keeps `service-local-neighborhood` as the main guardrail and now asserts the Step 12 path improves the `240` baseline to `295`, keeps `fixedServiceRealizationTrials === 0`, and exercises remove/add/swap service neighborhoods
 - the broader fixed corpus currently lands `adaptive-cap-search-wide` at `848` and `geometry-occupancy-hot-path` at `1030` under the shipped Step 12 slice
 
 ### 13. Introduce candidate geometry caches and tested scratch workspaces
@@ -441,7 +441,7 @@ Shipped bounded slice:
 - `src/packages/core/roads.ts` now supports a reusable `RoadProbeScratch` workspace for explicit-road BFS probes, threaded through `probeBuildingConnectedToRoads`, `canConnectToRoads`, `ensureBuildingConnectedToRoads`, and deferred-road materialization without changing caller-visible behavior
 - `src/packages/solvers/greedy/solver.ts` now reuses one explicit-road scratch workspace across service scans, residential scans, Step 12 service relocations, deferred-road reconstruction, local search, and final road validation; it also reuses cached candidate/group footprint keys plus a rollback-safe occupancy scratch in the bounded service neighborhood
 - `greedy.profile` now exposes `geometryCacheEntries`, `occupancyScratchReuses`, and `scratchProbeCalls`, and `benchmark:greedy` prints a `step13=` summary line so the runtime-only refactor stays visible in the fixed corpus
-- `tests/optimizers.test.cjs` now keeps helper-level parity guards for geometry caches and reusable road-probe scratch repeatability, while the fixed corpus now holds `geometry-occupancy-hot-path` at `1030`
+- `tests/optimizers/greedy.test.cjs` now keeps helper-level parity guards for geometry caches and reusable road-probe scratch repeatability, while the fixed corpus now holds `geometry-occupancy-hot-path` at `1030`
 
 ### 14. Explore a stronger greedy search policy
 
@@ -461,7 +461,7 @@ Shipped bounded slice:
 - the refill simulation replays road-anchor reservation checks, exact connectivity/path feasibility, overlap invalidation, and typed residential availability on scratch state; deferred-road mode and `fixedServices` still skip the reranker entirely
 - equal lookahead totals still fall back to the current marginal score and `compareServiceTieBreaks(...)`, so enabling the flag does not introduce a new tie policy
 - `benchmark:greedy` now carries the isolated `step14-service-lookahead-reranker` case plus a `step14=` profile line, and the current bounded slice improves that case from `240` to `275` with the feature enabled while keeping the flag-off baseline unchanged
-- `tests/optimizers.test.cjs` now covers Step 14 corpus isolation, flag-off parity, enabled-case improvement, and benchmark option normalization for `serviceLookaheadCandidates`
+- `tests/optimizers/benchmarks.test.cjs` now covers Step 14 corpus isolation, flag-off parity, enabled-case improvement, and benchmark option normalization for `serviceLookaheadCandidates`
 
 ### 15. Decide whether greedy should stay standalone or become more explicitly hybrid
 

@@ -1,6 +1,6 @@
 # Next Stage Solver Review
 
-Date: 2026-04-30
+Date: 2026-05-01
 
 ## Executive Summary
 
@@ -40,6 +40,7 @@ The default posture remains unchanged: keep `auto` as the recommended quality pa
   - Protected development/holdout splits.
 - CPU portfolio is closed as a measurement/safety gate. The latest tiny paired run tied population while using more configured worker CPU budget, so portfolio stays explicit-only.
 - CP-SAT road-semantics alignment and scorecard closeout are delivered as of 2026-04-30. CP-SAT now uses one road-connectivity formulation: per-component anchored roads, and the six-case scorecard reached `OPTIMAL` under a 5s single-worker budget.
+- CP-SAT async and portfolio failure-mode coverage is delivered as of 2026-05-01. Regression coverage now includes malformed progress, no-final-result streamed-progress close, child diagnostics, process-pool fallback, worker future failure after sibling progress, cancellation process groups, and cancellation snapshot propagation.
 
 ## Key Finding: CP-SAT Road Semantics
 
@@ -238,6 +239,23 @@ Success signal:
 
 - New Auto policy beats baseline on protected holdout or reaches equal population faster with no CPU-normalized regression.
 
+### CP-SAT Async And Portfolio Failure-Mode Coverage
+
+Goal: keep exact-backend lifecycle behavior safe before increasing orchestration complexity.
+
+Status: delivered. The async bridge and portfolio helper coverage now cover malformed streamed progress, no-final-result streamed-progress close, child-process diagnostics, blocked process-pool fallback, `BrokenProcessPool` fallback, worker `future.result()` failure after sibling progress, process-group cancellation, and portfolio snapshot propagation through background cancellation.
+
+Deliverables:
+
+- OR-Tools-free async failure regressions. Delivered.
+- Portfolio fallback and worker-result failure regressions. Delivered.
+- Background cancellation snapshot propagation regression. Delivered.
+- OS-level portfolio child-process cancellation regression kept green.
+
+Success signal:
+
+- CP-SAT portfolio remains explicit-only, but lifecycle behavior is covered well enough for future label/replay and orchestration experiments.
+
 ### Stage 6: Exact Small-Window DP Repair
 
 Goal: add dynamic programming only where it is naturally strong: tiny repair windows, narrow corridors, and exact oracle checks.
@@ -338,11 +356,10 @@ Any default-path solver change must satisfy:
 
 Recommended order:
 
-1. Finish async and portfolio cancellation/snapshot and worker-result failure coverage before increasing CP-SAT orchestration complexity.
-2. Add exact small-window DP repair only if telemetry shows small-repair CP-SAT overhead or narrow-window bottlenecks.
-3. Explore service-master decomposition if pressure cases justify it.
-4. Scale LNS replay labels from adaptive operator outcomes.
-5. Revisit learned rankers only after offline holdout and online equal-budget gates pass.
-6. Revisit GPU, portfolio, distributed solving, and external solvers only after a measured bottleneck and promotion-grade evidence exists.
+1. Add exact small-window DP repair only if telemetry shows small-repair CP-SAT overhead or narrow-window bottlenecks.
+2. Explore service-master decomposition if pressure cases justify it.
+3. Scale LNS replay labels from adaptive operator outcomes.
+4. Revisit learned rankers only after offline holdout and online equal-budget gates pass.
+5. Revisit GPU, portfolio, distributed solving, and external solvers only after a measured bottleneck and promotion-grade evidence exists.
 
 This keeps the project pointed at the real target: higher validated population per wall-clock minute, with fewer speculative detours.

@@ -195,11 +195,16 @@ def run_portfolio_workers(grid, params, worker_options, worker_task, on_result=N
                 executor.submit(worker_task, grid, params, worker_option, worker_index)
                 for worker_index, worker_option in enumerate(worker_options)
             ]
-            for future in concurrent.futures.as_completed(futures):
-                result = future.result()
-                results.append(result)
-                if on_result is not None:
-                    on_result(result)
+            try:
+                for future in concurrent.futures.as_completed(futures):
+                    result = future.result()
+                    results.append(result)
+                    if on_result is not None:
+                        on_result(result)
+            except Exception:
+                for pending in futures:
+                    pending.cancel()
+                raise
         return results
 
     process_factory = lambda: concurrent.futures.ProcessPoolExecutor(

@@ -333,7 +333,16 @@ Reviewed through 2026-05-01.
 - Kept the default `auto.cpSatStageReserveRatio` at `0.2`. The registered product-corpus promotion artifact kept Auto best or tied in 116/120 scorecards, and a targeted post-change `0.35` reserve probe on pressure cases tied mean population rather than improving it.
 - Added regression coverage that Auto no longer lets the CP-SAT stage time limit implicitly inflate LNS repair passes under a wall-clock Auto budget.
 - Targeted post-change smoke on `typed-footprint-pressure`, `service-local-neighborhood`, and `expansion-comparison-replay` at 1s/5s with seed `7` kept Auto mean population at 576.67; remaining short-budget losses stay visible as pressure evidence, not a default-policy promotion.
-- No solver mode default changed; `auto` remains the recommended quality path, and the next active priority is CP-SAT async/portfolio failure-mode coverage.
+- No solver mode default changed; `auto` remains the recommended quality path, and the next active priority is exact small-window DP repair only if telemetry trips its entry criteria.
+
+### 39. CP-SAT Async and Portfolio Failure-Mode Closeout
+
+- Closed the CP-SAT async/portfolio failure-mode priority as an OR-Tools-free regression and lifecycle confidence gate.
+- Async CP-SAT streamed progress now has regression coverage for malformed progress, child-process stderr/stdout diagnostics, and the close path where progress was streamed but no final result payload arrived.
+- Background CP-SAT cancellation now has regression coverage that a portfolio snapshot written before cancellation is materialized as the stopped solution with `stoppedByUser=true` and portfolio worker summaries intact.
+- Portfolio worker execution now cancels pending futures when a worker `future.result()` fails after a sibling has already reported progress, and the failure remains visible to the caller.
+- Existing process-group cancellation coverage continues to verify child-worker trees are terminated on cancellation.
+- No portfolio fan-out limits changed and portfolio remains explicit-only.
 
 ## Maintenance Watchpoints
 

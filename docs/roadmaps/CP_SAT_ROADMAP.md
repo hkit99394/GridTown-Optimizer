@@ -29,33 +29,15 @@ Delivered summary:
 - benchmark corpus and reproducible harness
 - single-machine portfolio CP-SAT
 - road-semantics scorecard closeout with model-size telemetry
-- initial async and portfolio failure-mode regressions
+- async and portfolio failure-mode closeout
 
 Detailed delivered notes live in [CP_SAT_ROADMAP_DELIVERED.md](./CP_SAT_ROADMAP_DELIVERED.md).
 
 ## Remaining Work By Product Priority
 
-Ordering note: this CP-SAT-specific list follows [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md) and [NEXT_STAGE_REVIEW.md](./NEXT_STAGE_REVIEW.md). Road-semantics scorecard closeout is delivered. The first async/portfolio failure-mode regression slice is delivered; the remaining CP-SAT priority is deeper cancellation/snapshot and worker-result coverage.
+Ordering note: this CP-SAT-specific list follows [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md) and [NEXT_STAGE_REVIEW.md](./NEXT_STAGE_REVIEW.md). Road-semantics, telemetry, and async/portfolio failure-mode closeouts are delivered. The next CP-SAT priority is using the exact backend as a label and replay engine; distributed CP-SAT remains gated.
 
-### 1. Deepen async and portfolio failure-mode coverage
-
-Impact on target: high confidence / medium direct quality
-
-Status: partial. The first OR-Tools-free regression slice covers malformed streamed progress, malformed portfolio-worker progress with backend termination, non-zero child-process diagnostics, blocked process-pool fallback, and `BrokenProcessPool` fallback.
-
-Why it matters:
-- async and portfolio paths are shipped, but more edge-case coverage will make them safer to evolve
-- this is the main confidence gap before increasing single-machine fan-out or starting distributed orchestration
-- it protects the exact-solver contract that `auto`, planner reuse, and portfolio summaries now depend on
-
-Remaining scope:
-- keep the OS-level orphan-process cancellation regression for portfolio worker trees green
-- interruption and cancellation cases
-- worker `future.result()` failure after sibling progress
-- portfolio cancellation snapshot propagation
-- no-final-result streamed-progress close path
-
-### 2. Use CP-SAT as a label and replay engine
+### 1. Use CP-SAT as a label and replay engine
 
 Impact on target: high enabling value
 
@@ -75,11 +57,11 @@ Guardrails:
 - always record wall-clock and CPU budget for parallel replay
 - keep `CP-SAT` labels tied to the exact model fingerprint and validated solution shape
 
-### 3. Distributed CP-SAT
+### 2. Distributed CP-SAT
 
 Priority note:
 - this has the highest remaining exact-search compute ceiling, but not the highest near-term product leverage
-- [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md) keeps distributed solving behind shared traces, deterministic feature work, single-machine portfolio hardening, workflow improvements, and cancellation confidence
+- [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md) keeps distributed solving behind shared traces, deterministic feature work, single-machine portfolio scorecards, workflow improvements, and fresh lifecycle coverage for any new orchestration tier
 - treat distributed CP-SAT as the next orchestration tier after local portfolio execution is demonstrably safe
 
 Why it matters:
@@ -100,7 +82,7 @@ Core requirements:
 - Treat residential pruning conservatively unless dominance is proven.
 - Do not change the exact objective implicitly while tuning the model.
 - Prefer async CP-SAT integration for new work.
-- Do not raise portfolio fan-out limits or begin distributed orchestration before cancellation and degraded-worker behavior have dedicated coverage.
+- Do not raise portfolio fan-out limits or begin distributed orchestration without fresh CPU-normalized scorecards and lifecycle coverage for the new orchestration tier.
 - Do not use CP-SAT parallelism as a headline win unless the scorecard reports CPU budget as well as wall-clock.
 - Treat building connectivity-shadow scoring as a heuristic/planner feature first; CP-SAT already models exact feasibility and should mainly provide labels, proofs, and validation for it.
 - Treat CP-SAT semantic gates as OR-Tools-enabled checks; a default test run that skips CP-SAT runtime coverage is not enough evidence by itself.

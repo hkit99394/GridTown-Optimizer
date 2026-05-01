@@ -91,16 +91,23 @@ Target alignment:
 - added model-size telemetry to CP-SAT result payloads and benchmark text output
 - registered the scorecard artifact at `artifacts/cp-sat-road-semantics/2026-04-30/`
 - the 5s single-worker scorecard reached `OPTIMAL` on all six cases, including 200 population on `multi-anchor-road-components`
-- no solver default changed; the next CP-SAT priority is async and portfolio failure-mode coverage
+- no solver default changed; the next CP-SAT priority is label and replay engine work
 
 ### 14. Initial async and portfolio failure-mode regressions
 - covered malformed streamed progress with an OR-Tools-free fake async backend
 - covered malformed portfolio-worker progress, verified no progress callback is emitted, and verified the backend is stopped
 - covered non-zero async child-process exits with stderr/stdout diagnostics
 - covered blocked process-pool fallback to threads and `BrokenProcessPool` fallback to threads
-- remaining work stays in [CP_SAT_ROADMAP.md](./CP_SAT_ROADMAP.md): cancellation/snapshot propagation and worker-result failure behavior
+
+### 15. Async and portfolio failure-mode closeout
+- added OR-Tools-free async regression coverage for streamed progress that closes without a final result payload
+- added background CP-SAT cancellation coverage that returns the latest portfolio snapshot as a stopped solution while preserving selected worker and running-worker summaries
+- hardened `run_portfolio_workers(...)` so pending futures are cancelled if one worker future fails after another worker already reported progress
+- extended portfolio fallback helper coverage for worker-future failure after sibling progress, while keeping blocked process-pool and `BrokenProcessPool` thread fallbacks covered
+- kept the process-group cancellation regression for child worker trees green
+- no fan-out limit changed and portfolio remains explicit-only
 
 ## Notes
 
 - The library now also exposes an async CP-SAT path through `solveAsync(...)` and `solveCpSatAsync(...)`.
-- Remaining benchmark, distributed-execution, and deeper failure-mode work stays in [CP_SAT_ROADMAP.md](./CP_SAT_ROADMAP.md).
+- Remaining benchmark, distributed-execution, and label/replay work stays in [CP_SAT_ROADMAP.md](./CP_SAT_ROADMAP.md).

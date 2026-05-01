@@ -104,6 +104,7 @@ const {
   solveCpSatAsync,
   solveLns,
   startAutoSolve,
+  startCpSatSolve,
   validateSolution,
   validateSolutionMap,
 } = require("city-builder/solver");
@@ -3234,6 +3235,50 @@ broken_results = module.run_portfolio_workers(
     lambda grid, params, worker_option, worker_index: {"workerIndex": worker_index, "seed": worker_option["randomSeed"]},
 )
 
+class OrderedFuture:
+    def __init__(self, value=None, error=None):
+        self._value = value
+        self._error = error
+        self.cancelled = False
+    def result(self):
+        if self._error is not None:
+            raise self._error
+        return self._value
+    def cancel(self):
+        self.cancelled = True
+        return True
+
+class FutureFailureAfterProgressExecutor:
+    futures = []
+    def __init__(self, *args, **kwargs):
+        FutureFailureAfterProgressExecutor.futures = []
+    def __enter__(self):
+        return self
+    def __exit__(self, exc_type, exc, tb):
+        return False
+    def submit(self, fn, *args, **kwargs):
+        if len(FutureFailureAfterProgressExecutor.futures) == 0:
+            future = OrderedFuture(fn(*args, **kwargs))
+        else:
+            future = OrderedFuture(error=RuntimeError("worker future failed after sibling progress"))
+        FutureFailureAfterProgressExecutor.futures.append(future)
+        return future
+
+module.concurrent.futures.ProcessPoolExecutor = FutureFailureAfterProgressExecutor
+progress_results = []
+try:
+    module.run_portfolio_workers(
+        [[1]],
+        {"optimizer": "cp-sat"},
+        [{"randomSeed": 21}, {"randomSeed": 22}],
+        lambda grid, params, worker_option, worker_index: {"workerIndex": worker_index, "seed": worker_option["randomSeed"]},
+        on_result=lambda result: progress_results.append(result),
+    )
+    future_failure_error = None
+except RuntimeError as error:
+    future_failure_error = str(error)
+future_failure_cancelled = [future.cancelled for future in FutureFailureAfterProgressExecutor.futures]
+
 try:
     module.build_portfolio_worker_options({"portfolio": {"workerCount": 2}})
     missing_budget_error = None
@@ -3289,6 +3334,9 @@ except ValueError as error:
 print(json.dumps({
     "results": results,
     "brokenResults": broken_results,
+    "futureFailureProgress": progress_results,
+    "futureFailureError": future_failure_error,
+    "futureFailureCancelled": future_failure_cancelled,
     "missingBudgetError": missing_budget_error,
     "workerThreadError": worker_thread_error,
     "cpuBudgetError": cpu_budget_error,
@@ -3312,6 +3360,11 @@ print(json.dumps({
   assert.deepEqual(payload.brokenResults, [
     { workerIndex: 0, seed: 13 },
   ]);
+  assert.deepEqual(payload.futureFailureProgress, [
+    { workerIndex: 0, seed: 21 },
+  ]);
+  assert.match(payload.futureFailureError, /worker future failed after sibling progress/);
+  assert.deepEqual(payload.futureFailureCancelled, [true, true]);
   assert.match(payload.missingBudgetError, /requires timeLimitSeconds/);
   assert.match(payload.workerThreadError, /exceeding the 8 worker portfolio limit/);
   assert.match(payload.cpuBudgetError, /exceeding the 28800\.0 second portfolio budget/);
@@ -3357,6 +3410,65 @@ setInterval(() => {}, 1000);
   }
 }
 
+async function testCpSatAsyncRejectsStreamedProgressWithoutFinalResult() {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "city-builder-cp-sat-no-final-stream-"));
+  const scriptPath = path.join(tempDir, "no-final-result.cjs");
+  fs.writeFileSync(
+    scriptPath,
+    `
+process.stdin.resume();
+process.stdout.write(JSON.stringify({
+  event: "progress",
+  kind: "bound",
+  telemetry: {
+    solveWallTimeSeconds: 0.1,
+    userTimeSeconds: 0.1,
+    solutionCount: 0,
+    incumbentObjectiveValue: null,
+    bestObjectiveBound: 10,
+    objectiveGap: null,
+    incumbentPopulation: null,
+    bestPopulationUpperBound: 10,
+    populationGapUpperBound: null,
+    lastImprovementAtSeconds: null,
+    secondsSinceLastImprovement: null,
+    numBranches: 1,
+    numConflicts: 0,
+    modelSize: null
+  }
+}) + "\\n");
+`,
+    "utf8"
+  );
+  const progressUpdates = [];
+
+  try {
+    await assert.rejects(
+      () => solveCpSatAsync(
+        [[1]],
+        {
+          optimizer: "cp-sat",
+          cpSat: {
+            pythonExecutable: process.execPath,
+            scriptPath,
+            streamProgress: true,
+          },
+          residentialTypes: [{ w: 1, h: 1, min: 1, max: 1, avail: 1 }],
+          availableBuildings: { residentials: 1, services: 0 },
+        },
+        {
+          onProgress: (update) => progressUpdates.push(update),
+        }
+      ),
+      /CP-SAT backend returned streamed progress without a final result payload/
+    );
+    assert.equal(progressUpdates.length, 1);
+    assert.equal(progressUpdates[0].kind, "bound");
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+}
+
 async function testCpSatAsyncRejectsChildProcessFailureWithDiagnostics() {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "city-builder-cp-sat-child-failure-"));
   const scriptPath = path.join(tempDir, "child-failure.cjs");
@@ -3385,6 +3497,106 @@ process.exit(3);
       }),
       /CP-SAT backend failed with exit code 3\. stderr: child exploded stdout: partial stdout/
     );
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+}
+
+async function waitForCpSatSnapshotState(handle, timeoutMs = 1000) {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    if (handle.getLatestSnapshotState().hasFeasibleSolution) return;
+    await delay(20);
+  }
+  assert.fail("Timed out waiting for CP-SAT snapshot state.");
+}
+
+async function testCpSatBackgroundCancelReturnsPortfolioSnapshot() {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "city-builder-cp-sat-portfolio-snapshot-"));
+  const scriptPath = path.join(tempDir, "portfolio-snapshot.cjs");
+  fs.writeFileSync(
+    scriptPath,
+    `
+const fs = require("node:fs");
+let input = "";
+process.stdin.setEncoding("utf8");
+process.stdin.on("data", (chunk) => {
+  input += chunk;
+});
+process.stdin.on("end", () => {
+  const request = JSON.parse(input || "{}");
+  const cpSat = request.params.cpSat;
+  const snapshot = {
+    roads: ["0,0"],
+    services: [],
+    residentials: [],
+    populations: [],
+    totalPopulation: 0,
+    status: "FEASIBLE",
+    portfolio: {
+      workerCount: 2,
+      selectedWorkerIndex: 0,
+      workers: [
+        {
+          workerIndex: 0,
+          randomSeed: 7,
+          randomizeSearch: true,
+          numWorkers: 1,
+          status: "FEASIBLE",
+          feasible: true,
+          totalPopulation: 0,
+          telemetry: null
+        },
+        {
+          workerIndex: 1,
+          randomSeed: 8,
+          randomizeSearch: true,
+          numWorkers: 1,
+          status: "RUNNING",
+          feasible: false,
+          totalPopulation: null,
+          telemetry: null
+        }
+      ]
+    }
+  };
+  fs.writeFileSync(cpSat.snapshotFilePath, JSON.stringify(snapshot));
+  const interval = setInterval(() => {
+    if (fs.existsSync(cpSat.stopFilePath)) {
+      clearInterval(interval);
+      process.exit(2);
+    }
+  }, 10);
+});
+`,
+    "utf8"
+  );
+
+  try {
+    const handle = startCpSatSolve([[1]], {
+      optimizer: "cp-sat",
+      cpSat: {
+        pythonExecutable: process.execPath,
+        scriptPath,
+        portfolio: {
+          workerCount: 2,
+          perWorkerTimeLimitSeconds: 1,
+        },
+      },
+      residentialTypes: [],
+      serviceTypes: [],
+      availableBuildings: { residentials: 0, services: 0 },
+    });
+
+    await waitForCpSatSnapshotState(handle);
+    handle.cancel();
+    const solution = await handle.promise;
+    assert.equal(solution.optimizer, "cp-sat");
+    assert.equal(solution.stoppedByUser, true);
+    assert.equal(solution.cpSatStatus, "FEASIBLE");
+    assert.equal(solution.cpSatPortfolio.workerCount, 2);
+    assert.equal(solution.cpSatPortfolio.selectedWorkerIndex, 0);
+    assert.equal(solution.cpSatPortfolio.workers[1].status, "RUNNING");
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true });
   }
@@ -9094,8 +9306,10 @@ async function runCpSatOptimizerTests() {
   maybeTestCpSatPortfolioOptionHelpers();
   testCpSatPortfolioExecutorFallbackHelpers();
   await testCpSatAsyncRejectsMalformedStreamedProgress();
+  await testCpSatAsyncRejectsStreamedProgressWithoutFinalResult();
   await testCpSatAsyncRejectsChildProcessFailureWithDiagnostics();
   await testCpSatAsyncRejectsMalformedPortfolioProgressAndStopsBackend();
+  await testCpSatBackgroundCancelReturnsPortfolioSnapshot();
   maybeTestCpSatPopulationUpperBoundHelpers();
   maybeTestCpSatResidentialPopulationUpperBoundHelpers();
   await maybeTestCpSatOptimizer();

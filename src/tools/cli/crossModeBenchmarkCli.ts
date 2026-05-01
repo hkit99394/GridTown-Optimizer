@@ -5,7 +5,6 @@ import {
   buildCrossModeProductWorkflowEvidenceSummary,
   buildCrossModeProductWorkflowRegistryEntryDraft,
   buildCrossModeBenchmarkTelemetryManifest,
-  buildExperimentRegistryEntry,
   captureExperimentRegistryHardwareMetadata,
   DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS,
   DEFAULT_CROSS_MODE_BENCHMARK_MODES,
@@ -24,8 +23,6 @@ import {
   runCrossModeBenchmarkBudgetAblations,
   runCrossModeBenchmarkSuite,
   resolveExperimentRegistryGitMetadata,
-  validateExperimentRegistryEntry,
-  validateExperimentRegistryFile,
 } from "../../benchmarkApi.js";
 import {
   applyInlineOptionHandlers,
@@ -47,8 +44,13 @@ import {
 import type {
   CrossModeBenchmarkMode,
   CrossModeBenchmarkSuiteResult,
-  ExperimentRegistryEntry,
 } from "../../benchmarkApi.js";
+import {
+  completeAppendableRegistryEntry,
+  defaultCliReplayCommand,
+  normalizeRepoRelativePath,
+  writeJsonArtifact,
+} from "./artifactBundleHelpers.js";
 
 interface ParsedBenchmarkArgs {
   json: boolean;
@@ -265,20 +267,8 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   };
 }
 
-function normalizeRepoRelativePath(value: string, label: string): string {
-  const normalized = path.normalize(value);
-  if (normalized === "." || path.isAbsolute(normalized) || normalized.startsWith("..")) {
-    throw new Error(`${label} must be a repository-relative path.`);
-  }
-  return normalized.split(path.sep).join(path.posix.sep);
-}
-
-function quoteCommandArg(value: string): string {
-  return /^[A-Za-z0-9_./:=,@+-]+$/.test(value) ? value : `'${value.replace(/'/g, "'\\''")}'`;
-}
-
 function defaultBenchmarkCommand(argv: readonly string[]): string {
-  return ["node", "dist/crossModeBenchmarkCli.js", ...argv].map(quoteCommandArg).join(" ");
+  return defaultCliReplayCommand("dist/crossModeBenchmarkCli.js", argv);
 }
 
 function defaultProductRegistryCommand(argv: readonly string[]): string {
@@ -288,10 +278,6 @@ function defaultProductRegistryCommand(argv: readonly string[]): string {
     && !arg.startsWith("--product-registry=")
   );
   return defaultBenchmarkCommand(replayArgs);
-}
-
-function writeJsonArtifact(filePath: string, value: unknown): void {
-  fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`);
 }
 
 function prepareScorecardArtifactBundlePaths(
@@ -322,50 +308,6 @@ function writeScorecardArtifactFiles(
   writeJsonArtifact(artifacts.absoluteArtifactPath("scorecard.json"), result);
   fs.writeFileSync(artifacts.absoluteArtifactPath("scorecard.txt"), `${formatCrossModeBenchmarkSuite(result)}\n`);
   writeJsonArtifact(artifacts.absoluteArtifactPath("telemetry-manifest.json"), telemetryManifest);
-}
-
-function existingRegistryHasRunId(registryPath: string, runId: unknown): boolean {
-  if (typeof runId !== "string") return false;
-  const registryResult = validateExperimentRegistryFile(registryPath, {
-    rootDir: process.cwd(),
-    validateArtifactPaths: true,
-    strict: false,
-  });
-  if (registryResult.errorCount > 0) {
-    throw new ExperimentRegistryValidationError("Existing experiment registry is invalid.", registryResult.issues);
-  }
-  return registryResult.entries.some((entry) => entry.runId === runId);
-}
-
-function completeAppendableRegistryEntry(
-  registryPath: string,
-  registryEntryDraft: Record<string, unknown>
-): ExperimentRegistryEntry {
-  const completedEntry = buildExperimentRegistryEntry(registryEntryDraft, {
-    rootDir: process.cwd(),
-  });
-  const validation = validateExperimentRegistryEntry(completedEntry, {
-    rootDir: process.cwd(),
-    validateArtifactPaths: true,
-    strict: true,
-  });
-  if (validation.entry === undefined) {
-    throw new ExperimentRegistryValidationError("Product workflow registry entry is invalid.", validation.issues);
-  }
-
-  const absoluteRegistryPath = path.resolve(process.cwd(), registryPath);
-  if (fs.existsSync(absoluteRegistryPath) && existingRegistryHasRunId(registryPath, validation.entry.runId)) {
-    throw new ExperimentRegistryValidationError("Product workflow registry entry duplicates an existing runId.", [
-      {
-        code: "duplicate-run-id",
-        message: `Duplicate runId '${validation.entry.runId}' already exists in '${registryPath}'.`,
-        runId: validation.entry.runId,
-        field: "runId",
-      },
-    ]);
-  }
-
-  return validation.entry;
 }
 
 function writeScorecardArtifactBundle(
@@ -405,7 +347,11 @@ function registerProductArtifacts(
     "--product-registry"
   );
   const dryRun = args.productRegisterDryRun;
-  const completedEntry = completeAppendableRegistryEntry(registryPath, registryEntryDraft);
+  const completedEntry = completeAppendableRegistryEntry(
+    registryPath,
+    registryEntryDraft,
+    "Product workflow registry entry is invalid."
+  );
   if (dryRun) {
     return {
       registryPath,

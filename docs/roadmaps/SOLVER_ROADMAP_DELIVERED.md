@@ -298,6 +298,15 @@ Reviewed through 2026-04-30.
 - Product-corpus artifact bundles remain the richer evidence path with `evidence-summary.json` and `registry-entry-draft.json`.
 - No solver defaults changed; this expands measurement coverage for normal cross-mode scorecards.
 
+### 35. Learned-Ranking Label Artifact Telemetry And Registry Drafts
+
+- Added learned-ranking label telemetry helpers that produce a label-bundle manifest with command, git, hardware, stable label fingerprint, Greedy source counts, split metadata, LNS status counts, and LNS label-scale readiness.
+- Added a strict label-bundle registry-entry draft helper with protected development/holdout split metadata, label fingerprint, model metadata marked `trained=false`, budget/count metadata, and summary metrics.
+- Added `--artifact-dir` to `benchmark:labels` so label runs can write `labels.json`, `labels.txt`, `telemetry-manifest.json`, and `registry-entry-draft.json`.
+- Added `--label-register-dry-run`, `--label-run-id`, `--label-decision`, `--label-summary`, and `--label-registry` so label artifacts can validate strict registry metadata before a later append.
+- Extracted shared CLI artifact helpers for repository-relative paths, replay-command quoting, JSON artifact writing, and strict registry dry-run validation.
+- No model was trained and no solver defaults changed; this is label artifact provenance and registry infrastructure.
+
 ## Maintenance Watchpoints
 
 - Keep deterministic benchmark seeds stable when changing solver scoring.

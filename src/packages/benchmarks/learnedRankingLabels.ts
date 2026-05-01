@@ -18,6 +18,7 @@ import {
 import { buildLnsReplayLabelScaleReadiness } from "./lnsReplayLabelReadiness.js";
 import { DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS } from "./deterministicAblationGates.js";
 import { runGreedyBenchmarkSuite } from "./greedy.js";
+import { hashString, stableStringify } from "../core/cpSatContinuation.js";
 
 import type {
   GreedyBenchmarkCase,
@@ -162,6 +163,68 @@ export interface LearnedRankingLabelSuiteResult {
 export interface LearnedRankingLabelSnapshot
   extends Omit<LearnedRankingLabelSuiteResult, "generatedAt"> {}
 
+export interface LearnedRankingLabelTelemetryManifestOptions {
+  command: string;
+  git?: {
+    commit: string;
+    branch: string;
+  };
+  hardware?: Record<string, unknown>;
+}
+
+export interface LearnedRankingLabelTelemetryManifest {
+  schemaVersion: 1;
+  source: "learned-ranking-label-bundle";
+  command: string;
+  generatedAt: string;
+  git: LearnedRankingLabelTelemetryManifestOptions["git"] | null;
+  hardware: Record<string, unknown>;
+  labelFingerprint: string;
+  suite: {
+    splitCount: number;
+    totalLabels: number;
+    greedyLabelCount: number;
+    lnsLabelCount: number;
+    seeds: number[];
+    protectedHoldout: boolean;
+    lnsScaleReady: boolean;
+    learnedModel: null;
+  };
+  audit: LearnedRankingAuditMetadata;
+  greedy: {
+    sourceCounts: Record<GreedyOrderingLabelSource, number>;
+    splits: Array<{
+      split: LearnedRankingLabelSplit;
+      selectedCaseNames: string[];
+      labelCount: number;
+      sourceCounts: Record<GreedyOrderingLabelSource, number>;
+    }>;
+  };
+  lns: {
+    scaleReadiness: LnsReplayLabelScaleReadiness<LearnedRankingLabelSplit>;
+    statusCounts: Record<LnsWindowReplaySnapshotLabel["status"], number>;
+    splits: Array<{
+      split: LearnedRankingLabelSplit;
+      selectedCaseNames: string[];
+      pressureFamilies: LnsReplayPressureFamilyLabel[];
+      labelCount: number;
+      usableLabelCount: number;
+      statusCounts: Record<LnsWindowReplaySnapshotLabel["status"], number>;
+      repairTimeLimitSeconds: number;
+      maxWindows: number;
+      explorationWindowCount: number;
+    }>;
+  };
+}
+
+export interface LearnedRankingLabelRegistryEntryDraftOptions {
+  runId?: string;
+  commands: readonly string[];
+  artifactPaths: readonly string[];
+  decision?: string;
+  summary?: string;
+}
+
 export interface LearnedRankingLabelRunOptions {
   seeds?: readonly number[];
   splitConfigs?: readonly LearnedRankingLabelSplitConfig[];
@@ -241,6 +304,19 @@ function emptyLnsStatusCounts(): Record<LnsWindowReplaySnapshotLabel["status"], 
     regressed: 0,
     invalid: 0,
     "recoverable-failure": 0,
+  };
+}
+
+function addLnsStatusCounts(
+  left: Record<LnsWindowReplaySnapshotLabel["status"], number>,
+  right: Record<LnsWindowReplaySnapshotLabel["status"], number>
+): Record<LnsWindowReplaySnapshotLabel["status"], number> {
+  return {
+    improved: left.improved + right.improved,
+    neutral: left.neutral + right.neutral,
+    regressed: left.regressed + right.regressed,
+    invalid: left.invalid + right.invalid,
+    "recoverable-failure": left["recoverable-failure"] + right["recoverable-failure"],
   };
 }
 
@@ -560,6 +636,173 @@ export function createLearnedRankingLabelSnapshot(
 ): LearnedRankingLabelSnapshot {
   const { generatedAt: _generatedAt, ...snapshot } = result;
   return snapshot;
+}
+
+export function buildLearnedRankingLabelFingerprint(
+  result: LearnedRankingLabelSuiteResult
+): string {
+  return `fnv1a:${hashString(stableStringify(createLearnedRankingLabelSnapshot(result)))}`;
+}
+
+function dateSlug(value: string): string {
+  return value.slice(0, 10);
+}
+
+function assertNonEmptyStringList(values: readonly string[], label: string): void {
+  if (values.length === 0 || values.some((value) => typeof value !== "string" || value.trim().length === 0)) {
+    throw new Error(`Learned ranking label ${label} must include at least one non-empty string.`);
+  }
+}
+
+function learnedRankingCasesBySplit(
+  result: LearnedRankingLabelSuiteResult
+): Record<LearnedRankingLabelSplit, string[]> {
+  const casesBySplit: Record<LearnedRankingLabelSplit, string[]> = {
+    development: [],
+    holdout: [],
+  };
+  for (const split of result.greedy.splits) {
+    casesBySplit[split.split].push(...split.selectedCaseNames);
+  }
+  for (const split of result.lns.splits) {
+    casesBySplit[split.split].push(...split.selectedCaseNames);
+  }
+  return {
+    development: uniqueBenchmarkValues(casesBySplit.development).sort(),
+    holdout: uniqueBenchmarkValues(casesBySplit.holdout).sort(),
+  };
+}
+
+function learnedRankingCaseFamilies(result: LearnedRankingLabelSuiteResult): string[] {
+  const pressureFamilies = uniqueBenchmarkValues(
+    result.lns.splits.flatMap((split) => split.pressureFamilies)
+  ).map((family) => `lns-${family}`);
+  return uniqueBenchmarkValues([
+    "greedy-connectivity-shadow",
+    "greedy-road-opportunity",
+    "lns-window-replay",
+    ...pressureFamilies,
+  ]).sort();
+}
+
+function aggregateLnsStatusCounts(
+  splits: readonly LnsReplayLabelSplitResult[]
+): Record<LnsWindowReplaySnapshotLabel["status"], number> {
+  return splits.reduce(
+    (counts, split) => addLnsStatusCounts(counts, split.statusCounts),
+    emptyLnsStatusCounts()
+  );
+}
+
+export function buildLearnedRankingLabelTelemetryManifest(
+  result: LearnedRankingLabelSuiteResult,
+  options: LearnedRankingLabelTelemetryManifestOptions
+): LearnedRankingLabelTelemetryManifest {
+  return {
+    schemaVersion: 1,
+    source: "learned-ranking-label-bundle",
+    command: options.command,
+    generatedAt: result.generatedAt,
+    git: options.git ?? null,
+    hardware: options.hardware ?? { captured: false, gpuUsed: false },
+    labelFingerprint: buildLearnedRankingLabelFingerprint(result),
+    suite: {
+      splitCount: result.splitCount,
+      totalLabels: result.greedy.labelCount + result.lns.labelCount,
+      greedyLabelCount: result.greedy.labelCount,
+      lnsLabelCount: result.lns.labelCount,
+      seeds: [...result.seeds],
+      protectedHoldout: result.leakage.protectedHoldout,
+      lnsScaleReady: result.lns.scaleReadiness.passed,
+      learnedModel: result.audit.learnedModel,
+    },
+    audit: structuredClone(result.audit),
+    greedy: {
+      sourceCounts: { ...result.greedy.sourceCounts },
+      splits: result.greedy.splits.map((split) => ({
+        split: split.split,
+        selectedCaseNames: [...split.selectedCaseNames],
+        labelCount: split.labelCount,
+        sourceCounts: { ...split.sourceCounts },
+      })),
+    },
+    lns: {
+      scaleReadiness: structuredClone(result.lns.scaleReadiness),
+      statusCounts: aggregateLnsStatusCounts(result.lns.splits),
+      splits: result.lns.splits.map((split) => ({
+        split: split.split,
+        selectedCaseNames: [...split.selectedCaseNames],
+        pressureFamilies: [...split.pressureFamilies],
+        labelCount: split.labelCount,
+        usableLabelCount: split.usableLabelCount,
+        statusCounts: { ...split.statusCounts },
+        repairTimeLimitSeconds: split.replay.repairTimeLimitSeconds,
+        maxWindows: split.replay.maxWindows,
+        explorationWindowCount: split.replay.explorationWindowCount,
+      })),
+    },
+  };
+}
+
+export function buildLearnedRankingLabelRegistryEntryDraft(
+  result: LearnedRankingLabelSuiteResult,
+  options: LearnedRankingLabelRegistryEntryDraftOptions
+): Record<string, unknown> {
+  assertNonEmptyStringList([...options.commands], "commands");
+  assertNonEmptyStringList([...options.artifactPaths], "artifact paths");
+
+  const splitCases = learnedRankingCasesBySplit(result);
+  const lnsStatusCounts = aggregateLnsStatusCounts(result.lns.splits);
+  return {
+    schemaVersion: 1,
+    runId: options.runId ?? `learned-ranking-labels-${dateSlug(result.generatedAt)}`,
+    artifactType: "label-bundle",
+    generatedAt: result.generatedAt,
+    commands: [...options.commands],
+    artifactPaths: [...options.artifactPaths],
+    cases: splitCases,
+    caseFamilies: learnedRankingCaseFamilies(result),
+    seeds: [...result.seeds],
+    splitStatus: {
+      protectedHoldout: result.leakage.protectedHoldout,
+      splitField: "LearnedRankingLabelSplitConfig.split",
+      developmentCaseCount: splitCases.development.length,
+      holdoutCaseCount: splitCases.holdout.length,
+      leakage: result.leakage,
+      lnsScaleReadiness: result.lns.scaleReadiness,
+      notes: result.leakage.protectedHoldout
+        ? "Learned-ranking labels keep development and holdout case names disjoint."
+        : "Learned-ranking labels are not protected holdout evidence because split overlap exists.",
+    },
+    budget: {
+      seeds: [...result.seeds],
+      splitCount: result.splitCount,
+      greedyLabelCount: result.greedy.labelCount,
+      lnsLabelCount: result.lns.labelCount,
+      lnsRepairTimeLimitSeconds: uniqueBenchmarkValues(
+        result.lns.splits.map((split) => split.replay.repairTimeLimitSeconds)
+      ),
+      lnsMaxWindows: uniqueBenchmarkValues(result.lns.splits.map((split) => split.replay.maxWindows)),
+      lnsExplorationWindowCount: result.audit.lnsReplay.explorationWindowCount,
+    },
+    model: {
+      trained: false,
+      learnedModel: result.audit.learnedModel,
+      runtimeDefaultChanged: false,
+      purpose: "offline-diagnostics-only",
+    },
+    decision: options.decision ?? "offline-label-bundle-only",
+    summary: options.summary
+      ?? `Learned-ranking label bundle with ${result.greedy.labelCount} Greedy labels and ${result.lns.labelCount} LNS replay labels across ${result.splitCount} split(s).`,
+    labelFingerprint: buildLearnedRankingLabelFingerprint(result),
+    summaryMetrics: {
+      greedySourceCounts: result.greedy.sourceCounts,
+      lnsStatusCounts,
+      protectedHoldout: result.leakage.protectedHoldout,
+      lnsScaleReady: result.lns.scaleReadiness.passed,
+      lnsScaleReadiness: result.lns.scaleReadiness,
+    },
+  };
 }
 
 function formatCaseList(values: readonly string[]): string {

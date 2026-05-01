@@ -183,7 +183,7 @@ Success signal:
 
 Goal: make every improvement or regression explainable.
 
-Status: partial. Cross-mode scorecard artifact bundles now include `telemetry-manifest.json` with command, git, hardware, per-run solver parameter summaries, wall/CPU timing, first-feasible and best-score timing, status/gap fields, candidate counts where available, CP-SAT model size where available, and per-stage Auto/Greedy/LNS/CP-SAT records. Product-corpus bundles also include evidence summaries and registry drafts. The remaining Stage 3 work is to make the same manifest contract universal across workflow, label, and model artifacts.
+Status: partial. Cross-mode scorecard artifact bundles now include `telemetry-manifest.json` with command, git, hardware, per-run solver parameter summaries, wall/CPU timing, first-feasible and best-score timing, status/gap fields, candidate counts where available, CP-SAT model size where available, and per-stage Auto/Greedy/LNS/CP-SAT records. Product-corpus bundles also include evidence summaries and registry drafts. Learned-ranking label bundles now emit label fingerprints, label/source counts, split metadata, LNS label-scale readiness, telemetry manifests, and strict registry-entry drafts. The remaining Stage 3 work is to make the same manifest contract universal across workflow replay and model artifacts.
 
 Deliverables:
 
@@ -192,7 +192,7 @@ Deliverables:
 - Candidate counts for services, residentials, roads, windows, and operators.
 - CP-SAT model-size metadata where available.
 - First-feasible time, best-score time, final status, final gap, wall time, CPU budget, and observed CPU time.
-- Registry append path for benchmark, workflow, label, and model artifacts.
+- Registry append path for benchmark, workflow, label, and model artifacts. Label-bundle draft/dry-run support is delivered; workflow and model artifacts remain.
 
 Success signal:
 
@@ -334,7 +334,7 @@ Any default-path solver change must satisfy:
 
 Recommended order:
 
-1. Extend telemetry manifests and strict registry entries from cross-mode scorecard artifacts to workflow, label, and model runs.
+1. Extend telemetry manifests and strict registry entries from scorecard and label artifacts to workflow replay and model runs.
 2. Implement adaptive LNS operators and operator weighting.
 3. Retune Auto budgets from scorecard evidence.
 4. Finish async and portfolio cancellation/snapshot and worker-result failure coverage before increasing CP-SAT orchestration complexity.

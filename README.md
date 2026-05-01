@@ -485,9 +485,10 @@ Build the low-risk learned-ranking label bundle with protected development/holdo
 ```bash
 npm run benchmark:labels
 npm run benchmark:labels -- --json --seeds=7,19,37 --max-windows=8 --repair-time=1
+npm run benchmark:labels -- --artifact-dir=artifacts/learned-ranking-labels/2026-05-01/bundle --label-run-id=learned-ranking-labels-2026-05-01 --label-register-dry-run --seeds=7,19,37 --max-windows=8 --repair-time=1 --json
 ```
 
-The combined label bundle includes Greedy connectivity-shadow ordering labels, Greedy road-opportunity near-miss labels, split-aware LNS replay labels, schema/audit metadata, and leakage checks. It does not train a model or change solver defaults.
+The combined label bundle includes Greedy connectivity-shadow ordering labels, Greedy road-opportunity near-miss labels, split-aware LNS replay labels, schema/audit metadata, and leakage checks. `--artifact-dir` writes `labels.json`, `labels.txt`, `telemetry-manifest.json`, and `registry-entry-draft.json`; `--label-register-dry-run` completes and validates strict label-bundle registry metadata without appending. It does not train a model or change solver defaults.
 
 List the available LNS case names:
 

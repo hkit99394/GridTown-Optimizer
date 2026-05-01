@@ -9,6 +9,10 @@ const {
   buildCrossModeBenchmarkParams,
   buildCrossModeBenchmarkTelemetryManifest,
   buildCpSatBenchmarkCpuPlan,
+  buildExperimentRegistryEntry,
+  buildLearnedRankingLabelFingerprint,
+  buildLearnedRankingLabelRegistryEntryDraft,
+  buildLearnedRankingLabelTelemetryManifest,
   buildLnsReplayLabelScaleReadiness,
   collectGreedyOrderingLabelsFromBenchmarkSuite,
   createLearnedRankingLabelSnapshot,
@@ -79,6 +83,7 @@ const {
   runGreedyDeterministicAblation,
   runGreedyBenchmarkSuite,
   runCpSatBenchmarkSuite,
+  validateExperimentRegistryEntry,
 } = require("city-builder/benchmarks");
 
 const {
@@ -1721,6 +1726,115 @@ function testLearnedRankingLabelSuite() {
   assert.match(formatted, /protected-holdout=true/);
   assert.match(formatted, /learned-model=none/);
   assert.match(formatted, /LNS label-scale ready=false/);
+
+  const labelFingerprint = buildLearnedRankingLabelFingerprint(result);
+  const labelTelemetryManifest = buildLearnedRankingLabelTelemetryManifest(result, {
+    command: "node dist/learnedRankingLabelCli.js --json",
+    git: {
+      commit: "1234567890abcdef1234567890abcdef12345678",
+      branch: "features/label-telemetry-test",
+    },
+    hardware: {
+      captured: true,
+      cpuModel: "Test CPU",
+      logicalCpuCount: 8,
+      memoryBytes: 16,
+      gpuUsed: false,
+    },
+  });
+  assert.match(labelFingerprint, /^fnv1a:[0-9a-f]{8}$/);
+  assert.equal(labelTelemetryManifest.source, "learned-ranking-label-bundle");
+  assert.equal(labelTelemetryManifest.labelFingerprint, labelFingerprint);
+  assert.equal(labelTelemetryManifest.suite.totalLabels, result.greedy.labelCount + result.lns.labelCount);
+  assert.equal(labelTelemetryManifest.suite.protectedHoldout, true);
+  assert.equal(
+    Object.values(labelTelemetryManifest.lns.statusCounts).reduce((sum, count) => sum + count, 0),
+    result.lns.labelCount
+  );
+  const labelRegistryDraft = buildLearnedRankingLabelRegistryEntryDraft(result, {
+    runId: "learned-label-test",
+    commands: ["node dist/learnedRankingLabelCli.js --json"],
+    artifactPaths: ["artifacts/labels/labels.json", "artifacts/labels/telemetry-manifest.json"],
+  });
+  assert.equal(labelRegistryDraft.artifactType, "label-bundle");
+  assert.deepEqual(labelRegistryDraft.cases.development, ["seeded-service-anchor-pressure", "typed-housing-baseline"]);
+  assert.equal(labelRegistryDraft.model.trained, false);
+  assert.equal(labelRegistryDraft.labelFingerprint, labelFingerprint);
+  const completedLabelRegistryEntry = buildExperimentRegistryEntry(labelRegistryDraft, {
+    rootDir: path.join(__dirname, ".."),
+    gitMetadata: {
+      commit: "1234567890abcdef1234567890abcdef12345678",
+      branch: "features/label-telemetry-test",
+    },
+  });
+  const labelRegistryValidation = validateExperimentRegistryEntry(completedLabelRegistryEntry, {
+    rootDir: path.join(__dirname, ".."),
+    validateArtifactPaths: false,
+    strict: true,
+  });
+  assert.deepEqual(labelRegistryValidation.issues, []);
+
+  const repoRoot = path.join(__dirname, "..");
+  const cliPath = path.join(repoRoot, "dist", "learnedRankingLabelCli.js");
+  const artifactDir = `artifacts/tmp-learned-ranking-label-artifacts-${process.pid}`;
+  const absoluteArtifactDir = path.join(repoRoot, artifactDir);
+  fs.rmSync(absoluteArtifactDir, { recursive: true, force: true });
+  try {
+    const artifactResult = childProcess.spawnSync(process.execPath, [
+      cliPath,
+      `--artifact-dir=${artifactDir}`,
+      "--seeds=7",
+      "--max-windows=1",
+      "--repair-time=0.1",
+      "--label-run-id=tmp-learned-ranking-label-artifact-test",
+      "--label-register-dry-run",
+      "--json",
+    ], {
+      cwd: repoRoot,
+      encoding: "utf8",
+    });
+    assert.equal(artifactResult.status, 0, artifactResult.stderr || artifactResult.stdout);
+    const artifactManifest = JSON.parse(artifactResult.stdout);
+    assert.equal(artifactManifest.artifactDir, artifactDir);
+    assert.equal(artifactManifest.runId, "tmp-learned-ranking-label-artifact-test");
+    assert.equal(artifactManifest.registry.appended, false);
+    assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.labelsJson)), true);
+    assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.labelsText)), true);
+    assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.telemetryManifestJson)), true);
+    assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.registryEntryDraftJson)), true);
+    const labelsArtifact = JSON.parse(fs.readFileSync(
+      path.join(repoRoot, artifactManifest.artifactPaths.labelsJson),
+      "utf8"
+    ));
+    const telemetryArtifact = JSON.parse(fs.readFileSync(
+      path.join(repoRoot, artifactManifest.artifactPaths.telemetryManifestJson),
+      "utf8"
+    ));
+    const draftArtifact = JSON.parse(fs.readFileSync(
+      path.join(repoRoot, artifactManifest.artifactPaths.registryEntryDraftJson),
+      "utf8"
+    ));
+    assert.equal(Object.hasOwn(labelsArtifact, "generatedAt"), false);
+    assert.equal(telemetryArtifact.source, "learned-ranking-label-bundle");
+    assert.equal(telemetryArtifact.labelFingerprint, artifactManifest.labelFingerprint);
+    assert.match(telemetryArtifact.command, /--artifact-dir=artifacts\/tmp-learned-ranking-label-artifacts-/);
+    assert.equal(draftArtifact.artifactType, "label-bundle");
+    assert.equal(draftArtifact.model.trained, false);
+    assert.equal(draftArtifact.labelFingerprint, artifactManifest.labelFingerprint);
+
+    const registryGuard = childProcess.spawnSync(process.execPath, [
+      cliPath,
+      "--label-register-dry-run",
+    ], {
+      cwd: repoRoot,
+      encoding: "utf8",
+    });
+    assert.notEqual(registryGuard.status, 0);
+    assert.match(registryGuard.stderr, /--label-register-dry-run requires --artifact-dir/);
+  } finally {
+    fs.rmSync(absoluteArtifactDir, { recursive: true, force: true });
+  }
+
   assert.throws(
     () => runLearnedRankingLabelSuite({
       splitConfigs: [

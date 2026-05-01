@@ -6,9 +6,9 @@ const repoRoot = path.resolve(__dirname, "..");
 const defaultTestFileBudget = 1500;
 
 const temporaryOversizedBudgets = new Map([
-  ["tests/optimizerHarness.cjs", 9800],
+  ["tests/optimizers/optimizerHarness.cjs", 9689],
   ["tests/review-findings.test.cjs", 4350],
-  ["tests/web-server-routes.test.cjs", 2050],
+  ["tests/web-server-routes.test.cjs", 1902],
 ]);
 
 function listFiles(dir, predicate) {

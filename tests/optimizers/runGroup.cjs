@@ -1,4 +1,4 @@
-const { runOptimizerTestGroup } = require("../optimizerHarness.cjs");
+const { runOptimizerTestGroup } = require("./optimizerHarness.cjs");
 
 function runOptimizerGroupCli(groupName, successMessage) {
   runOptimizerTestGroup(groupName)

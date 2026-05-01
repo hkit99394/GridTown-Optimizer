@@ -108,21 +108,29 @@ const {
   validateSolution,
   validateSolutionMap,
 } = require("city-builder/solver");
-const { parseCpSatRawSolution } = require("../dist/packages/solvers/cp-sat/solver.js");
+const {
+  delay,
+  resolveCpSatPython,
+  waitForFile,
+  waitForHeartbeatToStop,
+} = require("../helpers/processHelpers.cjs");
+const { sortedRoads } = require("../helpers/assertions.cjs");
+const { buildMockSolution } = require("../helpers/solverFixtures.cjs");
+const { parseCpSatRawSolution } = require("../../dist/packages/solvers/cp-sat/solver.js");
 const {
   buildAdaptiveNeighborhoodCandidates,
   buildLnsWarmStartHint,
   buildNeighborhoodWindows,
-} = require("../dist/packages/solvers/lns/solver.js");
-const { repairSmallWindowWithDp } = require("../dist/packages/solvers/lns/smallWindowDpRepair.js");
-const { startJsonBackgroundSolve } = require("../dist/packages/runtime/index.js");
-const { applyDeterministicDominanceUpgrades } = require("../dist/packages/core/dominanceUpgrades.js");
-const { buildPlannerExplainabilityMap } = require("../dist/packages/core/plannerExplainability.js");
-const { GreedyAttemptState } = require("../dist/packages/solvers/greedy/attemptState.js");
+} = require("../../dist/packages/solvers/lns/solver.js");
+const { repairSmallWindowWithDp } = require("../../dist/packages/solvers/lns/smallWindowDpRepair.js");
+const { startJsonBackgroundSolve } = require("../../dist/packages/runtime/index.js");
+const { applyDeterministicDominanceUpgrades } = require("../../dist/packages/core/dominanceUpgrades.js");
+const { buildPlannerExplainabilityMap } = require("../../dist/packages/core/plannerExplainability.js");
+const { GreedyAttemptState } = require("../../dist/packages/solvers/greedy/attemptState.js");
 const {
   createRoadOpportunityRecorder,
   recordRoadOpportunityPlacementFromOccupiedBuildings,
-} = require("../dist/packages/solvers/greedy/roadOpportunity.js");
+} = require("../../dist/packages/solvers/greedy/roadOpportunity.js");
 const {
   computeRoadAnchorReachableEmptyFrontier,
   createRoadProbeScratch,
@@ -133,13 +141,13 @@ const {
   probeBuildingConnectedToRoads,
   roadAnchorSeedCandidates,
   roadAnchorRepresentativeSeedCandidates,
-} = require("../dist/packages/core/roads.js");
+} = require("../../dist/packages/core/roads.js");
 const {
   forEachRectangleBorderCell,
   forEachRectangleCell,
   rectangleBorderCells,
   rectangleCells,
-} = require("../dist/packages/core/grid.js");
+} = require("../../dist/packages/core/grid.js");
 const {
   buildFootprintGeometryCache,
   buildServiceGeometryCache,
@@ -150,7 +158,7 @@ const {
   residentialFootprint,
   serviceEffectZone,
   serviceFootprint,
-} = require("../dist/packages/core/buildings.js");
+} = require("../../dist/packages/core/buildings.js");
 
 function testOptimizerRegistry() {
   assert.equal(OMITTED_SOLVER_OPTIMIZER, "auto");
@@ -493,9 +501,9 @@ async function maybeTestAutoOptimizer() {
 }
 
 function testAutoKeepsEqualPopulationOptimalCpSatResult() {
-  const solverModule = require("../dist/packages/solvers/greedy/solver.js");
-  const lnsModule = require("../dist/packages/solvers/lns/solver.js");
-  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
+  const solverModule = require("../../dist/packages/solvers/greedy/solver.js");
+  const lnsModule = require("../../dist/packages/solvers/lns/solver.js");
+  const cpSatModule = require("../../dist/packages/solvers/cp-sat/solver.js");
   const originalSolveGreedy = solverModule.solveGreedy;
   const originalSolveLns = lnsModule.solveLns;
   const originalSolveCpSat = cpSatModule.solveCpSat;
@@ -522,9 +530,9 @@ function testAutoKeepsEqualPopulationOptimalCpSatResult() {
 }
 
 function testAutoPreservesUserWarmStartMetadata() {
-  const solverModule = require("../dist/packages/solvers/greedy/solver.js");
-  const lnsModule = require("../dist/packages/solvers/lns/solver.js");
-  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
+  const solverModule = require("../../dist/packages/solvers/greedy/solver.js");
+  const lnsModule = require("../../dist/packages/solvers/lns/solver.js");
+  const cpSatModule = require("../../dist/packages/solvers/cp-sat/solver.js");
   const originalSolveGreedy = solverModule.solveGreedy;
   const originalSolveLns = lnsModule.solveLns;
   const originalSolveCpSat = cpSatModule.solveCpSat;
@@ -575,9 +583,9 @@ function testAutoPreservesUserWarmStartMetadata() {
 }
 
 function testAutoDirectRuntimeIgnoresMalformedOptionValues() {
-  const solverModule = require("../dist/packages/solvers/greedy/solver.js");
-  const lnsModule = require("../dist/packages/solvers/lns/solver.js");
-  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
+  const solverModule = require("../../dist/packages/solvers/greedy/solver.js");
+  const lnsModule = require("../../dist/packages/solvers/lns/solver.js");
+  const cpSatModule = require("../../dist/packages/solvers/cp-sat/solver.js");
   const originalSolveGreedy = solverModule.solveGreedy;
   const originalSolveLns = lnsModule.solveLns;
   const originalSolveCpSat = cpSatModule.solveCpSat;
@@ -614,9 +622,9 @@ function testAutoDirectRuntimeIgnoresMalformedOptionValues() {
 }
 
 async function testAutoAsyncPreservesCancelledStopReasonAfterCpSatReturns() {
-  const greedyBridgeModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
-  const lnsBridgeModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
-  const cpSatModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
+  const greedyBridgeModule = require("../../dist/packages/runtime/dispatch/backgroundSolvers.js");
+  const lnsBridgeModule = require("../../dist/packages/runtime/dispatch/backgroundSolvers.js");
+  const cpSatModule = require("../../dist/packages/runtime/dispatch/backgroundSolvers.js");
   const originalStartGreedySolve = greedyBridgeModule.startGreedySolve;
   const originalStartLnsSolve = lnsBridgeModule.startLnsSolve;
   const originalStartCpSatSolve = cpSatModule.startCpSatSolve;
@@ -671,9 +679,9 @@ async function testAutoAsyncPreservesCancelledStopReasonAfterCpSatReturns() {
 }
 
 async function testAutoAsyncStageErrorKeepsIncumbentWithExplicitStopReason() {
-  const greedyBridgeModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
-  const lnsBridgeModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
-  const cpSatModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
+  const greedyBridgeModule = require("../../dist/packages/runtime/dispatch/backgroundSolvers.js");
+  const lnsBridgeModule = require("../../dist/packages/runtime/dispatch/backgroundSolvers.js");
+  const cpSatModule = require("../../dist/packages/runtime/dispatch/backgroundSolvers.js");
   const originalStartGreedySolve = greedyBridgeModule.startGreedySolve;
   const originalStartLnsSolve = lnsBridgeModule.startLnsSolve;
   const originalStartCpSatSolve = cpSatModule.startCpSatSolve;
@@ -726,9 +734,9 @@ async function testAutoAsyncStageErrorKeepsIncumbentWithExplicitStopReason() {
 }
 
 async function testAutoAsyncRecoveredStageSnapshotKeepsNonRecoveryTerminalMetadata() {
-  const greedyBridgeModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
-  const lnsBridgeModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
-  const cpSatModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
+  const greedyBridgeModule = require("../../dist/packages/runtime/dispatch/backgroundSolvers.js");
+  const lnsBridgeModule = require("../../dist/packages/runtime/dispatch/backgroundSolvers.js");
+  const cpSatModule = require("../../dist/packages/runtime/dispatch/backgroundSolvers.js");
   const originalStartGreedySolve = greedyBridgeModule.startGreedySolve;
   const originalStartLnsSolve = lnsBridgeModule.startLnsSolve;
   const originalStartCpSatSolve = cpSatModule.startCpSatSolve;
@@ -781,9 +789,9 @@ async function testAutoAsyncRecoveredStageSnapshotKeepsNonRecoveryTerminalMetada
 }
 
 async function testAutoAsyncRecoveredCpSatSnapshotKeepsCompletedMetadata() {
-  const greedyBridgeModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
-  const lnsBridgeModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
-  const cpSatModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
+  const greedyBridgeModule = require("../../dist/packages/runtime/dispatch/backgroundSolvers.js");
+  const lnsBridgeModule = require("../../dist/packages/runtime/dispatch/backgroundSolvers.js");
+  const cpSatModule = require("../../dist/packages/runtime/dispatch/backgroundSolvers.js");
   const originalStartGreedySolve = greedyBridgeModule.startGreedySolve;
   const originalStartLnsSolve = lnsBridgeModule.startLnsSolve;
   const originalStartCpSatSolve = cpSatModule.startCpSatSolve;
@@ -837,8 +845,8 @@ async function testAutoAsyncRecoveredCpSatSnapshotKeepsCompletedMetadata() {
 }
 
 function testAutoSyncWallClockCapStopsRunningLnsStage() {
-  const solverModule = require("../dist/packages/solvers/greedy/solver.js");
-  const lnsModule = require("../dist/packages/solvers/lns/solver.js");
+  const solverModule = require("../../dist/packages/solvers/greedy/solver.js");
+  const lnsModule = require("../../dist/packages/solvers/lns/solver.js");
   const originalSolveGreedy = solverModule.solveGreedy;
   const originalSolveLns = lnsModule.solveLns;
   let observedStopFilePath = null;
@@ -878,8 +886,8 @@ function testAutoSyncWallClockCapStopsRunningLnsStage() {
 }
 
 function testAutoSyncWallClockCapKeepsExplicitStopReasonWhenLnsThrows() {
-  const solverModule = require("../dist/packages/solvers/greedy/solver.js");
-  const lnsModule = require("../dist/packages/solvers/lns/solver.js");
+  const solverModule = require("../../dist/packages/solvers/greedy/solver.js");
+  const lnsModule = require("../../dist/packages/solvers/lns/solver.js");
   const originalSolveGreedy = solverModule.solveGreedy;
   const originalSolveLns = lnsModule.solveLns;
   let observedStopFilePath = null;
@@ -914,9 +922,9 @@ function testAutoSyncWallClockCapKeepsExplicitStopReasonWhenLnsThrows() {
 }
 
 function testAutoSyncReservesCpSatBudgetBeforeLnsStage() {
-  const solverModule = require("../dist/packages/solvers/greedy/solver.js");
-  const lnsModule = require("../dist/packages/solvers/lns/solver.js");
-  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
+  const solverModule = require("../../dist/packages/solvers/greedy/solver.js");
+  const lnsModule = require("../../dist/packages/solvers/lns/solver.js");
+  const cpSatModule = require("../../dist/packages/solvers/cp-sat/solver.js");
   const originalSolveGreedy = solverModule.solveGreedy;
   const originalSolveLns = lnsModule.solveLns;
   const originalSolveCpSat = cpSatModule.solveCpSat;
@@ -979,9 +987,9 @@ function testAutoSyncReservesCpSatBudgetBeforeLnsStage() {
 }
 
 function testAutoSyncUsesTraceTunedDefaultLnsBudget() {
-  const solverModule = require("../dist/packages/solvers/greedy/solver.js");
-  const lnsModule = require("../dist/packages/solvers/lns/solver.js");
-  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
+  const solverModule = require("../../dist/packages/solvers/greedy/solver.js");
+  const lnsModule = require("../../dist/packages/solvers/lns/solver.js");
+  const cpSatModule = require("../../dist/packages/solvers/cp-sat/solver.js");
   const originalSolveGreedy = solverModule.solveGreedy;
   const originalSolveLns = lnsModule.solveLns;
   const originalSolveCpSat = cpSatModule.solveCpSat;
@@ -1020,9 +1028,9 @@ function testAutoSyncUsesTraceTunedDefaultLnsBudget() {
 }
 
 function testAutoSyncGreedyCanRunPastFormerStageBudget() {
-  const solverModule = require("../dist/packages/solvers/greedy/solver.js");
-  const lnsModule = require("../dist/packages/solvers/lns/solver.js");
-  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
+  const solverModule = require("../../dist/packages/solvers/greedy/solver.js");
+  const lnsModule = require("../../dist/packages/solvers/lns/solver.js");
+  const cpSatModule = require("../../dist/packages/solvers/cp-sat/solver.js");
   const originalSolveGreedy = solverModule.solveGreedy;
   const originalSolveLns = lnsModule.solveLns;
   const originalSolveCpSat = cpSatModule.solveCpSat;
@@ -1080,9 +1088,9 @@ function testAutoSyncGreedyCanRunPastFormerStageBudget() {
 }
 
 async function testAutoAsyncGreedyCanRunPastFormerStageBudget() {
-  const greedyBridgeModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
-  const lnsBridgeModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
-  const cpSatModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
+  const greedyBridgeModule = require("../../dist/packages/runtime/dispatch/backgroundSolvers.js");
+  const lnsBridgeModule = require("../../dist/packages/runtime/dispatch/backgroundSolvers.js");
+  const cpSatModule = require("../../dist/packages/runtime/dispatch/backgroundSolvers.js");
   const originalStartGreedySolve = greedyBridgeModule.startGreedySolve;
   const originalStartLnsSolve = lnsBridgeModule.startLnsSolve;
   const originalStartCpSatSolve = cpSatModule.startCpSatSolve;
@@ -1176,7 +1184,7 @@ async function testAutoAsyncGreedyCanRunPastFormerStageBudget() {
 }
 
 function testAutoClampsHeavyGreedyStageSettings() {
-  const solverModule = require("../dist/packages/solvers/greedy/solver.js");
+  const solverModule = require("../../dist/packages/solvers/greedy/solver.js");
   const originalSolveGreedy = solverModule.solveGreedy;
   let capturedGreedyOptions = null;
 
@@ -1233,9 +1241,9 @@ function testAutoClampsHeavyGreedyStageSettings() {
 }
 
 async function testAutoAsyncClampsHeavyGreedyStageSettings() {
-  const greedyBridgeModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
-  const lnsBridgeModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
-  const cpSatModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
+  const greedyBridgeModule = require("../../dist/packages/runtime/dispatch/backgroundSolvers.js");
+  const lnsBridgeModule = require("../../dist/packages/runtime/dispatch/backgroundSolvers.js");
+  const cpSatModule = require("../../dist/packages/runtime/dispatch/backgroundSolvers.js");
   const originalStartGreedySolve = greedyBridgeModule.startGreedySolve;
   const originalStartLnsSolve = lnsBridgeModule.startLnsSolve;
   const originalStartCpSatSolve = cpSatModule.startCpSatSolve;
@@ -1312,93 +1320,6 @@ async function testAutoAsyncClampsHeavyGreedyStageSettings() {
     lnsBridgeModule.startLnsSolve = originalStartLnsSolve;
     cpSatModule.startCpSatSolve = originalStartCpSatSolve;
   }
-}
-
-function resolveCpSatPython() {
-  const venvPython = path.resolve(__dirname, "../.venv-cp-sat/bin/python");
-  const candidates = [fs.existsSync(venvPython) ? venvPython : null, process.env.CITY_BUILDER_CP_SAT_PYTHON || null, "python3"].filter(
-    Boolean
-  );
-
-  for (const pythonExecutable of candidates) {
-    const importCheck = childProcess.spawnSync(pythonExecutable, ["-c", "import ortools"], {
-      encoding: "utf8",
-    });
-    if (importCheck.status === 0) {
-      return pythonExecutable;
-    }
-  }
-
-  console.log("Skipping CP-SAT optimizer test because no Python runtime with OR-Tools is configured.");
-  return null;
-}
-
-function buildMockSolution({
-  optimizer = "greedy",
-  totalPopulation = 0,
-  cpSatStatus,
-  stoppedByUser,
-  roads,
-  services,
-  residentials,
-} = {}) {
-  const hasPopulation = totalPopulation > 0;
-  const resolvedRoads = roads ?? ["0,0"];
-  const resolvedServices = services ?? [];
-  const resolvedResidentials = residentials ?? (hasPopulation ? [{ r: 1, c: 1, rows: 2, cols: 2 }] : []);
-  return {
-    optimizer,
-    ...(cpSatStatus ? { cpSatStatus } : {}),
-    ...(stoppedByUser !== undefined ? { stoppedByUser } : {}),
-    roads: new Set(resolvedRoads),
-    services: resolvedServices,
-    serviceTypeIndices: resolvedServices.map(() => -1),
-    servicePopulationIncreases: [],
-    residentials: resolvedResidentials,
-    residentialTypeIndices: resolvedResidentials.map(() => -1),
-    populations: resolvedResidentials.length ? [totalPopulation, ...Array(Math.max(0, resolvedResidentials.length - 1)).fill(0)] : [],
-    totalPopulation,
-  };
-}
-
-function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function waitForFile(filePath, timeoutMs = 1000) {
-  const startedAt = Date.now();
-  while (Date.now() - startedAt < timeoutMs) {
-    if (fs.existsSync(filePath)) return;
-    await delay(20);
-  }
-  assert.fail(`Timed out waiting for ${filePath}.`);
-}
-
-function readFileIfPresent(filePath) {
-  try {
-    return fs.readFileSync(filePath, "utf8");
-  } catch {
-    return "";
-  }
-}
-
-async function waitForHeartbeatToStop(heartbeatPath, timeoutMs = 1500) {
-  const startedAt = Date.now();
-  let previousHeartbeat = readFileIfPresent(heartbeatPath);
-  let stableSince = Date.now();
-
-  while (Date.now() - startedAt < timeoutMs) {
-    await delay(30);
-    const currentHeartbeat = readFileIfPresent(heartbeatPath);
-    if (currentHeartbeat === previousHeartbeat) {
-      if (Date.now() - stableSince >= 150) return;
-      continue;
-    }
-    previousHeartbeat = currentHeartbeat;
-    stableSince = Date.now();
-  }
-
-  assert.fail("Background child process kept writing heartbeats after cancellation.");
 }
 
 function testGreedyDispatcher() {
@@ -1835,20 +1756,20 @@ function testLearnedRankingLabelSuite() {
   assert.equal(labelRegistryDraft.model.trained, false);
   assert.equal(labelRegistryDraft.labelFingerprint, labelFingerprint);
   const completedLabelRegistryEntry = buildExperimentRegistryEntry(labelRegistryDraft, {
-    rootDir: path.join(__dirname, ".."),
+    rootDir: path.join(__dirname, "../.."),
     gitMetadata: {
       commit: "1234567890abcdef1234567890abcdef12345678",
       branch: "features/label-telemetry-test",
     },
   });
   const labelRegistryValidation = validateExperimentRegistryEntry(completedLabelRegistryEntry, {
-    rootDir: path.join(__dirname, ".."),
+    rootDir: path.join(__dirname, "../.."),
     validateArtifactPaths: false,
     strict: true,
   });
   assert.deepEqual(labelRegistryValidation.issues, []);
 
-  const repoRoot = path.join(__dirname, "..");
+  const repoRoot = path.join(__dirname, "../..");
   const cliPath = path.join(repoRoot, "dist", "learnedRankingLabelCli.js");
   const artifactDir = `artifacts/tmp-learned-ranking-label-artifacts-${process.pid}`;
   const absoluteArtifactDir = path.join(repoRoot, artifactDir);
@@ -2552,7 +2473,7 @@ function maybeTestCpSatBackendJsonContractSmoke() {
     return;
   }
 
-  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const scriptPath = path.resolve(__dirname, "../../python/cp_sat_solver.py");
   const grid = [
     [1, 1, 1, 1],
     [1, 1, 1, 1],
@@ -2616,7 +2537,7 @@ function maybeTestCpSatBackendStreamingProtocol() {
     return;
   }
 
-  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const scriptPath = path.resolve(__dirname, "../../python/cp_sat_solver.py");
   const grid = [
     [1, 1, 1, 1],
     [1, 1, 1, 1],
@@ -2658,7 +2579,7 @@ function maybeTestCpSatObjectivePolicyHelpers() {
     return;
   }
 
-  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const scriptPath = path.resolve(__dirname, "../../python/cp_sat_solver.py");
   const command = `
 import importlib.util
 import json
@@ -2706,7 +2627,7 @@ function maybeTestCpSatRuntimeOptionHelpers() {
     return;
   }
 
-  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const scriptPath = path.resolve(__dirname, "../../python/cp_sat_solver.py");
   const command = `
 import importlib.util
 import json
@@ -2797,7 +2718,7 @@ function maybeTestCpSatWarmStartHelpers() {
     return;
   }
 
-  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const scriptPath = path.resolve(__dirname, "../../python/cp_sat_solver.py");
   const command = `
 import importlib.util
 import json
@@ -2858,7 +2779,7 @@ function maybeTestCpSatSnapshotResponseHelpers() {
     return;
   }
 
-  const scriptPath = path.resolve(__dirname, "../python/cp_sat_runtime_support.py");
+  const scriptPath = path.resolve(__dirname, "../../python/cp_sat_runtime_support.py");
   const command = `
 import importlib.util
 import json
@@ -2942,7 +2863,7 @@ function maybeTestCpSatNoImprovementTimeoutHelpers() {
     return;
   }
 
-  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const scriptPath = path.resolve(__dirname, "../../python/cp_sat_solver.py");
   const command = `
 import importlib.util
 import json
@@ -3015,7 +2936,7 @@ function maybeTestCpSatSnapshotWritesTelemetry() {
     return;
   }
 
-  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const scriptPath = path.resolve(__dirname, "../../python/cp_sat_solver.py");
   const snapshotFilePath = path.join(os.tmpdir(), `city-builder-test-cp-sat-snapshot-${process.pid}.json`);
   fs.rmSync(snapshotFilePath, { force: true });
   const command = `
@@ -3120,7 +3041,7 @@ function maybeTestCpSatPortfolioOptionHelpers() {
     return;
   }
 
-  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const scriptPath = path.resolve(__dirname, "../../python/cp_sat_solver.py");
   const command = `
 import importlib.util
 import json
@@ -3197,7 +3118,7 @@ print(json.dumps(worker_options))
 }
 
 function testCpSatPortfolioExecutorFallbackHelpers() {
-  const scriptPath = path.resolve(__dirname, "../python/cp_sat_portfolio_support.py");
+  const scriptPath = path.resolve(__dirname, "../../python/cp_sat_portfolio_support.py");
   const command = `
 import importlib.util
 import json
@@ -4074,7 +3995,7 @@ function testLnsBenchmarkCorpusHelpers() {
     /Unknown LNS benchmark case\(s\): missing-case/
   );
 
-  const lnsModule = require("../dist/packages/solvers/lns/solver.js");
+  const lnsModule = require("../../dist/packages/solvers/lns/solver.js");
   const originalSolveLns = lnsModule.solveLns;
   let observedParams = null;
 
@@ -4158,7 +4079,7 @@ function testLnsNeighborhoodAblationRunner() {
   const variants = DEFAULT_LNS_NEIGHBORHOOD_ABLATION_VARIANTS.filter((variant) =>
     variant.name === "baseline" || variant.name === "small-2x2"
   );
-  const lnsModule = require("../dist/packages/solvers/lns/solver.js");
+  const lnsModule = require("../../dist/packages/solvers/lns/solver.js");
   const originalSolveLns = lnsModule.solveLns;
   const observedRuns = [];
 
@@ -4372,7 +4293,7 @@ function testLnsNeighborhoodAblationWindowSequenceMovement() {
     { name: "baseline", description: "Baseline ranked anchors.", lns: { neighborhoodAnchorPolicy: "ranked" } },
     { name: "weak-service-first", description: "Alternative anchors.", lns: { neighborhoodAnchorPolicy: "weak-service-first" } },
   ];
-  const lnsModule = require("../dist/packages/solvers/lns/solver.js");
+  const lnsModule = require("../../dist/packages/solvers/lns/solver.js");
   const originalSolveLns = lnsModule.solveLns;
 
   lnsModule.solveLns = (_grid, params) => {
@@ -4464,7 +4385,7 @@ function testLnsSeededServiceAnchorPressureBenchmarkCase() {
 }
 
 function testLnsWindowReplayLabelRunner() {
-  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
+  const cpSatModule = require("../../dist/packages/solvers/cp-sat/solver.js");
   const originalSolveCpSat = cpSatModule.solveCpSat;
   const observedRepairs = [];
 
@@ -5300,7 +5221,7 @@ async function testCrossModeBenchmarkHelpers() {
   assert.match(mockedFormatted, /auto-gap=2/);
   assert.match(mockedFormatted, /reason=/);
 
-  const repoRoot = path.join(__dirname, "..");
+  const repoRoot = path.join(__dirname, "../..");
   const cliPath = path.join(repoRoot, "dist", "crossModeBenchmarkCli.js");
   const artifactDir = `artifacts/tmp-cross-mode-scorecard-artifacts-${process.pid}`;
   const absoluteArtifactDir = path.join(repoRoot, artifactDir);
@@ -5526,7 +5447,7 @@ function getRequiredGreedyBenchmarkCase(name) {
 }
 
 function withPatchedGreedySolver(solveGreedyImpl, callback) {
-  const solverModule = require("../dist/packages/solvers/greedy/solver.js");
+  const solverModule = require("../../dist/packages/solvers/greedy/solver.js");
   const originalSolveGreedy = solverModule.solveGreedy;
   solverModule.solveGreedy = solveGreedyImpl;
 
@@ -5582,10 +5503,6 @@ function solveValidatedGreedyBenchmarkCase(name, greedyOverrides) {
       params: solved.params,
     }),
   };
-}
-
-function sortedRoads(solution) {
-  return [...solution.roads].sort();
 }
 
 function assertStep14BenchmarkIsolation(name, expectedLocalSearch) {
@@ -6261,9 +6178,9 @@ function testGreedyBenchmarkSuite() {
 }
 
 function runGreedyBenchmarkCliJson(args) {
-  const cliPath = path.join(__dirname, "..", "dist", "greedyBenchmarkCli.js");
+  const cliPath = path.join(__dirname, "../..", "dist", "greedyBenchmarkCli.js");
   const result = childProcess.spawnSync(process.execPath, [cliPath, "--json", ...args], {
-    cwd: path.join(__dirname, ".."),
+    cwd: path.join(__dirname, "../.."),
     encoding: "utf8",
   });
   if (result.status !== 0) {
@@ -6273,9 +6190,9 @@ function runGreedyBenchmarkCliJson(args) {
 }
 
 function runLnsBenchmarkCli(args) {
-  const cliPath = path.join(__dirname, "..", "dist", "lnsBenchmarkCli.js");
+  const cliPath = path.join(__dirname, "../..", "dist", "lnsBenchmarkCli.js");
   const result = childProcess.spawnSync(process.execPath, [cliPath, ...args], {
-    cwd: path.join(__dirname, ".."),
+    cwd: path.join(__dirname, "../.."),
     encoding: "utf8",
   });
   if (result.status !== 0) {
@@ -7367,7 +7284,7 @@ function maybeTestCpSatPopulationUpperBoundHelpers() {
     return;
   }
 
-  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const scriptPath = path.resolve(__dirname, "../../python/cp_sat_solver.py");
   const command = `
 import importlib.util
 import json
@@ -7417,7 +7334,7 @@ function maybeTestCpSatResidentialPopulationUpperBoundHelpers() {
     return;
   }
 
-  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const scriptPath = path.resolve(__dirname, "../../python/cp_sat_solver.py");
   const command = `
 import importlib.util
 import json
@@ -7465,7 +7382,7 @@ function maybeTestCpSatPrunesObjectivelyUselessServices() {
     return;
   }
 
-  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const scriptPath = path.resolve(__dirname, "../../python/cp_sat_solver.py");
   const command = `
 import importlib.util
 import json
@@ -7510,7 +7427,7 @@ function maybeTestCpSatBorderAccessCapacityHelpers() {
     return;
   }
 
-  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const scriptPath = path.resolve(__dirname, "../../python/cp_sat_solver.py");
   const command = `
 import importlib.util
 import json
@@ -7550,7 +7467,7 @@ function maybeTestCpSatGateRequirementHelpers() {
     return;
   }
 
-  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const scriptPath = path.resolve(__dirname, "../../python/cp_sat_solver.py");
   const command = `
 import importlib.util
 import json
@@ -7607,7 +7524,7 @@ function maybeTestCpSatGateRegionalCapacityHelpers() {
     return;
   }
 
-  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const scriptPath = path.resolve(__dirname, "../../python/cp_sat_solver.py");
   const command = `
 import importlib.util
 import json
@@ -7951,7 +7868,7 @@ function maybeTestLnsCanRepairRoadAnchorLayouts() {
 }
 
 function testLnsRunsFinalEscalationWithinConfiguredBudget() {
-  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
+  const cpSatModule = require("../../dist/packages/solvers/cp-sat/solver.js");
   const originalSolveCpSat = cpSatModule.solveCpSat;
   const seenWindows = [];
 
@@ -8004,7 +7921,7 @@ function testLnsRunsFinalEscalationWithinConfiguredBudget() {
 }
 
 function testLnsTelemetryRecordsRepairPolicyAndOutcomes() {
-  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
+  const cpSatModule = require("../../dist/packages/solvers/cp-sat/solver.js");
   const originalSolveCpSat = cpSatModule.solveCpSat;
   const seenRepairBudgets = [];
   let attempts = 0;
@@ -8087,7 +8004,7 @@ function testLnsTelemetryRecordsRepairPolicyAndOutcomes() {
 }
 
 function testLnsSmallWindowDpRepairImprovesWithoutCpSat() {
-  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
+  const cpSatModule = require("../../dist/packages/solvers/cp-sat/solver.js");
   const originalSolveCpSat = cpSatModule.solveCpSat;
   let cpSatCalls = 0;
 
@@ -8145,7 +8062,7 @@ function testLnsSmallWindowDpRepairImprovesWithoutCpSat() {
 }
 
 function testLnsSmallWindowDpRepairFallsBackToCpSatWhenIneligible() {
-  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
+  const cpSatModule = require("../../dist/packages/solvers/cp-sat/solver.js");
   const originalSolveCpSat = cpSatModule.solveCpSat;
   let cpSatCalls = 0;
 
@@ -8261,7 +8178,7 @@ function maybeTestSmallWindowDpMatchesCpSatOnEligibleRepair() {
 }
 
 function testLnsGreedySeedReportsBudgetAndProfile() {
-  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
+  const cpSatModule = require("../../dist/packages/solvers/cp-sat/solver.js");
   const originalSolveCpSat = cpSatModule.solveCpSat;
 
   cpSatModule.solveCpSat = (_grid, params) => ({
@@ -8318,7 +8235,7 @@ function testLnsGreedySeedReportsBudgetAndProfile() {
 }
 
 function testLnsStopsAfterNoImprovementTimeout() {
-  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
+  const cpSatModule = require("../../dist/packages/solvers/cp-sat/solver.js");
   const originalSolveCpSat = cpSatModule.solveCpSat;
   let attempts = 0;
 
@@ -9112,7 +9029,7 @@ function maybeTestCpSatCandidateReductionHelpers() {
     return;
   }
 
-  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const scriptPath = path.resolve(__dirname, "../../python/cp_sat_solver.py");
   const command = `
 import importlib.util
 import json
@@ -9180,7 +9097,7 @@ function maybeTestCpSatReachabilityReductionHelpers() {
     return;
   }
 
-  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const scriptPath = path.resolve(__dirname, "../../python/cp_sat_solver.py");
   const command = `
 import importlib.util
 import json
@@ -9248,7 +9165,7 @@ function maybeTestCpSatConnectivityHelperConstraints() {
     return;
   }
 
-  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const scriptPath = path.resolve(__dirname, "../../python/cp_sat_solver.py");
   const command = `
 import importlib.util
 import json
@@ -9307,7 +9224,7 @@ function maybeTestCpSatAllowsMultipleAnchoredRoadComponents() {
     return;
   }
 
-  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const scriptPath = path.resolve(__dirname, "../../python/cp_sat_solver.py");
   const command = `
 import importlib.util
 import json
@@ -9447,7 +9364,7 @@ function maybeTestCpSatRoadEligibilityReductionHelpers() {
     return;
   }
 
-  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const scriptPath = path.resolve(__dirname, "../../python/cp_sat_solver.py");
   const command = `
 import importlib.util
 import json
@@ -9501,7 +9418,7 @@ function maybeTestCpSatDisallowsBidirectionalRoadFlow() {
     return;
   }
 
-  const scriptPath = path.resolve(__dirname, "../python/cp_sat_solver.py");
+  const scriptPath = path.resolve(__dirname, "../../python/cp_sat_solver.py");
   const command = `
 import importlib.util
 import json

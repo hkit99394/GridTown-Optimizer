@@ -1,4 +1,4 @@
-const { OPTIMIZER_TEST_GROUP_NAMES, runOptimizerTestGroup } = require("./optimizerHarness.cjs");
+const { OPTIMIZER_TEST_GROUP_NAMES, runOptimizerTestGroup } = require("./optimizers/optimizerHarness.cjs");
 
 async function main() {
   const requestedGroups = process.argv.slice(2);

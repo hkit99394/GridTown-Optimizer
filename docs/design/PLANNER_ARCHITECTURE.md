@@ -415,6 +415,12 @@ Started on 2026-04-30:
 - Moved experiment registry helpers to
   `src/packages/benchmarks/experimentRegistry.ts`, leaving
   `src/benchmarks/experimentRegistry.ts` as a compatibility wrapper.
+- Moved LNS replay label readiness helpers to
+  `src/packages/benchmarks/lnsReplayLabelReadiness.ts`, leaving
+  `src/benchmarks/lnsReplayLabelReadiness.ts` as a compatibility wrapper.
+- Moved deterministic ablation gate helpers to
+  `src/packages/benchmarks/deterministicAblationGates.ts`, leaving
+  `src/benchmarks/deterministicAblationGates.ts` as a compatibility wrapper.
 
 ## Current Follow-Up
 

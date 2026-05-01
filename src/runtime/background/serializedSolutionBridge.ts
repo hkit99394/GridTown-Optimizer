@@ -2,8 +2,8 @@
  * Shared helpers for background solvers that return serialized Solution JSON.
  */
 
-import { materializeSerializedSolution } from "../../core/solutionSerialization.js";
-import { assertValidSerializedSolutionPayload } from "../../core/solverInputValidation.js";
+import { materializeSerializedSolution } from "../../packages/core/index.js";
+import { assertValidSerializedSolutionPayload } from "../../packages/core/index.js";
 import { startJsonBackgroundSolve } from "./runner.js";
 
 import type {
@@ -13,7 +13,7 @@ import type {
   SerializedSolution,
   Solution,
   SolverParams,
-} from "../../core/types.js";
+} from "../../packages/core/index.js";
 import type { JsonBackgroundSolverConfig } from "./runner.js";
 
 type SerializedBackgroundSolverConfig = Omit<

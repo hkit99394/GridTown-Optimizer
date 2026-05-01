@@ -4,9 +4,9 @@ import { randomInt } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { normalizeServicePlacement } from "../core/buildings.js";
-import { NO_TYPE_INDEX } from "../core/rules.js";
-import { materializeValidLnsSeedSolution } from "../core/solverInputValidation.js";
+import { normalizeServicePlacement } from "../packages/core/index.js";
+import { NO_TYPE_INDEX } from "../packages/core/index.js";
+import { materializeValidLnsSeedSolution } from "../packages/core/index.js";
 import { solveCpSat, startCpSatSolve } from "../cp-sat/solver.js";
 import { startGreedySolve } from "../greedy/bridge.js";
 import { startLnsSolve } from "../lns/bridge.js";
@@ -27,7 +27,7 @@ import type {
   SolveProgressLogEntry,
   Solution,
   SolverParams,
-} from "../core/types.js";
+} from "../packages/core/index.js";
 
 const DEFAULT_WEAK_CYCLE_IMPROVEMENT_THRESHOLD = 0.005;
 const DEFAULT_MAX_CONSECUTIVE_WEAK_CYCLES = 2;

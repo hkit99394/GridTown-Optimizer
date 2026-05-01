@@ -5,7 +5,7 @@ import type {
   OptimizerName,
   Solution,
   SolverParams,
-} from "../../core/types.js";
+} from "../../packages/core/index.js";
 import { getOptimizerAdapter, type OptimizerFinalizationContext } from "../dispatch/optimizerRegistry.js";
 import { progressLogSolutionSampleChanged, SolveProgressLogWriter } from "./solveProgressLog.js";
 

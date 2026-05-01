@@ -1,21 +1,21 @@
-import { normalizeServicePlacement } from "../../core/buildings.js";
-import { isAllowed } from "../../core/grid.js";
-import { validateSolutionMap, type SolutionMapValidationResult } from "../../core/map.js";
-import { buildPlannerExplainabilityMap } from "../../core/plannerExplainability.js";
-import { buildSolverProgressSummary } from "../../core/progress.js";
-import { pruneRedundantRoads } from "../../core/roads.js";
-import { serializeSolution } from "../../core/solutionSerialization.js";
-import { cellFromKey, cellKey } from "../../core/types.js";
+import { normalizeServicePlacement } from "../../packages/core/index.js";
+import { isAllowed } from "../../packages/core/index.js";
+import { validateSolutionMap, type SolutionMapValidationResult } from "../../packages/core/index.js";
+import { buildPlannerExplainabilityMap } from "../../packages/core/index.js";
+import { buildSolverProgressSummary } from "../../packages/core/index.js";
+import { pruneRedundantRoads } from "../../packages/core/index.js";
+import { serializeSolution } from "../../packages/core/index.js";
+import { cellFromKey, cellKey } from "../../packages/core/index.js";
 
-import type { SolutionValidationOptions } from "../../core/evaluator.js";
-import type { BuildingPlacementForRoadMaterialization } from "../../core/roads.js";
+import type { SolutionValidationOptions } from "../../packages/core/index.js";
+import type { BuildingPlacementForRoadMaterialization } from "../../packages/core/index.js";
 import type {
   Grid,
   Solution,
   SolveResponseStats,
   SolveResponseValidation,
   SolverParams,
-} from "../../core/types.js";
+} from "../../packages/core/index.js";
 
 export function buildSolveResponsePayload(
   grid: Grid,

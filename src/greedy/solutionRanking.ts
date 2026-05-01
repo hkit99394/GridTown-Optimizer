@@ -1,4 +1,4 @@
-import type { Grid, Solution } from "../core/types.js";
+import type { Grid, Solution } from "../packages/core/index.js";
 import {
   stableResidentialPlacementKey,
   stableServicePlacementKey,

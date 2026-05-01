@@ -8,7 +8,7 @@ import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import type { BackgroundSolveHandle, BackgroundSolveSnapshotState, Solution } from "../../core/types.js";
+import type { BackgroundSolveHandle, BackgroundSolveSnapshotState, Solution } from "../../packages/core/index.js";
 import type { ChildProcessWithoutNullStreams } from "node:child_process";
 
 const DEFAULT_BUFFER_LIMIT = 16 * 1024 * 1024;

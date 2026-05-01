@@ -13,15 +13,15 @@ import {
   width,
   getResidentialBaseMax,
   NO_TYPE_INDEX,
-} from "../core/index.js";
+} from "../packages/core/index.js";
 import type {
   CpSatNeighborhoodWindow,
   Grid,
   LnsNeighborhoodAnchorPolicy,
   Solution,
   SolverParams,
-} from "../core/index.js";
-import { cellFromKey, cellKey } from "../core/index.js";
+} from "../packages/core/index.js";
+import { cellFromKey, cellKey } from "../packages/core/index.js";
 
 export interface NeighborhoodAnchor {
   r: number;

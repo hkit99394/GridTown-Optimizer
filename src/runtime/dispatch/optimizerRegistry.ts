@@ -18,7 +18,7 @@ import { startGreedySolve } from "../../greedy/bridge.js";
 import { startLnsSolve } from "../../lns/bridge.js";
 import { solveLns } from "../../lns/solver.js";
 import { solveGreedy } from "../../greedy/solver.js";
-import { isOptimizerName, OMITTED_SOLVER_OPTIMIZER } from "../../core/types.js";
+import { isOptimizerName, OMITTED_SOLVER_OPTIMIZER } from "../../packages/core/index.js";
 
 import type {
   BackgroundSolveHandle,
@@ -29,7 +29,7 @@ import type {
   Solution,
   SolveProgressLogEntry,
   SolverParams,
-} from "../../core/types.js";
+} from "../../packages/core/index.js";
 
 export interface OptimizerFinalizationContext {
   cancelRequested: boolean;

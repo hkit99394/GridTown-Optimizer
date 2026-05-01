@@ -5,9 +5,9 @@ import type {
   ServicePlacement,
   Solution,
   SolverParams,
-} from "../core/types.js";
-import { normalizeServicePlacement } from "../core/buildings.js";
-import { getResidentialBaseMax, NO_TYPE_INDEX } from "../core/rules.js";
+} from "../packages/core/index.js";
+import { normalizeServicePlacement } from "../packages/core/index.js";
+import { getResidentialBaseMax, NO_TYPE_INDEX } from "../packages/core/index.js";
 import type { ConnectivityProbe, RoadConnectionProbe } from "./attemptState.js";
 
 export type ResidentialCandidateLike = ResidentialPlacement | ResidentialCandidate;

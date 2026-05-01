@@ -22,8 +22,8 @@ import type {
   Grid,
   SolverParams,
   Solution,
-} from "../core/index.js";
-import { assertValidLayout } from "../core/index.js";
+} from "../packages/core/index.js";
+import { assertValidLayout } from "../packages/core/index.js";
 import { startJsonBackgroundSolve } from "../runtime/index.js";
 
 interface CpSatResidentialPlacement {

@@ -9,7 +9,7 @@ import {
   startSerializedSolutionSolverProcess,
 } from "../runtime/background/serializedSolutionBridge.js";
 
-import type { BackgroundSolveHandle, Grid, SerializedSolution, Solution, SolverParams } from "../core/index.js";
+import type { BackgroundSolveHandle, Grid, SerializedSolution, Solution, SolverParams } from "../packages/core/index.js";
 
 export type LnsSolveHandle = BackgroundSolveHandle;
 

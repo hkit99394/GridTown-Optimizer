@@ -6,7 +6,7 @@ import { resolve } from "node:path";
 
 import { startSerializedSolutionSolverProcess } from "../runtime/background/serializedSolutionBridge.js";
 
-import type { BackgroundSolveHandle, Grid, SolverParams } from "../core/index.js";
+import type { BackgroundSolveHandle, Grid, SolverParams } from "../packages/core/index.js";
 export type GreedySolveHandle = BackgroundSolveHandle;
 
 export function startGreedySolve(G: Grid, params: SolverParams): GreedySolveHandle {

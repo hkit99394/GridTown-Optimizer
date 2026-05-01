@@ -2,10 +2,10 @@
  * Shared optimizer dispatcher.
  */
 
-import { assertValidSolveInputs } from "../../core/solverInputValidation.js";
+import { assertValidSolveInputs } from "../../packages/core/index.js";
 import { getOptimizerAdapter } from "./optimizerRegistry.js";
 
-import type { CpSatAsyncOptions, Grid, Solution, SolverParams } from "../../core/types.js";
+import type { CpSatAsyncOptions, Grid, Solution, SolverParams } from "../../packages/core/index.js";
 
 export function solve(grid: Grid, params: SolverParams): Solution {
   assertValidSolveInputs(grid, params);

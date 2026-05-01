@@ -11,8 +11,8 @@ import {
   hasAvailableRoadAnchorCell,
   isRoadAnchorCell,
   normalizeServicePlacement,
-} from "../core/index.js";
-import type { Grid, Solution } from "../core/index.js";
+} from "../packages/core/index.js";
+import type { Grid, Solution } from "../packages/core/index.js";
 
 export function placementLeavesRoadAnchorCellAvailable(
   G: Grid,

@@ -454,6 +454,12 @@ Started on 2026-04-30:
 - Routed `src/apps` and `src/tools` core dependencies through
   `src/packages/core/index.ts`, with a public API guard preventing direct
   app/tool imports from `src/core/*`.
+- Routed `src/runtime` and `src/server` core dependencies through
+  `src/packages/core/index.ts`, with a public API guard preventing direct
+  runtime/server imports from `src/core/*`.
+- Routed solver implementation directories (`src/auto`, `src/cp-sat`,
+  `src/greedy`, and `src/lns`) through `src/packages/core/index.ts`, with a
+  public API guard preventing direct solver imports from `src/core/*`.
 
 ## Current Follow-Up
 

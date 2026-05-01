@@ -1,6 +1,6 @@
-import { materializeSerializedSolution } from "../../core/solutionSerialization.js";
-import { assertValidSerializedSolutionPayload } from "../../core/solverInputValidation.js";
-import type { Grid, SerializedSolution, SolverParams } from "../../core/types.js";
+import { materializeSerializedSolution } from "../../packages/core/index.js";
+import { assertValidSerializedSolutionPayload } from "../../packages/core/index.js";
+import type { Grid, SerializedSolution, SolverParams } from "../../packages/core/index.js";
 
 export interface SolveRequest {
   grid: Grid;

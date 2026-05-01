@@ -4,7 +4,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import {
   assertValidLayoutEvaluateInputs,
   assertValidSolveInputs,
-} from "../../core/solverInputValidation.js";
+} from "../../packages/core/index.js";
 import { getOptimizerAdapter, resolveOptimizerName } from "../../runtime/dispatch/optimizerRegistry.js";
 import { SolveJobManager, type SolveJob } from "../../runtime/jobs/solveJobManager.js";
 import {
@@ -19,7 +19,7 @@ import { buildManualLayoutResponse, buildSolveResponse } from "./solutionRespons
 import { monitorClientDisconnect, readValidatedJsonBody, sendJson } from "./transport.js";
 
 import type { CancelSolveRequest, LayoutEvaluateRequest, SolveRequest } from "./contracts.js";
-import type { SerializedSolution, Solution } from "../../core/types.js";
+import type { SerializedSolution, Solution } from "../../packages/core/index.js";
 
 function buildSolveJobResponseBase(job: {
   requestId: string;

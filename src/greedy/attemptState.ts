@@ -1,10 +1,10 @@
-import { cellKey } from "../core/types.js";
+import { cellKey } from "../packages/core/index.js";
 import type {
   Grid,
   GreedyProfileCounters,
   ResidentialPlacement,
   ServicePlacement,
-} from "../core/types.js";
+} from "../packages/core/index.js";
 import {
   applyRoadConnectionProbe,
   computeRoadAnchorReachableEmptyFrontier,
@@ -14,13 +14,13 @@ import {
   measureBuildingConnectivityShadowFromFrontier,
   probeBuildingConnectedToRoads,
   probeBuildingConnectedToRoadAnchorReachableEmptyFrontier,
-} from "../core/roads.js";
-import type { BuildingConnectivityShadow } from "../core/roads.js";
-import type { RoadConnectionProbe } from "../core/roads.js";
-import { normalizeServicePlacement } from "../core/buildings.js";
-import { forEachRectangleCell } from "../core/grid.js";
+} from "../packages/core/index.js";
+import type { BuildingConnectivityShadow } from "../packages/core/index.js";
+import type { RoadConnectionProbe } from "../packages/core/index.js";
+import { normalizeServicePlacement } from "../packages/core/index.js";
+import { forEachRectangleCell } from "../packages/core/index.js";
 
-export type { RoadConnectionProbe } from "../core/roads.js";
+export type { RoadConnectionProbe } from "../packages/core/index.js";
 
 export type PlacementRect = { r: number; c: number; rows: number; cols: number };
 export type DeferredRoadFrontierProbe = NonNullable<ReturnType<typeof probeBuildingConnectedToRoadAnchorReachableEmptyFrontier>>;

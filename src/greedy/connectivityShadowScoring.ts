@@ -5,7 +5,7 @@ import type {
   ServiceCandidate,
   Solution,
   SolverParams,
-} from "../core/types.js";
+} from "../packages/core/index.js";
 import type {
   GreedyAttemptState,
   PlacementRect,

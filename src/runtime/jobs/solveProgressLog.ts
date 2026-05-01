@@ -1,9 +1,9 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-import { renderSolutionMap } from "../../core/map.js";
-import { buildEmptySolverProgressSummary, buildSolverProgressSummary } from "../../core/progress.js";
-import type { Grid, OptimizerName, SerializedSolution, Solution, SolveProgressLogEntry, SolverParams } from "../../core/types.js";
+import { renderSolutionMap } from "../../packages/core/index.js";
+import { buildEmptySolverProgressSummary, buildSolverProgressSummary } from "../../packages/core/index.js";
+import type { Grid, OptimizerName, SerializedSolution, Solution, SolveProgressLogEntry, SolverParams } from "../../packages/core/index.js";
 
 type PersistedSolveStatus = "running" | "completed" | "stopped" | "failed";
 

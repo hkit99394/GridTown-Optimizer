@@ -136,6 +136,40 @@ function testAppsAndToolsUseCorePackageBoundary() {
   assert.deepEqual(offenders, []);
 }
 
+function testRuntimeAndServerUseCorePackageBoundary() {
+  const srcDir = path.join(__dirname, "..", "src");
+  const directCoreImportPattern = /(?:from|import)\s+["'](?:\.\.\/|\.\.\/\.\.\/)core\//;
+  const offenderRoots = [
+    path.join(srcDir, "runtime"),
+    path.join(srcDir, "server"),
+  ];
+  const offenders = offenderRoots.flatMap((rootDir) =>
+    listFiles(rootDir, (fileName) => fileName.endsWith(".ts"))
+      .filter((filePath) => directCoreImportPattern.test(fs.readFileSync(filePath, "utf8")))
+      .map((filePath) => path.relative(srcDir, filePath))
+  );
+
+  assert.deepEqual(offenders, []);
+}
+
+function testSolversUseCorePackageBoundary() {
+  const srcDir = path.join(__dirname, "..", "src");
+  const directCoreImportPattern = /(?:from|import|export)\s+(?:type\s+)?(?:[^"']+\s+from\s+)?["']\.\.\/core\//;
+  const offenderRoots = [
+    path.join(srcDir, "auto"),
+    path.join(srcDir, "cp-sat"),
+    path.join(srcDir, "greedy"),
+    path.join(srcDir, "lns"),
+  ];
+  const offenders = offenderRoots.flatMap((rootDir) =>
+    listFiles(rootDir, (fileName) => fileName.endsWith(".ts"))
+      .filter((filePath) => directCoreImportPattern.test(fs.readFileSync(filePath, "utf8")))
+      .map((filePath) => path.relative(srcDir, filePath))
+  );
+
+  assert.deepEqual(offenders, []);
+}
+
 testSolverApiExposesDomainAndSolverSurface();
 testSolverApiDoesNotExposeBenchmarkSurface();
 testBenchmarkApiExposesBenchmarkSurface();
@@ -148,3 +182,5 @@ testLegacyBenchmarkModulesAreCompatibilityWrappers();
 testSolverApiUsesCorePackageBoundary();
 testBenchmarkPackageUsesCorePackageBoundary();
 testAppsAndToolsUseCorePackageBoundary();
+testRuntimeAndServerUseCorePackageBoundary();
+testSolversUseCorePackageBoundary();

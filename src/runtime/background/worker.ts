@@ -2,9 +2,9 @@
  * Shared JSON stdin/stdout worker harness for synchronous solver entry points.
  */
 
-import { serializeSolution } from "../../core/solutionSerialization.js";
+import { serializeSolution } from "../../packages/core/index.js";
 
-import type { Grid, Solution, SolverParams } from "../../core/types.js";
+import type { Grid, Solution, SolverParams } from "../../packages/core/index.js";
 
 interface SolveRequest {
   grid: Grid;

@@ -4,8 +4,8 @@
 
 import { existsSync } from "node:fs";
 
-import { cellKey } from "../core/types.js";
-import type { Grid } from "../core/types.js";
+import { cellKey } from "../packages/core/index.js";
+import type { Grid } from "../packages/core/index.js";
 import type {
   GreedyDiagnostics,
   GreedyDiagnosticExample,
@@ -21,7 +21,7 @@ import type {
   ResidentialCandidate,
   SolverParams,
   Solution,
-} from "../core/types.js";
+} from "../packages/core/index.js";
 import {
   createGreedyProfileCounters,
   createGreedyProfilePhaseRecorder,
@@ -67,8 +67,8 @@ import {
   roadsConnectedToRoadAnchor,
   findAvailableRoadAnchorCell,
   pruneRedundantRoads,
-} from "../core/roads.js";
-import { assertValidLayoutConstraints } from "../core/evaluator.js";
+} from "../packages/core/index.js";
+import { assertValidLayoutConstraints } from "../packages/core/index.js";
 import {
   buildFootprintCandidateIndexFromKeys,
   buildTypedCandidateIndex,
@@ -96,7 +96,7 @@ import {
   isBetterDensityAwareSearchSolution,
   isBetterSearchSolution,
 } from "./solutionRanking.js";
-import { applyDeterministicDominanceUpgrades } from "../core/dominanceUpgrades.js";
+import { applyDeterministicDominanceUpgrades } from "../packages/core/index.js";
 import {
   buildFootprintGeometryCache,
   buildServiceGeometryCache,
@@ -108,11 +108,11 @@ import {
   isBoostedByService,
   normalizeServicePlacement,
   serviceFootprint,
-} from "../core/buildings.js";
+} from "../packages/core/index.js";
 import { collectRoadAnchorRefinementSeeds, placementLeavesRoadAnchorCellAvailable } from "./roadAnchors.js";
-import { getBuildingLimits, getResidentialBaseMax, NO_TYPE_INDEX } from "../core/rules.js";
-import { writeSolutionSnapshot } from "../core/solutionSerialization.js";
-import { forEachRectangleCell } from "../core/grid.js";
+import { getBuildingLimits, getResidentialBaseMax, NO_TYPE_INDEX } from "../packages/core/index.js";
+import { writeSolutionSnapshot } from "../packages/core/index.js";
+import { forEachRectangleCell } from "../packages/core/index.js";
 
 type ResidentialCandidateStat = {
   r: number;

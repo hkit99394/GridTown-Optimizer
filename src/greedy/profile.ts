@@ -4,7 +4,7 @@ import type {
   GreedyProfileCounters,
   GreedyProfilePhaseName,
   GreedyProfilePhaseSummary,
-} from "../core/types.js";
+} from "../packages/core/index.js";
 
 export type GreedyProfilePhaseMetrics = {
   bestPopulationBefore?: number | null;

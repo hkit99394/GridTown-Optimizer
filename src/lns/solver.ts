@@ -5,14 +5,14 @@
 import { existsSync } from "node:fs";
 import { performance } from "node:perf_hooks";
 
-import { applyDeterministicDominanceUpgrades } from "../core/dominanceUpgrades.js";
-import { normalizeServicePlacement } from "../core/buildings.js";
+import { applyDeterministicDominanceUpgrades } from "../packages/core/index.js";
+import { normalizeServicePlacement } from "../packages/core/index.js";
 import { solveCpSat } from "../cp-sat/solver.js";
-import { height, width } from "../core/grid.js";
+import { height, width } from "../packages/core/index.js";
 import { buildNeighborhoodWindows, selectNeighborhoodWindow } from "./neighborhoods.js";
-import { NO_TYPE_INDEX } from "../core/rules.js";
-import { writeSolutionSnapshot } from "../core/solutionSerialization.js";
-import { assertValidLnsOptions, materializeValidLnsSeedSolution } from "../core/solverInputValidation.js";
+import { NO_TYPE_INDEX } from "../packages/core/index.js";
+import { writeSolutionSnapshot } from "../packages/core/index.js";
+import { assertValidLnsOptions, materializeValidLnsSeedSolution } from "../packages/core/index.js";
 import { solveGreedy } from "../greedy/solver.js";
 
 import type {
@@ -27,7 +27,7 @@ import type {
   LnsTelemetry,
   Solution,
   SolverParams,
-} from "../core/types.js";
+} from "../packages/core/index.js";
 
 type NormalizedLnsOptions = {
   iterations: number;

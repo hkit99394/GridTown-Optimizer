@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 
-import { isSolverInputError, isSolverInputErrorMessage } from "../../core/solverInputValidation.js";
+import { isSolverInputError, isSolverInputErrorMessage } from "../../packages/core/index.js";
 
 const MAX_BODY_SIZE_BYTES = 2 * 1024 * 1024;
 

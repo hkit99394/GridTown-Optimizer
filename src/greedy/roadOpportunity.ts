@@ -3,9 +3,9 @@ import type {
   GreedyProfileCounters,
   GreedyRoadOpportunityCounterfactualTrace,
   GreedyRoadOpportunityTrace,
-} from "../core/types.js";
-import { measureBuildingConnectivityShadow } from "../core/roads.js";
-import type { BuildingConnectivityShadow } from "../core/roads.js";
+} from "../packages/core/index.js";
+import { measureBuildingConnectivityShadow } from "../packages/core/index.js";
+import type { BuildingConnectivityShadow } from "../packages/core/index.js";
 import type {
   ConnectivityProbe,
   GreedyAttemptState,

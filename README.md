@@ -548,6 +548,12 @@ npm run benchmark:scorecard -- --product-corpus --list
 npm run benchmark:scorecard -- --product-corpus --modes=auto,greedy,lns,cp-sat --budgets=1,5,30 --seeds=7,19 --json
 ```
 
+Persist ordinary cross-mode scorecard artifacts, including a telemetry manifest, without product registry metadata:
+
+```bash
+npm run benchmark:scorecard -- --artifact-dir=artifacts/cross-mode/2026-05-01/smoke --modes=auto,greedy --budgets=1 --seeds=7 typed-housing-single
+```
+
 Use the promotion-matrix preset for the long product-corpus evidence run:
 
 ```bash
@@ -567,7 +573,7 @@ npm run benchmark:scorecard -- --product-corpus --product-artifact-dir=artifacts
 npm run experiment-registry -- append --entry=artifacts/product-corpus/2026-04-30/registry-entry-draft.json
 ```
 
-The artifact writer emits `scorecard.json`, `scorecard.txt`, `evidence-summary.json`, `telemetry-manifest.json`, and `registry-entry-draft.json`. The telemetry manifest records the exact command, git commit/branch, captured hardware, per-run solver parameter summaries, wall/CPU timing, first-feasible and best-score timing, status/gap fields, candidate counts where available, CP-SAT model size where available, and per-stage Auto/Greedy/LNS/CP-SAT records. `--product-register-dry-run` completes that draft with git and hardware metadata and validates it with strict registry checks without appending; use `--product-registry=<path>` to target a temporary registry for validation. Direct `--product-register` append is blocked because generated artifacts cannot be honestly stamped with a commit until the artifact bundle has been checkpointed. `--product-promotion-matrix` expands to modes `auto,greedy,lns,cp-sat`, budgets `1,5,30,120`, and seeds `7,19,37`; it rejects explicit `--modes`, `--budget`, `--budgets`, or `--seeds` overrides. Register product-corpus artifacts with split-aware `cases` metadata, workflow-tag `caseFamilies`, per-case evidence metrics, replay metrics, and telemetry manifests so later checks can distinguish development tuning from protected holdout evidence. `protectedHoldout` is only true for the full promotion matrix: all 10 product-corpus cases with their expected development/holdout split, `auto`, `greedy`, `lns`, and `cp-sat`, budgets `1,5,30,120`, the exact seed set `7,19,37`, complete scorecard matrix coverage, and required modes inside every required scorecard.
+`--artifact-dir` emits `scorecard.json`, `scorecard.txt`, and `telemetry-manifest.json` for ordinary scorecards. The product artifact writer emits those files plus `evidence-summary.json` and `registry-entry-draft.json`. The telemetry manifest records the exact command, git commit/branch, captured hardware, per-run solver parameter summaries, wall/CPU timing, first-feasible and best-score timing, status/gap fields, candidate counts where available, CP-SAT model size where available, and per-stage Auto/Greedy/LNS/CP-SAT records. `--product-register-dry-run` completes that draft with git and hardware metadata and validates it with strict registry checks without appending; use `--product-registry=<path>` to target a temporary registry for validation. Direct `--product-register` append is blocked because generated artifacts cannot be honestly stamped with a commit until the artifact bundle has been checkpointed. `--product-promotion-matrix` expands to modes `auto,greedy,lns,cp-sat`, budgets `1,5,30,120`, and seeds `7,19,37`; it rejects explicit `--modes`, `--budget`, `--budgets`, or `--seeds` overrides. Register product-corpus artifacts with split-aware `cases` metadata, workflow-tag `caseFamilies`, per-case evidence metrics, replay metrics, and telemetry manifests so later checks can distinguish development tuning from protected holdout evidence. `protectedHoldout` is only true for the full promotion matrix: all 10 product-corpus cases with their expected development/holdout split, `auto`, `greedy`, `lns`, and `cp-sat`, budgets `1,5,30,120`, the exact seed set `7,19,37`, complete scorecard matrix coverage, and required modes inside every required scorecard.
 
 ```json
 {

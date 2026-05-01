@@ -4862,6 +4862,81 @@ async function testCrossModeBenchmarkHelpers() {
   assert.match(mockedFormatted, /auto-gap=2/);
   assert.match(mockedFormatted, /reason=/);
 
+  const repoRoot = path.join(__dirname, "..");
+  const cliPath = path.join(repoRoot, "dist", "crossModeBenchmarkCli.js");
+  const artifactDir = `artifacts/tmp-cross-mode-scorecard-artifacts-${process.pid}`;
+  const absoluteArtifactDir = path.join(repoRoot, artifactDir);
+  fs.rmSync(absoluteArtifactDir, { recursive: true, force: true });
+  try {
+    const artifactResult = childProcess.spawnSync(process.execPath, [
+      cliPath,
+      `--artifact-dir=${artifactDir}`,
+      "--modes=greedy",
+      "--budgets=1",
+      "--seeds=7",
+      "--json",
+      "typed-housing-single",
+    ], {
+      cwd: repoRoot,
+      encoding: "utf8",
+    });
+    assert.equal(artifactResult.status, 0, artifactResult.stderr || artifactResult.stdout);
+    const artifactManifest = JSON.parse(artifactResult.stdout);
+    assert.equal(artifactManifest.artifactDir, artifactDir);
+    assert.deepEqual(Object.keys(artifactManifest.artifactPaths).sort(), [
+      "scorecardJson",
+      "scorecardText",
+      "telemetryManifestJson",
+    ]);
+    assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.scorecardJson)), true);
+    assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.scorecardText)), true);
+    assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.telemetryManifestJson)), true);
+    const scorecardArtifact = JSON.parse(fs.readFileSync(
+      path.join(repoRoot, artifactManifest.artifactPaths.scorecardJson),
+      "utf8"
+    ));
+    const telemetryArtifact = JSON.parse(fs.readFileSync(
+      path.join(repoRoot, artifactManifest.artifactPaths.telemetryManifestJson),
+      "utf8"
+    ));
+    assert.deepEqual(scorecardArtifact.selectedCaseNames, ["typed-housing-single"]);
+    assert.equal(telemetryArtifact.source, "cross-mode-benchmark");
+    assert.match(telemetryArtifact.command, /--artifact-dir=artifacts\/tmp-cross-mode-scorecard-artifacts-/);
+    assert.equal(telemetryArtifact.suite.totalRuns, 1);
+    assert.equal(telemetryArtifact.runs[0].caseName, "typed-housing-single");
+    assert.equal(telemetryArtifact.runs[0].mode, "greedy");
+    assert.equal(telemetryArtifact.runs[0].budgetSeconds, 1);
+    assert.equal(telemetryArtifact.runs[0].seed, 7);
+    assert.equal(typeof telemetryArtifact.hardware.captured, "boolean");
+
+    const ablationConflict = childProcess.spawnSync(process.execPath, [
+      cliPath,
+      `--artifact-dir=${artifactDir}`,
+      "--budget-ablation",
+      "--modes=greedy",
+    ], {
+      cwd: repoRoot,
+      encoding: "utf8",
+    });
+    assert.notEqual(ablationConflict.status, 0);
+    assert.match(ablationConflict.stderr, /--artifact-dir cannot be combined with --budget-ablation/);
+
+    const artifactWriterConflict = childProcess.spawnSync(process.execPath, [
+      cliPath,
+      `--artifact-dir=${artifactDir}`,
+      "--product-corpus",
+      `--product-artifact-dir=${artifactDir}-product`,
+    ], {
+      cwd: repoRoot,
+      encoding: "utf8",
+    });
+    assert.notEqual(artifactWriterConflict.status, 0);
+    assert.match(artifactWriterConflict.stderr, /Use only one artifact writer/);
+  } finally {
+    fs.rmSync(absoluteArtifactDir, { recursive: true, force: true });
+    fs.rmSync(`${absoluteArtifactDir}-product`, { recursive: true, force: true });
+  }
+
   const ablations = await runCrossModeBenchmarkBudgetAblations([benchmarkCase], {
     modes: ["auto", "lns"],
     budgetsSeconds: [3],

@@ -290,6 +290,14 @@ Reviewed through 2026-04-30.
 - The product-corpus registry draft includes `telemetry-manifest.json` in its artifact paths, so strict registry dry-runs validate the manifest as part of the evidence bundle.
 - No solver defaults changed; this is measurement infrastructure for explaining future regressions and long quiet benchmark runs.
 
+### 34. Generic Cross-Mode Scorecard Artifact Telemetry
+
+- Added `--artifact-dir` to the cross-mode benchmark CLI for ordinary scorecard artifact runs outside the product registry workflow.
+- Generic scorecard artifact bundles now write `scorecard.json`, `scorecard.txt`, and `telemetry-manifest.json` with command, git, hardware, per-run solver params, timing, status/gap, candidate counts, CP-SAT model-size metadata, and per-stage telemetry where available.
+- Guarded generic artifact writing against `--list`, budget-ablation output, trace-JSONL output, and the product artifact writer so each command has one clear artifact shape.
+- Product-corpus artifact bundles remain the richer evidence path with `evidence-summary.json` and `registry-entry-draft.json`.
+- No solver defaults changed; this expands measurement coverage for normal cross-mode scorecards.
+
 ## Maintenance Watchpoints
 
 - Keep deterministic benchmark seeds stable when changing solver scoring.

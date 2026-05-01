@@ -824,9 +824,11 @@ Road cells are encoded as `"r,c"` strings inside the `Set`.
 ## Project Layout
 
 - [src/index.ts](./src/index.ts): public API
-- [src/packages/runtime/solve.ts](./src/packages/runtime/solve.ts): top-level solver dispatch
-- [src/packages/runtime/optimizerRegistry.ts](./src/packages/runtime/optimizerRegistry.ts): optimizer registry
+- [src/packages/runtime/dispatch/solve.ts](./src/packages/runtime/dispatch/solve.ts): top-level solver dispatch
+- [src/packages/runtime/dispatch/optimizerRegistry.ts](./src/packages/runtime/dispatch/optimizerRegistry.ts): optimizer registry
 - [src/packages/solvers/auto/solver.ts](./src/packages/solvers/auto/solver.ts): staged `auto` orchestration
+- [src/packages/solvers/auto/stagePolicy.ts](./src/packages/solvers/auto/stagePolicy.ts): `auto` stage budgets and policy defaults
+- [src/packages/solvers/auto/terminal.ts](./src/packages/solvers/auto/terminal.ts): `auto` terminal recovery metadata
 - [src/packages/solvers/greedy/solver.ts](./src/packages/solvers/greedy/solver.ts): greedy solver
 - [src/packages/solvers/lns/solver.ts](./src/packages/solvers/lns/solver.ts): LNS solver
 - [src/packages/solvers/cp-sat/solver.ts](./src/packages/solvers/cp-sat/solver.ts): TypeScript bridge for CP-SAT

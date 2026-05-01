@@ -225,6 +225,7 @@ Deliverables:
 
 - Budget ablations over product-shaped corpus.
 - Greedy seed budget, LNS repair budget, CP-SAT reserve, and no-improvement timeout comparisons.
+- Evidence-backed policy changes in `src/packages/solvers/auto/stagePolicy.ts`.
 - Family-level policy recommendations.
 
 Success signal:

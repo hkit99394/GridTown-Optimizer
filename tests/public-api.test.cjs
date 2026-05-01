@@ -58,6 +58,37 @@ function listFiles(dir, predicate) {
   });
 }
 
+function relativeImportToPattern(targetDir, minParentSegments = 1, options = {}) {
+  const parentPrefix = `(?:\\.\\.\\/){${minParentSegments},}`;
+  const prefix = options.includeCurrent ? `(?:\\.\\/|${parentPrefix})` : parentPrefix;
+  const relativeTarget = `${prefix}${targetDir}\\/`;
+  return new RegExp(
+    [
+      `from\\s*["']${relativeTarget}`,
+      `import\\s*["']${relativeTarget}`,
+      `import\\(\\s*["']${relativeTarget}`,
+      `export\\s+[^"']*\\s+from\\s*["']${relativeTarget}`,
+    ].join("|")
+  );
+}
+
+function findRelativeImportOffenders(rootDirs, targetDir, options = {}) {
+  const roots = Array.isArray(rootDirs) ? rootDirs : [rootDirs];
+  const {
+    minParentSegments = 1,
+    includeCurrent = false,
+    relativeBaseDir = roots[0],
+    allowRelativePaths = new Set(),
+  } = options;
+  const importPattern = relativeImportToPattern(targetDir, minParentSegments, { includeCurrent });
+  return roots.flatMap((rootDir) =>
+    listFiles(rootDir, (fileName) => fileName.endsWith(".ts"))
+      .filter((filePath) => !allowRelativePaths.has(path.relative(relativeBaseDir, filePath)))
+      .filter((filePath) => importPattern.test(fs.readFileSync(filePath, "utf8")))
+      .map((filePath) => path.relative(relativeBaseDir, filePath))
+  );
+}
+
 function testInternalTestsUseDedicatedEntrypoints() {
   const legacyEntrypointPattern = /require\(["'](?:\.\.\/)+(?:dist\/index\.js|dist\/benchmarks\/index\.js)["']\)/;
   const offenders = listFiles(__dirname, (fileName) => fileName.endsWith(".cjs"))
@@ -84,17 +115,20 @@ function testBenchmarkToolingUsesBenchmarkApiBoundary() {
 
 function testBenchmarkInternalsAreHiddenBehindBenchmarkApi() {
   const srcDir = path.join(__dirname, "..", "src");
-  const directBenchmarkImportPattern = /(?:from|import)\s+["'](?:\.\/|\.\.\/|\.\.\/\.\.\/)?benchmarks\//;
   const allowedRelativePaths = new Set([
     "benchmarkApi.ts",
     path.join("packages", "benchmarks", "index.ts"),
   ]);
-  const offenders = listFiles(srcDir, (fileName) => fileName.endsWith(".ts"))
-    .filter((filePath) => !allowedRelativePaths.has(path.relative(srcDir, filePath)))
-    .filter((filePath) => !path.relative(srcDir, filePath).startsWith(`benchmarks${path.sep}`))
-    .filter((filePath) => directBenchmarkImportPattern.test(fs.readFileSync(filePath, "utf8")));
+  for (const filePath of listFiles(path.join(srcDir, "benchmarks"), (fileName) => fileName.endsWith(".ts"))) {
+    allowedRelativePaths.add(path.relative(srcDir, filePath));
+  }
+  const offenders = findRelativeImportOffenders(srcDir, "benchmarks", {
+    includeCurrent: true,
+    relativeBaseDir: srcDir,
+    allowRelativePaths: allowedRelativePaths,
+  });
 
-  assert.deepEqual(offenders.map((filePath) => path.relative(srcDir, filePath)), []);
+  assert.deepEqual(offenders, []);
 }
 
 function testLegacyBenchmarkModulesAreCompatibilityWrappers() {
@@ -238,41 +272,29 @@ function testSolverApiUsesCorePackageBoundary() {
 
 function testBenchmarkPackageUsesCorePackageBoundary() {
   const benchmarkPackageDir = path.join(__dirname, "..", "src", "packages", "benchmarks");
-  const directCoreImportPattern = /(?:from|import)\s+["']\.\.\/\.\.\/core\//;
-  const offenders = listFiles(benchmarkPackageDir, (fileName) => fileName.endsWith(".ts"))
-    .filter((filePath) => directCoreImportPattern.test(fs.readFileSync(filePath, "utf8")));
+  const offenders = findRelativeImportOffenders(benchmarkPackageDir, "core", { minParentSegments: 2 });
 
-  assert.deepEqual(offenders.map((filePath) => path.relative(benchmarkPackageDir, filePath)), []);
+  assert.deepEqual(offenders, []);
 }
 
 function testAppsAndToolsUseCorePackageBoundary() {
   const srcDir = path.join(__dirname, "..", "src");
-  const directCoreImportPattern = /(?:from|import)\s+["'](?:\.\.\/|\.\.\/\.\.\/)core\//;
   const offenderRoots = [
     path.join(srcDir, "apps"),
     path.join(srcDir, "tools"),
   ];
-  const offenders = offenderRoots.flatMap((rootDir) =>
-    listFiles(rootDir, (fileName) => fileName.endsWith(".ts"))
-      .filter((filePath) => directCoreImportPattern.test(fs.readFileSync(filePath, "utf8")))
-      .map((filePath) => path.relative(srcDir, filePath))
-  );
+  const offenders = findRelativeImportOffenders(offenderRoots, "core", { relativeBaseDir: srcDir });
 
   assert.deepEqual(offenders, []);
 }
 
 function testRuntimeAndServerUseCorePackageBoundary() {
   const srcDir = path.join(__dirname, "..", "src");
-  const directCoreImportPattern = /(?:from|import)\s+["'](?:\.\.\/|\.\.\/\.\.\/)core\//;
   const offenderRoots = [
     path.join(srcDir, "runtime"),
     path.join(srcDir, "server"),
   ];
-  const offenders = offenderRoots.flatMap((rootDir) =>
-    listFiles(rootDir, (fileName) => fileName.endsWith(".ts"))
-      .filter((filePath) => directCoreImportPattern.test(fs.readFileSync(filePath, "utf8")))
-      .map((filePath) => path.relative(srcDir, filePath))
-  );
+  const offenders = findRelativeImportOffenders(offenderRoots, "core", { relativeBaseDir: srcDir });
 
   assert.deepEqual(offenders, []);
 }
@@ -280,10 +302,10 @@ function testRuntimeAndServerUseCorePackageBoundary() {
 function testSolversUseCorePackageBoundary() {
   const srcDir = path.join(__dirname, "..", "src");
   const solverPackageDir = path.join(srcDir, "packages", "solvers");
-  const legacyCoreImportPattern = /(?:from|import\(|export\s+[^"']*\s+from)\s*["'](?:\.\.\/){3}core\//;
-  const offenders = listFiles(solverPackageDir, (fileName) => fileName.endsWith(".ts"))
-    .filter((filePath) => legacyCoreImportPattern.test(fs.readFileSync(filePath, "utf8")))
-    .map((filePath) => path.relative(srcDir, filePath));
+  const offenders = findRelativeImportOffenders(solverPackageDir, "core", {
+    minParentSegments: 3,
+    relativeBaseDir: srcDir,
+  });
 
   assert.deepEqual(offenders, []);
 }
@@ -291,10 +313,7 @@ function testSolversUseCorePackageBoundary() {
 function testSolverPackageDoesNotImportRuntimePackage() {
   const srcDir = path.join(__dirname, "..", "src");
   const solverPackageDir = path.join(srcDir, "packages", "solvers");
-  const runtimeImportPattern = /(?:from|import\(|export\s+[^"']*\s+from)\s*["'][^"']*\.\.\/runtime\//;
-  const offenders = listFiles(solverPackageDir, (fileName) => fileName.endsWith(".ts"))
-    .filter((filePath) => runtimeImportPattern.test(fs.readFileSync(filePath, "utf8")))
-    .map((filePath) => path.relative(srcDir, filePath));
+  const offenders = findRelativeImportOffenders(solverPackageDir, "runtime", { relativeBaseDir: srcDir });
 
   assert.deepEqual(offenders, []);
 }

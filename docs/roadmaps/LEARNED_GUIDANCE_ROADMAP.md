@@ -428,7 +428,7 @@ Additional gates:
 
 - [src/packages/core/types.ts](../../src/packages/core/types.ts): shared event, trace, and benchmark types
 - [src/packages/core/roads.ts](../../src/packages/core/roads.ts) or a sibling core module: deterministic connectivity-shadow and anchor-reachability opportunity features
-- [src/packages/runtime/solve.ts](../../src/packages/runtime/solve.ts): common solver callback / instrumentation entry point
+- [src/packages/runtime/dispatch/solve.ts](../../src/packages/runtime/dispatch/solve.ts): common solver callback / instrumentation entry point
 - [src/packages/solvers/greedy/solver.ts](../../src/packages/solvers/greedy/solver.ts): greedy trace emission and optional learned service re-ranking hook
 - [src/packages/solvers/lns/solver.ts](../../src/packages/solvers/lns/solver.ts): `LNS` trace emission and optional learned window re-ranking hook
 - [src/packages/solvers/cp-sat/solver.ts](../../src/packages/solvers/cp-sat/solver.ts): benchmark-safe warm-start comparisons and seed-quality reporting

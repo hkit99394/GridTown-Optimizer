@@ -231,6 +231,35 @@ Compatibility wrappers remain at `src/runtime/optimizerRegistry.ts`,
 entrypoints. New code should prefer the canonical package modules above unless
 it is preserving public import compatibility.
 
+### `src/packages/solvers/auto/solver.ts`
+
+Auto stage orchestration.
+
+Owns:
+- `greedy -> LNS -> CP-SAT` stage order
+- incumbent acceptance and weak-cycle stopping
+- sync and background Auto plan execution
+- Auto stage metadata assembly
+
+### `src/packages/solvers/auto/stagePolicy.ts`
+
+Auto budget and option policy.
+
+Owns:
+- Auto option normalization
+- Greedy seed-stage clamps
+- LNS stage budget slicing
+- CP-SAT reserve preservation for Auto cycles
+
+### `src/packages/solvers/auto/terminal.ts`
+
+Auto terminal result recovery.
+
+Owns:
+- terminal stop-reason descriptions
+- recovered active-stage selection
+- final Auto metadata normalization from snapshots and progress logs
+
 ### `src/packages/solvers/lns/neighborhoods.ts`
 
 LNS neighborhood planning.
@@ -284,6 +313,9 @@ When adding a new behavior:
 - If it changes background job lifecycle, status recovery, or concurrency admission, update `src/packages/runtime/jobs/solveJobManager.ts`.
 - If it changes persisted progress-log schema or sample projection, update `src/packages/runtime/jobs/solveProgressLog.ts`.
 - If it changes optimizer dispatch, update `src/packages/runtime/dispatch/optimizerRegistry.ts`.
+- If it changes Auto stage order or incumbent acceptance, update `src/packages/solvers/auto/solver.ts`.
+- If it changes Auto option defaults, Greedy seed clamps, LNS budget slicing, or CP-SAT reserve policy, update `src/packages/solvers/auto/stagePolicy.ts`.
+- If it changes stopped/recovered Auto solution metadata, update `src/packages/solvers/auto/terminal.ts`.
 - If it changes LNS anchor ranking or repair-window escalation, update `src/packages/solvers/lns/neighborhoods.ts`.
 - If it changes how solutions cross process, log, or file boundaries, update `src/packages/core/solutionSerialization.ts`.
 - If it changes benchmark CLI behavior, update the matching implementation in `src/tools/cli`.
@@ -488,17 +520,17 @@ Started on 2026-04-30:
 
 ## Current Follow-Up
 
-Reviewed on 2026-04-28:
-- Git status was clean before this pass.
-- Baseline `npm test` passed before refactoring.
-- Solver roadmap has no active default-changing priority; gated work should wait for new benchmark evidence.
-- Backend route contracts are now split from solver/manual-layout response assembly.
+Reviewed on 2026-05-01:
+- The source-layout migration stages above are complete.
+- Boundary guards now cover the benchmark split, legacy compatibility wrappers,
+  package dependency direction, and the planner-web location.
+- A true npm workspace split remains optional future work if build/test time or
+  package ownership needs it.
 
-The source-layout migration stages above are complete. A true npm workspace
-split remains optional future work if build/test time or package ownership
-needs it.
-
-The next cleanup candidates are the largest still-active hotspots:
+The remaining cleanup candidates should stay benchmark- or behavior-driven
+rather than migration prerequisites:
 - `src/packages/solvers/greedy/solver.ts`: split stable profiling, scratch-state, and local-search helpers only when benchmark evidence justifies the boundary.
 - `apps/planner-web/plannerResults.js`: separate manual-edit command state from rendering/overlay projection.
-- `src/packages/solvers/auto/solver.ts`: isolate stage-budget policy and terminal metadata normalization if the Auto path changes again.
+
+Cleanup completed during this migration pass:
+- `src/packages/solvers/auto/solver.ts`: stage policy and terminal metadata normalization now live in `src/packages/solvers/auto/stagePolicy.ts` and `src/packages/solvers/auto/terminal.ts`.

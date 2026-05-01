@@ -1,9 +1,8 @@
 /**
  * Canonical benchmark package boundary.
  *
- * The implementation modules still live under `src/benchmarks` during the
- * staged migration, but new consumers should depend on this package-shaped
- * entry point.
+ * Legacy modules under `src/benchmarks` are compatibility wrappers that
+ * re-export this package-shaped entry point and its implementation modules.
  */
 
 export * from "./greedy.js";
@@ -12,15 +11,15 @@ export * from "./benchmarkSeeds.js";
 export * from "./cpSat.js";
 export * from "./lns.js";
 export * from "./lnsPressureCases.js";
-export * from "../../benchmarks/crossMode.js";
-export * from "../../benchmarks/crossModeBudgetAblations.js";
-export * from "../../benchmarks/crossModeProductWorkflows.js";
-export * from "../../benchmarks/greedyConnectivityShadowAblations.js";
-export * from "../../benchmarks/greedyConnectivityShadowLabels.js";
-export * from "../../benchmarks/greedyDeterministicAblations.js";
-export * from "../../benchmarks/lnsNeighborhoodAblations.js";
+export * from "./crossMode.js";
+export * from "./crossModeBudgetAblations.js";
+export * from "./crossModeProductWorkflows.js";
+export * from "./greedyConnectivityShadowAblations.js";
+export * from "./greedyConnectivityShadowLabels.js";
+export * from "./greedyDeterministicAblations.js";
+export * from "./lnsNeighborhoodAblations.js";
 export * from "./deterministicAblationGates.js";
-export * from "../../benchmarks/lnsWindowReplayLabels.js";
+export * from "./lnsWindowReplayLabels.js";
 export * from "./lnsReplayLabelReadiness.js";
-export * from "../../benchmarks/learnedRankingLabels.js";
+export * from "./learnedRankingLabels.js";
 export * from "./experimentRegistry.js";

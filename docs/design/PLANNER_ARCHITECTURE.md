@@ -427,6 +427,23 @@ Started on 2026-04-30:
   leaving `src/benchmarks/greedy.ts` as a compatibility wrapper.
 - Moved the LNS benchmark runner to `src/packages/benchmarks/lns.ts`,
   leaving `src/benchmarks/lns.ts` as a compatibility wrapper.
+- Moved the cross-mode benchmark runner to
+  `src/packages/benchmarks/crossMode.ts`, leaving
+  `src/benchmarks/crossMode.ts` as a compatibility wrapper.
+- Moved cross-mode budget ablations and product workflow helpers to
+  `src/packages/benchmarks/crossModeBudgetAblations.ts` and
+  `src/packages/benchmarks/crossModeProductWorkflows.ts`, leaving
+  compatibility wrappers under `src/benchmarks`.
+- Moved Greedy deterministic and LNS neighborhood ablation runners to
+  `src/packages/benchmarks/greedyDeterministicAblations.ts` and
+  `src/packages/benchmarks/lnsNeighborhoodAblations.ts`, leaving
+  compatibility wrappers under `src/benchmarks`.
+- Moved LNS window replay labels, learned ranking labels, and Greedy
+  connectivity-shadow label/ablation helpers to `src/packages/benchmarks`,
+  leaving compatibility wrappers under `src/benchmarks`.
+- Completed the Split Benchmarks First package extraction: `src/benchmarks`
+  now contains only compatibility wrappers, while implementation modules live
+  under `src/packages/benchmarks`.
 
 ## Current Follow-Up
 

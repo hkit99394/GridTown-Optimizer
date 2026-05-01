@@ -276,10 +276,11 @@ Reviewed through 2026-04-30.
 - Added `--product-promotion-matrix` as the safe preset for the long evidence run: `auto`/`greedy`/`lns`/`cp-sat`, budgets `1/5/30/120`, and seeds `7/19/37`.
 - Tightened `protectedHoldout` so filtered slices remain partial; protected holdout now requires all product-corpus cases with expected development/holdout splits, `auto`/`greedy`/`lns`/`cp-sat`, budgets `1/5/30/120`, the exact seed set `7/19/37`, complete scorecard matrix coverage, and required modes inside every required scorecard.
 - Registered initial non-promotion product-corpus evidence as `product-corpus-scorecard-2026-04-30-initial-1s-5s-seed7-v2` under `artifacts/product-corpus/2026-04-30/initial-1s-5s-seed7-v2/`; this proves the artifact/registry path but remains partial because 30s/120s budgets and additional seeds are missing.
-- Captured a promotion-candidate dry-run artifact under `artifacts/product-corpus/2026-04-30/promotion-1s-5s-30s-120s-seeds7-19-37/`; it has `protectedHoldout=true`, 120 scorecards, 480 mode runs, exact seed coverage, and no missing split/mode/budget/scorecard coverage. Registry append is intentionally pending until the artifact bundle is checkpointed.
+- Captured a promotion artifact under `artifacts/product-corpus/2026-04-30/promotion-1s-5s-30s-120s-seeds7-19-37/`; it has `protectedHoldout=true`, 120 scorecards, 480 mode runs, exact seed coverage, and no missing split/mode/budget/scorecard coverage.
+- Appended the promotion evidence to `artifacts/experiments/index.jsonl` on 2026-05-01 as `product-corpus-scorecard-2026-04-30-promotion-1s-5s-30s-120s-seeds7-19-37`, pointing at artifact commit `7ad89dc0a953b981300064c7eb393c2613847aff`.
 - Added product-corpus registry regression coverage and README guidance for split-aware `cases` metadata and workflow-tag `caseFamilies`.
 - Added CP-SAT async/portfolio failure regressions for malformed streamed progress, malformed portfolio-worker progress with backend termination, non-zero child-process diagnostics, blocked process-pool fallback, and `BrokenProcessPool` fallback.
-- No solver defaults changed; promotion-grade product corpus runs still need actual fixed-budget dev/holdout artifacts and appended registry entries.
+- No solver defaults changed; the promotion-grade product corpus is now registered evidence for future solver decisions.
 
 ## Maintenance Watchpoints
 

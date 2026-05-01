@@ -91,15 +91,14 @@ Status vocabulary:
 
 | Rank | Priority | Status | Impact | Summary | Success Signal |
 | --- | --- | --- | ---: | --- | --- |
-| 1 | Product-shaped benchmark corpus | partial | 4.5 | Initial `--product-corpus` cross-mode selector now covers solver smoke, manual-layout replay, expansion-comparison replay, corridor/gate/footprint/service-pressure, anchor-service, and multi-anchor cases with dev/holdout metadata. Artifact writing, registry drafts, strict registry dry-run support, `--product-promotion-matrix`, evidence summaries, per-case metrics, and initial `/api/layout/evaluate` replay metrics are available. A protected-holdout promotion-candidate artifact now exists at `artifacts/product-corpus/2026-04-30/promotion-1s-5s-30s-120s-seeds7-19-37/` with all 120 scorecards and dry-run registry validation; registry append remains pending until the artifact bundle is checkpointed with a truthful artifact commit. | Promotion decisions use fixed-seed dev/holdout corpora with 1s/5s/30s/120s budgets and strict registry entries. |
-| 2 | Solver telemetry manifests | active | 4.0 | Persist stage-level candidate counts, CP-SAT model size, first-feasible time, best-score time, status/gap, operator outcome, wall time, CPU budget, and hardware metadata. | Every benchmark and workflow run can explain where time was spent and why a candidate change did or did not improve. |
-| 3 | Adaptive LNS operator set | active | 4.5 | Add semantic destroy/repair operators beyond fixed rectangles: weak services, residential headroom clusters, service-overlap conflicts, road gates/chokes, frontier congestion, and random exploration windows. | Equal-budget LNS/Auto scorecards improve time-to-best or fixed-budget population without worst-decile regression. |
-| 4 | Auto budget policy retuning | partial | 3.5 | Retune greedy seed, LNS repair, and CP-SAT reserve budgets in `src/packages/solvers/auto/stagePolicy.ts` only after telemetry and benchmark corpus identify a real bottleneck. | New budget policy beats baseline on protected scorecards or reaches equal population faster with CPU cost accounted for. |
-| 5 | CP-SAT async and portfolio failure-mode coverage | partial | 3.5 | Initial regressions cover malformed streamed progress, malformed portfolio-worker progress with backend stop, non-zero child-process diagnostics, and `BrokenProcessPool` thread fallback. Remaining work is deeper cancellation/snapshot and worker-result failure coverage. | Async and portfolio paths fail predictably, preserve incumbents where possible, and do not leave orphan work behind. |
-| 6 | Exact small-window DP repair | gated | 3.0 | Add bitmask/profile-DP repair only for tiny LNS neighborhoods, narrow corridors, and CP-SAT alignment oracles when telemetry shows CP-SAT startup/model overhead dominates. | DP matches exact evaluator results and beats CP-SAT repair wall time on small windows, improving LNS/Auto time-to-best without regressions. |
-| 7 | Service-master decomposition experiment | not-started | 3.5 | Treat service layouts as the master decision, then solve residential packing plus road repair as a subproblem; use no-good cuts or service swaps if useful. | Experimental mode beats Auto on service-overlap or facility-coverage pressure families without invalid layouts. |
-| 8 | LNS replay label scale-up | needs-scale | 3.0 | Use adaptive operator outcomes and replay windows to grow split-protected LNS labels. | Development and holdout splits satisfy usable, non-neutral, and family-balanced label gates before any LNS ranker is trained. |
-| 9 | CPU-first Greedy offline ranker | gated | 2.5 | Use the healthier Greedy label bundle for offline diagnostics only. | A small CPU model beats deterministic, random, and single-feature baselines on protected holdout without leaked case names. |
+| 1 | Solver telemetry manifests | active | 4.0 | Persist stage-level candidate counts, CP-SAT model size, first-feasible time, best-score time, status/gap, operator outcome, wall time, CPU budget, and hardware metadata. Full product-corpus evidence showed long quiet runs, so progress/checkpoint telemetry is now the next priority. | Every benchmark and workflow run can explain where time was spent and why a candidate change did or did not improve. |
+| 2 | Adaptive LNS operator set | active | 4.5 | Add semantic destroy/repair operators beyond fixed rectangles: weak services, residential headroom clusters, service-overlap conflicts, road gates/chokes, frontier congestion, and random exploration windows. | Equal-budget LNS/Auto scorecards improve time-to-best or fixed-budget population without worst-decile regression. |
+| 3 | Auto budget policy retuning | partial | 3.5 | Retune greedy seed, LNS repair, and CP-SAT reserve budgets in `src/packages/solvers/auto/stagePolicy.ts` only after telemetry and benchmark corpus identify a real bottleneck. | New budget policy beats baseline on protected scorecards or reaches equal population faster with CPU cost accounted for. |
+| 4 | CP-SAT async and portfolio failure-mode coverage | partial | 3.5 | Initial regressions cover malformed streamed progress, malformed portfolio-worker progress with backend stop, non-zero child-process diagnostics, and `BrokenProcessPool` thread fallback. Remaining work is deeper cancellation/snapshot and worker-result failure coverage. | Async and portfolio paths fail predictably, preserve incumbents where possible, and do not leave orphan work behind. |
+| 5 | Exact small-window DP repair | gated | 3.0 | Add bitmask/profile-DP repair only for tiny LNS neighborhoods, narrow corridors, and CP-SAT alignment oracles when telemetry shows CP-SAT startup/model overhead dominates. | DP matches exact evaluator results and beats CP-SAT repair wall time on small windows, improving LNS/Auto time-to-best without regressions. |
+| 6 | Service-master decomposition experiment | not-started | 3.5 | Treat service layouts as the master decision, then solve residential packing plus road repair as a subproblem; use no-good cuts or service swaps if useful. | Experimental mode beats Auto on service-overlap or facility-coverage pressure families without invalid layouts. |
+| 7 | LNS replay label scale-up | needs-scale | 3.0 | Use adaptive operator outcomes and replay windows to grow split-protected LNS labels. | Development and holdout splits satisfy usable, non-neutral, and family-balanced label gates before any LNS ranker is trained. |
+| 8 | CPU-first Greedy offline ranker | gated | 2.5 | Use the healthier Greedy label bundle for offline diagnostics only. | A small CPU model beats deterministic, random, and single-feature baselines on protected holdout without leaked case names. |
 
 ## Status Snapshot
 
@@ -109,7 +108,6 @@ Status vocabulary:
 | Deterministic Greedy/LNS ablation gates | delivered | [SOLVER_ABLATION_DECISIONS.md](../decisions/SOLVER_ABLATION_DECISIONS.md), `artifacts/deterministic-ablations/2026-04-27/` | No deterministic variant promoted; regressions remain blocked. |
 | Low-risk learned-ranking label bundle | delivered | `artifacts/learned-ranking-labels/2026-04-27/` | Offline diagnostics only; no model trained and no defaults changed. |
 | LNS replay label coverage | needs-scale | 84 usable replay labels in the 2026-04-27 bundle | Blocks learned LNS window ranking until scale and non-neutral holdout signal improve. |
-| Product-shaped benchmark corpus | partial | `node dist/crossModeBenchmarkCli.js --product-corpus --list` exposes 10 dev/holdout cases with workflow tags; `--product-promotion-matrix` pins the long-run matrix to `auto,greedy,lns,cp-sat`, budgets `1,5,30,120`, and seeds `7,19,37`; `artifacts/product-corpus/2026-04-30/promotion-1s-5s-30s-120s-seeds7-19-37/` has `protectedHoldout=true`, 120 scorecards, exact fixed seeds, and no missing split/mode/budget/scorecard coverage; dry-run registry validation succeeded without appending | Promotion-candidate evidence is captured; checkpoint the artifact bundle and append the strict registry entry before using it for a promotion decision. |
 | Generated pressure-case coverage | partial | [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED.md), item 30 | Useful starting point, but promotion needs broader workflow and adversarial coverage. |
 | CP-SAT portfolio telemetry and CPU-normalized scorecards | delivered | `artifacts/cp-sat-portfolio/2026-04-28/` | Portfolio remains explicit-only; Auto does not route through it. |
 | Experiment registry hardening | delivered | `artifacts/experiments/index.jsonl`; `npm run experiment-registry:check` | Future artifacts can be checked and appended with strict metadata. |
@@ -138,16 +136,15 @@ These are not next actions. Move them into the active table only after the trigg
 
 ## Combined Ordering
 
-1. Run and register the initial product-shaped workflow/adversarial corpus across fixed budgets and seeds using the artifact writer and strict registry draft helper.
-2. Persist stage-level telemetry manifests for solver and workflow runs.
-3. Implement adaptive LNS operators and operator scoring.
-4. Retune Auto budgets from evidence, not by intuition.
-5. Finish CP-SAT async and portfolio cancellation/snapshot and worker-result failure coverage before increasing orchestration complexity.
-6. Add exact small-window DP repair only if telemetry shows a small-repair CP-SAT overhead bottleneck.
-7. Explore service-master decomposition if coverage/service pressure cases justify it.
-8. Scale LNS replay labels from adaptive operator outcomes.
-9. Revisit learned rankers only after offline holdout and equal-budget online gates pass.
-10. Revisit portfolio, GPU, distributed workers, or alternative solvers only after they have a measured bottleneck and CPU-normalized win path.
+1. Persist stage-level telemetry manifests for solver and workflow runs.
+2. Implement adaptive LNS operators and operator scoring.
+3. Retune Auto budgets from evidence, not by intuition.
+4. Finish CP-SAT async and portfolio cancellation/snapshot and worker-result failure coverage before increasing orchestration complexity.
+5. Add exact small-window DP repair only if telemetry shows a small-repair CP-SAT overhead bottleneck.
+6. Explore service-master decomposition if coverage/service pressure cases justify it.
+7. Scale LNS replay labels from adaptive operator outcomes.
+8. Revisit learned rankers only after offline holdout and equal-budget online gates pass.
+9. Revisit portfolio, GPU, distributed workers, or alternative solvers only after they have a measured bottleneck and CPU-normalized win path.
 
 ## Discipline
 

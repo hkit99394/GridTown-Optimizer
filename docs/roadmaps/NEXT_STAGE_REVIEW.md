@@ -152,7 +152,7 @@ Success signal:
 
 Goal: judge solver changes on the real planning loop, not only saturated smoke tests.
 
-Status: partial. The initial selectable corpus, scorecard metadata, evidence-summary projection, artifact writer, strict registry-entry draft path, strict registry dry-run support, a `--product-promotion-matrix` preset, and direct `/api/layout/evaluate` replay metrics are delivered. Initial non-promotion evidence is registered as `product-corpus-scorecard-2026-04-30-initial-1s-5s-seed7-v2` under `artifacts/product-corpus/2026-04-30/initial-1s-5s-seed7-v2/`. A promotion-candidate dry-run artifact now exists under `artifacts/product-corpus/2026-04-30/promotion-1s-5s-30s-120s-seeds7-19-37/` with `protectedHoldout=true`; registry append is still pending until the artifact bundle is checkpointed with a truthful artifact commit.
+Status: delivered. The initial selectable corpus, scorecard metadata, evidence-summary projection, artifact writer, strict registry-entry draft path, strict registry dry-run support, a `--product-promotion-matrix` preset, and direct `/api/layout/evaluate` replay metrics are delivered. Promotion evidence is registered as `product-corpus-scorecard-2026-04-30-promotion-1s-5s-30s-120s-seeds7-19-37` under `artifacts/product-corpus/2026-04-30/promotion-1s-5s-30s-120s-seeds7-19-37/` with `protectedHoldout=true`, 120 scorecards, exact seed coverage, no missing split/mode/budget/scorecard coverage, and artifact commit `7ad89dc0a953b981300064c7eb393c2613847aff`.
 
 Deliverables:
 
@@ -161,7 +161,7 @@ Deliverables:
 - Add manual-layout replay through `/api/layout/evaluate`. Initial reusable-hint replay case and replay metric projection delivered.
 - Add expansion-comparison replay. Initial expansion replay case and replay metric projection delivered; broader expansion-choice lift evidence remains.
 - Add corridor, gate, footprint-pressure, service-pressure, anchor-service, and multi-anchor cases. Initial tagged coverage delivered; service-overlap remains future pressure coverage.
-- Preserve development and protected holdout splits. Initial case-level split metadata and strict registry draft/dry-run checks delivered; filtered runs are marked as partial, `--product-promotion-matrix` pins the required long-run modes/budgets/seeds, direct generated-artifact append is blocked until artifacts are checkpointed, and protected holdout requires full case, expected split, mode, budget, fixed seed, and per-scorecard mode coverage.
+- Preserve development and protected holdout splits. Delivered with case-level split metadata, strict registry draft/dry-run checks, the fixed `--product-promotion-matrix`, checkpointed artifact evidence, and an appended protected-holdout registry entry.
 
 Metrics:
 
@@ -332,15 +332,14 @@ Any default-path solver change must satisfy:
 
 Recommended order:
 
-1. Run and register the initial product-shaped benchmark corpus with the artifact writer and strict registry draft helper.
-2. Add telemetry manifests and strict registry entries for solver/workflow runs.
-3. Implement adaptive LNS operators and operator weighting.
-4. Retune Auto budgets from scorecard evidence.
-5. Finish async and portfolio cancellation/snapshot and worker-result failure coverage before increasing CP-SAT orchestration complexity.
-6. Add exact small-window DP repair only if telemetry shows small-repair CP-SAT overhead or narrow-window bottlenecks.
-7. Explore service-master decomposition if pressure cases justify it.
-8. Scale LNS replay labels from adaptive operator outcomes.
-9. Revisit learned rankers only after offline holdout and online equal-budget gates pass.
-10. Revisit GPU, portfolio, distributed solving, and external solvers only after a measured bottleneck and promotion-grade evidence exist.
+1. Add telemetry manifests and strict registry entries for solver/workflow runs.
+2. Implement adaptive LNS operators and operator weighting.
+3. Retune Auto budgets from scorecard evidence.
+4. Finish async and portfolio cancellation/snapshot and worker-result failure coverage before increasing CP-SAT orchestration complexity.
+5. Add exact small-window DP repair only if telemetry shows small-repair CP-SAT overhead or narrow-window bottlenecks.
+6. Explore service-master decomposition if pressure cases justify it.
+7. Scale LNS replay labels from adaptive operator outcomes.
+8. Revisit learned rankers only after offline holdout and online equal-budget gates pass.
+9. Revisit GPU, portfolio, distributed solving, and external solvers only after a measured bottleneck and promotion-grade evidence exist.
 
 This keeps the project pointed at the real target: higher validated population per wall-clock minute, with fewer speculative detours.

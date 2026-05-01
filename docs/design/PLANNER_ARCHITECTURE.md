@@ -406,6 +406,15 @@ Started on 2026-04-30:
   old `src/benchmarks/index.ts` now remains only as a compatibility wrapper.
 - Moved benchmark seed helpers to `src/packages/benchmarks/benchmarkSeeds.ts`,
   leaving `src/benchmarks/benchmarkSeeds.ts` as a compatibility wrapper.
+- Moved shared benchmark option helpers to
+  `src/packages/benchmarks/benchmarkOptions.ts`, leaving
+  `src/benchmarks/benchmarkOptions.ts` as a compatibility wrapper.
+- Moved generated LNS pressure cases to
+  `src/packages/benchmarks/lnsPressureCases.ts`, leaving
+  `src/benchmarks/lnsPressureCases.ts` as a compatibility wrapper.
+- Moved experiment registry helpers to
+  `src/packages/benchmarks/experimentRegistry.ts`, leaving
+  `src/benchmarks/experimentRegistry.ts` as a compatibility wrapper.
 
 ## Current Follow-Up
 

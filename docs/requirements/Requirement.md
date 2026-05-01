@@ -1,7 +1,7 @@
 Provided a 2D array of integers filled with 0 and 1s, when 1 means the cell is allowed, 0 means the cell is not allowed.
 
 Provided 2 types of buildings:
-1. Service Building: A service building is a building that provides a service to the city. 
+1. Service Building: A service building is a building that provides a service to the city.
 It can be placed on any allowed cell.
 It will increase the Population of the residential buildings in the surrounding cells.
 It takes up a rectangular footprint. Supported examples include 2x2, 2x3, 2x4, 3x3, and more generally nxm when the footprint fits on allowed cells.

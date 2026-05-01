@@ -225,11 +225,10 @@ Owns:
 - optimizer lookup
 - sync/background solver adapter selection
 
-Compatibility wrappers remain at `src/runtime/optimizerRegistry.ts`,
-`src/runtime/solve.ts`, `src/runtime/solveJobManager.ts`,
-`src/runtime/solveProgressLog.ts`, and the old top-level CLI/server
-entrypoints. New code should prefer the canonical package modules above unless
-it is preserving public import compatibility.
+Legacy runtime deep-import wrappers have been removed. The only remaining
+compatibility wrappers are the top-level script entrypoints that preserve
+existing `dist/*.js` command paths. New code should import the canonical package
+modules above or the supported package subpaths.
 
 ### `src/packages/solvers/auto/solver.ts`
 
@@ -433,53 +432,15 @@ Started on 2026-04-30:
 - Moved benchmark, learned-label, and experiment-registry CLI implementations
   from `src/apps` to `src/tools/cli`, leaving top-level compatibility wrappers
   for existing `dist/*Cli.js` paths.
-- Added a source-boundary guard so code outside `src/benchmarks` imports
+- Added a source-boundary guard so code outside the benchmark package imports
   benchmark internals only through `src/benchmarkApi.ts`.
 - Added `src/packages/benchmarks/index.ts` as the canonical benchmark package
   boundary, with `src/benchmarkApi.ts` re-exporting from that package-shaped
   entrypoint.
-- Moved the benchmark export list to `src/packages/benchmarks/index.ts`; the
-  old `src/benchmarks/index.ts` now remains only as a compatibility wrapper.
-- Moved benchmark seed helpers to `src/packages/benchmarks/benchmarkSeeds.ts`,
-  leaving `src/benchmarks/benchmarkSeeds.ts` as a compatibility wrapper.
-- Moved shared benchmark option helpers to
-  `src/packages/benchmarks/benchmarkOptions.ts`, leaving
-  `src/benchmarks/benchmarkOptions.ts` as a compatibility wrapper.
-- Moved generated LNS pressure cases to
-  `src/packages/benchmarks/lnsPressureCases.ts`, leaving
-  `src/benchmarks/lnsPressureCases.ts` as a compatibility wrapper.
-- Moved experiment registry helpers to
-  `src/packages/benchmarks/experimentRegistry.ts`, leaving
-  `src/benchmarks/experimentRegistry.ts` as a compatibility wrapper.
-- Moved LNS replay label readiness helpers to
-  `src/packages/benchmarks/lnsReplayLabelReadiness.ts`, leaving
-  `src/benchmarks/lnsReplayLabelReadiness.ts` as a compatibility wrapper.
-- Moved deterministic ablation gate helpers to
-  `src/packages/benchmarks/deterministicAblationGates.ts`, leaving
-  `src/benchmarks/deterministicAblationGates.ts` as a compatibility wrapper.
-- Moved the CP-SAT benchmark runner to `src/packages/benchmarks/cpSat.ts`,
-  leaving `src/benchmarks/cpSat.ts` as a compatibility wrapper.
-- Moved the Greedy benchmark runner to `src/packages/benchmarks/greedy.ts`,
-  leaving `src/benchmarks/greedy.ts` as a compatibility wrapper.
-- Moved the LNS benchmark runner to `src/packages/benchmarks/lns.ts`,
-  leaving `src/benchmarks/lns.ts` as a compatibility wrapper.
-- Moved the cross-mode benchmark runner to
-  `src/packages/benchmarks/crossMode.ts`, leaving
-  `src/benchmarks/crossMode.ts` as a compatibility wrapper.
-- Moved cross-mode budget ablations and product workflow helpers to
-  `src/packages/benchmarks/crossModeBudgetAblations.ts` and
-  `src/packages/benchmarks/crossModeProductWorkflows.ts`, leaving
-  compatibility wrappers under `src/benchmarks`.
-- Moved Greedy deterministic and LNS neighborhood ablation runners to
-  `src/packages/benchmarks/greedyDeterministicAblations.ts` and
-  `src/packages/benchmarks/lnsNeighborhoodAblations.ts`, leaving
-  compatibility wrappers under `src/benchmarks`.
-- Moved LNS window replay labels, learned ranking labels, and Greedy
-  connectivity-shadow label/ablation helpers to `src/packages/benchmarks`,
-  leaving compatibility wrappers under `src/benchmarks`.
-- Completed the Split Benchmarks First package extraction: `src/benchmarks`
-  now contains only compatibility wrappers, while implementation modules live
-  under `src/packages/benchmarks`.
+- Moved benchmark internals to `src/packages/benchmarks` and removed the
+  legacy `src/benchmarks` deep-import wrapper directory. The supported public
+  benchmark surface is `city-builder/benchmarks`, backed by
+  `src/benchmarkApi.ts`.
 - Started the core extraction phase by adding
   `src/packages/core/index.ts` as the canonical core package boundary and
   routing `src/solverApi.ts` through it.
@@ -489,31 +450,26 @@ Started on 2026-04-30:
 - Routed `src/apps` and `src/tools` core dependencies through
   `src/packages/core/index.ts`, with a public API guard preventing direct
   app/tool imports from legacy `src/core/*` modules.
-- Routed `src/runtime` and `src/server` core dependencies through
-  `src/packages/core/index.ts`, with a public API guard preventing direct
-  runtime/server imports from legacy `src/core/*` modules.
-- Routed solver implementation directories (`src/auto`, `src/cp-sat`,
-  `src/greedy`, and `src/lns`) through `src/packages/core/index.ts`, with a
-  public API guard preventing direct solver imports from legacy `src/core/*`
-  modules.
-- Moved core implementation modules into `src/packages/core`, leaving
-  `src/core` as compatibility wrappers for legacy deep imports.
-- Added public API guards proving legacy `src/core/*` files are compatibility
-  wrappers and preventing the core package from importing upward into other
-  package, app, runtime, server, benchmark, or tool layers.
-- Moved solver implementation modules into `src/packages/solvers`, leaving
-  `src/auto`, `src/cp-sat`, `src/greedy`, and `src/lns` as compatibility
-  wrappers for legacy deep imports.
-- Moved runtime implementation modules into `src/packages/runtime`, leaving
-  `src/runtime` as compatibility wrappers for legacy deep imports.
-- Moved planner server implementation modules into `src/apps/planner-server`,
-  leaving `src/server`, `src/server/http`, and `src/apps/webServer.ts` as
-  compatibility wrappers for legacy entrypoints.
+- Routed runtime, planner-server, and solver implementation dependencies
+  through `src/packages/core/index.ts`, with public API guards preventing direct
+  imports from legacy `src/core/*` modules.
+- Moved core implementation modules into `src/packages/core` and removed the
+  legacy `src/core` deep-import wrapper directory.
+- Added public API guards preventing the core package from importing upward
+  into other package, app, runtime, server, benchmark, or tool layers.
+- Moved solver implementation modules into `src/packages/solvers` and removed
+  the legacy `src/auto`, `src/cp-sat`, `src/greedy`, and `src/lns` deep-import
+  wrapper directories.
+- Moved runtime implementation modules into `src/packages/runtime` and removed
+  the legacy `src/runtime` deep-import wrapper directory.
+- Moved planner server implementation modules into `src/apps/planner-server`
+  and removed the legacy `src/server`, `src/server/http`, and
+  `src/apps/webServer.ts` wrappers.
 - Moved browser planner assets into `apps/planner-web` and pointed the local
   planner server at that static root.
-- Added public API guards proving legacy solver, runtime, and planner-server
-  files are compatibility wrappers, plus a guard that the planner web app lives
-  under `apps/planner-web`.
+- Added public API guards proving legacy deep-import wrapper directories stay
+  removed, while top-level script entry wrappers and the planner web app remain
+  at their supported paths.
 - Completed the public API split: `city-builder` now exposes the solver/domain
   surface, while benchmark, label, and experiment-registry tooling lives behind
   `city-builder/benchmarks`.
@@ -522,8 +478,9 @@ Started on 2026-04-30:
 
 Reviewed on 2026-05-01:
 - The source-layout migration stages above are complete.
-- Boundary guards now cover the benchmark split, legacy compatibility wrappers,
-  package dependency direction, and the planner-web location.
+- Boundary guards now cover the benchmark split, supported script entry
+  wrappers, removed legacy deep-import wrappers, package dependency direction,
+  and the planner-web location.
 - A true npm workspace split remains optional future work if build/test time or
   package ownership needs it.
 

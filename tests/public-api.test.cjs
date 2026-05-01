@@ -51,6 +51,7 @@ function testPackageSubpathsResolveToStableEntrypoints() {
 }
 
 function listFiles(dir, predicate) {
+  if (!fs.existsSync(dir)) return [];
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const entryPath = path.join(dir, entry.name);
     if (entry.isDirectory()) return listFiles(entryPath, predicate);
@@ -131,123 +132,115 @@ function testBenchmarkInternalsAreHiddenBehindBenchmarkApi() {
   assert.deepEqual(offenders, []);
 }
 
-function testLegacyBenchmarkModulesAreCompatibilityWrappers() {
-  const benchmarksDir = path.join(__dirname, "..", "src", "benchmarks");
-  const wrapperExportPattern = /export \* from "\.\.\/packages\/benchmarks\/[^"]+\.js";/;
-  const offenders = listFiles(benchmarksDir, (fileName) => fileName.endsWith(".ts"))
-    .filter((filePath) => !wrapperExportPattern.test(fs.readFileSync(filePath, "utf8")));
-
-  assert.deepEqual(offenders.map((filePath) => path.relative(benchmarksDir, filePath)), []);
-}
-
-function testLegacyCoreModulesAreCompatibilityWrappers() {
-  const coreDir = path.join(__dirname, "..", "src", "core");
-  const offenders = listFiles(coreDir, (fileName) => fileName.endsWith(".ts"))
-    .filter((filePath) => {
-      const moduleName = path.basename(filePath, ".ts");
-      const expected = `export * from "../packages/core/${moduleName}.js";`;
-      return fs.readFileSync(filePath, "utf8").trim() !== expected;
-    });
-
-  assert.deepEqual(offenders.map((filePath) => path.relative(coreDir, filePath)), []);
-}
-
-function testLegacySolverModulesAreCompatibilityWrappers() {
-  const srcDir = path.join(__dirname, "..", "src");
-  const legacySolverDirs = ["auto", "cp-sat", "greedy", "lns"];
-  const expectedWrappers = new Map([
-    [
-      "auto/solver.ts",
-      [
-        `export * from "../packages/solvers/auto/solver.js";`,
-        `export { startAutoSolve } from "../packages/runtime/index.js";`,
-        `export type { AutoSolveHandle } from "../packages/runtime/index.js";`,
-      ].join("\n"),
-    ],
-    [
-      "cp-sat/solver.ts",
-      [
-        `export * from "../packages/solvers/cp-sat/solver.js";`,
-        `export { startCpSatSolve } from "../packages/runtime/index.js";`,
-        `export type { CpSatSolveHandle } from "../packages/runtime/index.js";`,
-      ].join("\n"),
-    ],
-    [
-      "greedy/bridge.ts",
-      [
-        `export { startGreedySolve } from "../packages/runtime/index.js";`,
-        `export type { GreedySolveHandle } from "../packages/runtime/index.js";`,
-      ].join("\n"),
-    ],
-    ["greedy/worker.ts", `import "../packages/runtime/background/greedyWorker.js";`],
-    [
-      "lns/bridge.ts",
-      [
-        `export { startLnsSolve } from "../packages/runtime/index.js";`,
-        `export type { LnsSolveHandle } from "../packages/runtime/index.js";`,
-      ].join("\n"),
-    ],
-    ["lns/worker.ts", `import "../packages/runtime/background/lnsWorker.js";`],
-  ]);
-  const offenders = legacySolverDirs.flatMap((solverDir) =>
-    listFiles(path.join(srcDir, solverDir), (fileName) => fileName.endsWith(".ts"))
-      .filter((filePath) => {
-        const moduleName = path.basename(filePath, ".ts");
-        const relativePath = path.relative(srcDir, filePath);
-        const expected = expectedWrappers.get(relativePath)
-          ?? `export * from "../packages/solvers/${solverDir}/${moduleName}.js";`;
-        return fs.readFileSync(filePath, "utf8").trim() !== expected;
-      })
-      .map((filePath) => path.relative(srcDir, filePath))
-  );
-
-  assert.deepEqual(offenders, []);
-}
-
-function testLegacyRuntimeModulesAreCompatibilityWrappers() {
-  const srcDir = path.join(__dirname, "..", "src");
-  const runtimeDir = path.join(srcDir, "runtime");
-  const expectedWrappers = new Map([
-    ["runtime/index.ts", `export * from "../packages/runtime/index.js";`],
-    ["runtime/backgroundSolverRunner.ts", `export * from "../packages/runtime/background/runner.js";`],
-    ["runtime/optimizerRegistry.ts", `export * from "../packages/runtime/dispatch/optimizerRegistry.js";`],
-    ["runtime/solve.ts", `export * from "../packages/runtime/dispatch/solve.js";`],
-    ["runtime/solveJobManager.ts", `export * from "../packages/runtime/jobs/solveJobManager.js";`],
-    ["runtime/solveProgressLog.ts", `export * from "../packages/runtime/jobs/solveProgressLog.js";`],
-  ]);
-  for (const area of ["background", "dispatch", "jobs"]) {
-    for (const filePath of listFiles(path.join(runtimeDir, area), (fileName) => fileName.endsWith(".ts"))) {
-      const moduleName = path.basename(filePath, ".ts");
-      const relativePath = path.relative(srcDir, filePath);
-      expectedWrappers.set(relativePath, `export * from "../../packages/runtime/${area}/${moduleName}.js";`);
-    }
-  }
-
-  const offenders = listFiles(runtimeDir, (fileName) => fileName.endsWith(".ts"))
-    .map((filePath) => path.relative(srcDir, filePath))
-    .filter((relativePath) => fs.readFileSync(path.join(srcDir, relativePath), "utf8").trim() !== expectedWrappers.get(relativePath));
-
-  assert.deepEqual(offenders, []);
-}
-
-function testLegacyPlannerServerModulesAreCompatibilityWrappers() {
+function testScriptEntrypointWrappersRemain() {
   const srcDir = path.join(__dirname, "..", "src");
   const expectedWrappers = new Map([
-    ["apps/webServer.ts", `import "./planner-server/webServer.js";`],
-    ["server/index.ts", `export * from "../apps/planner-server/index.js";`],
+    [
+      "cli.ts",
+      [
+        "/**",
+        " * CLI entry point compatibility wrapper.",
+        " */",
+        "",
+        `import "./apps/cli.js";`,
+      ].join("\n"),
+    ],
+    [
+      "webServer.ts",
+      [
+        "/**",
+        " * Web server entry point compatibility wrapper.",
+        " */",
+        "",
+        `import "./apps/planner-server/webServer.js";`,
+      ].join("\n"),
+    ],
+    [
+      "greedyBenchmarkCli.ts",
+      [
+        "/**",
+        " * Greedy benchmark CLI compatibility wrapper.",
+        " */",
+        "",
+        `import "./tools/cli/greedyBenchmarkCli.js";`,
+      ].join("\n"),
+    ],
+    [
+      "cpSatBenchmarkCli.ts",
+      [
+        "/**",
+        " * CP-SAT benchmark CLI compatibility wrapper.",
+        " */",
+        "",
+        `import "./tools/cli/cpSatBenchmarkCli.js";`,
+      ].join("\n"),
+    ],
+    [
+      "lnsBenchmarkCli.ts",
+      [
+        "/**",
+        " * LNS benchmark CLI compatibility wrapper.",
+        " */",
+        "",
+        `import "./tools/cli/lnsBenchmarkCli.js";`,
+      ].join("\n"),
+    ],
+    [
+      "crossModeBenchmarkCli.ts",
+      [
+        "/**",
+        " * Cross-mode benchmark scorecard CLI compatibility wrapper.",
+        " */",
+        "",
+        `import "./tools/cli/crossModeBenchmarkCli.js";`,
+      ].join("\n"),
+    ],
+    [
+      "learnedRankingLabelCli.ts",
+      [
+        "/**",
+        " * Learned-ranking label CLI compatibility wrapper.",
+        " */",
+        "",
+        `import "./tools/cli/learnedRankingLabelCli.js";`,
+      ].join("\n"),
+    ],
+    [
+      "experimentRegistryCli.ts",
+      [
+        "/**",
+        " * Experiment registry CLI compatibility wrapper.",
+        " */",
+        "",
+        `import "./tools/cli/experimentRegistryCli.js";`,
+      ].join("\n"),
+    ],
   ]);
-  const serverHttpDir = path.join(srcDir, "server", "http");
-  for (const filePath of listFiles(serverHttpDir, (fileName) => fileName.endsWith(".ts"))) {
-    const moduleName = path.basename(filePath, ".ts");
-    const relativePath = path.relative(srcDir, filePath);
-    expectedWrappers.set(relativePath, `export * from "../../apps/planner-server/http/${moduleName}.js";`);
-  }
 
   const offenders = [...expectedWrappers]
     .filter(([relativePath, expected]) => fs.readFileSync(path.join(srcDir, relativePath), "utf8").trim() !== expected)
     .map(([relativePath]) => relativePath);
 
   assert.deepEqual(offenders, []);
+}
+
+function testLegacyDeepImportWrappersAreRemoved() {
+  const srcDir = path.join(__dirname, "..", "src");
+  const legacyPaths = [
+    "auto",
+    "benchmarks",
+    "core",
+    "cp-sat",
+    "greedy",
+    "lns",
+    "runtime",
+    "server",
+    path.join("apps", "webServer.ts"),
+  ];
+  const existingPaths = legacyPaths
+    .filter((relativePath) => fs.existsSync(path.join(srcDir, relativePath)));
+
+  assert.deepEqual(existingPaths, []);
 }
 
 function testPlannerWebLivesInAppFolder() {
@@ -291,10 +284,13 @@ function testAppsAndToolsUseCorePackageBoundary() {
 function testRuntimeAndServerUseCorePackageBoundary() {
   const srcDir = path.join(__dirname, "..", "src");
   const offenderRoots = [
-    path.join(srcDir, "runtime"),
-    path.join(srcDir, "server"),
+    path.join(srcDir, "packages", "runtime"),
+    path.join(srcDir, "apps", "planner-server"),
   ];
-  const offenders = findRelativeImportOffenders(offenderRoots, "core", { relativeBaseDir: srcDir });
+  const offenders = findRelativeImportOffenders(offenderRoots, "core", {
+    minParentSegments: 3,
+    relativeBaseDir: srcDir,
+  });
 
   assert.deepEqual(offenders, []);
 }
@@ -326,11 +322,8 @@ testPackageSubpathsResolveToStableEntrypoints();
 testInternalTestsUseDedicatedEntrypoints();
 testBenchmarkToolingUsesBenchmarkApiBoundary();
 testBenchmarkInternalsAreHiddenBehindBenchmarkApi();
-testLegacyBenchmarkModulesAreCompatibilityWrappers();
-testLegacyCoreModulesAreCompatibilityWrappers();
-testLegacySolverModulesAreCompatibilityWrappers();
-testLegacyRuntimeModulesAreCompatibilityWrappers();
-testLegacyPlannerServerModulesAreCompatibilityWrappers();
+testScriptEntrypointWrappersRemain();
+testLegacyDeepImportWrappersAreRemoved();
 testPlannerWebLivesInAppFolder();
 testCorePackageDoesNotImportOutsidePackage();
 testSolverApiUsesCorePackageBoundary();

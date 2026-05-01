@@ -1,8 +1,8 @@
 /**
  * Canonical benchmark package boundary.
  *
- * Legacy modules under `src/benchmarks` are compatibility wrappers that
- * re-export this package-shaped entry point and its implementation modules.
+ * Public consumers should use `city-builder/benchmarks`; internal callers
+ * should import through this package-shaped boundary.
  */
 
 export * from "./greedy.js";

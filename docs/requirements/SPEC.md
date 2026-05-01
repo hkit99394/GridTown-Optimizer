@@ -69,21 +69,21 @@ Maximization problem: choose a feasible placement of roads and buildings so that
 
 A solution is **feasible** iff all of the following hold.
 
-1. **Allowed cells**  
+1. **Allowed cells**
    Every road and every cell of every building footprint lies on an allowed cell (`G[r][c] = 1`).
 
-2. **Disjoint placement**  
+2. **Disjoint placement**
    No two buildings overlap (no cell belongs to more than one building). Roads may share cells with each other but **not** with building footprints (buildings and roads are disjoint).
 
-3. **Road connectivity**  
+3. **Road connectivity**
    - Road cells may form multiple connected components (orthogonal moves only).
    - Every road component has at least one road cell with row index `r = 0` or column index `c = 0`.
 
-4. **Building–road connectivity**  
+4. **Building–road connectivity**
    Every building must be **connected to a road-anchor-connected road component**: for each building, at least one cell of its footprint is **orthogonally adjacent** to some road cell.
    Buildings whose footprint covers row index `r = 0` or column index `c = 0` are treated as connected to the road anchor automatically.
 
-5. **No overlap with buildings**  
+5. **No overlap with buildings**
    Roads may be placed on allowed cells that are not part of any building; building footprints do not overlap with each other or with roads.
 
 ---
@@ -94,7 +94,7 @@ A solution is **feasible** iff all of the following hold.
 - **Output:** A feasible placement of:
   - a set of **road** cells,
   - a set of **service** buildings (each with its own rectangle size, population increase, and effect range),
-  - a set of **residential** buildings (each with its own rectangular footprint and population bounds),  
+  - a set of **residential** buildings (each with its own rectangular footprint and population bounds),
   such that **total city population** is **maximized**.
 
 - **Total city population** = sum over all residential buildings of (min(base + sum of service bonuses from services that boost it, max population)).

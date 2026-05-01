@@ -1,4 +1,5 @@
 import type {
+  Grid,
   GreedyProfileCounters,
   ResidentialCandidate,
   ResidentialPlacement,
@@ -58,7 +59,7 @@ export interface GreedyPrecomputedIndexes {
 }
 
 export interface GreedySolveContext {
-  grid: import("../../core/index.js").Grid;
+  grid: Grid;
   params: SolverParams;
   serviceOrder: ServiceCandidate[];
   residentialScoringGroups: ResidentialScoringGroup[];
@@ -130,7 +131,7 @@ export type GreedyForcedServiceEvaluator = (
 ) => Solution | null;
 
 export interface ResidentialLocalSearchState {
-  grid: import("../../core/index.js").Grid;
+  grid: Grid;
   roads: Set<string>;
   occupied: Set<string>;
   services: ServicePlacement[];

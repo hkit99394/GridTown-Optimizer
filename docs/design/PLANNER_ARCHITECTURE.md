@@ -444,6 +444,10 @@ Started on 2026-04-30:
 - Completed the Split Benchmarks First package extraction: `src/benchmarks`
   now contains only compatibility wrappers, while implementation modules live
   under `src/packages/benchmarks`.
+- Started the core extraction phase by adding
+  `src/packages/core/index.ts` as the canonical core package boundary and
+  routing `src/solverApi.ts` through it. Core implementations still live under
+  `src/core` while consumers migrate.
 
 ## Current Follow-Up
 

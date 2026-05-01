@@ -845,8 +845,8 @@ Road cells are encoded as `"r,c"` strings inside the `Set`.
 - [src/server/http/contracts.ts](./src/server/http/contracts.ts): shared HTTP payload contracts
 - [src/server/http/solutionResponse.ts](./src/server/http/solutionResponse.ts): solve and manual-layout HTTP response shaping
 - [src/server/http/static.ts](./src/server/http/static.ts): local planner static asset serving
-- [src/benchmarks/greedy.ts](./src/benchmarks/greedy.ts): fixed greedy benchmark corpus and harness
-- [src/benchmarks/cpSat.ts](./src/benchmarks/cpSat.ts): fixed CP-SAT benchmark corpus and harness
+- [src/packages/benchmarks/greedy.ts](./src/packages/benchmarks/greedy.ts): fixed greedy benchmark corpus and harness
+- [src/packages/benchmarks/cpSat.ts](./src/packages/benchmarks/cpSat.ts): fixed CP-SAT benchmark corpus and harness
 - [web/](./web): planner UI modules
 - [src/core/evaluator.ts](./src/core/evaluator.ts): validation and exact scoring
 - [src/core/map.ts](./src/core/map.ts): ASCII rendering and map-aware validation

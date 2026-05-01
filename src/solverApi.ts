@@ -32,8 +32,8 @@ export {
   validateLayoutConstraints,
   validateSolution,
   validateSolutionMap,
-} from "./core/index.js";
-export { CP_SAT_PORTFOLIO_CAPABILITY_LIMITS, OMITTED_SOLVER_OPTIMIZER, RECOMMENDED_INTERACTIVE_OPTIMIZER } from "./core/index.js";
+} from "./packages/core/index.js";
+export { CP_SAT_PORTFOLIO_CAPABILITY_LIMITS, OMITTED_SOLVER_OPTIMIZER, RECOMMENDED_INTERACTIVE_OPTIMIZER } from "./packages/core/index.js";
 export { getOptimizerAdapter, listOptimizerAdapters, resolveOptimizerName } from "./runtime/optimizerRegistry.js";
 
 export type {
@@ -122,4 +122,4 @@ export type {
   CpSatContinuationCheckpoint,
   SavedLayoutRecord,
   SolutionMapValidationResult,
-} from "./core/index.js";
+} from "./packages/core/index.js";

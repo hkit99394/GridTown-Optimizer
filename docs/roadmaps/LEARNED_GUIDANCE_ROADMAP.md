@@ -435,7 +435,7 @@ Additional gates:
 
 ### Benchmarking and research support
 
-- add a generic optimizer benchmark module next to [src/benchmarks/greedy.ts](../../src/benchmarks/greedy.ts) and [src/benchmarks/cpSat.ts](../../src/benchmarks/cpSat.ts)
+- add a generic optimizer benchmark module next to [src/packages/benchmarks/greedy.ts](../../src/packages/benchmarks/greedy.ts) and [src/packages/benchmarks/cpSat.ts](../../src/packages/benchmarks/cpSat.ts)
 - keep model-training code out of the main app path, for example under `python/ml/`
 - keep persisted traces as plain JSONL to stay easy to inspect and replay
 

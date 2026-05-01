@@ -105,6 +105,12 @@ function testLegacyBenchmarkModulesAreCompatibilityWrappers() {
   assert.deepEqual(offenders.map((filePath) => path.relative(benchmarksDir, filePath)), []);
 }
 
+function testSolverApiUsesCorePackageBoundary() {
+  const solverApiSource = fs.readFileSync(path.join(__dirname, "..", "src", "solverApi.ts"), "utf8");
+  assert.equal(solverApiSource.includes("./core/index.js"), false);
+  assert.equal(solverApiSource.includes("./packages/core/index.js"), true);
+}
+
 testSolverApiExposesDomainAndSolverSurface();
 testSolverApiDoesNotExposeBenchmarkSurface();
 testBenchmarkApiExposesBenchmarkSurface();
@@ -114,3 +120,4 @@ testInternalTestsUseDedicatedEntrypoints();
 testBenchmarkToolingUsesBenchmarkApiBoundary();
 testBenchmarkInternalsAreHiddenBehindBenchmarkApi();
 testLegacyBenchmarkModulesAreCompatibilityWrappers();
+testSolverApiUsesCorePackageBoundary();

@@ -90,6 +90,29 @@ function findRelativeImportOffenders(rootDirs, targetDir, options = {}) {
   );
 }
 
+function isPathWithin(childPath, parentPath) {
+  const relativePath = path.relative(parentPath, childPath);
+  return relativePath === "" || (!relativePath.startsWith("..") && !path.isAbsolute(relativePath));
+}
+
+function resolveSourceImport(filePath, specifier) {
+  if (!specifier.startsWith(".")) return null;
+  const sourceSpecifier = specifier.endsWith(".js")
+    ? `${specifier.slice(0, -".js".length)}.ts`
+    : specifier;
+  return path.resolve(path.dirname(filePath), sourceSpecifier);
+}
+
+function findRelativeImportSpecifiers(source) {
+  const importPattern = /(?:from\s*["']([^"']+)["']|import\s*\(\s*["']([^"']+)["']|import\s*["']([^"']+)["'])/g;
+  const specifiers = [];
+  let match;
+  while ((match = importPattern.exec(source)) !== null) {
+    specifiers.push(match[1] ?? match[2] ?? match[3]);
+  }
+  return specifiers;
+}
+
 function testInternalTestsUseDedicatedEntrypoints() {
   const legacyEntrypointPattern = /require\(["'](?:\.\.\/)+(?:dist\/index\.js|dist\/benchmarks\/index\.js)["']\)/;
   const offenders = listFiles(__dirname, (fileName) => fileName.endsWith(".cjs"))
@@ -116,18 +139,20 @@ function testBenchmarkToolingUsesBenchmarkApiBoundary() {
 
 function testBenchmarkInternalsAreHiddenBehindBenchmarkApi() {
   const srcDir = path.join(__dirname, "..", "src");
-  const allowedRelativePaths = new Set([
-    "benchmarkApi.ts",
-    path.join("packages", "benchmarks", "index.ts"),
-  ]);
-  for (const filePath of listFiles(path.join(srcDir, "benchmarks"), (fileName) => fileName.endsWith(".ts"))) {
-    allowedRelativePaths.add(path.relative(srcDir, filePath));
-  }
-  const offenders = findRelativeImportOffenders(srcDir, "benchmarks", {
-    includeCurrent: true,
-    relativeBaseDir: srcDir,
-    allowRelativePaths: allowedRelativePaths,
-  });
+  const benchmarkPackageDir = path.join(srcDir, "packages", "benchmarks");
+  const benchmarkApiPath = path.join(srcDir, "benchmarkApi.ts");
+  const offenders = listFiles(srcDir, (fileName) => fileName.endsWith(".ts"))
+    .filter((filePath) => filePath !== benchmarkApiPath)
+    .filter((filePath) => !isPathWithin(filePath, benchmarkPackageDir))
+    .flatMap((filePath) => {
+      const importTargets = findRelativeImportSpecifiers(fs.readFileSync(filePath, "utf8"))
+        .map((specifier) => resolveSourceImport(filePath, specifier))
+        .filter((targetPath) => targetPath && isPathWithin(targetPath, benchmarkPackageDir));
+      return importTargets.map((targetPath) => ({
+        importer: path.relative(srcDir, filePath),
+        target: path.relative(srcDir, targetPath),
+      }));
+    });
 
   assert.deepEqual(offenders, []);
 }

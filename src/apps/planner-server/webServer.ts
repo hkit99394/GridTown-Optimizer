@@ -7,16 +7,18 @@ import { resolve } from "node:path";
 
 import { SolveJobManager } from "../../packages/runtime/index.js";
 import { createPlannerRequestHandler } from "./index.js";
+import {
+  DEFAULT_MAX_RUNNING_SOLVES,
+  parseLocalServerPort,
+  parsePositiveIntegerConfig,
+} from "./serverConfig.js";
 
-const PORT = Number(process.env.PORT ?? 4173);
+const PORT = parseLocalServerPort(process.env.PORT);
 const HOST = process.env.HOST?.trim() || "127.0.0.1";
 const PROJECT_ROOT = resolve(__dirname, "../../..");
 const WEB_ROOT = resolve(PROJECT_ROOT, "apps", "planner-web");
 const PROGRESS_LOG_ROOT = resolve(PROJECT_ROOT, "artifacts", "solve-progress");
-const REQUESTED_MAX_RUNNING_SOLVES = Number(process.env.MAX_RUNNING_SOLVES ?? 1);
-const MAX_RUNNING_SOLVES = Number.isFinite(REQUESTED_MAX_RUNNING_SOLVES)
-  ? Math.max(1, Math.floor(REQUESTED_MAX_RUNNING_SOLVES))
-  : 1;
+const MAX_RUNNING_SOLVES = parsePositiveIntegerConfig(process.env.MAX_RUNNING_SOLVES, DEFAULT_MAX_RUNNING_SOLVES);
 
 const server = createServer(createPlannerRequestHandler({
   webRoot: WEB_ROOT,

@@ -1,10 +1,3 @@
-const { runOptimizerTestGroup } = require("../optimizerHarness.cjs");
+const { runOptimizerGroupCli } = require("./runGroup.cjs");
 
-runOptimizerTestGroup("benchmarks")
-  .then(() => {
-    console.log("Optimizer benchmarks tests passed.");
-  })
-  .catch((error) => {
-    console.error(error);
-    process.exitCode = 1;
-  });
+runOptimizerGroupCli("benchmarks", "Optimizer benchmarks tests passed.");

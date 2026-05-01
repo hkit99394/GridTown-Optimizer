@@ -145,8 +145,18 @@ function loadPlannerShellModule() {
   return loadBrowserModule("../apps/planner-web/plannerShell.js").CityBuilderShell;
 }
 
+function loadPlannerHeatmapsModule() {
+  return loadBrowserModule("../apps/planner-web/plannerHeatmaps.js").PlannerHeatmaps;
+}
+
 function loadPlannerResultsModule(options = {}) {
-  return loadBrowserModule("../apps/planner-web/plannerResults.js", options).CityBuilderResults;
+  return loadBrowserModule("../apps/planner-web/plannerResults.js", {
+    ...options,
+    window: {
+      PlannerHeatmaps: loadPlannerHeatmapsModule(),
+      ...(options.window ?? {}),
+    },
+  }).CityBuilderResults;
 }
 
 function loadPlannerPersistenceModule(localStorage = undefined) {

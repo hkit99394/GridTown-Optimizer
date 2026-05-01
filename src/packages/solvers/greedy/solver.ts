@@ -216,6 +216,25 @@ type GreedyExistingCapRefiner = (
   restartBudget: number,
   allowAnchorRefinement: boolean
 ) => Solution | null;
+interface ResidentialLocalSearchState {
+  grid: Grid;
+  roads: Set<string>;
+  occupied: Set<string>;
+  services: ServicePlacement[];
+  residentials: ResidentialPlacement[];
+  residentialTypeIndices: number[];
+  populations: number[];
+  totalPopulation: number;
+  residentialCandidates: ResidentialPlacement[] | ResidentialCandidate[];
+  residentialPopulationCache: number[];
+  params: SolverParams;
+  remainingAvail: number[] | null;
+  maxResidentials: number | undefined;
+  profileCounters?: GreedyProfileCounters;
+  recordRoadOpportunity?: RoadOpportunityRecorder;
+  maybeStop?: () => void;
+  explicitRoadProbeScratch?: ReturnType<typeof createRoadProbeScratch>;
+}
 type ServiceRelocationMove = {
   kind: "remove" | "add" | "swap";
   serviceIndex: number;
@@ -868,6 +887,22 @@ type ServiceLookaheadEvaluation = {
   refillScore: number;
 };
 
+interface ServiceLookaheadEvaluatorState {
+  grid: Grid;
+  params: SolverParams;
+  roads: Set<string>;
+  occupied: Set<string>;
+  effectZones: Set<string>[];
+  serviceBonuses: number[];
+  maxResidentials: number | undefined;
+  useTypes: boolean;
+  remainingAvail: number[] | null;
+  anyResidentialCandidates: ResidentialCandidatesList;
+  precomputedIndexes: GreedyPrecomputedIndexes;
+  profileCounters?: GreedyProfileCounters;
+  maybeStop?: MaybeStop;
+}
+
 const ROAD_OPPORTUNITY_COUNTERFACTUAL_POOL_LIMIT = ROAD_OPPORTUNITY_COUNTERFACTUAL_TRACE_LIMIT * 4;
 
 type RoadOpportunityCandidatePoolEntry<TCandidate> = {
@@ -1144,70 +1179,26 @@ function getCachedServiceFootprintKeys(
   return precomputedIndex >= 0 ? precomputedIndexes.serviceFootprintKeysByCandidate[precomputedIndex] : undefined;
 }
 
-function solveOne(
-  context: GreedySolveContext,
-  options: SolveOneOptions
-): Solution | null {
-  const {
-    grid: G,
-    params,
-    serviceOrder,
-    residentialScoringGroups,
-    serviceCoverageGroupsByKey,
-    anyResidentialCandidates,
-    residentialCandidatesForLocal,
-    precomputedIndexes,
-    maxResidentials,
-    useServiceTypes,
-    useTypes,
-    localSearch,
-    serviceLookaheadCandidates,
-    recordProfilePhase,
-    recordConnectivityShadowDecision,
-    recordRoadOpportunity,
-    maybeStop,
-  } = context;
-  const {
-    maxServices,
-    initialRoadSeed,
-    fixedServices,
-    profileCounters,
-  } = options;
-  const attemptState = new GreedyAttemptState(
-    G,
-    initialRoadSeed,
-    (params.greedy?.deferRoadCommitment ?? false) && !fixedServices,
-    profileCounters
-  );
-  const { roads, occupied, useDeferredRoadCommitment } = attemptState;
-  const { explicitRoadProbeScratch } = attemptState;
-  const lookaheadRoadProbeScratch = createRoadProbeScratch(G);
-  const remainingServiceAvail = useServiceTypes ? params.serviceTypes!.map((t) => t.avail) : null;
-  const remainingAvail = useTypes ? params.residentialTypes!.map((t) => t.avail) : null;
-  const densityTieBreaker = Boolean(params.greedy?.densityTieBreaker);
-  const densityTieBreakerToleranceRatio =
-    densityTieBreaker && typeof params.greedy?.densityTieBreakerTolerancePercent === "number"
-      ? Math.max(0, params.greedy.densityTieBreakerTolerancePercent) / 100
-      : (densityTieBreaker ? 0.02 : 0);
-  const connectivityShadowScoring = Boolean(params.greedy?.connectivityShadowScoring);
-
-  const services: ServicePlacement[] = [];
-  const serviceTypeIndices: number[] = [];
-  const serviceBonuses: number[] = [];
-  const effectZones: Set<string>[] = [];
-  const currentResidentialGroupBoosts = Array.from({ length: residentialScoringGroups.length }, () => 0);
-  const serviceSource = fixedServices ?? serviceOrder;
-  const probeRoadConnection = (
-    snapshotOccupied: Set<string>,
-    r: number,
-    c: number,
-    rows: number,
-    cols: number
-  ): ConnectivityProbe | null =>
-    attemptState.probeRoadConnection(snapshotOccupied, { r, c, rows, cols });
-  const evaluateServiceLookahead = (
-    entry: ServiceLookaheadCandidate
-  ): ServiceLookaheadEvaluation => {
+function createServiceLookaheadEvaluator(
+  state: ServiceLookaheadEvaluatorState
+): (entry: ServiceLookaheadCandidate) => ServiceLookaheadEvaluation {
+  const lookaheadRoadProbeScratch = createRoadProbeScratch(state.grid);
+  return (entry) => {
+    const {
+      grid: G,
+      params,
+      roads,
+      occupied,
+      effectZones,
+      serviceBonuses,
+      maxResidentials,
+      useTypes,
+      remainingAvail,
+      anyResidentialCandidates,
+      precomputedIndexes,
+      profileCounters,
+      maybeStop,
+    } = state;
     if (entry.probe.kind !== "explicit") {
       return {
         totalScore: entry.score,
@@ -1319,6 +1310,83 @@ function solveOne(
       refillScore,
     };
   };
+}
+
+function solveOne(
+  context: GreedySolveContext,
+  options: SolveOneOptions
+): Solution | null {
+  const {
+    grid: G,
+    params,
+    serviceOrder,
+    residentialScoringGroups,
+    serviceCoverageGroupsByKey,
+    anyResidentialCandidates,
+    residentialCandidatesForLocal,
+    precomputedIndexes,
+    maxResidentials,
+    useServiceTypes,
+    useTypes,
+    localSearch,
+    serviceLookaheadCandidates,
+    recordProfilePhase,
+    recordConnectivityShadowDecision,
+    recordRoadOpportunity,
+    maybeStop,
+  } = context;
+  const {
+    maxServices,
+    initialRoadSeed,
+    fixedServices,
+    profileCounters,
+  } = options;
+  const attemptState = new GreedyAttemptState(
+    G,
+    initialRoadSeed,
+    (params.greedy?.deferRoadCommitment ?? false) && !fixedServices,
+    profileCounters
+  );
+  const { roads, occupied, useDeferredRoadCommitment } = attemptState;
+  const { explicitRoadProbeScratch } = attemptState;
+  const remainingServiceAvail = useServiceTypes ? params.serviceTypes!.map((t) => t.avail) : null;
+  const remainingAvail = useTypes ? params.residentialTypes!.map((t) => t.avail) : null;
+  const densityTieBreaker = Boolean(params.greedy?.densityTieBreaker);
+  const densityTieBreakerToleranceRatio =
+    densityTieBreaker && typeof params.greedy?.densityTieBreakerTolerancePercent === "number"
+      ? Math.max(0, params.greedy.densityTieBreakerTolerancePercent) / 100
+      : (densityTieBreaker ? 0.02 : 0);
+  const connectivityShadowScoring = Boolean(params.greedy?.connectivityShadowScoring);
+
+  const services: ServicePlacement[] = [];
+  const serviceTypeIndices: number[] = [];
+  const serviceBonuses: number[] = [];
+  const effectZones: Set<string>[] = [];
+  const currentResidentialGroupBoosts = Array.from({ length: residentialScoringGroups.length }, () => 0);
+  const serviceSource = fixedServices ?? serviceOrder;
+  const probeRoadConnection = (
+    snapshotOccupied: Set<string>,
+    r: number,
+    c: number,
+    rows: number,
+    cols: number
+  ): ConnectivityProbe | null =>
+    attemptState.probeRoadConnection(snapshotOccupied, { r, c, rows, cols });
+  const evaluateServiceLookahead = createServiceLookaheadEvaluator({
+    grid: G,
+    params,
+    roads,
+    occupied,
+    effectZones,
+    serviceBonuses,
+    maxResidentials,
+    useTypes,
+    remainingAvail,
+    anyResidentialCandidates,
+    precomputedIndexes,
+    profileCounters,
+    maybeStop,
+  });
   const serviceOrderGlobalCandidateIndices = !fixedServices
     ? serviceSource.map((candidate) => precomputedIndexes.serviceCandidateIndicesByKey.get(serviceCandidateKey(candidate)) ?? -1)
     : null;
@@ -1933,8 +2001,8 @@ function solveOne(
     const phaseStartedAtMs = startGreedyProfilePhase(recordProfilePhase);
     const populationBeforeLocalSearch = totalPopulation;
     try {
-      totalPopulation = localSearchImprove(
-        G,
+      totalPopulation = localSearchImprove({
+        grid: G,
         roads,
         occupied,
         services,
@@ -1942,16 +2010,16 @@ function solveOne(
         residentialTypeIndices,
         populations,
         totalPopulation,
-        residentialCandidatesForLocal,
-        residentialPopulationCacheForLocal,
+        residentialCandidates: residentialCandidatesForLocal,
+        residentialPopulationCache: residentialPopulationCacheForLocal,
         params,
-        useTypes ? remainingAvail : null,
+        remainingAvail: useTypes ? remainingAvail : null,
         maxResidentials,
         profileCounters,
         recordRoadOpportunity,
         maybeStop,
-        explicitRoadProbeScratch
-      );
+        explicitRoadProbeScratch,
+      });
     } finally {
       if (recordProfilePhase) {
         recordProfilePhase("residentialLocalSearch", phaseStartedAtMs, {
@@ -4049,25 +4117,26 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
   return applyConnectivityShadowBaselineGuard(finalizeGreedySolution(best as Solution));
 }
 
-function localSearchImprove(
-  G: Grid,
-  roads: Set<string>,
-  occupied: Set<string>,
-  services: ServicePlacement[],
-  residentials: ResidentialPlacement[],
-  residentialTypeIndices: number[],
-  populations: number[],
-  totalPopulation: number,
-  residentialCandidates: ResidentialPlacement[] | ResidentialCandidate[],
-  residentialPopulationCache: number[],
-  params: SolverParams,
-  remainingAvail: number[] | null,
-  maxResidentials: number | undefined,
-  profileCounters?: GreedyProfileCounters,
-  recordRoadOpportunity?: RoadOpportunityRecorder,
-  maybeStop?: () => void,
-  explicitRoadProbeScratch = createRoadProbeScratch(G)
-): number {
+function localSearchImprove(state: ResidentialLocalSearchState): number {
+  const {
+    grid: G,
+    roads,
+    occupied,
+    services,
+    residentials,
+    residentialTypeIndices,
+    populations,
+    residentialCandidates,
+    residentialPopulationCache,
+    params,
+    remainingAvail,
+    maxResidentials,
+    profileCounters,
+    recordRoadOpportunity,
+    maybeStop,
+  } = state;
+  let { totalPopulation } = state;
+  const explicitRoadProbeScratch = state.explicitRoadProbeScratch ?? createRoadProbeScratch(G);
   const useTypes = remainingAvail !== null && residentialCandidates.length > 0 && "typeIndex" in residentialCandidates[0];
   const maxIter = 20;
   type MoveChoice = {

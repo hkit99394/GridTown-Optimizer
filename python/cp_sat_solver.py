@@ -150,6 +150,25 @@ class ObjectivePolicy:
     tie_break_summary: str
 
 
+@dataclass(frozen=True)
+class CpSatCellIndex:
+    reachable_allowed: set[tuple[int, int]]
+    road_eligible_cells: set[tuple[int, int]]
+    allowed_cells: list[tuple[int, int]]
+    cell_to_id: dict[tuple[int, int], int]
+    id_to_cell: dict[int, tuple[int, int]]
+    anchor_ids: list[int]
+    road_eligible_ids: set[int]
+
+
+@dataclass(frozen=True)
+class CpSatCandidateBundle:
+    placement_maps: CandidatePlacementMaps
+    service_candidates: list[dict[str, Any]]
+    residential_candidates: list[dict[str, Any]]
+    total_population_upper_bound: int
+
+
 def fail(message: str) -> None:
     print(message, file=sys.stderr)
     raise SystemExit(1)
@@ -360,15 +379,10 @@ def create_building_selection_variables(model, params, service_candidates, resid
     return service_vars, residential_vars
 
 
-def build_model(grid, params) -> BuiltCpSatModel:
-    if not grid or not grid[0]:
-        fail("Grid must be non-empty.")
-
-    reject_removed_road_connectivity_mode(params)
+def build_cp_sat_cell_index(grid, params, placement_maps: CandidatePlacementMaps) -> CpSatCellIndex:
     reachable_allowed = reachable_allowed_from_road_anchors(grid)
     if not reachable_allowed:
         fail("No feasible solution found: no allowed road cell exists in row 0 or column 0.")
-    placement_maps = build_candidate_placement_maps(grid, params)
     protected_road_cells = collect_protected_road_cells(grid, params, reachable_allowed, placement_maps)
     road_eligible_cells = trim_road_eligible_cells(grid, reachable_allowed, protected_road_cells)
 
@@ -376,6 +390,18 @@ def build_model(grid, params) -> BuiltCpSatModel:
     anchor_ids = [idx for idx, (r, c) in enumerate(allowed_cells) if r == 0 or c == 0]
     road_eligible_ids = {cell_to_id[cell] for cell in road_eligible_cells if cell in cell_to_id}
 
+    return CpSatCellIndex(
+        reachable_allowed=reachable_allowed,
+        road_eligible_cells=road_eligible_cells,
+        allowed_cells=allowed_cells,
+        cell_to_id=cell_to_id,
+        id_to_cell=id_to_cell,
+        anchor_ids=anchor_ids,
+        road_eligible_ids=road_eligible_ids,
+    )
+
+
+def build_cp_sat_candidate_bundle(grid, params, cell_to_id, placement_maps: CandidatePlacementMaps) -> CpSatCandidateBundle:
     service_candidates = enumerate_service_candidates(grid, params, cell_to_id, placement_maps.service)
     total_bonus_upper_bound = typed_service_bonus_upper_bound(params)
     residential_candidates = enumerate_residential_candidates(grid, params, cell_to_id, total_bonus_upper_bound, placement_maps)
@@ -383,32 +409,24 @@ def build_model(grid, params) -> BuiltCpSatModel:
     residential_candidates = annotate_residential_population_upper_bounds(params, service_candidates, residential_candidates)
     total_population_upper_bound = compute_total_population_upper_bound(params, residential_candidates)
 
-    model = cp_model.CpModel()
-    cell_count = len(allowed_cells)
-    road_network = create_road_network_variables(
-        model,
-        grid,
-        allowed_cells,
-        anchor_ids,
-        road_eligible_ids,
-        id_to_cell,
-        cell_to_id,
-    )
-    gate_access_analysis = analyze_gate_access_constraints(
-        road_eligible_ids,
-        road_network.road_neighbor_ids,
-        road_network.eligible_anchor_ids,
-        service_candidates,
-        residential_candidates,
+    return CpSatCandidateBundle(
+        placement_maps=placement_maps,
+        service_candidates=service_candidates,
+        residential_candidates=residential_candidates,
+        total_population_upper_bound=total_population_upper_bound,
     )
 
-    service_vars, residential_vars = create_building_selection_variables(
-        model,
-        params,
-        service_candidates,
-        residential_candidates,
-    )
 
+def add_cp_sat_layout_constraints(
+    model,
+    cell_count,
+    road_network,
+    service_vars,
+    service_candidates,
+    residential_vars,
+    residential_candidates,
+    gate_access_analysis,
+):
     add_occupancy_constraints(
         model,
         cell_count,
@@ -447,12 +465,59 @@ def build_model(grid, params) -> BuiltCpSatModel:
         road_network.road_neighbor_ids,
         road_network.root_vars,
     )
+
+
+def build_model(grid, params) -> BuiltCpSatModel:
+    if not grid or not grid[0]:
+        fail("Grid must be non-empty.")
+
+    reject_removed_road_connectivity_mode(params)
+    placement_maps = build_candidate_placement_maps(grid, params)
+    cell_index = build_cp_sat_cell_index(grid, params, placement_maps)
+    candidates = build_cp_sat_candidate_bundle(grid, params, cell_index.cell_to_id, placement_maps)
+
+    model = cp_model.CpModel()
+    cell_count = len(cell_index.allowed_cells)
+    road_network = create_road_network_variables(
+        model,
+        grid,
+        cell_index.allowed_cells,
+        cell_index.anchor_ids,
+        cell_index.road_eligible_ids,
+        cell_index.id_to_cell,
+        cell_index.cell_to_id,
+    )
+    gate_access_analysis = analyze_gate_access_constraints(
+        cell_index.road_eligible_ids,
+        road_network.road_neighbor_ids,
+        road_network.eligible_anchor_ids,
+        candidates.service_candidates,
+        candidates.residential_candidates,
+    )
+
+    service_vars, residential_vars = create_building_selection_variables(
+        model,
+        params,
+        candidates.service_candidates,
+        candidates.residential_candidates,
+    )
+
+    add_cp_sat_layout_constraints(
+        model,
+        cell_count,
+        road_network,
+        service_vars,
+        candidates.service_candidates,
+        residential_vars,
+        candidates.residential_candidates,
+        gate_access_analysis,
+    )
     directed_edges = add_flow_connectivity_constraints(
         model,
         grid,
-        id_to_cell,
-        cell_to_id,
-        road_eligible_ids,
+        cell_index.id_to_cell,
+        cell_index.cell_to_id,
+        cell_index.road_eligible_ids,
         road_network.road_vars,
         road_network.road_neighbor_ids,
         road_network.root_vars,
@@ -463,31 +528,31 @@ def build_model(grid, params) -> BuiltCpSatModel:
         model,
         cell_count,
         service_vars,
-        service_candidates,
+        candidates.service_candidates,
         residential_vars,
-        residential_candidates,
+        candidates.residential_candidates,
         road_network.total_roads,
-        total_population_upper_bound,
+        candidates.total_population_upper_bound,
     )
 
     return BuiltCpSatModel(
         model=model,
-        allowed_cells=allowed_cells,
-        anchor_ids=anchor_ids,
+        allowed_cells=cell_index.allowed_cells,
+        anchor_ids=cell_index.anchor_ids,
         road_vars=road_network.road_vars,
         root_vars=road_network.root_vars,
         service_vars=service_vars,
-        service_candidates=service_candidates,
+        service_candidates=candidates.service_candidates,
         residential_vars=residential_vars,
-        residential_candidates=residential_candidates,
+        residential_candidates=candidates.residential_candidates,
         populations=populations,
         total_roads=road_network.total_roads,
         total_services=total_services,
         total_population=total_population,
-        total_population_upper_bound=total_population_upper_bound,
+        total_population_upper_bound=candidates.total_population_upper_bound,
         objective_policy=objective_policy,
-        id_to_cell=id_to_cell,
-        road_eligible_cells=sorted(road_eligible_cells),
+        id_to_cell=cell_index.id_to_cell,
+        road_eligible_cells=sorted(cell_index.road_eligible_cells),
         directed_edges=directed_edges,
     )
 

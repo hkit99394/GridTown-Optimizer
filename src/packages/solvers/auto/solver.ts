@@ -71,6 +71,12 @@ interface AutoPlanStateChangeHooks {
   onIncumbentChange?: (incumbent: Solution | null) => void;
 }
 
+interface AutoPlanStageRequest {
+  stage: AutoStageOptimizerName;
+  cycleIndex: number;
+  incumbent: Solution | null;
+}
+
 interface SyncAutoStopController {
   stopFilePath: string;
   currentStopReason: () => AutoSolveStopReason | null;
@@ -814,6 +820,76 @@ function finalizeCompletedAutoPlan(incumbent: Solution | null, state: AutoRuntim
   return finalizeAutoSolution(incumbent, state);
 }
 
+function createAutoPlanStepper(
+  G: Grid,
+  params: SolverParams,
+  state: AutoRuntimeState,
+  options: NormalizedAutoOptions,
+  hooks: AutoPlanStateChangeHooks = {}
+): {
+  next: () => AutoPlanStageRequest | null;
+  accept: (request: AutoPlanStageRequest, stageSolution: Solution | null) => void;
+  finalize: () => Solution;
+} {
+  let incumbent: Solution | null = null;
+  let cycleStart: Solution | null = null;
+  let cycleIndex = 0;
+  let nextStage: AutoStageOptimizerName | null = "greedy";
+
+  return {
+    next: () => {
+      if (nextStage === null || state.stopReason) return null;
+      return {
+        stage: nextStage,
+        cycleIndex,
+        incumbent,
+      };
+    },
+    accept: (request, stageSolution) => {
+      if (request.stage === "greedy") {
+        incumbent = initializeAutoPlanIncumbent(G, params, stageSolution, state, hooks);
+        if (state.stopReason) {
+          nextStage = null;
+          return;
+        }
+        cycleIndex = 1;
+        cycleStart = incumbent;
+        nextStage = "lns";
+        return;
+      }
+
+      incumbent = acceptAutoStageResult(incumbent, stageSolution, hooks);
+      if (!incumbent || state.stopReason) {
+        nextStage = null;
+        return;
+      }
+
+      if (request.stage === "lns") {
+        nextStage = "cp-sat";
+        return;
+      }
+
+      if (shouldStopAfterAutoCpSatStage(stageSolution, incumbent)) {
+        state.stopReason = "optimal";
+        nextStage = null;
+        return;
+      }
+
+      advanceWeakCycleState(cycleStart, incumbent, state, options);
+      if (state.consecutiveWeakCycles >= options.maxConsecutiveWeakCycles) {
+        state.stopReason = "weak-cycle-limit";
+        nextStage = null;
+        return;
+      }
+
+      cycleIndex += 1;
+      cycleStart = incumbent;
+      nextStage = "lns";
+    },
+    finalize: () => finalizeCompletedAutoPlan(incumbent, state),
+  };
+}
+
 function runSyncAutoPlan(
   G: Grid,
   params: SolverParams,
@@ -822,37 +898,11 @@ function runSyncAutoPlan(
   runStage: AutoStageRunner<Solution | null>,
   hooks: AutoPlanStateChangeHooks = {}
 ): Solution {
-  const greedySolution = runStage("greedy", 0, null);
-  let incumbent: Solution | null = initializeAutoPlanIncumbent(G, params, greedySolution, state, hooks);
-  if (state.stopReason) {
-    return finalizeAutoSolution(incumbent, state);
+  const plan = createAutoPlanStepper(G, params, state, options, hooks);
+  for (let request = plan.next(); request !== null; request = plan.next()) {
+    plan.accept(request, runStage(request.stage, request.cycleIndex, request.incumbent));
   }
-
-  let cycleIndex = 1;
-  while (!state.stopReason) {
-    const cycleStart = incumbent;
-    const lnsSolution = runStage("lns", cycleIndex, incumbent);
-    incumbent = acceptAutoStageResult(incumbent, lnsSolution, hooks);
-    if (!incumbent || state.stopReason) break;
-
-    const cpSatSolution = runStage("cp-sat", cycleIndex, incumbent);
-    incumbent = acceptAutoStageResult(incumbent, cpSatSolution, hooks);
-    if (!incumbent || state.stopReason) break;
-
-    if (shouldStopAfterAutoCpSatStage(cpSatSolution, incumbent)) {
-      state.stopReason = "optimal";
-      break;
-    }
-
-    advanceWeakCycleState(cycleStart, incumbent, state, options);
-    if (state.consecutiveWeakCycles >= options.maxConsecutiveWeakCycles) {
-      state.stopReason = "weak-cycle-limit";
-      break;
-    }
-    cycleIndex += 1;
-  }
-
-  return finalizeCompletedAutoPlan(incumbent, state);
+  return plan.finalize();
 }
 
 async function runBackgroundAutoPlan(
@@ -863,37 +913,11 @@ async function runBackgroundAutoPlan(
   runStage: AutoStageRunner<Promise<Solution | null>>,
   hooks: AutoPlanStateChangeHooks = {}
 ): Promise<Solution> {
-  const greedySolution = await runStage("greedy", 0, null);
-  let incumbent: Solution | null = initializeAutoPlanIncumbent(G, params, greedySolution, state, hooks);
-  if (state.stopReason) {
-    return finalizeAutoSolution(incumbent, state);
+  const plan = createAutoPlanStepper(G, params, state, options, hooks);
+  for (let request = plan.next(); request !== null; request = plan.next()) {
+    plan.accept(request, await runStage(request.stage, request.cycleIndex, request.incumbent));
   }
-
-  let cycleIndex = 1;
-  while (!state.stopReason) {
-    const cycleStart = incumbent;
-    const lnsSolution = await runStage("lns", cycleIndex, incumbent);
-    incumbent = acceptAutoStageResult(incumbent, lnsSolution, hooks);
-    if (!incumbent || state.stopReason) break;
-
-    const cpSatSolution = await runStage("cp-sat", cycleIndex, incumbent);
-    incumbent = acceptAutoStageResult(incumbent, cpSatSolution, hooks);
-    if (!incumbent || state.stopReason) break;
-
-    if (shouldStopAfterAutoCpSatStage(cpSatSolution, incumbent)) {
-      state.stopReason = "optimal";
-      break;
-    }
-
-    advanceWeakCycleState(cycleStart, incumbent, state, options);
-    if (state.consecutiveWeakCycles >= options.maxConsecutiveWeakCycles) {
-      state.stopReason = "weak-cycle-limit";
-      break;
-    }
-    cycleIndex += 1;
-  }
-
-  return finalizeCompletedAutoPlan(incumbent, state);
+  return plan.finalize();
 }
 
 export function solveAuto(G: Grid, params: SolverParams): Solution {

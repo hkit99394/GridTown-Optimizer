@@ -260,21 +260,23 @@ Success signal:
 
 Goal: add dynamic programming only where it is naturally strong: tiny repair windows, narrow corridors, and exact oracle checks.
 
-Entry criteria:
+Status: delivered as a guarded opt-in subroutine. LNS can route eligible tiny repair windows through `small-window-dp`, with CP-SAT fallback for ineligible windows or no-feasible DP outcomes. The path is capped by mutable-cell, candidate, and state limits and reports per-outcome DP telemetry. No solver default changed.
 
-- Telemetry shows CP-SAT startup/model overhead dominates small LNS repair time, or corridor/narrow-window families need a faster exact repair path.
+Delivered entry criteria:
+
+- The initial path stays opt-in for tiny-window and oracle use instead of changing the default Auto/LNS route.
 
 Deliverables:
 
-- Bitmask or profile-DP repair prototype for bounded LNS windows.
-- Eligibility rules based on usable cell count, profile width, and typed availability state size.
-- Exact evaluator comparison against CP-SAT repair on the same windows.
-- Routing experiment that sends only eligible tiny repairs to DP and larger repairs to CP-SAT.
-- Regression tests using DP as a small-case oracle for CP-SAT road-semantics alignment.
+- Bitmask or profile-DP repair prototype for bounded LNS windows. Delivered as road-mask enumeration plus memoized residential set packing.
+- Eligibility rules based on usable cell count, profile width, and typed availability state size. Delivered through mutable-cell, candidate-count, and state-count caps.
+- Exact evaluator comparison against CP-SAT repair on the same windows. Delivered in OR-Tools-enabled regression coverage for an eligible tiny repair.
+- Routing experiment that sends only eligible tiny repairs to DP and larger repairs to CP-SAT. Delivered as opt-in LNS routing with CP-SAT fallback.
+- Regression tests using DP as a small-case oracle for CP-SAT road-semantics alignment. Delivered through exact evaluator validation and CP-SAT comparison on the same local repair window.
 
 Success signal:
 
-- DP returns evaluator-valid layouts, beats CP-SAT wall time on eligible windows, and improves LNS/Auto time-to-best without larger-window regressions.
+- DP returns evaluator-valid layouts, avoids CP-SAT on eligible tiny opt-in repairs, and leaves default LNS/Auto behavior unchanged until promotion scorecards justify a default route.
 
 ### Stage 7: Service-Master Decomposition Experiment
 
@@ -356,10 +358,9 @@ Any default-path solver change must satisfy:
 
 Recommended order:
 
-1. Add exact small-window DP repair only if telemetry shows small-repair CP-SAT overhead or narrow-window bottlenecks.
-2. Explore service-master decomposition if pressure cases justify it.
-3. Scale LNS replay labels from adaptive operator outcomes.
-4. Revisit learned rankers only after offline holdout and online equal-budget gates pass.
-5. Revisit GPU, portfolio, distributed solving, and external solvers only after a measured bottleneck and promotion-grade evidence exists.
+1. Explore service-master decomposition if pressure cases justify it.
+2. Scale LNS replay labels from adaptive operator outcomes.
+3. Revisit learned rankers only after offline holdout and online equal-budget gates pass.
+4. Revisit GPU, portfolio, distributed solving, and external solvers only after a measured bottleneck and promotion-grade evidence exists.
 
 This keeps the project pointed at the real target: higher validated population per wall-clock minute, with fewer speculative detours.

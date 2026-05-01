@@ -39,6 +39,14 @@ export interface LnsOptions {
   focusedRepairTimeLimitSeconds?: number;
   /** Per-neighborhood budget for escalated repair attempts. Defaults to repairTimeLimitSeconds. */
   escalatedRepairTimeLimitSeconds?: number;
+  /** Opt-in bounded exact DP repair for tiny LNS windows. Ineligible windows still fall back to CP-SAT. */
+  smallWindowDpRepair?: boolean;
+  /** Maximum mutable cells for the opt-in small-window DP repair path. */
+  smallWindowDpMaxMutableCells?: number;
+  /** Maximum mutable service plus residential candidates for the opt-in small-window DP repair path. */
+  smallWindowDpMaxCandidates?: number;
+  /** Maximum memo/search states for one opt-in small-window DP repair attempt. */
+  smallWindowDpMaxStates?: number;
   /** Optional saved-layout seed used instead of rebuilding the initial greedy incumbent. */
   seedHint?: CpSatWarmStartHint;
   /** Internal stop-token path used by the local web server. */
@@ -48,6 +56,28 @@ export interface LnsOptions {
 }
 
 export type LnsRepairPhase = "focused" | "escalated";
+
+export type LnsRepairBackend = "cp-sat" | "small-window-dp";
+
+export type LnsSmallWindowDpStatus =
+  | "optimal"
+  | "no-feasible-solution"
+  | "ineligible-window-size"
+  | "ineligible-mutable-cells"
+  | "ineligible-candidates"
+  | "ineligible-state-limit";
+
+export interface SmallWindowDpRepairTelemetry {
+  status: LnsSmallWindowDpStatus;
+  elapsedSeconds: number;
+  mutableCellCount: number;
+  roadCellCount: number;
+  serviceCandidateCount: number;
+  residentialCandidateCount: number;
+  candidateCount: number;
+  roadMaskCount: number;
+  stateCount: number;
+}
 
 export type LnsAdaptiveOperatorName =
   | "weak-service"
@@ -105,7 +135,9 @@ export interface LnsNeighborhoodOutcome {
   populationAfter: number;
   improvement: number;
   status: LnsNeighborhoodOutcomeStatus;
+  repairBackend?: LnsRepairBackend;
   cpSatStatus?: string | null;
+  smallWindowDp?: SmallWindowDpRepairTelemetry;
 }
 
 export interface LnsTelemetry {

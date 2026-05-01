@@ -333,7 +333,7 @@ Reviewed through 2026-05-01.
 - Kept the default `auto.cpSatStageReserveRatio` at `0.2`. The registered product-corpus promotion artifact kept Auto best or tied in 116/120 scorecards, and a targeted post-change `0.35` reserve probe on pressure cases tied mean population rather than improving it.
 - Added regression coverage that Auto no longer lets the CP-SAT stage time limit implicitly inflate LNS repair passes under a wall-clock Auto budget.
 - Targeted post-change smoke on `typed-footprint-pressure`, `service-local-neighborhood`, and `expansion-comparison-replay` at 1s/5s with seed `7` kept Auto mean population at 576.67; remaining short-budget losses stay visible as pressure evidence, not a default-policy promotion.
-- No solver mode default changed; `auto` remains the recommended quality path, and the next active priority is exact small-window DP repair only if telemetry trips its entry criteria.
+- No solver mode default changed; `auto` remains the recommended quality path.
 
 ### 39. CP-SAT Async and Portfolio Failure-Mode Closeout
 
@@ -343,6 +343,15 @@ Reviewed through 2026-05-01.
 - Portfolio worker execution now cancels pending futures when a worker `future.result()` fails after a sibling has already reported progress, and the failure remains visible to the caller.
 - Existing process-group cancellation coverage continues to verify child-worker trees are terminated on cancellation.
 - No portfolio fan-out limits changed and portfolio remains explicit-only.
+
+### 40. Exact Small-Window DP Repair
+
+- Added an opt-in LNS small-window DP repair backend guarded by `lns.smallWindowDpRepair`.
+- The DP path enumerates road masks inside a tiny mutable window, enumerates service choices, and uses memoized residential set packing under typed availability and global building caps.
+- Eligibility is bounded by mutable-cell, candidate, and state limits; ineligible or no-feasible DP attempts fall back to the existing CP-SAT repair path.
+- LNS repair outcomes now record whether a repair used `small-window-dp` or `cp-sat`, plus DP status, mutable-cell count, candidate count, road-mask count, state count, and elapsed time.
+- Regression coverage verifies an eligible tiny repair improves without invoking CP-SAT, ineligible windows fall back to CP-SAT, malformed DP options are rejected, and the DP result matches CP-SAT on an eligible tiny repair when OR-Tools is available.
+- No solver default changed; DP remains a bounded exact subroutine for tiny windows, narrow-profile experiments, and oracle checks.
 
 ## Maintenance Watchpoints
 

@@ -111,8 +111,10 @@ const {
 const { parseCpSatRawSolution } = require("../dist/packages/solvers/cp-sat/solver.js");
 const {
   buildAdaptiveNeighborhoodCandidates,
+  buildLnsWarmStartHint,
   buildNeighborhoodWindows,
 } = require("../dist/packages/solvers/lns/solver.js");
+const { repairSmallWindowWithDp } = require("../dist/packages/solvers/lns/smallWindowDpRepair.js");
 const { startJsonBackgroundSolve } = require("../dist/packages/runtime/index.js");
 const { applyDeterministicDominanceUpgrades } = require("../dist/packages/core/dominanceUpgrades.js");
 const { buildPlannerExplainabilityMap } = require("../dist/packages/core/plannerExplainability.js");
@@ -7985,6 +7987,180 @@ function testLnsTelemetryRecordsRepairPolicyAndOutcomes() {
   }
 }
 
+function testLnsSmallWindowDpRepairImprovesWithoutCpSat() {
+  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
+  const originalSolveCpSat = cpSatModule.solveCpSat;
+  let cpSatCalls = 0;
+
+  cpSatModule.solveCpSat = () => {
+    cpSatCalls += 1;
+    throw new Error("CP-SAT should not run for eligible small-window DP repair.");
+  };
+
+  try {
+    const grid = [
+      [1, 1, 1],
+      [1, 1, 1],
+      [1, 1, 1],
+    ];
+    const params = {
+      optimizer: "lns",
+      residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
+      availableBuildings: { residentials: 1, services: 0 },
+      lns: {
+        iterations: 1,
+        maxNoImprovementIterations: 1,
+        neighborhoodRows: 2,
+        neighborhoodCols: 2,
+        neighborhoodAnchorPolicy: "sliding-only",
+        smallWindowDpRepair: true,
+        smallWindowDpMaxMutableCells: 9,
+        smallWindowDpMaxCandidates: 8,
+        smallWindowDpMaxStates: 10_000,
+        seedHint: {
+          solution: {
+            roads: ["0,0"],
+            services: [],
+            residentials: [],
+            populations: [],
+            totalPopulation: 0,
+          },
+        },
+      },
+    };
+    const solution = solveLns(grid, params);
+    const validation = validateSolution({ grid, solution, params });
+    const outcome = solution.lnsTelemetry.outcomes[0];
+
+    assert.equal(cpSatCalls, 0);
+    assert.equal(solution.totalPopulation, 10);
+    assert.equal(validation.valid, true);
+    assert.equal(outcome.status, "improved");
+    assert.equal(outcome.repairBackend, "small-window-dp");
+    assert.equal(outcome.smallWindowDp.status, "optimal");
+    assert.equal(outcome.smallWindowDp.mutableCellCount, 9);
+    assert.equal(outcome.smallWindowDp.roadMaskCount, 512);
+  } finally {
+    cpSatModule.solveCpSat = originalSolveCpSat;
+  }
+}
+
+function testLnsSmallWindowDpRepairFallsBackToCpSatWhenIneligible() {
+  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
+  const originalSolveCpSat = cpSatModule.solveCpSat;
+  let cpSatCalls = 0;
+
+  cpSatModule.solveCpSat = (_grid, params) => {
+    cpSatCalls += 1;
+    return {
+      optimizer: "cp-sat",
+      cpSatStatus: "FEASIBLE",
+      roads: new Set(params.cpSat.warmStartHint.solution.roads),
+      services: [],
+      serviceTypeIndices: [],
+      servicePopulationIncreases: [],
+      residentials: [],
+      residentialTypeIndices: [],
+      populations: [],
+      totalPopulation: 0,
+    };
+  };
+
+  try {
+    const grid = [
+      [1, 1, 1],
+      [1, 1, 1],
+      [1, 1, 1],
+    ];
+    const solution = solveLns(grid, {
+      optimizer: "lns",
+      residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
+      availableBuildings: { residentials: 1, services: 0 },
+      lns: {
+        iterations: 1,
+        maxNoImprovementIterations: 1,
+        neighborhoodRows: 2,
+        neighborhoodCols: 2,
+        smallWindowDpRepair: true,
+        smallWindowDpMaxMutableCells: 1,
+        seedHint: {
+          solution: {
+            roads: ["0,0"],
+            services: [],
+            residentials: [],
+            populations: [],
+            totalPopulation: 0,
+          },
+        },
+      },
+    });
+    const outcome = solution.lnsTelemetry.outcomes[0];
+
+    assert.equal(cpSatCalls, 1);
+    assert.equal(outcome.status, "neutral");
+    assert.equal(outcome.repairBackend, "cp-sat");
+    assert.equal(outcome.cpSatStatus, "FEASIBLE");
+    assert.equal(outcome.smallWindowDp.status, "ineligible-window-size");
+  } finally {
+    cpSatModule.solveCpSat = originalSolveCpSat;
+  }
+}
+
+function maybeTestSmallWindowDpMatchesCpSatOnEligibleRepair() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const grid = [
+    [1, 1, 1],
+    [1, 1, 1],
+    [1, 1, 1],
+  ];
+  const window = { top: 0, left: 0, rows: 3, cols: 3 };
+  const incumbent = {
+    optimizer: "lns",
+    roads: new Set(["0,0"]),
+    services: [],
+    serviceTypeIndices: [],
+    servicePopulationIncreases: [],
+    residentials: [],
+    residentialTypeIndices: [],
+    populations: [],
+    totalPopulation: 0,
+  };
+  const params = {
+    optimizer: "lns",
+    cpSat: {
+      pythonExecutable,
+      numWorkers: 1,
+      timeLimitSeconds: 5,
+    },
+    residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
+    availableBuildings: { residentials: 1, services: 0 },
+  };
+
+  const dpResult = repairSmallWindowWithDp(grid, params, incumbent, window, {
+    maxMutableCells: 9,
+    maxCandidates: 8,
+    maxStates: 10_000,
+  });
+  const cpSatResult = solveCpSat(grid, {
+    ...params,
+    optimizer: "cp-sat",
+    cpSat: {
+      ...params.cpSat,
+      warmStartHint: buildLnsWarmStartHint(incumbent, window),
+    },
+  });
+
+  assert.equal(dpResult.status, "optimal");
+  assert.equal(dpResult.solution.totalPopulation, 10);
+  assert.equal(cpSatResult.totalPopulation, 10);
+  assert.equal(validateSolution({ grid, solution: dpResult.solution, params }).valid, true);
+  assert.equal(validateSolution({ grid, solution: cpSatResult, params }).valid, true);
+}
+
 function testLnsGreedySeedReportsBudgetAndProfile() {
   const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
   const originalSolveCpSat = cpSatModule.solveCpSat;
@@ -8116,6 +8292,44 @@ function testLnsRejectsMalformedScalarOptions() {
         },
       }),
     /Invalid solver input: LNS option lns\.iterations must be an integer between 1 and 10000\./
+  );
+  assert.throws(
+    () =>
+      solveLns(grid, {
+        optimizer: "lns",
+        lns: {
+          smallWindowDpRepair: "yes",
+          seedHint: {
+            solution: {
+              roads: ["0,0"],
+              services: [],
+              residentials: [],
+              populations: [],
+              totalPopulation: 0,
+            },
+          },
+        },
+      }),
+    /Invalid solver input: LNS option lns\.smallWindowDpRepair must be a boolean\./
+  );
+  assert.throws(
+    () =>
+      solveLns(grid, {
+        optimizer: "lns",
+        lns: {
+          smallWindowDpMaxMutableCells: 25,
+          seedHint: {
+            solution: {
+              roads: ["0,0"],
+              services: [],
+              residentials: [],
+              populations: [],
+              totalPopulation: 0,
+            },
+          },
+        },
+      }),
+    /Invalid solver input: LNS option lns\.smallWindowDpMaxMutableCells must be an integer between 1 and 24\./
   );
 }
 
@@ -9360,9 +9574,12 @@ async function runLnsOptimizerTests() {
   testLnsNeighborhoodWindowsEscalateWhenStagnating();
   testLnsRunsFinalEscalationWithinConfiguredBudget();
   testLnsTelemetryRecordsRepairPolicyAndOutcomes();
+  testLnsSmallWindowDpRepairImprovesWithoutCpSat();
+  testLnsSmallWindowDpRepairFallsBackToCpSatWhenIneligible();
   testLnsGreedySeedReportsBudgetAndProfile();
   testLnsStopsAfterNoImprovementTimeout();
   testLnsRejectsMalformedScalarOptions();
+  maybeTestSmallWindowDpMatchesCpSatOnEligibleRepair();
   maybeTestLnsOptimizer();
   testLnsRejectsInvalidSeedHint();
   testLnsRejectsMalformedSeedHintFields();

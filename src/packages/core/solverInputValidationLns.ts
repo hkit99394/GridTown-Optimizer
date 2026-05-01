@@ -1,6 +1,7 @@
 import type { SolverParams } from "./types.js";
 
 import {
+  requireOptionalBoolean,
   requireOptionalFiniteNumberInRange,
   requireOptionalIntegerInRange,
   requireOptionalString,
@@ -11,6 +12,9 @@ import {
 const LNS_MAX_ITERATIONS = 10_000;
 const LNS_MAX_NEIGHBORHOOD_DIMENSION = 10_000;
 const LNS_MAX_TIME_LIMIT_SECONDS = 24 * 60 * 60;
+const LNS_MAX_SMALL_WINDOW_DP_MUTABLE_CELLS = 24;
+const LNS_MAX_SMALL_WINDOW_DP_CANDIDATES = 64;
+const LNS_MAX_SMALL_WINDOW_DP_STATES = 1_000_000;
 const LNS_NEIGHBORHOOD_ANCHOR_POLICIES = [
   "ranked",
   "sliding-only",
@@ -107,6 +111,28 @@ export function assertValidLnsOptions(params: SolverParams): void {
     "LNS option lns.escalatedRepairTimeLimitSeconds",
     0,
     LNS_MAX_TIME_LIMIT_SECONDS
+  );
+  requireOptionalBoolean(lns, "smallWindowDpRepair", "LNS option lns.smallWindowDpRepair");
+  requireOptionalIntegerInRange(
+    lns,
+    "smallWindowDpMaxMutableCells",
+    "LNS option lns.smallWindowDpMaxMutableCells",
+    1,
+    LNS_MAX_SMALL_WINDOW_DP_MUTABLE_CELLS
+  );
+  requireOptionalIntegerInRange(
+    lns,
+    "smallWindowDpMaxCandidates",
+    "LNS option lns.smallWindowDpMaxCandidates",
+    1,
+    LNS_MAX_SMALL_WINDOW_DP_CANDIDATES
+  );
+  requireOptionalIntegerInRange(
+    lns,
+    "smallWindowDpMaxStates",
+    "LNS option lns.smallWindowDpMaxStates",
+    1,
+    LNS_MAX_SMALL_WINDOW_DP_STATES
   );
   requireOptionalString(lns, "stopFilePath", "LNS runtime option lns.stopFilePath");
   requireOptionalString(lns, "snapshotFilePath", "LNS runtime option lns.snapshotFilePath");

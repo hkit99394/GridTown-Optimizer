@@ -13,6 +13,7 @@ import {
   buildAdaptiveNeighborhoodCandidates,
   selectAdaptiveNeighborhoodOperator,
 } from "./neighborhoods.js";
+import { repairSmallWindowWithDp } from "./smallWindowDpRepair.js";
 import { NO_TYPE_INDEX } from "../../core/index.js";
 import { writeSolutionSnapshot } from "../../core/index.js";
 import { assertValidLnsOptions, materializeValidLnsSeedSolution } from "../../core/index.js";
@@ -28,7 +29,9 @@ import type {
   LnsNeighborhoodAnchorPolicy,
   LnsOperatorSummary,
   LnsOperatorWeight,
+  LnsRepairBackend,
   LnsRepairPhase,
+  SmallWindowDpRepairTelemetry,
   LnsStopReason,
   LnsTelemetry,
   Solution,
@@ -47,6 +50,10 @@ type NormalizedLnsOptions = {
   repairTimeLimitSeconds: number;
   focusedRepairTimeLimitSeconds: number;
   escalatedRepairTimeLimitSeconds: number;
+  smallWindowDpRepair: boolean;
+  smallWindowDpMaxMutableCells: number;
+  smallWindowDpMaxCandidates: number;
+  smallWindowDpMaxStates: number;
   seedHint?: CpSatWarmStartHint;
   stopFilePath: string;
   snapshotFilePath: string;
@@ -74,6 +81,9 @@ interface LnsRepairAttempt {
 const DEFAULT_LNS_ITERATIONS = 12;
 const DEFAULT_LNS_MAX_NO_IMPROVEMENT_ITERATIONS = 4;
 const DEFAULT_LNS_REPAIR_TIME_LIMIT_SECONDS = 5;
+const DEFAULT_LNS_SMALL_WINDOW_DP_MAX_MUTABLE_CELLS = 14;
+const DEFAULT_LNS_SMALL_WINDOW_DP_MAX_CANDIDATES = 28;
+const DEFAULT_LNS_SMALL_WINDOW_DP_MAX_STATES = 50_000;
 const LNS_OPERATOR_MIN_WEIGHT = 0.25;
 const LNS_OPERATOR_MAX_WEIGHT = 8;
 const LNS_ADAPTIVE_OPERATORS: LnsAdaptiveOperatorName[] = [
@@ -105,6 +115,10 @@ function positiveFiniteNumberOrDefault(value: unknown, fallback: number): number
 
 function optionalPositiveFiniteNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : null;
+}
+
+function booleanOrDefault(value: unknown, fallback: boolean): boolean {
+  return typeof value === "boolean" ? value : fallback;
 }
 
 function lnsNeighborhoodAnchorPolicyOrDefault(value: unknown): LnsNeighborhoodAnchorPolicy {
@@ -249,6 +263,19 @@ function getLnsOptions(G: Grid, params: SolverParams): NormalizedLnsOptions {
     escalatedRepairTimeLimitSeconds: positiveFiniteNumberOrDefault(
       lns.escalatedRepairTimeLimitSeconds,
       repairTimeLimitSeconds
+    ),
+    smallWindowDpRepair: booleanOrDefault(lns.smallWindowDpRepair, false),
+    smallWindowDpMaxMutableCells: positiveIntegerOrDefault(
+      lns.smallWindowDpMaxMutableCells,
+      DEFAULT_LNS_SMALL_WINDOW_DP_MAX_MUTABLE_CELLS
+    ),
+    smallWindowDpMaxCandidates: positiveIntegerOrDefault(
+      lns.smallWindowDpMaxCandidates,
+      DEFAULT_LNS_SMALL_WINDOW_DP_MAX_CANDIDATES
+    ),
+    smallWindowDpMaxStates: positiveIntegerOrDefault(
+      lns.smallWindowDpMaxStates,
+      DEFAULT_LNS_SMALL_WINDOW_DP_MAX_STATES
     ),
     seedHint: lns.seedHint,
     stopFilePath: lns.stopFilePath ?? "",
@@ -418,7 +445,11 @@ function buildRepairOutcome(
   status: LnsNeighborhoodOutcomeStatus,
   populationAfter: number,
   improvement = 0,
-  cpSatStatus?: string | null
+  cpSatStatus?: string | null,
+  metadata: {
+    repairBackend?: LnsRepairBackend;
+    smallWindowDp?: SmallWindowDpRepairTelemetry;
+  } = {}
 ): LnsNeighborhoodOutcome {
   return {
     iteration: attempt.iteration,
@@ -434,7 +465,9 @@ function buildRepairOutcome(
     populationAfter,
     improvement,
     status,
+    ...(metadata.repairBackend ? { repairBackend: metadata.repairBackend } : {}),
     ...(cpSatStatus !== undefined ? { cpSatStatus } : {}),
+    ...(metadata.smallWindowDp ? { smallWindowDp: metadata.smallWindowDp } : {}),
   };
 }
 
@@ -556,6 +589,50 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
       startedAtMs: repairStartedAtMs,
     });
     try {
+      let smallWindowDp: SmallWindowDpRepairTelemetry | undefined;
+      if (options.smallWindowDpRepair) {
+        const dpResult = repairSmallWindowWithDp(G, params, incumbent, neighborhoodWindow, {
+          maxMutableCells: options.smallWindowDpMaxMutableCells,
+          maxCandidates: options.smallWindowDpMaxCandidates,
+          maxStates: options.smallWindowDpMaxStates,
+        });
+        smallWindowDp = dpResult.telemetry;
+        if (dpResult.status === "optimal" && dpResult.solution) {
+          if (dpResult.solution.totalPopulation > incumbent.totalPopulation) {
+            incumbent = applyDeterministicDominanceUpgrades(G, params, {
+              ...dpResult.solution,
+              optimizer: "lns",
+            });
+            const populationAfter = incumbent.totalPopulation;
+            recordOutcome(
+              buildRepairOutcome(
+                attempt,
+                "improved",
+                populationAfter,
+                populationAfter - populationBefore,
+                undefined,
+                { repairBackend: "small-window-dp", smallWindowDp }
+              )
+            );
+            stagnantIterations = 0;
+            lastImprovementAtMs = performance.now();
+            writeRunningSnapshot();
+            continue;
+          }
+          recordOutcome(buildRepairOutcome(
+            attempt,
+            "neutral",
+            dpResult.solution.totalPopulation,
+            0,
+            undefined,
+            { repairBackend: "small-window-dp", smallWindowDp }
+          ));
+          stagnantIterations += 1;
+          writeRunningSnapshot();
+          continue;
+        }
+      }
+
       const candidate = solveCpSat(G, {
         ...params,
         optimizer: "cp-sat",
@@ -577,14 +654,28 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
         });
         const populationAfter = incumbent.totalPopulation;
         recordOutcome(
-          buildRepairOutcome(attempt, "improved", populationAfter, populationAfter - populationBefore, candidate.cpSatStatus ?? null)
+          buildRepairOutcome(
+            attempt,
+            "improved",
+            populationAfter,
+            populationAfter - populationBefore,
+            candidate.cpSatStatus ?? null,
+            { repairBackend: "cp-sat", smallWindowDp }
+          )
         );
         stagnantIterations = 0;
         lastImprovementAtMs = performance.now();
         writeRunningSnapshot();
         continue;
       }
-      recordOutcome(buildRepairOutcome(attempt, "neutral", candidate.totalPopulation, 0, candidate.cpSatStatus ?? null));
+      recordOutcome(buildRepairOutcome(
+        attempt,
+        "neutral",
+        candidate.totalPopulation,
+        0,
+        candidate.cpSatStatus ?? null,
+        { repairBackend: "cp-sat", smallWindowDp }
+      ));
       stagnantIterations += 1;
       writeRunningSnapshot();
     } catch (error) {

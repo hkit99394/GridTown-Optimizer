@@ -371,6 +371,13 @@ Reviewed through 2026-05-01.
 - Regression coverage checks that default split configs reference known replay cases and meet the five-family readiness precondition.
 - No learned model was trained and no solver default changed; learned LNS window ranking remains gated on a strict generated artifact that passes readiness, offline baselines, and equal-budget online checks.
 
+### 43. Auto Plan Runner Refactor
+
+- Collapsed the separate sync and background Auto plan loops into one shared plan runner.
+- The runner preserves the existing `greedy -> LNS -> CP-SAT` stage stepper, incumbent acceptance, weak-cycle stopping, and final Auto metadata assembly while accepting either synchronous stage results or background stage promises.
+- This closes the duplicate-runner SOLID cleanup without changing Auto stage order, budget policy, stop semantics, or solver defaults.
+- Regression coverage kept the focused Auto optimizer suite green.
+
 ## Maintenance Watchpoints
 
 - Keep deterministic benchmark seeds stable when changing solver scoring.

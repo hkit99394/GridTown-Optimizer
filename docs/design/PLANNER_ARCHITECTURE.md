@@ -237,7 +237,7 @@ Auto stage orchestration.
 Owns:
 - `greedy -> LNS -> CP-SAT` stage order
 - incumbent acceptance and weak-cycle stopping
-- sync and background Auto plan execution
+- shared sync/background Auto plan execution
 - Auto stage metadata assembly
 
 ### `src/packages/solvers/auto/stagePolicy.ts`

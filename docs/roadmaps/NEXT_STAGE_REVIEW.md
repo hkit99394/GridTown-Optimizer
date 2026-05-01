@@ -43,6 +43,7 @@ The default posture remains unchanged: keep `auto` as the recommended quality pa
 - CP-SAT async and portfolio failure-mode coverage is delivered as of 2026-05-01. Regression coverage now includes malformed progress, no-final-result streamed-progress close, child diagnostics, process-pool fallback, worker future failure after sibling progress, cancellation process groups, and cancellation snapshot propagation.
 - The service-master decomposition experiment is delivered as of 2026-05-01. Greedy now has an opt-in master/subproblem pass that enumerates bounded service layouts and realizes each through the existing fixed-service residential/road subproblem; the focused service-pressure benchmark improves from 465 to 555 population with exact validation.
 - LNS replay label scale-up is delivered as of 2026-05-01. Replay labels now carry adaptive-operator names/scores, the default learned-label replay settings collect broader top-k plus tail-exploration candidates, and development/holdout LNS splits have disjoint five-family pressure coverage. No learned ranker was trained or promoted.
+- Auto plan-runner duplication is closed as of 2026-05-02. Sync and background Auto execution now share the same stage loop while preserving the existing stage order, incumbent acceptance, weak-cycle stop policy, and default solver behavior.
 
 ## Key Finding: CP-SAT Road Semantics
 

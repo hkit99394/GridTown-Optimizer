@@ -67,6 +67,8 @@ type AutoStageRunner<TResult> = (
   incumbent: Solution | null
 ) => TResult;
 
+type MaybePromise<T> = T | Promise<T>;
+
 interface AutoPlanStateChangeHooks {
   onIncumbentChange?: (incumbent: Solution | null) => void;
 }
@@ -897,34 +899,52 @@ function createAutoPlanStepper(
   };
 }
 
-function runSyncAutoPlan(
+function isPromiseLike<T>(value: MaybePromise<T>): value is Promise<T> {
+  return Boolean(value && typeof (value as Promise<T>).then === "function");
+}
+
+function runAutoPlan(
   G: Grid,
   params: SolverParams,
   state: AutoRuntimeState,
   options: NormalizedAutoOptions,
   runStage: AutoStageRunner<Solution | null>,
-  hooks: AutoPlanStateChangeHooks = {}
-): Solution {
-  const plan = createAutoPlanStepper(G, params, state, options, hooks);
-  for (let request = plan.next(); request !== null; request = plan.next()) {
-    plan.accept(request, runStage(request.stage, request.cycleIndex, request.incumbent));
-  }
-  return plan.finalize();
-}
-
-async function runBackgroundAutoPlan(
+  hooks?: AutoPlanStateChangeHooks
+): Solution;
+function runAutoPlan(
   G: Grid,
   params: SolverParams,
   state: AutoRuntimeState,
   options: NormalizedAutoOptions,
   runStage: AutoStageRunner<Promise<Solution | null>>,
+  hooks?: AutoPlanStateChangeHooks
+): Promise<Solution>;
+function runAutoPlan(
+  G: Grid,
+  params: SolverParams,
+  state: AutoRuntimeState,
+  options: NormalizedAutoOptions,
+  runStage: AutoStageRunner<MaybePromise<Solution | null>>,
   hooks: AutoPlanStateChangeHooks = {}
-): Promise<Solution> {
+): MaybePromise<Solution> {
   const plan = createAutoPlanStepper(G, params, state, options, hooks);
-  for (let request = plan.next(); request !== null; request = plan.next()) {
-    plan.accept(request, await runStage(request.stage, request.cycleIndex, request.incumbent));
-  }
-  return plan.finalize();
+  const advance = (): MaybePromise<Solution> => {
+    const request = plan.next();
+    if (request === null) return plan.finalize();
+
+    const stageResult = runStage(request.stage, request.cycleIndex, request.incumbent);
+    if (isPromiseLike(stageResult)) {
+      return stageResult.then((stageSolution) => {
+        plan.accept(request, stageSolution);
+        return advance();
+      });
+    }
+
+    plan.accept(request, stageResult);
+    return advance();
+  };
+
+  return advance();
 }
 
 export function solveAuto(G: Grid, params: SolverParams): Solution {
@@ -1014,7 +1034,7 @@ export function solveAuto(G: Grid, params: SolverParams): Solution {
       return solution;
     };
 
-    return runSyncAutoPlan(G, params, state, options, runStage);
+    return runAutoPlan(G, params, state, options, runStage);
   } finally {
     stopController.cleanup();
   }
@@ -1072,7 +1092,7 @@ export function startAutoSolveWithStages(
         );
       };
 
-      return runBackgroundAutoPlan(G, params, state, options, runStage, {
+      return runAutoPlan(G, params, state, options, runStage, {
         onIncumbentChange: (incumbent) => {
           incumbentRef.current = incumbent;
         },

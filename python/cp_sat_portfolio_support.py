@@ -132,21 +132,23 @@ def build_portfolio_worker_options(cp_sat_options):
         MAX_CP_SAT_TIME_LIMIT_SECONDS,
         fallback=cp_sat_options.get("timeLimitSeconds"),
     )
-    if per_worker_time_limit is None:
-        raise ValueError("CP-SAT portfolio requires timeLimitSeconds or portfolio.perWorkerTimeLimitSeconds.")
 
-    total_cpu_budget = _optional_positive_float(
-        portfolio_options,
-        "totalCpuBudgetSeconds",
-        "portfolio.totalCpuBudgetSeconds",
-        MAX_PORTFOLIO_TOTAL_CPU_SECONDS,
-        fallback=MAX_PORTFOLIO_TOTAL_CPU_SECONDS,
-    )
-    requested_cpu_seconds = len(seeds) * per_worker_num_workers * per_worker_time_limit
-    if requested_cpu_seconds > total_cpu_budget:
-        raise ValueError(
-            f"CP-SAT portfolio requests {requested_cpu_seconds} total CPU seconds, exceeding the {total_cpu_budget} second portfolio budget."
+    if per_worker_time_limit is None:
+        if portfolio_options.get("totalCpuBudgetSeconds") is not None:
+            raise ValueError("portfolio.totalCpuBudgetSeconds requires timeLimitSeconds or portfolio.perWorkerTimeLimitSeconds.")
+    else:
+        total_cpu_budget = _optional_positive_float(
+            portfolio_options,
+            "totalCpuBudgetSeconds",
+            "portfolio.totalCpuBudgetSeconds",
+            MAX_PORTFOLIO_TOTAL_CPU_SECONDS,
+            fallback=MAX_PORTFOLIO_TOTAL_CPU_SECONDS,
         )
+        requested_cpu_seconds = len(seeds) * per_worker_num_workers * per_worker_time_limit
+        if requested_cpu_seconds > total_cpu_budget:
+            raise ValueError(
+                f"CP-SAT portfolio requests {requested_cpu_seconds} total CPU seconds, exceeding the {total_cpu_budget} second portfolio budget."
+            )
 
     worker_options = []
     for seed in seeds:
@@ -156,7 +158,8 @@ def build_portfolio_worker_options(cp_sat_options):
         worker_option["numWorkers"] = per_worker_num_workers
         worker_option["randomSeed"] = int(seed)
         worker_option["randomizeSearch"] = randomize_search
-        worker_option["timeLimitSeconds"] = per_worker_time_limit
+        if per_worker_time_limit is not None:
+            worker_option["timeLimitSeconds"] = per_worker_time_limit
         worker_option["logSearchProgress"] = False
         if portfolio_options.get("perWorkerMaxDeterministicTime") is not None:
             per_worker_deterministic_time = _optional_positive_float(

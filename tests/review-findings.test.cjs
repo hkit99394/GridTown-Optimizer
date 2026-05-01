@@ -824,7 +824,7 @@ function testPlannerSavedLayoutRestoreRoundTripsHintSeedTogglesAndPortfolio() {
         enabled: false,
         workerCount: 3,
         randomSeeds: "",
-        perWorkerTimeLimitSeconds: "30",
+        perWorkerTimeLimitSeconds: "",
         perWorkerNumWorkers: 1,
         randomizeSearch: true,
       },
@@ -3956,11 +3956,22 @@ function testPlannerRequestBuilderKeepsPortfolioStandaloneOnly() {
   assert.equal(lnsRequest.params.cpSat.portfolio, undefined);
 
   state.optimizer = "cp-sat";
+  const unlimitedCpSatRequest = controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false });
+  assert.equal(Object.prototype.hasOwnProperty.call(unlimitedCpSatRequest.params.cpSat, "timeLimitSeconds"), false);
+  assert.equal(unlimitedCpSatRequest.params.cpSat.portfolio.workerCount, 3);
+  assert.deepEqual(Array.from(unlimitedCpSatRequest.params.cpSat.portfolio.randomSeeds), [31, 32, 33]);
+  assert.equal(Object.prototype.hasOwnProperty.call(unlimitedCpSatRequest.params.cpSat.portfolio, "totalCpuBudgetSeconds"), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(unlimitedCpSatRequest.params.cpSat.portfolio, "perWorkerTimeLimitSeconds"), false);
+  assert.equal(unlimitedCpSatRequest.params.cpSat.portfolio.perWorkerNumWorkers, 1);
+  assert.equal(unlimitedCpSatRequest.params.cpSat.portfolio.randomizeSearch, true);
+
+  state.cpSat.timeLimitSeconds = "45";
   const cpSatRequest = controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false });
+  assert.equal(cpSatRequest.params.cpSat.timeLimitSeconds, 45);
   assert.equal(cpSatRequest.params.cpSat.portfolio.workerCount, 3);
   assert.deepEqual(Array.from(cpSatRequest.params.cpSat.portfolio.randomSeeds), [31, 32, 33]);
   assert.equal(cpSatRequest.params.cpSat.portfolio.totalCpuBudgetSeconds, 28800);
-  assert.equal(cpSatRequest.params.cpSat.portfolio.perWorkerTimeLimitSeconds, 30);
+  assert.equal(cpSatRequest.params.cpSat.portfolio.perWorkerTimeLimitSeconds, 45);
   assert.equal(cpSatRequest.params.cpSat.portfolio.perWorkerNumWorkers, 1);
   assert.equal(cpSatRequest.params.cpSat.portfolio.randomizeSearch, true);
 

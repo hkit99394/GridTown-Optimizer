@@ -660,8 +660,9 @@
                     </label>
                   </div>
                   <div class="notice info">
-                    Portfolio CP-SAT launches up to four exact paths inside a bounded per-worker budget. Internal
-                    worker lanes are capped at eight total.
+                    Portfolio CP-SAT launches multiple exact paths. Add a CP-SAT or per-worker time limit for a
+                    bounded run, or leave both blank to run until all paths finish or you stop them. Internal worker
+                    lanes are capped at eight total.
                   </div>
                   <div class="form-grid two-up">
                     <label class="check-field">
@@ -678,7 +679,13 @@
                     </label>
                     <label class="field">
                       <span>Per-worker limit (seconds)</span>
-                      <input id="cpSatPortfolioPerWorkerTimeLimitSeconds" type="number" min="1" step="1" />
+                      <input
+                        id="cpSatPortfolioPerWorkerTimeLimitSeconds"
+                        type="number"
+                        min="1"
+                        step="1"
+                        placeholder="Blank = CP-SAT limit or unlimited"
+                      />
                     </label>
                     <label class="field">
                       <span>CP-SAT workers per path</span>

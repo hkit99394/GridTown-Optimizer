@@ -3303,8 +3303,11 @@ except RuntimeError as error:
     future_failure_error = str(error)
 future_failure_cancelled = [future.cancelled for future in FutureFailureAfterProgressExecutor.futures]
 
+unlimited_worker_options = module.build_portfolio_worker_options({"portfolio": {"workerCount": 2}})
+unlimited_worker_has_time_limit = ["timeLimitSeconds" in option for option in unlimited_worker_options]
+
 try:
-    module.build_portfolio_worker_options({"portfolio": {"workerCount": 2}})
+    module.build_portfolio_worker_options({"portfolio": {"workerCount": 2, "totalCpuBudgetSeconds": 60}})
     missing_budget_error = None
 except ValueError as error:
     missing_budget_error = str(error)
@@ -3361,6 +3364,7 @@ print(json.dumps({
     "futureFailureProgress": progress_results,
     "futureFailureError": future_failure_error,
     "futureFailureCancelled": future_failure_cancelled,
+    "unlimitedWorkerHasTimeLimit": unlimited_worker_has_time_limit,
     "missingBudgetError": missing_budget_error,
     "workerThreadError": worker_thread_error,
     "cpuBudgetError": cpu_budget_error,
@@ -3389,7 +3393,8 @@ print(json.dumps({
   ]);
   assert.match(payload.futureFailureError, /worker future failed after sibling progress/);
   assert.deepEqual(payload.futureFailureCancelled, [true, true]);
-  assert.match(payload.missingBudgetError, /requires timeLimitSeconds/);
+  assert.deepEqual(payload.unlimitedWorkerHasTimeLimit, [false, false]);
+  assert.match(payload.missingBudgetError, /totalCpuBudgetSeconds requires timeLimitSeconds/);
   assert.match(payload.workerThreadError, /exceeding the 8 worker portfolio limit/);
   assert.match(payload.cpuBudgetError, /exceeding the 28800\.0 second portfolio budget/);
   assert.match(payload.tooManySeedsError, /must contain between 1 and 8 seeds/);

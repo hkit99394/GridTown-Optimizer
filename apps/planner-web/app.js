@@ -151,7 +151,7 @@ const state = {
       enabled: false,
       workerCount: 3,
       randomSeeds: "",
-      perWorkerTimeLimitSeconds: "30",
+      perWorkerTimeLimitSeconds: "",
       perWorkerNumWorkers: 1,
       randomizeSearch: true,
     },

@@ -9,7 +9,6 @@
   });
   const CP_SAT_PORTFOLIO_DEFAULT_WORKERS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.defaultWorkers;
   const CP_SAT_PORTFOLIO_MAX_WORKERS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxWorkers;
-  const CP_SAT_PORTFOLIO_DEFAULT_PER_WORKER_SECONDS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.defaultPerWorkerTimeLimitSeconds;
   const CP_SAT_PORTFOLIO_MAX_TOTAL_WORKER_THREADS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxTotalWorkerThreads;
   const CP_SAT_PORTFOLIO_MAX_PER_WORKER_THREADS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxPerWorkerThreads;
   const CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxTotalCpuBudgetSeconds;
@@ -48,7 +47,7 @@
         enabled: false,
         workerCount: CP_SAT_PORTFOLIO_DEFAULT_WORKERS,
         randomSeeds: "",
-        perWorkerTimeLimitSeconds: String(CP_SAT_PORTFOLIO_DEFAULT_PER_WORKER_SECONDS),
+        perWorkerTimeLimitSeconds: "",
         perWorkerNumWorkers: 1,
         randomizeSearch: true,
       };
@@ -574,7 +573,7 @@
         elements.cpSatPortfolioPerWorkerTimeLimitSeconds.max = String(maxPerWorkerSeconds);
         elements.cpSatPortfolioPerWorkerTimeLimitSeconds.disabled = disabled;
         elements.cpSatPortfolioPerWorkerTimeLimitSeconds.title =
-          `Capped at ${maxPerWorkerSeconds}s here so the portfolio stays inside the ${CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS}s total CPU budget.`;
+          `Blank inherits the CP-SAT time limit; if both are blank, portfolio workers run until they finish or you stop them. Finite values are capped at ${maxPerWorkerSeconds}s here so the portfolio stays inside the ${CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS}s total CPU budget.`;
       }
       if (elements.cpSatPortfolioPerWorkerNumWorkers) {
         elements.cpSatPortfolioPerWorkerNumWorkers.value = String(portfolio.perWorkerNumWorkers);

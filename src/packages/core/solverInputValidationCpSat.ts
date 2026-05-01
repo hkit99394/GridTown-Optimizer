@@ -98,11 +98,15 @@ function assertValidCpSatPortfolioOptions(value: unknown, path: string, cpSat: R
   const perWorkerTimeLimitSeconds =
     getOptionalFinitePositiveNumber(portfolio, "perWorkerTimeLimitSeconds")
     ?? getOptionalFinitePositiveNumber(cpSat, "timeLimitSeconds");
-  if (perWorkerTimeLimitSeconds === undefined) {
-    throw new SolverInputError(`${path} requires cpSat.timeLimitSeconds or ${path}.perWorkerTimeLimitSeconds.`);
-  }
 
   const configuredCpuBudget = getOptionalFinitePositiveNumber(portfolio, "totalCpuBudgetSeconds");
+  if (perWorkerTimeLimitSeconds === undefined) {
+    if (configuredCpuBudget !== undefined) {
+      throw new SolverInputError(`${path}.totalCpuBudgetSeconds requires cpSat.timeLimitSeconds or ${path}.perWorkerTimeLimitSeconds.`);
+    }
+    return;
+  }
+
   const cpuBudgetLimit = Math.min(
     configuredCpuBudget ?? CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS,
     CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS

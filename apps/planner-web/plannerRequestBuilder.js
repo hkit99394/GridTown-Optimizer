@@ -10,7 +10,6 @@
   const CP_SAT_PORTFOLIO_DEFAULT_WORKERS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.defaultWorkers;
   const CP_SAT_RANDOM_SEED_MAX = 0x7fffffff;
   const CP_SAT_PORTFOLIO_MAX_WORKERS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxWorkers;
-  const CP_SAT_PORTFOLIO_DEFAULT_PER_WORKER_SECONDS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.defaultPerWorkerTimeLimitSeconds;
   const CP_SAT_PORTFOLIO_MAX_TOTAL_WORKER_THREADS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxTotalWorkerThreads;
   const CP_SAT_PORTFOLIO_MAX_PER_WORKER_THREADS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxPerWorkerThreads;
   const CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxTotalCpuBudgetSeconds;
@@ -370,19 +369,24 @@
       );
       const requestedPerWorkerTimeLimitSeconds =
         readOptionalInteger(portfolio.perWorkerTimeLimitSeconds, 1)
-        ?? outerTimeLimitSeconds
-        ?? CP_SAT_PORTFOLIO_DEFAULT_PER_WORKER_SECONDS;
+        ?? outerTimeLimitSeconds;
       const maxPerWorkerTimeLimitSeconds = Math.max(
         1,
         Math.floor(CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS / (workerCount * perWorkerNumWorkers))
       );
-      const perWorkerTimeLimitSeconds = Math.min(requestedPerWorkerTimeLimitSeconds, maxPerWorkerTimeLimitSeconds);
+      const perWorkerTimeLimitSeconds = requestedPerWorkerTimeLimitSeconds === undefined
+        ? undefined
+        : Math.min(requestedPerWorkerTimeLimitSeconds, maxPerWorkerTimeLimitSeconds);
 
       return {
         workerCount,
         ...(randomSeeds ? { randomSeeds } : {}),
-        totalCpuBudgetSeconds: CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS,
-        perWorkerTimeLimitSeconds,
+        ...(perWorkerTimeLimitSeconds !== undefined
+          ? {
+              totalCpuBudgetSeconds: CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS,
+              perWorkerTimeLimitSeconds,
+            }
+          : {}),
         perWorkerNumWorkers,
         randomizeSearch: portfolio.randomizeSearch !== false,
       };

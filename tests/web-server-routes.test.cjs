@@ -352,9 +352,25 @@ async function testHealthRoute(handler) {
 }
 
 async function testStaticPlannerModules(handler) {
-  const result = await invoke(handler, { method: "GET", url: "/plannerShell.js" });
-  assert.equal(result.statusCode, 200);
-  assert.match(result.body, /CityBuilderShell/);
+  const expectedStaticModules = [
+    ["/plannerShell.js", /CityBuilderShell/],
+    ["/plannerShared.js", /CityBuilderShared/],
+    ["/plannerPersistence.js", /CityBuilderPersistence/],
+    ["/plannerSolveRuntime.js", /CityBuilderSolveRuntime/],
+    ["/plannerExpansion.js", /CityBuilderExpansion/],
+    ["/plannerHeatmaps.js", /PlannerHeatmaps/],
+    ["/plannerManualLayout.js", /PlannerManualLayout/],
+    ["/plannerResults.js", /CityBuilderResults/],
+    ["/plannerRequestBuilder.js", /CityBuilderRequestBuilder/],
+    ["/plannerWorkbench.js", /CityBuilderWorkbench/],
+    ["/app.js", /const state =/],
+  ];
+
+  for (const [url, bodyPattern] of expectedStaticModules) {
+    const result = await invoke(handler, { method: "GET", url });
+    assert.equal(result.statusCode, 200, `${url} should be served`);
+    assert.match(result.body, bodyPattern);
+  }
 }
 
 async function testUnexpectedStaticServerErrorsReturnInternalServerError() {
@@ -815,10 +831,11 @@ async function testImmediateSolveRejectsInvalidCpSatOptionsBeforeStartingBackend
         numWorkers: 1,
         portfolio: {
           workerCount: 2,
+          totalCpuBudgetSeconds: 60,
         },
       },
       expectedError:
-        "Invalid solver input: CP-SAT portfolio option cpSat.portfolio requires cpSat.timeLimitSeconds or CP-SAT portfolio option cpSat.portfolio.perWorkerTimeLimitSeconds.",
+        "Invalid solver input: CP-SAT portfolio option cpSat.portfolio.totalCpuBudgetSeconds requires cpSat.timeLimitSeconds or CP-SAT portfolio option cpSat.portfolio.perWorkerTimeLimitSeconds.",
     },
     {
       cpSat: {

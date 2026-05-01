@@ -1,6 +1,6 @@
 import { performance } from "node:perf_hooks";
 
-import { buildSolverProgressSummary, formatSolverProgressSummary } from "../../core/progress.js";
+import { buildSolverProgressSummary, formatSolverProgressSummary } from "../core/index.js";
 import { solveGreedy } from "../../greedy/solver.js";
 import {
   applyBenchmarkOptionDefaults,
@@ -24,7 +24,7 @@ import type {
   Grid,
   SolverParams,
   SolverProgressSummary,
-} from "../../core/types.js";
+} from "../core/index.js";
 
 export interface GreedyServiceLookaheadBenchmarkOptions {
   serviceLookaheadCandidates?: number;

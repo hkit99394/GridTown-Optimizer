@@ -448,6 +448,12 @@ Started on 2026-04-30:
   `src/packages/core/index.ts` as the canonical core package boundary and
   routing `src/solverApi.ts` through it. Core implementations still live under
   `src/core` while consumers migrate.
+- Routed `src/packages/benchmarks` core dependencies through
+  `src/packages/core/index.ts`, with a public API guard preventing direct
+  benchmark-package imports from `src/core/*`.
+- Routed `src/apps` and `src/tools` core dependencies through
+  `src/packages/core/index.ts`, with a public API guard preventing direct
+  app/tool imports from `src/core/*`.
 
 ## Current Follow-Up
 

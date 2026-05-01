@@ -7,13 +7,13 @@ import { DEFAULT_CP_SAT_BENCHMARK_CORPUS } from "./cpSat.js";
 import { DEFAULT_CROSS_MODE_BENCHMARK_CORPUS } from "./crossMode.js";
 import { DEFAULT_GREEDY_BENCHMARK_CORPUS } from "./greedy.js";
 import { DEFAULT_LNS_BENCHMARK_CORPUS } from "./lns.js";
-import { materializeValidLnsSeedSolution } from "../../core/solverInputValidation.js";
+import { materializeValidLnsSeedSolution } from "../core/index.js";
 import { buildManualLayoutResponse } from "../../server/http/solutionResponse.js";
 
 import type {
   CpSatWarmStartHint,
   Solution,
-} from "../../core/types.js";
+} from "../core/index.js";
 import type {
   CrossModeBenchmarkCaseScorecard,
   CrossModeBenchmarkCase,

@@ -8,7 +8,7 @@ import { runCliMain } from "../../apps/cliEntrypoint.js";
 import { applyInlineOptionHandlers, isCliFlag, parsePositiveInteger, parsePositiveNumber } from "../../apps/cliParsing.js";
 import { optionalCliNames, writeCliJsonOrText, writeCliList } from "../../apps/cliOutput.js";
 
-import type { CpSatOptions } from "../../core/types.js";
+import type { CpSatOptions } from "../../packages/core/index.js";
 
 interface ParsedBenchmarkArgs {
   json: boolean;

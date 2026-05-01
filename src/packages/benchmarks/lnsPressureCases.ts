@@ -3,7 +3,7 @@ import type {
   Grid,
   LnsOptions,
   SolverParams,
-} from "../../core/types.js";
+} from "../core/index.js";
 
 type GeneratedLnsReplayPressureFamily =
   | "corridor"

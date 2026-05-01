@@ -1,6 +1,6 @@
 import { performance } from "node:perf_hooks";
 
-import { buildSolverProgressSummary, formatSolverProgressSummary } from "../../core/progress.js";
+import { buildSolverProgressSummary, formatSolverProgressSummary } from "../core/index.js";
 import { solveLns } from "../../lns/solver.js";
 import {
   applyBenchmarkOptionDefaults,
@@ -31,7 +31,7 @@ import type {
   LnsTelemetry,
   SolverParams,
   SolverProgressSummary,
-} from "../../core/types.js";
+} from "../core/index.js";
 
 export interface LnsBenchmarkCase {
   name: string;

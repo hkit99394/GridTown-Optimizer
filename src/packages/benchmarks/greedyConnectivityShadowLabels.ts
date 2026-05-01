@@ -21,7 +21,7 @@ import type {
   GreedyConnectivityShadowDecisionPhase,
   GreedyConnectivityShadowDecisionTrace,
   GreedyConnectivityShadowPlacementTrace,
-} from "../../core/types.js";
+} from "../core/index.js";
 
 export type GreedyConnectivityShadowOrderingPreference = "candidate" | "incumbent";
 

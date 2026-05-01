@@ -6,9 +6,9 @@ import {
   formatTimeToQualityScorecard,
   serializeDecisionTraceJsonl,
   summarizeDecisionTraceReason,
-} from "../../core/decisionTrace.js";
-import { buildSolverProgressSummary, formatSolverProgressSummary } from "../../core/progress.js";
-import { isAdjacentToRoads, isRoadAnchorCell, roadsConnectedToRoadAnchor } from "../../core/roads.js";
+} from "../core/index.js";
+import { buildSolverProgressSummary, formatSolverProgressSummary } from "../core/index.js";
+import { isAdjacentToRoads, isRoadAnchorCell, roadsConnectedToRoadAnchor } from "../core/index.js";
 import { solveAsync } from "../../runtime/solve.js";
 import {
   assertBenchmarkCasesSelected,
@@ -46,7 +46,7 @@ import type {
   SolverDecisionTraceEvent,
   SolverProgressSummary,
   SolverTimeToQualityScorecard,
-} from "../../core/types.js";
+} from "../core/index.js";
 
 export type CrossModeBenchmarkMode = OptimizerName | "cp-sat-portfolio";
 export type CrossModeProblemSizeBand = "tiny" | "small" | "medium";

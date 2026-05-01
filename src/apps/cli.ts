@@ -6,9 +6,8 @@
  * advanced inspection mode.
  */
 
-import type { Grid, OptimizerName, SolverParams } from "../core/types.js";
-import { normalizeServicePlacement } from "../core/buildings.js";
-import { formatSolutionMap, validateSolutionMap } from "../core/index.js";
+import type { Grid, OptimizerName, SolverParams } from "../packages/core/index.js";
+import { formatSolutionMap, normalizeServicePlacement, validateSolutionMap } from "../packages/core/index.js";
 import { solveAsync } from "../runtime/solve.js";
 import { describeAutoStopReason, startAutoSolve } from "../auto/index.js";
 import { startCpSatSolve } from "../cp-sat/solver.js";

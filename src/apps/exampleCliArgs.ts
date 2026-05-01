@@ -1,4 +1,4 @@
-import type { OptimizerName } from "../core/types.js";
+import type { OptimizerName } from "../packages/core/index.js";
 import { readNamedOptionValue } from "./cliParsing.js";
 
 export const DEFAULT_CLI_CP_SAT_PARAMS = {

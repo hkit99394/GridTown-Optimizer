@@ -34,7 +34,7 @@ import type {
   GreedyRoadOpportunityCounterfactualTrace,
   GreedyRoadOpportunityTrace,
   LnsOptions,
-} from "../../core/types.js";
+} from "../core/index.js";
 import type {
   LnsWindowReplaySnapshot,
   LnsWindowReplaySnapshotLabel,

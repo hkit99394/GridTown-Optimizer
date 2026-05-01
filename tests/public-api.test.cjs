@@ -111,6 +111,31 @@ function testSolverApiUsesCorePackageBoundary() {
   assert.equal(solverApiSource.includes("./packages/core/index.js"), true);
 }
 
+function testBenchmarkPackageUsesCorePackageBoundary() {
+  const benchmarkPackageDir = path.join(__dirname, "..", "src", "packages", "benchmarks");
+  const directCoreImportPattern = /(?:from|import)\s+["']\.\.\/\.\.\/core\//;
+  const offenders = listFiles(benchmarkPackageDir, (fileName) => fileName.endsWith(".ts"))
+    .filter((filePath) => directCoreImportPattern.test(fs.readFileSync(filePath, "utf8")));
+
+  assert.deepEqual(offenders.map((filePath) => path.relative(benchmarkPackageDir, filePath)), []);
+}
+
+function testAppsAndToolsUseCorePackageBoundary() {
+  const srcDir = path.join(__dirname, "..", "src");
+  const directCoreImportPattern = /(?:from|import)\s+["'](?:\.\.\/|\.\.\/\.\.\/)core\//;
+  const offenderRoots = [
+    path.join(srcDir, "apps"),
+    path.join(srcDir, "tools"),
+  ];
+  const offenders = offenderRoots.flatMap((rootDir) =>
+    listFiles(rootDir, (fileName) => fileName.endsWith(".ts"))
+      .filter((filePath) => directCoreImportPattern.test(fs.readFileSync(filePath, "utf8")))
+      .map((filePath) => path.relative(srcDir, filePath))
+  );
+
+  assert.deepEqual(offenders, []);
+}
+
 testSolverApiExposesDomainAndSolverSurface();
 testSolverApiDoesNotExposeBenchmarkSurface();
 testBenchmarkApiExposesBenchmarkSurface();
@@ -121,3 +146,5 @@ testBenchmarkToolingUsesBenchmarkApiBoundary();
 testBenchmarkInternalsAreHiddenBehindBenchmarkApi();
 testLegacyBenchmarkModulesAreCompatibilityWrappers();
 testSolverApiUsesCorePackageBoundary();
+testBenchmarkPackageUsesCorePackageBoundary();
+testAppsAndToolsUseCorePackageBoundary();

@@ -8,7 +8,7 @@ import {
   width,
   materializeValidLnsSeedSolution,
   validateSolution,
-} from "../../core/index.js";
+} from "../core/index.js";
 import { solveCpSat } from "../../cp-sat/solver.js";
 import { solveGreedy } from "../../greedy/solver.js";
 import {
@@ -48,7 +48,7 @@ import type {
   LnsOptions,
   Solution,
   SolverParams,
-} from "../../core/types.js";
+} from "../core/index.js";
 import type {
   LnsBenchmarkCase,
   LnsReplayPressureFamilyLabel,

@@ -1,4 +1,4 @@
-import type { GreedyOptions, Grid, OptimizerName, Solution, SolverParams } from "../../core/types.js";
+import type { GreedyOptions, Grid, OptimizerName, Solution, SolverParams } from "../core/index.js";
 
 export interface NamedBenchmarkCase {
   name: string;

@@ -27,7 +27,7 @@ import type {
   LnsBenchmarkCaseResult,
   LnsBenchmarkRunOptions,
 } from "./lns.js";
-import type { LnsOptions } from "../../core/types.js";
+import type { LnsOptions } from "../core/index.js";
 import type {
   BenchmarkVariantCoverageMetrics,
   BenchmarkVariantResultSnapshot,

@@ -1,4 +1,4 @@
-import { serializeDecisionTraceJsonl } from "../../core/decisionTrace.js";
+import { serializeDecisionTraceJsonl } from "../core/index.js";
 import {
   benchmarkGeneratedAt,
   formatNullableBenchmarkNumber as formatPopulationGap,
@@ -31,7 +31,7 @@ import type {
   CrossModeProblemSizeBand,
   CrossModeBudgetPolicyRecommendation,
 } from "./crossMode.js";
-import type { SolverDecisionTraceEvent } from "../../core/types.js";
+import type { SolverDecisionTraceEvent } from "../core/index.js";
 
 export interface CrossModeBenchmarkBudgetAblationRunOptions extends CrossModeBenchmarkRunOptions {
   policies?: readonly CrossModeBenchmarkBudgetAblationPolicy[];

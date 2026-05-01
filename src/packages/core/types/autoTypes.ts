@@ -48,6 +48,9 @@ export interface AutoGreedySeedStageSummary {
   exhaustiveServiceSearch: boolean | null;
   serviceExactPoolLimit: number | null;
   serviceExactMaxCombinations: number | null;
+  serviceMasterDecomposition: boolean | null;
+  serviceMasterPoolLimit: number | null;
+  serviceMasterMaxLayouts: number | null;
   totalPopulation: number | null;
   elapsedSeconds: number | null;
   phases?: GreedyProfilePhaseSummary[];

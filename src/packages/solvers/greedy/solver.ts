@@ -124,6 +124,7 @@ import {
   runGreedyServiceCapSearch,
 } from "./serviceCapSearch.js";
 import type { CapSearchPhase } from "./serviceCapSearch.js";
+import { runGreedyServiceMasterDecomposition } from "./serviceMasterDecomposition.js";
 
 type ResidentialCandidateStat = {
   r: number;
@@ -3552,6 +3553,9 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     exhaustiveServiceSearch,
     serviceExactPoolLimit,
     serviceExactMaxCombinations,
+    serviceMasterDecomposition,
+    serviceMasterPoolLimit,
+    serviceMasterMaxLayouts,
     stopFilePath,
     snapshotFilePath,
   } = getGreedyOptions(params);
@@ -3802,6 +3806,21 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
       serviceExactPoolLimit,
       serviceExactMaxCombinations,
       serviceOrderSorted,
+      evaluateForcedServiceSet,
+      updateBest,
+      profileCounters,
+      maybeStop,
+    }));
+
+    incumbent = best;
+    best = runProfiledPhase("serviceMasterDecomposition", () => runGreedyServiceMasterDecomposition({
+      initialBest: incumbent,
+      enabled: serviceMasterDecomposition,
+      serviceMasterPoolLimit,
+      serviceMasterMaxLayouts,
+      serviceOrderSorted,
+      inferredUpper,
+      serviceTypeAvailability: params.serviceTypes?.map((type) => Math.max(0, type.avail)) ?? null,
       evaluateForcedServiceSet,
       updateBest,
       profileCounters,

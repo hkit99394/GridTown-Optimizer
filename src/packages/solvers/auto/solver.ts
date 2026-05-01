@@ -172,6 +172,9 @@ function buildGreedySeedStageSummary(
     exhaustiveServiceSearch: optionalBoolean(greedy.exhaustiveServiceSearch),
     serviceExactPoolLimit: optionalNumber(greedy.serviceExactPoolLimit),
     serviceExactMaxCombinations: optionalNumber(greedy.serviceExactMaxCombinations),
+    serviceMasterDecomposition: optionalBoolean(greedy.serviceMasterDecomposition),
+    serviceMasterPoolLimit: optionalNumber(greedy.serviceMasterPoolLimit),
+    serviceMasterMaxLayouts: optionalNumber(greedy.serviceMasterMaxLayouts),
     totalPopulation: solution?.totalPopulation ?? null,
     elapsedSeconds,
     ...(solution?.greedyProfile?.phases

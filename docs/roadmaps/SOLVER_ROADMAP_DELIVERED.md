@@ -353,6 +353,15 @@ Reviewed through 2026-05-01.
 - Regression coverage verifies an eligible tiny repair improves without invoking CP-SAT, ineligible windows fall back to CP-SAT, malformed DP options are rejected, and the DP result matches CP-SAT on an eligible tiny repair when OR-Tools is available.
 - No solver default changed; DP remains a bounded exact subroutine for tiny windows, narrow-profile experiments, and oracle checks.
 
+### 41. Service-Master Decomposition Experiment
+
+- Added a guarded Greedy service-master pass behind `greedy.serviceMasterDecomposition`.
+- The pass treats service choice as the master decision by enumerating a bounded, type-aware, non-overlapping pool of service layouts, then realizes each layout through the existing fixed-service residential packing and road-repair subproblem.
+- Added no-good-style pruning for duplicate, overlapping, type-infeasible, and failed master layouts, with profile counters for evaluated layouts, feasible layouts, no-good skips, and fixed-service realization work.
+- Added the `service-master-decomposition-experiment` Greedy benchmark case and benchmark text output for `service-master=layouts/feasible/no-good`.
+- Regression coverage verifies malformed service-master options are rejected, the benchmark final layout is evaluator-valid, and the opt-in master pass improves the focused service-pressure case from 465 to 555 population.
+- No solver default changed; this remains an experiment path until equal-budget scorecards justify any Auto or Greedy seed-policy promotion.
+
 ## Maintenance Watchpoints
 
 - Keep deterministic benchmark seeds stable when changing solver scoring.

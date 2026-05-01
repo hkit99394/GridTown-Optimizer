@@ -9,6 +9,8 @@ const AUTO_GREEDY_STAGE_REFINE_ITERATION_CAP = 1;
 const AUTO_GREEDY_STAGE_REFINE_CANDIDATE_CAP = 24;
 const AUTO_GREEDY_STAGE_EXACT_POOL_CAP = 8;
 const AUTO_GREEDY_STAGE_EXACT_COMBINATION_CAP = 512;
+const AUTO_GREEDY_STAGE_SERVICE_MASTER_POOL_CAP = 12;
+const AUTO_GREEDY_STAGE_SERVICE_MASTER_LAYOUT_CAP = 256;
 const AUTO_CP_SAT_STAGE_RESERVE_RATIO = 0.2;
 const AUTO_MIN_CP_SAT_STAGE_RESERVE_SECONDS = 1;
 const AUTO_TRACE_TUNED_LNS_MAX_ITERATIONS = 24;
@@ -123,6 +125,7 @@ export function buildAutoGreedyStageOptions(params: SolverParams): NonNullable<S
       )
     ),
     exhaustiveServiceSearch: false,
+    serviceMasterDecomposition: false,
     serviceExactPoolLimit: Math.max(
       1,
       Math.min(
@@ -135,6 +138,20 @@ export function buildAutoGreedyStageOptions(params: SolverParams): NonNullable<S
       Math.min(
         greedy.serviceExactMaxCombinations ?? params.serviceExactMaxCombinations ?? AUTO_GREEDY_STAGE_EXACT_COMBINATION_CAP,
         AUTO_GREEDY_STAGE_EXACT_COMBINATION_CAP
+      )
+    ),
+    serviceMasterPoolLimit: Math.max(
+      1,
+      Math.min(
+        greedy.serviceMasterPoolLimit ?? AUTO_GREEDY_STAGE_SERVICE_MASTER_POOL_CAP,
+        AUTO_GREEDY_STAGE_SERVICE_MASTER_POOL_CAP
+      )
+    ),
+    serviceMasterMaxLayouts: Math.max(
+      1,
+      Math.min(
+        greedy.serviceMasterMaxLayouts ?? AUTO_GREEDY_STAGE_SERVICE_MASTER_LAYOUT_CAP,
+        AUTO_GREEDY_STAGE_SERVICE_MASTER_LAYOUT_CAP
       )
     ),
   };

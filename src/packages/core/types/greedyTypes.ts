@@ -41,6 +41,12 @@ export interface GreedyOptions {
   serviceExactPoolLimit?: number;
   /** Hard cap on evaluated service combinations (default 12000) */
   serviceExactMaxCombinations?: number;
+  /** Experimental master/subproblem pass: enumerate bounded service layouts, then realize residentials/roads. Default false. */
+  serviceMasterDecomposition?: boolean;
+  /** Ranked service-candidate pool size for service-master decomposition (default 12). */
+  serviceMasterPoolLimit?: number;
+  /** Hard cap on service-master layouts evaluated through fixed-service realization (default 256). */
+  serviceMasterMaxLayouts?: number;
   /** Internal stop-token path used by the local web server. */
   stopFilePath?: string;
   /** Internal best-snapshot path used by the local web server. */
@@ -128,6 +134,9 @@ export interface GreedyProfileCounters {
     restartCaps: number;
     serviceRefineTrials: number;
     exhaustiveTrials: number;
+    serviceMasterLayouts: number;
+    serviceMasterFeasibleLayouts: number;
+    serviceMasterNoGoodSkips: number;
     fixedServiceRealizationTrials: number;
     localSearchIterations: number;
   };
@@ -289,6 +298,7 @@ export type GreedyProfilePhaseName =
   | "forcedServiceRealization"
   | "serviceRefinement"
   | "exhaustiveServiceSearch"
+  | "serviceMasterDecomposition"
   | "residentialLocalSearch"
   | "serviceNeighborhoodSearch";
 

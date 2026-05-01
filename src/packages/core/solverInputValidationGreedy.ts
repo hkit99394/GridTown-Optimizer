@@ -14,6 +14,8 @@ const GREEDY_MAX_SERVICE_REFINEMENT_ITERATIONS = 100;
 const GREEDY_MAX_SERVICE_CANDIDATE_LIMIT = 2_000;
 const GREEDY_MAX_SERVICE_EXACT_POOL_LIMIT = 64;
 const GREEDY_MAX_SERVICE_EXACT_COMBINATIONS = 100_000;
+const GREEDY_MAX_SERVICE_MASTER_POOL_LIMIT = 128;
+const GREEDY_MAX_SERVICE_MASTER_LAYOUTS = 100_000;
 const GREEDY_MAX_TIME_LIMIT_SECONDS = 24 * 60 * 60;
 const GREEDY_MAX_DENSITY_TIE_BREAKER_TOLERANCE_PERCENT = 100;
 
@@ -103,6 +105,21 @@ export function assertValidGreedyOptions(params: SolverParams): void {
       "Greedy option greedy.serviceExactMaxCombinations",
       1,
       GREEDY_MAX_SERVICE_EXACT_COMBINATIONS
+    );
+    requireOptionalBoolean(greedy, "serviceMasterDecomposition", "Greedy option greedy.serviceMasterDecomposition");
+    requireOptionalIntegerInRange(
+      greedy,
+      "serviceMasterPoolLimit",
+      "Greedy option greedy.serviceMasterPoolLimit",
+      1,
+      GREEDY_MAX_SERVICE_MASTER_POOL_LIMIT
+    );
+    requireOptionalIntegerInRange(
+      greedy,
+      "serviceMasterMaxLayouts",
+      "Greedy option greedy.serviceMasterMaxLayouts",
+      1,
+      GREEDY_MAX_SERVICE_MASTER_LAYOUTS
     );
     requireOptionalString(greedy, "stopFilePath", "Greedy option greedy.stopFilePath");
     requireOptionalString(greedy, "snapshotFilePath", "Greedy option greedy.snapshotFilePath");

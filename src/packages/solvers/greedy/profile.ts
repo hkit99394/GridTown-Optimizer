@@ -26,6 +26,7 @@ const GREEDY_PROFILE_PHASE_NAMES: readonly GreedyProfilePhaseName[] = Object.fre
   "forcedServiceRealization",
   "serviceRefinement",
   "exhaustiveServiceSearch",
+  "serviceMasterDecomposition",
   "residentialLocalSearch",
   "serviceNeighborhoodSearch",
 ]);
@@ -54,6 +55,9 @@ export function createGreedyProfileCounters(): GreedyProfileCounters {
       restartCaps: 0,
       serviceRefineTrials: 0,
       exhaustiveTrials: 0,
+      serviceMasterLayouts: 0,
+      serviceMasterFeasibleLayouts: 0,
+      serviceMasterNoGoodSkips: 0,
       fixedServiceRealizationTrials: 0,
       localSearchIterations: 0,
     },

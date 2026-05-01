@@ -41,6 +41,7 @@ The default posture remains unchanged: keep `auto` as the recommended quality pa
 - CPU portfolio is closed as a measurement/safety gate. The latest tiny paired run tied population while using more configured worker CPU budget, so portfolio stays explicit-only.
 - CP-SAT road-semantics alignment and scorecard closeout are delivered as of 2026-04-30. CP-SAT now uses one road-connectivity formulation: per-component anchored roads, and the six-case scorecard reached `OPTIMAL` under a 5s single-worker budget.
 - CP-SAT async and portfolio failure-mode coverage is delivered as of 2026-05-01. Regression coverage now includes malformed progress, no-final-result streamed-progress close, child diagnostics, process-pool fallback, worker future failure after sibling progress, cancellation process groups, and cancellation snapshot propagation.
+- The service-master decomposition experiment is delivered as of 2026-05-01. Greedy now has an opt-in master/subproblem pass that enumerates bounded service layouts and realizes each through the existing fixed-service residential/road subproblem; the focused service-pressure benchmark improves from 465 to 555 population with exact validation.
 
 ## Key Finding: CP-SAT Road Semantics
 
@@ -96,8 +97,9 @@ Best next algorithmic sequence:
 1. CP-SAT model alignment and strengthening.
 2. Adaptive LNS over semantic neighborhoods.
 3. Auto budget retuning from telemetry.
-4. Service-master decomposition experiments.
-5. Geometry-native CP-SAT or external exact solvers only as controlled research branches.
+4. Service-master decomposition experiments. Initial opt-in pass delivered; promotion remains gated on wider scorecards.
+5. LNS replay label scale-up from the delivered adaptive/operator traces.
+6. Geometry-native CP-SAT or external exact solvers only as controlled research branches.
 
 Do not start with learned ranking. It should follow telemetry and label scale, not precede them.
 
@@ -282,16 +284,18 @@ Success signal:
 
 Goal: attack the strongest service/residential coupling if adaptive LNS is not enough.
 
+Status: delivered as a guarded Greedy experiment. The new opt-in `greedy.serviceMasterDecomposition` pass enumerates bounded, type-aware, non-overlapping service layouts, evaluates each through the existing fixed-service residential packing plus road-repair realization path, and records master-layout profile counters. No default changed.
+
 Deliverables:
 
-- Experimental service-layout master problem.
-- Residential packing plus road-repair subproblem.
-- No-good cuts or service-swap neighborhoods.
-- Scorecards focused on service-overlap and facility-coverage pressure cases.
+- Experimental service-layout master problem. Delivered in `src/packages/solvers/greedy/serviceMasterDecomposition.ts`.
+- Residential packing plus road-repair subproblem. Delivered by reusing the fixed-service realization evaluator.
+- No-good cuts or service-swap neighborhoods. Delivered as duplicate, overlap, type-cap, and failed-layout pruning plus the existing fixed-service order/seed realization variants.
+- Scorecards focused on service-overlap and facility-coverage pressure cases. Delivered as the `service-master-decomposition-experiment` benchmark and Greedy profile output for master layouts.
 
 Success signal:
 
-- Experimental mode beats Auto on targeted pressure families while every final layout passes exact validation.
+- The focused opt-in pressure case improves from 465 to 555 population, records service-master profile counters, and passes exact validation. Wider equal-budget scorecards are still required before promotion into Auto or default Greedy seed policy.
 
 ## Gated Research Tracks
 

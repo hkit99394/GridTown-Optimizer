@@ -316,6 +316,9 @@ export function formatGreedyBenchmarkSuite(result: GreedyBenchmarkSuiteResult): 
         `  attempts=caps:${counters.attempts.serviceCaps} restarts:${counters.attempts.restarts} refine:${counters.attempts.serviceRefineTrials} exhaustive:${counters.attempts.exhaustiveTrials} fixed-set:${counters.attempts.fixedServiceRealizationTrials}`
       );
       lines.push(
+        `  service-master=layouts:${counters.attempts.serviceMasterLayouts} feasible:${counters.attempts.serviceMasterFeasibleLayouts} no-good:${counters.attempts.serviceMasterNoGoodSkips}`
+      );
+      lines.push(
         `  phases=${benchmark.greedyProfile?.phases.map(formatProfilePhaseSummary).join(", ") ?? "n/a"}`
       );
       lines.push(
@@ -721,6 +724,44 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
         exhaustiveServiceSearch: true,
         serviceExactPoolLimit: 6,
         serviceExactMaxCombinations: 64,
+      },
+    },
+  },
+  {
+    name: "service-master-decomposition-experiment",
+    description: "Experimental service-layout master pass should reroute a tempting facility pick through residential/road realization.",
+    grid: [
+      [1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 0],
+      [1, 1, 1, 1, 1],
+    ],
+    params: {
+      optimizer: "greedy",
+      serviceTypes: [
+        { rows: 1, cols: 1, bonus: 27, range: 1, avail: 2 },
+        { rows: 1, cols: 2, bonus: 70, range: 1, avail: 1 },
+      ],
+      residentialTypes: [
+        { w: 2, h: 2, min: 58, max: 156, avail: 5 },
+        { w: 2, h: 3, min: 117, max: 155, avail: 3 },
+      ],
+      availableBuildings: { services: 2, residentials: 6 },
+      greedy: {
+        localSearch: false,
+        localSearchServiceMoves: false,
+        randomSeed: 7,
+        restarts: 1,
+        serviceRefineIterations: 0,
+        serviceRefineCandidateLimit: 8,
+        exhaustiveServiceSearch: false,
+        serviceExactPoolLimit: 6,
+        serviceExactMaxCombinations: 64,
+        serviceMasterDecomposition: true,
+        serviceMasterPoolLimit: 10,
+        serviceMasterMaxLayouts: 256,
       },
     },
   },

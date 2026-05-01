@@ -78,6 +78,9 @@ export function getGreedyOptions(params: SolverParams): NormalizedGreedyOptions 
     exhaustiveServiceSearch: greedy.exhaustiveServiceSearch ?? params.exhaustiveServiceSearch ?? false,
     serviceExactPoolLimit: greedy.serviceExactPoolLimit ?? params.serviceExactPoolLimit ?? 22,
     serviceExactMaxCombinations: greedy.serviceExactMaxCombinations ?? params.serviceExactMaxCombinations ?? 12000,
+    serviceMasterDecomposition: greedy.serviceMasterDecomposition ?? false,
+    serviceMasterPoolLimit: greedy.serviceMasterPoolLimit ?? 12,
+    serviceMasterMaxLayouts: greedy.serviceMasterMaxLayouts ?? 256,
     stopFilePath: greedy.stopFilePath ?? "",
     snapshotFilePath: greedy.snapshotFilePath ?? "",
   };

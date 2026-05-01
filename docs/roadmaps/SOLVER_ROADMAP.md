@@ -91,9 +91,8 @@ Status vocabulary:
 
 | Rank | Priority | Status | Impact | Summary | Success Signal |
 | --- | --- | --- | ---: | --- | --- |
-| 1 | Service-master decomposition experiment | not-started | 3.5 | Treat service layouts as the master decision, then solve residential packing plus road repair as a subproblem; use no-good cuts or service swaps if useful. | Experimental mode beats Auto on service-overlap or facility-coverage pressure families without invalid layouts. |
-| 2 | LNS replay label scale-up | needs-scale | 3.0 | Use adaptive operator outcomes and replay windows to grow split-protected LNS labels. | Development and holdout splits satisfy usable, non-neutral, and family-balanced label gates before any LNS ranker is trained. |
-| 3 | CPU-first Greedy offline ranker | gated | 2.5 | Use the healthier Greedy label bundle for offline diagnostics only. | A small CPU model beats deterministic, random, and single-feature baselines on protected holdout without leaked case names. |
+| 1 | LNS replay label scale-up | needs-scale | 3.0 | Use adaptive operator outcomes and replay windows to grow split-protected LNS labels. | Development and holdout splits satisfy usable, non-neutral, and family-balanced label gates before any LNS ranker is trained. |
+| 2 | CPU-first Greedy offline ranker | gated | 2.5 | Use the healthier Greedy label bundle for offline diagnostics only. | A small CPU model beats deterministic, random, and single-feature baselines on protected holdout without leaked case names. |
 
 ## Status Snapshot
 
@@ -112,6 +111,7 @@ Status vocabulary:
 | Auto budget policy retuning | delivered | [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED.md), item 38 | Runtime Auto now applies the trace-tuned LNS budget defaults already used by scorecards, while keeping explicit user settings and the measured `0.2` CP-SAT reserve default intact. |
 | CP-SAT async/portfolio failure-mode coverage | delivered | [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED.md), item 39 | Async and portfolio regressions now cover malformed progress, no-final-result streams, child diagnostics, process-pool fallback, worker future failure after sibling progress, cancellation process groups, and portfolio snapshot propagation. |
 | Exact small-window DP repair | delivered | [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED.md), item 40 | Opt-in LNS repair can route eligible tiny windows through exact bitmask DP with CP-SAT fallback, outcome telemetry, evaluator validation, and CP-SAT comparison coverage where OR-Tools is available. No default changed. |
+| Service-master decomposition experiment | delivered | [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED.md), item 41 | Greedy has a guarded `serviceMasterDecomposition` pass that enumerates bounded service layouts, realizes each through the fixed-service residential/road subproblem, records profile counters, and has a service-pressure benchmark where opt-in master search improves 465 -> 555 with exact validation. No default changed. |
 | Model training path | gated | No `python/ml/` scaffold, offline metric report, trained model, or feature-flagged scorer is promoted | No learned default path. |
 | GPU, distributed solving, alternative solvers | gated | No CPU-first bottleneck evidence requiring them | Research-only until equal-budget wins exist. |
 
@@ -122,7 +122,7 @@ These are not next actions. Move them into the active table only after the trigg
 | Trigger | Priority | Impact | Summary | Success Signal |
 | --- | --- | ---: | --- | --- |
 | CP-SAT semantics alignment and product corpus are stable | Geometry-native CP-SAT / `NoOverlap2D` experiment | 3.0 | Compare current cell-indexed set packing with optional-interval rectangle constraints. | Controlled scorecard shows propagation or time-to-best improvement without model-size blowup. |
-| Service-overlap and coverage families expose a repeated bottleneck | Service-master / subproblem decomposition | 3.5 | Make service choice a master problem and residential/road repair a subproblem. | Beats Auto on targeted families and remains validated by the exact evaluator. |
+| Service-master scorecards show repeatable equal-budget wins | Service-master promotion in Auto or LNS seed policy | 3.5 | Promote or schedule the opt-in service-master pass only if targeted pressure evidence justifies its CPU cost. | Beats Auto or the current Greedy seed path on development and holdout pressure families while every final layout remains evaluator-valid. |
 | LNS label-scale gates pass | Learned LNS window ranking | 3.0 | Train and evaluate a ranker over adaptive LNS candidate windows. | Offline holdout beats deterministic, random, and single-feature baselines; online A/B improves fixed-budget quality without worst-decile regression. |
 | Greedy offline ranker beats deterministic order on protected holdout | Feature-flagged learned Greedy re-ranking | 2.5 | Add scorer adapter, model-load fallback, and equal-budget online A/B. | Online paired seeded benchmarks improve population or time-to-best with bounded inference overhead. |
 | Portfolio scorecards show CPU-normalized wins | CP-SAT portfolio in Auto | 2.0 | Let Auto route a controlled budget slice to portfolio only when CPU cost is justified. | Portfolio improves wall-clock quality and CPU-normalized efficiency versus single CP-SAT. |
@@ -132,9 +132,9 @@ These are not next actions. Move them into the active table only after the trigg
 
 ## Combined Ordering
 
-1. Explore service-master decomposition if coverage/service pressure cases justify it.
-2. Scale LNS replay labels from adaptive operator outcomes.
-3. Revisit learned rankers only after offline holdout and equal-budget online gates pass.
+1. Scale LNS replay labels from adaptive operator outcomes.
+2. Revisit learned rankers only after offline holdout and equal-budget online gates pass.
+3. Revisit service-master promotion only after equal-budget scorecards justify the opt-in CPU cost.
 4. Revisit portfolio, GPU, distributed workers, or alternative solvers only after they have a measured bottleneck and CPU-normalized win path.
 
 ## Discipline

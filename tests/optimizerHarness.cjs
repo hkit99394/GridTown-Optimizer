@@ -1194,10 +1194,13 @@ function testAutoClampsHeavyGreedyStageSettings() {
         serviceRefineIterations: 4,
         serviceRefineCandidateLimit: 60,
         exhaustiveServiceSearch: true,
+        serviceMasterDecomposition: true,
         densityTieBreaker: true,
         densityTieBreakerTolerancePercent: 25,
         serviceExactPoolLimit: 22,
         serviceExactMaxCombinations: 12000,
+        serviceMasterPoolLimit: 100,
+        serviceMasterMaxLayouts: 50000,
       },
       lns: { iterations: 1, maxNoImprovementIterations: 1, neighborhoodRows: 2, neighborhoodCols: 2, repairTimeLimitSeconds: 1 },
       cpSat: { timeLimitSeconds: 1, noImprovementTimeoutSeconds: 1, numWorkers: 1 },
@@ -1214,10 +1217,14 @@ function testAutoClampsHeavyGreedyStageSettings() {
     assert.equal(capturedGreedyOptions.densityTieBreakerTolerancePercent, 0);
     assert.equal(capturedGreedyOptions.serviceExactPoolLimit, 8);
     assert.equal(capturedGreedyOptions.serviceExactMaxCombinations, 512);
+    assert.equal(capturedGreedyOptions.serviceMasterDecomposition, false);
+    assert.equal(capturedGreedyOptions.serviceMasterPoolLimit, 12);
+    assert.equal(capturedGreedyOptions.serviceMasterMaxLayouts, 256);
     assert.equal(capturedGreedyOptions.profile, true);
     assert.equal(solution.autoStage.greedySeedStage.restarts, 4);
     assert.equal(solution.autoStage.greedySeedStage.serviceRefineIterations, 1);
     assert.equal(solution.autoStage.greedySeedStage.exhaustiveServiceSearch, false);
+    assert.equal(solution.autoStage.greedySeedStage.serviceMasterDecomposition, false);
     assert.equal(solution.autoStage.greedySeedStage.totalPopulation, 100);
     assert.equal(typeof solution.autoStage.greedySeedStage.elapsedSeconds, "number");
   } finally {
@@ -1267,10 +1274,13 @@ async function testAutoAsyncClampsHeavyGreedyStageSettings() {
         serviceRefineIterations: 4,
         serviceRefineCandidateLimit: 60,
         exhaustiveServiceSearch: true,
+        serviceMasterDecomposition: true,
         densityTieBreaker: true,
         densityTieBreakerTolerancePercent: 25,
         serviceExactPoolLimit: 22,
         serviceExactMaxCombinations: 12000,
+        serviceMasterPoolLimit: 100,
+        serviceMasterMaxLayouts: 50000,
       },
       lns: { iterations: 1, maxNoImprovementIterations: 1, neighborhoodRows: 2, neighborhoodCols: 2, repairTimeLimitSeconds: 1 },
       cpSat: { timeLimitSeconds: 1, noImprovementTimeoutSeconds: 1, numWorkers: 1 },
@@ -1287,10 +1297,14 @@ async function testAutoAsyncClampsHeavyGreedyStageSettings() {
     assert.equal(capturedGreedyOptions.densityTieBreakerTolerancePercent, 0);
     assert.equal(capturedGreedyOptions.serviceExactPoolLimit, 8);
     assert.equal(capturedGreedyOptions.serviceExactMaxCombinations, 512);
+    assert.equal(capturedGreedyOptions.serviceMasterDecomposition, false);
+    assert.equal(capturedGreedyOptions.serviceMasterPoolLimit, 12);
+    assert.equal(capturedGreedyOptions.serviceMasterMaxLayouts, 256);
     assert.equal(capturedGreedyOptions.profile, true);
     assert.equal(solution.autoStage.greedySeedStage.restarts, 4);
     assert.equal(solution.autoStage.greedySeedStage.serviceRefineIterations, 1);
     assert.equal(solution.autoStage.greedySeedStage.exhaustiveServiceSearch, false);
+    assert.equal(solution.autoStage.greedySeedStage.serviceMasterDecomposition, false);
     assert.equal(solution.autoStage.greedySeedStage.totalPopulation, 100);
     assert.equal(typeof solution.autoStage.greedySeedStage.elapsedSeconds, "number");
   } finally {
@@ -1428,6 +1442,14 @@ async function testPublicSolverDispatchValidatesInputs() {
   assert.throws(
     () => solve(grid, { optimizer: "greedy", greedy: { diagnostics: "yes" } }),
     /Invalid solver input: Greedy option greedy\.diagnostics must be a boolean\./
+  );
+  assert.throws(
+    () => solve(grid, { optimizer: "greedy", greedy: { serviceMasterDecomposition: "yes" } }),
+    /Invalid solver input: Greedy option greedy\.serviceMasterDecomposition must be a boolean\./
+  );
+  assert.throws(
+    () => solve(grid, { optimizer: "greedy", greedy: { serviceMasterMaxLayouts: 0 } }),
+    /Invalid solver input: Greedy option greedy\.serviceMasterMaxLayouts must be an integer between 1 and 100000\./
   );
   await assert.rejects(
     () => solveAsync(grid, { optimizer: "greedy", greedy: { restarts: 0 } }),
@@ -6871,6 +6893,61 @@ function testGreedyFixedServiceRealizationCompletenessImprovesMultiServiceRefine
   assert.equal(improvedSolution.greedyProfile.counters.attempts.serviceRefineTrials > 0, true);
 }
 
+function testGreedyServiceMasterDecompositionBenchmarkCase() {
+  const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
+    names: ["service-master-decomposition-experiment"],
+  });
+  const benchmarkCase = DEFAULT_GREEDY_BENCHMARK_CORPUS.find((entry) => entry.name === "service-master-decomposition-experiment");
+  const baselineParams = structuredClone(benchmarkCase.params);
+  baselineParams.greedy = {
+    ...baselineParams.greedy,
+    serviceMasterDecomposition: false,
+    profile: true,
+  };
+  const masterParams = structuredClone(benchmarkCase.params);
+  masterParams.greedy = {
+    ...masterParams.greedy,
+    profile: true,
+  };
+  const baselineSolution = solveGreedy(
+    benchmarkCase.grid.map((row) => [...row]),
+    baselineParams
+  );
+  const masterSolution = solveGreedy(
+    benchmarkCase.grid.map((row) => [...row]),
+    masterParams
+  );
+  const validation = validateSolution({
+    grid: benchmarkCase.grid,
+    solution: masterSolution,
+    params: masterParams,
+  });
+  const counters = masterSolution.greedyProfile.counters.attempts;
+  const phase = masterSolution.greedyProfile.phases.find((entry) => entry.name === "serviceMasterDecomposition");
+
+  assert.equal(result.caseCount, 1);
+  assert.deepEqual(result.selectedCaseNames, ["service-master-decomposition-experiment"]);
+  assert.equal(result.results[0].name, "service-master-decomposition-experiment");
+  assert.equal(result.results[0].totalPopulation, 555);
+  assert.equal(result.results[0].serviceCount, 1);
+  assert.equal(result.results[0].residentialCount, 4);
+  assert.equal(validation.valid, true);
+  assert.equal(baselineSolution.totalPopulation, 465);
+  assert.equal(masterSolution.totalPopulation, 555);
+  assert.equal(masterSolution.totalPopulation > baselineSolution.totalPopulation, true);
+  assert.deepEqual(masterSolution.services, [
+    { r: 0, c: 3, rows: 2, cols: 1, range: 1 },
+  ]);
+  assert.equal(counters.serviceMasterLayouts > 0, true);
+  assert.equal(counters.serviceMasterFeasibleLayouts > 0, true);
+  assert.equal(counters.serviceMasterNoGoodSkips > 0, true);
+  assert.equal(counters.fixedServiceRealizationTrials > 0, true);
+  assert.equal(phase.runs, 1);
+  assert.equal(phase.improvements, 1);
+  assert.match(formatGreedyBenchmarkSuite(result), /service-master-decomposition-experiment/);
+  assert.match(formatGreedyBenchmarkSuite(result), /service-master=/);
+}
+
 function testGreedyServiceLocalNeighborhoodBenchmarkCase() {
   const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
     names: ["service-local-neighborhood"],
@@ -9494,6 +9571,7 @@ async function runGreedyOptimizerTests() {
   testGreedyDeferredRoadCommitmentKeepsTopRowShortcut();
   testGreedyDeferredRoadMaterializationFailsDeterministically();
   testGreedyFixedServiceRealizationCompletenessImprovesMultiServiceRefineCase();
+  testGreedyServiceMasterDecompositionBenchmarkCase();
   testGreedyResidualServiceBundleRepairAddsServiceAndRefillsResidentials();
   testGreedyGroupedServiceScoringDiscountsLimitedFallbackTypes();
   testSolutionValidator();
@@ -9616,6 +9694,7 @@ async function runBenchmarksOptimizerTests() {
   testGreedyIncrementalInvalidationPreservesBenchmarkOutputs();
   testGreedyDeferredRoadCommitmentBenchmarkCase();
   testGreedyFixedServiceRealizationCompletenessBenchmarkCase();
+  testGreedyServiceMasterDecompositionBenchmarkCase();
   testGreedyServiceLocalNeighborhoodBenchmarkCase();
   testGreedyTypedFootprintPressureBenchmarkCase();
   testGreedyTypedAvailabilityPressureBenchmarkCase();

@@ -192,6 +192,9 @@ function summarizeCrossModeSolverParams(params: SolverParams): CrossModeBenchmar
       ["exhaustiveServiceSearch", params.greedy?.exhaustiveServiceSearch],
       ["serviceExactPoolLimit", params.greedy?.serviceExactPoolLimit],
       ["serviceExactMaxCombinations", params.greedy?.serviceExactMaxCombinations],
+      ["serviceMasterDecomposition", params.greedy?.serviceMasterDecomposition],
+      ["serviceMasterPoolLimit", params.greedy?.serviceMasterPoolLimit],
+      ["serviceMasterMaxLayouts", params.greedy?.serviceMasterMaxLayouts],
     ]),
     lns: compactRecord([
       ["wallClockLimitSeconds", params.lns?.wallClockLimitSeconds],

@@ -43,6 +43,7 @@ export type GreedyDeterministicAblationVariantName =
   | "no-service-neighborhood"
   | "no-service-refinement"
   | "no-exhaustive-service-search"
+  | "no-service-master-decomposition"
   | "no-service-lookahead"
   | "explicit-roads"
   | "deferred-roads"
@@ -162,6 +163,11 @@ export const DEFAULT_GREEDY_DETERMINISTIC_ABLATION_VARIANTS: readonly GreedyDete
       greedy: { exhaustiveServiceSearch: false },
     },
     {
+      name: "no-service-master-decomposition",
+      description: "Disable the experimental service-layout master pass.",
+      greedy: { serviceMasterDecomposition: false },
+    },
+    {
       name: "no-service-lookahead",
       description: "Disable Step 14 service lookahead reranking.",
       greedy: { serviceLookaheadCandidates: 0 },
@@ -186,6 +192,7 @@ export const DEFAULT_GREEDY_DETERMINISTIC_ABLATION_VARIANTS: readonly GreedyDete
 export const DEFAULT_GREEDY_DETERMINISTIC_ABLATION_CASE_NAMES = Object.freeze([
   "cap-sweep-mixed",
   "fixed-service-realization-complete",
+  "service-master-decomposition-experiment",
   "service-local-neighborhood",
   "step14-service-lookahead-reranker",
   "deferred-road-packing-gain",

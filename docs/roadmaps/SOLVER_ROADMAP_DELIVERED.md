@@ -325,6 +325,16 @@ Reviewed through 2026-05-01.
 - Regression coverage checks that the semantic operator set is present and that real LNS repair telemetry records operator outcomes and weight updates.
 - No solver default mode changed; this closes the initial operator-set implementation and leaves promotion-grade scorecard evidence for the Auto budget-retuning and LNS label-scale priorities.
 
+### 38. Auto Budget Policy Retuning
+
+- Closed the runtime Auto budget-retuning priority by aligning default Auto LNS stage budgets with the trace-tuned LNS policy already used by cross-mode scorecards.
+- Auto LNS stages now get default seed, repair, focused repair, escalated repair, iteration, and no-improvement caps from the measured 5s/30s/120s budget tiers when callers have not set explicit LNS values.
+- Explicit caller-provided LNS caps still win, so saved layouts, tests, and diagnostic runs can keep exact budgets.
+- Kept the default `auto.cpSatStageReserveRatio` at `0.2`. The registered product-corpus promotion artifact kept Auto best or tied in 116/120 scorecards, and a targeted post-change `0.35` reserve probe on pressure cases tied mean population rather than improving it.
+- Added regression coverage that Auto no longer lets the CP-SAT stage time limit implicitly inflate LNS repair passes under a wall-clock Auto budget.
+- Targeted post-change smoke on `typed-footprint-pressure`, `service-local-neighborhood`, and `expansion-comparison-replay` at 1s/5s with seed `7` kept Auto mean population at 576.67; remaining short-budget losses stay visible as pressure evidence, not a default-policy promotion.
+- No solver mode default changed; `auto` remains the recommended quality path, and the next active priority is CP-SAT async/portfolio failure-mode coverage.
+
 ## Maintenance Watchpoints
 
 - Keep deterministic benchmark seeds stable when changing solver scoring.

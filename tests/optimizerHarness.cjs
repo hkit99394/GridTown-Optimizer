@@ -947,6 +947,8 @@ function testAutoSyncReservesCpSatBudgetBeforeLnsStage() {
     assert.ok(observedLnsOptions.wallClockLimitSeconds > 1);
     assert.ok(observedLnsOptions.wallClockLimitSeconds < 2);
     assert.ok(observedLnsOptions.seedTimeLimitSeconds <= observedLnsOptions.wallClockLimitSeconds);
+    assert.equal(observedLnsOptions.iterations, 4);
+    assert.equal(observedLnsOptions.maxNoImprovementIterations, 4);
     assert.ok(observedLnsOptions.repairTimeLimitSeconds <= observedLnsOptions.wallClockLimitSeconds);
     assert.equal(observedLnsOptions.repairTimeLimitSeconds, 0.5);
     assert.equal(observedLnsOptions.focusedRepairTimeLimitSeconds, 0.75);
@@ -966,6 +968,47 @@ function testAutoSyncReservesCpSatBudgetBeforeLnsStage() {
       && event.reason.includes("completed")
       && event.evidence.improvement === 20
     ));
+  } finally {
+    solverModule.solveGreedy = originalSolveGreedy;
+    lnsModule.solveLns = originalSolveLns;
+    cpSatModule.solveCpSat = originalSolveCpSat;
+  }
+}
+
+function testAutoSyncUsesTraceTunedDefaultLnsBudget() {
+  const solverModule = require("../dist/packages/solvers/greedy/solver.js");
+  const lnsModule = require("../dist/packages/solvers/lns/solver.js");
+  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
+  const originalSolveGreedy = solverModule.solveGreedy;
+  const originalSolveLns = lnsModule.solveLns;
+  const originalSolveCpSat = cpSatModule.solveCpSat;
+  let observedLnsOptions = null;
+
+  solverModule.solveGreedy = () => buildMockSolution({ optimizer: "greedy", totalPopulation: 100 });
+  lnsModule.solveLns = (_grid, params) => {
+    observedLnsOptions = params.lns;
+    return buildMockSolution({ optimizer: "lns", totalPopulation: 140 });
+  };
+  cpSatModule.solveCpSat = () => buildMockSolution({ optimizer: "cp-sat", totalPopulation: 140, cpSatStatus: "OPTIMAL" });
+
+  try {
+    const solution = solveAuto([[1, 1], [1, 1]], {
+      optimizer: "auto",
+      cpSat: { timeLimitSeconds: 9, noImprovementTimeoutSeconds: 5, numWorkers: 1 },
+      auto: { wallClockLimitSeconds: 30 },
+    });
+
+    assert.equal(solution.autoStage.stopReason, "optimal");
+    assert(observedLnsOptions);
+    assert.equal(observedLnsOptions.seedTimeLimitSeconds, 2);
+    assert.equal(observedLnsOptions.repairTimeLimitSeconds, 2);
+    assert.equal(observedLnsOptions.focusedRepairTimeLimitSeconds, 2);
+    assert.equal(observedLnsOptions.escalatedRepairTimeLimitSeconds, 3);
+    assert.equal(observedLnsOptions.maxNoImprovementIterations, observedLnsOptions.iterations);
+    assert.ok(observedLnsOptions.iterations >= 10);
+    assert.ok(observedLnsOptions.iterations <= 12);
+    assert.ok(observedLnsOptions.wallClockLimitSeconds > 23);
+    assert.ok(observedLnsOptions.wallClockLimitSeconds < 25);
   } finally {
     solverModule.solveGreedy = originalSolveGreedy;
     lnsModule.solveLns = originalSolveLns;
@@ -9091,6 +9134,7 @@ async function runAutoOptimizerTests() {
   await testAutoAsyncRecoveredStageSnapshotKeepsNonRecoveryTerminalMetadata();
   testAutoSyncWallClockCapStopsRunningLnsStage();
   testAutoSyncWallClockCapKeepsExplicitStopReasonWhenLnsThrows();
+  testAutoSyncUsesTraceTunedDefaultLnsBudget();
   testAutoSyncGreedyCanRunPastFormerStageBudget();
   await testAutoAsyncGreedyCanRunPastFormerStageBudget();
   testAutoClampsHeavyGreedyStageSettings();

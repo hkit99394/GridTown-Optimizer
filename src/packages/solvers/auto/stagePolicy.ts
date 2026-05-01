@@ -11,6 +11,9 @@ const AUTO_GREEDY_STAGE_EXACT_POOL_CAP = 8;
 const AUTO_GREEDY_STAGE_EXACT_COMBINATION_CAP = 512;
 const AUTO_CP_SAT_STAGE_RESERVE_RATIO = 0.2;
 const AUTO_MIN_CP_SAT_STAGE_RESERVE_SECONDS = 1;
+const AUTO_TRACE_TUNED_LNS_MAX_ITERATIONS = 24;
+const AUTO_TRACE_TUNED_LNS_SMALL_BUDGET_SECONDS = 5;
+const AUTO_TRACE_TUNED_LNS_MEDIUM_BUDGET_SECONDS = 30;
 
 export const MAX_STAGE_RANDOM_SEED = 0x7fffffff;
 
@@ -27,6 +30,8 @@ export interface NormalizedAutoOptions {
 export interface AutoLnsStageBudget {
   wallClockLimitSeconds: number | null;
   seedTimeLimitSeconds?: number;
+  iterations?: number;
+  maxNoImprovementIterations?: number;
   repairTimeLimitSeconds: number;
   focusedRepairTimeLimitSeconds: number;
   escalatedRepairTimeLimitSeconds: number;
@@ -156,6 +161,34 @@ function budgetedAutoLnsStageSeconds(options: NormalizedAutoOptions, remainingSe
   return Math.max(0.001, remainingSeconds - cpSatReserveSeconds);
 }
 
+function defaultAutoLnsRepairBudgetSeconds(budgetSeconds: number): number {
+  if (budgetSeconds <= AUTO_TRACE_TUNED_LNS_SMALL_BUDGET_SECONDS) return 1;
+  if (budgetSeconds <= AUTO_TRACE_TUNED_LNS_MEDIUM_BUDGET_SECONDS) return 2;
+  return 5;
+}
+
+function defaultAutoLnsSeedBudgetSeconds(budgetSeconds: number, repairTimeLimitSeconds: number): number {
+  return Math.max(0.1, Math.min(budgetSeconds * 0.2, repairTimeLimitSeconds));
+}
+
+function defaultAutoLnsEscalatedRepairBudgetSeconds(
+  budgetSeconds: number,
+  repairTimeLimitSeconds: number
+): number {
+  if (budgetSeconds <= AUTO_TRACE_TUNED_LNS_SMALL_BUDGET_SECONDS) return repairTimeLimitSeconds;
+  return Math.min(repairTimeLimitSeconds * 2, Math.max(repairTimeLimitSeconds, budgetSeconds * 0.1));
+}
+
+function defaultAutoLnsIterations(stageBudgetSeconds: number, repairTimeLimitSeconds: number): number {
+  return Math.max(
+    1,
+    Math.min(
+      AUTO_TRACE_TUNED_LNS_MAX_ITERATIONS,
+      Math.floor(Math.max(0.001, stageBudgetSeconds) / Math.max(0.001, repairTimeLimitSeconds))
+    )
+  );
+}
+
 export function buildAutoLnsStageBudget(
   params: SolverParams,
   options: NormalizedAutoOptions,
@@ -164,25 +197,43 @@ export function buildAutoLnsStageBudget(
   const wallClockLimitSeconds = remainingSeconds === null
     ? null
     : budgetedAutoLnsStageSeconds(options, remainingSeconds);
-  const configuredRepairTimeLimitSeconds = params.lns?.repairTimeLimitSeconds ?? params.cpSat?.timeLimitSeconds ?? 5;
+  const tuningBudgetSeconds = options.wallClockLimitSeconds
+    ?? wallClockLimitSeconds
+    ?? params.cpSat?.timeLimitSeconds
+    ?? DEFAULT_CP_SAT_STAGE_TIME_LIMIT_SECONDS;
+  const defaultRepairTimeLimitSeconds = defaultAutoLnsRepairBudgetSeconds(tuningBudgetSeconds);
+  const configuredRepairTimeLimitSeconds = params.lns?.repairTimeLimitSeconds
+    ?? (options.wallClockLimitSeconds === null ? params.cpSat?.timeLimitSeconds : undefined)
+    ?? defaultRepairTimeLimitSeconds;
   const repairTimeLimitSeconds = wallClockLimitSeconds === null
     ? configuredRepairTimeLimitSeconds
     : capPositiveSeconds(configuredRepairTimeLimitSeconds, wallClockLimitSeconds);
-  const configuredSeedTimeLimitSeconds = optionalPositiveNumber(params.lns?.seedTimeLimitSeconds);
-  const seedTimeLimitSeconds = wallClockLimitSeconds !== null && configuredSeedTimeLimitSeconds !== null
+  const configuredSeedTimeLimitSeconds = optionalPositiveNumber(params.lns?.seedTimeLimitSeconds)
+    ?? defaultAutoLnsSeedBudgetSeconds(tuningBudgetSeconds, repairTimeLimitSeconds);
+  const seedTimeLimitSeconds = wallClockLimitSeconds !== null
     ? capPositiveSeconds(configuredSeedTimeLimitSeconds, wallClockLimitSeconds)
-    : undefined;
+    : configuredSeedTimeLimitSeconds;
   const repairVariantLimitSeconds = wallClockLimitSeconds ?? repairTimeLimitSeconds;
+  const defaultEscalatedRepairTimeLimitSeconds = defaultAutoLnsEscalatedRepairBudgetSeconds(
+    tuningBudgetSeconds,
+    repairTimeLimitSeconds
+  );
   const focusedRepairTimeLimitSeconds = wallClockLimitSeconds === null && params.lns?.focusedRepairTimeLimitSeconds !== undefined
     ? params.lns.focusedRepairTimeLimitSeconds
     : capPositiveSeconds(params.lns?.focusedRepairTimeLimitSeconds ?? repairTimeLimitSeconds, repairVariantLimitSeconds);
   const escalatedRepairTimeLimitSeconds = wallClockLimitSeconds === null && params.lns?.escalatedRepairTimeLimitSeconds !== undefined
     ? params.lns.escalatedRepairTimeLimitSeconds
-    : capPositiveSeconds(params.lns?.escalatedRepairTimeLimitSeconds ?? repairTimeLimitSeconds, repairVariantLimitSeconds);
+    : capPositiveSeconds(params.lns?.escalatedRepairTimeLimitSeconds ?? defaultEscalatedRepairTimeLimitSeconds, repairVariantLimitSeconds);
+  const defaultIterations = defaultAutoLnsIterations(repairVariantLimitSeconds, repairTimeLimitSeconds);
+  const iterations = params.lns?.iterations ?? defaultIterations;
+  const maxNoImprovementIterations = params.lns?.maxNoImprovementIterations
+    ?? (params.lns?.iterations === undefined ? defaultIterations : undefined);
 
   return {
     wallClockLimitSeconds,
-    ...(seedTimeLimitSeconds !== undefined ? { seedTimeLimitSeconds } : {}),
+    seedTimeLimitSeconds,
+    iterations,
+    ...(maxNoImprovementIterations !== undefined ? { maxNoImprovementIterations } : {}),
     repairTimeLimitSeconds,
     focusedRepairTimeLimitSeconds,
     escalatedRepairTimeLimitSeconds,

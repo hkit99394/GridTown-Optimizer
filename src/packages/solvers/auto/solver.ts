@@ -584,6 +584,10 @@ function stageSeedParams(
               repairTimeLimitSeconds: lnsBudget.repairTimeLimitSeconds,
             }),
         ...(lnsBudget.seedTimeLimitSeconds !== undefined ? { seedTimeLimitSeconds: lnsBudget.seedTimeLimitSeconds } : {}),
+        ...(lnsBudget.iterations !== undefined ? { iterations: lnsBudget.iterations } : {}),
+        ...(lnsBudget.maxNoImprovementIterations !== undefined
+          ? { maxNoImprovementIterations: lnsBudget.maxNoImprovementIterations }
+          : {}),
         focusedRepairTimeLimitSeconds: lnsBudget.focusedRepairTimeLimitSeconds,
         escalatedRepairTimeLimitSeconds: lnsBudget.escalatedRepairTimeLimitSeconds,
       },

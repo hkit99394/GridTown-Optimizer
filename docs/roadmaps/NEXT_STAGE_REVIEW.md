@@ -225,12 +225,14 @@ Success signal:
 
 Goal: tune orchestration only after telemetry identifies the bottleneck.
 
+Status: delivered for the runtime default policy. The registered product-corpus promotion artifact kept Auto as the best default in 116/120 scorecards, with the remaining losses concentrated in short-budget LNS/CP-SAT pressure cases. Runtime Auto now uses the same trace-tuned LNS seed, repair, focused, escalated, iteration, and no-improvement defaults that scorecards use, while explicit caller settings still win. The default CP-SAT reserve ratio remains `0.2`; a targeted `0.35` reserve smoke probe tied mean population on the pressure slice rather than improving it.
+
 Deliverables:
 
-- Budget ablations over product-shaped corpus.
-- Greedy seed budget, LNS repair budget, CP-SAT reserve, and no-improvement timeout comparisons.
-- Evidence-backed policy changes in `src/packages/solvers/auto/stagePolicy.ts`.
-- Family-level policy recommendations.
+- Budget ablations over product-shaped corpus. Delivered through the registered product-corpus promotion scorecard and targeted post-change pressure smoke.
+- Greedy seed budget, LNS repair budget, CP-SAT reserve, and no-improvement timeout comparisons. Delivered; LNS defaults were retuned, Greedy caps stayed conservative, and CP-SAT reserve stayed unchanged.
+- Evidence-backed policy changes in `src/packages/solvers/auto/stagePolicy.ts`. Delivered.
+- Family-level policy recommendations. Delivered as a conservative recommendation: keep Auto as default, use trace-tuned LNS repair defaults, and leave CP-SAT reserve as a configurable knob.
 
 Success signal:
 
@@ -336,13 +338,11 @@ Any default-path solver change must satisfy:
 
 Recommended order:
 
-1. Implement adaptive LNS operators and operator weighting.
-2. Retune Auto budgets from scorecard evidence.
-3. Finish async and portfolio cancellation/snapshot and worker-result failure coverage before increasing CP-SAT orchestration complexity.
-4. Add exact small-window DP repair only if telemetry shows small-repair CP-SAT overhead or narrow-window bottlenecks.
-5. Explore service-master decomposition if pressure cases justify it.
-6. Scale LNS replay labels from adaptive operator outcomes.
-7. Revisit learned rankers only after offline holdout and online equal-budget gates pass.
-8. Revisit GPU, portfolio, distributed solving, and external solvers only after a measured bottleneck and promotion-grade evidence exist.
+1. Finish async and portfolio cancellation/snapshot and worker-result failure coverage before increasing CP-SAT orchestration complexity.
+2. Add exact small-window DP repair only if telemetry shows small-repair CP-SAT overhead or narrow-window bottlenecks.
+3. Explore service-master decomposition if pressure cases justify it.
+4. Scale LNS replay labels from adaptive operator outcomes.
+5. Revisit learned rankers only after offline holdout and online equal-budget gates pass.
+6. Revisit GPU, portfolio, distributed solving, and external solvers only after a measured bottleneck and promotion-grade evidence exists.
 
 This keeps the project pointed at the real target: higher validated population per wall-clock minute, with fewer speculative detours.

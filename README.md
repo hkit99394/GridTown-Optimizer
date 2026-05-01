@@ -15,7 +15,7 @@ Core reference docs:
 - [Requirement.md](./docs/requirements/Requirement.md): product-level summary
 - [ALGORITHM.md](./docs/design/ALGORITHM.md): heuristic design notes
 - [LEARNED_GUIDANCE_ROADMAP.md](./docs/roadmaps/LEARNED_GUIDANCE_ROADMAP.md): roadmap for ML / RL-style learned guidance over the current solver stack
-- [PLANNER_ARCHITECTURE.md](./docs/design/PLANNER_ARCHITECTURE.md): current web/backend module boundaries
+- [PLANNER_ARCHITECTURE.md](./docs/design/PLANNER_ARCHITECTURE.md): current planner app/backend module boundaries
 - [SOLVER_ROADMAP.md](./docs/roadmaps/SOLVER_ROADMAP.md): overall solver roadmap
 - [SOLVER_ABLATION_DECISIONS.md](./docs/decisions/SOLVER_ABLATION_DECISIONS.md): deterministic ablation gate decisions before model training
 - [CP_SAT_ROADMAP.md](./docs/roadmaps/CP_SAT_ROADMAP.md): CP-SAT-specific roadmap
@@ -640,7 +640,10 @@ console.log(validation.mapText);
 
 ## Main Exports
 
-The public API is exposed from [src/index.ts](./src/index.ts):
+The default public API is exposed from [src/index.ts](./src/index.ts). Benchmark,
+label, and experiment-registry tooling is exposed separately from
+[src/benchmarkApi.ts](./src/benchmarkApi.ts) through the `city-builder/benchmarks`
+package subpath.
 
 - `solveAsync`
 - `solve`
@@ -651,17 +654,6 @@ The public API is exposed from [src/index.ts](./src/index.ts):
 - `solveCpSatAsync`
 - `solveLns`
 - `solveCpSat`
-- `runGreedyBenchmarkSuite`
-- `listGreedyBenchmarkCaseNames`
-- `normalizeGreedyBenchmarkOptions`
-- `createGreedyBenchmarkSnapshot`
-- `formatGreedyBenchmarkSuite`
-- `DEFAULT_GREEDY_BENCHMARK_CORPUS`
-- `DEFAULT_GREEDY_BENCHMARK_OPTIONS`
-- `runCpSatBenchmarkSuite`
-- `listCpSatBenchmarkCaseNames`
-- `normalizeCpSatBenchmarkOptions`
-- `DEFAULT_CP_SAT_BENCHMARK_CORPUS`
 - `evaluateLayout`
 - `validateLayoutConstraints`
 - `assertValidLayout`
@@ -831,23 +823,23 @@ Road cells are encoded as `"r,c"` strings inside the `Set`.
 ## Project Layout
 
 - [src/index.ts](./src/index.ts): public API
-- [src/runtime/solve.ts](./src/runtime/solve.ts): top-level solver dispatch
-- [src/runtime/optimizerRegistry.ts](./src/runtime/optimizerRegistry.ts): optimizer registry
-- [src/auto/solver.ts](./src/auto/solver.ts): staged `auto` orchestration
-- [src/greedy/solver.ts](./src/greedy/solver.ts): greedy solver
-- [src/lns/solver.ts](./src/lns/solver.ts): LNS solver
-- [src/cp-sat/solver.ts](./src/cp-sat/solver.ts): TypeScript bridge for CP-SAT
+- [src/packages/runtime/solve.ts](./src/packages/runtime/solve.ts): top-level solver dispatch
+- [src/packages/runtime/optimizerRegistry.ts](./src/packages/runtime/optimizerRegistry.ts): optimizer registry
+- [src/packages/solvers/auto/solver.ts](./src/packages/solvers/auto/solver.ts): staged `auto` orchestration
+- [src/packages/solvers/greedy/solver.ts](./src/packages/solvers/greedy/solver.ts): greedy solver
+- [src/packages/solvers/lns/solver.ts](./src/packages/solvers/lns/solver.ts): LNS solver
+- [src/packages/solvers/cp-sat/solver.ts](./src/packages/solvers/cp-sat/solver.ts): TypeScript bridge for CP-SAT
 - [python/cp_sat_solver.py](./python/cp_sat_solver.py): OR-Tools CP-SAT model
-- [src/greedy/roadAnchors.ts](./src/greedy/roadAnchors.ts): greedy road-anchor feasibility and refinement helpers
-- [src/runtime/jobs/solveJobManager.ts](./src/runtime/jobs/solveJobManager.ts): background solve job lifecycle
-- [src/server/http/requestHandler.ts](./src/server/http/requestHandler.ts): planner request composition
-- [src/server/http/routes.ts](./src/server/http/routes.ts): planner API route handlers
-- [src/server/http/contracts.ts](./src/server/http/contracts.ts): shared HTTP payload contracts
-- [src/server/http/solutionResponse.ts](./src/server/http/solutionResponse.ts): solve and manual-layout HTTP response shaping
-- [src/server/http/static.ts](./src/server/http/static.ts): local planner static asset serving
+- [src/packages/solvers/greedy/roadAnchors.ts](./src/packages/solvers/greedy/roadAnchors.ts): greedy road-anchor feasibility and refinement helpers
+- [src/packages/runtime/jobs/solveJobManager.ts](./src/packages/runtime/jobs/solveJobManager.ts): background solve job lifecycle
+- [src/apps/planner-server/http/requestHandler.ts](./src/apps/planner-server/http/requestHandler.ts): planner request composition
+- [src/apps/planner-server/http/routes.ts](./src/apps/planner-server/http/routes.ts): planner API route handlers
+- [src/apps/planner-server/http/contracts.ts](./src/apps/planner-server/http/contracts.ts): shared HTTP payload contracts
+- [src/apps/planner-server/http/solutionResponse.ts](./src/apps/planner-server/http/solutionResponse.ts): solve and manual-layout HTTP response shaping
+- [src/apps/planner-server/http/static.ts](./src/apps/planner-server/http/static.ts): local planner static asset serving
 - [src/packages/benchmarks/greedy.ts](./src/packages/benchmarks/greedy.ts): fixed greedy benchmark corpus and harness
 - [src/packages/benchmarks/cpSat.ts](./src/packages/benchmarks/cpSat.ts): fixed CP-SAT benchmark corpus and harness
-- [web/](./web): planner UI modules
+- [apps/planner-web/](./apps/planner-web): planner UI modules
 - [src/packages/core/evaluator.ts](./src/packages/core/evaluator.ts): validation and exact scoring
 - [src/packages/core/map.ts](./src/packages/core/map.ts): ASCII rendering and map-aware validation
 - [tests/](./tests): regression, route, and optimizer tests

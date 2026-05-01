@@ -8,7 +8,7 @@ import { DEFAULT_CROSS_MODE_BENCHMARK_CORPUS } from "./crossMode.js";
 import { DEFAULT_GREEDY_BENCHMARK_CORPUS } from "./greedy.js";
 import { DEFAULT_LNS_BENCHMARK_CORPUS } from "./lns.js";
 import { materializeValidLnsSeedSolution } from "../core/index.js";
-import { buildManualLayoutResponse } from "../../server/http/solutionResponse.js";
+import { buildManualLayoutResponse } from "../../apps/planner-server/http/solutionResponse.js";
 
 import type {
   CpSatWarmStartHint,

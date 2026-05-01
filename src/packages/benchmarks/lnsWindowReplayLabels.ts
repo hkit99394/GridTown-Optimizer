@@ -9,13 +9,13 @@ import {
   materializeValidLnsSeedSolution,
   validateSolution,
 } from "../core/index.js";
-import { solveCpSat } from "../../cp-sat/solver.js";
-import { solveGreedy } from "../../greedy/solver.js";
 import {
   buildLnsWarmStartHint,
   buildNeighborhoodWindows,
-} from "../../lns/solver.js";
-import { selectNeighborhoodWindow } from "../../lns/neighborhoods.js";
+  selectNeighborhoodWindow,
+  solveCpSat,
+  solveGreedy,
+} from "../solvers/index.js";
 import { normalizeCpSatBenchmarkOptions } from "./cpSat.js";
 import { normalizeGreedyBenchmarkOptions } from "./greedy.js";
 import { buildBenchmarkSeedRunPlan } from "./benchmarkSeeds.js";

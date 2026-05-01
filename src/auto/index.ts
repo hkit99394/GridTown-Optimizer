@@ -1,1 +1,1 @@
-export * from "./solver.js";
+export * from "../packages/solvers/auto/index.js";

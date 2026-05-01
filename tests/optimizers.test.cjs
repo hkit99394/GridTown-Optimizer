@@ -101,16 +101,16 @@ const {
   validateSolution,
   validateSolutionMap,
 } = require("city-builder/solver");
-const { parseCpSatRawSolution } = require("../dist/cp-sat/solver.js");
-const { buildNeighborhoodWindows } = require("../dist/lns/solver.js");
-const { startJsonBackgroundSolve } = require("../dist/runtime/index.js");
-const { applyDeterministicDominanceUpgrades } = require("../dist/core/dominanceUpgrades.js");
-const { buildPlannerExplainabilityMap } = require("../dist/core/plannerExplainability.js");
-const { GreedyAttemptState } = require("../dist/greedy/attemptState.js");
+const { parseCpSatRawSolution } = require("../dist/packages/solvers/cp-sat/solver.js");
+const { buildNeighborhoodWindows } = require("../dist/packages/solvers/lns/solver.js");
+const { startJsonBackgroundSolve } = require("../dist/packages/runtime/index.js");
+const { applyDeterministicDominanceUpgrades } = require("../dist/packages/core/dominanceUpgrades.js");
+const { buildPlannerExplainabilityMap } = require("../dist/packages/core/plannerExplainability.js");
+const { GreedyAttemptState } = require("../dist/packages/solvers/greedy/attemptState.js");
 const {
   createRoadOpportunityRecorder,
   recordRoadOpportunityPlacementFromOccupiedBuildings,
-} = require("../dist/greedy/roadOpportunity.js");
+} = require("../dist/packages/solvers/greedy/roadOpportunity.js");
 const {
   computeRoadAnchorReachableEmptyFrontier,
   createRoadProbeScratch,
@@ -121,13 +121,13 @@ const {
   probeBuildingConnectedToRoads,
   roadAnchorSeedCandidates,
   roadAnchorRepresentativeSeedCandidates,
-} = require("../dist/core/roads.js");
+} = require("../dist/packages/core/roads.js");
 const {
   forEachRectangleBorderCell,
   forEachRectangleCell,
   rectangleBorderCells,
   rectangleCells,
-} = require("../dist/core/grid.js");
+} = require("../dist/packages/core/grid.js");
 const {
   buildFootprintGeometryCache,
   buildServiceGeometryCache,
@@ -138,7 +138,7 @@ const {
   residentialFootprint,
   serviceEffectZone,
   serviceFootprint,
-} = require("../dist/core/buildings.js");
+} = require("../dist/packages/core/buildings.js");
 
 function testOptimizerRegistry() {
   assert.equal(OMITTED_SOLVER_OPTIMIZER, "auto");
@@ -481,9 +481,9 @@ async function maybeTestAutoOptimizer() {
 }
 
 function testAutoKeepsEqualPopulationOptimalCpSatResult() {
-  const solverModule = require("../dist/greedy/solver.js");
-  const lnsModule = require("../dist/lns/solver.js");
-  const cpSatModule = require("../dist/cp-sat/solver.js");
+  const solverModule = require("../dist/packages/solvers/greedy/solver.js");
+  const lnsModule = require("../dist/packages/solvers/lns/solver.js");
+  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
   const originalSolveGreedy = solverModule.solveGreedy;
   const originalSolveLns = lnsModule.solveLns;
   const originalSolveCpSat = cpSatModule.solveCpSat;
@@ -510,9 +510,9 @@ function testAutoKeepsEqualPopulationOptimalCpSatResult() {
 }
 
 function testAutoPreservesUserWarmStartMetadata() {
-  const solverModule = require("../dist/greedy/solver.js");
-  const lnsModule = require("../dist/lns/solver.js");
-  const cpSatModule = require("../dist/cp-sat/solver.js");
+  const solverModule = require("../dist/packages/solvers/greedy/solver.js");
+  const lnsModule = require("../dist/packages/solvers/lns/solver.js");
+  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
   const originalSolveGreedy = solverModule.solveGreedy;
   const originalSolveLns = lnsModule.solveLns;
   const originalSolveCpSat = cpSatModule.solveCpSat;
@@ -563,9 +563,9 @@ function testAutoPreservesUserWarmStartMetadata() {
 }
 
 function testAutoDirectRuntimeIgnoresMalformedOptionValues() {
-  const solverModule = require("../dist/greedy/solver.js");
-  const lnsModule = require("../dist/lns/solver.js");
-  const cpSatModule = require("../dist/cp-sat/solver.js");
+  const solverModule = require("../dist/packages/solvers/greedy/solver.js");
+  const lnsModule = require("../dist/packages/solvers/lns/solver.js");
+  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
   const originalSolveGreedy = solverModule.solveGreedy;
   const originalSolveLns = lnsModule.solveLns;
   const originalSolveCpSat = cpSatModule.solveCpSat;
@@ -602,9 +602,9 @@ function testAutoDirectRuntimeIgnoresMalformedOptionValues() {
 }
 
 async function testAutoAsyncPreservesCancelledStopReasonAfterCpSatReturns() {
-  const greedyBridgeModule = require("../dist/greedy/bridge.js");
-  const lnsBridgeModule = require("../dist/lns/bridge.js");
-  const cpSatModule = require("../dist/cp-sat/solver.js");
+  const greedyBridgeModule = require("../dist/packages/solvers/greedy/bridge.js");
+  const lnsBridgeModule = require("../dist/packages/solvers/lns/bridge.js");
+  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
   const originalStartGreedySolve = greedyBridgeModule.startGreedySolve;
   const originalStartLnsSolve = lnsBridgeModule.startLnsSolve;
   const originalStartCpSatSolve = cpSatModule.startCpSatSolve;
@@ -659,9 +659,9 @@ async function testAutoAsyncPreservesCancelledStopReasonAfterCpSatReturns() {
 }
 
 async function testAutoAsyncStageErrorKeepsIncumbentWithExplicitStopReason() {
-  const greedyBridgeModule = require("../dist/greedy/bridge.js");
-  const lnsBridgeModule = require("../dist/lns/bridge.js");
-  const cpSatModule = require("../dist/cp-sat/solver.js");
+  const greedyBridgeModule = require("../dist/packages/solvers/greedy/bridge.js");
+  const lnsBridgeModule = require("../dist/packages/solvers/lns/bridge.js");
+  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
   const originalStartGreedySolve = greedyBridgeModule.startGreedySolve;
   const originalStartLnsSolve = lnsBridgeModule.startLnsSolve;
   const originalStartCpSatSolve = cpSatModule.startCpSatSolve;
@@ -714,9 +714,9 @@ async function testAutoAsyncStageErrorKeepsIncumbentWithExplicitStopReason() {
 }
 
 async function testAutoAsyncRecoveredStageSnapshotKeepsNonRecoveryTerminalMetadata() {
-  const greedyBridgeModule = require("../dist/greedy/bridge.js");
-  const lnsBridgeModule = require("../dist/lns/bridge.js");
-  const cpSatModule = require("../dist/cp-sat/solver.js");
+  const greedyBridgeModule = require("../dist/packages/solvers/greedy/bridge.js");
+  const lnsBridgeModule = require("../dist/packages/solvers/lns/bridge.js");
+  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
   const originalStartGreedySolve = greedyBridgeModule.startGreedySolve;
   const originalStartLnsSolve = lnsBridgeModule.startLnsSolve;
   const originalStartCpSatSolve = cpSatModule.startCpSatSolve;
@@ -769,9 +769,9 @@ async function testAutoAsyncRecoveredStageSnapshotKeepsNonRecoveryTerminalMetada
 }
 
 async function testAutoAsyncRecoveredCpSatSnapshotKeepsCompletedMetadata() {
-  const greedyBridgeModule = require("../dist/greedy/bridge.js");
-  const lnsBridgeModule = require("../dist/lns/bridge.js");
-  const cpSatModule = require("../dist/cp-sat/solver.js");
+  const greedyBridgeModule = require("../dist/packages/solvers/greedy/bridge.js");
+  const lnsBridgeModule = require("../dist/packages/solvers/lns/bridge.js");
+  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
   const originalStartGreedySolve = greedyBridgeModule.startGreedySolve;
   const originalStartLnsSolve = lnsBridgeModule.startLnsSolve;
   const originalStartCpSatSolve = cpSatModule.startCpSatSolve;
@@ -825,8 +825,8 @@ async function testAutoAsyncRecoveredCpSatSnapshotKeepsCompletedMetadata() {
 }
 
 function testAutoSyncWallClockCapStopsRunningLnsStage() {
-  const solverModule = require("../dist/greedy/solver.js");
-  const lnsModule = require("../dist/lns/solver.js");
+  const solverModule = require("../dist/packages/solvers/greedy/solver.js");
+  const lnsModule = require("../dist/packages/solvers/lns/solver.js");
   const originalSolveGreedy = solverModule.solveGreedy;
   const originalSolveLns = lnsModule.solveLns;
   let observedStopFilePath = null;
@@ -866,8 +866,8 @@ function testAutoSyncWallClockCapStopsRunningLnsStage() {
 }
 
 function testAutoSyncWallClockCapKeepsExplicitStopReasonWhenLnsThrows() {
-  const solverModule = require("../dist/greedy/solver.js");
-  const lnsModule = require("../dist/lns/solver.js");
+  const solverModule = require("../dist/packages/solvers/greedy/solver.js");
+  const lnsModule = require("../dist/packages/solvers/lns/solver.js");
   const originalSolveGreedy = solverModule.solveGreedy;
   const originalSolveLns = lnsModule.solveLns;
   let observedStopFilePath = null;
@@ -902,9 +902,9 @@ function testAutoSyncWallClockCapKeepsExplicitStopReasonWhenLnsThrows() {
 }
 
 function testAutoSyncReservesCpSatBudgetBeforeLnsStage() {
-  const solverModule = require("../dist/greedy/solver.js");
-  const lnsModule = require("../dist/lns/solver.js");
-  const cpSatModule = require("../dist/cp-sat/solver.js");
+  const solverModule = require("../dist/packages/solvers/greedy/solver.js");
+  const lnsModule = require("../dist/packages/solvers/lns/solver.js");
+  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
   const originalSolveGreedy = solverModule.solveGreedy;
   const originalSolveLns = lnsModule.solveLns;
   const originalSolveCpSat = cpSatModule.solveCpSat;
@@ -965,9 +965,9 @@ function testAutoSyncReservesCpSatBudgetBeforeLnsStage() {
 }
 
 function testAutoSyncGreedyCanRunPastFormerStageBudget() {
-  const solverModule = require("../dist/greedy/solver.js");
-  const lnsModule = require("../dist/lns/solver.js");
-  const cpSatModule = require("../dist/cp-sat/solver.js");
+  const solverModule = require("../dist/packages/solvers/greedy/solver.js");
+  const lnsModule = require("../dist/packages/solvers/lns/solver.js");
+  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
   const originalSolveGreedy = solverModule.solveGreedy;
   const originalSolveLns = lnsModule.solveLns;
   const originalSolveCpSat = cpSatModule.solveCpSat;
@@ -1025,9 +1025,9 @@ function testAutoSyncGreedyCanRunPastFormerStageBudget() {
 }
 
 async function testAutoAsyncGreedyCanRunPastFormerStageBudget() {
-  const greedyBridgeModule = require("../dist/greedy/bridge.js");
-  const lnsBridgeModule = require("../dist/lns/bridge.js");
-  const cpSatModule = require("../dist/cp-sat/solver.js");
+  const greedyBridgeModule = require("../dist/packages/solvers/greedy/bridge.js");
+  const lnsBridgeModule = require("../dist/packages/solvers/lns/bridge.js");
+  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
   const originalStartGreedySolve = greedyBridgeModule.startGreedySolve;
   const originalStartLnsSolve = lnsBridgeModule.startLnsSolve;
   const originalStartCpSatSolve = cpSatModule.startCpSatSolve;
@@ -1121,7 +1121,7 @@ async function testAutoAsyncGreedyCanRunPastFormerStageBudget() {
 }
 
 function testAutoClampsHeavyGreedyStageSettings() {
-  const solverModule = require("../dist/greedy/solver.js");
+  const solverModule = require("../dist/packages/solvers/greedy/solver.js");
   const originalSolveGreedy = solverModule.solveGreedy;
   let capturedGreedyOptions = null;
 
@@ -1171,9 +1171,9 @@ function testAutoClampsHeavyGreedyStageSettings() {
 }
 
 async function testAutoAsyncClampsHeavyGreedyStageSettings() {
-  const greedyBridgeModule = require("../dist/greedy/bridge.js");
-  const lnsBridgeModule = require("../dist/lns/bridge.js");
-  const cpSatModule = require("../dist/cp-sat/solver.js");
+  const greedyBridgeModule = require("../dist/packages/solvers/greedy/bridge.js");
+  const lnsBridgeModule = require("../dist/packages/solvers/lns/bridge.js");
+  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
   const originalStartGreedySolve = greedyBridgeModule.startGreedySolve;
   const originalStartLnsSolve = lnsBridgeModule.startLnsSolve;
   const originalStartCpSatSolve = cpSatModule.startCpSatSolve;
@@ -3639,7 +3639,7 @@ function testLnsBenchmarkCorpusHelpers() {
     /Unknown LNS benchmark case\(s\): missing-case/
   );
 
-  const lnsModule = require("../dist/lns/solver.js");
+  const lnsModule = require("../dist/packages/solvers/lns/solver.js");
   const originalSolveLns = lnsModule.solveLns;
   let observedParams = null;
 
@@ -3723,7 +3723,7 @@ function testLnsNeighborhoodAblationRunner() {
   const variants = DEFAULT_LNS_NEIGHBORHOOD_ABLATION_VARIANTS.filter((variant) =>
     variant.name === "baseline" || variant.name === "small-2x2"
   );
-  const lnsModule = require("../dist/lns/solver.js");
+  const lnsModule = require("../dist/packages/solvers/lns/solver.js");
   const originalSolveLns = lnsModule.solveLns;
   const observedRuns = [];
 
@@ -3937,7 +3937,7 @@ function testLnsNeighborhoodAblationWindowSequenceMovement() {
     { name: "baseline", description: "Baseline ranked anchors.", lns: { neighborhoodAnchorPolicy: "ranked" } },
     { name: "weak-service-first", description: "Alternative anchors.", lns: { neighborhoodAnchorPolicy: "weak-service-first" } },
   ];
-  const lnsModule = require("../dist/lns/solver.js");
+  const lnsModule = require("../dist/packages/solvers/lns/solver.js");
   const originalSolveLns = lnsModule.solveLns;
 
   lnsModule.solveLns = (_grid, params) => {
@@ -4029,7 +4029,7 @@ function testLnsSeededServiceAnchorPressureBenchmarkCase() {
 }
 
 function testLnsWindowReplayLabelRunner() {
-  const cpSatModule = require("../dist/cp-sat/solver.js");
+  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
   const originalSolveCpSat = cpSatModule.solveCpSat;
   const observedRepairs = [];
 
@@ -4971,7 +4971,7 @@ function getRequiredGreedyBenchmarkCase(name) {
 }
 
 function withPatchedGreedySolver(solveGreedyImpl, callback) {
-  const solverModule = require("../dist/greedy/solver.js");
+  const solverModule = require("../dist/packages/solvers/greedy/solver.js");
   const originalSolveGreedy = solverModule.solveGreedy;
   solverModule.solveGreedy = solveGreedyImpl;
 
@@ -7341,7 +7341,7 @@ function maybeTestLnsCanRepairRoadAnchorLayouts() {
 }
 
 function testLnsRunsFinalEscalationWithinConfiguredBudget() {
-  const cpSatModule = require("../dist/cp-sat/solver.js");
+  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
   const originalSolveCpSat = cpSatModule.solveCpSat;
   const seenWindows = [];
 
@@ -7394,7 +7394,7 @@ function testLnsRunsFinalEscalationWithinConfiguredBudget() {
 }
 
 function testLnsTelemetryRecordsRepairPolicyAndOutcomes() {
-  const cpSatModule = require("../dist/cp-sat/solver.js");
+  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
   const originalSolveCpSat = cpSatModule.solveCpSat;
   const seenRepairBudgets = [];
   let attempts = 0;
@@ -7461,7 +7461,7 @@ function testLnsTelemetryRecordsRepairPolicyAndOutcomes() {
 }
 
 function testLnsGreedySeedReportsBudgetAndProfile() {
-  const cpSatModule = require("../dist/cp-sat/solver.js");
+  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
   const originalSolveCpSat = cpSatModule.solveCpSat;
 
   cpSatModule.solveCpSat = (_grid, params) => ({
@@ -7518,7 +7518,7 @@ function testLnsGreedySeedReportsBudgetAndProfile() {
 }
 
 function testLnsStopsAfterNoImprovementTimeout() {
-  const cpSatModule = require("../dist/cp-sat/solver.js");
+  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
   const originalSolveCpSat = cpSatModule.solveCpSat;
   let attempts = 0;
 

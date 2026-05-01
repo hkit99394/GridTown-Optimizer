@@ -1,7 +1,7 @@
 import { performance } from "node:perf_hooks";
 
 import { buildSolverProgressSummary, formatSolverProgressSummary } from "../core/index.js";
-import { solveLns } from "../../lns/solver.js";
+import { solveLns } from "../solvers/index.js";
 import {
   applyBenchmarkOptionDefaults,
   applyNormalizedGreedyBenchmarkParams,

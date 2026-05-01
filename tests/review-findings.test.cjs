@@ -5,9 +5,9 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 const { CP_SAT_PORTFOLIO_CAPABILITY_LIMITS, solve } = require("city-builder/solver");
-const { evaluateLayout } = require("../dist/core/evaluator.js");
-const { buildManualLayoutResponse, buildSolveResponse } = require("../dist/server/http/contracts.js");
-const { SolveProgressLogWriter } = require("../dist/runtime/jobs/solveProgressLog.js");
+const { evaluateLayout } = require("../dist/packages/core/evaluator.js");
+const { buildManualLayoutResponse, buildSolveResponse } = require("../dist/apps/planner-server/http/contracts.js");
+const { SolveProgressLogWriter } = require("../dist/packages/runtime/jobs/solveProgressLog.js");
 
 function createFakeDomElement(overrides = {}) {
   return {
@@ -64,7 +64,7 @@ function loadBrowserModule(relativePath, options = {}) {
 }
 
 function loadPlannerSharedModule() {
-  return loadBrowserModule("../web/plannerShared.js", {
+  return loadBrowserModule("../apps/planner-web/plannerShared.js", {
     window: {
       setTimeout,
       clearTimeout,
@@ -73,7 +73,7 @@ function loadPlannerSharedModule() {
 }
 
 function loadPlannerRequestBuilderModule(crypto = undefined) {
-  return loadBrowserModule("../web/plannerRequestBuilder.js", {
+  return loadBrowserModule("../apps/planner-web/plannerRequestBuilder.js", {
     window: {
       crypto,
       CityBuilderShared: loadPlannerSharedModule(),
@@ -86,7 +86,7 @@ function loadPlannerRequestBuilderModule(crypto = undefined) {
 }
 
 function loadPlannerExpansionModule(fetch) {
-  return loadBrowserModule("../web/plannerExpansion.js", {
+  return loadBrowserModule("../apps/planner-web/plannerExpansion.js", {
     context: {
       Error,
       fetch,
@@ -100,7 +100,7 @@ function loadPlannerWorkbenchModule() {
     observe() {}
     disconnect() {}
   }
-  return loadBrowserModule("../web/plannerWorkbench.js", {
+  return loadBrowserModule("../apps/planner-web/plannerWorkbench.js", {
     window: {
       CityBuilderShared: loadPlannerSharedModule(),
     },
@@ -130,7 +130,7 @@ function testCpSatPortfolioCapabilitiesAreExported() {
 }
 
 function loadPlannerSolveRuntimeModule() {
-  return loadBrowserModule("../web/plannerSolveRuntime.js", {
+  return loadBrowserModule("../apps/planner-web/plannerSolveRuntime.js", {
     window: {
       clearInterval,
       setInterval,
@@ -142,15 +142,15 @@ function loadPlannerSolveRuntimeModule() {
 }
 
 function loadPlannerShellModule() {
-  return loadBrowserModule("../web/plannerShell.js").CityBuilderShell;
+  return loadBrowserModule("../apps/planner-web/plannerShell.js").CityBuilderShell;
 }
 
 function loadPlannerResultsModule(options = {}) {
-  return loadBrowserModule("../web/plannerResults.js", options).CityBuilderResults;
+  return loadBrowserModule("../apps/planner-web/plannerResults.js", options).CityBuilderResults;
 }
 
 function loadPlannerPersistenceModule(localStorage = undefined) {
-  return loadBrowserModule("../web/plannerPersistence.js", {
+  return loadBrowserModule("../apps/planner-web/plannerPersistence.js", {
     window: {
       localStorage,
     },

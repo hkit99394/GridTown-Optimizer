@@ -5,10 +5,10 @@ const os = require("node:os");
 const path = require("node:path");
 const { Readable } = require("node:stream");
 
-const optimizerRegistry = require("../dist/runtime/dispatch/optimizerRegistry.js");
-const { SolveJobManager } = require("../dist/runtime/jobs/solveJobManager.js");
-const { SolverInputError } = require("../dist/core/solverInputValidation.js");
-const { createPlannerRequestHandler } = require("../dist/server/http/requestHandler.js");
+const optimizerRegistry = require("../dist/packages/runtime/dispatch/optimizerRegistry.js");
+const { SolveJobManager } = require("../dist/packages/runtime/jobs/solveJobManager.js");
+const { SolverInputError } = require("../dist/packages/core/solverInputValidation.js");
+const { createPlannerRequestHandler } = require("../dist/apps/planner-server/http/requestHandler.js");
 const { solve } = require("city-builder/solver");
 
 function createMockRequest(method, url, body = "", headers = undefined) {
@@ -111,7 +111,7 @@ async function testImmediateSolveCancelsOnDisconnect(handler) {
 async function testBackgroundSolveRejectsImmediateSolveAtCapacity() {
   const progressLogRoot = fs.mkdtempSync(path.join(os.tmpdir(), "planner-route-capacity-background-"));
   const handler = createPlannerRequestHandler({
-    webRoot: path.resolve(__dirname, "../web"),
+    webRoot: path.resolve(__dirname, "../apps/planner-web"),
     solveJobManager: new SolveJobManager({
       progressLogRoot,
       progressLogIntervalMs: 10,
@@ -185,7 +185,7 @@ async function testBackgroundSolveRejectsImmediateSolveAtCapacity() {
 async function testImmediateSolveRejectsBackgroundSolveAtCapacity() {
   const progressLogRoot = fs.mkdtempSync(path.join(os.tmpdir(), "planner-route-capacity-immediate-"));
   const handler = createPlannerRequestHandler({
-    webRoot: path.resolve(__dirname, "../web"),
+    webRoot: path.resolve(__dirname, "../apps/planner-web"),
     solveJobManager: new SolveJobManager({
       progressLogRoot,
       progressLogIntervalMs: 10,
@@ -359,7 +359,7 @@ async function testStaticPlannerModules(handler) {
 
 async function testUnexpectedStaticServerErrorsReturnInternalServerError() {
   const handler = createPlannerRequestHandler({
-    webRoot: path.resolve(__dirname, "../web-does-not-exist"),
+    webRoot: path.resolve(__dirname, "../apps/planner-web-does-not-exist"),
   });
 
   const result = await invoke(handler, { method: "GET", url: "/" });
@@ -1584,7 +1584,7 @@ async function testRecoveredAutoFailureNormalizesTerminalMetadata() {
   const solvePayload = buildTinySolvePayload();
   const progressLogRoot = fs.mkdtempSync(path.join(os.tmpdir(), "planner-route-auto-recovery-"));
   const handler = createPlannerRequestHandler({
-    webRoot: path.resolve(__dirname, "../web"),
+    webRoot: path.resolve(__dirname, "../apps/planner-web"),
     solveJobManager: new SolveJobManager({
       progressLogRoot,
       progressLogIntervalMs: 10,
@@ -1915,7 +1915,7 @@ async function testCancelMissingSolveRoute(handler) {
 async function testCompletedSolveJobsExpire() {
   const progressLogRoot = fs.mkdtempSync(path.join(os.tmpdir(), "planner-route-expiry-"));
   const handler = createPlannerRequestHandler({
-    webRoot: path.resolve(__dirname, "../web"),
+    webRoot: path.resolve(__dirname, "../apps/planner-web"),
     solveJobManager: new SolveJobManager({
       progressLogRoot,
       progressLogIntervalMs: 10,
@@ -1952,7 +1952,7 @@ async function testCompletedSolveJobsExpire() {
 async function main() {
   const progressLogRoot = fs.mkdtempSync(path.join(os.tmpdir(), "planner-route-logs-"));
   const handler = createPlannerRequestHandler({
-    webRoot: path.resolve(__dirname, "../web"),
+    webRoot: path.resolve(__dirname, "../apps/planner-web"),
     solveJobManager: new SolveJobManager({
       progressLogRoot,
       progressLogIntervalMs: 10,

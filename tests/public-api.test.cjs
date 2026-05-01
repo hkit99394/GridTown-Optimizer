@@ -27,8 +27,8 @@ function testSolverApiDoesNotExposeBenchmarkSurface() {
 }
 
 function testBenchmarkApiExposesBenchmarkSurface() {
-  assert.equal(benchmarkApi.runGreedyBenchmarkSuite, rootApi.runGreedyBenchmarkSuite);
-  assert.equal(benchmarkApi.appendExperimentRegistryEntry, rootApi.appendExperimentRegistryEntry);
+  assert.equal(typeof benchmarkApi.runGreedyBenchmarkSuite, "function");
+  assert.equal(typeof benchmarkApi.appendExperimentRegistryEntry, "function");
   assert.equal(typeof benchmarkApi.DEFAULT_GREEDY_BENCHMARK_CORPUS, "object");
 }
 
@@ -40,11 +40,12 @@ function testBenchmarkApiDoesNotExposeSolverEntrypoints() {
 
 function testPackageSubpathsResolveToStableEntrypoints() {
   assert.equal(packageRootApi.solve, rootApi.solve);
-  assert.equal(packageRootApi.runGreedyBenchmarkSuite, rootApi.runGreedyBenchmarkSuite);
   assert.equal(packageSolverApi.solve, solverApi.solve);
   assert.equal(packageSolverApi.solveGreedy, solverApi.solveGreedy);
   assert.equal(packageBenchmarkApi.runGreedyBenchmarkSuite, benchmarkApi.runGreedyBenchmarkSuite);
   assert.equal(packageBenchmarkApi.appendExperimentRegistryEntry, benchmarkApi.appendExperimentRegistryEntry);
+  assert.equal(hasOwnExport(packageRootApi, "runGreedyBenchmarkSuite"), false);
+  assert.equal(hasOwnExport(packageRootApi, "appendExperimentRegistryEntry"), false);
   assert.equal(hasOwnExport(packageSolverApi, "runGreedyBenchmarkSuite"), false);
   assert.equal(hasOwnExport(packageBenchmarkApi, "solve"), false);
 }
@@ -117,6 +118,73 @@ function testLegacyCoreModulesAreCompatibilityWrappers() {
   assert.deepEqual(offenders.map((filePath) => path.relative(coreDir, filePath)), []);
 }
 
+function testLegacySolverModulesAreCompatibilityWrappers() {
+  const srcDir = path.join(__dirname, "..", "src");
+  const legacySolverDirs = ["auto", "cp-sat", "greedy", "lns"];
+  const offenders = legacySolverDirs.flatMap((solverDir) =>
+    listFiles(path.join(srcDir, solverDir), (fileName) => fileName.endsWith(".ts"))
+      .filter((filePath) => {
+        const moduleName = path.basename(filePath, ".ts");
+        const expected = `export * from "../packages/solvers/${solverDir}/${moduleName}.js";`;
+        return fs.readFileSync(filePath, "utf8").trim() !== expected;
+      })
+      .map((filePath) => path.relative(srcDir, filePath))
+  );
+
+  assert.deepEqual(offenders, []);
+}
+
+function testLegacyRuntimeModulesAreCompatibilityWrappers() {
+  const srcDir = path.join(__dirname, "..", "src");
+  const runtimeDir = path.join(srcDir, "runtime");
+  const expectedWrappers = new Map([
+    ["runtime/index.ts", `export * from "../packages/runtime/index.js";`],
+    ["runtime/backgroundSolverRunner.ts", `export * from "../packages/runtime/background/runner.js";`],
+    ["runtime/optimizerRegistry.ts", `export * from "../packages/runtime/dispatch/optimizerRegistry.js";`],
+    ["runtime/solve.ts", `export * from "../packages/runtime/dispatch/solve.js";`],
+    ["runtime/solveJobManager.ts", `export * from "../packages/runtime/jobs/solveJobManager.js";`],
+    ["runtime/solveProgressLog.ts", `export * from "../packages/runtime/jobs/solveProgressLog.js";`],
+  ]);
+  for (const area of ["background", "dispatch", "jobs"]) {
+    for (const filePath of listFiles(path.join(runtimeDir, area), (fileName) => fileName.endsWith(".ts"))) {
+      const moduleName = path.basename(filePath, ".ts");
+      const relativePath = path.relative(srcDir, filePath);
+      expectedWrappers.set(relativePath, `export * from "../../packages/runtime/${area}/${moduleName}.js";`);
+    }
+  }
+
+  const offenders = listFiles(runtimeDir, (fileName) => fileName.endsWith(".ts"))
+    .map((filePath) => path.relative(srcDir, filePath))
+    .filter((relativePath) => fs.readFileSync(path.join(srcDir, relativePath), "utf8").trim() !== expectedWrappers.get(relativePath));
+
+  assert.deepEqual(offenders, []);
+}
+
+function testLegacyPlannerServerModulesAreCompatibilityWrappers() {
+  const srcDir = path.join(__dirname, "..", "src");
+  const expectedWrappers = new Map([
+    ["apps/webServer.ts", `import "./planner-server/webServer.js";`],
+    ["server/index.ts", `export * from "../apps/planner-server/index.js";`],
+  ]);
+  const serverHttpDir = path.join(srcDir, "server", "http");
+  for (const filePath of listFiles(serverHttpDir, (fileName) => fileName.endsWith(".ts"))) {
+    const moduleName = path.basename(filePath, ".ts");
+    const relativePath = path.relative(srcDir, filePath);
+    expectedWrappers.set(relativePath, `export * from "../../apps/planner-server/http/${moduleName}.js";`);
+  }
+
+  const offenders = [...expectedWrappers]
+    .filter(([relativePath, expected]) => fs.readFileSync(path.join(srcDir, relativePath), "utf8").trim() !== expected)
+    .map(([relativePath]) => relativePath);
+
+  assert.deepEqual(offenders, []);
+}
+
+function testPlannerWebLivesInAppFolder() {
+  assert.equal(fs.existsSync(path.join(__dirname, "..", "apps", "planner-web", "index.html")), true);
+  assert.equal(fs.existsSync(path.join(__dirname, "..", "web")), false);
+}
+
 function testCorePackageDoesNotImportOutsidePackage() {
   const corePackageDir = path.join(__dirname, "..", "src", "packages", "core");
   const parentImportPattern = /(?:from|import\(|export\s+[^"']*\s+from)\s*["']\.\.\//;
@@ -175,18 +243,11 @@ function testRuntimeAndServerUseCorePackageBoundary() {
 
 function testSolversUseCorePackageBoundary() {
   const srcDir = path.join(__dirname, "..", "src");
-  const directCoreImportPattern = /(?:from|import|export)\s+(?:type\s+)?(?:[^"']+\s+from\s+)?["']\.\.\/core\//;
-  const offenderRoots = [
-    path.join(srcDir, "auto"),
-    path.join(srcDir, "cp-sat"),
-    path.join(srcDir, "greedy"),
-    path.join(srcDir, "lns"),
-  ];
-  const offenders = offenderRoots.flatMap((rootDir) =>
-    listFiles(rootDir, (fileName) => fileName.endsWith(".ts"))
-      .filter((filePath) => directCoreImportPattern.test(fs.readFileSync(filePath, "utf8")))
-      .map((filePath) => path.relative(srcDir, filePath))
-  );
+  const solverPackageDir = path.join(srcDir, "packages", "solvers");
+  const legacyCoreImportPattern = /(?:from|import\(|export\s+[^"']*\s+from)\s*["'](?:\.\.\/){3}core\//;
+  const offenders = listFiles(solverPackageDir, (fileName) => fileName.endsWith(".ts"))
+    .filter((filePath) => legacyCoreImportPattern.test(fs.readFileSync(filePath, "utf8")))
+    .map((filePath) => path.relative(srcDir, filePath));
 
   assert.deepEqual(offenders, []);
 }
@@ -201,6 +262,10 @@ testBenchmarkToolingUsesBenchmarkApiBoundary();
 testBenchmarkInternalsAreHiddenBehindBenchmarkApi();
 testLegacyBenchmarkModulesAreCompatibilityWrappers();
 testLegacyCoreModulesAreCompatibilityWrappers();
+testLegacySolverModulesAreCompatibilityWrappers();
+testLegacyRuntimeModulesAreCompatibilityWrappers();
+testLegacyPlannerServerModulesAreCompatibilityWrappers();
+testPlannerWebLivesInAppFolder();
 testCorePackageDoesNotImportOutsidePackage();
 testSolverApiUsesCorePackageBoundary();
 testBenchmarkPackageUsesCorePackageBoundary();

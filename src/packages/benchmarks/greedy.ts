@@ -1,7 +1,7 @@
 import { performance } from "node:perf_hooks";
 
 import { buildSolverProgressSummary, formatSolverProgressSummary } from "../core/index.js";
-import { solveGreedy } from "../../greedy/solver.js";
+import { solveGreedy } from "../solvers/index.js";
 import {
   applyBenchmarkOptionDefaults,
   applyNormalizedGreedyBenchmarkParams,

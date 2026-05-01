@@ -15,7 +15,7 @@ This roadmap is intentionally not about turning `greedy` into a full exact solve
 
 The current greedy path is no longer a simple construction heuristic. The shipped bounded slices in this roadmap have already turned it into a measured, staged heuristic with stronger post-construction improvement and better runtime instrumentation.
 
-What exists today in [src/greedy/solver.ts](../../src/greedy/solver.ts):
+What exists today in [src/packages/solvers/greedy/solver.ts](../../src/packages/solvers/greedy/solver.ts):
 - full candidate enumeration for service and residential placements
 - grouped typed-residential service scoring plus dynamic marginal service rescoring
 - residential fill after service placement
@@ -156,8 +156,8 @@ Concrete work:
 - avoid recomputing equivalent BFS work between `canConnectToRoads` and `ensureBuildingConnectedToRoads`
 
 Shipped bounded slice:
-- `src/core/roads.ts` now uses one shared connection probe for both `canConnectToRoads` and `ensureBuildingConnectedToRoads`
-- `src/greedy/solver.ts` now reuses the winning probe inside service, residential, and local-search scans so selected placements do not rerun the same connectivity search
+- `src/packages/core/roads.ts` now uses one shared connection probe for both `canConnectToRoads` and `ensureBuildingConnectedToRoads`
+- `src/packages/solvers/greedy/solver.ts` now reuses the winning probe inside service, residential, and local-search scans so selected placements do not rerun the same connectivity search
 - `benchmark:greedy` now includes `bridge-connectivity-heavy` to keep probe reuse measurable in a deterministic corridor-style case
 
 Guardrail:
@@ -178,7 +178,7 @@ Concrete work:
 - invalidate or recompute only when a move actually changes the relevant service exposure model
 
 Shipped bounded slice:
-- `src/greedy/solver.ts` now builds a per-`solveOne` residential population cache immediately after the service phase settles
+- `src/packages/solvers/greedy/solver.ts` now builds a per-`solveOne` residential population cache immediately after the service phase settles
 - the cache is reused during both residential fill and `localSearchImprove`, while availability and overlap checks remain live
 - `benchmark:greedy` now reports `pop-cache` counters so cache entries and lookup volume stay visible on fixed benchmark cases
 
@@ -196,14 +196,14 @@ Why:
 Concrete work:
 - add service tie-breakers for lower explicit road cost, stronger road-anchor preservation, lower layout fragmentation, and lower building connectivity shadow
 - add residential tie-breakers for better packing efficiency and lower future building-induced connectivity shadow
-- port deterministic same-footprint service and residential type upgrades from [src/lns/solver.ts](../../src/lns/solver.ts)
+- port deterministic same-footprint service and residential type upgrades from [src/packages/solvers/lns/solver.ts](../../src/packages/solvers/lns/solver.ts)
 
 Guardrail:
 - keep tie-breaks deterministic when seeds and inputs are fixed
 
 Shipped bounded slice:
-- `src/greedy/solver.ts` now keeps primary service score and residential population ordering unchanged, then resolves equal-score ties with deterministic probe-cost and footprint-aware comparators while preserving road-anchor preference only on the service side
-- `src/core/dominanceUpgrades.ts` now holds the shared same-footprint typed-upgrade post-pass used by both greedy and LNS
+- `src/packages/solvers/greedy/solver.ts` now keeps primary service score and residential population ordering unchanged, then resolves equal-score ties with deterministic probe-cost and footprint-aware comparators while preserving road-anchor preference only on the service side
+- `src/packages/core/dominanceUpgrades.ts` now holds the shared same-footprint typed-upgrade post-pass used by both greedy and LNS
 - `benchmark:greedy` now includes `deterministic-tie-breaks` so Step 4 behavior stays visible in the fixed corpus
 
 ### 5. Make service scoring footprint-aware and availability-aware for typed residential candidates
@@ -228,7 +228,7 @@ Guardrail:
 - do not accidentally turn the scoring path into a full lookahead solve
 
 Shipped bounded slice:
-- `src/greedy/solver.ts` now groups typed residential variants by exact footprint for service scoring, so same-footprint alternatives contribute through one realizable scoring group instead of being summed independently
+- `src/packages/solvers/greedy/solver.ts` now groups typed residential variants by exact footprint for service scoring, so same-footprint alternatives contribute through one realizable scoring group instead of being summed independently
 - grouped service scoring now applies a local per-type availability-pressure multiplier when a service covers more premium typed groups than the configured `avail` can realize
 - grouped footprints now also drive the service-coverage index used by greedy scoring, reducing duplicate same-footprint work in the service-ranking path
 - `greedy.profile` now exposes grouped-scoring counters for collapsed variants, grouped coverage, grouped score evaluations, and availability-discounted groups
@@ -256,7 +256,7 @@ Guardrail:
 - do not regress the current useful behavior of avoiding obvious service over-placement when no explicit cap is given
 
 Shipped bounded slice:
-- `src/greedy/solver.ts` now keeps explicit `maxServices` behavior unchanged, while no-cap solves switch to deterministic coarse-to-fine cap search once `inferredUpper > 6`
+- `src/packages/solvers/greedy/solver.ts` now keeps explicit `maxServices` behavior unchanged, while no-cap solves switch to deterministic coarse-to-fine cap search once `inferredUpper > 6`
 - the adaptive path probes coarse caps at the endpoints and quarter splits first, then refines around the best two coarse caps instead of sweeping every value in `0..upper`
 - small `inferredUpper` cases still keep the old full sweep as a guardrail, so tiny service pools do not lose coverage from the bounded search
 - shuffled restarts and road-anchor refinement now run only on refine caps; coarse probes are baseline-only so low-diversification restart spend no longer multiplies across the whole cap range
@@ -280,7 +280,7 @@ Guardrail:
 - phase-level profiling should prove this is worth the added complexity before landing a broad refactor
 
 Shipped bounded slice:
-- `src/greedy/solver.ts` now maintains active candidate pools for the main service placement loop and the main residential placement loop, so overlap-invalidated candidates drop out of future scans instead of being rechecked every iteration
+- `src/packages/solvers/greedy/solver.ts` now maintains active candidate pools for the main service placement loop and the main residential placement loop, so overlap-invalidated candidates drop out of future scans instead of being rechecked every iteration
 - reverse indexes from occupied cells to service candidates, residential candidates, and residential scoring groups are now precomputed once per greedy solve and reused by every `solveOne()` attempt
 - service rescoring is now lazy in the main service loop: scores stay cached until a newly blocked residential group or a newly boosted covered group marks the affected service candidates dirty
 - service and residential type exhaustion now proactively invalidate candidates of exhausted types in the main construction loops
@@ -320,7 +320,7 @@ Guardrail:
 - if deferred connectivity picks a building set that cannot be realized by an explicit connected road network, fail that realization deterministically instead of silently returning an implicit-road layout
 
 Shipped bounded slice:
-- `src/greedy/solver.ts` now supports `greedy.deferRoadCommitment` as an opt-in experiment; the default path still commits explicit road paths during construction
+- `src/packages/solvers/greedy/solver.ts` now supports `greedy.deferRoadCommitment` as an opt-in experiment; the default path still commits explicit road paths during construction
 - in deferred mode, the main service and residential construction loops recompute anchor-reachable empty space after each accepted placement and treat non-anchor candidates as connectable when one of their border cells stays inside that frontier
 - deferred mode only applies to the main construction pass in this first slice; `fixedServices` reruns still evaluate under the explicit-road path, and road-anchor refinement is skipped while deferred mode is enabled because the construction frontier is no longer tied to a single committed anchor seed
 - before `localSearchImprove()` and final validation, the chosen building set is converted back into an explicit connected road network; if that reconstruction fails, the trial is rejected deterministically instead of returning an implicit-road layout
@@ -346,7 +346,7 @@ Guardrail:
 - prefer coarse completeness first, then deeper search only if benchmarks justify it
 
 Shipped bounded slice:
-- `src/greedy/solver.ts` now treats `fixedServices` refinement and exhaustive reruns as “best legal realization of this forced service set,” not just “evaluate the provided order once”
+- `src/packages/solvers/greedy/solver.ts` now treats `fixedServices` refinement and exhaustive reruns as “best legal realization of this forced service set,” not just “evaluate the provided order once”
 - forced-service evaluation now runs through one bounded helper that tries a deduped order set first, then replays the strongest successful orders across a bounded road-anchor seed set derived from the existing anchor helpers plus representative anchor-boundary seeds
 - refinement uses a richer forced-set budget than exhaustive search so service-swap trials can explore more legal realizations without letting exhaustive combination search explode combinatorially
 - `greedy.profile` now exposes `fixedServiceRealizationTrials`, and the fixed corpus includes `fixed-service-realization-complete` plus focused regressions for a seed-sensitive single-service case and a multi-service refine case
@@ -369,7 +369,7 @@ Guardrail:
 - preserve Auto's capped fast Greedy seed role; keep standalone Greedy's heavier local search bounded and measurable
 
 Shipped bounded slice:
-- `src/greedy/solver.ts` now keeps the existing residential move/add loop inside `localSearchImprove()`, then adds one bounded top-level service neighborhood pass under the same `greedy.localSearch` flag
+- `src/packages/solvers/greedy/solver.ts` now keeps the existing residential move/add loop inside `localSearchImprove()`, then adds one bounded top-level service neighborhood pass under the same `greedy.localSearch` flag
 - the first slice evaluates deterministic `remove`, `add`, and `swap` service neighbors against the incumbent using the existing bounded forced-service evaluator, instead of widening local search into a second full cap/restart solve
 - the service-neighborhood budget is intentionally small and fixed so Step 10 improves incumbent quality without letting local search dominate default greedy runtime
 - `greedy.profile` now exposes `localSearch` service-neighborhood counters, and `benchmark:greedy` includes `service-local-neighborhood` plus a `local-service=` summary line so the new slice stays visible in the fixed corpus
@@ -390,9 +390,9 @@ Concrete work:
 - collapse repeated rectangle normalization in hot loops
 
 Shipped bounded slice:
-- `src/core/grid.ts` now exposes visitor-style rectangle and neighbor helpers so hot callers can iterate footprint and border cells without allocating temporary arrays first
-- `src/core/buildings.ts` now uses those helpers for `overlaps`, service-boost checks, and `buildServiceEffectZoneSet()`, while keeping the existing array-returning compatibility APIs in place
-- `src/core/roads.ts`, `src/greedy/solver.ts`, and `src/greedy/roadAnchors.ts` now use the lower-allocation helpers in the explicit-road probe path and the hottest occupancy update loops, while preserving `Set<string>` road/building semantics and the existing public solution shape
+- `src/packages/core/grid.ts` now exposes visitor-style rectangle and neighbor helpers so hot callers can iterate footprint and border cells without allocating temporary arrays first
+- `src/packages/core/buildings.ts` now uses those helpers for `overlaps`, service-boost checks, and `buildServiceEffectZoneSet()`, while keeping the existing array-returning compatibility APIs in place
+- `src/packages/core/roads.ts`, `src/packages/solvers/greedy/solver.ts`, and `src/packages/solvers/greedy/roadAnchors.ts` now use the lower-allocation helpers in the explicit-road probe path and the hottest occupancy update loops, while preserving `Set<string>` road/building semantics and the existing public solution shape
 - this slice intentionally does not change cell-key representation, deferred-road semantics, or local-search snapshot handling; it is a semantics-preserving runtime refactor behind the current helper APIs
 - `tests/optimizers.test.cjs` now includes helper-level parity checks for rectangle iteration, effect-zone construction, and representative edge-border road probes, while the fixed greedy benchmark corpus continues to guard solution outputs
 
@@ -418,7 +418,7 @@ Guardrail:
 - preserve exact service type accounting, explicit road validity, and deterministic seeded behavior
 
 Shipped bounded slice:
-- `src/greedy/solver.ts` now evaluates Step 12 service neighborhoods as direct same-type relocations instead of running `remove`/`add`/`swap` through the Step 9 fixed-service evaluator for every trial
+- `src/packages/solvers/greedy/solver.ts` now evaluates Step 12 service neighborhoods as direct same-type relocations instead of running `remove`/`add`/`swap` through the Step 9 fixed-service evaluator for every trial
 - relocation candidates are scored against the incumbent occupancy and grouped residential upside with the current service removed from the boost state, then only the top-ranked few are exact-realized through the existing fixed-service solve path
 - the direct path now samples candidates per service type instead of from the global top-N pool, which avoids starving lower-ranked incumbent types during relocation search
 - `tests/optimizers.test.cjs` keeps `service-local-neighborhood` as the main guardrail and now asserts the Step 12 path improves the `240` baseline to `295`, keeps `fixedServiceRealizationTrials === 0`, and exercises remove/add/swap service neighborhoods
@@ -437,9 +437,9 @@ Original rationale for sequencing:
 - these changes touch correctness-sensitive mutation paths, so they need stronger helper-level aliasing and rollback tests first
 
 Shipped bounded slice:
-- `src/core/buildings.ts` now caches rectangle footprint keys and service effect-zone keys behind the existing helper APIs, so repeated footprint/effect-zone reads stop rebuilding the same geometry while the public `string[]` / `Set<string>` surface stays intact
-- `src/core/roads.ts` now supports a reusable `RoadProbeScratch` workspace for explicit-road BFS probes, threaded through `probeBuildingConnectedToRoads`, `canConnectToRoads`, `ensureBuildingConnectedToRoads`, and deferred-road materialization without changing caller-visible behavior
-- `src/greedy/solver.ts` now reuses one explicit-road scratch workspace across service scans, residential scans, Step 12 service relocations, deferred-road reconstruction, local search, and final road validation; it also reuses cached candidate/group footprint keys plus a rollback-safe occupancy scratch in the bounded service neighborhood
+- `src/packages/core/buildings.ts` now caches rectangle footprint keys and service effect-zone keys behind the existing helper APIs, so repeated footprint/effect-zone reads stop rebuilding the same geometry while the public `string[]` / `Set<string>` surface stays intact
+- `src/packages/core/roads.ts` now supports a reusable `RoadProbeScratch` workspace for explicit-road BFS probes, threaded through `probeBuildingConnectedToRoads`, `canConnectToRoads`, `ensureBuildingConnectedToRoads`, and deferred-road materialization without changing caller-visible behavior
+- `src/packages/solvers/greedy/solver.ts` now reuses one explicit-road scratch workspace across service scans, residential scans, Step 12 service relocations, deferred-road reconstruction, local search, and final road validation; it also reuses cached candidate/group footprint keys plus a rollback-safe occupancy scratch in the bounded service neighborhood
 - `greedy.profile` now exposes `geometryCacheEntries`, `occupancyScratchReuses`, and `scratchProbeCalls`, and `benchmark:greedy` prints a `step13=` summary line so the runtime-only refactor stays visible in the fixed corpus
 - `tests/optimizers.test.cjs` now keeps helper-level parity guards for geometry caches and reusable road-probe scratch repeatability, while the fixed corpus now holds `geometry-occupancy-hot-path` at `1030`
 
@@ -456,7 +456,7 @@ Original rationale for sequencing:
 - these changes are higher risk and should come after measurement plus the lower-risk runtime wins
 
 Shipped bounded slice:
-- `src/greedy/solver.ts` now supports an opt-in `greedy.serviceLookaheadCandidates` reranker in the main explicit non-`fixedServices` service loop
+- `src/packages/solvers/greedy/solver.ts` now supports an opt-in `greedy.serviceLookaheadCandidates` reranker in the main explicit non-`fixedServices` service loop
 - the Step 14 path first keeps the existing marginal-score pass, then reranks only the top-N already-feasible service candidates with a bounded sequential residential refill simulation capped at two placements
 - the refill simulation replays road-anchor reservation checks, exact connectivity/path feasibility, overlap invalidation, and typed residential availability on scratch state; deferred-road mode and `fixedServices` still skip the reranker entirely
 - equal lookahead totals still fall back to the current marginal score and `compareServiceTieBreaks(...)`, so enabling the flag does not introduce a new tie policy

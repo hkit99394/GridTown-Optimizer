@@ -1,4 +1,1 @@
-import { runJsonSolverWorkerCli } from "../runtime/background/worker.js";
-import { solveLns } from "./solver.js";
-
-runJsonSolverWorkerCli("LNS", solveLns);
+export * from "../packages/solvers/lns/worker.js";

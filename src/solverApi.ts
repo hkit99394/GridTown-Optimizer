@@ -1,16 +1,21 @@
 /**
  * Public solver and domain API.
  *
- * Prefer this entry point for application/runtime consumers. The root
- * `src/index.ts` remains a compatibility facade while benchmark and experiment
- * tooling move behind their own public API.
+ * Benchmark, label, and experiment-registry tooling lives behind
+ * `benchmarkApi.ts` and the `city-builder/benchmarks` package subpath.
  */
 
-export { solve, solveAsync } from "./runtime/solve.js";
-export { describeAutoStopReason, solveAuto, startAutoSolve } from "./auto/index.js";
-export { solveGreedy } from "./greedy/solver.js";
-export { solveCpSat, solveCpSatAsync, startCpSatSolve } from "./cp-sat/solver.js";
-export { solveLns } from "./lns/solver.js";
+export { solve, solveAsync } from "./packages/runtime/index.js";
+export {
+  describeAutoStopReason,
+  solveAuto,
+  solveCpSat,
+  solveCpSatAsync,
+  solveGreedy,
+  solveLns,
+  startAutoSolve,
+  startCpSatSolve,
+} from "./packages/solvers/index.js";
 export {
   assertValidLayout,
   assertValidLayoutConstraints,
@@ -34,7 +39,7 @@ export {
   validateSolutionMap,
 } from "./packages/core/index.js";
 export { CP_SAT_PORTFOLIO_CAPABILITY_LIMITS, OMITTED_SOLVER_OPTIMIZER, RECOMMENDED_INTERACTIVE_OPTIMIZER } from "./packages/core/index.js";
-export { getOptimizerAdapter, listOptimizerAdapters, resolveOptimizerName } from "./runtime/optimizerRegistry.js";
+export { getOptimizerAdapter, listOptimizerAdapters, resolveOptimizerName } from "./packages/runtime/index.js";
 
 export type {
   BuildDecisionTraceOptions,

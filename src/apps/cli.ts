@@ -8,9 +8,8 @@
 
 import type { Grid, OptimizerName, SolverParams } from "../packages/core/index.js";
 import { formatSolutionMap, normalizeServicePlacement, validateSolutionMap } from "../packages/core/index.js";
-import { solveAsync } from "../runtime/solve.js";
-import { describeAutoStopReason, startAutoSolve } from "../auto/index.js";
-import { startCpSatSolve } from "../cp-sat/solver.js";
+import { solveAsync } from "../packages/runtime/index.js";
+import { describeAutoStopReason, startAutoSolve, startCpSatSolve } from "../packages/solvers/index.js";
 import { runCliMain } from "./cliEntrypoint.js";
 import { parseExampleCliArgs } from "./exampleCliArgs.js";
 

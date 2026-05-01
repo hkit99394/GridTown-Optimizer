@@ -1,7 +1,7 @@
 import { performance } from "node:perf_hooks";
 
 import { buildSolverProgressSummary, formatSolverProgressSummary } from "../core/index.js";
-import { solveAsync } from "../../runtime/solve.js";
+import { solveAsync } from "../runtime/index.js";
 import {
   applyBenchmarkOptionDefaults,
   assertBenchmarkCasesSelected,

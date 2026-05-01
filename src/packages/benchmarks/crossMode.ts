@@ -9,7 +9,7 @@ import {
 } from "../core/index.js";
 import { buildSolverProgressSummary, formatSolverProgressSummary } from "../core/index.js";
 import { isAdjacentToRoads, isRoadAnchorCell, roadsConnectedToRoadAnchor } from "../core/index.js";
-import { solveAsync } from "../../runtime/solve.js";
+import { solveAsync } from "../runtime/index.js";
 import {
   assertBenchmarkCasesSelected,
   buildBenchmarkSuiteMetadata,

@@ -17,8 +17,8 @@ This roadmap is intentionally about `hybrid search`, not replacing the current s
 ## Non-Goals
 
 This roadmap is not about:
-- replacing [src/core/evaluator.ts](../../src/core/evaluator.ts) as the source of truth for legality and population
-- replacing [src/cp-sat/solver.ts](../../src/cp-sat/solver.ts) as the exact repair / global solve path
+- replacing [src/packages/core/evaluator.ts](../../src/packages/core/evaluator.ts) as the source of truth for legality and population
+- replacing [src/packages/solvers/cp-sat/solver.ts](../../src/packages/solvers/cp-sat/solver.ts) as the exact repair / global solve path
 - learning road connectivity or shortest-path logic that is already solved cleanly with graph algorithms
 - treating roads as blockers in the training target; the future blocker is building footprints that remove cells from anchor-reachable empty space
 - training a raw cell-by-cell end-to-end RL agent as the first milestone
@@ -128,7 +128,7 @@ Why:
 - learned guidance still needs richer chosen-vs-available decision state capture for offline training, generated-case split discipline, and registry metadata before promotion decisions depend on those artifacts
 
 Original scope:
-- add shared optimizer run events to [src/core/types.ts](../../src/core/types.ts)
+- add shared optimizer run events to [src/packages/core/types.ts](../../src/packages/core/types.ts)
 - add trace-export support to the existing `greedy`, `LNS`, `CP-SAT`, and scorecard benchmark runners
 - emit JSONL traces for solver milestones:
   - seed built
@@ -142,7 +142,7 @@ Original scope:
   - incumbent improved
   - solver finished
 - make benchmark runs reproducible with explicit seeds where supported
-- record final validation using [src/core/evaluator.ts](../../src/core/evaluator.ts)
+- record final validation using [src/packages/core/evaluator.ts](../../src/packages/core/evaluator.ts)
 
 Delivered:
 
@@ -426,12 +426,12 @@ Additional gates:
 
 ### Core runtime integration
 
-- [src/core/types.ts](../../src/core/types.ts): shared event, trace, and benchmark types
-- [src/core/roads.ts](../../src/core/roads.ts) or a sibling core module: deterministic connectivity-shadow and anchor-reachability opportunity features
-- [src/runtime/solve.ts](../../src/runtime/solve.ts): common solver callback / instrumentation entry point
-- [src/greedy/solver.ts](../../src/greedy/solver.ts): greedy trace emission and optional learned service re-ranking hook
-- [src/lns/solver.ts](../../src/lns/solver.ts): `LNS` trace emission and optional learned window re-ranking hook
-- [src/cp-sat/solver.ts](../../src/cp-sat/solver.ts): benchmark-safe warm-start comparisons and seed-quality reporting
+- [src/packages/core/types.ts](../../src/packages/core/types.ts): shared event, trace, and benchmark types
+- [src/packages/core/roads.ts](../../src/packages/core/roads.ts) or a sibling core module: deterministic connectivity-shadow and anchor-reachability opportunity features
+- [src/packages/runtime/solve.ts](../../src/packages/runtime/solve.ts): common solver callback / instrumentation entry point
+- [src/packages/solvers/greedy/solver.ts](../../src/packages/solvers/greedy/solver.ts): greedy trace emission and optional learned service re-ranking hook
+- [src/packages/solvers/lns/solver.ts](../../src/packages/solvers/lns/solver.ts): `LNS` trace emission and optional learned window re-ranking hook
+- [src/packages/solvers/cp-sat/solver.ts](../../src/packages/solvers/cp-sat/solver.ts): benchmark-safe warm-start comparisons and seed-quality reporting
 
 ### Benchmarking and research support
 
@@ -447,7 +447,7 @@ Every milestone should clear all of the following before the next phase begins:
    compare under matched wall-clock and matched `CP-SAT` repair budgets
 
 2. Exact validation:
-   every reported solution must pass [src/core/evaluator.ts](../../src/core/evaluator.ts)
+   every reported solution must pass [src/packages/core/evaluator.ts](../../src/packages/core/evaluator.ts)
 
 3. Repeated seeded runs:
    use repeated runs where randomness exists and report aggregate statistics

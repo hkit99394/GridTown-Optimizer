@@ -848,8 +848,8 @@ Road cells are encoded as `"r,c"` strings inside the `Set`.
 - [src/packages/benchmarks/greedy.ts](./src/packages/benchmarks/greedy.ts): fixed greedy benchmark corpus and harness
 - [src/packages/benchmarks/cpSat.ts](./src/packages/benchmarks/cpSat.ts): fixed CP-SAT benchmark corpus and harness
 - [web/](./web): planner UI modules
-- [src/core/evaluator.ts](./src/core/evaluator.ts): validation and exact scoring
-- [src/core/map.ts](./src/core/map.ts): ASCII rendering and map-aware validation
+- [src/packages/core/evaluator.ts](./src/packages/core/evaluator.ts): validation and exact scoring
+- [src/packages/core/map.ts](./src/packages/core/map.ts): ASCII rendering and map-aware validation
 - [tests/](./tests): regression, route, and optimizer tests
 
 ## Notes

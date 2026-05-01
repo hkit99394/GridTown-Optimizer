@@ -1,9 +1,14 @@
-/**
- * Canonical core package boundary.
- *
- * The implementation modules still live under `src/core` during the staged
- * migration. New package-facing exports should route through this entry point
- * so the eventual workspace move can stay mechanical.
- */
-
-export * from "../../core/index.js";
+export * from "./buildings.js";
+export * from "./capabilities.js";
+export * from "./decisionTrace.js";
+export * from "./dominanceUpgrades.js";
+export * from "./evaluator.js";
+export * from "./grid.js";
+export * from "./map.js";
+export * from "./plannerExplainability.js";
+export * from "./progress.js";
+export * from "./roads.js";
+export * from "./rules.js";
+export * from "./solutionSerialization.js";
+export * from "./solverInputValidation.js";
+export * from "./types.js";

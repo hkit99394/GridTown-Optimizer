@@ -237,7 +237,7 @@ Owns:
 - neighborhood escalation after stagnant iterations
 - neighborhood-window selection policy
 
-### `src/core/solutionSerialization.ts`
+### `src/packages/core/solutionSerialization.ts`
 
 Shared solution persistence helpers.
 
@@ -281,7 +281,7 @@ When adding a new behavior:
 - If it changes persisted progress-log schema or sample projection, update `src/runtime/jobs/solveProgressLog.ts`.
 - If it changes optimizer dispatch, update `src/runtime/dispatch/optimizerRegistry.ts`.
 - If it changes LNS anchor ranking or repair-window escalation, update `src/lns/neighborhoods.ts`.
-- If it changes how solutions cross process, log, or file boundaries, update `src/core/solutionSerialization.ts`.
+- If it changes how solutions cross process, log, or file boundaries, update `src/packages/core/solutionSerialization.ts`.
 - If it changes benchmark CLI behavior, update the matching implementation in `src/tools/cli`.
 - Keep `src/webServer.ts`, `src/apps/webServer.ts`, and `src/server/http/requestHandler.ts` thin.
 
@@ -446,8 +446,7 @@ Started on 2026-04-30:
   under `src/packages/benchmarks`.
 - Started the core extraction phase by adding
   `src/packages/core/index.ts` as the canonical core package boundary and
-  routing `src/solverApi.ts` through it. Core implementations still live under
-  `src/core` while consumers migrate.
+  routing `src/solverApi.ts` through it.
 - Routed `src/packages/benchmarks` core dependencies through
   `src/packages/core/index.ts`, with a public API guard preventing direct
   benchmark-package imports from `src/core/*`.
@@ -460,6 +459,11 @@ Started on 2026-04-30:
 - Routed solver implementation directories (`src/auto`, `src/cp-sat`,
   `src/greedy`, and `src/lns`) through `src/packages/core/index.ts`, with a
   public API guard preventing direct solver imports from `src/core/*`.
+- Moved core implementation modules into `src/packages/core`, leaving
+  `src/core` as compatibility wrappers for legacy deep imports.
+- Added public API guards proving legacy `src/core/*` files are compatibility
+  wrappers and preventing the core package from importing upward into other
+  package, app, runtime, server, benchmark, or tool layers.
 
 ## Current Follow-Up
 

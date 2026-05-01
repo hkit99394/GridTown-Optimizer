@@ -3,6 +3,8 @@ import path from "node:path";
 
 import {
   buildCrossModeProductWorkflowEvidenceSummary,
+  buildCrossModeProductWorkflowReplayMetrics,
+  buildCrossModeProductWorkflowReplayTelemetryManifest,
   buildCrossModeProductWorkflowRegistryEntryDraft,
   buildCrossModeBenchmarkTelemetryManifest,
   captureExperimentRegistryHardwareMetadata,
@@ -103,6 +105,8 @@ interface ProductArtifactManifest {
     scorecardJson: string;
     scorecardText: string;
     evidenceSummaryJson: string;
+    workflowReplayJson: string;
+    workflowReplayTelemetryManifestJson: string;
     telemetryManifestJson: string;
     registryEntryDraftJson: string;
   };
@@ -377,13 +381,23 @@ function writeProductArtifactBundle(
   }
   const artifacts = prepareScorecardArtifactBundlePaths(args.productArtifactDir, "--product-artifact-dir");
   const evidenceSummaryJson = path.posix.join(artifacts.artifactDir, "evidence-summary.json");
+  const workflowReplayJson = path.posix.join(artifacts.artifactDir, "workflow-replay.json");
+  const workflowReplayTelemetryManifestJson = path.posix.join(artifacts.artifactDir, "workflow-replay-telemetry-manifest.json");
   const registryEntryDraftJson = path.posix.join(artifacts.artifactDir, "registry-entry-draft.json");
   const evidenceSummary = buildCrossModeProductWorkflowEvidenceSummary(result);
   const command = args.productRegistryCommand ?? defaultProductRegistryCommand(argv);
+  const git = resolveExperimentRegistryGitMetadata();
+  const hardware = captureExperimentRegistryHardwareMetadata();
   const telemetryManifest = buildCrossModeBenchmarkTelemetryManifest(result, {
     command,
-    git: resolveExperimentRegistryGitMetadata(),
-    hardware: captureExperimentRegistryHardwareMetadata(),
+    git,
+    hardware,
+  });
+  const workflowReplay = buildCrossModeProductWorkflowReplayMetrics({ result });
+  const workflowReplayTelemetryManifest = buildCrossModeProductWorkflowReplayTelemetryManifest(result, {
+    command,
+    git,
+    hardware,
   });
   const registryEntryDraft = buildCrossModeProductWorkflowRegistryEntryDraft(result, {
     runId: args.productRunId,
@@ -392,6 +406,8 @@ function writeProductArtifactBundle(
       artifacts.artifactPaths.scorecardJson,
       artifacts.artifactPaths.scorecardText,
       evidenceSummaryJson,
+      workflowReplayJson,
+      workflowReplayTelemetryManifestJson,
       artifacts.artifactPaths.telemetryManifestJson,
     ],
     decision: args.productDecision,
@@ -400,6 +416,8 @@ function writeProductArtifactBundle(
 
   writeScorecardArtifactFiles(result, artifacts, telemetryManifest);
   writeJsonArtifact(artifacts.absoluteArtifactPath("evidence-summary.json"), evidenceSummary);
+  writeJsonArtifact(artifacts.absoluteArtifactPath("workflow-replay.json"), workflowReplay);
+  writeJsonArtifact(artifacts.absoluteArtifactPath("workflow-replay-telemetry-manifest.json"), workflowReplayTelemetryManifest);
   writeJsonArtifact(artifacts.absoluteArtifactPath("registry-entry-draft.json"), registryEntryDraft);
   const registry = args.productRegister || args.productRegisterDryRun
     ? registerProductArtifacts(registryEntryDraft, args)
@@ -411,6 +429,8 @@ function writeProductArtifactBundle(
       scorecardJson: artifacts.artifactPaths.scorecardJson,
       scorecardText: artifacts.artifactPaths.scorecardText,
       evidenceSummaryJson,
+      workflowReplayJson,
+      workflowReplayTelemetryManifestJson,
       telemetryManifestJson: artifacts.artifactPaths.telemetryManifestJson,
       registryEntryDraftJson,
     },
@@ -440,6 +460,8 @@ function formatProductArtifactManifest(manifest: ProductArtifactManifest): strin
     `scorecard-json=${manifest.artifactPaths.scorecardJson}`,
     `scorecard-text=${manifest.artifactPaths.scorecardText}`,
     `evidence-summary=${manifest.artifactPaths.evidenceSummaryJson}`,
+    `workflow-replay=${manifest.artifactPaths.workflowReplayJson}`,
+    `workflow-replay-telemetry-manifest=${manifest.artifactPaths.workflowReplayTelemetryManifestJson}`,
     `telemetry-manifest=${manifest.artifactPaths.telemetryManifestJson}`,
     `registry-entry-draft=${manifest.artifactPaths.registryEntryDraftJson}`,
   ];

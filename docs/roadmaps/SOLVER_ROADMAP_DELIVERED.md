@@ -4,7 +4,7 @@ This file keeps completed solver-roadmap work out of the main roadmap. The activ
 
 ## Delivered Work
 
-Reviewed through 2026-04-30.
+Reviewed through 2026-05-01.
 
 ### 1. Full Solver Stack
 
@@ -306,6 +306,14 @@ Reviewed through 2026-04-30.
 - Added `--label-register-dry-run`, `--label-run-id`, `--label-decision`, `--label-summary`, and `--label-registry` so label artifacts can validate strict registry metadata before a later append.
 - Extracted shared CLI artifact helpers for repository-relative paths, replay-command quoting, JSON artifact writing, and strict registry dry-run validation.
 - No model was trained and no solver defaults changed; this is label artifact provenance and registry infrastructure.
+
+### 36. Workflow Replay And Model-Experiment Telemetry Closeout
+
+- Product-corpus artifact bundles now write `workflow-replay.json` and `workflow-replay-telemetry-manifest.json` beside scorecard, evidence, telemetry, and registry-draft artifacts.
+- Product-corpus registry drafts include workflow replay artifacts, so strict dry-runs validate replay evidence with the rest of the bundle.
+- Added `buildCrossModeProductWorkflowReplayTelemetryManifest` for replay counts, validity, API routes, workflow tags, budgets, seeds, modes, command, git, and hardware metadata.
+- Added model-experiment artifact helpers for future training paths: manifest construction, stable model fingerprints, and strict registry-entry draft construction.
+- Marked Solver telemetry manifests delivered in the active roadmap. No model was trained, no workflow evidence was appended, and no solver defaults changed.
 
 ## Maintenance Watchpoints
 

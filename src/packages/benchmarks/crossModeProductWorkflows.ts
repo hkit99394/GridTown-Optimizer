@@ -32,6 +32,16 @@ export interface CrossModeProductWorkflowRegistryEntryDraftOptions {
   summary?: string;
 }
 
+export interface CrossModeProductWorkflowReplayTelemetryManifestOptions {
+  command: string;
+  git?: {
+    commit: string;
+    branch: string;
+  };
+  hardware?: Record<string, unknown>;
+  corpus?: readonly CrossModeBenchmarkCase[];
+}
+
 export interface CrossModeProductWorkflowCaseMetric {
   caseName: string;
   split: CrossModeBenchmarkSplit;
@@ -143,6 +153,27 @@ export interface CrossModeProductWorkflowEvidenceSummary {
   promotionCoverage: CrossModeProductWorkflowPromotionCoverage;
   caseMetrics: CrossModeProductWorkflowCaseMetric[];
   replayMetrics: CrossModeProductWorkflowReplayMetric[];
+}
+
+export interface CrossModeProductWorkflowReplayTelemetryManifest {
+  schemaVersion: 1;
+  source: "product-workflow-replay";
+  command: string;
+  generatedAt: string;
+  git: CrossModeProductWorkflowReplayTelemetryManifestOptions["git"] | null;
+  hardware: Record<string, unknown>;
+  suite: {
+    caseCount: number;
+    replayCount: number;
+    validReplayCount: number;
+    invalidReplayCount: number;
+    apiRoutes: CrossModeProductWorkflowReplayApiRoute[];
+    workflowTags: CrossModeProductWorkflowReplayTag[];
+    budgetsSeconds: number[];
+    seeds: number[];
+    modes: CrossModeBenchmarkMode[];
+  };
+  replays: CrossModeProductWorkflowReplayMetric[];
 }
 
 export interface CrossModeProductWorkflowReplayMetricOptions {
@@ -682,6 +713,36 @@ export function buildCrossModeProductWorkflowReplayMetrics(
   }
 
   return metrics;
+}
+
+export function buildCrossModeProductWorkflowReplayTelemetryManifest(
+  result: CrossModeBenchmarkSuiteResult,
+  options: CrossModeProductWorkflowReplayTelemetryManifestOptions
+): CrossModeProductWorkflowReplayTelemetryManifest {
+  const replays = buildCrossModeProductWorkflowReplayMetrics({
+    result,
+    corpus: options.corpus,
+  });
+  return {
+    schemaVersion: 1,
+    source: "product-workflow-replay",
+    command: options.command,
+    generatedAt: result.generatedAt,
+    git: options.git ?? null,
+    hardware: options.hardware ?? { captured: false, gpuUsed: false },
+    suite: {
+      caseCount: result.caseCount,
+      replayCount: replays.length,
+      validReplayCount: replays.filter((metric) => metric.valid).length,
+      invalidReplayCount: replays.filter((metric) => !metric.valid).length,
+      apiRoutes: uniqueSorted(replays.map((metric) => metric.apiRoute)) as CrossModeProductWorkflowReplayApiRoute[],
+      workflowTags: uniqueSorted(replays.map((metric) => metric.workflowTag)) as CrossModeProductWorkflowReplayTag[],
+      budgetsSeconds: uniqueSortedNumbers(replays.flatMap((metric) => metric.budgetsSeconds)),
+      seeds: uniqueSortedNumbers(replays.flatMap((metric) => metric.seeds)),
+      modes: uniqueSorted(replays.flatMap((metric) => metric.modes)) as CrossModeBenchmarkMode[],
+    },
+    replays,
+  };
 }
 
 export function buildCrossModeProductWorkflowEvidenceSummary(

@@ -6,6 +6,7 @@ const path = require("node:path");
 const {
   buildCrossModeProductWorkflowEvidenceSummary,
   buildCrossModeProductWorkflowReplayMetrics,
+  buildCrossModeProductWorkflowReplayTelemetryManifest,
   buildCrossModeProductWorkflowRegistryEntryDraft,
   completeExperimentRegistryEntry,
   DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS,
@@ -88,6 +89,23 @@ function testProductCorpusListingIsStableAndMetadataRich() {
   );
   assert(replayMetrics.every((metric) => metric.valid));
   assert(replayMetrics.every((metric) => metric.populationDeltaFromReported === 0));
+
+  const replayTelemetryManifest = buildCrossModeProductWorkflowReplayTelemetryManifest({
+    generatedAt: "2026-05-01T00:00:00.000Z",
+    caseCount: 2,
+    selectedCaseNames: ["manual-layout-replay-warm-start", "expansion-comparison-replay"],
+    cases: [],
+  }, {
+    command: "node dist/crossModeBenchmarkCli.js --product-corpus --json",
+    git: { commit: testCommit, branch: "features/product-workflow-replay-test" },
+    hardware: { captured: true, gpuUsed: false },
+  });
+  assert.equal(replayTelemetryManifest.source, "product-workflow-replay");
+  assert.equal(replayTelemetryManifest.suite.replayCount, 2);
+  assert.deepEqual(replayTelemetryManifest.suite.workflowTags, [
+    "expansion-comparison",
+    "manual-layout-replay",
+  ]);
 }
 
 function testProductCorpusCliListMatchesExportedCorpus() {
@@ -404,15 +422,31 @@ function testProductCorpusArtifactWriterCreatesRegistryDraft() {
     assert.equal(fs.existsSync(path.join(repoRoot, manifest.artifactPaths.scorecardJson)), true);
     assert.equal(fs.existsSync(path.join(repoRoot, manifest.artifactPaths.scorecardText)), true);
     assert.equal(fs.existsSync(path.join(repoRoot, manifest.artifactPaths.evidenceSummaryJson)), true);
+    assert.equal(fs.existsSync(path.join(repoRoot, manifest.artifactPaths.workflowReplayJson)), true);
+    assert.equal(fs.existsSync(path.join(repoRoot, manifest.artifactPaths.workflowReplayTelemetryManifestJson)), true);
     assert.equal(fs.existsSync(path.join(repoRoot, manifest.artifactPaths.telemetryManifestJson)), true);
     assert.equal(fs.existsSync(path.join(repoRoot, manifest.artifactPaths.registryEntryDraftJson)), true);
 
     const scorecard = readJson(manifest.artifactPaths.scorecardJson);
     const evidence = readJson(manifest.artifactPaths.evidenceSummaryJson);
+    const workflowReplay = readJson(manifest.artifactPaths.workflowReplayJson);
+    const workflowReplayTelemetryManifest = readJson(manifest.artifactPaths.workflowReplayTelemetryManifestJson);
     const telemetryManifest = readJson(manifest.artifactPaths.telemetryManifestJson);
     const draft = readJson(manifest.artifactPaths.registryEntryDraftJson);
     assert.equal(scorecard.caseCount, 2);
     assert.deepEqual(evidence.splitCaseCounts, { development: 1, holdout: 1 });
+    assert.equal(workflowReplay.length, 2);
+    assert.deepEqual(workflowReplay.map((metric) => metric.workflowTag).sort(), [
+      "expansion-comparison",
+      "manual-layout-replay",
+    ]);
+    assert.equal(workflowReplayTelemetryManifest.schemaVersion, 1);
+    assert.equal(workflowReplayTelemetryManifest.source, "product-workflow-replay");
+    assert.equal(workflowReplayTelemetryManifest.suite.replayCount, 2);
+    assert.equal(workflowReplayTelemetryManifest.suite.validReplayCount, 2);
+    assert.equal(workflowReplayTelemetryManifest.suite.invalidReplayCount, 0);
+    assert.deepEqual(workflowReplayTelemetryManifest.suite.apiRoutes, ["/api/layout/evaluate"]);
+    assert.equal(workflowReplayTelemetryManifest.hardware.captured, true);
     assert.equal(telemetryManifest.schemaVersion, 1);
     assert.equal(telemetryManifest.source, "cross-mode-benchmark");
     assert.equal(telemetryManifest.suite.caseCount, 2);
@@ -430,6 +464,8 @@ function testProductCorpusArtifactWriterCreatesRegistryDraft() {
       manifest.artifactPaths.scorecardJson,
       manifest.artifactPaths.scorecardText,
       manifest.artifactPaths.evidenceSummaryJson,
+      manifest.artifactPaths.workflowReplayJson,
+      manifest.artifactPaths.workflowReplayTelemetryManifestJson,
       manifest.artifactPaths.telemetryManifestJson,
     ]);
 

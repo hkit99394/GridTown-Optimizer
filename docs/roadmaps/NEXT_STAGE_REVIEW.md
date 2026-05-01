@@ -183,7 +183,7 @@ Success signal:
 
 Goal: make every improvement or regression explainable.
 
-Status: partial. Cross-mode scorecard artifact bundles now include `telemetry-manifest.json` with command, git, hardware, per-run solver parameter summaries, wall/CPU timing, first-feasible and best-score timing, status/gap fields, candidate counts where available, CP-SAT model size where available, and per-stage Auto/Greedy/LNS/CP-SAT records. Product-corpus bundles also include evidence summaries and registry drafts. Learned-ranking label bundles now emit label fingerprints, label/source counts, split metadata, LNS label-scale readiness, telemetry manifests, and strict registry-entry drafts. The remaining Stage 3 work is to make the same manifest contract universal across workflow replay and model artifacts.
+Status: delivered. Cross-mode scorecard artifact bundles include `telemetry-manifest.json` with command, git, hardware, per-run solver parameter summaries, wall/CPU timing, first-feasible and best-score timing, status/gap fields, candidate counts where available, CP-SAT model size where available, and per-stage Auto/Greedy/LNS/CP-SAT records. Product-corpus bundles also include evidence summaries, workflow replay artifacts, workflow replay telemetry manifests, and registry drafts. Learned-ranking label bundles emit label fingerprints, label/source counts, split metadata, LNS label-scale readiness, telemetry manifests, and strict registry-entry drafts. Model-experiment manifest and registry-draft helpers are available for future training runs; no model is trained by current scripts.
 
 Deliverables:
 
@@ -192,7 +192,7 @@ Deliverables:
 - Candidate counts for services, residentials, roads, windows, and operators.
 - CP-SAT model-size metadata where available.
 - First-feasible time, best-score time, final status, final gap, wall time, CPU budget, and observed CPU time.
-- Registry append path for benchmark, workflow, label, and model artifacts. Label-bundle draft/dry-run support is delivered; workflow and model artifacts remain.
+- Registry draft path for benchmark, workflow, label, and model artifacts. Label-bundle and product workflow dry-run support is delivered; model experiments have a helper contract for future training paths.
 
 Success signal:
 
@@ -334,14 +334,13 @@ Any default-path solver change must satisfy:
 
 Recommended order:
 
-1. Extend telemetry manifests and strict registry entries from scorecard and label artifacts to workflow replay and model runs.
-2. Implement adaptive LNS operators and operator weighting.
-3. Retune Auto budgets from scorecard evidence.
-4. Finish async and portfolio cancellation/snapshot and worker-result failure coverage before increasing CP-SAT orchestration complexity.
-5. Add exact small-window DP repair only if telemetry shows small-repair CP-SAT overhead or narrow-window bottlenecks.
-6. Explore service-master decomposition if pressure cases justify it.
-7. Scale LNS replay labels from adaptive operator outcomes.
-8. Revisit learned rankers only after offline holdout and online equal-budget gates pass.
-9. Revisit GPU, portfolio, distributed solving, and external solvers only after a measured bottleneck and promotion-grade evidence exist.
+1. Implement adaptive LNS operators and operator weighting.
+2. Retune Auto budgets from scorecard evidence.
+3. Finish async and portfolio cancellation/snapshot and worker-result failure coverage before increasing CP-SAT orchestration complexity.
+4. Add exact small-window DP repair only if telemetry shows small-repair CP-SAT overhead or narrow-window bottlenecks.
+5. Explore service-master decomposition if pressure cases justify it.
+6. Scale LNS replay labels from adaptive operator outcomes.
+7. Revisit learned rankers only after offline holdout and online equal-budget gates pass.
+8. Revisit GPU, portfolio, distributed solving, and external solvers only after a measured bottleneck and promotion-grade evidence exist.
 
 This keeps the project pointed at the real target: higher validated population per wall-clock minute, with fewer speculative detours.

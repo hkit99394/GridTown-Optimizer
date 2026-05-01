@@ -23,4 +23,5 @@ export * from "./deterministicAblationGates.js";
 export * from "./lnsWindowReplayLabels.js";
 export * from "./lnsReplayLabelReadiness.js";
 export * from "./learnedRankingLabels.js";
+export * from "./modelExperimentArtifacts.js";
 export * from "./experimentRegistry.js";

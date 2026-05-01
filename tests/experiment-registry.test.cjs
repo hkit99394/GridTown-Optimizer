@@ -6,6 +6,8 @@ const path = require("node:path");
 
 const {
   appendExperimentRegistryEntry,
+  buildModelExperimentRegistryEntryDraft,
+  buildModelExperimentTelemetryManifest,
   checkExperimentRegistryFile,
   completeExperimentRegistryEntry,
   formatExperimentRegistryIssues,
@@ -84,6 +86,74 @@ function testStrictMetadataRulesForBenchmarkAndLabelEntries() {
   const labelResult = validateExperimentRegistryEntry(labelBundle, { rootDir: repoRoot, validateArtifactPaths: false, strict: true });
 
   assert.equal(labelResult.issues.some((issue) => /label-bundle entries must include model metadata/.test(issue.message)), true);
+}
+
+function testModelExperimentManifestAndRegistryDraft() {
+  const telemetryManifest = buildModelExperimentTelemetryManifest({
+    command: "python python/ml/train.py --config=config.json",
+    generatedAt: "2026-05-01T00:00:00.000Z",
+    git: { commit: testCommit, branch: "features/model-contract-test" },
+    hardware: { captured: true, cpuModel: "Test CPU", logicalCores: 8, memoryGb: 16, gpuUsed: false },
+    model: { trained: true, version: "test-model-v1", format: "json" },
+    inputArtifacts: ["artifacts/learned-ranking-labels/2026-05-01/bundle/labels.json"],
+    outputArtifacts: ["artifacts/models/test/model.json"],
+    labelFingerprint: "fnv1a:labels001",
+    modelFingerprint: "fnv1a:model0001",
+    metrics: { holdoutAccuracy: 0.75 },
+    notes: "Registry helper contract only; no solver default changed.",
+  });
+
+  assert.equal(telemetryManifest.source, "model-experiment");
+  assert.equal(telemetryManifest.modelFingerprint, "fnv1a:model0001");
+  assert.deepEqual(telemetryManifest.outputArtifacts, ["artifacts/models/test/model.json"]);
+
+  const inferredTelemetryManifest = buildModelExperimentTelemetryManifest({
+    command: telemetryManifest.command,
+    generatedAt: telemetryManifest.generatedAt,
+    model: { trained: true, version: "test-model-v1", format: "json" },
+  });
+  const inferredDraft = buildModelExperimentRegistryEntryDraft({
+    commands: [telemetryManifest.command],
+    artifactPaths: ["artifacts/models/test/model.json"],
+    model: { trained: true, version: "test-model-v1", format: "json" },
+  });
+  assert.equal(inferredTelemetryManifest.modelFingerprint, inferredDraft.modelFingerprint);
+
+  const draft = buildModelExperimentRegistryEntryDraft({
+    runId: "model-experiment-test",
+    generatedAt: telemetryManifest.generatedAt,
+    commands: [telemetryManifest.command],
+    artifactPaths: [
+      "artifacts/models/test/model.json",
+      "artifacts/models/test/telemetry-manifest.json",
+    ],
+    cases: { development: ["case-a"], holdout: ["case-b"] },
+    caseFamilies: ["model-fixture"],
+    seeds: [7],
+    splitStatus: { protectedHoldout: true },
+    budget: { trainSeconds: 12, observedCpuSeconds: 10.5 },
+    model: telemetryManifest.model,
+    labelFingerprint: telemetryManifest.labelFingerprint,
+    modelFingerprint: telemetryManifest.modelFingerprint,
+    summaryMetrics: telemetryManifest.metrics,
+  });
+  assert.equal(draft.artifactType, "model-experiment");
+  assert.equal(draft.decision, "model-experiment-only");
+  assert.equal(draft.summary, "Model experiment artifact; no solver default changed.");
+
+  const entry = completeExperimentRegistryEntry(draft, {
+    indexedAt: "2026-05-01",
+    indexedGitCommit: testCommit,
+    branch: "features/model-contract-test",
+    artifactGitCommit: testCommit,
+    hardware: { captured: true, cpuModel: "Test CPU", logicalCores: 8, memoryGb: 16, gpuUsed: false },
+  });
+  const validation = validateExperimentRegistryEntry(entry, {
+    rootDir: repoRoot,
+    validateArtifactPaths: false,
+    strict: true,
+  });
+  assert.equal(validation.issues.length, 0, formatExperimentRegistryIssues(validation.issues));
 }
 
 function testAppendHelperAddsCommitCommandBudgetHardwareModelAndDecisionMetadata() {
@@ -184,6 +254,7 @@ function testRegistryCliCanAppendAndCheckLabelArtifacts() {
 
 testSeedRegistryChecksWithoutShapeErrors();
 testStrictMetadataRulesForBenchmarkAndLabelEntries();
+testModelExperimentManifestAndRegistryDraft();
 testAppendHelperAddsCommitCommandBudgetHardwareModelAndDecisionMetadata();
 testCompleteEntryPreservesExplicitNullArtifactCommit();
 testRegistryCliCanAppendAndCheckLabelArtifacts();

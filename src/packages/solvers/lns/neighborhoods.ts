@@ -17,6 +17,8 @@ import {
 import type {
   CpSatNeighborhoodWindow,
   Grid,
+  LnsAdaptiveOperatorName,
+  LnsOperatorWeight,
   LnsNeighborhoodAnchorPolicy,
   Solution,
   SolverParams,
@@ -30,8 +32,18 @@ export interface NeighborhoodAnchor {
   cols: number;
 }
 
+export interface LnsAdaptiveNeighborhoodCandidate {
+  operator: LnsAdaptiveOperatorName;
+  window: CpSatNeighborhoodWindow;
+  score: number;
+}
+
 interface RankedNeighborhoodAnchor extends NeighborhoodAnchor {
   score: number;
+}
+
+interface OperatorNeighborhoodAnchor extends NeighborhoodAnchor {
+  operator: LnsAdaptiveOperatorName;
 }
 
 export interface LnsNeighborhoodOptions {
@@ -78,7 +90,34 @@ function addWindow(
   window: CpSatNeighborhoodWindow | null
 ): void {
   if (!window) return;
-  dedupe.set(`${window.top}:${window.left}:${window.rows}:${window.cols}`, window);
+  dedupe.set(windowKey(window), window);
+}
+
+function windowKey(window: CpSatNeighborhoodWindow): string {
+  return `${window.top}:${window.left}:${window.rows}:${window.cols}`;
+}
+
+function addCandidate(
+  candidates: Map<string, LnsAdaptiveNeighborhoodCandidate>,
+  operator: LnsAdaptiveOperatorName,
+  window: CpSatNeighborhoodWindow | null,
+  score: number
+): void {
+  if (!window) return;
+  candidates.set(`${operator}:${windowKey(window)}`, { operator, window, score });
+}
+
+function addCandidateWindowsFromMap(
+  candidates: Map<string, LnsAdaptiveNeighborhoodCandidate>,
+  operator: LnsAdaptiveOperatorName,
+  windows: Map<string, CpSatNeighborhoodWindow>,
+  scoreBase: number
+): void {
+  let index = 0;
+  for (const window of windows.values()) {
+    addCandidate(candidates, operator, window, scoreBase - index);
+    index += 1;
+  }
 }
 
 function addRoadAnchorRepairWindows(
@@ -113,6 +152,35 @@ function addClampedWindowsForAnchors<T extends NeighborhoodAnchor>(
   }
 }
 
+function addClampedCandidateWindowsForAnchors<T extends NeighborhoodAnchor>(
+  candidates: Map<string, LnsAdaptiveNeighborhoodCandidate>,
+  operator: LnsAdaptiveOperatorName,
+  G: Grid,
+  anchors: readonly T[],
+  windowSizes: readonly { rows: number; cols: number }[],
+  scoreBase: number
+): void {
+  const windows = new Map<string, CpSatNeighborhoodWindow>();
+  addClampedWindowsForAnchors(windows, G, anchors, windowSizes);
+  addCandidateWindowsFromMap(candidates, operator, windows, scoreBase);
+}
+
+function addClampedCandidateWindowsForOperatorAnchors(
+  candidates: Map<string, LnsAdaptiveNeighborhoodCandidate>,
+  G: Grid,
+  anchors: readonly OperatorNeighborhoodAnchor[],
+  windowSizes: readonly { rows: number; cols: number }[],
+  scoreBase: number
+): void {
+  for (const { rows, cols } of windowSizes) {
+    let score = scoreBase;
+    for (const anchor of anchors) {
+      addCandidate(candidates, anchor.operator, clampNeighborhoodWindow(G, anchor, rows, cols), score);
+      score -= 1;
+    }
+  }
+}
+
 function addSlidingNeighborhoodWindows(
   windows: Map<string, CpSatNeighborhoodWindow>,
   G: Grid,
@@ -140,8 +208,19 @@ function addSlidingNeighborhoodWindows(
   addRoadAnchorRepairWindows(windows, G, rows + rowStart, cols);
 }
 
-function interleaveAnchors(anchorGroups: NeighborhoodAnchor[][]): NeighborhoodAnchor[] {
-  const interleaved: NeighborhoodAnchor[] = [];
+function addSlidingNeighborhoodCandidates(
+  candidates: Map<string, LnsAdaptiveNeighborhoodCandidate>,
+  G: Grid,
+  neighborhoodRows: number,
+  neighborhoodCols: number
+): void {
+  const windows = new Map<string, CpSatNeighborhoodWindow>();
+  addSlidingNeighborhoodWindows(windows, G, neighborhoodRows, neighborhoodCols);
+  addCandidateWindowsFromMap(candidates, "sliding", windows, 1000);
+}
+
+function interleaveAnchors<T extends NeighborhoodAnchor>(anchorGroups: readonly (readonly T[])[]): T[] {
+  const interleaved: T[] = [];
   const maxLength = anchorGroups.reduce((max, group) => Math.max(max, group.length), 0);
   for (let index = 0; index < maxLength; index++) {
     for (const group of anchorGroups) {
@@ -326,6 +405,140 @@ function buildFrontierCongestionAnchors(
     .map(({ r, c, rows, cols }) => ({ r, c, rows, cols }));
 }
 
+function buildGateChokeAnchors(
+  G: Grid,
+  incumbent: Solution,
+  limit: number
+): NeighborhoodAnchor[] {
+  if (limit <= 0) return [];
+
+  const occupied = buildOccupiedCellSet(incumbent);
+  const candidates: RankedNeighborhoodAnchor[] = [];
+
+  for (const roadKey of incumbent.roads) {
+    const { r, c } = cellFromKey(roadKey);
+    if (!isAllowed(G, r, c)) continue;
+    const neighbors = orthogonalNeighbors(G, r, c);
+    let roadNeighbors = 0;
+    let occupiedNeighbors = 0;
+    let frontierNeighbors = 0;
+
+    for (const [nr, nc] of neighbors) {
+      const neighborKey = cellKey(nr, nc);
+      if (!isAllowed(G, nr, nc)) continue;
+      if (incumbent.roads.has(neighborKey)) {
+        roadNeighbors += 1;
+      } else if (occupied.has(neighborKey)) {
+        occupiedNeighbors += 1;
+      } else {
+        frontierNeighbors += 1;
+      }
+    }
+
+    const isBoundaryGate = r === 0 || c === 0;
+    const isNarrowRoad = roadNeighbors <= 2;
+    if (!isBoundaryGate && (!isNarrowRoad || occupiedNeighbors + frontierNeighbors === 0)) continue;
+
+    candidates.push({
+      r,
+      c,
+      rows: 1,
+      cols: 1,
+      score: (isBoundaryGate ? 6 : 0) + (2 - Math.min(2, roadNeighbors)) * 4 + occupiedNeighbors * 3 + frontierNeighbors,
+    });
+  }
+
+  return candidates
+    .sort((a, b) => b.score - a.score || a.r - b.r || a.c - b.c)
+    .slice(0, limit)
+    .map(({ r, c, rows, cols }) => ({ r, c, rows, cols }));
+}
+
+function buildServiceOverlapAnchors(
+  G: Grid,
+  incumbent: Solution,
+  limit: number
+): NeighborhoodAnchor[] {
+  if (incumbent.services.length < 2 || limit <= 0) return [];
+
+  const serviceEffectZones = incumbent.services.map((service) => new Set(serviceEffectZone(G, service)));
+  const residentialFootprints = incumbent.residentials.map((residential) =>
+    residentialFootprint(residential.r, residential.c, residential.rows, residential.cols)
+  );
+
+  return incumbent.services
+    .map((service, serviceIndex) => {
+      const effectZone = serviceEffectZones[serviceIndex];
+      let sharedResidentials = 0;
+      let serviceZoneOverlap = 0;
+
+      for (const footprint of residentialFootprints) {
+        if (!footprint.some((cell) => effectZone.has(cell))) continue;
+        if (serviceEffectZones.some((otherZone, otherIndex) =>
+          otherIndex !== serviceIndex && footprint.some((cell) => otherZone.has(cell))
+        )) {
+          sharedResidentials += 1;
+        }
+      }
+
+      for (let otherIndex = 0; otherIndex < serviceEffectZones.length; otherIndex++) {
+        if (otherIndex === serviceIndex) continue;
+        let overlap = 0;
+        for (const cell of effectZone) {
+          if (serviceEffectZones[otherIndex].has(cell)) overlap += 1;
+        }
+        serviceZoneOverlap += overlap;
+      }
+
+      return {
+        ...normalizeServicePlacement(service),
+        score: sharedResidentials * 1000 + serviceZoneOverlap,
+        sharedResidentials,
+        serviceZoneOverlap,
+      };
+    })
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) =>
+      b.score - a.score
+      || b.sharedResidentials - a.sharedResidentials
+      || b.serviceZoneOverlap - a.serviceZoneOverlap
+      || a.r - b.r
+      || a.c - b.c
+    )
+    .slice(0, limit)
+    .map(({ r, c, rows, cols }) => ({ r, c, rows, cols }));
+}
+
+function buildRandomExplorationAnchors(
+  G: Grid,
+  incumbent: Solution,
+  limit: number
+): NeighborhoodAnchor[] {
+  const H = height(G);
+  const W = width(G);
+  const repairRowStart = H > 1 ? 1 : 0;
+  const repairableRows = H - repairRowStart;
+  if (limit <= 0 || repairableRows <= 0 || W <= 0) return [];
+
+  let seed = (
+    Math.imul(H + 1, 73856093)
+    ^ Math.imul(W + 1, 19349663)
+    ^ Math.imul((incumbent.totalPopulation ?? 0) + 1, 83492791)
+    ^ Math.imul(incumbent.roads.size + 1, 265443576)
+    ^ Math.imul(incumbent.services.length + incumbent.residentials.length + 1, 97531)
+  ) >>> 0;
+
+  const anchors: NeighborhoodAnchor[] = [];
+  for (let index = 0; index < limit; index++) {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    const r = repairRowStart + (seed % repairableRows);
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    const c = seed % W;
+    anchors.push({ r, c, rows: 1, cols: 1 });
+  }
+  return anchors;
+}
+
 function growNeighborhoodDimension(base: number, max: number, stageIndex: number, stageCount: number): number {
   if (max <= base) return Math.max(1, max);
   return Math.max(base, Math.min(max, base + Math.ceil(((max - base) * stageIndex) / Math.max(1, stageCount))));
@@ -393,6 +606,19 @@ function addEscalatedNeighborhoodWindows(
   }
 }
 
+function addEscalatedNeighborhoodCandidates(
+  candidates: Map<string, LnsAdaptiveNeighborhoodCandidate>,
+  G: Grid,
+  focusedAnchors: NeighborhoodAnchor[],
+  weakResidentials: NeighborhoodAnchor[],
+  options: LnsNeighborhoodOptions,
+  stagnantIterations: number
+): void {
+  const windows = new Map<string, CpSatNeighborhoodWindow>();
+  addEscalatedNeighborhoodWindows(windows, G, focusedAnchors, weakResidentials, options, stagnantIterations);
+  addCandidateWindowsFromMap(candidates, "random-exploration", windows, 2000);
+}
+
 export function selectNeighborhoodWindow(
   windows: CpSatNeighborhoodWindow[],
   iteration: number,
@@ -420,14 +646,73 @@ export function selectNeighborhoodWindow(
   return windows[neighborhoodIndex];
 }
 
-export function buildNeighborhoodWindows(
+function getOperatorWeight(
+  operatorWeights: readonly LnsOperatorWeight[] | undefined,
+  operator: LnsAdaptiveOperatorName
+): number {
+  return operatorWeights?.find((entry) => entry.operator === operator)?.weight ?? 1;
+}
+
+export function selectAdaptiveNeighborhoodOperator(
+  candidates: LnsAdaptiveNeighborhoodCandidate[],
+  iteration: number,
+  stagnantIterations: number,
+  options: Pick<LnsNeighborhoodOptions, "maxNoImprovementIterations">,
+  operatorWeights?: readonly LnsOperatorWeight[]
+): LnsAdaptiveNeighborhoodCandidate {
+  const repairAttempt = stagnantIterations + 1;
+  if (repairAttempt >= options.maxNoImprovementIterations) {
+    return candidates.reduce((best, candidate) => {
+      const bestArea = best.window.rows * best.window.cols;
+      const candidateArea = candidate.window.rows * candidate.window.cols;
+      if (candidateArea !== bestArea) return candidateArea > bestArea ? candidate : best;
+      if (candidate.window.rows !== best.window.rows) return candidate.window.rows > best.window.rows ? candidate : best;
+      if (candidate.window.cols !== best.window.cols) return candidate.window.cols > best.window.cols ? candidate : best;
+      if (candidate.window.top !== best.window.top) return candidate.window.top < best.window.top ? candidate : best;
+      if (candidate.window.left !== best.window.left) return candidate.window.left < best.window.left ? candidate : best;
+      return best;
+    });
+  }
+
+  const rankedCandidates = candidates
+    .map((candidate, index) => ({ candidate, index, weight: getOperatorWeight(operatorWeights, candidate.operator) }))
+    .sort((a, b) => {
+      if (a.weight !== b.weight) return b.weight - a.weight;
+      return a.index - b.index;
+    })
+    .map((entry) => entry.candidate);
+
+  const largeNeighborhoodTrigger = getLargeNeighborhoodTrigger(options);
+  const neighborhoodIndex = repairAttempt >= largeNeighborhoodTrigger
+    ? (repairAttempt - largeNeighborhoodTrigger) % rankedCandidates.length
+    : iteration % rankedCandidates.length;
+  return rankedCandidates[neighborhoodIndex];
+}
+
+function operatorAnchors(
+  operator: LnsAdaptiveOperatorName,
+  anchors: readonly NeighborhoodAnchor[]
+): OperatorNeighborhoodAnchor[] {
+  return anchors.map((anchor) => ({ ...anchor, operator }));
+}
+
+function dedupeWindows(candidates: readonly LnsAdaptiveNeighborhoodCandidate[]): CpSatNeighborhoodWindow[] {
+  const windows = new Map<string, CpSatNeighborhoodWindow>();
+  for (const candidate of candidates) {
+    const key = windowKey(candidate.window);
+    if (!windows.has(key)) windows.set(key, candidate.window);
+  }
+  return [...windows.values()];
+}
+
+export function buildAdaptiveNeighborhoodCandidates(
   G: Grid,
   params: SolverParams,
   incumbent: Solution,
   options: LnsNeighborhoodOptions,
   stagnantIterations = 0
-): CpSatNeighborhoodWindow[] {
-  const windows = new Map<string, CpSatNeighborhoodWindow>();
+): LnsAdaptiveNeighborhoodCandidate[] {
+  const candidates = new Map<string, LnsAdaptiveNeighborhoodCandidate>();
   const focusedAnchorLimit = Math.max(3, options.maxNoImprovementIterations * 2);
   const anchorPolicy = options.neighborhoodAnchorPolicy ?? "ranked";
 
@@ -441,8 +726,17 @@ export function buildNeighborhoodWindows(
   const weakServiceAnchors = buildWeakServiceAnchors(G, params, incumbent, focusedAnchorLimit);
   const residentialOpportunityAnchors = buildResidentialOpportunityAnchors(params, incumbent, focusedAnchorLimit);
   const frontierCongestionAnchors = buildFrontierCongestionAnchors(G, incumbent, focusedAnchorLimit);
+  const gateChokeAnchors = buildGateChokeAnchors(G, incumbent, focusedAnchorLimit);
+  const serviceOverlapAnchors = buildServiceOverlapAnchors(G, incumbent, focusedAnchorLimit);
+  const randomExplorationAnchors = buildRandomExplorationAnchors(G, incumbent, Math.max(2, focusedAnchorLimit));
   const focusedAnchors = anchorPolicy === "ranked"
-    ? interleaveAnchors([weakServiceAnchors, residentialOpportunityAnchors, frontierCongestionAnchors])
+    ? interleaveAnchors([
+      weakServiceAnchors,
+      residentialOpportunityAnchors,
+      frontierCongestionAnchors,
+      gateChokeAnchors,
+      serviceOverlapAnchors,
+    ])
     : anchorPolicy === "weak-service-first"
       ? weakServiceAnchors
       : anchorPolicy === "residential-opportunity-first"
@@ -450,25 +744,57 @@ export function buildNeighborhoodWindows(
         : anchorPolicy === "frontier-congestion-first"
           ? frontierCongestionAnchors
           : [];
+  const focusedOperatorAnchors = anchorPolicy === "ranked"
+    ? interleaveAnchors([
+      operatorAnchors("weak-service", weakServiceAnchors),
+      operatorAnchors("residential-headroom", residentialOpportunityAnchors),
+      operatorAnchors("frontier-congestion", frontierCongestionAnchors),
+      operatorAnchors("gate-choke", gateChokeAnchors),
+      operatorAnchors("service-overlap", serviceOverlapAnchors),
+    ])
+    : anchorPolicy === "weak-service-first"
+      ? operatorAnchors("weak-service", weakServiceAnchors)
+      : anchorPolicy === "residential-opportunity-first"
+        ? operatorAnchors("residential-headroom", residentialOpportunityAnchors)
+        : anchorPolicy === "frontier-congestion-first"
+          ? operatorAnchors("frontier-congestion", frontierCongestionAnchors)
+          : [];
 
-  addEscalatedNeighborhoodWindows(windows, G, focusedAnchors, weakResidentials, options, stagnantIterations);
+  addEscalatedNeighborhoodCandidates(candidates, G, focusedAnchors, weakResidentials, options, stagnantIterations);
 
-  addClampedWindowsForAnchors(windows, G, focusedAnchors, [
+  addClampedCandidateWindowsForOperatorAnchors(candidates, G, focusedOperatorAnchors, [
     { rows: options.neighborhoodRows, cols: options.neighborhoodCols },
-  ]);
+  ], 1500);
   if (anchorPolicy === "ranked" || anchorPolicy === "placed-buildings-first") {
-    addClampedWindowsForAnchors(
-      windows,
+    addClampedCandidateWindowsForAnchors(
+      candidates,
+      "placed-buildings",
       G,
       incumbent.services.map((service) => normalizeServicePlacement(service)),
-      [{ rows: options.neighborhoodRows, cols: options.neighborhoodCols }]
+      [{ rows: options.neighborhoodRows, cols: options.neighborhoodCols }],
+      900
     );
-    addClampedWindowsForAnchors(windows, G, weakResidentials, [
+    addClampedCandidateWindowsForAnchors(candidates, "placed-buildings", G, weakResidentials, [
       { rows: options.neighborhoodRows, cols: options.neighborhoodCols },
-    ]);
+    ], 850);
+  }
+  if (anchorPolicy === "ranked") {
+    addClampedCandidateWindowsForAnchors(candidates, "random-exploration", G, randomExplorationAnchors, [
+      { rows: options.neighborhoodRows, cols: options.neighborhoodCols },
+    ], 750);
   }
 
-  addSlidingNeighborhoodWindows(windows, G, options.neighborhoodRows, options.neighborhoodCols);
+  addSlidingNeighborhoodCandidates(candidates, G, options.neighborhoodRows, options.neighborhoodCols);
 
-  return [...windows.values()];
+  return [...candidates.values()];
+}
+
+export function buildNeighborhoodWindows(
+  G: Grid,
+  params: SolverParams,
+  incumbent: Solution,
+  options: LnsNeighborhoodOptions,
+  stagnantIterations = 0
+): CpSatNeighborhoodWindow[] {
+  return dedupeWindows(buildAdaptiveNeighborhoodCandidates(G, params, incumbent, options, stagnantIterations));
 }

@@ -49,6 +49,32 @@ export interface LnsOptions {
 
 export type LnsRepairPhase = "focused" | "escalated";
 
+export type LnsAdaptiveOperatorName =
+  | "weak-service"
+  | "residential-headroom"
+  | "frontier-congestion"
+  | "gate-choke"
+  | "service-overlap"
+  | "random-exploration"
+  | "placed-buildings"
+  | "sliding";
+
+export interface LnsOperatorWeight {
+  operator: LnsAdaptiveOperatorName;
+  weight: number;
+}
+
+export interface LnsOperatorSummary extends LnsOperatorWeight {
+  attempts: number;
+  feasibleRepairs: number;
+  improvements: number;
+  neutralRepairs: number;
+  recoverableFailures: number;
+  regressions: number;
+  totalImprovement: number;
+  elapsedSeconds: number;
+}
+
 export type LnsNeighborhoodOutcomeStatus =
   | "improved"
   | "neutral"
@@ -68,6 +94,8 @@ export type LnsStopReason =
 export interface LnsNeighborhoodOutcome {
   iteration: number;
   phase: LnsRepairPhase;
+  operator?: LnsAdaptiveOperatorName;
+  operatorWeight?: number;
   window: CpSatNeighborhoodWindow;
   stagnantIterationsBefore: number;
   staleSecondsBefore: number;
@@ -97,5 +125,6 @@ export interface LnsTelemetry {
   skippedIterations: number;
   finalStagnantIterations: number;
   elapsedSeconds: number;
+  operatorSummaries?: LnsOperatorSummary[];
   outcomes: LnsNeighborhoodOutcome[];
 }

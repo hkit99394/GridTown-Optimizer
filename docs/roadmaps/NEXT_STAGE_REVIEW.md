@@ -202,18 +202,20 @@ Success signal:
 
 Goal: make LNS the main time-to-good-solution engine.
 
+Status: delivered as the initial adaptive operator set. LNS now builds named semantic repair candidates, records the selected operator on each repair outcome, keeps per-operator attempts/feasible/improvement/regression/elapsed summaries, and raises operator weight after useful improvement while penalizing recoverable failures or regressions.
+
 Deliverables:
 
-- Operator interface for semantic destroy/repair choices.
+- Operator interface for semantic destroy/repair choices. Delivered through named adaptive neighborhood candidates.
 - Initial operators:
-  - weak-service repair
-  - residential-headroom cluster repair
-  - frontier-congestion repair
-  - gate/choke repair
-  - service-overlap repair
-  - random exploration windows
-- Operator telemetry: attempts, feasible repairs, improvements, elapsed time, regression count, and family-level performance.
-- Simple adaptive weighting that rewards operators with useful recent improvement.
+  - weak-service repair. Delivered.
+  - residential-headroom cluster repair. Delivered.
+  - frontier-congestion repair. Delivered.
+  - gate/choke repair. Delivered.
+  - service-overlap repair. Delivered.
+  - random exploration windows. Delivered.
+- Operator telemetry: attempts, feasible repairs, improvements, elapsed time, regression count, and family-level performance. Delivered through `lnsTelemetry.operatorSummaries`.
+- Simple adaptive weighting that rewards operators with useful recent improvement. Delivered.
 
 Success signal:
 

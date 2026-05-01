@@ -315,6 +315,16 @@ Reviewed through 2026-05-01.
 - Added model-experiment artifact helpers for future training paths: manifest construction, stable model fingerprints, and strict registry-entry draft construction.
 - Marked Solver telemetry manifests delivered in the active roadmap. No model was trained, no workflow evidence was appended, and no solver defaults changed.
 
+### 37. Adaptive LNS Operator Set
+
+- Added a named adaptive LNS neighborhood candidate interface while preserving the existing `buildNeighborhoodWindows(...)` compatibility path for replay labels and benchmark callers.
+- Added semantic operator families for weak-service repair, residential-headroom repair, frontier-congestion repair, gate/choke repair, service-overlap repair, random-exploration windows, placed-building windows, and sliding windows.
+- LNS repair outcomes now record the selected operator and operator weight, so solver traces can explain which repair family produced a neutral result, feasible improvement, recoverable failure, or stopped/skipped attempt.
+- LNS telemetry now emits `operatorSummaries` with attempts, feasible repairs, improvements, neutral repairs, recoverable failures, regressions, total improvement, elapsed seconds, and current adaptive weight per operator family.
+- Added simple adaptive weighting: improvement raises the selected operator weight, while recoverable failures and population regressions lower it within bounded limits.
+- Regression coverage checks that the semantic operator set is present and that real LNS repair telemetry records operator outcomes and weight updates.
+- No solver default mode changed; this closes the initial operator-set implementation and leaves promotion-grade scorecard evidence for the Auto budget-retuning and LNS label-scale priorities.
+
 ## Maintenance Watchpoints
 
 - Keep deterministic benchmark seeds stable when changing solver scoring.

@@ -108,7 +108,10 @@ const {
   validateSolutionMap,
 } = require("city-builder/solver");
 const { parseCpSatRawSolution } = require("../dist/packages/solvers/cp-sat/solver.js");
-const { buildNeighborhoodWindows } = require("../dist/packages/solvers/lns/solver.js");
+const {
+  buildAdaptiveNeighborhoodCandidates,
+  buildNeighborhoodWindows,
+} = require("../dist/packages/solvers/lns/solver.js");
 const { startJsonBackgroundSolve } = require("../dist/packages/runtime/index.js");
 const { applyDeterministicDominanceUpgrades } = require("../dist/packages/core/dominanceUpgrades.js");
 const { buildPlannerExplainabilityMap } = require("../dist/packages/core/plannerExplainability.js");
@@ -2180,6 +2183,26 @@ function testLnsNeighborhoodWindowsPrioritizeWeakServicesAndUpgradeHeadroom() {
     stopFilePath: "",
     snapshotFilePath: "",
   });
+  const operatorCandidates = buildAdaptiveNeighborhoodCandidates(grid, params, incumbent, {
+    iterations: 3,
+    maxNoImprovementIterations: 2,
+    neighborhoodRows: 3,
+    neighborhoodCols: 3,
+    repairTimeLimitSeconds: 1,
+    stopFilePath: "",
+    snapshotFilePath: "",
+  });
+  const operators = new Set(operatorCandidates.map((candidate) => candidate.operator));
+  for (const operator of [
+    "weak-service",
+    "residential-headroom",
+    "frontier-congestion",
+    "gate-choke",
+    "service-overlap",
+    "random-exploration",
+  ]) {
+    assert.equal(operators.has(operator), true, `expected LNS operator ${operator}`);
+  }
   const indexOfWindow = (target) =>
     windows.findIndex((window) =>
       window.top === target.top
@@ -7681,11 +7704,27 @@ function testLnsTelemetryRecordsRepairPolicyAndOutcomes() {
     assert.equal(solution.lnsTelemetry.seedTimeLimitSeconds, null);
     assert.equal(solution.lnsTelemetry.outcomes.length, 2);
     assert.equal(solution.lnsTelemetry.outcomes[0].phase, "focused");
+    assert.equal(typeof solution.lnsTelemetry.outcomes[0].operator, "string");
+    assert.equal(typeof solution.lnsTelemetry.outcomes[0].operatorWeight, "number");
     assert.equal(solution.lnsTelemetry.outcomes[0].status, "neutral");
     assert.equal(solution.lnsTelemetry.outcomes[1].phase, "escalated");
+    assert.equal(typeof solution.lnsTelemetry.outcomes[1].operator, "string");
     assert.equal(solution.lnsTelemetry.outcomes[1].status, "improved");
     assert.equal(solution.lnsTelemetry.improvingIterations, 1);
     assert.equal(solution.lnsTelemetry.neutralIterations, 1);
+    const neutralOperatorSummary = solution.lnsTelemetry.operatorSummaries.find(
+      (summary) => summary.operator === solution.lnsTelemetry.outcomes[0].operator
+    );
+    const improvedOperatorSummary = solution.lnsTelemetry.operatorSummaries.find(
+      (summary) => summary.operator === solution.lnsTelemetry.outcomes[1].operator
+    );
+    assert.equal(neutralOperatorSummary.attempts >= 1, true);
+    assert.equal(neutralOperatorSummary.feasibleRepairs >= 1, true);
+    assert.equal(neutralOperatorSummary.neutralRepairs >= 1, true);
+    assert.equal(improvedOperatorSummary.attempts >= 1, true);
+    assert.equal(improvedOperatorSummary.improvements, 1);
+    assert.equal(improvedOperatorSummary.totalImprovement, 10);
+    assert.ok(improvedOperatorSummary.weight > solution.lnsTelemetry.outcomes[1].operatorWeight);
   } finally {
     cpSatModule.solveCpSat = originalSolveCpSat;
   }

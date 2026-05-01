@@ -8,7 +8,6 @@ const defaultTestFileBudget = 1500;
 const temporaryOversizedBudgets = new Map([
   ["tests/optimizers/optimizerHarness.cjs", 9689],
   ["tests/review-findings.test.cjs", 4350],
-  ["tests/web-server-routes.test.cjs", 1902],
 ]);
 
 function listFiles(dir, predicate) {

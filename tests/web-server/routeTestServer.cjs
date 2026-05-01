@@ -1,6 +1,39 @@
 const assert = require("node:assert/strict");
 const { EventEmitter } = require("node:events");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
 const { Readable } = require("node:stream");
+
+const { SolveJobManager } = require("../../dist/packages/runtime/jobs/solveJobManager.js");
+const { createPlannerRequestHandler } = require("../../dist/apps/planner-server/http/requestHandler.js");
+
+function createRouteTestHandler({
+  webRoot = path.resolve(__dirname, "../../apps/planner-web"),
+  progressLogRoot = undefined,
+  progressLogRootPrefix = "planner-route-logs-",
+  progressLogIntervalMs = 10,
+  progressLogPollIntervalMs = 5,
+  maxRunningSolves = undefined,
+  completedJobRetentionMs = undefined,
+} = {}) {
+  const resolvedProgressLogRoot = progressLogRoot ?? fs.mkdtempSync(path.join(os.tmpdir(), progressLogRootPrefix));
+  const solveJobManagerOptions = {
+    progressLogRoot: resolvedProgressLogRoot,
+    progressLogIntervalMs,
+    progressLogPollIntervalMs,
+  };
+  if (maxRunningSolves !== undefined) solveJobManagerOptions.maxRunningSolves = maxRunningSolves;
+  if (completedJobRetentionMs !== undefined) solveJobManagerOptions.completedJobRetentionMs = completedJobRetentionMs;
+
+  return {
+    handler: createPlannerRequestHandler({
+      webRoot,
+      solveJobManager: new SolveJobManager(solveJobManagerOptions),
+    }),
+    progressLogRoot: resolvedProgressLogRoot,
+  };
+}
 
 function createMockRequest(method, url, body = "", headers = undefined) {
   const stream = Readable.from(body ? [Buffer.from(body)] : []);
@@ -138,6 +171,7 @@ module.exports = {
   createDeferred,
   createMockRequest,
   createMockResponse,
+  createRouteTestHandler,
   invoke,
   waitForNextTurn,
   waitForSolve,

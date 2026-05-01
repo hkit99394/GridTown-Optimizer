@@ -6,6 +6,7 @@ import type {
 } from "../core/index.js";
 
 type GeneratedLnsReplayPressureFamily =
+  | "anchor-service"
   | "corridor"
   | "gate"
   | "footprint-pressure"
@@ -161,5 +162,68 @@ export const GENERATED_LNS_PRESSURE_CASES: readonly GeneratedLnsBenchmarkCase[] 
     availableBuildings: { services: 2, residentials: 3 },
     randomSeed: 53,
     serviceRefineCandidateLimit: 10,
+  }),
+  buildGeneratedLnsPressureCase({
+    name: "lns-anchor-service-corner-pressure",
+    description: "Generated anchor-service holdout case where service relocation competes with anchor-side road pressure.",
+    pressureFamily: "anchor-service",
+    grid: [
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 0, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+      [1, 0, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+    ],
+    serviceTypes: [{ rows: 2, cols: 2, bonus: 105, range: 1, avail: 1 }],
+    residentialTypes: [
+      { w: 2, h: 2, min: 90, max: 260, avail: 2 },
+      { w: 2, h: 3, min: 150, max: 360, avail: 1 },
+    ],
+    availableBuildings: { services: 1, residentials: 3 },
+    randomSeed: 59,
+  }),
+  buildGeneratedLnsPressureCase({
+    name: "lns-gate-side-channel-pressure",
+    description: "Generated gate holdout case with two asymmetric passages around a blocked center.",
+    pressureFamily: "gate",
+    grid: [
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 0, 0, 1, 1, 1],
+      [1, 1, 1, 0, 1, 0, 1],
+      [1, 0, 1, 1, 1, 0, 1],
+      [1, 0, 1, 0, 1, 1, 1],
+      [1, 1, 1, 0, 0, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+    ],
+    serviceTypes: [{ rows: 1, cols: 2, bonus: 75, range: 2, avail: 1 }],
+    residentialTypes: [
+      { w: 2, h: 2, min: 90, max: 200, avail: 2 },
+      { w: 2, h: 3, min: 160, max: 340, avail: 1 },
+    ],
+    availableBuildings: { services: 1, residentials: 3 },
+    randomSeed: 61,
+  }),
+  buildGeneratedLnsPressureCase({
+    name: "lns-footprint-bottleneck-pressure",
+    description: "Generated footprint holdout case where larger buildings fight for a narrow buildable pocket.",
+    pressureFamily: "footprint-pressure",
+    grid: [
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 0, 1, 1, 1],
+      [1, 1, 1, 1, 1, 0, 1],
+      [1, 0, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 0, 1, 1],
+      [1, 1, 0, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+    ],
+    serviceTypes: [{ rows: 1, cols: 1, bonus: 55, range: 1, avail: 1 }],
+    residentialTypes: [
+      { w: 2, h: 2, min: 80, max: 190, avail: 2 },
+      { w: 3, h: 2, min: 180, max: 360, avail: 1 },
+      { w: 2, h: 3, min: 170, max: 350, avail: 1 },
+    ],
+    availableBuildings: { services: 1, residentials: 4 },
+    randomSeed: 67,
   }),
 ]);

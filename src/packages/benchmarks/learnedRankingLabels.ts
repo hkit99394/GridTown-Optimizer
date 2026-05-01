@@ -12,6 +12,7 @@ import {
   benchmarkGeneratedAt,
   countBenchmarkMatches,
   nonNegativeIntegerOrDefault,
+  positiveIntegerOrDefault,
   sumBenchmarkBy,
   uniqueBenchmarkValues,
 } from "./benchmarkOptions.js";
@@ -238,6 +239,9 @@ export interface LearnedRankingLabelRunOptions {
   explorationWindowCount?: number;
 }
 
+export const DEFAULT_LEARNED_RANKING_LNS_REPLAY_MAX_WINDOWS = 14;
+export const DEFAULT_LEARNED_RANKING_LNS_REPLAY_EXPLORATION_WINDOWS = 4;
+
 export const DEFAULT_LEARNED_RANKING_LABEL_SPLITS: readonly LearnedRankingLabelSplitConfig[] =
   Object.freeze([
     {
@@ -252,6 +256,7 @@ export const DEFAULT_LEARNED_RANKING_LABEL_SPLITS: readonly LearnedRankingLabelS
         "compact-service-repair",
         "seeded-service-anchor-pressure",
         "lns-corridor-squeeze-pressure",
+        "lns-gate-choke-pressure",
         "lns-footprint-mix-pressure",
       ],
     },
@@ -265,8 +270,10 @@ export const DEFAULT_LEARNED_RANKING_LABEL_SPLITS: readonly LearnedRankingLabelS
       ),
       lnsCaseNames: [
         "row0-anchor-repair",
-        "lns-gate-choke-pressure",
         "lns-service-overlap-pressure",
+        "lns-anchor-service-corner-pressure",
+        "lns-gate-side-channel-pressure",
+        "lns-footprint-bottleneck-pressure",
       ],
     },
   ]);
@@ -547,7 +554,14 @@ export function runLearnedRankingLabelSuite(
     ?? [...DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS];
   const greedyCorpus = options.greedyCorpus ?? DEFAULT_GREEDY_DETERMINISTIC_ABLATION_CORPUS;
   const lnsCorpus = options.lnsCorpus ?? DEFAULT_LNS_REPLAY_LABEL_CORPUS;
-  const explorationWindowCount = nonNegativeIntegerOrDefault(options.explorationWindowCount, 0);
+  const maxWindows = positiveIntegerOrDefault(
+    options.maxWindows,
+    DEFAULT_LEARNED_RANKING_LNS_REPLAY_MAX_WINDOWS
+  );
+  const explorationWindowCount = nonNegativeIntegerOrDefault(
+    options.explorationWindowCount,
+    DEFAULT_LEARNED_RANKING_LNS_REPLAY_EXPLORATION_WINDOWS
+  );
   const greedySplits: GreedyOrderingLabelSplitResult[] = [];
   const lnsSplits: LnsReplayLabelSplitResult[] = [];
 
@@ -578,7 +592,7 @@ export function runLearnedRankingLabelSuite(
       seeds,
       lns: options.lns,
       cpSat: options.cpSat,
-      maxWindows: options.maxWindows,
+      maxWindows,
       explorationWindowCount,
       repairTimeLimitSeconds: options.repairTimeLimitSeconds,
     });

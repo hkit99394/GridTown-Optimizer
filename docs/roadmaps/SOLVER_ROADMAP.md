@@ -91,8 +91,7 @@ Status vocabulary:
 
 | Rank | Priority | Status | Impact | Summary | Success Signal |
 | --- | --- | --- | ---: | --- | --- |
-| 1 | LNS replay label scale-up | needs-scale | 3.0 | Use adaptive operator outcomes and replay windows to grow split-protected LNS labels. | Development and holdout splits satisfy usable, non-neutral, and family-balanced label gates before any LNS ranker is trained. |
-| 2 | CPU-first Greedy offline ranker | gated | 2.5 | Use the healthier Greedy label bundle for offline diagnostics only. | A small CPU model beats deterministic, random, and single-feature baselines on protected holdout without leaked case names. |
+| 1 | CPU-first Greedy offline ranker | gated | 2.5 | Use the healthier Greedy label bundle for offline diagnostics only. | A small CPU model beats deterministic, random, and single-feature baselines on protected holdout without leaked case names. |
 
 ## Status Snapshot
 
@@ -101,8 +100,8 @@ Status vocabulary:
 | Cross-mode scorecards, traces, and budget-policy signals | delivered | [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED.md), items 11 and 14-17 | Supports promotion gates; no default change by itself. |
 | Deterministic Greedy/LNS ablation gates | delivered | [SOLVER_ABLATION_DECISIONS.md](../decisions/SOLVER_ABLATION_DECISIONS.md), `artifacts/deterministic-ablations/2026-04-27/` | No deterministic variant promoted; regressions remain blocked. |
 | Low-risk learned-ranking label bundle | delivered | `artifacts/learned-ranking-labels/2026-04-27/` | Offline diagnostics only; no model trained and no defaults changed. |
-| LNS replay label coverage | needs-scale | 84 usable replay labels in the 2026-04-27 bundle | Blocks learned LNS window ranking until scale and non-neutral holdout signal improve. |
-| Generated pressure-case coverage | partial | [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED.md), item 30 | Useful starting point, but promotion needs broader workflow and adversarial coverage. |
+| LNS replay label scale-up | delivered | [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED.md), item 42 | Split-protected replay label collection now has five-family development and holdout coverage, adaptive-operator labels, and scale-oriented defaults. Learned LNS ranking remains gated on strict artifact evidence and offline holdout wins. |
+| Generated pressure-case coverage | delivered | [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED.md), items 30 and 42 | Replay-label pressure coverage now has paired development/holdout cases across corridor, gate, footprint-pressure, service-pressure, and anchor-service families. |
 | CP-SAT portfolio telemetry and CPU-normalized scorecards | delivered | `artifacts/cp-sat-portfolio/2026-04-28/` | Portfolio remains explicit-only; Auto does not route through it. |
 | Experiment registry hardening | delivered | `artifacts/experiments/index.jsonl`; `npm run experiment-registry:check` | Future artifacts can be checked and appended with strict metadata. |
 | CP-SAT road-semantics alignment | delivered | Core model, warm-start roots, removed legacy mode switch, model-size telemetry, and six-case scorecard delivered on 2026-04-30; CP-SAT scores 200 on `multi-anchor-road-components` | Exact backend now matches the spec on the adversarial case and no road-semantics scorecard regression was observed. |
@@ -123,7 +122,7 @@ These are not next actions. Move them into the active table only after the trigg
 | --- | --- | ---: | --- | --- |
 | CP-SAT semantics alignment and product corpus are stable | Geometry-native CP-SAT / `NoOverlap2D` experiment | 3.0 | Compare current cell-indexed set packing with optional-interval rectangle constraints. | Controlled scorecard shows propagation or time-to-best improvement without model-size blowup. |
 | Service-master scorecards show repeatable equal-budget wins | Service-master promotion in Auto or LNS seed policy | 3.5 | Promote or schedule the opt-in service-master pass only if targeted pressure evidence justifies its CPU cost. | Beats Auto or the current Greedy seed path on development and holdout pressure families while every final layout remains evaluator-valid. |
-| LNS label-scale gates pass | Learned LNS window ranking | 3.0 | Train and evaluate a ranker over adaptive LNS candidate windows. | Offline holdout beats deterministic, random, and single-feature baselines; online A/B improves fixed-budget quality without worst-decile regression. |
+| Strict LNS scale-up artifact passes readiness and offline baselines | Learned LNS window ranking | 3.0 | Train and evaluate a ranker over adaptive LNS candidate windows. | Offline holdout beats deterministic, random, and single-feature baselines; online A/B improves fixed-budget quality without worst-decile regression. |
 | Greedy offline ranker beats deterministic order on protected holdout | Feature-flagged learned Greedy re-ranking | 2.5 | Add scorer adapter, model-load fallback, and equal-budget online A/B. | Online paired seeded benchmarks improve population or time-to-best with bounded inference overhead. |
 | Portfolio scorecards show CPU-normalized wins | CP-SAT portfolio in Auto | 2.0 | Let Auto route a controlled budget slice to portfolio only when CPU cost is justified. | Portfolio improves wall-clock quality and CPU-normalized efficiency versus single CP-SAT. |
 | CPU-first workflow has a measured bottleneck | GPU acceleration | 2.0 | Use GPU for training, batched feature extraction, or inference only after CPU baseline is useful. | GPU reduces time-to-label, time-to-train, or inference overhead while preserving solver quality gates. |
@@ -132,10 +131,9 @@ These are not next actions. Move them into the active table only after the trigg
 
 ## Combined Ordering
 
-1. Scale LNS replay labels from adaptive operator outcomes.
-2. Revisit learned rankers only after offline holdout and equal-budget online gates pass.
-3. Revisit service-master promotion only after equal-budget scorecards justify the opt-in CPU cost.
-4. Revisit portfolio, GPU, distributed workers, or alternative solvers only after they have a measured bottleneck and CPU-normalized win path.
+1. Revisit learned rankers only after strict scale-up artifacts, offline holdout, and equal-budget online gates pass.
+2. Revisit service-master promotion only after equal-budget scorecards justify the opt-in CPU cost.
+3. Revisit portfolio, GPU, distributed workers, or alternative solvers only after they have a measured bottleneck and CPU-normalized win path.
 
 ## Discipline
 

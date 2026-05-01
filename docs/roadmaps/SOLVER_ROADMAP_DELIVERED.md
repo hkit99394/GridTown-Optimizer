@@ -362,6 +362,15 @@ Reviewed through 2026-05-01.
 - Regression coverage verifies malformed service-master options are rejected, the benchmark final layout is evaluator-valid, and the opt-in master pass improves the focused service-pressure case from 465 to 555 population.
 - No solver default changed; this remains an experiment path until equal-budget scorecards justify any Auto or Greedy seed-policy promotion.
 
+### 42. LNS Replay Label Scale-Up
+
+- Expanded the default LNS replay-label corpus with paired holdout pressure cases for anchor-service, gate, and footprint-pressure families.
+- The default learned-label split now has disjoint development and holdout LNS case sets, and each split covers corridor, gate, footprint-pressure, service-pressure, and anchor-service families.
+- Replay labels now carry the adaptive LNS operator name and operator score for the replayed candidate, and case summaries record the baseline-selected operator as well as the selected window.
+- The learned-label runner now uses scale-oriented LNS replay defaults: 14 baseline-ranked adaptive candidates plus 4 tail-exploration candidates per case/seed unless the caller overrides the limits.
+- Regression coverage checks that default split configs reference known replay cases and meet the five-family readiness precondition.
+- No learned model was trained and no solver default changed; learned LNS window ranking remains gated on a strict generated artifact that passes readiness, offline baselines, and equal-budget online checks.
+
 ## Maintenance Watchpoints
 
 - Keep deterministic benchmark seeds stable when changing solver scoring.
@@ -374,4 +383,4 @@ Reviewed through 2026-05-01.
 - Keep ablation matrices small by default; expand cases, modes, budgets, or policies only when the previous sweep gives a clear signal.
 - Keep long ablation runs staged and timeout-bounded; the corrected 30s LNS budget can legitimately consume far more wall-clock than the previous capped corpus setup.
 - Keep the experiment registry append-only; corrected metadata should use a suffixed `runId`, and promotion-grade decisions should rely on strict registry entries with captured hardware and exact commands.
-- Keep LNS replay pressure cases as label-generation infrastructure until a strict registry artifact passes the readiness report; volume alone is not enough if non-neutral labels or holdout family balance are missing.
+- Keep LNS replay pressure cases as label-generation infrastructure until a strict registry artifact passes the readiness report and offline baselines; volume alone is not enough if non-neutral labels or holdout family balance are missing.

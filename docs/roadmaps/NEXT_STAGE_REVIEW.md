@@ -42,6 +42,7 @@ The default posture remains unchanged: keep `auto` as the recommended quality pa
 - CP-SAT road-semantics alignment and scorecard closeout are delivered as of 2026-04-30. CP-SAT now uses one road-connectivity formulation: per-component anchored roads, and the six-case scorecard reached `OPTIMAL` under a 5s single-worker budget.
 - CP-SAT async and portfolio failure-mode coverage is delivered as of 2026-05-01. Regression coverage now includes malformed progress, no-final-result streamed-progress close, child diagnostics, process-pool fallback, worker future failure after sibling progress, cancellation process groups, and cancellation snapshot propagation.
 - The service-master decomposition experiment is delivered as of 2026-05-01. Greedy now has an opt-in master/subproblem pass that enumerates bounded service layouts and realizes each through the existing fixed-service residential/road subproblem; the focused service-pressure benchmark improves from 465 to 555 population with exact validation.
+- LNS replay label scale-up is delivered as of 2026-05-01. Replay labels now carry adaptive-operator names/scores, the default learned-label replay settings collect broader top-k plus tail-exploration candidates, and development/holdout LNS splits have disjoint five-family pressure coverage. No learned ranker was trained or promoted.
 
 ## Key Finding: CP-SAT Road Semantics
 
@@ -98,10 +99,9 @@ Best next algorithmic sequence:
 2. Adaptive LNS over semantic neighborhoods.
 3. Auto budget retuning from telemetry.
 4. Service-master decomposition experiments. Initial opt-in pass delivered; promotion remains gated on wider scorecards.
-5. LNS replay label scale-up from the delivered adaptive/operator traces.
-6. Geometry-native CP-SAT or external exact solvers only as controlled research branches.
+5. Geometry-native CP-SAT or external exact solvers only as controlled research branches.
 
-Do not start with learned ranking. It should follow telemetry and label scale, not precede them.
+Do not start runtime learned ranking yet. It should follow strict label artifacts, offline holdout wins, and equal-budget online evidence.
 
 ### Research Anchors
 
@@ -123,11 +123,11 @@ Do not start with learned ranking. It should follow telemetry and label scale, n
 
 ### Gaps
 
-- LNS still relies heavily on window selection rather than a broader adaptive destroy/repair operator set.
+- LNS has an initial adaptive operator set, but learned window ranking still needs strict artifact evidence and offline baselines before runtime use.
 - The default benchmark corpus is too small and too easy to saturate for promotion decisions.
 - Planner workflows are not yet first-class benchmark cases.
 - Stage telemetry is useful but not yet complete enough to diagnose candidate counts, model size, first feasible time, and best-score time across every run.
-- LNS replay labels are too small and too neutral for model promotion.
+- LNS replay label infrastructure has scale-oriented splits and adaptive-operator labels, but model promotion still needs a strict generated artifact with enough non-neutral holdout signal.
 - There is no trained model path, model artifact, offline metric report, or feature-flagged scorer ready for runtime use.
 - Job state remains local-process memory; that is acceptable for a local planner but not for hosted multi-user scale.
 
@@ -363,8 +363,7 @@ Any default-path solver change must satisfy:
 Recommended order:
 
 1. Explore service-master decomposition if pressure cases justify it.
-2. Scale LNS replay labels from adaptive operator outcomes.
-3. Revisit learned rankers only after offline holdout and online equal-budget gates pass.
-4. Revisit GPU, portfolio, distributed solving, and external solvers only after a measured bottleneck and promotion-grade evidence exists.
+2. Revisit learned rankers only after strict scale-up artifacts, offline holdout, and online equal-budget gates pass.
+3. Revisit GPU, portfolio, distributed solving, and external solvers only after a measured bottleneck and promotion-grade evidence exists.
 
 This keeps the project pointed at the real target: higher validated population per wall-clock minute, with fewer speculative detours.

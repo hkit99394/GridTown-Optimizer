@@ -11,8 +11,8 @@ import {
 } from "../core/index.js";
 import {
   buildLnsWarmStartHint,
-  buildNeighborhoodWindows,
-  selectNeighborhoodWindow,
+  buildAdaptiveNeighborhoodCandidates,
+  selectAdaptiveNeighborhoodOperator,
   solveCpSat,
   solveGreedy,
 } from "../solvers/index.js";
@@ -45,10 +45,12 @@ import type {
   CpSatOptions,
   GreedyOptions,
   Grid,
+  LnsAdaptiveOperatorName,
   LnsOptions,
   Solution,
   SolverParams,
 } from "../core/index.js";
+import type { LnsAdaptiveNeighborhoodCandidate } from "../solvers/index.js";
 import type {
   LnsBenchmarkCase,
   LnsReplayPressureFamilyLabel,
@@ -81,6 +83,8 @@ export interface LnsWindowReplayLabel {
   pressureFamily: LnsReplayPressureFamilyLabel;
   seed: number | null;
   windowIndex: number;
+  operator: LnsAdaptiveOperatorName;
+  operatorScore: number;
   selectionSource: "baseline-top-k" | "exploration-tail";
   window: CpSatNeighborhoodWindow;
   selectedByBaseline: boolean;
@@ -113,6 +117,7 @@ export interface LnsWindowReplayCaseResult {
   candidateWindowCount: number;
   replayedWindowCount: number;
   baselineSelectedWindow: CpSatNeighborhoodWindow | null;
+  baselineSelectedOperator: LnsAdaptiveOperatorName | null;
   labels: LnsWindowReplayLabel[];
 }
 
@@ -236,11 +241,20 @@ function sameWindow(left: CpSatNeighborhoodWindow | null, right: CpSatNeighborho
     && left.cols === right.cols;
 }
 
+function sameCandidate(
+  left: LnsAdaptiveNeighborhoodCandidate | null,
+  right: LnsAdaptiveNeighborhoodCandidate
+): boolean {
+  return left !== null
+    && left.operator === right.operator
+    && sameWindow(left.window, right.window);
+}
+
 function buildWindowFeatures(
   window: CpSatNeighborhoodWindow,
   params: SolverParams,
   incumbent: Solution,
-  selectedWindow: CpSatNeighborhoodWindow | null
+  selectedByBaseline: boolean
 ): LnsWindowReplayFeatures {
   let serviceCountInside = 0;
   let serviceBonusInside = 0;
@@ -270,7 +284,7 @@ function buildWindowFeatures(
     residentialCountInside,
     residentialHeadroomInside,
     serviceBonusInside,
-    selectedByBaseline: sameWindow(selectedWindow, window),
+    selectedByBaseline,
   };
 }
 
@@ -304,16 +318,18 @@ function replayWindow(
   pressureFamily: LnsReplayPressureFamilyLabel,
   seed: number | null,
   incumbent: Solution,
-  window: CpSatNeighborhoodWindow,
+  candidate: LnsAdaptiveNeighborhoodCandidate,
   windowIndex: number,
   selectionSource: LnsWindowReplayLabel["selectionSource"],
-  selectedWindow: CpSatNeighborhoodWindow | null,
+  selectedCandidate: LnsAdaptiveNeighborhoodCandidate | null,
   repairTimeLimitSeconds: number
 ): LnsWindowReplayLabel {
   const startedAtMs = performance.now();
-  const features = buildWindowFeatures(window, params, incumbent, selectedWindow);
+  const { window } = candidate;
+  const selectedByBaseline = sameCandidate(selectedCandidate, candidate);
+  const features = buildWindowFeatures(window, params, incumbent, selectedByBaseline);
   try {
-    const candidate = solveCpSat(G, {
+    const repairedSolution = solveCpSat(G, {
       ...params,
       optimizer: "cp-sat",
       cpSat: {
@@ -323,24 +339,26 @@ function replayWindow(
         warmStartHint: buildLnsWarmStartHint(incumbent, window),
       },
     });
-    const populationDelta = candidate.totalPopulation - incumbent.totalPopulation;
-    const validation = validateReplaySolution(G, params, candidate);
+    const populationDelta = repairedSolution.totalPopulation - incumbent.totalPopulation;
+    const validation = validateReplaySolution(G, params, repairedSolution);
     const status = validation.valid ? statusForPopulationDelta(populationDelta) : "invalid";
     return {
       caseName,
       pressureFamily,
       seed,
       windowIndex,
+      operator: candidate.operator,
+      operatorScore: candidate.score,
       selectionSource,
       window: { ...window },
       selectedByBaseline: features.selectedByBaseline,
       incumbentPopulation: incumbent.totalPopulation,
-      totalPopulation: candidate.totalPopulation,
+      totalPopulation: repairedSolution.totalPopulation,
       populationDelta,
       improvement: Math.max(0, populationDelta),
       status,
       usable: validation.valid,
-      cpSatStatus: candidate.cpSatStatus ?? null,
+      cpSatStatus: repairedSolution.cpSatStatus ?? null,
       repairTimeLimitSeconds,
       wallClockSeconds: (performance.now() - startedAtMs) / 1000,
       validation,
@@ -355,6 +373,8 @@ function replayWindow(
       pressureFamily,
       seed,
       windowIndex,
+      operator: candidate.operator,
+      operatorScore: candidate.score,
       selectionSource,
       window: { ...window },
       selectedByBaseline: features.selectedByBaseline,
@@ -374,42 +394,43 @@ function replayWindow(
 }
 
 interface ReplayWindowPlan {
-  window: CpSatNeighborhoodWindow;
+  candidate: LnsAdaptiveNeighborhoodCandidate;
   windowIndex: number;
   selectionSource: LnsWindowReplayLabel["selectionSource"];
 }
 
-function replayWindowKey(window: CpSatNeighborhoodWindow): string {
-  return `${window.top}:${window.left}:${window.rows}:${window.cols}`;
+function replayCandidateKey(candidate: LnsAdaptiveNeighborhoodCandidate): string {
+  const { window } = candidate;
+  return `${candidate.operator}:${window.top}:${window.left}:${window.rows}:${window.cols}`;
 }
 
 function selectReplayWindowPlans(
-  windows: readonly CpSatNeighborhoodWindow[],
+  candidates: readonly LnsAdaptiveNeighborhoodCandidate[],
   maxWindows: number,
   explorationWindowCount: number
 ): ReplayWindowPlan[] {
   const selected = new Map<string, ReplayWindowPlan>();
-  for (const [windowIndex, window] of windows.slice(0, maxWindows).entries()) {
-    selected.set(replayWindowKey(window), {
-      window,
+  for (const [windowIndex, candidate] of candidates.slice(0, maxWindows).entries()) {
+    selected.set(replayCandidateKey(candidate), {
+      candidate,
       windowIndex,
       selectionSource: "baseline-top-k",
     });
   }
 
-  if (explorationWindowCount <= 0 || windows.length <= maxWindows) {
+  if (explorationWindowCount <= 0 || candidates.length <= maxWindows) {
     return [...selected.values()];
   }
 
-  const tail = windows.slice(maxWindows);
+  const tail = candidates.slice(maxWindows);
   const stride = Math.max(1, Math.floor(tail.length / explorationWindowCount));
   let explorationAdded = 0;
   for (let index = tail.length - 1; index >= 0 && explorationAdded < explorationWindowCount; index -= stride) {
-    const window = tail[index];
-    const key = replayWindowKey(window);
+    const candidate = tail[index];
+    const key = replayCandidateKey(candidate);
     if (selected.has(key)) continue;
     selected.set(key, {
-      window,
+      candidate,
       windowIndex: maxWindows + index,
       selectionSource: "exploration-tail",
     });
@@ -440,13 +461,13 @@ export function runLnsWindowReplayLabels(
         neighborhoodCols: lns.neighborhoodCols ?? Math.max(1, Math.ceil(width(G) / 2)),
         neighborhoodAnchorPolicy: lns.neighborhoodAnchorPolicy,
       };
-      const windows = buildNeighborhoodWindows(G, params, incumbent, neighborhoodOptions, 1);
-      const selectedWindow = windows.length
-        ? selectNeighborhoodWindow(windows, 0, 0, neighborhoodOptions)
+      const candidates = buildAdaptiveNeighborhoodCandidates(G, params, incumbent, neighborhoodOptions, 1);
+      const selectedCandidate = candidates.length
+        ? selectAdaptiveNeighborhoodOperator(candidates, 0, 0, neighborhoodOptions)
         : null;
-      const replayWindows = selectReplayWindowPlans(windows, maxWindows, explorationWindowCount);
+      const replayWindows = selectReplayWindowPlans(candidates, maxWindows, explorationWindowCount);
       const pressureFamily = getLnsReplayPressureFamily(benchmarkCase);
-      const labels = replayWindows.map(({ window, windowIndex, selectionSource }) =>
+      const labels = replayWindows.map(({ candidate, windowIndex, selectionSource }) =>
         replayWindow(
           G,
           params,
@@ -454,10 +475,10 @@ export function runLnsWindowReplayLabels(
           pressureFamily,
           seed,
           incumbent,
-          window,
+          candidate,
           windowIndex,
           selectionSource,
-          selectedWindow,
+          selectedCandidate,
           replayRepairTimeLimitSeconds
         )
       );
@@ -469,9 +490,10 @@ export function runLnsWindowReplayLabels(
         gridRows: height(G),
         gridCols: width(G),
         incumbentPopulation: incumbent.totalPopulation,
-        candidateWindowCount: windows.length,
+        candidateWindowCount: candidates.length,
         replayedWindowCount: labels.length,
-        baselineSelectedWindow: selectedWindow ? { ...selectedWindow } : null,
+        baselineSelectedWindow: selectedCandidate ? { ...selectedCandidate.window } : null,
+        baselineSelectedOperator: selectedCandidate?.operator ?? null,
         labels,
       };
     })
@@ -532,11 +554,11 @@ export function formatLnsWindowReplayLabels(result: LnsWindowReplaySuiteResult):
   for (const benchmarkCase of result.cases) {
     const seedLabel = benchmarkCase.seed === null ? "case-default" : benchmarkCase.seed;
     lines.push(
-      `- ${benchmarkCase.name} family=${benchmarkCase.pressureFamily} seed=${seedLabel}: incumbent=${benchmarkCase.incumbentPopulation} windows=${benchmarkCase.replayedWindowCount}/${benchmarkCase.candidateWindowCount} selected=${formatWindow(benchmarkCase.baselineSelectedWindow)}`
+      `- ${benchmarkCase.name} family=${benchmarkCase.pressureFamily} seed=${seedLabel}: incumbent=${benchmarkCase.incumbentPopulation} windows=${benchmarkCase.replayedWindowCount}/${benchmarkCase.candidateWindowCount} selected=${benchmarkCase.baselineSelectedOperator ?? "n/a"}:${formatWindow(benchmarkCase.baselineSelectedWindow)}`
     );
     for (const label of benchmarkCase.labels) {
       lines.push(
-        `  window#${label.windowIndex} ${formatWindow(label.window)} source=${label.selectionSource} selected=${label.selectedByBaseline} status=${label.status} usable=${label.usable} population=${label.totalPopulation} delta=${formatSigned(label.populationDelta)} improvement=+${label.improvement} repair=${label.repairTimeLimitSeconds}s valid=${label.validation.valid} features=area:${label.features.area} roads:${label.features.roadCountInside} services:${label.features.serviceCountInside} residentials:${label.features.residentialCountInside} headroom:${label.features.residentialHeadroomInside} service-bonus:${label.features.serviceBonusInside}`
+        `  window#${label.windowIndex} ${formatWindow(label.window)} operator=${label.operator} score=${label.operatorScore.toFixed(3)} source=${label.selectionSource} selected=${label.selectedByBaseline} status=${label.status} usable=${label.usable} population=${label.totalPopulation} delta=${formatSigned(label.populationDelta)} improvement=+${label.improvement} repair=${label.repairTimeLimitSeconds}s valid=${label.validation.valid} features=area:${label.features.area} roads:${label.features.roadCountInside} services:${label.features.serviceCountInside} residentials:${label.features.residentialCountInside} headroom:${label.features.residentialHeadroomInside} service-bonus:${label.features.serviceBonusInside}`
       );
     }
   }

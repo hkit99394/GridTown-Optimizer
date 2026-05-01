@@ -1758,6 +1758,7 @@ function testLearnedRankingLabelSuite() {
     greedyCorpus: DEFAULT_GREEDY_BENCHMARK_CORPUS,
     lnsCorpus: DEFAULT_LNS_BENCHMARK_CORPUS,
     maxWindows: 1,
+    explorationWindowCount: 0,
     repairTimeLimitSeconds: 0.1,
   });
   const snapshot = createLearnedRankingLabelSnapshot(result);
@@ -1778,6 +1779,8 @@ function testLearnedRankingLabelSuite() {
   assert.equal(result.lns.splits[0].replay.cases[0].pressureFamily, "anchor-service");
   assert.equal(result.lns.splits[0].replay.cases[0].labels[0].usable, true);
   assert.equal(result.lns.splits[0].replay.cases[0].labels[0].pressureFamily, "anchor-service");
+  assert.equal(typeof result.lns.splits[0].replay.cases[0].labels[0].operator, "string");
+  assert.equal(typeof result.lns.splits[0].replay.cases[0].labels[0].operatorScore, "number");
   assert.equal(result.lns.splits[0].replay.cases[0].labels[0].selectionSource, "baseline-top-k");
   assert.equal(result.lns.scaleReadiness.passed, false);
   assert.equal(result.lns.scaleReadiness.thresholds.minPressureFamilies, DEFAULT_LNS_REPLAY_LABEL_SCALE_THRESHOLDS.minPressureFamilies);
@@ -4035,6 +4038,16 @@ function testLnsBenchmarkCorpusHelpers() {
   assert(pressureFamilies.includes("footprint-pressure"));
   assert(pressureFamilies.includes("service-pressure"));
   assert(pressureFamilies.includes("anchor-service"));
+  const replayCasesByName = new Map(DEFAULT_LNS_REPLAY_LABEL_CORPUS.map((entry) => [entry.name, entry]));
+  const requiredReplayFamilies = ["corridor", "gate", "footprint-pressure", "service-pressure", "anchor-service"];
+  for (const split of DEFAULT_LEARNED_RANKING_LABEL_SPLITS) {
+    const splitFamilies = new Set(split.lnsCaseNames.map((name) => replayCasesByName.get(name)?.pressureFamily));
+    assert.equal(split.lnsCaseNames.every((name) => replayCasesByName.has(name)), true);
+    assert.equal(splitFamilies.size >= DEFAULT_LNS_REPLAY_LABEL_SCALE_THRESHOLDS.minPressureFamilies, true);
+    for (const family of requiredReplayFamilies) {
+      assert.equal(splitFamilies.has(family), true);
+    }
+  }
   assert.deepEqual(listLnsBenchmarkCaseNames(), names);
   assert.deepEqual(listLnsWindowReplayCaseNames(), replayNames);
 
@@ -4501,6 +4514,7 @@ function testLnsWindowReplayLabelRunner() {
     assert.equal(result.labelCount, 2);
     assert.equal(benchmarkCase.incumbentPopulation, 100);
     assert.equal(benchmarkCase.pressureFamily, "anchor-service");
+    assert.equal(typeof benchmarkCase.baselineSelectedOperator, "string");
     assert.equal(benchmarkCase.replayedWindowCount, 2);
     assert.equal(benchmarkCase.candidateWindowCount >= 2, true);
     assert.equal(selectedLabel.window.left, 3);
@@ -4513,6 +4527,8 @@ function testLnsWindowReplayLabelRunner() {
     assert.equal(regressedLabel.status, "invalid");
     assert.equal(regressedLabel.usable, false);
     assert.equal(selectedLabel.features.selectedByBaseline, true);
+    assert.equal(typeof selectedLabel.operator, "string");
+    assert.equal(typeof selectedLabel.operatorScore, "number");
     assert.equal(selectedLabel.pressureFamily, "anchor-service");
     assert.equal(selectedLabel.selectionSource, "baseline-top-k");
     assert.equal(selectedLabel.features.area, 9);
@@ -4545,6 +4561,7 @@ function testLnsWindowReplayLabelRunner() {
     assert.equal(explorationLabel.windowIndex >= explorationResult.maxWindows, true);
     assert.match(formatted, /=== LNS Window Replay Labels ===/);
     assert.match(formatted, /Pressure families: anchor-service/);
+    assert.match(formatted, /operator=/);
     assert.match(formatted, /delta=\+100/);
     assert.match(formatted, /delta=-10/);
     assert.match(formatted, /usable=false/);
@@ -5170,7 +5187,7 @@ async function testCrossModeBenchmarkHelpers() {
     seeds: [5],
     portfolio: { workerCount: 2 },
     solve: async (_grid, params, context) => {
-      await delay(context.mode === "cp-sat" ? 5 : 1);
+      await delay(context.mode === "cp-sat" ? 50 : 1);
       const totalPopulation = context.mode === "cp-sat-portfolio" ? 24 : 10;
       const solution = buildMockSolution({
         optimizer: params.optimizer,

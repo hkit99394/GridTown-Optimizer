@@ -256,7 +256,7 @@ Exit criteria:
 
 ### Phase 3: Counterfactual Label Collection For LNS
 
-Status: Needs scale before learned `LNS` window re-ranking
+Status: Scale-up infrastructure delivered; strict label artifact still required before learned `LNS` window re-ranking
 
 Why:
 - logging only the chosen window produces selection-biased data
@@ -274,15 +274,17 @@ Delivered:
 
 - small schema-valid replay label bundle with 84 usable labels
 - development / holdout split protection for the initial bundle
+- five-family development and holdout replay case coverage across corridor, gate, footprint-pressure, service-pressure, and anchor-service families
+- adaptive-operator name and score fields on replay labels
+- scale-oriented learned-label defaults with top-k adaptive candidates plus tail exploration windows
 
 Remaining deliverables:
 
-- larger replay corpus across corridor, gate, footprint-pressure, and service-pressure families
-- exploration windows beyond baseline top-k
+- strict generated artifact proving the scaled corpus passes readiness thresholds
 - initial, post-first-improvement, and post-stagnation incumbent states
 - multiple repair budgets when budget allocation is part of the target decision
 - model / CP-SAT formulation fingerprint and per-label timing metadata
-- train / validation / holdout splits that prevent benchmark leakage by family and seed
+- train / validation / holdout split evidence that prevents benchmark leakage by family and seed
 - parallel replay runner only if CPU-budget accounting remains explicit
 
 Exit criteria:

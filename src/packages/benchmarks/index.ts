@@ -6,11 +6,11 @@
  * entry point.
  */
 
-export * from "../../benchmarks/greedy.js";
+export * from "./greedy.js";
 export * from "./benchmarkOptions.js";
 export * from "./benchmarkSeeds.js";
-export * from "../../benchmarks/cpSat.js";
-export * from "../../benchmarks/lns.js";
+export * from "./cpSat.js";
+export * from "./lns.js";
 export * from "./lnsPressureCases.js";
 export * from "../../benchmarks/crossMode.js";
 export * from "../../benchmarks/crossModeBudgetAblations.js";

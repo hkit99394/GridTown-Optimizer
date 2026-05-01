@@ -421,6 +421,12 @@ Started on 2026-04-30:
 - Moved deterministic ablation gate helpers to
   `src/packages/benchmarks/deterministicAblationGates.ts`, leaving
   `src/benchmarks/deterministicAblationGates.ts` as a compatibility wrapper.
+- Moved the CP-SAT benchmark runner to `src/packages/benchmarks/cpSat.ts`,
+  leaving `src/benchmarks/cpSat.ts` as a compatibility wrapper.
+- Moved the Greedy benchmark runner to `src/packages/benchmarks/greedy.ts`,
+  leaving `src/benchmarks/greedy.ts` as a compatibility wrapper.
+- Moved the LNS benchmark runner to `src/packages/benchmarks/lns.ts`,
+  leaving `src/benchmarks/lns.ts` as a compatibility wrapper.
 
 ## Current Follow-Up
 

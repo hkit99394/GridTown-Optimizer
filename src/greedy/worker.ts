@@ -1,1 +1,1 @@
-export * from "../packages/solvers/greedy/worker.js";
+import "../packages/runtime/background/greedyWorker.js";

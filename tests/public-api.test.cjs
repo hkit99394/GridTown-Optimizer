@@ -121,11 +121,47 @@ function testLegacyCoreModulesAreCompatibilityWrappers() {
 function testLegacySolverModulesAreCompatibilityWrappers() {
   const srcDir = path.join(__dirname, "..", "src");
   const legacySolverDirs = ["auto", "cp-sat", "greedy", "lns"];
+  const expectedWrappers = new Map([
+    [
+      "auto/solver.ts",
+      [
+        `export * from "../packages/solvers/auto/solver.js";`,
+        `export { startAutoSolve } from "../packages/runtime/index.js";`,
+        `export type { AutoSolveHandle } from "../packages/runtime/index.js";`,
+      ].join("\n"),
+    ],
+    [
+      "cp-sat/solver.ts",
+      [
+        `export * from "../packages/solvers/cp-sat/solver.js";`,
+        `export { startCpSatSolve } from "../packages/runtime/index.js";`,
+        `export type { CpSatSolveHandle } from "../packages/runtime/index.js";`,
+      ].join("\n"),
+    ],
+    [
+      "greedy/bridge.ts",
+      [
+        `export { startGreedySolve } from "../packages/runtime/index.js";`,
+        `export type { GreedySolveHandle } from "../packages/runtime/index.js";`,
+      ].join("\n"),
+    ],
+    ["greedy/worker.ts", `import "../packages/runtime/background/greedyWorker.js";`],
+    [
+      "lns/bridge.ts",
+      [
+        `export { startLnsSolve } from "../packages/runtime/index.js";`,
+        `export type { LnsSolveHandle } from "../packages/runtime/index.js";`,
+      ].join("\n"),
+    ],
+    ["lns/worker.ts", `import "../packages/runtime/background/lnsWorker.js";`],
+  ]);
   const offenders = legacySolverDirs.flatMap((solverDir) =>
     listFiles(path.join(srcDir, solverDir), (fileName) => fileName.endsWith(".ts"))
       .filter((filePath) => {
         const moduleName = path.basename(filePath, ".ts");
-        const expected = `export * from "../packages/solvers/${solverDir}/${moduleName}.js";`;
+        const relativePath = path.relative(srcDir, filePath);
+        const expected = expectedWrappers.get(relativePath)
+          ?? `export * from "../packages/solvers/${solverDir}/${moduleName}.js";`;
         return fs.readFileSync(filePath, "utf8").trim() !== expected;
       })
       .map((filePath) => path.relative(srcDir, filePath))
@@ -252,6 +288,17 @@ function testSolversUseCorePackageBoundary() {
   assert.deepEqual(offenders, []);
 }
 
+function testSolverPackageDoesNotImportRuntimePackage() {
+  const srcDir = path.join(__dirname, "..", "src");
+  const solverPackageDir = path.join(srcDir, "packages", "solvers");
+  const runtimeImportPattern = /(?:from|import\(|export\s+[^"']*\s+from)\s*["'][^"']*\.\.\/runtime\//;
+  const offenders = listFiles(solverPackageDir, (fileName) => fileName.endsWith(".ts"))
+    .filter((filePath) => runtimeImportPattern.test(fs.readFileSync(filePath, "utf8")))
+    .map((filePath) => path.relative(srcDir, filePath));
+
+  assert.deepEqual(offenders, []);
+}
+
 testSolverApiExposesDomainAndSolverSurface();
 testSolverApiDoesNotExposeBenchmarkSurface();
 testBenchmarkApiExposesBenchmarkSurface();
@@ -272,3 +319,4 @@ testBenchmarkPackageUsesCorePackageBoundary();
 testAppsAndToolsUseCorePackageBoundary();
 testRuntimeAndServerUseCorePackageBoundary();
 testSolversUseCorePackageBoundary();
+testSolverPackageDoesNotImportRuntimePackage();

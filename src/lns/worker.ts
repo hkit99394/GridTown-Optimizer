@@ -1,1 +1,1 @@
-export * from "../packages/solvers/lns/worker.js";
+import "../packages/runtime/background/lnsWorker.js";

@@ -8,7 +8,6 @@ import { resolve } from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 
 import type {
-  BackgroundSolveHandle,
   CpSatAsyncOptions,
   CpSatModelSizeTelemetry,
   CpSatObjectivePolicy,
@@ -24,7 +23,6 @@ import type {
   Solution,
 } from "../../core/index.js";
 import { assertValidLayout } from "../../core/index.js";
-import { startJsonBackgroundSolve } from "../../runtime/index.js";
 
 interface CpSatResidentialPlacement {
   r: number;
@@ -45,7 +43,7 @@ interface CpSatServicePlacement {
   typeIndex: number;
 }
 
-interface CpSatRawSolution {
+export interface CpSatRawSolution {
   roads: string[];
   services: CpSatServicePlacement[];
   residentials: CpSatResidentialPlacement[];
@@ -69,8 +67,6 @@ interface CpSatRawResultEvent {
   event: "result";
   payload: CpSatRawSolution;
 }
-
-export type CpSatSolveHandle = BackgroundSolveHandle;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -313,7 +309,7 @@ function normalizeCpSatRawSolution(value: unknown): CpSatRawSolution {
   return { roads, services, residentials, populations, totalPopulation, status, objectivePolicy, telemetry, portfolio, stoppedByUser };
 }
 
-function defaultPythonExecutable(): string {
+export function defaultPythonExecutable(): string {
   const venvPython = resolve(__dirname, "../../../../.venv-cp-sat/bin/python");
   return existsSync(venvPython) ? venvPython : "python3";
 }
@@ -382,7 +378,7 @@ function buildCpSatBackendParams(params: SolverParams, asyncOptions?: CpSatAsync
   };
 }
 
-function buildCpSatRequest(G: Grid, params: SolverParams, asyncOptions?: CpSatAsyncOptions) {
+export function buildCpSatRequest(G: Grid, params: SolverParams, asyncOptions?: CpSatAsyncOptions) {
   return {
     grid: G,
     params: buildCpSatBackendParams(params, asyncOptions),
@@ -597,7 +593,7 @@ function validateCpSatLayout(G: Grid, params: SolverParams, raw: CpSatRawSolutio
   return layout;
 }
 
-function materializeCpSatSolution(G: Grid, params: SolverParams, raw: CpSatRawSolution): Solution {
+export function materializeCpSatSolution(G: Grid, params: SolverParams, raw: CpSatRawSolution): Solution {
   const layout = validateCpSatLayout(G, params, raw);
   return {
     optimizer: "cp-sat",
@@ -615,42 +611,6 @@ function materializeCpSatSolution(G: Grid, params: SolverParams, raw: CpSatRawSo
     populations: raw.populations,
     totalPopulation: raw.totalPopulation,
   };
-}
-
-export function startCpSatSolve(G: Grid, params: SolverParams): CpSatSolveHandle {
-  const pythonExecutable =
-    params.cpSat?.pythonExecutable ?? process.env.CITY_BUILDER_CP_SAT_PYTHON ?? defaultPythonExecutable();
-  const scriptPath = params.cpSat?.scriptPath ?? resolve(__dirname, "../../../../python/cp_sat_solver.py");
-  return startJsonBackgroundSolve({
-    solverLabel: "CP-SAT",
-    stopDirectoryPrefix: "city-builder-cp-sat-stop-",
-    command: pythonExecutable,
-    args: [scriptPath],
-    launchContext: `with ${pythonExecutable}`,
-    buildRequest: ({ stopFilePath, snapshotFilePath }) =>
-      buildCpSatRequest(G, {
-        ...params,
-        cpSat: {
-          ...(params.cpSat ?? {}),
-          stopFilePath,
-          snapshotFilePath,
-        },
-      }),
-    parseRaw: parseCpSatRawSolution,
-    materializeSolution: (raw, stoppedByUser) =>
-      materializeCpSatSolution(G, params, {
-        ...raw,
-        stoppedByUser: stoppedByUser || Boolean(raw.stoppedByUser),
-      }),
-    getSnapshotState: (raw) => ({
-      hasFeasibleSolution: Boolean(raw),
-      totalPopulation: raw?.totalPopulation ?? null,
-      cpSatStatus: raw?.status ?? null,
-    }),
-    readStoppedByUser: (raw) => Boolean(raw.stoppedByUser),
-    stoppedBeforeFeasibleMessage: "CP-SAT solve was stopped before finding a feasible solution.",
-    noSolutionMessage: "CP-SAT backend exited without returning a solution.",
-  });
 }
 
 export async function solveCpSatAsync(

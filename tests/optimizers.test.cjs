@@ -602,9 +602,9 @@ function testAutoDirectRuntimeIgnoresMalformedOptionValues() {
 }
 
 async function testAutoAsyncPreservesCancelledStopReasonAfterCpSatReturns() {
-  const greedyBridgeModule = require("../dist/packages/solvers/greedy/bridge.js");
-  const lnsBridgeModule = require("../dist/packages/solvers/lns/bridge.js");
-  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
+  const greedyBridgeModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
+  const lnsBridgeModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
+  const cpSatModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
   const originalStartGreedySolve = greedyBridgeModule.startGreedySolve;
   const originalStartLnsSolve = lnsBridgeModule.startLnsSolve;
   const originalStartCpSatSolve = cpSatModule.startCpSatSolve;
@@ -659,9 +659,9 @@ async function testAutoAsyncPreservesCancelledStopReasonAfterCpSatReturns() {
 }
 
 async function testAutoAsyncStageErrorKeepsIncumbentWithExplicitStopReason() {
-  const greedyBridgeModule = require("../dist/packages/solvers/greedy/bridge.js");
-  const lnsBridgeModule = require("../dist/packages/solvers/lns/bridge.js");
-  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
+  const greedyBridgeModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
+  const lnsBridgeModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
+  const cpSatModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
   const originalStartGreedySolve = greedyBridgeModule.startGreedySolve;
   const originalStartLnsSolve = lnsBridgeModule.startLnsSolve;
   const originalStartCpSatSolve = cpSatModule.startCpSatSolve;
@@ -714,9 +714,9 @@ async function testAutoAsyncStageErrorKeepsIncumbentWithExplicitStopReason() {
 }
 
 async function testAutoAsyncRecoveredStageSnapshotKeepsNonRecoveryTerminalMetadata() {
-  const greedyBridgeModule = require("../dist/packages/solvers/greedy/bridge.js");
-  const lnsBridgeModule = require("../dist/packages/solvers/lns/bridge.js");
-  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
+  const greedyBridgeModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
+  const lnsBridgeModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
+  const cpSatModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
   const originalStartGreedySolve = greedyBridgeModule.startGreedySolve;
   const originalStartLnsSolve = lnsBridgeModule.startLnsSolve;
   const originalStartCpSatSolve = cpSatModule.startCpSatSolve;
@@ -769,9 +769,9 @@ async function testAutoAsyncRecoveredStageSnapshotKeepsNonRecoveryTerminalMetada
 }
 
 async function testAutoAsyncRecoveredCpSatSnapshotKeepsCompletedMetadata() {
-  const greedyBridgeModule = require("../dist/packages/solvers/greedy/bridge.js");
-  const lnsBridgeModule = require("../dist/packages/solvers/lns/bridge.js");
-  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
+  const greedyBridgeModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
+  const lnsBridgeModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
+  const cpSatModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
   const originalStartGreedySolve = greedyBridgeModule.startGreedySolve;
   const originalStartLnsSolve = lnsBridgeModule.startLnsSolve;
   const originalStartCpSatSolve = cpSatModule.startCpSatSolve;
@@ -1025,9 +1025,9 @@ function testAutoSyncGreedyCanRunPastFormerStageBudget() {
 }
 
 async function testAutoAsyncGreedyCanRunPastFormerStageBudget() {
-  const greedyBridgeModule = require("../dist/packages/solvers/greedy/bridge.js");
-  const lnsBridgeModule = require("../dist/packages/solvers/lns/bridge.js");
-  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
+  const greedyBridgeModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
+  const lnsBridgeModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
+  const cpSatModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
   const originalStartGreedySolve = greedyBridgeModule.startGreedySolve;
   const originalStartLnsSolve = lnsBridgeModule.startLnsSolve;
   const originalStartCpSatSolve = cpSatModule.startCpSatSolve;
@@ -1171,9 +1171,9 @@ function testAutoClampsHeavyGreedyStageSettings() {
 }
 
 async function testAutoAsyncClampsHeavyGreedyStageSettings() {
-  const greedyBridgeModule = require("../dist/packages/solvers/greedy/bridge.js");
-  const lnsBridgeModule = require("../dist/packages/solvers/lns/bridge.js");
-  const cpSatModule = require("../dist/packages/solvers/cp-sat/solver.js");
+  const greedyBridgeModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
+  const lnsBridgeModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
+  const cpSatModule = require("../dist/packages/runtime/dispatch/backgroundSolvers.js");
   const originalStartGreedySolve = greedyBridgeModule.startGreedySolve;
   const originalStartLnsSolve = lnsBridgeModule.startLnsSolve;
   const originalStartCpSatSolve = cpSatModule.startCpSatSolve;

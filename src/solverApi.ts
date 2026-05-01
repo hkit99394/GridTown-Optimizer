@@ -5,7 +5,7 @@
  * `benchmarkApi.ts` and the `city-builder/benchmarks` package subpath.
  */
 
-export { solve, solveAsync } from "./packages/runtime/index.js";
+export { solve, solveAsync, startAutoSolve, startCpSatSolve } from "./packages/runtime/index.js";
 export {
   describeAutoStopReason,
   solveAuto,
@@ -13,8 +13,6 @@ export {
   solveCpSatAsync,
   solveGreedy,
   solveLns,
-  startAutoSolve,
-  startCpSatSolve,
 } from "./packages/solvers/index.js";
 export {
   assertValidLayout,

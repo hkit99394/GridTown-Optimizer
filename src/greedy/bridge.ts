@@ -1,1 +1,2 @@
-export * from "../packages/solvers/greedy/bridge.js";
+export { startGreedySolve } from "../packages/runtime/index.js";
+export type { GreedySolveHandle } from "../packages/runtime/index.js";

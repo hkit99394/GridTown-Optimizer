@@ -594,7 +594,7 @@ npm run benchmark:scorecard -- --budget-ablation --trace-jsonl --ablation-polici
 From code:
 
 ```ts
-import { runCpSatBenchmarkSuite } from "./dist/index.js";
+import { runCpSatBenchmarkSuite } from "./dist/benchmarkApi.js";
 
 process.env.CITY_BUILDER_CP_SAT_PYTHON ??= ".venv-cp-sat/bin/python";
 
@@ -644,6 +644,9 @@ The default public API is exposed from [src/index.ts](./src/index.ts). Benchmark
 label, and experiment-registry tooling is exposed separately from
 [src/benchmarkApi.ts](./src/benchmarkApi.ts) through the `city-builder/benchmarks`
 package subpath.
+Benchmark-only functions and types such as `runCpSatBenchmarkSuite`,
+`CpSatBenchmarkCase`, and `CpSatBenchmarkSuiteResult` are available from
+`./dist/benchmarkApi.js` or `city-builder/benchmarks`.
 
 - `solveAsync`
 - `solve`
@@ -675,8 +678,6 @@ Useful types include:
 - `ServiceTypeSetting`
 - `ResidentialTypeSetting`
 - `CpSatOptions`
-- `CpSatBenchmarkCase`
-- `CpSatBenchmarkSuiteResult`
 - `CpSatAsyncOptions`
 - `CpSatProgressUpdate`
 - `CpSatObjectivePolicy`

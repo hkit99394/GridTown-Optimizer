@@ -7,9 +7,7 @@ import { join } from "node:path";
 import { normalizeServicePlacement } from "../../core/index.js";
 import { NO_TYPE_INDEX } from "../../core/index.js";
 import { materializeValidLnsSeedSolution } from "../../core/index.js";
-import { solveCpSat, startCpSatSolve } from "../cp-sat/solver.js";
-import { startGreedySolve } from "../greedy/bridge.js";
-import { startLnsSolve } from "../lns/bridge.js";
+import { solveCpSat } from "../cp-sat/solver.js";
 import { solveLns } from "../lns/solver.js";
 import { solveGreedy } from "../greedy/solver.js";
 
@@ -64,7 +62,13 @@ interface AutoRuntimeState {
   greedySeedStage: AutoGreedySeedStageSummary | null;
 }
 
-type StageStarter = (grid: Grid, params: SolverParams) => BackgroundSolveHandle;
+export type AutoBackgroundStageStarter = (grid: Grid, params: SolverParams) => BackgroundSolveHandle;
+
+export interface AutoBackgroundStageStarters {
+  greedy: AutoBackgroundStageStarter;
+  lns: AutoBackgroundStageStarter;
+  cpSat: AutoBackgroundStageStarter;
+}
 
 type AutoStageRunner<TResult> = (
   stage: AutoStageOptimizerName,
@@ -813,7 +817,7 @@ async function runBackgroundStage(
   currentHandleRef: { current: BackgroundSolveHandle | null },
   stage: AutoStageOptimizerName,
   cycleIndex: number,
-  startBackgroundSolve: StageStarter,
+  startBackgroundSolve: AutoBackgroundStageStarter,
   nextStageSeed: () => number,
   autoStartedAtMs: number,
   deadlineAtMs: number | null
@@ -1353,7 +1357,11 @@ export function solveAuto(G: Grid, params: SolverParams): Solution {
   }
 }
 
-export function startAutoSolve(G: Grid, params: SolverParams): BackgroundSolveHandle {
+export function startAutoSolveWithStages(
+  G: Grid,
+  params: SolverParams,
+  stageStarters: AutoBackgroundStageStarters
+): BackgroundSolveHandle {
   const options = normalizeAutoOptions(params);
   const state = createAutoRuntimeState();
   const startedAtMs = Date.now();
@@ -1384,7 +1392,7 @@ export function startAutoSolve(G: Grid, params: SolverParams): BackgroundSolveHa
       ): Promise<Solution | null> => {
         incumbentRef.current = incumbent;
         const startStageSolve =
-          stage === "greedy" ? startGreedySolve : stage === "lns" ? startLnsSolve : startCpSatSolve;
+          stage === "greedy" ? stageStarters.greedy : stage === "lns" ? stageStarters.lns : stageStarters.cpSat;
         return runBackgroundStage(
           G,
           params,

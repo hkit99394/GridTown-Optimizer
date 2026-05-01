@@ -11,14 +11,13 @@ import {
   describeAutoRecoveredSolution,
   normalizeAutoTerminalSolution,
   solveAuto,
-  startAutoSolve,
 } from "../../solvers/auto/solver.js";
-import { solveCpSat, solveCpSatAsync, startCpSatSolve } from "../../solvers/cp-sat/solver.js";
-import { startGreedySolve } from "../../solvers/greedy/bridge.js";
+import { solveCpSat, solveCpSatAsync } from "../../solvers/cp-sat/solver.js";
 import { solveGreedy } from "../../solvers/greedy/solver.js";
-import { startLnsSolve } from "../../solvers/lns/bridge.js";
 import { solveLns } from "../../solvers/lns/solver.js";
 import { isOptimizerName, OMITTED_SOLVER_OPTIMIZER } from "../../core/index.js";
+import { startAutoSolve } from "./autoBackgroundSolver.js";
+import { startCpSatSolve, startGreedySolve, startLnsSolve } from "./backgroundSolvers.js";
 
 import type {
   BackgroundSolveHandle,

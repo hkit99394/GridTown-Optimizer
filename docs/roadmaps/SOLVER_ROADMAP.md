@@ -2,150 +2,92 @@
 
 ## Goal
 
-Maximize feasible city population under a fixed wall-clock and CPU budget.
+Maximize feasible city population under fixed wall-clock and CPU budgets, while preserving exact validation for every reported final layout.
 
-The solver roadmap is now centered on the fastest path to better solutions:
+The current strategy is intentionally conservative:
 
-1. Keep `auto` as the default quality path.
-2. Keep CP-SAT aligned with the formal problem semantics.
-3. Make LNS adaptive and evidence-driven.
-4. Expand benchmark coverage around planner workflows and pressure cases.
-5. Promote learned guidance, portfolio, GPU, distributed solving, or alternative solvers only after protected equal-budget evidence says they help.
+- Keep `auto` as the default quality path.
+- Use Greedy for fast incumbents and diagnostics.
+- Use LNS as the main improvement engine.
+- Use CP-SAT for exact repair, polish, proof, bounds, labels, and semantic checks.
+- Promote learned guidance, portfolio, GPU, distributed solving, or external solvers only after protected equal-budget evidence says they help.
 
-Primary metrics:
-
-- Time to first feasible incumbent.
-- Population at fixed checkpoints: 1s, 5s, 30s, 120s.
-- Time to best solution.
-- Improvement per extra CPU-second.
-- CP-SAT status, upper bound, and population gap when available.
-- Repeatability across fixed seeds, map families, and planner workflows.
-- Exact validation of every reported final layout.
+Primary metrics are time to first feasible, population at 1s/5s/30s/120s, time to best, improvement per CPU-second, CP-SAT status/gap, repeatability across fixed seeds and planner workflows, and exact validation.
 
 ## Runtime Posture
 
-The default path stays incumbent-first:
+The default solver path is incumbent-first:
 
 1. `greedy` builds a fast feasible incumbent.
 2. `LNS` improves the incumbent through bounded repair.
 3. `CP-SAT` performs exact repair, bounded polish, or proof.
 4. `auto` orchestrates the budget and keeps the best incumbent.
-5. Standalone `greedy`, `LNS`, `CP-SAT`, and explicit portfolio modes remain experiment tools.
 
 | Mode | Role | Default Use |
 | --- | --- | --- |
-| `auto` | Main quality path | Best feasible population per wall-clock budget |
+| `auto` | Main quality path | Recommended solver mode |
 | `greedy` | Fast incumbent and diagnostics | Seed generation, baseline, counterfactual traces |
 | `LNS` | Main improvement engine | Adaptive repair around incumbent layouts |
-| `CP-SAT` | Exact backend | Small proofs, local repairs, bounded polishing, model-alignment checks |
-| CP-SAT portfolio | Explicit research mode | Only after CPU-normalized scorecards beat single CP-SAT |
+| `CP-SAT` | Exact backend | Small proofs, local repairs, bounded polishing, semantic checks |
+| CP-SAT portfolio | Explicit research mode | Only after CPU-normalized wins over single CP-SAT |
 | Learned guidance | Future feature-flag path | Only after offline and online holdout gates pass |
 
-## Delivered Baseline
+## Current Baseline
 
-Completed solver work has moved to [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED.md).
-
-Current reviewed baseline:
+Completed details live in [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED.md). The short version:
 
 - `greedy`, `LNS`, `CP-SAT`, and `auto` are available through backend, planner, and CLI flows.
-- `auto` follows the incumbent-first `greedy -> LNS -> CP-SAT` workflow and preserves bounded CP-SAT reserve time.
-- Cross-mode progress, decision traces, JSONL export, time-to-quality scorecards, and budget-policy signals are available for reproducible comparison.
-- LNS has deterministic/probabilistic neighborhoods, improvement guards, replay labels, and budget controls.
-- Greedy has phase guardrails, profile counters, final road cleanup, connectivity-shadow traces, guarded opt-in connectivity-shadow scoring, and road-opportunity counterfactuals.
-- Experiment registry hardening exists through validation/check tooling, append helpers, and strict metadata gates.
-- Planner explainability, saved layouts, manual validation, continuation hints, and expansion comparison create a real product loop around the solver.
-- The 2026-04-28 health check passed `npm test`; Auto matched the best population on the four 5s seed-7 default scorecard cases.
-- CP-SAT portfolio measurement tied single CP-SAT on the tiny paired run while spending more configured worker CPU, so portfolio remains explicit-only.
-- Low-risk learned-ranking labels and a CPU-first Greedy offline ranker exist for diagnostics only; no learned runtime scorer has been promoted.
-- CP-SAT road-semantics alignment and scorecard closeout are delivered. The 2026-04-30 six-case single-worker scorecard reached `OPTIMAL` on tiny, corridor, gate, service-pressure, multi-anchor, and dense saturated families.
-
-## Strategic Shift
-
-The next stage is not "train first" or "add more modes." The next stage is:
-
-1. Verify that the exact backend encodes the same road semantics as the formal spec and TypeScript validator.
-2. Use adaptive LNS as the main time-to-good-solution engine.
-3. Turn the benchmark and experiment registry into the promotion gate for every solver change.
-4. Measure the planner's actual workflow: solve, inspect, edit, validate, reuse, compare next addition.
-
-Reasoning:
-
-- The problem is a hybrid of rectangle packing, set packing, service/facility coverage, and road-network design.
-- CP-SAT is the right exact backend, and its road-connectivity formulation plus scorecard evidence now match the per-component anchor rule.
-- LNS already matches the research shape for this kind of problem; adaptive destroy/repair operators are likely higher leverage than another global solver mode.
-- Current learned labels are useful but too small, especially for LNS, to justify runtime model hooks.
-- Tiny saturated cases are useful smoke tests but weak promotion evidence.
+- Planner workflows now cover solve, inspect, edit, validate, reuse, explainability maps, saved layouts, and expansion comparison.
+- CP-SAT road semantics are aligned with the formal per-component anchor rule, and the 2026-04-30 road-semantics scorecard reached `OPTIMAL` on the six-case single-worker suite.
+- LNS has adaptive semantic operators, replay labels, budget controls, and telemetry.
+- Auto uses trace-tuned LNS budget defaults while preserving the measured `0.2` CP-SAT reserve default and explicit caller overrides.
+- Cross-mode scorecards, product-corpus artifacts, telemetry manifests, workflow replay artifacts, and experiment-registry draft paths exist for promotion evidence.
+- Low-risk learned-ranking labels and a CPU-first Greedy offline ranker exist for diagnostics only. No learned runtime scorer has been promoted.
+- CP-SAT portfolio, exact small-window DP repair, and service-master decomposition remain guarded or opt-in; they are not default Auto behavior.
 
 ## Active Priorities
 
-Impact scale: `5` is most significant for population per minute. Rank is the recommended execution order.
+No active next-stage solver priority is open after the CPU-first Greedy offline ranker closeout.
 
-Status vocabulary:
-
-- `delivered`: implemented and closed for its intended gate.
-- `active`: next-stage work that can start now.
-- `partial`: usable infrastructure exists, but coverage or metadata is incomplete.
-- `needs-scale`: schema and path are proven, but evidence volume or holdout signal is too small.
-- `not-started`: no implementation exists yet.
-- `gated`: do not start until the trigger is satisfied.
-
-No active next-stage solver priority is open after the CPU-first Greedy offline ranker closeout. New work should move out of the gated table only when its trigger is satisfied.
-
-## Status Snapshot
-
-| Area | Status | Evidence | Default Impact |
-| --- | --- | --- | --- |
-| Cross-mode scorecards, traces, and budget-policy signals | delivered | [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED.md), items 11 and 14-17 | Supports promotion gates; no default change by itself. |
-| Deterministic Greedy/LNS ablation gates | delivered | [SOLVER_ABLATION_DECISIONS.md](../decisions/SOLVER_ABLATION_DECISIONS.md), `artifacts/deterministic-ablations/2026-04-27/` | No deterministic variant promoted; regressions remain blocked. |
-| Low-risk learned-ranking label bundle | delivered | `artifacts/learned-ranking-labels/2026-04-27/` | Offline diagnostics only; no model trained and no defaults changed. |
-| CPU-first Greedy offline ranker | delivered | [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED.md), item 44 | A TypeScript CPU pairwise linear ranker trains on protected Greedy development labels and beats deterministic, stable-random, and best single-feature baselines on protected holdout. No runtime scorer or solver default changed. |
-| LNS replay label scale-up | delivered | [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED.md), item 42 | Split-protected replay label collection now has five-family development and holdout coverage, adaptive-operator labels, and scale-oriented defaults. Learned LNS ranking remains gated on strict artifact evidence and offline holdout wins. |
-| Generated pressure-case coverage | delivered | [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED.md), items 30 and 42 | Replay-label pressure coverage now has paired development/holdout cases across corridor, gate, footprint-pressure, service-pressure, and anchor-service families. |
-| CP-SAT portfolio telemetry and CPU-normalized scorecards | delivered | `artifacts/cp-sat-portfolio/2026-04-28/` | Portfolio remains explicit-only; Auto does not route through it. |
-| Experiment registry hardening | delivered | `artifacts/experiments/index.jsonl`; `npm run experiment-registry:check` | Future artifacts can be checked and appended with strict metadata. |
-| CP-SAT road-semantics alignment | delivered | Core model, warm-start roots, removed legacy mode switch, model-size telemetry, and six-case scorecard delivered on 2026-04-30; CP-SAT scores 200 on `multi-anchor-road-components` | Exact backend now matches the spec on the adversarial case and no road-semantics scorecard regression was observed. |
-| Solver telemetry manifests | delivered | [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED.md), items 33-36 | Cross-mode scorecards, product workflow replay artifacts, learned-ranking label bundles, and model-experiment artifact contracts now have telemetry manifests and strict registry draft paths. No model was trained and no default changed. |
-| Adaptive LNS operator set | delivered | [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED.md), item 37 | LNS repair windows now carry semantic operator names, per-operator outcomes, and adaptive weights for weak-service, residential-headroom, frontier-congestion, gate/choke, service-overlap, random-exploration, placed-building, and sliding families. |
-| Auto budget policy retuning | delivered | [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED.md), item 38 | Runtime Auto now applies the trace-tuned LNS budget defaults already used by scorecards, while keeping explicit user settings and the measured `0.2` CP-SAT reserve default intact. |
-| CP-SAT async/portfolio failure-mode coverage | delivered | [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED.md), item 39 | Async and portfolio regressions now cover malformed progress, no-final-result streams, child diagnostics, process-pool fallback, worker future failure after sibling progress, cancellation process groups, and portfolio snapshot propagation. |
-| Exact small-window DP repair | delivered | [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED.md), item 40 | Opt-in LNS repair can route eligible tiny windows through exact bitmask DP with CP-SAT fallback, outcome telemetry, evaluator validation, and CP-SAT comparison coverage where OR-Tools is available. No default changed. |
-| Service-master decomposition experiment | delivered | [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED.md), item 41 | Greedy has a guarded `serviceMasterDecomposition` pass that enumerates bounded service layouts, realizes each through the fixed-service residential/road subproblem, records profile counters, and has a service-pressure benchmark where opt-in master search improves 465 -> 555 with exact validation. No default changed. |
-| Model training path | gated | Greedy has an offline CPU diagnostic model and artifact path; LNS still needs strict offline evidence, and no feature-flagged runtime scorer is promoted | No learned default path. |
-| GPU, distributed solving, alternative solvers | gated | No CPU-first bottleneck evidence requiring them | Research-only until equal-budget wins exist. |
+New solver work should move out of the gated table only when its trigger is satisfied. Until then, the right action is to preserve the current default posture and collect stronger evidence where a gate asks for it.
 
 ## Gated Priorities
 
-These are not next actions. Move them into the active table only after the trigger is satisfied.
+These are not next actions by default. They become active only when their trigger is satisfied.
 
-| Trigger | Priority | Impact | Summary | Success Signal |
-| --- | --- | ---: | --- | --- |
-| CP-SAT semantics alignment and product corpus are stable | Geometry-native CP-SAT / `NoOverlap2D` experiment | 3.0 | Compare current cell-indexed set packing with optional-interval rectangle constraints. | Controlled scorecard shows propagation or time-to-best improvement without model-size blowup. |
-| Service-master scorecards show repeatable equal-budget wins | Service-master promotion in Auto or LNS seed policy | 3.5 | Promote or schedule the opt-in service-master pass only if targeted pressure evidence justifies its CPU cost. | Beats Auto or the current Greedy seed path on development and holdout pressure families while every final layout remains evaluator-valid. |
-| Strict LNS scale-up artifact passes readiness and offline baselines | Learned LNS window ranking | 3.0 | Train and evaluate a ranker over adaptive LNS candidate windows. | Offline holdout beats deterministic, random, and single-feature baselines; online A/B improves fixed-budget quality without worst-decile regression. |
-| Greedy offline ranker evidence is paired with online equal-budget wins | Feature-flagged learned Greedy re-ranking | 2.5 | Add scorer adapter, model-load fallback, and equal-budget online A/B. | Online paired seeded benchmarks improve population or time-to-best with bounded inference overhead. |
-| Portfolio scorecards show CPU-normalized wins | CP-SAT portfolio in Auto | 2.0 | Let Auto route a controlled budget slice to portfolio only when CPU cost is justified. | Portfolio improves wall-clock quality and CPU-normalized efficiency versus single CP-SAT. |
-| CPU-first workflow has a measured bottleneck | GPU acceleration | 2.0 | Use GPU for training, batched feature extraction, or inference only after CPU baseline is useful. | GPU reduces time-to-label, time-to-train, or inference overhead while preserving solver quality gates. |
-| Hosted/multi-user execution becomes a product requirement | Durable worker architecture | 2.0 | Move jobs to a durable queue/status store before horizontal scale. | Status/cancel/snapshot behavior survives process restarts and multi-instance routing. |
-| Exact-bound quality remains blocked after CP-SAT tuning | External MILP/SCIP/Gurobi/cuOpt research adapter | 1.5 | Use an external exact or relaxation backend as a science instrument, not a product dependency. | Produces better bounds or incumbents on selected families under exact evaluator validation. |
+| Trigger | Candidate Work | Success Signal |
+| --- | --- | --- |
+| CP-SAT semantics and product corpus stay stable, and exact search quality remains a bottleneck | Geometry-native CP-SAT / `NoOverlap2D` experiment | Better propagation or time-to-best without model-size blowup. |
+| Service-master scorecards show repeatable equal-budget wins | Promote service-master into Auto or Greedy seed policy | Beats current Auto or Greedy seed path on development and holdout pressure families with evaluator-valid layouts. |
+| Strict LNS label artifacts pass readiness and offline baselines | Learned LNS window ranking | Offline holdout beats deterministic, random, and single-feature baselines; online A/B improves fixed-budget quality without worst-decile regression. |
+| Greedy offline ranker evidence is paired with online equal-budget wins | Feature-flagged learned Greedy re-ranking | Online seeded benchmarks improve population or time-to-best with bounded inference overhead. |
+| Portfolio scorecards show wall-clock and CPU-normalized wins | CP-SAT portfolio in Auto | Portfolio beats single CP-SAT on quality and CPU efficiency. |
+| A CPU-first label, training, feature, or inference workflow becomes a measured bottleneck | GPU acceleration | GPU reduces the measured bottleneck while preserving solver quality gates. |
+| Hosted or multi-user execution becomes a product requirement | Durable worker architecture | Status, cancellation, and snapshots survive process restarts and multi-instance routing. |
+| Exact bounds or incumbents remain blocked after CP-SAT tuning | External MILP/SCIP/Gurobi/cuOpt research adapter | Better bounds or incumbents on selected families under exact evaluator validation. |
 
-## Combined Ordering
+## Promotion Gates
 
-1. Revisit runtime learned rankers only after offline artifacts are paired with equal-budget online gates.
-2. Revisit service-master promotion only after equal-budget scorecards justify the opt-in CPU cost.
-3. Revisit portfolio, GPU, distributed workers, or alternative solvers only after they have a measured bottleneck and CPU-normalized win path.
+Any default-path solver change must include:
 
-## Discipline
+- Exact validation for all final layouts.
+- At least 3 fixed seeds.
+- 1s, 5s, 30s, and 120s budget reporting when relevant.
+- Protected development and holdout scorecards.
+- Median population improvement, or equal population with at least 10% faster time-to-best.
+- Worst-decile population delta `>= 0` unless a reviewed exception is documented.
+- Regression rate `<= 5%`.
+- CPU-budget efficiency no worse than 10% below baseline unless population improvement justifies it.
+- Registered benchmark, hardware, split, command, model, artifact, and decision metadata.
+
+## Guardrails
 
 - Roads are support cells, not the primary objective.
-- The formal road rule is per-component anchor connectivity. Solver backends and validators must agree on that rule.
-- Buildings that touch row `0` or column `0` are connected by the anchor rule and should not keep unnecessary connector roads alive.
-- Final road cleanup should remove support roads that do not affect anchor-boundary road connectivity or building access.
-- Connectivity cost should estimate building-induced loss of feasible connected area, not road commitment alone.
-- Auto LNS stages must preserve any reserved CP-SAT time by capping seed and repair sub-budgets in `src/packages/solvers/auto/stagePolicy.ts`.
-- Learned guidance is not ready until traces show repeated, explainable ranking mistakes and enough counterfactual labels exist.
+- The formal road rule is per-component anchor connectivity; solver backends and validators must agree.
+- Final road cleanup should remove only roads that do not affect building access or anchor-boundary road connectivity.
+- Auto LNS stages must preserve reserved CP-SAT time unless a future trace-backed policy changes that.
+- Learned guidance is not ready until traces show repeated ranking mistakes and enough counterfactual labels exist.
 - Tiny saturated cases are smoke tests, not promotion evidence.
-- Dynamic programming is a bounded exact subroutine for tiny windows, narrow profiles, and oracles, not a replacement for Greedy/LNS/CP-SAT.
-- CPU parallelism is useful only when measured against both wall-clock and CPU-second cost.
-- CP-SAT warm starts are global unless non-neighborhood variables are explicitly fixed.
-- OR-Tools `repair_hint` with multi-worker repair previously caused instability, so repair-heavy CP-SAT experiments must stay guarded.
-- Distributed solving should wait until single-machine Auto/LNS policy is trace-tuned or hosting requires durable jobs.
+- Dynamic programming is a bounded exact subroutine for tiny windows and oracles, not a replacement for Greedy/LNS/CP-SAT.
+- CPU parallelism must be measured against both wall-clock and CPU-second cost.
+- Distributed solving should wait until hosting requires durable jobs or single-machine policy is no longer the bottleneck.

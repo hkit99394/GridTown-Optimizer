@@ -225,10 +225,13 @@ Owns:
 - optimizer lookup
 - sync/background solver adapter selection
 
-Legacy runtime deep-import wrappers have been removed. The only remaining
-compatibility wrappers are the top-level script entrypoints that preserve
-existing `dist/*.js` command paths. New code should import the canonical package
-modules above or the supported package subpaths.
+Legacy `src/runtime/*` deep-import wrappers have been removed. The runtime
+package still keeps a few package-root re-export shims such as
+`src/packages/runtime/optimizerRegistry.ts`, `src/packages/runtime/solveJobManager.ts`,
+and `src/packages/runtime/solveProgressLog.ts` so internal callers can use the
+package boundary without knowing the `dispatch` or `jobs` subfolder. The other
+remaining compatibility wrappers are the top-level script entrypoints that
+preserve existing `dist/*.js` command paths.
 
 ### `src/packages/solvers/auto/solver.ts`
 
@@ -294,6 +297,40 @@ as `src/greedyBenchmarkCli.ts`, `src/crossModeBenchmarkCli.ts`, and
 `src/experimentRegistryCli.ts`. These wrappers should stay thin and only import
 the matching implementation under `src/tools/cli`.
 
+## Test Modules
+
+### `tests/optimizers/optimizerHarness.cjs`
+
+Grouped optimizer correctness and regression runner.
+
+Owns:
+- test group orchestration for core, Greedy, CP-SAT, Auto, LNS, and benchmark coverage
+- high-level solver behavior assertions that compose several package modules
+- compatibility coverage for public solver and benchmark entrypoints
+
+Does not own:
+- CP-SAT Python helper-introspection boilerplate
+
+### `tests/optimizers/cpSatPythonHelperAssertions.cjs`
+
+Focused CP-SAT Python helper assertions.
+
+Owns:
+- locating and loading `python/cp_sat_solver.py` inside throwaway Python snippets
+- shared `spawnSync`/JSON assertion plumbing for Python helper inspections
+- population-bound, service-pruning, border-capacity, gate, candidate-reduction,
+  reachability, and road-connectivity helper assertions
+
+### `tests/helpers/plannerBrowserModules.cjs`
+
+Planner browser-module test loader.
+
+Owns:
+- fake DOM element construction for browser-module regression tests
+- VM loading for `apps/planner-web` modules
+- composing planner shared, request-builder, workbench, persistence, results,
+  solve-runtime, shell, and expansion test modules
+
 ## Placement Rules
 
 When adding a new behavior:
@@ -318,6 +355,8 @@ When adding a new behavior:
 - If it changes LNS anchor ranking or repair-window escalation, update `src/packages/solvers/lns/neighborhoods.ts`.
 - If it changes how solutions cross process, log, or file boundaries, update `src/packages/core/solutionSerialization.ts`.
 - If it changes benchmark CLI behavior, update the matching implementation in `src/tools/cli`.
+- If it changes CP-SAT Python helper-introspection assertions, update `tests/optimizers/cpSatPythonHelperAssertions.cjs`.
+- If it changes browser-module fixture loading, update `tests/helpers/plannerBrowserModules.cjs`.
 - Keep `src/webServer.ts`, `src/apps/planner-server/webServer.ts`, and `src/apps/planner-server/http/requestHandler.ts` thin.
 
 ## Future Workspace Split
@@ -476,11 +515,19 @@ Started on 2026-04-30:
 
 ## Current Follow-Up
 
-Reviewed on 2026-05-01:
+Reviewed on 2026-05-02:
 - The source-layout migration stages above are complete.
 - Boundary guards now cover the benchmark split, supported script entry
   wrappers, removed legacy deep-import wrappers, package dependency direction,
   and the planner-web location.
+- The optimizer test harness has more temporary-budget headroom after
+  CP-SAT Python helper-introspection assertions moved to
+  `tests/optimizers/cpSatPythonHelperAssertions.cjs`.
+- The review-finding regression test has more temporary-budget headroom after
+  browser VM loaders moved to `tests/helpers/plannerBrowserModules.cjs`.
+- Temporary budgets were tightened to preserve that headroom:
+  `tests/optimizers/optimizerHarness.cjs` is capped at 9,300 lines and
+  `tests/review-findings.test.cjs` at 4,250 lines.
 - A true npm workspace split remains optional future work if build/test time or
   package ownership needs it.
 
@@ -491,3 +538,9 @@ rather than migration prerequisites:
 
 Cleanup completed during this migration pass:
 - `src/packages/solvers/auto/solver.ts`: stage policy and terminal metadata normalization now live in `src/packages/solvers/auto/stagePolicy.ts` and `src/packages/solvers/auto/terminal.ts`.
+- `tests/optimizers/optimizerHarness.cjs`: CP-SAT Python helper inspections now
+  live behind `tests/optimizers/cpSatPythonHelperAssertions.cjs`, keeping the
+  harness focused on grouped test orchestration.
+- `tests/review-findings.test.cjs`: planner browser-module loading now lives in
+  `tests/helpers/plannerBrowserModules.cjs`, keeping the regression file focused
+  on review scenarios and assertions.

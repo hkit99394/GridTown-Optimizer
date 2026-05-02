@@ -1,6 +1,6 @@
 # Next Stage Solver Review
 
-Date: 2026-05-01
+Date: 2026-05-02
 
 ## Executive Summary
 
@@ -45,6 +45,7 @@ The default posture remains unchanged: keep `auto` as the recommended quality pa
 - LNS replay label scale-up is delivered as of 2026-05-01. Replay labels now carry adaptive-operator names/scores, the default learned-label replay settings collect broader top-k plus tail-exploration candidates, and development/holdout LNS splits have disjoint five-family pressure coverage. No learned ranker was trained or promoted.
 - Auto plan-runner duplication is closed as of 2026-05-02. Sync and background Auto execution now share the same stage loop while preserving the existing stage order, incumbent acceptance, weak-cycle stop policy, and default solver behavior.
 - CPU-first Greedy offline ranker is delivered as of 2026-05-02. The diagnostic TypeScript pairwise ranker trains on protected Greedy development labels and, on the seed-7 regression slice, reaches 0.7930 holdout accuracy versus 0.7667 deterministic-proxy, 0.5005 stable-random, and 0.6314 best single-feature. No runtime scorer was added or promoted.
+- Test hygiene was refreshed on 2026-05-02. The oversized optimizer harness had drifted past its temporary file budget; CP-SAT Python helper-inspection assertions now live in `tests/optimizers/cpSatPythonHelperAssertions.cjs`. Browser VM loaders also moved out of `tests/review-findings.test.cjs` into `tests/helpers/plannerBrowserModules.cjs`. The temporary file budgets were tightened to preserve the new headroom.
 
 ## Key Finding: CP-SAT Road Semantics
 
@@ -122,6 +123,7 @@ Do not start runtime learned ranking yet. Greedy now has an offline holdout win,
 - Portfolio code already records worker counts, CPU budget, seeds, and CPU-normalized signals.
 - The planner exposes the actual user loop: solve, inspect, edit, validate, reuse, compare.
 - The benchmark and experiment registry are good foundations for promotion discipline.
+- Test structure now has clearer seams between grouped optimizer regression orchestration, CP-SAT Python helper introspection, review regression scenarios, and planner browser-module fixtures.
 
 ### Gaps
 
@@ -132,6 +134,7 @@ Do not start runtime learned ranking yet. Greedy now has an offline holdout win,
 - LNS replay label infrastructure has scale-oriented splits and adaptive-operator labels, but model promotion still needs a strict generated artifact with enough non-neutral holdout signal.
 - There is no trained model path, model artifact, offline metric report, or feature-flagged scorer ready for runtime use.
 - Job state remains local-process memory; that is acceptable for a local planner but not for hosted multi-user scale.
+- The optimizer and review regression harnesses remain intentionally large because they coordinate broad scenario groups. Continue extracting cohesive helper modules as new clusters emerge rather than raising temporary line budgets.
 
 ## Recommended Next-Stage Roadmap
 

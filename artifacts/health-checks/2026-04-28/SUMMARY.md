@@ -2,7 +2,7 @@
 
 Date: 2026-04-28
 
-This artifact records the fresh local checks used by [NEXT_STAGE_REVIEW.md](../../../docs/roadmaps/NEXT_STAGE_REVIEW.md).
+This artifact records the fresh local checks used by the consolidated [SOLVER_ROADMAP.md](../../../docs/roadmaps/SOLVER_ROADMAP.md).
 
 ## Repository
 

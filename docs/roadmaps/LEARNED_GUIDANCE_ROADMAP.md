@@ -70,7 +70,7 @@ Some early roadmap items are now delivered as measurement gates, but none of the
 | Model training | Partial / gated | A small CPU Greedy diagnostic model is trained and versioned through benchmark artifacts. No learned runtime scorer has been integrated, feature-flagged, or benchmarked online. |
 | GPU acceleration | Not started / gated | GPU should remain optional research infrastructure until a CPU-first model or label workflow is a measured bottleneck. |
 
-Next-stage execution details live in [NEXT_STAGE_REVIEW.md](./NEXT_STAGE_REVIEW.md).
+Current execution gates live in the consolidated [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md).
 
 ## AlphaGo / AlphaZero Feasibility
 

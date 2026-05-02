@@ -35,7 +35,7 @@ Detailed delivered notes live in [CP_SAT_ROADMAP_DELIVERED.md](./CP_SAT_ROADMAP_
 
 ## Remaining Work By Product Priority
 
-Ordering note: this CP-SAT-specific list follows [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md) and [NEXT_STAGE_REVIEW.md](./NEXT_STAGE_REVIEW.md). Road-semantics, telemetry, and async/portfolio failure-mode closeouts are delivered. The next CP-SAT priority is using the exact backend as a label and replay engine; distributed CP-SAT remains gated.
+Ordering note: this CP-SAT-specific list follows the consolidated [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md). Road-semantics, telemetry, and async/portfolio failure-mode closeouts are delivered. The next CP-SAT priority is using the exact backend as a label and replay engine; distributed CP-SAT remains gated.
 
 ### 1. Use CP-SAT as a label and replay engine
 

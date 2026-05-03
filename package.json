@@ -26,7 +26,7 @@
     "format": "prettier --write \"**/*.{ts,js,mjs,cjs,json,md,css,html}\"",
     "format:check": "prettier --check \"**/*.{ts,js,mjs,cjs,json,md,css,html}\"",
     "lint": "eslint apps/planner-web tests",
-    "typecheck:js": "tsc -p tsconfig.checkjs.json",
+    "typecheck:js": "tsc -p tsconfig.checkjs.json && tsc -p tsconfig.checkjs.browser.json",
     "security:audit": "npm audit --audit-level=high",
     "quality": "npm test && npm run experiment-registry:check && npm run security:audit",
     "start": "node dist/cli.js",

@@ -1,4 +1,67 @@
+/**
+ * @param {Window & { CityBuilderShell?: unknown }} globalObject
+ */
 (function attachPlannerShell(globalObject) {
+  /**
+   * @typedef {object} ShellToggleContainer
+   * @property {(selector: string) => Array<{ disabled: boolean }>} querySelectorAll
+   */
+
+  /**
+   * @typedef {object} ShellControl
+   * @property {boolean} disabled
+   * @property {string} [textContent]
+   */
+
+  /**
+   * @typedef {object} ShellElements
+   * @property {ShellControl} solveButton
+   * @property {ShellControl} stopSolveButton
+   * @property {ShellControl} loadConfigButton
+   * @property {ShellControl} loadLayoutButton
+   * @property {ShellControl} saveLayoutButton
+   * @property {ShellControl} lnsUseDisplayedSeed
+   * @property {ShellControl} cpSatUseDisplayedHint
+   * @property {ShellControl} expansionNextService
+   * @property {ShellControl} expansionNextResidential
+   * @property {ShellControl} compareExpansionButton
+   * @property {ShellControl | null | undefined} moveSelectedBuildingButton
+   * @property {ShellControl | null | undefined} removeSelectedBuildingButton
+   * @property {ShellControl | null | undefined} rotatePendingPlacementButton
+   * @property {ShellControl | null | undefined} validateEditedLayoutButton
+   * @property {ShellToggleContainer} layoutEditModeToggle
+   * @property {ShellToggleContainer} remainingServiceList
+   * @property {ShellToggleContainer} remainingResidentialList
+   * @property {{ textContent: string }} solveStatus
+   */
+
+  /**
+   * @typedef {object} PlannerShellState
+   * @property {boolean} isSolving
+   * @property {string | null | undefined} activeSolveRequestId
+   * @property {boolean} isStopping
+   * @property {Record<string, any> | null | undefined} result
+   * @property {Record<string, any> | null | undefined} resultContext
+   * @property {{ edited?: boolean, isApplying: boolean, pendingValidation: boolean, pendingPlacement?: { canRotate?: boolean } | null }} layoutEditor
+   * @property {{ isRunning: boolean }} expansionAdvice
+   */
+
+  /**
+   * @typedef {object} PlannerShellCallbacks
+   * @property {() => boolean} hasSelectedBuilding
+   * @property {() => { hasAnyCandidate: boolean }} readExpansionCandidateFlags
+   */
+
+  /**
+   * @typedef {object} PlannerShellOptions
+   * @property {PlannerShellState} state
+   * @property {ShellElements} elements
+   * @property {PlannerShellCallbacks} callbacks
+   */
+
+  /**
+   * @param {PlannerShellOptions} options
+   */
   function createPlannerShellController(options) {
     const { state, elements, callbacks } = options;
     const { hasSelectedBuilding, readExpansionCandidateFlags } = callbacks;
@@ -19,12 +82,21 @@
       );
     }
 
+    /**
+     * @param {ShellToggleContainer | null | undefined} container
+     * @param {string} selector
+     * @param {boolean} disabled
+     */
     function setActionButtonsDisabled(container, selector, disabled) {
       for (const button of container?.querySelectorAll?.(selector) ?? []) {
         button.disabled = disabled;
       }
     }
 
+    /**
+     * @param {string} optimizer
+     * @returns {string}
+     */
     function getOptimizerLabel(optimizer) {
       if (optimizer === "auto") return "Auto";
       if (optimizer === "cp-sat") return "CP-SAT";
@@ -74,6 +146,9 @@
       setActionButtonsDisabled(elements.remainingResidentialList, "button[data-action]", editorControlsDisabled);
     }
 
+    /**
+     * @param {string} message
+     */
     function setSolveState(message) {
       elements.solveStatus.textContent = message;
       syncActionAvailability();
@@ -86,7 +161,8 @@
     };
   }
 
-  globalObject.CityBuilderShell = Object.freeze({
+  const plannerShellGlobal = /** @type {Window & { CityBuilderShell?: unknown }} */ (globalObject);
+  plannerShellGlobal.CityBuilderShell = Object.freeze({
     createPlannerShellController
   });
 })(window);

@@ -11,6 +11,21 @@ const {
   waitForSolve
 } = require("./routeTestServer.cjs");
 
+/**
+ * @typedef {import("../../dist/packages/core/index.js").Solution} Solution
+ * @typedef {import("../../dist/packages/core/index.js").SolverParams} SolverParams
+ * @typedef {Parameters<typeof optimizerRegistry.getOptimizerAdapter>[0]} OptimizerAdapterRequest
+ * @typedef {ReturnType<typeof createRouteTestHandler>["handler"]} RouteTestHandler
+ */
+
+/**
+ * @typedef {{ promise: Promise<Solution>, resolve: (value?: Solution | PromiseLike<Solution>) => void }} DeferredSolution
+ */
+
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testBackgroundSolveRoutes(handler) {
   const solvePayload = buildTinySolvePayload();
   const requestId = "route-test-greedy";
@@ -47,10 +62,15 @@ async function testBackgroundSolveRoutes(handler) {
   assert.equal(persistedLog.entries[persistedLog.entries.length - 1].source, "final-result");
 }
 
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testStartSolveDefaultsOmittedOptimizerToAuto(handler) {
   const solvePayload = buildTinySolvePayload();
   const { optimizer, ...paramsWithoutOptimizer } = solvePayload.params;
   assert.equal(optimizer, "greedy");
+  /** @type {NonNullable<Solution["autoStage"]>} */
   const autoStage = {
     requestedOptimizer: "auto",
     activeStage: "greedy",
@@ -61,6 +81,7 @@ async function testStartSolveDefaultsOmittedOptimizerToAuto(handler) {
     stopReason: "completed-plan",
     generatedSeeds: [{ stage: "greedy", stageIndex: 1, cycleIndex: 0, randomSeed: 11 }]
   };
+  /** @type {Solution} */
   const backgroundSolution = {
     ...solve(solvePayload.grid, solvePayload.params),
     optimizer: "auto",
@@ -68,9 +89,12 @@ async function testStartSolveDefaultsOmittedOptimizerToAuto(handler) {
     autoStage
   };
   const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+  /** @type {OptimizerAdapterRequest} */
   let adapterRequest = null;
+  let adapterRequested = false;
 
   optimizerRegistry.getOptimizerAdapter = (params) => {
+    adapterRequested = true;
     adapterRequest = params;
     return {
       name: "auto",
@@ -112,7 +136,17 @@ async function testStartSolveDefaultsOmittedOptimizerToAuto(handler) {
 
     assert.equal(startResult.statusCode, 202);
     assert.equal(startResult.payload.optimizer, "auto");
-    assert.equal(adapterRequest.optimizer, undefined);
+    assert.equal(adapterRequested, true);
+    if (adapterRequest === undefined) {
+      assert.equal(adapterRequest, undefined);
+    } else if (typeof adapterRequest === "string") {
+      assert.equal(adapterRequest, "auto");
+    } else if (adapterRequest === null || typeof adapterRequest !== "object") {
+      assert.fail("Expected the optimizer adapter to receive sanitized solver params.");
+    } else {
+      const requestedParams = /** @type {Pick<SolverParams, "optimizer">} */ (/** @type {unknown} */ (adapterRequest));
+      assert.equal(requestedParams.optimizer, undefined);
+    }
 
     const finalPayload = await waitForSolve(handler, requestId);
     assert.equal(finalPayload.stats.optimizer, "auto");
@@ -126,8 +160,13 @@ async function testStartSolveDefaultsOmittedOptimizerToAuto(handler) {
   }
 }
 
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testSolveStatusIncludesAutoStageMetadata(handler) {
   const solvePayload = buildTinySolvePayload();
+  /** @type {Solution} */
   const backgroundSolution = {
     ...solve(solvePayload.grid, solvePayload.params),
     optimizer: "auto",
@@ -147,7 +186,7 @@ async function testSolveStatusIncludesAutoStageMetadata(handler) {
     }
   };
   const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
-  const handlePromiseDeferred = createDeferred();
+  const handlePromiseDeferred = /** @type {DeferredSolution} */ (createDeferred());
 
   optimizerRegistry.getOptimizerAdapter = () => ({
     name: "auto",
@@ -225,40 +264,46 @@ async function testRecoveredAutoFailureNormalizesTerminalMetadata() {
     progressLogRootPrefix: "planner-route-auto-recovery-"
   });
   const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+  /** @type {NonNullable<Solution["autoStage"]>} */
+  const streamedAutoStage = {
+    requestedOptimizer: "auto",
+    activeStage: "cp-sat",
+    stageIndex: 3,
+    cycleIndex: 1,
+    consecutiveWeakCycles: 0,
+    lastCycleImprovementRatio: null,
+    stopReason: null,
+    generatedSeeds: [
+      { stage: "greedy", stageIndex: 1, cycleIndex: 0, randomSeed: 11 },
+      { stage: "lns", stageIndex: 2, cycleIndex: 1, randomSeed: 13 },
+      { stage: "cp-sat", stageIndex: 3, cycleIndex: 1, randomSeed: 17 }
+    ]
+  };
+  /** @type {Solution} */
   const streamedSolution = {
     ...solve(solvePayload.grid, solvePayload.params),
     optimizer: "auto",
     activeOptimizer: "cp-sat",
     cpSatStatus: "FEASIBLE",
-    autoStage: {
-      requestedOptimizer: "auto",
-      activeStage: "cp-sat",
-      stageIndex: 3,
-      cycleIndex: 1,
-      consecutiveWeakCycles: 0,
-      lastCycleImprovementRatio: null,
-      stopReason: null,
-      generatedSeeds: [
-        { stage: "greedy", stageIndex: 1, cycleIndex: 0, randomSeed: 11 },
-        { stage: "lns", stageIndex: 2, cycleIndex: 1, randomSeed: 13 },
-        { stage: "cp-sat", stageIndex: 3, cycleIndex: 1, randomSeed: 17 }
-      ]
-    }
+    autoStage: streamedAutoStage
   };
+  /** @type {NonNullable<Solution["autoStage"]>} */
+  const recoveredAutoStage = {
+    ...streamedAutoStage,
+    activeStage: null,
+    stageIndex: 2,
+    cycleIndex: 1,
+    stopReason: null,
+    generatedSeeds: [
+      { stage: "greedy", stageIndex: 1, cycleIndex: 0, randomSeed: 11 },
+      { stage: "lns", stageIndex: 2, cycleIndex: 1, randomSeed: 13 }
+    ]
+  };
+  /** @type {Solution} */
   const recoveredSolution = {
     ...streamedSolution,
     activeOptimizer: "lns",
-    autoStage: {
-      ...streamedSolution.autoStage,
-      activeStage: null,
-      stageIndex: 2,
-      cycleIndex: 1,
-      stopReason: null,
-      generatedSeeds: [
-        { stage: "greedy", stageIndex: 1, cycleIndex: 0, randomSeed: 11 },
-        { stage: "lns", stageIndex: 2, cycleIndex: 1, randomSeed: 13 }
-      ]
-    }
+    autoStage: recoveredAutoStage
   };
 
   optimizerRegistry.getOptimizerAdapter = () => ({
@@ -339,6 +384,10 @@ async function testRecoveredAutoFailureNormalizesTerminalMetadata() {
   }
 }
 
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testCancelMissingSolveRoute(handler) {
   const result = await invoke(handler, {
     method: "POST",
@@ -387,9 +436,9 @@ async function main() {
   await testBackgroundSolveRoutes(handler);
   await testStartSolveDefaultsOmittedOptimizerToAuto(handler);
   await testSolveStatusIncludesAutoStageMetadata(handler);
-  await testRecoveredAutoFailureNormalizesTerminalMetadata(handler);
+  await testRecoveredAutoFailureNormalizesTerminalMetadata();
   await testCancelMissingSolveRoute(handler);
-  await testCompletedSolveJobsExpire(handler);
+  await testCompletedSolveJobsExpire();
 
   console.log("Web server status route tests passed.");
 }

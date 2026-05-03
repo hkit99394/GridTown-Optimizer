@@ -8,6 +8,14 @@ const {
   invoke
 } = require("./routeTestServer.cjs");
 
+/**
+ * @typedef {ReturnType<typeof createRouteTestHandler>["handler"]} RouteTestHandler
+ */
+
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testLayoutEvaluateRoute(handler) {
   const solvePayload = buildTinySolvePayload();
   const solved = solve(solvePayload.grid, solvePayload.params);
@@ -35,6 +43,10 @@ async function testLayoutEvaluateRoute(handler) {
   assertPlannerExplainabilityPayload(result.payload, solvePayload.grid);
 }
 
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testLayoutEvaluateCleansRedundantRoads(handler) {
   const result = await invoke(handler, {
     method: "POST",
@@ -71,6 +83,10 @@ async function testLayoutEvaluateCleansRedundantRoads(handler) {
   assert.equal(result.payload.stats.totalPopulation, 10);
 }
 
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testLayoutEvaluateRejectsMalformedSerializedSolutions(handler) {
   const solvePayload = buildTinySolvePayload();
   const solved = solve(solvePayload.grid, solvePayload.params);
@@ -96,6 +112,10 @@ async function testLayoutEvaluateRejectsMalformedSerializedSolutions(handler) {
   );
 }
 
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testLayoutEvaluateReportsWellFormedInvalidManualLayout(handler) {
   const solvePayload = buildTinySolvePayload();
   const solved = solve(solvePayload.grid, solvePayload.params);
@@ -120,6 +140,10 @@ async function testLayoutEvaluateReportsWellFormedInvalidManualLayout(handler) {
   assert.equal(result.payload.solution.manualLayout, true);
 }
 
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testLayoutEvaluateRejectsInvalidProblemDefinition(handler) {
   const solvePayload = buildTinySolvePayload();
   const solved = solve(solvePayload.grid, solvePayload.params);

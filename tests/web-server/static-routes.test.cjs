@@ -3,13 +3,26 @@ const path = require("node:path");
 
 const { createRouteTestHandler, invoke } = require("./routeTestServer.cjs");
 
+/**
+ * @typedef {ReturnType<typeof createRouteTestHandler>["handler"]} RouteTestHandler
+ */
+
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testHealthRoute(handler) {
   const result = await invoke(handler, { method: "GET", url: "/api/health" });
   assert.equal(result.statusCode, 200);
   assert.deepEqual(result.payload, { ok: true });
 }
 
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testStaticPlannerModules(handler) {
+  /** @type {Array<[string, RegExp]>} */
   const expectedStaticModules = [
     ["/plannerShell.js", /CityBuilderShell/],
     ["/plannerShared.js", /CityBuilderShared/],
@@ -43,6 +56,10 @@ async function testUnexpectedStaticServerErrorsReturnInternalServerError() {
   assert.match(result.payload.error, /ENOENT/);
 }
 
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testMethodNotAllowed(handler) {
   const result = await invoke(handler, { method: "PUT", url: "/api/solve" });
   assert.equal(result.statusCode, 405);
@@ -54,7 +71,7 @@ async function main() {
   const { handler } = createRouteTestHandler();
   await testHealthRoute(handler);
   await testStaticPlannerModules(handler);
-  await testUnexpectedStaticServerErrorsReturnInternalServerError(handler);
+  await testUnexpectedStaticServerErrorsReturnInternalServerError();
   await testMethodNotAllowed(handler);
 
   console.log("Web server static route tests passed.");

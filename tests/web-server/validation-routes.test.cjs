@@ -10,6 +10,14 @@ const {
   invoke
 } = require("./routeTestServer.cjs");
 
+/**
+ * @typedef {ReturnType<typeof createRouteTestHandler>["handler"]} RouteTestHandler
+ */
+
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testJsonRoutesRejectNonJsonContentType(handler) {
   const result = await invoke(handler, {
     method: "POST",
@@ -26,6 +34,10 @@ async function testJsonRoutesRejectNonJsonContentType(handler) {
   assert.match(result.payload.error, /Content-Type: application\/json/);
 }
 
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testJsonRoutesRejectCrossOrigin(handler) {
   const result = await invoke(handler, {
     method: "POST",
@@ -43,6 +55,10 @@ async function testJsonRoutesRejectCrossOrigin(handler) {
   assert.match(result.payload.error, /cross-origin/);
 }
 
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testImmediateSolveRejectsInvalidLnsSeedHint(handler) {
   const solvePayload = buildTinySolvePayload();
   const result = await invoke(handler, {
@@ -96,6 +112,10 @@ async function testImmediateSolveRejectsInvalidLnsSeedHint(handler) {
   );
 }
 
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testImmediateSolveRejectsMalformedLnsSeedFields(handler) {
   const solvePayload = buildTinySolvePayload();
   const result = await invoke(handler, {
@@ -133,6 +153,10 @@ async function testImmediateSolveRejectsMalformedLnsSeedFields(handler) {
   );
 }
 
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testImmediateSolveRejectsStaleLnsSeedHintBeforeStartingBackend(handler) {
   const solvePayload = buildTinySolvePayload();
   const reusableSolution = solve(solvePayload.grid, solvePayload.params);
@@ -186,6 +210,10 @@ async function testImmediateSolveRejectsStaleLnsSeedHintBeforeStartingBackend(ha
   }
 }
 
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testImmediateSolveRejectsInvalidCpSatOptionsBeforeStartingBackend(handler) {
   const solvePayload = buildTinySolvePayload();
   const reusableSolution = solve(solvePayload.grid, solvePayload.params);
@@ -424,6 +452,10 @@ async function testImmediateSolveRejectsInvalidCpSatOptionsBeforeStartingBackend
   }
 }
 
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testImmediateSolveRejectsInvalidGreedyOptionsBeforeStartingBackend(handler) {
   const solvePayload = buildTinySolvePayload();
   const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
@@ -491,6 +523,10 @@ async function testImmediateSolveRejectsInvalidGreedyOptionsBeforeStartingBacken
   }
 }
 
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testSolveRoutesRejectInvalidAutoOptionsBeforeStartingBackend(handler) {
   const solvePayload = buildTinySolvePayload();
   const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
@@ -572,6 +608,10 @@ async function testSolveRoutesRejectInvalidAutoOptionsBeforeStartingBackend(hand
   }
 }
 
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testSolveRoutesRejectInvalidLnsOptionsBeforeStartingBackend(handler) {
   const solvePayload = buildTinySolvePayload();
   const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
@@ -639,6 +679,10 @@ async function testSolveRoutesRejectInvalidLnsOptionsBeforeStartingBackend(handl
   }
 }
 
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testImmediateSolvePreservesTypedSolverInputErrors(handler) {
   const solvePayload = buildTinySolvePayload();
   const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
@@ -694,6 +738,10 @@ async function testImmediateSolvePreservesTypedSolverInputErrors(handler) {
   }
 }
 
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testStartSolveRejectsInvalidLnsSeedHint(handler) {
   const solvePayload = buildTinySolvePayload();
   const result = await invoke(handler, {
@@ -721,6 +769,10 @@ async function testStartSolveRejectsInvalidLnsSeedHint(handler) {
   assert.equal(result.payload.error, "Invalid solver input: LNS seed hint is missing the saved solution payload.");
 }
 
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testStartSolveRejectsInvalidCpSatOptionsBeforeStartingJob(handler) {
   const solvePayload = buildTinySolvePayload();
   const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
@@ -778,6 +830,10 @@ async function testStartSolveRejectsInvalidCpSatOptionsBeforeStartingJob(handler
   }
 }
 
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testStartSolveRejectsInvalidCpSatWarmStartBeforeStartingJob(handler) {
   const solvePayload = buildTinySolvePayload();
   const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
@@ -841,6 +897,10 @@ async function testStartSolveRejectsInvalidCpSatWarmStartBeforeStartingJob(handl
   }
 }
 
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testStartSolveRejectsInvalidGreedyOptionsBeforeStartingJob(handler) {
   const solvePayload = buildTinySolvePayload();
   const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;

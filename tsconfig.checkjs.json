@@ -10,5 +10,15 @@
     "types": ["node"],
     "skipLibCheck": true
   },
-  "include": ["tests/helpers/assertions.cjs", "tests/helpers/processHelpers.cjs", "tests/helpers/solverFixtures.cjs"]
+  "include": [
+    "tests/helpers/assertions.cjs",
+    "tests/helpers/processHelpers.cjs",
+    "tests/helpers/solverFixtures.cjs",
+    "tests/web-server/layout-evaluate-routes.test.cjs",
+    "tests/web-server/solve-routes.test.cjs",
+    "tests/web-server/static-routes.test.cjs",
+    "tests/web-server/status-routes.test.cjs",
+    "tests/web-server/validation-routes.test.cjs",
+    "tests/web-server/routeTestServer.cjs"
+  ]
 }

@@ -14,10 +14,28 @@ const {
   waitForSolve
 } = require("./routeTestServer.cjs");
 
+/**
+ * @typedef {import("../../dist/packages/core/index.js").SolverParams} SolverParams
+ * @typedef {ReturnType<typeof createRouteTestHandler>["handler"]} RouteTestHandler
+ */
+
+/**
+ * @typedef {SolverParams & {
+ *   cpSat: NonNullable<SolverParams["cpSat"]>,
+ *   greedy: NonNullable<SolverParams["greedy"]>,
+ *   lns: NonNullable<SolverParams["lns"]>
+ * }} CapturedSanitizedParams
+ */
+
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testHttpSolveStripsLocalRuntimePathOptions(handler) {
   const solvePayload = buildTinySolvePayload();
   const backgroundSolution = solve(solvePayload.grid, solvePayload.params);
   const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+  /** @type {SolverParams | null} */
   let capturedParams = null;
 
   optimizerRegistry.getOptimizerAdapter = (params) => ({
@@ -73,20 +91,28 @@ async function testHttpSolveStripsLocalRuntimePathOptions(handler) {
 
     assert.equal(result.statusCode, 200);
     assert.equal(result.payload.ok, true);
-    assert.equal(capturedParams.cpSat.pythonExecutable, undefined);
-    assert.equal(capturedParams.cpSat.scriptPath, undefined);
-    assert.equal(capturedParams.cpSat.stopFilePath, undefined);
-    assert.equal(capturedParams.cpSat.snapshotFilePath, undefined);
-    assert.equal(capturedParams.cpSat.numWorkers, 1);
-    assert.equal(capturedParams.greedy.stopFilePath, undefined);
-    assert.equal(capturedParams.greedy.snapshotFilePath, undefined);
-    assert.equal(capturedParams.lns.stopFilePath, undefined);
-    assert.equal(capturedParams.lns.snapshotFilePath, undefined);
+    if (capturedParams === null) {
+      assert.fail("Expected sanitized solver params to be captured.");
+    }
+    const sanitizedParams = /** @type {CapturedSanitizedParams} */ (/** @type {unknown} */ (capturedParams));
+    assert.equal(sanitizedParams.cpSat.pythonExecutable, undefined);
+    assert.equal(sanitizedParams.cpSat.scriptPath, undefined);
+    assert.equal(sanitizedParams.cpSat.stopFilePath, undefined);
+    assert.equal(sanitizedParams.cpSat.snapshotFilePath, undefined);
+    assert.equal(sanitizedParams.cpSat.numWorkers, 1);
+    assert.equal(sanitizedParams.greedy.stopFilePath, undefined);
+    assert.equal(sanitizedParams.greedy.snapshotFilePath, undefined);
+    assert.equal(sanitizedParams.lns.stopFilePath, undefined);
+    assert.equal(sanitizedParams.lns.snapshotFilePath, undefined);
   } finally {
     optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
   }
 }
 
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testImmediateSolveRoute(handler) {
   const solvePayload = buildTinySolvePayload();
   const backgroundSolution = solve(solvePayload.grid, solvePayload.params);
@@ -137,6 +163,10 @@ async function testImmediateSolveRoute(handler) {
   }
 }
 
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testImmediateSolveBackendJsonErrorsReturnInternalServerError(handler) {
   const solvePayload = buildTinySolvePayload();
   const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
@@ -184,12 +214,17 @@ async function testImmediateSolveBackendJsonErrorsReturnInternalServerError(hand
   }
 }
 
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testImmediateSolveCancelsOnDisconnect(handler) {
   const solvePayload = buildTinySolvePayload();
   const backgroundSolution = solve(solvePayload.grid, solvePayload.params);
   const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
   let cancelCalled = false;
   const handlePromiseDeferred = createDeferred();
+  /** @type {NodeJS.Timeout | null} */
   let fallbackResolveTimer = null;
   const startBackgroundSolveDeferred = createDeferred();
 
@@ -383,8 +418,8 @@ async function main() {
   await testImmediateSolveRoute(handler);
   await testImmediateSolveBackendJsonErrorsReturnInternalServerError(handler);
   await testImmediateSolveCancelsOnDisconnect(handler);
-  await testBackgroundSolveRejectsImmediateSolveAtCapacity(handler);
-  await testImmediateSolveRejectsBackgroundSolveAtCapacity(handler);
+  await testBackgroundSolveRejectsImmediateSolveAtCapacity();
+  await testImmediateSolveRejectsBackgroundSolveAtCapacity();
 
   console.log("Web server solve route tests passed.");
 }

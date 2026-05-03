@@ -69,11 +69,12 @@ Delivered so far:
 - Learned-ranking label telemetry and registry drafts now preserve the LNS feature schema, CP-SAT worker count, CP-SAT model fingerprints, and an input fingerprint for replay-label evidence.
 - Replay state policies are now explicit. Default label generation still uses `initial-incumbent`, while strict runs can request `initial-incumbent`, `post-first-improvement`, and `post-stagnation` with bounded state-collection iterations and a separate CP-SAT repair budget.
 - `lnsBenchmarkCli` and `learnedRankingLabelCli` expose the state-policy and state-collection knobs, and label telemetry/snapshots carry requested and captured state policies.
+- Learned-ranking label generation now has a `strict-lns-replay` preset that records the preset in audit/registry metadata and applies the strict three-state replay policy with the standard three fixed seeds unless the caller explicitly overrides them.
 
 Concrete work:
 
 - Generate strict LNS replay artifacts across development and holdout pressure families, with at least 3 fixed seeds per family.
-- Use the strict state-policy set: `initial-incumbent`, `post-first-improvement`, and `post-stagnation`.
+- Use the `strict-lns-replay` preset so state policy, seed, telemetry, and registry metadata stay reproducible.
 - Replay baseline top windows plus tail exploration windows under equal CP-SAT repair budgets.
 - Generate and register strict artifacts large enough to test readiness thresholds.
 - Expose the same feature payload shape in broader traces, benchmark summaries, and planner explainability surfaces where useful.

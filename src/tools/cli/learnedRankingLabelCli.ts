@@ -11,7 +11,8 @@ import {
   formatLearnedRankingLabelSuite,
   formatExperimentRegistryIssues,
   runLearnedRankingLabelSuite,
-  resolveExperimentRegistryGitMetadata
+  resolveExperimentRegistryGitMetadata,
+  STRICT_LNS_REPLAY_LABEL_PRESET
 } from "../../benchmarkApi.js";
 import {
   applyInlineOptionHandlers,
@@ -31,10 +32,15 @@ import {
   writeJsonArtifact
 } from "./artifactBundleHelpers.js";
 
-import type { LearnedRankingLabelSuiteResult, LnsWindowReplayStatePolicy } from "../../benchmarkApi.js";
+import type {
+  LearnedRankingLabelRunPreset,
+  LearnedRankingLabelSuiteResult,
+  LnsWindowReplayStatePolicy
+} from "../../benchmarkApi.js";
 
 interface ParsedLabelArgs {
   json: boolean;
+  preset?: LearnedRankingLabelRunPreset;
   seeds?: number[];
   maxWindows?: number;
   explorationWindowCount?: number;
@@ -71,8 +77,14 @@ interface LearnedRankingLabelArtifactManifest {
   };
 }
 
+function parseLabelPreset(value: string): LearnedRankingLabelRunPreset {
+  if (value === STRICT_LNS_REPLAY_LABEL_PRESET) return value;
+  throw new Error(`Unknown learned-ranking label preset: ${value}`);
+}
+
 function parseArgs(argv: string[]): ParsedLabelArgs {
   let json = false;
+  let preset: LearnedRankingLabelRunPreset | undefined;
   let seeds: number[] | undefined;
   let maxWindows: number | undefined;
   let explorationWindowCount: number | undefined;
@@ -87,6 +99,9 @@ function parseArgs(argv: string[]): ParsedLabelArgs {
   let labelRegistryPath: string | undefined;
   let labelRegisterDryRun = false;
   const inlineOptions: Record<string, (value: string) => void> = {
+    preset: (value) => {
+      preset = parseLabelPreset(value);
+    },
     seeds: (value) => {
       seeds = parseNumberList(value, "seeds");
     },
@@ -130,6 +145,10 @@ function parseArgs(argv: string[]): ParsedLabelArgs {
       json = true;
       continue;
     }
+    if (isCliFlag(arg, "--strict-lns-replay", "--strict-replay-labels")) {
+      preset = STRICT_LNS_REPLAY_LABEL_PRESET;
+      continue;
+    }
     if (applyInlineOptionHandlers(arg, inlineOptions)) {
       continue;
     }
@@ -145,6 +164,7 @@ function parseArgs(argv: string[]): ParsedLabelArgs {
 
   return {
     json,
+    preset,
     seeds,
     maxWindows,
     explorationWindowCount,
@@ -269,6 +289,7 @@ export function runLearnedRankingLabelCli(): void {
   }
 
   const result = runLearnedRankingLabelSuite({
+    preset: args.preset,
     seeds: args.seeds,
     maxWindows: args.maxWindows,
     explorationWindowCount: args.explorationWindowCount,

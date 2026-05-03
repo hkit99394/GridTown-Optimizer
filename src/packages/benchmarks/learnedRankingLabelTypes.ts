@@ -16,6 +16,8 @@ import type {
 
 export type LearnedRankingLabelSplit = "development" | "holdout";
 
+export type LearnedRankingLabelRunPreset = "strict-lns-replay";
+
 export type GreedyOrderingLabelSource = "connectivity-shadow-decision" | "road-opportunity-counterfactual";
 
 export interface LearnedRankingLabelSplitConfig {
@@ -93,6 +95,7 @@ export interface LearnedRankingAuditMetadata {
     connectivityShadowScoring: true;
   };
   lnsReplay: {
+    preset: LearnedRankingLabelRunPreset | null;
     cpSatNumWorkers: 1;
     incumbentStatePolicy: LnsWindowReplayStatePolicy | "multiple";
     incumbentStatePolicies: LnsWindowReplayStatePolicy[];
@@ -196,6 +199,7 @@ export interface LearnedRankingLabelRegistryEntryDraftOptions {
 }
 
 export interface LearnedRankingLabelRunOptions {
+  preset?: LearnedRankingLabelRunPreset;
   seeds?: readonly number[];
   splitConfigs?: readonly LearnedRankingLabelSplitConfig[];
   greedyCorpus?: readonly GreedyBenchmarkCase[];

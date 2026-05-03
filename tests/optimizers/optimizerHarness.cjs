@@ -21,6 +21,9 @@ const {
   createLearnedRankingLabelSnapshot,
   DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS,
   DEFAULT_LEARNED_RANKING_LABEL_SPLITS,
+  STRICT_LNS_REPLAY_LABEL_PRESET,
+  STRICT_LNS_REPLAY_LABEL_SEEDS,
+  STRICT_LNS_REPLAY_LABEL_STATE_POLICIES,
   DEFAULT_LNS_REPLAY_LABEL_CASE_NAMES,
   DEFAULT_LNS_REPLAY_LABEL_CORPUS,
   DEFAULT_LNS_REPLAY_LABEL_SCALE_THRESHOLDS,
@@ -1802,20 +1805,21 @@ function testLearnedRankingLabelSuite() {
   assert.equal(orderingLabels[1].target, "accepted-near-miss");
   assert.equal(orderingLabels[1].margin, 1);
 
+  const learnedLabelSplitConfigs = [
+    {
+      split: "development",
+      greedyCaseNames: ["typed-housing-baseline"],
+      lnsCaseNames: ["seeded-service-anchor-pressure"]
+    },
+    {
+      split: "holdout",
+      greedyCaseNames: ["deterministic-tie-breaks"],
+      lnsCaseNames: ["row0-anchor-repair"]
+    }
+  ];
   const result = runLearnedRankingLabelSuite({
     seeds: [7],
-    splitConfigs: [
-      {
-        split: "development",
-        greedyCaseNames: ["typed-housing-baseline"],
-        lnsCaseNames: ["seeded-service-anchor-pressure"]
-      },
-      {
-        split: "holdout",
-        greedyCaseNames: ["deterministic-tie-breaks"],
-        lnsCaseNames: ["row0-anchor-repair"]
-      }
-    ],
+    splitConfigs: learnedLabelSplitConfigs,
     greedyCorpus: DEFAULT_GREEDY_BENCHMARK_CORPUS,
     lnsCorpus: DEFAULT_LNS_BENCHMARK_CORPUS,
     maxWindows: 1,
@@ -1827,6 +1831,7 @@ function testLearnedRankingLabelSuite() {
 
   assert.equal(result.schemaVersion, 1);
   assert.equal(result.audit.learnedModel, null);
+  assert.equal(result.audit.lnsReplay.preset, null);
   assert.equal(result.audit.lnsReplay.cpSatNumWorkers, 1);
   assert.equal(result.audit.lnsReplay.featureSchemaVersion, 2);
   assert.equal(result.audit.lnsReplay.incumbentStatePolicy, "initial-incumbent");
@@ -1880,8 +1885,30 @@ function testLearnedRankingLabelSuite() {
   assert.match(formatted, /Low-Risk Learned Ranking Labels/);
   assert.match(formatted, /protected-holdout=true/);
   assert.match(formatted, /learned-model=none/);
+  assert.match(formatted, /lns-preset=none/);
   assert.match(formatted, /lns-feature-schema=2/);
   assert.match(formatted, /LNS label-scale ready=false/);
+
+  const strictPresetResult = runLearnedRankingLabelSuite({
+    preset: STRICT_LNS_REPLAY_LABEL_PRESET,
+    seeds: [7],
+    splitConfigs: learnedLabelSplitConfigs,
+    greedyCorpus: DEFAULT_GREEDY_BENCHMARK_CORPUS,
+    lnsCorpus: DEFAULT_LNS_BENCHMARK_CORPUS,
+    maxWindows: 1,
+    explorationWindowCount: 0,
+    repairTimeLimitSeconds: 0.1,
+    lnsStateCollectionIterations: 2
+  });
+  assert.deepEqual(STRICT_LNS_REPLAY_LABEL_SEEDS, DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS);
+  assert.equal(strictPresetResult.audit.lnsReplay.preset, STRICT_LNS_REPLAY_LABEL_PRESET);
+  assert.deepEqual(strictPresetResult.audit.lnsReplay.incumbentStatePolicies, [
+    ...STRICT_LNS_REPLAY_LABEL_STATE_POLICIES
+  ]);
+  assert.deepEqual(strictPresetResult.lns.splits[0].replay.statePolicies, [
+    ...STRICT_LNS_REPLAY_LABEL_STATE_POLICIES
+  ]);
+  assert.equal(strictPresetResult.audit.lnsReplay.stateCollectionIterations, 2);
 
   const labelFingerprint = buildLearnedRankingLabelFingerprint(result);
   const labelTelemetryManifest = buildLearnedRankingLabelTelemetryManifest(result, {
@@ -1901,6 +1928,7 @@ function testLearnedRankingLabelSuite() {
   assert.match(labelFingerprint, /^fnv1a:[0-9a-f]{8}$/);
   assert.equal(labelTelemetryManifest.source, "learned-ranking-label-bundle");
   assert.equal(labelTelemetryManifest.labelFingerprint, labelFingerprint);
+  assert.equal(labelTelemetryManifest.audit.lnsReplay.preset, null);
   assert.equal(labelTelemetryManifest.suite.totalLabels, result.greedy.labelCount + result.lns.labelCount);
   assert.equal(labelTelemetryManifest.suite.protectedHoldout, true);
   assert.deepEqual(labelTelemetryManifest.lns.splits[0].statePolicies, ["initial-incumbent"]);
@@ -1920,6 +1948,7 @@ function testLearnedRankingLabelSuite() {
   assert.equal(labelRegistryDraft.model.trained, false);
   assert.equal(labelRegistryDraft.labelFingerprint, labelFingerprint);
   assert.equal(labelRegistryDraft.budget.lnsFeatureSchemaVersion, 2);
+  assert.equal(labelRegistryDraft.budget.lnsPresetApplied, 0);
   assert.equal(labelRegistryDraft.budget.lnsStatePolicyCount, 1);
   assert.equal(labelRegistryDraft.budget.lnsCapturedStatePolicyCount, 1);
   assert.deepEqual(labelRegistryDraft.budget.lnsStateCollectionIterations, [4]);
@@ -1927,6 +1956,7 @@ function testLearnedRankingLabelSuite() {
   assert.deepEqual(labelRegistryDraft.budget.lnsCpSatNumWorkers, [1]);
   assert.deepEqual(labelRegistryDraft.summaryMetrics.lnsStatePolicies, ["initial-incumbent"]);
   assert.deepEqual(labelRegistryDraft.summaryMetrics.lnsCapturedStatePolicies, ["initial-incumbent"]);
+  assert.equal(labelRegistryDraft.summaryMetrics.lnsReplayPreset, null);
   assert.equal(labelRegistryDraft.cpSatModelFingerprints.length > 0, true);
   assert.match(labelRegistryDraft.inputFingerprint, /^fnv1a:[0-9a-f]{8}$/);
   const completedLabelRegistryEntry = buildExperimentRegistryEntry(labelRegistryDraft, {

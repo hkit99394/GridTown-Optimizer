@@ -1,4 +1,15 @@
+/**
+ * @param {Window & { CityBuilderShared?: unknown }} globalObject
+ */
 (function attachPlannerShared(globalObject) {
+  /**
+   * @typedef {Record<string, any>} JsonObject
+   * @typedef {number[][]} PlannerGrid
+   * @typedef {{ r: number, c: number, rows: number, cols: number, range?: number, [key: string]: any }} CandidatePlacement
+   * @typedef {JsonObject & { populations?: number[], residentials?: CandidatePlacement[], residentialTypeIndices?: number[], roads?: string[], servicePopulationIncreases?: number[], services?: CandidatePlacement[], serviceTypeIndices?: number[] }} CheckpointSolution
+   * @typedef {{ kind: "services" | "residentials", rows: JsonObject[] }} CatalogImportBlock
+   */
+
   const CP_SAT_PORTFOLIO_CAPABILITY_LIMITS = Object.freeze({
     defaultWorkers: 3,
     defaultPerWorkerTimeLimitSeconds: 30,
@@ -8,22 +19,44 @@
     maxTotalCpuBudgetSeconds: 8 * 60 * 60
   });
 
+  /**
+   * @param {PlannerGrid} grid
+   * @returns {PlannerGrid}
+   */
   function cloneGrid(grid) {
     return grid.map((row) => [...row]);
   }
 
+  /**
+   * @param {number} rows
+   * @param {number} cols
+   * @param {number} [value]
+   * @returns {PlannerGrid}
+   */
   function createGrid(rows, cols, value = 1) {
     return Array.from({ length: rows }, () => Array.from({ length: cols }, () => value));
   }
 
+  /**
+   * @template T
+   * @param {T} value
+   * @returns {T}
+   */
   function cloneJson(value) {
     return JSON.parse(JSON.stringify(value));
   }
 
+  /**
+   * @returns {string}
+   */
   function createSavedEntryId() {
     return `saved-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
   }
 
+  /**
+   * @param {unknown} value
+   * @returns {string}
+   */
   function stableStringify(value) {
     if (Array.isArray(value)) {
       return `[${value.map((item) => stableStringify(item)).join(",")}]`;
@@ -36,6 +69,10 @@
     return JSON.stringify(value);
   }
 
+  /**
+   * @param {string} value
+   * @returns {string}
+   */
   function hashString(value) {
     let hash = 2166136261;
     for (let index = 0; index < value.length; index += 1) {
@@ -45,18 +82,36 @@
     return (hash >>> 0).toString(16).padStart(8, "0");
   }
 
+  /**
+   * @param {string[]} values
+   * @returns {string[]}
+   */
   function sortedUnique(values) {
     return Array.from(new Set(values)).sort();
   }
 
+  /**
+   * @param {CandidatePlacement} service
+   * @param {number} typeIndex
+   * @returns {string}
+   */
   function buildServiceCandidateKey(service, typeIndex) {
     return `service:${typeIndex}:${service.r}:${service.c}:${service.rows}:${service.cols}`;
   }
 
+  /**
+   * @param {CandidatePlacement} residential
+   * @param {number} typeIndex
+   * @returns {string}
+   */
   function buildResidentialCandidateKey(residential, typeIndex) {
     return `residential:${typeIndex}:${residential.r}:${residential.c}:${residential.rows}:${residential.cols}`;
   }
 
+  /**
+   * @param {JsonObject | null | undefined} serviceType
+   * @returns {JsonObject}
+   */
   function serializeServiceTypeForCatalog(serviceType) {
     return {
       name: serviceType?.name ?? "",
@@ -67,6 +122,10 @@
     };
   }
 
+  /**
+   * @param {JsonObject | null | undefined} residentialType
+   * @returns {JsonObject}
+   */
   function serializeResidentialTypeForCatalog(residentialType) {
     return {
       name: residentialType?.name ?? "",
@@ -76,6 +135,10 @@
     };
   }
 
+  /**
+   * @param {JsonObject} request
+   * @returns {JsonObject}
+   */
   function buildCpSatContinuationModelInput(request) {
     const params = request?.params ?? {};
     const modelParams = {
@@ -96,10 +159,18 @@
     };
   }
 
+  /**
+   * @param {JsonObject} modelInput
+   * @returns {string}
+   */
   function computeCpSatModelFingerprint(modelInput) {
     return `fnv1a:${hashString(stableStringify(modelInput))}`;
   }
 
+  /**
+   * @param {unknown} value
+   * @returns {number}
+   */
   function normalizeElapsedMs(value) {
     const number = Number(value);
     if (!Number.isFinite(number) || number < 0) return 0;
@@ -111,6 +182,10 @@
   const MISSING_CONTINUATION_VALIDATION_ERROR =
     "This layout is missing validation metadata. Re-evaluate or re-save it before reusing it as a CP-SAT hint or LNS seed.";
 
+  /**
+   * @param {JsonObject | null | undefined} result
+   * @returns {JsonObject}
+   */
   function validateContinuationSourceResult(result) {
     if (!result?.validation || result.validation.valid !== true) {
       if (result?.validation?.valid === false) {
@@ -121,13 +196,19 @@
     return result.validation;
   }
 
+  /**
+   * @param {JsonObject} result
+   * @param {JsonObject} resultContext
+   * @param {number} elapsedMs
+   * @returns {JsonObject}
+   */
   function buildCpSatWarmStartCheckpoint(result, resultContext, elapsedMs) {
     if (!result?.solution || !resultContext?.grid || !resultContext?.params) {
       throw new Error("This saved layout does not include enough data to build a CP-SAT hint.");
     }
     const validation = validateContinuationSourceResult(result);
 
-    const solution = result.solution;
+    const solution = /** @type {CheckpointSolution} */ (result.solution);
     const modelInput = buildCpSatContinuationModelInput(resultContext);
     const roadKeys = sortedUnique(Array.isArray(solution.roads) ? solution.roads : []);
     const serviceCandidateKeys = sortedUnique(
@@ -225,17 +306,32 @@
     };
   }
 
+  /**
+   * @param {string} savedAt
+   * @returns {string}
+   */
   function formatSavedTimestamp(savedAt) {
     const date = new Date(savedAt);
     return Number.isNaN(date.getTime()) ? "Unknown time" : date.toLocaleString();
   }
 
+  /**
+   * @param {unknown} value
+   * @param {number} fallback
+   * @param {number} [min]
+   * @returns {number}
+   */
   function clampInteger(value, fallback, min = 0) {
     const number = Number(value);
     if (!Number.isFinite(number)) return fallback;
     return Math.max(min, Math.floor(number));
   }
 
+  /**
+   * @param {unknown} value
+   * @param {number} [min]
+   * @returns {number | undefined}
+   */
   function readOptionalInteger(value, min = 1) {
     if (value === "" || value == null) return undefined;
     const number = Number(value);
@@ -243,16 +339,27 @@
     return Math.max(min, Math.floor(number));
   }
 
+  /**
+   * @returns {string}
+   */
   function createSolveRequestId() {
     return `solve-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
   }
 
+  /**
+   * @param {number} ms
+   * @returns {Promise<void>}
+   */
   function delay(ms) {
     return new Promise((resolve) => {
       globalObject.setTimeout(resolve, ms);
     });
   }
 
+  /**
+   * @param {number} ms
+   * @returns {string}
+   */
   function formatElapsedTime(ms) {
     const totalSeconds = Math.max(0, Math.floor(ms / 1000));
     const hours = Math.floor(totalSeconds / 3600);
@@ -264,15 +371,27 @@
     return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   }
 
+  /**
+   * @param {JsonObject | null | undefined} entry
+   * @returns {number}
+   */
   function getSavedLayoutElapsedMs(entry) {
     return normalizeElapsedMs(entry?.elapsedMs ?? entry?.resultElapsedMs ?? entry?.result?.stats?.elapsedMs ?? 0);
   }
 
+  /**
+   * @param {unknown} value
+   * @returns {number | null}
+   */
   function readFiniteNumber(value) {
     const number = Number(value);
     return Number.isFinite(number) ? number : null;
   }
 
+  /**
+   * @param {JsonObject | null | undefined} entry
+   * @returns {number | null}
+   */
   function getSavedLayoutPopulation(entry) {
     const directPopulation =
       readFiniteNumber(entry?.result?.validation?.recomputedTotalPopulation) ??
@@ -292,6 +411,10 @@
     return Math.max(0, Math.round(summedPopulation));
   }
 
+  /**
+   * @param {unknown} value
+   * @returns {string}
+   */
   function escapeHtml(value) {
     return String(value)
       .replaceAll("&", "&amp;")
@@ -301,6 +424,10 @@
       .replaceAll("'", "&#39;");
   }
 
+  /**
+   * @param {unknown} line
+   * @returns {string[]}
+   */
   function splitTabularLine(line) {
     const trimmed = String(line ?? "").trim();
     if (!trimmed) return [];
@@ -310,12 +437,20 @@
     return trimmed.split(/\s{2,}/).map((cell) => cell.trim());
   }
 
+  /**
+   * @param {unknown} value
+   * @returns {string}
+   */
   function normalizeHeaderName(value) {
     return String(value ?? "")
       .toLowerCase()
       .replace(/[^a-z]/g, "");
   }
 
+  /**
+   * @param {string[]} lines
+   * @returns {CatalogImportBlock | null}
+   */
   function parseCatalogImportBlock(lines) {
     if (!lines.length) return null;
     const header = splitTabularLine(lines[0]).map(normalizeHeaderName);
@@ -366,6 +501,10 @@
     return null;
   }
 
+  /**
+   * @param {unknown} text
+   * @returns {{ services: JsonObject[] | null, residentials: JsonObject[] | null }}
+   */
   function parseCatalogImportText(text) {
     const blocks = String(text ?? "")
       .split(/\r?\n\s*\r?\n+/)
@@ -397,12 +536,22 @@
     };
   }
 
+  /**
+   * @param {unknown} optimizer
+   * @returns {"auto" | "greedy" | "cp-sat" | "lns"}
+   */
   function normalizeOptimizer(optimizer) {
     return optimizer === "auto" || optimizer === "greedy" || optimizer === "cp-sat" || optimizer === "lns"
       ? optimizer
       : "auto";
   }
 
+  /**
+   * @param {unknown} value
+   * @param {string} separator
+   * @param {string} label
+   * @returns {[number, number]}
+   */
   function parsePair(value, separator, label) {
     const text = String(value ?? "")
       .trim()
@@ -411,9 +560,15 @@
     if (parts.length !== 2 || parts.some((part) => !Number.isInteger(part) || part <= 0)) {
       throw new Error(`${label} must be in the format A${separator}B using positive integers.`);
     }
-    return parts;
+    return /** @type {[number, number]} */ (parts);
   }
 
+  /**
+   * @param {unknown} value
+   * @param {string} label
+   * @param {number} [min]
+   * @returns {number}
+   */
   function parseIntegerField(value, label, min = 0) {
     const number = Number.parseInt(String(value ?? "").trim(), 10);
     if (!Number.isInteger(number) || number < min) {
@@ -422,6 +577,11 @@
     return number;
   }
 
+  /**
+   * @param {JsonObject} entry
+   * @param {number} index
+   * @returns {JsonObject}
+   */
   function parseServiceCatalogEntry(entry, index) {
     const name = String(entry.name ?? "").trim();
     const [rows, cols] = parsePair(entry.size, "x", `Service ${index + 1} size`);
@@ -450,6 +610,11 @@
     };
   }
 
+  /**
+   * @param {JsonObject} entry
+   * @param {number} index
+   * @returns {JsonObject}
+   */
   function parseResidentialCatalogEntry(entry, index) {
     const name = String(entry.name ?? "").trim();
     const [w, h] = parsePair(entry.size, "x", `Residential ${index + 1} size`);
@@ -468,6 +633,10 @@
     };
   }
 
+  /**
+   * @param {unknown} grid
+   * @returns {grid is PlannerGrid}
+   */
   function isGridLike(grid) {
     return (
       Array.isArray(grid) &&
@@ -478,7 +647,9 @@
     );
   }
 
-  globalObject.CityBuilderShared = Object.freeze({
+  const sharedGlobal = /** @type {Window & { CityBuilderShared?: unknown }} */ (globalObject);
+
+  sharedGlobal.CityBuilderShared = Object.freeze({
     CP_SAT_PORTFOLIO_CAPABILITY_LIMITS,
     buildCpSatContinuationModelInput,
     buildCpSatWarmStartCheckpoint,

@@ -1,5 +1,39 @@
-(function attachPlannerResults(globalObject) {
-  function createPlannerResultsController(options) {
+/** @param {Window & { CityBuilderResults?: unknown, PlannerHeatmaps?: any, PlannerManualLayout?: any }} globalObject */ (function attachPlannerResults(
+  globalObject
+) {
+  /**
+   * @typedef {Record<string, any>} JsonObject
+   * @typedef {number[][]} PlannerGrid
+   * @typedef {{ r: number, c: number }} ResultCell
+   * @typedef {{ r: number, c: number, rows: number, cols: number, range?: number, [key: string]: any }} ResultPlacement
+   * @typedef {{ kind: "service" | "residential", index: number }} ResultSelection
+   * @typedef {{ kind: "service" | "residential", placement: ResultPlacement, index: number }} SelectedResultPlacement
+   * @typedef {SelectedResultPlacement | null} MaybeSelectedResultPlacement
+   * @typedef {JsonObject & { populations: number[], residentials: ResultPlacement[], residentialTypeIndices: number[], roads: string[], servicePopulationIncreases: number[], services: ResultPlacement[], serviceTypeIndices: number[] }} ResultSolution
+   * @typedef {JsonObject & { grid: PlannerGrid, params: JsonObject }} ResultContext
+   * @typedef {ResultSolution | null | undefined} MaybeResultSolution
+   * @typedef {JsonObject | null | undefined} MaybeJson
+   * @typedef {HTMLElement | null | undefined} MaybeElement
+   * @typedef {PlannerGrid | null | undefined} MaybeGrid
+   * @typedef {{ id: string, name: string, bonus: number }} BonusCoverageEntry
+   * @typedef {{ totalAvailable: number, used: number, remaining: number }} TypeAvailabilitySummary
+   * @typedef {JsonObject & { grid: PlannerGrid, isSolving: boolean, layoutEditor: JsonObject, result: JsonObject | null, resultContext: ResultContext | null, resultElapsedMs: number, resultError: string, resultExplainabilityMode: string, resultHeatmapEnabled: boolean, resultIsLiveSnapshot: boolean, selectedMapBuilding: ResultSelection | null, selectedMapCell: ResultCell | null, solveProgressLog: JsonObject[] }} ResultsState
+   * @typedef {{ LIVE_SNAPSHOT_REFRESH_INTERVAL_MS?: number }} ResultsConstants
+   * @typedef {{ cloneJson: <T>(value: T) => T, formatElapsedTime: (ms: number) => string }} ResultsHelpers
+   * @typedef {{ applyMatrixLayout: (gridElement: HTMLElement) => void, clearExpansionAdvice: () => void, getOptimizerLabel: (optimizer: string) => string, renderExpansionAdvice: () => void, setSolveState: (message: string) => void, syncActionAvailability: () => void }} ResultsCallbacks
+   * @typedef {{ state: ResultsState, elements: JsonObject, constants?: ResultsConstants, helpers: ResultsHelpers, callbacks: ResultsCallbacks }} ResultsOptions
+   * @typedef {{ keepMode?: boolean, message?: string, selectedBuilding?: ResultSelection | null, selectedCell?: ResultCell | null }} ManualLayoutResultOptions
+   * @typedef {ManualLayoutResultOptions & { pendingValidation?: boolean }} CommitLayoutResultOptions
+   * @typedef {{ liveSnapshot?: boolean, manualLayout?: boolean }} RenderResultOptions
+   * @typedef {{ maximumFractionDigits?: number }} ProgressNumberOptions
+   * @typedef {{ cellSize: number, gap: number, paddingX: number, paddingY: number }} MatrixLayout
+   */
+
+  const resultsGlobal =
+    /** @type {Window & { CityBuilderResults?: unknown, PlannerHeatmaps?: any, PlannerManualLayout?: any }} */
+    (globalObject);
+
+  /** @param {ResultsOptions} options */ function createPlannerResultsController(options) {
     const { state, elements, constants = {}, helpers, callbacks } = options;
     const { LIVE_SNAPSHOT_REFRESH_INTERVAL_MS = 5 * 1000 } = constants;
     const { cloneJson, formatElapsedTime } = helpers;
@@ -25,21 +59,21 @@
       "availability-cap",
       "lower-score-no-improvement"
     ];
-    const DIAGNOSTIC_REASON_LABELS = {
+    const DIAGNOSTIC_REASON_LABELS = /** @type {Record<string, string>} */ ({
       "blocked-footprint": "Blocked footprint",
       "no-road-path": "No road path",
       "no-service-coverage": "No service coverage",
       "base-only": "Base population only",
       "availability-cap": "Availability cap",
       "lower-score-no-improvement": "Lower score / no improvement"
-    };
+    });
     const EXPLAINABILITY_MODE_LABELS = {
       layout: "Layout",
       "service-value": "Service value",
       "placement-opportunity": "Placement opportunity",
       "connectivity-risk": "Connectivity risk"
     };
-    if (!globalObject.PlannerManualLayout?.createPlannerManualLayoutModel) {
+    if (!resultsGlobal.PlannerManualLayout?.createPlannerManualLayoutModel) {
       throw new Error("Planner manual-layout helpers are not loaded.");
     }
     const {
@@ -58,12 +92,12 @@
       isCellInsideServiceEffect,
       readPendingPlacementFootprint,
       removePlacementFromSolution
-    } = globalObject.PlannerManualLayout.createPlannerManualLayoutModel({
+    } = resultsGlobal.PlannerManualLayout.createPlannerManualLayoutModel({
       state,
       cloneJson,
       pendingManualLayoutError: PENDING_MANUAL_LAYOUT_ERROR
     });
-    if (!globalObject.PlannerHeatmaps?.createPlannerHeatmapHelpers) {
+    if (!resultsGlobal.PlannerHeatmaps?.createPlannerHeatmapHelpers) {
       throw new Error("Planner heatmap helpers are not loaded.");
     }
     const {
@@ -74,7 +108,7 @@
       getPlannerExplainabilityCell,
       hidesBuildingOverlayForMode: heatmapHidesBuildingOverlayForMode,
       normalizeExplainabilityMode
-    } = globalObject.PlannerHeatmaps.createPlannerHeatmapHelpers({
+    } = resultsGlobal.PlannerHeatmaps.createPlannerHeatmapHelpers({
       state,
       explainabilityModeLabels: EXPLAINABILITY_MODE_LABELS,
       helpers: {
@@ -85,7 +119,6 @@
         isCellInsideServiceEffect
       }
     });
-
     function formatLiveSnapshotRefreshCadence() {
       const seconds = Math.max(1, Math.round(LIVE_SNAPSHOT_REFRESH_INTERVAL_MS / 1000));
       if (seconds < 60) {
@@ -95,31 +128,28 @@
       const minutes = Math.round(seconds / 60);
       return `${minutes} minute${minutes === 1 ? "" : "s"}`;
     }
-
     function hasEditableLayoutContext() {
       return Boolean(state.result && state.resultContext);
     }
-
     function isLayoutEditBusy() {
       return Boolean(state.isSolving || state.layoutEditor.isApplying);
     }
-
-    function setLayoutEditorStatus(message) {
+    /** @param {string} message */ function setLayoutEditorStatus(message) {
       state.layoutEditor.status = message;
       renderLayoutEditorControls();
     }
-
-    function lookupServiceName(typeIndex) {
+    /** @param {number} typeIndex */ function lookupServiceName(typeIndex) {
       const type = state.resultContext?.params?.serviceTypes?.[typeIndex];
       return type?.name || `Service Type ${typeIndex + 1}`;
     }
-
-    function lookupResidentialName(typeIndex) {
+    /** @param {number} typeIndex */ function lookupResidentialName(typeIndex) {
       const type = state.resultContext?.params?.residentialTypes?.[typeIndex];
       return type?.name || `Residential Type ${typeIndex + 1}`;
     }
-
-    function getSelectedMapPlacement(solution, selection = state.selectedMapBuilding) {
+    /** @param {MaybeResultSolution} solution @param {ResultSelection | null | undefined} [selection] @returns {MaybeSelectedResultPlacement} */ function getSelectedMapPlacement(
+      solution,
+      selection = state.selectedMapBuilding
+    ) {
       if (!solution || !selection || !Number.isInteger(selection.index) || selection.index < 0) return null;
       if (selection.kind === "service") {
         const placement = solution.services?.[selection.index];
@@ -131,28 +161,26 @@
       }
       return null;
     }
-
-    function getSelectedMapCell(grid = state.resultContext?.grid ?? state.grid) {
+    /** @param {MaybeGrid} [grid] */ function getSelectedMapCell(grid = state.resultContext?.grid ?? state.grid) {
       if (!grid?.length || !state.selectedMapCell) return null;
       const { r, c } = state.selectedMapCell;
       if (!Number.isInteger(r) || !Number.isInteger(c)) return null;
       if (r < 0 || c < 0 || r >= grid.length || c >= (grid[0]?.length ?? 0)) return null;
       return { r, c };
     }
-
-    function getTypeTotalAvailable(type, isService) {
+    /** @param {MaybeJson} type @param {boolean} isService */ function getTypeTotalAvailable(type, isService) {
       const fallback = isService ? 1 : 0;
       const rawAvailable = type?.avail ?? fallback;
       const parsedAvailable = Number(rawAvailable);
       return Number.isFinite(parsedAvailable) ? Math.max(0, Math.floor(parsedAvailable)) : fallback;
     }
-
-    function getSelectedPlacementLabel(solution = state.result?.solution) {
+    /** @param {MaybeResultSolution} [solution] */ function getSelectedPlacementLabel(
+      solution = state.result?.solution
+    ) {
       const selected = getSelectedMapPlacement(solution);
       if (!selected) return "";
       return `${selected.kind === "service" ? "S" : "R"}${selected.index + 1}`;
     }
-
     function getManualLayoutState() {
       const manualLayout = Boolean(
         state.layoutEditor.edited || state.result?.solution?.manualLayout || state.result?.stats?.manualLayout
@@ -167,16 +195,16 @@
         hasValidationErrors
       };
     }
-
     function hasPendingManualValidation() {
       return getManualLayoutState().pendingValidation;
     }
-
     function hasManualLayoutValidationErrors() {
       return getManualLayoutState().hasValidationErrors;
     }
-
-    function setLayoutEditMode(mode, pendingPlacement = null) {
+    /** @param {string} mode @param {JsonObject | null} [pendingPlacement] */ function setLayoutEditMode(
+      mode,
+      pendingPlacement = null
+    ) {
       state.layoutEditor.mode = mode;
       state.layoutEditor.pendingPlacement = pendingPlacement;
       state.layoutEditor.status = "";
@@ -186,7 +214,6 @@
       syncActionAvailability();
       renderLayoutEditorControls();
     }
-
     function renderLayoutEditorControls() {
       if (!elements.layoutEditModeToggle || !elements.layoutEditorStatus) return;
       const pendingPlacement = state.layoutEditor.pendingPlacement;
@@ -236,7 +263,10 @@
 
       elements.layoutEditorStatus.textContent = message;
     }
-    async function evaluateEditedLayout(nextSolution, options = {}) {
+    /** @param {ResultSolution} nextSolution @param {ManualLayoutResultOptions} [options] */ async function evaluateEditedLayout(
+      nextSolution,
+      options = {}
+    ) {
       if (!state.resultContext?.grid || !state.resultContext?.params) {
         throw new Error("Run or load a layout before editing it.");
       }
@@ -296,8 +326,10 @@
         renderLayoutEditorControls();
       }
     }
-
-    function commitEditedLayoutResult(nextResult, options = {}) {
+    /** @param {JsonObject} nextResult @param {CommitLayoutResultOptions} [options] */ function commitEditedLayoutResult(
+      nextResult,
+      options = {}
+    ) {
       const {
         message = "Manual layout updated.",
         selectedBuilding = null,
@@ -326,8 +358,10 @@
       setSolveState(message);
       renderResults();
     }
-
-    function applyEditedLayoutLocally(nextSolution, options = {}) {
+    /** @param {ResultSolution} nextSolution @param {ManualLayoutResultOptions} [options] */ function applyEditedLayoutLocally(
+      nextSolution,
+      options = {}
+    ) {
       const {
         message = "Manual layout updated.",
         selectedBuilding = null,
@@ -342,15 +376,16 @@
         pendingValidation: true
       });
     }
-
-    function focusSelectedPlacement(selection, message) {
+    /** @param {ResultSelection} selection @param {string} message */ function focusSelectedPlacement(
+      selection,
+      message
+    ) {
       state.selectedMapBuilding = selection;
       state.selectedMapCell = null;
       state.layoutEditor.status = message;
       renderResults();
     }
-
-    function toggleManualRoad(row, col) {
+    /** @param {number} row @param {number} col */ function toggleManualRoad(row, col) {
       const grid = state.resultContext?.grid ?? state.grid;
       if (grid?.[row]?.[col] !== 1) {
         throw new Error("Roads can only be edited on allowed cells.");
@@ -374,8 +409,7 @@
         keepMode: true
       });
     }
-
-    function eraseAtCell(row, col) {
+    /** @param {number} row @param {number} col */ function eraseAtCell(row, col) {
       const selected = findBuildingAtCell(state.result?.solution, row, col);
       if (selected) {
         const nextSolution = cloneEditableSolution();
@@ -393,15 +427,14 @@
       if (!(nextSolution.roads ?? []).includes(key)) {
         throw new Error("There is no road or building at that cell to erase.");
       }
-      nextSolution.roads = (nextSolution.roads ?? []).filter((roadKey) => roadKey !== key);
+      nextSolution.roads = /** @type {string[]} */ (nextSolution.roads ?? []).filter((roadKey) => roadKey !== key);
       applyEditedLayoutLocally(nextSolution, {
         message: `Removed road at (${row}, ${col}).`,
         selectedCell: { r: row, c: col },
         keepMode: true
       });
     }
-
-    function placePendingBuilding(row, col) {
+    /** @param {number} row @param {number} col */ function placePendingBuilding(row, col) {
       const pending = state.layoutEditor.pendingPlacement;
       if (!pending) {
         throw new Error("Choose a remaining building to place first.");
@@ -435,8 +468,7 @@
         selectedBuilding: { kind: "residential", index: nextSolution.residentials.length - 1 }
       });
     }
-
-    function moveSelectedBuilding(row, col) {
+    /** @param {number} row @param {number} col */ function moveSelectedBuilding(row, col) {
       const currentSolution = state.result?.solution;
       const currentSelection = getSelectedMapPlacement(currentSolution);
       const clickedSelection = findBuildingAtCell(currentSolution, row, col);
@@ -493,16 +525,23 @@
         keepMode: true
       });
     }
-
-    function getSolvedCellKind(grid, solution, row, col) {
+    /** @param {MaybeGrid} grid @param {MaybeResultSolution} solution @param {number} row @param {number} col */ function getSolvedCellKind(
+      grid,
+      solution,
+      row,
+      col
+    ) {
       if (grid?.[row]?.[col] !== 1) return "blocked";
       if (findBuildingAtCell(solution, row, col)?.kind === "service") return "service";
       if (findBuildingAtCell(solution, row, col)?.kind === "residential") return "residential";
       if ((solution?.roads ?? []).includes?.(`${row},${col}`)) return "road";
       return "empty";
     }
-
-    function getCellBonusCoverage(solution, row, col) {
+    /** @param {MaybeResultSolution} solution @param {number} row @param {number} col @returns {BonusCoverageEntry[]} */ function getCellBonusCoverage(
+      solution,
+      row,
+      col
+    ) {
       const grid = state.resultContext?.grid ?? state.grid;
       if (!grid?.length || grid[row]?.[col] !== 1 || !solution) return [];
 
@@ -518,8 +557,7 @@
         ];
       });
     }
-
-    function formatCellExplainability(cell) {
+    /** @param {MaybeJson} cell */ function formatCellExplainability(cell) {
       if (!cell) return "";
       const parts = [];
       if (cell.serviceValue > 0) {
@@ -543,8 +581,10 @@
       }
       return parts.join("; ");
     }
-
-    function countPlacementsByType(typeIndices, typeCount) {
+    /** @param {unknown} typeIndices @param {number} typeCount */ function countPlacementsByType(
+      typeIndices,
+      typeCount
+    ) {
       const counts = Array.from({ length: Math.max(0, typeCount) }, () => 0);
       if (!Array.isArray(typeIndices)) return counts;
       typeIndices.forEach((typeIndex) => {
@@ -554,8 +594,11 @@
       });
       return counts;
     }
-
-    function getTypeAvailabilitySummary(kind, typeIndex, solution) {
+    /** @param {string} kind @param {number} typeIndex @param {MaybeResultSolution} solution */ function getTypeAvailabilitySummary(
+      kind,
+      typeIndex,
+      solution
+    ) {
       const isService = kind === "service";
       const types = isService
         ? (state.resultContext?.params?.serviceTypes ?? [])
@@ -572,8 +615,9 @@
         remaining: Math.max(0, totalAvailable - used)
       };
     }
-
-    function renderSelectedBuildingDetail(solution = state.result?.solution) {
+    /** @param {MaybeResultSolution} [solution] */ function renderSelectedBuildingDetail(
+      solution = state.result?.solution
+    ) {
       if (!elements.selectedBuildingTitle || !elements.selectedBuildingFacts || !elements.selectedBuildingSummary)
         return;
 
@@ -647,6 +691,7 @@
         return;
       }
 
+      if (!selected || !solution) return;
       const isService = selected.kind === "service";
       const placement = selected.placement;
       const typeIndex = isService
@@ -679,8 +724,12 @@
       elements.selectedBuildingAvailability.textContent = `${availability.remaining} left of ${availability.totalAvailable} for this type`;
       elements.selectedBuildingFacts.hidden = false;
     }
-
-    function renderRemainingAvailability(listElement, types, usedCounts, labelPrefix) {
+    /** @param {MaybeElement} listElement @param {JsonObject[] | null | undefined} types @param {number[]} usedCounts @param {string} labelPrefix */ function renderRemainingAvailability(
+      listElement,
+      types,
+      usedCounts,
+      labelPrefix
+    ) {
       if (!listElement) return;
       listElement.innerHTML = "";
 
@@ -727,12 +776,10 @@
         listElement.append(item);
       });
     }
-
-    function formatDiagnosticCount(value) {
+    /** @param {unknown} value */ function formatDiagnosticCount(value) {
       return Number(value ?? 0).toLocaleString();
     }
-
-    function formatDiagnosticExample(example) {
+    /** @param {JsonObject} example */ function formatDiagnosticExample(example) {
       const idPrefix = example.kind === "service" ? "S" : "R";
       const typeName =
         example.typeName ||
@@ -752,8 +799,11 @@
       }
       return parts.join(", ");
     }
-
-    function renderDiagnosticKindReport(listElement, report, emptyLabel) {
+    /** @param {MaybeElement} listElement @param {MaybeJson} report @param {string} emptyLabel */ function renderDiagnosticKindReport(
+      listElement,
+      report,
+      emptyLabel
+    ) {
       if (!listElement) return;
       listElement.innerHTML = "";
 
@@ -786,8 +836,10 @@
         listElement.append(item);
       });
     }
-
-    function renderGreedyDiagnostics(solution, options = {}) {
+    /** @param {MaybeResultSolution} solution @param {RenderResultOptions} [options] */ function renderGreedyDiagnostics(
+      solution,
+      options = {}
+    ) {
       if (!elements.greedyDiagnosticsBlock) return;
       const diagnostics = solution?.greedyDiagnostics;
       if (!diagnostics || options.manualLayout || options.liveSnapshot) {
@@ -817,8 +869,7 @@
         "No residential blockers were recorded."
       );
     }
-
-    function formatAutoSeedStatus(solution) {
+    /** @param {MaybeJson} solution */ function formatAutoSeedStatus(solution) {
       const generatedSeeds = Array.isArray(solution?.autoStage?.generatedSeeds)
         ? solution.autoStage.generatedSeeds
         : [];
@@ -829,24 +880,22 @@
         ? `, generated ${generatedSeeds.length} stage seeds (latest ${latestStage} ${latestSeed.randomSeed})`
         : `, generated ${generatedSeeds.length} stage seeds`;
     }
-
-    function formatCpSatSeedStatus(solution, stats) {
+    /** @param {MaybeJson} solution @param {MaybeJson} stats */ function formatCpSatSeedStatus(solution, stats) {
       if (stats?.optimizer === "auto" || solution?.optimizer === "auto") {
         return formatAutoSeedStatus(solution);
       }
       const configuredSeed = state.resultContext?.params?.cpSat?.randomSeed;
-      const portfolioWorkers = solution?.cpSatPortfolio?.workers ?? [];
+      const portfolio = solution?.cpSatPortfolio ?? null;
+      const portfolioWorkers = /** @type {JsonObject[]} */ (portfolio?.workers ?? []);
       if (portfolioWorkers.length > 0) {
-        const selectedWorker = portfolioWorkers.find(
-          (worker) => worker.workerIndex === solution.cpSatPortfolio?.selectedWorkerIndex
-        );
+        const selectedWorker = portfolioWorkers.find((worker) => worker.workerIndex === portfolio?.selectedWorkerIndex);
         const feasibleWorkers = portfolioWorkers.filter((worker) => worker.feasible);
         const populations = feasibleWorkers
           .map((worker) => (Number.isFinite(worker.totalPopulation) ? Number(worker.totalPopulation) : null))
           .filter((population) => population !== null);
         const populationSpread = populations.length > 1 ? Math.max(...populations) - Math.min(...populations) : null;
-        const selectedLabel = `selected worker ${Number(selectedWorker?.workerIndex ?? 0) + 1}/${solution.cpSatPortfolio?.workerCount ?? portfolioWorkers.length}`;
-        const seedLabel = Number.isInteger(selectedWorker?.randomSeed) ? ` seed ${selectedWorker.randomSeed}` : "";
+        const selectedLabel = `selected worker ${Number(selectedWorker?.workerIndex ?? 0) + 1}/${portfolio?.workerCount ?? portfolioWorkers.length}`;
+        const seedLabel = Number.isInteger(selectedWorker?.randomSeed) ? ` seed ${selectedWorker?.randomSeed}` : "";
         const feasibleLabel = `, ${feasibleWorkers.length}/${portfolioWorkers.length} feasible`;
         const spreadLabel = populationSpread !== null ? `, spread ${populationSpread.toLocaleString()}` : "";
         if (selectedWorker) {
@@ -864,14 +913,15 @@
       }
       return Number.isInteger(configuredSeed) ? `, seed ${configuredSeed}` : "";
     }
-
-    function formatProgressLogNumber(value, options = {}) {
+    /** @param {unknown} value @param {ProgressNumberOptions} [options] @returns {string | null} */ function formatProgressLogNumber(
+      value,
+      options = {}
+    ) {
       if (typeof value !== "number" || !Number.isFinite(value)) return null;
       const { maximumFractionDigits = 0 } = options;
       return Number(value).toLocaleString(undefined, { maximumFractionDigits });
     }
-
-    function formatProgressSummaryParts(summary) {
+    /** @param {MaybeJson} summary */ function formatProgressSummaryParts(summary) {
       if (!summary) return [];
       const parts = [];
       const currentScore = formatProgressLogNumber(summary.currentScore);
@@ -912,16 +962,14 @@
       }
       return parts;
     }
-
-    function getResultProgressLogEntries() {
+    /** @returns {JsonObject[]} */ function getResultProgressLogEntries() {
       return Array.isArray(state.result?.progressLog)
         ? state.result.progressLog
         : Array.isArray(state.solveProgressLog)
           ? state.solveProgressLog
           : [];
     }
-
-    function renderProgressLog(options = {}) {
+    /** @param {RenderResultOptions} [options] */ function renderProgressLog(options = {}) {
       if (!elements.resultProgressSummary || !elements.resultProgressLog) return;
 
       const { liveSnapshot = false, manualLayout = false } = options;
@@ -1017,9 +1065,10 @@
         elements.resultProgressLog.append(item);
       });
     }
-
-    function createSolvedMapMatrix(grid, solution) {
-      const matrix = grid.map((row) => row.map((cell) => (cell === 1 ? "empty" : "blocked")));
+    /** @param {PlannerGrid} grid @param {ResultSolution} solution */ function createSolvedMapMatrix(grid, solution) {
+      const matrix = /** @type {string[][]} */ (
+        grid.map((row) => row.map((cell) => (cell === 1 ? "empty" : "blocked")))
+      );
 
       for (const roadKey of solution.roads) {
         const [row, col] = roadKey.split(",").map(Number);
@@ -1048,8 +1097,12 @@
 
       return matrix;
     }
-
-    function describeSolvedCell(kind, row, col, hoverLabel) {
+    /** @param {string} kind @param {number} row @param {number} col @param {string} hoverLabel */ function describeSolvedCell(
+      kind,
+      row,
+      col,
+      hoverLabel
+    ) {
       if (hoverLabel) {
         return `Solved cell ${row},${col} belongs to ${hoverLabel}`;
       }
@@ -1065,8 +1118,11 @@
                 : "empty allowed";
       return `Solved cell ${row},${col} is ${label}`;
     }
-
-    function createSolvedMapHoverLabels(solution, rows, cols) {
+    /** @param {ResultSolution} solution @param {number} rows @param {number} cols */ function createSolvedMapHoverLabels(
+      solution,
+      rows,
+      cols
+    ) {
       const labels = Array.from({ length: rows }, () => Array.from({ length: cols }, () => ""));
       const pendingManualValidation = hasPendingManualValidation();
 
@@ -1100,9 +1156,8 @@
 
       return labels;
     }
-
-    function readMatrixLayout(element) {
-      const styles = globalObject.getComputedStyle(element);
+    /** @param {Element} element @returns {MatrixLayout} */ function readMatrixLayout(element) {
+      const styles = resultsGlobal.getComputedStyle(element);
       return {
         cellSize: Number.parseFloat(styles.getPropertyValue("--matrix-cell-size")) || 28,
         gap: Number.parseFloat(styles.getPropertyValue("--matrix-gap")) || 6,
@@ -1110,8 +1165,14 @@
         paddingY: Number.parseFloat(styles.paddingTop) || 18
       };
     }
-
-    function createBuildingOverlay(kind, index, placement, layout, label, isSelected = false) {
+    /** @param {"service" | "residential"} kind @param {number} index @param {ResultPlacement} placement @param {MatrixLayout} layout @param {string} label @param {boolean} [isSelected] */ function createBuildingOverlay(
+      kind,
+      index,
+      placement,
+      layout,
+      label,
+      isSelected = false
+    ) {
       const outline = document.createElement("div");
       const pitch = layout.cellSize + layout.gap;
       const width = placement.cols * layout.cellSize + Math.max(0, placement.cols - 1) * layout.gap;
@@ -1143,8 +1204,7 @@
 
       return outline;
     }
-
-    function renderBuildingOverlay(solution) {
+    /** @param {MaybeResultSolution} solution */ function renderBuildingOverlay(solution) {
       elements.resultOverlay.innerHTML = "";
       if (!solution) return;
 
@@ -1176,19 +1236,15 @@
         );
       });
     }
-
     function clearResultOverlay() {
       elements.resultOverlay.innerHTML = "";
     }
-
     function getActiveExplainabilityMode() {
       return normalizeExplainabilityMode();
     }
-
-    function hidesBuildingOverlayForMode(mode = getActiveExplainabilityMode()) {
+    /** @param {string} [mode] */ function hidesBuildingOverlayForMode(mode = getActiveExplainabilityMode()) {
       return heatmapHidesBuildingOverlayForMode(mode);
     }
-
     function refreshResultOverlay() {
       if (!state.result?.solution || !elements.resultMapGrid.dataset.cols) {
         clearResultOverlay();
@@ -1200,8 +1256,7 @@
       }
       renderBuildingOverlay(state.result.solution);
     }
-
-    function renderSolvedMap(grid, solution) {
+    /** @param {MaybeGrid} grid @param {ResultSolution} solution */ function renderSolvedMap(grid, solution) {
       if (!grid?.length) {
         elements.resultMapGrid.innerHTML = "";
         delete elements.resultMapGrid.dataset.cols;
@@ -1260,7 +1315,6 @@
       }
       renderSelectedBuildingDetail(solution);
     }
-
     function renderResults() {
       syncActionAvailability();
       if (state.resultError) {
@@ -1326,7 +1380,8 @@
         return;
       }
 
-      const { solution, stats, validation } = state.result;
+      const { solution, stats, validation } =
+        /** @type {{ solution: ResultSolution, stats: JsonObject, validation: JsonObject }} */ (state.result);
       state.selectedMapBuilding = getSelectedMapPlacement(solution)?.kind ? state.selectedMapBuilding : null;
       const { manualLayout, pendingValidation: pendingManualValidation } = getManualLayoutState();
       const stoppedByUser = Boolean(solution.stoppedByUser || stats.stoppedByUser);
@@ -1444,12 +1499,10 @@
       renderLayoutEditorControls();
       renderExpansionAdvice();
     }
-
     function hasSelectedBuilding() {
       return Boolean(getSelectedMapPlacement(state.result?.solution));
     }
-
-    function handleLayoutEditToggleClick(event) {
+    /** @param {Event} event */ function handleLayoutEditToggleClick(event) {
       if (isLayoutEditBusy() || !hasEditableLayoutContext()) return;
       const target = event.target;
       if (!(target instanceof Element)) return;
@@ -1457,8 +1510,7 @@
       if (!(button instanceof HTMLButtonElement) || !button.dataset.layoutEditMode) return;
       setLayoutEditMode(button.dataset.layoutEditMode);
     }
-
-    function handleRemainingPlacementClick(event) {
+    /** @param {Event} event */ function handleRemainingPlacementClick(event) {
       if (isLayoutEditBusy() || !hasEditableLayoutContext()) return;
       const target = event.target;
       if (!(target instanceof Element)) return;
@@ -1473,7 +1525,6 @@
         setLayoutEditMode("place-residential", buildPendingPlacementDefinition("residential", typeIndex, name));
       }
     }
-
     function handleRotatePendingPlacementAction() {
       if (isLayoutEditBusy() || !hasEditableLayoutContext()) return;
       const pendingPlacement = state.layoutEditor.pendingPlacement;
@@ -1486,7 +1537,6 @@
       renderLayoutEditorControls();
       syncActionAvailability();
     }
-
     function handleMoveSelectedAction() {
       if (isLayoutEditBusy() || !hasEditableLayoutContext()) return;
       if (!hasSelectedBuilding()) {
@@ -1495,7 +1545,6 @@
       }
       setLayoutEditMode("move");
     }
-
     function handleRemoveSelectedAction() {
       if (isLayoutEditBusy() || !hasEditableLayoutContext()) return;
       const selected = getSelectedMapPlacement(state.result?.solution);
@@ -1513,7 +1562,6 @@
         setLayoutEditorStatus(error instanceof Error ? error.message : "Failed to remove the selected building.");
       }
     }
-
     async function handleValidateEditedLayoutAction() {
       if (isLayoutEditBusy() || !hasEditableLayoutContext()) return;
       if (!state.layoutEditor.pendingValidation) {
@@ -1536,8 +1584,7 @@
         setLayoutEditorStatus(error instanceof Error ? error.message : "Failed to validate the edited layout.");
       }
     }
-
-    function handleResultMapClick(event) {
+    /** @param {Event} event */ function handleResultMapClick(event) {
       const target = event.target;
       if (!(target instanceof Element) || !state.result?.solution) return;
       const cell = target.closest(".grid-cell");
@@ -1594,7 +1641,7 @@
     });
   }
 
-  globalObject.CityBuilderResults = Object.freeze({
+  resultsGlobal.CityBuilderResults = Object.freeze({
     createPlannerResultsController
   });
 })(window);

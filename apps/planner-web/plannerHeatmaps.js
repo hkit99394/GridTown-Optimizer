@@ -1,4 +1,30 @@
+/**
+ * @param {Window & { PlannerHeatmaps?: unknown }} globalObject
+ */
 (function attachPlannerHeatmaps(globalObject) {
+  /**
+   * @typedef {Record<string, any>} JsonObject
+   * @typedef {number[][]} PlannerGrid
+   * @typedef {{ r: number, c: number }} HeatmapCell
+   * @typedef {{ r: number, c: number, rows: number, cols: number, [key: string]: any }} HeatmapPlacement
+   * @typedef {HeatmapPlacement & { range: number }} HeatmapServicePlacement
+   * @typedef {{ values: number[][], details: string[][], maxValue: number }} PlannerHeatmap
+   * @typedef {JsonObject & { roads?: string[], servicePopulationIncreases?: number[], services?: HeatmapServicePlacement[] }} HeatmapSolution
+   * @typedef {{ result?: JsonObject | null, resultContext?: JsonObject | null, resultExplainabilityMode: string, resultHeatmapEnabled: boolean }} HeatmapState
+   * @typedef {{ remaining: number }} TypeAvailabilitySummary
+   * @typedef {{
+   *   footprintCellsForPlacement: (placement: HeatmapPlacement) => HeatmapCell[],
+   *   getOccupiedCells: (solution: HeatmapSolution | null | undefined) => Set<string>,
+   *   getTypeAvailabilitySummary: (kind: string, typeIndex: number, solution: HeatmapSolution) => TypeAvailabilitySummary,
+   *   isCellInsideAnyServiceFootprint: (solution: HeatmapSolution, row: number, col: number) => boolean,
+   *   isCellInsideServiceEffect: (service: HeatmapServicePlacement, row: number, col: number) => boolean
+   * }} HeatmapHelpers
+   * @typedef {{ state: HeatmapState, explainabilityModeLabels: Record<string, string>, helpers: HeatmapHelpers }} HeatmapOptions
+   */
+
+  /**
+   * @param {HeatmapOptions} options
+   */
   function createPlannerHeatmapHelpers(options) {
     const { state, explainabilityModeLabels, helpers } = options;
     const {
@@ -9,16 +35,27 @@
       isCellInsideServiceEffect
     } = helpers;
 
+    /**
+     * @param {unknown} value
+     * @returns {string}
+     */
     function formatExplainabilityNumber(value) {
       return Number(value).toLocaleString();
     }
 
+    /**
+     * @returns {string}
+     */
     function normalizeExplainabilityMode() {
       const mode = state.resultExplainabilityMode;
       if (Object.prototype.hasOwnProperty.call(explainabilityModeLabels, mode)) return mode;
       return state.resultHeatmapEnabled ? "service-value" : "layout";
     }
 
+    /**
+     * @param {PlannerGrid} grid
+     * @returns {PlannerHeatmap}
+     */
     function createEmptyHeatmap(grid) {
       return {
         values: grid.map((row) => row.map(() => 0)),
@@ -27,20 +64,34 @@
       };
     }
 
+    /**
+     * @returns {JsonObject | null}
+     */
     function getPlannerExplainabilityMap() {
       const map = state.result?.explainability;
       if (!map || !Array.isArray(map.cells)) return null;
       return map;
     }
 
+    /**
+     * @param {number} row
+     * @param {number} col
+     * @returns {JsonObject | null}
+     */
     function getPlannerExplainabilityCell(row, col) {
       return getPlannerExplainabilityMap()?.cells?.[row]?.[col] ?? null;
     }
 
+    /**
+     * @param {PlannerGrid} grid
+     * @param {HeatmapSolution | null | undefined} solution
+     * @returns {PlannerHeatmap}
+     */
     function createServiceValueHeatmap(grid, solution) {
       const values = grid.map((row) => row.map(() => 0));
+      const details = grid.map((row) => row.map(() => ""));
       let maxValue = 0;
-      if (!solution) return { values, maxValue };
+      if (!solution) return { values, details, maxValue };
 
       for (let row = 0; row < grid.length; row += 1) {
         for (let col = 0; col < (grid[row]?.length ?? 0); col += 1) {
@@ -55,9 +106,13 @@
         }
       }
 
-      return { values, maxValue };
+      return { values, details, maxValue };
     }
 
+    /**
+     * @param {HeatmapSolution} solution
+     * @returns {Set<string>}
+     */
     function getPlacementBlockedCells(solution) {
       const blocked = getOccupiedCells(solution);
       for (const roadKey of solution?.roads ?? []) {
@@ -66,6 +121,12 @@
       return blocked;
     }
 
+    /**
+     * @param {PlannerGrid} grid
+     * @param {HeatmapPlacement} placement
+     * @param {Set<string>} blockedCells
+     * @returns {boolean}
+     */
     function placementFitsClearCells(grid, placement, blockedCells) {
       if (!grid?.length || placement.r < 0 || placement.c < 0) return false;
       if (placement.r + placement.rows > grid.length || placement.c + placement.cols > (grid[0]?.length ?? 0)) {
@@ -79,6 +140,10 @@
       return true;
     }
 
+    /**
+     * @param {JsonObject | null | undefined} type
+     * @returns {{ rows: number, cols: number }[]}
+     */
     function getResidentialTypeOrientations(type) {
       const rows = Number(type?.h ?? 0);
       const cols = Number(type?.w ?? 0);
@@ -90,6 +155,11 @@
       return orientations;
     }
 
+    /**
+     * @param {HeatmapSolution | null | undefined} solution
+     * @param {HeatmapPlacement} placement
+     * @returns {number}
+     */
     function getServiceBoostForFootprint(solution, placement) {
       if (!solution) return 0;
       const footprint = footprintCellsForPlacement(placement);
@@ -100,6 +170,12 @@
       }, 0);
     }
 
+    /**
+     * @param {unknown} minPopulation
+     * @param {unknown} maxPopulation
+     * @param {unknown} boost
+     * @returns {number}
+     */
     function clampPopulationValue(minPopulation, maxPopulation, boost) {
       const minValue = Number(minPopulation ?? 0);
       const maxValue = Number(maxPopulation ?? minValue);
@@ -110,9 +186,14 @@
       return Math.min(Math.max(boosted, safeMin), safeMax);
     }
 
+    /**
+     * @param {PlannerGrid} grid
+     * @param {HeatmapSolution | null | undefined} solution
+     * @returns {PlannerHeatmap}
+     */
     function createPlacementOpportunityHeatmap(grid, solution) {
       const heatmap = createEmptyHeatmap(grid);
-      const residentialTypes = state.resultContext?.params?.residentialTypes ?? [];
+      const residentialTypes = /** @type {JsonObject[]} */ (state.resultContext?.params?.residentialTypes ?? []);
       if (!solution || residentialTypes.length === 0) return heatmap;
 
       const blockedCells = getPlacementBlockedCells(solution);
@@ -142,6 +223,11 @@
       return heatmap;
     }
 
+    /**
+     * @param {PlannerGrid} grid
+     * @param {HeatmapSolution | null | undefined} solution
+     * @returns {Set<string>}
+     */
     function getTraversableCells(grid, solution) {
       const buildingCells = getOccupiedCells(solution);
       const traversable = new Set();
@@ -156,13 +242,29 @@
       return traversable;
     }
 
+    /**
+     * @param {number} row
+     * @param {number} col
+     * @returns {string[]}
+     */
     function getNeighborCellKeys(row, col) {
       return [`${row - 1},${col}`, `${row + 1},${col}`, `${row},${col - 1}`, `${row},${col + 1}`];
     }
 
+    /**
+     * @param {PlannerGrid} grid
+     * @param {Set<string>} traversable
+     * @param {string | null} [removedKey]
+     * @returns {Set<string>}
+     */
     function floodReachableFromAnchorBoundary(grid, traversable, removedKey = null) {
       const reachable = new Set();
+      /** @type {string[]} */
       const queue = [];
+      /**
+       * @param {number} row
+       * @param {number} col
+       */
       const addAnchor = (row, col) => {
         const key = `${row},${col}`;
         if (key !== removedKey && traversable.has(key) && !reachable.has(key)) {
@@ -179,7 +281,7 @@
       }
 
       for (let index = 0; index < queue.length; index += 1) {
-        const [row, col] = queue[index].split(",").map(Number);
+        const [row = 0, col = 0] = queue[index].split(",").map(Number);
         for (const nextKey of getNeighborCellKeys(row, col)) {
           if (nextKey === removedKey || reachable.has(nextKey) || !traversable.has(nextKey)) continue;
           reachable.add(nextKey);
@@ -190,6 +292,11 @@
       return reachable;
     }
 
+    /**
+     * @param {PlannerGrid} grid
+     * @param {HeatmapSolution | null | undefined} solution
+     * @returns {PlannerHeatmap}
+     */
     function createConnectivityRiskHeatmap(grid, solution) {
       const heatmap = createEmptyHeatmap(grid);
       const traversable = getTraversableCells(grid, solution);
@@ -199,7 +306,7 @@
       if (baseReachable.size === 0) return heatmap;
 
       for (const key of baseReachable) {
-        const [row, col] = key.split(",").map(Number);
+        const [row = 0, col = 0] = key.split(",").map(Number);
         const reachableWithoutCell = floodReachableFromAnchorBoundary(grid, traversable, key);
         const lostReachableCells = Math.max(0, baseReachable.size - reachableWithoutCell.size - 1);
         if (lostReachableCells <= 0) continue;
@@ -213,6 +320,11 @@
       return heatmap;
     }
 
+    /**
+     * @param {string} mode
+     * @param {PlannerGrid} grid
+     * @returns {PlannerHeatmap | null}
+     */
     function createBackendExplainabilityHeatmap(mode, grid) {
       const map = getPlannerExplainabilityMap();
       if (!map) return null;
@@ -279,6 +391,12 @@
       return heatmap;
     }
 
+    /**
+     * @param {string} mode
+     * @param {PlannerGrid} grid
+     * @param {HeatmapSolution | null | undefined} solution
+     * @returns {PlannerHeatmap}
+     */
     function createFallbackExplainabilityHeatmap(mode, grid, solution) {
       if (mode === "service-value") {
         return createServiceValueHeatmap(grid, solution);
@@ -292,12 +410,24 @@
       return createEmptyHeatmap(grid);
     }
 
+    /**
+     * @param {string} mode
+     * @param {PlannerGrid} grid
+     * @param {HeatmapSolution | null | undefined} solution
+     * @returns {PlannerHeatmap}
+     */
     function createExplainabilityHeatmap(mode, grid, solution) {
       return (
         createBackendExplainabilityHeatmap(mode, grid) ?? createFallbackExplainabilityHeatmap(mode, grid, solution)
       );
     }
 
+    /**
+     * @param {string} mode
+     * @param {number} value
+     * @param {string} [detail]
+     * @returns {string}
+     */
     function describeExplainabilityValue(mode, value, detail = "") {
       if (!(value > 0)) return "";
       if (mode === "service-value") {
@@ -312,6 +442,12 @@
       return "";
     }
 
+    /**
+     * @param {HTMLElement} cell
+     * @param {string} mode
+     * @param {number} value
+     * @param {number} maxValue
+     */
     function applyExplainabilityHeatmapStyle(cell, mode, value, maxValue) {
       if (!(value > 0) || !(maxValue > 0)) return;
       const intensity = Math.max(0.18, Math.min(1, value / maxValue));
@@ -332,6 +468,10 @@
       cell.style.setProperty("--heatmap-border-alpha", borderAlpha);
     }
 
+    /**
+     * @param {string} [mode]
+     * @returns {boolean}
+     */
     function hidesBuildingOverlayForMode(mode = normalizeExplainabilityMode()) {
       return mode === "service-value";
     }
@@ -347,7 +487,9 @@
     });
   }
 
-  globalObject.PlannerHeatmaps = Object.freeze({
+  const heatmapsGlobal = /** @type {Window & { PlannerHeatmaps?: unknown }} */ (globalObject);
+
+  heatmapsGlobal.PlannerHeatmaps = Object.freeze({
     createPlannerHeatmapHelpers
   });
 })(window);

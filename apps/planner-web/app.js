@@ -1,3 +1,8 @@
+/**
+ * @typedef {Record<string, any>} JsonObject
+ * @typedef {number[][]} PlannerGrid
+ */
+
 const SAMPLE_GRID = [
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -61,17 +66,21 @@ const SOLVE_STATUS_POLL_INTERVAL_MS = 1000;
 const LIVE_SNAPSHOT_REFRESH_INTERVAL_MS = 5 * 1000;
 const COMPARISON_PROGRESS_HINT_INTERVAL_MS = 60 * 1000;
 
-const plannerModules = {
-  shell: window.CityBuilderShell,
-  shared: window.CityBuilderShared,
-  persistence: window.CityBuilderPersistence,
-  solveRuntime: window.CityBuilderSolveRuntime,
-  expansion: window.CityBuilderExpansion,
-  manualLayout: window.PlannerManualLayout,
-  results: window.CityBuilderResults,
-  requestBuilder: window.CityBuilderRequestBuilder,
-  workbench: window.CityBuilderWorkbench
-};
+const plannerWindow =
+  /** @type {Window & { CityBuilderExpansion?: unknown, CityBuilderPersistence?: unknown, CityBuilderRequestBuilder?: unknown, CityBuilderResults?: unknown, CityBuilderShared?: unknown, CityBuilderShell?: unknown, CityBuilderSolveRuntime?: unknown, CityBuilderWorkbench?: unknown, PlannerManualLayout?: unknown }} */
+  (window);
+
+const plannerModules = /** @type {Record<string, JsonObject>} */ ({
+  shell: plannerWindow.CityBuilderShell,
+  shared: plannerWindow.CityBuilderShared,
+  persistence: plannerWindow.CityBuilderPersistence,
+  solveRuntime: plannerWindow.CityBuilderSolveRuntime,
+  expansion: plannerWindow.CityBuilderExpansion,
+  manualLayout: plannerWindow.PlannerManualLayout,
+  results: plannerWindow.CityBuilderResults,
+  requestBuilder: plannerWindow.CityBuilderRequestBuilder,
+  workbench: plannerWindow.CityBuilderWorkbench
+});
 
 if (Object.values(plannerModules).some((module) => !module)) {
   throw new Error(
@@ -113,7 +122,7 @@ const { createPlannerResultsController } = plannerModules.results;
 const { createPlannerRequestBuilderController } = plannerModules.requestBuilder;
 const { createPlannerWorkbenchController } = plannerModules.workbench;
 
-const state = {
+const state = /** @type {JsonObject} */ ({
   grid: cloneGrid(SAMPLE_GRID),
   paintMode: "toggle",
   optimizer: "auto",
@@ -201,9 +210,9 @@ const state = {
     result: null,
     error: ""
   }
-};
+});
 
-const elements = {
+const elements = /** @type {JsonObject} */ ({
   gridRows: document.querySelector("#gridRows"),
   gridCols: document.querySelector("#gridCols"),
   gridEditor: document.querySelector("#gridEditor"),
@@ -333,12 +342,16 @@ const elements = {
   fillAllowedButton: document.querySelector("#fillAllowedButton"),
   clearGridButton: document.querySelector("#clearGridButton"),
   sampleGridButton: document.querySelector("#sampleGridButton")
-};
+});
 
-let expansionAdviceController = null;
-let resultsController = null;
-let requestBuilderController = null;
-let workbenchController = null;
+/** @type {JsonObject} */
+let expansionAdviceController = /** @type {JsonObject} */ (/** @type {unknown} */ (null));
+/** @type {JsonObject} */
+let resultsController = /** @type {JsonObject} */ (/** @type {unknown} */ (null));
+/** @type {JsonObject} */
+let requestBuilderController = /** @type {JsonObject} */ (/** @type {unknown} */ (null));
+/** @type {JsonObject} */
+let workbenchController = /** @type {JsonObject} */ (/** @type {unknown} */ (null));
 
 function readExpansionCandidateFlagsFallback() {
   const hasServiceCandidate = Boolean(String(state.expansionAdvice.nextServiceText ?? "").trim());
@@ -390,6 +403,10 @@ function clearExpansionAdvice() {
 
 const RESULT_EXPLAINABILITY_MODES = new Set(["layout", "service-value", "placement-opportunity", "connectivity-risk"]);
 
+/**
+ * @param {string} mode
+ * @returns {string}
+ */
 function normalizeResultExplainabilityMode(mode) {
   return RESULT_EXPLAINABILITY_MODES.has(mode) ? mode : "layout";
 }
@@ -571,30 +588,39 @@ function init() {
   workbenchController.initResizeHandling();
   requestAnimationFrame(() => workbenchController.refreshMatrixLayouts());
 
-  elements.paintModeToggle.addEventListener("click", (event) => {
-    const target = event.target;
-    if (!(target instanceof Element)) return;
-    const button = target.closest("button");
-    if (!(button instanceof HTMLButtonElement) || !button.dataset.paintMode) return;
-    workbenchController.setPaintMode(button.dataset.paintMode);
-  });
+  elements.paintModeToggle.addEventListener(
+    "click",
+    /** @param {Event} event */ (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const button = target.closest("button");
+      if (!(button instanceof HTMLButtonElement) || !button.dataset.paintMode) return;
+      workbenchController.setPaintMode(button.dataset.paintMode);
+    }
+  );
 
-  elements.solverToggle.addEventListener("click", (event) => {
-    const target = event.target;
-    if (!(target instanceof Element)) return;
-    const button = target.closest("button");
-    if (!(button instanceof HTMLButtonElement) || !button.dataset.optimizer) return;
-    workbenchController.setOptimizer(button.dataset.optimizer);
-    requestBuilderController.updatePayloadPreview();
-  });
+  elements.solverToggle.addEventListener(
+    "click",
+    /** @param {Event} event */ (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const button = target.closest("button");
+      if (!(button instanceof HTMLButtonElement) || !button.dataset.optimizer) return;
+      workbenchController.setOptimizer(button.dataset.optimizer);
+      requestBuilderController.updatePayloadPreview();
+    }
+  );
 
-  elements.runtimePresetButtons.addEventListener("click", (event) => {
-    const target = event.target;
-    if (!(target instanceof Element)) return;
-    const button = target.closest("button");
-    if (!(button instanceof HTMLButtonElement) || !button.dataset.runtimePreset) return;
-    workbenchController.applyRuntimePreset(button.dataset.runtimePreset);
-  });
+  elements.runtimePresetButtons.addEventListener(
+    "click",
+    /** @param {Event} event */ (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const button = target.closest("button");
+      if (!(button instanceof HTMLButtonElement) || !button.dataset.runtimePreset) return;
+      workbenchController.applyRuntimePreset(button.dataset.runtimePreset);
+    }
+  );
 
   elements.resizeGridButton.addEventListener("click", () => {
     const rows = clampInteger(elements.gridRows.value, state.grid.length, 1);
@@ -606,23 +632,29 @@ function init() {
   elements.clearGridButton.addEventListener("click", () => workbenchController.applyPreset("clear"));
   elements.sampleGridButton.addEventListener("click", () => workbenchController.applyPreset("sample"));
 
-  elements.gridEditor.addEventListener("pointerdown", (event) => {
-    const target = event.target;
-    if (!(target instanceof Element)) return;
-    const cell = target.closest(".grid-cell");
-    if (!(cell instanceof HTMLButtonElement)) return;
-    state.isPainting = true;
-    workbenchController.applyPaint(cell);
-  });
+  elements.gridEditor.addEventListener(
+    "pointerdown",
+    /** @param {Event} event */ (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const cell = target.closest(".grid-cell");
+      if (!(cell instanceof HTMLButtonElement)) return;
+      state.isPainting = true;
+      workbenchController.applyPaint(cell);
+    }
+  );
 
-  elements.gridEditor.addEventListener("pointerover", (event) => {
-    if (!state.isPainting) return;
-    const target = event.target;
-    if (!(target instanceof Element)) return;
-    const cell = target.closest(".grid-cell");
-    if (!(cell instanceof HTMLButtonElement)) return;
-    workbenchController.applyPaint(cell);
-  });
+  elements.gridEditor.addEventListener(
+    "pointerover",
+    /** @param {Event} event */ (event) => {
+      if (!state.isPainting) return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const cell = target.closest(".grid-cell");
+      if (!(cell instanceof HTMLButtonElement)) return;
+      workbenchController.applyPaint(cell);
+    }
+  );
 
   window.addEventListener("pointerup", () => {
     state.isPainting = false;
@@ -777,15 +809,20 @@ function init() {
   elements.resultMapGrid.addEventListener("click", resultsController.handleResultMapClick);
   if (elements.resultExplainabilityModeToggle) {
     syncResultExplainabilityModeControl();
-    elements.resultExplainabilityModeToggle.addEventListener("click", (event) => {
-      const target = event.target;
-      if (!(target instanceof Element)) return;
-      const button = target.closest("button[data-result-explainability-mode]");
-      if (!(button instanceof HTMLButtonElement)) return;
-      state.resultExplainabilityMode = normalizeResultExplainabilityMode(button.dataset.resultExplainabilityMode);
-      syncResultExplainabilityModeControl();
-      resultsController.renderResults();
-    });
+    elements.resultExplainabilityModeToggle.addEventListener(
+      "click",
+      /** @param {Event} event */ (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        const button = target.closest("button[data-result-explainability-mode]");
+        if (!(button instanceof HTMLButtonElement)) return;
+        state.resultExplainabilityMode = normalizeResultExplainabilityMode(
+          button.dataset.resultExplainabilityMode ?? "layout"
+        );
+        syncResultExplainabilityModeControl();
+        resultsController.renderResults();
+      }
+    );
   } else if (elements.resultHeatmapToggle) {
     elements.resultHeatmapToggle.checked = Boolean(state.resultHeatmapEnabled);
     elements.resultHeatmapToggle.addEventListener("change", () => {

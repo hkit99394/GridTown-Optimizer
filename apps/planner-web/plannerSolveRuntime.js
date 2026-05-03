@@ -1,30 +1,121 @@
+/**
+ * @param {Window & { CityBuilderSolveRuntime?: unknown }} globalObject
+ */
 (function attachPlannerSolveRuntime(globalObject) {
+  /**
+   * @typedef {Record<string, any>} JsonObject
+   *
+   * @typedef {{ capturedAt?: string, elapsedMs?: number, fallbackOptimizer?: string, source?: string }} ProgressEntryOptions
+   *
+   * @typedef {JsonObject & { progressSummary?: JsonObject | null }} ProgressLogEntry
+   *
+   * @typedef {JsonObject & {
+   *   activeStage?: string | null,
+   *   bestScore?: number | null,
+   *   currentScore?: number | null,
+   *   exactGap?: number | null,
+   *   reuseSource?: string | null,
+   *   timeSinceImprovementSeconds?: number | null
+   * }} ProgressSummary
+   *
+   * @typedef {{
+   *   activeSolveRequestId: string,
+   *   isSolving: boolean,
+   *   isStopping: boolean,
+   *   layoutEditor: { edited: boolean, isApplying: boolean, mode: string, pendingPlacement: unknown, pendingValidation: boolean, status: string },
+   *   lns: { useDisplayedSeed?: boolean },
+   *   optimizer: string,
+   *   result: JsonObject | null,
+   *   resultContext: JsonObject | null,
+   *   resultElapsedMs: number,
+   *   resultError: string,
+   *   resultIsLiveSnapshot: boolean,
+   *   selectedMapCell: JsonObject | null,
+   *   solveProgressLog: ProgressLogEntry[],
+   *   solveTimerElapsedMs: number,
+   *   solveTimerFrozen: boolean,
+   *   solveTimerHandle: number,
+   *   solveTimerStartedAt: number
+   * }} SolveRuntimeState
+   *
+   * @typedef {{ resultElapsed?: HTMLElement | null, solveStatus: HTMLElement, solveTimer: HTMLElement }} SolveRuntimeElements
+   *
+   * @typedef {{ LIVE_SNAPSHOT_REFRESH_INTERVAL_MS: number, SOLVE_STATUS_POLL_INTERVAL_MS: number }} SolveRuntimeConstants
+   *
+   * @typedef {{
+   *   createSolveRequestId: () => string,
+   *   delay: (ms: number) => Promise<void>,
+   *   formatElapsedTime: (ms: number) => string,
+   *   normalizeElapsedMs: (ms: number) => number
+   * }} SolveRuntimeHelpers
+   *
+   * @typedef {{
+   *   buildSolveRequest: () => JsonObject,
+   *   clearExpansionAdvice: () => void,
+   *   ensureCpSatRandomSeed: () => number,
+   *   getDisplayedLayoutCheckpoint: () => JsonObject | null,
+   *   getOptimizerLabel: (optimizer: string) => string,
+   *   renderResults: () => void,
+   *   setSolveState: (message: string | null) => void
+   * }} SolveRuntimeCallbacks
+   *
+   * @typedef {{ state: SolveRuntimeState, elements: SolveRuntimeElements, constants: SolveRuntimeConstants, helpers: SolveRuntimeHelpers, callbacks: SolveRuntimeCallbacks }} SolveRuntimeOptions
+   *
+   * @typedef {{ syncTimerWhenIdle?: boolean }} SetResultElapsedOptions
+   *
+   * @typedef {{ resetMode?: boolean }} ClearManualEditOptions
+   */
+
   const AUTO_QUALITY_PATH_LABEL = "recommended quality path";
   const GREEDY_MODE_LABEL = "heavy standalone heuristic / advanced inspection mode";
 
+  /**
+   * @param {unknown} value
+   * @returns {number}
+   */
   function normalizeProgressElapsedMs(value) {
     const numericValue = Number(value);
     if (!Number.isFinite(numericValue)) return 0;
     return Math.max(0, Math.round(numericValue));
   }
 
+  /**
+   * @param {JsonObject | null | undefined} payload
+   * @returns {JsonObject | null}
+   */
   function readAutoStage(payload) {
     return payload?.solution?.autoStage ?? payload?.stats?.autoStage ?? payload?.autoStage ?? null;
   }
 
+  /**
+   * @param {JsonObject | null | undefined} payload
+   * @returns {JsonObject | null}
+   */
   function readLnsTelemetry(payload) {
     return payload?.solution?.lnsTelemetry ?? payload?.stats?.lnsTelemetry ?? null;
   }
 
+  /**
+   * @param {JsonObject | null | undefined} lnsTelemetry
+   * @returns {JsonObject | null}
+   */
   function readLatestLnsOutcome(lnsTelemetry) {
     const outcomes = Array.isArray(lnsTelemetry?.outcomes) ? lnsTelemetry.outcomes : [];
     return outcomes.length ? outcomes[outcomes.length - 1] : null;
   }
 
+  /**
+   * @param {unknown} value
+   * @returns {number | null}
+   */
   function finiteNumberOrNull(value) {
     return typeof value === "number" && Number.isFinite(value) ? value : null;
   }
 
+  /**
+   * @param {JsonObject | null | undefined} portfolio
+   * @returns {JsonObject | null}
+   */
   function buildPortfolioProgressSummary(portfolio) {
     const workers = Array.isArray(portfolio?.workers) ? portfolio.workers : [];
     if (!portfolio || workers.length === 0) return null;
@@ -36,6 +127,12 @@
     };
   }
 
+  /**
+   * @param {JsonObject} payload
+   * @param {number | null} totalPopulation
+   * @param {number | undefined} elapsedMs
+   * @returns {ProgressSummary}
+   */
   function buildProgressSummary(payload, totalPopulation, elapsedMs) {
     if (payload?.stats?.progressSummary) return payload.stats.progressSummary;
     const telemetry = payload?.solution?.cpSatTelemetry ?? null;
@@ -73,6 +170,10 @@
     };
   }
 
+  /**
+   * @param {ProgressSummary | null | undefined} summary
+   * @returns {string}
+   */
   function formatProgressMessageSuffix(summary) {
     if (!summary) return "";
     const parts = [];
@@ -94,6 +195,10 @@
     return parts.length ? ` ${parts.join("; ")}.` : "";
   }
 
+  /**
+   * @param {JsonObject | null | undefined} lnsTelemetry
+   * @returns {string | null}
+   */
   function buildLnsProgressNote(lnsTelemetry) {
     if (!lnsTelemetry) return null;
     const latestOutcome = readLatestLnsOutcome(lnsTelemetry);
@@ -106,6 +211,10 @@
     return `LNS ${latestOutcome.status}${improvement} in ${latestOutcome.phase} neighborhood ${Number(latestOutcome.iteration ?? 0) + 1}. Stop: ${lnsTelemetry.stopReason}.`;
   }
 
+  /**
+   * @param {ProgressLogEntry} entry
+   * @returns {ProgressLogEntry}
+   */
   function cloneProgressLogEntry(entry) {
     try {
       return JSON.parse(JSON.stringify(entry));
@@ -114,6 +223,11 @@
     }
   }
 
+  /**
+   * @param {JsonObject} payload
+   * @param {ProgressEntryOptions} [options]
+   * @returns {ProgressLogEntry | null}
+   */
   function buildSolveProgressLogEntry(payload, options = {}) {
     if (payload?.progressEntry && typeof payload.progressEntry === "object") {
       return cloneProgressLogEntry(payload.progressEntry);
@@ -183,6 +297,12 @@
     };
   }
 
+  /**
+   * @param {ProgressLogEntry[] | null | undefined} logEntries
+   * @param {JsonObject} payload
+   * @param {ProgressEntryOptions} [options]
+   * @returns {ProgressLogEntry[]}
+   */
   function appendSolveProgressLog(logEntries, payload, options = {}) {
     const entry = buildSolveProgressLogEntry(payload, options);
     if (!entry) return Array.isArray(logEntries) ? logEntries.slice() : [];
@@ -218,6 +338,9 @@
     return nextEntries;
   }
 
+  /**
+   * @param {SolveRuntimeOptions} options
+   */
   function createSolveRuntime(options) {
     const { state, elements, constants, helpers, callbacks } = options;
     const { LIVE_SNAPSHOT_REFRESH_INTERVAL_MS, SOLVE_STATUS_POLL_INTERVAL_MS } = constants;
@@ -232,6 +355,10 @@
       setSolveState
     } = callbacks;
 
+    /**
+     * @param {number} ms
+     * @param {SetResultElapsedOptions} [options]
+     */
     function setResultElapsed(ms, options = {}) {
       const { syncTimerWhenIdle = false } = options;
       state.resultElapsedMs = normalizeElapsedMs(ms);
@@ -303,6 +430,9 @@
       state.solveTimerHandle = globalObject.setInterval(syncSolveTimer, 250);
     }
 
+    /**
+     * @param {ClearManualEditOptions} [options]
+     */
     function clearManualEditState(options = {}) {
       const { resetMode = false } = options;
       state.layoutEditor.edited = false;
@@ -314,6 +444,10 @@
       }
     }
 
+    /**
+     * @param {JsonObject} payload
+     * @returns {string}
+     */
     function buildSolveProgressMessage(payload) {
       const optimizer = payload.optimizer || state.optimizer;
       const optimizerLabel = getOptimizerLabel(optimizer);
@@ -355,7 +489,9 @@
 
       if (payload.hasFeasibleSolution) {
         if (optimizer === "auto") {
-          const cycleLabel = autoStage?.cycleIndex > 0 ? `Cycle ${autoStage.cycleIndex}. ` : "";
+          const autoStageCycleIndex = finiteNumberOrNull(autoStage?.cycleIndex);
+          const cycleLabel =
+            autoStageCycleIndex !== null && autoStageCycleIndex > 0 ? `Cycle ${autoStageCycleIndex}. ` : "";
           const weakCycleLabel =
             typeof autoStage?.consecutiveWeakCycles === "number"
               ? `Weak cycles: ${autoStage.consecutiveWeakCycles}. `
@@ -387,6 +523,9 @@
       return `Running ${optimizerLabel} solver. Running the heavy standalone heuristic search...`;
     }
 
+    /**
+     * @param {JsonObject} payload
+     */
     function applyRunningSnapshot(payload) {
       if (!payload?.solution || payload.jobStatus !== "running") return;
       clearExpansionAdvice();
@@ -437,6 +576,10 @@
       }
     }
 
+    /**
+     * @param {string} requestId
+     * @returns {Promise<JsonObject>}
+     */
     async function waitForSolveResult(requestId) {
       let hasReceivedRunningSnapshot = false;
       let nextSnapshotRefreshAt = 0;
@@ -589,7 +732,9 @@
     };
   }
 
-  globalObject.CityBuilderSolveRuntime = Object.freeze({
+  const solveRuntimeGlobal = /** @type {Window & { CityBuilderSolveRuntime?: unknown }} */ (globalObject);
+
+  solveRuntimeGlobal.CityBuilderSolveRuntime = Object.freeze({
     appendSolveProgressLog,
     buildSolveProgressLogEntry,
     createSolveRuntime

@@ -1,7 +1,47 @@
+/**
+ * @param {{ PlannerManualLayout?: unknown }} globalObject
+ */
 (function attachPlannerManualLayout(globalObject) {
+  /**
+   * @typedef {Record<string, any>} JsonObject
+   *
+   * @typedef {{ rows: number, cols: number, [key: string]: any }} ManualFootprint
+   *
+   * @typedef {ManualFootprint & { r: number, c: number, range?: number }} ManualPlacement
+   *
+   * @typedef {ManualFootprint & { canRotate?: boolean, kind?: "service" | "residential", name?: string, rotated?: boolean, typeIndex?: number }} PendingManualPlacement
+   *
+   * @typedef {{ r: number, c: number }} ManualLayoutCell
+   *
+   * @typedef {{ kind: "service" | "residential", index: number }} ManualLayoutSelection
+   *
+   * @typedef {JsonObject & {
+   *   populations: number[],
+   *   residentials: ManualPlacement[],
+   *   residentialTypeIndices: number[],
+   *   roads?: string[],
+   *   servicePopulationIncreases: number[],
+   *   services: ManualPlacement[],
+   *   serviceTypeIndices: number[]
+   * }} ManualLayoutSolution
+   *
+   * @typedef {{ result?: JsonObject | null, resultContext?: JsonObject | null }} ManualLayoutState
+   *
+   * @typedef {{ excludeKind?: "service" | "residential" | null, excludeIndex?: number }} OccupiedCellsOptions
+   *
+   * @typedef {{ state: ManualLayoutState, cloneJson: <T>(value: T) => T, pendingManualLayoutError: string }} ManualLayoutModelOptions
+   */
+
+  /**
+   * @param {ManualLayoutModelOptions} options
+   */
   function createPlannerManualLayoutModel(options) {
     const { state, cloneJson, pendingManualLayoutError } = options;
 
+    /**
+     * @param {ManualPlacement} placement
+     * @returns {ManualPlacement}
+     */
     function swapPlacementDimensions(placement) {
       return {
         ...placement,
@@ -10,6 +50,12 @@
       };
     }
 
+    /**
+     * @param {"service" | "residential"} kind
+     * @param {number} typeIndex
+     * @param {string} name
+     * @returns {PendingManualPlacement}
+     */
     function buildPendingPlacementDefinition(kind, typeIndex, name) {
       if (kind === "service") {
         const type = state.resultContext?.params?.serviceTypes?.[typeIndex];
@@ -38,6 +84,10 @@
       };
     }
 
+    /**
+     * @param {PendingManualPlacement | null | undefined} pendingPlacement
+     * @returns {{ rows: number, cols: number } | null}
+     */
     function readPendingPlacementFootprint(pendingPlacement) {
       if (!pendingPlacement) return null;
       return pendingPlacement.rotated
@@ -45,6 +95,10 @@
         : { rows: pendingPlacement.rows, cols: pendingPlacement.cols };
     }
 
+    /**
+     * @param {ManualPlacement} placement
+     * @returns {ManualLayoutCell[]}
+     */
     function footprintCellsForPlacement(placement) {
       const cells = [];
       for (let dr = 0; dr < placement.rows; dr += 1) {
@@ -55,6 +109,11 @@
       return cells;
     }
 
+    /**
+     * @param {ManualLayoutSolution} solution
+     * @param {OccupiedCellsOptions} [options]
+     * @returns {Set<string>}
+     */
     function getOccupiedCells(solution, options = {}) {
       const { excludeKind = null, excludeIndex = -1 } = options;
       const occupied = new Set();
@@ -72,6 +131,10 @@
       return occupied;
     }
 
+    /**
+     * @param {number[][] | null | undefined} grid
+     * @param {ManualPlacement} placement
+     */
     function ensurePlacementFitsGrid(grid, placement) {
       if (!grid?.length) throw new Error("No grid is available for manual editing.");
       if (placement.r < 0 || placement.c < 0) {
@@ -88,6 +151,11 @@
       });
     }
 
+    /**
+     * @param {ManualLayoutSolution} solution
+     * @param {ManualPlacement} placement
+     * @param {OccupiedCellsOptions} [options]
+     */
     function ensurePlacementIsClear(solution, placement, options = {}) {
       const occupied = getOccupiedCells(solution, options);
       const roads = new Set(solution.roads ?? []);
@@ -103,6 +171,13 @@
       });
     }
 
+    /**
+     * @param {number} typeIndex
+     * @param {number} row
+     * @param {number} col
+     * @param {boolean} [rotated]
+     * @returns {{ placement: ManualPlacement, bonus: number, name: string }}
+     */
     function buildServicePlacementForType(typeIndex, row, col, rotated = false) {
       const type = state.resultContext?.params?.serviceTypes?.[typeIndex];
       if (!type) throw new Error("That service type is no longer available in the current settings.");
@@ -120,6 +195,13 @@
       };
     }
 
+    /**
+     * @param {number} typeIndex
+     * @param {number} row
+     * @param {number} col
+     * @param {boolean} [rotated]
+     * @returns {{ placement: ManualPlacement, population: number, name: string }}
+     */
     function buildResidentialPlacementForType(typeIndex, row, col, rotated = false) {
       const type = state.resultContext?.params?.residentialTypes?.[typeIndex];
       if (!type) throw new Error("That residential type is no longer available in the current settings.");
@@ -136,6 +218,9 @@
       };
     }
 
+    /**
+     * @returns {ManualLayoutSolution}
+     */
     function cloneEditableSolution() {
       if (!state.result?.solution) {
         throw new Error("Run or load a layout before editing it.");
@@ -143,6 +228,10 @@
       return cloneJson(state.result.solution);
     }
 
+    /**
+     * @param {ManualLayoutSolution | null | undefined} solution
+     * @returns {number}
+     */
     function sumRecordedResidentialPopulation(solution) {
       return (solution?.populations ?? []).reduce((sum, population) => {
         const numericPopulation = Number(population);
@@ -150,6 +239,10 @@
       }, 0);
     }
 
+    /**
+     * @param {ManualLayoutSolution} nextSolution
+     * @returns {JsonObject}
+     */
     function buildPendingManualLayoutResult(nextSolution) {
       const normalizedSolution = {
         ...nextSolution,
@@ -190,6 +283,10 @@
       };
     }
 
+    /**
+     * @param {ManualLayoutSolution} solution
+     * @param {ManualLayoutSelection | null | undefined} selection
+     */
     function removePlacementFromSolution(solution, selection) {
       if (!selection) throw new Error("Select a building first.");
       if (selection.kind === "service") {
@@ -205,6 +302,12 @@
       }
     }
 
+    /**
+     * @param {ManualLayoutSolution | null | undefined} solution
+     * @param {number} row
+     * @param {number} col
+     * @returns {ManualLayoutSelection | null}
+     */
     function findBuildingAtCell(solution, row, col) {
       if (!solution || !Number.isInteger(row) || !Number.isInteger(col)) return null;
 
@@ -230,6 +333,12 @@
       return null;
     }
 
+    /**
+     * @param {ManualPlacement | null | undefined} placement
+     * @param {number} row
+     * @param {number} col
+     * @returns {boolean}
+     */
     function isCellInsidePlacement(placement, row, col) {
       return Boolean(
         placement &&
@@ -240,6 +349,12 @@
       );
     }
 
+    /**
+     * @param {(ManualPlacement & { range: number }) | null | undefined} service
+     * @param {number} row
+     * @param {number} col
+     * @returns {boolean}
+     */
     function isCellInsideServiceEffect(service, row, col) {
       return Boolean(
         service &&
@@ -250,6 +365,12 @@
       );
     }
 
+    /**
+     * @param {ManualLayoutSolution | null | undefined} solution
+     * @param {number} row
+     * @param {number} col
+     * @returns {boolean}
+     */
     function isCellInsideAnyServiceFootprint(solution, row, col) {
       return (solution?.services ?? []).some((service) => isCellInsidePlacement(service, row, col));
     }
@@ -273,7 +394,9 @@
     };
   }
 
-  globalObject.PlannerManualLayout = {
+  const manualLayoutGlobal = /** @type {{ PlannerManualLayout?: unknown }} */ (globalObject);
+
+  manualLayoutGlobal.PlannerManualLayout = {
     createPlannerManualLayoutModel
   };
 })(typeof window !== "undefined" ? window : globalThis);

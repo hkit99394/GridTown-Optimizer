@@ -1,6 +1,52 @@
+/**
+ * @param {Window & { CityBuilderShared?: { CP_SAT_PORTFOLIO_CAPABILITY_LIMITS?: Record<string, number> }, CityBuilderWorkbench?: unknown }} globalObject
+ */
 (function attachPlannerWorkbench(globalObject) {
+  /**
+   * @typedef {Record<string, any>} JsonObject
+   * @typedef {number[][]} PlannerGrid
+   * @typedef {JsonObject & { enabled?: boolean, perWorkerNumWorkers?: number, perWorkerTimeLimitSeconds?: string, randomizeSearch?: boolean, randomSeeds?: string, workerCount?: number }} CpSatPortfolioState
+   * @typedef {JsonObject & {
+   *   auto?: JsonObject | null,
+   *   availableBuildings: { services: string, residentials: string },
+   *   cpSat: JsonObject & { portfolio?: CpSatPortfolioState },
+   *   expansionAdvice: { nextServiceText: string, nextResidentialText: string },
+   *   greedy: JsonObject,
+   *   grid: PlannerGrid,
+   *   isSolving: boolean,
+   *   lns: JsonObject,
+   *   optimizer: string,
+   *   paintMode: string,
+   *   residentialTypes: JsonObject[],
+   *   serviceTypes: JsonObject[]
+   * }} WorkbenchState
+   * @typedef {{ sampleGrid: PlannerGrid }} WorkbenchConstants
+   * @typedef {{
+   *   cloneGrid: (grid: PlannerGrid) => PlannerGrid,
+   *   createGrid: (rows: number, cols: number, value?: number) => PlannerGrid,
+   *   escapeHtml: (value: unknown) => string,
+   *   isGridLike: (value: unknown) => value is PlannerGrid,
+   *   normalizeOptimizer: (optimizer: unknown) => string,
+   *   parseCatalogImportText: (text: unknown) => { services: JsonObject[] | null, residentials: JsonObject[] | null },
+   *   serializeResidentialTypeForCatalog: (residentialType: JsonObject | null | undefined) => JsonObject,
+   *   serializeServiceTypeForCatalog: (serviceType: JsonObject | null | undefined) => JsonObject
+   * }} WorkbenchHelpers
+   * @typedef {{
+   *   getOptimizerLabel: (optimizer: string) => string,
+   *   refreshResultOverlay: () => void,
+   *   renderExpansionAdvice: () => void,
+   *   setSolveState?: (message: string) => void,
+   *   updatePayloadPreview: () => void
+   * }} WorkbenchCallbacks
+   * @typedef {{ state: WorkbenchState, elements: JsonObject, constants: WorkbenchConstants, helpers: WorkbenchHelpers, callbacks: WorkbenchCallbacks }} WorkbenchOptions
+   * @typedef {{ preserveCpSatRuntime?: boolean, optimizer?: string }} ApplySolveRequestOptions
+   */
+
+  const workbenchBootstrapGlobal =
+    /** @type {Window & { CityBuilderShared?: { CP_SAT_PORTFOLIO_CAPABILITY_LIMITS?: Record<string, number> } }} */
+    (globalObject);
   const CP_SAT_PORTFOLIO_CAPABILITY_LIMITS =
-    globalObject.CityBuilderShared?.CP_SAT_PORTFOLIO_CAPABILITY_LIMITS ??
+    workbenchBootstrapGlobal.CityBuilderShared?.CP_SAT_PORTFOLIO_CAPABILITY_LIMITS ??
     Object.freeze({
       defaultWorkers: 3,
       defaultPerWorkerTimeLimitSeconds: 30,
@@ -15,6 +61,9 @@
   const CP_SAT_PORTFOLIO_MAX_PER_WORKER_THREADS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxPerWorkerThreads;
   const CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxTotalCpuBudgetSeconds;
 
+  /**
+   * @param {WorkbenchOptions} options
+   */
   function createPlannerWorkbenchController(options) {
     const { state, elements, constants, helpers, callbacks } = options;
     const { sampleGrid } = constants;
@@ -31,6 +80,9 @@
     const { getOptimizerLabel, refreshResultOverlay, renderExpansionAdvice, setSolveState, updatePayloadPreview } =
       callbacks;
 
+    /**
+     * @returns {CpSatPortfolioState}
+     */
     function getDefaultCpSatPortfolioState() {
       return {
         enabled: false,
@@ -42,6 +94,10 @@
       };
     }
 
+    /**
+     * @param {CpSatPortfolioState | null | undefined} portfolio
+     * @returns {JsonObject}
+     */
     function applyCpSatPortfolioRequestToState(portfolio) {
       if (!portfolio) return {};
       return {
@@ -60,6 +116,10 @@
       };
     }
 
+    /**
+     * @param {JsonObject} request
+     * @param {ApplySolveRequestOptions} [options]
+     */
     function applySolveRequestToPlanner(request, options = {}) {
       const { preserveCpSatRuntime = true, optimizer = "auto" } = options;
       if (!isGridLike(request?.grid) || typeof request?.params !== "object" || request.params == null) {
@@ -68,12 +128,16 @@
 
       const params = request.params;
       state.grid = cloneGrid(request.grid);
-      state.serviceTypes = Array.isArray(params.serviceTypes)
-        ? params.serviceTypes.map((serviceType) => serializeServiceTypeForCatalog(serviceType))
-        : [];
-      state.residentialTypes = Array.isArray(params.residentialTypes)
-        ? params.residentialTypes.map((residentialType) => serializeResidentialTypeForCatalog(residentialType))
-        : [];
+      const requestServiceTypes = /** @type {JsonObject[]} */ (
+        Array.isArray(params.serviceTypes) ? params.serviceTypes : []
+      );
+      const requestResidentialTypes = /** @type {JsonObject[]} */ (
+        Array.isArray(params.residentialTypes) ? params.residentialTypes : []
+      );
+      state.serviceTypes = requestServiceTypes.map((serviceType) => serializeServiceTypeForCatalog(serviceType));
+      state.residentialTypes = requestResidentialTypes.map((residentialType) =>
+        serializeResidentialTypeForCatalog(residentialType)
+      );
       state.availableBuildings = {
         services:
           params.availableBuildings?.services != null
@@ -145,6 +209,9 @@
       renderExpansionAdvice();
     }
 
+    /**
+     * @param {string} mode
+     */
     function setPaintMode(mode) {
       state.paintMode = mode;
       for (const button of elements.paintModeToggle.querySelectorAll("button")) {
@@ -154,6 +221,9 @@
       }
     }
 
+    /**
+     * @param {unknown} optimizer
+     */
     function setOptimizer(optimizer) {
       state.optimizer = normalizeOptimizer(optimizer);
       for (const button of elements.solverToggle.querySelectorAll("button")) {
@@ -171,6 +241,10 @@
       updateSummary();
     }
 
+    /**
+     * @param {HTMLInputElement | null | undefined} element
+     * @param {unknown} max
+     */
     function setInputMax(element, max) {
       if (!element) return;
       if (max === null || max === undefined || max === "") {
@@ -190,6 +264,12 @@
       return state.grid.reduce((sum, row) => sum + row.reduce((rowSum, cell) => rowSum + (cell === 1 ? 1 : 0), 0), 0);
     }
 
+    /**
+     * @param {number} cols
+     * @param {number} frameWidth
+     * @param {string} [layoutMode]
+     * @returns {{ size: number, gap: number }}
+     */
     function getMatrixMetrics(cols, frameWidth, layoutMode = "adaptive") {
       const maxSize = cols <= 12 ? 34 : cols <= 18 ? 30 : cols <= 24 ? 24 : cols <= 30 ? 20 : cols <= 40 ? 16 : 12;
       const minSize = cols <= 18 ? 18 : cols <= 30 ? 13 : 10;
@@ -207,6 +287,9 @@
       return { size, gap };
     }
 
+    /**
+     * @param {HTMLElement | null | undefined} gridElement
+     */
     function applyMatrixLayout(gridElement) {
       if (!gridElement) return;
       const cols = Number(gridElement.dataset.cols || 0);
@@ -228,6 +311,12 @@
       refreshResultOverlay();
     }
 
+    /**
+     * @param {number} value
+     * @param {number} row
+     * @param {number} col
+     * @returns {string}
+     */
     function buildCanvasCellLabel(value, row, col) {
       return `Cell ${row},${col} is ${value === 1 ? "allowed" : "blocked"}`;
     }
@@ -262,6 +351,9 @@
       updateSummary();
     }
 
+    /**
+     * @param {HTMLElement} cellElement
+     */
     function applyPaint(cellElement) {
       const row = Number(cellElement.dataset.r);
       const col = Number(cellElement.dataset.c);
@@ -278,6 +370,10 @@
       updatePayloadPreview();
     }
 
+    /**
+     * @param {number} rows
+     * @param {number} cols
+     */
     function resizeGrid(rows, cols) {
       const next = createGrid(rows, cols, 1);
       for (let r = 0; r < Math.min(rows, state.grid.length); r += 1) {
@@ -291,6 +387,9 @@
       updatePayloadPreview();
     }
 
+    /**
+     * @param {string} kind
+     */
     function applyPreset(kind) {
       const rows = state.grid.length;
       const cols = state.grid[0]?.length ?? 0;
@@ -306,6 +405,9 @@
       updatePayloadPreview();
     }
 
+    /**
+     * @param {string} kind
+     */
     function applyRuntimePreset(kind) {
       const defaultNeighborhoodRows = Math.max(1, Math.ceil(state.grid.length / 2));
       const defaultNeighborhoodCols = Math.max(1, Math.ceil((state.grid[0]?.length ?? 1) / 2));
@@ -509,6 +611,9 @@
       elements.maxResidentials.value = state.availableBuildings.residentials;
     }
 
+    /**
+     * @param {boolean} autoOwnsStageSeeds
+     */
     function syncCpSatPortfolioFields(autoOwnsStageSeeds) {
       const portfolio = {
         ...getDefaultCpSatPortfolioState(),
@@ -701,6 +806,9 @@
       elements.summaryOptimizer.textContent = getOptimizerLabel(state.optimizer);
     }
 
+    /**
+     * @param {Event} event
+     */
     function handleCatalogInput(event) {
       const target = event.target;
       if (!(target instanceof HTMLInputElement)) return;
@@ -714,6 +822,9 @@
       updatePayloadPreview();
     }
 
+    /**
+     * @param {Event} event
+     */
     function handleCatalogClick(event) {
       const target = event.target;
       if (!(target instanceof Element)) return;
@@ -774,7 +885,11 @@
     });
   }
 
-  globalObject.CityBuilderWorkbench = Object.freeze({
+  const workbenchGlobal =
+    /** @type {Window & { CityBuilderWorkbench?: unknown }} */
+    (globalObject);
+
+  workbenchGlobal.CityBuilderWorkbench = Object.freeze({
     createPlannerWorkbenchController
   });
 })(window);

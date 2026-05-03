@@ -12,10 +12,8 @@ const temporaryOversizedBudgets = new Map([
   ["apps/planner-web/plannerResults.js", 1650],
   ["apps/planner-web/styles.css", 1550],
   ["python/cp_sat_solver.py", 950],
-  ["src/packages/benchmarks/crossMode.ts", 1000],
   ["src/packages/benchmarks/experimentRegistry.ts", 1150],
   ["src/packages/benchmarks/greedy.ts", 1000],
-  ["src/packages/benchmarks/learnedRankingLabels.ts", 950],
   ["src/packages/benchmarks/lnsWindowReplayLabels.ts", 1200],
   ["src/packages/solvers/auto/solver.ts", 1150]
 ]);

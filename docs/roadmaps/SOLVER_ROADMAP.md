@@ -70,14 +70,15 @@ Delivered so far:
 - Replay state policies are now explicit. Default label generation still uses `initial-incumbent`, while strict runs can request `initial-incumbent`, `post-first-improvement`, and `post-stagnation` with bounded state-collection iterations and a separate CP-SAT repair budget.
 - `lnsBenchmarkCli` and `learnedRankingLabelCli` expose the state-policy and state-collection knobs, and label telemetry/snapshots carry requested and captured state policies.
 - Learned-ranking label generation now has a `strict-lns-replay` preset that records the preset in audit/registry metadata and applies the strict three-state replay policy with the standard three fixed seeds unless the caller explicitly overrides them.
-- LNS replay-label readiness now reports required, captured, and missing replay state policies; the strict preset enables the three-state coverage gate so artifact readiness fails clearly if a requested state is absent.
+- LNS replay-label readiness now reports required, captured, and missing replay state policies at both split and pressure-family level; the strict preset enables the three-state coverage gate so artifact readiness fails clearly if a requested state is absent.
+- The strict artifact bundle `strict-lns-replay-labels-2026-05-04` is generated and registered under `artifacts/learned-ranking-labels/2026-05-04/strict-lns-replay-labels/` with 4,677 Greedy labels, 1,146 LNS replay labels, protected holdout, feature schema `2`, CP-SAT worker count `1`, seeds `7`, `19`, and `37`, strict three-state replay policy, and label fingerprint `fnv1a:03ab1acf`.
+- The first strict bundle is evidence-only and does not pass readiness yet: development covers 5 families with 648 usable and 69 non-neutral labels but misses the neutral-ratio gate at `0.894` and lacks `post-first-improvement` captures in corridor, footprint-pressure, and service-pressure; holdout covers 5 families with 498 usable labels but has 0 non-neutral labels, neutral ratio `1.000`, and no captured `post-first-improvement` state in any LNS pressure family.
 
 Concrete work:
 
-- Generate strict LNS replay artifacts across development and holdout pressure families, with at least 3 fixed seeds per family.
-- Use the `strict-lns-replay` preset so state policy, seed, telemetry, and registry metadata stay reproducible.
-- Replay baseline top windows plus tail exploration windows under equal CP-SAT repair budgets.
-- Generate and register strict artifacts large enough to test readiness thresholds.
+- Diagnose why `post-first-improvement` is absent in the neutral pressure-family traces, especially holdout.
+- Add or retune LNS pressure cases so both splits produce enough non-neutral replay outcomes under equal CP-SAT repair budgets.
+- Regenerate the strict bundle after the state-capture and non-neutral signal fixes, preserving the `strict-lns-replay` preset and registered metadata.
 - Expose the same feature payload shape in broader traces, benchmark summaries, and planner explainability surfaces where useful.
 
 Exit criteria:

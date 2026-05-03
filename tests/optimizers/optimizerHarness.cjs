@@ -1871,6 +1871,10 @@ function testLearnedRankingLabelSuite() {
   assert.deepEqual(result.lns.scaleReadiness.thresholds.requiredStatePolicies, []);
   assert.deepEqual(result.lns.scaleReadiness.splitReadiness[0].capturedStatePolicies, ["initial-incumbent"]);
   assert.deepEqual(result.lns.scaleReadiness.splitReadiness[0].missingStatePolicies, []);
+  assert.deepEqual(result.lns.scaleReadiness.splitReadiness[0].families[0].capturedStatePolicies, [
+    "initial-incumbent"
+  ]);
+  assert.deepEqual(result.lns.scaleReadiness.splitReadiness[0].families[0].missingStatePolicies, []);
   assert.equal(result.lns.scaleReadiness.splitReadiness[0].failedReasons.length > 0, true);
   assert.equal(
     buildLnsReplayLabelScaleReadiness(result.lns.splits, {
@@ -1881,6 +1885,54 @@ function testLearnedRankingLabelSuite() {
       minUsableLabelsPerFamily: 0,
       maxNeutralLabelRatio: 1
     }).passed,
+    true
+  );
+  const familyStateReadiness = buildLnsReplayLabelScaleReadiness(
+    [
+      {
+        split: "development",
+        seeds: [7],
+        replay: {
+          cases: [
+            {
+              name: "anchor-initial",
+              pressureFamily: "anchor-service",
+              seed: 7,
+              statePolicy: "initial-incumbent",
+              labels: [{ status: "improved", usable: true }]
+            },
+            {
+              name: "gate-first",
+              pressureFamily: "gate",
+              seed: 7,
+              statePolicy: "post-first-improvement",
+              labels: [{ status: "improved", usable: true }]
+            }
+          ]
+        }
+      }
+    ],
+    {
+      minPressureFamilies: 2,
+      minSeedsPerFamily: 1,
+      minUsableLabelsPerSplit: 0,
+      minNonNeutralLabelsPerSplit: 0,
+      minUsableLabelsPerFamily: 0,
+      maxNeutralLabelRatio: 1,
+      requiredStatePolicies: ["initial-incumbent", "post-first-improvement"]
+    }
+  );
+  assert.equal(familyStateReadiness.passed, false);
+  assert.deepEqual(familyStateReadiness.splitReadiness[0].missingStatePolicies, []);
+  assert.deepEqual(
+    familyStateReadiness.splitReadiness[0].families.find((family) => family.pressureFamily === "anchor-service")
+      .missingStatePolicies,
+    ["post-first-improvement"]
+  );
+  assert.equal(
+    familyStateReadiness.splitReadiness[0].failedReasons.includes(
+      "anchor-service state-policies missing:post-first-improvement"
+    ),
     true
   );
   assert.equal(buildLnsReplayLabelScaleReadiness([]).passed, false);

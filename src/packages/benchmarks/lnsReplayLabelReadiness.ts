@@ -48,6 +48,9 @@ export interface LnsReplayLabelFamilyScaleSummary {
   pressureFamily: LnsReplayLabelReadinessPressureFamilyLabel;
   caseNames: string[];
   seeds: number[];
+  requiredStatePolicies: LnsWindowReplayStatePolicy[];
+  capturedStatePolicies: LnsWindowReplayStatePolicy[];
+  missingStatePolicies: LnsWindowReplayStatePolicy[];
   labelCount: number;
   usableLabelCount: number;
   nonNeutralUsableLabelCount: number;
@@ -99,7 +102,8 @@ function lnsLabelIsNonNeutral(label: LnsReplayLabelReadinessLabel): boolean {
 
 function summarizeLnsReplayFamily(
   pressureFamily: LnsReplayLabelReadinessPressureFamilyLabel,
-  cases: readonly LnsReplayLabelReadinessCase[]
+  cases: readonly LnsReplayLabelReadinessCase[],
+  requiredStatePolicies: readonly LnsWindowReplayStatePolicy[]
 ): LnsReplayLabelFamilyScaleSummary {
   const labels = cases.flatMap((benchmarkCase) => benchmarkCase.labels);
   const usableLabels = labels.filter((label) => label.usable);
@@ -111,11 +115,21 @@ function summarizeLnsReplayFamily(
       .filter((seed): seed is number => seed !== null)
       .map((seed) => String(seed))
   ).map((seed) => Number(seed));
+  const capturedStatePolicies = uniqueBenchmarkValues(
+    cases
+      .map((benchmarkCase) => benchmarkCase.statePolicy)
+      .filter((statePolicy): statePolicy is LnsWindowReplayStatePolicy => statePolicy !== undefined)
+  ) as LnsWindowReplayStatePolicy[];
+  const capturedStatePolicySet = new Set(capturedStatePolicies);
+  const missingStatePolicies = requiredStatePolicies.filter((statePolicy) => !capturedStatePolicySet.has(statePolicy));
 
   return {
     pressureFamily,
     caseNames: uniqueBenchmarkValuesBy(cases, (benchmarkCase) => benchmarkCase.name),
     seeds,
+    requiredStatePolicies: [...requiredStatePolicies],
+    capturedStatePolicies,
+    missingStatePolicies,
     labelCount: labels.length,
     usableLabelCount: usableLabels.length,
     nonNeutralUsableLabelCount,
@@ -128,16 +142,16 @@ function buildLnsReplayLabelSplitScaleReadiness<Split extends string>(
   split: LnsReplayLabelScaleSplitInput<Split>,
   thresholds: LnsReplayLabelScaleThresholds
 ): LnsReplayLabelSplitScaleReadiness<Split> {
+  const requiredStatePolicies = [...(thresholds.requiredStatePolicies ?? [])];
   const families = [
     ...groupBenchmarkValuesBy(split.replay.cases, (benchmarkCase) => benchmarkCase.pressureFamily).entries()
   ]
-    .map(([pressureFamily, cases]) => summarizeLnsReplayFamily(pressureFamily, cases))
+    .map(([pressureFamily, cases]) => summarizeLnsReplayFamily(pressureFamily, cases, requiredStatePolicies))
     .sort((left, right) => left.pressureFamily.localeCompare(right.pressureFamily));
   const usableLabelCount = sumBenchmarkBy(families, (family) => family.usableLabelCount);
   const nonNeutralUsableLabelCount = sumBenchmarkBy(families, (family) => family.nonNeutralUsableLabelCount);
   const neutralUsableLabelCount = sumBenchmarkBy(families, (family) => family.neutralUsableLabelCount);
   const neutralLabelRatio = usableLabelCount === 0 ? 1 : neutralUsableLabelCount / usableLabelCount;
-  const requiredStatePolicies = [...(thresholds.requiredStatePolicies ?? [])];
   const capturedStatePolicies = uniqueBenchmarkValues(
     split.replay.cases
       .map((benchmarkCase) => benchmarkCase.statePolicy)
@@ -170,6 +184,9 @@ function buildLnsReplayLabelSplitScaleReadiness<Split extends string>(
       failedReasons.push(
         `${family.pressureFamily} usable-labels ${family.usableLabelCount}/${thresholds.minUsableLabelsPerFamily}`
       );
+    }
+    if (family.missingStatePolicies.length > 0) {
+      failedReasons.push(`${family.pressureFamily} state-policies missing:${family.missingStatePolicies.join(",")}`);
     }
   }
 

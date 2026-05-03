@@ -4,7 +4,13 @@
  * Re-exported by ../types.ts to preserve the public API.
  */
 
-import type { AvailableBuildings, OptimizerName, ResidentialSettings, ResidentialTypeSetting, ServiceTypeSetting } from "./baseTypes.js";
+import type {
+  AvailableBuildings,
+  OptimizerName,
+  ResidentialSettings,
+  ResidentialTypeSetting,
+  ServiceTypeSetting
+} from "./baseTypes.js";
 import type { AutoOptions } from "./autoTypes.js";
 import type { CpSatOptions } from "./cpSatTypes.js";
 import type { GreedyOptions } from "./greedyTypes.js";

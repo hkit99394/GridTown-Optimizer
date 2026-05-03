@@ -4,7 +4,7 @@ import type {
   ServiceCandidate,
   ServicePlacement,
   Solution,
-  SolverParams,
+  SolverParams
 } from "../../core/index.js";
 import { normalizeServicePlacement } from "../../core/index.js";
 import { getResidentialBaseMax, NO_TYPE_INDEX } from "../../core/index.js";
@@ -23,9 +23,15 @@ export function getCandidateTypeIndex(candidate: ResidentialCandidateLike): numb
 }
 
 export function serviceCandidateKey(candidate: ServiceCandidate): string {
-  return [candidate.r, candidate.c, candidate.rows, candidate.cols, candidate.range, candidate.typeIndex, candidate.bonus].join(
-    ","
-  );
+  return [
+    candidate.r,
+    candidate.c,
+    candidate.rows,
+    candidate.cols,
+    candidate.range,
+    candidate.typeIndex,
+    candidate.bonus
+  ].join(",");
 }
 
 export function sameServicePlacement(a: ServicePlacement, b: ServicePlacement): boolean {
@@ -40,7 +46,7 @@ export function materializeServicePlacement(candidate: ServiceCandidate): Requir
     c: candidate.c,
     rows: candidate.rows,
     cols: candidate.cols,
-    range: candidate.range,
+    range: candidate.range
   };
 }
 
@@ -49,7 +55,7 @@ export function materializeChosenServiceCandidate(solution: Solution, index: num
   return {
     ...placement,
     typeIndex: solution.serviceTypeIndices[index] ?? NO_TYPE_INDEX,
-    bonus: solution.servicePopulationIncreases[index] ?? 0,
+    bonus: solution.servicePopulationIncreases[index] ?? 0
   };
 }
 
@@ -62,18 +68,12 @@ export function stableServicePlacementKey(candidate: ServicePlacement | ServiceC
     placement.cols,
     placement.range,
     "typeIndex" in candidate ? candidate.typeIndex : NO_TYPE_INDEX,
-    "bonus" in candidate ? candidate.bonus : 0,
+    "bonus" in candidate ? candidate.bonus : 0
   ].join(",");
 }
 
 export function stableResidentialPlacementKey(candidate: ResidentialCandidateLike): string {
-  return [
-    candidate.r,
-    candidate.c,
-    candidate.rows,
-    candidate.cols,
-    getCandidateTypeIndex(candidate),
-  ].join(",");
+  return [candidate.r, candidate.c, candidate.rows, candidate.cols, getCandidateTypeIndex(candidate)].join(",");
 }
 
 export function roadCostFromTieBreakProbe(probe: TieBreakProbe): number {

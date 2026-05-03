@@ -5,13 +5,15 @@ const path = require("node:path");
 
 function resolveCpSatPython(repoRoot = path.resolve(__dirname, "../..")) {
   const venvPython = path.resolve(repoRoot, ".venv-cp-sat/bin/python");
-  const candidates = [fs.existsSync(venvPython) ? venvPython : null, process.env.CITY_BUILDER_CP_SAT_PYTHON || null, "python3"].filter(
-    Boolean
-  );
+  const candidates = [
+    fs.existsSync(venvPython) ? venvPython : null,
+    process.env.CITY_BUILDER_CP_SAT_PYTHON || null,
+    "python3"
+  ].filter(Boolean);
 
   for (const pythonExecutable of candidates) {
     const importCheck = childProcess.spawnSync(pythonExecutable, ["-c", "import ortools"], {
-      encoding: "utf8",
+      encoding: "utf8"
     });
     if (importCheck.status === 0) {
       return pythonExecutable;
@@ -66,5 +68,5 @@ module.exports = {
   delay,
   resolveCpSatPython,
   waitForFile,
-  waitForHeartbeatToStop,
+  waitForHeartbeatToStop
 };

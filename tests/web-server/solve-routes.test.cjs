@@ -11,7 +11,7 @@ const {
   createRouteTestHandler,
   invoke,
   waitForNextTurn,
-  waitForSolve,
+  waitForSolve
 } = require("./routeTestServer.cjs");
 
 async function testHttpSolveStripsLocalRuntimePathOptions(handler) {
@@ -36,11 +36,11 @@ async function testHttpSolveStripsLocalRuntimePathOptions(handler) {
         getLatestSnapshotState() {
           return {
             hasFeasibleSolution: false,
-            totalPopulation: null,
+            totalPopulation: null
           };
-        },
+        }
       };
-    },
+    }
   });
 
   try {
@@ -56,19 +56,19 @@ async function testHttpSolveStripsLocalRuntimePathOptions(handler) {
             scriptPath: "/tmp/evil.py",
             stopFilePath: "/tmp/stop",
             snapshotFilePath: "/tmp/snapshot.json",
-            numWorkers: 1,
+            numWorkers: 1
           },
           greedy: {
             ...solvePayload.params.greedy,
             stopFilePath: "/tmp/greedy-stop",
-            snapshotFilePath: "/tmp/greedy-snapshot.json",
+            snapshotFilePath: "/tmp/greedy-snapshot.json"
           },
           lns: {
             stopFilePath: "/tmp/lns-stop",
-            snapshotFilePath: "/tmp/lns-snapshot.json",
-          },
-        },
-      },
+            snapshotFilePath: "/tmp/lns-snapshot.json"
+          }
+        }
+      }
     });
 
     assert.equal(result.statusCode, 200);
@@ -111,18 +111,18 @@ async function testImmediateSolveRoute(handler) {
         getLatestSnapshotState() {
           return {
             hasFeasibleSolution: false,
-            totalPopulation: null,
+            totalPopulation: null
           };
-        },
+        }
       };
-    },
+    }
   });
 
   try {
     const result = await invoke(handler, {
       method: "POST",
       url: "/api/solve",
-      json: solvePayload,
+      json: solvePayload
     });
 
     assert.equal(result.statusCode, 200);
@@ -156,11 +156,11 @@ async function testImmediateSolveBackendJsonErrorsReturnInternalServerError(hand
         getLatestSnapshotState() {
           return {
             hasFeasibleSolution: false,
-            totalPopulation: null,
+            totalPopulation: null
           };
-        },
+        }
       };
-    },
+    }
   });
 
   try {
@@ -171,9 +171,9 @@ async function testImmediateSolveBackendJsonErrorsReturnInternalServerError(hand
         ...solvePayload,
         params: {
           ...solvePayload.params,
-          optimizer: "cp-sat",
-        },
-      },
+          optimizer: "cp-sat"
+        }
+      }
     });
 
     assert.equal(result.statusCode, 500);
@@ -212,11 +212,11 @@ async function testImmediateSolveCancelsOnDisconnect(handler) {
         getLatestSnapshotState() {
           return {
             hasFeasibleSolution: false,
-            totalPopulation: null,
+            totalPopulation: null
           };
-        },
+        }
       };
-    },
+    }
   });
 
   try {
@@ -245,7 +245,7 @@ async function testImmediateSolveCancelsOnDisconnect(handler) {
 async function testBackgroundSolveRejectsImmediateSolveAtCapacity() {
   const { handler } = createRouteTestHandler({
     progressLogRootPrefix: "planner-route-capacity-background-",
-    maxRunningSolves: 1,
+    maxRunningSolves: 1
   });
   const solvePayload = buildTinySolvePayload();
   const backgroundSolution = solve(solvePayload.grid, solvePayload.params);
@@ -271,11 +271,11 @@ async function testBackgroundSolveRejectsImmediateSolveAtCapacity() {
         getLatestSnapshotState() {
           return {
             hasFeasibleSolution: false,
-            totalPopulation: null,
+            totalPopulation: null
           };
-        },
+        }
       };
-    },
+    }
   });
 
   try {
@@ -285,8 +285,8 @@ async function testBackgroundSolveRejectsImmediateSolveAtCapacity() {
       url: "/api/solve/start",
       json: {
         ...solvePayload,
-        requestId,
-      },
+        requestId
+      }
     });
     assert.equal(startResult.statusCode, 202);
     await startBackgroundSolveDeferred.promise;
@@ -294,7 +294,7 @@ async function testBackgroundSolveRejectsImmediateSolveAtCapacity() {
     const immediateResult = await invoke(handler, {
       method: "POST",
       url: "/api/solve",
-      json: solvePayload,
+      json: solvePayload
     });
 
     assert.equal(immediateResult.statusCode, 429);
@@ -313,7 +313,7 @@ async function testBackgroundSolveRejectsImmediateSolveAtCapacity() {
 async function testImmediateSolveRejectsBackgroundSolveAtCapacity() {
   const { handler } = createRouteTestHandler({
     progressLogRootPrefix: "planner-route-capacity-immediate-",
-    maxRunningSolves: 1,
+    maxRunningSolves: 1
   });
   const solvePayload = buildTinySolvePayload();
   const backgroundSolution = solve(solvePayload.grid, solvePayload.params);
@@ -339,11 +339,11 @@ async function testImmediateSolveRejectsBackgroundSolveAtCapacity() {
         getLatestSnapshotState() {
           return {
             hasFeasibleSolution: false,
-            totalPopulation: null,
+            totalPopulation: null
           };
-        },
+        }
       };
-    },
+    }
   });
 
   try {
@@ -358,8 +358,8 @@ async function testImmediateSolveRejectsBackgroundSolveAtCapacity() {
       url: "/api/solve/start",
       json: {
         ...solvePayload,
-        requestId: "capacity-immediate-running",
-      },
+        requestId: "capacity-immediate-running"
+      }
     });
 
     assert.equal(startResult.statusCode, 429);

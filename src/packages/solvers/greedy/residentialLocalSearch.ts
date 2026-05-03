@@ -4,28 +4,17 @@ import type {
   ResidentialCandidate,
   ResidentialPlacement,
   ServicePlacement,
-  SolverParams,
+  SolverParams
 } from "../../core/index.js";
-import {
-  createRoadProbeScratch,
-  NO_TYPE_INDEX,
-  overlaps,
-} from "../../core/index.js";
-import {
-  commitExplicitRoadConnectedPlacement,
-  probeExplicitRoadConnection,
-} from "./attemptState.js";
+import { createRoadProbeScratch, NO_TYPE_INDEX, overlaps } from "../../core/index.js";
+import { commitExplicitRoadConnectedPlacement, probeExplicitRoadConnection } from "./attemptState.js";
 import type { RoadConnectionProbe } from "./attemptState.js";
 import {
   recordRoadOpportunityPlacementFromOccupiedBuildings,
-  roadOpportunityHasTraceCapacity,
+  roadOpportunityHasTraceCapacity
 } from "./roadOpportunity.js";
 import type { RoadOpportunityRecorder } from "./roadOpportunity.js";
-import {
-  compareResidentialTieBreaks,
-  getCandidateTypeIndex,
-  stableResidentialPlacementKey,
-} from "./candidates.js";
+import { compareResidentialTieBreaks, getCandidateTypeIndex, stableResidentialPlacementKey } from "./candidates.js";
 import type { ResidentialCandidatesList } from "./candidates.js";
 import { placementLeavesRoadAnchorCellAvailable } from "./roadAnchors.js";
 import {
@@ -34,23 +23,17 @@ import {
   deletePlacementCellsFromOccupancyScratch,
   deletePlacementCellsFromSet,
   resetOccupancyScratch,
-  toExplicitConnectivityProbe,
+  toExplicitConnectivityProbe
 } from "./placementUtils.js";
 import {
   createRoadOpportunityCandidatePools,
   pushRoadOpportunityCandidate,
-  selectRoadOpportunityCounterfactuals,
+  selectRoadOpportunityCounterfactuals
 } from "./roadOpportunityCandidates.js";
 import type { RoadOpportunityCandidatePoolEntry } from "./roadOpportunityCandidates.js";
-import {
-  startGreedyProfilePhase,
-} from "./profile.js";
+import { startGreedyProfilePhase } from "./profile.js";
 import type { GreedyProfilePhaseRecorder } from "./profile.js";
-import type {
-  ResidentialAddChoice,
-  ResidentialLocalSearchState,
-  ResidentialMoveChoice,
-} from "./types.js";
+import type { ResidentialAddChoice, ResidentialLocalSearchState, ResidentialMoveChoice } from "./types.js";
 
 export function runResidentialLocalSearchPhase(options: {
   enabled: boolean;
@@ -92,7 +75,7 @@ export function runResidentialLocalSearchPhase(options: {
     recordRoadOpportunity,
     maybeStop,
     explicitRoadProbeScratch,
-    recordProfilePhase,
+    recordProfilePhase
   } = options;
   if (!enabled) return totalPopulation;
 
@@ -117,14 +100,14 @@ export function runResidentialLocalSearchPhase(options: {
       profileCounters,
       recordRoadOpportunity,
       maybeStop,
-      explicitRoadProbeScratch,
+      explicitRoadProbeScratch
     });
     return phaseTotalPopulation;
   } finally {
     if (recordProfilePhase) {
       recordProfilePhase("residentialLocalSearch", phaseStartedAtMs, {
         candidatePopulationBefore: populationBeforeLocalSearch,
-        candidatePopulationAfter: phaseTotalPopulation,
+        candidatePopulationAfter: phaseTotalPopulation
       });
     }
   }
@@ -142,15 +125,8 @@ class ResidentialLayoutState {
   }
 
   applyAdd(choice: ResidentialAddChoice, probe: RoadConnectionProbe): void {
-    const {
-      roads,
-      occupied,
-      residentials,
-      residentialTypeIndices,
-      populations,
-      remainingAvail,
-      profileCounters,
-    } = this.state;
+    const { roads, occupied, residentials, residentialTypeIndices, populations, remainingAvail, profileCounters } =
+      this.state;
     const { candidate, candidateTypeIndex, addPop } = choice;
     this.currentTotalPopulation += addPop;
     commitExplicitRoadConnectedPlacement({
@@ -158,7 +134,7 @@ class ResidentialLayoutState {
       occupied,
       probe,
       placement: candidate,
-      profileCounters,
+      profileCounters
     });
     residentials.push({ r: candidate.r, c: candidate.c, rows: candidate.rows, cols: candidate.cols });
     residentialTypeIndices.push(candidateTypeIndex);
@@ -168,15 +144,8 @@ class ResidentialLayoutState {
   }
 
   applyMove(choice: ResidentialMoveChoice, probe: RoadConnectionProbe): void {
-    const {
-      roads,
-      occupied,
-      residentials,
-      residentialTypeIndices,
-      populations,
-      remainingAvail,
-      profileCounters,
-    } = this.state;
+    const { roads, occupied, residentials, residentialTypeIndices, populations, remainingAvail, profileCounters } =
+      this.state;
     const currentResidential = residentials[choice.residentialIndex];
     deletePlacementCellsFromSet(occupied, currentResidential);
     if (remainingAvail && choice.currentTypeIndex >= 0) remainingAvail[choice.currentTypeIndex]++;
@@ -185,14 +154,14 @@ class ResidentialLayoutState {
       occupied,
       probe,
       placement: choice.candidate,
-      profileCounters,
+      profileCounters
     });
     if (remainingAvail && choice.candidateTypeIndex >= 0) remainingAvail[choice.candidateTypeIndex]--;
     residentials[choice.residentialIndex] = {
       r: choice.candidate.r,
       c: choice.candidate.c,
       rows: choice.candidate.rows,
-      cols: choice.candidate.cols,
+      cols: choice.candidate.cols
     };
     residentialTypeIndices[choice.residentialIndex] = choice.candidateTypeIndex;
     populations[choice.residentialIndex] = choice.newPop;
@@ -217,11 +186,12 @@ function localSearchImprove(state: ResidentialLocalSearchState): number {
     maxResidentials,
     profileCounters,
     recordRoadOpportunity,
-    maybeStop,
+    maybeStop
   } = state;
   const layoutState = new ResidentialLayoutState(state);
   const explicitRoadProbeScratch = state.explicitRoadProbeScratch ?? createRoadProbeScratch(G);
-  const useTypes = remainingAvail !== null && residentialCandidates.length > 0 && "typeIndex" in residentialCandidates[0];
+  const useTypes =
+    remainingAvail !== null && residentialCandidates.length > 0 && "typeIndex" in residentialCandidates[0];
   const maxIter = 20;
 
   const probeRoadConnection = (
@@ -250,9 +220,13 @@ function localSearchImprove(state: ResidentialLocalSearchState): number {
     let bestAdd: ResidentialAddChoice | null = null;
     let bestAddDelta = 0;
     let bestAddProbe: RoadConnectionProbe | null = null;
-    const collectRoadOpportunityCounterfactuals = roadOpportunityHasTraceCapacity(recordRoadOpportunity, "residential-local-search");
-    const residentialRoadOpportunityPools =
-      createRoadOpportunityCandidatePools<ResidentialPlacement | ResidentialCandidate>();
+    const collectRoadOpportunityCounterfactuals = roadOpportunityHasTraceCapacity(
+      recordRoadOpportunity,
+      "residential-local-search"
+    );
+    const residentialRoadOpportunityPools = createRoadOpportunityCandidatePools<
+      ResidentialPlacement | ResidentialCandidate
+    >();
 
     for (let i = 0; i < residentials.length; i++) {
       maybeStop?.();
@@ -269,18 +243,15 @@ function localSearchImprove(state: ResidentialLocalSearchState): number {
         maybeStop?.();
         if (profileCounters) profileCounters.localSearch.candidateScans++;
         const candidateTypeIndex = getCandidateTypeIndex(cand);
-        const samePlacement =
-          cand.r === res.r
-          && cand.c === res.c
-          && cand.rows === res.rows
-          && cand.cols === res.cols;
+        const samePlacement = cand.r === res.r && cand.c === res.c && cand.rows === res.rows && cand.cols === res.cols;
         if (samePlacement && candidateTypeIndex === resType) continue;
         if (useTypes && remainingAvail) {
           if (candidateTypeIndex !== resType && remainingAvail[candidateTypeIndex] <= 0) continue;
         }
         if (roads.size === 0) {
           if (profileCounters) profileCounters.roads.roadAnchorChecks++;
-          if (!placementLeavesRoadAnchorCellAvailable(G, othersOccupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
+          if (!placementLeavesRoadAnchorCellAvailable(G, othersOccupied, cand.r, cand.c, cand.rows, cand.cols))
+            continue;
         }
         if (overlaps(othersOccupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
         if (profileCounters) profileCounters.localSearch.moveChecks++;
@@ -292,9 +263,10 @@ function localSearchImprove(state: ResidentialLocalSearchState): number {
         const delta = newPop - currentPop;
         const traceProbe = toExplicitConnectivityProbe(probe);
         const traceKey = `move:${i}:${candidateIndex}:${stableResidentialPlacementKey(cand)}:${candidateTypeIndex}`;
-        const traceOccupiedBuildings = delta > 0 && (profileCounters || recordRoadOpportunity)
-          ? buildLocalSearchBuildingOccupancy(services, residentials, i)
-          : undefined;
+        const traceOccupiedBuildings =
+          delta > 0 && (profileCounters || recordRoadOpportunity)
+            ? buildLocalSearchBuildingOccupancy(services, residentials, i)
+            : undefined;
         if (collectRoadOpportunityCounterfactuals && delta > 0 && traceOccupiedBuildings) {
           const roadOpportunityEntry: RoadOpportunityCandidatePoolEntry<ResidentialPlacement | ResidentialCandidate> = {
             key: traceKey,
@@ -305,14 +277,17 @@ function localSearchImprove(state: ResidentialLocalSearchState): number {
             occupiedBuildings: new Set(traceOccupiedBuildings),
             score: delta,
             typeIndex: candidateTypeIndex,
-            moveKind: "residential-move",
+            moveKind: "residential-move"
           };
           pushRoadOpportunityCandidate(residentialRoadOpportunityPools, roadOpportunityEntry);
         }
         if (
-          delta > bestMoveDelta
-          || (delta === bestMoveDelta && delta > 0 && bestMove !== null && bestMoveProbe !== null
-            && compareResidentialTieBreaks(params, cand, probe, bestMove.candidate, bestMoveProbe) < 0)
+          delta > bestMoveDelta ||
+          (delta === bestMoveDelta &&
+            delta > 0 &&
+            bestMove !== null &&
+            bestMoveProbe !== null &&
+            compareResidentialTieBreaks(params, cand, probe, bestMove.candidate, bestMoveProbe) < 0)
         ) {
           bestMove = {
             kind: "move",
@@ -324,7 +299,7 @@ function localSearchImprove(state: ResidentialLocalSearchState): number {
             newPop,
             key: traceKey,
             probe: traceProbe,
-            occupiedBuildings: traceOccupiedBuildings ?? buildLocalSearchBuildingOccupancy(services, residentials, i),
+            occupiedBuildings: traceOccupiedBuildings ?? buildLocalSearchBuildingOccupancy(services, residentials, i)
           };
           bestMoveDelta = delta;
           bestMoveProbe = probe;
@@ -354,9 +329,10 @@ function localSearchImprove(state: ResidentialLocalSearchState): number {
         const addPop = residentialPopulationCache[candidateIndex] ?? -1;
         const traceProbe = toExplicitConnectivityProbe(probe);
         const traceKey = `add:${candidateIndex}:${stableResidentialPlacementKey(cand)}:${candidateTypeIndex}`;
-        const traceOccupiedBuildings = addPop > 0 && (profileCounters || recordRoadOpportunity)
-          ? buildLocalSearchBuildingOccupancy(services, residentials)
-          : undefined;
+        const traceOccupiedBuildings =
+          addPop > 0 && (profileCounters || recordRoadOpportunity)
+            ? buildLocalSearchBuildingOccupancy(services, residentials)
+            : undefined;
         if (collectRoadOpportunityCounterfactuals && addPop > 0 && traceOccupiedBuildings) {
           const roadOpportunityEntry: RoadOpportunityCandidatePoolEntry<ResidentialPlacement | ResidentialCandidate> = {
             key: traceKey,
@@ -367,14 +343,17 @@ function localSearchImprove(state: ResidentialLocalSearchState): number {
             occupiedBuildings: new Set(traceOccupiedBuildings),
             score: addPop,
             typeIndex: candidateTypeIndex,
-            moveKind: "residential-add",
+            moveKind: "residential-add"
           };
           pushRoadOpportunityCandidate(residentialRoadOpportunityPools, roadOpportunityEntry);
         }
         if (
-          addPop > bestAddDelta
-          || (addPop === bestAddDelta && addPop > 0 && bestAdd !== null && bestAddProbe !== null
-            && compareResidentialTieBreaks(params, cand, probe, bestAdd.candidate, bestAddProbe) < 0)
+          addPop > bestAddDelta ||
+          (addPop === bestAddDelta &&
+            addPop > 0 &&
+            bestAdd !== null &&
+            bestAddProbe !== null &&
+            compareResidentialTieBreaks(params, cand, probe, bestAdd.candidate, bestAddProbe) < 0)
         ) {
           bestAdd = {
             kind: "add",
@@ -383,7 +362,7 @@ function localSearchImprove(state: ResidentialLocalSearchState): number {
             addPop,
             key: traceKey,
             probe: traceProbe,
-            occupiedBuildings: traceOccupiedBuildings ?? buildLocalSearchBuildingOccupancy(services, residentials),
+            occupiedBuildings: traceOccupiedBuildings ?? buildLocalSearchBuildingOccupancy(services, residentials)
           };
           bestAddDelta = addPop;
           bestAddProbe = probe;
@@ -404,7 +383,7 @@ function localSearchImprove(state: ResidentialLocalSearchState): number {
             chosenProbe: bestAdd.probe,
             chosenScore: bestAddDelta,
             compareTieBreaks: (candidate, probe, chosen, chosenProbe) =>
-              compareResidentialTieBreaks(params, candidate, probe, chosen, chosenProbe),
+              compareResidentialTieBreaks(params, candidate, probe, chosen, chosenProbe)
           })
         : undefined;
       recordRoadOpportunityPlacementFromOccupiedBuildings({
@@ -417,9 +396,9 @@ function localSearchImprove(state: ResidentialLocalSearchState): number {
         record: recordRoadOpportunity,
         score: bestAddDelta,
         counterfactuals,
-          typeIndex: candidateTypeIndex,
-          moveKind: "residential-add",
-        });
+        typeIndex: candidateTypeIndex,
+        moveKind: "residential-add"
+      });
       layoutState.applyAdd(bestAdd, bestAddProbe);
       continue;
     }
@@ -433,7 +412,7 @@ function localSearchImprove(state: ResidentialLocalSearchState): number {
             chosenProbe: bestMove.probe,
             chosenScore: bestMoveDelta,
             compareTieBreaks: (candidate, probe, chosen, chosenProbe) =>
-              compareResidentialTieBreaks(params, candidate, probe, chosen, chosenProbe),
+              compareResidentialTieBreaks(params, candidate, probe, chosen, chosenProbe)
           })
         : undefined;
       recordRoadOpportunityPlacementFromOccupiedBuildings({
@@ -446,9 +425,9 @@ function localSearchImprove(state: ResidentialLocalSearchState): number {
         record: recordRoadOpportunity,
         score: bestMoveDelta,
         counterfactuals,
-          typeIndex: bestMove.candidateTypeIndex,
-          moveKind: "residential-move",
-        });
+        typeIndex: bestMove.candidateTypeIndex,
+        moveKind: "residential-move"
+      });
       if (!bestMoveProbe) break;
       layoutState.applyMove(bestMove, bestMoveProbe);
       continue;

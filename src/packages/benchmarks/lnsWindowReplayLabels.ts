@@ -15,7 +15,7 @@ import {
   serviceFootprint,
   width,
   materializeValidLnsSeedSolution,
-  validateSolution,
+  validateSolution
 } from "../core/index.js";
 import { computeCpSatRequestFingerprint } from "../core/cpSatContinuation.js";
 import {
@@ -23,7 +23,7 @@ import {
   buildAdaptiveNeighborhoodCandidates,
   selectAdaptiveNeighborhoodOperator,
   solveCpSat,
-  solveGreedy,
+  solveGreedy
 } from "../solvers/index.js";
 import { normalizeCpSatBenchmarkOptions } from "./cpSat.js";
 import { normalizeGreedyBenchmarkOptions } from "./greedy.js";
@@ -41,13 +41,9 @@ import {
   positiveIntegerOrDefault,
   selectBenchmarkCasesByName,
   sumBenchmarkBy,
-  uniqueBenchmarkValuesBy,
+  uniqueBenchmarkValuesBy
 } from "./benchmarkOptions.js";
-import {
-  DEFAULT_LNS_REPLAY_LABEL_CORPUS,
-  getLnsReplayPressureFamily,
-  normalizeLnsBenchmarkOptions,
-} from "./lns.js";
+import { DEFAULT_LNS_REPLAY_LABEL_CORPUS, getLnsReplayPressureFamily, normalizeLnsBenchmarkOptions } from "./lns.js";
 
 import type {
   CpSatNeighborhoodWindow,
@@ -58,13 +54,10 @@ import type {
   LnsAdaptiveOperatorName,
   LnsOptions,
   Solution,
-  SolverParams,
+  SolverParams
 } from "../core/index.js";
 import type { LnsAdaptiveNeighborhoodCandidate } from "../solvers/index.js";
-import type {
-  LnsBenchmarkCase,
-  LnsReplayPressureFamilyLabel,
-} from "./lns.js";
+import type { LnsBenchmarkCase, LnsReplayPressureFamilyLabel } from "./lns.js";
 
 export const LNS_WINDOW_REPLAY_FEATURE_SCHEMA_VERSION = 2;
 export const LNS_WINDOW_REPLAY_CP_SAT_NUM_WORKERS = 1;
@@ -72,12 +65,26 @@ export const LNS_WINDOW_REPLAY_CP_SAT_NUM_WORKERS = 1;
 export const LNS_WINDOW_REPLAY_CP_SAT_MODEL_ENCODING_VERSION = "cp-sat-layout-v1";
 export const LNS_WINDOW_REPLAY_CP_SAT_CANDIDATE_KEY_VERSION = 1;
 
+export const LNS_WINDOW_REPLAY_STATE_POLICIES = Object.freeze([
+  "initial-incumbent",
+  "post-first-improvement",
+  "post-stagnation"
+] as const);
+export const DEFAULT_LNS_WINDOW_REPLAY_STATE_POLICIES = Object.freeze(["initial-incumbent"] as const);
+
+export type LnsWindowReplayStatePolicy = (typeof LNS_WINDOW_REPLAY_STATE_POLICIES)[number];
+
+export type LnsWindowReplayStateSourceStatus = "initial-incumbent" | "improved" | "neutral" | "recoverable-failure";
+
 export interface LnsWindowReplayLabelRunOptions {
   names?: readonly string[];
   seeds?: readonly number[];
   maxWindows?: number;
   explorationWindowCount?: number;
   repairTimeLimitSeconds?: number;
+  statePolicies?: readonly LnsWindowReplayStatePolicy[];
+  stateCollectionIterations?: number;
+  stateCollectionRepairTimeLimitSeconds?: number;
   lns?: Partial<LnsOptions>;
   cpSat?: Partial<CpSatOptions>;
   greedy?: Partial<GreedyOptions>;
@@ -138,8 +145,10 @@ export interface LnsWindowReplayTiming {
   observedCpuSeconds: number | null;
 }
 
-export type LnsWindowReplaySnapshotTiming =
-  Pick<LnsWindowReplayTiming, "repairTimeLimitSeconds" | "cpSatNumWorkers" | "workerCpuBudgetSeconds">;
+export type LnsWindowReplaySnapshotTiming = Pick<
+  LnsWindowReplayTiming,
+  "repairTimeLimitSeconds" | "cpSatNumWorkers" | "workerCpuBudgetSeconds"
+>;
 
 export interface LnsWindowReplayCpSatMetadata {
   modelEncodingVersion: typeof LNS_WINDOW_REPLAY_CP_SAT_MODEL_ENCODING_VERSION;
@@ -153,6 +162,11 @@ export interface LnsWindowReplayLabel {
   caseName: string;
   pressureFamily: LnsReplayPressureFamilyLabel;
   seed: number | null;
+  statePolicy: LnsWindowReplayStatePolicy;
+  stateIndex: number;
+  stateSourceIteration: number | null;
+  stateSourceStatus: LnsWindowReplayStateSourceStatus;
+  stateStagnantIterations: number;
   windowIndex: number;
   operator: LnsAdaptiveOperatorName;
   operatorScore: number;
@@ -184,6 +198,11 @@ export interface LnsWindowReplayCaseResult {
   description: string;
   pressureFamily: LnsReplayPressureFamilyLabel;
   seed: number | null;
+  statePolicy: LnsWindowReplayStatePolicy;
+  stateIndex: number;
+  stateSourceIteration: number | null;
+  stateSourceStatus: LnsWindowReplayStateSourceStatus;
+  stateStagnantIterations: number;
   gridRows: number;
   gridCols: number;
   incumbentPopulation: number;
@@ -206,6 +225,11 @@ export interface LnsWindowReplaySuiteResult {
   maxWindows: number;
   explorationWindowCount: number;
   repairTimeLimitSeconds: number;
+  statePolicies: LnsWindowReplayStatePolicy[];
+  capturedStatePolicies: LnsWindowReplayStatePolicy[];
+  stateCollectionIterations: number;
+  stateCollectionRepairTimeLimitSeconds: number;
+  stateCount: number;
   featureSchemaVersion: typeof LNS_WINDOW_REPLAY_FEATURE_SCHEMA_VERSION;
   cpSatNumWorkers: typeof LNS_WINDOW_REPLAY_CP_SAT_NUM_WORKERS;
   cpSatModelFingerprints: string[];
@@ -213,18 +237,15 @@ export interface LnsWindowReplaySuiteResult {
   cases: LnsWindowReplayCaseResult[];
 }
 
-export interface LnsWindowReplaySnapshotLabel
-  extends Omit<LnsWindowReplayLabel, "wallClockSeconds" | "timing"> {
+export interface LnsWindowReplaySnapshotLabel extends Omit<LnsWindowReplayLabel, "wallClockSeconds" | "timing"> {
   timing: LnsWindowReplaySnapshotTiming;
 }
 
-export interface LnsWindowReplaySnapshotCaseResult
-  extends Omit<LnsWindowReplayCaseResult, "labels"> {
+export interface LnsWindowReplaySnapshotCaseResult extends Omit<LnsWindowReplayCaseResult, "labels"> {
   labels: LnsWindowReplaySnapshotLabel[];
 }
 
-export interface LnsWindowReplaySnapshot
-  extends Omit<LnsWindowReplaySuiteResult, "generatedAt" | "cases"> {
+export interface LnsWindowReplaySnapshot extends Omit<LnsWindowReplaySuiteResult, "generatedAt" | "cases"> {
   cases: LnsWindowReplaySnapshotCaseResult[];
 }
 
@@ -234,7 +255,7 @@ function selectReplayCases(
 ): LnsBenchmarkCase[] {
   return selectBenchmarkCasesByName(corpus, names, {
     caseLabel: "LNS window replay",
-    corpusLabel: "LNS window replay",
+    corpusLabel: "LNS window replay"
   });
 }
 
@@ -243,8 +264,24 @@ export function listLnsWindowReplayCaseNames(
 ): string[] {
   return listBenchmarkCaseNames(corpus, {
     caseLabel: "LNS window replay",
-    corpusLabel: "LNS window replay",
+    corpusLabel: "LNS window replay"
   });
+}
+
+const LNS_WINDOW_REPLAY_STATE_POLICY_SET = new Set<string>(LNS_WINDOW_REPLAY_STATE_POLICIES);
+
+function normalizeLnsWindowReplayStatePolicies(
+  statePolicies: readonly LnsWindowReplayStatePolicy[] | undefined
+): LnsWindowReplayStatePolicy[] {
+  const rawPolicies = statePolicies?.length ? statePolicies : DEFAULT_LNS_WINDOW_REPLAY_STATE_POLICIES;
+  const normalized: LnsWindowReplayStatePolicy[] = [];
+  for (const policy of rawPolicies) {
+    if (!LNS_WINDOW_REPLAY_STATE_POLICY_SET.has(policy)) {
+      throw new Error(`Unknown LNS window replay state policy: ${String(policy)}.`);
+    }
+    if (!normalized.includes(policy)) normalized.push(policy);
+  }
+  return normalized;
 }
 
 function buildReplayParams(
@@ -255,16 +292,33 @@ function buildReplayParams(
   const params = cloneBenchmarkSolverParams(benchmarkCase.params);
   const greedy = normalizeGreedyBenchmarkOptions(inheritGreedyBenchmarkOptions<GreedyOptions>(params), {
     ...(options.greedy ?? {}),
-    ...(seed !== null ? { randomSeed: seed } : {}),
+    ...(seed !== null ? { randomSeed: seed } : {})
   });
   return {
     ...applyNormalizedGreedyBenchmarkParams(params, greedy),
     optimizer: "lns",
     cpSat: normalizeCpSatBenchmarkOptions(params.cpSat, {
       ...(options.cpSat ?? {}),
-      ...(seed !== null ? { randomSeed: seed } : {}),
+      ...(seed !== null ? { randomSeed: seed } : {})
     }),
-    lns: normalizeLnsBenchmarkOptions(params.lns, options.lns),
+    lns: normalizeLnsBenchmarkOptions(params.lns, options.lns)
+  };
+}
+
+interface ReplayNeighborhoodOptions {
+  maxNoImprovementIterations: number;
+  neighborhoodRows: number;
+  neighborhoodCols: number;
+  neighborhoodAnchorPolicy: LnsOptions["neighborhoodAnchorPolicy"];
+}
+
+function buildReplayNeighborhoodOptions(G: Grid, params: SolverParams): ReplayNeighborhoodOptions {
+  const lns = params.lns ?? {};
+  return {
+    maxNoImprovementIterations: lns.maxNoImprovementIterations ?? 4,
+    neighborhoodRows: lns.neighborhoodRows ?? Math.max(1, Math.ceil(height(G) / 2)),
+    neighborhoodCols: lns.neighborhoodCols ?? Math.max(1, Math.ceil(width(G) / 2)),
+    neighborhoodAnchorPolicy: lns.neighborhoodAnchorPolicy
   };
 }
 
@@ -279,10 +333,10 @@ function buildInitialIncumbent(G: Grid, params: SolverParams): Solution {
       optimizer: "greedy",
       greedy: {
         ...(params.greedy ?? {}),
-        profile: false,
-      },
+        profile: false
+      }
     }),
-    optimizer: "lns",
+    optimizer: "lns"
   });
 }
 
@@ -293,22 +347,23 @@ function rectangleIntersectsWindow(
   rows: number,
   cols: number
 ): boolean {
-  return r < window.top + window.rows
-    && r + rows > window.top
-    && c < window.left + window.cols
-    && c + cols > window.left;
+  return (
+    r < window.top + window.rows && r + rows > window.top && c < window.left + window.cols && c + cols > window.left
+  );
 }
 
 function roadInsideWindow(window: CpSatNeighborhoodWindow, key: string): boolean {
   const [rRaw, cRaw] = key.split(",");
   const r = Number(rRaw);
   const c = Number(cRaw);
-  return Number.isInteger(r)
-    && Number.isInteger(c)
-    && r >= window.top
-    && r < window.top + window.rows
-    && c >= window.left
-    && c < window.left + window.cols;
+  return (
+    Number.isInteger(r) &&
+    Number.isInteger(c) &&
+    r >= window.top &&
+    r < window.top + window.rows &&
+    c >= window.left &&
+    c < window.left + window.cols
+  );
 }
 
 function cellKeyInsideWindow(window: CpSatNeighborhoodWindow, key: string): boolean {
@@ -347,7 +402,7 @@ function clearWindowFootprintKeys(
   }
   return {
     occupied: next,
-    clearedBuildingFootprintCells,
+    clearedBuildingFootprintCells
   };
 }
 
@@ -355,11 +410,7 @@ function isAllowedEmptyCell(G: Grid, occupied: Set<string>, r: number, c: number
   return isAllowed(G, r, c) && !occupied.has(cellKey(r, c));
 }
 
-function countAllowedWindowCells(
-  G: Grid,
-  occupied: Set<string>,
-  window: CpSatNeighborhoodWindow
-): number {
+function countAllowedWindowCells(G: Grid, occupied: Set<string>, window: CpSatNeighborhoodWindow): number {
   let count = 0;
   for (let r = window.top; r < window.top + window.rows; r++) {
     for (let c = window.left; c < window.left + window.cols; c++) {
@@ -369,11 +420,7 @@ function countAllowedWindowCells(
   return count;
 }
 
-function countNarrowGateCells(
-  G: Grid,
-  occupied: Set<string>,
-  window: CpSatNeighborhoodWindow
-): number {
+function countNarrowGateCells(G: Grid, occupied: Set<string>, window: CpSatNeighborhoodWindow): number {
   let count = 0;
   for (let r = window.top; r < window.top + window.rows; r++) {
     for (let c = window.left; c < window.left + window.cols; c++) {
@@ -447,14 +494,11 @@ function summarizeEmptyGraph(G: Grid, occupied: Set<string>): EmptyGraphSummary 
     reachableKeys,
     reachableCount: reachableKeys.size,
     disconnectedCount: emptyKeys.size - reachableKeys.size,
-    componentCount,
+    componentCount
   };
 }
 
-function countReachableWindowCells(
-  window: CpSatNeighborhoodWindow,
-  reachableKeys: Set<string>
-): number {
+function countReachableWindowCells(window: CpSatNeighborhoodWindow, reachableKeys: Set<string>): number {
   let count = 0;
   for (const key of reachableKeys) {
     if (cellKeyInsideWindow(window, key)) count += 1;
@@ -471,10 +515,7 @@ function finiteNonNegative(value: number): number {
   return Number.isFinite(value) ? Math.max(0, value) : 0;
 }
 
-function candidateFootprintIsBlocked(
-  footprintKeys: readonly string[],
-  occupied: Set<string>
-): boolean {
+function candidateFootprintIsBlocked(footprintKeys: readonly string[], occupied: Set<string>): boolean {
   return footprintKeys.some((key) => occupied.has(key));
 }
 
@@ -530,25 +571,25 @@ function buildCandidateLossFeatures(
     maxServiceCandidateBonusInside,
     residentialCandidateHeadroomInside,
     serviceTypeCounts,
-    residentialTypeCounts,
+    residentialTypeCounts
   };
 }
 
 function sameWindow(left: CpSatNeighborhoodWindow | null, right: CpSatNeighborhoodWindow): boolean {
-  return left !== null
-    && left.top === right.top
-    && left.left === right.left
-    && left.rows === right.rows
-    && left.cols === right.cols;
+  return (
+    left !== null &&
+    left.top === right.top &&
+    left.left === right.left &&
+    left.rows === right.rows &&
+    left.cols === right.cols
+  );
 }
 
 function sameCandidate(
   left: LnsAdaptiveNeighborhoodCandidate | null,
   right: LnsAdaptiveNeighborhoodCandidate
 ): boolean {
-  return left !== null
-    && left.operator === right.operator
-    && sameWindow(left.window, right.window);
+  return left !== null && left.operator === right.operator && sameWindow(left.window, right.window);
 }
 
 function buildWindowFeatures(
@@ -600,7 +641,7 @@ function buildWindowFeatures(
       newlyReachableEmptyCellsIfCleared: Math.max(0, afterGraph.reachableCount - beforeGraph.reachableCount),
       disconnectedEmptyCellsBefore: beforeGraph.disconnectedCount,
       disconnectedEmptyCellsAfterClearingWindow: afterGraph.disconnectedCount,
-      clearedBuildingFootprintCells: cleared.clearedBuildingFootprintCells,
+      clearedBuildingFootprintCells: cleared.clearedBuildingFootprintCells
     },
     fragmentation: {
       emptyComponentCountBefore: beforeGraph.componentCount,
@@ -608,9 +649,9 @@ function buildWindowFeatures(
       componentDeltaAfterClearingWindow: afterGraph.componentCount - beforeGraph.componentCount,
       allowedWindowCellCount: countAllowedWindowCells(G, cleared.occupied, window),
       anchorReachableWindowCellCount: countReachableWindowCells(window, afterGraph.reachableKeys),
-      narrowGateCellCount: countNarrowGateCells(G, cleared.occupied, window),
+      narrowGateCellCount: countNarrowGateCells(G, cleared.occupied, window)
     },
-    candidateLoss,
+    candidateLoss
   };
 }
 
@@ -625,8 +666,8 @@ function labelWithoutWallClock(label: LnsWindowReplayLabel): LnsWindowReplaySnap
     timing: {
       repairTimeLimitSeconds: timing.repairTimeLimitSeconds,
       cpSatNumWorkers: timing.cpSatNumWorkers,
-      workerCpuBudgetSeconds: timing.workerCpuBudgetSeconds,
-    },
+      workerCpuBudgetSeconds: timing.workerCpuBudgetSeconds
+    }
   };
 }
 
@@ -634,7 +675,7 @@ function validateReplaySolution(G: Grid, params: SolverParams, solution: Solutio
   const validation = validateSolution({ grid: G, params, solution });
   return {
     valid: validation.valid,
-    recomputedTotalPopulation: validation.recomputedTotalPopulation,
+    recomputedTotalPopulation: validation.recomputedTotalPopulation
   };
 }
 
@@ -644,12 +685,21 @@ function statusForPopulationDelta(populationDelta: number): LnsWindowReplayLabel
   return "neutral";
 }
 
+function isRecoverableCpSatFailure(error: unknown): boolean {
+  return error instanceof Error && /No feasible solution found with CP-SAT\./.test(error.message);
+}
+
 function replayWindow(
   G: Grid,
   params: SolverParams,
   caseName: string,
   pressureFamily: LnsReplayPressureFamilyLabel,
   seed: number | null,
+  statePolicy: LnsWindowReplayStatePolicy,
+  stateIndex: number,
+  stateSourceIteration: number | null,
+  stateSourceStatus: LnsWindowReplayStateSourceStatus,
+  stateStagnantIterations: number,
   incumbent: Solution,
   candidate: LnsAdaptiveNeighborhoodCandidate,
   windowIndex: number,
@@ -667,7 +717,7 @@ function replayWindow(
     candidateKeyVersion: LNS_WINDOW_REPLAY_CP_SAT_CANDIDATE_KEY_VERSION,
     modelFingerprint: cpSatModelFingerprint,
     warmStartFixOutsideNeighborhood: true,
-    modelSize: null,
+    modelSize: null
   };
   try {
     const repairedSolution = solveCpSat(G, {
@@ -677,8 +727,8 @@ function replayWindow(
         ...(params.cpSat ?? {}),
         numWorkers: LNS_WINDOW_REPLAY_CP_SAT_NUM_WORKERS,
         timeLimitSeconds: repairTimeLimitSeconds,
-        warmStartHint: buildLnsWarmStartHint(incumbent, window),
-      },
+        warmStartHint: buildLnsWarmStartHint(incumbent, window)
+      }
     });
     const wallClockSeconds = (performance.now() - startedAtMs) / 1000;
     const populationDelta = repairedSolution.totalPopulation - incumbent.totalPopulation;
@@ -691,12 +741,17 @@ function replayWindow(
       wallClockSeconds,
       cpSatSolveWallTimeSeconds: repairedSolution.cpSatTelemetry?.solveWallTimeSeconds ?? null,
       cpSatUserTimeSeconds: repairedSolution.cpSatTelemetry?.userTimeSeconds ?? null,
-      observedCpuSeconds: repairedSolution.cpSatTelemetry?.userTimeSeconds ?? null,
+      observedCpuSeconds: repairedSolution.cpSatTelemetry?.userTimeSeconds ?? null
     };
     return {
       caseName,
       pressureFamily,
       seed,
+      statePolicy,
+      stateIndex,
+      stateSourceIteration,
+      stateSourceStatus,
+      stateStagnantIterations,
       windowIndex,
       operator: candidate.operator,
       operatorScore: candidate.score,
@@ -715,13 +770,13 @@ function replayWindow(
       timing,
       cpSat: {
         ...baseCpSatMetadata,
-        modelSize: repairedSolution.cpSatTelemetry?.modelSize ?? null,
+        modelSize: repairedSolution.cpSatTelemetry?.modelSize ?? null
       },
       validation,
-      features,
+      features
     };
   } catch (error) {
-    if (!(error instanceof Error) || !/No feasible solution found with CP-SAT\./.test(error.message)) {
+    if (!isRecoverableCpSatFailure(error)) {
       throw error;
     }
     const wallClockSeconds = (performance.now() - startedAtMs) / 1000;
@@ -729,6 +784,11 @@ function replayWindow(
       caseName,
       pressureFamily,
       seed,
+      statePolicy,
+      stateIndex,
+      stateSourceIteration,
+      stateSourceStatus,
+      stateStagnantIterations,
       windowIndex,
       operator: candidate.operator,
       operatorScore: candidate.score,
@@ -751,11 +811,11 @@ function replayWindow(
         wallClockSeconds,
         cpSatSolveWallTimeSeconds: null,
         cpSatUserTimeSeconds: null,
-        observedCpuSeconds: null,
+        observedCpuSeconds: null
       },
       cpSat: baseCpSatMetadata,
       validation: validateReplaySolution(G, params, incumbent),
-      features,
+      features
     };
   }
 }
@@ -781,7 +841,7 @@ function selectReplayWindowPlans(
     selected.set(replayCandidateKey(candidate), {
       candidate,
       windowIndex,
-      selectionSource: "baseline-top-k",
+      selectionSource: "baseline-top-k"
     });
   }
 
@@ -799,12 +859,136 @@ function selectReplayWindowPlans(
     selected.set(key, {
       candidate,
       windowIndex: maxWindows + index,
-      selectionSource: "exploration-tail",
+      selectionSource: "exploration-tail"
     });
     explorationAdded++;
   }
 
   return [...selected.values()];
+}
+
+interface CapturedReplayState {
+  statePolicy: LnsWindowReplayStatePolicy;
+  stateSourceIteration: number | null;
+  stateSourceStatus: LnsWindowReplayStateSourceStatus;
+  stateStagnantIterations: number;
+  incumbent: Solution;
+}
+
+interface ReplayState extends CapturedReplayState {
+  stateIndex: number;
+}
+
+function captureReplayState(
+  captured: Map<LnsWindowReplayStatePolicy, CapturedReplayState>,
+  state: CapturedReplayState
+): void {
+  if (!captured.has(state.statePolicy)) captured.set(state.statePolicy, state);
+}
+
+function needsCollectedReplayStates(statePolicies: readonly LnsWindowReplayStatePolicy[]): boolean {
+  return statePolicies.some((policy) => policy !== "initial-incumbent");
+}
+
+function materializeReplayStates(
+  captured: Map<LnsWindowReplayStatePolicy, CapturedReplayState>,
+  statePolicies: readonly LnsWindowReplayStatePolicy[]
+): ReplayState[] {
+  return statePolicies.flatMap((statePolicy, stateIndex) => {
+    const state = captured.get(statePolicy);
+    return state ? [{ ...state, stateIndex }] : [];
+  });
+}
+
+function collectReplayStates(
+  G: Grid,
+  params: SolverParams,
+  initialIncumbent: Solution,
+  neighborhoodOptions: ReplayNeighborhoodOptions,
+  statePolicies: readonly LnsWindowReplayStatePolicy[],
+  stateCollectionIterations: number,
+  stateCollectionRepairTimeLimitSeconds: number
+): ReplayState[] {
+  const captured = new Map<LnsWindowReplayStatePolicy, CapturedReplayState>();
+  captureReplayState(captured, {
+    statePolicy: "initial-incumbent",
+    stateSourceIteration: null,
+    stateSourceStatus: "initial-incumbent",
+    stateStagnantIterations: 0,
+    incumbent: initialIncumbent
+  });
+
+  if (!needsCollectedReplayStates(statePolicies)) {
+    return materializeReplayStates(captured, statePolicies);
+  }
+
+  let incumbent = initialIncumbent;
+  let stagnantIterations = 0;
+  for (let iteration = 0; iteration < stateCollectionIterations; iteration++) {
+    if (statePolicies.every((policy) => captured.has(policy))) break;
+    const candidates = buildAdaptiveNeighborhoodCandidates(
+      G,
+      params,
+      incumbent,
+      neighborhoodOptions,
+      stagnantIterations + 1
+    );
+    if (candidates.length === 0) break;
+
+    const selectedCandidate = selectAdaptiveNeighborhoodOperator(
+      candidates,
+      iteration,
+      stagnantIterations,
+      neighborhoodOptions
+    );
+    try {
+      const repairedSolution = solveCpSat(G, {
+        ...params,
+        optimizer: "cp-sat",
+        cpSat: {
+          ...(params.cpSat ?? {}),
+          numWorkers: LNS_WINDOW_REPLAY_CP_SAT_NUM_WORKERS,
+          timeLimitSeconds: stateCollectionRepairTimeLimitSeconds,
+          warmStartHint: buildLnsWarmStartHint(incumbent, selectedCandidate.window)
+        }
+      });
+      if (repairedSolution.totalPopulation > incumbent.totalPopulation) {
+        incumbent = {
+          ...repairedSolution,
+          optimizer: "lns"
+        };
+        stagnantIterations = 0;
+        captureReplayState(captured, {
+          statePolicy: "post-first-improvement",
+          stateSourceIteration: iteration,
+          stateSourceStatus: "improved",
+          stateStagnantIterations: stagnantIterations,
+          incumbent
+        });
+        continue;
+      }
+      stagnantIterations += 1;
+      captureReplayState(captured, {
+        statePolicy: "post-stagnation",
+        stateSourceIteration: iteration,
+        stateSourceStatus: "neutral",
+        stateStagnantIterations: stagnantIterations,
+        incumbent
+      });
+    } catch (error) {
+      if (!isRecoverableCpSatFailure(error)) throw error;
+      stagnantIterations += 1;
+      captureReplayState(captured, {
+        statePolicy: "post-stagnation",
+        stateSourceIteration: iteration,
+        stateSourceStatus: "recoverable-failure",
+        stateStagnantIterations: stagnantIterations,
+        incumbent
+      });
+    }
+  }
+
+  return materializeReplayStates(captured, statePolicies);
 }
 
 export function runLnsWindowReplayLabels(
@@ -816,58 +1000,80 @@ export function runLnsWindowReplayLabels(
   const maxWindows = positiveIntegerOrDefault(options.maxWindows, 8);
   const explorationWindowCount = nonNegativeIntegerOrDefault(options.explorationWindowCount, 0);
   const replayRepairTimeLimitSeconds = positiveFiniteNumberOrDefault(options.repairTimeLimitSeconds, 1);
+  const statePolicies = normalizeLnsWindowReplayStatePolicies(options.statePolicies);
+  const stateCollectionIterations = positiveIntegerOrDefault(options.stateCollectionIterations, 4);
+  const stateCollectionRepairTimeLimitSeconds = positiveFiniteNumberOrDefault(
+    options.stateCollectionRepairTimeLimitSeconds,
+    replayRepairTimeLimitSeconds
+  );
   const cases = seedRuns.flatMap((seed) =>
-    selectedCases.map((benchmarkCase): LnsWindowReplayCaseResult => {
+    selectedCases.flatMap((benchmarkCase): LnsWindowReplayCaseResult[] => {
       const G = cloneBenchmarkGrid(benchmarkCase.grid);
       const params = buildReplayParams(benchmarkCase, seed, options);
       const cpSatModelFingerprint = computeCpSatRequestFingerprint(G, {
         ...params,
-        optimizer: "cp-sat",
+        optimizer: "cp-sat"
       });
       const incumbent = buildInitialIncumbent(G, params);
-      const lns = params.lns ?? {};
-      const neighborhoodOptions = {
-        maxNoImprovementIterations: lns.maxNoImprovementIterations ?? 4,
-        neighborhoodRows: lns.neighborhoodRows ?? Math.max(1, Math.ceil(height(G) / 2)),
-        neighborhoodCols: lns.neighborhoodCols ?? Math.max(1, Math.ceil(width(G) / 2)),
-        neighborhoodAnchorPolicy: lns.neighborhoodAnchorPolicy,
-      };
-      const candidates = buildAdaptiveNeighborhoodCandidates(G, params, incumbent, neighborhoodOptions, 1);
-      const selectedCandidate = candidates.length
-        ? selectAdaptiveNeighborhoodOperator(candidates, 0, 0, neighborhoodOptions)
-        : null;
-      const replayWindows = selectReplayWindowPlans(candidates, maxWindows, explorationWindowCount);
       const pressureFamily = getLnsReplayPressureFamily(benchmarkCase);
-      const labels = replayWindows.map(({ candidate, windowIndex, selectionSource }) =>
-        replayWindow(
-          G,
-          params,
-          benchmarkCase.name,
+      const neighborhoodOptions = buildReplayNeighborhoodOptions(G, params);
+      const replayStates = collectReplayStates(
+        G,
+        params,
+        incumbent,
+        neighborhoodOptions,
+        statePolicies,
+        stateCollectionIterations,
+        stateCollectionRepairTimeLimitSeconds
+      );
+
+      return replayStates.map((state): LnsWindowReplayCaseResult => {
+        const candidates = buildAdaptiveNeighborhoodCandidates(G, params, state.incumbent, neighborhoodOptions, 1);
+        const selectedCandidate = candidates.length
+          ? selectAdaptiveNeighborhoodOperator(candidates, 0, 0, neighborhoodOptions)
+          : null;
+        const replayWindows = selectReplayWindowPlans(candidates, maxWindows, explorationWindowCount);
+        const labels = replayWindows.map(({ candidate, windowIndex, selectionSource }) =>
+          replayWindow(
+            G,
+            params,
+            benchmarkCase.name,
+            pressureFamily,
+            seed,
+            state.statePolicy,
+            state.stateIndex,
+            state.stateSourceIteration,
+            state.stateSourceStatus,
+            state.stateStagnantIterations,
+            state.incumbent,
+            candidate,
+            windowIndex,
+            selectionSource,
+            selectedCandidate,
+            cpSatModelFingerprint,
+            replayRepairTimeLimitSeconds
+          )
+        );
+        return {
+          name: benchmarkCase.name,
+          description: benchmarkCase.description,
           pressureFamily,
           seed,
-          incumbent,
-          candidate,
-          windowIndex,
-          selectionSource,
-          selectedCandidate,
-          cpSatModelFingerprint,
-          replayRepairTimeLimitSeconds
-        )
-      );
-      return {
-        name: benchmarkCase.name,
-        description: benchmarkCase.description,
-        pressureFamily,
-        seed,
-        gridRows: height(G),
-        gridCols: width(G),
-        incumbentPopulation: incumbent.totalPopulation,
-        candidateWindowCount: candidates.length,
-        replayedWindowCount: labels.length,
-        baselineSelectedWindow: selectedCandidate ? { ...selectedCandidate.window } : null,
-        baselineSelectedOperator: selectedCandidate?.operator ?? null,
-        labels,
-      };
+          statePolicy: state.statePolicy,
+          stateIndex: state.stateIndex,
+          stateSourceIteration: state.stateSourceIteration,
+          stateSourceStatus: state.stateSourceStatus,
+          stateStagnantIterations: state.stateStagnantIterations,
+          gridRows: height(G),
+          gridCols: width(G),
+          incumbentPopulation: state.incumbent.totalPopulation,
+          candidateWindowCount: candidates.length,
+          replayedWindowCount: labels.length,
+          baselineSelectedWindow: selectedCandidate ? { ...selectedCandidate.window } : null,
+          baselineSelectedOperator: selectedCandidate?.operator ?? null,
+          labels
+        };
+      });
     })
   );
 
@@ -883,6 +1089,11 @@ export function runLnsWindowReplayLabels(
     maxWindows,
     explorationWindowCount,
     repairTimeLimitSeconds: replayRepairTimeLimitSeconds,
+    statePolicies: [...statePolicies],
+    capturedStatePolicies: uniqueBenchmarkValuesBy(cases, (benchmarkCase) => benchmarkCase.statePolicy),
+    stateCollectionIterations,
+    stateCollectionRepairTimeLimitSeconds,
+    stateCount: cases.length,
     featureSchemaVersion: LNS_WINDOW_REPLAY_FEATURE_SCHEMA_VERSION,
     cpSatNumWorkers: LNS_WINDOW_REPLAY_CP_SAT_NUM_WORKERS,
     cpSatModelFingerprints: uniqueBenchmarkValuesBy(
@@ -890,13 +1101,11 @@ export function runLnsWindowReplayLabels(
       (label) => label.cpSat.modelFingerprint
     ),
     labelCount: sumBenchmarkBy(cases, (benchmarkCase) => benchmarkCase.labels.length),
-    cases,
+    cases
   };
 }
 
-export function createLnsWindowReplaySnapshot(
-  result: LnsWindowReplaySuiteResult
-): LnsWindowReplaySnapshot {
+export function createLnsWindowReplaySnapshot(result: LnsWindowReplaySuiteResult): LnsWindowReplaySnapshot {
   return {
     caseCount: result.caseCount,
     schemaVersion: result.schemaVersion,
@@ -908,17 +1117,20 @@ export function createLnsWindowReplaySnapshot(
     maxWindows: result.maxWindows,
     explorationWindowCount: result.explorationWindowCount,
     repairTimeLimitSeconds: result.repairTimeLimitSeconds,
+    statePolicies: [...result.statePolicies],
+    capturedStatePolicies: [...result.capturedStatePolicies],
+    stateCollectionIterations: result.stateCollectionIterations,
+    stateCollectionRepairTimeLimitSeconds: result.stateCollectionRepairTimeLimitSeconds,
+    stateCount: result.stateCount,
     featureSchemaVersion: result.featureSchemaVersion,
     cpSatNumWorkers: result.cpSatNumWorkers,
     cpSatModelFingerprints: [...result.cpSatModelFingerprints],
     labelCount: result.labelCount,
     cases: result.cases.map((benchmarkCase) => ({
       ...benchmarkCase,
-      baselineSelectedWindow: benchmarkCase.baselineSelectedWindow
-        ? { ...benchmarkCase.baselineSelectedWindow }
-        : null,
-      labels: benchmarkCase.labels.map(labelWithoutWallClock),
-    })),
+      baselineSelectedWindow: benchmarkCase.baselineSelectedWindow ? { ...benchmarkCase.baselineSelectedWindow } : null,
+      labels: benchmarkCase.labels.map(labelWithoutWallClock)
+    }))
   };
 }
 
@@ -931,6 +1143,11 @@ export function formatLnsWindowReplayLabels(result: LnsWindowReplaySuiteResult):
   lines.push(`Labels: ${result.labelCount}`);
   lines.push(`Max windows: ${result.maxWindows}`);
   lines.push(`Exploration windows: ${result.explorationWindowCount}`);
+  lines.push(`State policies: ${result.statePolicies.join(", ")}`);
+  lines.push(`Captured state policies: ${result.capturedStatePolicies.join(", ") || "none"}`);
+  lines.push(
+    `State collection: iterations=${result.stateCollectionIterations} repair=${result.stateCollectionRepairTimeLimitSeconds}s`
+  );
   lines.push(`Feature schema: ${result.featureSchemaVersion}`);
   lines.push(`CP-SAT workers: ${result.cpSatNumWorkers}`);
   lines.push(`CP-SAT fingerprints: ${result.cpSatModelFingerprints.join(", ") || "none"}`);
@@ -938,11 +1155,11 @@ export function formatLnsWindowReplayLabels(result: LnsWindowReplaySuiteResult):
   for (const benchmarkCase of result.cases) {
     const seedLabel = benchmarkCase.seed === null ? "case-default" : benchmarkCase.seed;
     lines.push(
-      `- ${benchmarkCase.name} family=${benchmarkCase.pressureFamily} seed=${seedLabel}: incumbent=${benchmarkCase.incumbentPopulation} windows=${benchmarkCase.replayedWindowCount}/${benchmarkCase.candidateWindowCount} selected=${benchmarkCase.baselineSelectedOperator ?? "n/a"}:${formatWindow(benchmarkCase.baselineSelectedWindow)}`
+      `- ${benchmarkCase.name} family=${benchmarkCase.pressureFamily} seed=${seedLabel} state=${benchmarkCase.statePolicy}#${benchmarkCase.stateIndex} source=${benchmarkCase.stateSourceStatus}@${benchmarkCase.stateSourceIteration ?? "initial"} stagnant=${benchmarkCase.stateStagnantIterations}: incumbent=${benchmarkCase.incumbentPopulation} windows=${benchmarkCase.replayedWindowCount}/${benchmarkCase.candidateWindowCount} selected=${benchmarkCase.baselineSelectedOperator ?? "n/a"}:${formatWindow(benchmarkCase.baselineSelectedWindow)}`
     );
     for (const label of benchmarkCase.labels) {
       lines.push(
-        `  window#${label.windowIndex} ${formatWindow(label.window)} operator=${label.operator} score=${label.operatorScore.toFixed(3)} source=${label.selectionSource} selected=${label.selectedByBaseline} status=${label.status} usable=${label.usable} population=${label.totalPopulation} delta=${formatSigned(label.populationDelta)} improvement=+${label.improvement} repair=${label.repairTimeLimitSeconds}s cpu-budget=${label.timing.workerCpuBudgetSeconds}s valid=${label.validation.valid} cp-sat=${label.cpSat.modelFingerprint} features=area:${label.features.area} roads:${label.features.roadCountInside} services:${label.features.serviceCountInside} residentials:${label.features.residentialCountInside} headroom:${label.features.residentialHeadroomInside} service-bonus:${label.features.serviceBonusInside} reachable:${label.features.connectivityShadow.reachableEmptyCellsBefore}->${label.features.connectivityShadow.reachableEmptyCellsAfterClearingWindow} newly-reachable:${label.features.connectivityShadow.newlyReachableEmptyCellsIfCleared} components:${label.features.fragmentation.emptyComponentCountBefore}->${label.features.fragmentation.emptyComponentCountAfterClearingWindow} candidates:svc:${label.features.candidateLoss.serviceCandidatesIntersectingWindow}/res:${label.features.candidateLoss.residentialCandidatesIntersectingWindow}`
+        `  window#${label.windowIndex} state=${label.statePolicy}#${label.stateIndex} ${formatWindow(label.window)} operator=${label.operator} score=${label.operatorScore.toFixed(3)} source=${label.selectionSource} selected=${label.selectedByBaseline} status=${label.status} usable=${label.usable} population=${label.totalPopulation} delta=${formatSigned(label.populationDelta)} improvement=+${label.improvement} repair=${label.repairTimeLimitSeconds}s cpu-budget=${label.timing.workerCpuBudgetSeconds}s valid=${label.validation.valid} cp-sat=${label.cpSat.modelFingerprint} features=area:${label.features.area} roads:${label.features.roadCountInside} services:${label.features.serviceCountInside} residentials:${label.features.residentialCountInside} headroom:${label.features.residentialHeadroomInside} service-bonus:${label.features.serviceBonusInside} reachable:${label.features.connectivityShadow.reachableEmptyCellsBefore}->${label.features.connectivityShadow.reachableEmptyCellsAfterClearingWindow} newly-reachable:${label.features.connectivityShadow.newlyReachableEmptyCellsIfCleared} components:${label.features.fragmentation.emptyComponentCountBefore}->${label.features.fragmentation.emptyComponentCountAfterClearingWindow} candidates:svc:${label.features.candidateLoss.serviceCandidatesIntersectingWindow}/res:${label.features.candidateLoss.residentialCandidatesIntersectingWindow}`
       );
     }
   }

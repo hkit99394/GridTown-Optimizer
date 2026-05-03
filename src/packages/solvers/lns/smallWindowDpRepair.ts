@@ -23,7 +23,7 @@ import {
   serviceEffectZone,
   serviceFootprint,
   validateSolution,
-  width,
+  width
 } from "../../core/index.js";
 
 import type {
@@ -36,7 +36,7 @@ import type {
   ServicePlacement,
   SmallWindowDpRepairTelemetry,
   Solution,
-  SolverParams,
+  SolverParams
 } from "../../core/index.js";
 
 interface SmallWindowDpRepairOptions {
@@ -104,20 +104,19 @@ function clamp(value: number, minimum: number, maximum: number): number {
 
 function isInsideWindow(key: string, window: CpSatNeighborhoodWindow): boolean {
   const { r, c } = cellFromKey(key);
-  return r >= window.top
-    && r < window.top + window.rows
-    && c >= window.left
-    && c < window.left + window.cols;
+  return r >= window.top && r < window.top + window.rows && c >= window.left && c < window.left + window.cols;
 }
 
 function rectangleIntersectsWindow(
   placement: { r: number; c: number; rows: number; cols: number },
   window: CpSatNeighborhoodWindow
 ): boolean {
-  return placement.r < window.top + window.rows
-    && placement.r + placement.rows > window.top
-    && placement.c < window.left + window.cols
-    && placement.c + placement.cols > window.left;
+  return (
+    placement.r < window.top + window.rows &&
+    placement.r + placement.rows > window.top &&
+    placement.c < window.left + window.cols &&
+    placement.c + placement.cols > window.left
+  );
 }
 
 function footprintOverlaps(footprintKeys: readonly string[], blocked: Set<string>): boolean {
@@ -168,7 +167,12 @@ function subtractCounts(capacities: readonly number[], used: readonly number[]):
   return capacities.map((capacity, index) => Math.max(0, capacity - (used[index] ?? 0)));
 }
 
-function finiteRemainingSlots(limit: number | undefined, fixedCount: number, typedRemaining: readonly number[], candidateCount: number): number {
+function finiteRemainingSlots(
+  limit: number | undefined,
+  fixedCount: number,
+  typedRemaining: readonly number[],
+  candidateCount: number
+): number {
   if (limit !== undefined) return Math.max(0, limit - fixedCount);
   if (typedRemaining.length > 0) return typedRemaining.reduce((sum, count) => sum + count, 0);
   return candidateCount;
@@ -186,12 +190,7 @@ function computeResidentialPopulation(
     const zone = new Set(serviceEffectZone(G, service));
     if (footprint.some((key) => zone.has(key))) boost += service.bonus;
   }
-  const { base, max } = getResidentialBaseMax(
-    params,
-    residential.rows,
-    residential.cols,
-    residential.typeIndex
-  );
+  const { base, max } = getResidentialBaseMax(params, residential.rows, residential.cols, residential.typeIndex);
   return clamp(base + boost, base, max);
 }
 
@@ -230,7 +229,7 @@ function makeTelemetry(
     residentialCandidateCount,
     candidateCount: serviceCandidateCount + residentialCandidateCount,
     roadMaskCount,
-    stateCount,
+    stateCount
   };
 }
 
@@ -242,7 +241,7 @@ function toDpServicePlacement(candidate: ServiceCandidate): DpServicePlacement {
     cols: candidate.cols,
     range: candidate.range,
     typeIndex: candidate.typeIndex,
-    bonus: candidate.bonus,
+    bonus: candidate.bonus
   };
 }
 
@@ -252,23 +251,16 @@ function toDpResidentialPlacement(candidate: ResidentialCandidate | ResidentialP
     c: candidate.c,
     rows: candidate.rows,
     cols: candidate.cols,
-    typeIndex: "typeIndex" in candidate ? candidate.typeIndex : -1,
+    typeIndex: "typeIndex" in candidate ? candidate.typeIndex : -1
   };
 }
 
 function compareServiceCandidates(a: ServiceCandidate, b: ServiceCandidate): number {
-  return a.typeIndex - b.typeIndex
-    || b.bonus - a.bonus
-    || a.r - b.r
-    || a.c - b.c
-    || a.rows * a.cols - b.rows * b.cols;
+  return a.typeIndex - b.typeIndex || b.bonus - a.bonus || a.r - b.r || a.c - b.c || a.rows * a.cols - b.rows * b.cols;
 }
 
 function compareResidentialCandidates(a: DpResidentialPlacement, b: DpResidentialPlacement): number {
-  return a.typeIndex - b.typeIndex
-    || a.r - b.r
-    || a.c - b.c
-    || a.rows * a.cols - b.rows * b.cols;
+  return a.typeIndex - b.typeIndex || a.r - b.r || a.c - b.c || a.rows * a.cols - b.rows * b.cols;
 }
 
 export function repairSmallWindowWithDp(
@@ -301,7 +293,7 @@ export function repairSmallWindowWithDp(
       residentialCandidateCount,
       roadMaskCount,
       stateCount
-    ),
+    )
   });
 
   if (window.rows <= 0 || window.cols <= 0 || window.rows * window.cols > options.maxMutableCells) {
@@ -319,7 +311,7 @@ export function repairSmallWindowWithDp(
     const typedService: DpServicePlacement = {
       ...normalized,
       typeIndex: incumbent.serviceTypeIndices[index] ?? -1,
-      bonus: incumbent.servicePopulationIncreases[index] ?? 0,
+      bonus: incumbent.servicePopulationIncreases[index] ?? 0
     };
     fixedServices.push(typedService);
     for (const key of serviceFootprint(typedService)) fixedBlocked.add(key);
@@ -329,7 +321,7 @@ export function repairSmallWindowWithDp(
     if (rectangleIntersectsWindow(residential, window)) return;
     const typedResidential: DpResidentialPlacement = {
       ...residential,
-      typeIndex: incumbent.residentialTypeIndices[index] ?? -1,
+      typeIndex: incumbent.residentialTypeIndices[index] ?? -1
     };
     fixedResidentials.push(typedResidential);
     for (const key of residentialFootprint(residential.r, residential.c, residential.rows, residential.cols)) {
@@ -356,7 +348,10 @@ export function repairSmallWindowWithDp(
 
   const serviceTypeCount = params.serviceTypes?.length ?? 0;
   const residentialTypeCount = params.residentialTypes?.length ?? 0;
-  const fixedServiceTypeCounts = countByType(serviceTypeCount, fixedServices.map((service) => service.typeIndex));
+  const fixedServiceTypeCounts = countByType(
+    serviceTypeCount,
+    fixedServices.map((service) => service.typeIndex)
+  );
   const fixedResidentialTypeCounts = countByType(
     residentialTypeCount,
     fixedResidentials.map((residential) => residential.typeIndex)
@@ -432,7 +427,7 @@ export function repairSmallWindowWithDp(
     return {
       placement: toDpServicePlacement(candidate),
       footprintKeys,
-      mask: buildMask(footprintKeys, cellIndexByKey),
+      mask: buildMask(footprintKeys, cellIndexByKey)
     };
   });
   const residentialCandidates: DpCandidate<DpResidentialPlacement>[] = rawResidentialCandidates.map((candidate) => {
@@ -440,7 +435,7 @@ export function repairSmallWindowWithDp(
     return {
       placement: candidate,
       footprintKeys,
-      mask: buildMask(footprintKeys, cellIndexByKey),
+      mask: buildMask(footprintKeys, cellIndexByKey)
     };
   });
 
@@ -489,7 +484,15 @@ export function repairSmallWindowWithDp(
         const typeIndex = candidate.placement.typeIndex;
         if (remainingSlots <= 0 || (remainingTypes[typeIndex] ?? 0) <= 0) return;
         if ((occupiedMask & candidate.mask) !== 0n) return;
-        if (!isAdjacentToRoads(roads, candidate.placement.r, candidate.placement.c, candidate.placement.rows, candidate.placement.cols)) {
+        if (
+          !isAdjacentToRoads(
+            roads,
+            candidate.placement.r,
+            candidate.placement.c,
+            candidate.placement.rows,
+            candidate.placement.cols
+          )
+        ) {
           return;
         }
 
@@ -538,9 +541,16 @@ export function repairSmallWindowWithDp(
           const typeIndex = candidate.placement.typeIndex;
           const hasTypeCapacity = residentialTypeCount === 0 || (remainingTypes[typeIndex] ?? 0) > 0;
 
-          if (hasTypeCapacity
-            && (occupiedMask & candidate.mask) === 0n
-            && isAdjacentToRoads(roads, candidate.placement.r, candidate.placement.c, candidate.placement.rows, candidate.placement.cols)
+          if (
+            hasTypeCapacity &&
+            (occupiedMask & candidate.mask) === 0n &&
+            isAdjacentToRoads(
+              roads,
+              candidate.placement.r,
+              candidate.placement.c,
+              candidate.placement.rows,
+              candidate.placement.cols
+            )
           ) {
             const nextRemainingTypes = [...remainingTypes];
             if (residentialTypeCount > 0) nextRemainingTypes[typeIndex] -= 1;
@@ -553,7 +563,7 @@ export function repairSmallWindowWithDp(
             const population = computeResidentialPopulation(G, params, allServices, candidate.placement);
             const taken = {
               population: population + child.population,
-              indices: [index, ...child.indices],
+              indices: [index, ...child.indices]
             };
             bestResidential = compareResidentialDpResult(bestResidential, taken);
           }
@@ -568,7 +578,9 @@ export function repairSmallWindowWithDp(
           [...residentialTypeRemaining],
           remainingResidentialSlots
         );
-        const selectedResidentials = residentialSelection.indices.map((index) => residentialCandidates[index].placement);
+        const selectedResidentials = residentialSelection.indices.map(
+          (index) => residentialCandidates[index].placement
+        );
         const allResidentials = [...fixedResidentials, ...selectedResidentials];
         const populations = allResidentials.map((residential) =>
           computeResidentialPopulation(G, params, allServices, residential)
@@ -583,7 +595,7 @@ export function repairSmallWindowWithDp(
           residentials: allResidentials.map(({ typeIndex, ...residential }) => residential),
           residentialTypeIndices: allResidentials.map((residential) => residential.typeIndex),
           populations,
-          totalPopulation: fixedResidentialPopulation + residentialSelection.population,
+          totalPopulation: fixedResidentialPopulation + residentialSelection.population
         };
         const validation = validateSolution({ grid: G, solution, params });
         if (!validation.valid) continue;
@@ -593,7 +605,7 @@ export function repairSmallWindowWithDp(
           totalPopulation: solution.totalPopulation,
           roadCount: solution.roads.size,
           serviceCount: solution.services.length,
-          residentialCount: solution.residentials.length,
+          residentialCount: solution.residentials.length
         });
       }
     }

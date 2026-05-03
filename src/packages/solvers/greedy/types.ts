@@ -6,12 +6,12 @@ import type {
   ServiceCandidate,
   ServicePlacement,
   Solution,
-  SolverParams,
+  SolverParams
 } from "../../core/index.js";
 import type {
   createRoadProbeScratch,
   buildFootprintGeometryCache,
-  buildServiceGeometryCache,
+  buildServiceGeometryCache
 } from "../../core/index.js";
 import type { ConnectivityProbe } from "./attemptState.js";
 import type { ResidentialCandidatesList } from "./candidates.js";

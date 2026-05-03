@@ -4,7 +4,7 @@ const {
   DEFAULT_MAX_RUNNING_SOLVES,
   DEFAULT_PLANNER_PORT,
   parseLocalServerPort,
-  parsePositiveIntegerConfig,
+  parsePositiveIntegerConfig
 } = require("../dist/apps/planner-server/serverConfig.js");
 
 function testPortParsingFallsBackForInvalidValues() {

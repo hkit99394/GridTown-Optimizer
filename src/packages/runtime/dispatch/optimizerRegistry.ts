@@ -10,7 +10,7 @@ import {
   describeAutoCompletedSolution,
   describeAutoRecoveredSolution,
   normalizeAutoTerminalSolution,
-  solveAuto,
+  solveAuto
 } from "../../solvers/auto/solver.js";
 import { solveCpSat, solveCpSatAsync } from "../../solvers/cp-sat/solver.js";
 import { solveGreedy } from "../../solvers/greedy/solver.js";
@@ -27,7 +27,7 @@ import type {
   OptimizerName,
   Solution,
   SolveProgressLogEntry,
-  SolverParams,
+  SolverParams
 } from "../../core/index.js";
 
 export interface OptimizerFinalizationContext {
@@ -66,27 +66,27 @@ const optimizerAdapters: Record<OptimizerName, OptimizerAdapter> = {
     startBackgroundSolve: startAutoSolve,
     normalizeTerminalSolution: normalizeAutoTerminalSolution,
     describeCompletedSolution: describeAutoCompletedSolution,
-    describeRecoveredSolution: describeAutoRecoveredSolution,
+    describeRecoveredSolution: describeAutoRecoveredSolution
   },
   greedy: {
     name: "greedy",
     solve: solveGreedy,
     startBackgroundSolve: startGreedySolve,
-    describeRecoveredSolution: describeDefaultRecoveredSolution,
+    describeRecoveredSolution: describeDefaultRecoveredSolution
   },
   "cp-sat": {
     name: "cp-sat",
     solve: solveCpSat,
     solveAsync: (grid, params, cpSatAsyncOptions) => solveCpSatAsync(grid, params, cpSatAsyncOptions),
     startBackgroundSolve: startCpSatSolve,
-    describeRecoveredSolution: describeDefaultRecoveredSolution,
+    describeRecoveredSolution: describeDefaultRecoveredSolution
   },
   lns: {
     name: "lns",
     solve: solveLns,
     startBackgroundSolve: startLnsSolve,
-    describeRecoveredSolution: describeLnsRecoveredSolution,
-  },
+    describeRecoveredSolution: describeLnsRecoveredSolution
+  }
 };
 
 export function resolveOptimizerName(

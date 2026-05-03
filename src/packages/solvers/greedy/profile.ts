@@ -1,10 +1,6 @@
 import { performance } from "node:perf_hooks";
 
-import type {
-  GreedyProfileCounters,
-  GreedyProfilePhaseName,
-  GreedyProfilePhaseSummary,
-} from "../../core/index.js";
+import type { GreedyProfileCounters, GreedyProfilePhaseName, GreedyProfilePhaseSummary } from "../../core/index.js";
 
 export type GreedyProfilePhaseMetrics = {
   bestPopulationBefore?: number | null;
@@ -28,7 +24,7 @@ const GREEDY_PROFILE_PHASE_NAMES: readonly GreedyProfilePhaseName[] = Object.fre
   "exhaustiveServiceSearch",
   "serviceMasterDecomposition",
   "residentialLocalSearch",
-  "serviceNeighborhoodSearch",
+  "serviceNeighborhoodSearch"
 ]);
 
 export function createGreedyProfileCounters(): GreedyProfileCounters {
@@ -44,7 +40,7 @@ export function createGreedyProfileCounters(): GreedyProfileCounters {
       serviceStaticScores: 0,
       serviceStaticScoreGroupEvaluations: 0,
       serviceStaticAvailabilityDiscountedGroups: 0,
-      residentialPopulationCacheEntries: 0,
+      residentialPopulationCacheEntries: 0
     },
     attempts: {
       serviceCaps: 0,
@@ -59,7 +55,7 @@ export function createGreedyProfileCounters(): GreedyProfileCounters {
       serviceMasterFeasibleLayouts: 0,
       serviceMasterNoGoodSkips: 0,
       fixedServiceRealizationTrials: 0,
-      localSearchIterations: 0,
+      localSearchIterations: 0
     },
     servicePhase: {
       candidateScans: 0,
@@ -75,7 +71,7 @@ export function createGreedyProfileCounters(): GreedyProfileCounters {
       scoreDirtyMarks: 0,
       scoreRecomputes: 0,
       placements: 0,
-      fixedPlacements: 0,
+      fixedPlacements: 0
     },
     residentialPhase: {
       candidateScans: 0,
@@ -83,7 +79,7 @@ export function createGreedyProfileCounters(): GreedyProfileCounters {
       candidateInvalidations: 0,
       typeInvalidations: 0,
       placements: 0,
-      populationCacheLookups: 0,
+      populationCacheLookups: 0
     },
     localSearch: {
       candidateScans: 0,
@@ -96,7 +92,7 @@ export function createGreedyProfileCounters(): GreedyProfileCounters {
       serviceAddChecks: 0,
       serviceSwapChecks: 0,
       serviceNeighborhoodImprovements: 0,
-      populationCacheLookups: 0,
+      populationCacheLookups: 0
     },
     roads: {
       canConnectChecks: 0,
@@ -124,8 +120,8 @@ export function createGreedyProfileCounters(): GreedyProfileCounters {
       roadOpportunityFootprintCells: 0,
       roadOpportunityDisconnectedCells: 0,
       roadOpportunityMaxLostCells: 0,
-      roadOpportunityMaxDisconnectedCells: 0,
-    },
+      roadOpportunityMaxDisconnectedCells: 0
+    }
   };
 }
 
@@ -138,7 +134,7 @@ export function createGreedyProfilePhaseSummaries(): GreedyProfilePhaseSummary[]
     bestPopulationAfter: null,
     bestPopulationDelta: 0,
     candidatePopulationDelta: 0,
-    improvements: 0,
+    improvements: 0
   }));
 }
 
@@ -163,17 +159,15 @@ export function createGreedyProfilePhaseRecorder(
       phase.bestPopulationAfter = bestAfter;
     }
 
-    const bestDelta = bestAfter !== null
-      ? Math.max(0, bestAfter - (bestBefore ?? 0))
-      : 0;
-    const candidateDelta = metrics.candidatePopulationDelta ?? (
-      metrics.candidatePopulationBefore !== undefined
-      && metrics.candidatePopulationBefore !== null
-      && metrics.candidatePopulationAfter !== undefined
-      && metrics.candidatePopulationAfter !== null
+    const bestDelta = bestAfter !== null ? Math.max(0, bestAfter - (bestBefore ?? 0)) : 0;
+    const candidateDelta =
+      metrics.candidatePopulationDelta ??
+      (metrics.candidatePopulationBefore !== undefined &&
+      metrics.candidatePopulationBefore !== null &&
+      metrics.candidatePopulationAfter !== undefined &&
+      metrics.candidatePopulationAfter !== null
         ? Math.max(0, metrics.candidatePopulationAfter - metrics.candidatePopulationBefore)
-        : 0
-    );
+        : 0);
 
     phase.bestPopulationDelta += bestDelta;
     phase.candidatePopulationDelta += Math.max(0, candidateDelta);
@@ -203,7 +197,7 @@ export function runGreedyProfilePhase<T>(options: {
   } finally {
     recordProfilePhase(phase, phaseStartedAtMs, {
       bestPopulationBefore,
-      bestPopulationAfter: getBestPopulation(),
+      bestPopulationAfter: getBestPopulation()
     });
   }
 }

@@ -20,7 +20,7 @@ import type {
   EvaluatedServicePlacement,
   Grid,
   SolverParams,
-  Solution,
+  Solution
 } from "../../core/index.js";
 import { assertValidLayout } from "../../core/index.js";
 
@@ -117,7 +117,7 @@ function parseCpSatObjectivePolicy(value: unknown): CpSatObjectivePolicy {
   return {
     populationWeight: expectInteger(value.populationWeight, "objectivePolicy.populationWeight"),
     maxTieBreakPenalty: expectInteger(value.maxTieBreakPenalty, "objectivePolicy.maxTieBreakPenalty"),
-    summary: expectString(value.summary, "objectivePolicy.summary"),
+    summary: expectString(value.summary, "objectivePolicy.summary")
   };
 }
 
@@ -135,8 +135,11 @@ function parseCpSatModelSizeTelemetry(value: unknown): CpSatModelSizeTelemetry {
     rootVariableCount: expectInteger(value.rootVariableCount, "telemetry.modelSize.rootVariableCount"),
     directedEdgeCount: expectInteger(value.directedEdgeCount, "telemetry.modelSize.directedEdgeCount"),
     serviceCandidateCount: expectInteger(value.serviceCandidateCount, "telemetry.modelSize.serviceCandidateCount"),
-    residentialCandidateCount: expectInteger(value.residentialCandidateCount, "telemetry.modelSize.residentialCandidateCount"),
-    populationVariableCount: expectInteger(value.populationVariableCount, "telemetry.modelSize.populationVariableCount"),
+    residentialCandidateCount: expectInteger(
+      value.residentialCandidateCount,
+      "telemetry.modelSize.residentialCandidateCount"
+    ),
+    populationVariableCount: expectInteger(value.populationVariableCount, "telemetry.modelSize.populationVariableCount")
   };
 }
 
@@ -152,7 +155,9 @@ function parseCpSatTelemetry(value: unknown): CpSatTelemetry {
     bestObjectiveBound: expectNullableNumber(value.bestObjectiveBound, "telemetry.bestObjectiveBound"),
     objectiveGap: expectNullableNumber(value.objectiveGap, "telemetry.objectiveGap"),
     incumbentPopulation:
-      value.incumbentPopulation === null ? null : expectInteger(value.incumbentPopulation, "telemetry.incumbentPopulation"),
+      value.incumbentPopulation === null
+        ? null
+        : expectInteger(value.incumbentPopulation, "telemetry.incumbentPopulation"),
     bestPopulationUpperBound:
       value.bestPopulationUpperBound === null
         ? null
@@ -161,7 +166,10 @@ function parseCpSatTelemetry(value: unknown): CpSatTelemetry {
       value.populationGapUpperBound === null
         ? null
         : expectInteger(value.populationGapUpperBound, "telemetry.populationGapUpperBound"),
-    lastImprovementAtSeconds: expectNullableNumber(value.lastImprovementAtSeconds, "telemetry.lastImprovementAtSeconds"),
+    lastImprovementAtSeconds: expectNullableNumber(
+      value.lastImprovementAtSeconds,
+      "telemetry.lastImprovementAtSeconds"
+    ),
     secondsSinceLastImprovement: expectNullableNumber(
       value.secondsSinceLastImprovement,
       "telemetry.secondsSinceLastImprovement"
@@ -169,9 +177,7 @@ function parseCpSatTelemetry(value: unknown): CpSatTelemetry {
     numBranches: expectInteger(value.numBranches, "telemetry.numBranches"),
     numConflicts: expectInteger(value.numConflicts, "telemetry.numConflicts"),
     modelSize:
-      value.modelSize === undefined || value.modelSize === null
-        ? null
-        : parseCpSatModelSizeTelemetry(value.modelSize),
+      value.modelSize === undefined || value.modelSize === null ? null : parseCpSatModelSizeTelemetry(value.modelSize)
   };
 }
 
@@ -181,7 +187,8 @@ function parseCpSatPortfolioWorkerSummary(value: unknown, index: number): CpSatP
   }
   return {
     workerIndex: expectInteger(value.workerIndex, `portfolio.workers[${index}].workerIndex`),
-    randomSeed: value.randomSeed === null ? null : expectInteger(value.randomSeed, `portfolio.workers[${index}].randomSeed`),
+    randomSeed:
+      value.randomSeed === null ? null : expectInteger(value.randomSeed, `portfolio.workers[${index}].randomSeed`),
     randomizeSearch: expectBoolean(value.randomizeSearch, `portfolio.workers[${index}].randomizeSearch`),
     numWorkers: expectInteger(value.numWorkers, `portfolio.workers[${index}].numWorkers`),
     status: expectString(value.status, `portfolio.workers[${index}].status`),
@@ -190,10 +197,7 @@ function parseCpSatPortfolioWorkerSummary(value: unknown, index: number): CpSatP
       value.totalPopulation === null
         ? null
         : expectInteger(value.totalPopulation, `portfolio.workers[${index}].totalPopulation`),
-    telemetry:
-      value.telemetry === undefined || value.telemetry === null
-        ? null
-        : parseCpSatTelemetry(value.telemetry),
+    telemetry: value.telemetry === undefined || value.telemetry === null ? null : parseCpSatTelemetry(value.telemetry)
   };
 }
 
@@ -206,7 +210,9 @@ function parseCpSatPortfolioSummary(value: unknown): CpSatPortfolioSummary {
   }
   const workerCount = expectInteger(value.workerCount, "portfolio.workerCount");
   const selectedWorkerIndex =
-    value.selectedWorkerIndex === null ? null : expectInteger(value.selectedWorkerIndex, "portfolio.selectedWorkerIndex");
+    value.selectedWorkerIndex === null
+      ? null
+      : expectInteger(value.selectedWorkerIndex, "portfolio.selectedWorkerIndex");
   const workers = value.workers.map((entry, index) => parseCpSatPortfolioWorkerSummary(entry, index));
   if (workers.length !== workerCount) {
     throw new Error("CP-SAT backend returned invalid JSON: portfolio.workerCount must match workers length.");
@@ -215,12 +221,14 @@ function parseCpSatPortfolioSummary(value: unknown): CpSatPortfolioSummary {
     throw new Error("CP-SAT backend returned invalid JSON: portfolio.workers must have unique workerIndex values.");
   }
   if (selectedWorkerIndex !== null && !workers.some((worker) => worker.workerIndex === selectedWorkerIndex)) {
-    throw new Error("CP-SAT backend returned invalid JSON: portfolio.selectedWorkerIndex must reference a listed worker.");
+    throw new Error(
+      "CP-SAT backend returned invalid JSON: portfolio.selectedWorkerIndex must reference a listed worker."
+    );
   }
   return {
     workerCount,
     selectedWorkerIndex,
-    workers,
+    workers
   };
 }
 
@@ -238,7 +246,7 @@ function parseCpSatProgressUpdate(value: unknown): CpSatProgressUpdate {
   return {
     kind: expectCpSatProgressKind(value.kind, "progress.kind"),
     telemetry: value.telemetry === undefined ? undefined : parseCpSatTelemetry(value.telemetry),
-    worker: value.worker === undefined ? undefined : parseCpSatPortfolioWorkerSummary(value.worker, 0),
+    worker: value.worker === undefined ? undefined : parseCpSatPortfolioWorkerSummary(value.worker, 0)
   };
 }
 
@@ -253,7 +261,7 @@ function parseCpSatServicePlacement(value: unknown, index: number): CpSatService
     cols: expectInteger(value.cols, `services[${index}].cols`),
     range: expectInteger(value.range, `services[${index}].range`),
     bonus: expectInteger(value.bonus, `services[${index}].bonus`),
-    typeIndex: expectInteger(value.typeIndex, `services[${index}].typeIndex`),
+    typeIndex: expectInteger(value.typeIndex, `services[${index}].typeIndex`)
   };
 }
 
@@ -267,7 +275,7 @@ function parseCpSatResidentialPlacement(value: unknown, index: number): CpSatRes
     rows: expectInteger(value.rows, `residentials[${index}].rows`),
     cols: expectInteger(value.cols, `residentials[${index}].cols`),
     typeIndex: expectInteger(value.typeIndex, `residentials[${index}].typeIndex`),
-    population: expectInteger(value.population, `residentials[${index}].population`),
+    population: expectInteger(value.population, `residentials[${index}].population`)
   };
 }
 
@@ -294,10 +302,12 @@ function normalizeCpSatRawSolution(value: unknown): CpSatRawSolution {
       })();
   const totalPopulation = expectInteger(value.totalPopulation, "totalPopulation");
   const status = expectString(value.status, "status");
-  const objectivePolicy = value.objectivePolicy === undefined ? undefined : parseCpSatObjectivePolicy(value.objectivePolicy);
+  const objectivePolicy =
+    value.objectivePolicy === undefined ? undefined : parseCpSatObjectivePolicy(value.objectivePolicy);
   const telemetry = value.telemetry === undefined ? undefined : parseCpSatTelemetry(value.telemetry);
   const portfolio = value.portfolio === undefined ? undefined : parseCpSatPortfolioSummary(value.portfolio);
-  const stoppedByUser = value.stoppedByUser === undefined ? undefined : expectBoolean(value.stoppedByUser, "stoppedByUser");
+  const stoppedByUser =
+    value.stoppedByUser === undefined ? undefined : expectBoolean(value.stoppedByUser, "stoppedByUser");
 
   if (populations.length !== residentials.length) {
     throw new Error("CP-SAT backend returned invalid JSON: populations length must match residentials length.");
@@ -306,7 +316,18 @@ function normalizeCpSatRawSolution(value: unknown): CpSatRawSolution {
     throw new Error("CP-SAT backend returned invalid JSON: totalPopulation must equal the population sum.");
   }
 
-  return { roads, services, residentials, populations, totalPopulation, status, objectivePolicy, telemetry, portfolio, stoppedByUser };
+  return {
+    roads,
+    services,
+    residentials,
+    populations,
+    totalPopulation,
+    status,
+    objectivePolicy,
+    telemetry,
+    portfolio,
+    stoppedByUser
+  };
 }
 
 export function defaultPythonExecutable(): string {
@@ -327,14 +348,14 @@ function normalizeWarmStartHint(value: CpSatWarmStartHint | Solution | undefined
       services: value.services.map((service, index) => ({
         ...service,
         typeIndex: value.serviceTypeIndices[index],
-        bonus: value.servicePopulationIncreases[index],
+        bonus: value.servicePopulationIncreases[index]
       })),
       residentials: value.residentials.map((residential, index) => ({
         ...residential,
         typeIndex: value.residentialTypeIndices[index],
-        population: value.populations[index],
+        population: value.populations[index]
       })),
-      totalPopulation: value.totalPopulation,
+      totalPopulation: value.totalPopulation
     };
   }
 
@@ -344,19 +365,22 @@ function normalizeWarmStartHint(value: CpSatWarmStartHint | Solution | undefined
     roads: [...(value.roads ?? solution?.roads ?? value.roadKeys ?? [])],
     services: (value.services ?? solution?.services ?? []).map((service) => ({ ...service })),
     residentials: (value.residentials ?? solution?.residentials ?? []).map((residential) => ({ ...residential })),
-    totalPopulation: value.totalPopulation ?? solution?.totalPopulation,
+    totalPopulation: value.totalPopulation ?? solution?.totalPopulation
   };
 }
 
 function buildCpSatBackendParams(params: SolverParams, asyncOptions?: CpSatAsyncOptions): SolverParams {
-  const normalizedWarmStartHint = params.cpSat?.warmStartHint ? normalizeWarmStartHint(params.cpSat.warmStartHint) : undefined;
+  const normalizedWarmStartHint = params.cpSat?.warmStartHint
+    ? normalizeWarmStartHint(params.cpSat.warmStartHint)
+    : undefined;
   const streamProgress = Boolean(
-    asyncOptions && (params.cpSat?.streamProgress || asyncOptions.onProgress || asyncOptions.progressIntervalSeconds !== undefined)
+    asyncOptions &&
+    (params.cpSat?.streamProgress || asyncOptions.onProgress || asyncOptions.progressIntervalSeconds !== undefined)
   );
   const progressIntervalSeconds = asyncOptions?.progressIntervalSeconds ?? params.cpSat?.progressIntervalSeconds;
   const objectiveLowerBound =
-    params.cpSat?.objectiveLowerBound
-    ?? (isRecord(normalizedWarmStartHint) && typeof normalizedWarmStartHint.objectiveLowerBound === "number"
+    params.cpSat?.objectiveLowerBound ??
+    (isRecord(normalizedWarmStartHint) && typeof normalizedWarmStartHint.objectiveLowerBound === "number"
       ? normalizedWarmStartHint.objectiveLowerBound
       : undefined);
 
@@ -373,15 +397,15 @@ function buildCpSatBackendParams(params: SolverParams, asyncOptions?: CpSatAsync
         : {}),
       ...(objectiveLowerBound !== undefined ? { objectiveLowerBound } : {}),
       ...(streamProgress ? { streamProgress: true } : {}),
-      ...(progressIntervalSeconds !== undefined ? { progressIntervalSeconds } : {}),
-    },
+      ...(progressIntervalSeconds !== undefined ? { progressIntervalSeconds } : {})
+    }
   };
 }
 
 export function buildCpSatRequest(G: Grid, params: SolverParams, asyncOptions?: CpSatAsyncOptions) {
   return {
     grid: G,
-    params: buildCpSatBackendParams(params, asyncOptions),
+    params: buildCpSatBackendParams(params, asyncOptions)
   };
 }
 
@@ -394,7 +418,7 @@ function buildCpSatBackendInvocation(G: Grid, params: SolverParams, asyncOptions
     pythonExecutable,
     scriptPath,
     request: JSON.stringify(requestPayload),
-    streamProgress: Boolean(requestPayload.params.cpSat?.streamProgress),
+    streamProgress: Boolean(requestPayload.params.cpSat?.streamProgress)
   };
 }
 
@@ -403,7 +427,7 @@ function runCpSatBackend(G: Grid, params: SolverParams) {
   const result = spawnSync(pythonExecutable, [scriptPath], {
     input: request,
     encoding: "utf8",
-    maxBuffer: 16 * 1024 * 1024,
+    maxBuffer: 16 * 1024 * 1024
   });
 
   if (result.error) {
@@ -434,13 +458,13 @@ function parseCpSatStreamEvent(line: string): CpSatRawProgressEvent | CpSatRawRe
       event,
       kind: update.kind,
       telemetry: update.telemetry,
-      worker: update.worker,
+      worker: update.worker
     };
   }
   if (event === "result") {
     return {
       event,
-      payload: normalizeCpSatRawSolution(value.payload),
+      payload: normalizeCpSatRawSolution(value.payload)
     };
   }
   throw new Error("CP-SAT backend returned invalid JSON: unknown stream event type.");
@@ -451,10 +475,14 @@ async function runCpSatBackendAsync(
   params: SolverParams,
   asyncOptions?: CpSatAsyncOptions
 ): Promise<CpSatRawSolution> {
-  const { pythonExecutable, scriptPath, request, streamProgress } = buildCpSatBackendInvocation(G, params, asyncOptions);
+  const { pythonExecutable, scriptPath, request, streamProgress } = buildCpSatBackendInvocation(
+    G,
+    params,
+    asyncOptions
+  );
   return new Promise((resolvePromise, rejectPromise) => {
     const child = spawn(pythonExecutable, [scriptPath], {
-      stdio: ["pipe", "pipe", "pipe"],
+      stdio: ["pipe", "pipe", "pipe"]
     });
     let stdout = "";
     let stderr = "";
@@ -482,7 +510,7 @@ async function runCpSatBackendAsync(
               asyncOptions?.onProgress?.({
                 kind: event.kind,
                 telemetry: event.telemetry,
-                worker: event.worker,
+                worker: event.worker
               });
             } else {
               finalPayload = event.payload;
@@ -526,7 +554,7 @@ async function runCpSatBackendAsync(
               asyncOptions?.onProgress?.({
                 kind: event.kind,
                 telemetry: event.telemetry,
-                worker: event.worker,
+                worker: event.worker
               });
             } else {
               finalPayload = event.payload;
@@ -570,26 +598,33 @@ function decodeCpSatLayout(raw: CpSatRawSolution) {
     rows: service.rows,
     cols: service.cols,
     range: service.range,
-    bonus: service.bonus,
+    bonus: service.bonus
   }));
   const residentials = raw.residentials.map((residential) => ({
     r: residential.r,
     c: residential.c,
     rows: residential.rows,
-    cols: residential.cols,
+    cols: residential.cols
   }));
   return { roads, services, residentials };
 }
 
-function validateCpSatLayout(G: Grid, params: SolverParams, raw: CpSatRawSolution): ReturnType<typeof decodeCpSatLayout> {
+function validateCpSatLayout(
+  G: Grid,
+  params: SolverParams,
+  raw: CpSatRawSolution
+): ReturnType<typeof decodeCpSatLayout> {
   const layout = decodeCpSatLayout(raw);
-  assertValidLayout({
-    grid: G,
-    roads: layout.roads,
-    services: layout.services,
-    residentials: layout.residentials,
-    params,
-  }, "CP-SAT backend produced an invalid layout");
+  assertValidLayout(
+    {
+      grid: G,
+      roads: layout.roads,
+      services: layout.services,
+      residentials: layout.residentials,
+      params
+    },
+    "CP-SAT backend produced an invalid layout"
+  );
   return layout;
 }
 
@@ -609,7 +644,7 @@ export function materializeCpSatSolution(G: Grid, params: SolverParams, raw: CpS
     residentials: layout.residentials,
     residentialTypeIndices: raw.residentials.map((residential) => residential.typeIndex),
     populations: raw.populations,
-    totalPopulation: raw.totalPopulation,
+    totalPopulation: raw.totalPopulation
   };
 }
 

@@ -12,7 +12,7 @@ import {
   cloneBenchmarkSolverParams,
   inheritGreedyBenchmarkOptions,
   listBenchmarkCaseNames,
-  selectBenchmarkCasesByName,
+  selectBenchmarkCasesByName
 } from "./benchmarkOptions.js";
 
 import type {
@@ -23,7 +23,7 @@ import type {
   GreedyRoadOpportunityTrace,
   Grid,
   SolverParams,
-  SolverProgressSummary,
+  SolverProgressSummary
 } from "../core/index.js";
 
 export interface GreedyServiceLookaheadBenchmarkOptions {
@@ -70,8 +70,10 @@ type GreedyBenchmarkSnapshotProfile = Omit<GreedyProfile, "phases"> & {
   phases: Array<Omit<GreedyProfilePhaseSummary, "elapsedMs">>;
 };
 
-export interface GreedyBenchmarkSnapshotCaseResult
-  extends Omit<GreedyBenchmarkCaseResult, "wallClockSeconds" | "greedyProfile"> {
+export interface GreedyBenchmarkSnapshotCaseResult extends Omit<
+  GreedyBenchmarkCaseResult,
+  "wallClockSeconds" | "greedyProfile"
+> {
   greedyProfile: GreedyBenchmarkSnapshotProfile | null;
 }
 
@@ -93,7 +95,7 @@ export const DEFAULT_GREEDY_BENCHMARK_OPTIONS = Object.freeze({
   serviceRefineCandidateLimit: 12,
   exhaustiveServiceSearch: false,
   serviceExactPoolLimit: 8,
-  serviceExactMaxCombinations: 256,
+  serviceExactMaxCombinations: 256
 } satisfies Required<
   Pick<
     GreedyOptions,
@@ -137,7 +139,7 @@ function selectBenchmarkCases(
 ): GreedyBenchmarkCase[] {
   return selectBenchmarkCasesByName(corpus, names, {
     caseLabel: "greedy benchmark",
-    corpusLabel: "Greedy benchmark",
+    corpusLabel: "Greedy benchmark"
   });
 }
 
@@ -146,7 +148,7 @@ export function listGreedyBenchmarkCaseNames(
 ): string[] {
   return listBenchmarkCaseNames(corpus, {
     caseLabel: "greedy benchmark",
-    corpusLabel: "Greedy benchmark",
+    corpusLabel: "Greedy benchmark"
   });
 }
 
@@ -174,9 +176,9 @@ function runGreedyBenchmarkCase(
     progressSummary: buildSolverProgressSummary(solution, {
       elapsedTimeSeconds: wallClockSeconds,
       fallbackOptimizer: "greedy",
-      params,
+      params
     }),
-    wallClockSeconds,
+    wallClockSeconds
   };
 }
 
@@ -190,7 +192,7 @@ export function runGreedyBenchmarkSuite(
   const results = selected.map((benchmarkCase) => runGreedyBenchmarkCase(benchmarkCase, options));
   return {
     ...buildBenchmarkSuiteMetadata(results.map((result) => result.name)),
-    results,
+    results
   };
 }
 
@@ -198,23 +200,25 @@ export function createGreedyBenchmarkSnapshot(result: GreedyBenchmarkSuiteResult
   return {
     caseCount: result.caseCount,
     selectedCaseNames: [...result.selectedCaseNames],
-    results: result.results.map(({ wallClockSeconds: _wallClockSeconds, greedyProfile, progressSummary, ...benchmark }) => ({
-      ...benchmark,
-      progressSummary: {
-        ...progressSummary,
-        elapsedTimeSeconds: null,
-      },
-      greedyProfile: greedyProfile
-        ? {
-            counters: structuredClone(greedyProfile.counters),
-            phases: greedyProfile.phases.map(({ elapsedMs: _elapsedMs, ...phase }) => ({ ...phase })),
-            connectivityShadowDecisions: structuredClone(greedyProfile.connectivityShadowDecisions ?? []),
-            connectivityShadowDecisionTraceLimit: greedyProfile.connectivityShadowDecisionTraceLimit,
-            roadOpportunityTraces: structuredClone(greedyProfile.roadOpportunityTraces ?? []),
-            roadOpportunityTraceLimit: greedyProfile.roadOpportunityTraceLimit,
-          }
-        : null,
-    })),
+    results: result.results.map(
+      ({ wallClockSeconds: _wallClockSeconds, greedyProfile, progressSummary, ...benchmark }) => ({
+        ...benchmark,
+        progressSummary: {
+          ...progressSummary,
+          elapsedTimeSeconds: null
+        },
+        greedyProfile: greedyProfile
+          ? {
+              counters: structuredClone(greedyProfile.counters),
+              phases: greedyProfile.phases.map(({ elapsedMs: _elapsedMs, ...phase }) => ({ ...phase })),
+              connectivityShadowDecisions: structuredClone(greedyProfile.connectivityShadowDecisions ?? []),
+              connectivityShadowDecisionTraceLimit: greedyProfile.connectivityShadowDecisionTraceLimit,
+              roadOpportunityTraces: structuredClone(greedyProfile.roadOpportunityTraces ?? []),
+              roadOpportunityTraceLimit: greedyProfile.roadOpportunityTraceLimit
+            }
+          : null
+      })
+    )
   };
 }
 
@@ -235,7 +239,7 @@ function formatPlacementTrace(placement: {
   const extras = [
     placement.typeIndex === undefined ? null : `type:${placement.typeIndex}`,
     placement.bonus === undefined ? null : `bonus:${placement.bonus}`,
-    placement.range === undefined ? null : `range:${placement.range}`,
+    placement.range === undefined ? null : `range:${placement.range}`
   ].filter((entry): entry is string => entry !== null);
   return `r${placement.r}c${placement.c} ${placement.rows}x${placement.cols} road:${placement.roadCost}${extras.length ? ` ${extras.join(" ")}` : ""}`;
 }
@@ -251,7 +255,7 @@ function formatRoadOpportunityTrace(trace: GreedyRoadOpportunityTrace): string {
     trace.bonus === undefined ? null : `bonus:${trace.bonus}`,
     trace.range === undefined ? null : `range:${trace.range}`,
     trace.moveKind === undefined ? null : `move:${trace.moveKind}`,
-    `counterfactuals:${trace.counterfactuals?.length ?? 0}`,
+    `counterfactuals:${trace.counterfactuals?.length ?? 0}`
   ].filter((entry): entry is string => entry !== null);
   return `${trace.phase} r${trace.r}c${trace.c} ${trace.rows}x${trace.cols} road:${trace.roadCost} reachable:${trace.reachableBefore}->${trace.reachableAfter} lost:${trace.lostCells} footprint:${trace.footprintCells} disconnected:${trace.disconnectedCells}${extras.length ? ` ${extras.join(" ")}` : ""}`;
 }
@@ -262,7 +266,7 @@ function formatRoadOpportunityCounterfactual(counterfactual: GreedyRoadOpportuni
     counterfactual.bonus === undefined ? null : `bonus:${counterfactual.bonus}`,
     counterfactual.range === undefined ? null : `range:${counterfactual.range}`,
     counterfactual.moveKind === undefined ? null : `move:${counterfactual.moveKind}`,
-    counterfactual.tieBreakComparison === undefined ? null : `tie:${counterfactual.tieBreakComparison}`,
+    counterfactual.tieBreakComparison === undefined ? null : `tie:${counterfactual.tieBreakComparison}`
   ].filter((entry): entry is string => entry !== null);
   return `reason:${counterfactual.reason} rejected:r${counterfactual.r}c${counterfactual.c} ${counterfactual.rows}x${counterfactual.cols} road:${counterfactual.roadCost} score:${counterfactual.score} score-delta:${formatSignedNumber(counterfactual.scoreDelta)} road-delta:${formatSignedNumber(counterfactual.roadCostDelta)} reachable:${counterfactual.reachableBefore}->${counterfactual.reachableAfter} lost:${counterfactual.lostCells} footprint:${counterfactual.footprintCells} disconnected:${counterfactual.disconnectedCells}${extras.length ? ` ${extras.join(" ")}` : ""}`;
 }
@@ -271,11 +275,11 @@ function selectRoadOpportunityTraceSamples(
   traces: readonly GreedyRoadOpportunityTrace[],
   limit: number
 ): GreedyRoadOpportunityTrace[] {
-  const localSearchTraces = traces.filter((trace) =>
-    trace.phase === "service-neighborhood" || trace.phase === "residential-local-search"
+  const localSearchTraces = traces.filter(
+    (trace) => trace.phase === "service-neighborhood" || trace.phase === "residential-local-search"
   );
-  const constructiveTraces = traces.filter((trace) =>
-    trace.phase !== "service-neighborhood" && trace.phase !== "residential-local-search"
+  const constructiveTraces = traces.filter(
+    (trace) => trace.phase !== "service-neighborhood" && trace.phase !== "residential-local-search"
   );
   return [...localSearchTraces, ...constructiveTraces].slice(0, limit);
 }
@@ -318,9 +322,7 @@ export function formatGreedyBenchmarkSuite(result: GreedyBenchmarkSuiteResult): 
       lines.push(
         `  service-master=layouts:${counters.attempts.serviceMasterLayouts} feasible:${counters.attempts.serviceMasterFeasibleLayouts} no-good:${counters.attempts.serviceMasterNoGoodSkips}`
       );
-      lines.push(
-        `  phases=${benchmark.greedyProfile?.phases.map(formatProfilePhaseSummary).join(", ") ?? "n/a"}`
-      );
+      lines.push(`  phases=${benchmark.greedyProfile?.phases.map(formatProfilePhaseSummary).join(", ") ?? "n/a"}`);
       lines.push(
         `  cap-search=evaluated:${counters.attempts.serviceCaps} coarse:${counters.attempts.coarseCaps} refine:${counters.attempts.refineCaps} skipped:${counters.attempts.capsSkipped} restart-caps:${counters.attempts.restartCaps}`
       );
@@ -372,13 +374,13 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
       [1, 1, 1, 1],
       [1, 1, 1, 1],
       [1, 1, 1, 1],
-      [1, 1, 1, 1],
+      [1, 1, 1, 1]
     ],
     params: {
       optimizer: "greedy",
       residentialTypes: [
         { w: 2, h: 2, min: 10, max: 10, avail: 1 },
-        { w: 2, h: 2, min: 100, max: 100, avail: 1 },
+        { w: 2, h: 2, min: 100, max: 100, avail: 1 }
       ],
       availableBuildings: { services: 0, residentials: 2 },
       greedy: {
@@ -389,9 +391,9 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
         serviceRefineCandidateLimit: 4,
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 4,
-        serviceExactMaxCombinations: 16,
-      },
-    },
+        serviceExactMaxCombinations: 16
+      }
+    }
   },
   {
     name: "compact-service-single",
@@ -402,14 +404,14 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
       [1, 1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1, 1],
-      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1]
     ],
     params: {
       optimizer: "greedy",
       serviceTypes: [{ rows: 2, cols: 2, bonus: 45, range: 1, avail: 1 }],
       residentialSettings: {
         "2x2": { min: 100, max: 180 },
-        "2x3": { min: 140, max: 240 },
+        "2x3": { min: 140, max: 240 }
       },
       availableBuildings: { services: 1, residentials: 2 },
       greedy: {
@@ -420,9 +422,9 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
         serviceRefineCandidateLimit: 8,
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 8,
-        serviceExactMaxCombinations: 32,
-      },
-    },
+        serviceExactMaxCombinations: 32
+      }
+    }
   },
   {
     name: "cap-sweep-mixed",
@@ -433,17 +435,17 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
       [1, 1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1, 1],
-      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1]
     ],
     params: {
       optimizer: "greedy",
       serviceTypes: [
         { rows: 1, cols: 1, bonus: 35, range: 1, avail: 2 },
-        { rows: 2, cols: 2, bonus: 70, range: 1, avail: 1 },
+        { rows: 2, cols: 2, bonus: 70, range: 1, avail: 1 }
       ],
       residentialTypes: [
         { w: 2, h: 2, min: 60, max: 120, avail: 4 },
-        { w: 2, h: 3, min: 90, max: 180, avail: 2 },
+        { w: 2, h: 3, min: 90, max: 180, avail: 2 }
       ],
       greedy: {
         localSearch: true,
@@ -453,9 +455,9 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
         serviceRefineCandidateLimit: 10,
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 8,
-        serviceExactMaxCombinations: 64,
-      },
-    },
+        serviceExactMaxCombinations: 64
+      }
+    }
   },
   {
     name: "bridge-connectivity-heavy",
@@ -469,14 +471,14 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
       [1, 1, 1, 0, 0, 0, 1, 1, 1],
       [1, 1, 1, 0, 0, 0, 1, 1, 1],
       [1, 1, 1, 0, 0, 0, 1, 1, 1],
-      [1, 1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1, 1]
     ],
     params: {
       optimizer: "greedy",
       serviceTypes: [{ rows: 2, cols: 2, bonus: 60, range: 2, avail: 1 }],
       residentialTypes: [
         { w: 2, h: 2, min: 80, max: 160, avail: 2 },
-        { w: 2, h: 3, min: 120, max: 220, avail: 1 },
+        { w: 2, h: 3, min: 120, max: 220, avail: 1 }
       ],
       availableBuildings: { services: 1, residentials: 3 },
       greedy: {
@@ -487,9 +489,9 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
         serviceRefineCandidateLimit: 8,
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 8,
-        serviceExactMaxCombinations: 64,
-      },
-    },
+        serviceExactMaxCombinations: 64
+      }
+    }
   },
   {
     name: "geometry-occupancy-hot-path",
@@ -503,17 +505,17 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
       [1, 1, 0, 1, 1, 0, 1, 1, 1],
       [1, 1, 1, 1, 1, 1, 1, 1, 1],
       [1, 0, 1, 1, 1, 1, 1, 0, 1],
-      [1, 1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1, 1]
     ],
     params: {
       optimizer: "greedy",
       serviceTypes: [
         { rows: 1, cols: 1, bonus: 40, range: 1, avail: 3 },
-        { rows: 2, cols: 2, bonus: 70, range: 2, avail: 2 },
+        { rows: 2, cols: 2, bonus: 70, range: 2, avail: 2 }
       ],
       residentialTypes: [
         { w: 2, h: 2, min: 70, max: 130, avail: 7 },
-        { w: 2, h: 3, min: 110, max: 200, avail: 4 },
+        { w: 2, h: 3, min: 110, max: 200, avail: 4 }
       ],
       greedy: {
         localSearch: true,
@@ -523,9 +525,9 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
         serviceRefineCandidateLimit: 10,
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 8,
-        serviceExactMaxCombinations: 64,
-      },
-    },
+        serviceExactMaxCombinations: 64
+      }
+    }
   },
   {
     name: "typed-footprint-pressure",
@@ -536,18 +538,18 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
       [1, 1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1, 1],
-      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1]
     ],
     params: {
       optimizer: "greedy",
       serviceTypes: [
         { rows: 1, cols: 1, bonus: 55, range: 1, avail: 1 },
-        { rows: 1, cols: 1, bonus: 40, range: 2, avail: 1 },
+        { rows: 1, cols: 1, bonus: 40, range: 2, avail: 1 }
       ],
       residentialTypes: [
         { w: 2, h: 2, min: 35, max: 150, avail: 1 },
         { w: 2, h: 2, min: 35, max: 95, avail: 4 },
-        { w: 2, h: 3, min: 80, max: 150, avail: 2 },
+        { w: 2, h: 3, min: 80, max: 150, avail: 2 }
       ],
       availableBuildings: { services: 2, residentials: 4 },
       greedy: {
@@ -558,9 +560,9 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
         serviceRefineCandidateLimit: 8,
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 8,
-        serviceExactMaxCombinations: 64,
-      },
-    },
+        serviceExactMaxCombinations: 64
+      }
+    }
   },
   {
     name: "typed-availability-pressure",
@@ -571,14 +573,14 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
       [1, 1, 1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1, 1, 1],
-      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1]
     ],
     params: {
       optimizer: "greedy",
       serviceTypes: [{ rows: 1, cols: 1, bonus: 65, range: 2, avail: 2 }],
       residentialTypes: [
         { w: 2, h: 2, min: 45, max: 180, avail: 1 },
-        { w: 2, h: 2, min: 45, max: 110, avail: 6 },
+        { w: 2, h: 2, min: 45, max: 110, avail: 6 }
       ],
       availableBuildings: { services: 2, residentials: 5 },
       greedy: {
@@ -589,9 +591,9 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
         serviceRefineCandidateLimit: 8,
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 8,
-        serviceExactMaxCombinations: 64,
-      },
-    },
+        serviceExactMaxCombinations: 64
+      }
+    }
   },
   {
     name: "adaptive-cap-search-wide",
@@ -604,17 +606,17 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
       [1, 1, 1, 1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1, 1, 1, 1],
-      [1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1]
     ],
     params: {
       optimizer: "greedy",
       serviceTypes: [
         { rows: 1, cols: 1, bonus: 32, range: 1, avail: 5 },
-        { rows: 2, cols: 2, bonus: 58, range: 1, avail: 3 },
+        { rows: 2, cols: 2, bonus: 58, range: 1, avail: 3 }
       ],
       residentialTypes: [
         { w: 2, h: 2, min: 60, max: 120, avail: 8 },
-        { w: 2, h: 3, min: 95, max: 175, avail: 4 },
+        { w: 2, h: 3, min: 95, max: 175, avail: 4 }
       ],
       greedy: {
         localSearch: true,
@@ -624,9 +626,9 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
         serviceRefineCandidateLimit: 12,
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 10,
-        serviceExactMaxCombinations: 96,
-      },
-    },
+        serviceExactMaxCombinations: 96
+      }
+    }
   },
   {
     name: "crowded-invalidation-heavy",
@@ -638,17 +640,17 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
       [1, 1, 1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1, 1, 1],
-      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1]
     ],
     params: {
       optimizer: "greedy",
       serviceTypes: [
         { rows: 1, cols: 1, bonus: 36, range: 1, avail: 2 },
-        { rows: 2, cols: 2, bonus: 62, range: 1, avail: 2 },
+        { rows: 2, cols: 2, bonus: 62, range: 1, avail: 2 }
       ],
       residentialTypes: [
         { w: 2, h: 2, min: 70, max: 130, avail: 5 },
-        { w: 2, h: 3, min: 105, max: 185, avail: 3 },
+        { w: 2, h: 3, min: 105, max: 185, avail: 3 }
       ],
       greedy: {
         localSearch: true,
@@ -658,9 +660,9 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
         serviceRefineCandidateLimit: 10,
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 8,
-        serviceExactMaxCombinations: 64,
-      },
-    },
+        serviceExactMaxCombinations: 64
+      }
+    }
   },
   {
     name: "deferred-road-packing-gain",
@@ -671,14 +673,14 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
       [1, 1, 1, 1, 0, 1],
       [1, 1, 1, 1, 0, 1],
       [0, 1, 1, 0, 1, 1],
-      [1, 0, 1, 0, 1, 1],
+      [1, 0, 1, 0, 1, 1]
     ],
     params: {
       optimizer: "greedy",
       serviceTypes: [{ rows: 1, cols: 1, bonus: 55, range: 1, avail: 2 }],
       residentialTypes: [
         { w: 2, h: 2, min: 60, max: 120, avail: 4 },
-        { w: 2, h: 3, min: 90, max: 170, avail: 2 },
+        { w: 2, h: 3, min: 90, max: 170, avail: 2 }
       ],
       greedy: {
         localSearch: false,
@@ -689,31 +691,32 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
         serviceRefineCandidateLimit: 6,
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 6,
-        serviceExactMaxCombinations: 32,
-      },
-    },
+        serviceExactMaxCombinations: 32
+      }
+    }
   },
   {
     name: "fixed-service-realization-complete",
-    description: "Refinement/exhaustive reruns should evaluate a forced service set across bounded orders and road-anchor seeds.",
+    description:
+      "Refinement/exhaustive reruns should evaluate a forced service set across bounded orders and road-anchor seeds.",
     grid: [
       [0, 1, 1, 1, 1, 1],
       [1, 1, 1, 0, 1, 1],
       [1, 1, 1, 1, 1, 1],
       [0, 1, 1, 0, 1, 1],
       [1, 1, 1, 1, 1, 1],
-      [1, 1, 0, 1, 1, 0],
+      [1, 1, 0, 1, 1, 0]
     ],
     params: {
       optimizer: "greedy",
       serviceTypes: [
         { rows: 1, cols: 1, bonus: 35, range: 1, avail: 2 },
         { rows: 2, cols: 2, bonus: 55, range: 1, avail: 1 },
-        { rows: 1, cols: 2, bonus: 45, range: 1, avail: 1 },
+        { rows: 1, cols: 2, bonus: 45, range: 1, avail: 1 }
       ],
       residentialTypes: [
         { w: 2, h: 2, min: 60, max: 120, avail: 5 },
-        { w: 2, h: 3, min: 90, max: 170, avail: 3 },
+        { w: 2, h: 3, min: 90, max: 170, avail: 3 }
       ],
       greedy: {
         localSearch: false,
@@ -723,30 +726,31 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
         serviceRefineCandidateLimit: 8,
         exhaustiveServiceSearch: true,
         serviceExactPoolLimit: 6,
-        serviceExactMaxCombinations: 64,
-      },
-    },
+        serviceExactMaxCombinations: 64
+      }
+    }
   },
   {
     name: "service-master-decomposition-experiment",
-    description: "Experimental service-layout master pass should reroute a tempting facility pick through residential/road realization.",
+    description:
+      "Experimental service-layout master pass should reroute a tempting facility pick through residential/road realization.",
     grid: [
       [1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1],
       [1, 1, 1, 1, 0],
-      [1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1]
     ],
     params: {
       optimizer: "greedy",
       serviceTypes: [
         { rows: 1, cols: 1, bonus: 27, range: 1, avail: 2 },
-        { rows: 1, cols: 2, bonus: 70, range: 1, avail: 1 },
+        { rows: 1, cols: 2, bonus: 70, range: 1, avail: 1 }
       ],
       residentialTypes: [
         { w: 2, h: 2, min: 58, max: 156, avail: 5 },
-        { w: 2, h: 3, min: 117, max: 155, avail: 3 },
+        { w: 2, h: 3, min: 117, max: 155, avail: 3 }
       ],
       availableBuildings: { services: 2, residentials: 6 },
       greedy: {
@@ -761,31 +765,32 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
         serviceExactMaxCombinations: 64,
         serviceMasterDecomposition: true,
         serviceMasterPoolLimit: 10,
-        serviceMasterMaxLayouts: 256,
-      },
-    },
+        serviceMasterMaxLayouts: 256
+      }
+    }
   },
   {
     name: "service-local-neighborhood",
-    description: "Bounded service local search should evaluate service add/remove/swap moves even when coarse service refinement is disabled.",
+    description:
+      "Bounded service local search should evaluate service add/remove/swap moves even when coarse service refinement is disabled.",
     grid: [
       [0, 1, 1, 1, 1, 1],
       [1, 1, 1, 0, 1, 1],
       [1, 1, 1, 1, 1, 1],
       [0, 1, 1, 0, 1, 1],
       [1, 1, 1, 1, 1, 1],
-      [1, 1, 0, 1, 1, 0],
+      [1, 1, 0, 1, 1, 0]
     ],
     params: {
       optimizer: "greedy",
       serviceTypes: [
         { rows: 1, cols: 1, bonus: 35, range: 1, avail: 2 },
         { rows: 2, cols: 2, bonus: 55, range: 1, avail: 1 },
-        { rows: 1, cols: 2, bonus: 45, range: 1, avail: 1 },
+        { rows: 1, cols: 2, bonus: 45, range: 1, avail: 1 }
       ],
       residentialTypes: [
         { w: 2, h: 2, min: 60, max: 120, avail: 5 },
-        { w: 2, h: 3, min: 90, max: 170, avail: 3 },
+        { w: 2, h: 3, min: 90, max: 170, avail: 3 }
       ],
       greedy: {
         localSearch: true,
@@ -795,31 +800,32 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
         serviceRefineCandidateLimit: 8,
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 6,
-        serviceExactMaxCombinations: 64,
-      },
-    },
+        serviceExactMaxCombinations: 64
+      }
+    }
   },
   {
     name: "step14-service-lookahead-reranker",
-    description: "Isolated Step 14 case where service lookahead should improve the greedy incumbent without service local search, refinement, or exhaustive reruns.",
+    description:
+      "Isolated Step 14 case where service lookahead should improve the greedy incumbent without service local search, refinement, or exhaustive reruns.",
     grid: [
       [0, 1, 1, 1, 1, 1],
       [1, 1, 1, 0, 1, 1],
       [1, 1, 1, 1, 1, 1],
       [0, 1, 1, 0, 1, 1],
       [1, 1, 1, 1, 1, 1],
-      [1, 1, 0, 1, 1, 0],
+      [1, 1, 0, 1, 1, 0]
     ],
     params: {
       optimizer: "greedy",
       serviceTypes: [
         { rows: 1, cols: 1, bonus: 35, range: 1, avail: 2 },
         { rows: 2, cols: 2, bonus: 55, range: 1, avail: 1 },
-        { rows: 1, cols: 2, bonus: 45, range: 1, avail: 1 },
+        { rows: 1, cols: 2, bonus: 45, range: 1, avail: 1 }
       ],
       residentialTypes: [
         { w: 2, h: 2, min: 60, max: 120, avail: 5 },
-        { w: 2, h: 3, min: 90, max: 170, avail: 3 },
+        { w: 2, h: 3, min: 90, max: 170, avail: 3 }
       ],
       greedy: {
         localSearch: true,
@@ -831,19 +837,20 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 6,
         serviceExactMaxCombinations: 64,
-        serviceLookaheadCandidates: 4,
-      } as GreedyBenchmarkOptions,
-    },
+        serviceLookaheadCandidates: 4
+      } as GreedyBenchmarkOptions
+    }
   },
   {
     name: "step14-deterministic-lookahead-ties",
-    description: "Symmetric Step 14 tie case where lookahead should stay deterministic while picking a tied service/residential refill layout.",
+    description:
+      "Symmetric Step 14 tie case where lookahead should stay deterministic while picking a tied service/residential refill layout.",
     grid: [
       [1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1],
-      [1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1]
     ],
     params: {
       optimizer: "greedy",
@@ -859,25 +866,26 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 4,
         serviceExactMaxCombinations: 32,
-        serviceLookaheadCandidates: 4,
-      } as GreedyBenchmarkOptions,
-    },
+        serviceLookaheadCandidates: 4
+      } as GreedyBenchmarkOptions
+    }
   },
   {
     name: "step14-row0-path-null-reservation",
-    description: "Step 14 road-anchor edge case where lookahead should keep a path:null boundary service and reserve exactly one anchor road cell for the refill.",
+    description:
+      "Step 14 road-anchor edge case where lookahead should keep a path:null boundary service and reserve exactly one anchor road cell for the refill.",
     grid: [
       [1, 1, 1, 1],
       [1, 1, 1, 1],
       [1, 1, 1, 1],
-      [1, 1, 1, 1],
+      [1, 1, 1, 1]
     ],
     params: {
       optimizer: "greedy",
       serviceTypes: [{ rows: 1, cols: 1, bonus: 40, range: 1, avail: 1 }],
       residentialTypes: [
         { w: 2, h: 2, min: 60, max: 120, avail: 2 },
-        { w: 2, h: 3, min: 90, max: 170, avail: 1 },
+        { w: 2, h: 3, min: 90, max: 170, avail: 1 }
       ],
       greedy: {
         localSearch: false,
@@ -889,25 +897,26 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 4,
         serviceExactMaxCombinations: 32,
-        serviceLookaheadCandidates: 4,
-      } as GreedyBenchmarkOptions,
-    },
+        serviceLookaheadCandidates: 4
+      } as GreedyBenchmarkOptions
+    }
   },
   {
     name: "step14-scarce-type-sequential-refill",
-    description: "Step 14 scarce-type case where lookahead should spend one premium typed refill before falling back to the cheaper sequential refill.",
+    description:
+      "Step 14 scarce-type case where lookahead should spend one premium typed refill before falling back to the cheaper sequential refill.",
     grid: [
       [1, 1, 1, 1],
       [1, 1, 1, 1],
       [1, 1, 1, 1],
-      [1, 1, 1, 1],
+      [1, 1, 1, 1]
     ],
     params: {
       optimizer: "greedy",
       serviceTypes: [{ rows: 1, cols: 1, bonus: 35, range: 1, avail: 2 }],
       residentialTypes: [
         { w: 2, h: 2, min: 60, max: 120, avail: 1 },
-        { w: 2, h: 2, min: 60, max: 90, avail: 3 },
+        { w: 2, h: 2, min: 60, max: 90, avail: 3 }
       ],
       greedy: {
         localSearch: false,
@@ -919,19 +928,20 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 4,
         serviceExactMaxCombinations: 32,
-        serviceLookaheadCandidates: 4,
-      } as GreedyBenchmarkOptions,
-    },
+        serviceLookaheadCandidates: 4
+      } as GreedyBenchmarkOptions
+    }
   },
   {
     name: "deterministic-tie-breaks",
-    description: "Tie-heavy case that exercises deterministic residential tie resolution in the fixed benchmark corpus.",
+    description:
+      "Tie-heavy case that exercises deterministic residential tie resolution in the fixed benchmark corpus.",
     grid: [
       [1, 1, 0, 0],
       [1, 1, 1, 1],
       [0, 0, 1, 1],
       [0, 0, 0, 0],
-      [0, 0, 0, 0],
+      [0, 0, 0, 0]
     ],
     params: {
       optimizer: "greedy",
@@ -945,8 +955,8 @@ export const DEFAULT_GREEDY_BENCHMARK_CORPUS: readonly GreedyBenchmarkCase[] = O
         serviceRefineCandidateLimit: 4,
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 4,
-        serviceExactMaxCombinations: 16,
-      },
-    },
-  },
+        serviceExactMaxCombinations: 16
+      }
+    }
+  }
 ]);

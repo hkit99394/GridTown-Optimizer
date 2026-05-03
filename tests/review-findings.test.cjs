@@ -16,7 +16,7 @@ const {
   loadPlannerSharedModule,
   loadPlannerShellModule,
   loadPlannerSolveRuntimeModule,
-  loadPlannerWorkbenchModule,
+  loadPlannerWorkbenchModule
 } = require("./helpers/plannerBrowserModules.cjs");
 
 function testCpSatPortfolioCapabilitiesAreExported() {
@@ -27,10 +27,9 @@ function testCpSatPortfolioCapabilitiesAreExported() {
   assert.equal(CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxTotalWorkerThreads, 8);
   assert.equal(CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxPerWorkerThreads, 4);
   assert.equal(CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxTotalCpuBudgetSeconds, 28800);
-  assert.deepEqual(
-    JSON.parse(JSON.stringify(plannerShared.CP_SAT_PORTFOLIO_CAPABILITY_LIMITS)),
-    { ...CP_SAT_PORTFOLIO_CAPABILITY_LIMITS }
-  );
+  assert.deepEqual(JSON.parse(JSON.stringify(plannerShared.CP_SAT_PORTFOLIO_CAPABILITY_LIMITS)), {
+    ...CP_SAT_PORTFOLIO_CAPABILITY_LIMITS
+  });
 }
 
 function testDistinctResidentialTypes() {
@@ -38,16 +37,16 @@ function testDistinctResidentialTypes() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const params = {
     optimizer: "greedy",
     residentialTypes: [
       { w: 2, h: 2, min: 10, max: 10, avail: 1 },
-      { w: 2, h: 2, min: 100, max: 100, avail: 1 },
+      { w: 2, h: 2, min: 100, max: 100, avail: 1 }
     ],
     availableBuildings: { residentials: 2, services: 0 },
-    greedy: { localSearch: false },
+    greedy: { localSearch: false }
   };
 
   const solution = solve(grid, params);
@@ -56,7 +55,7 @@ function testDistinctResidentialTypes() {
     roads: solution.roads,
     services: [],
     residentials: solution.residentials,
-    params,
+    params
   });
 
   assert.equal(solution.totalPopulation, 110);
@@ -70,7 +69,7 @@ function testNoRoadAnchorBoundaryThrows() {
   const grid = [
     [0, 0, 0],
     [0, 1, 1],
-    [0, 1, 1],
+    [0, 1, 1]
   ];
 
   assert.throws(
@@ -84,12 +83,12 @@ function testEvaluatorHonorsCountCaps() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const roads = new Set(["0,0", "1,0", "2,0", "3,0"]);
   const residentials = [
     { r: 0, c: 1, rows: 2, cols: 2 },
-    { r: 2, c: 1, rows: 2, cols: 2 },
+    { r: 2, c: 1, rows: 2, cols: 2 }
   ];
 
   const evaluation = evaluateLayout({
@@ -100,8 +99,8 @@ function testEvaluatorHonorsCountCaps() {
     params: {
       basePop: 10,
       maxPop: 10,
-      availableBuildings: { residentials: 1 },
-    },
+      availableBuildings: { residentials: 1 }
+    }
   });
 
   assert.equal(evaluation.valid, false);
@@ -113,16 +112,16 @@ function testResidentialCapStillAppliesWithTypedResidentials() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const params = {
     optimizer: "greedy",
     residentialTypes: [
       { w: 2, h: 2, min: 10, max: 10, avail: 2 },
-      { w: 2, h: 2, min: 20, max: 20, avail: 2 },
+      { w: 2, h: 2, min: 20, max: 20, avail: 2 }
     ],
     availableBuildings: { residentials: 1, services: 0 },
-    greedy: { localSearch: false },
+    greedy: { localSearch: false }
   };
 
   const solution = solve(grid, params);
@@ -136,14 +135,14 @@ function testNamedBuildingTypesAreAccepted() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const params = {
     optimizer: "greedy",
     serviceTypes: [{ name: "Health Clinic", rows: 2, cols: 2, bonus: 40, range: 1, avail: 1 }],
     residentialTypes: [{ name: "The Aurora", w: 2, h: 2, min: 100, max: 140, avail: 1 }],
     availableBuildings: { residentials: 1, services: 1 },
-    greedy: { localSearch: false },
+    greedy: { localSearch: false }
   };
 
   const solution = solve(grid, params);
@@ -159,13 +158,13 @@ function testGreedySkipsServicesWithZeroMarginalGain() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const params = {
     serviceTypes: [{ rows: 2, cols: 2, bonus: 50, range: 1, avail: 1 }],
     residentialTypes: [{ w: 2, h: 2, min: 100, max: 100, avail: 2 }],
     availableBuildings: { services: 1, residentials: 2 },
-    greedy: { localSearch: false, restarts: 1, exhaustiveServiceSearch: false },
+    greedy: { localSearch: false, restarts: 1, exhaustiveServiceSearch: false }
   };
 
   const solution = solveGreedy(grid, params);
@@ -183,24 +182,24 @@ function testGreedyLocalSearchDoesNotRegressNontrivialSeed() {
     [1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1],
-    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1]
   ];
   const params = {
     serviceTypes: [
       { rows: 2, cols: 2, bonus: 80, range: 1, avail: 1 },
-      { rows: 2, cols: 3, bonus: 60, range: 1, avail: 1 },
+      { rows: 2, cols: 3, bonus: 60, range: 1, avail: 1 }
     ],
     residentialTypes: [
       { w: 2, h: 2, min: 70, max: 130, avail: 2 },
-      { w: 2, h: 3, min: 90, max: 210, avail: 2 },
+      { w: 2, h: 3, min: 90, max: 210, avail: 2 }
     ],
     availableBuildings: { services: 2, residentials: 3 },
     greedy: {
       localSearch: false,
       restarts: 1,
       serviceRefineIterations: 0,
-      exhaustiveServiceSearch: false,
-    },
+      exhaustiveServiceSearch: false
+    }
   };
 
   const baseline = solveGreedy(grid, params);
@@ -208,8 +207,8 @@ function testGreedyLocalSearchDoesNotRegressNontrivialSeed() {
     ...params,
     greedy: {
       ...params.greedy,
-      localSearch: true,
-    },
+      localSearch: true
+    }
   });
 
   assert.equal(improved.totalPopulation >= baseline.totalPopulation, true);
@@ -245,7 +244,7 @@ function testPlannerServiceAvailabilityRoundTrip() {
     cols: 2,
     bonus: 40,
     range: 1,
-    avail: 3,
+    avail: 3
   });
   assert.equal(serialized.avail, "3");
 
@@ -269,17 +268,20 @@ function testPlannerAutoFillsCpSatRandomSeed() {
     getRandomValues(array) {
       array[0] = 123456789;
       return array;
-    },
+    }
   });
   const controller = plannerRequestBuilder.createPlannerRequestBuilderController({
     state: {
       optimizer: "cp-sat",
-      grid: [[1, 1], [1, 1]],
+      grid: [
+        [1, 1],
+        [1, 1]
+      ],
       serviceTypes: [],
       residentialTypes: [],
       availableBuildings: {
         services: "",
-        residentials: "",
+        residentials: ""
       },
       greedy: {
         localSearch: true,
@@ -289,7 +291,7 @@ function testPlannerAutoFillsCpSatRandomSeed() {
         serviceRefineCandidateLimit: 1,
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 1,
-        serviceExactMaxCombinations: 1,
+        serviceExactMaxCombinations: 1
       },
       cpSat: {
         timeLimitSeconds: "",
@@ -298,7 +300,7 @@ function testPlannerAutoFillsCpSatRandomSeed() {
         numWorkers: 8,
         logSearchProgress: false,
         pythonExecutable: "",
-        useDisplayedHint: false,
+        useDisplayedHint: false
       },
       lns: {
         iterations: 1,
@@ -306,18 +308,18 @@ function testPlannerAutoFillsCpSatRandomSeed() {
         neighborhoodRows: 1,
         neighborhoodCols: 1,
         repairTimeLimitSeconds: 1,
-        useDisplayedSeed: false,
+        useDisplayedSeed: false
       },
       result: null,
       resultContext: null,
-      resultElapsedMs: 0,
+      resultElapsedMs: 0
     },
     elements: {
       cpSatRandomSeed: { value: "" },
       cpSatHintStatus: { textContent: "" },
       lnsSeedStatus: { textContent: "" },
       payloadPreview: { textContent: "" },
-      layoutStorageName: { value: "" },
+      layoutStorageName: { value: "" }
     },
     helpers: {
       buildCpSatContinuationModelInput() {
@@ -354,8 +356,8 @@ function testPlannerAutoFillsCpSatRandomSeed() {
       },
       parseServiceCatalogEntry(entry) {
         return entry;
-      },
-    },
+      }
+    }
   });
 
   assert.equal(controller.ensureCpSatRandomSeed(), 123456789);
@@ -369,12 +371,15 @@ function testPlannerBuildSolveRequestIncludesCpSatNoImprovementTimeout() {
   const controller = plannerRequestBuilder.createPlannerRequestBuilderController({
     state: {
       optimizer: "cp-sat",
-      grid: [[1, 1], [1, 1]],
+      grid: [
+        [1, 1],
+        [1, 1]
+      ],
       serviceTypes: [],
       residentialTypes: [],
       availableBuildings: {
         services: "",
-        residentials: "",
+        residentials: ""
       },
       greedy: {
         localSearch: true,
@@ -384,7 +389,7 @@ function testPlannerBuildSolveRequestIncludesCpSatNoImprovementTimeout() {
         serviceRefineCandidateLimit: 1,
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 1,
-        serviceExactMaxCombinations: 1,
+        serviceExactMaxCombinations: 1
       },
       cpSat: {
         timeLimitSeconds: "30",
@@ -393,7 +398,7 @@ function testPlannerBuildSolveRequestIncludesCpSatNoImprovementTimeout() {
         numWorkers: 8,
         logSearchProgress: false,
         pythonExecutable: "",
-        useDisplayedHint: false,
+        useDisplayedHint: false
       },
       lns: {
         iterations: 1,
@@ -401,18 +406,18 @@ function testPlannerBuildSolveRequestIncludesCpSatNoImprovementTimeout() {
         neighborhoodRows: 1,
         neighborhoodCols: 1,
         repairTimeLimitSeconds: 1,
-        useDisplayedSeed: false,
+        useDisplayedSeed: false
       },
       result: null,
       resultContext: null,
-      resultElapsedMs: 0,
+      resultElapsedMs: 0
     },
     elements: {
       cpSatRandomSeed: { value: "" },
       cpSatHintStatus: { textContent: "" },
       lnsSeedStatus: { textContent: "" },
       payloadPreview: { textContent: "" },
-      layoutStorageName: { value: "" },
+      layoutStorageName: { value: "" }
     },
     helpers: {
       buildCpSatContinuationModelInput() {
@@ -449,8 +454,8 @@ function testPlannerBuildSolveRequestIncludesCpSatNoImprovementTimeout() {
       },
       parseServiceCatalogEntry(entry) {
         return entry;
-      },
-    },
+      }
+    }
   });
 
   const request = controller.buildSolveRequest();
@@ -465,12 +470,15 @@ function testPlannerBuildSolveRequestEnablesGreedyDiagnosticsOnlyForStandaloneGr
   const plannerRequestBuilder = loadPlannerRequestBuilderModule();
   const state = {
     optimizer: "greedy",
-    grid: [[1, 1], [1, 1]],
+    grid: [
+      [1, 1],
+      [1, 1]
+    ],
     serviceTypes: [],
     residentialTypes: [],
     availableBuildings: {
       services: "",
-      residentials: "",
+      residentials: ""
     },
     greedy: {
       localSearch: true,
@@ -485,7 +493,7 @@ function testPlannerBuildSolveRequestEnablesGreedyDiagnosticsOnlyForStandaloneGr
       exhaustiveServiceSearch: false,
       diagnostics: true,
       serviceExactPoolLimit: 1,
-      serviceExactMaxCombinations: 1,
+      serviceExactMaxCombinations: 1
     },
     cpSat: {
       timeLimitSeconds: "",
@@ -494,7 +502,7 @@ function testPlannerBuildSolveRequestEnablesGreedyDiagnosticsOnlyForStandaloneGr
       numWorkers: 8,
       logSearchProgress: false,
       pythonExecutable: "",
-      useDisplayedHint: false,
+      useDisplayedHint: false
     },
     lns: {
       iterations: 1,
@@ -502,11 +510,11 @@ function testPlannerBuildSolveRequestEnablesGreedyDiagnosticsOnlyForStandaloneGr
       neighborhoodRows: 1,
       neighborhoodCols: 1,
       repairTimeLimitSeconds: 1,
-      useDisplayedSeed: false,
+      useDisplayedSeed: false
     },
     result: null,
     resultContext: null,
-    resultElapsedMs: 0,
+    resultElapsedMs: 0
   };
   const controller = plannerRequestBuilder.createPlannerRequestBuilderController({
     state,
@@ -515,7 +523,7 @@ function testPlannerBuildSolveRequestEnablesGreedyDiagnosticsOnlyForStandaloneGr
       cpSatHintStatus: createFakeDomElement(),
       lnsSeedStatus: createFakeDomElement(),
       payloadPreview: createFakeDomElement(),
-      layoutStorageName: createFakeDomElement(),
+      layoutStorageName: createFakeDomElement()
     },
     helpers: {
       buildCpSatContinuationModelInput: plannerShared.buildCpSatContinuationModelInput,
@@ -527,8 +535,8 @@ function testPlannerBuildSolveRequestEnablesGreedyDiagnosticsOnlyForStandaloneGr
       getSavedLayoutElapsedMs: plannerShared.getSavedLayoutElapsedMs,
       readOptionalInteger: plannerShared.readOptionalInteger,
       parseResidentialCatalogEntry: plannerShared.parseResidentialCatalogEntry,
-      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry,
-    },
+      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry
+    }
   });
 
   const greedyRequest = controller.buildSolveRequest();
@@ -557,7 +565,7 @@ function testPlannerSavedLayoutRestoreRoundTripsHintSeedTogglesAndPortfolio() {
   const plannerWorkbench = loadPlannerWorkbenchModule();
   const grid = [
     [1, 1],
-    [1, 1],
+    [1, 1]
   ];
 
   const requestBuilderController = plannerRequestBuilder.createPlannerRequestBuilderController({
@@ -565,12 +573,10 @@ function testPlannerSavedLayoutRestoreRoundTripsHintSeedTogglesAndPortfolio() {
       optimizer: "cp-sat",
       grid,
       serviceTypes: [],
-      residentialTypes: [
-        plannerShared.serializeResidentialTypeForCatalog({ w: 2, h: 2, min: 10, max: 10, avail: 1 }),
-      ],
+      residentialTypes: [plannerShared.serializeResidentialTypeForCatalog({ w: 2, h: 2, min: 10, max: 10, avail: 1 })],
       availableBuildings: {
         services: "0",
-        residentials: "1",
+        residentials: "1"
       },
       greedy: {
         localSearch: false,
@@ -580,7 +586,7 @@ function testPlannerSavedLayoutRestoreRoundTripsHintSeedTogglesAndPortfolio() {
         serviceRefineCandidateLimit: 1,
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 1,
-        serviceExactMaxCombinations: 1,
+        serviceExactMaxCombinations: 1
       },
       cpSat: {
         timeLimitSeconds: "",
@@ -596,8 +602,8 @@ function testPlannerSavedLayoutRestoreRoundTripsHintSeedTogglesAndPortfolio() {
           randomSeeds: "17, 23, 29",
           perWorkerTimeLimitSeconds: "12",
           perWorkerNumWorkers: "99",
-          randomizeSearch: false,
-        },
+          randomizeSearch: false
+        }
       },
       lns: {
         iterations: 1,
@@ -605,18 +611,18 @@ function testPlannerSavedLayoutRestoreRoundTripsHintSeedTogglesAndPortfolio() {
         neighborhoodRows: 2,
         neighborhoodCols: 2,
         repairTimeLimitSeconds: 1,
-        useDisplayedSeed: false,
+        useDisplayedSeed: false
       },
       result: null,
       resultContext: null,
-      resultElapsedMs: 0,
+      resultElapsedMs: 0
     },
     elements: {
       cpSatRandomSeed: createFakeDomElement(),
       cpSatHintStatus: createFakeDomElement(),
       lnsSeedStatus: createFakeDomElement(),
       payloadPreview: createFakeDomElement(),
-      layoutStorageName: createFakeDomElement(),
+      layoutStorageName: createFakeDomElement()
     },
     helpers: {
       buildCpSatContinuationModelInput: plannerShared.buildCpSatContinuationModelInput,
@@ -628,8 +634,8 @@ function testPlannerSavedLayoutRestoreRoundTripsHintSeedTogglesAndPortfolio() {
       getSavedLayoutElapsedMs: plannerShared.getSavedLayoutElapsedMs,
       readOptionalInteger: plannerShared.readOptionalInteger,
       parseResidentialCatalogEntry: plannerShared.parseResidentialCatalogEntry,
-      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry,
-    },
+      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry
+    }
   });
 
   const savedRequest = requestBuilderController.buildSolveRequest();
@@ -650,7 +656,7 @@ function testPlannerSavedLayoutRestoreRoundTripsHintSeedTogglesAndPortfolio() {
     residentialTypes: [],
     availableBuildings: {
       services: "",
-      residentials: "",
+      residentials: ""
     },
     greedy: {
       localSearch: true,
@@ -660,7 +666,7 @@ function testPlannerSavedLayoutRestoreRoundTripsHintSeedTogglesAndPortfolio() {
       serviceRefineCandidateLimit: 60,
       exhaustiveServiceSearch: true,
       serviceExactPoolLimit: 22,
-      serviceExactMaxCombinations: 12000,
+      serviceExactMaxCombinations: 12000
     },
     cpSat: {
       timeLimitSeconds: "",
@@ -676,8 +682,8 @@ function testPlannerSavedLayoutRestoreRoundTripsHintSeedTogglesAndPortfolio() {
         randomSeeds: "",
         perWorkerTimeLimitSeconds: "",
         perWorkerNumWorkers: 1,
-        randomizeSearch: true,
-      },
+        randomizeSearch: true
+      }
     },
     lns: {
       iterations: 12,
@@ -685,12 +691,12 @@ function testPlannerSavedLayoutRestoreRoundTripsHintSeedTogglesAndPortfolio() {
       neighborhoodRows: 6,
       neighborhoodCols: 8,
       repairTimeLimitSeconds: 5,
-      useDisplayedSeed: true,
+      useDisplayedSeed: true
     },
     expansionAdvice: {
       nextServiceText: "",
-      nextResidentialText: "",
-    },
+      nextResidentialText: ""
+    }
   };
 
   const workbenchController = plannerWorkbench.createPlannerWorkbenchController({
@@ -748,10 +754,10 @@ function testPlannerSavedLayoutRestoreRoundTripsHintSeedTogglesAndPortfolio() {
       summaryServiceTypes: createFakeDomElement(),
       summaryResidentialTypes: createFakeDomElement(),
       summaryOptimizer: createFakeDomElement(),
-      payloadPreview: createFakeDomElement(),
+      payloadPreview: createFakeDomElement()
     },
     constants: {
-      sampleGrid: [[1]],
+      sampleGrid: [[1]]
     },
     helpers: {
       cloneGrid: plannerShared.cloneGrid,
@@ -761,7 +767,7 @@ function testPlannerSavedLayoutRestoreRoundTripsHintSeedTogglesAndPortfolio() {
       normalizeOptimizer: plannerShared.normalizeOptimizer,
       parseCatalogImportText: plannerShared.parseCatalogImportText,
       serializeResidentialTypeForCatalog: plannerShared.serializeResidentialTypeForCatalog,
-      serializeServiceTypeForCatalog: plannerShared.serializeServiceTypeForCatalog,
+      serializeServiceTypeForCatalog: plannerShared.serializeServiceTypeForCatalog
     },
     callbacks: {
       getOptimizerLabel(optimizer) {
@@ -770,13 +776,13 @@ function testPlannerSavedLayoutRestoreRoundTripsHintSeedTogglesAndPortfolio() {
       refreshResultOverlay() {},
       renderExpansionAdvice() {},
       setSolveState() {},
-      updatePayloadPreview() {},
-    },
+      updatePayloadPreview() {}
+    }
   });
 
   workbenchController.applySolveRequestToPlanner(savedRequest, {
     preserveCpSatRuntime: false,
-    optimizer: savedRequest.params.optimizer,
+    optimizer: savedRequest.params.optimizer
   });
 
   assert.equal(restoredState.cpSat.useDisplayedHint, true);
@@ -795,13 +801,18 @@ function testPlannerRuntimePresetAppliesBoundedCpSatPolicy() {
   let solveStateMessage = "";
   const state = {
     isSolving: false,
-    grid: [[1, 1], [1, 1], [1, 1], [1, 1]],
+    grid: [
+      [1, 1],
+      [1, 1],
+      [1, 1],
+      [1, 1]
+    ],
     optimizer: "greedy",
     serviceTypes: [{ name: "Clinic" }],
     residentialTypes: [{ name: "Tower" }],
     availableBuildings: {
       services: "",
-      residentials: "",
+      residentials: ""
     },
     greedy: {
       localSearch: true,
@@ -811,7 +822,7 @@ function testPlannerRuntimePresetAppliesBoundedCpSatPolicy() {
       serviceRefineCandidateLimit: 60,
       exhaustiveServiceSearch: true,
       serviceExactPoolLimit: 22,
-      serviceExactMaxCombinations: 12000,
+      serviceExactMaxCombinations: 12000
     },
     cpSat: {
       timeLimitSeconds: "",
@@ -820,7 +831,7 @@ function testPlannerRuntimePresetAppliesBoundedCpSatPolicy() {
       numWorkers: 2,
       logSearchProgress: false,
       pythonExecutable: "",
-      useDisplayedHint: false,
+      useDisplayedHint: false
     },
     lns: {
       iterations: 12,
@@ -828,12 +839,12 @@ function testPlannerRuntimePresetAppliesBoundedCpSatPolicy() {
       neighborhoodRows: 2,
       neighborhoodCols: 2,
       repairTimeLimitSeconds: 5,
-      useDisplayedSeed: false,
+      useDisplayedSeed: false
     },
     expansionAdvice: {
       nextServiceText: "",
-      nextResidentialText: "",
-    },
+      nextResidentialText: ""
+    }
   };
   const elements = {
     solverToggle: { querySelectorAll: () => [] },
@@ -871,13 +882,13 @@ function testPlannerRuntimePresetAppliesBoundedCpSatPolicy() {
     summaryAllowedCells: { textContent: "" },
     summaryServiceTypes: { textContent: "" },
     summaryResidentialTypes: { textContent: "" },
-    summaryOptimizer: { textContent: "" },
+    summaryOptimizer: { textContent: "" }
   };
   const controller = plannerWorkbench.createPlannerWorkbenchController({
     state,
     elements,
     constants: {
-      sampleGrid: [[1]],
+      sampleGrid: [[1]]
     },
     helpers: {
       cloneGrid(grid) {
@@ -903,7 +914,7 @@ function testPlannerRuntimePresetAppliesBoundedCpSatPolicy() {
       },
       serializeServiceTypeForCatalog(entry) {
         return entry;
-      },
+      }
     },
     callbacks: {
       getOptimizerLabel(optimizer) {
@@ -916,8 +927,8 @@ function testPlannerRuntimePresetAppliesBoundedCpSatPolicy() {
       },
       updatePayloadPreview() {
         payloadPreviewUpdates += 1;
-      },
-    },
+      }
+    }
   });
 
   controller.applyRuntimePreset("bounded-cp-sat");
@@ -945,7 +956,7 @@ function testPlannerAutoMarksIgnoredSeedControlsUnavailable() {
     residentialTypes: [],
     availableBuildings: {
       services: "",
-      residentials: "",
+      residentials: ""
     },
     greedy: {
       localSearch: true,
@@ -959,7 +970,7 @@ function testPlannerAutoMarksIgnoredSeedControlsUnavailable() {
       serviceRefineCandidateLimit: 60,
       exhaustiveServiceSearch: true,
       serviceExactPoolLimit: 22,
-      serviceExactMaxCombinations: 12000,
+      serviceExactMaxCombinations: 12000
     },
     cpSat: {
       timeLimitSeconds: "",
@@ -968,7 +979,7 @@ function testPlannerAutoMarksIgnoredSeedControlsUnavailable() {
       numWorkers: 8,
       logSearchProgress: false,
       pythonExecutable: "",
-      useDisplayedHint: true,
+      useDisplayedHint: true
     },
     lns: {
       iterations: 1,
@@ -976,15 +987,15 @@ function testPlannerAutoMarksIgnoredSeedControlsUnavailable() {
       neighborhoodRows: 1,
       neighborhoodCols: 1,
       repairTimeLimitSeconds: 1,
-      useDisplayedSeed: true,
+      useDisplayedSeed: true
     },
     auto: {
-      wallClockLimitSeconds: "",
+      wallClockLimitSeconds: ""
     },
     expansionAdvice: {
       nextServiceText: "",
-      nextResidentialText: "",
-    },
+      nextResidentialText: ""
+    }
   };
   const elements = {
     solverToggle: createFakeDomElement(),
@@ -1025,13 +1036,13 @@ function testPlannerAutoMarksIgnoredSeedControlsUnavailable() {
     summaryAllowedCells: createFakeDomElement(),
     summaryServiceTypes: createFakeDomElement(),
     summaryResidentialTypes: createFakeDomElement(),
-    summaryOptimizer: createFakeDomElement(),
+    summaryOptimizer: createFakeDomElement()
   };
   const controller = plannerWorkbench.createPlannerWorkbenchController({
     state,
     elements,
     constants: {
-      sampleGrid: [[1]],
+      sampleGrid: [[1]]
     },
     helpers: {
       cloneGrid(grid) {
@@ -1057,7 +1068,7 @@ function testPlannerAutoMarksIgnoredSeedControlsUnavailable() {
       },
       serializeServiceTypeForCatalog(entry) {
         return entry;
-      },
+      }
     },
     callbacks: {
       getOptimizerLabel(optimizer) {
@@ -1066,8 +1077,8 @@ function testPlannerAutoMarksIgnoredSeedControlsUnavailable() {
       refreshResultOverlay() {},
       renderExpansionAdvice() {},
       setSolveState() {},
-      updatePayloadPreview() {},
-    },
+      updatePayloadPreview() {}
+    }
   });
 
   controller.setOptimizer("auto");
@@ -1125,11 +1136,11 @@ function testPlannerShellRequiresManualValidationBeforeContinuationReuse() {
     layoutEditor: {
       isApplying: false,
       pendingValidation: true,
-      pendingPlacement: { canRotate: true },
+      pendingPlacement: { canRotate: true }
     },
     expansionAdvice: {
-      isRunning: false,
-    },
+      isRunning: false
+    }
   };
   const elements = {
     solveButton: { disabled: false, textContent: "" },
@@ -1149,19 +1160,19 @@ function testPlannerShellRequiresManualValidationBeforeContinuationReuse() {
     layoutEditModeToggle: {
       querySelectorAll() {
         return [];
-      },
+      }
     },
     remainingServiceList: {
       querySelectorAll() {
         return [];
-      },
+      }
     },
     remainingResidentialList: {
       querySelectorAll() {
         return [];
-      },
+      }
     },
-    solveStatus: { textContent: "" },
+    solveStatus: { textContent: "" }
   };
   const controller = plannerShell.createPlannerShellController({
     state,
@@ -1172,8 +1183,8 @@ function testPlannerShellRequiresManualValidationBeforeContinuationReuse() {
       },
       readExpansionCandidateFlags() {
         return { hasAnyCandidate: true };
-      },
-    },
+      }
+    }
   });
 
   controller.syncActionAvailability();
@@ -1223,7 +1234,7 @@ function testPlannerPersistenceRestoresLegacyReviewedInvalidLayoutWithoutPending
     },
     setItem(key, value) {
       storage.set(key, String(value));
-    },
+    }
   };
   const plannerPersistence = loadPlannerPersistenceModule(localStorage);
   const constants = {
@@ -1231,7 +1242,7 @@ function testPlannerPersistenceRestoresLegacyReviewedInvalidLayoutWithoutPending
     LAYOUT_STORAGE_KEY: "layouts",
     defaultResidentialTypes: [],
     defaultServiceTypes: [],
-    sampleGrid: [[1]],
+    sampleGrid: [[1]]
   };
   const state = {
     isSolving: false,
@@ -1243,14 +1254,14 @@ function testPlannerPersistenceRestoresLegacyReviewedInvalidLayoutWithoutPending
       isApplying: true,
       edited: false,
       pendingValidation: false,
-      status: "",
+      status: ""
     },
     result: null,
     resultContext: null,
     solveProgressLog: [],
     resultIsLiveSnapshot: false,
     resultError: "",
-    optimizer: "greedy",
+    optimizer: "greedy"
   };
   const elements = {
     savedLayoutsSelect: createFakeDomElement({ value: "layout-1" }),
@@ -1258,7 +1269,7 @@ function testPlannerPersistenceRestoresLegacyReviewedInvalidLayoutWithoutPending
     layoutStorageStatus: createFakeDomElement(),
     savedConfigsSelect: createFakeDomElement(),
     configStorageName: createFakeDomElement(),
-    configStorageStatus: createFakeDomElement(),
+    configStorageStatus: createFakeDomElement()
   };
   const persistence = plannerPersistence.createPlannerPersistence({
     state,
@@ -1294,7 +1305,7 @@ function testPlannerPersistenceRestoresLegacyReviewedInvalidLayoutWithoutPending
       },
       normalizeOptimizer(value) {
         return value === "auto" || value === "lns" || value === "cp-sat" ? value : "greedy";
-      },
+      }
     },
     callbacks: {
       applySolveRequestToPlanner() {},
@@ -1304,49 +1315,52 @@ function testPlannerPersistenceRestoresLegacyReviewedInvalidLayoutWithoutPending
       resetSolveTimer() {},
       setResultElapsed() {},
       setSolveState() {},
-      syncPlannerFromState() {},
-    },
+      syncPlannerFromState() {}
+    }
   });
 
-  localStorage.setItem(constants.LAYOUT_STORAGE_KEY, JSON.stringify([
-    {
-      id: "layout-1",
-      name: "Reviewed invalid layout",
-      savedAt: "2026-04-19T00:00:00.000Z",
-      elapsedMs: 123,
-      result: {
-        solution: {
-          manualLayout: true,
-          roads: [],
-          services: [],
-          serviceTypeIndices: [],
-          servicePopulationIncreases: [],
-          residentials: [],
-          residentialTypeIndices: [],
-          populations: [],
-          totalPopulation: 0,
+  localStorage.setItem(
+    constants.LAYOUT_STORAGE_KEY,
+    JSON.stringify([
+      {
+        id: "layout-1",
+        name: "Reviewed invalid layout",
+        savedAt: "2026-04-19T00:00:00.000Z",
+        elapsedMs: 123,
+        result: {
+          solution: {
+            manualLayout: true,
+            roads: [],
+            services: [],
+            serviceTypeIndices: [],
+            servicePopulationIncreases: [],
+            residentials: [],
+            residentialTypeIndices: [],
+            populations: [],
+            totalPopulation: 0
+          },
+          stats: {
+            manualLayout: true,
+            optimizer: undefined,
+            totalPopulation: 0,
+            roadCount: 0,
+            serviceCount: 0,
+            residentialCount: 0
+          },
+          validation: {
+            valid: false,
+            errors: ["Invalid layout"]
+          }
         },
-        stats: {
-          manualLayout: true,
-          optimizer: undefined,
-          totalPopulation: 0,
-          roadCount: 0,
-          serviceCount: 0,
-          residentialCount: 0,
-        },
-        validation: {
-          valid: false,
-          errors: ["Invalid layout"],
-        },
-      },
-      resultContext: {
-        grid: [[1]],
-        params: {
-          optimizer: "greedy",
-        },
-      },
-    },
-  ]));
+        resultContext: {
+          grid: [[1]],
+          params: {
+            optimizer: "greedy"
+          }
+        }
+      }
+    ])
+  );
 
   persistence.loadSelectedLayout();
 
@@ -1362,7 +1376,7 @@ function testPlannerPersistenceRestoresLegacyPendingValidationLayoutWithoutFlag(
     },
     setItem(key, value) {
       storage.set(key, String(value));
-    },
+    }
   };
   const plannerPersistence = loadPlannerPersistenceModule(localStorage);
   const constants = {
@@ -1370,7 +1384,7 @@ function testPlannerPersistenceRestoresLegacyPendingValidationLayoutWithoutFlag(
     LAYOUT_STORAGE_KEY: "layouts",
     defaultResidentialTypes: [],
     defaultServiceTypes: [],
-    sampleGrid: [[1]],
+    sampleGrid: [[1]]
   };
   const state = {
     isSolving: false,
@@ -1381,14 +1395,14 @@ function testPlannerPersistenceRestoresLegacyPendingValidationLayoutWithoutFlag(
       pendingPlacement: null,
       edited: false,
       pendingValidation: false,
-      status: "",
+      status: ""
     },
     result: null,
     resultContext: null,
     solveProgressLog: [],
     resultIsLiveSnapshot: false,
     resultError: "",
-    optimizer: "greedy",
+    optimizer: "greedy"
   };
   const elements = {
     savedLayoutsSelect: createFakeDomElement({ value: "layout-1" }),
@@ -1396,7 +1410,7 @@ function testPlannerPersistenceRestoresLegacyPendingValidationLayoutWithoutFlag(
     layoutStorageStatus: createFakeDomElement(),
     savedConfigsSelect: createFakeDomElement(),
     configStorageName: createFakeDomElement(),
-    configStorageStatus: createFakeDomElement(),
+    configStorageStatus: createFakeDomElement()
   };
   const persistence = plannerPersistence.createPlannerPersistence({
     state,
@@ -1432,7 +1446,7 @@ function testPlannerPersistenceRestoresLegacyPendingValidationLayoutWithoutFlag(
       },
       normalizeOptimizer(value) {
         return value === "auto" || value === "lns" || value === "cp-sat" ? value : "greedy";
-      },
+      }
     },
     callbacks: {
       applySolveRequestToPlanner() {},
@@ -1442,49 +1456,52 @@ function testPlannerPersistenceRestoresLegacyPendingValidationLayoutWithoutFlag(
       resetSolveTimer() {},
       setResultElapsed() {},
       setSolveState() {},
-      syncPlannerFromState() {},
-    },
+      syncPlannerFromState() {}
+    }
   });
 
-  localStorage.setItem(constants.LAYOUT_STORAGE_KEY, JSON.stringify([
-    {
-      id: "layout-1",
-      name: "Pending invalid layout",
-      savedAt: "2026-04-19T00:00:00.000Z",
-      elapsedMs: 123,
-      result: {
-        solution: {
-          manualLayout: true,
-          roads: [],
-          services: [],
-          serviceTypeIndices: [],
-          servicePopulationIncreases: [],
-          residentials: [],
-          residentialTypeIndices: [],
-          populations: [],
-          totalPopulation: 0,
+  localStorage.setItem(
+    constants.LAYOUT_STORAGE_KEY,
+    JSON.stringify([
+      {
+        id: "layout-1",
+        name: "Pending invalid layout",
+        savedAt: "2026-04-19T00:00:00.000Z",
+        elapsedMs: 123,
+        result: {
+          solution: {
+            manualLayout: true,
+            roads: [],
+            services: [],
+            serviceTypeIndices: [],
+            servicePopulationIncreases: [],
+            residentials: [],
+            residentialTypeIndices: [],
+            populations: [],
+            totalPopulation: 0
+          },
+          stats: {
+            manualLayout: true,
+            optimizer: undefined,
+            totalPopulation: 0,
+            roadCount: 0,
+            serviceCount: 0,
+            residentialCount: 0
+          },
+          validation: {
+            valid: false,
+            errors: ["Manual edits are pending validation. Use Validate layout when you're ready."]
+          }
         },
-        stats: {
-          manualLayout: true,
-          optimizer: undefined,
-          totalPopulation: 0,
-          roadCount: 0,
-          serviceCount: 0,
-          residentialCount: 0,
-        },
-        validation: {
-          valid: false,
-          errors: ["Manual edits are pending validation. Use Validate layout when you're ready."],
-        },
-      },
-      resultContext: {
-        grid: [[1]],
-        params: {
-          optimizer: "greedy",
-        },
-      },
-    },
-  ]));
+        resultContext: {
+          grid: [[1]],
+          params: {
+            optimizer: "greedy"
+          }
+        }
+      }
+    ])
+  );
 
   persistence.loadSelectedLayout();
 
@@ -1500,7 +1517,7 @@ function testPlannerPersistenceSavedLayoutOptionsShowPopulation() {
     },
     setItem(key, value) {
       storage.set(key, String(value));
-    },
+    }
   };
   const plannerPersistence = loadPlannerPersistenceModule(localStorage);
   const appendedLayoutOptions = [];
@@ -1508,13 +1525,13 @@ function testPlannerPersistenceSavedLayoutOptionsShowPopulation() {
     savedLayoutsSelect: createFakeDomElement({
       append(option) {
         appendedLayoutOptions.push(option);
-      },
+      }
     }),
     layoutStorageName: createFakeDomElement(),
     layoutStorageStatus: createFakeDomElement(),
     savedConfigsSelect: createFakeDomElement(),
     configStorageName: createFakeDomElement(),
-    configStorageStatus: createFakeDomElement(),
+    configStorageStatus: createFakeDomElement()
   };
   const persistence = plannerPersistence.createPlannerPersistence({
     state: {
@@ -1527,14 +1544,14 @@ function testPlannerPersistenceSavedLayoutOptionsShowPopulation() {
         edited: false,
         pendingValidation: false,
         status: "",
-        isApplying: false,
+        isApplying: false
       },
       result: null,
       resultContext: null,
       solveProgressLog: [],
       resultIsLiveSnapshot: false,
       resultError: "",
-      optimizer: "greedy",
+      optimizer: "greedy"
     },
     elements,
     constants: {
@@ -1542,7 +1559,7 @@ function testPlannerPersistenceSavedLayoutOptionsShowPopulation() {
       LAYOUT_STORAGE_KEY: "layouts",
       defaultResidentialTypes: [],
       defaultServiceTypes: [],
-      sampleGrid: [[1]],
+      sampleGrid: [[1]]
     },
     helpers: {
       buildCpSatWarmStartCheckpoint() {
@@ -1561,7 +1578,7 @@ function testPlannerPersistenceSavedLayoutOptionsShowPopulation() {
       getSavedLayoutPopulation: plannerShared.getSavedLayoutPopulation,
       isGridLike: plannerShared.isGridLike,
       normalizeElapsedMs: plannerShared.normalizeElapsedMs,
-      normalizeOptimizer: plannerShared.normalizeOptimizer,
+      normalizeOptimizer: plannerShared.normalizeOptimizer
     },
     callbacks: {
       applySolveRequestToPlanner() {},
@@ -1571,29 +1588,32 @@ function testPlannerPersistenceSavedLayoutOptionsShowPopulation() {
       resetSolveTimer() {},
       setResultElapsed() {},
       setSolveState() {},
-      syncPlannerFromState() {},
-    },
+      syncPlannerFromState() {}
+    }
   });
-  localStorage.setItem("layouts", JSON.stringify([
-    {
-      id: "layout-1",
-      name: "High score",
-      savedAt: "2026-04-19T00:00:00.000Z",
-      elapsedMs: 65000,
-      result: {
-        validation: {
-          recomputedTotalPopulation: 1234,
-        },
-        stats: {
-          totalPopulation: 1200,
-        },
-        solution: {
-          populations: [600, 634],
-          totalPopulation: 1234,
-        },
-      },
-    },
-  ]));
+  localStorage.setItem(
+    "layouts",
+    JSON.stringify([
+      {
+        id: "layout-1",
+        name: "High score",
+        savedAt: "2026-04-19T00:00:00.000Z",
+        elapsedMs: 65000,
+        result: {
+          validation: {
+            recomputedTotalPopulation: 1234
+          },
+          stats: {
+            totalPopulation: 1200
+          },
+          solution: {
+            populations: [600, 634],
+            totalPopulation: 1234
+          }
+        }
+      }
+    ])
+  );
 
   persistence.refreshSavedLayoutOptions();
 
@@ -1605,7 +1625,11 @@ function testPlannerResultsRotatePendingPlacementUpdatesFootprint() {
   const plannerResults = loadPlannerResultsModule();
   const state = {
     isSolving: false,
-    grid: [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
+    grid: [
+      [1, 1, 1],
+      [1, 1, 1],
+      [1, 1, 1]
+    ],
     result: {
       solution: {
         roads: [],
@@ -1615,22 +1639,26 @@ function testPlannerResultsRotatePendingPlacementUpdatesFootprint() {
         residentials: [],
         residentialTypeIndices: [],
         populations: [],
-        totalPopulation: 0,
+        totalPopulation: 0
       },
       stats: {
-        manualLayout: false,
+        manualLayout: false
       },
       validation: {
         valid: true,
-        errors: [],
-      },
+        errors: []
+      }
     },
     resultContext: {
-      grid: [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
+      grid: [
+        [1, 1, 1],
+        [1, 1, 1],
+        [1, 1, 1]
+      ],
       params: {
         serviceTypes: [{ name: "Depot", rows: 2, cols: 3, range: 1, bonus: 10, avail: 1 }],
-        residentialTypes: [],
-      },
+        residentialTypes: []
+      }
     },
     solveProgressLog: [],
     resultIsLiveSnapshot: false,
@@ -1643,21 +1671,21 @@ function testPlannerResultsRotatePendingPlacementUpdatesFootprint() {
       isApplying: false,
       edited: false,
       pendingValidation: false,
-      status: "",
-    },
+      status: ""
+    }
   };
   const modeButtons = [
     createFakeDomElement({ dataset: { layoutEditMode: "inspect" } }),
-    createFakeDomElement({ dataset: { layoutEditMode: "place-service" } }),
+    createFakeDomElement({ dataset: { layoutEditMode: "place-service" } })
   ];
   const elements = {
     layoutEditModeToggle: {
       querySelectorAll() {
         return modeButtons;
-      },
+      }
     },
     layoutEditorStatus: createFakeDomElement(),
-    rotatePendingPlacementButton: createFakeDomElement(),
+    rotatePendingPlacementButton: createFakeDomElement()
   };
   const controller = plannerResults.createPlannerResultsController({
     state,
@@ -1668,7 +1696,7 @@ function testPlannerResultsRotatePendingPlacementUpdatesFootprint() {
       },
       formatElapsedTime(value) {
         return String(value);
-      },
+      }
     },
     callbacks: {
       applyMatrixLayout() {},
@@ -1678,8 +1706,8 @@ function testPlannerResultsRotatePendingPlacementUpdatesFootprint() {
       },
       renderExpansionAdvice() {},
       setSolveState() {},
-      syncActionAvailability() {},
-    },
+      syncActionAvailability() {}
+    }
   });
 
   controller.setLayoutEditMode("place-service", {
@@ -1689,7 +1717,7 @@ function testPlannerResultsRotatePendingPlacementUpdatesFootprint() {
     rows: 2,
     cols: 3,
     rotated: false,
-    canRotate: true,
+    canRotate: true
   });
 
   assert.match(elements.layoutEditorStatus.textContent, /Depot \(2x3\)/);
@@ -1711,17 +1739,17 @@ function testPlannerResultsShowsAutoGeneratedSeedSummary() {
             return "";
           },
           paddingLeft: "0",
-          paddingTop: "0",
+          paddingTop: "0"
         };
-      },
+      }
     },
     context: {
       document: {
         createElement() {
           return createFakeDomElement();
-        },
-      },
-    },
+        }
+      }
+    }
   });
   const autoStage = {
     requestedOptimizer: "auto",
@@ -1734,8 +1762,8 @@ function testPlannerResultsShowsAutoGeneratedSeedSummary() {
     generatedSeeds: [
       { stage: "greedy", stageIndex: 1, cycleIndex: 0, randomSeed: 11 },
       { stage: "lns", stageIndex: 2, cycleIndex: 1, randomSeed: 13 },
-      { stage: "cp-sat", stageIndex: 3, cycleIndex: 1, randomSeed: 17 },
-    ],
+      { stage: "cp-sat", stageIndex: 3, cycleIndex: 1, randomSeed: 17 }
+    ]
   };
   const state = {
     isSolving: false,
@@ -1752,7 +1780,7 @@ function testPlannerResultsShowsAutoGeneratedSeedSummary() {
         residentials: [],
         residentialTypeIndices: [],
         populations: [],
-        totalPopulation: 0,
+        totalPopulation: 0
       },
       stats: {
         optimizer: "auto",
@@ -1765,12 +1793,12 @@ function testPlannerResultsShowsAutoGeneratedSeedSummary() {
         totalPopulation: 0,
         roadCount: 1,
         serviceCount: 0,
-        residentialCount: 0,
+        residentialCount: 0
       },
       validation: {
         valid: true,
-        errors: [],
-      },
+        errors: []
+      }
     },
     resultContext: {
       grid: [[1, 1]],
@@ -1778,8 +1806,8 @@ function testPlannerResultsShowsAutoGeneratedSeedSummary() {
         optimizer: "auto",
         cpSat: { randomSeed: 999 },
         serviceTypes: [],
-        residentialTypes: [],
-      },
+        residentialTypes: []
+      }
     },
     solveProgressLog: [],
     resultIsLiveSnapshot: false,
@@ -1793,15 +1821,18 @@ function testPlannerResultsShowsAutoGeneratedSeedSummary() {
       isApplying: false,
       edited: false,
       pendingValidation: false,
-      status: "",
-    },
+      status: ""
+    }
   };
-  const elements = new Proxy({}, {
-    get(target, key) {
-      if (!target[key]) target[key] = createFakeDomElement();
-      return target[key];
-    },
-  });
+  const elements = new Proxy(
+    {},
+    {
+      get(target, key) {
+        if (!target[key]) target[key] = createFakeDomElement();
+        return target[key];
+      }
+    }
+  );
   const controller = plannerResults.createPlannerResultsController({
     state,
     elements,
@@ -1811,7 +1842,7 @@ function testPlannerResultsShowsAutoGeneratedSeedSummary() {
       },
       formatElapsedTime(value) {
         return `${value}ms`;
-      },
+      }
     },
     callbacks: {
       applyMatrixLayout() {},
@@ -1821,8 +1852,8 @@ function testPlannerResultsShowsAutoGeneratedSeedSummary() {
       },
       renderExpansionAdvice() {},
       setSolveState() {},
-      syncActionAvailability() {},
-    },
+      syncActionAvailability() {}
+    }
   });
 
   controller.renderResults();
@@ -1843,7 +1874,7 @@ function testPlannerResultsShowsGreedyDiagnosticsReport() {
       appendChild(child) {
         this.children.push(child);
       },
-      ...overrides,
+      ...overrides
     });
   }
 
@@ -1855,21 +1886,24 @@ function testPlannerResultsShowsGreedyDiagnosticsReport() {
             return "";
           },
           paddingLeft: "0",
-          paddingTop: "0",
+          paddingTop: "0"
         };
-      },
+      }
     },
     context: {
       document: {
         createElement() {
           return createRecordingElement();
-        },
-      },
-    },
+        }
+      }
+    }
   });
   const state = {
     isSolving: false,
-    grid: [[1, 1], [1, 1]],
+    grid: [
+      [1, 1],
+      [1, 1]
+    ],
     result: {
       solution: {
         optimizer: "greedy",
@@ -1906,10 +1940,10 @@ function testPlannerResultsShowsGreedyDiagnosticsReport() {
                   cols: 1,
                   typeIndex: 0,
                   typeName: "Clinic",
-                  score: 0,
-                },
-              ],
-            },
+                  score: 0
+                }
+              ]
+            }
           },
           residentials: {
             candidateLimit: 2000,
@@ -1933,12 +1967,12 @@ function testPlannerResultsShowsGreedyDiagnosticsReport() {
                   typeIndex: 0,
                   typeName: "House",
                   population: 10,
-                  basePopulation: 10,
-                },
-              ],
-            },
-          },
-        },
+                  basePopulation: 10
+                }
+              ]
+            }
+          }
+        }
       },
       stats: {
         optimizer: "greedy",
@@ -1949,20 +1983,23 @@ function testPlannerResultsShowsGreedyDiagnosticsReport() {
         totalPopulation: 0,
         roadCount: 0,
         serviceCount: 0,
-        residentialCount: 0,
+        residentialCount: 0
       },
       validation: {
         valid: true,
-        errors: [],
-      },
+        errors: []
+      }
     },
     resultContext: {
-      grid: [[1, 1], [1, 1]],
+      grid: [
+        [1, 1],
+        [1, 1]
+      ],
       params: {
         optimizer: "greedy",
         serviceTypes: [{ name: "Clinic", bonus: 10, rows: 1, cols: 1, range: 1, avail: 1 }],
-        residentialTypes: [{ name: "House", w: 1, h: 1, min: 10, max: 20, avail: 1 }],
-      },
+        residentialTypes: [{ name: "House", w: 1, h: 1, min: 10, max: 20, avail: 1 }]
+      }
     },
     solveProgressLog: [],
     resultIsLiveSnapshot: false,
@@ -1976,15 +2013,18 @@ function testPlannerResultsShowsGreedyDiagnosticsReport() {
       isApplying: false,
       edited: false,
       pendingValidation: false,
-      status: "",
-    },
+      status: ""
+    }
   };
-  const elements = new Proxy({}, {
-    get(target, key) {
-      if (!target[key]) target[key] = createRecordingElement();
-      return target[key];
-    },
-  });
+  const elements = new Proxy(
+    {},
+    {
+      get(target, key) {
+        if (!target[key]) target[key] = createRecordingElement();
+        return target[key];
+      }
+    }
+  );
   const controller = plannerResults.createPlannerResultsController({
     state,
     elements,
@@ -1994,7 +2034,7 @@ function testPlannerResultsShowsGreedyDiagnosticsReport() {
       },
       formatElapsedTime(value) {
         return `${value}ms`;
-      },
+      }
     },
     callbacks: {
       applyMatrixLayout() {},
@@ -2004,8 +2044,8 @@ function testPlannerResultsShowsGreedyDiagnosticsReport() {
       },
       renderExpansionAdvice() {},
       setSolveState() {},
-      syncActionAvailability() {},
-    },
+      syncActionAvailability() {}
+    }
   });
 
   controller.renderResults();
@@ -2015,7 +2055,10 @@ function testPlannerResultsShowsGreedyDiagnosticsReport() {
   assert.equal(elements.greedyDiagnosticsServiceList.children.length, 1);
   assert.equal(elements.greedyDiagnosticsResidentialList.children.length, 1);
   assert.match(elements.greedyDiagnosticsServiceList.children[0].children[0].textContent, /No service coverage: 1/);
-  assert.match(elements.greedyDiagnosticsResidentialList.children[0].children[0].textContent, /Base population only: 1/);
+  assert.match(
+    elements.greedyDiagnosticsResidentialList.children[0].children[0].textContent,
+    /Base population only: 1/
+  );
 }
 
 function testPlannerResultsAppliesServiceValueHeatmap() {
@@ -2026,7 +2069,7 @@ function testPlannerResultsAppliesServiceValueHeatmap() {
       style: {
         setProperty(name, value) {
           this[name] = value;
-        },
+        }
       },
       append(...children) {
         this.children.push(...children);
@@ -2037,7 +2080,7 @@ function testPlannerResultsAppliesServiceValueHeatmap() {
       setAttribute(name, value) {
         this.attributes[name] = String(value);
       },
-      ...overrides,
+      ...overrides
     });
   }
 
@@ -2049,21 +2092,24 @@ function testPlannerResultsAppliesServiceValueHeatmap() {
             return "";
           },
           paddingLeft: "0",
-          paddingTop: "0",
+          paddingTop: "0"
         };
-      },
+      }
     },
     context: {
       document: {
         createElement() {
           return createRecordingElement();
-        },
-      },
-    },
+        }
+      }
+    }
   });
   const state = {
     isSolving: false,
-    grid: [[1, 1, 1], [1, 1, 1]],
+    grid: [
+      [1, 1, 1],
+      [1, 1, 1]
+    ],
     result: {
       solution: {
         optimizer: "greedy",
@@ -2074,7 +2120,7 @@ function testPlannerResultsAppliesServiceValueHeatmap() {
         residentials: [{ r: 1, c: 1, rows: 1, cols: 1 }],
         residentialTypeIndices: [0],
         populations: [30],
-        totalPopulation: 30,
+        totalPopulation: 30
       },
       stats: {
         optimizer: "greedy",
@@ -2085,20 +2131,23 @@ function testPlannerResultsAppliesServiceValueHeatmap() {
         totalPopulation: 30,
         roadCount: 1,
         serviceCount: 1,
-        residentialCount: 1,
+        residentialCount: 1
       },
       validation: {
         valid: true,
-        errors: [],
-      },
+        errors: []
+      }
     },
     resultContext: {
-      grid: [[1, 1, 1], [1, 1, 1]],
+      grid: [
+        [1, 1, 1],
+        [1, 1, 1]
+      ],
       params: {
         optimizer: "greedy",
         serviceTypes: [{ name: "Clinic", bonus: 20, rows: 1, cols: 1, range: 1, avail: 1 }],
-        residentialTypes: [{ name: "House", w: 1, h: 1, min: 10, max: 30, avail: 1 }],
-      },
+        residentialTypes: [{ name: "House", w: 1, h: 1, min: 10, max: 30, avail: 1 }]
+      }
     },
     solveProgressLog: [],
     resultIsLiveSnapshot: false,
@@ -2113,15 +2162,18 @@ function testPlannerResultsAppliesServiceValueHeatmap() {
       isApplying: false,
       edited: false,
       pendingValidation: false,
-      status: "",
-    },
+      status: ""
+    }
   };
-  const elements = new Proxy({}, {
-    get(target, key) {
-      if (!target[key]) target[key] = createRecordingElement();
-      return target[key];
-    },
-  });
+  const elements = new Proxy(
+    {},
+    {
+      get(target, key) {
+        if (!target[key]) target[key] = createRecordingElement();
+        return target[key];
+      }
+    }
+  );
   const controller = plannerResults.createPlannerResultsController({
     state,
     elements,
@@ -2131,7 +2183,7 @@ function testPlannerResultsAppliesServiceValueHeatmap() {
       },
       formatElapsedTime(value) {
         return `${value}ms`;
-      },
+      }
     },
     callbacks: {
       applyMatrixLayout() {},
@@ -2141,8 +2193,8 @@ function testPlannerResultsAppliesServiceValueHeatmap() {
       },
       renderExpansionAdvice() {},
       setSolveState() {},
-      syncActionAvailability() {},
-    },
+      syncActionAvailability() {}
+    }
   });
 
   controller.renderResults();
@@ -2184,7 +2236,7 @@ function testPlannerResultsUsesPlannerExplainabilityRiskLayer() {
       style: {
         setProperty(name, value) {
           this[name] = value;
-        },
+        }
       },
       append(...children) {
         this.children.push(...children);
@@ -2195,14 +2247,14 @@ function testPlannerResultsUsesPlannerExplainabilityRiskLayer() {
       setAttribute(name, value) {
         this.attributes[name] = String(value);
       },
-      ...overrides,
+      ...overrides
     });
     element.classList = {
       add(value) {
         element.className = `${element.className || ""} ${value}`.trim();
       },
       remove() {},
-      toggle() {},
+      toggle() {}
     };
     return element;
   }
@@ -2215,33 +2267,120 @@ function testPlannerResultsUsesPlannerExplainabilityRiskLayer() {
             return "";
           },
           paddingLeft: "0",
-          paddingTop: "0",
+          paddingTop: "0"
         };
-      },
+      }
     },
     context: {
       document: {
         createElement() {
           return createRecordingElement();
-        },
-      },
-    },
+        }
+      }
+    }
   });
   const cells = [
     [
-      { r: 0, c: 0, allowed: true, occupiedKind: "service", roadAnchorReachable: false, roadAnchorDistance: null, serviceValue: 0, bestServiceBonus: 0, residentialOpportunity: 0, residentialHeadroom: 0, connectivityLostCells: 0, connectivityDisconnectedCells: 0, connectivityFootprintCells: 0 },
-      { r: 0, c: 1, allowed: true, occupiedKind: null, roadAnchorReachable: true, roadAnchorDistance: 0, serviceValue: 20, bestServiceBonus: 10, residentialOpportunity: 30, residentialHeadroom: 20, connectivityLostCells: 0, connectivityDisconnectedCells: 0, connectivityFootprintCells: 0 },
-      { r: 0, c: 2, allowed: true, occupiedKind: null, roadAnchorReachable: true, roadAnchorDistance: 0, serviceValue: 0, bestServiceBonus: 40, residentialOpportunity: 0, residentialHeadroom: 0, connectivityLostCells: 0, connectivityDisconnectedCells: 0, connectivityFootprintCells: 0 },
+      {
+        r: 0,
+        c: 0,
+        allowed: true,
+        occupiedKind: "service",
+        roadAnchorReachable: false,
+        roadAnchorDistance: null,
+        serviceValue: 0,
+        bestServiceBonus: 0,
+        residentialOpportunity: 0,
+        residentialHeadroom: 0,
+        connectivityLostCells: 0,
+        connectivityDisconnectedCells: 0,
+        connectivityFootprintCells: 0
+      },
+      {
+        r: 0,
+        c: 1,
+        allowed: true,
+        occupiedKind: null,
+        roadAnchorReachable: true,
+        roadAnchorDistance: 0,
+        serviceValue: 20,
+        bestServiceBonus: 10,
+        residentialOpportunity: 30,
+        residentialHeadroom: 20,
+        connectivityLostCells: 0,
+        connectivityDisconnectedCells: 0,
+        connectivityFootprintCells: 0
+      },
+      {
+        r: 0,
+        c: 2,
+        allowed: true,
+        occupiedKind: null,
+        roadAnchorReachable: true,
+        roadAnchorDistance: 0,
+        serviceValue: 0,
+        bestServiceBonus: 40,
+        residentialOpportunity: 0,
+        residentialHeadroom: 0,
+        connectivityLostCells: 0,
+        connectivityDisconnectedCells: 0,
+        connectivityFootprintCells: 0
+      }
     ],
     [
-      { r: 1, c: 0, allowed: true, occupiedKind: "road", roadAnchorReachable: true, roadAnchorDistance: 1, serviceValue: 20, bestServiceBonus: 0, residentialOpportunity: 0, residentialHeadroom: 0, connectivityLostCells: 4, connectivityDisconnectedCells: 4, connectivityFootprintCells: 1 },
-      { r: 1, c: 1, allowed: true, occupiedKind: "residential", roadAnchorReachable: false, roadAnchorDistance: null, serviceValue: 20, bestServiceBonus: 0, residentialOpportunity: 0, residentialHeadroom: 0, connectivityLostCells: 0, connectivityDisconnectedCells: 0, connectivityFootprintCells: 0 },
-      { r: 1, c: 2, allowed: true, occupiedKind: null, roadAnchorReachable: true, roadAnchorDistance: 2, serviceValue: 0, bestServiceBonus: 0, residentialOpportunity: 0, residentialHeadroom: 0, connectivityLostCells: 0, connectivityDisconnectedCells: 0, connectivityFootprintCells: 0 },
-    ],
+      {
+        r: 1,
+        c: 0,
+        allowed: true,
+        occupiedKind: "road",
+        roadAnchorReachable: true,
+        roadAnchorDistance: 1,
+        serviceValue: 20,
+        bestServiceBonus: 0,
+        residentialOpportunity: 0,
+        residentialHeadroom: 0,
+        connectivityLostCells: 4,
+        connectivityDisconnectedCells: 4,
+        connectivityFootprintCells: 1
+      },
+      {
+        r: 1,
+        c: 1,
+        allowed: true,
+        occupiedKind: "residential",
+        roadAnchorReachable: false,
+        roadAnchorDistance: null,
+        serviceValue: 20,
+        bestServiceBonus: 0,
+        residentialOpportunity: 0,
+        residentialHeadroom: 0,
+        connectivityLostCells: 0,
+        connectivityDisconnectedCells: 0,
+        connectivityFootprintCells: 0
+      },
+      {
+        r: 1,
+        c: 2,
+        allowed: true,
+        occupiedKind: null,
+        roadAnchorReachable: true,
+        roadAnchorDistance: 2,
+        serviceValue: 0,
+        bestServiceBonus: 0,
+        residentialOpportunity: 0,
+        residentialHeadroom: 0,
+        connectivityLostCells: 0,
+        connectivityDisconnectedCells: 0,
+        connectivityFootprintCells: 0
+      }
+    ]
   ];
   const state = {
     isSolving: false,
-    grid: [[1, 1, 1], [1, 1, 1]],
+    grid: [
+      [1, 1, 1],
+      [1, 1, 1]
+    ],
     result: {
       solution: {
         optimizer: "greedy",
@@ -2252,7 +2391,7 @@ function testPlannerResultsUsesPlannerExplainabilityRiskLayer() {
         residentials: [{ r: 1, c: 1, rows: 1, cols: 1 }],
         residentialTypeIndices: [0],
         populations: [30],
-        totalPopulation: 30,
+        totalPopulation: 30
       },
       explainability: {
         schemaVersion: 1,
@@ -2265,7 +2404,7 @@ function testPlannerResultsUsesPlannerExplainabilityRiskLayer() {
         maxConnectivityLostCells: 4,
         maxConnectivityDisconnectedCells: 4,
         roadAnchorReachableCellCount: 4,
-        cells,
+        cells
       },
       stats: {
         optimizer: "greedy",
@@ -2276,20 +2415,23 @@ function testPlannerResultsUsesPlannerExplainabilityRiskLayer() {
         totalPopulation: 30,
         roadCount: 1,
         serviceCount: 1,
-        residentialCount: 1,
+        residentialCount: 1
       },
       validation: {
         valid: true,
-        errors: [],
-      },
+        errors: []
+      }
     },
     resultContext: {
-      grid: [[1, 1, 1], [1, 1, 1]],
+      grid: [
+        [1, 1, 1],
+        [1, 1, 1]
+      ],
       params: {
         optimizer: "greedy",
         serviceTypes: [{ name: "Clinic", bonus: 20, rows: 1, cols: 1, range: 1, avail: 1 }],
-        residentialTypes: [{ name: "House", w: 1, h: 1, min: 10, max: 30, avail: 1 }],
-      },
+        residentialTypes: [{ name: "House", w: 1, h: 1, min: 10, max: 30, avail: 1 }]
+      }
     },
     solveProgressLog: [],
     resultIsLiveSnapshot: false,
@@ -2305,15 +2447,18 @@ function testPlannerResultsUsesPlannerExplainabilityRiskLayer() {
       isApplying: false,
       edited: false,
       pendingValidation: false,
-      status: "",
-    },
+      status: ""
+    }
   };
-  const elements = new Proxy({}, {
-    get(target, key) {
-      if (!target[key]) target[key] = createRecordingElement();
-      return target[key];
-    },
-  });
+  const elements = new Proxy(
+    {},
+    {
+      get(target, key) {
+        if (!target[key]) target[key] = createRecordingElement();
+        return target[key];
+      }
+    }
+  );
   const controller = plannerResults.createPlannerResultsController({
     state,
     elements,
@@ -2323,7 +2468,7 @@ function testPlannerResultsUsesPlannerExplainabilityRiskLayer() {
       },
       formatElapsedTime(value) {
         return `${value}ms`;
-      },
+      }
     },
     callbacks: {
       applyMatrixLayout() {},
@@ -2333,8 +2478,8 @@ function testPlannerResultsUsesPlannerExplainabilityRiskLayer() {
       },
       renderExpansionAdvice() {},
       setSolveState() {},
-      syncActionAvailability() {},
-    },
+      syncActionAvailability() {}
+    }
   });
 
   controller.renderResults();
@@ -2373,7 +2518,7 @@ function testPlannerResultsAppliesPlacementOpportunityMap() {
       style: {
         setProperty(name, value) {
           this[name] = value;
-        },
+        }
       },
       append(...children) {
         this.children.push(...children);
@@ -2384,7 +2529,7 @@ function testPlannerResultsAppliesPlacementOpportunityMap() {
       setAttribute(name, value) {
         this.attributes[name] = String(value);
       },
-      ...overrides,
+      ...overrides
     });
   }
 
@@ -2396,21 +2541,25 @@ function testPlannerResultsAppliesPlacementOpportunityMap() {
             return "";
           },
           paddingLeft: "0",
-          paddingTop: "0",
+          paddingTop: "0"
         };
-      },
+      }
     },
     context: {
       document: {
         createElement() {
           return createRecordingElement();
-        },
-      },
-    },
+        }
+      }
+    }
   });
   const state = {
     isSolving: false,
-    grid: [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
+    grid: [
+      [1, 1, 1],
+      [1, 1, 1],
+      [1, 1, 1]
+    ],
     result: {
       solution: {
         optimizer: "greedy",
@@ -2421,7 +2570,7 @@ function testPlannerResultsAppliesPlacementOpportunityMap() {
         residentials: [],
         residentialTypeIndices: [],
         populations: [],
-        totalPopulation: 0,
+        totalPopulation: 0
       },
       stats: {
         optimizer: "greedy",
@@ -2432,20 +2581,24 @@ function testPlannerResultsAppliesPlacementOpportunityMap() {
         totalPopulation: 0,
         roadCount: 1,
         serviceCount: 1,
-        residentialCount: 0,
+        residentialCount: 0
       },
       validation: {
         valid: true,
-        errors: [],
-      },
+        errors: []
+      }
     },
     resultContext: {
-      grid: [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
+      grid: [
+        [1, 1, 1],
+        [1, 1, 1],
+        [1, 1, 1]
+      ],
       params: {
         optimizer: "greedy",
         serviceTypes: [{ name: "Clinic", bonus: 20, rows: 1, cols: 1, range: 1, avail: 1 }],
-        residentialTypes: [{ name: "House", w: 1, h: 1, min: 10, max: 25, avail: 1 }],
-      },
+        residentialTypes: [{ name: "House", w: 1, h: 1, min: 10, max: 25, avail: 1 }]
+      }
     },
     solveProgressLog: [],
     resultIsLiveSnapshot: false,
@@ -2460,15 +2613,18 @@ function testPlannerResultsAppliesPlacementOpportunityMap() {
       isApplying: false,
       edited: false,
       pendingValidation: false,
-      status: "",
-    },
+      status: ""
+    }
   };
-  const elements = new Proxy({}, {
-    get(target, key) {
-      if (!target[key]) target[key] = createRecordingElement();
-      return target[key];
-    },
-  });
+  const elements = new Proxy(
+    {},
+    {
+      get(target, key) {
+        if (!target[key]) target[key] = createRecordingElement();
+        return target[key];
+      }
+    }
+  );
   const controller = plannerResults.createPlannerResultsController({
     state,
     elements,
@@ -2478,7 +2634,7 @@ function testPlannerResultsAppliesPlacementOpportunityMap() {
       },
       formatElapsedTime(value) {
         return `${value}ms`;
-      },
+      }
     },
     callbacks: {
       applyMatrixLayout() {},
@@ -2488,8 +2644,8 @@ function testPlannerResultsAppliesPlacementOpportunityMap() {
       },
       renderExpansionAdvice() {},
       setSolveState() {},
-      syncActionAvailability() {},
-    },
+      syncActionAvailability() {}
+    }
   });
 
   controller.renderResults();
@@ -2520,7 +2676,7 @@ function testPlannerResultsAppliesConnectivityRiskMap() {
       style: {
         setProperty(name, value) {
           this[name] = value;
-        },
+        }
       },
       append(...children) {
         this.children.push(...children);
@@ -2531,7 +2687,7 @@ function testPlannerResultsAppliesConnectivityRiskMap() {
       setAttribute(name, value) {
         this.attributes[name] = String(value);
       },
-      ...overrides,
+      ...overrides
     });
   }
 
@@ -2543,19 +2699,23 @@ function testPlannerResultsAppliesConnectivityRiskMap() {
             return "";
           },
           paddingLeft: "0",
-          paddingTop: "0",
+          paddingTop: "0"
         };
-      },
+      }
     },
     context: {
       document: {
         createElement() {
           return createRecordingElement();
-        },
-      },
-    },
+        }
+      }
+    }
   });
-  const grid = [[0, 0, 0, 0], [1, 1, 1, 0], [1, 0, 1, 1]];
+  const grid = [
+    [0, 0, 0, 0],
+    [1, 1, 1, 0],
+    [1, 0, 1, 1]
+  ];
   const state = {
     isSolving: false,
     grid,
@@ -2569,7 +2729,7 @@ function testPlannerResultsAppliesConnectivityRiskMap() {
         residentials: [],
         residentialTypeIndices: [],
         populations: [],
-        totalPopulation: 0,
+        totalPopulation: 0
       },
       stats: {
         optimizer: "greedy",
@@ -2580,20 +2740,20 @@ function testPlannerResultsAppliesConnectivityRiskMap() {
         totalPopulation: 0,
         roadCount: 0,
         serviceCount: 0,
-        residentialCount: 0,
+        residentialCount: 0
       },
       validation: {
         valid: true,
-        errors: [],
-      },
+        errors: []
+      }
     },
     resultContext: {
       grid,
       params: {
         optimizer: "greedy",
         serviceTypes: [],
-        residentialTypes: [],
-      },
+        residentialTypes: []
+      }
     },
     solveProgressLog: [],
     resultIsLiveSnapshot: false,
@@ -2608,15 +2768,18 @@ function testPlannerResultsAppliesConnectivityRiskMap() {
       isApplying: false,
       edited: false,
       pendingValidation: false,
-      status: "",
-    },
+      status: ""
+    }
   };
-  const elements = new Proxy({}, {
-    get(target, key) {
-      if (!target[key]) target[key] = createRecordingElement();
-      return target[key];
-    },
-  });
+  const elements = new Proxy(
+    {},
+    {
+      get(target, key) {
+        if (!target[key]) target[key] = createRecordingElement();
+        return target[key];
+      }
+    }
+  );
   const controller = plannerResults.createPlannerResultsController({
     state,
     elements,
@@ -2626,7 +2789,7 @@ function testPlannerResultsAppliesConnectivityRiskMap() {
       },
       formatElapsedTime(value) {
         return `${value}ms`;
-      },
+      }
     },
     callbacks: {
       applyMatrixLayout() {},
@@ -2636,8 +2799,8 @@ function testPlannerResultsAppliesConnectivityRiskMap() {
       },
       renderExpansionAdvice() {},
       setSolveState() {},
-      syncActionAvailability() {},
-    },
+      syncActionAvailability() {}
+    }
   });
 
   controller.renderResults();
@@ -2660,12 +2823,12 @@ function testManualLayoutResponseClearsSolverMetadata() {
   const response = buildManualLayoutResponse(
     [
       [1, 1],
-      [1, 1],
+      [1, 1]
     ],
     {
       basePop: 10,
       maxPop: 10,
-      availableBuildings: { residentials: 0, services: 0 },
+      availableBuildings: { residentials: 0, services: 0 }
     },
     {
       optimizer: "cp-sat",
@@ -2673,7 +2836,7 @@ function testManualLayoutResponseClearsSolverMetadata() {
       cpSatObjectivePolicy: {
         populationWeight: 5,
         maxTieBreakPenalty: 4,
-        summary: "maximize population, then minimize roads + services",
+        summary: "maximize population, then minimize roads + services"
       },
       cpSatTelemetry: {
         solveWallTimeSeconds: 1,
@@ -2688,7 +2851,7 @@ function testManualLayoutResponseClearsSolverMetadata() {
         lastImprovementAtSeconds: 0,
         secondsSinceLastImprovement: 0,
         numBranches: 0,
-        numConflicts: 0,
+        numConflicts: 0
       },
       cpSatPortfolio: {
         workerCount: 1,
@@ -2701,9 +2864,9 @@ function testManualLayoutResponseClearsSolverMetadata() {
             numWorkers: 1,
             status: "OPTIMAL",
             feasible: true,
-            totalPopulation: 0,
-          },
-        ],
+            totalPopulation: 0
+          }
+        ]
       },
       stoppedByUser: true,
       roads: new Set(["0,0", "0,1"]),
@@ -2713,7 +2876,7 @@ function testManualLayoutResponseClearsSolverMetadata() {
       residentials: [],
       residentialTypeIndices: [],
       populations: [],
-      totalPopulation: 0,
+      totalPopulation: 0
     }
   );
 
@@ -2735,11 +2898,11 @@ function testManualLayoutResponseCleansRedundantRoads() {
     [
       [1, 1, 1],
       [1, 1, 1],
-      [1, 1, 1],
+      [1, 1, 1]
     ],
     {
       residentialTypes: [{ name: "House", w: 1, h: 1, min: 10, max: 10, avail: 1 }],
-      availableBuildings: { residentials: 1, services: 0 },
+      availableBuildings: { residentials: 1, services: 0 }
     },
     {
       roads: new Set(["0,1", "1,1", "2,1", "2,0"]),
@@ -2749,7 +2912,7 @@ function testManualLayoutResponseCleansRedundantRoads() {
       residentials: [{ r: 2, c: 2, rows: 1, cols: 1 }],
       residentialTypeIndices: [0],
       populations: [0],
-      totalPopulation: 0,
+      totalPopulation: 0
     }
   );
 
@@ -2771,7 +2934,7 @@ function testManualLayoutResponseReportsOutOfBoundsRoads() {
       residentials: [],
       residentialTypeIndices: [],
       populations: [],
-      totalPopulation: 0,
+      totalPopulation: 0
     }
   );
 
@@ -2781,7 +2944,7 @@ function testManualLayoutResponseReportsOutOfBoundsRoads() {
     "   0",
     " 0 .",
     "",
-    "Legend: # blocked  R road  S service  H residential  . empty",
+    "Legend: # blocked  R road  S service  H residential  . empty"
   ]);
 }
 
@@ -2791,12 +2954,12 @@ function testBuildCpSatWarmStartCheckpointRejectsInvalidLayouts() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const params = {
     optimizer: "cp-sat",
     residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
-    availableBuildings: { residentials: 1, services: 0 },
+    availableBuildings: { residentials: 1, services: 0 }
   };
   const invalidManualResult = buildManualLayoutResponse(grid, params, {
     roads: new Set(["0,2", "1,2"]),
@@ -2805,11 +2968,11 @@ function testBuildCpSatWarmStartCheckpointRejectsInvalidLayouts() {
     servicePopulationIncreases: [],
     residentials: [
       { r: 0, c: 0, rows: 2, cols: 2 },
-      { r: 2, c: 0, rows: 2, cols: 2 },
+      { r: 2, c: 0, rows: 2, cols: 2 }
     ],
     residentialTypeIndices: [0, 0],
     populations: [10, 10],
-    totalPopulation: 20,
+    totalPopulation: 20
   });
 
   assert.equal(invalidManualResult.validation.valid, false);
@@ -2825,12 +2988,12 @@ function testBuildCpSatWarmStartCheckpointRejectsLegacyLayoutsWithoutValidation(
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const params = {
     optimizer: "cp-sat",
     residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
-    availableBuildings: { residentials: 1, services: 0 },
+    availableBuildings: { residentials: 1, services: 0 }
   };
   const invalidManualResult = buildManualLayoutResponse(grid, params, {
     roads: new Set(["0,2", "1,2"]),
@@ -2839,14 +3002,14 @@ function testBuildCpSatWarmStartCheckpointRejectsLegacyLayoutsWithoutValidation(
     servicePopulationIncreases: [],
     residentials: [
       { r: 0, c: 0, rows: 2, cols: 2 },
-      { r: 2, c: 0, rows: 2, cols: 2 },
+      { r: 2, c: 0, rows: 2, cols: 2 }
     ],
     residentialTypeIndices: [0, 0],
     populations: [10, 10],
-    totalPopulation: 20,
+    totalPopulation: 20
   });
   const legacySavedResult = {
-    ...invalidManualResult,
+    ...invalidManualResult
   };
   delete legacySavedResult.validation;
 
@@ -2863,29 +3026,27 @@ function testPlannerRequestBuilderSkipsLegacySavedCheckpointWithoutValidation() 
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const params = {
     optimizer: "cp-sat",
     residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
     availableBuildings: { residentials: 1, services: 0 },
     cpSat: {},
-    lns: {},
+    lns: {}
   };
   const validManualResult = buildManualLayoutResponse(grid, params, {
     roads: new Set(["0,3"]),
     services: [],
     serviceTypeIndices: [],
     servicePopulationIncreases: [],
-    residentials: [
-      { r: 0, c: 0, rows: 2, cols: 2 },
-    ],
+    residentials: [{ r: 0, c: 0, rows: 2, cols: 2 }],
     residentialTypeIndices: [0],
     populations: [10],
-    totalPopulation: 10,
+    totalPopulation: 10
   });
   const legacySavedResult = {
-    ...validManualResult,
+    ...validManualResult
   };
   delete legacySavedResult.validation;
 
@@ -2894,12 +3055,10 @@ function testPlannerRequestBuilderSkipsLegacySavedCheckpointWithoutValidation() 
       optimizer: "cp-sat",
       grid,
       serviceTypes: [],
-      residentialTypes: [
-        plannerShared.serializeResidentialTypeForCatalog({ w: 2, h: 2, min: 10, max: 10, avail: 1 }),
-      ],
+      residentialTypes: [plannerShared.serializeResidentialTypeForCatalog({ w: 2, h: 2, min: 10, max: 10, avail: 1 })],
       availableBuildings: {
         services: "0",
-        residentials: "1",
+        residentials: "1"
       },
       greedy: {
         localSearch: false,
@@ -2909,7 +3068,7 @@ function testPlannerRequestBuilderSkipsLegacySavedCheckpointWithoutValidation() 
         serviceRefineCandidateLimit: 1,
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 1,
-        serviceExactMaxCombinations: 1,
+        serviceExactMaxCombinations: 1
       },
       cpSat: {
         timeLimitSeconds: "",
@@ -2918,7 +3077,7 @@ function testPlannerRequestBuilderSkipsLegacySavedCheckpointWithoutValidation() 
         numWorkers: 8,
         logSearchProgress: false,
         pythonExecutable: "",
-        useDisplayedHint: false,
+        useDisplayedHint: false
       },
       lns: {
         iterations: 1,
@@ -2926,18 +3085,18 @@ function testPlannerRequestBuilderSkipsLegacySavedCheckpointWithoutValidation() 
         neighborhoodRows: 2,
         neighborhoodCols: 2,
         repairTimeLimitSeconds: 1,
-        useDisplayedSeed: false,
+        useDisplayedSeed: false
       },
       result: null,
       resultContext: null,
-      resultElapsedMs: 0,
+      resultElapsedMs: 0
     },
     elements: {
       cpSatRandomSeed: { value: "" },
       cpSatHintStatus: { textContent: "" },
       lnsSeedStatus: { textContent: "" },
       payloadPreview: { textContent: "" },
-      layoutStorageName: { value: "" },
+      layoutStorageName: { value: "" }
     },
     helpers: {
       buildCpSatContinuationModelInput: plannerShared.buildCpSatContinuationModelInput,
@@ -2949,8 +3108,8 @@ function testPlannerRequestBuilderSkipsLegacySavedCheckpointWithoutValidation() 
       getSavedLayoutElapsedMs: plannerShared.getSavedLayoutElapsedMs,
       readOptionalInteger: plannerShared.readOptionalInteger,
       parseResidentialCatalogEntry: plannerShared.parseResidentialCatalogEntry,
-      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry,
-    },
+      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry
+    }
   });
 
   const checkpoint = plannerShared.buildCpSatWarmStartCheckpoint(validManualResult, { grid, params }, 0);
@@ -2961,7 +3120,7 @@ function testPlannerRequestBuilderSkipsLegacySavedCheckpointWithoutValidation() 
     elapsedMs: 0,
     result: legacySavedResult,
     resultContext: { grid, params },
-    continueCpSat: checkpoint,
+    continueCpSat: checkpoint
   };
 
   assert.equal(controller.getSavedLayoutCheckpoint(legacySavedEntry), null);
@@ -2974,26 +3133,24 @@ function testPlannerRequestBuilderRebuildsStaleSavedCheckpoint() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const params = {
     optimizer: "cp-sat",
     residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
     availableBuildings: { residentials: 1, services: 0 },
     cpSat: {},
-    lns: {},
+    lns: {}
   };
   const validManualResult = buildManualLayoutResponse(grid, params, {
     roads: new Set(["0,3"]),
     services: [],
     serviceTypeIndices: [],
     servicePopulationIncreases: [],
-    residentials: [
-      { r: 0, c: 0, rows: 2, cols: 2 },
-    ],
+    residentials: [{ r: 0, c: 0, rows: 2, cols: 2 }],
     residentialTypeIndices: [0],
     populations: [10],
-    totalPopulation: 10,
+    totalPopulation: 10
   });
   const checkpoint = plannerShared.buildCpSatWarmStartCheckpoint(validManualResult, { grid, params }, 0);
   const staleCheckpoint = plannerShared.cloneJson(checkpoint);
@@ -3005,12 +3162,10 @@ function testPlannerRequestBuilderRebuildsStaleSavedCheckpoint() {
       optimizer: "cp-sat",
       grid,
       serviceTypes: [],
-      residentialTypes: [
-        plannerShared.serializeResidentialTypeForCatalog({ w: 2, h: 2, min: 10, max: 10, avail: 1 }),
-      ],
+      residentialTypes: [plannerShared.serializeResidentialTypeForCatalog({ w: 2, h: 2, min: 10, max: 10, avail: 1 })],
       availableBuildings: {
         services: "0",
-        residentials: "1",
+        residentials: "1"
       },
       greedy: {
         localSearch: false,
@@ -3020,7 +3175,7 @@ function testPlannerRequestBuilderRebuildsStaleSavedCheckpoint() {
         serviceRefineCandidateLimit: 1,
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 1,
-        serviceExactMaxCombinations: 1,
+        serviceExactMaxCombinations: 1
       },
       cpSat: {
         timeLimitSeconds: "",
@@ -3029,7 +3184,7 @@ function testPlannerRequestBuilderRebuildsStaleSavedCheckpoint() {
         numWorkers: 8,
         logSearchProgress: false,
         pythonExecutable: "",
-        useDisplayedHint: false,
+        useDisplayedHint: false
       },
       lns: {
         iterations: 1,
@@ -3037,18 +3192,18 @@ function testPlannerRequestBuilderRebuildsStaleSavedCheckpoint() {
         neighborhoodRows: 2,
         neighborhoodCols: 2,
         repairTimeLimitSeconds: 1,
-        useDisplayedSeed: false,
+        useDisplayedSeed: false
       },
       result: null,
       resultContext: null,
-      resultElapsedMs: 0,
+      resultElapsedMs: 0
     },
     elements: {
       cpSatRandomSeed: { value: "" },
       cpSatHintStatus: { textContent: "" },
       lnsSeedStatus: { textContent: "" },
       payloadPreview: { textContent: "" },
-      layoutStorageName: { value: "" },
+      layoutStorageName: { value: "" }
     },
     helpers: {
       buildCpSatContinuationModelInput: plannerShared.buildCpSatContinuationModelInput,
@@ -3060,8 +3215,8 @@ function testPlannerRequestBuilderRebuildsStaleSavedCheckpoint() {
       getSavedLayoutElapsedMs: plannerShared.getSavedLayoutElapsedMs,
       readOptionalInteger: plannerShared.readOptionalInteger,
       parseResidentialCatalogEntry: plannerShared.parseResidentialCatalogEntry,
-      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry,
-    },
+      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry
+    }
   });
 
   const savedCheckpoint = controller.getSavedLayoutCheckpoint({
@@ -3071,7 +3226,7 @@ function testPlannerRequestBuilderRebuildsStaleSavedCheckpoint() {
     elapsedMs: 0,
     result: validManualResult,
     resultContext: { grid, params },
-    continueCpSat: staleCheckpoint,
+    continueCpSat: staleCheckpoint
   });
 
   assert.equal(savedCheckpoint.compatibility.modelFingerprint, checkpoint.compatibility.modelFingerprint);
@@ -3085,14 +3240,14 @@ function testPlannerRequestBuilderSkipsInvalidDisplayedLayoutContinuation() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const params = {
     optimizer: "cp-sat",
     residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
     availableBuildings: { residentials: 1, services: 0 },
     cpSat: {},
-    lns: {},
+    lns: {}
   };
   const invalidManualResult = buildManualLayoutResponse(grid, params, {
     roads: new Set(["0,2", "1,2"]),
@@ -3101,22 +3256,20 @@ function testPlannerRequestBuilderSkipsInvalidDisplayedLayoutContinuation() {
     servicePopulationIncreases: [],
     residentials: [
       { r: 0, c: 0, rows: 2, cols: 2 },
-      { r: 2, c: 0, rows: 2, cols: 2 },
+      { r: 2, c: 0, rows: 2, cols: 2 }
     ],
     residentialTypeIndices: [0, 0],
     populations: [10, 10],
-    totalPopulation: 20,
+    totalPopulation: 20
   });
   const state = {
     optimizer: "cp-sat",
     grid,
     serviceTypes: [],
-    residentialTypes: [
-      plannerShared.serializeResidentialTypeForCatalog({ w: 2, h: 2, min: 10, max: 10, avail: 1 }),
-    ],
+    residentialTypes: [plannerShared.serializeResidentialTypeForCatalog({ w: 2, h: 2, min: 10, max: 10, avail: 1 })],
     availableBuildings: {
       services: "0",
-      residentials: "1",
+      residentials: "1"
     },
     greedy: {
       localSearch: false,
@@ -3126,7 +3279,7 @@ function testPlannerRequestBuilderSkipsInvalidDisplayedLayoutContinuation() {
       serviceRefineCandidateLimit: 1,
       exhaustiveServiceSearch: false,
       serviceExactPoolLimit: 1,
-      serviceExactMaxCombinations: 1,
+      serviceExactMaxCombinations: 1
     },
     cpSat: {
       timeLimitSeconds: "",
@@ -3135,7 +3288,7 @@ function testPlannerRequestBuilderSkipsInvalidDisplayedLayoutContinuation() {
       numWorkers: 8,
       logSearchProgress: false,
       pythonExecutable: "",
-      useDisplayedHint: true,
+      useDisplayedHint: true
     },
     lns: {
       iterations: 1,
@@ -3143,18 +3296,18 @@ function testPlannerRequestBuilderSkipsInvalidDisplayedLayoutContinuation() {
       neighborhoodRows: 2,
       neighborhoodCols: 2,
       repairTimeLimitSeconds: 1,
-      useDisplayedSeed: true,
+      useDisplayedSeed: true
     },
     result: invalidManualResult,
     resultContext: { grid, params },
-    resultElapsedMs: 0,
+    resultElapsedMs: 0
   };
   const elements = {
     cpSatRandomSeed: { value: "" },
     cpSatHintStatus: { textContent: "" },
     lnsSeedStatus: { textContent: "" },
     payloadPreview: { textContent: "" },
-    layoutStorageName: { value: "" },
+    layoutStorageName: { value: "" }
   };
   const controller = plannerRequestBuilder.createPlannerRequestBuilderController({
     state,
@@ -3169,8 +3322,8 @@ function testPlannerRequestBuilderSkipsInvalidDisplayedLayoutContinuation() {
       getSavedLayoutElapsedMs: plannerShared.getSavedLayoutElapsedMs,
       readOptionalInteger: plannerShared.readOptionalInteger,
       parseResidentialCatalogEntry: plannerShared.parseResidentialCatalogEntry,
-      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry,
-    },
+      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry
+    }
   });
 
   controller.renderCpSatHintStatus();
@@ -3195,29 +3348,27 @@ function testPlannerRequestBuilderSkipsLegacyDisplayedLayoutContinuationWithoutV
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const params = {
     optimizer: "cp-sat",
     residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
     availableBuildings: { residentials: 1, services: 0 },
     cpSat: {},
-    lns: {},
+    lns: {}
   };
   const validManualResult = buildManualLayoutResponse(grid, params, {
     roads: new Set(["0,3"]),
     services: [],
     serviceTypeIndices: [],
     servicePopulationIncreases: [],
-    residentials: [
-      { r: 0, c: 0, rows: 2, cols: 2 },
-    ],
+    residentials: [{ r: 0, c: 0, rows: 2, cols: 2 }],
     residentialTypeIndices: [0],
     populations: [10],
-    totalPopulation: 10,
+    totalPopulation: 10
   });
   const legacySavedResult = {
-    ...validManualResult,
+    ...validManualResult
   };
   delete legacySavedResult.validation;
 
@@ -3225,12 +3376,10 @@ function testPlannerRequestBuilderSkipsLegacyDisplayedLayoutContinuationWithoutV
     optimizer: "cp-sat",
     grid,
     serviceTypes: [],
-    residentialTypes: [
-      plannerShared.serializeResidentialTypeForCatalog({ w: 2, h: 2, min: 10, max: 10, avail: 1 }),
-    ],
+    residentialTypes: [plannerShared.serializeResidentialTypeForCatalog({ w: 2, h: 2, min: 10, max: 10, avail: 1 })],
     availableBuildings: {
       services: "0",
-      residentials: "1",
+      residentials: "1"
     },
     greedy: {
       localSearch: false,
@@ -3240,7 +3389,7 @@ function testPlannerRequestBuilderSkipsLegacyDisplayedLayoutContinuationWithoutV
       serviceRefineCandidateLimit: 1,
       exhaustiveServiceSearch: false,
       serviceExactPoolLimit: 1,
-      serviceExactMaxCombinations: 1,
+      serviceExactMaxCombinations: 1
     },
     cpSat: {
       timeLimitSeconds: "",
@@ -3249,7 +3398,7 @@ function testPlannerRequestBuilderSkipsLegacyDisplayedLayoutContinuationWithoutV
       numWorkers: 8,
       logSearchProgress: false,
       pythonExecutable: "",
-      useDisplayedHint: true,
+      useDisplayedHint: true
     },
     lns: {
       iterations: 1,
@@ -3257,18 +3406,18 @@ function testPlannerRequestBuilderSkipsLegacyDisplayedLayoutContinuationWithoutV
       neighborhoodRows: 2,
       neighborhoodCols: 2,
       repairTimeLimitSeconds: 1,
-      useDisplayedSeed: true,
+      useDisplayedSeed: true
     },
     result: legacySavedResult,
     resultContext: { grid, params },
-    resultElapsedMs: 0,
+    resultElapsedMs: 0
   };
   const elements = {
     cpSatRandomSeed: { value: "" },
     cpSatHintStatus: { textContent: "" },
     lnsSeedStatus: { textContent: "" },
     payloadPreview: { textContent: "" },
-    layoutStorageName: { value: "" },
+    layoutStorageName: { value: "" }
   };
   const controller = plannerRequestBuilder.createPlannerRequestBuilderController({
     state,
@@ -3283,8 +3432,8 @@ function testPlannerRequestBuilderSkipsLegacyDisplayedLayoutContinuationWithoutV
       getSavedLayoutElapsedMs: plannerShared.getSavedLayoutElapsedMs,
       readOptionalInteger: plannerShared.readOptionalInteger,
       parseResidentialCatalogEntry: plannerShared.parseResidentialCatalogEntry,
-      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry,
-    },
+      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry
+    }
   });
 
   controller.renderCpSatHintStatus();
@@ -3309,7 +3458,7 @@ function testPlannerRequestBuilderIncludesHintAndSeedForAuto() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const params = {
     optimizer: "auto",
@@ -3317,20 +3466,22 @@ function testPlannerRequestBuilderIncludesHintAndSeedForAuto() {
     residentialTypes: [{ name: "Residential 1", w: 2, h: 2, min: 10, max: 10, avail: 1 }],
     availableBuildings: { residentials: 1, services: 1 },
     cpSat: {},
-    lns: {},
+    lns: {}
   };
-  const validResult = buildSolveResponse(grid, { ...params, optimizer: "greedy" }, solve(grid, { ...params, optimizer: "greedy" }));
+  const validResult = buildSolveResponse(
+    grid,
+    { ...params, optimizer: "greedy" },
+    solve(grid, { ...params, optimizer: "greedy" })
+  );
 
   const state = {
     optimizer: "auto",
     grid,
     serviceTypes: [],
-    residentialTypes: [
-      plannerShared.serializeResidentialTypeForCatalog({ w: 2, h: 2, min: 10, max: 10, avail: 1 }),
-    ],
+    residentialTypes: [plannerShared.serializeResidentialTypeForCatalog({ w: 2, h: 2, min: 10, max: 10, avail: 1 })],
     availableBuildings: {
       services: "1",
-      residentials: "1",
+      residentials: "1"
     },
     greedy: {
       localSearch: false,
@@ -3340,7 +3491,7 @@ function testPlannerRequestBuilderIncludesHintAndSeedForAuto() {
       serviceRefineCandidateLimit: 1,
       exhaustiveServiceSearch: false,
       serviceExactPoolLimit: 1,
-      serviceExactMaxCombinations: 1,
+      serviceExactMaxCombinations: 1
     },
     cpSat: {
       timeLimitSeconds: "",
@@ -3349,7 +3500,7 @@ function testPlannerRequestBuilderIncludesHintAndSeedForAuto() {
       numWorkers: 8,
       logSearchProgress: false,
       pythonExecutable: "",
-      useDisplayedHint: true,
+      useDisplayedHint: true
     },
     lns: {
       iterations: 1,
@@ -3357,18 +3508,18 @@ function testPlannerRequestBuilderIncludesHintAndSeedForAuto() {
       neighborhoodRows: 2,
       neighborhoodCols: 2,
       repairTimeLimitSeconds: 1,
-      useDisplayedSeed: true,
+      useDisplayedSeed: true
     },
     result: validResult,
     resultContext: { grid, params },
-    resultElapsedMs: 0,
+    resultElapsedMs: 0
   };
   const elements = {
     cpSatRandomSeed: { value: "" },
     cpSatHintStatus: { textContent: "" },
     lnsSeedStatus: { textContent: "" },
     payloadPreview: { textContent: "" },
-    layoutStorageName: { value: "" },
+    layoutStorageName: { value: "" }
   };
   const controller = plannerRequestBuilder.createPlannerRequestBuilderController({
     state,
@@ -3383,8 +3534,8 @@ function testPlannerRequestBuilderIncludesHintAndSeedForAuto() {
       getSavedLayoutElapsedMs: plannerShared.getSavedLayoutElapsedMs,
       readOptionalInteger: plannerShared.readOptionalInteger,
       parseResidentialCatalogEntry: plannerShared.parseResidentialCatalogEntry,
-      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry,
-    },
+      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry
+    }
   });
 
   const request = controller.buildSolveRequest({ hintMismatch: "ignore" });
@@ -3405,7 +3556,7 @@ async function testPlannerExpansionOmitsStaleComparisonHint() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const params = {
     optimizer: "cp-sat",
@@ -3413,19 +3564,17 @@ async function testPlannerExpansionOmitsStaleComparisonHint() {
     residentialTypes: [{ name: "Residential 1", w: 2, h: 2, min: 10, max: 10, avail: 1 }],
     availableBuildings: { services: 0, residentials: 1 },
     cpSat: {},
-    lns: {},
+    lns: {}
   };
   const validResult = buildManualLayoutResponse(grid, params, {
     roads: new Set(["0,3"]),
     services: [],
     serviceTypeIndices: [],
     servicePopulationIncreases: [],
-    residentials: [
-      { r: 0, c: 0, rows: 2, cols: 2 },
-    ],
+    residentials: [{ r: 0, c: 0, rows: 2, cols: 2 }],
     residentialTypeIndices: [0],
     populations: [10],
-    totalPopulation: 10,
+    totalPopulation: 10
   });
   const checkpoint = plannerShared.buildCpSatWarmStartCheckpoint(validResult, { grid, params }, 0);
   let capturedStartRequest = null;
@@ -3437,7 +3586,7 @@ async function testPlannerExpansionOmitsStaleComparisonHint() {
         ok: true,
         async json() {
           return { ok: true, requestId: capturedStartRequest.requestId };
-        },
+        }
       };
     }
     if (urlText.startsWith("/api/solve/status")) {
@@ -3448,9 +3597,9 @@ async function testPlannerExpansionOmitsStaleComparisonHint() {
             ok: true,
             jobStatus: "completed",
             stats: { totalPopulation: 12 },
-            solution: { totalPopulation: 12 },
+            solution: { totalPopulation: 12 }
           };
-        },
+        }
       };
     }
     throw new Error(`Unexpected fetch URL ${urlText}`);
@@ -3460,19 +3609,17 @@ async function testPlannerExpansionOmitsStaleComparisonHint() {
     optimizer: "cp-sat",
     grid,
     serviceTypes: [],
-    residentialTypes: [
-      plannerShared.serializeResidentialTypeForCatalog(params.residentialTypes[0]),
-    ],
+    residentialTypes: [plannerShared.serializeResidentialTypeForCatalog(params.residentialTypes[0])],
     availableBuildings: {
       services: "0",
-      residentials: "1",
+      residentials: "1"
     },
     greedy: {},
     cpSat: {
-      useDisplayedHint: true,
+      useDisplayedHint: true
     },
     lns: {
-      useDisplayedSeed: true,
+      useDisplayedSeed: true
     },
     result: validResult,
     resultContext: { grid, params },
@@ -3482,8 +3629,8 @@ async function testPlannerExpansionOmitsStaleComparisonHint() {
       isRunning: false,
       status: "",
       result: null,
-      error: "",
-    },
+      error: ""
+    }
   };
   const controller = plannerExpansion.createExpansionAdviceController({
     state,
@@ -3493,11 +3640,11 @@ async function testPlannerExpansionOmitsStaleComparisonHint() {
       expansionAdviceWinner: createFakeDomElement(),
       expansionAdviceBaseline: createFakeDomElement(),
       expansionAdviceServiceOutcome: createFakeDomElement(),
-      expansionAdviceResidentialOutcome: createFakeDomElement(),
+      expansionAdviceResidentialOutcome: createFakeDomElement()
     },
     constants: {
       COMPARISON_PROGRESS_HINT_INTERVAL_MS: 1,
-      SOLVE_STATUS_POLL_INTERVAL_MS: 1,
+      SOLVE_STATUS_POLL_INTERVAL_MS: 1
     },
     helpers: {
       buildCpSatContinuationModelInput: plannerShared.buildCpSatContinuationModelInput,
@@ -3508,7 +3655,7 @@ async function testPlannerExpansionOmitsStaleComparisonHint() {
       },
       async delay() {},
       parseResidentialCatalogEntry: plannerShared.parseResidentialCatalogEntry,
-      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry,
+      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry
     },
     callbacks: {
       buildSolveRequest() {
@@ -3518,8 +3665,8 @@ async function testPlannerExpansionOmitsStaleComparisonHint() {
             optimizer: state.optimizer,
             greedy: {},
             cpSat: {},
-            lns: {},
-          },
+            lns: {}
+          }
         };
       },
       getDisplayedLayoutCheckpoint() {
@@ -3531,8 +3678,8 @@ async function testPlannerExpansionOmitsStaleComparisonHint() {
       getOptimizerLabel() {
         return "CP-SAT";
       },
-      syncActionAvailability() {},
-    },
+      syncActionAvailability() {}
+    }
   });
 
   await controller.compareExpansionOptions();
@@ -3548,22 +3695,20 @@ function testPlannerRequestBuilderTreatsBlankAutoCapAsUnlimited() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
 
   const state = {
     optimizer: "auto",
     auto: {
-      wallClockLimitSeconds: "",
+      wallClockLimitSeconds: ""
     },
     grid,
     serviceTypes: [],
-    residentialTypes: [
-      plannerShared.serializeResidentialTypeForCatalog({ w: 2, h: 2, min: 10, max: 10, avail: 1 }),
-    ],
+    residentialTypes: [plannerShared.serializeResidentialTypeForCatalog({ w: 2, h: 2, min: 10, max: 10, avail: 1 })],
     availableBuildings: {
       services: "1",
-      residentials: "1",
+      residentials: "1"
     },
     greedy: {
       localSearch: false,
@@ -3573,7 +3718,7 @@ function testPlannerRequestBuilderTreatsBlankAutoCapAsUnlimited() {
       serviceRefineCandidateLimit: 1,
       exhaustiveServiceSearch: false,
       serviceExactPoolLimit: 1,
-      serviceExactMaxCombinations: 1,
+      serviceExactMaxCombinations: 1
     },
     cpSat: {
       timeLimitSeconds: "",
@@ -3582,7 +3727,7 @@ function testPlannerRequestBuilderTreatsBlankAutoCapAsUnlimited() {
       numWorkers: 8,
       logSearchProgress: false,
       pythonExecutable: "",
-      useDisplayedHint: false,
+      useDisplayedHint: false
     },
     lns: {
       iterations: 1,
@@ -3590,18 +3735,18 @@ function testPlannerRequestBuilderTreatsBlankAutoCapAsUnlimited() {
       neighborhoodRows: 2,
       neighborhoodCols: 2,
       repairTimeLimitSeconds: 1,
-      useDisplayedSeed: false,
+      useDisplayedSeed: false
     },
     result: null,
     resultContext: null,
-    resultElapsedMs: 0,
+    resultElapsedMs: 0
   };
   const elements = {
     cpSatRandomSeed: { value: "" },
     cpSatHintStatus: { textContent: "" },
     lnsSeedStatus: { textContent: "" },
     payloadPreview: { textContent: "" },
-    layoutStorageName: { value: "" },
+    layoutStorageName: { value: "" }
   };
   const controller = plannerRequestBuilder.createPlannerRequestBuilderController({
     state,
@@ -3616,15 +3761,23 @@ function testPlannerRequestBuilderTreatsBlankAutoCapAsUnlimited() {
       getSavedLayoutElapsedMs: plannerShared.getSavedLayoutElapsedMs,
       readOptionalInteger: plannerShared.readOptionalInteger,
       parseResidentialCatalogEntry: plannerShared.parseResidentialCatalogEntry,
-      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry,
-    },
+      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry
+    }
   });
 
-  const unlimitedRequest = controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false });
+  const unlimitedRequest = controller.buildSolveRequest({
+    hintMismatch: "ignore",
+    includeWarmStartHint: false,
+    includeLnsSeed: false
+  });
   assert.equal(unlimitedRequest.params.auto, undefined);
 
   state.auto.wallClockLimitSeconds = "90";
-  const cappedRequest = controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false });
+  const cappedRequest = controller.buildSolveRequest({
+    hintMismatch: "ignore",
+    includeWarmStartHint: false,
+    includeLnsSeed: false
+  });
   assert.equal(cappedRequest.params.auto.wallClockLimitSeconds, 90);
 }
 
@@ -3634,21 +3787,19 @@ function testPlannerRequestBuilderKeepsAutoPayloadMinimal() {
   const state = {
     optimizer: "auto",
     auto: {
-      wallClockLimitSeconds: "",
+      wallClockLimitSeconds: ""
     },
     grid: [
       [1, 1, 1, 1],
       [1, 1, 1, 1],
       [1, 1, 1, 1],
-      [1, 1, 1, 1],
+      [1, 1, 1, 1]
     ],
     serviceTypes: [],
-    residentialTypes: [
-      plannerShared.serializeResidentialTypeForCatalog({ w: 2, h: 2, min: 10, max: 10, avail: 1 }),
-    ],
+    residentialTypes: [plannerShared.serializeResidentialTypeForCatalog({ w: 2, h: 2, min: 10, max: 10, avail: 1 })],
     availableBuildings: {
       services: "1",
-      residentials: "1",
+      residentials: "1"
     },
     greedy: {
       localSearch: true,
@@ -3660,7 +3811,7 @@ function testPlannerRequestBuilderKeepsAutoPayloadMinimal() {
       serviceRefineCandidateLimit: 60,
       exhaustiveServiceSearch: true,
       serviceExactPoolLimit: 22,
-      serviceExactMaxCombinations: 12000,
+      serviceExactMaxCombinations: 12000
     },
     cpSat: {
       timeLimitSeconds: "",
@@ -3669,7 +3820,7 @@ function testPlannerRequestBuilderKeepsAutoPayloadMinimal() {
       numWorkers: 8,
       logSearchProgress: false,
       pythonExecutable: "",
-      useDisplayedHint: false,
+      useDisplayedHint: false
     },
     lns: {
       iterations: 1,
@@ -3677,18 +3828,18 @@ function testPlannerRequestBuilderKeepsAutoPayloadMinimal() {
       neighborhoodRows: 2,
       neighborhoodCols: 2,
       repairTimeLimitSeconds: 1,
-      useDisplayedSeed: false,
+      useDisplayedSeed: false
     },
     result: null,
     resultContext: null,
-    resultElapsedMs: 0,
+    resultElapsedMs: 0
   };
   const elements = {
     cpSatRandomSeed: { value: "" },
     cpSatHintStatus: { textContent: "" },
     lnsSeedStatus: { textContent: "" },
     payloadPreview: { textContent: "" },
-    layoutStorageName: { value: "" },
+    layoutStorageName: { value: "" }
   };
   const controller = plannerRequestBuilder.createPlannerRequestBuilderController({
     state,
@@ -3703,25 +3854,37 @@ function testPlannerRequestBuilderKeepsAutoPayloadMinimal() {
       getSavedLayoutElapsedMs: plannerShared.getSavedLayoutElapsedMs,
       readOptionalInteger: plannerShared.readOptionalInteger,
       parseResidentialCatalogEntry: plannerShared.parseResidentialCatalogEntry,
-      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry,
-    },
+      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry
+    }
   });
 
-  const request = controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false });
+  const request = controller.buildSolveRequest({
+    hintMismatch: "ignore",
+    includeWarmStartHint: false,
+    includeLnsSeed: false
+  });
   assert.equal(request.params.optimizer, "auto");
   assert.equal(request.params.greedy, undefined);
   assert.equal(request.params.cpSat, undefined);
   assert.equal(request.params.lns, undefined);
 
   state.optimizer = "legacy-or-missing";
-  const normalizedRequest = controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false });
+  const normalizedRequest = controller.buildSolveRequest({
+    hintMismatch: "ignore",
+    includeWarmStartHint: false,
+    includeLnsSeed: false
+  });
   assert.equal(normalizedRequest.params.optimizer, "auto");
   assert.equal(normalizedRequest.params.greedy, undefined);
   assert.equal(normalizedRequest.params.cpSat, undefined);
   assert.equal(normalizedRequest.params.lns, undefined);
 
   state.optimizer = "greedy";
-  const greedyRequest = controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false });
+  const greedyRequest = controller.buildSolveRequest({
+    hintMismatch: "ignore",
+    includeWarmStartHint: false,
+    includeLnsSeed: false
+  });
   assert.equal(greedyRequest.params.greedy.localSearch, true);
   assert.equal(greedyRequest.params.greedy.randomSeed, 17);
   assert.equal(greedyRequest.params.greedy.densityTieBreaker, true);
@@ -3734,19 +3897,17 @@ function testPlannerRequestBuilderKeepsPortfolioStandaloneOnly() {
   const state = {
     optimizer: "auto",
     auto: {
-      wallClockLimitSeconds: "",
+      wallClockLimitSeconds: ""
     },
     grid: [
       [1, 1],
-      [1, 1],
+      [1, 1]
     ],
     serviceTypes: [],
-    residentialTypes: [
-      plannerShared.serializeResidentialTypeForCatalog({ w: 2, h: 2, min: 10, max: 10, avail: 1 }),
-    ],
+    residentialTypes: [plannerShared.serializeResidentialTypeForCatalog({ w: 2, h: 2, min: 10, max: 10, avail: 1 })],
     availableBuildings: {
       services: "0",
-      residentials: "1",
+      residentials: "1"
     },
     greedy: {
       localSearch: false,
@@ -3756,7 +3917,7 @@ function testPlannerRequestBuilderKeepsPortfolioStandaloneOnly() {
       serviceRefineCandidateLimit: 1,
       exhaustiveServiceSearch: false,
       serviceExactPoolLimit: 1,
-      serviceExactMaxCombinations: 1,
+      serviceExactMaxCombinations: 1
     },
     cpSat: {
       timeLimitSeconds: "",
@@ -3772,8 +3933,8 @@ function testPlannerRequestBuilderKeepsPortfolioStandaloneOnly() {
         randomSeeds: "31, 32, 33",
         perWorkerTimeLimitSeconds: "",
         perWorkerNumWorkers: "1",
-        randomizeSearch: true,
-      },
+        randomizeSearch: true
+      }
     },
     lns: {
       iterations: 1,
@@ -3781,11 +3942,11 @@ function testPlannerRequestBuilderKeepsPortfolioStandaloneOnly() {
       neighborhoodRows: 2,
       neighborhoodCols: 2,
       repairTimeLimitSeconds: 1,
-      useDisplayedSeed: false,
+      useDisplayedSeed: false
     },
     result: null,
     resultContext: null,
-    resultElapsedMs: 0,
+    resultElapsedMs: 0
   };
   const controller = plannerRequestBuilder.createPlannerRequestBuilderController({
     state,
@@ -3794,7 +3955,7 @@ function testPlannerRequestBuilderKeepsPortfolioStandaloneOnly() {
       cpSatHintStatus: createFakeDomElement(),
       lnsSeedStatus: createFakeDomElement(),
       payloadPreview: createFakeDomElement(),
-      layoutStorageName: createFakeDomElement(),
+      layoutStorageName: createFakeDomElement()
     },
     helpers: {
       buildCpSatContinuationModelInput: plannerShared.buildCpSatContinuationModelInput,
@@ -3806,29 +3967,51 @@ function testPlannerRequestBuilderKeepsPortfolioStandaloneOnly() {
       getSavedLayoutElapsedMs: plannerShared.getSavedLayoutElapsedMs,
       readOptionalInteger: plannerShared.readOptionalInteger,
       parseResidentialCatalogEntry: plannerShared.parseResidentialCatalogEntry,
-      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry,
-    },
+      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry
+    }
   });
 
-  const autoRequest = controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false });
+  const autoRequest = controller.buildSolveRequest({
+    hintMismatch: "ignore",
+    includeWarmStartHint: false,
+    includeLnsSeed: false
+  });
   assert.equal(autoRequest.params.cpSat, undefined);
 
   state.optimizer = "lns";
-  const lnsRequest = controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false });
+  const lnsRequest = controller.buildSolveRequest({
+    hintMismatch: "ignore",
+    includeWarmStartHint: false,
+    includeLnsSeed: false
+  });
   assert.equal(lnsRequest.params.cpSat.portfolio, undefined);
 
   state.optimizer = "cp-sat";
-  const unlimitedCpSatRequest = controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false });
+  const unlimitedCpSatRequest = controller.buildSolveRequest({
+    hintMismatch: "ignore",
+    includeWarmStartHint: false,
+    includeLnsSeed: false
+  });
   assert.equal(Object.prototype.hasOwnProperty.call(unlimitedCpSatRequest.params.cpSat, "timeLimitSeconds"), false);
   assert.equal(unlimitedCpSatRequest.params.cpSat.portfolio.workerCount, 3);
   assert.deepEqual(Array.from(unlimitedCpSatRequest.params.cpSat.portfolio.randomSeeds), [31, 32, 33]);
-  assert.equal(Object.prototype.hasOwnProperty.call(unlimitedCpSatRequest.params.cpSat.portfolio, "totalCpuBudgetSeconds"), false);
-  assert.equal(Object.prototype.hasOwnProperty.call(unlimitedCpSatRequest.params.cpSat.portfolio, "perWorkerTimeLimitSeconds"), false);
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(unlimitedCpSatRequest.params.cpSat.portfolio, "totalCpuBudgetSeconds"),
+    false
+  );
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(unlimitedCpSatRequest.params.cpSat.portfolio, "perWorkerTimeLimitSeconds"),
+    false
+  );
   assert.equal(unlimitedCpSatRequest.params.cpSat.portfolio.perWorkerNumWorkers, 1);
   assert.equal(unlimitedCpSatRequest.params.cpSat.portfolio.randomizeSearch, true);
 
   state.cpSat.timeLimitSeconds = "45";
-  const cpSatRequest = controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false });
+  const cpSatRequest = controller.buildSolveRequest({
+    hintMismatch: "ignore",
+    includeWarmStartHint: false,
+    includeLnsSeed: false
+  });
   assert.equal(cpSatRequest.params.cpSat.timeLimitSeconds, 45);
   assert.equal(cpSatRequest.params.cpSat.portfolio.workerCount, 3);
   assert.deepEqual(Array.from(cpSatRequest.params.cpSat.portfolio.randomSeeds), [31, 32, 33]);
@@ -3841,7 +4024,11 @@ function testPlannerRequestBuilderKeepsPortfolioStandaloneOnly() {
   state.cpSat.portfolio.workerCount = "4";
   state.cpSat.portfolio.perWorkerNumWorkers = "2";
   state.cpSat.portfolio.perWorkerTimeLimitSeconds = "99999";
-  const cappedRequest = controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false });
+  const cappedRequest = controller.buildSolveRequest({
+    hintMismatch: "ignore",
+    includeWarmStartHint: false,
+    includeLnsSeed: false
+  });
   assert.equal(cappedRequest.params.cpSat.portfolio.perWorkerTimeLimitSeconds, 3600);
   assert.equal(cappedRequest.params.cpSat.portfolio.perWorkerNumWorkers, 2);
 
@@ -3854,7 +4041,11 @@ function testPlannerRequestBuilderKeepsPortfolioStandaloneOnly() {
   );
 
   state.cpSat.portfolio.randomSeeds = "1, 2, 3, 4, 5, 6, 7, 8";
-  const maxSeedRequest = controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false });
+  const maxSeedRequest = controller.buildSolveRequest({
+    hintMismatch: "ignore",
+    includeWarmStartHint: false,
+    includeLnsSeed: false
+  });
   assert.equal(maxSeedRequest.params.cpSat.portfolio.workerCount, 8);
   assert.deepEqual(Array.from(maxSeedRequest.params.cpSat.portfolio.randomSeeds), [1, 2, 3, 4, 5, 6, 7, 8]);
 
@@ -3867,28 +4058,32 @@ function testPlannerRequestBuilderKeepsPortfolioStandaloneOnly() {
 
 function testPlannerSolveProgressLogCapturesSnapshotAndFinalResult() {
   const runtimeModule = loadPlannerSolveRuntimeModule();
-  const logAfterSnapshot = runtimeModule.appendSolveProgressLog([], {
-    optimizer: "cp-sat",
-    solution: {
+  const logAfterSnapshot = runtimeModule.appendSolveProgressLog(
+    [],
+    {
       optimizer: "cp-sat",
-      totalPopulation: 1234,
-      cpSatStatus: "FEASIBLE",
-      cpSatTelemetry: {
-        bestPopulationUpperBound: 1300,
-        populationGapUpperBound: 66,
-        secondsSinceLastImprovement: 4.5,
+      solution: {
+        optimizer: "cp-sat",
+        totalPopulation: 1234,
+        cpSatStatus: "FEASIBLE",
+        cpSatTelemetry: {
+          bestPopulationUpperBound: 1300,
+          populationGapUpperBound: 66,
+          secondsSinceLastImprovement: 4.5
+        }
       },
+      stats: {
+        optimizer: "cp-sat",
+        totalPopulation: 1234,
+        cpSatStatus: "FEASIBLE"
+      }
     },
-    stats: {
-      optimizer: "cp-sat",
-      totalPopulation: 1234,
-      cpSatStatus: "FEASIBLE",
-    },
-  }, {
-    elapsedMs: 60000,
-    capturedAt: "2026-04-14T11:00:00.000Z",
-    source: "live-snapshot",
-  });
+    {
+      elapsedMs: 60000,
+      capturedAt: "2026-04-14T11:00:00.000Z",
+      source: "live-snapshot"
+    }
+  );
 
   assert.equal(logAfterSnapshot.length, 1);
   assert.deepEqual(JSON.parse(JSON.stringify(logAfterSnapshot[0])), {
@@ -3908,38 +4103,42 @@ function testPlannerSolveProgressLogCapturesSnapshotAndFinalResult() {
       timeSinceImprovementSeconds: 4.5,
       stopReason: null,
       exactGap: 66,
-      portfolioWorkerSummary: null,
+      portfolioWorkerSummary: null
     },
     bestPopulationUpperBound: 1300,
     populationGapUpperBound: 66,
     solveWallTimeSeconds: null,
     lastImprovementAtSeconds: null,
     secondsSinceLastImprovement: 4.5,
-    note: null,
+    note: null
   });
 
-  const logAfterFinal = runtimeModule.appendSolveProgressLog(logAfterSnapshot, {
-    optimizer: "cp-sat",
-    solution: {
+  const logAfterFinal = runtimeModule.appendSolveProgressLog(
+    logAfterSnapshot,
+    {
       optimizer: "cp-sat",
-      totalPopulation: 1250,
-      cpSatStatus: "OPTIMAL",
-      cpSatTelemetry: {
-        bestPopulationUpperBound: 1250,
-        populationGapUpperBound: 0,
-        secondsSinceLastImprovement: 0.2,
+      solution: {
+        optimizer: "cp-sat",
+        totalPopulation: 1250,
+        cpSatStatus: "OPTIMAL",
+        cpSatTelemetry: {
+          bestPopulationUpperBound: 1250,
+          populationGapUpperBound: 0,
+          secondsSinceLastImprovement: 0.2
+        }
       },
+      stats: {
+        optimizer: "cp-sat",
+        totalPopulation: 1250,
+        cpSatStatus: "OPTIMAL"
+      }
     },
-    stats: {
-      optimizer: "cp-sat",
-      totalPopulation: 1250,
-      cpSatStatus: "OPTIMAL",
-    },
-  }, {
-    elapsedMs: 90000,
-    capturedAt: "2026-04-14T11:00:30.000Z",
-    source: "final-result",
-  });
+    {
+      elapsedMs: 90000,
+      capturedAt: "2026-04-14T11:00:30.000Z",
+      source: "final-result"
+    }
+  );
 
   assert.equal(logAfterFinal.length, 2);
   assert.equal(logAfterFinal[1].source, "final-result");
@@ -3956,7 +4155,7 @@ function testPlannerSolveProgressLogCapturesSnapshotAndFinalResult() {
     timeSinceImprovementSeconds: 0.2,
     stopReason: null,
     exactGap: 0,
-    portfolioWorkerSummary: null,
+    portfolioWorkerSummary: null
   });
 }
 
@@ -3978,8 +4177,8 @@ function testPlannerSolveProgressLogPrefersBackendProgressEntry() {
       stopReason: null,
       generatedSeeds: [
         { stage: "greedy", stageIndex: 1, cycleIndex: 0, randomSeed: 11 },
-        { stage: "lns", stageIndex: 2, cycleIndex: 1, randomSeed: 13 },
-      ],
+        { stage: "lns", stageIndex: 2, cycleIndex: 1, randomSeed: 13 }
+      ]
     },
     hasFeasibleSolution: true,
     totalPopulation: 321,
@@ -3993,26 +4192,30 @@ function testPlannerSolveProgressLogPrefersBackendProgressEntry() {
       timeSinceImprovementSeconds: null,
       stopReason: null,
       exactGap: null,
-      portfolioWorkerSummary: null,
+      portfolioWorkerSummary: null
     },
     bestPopulationUpperBound: null,
     populationGapUpperBound: null,
     solveWallTimeSeconds: null,
     lastImprovementAtSeconds: null,
     secondsSinceLastImprovement: null,
-    note: "Backend canonical event.",
+    note: "Backend canonical event."
   };
-  const log = runtimeModule.appendSolveProgressLog([], {
-    progressEntry,
-    solution: {
-      optimizer: "cp-sat",
-      totalPopulation: 999,
-      cpSatStatus: "OPTIMAL",
+  const log = runtimeModule.appendSolveProgressLog(
+    [],
+    {
+      progressEntry,
+      solution: {
+        optimizer: "cp-sat",
+        totalPopulation: 999,
+        cpSatStatus: "OPTIMAL"
+      }
     },
-  }, {
-    elapsedMs: 99999,
-    source: "final-result",
-  });
+    {
+      elapsedMs: 99999,
+      source: "final-result"
+    }
+  );
 
   assert.equal(log.length, 1);
   assert.deepEqual(JSON.parse(JSON.stringify(log[0])), progressEntry);
@@ -4028,7 +4231,7 @@ function testFilesystemSolveLogTracksSolverClockAcrossHeartbeats() {
     optimizer: "cp-sat",
     grid: [[1]],
     params: { optimizer: "cp-sat", cpSat: { randomSeed: 7 } },
-    createdAtMs: 0,
+    createdAtMs: 0
   });
   const feasibleSolution = {
     optimizer: "cp-sat",
@@ -4046,7 +4249,7 @@ function testFilesystemSolveLogTracksSolverClockAcrossHeartbeats() {
       lastImprovementAtSeconds: 49.774,
       secondsSinceLastImprovement: 0,
       numBranches: 0,
-      numConflicts: 0,
+      numConflicts: 0
     },
     stoppedByUser: false,
     roads: new Set(),
@@ -4056,55 +4259,61 @@ function testFilesystemSolveLogTracksSolverClockAcrossHeartbeats() {
     residentials: [],
     residentialTypeIndices: [],
     populations: [],
-    totalPopulation: 10,
+    totalPopulation: 10
   };
 
   writer.appendSolutionSample(feasibleSolution, {
     elapsedMs: 100025,
     capturedAt: "2026-04-14T19:00:00.000Z",
-    source: "live-snapshot",
+    source: "live-snapshot"
   });
 
-  writer.appendSolutionSample({
-    ...feasibleSolution,
-    cpSatTelemetry: {
-      ...feasibleSolution.cpSatTelemetry,
-      secondsSinceLastImprovement: 60,
+  writer.appendSolutionSample(
+    {
+      ...feasibleSolution,
+      cpSatTelemetry: {
+        ...feasibleSolution.cpSatTelemetry,
+        secondsSinceLastImprovement: 60
+      }
     },
-  }, {
-    elapsedMs: 160025,
-    capturedAt: "2026-04-14T19:01:00.000Z",
-    source: "live-snapshot",
-  });
+    {
+      elapsedMs: 160025,
+      capturedAt: "2026-04-14T19:01:00.000Z",
+      source: "live-snapshot"
+    }
+  );
 
   writer.finish("completed", {
     finishedAtMs: 160025,
-    solution: feasibleSolution,
+    solution: feasibleSolution
   });
 
   const payload = JSON.parse(fs.readFileSync(writer.filePath, "utf8"));
   assert.equal(payload.entries.length, 2);
-  assert.deepEqual(payload.entries.map((entry) => ({
-    solveWallTimeSeconds: entry.solveWallTimeSeconds,
-    lastImprovementAtSeconds: entry.lastImprovementAtSeconds,
-    secondsSinceLastImprovement: entry.secondsSinceLastImprovement,
-  })), [
-    {
-      solveWallTimeSeconds: 49.774,
-      lastImprovementAtSeconds: 49.774,
-      secondsSinceLastImprovement: 0,
-    },
-    {
-      solveWallTimeSeconds: 109.774,
-      lastImprovementAtSeconds: 49.774,
-      secondsSinceLastImprovement: 60,
-    },
-  ]);
+  assert.deepEqual(
+    payload.entries.map((entry) => ({
+      solveWallTimeSeconds: entry.solveWallTimeSeconds,
+      lastImprovementAtSeconds: entry.lastImprovementAtSeconds,
+      secondsSinceLastImprovement: entry.secondsSinceLastImprovement
+    })),
+    [
+      {
+        solveWallTimeSeconds: 49.774,
+        lastImprovementAtSeconds: 49.774,
+        secondsSinceLastImprovement: 0
+      },
+      {
+        solveWallTimeSeconds: 109.774,
+        lastImprovementAtSeconds: 49.774,
+        secondsSinceLastImprovement: 60
+      }
+    ]
+  );
   assert.deepEqual(payload.finalResult.mapRows, [
     "   0",
     " 0 .",
     "",
-    "Legend: # blocked  R road  S service  H residential  . empty",
+    "Legend: # blocked  R road  S service  H residential  . empty"
   ]);
   assert.equal(payload.finalResult.mapText, payload.finalResult.mapRows.join("\n"));
   assert.deepEqual(payload.finalResult.solution, {
@@ -4123,7 +4332,7 @@ function testFilesystemSolveLogTracksSolverClockAcrossHeartbeats() {
       lastImprovementAtSeconds: 49.774,
       secondsSinceLastImprovement: 60,
       numBranches: 0,
-      numConflicts: 0,
+      numConflicts: 0
     },
     stoppedByUser: false,
     roads: [],
@@ -4133,9 +4342,12 @@ function testFilesystemSolveLogTracksSolverClockAcrossHeartbeats() {
     residentials: [],
     residentialTypeIndices: [],
     populations: [],
-    totalPopulation: 10,
+    totalPopulation: 10
   });
-  assert.equal(payload.finalResult.solution.cpSatTelemetry.solveWallTimeSeconds, payload.entries[1].solveWallTimeSeconds);
+  assert.equal(
+    payload.finalResult.solution.cpSatTelemetry.solveWallTimeSeconds,
+    payload.entries[1].solveWallTimeSeconds
+  );
   assert.equal(
     payload.finalResult.solution.cpSatTelemetry.secondsSinceLastImprovement,
     payload.entries[1].secondsSinceLastImprovement

@@ -10,7 +10,7 @@ import {
   ExperimentRegistryValidationError,
   formatExperimentRegistryIssues,
   validateExperimentRegistryEntry,
-  validateExperimentRegistryFile,
+  validateExperimentRegistryFile
 } from "../../benchmarkApi.js";
 import { applyInlineOptionHandlers, isCliFlag, parseNumberList } from "../../apps/cliParsing.js";
 import { runCliMain } from "../../apps/cliEntrypoint.js";
@@ -19,7 +19,7 @@ import { writeCliJson, writeCliText } from "../../apps/cliOutput.js";
 import type {
   ExperimentRegistryCheckOptions,
   ExperimentRegistryEntry,
-  ExperimentRegistryIssue,
+  ExperimentRegistryIssue
 } from "../../benchmarkApi.js";
 
 type RegistryCommand = "check" | "validate-entry" | "append" | "help";
@@ -99,7 +99,7 @@ function usage(): string {
     "  --gpu-runtime=<name>           Record GPU runtime metadata.",
     "  --gpu-driver=<name>            Record GPU driver metadata.",
     "  --gpu-memory-bytes=<bytes>     Record GPU memory metadata.",
-    "  --hardware-notes=<text>        Record hardware notes.",
+    "  --hardware-notes=<text>        Record hardware notes."
   ].join("\n");
 }
 
@@ -191,7 +191,7 @@ function parseArgs(argv: string[]): ParsedRegistryArgs {
       seeds = parseNumberList(value, "--seeds");
     },
     "split-status": (value) => {
-      splitStatus = value === "null" ? null : JSON.parse(value) as unknown;
+      splitStatus = value === "null" ? null : (JSON.parse(value) as unknown);
     },
     budget: (value) => {
       budget = JSON.parse(value) as unknown;
@@ -200,7 +200,7 @@ function parseArgs(argv: string[]): ParsedRegistryArgs {
       hardware = JSON.parse(value) as unknown;
     },
     model: (value) => {
-      model = value === "null" ? null : JSON.parse(value) as unknown;
+      model = value === "null" ? null : (JSON.parse(value) as unknown);
     },
     decision: (value) => {
       decision = value;
@@ -222,7 +222,7 @@ function parseArgs(argv: string[]): ParsedRegistryArgs {
     },
     "hardware-notes": (value) => {
       hardwareNotes = value;
-    },
+    }
   };
 
   const args = [...argv];
@@ -293,7 +293,7 @@ function parseArgs(argv: string[]): ParsedRegistryArgs {
     gpuRuntime,
     gpuDriver,
     gpuMemoryBytes,
-    hardwareNotes,
+    hardwareNotes
   };
 }
 
@@ -316,9 +316,8 @@ function readEntry(entryPath: string | undefined): Record<string, unknown> {
   if (entryPath === undefined) {
     throw new Error("--entry is required.");
   }
-  const content = entryPath === "-"
-    ? fs.readFileSync(0, "utf8")
-    : fs.readFileSync(path.resolve(process.cwd(), entryPath), "utf8");
+  const content =
+    entryPath === "-" ? fs.readFileSync(0, "utf8") : fs.readFileSync(path.resolve(process.cwd(), entryPath), "utf8");
   const parsed = JSON.parse(content) as unknown;
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
     throw new Error("Registry entry JSON must be an object.");
@@ -348,7 +347,7 @@ function buildEntryFromArgs(args: ParsedRegistryArgs): Record<string, unknown> {
     hardware: args.hardware,
     model: args.model ?? null,
     decision: args.decision,
-    summary: args.summary,
+    summary: args.summary
   };
 }
 
@@ -389,12 +388,17 @@ function buildCompletedEntry(args: ParsedRegistryArgs): Record<string, unknown> 
     branch: args.branch ?? currentBranch,
     generatedAt: args.generatedAt,
     artifactGitCommit: resolveCommit(args.artifactGitCommit, currentCommit),
-    hardware: args.hardware as Record<string, unknown> & { captured: boolean; gpuUsed: boolean }
-      ?? captureExperimentRegistryHardwareMetadata(hardwareOverrides),
+    hardware:
+      (args.hardware as Record<string, unknown> & { captured: boolean; gpuUsed: boolean }) ??
+      captureExperimentRegistryHardwareMetadata(hardwareOverrides)
   });
 }
 
-function assertNoDuplicateRunId(registryPath: string, entry: Record<string, unknown>, options: ExperimentRegistryCheckOptions): void {
+function assertNoDuplicateRunId(
+  registryPath: string,
+  entry: Record<string, unknown>,
+  options: ExperimentRegistryCheckOptions
+): void {
   const registryRoot = options.rootDir ?? options.cwd ?? process.cwd();
   if (!fs.existsSync(path.resolve(registryRoot, registryPath))) {
     return;
@@ -402,7 +406,7 @@ function assertNoDuplicateRunId(registryPath: string, entry: Record<string, unkn
   const registryResult = validateExperimentRegistryFile(registryPath, {
     ...options,
     strict: false,
-    strictMetadata: false,
+    strictMetadata: false
   });
   if (!registryResult.valid) {
     throw new ExperimentRegistryValidationError("Existing experiment registry is invalid.", registryResult.issues);
@@ -414,8 +418,8 @@ function assertNoDuplicateRunId(registryPath: string, entry: Record<string, unkn
         code: "duplicate-run-id",
         message: `Duplicate runId '${entry.runId}' already exists in '${registryPath}'.`,
         runId: entry.runId,
-        field: "runId",
-      },
+        field: "runId"
+      }
     ]);
   }
 }
@@ -430,7 +434,7 @@ export function runExperimentRegistryCli(argv = process.argv.slice(2)): void {
   const baseOptions: ExperimentRegistryCheckOptions = {
     rootDir: process.cwd(),
     validateArtifactPaths: args.validateArtifactPaths,
-    strict: args.strict,
+    strict: args.strict
   };
 
   if (args.command === "check") {
@@ -451,7 +455,7 @@ export function runExperimentRegistryCli(argv = process.argv.slice(2)): void {
   const completedEntry = buildCompletedEntry(args);
   const appendOptions = {
     ...baseOptions,
-    strict: args.allowHistorical ? args.strict : true,
+    strict: args.allowHistorical ? args.strict : true
   };
 
   if (args.dryRun) {

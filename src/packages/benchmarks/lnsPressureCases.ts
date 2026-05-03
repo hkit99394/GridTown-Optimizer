@@ -1,9 +1,4 @@
-import type {
-  GreedyOptions,
-  Grid,
-  LnsOptions,
-  SolverParams,
-} from "../core/index.js";
+import type { GreedyOptions, Grid, LnsOptions, SolverParams } from "../core/index.js";
 
 type GeneratedLnsReplayPressureFamily =
   | "anchor-service"
@@ -20,17 +15,19 @@ interface GeneratedLnsBenchmarkCase {
   params: SolverParams;
 }
 
-const GENERATED_LNS_PRESSURE_OPTIONS: Readonly<Required<
-  Pick<
-    LnsOptions,
-    "iterations" | "maxNoImprovementIterations" | "neighborhoodRows" | "neighborhoodCols" | "repairTimeLimitSeconds"
+const GENERATED_LNS_PRESSURE_OPTIONS: Readonly<
+  Required<
+    Pick<
+      LnsOptions,
+      "iterations" | "maxNoImprovementIterations" | "neighborhoodRows" | "neighborhoodCols" | "repairTimeLimitSeconds"
+    >
   >
->> = Object.freeze({
+> = Object.freeze({
   iterations: 2,
   maxNoImprovementIterations: 4,
   neighborhoodRows: 3,
   neighborhoodCols: 3,
-  repairTimeLimitSeconds: 0.5,
+  repairTimeLimitSeconds: 0.5
 });
 
 interface GeneratedLnsPressureCaseInput {
@@ -45,10 +42,7 @@ interface GeneratedLnsPressureCaseInput {
   serviceRefineCandidateLimit?: number;
 }
 
-function buildGeneratedPressureGreedyOptions(
-  randomSeed: number,
-  serviceRefineCandidateLimit = 8
-): GreedyOptions {
+function buildGeneratedPressureGreedyOptions(randomSeed: number, serviceRefineCandidateLimit = 8): GreedyOptions {
   return {
     localSearch: true,
     randomSeed,
@@ -57,7 +51,7 @@ function buildGeneratedPressureGreedyOptions(
     serviceRefineCandidateLimit,
     exhaustiveServiceSearch: false,
     serviceExactPoolLimit: 8,
-    serviceExactMaxCombinations: 64,
+    serviceExactMaxCombinations: 64
   };
 }
 
@@ -73,8 +67,8 @@ function buildGeneratedLnsPressureCase(input: GeneratedLnsPressureCaseInput): Ge
       residentialTypes: input.residentialTypes,
       availableBuildings: input.availableBuildings,
       lns: { ...GENERATED_LNS_PRESSURE_OPTIONS },
-      greedy: buildGeneratedPressureGreedyOptions(input.randomSeed, input.serviceRefineCandidateLimit),
-    },
+      greedy: buildGeneratedPressureGreedyOptions(input.randomSeed, input.serviceRefineCandidateLimit)
+    }
   };
 }
 
@@ -89,15 +83,15 @@ export const GENERATED_LNS_PRESSURE_CASES: readonly GeneratedLnsBenchmarkCase[] 
       [1, 0, 1, 1, 1, 0, 1],
       [1, 1, 1, 0, 1, 1, 1],
       [1, 1, 1, 0, 1, 1, 1],
-      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1]
     ],
     serviceTypes: [{ rows: 1, cols: 2, bonus: 60, range: 2, avail: 1 }],
     residentialTypes: [
       { w: 2, h: 2, min: 80, max: 180, avail: 2 },
-      { w: 2, h: 3, min: 140, max: 300, avail: 1 },
+      { w: 2, h: 3, min: 140, max: 300, avail: 1 }
     ],
     availableBuildings: { services: 1, residentials: 3 },
-    randomSeed: 41,
+    randomSeed: 41
   }),
   buildGeneratedLnsPressureCase({
     name: "lns-gate-choke-pressure",
@@ -109,15 +103,15 @@ export const GENERATED_LNS_PRESSURE_CASES: readonly GeneratedLnsBenchmarkCase[] 
       [1, 1, 0, 1, 1, 1],
       [1, 1, 1, 1, 0, 1],
       [1, 1, 1, 1, 0, 1],
-      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1]
     ],
     serviceTypes: [{ rows: 1, cols: 1, bonus: 70, range: 2, avail: 1 }],
     residentialTypes: [
       { w: 2, h: 2, min: 90, max: 190, avail: 2 },
-      { w: 3, h: 2, min: 150, max: 330, avail: 1 },
+      { w: 3, h: 2, min: 150, max: 330, avail: 1 }
     ],
     availableBuildings: { services: 1, residentials: 3 },
-    randomSeed: 43,
+    randomSeed: 43
   }),
   buildGeneratedLnsPressureCase({
     name: "lns-footprint-mix-pressure",
@@ -129,15 +123,15 @@ export const GENERATED_LNS_PRESSURE_CASES: readonly GeneratedLnsBenchmarkCase[] 
       [1, 1, 0, 1, 1, 1],
       [1, 1, 1, 1, 0, 1],
       [1, 1, 1, 1, 1, 1],
-      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1]
     ],
     serviceTypes: [{ rows: 1, cols: 2, bonus: 50, range: 1, avail: 1 }],
     residentialTypes: [
       { w: 2, h: 2, min: 80, max: 170, avail: 2 },
-      { w: 3, h: 2, min: 170, max: 340, avail: 1 },
+      { w: 3, h: 2, min: 170, max: 340, avail: 1 }
     ],
     availableBuildings: { services: 1, residentials: 3 },
-    randomSeed: 47,
+    randomSeed: 47
   }),
   buildGeneratedLnsPressureCase({
     name: "lns-service-overlap-pressure",
@@ -149,23 +143,24 @@ export const GENERATED_LNS_PRESSURE_CASES: readonly GeneratedLnsBenchmarkCase[] 
       [1, 1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1, 1],
-      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1]
     ],
     serviceTypes: [
       { rows: 1, cols: 1, bonus: 50, range: 1, avail: 1 },
-      { rows: 2, cols: 1, bonus: 90, range: 2, avail: 1 },
+      { rows: 2, cols: 1, bonus: 90, range: 2, avail: 1 }
     ],
     residentialTypes: [
       { w: 2, h: 2, min: 80, max: 220, avail: 2 },
-      { w: 2, h: 3, min: 160, max: 360, avail: 1 },
+      { w: 2, h: 3, min: 160, max: 360, avail: 1 }
     ],
     availableBuildings: { services: 2, residentials: 3 },
     randomSeed: 53,
-    serviceRefineCandidateLimit: 10,
+    serviceRefineCandidateLimit: 10
   }),
   buildGeneratedLnsPressureCase({
     name: "lns-anchor-service-corner-pressure",
-    description: "Generated anchor-service holdout case where service relocation competes with anchor-side road pressure.",
+    description:
+      "Generated anchor-service holdout case where service relocation competes with anchor-side road pressure.",
     pressureFamily: "anchor-service",
     grid: [
       [1, 1, 1, 1, 1, 1],
@@ -173,15 +168,15 @@ export const GENERATED_LNS_PRESSURE_CASES: readonly GeneratedLnsBenchmarkCase[] 
       [1, 1, 0, 1, 1, 1],
       [1, 1, 1, 1, 1, 1],
       [1, 0, 1, 1, 1, 1],
-      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1]
     ],
     serviceTypes: [{ rows: 2, cols: 2, bonus: 105, range: 1, avail: 1 }],
     residentialTypes: [
       { w: 2, h: 2, min: 90, max: 260, avail: 2 },
-      { w: 2, h: 3, min: 150, max: 360, avail: 1 },
+      { w: 2, h: 3, min: 150, max: 360, avail: 1 }
     ],
     availableBuildings: { services: 1, residentials: 3 },
-    randomSeed: 59,
+    randomSeed: 59
   }),
   buildGeneratedLnsPressureCase({
     name: "lns-gate-side-channel-pressure",
@@ -194,15 +189,15 @@ export const GENERATED_LNS_PRESSURE_CASES: readonly GeneratedLnsBenchmarkCase[] 
       [1, 0, 1, 1, 1, 0, 1],
       [1, 0, 1, 0, 1, 1, 1],
       [1, 1, 1, 0, 0, 1, 1],
-      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1]
     ],
     serviceTypes: [{ rows: 1, cols: 2, bonus: 75, range: 2, avail: 1 }],
     residentialTypes: [
       { w: 2, h: 2, min: 90, max: 200, avail: 2 },
-      { w: 2, h: 3, min: 160, max: 340, avail: 1 },
+      { w: 2, h: 3, min: 160, max: 340, avail: 1 }
     ],
     availableBuildings: { services: 1, residentials: 3 },
-    randomSeed: 61,
+    randomSeed: 61
   }),
   buildGeneratedLnsPressureCase({
     name: "lns-footprint-bottleneck-pressure",
@@ -215,15 +210,15 @@ export const GENERATED_LNS_PRESSURE_CASES: readonly GeneratedLnsBenchmarkCase[] 
       [1, 0, 1, 1, 1, 1, 1],
       [1, 1, 1, 1, 0, 1, 1],
       [1, 1, 0, 1, 1, 1, 1],
-      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1]
     ],
     serviceTypes: [{ rows: 1, cols: 1, bonus: 55, range: 1, avail: 1 }],
     residentialTypes: [
       { w: 2, h: 2, min: 80, max: 190, avail: 2 },
       { w: 3, h: 2, min: 180, max: 360, avail: 1 },
-      { w: 2, h: 3, min: 170, max: 350, avail: 1 },
+      { w: 2, h: 3, min: 170, max: 350, avail: 1 }
     ],
     availableBuildings: { services: 1, residentials: 4 },
-    randomSeed: 67,
-  }),
+    randomSeed: 67
+  })
 ]);

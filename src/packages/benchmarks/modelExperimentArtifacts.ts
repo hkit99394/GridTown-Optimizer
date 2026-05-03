@@ -94,7 +94,7 @@ export function buildModelExperimentTelemetryManifest(
     ...(options.datasetFingerprint === undefined ? {} : { datasetFingerprint: options.datasetFingerprint }),
     modelFingerprint,
     metrics: cloneRecord(options.metrics ?? {}),
-    ...(options.notes === undefined ? {} : { notes: options.notes }),
+    ...(options.notes === undefined ? {} : { notes: options.notes })
   };
 }
 
@@ -114,9 +114,8 @@ export function buildModelExperimentRegistryEntryDraft(
     commands: [...options.commands],
     artifactPaths: [...options.artifactPaths],
     cases: options.cases ?? null,
-    caseFamilies: options.caseFamilies === undefined || options.caseFamilies === null
-      ? null
-      : [...options.caseFamilies],
+    caseFamilies:
+      options.caseFamilies === undefined || options.caseFamilies === null ? null : [...options.caseFamilies],
     seeds: [...(options.seeds ?? [])],
     splitStatus: options.splitStatus ?? null,
     budget: cloneRecord(options.budget ?? {}),
@@ -127,6 +126,6 @@ export function buildModelExperimentRegistryEntryDraft(
     ...(options.datasetFingerprint === undefined ? {} : { datasetFingerprint: options.datasetFingerprint }),
     ...(options.inputFingerprint === undefined ? {} : { inputFingerprint: options.inputFingerprint }),
     modelFingerprint,
-    summaryMetrics: cloneRecord(options.summaryMetrics ?? {}),
+    summaryMetrics: cloneRecord(options.summaryMetrics ?? {})
   };
 }

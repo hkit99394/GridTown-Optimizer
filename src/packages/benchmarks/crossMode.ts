@@ -4,7 +4,7 @@ import {
   buildDecisionTraceFromSolution,
   buildTimeToQualityScorecard,
   serializeDecisionTraceJsonl,
-  summarizeDecisionTraceReason,
+  summarizeDecisionTraceReason
 } from "../core/index.js";
 import { buildSolverProgressSummary } from "../core/index.js";
 import { isAdjacentToRoads, isRoadAnchorCell, roadsConnectedToRoadAnchor } from "../core/index.js";
@@ -19,7 +19,7 @@ import {
   observedCpSatWorkerCpuSeconds,
   safePopulationRate,
   selectBenchmarkCasesByName,
-  uniqueBenchmarkValues,
+  uniqueBenchmarkValues
 } from "./benchmarkOptions.js";
 import { buildCpSatBenchmarkCpuPlan, normalizeCpSatBenchmarkOptions } from "./cpSat.js";
 import { normalizeGreedyBenchmarkOptions } from "./greedy.js";
@@ -32,7 +32,7 @@ import {
   buildBudgetPolicySignals,
   buildCrossModeBudgetAllocationSignal,
   buildPortfolioEfficiencySignals,
-  buildSummaries,
+  buildSummaries
 } from "./crossModeSignals.js";
 
 export { DEFAULT_CROSS_MODE_BENCHMARK_CORPUS } from "./crossModeCorpus.js";
@@ -50,7 +50,7 @@ import type {
   SolverParams,
   SolverDecisionTraceEvent,
   SolverProgressSummary,
-  SolverTimeToQualityScorecard,
+  SolverTimeToQualityScorecard
 } from "../core/index.js";
 import type { CrossModeBenchmarkRunTelemetry } from "./crossModeTelemetry.js";
 
@@ -182,11 +182,7 @@ export interface CrossModeBenchmarkModeResult {
   telemetry: CrossModeBenchmarkRunTelemetry;
 }
 
-export type CrossModeRoadSemanticStatus =
-  | "anchor-connected"
-  | "empty"
-  | "no-anchor-touch"
-  | "disconnected";
+export type CrossModeRoadSemanticStatus = "anchor-connected" | "empty" | "no-anchor-touch" | "disconnected";
 
 export interface CrossModeRoadSemanticsSummary {
   status: CrossModeRoadSemanticStatus;
@@ -200,12 +196,7 @@ export interface CrossModeRoadSemanticsSummary {
 
 type CrossModeBenchmarkModeResultDraft = Omit<
   CrossModeBenchmarkModeResult,
-  | "scoreDeltaToBest"
-  | "scoreRatioToBest"
-  | "winVsAuto"
-  | "scoreDeltaVsAuto"
-  | "rank"
-  | "budgetAllocationSignal"
+  "scoreDeltaToBest" | "scoreRatioToBest" | "winVsAuto" | "scoreDeltaVsAuto" | "rank" | "budgetAllocationSignal"
 >;
 
 export interface CrossModeBenchmarkCaseScorecard {
@@ -327,13 +318,12 @@ export const DEFAULT_CROSS_MODE_BENCHMARK_MODES = Object.freeze([
   "greedy",
   "lns",
   "cp-sat",
-  "cp-sat-portfolio",
+  "cp-sat-portfolio"
 ] satisfies CrossModeBenchmarkMode[]);
 
 const TRACE_TUNED_LNS_MAX_ITERATIONS = 24;
 const TRACE_TUNED_LNS_SMALL_BUDGET_SECONDS = 5;
 const TRACE_TUNED_LNS_MEDIUM_BUDGET_SECONDS = 30;
-
 
 function inferProblemSizeBand(benchmarkCase: CrossModeBenchmarkCase): CrossModeProblemSizeBand {
   if (benchmarkCase.problemSizeBand) return benchmarkCase.problemSizeBand;
@@ -359,9 +349,7 @@ function normalizeBudgetList(options: CrossModeBenchmarkRunOptions): number[] {
     : options.budgetSeconds !== undefined
       ? [options.budgetSeconds]
       : DEFAULT_CROSS_MODE_BENCHMARK_BUDGETS_SECONDS;
-  const budgets = requested
-    .map((value) => normalizeBudgetSeconds(value))
-    .filter((value) => value > 0);
+  const budgets = requested.map((value) => normalizeBudgetSeconds(value)).filter((value) => value > 0);
   return uniqueBenchmarkValues(budgets);
 }
 
@@ -394,7 +382,7 @@ function applyGreedyCompatibilityFields(params: SolverParams, greedy: GreedyOpti
     serviceRefineCandidateLimit: greedy.serviceRefineCandidateLimit,
     exhaustiveServiceSearch: greedy.exhaustiveServiceSearch,
     serviceExactPoolLimit: greedy.serviceExactPoolLimit,
-    serviceExactMaxCombinations: greedy.serviceExactMaxCombinations,
+    serviceExactMaxCombinations: greedy.serviceExactMaxCombinations
   };
 }
 
@@ -407,7 +395,7 @@ function buildBudgetedGreedyOptions(
   return {
     ...normalizeGreedyBenchmarkOptions(params.greedy, options.greedy),
     timeLimitSeconds: budgetSeconds,
-    randomSeed: seed,
+    randomSeed: seed
   };
 }
 
@@ -433,7 +421,7 @@ function buildPortfolioOptions(
     perWorkerNumWorkers,
     totalCpuBudgetSeconds:
       options.portfolio?.totalCpuBudgetSeconds ?? workerCount * perWorkerNumWorkers * perWorkerTimeLimitSeconds,
-    randomizeSearch: options.portfolio?.randomizeSearch ?? true,
+    randomizeSearch: options.portfolio?.randomizeSearch ?? true
   };
 }
 
@@ -449,7 +437,7 @@ function buildBudgetedCpSatOptions(
     timeLimitSeconds: options.cpSat?.timeLimitSeconds ?? budgetSeconds,
     maxDeterministicTime: options.cpSat?.maxDeterministicTime ?? budgetSeconds,
     randomSeed: seed,
-    portfolio,
+    portfolio
   });
 }
 
@@ -497,10 +485,10 @@ function budgetAblationLnsOptions(
     ...(repairTimeLimitSeconds !== null
       ? {
           repairTimeLimitSeconds,
-          focusedRepairTimeLimitSeconds: repairTimeLimitSeconds,
+          focusedRepairTimeLimitSeconds: repairTimeLimitSeconds
         }
       : {}),
-    ...(escalatedRepairTimeLimitSeconds !== null ? { escalatedRepairTimeLimitSeconds } : {}),
+    ...(escalatedRepairTimeLimitSeconds !== null ? { escalatedRepairTimeLimitSeconds } : {})
   };
 }
 
@@ -510,7 +498,7 @@ function budgetAblationAutoOptions(policy: CrossModeBenchmarkBudgetAblationPolic
     ...(policy.auto ?? {}),
     ...(typeof policy.autoCpSatStageReserveRatio === "number" && Number.isFinite(policy.autoCpSatStageReserveRatio)
       ? { cpSatStageReserveRatio: Math.max(0, Math.min(1, policy.autoCpSatStageReserveRatio)) }
-      : {}),
+      : {})
   };
 }
 
@@ -528,10 +516,14 @@ function defaultTraceTunedLnsEscalatedRepairBudgetSeconds(
   return Math.min(repairTimeLimitSeconds * 2, Math.max(repairTimeLimitSeconds, budgetSeconds * 0.1));
 }
 
-function buildBudgetedLnsOptions(params: SolverParams, options: CrossModeBenchmarkRunOptions, budgetSeconds: number): LnsOptions {
+function buildBudgetedLnsOptions(
+  params: SolverParams,
+  options: CrossModeBenchmarkRunOptions,
+  budgetSeconds: number
+): LnsOptions {
   const overrideLns = {
     ...(options.lns ?? {}),
-    ...budgetAblationLnsOptions(options.budgetAblationPolicy, budgetSeconds),
+    ...budgetAblationLnsOptions(options.budgetAblationPolicy, budgetSeconds)
   };
   const explicitRepairTimeLimitSeconds = firstPositiveFiniteNumber(overrideLns.repairTimeLimitSeconds);
   const repairTimeLimitSeconds = Math.min(
@@ -539,8 +531,8 @@ function buildBudgetedLnsOptions(params: SolverParams, options: CrossModeBenchma
     budgetSeconds
   );
   const seedTimeLimitSeconds = Math.min(
-    firstPositiveFiniteNumber(overrideLns.seedTimeLimitSeconds)
-      ?? Math.max(0.1, Math.min(budgetSeconds * 0.2, repairTimeLimitSeconds)),
+    firstPositiveFiniteNumber(overrideLns.seedTimeLimitSeconds) ??
+      Math.max(0.1, Math.min(budgetSeconds * 0.2, repairTimeLimitSeconds)),
     budgetSeconds
   );
   const repairBudgetSeconds = Math.max(0, budgetSeconds - seedTimeLimitSeconds);
@@ -561,12 +553,12 @@ function buildBudgetedLnsOptions(params: SolverParams, options: CrossModeBenchma
     repairTimeLimitSeconds,
     focusedRepairTimeLimitSeconds: Math.min(explicitFocusedRepair ?? repairTimeLimitSeconds, budgetSeconds),
     escalatedRepairTimeLimitSeconds: Math.min(
-      explicitEscalatedRepair
-        ?? (explicitRepairTimeLimitSeconds === null
+      explicitEscalatedRepair ??
+        (explicitRepairTimeLimitSeconds === null
           ? defaultTraceTunedLnsEscalatedRepairBudgetSeconds(budgetSeconds, repairTimeLimitSeconds)
           : repairTimeLimitSeconds),
       budgetSeconds
-    ),
+    )
   });
 }
 
@@ -581,16 +573,14 @@ export function buildCrossModeBenchmarkParams(
   const optimizer = modeToOptimizer(mode);
   const greedy = buildBudgetedGreedyOptions(params, options, budgetSeconds, seed);
   const baseWithGreedy = applyGreedyCompatibilityFields(params, greedy);
-  const portfolio = mode === "cp-sat-portfolio"
-    ? buildPortfolioOptions(options, budgetSeconds, seed)
-    : undefined;
+  const portfolio = mode === "cp-sat-portfolio" ? buildPortfolioOptions(options, budgetSeconds, seed) : undefined;
   const cpSat = buildBudgetedCpSatOptions(baseWithGreedy, options, budgetSeconds, seed, portfolio);
   const autoPolicyOverrides = budgetAblationAutoOptions(options.budgetAblationPolicy);
 
   if (mode === "greedy") {
     return {
       ...baseWithGreedy,
-      optimizer,
+      optimizer
     };
   }
 
@@ -599,7 +589,7 @@ export function buildCrossModeBenchmarkParams(
       ...baseWithGreedy,
       optimizer,
       cpSat: withoutPortfolio(cpSat),
-      lns: buildBudgetedLnsOptions(baseWithGreedy, options, budgetSeconds),
+      lns: buildBudgetedLnsOptions(baseWithGreedy, options, budgetSeconds)
     };
   }
 
@@ -616,17 +606,17 @@ export function buildCrossModeBenchmarkParams(
         cpSatStageTimeLimitSeconds: Math.min(
           autoPolicyOverrides.cpSatStageTimeLimitSeconds ?? options.auto?.cpSatStageTimeLimitSeconds ?? budgetSeconds,
           budgetSeconds
-        ),
+        )
       },
       cpSat: withoutPortfolio(cpSat),
-      lns: buildBudgetedLnsOptions(baseWithGreedy, options, budgetSeconds),
+      lns: buildBudgetedLnsOptions(baseWithGreedy, options, budgetSeconds)
     };
   }
 
   return {
     ...baseWithGreedy,
     optimizer,
-    cpSat: mode === "cp-sat" ? withoutPortfolio(cpSat) : cpSat,
+    cpSat: mode === "cp-sat" ? withoutPortfolio(cpSat) : cpSat
   };
 }
 
@@ -637,14 +627,13 @@ function workerCpuBudgetSeconds(mode: CrossModeBenchmarkMode, cpSat: CpSatOption
   return budgetSeconds;
 }
 
-
 function selectBenchmarkCases(
   corpus: readonly CrossModeBenchmarkCase[],
   names: readonly string[] | undefined
 ): CrossModeBenchmarkCase[] {
   return selectBenchmarkCasesByName(corpus, names, {
     caseLabel: "cross-mode benchmark",
-    corpusLabel: "Cross-mode benchmark",
+    corpusLabel: "Cross-mode benchmark"
   });
 }
 
@@ -668,10 +657,9 @@ export function listCrossModeBenchmarkCaseNames(
 ): string[] {
   return listBenchmarkCaseNames(corpus, {
     caseLabel: "cross-mode benchmark",
-    corpusLabel: "Cross-mode benchmark",
+    corpusLabel: "Cross-mode benchmark"
   });
 }
-
 
 async function defaultCrossModeSolve(
   grid: Grid,
@@ -697,15 +685,15 @@ function buildCrossModeBenchmarkTraceArtifacts(
   const decisionTrace = buildDecisionTraceFromSolution(solution, {
     runId: `${benchmarkCase.name}:${mode}${policySegment}:budget-${options.budgetSeconds}:seed-${options.seed}`,
     optimizer,
-    elapsedTimeSeconds: options.wallClockSeconds,
+    elapsedTimeSeconds: options.wallClockSeconds
   });
   return {
     decisionTrace,
     timeToQuality: buildTimeToQualityScorecard(decisionTrace, {
       finalElapsedMs: options.wallClockSeconds * 1000,
-      finalScore: solution.totalPopulation,
+      finalScore: solution.totalPopulation
     }),
-    checkpointReason: summarizeDecisionTraceReason(decisionTrace),
+    checkpointReason: summarizeDecisionTraceReason(decisionTrace)
   };
 }
 
@@ -722,20 +710,21 @@ function buildRoadSemanticsSummary(grid: Grid, solution: Solution): CrossModeRoa
       r: service.r,
       c: service.c,
       rows: service.rows,
-      cols: service.cols,
+      cols: service.cols
     })),
-    ...solution.residentials,
+    ...solution.residentials
   ];
   const roadAdjacentBuildingCount = countBenchmarkMatches(buildings, (building) =>
     isAdjacentToRoads(roads, building.r, building.c, building.rows, building.cols)
   );
-  const status: CrossModeRoadSemanticStatus = roads.size === 0
-    ? "empty"
-    : anchorRoadCount === 0
-      ? "no-anchor-touch"
-      : disconnectedRoadCount > 0
-        ? "disconnected"
-        : "anchor-connected";
+  const status: CrossModeRoadSemanticStatus =
+    roads.size === 0
+      ? "empty"
+      : anchorRoadCount === 0
+        ? "no-anchor-touch"
+        : disconnectedRoadCount > 0
+          ? "disconnected"
+          : "anchor-connected";
 
   return {
     status,
@@ -744,7 +733,7 @@ function buildRoadSemanticsSummary(grid: Grid, solution: Solution): CrossModeRoa
     disconnectedRoadCount,
     anchorConnectedRoadRatio: safePopulationRate(connectedRoads.size, roads.size),
     roadAdjacentBuildingCount,
-    roadUnadjacentBuildingCount: buildings.length - roadAdjacentBuildingCount,
+    roadUnadjacentBuildingCount: buildings.length - roadAdjacentBuildingCount
   };
 }
 
@@ -763,7 +752,7 @@ async function runCrossModeBenchmarkCase(
     const params = buildCrossModeBenchmarkParams(benchmarkCase, mode, {
       ...options,
       budgetSeconds,
-      seeds: [seed],
+      seeds: [seed]
     });
     const startedAt = performance.now();
     const solution = await solve(cloneBenchmarkGrid(benchmarkCase.grid), params, {
@@ -771,21 +760,21 @@ async function runCrossModeBenchmarkCase(
       mode,
       budgetSeconds,
       seed,
-      ...(options.budgetAblationPolicy?.name ? { budgetAblationPolicyName: options.budgetAblationPolicy.name } : {}),
+      ...(options.budgetAblationPolicy?.name ? { budgetAblationPolicyName: options.budgetAblationPolicy.name } : {})
     });
     const finishedAt = performance.now();
     const wallClockSeconds = (finishedAt - startedAt) / 1000;
     const progressSummary = buildSolverProgressSummary(solution, {
       elapsedTimeSeconds: wallClockSeconds,
       fallbackOptimizer: params.optimizer ?? modeToOptimizer(mode),
-      params,
+      params
     });
     const optimizer = params.optimizer ?? modeToOptimizer(mode);
     const traceArtifacts = buildCrossModeBenchmarkTraceArtifacts(benchmarkCase, mode, optimizer, solution, {
       budgetSeconds,
       seed,
       wallClockSeconds,
-      policyName: options.budgetAblationPolicy?.name,
+      policyName: options.budgetAblationPolicy?.name
     });
     const workerCpuBudgetSecondsValue = workerCpuBudgetSeconds(mode, params.cpSat ?? {}, budgetSeconds);
     const observedWorkerCpuSecondsValue = observedCpSatWorkerCpuSeconds(solution);
@@ -800,7 +789,7 @@ async function runCrossModeBenchmarkCase(
       seed,
       wallClockSeconds,
       workerCpuBudgetSeconds: workerCpuBudgetSecondsValue,
-      observedWorkerCpuSeconds: observedWorkerCpuSecondsValue,
+      observedWorkerCpuSeconds: observedWorkerCpuSecondsValue
     });
 
     rawResults.push({
@@ -832,26 +821,25 @@ async function runCrossModeBenchmarkCase(
       stoppedByUser: Boolean(solution.stoppedByUser),
       progressSummary,
       telemetry,
-      ...traceArtifacts,
+      ...traceArtifacts
     });
   }
 
-  const bestScore = rawResults.length
-    ? Math.max(...rawResults.map((result) => result.totalPopulation))
-    : null;
+  const bestScore = rawResults.length ? Math.max(...rawResults.map((result) => result.totalPopulation)) : null;
   const autoResult = rawResults.find((result) => result.mode === "auto") ?? null;
   const autoScore = autoResult?.totalPopulation ?? null;
   const withScoreDeltas: CrossModeBenchmarkModeResult[] = rawResults.map((result) => {
     const scoreDeltaVsAuto = autoScore === null ? null : result.totalPopulation - autoScore;
-    const winVsAuto: CrossModeWinVsAuto = result.mode === "auto"
-      ? "baseline"
-      : scoreDeltaVsAuto === null
-        ? "no-auto"
-        : scoreDeltaVsAuto > 0
-          ? "win"
-          : scoreDeltaVsAuto < 0
-            ? "loss"
-            : "tie";
+    const winVsAuto: CrossModeWinVsAuto =
+      result.mode === "auto"
+        ? "baseline"
+        : scoreDeltaVsAuto === null
+          ? "no-auto"
+          : scoreDeltaVsAuto > 0
+            ? "win"
+            : scoreDeltaVsAuto < 0
+              ? "loss"
+              : "tie";
     return {
       ...result,
       scoreDeltaToBest: bestScore === null ? null : bestScore - result.totalPopulation,
@@ -861,8 +849,8 @@ async function runCrossModeBenchmarkCase(
       scoreDeltaVsAuto: result.mode === "auto" ? 0 : scoreDeltaVsAuto,
       budgetAllocationSignal: buildCrossModeBudgetAllocationSignal(result, {
         scoreDeltaVsAuto: result.mode === "auto" ? 0 : scoreDeltaVsAuto,
-        autoBestScoreAtMs: autoResult?.timeToQuality.bestScoreAtMs ?? null,
-      }),
+        autoBestScoreAtMs: autoResult?.timeToQuality.bestScoreAtMs ?? null
+      })
     };
   });
   const rankedResults = rankResults(withScoreDeltas);
@@ -878,13 +866,13 @@ async function runCrossModeBenchmarkCase(
     budgetSeconds,
     seed,
     bestScore,
-    winnerModes: bestScore === null
-      ? []
-      : rankedResults.filter((result) => result.totalPopulation === bestScore).map((result) => result.mode),
-    results: rankedResults,
+    winnerModes:
+      bestScore === null
+        ? []
+        : rankedResults.filter((result) => result.totalPopulation === bestScore).map((result) => result.mode),
+    results: rankedResults
   };
 }
-
 
 export async function runCrossModeBenchmarkSuite(
   corpus: readonly CrossModeBenchmarkCase[] = DEFAULT_CROSS_MODE_BENCHMARK_CORPUS,
@@ -917,7 +905,7 @@ export async function runCrossModeBenchmarkSuite(
     cases,
     budgetPolicySignals,
     portfolioEfficiencySignals,
-    ...summaries,
+    ...summaries
   };
 }
 

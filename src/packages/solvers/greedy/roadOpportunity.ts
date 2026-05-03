@@ -2,15 +2,11 @@ import type {
   Grid,
   GreedyProfileCounters,
   GreedyRoadOpportunityCounterfactualTrace,
-  GreedyRoadOpportunityTrace,
+  GreedyRoadOpportunityTrace
 } from "../../core/index.js";
 import { measureBuildingConnectivityShadow } from "../../core/index.js";
 import type { BuildingConnectivityShadow } from "../../core/index.js";
-import type {
-  ConnectivityProbe,
-  GreedyAttemptState,
-  PlacementRect,
-} from "./attemptState.js";
+import type { ConnectivityProbe, GreedyAttemptState, PlacementRect } from "./attemptState.js";
 
 export const ROAD_OPPORTUNITY_TRACE_LIMIT = 80;
 export const ROAD_OPPORTUNITY_COUNTERFACTUAL_TRACE_LIMIT = 3;
@@ -52,36 +48,24 @@ type RecordRoadOpportunityBaseOptions = {
   moveKind?: GreedyRoadOpportunityTrace["moveKind"];
 };
 
-function recordConnectivityShadowCounters(
-  counters: RoadCounters,
-  opportunity: ConnectivityOpportunity
-): void {
+function recordConnectivityShadowCounters(counters: RoadCounters, opportunity: ConnectivityOpportunity): void {
   counters.connectivityShadowChecks++;
   counters.connectivityShadowLostCells += opportunity.lostCells;
   counters.connectivityShadowFootprintCells += opportunity.footprintCells;
   counters.connectivityShadowDisconnectedCells += opportunity.disconnectedCells;
-  counters.connectivityShadowMaxLostCells = Math.max(
-    counters.connectivityShadowMaxLostCells,
-    opportunity.lostCells
-  );
+  counters.connectivityShadowMaxLostCells = Math.max(counters.connectivityShadowMaxLostCells, opportunity.lostCells);
   counters.connectivityShadowMaxDisconnectedCells = Math.max(
     counters.connectivityShadowMaxDisconnectedCells,
     opportunity.disconnectedCells
   );
 }
 
-function recordRoadOpportunityCounters(
-  counters: RoadCounters,
-  opportunity: ConnectivityOpportunity
-): void {
+function recordRoadOpportunityCounters(counters: RoadCounters, opportunity: ConnectivityOpportunity): void {
   counters.roadOpportunityChecks++;
   counters.roadOpportunityLostCells += opportunity.lostCells;
   counters.roadOpportunityFootprintCells += opportunity.footprintCells;
   counters.roadOpportunityDisconnectedCells += opportunity.disconnectedCells;
-  counters.roadOpportunityMaxLostCells = Math.max(
-    counters.roadOpportunityMaxLostCells,
-    opportunity.lostCells
-  );
+  counters.roadOpportunityMaxLostCells = Math.max(counters.roadOpportunityMaxLostCells, opportunity.lostCells);
   counters.roadOpportunityMaxDisconnectedCells = Math.max(
     counters.roadOpportunityMaxDisconnectedCells,
     opportunity.disconnectedCells
@@ -95,12 +79,15 @@ export function createRoadOpportunityRecorder(enabled: boolean): {
   if (!enabled) {
     return {
       traces: undefined,
-      recordRoadOpportunity: undefined,
+      recordRoadOpportunity: undefined
     };
   }
 
   const traces: GreedyRoadOpportunityTrace[] = [];
-  const constructiveTraceLimit = Math.max(0, ROAD_OPPORTUNITY_TRACE_LIMIT - ROAD_OPPORTUNITY_LOCAL_SEARCH_TRACE_RESERVE);
+  const constructiveTraceLimit = Math.max(
+    0,
+    ROAD_OPPORTUNITY_TRACE_LIMIT - ROAD_OPPORTUNITY_LOCAL_SEARCH_TRACE_RESERVE
+  );
   const record = ((trace: GreedyRoadOpportunityTrace) => {
     if (!isLocalSearchRoadOpportunityPhase(trace.phase) && constructiveTraceCount(traces) >= constructiveTraceLimit) {
       return;
@@ -113,14 +100,11 @@ export function createRoadOpportunityRecorder(enabled: boolean): {
   record.remainingForPhase = (phase: GreedyRoadOpportunityTrace["phase"]) => {
     const globalRemaining = Math.max(0, ROAD_OPPORTUNITY_TRACE_LIMIT - traces.length);
     if (isLocalSearchRoadOpportunityPhase(phase)) return globalRemaining;
-    return Math.min(
-      globalRemaining,
-      Math.max(0, constructiveTraceLimit - constructiveTraceCount(traces))
-    );
+    return Math.min(globalRemaining, Math.max(0, constructiveTraceLimit - constructiveTraceCount(traces)));
   };
   return {
     traces,
-    recordRoadOpportunity: record,
+    recordRoadOpportunity: record
   };
 }
 
@@ -178,14 +162,16 @@ function buildCounterfactualTraceFromOpportunity(options: {
     ...(candidate.typeIndex === undefined ? {} : { typeIndex: candidate.typeIndex }),
     ...(candidate.bonus === undefined ? {} : { bonus: candidate.bonus }),
     ...(candidate.range === undefined ? {} : { range: candidate.range }),
-    ...(candidate.moveKind === undefined ? {} : { moveKind: candidate.moveKind }),
+    ...(candidate.moveKind === undefined ? {} : { moveKind: candidate.moveKind })
   };
 }
 
-function recordMeasuredRoadOpportunity(options: RecordRoadOpportunityBaseOptions & {
-  opportunity: ConnectivityOpportunity;
-  measureCounterfactual: (candidate: RoadOpportunityCounterfactualCandidate) => ConnectivityOpportunity;
-}): void {
+function recordMeasuredRoadOpportunity(
+  options: RecordRoadOpportunityBaseOptions & {
+    opportunity: ConnectivityOpportunity;
+    measureCounterfactual: (candidate: RoadOpportunityCounterfactualCandidate) => ConnectivityOpportunity;
+  }
+): void {
   if (!options.profileCounters && !options.record) return;
 
   const counters = options.profileCounters?.roads;
@@ -195,18 +181,18 @@ function recordMeasuredRoadOpportunity(options: RecordRoadOpportunityBaseOptions
   }
 
   const counterfactuals =
-    options.record
-    && options.score !== undefined
-    && options.counterfactuals?.length
-    && roadOpportunityHasTraceCapacity(options.record, options.phase)
-      ? options.counterfactuals
-          .slice(0, ROAD_OPPORTUNITY_COUNTERFACTUAL_TRACE_LIMIT)
-          .map((candidate) => buildCounterfactualTraceFromOpportunity({
+    options.record &&
+    options.score !== undefined &&
+    options.counterfactuals?.length &&
+    roadOpportunityHasTraceCapacity(options.record, options.phase)
+      ? options.counterfactuals.slice(0, ROAD_OPPORTUNITY_COUNTERFACTUAL_TRACE_LIMIT).map((candidate) =>
+          buildCounterfactualTraceFromOpportunity({
             chosenRoadCost: options.probe.roadCost,
             chosenScore: options.score!,
             candidate,
-            opportunity: options.measureCounterfactual(candidate),
-          }))
+            opportunity: options.measureCounterfactual(candidate)
+          })
+        )
       : undefined;
 
   options.record?.({
@@ -226,29 +212,33 @@ function recordMeasuredRoadOpportunity(options: RecordRoadOpportunityBaseOptions
     ...(options.bonus === undefined ? {} : { bonus: options.bonus }),
     ...(options.range === undefined ? {} : { range: options.range }),
     ...(options.moveKind === undefined ? {} : { moveKind: options.moveKind }),
-    ...(counterfactuals?.length ? { counterfactuals } : {}),
+    ...(counterfactuals?.length ? { counterfactuals } : {})
   });
 }
 
-export function recordRoadOpportunityPlacement(options: RecordRoadOpportunityBaseOptions & {
-  attemptState: GreedyAttemptState;
-  footprintKeys?: readonly string[];
-}): void {
+export function recordRoadOpportunityPlacement(
+  options: RecordRoadOpportunityBaseOptions & {
+    attemptState: GreedyAttemptState;
+    footprintKeys?: readonly string[];
+  }
+): void {
   if (!shouldMeasureRoadOpportunity(options)) return;
 
   recordMeasuredRoadOpportunity({
     ...options,
     opportunity: options.attemptState.measureConnectivityShadow(options.placement, options.footprintKeys),
     measureCounterfactual: (candidate) =>
-      options.attemptState.measureConnectivityShadow(candidate.placement, candidate.footprintKeys),
+      options.attemptState.measureConnectivityShadow(candidate.placement, candidate.footprintKeys)
   });
 }
 
-export function recordRoadOpportunityPlacementFromOccupiedBuildings(options: RecordRoadOpportunityBaseOptions & {
-  grid: Grid;
-  occupiedBuildings: Set<string>;
-  footprintKeys?: readonly string[];
-}): void {
+export function recordRoadOpportunityPlacementFromOccupiedBuildings(
+  options: RecordRoadOpportunityBaseOptions & {
+    grid: Grid;
+    occupiedBuildings: Set<string>;
+    footprintKeys?: readonly string[];
+  }
+): void {
   if (!shouldMeasureRoadOpportunity(options)) return;
 
   recordMeasuredRoadOpportunity({
@@ -265,6 +255,6 @@ export function recordRoadOpportunityPlacementFromOccupiedBuildings(options: Rec
         candidate.occupiedBuildings ?? options.occupiedBuildings,
         candidate.placement,
         candidate.footprintKeys
-      ),
+      )
   });
 }

@@ -1,10 +1,5 @@
 import { cellKey } from "../../core/index.js";
-import type {
-  Grid,
-  GreedyProfileCounters,
-  ResidentialPlacement,
-  ServicePlacement,
-} from "../../core/index.js";
+import type { Grid, GreedyProfileCounters, ResidentialPlacement, ServicePlacement } from "../../core/index.js";
 import {
   applyRoadConnectionProbe,
   computeRoadAnchorReachableEmptyFrontier,
@@ -13,7 +8,7 @@ import {
   measureBuildingConnectivityShadow,
   measureBuildingConnectivityShadowFromFrontier,
   probeBuildingConnectedToRoads,
-  probeBuildingConnectedToRoadAnchorReachableEmptyFrontier,
+  probeBuildingConnectedToRoadAnchorReachableEmptyFrontier
 } from "../../core/index.js";
 import type { BuildingConnectivityShadow } from "../../core/index.js";
 import type { RoadConnectionProbe } from "../../core/index.js";
@@ -23,29 +18,22 @@ import { forEachRectangleCell } from "../../core/index.js";
 export type { RoadConnectionProbe } from "../../core/index.js";
 
 export type PlacementRect = { r: number; c: number; rows: number; cols: number };
-export type DeferredRoadFrontierProbe = NonNullable<ReturnType<typeof probeBuildingConnectedToRoadAnchorReachableEmptyFrontier>>;
+export type DeferredRoadFrontierProbe = NonNullable<
+  ReturnType<typeof probeBuildingConnectedToRoadAnchorReachableEmptyFrontier>
+>;
 export type ConnectivityProbe =
   | { kind: "explicit"; roadCost: number; roadProbe: RoadConnectionProbe }
   | { kind: "deferred"; roadCost: number; frontierProbe: DeferredRoadFrontierProbe };
 
-function forEachPlacementCell(
-  placement: PlacementRect,
-  visit: (key: string) => void
-): void {
+function forEachPlacementCell(placement: PlacementRect, visit: (key: string) => void): void {
   forEachRectangleCell(placement.r, placement.c, placement.rows, placement.cols, (r, c) => visit(cellKey(r, c)));
 }
 
-function addPlacementCellsToSet(
-  target: Set<string>,
-  placement: PlacementRect
-): void {
+function addPlacementCellsToSet(target: Set<string>, placement: PlacementRect): void {
   forEachPlacementCell(placement, (key) => target.add(key));
 }
 
-function forEachCachedPlacementCell(
-  footprintKeys: readonly string[],
-  visit: (key: string) => void
-): void {
+function forEachCachedPlacementCell(footprintKeys: readonly string[], visit: (key: string) => void): void {
   for (const key of footprintKeys) visit(key);
 }
 
@@ -112,7 +100,7 @@ export function commitExplicitRoadConnectedPlacement(options: {
     footprintKeys,
     newlyOccupiedKeys,
     profileCounters,
-    countProbeReuse = true,
+    countProbeReuse = true
   } = options;
   const occupiedKeys = newlyOccupiedKeys
     ? [...newlyOccupiedKeys]
@@ -216,7 +204,7 @@ export class GreedyAttemptState {
       roads: this.roads,
       occupied: this.occupied,
       profileCounters: this.profileCounters,
-      ...commitOptions,
+      ...commitOptions
     });
     this.addPlacementToOccupiedBuildings(commitOptions.placement, commitOptions.footprintKeys);
     return committedKeys;
@@ -252,7 +240,7 @@ export class GreedyAttemptState {
       placement,
       footprintKeys: options.footprintKeys,
       newlyOccupiedKeys: occupiedKeys,
-      recordConnectivityShadow: options.recordConnectivityShadow,
+      recordConnectivityShadow: options.recordConnectivityShadow
     });
   }
 
@@ -269,10 +257,7 @@ export class GreedyAttemptState {
       this.grid,
       this.initialRoadSeed,
       occupiedBuildings,
-      [
-        ...services.map((service) => normalizeServicePlacement(service)),
-        ...residentials,
-      ],
+      [...services.map((service) => normalizeServicePlacement(service)), ...residentials],
       this.explicitRoadProbeScratch
     );
     if (!materializedRoads) {

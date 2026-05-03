@@ -11,14 +11,14 @@ import {
   formatExperimentRegistryIssues,
   formatGreedyOfflineRankerExperiment,
   resolveExperimentRegistryGitMetadata,
-  runGreedyOfflineRankerExperiment,
+  runGreedyOfflineRankerExperiment
 } from "../../benchmarkApi.js";
 import {
   applyInlineOptionHandlers,
   isCliFlag,
   parseNumberList,
   parsePositiveInteger,
-  parsePositiveNumber,
+  parsePositiveNumber
 } from "../../apps/cliParsing.js";
 import { runCliMain } from "../../apps/cliEntrypoint.js";
 import { writeCliJsonOrText } from "../../apps/cliOutput.js";
@@ -26,12 +26,10 @@ import {
   completeAppendableRegistryEntry,
   defaultCliReplayCommand,
   normalizeRepoRelativePath,
-  writeJsonArtifact,
+  writeJsonArtifact
 } from "./artifactBundleHelpers.js";
 
-import type {
-  GreedyOfflineRankerExperimentResult,
-} from "../../benchmarkApi.js";
+import type { GreedyOfflineRankerExperimentResult } from "../../benchmarkApi.js";
 
 interface ParsedGreedyRankerArgs {
   json: boolean;
@@ -104,7 +102,7 @@ function parseArgs(argv: string[]): ParsedGreedyRankerArgs {
     },
     "ranker-registry": (value) => {
       rankerRegistryPath = value;
-    },
+    }
   };
 
   for (const arg of argv) {
@@ -132,15 +130,12 @@ function parseArgs(argv: string[]): ParsedGreedyRankerArgs {
     rankerDecision,
     rankerSummary,
     rankerRegistryPath,
-    rankerRegisterDryRun,
+    rankerRegisterDryRun
   };
 }
 
 function defaultRankerArtifactCommand(argv: readonly string[]): string {
-  const replayArgs = argv.filter((arg) =>
-    arg !== "--ranker-register-dry-run"
-    && !arg.startsWith("--ranker-registry=")
-  );
+  const replayArgs = argv.filter((arg) => arg !== "--ranker-register-dry-run" && !arg.startsWith("--ranker-registry="));
   return defaultCliReplayCommand("dist/greedyOfflineRankerCli.js", replayArgs);
 }
 
@@ -161,7 +156,7 @@ function registerRankerArtifacts(
     registryPath,
     dryRun: true,
     appended: false,
-    runId: completedEntry.runId,
+    runId: completedEntry.runId
   };
 }
 
@@ -189,25 +184,26 @@ function writeGreedyRankerArtifactBundle(
     command,
     git: resolveExperimentRegistryGitMetadata(),
     hardware: captureExperimentRegistryHardwareMetadata(),
-    outputArtifacts: [experimentJson, experimentText, modelJson, telemetryManifestJson],
+    outputArtifacts: [experimentJson, experimentText, modelJson, telemetryManifestJson]
   });
   const registryEntryDraft = buildGreedyOfflineRankerRegistryEntryDraft(result, {
     runId: args.rankerRunId,
     commands: [command],
     artifactPaths: [experimentJson, experimentText, modelJson, telemetryManifestJson],
     decision: args.rankerDecision,
-    summary: args.rankerSummary,
+    summary: args.rankerSummary
   });
 
   writeJsonArtifact(absoluteArtifactPath("greedy-offline-ranker.json"), createGreedyOfflineRankerSnapshot(result));
-  fs.writeFileSync(absoluteArtifactPath("greedy-offline-ranker.txt"), `${formatGreedyOfflineRankerExperiment(result)}\n`);
+  fs.writeFileSync(
+    absoluteArtifactPath("greedy-offline-ranker.txt"),
+    `${formatGreedyOfflineRankerExperiment(result)}\n`
+  );
   writeJsonArtifact(absoluteArtifactPath("model.json"), result.model);
   writeJsonArtifact(absoluteArtifactPath("telemetry-manifest.json"), telemetryManifest);
   writeJsonArtifact(absoluteArtifactPath("registry-entry-draft.json"), registryEntryDraft);
 
-  const registry = args.rankerRegisterDryRun
-    ? registerRankerArtifacts(registryEntryDraft, args)
-    : undefined;
+  const registry = args.rankerRegisterDryRun ? registerRankerArtifacts(registryEntryDraft, args) : undefined;
 
   return {
     artifactDir,
@@ -216,7 +212,7 @@ function writeGreedyRankerArtifactBundle(
       experimentText,
       modelJson,
       telemetryManifestJson,
-      registryEntryDraftJson,
+      registryEntryDraftJson
     },
     runId: registryEntryDraft.runId,
     generatedAt: result.generatedAt,
@@ -224,7 +220,7 @@ function writeGreedyRankerArtifactBundle(
     modelFingerprint: result.modelFingerprint,
     datasetFingerprint: result.datasetFingerprint,
     holdoutAccuracy: result.evaluation.model.holdout.accuracy,
-    registry,
+    registry
   };
 }
 
@@ -240,7 +236,7 @@ function formatGreedyRankerArtifactManifest(manifest: GreedyRankerArtifactManife
     `experiment-text=${manifest.artifactPaths.experimentText}`,
     `model-json=${manifest.artifactPaths.modelJson}`,
     `telemetry-manifest=${manifest.artifactPaths.telemetryManifestJson}`,
-    `registry-entry-draft=${manifest.artifactPaths.registryEntryDraftJson}`,
+    `registry-entry-draft=${manifest.artifactPaths.registryEntryDraftJson}`
   ];
   if (manifest.registry !== undefined) {
     lines.push(`registry-dry-run=${manifest.registry.registryPath}`);
@@ -262,8 +258,8 @@ export function runGreedyOfflineRankerCli(): void {
     seeds: args.seeds,
     training: {
       epochs: args.epochs,
-      learningRate: args.learningRate,
-    },
+      learningRate: args.learningRate
+    }
   });
 
   if (args.artifactDir !== undefined) {
@@ -272,8 +268,10 @@ export function runGreedyOfflineRankerCli(): void {
     return;
   }
 
-  writeCliJsonOrText(args.json, () => createGreedyOfflineRankerSnapshot(result), () =>
-    formatGreedyOfflineRankerExperiment(result)
+  writeCliJsonOrText(
+    args.json,
+    () => createGreedyOfflineRankerSnapshot(result),
+    () => formatGreedyOfflineRankerExperiment(result)
   );
 }
 

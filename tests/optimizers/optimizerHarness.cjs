@@ -88,7 +88,7 @@ const {
   runGreedyDeterministicAblation,
   runGreedyBenchmarkSuite,
   runCpSatBenchmarkSuite,
-  validateExperimentRegistryEntry,
+  validateExperimentRegistryEntry
 } = require("city-builder/benchmarks");
 
 const {
@@ -111,33 +111,26 @@ const {
   startAutoSolve,
   startCpSatSolve,
   validateSolution,
-  validateSolutionMap,
+  validateSolutionMap
 } = require("city-builder/solver");
-const {
-  delay,
-  resolveCpSatPython,
-  waitForFile,
-  waitForHeartbeatToStop,
-} = require("../helpers/processHelpers.cjs");
+const { delay, resolveCpSatPython, waitForFile, waitForHeartbeatToStop } = require("../helpers/processHelpers.cjs");
 const { sortedRoads } = require("../helpers/assertions.cjs");
 const { buildMockSolution } = require("../helpers/solverFixtures.cjs");
 const { parseCpSatRawSolution } = require("../../dist/packages/solvers/cp-sat/solver.js");
 const {
   buildAdaptiveNeighborhoodCandidates,
   buildLnsWarmStartHint,
-  buildNeighborhoodWindows,
+  buildNeighborhoodWindows
 } = require("../../dist/packages/solvers/lns/solver.js");
 const { repairSmallWindowWithDp } = require("../../dist/packages/solvers/lns/smallWindowDpRepair.js");
 const { startJsonBackgroundSolve } = require("../../dist/packages/runtime/index.js");
 const { applyDeterministicDominanceUpgrades } = require("../../dist/packages/core/dominanceUpgrades.js");
 const { buildPlannerExplainabilityMap } = require("../../dist/packages/core/plannerExplainability.js");
-const {
-  createCpSatPythonHelperAssertions,
-} = require("./cpSatPythonHelperAssertions.cjs");
+const { createCpSatPythonHelperAssertions } = require("./cpSatPythonHelperAssertions.cjs");
 const { GreedyAttemptState } = require("../../dist/packages/solvers/greedy/attemptState.js");
 const {
   createRoadOpportunityRecorder,
-  recordRoadOpportunityPlacementFromOccupiedBuildings,
+  recordRoadOpportunityPlacementFromOccupiedBuildings
 } = require("../../dist/packages/solvers/greedy/roadOpportunity.js");
 const {
   computeRoadAnchorReachableEmptyFrontier,
@@ -148,13 +141,13 @@ const {
   pruneRedundantRoads,
   probeBuildingConnectedToRoads,
   roadAnchorSeedCandidates,
-  roadAnchorRepresentativeSeedCandidates,
+  roadAnchorRepresentativeSeedCandidates
 } = require("../../dist/packages/core/roads.js");
 const {
   forEachRectangleBorderCell,
   forEachRectangleCell,
   rectangleBorderCells,
-  rectangleCells,
+  rectangleCells
 } = require("../../dist/packages/core/grid.js");
 const {
   buildFootprintGeometryCache,
@@ -165,7 +158,7 @@ const {
   overlaps,
   residentialFootprint,
   serviceEffectZone,
-  serviceFootprint,
+  serviceFootprint
 } = require("../../dist/packages/core/buildings.js");
 const {
   maybeTestCpSatBorderAccessCapacityHelpers,
@@ -179,7 +172,7 @@ const {
   maybeTestCpSatPrunesObjectivelyUselessServices,
   maybeTestCpSatReachabilityReductionHelpers,
   maybeTestCpSatResidentialPopulationUpperBoundHelpers,
-  maybeTestCpSatRoadEligibilityReductionHelpers,
+  maybeTestCpSatRoadEligibilityReductionHelpers
 } = createCpSatPythonHelperAssertions(resolveCpSatPython);
 
 function testOptimizerRegistry() {
@@ -199,7 +192,9 @@ function testOptimizerRegistry() {
   assert.equal(getOptimizerAdapter({ optimizer: "cp-sat" }).name, "cp-sat");
   assert.equal(getOptimizerAdapter("lns").name, "lns");
   assert.deepEqual(
-    listOptimizerAdapters().map((adapter) => adapter.name).sort(),
+    listOptimizerAdapters()
+      .map((adapter) => adapter.name)
+      .sort(),
     ["auto", "cp-sat", "greedy", "lns"]
   );
 }
@@ -220,7 +215,7 @@ function testBuildingGeometryHelpersParity() {
     [1, 1, 1, 1],
     [1, 1, 0, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const service = { r: 1, c: 0, rows: 1, cols: 2, range: 1 };
   const zoneSet = buildServiceEffectZoneSet(grid, service);
@@ -246,16 +241,16 @@ function testBuildingGeometryCachesParity() {
     [1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1],
-    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1]
   ];
   const services = [
     { r: 1, c: 1, rows: 1, cols: 2, range: 1 },
-    { r: 1, c: 1, rows: 1, cols: 2, range: 2 },
+    { r: 1, c: 1, rows: 1, cols: 2, range: 2 }
   ];
   const serviceGeometry = buildServiceGeometryCache(grid, services);
   const footprintGeometry = buildFootprintGeometryCache([
     { r: 0, c: 0, rows: 2, cols: 2 },
-    { r: 0, c: 0, rows: 2, cols: 2 },
+    { r: 0, c: 0, rows: 2, cols: 2 }
   ]);
   const mutatedFootprint = serviceFootprint(services[0]);
   mutatedFootprint.pop();
@@ -292,11 +287,11 @@ function testPlannerExplainabilityMapSummarizesOpportunityAndRisk() {
   const grid = [
     [1, 1, 1],
     [0, 1, 0],
-    [0, 1, 1],
+    [0, 1, 1]
   ];
   const params = {
     serviceTypes: [{ name: "Clinic", rows: 1, cols: 1, range: 1, bonus: 50, avail: 2 }],
-    residentialTypes: [{ name: "Studio", w: 1, h: 1, min: 10, max: 30, avail: 1 }],
+    residentialTypes: [{ name: "Studio", w: 1, h: 1, min: 10, max: 30, avail: 1 }]
   };
   const solution = {
     roads: new Set(["1,1"]),
@@ -306,7 +301,7 @@ function testPlannerExplainabilityMapSummarizesOpportunityAndRisk() {
     residentials: [],
     residentialTypeIndices: [],
     populations: [],
-    totalPopulation: 0,
+    totalPopulation: 0
   };
 
   const map = buildPlannerExplainabilityMap(grid, params, solution);
@@ -334,7 +329,7 @@ function testRoadProbePreservesEdgeBorderConnectivity() {
   const grid = [
     [1, 1, 1],
     [1, 1, 1],
-    [1, 1, 1],
+    [1, 1, 1]
   ];
   const roads = new Set(["0,2"]);
   const occupied = new Set(roads);
@@ -352,7 +347,7 @@ function testRoadProbeScratchRepeatability() {
     [1, 0, 1, 0, 1],
     [1, 1, 1, 1, 1],
     [1, 0, 1, 0, 1],
-    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1]
   ];
   const roads = new Set(["0,4"]);
   const occupied = new Set(roads);
@@ -373,7 +368,7 @@ function testRoadProbeScratchWorkspaceResetsBetweenCalls() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const roads = new Set(["0,3"]);
   const scratch = createRoadProbeScratch(grid);
@@ -393,7 +388,7 @@ function testBuildingConnectivityShadowMeasuresDisconnectedReachableCells() {
   const grid = [
     [1, 1, 1],
     [0, 1, 0],
-    [0, 1, 0],
+    [0, 1, 0]
   ];
   const blockedBuildings = new Set();
 
@@ -411,7 +406,7 @@ function testBuildingConnectivityShadowMeasuresDisconnectedReachableCells() {
     reachableAfter: 2,
     lostCells: 3,
     footprintCells: 1,
-    disconnectedCells: 2,
+    disconnectedCells: 2
   });
   assert.deepEqual(shadowFromFrontier, shadow);
 }
@@ -419,7 +414,7 @@ function testBuildingConnectivityShadowMeasuresDisconnectedReachableCells() {
 function testGreedyAttemptStateRejectsMismatchedProbeKind() {
   const grid = [
     [1, 1],
-    [1, 1],
+    [1, 1]
   ];
   const placement = { r: 1, c: 0, rows: 1, cols: 1 };
 
@@ -443,12 +438,12 @@ function testRoadPruningDropsConnectorsOnlyNeededByAnchorBoundaryBuildings() {
   const grid = [
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const roads = new Set(["0,0", "1,0", "2,0", "0,1"]);
   const buildings = [
     { r: 0, c: 2, rows: 1, cols: 1 },
-    { r: 1, c: 1, rows: 1, cols: 1 },
+    { r: 1, c: 1, rows: 1, cols: 1 }
   ];
 
   const pruned = pruneRedundantRoads(grid, roads, buildings);
@@ -459,7 +454,7 @@ function testRoadPruningDropsConnectorsOnlyNeededByAnchorBoundaryBuildings() {
 function testRoadPruningRevisitsCandidatesAfterDependentRoadRemoval() {
   const grid = [
     [1, 1],
-    [1, 1],
+    [1, 1]
   ];
   const roads = new Set(["0,0", "1,0", "1,1"]);
 
@@ -476,13 +471,11 @@ async function maybeTestAutoOptimizer() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const params = {
     optimizer: "auto",
-    residentialTypes: [
-      { w: 2, h: 2, min: 100, max: 100, avail: 1 },
-    ],
+    residentialTypes: [{ w: 2, h: 2, min: 100, max: 100, avail: 1 }],
     availableBuildings: { residentials: 1, services: 0 },
     greedy: {
       localSearch: false,
@@ -491,31 +484,33 @@ async function maybeTestAutoOptimizer() {
       serviceRefineCandidateLimit: 1,
       exhaustiveServiceSearch: false,
       serviceExactPoolLimit: 1,
-      serviceExactMaxCombinations: 1,
+      serviceExactMaxCombinations: 1
     },
     lns: {
       iterations: 1,
       maxNoImprovementIterations: 1,
       neighborhoodRows: 2,
       neighborhoodCols: 2,
-      repairTimeLimitSeconds: 1,
+      repairTimeLimitSeconds: 1
     },
     cpSat: {
       pythonExecutable,
       timeLimitSeconds: 1,
       noImprovementTimeoutSeconds: 1,
-      numWorkers: 1,
+      numWorkers: 1
     },
     auto: {
-      wallClockLimitSeconds: 15,
-    },
+      wallClockLimitSeconds: 15
+    }
   };
 
   const solution = await solveAsync(grid, params);
 
   assert.equal(solution.optimizer, "auto");
   assert.equal(solution.totalPopulation, 100);
-  assert.ok(solution.activeOptimizer === "greedy" || solution.activeOptimizer === "lns" || solution.activeOptimizer === "cp-sat");
+  assert.ok(
+    solution.activeOptimizer === "greedy" || solution.activeOptimizer === "lns" || solution.activeOptimizer === "cp-sat"
+  );
   assert.ok(solution.autoStage);
   assert.equal(solution.autoStage.activeStage, solution.activeOptimizer);
   assert.ok(solution.autoStage.generatedSeeds.length >= 3);
@@ -532,13 +527,20 @@ function testAutoKeepsEqualPopulationOptimalCpSatResult() {
 
   solverModule.solveGreedy = () => buildMockSolution({ optimizer: "greedy", totalPopulation: 100 });
   lnsModule.solveLns = () => buildMockSolution({ optimizer: "lns", totalPopulation: 100 });
-  cpSatModule.solveCpSat = () => buildMockSolution({ optimizer: "cp-sat", totalPopulation: 100, cpSatStatus: "OPTIMAL" });
+  cpSatModule.solveCpSat = () =>
+    buildMockSolution({ optimizer: "cp-sat", totalPopulation: 100, cpSatStatus: "OPTIMAL" });
 
   try {
-    const solution = solveAuto([[1, 1], [1, 1]], {
-      optimizer: "auto",
-      auto: { wallClockLimitSeconds: 10 },
-    });
+    const solution = solveAuto(
+      [
+        [1, 1],
+        [1, 1]
+      ],
+      {
+        optimizer: "auto",
+        auto: { wallClockLimitSeconds: 10 }
+      }
+    );
 
     assert.equal(solution.cpSatStatus, "OPTIMAL");
     assert.equal(solution.activeOptimizer, "cp-sat");
@@ -568,28 +570,34 @@ function testAutoPreservesUserWarmStartMetadata() {
   };
 
   try {
-    solveAuto([[1, 1], [1, 1]], {
-      optimizer: "auto",
-      cpSat: {
-        timeLimitSeconds: 5,
-        objectiveLowerBound: 70,
-        warmStartHint: {
-          sourceName: "checkpoint",
-          modelFingerprint: "fingerprint-1",
-          preferStrictImprove: true,
-          objectiveLowerBound: 75,
-          roads: ["0,0"],
-          solution: {
+    solveAuto(
+      [
+        [1, 1],
+        [1, 1]
+      ],
+      {
+        optimizer: "auto",
+        cpSat: {
+          timeLimitSeconds: 5,
+          objectiveLowerBound: 70,
+          warmStartHint: {
+            sourceName: "checkpoint",
+            modelFingerprint: "fingerprint-1",
+            preferStrictImprove: true,
+            objectiveLowerBound: 75,
             roads: ["0,0"],
-            services: [],
-            residentials: [],
-            populations: [],
-            totalPopulation: 55,
-          },
+            solution: {
+              roads: ["0,0"],
+              services: [],
+              residentials: [],
+              populations: [],
+              totalPopulation: 55
+            }
+          }
         },
-      },
-      auto: { wallClockLimitSeconds: 10 },
-    });
+        auto: { wallClockLimitSeconds: 10 }
+      }
+    );
 
     assert.ok(capturedCpSatOptions);
     assert.equal(capturedCpSatOptions.warmStartHint.modelFingerprint, "fingerprint-1");
@@ -621,16 +629,22 @@ function testAutoDirectRuntimeIgnoresMalformedOptionValues() {
   };
 
   try {
-    const solution = solveAuto([[1, 1], [1, 1]], {
-      optimizer: "auto",
-      auto: {
-        wallClockLimitSeconds: "bad",
-        weakCycleImprovementThreshold: "bad",
-        maxConsecutiveWeakCycles: "bad",
-        cpSatStageTimeLimitSeconds: "bad",
-        cpSatStageNoImprovementTimeoutSeconds: "bad",
-      },
-    });
+    const solution = solveAuto(
+      [
+        [1, 1],
+        [1, 1]
+      ],
+      {
+        optimizer: "auto",
+        auto: {
+          wallClockLimitSeconds: "bad",
+          weakCycleImprovementThreshold: "bad",
+          maxConsecutiveWeakCycles: "bad",
+          cpSatStageTimeLimitSeconds: "bad",
+          cpSatStageNoImprovementTimeoutSeconds: "bad"
+        }
+      }
+    );
 
     assert.equal(solution.autoStage.stopReason, "optimal");
     assert.ok(capturedCpSatOptions);
@@ -665,23 +679,34 @@ async function testAutoAsyncPreservesCancelledStopReasonAfterCpSatReturns() {
         totalPopulation: solution.totalPopulation,
         activeOptimizer: solution.optimizer,
         autoStage: null,
-        cpSatStatus: solution.cpSatStatus ?? null,
-      }),
+        cpSatStatus: solution.cpSatStatus ?? null
+      })
     };
   };
 
-  greedyBridgeModule.startGreedySolve = () => buildBackgroundHandle(buildMockSolution({ optimizer: "greedy", totalPopulation: 100 }));
-  lnsBridgeModule.startLnsSolve = () => buildBackgroundHandle(buildMockSolution({ optimizer: "lns", totalPopulation: 100 }));
+  greedyBridgeModule.startGreedySolve = () =>
+    buildBackgroundHandle(buildMockSolution({ optimizer: "greedy", totalPopulation: 100 }));
+  lnsBridgeModule.startLnsSolve = () =>
+    buildBackgroundHandle(buildMockSolution({ optimizer: "lns", totalPopulation: 100 }));
   cpSatModule.startCpSatSolve = () => {
     cpSatStarted = true;
-    return buildBackgroundHandle(buildMockSolution({ optimizer: "cp-sat", totalPopulation: 100, cpSatStatus: "OPTIMAL" }), 50);
+    return buildBackgroundHandle(
+      buildMockSolution({ optimizer: "cp-sat", totalPopulation: 100, cpSatStatus: "OPTIMAL" }),
+      50
+    );
   };
 
   try {
-    const handle = startAutoSolve([[1, 1], [1, 1]], {
-      optimizer: "auto",
-      auto: { wallClockLimitSeconds: 10 },
-    });
+    const handle = startAutoSolve(
+      [
+        [1, 1],
+        [1, 1]
+      ],
+      {
+        optimizer: "auto",
+        auto: { wallClockLimitSeconds: 10 }
+      }
+    );
 
     while (!cpSatStarted) {
       await delay(5);
@@ -717,12 +742,14 @@ async function testAutoAsyncStageErrorKeepsIncumbentWithExplicitStopReason() {
       totalPopulation: solution.totalPopulation,
       activeOptimizer: solution.optimizer,
       autoStage: null,
-      cpSatStatus: solution.cpSatStatus ?? null,
-    }),
+      cpSatStatus: solution.cpSatStatus ?? null
+    })
   });
 
-  greedyBridgeModule.startGreedySolve = () => buildBackgroundHandle(buildMockSolution({ optimizer: "greedy", totalPopulation: 100 }));
-  lnsBridgeModule.startLnsSolve = () => buildBackgroundHandle(buildMockSolution({ optimizer: "lns", totalPopulation: 100 }));
+  greedyBridgeModule.startGreedySolve = () =>
+    buildBackgroundHandle(buildMockSolution({ optimizer: "greedy", totalPopulation: 100 }));
+  lnsBridgeModule.startLnsSolve = () =>
+    buildBackgroundHandle(buildMockSolution({ optimizer: "lns", totalPopulation: 100 }));
   cpSatModule.startCpSatSolve = () => ({
     promise: delay(0).then(() => {
       throw new Error("CP-SAT backend exited without returning a solution.");
@@ -734,14 +761,20 @@ async function testAutoAsyncStageErrorKeepsIncumbentWithExplicitStopReason() {
       totalPopulation: null,
       activeOptimizer: "cp-sat",
       autoStage: null,
-      cpSatStatus: null,
-    }),
+      cpSatStatus: null
+    })
   });
 
   try {
-    const solution = await startAutoSolve([[1, 1], [1, 1]], {
-      optimizer: "auto",
-    }).promise;
+    const solution = await startAutoSolve(
+      [
+        [1, 1],
+        [1, 1]
+      ],
+      {
+        optimizer: "auto"
+      }
+    ).promise;
 
     assert.equal(solution.totalPopulation, 100);
     assert.equal(solution.activeOptimizer, "cp-sat");
@@ -772,12 +805,14 @@ async function testAutoAsyncRecoveredStageSnapshotKeepsNonRecoveryTerminalMetada
       totalPopulation: solution.totalPopulation,
       activeOptimizer: solution.optimizer,
       autoStage: null,
-      cpSatStatus: solution.cpSatStatus ?? null,
-    }),
+      cpSatStatus: solution.cpSatStatus ?? null
+    })
   });
 
-  greedyBridgeModule.startGreedySolve = () => buildBackgroundHandle(buildMockSolution({ optimizer: "greedy", totalPopulation: 100 }));
-  lnsBridgeModule.startLnsSolve = () => buildBackgroundHandle(buildMockSolution({ optimizer: "lns", totalPopulation: 100 }));
+  greedyBridgeModule.startGreedySolve = () =>
+    buildBackgroundHandle(buildMockSolution({ optimizer: "greedy", totalPopulation: 100 }));
+  lnsBridgeModule.startLnsSolve = () =>
+    buildBackgroundHandle(buildMockSolution({ optimizer: "lns", totalPopulation: 100 }));
   cpSatModule.startCpSatSolve = () => ({
     promise: delay(0).then(() => {
       throw new Error("CP-SAT backend exited after streaming a feasible incumbent.");
@@ -789,14 +824,20 @@ async function testAutoAsyncRecoveredStageSnapshotKeepsNonRecoveryTerminalMetada
       totalPopulation: 100,
       activeOptimizer: "cp-sat",
       autoStage: null,
-      cpSatStatus: "FEASIBLE",
-    }),
+      cpSatStatus: "FEASIBLE"
+    })
   });
 
   try {
-    const solution = await startAutoSolve([[1, 1], [1, 1]], {
-      optimizer: "auto",
-    }).promise;
+    const solution = await startAutoSolve(
+      [
+        [1, 1],
+        [1, 1]
+      ],
+      {
+        optimizer: "auto"
+      }
+    ).promise;
 
     assert.equal(solution.totalPopulation, 100);
     assert.equal(solution.activeOptimizer, "cp-sat");
@@ -827,12 +868,14 @@ async function testAutoAsyncRecoveredCpSatSnapshotKeepsCompletedMetadata() {
       totalPopulation: solution.totalPopulation,
       activeOptimizer: solution.optimizer,
       autoStage: null,
-      cpSatStatus: solution.cpSatStatus ?? null,
-    }),
+      cpSatStatus: solution.cpSatStatus ?? null
+    })
   });
 
-  greedyBridgeModule.startGreedySolve = () => buildBackgroundHandle(buildMockSolution({ optimizer: "greedy", totalPopulation: 100 }));
-  lnsBridgeModule.startLnsSolve = () => buildBackgroundHandle(buildMockSolution({ optimizer: "lns", totalPopulation: 100 }));
+  greedyBridgeModule.startGreedySolve = () =>
+    buildBackgroundHandle(buildMockSolution({ optimizer: "greedy", totalPopulation: 100 }));
+  lnsBridgeModule.startLnsSolve = () =>
+    buildBackgroundHandle(buildMockSolution({ optimizer: "lns", totalPopulation: 100 }));
   cpSatModule.startCpSatSolve = () => ({
     promise: delay(0).then(() => {
       throw new Error("CP-SAT backend wrote a snapshot artifact but no final result.");
@@ -844,14 +887,20 @@ async function testAutoAsyncRecoveredCpSatSnapshotKeepsCompletedMetadata() {
       totalPopulation: 100,
       activeOptimizer: "cp-sat",
       autoStage: null,
-      cpSatStatus: "OPTIMAL",
-    }),
+      cpSatStatus: "OPTIMAL"
+    })
   });
 
   try {
-    const solution = await startAutoSolve([[1, 1], [1, 1]], {
-      optimizer: "auto",
-    }).promise;
+    const solution = await startAutoSolve(
+      [
+        [1, 1],
+        [1, 1]
+      ],
+      {
+        optimizer: "auto"
+      }
+    ).promise;
 
     assert.equal(solution.totalPopulation, 100);
     assert.equal(solution.cpSatStatus, "OPTIMAL");
@@ -883,17 +932,23 @@ function testAutoSyncWallClockCapStopsRunningLnsStage() {
     return buildMockSolution({
       optimizer: "lns",
       totalPopulation: 100,
-      stoppedByUser: fs.existsSync(observedStopFilePath),
+      stoppedByUser: fs.existsSync(observedStopFilePath)
     });
   };
 
   try {
     const startedAt = Date.now();
-    const solution = solveAuto([[1, 1], [1, 1]], {
-      optimizer: "auto",
-      lns: { iterations: 1, maxNoImprovementIterations: 1, repairTimeLimitSeconds: 5 },
-      auto: { wallClockLimitSeconds: 2 },
-    });
+    const solution = solveAuto(
+      [
+        [1, 1],
+        [1, 1]
+      ],
+      {
+        optimizer: "auto",
+        lns: { iterations: 1, maxNoImprovementIterations: 1, repairTimeLimitSeconds: 5 },
+        auto: { wallClockLimitSeconds: 2 }
+      }
+    );
     const elapsedMs = Date.now() - startedAt;
 
     assert.equal(typeof observedStopFilePath, "string");
@@ -925,11 +980,17 @@ function testAutoSyncWallClockCapKeepsExplicitStopReasonWhenLnsThrows() {
   };
 
   try {
-    const solution = solveAuto([[1, 1], [1, 1]], {
-      optimizer: "auto",
-      lns: { iterations: 1, maxNoImprovementIterations: 1, repairTimeLimitSeconds: 5 },
-      auto: { wallClockLimitSeconds: 2 },
-    });
+    const solution = solveAuto(
+      [
+        [1, 1],
+        [1, 1]
+      ],
+      {
+        optimizer: "auto",
+        lns: { iterations: 1, maxNoImprovementIterations: 1, repairTimeLimitSeconds: 5 },
+        auto: { wallClockLimitSeconds: 2 }
+      }
+    );
 
     assert.equal(typeof observedStopFilePath, "string");
     assert.equal(solution.totalPopulation, 100);
@@ -957,22 +1018,29 @@ function testAutoSyncReservesCpSatBudgetBeforeLnsStage() {
     observedLnsOptions = params.lns;
     return buildMockSolution({ optimizer: "lns", totalPopulation: 120 });
   };
-  cpSatModule.solveCpSat = () => buildMockSolution({ optimizer: "cp-sat", totalPopulation: 120, cpSatStatus: "OPTIMAL" });
+  cpSatModule.solveCpSat = () =>
+    buildMockSolution({ optimizer: "cp-sat", totalPopulation: 120, cpSatStatus: "OPTIMAL" });
 
   try {
-    const solution = solveAuto([[1, 1], [1, 1]], {
-      optimizer: "auto",
-      lns: {
-        iterations: 4,
-        maxNoImprovementIterations: 4,
-        seedTimeLimitSeconds: 5,
-        repairTimeLimitSeconds: 0.5,
-        focusedRepairTimeLimitSeconds: 0.75,
-        escalatedRepairTimeLimitSeconds: 1.25,
-      },
-      cpSat: { timeLimitSeconds: 5, noImprovementTimeoutSeconds: 5, numWorkers: 1 },
-      auto: { wallClockLimitSeconds: 2.5 },
-    });
+    const solution = solveAuto(
+      [
+        [1, 1],
+        [1, 1]
+      ],
+      {
+        optimizer: "auto",
+        lns: {
+          iterations: 4,
+          maxNoImprovementIterations: 4,
+          seedTimeLimitSeconds: 5,
+          repairTimeLimitSeconds: 0.5,
+          focusedRepairTimeLimitSeconds: 0.75,
+          escalatedRepairTimeLimitSeconds: 1.25
+        },
+        cpSat: { timeLimitSeconds: 5, noImprovementTimeoutSeconds: 5, numWorkers: 1 },
+        auto: { wallClockLimitSeconds: 2.5 }
+      }
+    );
 
     assert.equal(solution.autoStage.stopReason, "optimal");
     assert(observedLnsOptions);
@@ -989,18 +1057,24 @@ function testAutoSyncReservesCpSatBudgetBeforeLnsStage() {
     assert.ok(observedLnsOptions.focusedRepairTimeLimitSeconds <= observedLnsOptions.wallClockLimitSeconds);
     assert.ok(observedLnsOptions.escalatedRepairTimeLimitSeconds <= observedLnsOptions.wallClockLimitSeconds);
     assert.ok(observedLnsOptions.escalatedRepairTimeLimitSeconds > observedLnsOptions.repairTimeLimitSeconds);
-    assert.deepEqual(solution.autoStage.stageRuns.map((run) => run.stage), ["greedy", "lns", "cp-sat"]);
+    assert.deepEqual(
+      solution.autoStage.stageRuns.map((run) => run.stage),
+      ["greedy", "lns", "cp-sat"]
+    );
     assert.equal(solution.autoStage.stageRuns[1].improvement, 20);
     assert.equal(solution.autoStage.stageRuns[2].improvement, 0);
     assert.equal(solution.autoStage.stageRuns[2].cpSatStatus, "OPTIMAL");
     assert.equal(typeof solution.autoStage.stageRuns[1].elapsedSeconds, "number");
     const trace = buildDecisionTraceFromSolution(solution, { optimizer: "auto" });
-    assert(trace.some((event) =>
-      event.kind === "auto-stage"
-      && event.activeStage === "lns"
-      && event.reason.includes("completed")
-      && event.evidence.improvement === 20
-    ));
+    assert(
+      trace.some(
+        (event) =>
+          event.kind === "auto-stage" &&
+          event.activeStage === "lns" &&
+          event.reason.includes("completed") &&
+          event.evidence.improvement === 20
+      )
+    );
   } finally {
     solverModule.solveGreedy = originalSolveGreedy;
     lnsModule.solveLns = originalSolveLns;
@@ -1022,14 +1096,21 @@ function testAutoSyncUsesTraceTunedDefaultLnsBudget() {
     observedLnsOptions = params.lns;
     return buildMockSolution({ optimizer: "lns", totalPopulation: 140 });
   };
-  cpSatModule.solveCpSat = () => buildMockSolution({ optimizer: "cp-sat", totalPopulation: 140, cpSatStatus: "OPTIMAL" });
+  cpSatModule.solveCpSat = () =>
+    buildMockSolution({ optimizer: "cp-sat", totalPopulation: 140, cpSatStatus: "OPTIMAL" });
 
   try {
-    const solution = solveAuto([[1, 1], [1, 1]], {
-      optimizer: "auto",
-      cpSat: { timeLimitSeconds: 9, noImprovementTimeoutSeconds: 5, numWorkers: 1 },
-      auto: { wallClockLimitSeconds: 30 },
-    });
+    const solution = solveAuto(
+      [
+        [1, 1],
+        [1, 1]
+      ],
+      {
+        optimizer: "auto",
+        cpSat: { timeLimitSeconds: 9, noImprovementTimeoutSeconds: 5, numWorkers: 1 },
+        auto: { wallClockLimitSeconds: 30 }
+      }
+    );
 
     assert.equal(solution.autoStage.stopReason, "optimal");
     assert(observedLnsOptions);
@@ -1071,7 +1152,7 @@ function testAutoSyncGreedyCanRunPastFormerStageBudget() {
     return buildMockSolution({
       optimizer: "greedy",
       totalPopulation: 100,
-      stoppedByUser: greedyStoppedByUser,
+      stoppedByUser: greedyStoppedByUser
     });
   };
   lnsModule.solveLns = () => {
@@ -1085,12 +1166,18 @@ function testAutoSyncGreedyCanRunPastFormerStageBudget() {
 
   try {
     const startedAt = Date.now();
-    const solution = solveAuto([[1, 1], [1, 1]], {
-      optimizer: "auto",
-      lns: { iterations: 1, maxNoImprovementIterations: 1, repairTimeLimitSeconds: 1 },
-      cpSat: { timeLimitSeconds: 1, noImprovementTimeoutSeconds: 1, numWorkers: 1 },
-      auto: { wallClockLimitSeconds: 4 },
-    });
+    const solution = solveAuto(
+      [
+        [1, 1],
+        [1, 1]
+      ],
+      {
+        optimizer: "auto",
+        lns: { iterations: 1, maxNoImprovementIterations: 1, repairTimeLimitSeconds: 1 },
+        cpSat: { timeLimitSeconds: 1, noImprovementTimeoutSeconds: 1, numWorkers: 1 },
+        auto: { wallClockLimitSeconds: 4 }
+      }
+    );
     const elapsedMs = Date.now() - startedAt;
 
     assert.equal(typeof observedGreedyStopFilePath, "string");
@@ -1145,8 +1232,8 @@ async function testAutoAsyncGreedyCanRunPastFormerStageBudget() {
         totalPopulation: snapshot.totalPopulation,
         activeOptimizer: snapshot.optimizer,
         autoStage: null,
-        cpSatStatus: null,
-      }),
+        cpSatStatus: null
+      })
     };
   };
   lnsBridgeModule.startLnsSolve = () => {
@@ -1161,8 +1248,8 @@ async function testAutoAsyncGreedyCanRunPastFormerStageBudget() {
         totalPopulation: solution.totalPopulation,
         activeOptimizer: solution.optimizer,
         autoStage: null,
-        cpSatStatus: null,
-      }),
+        cpSatStatus: null
+      })
     };
   };
   cpSatModule.startCpSatSolve = () => {
@@ -1177,17 +1264,23 @@ async function testAutoAsyncGreedyCanRunPastFormerStageBudget() {
         totalPopulation: solution.totalPopulation,
         activeOptimizer: solution.optimizer,
         autoStage: null,
-        cpSatStatus: solution.cpSatStatus,
-      }),
+        cpSatStatus: solution.cpSatStatus
+      })
     };
   };
 
   try {
     const startedAt = Date.now();
-    const solution = await startAutoSolve([[1, 1], [1, 1]], {
-      optimizer: "auto",
-      auto: { wallClockLimitSeconds: 4 },
-    }).promise;
+    const solution = await startAutoSolve(
+      [
+        [1, 1],
+        [1, 1]
+      ],
+      {
+        optimizer: "auto",
+        auto: { wallClockLimitSeconds: 4 }
+      }
+    ).promise;
     const elapsedMs = Date.now() - startedAt;
 
     assert.equal(greedyCancelCalled, false);
@@ -1216,26 +1309,38 @@ function testAutoClampsHeavyGreedyStageSettings() {
   };
 
   try {
-    const solution = solveAuto([[1, 1], [1, 1]], {
-      optimizer: "auto",
-      greedy: {
-        localSearch: true,
-        restarts: 20,
-        serviceRefineIterations: 4,
-        serviceRefineCandidateLimit: 60,
-        exhaustiveServiceSearch: true,
-        serviceMasterDecomposition: true,
-        densityTieBreaker: true,
-        densityTieBreakerTolerancePercent: 25,
-        serviceExactPoolLimit: 22,
-        serviceExactMaxCombinations: 12000,
-        serviceMasterPoolLimit: 100,
-        serviceMasterMaxLayouts: 50000,
-      },
-      lns: { iterations: 1, maxNoImprovementIterations: 1, neighborhoodRows: 2, neighborhoodCols: 2, repairTimeLimitSeconds: 1 },
-      cpSat: { timeLimitSeconds: 1, noImprovementTimeoutSeconds: 1, numWorkers: 1 },
-      auto: { wallClockLimitSeconds: 10 },
-    });
+    const solution = solveAuto(
+      [
+        [1, 1],
+        [1, 1]
+      ],
+      {
+        optimizer: "auto",
+        greedy: {
+          localSearch: true,
+          restarts: 20,
+          serviceRefineIterations: 4,
+          serviceRefineCandidateLimit: 60,
+          exhaustiveServiceSearch: true,
+          serviceMasterDecomposition: true,
+          densityTieBreaker: true,
+          densityTieBreakerTolerancePercent: 25,
+          serviceExactPoolLimit: 22,
+          serviceExactMaxCombinations: 12000,
+          serviceMasterPoolLimit: 100,
+          serviceMasterMaxLayouts: 50000
+        },
+        lns: {
+          iterations: 1,
+          maxNoImprovementIterations: 1,
+          neighborhoodRows: 2,
+          neighborhoodCols: 2,
+          repairTimeLimitSeconds: 1
+        },
+        cpSat: { timeLimitSeconds: 1, noImprovementTimeoutSeconds: 1, numWorkers: 1 },
+        auto: { wallClockLimitSeconds: 10 }
+      }
+    );
 
     assert.equal(solution.optimizer, "auto");
     assert.ok(capturedGreedyOptions);
@@ -1280,42 +1385,58 @@ async function testAutoAsyncClampsHeavyGreedyStageSettings() {
       totalPopulation: solution.totalPopulation,
       activeOptimizer: solution.optimizer,
       autoStage: null,
-      cpSatStatus: solution.cpSatStatus ?? null,
-    }),
+      cpSatStatus: solution.cpSatStatus ?? null
+    })
   });
 
   greedyBridgeModule.startGreedySolve = (grid, params) => {
     capturedGreedyOptions = params.greedy;
     return buildBackgroundHandle(buildMockSolution({ optimizer: "greedy", totalPopulation: 100 }));
   };
-  lnsBridgeModule.startLnsSolve = () => buildBackgroundHandle(buildMockSolution({ optimizer: "lns", totalPopulation: 120 }));
-  cpSatModule.startCpSatSolve = () => buildBackgroundHandle(buildMockSolution({
-    optimizer: "cp-sat",
-    totalPopulation: 120,
-    cpSatStatus: "OPTIMAL",
-  }));
+  lnsBridgeModule.startLnsSolve = () =>
+    buildBackgroundHandle(buildMockSolution({ optimizer: "lns", totalPopulation: 120 }));
+  cpSatModule.startCpSatSolve = () =>
+    buildBackgroundHandle(
+      buildMockSolution({
+        optimizer: "cp-sat",
+        totalPopulation: 120,
+        cpSatStatus: "OPTIMAL"
+      })
+    );
 
   try {
-    const solution = await startAutoSolve([[1, 1], [1, 1]], {
-      optimizer: "auto",
-      greedy: {
-        localSearch: true,
-        restarts: 20,
-        serviceRefineIterations: 4,
-        serviceRefineCandidateLimit: 60,
-        exhaustiveServiceSearch: true,
-        serviceMasterDecomposition: true,
-        densityTieBreaker: true,
-        densityTieBreakerTolerancePercent: 25,
-        serviceExactPoolLimit: 22,
-        serviceExactMaxCombinations: 12000,
-        serviceMasterPoolLimit: 100,
-        serviceMasterMaxLayouts: 50000,
-      },
-      lns: { iterations: 1, maxNoImprovementIterations: 1, neighborhoodRows: 2, neighborhoodCols: 2, repairTimeLimitSeconds: 1 },
-      cpSat: { timeLimitSeconds: 1, noImprovementTimeoutSeconds: 1, numWorkers: 1 },
-      auto: { wallClockLimitSeconds: 10 },
-    }).promise;
+    const solution = await startAutoSolve(
+      [
+        [1, 1],
+        [1, 1]
+      ],
+      {
+        optimizer: "auto",
+        greedy: {
+          localSearch: true,
+          restarts: 20,
+          serviceRefineIterations: 4,
+          serviceRefineCandidateLimit: 60,
+          exhaustiveServiceSearch: true,
+          serviceMasterDecomposition: true,
+          densityTieBreaker: true,
+          densityTieBreakerTolerancePercent: 25,
+          serviceExactPoolLimit: 22,
+          serviceExactMaxCombinations: 12000,
+          serviceMasterPoolLimit: 100,
+          serviceMasterMaxLayouts: 50000
+        },
+        lns: {
+          iterations: 1,
+          maxNoImprovementIterations: 1,
+          neighborhoodRows: 2,
+          neighborhoodCols: 2,
+          repairTimeLimitSeconds: 1
+        },
+        cpSat: { timeLimitSeconds: 1, noImprovementTimeoutSeconds: 1, numWorkers: 1 },
+        auto: { wallClockLimitSeconds: 10 }
+      }
+    ).promise;
 
     assert.equal(solution.optimizer, "auto");
     assert.ok(capturedGreedyOptions);
@@ -1349,14 +1470,14 @@ function testGreedyDispatcher() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const params = {
     optimizer: "greedy",
     basePop: 10,
     maxPop: 10,
     availableBuildings: { services: 0, residentials: 2 },
-    greedy: { localSearch: false },
+    greedy: { localSearch: false }
   };
 
   const dispatched = solve(grid, params);
@@ -1371,7 +1492,7 @@ async function testPublicSolverDispatchValidatesInputs() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
 
   assert.throws(
@@ -1407,17 +1528,17 @@ function testGreedyRandomSeedIsDeterministic() {
     [1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1],
-    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1]
   ];
   const params = {
     serviceTypes: [
       { rows: 2, cols: 2, bonus: 60, range: 1, avail: 1 },
       { rows: 2, cols: 3, bonus: 90, range: 1, avail: 1 },
-      { rows: 3, cols: 2, bonus: 70, range: 2, avail: 1 },
+      { rows: 3, cols: 2, bonus: 70, range: 2, avail: 1 }
     ],
     residentialTypes: [
       { w: 2, h: 2, min: 80, max: 180, avail: 2 },
-      { w: 2, h: 3, min: 120, max: 260, avail: 2 },
+      { w: 2, h: 3, min: 120, max: 260, avail: 2 }
     ],
     availableBuildings: { services: 2, residentials: 3 },
     greedy: {
@@ -1425,8 +1546,8 @@ function testGreedyRandomSeedIsDeterministic() {
       randomSeed: 17,
       restarts: 4,
       serviceRefineIterations: 0,
-      exhaustiveServiceSearch: false,
-    },
+      exhaustiveServiceSearch: false
+    }
   };
 
   const first = solveGreedy(grid, params);
@@ -1446,50 +1567,48 @@ function testGreedyConnectivityShadowScoringIsOptInTieBreaker() {
   const grid = [
     [0, 1, 1],
     [0, 1, 0],
-    [1, 0, 0],
+    [1, 0, 0]
   ];
   const baseParams = {
     optimizer: "greedy",
-    residentialTypes: [
-      { w: 1, h: 1, min: 10, max: 10, avail: 1 },
-    ],
+    residentialTypes: [{ w: 1, h: 1, min: 10, max: 10, avail: 1 }],
     availableBuildings: { services: 0, residentials: 1 },
     greedy: {
       localSearch: false,
       restarts: 1,
       serviceRefineIterations: 0,
-      exhaustiveServiceSearch: false,
-    },
+      exhaustiveServiceSearch: false
+    }
   };
   const defaultSolution = solveGreedy(grid, structuredClone(baseParams));
   const explicitOff = solveGreedy(grid, {
     ...structuredClone(baseParams),
     greedy: {
       ...baseParams.greedy,
-      connectivityShadowScoring: false,
-    },
+      connectivityShadowScoring: false
+    }
   });
   const profiledDefault = solveGreedy(grid, {
     ...structuredClone(baseParams),
     greedy: {
       ...baseParams.greedy,
-      profile: true,
-    },
+      profile: true
+    }
   });
   const enabled = solveGreedy(grid, {
     ...structuredClone(baseParams),
     greedy: {
       ...baseParams.greedy,
-      connectivityShadowScoring: true,
-    },
+      connectivityShadowScoring: true
+    }
   });
   const enabledProfiled = solveGreedy(grid, {
     ...structuredClone(baseParams),
     greedy: {
       ...baseParams.greedy,
       connectivityShadowScoring: true,
-      profile: true,
-    },
+      profile: true
+    }
   });
   const snapshotDir = fs.mkdtempSync(path.join(os.tmpdir(), "greedy-shadow-snapshot-"));
   const snapshotFilePath = path.join(snapshotDir, "snapshot.json");
@@ -1500,8 +1619,8 @@ function testGreedyConnectivityShadowScoringIsOptInTieBreaker() {
       greedy: {
         ...baseParams.greedy,
         connectivityShadowScoring: true,
-        snapshotFilePath,
-      },
+        snapshotFilePath
+      }
     });
     const snapshot = JSON.parse(fs.readFileSync(snapshotFilePath, "utf8"));
 
@@ -1523,7 +1642,7 @@ function testGreedyConnectivityShadowScoringIsOptInTieBreaker() {
       rows: 1,
       cols: 1,
       roadCost: 0,
-      typeIndex: 0,
+      typeIndex: 0
     });
     assert.deepEqual(snapshotted.residentials, enabled.residentials);
     assert.deepEqual(snapshot.residentials, enabled.residentials);
@@ -1540,31 +1659,29 @@ function testGreedyConnectivityShadowOrderingLabelRunner() {
     grid: [
       [0, 1, 1],
       [0, 1, 0],
-      [1, 0, 0],
+      [1, 0, 0]
     ],
     params: {
       optimizer: "greedy",
-      residentialTypes: [
-        { w: 1, h: 1, min: 10, max: 10, avail: 1 },
-      ],
+      residentialTypes: [{ w: 1, h: 1, min: 10, max: 10, avail: 1 }],
       availableBuildings: { services: 0, residentials: 1 },
       greedy: {
         localSearch: false,
         restarts: 1,
         serviceRefineIterations: 0,
-        exhaustiveServiceSearch: false,
-      },
-    },
+        exhaustiveServiceSearch: false
+      }
+    }
   };
 
   const result = runGreedyConnectivityShadowOrderingLabels([labelCase], {
     seeds: [7],
-    maxLabelsPerCase: 1,
+    maxLabelsPerCase: 1
   });
   const repeatedSnapshot = createGreedyConnectivityShadowOrderingLabelSnapshot(
     runGreedyConnectivityShadowOrderingLabels([labelCase], {
       seeds: [7],
-      maxLabelsPerCase: 1,
+      maxLabelsPerCase: 1
     })
   );
   const snapshot = createGreedyConnectivityShadowOrderingLabelSnapshot(result);
@@ -1630,8 +1747,8 @@ function testLearnedRankingLabelSuite() {
               chosen: { r: 0, c: 1, rows: 1, cols: 1, roadCost: 0, typeIndex: 0 },
               rejected: { r: 1, c: 1, rows: 1, cols: 1, roadCost: 1, typeIndex: 0 },
               candidateShadowPenalty: 1,
-              incumbentShadowPenalty: 5,
-            },
+              incumbentShadowPenalty: 5
+            }
           ],
           roadOpportunityTraces: [
             {
@@ -1664,14 +1781,14 @@ function testLearnedRankingLabelSuite() {
                   lostCells: 2,
                   footprintCells: 1,
                   disconnectedCells: 1,
-                  typeIndex: 0,
-                },
-              ],
-            },
-          ],
-        },
-      },
-    ],
+                  typeIndex: 0
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
   };
   const orderingLabels = collectGreedyOrderingLabelsFromBenchmarkSuite(greedyFixtureSuite, "development", 7);
 
@@ -1690,19 +1807,19 @@ function testLearnedRankingLabelSuite() {
       {
         split: "development",
         greedyCaseNames: ["typed-housing-baseline"],
-        lnsCaseNames: ["seeded-service-anchor-pressure"],
+        lnsCaseNames: ["seeded-service-anchor-pressure"]
       },
       {
         split: "holdout",
         greedyCaseNames: ["deterministic-tie-breaks"],
-        lnsCaseNames: ["row0-anchor-repair"],
-      },
+        lnsCaseNames: ["row0-anchor-repair"]
+      }
     ],
     greedyCorpus: DEFAULT_GREEDY_BENCHMARK_CORPUS,
     lnsCorpus: DEFAULT_LNS_BENCHMARK_CORPUS,
     maxWindows: 1,
     explorationWindowCount: 0,
-    repairTimeLimitSeconds: 0.1,
+    repairTimeLimitSeconds: 0.1
   });
   const snapshot = createLearnedRankingLabelSnapshot(result);
   const formatted = formatLearnedRankingLabelSuite(result);
@@ -1711,6 +1828,10 @@ function testLearnedRankingLabelSuite() {
   assert.equal(result.audit.learnedModel, null);
   assert.equal(result.audit.lnsReplay.cpSatNumWorkers, 1);
   assert.equal(result.audit.lnsReplay.featureSchemaVersion, 2);
+  assert.equal(result.audit.lnsReplay.incumbentStatePolicy, "initial-incumbent");
+  assert.deepEqual(result.audit.lnsReplay.incumbentStatePolicies, ["initial-incumbent"]);
+  assert.equal(result.audit.lnsReplay.stateCollectionIterations, 4);
+  assert.equal(result.audit.lnsReplay.stateCollectionRepairTimeLimitSeconds, 0.1);
   assert.equal(result.leakage.protectedHoldout, true);
   assert.deepEqual(result.leakage.greedyOverlap, []);
   assert.deepEqual(result.leakage.lnsOverlap, []);
@@ -1719,27 +1840,39 @@ function testLearnedRankingLabelSuite() {
   assert.equal(result.lns.splits[0].replay.schemaVersion, 1);
   assert.equal(result.lns.splits[0].replay.featureSchemaVersion, 2);
   assert.equal(result.lns.splits[0].replay.cpSatNumWorkers, 1);
+  assert.deepEqual(result.lns.splits[0].replay.statePolicies, ["initial-incumbent"]);
+  assert.deepEqual(result.lns.splits[0].replay.capturedStatePolicies, ["initial-incumbent"]);
+  assert.equal(result.lns.splits[0].replay.stateCollectionIterations, 4);
+  assert.equal(result.lns.splits[0].replay.stateCollectionRepairTimeLimitSeconds, 0.1);
+  assert.equal(result.lns.splits[0].replay.stateCount, 1);
   assert.equal(result.lns.splits[0].replay.cpSatModelFingerprints.length, 1);
   assert.deepEqual(result.lns.splits[0].pressureFamilies, ["anchor-service"]);
   assert.deepEqual(result.lns.splits[0].replay.pressureFamilies, ["anchor-service"]);
   assert.equal(result.lns.splits[0].replay.explorationWindowCount, 0);
   assert.equal(result.lns.splits[0].replay.cases[0].pressureFamily, "anchor-service");
+  assert.equal(result.lns.splits[0].replay.cases[0].statePolicy, "initial-incumbent");
   assert.equal(typeof result.lns.splits[0].replay.cases[0].labels[0].usable, "boolean");
   assert.equal(result.lns.splits[0].replay.cases[0].labels[0].pressureFamily, "anchor-service");
   assert.equal(typeof result.lns.splits[0].replay.cases[0].labels[0].operator, "string");
   assert.equal(typeof result.lns.splits[0].replay.cases[0].labels[0].operatorScore, "number");
   assert.equal(result.lns.splits[0].replay.cases[0].labels[0].selectionSource, "baseline-top-k");
   assert.equal(result.lns.scaleReadiness.passed, false);
-  assert.equal(result.lns.scaleReadiness.thresholds.minPressureFamilies, DEFAULT_LNS_REPLAY_LABEL_SCALE_THRESHOLDS.minPressureFamilies);
+  assert.equal(
+    result.lns.scaleReadiness.thresholds.minPressureFamilies,
+    DEFAULT_LNS_REPLAY_LABEL_SCALE_THRESHOLDS.minPressureFamilies
+  );
   assert.equal(result.lns.scaleReadiness.splitReadiness[0].failedReasons.length > 0, true);
-  assert.equal(buildLnsReplayLabelScaleReadiness(result.lns.splits, {
-    minPressureFamilies: 1,
-    minSeedsPerFamily: 1,
-    minUsableLabelsPerSplit: 0,
-    minNonNeutralLabelsPerSplit: 0,
-    minUsableLabelsPerFamily: 0,
-    maxNeutralLabelRatio: 1,
-  }).passed, true);
+  assert.equal(
+    buildLnsReplayLabelScaleReadiness(result.lns.splits, {
+      minPressureFamilies: 1,
+      minSeedsPerFamily: 1,
+      minUsableLabelsPerSplit: 0,
+      minNonNeutralLabelsPerSplit: 0,
+      minUsableLabelsPerFamily: 0,
+      maxNeutralLabelRatio: 1
+    }).passed,
+    true
+  );
   assert.equal(buildLnsReplayLabelScaleReadiness([]).passed, false);
   assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
   assert.equal(snapshot.lns.scaleReadiness.passed, false);
@@ -1754,21 +1887,24 @@ function testLearnedRankingLabelSuite() {
     command: "node dist/learnedRankingLabelCli.js --json",
     git: {
       commit: "1234567890abcdef1234567890abcdef12345678",
-      branch: "features/label-telemetry-test",
+      branch: "features/label-telemetry-test"
     },
     hardware: {
       captured: true,
       cpuModel: "Test CPU",
       logicalCpuCount: 8,
       memoryBytes: 16,
-      gpuUsed: false,
-    },
+      gpuUsed: false
+    }
   });
   assert.match(labelFingerprint, /^fnv1a:[0-9a-f]{8}$/);
   assert.equal(labelTelemetryManifest.source, "learned-ranking-label-bundle");
   assert.equal(labelTelemetryManifest.labelFingerprint, labelFingerprint);
   assert.equal(labelTelemetryManifest.suite.totalLabels, result.greedy.labelCount + result.lns.labelCount);
   assert.equal(labelTelemetryManifest.suite.protectedHoldout, true);
+  assert.deepEqual(labelTelemetryManifest.lns.splits[0].statePolicies, ["initial-incumbent"]);
+  assert.deepEqual(labelTelemetryManifest.lns.splits[0].capturedStatePolicies, ["initial-incumbent"]);
+  assert.equal(labelTelemetryManifest.lns.splits[0].stateCount, 1);
   assert.equal(
     Object.values(labelTelemetryManifest.lns.statusCounts).reduce((sum, count) => sum + count, 0),
     result.lns.labelCount
@@ -1776,27 +1912,33 @@ function testLearnedRankingLabelSuite() {
   const labelRegistryDraft = buildLearnedRankingLabelRegistryEntryDraft(result, {
     runId: "learned-label-test",
     commands: ["node dist/learnedRankingLabelCli.js --json"],
-    artifactPaths: ["artifacts/labels/labels.json", "artifacts/labels/telemetry-manifest.json"],
+    artifactPaths: ["artifacts/labels/labels.json", "artifacts/labels/telemetry-manifest.json"]
   });
   assert.equal(labelRegistryDraft.artifactType, "label-bundle");
   assert.deepEqual(labelRegistryDraft.cases.development, ["seeded-service-anchor-pressure", "typed-housing-baseline"]);
   assert.equal(labelRegistryDraft.model.trained, false);
   assert.equal(labelRegistryDraft.labelFingerprint, labelFingerprint);
   assert.equal(labelRegistryDraft.budget.lnsFeatureSchemaVersion, 2);
+  assert.equal(labelRegistryDraft.budget.lnsStatePolicyCount, 1);
+  assert.equal(labelRegistryDraft.budget.lnsCapturedStatePolicyCount, 1);
+  assert.deepEqual(labelRegistryDraft.budget.lnsStateCollectionIterations, [4]);
+  assert.deepEqual(labelRegistryDraft.budget.lnsStateCollectionRepairTimeLimitSeconds, [0.1]);
   assert.deepEqual(labelRegistryDraft.budget.lnsCpSatNumWorkers, [1]);
+  assert.deepEqual(labelRegistryDraft.summaryMetrics.lnsStatePolicies, ["initial-incumbent"]);
+  assert.deepEqual(labelRegistryDraft.summaryMetrics.lnsCapturedStatePolicies, ["initial-incumbent"]);
   assert.equal(labelRegistryDraft.cpSatModelFingerprints.length > 0, true);
   assert.match(labelRegistryDraft.inputFingerprint, /^fnv1a:[0-9a-f]{8}$/);
   const completedLabelRegistryEntry = buildExperimentRegistryEntry(labelRegistryDraft, {
     rootDir: path.join(__dirname, "../.."),
     gitMetadata: {
       commit: "1234567890abcdef1234567890abcdef12345678",
-      branch: "features/label-telemetry-test",
-    },
+      branch: "features/label-telemetry-test"
+    }
   });
   const labelRegistryValidation = validateExperimentRegistryEntry(completedLabelRegistryEntry, {
     rootDir: path.join(__dirname, "../.."),
     validateArtifactPaths: false,
-    strict: true,
+    strict: true
   });
   assert.deepEqual(labelRegistryValidation.issues, []);
 
@@ -1806,19 +1948,23 @@ function testLearnedRankingLabelSuite() {
   const absoluteArtifactDir = path.join(repoRoot, artifactDir);
   fs.rmSync(absoluteArtifactDir, { recursive: true, force: true });
   try {
-    const artifactResult = childProcess.spawnSync(process.execPath, [
-      cliPath,
-      `--artifact-dir=${artifactDir}`,
-      "--seeds=7",
-      "--max-windows=1",
-      "--repair-time=0.1",
-      "--label-run-id=tmp-learned-ranking-label-artifact-test",
-      "--label-register-dry-run",
-      "--json",
-    ], {
-      cwd: repoRoot,
-      encoding: "utf8",
-    });
+    const artifactResult = childProcess.spawnSync(
+      process.execPath,
+      [
+        cliPath,
+        `--artifact-dir=${artifactDir}`,
+        "--seeds=7",
+        "--max-windows=1",
+        "--repair-time=0.1",
+        "--label-run-id=tmp-learned-ranking-label-artifact-test",
+        "--label-register-dry-run",
+        "--json"
+      ],
+      {
+        cwd: repoRoot,
+        encoding: "utf8"
+      }
+    );
     assert.equal(artifactResult.status, 0, artifactResult.stderr || artifactResult.stdout);
     const artifactManifest = JSON.parse(artifactResult.stdout);
     assert.equal(artifactManifest.artifactDir, artifactDir);
@@ -1828,18 +1974,15 @@ function testLearnedRankingLabelSuite() {
     assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.labelsText)), true);
     assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.telemetryManifestJson)), true);
     assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.registryEntryDraftJson)), true);
-    const labelsArtifact = JSON.parse(fs.readFileSync(
-      path.join(repoRoot, artifactManifest.artifactPaths.labelsJson),
-      "utf8"
-    ));
-    const telemetryArtifact = JSON.parse(fs.readFileSync(
-      path.join(repoRoot, artifactManifest.artifactPaths.telemetryManifestJson),
-      "utf8"
-    ));
-    const draftArtifact = JSON.parse(fs.readFileSync(
-      path.join(repoRoot, artifactManifest.artifactPaths.registryEntryDraftJson),
-      "utf8"
-    ));
+    const labelsArtifact = JSON.parse(
+      fs.readFileSync(path.join(repoRoot, artifactManifest.artifactPaths.labelsJson), "utf8")
+    );
+    const telemetryArtifact = JSON.parse(
+      fs.readFileSync(path.join(repoRoot, artifactManifest.artifactPaths.telemetryManifestJson), "utf8")
+    );
+    const draftArtifact = JSON.parse(
+      fs.readFileSync(path.join(repoRoot, artifactManifest.artifactPaths.registryEntryDraftJson), "utf8")
+    );
     assert.equal(Object.hasOwn(labelsArtifact, "generatedAt"), false);
     assert.equal(telemetryArtifact.source, "learned-ranking-label-bundle");
     assert.equal(telemetryArtifact.labelFingerprint, artifactManifest.labelFingerprint);
@@ -1849,12 +1992,9 @@ function testLearnedRankingLabelSuite() {
     assert.equal(draftArtifact.model.trained, false);
     assert.equal(draftArtifact.labelFingerprint, artifactManifest.labelFingerprint);
 
-    const registryGuard = childProcess.spawnSync(process.execPath, [
-      cliPath,
-      "--label-register-dry-run",
-    ], {
+    const registryGuard = childProcess.spawnSync(process.execPath, [cliPath, "--label-register-dry-run"], {
       cwd: repoRoot,
-      encoding: "utf8",
+      encoding: "utf8"
     });
     assert.notEqual(registryGuard.status, 0);
     assert.match(registryGuard.stderr, /--label-register-dry-run requires --artifact-dir/);
@@ -1863,22 +2003,23 @@ function testLearnedRankingLabelSuite() {
   }
 
   assert.throws(
-    () => runLearnedRankingLabelSuite({
-      splitConfigs: [
-        {
-          split: "development",
-          greedyCaseNames: ["typed-housing-baseline"],
-          lnsCaseNames: ["typed-housing-single"],
-        },
-        {
-          split: "holdout",
-          greedyCaseNames: ["typed-housing-baseline"],
-          lnsCaseNames: ["row0-anchor-repair"],
-        },
-      ],
-      greedyCorpus: DEFAULT_GREEDY_BENCHMARK_CORPUS,
-      lnsCorpus: DEFAULT_LNS_BENCHMARK_CORPUS,
-    }),
+    () =>
+      runLearnedRankingLabelSuite({
+        splitConfigs: [
+          {
+            split: "development",
+            greedyCaseNames: ["typed-housing-baseline"],
+            lnsCaseNames: ["typed-housing-single"]
+          },
+          {
+            split: "holdout",
+            greedyCaseNames: ["typed-housing-baseline"],
+            lnsCaseNames: ["row0-anchor-repair"]
+          }
+        ],
+        greedyCorpus: DEFAULT_GREEDY_BENCHMARK_CORPUS,
+        lnsCorpus: DEFAULT_LNS_BENCHMARK_CORPUS
+      }),
     /development\/holdout split overlap is not allowed/
   );
 }
@@ -1887,8 +2028,8 @@ function testGreedyOfflineRankerExperiment() {
   const result = runGreedyOfflineRankerExperiment({
     seeds: [7],
     training: {
-      epochs: 8,
-    },
+      epochs: 8
+    }
   });
   const snapshot = createGreedyOfflineRankerSnapshot(result);
   const formatted = formatGreedyOfflineRankerExperiment(result);
@@ -1929,15 +2070,15 @@ function testGreedyOfflineRankerExperiment() {
     command: "node dist/greedyOfflineRankerCli.js --seeds=7 --epochs=8",
     git: {
       commit: "1234567890abcdef1234567890abcdef12345678",
-      branch: "features/greedy-offline-ranker-test",
+      branch: "features/greedy-offline-ranker-test"
     },
     hardware: {
       captured: true,
       cpuModel: "Test CPU",
       logicalCpuCount: 8,
       memoryBytes: 16,
-      gpuUsed: false,
-    },
+      gpuUsed: false
+    }
   });
   assert.equal(telemetryManifest.source, "model-experiment");
   assert.equal(telemetryManifest.model.trained, true);
@@ -1948,7 +2089,7 @@ function testGreedyOfflineRankerExperiment() {
   const registryDraft = buildGreedyOfflineRankerRegistryEntryDraft(result, {
     runId: "greedy-offline-ranker-test",
     commands: ["node dist/greedyOfflineRankerCli.js --seeds=7 --epochs=8"],
-    artifactPaths: ["artifacts/greedy-ranker/model.json", "artifacts/greedy-ranker/telemetry-manifest.json"],
+    artifactPaths: ["artifacts/greedy-ranker/model.json", "artifacts/greedy-ranker/telemetry-manifest.json"]
   });
   assert.equal(registryDraft.artifactType, "model-experiment");
   assert.equal(registryDraft.decision, "offline-greedy-ranker-beats-baselines");
@@ -1959,13 +2100,13 @@ function testGreedyOfflineRankerExperiment() {
     rootDir: path.join(__dirname, "../.."),
     gitMetadata: {
       commit: "1234567890abcdef1234567890abcdef12345678",
-      branch: "features/greedy-offline-ranker-test",
-    },
+      branch: "features/greedy-offline-ranker-test"
+    }
   });
   const registryValidation = validateExperimentRegistryEntry(completedRegistryEntry, {
     rootDir: path.join(__dirname, "../.."),
     validateArtifactPaths: false,
-    strict: true,
+    strict: true
   });
   assert.deepEqual(registryValidation.issues, []);
 
@@ -1975,18 +2116,22 @@ function testGreedyOfflineRankerExperiment() {
   const absoluteArtifactDir = path.join(repoRoot, artifactDir);
   fs.rmSync(absoluteArtifactDir, { recursive: true, force: true });
   try {
-    const artifactResult = childProcess.spawnSync(process.execPath, [
-      cliPath,
-      `--artifact-dir=${artifactDir}`,
-      "--seeds=7",
-      "--epochs=8",
-      "--ranker-run-id=tmp-greedy-offline-ranker-test",
-      "--ranker-register-dry-run",
-      "--json",
-    ], {
-      cwd: repoRoot,
-      encoding: "utf8",
-    });
+    const artifactResult = childProcess.spawnSync(
+      process.execPath,
+      [
+        cliPath,
+        `--artifact-dir=${artifactDir}`,
+        "--seeds=7",
+        "--epochs=8",
+        "--ranker-run-id=tmp-greedy-offline-ranker-test",
+        "--ranker-register-dry-run",
+        "--json"
+      ],
+      {
+        cwd: repoRoot,
+        encoding: "utf8"
+      }
+    );
     assert.equal(artifactResult.status, 0, artifactResult.stderr || artifactResult.stdout);
     const artifactManifest = JSON.parse(artifactResult.stdout);
     assert.equal(artifactManifest.artifactDir, artifactDir);
@@ -1998,15 +2143,15 @@ function testGreedyOfflineRankerExperiment() {
     assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.modelJson)), true);
     assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.telemetryManifestJson)), true);
     assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.registryEntryDraftJson)), true);
-    const modelArtifact = JSON.parse(fs.readFileSync(path.join(repoRoot, artifactManifest.artifactPaths.modelJson), "utf8"));
-    const telemetryArtifact = JSON.parse(fs.readFileSync(
-      path.join(repoRoot, artifactManifest.artifactPaths.telemetryManifestJson),
-      "utf8"
-    ));
-    const draftArtifact = JSON.parse(fs.readFileSync(
-      path.join(repoRoot, artifactManifest.artifactPaths.registryEntryDraftJson),
-      "utf8"
-    ));
+    const modelArtifact = JSON.parse(
+      fs.readFileSync(path.join(repoRoot, artifactManifest.artifactPaths.modelJson), "utf8")
+    );
+    const telemetryArtifact = JSON.parse(
+      fs.readFileSync(path.join(repoRoot, artifactManifest.artifactPaths.telemetryManifestJson), "utf8")
+    );
+    const draftArtifact = JSON.parse(
+      fs.readFileSync(path.join(repoRoot, artifactManifest.artifactPaths.registryEntryDraftJson), "utf8")
+    );
     assert.equal(modelArtifact.trained, true);
     assert.equal(telemetryArtifact.source, "model-experiment");
     assert.equal(telemetryArtifact.modelFingerprint, artifactManifest.modelFingerprint);
@@ -2015,12 +2160,9 @@ function testGreedyOfflineRankerExperiment() {
     assert.equal(draftArtifact.model.trained, true);
     assert.equal(draftArtifact.modelFingerprint, artifactManifest.modelFingerprint);
 
-    const registryGuard = childProcess.spawnSync(process.execPath, [
-      cliPath,
-      "--ranker-register-dry-run",
-    ], {
+    const registryGuard = childProcess.spawnSync(process.execPath, [cliPath, "--ranker-register-dry-run"], {
       cwd: repoRoot,
-      encoding: "utf8",
+      encoding: "utf8"
     });
     assert.notEqual(registryGuard.status, 0);
     assert.match(registryGuard.stderr, /--ranker-register-dry-run requires --artifact-dir/);
@@ -2033,20 +2175,18 @@ function testGreedyRoadOpportunityCounterfactualsAreBoundedAndObservational() {
   const grid = [
     [1, 1],
     [1, 0],
-    [1, 0],
+    [1, 0]
   ];
   const baseParams = {
     optimizer: "greedy",
-    residentialTypes: [
-      { w: 1, h: 1, min: 10, max: 10, avail: 1 },
-    ],
+    residentialTypes: [{ w: 1, h: 1, min: 10, max: 10, avail: 1 }],
     availableBuildings: { services: 0, residentials: 1 },
     greedy: {
       localSearch: false,
       restarts: 1,
       serviceRefineIterations: 0,
-      exhaustiveServiceSearch: false,
-    },
+      exhaustiveServiceSearch: false
+    }
   };
 
   const baseline = solveGreedy(grid, structuredClone(baseParams));
@@ -2054,11 +2194,11 @@ function testGreedyRoadOpportunityCounterfactualsAreBoundedAndObservational() {
     ...structuredClone(baseParams),
     greedy: {
       ...baseParams.greedy,
-      profile: true,
-    },
+      profile: true
+    }
   });
-  const trace = profiled.greedyProfile.roadOpportunityTraces.find((entry) =>
-    entry.phase === "residential" && (entry.counterfactuals?.length ?? 0) > 0
+  const trace = profiled.greedyProfile.roadOpportunityTraces.find(
+    (entry) => entry.phase === "residential" && (entry.counterfactuals?.length ?? 0) > 0
   );
 
   assert.deepEqual(profiled.residentials, baseline.residentials);
@@ -2077,11 +2217,7 @@ function testGreedyRoadOpportunityCounterfactualsAreBoundedAndObservational() {
 }
 
 function testRoadOpportunityLocalSearchMeasurementUsesPostRemoveOccupancy() {
-  const grid = [
-    [1],
-    [1],
-    [1],
-  ];
+  const grid = [[1], [1], [1]];
   const { traces, recordRoadOpportunity } = createRoadOpportunityRecorder(true);
   const probe = { kind: "explicit", roadCost: 0, roadProbe: { path: null } };
 
@@ -2093,7 +2229,7 @@ function testRoadOpportunityLocalSearchMeasurementUsesPostRemoveOccupancy() {
       probe,
       phase: "residential",
       record: recordRoadOpportunity,
-      score: 10,
+      score: 10
     });
   }
 
@@ -2105,7 +2241,7 @@ function testRoadOpportunityLocalSearchMeasurementUsesPostRemoveOccupancy() {
     phase: "residential-local-search",
     record: recordRoadOpportunity,
     score: 10,
-    moveKind: "residential-move",
+    moveKind: "residential-move"
   });
 
   const localTrace = traces.find((entry) => entry.phase === "residential-local-search");
@@ -2125,15 +2261,16 @@ function testGreedyStopFileCancelsBeforePrecompute() {
   try {
     const grid = Array.from({ length: 8 }, () => Array.from({ length: 8 }, () => 1));
     assert.throws(
-      () => solveGreedy(grid, {
-        residentialTypes: [{ w: 2, h: 2, min: 100, max: 100, avail: 4 }],
-        availableBuildings: { services: 0, residentials: 4 },
-        greedy: {
-          localSearch: false,
-          restarts: 1,
-          stopFilePath,
-        },
-      }),
+      () =>
+        solveGreedy(grid, {
+          residentialTypes: [{ w: 2, h: 2, min: 100, max: 100, avail: 4 }],
+          availableBuildings: { services: 0, residentials: 4 },
+          greedy: {
+            localSearch: false,
+            restarts: 1,
+            stopFilePath
+          }
+        }),
       /Greedy solve was stopped before finding a feasible solution\./
     );
   } finally {
@@ -2154,7 +2291,7 @@ function testGreedyWallClockBudgetStopsWithBestSolution() {
       [1, 1, 1, 1],
       [1, 1, 1, 1],
       [1, 1, 1, 1],
-      [1, 1, 1, 1],
+      [1, 1, 1, 1]
     ];
     const solution = solveGreedy(grid, {
       residentialTypes: [{ w: 2, h: 2, min: 100, max: 100, avail: 1 }],
@@ -2162,8 +2299,8 @@ function testGreedyWallClockBudgetStopsWithBestSolution() {
       greedy: {
         localSearch: false,
         restarts: 3000,
-        timeLimitSeconds: 1,
-      },
+        timeLimitSeconds: 1
+      }
     });
 
     assert.equal(solution.totalPopulation, 100);
@@ -2179,14 +2316,12 @@ function testGreedyExploresAllAllowedRoadAnchorSeeds() {
   const grid = [
     [1, 0, 1, 0],
     [0, 0, 1, 1],
-    [0, 0, 1, 1],
+    [0, 0, 1, 1]
   ];
   const params = {
-    residentialTypes: [
-      { w: 2, h: 2, min: 10, max: 10, avail: 1 },
-    ],
+    residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
     availableBuildings: { services: 0, residentials: 1 },
-    greedy: { localSearch: false, restarts: 1, exhaustiveServiceSearch: false },
+    greedy: { localSearch: false, restarts: 1, exhaustiveServiceSearch: false }
   };
 
   const solution = solveGreedy(grid, params);
@@ -2201,14 +2336,12 @@ function testGreedyExploresMultipleRoadAnchorSeedsWithinOneComponent() {
     [1, 1, 1, 0, 0],
     [1, 1, 0, 0, 0],
     [0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0]
   ];
   const params = {
-    residentialTypes: [
-      { w: 2, h: 2, min: 10, max: 10, avail: 1 },
-    ],
+    residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
     availableBuildings: { services: 0, residentials: 1 },
-    greedy: { localSearch: false, restarts: 1, exhaustiveServiceSearch: false },
+    greedy: { localSearch: false, restarts: 1, exhaustiveServiceSearch: false }
   };
 
   const solution = solveGreedy(grid, params);
@@ -2223,18 +2356,16 @@ function testGreedyExploresWideRoadAnchors() {
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1],
-    [1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0],
+    [1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0]
   ];
   const params = {
-    serviceTypes: [
-      { rows: 2, cols: 2, bonus: 40, range: 1, avail: 1 },
-    ],
+    serviceTypes: [{ rows: 2, cols: 2, bonus: 40, range: 1, avail: 1 }],
     residentialTypes: [
       { w: 2, h: 2, min: 10, max: 50, avail: 3 },
-      { w: 2, h: 3, min: 15, max: 60, avail: 2 },
+      { w: 2, h: 3, min: 15, max: 60, avail: 2 }
     ],
     availableBuildings: { services: 1, residentials: 3 },
-    greedy: { localSearch: false, restarts: 1, exhaustiveServiceSearch: false },
+    greedy: { localSearch: false, restarts: 1, exhaustiveServiceSearch: false }
   };
 
   const solution = solveGreedy(grid, params);
@@ -2247,15 +2378,15 @@ function testGreedyExploresAnchorsBeyondLegacyRepresentativeCap() {
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1],
     [1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 0],
-    [1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1],
+    [1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1]
   ];
   const params = {
     residentialTypes: [
       { w: 2, h: 2, min: 10, max: 10, avail: 20 },
-      { w: 2, h: 3, min: 15, max: 15, avail: 20 },
+      { w: 2, h: 3, min: 15, max: 15, avail: 20 }
     ],
     availableBuildings: { services: 0, residentials: 20 },
-    greedy: { localSearch: false, restarts: 1, exhaustiveServiceSearch: false },
+    greedy: { localSearch: false, restarts: 1, exhaustiveServiceSearch: false }
   };
 
   const solution = solveGreedy(grid, params);
@@ -2266,16 +2397,13 @@ function testGreedyExploresAnchorsBeyondLegacyRepresentativeCap() {
 function testRoadAnchorSeedCandidatesIncludeAllAllowedAnchorBoundaryCells() {
   const singleComponentGrid = [
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const disconnectedComponentGrid = [
     [1, 0, 1, 1, 0, 1],
-    [1, 0, 1, 1, 0, 0],
+    [1, 0, 1, 1, 0, 0]
   ];
-  const wideComponentGrid = [
-    Array.from({ length: 20 }, () => 1),
-    Array.from({ length: 20 }, () => 1),
-  ];
+  const wideComponentGrid = [Array.from({ length: 20 }, () => 1), Array.from({ length: 20 }, () => 1)];
 
   assert.deepEqual(
     roadAnchorSeedCandidates(singleComponentGrid).map((seed) => [...seed][0]),
@@ -2292,13 +2420,9 @@ function testRoadAnchorSeedCandidatesIncludeAllAllowedAnchorBoundaryCells() {
 }
 
 function testRepresentativeRoadAnchorSeedCandidatesStayBoundaryExhaustive() {
-  const wideGrid = [
-    Array.from({ length: 40 }, () => 1),
-    Array.from({ length: 40 }, () => 1),
-  ];
+  const wideGrid = [Array.from({ length: 40 }, () => 1), Array.from({ length: 40 }, () => 1)];
 
-  const representativeKeys = roadAnchorRepresentativeSeedCandidates(wideGrid, 12)
-    .map((seed) => [...seed][0]);
+  const representativeKeys = roadAnchorRepresentativeSeedCandidates(wideGrid, 12).map((seed) => [...seed][0]);
 
   assert.equal(representativeKeys.length, 41);
   assert.equal(representativeKeys[0], "0,0");
@@ -2311,11 +2435,11 @@ function testLnsNeighborhoodWindowsPrioritizeWeakServicesAndUpgradeHeadroom() {
   const params = {
     serviceTypes: [
       { rows: 2, cols: 2, bonus: 30, range: 1, avail: 2 },
-      { rows: 2, cols: 2, bonus: 180, range: 4, avail: 2 },
+      { rows: 2, cols: 2, bonus: 180, range: 4, avail: 2 }
     ],
     residentialTypes: [
       { w: 2, h: 2, min: 100, max: 150, avail: 1 },
-      { w: 2, h: 2, min: 100, max: 500, avail: 1 },
+      { w: 2, h: 2, min: 100, max: 500, avail: 1 }
     ],
     availableBuildings: { services: 2, residentials: 2 },
     lns: {
@@ -2323,25 +2447,25 @@ function testLnsNeighborhoodWindowsPrioritizeWeakServicesAndUpgradeHeadroom() {
       maxNoImprovementIterations: 2,
       neighborhoodRows: 3,
       neighborhoodCols: 3,
-      repairTimeLimitSeconds: 1,
-    },
+      repairTimeLimitSeconds: 1
+    }
   };
   const incumbent = {
     optimizer: "lns",
     roads: new Set(["0,0", "0,1", "0,2", "0,3", "0,4", "0,5", "1,0", "2,0", "3,0", "4,0", "5,0"]),
     services: [
       { r: 1, c: 4, rows: 2, cols: 2, range: 1 },
-      { r: 1, c: 0, rows: 2, cols: 2, range: 4 },
+      { r: 1, c: 0, rows: 2, cols: 2, range: 4 }
     ],
     serviceTypeIndices: [0, 1],
     servicePopulationIncreases: [30, 180],
     residentials: [
       { r: 4, c: 0, rows: 2, cols: 2 },
-      { r: 4, c: 4, rows: 2, cols: 2 },
+      { r: 4, c: 4, rows: 2, cols: 2 }
     ],
     residentialTypeIndices: [1, 0],
     populations: [280, 150],
-    totalPopulation: 430,
+    totalPopulation: 430
   };
 
   const windows = buildNeighborhoodWindows(grid, params, incumbent, {
@@ -2351,7 +2475,7 @@ function testLnsNeighborhoodWindowsPrioritizeWeakServicesAndUpgradeHeadroom() {
     neighborhoodCols: 3,
     repairTimeLimitSeconds: 1,
     stopFilePath: "",
-    snapshotFilePath: "",
+    snapshotFilePath: ""
   });
   const operatorCandidates = buildAdaptiveNeighborhoodCandidates(grid, params, incumbent, {
     iterations: 3,
@@ -2360,7 +2484,7 @@ function testLnsNeighborhoodWindowsPrioritizeWeakServicesAndUpgradeHeadroom() {
     neighborhoodCols: 3,
     repairTimeLimitSeconds: 1,
     stopFilePath: "",
-    snapshotFilePath: "",
+    snapshotFilePath: ""
   });
   const operators = new Set(operatorCandidates.map((candidate) => candidate.operator));
   for (const operator of [
@@ -2369,16 +2493,17 @@ function testLnsNeighborhoodWindowsPrioritizeWeakServicesAndUpgradeHeadroom() {
     "frontier-congestion",
     "gate-choke",
     "service-overlap",
-    "random-exploration",
+    "random-exploration"
   ]) {
     assert.equal(operators.has(operator), true, `expected LNS operator ${operator}`);
   }
   const indexOfWindow = (target) =>
-    windows.findIndex((window) =>
-      window.top === target.top
-      && window.left === target.left
-      && window.rows === target.rows
-      && window.cols === target.cols
+    windows.findIndex(
+      (window) =>
+        window.top === target.top &&
+        window.left === target.left &&
+        window.rows === target.rows &&
+        window.cols === target.cols
     );
 
   const weakServiceWindow = { top: 1, left: 3, rows: 3, cols: 3 };
@@ -2399,7 +2524,7 @@ function testLnsNeighborhoodWindowsPrioritizeWeakServicesAndUpgradeHeadroom() {
     neighborhoodAnchorPolicy: "sliding-only",
     repairTimeLimitSeconds: 1,
     stopFilePath: "",
-    snapshotFilePath: "",
+    snapshotFilePath: ""
   });
 
   assert.notDeepEqual(slidingOnlyWindows[0], weakServiceWindow);
@@ -2408,19 +2533,15 @@ function testLnsNeighborhoodWindowsPrioritizeWeakServicesAndUpgradeHeadroom() {
 function testLnsNeighborhoodWindowsEscalateWhenStagnating() {
   const grid = Array.from({ length: 8 }, () => Array.from({ length: 10 }, () => 1));
   const params = {
-    serviceTypes: [
-      { rows: 2, cols: 2, bonus: 40, range: 2, avail: 1 },
-    ],
-    residentialTypes: [
-      { w: 2, h: 2, min: 100, max: 300, avail: 1 },
-    ],
+    serviceTypes: [{ rows: 2, cols: 2, bonus: 40, range: 2, avail: 1 }],
+    residentialTypes: [{ w: 2, h: 2, min: 100, max: 300, avail: 1 }],
     lns: {
       iterations: 6,
       maxNoImprovementIterations: 4,
       neighborhoodRows: 3,
       neighborhoodCols: 4,
-      repairTimeLimitSeconds: 1,
-    },
+      repairTimeLimitSeconds: 1
+    }
   };
   const incumbent = {
     optimizer: "lns",
@@ -2431,7 +2552,7 @@ function testLnsNeighborhoodWindowsEscalateWhenStagnating() {
     residentials: [],
     residentialTypeIndices: [],
     populations: [],
-    totalPopulation: 0,
+    totalPopulation: 0
   };
   const options = {
     iterations: 6,
@@ -2440,7 +2561,7 @@ function testLnsNeighborhoodWindowsEscalateWhenStagnating() {
     neighborhoodCols: 4,
     repairTimeLimitSeconds: 1,
     stopFilePath: "",
-    snapshotFilePath: "",
+    snapshotFilePath: ""
   };
 
   const staleWindows = buildNeighborhoodWindows(grid, params, incumbent, options, 2);
@@ -2449,14 +2570,10 @@ function testLnsNeighborhoodWindowsEscalateWhenStagnating() {
 
   const finalStageWindows = buildNeighborhoodWindows(grid, params, incumbent, options, 4);
   assert.ok(
-    finalStageWindows.some((window) =>
-      window.top === 1 && window.left === 0 && window.rows === 7 && window.cols === 10
-    )
+    finalStageWindows.some((window) => window.top === 1 && window.left === 0 && window.rows === 7 && window.cols === 10)
   );
   assert.ok(
-    finalStageWindows.some((window) =>
-      window.top === 0 && window.left === 0 && window.rows === 8 && window.cols === 10
-    )
+    finalStageWindows.some((window) => window.top === 0 && window.left === 0 && window.rows === 8 && window.cols === 10)
   );
 }
 
@@ -2470,20 +2587,20 @@ async function maybeTestCpSatOptimizer() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const params = {
     optimizer: "cp-sat",
     cpSat: {
       pythonExecutable,
       timeLimitSeconds: 5,
-      numWorkers: 1,
+      numWorkers: 1
     },
     residentialTypes: [
       { w: 2, h: 2, min: 10, max: 10, avail: 1 },
-      { w: 2, h: 2, min: 100, max: 100, avail: 1 },
+      { w: 2, h: 2, min: 100, max: 100, avail: 1 }
     ],
-    availableBuildings: { residentials: 2, services: 0 },
+    availableBuildings: { residentials: 2, services: 0 }
   };
 
   const solution = await solveAsync(grid, params);
@@ -2498,7 +2615,10 @@ async function maybeTestCpSatOptimizer() {
   assert.equal(typeof solution.cpSatTelemetry?.bestObjectiveBound, "number");
   assert.equal(typeof solution.cpSatTelemetry?.solutionCount, "number");
   assert.equal(solution.totalPopulation, 110);
-  assert.deepEqual([...solution.residentialTypeIndices].sort((a, b) => a - b), [0, 1]);
+  assert.deepEqual(
+    [...solution.residentialTypeIndices].sort((a, b) => a - b),
+    [0, 1]
+  );
   assert.equal(direct.totalPopulation, 110);
 }
 
@@ -2511,17 +2631,17 @@ async function maybeTestCpSatUsesColumnZeroRoadAnchor() {
   const grid = [
     [0, 0, 0],
     [1, 1, 1],
-    [1, 1, 1],
+    [1, 1, 1]
   ];
   const params = {
     optimizer: "cp-sat",
     cpSat: {
       pythonExecutable,
       timeLimitSeconds: 5,
-      numWorkers: 1,
+      numWorkers: 1
     },
     residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
-    availableBuildings: { residentials: 1, services: 0 },
+    availableBuildings: { residentials: 1, services: 0 }
   };
 
   const solution = await solveCpSatAsync(grid, params);
@@ -2530,8 +2650,14 @@ async function maybeTestCpSatUsesColumnZeroRoadAnchor() {
   assert.match(solution.cpSatStatus ?? "", /^(OPTIMAL|FEASIBLE)$/);
   assert.equal(solution.totalPopulation, 10);
   assert.equal(validation.valid, true);
-  assert.equal([...solution.roads].some((key) => key.endsWith(",0")), true);
-  assert.equal([...solution.roads].some((key) => key.startsWith("0,")), false);
+  assert.equal(
+    [...solution.roads].some((key) => key.endsWith(",0")),
+    true
+  );
+  assert.equal(
+    [...solution.roads].some((key) => key.startsWith("0,")),
+    false
+  );
 }
 
 async function maybeTestCpSatAllowsMultiAnchorComponentsInOptimization() {
@@ -2543,17 +2669,17 @@ async function maybeTestCpSatAllowsMultiAnchorComponentsInOptimization() {
   const grid = [
     [0, 1, 0, 0, 0, 1, 0],
     [0, 1, 1, 0, 0, 1, 1],
-    [0, 1, 1, 0, 0, 1, 1],
+    [0, 1, 1, 0, 0, 1, 1]
   ];
   const baseParams = {
     optimizer: "cp-sat",
     cpSat: {
       pythonExecutable,
       timeLimitSeconds: 5,
-      numWorkers: 1,
+      numWorkers: 1
     },
     residentialTypes: [{ w: 2, h: 2, min: 100, max: 100, avail: 2 }],
-    availableBuildings: { residentials: 2, services: 0 },
+    availableBuildings: { residentials: 2, services: 0 }
   };
 
   const aligned = await solveCpSatAsync(grid, baseParams);
@@ -2575,17 +2701,17 @@ function maybeTestCpSatSyncCompatibility() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const params = {
     optimizer: "cp-sat",
     cpSat: {
       pythonExecutable,
       timeLimitSeconds: 5,
-      numWorkers: 1,
+      numWorkers: 1
     },
     residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
-    availableBuildings: { residentials: 1, services: 0 },
+    availableBuildings: { residentials: 1, services: 0 }
   };
 
   const dispatched = solve(grid, params);
@@ -2609,21 +2735,21 @@ async function maybeTestCpSatSupportsShapedServices() {
     [1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1],
-    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1]
   ];
   const params = {
     optimizer: "cp-sat",
     cpSat: {
       pythonExecutable,
       timeLimitSeconds: 5,
-      numWorkers: 1,
+      numWorkers: 1
     },
     serviceTypes: [{ rows: 2, cols: 3, bonus: 50, range: 1, avail: 1 }],
     residentialSettings: {
       "2x2": { min: 100, max: 200 },
-      "2x3": { min: 140, max: 260 },
+      "2x3": { min: 140, max: 260 }
     },
-    availableBuildings: { services: 1, residentials: 2 },
+    availableBuildings: { services: 1, residentials: 2 }
   };
 
   const solution = await solveAsync(grid, params);
@@ -2638,7 +2764,10 @@ async function maybeTestCpSatSupportsShapedServices() {
   assert.deepEqual([...solution.servicePopulationIncreases], [50]);
   assert.deepEqual([...direct.serviceTypeIndices], [0]);
   assert.deepEqual([...direct.servicePopulationIncreases], [50]);
-  assert.deepEqual([solution.services[0].rows, solution.services[0].cols].sort((a, b) => a - b), [2, 3]);
+  assert.deepEqual(
+    [solution.services[0].rows, solution.services[0].cols].sort((a, b) => a - b),
+    [2, 3]
+  );
   assert.equal(solution.services[0].range, 1);
 
   const validation = validateSolution({ grid, solution, params });
@@ -2656,23 +2785,19 @@ function maybeTestCpSatBackendJsonContractSmoke() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const params = {
     serviceTypes: [{ rows: 2, cols: 2, bonus: 15, range: 1, avail: 1 }],
     residentialTypes: [{ w: 2, h: 2, min: 40, max: 55, avail: 1 }],
     availableBuildings: { services: 1, residentials: 1 },
-    cpSat: { timeLimitSeconds: 5, numWorkers: 1 },
+    cpSat: { timeLimitSeconds: 5, numWorkers: 1 }
   };
 
-  const result = childProcess.spawnSync(
-    pythonExecutable,
-    [scriptPath],
-    {
-      input: JSON.stringify({ grid, params }),
-      encoding: "utf8",
-    }
-  );
+  const result = childProcess.spawnSync(pythonExecutable, [scriptPath], {
+    input: JSON.stringify({ grid, params }),
+    encoding: "utf8"
+  });
 
   if (result.status !== 0) {
     throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to run CP-SAT backend smoke test.");
@@ -2686,7 +2811,10 @@ function maybeTestCpSatBackendJsonContractSmoke() {
   assert(Array.isArray(payload.residentials));
   assert(Array.isArray(payload.populations));
   assert.equal(payload.populations.length, payload.residentials.length);
-  assert.equal(payload.totalPopulation, payload.populations.reduce((sum, value) => sum + value, 0));
+  assert.equal(
+    payload.totalPopulation,
+    payload.populations.reduce((sum, value) => sum + value, 0)
+  );
   assert.equal(typeof payload.objectivePolicy?.populationWeight, "number");
   assert.equal(typeof payload.objectivePolicy?.maxTieBreakPenalty, "number");
   assert.equal(typeof payload.objectivePolicy?.summary, "string");
@@ -2720,21 +2848,23 @@ function maybeTestCpSatBackendStreamingProtocol() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const params = {
     serviceTypes: [{ rows: 1, cols: 1, bonus: 30, range: 1, avail: 1 }],
     residentialTypes: [{ w: 2, h: 2, min: 10, max: 40, avail: 1 }],
     availableBuildings: { services: 1, residentials: 1 },
-    cpSat: { timeLimitSeconds: 5, numWorkers: 1, streamProgress: true, progressIntervalSeconds: 0 },
+    cpSat: { timeLimitSeconds: 5, numWorkers: 1, streamProgress: true, progressIntervalSeconds: 0 }
   };
 
   const result = childProcess.spawnSync(pythonExecutable, [scriptPath], {
     input: JSON.stringify({ grid, params }),
-    encoding: "utf8",
+    encoding: "utf8"
   });
   if (result.status !== 0) {
-    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to run CP-SAT backend streaming protocol test.");
+    throw new Error(
+      result.stderr?.trim() || result.stdout?.trim() || "Failed to run CP-SAT backend streaming protocol test."
+    );
   }
 
   const lines = result.stdout
@@ -2788,10 +2918,12 @@ print(json.dumps({
 `;
 
   const result = childProcess.spawnSync(pythonExecutable, ["-c", command], {
-    encoding: "utf8",
+    encoding: "utf8"
   });
   if (result.status !== 0) {
-    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT objective policy helpers.");
+    throw new Error(
+      result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT objective policy helpers."
+    );
   }
 
   const payload = JSON.parse(result.stdout);
@@ -2839,10 +2971,12 @@ print(json.dumps({
 `;
 
   const result = childProcess.spawnSync(pythonExecutable, ["-c", command], {
-    encoding: "utf8",
+    encoding: "utf8"
   });
   if (result.status !== 0) {
-    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT runtime option helpers.");
+    throw new Error(
+      result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT runtime option helpers."
+    );
   }
 
   const payload = JSON.parse(result.stdout);
@@ -2879,10 +3013,14 @@ print(json.dumps({
 `;
 
   const noLimitResult = childProcess.spawnSync(pythonExecutable, ["-c", noLimitCommand], {
-    encoding: "utf8",
+    encoding: "utf8"
   });
   if (noLimitResult.status !== 0) {
-    throw new Error(noLimitResult.stderr?.trim() || noLimitResult.stdout?.trim() || "Failed to inspect CP-SAT default time limit behavior.");
+    throw new Error(
+      noLimitResult.stderr?.trim() ||
+        noLimitResult.stdout?.trim() ||
+        "Failed to inspect CP-SAT default time limit behavior."
+    );
   }
 
   const noLimitPayload = JSON.parse(noLimitResult.stdout);
@@ -2938,7 +3076,7 @@ print(json.dumps({
 `;
 
   const result = childProcess.spawnSync(pythonExecutable, ["-c", command], {
-    encoding: "utf8",
+    encoding: "utf8"
   });
   if (result.status !== 0) {
     throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT warm-start helpers.");
@@ -3021,10 +3159,12 @@ print(json.dumps(response))
 `;
 
   const result = childProcess.spawnSync(pythonExecutable, ["-c", command], {
-    encoding: "utf8",
+    encoding: "utf8"
   });
   if (result.status !== 0) {
-    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT snapshot response helpers.");
+    throw new Error(
+      result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT snapshot response helpers."
+    );
   }
 
   const payload = JSON.parse(result.stdout);
@@ -3095,10 +3235,12 @@ print(json.dumps({
 `;
 
   const result = childProcess.spawnSync(pythonExecutable, ["-c", command], {
-    encoding: "utf8",
+    encoding: "utf8"
   });
   if (result.status !== 0) {
-    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT no-improvement timeout helpers.");
+    throw new Error(
+      result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT no-improvement timeout helpers."
+    );
   }
 
   const payload = JSON.parse(result.stdout);
@@ -3161,11 +3303,13 @@ print(json.dumps({
 `;
 
   const result = childProcess.spawnSync(pythonExecutable, ["-c", command], {
-    encoding: "utf8",
+    encoding: "utf8"
   });
   fs.rmSync(snapshotFilePath, { force: true });
   if (result.status !== 0) {
-    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT snapshot telemetry output.");
+    throw new Error(
+      result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT snapshot telemetry output."
+    );
   }
 
   const payload = JSON.parse(result.stdout);
@@ -3186,13 +3330,13 @@ async function maybeTestCpSatWarmStartContinuation() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const params = {
     serviceTypes: [{ rows: 1, cols: 1, bonus: 30, range: 1, avail: 1 }],
     residentialTypes: [{ w: 2, h: 2, min: 10, max: 40, avail: 1 }],
     availableBuildings: { services: 1, residentials: 1 },
-    greedy: { localSearch: false, restarts: 1 },
+    greedy: { localSearch: false, restarts: 1 }
   };
 
   const seed = solveGreedy(grid, params);
@@ -3205,8 +3349,8 @@ async function maybeTestCpSatWarmStartContinuation() {
       numWorkers: 1,
       randomSeed: 7,
       warmStartHint: seed,
-      objectiveLowerBound: seed.totalPopulation,
-    },
+      objectiveLowerBound: seed.totalPopulation
+    }
   });
 
   assert.match(continued.cpSatStatus ?? "", /^(OPTIMAL|FEASIBLE)$/);
@@ -3248,10 +3392,12 @@ print(json.dumps(worker_options))
 `;
 
   const result = childProcess.spawnSync(pythonExecutable, ["-c", command], {
-    encoding: "utf8",
+    encoding: "utf8"
   });
   if (result.status !== 0) {
-    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT portfolio option helpers.");
+    throw new Error(
+      result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT portfolio option helpers."
+    );
   }
 
   const payload = JSON.parse(result.stdout);
@@ -3266,7 +3412,7 @@ print(json.dumps(worker_options))
       logSearchProgress: worker.logSearchProgress,
       stopFilePath: worker.stopFilePath,
       hasSnapshotFilePath: Object.prototype.hasOwnProperty.call(worker, "snapshotFilePath"),
-      hasPortfolio: Object.prototype.hasOwnProperty.call(worker, "portfolio"),
+      hasPortfolio: Object.prototype.hasOwnProperty.call(worker, "portfolio")
     })),
     [
       {
@@ -3278,7 +3424,7 @@ print(json.dumps(worker_options))
         logSearchProgress: false,
         stopFilePath: "/tmp/shared-stop-token",
         hasSnapshotFilePath: false,
-        hasPortfolio: false,
+        hasPortfolio: false
       },
       {
         randomSeed: 9,
@@ -3289,8 +3435,8 @@ print(json.dumps(worker_options))
         logSearchProgress: false,
         stopFilePath: "/tmp/shared-stop-token",
         hasSnapshotFilePath: false,
-        hasPortfolio: false,
-      },
+        hasPortfolio: false
+      }
     ]
   );
 }
@@ -3476,23 +3622,21 @@ print(json.dumps({
 `;
 
   const result = childProcess.spawnSync("python3", ["-c", command], {
-    encoding: "utf8",
+    encoding: "utf8"
   });
   if (result.status !== 0) {
-    throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT portfolio fallback helpers.");
+    throw new Error(
+      result.stderr?.trim() || result.stdout?.trim() || "Failed to inspect CP-SAT portfolio fallback helpers."
+    );
   }
 
   const payload = JSON.parse(result.stdout);
   assert.deepEqual(payload.results, [
     { workerIndex: 0, seed: 7 },
-    { workerIndex: 1, seed: 9 },
+    { workerIndex: 1, seed: 9 }
   ]);
-  assert.deepEqual(payload.brokenResults, [
-    { workerIndex: 0, seed: 13 },
-  ]);
-  assert.deepEqual(payload.futureFailureProgress, [
-    { workerIndex: 0, seed: 21 },
-  ]);
+  assert.deepEqual(payload.brokenResults, [{ workerIndex: 0, seed: 13 }]);
+  assert.deepEqual(payload.futureFailureProgress, [{ workerIndex: 0, seed: 21 }]);
   assert.match(payload.futureFailureError, /worker future failed after sibling progress/);
   assert.deepEqual(payload.futureFailureCancelled, [true, true]);
   assert.deepEqual(payload.unlimitedWorkerHasTimeLimit, [false, false]);
@@ -3518,22 +3662,23 @@ setInterval(() => {}, 1000);
 
   try {
     await assert.rejects(
-      () => solveCpSatAsync(
-        [[1]],
-        {
-          optimizer: "cp-sat",
-          cpSat: {
-            pythonExecutable: process.execPath,
-            scriptPath,
-            streamProgress: true,
+      () =>
+        solveCpSatAsync(
+          [[1]],
+          {
+            optimizer: "cp-sat",
+            cpSat: {
+              pythonExecutable: process.execPath,
+              scriptPath,
+              streamProgress: true
+            },
+            residentialTypes: [{ w: 1, h: 1, min: 1, max: 1, avail: 1 }],
+            availableBuildings: { residentials: 1, services: 0 }
           },
-          residentialTypes: [{ w: 1, h: 1, min: 1, max: 1, avail: 1 }],
-          availableBuildings: { residentials: 1, services: 0 },
-        },
-        {
-          onProgress: () => {},
-        }
-      ),
+          {
+            onProgress: () => {}
+          }
+        ),
       /progress.kind must be a known progress kind/
     );
   } finally {
@@ -3575,22 +3720,23 @@ process.stdout.write(JSON.stringify({
 
   try {
     await assert.rejects(
-      () => solveCpSatAsync(
-        [[1]],
-        {
-          optimizer: "cp-sat",
-          cpSat: {
-            pythonExecutable: process.execPath,
-            scriptPath,
-            streamProgress: true,
+      () =>
+        solveCpSatAsync(
+          [[1]],
+          {
+            optimizer: "cp-sat",
+            cpSat: {
+              pythonExecutable: process.execPath,
+              scriptPath,
+              streamProgress: true
+            },
+            residentialTypes: [{ w: 1, h: 1, min: 1, max: 1, avail: 1 }],
+            availableBuildings: { residentials: 1, services: 0 }
           },
-          residentialTypes: [{ w: 1, h: 1, min: 1, max: 1, avail: 1 }],
-          availableBuildings: { residentials: 1, services: 0 },
-        },
-        {
-          onProgress: (update) => progressUpdates.push(update),
-        }
-      ),
+          {
+            onProgress: (update) => progressUpdates.push(update)
+          }
+        ),
       /CP-SAT backend returned streamed progress without a final result payload/
     );
     assert.equal(progressUpdates.length, 1);
@@ -3617,15 +3763,16 @@ process.exit(3);
 
   try {
     await assert.rejects(
-      () => solveCpSatAsync([[1]], {
-        optimizer: "cp-sat",
-        cpSat: {
-          pythonExecutable: process.execPath,
-          scriptPath,
-        },
-        residentialTypes: [{ w: 1, h: 1, min: 1, max: 1, avail: 1 }],
-        availableBuildings: { residentials: 1, services: 0 },
-      }),
+      () =>
+        solveCpSatAsync([[1]], {
+          optimizer: "cp-sat",
+          cpSat: {
+            pythonExecutable: process.execPath,
+            scriptPath
+          },
+          residentialTypes: [{ w: 1, h: 1, min: 1, max: 1, avail: 1 }],
+          availableBuildings: { residentials: 1, services: 0 }
+        }),
       /CP-SAT backend failed with exit code 3\. stderr: child exploded stdout: partial stdout/
     );
   } finally {
@@ -3711,12 +3858,12 @@ process.stdin.on("end", () => {
         scriptPath,
         portfolio: {
           workerCount: 2,
-          perWorkerTimeLimitSeconds: 1,
-        },
+          perWorkerTimeLimitSeconds: 1
+        }
       },
       residentialTypes: [],
       serviceTypes: [],
-      availableBuildings: { residentials: 0, services: 0 },
+      availableBuildings: { residentials: 0, services: 0 }
     });
 
     await waitForCpSatSnapshotState(handle);
@@ -3750,10 +3897,10 @@ function testBackgroundSolveCleansTempDirectoryWhenRequestBuildFails() {
         materializeSolution: () => buildMockSolution({ optimizer: "cp-sat" }),
         getSnapshotState: () => ({
           hasFeasibleSolution: false,
-          totalPopulation: null,
+          totalPopulation: null
         }),
         stoppedBeforeFeasibleMessage: "Test request builder stopped before feasible.",
-        noSolutionMessage: "Test request builder returned no solution.",
+        noSolutionMessage: "Test request builder returned no solution."
       }),
     /request construction failed/
   );
@@ -3823,17 +3970,17 @@ process.stdin.on("end", () => {
         stopFilePath,
         snapshotFilePath,
         childPidFilePath,
-        heartbeatPath,
+        heartbeatPath
       }),
       parseRaw: JSON.parse,
       materializeSolution: () => buildMockSolution({ optimizer: "cp-sat", stoppedByUser: true }),
       getSnapshotState: () => ({
         hasFeasibleSolution: false,
-        totalPopulation: null,
+        totalPopulation: null
       }),
       stoppedBeforeFeasibleMessage: "Test portfolio solve stopped before feasible.",
       noSolutionMessage: "Test portfolio solve returned no solution.",
-      forcedTerminationDelayMs: 40,
+      forcedTerminationDelayMs: 40
     });
 
     await waitForFile(childPidFilePath);
@@ -3849,7 +3996,9 @@ process.stdin.on("end", () => {
     if (!heartbeatStopped && Number.isInteger(childPid)) {
       try {
         process.kill(childPid, "SIGKILL");
-      } catch {}
+      } catch (_error) {
+        // The child may have already exited after cancellation.
+      }
     }
     fs.rmSync(tempDir, { recursive: true, force: true });
   }
@@ -3904,19 +4053,22 @@ process.stdin.on("end", () => {
     await assert.rejects(
       () =>
         solveCpSatAsync(
-          [[1, 1], [1, 1]],
+          [
+            [1, 1],
+            [1, 1]
+          ],
           {
             optimizer: "cp-sat",
             cpSat: {
               pythonExecutable: process.execPath,
               scriptPath,
               streamProgress: true,
-              progressIntervalSeconds: 0,
-            },
+              progressIntervalSeconds: 0
+            }
           },
           {
             onProgress: (update) => progressUpdates.push(update),
-            progressIntervalSeconds: 0,
+            progressIntervalSeconds: 0
           }
         ),
       /CP-SAT backend returned invalid JSON: portfolio\.workers\[0\]\.workerIndex must be an integer/
@@ -3939,7 +4091,7 @@ async function maybeTestCpSatPortfolioSolve() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const solution = await solveCpSatAsync(grid, {
     optimizer: "cp-sat",
@@ -3949,14 +4101,14 @@ async function maybeTestCpSatPortfolioSolve() {
       portfolio: {
         randomSeeds: [3, 11],
         perWorkerTimeLimitSeconds: 2,
-        perWorkerNumWorkers: 1,
-      },
+        perWorkerNumWorkers: 1
+      }
     },
     residentialTypes: [
       { w: 2, h: 2, min: 10, max: 10, avail: 1 },
-      { w: 2, h: 2, min: 100, max: 100, avail: 1 },
+      { w: 2, h: 2, min: 100, max: 100, avail: 1 }
     ],
-    availableBuildings: { residentials: 2, services: 0 },
+    availableBuildings: { residentials: 2, services: 0 }
   });
 
   assert.match(solution.cpSatStatus ?? "", /^(OPTIMAL|FEASIBLE)$/);
@@ -3966,7 +4118,9 @@ async function maybeTestCpSatPortfolioSolve() {
   assert.equal(typeof solution.cpSatPortfolio?.selectedWorkerIndex, "number");
   assert(solution.cpSatPortfolio?.workers.some((worker) => worker.feasible));
   assert(
-    solution.cpSatPortfolio?.workers.some((worker) => worker.workerIndex === solution.cpSatPortfolio?.selectedWorkerIndex)
+    solution.cpSatPortfolio?.workers.some(
+      (worker) => worker.workerIndex === solution.cpSatPortfolio?.selectedWorkerIndex
+    )
   );
 }
 
@@ -3980,30 +4134,30 @@ async function maybeTestCpSatAsyncOptimizer() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const params = {
     optimizer: "cp-sat",
     cpSat: {
       pythonExecutable,
       timeLimitSeconds: 5,
-      numWorkers: 1,
+      numWorkers: 1
     },
     residentialTypes: [
       { w: 2, h: 2, min: 10, max: 10, avail: 1 },
-      { w: 2, h: 2, min: 100, max: 100, avail: 1 },
+      { w: 2, h: 2, min: 100, max: 100, avail: 1 }
     ],
-    availableBuildings: { residentials: 2, services: 0 },
+    availableBuildings: { residentials: 2, services: 0 }
   };
 
   const progressUpdates = [];
   const dispatched = await solveAsync(grid, params, {
     onProgress: (update) => progressUpdates.push(update),
-    progressIntervalSeconds: 0,
+    progressIntervalSeconds: 0
   });
   const direct = await solveCpSatAsync(grid, params, {
     onProgress: (update) => progressUpdates.push(update),
-    progressIntervalSeconds: 0,
+    progressIntervalSeconds: 0
   });
 
   assert.match(dispatched.cpSatStatus ?? "", /^(OPTIMAL|FEASIBLE)$/);
@@ -4017,14 +4171,17 @@ async function testCpSatBenchmarkCorpusHelpers() {
   const names = DEFAULT_CP_SAT_BENCHMARK_CORPUS.map((entry) => entry.name);
   assert.equal(new Set(names).size, names.length);
   assert.deepEqual(listCpSatBenchmarkCaseNames(), names);
-  assert.deepEqual([...DEFAULT_CP_SAT_ROAD_SEMANTICS_SCORECARD_CASE_NAMES], [
-    "typed-housing-single",
-    "road-semantics-corridor-pressure",
-    "road-semantics-gate-choke",
-    "road-semantics-service-pressure",
-    "multi-anchor-road-components",
-    "road-semantics-dense-saturated",
-  ]);
+  assert.deepEqual(
+    [...DEFAULT_CP_SAT_ROAD_SEMANTICS_SCORECARD_CASE_NAMES],
+    [
+      "typed-housing-single",
+      "road-semantics-corridor-pressure",
+      "road-semantics-gate-choke",
+      "road-semantics-service-pressure",
+      "multi-anchor-road-components",
+      "road-semantics-dense-saturated"
+    ]
+  );
   assert(DEFAULT_CP_SAT_ROAD_SEMANTICS_SCORECARD_CASE_NAMES.every((name) => names.includes(name)));
   assert.equal(names.includes("typed-housing-portfolio"), true);
   assert.equal(DEFAULT_CP_SAT_ROAD_SEMANTICS_SCORECARD_CASE_NAMES.includes("typed-housing-portfolio"), false);
@@ -4033,11 +4190,11 @@ async function testCpSatBenchmarkCorpusHelpers() {
     {
       timeLimitSeconds: 12,
       portfolio: {
-        workerCount: 2,
-      },
+        workerCount: 2
+      }
     },
     {
-      randomSeed: 7,
+      randomSeed: 7
     }
   );
 
@@ -4050,7 +4207,10 @@ async function testCpSatBenchmarkCorpusHelpers() {
   assert.deepEqual(normalized.portfolio?.randomSeeds, [7, 108]);
   assert.equal(normalized.portfolio?.workerCount, 2);
   assert.equal(normalized.portfolio?.perWorkerTimeLimitSeconds, 12);
-  assert.equal(normalized.portfolio?.perWorkerMaxDeterministicTime, DEFAULT_CP_SAT_BENCHMARK_OPTIONS.maxDeterministicTime);
+  assert.equal(
+    normalized.portfolio?.perWorkerMaxDeterministicTime,
+    DEFAULT_CP_SAT_BENCHMARK_OPTIONS.maxDeterministicTime
+  );
   assert.equal(normalized.portfolio?.perWorkerNumWorkers, 1);
   assert.equal(normalized.portfolio?.totalCpuBudgetSeconds, 24);
 
@@ -4065,13 +4225,13 @@ async function testCpSatBenchmarkCorpusHelpers() {
     cpuBudgetMultiplier: 2,
     totalCpuBudgetSeconds: 24,
     cpuBudgetHeadroomSeconds: 0,
-    admission: "within-budget",
+    admission: "within-budget"
   });
 
   assert.deepEqual(
     buildCpSatBenchmarkCpuPlan({
       timeLimitSeconds: 5,
-      numWorkers: 4,
+      numWorkers: 4
     }),
     {
       mode: "single",
@@ -4084,7 +4244,7 @@ async function testCpSatBenchmarkCorpusHelpers() {
       cpuBudgetMultiplier: 4,
       totalCpuBudgetSeconds: null,
       cpuBudgetHeadroomSeconds: null,
-      admission: "within-budget",
+      admission: "within-budget"
     }
   );
 
@@ -4092,8 +4252,8 @@ async function testCpSatBenchmarkCorpusHelpers() {
     {
       portfolio: {
         workerCount: 99,
-        randomSeeds: [2, 5, 8],
-      },
+        randomSeeds: [2, 5, 8]
+      }
     },
     undefined
   );
@@ -4103,16 +4263,17 @@ async function testCpSatBenchmarkCorpusHelpers() {
   assert.equal(normalizedWithExplicitSeeds.portfolio?.totalCpuBudgetSeconds, 30);
 
   assert.throws(
-    () => normalizeCpSatBenchmarkOptions(
-      {
-        timeLimitSeconds: 5,
-        portfolio: {
-          workerCount: 3,
-          totalCpuBudgetSeconds: 10,
+    () =>
+      normalizeCpSatBenchmarkOptions(
+        {
+          timeLimitSeconds: 5,
+          portfolio: {
+            workerCount: 3,
+            totalCpuBudgetSeconds: 10
+          }
         },
-      },
-      undefined
-    ),
+        undefined
+      ),
     /CP-SAT benchmark portfolio requests 15 total CPU seconds, exceeding the 10 second benchmark portfolio budget/
   );
 
@@ -4141,7 +4302,10 @@ function testLnsBenchmarkCorpusHelpers() {
   const requiredReplayFamilies = ["corridor", "gate", "footprint-pressure", "service-pressure", "anchor-service"];
   for (const split of DEFAULT_LEARNED_RANKING_LABEL_SPLITS) {
     const splitFamilies = new Set(split.lnsCaseNames.map((name) => replayCasesByName.get(name)?.pressureFamily));
-    assert.equal(split.lnsCaseNames.every((name) => replayCasesByName.has(name)), true);
+    assert.equal(
+      split.lnsCaseNames.every((name) => replayCasesByName.has(name)),
+      true
+    );
     assert.equal(splitFamilies.size >= DEFAULT_LNS_REPLAY_LABEL_SCALE_THRESHOLDS.minPressureFamilies, true);
     for (const family of requiredReplayFamilies) {
       assert.equal(splitFamilies.has(family), true);
@@ -4153,11 +4317,11 @@ function testLnsBenchmarkCorpusHelpers() {
   const normalized = normalizeLnsBenchmarkOptions(
     {
       iterations: 4,
-      wallClockLimitSeconds: 20,
+      wallClockLimitSeconds: 20
     },
     {
       neighborhoodRows: 5,
-      repairTimeLimitSeconds: 2,
+      repairTimeLimitSeconds: 2
     }
   );
 
@@ -4188,16 +4352,16 @@ function testLnsBenchmarkCorpusHelpers() {
       names: ["typed-housing-single"],
       lns: {
         iterations: 3,
-        wallClockLimitSeconds: 20,
+        wallClockLimitSeconds: 20
       },
       cpSat: {
         randomSeed: 29,
-        numWorkers: 1,
+        numWorkers: 1
       },
       greedy: {
         randomSeed: 31,
-        profile: true,
-      },
+        profile: true
+      }
     });
 
     assert.equal(result.caseCount, 1);
@@ -4216,7 +4380,10 @@ function testLnsBenchmarkCorpusHelpers() {
 
     assert.equal(observedParams.optimizer, "lns");
     assert.equal(observedParams.lns.iterations, 3);
-    assert.equal(observedParams.lns.maxNoImprovementIterations, DEFAULT_LNS_BENCHMARK_OPTIONS.maxNoImprovementIterations);
+    assert.equal(
+      observedParams.lns.maxNoImprovementIterations,
+      DEFAULT_LNS_BENCHMARK_OPTIONS.maxNoImprovementIterations
+    );
     assert.equal(observedParams.cpSat.randomSeed, 29);
     assert.equal(observedParams.greedy.randomSeed, 31);
 
@@ -4236,7 +4403,7 @@ function testLnsNeighborhoodAblationRunner() {
       [1, 1, 1, 1],
       [1, 1, 1, 1],
       [1, 1, 1, 1],
-      [1, 1, 1, 1],
+      [1, 1, 1, 1]
     ],
     params: {
       optimizer: "lns",
@@ -4250,12 +4417,12 @@ function testLnsNeighborhoodAblationRunner() {
         serviceRefineCandidateLimit: 4,
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 4,
-        serviceExactMaxCombinations: 16,
-      },
-    },
+        serviceExactMaxCombinations: 16
+      }
+    }
   };
-  const variants = DEFAULT_LNS_NEIGHBORHOOD_ABLATION_VARIANTS.filter((variant) =>
-    variant.name === "baseline" || variant.name === "small-2x2"
+  const variants = DEFAULT_LNS_NEIGHBORHOOD_ABLATION_VARIANTS.filter(
+    (variant) => variant.name === "baseline" || variant.name === "small-2x2"
   );
   const lnsModule = require("../../dist/packages/solvers/lns/solver.js");
   const originalSolveLns = lnsModule.solveLns;
@@ -4265,14 +4432,14 @@ function testLnsNeighborhoodAblationRunner() {
     observedRuns.push({
       window: `${params.lns.neighborhoodRows}x${params.lns.neighborhoodCols}`,
       greedySeed: params.greedy.randomSeed,
-      cpSatSeed: params.cpSat.randomSeed,
+      cpSatSeed: params.cpSat.randomSeed
     });
     grid[0][0] = 0;
     return {
       ...buildMockSolution({
         optimizer: "lns",
         totalPopulation: params.lns.neighborhoodRows === 2 ? 90 : 70,
-        cpSatStatus: "FEASIBLE",
+        cpSatStatus: "FEASIBLE"
       }),
       lnsTelemetry: {
         stopReason: "iteration-limit",
@@ -4302,10 +4469,10 @@ function testLnsNeighborhoodAblationRunner() {
             populationBefore: 70,
             populationAfter: params.lns.neighborhoodRows === 2 ? 90 : 70,
             improvement: params.lns.neighborhoodRows === 2 ? 20 : 0,
-            status: params.lns.neighborhoodRows === 2 ? "improved" : "neutral",
-          },
-        ],
-      },
+            status: params.lns.neighborhoodRows === 2 ? "improved" : "neutral"
+          }
+        ]
+      }
     };
   };
 
@@ -4325,11 +4492,12 @@ function testLnsNeighborhoodAblationRunner() {
     assert.equal(result.comparisonCount, 1);
     assert.deepEqual(result.selectedCaseNames, ["lns-neighborhood-ablation-fixture"]);
     assert.deepEqual(result.variants, ["baseline", "small-2x2"]);
-    assert.deepEqual(result.variantExecutionOrders, [
-      { seed: null, variants: ["baseline", "small-2x2"] },
-    ]);
+    assert.deepEqual(result.variantExecutionOrders, [{ seed: null, variants: ["baseline", "small-2x2"] }]);
     assert.deepEqual(snapshot.variantExecutionOrders, result.variantExecutionOrders);
-    assert.deepEqual(observedRuns.map((entry) => entry.window), ["3x3", "2x2"]);
+    assert.deepEqual(
+      observedRuns.map((entry) => entry.window),
+      ["3x3", "2x2"]
+    );
     assert.equal(result.coverage.caseCount, 1);
     assert.equal(result.coverage.seedCount, 1);
     assert.equal(result.coverage.comparisonCount, 1);
@@ -4388,16 +4556,19 @@ function testLnsNeighborhoodAblationRunner() {
     assert.equal(seededResult.seedCount, 2);
     assert.equal(seededResult.comparisonCount, 2);
     assert.deepEqual(seededResult.selectedCaseNames, ["lns-neighborhood-ablation-fixture"]);
-    assert.deepEqual(seededResult.cases.map((entry) => entry.seed), [7, 19]);
+    assert.deepEqual(
+      seededResult.cases.map((entry) => entry.seed),
+      [7, 19]
+    );
     assert.deepEqual(seededResult.variantExecutionOrders, [
       { seed: 7, variants: ["baseline", "small-2x2"] },
-      { seed: 19, variants: ["small-2x2", "baseline"] },
+      { seed: 19, variants: ["small-2x2", "baseline"] }
     ]);
     assert.deepEqual(
       seededResult.cases.map((entry) => entry.variants.map((variant) => variant.variantName)),
       [
         ["baseline", "small-2x2"],
-        ["baseline", "small-2x2"],
+        ["baseline", "small-2x2"]
       ]
     );
     assert.equal(seededResult.coverage.caseCount, 1);
@@ -4424,15 +4595,17 @@ function testLnsNeighborhoodAblationRunner() {
     assert.match(seededFormatted, /comparisons=2/);
 
     assert.throws(
-      () => runLnsNeighborhoodAblation([ablationCase], {
-        variants: [{ name: "small-2x2", description: "Invalid missing baseline.", lns: { neighborhoodRows: 2 } }],
-      }),
+      () =>
+        runLnsNeighborhoodAblation([ablationCase], {
+          variants: [{ name: "small-2x2", description: "Invalid missing baseline.", lns: { neighborhoodRows: 2 } }]
+        }),
       /must include the baseline variant/
     );
     assert.throws(
-      () => runLnsNeighborhoodAblation([ablationCase], {
-        variantNames: ["small-2x2", "small-2x2"],
-      }),
+      () =>
+        runLnsNeighborhoodAblation([ablationCase], {
+          variantNames: ["small-2x2", "small-2x2"]
+        }),
       /requested variants must use unique names/
     );
     assert.throws(
@@ -4459,17 +4632,21 @@ function testLnsNeighborhoodAblationWindowSequenceMovement() {
     grid: [
       [1, 1, 1],
       [1, 1, 1],
-      [1, 1, 1],
+      [1, 1, 1]
     ],
     params: {
       optimizer: "lns",
       residentialTypes: [{ w: 1, h: 1, min: 10, max: 10, avail: 1 }],
-      availableBuildings: { residentials: 1, services: 0 },
-    },
+      availableBuildings: { residentials: 1, services: 0 }
+    }
   };
   const variants = [
     { name: "baseline", description: "Baseline ranked anchors.", lns: { neighborhoodAnchorPolicy: "ranked" } },
-    { name: "weak-service-first", description: "Alternative anchors.", lns: { neighborhoodAnchorPolicy: "weak-service-first" } },
+    {
+      name: "weak-service-first",
+      description: "Alternative anchors.",
+      lns: { neighborhoodAnchorPolicy: "weak-service-first" }
+    }
   ];
   const lnsModule = require("../../dist/packages/solvers/lns/solver.js");
   const originalSolveLns = lnsModule.solveLns;
@@ -4477,8 +4654,14 @@ function testLnsNeighborhoodAblationWindowSequenceMovement() {
   lnsModule.solveLns = (_grid, params) => {
     const shifted = params.lns.neighborhoodAnchorPolicy === "weak-service-first";
     const windows = shifted
-      ? [{ top: 0, left: 0, rows: 3, cols: 3 }, { top: 2, left: 2, rows: 3, cols: 3 }]
-      : [{ top: 0, left: 0, rows: 3, cols: 3 }, { top: 1, left: 1, rows: 3, cols: 3 }];
+      ? [
+          { top: 0, left: 0, rows: 3, cols: 3 },
+          { top: 2, left: 2, rows: 3, cols: 3 }
+        ]
+      : [
+          { top: 0, left: 0, rows: 3, cols: 3 },
+          { top: 1, left: 1, rows: 3, cols: 3 }
+        ];
     return {
       ...buildMockSolution({ optimizer: "lns", totalPopulation: 70, cpSatStatus: "FEASIBLE" }),
       lnsTelemetry: {
@@ -4508,9 +4691,9 @@ function testLnsNeighborhoodAblationWindowSequenceMovement() {
           populationBefore: 70,
           populationAfter: 70,
           improvement: 0,
-          status: "neutral",
-        })),
-      },
+          status: "neutral"
+        }))
+      }
     };
   };
 
@@ -4534,18 +4717,22 @@ function testLnsNeighborhoodAblationWindowSequenceMovement() {
 function testLnsSeededServiceAnchorPressureBenchmarkCase() {
   const result = runLnsNeighborhoodAblation(undefined, {
     names: ["seeded-service-anchor-pressure"],
-    variantNames: ["sliding-only", "weak-service-first"],
+    variantNames: ["sliding-only", "weak-service-first"]
   });
-  const seededSnapshot = createLnsNeighborhoodAblationSnapshot(runLnsNeighborhoodAblation(undefined, {
-    names: ["seeded-service-anchor-pressure"],
-    variantNames: ["sliding-only", "weak-service-first"],
-    seeds: [7],
-  }));
-  const repeatedSeededSnapshot = createLnsNeighborhoodAblationSnapshot(runLnsNeighborhoodAblation(undefined, {
-    names: ["seeded-service-anchor-pressure"],
-    variantNames: ["sliding-only", "weak-service-first"],
-    seeds: [7],
-  }));
+  const seededSnapshot = createLnsNeighborhoodAblationSnapshot(
+    runLnsNeighborhoodAblation(undefined, {
+      names: ["seeded-service-anchor-pressure"],
+      variantNames: ["sliding-only", "weak-service-first"],
+      seeds: [7]
+    })
+  );
+  const repeatedSeededSnapshot = createLnsNeighborhoodAblationSnapshot(
+    runLnsNeighborhoodAblation(undefined, {
+      names: ["seeded-service-anchor-pressure"],
+      variantNames: ["sliding-only", "weak-service-first"],
+      seeds: [7]
+    })
+  );
   const benchmarkCase = result.cases[0];
   const slidingOnly = benchmarkCase.variants.find((entry) => entry.variantName === "sliding-only");
   const weakServiceFirst = benchmarkCase.variants.find((entry) => entry.variantName === "weak-service-first");
@@ -4573,7 +4760,7 @@ function testLnsWindowReplayLabelRunner() {
       timeLimitSeconds: params.cpSat.timeLimitSeconds,
       fixOutsideNeighborhoodToHintedValue: params.cpSat.warmStartHint.fixOutsideNeighborhoodToHintedValue,
       window: { ...window },
-      incumbentPopulation: params.cpSat.warmStartHint.solution.totalPopulation,
+      incumbentPopulation: params.cpSat.warmStartHint.solution.totalPopulation
     });
     return buildMockSolution({
       optimizer: "cp-sat",
@@ -4604,9 +4791,9 @@ function testLnsWindowReplayLabelRunner() {
           directedEdgeCount: 12,
           serviceCandidateCount: 3,
           residentialCandidateCount: 5,
-          populationVariableCount: 2,
-        },
-      },
+          populationVariableCount: 2
+        }
+      }
     });
   };
 
@@ -4615,14 +4802,16 @@ function testLnsWindowReplayLabelRunner() {
       names: ["seeded-service-anchor-pressure"],
       seeds: [7],
       maxWindows: 2,
-      repairTimeLimitSeconds: 0.25,
+      repairTimeLimitSeconds: 0.25
     });
-    const repeatedSnapshot = createLnsWindowReplaySnapshot(runLnsWindowReplayLabels(undefined, {
-      names: ["seeded-service-anchor-pressure"],
-      seeds: [7],
-      maxWindows: 2,
-      repairTimeLimitSeconds: 0.25,
-    }));
+    const repeatedSnapshot = createLnsWindowReplaySnapshot(
+      runLnsWindowReplayLabels(undefined, {
+        names: ["seeded-service-anchor-pressure"],
+        seeds: [7],
+        maxWindows: 2,
+        repairTimeLimitSeconds: 0.25
+      })
+    );
     const snapshot = createLnsWindowReplaySnapshot(result);
     const formatted = formatLnsWindowReplayLabels(result);
     const benchmarkCase = result.cases[0];
@@ -4638,6 +4827,11 @@ function testLnsWindowReplayLabelRunner() {
     assert.equal(result.maxWindows, 2);
     assert.equal(result.explorationWindowCount, 0);
     assert.equal(result.repairTimeLimitSeconds, 0.25);
+    assert.deepEqual(result.statePolicies, ["initial-incumbent"]);
+    assert.deepEqual(result.capturedStatePolicies, ["initial-incumbent"]);
+    assert.equal(result.stateCollectionIterations, 4);
+    assert.equal(result.stateCollectionRepairTimeLimitSeconds, 0.25);
+    assert.equal(result.stateCount, 1);
     assert.equal(result.featureSchemaVersion, 2);
     assert.equal(result.cpSatNumWorkers, 1);
     assert.equal(result.cpSatModelFingerprints.length, 1);
@@ -4645,6 +4839,11 @@ function testLnsWindowReplayLabelRunner() {
     assert.equal(result.labelCount, 2);
     assert.equal(benchmarkCase.incumbentPopulation, 100);
     assert.equal(benchmarkCase.pressureFamily, "anchor-service");
+    assert.equal(benchmarkCase.statePolicy, "initial-incumbent");
+    assert.equal(benchmarkCase.stateIndex, 0);
+    assert.equal(benchmarkCase.stateSourceIteration, null);
+    assert.equal(benchmarkCase.stateSourceStatus, "initial-incumbent");
+    assert.equal(benchmarkCase.stateStagnantIterations, 0);
     assert.equal(typeof benchmarkCase.baselineSelectedOperator, "string");
     assert.equal(benchmarkCase.replayedWindowCount, 2);
     assert.equal(benchmarkCase.candidateWindowCount >= 2, true);
@@ -4658,6 +4857,11 @@ function testLnsWindowReplayLabelRunner() {
     assert.equal(regressedLabel.status, "invalid");
     assert.equal(regressedLabel.usable, false);
     assert.equal(selectedLabel.features.selectedByBaseline, true);
+    assert.equal(selectedLabel.statePolicy, "initial-incumbent");
+    assert.equal(selectedLabel.stateIndex, 0);
+    assert.equal(selectedLabel.stateSourceIteration, null);
+    assert.equal(selectedLabel.stateSourceStatus, "initial-incumbent");
+    assert.equal(selectedLabel.stateStagnantIterations, 0);
     assert.equal(selectedLabel.features.schemaVersion, 2);
     assert.equal(typeof selectedLabel.operator, "string");
     assert.equal(typeof selectedLabel.operatorScore, "number");
@@ -4668,7 +4872,11 @@ function testLnsWindowReplayLabelRunner() {
     assert.equal(selectedLabel.validation.recomputedTotalPopulation >= 0, true);
     assert.equal(selectedLabel.features.serviceCountInside >= 1, true);
     assert.equal(selectedLabel.features.residentialHeadroomInside >= 0, true);
-    assert.equal(selectedLabel.features.connectivityShadow.reachableEmptyCellsAfterClearingWindow >= selectedLabel.features.connectivityShadow.reachableEmptyCellsBefore, true);
+    assert.equal(
+      selectedLabel.features.connectivityShadow.reachableEmptyCellsAfterClearingWindow >=
+        selectedLabel.features.connectivityShadow.reachableEmptyCellsBefore,
+      true
+    );
     assert.equal(selectedLabel.features.connectivityShadow.clearedBuildingFootprintCells >= 0, true);
     assert.equal(selectedLabel.features.fragmentation.allowedWindowCellCount >= 0, true);
     assert.equal(selectedLabel.features.candidateLoss.serviceCandidatesIntersectingWindow >= 0, true);
@@ -4691,6 +4899,8 @@ function testLnsWindowReplayLabelRunner() {
     assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
     assert.equal(snapshot.schemaVersion, 1);
     assert.deepEqual(snapshot.pressureFamilies, ["anchor-service"]);
+    assert.deepEqual(snapshot.statePolicies, ["initial-incumbent"]);
+    assert.deepEqual(snapshot.capturedStatePolicies, ["initial-incumbent"]);
     assert.deepEqual(snapshot.cpSatModelFingerprints, result.cpSatModelFingerprints);
     assert.equal(Object.hasOwn(snapshot.cases[0].labels[0], "wallClockSeconds"), false);
     assert.equal(Object.hasOwn(snapshot.cases[0].labels[0].timing, "wallClockSeconds"), false);
@@ -4701,15 +4911,54 @@ function testLnsWindowReplayLabelRunner() {
       seeds: [7],
       maxWindows: 1,
       explorationWindowCount: 1,
-      repairTimeLimitSeconds: 0.25,
+      repairTimeLimitSeconds: 0.25
     });
     assert.equal(explorationResult.explorationWindowCount, 1);
     assert.equal(explorationResult.labelCount, 2);
-    const explorationLabel = explorationResult.cases[0].labels.find((label) => label.selectionSource === "exploration-tail");
+    const explorationLabel = explorationResult.cases[0].labels.find(
+      (label) => label.selectionSource === "exploration-tail"
+    );
     assert(explorationLabel);
     assert.equal(explorationLabel.windowIndex >= explorationResult.maxWindows, true);
+    observedRepairs.length = 0;
+    const stateResult = runLnsWindowReplayLabels(undefined, {
+      names: ["seeded-service-anchor-pressure"],
+      seeds: [7],
+      maxWindows: 1,
+      repairTimeLimitSeconds: 0.25,
+      statePolicies: ["initial-incumbent", "post-first-improvement", "post-stagnation"],
+      stateCollectionIterations: 2,
+      stateCollectionRepairTimeLimitSeconds: 0.05
+    });
+    assert.deepEqual(stateResult.statePolicies, ["initial-incumbent", "post-first-improvement", "post-stagnation"]);
+    assert.deepEqual(stateResult.capturedStatePolicies, [
+      "initial-incumbent",
+      "post-first-improvement",
+      "post-stagnation"
+    ]);
+    assert.equal(stateResult.comparisonCount, 3);
+    assert.equal(stateResult.stateCount, 3);
+    assert.equal(stateResult.labelCount, 3);
+    assert.deepEqual(
+      stateResult.cases.map((entry) => entry.statePolicy),
+      ["initial-incumbent", "post-first-improvement", "post-stagnation"]
+    );
+    assert.equal(stateResult.cases[1].stateSourceIteration, 0);
+    assert.equal(stateResult.cases[1].stateSourceStatus, "improved");
+    assert.equal(stateResult.cases[1].incumbentPopulation, 200);
+    assert.equal(stateResult.cases[2].stateSourceIteration, 1);
+    assert.equal(stateResult.cases[2].stateSourceStatus, "neutral");
+    assert.equal(stateResult.cases[2].stateStagnantIterations, 1);
+    assert.equal(stateResult.cases[2].labels[0].statePolicy, "post-stagnation");
+    assert.deepEqual(
+      observedRepairs.map((entry) => entry.timeLimitSeconds),
+      [0.05, 0.05, 0.25, 0.25, 0.25]
+    );
+    assert.equal(observedRepairs[0].incumbentPopulation, 100);
+    assert.equal(observedRepairs[1].incumbentPopulation, 200);
     assert.match(formatted, /=== LNS Window Replay Labels ===/);
     assert.match(formatted, /Pressure families: anchor-service/);
+    assert.match(formatted, /State policies: initial-incumbent/);
     assert.match(formatted, /Feature schema: 2/);
     assert.match(formatted, /cpu-budget=0.25s/);
     assert.match(formatted, /newly-reachable:/);
@@ -4748,12 +4997,12 @@ async function testCrossModeBenchmarkHelpers() {
     grid: [
       [1, 1, 1],
       [1, 1, 1],
-      [1, 1, 1],
+      [1, 1, 1]
     ],
     params: {
       residentialTypes: [{ w: 1, h: 1, min: 1, max: 1, avail: 1 }],
-      availableBuildings: { residentials: 1, services: 0 },
-    },
+      availableBuildings: { residentials: 1, services: 0 }
+    }
   };
 
   const greedyParams = buildCrossModeBenchmarkParams(benchmarkCase, "greedy", { budgetSeconds: 3, seeds: [5] });
@@ -4768,29 +5017,21 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(autoParams.lns.wallClockLimitSeconds, 3);
   assert.equal(autoParams.cpSat.timeLimitSeconds, 3);
   assert.equal(autoParams.cpSat.portfolio, undefined);
-  assert.deepEqual(DEFAULT_CROSS_MODE_BUDGET_ABLATION_POLICIES.map((policy) => policy.name), [
-    "baseline",
-    "seed-light",
-    "repair-heavy",
-    "cp-sat-reserve-heavy",
-  ]);
+  assert.deepEqual(
+    DEFAULT_CROSS_MODE_BUDGET_ABLATION_POLICIES.map((policy) => policy.name),
+    ["baseline", "seed-light", "repair-heavy", "cp-sat-reserve-heavy"]
+  );
   const coverageNames = DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS.map((entry) => entry.name);
   assert.equal(new Set(coverageNames).size, coverageNames.length);
   assert(coverageNames.includes("typed-footprint-pressure"));
   assert(coverageNames.includes("deferred-road-packing-gain"));
   assert(coverageNames.includes("service-local-neighborhood"));
   assert(coverageNames.includes("row0-anchor-repair"));
-  assert.deepEqual(
-    listCrossModeBenchmarkCaseNames(DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS),
-    coverageNames
-  );
+  assert.deepEqual(listCrossModeBenchmarkCaseNames(DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS), coverageNames);
 
   const productNames = DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS.map((entry) => entry.name);
   assert.equal(new Set(productNames).size, productNames.length);
-  assert.deepEqual(
-    listCrossModeBenchmarkCaseNames(DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS),
-    productNames
-  );
+  assert.deepEqual(listCrossModeBenchmarkCaseNames(DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS), productNames);
   assert(productNames.includes("manual-layout-replay-warm-start"));
   assert(productNames.includes("expansion-comparison-replay"));
   assert(productNames.includes("multi-anchor-road-components"));
@@ -4804,7 +5045,7 @@ async function testCrossModeBenchmarkHelpers() {
     "footprint-pressure",
     "service-pressure",
     "anchor-service",
-    "multi-anchor",
+    "multi-anchor"
   ]) {
     assert(productTags.has(tag), `Expected product workflow corpus to include ${tag}.`);
   }
@@ -4838,7 +5079,7 @@ async function testCrossModeBenchmarkHelpers() {
       focusedRepairTimeLimitSeconds: 1,
       escalatedRepairTimeLimitSeconds: 1,
       iterations: 4,
-      maxNoImprovementIterations: 4,
+      maxNoImprovementIterations: 4
     },
     {
       budgetSeconds: 30,
@@ -4847,7 +5088,7 @@ async function testCrossModeBenchmarkHelpers() {
       focusedRepairTimeLimitSeconds: 2,
       escalatedRepairTimeLimitSeconds: 3,
       iterations: 14,
-      maxNoImprovementIterations: 14,
+      maxNoImprovementIterations: 14
     },
     {
       budgetSeconds: 120,
@@ -4856,8 +5097,8 @@ async function testCrossModeBenchmarkHelpers() {
       focusedRepairTimeLimitSeconds: 5,
       escalatedRepairTimeLimitSeconds: 10,
       iterations: 23,
-      maxNoImprovementIterations: 23,
-    },
+      maxNoImprovementIterations: 23
+    }
   ];
   for (const corpusCase of DEFAULT_CROSS_MODE_BENCHMARK_CORPUS) {
     const ablationLnsPolicies = DEFAULT_CROSS_MODE_BENCHMARK_BUDGETS_SECONDS.map((budgetSeconds) => {
@@ -4869,7 +5110,7 @@ async function testCrossModeBenchmarkHelpers() {
         focusedRepairTimeLimitSeconds: params.lns.focusedRepairTimeLimitSeconds,
         escalatedRepairTimeLimitSeconds: params.lns.escalatedRepairTimeLimitSeconds,
         iterations: params.lns.iterations,
-        maxNoImprovementIterations: params.lns.maxNoImprovementIterations,
+        maxNoImprovementIterations: params.lns.maxNoImprovementIterations
       };
     });
     assert.deepEqual(ablationLnsPolicies, expectedAblationLnsPolicies);
@@ -4884,8 +5125,8 @@ async function testCrossModeBenchmarkHelpers() {
       focusedRepairTimeLimitSeconds: 4,
       escalatedRepairTimeLimitSeconds: 6,
       iterations: 3,
-      maxNoImprovementIterations: 2,
-    },
+      maxNoImprovementIterations: 2
+    }
   });
   assert.equal(explicitLnsParams.lns.seedTimeLimitSeconds, 5);
   assert.equal(explicitLnsParams.lns.repairTimeLimitSeconds, 7);
@@ -4898,18 +5139,20 @@ async function testCrossModeBenchmarkHelpers() {
   const seedLightParams = buildCrossModeBenchmarkParams(benchmarkCase, "lns", {
     budgetSeconds: 20,
     seeds: [5],
-    budgetAblationPolicy: seedLightPolicy,
+    budgetAblationPolicy: seedLightPolicy
   });
   assert.equal(seedLightParams.lns.seedTimeLimitSeconds, 1);
   assert.equal(seedLightParams.lns.repairTimeLimitSeconds, 2);
   assert.equal(seedLightParams.lns.focusedRepairTimeLimitSeconds, 2);
   assert.equal(seedLightParams.lns.escalatedRepairTimeLimitSeconds, 3);
 
-  const reserveHeavyPolicy = DEFAULT_CROSS_MODE_BUDGET_ABLATION_POLICIES.find((policy) => policy.name === "cp-sat-reserve-heavy");
+  const reserveHeavyPolicy = DEFAULT_CROSS_MODE_BUDGET_ABLATION_POLICIES.find(
+    (policy) => policy.name === "cp-sat-reserve-heavy"
+  );
   const reserveHeavyParams = buildCrossModeBenchmarkParams(benchmarkCase, "auto", {
     budgetSeconds: 20,
     seeds: [5],
-    budgetAblationPolicy: reserveHeavyPolicy,
+    budgetAblationPolicy: reserveHeavyPolicy
   });
   assert.equal(reserveHeavyParams.auto.cpSatStageReserveRatio, 0.35);
   assert.equal(reserveHeavyParams.lns.seedTimeLimitSeconds, 1);
@@ -4918,7 +5161,7 @@ async function testCrossModeBenchmarkHelpers() {
   const portfolioParams = buildCrossModeBenchmarkParams(benchmarkCase, "cp-sat-portfolio", {
     budgetSeconds: 3,
     seeds: [5],
-    portfolio: { workerCount: 2 },
+    portfolio: { workerCount: 2 }
   });
   assert.equal(portfolioParams.optimizer, "cp-sat");
   assert.equal(portfolioParams.cpSat.timeLimitSeconds, 3);
@@ -4938,8 +5181,8 @@ async function testCrossModeBenchmarkHelpers() {
       serviceRefineCandidateLimit: 1,
       exhaustiveServiceSearch: false,
       serviceExactPoolLimit: 1,
-      serviceExactMaxCombinations: 1,
-    },
+      serviceExactMaxCombinations: 1
+    }
   });
 
   assert.equal(result.caseCount, 1);
@@ -4976,13 +5219,14 @@ async function testCrossModeBenchmarkHelpers() {
     modes: ["greedy"],
     budgetsSeconds: [1],
     seeds: [7],
-    solve: (_grid, params, context) => buildMockSolution({
-      optimizer: params.optimizer,
-      totalPopulation: context.benchmarkCase.params.cpSat.warmStartHint.solution.totalPopulation,
-      roads: context.benchmarkCase.params.cpSat.warmStartHint.solution.roads,
-      residentials: context.benchmarkCase.params.cpSat.warmStartHint.solution.residentials,
-      services: context.benchmarkCase.params.cpSat.warmStartHint.solution.services,
-    }),
+    solve: (_grid, params, context) =>
+      buildMockSolution({
+        optimizer: params.optimizer,
+        totalPopulation: context.benchmarkCase.params.cpSat.warmStartHint.solution.totalPopulation,
+        roads: context.benchmarkCase.params.cpSat.warmStartHint.solution.roads,
+        residentials: context.benchmarkCase.params.cpSat.warmStartHint.solution.residentials,
+        services: context.benchmarkCase.params.cpSat.warmStartHint.solution.services
+      })
   });
   assert.equal(productWorkflowResult.caseCount, 1);
   assert.equal(productWorkflowResult.selectedCaseNames[0], "manual-layout-replay-warm-start");
@@ -5001,20 +5245,21 @@ async function testCrossModeBenchmarkHelpers() {
         auto: 10 + seedBonus,
         greedy: 12 + seedBonus,
         lns: 8 + seedBonus,
-        "cp-sat-portfolio": 10 + seedBonus,
+        "cp-sat-portfolio": 10 + seedBonus
       };
       const solution = buildMockSolution({
         optimizer: params.optimizer,
         totalPopulation: modeScores[context.mode],
         cpSatStatus: params.optimizer === "cp-sat" ? "FEASIBLE" : undefined,
-        roads: context.mode === "greedy"
-          ? ["0,1"]
-          : context.mode === "lns"
-            ? ["1,1"]
-            : context.mode === "cp-sat-portfolio"
-              ? ["0,0", "2,2"]
-              : ["0,0"],
-        residentials: [{ r: 1, c: 1, rows: 1, cols: 1 }],
+        roads:
+          context.mode === "greedy"
+            ? ["0,1"]
+            : context.mode === "lns"
+              ? ["1,1"]
+              : context.mode === "cp-sat-portfolio"
+                ? ["0,0", "2,2"]
+                : ["0,0"],
+        residentials: [{ r: 1, c: 1, rows: 1, cols: 1 }]
       });
       if (context.mode === "auto") {
         solution.activeOptimizer = "lns";
@@ -5039,7 +5284,7 @@ async function testCrossModeBenchmarkHelpers() {
               populationBefore: null,
               candidatePopulation: modeScores[context.mode],
               acceptedPopulation: modeScores[context.mode],
-              improvement: null,
+              improvement: null
             },
             {
               stage: "lns",
@@ -5053,7 +5298,7 @@ async function testCrossModeBenchmarkHelpers() {
               candidatePopulation: modeScores[context.mode],
               acceptedPopulation: modeScores[context.mode],
               improvement: 0,
-              lnsStopReason: "iteration-limit",
+              lnsStopReason: "iteration-limit"
             },
             {
               stage: "lns",
@@ -5067,7 +5312,7 @@ async function testCrossModeBenchmarkHelpers() {
               candidatePopulation: modeScores[context.mode],
               acceptedPopulation: modeScores[context.mode],
               improvement: 0,
-              lnsStopReason: "iteration-limit",
+              lnsStopReason: "iteration-limit"
             },
             {
               stage: "cp-sat",
@@ -5081,7 +5326,7 @@ async function testCrossModeBenchmarkHelpers() {
               candidatePopulation: modeScores[context.mode],
               acceptedPopulation: modeScores[context.mode],
               improvement: 1,
-              cpSatStatus: "FEASIBLE",
+              cpSatStatus: "FEASIBLE"
             },
             {
               stage: "cp-sat",
@@ -5095,8 +5340,8 @@ async function testCrossModeBenchmarkHelpers() {
               candidatePopulation: modeScores[context.mode],
               acceptedPopulation: modeScores[context.mode],
               improvement: 2,
-              cpSatStatus: "FEASIBLE",
-            },
+              cpSatStatus: "FEASIBLE"
+            }
           ],
           greedySeedStage: {
             timeLimitSeconds: 3,
@@ -5120,10 +5365,10 @@ async function testCrossModeBenchmarkHelpers() {
                 candidatePopulationBefore: 0,
                 candidatePopulationAfter: modeScores[context.mode],
                 candidatePopulationDelta: modeScores[context.mode],
-                improvements: 1,
-              },
-            ],
-          },
+                improvements: 1
+              }
+            ]
+          }
         };
         solution.lnsTelemetry = {
           stopReason: "iteration-limit",
@@ -5155,9 +5400,9 @@ async function testCrossModeBenchmarkHelpers() {
               populationAfter: modeScores[context.mode],
               improvement: 0,
               status: "neutral",
-              cpSatStatus: "FEASIBLE",
-            },
-          ],
+              cpSatStatus: "FEASIBLE"
+            }
+          ]
         };
       }
       if (context.mode === "lns") {
@@ -5191,9 +5436,9 @@ async function testCrossModeBenchmarkHelpers() {
               populationAfter: modeScores[context.mode],
               improvement: 0,
               status: "neutral",
-              cpSatStatus: "FEASIBLE",
-            },
-          ],
+              cpSatStatus: "FEASIBLE"
+            }
+          ]
         };
       }
       if (context.mode === "cp-sat-portfolio") {
@@ -5210,19 +5455,35 @@ async function testCrossModeBenchmarkHelpers() {
           lastImprovementAtSeconds: 0.5,
           secondsSinceLastImprovement: 0.5,
           numBranches: 0,
-          numConflicts: 0,
+          numConflicts: 0
         };
         solution.cpSatPortfolio = {
           workerCount: 2,
           selectedWorkerIndex: 1,
           workers: [
-            { workerIndex: 0, randomSeed: context.seed, randomizeSearch: true, numWorkers: 1, status: "UNKNOWN", feasible: false, totalPopulation: null },
-            { workerIndex: 1, randomSeed: context.seed + 101, randomizeSearch: true, numWorkers: 1, status: "FEASIBLE", feasible: true, totalPopulation: modeScores[context.mode] },
-          ],
+            {
+              workerIndex: 0,
+              randomSeed: context.seed,
+              randomizeSearch: true,
+              numWorkers: 1,
+              status: "UNKNOWN",
+              feasible: false,
+              totalPopulation: null
+            },
+            {
+              workerIndex: 1,
+              randomSeed: context.seed + 101,
+              randomizeSearch: true,
+              numWorkers: 1,
+              status: "FEASIBLE",
+              feasible: true,
+              totalPopulation: modeScores[context.mode]
+            }
+          ]
         };
       }
       return solution;
-    },
+    }
   });
 
   assert.equal(mocked.cases.length, 2);
@@ -5250,7 +5511,8 @@ async function testCrossModeBenchmarkHelpers() {
   assert.match(mocked.budgetPolicySignals[0].reason, /Auto LNS used 1\.500s/);
   assert.match(mocked.budgetPolicySignals[0].reason, /Auto CP-SAT used 0\.700s for \+3/);
   assert.equal(
-    mocked.cases[0].results.find((entry) => entry.mode === "cp-sat-portfolio").progressSummary.portfolioWorkerSummary.feasibleWorkers,
+    mocked.cases[0].results.find((entry) => entry.mode === "cp-sat-portfolio").progressSummary.portfolioWorkerSummary
+      .feasibleWorkers,
     1
   );
   const mockedAuto = mocked.cases[0].results.find((entry) => entry.mode === "auto");
@@ -5286,7 +5548,10 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(mocked.portfolioEfficiencySignals.length, 0);
   assert.equal(mockedAuto.telemetry.stageCount, mockedAuto.telemetry.stages.length);
   assert(mockedAuto.telemetry.stages.some((entry) => entry.kind === "auto-stage" && entry.stage === "lns"));
-  assert.equal(mockedAuto.telemetry.stages.find((entry) => entry.kind === "lns-neighborhood").operatorOutcome, "neutral");
+  assert.equal(
+    mockedAuto.telemetry.stages.find((entry) => entry.kind === "lns-neighborhood").operatorOutcome,
+    "neutral"
+  );
   assert.equal(mockedLns.telemetry.stages.find((entry) => entry.kind === "lns").candidateCounts.iterationsStarted, 1);
   assert.equal(mockedPortfolio.telemetry.cpu.workerCpuBudgetSeconds, 6);
   assert.equal(mockedPortfolio.telemetry.score.cpSatStatus, "FEASIBLE");
@@ -5295,15 +5560,15 @@ async function testCrossModeBenchmarkHelpers() {
     command: "node dist/crossModeBenchmarkCli.js --json",
     git: {
       commit: "1234567890abcdef1234567890abcdef12345678",
-      branch: "features/telemetry-manifest-test",
+      branch: "features/telemetry-manifest-test"
     },
     hardware: {
       captured: true,
       cpuModel: "Test CPU",
       logicalCpuCount: 8,
       memoryBytes: 16,
-      gpuUsed: false,
-    },
+      gpuUsed: false
+    }
   });
   assert.equal(mockedTelemetryManifest.schemaVersion, 1);
   assert.equal(mockedTelemetryManifest.source, "cross-mode-benchmark");
@@ -5312,11 +5577,14 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(mockedTelemetryManifest.hardware.cpuModel, "Test CPU");
   assert.equal(mockedTelemetryManifest.suite.totalRuns, 8);
   assert.equal(mockedTelemetryManifest.runs.length, 8);
-  assert(mockedTelemetryManifest.runs.some((entry) =>
-    entry.caseName === "mock-scorecard"
-    && entry.mode === "lns"
-    && entry.stages.some((stage) => stage.kind === "lns-neighborhood" && stage.operatorOutcome === "neutral")
-  ));
+  assert(
+    mockedTelemetryManifest.runs.some(
+      (entry) =>
+        entry.caseName === "mock-scorecard" &&
+        entry.mode === "lns" &&
+        entry.stages.some((stage) => stage.kind === "lns-neighborhood" && stage.operatorOutcome === "neutral")
+    )
+  );
 
   const telemetry = (population, userTimeSeconds = 1) => ({
     solveWallTimeSeconds: userTimeSeconds,
@@ -5331,7 +5599,7 @@ async function testCrossModeBenchmarkHelpers() {
     lastImprovementAtSeconds: userTimeSeconds,
     secondsSinceLastImprovement: 0,
     numBranches: 0,
-    numConflicts: 0,
+    numConflicts: 0
   });
   const portfolioCompared = await runCrossModeBenchmarkSuite([benchmarkCase], {
     modes: ["cp-sat", "cp-sat-portfolio"],
@@ -5344,7 +5612,7 @@ async function testCrossModeBenchmarkHelpers() {
       const solution = buildMockSolution({
         optimizer: params.optimizer,
         totalPopulation,
-        cpSatStatus: "FEASIBLE",
+        cpSatStatus: "FEASIBLE"
       });
       solution.cpSatTelemetry = telemetry(totalPopulation, context.mode === "cp-sat" ? 2 : 1);
       if (context.mode === "cp-sat-portfolio") {
@@ -5352,13 +5620,31 @@ async function testCrossModeBenchmarkHelpers() {
           workerCount: 2,
           selectedWorkerIndex: 1,
           workers: [
-            { workerIndex: 0, randomSeed: context.seed, randomizeSearch: true, numWorkers: 1, status: "FEASIBLE", feasible: true, totalPopulation: 12, telemetry: telemetry(12, 1) },
-            { workerIndex: 1, randomSeed: context.seed + 101, randomizeSearch: true, numWorkers: 1, status: "FEASIBLE", feasible: true, totalPopulation, telemetry: telemetry(totalPopulation, 1) },
-          ],
+            {
+              workerIndex: 0,
+              randomSeed: context.seed,
+              randomizeSearch: true,
+              numWorkers: 1,
+              status: "FEASIBLE",
+              feasible: true,
+              totalPopulation: 12,
+              telemetry: telemetry(12, 1)
+            },
+            {
+              workerIndex: 1,
+              randomSeed: context.seed + 101,
+              randomizeSearch: true,
+              numWorkers: 1,
+              status: "FEASIBLE",
+              feasible: true,
+              totalPopulation,
+              telemetry: telemetry(totalPopulation, 1)
+            }
+          ]
         };
       }
       return solution;
-    },
+    }
   });
   assert.equal(portfolioCompared.portfolioEfficiencySignals.length, 1);
   assert.equal(portfolioCompared.portfolioEfficiencySignals[0].scoreDelta, 14);
@@ -5386,8 +5672,8 @@ async function testCrossModeBenchmarkHelpers() {
         lastImprovementAtSeconds: 0,
         secondsSinceLastImprovement: 3,
         numBranches: 0,
-        numConflicts: 0,
-      },
+        numConflicts: 0
+      }
     },
     { elapsedTimeSeconds: 0 }
   );
@@ -5411,7 +5697,7 @@ async function testCrossModeBenchmarkHelpers() {
         kind: "checkpoint",
         decision: "improved",
         reason: "Synthetic improvement.",
-        score: { before: null, after: 20, best: 20, delta: 20, upperBound: null, gap: null },
+        score: { before: null, after: 20, best: 20, delta: 20, upperBound: null, gap: null }
       },
       {
         schemaVersion: 1,
@@ -5424,8 +5710,8 @@ async function testCrossModeBenchmarkHelpers() {
         kind: "checkpoint",
         decision: "stalled",
         reason: "Synthetic lower side event.",
-        score: { before: 20, after: 10, best: 10, delta: -10, upperBound: null, gap: null },
-      },
+        score: { before: 20, after: 10, best: 10, delta: -10, upperBound: null, gap: null }
+      }
     ],
     { finalElapsedMs: 3000, finalScore: 10, timeCheckpointsMs: [2500, Number.NaN], qualityTargetRatios: [1] }
   );
@@ -5458,37 +5744,39 @@ async function testCrossModeBenchmarkHelpers() {
   const absoluteArtifactDir = path.join(repoRoot, artifactDir);
   fs.rmSync(absoluteArtifactDir, { recursive: true, force: true });
   try {
-    const artifactResult = childProcess.spawnSync(process.execPath, [
-      cliPath,
-      `--artifact-dir=${artifactDir}`,
-      "--modes=greedy",
-      "--budgets=1",
-      "--seeds=7",
-      "--json",
-      "typed-housing-single",
-    ], {
-      cwd: repoRoot,
-      encoding: "utf8",
-    });
+    const artifactResult = childProcess.spawnSync(
+      process.execPath,
+      [
+        cliPath,
+        `--artifact-dir=${artifactDir}`,
+        "--modes=greedy",
+        "--budgets=1",
+        "--seeds=7",
+        "--json",
+        "typed-housing-single"
+      ],
+      {
+        cwd: repoRoot,
+        encoding: "utf8"
+      }
+    );
     assert.equal(artifactResult.status, 0, artifactResult.stderr || artifactResult.stdout);
     const artifactManifest = JSON.parse(artifactResult.stdout);
     assert.equal(artifactManifest.artifactDir, artifactDir);
     assert.deepEqual(Object.keys(artifactManifest.artifactPaths).sort(), [
       "scorecardJson",
       "scorecardText",
-      "telemetryManifestJson",
+      "telemetryManifestJson"
     ]);
     assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.scorecardJson)), true);
     assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.scorecardText)), true);
     assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.telemetryManifestJson)), true);
-    const scorecardArtifact = JSON.parse(fs.readFileSync(
-      path.join(repoRoot, artifactManifest.artifactPaths.scorecardJson),
-      "utf8"
-    ));
-    const telemetryArtifact = JSON.parse(fs.readFileSync(
-      path.join(repoRoot, artifactManifest.artifactPaths.telemetryManifestJson),
-      "utf8"
-    ));
+    const scorecardArtifact = JSON.parse(
+      fs.readFileSync(path.join(repoRoot, artifactManifest.artifactPaths.scorecardJson), "utf8")
+    );
+    const telemetryArtifact = JSON.parse(
+      fs.readFileSync(path.join(repoRoot, artifactManifest.artifactPaths.telemetryManifestJson), "utf8")
+    );
     assert.deepEqual(scorecardArtifact.selectedCaseNames, ["typed-housing-single"]);
     assert.equal(telemetryArtifact.source, "cross-mode-benchmark");
     assert.match(telemetryArtifact.command, /--artifact-dir=artifacts\/tmp-cross-mode-scorecard-artifacts-/);
@@ -5499,27 +5787,25 @@ async function testCrossModeBenchmarkHelpers() {
     assert.equal(telemetryArtifact.runs[0].seed, 7);
     assert.equal(typeof telemetryArtifact.hardware.captured, "boolean");
 
-    const ablationConflict = childProcess.spawnSync(process.execPath, [
-      cliPath,
-      `--artifact-dir=${artifactDir}`,
-      "--budget-ablation",
-      "--modes=greedy",
-    ], {
-      cwd: repoRoot,
-      encoding: "utf8",
-    });
+    const ablationConflict = childProcess.spawnSync(
+      process.execPath,
+      [cliPath, `--artifact-dir=${artifactDir}`, "--budget-ablation", "--modes=greedy"],
+      {
+        cwd: repoRoot,
+        encoding: "utf8"
+      }
+    );
     assert.notEqual(ablationConflict.status, 0);
     assert.match(ablationConflict.stderr, /--artifact-dir cannot be combined with --budget-ablation/);
 
-    const artifactWriterConflict = childProcess.spawnSync(process.execPath, [
-      cliPath,
-      `--artifact-dir=${artifactDir}`,
-      "--product-corpus",
-      `--product-artifact-dir=${artifactDir}-product`,
-    ], {
-      cwd: repoRoot,
-      encoding: "utf8",
-    });
+    const artifactWriterConflict = childProcess.spawnSync(
+      process.execPath,
+      [cliPath, `--artifact-dir=${artifactDir}`, "--product-corpus", `--product-artifact-dir=${artifactDir}-product`],
+      {
+        cwd: repoRoot,
+        encoding: "utf8"
+      }
+    );
     assert.notEqual(artifactWriterConflict.status, 0);
     assert.match(artifactWriterConflict.stderr, /Use only one artifact writer/);
   } finally {
@@ -5538,14 +5824,14 @@ async function testCrossModeBenchmarkHelpers() {
         description: "Mock reserve-heavy policy.",
         autoCpSatStageReserveRatio: 0.35,
         lnsSeedBudgetRatio: 0.1,
-        lnsRepairBudgetRatio: 0.2,
-      },
+        lnsRepairBudgetRatio: 0.2
+      }
     ],
     solve: async (_grid, params, context) => {
       const reserveBonus = params.auto?.cpSatStageReserveRatio === 0.35 ? 5 : 0;
       const totalPopulation = context.mode === "auto" ? 10 + reserveBonus : 9;
       return buildMockSolution({ optimizer: params.optimizer, totalPopulation });
-    },
+    }
   });
   assert.equal(ablations.policies.length, 2);
   assert.equal(ablations.baselinePolicyName, "baseline");
@@ -5584,14 +5870,14 @@ async function testCrossModeBenchmarkHelpers() {
       {
         name: "reserve-heavy",
         description: "Mock reserve-heavy policy.",
-        autoCpSatStageReserveRatio: 0.35,
+        autoCpSatStageReserveRatio: 0.35
       },
-      { name: "baseline", description: "Mock baseline." },
+      { name: "baseline", description: "Mock baseline." }
     ],
     solve: async (_grid, params) => {
       const reserveBonus = params.auto?.cpSatStageReserveRatio === 0.35 ? 5 : 0;
       return buildMockSolution({ optimizer: params.optimizer, totalPopulation: 10 + reserveBonus });
-    },
+    }
   });
   assert.equal(reorderedAblations.baselinePolicyName, "baseline");
   assert.equal(reorderedAblations.policies[0].policyName, "reserve-heavy");
@@ -5606,9 +5892,9 @@ async function testCrossModeBenchmarkHelpers() {
     seeds: [5],
     policies: [
       { name: "aaa-tie", description: "Alphabetically first tied policy." },
-      { name: "baseline", description: "Mock baseline." },
+      { name: "baseline", description: "Mock baseline." }
     ],
-    solve: async (_grid, params) => buildMockSolution({ optimizer: params.optimizer, totalPopulation: 10 }),
+    solve: async (_grid, params) => buildMockSolution({ optimizer: params.optimizer, totalPopulation: 10 })
   });
   assert.equal(tiedAblations.baselinePolicyName, "baseline");
   assert.equal(tiedAblations.bestPolicyName, "baseline");
@@ -5623,16 +5909,12 @@ async function testCrossModeBenchmarkHelpers() {
     seeds: [5],
     policies: [
       { name: "baseline", description: "Mock baseline." },
-      { name: "lns-win", description: "Mock LNS improvement." },
+      { name: "lns-win", description: "Mock LNS improvement." }
     ],
     solve: async (_grid, params, context) => {
-      const totalPopulation = context.mode === "greedy"
-        ? 20
-        : context.budgetAblationPolicyName === "lns-win"
-          ? 15
-          : 10;
+      const totalPopulation = context.mode === "greedy" ? 20 : context.budgetAblationPolicyName === "lns-win" ? 15 : 10;
       return buildMockSolution({ optimizer: params.optimizer, totalPopulation });
-    },
+    }
   });
   assert.equal(lnsOnlyAblations.topPolicyRankingBasis, "mean-lns-population");
   assert.equal(lnsOnlyAblations.topPolicyName, "lns-win");
@@ -5640,16 +5922,17 @@ async function testCrossModeBenchmarkHelpers() {
   assert.deepEqual(lnsOnlyAblations.topPolicyTiedPolicyNames, ["lns-win"]);
 
   await assert.rejects(
-    () => runCrossModeBenchmarkBudgetAblations([benchmarkCase], {
-      modes: ["auto"],
-      budgetsSeconds: [3],
-      seeds: [5],
-      baselinePolicyName: "missing-baseline",
-      policies: [{ name: "baseline", description: "Mock baseline." }],
-      solve: async () => {
-        throw new Error("baseline validation should run before suite execution");
-      },
-    }),
+    () =>
+      runCrossModeBenchmarkBudgetAblations([benchmarkCase], {
+        modes: ["auto"],
+        budgetsSeconds: [3],
+        seeds: [5],
+        baselinePolicyName: "missing-baseline",
+        policies: [{ name: "baseline", description: "Mock baseline." }],
+        solve: async () => {
+          throw new Error("baseline validation should run before suite execution");
+        }
+      }),
     /baseline policy not found: missing-baseline/
   );
 
@@ -5666,7 +5949,7 @@ const STEP14_SCARCE_REFILL_BENCHMARK_NAME = "step14-scarce-type-sequential-refil
 const STEP14_FOLLOW_UP_BENCHMARK_NAMES = [
   STEP14_DETERMINISTIC_TIES_BENCHMARK_NAME,
   STEP14_ROW0_PATH_NULL_BENCHMARK_NAME,
-  STEP14_SCARCE_REFILL_BENCHMARK_NAME,
+  STEP14_SCARCE_REFILL_BENCHMARK_NAME
 ];
 const GREEDY_SERVICE_LOOKAHEAD_CANDIDATES_OPTION = "serviceLookaheadCandidates";
 const GREEDY_LOOKAHEAD_DISABLED = { [GREEDY_SERVICE_LOOKAHEAD_CANDIDATES_OPTION]: undefined };
@@ -5694,10 +5977,10 @@ function runGreedyServiceLookaheadBenchmarkPair(name, solveGreedyImpl) {
   const runPair = () => {
     const baseline = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
       names: [benchmarkName],
-      greedy: GREEDY_LOOKAHEAD_DISABLED,
+      greedy: GREEDY_LOOKAHEAD_DISABLED
     });
     const enabled = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
-      names: [benchmarkName],
+      names: [benchmarkName]
     });
     return { baseline, enabled };
   };
@@ -5711,7 +5994,7 @@ function solveGreedyBenchmarkCase(name, greedyOverrides) {
   params.greedy = {
     ...(params.greedy ?? {}),
     ...(greedyOverrides ?? {}),
-    profile: true,
+    profile: true
   };
 
   return {
@@ -5720,7 +6003,7 @@ function solveGreedyBenchmarkCase(name, greedyOverrides) {
     solution: solveGreedy(
       benchmarkCase.grid.map((row) => [...row]),
       params
-    ),
+    )
   };
 }
 
@@ -5731,8 +6014,8 @@ function solveValidatedGreedyBenchmarkCase(name, greedyOverrides) {
     validation: validateSolution({
       grid: solved.benchmarkCase.grid,
       solution: solved.solution,
-      params: solved.params,
-    }),
+      params: solved.params
+    })
   };
 }
 
@@ -5764,10 +6047,10 @@ function testGreedyBenchmarkCorpusHelpers() {
   const normalized = normalizeGreedyBenchmarkOptions(
     {
       localSearch: false,
-      restarts: 4,
+      restarts: 4
     },
     {
-      randomSeed: 13,
+      randomSeed: 13
     }
   );
 
@@ -5776,22 +6059,15 @@ function testGreedyBenchmarkCorpusHelpers() {
   assert.equal(normalized.randomSeed, 13);
   assert.equal(normalized.restarts, 4);
   assert.equal(normalized.serviceRefineIterations, DEFAULT_GREEDY_BENCHMARK_OPTIONS.serviceRefineIterations);
-  assert.equal(
-    normalized.serviceRefineCandidateLimit,
-    DEFAULT_GREEDY_BENCHMARK_OPTIONS.serviceRefineCandidateLimit
-  );
+  assert.equal(normalized.serviceRefineCandidateLimit, DEFAULT_GREEDY_BENCHMARK_OPTIONS.serviceRefineCandidateLimit);
   assert.equal(normalized.serviceLookaheadCandidates, undefined);
   assert.equal(normalized.exhaustiveServiceSearch, false);
   assert.equal(normalized.serviceExactPoolLimit, DEFAULT_GREEDY_BENCHMARK_OPTIONS.serviceExactPoolLimit);
-  assert.equal(
-    normalized.serviceExactMaxCombinations,
-    DEFAULT_GREEDY_BENCHMARK_OPTIONS.serviceExactMaxCombinations
-  );
+  assert.equal(normalized.serviceExactMaxCombinations, DEFAULT_GREEDY_BENCHMARK_OPTIONS.serviceExactMaxCombinations);
 
-  const normalizedLookahead = normalizeGreedyBenchmarkOptions(
-    undefined,
-    { [GREEDY_SERVICE_LOOKAHEAD_CANDIDATES_OPTION]: 4 }
-  );
+  const normalizedLookahead = normalizeGreedyBenchmarkOptions(undefined, {
+    [GREEDY_SERVICE_LOOKAHEAD_CANDIDATES_OPTION]: 4
+  });
 
   assert.equal(normalizedLookahead.serviceLookaheadCandidates, 4);
 
@@ -5809,7 +6085,7 @@ function testGreedyBenchmarkCorpusHelpers() {
           [1, 1, 1, 1],
           [1, 1, 1, 1],
           [1, 1, 1, 1],
-          [1, 1, 1, 1],
+          [1, 1, 1, 1]
         ],
         params: {
           optimizer: "greedy",
@@ -5821,9 +6097,9 @@ function testGreedyBenchmarkCorpusHelpers() {
           serviceRefineCandidateLimit: 3,
           exhaustiveServiceSearch: false,
           serviceExactPoolLimit: 3,
-          serviceExactMaxCombinations: 12,
-        },
-      },
+          serviceExactMaxCombinations: 12
+        }
+      }
     ],
     undefined
   );
@@ -5839,7 +6115,7 @@ function testGreedyConnectivityShadowScoringAblationRunner() {
     grid: [
       [1, 1, 1],
       [1, 1, 1],
-      [1, 1, 1],
+      [1, 1, 1]
     ],
     params: {
       optimizer: "greedy",
@@ -5854,17 +6130,22 @@ function testGreedyConnectivityShadowScoringAblationRunner() {
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 1,
         serviceExactMaxCombinations: 1,
-        profile: true,
-      },
-    },
+        profile: true
+      }
+    }
   };
 
   const result = runGreedyConnectivityShadowScoringAblation([ablationCase]);
   const formatted = formatGreedyConnectivityShadowScoringAblation(result);
 
-  assert.equal(DEFAULT_GREEDY_CONNECTIVITY_SHADOW_SCORING_ABLATION_CASE_NAMES.includes("row0-corridor-repair-pressure"), true);
   assert.equal(
-    DEFAULT_GREEDY_CONNECTIVITY_SHADOW_SCORING_ABLATION_CORPUS.some((entry) => entry.name === "row0-corridor-repair-pressure"),
+    DEFAULT_GREEDY_CONNECTIVITY_SHADOW_SCORING_ABLATION_CASE_NAMES.includes("row0-corridor-repair-pressure"),
+    true
+  );
+  assert.equal(
+    DEFAULT_GREEDY_CONNECTIVITY_SHADOW_SCORING_ABLATION_CORPUS.some(
+      (entry) => entry.name === "row0-corridor-repair-pressure"
+    ),
     true
   );
   assert.equal(listGreedyConnectivityShadowScoringAblationCaseNames().includes("bridge-connectivity-heavy"), true);
@@ -5904,7 +6185,7 @@ function testGreedyDeterministicAblationRunner() {
       [1, 1, 1, 1],
       [1, 1, 1, 1],
       [1, 1, 1, 1],
-      [1, 1, 1, 1],
+      [1, 1, 1, 1]
     ],
     params: {
       optimizer: "greedy",
@@ -5921,14 +6202,18 @@ function testGreedyDeterministicAblationRunner() {
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 4,
         serviceExactMaxCombinations: 16,
-        profile: true,
-      },
-    },
+        profile: true
+      }
+    }
   };
   const variants = [
     { name: "baseline", description: "Baseline fixture settings.", greedy: {} },
-    { name: "no-local-search", description: "Disable all local search.", greedy: { localSearch: false, localSearchServiceMoves: false } },
-    { name: "deferred-roads", description: "Enable deferred road commitment.", greedy: { deferRoadCommitment: true } },
+    {
+      name: "no-local-search",
+      description: "Disable all local search.",
+      greedy: { localSearch: false, localSearchServiceMoves: false }
+    },
+    { name: "deferred-roads", description: "Enable deferred road commitment.", greedy: { deferRoadCommitment: true } }
   ];
 
   const result = runGreedyDeterministicAblation([ablationCase], { variants });
@@ -5997,7 +6282,10 @@ function testGreedyDeterministicAblationRunner() {
   assert.equal(seededResult.variantSummaries[0].unchangedRate, 1);
   assert.equal(seededResult.variantSummaries[0].worstPopulationDeltaSeed, 7);
   assert.equal(seededResult.variantSummaries[0].bestPopulationDeltaSeed, 7);
-  assert.deepEqual(seededResult.cases.map((entry) => entry.seed), [7, 19]);
+  assert.deepEqual(
+    seededResult.cases.map((entry) => entry.seed),
+    [7, 19]
+  );
   assert.deepEqual(
     seededResult.cases.flatMap((entry) => entry.variants.map((variant) => variant.greedyOptions.randomSeed)),
     [7, 7, 7, 19, 19, 19]
@@ -6011,15 +6299,19 @@ function testGreedyDeterministicAblationRunner() {
   assert.match(seededFormatted, /Seeds: 7, 19/);
   assert.match(seededFormatted, /comparisons=2/);
   assert.throws(
-    () => runGreedyDeterministicAblation([ablationCase], {
-      variants: [{ name: "no-local-search", description: "Invalid missing baseline.", greedy: { localSearch: false } }],
-    }),
+    () =>
+      runGreedyDeterministicAblation([ablationCase], {
+        variants: [
+          { name: "no-local-search", description: "Invalid missing baseline.", greedy: { localSearch: false } }
+        ]
+      }),
     /must include the baseline variant/
   );
   assert.throws(
-    () => runGreedyDeterministicAblation([ablationCase], {
-      variantNames: ["no-local-search", "no-local-search"],
-    }),
+    () =>
+      runGreedyDeterministicAblation([ablationCase], {
+        variantNames: ["no-local-search", "no-local-search"]
+      }),
     /requested variants must use unique names/
   );
   assert.throws(
@@ -6053,7 +6345,7 @@ function testDeterministicAblationGateReport() {
     bestPopulationDeltaSeed: 7,
     worstPopulationDeltaCaseName: "case-a",
     worstPopulationDeltaSeed: 7,
-    ...overrides,
+    ...overrides
   });
   const greedySuite = {
     caseCount: 2,
@@ -6068,12 +6360,12 @@ function testDeterministicAblationGateReport() {
         medianPopulationDeltaVsBaseline: 10,
         bestPopulationDeltaVsBaseline: 20,
         winRate: 0.75,
-        unchangedRate: 0.25,
+        unchangedRate: 0.25
       }),
       summary("target", {
         bestPopulationDeltaVsBaseline: 10,
         winRate: 0.25,
-        unchangedRate: 0.75,
+        unchangedRate: 0.75
       }),
       summary("bad", {
         worstDecilePopulationDeltaVsBaseline: -5,
@@ -6081,9 +6373,9 @@ function testDeterministicAblationGateReport() {
         bestPopulationDeltaVsBaseline: 20,
         winRate: 0.25,
         regressionRate: 0.25,
-        unchangedRate: 0.5,
-      }),
-    ],
+        unchangedRate: 0.5
+      })
+    ]
   };
   const lnsSuite = {
     caseCount: 1,
@@ -6098,16 +6390,16 @@ function testDeterministicAblationGateReport() {
         comparisonCount: 2,
         firstWindowMovementRate: 0,
         windowSequenceMovementRate: 0,
-        anchorCoordinateMovementRate: 0,
+        anchorCoordinateMovementRate: 0
       }),
       summary("moved-window", {
         caseCount: 1,
         comparisonCount: 2,
         firstWindowMovementRate: 0,
         windowSequenceMovementRate: 1,
-        anchorCoordinateMovementRate: 1,
-      }),
-    ],
+        anchorCoordinateMovementRate: 1
+      })
+    ]
   };
 
   const report = buildDeterministicAblationGateReport({ greedy: greedySuite, lns: lnsSuite });
@@ -6119,17 +6411,17 @@ function testDeterministicAblationGateReport() {
   assert.equal(report.reportType, "deterministic-ablation-gate");
   assert.equal(Object.hasOwn(report, "generatedAt"), false);
   assert.equal(greedyDecisions.find((entry) => entry.variantName === "baseline").decision, "keep-baseline");
-  assert.equal(greedyDecisions.find((entry) => entry.variantName === "candidate").decision, "safe-deterministic-candidate");
+  assert.equal(
+    greedyDecisions.find((entry) => entry.variantName === "candidate").decision,
+    "safe-deterministic-candidate"
+  );
   assert.equal(greedyDecisions.find((entry) => entry.variantName === "target").decision, "learning-target");
   assert.equal(greedyDecisions.find((entry) => entry.variantName === "bad").decision, "blocked-regression");
   assert.equal(lnsDecisions.find((entry) => entry.variantName === "moved-window").decision, "learning-target");
   assert.match(formatted, /Deterministic Ablation Gate Report/);
   assert.match(formatted, /candidate: safe-deterministic-candidate/);
   assert.match(formatted, /Collect counterfactual LNS window replay labels/);
-  assert.throws(
-    () => buildDeterministicAblationGateReport({}),
-    /requires at least one suite result/
-  );
+  assert.throws(() => buildDeterministicAblationGateReport({}), /requires at least one suite result/);
 }
 
 function testGreedyStep14ServiceLookaheadBenchmarkCaseIsolated() {
@@ -6145,7 +6437,7 @@ function testGreedyStep14FollowUpBenchmarkCasesStayIsolated() {
 function testGreedyServiceLookaheadIsOffByDefaultAndLeavesCorpusUnchangedWhenOff() {
   const { baseline } = runGreedyServiceLookaheadBenchmarkPair(STEP14_GREEDY_BENCHMARK_NAME);
   const untouchedCorpusCase = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
-    names: ["compact-service-single"],
+    names: ["compact-service-single"]
   });
 
   assert.deepEqual(baseline.selectedCaseNames, [STEP14_GREEDY_BENCHMARK_NAME]);
@@ -6176,10 +6468,7 @@ function testGreedyStep14ServiceLookaheadBenchmarkCaseImprovesWhenEnabled() {
 
 function testGreedyStep14DeterministicLookaheadTieBenchmarkCase() {
   const { baseline, enabled } = runGreedyServiceLookaheadBenchmarkPair(STEP14_DETERMINISTIC_TIES_BENCHMARK_NAME);
-  const baselineSolve = solveGreedyBenchmarkCase(
-    STEP14_DETERMINISTIC_TIES_BENCHMARK_NAME,
-    GREEDY_LOOKAHEAD_DISABLED
-  );
+  const baselineSolve = solveGreedyBenchmarkCase(STEP14_DETERMINISTIC_TIES_BENCHMARK_NAME, GREEDY_LOOKAHEAD_DISABLED);
   const firstEnabledSolve = solveValidatedGreedyBenchmarkCase(STEP14_DETERMINISTIC_TIES_BENCHMARK_NAME);
   const secondEnabledSolve = solveValidatedGreedyBenchmarkCase(STEP14_DETERMINISTIC_TIES_BENCHMARK_NAME);
 
@@ -6191,15 +6480,11 @@ function testGreedyStep14DeterministicLookaheadTieBenchmarkCase() {
   assert.equal(enabled.results[0].serviceCount, 1);
   assert.equal(enabled.results[0].residentialCount, 2);
   assertLookaheadCounters(enabled.results[0], 28, 2);
-  assert.deepEqual(baselineSolve.solution.services, [
-    { r: 1, c: 0, rows: 1, cols: 1, range: 1 },
-  ]);
-  assert.deepEqual(firstEnabledSolve.solution.services, [
-    { r: 1, c: 0, rows: 1, cols: 1, range: 1 },
-  ]);
+  assert.deepEqual(baselineSolve.solution.services, [{ r: 1, c: 0, rows: 1, cols: 1, range: 1 }]);
+  assert.deepEqual(firstEnabledSolve.solution.services, [{ r: 1, c: 0, rows: 1, cols: 1, range: 1 }]);
   assert.deepEqual(firstEnabledSolve.solution.residentials, [
     { r: 0, c: 1, rows: 2, cols: 2 },
-    { r: 2, c: 0, rows: 2, cols: 2 },
+    { r: 2, c: 0, rows: 2, cols: 2 }
   ]);
   assert.deepEqual(firstEnabledSolve.solution.populations, [100, 100]);
   assert.deepEqual(sortedRoads(firstEnabledSolve.solution), ["0,0"]);
@@ -6228,17 +6513,13 @@ function testGreedyStep14Row0PathNullReservationBenchmarkCase() {
   assert.equal(enabled.results[0].serviceCount, 1);
   assert.equal(enabled.results[0].residentialCount, 2);
   assertLookaheadCounters(enabled.results[0], 56, 6);
-  assert.deepEqual(baselineSolve.solution.services, [
-    { r: 1, c: 0, rows: 1, cols: 1, range: 1 },
-  ]);
-  assert.deepEqual(enabledSolve.solution.services, [
-    { r: 0, c: 2, rows: 1, cols: 1, range: 1 },
-  ]);
+  assert.deepEqual(baselineSolve.solution.services, [{ r: 1, c: 0, rows: 1, cols: 1, range: 1 }]);
+  assert.deepEqual(enabledSolve.solution.services, [{ r: 0, c: 2, rows: 1, cols: 1, range: 1 }]);
   assert.deepEqual(sortedRoads(baselineSolve.solution), ["0,0"]);
   assert.deepEqual(sortedRoads(enabledSolve.solution), ["0,3"]);
   assert.deepEqual(enabledSolve.solution.residentials, [
     { r: 0, c: 0, rows: 3, cols: 2 },
-    { r: 1, c: 2, rows: 2, cols: 2 },
+    { r: 1, c: 2, rows: 2, cols: 2 }
   ]);
   assert.equal(enabledSolve.solution.services[0].r, 0);
   assert.equal(enabledSolve.solution.roads.size, baselineSolve.solution.roads.size);
@@ -6261,19 +6542,11 @@ function testGreedyStep14ScarceTypeSequentialRefillBenchmarkCase() {
   assert.equal(enabled.results[0].serviceCount, 1);
   assert.equal(enabled.results[0].residentialCount, 3);
   assertLookaheadCounters(enabled.results[0], 104, 1);
-  assert.deepEqual(enabledSolve.solution.services, [
-    { r: 1, c: 2, rows: 1, cols: 1, range: 1 },
-  ]);
+  assert.deepEqual(enabledSolve.solution.services, [{ r: 1, c: 2, rows: 1, cols: 1, range: 1 }]);
   assert.deepEqual(enabledSolve.solution.residentialTypeIndices, [0, 1, 1]);
   assert.deepEqual(enabledSolve.solution.populations, [95, 90, 90]);
-  assert.equal(
-    enabledSolve.solution.residentialTypeIndices.filter((typeIndex) => typeIndex === 0).length,
-    1
-  );
-  assert.equal(
-    enabledSolve.solution.residentialTypeIndices.filter((typeIndex) => typeIndex === 1).length,
-    2
-  );
+  assert.equal(enabledSolve.solution.residentialTypeIndices.filter((typeIndex) => typeIndex === 0).length, 1);
+  assert.equal(enabledSolve.solution.residentialTypeIndices.filter((typeIndex) => typeIndex === 1).length, 2);
   assert.deepEqual(baselineSolve.solution.residentialTypeIndices, [0, 1, 1]);
   assert.deepEqual(baselineSolve.solution.populations, [95, 90, 90]);
   assert.equal(enabledSolve.solution.totalPopulation, baselineSolve.solution.totalPopulation);
@@ -6288,18 +6561,18 @@ function testGreedyStep14LookaheadCapsRefillDepthWhenMaxResidentialsIsOne() {
     [1, 1, 1, 1, 1, 1],
     [0, 1, 1, 0, 1, 1],
     [1, 1, 1, 1, 1, 1],
-    [1, 1, 0, 1, 1, 0],
+    [1, 1, 0, 1, 1, 0]
   ];
   const enabledParams = {
     optimizer: "greedy",
     serviceTypes: [
       { rows: 1, cols: 1, bonus: 35, range: 1, avail: 2 },
       { rows: 2, cols: 2, bonus: 55, range: 1, avail: 1 },
-      { rows: 1, cols: 2, bonus: 45, range: 1, avail: 1 },
+      { rows: 1, cols: 2, bonus: 45, range: 1, avail: 1 }
     ],
     residentialTypes: [
       { w: 2, h: 2, min: 60, max: 120, avail: 5 },
-      { w: 2, h: 3, min: 90, max: 170, avail: 3 },
+      { w: 2, h: 3, min: 90, max: 170, avail: 3 }
     ],
     availableBuildings: { residentials: 1 },
     greedy: {
@@ -6313,13 +6586,13 @@ function testGreedyStep14LookaheadCapsRefillDepthWhenMaxResidentialsIsOne() {
       serviceExactPoolLimit: 6,
       serviceExactMaxCombinations: 64,
       serviceLookaheadCandidates: 4,
-      profile: true,
-    },
+      profile: true
+    }
   };
   const baselineParams = structuredClone(enabledParams);
   baselineParams.greedy = {
     ...baselineParams.greedy,
-    serviceLookaheadCandidates: undefined,
+    serviceLookaheadCandidates: undefined
   };
 
   const baseline = solveGreedy(
@@ -6337,12 +6610,10 @@ function testGreedyStep14LookaheadCapsRefillDepthWhenMaxResidentialsIsOne() {
   assert.equal(enabled.residentials.length, 1);
   assert.deepEqual(enabled.services, [
     { r: 2, c: 3, rows: 1, cols: 2, range: 1 },
-    { r: 2, c: 0, rows: 1, cols: 1, range: 1 },
+    { r: 2, c: 0, rows: 1, cols: 1, range: 1 }
   ]);
   assert.deepEqual(enabled.serviceTypeIndices, [2, 0]);
-  assert.deepEqual(enabled.residentials, [
-    { r: 0, c: 1, rows: 3, cols: 2 },
-  ]);
+  assert.deepEqual(enabled.residentials, [{ r: 0, c: 1, rows: 3, cols: 2 }]);
   assert.deepEqual(enabled.residentialTypeIndices, [1]);
   assert.deepEqual(enabled.populations, [170]);
   assert.equal(enabled.greedyProfile.counters.servicePhase.lookaheadEvaluations > 0, true);
@@ -6352,7 +6623,7 @@ function testGreedyStep14LookaheadCapsRefillDepthWhenMaxResidentialsIsOne() {
 
 function testGreedyBenchmarkSuite() {
   const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
-    names: ["cap-sweep-mixed"],
+    names: ["cap-sweep-mixed"]
   });
   const snapshot = createGreedyBenchmarkSnapshot(result);
 
@@ -6371,19 +6642,19 @@ function testGreedyBenchmarkSuite() {
   assert(result.results[0].greedyProfile.counters.roads.connectivityShadowLostCells > 0);
   assert(result.results[0].greedyProfile.counters.roads.roadOpportunityChecks > 0);
   assert(
-    result.results[0].greedyProfile.counters.roads.roadOpportunityLostCells
-      >= result.results[0].greedyProfile.counters.roads.roadOpportunityFootprintCells
+    result.results[0].greedyProfile.counters.roads.roadOpportunityLostCells >=
+      result.results[0].greedyProfile.counters.roads.roadOpportunityFootprintCells
   );
   assert(result.results[0].greedyProfile.roadOpportunityTraces.length > 0);
   assert.equal(result.results[0].greedyProfile.roadOpportunityTraces[0].reachableBefore >= 0, true);
   assert.equal(
     result.results[0].greedyProfile.roadOpportunityTraces[0].lostCells,
-    result.results[0].greedyProfile.roadOpportunityTraces[0].reachableBefore
-      - result.results[0].greedyProfile.roadOpportunityTraces[0].reachableAfter
+    result.results[0].greedyProfile.roadOpportunityTraces[0].reachableBefore -
+      result.results[0].greedyProfile.roadOpportunityTraces[0].reachableAfter
   );
   assert(
-    result.results[0].greedyProfile.counters.roads.connectivityShadowLostCells
-      >= result.results[0].greedyProfile.counters.roads.connectivityShadowFootprintCells
+    result.results[0].greedyProfile.counters.roads.connectivityShadowLostCells >=
+      result.results[0].greedyProfile.counters.roads.connectivityShadowFootprintCells
   );
   assert(result.results[0].greedyProfile.phases.some((phase) => phase.name === "precompute" && phase.runs === 1));
   assert(
@@ -6412,7 +6683,7 @@ function runGreedyBenchmarkCliJson(args) {
   const cliPath = path.join(__dirname, "../..", "dist", "greedyBenchmarkCli.js");
   const result = childProcess.spawnSync(process.execPath, [cliPath, "--json", ...args], {
     cwd: path.join(__dirname, "../.."),
-    encoding: "utf8",
+    encoding: "utf8"
   });
   if (result.status !== 0) {
     throw new Error(result.stderr?.trim() || result.stdout?.trim() || "Greedy benchmark CLI failed.");
@@ -6424,7 +6695,7 @@ function runLnsBenchmarkCli(args) {
   const cliPath = path.join(__dirname, "../..", "dist", "lnsBenchmarkCli.js");
   const result = childProcess.spawnSync(process.execPath, [cliPath, ...args], {
     cwd: path.join(__dirname, "../.."),
-    encoding: "utf8",
+    encoding: "utf8"
   });
   if (result.status !== 0) {
     throw new Error(result.stderr?.trim() || result.stdout?.trim() || "LNS benchmark CLI failed.");
@@ -6441,7 +6712,7 @@ function testGreedyBenchmarkCliConnectivityShadowFlags() {
     "--connectivity-shadow-labels",
     "--seeds=7",
     "--max-labels=1",
-    benchmarkName,
+    benchmarkName
   ]);
 
   assert.deepEqual(defaultRun.selectedCaseNames, [benchmarkName]);
@@ -6467,7 +6738,7 @@ function testGreedyBenchmarkCliDeterministicAblationFlags() {
     "--deterministic-ablation",
     "--ablation-variants=no-local-search",
     "--seeds=7,19",
-    benchmarkName,
+    benchmarkName
   ]);
 
   assert.deepEqual(result.selectedCaseNames, [benchmarkName]);
@@ -6477,7 +6748,10 @@ function testGreedyBenchmarkCliDeterministicAblationFlags() {
   assert.equal(result.seedCount, 2);
   assert.equal(result.comparisonCount, 2);
   assert.equal(result.coverage.runCount, 4);
-  assert.deepEqual(result.cases.map((entry) => entry.seed), [7, 19]);
+  assert.deepEqual(
+    result.cases.map((entry) => entry.seed),
+    [7, 19]
+  );
   assert.equal(result.cases[0].baseline.greedyOptions.profile, false);
   assert.equal(result.cases[0].variants[1].greedyOptions.localSearch, false);
   assert.equal(result.cases[1].baseline.greedyOptions.randomSeed, 19);
@@ -6486,7 +6760,7 @@ function testGreedyBenchmarkCliDeterministicAblationFlags() {
     "--deterministic-ablation",
     "--gate-report",
     "--ablation-variants=no-local-search",
-    benchmarkName,
+    benchmarkName
   ]);
   assert.equal(gateReport.reportType, "deterministic-ablation-gate");
   assert.deepEqual(gateReport.suites[0].seeds, [7, 19, 37]);
@@ -6500,14 +6774,16 @@ function testLnsBenchmarkCliNeighborhoodAblationSeedListParsing() {
   assert.match(output, /compact-service-repair/);
   assert.match(output, /row0-anchor-repair/);
 
-  const gateReport = JSON.parse(runLnsBenchmarkCli([
-    "--json",
-    "--neighborhood-ablation",
-    "--gate-report",
-    "--seeds=7",
-    "--ablation-variants=baseline,sliding-only",
-    "seeded-service-anchor-pressure",
-  ]));
+  const gateReport = JSON.parse(
+    runLnsBenchmarkCli([
+      "--json",
+      "--neighborhood-ablation",
+      "--gate-report",
+      "--seeds=7",
+      "--ablation-variants=baseline,sliding-only",
+      "seeded-service-anchor-pressure"
+    ])
+  );
   assert.equal(gateReport.reportType, "deterministic-ablation-gate");
   assert.equal(gateReport.suites[0].suite, "lns-neighborhood");
   assert.deepEqual(gateReport.suites[0].seeds, [7]);
@@ -6516,7 +6792,7 @@ function testLnsBenchmarkCliNeighborhoodAblationSeedListParsing() {
 
 function testGreedyDeterministicTieBreakBenchmarkCase() {
   const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
-    names: ["deterministic-tie-breaks"],
+    names: ["deterministic-tie-breaks"]
   });
 
   assert.equal(result.caseCount, 1);
@@ -6530,7 +6806,7 @@ function testGreedyDeterministicTieBreakBenchmarkCase() {
 
 function testGreedyConnectivityHeavyBenchmarkCase() {
   const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
-    names: ["bridge-connectivity-heavy"],
+    names: ["bridge-connectivity-heavy"]
   });
 
   assert.equal(result.caseCount, 1);
@@ -6555,19 +6831,19 @@ function testGridRectangleBorderCellsPreserveExpectedRing() {
     [2, 2],
     [2, 6],
     [3, 2],
-    [3, 6],
+    [3, 6]
   ]);
   assert.deepEqual(rectangleBorderCells(0, 0, 1, 1), [
     [-1, 0],
     [1, 0],
     [0, -1],
-    [0, 1],
+    [0, 1]
   ]);
 }
 
 function testGreedyGeometryOccupancyHotPathBenchmarkCase() {
   const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
-    names: ["geometry-occupancy-hot-path"],
+    names: ["geometry-occupancy-hot-path"]
   });
 
   assert.equal(result.caseCount, 1);
@@ -6588,10 +6864,7 @@ function testGreedyGeometryOccupancyHotPathBenchmarkCase() {
 
 function inferredPositiveServiceUpper(params) {
   const types = params.serviceTypes ?? [];
-  const positiveBonuses = types.reduce(
-    (sum, type) => sum + (type.bonus > 0 ? Math.max(0, type.avail) : 0),
-    0
-  );
+  const positiveBonuses = types.reduce((sum, type) => sum + (type.bonus > 0 ? Math.max(0, type.avail) : 0), 0);
   const totalAvail = types.reduce((sum, type) => sum + Math.max(0, type.avail), 0);
   return positiveBonuses > 0 ? Math.min(totalAvail, positiveBonuses) : totalAvail;
 }
@@ -6608,8 +6881,8 @@ function testGreedyExplicitServiceCapIsMaximum() {
       restarts: 1,
       serviceRefineIterations: 0,
       exhaustiveServiceSearch: false,
-      profile: true,
-    },
+      profile: true
+    }
   };
 
   const solution = solveGreedy(grid, params);
@@ -6628,11 +6901,11 @@ function testGreedyExplicitCapSweepsAllAllowedLowerCaps() {
     optimizer: "greedy",
     serviceTypes: [
       { rows: 1, cols: 1, bonus: 32, range: 1, avail: 5 },
-      { rows: 2, cols: 2, bonus: 58, range: 1, avail: 3 },
+      { rows: 2, cols: 2, bonus: 58, range: 1, avail: 3 }
     ],
     residentialTypes: [
       { w: 2, h: 2, min: 60, max: 120, avail: 8 },
-      { w: 2, h: 3, min: 95, max: 175, avail: 4 },
+      { w: 2, h: 3, min: 95, max: 175, avail: 4 }
     ],
     availableBuildings: { services: 3 },
     greedy: {
@@ -6644,8 +6917,8 @@ function testGreedyExplicitCapSweepsAllAllowedLowerCaps() {
       exhaustiveServiceSearch: false,
       serviceExactPoolLimit: 8,
       serviceExactMaxCombinations: 64,
-      profile: true,
-    },
+      profile: true
+    }
   };
 
   const solution = solveGreedy(grid, params);
@@ -6665,8 +6938,8 @@ function testGreedySmallUpperKeepsFullCapSweep() {
       ...benchmarkCase.params,
       greedy: {
         ...benchmarkCase.params.greedy,
-        profile: true,
-      },
+        profile: true
+      }
     })
   );
   const counters = solution.greedyProfile.counters.attempts;
@@ -6682,7 +6955,7 @@ function testGreedySmallUpperKeepsFullCapSweep() {
 function testGreedyAdaptiveCapSearchWideBenchmarkCase() {
   const benchmarkCase = DEFAULT_GREEDY_BENCHMARK_CORPUS.find((entry) => entry.name === "adaptive-cap-search-wide");
   const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
-    names: ["adaptive-cap-search-wide"],
+    names: ["adaptive-cap-search-wide"]
   });
   const counters = result.results[0].greedyProfile.counters.attempts;
   const upper = inferredPositiveServiceUpper(benchmarkCase.params);
@@ -6708,11 +6981,11 @@ function testGreedyAdaptiveCapSearchMatchesBestExplicitCap() {
     optimizer: "greedy",
     serviceTypes: [
       { rows: 1, cols: 1, bonus: 28, range: 1, avail: 5 },
-      { rows: 2, cols: 2, bonus: 50, range: 1, avail: 2 },
+      { rows: 2, cols: 2, bonus: 50, range: 1, avail: 2 }
     ],
     residentialTypes: [
       { w: 2, h: 2, min: 60, max: 120, avail: 6 },
-      { w: 2, h: 3, min: 95, max: 175, avail: 3 },
+      { w: 2, h: 3, min: 95, max: 175, avail: 3 }
     ],
     greedy: {
       localSearch: false,
@@ -6722,8 +6995,8 @@ function testGreedyAdaptiveCapSearchMatchesBestExplicitCap() {
       serviceRefineCandidateLimit: 8,
       exhaustiveServiceSearch: false,
       serviceExactPoolLimit: 8,
-      serviceExactMaxCombinations: 64,
-    },
+      serviceExactMaxCombinations: 64
+    }
   };
   const upper = inferredPositiveServiceUpper(params);
   let bestExplicit = null;
@@ -6734,7 +7007,7 @@ function testGreedyAdaptiveCapSearchMatchesBestExplicitCap() {
       grid.map((row) => [...row]),
       structuredClone({
         ...params,
-        availableBuildings: { services: cap },
+        availableBuildings: { services: cap }
       })
     );
     if (!bestExplicit || candidate.totalPopulation > bestExplicit.totalPopulation) {
@@ -6749,8 +7022,8 @@ function testGreedyAdaptiveCapSearchMatchesBestExplicitCap() {
       ...params,
       greedy: {
         ...params.greedy,
-        profile: true,
-      },
+        profile: true
+      }
     })
   );
 
@@ -6775,7 +7048,7 @@ function testGreedyIncrementalInvalidationPreservesBenchmarkOutputs() {
     "service-local-neighborhood": { totalPopulation: 395, serviceCount: 2, residentialCount: 3 },
     "step14-deterministic-lookahead-ties": { totalPopulation: 200, serviceCount: 1, residentialCount: 2 },
     "step14-row0-path-null-reservation": { totalPopulation: 230, serviceCount: 1, residentialCount: 2 },
-    "step14-scarce-type-sequential-refill": { totalPopulation: 275, serviceCount: 1, residentialCount: 3 },
+    "step14-scarce-type-sequential-refill": { totalPopulation: 275, serviceCount: 1, residentialCount: 3 }
   };
 
   for (const [name, expected] of Object.entries(expectations)) {
@@ -6791,7 +7064,7 @@ function testGreedyIncrementalInvalidationPreservesBenchmarkOutputs() {
 
 function testGreedyIncrementalInvalidationCounters() {
   const crowdedBenchmarkResult = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
-    names: ["crowded-invalidation-heavy"],
+    names: ["crowded-invalidation-heavy"]
   });
   assert.equal(crowdedBenchmarkResult.caseCount, 1);
   assert.deepEqual(crowdedBenchmarkResult.selectedCaseNames, ["crowded-invalidation-heavy"]);
@@ -6799,7 +7072,9 @@ function testGreedyIncrementalInvalidationCounters() {
   assert.match(formatGreedyBenchmarkSuite(crowdedBenchmarkResult), /crowded-invalidation-heavy/);
   assert.match(formatGreedyBenchmarkSuite(crowdedBenchmarkResult), /invalidation=/);
 
-  const crowdedBenchmarkCase = DEFAULT_GREEDY_BENCHMARK_CORPUS.find((entry) => entry.name === "crowded-invalidation-heavy");
+  const crowdedBenchmarkCase = DEFAULT_GREEDY_BENCHMARK_CORPUS.find(
+    (entry) => entry.name === "crowded-invalidation-heavy"
+  );
   const focusedCrowdedParams = structuredClone(crowdedBenchmarkCase.params);
   focusedCrowdedParams.maxServices = 1;
   focusedCrowdedParams.greedy = {
@@ -6807,7 +7082,7 @@ function testGreedyIncrementalInvalidationCounters() {
     localSearch: false,
     restarts: 1,
     serviceRefineIterations: 0,
-    profile: true,
+    profile: true
   };
   const focusedCrowdedSolution = solveGreedy(
     crowdedBenchmarkCase.grid.map((row) => [...row]),
@@ -6828,20 +7103,19 @@ function testGreedyIncrementalInvalidationCounters() {
   assert.equal(focusedCrowdedCounters.residentialPhase.candidateInvalidations > 0, true);
   assert.equal(
     focusedCrowdedCounters.servicePhase.candidateScans <
-      focusedCrowdedCounters.precompute.serviceCandidates
-        * Math.max(1, focusedCrowdedCounters.servicePhase.placements),
+      focusedCrowdedCounters.precompute.serviceCandidates * Math.max(1, focusedCrowdedCounters.servicePhase.placements),
     true
   );
   assert.equal(focusedCrowdedCounters.servicePhase.candidateScans < 1000, true);
   assert.equal(
     focusedCrowdedCounters.residentialPhase.candidateScans <
-      focusedCrowdedCounters.precompute.residentialCandidates
-        * Math.max(1, focusedCrowdedCounters.residentialPhase.placements),
+      focusedCrowdedCounters.precompute.residentialCandidates *
+        Math.max(1, focusedCrowdedCounters.residentialPhase.placements),
     true
   );
 
   const typedResult = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
-    names: ["typed-availability-pressure"],
+    names: ["typed-availability-pressure"]
   });
   const typedCounters = typedResult.results[0].greedyProfile.counters;
 
@@ -6849,7 +7123,7 @@ function testGreedyIncrementalInvalidationCounters() {
   assert.equal(typedCounters.residentialPhase.typeInvalidations > 0, true);
 
   const fixedServiceResult = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
-    names: ["compact-service-single"],
+    names: ["compact-service-single"]
   });
   const fixedServiceCounters = fixedServiceResult.results[0].greedyProfile.counters;
 
@@ -6859,7 +7133,7 @@ function testGreedyIncrementalInvalidationCounters() {
 
 function testGreedyDeferredRoadCommitmentBenchmarkCase() {
   const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
-    names: ["deferred-road-packing-gain"],
+    names: ["deferred-road-packing-gain"]
   });
   const benchmarkCase = DEFAULT_GREEDY_BENCHMARK_CORPUS.find((entry) => entry.name === "deferred-road-packing-gain");
   const deferredParams = structuredClone(benchmarkCase.params);
@@ -6878,7 +7152,7 @@ function testGreedyDeferredRoadCommitmentBenchmarkCase() {
   const validation = validateSolutionMap({
     grid: benchmarkCase.grid,
     solution: deferredSolution,
-    params: deferredParams,
+    params: deferredParams
   });
 
   assert.equal(result.caseCount, 1);
@@ -6906,12 +7180,12 @@ function testGreedyDeferredRoadCommitmentKeepsTopRowShortcut() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [0, 0, 0, 0],
-    [0, 0, 0, 0],
+    [0, 0, 0, 0]
   ];
   const params = {
     residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
     availableBuildings: { residentials: 1, services: 0 },
-    greedy: { localSearch: false, restarts: 1, exhaustiveServiceSearch: false, deferRoadCommitment: true },
+    greedy: { localSearch: false, restarts: 1, exhaustiveServiceSearch: false, deferRoadCommitment: true }
   };
 
   const solution = solveGreedy(grid, params);
@@ -6927,24 +7201,21 @@ function testGreedyDeferredRoadMaterializationFailsDeterministically() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const occupiedBuildings = new Set(["0,0", "0,1", "0,2", "0,3", "1,0", "2,0", "3,0"]);
-  const roads = materializeDeferredRoadNetwork(
-    grid,
-    undefined,
-    occupiedBuildings,
-    [{ r: 2, c: 1, rows: 1, cols: 1 }]
-  );
+  const roads = materializeDeferredRoadNetwork(grid, undefined, occupiedBuildings, [{ r: 2, c: 1, rows: 1, cols: 1 }]);
 
   assert.equal(roads, null);
 }
 
 function testGreedyFixedServiceRealizationCompletenessBenchmarkCase() {
   const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
-    names: ["fixed-service-realization-complete"],
+    names: ["fixed-service-realization-complete"]
   });
-  const benchmarkCase = DEFAULT_GREEDY_BENCHMARK_CORPUS.find((entry) => entry.name === "fixed-service-realization-complete");
+  const benchmarkCase = DEFAULT_GREEDY_BENCHMARK_CORPUS.find(
+    (entry) => entry.name === "fixed-service-realization-complete"
+  );
   const improvedParams = structuredClone(benchmarkCase.params);
   improvedParams.greedy = { ...improvedParams.greedy, profile: true };
   const improvedSolution = solveGreedy(
@@ -6956,7 +7227,7 @@ function testGreedyFixedServiceRealizationCompletenessBenchmarkCase() {
     ...baselineParams.greedy,
     profile: true,
     serviceRefineIterations: 0,
-    exhaustiveServiceSearch: false,
+    exhaustiveServiceSearch: false
   };
   const baselineSolution = solveGreedy(
     benchmarkCase.grid.map((row) => [...row]),
@@ -6966,7 +7237,7 @@ function testGreedyFixedServiceRealizationCompletenessBenchmarkCase() {
   exhaustiveOnlyParams.greedy = {
     ...exhaustiveOnlyParams.greedy,
     profile: true,
-    serviceRefineIterations: 0,
+    serviceRefineIterations: 0
   };
   const exhaustiveOnlySolution = solveGreedy(
     benchmarkCase.grid.map((row) => [...row]),
@@ -6987,7 +7258,7 @@ function testGreedyFixedServiceRealizationCompletenessBenchmarkCase() {
   assert.equal(exhaustiveOnlySolution.totalPopulation >= baselineSolution.totalPopulation, true);
   assert.deepEqual(exhaustiveOnlySolution.services, [
     { r: 2, c: 2, rows: 1, cols: 2, range: 1 },
-    { r: 0, c: 3, rows: 1, cols: 1, range: 1 },
+    { r: 0, c: 3, rows: 1, cols: 1, range: 1 }
   ]);
   assert.deepEqual(exhaustiveOnlySolution.populations, [170, 120, 105]);
   assert.equal(exhaustiveOnlySolution.greedyProfile.counters.attempts.fixedServiceRealizationTrials > 0, true);
@@ -7006,18 +7277,18 @@ function testGreedyFixedServiceRealizationCompletenessImprovesMultiServiceRefine
     [1, 1, 1, 1, 1, 1],
     [0, 0, 1, 0, 1, 1],
     [1, 1, 0, 0, 1, 1],
-    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1]
   ];
   const params = {
     optimizer: "greedy",
     serviceTypes: [
       { rows: 1, cols: 1, bonus: 48, range: 2, avail: 1 },
       { rows: 1, cols: 2, bonus: 67, range: 2, avail: 2 },
-      { rows: 1, cols: 2, bonus: 47, range: 1, avail: 1 },
+      { rows: 1, cols: 2, bonus: 47, range: 1, avail: 1 }
     ],
     residentialTypes: [
       { w: 2, h: 2, min: 53, max: 157, avail: 5 },
-      { w: 2, h: 3, min: 81, max: 171, avail: 2 },
+      { w: 2, h: 3, min: 81, max: 171, avail: 2 }
     ],
     greedy: {
       localSearch: false,
@@ -7028,14 +7299,14 @@ function testGreedyFixedServiceRealizationCompletenessImprovesMultiServiceRefine
       exhaustiveServiceSearch: false,
       serviceExactPoolLimit: 6,
       serviceExactMaxCombinations: 64,
-      profile: true,
-    },
+      profile: true
+    }
   };
 
   const baselineParams = structuredClone(params);
   baselineParams.greedy = {
     ...baselineParams.greedy,
-    serviceRefineIterations: 0,
+    serviceRefineIterations: 0
   };
   const baselineSolution = solveGreedy(
     grid.map((row) => [...row]),
@@ -7055,9 +7326,7 @@ function testGreedyFixedServiceRealizationCompletenessImprovesMultiServiceRefine
   assert.equal(improvedSolution.totalPopulation > baselineSolution.totalPopulation, true);
   assert.deepEqual(baselineSolution.serviceTypeIndices, [1]);
   assert.deepEqual(improvedSolution.serviceTypeIndices, [1]);
-  assert.deepEqual(improvedSolution.services, [
-    { r: 0, c: 2, rows: 2, cols: 1, range: 2 },
-  ]);
+  assert.deepEqual(improvedSolution.services, [{ r: 0, c: 2, rows: 2, cols: 1, range: 2 }]);
   assert.deepEqual(improvedSolution.populations, [148, 148, 120, 53]);
   assert.equal(improvedSolution.greedyProfile.counters.attempts.fixedServiceRealizationTrials > 0, true);
   assert.equal(improvedSolution.greedyProfile.counters.attempts.serviceRefineTrials > 0, true);
@@ -7065,19 +7334,21 @@ function testGreedyFixedServiceRealizationCompletenessImprovesMultiServiceRefine
 
 function testGreedyServiceMasterDecompositionBenchmarkCase() {
   const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
-    names: ["service-master-decomposition-experiment"],
+    names: ["service-master-decomposition-experiment"]
   });
-  const benchmarkCase = DEFAULT_GREEDY_BENCHMARK_CORPUS.find((entry) => entry.name === "service-master-decomposition-experiment");
+  const benchmarkCase = DEFAULT_GREEDY_BENCHMARK_CORPUS.find(
+    (entry) => entry.name === "service-master-decomposition-experiment"
+  );
   const baselineParams = structuredClone(benchmarkCase.params);
   baselineParams.greedy = {
     ...baselineParams.greedy,
     serviceMasterDecomposition: false,
-    profile: true,
+    profile: true
   };
   const masterParams = structuredClone(benchmarkCase.params);
   masterParams.greedy = {
     ...masterParams.greedy,
-    profile: true,
+    profile: true
   };
   const baselineSolution = solveGreedy(
     benchmarkCase.grid.map((row) => [...row]),
@@ -7090,7 +7361,7 @@ function testGreedyServiceMasterDecompositionBenchmarkCase() {
   const validation = validateSolution({
     grid: benchmarkCase.grid,
     solution: masterSolution,
-    params: masterParams,
+    params: masterParams
   });
   const counters = masterSolution.greedyProfile.counters.attempts;
   const phase = masterSolution.greedyProfile.phases.find((entry) => entry.name === "serviceMasterDecomposition");
@@ -7105,9 +7376,7 @@ function testGreedyServiceMasterDecompositionBenchmarkCase() {
   assert.equal(baselineSolution.totalPopulation, 465);
   assert.equal(masterSolution.totalPopulation, 555);
   assert.equal(masterSolution.totalPopulation > baselineSolution.totalPopulation, true);
-  assert.deepEqual(masterSolution.services, [
-    { r: 0, c: 3, rows: 2, cols: 1, range: 1 },
-  ]);
+  assert.deepEqual(masterSolution.services, [{ r: 0, c: 3, rows: 2, cols: 1, range: 1 }]);
   assert.equal(counters.serviceMasterLayouts > 0, true);
   assert.equal(counters.serviceMasterFeasibleLayouts > 0, true);
   assert.equal(counters.serviceMasterNoGoodSkips > 0, true);
@@ -7120,7 +7389,7 @@ function testGreedyServiceMasterDecompositionBenchmarkCase() {
 
 function testGreedyServiceLocalNeighborhoodBenchmarkCase() {
   const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
-    names: ["service-local-neighborhood"],
+    names: ["service-local-neighborhood"]
   });
   const benchmarkCase = DEFAULT_GREEDY_BENCHMARK_CORPUS.find((entry) => entry.name === "service-local-neighborhood");
   const improvedParams = structuredClone(benchmarkCase.params);
@@ -7134,7 +7403,7 @@ function testGreedyServiceLocalNeighborhoodBenchmarkCase() {
     ...baselineParams.greedy,
     profile: true,
     localSearch: true,
-    localSearchServiceMoves: false,
+    localSearchServiceMoves: false
   };
   const baselineSolution = solveGreedy(
     benchmarkCase.grid.map((row) => [...row]),
@@ -7168,7 +7437,7 @@ function testGreedyResidualServiceBundleRepairAddsServiceAndRefillsResidentials(
     [1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1],
-    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1]
   ];
   const params = {
     optimizer: "greedy",
@@ -7185,13 +7454,13 @@ function testGreedyResidualServiceBundleRepairAddsServiceAndRefillsResidentials(
       exhaustiveServiceSearch: false,
       serviceExactPoolLimit: 4,
       serviceExactMaxCombinations: 16,
-      profile: true,
-    },
+      profile: true
+    }
   };
   const baselineParams = structuredClone(params);
   baselineParams.greedy = {
     ...baselineParams.greedy,
-    localSearchServiceMoves: false,
+    localSearchServiceMoves: false
   };
 
   const baseline = solveGreedy(
@@ -7203,8 +7472,7 @@ function testGreedyResidualServiceBundleRepairAddsServiceAndRefillsResidentials(
     params
   );
   const validation = validateSolution({ grid, solution: repaired, params });
-  const overlaps = (a, b) =>
-    a.r < b.r + b.rows && a.r + a.rows > b.r && a.c < b.c + b.cols && a.c + a.cols > b.c;
+  const overlaps = (a, b) => a.r < b.r + b.rows && a.r + a.rows > b.r && a.c < b.c + b.cols && a.c + a.cols > b.c;
 
   assert.equal(validation.valid, true);
   assert.equal(baseline.totalPopulation, 320);
@@ -7213,18 +7481,21 @@ function testGreedyResidualServiceBundleRepairAddsServiceAndRefillsResidentials(
   assert.equal(repaired.totalPopulation >= baseline.totalPopulation, true);
   assert.deepEqual(repaired.services, [
     { r: 1, c: 0, rows: 1, cols: 1, range: 1 },
-    { r: 2, c: 0, rows: 1, cols: 1, range: 1 },
+    { r: 2, c: 0, rows: 1, cols: 1, range: 1 }
   ]);
   assert.deepEqual(repaired.serviceTypeIndices, [0, 0]);
   assert.deepEqual(repaired.populations, [120, 120, 80]);
-  assert.equal(baseline.residentials.some((residential) => overlaps(repaired.services[0], residential)), false);
+  assert.equal(
+    baseline.residentials.some((residential) => overlaps(repaired.services[0], residential)),
+    false
+  );
   assert.equal(repaired.greedyProfile.counters.localSearch.serviceSwapChecks > 0, true);
   assert.equal(repaired.greedyProfile.counters.localSearch.serviceNeighborhoodImprovements >= 0, true);
 }
 
 function testGreedyTypedFootprintPressureBenchmarkCase() {
   const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
-    names: ["typed-footprint-pressure"],
+    names: ["typed-footprint-pressure"]
   });
   const benchmarkCase = DEFAULT_GREEDY_BENCHMARK_CORPUS.find((entry) => entry.name === "typed-footprint-pressure");
   const solution = solveGreedy(
@@ -7241,7 +7512,7 @@ function testGreedyTypedFootprintPressureBenchmarkCase() {
   assert.deepEqual(solution.serviceTypeIndices, [1, 0]);
   assert.deepEqual(solution.services, [
     { r: 3, c: 2, rows: 1, cols: 1, range: 2 },
-    { r: 2, c: 3, rows: 1, cols: 1, range: 1 },
+    { r: 2, c: 3, rows: 1, cols: 1, range: 1 }
   ]);
   assert.deepEqual(solution.residentialTypeIndices, [2, 2, 0, 1]);
   assert.deepEqual(solution.populations, [150, 150, 130, 75]);
@@ -7256,7 +7527,7 @@ function testGreedyTypedFootprintPressureBenchmarkCase() {
 
 function testGreedyTypedAvailabilityPressureBenchmarkCase() {
   const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
-    names: ["typed-availability-pressure"],
+    names: ["typed-availability-pressure"]
   });
   const benchmarkCase = DEFAULT_GREEDY_BENCHMARK_CORPUS.find((entry) => entry.name === "typed-availability-pressure");
   const solution = solveGreedy(
@@ -7275,14 +7546,15 @@ function testGreedyTypedAvailabilityPressureBenchmarkCase() {
   assert.equal(solution.services.length, 2);
   assert.deepEqual(solution.services, [
     { r: 3, c: 3, rows: 1, cols: 1, range: 2 },
-    { r: 2, c: 2, rows: 1, cols: 1, range: 2 },
+    { r: 2, c: 2, rows: 1, cols: 1, range: 2 }
   ]);
   assert.deepEqual(solution.residentialTypeIndices, [0, 1, 1, 1, 1]);
   assert.deepEqual(solution.populations, [175, 110, 110, 110, 110]);
   assert(result.results[0].greedyProfile);
   assert.equal(counters.servicePhase.availabilityDiscountedGroups > 0, true);
   assert.equal(
-    counters.precompute.serviceStaticAvailabilityDiscountedGroups + counters.servicePhase.availabilityDiscountedGroups > 0,
+    counters.precompute.serviceStaticAvailabilityDiscountedGroups + counters.servicePhase.availabilityDiscountedGroups >
+      0,
     true
   );
   assert.match(formatGreedyBenchmarkSuite(result), /typed-availability-pressure/);
@@ -7291,7 +7563,7 @@ function testGreedyTypedAvailabilityPressureBenchmarkCase() {
 
 function testGreedyGroupedServiceScoringLeavesUntypedBenchmarkUndiscounted() {
   const result = runGreedyBenchmarkSuite(DEFAULT_GREEDY_BENCHMARK_CORPUS, {
-    names: ["compact-service-single"],
+    names: ["compact-service-single"]
   });
   const counters = result.results[0].greedyProfile.counters;
 
@@ -7309,14 +7581,14 @@ function testGreedyGroupedServiceScoringDiscountsLimitedFallbackTypes() {
     [1, 1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1, 1],
-    [1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1]
   ];
   const params = {
     optimizer: "greedy",
     serviceTypes: [{ rows: 1, cols: 1, bonus: 65, range: 2, avail: 2 }],
     residentialTypes: [
       { w: 2, h: 2, min: 45, max: 180, avail: 1 },
-      { w: 2, h: 2, min: 45, max: 90, avail: 1 },
+      { w: 2, h: 2, min: 45, max: 90, avail: 1 }
     ],
     availableBuildings: { services: 2, residentials: 5 },
     greedy: {
@@ -7328,8 +7600,8 @@ function testGreedyGroupedServiceScoringDiscountsLimitedFallbackTypes() {
       exhaustiveServiceSearch: false,
       serviceExactPoolLimit: 8,
       serviceExactMaxCombinations: 64,
-      profile: true,
-    },
+      profile: true
+    }
   };
 
   const solution = solveGreedy(grid, params);
@@ -7338,7 +7610,7 @@ function testGreedyGroupedServiceScoringDiscountsLimitedFallbackTypes() {
   assert.deepEqual(solution.serviceTypeIndices, [0, 0]);
   assert.deepEqual(solution.services, [
     { r: 2, c: 2, rows: 1, cols: 1, range: 2 },
-    { r: 1, c: 0, rows: 1, cols: 1, range: 2 },
+    { r: 1, c: 0, rows: 1, cols: 1, range: 2 }
   ]);
   assert.deepEqual(solution.residentialTypeIndices, [0, 1]);
   assert.deepEqual(solution.populations, [175, 90]);
@@ -7360,8 +7632,8 @@ async function maybeTestCpSatBenchmarkSuite() {
       maxDeterministicTime: 5,
       numWorkers: 1,
       randomSeed: 13,
-      progressIntervalSeconds: 0,
-    },
+      progressIntervalSeconds: 0
+    }
   });
 
   assert.equal(result.caseCount, 1);
@@ -7384,8 +7656,8 @@ async function maybeTestCpSatBenchmarkSuite() {
       timeLimitSeconds: 5,
       maxDeterministicTime: 5,
       numWorkers: 1,
-      randomSeed: 13,
-    },
+      randomSeed: 13
+    }
   });
 
   assert.equal(withoutTimeline.results[0].progressTimeline.length, 0);
@@ -7394,13 +7666,13 @@ async function maybeTestCpSatBenchmarkSuite() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const continuationParams = {
     serviceTypes: [{ rows: 1, cols: 1, bonus: 30, range: 1, avail: 1 }],
     residentialTypes: [{ w: 2, h: 2, min: 10, max: 40, avail: 1 }],
     availableBuildings: { services: 1, residentials: 1 },
-    greedy: { localSearch: false, restarts: 1 },
+    greedy: { localSearch: false, restarts: 1 }
   };
   const seed = solveGreedy(continuationGrid, continuationParams);
   const continuationBenchmark = await runCpSatBenchmarkSuite(
@@ -7414,10 +7686,10 @@ async function maybeTestCpSatBenchmarkSuite() {
           optimizer: "cp-sat",
           cpSat: {
             warmStartHint: seed,
-            objectiveLowerBound: seed.totalPopulation,
-          },
-        },
-      },
+            objectiveLowerBound: seed.totalPopulation
+          }
+        }
+      }
     ],
     {
       cpSat: {
@@ -7426,8 +7698,8 @@ async function maybeTestCpSatBenchmarkSuite() {
         maxDeterministicTime: 5,
         numWorkers: 1,
         randomSeed: 19,
-        progressIntervalSeconds: 0,
-      },
+        progressIntervalSeconds: 0
+      }
     }
   );
 
@@ -7458,7 +7730,7 @@ function testCpSatRejectsDuplicatePortfolioWorkerIndices() {
                 numWorkers: 1,
                 status: "FEASIBLE",
                 feasible: true,
-                totalPopulation: 0,
+                totalPopulation: 0
               },
               {
                 workerIndex: 0,
@@ -7467,10 +7739,10 @@ function testCpSatRejectsDuplicatePortfolioWorkerIndices() {
                 numWorkers: 1,
                 status: "FEASIBLE",
                 feasible: true,
-                totalPopulation: 0,
-              },
-            ],
-          },
+                totalPopulation: 0
+              }
+            ]
+          }
         })
       ),
     /portfolio\.workers must have unique workerIndex values/
@@ -7499,10 +7771,10 @@ function testCpSatRejectsDanglingSelectedPortfolioWorkerIndex() {
                 numWorkers: 1,
                 status: "FEASIBLE",
                 feasible: true,
-                totalPopulation: 0,
-              },
-            ],
-          },
+                totalPopulation: 0
+              }
+            ]
+          }
         })
       ),
     /portfolio\.selectedWorkerIndex must reference a listed worker/
@@ -7520,17 +7792,17 @@ async function maybeTestCpSatObjectivePrefersFewerRoadsOnPopulationTie() {
     [1, 1, 0, 1],
     [0, 0, 0, 1],
     [0, 1, 1, 1],
-    [0, 1, 1, 1],
+    [0, 1, 1, 1]
   ];
   const params = {
     optimizer: "cp-sat",
     cpSat: {
       pythonExecutable,
       timeLimitSeconds: 5,
-      numWorkers: 1,
+      numWorkers: 1
     },
     residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
-    availableBuildings: { residentials: 1, services: 0 },
+    availableBuildings: { residentials: 1, services: 0 }
   };
 
   const solution = await solveCpSatAsync(grid, params);
@@ -7551,18 +7823,18 @@ async function maybeTestCpSatObjectiveAvoidsUselessServices() {
     [1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1],
-    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1]
   ];
   const params = {
     optimizer: "cp-sat",
     cpSat: {
       pythonExecutable,
       timeLimitSeconds: 5,
-      numWorkers: 1,
+      numWorkers: 1
     },
     serviceTypes: [{ rows: 1, cols: 1, bonus: 0, range: 0, avail: 1 }],
     residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
-    availableBuildings: { services: 1, residentials: 1 },
+    availableBuildings: { services: 1, residentials: 1 }
   };
 
   const solution = await solveCpSatAsync(grid, params);
@@ -7582,26 +7854,26 @@ function maybeTestLnsOptimizer() {
     [1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1],
-    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1]
   ];
   const params = {
     optimizer: "lns",
     cpSat: {
       pythonExecutable,
       numWorkers: 1,
-      timeLimitSeconds: 5,
+      timeLimitSeconds: 5
     },
     lns: {
       iterations: 2,
       maxNoImprovementIterations: 2,
       repairTimeLimitSeconds: 1,
       neighborhoodRows: 3,
-      neighborhoodCols: 3,
+      neighborhoodCols: 3
     },
     serviceTypes: [{ rows: 2, cols: 2, bonus: 80, range: 2, avail: 1 }],
     residentialTypes: [
       { w: 2, h: 2, min: 100, max: 180, avail: 2 },
-      { w: 2, h: 3, min: 130, max: 260, avail: 1 },
+      { w: 2, h: 3, min: 130, max: 260, avail: 1 }
     ],
     availableBuildings: { services: 1, residentials: 3 },
     greedy: {
@@ -7609,8 +7881,8 @@ function maybeTestLnsOptimizer() {
       restarts: 2,
       serviceRefineIterations: 1,
       serviceRefineCandidateLimit: 10,
-      exhaustiveServiceSearch: false,
-    },
+      exhaustiveServiceSearch: false
+    }
   };
 
   const greedySeed = solveGreedy(grid, { ...params, optimizer: "greedy" });
@@ -7630,7 +7902,7 @@ function maybeTestLnsOptimizer() {
             cols: service.cols,
             range: service.range,
             typeIndex: greedySeed.serviceTypeIndices[index] ?? -1,
-            bonus: greedySeed.servicePopulationIncreases[index] ?? 0,
+            bonus: greedySeed.servicePopulationIncreases[index] ?? 0
           })),
           residentials: greedySeed.residentials.map((residential, index) => ({
             r: residential.r,
@@ -7638,13 +7910,13 @@ function maybeTestLnsOptimizer() {
             rows: residential.rows,
             cols: residential.cols,
             typeIndex: greedySeed.residentialTypeIndices[index] ?? -1,
-            population: greedySeed.populations[index] ?? 0,
+            population: greedySeed.populations[index] ?? 0
           })),
           populations: [...greedySeed.populations],
-          totalPopulation: greedySeed.totalPopulation,
-        },
-      },
-    },
+          totalPopulation: greedySeed.totalPopulation
+        }
+      }
+    }
   });
 
   assert.equal(solution.optimizer, "lns");
@@ -7663,7 +7935,7 @@ function testLnsRejectsInvalidSeedHint() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const params = {
     optimizer: "lns",
@@ -7679,22 +7951,19 @@ function testLnsRejectsInvalidSeedHint() {
           services: [],
           residentials: [
             { r: 0, c: 0, rows: 2, cols: 2, typeIndex: 0, population: 10 },
-            { r: 2, c: 0, rows: 2, cols: 2, typeIndex: 0, population: 10 },
+            { r: 2, c: 0, rows: 2, cols: 2, typeIndex: 0, population: 10 }
           ],
           populations: [10, 10],
-          totalPopulation: 20,
-        },
-      },
+          totalPopulation: 20
+        }
+      }
     },
     residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
     availableBuildings: { residentials: 1, services: 0 },
-    greedy: { localSearch: false, restarts: 1, exhaustiveServiceSearch: false },
+    greedy: { localSearch: false, restarts: 1, exhaustiveServiceSearch: false }
   };
 
-  assert.throws(
-    () => solveLns(grid, params),
-    /Invalid solver input: LNS seed hint is invalid:/
-  );
+  assert.throws(() => solveLns(grid, params), /Invalid solver input: LNS seed hint is invalid:/);
 }
 
 function testLnsRejectsMalformedSeedHintFields() {
@@ -7702,7 +7971,7 @@ function testLnsRejectsMalformedSeedHintFields() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const params = {
     optimizer: "lns",
@@ -7716,17 +7985,15 @@ function testLnsRejectsMalformedSeedHintFields() {
         solution: {
           roads: [],
           services: [],
-          residentials: [
-            { r: null, c: 0, rows: 2, cols: 2, typeIndex: 0, population: 10 },
-          ],
+          residentials: [{ r: null, c: 0, rows: 2, cols: 2, typeIndex: 0, population: 10 }],
           populations: [10],
-          totalPopulation: 10,
-        },
-      },
+          totalPopulation: 10
+        }
+      }
     },
     residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
     availableBuildings: { residentials: 1, services: 0 },
-    greedy: { localSearch: false, restarts: 1, exhaustiveServiceSearch: false },
+    greedy: { localSearch: false, restarts: 1, exhaustiveServiceSearch: false }
   };
 
   assert.throws(
@@ -7744,25 +8011,25 @@ function maybeTestLnsExploresMultipleRoadAnchorSeeds() {
   const grid = [
     [1, 0, 1, 0],
     [0, 0, 1, 1],
-    [0, 0, 1, 1],
+    [0, 0, 1, 1]
   ];
   const params = {
     optimizer: "lns",
     cpSat: {
       pythonExecutable,
       numWorkers: 1,
-      timeLimitSeconds: 5,
+      timeLimitSeconds: 5
     },
     lns: {
       iterations: 2,
       maxNoImprovementIterations: 2,
       repairTimeLimitSeconds: 1,
       neighborhoodRows: 2,
-      neighborhoodCols: 2,
+      neighborhoodCols: 2
     },
     residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
     availableBuildings: { residentials: 1, services: 0 },
-    greedy: { localSearch: false, restarts: 1, exhaustiveServiceSearch: false },
+    greedy: { localSearch: false, restarts: 1, exhaustiveServiceSearch: false }
   };
 
   const solution = solveLns(grid, params);
@@ -7782,28 +8049,28 @@ function maybeTestLnsCanRepairRoadAnchorLayouts() {
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1],
     [1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 0],
-    [1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1],
+    [1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1]
   ];
   const params = {
     optimizer: "lns",
     cpSat: {
       pythonExecutable,
       numWorkers: 1,
-      timeLimitSeconds: 5,
+      timeLimitSeconds: 5
     },
     lns: {
       iterations: 1,
       maxNoImprovementIterations: 1,
       repairTimeLimitSeconds: 5,
       neighborhoodRows: 3,
-      neighborhoodCols: 6,
+      neighborhoodCols: 6
     },
     residentialTypes: [
       { w: 2, h: 2, min: 10, max: 10, avail: 20 },
-      { w: 2, h: 3, min: 15, max: 15, avail: 20 },
+      { w: 2, h: 3, min: 15, max: 15, avail: 20 }
     ],
     availableBuildings: { residentials: 20, services: 0 },
-    greedy: { localSearch: false, restarts: 1, exhaustiveServiceSearch: false },
+    greedy: { localSearch: false, restarts: 1, exhaustiveServiceSearch: false }
   };
 
   const greedySolution = solveGreedy(grid, params);
@@ -7833,7 +8100,7 @@ function testLnsRunsFinalEscalationWithinConfiguredBudget() {
       residentials: [],
       residentialTypeIndices: [],
       populations: [],
-      totalPopulation: 0,
+      totalPopulation: 0
     };
   };
 
@@ -7853,10 +8120,10 @@ function testLnsRunsFinalEscalationWithinConfiguredBudget() {
             services: [],
             residentials: [],
             populations: [],
-            totalPopulation: 0,
-          },
-        },
-      },
+            totalPopulation: 0
+          }
+        }
+      }
     });
   } finally {
     cpSatModule.solveCpSat = originalSolveCpSat;
@@ -7889,7 +8156,7 @@ function testLnsTelemetryRecordsRepairPolicyAndOutcomes() {
       residentials: improved ? [{ r: 1, c: 1, rows: 2, cols: 2 }] : [],
       residentialTypeIndices: improved ? [0] : [],
       populations: improved ? [10] : [],
-      totalPopulation: improved ? 10 : 0,
+      totalPopulation: improved ? 10 : 0
     };
   };
 
@@ -7912,10 +8179,10 @@ function testLnsTelemetryRecordsRepairPolicyAndOutcomes() {
             services: [],
             residentials: [],
             populations: [],
-            totalPopulation: 0,
-          },
-        },
-      },
+            totalPopulation: 0
+          }
+        }
+      }
     });
 
     assert.equal(solution.optimizer, "lns");
@@ -7966,7 +8233,7 @@ function testLnsSmallWindowDpRepairImprovesWithoutCpSat() {
     const grid = [
       [1, 1, 1],
       [1, 1, 1],
-      [1, 1, 1],
+      [1, 1, 1]
     ];
     const params = {
       optimizer: "lns",
@@ -7988,10 +8255,10 @@ function testLnsSmallWindowDpRepairImprovesWithoutCpSat() {
             services: [],
             residentials: [],
             populations: [],
-            totalPopulation: 0,
-          },
-        },
-      },
+            totalPopulation: 0
+          }
+        }
+      }
     };
     const solution = solveLns(grid, params);
     const validation = validateSolution({ grid, solution, params });
@@ -8027,7 +8294,7 @@ function testLnsSmallWindowDpRepairFallsBackToCpSatWhenIneligible() {
       residentials: [],
       residentialTypeIndices: [],
       populations: [],
-      totalPopulation: 0,
+      totalPopulation: 0
     };
   };
 
@@ -8035,7 +8302,7 @@ function testLnsSmallWindowDpRepairFallsBackToCpSatWhenIneligible() {
     const grid = [
       [1, 1, 1],
       [1, 1, 1],
-      [1, 1, 1],
+      [1, 1, 1]
     ];
     const solution = solveLns(grid, {
       optimizer: "lns",
@@ -8054,10 +8321,10 @@ function testLnsSmallWindowDpRepairFallsBackToCpSatWhenIneligible() {
             services: [],
             residentials: [],
             populations: [],
-            totalPopulation: 0,
-          },
-        },
-      },
+            totalPopulation: 0
+          }
+        }
+      }
     });
     const outcome = solution.lnsTelemetry.outcomes[0];
 
@@ -8080,7 +8347,7 @@ function maybeTestSmallWindowDpMatchesCpSatOnEligibleRepair() {
   const grid = [
     [1, 1, 1],
     [1, 1, 1],
-    [1, 1, 1],
+    [1, 1, 1]
   ];
   const window = { top: 0, left: 0, rows: 3, cols: 3 };
   const incumbent = {
@@ -8092,31 +8359,31 @@ function maybeTestSmallWindowDpMatchesCpSatOnEligibleRepair() {
     residentials: [],
     residentialTypeIndices: [],
     populations: [],
-    totalPopulation: 0,
+    totalPopulation: 0
   };
   const params = {
     optimizer: "lns",
     cpSat: {
       pythonExecutable,
       numWorkers: 1,
-      timeLimitSeconds: 5,
+      timeLimitSeconds: 5
     },
     residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
-    availableBuildings: { residentials: 1, services: 0 },
+    availableBuildings: { residentials: 1, services: 0 }
   };
 
   const dpResult = repairSmallWindowWithDp(grid, params, incumbent, window, {
     maxMutableCells: 9,
     maxCandidates: 8,
-    maxStates: 10_000,
+    maxStates: 10_000
   });
   const cpSatResult = solveCpSat(grid, {
     ...params,
     optimizer: "cp-sat",
     cpSat: {
       ...params.cpSat,
-      warmStartHint: buildLnsWarmStartHint(incumbent, window),
-    },
+      warmStartHint: buildLnsWarmStartHint(incumbent, window)
+    }
   });
 
   assert.equal(dpResult.status, "optimal");
@@ -8141,11 +8408,13 @@ function testLnsGreedySeedReportsBudgetAndProfile() {
       r: residential.r,
       c: residential.c,
       rows: residential.rows,
-      cols: residential.cols,
+      cols: residential.cols
     })),
-    residentialTypeIndices: [...params.cpSat.warmStartHint.solution.residentials.map((residential) => residential.typeIndex)],
+    residentialTypeIndices: [
+      ...params.cpSat.warmStartHint.solution.residentials.map((residential) => residential.typeIndex)
+    ],
     populations: [...params.cpSat.warmStartHint.solution.populations],
-    totalPopulation: params.cpSat.warmStartHint.solution.totalPopulation,
+    totalPopulation: params.cpSat.warmStartHint.solution.totalPopulation
   });
 
   try {
@@ -8161,7 +8430,7 @@ function testLnsGreedySeedReportsBudgetAndProfile() {
         serviceRefineCandidateLimit: 1,
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 1,
-        serviceExactMaxCombinations: 1,
+        serviceExactMaxCombinations: 1
       },
       lns: {
         iterations: 1,
@@ -8169,8 +8438,8 @@ function testLnsGreedySeedReportsBudgetAndProfile() {
         wallClockLimitSeconds: 10,
         repairTimeLimitSeconds: 2,
         neighborhoodRows: 2,
-        neighborhoodCols: 2,
-      },
+        neighborhoodCols: 2
+      }
     });
 
     assert.equal(solution.lnsTelemetry.seedSource, "greedy");
@@ -8204,7 +8473,7 @@ function testLnsStopsAfterNoImprovementTimeout() {
       residentials: [],
       residentialTypeIndices: [],
       populations: [],
-      totalPopulation: 0,
+      totalPopulation: 0
     };
   };
 
@@ -8223,10 +8492,10 @@ function testLnsStopsAfterNoImprovementTimeout() {
             services: [],
             residentials: [],
             populations: [],
-            totalPopulation: 0,
-          },
-        },
-      },
+            totalPopulation: 0
+          }
+        }
+      }
     });
 
     assert.equal(attempts, 1);
@@ -8251,10 +8520,10 @@ function testLnsRejectsMalformedScalarOptions() {
               services: [],
               residentials: [],
               populations: [],
-              totalPopulation: 0,
-            },
-          },
-        },
+              totalPopulation: 0
+            }
+          }
+        }
       }),
     /Invalid solver input: LNS option lns\.iterations must be an integer between 1 and 10000\./
   );
@@ -8270,10 +8539,10 @@ function testLnsRejectsMalformedScalarOptions() {
               services: [],
               residentials: [],
               populations: [],
-              totalPopulation: 0,
-            },
-          },
-        },
+              totalPopulation: 0
+            }
+          }
+        }
       }),
     /Invalid solver input: LNS option lns\.smallWindowDpRepair must be a boolean\./
   );
@@ -8289,10 +8558,10 @@ function testLnsRejectsMalformedScalarOptions() {
               services: [],
               residentials: [],
               populations: [],
-              totalPopulation: 0,
-            },
-          },
-        },
+              totalPopulation: 0
+            }
+          }
+        }
       }),
     /Invalid solver input: LNS option lns\.smallWindowDpMaxMutableCells must be an integer between 1 and 24\./
   );
@@ -8309,11 +8578,11 @@ function testLnsDeterministicServiceUpgrade() {
       optimizer: "lns",
       cpSat: {
         timeLimitSeconds: 1,
-        numWorkers: 1,
+        numWorkers: 1
       },
       serviceTypes: [
         { rows: 2, cols: 2, bonus: 118, range: 5, avail: 1 },
-        { rows: 2, cols: 2, bonus: 480, range: 5, avail: 1 },
+        { rows: 2, cols: 2, bonus: 480, range: 5, avail: 1 }
       ],
       residentialTypes: [{ w: 2, h: 2, min: 100, max: 600, avail: 1 }],
       availableBuildings: { services: 1, residentials: 1 },
@@ -8335,8 +8604,8 @@ function testLnsDeterministicServiceUpgrade() {
                 cols: 2,
                 range: 5,
                 typeIndex: 0,
-                bonus: 118,
-              },
+                bonus: 118
+              }
             ],
             residentials: [
               {
@@ -8345,14 +8614,14 @@ function testLnsDeterministicServiceUpgrade() {
                 rows: 2,
                 cols: 2,
                 typeIndex: 0,
-                population: 218,
-              },
+                population: 218
+              }
             ],
             populations: [218],
-            totalPopulation: 218,
-          },
-        },
-      },
+            totalPopulation: 218
+          }
+        }
+      }
     };
 
     const solution = solveLns(grid, params);
@@ -8375,10 +8644,10 @@ function testDeterministicDominanceServiceUpgradeHelper() {
     optimizer: "greedy",
     serviceTypes: [
       { rows: 2, cols: 2, bonus: 118, range: 5, avail: 1 },
-      { rows: 2, cols: 2, bonus: 480, range: 5, avail: 1 },
+      { rows: 2, cols: 2, bonus: 480, range: 5, avail: 1 }
     ],
     residentialTypes: [{ w: 2, h: 2, min: 100, max: 600, avail: 1 }],
-    availableBuildings: { services: 1, residentials: 1 },
+    availableBuildings: { services: 1, residentials: 1 }
   };
   const solution = applyDeterministicDominanceUpgrades(grid, params, {
     optimizer: "greedy",
@@ -8389,7 +8658,7 @@ function testDeterministicDominanceServiceUpgradeHelper() {
     residentials: [{ r: 3, c: 1, rows: 2, cols: 2 }],
     residentialTypeIndices: [0],
     populations: [218],
-    totalPopulation: 218,
+    totalPopulation: 218
   });
 
   assert.equal(solution.serviceTypeIndices[0], 1);
@@ -8409,12 +8678,12 @@ function testLnsDeterministicResidentialUpgrade() {
       optimizer: "lns",
       cpSat: {
         timeLimitSeconds: 1,
-        numWorkers: 1,
+        numWorkers: 1
       },
       serviceTypes: [{ rows: 2, cols: 2, bonus: 480, range: 5, avail: 1 }],
       residentialTypes: [
         { w: 2, h: 2, min: 100, max: 400, avail: 1 },
-        { w: 2, h: 2, min: 100, max: 700, avail: 1 },
+        { w: 2, h: 2, min: 100, max: 700, avail: 1 }
       ],
       availableBuildings: { services: 1, residentials: 1 },
       lns: {
@@ -8435,8 +8704,8 @@ function testLnsDeterministicResidentialUpgrade() {
                 cols: 2,
                 range: 5,
                 typeIndex: 0,
-                bonus: 480,
-              },
+                bonus: 480
+              }
             ],
             residentials: [
               {
@@ -8445,14 +8714,14 @@ function testLnsDeterministicResidentialUpgrade() {
                 rows: 2,
                 cols: 2,
                 typeIndex: 0,
-                population: 400,
-              },
+                population: 400
+              }
             ],
             populations: [400],
-            totalPopulation: 400,
-          },
-        },
-      },
+            totalPopulation: 400
+          }
+        }
+      }
     };
 
     const solution = solveLns(grid, params);
@@ -8475,9 +8744,9 @@ function testDeterministicDominanceResidentialUpgradeHelper() {
     serviceTypes: [{ rows: 2, cols: 2, bonus: 480, range: 5, avail: 1 }],
     residentialTypes: [
       { w: 2, h: 2, min: 100, max: 400, avail: 1 },
-      { w: 2, h: 2, min: 100, max: 700, avail: 1 },
+      { w: 2, h: 2, min: 100, max: 700, avail: 1 }
     ],
-    availableBuildings: { services: 1, residentials: 1 },
+    availableBuildings: { services: 1, residentials: 1 }
   };
   const solution = applyDeterministicDominanceUpgrades(grid, params, {
     optimizer: "greedy",
@@ -8488,7 +8757,7 @@ function testDeterministicDominanceResidentialUpgradeHelper() {
     residentials: [{ r: 3, c: 1, rows: 2, cols: 2 }],
     residentialTypeIndices: [0],
     populations: [400],
-    totalPopulation: 400,
+    totalPopulation: 400
   });
 
   assert.equal(solution.residentialTypeIndices[0], 1);
@@ -8501,16 +8770,16 @@ function testSolutionValidator() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const params = {
     optimizer: "greedy",
     residentialTypes: [
       { w: 2, h: 2, min: 10, max: 10, avail: 1 },
-      { w: 2, h: 2, min: 100, max: 100, avail: 1 },
+      { w: 2, h: 2, min: 100, max: 100, avail: 1 }
     ],
     availableBuildings: { residentials: 2, services: 0 },
-    greedy: { localSearch: false },
+    greedy: { localSearch: false }
   };
 
   const solution = solve(grid, params);
@@ -8521,7 +8790,7 @@ function testSolutionValidator() {
   const broken = {
     ...solution,
     populations: [...solution.populations],
-    totalPopulation: solution.totalPopulation + 1,
+    totalPopulation: solution.totalPopulation + 1
   };
   broken.populations[0] += 1;
 
@@ -8536,25 +8805,25 @@ function testSolutionMapValidatorRejectsRoadsNotConnectedToAnchorBoundary() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const params = {
     optimizer: "greedy",
     residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
     availableBuildings: { residentials: 1, services: 0 },
-    greedy: { localSearch: false },
+    greedy: { localSearch: false }
   };
 
   const solution = solve(grid, params);
   const broken = {
     ...solution,
-    roads: new Set(["1,1", "1,2"]),
+    roads: new Set(["1,1", "1,2"])
   };
 
   const validation = validateSolutionMap({ grid, solution: broken, params });
   assert.equal(validation.valid, false);
   assert.match(validation.errors.join("\n"), /row 0 or column 0/);
-  assert.match(validation.mapText, /^   0123/m);
+  assert.match(validation.mapText, /^ {3}0123/m);
 }
 
 function testSolutionValidatorAllowsMultipleAnchorBoundaryRoadComponents() {
@@ -8562,10 +8831,10 @@ function testSolutionValidatorAllowsMultipleAnchorBoundaryRoadComponents() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const params = {
-    availableBuildings: { residentials: 0, services: 0 },
+    availableBuildings: { residentials: 0, services: 0 }
   };
   const solution = {
     optimizer: "greedy",
@@ -8576,7 +8845,7 @@ function testSolutionValidatorAllowsMultipleAnchorBoundaryRoadComponents() {
     residentials: [],
     residentialTypeIndices: [],
     populations: [],
-    totalPopulation: 0,
+    totalPopulation: 0
   };
 
   const validation = validateSolution({ grid, solution, params });
@@ -8588,10 +8857,10 @@ function testSolutionValidatorRejectsRoadComponentsWithoutAnchorBoundary() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const params = {
-    availableBuildings: { residentials: 0, services: 0 },
+    availableBuildings: { residentials: 0, services: 0 }
   };
   const solution = {
     optimizer: "greedy",
@@ -8602,7 +8871,7 @@ function testSolutionValidatorRejectsRoadComponentsWithoutAnchorBoundary() {
     residentials: [],
     residentialTypeIndices: [],
     populations: [],
-    totalPopulation: 0,
+    totalPopulation: 0
   };
 
   const validation = validateSolution({ grid, solution, params });
@@ -8616,10 +8885,10 @@ function testSolutionValidatorAllowsColumn0AnchoredRoadComponent() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const params = {
-    availableBuildings: { residentials: 0, services: 0 },
+    availableBuildings: { residentials: 0, services: 0 }
   };
   const solution = {
     optimizer: "greedy",
@@ -8630,7 +8899,7 @@ function testSolutionValidatorAllowsColumn0AnchoredRoadComponent() {
     residentials: [],
     residentialTypeIndices: [],
     populations: [],
-    totalPopulation: 0,
+    totalPopulation: 0
   };
 
   const validation = validateSolution({ grid, solution, params });
@@ -8642,12 +8911,12 @@ function testTopRowBuildingCountsAsRoadConnected() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const params = {
     basePop: 10,
     maxPop: 10,
-    availableBuildings: { residentials: 1, services: 0 },
+    availableBuildings: { residentials: 1, services: 0 }
   };
   const solution = {
     roads: new Set(["0,3"]),
@@ -8657,7 +8926,7 @@ function testTopRowBuildingCountsAsRoadConnected() {
     residentials: [{ r: 0, c: 0, rows: 2, cols: 2 }],
     residentialTypeIndices: [-1],
     populations: [10],
-    totalPopulation: 10,
+    totalPopulation: 10
   };
 
   const validation = validateSolutionMap({ grid, solution, params });
@@ -8669,12 +8938,12 @@ function testLeftColumnBuildingCountsAsRoadConnected() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const params = {
     basePop: 10,
     maxPop: 10,
-    availableBuildings: { residentials: 1, services: 0 },
+    availableBuildings: { residentials: 1, services: 0 }
   };
   const solution = {
     roads: new Set(["3,0"]),
@@ -8684,7 +8953,7 @@ function testLeftColumnBuildingCountsAsRoadConnected() {
     residentials: [{ r: 1, c: 0, rows: 2, cols: 2 }],
     residentialTypeIndices: [-1],
     populations: [10],
-    totalPopulation: 10,
+    totalPopulation: 10
   };
 
   const validation = validateSolutionMap({ grid, solution, params });
@@ -8696,12 +8965,12 @@ function testGreedyRespectsTopRowConnectivityShortcut() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [0, 0, 0, 0],
-    [0, 0, 0, 0],
+    [0, 0, 0, 0]
   ];
   const params = {
     residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
     availableBuildings: { residentials: 1, services: 0 },
-    greedy: { localSearch: false, restarts: 1, exhaustiveServiceSearch: false },
+    greedy: { localSearch: false, restarts: 1, exhaustiveServiceSearch: false }
   };
 
   const solution = solveGreedy(grid, params);
@@ -8719,21 +8988,24 @@ function testGreedySupportsShapedServices() {
     [1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1],
-    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1]
   ];
   const params = {
     serviceTypes: [{ rows: 2, cols: 3, bonus: 50, range: 1, avail: 1 }],
     residentialSettings: {
       "2x2": { min: 100, max: 200 },
-      "2x3": { min: 140, max: 260 },
+      "2x3": { min: 140, max: 260 }
     },
     availableBuildings: { services: 1, residentials: 2 },
-    greedy: { localSearch: false },
+    greedy: { localSearch: false }
   };
 
   const solution = solveGreedy(grid, params);
   assert.equal(solution.services.length, 1);
-  assert.deepEqual([solution.services[0].rows, solution.services[0].cols].sort((a, b) => a - b), [2, 3]);
+  assert.deepEqual(
+    [solution.services[0].rows, solution.services[0].cols].sort((a, b) => a - b),
+    [2, 3]
+  );
   assert.equal(solution.services[0].range, 1);
   assert.deepEqual(solution.serviceTypeIndices, [0]);
   assert.deepEqual(solution.servicePopulationIncreases, [50]);
@@ -8743,7 +9015,7 @@ function testGreedySupportsShapedServices() {
 
   const broken = {
     ...solution,
-    services: [{ ...solution.services[0], range: 3 }],
+    services: [{ ...solution.services[0], range: 3 }]
   };
   const brokenValidation = validateSolution({ grid, solution: broken, params });
   assert.equal(brokenValidation.valid, false);
@@ -8755,12 +9027,12 @@ function testGreedyResidentialPopulationCacheRespectsTypedVariants() {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
-    [1, 1, 1, 1],
+    [1, 1, 1, 1]
   ];
   const params = {
     residentialTypes: [
       { w: 2, h: 2, min: 10, max: 10, avail: 1 },
-      { w: 2, h: 2, min: 100, max: 100, avail: 1 },
+      { w: 2, h: 2, min: 100, max: 100, avail: 1 }
     ],
     availableBuildings: { residentials: 2, services: 0 },
     greedy: {
@@ -8772,14 +9044,17 @@ function testGreedyResidentialPopulationCacheRespectsTypedVariants() {
       exhaustiveServiceSearch: false,
       serviceExactPoolLimit: 4,
       serviceExactMaxCombinations: 16,
-      profile: true,
-    },
+      profile: true
+    }
   };
 
   const solution = solveGreedy(grid, params);
 
   assert.equal(solution.totalPopulation, 110);
-  assert.deepEqual([...solution.populations].sort((a, b) => a - b), [10, 100]);
+  assert.deepEqual(
+    [...solution.populations].sort((a, b) => a - b),
+    [10, 100]
+  );
   assert(solution.greedyProfile);
   assert(solution.greedyProfile.counters.precompute.residentialPopulationCacheEntries > 0);
   assert(solution.greedyProfile.counters.residentialPhase.populationCacheLookups > 0);
@@ -8792,7 +9067,7 @@ function testGreedyProfilingIsAdditive() {
     [1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1],
-    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1]
   ];
   const params = {
     serviceTypes: [{ rows: 2, cols: 2, bonus: 45, range: 1, avail: 1 }],
@@ -8806,8 +9081,8 @@ function testGreedyProfilingIsAdditive() {
       serviceRefineCandidateLimit: 8,
       exhaustiveServiceSearch: false,
       serviceExactPoolLimit: 8,
-      serviceExactMaxCombinations: 32,
-    },
+      serviceExactMaxCombinations: 32
+    }
   };
 
   const withoutProfile = solveGreedy(grid, params);
@@ -8815,8 +9090,8 @@ function testGreedyProfilingIsAdditive() {
     ...params,
     greedy: {
       ...params.greedy,
-      profile: true,
-    },
+      profile: true
+    }
   });
 
   assert.equal(withoutProfile.greedyProfile, undefined);
@@ -8851,8 +9126,8 @@ function testGreedyDensityTieBreakerPrefersCentralNearTies() {
       serviceRefineIterations: 0,
       exhaustiveServiceSearch: false,
       densityTieBreaker: true,
-      densityTieBreakerTolerancePercent: 0,
-    },
+      densityTieBreakerTolerancePercent: 0
+    }
   };
 
   const solution = solveGreedy(grid, params);
@@ -8872,8 +9147,8 @@ function testGreedyDensityTieBreakerIsOptIn() {
       localSearch: false,
       restarts: 1,
       serviceRefineIterations: 0,
-      exhaustiveServiceSearch: false,
-    },
+      exhaustiveServiceSearch: false
+    }
   };
 
   const withoutDensity = solveGreedy(grid, params);
@@ -8882,8 +9157,8 @@ function testGreedyDensityTieBreakerIsOptIn() {
     greedy: {
       ...params.greedy,
       densityTieBreaker: true,
-      densityTieBreakerTolerancePercent: 2.5,
-    },
+      densityTieBreakerTolerancePercent: 2.5
+    }
   });
 
   assert.deepEqual(withoutDensity.residentials, [{ r: 0, c: 0, rows: 1, cols: 1 }]);
@@ -8902,18 +9177,18 @@ function testGreedyDiagnosticsAreOptInDeterministicAndAdditive() {
       localSearch: false,
       restarts: 1,
       serviceRefineIterations: 0,
-      exhaustiveServiceSearch: false,
-    },
+      exhaustiveServiceSearch: false
+    }
   };
 
   const withoutDiagnostics = solveGreedy(grid, params);
   const withDiagnostics = solveGreedy(grid, {
     ...params,
-    greedy: { ...params.greedy, diagnostics: true },
+    greedy: { ...params.greedy, diagnostics: true }
   });
   const repeated = solveGreedy(grid, {
     ...params,
-    greedy: { ...params.greedy, diagnostics: true },
+    greedy: { ...params.greedy, diagnostics: true }
   });
 
   assert.equal(withoutDiagnostics.greedyDiagnostics, undefined);
@@ -8958,8 +9233,8 @@ function testGreedyDiagnosticsReportsNoServiceCoverage() {
       restarts: 1,
       serviceRefineIterations: 0,
       exhaustiveServiceSearch: false,
-      diagnostics: true,
-    },
+      diagnostics: true
+    }
   };
 
   const solution = solveGreedy(grid, params);
@@ -9159,12 +9434,12 @@ async function runBenchmarksOptimizerTests() {
 }
 
 const OPTIMIZER_TEST_GROUPS = {
-  "core": runCoreOptimizerTests,
-  "greedy": runGreedyOptimizerTests,
-  "cpSat": runCpSatOptimizerTests,
-  "auto": runAutoOptimizerTests,
-  "lns": runLnsOptimizerTests,
-  "benchmarks": runBenchmarksOptimizerTests,
+  core: runCoreOptimizerTests,
+  greedy: runGreedyOptimizerTests,
+  cpSat: runCpSatOptimizerTests,
+  auto: runAutoOptimizerTests,
+  lns: runLnsOptimizerTests,
+  benchmarks: runBenchmarksOptimizerTests
 };
 
 const OPTIMIZER_TEST_GROUP_NAMES = Object.freeze(Object.keys(OPTIMIZER_TEST_GROUPS));
@@ -9172,7 +9447,9 @@ const OPTIMIZER_TEST_GROUP_NAMES = Object.freeze(Object.keys(OPTIMIZER_TEST_GROU
 async function runOptimizerTestGroup(groupName) {
   const runner = OPTIMIZER_TEST_GROUPS[groupName];
   if (!runner) {
-    throw new Error(`Unknown optimizer test group: ${groupName}. Expected one of: ${OPTIMIZER_TEST_GROUP_NAMES.join(", ")}.`);
+    throw new Error(
+      `Unknown optimizer test group: ${groupName}. Expected one of: ${OPTIMIZER_TEST_GROUP_NAMES.join(", ")}.`
+    );
   }
   await runner();
 }
@@ -9188,12 +9465,12 @@ async function main() {
 
 if (require.main === module) {
   main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
+    console.error(error);
+    process.exitCode = 1;
   });
 }
 
 module.exports = {
   OPTIMIZER_TEST_GROUP_NAMES,
-  runOptimizerTestGroup,
+  runOptimizerTestGroup
 };

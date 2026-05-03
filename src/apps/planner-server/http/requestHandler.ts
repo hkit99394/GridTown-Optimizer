@@ -7,7 +7,7 @@ import {
   handleLayoutEvaluate,
   handlePlannerHealth,
   handleSolveStatus,
-  handleStartSolve,
+  handleStartSolve
 } from "./routes.js";
 import { servePlannerStatic } from "./static.js";
 import { getErrorMessage, getErrorStatusCode, sendJson } from "./transport.js";
@@ -17,10 +17,7 @@ export interface PlannerRequestHandlerOptions {
   webRoot: string;
 }
 
-type PlannerRouteHandler = (
-  req: IncomingMessage,
-  res: ServerResponse<IncomingMessage>
-) => boolean | Promise<boolean>;
+type PlannerRouteHandler = (req: IncomingMessage, res: ServerResponse<IncomingMessage>) => boolean | Promise<boolean>;
 
 export function createPlannerRequestHandler(options: PlannerRequestHandlerOptions) {
   const solveJobManager = options.solveJobManager ?? new SolveJobManager();
@@ -30,7 +27,7 @@ export function createPlannerRequestHandler(options: PlannerRequestHandlerOption
     handleLayoutEvaluate,
     (req, res) => handleStartSolve(req, res, solveJobManager),
     (req, res) => handleSolveStatus(req, res, solveJobManager),
-    (req, res) => handleCancelSolve(req, res, solveJobManager),
+    (req, res) => handleCancelSolve(req, res, solveJobManager)
   ];
 
   return async (req: IncomingMessage, res: ServerResponse<IncomingMessage>) => {

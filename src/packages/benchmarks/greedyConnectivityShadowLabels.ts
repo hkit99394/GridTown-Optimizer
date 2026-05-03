@@ -5,22 +5,16 @@ import {
   listBenchmarkCaseNames,
   positiveIntegerOrDefault,
   sumBenchmarkBy,
-  uniqueBenchmarkValuesBy,
+  uniqueBenchmarkValuesBy
 } from "./benchmarkOptions.js";
-import {
-  DEFAULT_GREEDY_CONNECTIVITY_SHADOW_SCORING_ABLATION_CORPUS,
-} from "./greedyConnectivityShadowAblations.js";
+import { DEFAULT_GREEDY_CONNECTIVITY_SHADOW_SCORING_ABLATION_CORPUS } from "./greedyConnectivityShadowAblations.js";
 import { runGreedyBenchmarkSuite } from "./greedy.js";
 
-import type {
-  GreedyBenchmarkCase,
-  GreedyBenchmarkOptions,
-  GreedyBenchmarkRunOptions,
-} from "./greedy.js";
+import type { GreedyBenchmarkCase, GreedyBenchmarkOptions, GreedyBenchmarkRunOptions } from "./greedy.js";
 import type {
   GreedyConnectivityShadowDecisionPhase,
   GreedyConnectivityShadowDecisionTrace,
-  GreedyConnectivityShadowPlacementTrace,
+  GreedyConnectivityShadowPlacementTrace
 } from "../core/index.js";
 
 export type GreedyConnectivityShadowOrderingPreference = "candidate" | "incumbent";
@@ -91,17 +85,17 @@ export interface GreedyConnectivityShadowOrderingLabelSuiteResult {
   cases: GreedyConnectivityShadowOrderingLabelCaseResult[];
 }
 
-export interface GreedyConnectivityShadowOrderingLabelSnapshot
-  extends Omit<GreedyConnectivityShadowOrderingLabelSuiteResult, "generatedAt"> {}
+export interface GreedyConnectivityShadowOrderingLabelSnapshot extends Omit<
+  GreedyConnectivityShadowOrderingLabelSuiteResult,
+  "generatedAt"
+> {}
 
 export const DEFAULT_GREEDY_CONNECTIVITY_SHADOW_ORDERING_LABEL_CORPUS =
   DEFAULT_GREEDY_CONNECTIVITY_SHADOW_SCORING_ABLATION_CORPUS;
 
 const DEFAULT_MAX_LABELS_PER_CASE = 80;
 
-function clonePlacement(
-  placement: GreedyConnectivityShadowPlacementTrace
-): GreedyConnectivityShadowPlacementTrace {
+function clonePlacement(placement: GreedyConnectivityShadowPlacementTrace): GreedyConnectivityShadowPlacementTrace {
   return { ...placement };
 }
 
@@ -117,18 +111,11 @@ function optionalDelta(left: number | null, right: number | null): number | null
   return left === null || right === null ? null : left - right;
 }
 
-function sameTypeIndex(
-  candidateTypeIndex: number | null,
-  incumbentTypeIndex: number | null
-): boolean | null {
-  return candidateTypeIndex === null || incumbentTypeIndex === null
-    ? null
-    : candidateTypeIndex === incumbentTypeIndex;
+function sameTypeIndex(candidateTypeIndex: number | null, incumbentTypeIndex: number | null): boolean | null {
+  return candidateTypeIndex === null || incumbentTypeIndex === null ? null : candidateTypeIndex === incumbentTypeIndex;
 }
 
-function preferredSide(
-  decision: GreedyConnectivityShadowDecisionTrace
-): GreedyConnectivityShadowOrderingPreference {
+function preferredSide(decision: GreedyConnectivityShadowDecisionTrace): GreedyConnectivityShadowOrderingPreference {
   return decision.candidateShadowPenalty < decision.incumbentShadowPenalty ? "candidate" : "incumbent";
 }
 
@@ -176,8 +163,8 @@ function labelFromDecision(options: {
       bonusDelta: optionalDelta(candidateBonus, incumbentBonus),
       candidateShadowPenalty: decision.candidateShadowPenalty,
       incumbentShadowPenalty: decision.incumbentShadowPenalty,
-      shadowPenaltyDelta,
-    },
+      shadowPenaltyDelta
+    }
   };
 }
 
@@ -186,7 +173,7 @@ export function listGreedyConnectivityShadowOrderingLabelCaseNames(
 ): string[] {
   return listBenchmarkCaseNames(corpus, {
     caseLabel: "Greedy connectivity-shadow ordering label",
-    corpusLabel: "Greedy connectivity-shadow ordering label",
+    corpusLabel: "Greedy connectivity-shadow ordering label"
   });
 }
 
@@ -197,16 +184,14 @@ export function createGreedyConnectivityShadowOrderingLabelsFromDecisions(option
   maxLabels?: number;
 }): GreedyConnectivityShadowOrderingLabel[] {
   const maxLabels = positiveIntegerOrDefault(options.maxLabels, DEFAULT_MAX_LABELS_PER_CASE);
-  return options.decisions
-    .slice(0, maxLabels)
-    .map((decision, labelIndex) =>
-      labelFromDecision({
-        caseName: options.caseName,
-        seed: options.seed ?? null,
-        labelIndex,
-        decision,
-      })
-    );
+  return options.decisions.slice(0, maxLabels).map((decision, labelIndex) =>
+    labelFromDecision({
+      caseName: options.caseName,
+      seed: options.seed ?? null,
+      labelIndex,
+      decision
+    })
+  );
 }
 
 export function runGreedyConnectivityShadowOrderingLabels(
@@ -225,8 +210,8 @@ export function runGreedyConnectivityShadowOrderingLabels(
         ...(options.greedy ?? {}),
         connectivityShadowScoring: true,
         profile: true,
-        ...(seed !== null ? { randomSeed: seed } : {}),
-      },
+        ...(seed !== null ? { randomSeed: seed } : {})
+      }
     });
     return suite.results.map((result): GreedyConnectivityShadowOrderingLabelCaseResult => {
       const decisions = result.greedyProfile?.connectivityShadowDecisions ?? [];
@@ -234,7 +219,7 @@ export function runGreedyConnectivityShadowOrderingLabels(
         caseName: result.name,
         seed,
         decisions,
-        maxLabels: maxLabelsPerCase,
+        maxLabels: maxLabelsPerCase
       });
       return {
         name: result.name,
@@ -249,7 +234,7 @@ export function runGreedyConnectivityShadowOrderingLabels(
         greedyOptions: result.greedyOptions,
         traceCount: decisions.length,
         labelCount: labels.length,
-        labels,
+        labels
       };
     });
   });
@@ -262,7 +247,7 @@ export function runGreedyConnectivityShadowOrderingLabels(
     seeds,
     maxLabelsPerCase,
     labelCount: sumBenchmarkBy(cases, (benchmarkCase) => benchmarkCase.labelCount),
-    cases,
+    cases
   };
 }
 
@@ -277,8 +262,8 @@ export function createGreedyConnectivityShadowOrderingLabelSnapshot(
     cases: snapshot.cases.map((benchmarkCase) => ({
       ...benchmarkCase,
       greedyOptions: structuredClone(benchmarkCase.greedyOptions),
-      labels: benchmarkCase.labels.map((label) => structuredClone(label)),
-    })),
+      labels: benchmarkCase.labels.map((label) => structuredClone(label))
+    }))
   };
 }
 
@@ -286,7 +271,7 @@ function formatPlacement(placement: GreedyConnectivityShadowPlacementTrace): str
   const extras = [
     placement.typeIndex === undefined ? null : `type:${placement.typeIndex}`,
     placement.bonus === undefined ? null : `bonus:${placement.bonus}`,
-    placement.range === undefined ? null : `range:${placement.range}`,
+    placement.range === undefined ? null : `range:${placement.range}`
   ].filter((entry): entry is string => entry !== null);
   return `r${placement.r}c${placement.c} ${placement.rows}x${placement.cols} road:${placement.roadCost}${extras.length ? ` ${extras.join(" ")}` : ""}`;
 }

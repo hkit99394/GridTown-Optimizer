@@ -11,10 +11,10 @@ export const EXPERIMENT_REGISTRY_ARTIFACT_TYPES = [
   "ablation-gate",
   "health-check",
   "model-experiment",
-  "portfolio-scorecard",
+  "portfolio-scorecard"
 ] as const;
 
-export type ExperimentRegistryArtifactType = typeof EXPERIMENT_REGISTRY_ARTIFACT_TYPES[number];
+export type ExperimentRegistryArtifactType = (typeof EXPERIMENT_REGISTRY_ARTIFACT_TYPES)[number];
 export type ExperimentRegistryCases = string[] | Record<string, string[]> | null;
 
 export interface ExperimentRegistryEntry {
@@ -119,11 +119,13 @@ function hasOwn(record: Record<string, unknown>, key: string): boolean {
   return Object.prototype.hasOwnProperty.call(record, key);
 }
 
-function normalizeCheckOptions(options: ExperimentRegistryCheckOptions = {}): Required<Pick<ExperimentRegistryCheckOptions, "rootDir" | "validateArtifactPaths" | "strict">> {
+function normalizeCheckOptions(
+  options: ExperimentRegistryCheckOptions = {}
+): Required<Pick<ExperimentRegistryCheckOptions, "rootDir" | "validateArtifactPaths" | "strict">> {
   return {
     rootDir: options.rootDir ?? options.cwd ?? process.cwd(),
     validateArtifactPaths: options.validateArtifactPaths ?? options.checkArtifactPaths ?? true,
-    strict: options.strict ?? options.strictMetadata ?? false,
+    strict: options.strict ?? options.strictMetadata ?? false
   };
 }
 
@@ -161,7 +163,11 @@ function validateDateField(
 ): void {
   validateRequiredString(entry, key, issues, lineNumber, runId);
   if (isNonEmptyString(entry[key]) && !isValidDateLike(entry[key] as string)) {
-    issue(issues, "invalid-date", `Field '${key}' must be a parseable date or timestamp.`, { lineNumber, runId, field: key });
+    issue(issues, "invalid-date", `Field '${key}' must be a parseable date or timestamp.`, {
+      lineNumber,
+      runId,
+      field: key
+    });
   }
 }
 
@@ -180,11 +186,16 @@ function validateCommitField(
   const value = entry[key];
   if (nullable && value === null) return;
   if (!isNonEmptyString(value) || !COMMIT_SHA_PATTERN.test(value)) {
-    issue(issues, "invalid-commit", `Field '${key}' must be a 40-character lowercase git commit SHA${nullable ? " or null" : ""}.`, {
-      lineNumber,
-      runId,
-      field: key,
-    });
+    issue(
+      issues,
+      "invalid-commit",
+      `Field '${key}' must be a 40-character lowercase git commit SHA${nullable ? " or null" : ""}.`,
+      {
+        lineNumber,
+        runId,
+        field: key
+      }
+    );
   }
 }
 
@@ -201,7 +212,11 @@ function validateStringList(
     return false;
   }
   if (!options.allowEmpty && value.length === 0) {
-    issue(issues, "invalid-field", `Field '${key}' must contain at least one entry.`, { lineNumber, runId, field: key });
+    issue(issues, "invalid-field", `Field '${key}' must contain at least one entry.`, {
+      lineNumber,
+      runId,
+      field: key
+    });
     return false;
   }
   const seen = new Set<string>();
@@ -210,7 +225,7 @@ function validateStringList(
       issue(issues, "invalid-field", `Field '${key}[${index}]' must be a non-empty string.`, {
         lineNumber,
         runId,
-        field: key,
+        field: key
       });
       return;
     }
@@ -218,7 +233,7 @@ function validateStringList(
       issue(issues, "duplicate-value", `Field '${key}' contains duplicate value '${entryValue}'.`, {
         lineNumber,
         runId,
-        field: key,
+        field: key
       });
     }
     seen.add(entryValue);
@@ -237,7 +252,7 @@ function validateArtifactPath(
     issue(issues, "invalid-artifact-path", `Artifact path '${artifactPath}' must be relative to the repository root.`, {
       lineNumber,
       runId,
-      field: "artifactPaths",
+      field: "artifactPaths"
     });
     return;
   }
@@ -247,7 +262,7 @@ function validateArtifactPath(
     issue(issues, "invalid-artifact-path", `Artifact path '${artifactPath}' must stay inside the repository root.`, {
       lineNumber,
       runId,
-      field: "artifactPaths",
+      field: "artifactPaths"
     });
     return;
   }
@@ -256,7 +271,7 @@ function validateArtifactPath(
     issue(issues, "missing-artifact", `Artifact path '${artifactPath}' does not exist.`, {
       lineNumber,
       runId,
-      field: "artifactPaths",
+      field: "artifactPaths"
     });
   }
 }
@@ -275,7 +290,7 @@ function validateCases(
     issue(issues, "invalid-field", "Field 'cases' must be null, an array, or a split-to-case-list object.", {
       lineNumber,
       runId,
-      field: "cases",
+      field: "cases"
     });
     return false;
   }
@@ -285,7 +300,7 @@ function validateCases(
     issue(issues, "invalid-field", "Field 'cases' split object must contain at least one split.", {
       lineNumber,
       runId,
-      field: "cases",
+      field: "cases"
     });
     return false;
   }
@@ -300,7 +315,7 @@ function validateCases(
     issue(issues, "invalid-field", "Field 'cases' split object must contain at least one case across all splits.", {
       lineNumber,
       runId,
-      field: "cases",
+      field: "cases"
     });
     return false;
   }
@@ -320,11 +335,19 @@ function validateSeeds(
   const seen = new Set<number>();
   value.forEach((seed, index) => {
     if (!Number.isSafeInteger(seed)) {
-      issue(issues, "invalid-seed", `Field 'seeds[${index}]' must be a safe integer.`, { lineNumber, runId, field: "seeds" });
+      issue(issues, "invalid-seed", `Field 'seeds[${index}]' must be a safe integer.`, {
+        lineNumber,
+        runId,
+        field: "seeds"
+      });
       return;
     }
     if (seen.has(seed)) {
-      issue(issues, "duplicate-value", `Field 'seeds' contains duplicate value '${seed}'.`, { lineNumber, runId, field: "seeds" });
+      issue(issues, "duplicate-value", `Field 'seeds' contains duplicate value '${seed}'.`, {
+        lineNumber,
+        runId,
+        field: "seeds"
+      });
     }
     seen.add(seed);
   });
@@ -344,7 +367,7 @@ function validateBudgetValue(
       issue(issues, "invalid-budget", `Budget field '${fieldPath}' must be a finite non-negative number.`, {
         lineNumber,
         runId,
-        field: "budget",
+        field: "budget"
       });
     }
     return;
@@ -354,11 +377,13 @@ function validateBudgetValue(
       issue(issues, "invalid-budget", `Budget field '${fieldPath}' must not be an empty array.`, {
         lineNumber,
         runId,
-        field: "budget",
+        field: "budget"
       });
       return;
     }
-    value.forEach((entryValue, index) => validateBudgetValue(entryValue, `${fieldPath}[${index}]`, issues, lineNumber, runId));
+    value.forEach((entryValue, index) =>
+      validateBudgetValue(entryValue, `${fieldPath}[${index}]`, issues, lineNumber, runId)
+    );
     return;
   }
   if (isRecord(value)) {
@@ -370,7 +395,7 @@ function validateBudgetValue(
   issue(issues, "invalid-budget", `Budget field '${fieldPath}' must contain numbers, arrays, objects, or null.`, {
     lineNumber,
     runId,
-    field: "budget",
+    field: "budget"
   });
 }
 
@@ -385,55 +410,83 @@ function validateHardware(
     return false;
   }
   if (typeof value.captured !== "boolean") {
-    issue(issues, "invalid-hardware", "Field 'hardware.captured' must be a boolean.", { lineNumber, runId, field: "hardware" });
+    issue(issues, "invalid-hardware", "Field 'hardware.captured' must be a boolean.", {
+      lineNumber,
+      runId,
+      field: "hardware"
+    });
   }
   if (typeof value.gpuUsed !== "boolean") {
-    issue(issues, "invalid-hardware", "Field 'hardware.gpuUsed' must be a boolean.", { lineNumber, runId, field: "hardware" });
+    issue(issues, "invalid-hardware", "Field 'hardware.gpuUsed' must be a boolean.", {
+      lineNumber,
+      runId,
+      field: "hardware"
+    });
   }
   if (value.captured === true) {
     if (!isNonEmptyString(value.cpuModel)) {
       issue(issues, "incomplete-hardware", "Captured hardware must include 'hardware.cpuModel'.", {
         lineNumber,
         runId,
-        field: "hardware",
+        field: "hardware"
       });
     }
     const logicalCpuCount = value.logicalCpuCount ?? value.logicalCores;
     if (!Number.isSafeInteger(logicalCpuCount) || (logicalCpuCount as number) <= 0) {
-      issue(issues, "incomplete-hardware", "Captured hardware must include a positive 'hardware.logicalCpuCount' or 'hardware.logicalCores'.", {
-        lineNumber,
-        runId,
-        field: "hardware",
-      });
+      issue(
+        issues,
+        "incomplete-hardware",
+        "Captured hardware must include a positive 'hardware.logicalCpuCount' or 'hardware.logicalCores'.",
+        {
+          lineNumber,
+          runId,
+          field: "hardware"
+        }
+      );
     }
     if (typeof value.memoryBytes !== "number" && typeof value.memoryGb !== "number") {
-      issue(issues, "incomplete-hardware", "Captured hardware must include 'hardware.memoryBytes' or 'hardware.memoryGb'.", {
-        lineNumber,
-        runId,
-        field: "hardware",
-      });
+      issue(
+        issues,
+        "incomplete-hardware",
+        "Captured hardware must include 'hardware.memoryBytes' or 'hardware.memoryGb'.",
+        {
+          lineNumber,
+          runId,
+          field: "hardware"
+        }
+      );
     }
     if (value.gpuUsed === true) {
       if (!isNonEmptyString(value.gpuModel)) {
         issue(issues, "incomplete-hardware", "GPU-backed runs must include 'hardware.gpuModel'.", {
           lineNumber,
           runId,
-          field: "hardware",
+          field: "hardware"
         });
       }
       if (typeof value.gpuMemoryBytes !== "number" && typeof value.gpuMemoryGb !== "number") {
-        issue(issues, "incomplete-hardware", "GPU-backed runs must include 'hardware.gpuMemoryBytes' or 'hardware.gpuMemoryGb'.", {
-          lineNumber,
-          runId,
-          field: "hardware",
-        });
+        issue(
+          issues,
+          "incomplete-hardware",
+          "GPU-backed runs must include 'hardware.gpuMemoryBytes' or 'hardware.gpuMemoryGb'.",
+          {
+            lineNumber,
+            runId,
+            field: "hardware"
+          }
+        );
       }
       if (!isNonEmptyString(value.gpuRuntime) && !isNonEmptyString(value.gpuDriver)) {
-        issue(issues, "incomplete-hardware", "GPU-backed runs must include 'hardware.gpuRuntime' or 'hardware.gpuDriver'.", {
-          lineNumber,
-          runId,
-          field: "hardware",
-        });
+        issue(
+          issues,
+          "incomplete-hardware",
+          "GPU-backed runs must include 'hardware.gpuRuntime' or 'hardware.gpuDriver'.",
+          {
+            lineNumber,
+            runId,
+            field: "hardware"
+          }
+        );
       }
     }
   }
@@ -457,11 +510,16 @@ function validateModel(
     const hasFingerprint = isNonEmptyString(value.fingerprint) || isNonEmptyString(entry.modelFingerprint);
     const hasPath = isNonEmptyString(value.path) || isNonEmptyString(value.modelPath);
     if (!hasVersion && !hasFingerprint && !hasPath) {
-      issue(issues, "incomplete-model", "Trained model entries must include a model version, fingerprint, or model path.", {
-        lineNumber,
-        runId,
-        field: "model",
-      });
+      issue(
+        issues,
+        "incomplete-model",
+        "Trained model entries must include a model version, fingerprint, or model path.",
+        {
+          lineNumber,
+          runId,
+          field: "model"
+        }
+      );
     }
   }
   return true;
@@ -475,7 +533,11 @@ function validateOptionalFingerprint(
   runId?: string
 ): void {
   if (hasOwn(entry, key) && !isNonEmptyString(entry[key])) {
-    issue(issues, "invalid-field", `Field '${key}' must be a non-empty string when present.`, { lineNumber, runId, field: key });
+    issue(issues, "invalid-field", `Field '${key}' must be a non-empty string when present.`, {
+      lineNumber,
+      runId,
+      field: key
+    });
   }
 }
 
@@ -496,48 +558,66 @@ function validateStrictPromotionMetadata(
     issue(issues, "strict-missing-artifact-commit", "Strict registry checks require 'artifactGitCommit'.", {
       lineNumber,
       runId,
-      field: "artifactGitCommit",
+      field: "artifactGitCommit"
     });
   }
 
-  if (Array.isArray(entry.commands) && entry.commands.some((command) => typeof command === "string" && command.includes("..."))) {
+  if (
+    Array.isArray(entry.commands) &&
+    entry.commands.some((command) => typeof command === "string" && command.includes("..."))
+  ) {
     issue(issues, "strict-abbreviated-command", "Strict registry checks require exact commands without ellipses.", {
       lineNumber,
       runId,
-      field: "commands",
+      field: "commands"
     });
   }
 
   if (isRecord(entry.budget) && !budgetHasFiniteNumber(entry.budget)) {
-    issue(issues, "strict-missing-budget", "Strict registry checks require at least one finite budget or observed runtime value.", {
-      lineNumber,
-      runId,
-      field: "budget",
-    });
+    issue(
+      issues,
+      "strict-missing-budget",
+      "Strict registry checks require at least one finite budget or observed runtime value.",
+      {
+        lineNumber,
+        runId,
+        field: "budget"
+      }
+    );
   }
 
   if (isRecord(entry.hardware) && entry.hardware.captured !== true) {
-    issue(issues, "strict-missing-hardware", "hardware.captured is false; strict registry checks require captured hardware metadata.", {
-      lineNumber,
-      runId,
-      field: "hardware",
-    });
+    issue(
+      issues,
+      "strict-missing-hardware",
+      "hardware.captured is false; strict registry checks require captured hardware metadata.",
+      {
+        lineNumber,
+        runId,
+        field: "hardware"
+      }
+    );
   }
 
   if ((entry.artifactType === "benchmark" || entry.artifactType === "label-bundle") && entry.splitStatus === null) {
     issue(issues, "strict-missing-split", `${entry.artifactType} entries must include splitStatus metadata.`, {
       lineNumber,
       runId,
-      field: "splitStatus",
+      field: "splitStatus"
     });
   }
 
   if (entry.artifactType === "label-bundle" && entry.model === null) {
-    issue(issues, "strict-missing-model", "label-bundle entries must include model metadata, even when no model was trained.", {
-      lineNumber,
-      runId,
-      field: "model",
-    });
+    issue(
+      issues,
+      "strict-missing-model",
+      "label-bundle entries must include model metadata, even when no model was trained.",
+      {
+        lineNumber,
+        runId,
+        field: "model"
+      }
+    );
   }
 }
 
@@ -562,13 +642,16 @@ export function validateExperimentRegistryEntry(
     issue(issues, "invalid-schema-version", `Field 'schemaVersion' must be ${EXPERIMENT_REGISTRY_SCHEMA_VERSION}.`, {
       lineNumber,
       runId,
-      field: "schemaVersion",
+      field: "schemaVersion"
     });
   }
 
   validateRequiredString(value, "runId", issues, lineNumber, runId);
   validateRequiredString(value, "artifactType", issues, lineNumber, runId);
-  if (isNonEmptyString(value.artifactType) && !EXPERIMENT_REGISTRY_ARTIFACT_TYPES.includes(value.artifactType as ExperimentRegistryArtifactType)) {
+  if (
+    isNonEmptyString(value.artifactType) &&
+    !EXPERIMENT_REGISTRY_ARTIFACT_TYPES.includes(value.artifactType as ExperimentRegistryArtifactType)
+  ) {
     issue(
       issues,
       "invalid-artifact-type",
@@ -589,7 +672,11 @@ export function validateExperimentRegistryEntry(
   }
 
   if (!hasOwn(value, "artifactPaths")) {
-    issue(issues, "missing-field", "Missing required field 'artifactPaths'.", { lineNumber, runId, field: "artifactPaths" });
+    issue(issues, "missing-field", "Missing required field 'artifactPaths'.", {
+      lineNumber,
+      runId,
+      field: "artifactPaths"
+    });
   } else if (validateStringList(value.artifactPaths, "artifactPaths", issues, lineNumber, runId)) {
     if (validateArtifactPaths) {
       for (const artifactPath of value.artifactPaths as string[]) {
@@ -605,7 +692,11 @@ export function validateExperimentRegistryEntry(
   }
 
   if (!hasOwn(value, "caseFamilies")) {
-    issue(issues, "missing-field", "Missing required field 'caseFamilies'.", { lineNumber, runId, field: "caseFamilies" });
+    issue(issues, "missing-field", "Missing required field 'caseFamilies'.", {
+      lineNumber,
+      runId,
+      field: "caseFamilies"
+    });
   } else if (value.caseFamilies !== null) {
     validateStringList(value.caseFamilies, "caseFamilies", issues, lineNumber, runId);
   }
@@ -614,7 +705,7 @@ export function validateExperimentRegistryEntry(
     issue(issues, "incomplete-coverage", "At least one of 'cases' or 'caseFamilies' must be populated.", {
       lineNumber,
       runId,
-      field: "cases",
+      field: "cases"
     });
   }
 
@@ -625,9 +716,17 @@ export function validateExperimentRegistryEntry(
   }
 
   if (!hasOwn(value, "splitStatus")) {
-    issue(issues, "missing-field", "Missing required field 'splitStatus'.", { lineNumber, runId, field: "splitStatus" });
+    issue(issues, "missing-field", "Missing required field 'splitStatus'.", {
+      lineNumber,
+      runId,
+      field: "splitStatus"
+    });
   } else if (value.splitStatus !== null && !isRecord(value.splitStatus)) {
-    issue(issues, "invalid-field", "Field 'splitStatus' must be null or an object.", { lineNumber, runId, field: "splitStatus" });
+    issue(issues, "invalid-field", "Field 'splitStatus' must be null or an object.", {
+      lineNumber,
+      runId,
+      field: "splitStatus"
+    });
   }
 
   if (!hasOwn(value, "budget")) {
@@ -658,10 +757,18 @@ export function validateExperimentRegistryEntry(
   }
 
   if (hasOwn(value, "solverParams") && !isRecord(value.solverParams)) {
-    issue(issues, "invalid-field", "Field 'solverParams' must be an object when present.", { lineNumber, runId, field: "solverParams" });
+    issue(issues, "invalid-field", "Field 'solverParams' must be an object when present.", {
+      lineNumber,
+      runId,
+      field: "solverParams"
+    });
   }
   if (hasOwn(value, "summaryMetrics") && !isRecord(value.summaryMetrics)) {
-    issue(issues, "invalid-field", "Field 'summaryMetrics' must be an object when present.", { lineNumber, runId, field: "summaryMetrics" });
+    issue(issues, "invalid-field", "Field 'summaryMetrics' must be an object when present.", {
+      lineNumber,
+      runId,
+      field: "summaryMetrics"
+    });
   }
 
   if (normalizedOptions.strict === true) {
@@ -669,8 +776,8 @@ export function validateExperimentRegistryEntry(
   }
 
   return {
-    entry: issues.length === 0 ? value as unknown as ExperimentRegistryEntry : undefined,
-    issues,
+    entry: issues.length === 0 ? (value as unknown as ExperimentRegistryEntry) : undefined,
+    issues
   };
 }
 
@@ -703,7 +810,7 @@ export function checkExperimentRegistryContent(
         issue(issues, "duplicate-run-id", `Duplicate runId '${runId}' also appears on line ${previousLine}.`, {
           lineNumber,
           runId,
-          field: "runId",
+          field: "runId"
         });
       } else {
         seenRunIds.set(runId, lineNumber);
@@ -750,7 +857,7 @@ export function completeExperimentRegistryEntry(
 ): Record<string, unknown> {
   const artifactGitCommit = Object.prototype.hasOwnProperty.call(entry, "artifactGitCommit")
     ? entry.artifactGitCommit
-    : metadata.artifactGitCommit ?? null;
+    : (metadata.artifactGitCommit ?? null);
   return {
     ...entry,
     schemaVersion: entry.schemaVersion ?? EXPERIMENT_REGISTRY_SCHEMA_VERSION,
@@ -761,11 +868,14 @@ export function completeExperimentRegistryEntry(
     artifactGitCommit,
     splitStatus: entry.splitStatus ?? null,
     hardware: entry.hardware ?? metadata.hardware ?? { captured: false, gpuUsed: false },
-    model: entry.model ?? null,
+    model: entry.model ?? null
   };
 }
 
-export function captureExperimentRegistryHardwareMetadata(overrides: Record<string, unknown> = {}): Record<string, unknown> & {
+export function captureExperimentRegistryHardwareMetadata(overrides: Record<string, unknown> = {}): Record<
+  string,
+  unknown
+> & {
   captured: boolean;
   gpuUsed: boolean;
 } {
@@ -780,7 +890,7 @@ export function captureExperimentRegistryHardwareMetadata(overrides: Record<stri
     memoryBytes: os.totalmem(),
     totalMemoryBytes: os.totalmem(),
     gpuUsed,
-    ...overrides,
+    ...overrides
   };
 }
 
@@ -805,7 +915,7 @@ export function resolveExperimentRegistryGitMetadata(options: ExperimentRegistry
   }
   return {
     commit: execGitValue(["rev-parse", "HEAD"], "0000000000000000000000000000000000000000"),
-    branch: execGitValue(["branch", "--show-current"], "unknown"),
+    branch: execGitValue(["branch", "--show-current"], "unknown")
   };
 }
 
@@ -819,44 +929,63 @@ export function buildExperimentRegistryEntry(
     indexedAt: indexDate(now),
     indexedGitCommit: gitMetadata.commit,
     branch: gitMetadata.branch,
-    artifactGitCommit: entry.artifactGitCommit === undefined ? gitMetadata.commit : entry.artifactGitCommit as string | null,
-    hardware: captureExperimentRegistryHardwareMetadata(),
+    artifactGitCommit:
+      entry.artifactGitCommit === undefined ? gitMetadata.commit : (entry.artifactGitCommit as string | null),
+    hardware: captureExperimentRegistryHardwareMetadata()
   });
 }
 
 function historicalWarningsForEntry(entry: ExperimentRegistryEntry, lineNumber?: number): ExperimentRegistryIssue[] {
   const warnings: ExperimentRegistryIssue[] = [];
   if (entry.artifactGitCommit === null) {
-    issue(warnings, "historical-missing-artifact-commit", "artifactGitCommit is null; future promotion-grade entries should record the artifact commit.", {
-      lineNumber,
-      runId: entry.runId,
-      field: "artifactGitCommit",
-      severity: "warning",
-    });
+    issue(
+      warnings,
+      "historical-missing-artifact-commit",
+      "artifactGitCommit is null; future promotion-grade entries should record the artifact commit.",
+      {
+        lineNumber,
+        runId: entry.runId,
+        field: "artifactGitCommit",
+        severity: "warning"
+      }
+    );
   }
   if (entry.hardware.captured === false) {
-    issue(warnings, "historical-missing-hardware", "hardware.captured is false; future promotion-grade entries should record CPU/GPU metadata.", {
-      lineNumber,
-      runId: entry.runId,
-      field: "hardware",
-      severity: "warning",
-    });
+    issue(
+      warnings,
+      "historical-missing-hardware",
+      "hardware.captured is false; future promotion-grade entries should record CPU/GPU metadata.",
+      {
+        lineNumber,
+        runId: entry.runId,
+        field: "hardware",
+        severity: "warning"
+      }
+    );
   }
   if (entry.commands.some((command) => command.includes("..."))) {
-    issue(warnings, "historical-abbreviated-command", "commands include an ellipsis; future entries should record exact commands.", {
-      lineNumber,
-      runId: entry.runId,
-      field: "commands",
-      severity: "warning",
-    });
+    issue(
+      warnings,
+      "historical-abbreviated-command",
+      "commands include an ellipsis; future entries should record exact commands.",
+      {
+        lineNumber,
+        runId: entry.runId,
+        field: "commands",
+        severity: "warning"
+      }
+    );
   }
   return warnings;
 }
 
-function toValidationResult(entries: ExperimentRegistryEntry[], issues: ExperimentRegistryIssue[]): ExperimentRegistryValidationResult {
+function toValidationResult(
+  entries: ExperimentRegistryEntry[],
+  issues: ExperimentRegistryIssue[]
+): ExperimentRegistryValidationResult {
   const normalizedIssues = issues.map((entry) => ({
     ...entry,
-    severity: entry.severity ?? "error" as const,
+    severity: entry.severity ?? ("error" as const)
   }));
   const errorCount = normalizedIssues.filter((entry) => entry.severity !== "warning").length;
   const warningCount = normalizedIssues.length - errorCount;
@@ -865,7 +994,7 @@ function toValidationResult(entries: ExperimentRegistryEntry[], issues: Experime
     entries,
     issues: normalizedIssues,
     errorCount,
-    warningCount,
+    warningCount
   };
 }
 
@@ -883,9 +1012,14 @@ export function validateExperimentRegistryEntries(
       rootDir: normalizedOptions.rootDir,
       validateArtifactPaths: normalizedOptions.validateArtifactPaths,
       strict: normalizedOptions.strict,
-      lineNumber: index + 1,
+      lineNumber: index + 1
     });
-    issues.push(...validation.issues.map((validationIssue) => ({ ...validationIssue, severity: validationIssue.severity ?? "error" as const })));
+    issues.push(
+      ...validation.issues.map((validationIssue) => ({
+        ...validationIssue,
+        severity: validationIssue.severity ?? ("error" as const)
+      }))
+    );
     if (validation.entry !== undefined) {
       validEntries.push(validation.entry);
       issues.push(...historicalWarningsForEntry(validation.entry, index + 1));
@@ -906,14 +1040,14 @@ export function validateExperimentRegistryFile(
     ...options,
     rootDir: normalizedOptions.rootDir,
     validateArtifactPaths: normalizedOptions.validateArtifactPaths,
-    strict: normalizedOptions.strict,
+    strict: normalizedOptions.strict
   });
-  const issues = check.issues.map((entry) => ({ ...entry, severity: entry.severity ?? "error" as const }));
+  const issues = check.issues.map((entry) => ({ ...entry, severity: entry.severity ?? ("error" as const) }));
   check.entries.forEach((entry, index) => {
     issues.push(
       ...historicalWarningsForEntry(entry, index + 1).map((warning) => ({
         ...warning,
-        severity: warning.severity ?? "warning" as const,
+        severity: warning.severity ?? ("warning" as const)
       }))
     );
   });
@@ -948,7 +1082,7 @@ export function appendExperimentRegistryEntry(
       ...options,
       rootDir,
       strict: false,
-      strictMetadata: false,
+      strictMetadata: false
     });
     if (!existingCheck.valid) {
       throw new ExperimentRegistryValidationError("Existing experiment registry is invalid.", existingCheck.issues);
@@ -968,8 +1102,8 @@ export function appendExperimentRegistryEntry(
     throw new ExperimentRegistryValidationError("Experiment registry entry is invalid.", [
       {
         code: "invalid-json",
-        message: "Registry entry must be a JSON object.",
-      },
+        message: "Registry entry must be a JSON object."
+      }
     ]);
   }
 
@@ -984,8 +1118,8 @@ export function appendExperimentRegistryEntry(
         code: "duplicate-run-id",
         message: `Duplicate runId '${validation.entry.runId}' already exists in '${registryPath}'.`,
         runId: validation.entry.runId,
-        field: "runId",
-      },
+        field: "runId"
+      }
     ]);
   }
 

@@ -4,7 +4,7 @@ import type {
   Grid,
   OptimizerName,
   Solution,
-  SolverParams,
+  SolverParams
 } from "../../core/index.js";
 import { getOptimizerAdapter, type OptimizerFinalizationContext } from "../dispatch/optimizerRegistry.js";
 import { progressLogSolutionSampleChanged, SolveProgressLogWriter } from "./solveProgressLog.js";
@@ -58,8 +58,10 @@ export interface SolveAdmissionLease {
 
 function buildRecoveredSolveMessage(job: SolveJob, solution: Solution, error: unknown): string {
   const adapter = getOptimizerAdapter(job.optimizer);
-  return adapter.describeRecoveredSolution?.(solution, error)
-    ?? "Showing the best available solution captured before the solver stopped progressing.";
+  return (
+    adapter.describeRecoveredSolution?.(solution, error) ??
+    "Showing the best available solution captured before the solver stopped progressing."
+  );
 }
 
 function buildCompletedSolveMessage(job: SolveJob, solution: Solution): string | null {
@@ -70,7 +72,7 @@ function buildOptimizerFinalizationContext(job: SolveJob): OptimizerFinalization
   return {
     cancelRequested: job.cancelRequested,
     snapshotState: job.handle?.getLatestSnapshotState() ?? null,
-    lastProgressEntry: job.progressLogWriter.getLastEntry(),
+    lastProgressEntry: job.progressLogWriter.getLastEntry()
   };
 }
 
@@ -94,7 +96,10 @@ export class SolveJobManager {
     this.progressLogIntervalMs = options.progressLogIntervalMs ?? DEFAULT_PROGRESS_LOG_INTERVAL_MS;
     this.progressLogPollIntervalMs = options.progressLogPollIntervalMs ?? DEFAULT_PROGRESS_LOG_POLL_INTERVAL_MS;
     this.completedJobRetentionMs = Math.max(0, options.completedJobRetentionMs ?? DEFAULT_COMPLETED_JOB_RETENTION_MS);
-    this.maxRetainedCompletedJobs = Math.max(1, options.maxRetainedCompletedJobs ?? DEFAULT_MAX_RETAINED_COMPLETED_JOBS);
+    this.maxRetainedCompletedJobs = Math.max(
+      1,
+      options.maxRetainedCompletedJobs ?? DEFAULT_MAX_RETAINED_COMPLETED_JOBS
+    );
     const requestedMaxRunningSolves = options.maxRunningSolves ?? DEFAULT_MAX_RUNNING_SOLVES;
     this.maxRunningSolves = Number.isFinite(requestedMaxRunningSolves)
       ? Math.max(1, Math.floor(requestedMaxRunningSolves))
@@ -125,7 +130,7 @@ export class SolveJobManager {
         if (released) return;
         released = true;
         this.runningImmediateSolves = Math.max(0, this.runningImmediateSolves - 1);
-      },
+      }
     };
   }
 
@@ -144,7 +149,7 @@ export class SolveJobManager {
         optimizer,
         grid,
         params,
-        createdAtMs: createdAt,
+        createdAtMs: createdAt
       });
       job = {
         requestId,
@@ -160,12 +165,12 @@ export class SolveJobManager {
         createdAt,
         progressLogFilePath: progressLogWriter.filePath,
         progressLogWriter,
-        progressLogIntervalHandle: null,
+        progressLogIntervalHandle: null
       };
 
       this.jobs.set(requestId, job);
       job.progressLogWriter.appendPendingSample({
-        elapsedMs: 0,
+        elapsedMs: 0
       });
       job.progressLogIntervalHandle = this.startProgressLogTicker(job);
     } catch (error) {
@@ -179,9 +184,10 @@ export class SolveJobManager {
       .then((solution) => {
         solution = normalizeTerminalSolution(job, solution);
         const status = solution.stoppedByUser || job.cancelRequested ? "stopped" : "completed";
-        const message = status === "stopped"
-          ? "Solve was stopped by user. Showing the best feasible result found so far."
-          : buildCompletedSolveMessage(job, solution);
+        const message =
+          status === "stopped"
+            ? "Solve was stopped by user. Showing the best feasible result found so far."
+            : buildCompletedSolveMessage(job, solution);
         this.finalizeJobWithSolution(job, solution, status, message);
       })
       .catch((error) => {
@@ -189,7 +195,7 @@ export class SolveJobManager {
         if (recoveredSolution) {
           let solution: Solution = {
             ...recoveredSolution,
-            stoppedByUser: job.cancelRequested ? true : Boolean(recoveredSolution.stoppedByUser),
+            stoppedByUser: job.cancelRequested ? true : Boolean(recoveredSolution.stoppedByUser)
           };
           solution = normalizeTerminalSolution(job, solution);
           const status = job.cancelRequested ? "stopped" : "completed";
@@ -235,13 +241,13 @@ export class SolveJobManager {
 
     const snapshotState = job.handle?.getLatestSnapshotState() ?? {
       hasFeasibleSolution: false,
-      totalPopulation: null,
+      totalPopulation: null
     };
 
     return {
       job,
       snapshotState,
-      liveSnapshot: includeSnapshot ? (job.handle?.getLatestSnapshot() ?? null) : null,
+      liveSnapshot: includeSnapshot ? (job.handle?.getLatestSnapshot() ?? null) : null
     };
   }
 
@@ -273,7 +279,9 @@ export class SolveJobManager {
 
     if (retainedCompletedJobs.length <= this.maxRetainedCompletedJobs) return;
 
-    retainedCompletedJobs.sort((left, right) => (left.finishedAt ?? left.createdAt) - (right.finishedAt ?? right.createdAt));
+    retainedCompletedJobs.sort(
+      (left, right) => (left.finishedAt ?? left.createdAt) - (right.finishedAt ?? right.createdAt)
+    );
     for (const job of retainedCompletedJobs.slice(0, retainedCompletedJobs.length - this.maxRetainedCompletedJobs)) {
       this.jobs.delete(job.requestId);
     }
@@ -292,13 +300,13 @@ export class SolveJobManager {
     job.error = null;
     job.progressLogWriter.appendSolutionSample(solution, {
       elapsedMs: finishedAtMs - job.createdAt,
-      source: "final-result",
+      source: "final-result"
     });
     job.progressLogWriter.finish(status, {
       finishedAtMs,
       solution,
       message,
-      error: null,
+      error: null
     });
   }
 
@@ -317,7 +325,7 @@ export class SolveJobManager {
       finishedAtMs,
       solution: null,
       message,
-      error,
+      error
     });
   }
 
@@ -341,21 +349,21 @@ export class SolveJobManager {
         if (elapsedMs - lastEntry.elapsedMs < this.progressLogIntervalMs) return;
         job.progressLogWriter.appendPendingSample({
           elapsedMs,
-          note: "Still searching for the first feasible solution.",
+          note: "Still searching for the first feasible solution."
         });
         return;
       }
 
       const shouldAppendImmediately = progressLogSolutionSampleChanged(lastEntry, snapshot);
 
-      const shouldAppendHeartbeat = !shouldAppendImmediately
-        && (!lastEntry || elapsedMs - lastEntry.elapsedMs >= this.progressLogIntervalMs);
+      const shouldAppendHeartbeat =
+        !shouldAppendImmediately && (!lastEntry || elapsedMs - lastEntry.elapsedMs >= this.progressLogIntervalMs);
 
       if (!shouldAppendImmediately && !shouldAppendHeartbeat) return;
 
       job.progressLogWriter.appendSolutionSample(snapshot, {
         elapsedMs,
-        source: "live-snapshot",
+        source: "live-snapshot"
       });
     };
 

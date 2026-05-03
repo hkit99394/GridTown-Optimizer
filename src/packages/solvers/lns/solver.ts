@@ -9,10 +9,7 @@ import { applyDeterministicDominanceUpgrades } from "../../core/index.js";
 import { normalizeServicePlacement } from "../../core/index.js";
 import { solveCpSat } from "../cp-sat/solver.js";
 import { height, width } from "../../core/index.js";
-import {
-  buildAdaptiveNeighborhoodCandidates,
-  selectAdaptiveNeighborhoodOperator,
-} from "./neighborhoods.js";
+import { buildAdaptiveNeighborhoodCandidates, selectAdaptiveNeighborhoodOperator } from "./neighborhoods.js";
 import { repairSmallWindowWithDp } from "./smallWindowDpRepair.js";
 import { NO_TYPE_INDEX } from "../../core/index.js";
 import { writeSolutionSnapshot } from "../../core/index.js";
@@ -35,7 +32,7 @@ import type {
   LnsStopReason,
   LnsTelemetry,
   Solution,
-  SolverParams,
+  SolverParams
 } from "../../core/index.js";
 
 type NormalizedLnsOptions = {
@@ -94,7 +91,7 @@ const LNS_ADAPTIVE_OPERATORS: LnsAdaptiveOperatorName[] = [
   "service-overlap",
   "random-exploration",
   "placed-buildings",
-  "sliding",
+  "sliding"
 ];
 const LNS_NEIGHBORHOOD_ANCHOR_POLICIES = new Set<LnsNeighborhoodAnchorPolicy>([
   "ranked",
@@ -102,7 +99,7 @@ const LNS_NEIGHBORHOOD_ANCHOR_POLICIES = new Set<LnsNeighborhoodAnchorPolicy>([
   "weak-service-first",
   "residential-opportunity-first",
   "frontier-congestion-first",
-  "placed-buildings-first",
+  "placed-buildings-first"
 ]);
 
 function positiveIntegerOrDefault(value: unknown, fallback: number): number {
@@ -123,7 +120,7 @@ function booleanOrDefault(value: unknown, fallback: boolean): boolean {
 
 function lnsNeighborhoodAnchorPolicyOrDefault(value: unknown): LnsNeighborhoodAnchorPolicy {
   return typeof value === "string" && LNS_NEIGHBORHOOD_ANCHOR_POLICIES.has(value as LnsNeighborhoodAnchorPolicy)
-    ? value as LnsNeighborhoodAnchorPolicy
+    ? (value as LnsNeighborhoodAnchorPolicy)
     : "ranked";
 }
 
@@ -154,18 +151,23 @@ function clampOperatorWeight(weight: number): number {
 }
 
 function buildInitialOperatorSummaries(): Map<LnsAdaptiveOperatorName, LnsOperatorSummary> {
-  return new Map(LNS_ADAPTIVE_OPERATORS.map((operator) => [operator, {
-    operator,
-    attempts: 0,
-    feasibleRepairs: 0,
-    improvements: 0,
-    neutralRepairs: 0,
-    recoverableFailures: 0,
-    regressions: 0,
-    totalImprovement: 0,
-    elapsedSeconds: 0,
-    weight: 1,
-  }]));
+  return new Map(
+    LNS_ADAPTIVE_OPERATORS.map((operator) => [
+      operator,
+      {
+        operator,
+        attempts: 0,
+        feasibleRepairs: 0,
+        improvements: 0,
+        neutralRepairs: 0,
+        recoverableFailures: 0,
+        regressions: 0,
+        totalImprovement: 0,
+        elapsedSeconds: 0,
+        weight: 1
+      }
+    ])
+  );
 }
 
 function getOperatorSummary(
@@ -184,7 +186,7 @@ function getOperatorSummary(
     regressions: 0,
     totalImprovement: 0,
     elapsedSeconds: 0,
-    weight: 1,
+    weight: 1
   };
   summaries.set(operator, fallback);
   return fallback;
@@ -237,8 +239,8 @@ function getLnsOptions(G: Grid, params: SolverParams): NormalizedLnsOptions {
     lns.repairTimeLimitSeconds,
     positiveFiniteNumberOrDefault(params.cpSat?.timeLimitSeconds, DEFAULT_LNS_REPAIR_TIME_LIMIT_SECONDS)
   );
-  const wallClockLimitSeconds = optionalPositiveFiniteNumber(lns.wallClockLimitSeconds)
-    ?? optionalPositiveFiniteNumber(lns.timeLimitSeconds);
+  const wallClockLimitSeconds =
+    optionalPositiveFiniteNumber(lns.wallClockLimitSeconds) ?? optionalPositiveFiniteNumber(lns.timeLimitSeconds);
   return {
     iterations: positiveIntegerOrDefault(lns.iterations, DEFAULT_LNS_ITERATIONS),
     maxNoImprovementIterations: positiveIntegerOrDefault(
@@ -247,8 +249,11 @@ function getLnsOptions(G: Grid, params: SolverParams): NormalizedLnsOptions {
     ),
     wallClockLimitSeconds,
     noImprovementTimeoutSeconds: optionalPositiveFiniteNumber(lns.noImprovementTimeoutSeconds),
-    seedTimeLimitSeconds: optionalPositiveFiniteNumber(lns.seedTimeLimitSeconds)
-      ?? (wallClockLimitSeconds === null ? null : Math.max(0.1, Math.min(wallClockLimitSeconds * 0.2, repairTimeLimitSeconds))),
+    seedTimeLimitSeconds:
+      optionalPositiveFiniteNumber(lns.seedTimeLimitSeconds) ??
+      (wallClockLimitSeconds === null
+        ? null
+        : Math.max(0.1, Math.min(wallClockLimitSeconds * 0.2, repairTimeLimitSeconds))),
     neighborhoodRows: Math.max(
       1,
       Math.min(repairableRows || 1, positiveIntegerOrDefault(lns.neighborhoodRows, Math.max(4, Math.ceil(H / 2))))
@@ -259,7 +264,10 @@ function getLnsOptions(G: Grid, params: SolverParams): NormalizedLnsOptions {
     ),
     neighborhoodAnchorPolicy: lnsNeighborhoodAnchorPolicyOrDefault(lns.neighborhoodAnchorPolicy),
     repairTimeLimitSeconds,
-    focusedRepairTimeLimitSeconds: positiveFiniteNumberOrDefault(lns.focusedRepairTimeLimitSeconds, repairTimeLimitSeconds),
+    focusedRepairTimeLimitSeconds: positiveFiniteNumberOrDefault(
+      lns.focusedRepairTimeLimitSeconds,
+      repairTimeLimitSeconds
+    ),
     escalatedRepairTimeLimitSeconds: positiveFiniteNumberOrDefault(
       lns.escalatedRepairTimeLimitSeconds,
       repairTimeLimitSeconds
@@ -279,7 +287,7 @@ function getLnsOptions(G: Grid, params: SolverParams): NormalizedLnsOptions {
     ),
     seedHint: lns.seedHint,
     stopFilePath: lns.stopFilePath ?? "",
-    snapshotFilePath: lns.snapshotFilePath ?? "",
+    snapshotFilePath: lns.snapshotFilePath ?? ""
   };
 }
 
@@ -295,7 +303,10 @@ function residentialCandidateKey(solution: Solution, index: number): string {
   return `residential:${typeIndex}:${residential.r}:${residential.c}:${residential.rows}:${residential.cols}`;
 }
 
-export function buildLnsWarmStartHint(solution: Solution, neighborhoodWindow: CpSatNeighborhoodWindow): CpSatWarmStartHint {
+export function buildLnsWarmStartHint(
+  solution: Solution,
+  neighborhoodWindow: CpSatNeighborhoodWindow
+): CpSatWarmStartHint {
   const roadKeys = Array.from(solution.roads);
   return {
     sourceName: "lns-incumbent",
@@ -313,7 +324,7 @@ export function buildLnsWarmStartHint(solution: Solution, neighborhoodWindow: Cp
           cols: normalized.cols,
           range: normalized.range,
           typeIndex: solution.serviceTypeIndices[index] ?? NO_TYPE_INDEX,
-          bonus: solution.servicePopulationIncreases[index] ?? 0,
+          bonus: solution.servicePopulationIncreases[index] ?? 0
         };
       }),
       residentials: solution.residentials.map((residential, index) => ({
@@ -322,21 +333,21 @@ export function buildLnsWarmStartHint(solution: Solution, neighborhoodWindow: Cp
         rows: residential.rows,
         cols: residential.cols,
         typeIndex: solution.residentialTypeIndices[index] ?? NO_TYPE_INDEX,
-        population: solution.populations[index] ?? 0,
+        population: solution.populations[index] ?? 0
       })),
       populations: [...solution.populations],
-      totalPopulation: solution.totalPopulation,
+      totalPopulation: solution.totalPopulation
     },
     // Keep the incumbent as a regular warm start, but avoid OR-Tools' repair_hint
     // path here because it has been crashing inside MinimizeL1DistanceWithHint().
     neighborhoodWindow,
-    fixOutsideNeighborhoodToHintedValue: true,
+    fixOutsideNeighborhoodToHintedValue: true
   };
 }
 export {
   buildAdaptiveNeighborhoodCandidates,
   buildNeighborhoodWindows,
-  selectAdaptiveNeighborhoodOperator,
+  selectAdaptiveNeighborhoodOperator
 } from "./neighborhoods.js";
 
 function shouldStop(stopFilePath: string): boolean {
@@ -355,7 +366,7 @@ function buildInitialLnsIncumbent(G: Grid, params: SolverParams, options: Normal
     return {
       solution: applyDeterministicDominanceUpgrades(G, params, seededIncumbent),
       seedSource: "hint",
-      seedWallClockSeconds: (performance.now() - startedAt) / 1000,
+      seedWallClockSeconds: (performance.now() - startedAt) / 1000
     };
   }
 
@@ -367,15 +378,15 @@ function buildInitialLnsIncumbent(G: Grid, params: SolverParams, options: Normal
         ...(params.greedy ?? {}),
         profile: params.greedy?.profile ?? true,
         ...(options.seedTimeLimitSeconds !== null ? { timeLimitSeconds: options.seedTimeLimitSeconds } : {}),
-        ...(options.stopFilePath ? { stopFilePath: options.stopFilePath } : {}),
-      },
+        ...(options.stopFilePath ? { stopFilePath: options.stopFilePath } : {})
+      }
     }),
-    optimizer: "lns" as const,
+    optimizer: "lns" as const
   };
   return {
     solution: applyDeterministicDominanceUpgrades(G, params, initialIncumbent),
     seedSource: "greedy",
-    seedWallClockSeconds: (performance.now() - startedAt) / 1000,
+    seedWallClockSeconds: (performance.now() - startedAt) / 1000
   };
 }
 
@@ -398,45 +409,42 @@ function buildLnsTelemetry(
     focusedRepairTimeLimitSeconds: options.focusedRepairTimeLimitSeconds,
     escalatedRepairTimeLimitSeconds: options.escalatedRepairTimeLimitSeconds,
     iterationsStarted: outcomes.filter((outcome) => outcome.status !== "skipped-budget").length,
-    iterationsCompleted: outcomes.filter((outcome) => outcome.status !== "skipped-budget" && outcome.status !== "stopped").length,
+    iterationsCompleted: outcomes.filter(
+      (outcome) => outcome.status !== "skipped-budget" && outcome.status !== "stopped"
+    ).length,
     improvingIterations: outcomes.filter((outcome) => outcome.status === "improved").length,
     neutralIterations: outcomes.filter((outcome) => outcome.status === "neutral").length,
     recoverableFailures: outcomes.filter((outcome) => outcome.status === "recoverable-failure").length,
-    skippedIterations: outcomes.filter((outcome) => outcome.status === "skipped-budget" || outcome.status === "stopped").length,
+    skippedIterations: outcomes.filter((outcome) => outcome.status === "skipped-budget" || outcome.status === "stopped")
+      .length,
     finalStagnantIterations: stagnantIterations,
     elapsedSeconds: (performance.now() - startedAtMs) / 1000,
     operatorSummaries,
-    outcomes: [...outcomes],
+    outcomes: [...outcomes]
   };
 }
 
-function materializeLnsSolution(
-  incumbent: Solution,
-  telemetry: LnsTelemetry,
-  stoppedByUser = false
-): Solution {
+function materializeLnsSolution(incumbent: Solution, telemetry: LnsTelemetry, stoppedByUser = false): Solution {
   const solutionStoppedByUser = stoppedByUser || Boolean(incumbent.stoppedByUser);
   return {
     ...incumbent,
     optimizer: "lns",
     lnsTelemetry: telemetry,
-    ...(solutionStoppedByUser ? { stoppedByUser: true } : {}),
+    ...(solutionStoppedByUser ? { stoppedByUser: true } : {})
   };
 }
 
-function writeLnsSnapshot(
-  options: NormalizedLnsOptions,
-  incumbent: Solution,
-  telemetry: LnsTelemetry
-): void {
+function writeLnsSnapshot(options: NormalizedLnsOptions, incumbent: Solution, telemetry: LnsTelemetry): void {
   if (!options.snapshotFilePath) return;
   writeSolutionSnapshot(options.snapshotFilePath, materializeLnsSolution(incumbent, telemetry));
 }
 
-function buildRepairAttempt(input: Omit<LnsRepairAttempt, "startedAtMs"> & { startedAtMs?: number | null }): LnsRepairAttempt {
+function buildRepairAttempt(
+  input: Omit<LnsRepairAttempt, "startedAtMs"> & { startedAtMs?: number | null }
+): LnsRepairAttempt {
   return {
     ...input,
-    startedAtMs: input.startedAtMs ?? null,
+    startedAtMs: input.startedAtMs ?? null
   };
 }
 
@@ -467,7 +475,7 @@ function buildRepairOutcome(
     status,
     ...(metadata.repairBackend ? { repairBackend: metadata.repairBackend } : {}),
     ...(cpSatStatus !== undefined ? { cpSatStatus } : {}),
-    ...(metadata.smallWindowDp ? { smallWindowDp: metadata.smallWindowDp } : {}),
+    ...(metadata.smallWindowDp ? { smallWindowDp: metadata.smallWindowDp } : {})
   };
 }
 
@@ -475,7 +483,8 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
   assertValidLnsOptions(params);
   const startedAtMs = performance.now();
   const options = getLnsOptions(G, params);
-  const deadlineAtMs = options.wallClockLimitSeconds === null ? null : startedAtMs + options.wallClockLimitSeconds * 1000;
+  const deadlineAtMs =
+    options.wallClockLimitSeconds === null ? null : startedAtMs + options.wallClockLimitSeconds * 1000;
   const outcomes: LnsTelemetry["outcomes"] = [];
   const operatorSummaries = buildInitialOperatorSummaries();
 
@@ -527,8 +536,8 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
     }
 
     if (
-      options.noImprovementTimeoutSeconds !== null
-      && getStaleSeconds(lastImprovementAtMs) >= options.noImprovementTimeoutSeconds
+      options.noImprovementTimeoutSeconds !== null &&
+      getStaleSeconds(lastImprovementAtMs) >= options.noImprovementTimeoutSeconds
     ) {
       return finish("stale-time-limit");
     }
@@ -552,25 +561,30 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
     const neighborhoodWindow = selectedNeighborhood.window;
     const operatorSummary = getOperatorSummary(operatorSummaries, selectedNeighborhood.operator);
     const phase = getRepairPhase(stagnantIterations, options);
-    const configuredRepairTimeLimitSeconds = phase === "escalated"
-      ? options.escalatedRepairTimeLimitSeconds
-      : options.focusedRepairTimeLimitSeconds;
+    const configuredRepairTimeLimitSeconds =
+      phase === "escalated" ? options.escalatedRepairTimeLimitSeconds : options.focusedRepairTimeLimitSeconds;
     const repairTimeLimitSeconds = clampRepairBudgetToDeadline(configuredRepairTimeLimitSeconds, deadlineAtMs);
     const populationBefore = incumbent.totalPopulation;
     const staleSecondsBefore = getStaleSeconds(lastImprovementAtMs);
 
     if (repairTimeLimitSeconds <= 0) {
-      recordOutcome(buildRepairOutcome(buildRepairAttempt({
-        iteration,
-        phase,
-        operator: selectedNeighborhood.operator,
-        operatorWeight: operatorSummary.weight,
-        window: neighborhoodWindow,
-        stagnantIterationsBefore: stagnantIterations,
-        staleSecondsBefore,
-        repairTimeLimitSeconds: 0,
-        populationBefore,
-      }), "skipped-budget", populationBefore));
+      recordOutcome(
+        buildRepairOutcome(
+          buildRepairAttempt({
+            iteration,
+            phase,
+            operator: selectedNeighborhood.operator,
+            operatorWeight: operatorSummary.weight,
+            window: neighborhoodWindow,
+            stagnantIterationsBefore: stagnantIterations,
+            staleSecondsBefore,
+            repairTimeLimitSeconds: 0,
+            populationBefore
+          }),
+          "skipped-budget",
+          populationBefore
+        )
+      );
       writeRunningSnapshot();
       return finish("wall-clock-limit");
     }
@@ -586,7 +600,7 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
       staleSecondsBefore,
       repairTimeLimitSeconds,
       populationBefore,
-      startedAtMs: repairStartedAtMs,
+      startedAtMs: repairStartedAtMs
     });
     try {
       let smallWindowDp: SmallWindowDpRepairTelemetry | undefined;
@@ -594,39 +608,33 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
         const dpResult = repairSmallWindowWithDp(G, params, incumbent, neighborhoodWindow, {
           maxMutableCells: options.smallWindowDpMaxMutableCells,
           maxCandidates: options.smallWindowDpMaxCandidates,
-          maxStates: options.smallWindowDpMaxStates,
+          maxStates: options.smallWindowDpMaxStates
         });
         smallWindowDp = dpResult.telemetry;
         if (dpResult.status === "optimal" && dpResult.solution) {
           if (dpResult.solution.totalPopulation > incumbent.totalPopulation) {
             incumbent = applyDeterministicDominanceUpgrades(G, params, {
               ...dpResult.solution,
-              optimizer: "lns",
+              optimizer: "lns"
             });
             const populationAfter = incumbent.totalPopulation;
             recordOutcome(
-              buildRepairOutcome(
-                attempt,
-                "improved",
-                populationAfter,
-                populationAfter - populationBefore,
-                undefined,
-                { repairBackend: "small-window-dp", smallWindowDp }
-              )
+              buildRepairOutcome(attempt, "improved", populationAfter, populationAfter - populationBefore, undefined, {
+                repairBackend: "small-window-dp",
+                smallWindowDp
+              })
             );
             stagnantIterations = 0;
             lastImprovementAtMs = performance.now();
             writeRunningSnapshot();
             continue;
           }
-          recordOutcome(buildRepairOutcome(
-            attempt,
-            "neutral",
-            dpResult.solution.totalPopulation,
-            0,
-            undefined,
-            { repairBackend: "small-window-dp", smallWindowDp }
-          ));
+          recordOutcome(
+            buildRepairOutcome(attempt, "neutral", dpResult.solution.totalPopulation, 0, undefined, {
+              repairBackend: "small-window-dp",
+              smallWindowDp
+            })
+          );
           stagnantIterations += 1;
           writeRunningSnapshot();
           continue;
@@ -643,14 +651,14 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
           numWorkers: 1,
           timeLimitSeconds: repairTimeLimitSeconds,
           stopFilePath: options.stopFilePath || undefined,
-          warmStartHint: buildLnsWarmStartHint(incumbent, neighborhoodWindow),
-        },
+          warmStartHint: buildLnsWarmStartHint(incumbent, neighborhoodWindow)
+        }
       });
 
       if (candidate.totalPopulation > incumbent.totalPopulation) {
         incumbent = applyDeterministicDominanceUpgrades(G, params, {
           ...candidate,
-          optimizer: "lns",
+          optimizer: "lns"
         });
         const populationAfter = incumbent.totalPopulation;
         recordOutcome(
@@ -668,14 +676,12 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
         writeRunningSnapshot();
         continue;
       }
-      recordOutcome(buildRepairOutcome(
-        attempt,
-        "neutral",
-        candidate.totalPopulation,
-        0,
-        candidate.cpSatStatus ?? null,
-        { repairBackend: "cp-sat", smallWindowDp }
-      ));
+      recordOutcome(
+        buildRepairOutcome(attempt, "neutral", candidate.totalPopulation, 0, candidate.cpSatStatus ?? null, {
+          repairBackend: "cp-sat",
+          smallWindowDp
+        })
+      );
       stagnantIterations += 1;
       writeRunningSnapshot();
     } catch (error) {
@@ -694,8 +700,8 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
   }
 
   if (
-    options.noImprovementTimeoutSeconds !== null
-    && getStaleSeconds(lastImprovementAtMs) >= options.noImprovementTimeoutSeconds
+    options.noImprovementTimeoutSeconds !== null &&
+    getStaleSeconds(lastImprovementAtMs) >= options.noImprovementTimeoutSeconds
   ) {
     return finish("stale-time-limit");
   }

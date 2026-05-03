@@ -23,6 +23,7 @@ We design a **two-phase approach**: first decide (or assume) a road network that
 ## 3. Phase 1: Road Network
 
 **Goal:** A set of road cells `R` such that:
+
 - All cells in `R` are allowed and connected to the road-anchor boundary via orthogonal moves on `R`.
 - Every cell that might host a building can be made adjacent to some road (we can build roads as needed when placing buildings).
 
@@ -142,13 +143,13 @@ If grid is small:
 
 ## 8. Summary
 
-| Step | Action |
-|------|--------|
-| 1 | Start with the anchored road set (row 0 or column 0). |
-| 2 | Enumerate all valid service and residential placements; mark connectable. |
-| 3 | Greedy place services (by coverage of residential potential). |
-| 4 | Greedy place residentials (by effective population); extend roads as needed. |
-| 5 | Optional: local search to improve total population. |
-| 6 | Return roads, buildings, total population. |
+| Step | Action                                                                       |
+| ---- | ---------------------------------------------------------------------------- |
+| 1    | Start with the anchored road set (row 0 or column 0).                        |
+| 2    | Enumerate all valid service and residential placements; mark connectable.    |
+| 3    | Greedy place services (by coverage of residential potential).                |
+| 4    | Greedy place residentials (by effective population); extend roads as needed. |
+| 5    | Optional: local search to improve total population.                          |
+| 6    | Return roads, buildings, total population.                                   |
 
 This gives a clear, implementable procedure that respects the formal spec (allowed cells, connectivity to row 0 or column 0, building–road adjacency, disjoint buildings) and aims to maximize total city population.

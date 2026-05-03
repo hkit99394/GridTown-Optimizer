@@ -5,7 +5,7 @@ import type {
   Solution,
   SolverParams,
   SolverProgressPortfolioSummary,
-  SolverProgressSummary,
+  SolverProgressSummary
 } from "./types.js";
 
 export interface BuildSolverProgressSummaryOptions {
@@ -31,7 +31,7 @@ function summarizePortfolio(portfolio: CpSatPortfolioSummary | undefined): Solve
     workerCount: portfolio.workerCount,
     completedWorkers: workers.length,
     feasibleWorkers: workers.filter((worker) => worker.feasible).length,
-    selectedWorkerIndex: portfolio.selectedWorkerIndex ?? null,
+    selectedWorkerIndex: portfolio.selectedWorkerIndex ?? null
   };
 }
 
@@ -45,7 +45,10 @@ function getLatestLnsOutcome(solution: Solution): NonNullable<Solution["lnsTelem
   return outcomes[outcomes.length - 1];
 }
 
-function inferActiveStage(solution: Solution, fallbackOptimizer: OptimizerName | null): OptimizerName | AutoStageOptimizerName | null {
+function inferActiveStage(
+  solution: Solution,
+  fallbackOptimizer: OptimizerName | null
+): OptimizerName | AutoStageOptimizerName | null {
   return solution.activeOptimizer ?? solution.autoStage?.activeStage ?? solution.optimizer ?? fallbackOptimizer ?? null;
 }
 
@@ -82,11 +85,15 @@ function inferStopReason(solution: Solution): string | null {
 function inferCurrentScore(solution: Solution): number | null {
   const latestLnsOutcome = getLatestLnsOutcome(solution);
   if (latestLnsOutcome) return latestLnsOutcome.populationAfter;
-  return finiteNumberOrNull(solution.cpSatTelemetry?.incumbentPopulation) ?? finiteNumberOrNull(solution.totalPopulation);
+  return (
+    finiteNumberOrNull(solution.cpSatTelemetry?.incumbentPopulation) ?? finiteNumberOrNull(solution.totalPopulation)
+  );
 }
 
 function inferBestScore(solution: Solution): number | null {
-  return finiteNumberOrNull(solution.totalPopulation) ?? finiteNumberOrNull(solution.cpSatTelemetry?.incumbentPopulation);
+  return (
+    finiteNumberOrNull(solution.totalPopulation) ?? finiteNumberOrNull(solution.cpSatTelemetry?.incumbentPopulation)
+  );
 }
 
 export function buildSolverProgressSummary(
@@ -95,9 +102,9 @@ export function buildSolverProgressSummary(
 ): SolverProgressSummary {
   const telemetry = solution.cpSatTelemetry;
   const elapsedTimeSeconds =
-    roundSeconds(options.elapsedTimeSeconds)
-    ?? roundSeconds(telemetry?.solveWallTimeSeconds)
-    ?? roundSeconds(solution.lnsTelemetry?.elapsedSeconds);
+    roundSeconds(options.elapsedTimeSeconds) ??
+    roundSeconds(telemetry?.solveWallTimeSeconds) ??
+    roundSeconds(solution.lnsTelemetry?.elapsedSeconds);
 
   return {
     currentScore: inferCurrentScore(solution),
@@ -108,7 +115,7 @@ export function buildSolverProgressSummary(
     timeSinceImprovementSeconds: roundSeconds(telemetry?.secondsSinceLastImprovement),
     stopReason: inferStopReason(solution),
     exactGap: finiteNumberOrNull(telemetry?.populationGapUpperBound),
-    portfolioWorkerSummary: summarizePortfolio(solution.cpSatPortfolio),
+    portfolioWorkerSummary: summarizePortfolio(solution.cpSatPortfolio)
   };
 }
 
@@ -125,7 +132,7 @@ export function buildEmptySolverProgressSummary(
     timeSinceImprovementSeconds: null,
     stopReason: null,
     exactGap: null,
-    portfolioWorkerSummary: null,
+    portfolioWorkerSummary: null
   };
 }
 
@@ -143,7 +150,7 @@ export function formatSolverProgressSummary(summary: SolverProgressSummary): str
     `elapsed=${formatProgressNumber(summary.elapsedTimeSeconds, "s")}`,
     `since-improve=${formatProgressNumber(summary.timeSinceImprovementSeconds, "s")}`,
     `stop=${summary.stopReason ?? "n/a"}`,
-    `gap=${formatProgressNumber(summary.exactGap)}`,
+    `gap=${formatProgressNumber(summary.exactGap)}`
   ];
 
   if (summary.portfolioWorkerSummary) {

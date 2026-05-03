@@ -1,8 +1,5 @@
 import type { Grid, Solution } from "../../core/index.js";
-import {
-  stableResidentialPlacementKey,
-  stableServicePlacementKey,
-} from "./candidates.js";
+import { stableResidentialPlacementKey, stableServicePlacementKey } from "./candidates.js";
 
 export function isBetterSearchSolution(candidate: Solution | null, incumbent: Solution | null): boolean {
   if (!candidate) return false;
@@ -39,11 +36,9 @@ export function computePlacementDensityScore(
   const placementCenterR = placement.r + (placement.rows - 1) / 2;
   const placementCenterC = placement.c + (placement.cols - 1) / 2;
   const distanceSquared =
-    (placementCenterR - centerR) * (placementCenterR - centerR)
-    + (placementCenterC - centerC) * (placementCenterC - centerC);
-  const maxDistanceSquared =
-    centerR * centerR
-    + centerC * centerC;
+    (placementCenterR - centerR) * (placementCenterR - centerR) +
+    (placementCenterC - centerC) * (placementCenterC - centerC);
+  const maxDistanceSquared = centerR * centerR + centerC * centerC;
   if (maxDistanceSquared <= 0) return populationWeight;
   const centrality = 1 - Math.min(1, distanceSquared / maxDistanceSquared);
   return populationWeight * centrality;

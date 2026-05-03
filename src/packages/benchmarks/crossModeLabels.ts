@@ -5,6 +5,5 @@ export const MODE_LABELS: Record<CrossModeBenchmarkMode, string> = {
   greedy: "Greedy",
   lns: "LNS",
   "cp-sat": "CP-SAT",
-  "cp-sat-portfolio": "CP-SAT portfolio",
+  "cp-sat-portfolio": "CP-SAT portfolio"
 };
-

@@ -24,14 +24,14 @@ import {
   PRODUCT_WORKFLOW_PROMOTION_SEEDS,
   runCrossModeBenchmarkBudgetAblations,
   runCrossModeBenchmarkSuite,
-  resolveExperimentRegistryGitMetadata,
+  resolveExperimentRegistryGitMetadata
 } from "../../benchmarkApi.js";
 import {
   applyInlineOptionHandlers,
   isCliFlag,
   parseNameList,
   parseNumberList,
-  parsePositiveNumber,
+  parsePositiveNumber
 } from "../../apps/cliParsing.js";
 import { runCliMain } from "../../apps/cliEntrypoint.js";
 import {
@@ -40,18 +40,15 @@ import {
   writeCliJsonOrText,
   writeCliList,
   writeCliRaw,
-  writeCliText,
+  writeCliText
 } from "../../apps/cliOutput.js";
 
-import type {
-  CrossModeBenchmarkMode,
-  CrossModeBenchmarkSuiteResult,
-} from "../../benchmarkApi.js";
+import type { CrossModeBenchmarkMode, CrossModeBenchmarkSuiteResult } from "../../benchmarkApi.js";
 import {
   completeAppendableRegistryEntry,
   defaultCliReplayCommand,
   normalizeRepoRelativePath,
-  writeJsonArtifact,
+  writeJsonArtifact
 } from "./artifactBundleHelpers.js";
 
 interface ParsedBenchmarkArgs {
@@ -164,10 +161,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
       modes = parseModes(value);
     },
     "ablation-policies": (value) => {
-      ablationPolicyNames = parseNameList(
-        value,
-        "name for cross-mode benchmark --ablation-policies"
-      );
+      ablationPolicyNames = parseNameList(value, "name for cross-mode benchmark --ablation-policies");
       budgetAblations = true;
     },
     budget: (value) => {
@@ -199,7 +193,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     },
     "product-registry": (value) => {
       productRegistryPath = value;
-    },
+    }
   };
 
   for (const arg of argv) {
@@ -267,7 +261,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     productRegistryPath,
     productRegister,
     productRegisterDryRun,
-    productPromotionMatrix,
+    productPromotionMatrix
   };
 }
 
@@ -276,18 +270,14 @@ function defaultBenchmarkCommand(argv: readonly string[]): string {
 }
 
 function defaultProductRegistryCommand(argv: readonly string[]): string {
-  const replayArgs = argv.filter((arg) =>
-    arg !== "--product-register"
-    && arg !== "--product-register-dry-run"
-    && !arg.startsWith("--product-registry=")
+  const replayArgs = argv.filter(
+    (arg) =>
+      arg !== "--product-register" && arg !== "--product-register-dry-run" && !arg.startsWith("--product-registry=")
   );
   return defaultBenchmarkCommand(replayArgs);
 }
 
-function prepareScorecardArtifactBundlePaths(
-  artifactDirValue: string,
-  label: string
-): ScorecardArtifactBundlePaths {
+function prepareScorecardArtifactBundlePaths(artifactDirValue: string, label: string): ScorecardArtifactBundlePaths {
   const artifactDir = normalizeRepoRelativePath(artifactDirValue, label);
   const absoluteArtifactDir = path.resolve(process.cwd(), artifactDir);
   fs.mkdirSync(absoluteArtifactDir, { recursive: true });
@@ -298,9 +288,9 @@ function prepareScorecardArtifactBundlePaths(
     artifactPaths: {
       scorecardJson: artifactPath("scorecard.json"),
       scorecardText: artifactPath("scorecard.txt"),
-      telemetryManifestJson: artifactPath("telemetry-manifest.json"),
+      telemetryManifestJson: artifactPath("telemetry-manifest.json")
     },
-    absoluteArtifactPath: (fileName) => path.join(absoluteArtifactDir, fileName),
+    absoluteArtifactPath: (fileName) => path.join(absoluteArtifactDir, fileName)
   };
 }
 
@@ -326,7 +316,7 @@ function writeScorecardArtifactBundle(
   const telemetryManifest = buildCrossModeBenchmarkTelemetryManifest(result, {
     command: defaultBenchmarkCommand(argv),
     git: resolveExperimentRegistryGitMetadata(),
-    hardware: captureExperimentRegistryHardwareMetadata(),
+    hardware: captureExperimentRegistryHardwareMetadata()
   });
 
   writeScorecardArtifactFiles(result, artifacts, telemetryManifest);
@@ -338,7 +328,7 @@ function writeScorecardArtifactBundle(
     caseCount: result.caseCount,
     modeCount: result.modeCount,
     budgetsSeconds: [...result.budgetsSeconds],
-    seeds: [...result.seeds],
+    seeds: [...result.seeds]
   };
 }
 
@@ -361,14 +351,13 @@ function registerProductArtifacts(
       registryPath,
       dryRun,
       appended: false,
-      runId: completedEntry.runId,
+      runId: completedEntry.runId
     };
   }
 
   throw new Error(
     "--product-register cannot append artifacts generated in the same command; use --product-register-dry-run, commit the artifact bundle, then run `npm run experiment-registry -- append --entry=<artifact-dir>/registry-entry-draft.json`."
   );
-
 }
 
 function writeProductArtifactBundle(
@@ -382,7 +371,10 @@ function writeProductArtifactBundle(
   const artifacts = prepareScorecardArtifactBundlePaths(args.productArtifactDir, "--product-artifact-dir");
   const evidenceSummaryJson = path.posix.join(artifacts.artifactDir, "evidence-summary.json");
   const workflowReplayJson = path.posix.join(artifacts.artifactDir, "workflow-replay.json");
-  const workflowReplayTelemetryManifestJson = path.posix.join(artifacts.artifactDir, "workflow-replay-telemetry-manifest.json");
+  const workflowReplayTelemetryManifestJson = path.posix.join(
+    artifacts.artifactDir,
+    "workflow-replay-telemetry-manifest.json"
+  );
   const registryEntryDraftJson = path.posix.join(artifacts.artifactDir, "registry-entry-draft.json");
   const evidenceSummary = buildCrossModeProductWorkflowEvidenceSummary(result);
   const command = args.productRegistryCommand ?? defaultProductRegistryCommand(argv);
@@ -391,13 +383,13 @@ function writeProductArtifactBundle(
   const telemetryManifest = buildCrossModeBenchmarkTelemetryManifest(result, {
     command,
     git,
-    hardware,
+    hardware
   });
   const workflowReplay = buildCrossModeProductWorkflowReplayMetrics({ result });
   const workflowReplayTelemetryManifest = buildCrossModeProductWorkflowReplayTelemetryManifest(result, {
     command,
     git,
-    hardware,
+    hardware
   });
   const registryEntryDraft = buildCrossModeProductWorkflowRegistryEntryDraft(result, {
     runId: args.productRunId,
@@ -408,20 +400,22 @@ function writeProductArtifactBundle(
       evidenceSummaryJson,
       workflowReplayJson,
       workflowReplayTelemetryManifestJson,
-      artifacts.artifactPaths.telemetryManifestJson,
+      artifacts.artifactPaths.telemetryManifestJson
     ],
     decision: args.productDecision,
-    summary: args.productSummary,
+    summary: args.productSummary
   });
 
   writeScorecardArtifactFiles(result, artifacts, telemetryManifest);
   writeJsonArtifact(artifacts.absoluteArtifactPath("evidence-summary.json"), evidenceSummary);
   writeJsonArtifact(artifacts.absoluteArtifactPath("workflow-replay.json"), workflowReplay);
-  writeJsonArtifact(artifacts.absoluteArtifactPath("workflow-replay-telemetry-manifest.json"), workflowReplayTelemetryManifest);
+  writeJsonArtifact(
+    artifacts.absoluteArtifactPath("workflow-replay-telemetry-manifest.json"),
+    workflowReplayTelemetryManifest
+  );
   writeJsonArtifact(artifacts.absoluteArtifactPath("registry-entry-draft.json"), registryEntryDraft);
-  const registry = args.productRegister || args.productRegisterDryRun
-    ? registerProductArtifacts(registryEntryDraft, args)
-    : undefined;
+  const registry =
+    args.productRegister || args.productRegisterDryRun ? registerProductArtifacts(registryEntryDraft, args) : undefined;
 
   return {
     artifactDir: artifacts.artifactDir,
@@ -432,7 +426,7 @@ function writeProductArtifactBundle(
       workflowReplayJson,
       workflowReplayTelemetryManifestJson,
       telemetryManifestJson: artifacts.artifactPaths.telemetryManifestJson,
-      registryEntryDraftJson,
+      registryEntryDraftJson
     },
     runId: registryEntryDraft.runId,
     generatedAt: result.generatedAt,
@@ -440,7 +434,7 @@ function writeProductArtifactBundle(
     modeCount: result.modeCount,
     budgetsSeconds: [...result.budgetsSeconds],
     seeds: [...result.seeds],
-    registry,
+    registry
   };
 }
 
@@ -449,7 +443,7 @@ function formatScorecardArtifactManifest(manifest: ScorecardArtifactManifest): s
     `Cross-mode scorecard artifacts written to ${manifest.artifactDir}`,
     `scorecard-json=${manifest.artifactPaths.scorecardJson}`,
     `scorecard-text=${manifest.artifactPaths.scorecardText}`,
-    `telemetry-manifest=${manifest.artifactPaths.telemetryManifestJson}`,
+    `telemetry-manifest=${manifest.artifactPaths.telemetryManifestJson}`
   ].join("\n");
 }
 
@@ -463,12 +457,10 @@ function formatProductArtifactManifest(manifest: ProductArtifactManifest): strin
     `workflow-replay=${manifest.artifactPaths.workflowReplayJson}`,
     `workflow-replay-telemetry-manifest=${manifest.artifactPaths.workflowReplayTelemetryManifestJson}`,
     `telemetry-manifest=${manifest.artifactPaths.telemetryManifestJson}`,
-    `registry-entry-draft=${manifest.artifactPaths.registryEntryDraftJson}`,
+    `registry-entry-draft=${manifest.artifactPaths.registryEntryDraftJson}`
   ];
   if (manifest.registry !== undefined) {
-    lines.push(
-      `registry-${manifest.registry.appended ? "appended" : "dry-run"}=${manifest.registry.registryPath}`
-    );
+    lines.push(`registry-${manifest.registry.appended ? "appended" : "dry-run"}=${manifest.registry.registryPath}`);
   }
   return lines.join("\n");
 }
@@ -503,7 +495,10 @@ export async function runCrossModeBenchmarkCli(): Promise<void> {
   if (args.productArtifactDir !== undefined && args.traceJsonl) {
     throw new Error("--product-artifact-dir cannot be combined with --trace-jsonl.");
   }
-  if ((args.productRegister || args.productRegisterDryRun || args.productRegistryPath !== undefined) && !args.productCorpus) {
+  if (
+    (args.productRegister || args.productRegisterDryRun || args.productRegistryPath !== undefined) &&
+    !args.productCorpus
+  ) {
     throw new Error("--product-register, --product-register-dry-run, and --product-registry require --product-corpus.");
   }
   if (args.productPromotionMatrix && !args.productCorpus) {
@@ -527,13 +522,11 @@ export async function runCrossModeBenchmarkCli(): Promise<void> {
     throw new Error("--product-promotion-matrix cannot be combined with --budget-ablation.");
   }
   if (
-    args.productPromotionMatrix
-    && (
-      args.modes !== undefined
-      || args.budgetSeconds !== undefined
-      || args.budgetsSeconds !== undefined
-      || args.seeds !== undefined
-    )
+    args.productPromotionMatrix &&
+    (args.modes !== undefined ||
+      args.budgetSeconds !== undefined ||
+      args.budgetsSeconds !== undefined ||
+      args.seeds !== undefined)
   ) {
     throw new Error("--product-promotion-matrix cannot be combined with --modes, --budget, --budgets, or --seeds.");
   }
@@ -554,7 +547,7 @@ export async function runCrossModeBenchmarkCli(): Promise<void> {
       policyNames: args.ablationPolicyNames,
       budgetSeconds: args.budgetSeconds,
       budgetsSeconds: args.budgetsSeconds,
-      seeds: args.seeds,
+      seeds: args.seeds
     });
 
     if (args.json) {
@@ -576,7 +569,7 @@ export async function runCrossModeBenchmarkCli(): Promise<void> {
     modes: args.productPromotionMatrix ? [...PRODUCT_WORKFLOW_PROMOTION_MODES] : args.modes,
     budgetSeconds: args.productPromotionMatrix ? undefined : args.budgetSeconds,
     budgetsSeconds: args.productPromotionMatrix ? [...PRODUCT_WORKFLOW_PROMOTION_BUDGETS_SECONDS] : args.budgetsSeconds,
-    seeds: args.productPromotionMatrix ? [...PRODUCT_WORKFLOW_PROMOTION_SEEDS] : args.seeds,
+    seeds: args.productPromotionMatrix ? [...PRODUCT_WORKFLOW_PROMOTION_SEEDS] : args.seeds
   });
 
   if (args.artifactDir !== undefined) {

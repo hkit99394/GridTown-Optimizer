@@ -2,7 +2,7 @@ import {
   formatBenchmarkRate as formatRate,
   formatBenchmarkSeconds as formatSeconds,
   formatBenchmarkSignedNumber as formatSigned,
-  uniqueBenchmarkValues,
+  uniqueBenchmarkValues
 } from "./benchmarkOptions.js";
 
 export type DeterministicAblationGateSuiteName = "greedy-deterministic" | "lns-neighborhood";
@@ -123,7 +123,7 @@ function evidenceFromSummary(summary: DeterministicAblationGateVariantSummaryInp
     bestPopulationDeltaCaseName: summary.bestPopulationDeltaCaseName,
     bestPopulationDeltaSeed: summary.bestPopulationDeltaSeed,
     worstPopulationDeltaCaseName: summary.worstPopulationDeltaCaseName,
-    worstPopulationDeltaSeed: summary.worstPopulationDeltaSeed,
+    worstPopulationDeltaSeed: summary.worstPopulationDeltaSeed
   };
   if (isLnsVariantSummary(summary)) {
     evidence.firstWindowMovementRate = summary.firstWindowMovementRate;
@@ -134,17 +134,21 @@ function evidenceFromSummary(summary: DeterministicAblationGateVariantSummaryInp
 }
 
 function hasPopulationRegression(summary: DeterministicAblationGateVariantSummaryInput): boolean {
-  return summary.regressionRate > 0
-    || summary.worstPopulationDeltaVsBaseline < 0
-    || summary.medianPopulationDeltaVsBaseline < 0
-    || summary.worstDecilePopulationDeltaVsBaseline < 0;
+  return (
+    summary.regressionRate > 0 ||
+    summary.worstPopulationDeltaVsBaseline < 0 ||
+    summary.medianPopulationDeltaVsBaseline < 0 ||
+    summary.worstDecilePopulationDeltaVsBaseline < 0
+  );
 }
 
 function hasRepeatedNonRegressingWin(summary: DeterministicAblationGateVariantSummaryInput): boolean {
-  return summary.winRate > 0
-    && summary.medianPopulationDeltaVsBaseline > 0
-    && summary.worstDecilePopulationDeltaVsBaseline >= 0
-    && summary.worstPopulationDeltaVsBaseline >= 0;
+  return (
+    summary.winRate > 0 &&
+    summary.medianPopulationDeltaVsBaseline > 0 &&
+    summary.worstDecilePopulationDeltaVsBaseline >= 0 &&
+    summary.worstPopulationDeltaVsBaseline >= 0
+  );
 }
 
 function hasMeanWallClockCost(summary: DeterministicAblationGateVariantSummaryInput): boolean {
@@ -156,9 +160,11 @@ function hasIsolatedPopulationWin(summary: DeterministicAblationGateVariantSumma
 }
 
 function hasWindowMovement(summary: DeterministicAblationGateVariantSummaryInput): boolean {
-  return (summary.firstWindowMovementRate ?? 0) > 0
-    || (summary.windowSequenceMovementRate ?? 0) > 0
-    || (summary.anchorCoordinateMovementRate ?? 0) > 0;
+  return (
+    (summary.firstWindowMovementRate ?? 0) > 0 ||
+    (summary.windowSequenceMovementRate ?? 0) > 0 ||
+    (summary.anchorCoordinateMovementRate ?? 0) > 0
+  );
 }
 
 function decideVariant(
@@ -188,15 +194,17 @@ function decideVariant(
     );
   } else if (hasRepeatedNonRegressingWin(summary) && hasMeanWallClockCost(summary)) {
     decision = "learning-target";
-    nextAction = "Rerun at fixed wall-clock budgets or collect labels before promotion; population lift currently carries mean time cost.";
+    nextAction =
+      "Rerun at fixed wall-clock budgets or collect labels before promotion; population lift currently carries mean time cost.";
     reasons.push(
       `Population lift is non-regressing but slower on average: median-delta=${formatSigned(summary.medianPopulationDeltaVsBaseline)}, wall-delta-mean=${formatSeconds(summary.meanWallClockDeltaVsBaselineSeconds ?? 0)}.`
     );
   } else if (hasIsolatedPopulationWin(summary)) {
     decision = "learning-target";
-    nextAction = suite === "lns-neighborhood"
-      ? "Collect counterfactual LNS window replay labels before learned window ranking."
-      : "Collect ordering labels before trying learned Greedy ranking.";
+    nextAction =
+      suite === "lns-neighborhood"
+        ? "Collect counterfactual LNS window replay labels before learned window ranking."
+        : "Collect ordering labels before trying learned Greedy ranking.";
     reasons.push(
       `Has isolated wins but not enough repeated lift for deterministic promotion: best-delta=${formatSigned(summary.bestPopulationDeltaVsBaseline)}.`
     );
@@ -218,7 +226,7 @@ function decideVariant(
     decision,
     nextAction,
     reasons,
-    evidence,
+    evidence
   };
 }
 
@@ -234,7 +242,7 @@ function buildSuiteReport(
     seeds: [...result.seeds],
     selectedCaseNames: [...result.selectedCaseNames],
     variants: [...result.variants],
-    decisions: result.variantSummaries.map((summary) => decideVariant(suite, summary)),
+    decisions: result.variantSummaries.map((summary) => decideVariant(suite, summary))
   };
 }
 
@@ -276,13 +284,11 @@ export function buildDeterministicAblationGateReport(
     schemaVersion: 1,
     reportType: "deterministic-ablation-gate",
     suites,
-    nextActions: nextActionsForSuites(suites),
+    nextActions: nextActionsForSuites(suites)
   };
 }
 
-export function formatDeterministicAblationGateReport(
-  report: DeterministicAblationGateReport
-): string {
+export function formatDeterministicAblationGateReport(report: DeterministicAblationGateReport): string {
   const lines: string[] = [];
   lines.push("=== Deterministic Ablation Gate Report ===");
   for (const suite of report.suites) {
@@ -291,9 +297,10 @@ export function formatDeterministicAblationGateReport(
     );
     for (const decision of suite.decisions) {
       const evidence = decision.evidence;
-      const windowEvidence = evidence.firstWindowMovementRate === undefined
-        ? ""
-        : ` first-window-move-rate=${formatRate(evidence.firstWindowMovementRate)} window-sequence-move-rate=${formatRate(evidence.windowSequenceMovementRate ?? 0)} anchor-coordinate-move-rate=${formatRate(evidence.anchorCoordinateMovementRate ?? 0)}`;
+      const windowEvidence =
+        evidence.firstWindowMovementRate === undefined
+          ? ""
+          : ` first-window-move-rate=${formatRate(evidence.firstWindowMovementRate)} window-sequence-move-rate=${formatRate(evidence.windowSequenceMovementRate ?? 0)} anchor-coordinate-move-rate=${formatRate(evidence.anchorCoordinateMovementRate ?? 0)}`;
       lines.push(
         `  ${decision.variantName}: ${decision.decision} win-rate=${formatRate(evidence.winRate)} regression-rate=${formatRate(evidence.regressionRate)} median-delta=${formatSigned(evidence.medianPopulationDeltaVsBaseline)} worst-delta=${formatSigned(evidence.worstPopulationDeltaVsBaseline)} best-delta=${formatSigned(evidence.bestPopulationDeltaVsBaseline)} wall-mean=${formatSeconds(evidence.meanWallClockSeconds)} wall-delta-mean=${formatSeconds(evidence.meanWallClockDeltaVsBaselineSeconds)}${windowEvidence}`
       );

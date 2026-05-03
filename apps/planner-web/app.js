@@ -10,7 +10,7 @@ const SAMPLE_GRID = [
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
   [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
-  [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+  [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0]
 ];
 
 const DEFAULT_SERVICE_TYPES = [
@@ -25,7 +25,7 @@ const DEFAULT_SERVICE_TYPES = [
   { name: "Park", bonus: "215", size: "2x3", effective: "12x13", avail: "1" },
   { name: "Congress Center", bonus: "270", size: "4x2", effective: "14x12", avail: "1" },
   { name: "Cinema", bonus: "189", size: "2x2", effective: "10x10", avail: "1" },
-  { name: "Supermarket", bonus: "386", size: "3x2", effective: "13x12", avail: "1" },
+  { name: "Supermarket", bonus: "386", size: "3x2", effective: "13x12", avail: "1" }
 ];
 
 const DEFAULT_RESIDENTIAL_TYPES = [
@@ -52,7 +52,7 @@ const DEFAULT_RESIDENTIAL_TYPES = [
   { name: "Heritage House", resident: "300/900", size: "2x2", avail: "2" },
   { name: "Vintage Vista", resident: "140/420", size: "2x2", avail: "2" },
   { name: "Serenade Pointe", resident: "500/1500", size: "2x2", avail: "1" },
-  { name: "Serene Heights", resident: "150/450", size: "2x2", avail: "1" },
+  { name: "Serene Heights", resident: "150/450", size: "2x2", avail: "1" }
 ];
 
 const CONFIG_STORAGE_KEY = "city-builder:planner-configs:v1";
@@ -70,7 +70,7 @@ const plannerModules = {
   manualLayout: window.PlannerManualLayout,
   results: window.CityBuilderResults,
   requestBuilder: window.CityBuilderRequestBuilder,
-  workbench: window.CityBuilderWorkbench,
+  workbench: window.CityBuilderWorkbench
 };
 
 if (Object.values(plannerModules).some((module) => !module)) {
@@ -103,7 +103,7 @@ const {
   parseServiceCatalogEntry,
   readOptionalInteger,
   serializeResidentialTypeForCatalog,
-  serializeServiceTypeForCatalog,
+  serializeServiceTypeForCatalog
 } = plannerModules.shared;
 const { createPlannerShellController } = plannerModules.shell;
 const { createPlannerPersistence } = plannerModules.persistence;
@@ -121,7 +121,7 @@ const state = {
   residentialTypes: DEFAULT_RESIDENTIAL_TYPES.map((entry) => ({ ...entry })),
   availableBuildings: {
     services: "",
-    residentials: "",
+    residentials: ""
   },
   // Standalone Greedy intentionally uses the heavy heuristic profile; Auto clamps
   // these values when it only needs a fast seed stage.
@@ -138,7 +138,7 @@ const state = {
     exhaustiveServiceSearch: true,
     diagnostics: false,
     serviceExactPoolLimit: 22,
-    serviceExactMaxCombinations: 12000,
+    serviceExactMaxCombinations: 12000
   },
   cpSat: {
     timeLimitSeconds: "",
@@ -153,8 +153,8 @@ const state = {
       randomSeeds: "",
       perWorkerTimeLimitSeconds: "",
       perWorkerNumWorkers: 1,
-      randomizeSearch: true,
-    },
+      randomizeSearch: true
+    }
   },
   lns: {
     iterations: 12,
@@ -162,10 +162,10 @@ const state = {
     neighborhoodRows: 6,
     neighborhoodCols: 8,
     repairTimeLimitSeconds: 5,
-    useDisplayedSeed: true,
+    useDisplayedSeed: true
   },
   auto: {
-    wallClockLimitSeconds: "",
+    wallClockLimitSeconds: ""
   },
   isPainting: false,
   isSolving: false,
@@ -191,7 +191,7 @@ const state = {
     isApplying: false,
     edited: false,
     pendingValidation: false,
-    status: "",
+    status: ""
   },
   expansionAdvice: {
     isRunning: false,
@@ -199,8 +199,8 @@ const state = {
     nextResidentialText: "",
     status: "",
     result: null,
-    error: "",
-  },
+    error: ""
+  }
 };
 
 const elements = {
@@ -332,7 +332,7 @@ const elements = {
   resizeGridButton: document.querySelector("#resizeGridButton"),
   fillAllowedButton: document.querySelector("#fillAllowedButton"),
   clearGridButton: document.querySelector("#clearGridButton"),
-  sampleGridButton: document.querySelector("#sampleGridButton"),
+  sampleGridButton: document.querySelector("#sampleGridButton")
 };
 
 let expansionAdviceController = null;
@@ -347,7 +347,7 @@ function readExpansionCandidateFlagsFallback() {
     hasServiceCandidate,
     hasResidentialCandidate,
     hasAnyCandidate: hasServiceCandidate || hasResidentialCandidate,
-    hasBothCandidates: hasServiceCandidate && hasResidentialCandidate,
+    hasBothCandidates: hasServiceCandidate && hasResidentialCandidate
   };
 }
 
@@ -356,8 +356,9 @@ const shellController = createPlannerShellController({
   elements,
   callbacks: {
     hasSelectedBuilding: () => resultsController?.hasSelectedBuilding(),
-    readExpansionCandidateFlags: () => expansionAdviceController?.readExpansionCandidateFlags() ?? readExpansionCandidateFlagsFallback(),
-  },
+    readExpansionCandidateFlags: () =>
+      expansionAdviceController?.readExpansionCandidateFlags() ?? readExpansionCandidateFlagsFallback()
+  }
 });
 
 function clearRenderedResultState() {
@@ -387,12 +388,7 @@ function clearExpansionAdvice() {
   state.expansionAdvice.error = "";
 }
 
-const RESULT_EXPLAINABILITY_MODES = new Set([
-  "layout",
-  "service-value",
-  "placement-opportunity",
-  "connectivity-risk",
-]);
+const RESULT_EXPLAINABILITY_MODES = new Set(["layout", "service-value", "placement-opportunity", "connectivity-risk"]);
 
 function normalizeResultExplainabilityMode(mode) {
   return RESULT_EXPLAINABILITY_MODES.has(mode) ? mode : "layout";
@@ -423,15 +419,15 @@ requestBuilderController = createPlannerRequestBuilderController({
     getSavedLayoutElapsedMs,
     parseResidentialCatalogEntry,
     parseServiceCatalogEntry,
-    readOptionalInteger,
-  },
+    readOptionalInteger
+  }
 });
 
 workbenchController = createPlannerWorkbenchController({
   state,
   elements,
   constants: {
-    sampleGrid: SAMPLE_GRID,
+    sampleGrid: SAMPLE_GRID
   },
   helpers: {
     cloneGrid,
@@ -441,15 +437,15 @@ workbenchController = createPlannerWorkbenchController({
     normalizeOptimizer,
     parseCatalogImportText,
     serializeResidentialTypeForCatalog,
-    serializeServiceTypeForCatalog,
+    serializeServiceTypeForCatalog
   },
   callbacks: {
     getOptimizerLabel: shellController.getOptimizerLabel,
     refreshResultOverlay: () => resultsController?.refreshResultOverlay(),
     renderExpansionAdvice: () => expansionAdviceController?.renderExpansionAdvice(),
     setSolveState: shellController.setSolveState,
-    updatePayloadPreview: () => requestBuilderController?.updatePayloadPreview(),
-  },
+    updatePayloadPreview: () => requestBuilderController?.updatePayloadPreview()
+  }
 });
 
 expansionAdviceController = createExpansionAdviceController({
@@ -457,7 +453,7 @@ expansionAdviceController = createExpansionAdviceController({
   elements,
   constants: {
     COMPARISON_PROGRESS_HINT_INTERVAL_MS,
-    SOLVE_STATUS_POLL_INTERVAL_MS,
+    SOLVE_STATUS_POLL_INTERVAL_MS
   },
   helpers: {
     buildCpSatContinuationModelInput,
@@ -466,26 +462,26 @@ expansionAdviceController = createExpansionAdviceController({
     createSolveRequestId,
     delay,
     parseResidentialCatalogEntry,
-    parseServiceCatalogEntry,
+    parseServiceCatalogEntry
   },
   callbacks: {
     buildSolveRequest: requestBuilderController.buildSolveRequest,
     getDisplayedLayoutCheckpoint: requestBuilderController.getDisplayedLayoutCheckpoint,
     getDisplayedLayoutSourceLabel: requestBuilderController.getDisplayedLayoutSourceLabel,
     getOptimizerLabel: shellController.getOptimizerLabel,
-    syncActionAvailability: shellController.syncActionAvailability,
-  },
+    syncActionAvailability: shellController.syncActionAvailability
+  }
 });
 
 resultsController = createPlannerResultsController({
   state,
   elements,
   constants: {
-    LIVE_SNAPSHOT_REFRESH_INTERVAL_MS,
+    LIVE_SNAPSHOT_REFRESH_INTERVAL_MS
   },
   helpers: {
     cloneJson,
-    formatElapsedTime,
+    formatElapsedTime
   },
   callbacks: {
     applyMatrixLayout: workbenchController.applyMatrixLayout,
@@ -493,8 +489,8 @@ resultsController = createPlannerResultsController({
     getOptimizerLabel: shellController.getOptimizerLabel,
     renderExpansionAdvice: expansionAdviceController.renderExpansionAdvice,
     setSolveState: shellController.setSolveState,
-    syncActionAvailability: shellController.syncActionAvailability,
-  },
+    syncActionAvailability: shellController.syncActionAvailability
+  }
 });
 
 const solveRuntimeController = createSolveRuntime({
@@ -502,13 +498,13 @@ const solveRuntimeController = createSolveRuntime({
   elements,
   constants: {
     LIVE_SNAPSHOT_REFRESH_INTERVAL_MS,
-    SOLVE_STATUS_POLL_INTERVAL_MS,
+    SOLVE_STATUS_POLL_INTERVAL_MS
   },
   helpers: {
     createSolveRequestId,
     delay,
     formatElapsedTime,
-    normalizeElapsedMs,
+    normalizeElapsedMs
   },
   callbacks: {
     buildSolveRequest: requestBuilderController.buildSolveRequest,
@@ -517,8 +513,8 @@ const solveRuntimeController = createSolveRuntime({
     getDisplayedLayoutCheckpoint: requestBuilderController.getDisplayedLayoutCheckpoint,
     getOptimizerLabel: shellController.getOptimizerLabel,
     renderResults: resultsController.renderResults,
-    setSolveState: shellController.setSolveState,
-  },
+    setSolveState: shellController.setSolveState
+  }
 });
 
 const persistenceController = createPlannerPersistence({
@@ -529,7 +525,7 @@ const persistenceController = createPlannerPersistence({
     LAYOUT_STORAGE_KEY,
     defaultResidentialTypes: DEFAULT_RESIDENTIAL_TYPES,
     defaultServiceTypes: DEFAULT_SERVICE_TYPES,
-    sampleGrid: SAMPLE_GRID,
+    sampleGrid: SAMPLE_GRID
   },
   helpers: {
     buildCpSatWarmStartCheckpoint,
@@ -542,7 +538,7 @@ const persistenceController = createPlannerPersistence({
     getSavedLayoutPopulation,
     isGridLike,
     normalizeElapsedMs,
-    normalizeOptimizer,
+    normalizeOptimizer
   },
   callbacks: {
     applySolveRequestToPlanner: workbenchController.applySolveRequestToPlanner,
@@ -552,8 +548,8 @@ const persistenceController = createPlannerPersistence({
     resetSolveTimer: solveRuntimeController.resetSolveTimer,
     setResultElapsed: solveRuntimeController.setResultElapsed,
     setSolveState: shellController.setSolveState,
-    syncPlannerFromState: workbenchController.syncPlannerFromState,
-  },
+    syncPlannerFromState: workbenchController.syncPlannerFromState
+  }
 });
 
 function init() {
@@ -665,7 +661,7 @@ function init() {
     ["greedyExhaustiveServiceSearch", "exhaustiveServiceSearch", "checkbox"],
     ["greedyDiagnostics", "diagnostics", "checkbox"],
     ["greedyServiceExactPoolLimit", "serviceExactPoolLimit", "number"],
-    ["greedyServiceExactMaxCombinations", "serviceExactMaxCombinations", "number"],
+    ["greedyServiceExactMaxCombinations", "serviceExactMaxCombinations", "number"]
   ];
 
   greedyBindings.forEach(([elementKey, stateKey, inputType]) => {
@@ -680,7 +676,7 @@ function init() {
     ["lnsMaxNoImprovementIterations", "maxNoImprovementIterations"],
     ["lnsNeighborhoodRows", "neighborhoodRows"],
     ["lnsNeighborhoodCols", "neighborhoodCols"],
-    ["lnsRepairTimeLimitSeconds", "repairTimeLimitSeconds"],
+    ["lnsRepairTimeLimitSeconds", "repairTimeLimitSeconds"]
   ];
 
   lnsBindings.forEach(([elementKey, stateKey]) => {
@@ -707,7 +703,7 @@ function init() {
     ["cpSatNoImprovementTimeoutSeconds", "noImprovementTimeoutSeconds", "number"],
     ["cpSatRandomSeed", "randomSeed", "number"],
     ["cpSatNumWorkers", "numWorkers", "number"],
-    ["cpSatLogSearchProgress", "logSearchProgress", "checkbox"],
+    ["cpSatLogSearchProgress", "logSearchProgress", "checkbox"]
   ];
 
   cpSatBindings.forEach(([elementKey, stateKey, inputType]) => {
@@ -733,7 +729,7 @@ function init() {
     ["cpSatPortfolioRandomSeeds", "randomSeeds", "text"],
     ["cpSatPortfolioPerWorkerTimeLimitSeconds", "perWorkerTimeLimitSeconds", "number"],
     ["cpSatPortfolioPerWorkerNumWorkers", "perWorkerNumWorkers", "number"],
-    ["cpSatPortfolioRandomizeSearch", "randomizeSearch", "checkbox"],
+    ["cpSatPortfolioRandomizeSearch", "randomizeSearch", "checkbox"]
   ];
 
   cpSatPortfolioBindings.forEach(([elementKey, stateKey, inputType]) => {

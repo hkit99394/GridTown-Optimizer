@@ -1,10 +1,7 @@
 const assert = require("node:assert/strict");
 const path = require("node:path");
 
-const {
-  createRouteTestHandler,
-  invoke,
-} = require("./routeTestServer.cjs");
+const { createRouteTestHandler, invoke } = require("./routeTestServer.cjs");
 
 async function testHealthRoute(handler) {
   const result = await invoke(handler, { method: "GET", url: "/api/health" });
@@ -24,7 +21,7 @@ async function testStaticPlannerModules(handler) {
     ["/plannerResults.js", /CityBuilderResults/],
     ["/plannerRequestBuilder.js", /CityBuilderRequestBuilder/],
     ["/plannerWorkbench.js", /CityBuilderWorkbench/],
-    ["/app.js", /const state =/],
+    ["/app.js", /const state =/]
   ];
 
   for (const [url, bodyPattern] of expectedStaticModules) {
@@ -36,7 +33,7 @@ async function testStaticPlannerModules(handler) {
 
 async function testUnexpectedStaticServerErrorsReturnInternalServerError() {
   const { handler } = createRouteTestHandler({
-    webRoot: path.resolve(__dirname, "../../apps/planner-web-does-not-exist"),
+    webRoot: path.resolve(__dirname, "../../apps/planner-web-does-not-exist")
   });
 
   const result = await invoke(handler, { method: "GET", url: "/" });

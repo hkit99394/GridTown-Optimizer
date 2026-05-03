@@ -3,6 +3,7 @@
 ## Goal
 
 Keep the planner easy to extend by separating:
+
 - browser state + bootstrap wiring
 - planner UI modules by responsibility
 - HTTP request handling from server startup
@@ -15,12 +16,14 @@ Keep the planner easy to extend by separating:
 Thin bootstrap and orchestration layer.
 
 Owns:
+
 - initial planner state
 - DOM element lookup
 - controller creation
 - event wiring
 
 Does not own:
+
 - cross-module action availability rules
 - result rendering details
 - expansion comparison logic
@@ -34,6 +37,7 @@ Does not own:
 Shared planner shell and UI-state coordination.
 
 Owns:
+
 - optimizer display labels
 - solve-status text updates
 - cross-module action/button availability
@@ -44,6 +48,7 @@ Owns:
 Shared browser helpers and stable utility logic.
 
 Owns:
+
 - JSON/grid cloning
 - checkpoint and fingerprint helpers
 - catalog import parsing
@@ -54,6 +59,7 @@ Owns:
 Planner payload and hint/seed preparation.
 
 Owns:
+
 - displayed-layout checkpoint lookup
 - CP-SAT hint status
 - LNS seed status
@@ -65,6 +71,7 @@ Owns:
 Grid, catalog, and summary workbench.
 
 Owns:
+
 - grid painting and resize
 - preset application
 - solver field synchronization
@@ -79,6 +86,7 @@ Owns:
 Local storage for saved inputs and saved layouts.
 
 Owns:
+
 - save/load/delete input setups
 - save/load/delete solved layouts
 - restoring saved planner state
@@ -88,6 +96,7 @@ Owns:
 Long-running solve lifecycle.
 
 Owns:
+
 - solve timer
 - start/poll/stop flow
 - progress messages
@@ -98,6 +107,7 @@ Owns:
 Decision and expansion comparison workflow.
 
 Owns:
+
 - parsing typed service/residential candidates
 - building comparison scenarios
 - running background comparison solves
@@ -108,6 +118,7 @@ Owns:
 Solved output rendering and manual layout editing.
 
 Owns:
+
 - result badges and validation display
 - placement and remaining-availability rendering
 - solved-map rendering and overlays
@@ -122,6 +133,7 @@ Owns:
 Local server entrypoints.
 
 Owns:
+
 - compatibility entry from the historical `dist/webServer.js` path
 - creating the HTTP server in `src/apps/planner-server/webServer.ts`
 - binding `createPlannerRequestHandler`
@@ -132,6 +144,7 @@ Owns:
 Thin backend composition layer.
 
 Owns:
+
 - constructing the planner route pipeline
 - binding `SolveJobManager` into route handlers
 - delegating API requests vs static asset requests
@@ -142,6 +155,7 @@ Owns:
 Planner API route handlers.
 
 Owns:
+
 - `/api/health`
 - `/api/solve`
 - `/api/layout/evaluate`
@@ -156,12 +170,14 @@ Owns:
 Planner HTTP request contracts.
 
 Owns:
+
 - request payload interfaces
 - route payload shape guards
 - browser-supplied local runtime parameter sanitization
 - serialized solution payload assertions/materialization re-exports
 
 Does not own:
+
 - solver/manual-layout response assembly
 - route orchestration
 - request body parsing
@@ -171,6 +187,7 @@ Does not own:
 Planner response assembly.
 
 Owns:
+
 - solve/manual-layout response shaping
 - validation projection for the browser contract
 - stats projection for solver and manual-layout outputs
@@ -182,6 +199,7 @@ Owns:
 HTTP transport helpers shared by planner routes.
 
 Owns:
+
 - request-body parsing limits
 - JSON parsing and validation helpers
 - JSON/text response helpers
@@ -193,6 +211,7 @@ Owns:
 Planner static asset serving.
 
 Owns:
+
 - static asset path map
 - content-type lookup
 - static file reads for the local planner
@@ -202,6 +221,7 @@ Owns:
 Background solve job orchestration.
 
 Owns:
+
 - job lifecycle
 - cancellation state
 - snapshot recovery
@@ -212,6 +232,7 @@ Owns:
 Persistent solve-progress log writer.
 
 Owns:
+
 - progress-log document schema
 - pending, live-snapshot, and final-result samples
 - final solution serialization for long-running solve recovery/review
@@ -222,6 +243,7 @@ Owns:
 Single optimizer dispatch boundary.
 
 Owns:
+
 - optimizer lookup
 - sync/background solver adapter selection
 
@@ -238,6 +260,7 @@ preserve existing `dist/*.js` command paths.
 Auto stage orchestration.
 
 Owns:
+
 - `greedy -> LNS -> CP-SAT` stage order
 - incumbent acceptance and weak-cycle stopping
 - shared sync/background Auto plan execution
@@ -248,6 +271,7 @@ Owns:
 Auto budget and option policy.
 
 Owns:
+
 - Auto option normalization
 - Greedy seed-stage clamps
 - LNS stage budget slicing
@@ -258,6 +282,7 @@ Owns:
 Auto terminal result recovery.
 
 Owns:
+
 - terminal stop-reason descriptions
 - recovered active-stage selection
 - final Auto metadata normalization from snapshots and progress logs
@@ -267,6 +292,7 @@ Owns:
 LNS neighborhood planning.
 
 Owns:
+
 - anchor ranking for weak services, upgrade headroom, and frontier congestion
 - repair-window generation
 - neighborhood escalation after stagnant iterations
@@ -277,6 +303,7 @@ Owns:
 Shared solution persistence helpers.
 
 Owns:
+
 - serializing `Solution` objects for HTTP, logs, and worker boundaries
 - materializing serialized solutions back into `Set`-backed runtime objects
 - snapshot file writes for long-running solver flows
@@ -288,6 +315,7 @@ Owns:
 Benchmark, label, and experiment-registry command implementations.
 
 Owns:
+
 - benchmark-specific argument parsing and command routing
 - benchmark scorecard, label, and registry command output formatting
 - importing benchmark functionality through `src/benchmarkApi.ts`
@@ -304,11 +332,13 @@ the matching implementation under `src/tools/cli`.
 Grouped optimizer correctness and regression runner.
 
 Owns:
+
 - test group orchestration for core, Greedy, CP-SAT, Auto, LNS, and benchmark coverage
 - high-level solver behavior assertions that compose several package modules
 - compatibility coverage for public solver and benchmark entrypoints
 
 Does not own:
+
 - CP-SAT Python helper-introspection boilerplate
 
 ### `tests/optimizers/cpSatPythonHelperAssertions.cjs`
@@ -316,6 +346,7 @@ Does not own:
 Focused CP-SAT Python helper assertions.
 
 Owns:
+
 - locating and loading `python/cp_sat_solver.py` inside throwaway Python snippets
 - shared `spawnSync`/JSON assertion plumbing for Python helper inspections
 - population-bound, service-pruning, border-capacity, gate, candidate-reduction,
@@ -326,6 +357,7 @@ Owns:
 Planner browser-module test loader.
 
 Owns:
+
 - fake DOM element construction for browser-module regression tests
 - VM loading for `apps/planner-web` modules
 - composing planner shared, request-builder, workbench, persistence, results,
@@ -334,6 +366,7 @@ Owns:
 ## Placement Rules
 
 When adding a new behavior:
+
 - If it changes shared button availability or solver status messaging across modules, put it in `plannerShell.js`.
 - If it changes how planner payloads are built, put it in `plannerRequestBuilder.js`.
 - If it changes grid/catalog editing or summary behavior, put it in `plannerWorkbench.js`.
@@ -442,6 +475,7 @@ semantic.
    folder names.
 
 Success criteria:
+
 - `npm test` still covers solver correctness, HTTP routes, and benchmark
   registry behavior after each migration stage.
 - Existing CLI and web entrypoints keep working through compatibility wrappers
@@ -453,6 +487,7 @@ Success criteria:
 ## Migration Progress
 
 Started on 2026-04-30:
+
 - Added `src/solverApi.ts` as the dedicated solver/domain public entry point.
 - Added `src/benchmarkApi.ts` as the dedicated benchmark, label, and
   experiment-registry public entry point.
@@ -516,6 +551,7 @@ Started on 2026-04-30:
 ## Current Follow-Up
 
 Reviewed on 2026-05-02:
+
 - The source-layout migration stages above are complete.
 - Boundary guards now cover the benchmark split, supported script entry
   wrappers, removed legacy deep-import wrappers, package dependency direction,
@@ -533,10 +569,12 @@ Reviewed on 2026-05-02:
 
 The remaining cleanup candidates should stay benchmark- or behavior-driven
 rather than migration prerequisites:
+
 - `src/packages/solvers/greedy/solver.ts`: split stable profiling, scratch-state, and local-search helpers only when benchmark evidence justifies the boundary.
 - `apps/planner-web/plannerResults.js`: separate manual-edit command state from rendering/overlay projection.
 
 Cleanup completed during this migration pass:
+
 - `src/packages/solvers/auto/solver.ts`: stage policy and terminal metadata normalization now live in `src/packages/solvers/auto/stagePolicy.ts` and `src/packages/solvers/auto/terminal.ts`.
 - `tests/optimizers/optimizerHarness.cjs`: CP-SAT Python helper inspections now
   live behind `tests/optimizers/cpSatPythonHelperAssertions.cjs`, keeping the

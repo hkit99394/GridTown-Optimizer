@@ -2,23 +2,17 @@ import { resolve } from "node:path";
 
 import {
   materializeSerializedBackgroundSolution,
-  startSerializedSolutionSolverProcess,
+  startSerializedSolutionSolverProcess
 } from "../background/serializedSolutionBridge.js";
 import { startJsonBackgroundSolve } from "../background/runner.js";
 import {
   defaultPythonExecutable,
   buildCpSatRequest,
   materializeCpSatSolution,
-  parseCpSatRawSolution,
+  parseCpSatRawSolution
 } from "../../solvers/cp-sat/solver.js";
 
-import type {
-  BackgroundSolveHandle,
-  Grid,
-  SerializedSolution,
-  Solution,
-  SolverParams,
-} from "../../core/index.js";
+import type { BackgroundSolveHandle, Grid, SerializedSolution, Solution, SolverParams } from "../../core/index.js";
 
 export type CpSatSolveHandle = BackgroundSolveHandle;
 export type GreedySolveHandle = BackgroundSolveHandle;
@@ -33,7 +27,7 @@ export function startGreedySolve(G: Grid, params: SolverParams): GreedySolveHand
     solverOptionKey: "greedy",
     workerScriptPath: resolve(__dirname, "../background/greedyWorker.js"),
     stoppedBeforeFeasibleMessage: "Greedy solve was stopped before finding a feasible solution.",
-    noSolutionMessage: "Greedy backend exited without returning a solution.",
+    noSolutionMessage: "Greedy backend exited without returning a solution."
   });
 }
 
@@ -45,10 +39,10 @@ function materializeLnsSolution(raw: SerializedSolution, stoppedByUser: boolean)
       ? {
           lnsTelemetry: {
             ...solution.lnsTelemetry,
-            stopReason: "cancelled",
-          },
+            stopReason: "cancelled"
+          }
         }
-      : {}),
+      : {})
   };
 }
 
@@ -62,7 +56,7 @@ export function startLnsSolve(G: Grid, params: SolverParams): LnsSolveHandle {
     workerScriptPath: resolve(__dirname, "../background/lnsWorker.js"),
     materializeSolution: materializeLnsSolution,
     stoppedBeforeFeasibleMessage: "LNS solve was stopped before finding a feasible solution.",
-    noSolutionMessage: "LNS backend exited without returning a solution.",
+    noSolutionMessage: "LNS backend exited without returning a solution."
   });
 }
 
@@ -82,22 +76,22 @@ export function startCpSatSolve(G: Grid, params: SolverParams): CpSatSolveHandle
         cpSat: {
           ...(params.cpSat ?? {}),
           stopFilePath,
-          snapshotFilePath,
-        },
+          snapshotFilePath
+        }
       }),
     parseRaw: parseCpSatRawSolution,
     materializeSolution: (raw, stoppedByUser) =>
       materializeCpSatSolution(G, params, {
         ...raw,
-        stoppedByUser: stoppedByUser || Boolean(raw.stoppedByUser),
+        stoppedByUser: stoppedByUser || Boolean(raw.stoppedByUser)
       }),
     getSnapshotState: (raw) => ({
       hasFeasibleSolution: Boolean(raw),
       totalPopulation: raw?.totalPopulation ?? null,
-      cpSatStatus: raw?.status ?? null,
+      cpSatStatus: raw?.status ?? null
     }),
     readStoppedByUser: (raw) => Boolean(raw.stoppedByUser),
     stoppedBeforeFeasibleMessage: "CP-SAT solve was stopped before finding a feasible solution.",
-    noSolutionMessage: "CP-SAT backend exited without returning a solution.",
+    noSolutionMessage: "CP-SAT backend exited without returning a solution."
   });
 }

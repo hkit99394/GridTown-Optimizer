@@ -18,5 +18,5 @@ if (require.main === module) {
 
 module.exports = {
   OPTIMIZER_TEST_GROUP_NAMES,
-  runOptimizerTestGroup,
+  runOptimizerTestGroup
 };

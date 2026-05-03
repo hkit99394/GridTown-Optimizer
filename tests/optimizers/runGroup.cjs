@@ -12,5 +12,5 @@ function runOptimizerGroupCli(groupName, successMessage) {
 }
 
 module.exports = {
-  runOptimizerGroupCli,
+  runOptimizerGroupCli
 };

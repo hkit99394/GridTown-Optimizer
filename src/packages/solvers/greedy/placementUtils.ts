@@ -1,11 +1,5 @@
-import {
-  cellKey,
-  forEachRectangleCell,
-} from "../../core/index.js";
-import type {
-  ResidentialPlacement,
-  ServicePlacement,
-} from "../../core/index.js";
+import { cellKey, forEachRectangleCell } from "../../core/index.js";
+import type { ResidentialPlacement, ServicePlacement } from "../../core/index.js";
 import type { ConnectivityProbe, RoadConnectionProbe } from "./attemptState.js";
 
 export type OccupancyScratch = {
@@ -21,10 +15,7 @@ export function forEachPlacementCell(
   forEachRectangleCell(placement.r, placement.c, placement.rows, placement.cols, (r, c) => visit(cellKey(r, c)));
 }
 
-export function forEachCachedPlacementCell(
-  footprintKeys: readonly string[],
-  visit: (key: string) => void
-): void {
+export function forEachCachedPlacementCell(footprintKeys: readonly string[], visit: (key: string) => void): void {
   for (const key of footprintKeys) visit(key);
 }
 
@@ -75,7 +66,7 @@ export function createOccupancyScratch(base: Set<string>): OccupancyScratch {
   return {
     cells: new Set(base),
     addedKeys: new Set(),
-    removedKeys: new Set(),
+    removedKeys: new Set()
   };
 }
 

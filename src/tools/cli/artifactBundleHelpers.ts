@@ -5,12 +5,10 @@ import {
   buildExperimentRegistryEntry,
   ExperimentRegistryValidationError,
   validateExperimentRegistryEntry,
-  validateExperimentRegistryFile,
+  validateExperimentRegistryFile
 } from "../../benchmarkApi.js";
 
-import type {
-  ExperimentRegistryEntry,
-} from "../../benchmarkApi.js";
+import type { ExperimentRegistryEntry } from "../../benchmarkApi.js";
 
 export function normalizeRepoRelativePath(value: string, label: string): string {
   const normalized = path.normalize(value);
@@ -37,7 +35,7 @@ function existingRegistryHasRunId(registryPath: string, runId: unknown): boolean
   const registryResult = validateExperimentRegistryFile(registryPath, {
     rootDir: process.cwd(),
     validateArtifactPaths: true,
-    strict: false,
+    strict: false
   });
   if (registryResult.errorCount > 0) {
     throw new ExperimentRegistryValidationError("Existing experiment registry is invalid.", registryResult.issues);
@@ -51,12 +49,12 @@ export function completeAppendableRegistryEntry(
   invalidMessage: string
 ): ExperimentRegistryEntry {
   const completedEntry = buildExperimentRegistryEntry(registryEntryDraft, {
-    rootDir: process.cwd(),
+    rootDir: process.cwd()
   });
   const validation = validateExperimentRegistryEntry(completedEntry, {
     rootDir: process.cwd(),
     validateArtifactPaths: true,
-    strict: true,
+    strict: true
   });
   if (validation.entry === undefined) {
     throw new ExperimentRegistryValidationError(invalidMessage, validation.issues);
@@ -69,8 +67,8 @@ export function completeAppendableRegistryEntry(
         code: "duplicate-run-id",
         message: `Duplicate runId '${validation.entry.runId}' already exists in '${registryPath}'.`,
         runId: validation.entry.runId,
-        field: "runId",
-      },
+        field: "runId"
+      }
     ]);
   }
 

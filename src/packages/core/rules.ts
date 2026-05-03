@@ -16,7 +16,7 @@ export function getBuildingLimits(params: SolverParams): {
 } {
   return {
     maxServices: params.availableBuildings?.services ?? params.maxServices,
-    maxResidentials: params.availableBuildings?.residentials ?? params.maxResidentials,
+    maxResidentials: params.availableBuildings?.residentials ?? params.maxResidentials
   };
 }
 

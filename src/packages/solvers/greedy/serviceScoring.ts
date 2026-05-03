@@ -1,27 +1,14 @@
-import type {
-  Grid,
-  GreedyProfileCounters,
-  ServiceCandidate,
-  SolverParams,
-} from "../../core/index.js";
-import {
-  buildServiceEffectZoneSet,
-  getResidentialBaseMax,
-  isBoostedByService,
-  overlaps,
-} from "../../core/index.js";
+import type { Grid, GreedyProfileCounters, ServiceCandidate, SolverParams } from "../../core/index.js";
+import { buildServiceEffectZoneSet, getResidentialBaseMax, isBoostedByService, overlaps } from "../../core/index.js";
 import { buildFootprintCandidateIndexFromKeys } from "./candidatePools.js";
-import {
-  getCandidateTypeIndex,
-  serviceCandidateKey,
-} from "./candidates.js";
+import { getCandidateTypeIndex, serviceCandidateKey } from "./candidates.js";
 import type { ResidentialCandidatesList } from "./candidates.js";
 import { rectanglesOverlap } from "./placementUtils.js";
 import type {
   GreedyPrecomputedIndexes,
   MaybeStop,
   ResidentialCandidateStat,
-  ResidentialScoringGroup,
+  ResidentialScoringGroup
 } from "./types.js";
 
 function marginalPopulationGain(base: number, max: number, currentBoost: number, extraBoost: number): number {
@@ -30,9 +17,7 @@ function marginalPopulationGain(base: number, max: number, currentBoost: number,
   return Math.max(0, boostedPopulation - currentPopulation);
 }
 
-function residentialScoringGroupKey(
-  residential: Pick<ResidentialCandidateStat, "r" | "c" | "rows" | "cols">
-): string {
+function residentialScoringGroupKey(residential: Pick<ResidentialCandidateStat, "r" | "c" | "rows" | "cols">): string {
   return [residential.r, residential.c, residential.rows, residential.cols].join(",");
 }
 
@@ -52,22 +37,20 @@ export function buildResidentialScoringGroups(
         c: residential.c,
         rows: residential.rows,
         cols: residential.cols,
-        variants: [],
+        variants: []
       };
       groupsByKey.set(key, group);
     }
     group.variants.push({
       base: residential.base,
       max: residential.max,
-      typeIndex: residential.typeIndex,
+      typeIndex: residential.typeIndex
     });
   }
 
   const groups = [...groupsByKey.values()];
   for (const group of groups) {
-    group.variants.sort(
-      (a, b) => b.max - a.max || b.base - a.base || a.typeIndex - b.typeIndex
-    );
+    group.variants.sort((a, b) => b.max - a.max || b.base - a.base || a.typeIndex - b.typeIndex);
   }
   if (profileCounters) {
     profileCounters.precompute.residentialScoringGroups += groups.length;
@@ -93,7 +76,7 @@ export function buildServiceCoverageIndex(
       r: service.r - service.range,
       c: service.c - service.range,
       rows: service.rows + 2 * service.range,
-      cols: service.cols + 2 * service.range,
+      cols: service.cols + 2 * service.range
     };
     const footprint = { r: service.r, c: service.c, rows: service.rows, cols: service.cols };
     const coveredGroupIndices: number[] = [];
@@ -151,7 +134,7 @@ function buildServiceAvailabilityPressureByType(
         typeIndex,
         gain,
         max: variant.max,
-        base: variant.base,
+        base: variant.base
       });
       activeTypeIndices.add(typeIndex);
     }
@@ -174,17 +157,14 @@ function buildServiceAvailabilityPressureByType(
         const option = options[index];
         const weightedGain = option.gain * (multipliers.get(option.typeIndex) ?? 1);
         if (
-          weightedGain > chosenWeightedGain
-          || (weightedGain === chosenWeightedGain && (
-            option.gain > chosen.gain
-            || (option.gain === chosen.gain && (
-              option.max > chosen.max
-              || (option.max === chosen.max && (
-                option.base > chosen.base
-                || (option.base === chosen.base && option.typeIndex < chosen.typeIndex)
-              ))
-            ))
-          ))
+          weightedGain > chosenWeightedGain ||
+          (weightedGain === chosenWeightedGain &&
+            (option.gain > chosen.gain ||
+              (option.gain === chosen.gain &&
+                (option.max > chosen.max ||
+                  (option.max === chosen.max &&
+                    (option.base > chosen.base ||
+                      (option.base === chosen.base && option.typeIndex < chosen.typeIndex)))))))
         ) {
           chosen = option;
           chosenWeightedGain = weightedGain;

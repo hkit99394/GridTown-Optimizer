@@ -3,7 +3,14 @@ import { join, resolve } from "node:path";
 
 import { renderSolutionMap } from "../../core/index.js";
 import { buildEmptySolverProgressSummary, buildSolverProgressSummary } from "../../core/index.js";
-import type { Grid, OptimizerName, SerializedSolution, Solution, SolveProgressLogEntry, SolverParams } from "../../core/index.js";
+import type {
+  Grid,
+  OptimizerName,
+  SerializedSolution,
+  Solution,
+  SolveProgressLogEntry,
+  SolverParams
+} from "../../core/index.js";
 
 type PersistedSolveStatus = "running" | "completed" | "stopped" | "failed";
 
@@ -93,26 +100,25 @@ export function progressLogPayloadsEqual(left: unknown, right: unknown): boolean
   return JSON.stringify(left ?? null) === JSON.stringify(right ?? null);
 }
 
-export function progressLogSolutionSampleChanged(
-  lastEntry: SolveProgressLogEntry | null,
-  solution: Solution
-): boolean {
+export function progressLogSolutionSampleChanged(lastEntry: SolveProgressLogEntry | null, solution: Solution): boolean {
   if (!lastEntry || !lastEntry.hasFeasibleSolution) return true;
 
   const bestPopulationUpperBound = solution.cpSatTelemetry?.bestPopulationUpperBound ?? null;
   const populationGapUpperBound = solution.cpSatTelemetry?.populationGapUpperBound ?? null;
   const latestLnsOutcome = getLastLnsOutcome(solution);
 
-  return lastEntry.totalPopulation !== solution.totalPopulation
-    || (lastEntry.activeOptimizer ?? null) !== (solution.activeOptimizer ?? null)
-    || lastEntry.cpSatStatus !== (solution.cpSatStatus ?? null)
-    || lastEntry.bestPopulationUpperBound !== bestPopulationUpperBound
-    || lastEntry.populationGapUpperBound !== populationGapUpperBound
-    || (lastEntry.lnsStopReason ?? null) !== (solution.lnsTelemetry?.stopReason ?? null)
-    || (lastEntry.lnsNeighborhoodStatus ?? null) !== (latestLnsOutcome?.status ?? null)
-    || (lastEntry.lnsNeighborhoodImprovement ?? null) !== (latestLnsOutcome?.improvement ?? null)
-    || (lastEntry.lnsNeighborhoodsCompleted ?? null) !== (solution.lnsTelemetry?.iterationsCompleted ?? null)
-    || !progressLogPayloadsEqual(lastEntry.autoStage, solution.autoStage);
+  return (
+    lastEntry.totalPopulation !== solution.totalPopulation ||
+    (lastEntry.activeOptimizer ?? null) !== (solution.activeOptimizer ?? null) ||
+    lastEntry.cpSatStatus !== (solution.cpSatStatus ?? null) ||
+    lastEntry.bestPopulationUpperBound !== bestPopulationUpperBound ||
+    lastEntry.populationGapUpperBound !== populationGapUpperBound ||
+    (lastEntry.lnsStopReason ?? null) !== (solution.lnsTelemetry?.stopReason ?? null) ||
+    (lastEntry.lnsNeighborhoodStatus ?? null) !== (latestLnsOutcome?.status ?? null) ||
+    (lastEntry.lnsNeighborhoodImprovement ?? null) !== (latestLnsOutcome?.improvement ?? null) ||
+    (lastEntry.lnsNeighborhoodsCompleted ?? null) !== (solution.lnsTelemetry?.iterationsCompleted ?? null) ||
+    !progressLogPayloadsEqual(lastEntry.autoStage, solution.autoStage)
+  );
 }
 
 function cloneProgressLogInput<T>(value: T): T {
@@ -125,8 +131,8 @@ function resolveCapturedAt(value: string | undefined): string {
 
 function solveStartedAtElapsedMsFromTelemetry(solution: Solution, elapsedMs: number): number | null {
   const telemetrySolveWallTimeSeconds =
-    typeof solution.cpSatTelemetry?.solveWallTimeSeconds === "number"
-      && Number.isFinite(solution.cpSatTelemetry.solveWallTimeSeconds)
+    typeof solution.cpSatTelemetry?.solveWallTimeSeconds === "number" &&
+    Number.isFinite(solution.cpSatTelemetry.solveWallTimeSeconds)
       ? solution.cpSatTelemetry.solveWallTimeSeconds
       : null;
   return telemetrySolveWallTimeSeconds === null
@@ -162,7 +168,7 @@ function buildLnsProgressNote(solution: Solution): string | null {
 function serializeSolutionForLog(solution: Solution): SerializedSolution {
   return {
     ...solution,
-    roads: Array.from(solution.roads),
+    roads: Array.from(solution.roads)
   };
 }
 
@@ -176,33 +182,33 @@ function syncSerializedSolutionToFinalEntry(
 
   if (solution.autoStage || solution.activeOptimizer || finalEntry.autoStage || finalEntry.activeOptimizer) {
     const activeOptimizer =
-      solution.activeOptimizer
-      ?? finalEntry.activeOptimizer
-      ?? finalEntry.autoStage?.activeStage
-      ?? undefined;
-    const resolvedActiveStage = solution.autoStage?.activeStage ?? activeOptimizer ?? finalEntry.autoStage?.activeStage ?? null;
-    const autoStage = solution.autoStage || finalEntry.autoStage
-      ? {
-          ...(finalEntry.autoStage ?? {}),
-          ...(solution.autoStage ?? {}),
-          requestedOptimizer: solution.autoStage?.requestedOptimizer ?? finalEntry.autoStage?.requestedOptimizer ?? "auto",
-          activeStage: resolvedActiveStage,
-          stageIndex: solution.autoStage?.stageIndex ?? finalEntry.autoStage?.stageIndex ?? 0,
-          cycleIndex: solution.autoStage?.cycleIndex ?? finalEntry.autoStage?.cycleIndex ?? 0,
-          consecutiveWeakCycles:
-            solution.autoStage?.consecutiveWeakCycles ?? finalEntry.autoStage?.consecutiveWeakCycles ?? 0,
-          lastCycleImprovementRatio:
-            solution.autoStage?.lastCycleImprovementRatio ?? finalEntry.autoStage?.lastCycleImprovementRatio ?? null,
-          generatedSeeds: solution.autoStage?.generatedSeeds ?? finalEntry.autoStage?.generatedSeeds ?? [],
-          ...(solution.autoStage?.stopReason == null && finalEntry.autoStage?.stopReason != null
-            ? { stopReason: finalEntry.autoStage.stopReason }
-            : {}),
-        }
-      : undefined;
+      solution.activeOptimizer ?? finalEntry.activeOptimizer ?? finalEntry.autoStage?.activeStage ?? undefined;
+    const resolvedActiveStage =
+      solution.autoStage?.activeStage ?? activeOptimizer ?? finalEntry.autoStage?.activeStage ?? null;
+    const autoStage =
+      solution.autoStage || finalEntry.autoStage
+        ? {
+            ...(finalEntry.autoStage ?? {}),
+            ...(solution.autoStage ?? {}),
+            requestedOptimizer:
+              solution.autoStage?.requestedOptimizer ?? finalEntry.autoStage?.requestedOptimizer ?? "auto",
+            activeStage: resolvedActiveStage,
+            stageIndex: solution.autoStage?.stageIndex ?? finalEntry.autoStage?.stageIndex ?? 0,
+            cycleIndex: solution.autoStage?.cycleIndex ?? finalEntry.autoStage?.cycleIndex ?? 0,
+            consecutiveWeakCycles:
+              solution.autoStage?.consecutiveWeakCycles ?? finalEntry.autoStage?.consecutiveWeakCycles ?? 0,
+            lastCycleImprovementRatio:
+              solution.autoStage?.lastCycleImprovementRatio ?? finalEntry.autoStage?.lastCycleImprovementRatio ?? null,
+            generatedSeeds: solution.autoStage?.generatedSeeds ?? finalEntry.autoStage?.generatedSeeds ?? [],
+            ...(solution.autoStage?.stopReason == null && finalEntry.autoStage?.stopReason != null
+              ? { stopReason: finalEntry.autoStage.stopReason }
+              : {})
+          }
+        : undefined;
     syncedSolution = {
       ...syncedSolution,
       ...(activeOptimizer ? { activeOptimizer } : {}),
-      ...(autoStage ? { autoStage } : {}),
+      ...(autoStage ? { autoStage } : {})
     };
   }
 
@@ -215,12 +221,14 @@ function syncSerializedSolutionToFinalEntry(
       : null;
   const finalSolveWallTimeSeconds =
     typeof finalEntry.solveWallTimeSeconds === "number" ? finalEntry.solveWallTimeSeconds : null;
-  const userTimeSeconds = finalSolveWallTimeSeconds === null
-    ? currentTelemetry.userTimeSeconds
-    : currentSolveWallTimeSeconds === null
-      ? finalSolveWallTimeSeconds
-      : roundTelemetrySeconds(currentTelemetry.userTimeSeconds + Math.max(0, finalSolveWallTimeSeconds - currentSolveWallTimeSeconds))
-        ?? currentTelemetry.userTimeSeconds;
+  const userTimeSeconds =
+    finalSolveWallTimeSeconds === null
+      ? currentTelemetry.userTimeSeconds
+      : currentSolveWallTimeSeconds === null
+        ? finalSolveWallTimeSeconds
+        : (roundTelemetrySeconds(
+            currentTelemetry.userTimeSeconds + Math.max(0, finalSolveWallTimeSeconds - currentSolveWallTimeSeconds)
+          ) ?? currentTelemetry.userTimeSeconds);
 
   return {
     ...syncedSolution,
@@ -234,8 +242,9 @@ function syncSerializedSolutionToFinalEntry(
       bestPopulationUpperBound: finalEntry.bestPopulationUpperBound ?? currentTelemetry.bestPopulationUpperBound,
       populationGapUpperBound: finalEntry.populationGapUpperBound ?? currentTelemetry.populationGapUpperBound,
       lastImprovementAtSeconds: finalEntry.lastImprovementAtSeconds ?? currentTelemetry.lastImprovementAtSeconds,
-      secondsSinceLastImprovement: finalEntry.secondsSinceLastImprovement ?? currentTelemetry.secondsSinceLastImprovement,
-    },
+      secondsSinceLastImprovement:
+        finalEntry.secondsSinceLastImprovement ?? currentTelemetry.secondsSinceLastImprovement
+    }
   };
 }
 
@@ -254,9 +263,8 @@ function buildProgressEntry(
     ? {
         lnsStopReason: solution.lnsTelemetry.stopReason,
         lnsNeighborhoodStatus: lastLnsOutcome?.status ?? null,
-        lnsNeighborhoodImprovement:
-          typeof lastLnsOutcome?.improvement === "number" ? lastLnsOutcome.improvement : null,
-        lnsNeighborhoodsCompleted: solution.lnsTelemetry.iterationsCompleted,
+        lnsNeighborhoodImprovement: typeof lastLnsOutcome?.improvement === "number" ? lastLnsOutcome.improvement : null,
+        lnsNeighborhoodsCompleted: solution.lnsTelemetry.iterationsCompleted
       }
     : {};
   const elapsedMs = normalizeElapsedMs(options.elapsedMs);
@@ -271,9 +279,10 @@ function buildProgressEntry(
 
   if (state.solveStartedAtElapsedMs !== null) {
     const derivedSolveWallTimeSeconds = Math.max(0, (elapsedMs - state.solveStartedAtElapsedMs) / 1000);
-    solveWallTimeSeconds = snapshotSolveWallTimeSeconds === null
-      ? derivedSolveWallTimeSeconds
-      : Math.max(snapshotSolveWallTimeSeconds, derivedSolveWallTimeSeconds);
+    solveWallTimeSeconds =
+      snapshotSolveWallTimeSeconds === null
+        ? derivedSolveWallTimeSeconds
+        : Math.max(snapshotSolveWallTimeSeconds, derivedSolveWallTimeSeconds);
   }
 
   if (lastImprovementAtSeconds !== null && solveWallTimeSeconds !== null) {
@@ -281,8 +290,8 @@ function buildProgressEntry(
   } else if (snapshotSecondsSinceLastImprovement !== null && solveWallTimeSeconds !== null) {
     secondsSinceLastImprovement = Math.max(
       0,
-      snapshotSecondsSinceLastImprovement
-        + Math.max(0, solveWallTimeSeconds - (snapshotSolveWallTimeSeconds ?? solveWallTimeSeconds))
+      snapshotSecondsSinceLastImprovement +
+        Math.max(0, solveWallTimeSeconds - (snapshotSolveWallTimeSeconds ?? solveWallTimeSeconds))
     );
   }
 
@@ -295,9 +304,8 @@ function buildProgressEntry(
         cpSatTelemetry: {
           ...telemetry,
           solveWallTimeSeconds: roundedSolveWallTimeSeconds ?? telemetry.solveWallTimeSeconds,
-          secondsSinceLastImprovement:
-            roundedSecondsSinceLastImprovement ?? telemetry.secondsSinceLastImprovement,
-        },
+          secondsSinceLastImprovement: roundedSecondsSinceLastImprovement ?? telemetry.secondsSinceLastImprovement
+        }
       }
     : solution;
 
@@ -315,7 +323,7 @@ function buildProgressEntry(
     progressSummary: buildSolverProgressSummary(progressSolution, {
       elapsedTimeSeconds: elapsedMs / 1000,
       fallbackOptimizer: optimizer,
-      params: state.params,
+      params: state.params
     }),
     bestPopulationUpperBound:
       typeof telemetry?.bestPopulationUpperBound === "number" ? telemetry.bestPopulationUpperBound : null,
@@ -324,31 +332,33 @@ function buildProgressEntry(
     solveWallTimeSeconds: roundedSolveWallTimeSeconds,
     lastImprovementAtSeconds: roundedLastImprovementAtSeconds,
     secondsSinceLastImprovement: roundedSecondsSinceLastImprovement,
-    note: buildLnsProgressNote(solution),
+    note: buildLnsProgressNote(solution)
   };
 }
 
 function entriesMatch(left: SolveProgressLogEntry | undefined, right: SolveProgressLogEntry): boolean {
   if (!left) return false;
-  return left.elapsedMs === right.elapsedMs
-    && left.source === right.source
-    && left.optimizer === right.optimizer
-    && (left.activeOptimizer ?? null) === (right.activeOptimizer ?? null)
-    && left.hasFeasibleSolution === right.hasFeasibleSolution
-    && left.totalPopulation === right.totalPopulation
-    && left.cpSatStatus === right.cpSatStatus
-    && (left.lnsStopReason ?? null) === (right.lnsStopReason ?? null)
-    && (left.lnsNeighborhoodStatus ?? null) === (right.lnsNeighborhoodStatus ?? null)
-    && (left.lnsNeighborhoodImprovement ?? null) === (right.lnsNeighborhoodImprovement ?? null)
-    && (left.lnsNeighborhoodsCompleted ?? null) === (right.lnsNeighborhoodsCompleted ?? null)
-    && progressLogPayloadsEqual(left.progressSummary, right.progressSummary)
-    && left.bestPopulationUpperBound === right.bestPopulationUpperBound
-    && left.populationGapUpperBound === right.populationGapUpperBound
-    && left.solveWallTimeSeconds === right.solveWallTimeSeconds
-    && left.lastImprovementAtSeconds === right.lastImprovementAtSeconds
-    && left.secondsSinceLastImprovement === right.secondsSinceLastImprovement
-    && progressLogPayloadsEqual(left.autoStage, right.autoStage)
-    && (left.note ?? null) === (right.note ?? null);
+  return (
+    left.elapsedMs === right.elapsedMs &&
+    left.source === right.source &&
+    left.optimizer === right.optimizer &&
+    (left.activeOptimizer ?? null) === (right.activeOptimizer ?? null) &&
+    left.hasFeasibleSolution === right.hasFeasibleSolution &&
+    left.totalPopulation === right.totalPopulation &&
+    left.cpSatStatus === right.cpSatStatus &&
+    (left.lnsStopReason ?? null) === (right.lnsStopReason ?? null) &&
+    (left.lnsNeighborhoodStatus ?? null) === (right.lnsNeighborhoodStatus ?? null) &&
+    (left.lnsNeighborhoodImprovement ?? null) === (right.lnsNeighborhoodImprovement ?? null) &&
+    (left.lnsNeighborhoodsCompleted ?? null) === (right.lnsNeighborhoodsCompleted ?? null) &&
+    progressLogPayloadsEqual(left.progressSummary, right.progressSummary) &&
+    left.bestPopulationUpperBound === right.bestPopulationUpperBound &&
+    left.populationGapUpperBound === right.populationGapUpperBound &&
+    left.solveWallTimeSeconds === right.solveWallTimeSeconds &&
+    left.lastImprovementAtSeconds === right.lastImprovementAtSeconds &&
+    left.secondsSinceLastImprovement === right.secondsSinceLastImprovement &&
+    progressLogPayloadsEqual(left.autoStage, right.autoStage) &&
+    (left.note ?? null) === (right.note ?? null)
+  );
 }
 
 export class SolveProgressLogWriter {
@@ -377,16 +387,16 @@ export class SolveProgressLogWriter {
       grid: {
         rows: options.grid.length,
         cols: options.grid[0]?.length ?? 0,
-        allowedCells: countAllowedCells(options.grid),
+        allowedCells: countAllowedCells(options.grid)
       },
       input: {
         grid: cloneProgressLogInput(options.grid),
-        params: cloneProgressLogInput(options.params),
+        params: cloneProgressLogInput(options.params)
       },
       entries: [],
       message: null,
       error: null,
-      finalResult: null,
+      finalResult: null
     };
     this.flush();
   }
@@ -405,26 +415,38 @@ export class SolveProgressLogWriter {
       solveStartedAtElapsedMsFromTelemetry(solution, elapsedMs)
     );
 
-    return buildProgressEntry(solution, this.optimizer, {
-      ...options,
-      elapsedMs,
-    }, {
-      solveStartedAtElapsedMs,
-      params: this.document.input.params,
-    });
+    return buildProgressEntry(
+      solution,
+      this.optimizer,
+      {
+        ...options,
+        elapsedMs
+      },
+      {
+        solveStartedAtElapsedMs,
+        params: this.document.input.params
+      }
+    );
   }
 
   appendSolutionSample(solution: Solution, options: AppendProgressLogEntryOptions): void {
     const elapsedMs = normalizeElapsedMs(options.elapsedMs);
     this.observeSolutionClock(solution, elapsedMs);
 
-    this.appendEntry(buildProgressEntry(solution, this.optimizer, {
-      ...options,
-      elapsedMs,
-    }, {
-      solveStartedAtElapsedMs: this.solveStartedAtElapsedMs,
-      params: this.document.input.params,
-    }));
+    this.appendEntry(
+      buildProgressEntry(
+        solution,
+        this.optimizer,
+        {
+          ...options,
+          elapsedMs
+        },
+        {
+          solveStartedAtElapsedMs: this.solveStartedAtElapsedMs,
+          params: this.document.input.params
+        }
+      )
+    );
   }
 
   appendPendingSample(options: AppendPendingProgressLogEntryOptions): void {
@@ -442,7 +464,7 @@ export class SolveProgressLogWriter {
       solveWallTimeSeconds: null,
       lastImprovementAtSeconds: null,
       secondsSinceLastImprovement: null,
-      note: options.note ?? "Solve started. Waiting for the first feasible solution.",
+      note: options.note ?? "Solve started. Waiting for the first feasible solution."
     });
   }
 
@@ -457,12 +479,15 @@ export class SolveProgressLogWriter {
     this.flush();
   }
 
-  finish(status: PersistedSolveStatus, options: {
-    finishedAtMs: number;
-    solution?: Solution | null;
-    message?: string | null;
-    error?: string | null;
-  }): void {
+  finish(
+    status: PersistedSolveStatus,
+    options: {
+      finishedAtMs: number;
+      solution?: Solution | null;
+      message?: string | null;
+      error?: string | null;
+    }
+  ): void {
     this.document.status = status;
     this.document.finishedAt = new Date(options.finishedAtMs).toISOString();
     this.document.updatedAt = this.document.finishedAt;
@@ -480,7 +505,7 @@ export class SolveProgressLogWriter {
         stoppedByUser: Boolean(options.solution.stoppedByUser),
         solution: serializedSolution,
         mapRows,
-        mapText: mapRows.join("\n"),
+        mapText: mapRows.join("\n")
       };
     } else {
       this.document.finalResult = null;

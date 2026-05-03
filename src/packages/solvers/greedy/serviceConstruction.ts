@@ -3,17 +3,13 @@ import type {
   GreedyProfileCounters,
   ServiceCandidate,
   ServicePlacement,
-  SolverParams,
+  SolverParams
 } from "../../core/index.js";
-import {
-  applyRoadConnectionProbe,
-  createRoadProbeScratch,
-  overlaps,
-} from "../../core/index.js";
+import { applyRoadConnectionProbe, createRoadProbeScratch, overlaps } from "../../core/index.js";
 import {
   collectNewlyOccupiedKeysForPlacement,
   GreedyAttemptState,
-  probeExplicitRoadConnection,
+  probeExplicitRoadConnection
 } from "./attemptState.js";
 import type { ConnectivityProbe, RoadConnectionProbe } from "./attemptState.js";
 import {
@@ -21,38 +17,32 @@ import {
   compareConnectivityShadowPenalty,
   computeConnectivityShadowPenalty,
   recordConnectivityShadowTieDecision,
-  servicePlacementTrace,
+  servicePlacementTrace
 } from "./connectivityShadowScoring.js";
 import type { ConnectivityShadowDecisionRecorder } from "./connectivityShadowScoring.js";
-import {
-  recordRoadOpportunityPlacement,
-  roadOpportunityHasTraceCapacity,
-} from "./roadOpportunity.js";
+import { recordRoadOpportunityPlacement, roadOpportunityHasTraceCapacity } from "./roadOpportunity.js";
 import type { RoadOpportunityRecorder } from "./roadOpportunity.js";
 import {
   collectIndexedCandidatesForCells,
   createActiveCandidatePool,
   invalidateCandidatePoolEntries,
   mapGlobalCandidateIndicesToLocal,
-  markServiceCandidatesDirty,
+  markServiceCandidatesDirty
 } from "./candidatePools.js";
 import {
   compareResidentialTieBreaks,
   compareServiceTieBreaks,
   getCandidateTypeIndex,
   materializeServicePlacement,
-  serviceCandidateKey,
+  serviceCandidateKey
 } from "./candidates.js";
 import type { ResidentialCandidatesList } from "./candidates.js";
-import {
-  compareDensityAwareScore,
-  computePlacementDensityScore,
-} from "./solutionRanking.js";
+import { compareDensityAwareScore, computePlacementDensityScore } from "./solutionRanking.js";
 import { placementLeavesRoadAnchorCellAvailable } from "./roadAnchors.js";
 import {
   createRoadOpportunityCandidatePools,
   pushRoadOpportunityCandidate,
-  selectRoadOpportunityCounterfactuals,
+  selectRoadOpportunityCounterfactuals
 } from "./roadOpportunityCandidates.js";
 import type { RoadOpportunityCandidatePools } from "./roadOpportunityCandidates.js";
 import { overlapsCachedFootprint } from "./placementUtils.js";
@@ -61,16 +51,12 @@ import {
   computeResidentialPopulation,
   computeServiceMarginalScore,
   getCachedServiceEffectZoneSet,
-  getCachedServiceFootprintKeys,
+  getCachedServiceFootprintKeys
 } from "./serviceScoring.js";
-import type {
-  GreedyPrecomputedIndexes,
-  MaybeStop,
-  ResidentialScoringGroup,
-} from "./types.js";
+import type { GreedyPrecomputedIndexes, MaybeStop, ResidentialScoringGroup } from "./types.js";
 
 const SERVICE_LOOKAHEAD = {
-  residentialDepth: 2,
+  residentialDepth: 2
 };
 
 type ServiceLookaheadCandidate = {
@@ -101,10 +87,7 @@ interface ServiceLookaheadEvaluatorState {
   maybeStop?: MaybeStop;
 }
 
-function compareServiceLookaheadCandidates(
-  left: ServiceLookaheadCandidate,
-  right: ServiceLookaheadCandidate
-): number {
+function compareServiceLookaheadCandidates(left: ServiceLookaheadCandidate, right: ServiceLookaheadCandidate): number {
   if (left.score !== right.score) return right.score - left.score;
   return compareServiceTieBreaks(left.service, left.probe, right.service, right.probe);
 }
@@ -150,12 +133,12 @@ function createServiceLookaheadEvaluator(
       anyResidentialCandidates,
       precomputedIndexes,
       profileCounters,
-      maybeStop,
+      maybeStop
     } = state;
     if (entry.probe.kind !== "explicit") {
       return {
         totalScore: entry.score,
-        refillScore: 0,
+        refillScore: 0
       };
     }
     if (profileCounters) profileCounters.servicePhase.lookaheadEvaluations++;
@@ -194,12 +177,25 @@ function createServiceLookaheadEvaluator(
         const candidate = anyResidentialCandidates[candidateIndex];
         if (profileCounters) profileCounters.servicePhase.lookaheadResidentialScans++;
         const candidateTypeIndex = getCandidateTypeIndex(candidate);
-        if (remainingResidentialAvail && candidateTypeIndex >= 0 && remainingResidentialAvail[candidateTypeIndex] <= 0) {
+        if (
+          remainingResidentialAvail &&
+          candidateTypeIndex >= 0 &&
+          remainingResidentialAvail[candidateTypeIndex] <= 0
+        ) {
           continue;
         }
         if (roadsScratch.size === 0) {
           if (profileCounters) profileCounters.roads.roadAnchorChecks++;
-          if (!placementLeavesRoadAnchorCellAvailable(G, occupiedScratch, candidate.r, candidate.c, candidate.rows, candidate.cols)) {
+          if (
+            !placementLeavesRoadAnchorCellAvailable(
+              G,
+              occupiedScratch,
+              candidate.r,
+              candidate.c,
+              candidate.rows,
+              candidate.cols
+            )
+          ) {
             continue;
           }
         }
@@ -228,9 +224,12 @@ function createServiceLookaheadEvaluator(
           candidateTypeIndex
         );
         if (
-          pop > bestResidentialPop
-          || (pop === bestResidentialPop && pop >= 0 && bestResidential !== null && bestResidentialProbe !== null
-            && compareResidentialTieBreaks(params, candidate, probe, bestResidential, bestResidentialProbe) < 0)
+          pop > bestResidentialPop ||
+          (pop === bestResidentialPop &&
+            pop >= 0 &&
+            bestResidential !== null &&
+            bestResidentialProbe !== null &&
+            compareResidentialTieBreaks(params, candidate, probe, bestResidential, bestResidentialProbe) < 0)
         ) {
           bestResidential = candidate;
           bestResidentialIndex = candidateIndex;
@@ -241,8 +240,7 @@ function createServiceLookaheadEvaluator(
 
       if (!bestResidential || bestResidentialIndex < 0 || bestResidentialPop <= 0 || !bestResidentialProbe) break;
 
-      const candidateFootprintKeys =
-        precomputedIndexes.residentialCandidateFootprintKeys[bestResidentialIndex];
+      const candidateFootprintKeys = precomputedIndexes.residentialCandidateFootprintKeys[bestResidentialIndex];
       const residentialNewlyOccupiedKeys = collectNewlyOccupiedKeysForPlacement(
         occupiedScratch,
         bestResidentialProbe,
@@ -260,7 +258,7 @@ function createServiceLookaheadEvaluator(
 
     return {
       totalScore: entry.score + refillScore,
-      refillScore,
+      refillScore
     };
   };
 }
@@ -361,7 +359,7 @@ function createGreedyServiceConstructionState(groupCount: number): GreedyService
     serviceTypeIndices: [],
     serviceBonuses: [],
     effectZones: [],
-    currentResidentialGroupBoosts: Array.from({ length: groupCount }, () => 0),
+    currentResidentialGroupBoosts: Array.from({ length: groupCount }, () => 0)
   };
 }
 
@@ -370,12 +368,7 @@ function appendConstructedGreedyService(
   service: ServiceCandidate,
   placement: ServicePlacement
 ): number[] {
-  const {
-    G,
-    precomputedIndexes,
-    serviceCoverageGroupsByKey,
-    state,
-  } = context;
+  const { G, precomputedIndexes, serviceCoverageGroupsByKey, state } = context;
   state.services.push(placement);
   state.serviceTypeIndices.push(service.typeIndex);
   state.serviceBonuses.push(service.bonus);
@@ -403,7 +396,7 @@ class FixedGreedyServicePlacementStrategy implements GreedyServicePlacementStrat
       remainingServiceAvail,
       maybeStop,
       probeRoadConnection,
-      state,
+      state
     } = this.context;
     const { profileCounters, recordRoadOpportunity } = this.context.telemetry;
     for (const service of serviceSource) {
@@ -415,7 +408,10 @@ class FixedGreedyServicePlacementStrategy implements GreedyServicePlacementStrat
       if (useServiceTypes && remainingServiceAvail && remainingServiceAvail[service.typeIndex] <= 0) {
         return false;
       }
-      if (roads.size === 0 && !placementLeavesRoadAnchorCellAvailable(G, occupied, placement.r, placement.c, placement.rows, placement.cols)) {
+      if (
+        roads.size === 0 &&
+        !placementLeavesRoadAnchorCellAvailable(G, occupied, placement.r, placement.c, placement.rows, placement.cols)
+      ) {
         return false;
       }
       if (overlaps(occupied, placement.r, placement.c, placement.rows, placement.cols)) {
@@ -436,14 +432,14 @@ class FixedGreedyServicePlacementStrategy implements GreedyServicePlacementStrat
         record: recordRoadOpportunity,
         typeIndex: service.typeIndex,
         bonus: service.bonus,
-        range: service.range,
+        range: service.range
       });
       attemptState.commitExplicitPlacement({
         probe: probe.roadProbe,
         placement,
         footprintKeys: cachedFootprintKeys,
         countProbeReuse: false,
-        recordConnectivityShadow: false,
+        recordConnectivityShadow: false
       });
       appendConstructedGreedyService(this.context, service, placement);
       if (useServiceTypes && remainingServiceAvail) remainingServiceAvail[service.typeIndex]--;
@@ -457,11 +453,7 @@ class DynamicGreedyServicePlacementStrategy implements GreedyServicePlacementStr
   constructor(private readonly context: GreedyServiceConstructionContext) {}
 
   construct(): boolean {
-    const {
-      maxServices,
-      maybeStop,
-      state,
-    } = this.context;
+    const { maxServices, maybeStop, state } = this.context;
     const poolState = this.createCandidatePoolState();
     const evaluateServiceLookahead = this.createLookaheadEvaluator();
     for (;;) {
@@ -475,14 +467,8 @@ class DynamicGreedyServicePlacementStrategy implements GreedyServicePlacementStr
   }
 
   private createCandidatePoolState(): DynamicGreedyServiceCandidatePoolState {
-    const {
-      serviceOrder,
-      serviceSource,
-      occupied,
-      precomputedIndexes,
-      useServiceTypes,
-      remainingServiceAvail,
-    } = this.context;
+    const { serviceOrder, serviceSource, occupied, precomputedIndexes, useServiceTypes, remainingServiceAvail } =
+      this.context;
     const orderGlobalCandidateIndices = serviceSource.map(
       (candidate) => precomputedIndexes.serviceCandidateIndicesByKey.get(serviceCandidateKey(candidate)) ?? -1
     );
@@ -498,7 +484,7 @@ class DynamicGreedyServicePlacementStrategy implements GreedyServicePlacementStr
       scoreCache: Array.from({ length: serviceSource.length }, () => 0),
       scoreDirty: Array.from({ length: serviceSource.length }, () => true),
       orderGlobalCandidateIndices,
-      globalToLocalCandidateIndices,
+      globalToLocalCandidateIndices
     };
     if (occupied.size > 0) {
       this.invalidateGlobalCandidates(
@@ -531,7 +517,7 @@ class DynamicGreedyServicePlacementStrategy implements GreedyServicePlacementStr
       anyResidentialCandidates,
       precomputedIndexes,
       maybeStop,
-      state,
+      state
     } = this.context;
     const { profileCounters } = this.context.telemetry;
     return createServiceLookaheadEvaluator({
@@ -547,7 +533,7 @@ class DynamicGreedyServicePlacementStrategy implements GreedyServicePlacementStr
       anyResidentialCandidates,
       precomputedIndexes,
       profileCounters,
-      maybeStop,
+      maybeStop
     });
   }
 
@@ -557,13 +543,15 @@ class DynamicGreedyServicePlacementStrategy implements GreedyServicePlacementStr
       maxResidentials,
       anyResidentialCandidates,
       residentialScoringGroups,
-      serviceLookaheadCandidates,
+      serviceLookaheadCandidates
     } = this.context;
-    return serviceLookaheadCandidates > 1
-      && !useDeferredRoadCommitment
-      && (maxResidentials === undefined || maxResidentials > 0)
-      && anyResidentialCandidates.length > 0
-      && residentialScoringGroups.length > 0;
+    return (
+      serviceLookaheadCandidates > 1 &&
+      !useDeferredRoadCommitment &&
+      (maxResidentials === undefined || maxResidentials > 0) &&
+      anyResidentialCandidates.length > 0 &&
+      residentialScoringGroups.length > 0
+    );
   }
 
   private chooseNextPlacement(
@@ -588,13 +576,9 @@ class DynamicGreedyServicePlacementStrategy implements GreedyServicePlacementStr
       serviceLookaheadCandidates,
       maybeStop,
       probeRoadConnection,
-      state,
+      state
     } = this.context;
-    const {
-      profileCounters,
-      recordConnectivityShadowDecision,
-      recordRoadOpportunity,
-    } = this.context.telemetry;
+    const { profileCounters, recordConnectivityShadowDecision, recordRoadOpportunity } = this.context.telemetry;
     const enableServiceLookahead = this.isLookaheadEnabled();
     let bestCandidate: ServiceCandidate | null = null;
     let bestCandidateIndex = -1;
@@ -618,7 +602,10 @@ class DynamicGreedyServicePlacementStrategy implements GreedyServicePlacementStr
       if (useServiceTypes && remainingServiceAvail && remainingServiceAvail[service.typeIndex] <= 0) continue;
       if (roads.size === 0) {
         if (profileCounters) profileCounters.roads.roadAnchorChecks++;
-        if (!placementLeavesRoadAnchorCellAvailable(G, occupied, placement.r, placement.c, placement.rows, placement.cols)) continue;
+        if (
+          !placementLeavesRoadAnchorCellAvailable(G, occupied, placement.r, placement.c, placement.rows, placement.cols)
+        )
+          continue;
       }
       if (profileCounters) profileCounters.servicePhase.canConnectChecks++;
       const probe = probeRoadConnection(occupied, placement.r, placement.c, placement.rows, placement.cols);
@@ -637,9 +624,7 @@ class DynamicGreedyServicePlacementStrategy implements GreedyServicePlacementStr
         if (profileCounters) profileCounters.servicePhase.scoreRecomputes++;
       }
       const score = poolState.scoreCache[candidateIndex] ?? 0;
-      const densityScore = densityTieBreaker
-        ? computePlacementDensityScore(G, service, score)
-        : 0;
+      const densityScore = densityTieBreaker ? computePlacementDensityScore(G, service, score) : 0;
       const serviceFootprintKeys = precomputedIndexes.serviceFootprintKeysByCandidate[globalCandidateIndex];
       if (serviceRoadOpportunityPools && score > 0) {
         pushRoadOpportunityCandidate(serviceRoadOpportunityPools, {
@@ -652,39 +637,32 @@ class DynamicGreedyServicePlacementStrategy implements GreedyServicePlacementStr
           score,
           typeIndex: service.typeIndex,
           bonus: service.bonus,
-          range: service.range,
+          range: service.range
         });
       }
       if (enableServiceLookahead) {
-        pushBoundedServiceLookaheadCandidate(
-          lookaheadShortlist,
-          serviceLookaheadCandidates,
-          {
-            service,
-            candidateIndex,
-            score,
-            probe,
-          }
-        );
+        pushBoundedServiceLookaheadCandidate(lookaheadShortlist, serviceLookaheadCandidates, {
+          service,
+          candidateIndex,
+          score,
+          probe
+        });
       }
-      const scoreComparison = bestCandidate === null
-        ? (score > 0 ? 1 : -1)
-        : compareDensityAwareScore(
-            score,
-            densityScore,
-            bestScore,
-            bestDensityScore,
-            densityTieBreakerToleranceRatio
-          );
+      const scoreComparison =
+        bestCandidate === null
+          ? score > 0
+            ? 1
+            : -1
+          : compareDensityAwareScore(score, densityScore, bestScore, bestDensityScore, densityTieBreakerToleranceRatio);
       let candidateConnectivityShadowPenalty: number | null = null;
       let connectivityShadowComparison = 0;
       if (
-        scoreComparison === 0
-        && score > 0
-        && connectivityShadowScoring
-        && bestCandidate !== null
-        && bestProbe !== null
-        && canUseConnectivityShadowTieBreak(probe, bestProbe)
+        scoreComparison === 0 &&
+        score > 0 &&
+        connectivityShadowScoring &&
+        bestCandidate !== null &&
+        bestProbe !== null &&
+        canUseConnectivityShadowTieBreak(probe, bestProbe)
       ) {
         candidateConnectivityShadowPenalty = computeConnectivityShadowPenalty(
           attemptState,
@@ -713,47 +691,36 @@ class DynamicGreedyServicePlacementStrategy implements GreedyServicePlacementStr
           incumbent: servicePlacementTrace(bestCandidate, bestProbe),
           candidateShadowPenalty: candidateConnectivityShadowPenalty,
           incumbentShadowPenalty: bestConnectivityShadowPenalty,
-          comparison: connectivityShadowComparison,
+          comparison: connectivityShadowComparison
         });
       }
       if (
-        scoreComparison > 0
-        || connectivityShadowComparison > 0
-        || (scoreComparison === 0 && connectivityShadowComparison === 0 && score > 0 && bestCandidate !== null
-          && bestProbe !== null
-          && compareServiceTieBreaks(service, probe, bestCandidate, bestProbe) < 0)
+        scoreComparison > 0 ||
+        connectivityShadowComparison > 0 ||
+        (scoreComparison === 0 &&
+          connectivityShadowComparison === 0 &&
+          score > 0 &&
+          bestCandidate !== null &&
+          bestProbe !== null &&
+          compareServiceTieBreaks(service, probe, bestCandidate, bestProbe) < 0)
       ) {
         bestCandidate = service;
         bestCandidateIndex = candidateIndex;
         bestScore = score;
         bestDensityScore = densityScore;
-        bestConnectivityShadowPenalty = connectivityShadowComparison !== 0
-          ? candidateConnectivityShadowPenalty
-          : null;
+        bestConnectivityShadowPenalty = connectivityShadowComparison !== 0 ? candidateConnectivityShadowPenalty : null;
         bestProbe = probe;
       }
     }
 
     let lookaheadDisplacedCandidateIndex = -1;
     const preLookaheadBestCandidateIndex = bestCandidateIndex;
-    if (
-      enableServiceLookahead
-      && lookaheadShortlist.length > 1
-      && bestCandidate !== null
-      && bestProbe !== null
-    ) {
+    if (enableServiceLookahead && lookaheadShortlist.length > 1 && bestCandidate !== null && bestProbe !== null) {
       let lookaheadBestEntry = lookaheadShortlist[0]!;
       let lookaheadBestEvaluation = evaluateServiceLookahead(lookaheadBestEntry);
       for (const entry of lookaheadShortlist.slice(1)) {
         const evaluation = evaluateServiceLookahead(entry);
-        if (
-          compareServiceLookaheadEvaluations(
-            entry,
-            evaluation,
-            lookaheadBestEntry,
-            lookaheadBestEvaluation
-          ) < 0
-        ) {
+        if (compareServiceLookaheadEvaluations(entry, evaluation, lookaheadBestEntry, lookaheadBestEvaluation) < 0) {
           lookaheadBestEntry = entry;
           lookaheadBestEvaluation = evaluation;
         }
@@ -775,19 +742,12 @@ class DynamicGreedyServicePlacementStrategy implements GreedyServicePlacementStr
       probe: bestProbe,
       score: bestScore,
       roadOpportunityPools: serviceRoadOpportunityPools,
-      lookaheadDisplacedCandidateIndex,
+      lookaheadDisplacedCandidateIndex
     };
   }
 
-  private commitChoice(
-    choice: DynamicGreedyServiceChoice,
-    poolState: DynamicGreedyServiceCandidatePoolState
-  ): boolean {
-    const {
-      attemptState,
-      useDeferredRoadCommitment,
-      precomputedIndexes,
-    } = this.context;
+  private commitChoice(choice: DynamicGreedyServiceChoice, poolState: DynamicGreedyServiceCandidatePoolState): boolean {
+    const { attemptState, useDeferredRoadCommitment, precomputedIndexes } = this.context;
     const { profileCounters, recordRoadOpportunity } = this.context.telemetry;
     const placement = materializeServicePlacement(choice.candidate);
     const globalCandidateIndex = poolState.orderGlobalCandidateIndices[choice.candidateIndex] ?? -1;
@@ -805,7 +765,7 @@ class DynamicGreedyServicePlacementStrategy implements GreedyServicePlacementStr
           chosenProbe: choice.probe,
           chosenScore: choice.score,
           compareTieBreaks: compareServiceTieBreaks,
-          isLookaheadDisplaced: (entry) => entry.candidateIndex === choice.lookaheadDisplacedCandidateIndex,
+          isLookaheadDisplaced: (entry) => entry.candidateIndex === choice.lookaheadDisplacedCandidateIndex
         })
       : undefined;
     recordRoadOpportunityPlacement({
@@ -820,12 +780,12 @@ class DynamicGreedyServicePlacementStrategy implements GreedyServicePlacementStr
       counterfactuals,
       typeIndex: choice.candidate.typeIndex,
       bonus: choice.candidate.bonus,
-      range: choice.candidate.range,
+      range: choice.candidate.range
     });
     const committedKeys = attemptState.commitPlacement(choice.probe, placement, {
       footprintKeys: cachedFootprintKeys,
       newlyOccupiedKeys,
-      recordConnectivityShadow: false,
+      recordConnectivityShadow: false
     });
     if (!committedKeys) {
       return false;
@@ -848,10 +808,7 @@ class DynamicGreedyServicePlacementStrategy implements GreedyServicePlacementStr
   ): number {
     const invalidated = invalidateCandidatePoolEntries(
       poolState.activePool,
-      mapGlobalCandidateIndicesToLocal(
-        globalCandidateIndices,
-        poolState.globalToLocalCandidateIndices
-      )
+      mapGlobalCandidateIndicesToLocal(globalCandidateIndices, poolState.globalToLocalCandidateIndices)
     );
     const { profileCounters } = this.context.telemetry;
     if (profileCounters) {
@@ -892,11 +849,7 @@ class DynamicGreedyServicePlacementStrategy implements GreedyServicePlacementStr
     poolState: DynamicGreedyServiceCandidatePoolState,
     service: ServiceCandidate
   ): void {
-    const {
-      useServiceTypes,
-      remainingServiceAvail,
-      precomputedIndexes,
-    } = this.context;
+    const { useServiceTypes, remainingServiceAvail, precomputedIndexes } = this.context;
     if (!useServiceTypes || !remainingServiceAvail) return;
     remainingServiceAvail[service.typeIndex]--;
     if (remainingServiceAvail[service.typeIndex] > 0 || !precomputedIndexes.serviceCandidateIndicesByType) return;
@@ -916,7 +869,9 @@ function createGreedyServicePlacementStrategy(
     : new DynamicGreedyServicePlacementStrategy(context);
 }
 
-export function constructGreedyServicePhase(options: GreedyServiceConstructionOptions): GreedyServiceConstructionResult | null {
+export function constructGreedyServicePhase(
+  options: GreedyServiceConstructionOptions
+): GreedyServiceConstructionResult | null {
   const state = createGreedyServiceConstructionState(options.residentialScoringGroups.length);
   const context: GreedyServiceConstructionContext = {
     ...options,
@@ -925,10 +880,10 @@ export function constructGreedyServicePhase(options: GreedyServiceConstructionOp
     telemetry: {
       profileCounters: options.profileCounters,
       recordConnectivityShadowDecision: options.recordConnectivityShadowDecision,
-      recordRoadOpportunity: options.recordRoadOpportunity,
+      recordRoadOpportunity: options.recordRoadOpportunity
     },
     probeRoadConnection: (snapshotOccupied, r, c, rows, cols) =>
-      options.attemptState.probeRoadConnection(snapshotOccupied, { r, c, rows, cols }),
+      options.attemptState.probeRoadConnection(snapshotOccupied, { r, c, rows, cols })
   };
   const strategy = createGreedyServicePlacementStrategy(context);
   if (!strategy.construct()) return null;
@@ -938,6 +893,6 @@ export function constructGreedyServicePhase(options: GreedyServiceConstructionOp
     services: state.services,
     serviceTypeIndices: state.serviceTypeIndices,
     serviceBonuses: state.serviceBonuses,
-    effectZones: state.effectZones,
+    effectZones: state.effectZones
   };
 }

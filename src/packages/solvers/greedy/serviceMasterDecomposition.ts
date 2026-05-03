@@ -20,18 +20,23 @@ export type ServiceMasterMaybeStop = () => void;
 const SERVICE_MASTER_FIXED_SERVICE_EVALUATION: FixedServiceEvaluationBudget = {
   maxOrders: 4,
   maxSeededOrders: 1,
-  maxSeeds: 3,
+  maxSeeds: 3
 };
 
 function servicesOverlap(left: ServiceCandidate, right: ServiceCandidate): boolean {
-  return left.r < right.r + right.rows
-    && left.r + left.rows > right.r
-    && left.c < right.c + right.cols
-    && left.c + left.cols > right.c;
+  return (
+    left.r < right.r + right.rows &&
+    left.r + left.rows > right.r &&
+    left.c < right.c + right.cols &&
+    left.c + left.cols > right.c
+  );
 }
 
 function layoutKey(services: readonly ServiceCandidate[]): string {
-  return services.map((service) => serviceCandidateKey(service)).sort().join("|");
+  return services
+    .map((service) => serviceCandidateKey(service))
+    .sort()
+    .join("|");
 }
 
 function canAddServiceToMasterLayout(options: {
@@ -40,12 +45,7 @@ function canAddServiceToMasterLayout(options: {
   serviceTypeUsage: readonly number[];
   serviceTypeAvailability: readonly number[] | null;
 }): boolean {
-  const {
-    chosen,
-    candidate,
-    serviceTypeUsage,
-    serviceTypeAvailability,
-  } = options;
+  const { chosen, candidate, serviceTypeUsage, serviceTypeAvailability } = options;
 
   if (chosen.some((service) => servicesOverlap(service, candidate))) return false;
   if (serviceTypeAvailability && candidate.typeIndex >= 0) {
@@ -63,13 +63,7 @@ function enumerateServiceMasterLayouts(options: {
   serviceTypeAvailability: readonly number[] | null;
   profileCounters?: GreedyProfileCounters;
 }): ServiceCandidate[][] {
-  const {
-    pool,
-    maxServices,
-    maxLayouts,
-    serviceTypeAvailability,
-    profileCounters,
-  } = options;
+  const { pool, maxServices, maxLayouts, serviceTypeAvailability, profileCounters } = options;
   const layouts: ServiceCandidate[][] = [];
   const chosen: ServiceCandidate[] = [];
   const seenLayoutKeys = new Set<string>();
@@ -97,12 +91,14 @@ function enumerateServiceMasterLayouts(options: {
     for (let index = start; index <= pool.length - needed; index++) {
       const candidate = pool[index];
       if (!candidate) continue;
-      if (!canAddServiceToMasterLayout({
-        chosen,
-        candidate,
-        serviceTypeUsage,
-        serviceTypeAvailability,
-      })) {
+      if (
+        !canAddServiceToMasterLayout({
+          chosen,
+          candidate,
+          serviceTypeUsage,
+          serviceTypeAvailability
+        })
+      ) {
         if (profileCounters) profileCounters.attempts.serviceMasterNoGoodSkips++;
         continue;
       }
@@ -152,7 +148,7 @@ export function runGreedyServiceMasterDecomposition(options: {
     evaluateForcedServiceSet,
     updateBest,
     profileCounters,
-    maybeStop,
+    maybeStop
   } = options;
   if (!enabled) return initialBest;
 
@@ -164,18 +160,14 @@ export function runGreedyServiceMasterDecomposition(options: {
     maxServices,
     maxLayouts,
     serviceTypeAvailability,
-    profileCounters,
+    profileCounters
   });
 
   let best = initialBest;
   for (const layout of layouts) {
     maybeStop?.();
     if (profileCounters) profileCounters.attempts.serviceMasterLayouts++;
-    const trial = evaluateForcedServiceSet(
-      layout,
-      layout.length,
-      SERVICE_MASTER_FIXED_SERVICE_EVALUATION
-    );
+    const trial = evaluateForcedServiceSet(layout, layout.length, SERVICE_MASTER_FIXED_SERVICE_EVALUATION);
     if (trial) {
       if (profileCounters) profileCounters.attempts.serviceMasterFeasibleLayouts++;
       if (isBetterSearchSolution(trial, best)) {

@@ -1,32 +1,21 @@
 (function attachPlannerResults(globalObject) {
   function createPlannerResultsController(options) {
-    const {
-      state,
-      elements,
-      constants = {},
-      helpers,
-      callbacks,
-    } = options;
-    const {
-      LIVE_SNAPSHOT_REFRESH_INTERVAL_MS = 5 * 1000,
-    } = constants;
-    const {
-      cloneJson,
-      formatElapsedTime,
-    } = helpers;
+    const { state, elements, constants = {}, helpers, callbacks } = options;
+    const { LIVE_SNAPSHOT_REFRESH_INTERVAL_MS = 5 * 1000 } = constants;
+    const { cloneJson, formatElapsedTime } = helpers;
     const {
       applyMatrixLayout,
       clearExpansionAdvice,
       getOptimizerLabel,
       renderExpansionAdvice,
       setSolveState,
-      syncActionAvailability,
+      syncActionAvailability
     } = callbacks;
-    const PENDING_MANUAL_VALIDATION_MESSAGE = "Manual edits are pending validation. Validate the layout when you're ready.";
+    const PENDING_MANUAL_VALIDATION_MESSAGE =
+      "Manual edits are pending validation. Validate the layout when you're ready.";
     const INVALID_MANUAL_LAYOUT_MESSAGE =
       "Manual layout has validation errors. Fix them, then validate again before reusing it as a seed or hint.";
-    const PENDING_MANUAL_LAYOUT_ERROR =
-      "Manual edits are pending validation. Use Validate layout when you're ready.";
+    const PENDING_MANUAL_LAYOUT_ERROR = "Manual edits are pending validation. Use Validate layout when you're ready.";
     const PLACEMENT_MODE_STATUS_PREFIX = "Click the map to set its top-left cell.";
     const DIAGNOSTIC_REASON_ORDER = [
       "blocked-footprint",
@@ -34,7 +23,7 @@
       "no-service-coverage",
       "base-only",
       "availability-cap",
-      "lower-score-no-improvement",
+      "lower-score-no-improvement"
     ];
     const DIAGNOSTIC_REASON_LABELS = {
       "blocked-footprint": "Blocked footprint",
@@ -42,13 +31,13 @@
       "no-service-coverage": "No service coverage",
       "base-only": "Base population only",
       "availability-cap": "Availability cap",
-      "lower-score-no-improvement": "Lower score / no improvement",
+      "lower-score-no-improvement": "Lower score / no improvement"
     };
     const EXPLAINABILITY_MODE_LABELS = {
       layout: "Layout",
       "service-value": "Service value",
       "placement-opportunity": "Placement opportunity",
-      "connectivity-risk": "Connectivity risk",
+      "connectivity-risk": "Connectivity risk"
     };
     if (!globalObject.PlannerManualLayout?.createPlannerManualLayoutModel) {
       throw new Error("Planner manual-layout helpers are not loaded.");
@@ -68,11 +57,11 @@
       isCellInsidePlacement,
       isCellInsideServiceEffect,
       readPendingPlacementFootprint,
-      removePlacementFromSolution,
+      removePlacementFromSolution
     } = globalObject.PlannerManualLayout.createPlannerManualLayoutModel({
       state,
       cloneJson,
-      pendingManualLayoutError: PENDING_MANUAL_LAYOUT_ERROR,
+      pendingManualLayoutError: PENDING_MANUAL_LAYOUT_ERROR
     });
     if (!globalObject.PlannerHeatmaps?.createPlannerHeatmapHelpers) {
       throw new Error("Planner heatmap helpers are not loaded.");
@@ -84,7 +73,7 @@
       formatExplainabilityNumber,
       getPlannerExplainabilityCell,
       hidesBuildingOverlayForMode: heatmapHidesBuildingOverlayForMode,
-      normalizeExplainabilityMode,
+      normalizeExplainabilityMode
     } = globalObject.PlannerHeatmaps.createPlannerHeatmapHelpers({
       state,
       explainabilityModeLabels: EXPLAINABILITY_MODE_LABELS,
@@ -93,8 +82,8 @@
         getOccupiedCells,
         getTypeAvailabilitySummary,
         isCellInsideAnyServiceFootprint,
-        isCellInsideServiceEffect,
-      },
+        isCellInsideServiceEffect
+      }
     });
 
     function formatLiveSnapshotRefreshCadence() {
@@ -166,25 +155,17 @@
 
     function getManualLayoutState() {
       const manualLayout = Boolean(
-        state.layoutEditor.edited
-        || state.result?.solution?.manualLayout
-        || state.result?.stats?.manualLayout
+        state.layoutEditor.edited || state.result?.solution?.manualLayout || state.result?.stats?.manualLayout
       );
       const pendingValidation = Boolean(manualLayout && state.layoutEditor.pendingValidation);
       const hasValidationErrors = Boolean(
-        manualLayout
-        && state.result?.validation?.valid === false
-        && !pendingValidation
+        manualLayout && state.result?.validation?.valid === false && !pendingValidation
       );
       return {
         manualLayout,
         pendingValidation,
-        hasValidationErrors,
+        hasValidationErrors
       };
-    }
-
-    function isManualLayoutResult() {
-      return getManualLayoutState().manualLayout;
     }
 
     function hasPendingManualValidation() {
@@ -218,7 +199,9 @@
         button.setAttribute("aria-pressed", String(isActive));
       }
       if (elements.rotatePendingPlacementButton) {
-        elements.rotatePendingPlacementButton.textContent = pendingPlacement?.rotated ? "Use original orientation" : "Rotate 90°";
+        elements.rotatePendingPlacementButton.textContent = pendingPlacement?.rotated
+          ? "Use original orientation"
+          : "Rotate 90°";
       }
 
       let message = state.layoutEditor.status;
@@ -227,7 +210,10 @@
           message = "Run or load a layout to edit it.";
         } else if (state.layoutEditor.isApplying) {
           message = "Validating the edited layout...";
-        } else if ((state.layoutEditor.mode === "place-service" || state.layoutEditor.mode === "place-residential") && pendingPlacement) {
+        } else if (
+          (state.layoutEditor.mode === "place-service" || state.layoutEditor.mode === "place-residential") &&
+          pendingPlacement
+        ) {
           message = `Placing ${pendingPlacement.name} (${pendingFootprint?.rows}x${pendingFootprint?.cols}). ${PLACEMENT_MODE_STATUS_PREFIX}`;
         } else if (state.layoutEditor.mode === "road") {
           message = "Road mode: click an empty allowed cell to add road, or an existing road cell to remove it.";
@@ -255,7 +241,12 @@
         throw new Error("Run or load a layout before editing it.");
       }
 
-      const { message = "Manual layout updated.", selectedBuilding = null, selectedCell = null, keepMode = false } = options;
+      const {
+        message = "Manual layout updated.",
+        selectedBuilding = null,
+        selectedCell = null,
+        keepMode = false
+      } = options;
       state.layoutEditor.isApplying = true;
       state.layoutEditor.status = "Validating the edited layout...";
       syncActionAvailability();
@@ -265,18 +256,20 @@
         const response = await fetch("/api/layout/evaluate", {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type": "application/json"
           },
           body: JSON.stringify({
             grid: state.resultContext.grid,
             params: state.resultContext.params,
-            solution: nextSolution,
-          }),
+            solution: nextSolution
+          })
         });
         const payload = await response.json();
         if (!response.ok || !payload.ok) {
           if (response.status === 405) {
-            throw new Error("Manual layout editing needs the updated web server. Restart `npm run web` once, then try the action again.");
+            throw new Error(
+              "Manual layout editing needs the updated web server. Restart `npm run web` once, then try the action again."
+            );
           }
           throw new Error(payload.error || "Failed to evaluate the edited layout.");
         }
@@ -284,16 +277,18 @@
         const submittedRoadCount = new Set(Array.isArray(nextSolution.roads) ? nextSolution.roads : []).size;
         const validatedRoadCount = new Set(Array.isArray(payload.solution?.roads) ? payload.solution.roads : []).size;
         const removedRoadCount = Math.max(0, submittedRoadCount - validatedRoadCount);
-        const roadCleanupMessage = removedRoadCount > 0
-          ? ` Removed ${removedRoadCount} unnecessary road cell${removedRoadCount === 1 ? "" : "s"}.`
-          : "";
+        const roadCleanupMessage =
+          removedRoadCount > 0
+            ? ` Removed ${removedRoadCount} unnecessary road cell${removedRoadCount === 1 ? "" : "s"}.`
+            : "";
         commitEditedLayoutResult(payload, {
-          message: payload.validation?.valid === true
-            ? `${message}${roadCleanupMessage}`
-            : `Layout validation completed.${roadCleanupMessage} Review the reported issues before using this layout as a seed or hint.`,
+          message:
+            payload.validation?.valid === true
+              ? `${message}${roadCleanupMessage}`
+              : `Layout validation completed.${roadCleanupMessage} Review the reported issues before using this layout as a seed or hint.`,
           selectedBuilding,
           selectedCell,
-          keepMode,
+          keepMode
         });
       } finally {
         state.layoutEditor.isApplying = false;
@@ -308,14 +303,14 @@
         selectedBuilding = null,
         selectedCell = null,
         keepMode = false,
-        pendingValidation = false,
+        pendingValidation = false
       } = options;
 
       clearExpansionAdvice();
       state.solveProgressLog = [];
       state.result = {
         ...nextResult,
-        progressLog: [],
+        progressLog: []
       };
       state.resultIsLiveSnapshot = false;
       state.resultError = "";
@@ -337,14 +332,14 @@
         message = "Manual layout updated.",
         selectedBuilding = null,
         selectedCell = null,
-        keepMode = false,
+        keepMode = false
       } = options;
       commitEditedLayoutResult(buildPendingManualLayoutResult(nextSolution), {
         message: `${message} Validate the layout when you're ready.`,
         selectedBuilding,
         selectedCell,
         keepMode,
-        pendingValidation: true,
+        pendingValidation: true
       });
     }
 
@@ -376,7 +371,7 @@
       applyEditedLayoutLocally(nextSolution, {
         message: roads.has(key) ? `Added road at (${row}, ${col}).` : `Removed road at (${row}, ${col}).`,
         selectedCell: { r: row, c: col },
-        keepMode: true,
+        keepMode: true
       });
     }
 
@@ -388,7 +383,7 @@
         applyEditedLayoutLocally(nextSolution, {
           message: `Removed ${selected.kind === "service" ? "service" : "residential"} ${selected.kind === "service" ? "S" : "R"}${selected.index + 1}.`,
           selectedCell: { r: row, c: col },
-          keepMode: true,
+          keepMode: true
         });
         return;
       }
@@ -402,7 +397,7 @@
       applyEditedLayoutLocally(nextSolution, {
         message: `Removed road at (${row}, ${col}).`,
         selectedCell: { r: row, c: col },
-        keepMode: true,
+        keepMode: true
       });
     }
 
@@ -424,7 +419,7 @@
         nextSolution.servicePopulationIncreases.push(candidate.bonus);
         applyEditedLayoutLocally(nextSolution, {
           message: `Placed ${pending.name} at (${row}, ${col}).`,
-          selectedBuilding: { kind: "service", index: nextSolution.services.length - 1 },
+          selectedBuilding: { kind: "service", index: nextSolution.services.length - 1 }
         });
         return;
       }
@@ -437,7 +432,7 @@
       nextSolution.populations.push(candidate.population);
       applyEditedLayoutLocally(nextSolution, {
         message: `Placed ${pending.name} at (${row}, ${col}).`,
-        selectedBuilding: { kind: "residential", index: nextSolution.residentials.length - 1 },
+        selectedBuilding: { kind: "residential", index: nextSolution.residentials.length - 1 }
       });
     }
 
@@ -458,8 +453,8 @@
       }
 
       if (
-        clickedSelection
-        && (clickedSelection.kind !== currentSelection.kind || clickedSelection.index !== currentSelection.index)
+        clickedSelection &&
+        (clickedSelection.kind !== currentSelection.kind || clickedSelection.index !== currentSelection.index)
       ) {
         focusSelectedPlacement(
           clickedSelection,
@@ -478,12 +473,12 @@
       const nextPlacement = {
         ...selection.placement,
         r: row,
-        c: col,
+        c: col
       };
       ensurePlacementFitsGrid(grid, nextPlacement);
       ensurePlacementIsClear(nextSolution, nextPlacement, {
         excludeKind: selection.kind,
-        excludeIndex: selection.index,
+        excludeIndex: selection.index
       });
 
       if (selection.kind === "service") {
@@ -495,7 +490,7 @@
       applyEditedLayoutLocally(nextSolution, {
         message: `Moved ${selection.kind === "service" ? "S" : "R"}${selection.index + 1} to (${row}, ${col}).`,
         selectedBuilding: { kind: selection.kind, index: selection.index },
-        keepMode: true,
+        keepMode: true
       });
     }
 
@@ -514,11 +509,13 @@
       return (solution.services ?? []).flatMap((service, index) => {
         if (isCellInsidePlacement(service, row, col) || !isCellInsideServiceEffect(service, row, col)) return [];
 
-        return [{
-          id: `S${index + 1}`,
-          name: lookupServiceName(solution.serviceTypeIndices?.[index] ?? -1),
-          bonus: Number(solution.servicePopulationIncreases?.[index] ?? 0),
-        }];
+        return [
+          {
+            id: `S${index + 1}`,
+            name: lookupServiceName(solution.serviceTypeIndices?.[index] ?? -1),
+            bonus: Number(solution.servicePopulationIncreases?.[index] ?? 0)
+          }
+        ];
       });
     }
 
@@ -536,8 +533,8 @@
       }
       if (cell.connectivityDisconnectedCells > 0 || cell.connectivityLostCells > 0) {
         parts.push(
-          `connectivity risk ${formatExplainabilityNumber(cell.connectivityDisconnectedCells || cell.connectivityLostCells)} cell`
-          + `${(cell.connectivityDisconnectedCells || cell.connectivityLostCells) === 1 ? "" : "s"}`
+          `connectivity risk ${formatExplainabilityNumber(cell.connectivityDisconnectedCells || cell.connectivityLostCells)} cell` +
+            `${(cell.connectivityDisconnectedCells || cell.connectivityLostCells) === 1 ? "" : "s"}`
         );
       }
       const anchorReachable = cell.roadAnchorReachable;
@@ -560,7 +557,9 @@
 
     function getTypeAvailabilitySummary(kind, typeIndex, solution) {
       const isService = kind === "service";
-      const types = isService ? (state.resultContext?.params?.serviceTypes ?? []) : (state.resultContext?.params?.residentialTypes ?? []);
+      const types = isService
+        ? (state.resultContext?.params?.serviceTypes ?? [])
+        : (state.resultContext?.params?.residentialTypes ?? []);
       const usedCounts = countPlacementsByType(
         isService ? solution?.serviceTypeIndices : solution?.residentialTypeIndices,
         types.length
@@ -570,12 +569,13 @@
       return {
         totalAvailable,
         used,
-        remaining: Math.max(0, totalAvailable - used),
+        remaining: Math.max(0, totalAvailable - used)
       };
     }
 
     function renderSelectedBuildingDetail(solution = state.result?.solution) {
-      if (!elements.selectedBuildingTitle || !elements.selectedBuildingFacts || !elements.selectedBuildingSummary) return;
+      if (!elements.selectedBuildingTitle || !elements.selectedBuildingFacts || !elements.selectedBuildingSummary)
+        return;
 
       const selected = getSelectedMapPlacement(solution);
       const selectedCell = getSelectedMapCell();
@@ -590,7 +590,12 @@
       }
 
       if (!selected && selectedCell) {
-        const kind = getSolvedCellKind(state.resultContext?.grid ?? state.grid, solution, selectedCell.r, selectedCell.c);
+        const kind = getSolvedCellKind(
+          state.resultContext?.grid ?? state.grid,
+          solution,
+          selectedCell.r,
+          selectedCell.c
+        );
         const coverage = getCellBonusCoverage(solution, selectedCell.r, selectedCell.c);
         const explainability = getPlannerExplainabilityCell(selectedCell.r, selectedCell.c);
         const explainabilityText = formatCellExplainability(explainability);
@@ -599,18 +604,22 @@
           ? coverage.map((entry) => `${entry.name} (${entry.id})`).join(", ")
           : "no nearby service zones";
         const categoryLabel =
-          kind === "road" ? "Road" :
-          kind === "empty" ? "Empty cell" :
-          kind === "blocked" ? "Blocked cell" :
-          kind === "service" ? "Service cell" :
-          "Residential cell";
+          kind === "road"
+            ? "Road"
+            : kind === "empty"
+              ? "Empty cell"
+              : kind === "blocked"
+                ? "Blocked cell"
+                : kind === "service"
+                  ? "Service cell"
+                  : "Residential cell";
 
         elements.selectedBuildingTitle.textContent = `${categoryLabel} (${selectedCell.r}, ${selectedCell.c})`;
         elements.selectedBuildingSummary.textContent =
           kind === "blocked"
             ? "Blocked cells do not receive service bonus coverage."
-            : `Potential service bonus at this position is +${totalBonus} population from ${sourceText}.`
-              + `${explainabilityText ? ` Planner map: ${explainabilityText}.` : ""}`;
+            : `Potential service bonus at this position is +${totalBonus} population from ${sourceText}.` +
+              `${explainabilityText ? ` Planner map: ${explainabilityText}.` : ""}`;
         elements.selectedBuildingId.textContent = `${selectedCell.r},${selectedCell.c}`;
         elements.selectedBuildingCategory.textContent = categoryLabel;
         elements.selectedBuildingPosition.textContent = `Row ${selectedCell.r}, Col ${selectedCell.c}`;
@@ -624,9 +633,13 @@
         const anchorReachable = Boolean(explainability?.roadAnchorReachable);
         elements.selectedBuildingAvailability.textContent =
           kind === "empty"
-            ? (anchorReachable ? "Open and anchor reachable" : "Open cell")
+            ? anchorReachable
+              ? "Open and anchor reachable"
+              : "Open cell"
             : kind === "road"
-              ? (anchorReachable ? "Occupied by anchor reachable road" : "Occupied by road")
+              ? anchorReachable
+                ? "Occupied by anchor reachable road"
+                : "Occupied by road"
               : kind === "blocked"
                 ? "Not buildable"
                 : "Occupied by a building";
@@ -663,8 +676,7 @@
         : pendingManualValidation
           ? `Population pending validation, type range ${type?.min ?? 0}-${type?.max ?? 0}`
           : `${solution.populations?.[selected.index] ?? 0} population, type range ${type?.min ?? 0}-${type?.max ?? 0}`;
-      elements.selectedBuildingAvailability.textContent =
-        `${availability.remaining} left of ${availability.totalAvailable} for this type`;
+      elements.selectedBuildingAvailability.textContent = `${availability.remaining} left of ${availability.totalAvailable} for this type`;
       elements.selectedBuildingFacts.hidden = false;
     }
 
@@ -674,22 +686,24 @@
 
       const remainingEntries = Array.isArray(types)
         ? types.flatMap((type, index) => {
-          const isService = labelPrefix === "Service";
-          const totalAvailable = getTypeTotalAvailable(type, isService);
-          const used = usedCounts[index] ?? 0;
-          const remaining = Math.max(0, totalAvailable - used);
-          if (!remaining) return [];
-          return [{
-            name: type?.name || `${labelPrefix} Type ${index + 1}`,
-            kind: isService ? "service" : "residential",
-            typeIndex: index,
-            remaining,
-            totalAvailable,
-            detail: isService
-              ? `${Number(type?.bonus ?? 0)}`
-              : `${Number(type?.min ?? 0)}/${Number(type?.max ?? 0)}, ${Number(type?.w ?? 0)}x${Number(type?.h ?? 0)}`,
-          }];
-        })
+            const isService = labelPrefix === "Service";
+            const totalAvailable = getTypeTotalAvailable(type, isService);
+            const used = usedCounts[index] ?? 0;
+            const remaining = Math.max(0, totalAvailable - used);
+            if (!remaining) return [];
+            return [
+              {
+                name: type?.name || `${labelPrefix} Type ${index + 1}`,
+                kind: isService ? "service" : "residential",
+                typeIndex: index,
+                remaining,
+                totalAvailable,
+                detail: isService
+                  ? `${Number(type?.bonus ?? 0)}`
+                  : `${Number(type?.min ?? 0)}/${Number(type?.max ?? 0)}, ${Number(type?.w ?? 0)}x${Number(type?.h ?? 0)}`
+              }
+            ];
+          })
         : [];
 
       if (remainingEntries.length === 0) {
@@ -720,11 +734,12 @@
 
     function formatDiagnosticExample(example) {
       const idPrefix = example.kind === "service" ? "S" : "R";
-      const typeName = example.typeName
-        || (example.kind === "service" ? lookupServiceName(example.typeIndex) : lookupResidentialName(example.typeIndex));
+      const typeName =
+        example.typeName ||
+        (example.kind === "service" ? lookupServiceName(example.typeIndex) : lookupResidentialName(example.typeIndex));
       const parts = [
         `${typeName || `${idPrefix} type ${Number(example.typeIndex ?? -1) + 1}`} at (${example.r}, ${example.c})`,
-        `${example.rows}x${example.cols}`,
+        `${example.rows}x${example.cols}`
       ];
       if (typeof example.score === "number" && Number.isFinite(example.score)) {
         parts.push(`score ${formatDiagnosticCount(example.score)}`);
@@ -742,13 +757,11 @@
       if (!listElement) return;
       listElement.innerHTML = "";
 
-      const reasonEntries = DIAGNOSTIC_REASON_ORDER
-        .map((reason) => ({
-          reason,
-          count: Number(report?.reasonCounts?.[reason] ?? 0),
-          examples: Array.isArray(report?.examplesByReason?.[reason]) ? report.examplesByReason[reason] : [],
-        }))
-        .filter((entry) => entry.count > 0);
+      const reasonEntries = DIAGNOSTIC_REASON_ORDER.map((reason) => ({
+        reason,
+        count: Number(report?.reasonCounts?.[reason] ?? 0),
+        examples: Array.isArray(report?.examplesByReason?.[reason]) ? report.examplesByReason[reason] : []
+      })).filter((entry) => entry.count > 0);
 
       if (reasonEntries.length === 0) {
         listElement.innerHTML = `<li>${emptyLabel}</li>`;
@@ -764,9 +777,10 @@
         const detail = document.createElement("span");
         detail.className = "progress-log-detail";
         const examples = entry.examples.map(formatDiagnosticExample);
-        detail.textContent = examples.length > 0
-          ? `Examples: ${examples.join(" | ")}`
-          : "No bounded examples were captured for this reason.";
+        detail.textContent =
+          examples.length > 0
+            ? `Examples: ${examples.join(" | ")}`
+            : "No bounded examples were captured for this reason.";
 
         item.append(stamp, detail);
         listElement.append(item);
@@ -787,9 +801,9 @@
       const truncated = diagnostics.services?.truncated || diagnostics.residentials?.truncated;
       if (elements.greedyDiagnosticsSummary) {
         elements.greedyDiagnosticsSummary.textContent =
-          `Scanned ${formatDiagnosticCount(serviceScanned)} unplaced service candidates and `
-          + `${formatDiagnosticCount(residentialScanned)} unplaced residential candidates`
-          + `${truncated ? `, capped at ${formatDiagnosticCount(diagnostics.candidateLimit)} per category` : ""}.`;
+          `Scanned ${formatDiagnosticCount(serviceScanned)} unplaced service candidates and ` +
+          `${formatDiagnosticCount(residentialScanned)} unplaced residential candidates` +
+          `${truncated ? `, capped at ${formatDiagnosticCount(diagnostics.candidateLimit)} per category` : ""}.`;
       }
 
       renderDiagnosticKindReport(
@@ -830,11 +844,8 @@
         const populations = feasibleWorkers
           .map((worker) => (Number.isFinite(worker.totalPopulation) ? Number(worker.totalPopulation) : null))
           .filter((population) => population !== null);
-        const populationSpread = populations.length > 1
-          ? Math.max(...populations) - Math.min(...populations)
-          : null;
-        const selectedLabel =
-          `selected worker ${Number(selectedWorker?.workerIndex ?? 0) + 1}/${solution.cpSatPortfolio?.workerCount ?? portfolioWorkers.length}`;
+        const populationSpread = populations.length > 1 ? Math.max(...populations) - Math.min(...populations) : null;
+        const selectedLabel = `selected worker ${Number(selectedWorker?.workerIndex ?? 0) + 1}/${solution.cpSatPortfolio?.workerCount ?? portfolioWorkers.length}`;
         const seedLabel = Number.isInteger(selectedWorker?.randomSeed) ? ` seed ${selectedWorker.randomSeed}` : "";
         const feasibleLabel = `, ${feasibleWorkers.length}/${portfolioWorkers.length} feasible`;
         const spreadLabel = populationSpread !== null ? `, spread ${populationSpread.toLocaleString()}` : "";
@@ -882,7 +893,7 @@
         parts.push(`elapsed ${elapsed}s`);
       }
       const sinceImprovement = formatProgressLogNumber(summary.timeSinceImprovementSeconds, {
-        maximumFractionDigits: 1,
+        maximumFractionDigits: 1
       });
       if (sinceImprovement !== null) {
         parts.push(`last improvement ${sinceImprovement}s ago`);
@@ -913,16 +924,14 @@
     function renderProgressLog(options = {}) {
       if (!elements.resultProgressSummary || !elements.resultProgressLog) return;
 
-      const {
-        liveSnapshot = false,
-        manualLayout = false,
-      } = options;
+      const { liveSnapshot = false, manualLayout = false } = options;
       const entries = getResultProgressLogEntries();
 
       elements.resultProgressLog.innerHTML = "";
 
       if (manualLayout) {
-        elements.resultProgressSummary.textContent = "Manual layout edits clear the recorded solver performance history.";
+        elements.resultProgressSummary.textContent =
+          "Manual layout edits clear the recorded solver performance history.";
         elements.resultProgressLog.innerHTML = "<li>No solver samples are attached to this manual layout.</li>";
         return;
       }
@@ -991,9 +1000,11 @@
         if (gapLabel !== null) {
           parts.push(`gap <= ${gapLabel}`);
         }
-        const improvementLabel = entry.progressSummary ? null : formatProgressLogNumber(entry.secondsSinceLastImprovement, {
-          maximumFractionDigits: 1,
-        });
+        const improvementLabel = entry.progressSummary
+          ? null
+          : formatProgressLogNumber(entry.secondsSinceLastImprovement, {
+              maximumFractionDigits: 1
+            });
         if (improvementLabel !== null) {
           parts.push(`last improvement ${improvementLabel}s ago`);
         }
@@ -1043,11 +1054,15 @@
         return `Solved cell ${row},${col} belongs to ${hoverLabel}`;
       }
       const label =
-        kind === "road" ? "road" :
-        kind === "service" ? "service building" :
-        kind === "residential" ? "residential building" :
-        kind === "blocked" ? "blocked" :
-        "empty allowed";
+        kind === "road"
+          ? "road"
+          : kind === "service"
+            ? "service building"
+            : kind === "residential"
+              ? "residential building"
+              : kind === "blocked"
+                ? "blocked"
+                : "empty allowed";
       return `Solved cell ${row},${col} is ${label}`;
     }
 
@@ -1092,7 +1107,7 @@
         cellSize: Number.parseFloat(styles.getPropertyValue("--matrix-cell-size")) || 28,
         gap: Number.parseFloat(styles.getPropertyValue("--matrix-gap")) || 6,
         paddingX: Number.parseFloat(styles.paddingLeft) || 18,
-        paddingY: Number.parseFloat(styles.paddingTop) || 18,
+        paddingY: Number.parseFloat(styles.paddingTop) || 18
       };
     }
 
@@ -1170,10 +1185,6 @@
       return normalizeExplainabilityMode();
     }
 
-    function isExplainabilityMapVisible() {
-      return getActiveExplainabilityMode() !== "layout";
-    }
-
     function hidesBuildingOverlayForMode(mode = getActiveExplainabilityMode()) {
       return heatmapHidesBuildingOverlayForMode(mode);
     }
@@ -1215,7 +1226,7 @@
         for (let c = 0; c < cols; c += 1) {
           const kind = matrix[r][c];
           const visualKind = hideOverlayForMode && kind !== "blocked" ? "empty" : kind;
-          const hoverLabel = hideOverlayForMode ? "" : (hoverLabels[r]?.[c] || "");
+          const hoverLabel = hideOverlayForMode ? "" : hoverLabels[r]?.[c] || "";
           const explainabilityValue = heatmap?.values?.[r]?.[c] ?? 0;
           const explainabilityDetail = heatmap?.details?.[r]?.[c] ?? "";
           const explainabilityValueLabel = describeExplainabilityValue(
@@ -1317,10 +1328,7 @@
 
       const { solution, stats, validation } = state.result;
       state.selectedMapBuilding = getSelectedMapPlacement(solution)?.kind ? state.selectedMapBuilding : null;
-      const {
-        manualLayout,
-        pendingValidation: pendingManualValidation,
-      } = getManualLayoutState();
+      const { manualLayout, pendingValidation: pendingManualValidation } = getManualLayoutState();
       const stoppedByUser = Boolean(solution.stoppedByUser || stats.stoppedByUser);
       const liveSnapshot = Boolean(state.isSolving && state.resultIsLiveSnapshot);
       const solvedGrid = state.resultContext?.grid ?? state.grid;
@@ -1334,7 +1342,11 @@
           ? `Showing the best validated layout found so far while the solver keeps running. The first live capture appears as soon as an incumbent is available, then refreshes every ${formatLiveSnapshotRefreshCadence()}.`
           : `The latest running snapshot needs review: ${validation.errors.join(" ")}`;
       } else if (manualLayout) {
-        elements.resultBadge.textContent = pendingManualValidation ? "Edited" : validation.valid ? "Manual" : "Manual review";
+        elements.resultBadge.textContent = pendingManualValidation
+          ? "Edited"
+          : validation.valid
+            ? "Manual"
+            : "Manual review";
         elements.resultBadge.className = `result-badge ${pendingManualValidation ? "idle" : validation.valid ? "success" : "error"}`;
         elements.validationNotice.className = `notice ${pendingManualValidation || validation.valid ? "info" : "error"}`;
         elements.validationNotice.textContent = pendingManualValidation
@@ -1343,19 +1355,23 @@
             ? "This layout was manually edited and revalidated for the current grid and settings."
             : validation.errors.join(" ");
       } else {
-        elements.resultBadge.textContent = validation.valid ? (stoppedByUser ? "Stopped" : "Validated") : "Needs review";
+        elements.resultBadge.textContent = validation.valid
+          ? stoppedByUser
+            ? "Stopped"
+            : "Validated"
+          : "Needs review";
         elements.resultBadge.className = `result-badge ${validation.valid ? "success" : "error"}`;
         elements.validationNotice.className = `notice ${validation.valid ? "success" : "error"}`;
         elements.validationNotice.textContent = validation.valid
-          ? (
-            stoppedByUser
-              ? `${getOptimizerLabel(stats.optimizer)} was stopped early. Showing the best validated result found so far.`
-              : "The solver output passed validation for the current grid and settings."
-          )
+          ? stoppedByUser
+            ? `${getOptimizerLabel(stats.optimizer)} was stopped early. Showing the best validated result found so far.`
+            : "The solver output passed validation for the current grid and settings."
           : validation.errors.join(" ");
       }
 
-      elements.resultPopulation.textContent = pendingManualValidation ? "Pending" : Number(stats.totalPopulation).toLocaleString();
+      elements.resultPopulation.textContent = pendingManualValidation
+        ? "Pending"
+        : Number(stats.totalPopulation).toLocaleString();
       elements.resultRoadCount.textContent = String(stats.roadCount);
       elements.resultServiceCount.textContent = String(stats.serviceCount);
       elements.resultResidentialCount.textContent = String(stats.residentialCount);
@@ -1366,14 +1382,14 @@
           ? `Auto -> ${getOptimizerLabel(stats.activeOptimizer)}`
           : null;
       elements.resultSolverStatus.textContent = manualLayout
-        ? (pendingManualValidation ? "manual edit (pending validation)" : "manual edit")
+        ? pendingManualValidation
+          ? "manual edit (pending validation)"
+          : "manual edit"
         : liveSnapshot
           ? `${autoStageStatus || stats.cpSatStatus || getOptimizerLabel(stats.optimizer)} (live)${cpSatSeedStatus}`
-          : (
-            stoppedByUser && stats.cpSatStatus
-              ? `${stats.cpSatStatus} (stopped)${cpSatSeedStatus}`
-              : `${stats.cpSatStatus || autoStageStatus || (stats.optimizer ?? "n/a")}${cpSatSeedStatus}`
-          );
+          : stoppedByUser && stats.cpSatStatus
+            ? `${stats.cpSatStatus} (stopped)${cpSatSeedStatus}`
+            : `${stats.cpSatStatus || autoStageStatus || (stats.optimizer ?? "n/a")}${cpSatSeedStatus}`;
 
       elements.serviceResultList.innerHTML = "";
       if (solution.services.length === 0) {
@@ -1383,13 +1399,11 @@
           const item = document.createElement("li");
           const typeLabel = lookupServiceName(solution.serviceTypeIndices[index] ?? -1);
           item.textContent =
-            `${typeLabel} (S${index + 1}) at (${service.r}, ${service.c}) `
-            + `${service.rows}x${service.cols}, range ${service.range}, `
-            + (
-              pendingManualValidation
-                ? "effect pending validation"
-                : `+${solution.servicePopulationIncreases[index] ?? 0}`
-            );
+            `${typeLabel} (S${index + 1}) at (${service.r}, ${service.c}) ` +
+            `${service.rows}x${service.cols}, range ${service.range}, ` +
+            (pendingManualValidation
+              ? "effect pending validation"
+              : `+${solution.servicePopulationIncreases[index] ?? 0}`);
           elements.serviceResultList.append(item);
         });
       }
@@ -1402,13 +1416,9 @@
           const item = document.createElement("li");
           const typeLabel = lookupResidentialName(solution.residentialTypeIndices[index] ?? -1);
           item.textContent =
-            `${typeLabel} (R${index + 1}) at (${residential.r}, ${residential.c}) `
-            + `${residential.rows}x${residential.cols}, `
-            + (
-              pendingManualValidation
-                ? "population pending validation"
-                : `pop ${solution.populations[index] ?? 0}`
-            );
+            `${typeLabel} (R${index + 1}) at (${residential.r}, ${residential.c}) ` +
+            `${residential.rows}x${residential.cols}, ` +
+            (pendingManualValidation ? "population pending validation" : `pop ${solution.populations[index] ?? 0}`);
           elements.residentialResultList.append(item);
         });
       }
@@ -1470,7 +1480,7 @@
       if (!pendingPlacement?.canRotate) return;
       state.layoutEditor.pendingPlacement = {
         ...pendingPlacement,
-        rotated: !pendingPlacement.rotated,
+        rotated: !pendingPlacement.rotated
       };
       state.layoutEditor.status = "";
       renderLayoutEditorControls();
@@ -1497,7 +1507,7 @@
         const nextSolution = cloneEditableSolution();
         removePlacementFromSolution(nextSolution, selected);
         applyEditedLayoutLocally(nextSolution, {
-          message: `Removed ${selected.kind === "service" ? "S" : "R"}${selected.index + 1}.`,
+          message: `Removed ${selected.kind === "service" ? "S" : "R"}${selected.index + 1}.`
         });
       } catch (error) {
         setLayoutEditorStatus(error instanceof Error ? error.message : "Failed to remove the selected building.");
@@ -1507,9 +1517,11 @@
     async function handleValidateEditedLayoutAction() {
       if (isLayoutEditBusy() || !hasEditableLayoutContext()) return;
       if (!state.layoutEditor.pendingValidation) {
-        setLayoutEditorStatus(state.layoutEditor.edited
-          ? "This manual layout is already validated."
-          : "Make a manual edit first, then validate the layout.");
+        setLayoutEditorStatus(
+          state.layoutEditor.edited
+            ? "This manual layout is already validated."
+            : "Make a manual edit first, then validate the layout."
+        );
         return;
       }
 
@@ -1518,7 +1530,7 @@
           message: "Manual layout validated.",
           selectedBuilding: state.selectedMapBuilding,
           selectedCell: state.selectedMapCell,
-          keepMode: true,
+          keepMode: true
         });
       } catch (error) {
         setLayoutEditorStatus(error instanceof Error ? error.message : "Failed to validate the edited layout.");
@@ -1578,11 +1590,11 @@
       refreshResultOverlay,
       renderLayoutEditorControls,
       renderResults,
-      setLayoutEditMode,
+      setLayoutEditMode
     });
   }
 
   globalObject.CityBuilderResults = Object.freeze({
-    createPlannerResultsController,
+    createPlannerResultsController
   });
 })(window);

@@ -14,7 +14,7 @@ import {
   inheritGreedyBenchmarkOptions,
   listBenchmarkCaseNames,
   selectBenchmarkCasesByName,
-  uniqueBenchmarkValuesBy,
+  uniqueBenchmarkValuesBy
 } from "./benchmarkOptions.js";
 import { normalizeCpSatBenchmarkOptions } from "./cpSat.js";
 import { normalizeGreedyBenchmarkOptions } from "./greedy.js";
@@ -30,7 +30,7 @@ import type {
   LnsOptions,
   LnsTelemetry,
   SolverParams,
-  SolverProgressSummary,
+  SolverProgressSummary
 } from "../core/index.js";
 
 export interface LnsBenchmarkCase {
@@ -51,9 +51,7 @@ export type LnsReplayPressureFamily =
 
 export const UNCATEGORIZED_LNS_REPLAY_PRESSURE_FAMILY = "uncategorized" as const;
 
-export type LnsReplayPressureFamilyLabel =
-  | LnsReplayPressureFamily
-  | typeof UNCATEGORIZED_LNS_REPLAY_PRESSURE_FAMILY;
+export type LnsReplayPressureFamilyLabel = LnsReplayPressureFamily | typeof UNCATEGORIZED_LNS_REPLAY_PRESSURE_FAMILY;
 
 export function getLnsReplayPressureFamily(
   benchmarkCase: Pick<LnsBenchmarkCase, "pressureFamily">
@@ -104,17 +102,19 @@ export interface LnsBenchmarkSnapshot {
   results: LnsBenchmarkSnapshotCaseResult[];
 }
 
-export const DEFAULT_LNS_BENCHMARK_OPTIONS: Readonly<Required<
-  Pick<
-    LnsOptions,
-    "iterations" | "maxNoImprovementIterations" | "neighborhoodRows" | "neighborhoodCols" | "repairTimeLimitSeconds"
+export const DEFAULT_LNS_BENCHMARK_OPTIONS: Readonly<
+  Required<
+    Pick<
+      LnsOptions,
+      "iterations" | "maxNoImprovementIterations" | "neighborhoodRows" | "neighborhoodCols" | "repairTimeLimitSeconds"
+    >
   >
->> = Object.freeze({
+> = Object.freeze({
   iterations: 2,
   maxNoImprovementIterations: 2,
   neighborhoodRows: 3,
   neighborhoodCols: 3,
-  repairTimeLimitSeconds: 1,
+  repairTimeLimitSeconds: 1
 });
 
 function formatProfilePhaseSummary(phase: GreedyProfilePhaseSummary): string {
@@ -135,7 +135,7 @@ function buildBenchmarkParams(benchmarkCase: LnsBenchmarkCase, options?: LnsBenc
     ...applyNormalizedGreedyBenchmarkParams(params, greedy),
     optimizer: "lns",
     cpSat: normalizeCpSatBenchmarkOptions(params.cpSat, options?.cpSat),
-    lns: normalizeLnsBenchmarkOptions(params.lns, options?.lns),
+    lns: normalizeLnsBenchmarkOptions(params.lns, options?.lns)
   };
 }
 
@@ -145,7 +145,7 @@ function selectBenchmarkCases(
 ): LnsBenchmarkCase[] {
   return selectBenchmarkCasesByName(corpus, names, {
     caseLabel: "LNS benchmark",
-    corpusLabel: "LNS benchmark",
+    corpusLabel: "LNS benchmark"
   });
 }
 
@@ -154,11 +154,14 @@ export function listLnsBenchmarkCaseNames(
 ): string[] {
   return listBenchmarkCaseNames(corpus, {
     caseLabel: "LNS benchmark",
-    corpusLabel: "LNS benchmark",
+    corpusLabel: "LNS benchmark"
   });
 }
 
-function runLnsBenchmarkCase(benchmarkCase: LnsBenchmarkCase, options?: LnsBenchmarkRunOptions): LnsBenchmarkCaseResult {
+function runLnsBenchmarkCase(
+  benchmarkCase: LnsBenchmarkCase,
+  options?: LnsBenchmarkRunOptions
+): LnsBenchmarkCaseResult {
   const params = buildBenchmarkParams(benchmarkCase, options);
   const startedAt = performance.now();
   const solution = solveLns(cloneBenchmarkGrid(benchmarkCase.grid), params);
@@ -185,9 +188,9 @@ function runLnsBenchmarkCase(benchmarkCase: LnsBenchmarkCase, options?: LnsBench
     progressSummary: buildSolverProgressSummary(solution, {
       elapsedTimeSeconds: wallClockSeconds,
       fallbackOptimizer: "lns",
-      params,
+      params
     }),
-    wallClockSeconds,
+    wallClockSeconds
   };
 }
 
@@ -201,7 +204,7 @@ export function runLnsBenchmarkSuite(
   const results = selected.map((benchmarkCase) => runLnsBenchmarkCase(benchmarkCase, options));
   return {
     ...buildBenchmarkSuiteMetadata(results.map((result) => result.name)),
-    results,
+    results
   };
 }
 
@@ -209,7 +212,7 @@ export function createLnsBenchmarkSnapshot(result: LnsBenchmarkSuiteResult): Lns
   return {
     caseCount: result.caseCount,
     selectedCaseNames: [...result.selectedCaseNames],
-    results: result.results.map(({ wallClockSeconds: _wallClockSeconds, ...benchmark }) => benchmark),
+    results: result.results.map(({ wallClockSeconds: _wallClockSeconds, ...benchmark }) => benchmark)
   };
 }
 
@@ -257,13 +260,13 @@ export const DEFAULT_LNS_BENCHMARK_CORPUS: readonly LnsBenchmarkCase[] = Object.
       [1, 1, 1, 1],
       [1, 1, 1, 1],
       [1, 1, 1, 1],
-      [1, 1, 1, 1],
+      [1, 1, 1, 1]
     ],
     params: {
       optimizer: "lns",
       residentialTypes: [
         { w: 2, h: 2, min: 10, max: 10, avail: 1 },
-        { w: 2, h: 2, min: 100, max: 100, avail: 1 },
+        { w: 2, h: 2, min: 100, max: 100, avail: 1 }
       ],
       availableBuildings: { residentials: 2, services: 0 },
       greedy: {
@@ -274,9 +277,9 @@ export const DEFAULT_LNS_BENCHMARK_CORPUS: readonly LnsBenchmarkCase[] = Object.
         serviceRefineCandidateLimit: 4,
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 4,
-        serviceExactMaxCombinations: 16,
-      },
-    },
+        serviceExactMaxCombinations: 16
+      }
+    }
   },
   {
     name: "compact-service-repair",
@@ -288,14 +291,14 @@ export const DEFAULT_LNS_BENCHMARK_CORPUS: readonly LnsBenchmarkCase[] = Object.
       [1, 1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1, 1],
-      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1]
     ],
     params: {
       optimizer: "lns",
       serviceTypes: [{ rows: 2, cols: 2, bonus: 80, range: 2, avail: 1 }],
       residentialTypes: [
         { w: 2, h: 2, min: 100, max: 180, avail: 2 },
-        { w: 2, h: 3, min: 130, max: 260, avail: 1 },
+        { w: 2, h: 3, min: 130, max: 260, avail: 1 }
       ],
       availableBuildings: { services: 1, residentials: 3 },
       greedy: {
@@ -306,9 +309,9 @@ export const DEFAULT_LNS_BENCHMARK_CORPUS: readonly LnsBenchmarkCase[] = Object.
         serviceRefineCandidateLimit: 10,
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 8,
-        serviceExactMaxCombinations: 64,
-      },
-    },
+        serviceExactMaxCombinations: 64
+      }
+    }
   },
   {
     name: "seeded-service-anchor-pressure",
@@ -320,7 +323,7 @@ export const DEFAULT_LNS_BENCHMARK_CORPUS: readonly LnsBenchmarkCase[] = Object.
       [1, 1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1, 1],
-      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1]
     ],
     params: {
       optimizer: "lns",
@@ -342,12 +345,12 @@ export const DEFAULT_LNS_BENCHMARK_CORPUS: readonly LnsBenchmarkCase[] = Object.
             services: [{ r: 1, c: 4, rows: 2, cols: 2, range: 1, typeIndex: 0, bonus: 100 }],
             residentials: [{ r: 4, c: 4, rows: 2, cols: 2, typeIndex: 0, population: 100 }],
             populations: [100],
-            totalPopulation: 100,
-          },
-        },
+            totalPopulation: 100
+          }
+        }
       },
       cpSat: {
-        timeLimitSeconds: 0.5,
+        timeLimitSeconds: 0.5
       },
       greedy: {
         localSearch: false,
@@ -357,9 +360,9 @@ export const DEFAULT_LNS_BENCHMARK_CORPUS: readonly LnsBenchmarkCase[] = Object.
         serviceRefineCandidateLimit: 4,
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 4,
-        serviceExactMaxCombinations: 16,
-      },
-    },
+        serviceExactMaxCombinations: 16
+      }
+    }
   },
   {
     name: "row0-anchor-repair",
@@ -368,7 +371,7 @@ export const DEFAULT_LNS_BENCHMARK_CORPUS: readonly LnsBenchmarkCase[] = Object.
     grid: [
       [1, 0, 1, 0],
       [0, 0, 1, 1],
-      [0, 0, 1, 1],
+      [0, 0, 1, 1]
     ],
     params: {
       optimizer: "lns",
@@ -382,11 +385,11 @@ export const DEFAULT_LNS_BENCHMARK_CORPUS: readonly LnsBenchmarkCase[] = Object.
         serviceRefineCandidateLimit: 4,
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 4,
-        serviceExactMaxCombinations: 16,
-      },
-    },
+        serviceExactMaxCombinations: 16
+      }
+    }
   },
-  ...GENERATED_LNS_PRESSURE_CASES,
+  ...GENERATED_LNS_PRESSURE_CASES
 ]);
 
 export const DEFAULT_LNS_REPLAY_LABEL_CASE_NAMES = Object.freeze([
@@ -399,18 +402,19 @@ export const DEFAULT_LNS_REPLAY_LABEL_CASE_NAMES = Object.freeze([
   "lns-service-overlap-pressure",
   "lns-anchor-service-corner-pressure",
   "lns-gate-side-channel-pressure",
-  "lns-footprint-bottleneck-pressure",
+  "lns-footprint-bottleneck-pressure"
 ] satisfies string[]);
 
 function selectReplayLabelCases(corpus: readonly LnsBenchmarkCase[]): LnsBenchmarkCase[] {
   return selectBenchmarkCasesByName(corpus, DEFAULT_LNS_REPLAY_LABEL_CASE_NAMES, {
     caseLabel: "LNS replay label",
-    corpusLabel: "LNS replay label",
+    corpusLabel: "LNS replay label"
   });
 }
 
-export const DEFAULT_LNS_REPLAY_LABEL_CORPUS: readonly LnsBenchmarkCase[] =
-  Object.freeze(selectReplayLabelCases(DEFAULT_LNS_BENCHMARK_CORPUS));
+export const DEFAULT_LNS_REPLAY_LABEL_CORPUS: readonly LnsBenchmarkCase[] = Object.freeze(
+  selectReplayLabelCases(DEFAULT_LNS_BENCHMARK_CORPUS)
+);
 
 export function listLnsReplayPressureFamilies(
   corpus: readonly LnsBenchmarkCase[] = DEFAULT_LNS_REPLAY_LABEL_CORPUS

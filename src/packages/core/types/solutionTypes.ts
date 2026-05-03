@@ -5,8 +5,19 @@
  */
 
 import type { AutoSolveStageMetadata } from "./autoTypes.js";
-import type { AutoStageOptimizerName, Grid, OptimizerName, ResidentialPlacement, ServicePlacement } from "./baseTypes.js";
-import type { CpSatObjectivePolicy, CpSatPortfolioSummary, CpSatTelemetry, SolverProgressSummary } from "./cpSatTypes.js";
+import type {
+  AutoStageOptimizerName,
+  Grid,
+  OptimizerName,
+  ResidentialPlacement,
+  ServicePlacement
+} from "./baseTypes.js";
+import type {
+  CpSatObjectivePolicy,
+  CpSatPortfolioSummary,
+  CpSatTelemetry,
+  SolverProgressSummary
+} from "./cpSatTypes.js";
 import type { GreedyDiagnostics, GreedyProfile } from "./greedyTypes.js";
 import type { LnsNeighborhoodOutcomeStatus, LnsStopReason, LnsTelemetry } from "./lnsTypes.js";
 import type { SolverParams } from "./solverParamTypes.js";

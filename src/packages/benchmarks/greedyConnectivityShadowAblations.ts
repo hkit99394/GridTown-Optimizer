@@ -9,18 +9,15 @@ import {
   meanBenchmarkValue,
   selectBenchmarkCasesByName,
   sumBenchmarkBy,
-  sumBenchmarkValues,
+  sumBenchmarkValues
 } from "./benchmarkOptions.js";
-import {
-  DEFAULT_GREEDY_BENCHMARK_CORPUS,
-  runGreedyBenchmarkSuite,
-} from "./greedy.js";
+import { DEFAULT_GREEDY_BENCHMARK_CORPUS, runGreedyBenchmarkSuite } from "./greedy.js";
 
 import type {
   GreedyBenchmarkCase,
   GreedyBenchmarkCaseResult,
   GreedyBenchmarkOptions,
-  GreedyBenchmarkRunOptions,
+  GreedyBenchmarkRunOptions
 } from "./greedy.js";
 
 export type GreedyConnectivityShadowScoringAblationVariantName = "baseline" | "connectivity-shadow";
@@ -104,25 +101,21 @@ export const DEFAULT_GREEDY_CONNECTIVITY_SHADOW_SCORING_ABLATION_CASE_NAMES = Ob
   "service-local-neighborhood",
   "deterministic-tie-breaks",
   "typed-footprint-pressure",
-  "typed-availability-pressure",
+  "typed-availability-pressure"
 ] satisfies string[]);
 
 function selectDefaultAblationCases(corpus: readonly GreedyBenchmarkCase[]): GreedyBenchmarkCase[] {
   return selectBenchmarkCasesByName(corpus, DEFAULT_GREEDY_CONNECTIVITY_SHADOW_SCORING_ABLATION_CASE_NAMES, {
     caseLabel: "Greedy connectivity-shadow ablation",
-    corpusLabel: "Greedy connectivity-shadow ablation",
+    corpusLabel: "Greedy connectivity-shadow ablation"
   });
 }
 
-export const DEFAULT_GREEDY_CONNECTIVITY_SHADOW_SCORING_ABLATION_CORPUS: readonly GreedyBenchmarkCase[] =
-  Object.freeze(
-    selectDefaultAblationCases(
-      dedupeBenchmarkCases([
-        DEFAULT_GREEDY_BENCHMARK_CORPUS,
-        DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS,
-      ])
-    )
-  );
+export const DEFAULT_GREEDY_CONNECTIVITY_SHADOW_SCORING_ABLATION_CORPUS: readonly GreedyBenchmarkCase[] = Object.freeze(
+  selectDefaultAblationCases(
+    dedupeBenchmarkCases([DEFAULT_GREEDY_BENCHMARK_CORPUS, DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS])
+  )
+);
 
 function maybeDelta(left: number | null, right: number | null): number | null {
   return left === null || right === null ? null : right - left;
@@ -154,11 +147,13 @@ function variantResult(
     shadowScoreWins: counters?.connectivityShadowScoreWins ?? null,
     shadowScoreLosses: counters?.connectivityShadowScoreLosses ?? null,
     shadowScoreNeutral: counters?.connectivityShadowScoreNeutral ?? null,
-    shadowDecisionTraceCount: result.greedyProfile?.connectivityShadowDecisions?.length ?? 0,
+    shadowDecisionTraceCount: result.greedyProfile?.connectivityShadowDecisions?.length ?? 0
   };
 }
 
-function buildCoverage(cases: readonly GreedyConnectivityShadowScoringAblationCaseResult[]): GreedyConnectivityShadowScoringAblationCoverage {
+function buildCoverage(
+  cases: readonly GreedyConnectivityShadowScoringAblationCaseResult[]
+): GreedyConnectivityShadowScoringAblationCoverage {
   const variants = cases.flatMap((entry) => [entry.baseline, entry.connectivityShadow]);
   return {
     caseCount: cases.length,
@@ -169,7 +164,7 @@ function buildCoverage(cases: readonly GreedyConnectivityShadowScoringAblationCa
     shadowObservedRuns: countBenchmarkMatches(
       variants,
       (entry) => entry.shadowChecks !== null && entry.shadowChecks > 0
-    ),
+    )
   };
 }
 
@@ -178,7 +173,7 @@ export function listGreedyConnectivityShadowScoringAblationCaseNames(
 ): string[] {
   return listBenchmarkCaseNames(corpus, {
     caseLabel: "Greedy connectivity-shadow ablation",
-    corpusLabel: "Greedy connectivity-shadow ablation",
+    corpusLabel: "Greedy connectivity-shadow ablation"
   });
 }
 
@@ -192,21 +187,19 @@ export function runGreedyConnectivityShadowScoringAblation(
     greedy: {
       ...(options.greedy ?? {}),
       ...(options.baselineGreedy ?? {}),
-      connectivityShadowScoring: false,
-    },
+      connectivityShadowScoring: false
+    }
   });
   const connectivityShadowSuite = runGreedyBenchmarkSuite(corpus, {
     names,
     greedy: {
       ...(options.greedy ?? {}),
       ...(options.connectivityShadowGreedy ?? {}),
-      connectivityShadowScoring: true,
-    },
+      connectivityShadowScoring: true
+    }
   });
 
-  const connectivityShadowByName = new Map(
-    connectivityShadowSuite.results.map((result) => [result.name, result])
-  );
+  const connectivityShadowByName = new Map(connectivityShadowSuite.results.map((result) => [result.name, result]));
   const cases = baselineSuite.results.map((baselineResult) => {
     const connectivityShadowResult = connectivityShadowByName.get(baselineResult.name);
     if (!connectivityShadowResult) {
@@ -228,7 +221,7 @@ export function runGreedyConnectivityShadowScoringAblation(
       serviceDelta: connectivityShadow.serviceCount - baseline.serviceCount,
       residentialDelta: connectivityShadow.residentialCount - baseline.residentialCount,
       shadowChecksDelta: maybeDelta(baseline.shadowChecks, connectivityShadow.shadowChecks),
-      shadowLostCellsDelta: maybeDelta(baseline.shadowLostCells, connectivityShadow.shadowLostCells),
+      shadowLostCellsDelta: maybeDelta(baseline.shadowLostCells, connectivityShadow.shadowLostCells)
     };
   });
   const populationDeltas = cases.map((entry) => entry.populationDelta);
@@ -245,7 +238,7 @@ export function runGreedyConnectivityShadowScoringAblation(
     bestPopulationDelta: populationDeltas.length ? Math.max(...populationDeltas) : 0,
     worstPopulationDelta: populationDeltas.length ? Math.min(...populationDeltas) : 0,
     totalRoadDelta: sumBenchmarkBy(cases, (entry) => entry.roadDelta),
-    cases,
+    cases
   };
 }
 
@@ -264,7 +257,7 @@ function formatVariant(variant: GreedyConnectivityShadowScoringAblationVariantRe
     `shadow-score-ties:${formatNullable(variant.shadowScoreTies)}`,
     `shadow-score-wins:${formatNullable(variant.shadowScoreWins)}`,
     `shadow-score-losses:${formatNullable(variant.shadowScoreLosses)}`,
-    `shadow-trace:${variant.shadowDecisionTraceCount}`,
+    `shadow-trace:${variant.shadowDecisionTraceCount}`
   ].join(" ");
 }
 

@@ -1,16 +1,12 @@
 (function attachPlannerManualLayout(globalObject) {
   function createPlannerManualLayoutModel(options) {
-    const {
-      state,
-      cloneJson,
-      pendingManualLayoutError,
-    } = options;
+    const { state, cloneJson, pendingManualLayoutError } = options;
 
     function swapPlacementDimensions(placement) {
       return {
         ...placement,
         rows: placement.cols,
-        cols: placement.rows,
+        cols: placement.rows
       };
     }
 
@@ -25,7 +21,7 @@
           rows: Number(type.rows),
           cols: Number(type.cols),
           rotated: false,
-          canRotate: (type.allowRotation ?? true) && Number(type.rows) !== Number(type.cols),
+          canRotate: (type.allowRotation ?? true) && Number(type.rows) !== Number(type.cols)
         };
       }
 
@@ -38,7 +34,7 @@
         rows: Number(type.h),
         cols: Number(type.w),
         rotated: false,
-        canRotate: Number(type.h) !== Number(type.w),
+        canRotate: Number(type.h) !== Number(type.w)
       };
     }
 
@@ -115,12 +111,12 @@
         c: col,
         rows: Number(type.rows),
         cols: Number(type.cols),
-        range: Number(type.range),
+        range: Number(type.range)
       };
       return {
         placement: rotated ? swapPlacementDimensions(basePlacement) : basePlacement,
         bonus: Number(type.bonus ?? 0),
-        name: type.name || `Service Type ${typeIndex + 1}`,
+        name: type.name || `Service Type ${typeIndex + 1}`
       };
     }
 
@@ -131,12 +127,12 @@
         r: row,
         c: col,
         rows: Number(type.h),
-        cols: Number(type.w),
+        cols: Number(type.w)
       };
       return {
         placement: rotated ? swapPlacementDimensions(basePlacement) : basePlacement,
         population: Number(type.min ?? 0),
-        name: type.name || `Residential Type ${typeIndex + 1}`,
+        name: type.name || `Residential Type ${typeIndex + 1}`
       };
     }
 
@@ -166,7 +162,7 @@
         cpSatTelemetry: undefined,
         cpSatPortfolio: undefined,
         stoppedByUser: false,
-        totalPopulation: sumRecordedResidentialPopulation(nextSolution),
+        totalPopulation: sumRecordedResidentialPopulation(nextSolution)
       };
 
       return {
@@ -177,7 +173,7 @@
           recomputedPopulations: [],
           recomputedTotalPopulation: normalizedSolution.totalPopulation,
           mapRows: [],
-          mapText: "",
+          mapText: ""
         },
         stats: {
           optimizer: normalizedSolution.optimizer,
@@ -189,8 +185,8 @@
           totalPopulation: normalizedSolution.totalPopulation,
           roadCount: normalizedSolution.roads?.length ?? 0,
           serviceCount: normalizedSolution.services?.length ?? 0,
-          residentialCount: normalizedSolution.residentials?.length ?? 0,
-        },
+          residentialCount: normalizedSolution.residentials?.length ?? 0
+        }
       };
     }
 
@@ -214,12 +210,7 @@
 
       for (let index = 0; index < (solution.services?.length ?? 0); index += 1) {
         const service = solution.services[index];
-        if (
-          row >= service.r
-          && row < service.r + service.rows
-          && col >= service.c
-          && col < service.c + service.cols
-        ) {
+        if (row >= service.r && row < service.r + service.rows && col >= service.c && col < service.c + service.cols) {
           return { kind: "service", index };
         }
       }
@@ -227,10 +218,10 @@
       for (let index = 0; index < (solution.residentials?.length ?? 0); index += 1) {
         const residential = solution.residentials[index];
         if (
-          row >= residential.r
-          && row < residential.r + residential.rows
-          && col >= residential.c
-          && col < residential.c + residential.cols
+          row >= residential.r &&
+          row < residential.r + residential.rows &&
+          col >= residential.c &&
+          col < residential.c + residential.cols
         ) {
           return { kind: "residential", index };
         }
@@ -241,21 +232,21 @@
 
     function isCellInsidePlacement(placement, row, col) {
       return Boolean(
-        placement
-        && row >= placement.r
-        && row < placement.r + placement.rows
-        && col >= placement.c
-        && col < placement.c + placement.cols
+        placement &&
+        row >= placement.r &&
+        row < placement.r + placement.rows &&
+        col >= placement.c &&
+        col < placement.c + placement.cols
       );
     }
 
     function isCellInsideServiceEffect(service, row, col) {
       return Boolean(
-        service
-        && row >= service.r - service.range
-        && row <= service.r + service.rows - 1 + service.range
-        && col >= service.c - service.range
-        && col <= service.c + service.cols - 1 + service.range
+        service &&
+        row >= service.r - service.range &&
+        row <= service.r + service.rows - 1 + service.range &&
+        col >= service.c - service.range &&
+        col <= service.c + service.cols - 1 + service.range
       );
     }
 
@@ -278,11 +269,11 @@
       isCellInsidePlacement,
       isCellInsideServiceEffect,
       readPendingPlacementFootprint,
-      removePlacementFromSolution,
+      removePlacementFromSolution
     };
   }
 
   globalObject.PlannerManualLayout = {
-    createPlannerManualLayoutModel,
+    createPlannerManualLayoutModel
   };
 })(typeof window !== "undefined" ? window : globalThis);

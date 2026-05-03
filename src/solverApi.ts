@@ -12,7 +12,7 @@ export {
   solveCpSat,
   solveCpSatAsync,
   solveGreedy,
-  solveLns,
+  solveLns
 } from "./packages/solvers/index.js";
 export {
   assertValidLayout,
@@ -34,9 +34,13 @@ export {
   summarizeDecisionTraceReason,
   validateLayoutConstraints,
   validateSolution,
-  validateSolutionMap,
+  validateSolutionMap
 } from "./packages/core/index.js";
-export { CP_SAT_PORTFOLIO_CAPABILITY_LIMITS, OMITTED_SOLVER_OPTIMIZER, RECOMMENDED_INTERACTIVE_OPTIMIZER } from "./packages/core/index.js";
+export {
+  CP_SAT_PORTFOLIO_CAPABILITY_LIMITS,
+  OMITTED_SOLVER_OPTIMIZER,
+  RECOMMENDED_INTERACTIVE_OPTIMIZER
+} from "./packages/core/index.js";
 export { getOptimizerAdapter, listOptimizerAdapters, resolveOptimizerName } from "./packages/runtime/index.js";
 
 export type {
@@ -127,5 +131,5 @@ export type {
   CpSatContinuationResumePolicy,
   CpSatContinuationCheckpoint,
   SavedLayoutRecord,
-  SolutionMapValidationResult,
+  SolutionMapValidationResult
 } from "./packages/core/index.js";

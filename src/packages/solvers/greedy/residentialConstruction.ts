@@ -1,9 +1,4 @@
-import type {
-  Grid,
-  GreedyProfileCounters,
-  ResidentialPlacement,
-  SolverParams,
-} from "../../core/index.js";
+import type { Grid, GreedyProfileCounters, ResidentialPlacement, SolverParams } from "../../core/index.js";
 import { GreedyAttemptState } from "./attemptState.js";
 import type { ConnectivityProbe } from "./attemptState.js";
 import {
@@ -11,34 +6,24 @@ import {
   compareConnectivityShadowPenalty,
   computeConnectivityShadowPenalty,
   recordConnectivityShadowTieDecision,
-  residentialPlacementTrace,
+  residentialPlacementTrace
 } from "./connectivityShadowScoring.js";
 import type { ConnectivityShadowDecisionRecorder } from "./connectivityShadowScoring.js";
-import {
-  recordRoadOpportunityPlacement,
-  roadOpportunityHasTraceCapacity,
-} from "./roadOpportunity.js";
+import { recordRoadOpportunityPlacement, roadOpportunityHasTraceCapacity } from "./roadOpportunity.js";
 import type { RoadOpportunityRecorder } from "./roadOpportunity.js";
 import {
   collectIndexedCandidatesForCells,
   createActiveCandidatePool,
-  invalidateCandidatePoolEntries,
+  invalidateCandidatePoolEntries
 } from "./candidatePools.js";
-import {
-  compareResidentialTieBreaks,
-  getCandidateTypeIndex,
-  stableResidentialPlacementKey,
-} from "./candidates.js";
+import { compareResidentialTieBreaks, getCandidateTypeIndex, stableResidentialPlacementKey } from "./candidates.js";
 import type { ResidentialCandidatesList } from "./candidates.js";
-import {
-  compareDensityAwareScore,
-  computePlacementDensityScore,
-} from "./solutionRanking.js";
+import { compareDensityAwareScore, computePlacementDensityScore } from "./solutionRanking.js";
 import { placementLeavesRoadAnchorCellAvailable } from "./roadAnchors.js";
 import {
   createRoadOpportunityCandidatePools,
   pushRoadOpportunityCandidate,
-  selectRoadOpportunityCounterfactuals,
+  selectRoadOpportunityCounterfactuals
 } from "./roadOpportunityCandidates.js";
 import type { RoadOpportunityCandidatePoolEntry } from "./roadOpportunityCandidates.js";
 import { buildResidentialPopulationCache } from "./serviceScoring.js";
@@ -95,7 +80,7 @@ export function constructGreedyResidentialPhase(options: {
     profileCounters,
     recordConnectivityShadowDecision,
     recordRoadOpportunity,
-    maybeStop,
+    maybeStop
   } = options;
   const probeRoadConnection = (
     snapshotOccupied: Set<string>,
@@ -103,8 +88,7 @@ export function constructGreedyResidentialPhase(options: {
     c: number,
     rows: number,
     cols: number
-  ): ConnectivityProbe | null =>
-    attemptState.probeRoadConnection(snapshotOccupied, { r, c, rows, cols });
+  ): ConnectivityProbe | null => attemptState.probeRoadConnection(snapshotOccupied, { r, c, rows, cols });
   const residentialPopulationCache = buildResidentialPopulationCache(
     params,
     anyResidentialCandidates,
@@ -170,9 +154,7 @@ export function constructGreedyResidentialPhase(options: {
       if (!probe) continue;
       if (profileCounters) profileCounters.residentialPhase.populationCacheLookups++;
       const pop = residentialPopulationCache[candidateIndex] ?? -1;
-      const densityScore = densityTieBreaker
-        ? computePlacementDensityScore(G, cand, pop)
-        : 0;
+      const densityScore = densityTieBreaker ? computePlacementDensityScore(G, cand, pop) : 0;
       const residentialFootprintKeys = precomputedIndexes.residentialCandidateFootprintKeys[candidateIndex];
       if (collectRoadOpportunityCounterfactuals && pop >= 0) {
         const roadOpportunityEntry: RoadOpportunityCandidatePoolEntry<ResidentialCandidatesList[0]> = {
@@ -183,28 +165,23 @@ export function constructGreedyResidentialPhase(options: {
           probe,
           footprintKeys: residentialFootprintKeys,
           score: pop,
-          typeIndex: getCandidateTypeIndex(cand),
+          typeIndex: getCandidateTypeIndex(cand)
         };
         pushRoadOpportunityCandidate(residentialRoadOpportunityPools, roadOpportunityEntry);
       }
-      const scoreComparison = best === null
-        ? 1
-        : compareDensityAwareScore(
-            pop,
-            densityScore,
-            bestPop,
-            bestDensityScore,
-            densityTieBreakerToleranceRatio
-          );
+      const scoreComparison =
+        best === null
+          ? 1
+          : compareDensityAwareScore(pop, densityScore, bestPop, bestDensityScore, densityTieBreakerToleranceRatio);
       let candidateConnectivityShadowPenalty: number | null = null;
       let connectivityShadowComparison = 0;
       if (
-        scoreComparison === 0
-        && pop >= 0
-        && connectivityShadowScoring
-        && best !== null
-        && bestProbe !== null
-        && canUseConnectivityShadowTieBreak(probe, bestProbe)
+        scoreComparison === 0 &&
+        pop >= 0 &&
+        connectivityShadowScoring &&
+        best !== null &&
+        bestProbe !== null &&
+        canUseConnectivityShadowTieBreak(probe, bestProbe)
       ) {
         const residentialFootprintKeys = precomputedIndexes.residentialCandidateFootprintKeys[candidateIndex];
         candidateConnectivityShadowPenalty = computeConnectivityShadowPenalty(
@@ -229,20 +206,22 @@ export function constructGreedyResidentialPhase(options: {
           incumbent: residentialPlacementTrace(best, bestProbe),
           candidateShadowPenalty: candidateConnectivityShadowPenalty,
           incumbentShadowPenalty: bestConnectivityShadowPenalty,
-          comparison: connectivityShadowComparison,
+          comparison: connectivityShadowComparison
         });
       }
       if (
-        scoreComparison > 0
-        || connectivityShadowComparison > 0
-        || (scoreComparison === 0 && connectivityShadowComparison === 0 && pop >= 0 && best !== null && bestProbe !== null
-          && compareResidentialTieBreaks(params, cand, probe, best, bestProbe) < 0)
+        scoreComparison > 0 ||
+        connectivityShadowComparison > 0 ||
+        (scoreComparison === 0 &&
+          connectivityShadowComparison === 0 &&
+          pop >= 0 &&
+          best !== null &&
+          bestProbe !== null &&
+          compareResidentialTieBreaks(params, cand, probe, best, bestProbe) < 0)
       ) {
         bestPop = pop;
         bestDensityScore = densityScore;
-        bestConnectivityShadowPenalty = connectivityShadowComparison !== 0
-          ? candidateConnectivityShadowPenalty
-          : null;
+        bestConnectivityShadowPenalty = connectivityShadowComparison !== 0 ? candidateConnectivityShadowPenalty : null;
         best = cand;
         bestCandidateIndex = candidateIndex;
         bestProbe = probe;
@@ -265,7 +244,7 @@ export function constructGreedyResidentialPhase(options: {
           chosenProbe: bestProbe,
           chosenScore: bestPop,
           compareTieBreaks: (candidate, probe, chosen, chosenProbe) =>
-            compareResidentialTieBreaks(params, candidate, probe, chosen, chosenProbe),
+            compareResidentialTieBreaks(params, candidate, probe, chosen, chosenProbe)
         })
       : undefined;
     recordRoadOpportunityPlacement({
@@ -278,12 +257,12 @@ export function constructGreedyResidentialPhase(options: {
       record: recordRoadOpportunity,
       score: bestPop,
       counterfactuals,
-      typeIndex: bestTypeIndex,
+      typeIndex: bestTypeIndex
     });
     const committedKeys = attemptState.commitPlacement(bestProbe, best, {
       footprintKeys: residentialFootprintKeys,
       newlyOccupiedKeys,
-      recordConnectivityShadow: false,
+      recordConnectivityShadow: false
     });
     if (!committedKeys) {
       break;
@@ -318,6 +297,6 @@ export function constructGreedyResidentialPhase(options: {
     residentials,
     residentialTypeIndices,
     populations,
-    residentialPopulationCacheForLocal,
+    residentialPopulationCacheForLocal
   };
 }

@@ -1,12 +1,14 @@
 (function attachPlannerWorkbench(globalObject) {
-  const CP_SAT_PORTFOLIO_CAPABILITY_LIMITS = globalObject.CityBuilderShared?.CP_SAT_PORTFOLIO_CAPABILITY_LIMITS ?? Object.freeze({
-    defaultWorkers: 3,
-    defaultPerWorkerTimeLimitSeconds: 30,
-    maxWorkers: 8,
-    maxTotalWorkerThreads: 8,
-    maxPerWorkerThreads: 4,
-    maxTotalCpuBudgetSeconds: 8 * 60 * 60,
-  });
+  const CP_SAT_PORTFOLIO_CAPABILITY_LIMITS =
+    globalObject.CityBuilderShared?.CP_SAT_PORTFOLIO_CAPABILITY_LIMITS ??
+    Object.freeze({
+      defaultWorkers: 3,
+      defaultPerWorkerTimeLimitSeconds: 30,
+      maxWorkers: 8,
+      maxTotalWorkerThreads: 8,
+      maxPerWorkerThreads: 4,
+      maxTotalCpuBudgetSeconds: 8 * 60 * 60
+    });
   const CP_SAT_PORTFOLIO_DEFAULT_WORKERS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.defaultWorkers;
   const CP_SAT_PORTFOLIO_MAX_WORKERS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxWorkers;
   const CP_SAT_PORTFOLIO_MAX_TOTAL_WORKER_THREADS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxTotalWorkerThreads;
@@ -14,16 +16,8 @@
   const CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxTotalCpuBudgetSeconds;
 
   function createPlannerWorkbenchController(options) {
-    const {
-      state,
-      elements,
-      constants,
-      helpers,
-      callbacks,
-    } = options;
-    const {
-      sampleGrid,
-    } = constants;
+    const { state, elements, constants, helpers, callbacks } = options;
+    const { sampleGrid } = constants;
     const {
       cloneGrid,
       createGrid,
@@ -32,15 +26,10 @@
       normalizeOptimizer,
       parseCatalogImportText,
       serializeResidentialTypeForCatalog,
-      serializeServiceTypeForCatalog,
+      serializeServiceTypeForCatalog
     } = helpers;
-    const {
-      getOptimizerLabel,
-      refreshResultOverlay,
-      renderExpansionAdvice,
-      setSolveState,
-      updatePayloadPreview,
-    } = callbacks;
+    const { getOptimizerLabel, refreshResultOverlay, renderExpansionAdvice, setSolveState, updatePayloadPreview } =
+      callbacks;
 
     function getDefaultCpSatPortfolioState() {
       return {
@@ -49,7 +38,7 @@
         randomSeeds: "",
         perWorkerTimeLimitSeconds: "",
         perWorkerNumWorkers: 1,
-        randomizeSearch: true,
+        randomizeSearch: true
       };
     }
 
@@ -66,8 +55,8 @@
             ? { perWorkerTimeLimitSeconds: String(portfolio.perWorkerTimeLimitSeconds) }
             : {}),
           ...(portfolio.perWorkerNumWorkers != null ? { perWorkerNumWorkers: portfolio.perWorkerNumWorkers } : {}),
-          ...(portfolio.randomizeSearch != null ? { randomizeSearch: Boolean(portfolio.randomizeSearch) } : {}),
-        },
+          ...(portfolio.randomizeSearch != null ? { randomizeSearch: Boolean(portfolio.randomizeSearch) } : {})
+        }
       };
     }
 
@@ -86,28 +75,37 @@
         ? params.residentialTypes.map((residentialType) => serializeResidentialTypeForCatalog(residentialType))
         : [];
       state.availableBuildings = {
-        services: params.availableBuildings?.services != null ? String(params.availableBuildings.services) : (params.maxServices != null ? String(params.maxServices) : ""),
-        residentials: params.availableBuildings?.residentials != null
-          ? String(params.availableBuildings.residentials)
-          : (params.maxResidentials != null ? String(params.maxResidentials) : ""),
+        services:
+          params.availableBuildings?.services != null
+            ? String(params.availableBuildings.services)
+            : params.maxServices != null
+              ? String(params.maxServices)
+              : "",
+        residentials:
+          params.availableBuildings?.residentials != null
+            ? String(params.availableBuildings.residentials)
+            : params.maxResidentials != null
+              ? String(params.maxResidentials)
+              : ""
       };
       state.optimizer = normalizeOptimizer(optimizer);
       if (params.greedy) {
         state.greedy = {
           ...state.greedy,
           randomSeed: "",
-          ...params.greedy,
+          ...params.greedy
         };
       }
       if (params.lns) {
         state.lns = {
           ...state.lns,
-          ...params.lns,
+          ...params.lns
         };
       }
       state.auto = {
         ...(state.auto ?? { wallClockLimitSeconds: "" }),
-        wallClockLimitSeconds: params.auto?.wallClockLimitSeconds != null ? String(params.auto.wallClockLimitSeconds) : "",
+        wallClockLimitSeconds:
+          params.auto?.wallClockLimitSeconds != null ? String(params.auto.wallClockLimitSeconds) : ""
       };
 
       if (!preserveCpSatRuntime && params.cpSat) {
@@ -120,9 +118,13 @@
             : {}),
           ...(params.cpSat.randomSeed != null ? { randomSeed: String(params.cpSat.randomSeed) } : {}),
           ...(params.cpSat.numWorkers != null ? { numWorkers: params.cpSat.numWorkers } : {}),
-          ...(params.cpSat.logSearchProgress != null ? { logSearchProgress: Boolean(params.cpSat.logSearchProgress) } : {}),
-          ...(params.cpSat.useDisplayedHint != null ? { useDisplayedHint: Boolean(params.cpSat.useDisplayedHint) } : {}),
-          ...applyCpSatPortfolioRequestToState(params.cpSat.portfolio),
+          ...(params.cpSat.logSearchProgress != null
+            ? { logSearchProgress: Boolean(params.cpSat.logSearchProgress) }
+            : {}),
+          ...(params.cpSat.useDisplayedHint != null
+            ? { useDisplayedHint: Boolean(params.cpSat.useDisplayedHint) }
+            : {}),
+          ...applyCpSatPortfolioRequestToState(params.cpSat.portfolio)
         };
       }
 
@@ -185,43 +187,19 @@
     }
 
     function countAllowedCells() {
-      return state.grid.reduce(
-        (sum, row) => sum + row.reduce((rowSum, cell) => rowSum + (cell === 1 ? 1 : 0), 0),
-        0
-      );
+      return state.grid.reduce((sum, row) => sum + row.reduce((rowSum, cell) => rowSum + (cell === 1 ? 1 : 0), 0), 0);
     }
 
     function getMatrixMetrics(cols, frameWidth, layoutMode = "adaptive") {
-      const maxSize =
-        cols <= 12 ? 34 :
-        cols <= 18 ? 30 :
-        cols <= 24 ? 24 :
-        cols <= 30 ? 20 :
-        cols <= 40 ? 16 :
-        12;
-      const minSize =
-        cols <= 18 ? 18 :
-        cols <= 30 ? 13 :
-        10;
-      const gap =
-        cols <= 16 ? 6 :
-        cols <= 30 ? 4 :
-        2;
+      const maxSize = cols <= 12 ? 34 : cols <= 18 ? 30 : cols <= 24 ? 24 : cols <= 30 ? 20 : cols <= 40 ? 16 : 12;
+      const minSize = cols <= 18 ? 18 : cols <= 30 ? 13 : 10;
+      const gap = cols <= 16 ? 6 : cols <= 30 ? 4 : 2;
       const usableWidth = Math.max(220, (frameWidth || 0) - 40);
       const fitSize = Math.floor((usableWidth - gap * Math.max(cols - 1, 0)) / Math.max(cols, 1));
       if (layoutMode === "comfortable") {
         const preferredSize =
-          cols <= 12 ? 34 :
-          cols <= 18 ? 30 :
-          cols <= 24 ? 26 :
-          cols <= 30 ? 22 :
-          cols <= 40 ? 18 :
-          14;
-        const comfortableMin =
-          cols <= 24 ? 20 :
-          cols <= 30 ? 18 :
-          cols <= 40 ? 14 :
-          12;
+          cols <= 12 ? 34 : cols <= 18 ? 30 : cols <= 24 ? 26 : cols <= 30 ? 22 : cols <= 40 ? 18 : 14;
+        const comfortableMin = cols <= 24 ? 20 : cols <= 30 ? 18 : cols <= 40 ? 14 : 12;
         const size = Math.max(comfortableMin, Math.min(maxSize, Math.max(fitSize || preferredSize, preferredSize)));
         return { size, gap };
       }
@@ -233,9 +211,10 @@
       if (!gridElement) return;
       const cols = Number(gridElement.dataset.cols || 0);
       if (!cols) return;
-      const frame = typeof gridElement.closest === "function"
-        ? (gridElement.closest(".matrix-frame, .grid-frame") || gridElement.parentElement)
-        : gridElement.parentElement;
+      const frame =
+        typeof gridElement.closest === "function"
+          ? gridElement.closest(".matrix-frame, .grid-frame") || gridElement.parentElement
+          : gridElement.parentElement;
       const layoutMode = gridElement.dataset.layoutMode || "adaptive";
       const { size, gap } = getMatrixMetrics(cols, frame?.clientWidth ?? 0, layoutMode);
       gridElement.style.setProperty("--matrix-cell-size", `${size}px`);
@@ -288,10 +267,7 @@
       const col = Number(cellElement.dataset.c);
       if (!Number.isInteger(row) || !Number.isInteger(col)) return;
       const current = state.grid[row][col];
-      const next =
-        state.paintMode === "toggle" ? (current === 1 ? 0 : 1) :
-        state.paintMode === "allow" ? 1 :
-        0;
+      const next = state.paintMode === "toggle" ? (current === 1 ? 0 : 1) : state.paintMode === "allow" ? 1 : 0;
       if (current === next) return;
       state.grid[row][col] = next;
       cellElement.classList.toggle("allowed", next === 1);
@@ -343,7 +319,7 @@
           serviceRefineCandidateLimit: 60,
           exhaustiveServiceSearch: true,
           serviceExactPoolLimit: 22,
-          serviceExactMaxCombinations: 12000,
+          serviceExactMaxCombinations: 12000
         };
         elements.runtimePresetStatus.textContent =
           'Applied "Heavy Greedy": standalone heuristic settings with deeper service refinement and exact service search.';
@@ -355,7 +331,7 @@
           neighborhoodRows: defaultNeighborhoodRows,
           neighborhoodCols: defaultNeighborhoodCols,
           repairTimeLimitSeconds: 5,
-          useDisplayedSeed: true,
+          useDisplayedSeed: true
         };
         elements.runtimePresetStatus.textContent =
           'Applied "LNS Improve": use the displayed layout as the seed and spend the budget on neighborhood repair.';
@@ -369,8 +345,8 @@
           portfolio: {
             ...getDefaultCpSatPortfolioState(),
             ...state.cpSat.portfolio,
-            enabled: false,
-          },
+            enabled: false
+          }
         };
         elements.runtimePresetStatus.textContent =
           'Applied "Bounded CP-SAT": 30s max runtime with a 10s no-improvement cutoff and displayed-layout hinting.';
@@ -389,8 +365,8 @@
             randomSeeds: "",
             perWorkerTimeLimitSeconds: "30",
             perWorkerNumWorkers: 1,
-            randomizeSearch: true,
-          },
+            randomizeSearch: true
+          }
         };
         elements.runtimePresetStatus.textContent =
           'Applied "Portfolio CP-SAT": three randomized exact paths with 30s per-worker caps and one internal worker each.';
@@ -398,10 +374,7 @@
         return;
       }
 
-      const optimizer =
-        kind === "heavy-greedy" ? "greedy"
-        : kind === "lns-improve" ? "lns"
-        : "cp-sat";
+      const optimizer = kind === "heavy-greedy" ? "greedy" : kind === "lns-improve" ? "lns" : "cp-sat";
       setOptimizer(optimizer);
       syncSolverFields();
       updateSummary();
@@ -426,7 +399,9 @@
       elements.greedyRandomSeed.placeholder = autoOwnsStageSeeds ? "Auto generates stage seeds" : "Blank = random";
       elements.greedyRandomSeed.value = autoOwnsStageSeeds
         ? ""
-        : (state.greedy.randomSeed === "" ? "" : String(state.greedy.randomSeed ?? ""));
+        : state.greedy.randomSeed === ""
+          ? ""
+          : String(state.greedy.randomSeed ?? "");
       if (elements.greedyTimeLimitSeconds) {
         elements.greedyTimeLimitSeconds.disabled = autoOwnsStageSeeds;
         elements.greedyTimeLimitSeconds.title = autoOwnsStageSeeds
@@ -437,7 +412,9 @@
           : "Blank = unlimited";
         elements.greedyTimeLimitSeconds.value = autoOwnsStageSeeds
           ? ""
-          : (state.greedy.timeLimitSeconds === "" ? "" : String(state.greedy.timeLimitSeconds ?? ""));
+          : state.greedy.timeLimitSeconds === ""
+            ? ""
+            : String(state.greedy.timeLimitSeconds ?? "");
       }
       elements.greedyRestarts.value = String(state.greedy.restarts);
       setInputMax(elements.greedyRestarts, autoOwnsStageSeeds ? 4 : "");
@@ -452,7 +429,9 @@
       elements.greedyServiceRefineCandidateLimit.title = autoOwnsStageSeeds
         ? "Auto caps the Greedy seed stage at 24 service-refinement candidates."
         : "";
-      elements.greedyExhaustiveServiceSearch.checked = autoOwnsStageSeeds ? false : state.greedy.exhaustiveServiceSearch;
+      elements.greedyExhaustiveServiceSearch.checked = autoOwnsStageSeeds
+        ? false
+        : state.greedy.exhaustiveServiceSearch;
       elements.greedyExhaustiveServiceSearch.disabled = autoOwnsStageSeeds;
       elements.greedyExhaustiveServiceSearch.title = autoOwnsStageSeeds
         ? "Auto always disables exhaustive service search during the fast Greedy seed stage."
@@ -513,10 +492,14 @@
       elements.cpSatRandomSeed.title = autoOwnsStageSeeds
         ? "Auto generates per-stage seeds and ignores standalone CP-SAT seeds."
         : "";
-      elements.cpSatRandomSeed.placeholder = autoOwnsStageSeeds ? "Auto generates stage seeds" : "Blank = auto-fill on solve";
+      elements.cpSatRandomSeed.placeholder = autoOwnsStageSeeds
+        ? "Auto generates stage seeds"
+        : "Blank = auto-fill on solve";
       elements.cpSatRandomSeed.value = autoOwnsStageSeeds
         ? ""
-        : (state.cpSat.randomSeed === "" ? "" : String(state.cpSat.randomSeed ?? ""));
+        : state.cpSat.randomSeed === ""
+          ? ""
+          : String(state.cpSat.randomSeed ?? "");
       elements.cpSatNumWorkers.value = String(state.cpSat.numWorkers);
       elements.cpSatLogSearchProgress.checked = state.cpSat.logSearchProgress;
       elements.cpSatUseDisplayedHint.checked = Boolean(state.cpSat.useDisplayedHint);
@@ -529,11 +512,14 @@
     function syncCpSatPortfolioFields(autoOwnsStageSeeds) {
       const portfolio = {
         ...getDefaultCpSatPortfolioState(),
-        ...(state.cpSat.portfolio ?? {}),
+        ...(state.cpSat.portfolio ?? {})
       };
       const portfolioActive = !autoOwnsStageSeeds && Boolean(portfolio.enabled);
       const disabled = !portfolioActive;
-      const workerCount = Math.max(1, Math.min(Number(portfolio.workerCount) || CP_SAT_PORTFOLIO_DEFAULT_WORKERS, CP_SAT_PORTFOLIO_MAX_WORKERS));
+      const workerCount = Math.max(
+        1,
+        Math.min(Number(portfolio.workerCount) || CP_SAT_PORTFOLIO_DEFAULT_WORKERS, CP_SAT_PORTFOLIO_MAX_WORKERS)
+      );
       const maxPerWorkerThreads = Math.max(
         1,
         Math.min(
@@ -541,7 +527,10 @@
           Math.floor(CP_SAT_PORTFOLIO_MAX_TOTAL_WORKER_THREADS / workerCount)
         )
       );
-      const perWorkerNumWorkers = Math.max(1, Math.min(Number(portfolio.perWorkerNumWorkers) || 1, maxPerWorkerThreads));
+      const perWorkerNumWorkers = Math.max(
+        1,
+        Math.min(Number(portfolio.perWorkerNumWorkers) || 1, maxPerWorkerThreads)
+      );
       const maxPerWorkerSeconds = Math.max(
         1,
         Math.floor(CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS / (workerCount * perWorkerNumWorkers))
@@ -571,15 +560,13 @@
         elements.cpSatPortfolioPerWorkerTimeLimitSeconds.value = portfolio.perWorkerTimeLimitSeconds ?? "";
         elements.cpSatPortfolioPerWorkerTimeLimitSeconds.max = String(maxPerWorkerSeconds);
         elements.cpSatPortfolioPerWorkerTimeLimitSeconds.disabled = disabled;
-        elements.cpSatPortfolioPerWorkerTimeLimitSeconds.title =
-          `Blank inherits the CP-SAT time limit; if both are blank, portfolio workers run until they finish or you stop them. Finite values are capped at ${maxPerWorkerSeconds}s here so the portfolio stays inside the ${CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS}s total CPU budget.`;
+        elements.cpSatPortfolioPerWorkerTimeLimitSeconds.title = `Blank inherits the CP-SAT time limit; if both are blank, portfolio workers run until they finish or you stop them. Finite values are capped at ${maxPerWorkerSeconds}s here so the portfolio stays inside the ${CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS}s total CPU budget.`;
       }
       if (elements.cpSatPortfolioPerWorkerNumWorkers) {
         elements.cpSatPortfolioPerWorkerNumWorkers.value = String(portfolio.perWorkerNumWorkers);
         elements.cpSatPortfolioPerWorkerNumWorkers.max = String(maxPerWorkerThreads);
         elements.cpSatPortfolioPerWorkerNumWorkers.disabled = disabled;
-        elements.cpSatPortfolioPerWorkerNumWorkers.title =
-          `Capped at ${maxPerWorkerThreads} here so portfolio CPU lanes stay at ${CP_SAT_PORTFOLIO_MAX_TOTAL_WORKER_THREADS} or fewer.`;
+        elements.cpSatPortfolioPerWorkerNumWorkers.title = `Capped at ${maxPerWorkerThreads} here so portfolio CPU lanes stay at ${CP_SAT_PORTFOLIO_MAX_TOTAL_WORKER_THREADS} or fewer.`;
       }
       if (elements.cpSatPortfolioRandomizeSearch) {
         elements.cpSatPortfolioRandomizeSearch.checked = portfolio.randomizeSearch !== false;
@@ -598,7 +585,9 @@
         return;
       }
 
-      const rows = state.serviceTypes.map((entry, index) => `
+      const rows = state.serviceTypes
+        .map(
+          (entry, index) => `
         <tr>
           <td class="catalog-index">${index + 1}</td>
           <td><input type="text" value="${escapeHtml(entry.name)}" data-collection="serviceTypes" data-index="${index}" data-field="name" /></td>
@@ -608,7 +597,9 @@
           <td><input type="number" min="0" step="1" value="${escapeHtml(entry.avail ?? "1")}" data-collection="serviceTypes" data-index="${index}" data-field="avail" /></td>
           <td class="catalog-action-cell"><button type="button" class="button ghost compact" data-action="remove-service" data-index="${index}">Remove</button></td>
         </tr>
-      `).join("");
+      `
+        )
+        .join("");
 
       elements.serviceList.innerHTML = `
         <div class="catalog-shell">
@@ -642,7 +633,9 @@
         return;
       }
 
-      const rows = state.residentialTypes.map((entry, index) => `
+      const rows = state.residentialTypes
+        .map(
+          (entry, index) => `
         <tr>
           <td class="catalog-index">${index + 1}</td>
           <td><input type="text" value="${escapeHtml(entry.name)}" data-collection="residentialTypes" data-index="${index}" data-field="name" /></td>
@@ -651,7 +644,9 @@
           <td><input type="number" min="0" step="1" value="${escapeHtml(entry.avail)}" data-collection="residentialTypes" data-index="${index}" data-field="avail" /></td>
           <td class="catalog-action-cell"><button type="button" class="button ghost compact" data-action="remove-residential" data-index="${index}">Remove</button></td>
         </tr>
-      `).join("");
+      `
+        )
+        .join("");
 
       elements.residentialList.innerHTML = `
         <div class="catalog-shell">
@@ -687,11 +682,12 @@
         updatePayloadPreview();
         const importedParts = [
           imported.services ? `${imported.services.length} service rows` : "",
-          imported.residentials ? `${imported.residentials.length} residential rows` : "",
+          imported.residentials ? `${imported.residentials.length} residential rows` : ""
         ].filter(Boolean);
         elements.catalogImportStatus.textContent = `Imported ${importedParts.join(" and ")}.`;
       } catch (error) {
-        elements.catalogImportStatus.textContent = error instanceof Error ? error.message : "Failed to import pasted tables.";
+        elements.catalogImportStatus.textContent =
+          error instanceof Error ? error.message : "Failed to import pasted tables.";
       }
     }
 
@@ -774,11 +770,11 @@
       syncPlannerFromState,
       syncSolverFields,
       updateSummary,
-      updateGridDimensionInputs,
+      updateGridDimensionInputs
     });
   }
 
   globalObject.CityBuilderWorkbench = Object.freeze({
-    createPlannerWorkbenchController,
+    createPlannerWorkbenchController
   });
 })(window);

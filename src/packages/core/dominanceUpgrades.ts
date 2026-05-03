@@ -8,8 +8,8 @@ function serviceTypeSupportsPlacement(
   placement: ReturnType<typeof normalizeServicePlacement>
 ): boolean {
   return (
-    (placement.rows === type.rows && placement.cols === type.cols)
-    || ((type.allowRotation ?? true) && placement.rows === type.cols && placement.cols === type.rows)
+    (placement.rows === type.rows && placement.cols === type.cols) ||
+    ((type.allowRotation ?? true) && placement.rows === type.cols && placement.cols === type.rows)
   );
 }
 
@@ -57,7 +57,7 @@ function recomputeSolutionPopulationTotals(G: Grid, params: SolverParams, soluti
   return {
     ...solution,
     populations,
-    totalPopulation: populations.reduce((sum, population) => sum + population, 0),
+    totalPopulation: populations.reduce((sum, population) => sum + population, 0)
   };
 }
 
@@ -100,7 +100,7 @@ function applyDeterministicServiceUpgrades(G: Grid, params: SolverParams, soluti
           ...incumbent,
           services: nextServices,
           serviceTypeIndices: nextServiceTypeIndices,
-          servicePopulationIncreases: nextServiceBonuses,
+          servicePopulationIncreases: nextServiceBonuses
         });
         if (candidateSolution.totalPopulation <= bestPopulation) continue;
 
@@ -150,7 +150,7 @@ function applyDeterministicResidentialUpgrades(G: Grid, params: SolverParams, so
         nextResidentialTypeIndices[residentialIndex] = candidateTypeIndex;
         const candidateSolution = recomputeSolutionPopulationTotals(G, params, {
           ...incumbent,
-          residentialTypeIndices: nextResidentialTypeIndices,
+          residentialTypeIndices: nextResidentialTypeIndices
         });
 
         if (candidateSolution.totalPopulation <= bestPopulation) continue;

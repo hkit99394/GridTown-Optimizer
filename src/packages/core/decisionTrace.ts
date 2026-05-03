@@ -8,7 +8,7 @@ import type {
   SolverDecisionTraceDecision,
   SolverDecisionTraceEvent,
   SolverDecisionTraceScore,
-  SolverTimeToQualityScorecard,
+  SolverTimeToQualityScorecard
 } from "./types.js";
 
 export interface BuildDecisionTraceOptions {
@@ -62,19 +62,23 @@ function optionalMillisecondsFromSeconds(value: unknown): number | null {
 
 function normalizeCheckpointMs(values: readonly number[] | undefined, fallback: readonly number[]): number[] {
   const requested = values?.length ? values : fallback;
-  return [...new Set(
-    requested
-      .map((value) => finiteNumberOrNull(value))
-      .filter((value): value is number => value !== null)
-      .map(roundElapsedMs)
-  )]
+  return [
+    ...new Set(
+      requested
+        .map((value) => finiteNumberOrNull(value))
+        .filter((value): value is number => value !== null)
+        .map(roundElapsedMs)
+    )
+  ]
     .filter((value) => value >= 0)
     .sort((left, right) => left - right);
 }
 
 function normalizeQualityTargetRatios(values: readonly number[] | undefined): number[] {
   const requested = values?.length ? values : DEFAULT_QUALITY_TARGET_RATIOS;
-  return [...new Set(requested.map((value) => finiteNumberOrNull(value)).filter((value): value is number => value !== null))]
+  return [
+    ...new Set(requested.map((value) => finiteNumberOrNull(value)).filter((value): value is number => value !== null))
+  ]
     .filter((value) => value >= 0)
     .sort((left, right) => left - right);
 }
@@ -91,16 +95,14 @@ function score(input: Partial<SolverDecisionTraceScore>): SolverDecisionTraceSco
   const before = finiteNumberOrNull(input.before);
   const after = finiteNumberOrNull(input.after);
   const best = finiteNumberOrNull(input.best) ?? after;
-  const delta = finiteNumberOrNull(input.delta) ?? (
-    before !== null && after !== null ? after - before : null
-  );
+  const delta = finiteNumberOrNull(input.delta) ?? (before !== null && after !== null ? after - before : null);
   return {
     before,
     after,
     best,
     delta,
     upperBound: finiteNumberOrNull(input.upperBound),
-    gap: finiteNumberOrNull(input.gap),
+    gap: finiteNumberOrNull(input.gap)
   };
 }
 
@@ -116,7 +118,9 @@ function traceBuilder(
   const events: SolverDecisionTraceEvent[] = [];
   return {
     events,
-    push(input: Omit<SolverDecisionTraceEvent, "schemaVersion" | "runId" | "sequence" | "eventId" | "optimizer">): void {
+    push(
+      input: Omit<SolverDecisionTraceEvent, "schemaVersion" | "runId" | "sequence" | "eventId" | "optimizer">
+    ): void {
       const sequence = events.length;
       const { activeStage, elapsedMs, ...rest } = input;
       const event: SolverDecisionTraceEvent = {
@@ -127,10 +131,10 @@ function traceBuilder(
         optimizer,
         activeStage: activeStage ?? defaultActiveStage,
         ...rest,
-        elapsedMs: roundElapsedMs(elapsedMs),
+        elapsedMs: roundElapsedMs(elapsedMs)
       };
       events.push(event);
-    },
+    }
   };
 }
 
@@ -145,30 +149,32 @@ function appendGreedyPhaseEvents(
   let elapsedMs = 0;
   for (const phase of phases) {
     elapsedMs += roundElapsedMs(phase.elapsedMs);
-    const delta = finiteNumberOrNull(phase.bestPopulationDelta) ?? finiteNumberOrNull(phase.candidatePopulationDelta) ?? 0;
+    const delta =
+      finiteNumberOrNull(phase.bestPopulationDelta) ?? finiteNumberOrNull(phase.candidatePopulationDelta) ?? 0;
     const decision: SolverDecisionTraceDecision = delta > 0 ? "improved" : "stalled";
     builder.push({
       elapsedMs,
       activeStage,
       kind: "greedy-phase",
       decision,
-      reason: decision === "improved"
-        ? `Greedy ${phase.name} improved best population by ${delta}.`
-        : `Greedy ${phase.name} did not improve the incumbent.`,
+      reason:
+        decision === "improved"
+          ? `Greedy ${phase.name} improved best population by ${delta}.`
+          : `Greedy ${phase.name} did not improve the incumbent.`,
       score: score({
         before: phase.bestPopulationBefore,
         after: phase.bestPopulationAfter,
-        delta,
+        delta
       }),
       stage: {
         ...stage,
-        phase: phase.name,
+        phase: phase.name
       },
       evidence: {
         runs: phase.runs,
         improvements: phase.improvements,
-        candidateDelta: phase.candidatePopulationDelta,
-      },
+        candidateDelta: phase.candidatePopulationDelta
+      }
     });
   }
 }
@@ -199,13 +205,13 @@ function appendLnsEvents(
     reason: `LNS seeded from ${telemetry.seedSource}.`,
     score: score({
       after: seedPopulation,
-      best: seedPopulation,
+      best: seedPopulation
     }),
     evidence: {
       seedSource: telemetry.seedSource,
       seedTimeLimitSeconds: telemetry.seedTimeLimitSeconds,
-      seedWallClockSeconds: telemetry.seedWallClockSeconds,
-    },
+      seedWallClockSeconds: telemetry.seedWallClockSeconds
+    }
   });
 
   let elapsedMs = seedElapsedMs;
@@ -217,26 +223,27 @@ function appendLnsEvents(
       activeStage,
       kind: "lns-neighborhood",
       decision,
-      reason: decision === "improved"
-        ? `LNS ${outcome.phase} neighborhood ${outcome.iteration + 1} improved population by ${outcome.improvement}.`
-        : `LNS ${outcome.phase} neighborhood ${outcome.iteration + 1} ${outcome.status}.`,
+      reason:
+        decision === "improved"
+          ? `LNS ${outcome.phase} neighborhood ${outcome.iteration + 1} improved population by ${outcome.improvement}.`
+          : `LNS ${outcome.phase} neighborhood ${outcome.iteration + 1} ${outcome.status}.`,
       score: score({
         before: outcome.populationBefore,
         after: outcome.populationAfter,
         delta: outcome.improvement,
-        best: Math.max(outcome.populationBefore, outcome.populationAfter),
+        best: Math.max(outcome.populationBefore, outcome.populationAfter)
       }),
       stage: {
         phase: outcome.phase,
-        iteration: outcome.iteration,
+        iteration: outcome.iteration
       },
       evidence: {
         status: outcome.status,
         repairTimeLimitSeconds: outcome.repairTimeLimitSeconds,
         staleSecondsBefore: outcome.staleSecondsBefore,
         stagnantIterationsBefore: outcome.stagnantIterationsBefore,
-        cpSatStatus: outcome.cpSatStatus ?? null,
-      },
+        cpSatStatus: outcome.cpSatStatus ?? null
+      }
     });
   }
 }
@@ -261,7 +268,7 @@ function appendCpSatEvents(
           : `CP-SAT portfolio worker ${worker.workerIndex} finished without a feasible incumbent.`,
         score: score({
           after: worker.totalPopulation,
-          best: worker.totalPopulation,
+          best: worker.totalPopulation
         }),
         evidence: {
           workerIndex: worker.workerIndex,
@@ -269,8 +276,8 @@ function appendCpSatEvents(
           randomizeSearch: worker.randomizeSearch,
           numWorkers: worker.numWorkers,
           status: worker.status,
-          selected: portfolio.selectedWorkerIndex === worker.workerIndex,
-        },
+          selected: portfolio.selectedWorkerIndex === worker.workerIndex
+        }
       });
     }
   }
@@ -289,10 +296,10 @@ function appendCpSatEvents(
         numBranches: telemetry.numBranches,
         numConflicts: telemetry.numConflicts,
         lastImprovementAtSeconds: telemetry.lastImprovementAtSeconds,
-        secondsSinceLastImprovement: telemetry.secondsSinceLastImprovement,
+        secondsSinceLastImprovement: telemetry.secondsSinceLastImprovement
       }
     : {
-        status: solution.cpSatStatus ?? null,
+        status: solution.cpSatStatus ?? null
       };
   const hasIncumbentImprovement = Boolean(telemetry && telemetry.solutionCount > 0 && incumbent > 0);
   if (telemetry && hasIncumbentImprovement) {
@@ -304,37 +311,33 @@ function appendCpSatEvents(
       reason: `CP-SAT found incumbent population ${incumbent}.`,
       score: score({
         after: incumbent,
-        best: incumbent,
+        best: incumbent
       }),
-      evidence,
+      evidence
     });
   }
   const decision: SolverDecisionTraceDecision =
-    gap !== null || upperBound !== null
-      ? "bounded"
-      : incumbent > 0
-        ? "improved"
-        : "stalled";
-  const terminalDecision: SolverDecisionTraceDecision = hasIncumbentImprovement && decision === "improved"
-    ? "stalled"
-    : decision;
+    gap !== null || upperBound !== null ? "bounded" : incumbent > 0 ? "improved" : "stalled";
+  const terminalDecision: SolverDecisionTraceDecision =
+    hasIncumbentImprovement && decision === "improved" ? "stalled" : decision;
   const terminalElapsedMs = telemetry ? millisecondsFromSeconds(telemetry.solveWallTimeSeconds) : finalElapsedMs;
   builder.push({
     elapsedMs: Math.max((telemetry ? elapsedMsOffset : 0) + terminalElapsedMs, 0),
     activeStage,
     kind: "cp-sat-progress",
     decision: terminalDecision,
-    reason: gap !== null
-      ? `CP-SAT ${solution.cpSatStatus ?? "finished"} with population gap ${gap}.`
-      : `CP-SAT ${solution.cpSatStatus ?? "finished"} with incumbent population ${incumbent}.`,
+    reason:
+      gap !== null
+        ? `CP-SAT ${solution.cpSatStatus ?? "finished"} with population gap ${gap}.`
+        : `CP-SAT ${solution.cpSatStatus ?? "finished"} with incumbent population ${incumbent}.`,
     score: score({
       before: hasIncumbentImprovement ? incumbent : null,
       after: incumbent,
       best: incumbent,
       upperBound,
-      gap,
+      gap
     }),
-    evidence,
+    evidence
   });
 }
 
@@ -365,15 +368,11 @@ function autoStageRunEvidence(run: AutoStageRunSummary): NonNullable<SolverDecis
     lnsIterationsStarted: run.lnsIterationsStarted ?? null,
     lnsIterationsCompleted: run.lnsIterationsCompleted ?? null,
     lnsImprovingIterations: run.lnsImprovingIterations ?? null,
-    lnsNeutralIterations: run.lnsNeutralIterations ?? null,
+    lnsNeutralIterations: run.lnsNeutralIterations ?? null
   };
 }
 
-function appendAutoEvents(
-  builder: DecisionTraceBuilder,
-  solution: Solution,
-  finalElapsedMs: number
-): void {
+function appendAutoEvents(builder: DecisionTraceBuilder, solution: Solution, finalElapsedMs: number): void {
   const autoStage = solution.autoStage;
   if (!autoStage) return;
   const stageRunByIndex = new Map((autoStage.stageRuns ?? []).map((run) => [run.stageIndex, run]));
@@ -389,11 +388,11 @@ function appendAutoEvents(
       score: score({}),
       stage: {
         stageIndex: seed.stageIndex,
-        cycleIndex: seed.cycleIndex,
+        cycleIndex: seed.cycleIndex
       },
       evidence: {
-        randomSeed: seed.randomSeed,
-      },
+        randomSeed: seed.randomSeed
+      }
     });
   }
 
@@ -407,15 +406,15 @@ function appendAutoEvents(
       reason: `Auto greedy seed produced population ${greedySeed.totalPopulation ?? "n/a"}.`,
       score: score({
         after: greedySeed.totalPopulation,
-        best: greedySeed.totalPopulation,
+        best: greedySeed.totalPopulation
       }),
       evidence: {
         timeLimitSeconds: greedySeed.timeLimitSeconds,
         localSearch: greedySeed.localSearch,
         restarts: greedySeed.restarts,
         serviceRefineIterations: greedySeed.serviceRefineIterations,
-        serviceRefineCandidateLimit: greedySeed.serviceRefineCandidateLimit,
-      },
+        serviceRefineCandidateLimit: greedySeed.serviceRefineCandidateLimit
+      }
     });
     appendGreedyPhaseEvents(builder, greedySeed.phases, "greedy");
   }
@@ -431,13 +430,13 @@ function appendAutoEvents(
       score: score({
         before: run.populationBefore,
         after: run.acceptedPopulation,
-        best: run.acceptedPopulation,
+        best: run.acceptedPopulation
       }),
       stage: {
         stageIndex: run.stageIndex,
-        cycleIndex: run.cycleIndex,
+        cycleIndex: run.cycleIndex
       },
-      evidence: autoStageRunEvidence(run),
+      evidence: autoStageRunEvidence(run)
     });
   }
 
@@ -450,16 +449,16 @@ function appendAutoEvents(
       reason: `Auto stopped: ${autoStage.stopReason}.`,
       score: score({
         after: solution.totalPopulation,
-        best: solution.totalPopulation,
+        best: solution.totalPopulation
       }),
       stage: {
         stageIndex: autoStage.stageIndex,
-        cycleIndex: autoStage.cycleIndex,
+        cycleIndex: autoStage.cycleIndex
       },
       evidence: {
         consecutiveWeakCycles: autoStage.consecutiveWeakCycles,
-        lastCycleImprovementRatio: autoStage.lastCycleImprovementRatio,
-      },
+        lastCycleImprovementRatio: autoStage.lastCycleImprovementRatio
+      }
     });
   }
 }
@@ -472,10 +471,12 @@ function autoDetailOffsetMs(solution: Solution, stage: AutoStageOptimizerName): 
 }
 
 function resolveFinalElapsedMs(solution: Solution, options: BuildDecisionTraceOptions): number {
-  return optionalMillisecondsFromSeconds(options.elapsedTimeSeconds)
-    ?? optionalMillisecondsFromSeconds(solution.cpSatTelemetry?.solveWallTimeSeconds)
-    ?? optionalMillisecondsFromSeconds(solution.lnsTelemetry?.elapsedSeconds)
-    ?? 0;
+  return (
+    optionalMillisecondsFromSeconds(options.elapsedTimeSeconds) ??
+    optionalMillisecondsFromSeconds(solution.cpSatTelemetry?.solveWallTimeSeconds) ??
+    optionalMillisecondsFromSeconds(solution.lnsTelemetry?.elapsedSeconds) ??
+    0
+  );
 }
 
 export function buildDecisionTraceFromSolution(
@@ -493,7 +494,12 @@ export function buildDecisionTraceFromSolution(
     appendGreedyPhaseEvents(builder, solution.greedyProfile?.phases, activeStage);
   }
   if (optimizer === "auto") {
-    appendLnsEvents(builder, solution, solution.lnsTelemetry ? "lns" : activeStage, autoDetailOffsetMs(solution, "lns"));
+    appendLnsEvents(
+      builder,
+      solution,
+      solution.lnsTelemetry ? "lns" : activeStage,
+      autoDetailOffsetMs(solution, "lns")
+    );
     appendCpSatEvents(
       builder,
       solution,
@@ -523,23 +529,24 @@ export function buildDecisionTraceFromSolution(
       score: score({
         before: previousBest || null,
         after: solution.totalPopulation,
-        best: Math.max(previousBest, solution.totalPopulation),
+        best: Math.max(previousBest, solution.totalPopulation)
       }),
       evidence: {
         stoppedByUser: Boolean(solution.stoppedByUser),
         stoppedByTimeLimit: Boolean(solution.stoppedByTimeLimit),
         roadCount: solution.roads.size,
         serviceCount: solution.services.length,
-        residentialCount: solution.residentials.length,
-      },
+        residentialCount: solution.residentials.length
+      }
     });
   }
 
-  return builder.events.sort((left, right) => left.elapsedMs - right.elapsedMs || left.sequence - right.sequence)
+  return builder.events
+    .sort((left, right) => left.elapsedMs - right.elapsedMs || left.sequence - right.sequence)
     .map((event, sequence) => ({
       ...event,
       sequence,
-      eventId: `${runId}:${String(sequence).padStart(4, "0")}:${event.kind}`,
+      eventId: `${runId}:${String(sequence).padStart(4, "0")}:${event.kind}`
     }));
 }
 
@@ -548,11 +555,10 @@ function buildTimedScoreObservations(
   finalElapsedMs: number,
   finalScore: number | null
 ): TimedScoreObservation[] {
-  const observations = events
-    .flatMap((event): Array<Omit<TimedScoreObservation, "bestScore">> => {
-      const eventScore = event.score.best ?? event.score.after;
-      return eventScore === null ? [] : [{ elapsedMs: event.elapsedMs, score: eventScore, event }];
-    });
+  const observations = events.flatMap((event): Array<Omit<TimedScoreObservation, "bestScore">> => {
+    const eventScore = event.score.best ?? event.score.after;
+    return eventScore === null ? [] : [{ elapsedMs: event.elapsedMs, score: eventScore, event }];
+  });
   if (finalScore !== null) {
     observations.push({ elapsedMs: finalElapsedMs, score: finalScore, event: null });
   }
@@ -562,7 +568,7 @@ function buildTimedScoreObservations(
     bestScore = Math.max(bestScore ?? observation.score, observation.score);
     return {
       ...observation,
-      bestScore,
+      bestScore
     };
   });
 }
@@ -587,37 +593,37 @@ export function buildTimeToQualityScorecard(
     if (event.score.delta !== null) return event.score.delta > 0;
     return event.score.before === null && after > 0;
   });
-  const bestObservation = bestScore === null
-    ? null
-    : observations.find((entry) => entry.bestScore >= bestScore) ?? null;
-  const timeCheckpoints = normalizeCheckpointMs(options.timeCheckpointsMs, DEFAULT_TIME_CHECKPOINTS_MS).map((elapsedMs) => {
-    const latestObservation = observations
-      .filter((entry) => entry.elapsedMs <= elapsedMs)
-      .reduce<TimedScoreObservation | null>((latest, entry) => (
-        latest === null || entry.elapsedMs >= latest.elapsedMs ? entry : latest
-      ), null);
-    const checkpointScore = latestObservation?.bestScore ?? null;
-    return {
-      elapsedMs,
-      bestScore: checkpointScore,
-      scoreDeltaToBest: bestScore === null || checkpointScore === null ? null : bestScore - checkpointScore,
-      scoreRatioToBest: bestScore === null || bestScore <= 0 || checkpointScore === null
-        ? null
-        : checkpointScore / bestScore,
-      reached: latestObservation !== null,
-    };
-  });
+  const bestObservation =
+    bestScore === null ? null : (observations.find((entry) => entry.bestScore >= bestScore) ?? null);
+  const timeCheckpoints = normalizeCheckpointMs(options.timeCheckpointsMs, DEFAULT_TIME_CHECKPOINTS_MS).map(
+    (elapsedMs) => {
+      const latestObservation = observations
+        .filter((entry) => entry.elapsedMs <= elapsedMs)
+        .reduce<TimedScoreObservation | null>(
+          (latest, entry) => (latest === null || entry.elapsedMs >= latest.elapsedMs ? entry : latest),
+          null
+        );
+      const checkpointScore = latestObservation?.bestScore ?? null;
+      return {
+        elapsedMs,
+        bestScore: checkpointScore,
+        scoreDeltaToBest: bestScore === null || checkpointScore === null ? null : bestScore - checkpointScore,
+        scoreRatioToBest:
+          bestScore === null || bestScore <= 0 || checkpointScore === null ? null : checkpointScore / bestScore,
+        reached: latestObservation !== null
+      };
+    }
+  );
   const qualityTargets = normalizeQualityTargetRatios(options.qualityTargetRatios).map((ratio) => {
     const normalizedRatio = Math.max(0, ratio);
     const targetScore = bestScore === null ? null : Math.ceil(bestScore * normalizedRatio);
-    const reached = targetScore === null
-      ? null
-      : observations.find((entry) => entry.bestScore >= targetScore) ?? null;
+    const reached =
+      targetScore === null ? null : (observations.find((entry) => entry.bestScore >= targetScore) ?? null);
     return {
       ratio: normalizedRatio,
       targetScore,
       reachedAtMs: reached?.elapsedMs ?? null,
-      reachedScore: reached?.bestScore ?? null,
+      reachedScore: reached?.bestScore ?? null
     };
   });
 
@@ -630,7 +636,7 @@ export function buildTimeToQualityScorecard(
     bestScoreAtMs: bestObservation?.elapsedMs ?? null,
     improvementCount: events.filter((event) => event.decision === "improved" && (event.score.delta ?? 1) > 0).length,
     timeCheckpoints,
-    qualityTargets,
+    qualityTargets
   };
 }
 
@@ -660,7 +666,7 @@ export function formatTimeToQualityScorecard(scorecard: SolverTimeToQualityScore
     `best=${best}`,
     `improvements=${scorecard.improvementCount}`,
     `time-checkpoints=${timeCheckpoints}`,
-    `quality-targets=${qualityTargets}`,
+    `quality-targets=${qualityTargets}`
   ].join(" ");
 }
 

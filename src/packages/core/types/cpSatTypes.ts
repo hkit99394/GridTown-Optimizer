@@ -170,13 +170,7 @@ export type SolverDecisionTraceKind =
   | "cp-sat-progress"
   | "auto-stage";
 
-export type SolverDecisionTraceDecision =
-  | "started"
-  | "improved"
-  | "stalled"
-  | "bounded"
-  | "stopped"
-  | "failed";
+export type SolverDecisionTraceDecision = "started" | "improved" | "stalled" | "bounded" | "stopped" | "failed";
 
 export type SolverDecisionTraceEvidenceValue = string | number | boolean | null;
 

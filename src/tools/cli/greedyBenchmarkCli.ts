@@ -16,7 +16,7 @@ import {
   runGreedyConnectivityShadowScoringAblation,
   runGreedyConnectivityShadowOrderingLabels,
   runGreedyDeterministicAblation,
-  runGreedyBenchmarkSuite,
+  runGreedyBenchmarkSuite
 } from "../../benchmarkApi.js";
 import {
   applyInlineOptionHandlers,
@@ -24,14 +24,17 @@ import {
   isCliFlag,
   parseNameList,
   parseNumberList,
-  parsePositiveInteger,
+  parsePositiveInteger
 } from "../../apps/cliParsing.js";
 import { runCliMain } from "../../apps/cliEntrypoint.js";
-import { optionalCliNames, writeCliJson, writeCliJsonOrText, writeCliList, writeCliText } from "../../apps/cliOutput.js";
-import type {
-  GreedyBenchmarkOptions,
-  GreedyDeterministicAblationVariantName,
-} from "../../benchmarkApi.js";
+import {
+  optionalCliNames,
+  writeCliJson,
+  writeCliJsonOrText,
+  writeCliList,
+  writeCliText
+} from "../../apps/cliOutput.js";
+import type { GreedyBenchmarkOptions, GreedyDeterministicAblationVariantName } from "../../benchmarkApi.js";
 
 interface ParsedBenchmarkArgs {
   json: boolean;
@@ -61,17 +64,14 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let maxLabelsPerCase: number | undefined;
   const inlineOptions: Record<string, (value: string) => void> = {
     "ablation-variants": (value) => {
-      ablationVariantNames = parseNameList(
-        value,
-        "ablation variant"
-      ) as GreedyDeterministicAblationVariantName[];
+      ablationVariantNames = parseNameList(value, "ablation variant") as GreedyDeterministicAblationVariantName[];
     },
     seeds: (value) => {
       seeds = parseNumberList(value, "seeds");
     },
     "max-labels": (value) => {
       maxLabelsPerCase = parsePositiveInteger(value, "max labels");
-    },
+    }
   };
 
   for (const arg of argv) {
@@ -95,7 +95,15 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
       connectivityShadowLabels = true;
       continue;
     }
-    if (isCliFlag(arg, "--deterministic-ablation", "--deterministic-ablations", "--ordering-ablation", "--ordering-ablations")) {
+    if (
+      isCliFlag(
+        arg,
+        "--deterministic-ablation",
+        "--deterministic-ablations",
+        "--ordering-ablation",
+        "--ordering-ablations"
+      )
+    ) {
       deterministicAblation = true;
       continue;
     }
@@ -132,7 +140,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     greedy,
     ablationVariantNames,
     seeds,
-    maxLabelsPerCase,
+    maxLabelsPerCase
   };
 }
 
@@ -141,10 +149,12 @@ export function runGreedyBenchmarkCli(): void {
   const modeCount = countEnabledCliModes([
     args.connectivityShadowAblation,
     args.connectivityShadowLabels,
-    args.deterministicAblation,
+    args.deterministicAblation
   ]);
   if (modeCount > 1) {
-    throw new Error("Choose only one of --connectivity-shadow-ablation, --connectivity-shadow-labels, or --deterministic-ablation.");
+    throw new Error(
+      "Choose only one of --connectivity-shadow-ablation, --connectivity-shadow-labels, or --deterministic-ablation."
+    );
   }
   if (args.gateReport && !args.deterministicAblation) {
     throw new Error("--gate-report is only available with --deterministic-ablation.");
@@ -154,9 +164,9 @@ export function runGreedyBenchmarkCli(): void {
       ? listGreedyConnectivityShadowScoringAblationCaseNames()
       : args.connectivityShadowLabels
         ? listGreedyConnectivityShadowOrderingLabelCaseNames()
-      : args.deterministicAblation
-        ? listGreedyDeterministicAblationCaseNames()
-      : listGreedyBenchmarkCaseNames();
+        : args.deterministicAblation
+          ? listGreedyDeterministicAblationCaseNames()
+          : listGreedyBenchmarkCaseNames();
     writeCliList(names);
     return;
   }
@@ -166,7 +176,7 @@ export function runGreedyBenchmarkCli(): void {
       names: optionalCliNames(args.names),
       greedy: args.greedy,
       variantNames: args.ablationVariantNames,
-      seeds: args.seeds ?? (args.gateReport ? DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS : undefined),
+      seeds: args.seeds ?? (args.gateReport ? DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS : undefined)
     });
 
     if (args.gateReport) {
@@ -179,8 +189,10 @@ export function runGreedyBenchmarkCli(): void {
       return;
     }
 
-    writeCliJsonOrText(args.json, () => createGreedyDeterministicAblationSnapshot(result), () =>
-      formatGreedyDeterministicAblation(result)
+    writeCliJsonOrText(
+      args.json,
+      () => createGreedyDeterministicAblationSnapshot(result),
+      () => formatGreedyDeterministicAblation(result)
     );
     return;
   }
@@ -190,7 +202,7 @@ export function runGreedyBenchmarkCli(): void {
       names: optionalCliNames(args.names),
       greedy: args.greedy,
       seeds: args.seeds,
-      maxLabelsPerCase: args.maxLabelsPerCase,
+      maxLabelsPerCase: args.maxLabelsPerCase
     });
 
     writeCliJsonOrText(
@@ -204,7 +216,7 @@ export function runGreedyBenchmarkCli(): void {
   if (args.connectivityShadowAblation) {
     const result = runGreedyConnectivityShadowScoringAblation(undefined, {
       names: optionalCliNames(args.names),
-      greedy: args.greedy,
+      greedy: args.greedy
     });
 
     writeCliJsonOrText(args.json, result, () => formatGreedyConnectivityShadowScoringAblation(result));
@@ -213,10 +225,14 @@ export function runGreedyBenchmarkCli(): void {
 
   const result = runGreedyBenchmarkSuite(undefined, {
     names: optionalCliNames(args.names),
-    greedy: args.greedy,
+    greedy: args.greedy
   });
 
-  writeCliJsonOrText(args.json, () => createGreedyBenchmarkSnapshot(result), () => formatGreedyBenchmarkSuite(result));
+  writeCliJsonOrText(
+    args.json,
+    () => createGreedyBenchmarkSnapshot(result),
+    () => formatGreedyBenchmarkSuite(result)
+  );
 }
 
 runCliMain(runGreedyBenchmarkCli);

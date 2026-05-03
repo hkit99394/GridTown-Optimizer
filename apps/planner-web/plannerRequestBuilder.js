@@ -1,12 +1,14 @@
 (function attachPlannerRequestBuilder(globalObject) {
-  const CP_SAT_PORTFOLIO_CAPABILITY_LIMITS = globalObject.CityBuilderShared?.CP_SAT_PORTFOLIO_CAPABILITY_LIMITS ?? Object.freeze({
-    defaultWorkers: 3,
-    defaultPerWorkerTimeLimitSeconds: 30,
-    maxWorkers: 8,
-    maxTotalWorkerThreads: 8,
-    maxPerWorkerThreads: 4,
-    maxTotalCpuBudgetSeconds: 8 * 60 * 60,
-  });
+  const CP_SAT_PORTFOLIO_CAPABILITY_LIMITS =
+    globalObject.CityBuilderShared?.CP_SAT_PORTFOLIO_CAPABILITY_LIMITS ??
+    Object.freeze({
+      defaultWorkers: 3,
+      defaultPerWorkerTimeLimitSeconds: 30,
+      maxWorkers: 8,
+      maxTotalWorkerThreads: 8,
+      maxPerWorkerThreads: 4,
+      maxTotalCpuBudgetSeconds: 8 * 60 * 60
+    });
   const CP_SAT_PORTFOLIO_DEFAULT_WORKERS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.defaultWorkers;
   const CP_SAT_RANDOM_SEED_MAX = 0x7fffffff;
   const CP_SAT_PORTFOLIO_MAX_WORKERS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxWorkers;
@@ -15,11 +17,7 @@
   const CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxTotalCpuBudgetSeconds;
 
   function createPlannerRequestBuilderController(options) {
-    const {
-      state,
-      elements,
-      helpers,
-    } = options;
+    const { state, elements, helpers } = options;
     const {
       buildCpSatContinuationModelInput,
       buildCpSatWarmStartCheckpoint,
@@ -30,7 +28,7 @@
       getSavedLayoutElapsedMs,
       readOptionalInteger,
       parseResidentialCatalogEntry,
-      parseServiceCatalogEntry,
+      parseServiceCatalogEntry
     } = helpers;
 
     function generateCpSatRandomSeed() {
@@ -66,18 +64,18 @@
       if (!result?.solution || !resultContext?.grid || !resultContext?.params) {
         return {
           checkpoint: null,
-          error: "missing",
+          error: "missing"
         };
       }
       try {
         return {
           checkpoint: buildCpSatWarmStartCheckpoint(result, resultContext, elapsedMs),
-          error: null,
+          error: null
         };
       } catch (error) {
         return {
           checkpoint: null,
-          error: getCheckpointBuildErrorMessage(error),
+          error: getCheckpointBuildErrorMessage(error)
         };
       }
     }
@@ -86,13 +84,18 @@
       if (entry?.result?.validation?.valid !== true) {
         return null;
       }
-      const rebuiltCheckpoint = tryBuildCheckpoint(entry?.result, entry?.resultContext, getSavedLayoutElapsedMs(entry)).checkpoint;
+      const rebuiltCheckpoint = tryBuildCheckpoint(
+        entry?.result,
+        entry?.resultContext,
+        getSavedLayoutElapsedMs(entry)
+      ).checkpoint;
       if (!rebuiltCheckpoint) return null;
       if (
-        entry?.continueCpSat?.kind === "city-builder.cp-sat-checkpoint"
-        && entry.continueCpSat.version === 1
-        && entry.continueCpSat.compatibility?.modelFingerprint === rebuiltCheckpoint.compatibility?.modelFingerprint
-        && entry.continueCpSat.compatibility?.candidateUniverseHash === rebuiltCheckpoint.compatibility?.candidateUniverseHash
+        entry?.continueCpSat?.kind === "city-builder.cp-sat-checkpoint" &&
+        entry.continueCpSat.version === 1 &&
+        entry.continueCpSat.compatibility?.modelFingerprint === rebuiltCheckpoint.compatibility?.modelFingerprint &&
+        entry.continueCpSat.compatibility?.candidateUniverseHash ===
+          rebuiltCheckpoint.compatibility?.candidateUniverseHash
       ) {
         return cloneJson(entry.continueCpSat);
       }
@@ -105,10 +108,6 @@
 
     function getDisplayedLayoutCheckpoint() {
       return getDisplayedLayoutCheckpointState().checkpoint;
-    }
-
-    function getDisplayedLayoutCheckpointError() {
-      return getDisplayedLayoutCheckpointState().error;
     }
 
     function getDisplayedLayoutSourceLabel() {
@@ -131,7 +130,7 @@
         defaultLabel,
         readyLabel,
         mismatchLabel,
-        previewRequestOptions,
+        previewRequestOptions
       } = options;
       if (!element) return;
       if (!enabled) {
@@ -182,7 +181,7 @@
         defaultLabel: "CP-SAT hint",
         readyLabel: "CP-SAT hint",
         mismatchLabel: "CP-SAT hinting",
-        previewRequestOptions: { hintMismatch: "ignore", includeWarmStartHint: false },
+        previewRequestOptions: { hintMismatch: "ignore", includeWarmStartHint: false }
       });
     }
 
@@ -199,18 +198,13 @@
         previewRequestOptions: {
           hintMismatch: "ignore",
           includeWarmStartHint: false,
-          includeLnsSeed: false,
-        },
+          includeLnsSeed: false
+        }
       });
     }
 
     function buildDisplayedLayoutContinuationBasePayload(grid, params, options) {
-      const {
-        optimizer,
-        enabled,
-        hintMismatch,
-        mismatchMessage,
-      } = options;
+      const { optimizer, enabled, hintMismatch, mismatchMessage } = options;
       if ((params.optimizer !== optimizer && params.optimizer !== "auto") || !enabled) return undefined;
 
       const checkpoint = getDisplayedLayoutCheckpoint();
@@ -237,8 +231,8 @@
           preferStrictImprove: Boolean(checkpoint.resumePolicy.objectiveCutoff.preferStrictImprove),
           repairHint: Boolean(checkpoint.resumePolicy.repairHint),
           fixVariablesToHintedValue: Boolean(checkpoint.resumePolicy.fixVariablesToHintedValue),
-          hintConflictLimit: 20,
-        },
+          hintConflictLimit: 20
+        }
       };
     }
 
@@ -247,7 +241,7 @@
         optimizer: "cp-sat",
         enabled: state.cpSat.useDisplayedHint,
         hintMismatch,
-        mismatchMessage: "Turn off default hinting or restore matching inputs first.",
+        mismatchMessage: "Turn off default hinting or restore matching inputs first."
       });
       return continuation?.payload;
     }
@@ -257,13 +251,13 @@
         optimizer: "lns",
         enabled: state.lns.useDisplayedSeed,
         hintMismatch,
-        mismatchMessage: "Turn off default seeding or restore matching inputs first.",
+        mismatchMessage: "Turn off default seeding or restore matching inputs first."
       });
       if (!continuation) return undefined;
 
       return {
         ...continuation.payload,
-        solution: cloneJson(continuation.checkpoint.hint.solution),
+        solution: cloneJson(continuation.checkpoint.hint.solution)
       };
     }
 
@@ -281,7 +275,8 @@
 
     function buildGreedyPayload(optimizer) {
       const randomSeed = optimizer === "auto" ? undefined : readOptionalInteger(state.greedy.randomSeed, 0);
-      const timeLimitSeconds = optimizer === "greedy" ? readOptionalInteger(state.greedy.timeLimitSeconds, 1) : undefined;
+      const timeLimitSeconds =
+        optimizer === "greedy" ? readOptionalInteger(state.greedy.timeLimitSeconds, 1) : undefined;
       const densityTieBreaker = optimizer === "greedy" && Boolean(state.greedy.densityTieBreaker);
       const densityTieBreakerTolerancePercent = densityTieBreaker
         ? clampOptionalFiniteNumber(state.greedy.densityTieBreakerTolerancePercent, 0, 100)
@@ -295,11 +290,19 @@
         ...(densityTieBreakerTolerancePercent !== undefined ? { densityTieBreakerTolerancePercent } : {}),
         restarts: clampInteger(state.greedy.restarts, optimizer === "auto" ? 4 : 1, 1),
         serviceRefineIterations: clampInteger(state.greedy.serviceRefineIterations, optimizer === "auto" ? 1 : 0, 0),
-        serviceRefineCandidateLimit: clampInteger(state.greedy.serviceRefineCandidateLimit, optimizer === "auto" ? 24 : 1, 1),
+        serviceRefineCandidateLimit: clampInteger(
+          state.greedy.serviceRefineCandidateLimit,
+          optimizer === "auto" ? 24 : 1,
+          1
+        ),
         exhaustiveServiceSearch: optimizer === "auto" ? false : Boolean(state.greedy.exhaustiveServiceSearch),
         diagnostics: optimizer === "greedy" && Boolean(state.greedy.diagnostics),
         serviceExactPoolLimit: clampInteger(state.greedy.serviceExactPoolLimit, optimizer === "auto" ? 8 : 1, 1),
-        serviceExactMaxCombinations: clampInteger(state.greedy.serviceExactMaxCombinations, optimizer === "auto" ? 512 : 1, 1),
+        serviceExactMaxCombinations: clampInteger(
+          state.greedy.serviceExactMaxCombinations,
+          optimizer === "auto" ? 512 : 1,
+          1
+        )
       };
 
       if (optimizer !== "auto") {
@@ -312,7 +315,7 @@
         serviceRefineIterations: Math.min(payload.serviceRefineIterations, 1),
         serviceRefineCandidateLimit: Math.min(payload.serviceRefineCandidateLimit, 24),
         serviceExactPoolLimit: Math.min(payload.serviceExactPoolLimit, 8),
-        serviceExactMaxCombinations: Math.min(payload.serviceExactMaxCombinations, 512),
+        serviceExactMaxCombinations: Math.min(payload.serviceExactMaxCombinations, 512)
       };
     }
 
@@ -363,20 +366,17 @@
           Math.floor(CP_SAT_PORTFOLIO_MAX_TOTAL_WORKER_THREADS / workerCount)
         )
       );
-      const perWorkerNumWorkers = Math.min(
-        clampInteger(portfolio.perWorkerNumWorkers, 1, 1),
-        maxPerWorkerThreads
-      );
+      const perWorkerNumWorkers = Math.min(clampInteger(portfolio.perWorkerNumWorkers, 1, 1), maxPerWorkerThreads);
       const requestedPerWorkerTimeLimitSeconds =
-        readOptionalInteger(portfolio.perWorkerTimeLimitSeconds, 1)
-        ?? outerTimeLimitSeconds;
+        readOptionalInteger(portfolio.perWorkerTimeLimitSeconds, 1) ?? outerTimeLimitSeconds;
       const maxPerWorkerTimeLimitSeconds = Math.max(
         1,
         Math.floor(CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS / (workerCount * perWorkerNumWorkers))
       );
-      const perWorkerTimeLimitSeconds = requestedPerWorkerTimeLimitSeconds === undefined
-        ? undefined
-        : Math.min(requestedPerWorkerTimeLimitSeconds, maxPerWorkerTimeLimitSeconds);
+      const perWorkerTimeLimitSeconds =
+        requestedPerWorkerTimeLimitSeconds === undefined
+          ? undefined
+          : Math.min(requestedPerWorkerTimeLimitSeconds, maxPerWorkerTimeLimitSeconds);
 
       return {
         workerCount,
@@ -384,11 +384,11 @@
         ...(perWorkerTimeLimitSeconds !== undefined
           ? {
               totalCpuBudgetSeconds: CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS,
-              perWorkerTimeLimitSeconds,
+              perWorkerTimeLimitSeconds
             }
           : {}),
         perWorkerNumWorkers,
-        randomizeSearch: portfolio.randomizeSearch !== false,
+        randomizeSearch: portfolio.randomizeSearch !== false
       };
     }
 
@@ -409,10 +409,10 @@
         ...(autoWallClockLimitSeconds !== undefined
           ? {
               auto: {
-                wallClockLimitSeconds: autoWallClockLimitSeconds,
-              },
+                wallClockLimitSeconds: autoWallClockLimitSeconds
+              }
             }
-          : {}),
+          : {})
       };
       if (optimizer !== "auto") {
         params.greedy = buildGreedyPayload(optimizer);
@@ -421,14 +421,14 @@
           logSearchProgress: Boolean(state.cpSat.logSearchProgress),
           ...(cpSatRandomSeed !== undefined ? { randomSeed: cpSatRandomSeed } : {}),
           ...(timeLimitSeconds !== undefined ? { timeLimitSeconds } : {}),
-          ...(noImprovementTimeoutSeconds !== undefined ? { noImprovementTimeoutSeconds } : {}),
+          ...(noImprovementTimeoutSeconds !== undefined ? { noImprovementTimeoutSeconds } : {})
         };
         params.lns = {
           iterations: clampInteger(state.lns.iterations, 12, 1),
           maxNoImprovementIterations: clampInteger(state.lns.maxNoImprovementIterations, 4, 1),
           neighborhoodRows: clampInteger(state.lns.neighborhoodRows, defaultNeighborhoodRows, 1),
           neighborhoodCols: clampInteger(state.lns.neighborhoodCols, defaultNeighborhoodCols, 1),
-          repairTimeLimitSeconds: clampInteger(state.lns.repairTimeLimitSeconds, 5, 1),
+          repairTimeLimitSeconds: clampInteger(state.lns.repairTimeLimitSeconds, 5, 1)
         };
       }
       const cpSatPortfolio = buildCpSatPortfolioPayload(optimizer, timeLimitSeconds);
@@ -462,7 +462,7 @@
 
       return {
         grid,
-        params,
+        params
       };
     }
 
@@ -484,11 +484,11 @@
       getSavedLayoutCheckpoint,
       renderCpSatHintStatus,
       renderLnsSeedStatus,
-      updatePayloadPreview,
+      updatePayloadPreview
     });
   }
 
   globalObject.CityBuilderRequestBuilder = Object.freeze({
-    createPlannerRequestBuilderController,
+    createPlannerRequestBuilderController
   });
 })(window);

@@ -3,7 +3,7 @@ import {
   formatBenchmarkRate as formatRatio,
   formatNullableBenchmarkNumber as formatPopulationGap,
   formatNullableBenchmarkSeconds as formatSeconds,
-  formatNullableBenchmarkSignedNumber as formatScoreDeltaVsAuto,
+  formatNullableBenchmarkSignedNumber as formatScoreDeltaVsAuto
 } from "./benchmarkOptions.js";
 import { MODE_LABELS } from "./crossModeLabels.js";
 import { compareModeResults } from "./crossModeResultOrder.js";
@@ -14,7 +14,7 @@ import type {
   CrossModeBenchmarkSuiteResult,
   CrossModeBudgetAllocationSignal,
   CrossModePortfolioEfficiencySignal,
-  CrossModeRoadSemanticsSummary,
+  CrossModeRoadSemanticsSummary
 } from "./crossMode.js";
 
 function formatScoreDelta(value: number | null): string {
@@ -32,7 +32,7 @@ function formatBudgetAllocationSignal(signal: CrossModeBudgetAllocationSignal): 
     `best=${formatSeconds(signal.bestScoreSeconds)}`,
     `after-best=${formatSeconds(signal.secondsAfterBest)}`,
     `improvements/s=${signal.improvementsPerSecond === null ? "n/a" : signal.improvementsPerSecond.toFixed(3)}`,
-    `auto-best-delta=${formatSeconds(signal.autoBestScoreSecondsDelta)}`,
+    `auto-best-delta=${formatSeconds(signal.autoBestScoreSecondsDelta)}`
   ].join(" ");
 }
 
@@ -49,7 +49,7 @@ function formatBudgetPolicySignal(signal: CrossModeBenchmarkBudgetPolicySignal):
     `lns-vs-auto=${formatScoreDeltaVsAuto(signal.lnsScoreDeltaVsAuto)}`,
     `auto-lns=${formatSeconds(signal.autoLnsStageElapsedSeconds)}/+${formatPopulationGap(signal.autoLnsStageImprovement)}`,
     `auto-cp-sat=${formatSeconds(signal.autoCpSatStageElapsedSeconds)}/+${formatPopulationGap(signal.autoCpSatStageImprovement)}`,
-    `reason=${signal.reason}`,
+    `reason=${signal.reason}`
   ].join(" ");
 }
 
@@ -67,7 +67,7 @@ function formatPortfolioEfficiencySignal(signal: CrossModePortfolioEfficiencySig
     `single-pop/cpu=${signal.singlePopulationPerCpuBudgetSecond === null ? "n/a" : signal.singlePopulationPerCpuBudgetSecond.toFixed(3)}`,
     `portfolio-pop/cpu=${signal.portfolioPopulationPerCpuBudgetSecond === null ? "n/a" : signal.portfolioPopulationPerCpuBudgetSecond.toFixed(3)}`,
     `cpu-eff-ratio=${signal.cpuBudgetEfficiencyRatio === null ? "n/a" : signal.cpuBudgetEfficiencyRatio.toFixed(3)}`,
-    `reason=${signal.reason}`,
+    `reason=${signal.reason}`
   ].join(" ");
 }
 
@@ -94,7 +94,7 @@ function formatRoadSemanticsSummary(summary: CrossModeRoadSemanticsSummary): str
     `disconnected=${summary.disconnectedRoadCount}`,
     `connected-ratio=${summary.anchorConnectedRoadRatio === null ? "n/a" : summary.anchorConnectedRoadRatio.toFixed(3)}`,
     `adjacent-buildings=${summary.roadAdjacentBuildingCount}`,
-    `unadjacent-buildings=${summary.roadUnadjacentBuildingCount}`,
+    `unadjacent-buildings=${summary.roadUnadjacentBuildingCount}`
   ].join(" ");
 }
 
@@ -166,4 +166,3 @@ export function formatCrossModeBenchmarkSuite(result: CrossModeBenchmarkSuiteRes
 
   return lines.join("\n");
 }
-

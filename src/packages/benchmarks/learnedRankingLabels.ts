@@ -1,12 +1,12 @@
 import { normalizeBenchmarkSeeds } from "./benchmarkSeeds.js";
 import {
   DEFAULT_GREEDY_DETERMINISTIC_ABLATION_CORPUS,
-  DEFAULT_GREEDY_DETERMINISTIC_ABLATION_CASE_NAMES,
+  DEFAULT_GREEDY_DETERMINISTIC_ABLATION_CASE_NAMES
 } from "./greedyDeterministicAblations.js";
 import {
   createLnsWindowReplaySnapshot,
   LNS_WINDOW_REPLAY_FEATURE_SCHEMA_VERSION,
-  runLnsWindowReplayLabels,
+  runLnsWindowReplayLabels
 } from "./lnsWindowReplayLabels.js";
 import { DEFAULT_LNS_REPLAY_LABEL_CORPUS } from "./lns.js";
 import {
@@ -15,51 +15,43 @@ import {
   nonNegativeIntegerOrDefault,
   positiveIntegerOrDefault,
   sumBenchmarkBy,
-  uniqueBenchmarkValues,
+  uniqueBenchmarkValues
 } from "./benchmarkOptions.js";
 import { buildLnsReplayLabelScaleReadiness } from "./lnsReplayLabelReadiness.js";
 import { DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS } from "./deterministicAblationGates.js";
 import { runGreedyBenchmarkSuite } from "./greedy.js";
 import { hashString, stableStringify } from "../core/cpSatContinuation.js";
 
-import type {
-  GreedyBenchmarkCase,
-  GreedyBenchmarkOptions,
-  GreedyBenchmarkSuiteResult,
-} from "./greedy.js";
-import type {
-  LnsBenchmarkCase,
-  LnsReplayPressureFamilyLabel,
-} from "./lns.js";
+import type { GreedyBenchmarkCase, GreedyBenchmarkOptions, GreedyBenchmarkSuiteResult } from "./greedy.js";
+import type { LnsBenchmarkCase, LnsReplayPressureFamilyLabel } from "./lns.js";
 import type {
   CpSatOptions,
   GreedyConnectivityShadowPlacementTrace,
   GreedyRoadOpportunityCounterfactualTrace,
   GreedyRoadOpportunityTrace,
-  LnsOptions,
+  LnsOptions
 } from "../core/index.js";
 import type {
   LnsWindowReplaySnapshot,
   LnsWindowReplaySnapshotLabel,
+  LnsWindowReplayStatePolicy
 } from "./lnsWindowReplayLabels.js";
 import type { LnsReplayLabelScaleReadiness } from "./lnsReplayLabelReadiness.js";
 
 export {
   DEFAULT_LNS_REPLAY_LABEL_SCALE_THRESHOLDS,
-  buildLnsReplayLabelScaleReadiness,
+  buildLnsReplayLabelScaleReadiness
 } from "./lnsReplayLabelReadiness.js";
 export type {
   LnsReplayLabelFamilyScaleSummary,
   LnsReplayLabelScaleReadiness,
   LnsReplayLabelScaleThresholds,
-  LnsReplayLabelSplitScaleReadiness,
+  LnsReplayLabelSplitScaleReadiness
 } from "./lnsReplayLabelReadiness.js";
 
 export type LearnedRankingLabelSplit = "development" | "holdout";
 
-export type GreedyOrderingLabelSource =
-  | "connectivity-shadow-decision"
-  | "road-opportunity-counterfactual";
+export type GreedyOrderingLabelSource = "connectivity-shadow-decision" | "road-opportunity-counterfactual";
 
 export interface LearnedRankingLabelSplitConfig {
   split: LearnedRankingLabelSplit;
@@ -137,7 +129,10 @@ export interface LearnedRankingAuditMetadata {
   };
   lnsReplay: {
     cpSatNumWorkers: 1;
-    incumbentStatePolicy: "initial-incumbent";
+    incumbentStatePolicy: LnsWindowReplayStatePolicy | "multiple";
+    incumbentStatePolicies: LnsWindowReplayStatePolicy[];
+    stateCollectionIterations: number;
+    stateCollectionRepairTimeLimitSeconds: number;
     candidateWindowPolicy: "baseline-ranked-top-k" | "baseline-ranked-top-k-plus-tail-exploration";
     explorationWindowCount: number;
     featureSchemaVersion: typeof LNS_WINDOW_REPLAY_FEATURE_SCHEMA_VERSION;
@@ -163,8 +158,7 @@ export interface LearnedRankingLabelSuiteResult {
   leakage: LearnedRankingLeakageReport;
 }
 
-export interface LearnedRankingLabelSnapshot
-  extends Omit<LearnedRankingLabelSuiteResult, "generatedAt"> {}
+export interface LearnedRankingLabelSnapshot extends Omit<LearnedRankingLabelSuiteResult, "generatedAt"> {}
 
 export interface LearnedRankingLabelTelemetryManifestOptions {
   command: string;
@@ -216,6 +210,11 @@ export interface LearnedRankingLabelTelemetryManifest {
       repairTimeLimitSeconds: number;
       maxWindows: number;
       explorationWindowCount: number;
+      statePolicies: LnsWindowReplayStatePolicy[];
+      capturedStatePolicies: LnsWindowReplayStatePolicy[];
+      stateCollectionIterations: number;
+      stateCollectionRepairTimeLimitSeconds: number;
+      stateCount: number;
       featureSchemaVersion: number;
       cpSatNumWorkers: number;
       cpSatModelFingerprints: string[];
@@ -242,51 +241,54 @@ export interface LearnedRankingLabelRunOptions {
   maxWindows?: number;
   repairTimeLimitSeconds?: number;
   explorationWindowCount?: number;
+  lnsStatePolicies?: readonly LnsWindowReplayStatePolicy[];
+  lnsStateCollectionIterations?: number;
+  lnsStateCollectionRepairTimeLimitSeconds?: number;
 }
 
 export const DEFAULT_LEARNED_RANKING_LNS_REPLAY_MAX_WINDOWS = 14;
 export const DEFAULT_LEARNED_RANKING_LNS_REPLAY_EXPLORATION_WINDOWS = 4;
 
-export const DEFAULT_LEARNED_RANKING_LABEL_SPLITS: readonly LearnedRankingLabelSplitConfig[] =
-  Object.freeze([
-    {
-      split: "development",
-      greedyCaseNames: [
-        "cap-sweep-mixed",
-        "service-local-neighborhood",
-        "step14-service-lookahead-reranker",
-        "row0-corridor-repair-pressure",
-      ],
-      lnsCaseNames: [
-        "compact-service-repair",
-        "seeded-service-anchor-pressure",
-        "lns-corridor-squeeze-pressure",
-        "lns-gate-choke-pressure",
-        "lns-footprint-mix-pressure",
-      ],
-    },
-    {
-      split: "holdout",
-      greedyCaseNames: DEFAULT_GREEDY_DETERMINISTIC_ABLATION_CASE_NAMES.filter((name) =>
-        name === "fixed-service-realization-complete"
-        || name === "geometry-occupancy-hot-path"
-        || name === "typed-footprint-pressure"
-        || name === "typed-availability-pressure"
-      ),
-      lnsCaseNames: [
-        "row0-anchor-repair",
-        "lns-service-overlap-pressure",
-        "lns-anchor-service-corner-pressure",
-        "lns-gate-side-channel-pressure",
-        "lns-footprint-bottleneck-pressure",
-      ],
-    },
-  ]);
+export const DEFAULT_LEARNED_RANKING_LABEL_SPLITS: readonly LearnedRankingLabelSplitConfig[] = Object.freeze([
+  {
+    split: "development",
+    greedyCaseNames: [
+      "cap-sweep-mixed",
+      "service-local-neighborhood",
+      "step14-service-lookahead-reranker",
+      "row0-corridor-repair-pressure"
+    ],
+    lnsCaseNames: [
+      "compact-service-repair",
+      "seeded-service-anchor-pressure",
+      "lns-corridor-squeeze-pressure",
+      "lns-gate-choke-pressure",
+      "lns-footprint-mix-pressure"
+    ]
+  },
+  {
+    split: "holdout",
+    greedyCaseNames: DEFAULT_GREEDY_DETERMINISTIC_ABLATION_CASE_NAMES.filter(
+      (name) =>
+        name === "fixed-service-realization-complete" ||
+        name === "geometry-occupancy-hot-path" ||
+        name === "typed-footprint-pressure" ||
+        name === "typed-availability-pressure"
+    ),
+    lnsCaseNames: [
+      "row0-anchor-repair",
+      "lns-service-overlap-pressure",
+      "lns-anchor-service-corner-pressure",
+      "lns-gate-side-channel-pressure",
+      "lns-footprint-bottleneck-pressure"
+    ]
+  }
+]);
 
 function emptySourceCounts(): Record<GreedyOrderingLabelSource, number> {
   return {
     "connectivity-shadow-decision": 0,
-    "road-opportunity-counterfactual": 0,
+    "road-opportunity-counterfactual": 0
   };
 }
 
@@ -294,10 +296,14 @@ function sumGreedySourceCounts(
   splits: readonly GreedyOrderingLabelSplitResult[]
 ): Record<GreedyOrderingLabelSource, number> {
   return {
-    "connectivity-shadow-decision":
-      sumBenchmarkBy(splits, (split) => split.sourceCounts["connectivity-shadow-decision"]),
-    "road-opportunity-counterfactual":
-      sumBenchmarkBy(splits, (split) => split.sourceCounts["road-opportunity-counterfactual"]),
+    "connectivity-shadow-decision": sumBenchmarkBy(
+      splits,
+      (split) => split.sourceCounts["connectivity-shadow-decision"]
+    ),
+    "road-opportunity-counterfactual": sumBenchmarkBy(
+      splits,
+      (split) => split.sourceCounts["road-opportunity-counterfactual"]
+    )
   };
 }
 
@@ -315,7 +321,7 @@ function emptyLnsStatusCounts(): Record<LnsWindowReplaySnapshotLabel["status"], 
     neutral: 0,
     regressed: 0,
     invalid: 0,
-    "recoverable-failure": 0,
+    "recoverable-failure": 0
   };
 }
 
@@ -328,13 +334,11 @@ function addLnsStatusCounts(
     neutral: left.neutral + right.neutral,
     regressed: left.regressed + right.regressed,
     invalid: left.invalid + right.invalid,
-    "recoverable-failure": left["recoverable-failure"] + right["recoverable-failure"],
+    "recoverable-failure": left["recoverable-failure"] + right["recoverable-failure"]
   };
 }
 
-function countLnsStatuses(
-  replay: LnsWindowReplaySnapshot
-): Record<LnsWindowReplaySnapshotLabel["status"], number> {
+function countLnsStatuses(replay: LnsWindowReplaySnapshot): Record<LnsWindowReplaySnapshotLabel["status"], number> {
   const counts = emptyLnsStatusCounts();
   for (const benchmarkCase of replay.cases) {
     for (const label of benchmarkCase.labels) {
@@ -345,9 +349,8 @@ function countLnsStatuses(
 }
 
 function countUsableLnsLabels(replay: LnsWindowReplaySnapshot): number {
-  return sumBenchmarkBy(
-    replay.cases,
-    (benchmarkCase) => countBenchmarkMatches(benchmarkCase.labels, (label) => label.usable)
+  return sumBenchmarkBy(replay.cases, (benchmarkCase) =>
+    countBenchmarkMatches(benchmarkCase.labels, (label) => label.usable)
   );
 }
 
@@ -364,13 +367,11 @@ function placementFeaturesFromShadowTrace(
     shadowPenalty,
     ...(placement.typeIndex === undefined ? {} : { typeIndex: placement.typeIndex }),
     ...(placement.bonus === undefined ? {} : { bonus: placement.bonus }),
-    ...(placement.range === undefined ? {} : { range: placement.range }),
+    ...(placement.range === undefined ? {} : { range: placement.range })
   };
 }
 
-function placementFeaturesFromOpportunityTrace(
-  trace: GreedyRoadOpportunityTrace
-): GreedyOrderingPlacementFeatures {
+function placementFeaturesFromOpportunityTrace(trace: GreedyRoadOpportunityTrace): GreedyOrderingPlacementFeatures {
   return {
     r: trace.r,
     c: trace.c,
@@ -385,7 +386,7 @@ function placementFeaturesFromOpportunityTrace(
     disconnectedCells: trace.disconnectedCells,
     ...(trace.typeIndex === undefined ? {} : { typeIndex: trace.typeIndex }),
     ...(trace.bonus === undefined ? {} : { bonus: trace.bonus }),
-    ...(trace.range === undefined ? {} : { range: trace.range }),
+    ...(trace.range === undefined ? {} : { range: trace.range })
   };
 }
 
@@ -406,7 +407,7 @@ function placementFeaturesFromCounterfactualTrace(
     disconnectedCells: trace.disconnectedCells,
     ...(trace.typeIndex === undefined ? {} : { typeIndex: trace.typeIndex }),
     ...(trace.bonus === undefined ? {} : { bonus: trace.bonus }),
-    ...(trace.range === undefined ? {} : { range: trace.range }),
+    ...(trace.range === undefined ? {} : { range: trace.range })
   };
 }
 
@@ -414,14 +415,16 @@ function samePlacement(
   left: GreedyConnectivityShadowPlacementTrace,
   right: GreedyConnectivityShadowPlacementTrace
 ): boolean {
-  return left.r === right.r
-    && left.c === right.c
-    && left.rows === right.rows
-    && left.cols === right.cols
-    && left.roadCost === right.roadCost
-    && left.typeIndex === right.typeIndex
-    && left.bonus === right.bonus
-    && left.range === right.range;
+  return (
+    left.r === right.r &&
+    left.c === right.c &&
+    left.rows === right.rows &&
+    left.cols === right.cols &&
+    left.roadCost === right.roadCost &&
+    left.typeIndex === right.typeIndex &&
+    left.bonus === right.bonus &&
+    left.range === right.range
+  );
 }
 
 function labelId(
@@ -448,12 +451,8 @@ export function collectGreedyOrderingLabelsFromBenchmarkSuite(
     let labelIndex = 0;
     for (const decision of profile.connectivityShadowDecisions ?? []) {
       const selectedIsCandidate = samePlacement(decision.chosen, decision.candidate);
-      const selectedPenalty = selectedIsCandidate
-        ? decision.candidateShadowPenalty
-        : decision.incumbentShadowPenalty;
-      const rejectedPenalty = selectedIsCandidate
-        ? decision.incumbentShadowPenalty
-        : decision.candidateShadowPenalty;
+      const selectedPenalty = selectedIsCandidate ? decision.candidateShadowPenalty : decision.incumbentShadowPenalty;
+      const rejectedPenalty = selectedIsCandidate ? decision.incumbentShadowPenalty : decision.candidateShadowPenalty;
       labels.push({
         id: labelId(split, benchmark.name, seed, "connectivity-shadow-decision", labelIndex++),
         split,
@@ -464,7 +463,7 @@ export function collectGreedyOrderingLabelsFromBenchmarkSuite(
         target: "lower-connectivity-shadow",
         selected: placementFeaturesFromShadowTrace(decision.chosen, selectedPenalty),
         rejected: placementFeaturesFromShadowTrace(decision.rejected, rejectedPenalty),
-        margin: rejectedPenalty - selectedPenalty,
+        margin: rejectedPenalty - selectedPenalty
       });
     }
 
@@ -481,7 +480,7 @@ export function collectGreedyOrderingLabelsFromBenchmarkSuite(
           selected: placementFeaturesFromOpportunityTrace(trace),
           rejected: placementFeaturesFromCounterfactualTrace(counterfactual),
           margin: counterfactual.lostCells - trace.lostCells,
-          reason: counterfactual.reason,
+          reason: counterfactual.reason
         });
       }
     }
@@ -519,9 +518,7 @@ function validateSplitConfigs(splitConfigs: readonly LearnedRankingLabelSplitCon
   }
 }
 
-function buildLeakageReport(
-  splitConfigs: readonly LearnedRankingLabelSplitConfig[]
-): LearnedRankingLeakageReport {
+function buildLeakageReport(splitConfigs: readonly LearnedRankingLabelSplitConfig[]): LearnedRankingLeakageReport {
   const development = splitConfigs.find((config) => config.split === "development")!;
   const holdout = splitConfigs.find((config) => config.split === "holdout")!;
   const greedyOverlap = intersection(development.greedyCaseNames, holdout.greedyCaseNames);
@@ -533,7 +530,7 @@ function buildLeakageReport(
     holdoutLnsCases: [...holdout.lnsCaseNames],
     greedyOverlap,
     lnsOverlap,
-    protectedHoldout: greedyOverlap.length === 0 && lnsOverlap.length === 0,
+    protectedHoldout: greedyOverlap.length === 0 && lnsOverlap.length === 0
   };
 }
 
@@ -541,7 +538,7 @@ function assertProtectedHoldout(leakage: LearnedRankingLeakageReport): void {
   if (!leakage.protectedHoldout) {
     const overlaps = [
       leakage.greedyOverlap.length ? `Greedy: ${leakage.greedyOverlap.join(", ")}` : null,
-      leakage.lnsOverlap.length ? `LNS: ${leakage.lnsOverlap.join(", ")}` : null,
+      leakage.lnsOverlap.length ? `LNS: ${leakage.lnsOverlap.join(", ")}` : null
     ].filter((entry): entry is string => entry !== null);
     throw new Error(`Learned ranking development/holdout split overlap is not allowed. ${overlaps.join("; ")}`);
   }
@@ -555,14 +552,12 @@ export function runLearnedRankingLabelSuite(
   const leakage = buildLeakageReport(splitConfigs);
   assertProtectedHoldout(leakage);
 
-  const seeds = normalizeBenchmarkSeeds(options.seeds, "learned ranking label seeds")
-    ?? [...DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS];
+  const seeds = normalizeBenchmarkSeeds(options.seeds, "learned ranking label seeds") ?? [
+    ...DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS
+  ];
   const greedyCorpus = options.greedyCorpus ?? DEFAULT_GREEDY_DETERMINISTIC_ABLATION_CORPUS;
   const lnsCorpus = options.lnsCorpus ?? DEFAULT_LNS_REPLAY_LABEL_CORPUS;
-  const maxWindows = positiveIntegerOrDefault(
-    options.maxWindows,
-    DEFAULT_LEARNED_RANKING_LNS_REPLAY_MAX_WINDOWS
-  );
+  const maxWindows = positiveIntegerOrDefault(options.maxWindows, DEFAULT_LEARNED_RANKING_LNS_REPLAY_MAX_WINDOWS);
   const explorationWindowCount = nonNegativeIntegerOrDefault(
     options.explorationWindowCount,
     DEFAULT_LEARNED_RANKING_LNS_REPLAY_EXPLORATION_WINDOWS
@@ -578,8 +573,8 @@ export function runLearnedRankingLabelSuite(
           ...(options.greedy ?? {}),
           profile: true,
           connectivityShadowScoring: true,
-          randomSeed: seed,
-        },
+          randomSeed: seed
+        }
       });
       return collectGreedyOrderingLabelsFromBenchmarkSuite(result, config.split, seed);
     });
@@ -589,7 +584,7 @@ export function runLearnedRankingLabelSuite(
       seeds: [...seeds],
       labelCount: greedyLabels.length,
       sourceCounts: countSources(greedyLabels),
-      labels: greedyLabels,
+      labels: greedyLabels
     });
 
     const lnsReplay = runLnsWindowReplayLabels(lnsCorpus, {
@@ -600,6 +595,9 @@ export function runLearnedRankingLabelSuite(
       maxWindows,
       explorationWindowCount,
       repairTimeLimitSeconds: options.repairTimeLimitSeconds,
+      statePolicies: options.lnsStatePolicies,
+      stateCollectionIterations: options.lnsStateCollectionIterations,
+      stateCollectionRepairTimeLimitSeconds: options.lnsStateCollectionRepairTimeLimitSeconds
     });
     const replaySnapshot = createLnsWindowReplaySnapshot(lnsReplay);
     lnsSplits.push({
@@ -610,11 +608,19 @@ export function runLearnedRankingLabelSuite(
       labelCount: lnsReplay.labelCount,
       usableLabelCount: countUsableLnsLabels(replaySnapshot),
       statusCounts: countLnsStatuses(replaySnapshot),
-      replay: replaySnapshot,
+      replay: replaySnapshot
     });
   }
 
   const greedySourceCounts = sumGreedySourceCounts(greedySplits);
+  const lnsReplayStatePolicies = uniqueBenchmarkValues(
+    lnsSplits.flatMap((split) => split.replay.statePolicies)
+  ) as LnsWindowReplayStatePolicy[];
+  const lnsReplayPrimaryStatePolicy: LnsWindowReplayStatePolicy | "multiple" =
+    lnsReplayStatePolicies.length === 1 ? lnsReplayStatePolicies[0]! : "multiple";
+  const lnsReplayStateCollectionIterations = lnsSplits[0]?.replay.stateCollectionIterations ?? 4;
+  const lnsReplayStateCollectionRepairTimeLimitSeconds =
+    lnsSplits[0]?.replay.stateCollectionRepairTimeLimitSeconds ?? options.repairTimeLimitSeconds ?? 1;
 
   return {
     generatedAt: benchmarkGeneratedAt(),
@@ -625,42 +631,40 @@ export function runLearnedRankingLabelSuite(
       learnedModel: null,
       greedy: {
         profile: true,
-        connectivityShadowScoring: true,
+        connectivityShadowScoring: true
       },
       lnsReplay: {
         cpSatNumWorkers: 1,
-        incumbentStatePolicy: "initial-incumbent",
-        candidateWindowPolicy: explorationWindowCount > 0
-          ? "baseline-ranked-top-k-plus-tail-exploration"
-          : "baseline-ranked-top-k",
+        incumbentStatePolicy: lnsReplayPrimaryStatePolicy,
+        incumbentStatePolicies: lnsReplayStatePolicies,
+        stateCollectionIterations: lnsReplayStateCollectionIterations,
+        stateCollectionRepairTimeLimitSeconds: lnsReplayStateCollectionRepairTimeLimitSeconds,
+        candidateWindowPolicy:
+          explorationWindowCount > 0 ? "baseline-ranked-top-k-plus-tail-exploration" : "baseline-ranked-top-k",
         explorationWindowCount,
-        featureSchemaVersion: LNS_WINDOW_REPLAY_FEATURE_SCHEMA_VERSION,
-      },
+        featureSchemaVersion: LNS_WINDOW_REPLAY_FEATURE_SCHEMA_VERSION
+      }
     },
     greedy: {
       labelCount: sumBenchmarkBy(greedySplits, (split) => split.labelCount),
       sourceCounts: greedySourceCounts,
-      splits: greedySplits,
+      splits: greedySplits
     },
     lns: {
       labelCount: sumBenchmarkBy(lnsSplits, (split) => split.labelCount),
       scaleReadiness: buildLnsReplayLabelScaleReadiness(lnsSplits),
-      splits: lnsSplits,
+      splits: lnsSplits
     },
-    leakage,
+    leakage
   };
 }
 
-export function createLearnedRankingLabelSnapshot(
-  result: LearnedRankingLabelSuiteResult
-): LearnedRankingLabelSnapshot {
+export function createLearnedRankingLabelSnapshot(result: LearnedRankingLabelSuiteResult): LearnedRankingLabelSnapshot {
   const { generatedAt: _generatedAt, ...snapshot } = result;
   return snapshot;
 }
 
-export function buildLearnedRankingLabelFingerprint(
-  result: LearnedRankingLabelSuiteResult
-): string {
+export function buildLearnedRankingLabelFingerprint(result: LearnedRankingLabelSuiteResult): string {
   return `fnv1a:${hashString(stableStringify(createLearnedRankingLabelSnapshot(result)))}`;
 }
 
@@ -679,7 +683,7 @@ function learnedRankingCasesBySplit(
 ): Record<LearnedRankingLabelSplit, string[]> {
   const casesBySplit: Record<LearnedRankingLabelSplit, string[]> = {
     development: [],
-    holdout: [],
+    holdout: []
   };
   for (const split of result.greedy.splits) {
     casesBySplit[split.split].push(...split.selectedCaseNames);
@@ -689,29 +693,26 @@ function learnedRankingCasesBySplit(
   }
   return {
     development: uniqueBenchmarkValues(casesBySplit.development).sort(),
-    holdout: uniqueBenchmarkValues(casesBySplit.holdout).sort(),
+    holdout: uniqueBenchmarkValues(casesBySplit.holdout).sort()
   };
 }
 
 function learnedRankingCaseFamilies(result: LearnedRankingLabelSuiteResult): string[] {
-  const pressureFamilies = uniqueBenchmarkValues(
-    result.lns.splits.flatMap((split) => split.pressureFamilies)
-  ).map((family) => `lns-${family}`);
+  const pressureFamilies = uniqueBenchmarkValues(result.lns.splits.flatMap((split) => split.pressureFamilies)).map(
+    (family) => `lns-${family}`
+  );
   return uniqueBenchmarkValues([
     "greedy-connectivity-shadow",
     "greedy-road-opportunity",
     "lns-window-replay",
-    ...pressureFamilies,
+    ...pressureFamilies
   ]).sort();
 }
 
 function aggregateLnsStatusCounts(
   splits: readonly LnsReplayLabelSplitResult[]
 ): Record<LnsWindowReplaySnapshotLabel["status"], number> {
-  return splits.reduce(
-    (counts, split) => addLnsStatusCounts(counts, split.statusCounts),
-    emptyLnsStatusCounts()
-  );
+  return splits.reduce((counts, split) => addLnsStatusCounts(counts, split.statusCounts), emptyLnsStatusCounts());
 }
 
 export function buildLearnedRankingLabelTelemetryManifest(
@@ -734,7 +735,7 @@ export function buildLearnedRankingLabelTelemetryManifest(
       seeds: [...result.seeds],
       protectedHoldout: result.leakage.protectedHoldout,
       lnsScaleReady: result.lns.scaleReadiness.passed,
-      learnedModel: result.audit.learnedModel,
+      learnedModel: result.audit.learnedModel
     },
     audit: structuredClone(result.audit),
     greedy: {
@@ -743,8 +744,8 @@ export function buildLearnedRankingLabelTelemetryManifest(
         split: split.split,
         selectedCaseNames: [...split.selectedCaseNames],
         labelCount: split.labelCount,
-        sourceCounts: { ...split.sourceCounts },
-      })),
+        sourceCounts: { ...split.sourceCounts }
+      }))
     },
     lns: {
       scaleReadiness: structuredClone(result.lns.scaleReadiness),
@@ -759,11 +760,16 @@ export function buildLearnedRankingLabelTelemetryManifest(
         repairTimeLimitSeconds: split.replay.repairTimeLimitSeconds,
         maxWindows: split.replay.maxWindows,
         explorationWindowCount: split.replay.explorationWindowCount,
+        statePolicies: [...split.replay.statePolicies],
+        capturedStatePolicies: [...split.replay.capturedStatePolicies],
+        stateCollectionIterations: split.replay.stateCollectionIterations,
+        stateCollectionRepairTimeLimitSeconds: split.replay.stateCollectionRepairTimeLimitSeconds,
+        stateCount: split.replay.stateCount,
         featureSchemaVersion: split.replay.featureSchemaVersion,
         cpSatNumWorkers: split.replay.cpSatNumWorkers,
-        cpSatModelFingerprints: [...split.replay.cpSatModelFingerprints],
-      })),
-    },
+        cpSatModelFingerprints: [...split.replay.cpSatModelFingerprints]
+      }))
+    }
   };
 }
 
@@ -779,6 +785,19 @@ export function buildLearnedRankingLabelRegistryEntryDraft(
   const lnsCpSatModelFingerprints = uniqueBenchmarkValues(
     result.lns.splits.flatMap((split) => split.replay.cpSatModelFingerprints)
   );
+  const lnsCapturedStatePolicies = uniqueBenchmarkValues(
+    result.lns.splits.flatMap((split) => split.replay.capturedStatePolicies)
+  );
+  const lnsReplayInputFingerprintPayload = {
+    cpSatModelFingerprints: lnsCpSatModelFingerprints,
+    statePolicies: result.audit.lnsReplay.incumbentStatePolicies,
+    stateCollectionIterations: uniqueBenchmarkValues(
+      result.lns.splits.map((split) => split.replay.stateCollectionIterations)
+    ),
+    stateCollectionRepairTimeLimitSeconds: uniqueBenchmarkValues(
+      result.lns.splits.map((split) => split.replay.stateCollectionRepairTimeLimitSeconds)
+    )
+  };
   return {
     schemaVersion: 1,
     runId: options.runId ?? `learned-ranking-labels-${dateSlug(result.generatedAt)}`,
@@ -789,7 +808,7 @@ export function buildLearnedRankingLabelRegistryEntryDraft(
     cases: splitCases,
     caseFamilies: learnedRankingCaseFamilies(result),
     seeds: [...result.seeds],
-    inputFingerprint: `fnv1a:${hashString(stableStringify(lnsCpSatModelFingerprints))}`,
+    inputFingerprint: `fnv1a:${hashString(stableStringify(lnsReplayInputFingerprintPayload))}`,
     cpSatModelFingerprints: lnsCpSatModelFingerprints,
     splitStatus: {
       protectedHoldout: result.leakage.protectedHoldout,
@@ -800,7 +819,7 @@ export function buildLearnedRankingLabelRegistryEntryDraft(
       lnsScaleReadiness: result.lns.scaleReadiness,
       notes: result.leakage.protectedHoldout
         ? "Learned-ranking labels keep development and holdout case names disjoint."
-        : "Learned-ranking labels are not protected holdout evidence because split overlap exists.",
+        : "Learned-ranking labels are not protected holdout evidence because split overlap exists."
     },
     budget: {
       seeds: [...result.seeds],
@@ -812,18 +831,27 @@ export function buildLearnedRankingLabelRegistryEntryDraft(
       ),
       lnsMaxWindows: uniqueBenchmarkValues(result.lns.splits.map((split) => split.replay.maxWindows)),
       lnsExplorationWindowCount: result.audit.lnsReplay.explorationWindowCount,
+      lnsStatePolicyCount: result.audit.lnsReplay.incumbentStatePolicies.length,
+      lnsCapturedStatePolicyCount: lnsCapturedStatePolicies.length,
+      lnsStateCollectionIterations: uniqueBenchmarkValues(
+        result.lns.splits.map((split) => split.replay.stateCollectionIterations)
+      ),
+      lnsStateCollectionRepairTimeLimitSeconds: uniqueBenchmarkValues(
+        result.lns.splits.map((split) => split.replay.stateCollectionRepairTimeLimitSeconds)
+      ),
       lnsFeatureSchemaVersion: result.audit.lnsReplay.featureSchemaVersion,
-      lnsCpSatNumWorkers: uniqueBenchmarkValues(result.lns.splits.map((split) => split.replay.cpSatNumWorkers)),
+      lnsCpSatNumWorkers: uniqueBenchmarkValues(result.lns.splits.map((split) => split.replay.cpSatNumWorkers))
     },
     model: {
       trained: false,
       learnedModel: result.audit.learnedModel,
       runtimeDefaultChanged: false,
-      purpose: "offline-diagnostics-only",
+      purpose: "offline-diagnostics-only"
     },
     decision: options.decision ?? "offline-label-bundle-only",
-    summary: options.summary
-      ?? `Learned-ranking label bundle with ${result.greedy.labelCount} Greedy labels and ${result.lns.labelCount} LNS replay labels across ${result.splitCount} split(s).`,
+    summary:
+      options.summary ??
+      `Learned-ranking label bundle with ${result.greedy.labelCount} Greedy labels and ${result.lns.labelCount} LNS replay labels across ${result.splitCount} split(s).`,
     labelFingerprint: buildLearnedRankingLabelFingerprint(result),
     summaryMetrics: {
       greedySourceCounts: result.greedy.sourceCounts,
@@ -831,8 +859,10 @@ export function buildLearnedRankingLabelRegistryEntryDraft(
       protectedHoldout: result.leakage.protectedHoldout,
       lnsScaleReady: result.lns.scaleReadiness.passed,
       lnsScaleReadiness: result.lns.scaleReadiness,
-      lnsCpSatModelFingerprints,
-    },
+      lnsStatePolicies: [...result.audit.lnsReplay.incumbentStatePolicies],
+      lnsCapturedStatePolicies,
+      lnsCpSatModelFingerprints
+    }
   };
 }
 
@@ -847,7 +877,7 @@ export function formatLearnedRankingLabelSuite(result: LearnedRankingLabelSuiteR
   lines.push(`Schema: ${result.schemaVersion}`);
   lines.push(`Seeds: ${result.seeds.join(", ")}`);
   lines.push(
-    `Audit: learned-model=${result.audit.learnedModel ?? "none"} greedy-profile=${result.audit.greedy.profile} greedy-connectivity-shadow=${result.audit.greedy.connectivityShadowScoring} lns-cp-sat-workers=${result.audit.lnsReplay.cpSatNumWorkers} lns-state=${result.audit.lnsReplay.incumbentStatePolicy} lns-windows=${result.audit.lnsReplay.candidateWindowPolicy} lns-exploration=${result.audit.lnsReplay.explorationWindowCount} lns-feature-schema=${result.audit.lnsReplay.featureSchemaVersion}`
+    `Audit: learned-model=${result.audit.learnedModel ?? "none"} greedy-profile=${result.audit.greedy.profile} greedy-connectivity-shadow=${result.audit.greedy.connectivityShadowScoring} lns-cp-sat-workers=${result.audit.lnsReplay.cpSatNumWorkers} lns-state=${result.audit.lnsReplay.incumbentStatePolicies.join(",")} lns-state-collection=${result.audit.lnsReplay.stateCollectionIterations}x${result.audit.lnsReplay.stateCollectionRepairTimeLimitSeconds}s lns-windows=${result.audit.lnsReplay.candidateWindowPolicy} lns-exploration=${result.audit.lnsReplay.explorationWindowCount} lns-feature-schema=${result.audit.lnsReplay.featureSchemaVersion}`
   );
   lines.push(
     `Leakage: protected-holdout=${result.leakage.protectedHoldout} greedy-overlap=${formatCaseList(result.leakage.greedyOverlap)} lns-overlap=${formatCaseList(result.leakage.lnsOverlap)}`

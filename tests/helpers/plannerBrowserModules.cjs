@@ -13,7 +13,7 @@ function createFakeDomElement(overrides = {}) {
     innerHTML: "",
     dataset: {},
     style: {
-      setProperty() {},
+      setProperty() {}
     },
     parentElement: null,
     append() {},
@@ -25,17 +25,14 @@ function createFakeDomElement(overrides = {}) {
     classList: {
       add() {},
       remove() {},
-      toggle() {},
+      toggle() {}
     },
-    ...overrides,
+    ...overrides
   };
 }
 
 function loadBrowserModule(repoRelativePath, options = {}) {
-  const {
-    window = {},
-    context: extraContext = {},
-  } = options;
+  const { window = {}, context: extraContext = {} } = options;
   const source = fs.readFileSync(path.resolve(repoRoot, repoRelativePath), "utf8");
   const sandbox = {
     window,
@@ -51,7 +48,7 @@ function loadBrowserModule(repoRelativePath, options = {}) {
     Set,
     Map,
     Promise,
-    ...extraContext,
+    ...extraContext
   };
   vm.createContext(sandbox);
   vm.runInContext(source, sandbox);
@@ -62,8 +59,8 @@ function loadPlannerSharedModule() {
   return loadBrowserModule("apps/planner-web/plannerShared.js", {
     window: {
       setTimeout,
-      clearTimeout,
-    },
+      clearTimeout
+    }
   }).CityBuilderShared;
 }
 
@@ -71,12 +68,12 @@ function loadPlannerRequestBuilderModule(crypto = undefined) {
   return loadBrowserModule("apps/planner-web/plannerRequestBuilder.js", {
     window: {
       crypto,
-      CityBuilderShared: loadPlannerSharedModule(),
+      CityBuilderShared: loadPlannerSharedModule()
     },
     context: {
       Uint32Array,
-      Error,
-    },
+      Error
+    }
   }).CityBuilderRequestBuilder;
 }
 
@@ -85,8 +82,8 @@ function loadPlannerExpansionModule(fetch) {
     context: {
       Error,
       fetch,
-      URLSearchParams,
-    },
+      URLSearchParams
+    }
   }).CityBuilderExpansion;
 }
 
@@ -97,16 +94,16 @@ function loadPlannerWorkbenchModule() {
   }
   return loadBrowserModule("apps/planner-web/plannerWorkbench.js", {
     window: {
-      CityBuilderShared: loadPlannerSharedModule(),
+      CityBuilderShared: loadPlannerSharedModule()
     },
     context: {
       document: {
         createElement() {
           return createFakeDomElement();
-        },
+        }
       },
-      ResizeObserver,
-    },
+      ResizeObserver
+    }
   }).CityBuilderWorkbench;
 }
 
@@ -114,11 +111,11 @@ function loadPlannerSolveRuntimeModule() {
   return loadBrowserModule("apps/planner-web/plannerSolveRuntime.js", {
     window: {
       clearInterval,
-      setInterval,
+      setInterval
     },
     context: {
-      Error,
-    },
+      Error
+    }
   }).CityBuilderSolveRuntime;
 }
 
@@ -140,23 +137,23 @@ function loadPlannerResultsModule(options = {}) {
     window: {
       PlannerHeatmaps: loadPlannerHeatmapsModule(),
       PlannerManualLayout: loadPlannerManualLayoutModule(),
-      ...(options.window ?? {}),
-    },
+      ...(options.window ?? {})
+    }
   }).CityBuilderResults;
 }
 
 function loadPlannerPersistenceModule(localStorage = undefined) {
   return loadBrowserModule("apps/planner-web/plannerPersistence.js", {
     window: {
-      localStorage,
+      localStorage
     },
     context: {
       document: {
         createElement() {
           return createFakeDomElement();
-        },
-      },
-    },
+        }
+      }
+    }
   }).CityBuilderPersistence;
 }
 
@@ -169,5 +166,5 @@ module.exports = {
   loadPlannerSharedModule,
   loadPlannerShellModule,
   loadPlannerSolveRuntimeModule,
-  loadPlannerWorkbenchModule,
+  loadPlannerWorkbenchModule
 };

@@ -15,24 +15,17 @@ import {
   snapshotBenchmarkVariantResult,
   snapshotBenchmarkVariantSummary,
   summarizeBenchmarkVariantMetrics,
-  uniqueBenchmarkValuesBy,
+  uniqueBenchmarkValuesBy
 } from "./benchmarkOptions.js";
-import {
-  DEFAULT_LNS_BENCHMARK_CORPUS,
-  runLnsBenchmarkSuite,
-} from "./lns.js";
+import { DEFAULT_LNS_BENCHMARK_CORPUS, runLnsBenchmarkSuite } from "./lns.js";
 
-import type {
-  LnsBenchmarkCase,
-  LnsBenchmarkCaseResult,
-  LnsBenchmarkRunOptions,
-} from "./lns.js";
+import type { LnsBenchmarkCase, LnsBenchmarkCaseResult, LnsBenchmarkRunOptions } from "./lns.js";
 import type { LnsOptions } from "../core/index.js";
 import type {
   BenchmarkVariantCoverageMetrics,
   BenchmarkVariantResultSnapshot,
   BenchmarkVariantSummaryMetrics,
-  BenchmarkVariantSummarySnapshot,
+  BenchmarkVariantSummarySnapshot
 } from "./benchmarkOptions.js";
 
 export type LnsNeighborhoodAblationVariantName =
@@ -105,8 +98,7 @@ export interface LnsNeighborhoodAblationCaseResult {
   variants: LnsNeighborhoodAblationVariantResult[];
 }
 
-export interface LnsNeighborhoodAblationVariantSummary
-  extends BenchmarkVariantSummaryMetrics<LnsNeighborhoodAblationVariantName> {
+export interface LnsNeighborhoodAblationVariantSummary extends BenchmarkVariantSummaryMetrics<LnsNeighborhoodAblationVariantName> {
   description: string;
   firstWindowMovementCount: number;
   firstWindowMovementRate: number;
@@ -137,84 +129,86 @@ export interface LnsNeighborhoodAblationSuiteResult {
   cases: LnsNeighborhoodAblationCaseResult[];
 }
 
-export interface LnsNeighborhoodAblationSnapshotVariantResult
-  extends BenchmarkVariantResultSnapshot<LnsNeighborhoodAblationVariantResult> {}
+export interface LnsNeighborhoodAblationSnapshotVariantResult extends BenchmarkVariantResultSnapshot<LnsNeighborhoodAblationVariantResult> {}
 
-export interface LnsNeighborhoodAblationSnapshotCaseResult
-  extends Omit<LnsNeighborhoodAblationCaseResult, "baseline" | "variants"> {
+export interface LnsNeighborhoodAblationSnapshotCaseResult extends Omit<
+  LnsNeighborhoodAblationCaseResult,
+  "baseline" | "variants"
+> {
   baseline: LnsNeighborhoodAblationSnapshotVariantResult;
   variants: LnsNeighborhoodAblationSnapshotVariantResult[];
 }
 
-export interface LnsNeighborhoodAblationSnapshotVariantSummary
-  extends BenchmarkVariantSummarySnapshot<LnsNeighborhoodAblationVariantSummary> {}
+export interface LnsNeighborhoodAblationSnapshotVariantSummary extends BenchmarkVariantSummarySnapshot<LnsNeighborhoodAblationVariantSummary> {}
 
-export interface LnsNeighborhoodAblationSnapshot
-  extends Omit<LnsNeighborhoodAblationSuiteResult, "generatedAt" | "variantSummaries" | "cases"> {
+export interface LnsNeighborhoodAblationSnapshot extends Omit<
+  LnsNeighborhoodAblationSuiteResult,
+  "generatedAt" | "variantSummaries" | "cases"
+> {
   variantSummaries: LnsNeighborhoodAblationSnapshotVariantSummary[];
   cases: LnsNeighborhoodAblationSnapshotCaseResult[];
 }
 
-export const DEFAULT_LNS_NEIGHBORHOOD_ABLATION_VARIANTS: readonly LnsNeighborhoodAblationVariant[] =
-  Object.freeze([
-    {
-      name: "baseline",
-      description: "Current ranked LNS anchors plus sliding fallback windows.",
-      lns: { neighborhoodAnchorPolicy: "ranked" },
-    },
-    {
-      name: "sliding-only",
-      description: "Disable ranked anchors and use only deterministic sliding windows.",
-      lns: { neighborhoodAnchorPolicy: "sliding-only" },
-    },
-    {
-      name: "weak-service-first",
-      description: "Rank repair windows from weak service marginal-value anchors plus sliding fallback.",
-      lns: { neighborhoodAnchorPolicy: "weak-service-first" },
-    },
-    {
-      name: "residential-opportunity-first",
-      description: "Rank repair windows from residential headroom anchors plus sliding fallback.",
-      lns: { neighborhoodAnchorPolicy: "residential-opportunity-first" },
-    },
-    {
-      name: "frontier-congestion-first",
-      description: "Rank repair windows from road-frontier congestion anchors plus sliding fallback.",
-      lns: { neighborhoodAnchorPolicy: "frontier-congestion-first" },
-    },
-    {
-      name: "placed-buildings-first",
-      description: "Use incumbent service and weak-residential anchors without the ranked feature groups.",
-      lns: { neighborhoodAnchorPolicy: "placed-buildings-first" },
-    },
-    {
-      name: "small-2x2",
-      description: "Keep ranked anchors but constrain repair windows to 2x2.",
-      lns: { neighborhoodAnchorPolicy: "ranked", neighborhoodRows: 2, neighborhoodCols: 2 },
-    },
-    {
-      name: "wide-4x4",
-      description: "Keep ranked anchors but expand repair windows to 4x4.",
-      lns: { neighborhoodAnchorPolicy: "ranked", neighborhoodRows: 4, neighborhoodCols: 4 },
-    },
-  ]);
+export const DEFAULT_LNS_NEIGHBORHOOD_ABLATION_VARIANTS: readonly LnsNeighborhoodAblationVariant[] = Object.freeze([
+  {
+    name: "baseline",
+    description: "Current ranked LNS anchors plus sliding fallback windows.",
+    lns: { neighborhoodAnchorPolicy: "ranked" }
+  },
+  {
+    name: "sliding-only",
+    description: "Disable ranked anchors and use only deterministic sliding windows.",
+    lns: { neighborhoodAnchorPolicy: "sliding-only" }
+  },
+  {
+    name: "weak-service-first",
+    description: "Rank repair windows from weak service marginal-value anchors plus sliding fallback.",
+    lns: { neighborhoodAnchorPolicy: "weak-service-first" }
+  },
+  {
+    name: "residential-opportunity-first",
+    description: "Rank repair windows from residential headroom anchors plus sliding fallback.",
+    lns: { neighborhoodAnchorPolicy: "residential-opportunity-first" }
+  },
+  {
+    name: "frontier-congestion-first",
+    description: "Rank repair windows from road-frontier congestion anchors plus sliding fallback.",
+    lns: { neighborhoodAnchorPolicy: "frontier-congestion-first" }
+  },
+  {
+    name: "placed-buildings-first",
+    description: "Use incumbent service and weak-residential anchors without the ranked feature groups.",
+    lns: { neighborhoodAnchorPolicy: "placed-buildings-first" }
+  },
+  {
+    name: "small-2x2",
+    description: "Keep ranked anchors but constrain repair windows to 2x2.",
+    lns: { neighborhoodAnchorPolicy: "ranked", neighborhoodRows: 2, neighborhoodCols: 2 }
+  },
+  {
+    name: "wide-4x4",
+    description: "Keep ranked anchors but expand repair windows to 4x4.",
+    lns: { neighborhoodAnchorPolicy: "ranked", neighborhoodRows: 4, neighborhoodCols: 4 }
+  }
+]);
 
 export const DEFAULT_LNS_NEIGHBORHOOD_ABLATION_CASE_NAMES = Object.freeze([
   "typed-housing-single",
   "compact-service-repair",
   "seeded-service-anchor-pressure",
-  "row0-anchor-repair",
+  "row0-anchor-repair"
 ] satisfies string[]);
 
 function selectDefaultAblationCases(corpus: readonly LnsBenchmarkCase[]): LnsBenchmarkCase[] {
   return selectBenchmarkCasesByName(corpus, DEFAULT_LNS_NEIGHBORHOOD_ABLATION_CASE_NAMES, {
     caseLabel: "LNS neighborhood ablation",
-    corpusLabel: "LNS neighborhood ablation",
+    corpusLabel: "LNS neighborhood ablation"
   });
 }
 
-export const DEFAULT_LNS_NEIGHBORHOOD_ABLATION_CORPUS: readonly LnsBenchmarkCase[] =
-  Object.freeze(selectDefaultAblationCases(DEFAULT_LNS_BENCHMARK_CORPUS));
+export const DEFAULT_LNS_NEIGHBORHOOD_ABLATION_CORPUS: readonly LnsBenchmarkCase[] = Object.freeze(
+  selectDefaultAblationCases(DEFAULT_LNS_BENCHMARK_CORPUS)
+);
 
 function firstWindowMoved(
   baseline: LnsNeighborhoodAblationVariantResult,
@@ -223,24 +217,22 @@ function firstWindowMoved(
   const baselineWindow = baseline.outcomes[0]?.window ?? null;
   const variantWindow = variant.outcomes[0]?.window ?? null;
   if (baselineWindow === null || variantWindow === null) return baselineWindow !== variantWindow;
-  return baselineWindow.top !== variantWindow.top
-    || baselineWindow.left !== variantWindow.left
-    || baselineWindow.rows !== variantWindow.rows
-    || baselineWindow.cols !== variantWindow.cols;
+  return (
+    baselineWindow.top !== variantWindow.top ||
+    baselineWindow.left !== variantWindow.left ||
+    baselineWindow.rows !== variantWindow.rows ||
+    baselineWindow.cols !== variantWindow.cols
+  );
 }
 
 function windowSequenceKey(result: LnsNeighborhoodAblationVariantResult): string {
   return result.outcomes
-    .map((outcome) =>
-      `${outcome.window.top}:${outcome.window.left}:${outcome.window.rows}x${outcome.window.cols}`
-    )
+    .map((outcome) => `${outcome.window.top}:${outcome.window.left}:${outcome.window.rows}x${outcome.window.cols}`)
     .join("|");
 }
 
 function anchorCoordinateSequenceKey(result: LnsNeighborhoodAblationVariantResult): string {
-  return result.outcomes
-    .map((outcome) => `${outcome.window.top}:${outcome.window.left}`)
-    .join("|");
+  return result.outcomes.map((outcome) => `${outcome.window.top}:${outcome.window.left}`).join("|");
 }
 
 function normalizeVariants(
@@ -255,7 +247,7 @@ function normalizeVariants(
       suiteLabel: "LNS neighborhood ablations",
       variantSetLabel: "LNS neighborhood ablation variants",
       requestedVariantSetLabel: "LNS neighborhood ablation requested variants",
-      unknownVariantLabel: "LNS neighborhood ablation variant",
+      unknownVariantLabel: "LNS neighborhood ablation variant"
     },
     "baseline"
   );
@@ -268,10 +260,7 @@ function rotateVariantOrder(
   if (variants.length === 0) return variants;
   const normalizedOffset = offset % variants.length;
   if (normalizedOffset === 0) return variants;
-  return [
-    ...variants.slice(normalizedOffset),
-    ...variants.slice(0, normalizedOffset),
-  ];
+  return [...variants.slice(normalizedOffset), ...variants.slice(0, normalizedOffset)];
 }
 
 function variantResult(
@@ -298,15 +287,16 @@ function variantResult(
     improvingIterations: result.lnsTelemetry?.improvingIterations ?? null,
     neutralIterations: result.lnsTelemetry?.neutralIterations ?? null,
     recoverableFailures: result.lnsTelemetry?.recoverableFailures ?? null,
-    outcomes: result.lnsTelemetry?.outcomes.map((outcome) => ({
-      iteration: outcome.iteration,
-      phase: outcome.phase,
-      status: outcome.status,
-      improvement: outcome.improvement,
-      populationBefore: outcome.populationBefore,
-      populationAfter: outcome.populationAfter,
-      window: { ...outcome.window },
-    })) ?? [],
+    outcomes:
+      result.lnsTelemetry?.outcomes.map((outcome) => ({
+        iteration: outcome.iteration,
+        phase: outcome.phase,
+        status: outcome.status,
+        improvement: outcome.improvement,
+        populationBefore: outcome.populationBefore,
+        populationAfter: outcome.populationAfter,
+        window: { ...outcome.window }
+      })) ?? []
   };
 }
 
@@ -327,11 +317,13 @@ function buildVariantSummary(
   const firstWindowMovementCount = countBenchmarkMatches(caseResults, ({ entry, result }) =>
     firstWindowMoved(entry.baseline, result)
   );
-  const windowSequenceMovementCount = countBenchmarkMatches(caseResults, ({ entry, result }) =>
-    windowSequenceKey(entry.baseline) !== windowSequenceKey(result)
+  const windowSequenceMovementCount = countBenchmarkMatches(
+    caseResults,
+    ({ entry, result }) => windowSequenceKey(entry.baseline) !== windowSequenceKey(result)
   );
-  const anchorCoordinateMovementCount = countBenchmarkMatches(caseResults, ({ entry, result }) =>
-    anchorCoordinateSequenceKey(entry.baseline) !== anchorCoordinateSequenceKey(result)
+  const anchorCoordinateMovementCount = countBenchmarkMatches(
+    caseResults,
+    ({ entry, result }) => anchorCoordinateSequenceKey(entry.baseline) !== anchorCoordinateSequenceKey(result)
   );
   const comparisonCount = caseResults.length;
   return {
@@ -342,7 +334,7 @@ function buildVariantSummary(
     windowSequenceMovementCount,
     windowSequenceMovementRate: benchmarkRatio(windowSequenceMovementCount, comparisonCount),
     anchorCoordinateMovementCount,
-    anchorCoordinateMovementRate: benchmarkRatio(anchorCoordinateMovementCount, comparisonCount),
+    anchorCoordinateMovementRate: benchmarkRatio(anchorCoordinateMovementCount, comparisonCount)
   };
 }
 
@@ -359,7 +351,7 @@ export function listLnsNeighborhoodAblationCaseNames(
 ): string[] {
   return listBenchmarkCaseNames(corpus, {
     caseLabel: "LNS neighborhood ablation",
-    corpusLabel: "LNS neighborhood ablation",
+    corpusLabel: "LNS neighborhood ablation"
   });
 }
 
@@ -376,13 +368,11 @@ export function runLnsNeighborhoodAblation(
   const { seeds, seedRuns } = buildBenchmarkSeedRunPlan(options.seeds, "LNS neighborhood ablation seeds");
   const rotateVariantRunOrder = options.rotateVariantRunOrder ?? seedRuns.length > 1;
   const variantExecutionOrders = seedRuns.map((seed, seedIndex) => {
-    const orderedVariants = rotateVariantRunOrder
-      ? rotateVariantOrder(variants, seedIndex)
-      : variants;
+    const orderedVariants = rotateVariantRunOrder ? rotateVariantOrder(variants, seedIndex) : variants;
     return {
       seed,
       orderedVariants,
-      variants: orderedVariants.map((variant) => variant.name),
+      variants: orderedVariants.map((variant) => variant.name)
     };
   });
   const suites = new Map<string, ReturnType<typeof runLnsBenchmarkSuite>>();
@@ -394,17 +384,17 @@ export function runLnsNeighborhoodAblation(
           names,
           greedy: {
             ...(options.greedy ?? {}),
-            ...(executionOrder.seed !== null ? { randomSeed: executionOrder.seed } : {}),
+            ...(executionOrder.seed !== null ? { randomSeed: executionOrder.seed } : {})
           },
           cpSat: {
             ...(options.cpSat ?? {}),
-            ...(executionOrder.seed !== null ? { randomSeed: executionOrder.seed } : {}),
+            ...(executionOrder.seed !== null ? { randomSeed: executionOrder.seed } : {})
           },
           lns: {
             maxNoImprovementIterations: 4,
             ...(options.lns ?? {}),
-            ...variant.lns,
-          },
+            ...variant.lns
+          }
         })
       );
     }
@@ -420,7 +410,9 @@ export function runLnsNeighborhoodAblation(
         const suite = suites.get(`${seed ?? "case-default"}:${variant.name}`);
         const result = suite?.results.find((entry) => entry.name === baselineResult.name);
         if (!result) {
-          throw new Error(`LNS neighborhood ablation result missing: ${variant.name}/${baselineResult.name}/${seed ?? "case-default"}.`);
+          throw new Error(
+            `LNS neighborhood ablation result missing: ${variant.name}/${baselineResult.name}/${seed ?? "case-default"}.`
+          );
         }
         return variantResult(variant, result, baselineResult, seed);
       });
@@ -432,7 +424,7 @@ export function runLnsNeighborhoodAblation(
         gridCols: baselineResult.gridCols,
         gridCells: baselineResult.gridRows * baselineResult.gridCols,
         baseline: variantResults.find((entry) => entry.variantName === "baseline")!,
-        variants: variantResults,
+        variants: variantResults
       };
     });
   });
@@ -447,11 +439,13 @@ export function runLnsNeighborhoodAblation(
     variants: variants.map((variant) => variant.name),
     variantExecutionOrders: variantExecutionOrders.map((entry) => ({
       seed: entry.seed,
-      variants: [...entry.variants],
+      variants: [...entry.variants]
     })),
     coverage: buildCoverage(cases, selectedCaseNames.length, seedRuns.length),
-    variantSummaries: variants.map((variant) => buildVariantSummary(variant, cases, selectedCaseNames.length, seedRuns.length)),
-    cases,
+    variantSummaries: variants.map((variant) =>
+      buildVariantSummary(variant, cases, selectedCaseNames.length, seedRuns.length)
+    ),
+    cases
   };
 }
 
@@ -467,15 +461,15 @@ export function createLnsNeighborhoodAblationSnapshot(
     variants: [...result.variants],
     variantExecutionOrders: result.variantExecutionOrders.map((entry) => ({
       seed: entry.seed,
-      variants: [...entry.variants],
+      variants: [...entry.variants]
     })),
     coverage: { ...result.coverage },
     variantSummaries: result.variantSummaries.map(snapshotBenchmarkVariantSummary),
     cases: result.cases.map((benchmarkCase) => ({
       ...benchmarkCase,
       baseline: snapshotBenchmarkVariantResult(benchmarkCase.baseline),
-      variants: benchmarkCase.variants.map(snapshotBenchmarkVariantResult),
-    })),
+      variants: benchmarkCase.variants.map(snapshotBenchmarkVariantResult)
+    }))
   };
 }
 
@@ -488,10 +482,12 @@ export function formatLnsNeighborhoodAblation(result: LnsNeighborhoodAblationSui
   lines.push(`Variants: ${result.variants.join(", ")}`);
   if (result.variantExecutionOrders.length > 0) {
     lines.push(
-      `Run order: ${result.variantExecutionOrders.map((entry) => {
-        const seedLabel = entry.seed === null ? "case-default" : `seed:${entry.seed}`;
-        return `${seedLabel}=${entry.variants.join(" > ")}`;
-      }).join("; ")}`
+      `Run order: ${result.variantExecutionOrders
+        .map((entry) => {
+          const seedLabel = entry.seed === null ? "case-default" : `seed:${entry.seed}`;
+          return `${seedLabel}=${entry.variants.join(" > ")}`;
+        })
+        .join("; ")}`
     );
   }
   lines.push(

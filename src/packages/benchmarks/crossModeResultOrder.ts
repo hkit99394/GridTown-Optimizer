@@ -12,9 +12,8 @@ export function rankResults(results: CrossModeBenchmarkModeResult[]): CrossModeB
   let last: CrossModeBenchmarkModeResult | null = null;
   let lastRank = 0;
   for (const [index, result] of sorted.entries()) {
-    const rank = last
-      && result.totalPopulation === last.totalPopulation
-      && result.wallClockSeconds === last.wallClockSeconds
+    const rank =
+      last && result.totalPopulation === last.totalPopulation && result.wallClockSeconds === last.wallClockSeconds
         ? lastRank
         : index + 1;
     rankByMode.set(result.mode, rank);
@@ -23,7 +22,6 @@ export function rankResults(results: CrossModeBenchmarkModeResult[]): CrossModeB
   }
   return results.map((result) => ({
     ...result,
-    rank: rankByMode.get(result.mode) ?? result.rank,
+    rank: rankByMode.get(result.mode) ?? result.rank
   }));
 }
-

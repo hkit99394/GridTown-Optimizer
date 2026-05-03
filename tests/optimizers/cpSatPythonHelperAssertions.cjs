@@ -21,7 +21,7 @@ ${commandBody}
 `;
 
   const result = childProcess.spawnSync(pythonExecutable, ["-c", command], {
-    encoding: "utf8",
+    encoding: "utf8"
   });
   if (result.status !== 0) {
     throw new Error(result.stderr?.trim() || result.stdout?.trim() || failureMessage);
@@ -185,10 +185,10 @@ print(json.dumps({
 
       assert.deepEqual(payload.gate_downstream, {
         1: [3, 4],
-        3: [4],
+        3: [4]
       });
       assert.deepEqual(payload.gate_requirements, {
-        0: [1, 3],
+        0: [1, 3]
       });
     },
 
@@ -214,7 +214,7 @@ print(json.dumps({
       assert.deepEqual(payload.coefficients, {
         1: 2,
         2: 1,
-        4: 2,
+        4: 2
       });
     },
 
@@ -313,12 +313,12 @@ print(json.dumps({
         [3, 0],
         [3, 1],
         [4, 0],
-        [4, 1],
+        [4, 1]
       ]);
       assert.deepEqual(payload.service_candidates, []);
       assert.deepEqual(payload.residential_candidates, [
         { r: 0, c: 0, rows: 2, cols: 2 },
-        { r: 3, c: 0, rows: 2, cols: 2 },
+        { r: 3, c: 0, rows: 2, cols: 2 }
       ]);
     },
 
@@ -361,7 +361,7 @@ print(json.dumps({
       assert(payload.root_ids.every((cellId) => [0, 1].includes(cellId)));
       assert.deepEqual(payload.roads, [
         [0, 0],
-        [0, 1],
+        [0, 1]
       ]);
     },
 
@@ -471,20 +471,20 @@ print(json.dumps({
       assert.equal(payload.anchored_components.feasible, true);
       assert.deepEqual(payload.anchored_components.roads, [
         [0, 0],
-        [0, 2],
+        [0, 2]
       ]);
       assert.deepEqual(payload.anchored_components.root_cells, [
         [0, 0],
-        [0, 2],
+        [0, 2]
       ]);
       assert.equal(payload.unanchored_component.feasible, false);
       assert.deepEqual(payload.multi_component_hinting.hinted_root_cells, [
         [0, 0],
-        [0, 2],
+        [0, 2]
       ]);
       assert.deepEqual(payload.multi_component_hinting.selected_root_hints, [
         [0, 0],
-        [0, 2],
+        [0, 2]
       ]);
       assert.equal(payload.multi_component_hinting.fixed_neighborhood_feasible, true);
     },
@@ -517,13 +517,13 @@ print(json.dumps({
         [0, 0],
         [0, 1],
         [1, 0],
-        [2, 0],
+        [2, 0]
       ]);
       assert.deepEqual(payload.road_eligible_cells, [
         [0, 0],
         [0, 1],
         [1, 0],
-        [2, 0],
+        [2, 0]
       ]);
     },
 
@@ -560,10 +560,10 @@ print(json.dumps({
       if (!payload) return;
 
       assert.equal(payload.infeasible, true);
-    },
+    }
   };
 }
 
 module.exports = {
-  createCpSatPythonHelperAssertions,
+  createCpSatPythonHelperAssertions
 };

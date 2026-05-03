@@ -11,7 +11,7 @@ import {
   rectangleBorderCells,
   height,
   width,
-  isAllowed,
+  isAllowed
 } from "./grid.js";
 
 export function isRoadAnchorCell(r: number, c: number): boolean {
@@ -109,11 +109,7 @@ function roadProbeScratchMatchesGrid(G: Grid, scratch: RoadProbeScratch): boolea
   return scratch.height === height(G) && scratch.width === width(G);
 }
 
-function hasAvailableRoadAnchorCellWithScratch(
-  G: Grid,
-  scratch: RoadProbeScratch,
-  blockedGeneration: number
-): boolean {
+function hasAvailableRoadAnchorCellWithScratch(G: Grid, scratch: RoadProbeScratch, blockedGeneration: number): boolean {
   let available = false;
   forEachRoadAnchorCell(G, (r, c) => {
     if (available || !isAllowed(G, r, c)) return;
@@ -138,7 +134,7 @@ export function createRoadProbeScratch(G: Grid): RoadProbeScratch {
     parentIndex: new Int32Array(H * W),
     queue: new Int32Array(H * W),
     blockedGeneration: 0,
-    visitedGeneration: 0,
+    visitedGeneration: 0
   };
 }
 
@@ -321,8 +317,8 @@ function buildRoadConnectionProbe(
     return { path: null };
   }
   if (
-    roads.size === 0
-    && !(useScratch
+    roads.size === 0 &&
+    !(useScratch
       ? hasAvailableRoadAnchorCellWithScratch(G, useScratch, blockedGeneration)
       : hasAvailableRoadAnchorCell(G, blockSet!))
   ) {
@@ -421,7 +417,7 @@ export function measureBuildingConnectivityShadowFromFrontier(
     reachableAfter: after.size,
     lostCells,
     footprintCells,
-    disconnectedCells: Math.max(0, lostCells - footprintCells),
+    disconnectedCells: Math.max(0, lostCells - footprintCells)
   };
 }
 
@@ -514,13 +510,7 @@ export const roadSeedColumn0 = roadAnchorSeed;
 export const roadsConnectedToColumn0 = roadsConnectedToRoadAnchor;
 
 /** Check if building at (r,c,rows,cols) is already adjacent to roads (no extension needed for connectivity) */
-export function isAdjacentToRoads(
-  roads: Set<string>,
-  r: number,
-  c: number,
-  rows: number,
-  cols: number
-): boolean {
+export function isAdjacentToRoads(roads: Set<string>, r: number, c: number, rows: number, cols: number): boolean {
   if (buildingTouchesRoadAnchorBoundary(r, c)) return true;
   let adjacent = false;
   forEachRectangleBorderCell(r, c, rows, cols, (br, bc) => {
@@ -584,9 +574,7 @@ function allBuildingsHaveRoadAccess(
   roads: Set<string>,
   buildings: readonly BuildingPlacementForRoadMaterialization[]
 ): boolean {
-  return buildings.every((building) =>
-    isAdjacentToRoads(roads, building.r, building.c, building.rows, building.cols)
-  );
+  return buildings.every((building) => isAdjacentToRoads(roads, building.r, building.c, building.rows, building.cols));
 }
 
 /** Remove final road cells that are not required for anchor-boundary road connectivity or building access. */
@@ -655,17 +643,15 @@ export function materializeDeferredRoadNetwork(
       if (!probe) continue;
       const cost = probe.path?.length ?? 0;
       if (
-        cost < bestCost
-        || (cost === bestCost && bestBuilding !== null && (
-          building.r < bestBuilding.r
-          || (building.r === bestBuilding.r && (
-            building.c < bestBuilding.c
-            || (building.c === bestBuilding.c && (
-              building.rows < bestBuilding.rows
-              || (building.rows === bestBuilding.rows && building.cols < bestBuilding.cols)
-            ))
-          ))
-        ))
+        cost < bestCost ||
+        (cost === bestCost &&
+          bestBuilding !== null &&
+          (building.r < bestBuilding.r ||
+            (building.r === bestBuilding.r &&
+              (building.c < bestBuilding.c ||
+                (building.c === bestBuilding.c &&
+                  (building.rows < bestBuilding.rows ||
+                    (building.rows === bestBuilding.rows && building.cols < bestBuilding.cols)))))))
       ) {
         bestIndex = index;
         bestCost = cost;

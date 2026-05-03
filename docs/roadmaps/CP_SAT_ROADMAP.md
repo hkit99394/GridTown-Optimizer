@@ -7,6 +7,7 @@ Strengthen `CP-SAT` as the exact/global solver.
 This roadmap supports the product target, but it is not the first place to chase quality-per-minute. `CP-SAT` is most valuable when it supplies exact improvement, proof, upper bounds, warm-start polishing, and reliable labels for benchmark/replay work.
 
 The focus is:
+
 - stronger exact search
 - clearer exact-run visibility
 - stable long-running execution
@@ -18,6 +19,7 @@ The focus is:
 The single-machine CP-SAT foundation is delivered.
 
 Delivered summary:
+
 - exact-safe candidate reduction
 - stronger connectivity and implied cuts
 - aligned per-component road-anchor connectivity
@@ -42,17 +44,20 @@ Ordering note: this CP-SAT-specific list follows the consolidated [SOLVER_ROADMA
 Impact on target: high enabling value
 
 Why it matters:
+
 - learned ranking and better `LNS` control need trustworthy labels for "what would have happened if we repaired this different window?"
 - CP-SAT already owns exact repair, warm starts, objective lower bounds, and progress telemetry
 - replay workloads can use CPU parallelism while still reporting total CPU budget beside wall-clock time
 
 Scope:
+
 - counterfactual `LNS` window replay under equal repair budgets
 - seed-quality comparisons for warm starts and objective lower bounds
 - exact upper-bound and gap export into shared traces
 - benchmark-safe replay harness that keeps final validation through the existing evaluator
 
 Guardrails:
+
 - do not let label generation leak holdout cases into model selection
 - always record wall-clock and CPU budget for parallel replay
 - keep `CP-SAT` labels tied to the exact model fingerprint and validated solution shape
@@ -60,16 +65,19 @@ Guardrails:
 ### 2. Distributed CP-SAT
 
 Priority note:
+
 - this has the highest remaining exact-search compute ceiling, but not the highest near-term product leverage
 - [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md) keeps distributed solving behind shared traces, deterministic feature work, single-machine portfolio scorecards, workflow improvements, and fresh lifecycle coverage for any new orchestration tier
 - treat distributed CP-SAT as the next orchestration tier after local portfolio execution is demonstrably safe
 
 Why it matters:
+
 - it can materially expand exact-search coverage beyond one host
 - the single-machine exact foundation, async execution, and measurement are already in place
 - it gives exact search more ceiling once the local lifecycle risks are lower
 
 Core requirements:
+
 - coordinator for multi-worker or multi-machine exact runs
 - shared incumbent and bound reporting
 - worker lifecycle, cancellation, and degraded-mode handling

@@ -8,7 +8,7 @@ const {
   createDeferred,
   createRouteTestHandler,
   invoke,
-  waitForSolve,
+  waitForSolve
 } = require("./routeTestServer.cjs");
 
 async function testBackgroundSolveRoutes(handler) {
@@ -19,8 +19,8 @@ async function testBackgroundSolveRoutes(handler) {
     url: "/api/solve/start",
     json: {
       ...solvePayload,
-      requestId,
-    },
+      requestId
+    }
   });
 
   assert.equal(startResult.statusCode, 202);
@@ -59,15 +59,13 @@ async function testStartSolveDefaultsOmittedOptimizerToAuto(handler) {
     consecutiveWeakCycles: 0,
     lastCycleImprovementRatio: null,
     stopReason: "completed-plan",
-    generatedSeeds: [
-      { stage: "greedy", stageIndex: 1, cycleIndex: 0, randomSeed: 11 },
-    ],
+    generatedSeeds: [{ stage: "greedy", stageIndex: 1, cycleIndex: 0, randomSeed: 11 }]
   };
   const backgroundSolution = {
     ...solve(solvePayload.grid, solvePayload.params),
     optimizer: "auto",
     activeOptimizer: "greedy",
-    autoStage,
+    autoStage
   };
   const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
   let adapterRequest = null;
@@ -92,11 +90,11 @@ async function testStartSolveDefaultsOmittedOptimizerToAuto(handler) {
               totalPopulation: backgroundSolution.totalPopulation,
               activeOptimizer: backgroundSolution.activeOptimizer,
               autoStage: backgroundSolution.autoStage,
-              cpSatStatus: null,
+              cpSatStatus: null
             };
-          },
+          }
         };
-      },
+      }
     };
   };
 
@@ -108,8 +106,8 @@ async function testStartSolveDefaultsOmittedOptimizerToAuto(handler) {
       json: {
         grid: solvePayload.grid,
         params: paramsWithoutOptimizer,
-        requestId,
-      },
+        requestId
+      }
     });
 
     assert.equal(startResult.statusCode, 202);
@@ -144,9 +142,9 @@ async function testSolveStatusIncludesAutoStageMetadata(handler) {
       stopReason: null,
       generatedSeeds: [
         { stage: "greedy", stageIndex: 1, cycleIndex: 0, randomSeed: 11 },
-        { stage: "lns", stageIndex: 2, cycleIndex: 1, randomSeed: 13 },
-      ],
-    },
+        { stage: "lns", stageIndex: 2, cycleIndex: 1, randomSeed: 13 }
+      ]
+    }
   };
   const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
   const handlePromiseDeferred = createDeferred();
@@ -169,11 +167,11 @@ async function testSolveStatusIncludesAutoStageMetadata(handler) {
             totalPopulation: backgroundSolution.totalPopulation,
             activeOptimizer: backgroundSolution.activeOptimizer,
             autoStage: backgroundSolution.autoStage,
-            cpSatStatus: null,
+            cpSatStatus: null
           };
-        },
+        }
       };
-    },
+    }
   });
 
   try {
@@ -185,10 +183,10 @@ async function testSolveStatusIncludesAutoStageMetadata(handler) {
         ...solvePayload,
         params: {
           ...solvePayload.params,
-          optimizer: "auto",
+          optimizer: "auto"
         },
-        requestId,
-      },
+        requestId
+      }
     });
 
     assert.equal(startResult.statusCode, 202);
@@ -196,7 +194,7 @@ async function testSolveStatusIncludesAutoStageMetadata(handler) {
 
     const statusResult = await invoke(handler, {
       method: "GET",
-      url: `/api/solve/status?${new URLSearchParams({ requestId }).toString()}`,
+      url: `/api/solve/status?${new URLSearchParams({ requestId }).toString()}`
     });
 
     assert.equal(statusResult.statusCode, 200);
@@ -206,7 +204,7 @@ async function testSolveStatusIncludesAutoStageMetadata(handler) {
 
     const snapshotStatusResult = await invoke(handler, {
       method: "GET",
-      url: `/api/solve/status?${new URLSearchParams({ requestId, includeSnapshot: "1" }).toString()}`,
+      url: `/api/solve/status?${new URLSearchParams({ requestId, includeSnapshot: "1" }).toString()}`
     });
 
     assert.equal(snapshotStatusResult.statusCode, 200);
@@ -224,7 +222,7 @@ async function testSolveStatusIncludesAutoStageMetadata(handler) {
 async function testRecoveredAutoFailureNormalizesTerminalMetadata() {
   const solvePayload = buildTinySolvePayload();
   const { handler } = createRouteTestHandler({
-    progressLogRootPrefix: "planner-route-auto-recovery-",
+    progressLogRootPrefix: "planner-route-auto-recovery-"
   });
   const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
   const streamedSolution = {
@@ -243,9 +241,9 @@ async function testRecoveredAutoFailureNormalizesTerminalMetadata() {
       generatedSeeds: [
         { stage: "greedy", stageIndex: 1, cycleIndex: 0, randomSeed: 11 },
         { stage: "lns", stageIndex: 2, cycleIndex: 1, randomSeed: 13 },
-        { stage: "cp-sat", stageIndex: 3, cycleIndex: 1, randomSeed: 17 },
-      ],
-    },
+        { stage: "cp-sat", stageIndex: 3, cycleIndex: 1, randomSeed: 17 }
+      ]
+    }
   };
   const recoveredSolution = {
     ...streamedSolution,
@@ -258,9 +256,9 @@ async function testRecoveredAutoFailureNormalizesTerminalMetadata() {
       stopReason: null,
       generatedSeeds: [
         { stage: "greedy", stageIndex: 1, cycleIndex: 0, randomSeed: 11 },
-        { stage: "lns", stageIndex: 2, cycleIndex: 1, randomSeed: 13 },
-      ],
-    },
+        { stage: "lns", stageIndex: 2, cycleIndex: 1, randomSeed: 13 }
+      ]
+    }
   };
 
   optimizerRegistry.getOptimizerAdapter = () => ({
@@ -288,11 +286,11 @@ async function testRecoveredAutoFailureNormalizesTerminalMetadata() {
             totalPopulation: latestSnapshot.totalPopulation,
             activeOptimizer: latestSnapshot.activeOptimizer,
             autoStage: latestSnapshot.autoStage,
-            cpSatStatus: latestSnapshot.cpSatStatus,
+            cpSatStatus: latestSnapshot.cpSatStatus
           };
-        },
+        }
       };
-    },
+    }
   });
 
   try {
@@ -304,17 +302,20 @@ async function testRecoveredAutoFailureNormalizesTerminalMetadata() {
         ...solvePayload,
         params: {
           ...solvePayload.params,
-          optimizer: "auto",
+          optimizer: "auto"
         },
-        requestId,
-      },
+        requestId
+      }
     });
 
     assert.equal(startResult.statusCode, 202);
     const finalPayload = await waitForSolve(handler, requestId);
 
     assert.equal(finalPayload.jobStatus, "completed");
-    assert.equal(finalPayload.message, "Auto kept the best available incumbent after a later stage ended without a usable result.");
+    assert.equal(
+      finalPayload.message,
+      "Auto kept the best available incumbent after a later stage ended without a usable result."
+    );
     assert.equal(finalPayload.stats.activeOptimizer, "cp-sat");
     assert.equal(finalPayload.stats.autoStage.activeStage, "cp-sat");
     assert.equal(finalPayload.stats.autoStage.stageIndex, 3);
@@ -325,7 +326,10 @@ async function testRecoveredAutoFailureNormalizesTerminalMetadata() {
     assert.equal(finalPayload.solution.autoStage.stopReason, "stage-error");
 
     const persistedLog = JSON.parse(fs.readFileSync(startResult.payload.progressLogFilePath, "utf8"));
-    assert.equal(persistedLog.message, "Auto kept the best available incumbent after a later stage ended without a usable result.");
+    assert.equal(
+      persistedLog.message,
+      "Auto kept the best available incumbent after a later stage ended without a usable result."
+    );
     assert.equal(persistedLog.finalResult.solution.activeOptimizer, "cp-sat");
     assert.equal(persistedLog.finalResult.solution.autoStage.activeStage, "cp-sat");
     assert.equal(persistedLog.finalResult.solution.autoStage.stageIndex, 3);
@@ -339,7 +343,7 @@ async function testCancelMissingSolveRoute(handler) {
   const result = await invoke(handler, {
     method: "POST",
     url: "/api/solve/cancel",
-    json: { requestId: "missing-solve" },
+    json: { requestId: "missing-solve" }
   });
 
   assert.equal(result.statusCode, 200);
@@ -350,7 +354,7 @@ async function testCancelMissingSolveRoute(handler) {
 async function testCompletedSolveJobsExpire() {
   const { handler } = createRouteTestHandler({
     progressLogRootPrefix: "planner-route-expiry-",
-    completedJobRetentionMs: 50,
+    completedJobRetentionMs: 50
   });
   const solvePayload = buildTinySolvePayload();
   const requestId = "expiring-route-test-greedy";
@@ -359,8 +363,8 @@ async function testCompletedSolveJobsExpire() {
     url: "/api/solve/start",
     json: {
       ...solvePayload,
-      requestId,
-    },
+      requestId
+    }
   });
 
   assert.equal(startResult.statusCode, 202);
@@ -369,7 +373,7 @@ async function testCompletedSolveJobsExpire() {
 
   const expiredResult = await invoke(handler, {
     method: "GET",
-    url: `/api/solve/status?${new URLSearchParams({ requestId }).toString()}`,
+    url: `/api/solve/status?${new URLSearchParams({ requestId }).toString()}`
   });
 
   assert.equal(expiredResult.statusCode, 404);

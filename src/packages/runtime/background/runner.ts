@@ -54,7 +54,7 @@ function createSolverTempFiles(stopDirectoryPrefix: string): SolverTempFiles {
   return {
     directoryPath,
     stopFilePath: join(directoryPath, "stop"),
-    snapshotFilePath: join(directoryPath, "snapshot.json"),
+    snapshotFilePath: join(directoryPath, "snapshot.json")
   };
 }
 
@@ -75,7 +75,7 @@ function appendBufferedOutput(
 function spawnBackgroundSolverProcess(command: string, args: string[]): ChildProcessWithoutNullStreams {
   return spawn(command, args, {
     stdio: ["pipe", "pipe", "pipe"],
-    detached: process.platform !== "win32",
+    detached: process.platform !== "win32"
   });
 }
 
@@ -122,10 +122,7 @@ function resolveClosedSolverSolution<TRaw>(
     if (!raw) {
       throw new Error(config.noSolutionMessage);
     }
-    return config.materializeSolution(
-      raw,
-      state.stopRequested || Boolean(config.readStoppedByUser?.(raw))
-    );
+    return config.materializeSolution(raw, state.stopRequested || Boolean(config.readStoppedByUser?.(raw)));
   } catch (error) {
     if (state.stopRequested && state.snapshotRaw) {
       try {
@@ -174,7 +171,7 @@ export function startJsonBackgroundSolve<TRaw>(config: JsonBackgroundSolverConfi
   try {
     request = config.buildRequest({
       stopFilePath: tempFiles.stopFilePath,
-      snapshotFilePath: tempFiles.snapshotFilePath,
+      snapshotFilePath: tempFiles.snapshotFilePath
     });
   } catch (error) {
     cleanupTempDirectory();
@@ -190,11 +187,7 @@ export function startJsonBackgroundSolve<TRaw>(config: JsonBackgroundSolverConfi
   }
 
   const readLatestSnapshotRaw = (): TRaw | null => {
-    latestSnapshotRaw = readSnapshotFileIfPresent(
-      tempFiles.snapshotFilePath,
-      config.parseRaw,
-      latestSnapshotRaw
-    );
+    latestSnapshotRaw = readSnapshotFileIfPresent(tempFiles.snapshotFilePath, config.parseRaw, latestSnapshotRaw);
     return latestSnapshotRaw;
   };
 
@@ -266,15 +259,17 @@ export function startJsonBackgroundSolve<TRaw>(config: JsonBackgroundSolverConfi
       cleanupTempDirectory();
 
       try {
-        resolvePromise(resolveClosedSolverSolution(config, {
-          code,
-          signal,
-          stdout,
-          stderr,
-          stopRequested,
-          streamError,
-          snapshotRaw,
-        }));
+        resolvePromise(
+          resolveClosedSolverSolution(config, {
+            code,
+            signal,
+            stdout,
+            stderr,
+            stopRequested,
+            streamError,
+            snapshotRaw
+          })
+        );
       } catch (error) {
         rejectPromise(error as Error);
       }
@@ -292,6 +287,6 @@ export function startJsonBackgroundSolve<TRaw>(config: JsonBackgroundSolverConfi
     promise,
     cancel,
     getLatestSnapshot: () => materializeSnapshot(stopRequested),
-    getLatestSnapshotState: () => config.getSnapshotState(readLatestSnapshotRaw()),
+    getLatestSnapshotState: () => config.getSnapshotState(readLatestSnapshotRaw())
   };
 }

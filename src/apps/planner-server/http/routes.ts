@@ -1,18 +1,20 @@
 import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 
+import { assertValidLayoutEvaluateInputs, assertValidSolveInputs } from "../../../packages/core/index.js";
 import {
-  assertValidLayoutEvaluateInputs,
-  assertValidSolveInputs,
-} from "../../../packages/core/index.js";
-import { getOptimizerAdapter, resolveOptimizerName, SolveJobManager, type SolveJob } from "../../../packages/runtime/index.js";
+  getOptimizerAdapter,
+  resolveOptimizerName,
+  SolveJobManager,
+  type SolveJob
+} from "../../../packages/runtime/index.js";
 import {
   assertValidSerializedSolutionPayload,
   isCancelSolveRequest,
   isLayoutEvaluateRequest,
   isSolveRequest,
   materializeSerializedSolution,
-  sanitizeSolveRequest,
+  sanitizeSolveRequest
 } from "./contracts.js";
 import { buildManualLayoutResponse, buildSolveResponse } from "./solutionResponse.js";
 import { monitorClientDisconnect, readValidatedJsonBody, sendJson } from "./transport.js";
@@ -33,7 +35,7 @@ function buildSolveJobResponseBase(job: {
     optimizer: job.optimizer,
     jobStatus: job.status,
     cancelRequested: job.cancelRequested,
-    progressLogFilePath: job.progressLogFilePath,
+    progressLogFilePath: job.progressLogFilePath
   };
 }
 
@@ -50,14 +52,15 @@ function buildCancelRequestedMessage(optimizer: string): string {
 function buildLiveProgressEntry(job: SolveJob, solution: Solution) {
   return job.progressLogWriter.buildSolutionSample(solution, {
     elapsedMs: Date.now() - job.createdAt,
-    source: "live-snapshot",
+    source: "live-snapshot"
   });
 }
 
 function sendSolveCapacityFull(res: ServerResponse<IncomingMessage>): void {
   sendJson(res, 429, {
     ok: false,
-    error: "Another solve is already running. Stop the running solve or wait for it to finish before starting a new one.",
+    error:
+      "Another solve is already running. Stop the running solve or wait for it to finish before starting a new one."
   });
 }
 
@@ -69,10 +72,7 @@ function isPostRoute(req: IncomingMessage, pathname: string): boolean {
   return req.method === "POST" && requestUrl(req).pathname === pathname;
 }
 
-function matchGetOrHeadRoute(
-  req: IncomingMessage,
-  pathname: string
-): { url: URL; headOnly: boolean } | null {
+function matchGetOrHeadRoute(req: IncomingMessage, pathname: string): { url: URL; headOnly: boolean } | null {
   const method = req.method ?? "GET";
   if (method !== "GET" && method !== "HEAD") return null;
   const url = requestUrl(req);
@@ -115,10 +115,7 @@ async function readLayoutEvaluatePayload(
   return { ...sanitized, solution };
 }
 
-export function handlePlannerHealth(
-  req: IncomingMessage,
-  res: ServerResponse<IncomingMessage>
-): boolean {
+export function handlePlannerHealth(req: IncomingMessage, res: ServerResponse<IncomingMessage>): boolean {
   const route = matchGetOrHeadRoute(req, "/api/health");
   if (!route) return false;
 
@@ -154,7 +151,7 @@ export async function handleImmediateSolve(
 
       sendJson(res, 200, {
         ok: true,
-        ...buildSolveResponse(payload.grid, payload.params, solution),
+        ...buildSolveResponse(payload.grid, payload.params, solution)
       });
     } catch (error) {
       if (disconnectMonitor.isDisconnected()) return true;
@@ -180,7 +177,7 @@ export async function handleLayoutEvaluate(
   const solution = materializeSerializedSolution(payload.solution);
   sendJson(res, 200, {
     ok: true,
-    ...buildManualLayoutResponse(payload.grid, payload.params, solution),
+    ...buildManualLayoutResponse(payload.grid, payload.params, solution)
   });
   return true;
 }
@@ -195,14 +192,13 @@ export async function handleStartSolve(
   const payload = await readSolvePayload(req, res);
   if (!payload) return true;
 
-  const requestId = typeof payload.requestId === "string" && payload.requestId.trim()
-    ? payload.requestId.trim()
-    : randomUUID();
+  const requestId =
+    typeof payload.requestId === "string" && payload.requestId.trim() ? payload.requestId.trim() : randomUUID();
   const existingJob = solveJobManager.replaceIfIdle(requestId);
   if (existingJob?.status === "running") {
     sendJson(res, 409, {
       ok: false,
-      error: "A solve with this request ID is already running.",
+      error: "A solve with this request ID is already running."
     });
     return true;
   }
@@ -217,7 +213,7 @@ export async function handleStartSolve(
     requestId,
     optimizer: resolveOptimizerName(payload.params),
     jobStatus: "running",
-    progressLogFilePath: job.progressLogFilePath,
+    progressLogFilePath: job.progressLogFilePath
   });
   return true;
 }
@@ -231,69 +227,101 @@ export function handleSolveStatus(
   if (!route) return false;
 
   const requestId = route.url.searchParams.get("requestId")?.trim() ?? "";
-  const includeSnapshot = ["1", "true", "yes"].includes((route.url.searchParams.get("includeSnapshot") ?? "").toLowerCase());
+  const includeSnapshot = ["1", "true", "yes"].includes(
+    (route.url.searchParams.get("includeSnapshot") ?? "").toLowerCase()
+  );
   if (!requestId) {
-    sendJson(res, 400, {
-      ok: false,
-      error: "Missing requestId query parameter.",
-    }, route.headOnly);
+    sendJson(
+      res,
+      400,
+      {
+        ok: false,
+        error: "Missing requestId query parameter."
+      },
+      route.headOnly
+    );
     return true;
   }
 
   const jobStatus = solveJobManager.getStatus(requestId, includeSnapshot);
   if (!jobStatus) {
-    sendJson(res, 404, {
-      ok: false,
-      error: "No solve job was found for that request.",
-    }, route.headOnly);
+    sendJson(
+      res,
+      404,
+      {
+        ok: false,
+        error: "No solve job was found for that request."
+      },
+      route.headOnly
+    );
     return true;
   }
   const { job, snapshotState, liveSnapshot } = jobStatus;
 
   if (job.solution) {
     const progressEntry = job.progressLogWriter.getLastEntry();
-    sendJson(res, 200, {
-      ...buildSolveJobResponseBase(job),
-      ...(job.message ? { message: job.message } : {}),
-      ...(progressEntry ? { progressEntry } : {}),
-      ...buildSolveResponse(job.grid, job.params, job.solution),
-    }, route.headOnly);
+    sendJson(
+      res,
+      200,
+      {
+        ...buildSolveJobResponseBase(job),
+        ...(job.message ? { message: job.message } : {}),
+        ...(progressEntry ? { progressEntry } : {}),
+        ...buildSolveResponse(job.grid, job.params, job.solution)
+      },
+      route.headOnly
+    );
     return true;
   }
 
   if (job.status !== "running") {
-    sendJson(res, 200, {
-      ...buildSolveJobResponseBase(job),
-      error: job.error ?? (job.status === "stopped" ? "Solve was stopped." : "Solve failed."),
-    }, route.headOnly);
+    sendJson(
+      res,
+      200,
+      {
+        ...buildSolveJobResponseBase(job),
+        error: job.error ?? (job.status === "stopped" ? "Solve was stopped." : "Solve failed.")
+      },
+      route.headOnly
+    );
     return true;
   }
 
   if (liveSnapshot) {
     const progressEntry = buildLiveProgressEntry(job, liveSnapshot);
-    sendJson(res, 200, {
+    sendJson(
+      res,
+      200,
+      {
+        ...buildSolveJobResponseBase(job),
+        hasFeasibleSolution: snapshotState.hasFeasibleSolution,
+        bestTotalPopulation: snapshotState.totalPopulation,
+        activeOptimizer: snapshotState.activeOptimizer ?? null,
+        autoStage: snapshotState.autoStage ?? null,
+        progressEntry,
+        liveSnapshot: true,
+        ...(job.message ? { message: job.message } : {}),
+        ...buildSolveResponse(job.grid, job.params, liveSnapshot)
+      },
+      route.headOnly
+    );
+    return true;
+  }
+
+  const progressEntry = job.progressLogWriter.getLastEntry();
+  sendJson(
+    res,
+    200,
+    {
       ...buildSolveJobResponseBase(job),
       hasFeasibleSolution: snapshotState.hasFeasibleSolution,
       bestTotalPopulation: snapshotState.totalPopulation,
       activeOptimizer: snapshotState.activeOptimizer ?? null,
       autoStage: snapshotState.autoStage ?? null,
-      progressEntry,
-      liveSnapshot: true,
-      ...(job.message ? { message: job.message } : {}),
-      ...buildSolveResponse(job.grid, job.params, liveSnapshot),
-    }, route.headOnly);
-    return true;
-  }
-
-  const progressEntry = job.progressLogWriter.getLastEntry();
-  sendJson(res, 200, {
-    ...buildSolveJobResponseBase(job),
-    hasFeasibleSolution: snapshotState.hasFeasibleSolution,
-    bestTotalPopulation: snapshotState.totalPopulation,
-    activeOptimizer: snapshotState.activeOptimizer ?? null,
-    autoStage: snapshotState.autoStage ?? null,
-    ...(progressEntry ? { progressEntry } : {}),
-  }, route.headOnly);
+      ...(progressEntry ? { progressEntry } : {})
+    },
+    route.headOnly
+  );
   return true;
 }
 
@@ -317,7 +345,7 @@ export async function handleCancelSolve(
     sendJson(res, 200, {
       ok: true,
       stopped: false,
-      message: "No solve job was found for that request.",
+      message: "No solve job was found for that request."
     });
     return true;
   }
@@ -326,7 +354,7 @@ export async function handleCancelSolve(
     sendJson(res, 200, {
       ok: true,
       stopped: false,
-      message: "That solve is no longer running.",
+      message: "That solve is no longer running."
     });
     return true;
   }
@@ -335,7 +363,7 @@ export async function handleCancelSolve(
   sendJson(res, 200, {
     ok: true,
     stopped: true,
-    message: buildCancelRequestedMessage(activeSolve.optimizer),
+    message: buildCancelRequestedMessage(activeSolve.optimizer)
   });
   return true;
 }

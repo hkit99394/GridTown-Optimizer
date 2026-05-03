@@ -1,10 +1,6 @@
-import type {
-  GreedyRoadOpportunityCounterfactualReason,
-} from "../../core/index.js";
+import type { GreedyRoadOpportunityCounterfactualReason } from "../../core/index.js";
 import type { ConnectivityProbe, PlacementRect } from "./attemptState.js";
-import {
-  ROAD_OPPORTUNITY_COUNTERFACTUAL_TRACE_LIMIT,
-} from "./roadOpportunity.js";
+import { ROAD_OPPORTUNITY_COUNTERFACTUAL_TRACE_LIMIT } from "./roadOpportunity.js";
 import type { RoadOpportunityCounterfactualCandidate } from "./roadOpportunity.js";
 
 const ROAD_OPPORTUNITY_COUNTERFACTUAL_POOL_LIMIT = ROAD_OPPORTUNITY_COUNTERFACTUAL_TRACE_LIMIT * 4;
@@ -121,7 +117,7 @@ function compareSelectedRoadOpportunityCounterfactuals(
     "higher-score-rejected": 1,
     "same-score-tie": 2,
     "near-score": 3,
-    "lower-road-cost": 4,
+    "lower-road-cost": 4
   };
   if (reasonRank[left.reason] !== reasonRank[right.reason]) {
     return reasonRank[left.reason] - reasonRank[right.reason];
@@ -144,7 +140,12 @@ export function selectRoadOpportunityCounterfactuals<TCandidate>(options: {
   chosenCandidate: TCandidate;
   chosenProbe: ConnectivityProbe;
   chosenScore: number;
-  compareTieBreaks: (candidate: TCandidate, probe: ConnectivityProbe, chosen: TCandidate, chosenProbe: ConnectivityProbe) => number;
+  compareTieBreaks: (
+    candidate: TCandidate,
+    probe: ConnectivityProbe,
+    chosen: TCandidate,
+    chosenProbe: ConnectivityProbe
+  ) => number;
   isLookaheadDisplaced?: (entry: RoadOpportunityCandidatePoolEntry<TCandidate>) => boolean;
 }): RoadOpportunityCounterfactualCandidate[] {
   const selected: Array<RoadOpportunityCounterfactualCandidate & { key: string }> = [];
@@ -156,7 +157,7 @@ export function selectRoadOpportunityCounterfactuals<TCandidate>(options: {
       chosenScore: options.chosenScore,
       candidateRoadCost: entry.probe.roadCost,
       chosenRoadCost: options.chosenProbe.roadCost,
-      lookaheadDisplaced,
+      lookaheadDisplaced
     });
     if (!reason) continue;
     const tieBreakComparison = options.compareTieBreaks(
@@ -177,7 +178,7 @@ export function selectRoadOpportunityCounterfactuals<TCandidate>(options: {
       ...(entry.typeIndex === undefined ? {} : { typeIndex: entry.typeIndex }),
       ...(entry.bonus === undefined ? {} : { bonus: entry.bonus }),
       ...(entry.range === undefined ? {} : { range: entry.range }),
-      ...(entry.moveKind === undefined ? {} : { moveKind: entry.moveKind }),
+      ...(entry.moveKind === undefined ? {} : { moveKind: entry.moveKind })
     });
   }
 

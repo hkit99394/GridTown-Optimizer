@@ -18,21 +18,13 @@ export interface CancelSolveRequest {
   requestId: string;
 }
 
-const LOCAL_RUNTIME_CP_SAT_KEYS = new Set([
-  "pythonExecutable",
-  "scriptPath",
-  "stopFilePath",
-  "snapshotFilePath",
-]);
-const LOCAL_RUNTIME_SOLVER_KEYS = new Set([
-  "stopFilePath",
-  "snapshotFilePath",
-]);
+const LOCAL_RUNTIME_CP_SAT_KEYS = new Set(["pythonExecutable", "scriptPath", "stopFilePath", "snapshotFilePath"]);
+const LOCAL_RUNTIME_SOLVER_KEYS = new Set(["stopFilePath", "snapshotFilePath"]);
 
 const LOCAL_RUNTIME_PARAM_SECTIONS = [
   { key: "cpSat", keysToStrip: LOCAL_RUNTIME_CP_SAT_KEYS },
   { key: "greedy", keysToStrip: LOCAL_RUNTIME_SOLVER_KEYS },
-  { key: "lns", keysToStrip: LOCAL_RUNTIME_SOLVER_KEYS },
+  { key: "lns", keysToStrip: LOCAL_RUNTIME_SOLVER_KEYS }
 ] as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -73,11 +65,13 @@ export function isSerializedSolution(value: unknown): value is SerializedSolutio
 export function isLayoutEvaluateRequest(value: unknown): value is LayoutEvaluateRequest {
   if (typeof value !== "object" || value === null) return false;
   const candidate = value as Partial<LayoutEvaluateRequest>;
-  return isGrid(candidate.grid)
-    && typeof candidate.params === "object"
-    && candidate.params !== null
-    && typeof candidate.solution === "object"
-    && candidate.solution !== null;
+  return (
+    isGrid(candidate.grid) &&
+    typeof candidate.params === "object" &&
+    candidate.params !== null &&
+    typeof candidate.solution === "object" &&
+    candidate.solution !== null
+  );
 }
 
 function stripKeysFromRecord<T>(value: T, keysToStrip: Set<string>): T {
@@ -114,7 +108,7 @@ export function sanitizePlannerSolverParams(params: SolverParams): SolverParams 
 export function sanitizeSolveRequest<T extends SolveRequest | LayoutEvaluateRequest>(payload: T): T {
   return {
     ...payload,
-    params: sanitizePlannerSolverParams(payload.params),
+    params: sanitizePlannerSolverParams(payload.params)
   };
 }
 

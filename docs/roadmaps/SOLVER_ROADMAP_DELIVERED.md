@@ -6,18 +6,18 @@ Reviewed through 2026-05-02.
 
 ## Delivered Snapshot
 
-| Area | Delivered State |
-| --- | --- |
-| Solver stack | `greedy`, `LNS`, `CP-SAT`, and `auto` are available across backend, planner, and CLI flows. `auto` uses the incumbent-first `greedy -> LNS -> CP-SAT` path when budget allows. |
-| Greedy | Greedy has runtime guardrails, phase counters, final road cleanup, connectivity-shadow diagnostics, road-opportunity counterfactuals, deterministic ablations, and a diagnostics-only offline ranker. |
-| LNS | LNS has deterministic/probabilistic windows, adaptive semantic operators, replay labels, improvement guards, small-window DP as an opt-in repair backend, and budget-aware telemetry. |
-| CP-SAT | CP-SAT supports exact repair/proof, warm starts, async progress, portfolio experiments, model-size telemetry, and aligned per-component road-anchor semantics. |
-| Auto | Auto records stage summaries and detailed traces, preserves CP-SAT reserve time, applies trace-tuned LNS defaults, and now shares one plan runner for sync and background execution. |
-| Planner workflows | Saved-layout population visibility, manual validation, continuation hints, explainability maps, solved-map inspection, and expansion comparison are available around the solver loop. |
-| Benchmarks and telemetry | Cross-mode scorecards, time-to-quality reporting, JSONL traces, budget ablations, product-corpus artifacts, workflow replay artifacts, and telemetry manifests are available. |
-| Experiment registry | Registry validation, append helpers, strict metadata gates, artifact-path checks, and dry-run support exist for benchmark, label, workflow, and model-experiment artifacts. |
-| Learned guidance | Label bundles, protected splits, LNS replay pressure cases, and a CPU-first Greedy offline ranker exist for diagnostics. No learned runtime scorer has been promoted. |
-| Guarded experiments | CP-SAT portfolio, service-master decomposition, exact small-window DP repair, connectivity-shadow scoring, and learned rankers remain explicit, opt-in, or gated. |
+| Area                     | Delivered State                                                                                                                                                                                       |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Solver stack             | `greedy`, `LNS`, `CP-SAT`, and `auto` are available across backend, planner, and CLI flows. `auto` uses the incumbent-first `greedy -> LNS -> CP-SAT` path when budget allows.                        |
+| Greedy                   | Greedy has runtime guardrails, phase counters, final road cleanup, connectivity-shadow diagnostics, road-opportunity counterfactuals, deterministic ablations, and a diagnostics-only offline ranker. |
+| LNS                      | LNS has deterministic/probabilistic windows, adaptive semantic operators, replay labels, improvement guards, small-window DP as an opt-in repair backend, and budget-aware telemetry.                 |
+| CP-SAT                   | CP-SAT supports exact repair/proof, warm starts, async progress, portfolio experiments, model-size telemetry, and aligned per-component road-anchor semantics.                                        |
+| Auto                     | Auto records stage summaries and detailed traces, preserves CP-SAT reserve time, applies trace-tuned LNS defaults, and now shares one plan runner for sync and background execution.                  |
+| Planner workflows        | Saved-layout population visibility, manual validation, continuation hints, explainability maps, solved-map inspection, and expansion comparison are available around the solver loop.                 |
+| Benchmarks and telemetry | Cross-mode scorecards, time-to-quality reporting, JSONL traces, budget ablations, product-corpus artifacts, workflow replay artifacts, and telemetry manifests are available.                         |
+| Experiment registry      | Registry validation, append helpers, strict metadata gates, artifact-path checks, and dry-run support exist for benchmark, label, workflow, and model-experiment artifacts.                           |
+| Learned guidance         | Label bundles, protected splits, LNS replay pressure cases, and a CPU-first Greedy offline ranker exist for diagnostics. No learned runtime scorer has been promoted.                                 |
+| Guarded experiments      | CP-SAT portfolio, service-master decomposition, exact small-window DP repair, connectivity-shadow scoring, and learned rankers remain explicit, opt-in, or gated.                                     |
 
 ## Key Evidence Artifacts
 

@@ -3,5 +3,5 @@ function sortedRoads(solution) {
 }
 
 module.exports = {
-  sortedRoads,
+  sortedRoads
 };

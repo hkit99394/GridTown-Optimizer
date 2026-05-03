@@ -9,7 +9,7 @@ import type {
   Solution,
   SolverDecisionTraceEvent,
   SolverParams,
-  SolverTimeToQualityScorecard,
+  SolverTimeToQualityScorecard
 } from "../core/index.js";
 import type {
   CrossModeBenchmarkCase,
@@ -17,7 +17,7 @@ import type {
   CrossModeBenchmarkSplit,
   CrossModeBenchmarkSuiteResult,
   CrossModeProblemSizeBand,
-  CrossModeWorkflowTag,
+  CrossModeWorkflowTag
 } from "./crossMode.js";
 
 export interface CrossModeBenchmarkSolverParamSummary {
@@ -180,7 +180,7 @@ function summarizeCrossModeSolverParams(params: SolverParams): CrossModeBenchmar
       ["cpSatStageReserveRatio", params.auto?.cpSatStageReserveRatio],
       ["cpSatStageNoImprovementTimeoutSeconds", params.auto?.cpSatStageNoImprovementTimeoutSeconds],
       ["weakCycleImprovementThreshold", params.auto?.weakCycleImprovementThreshold],
-      ["maxConsecutiveWeakCycles", params.auto?.maxConsecutiveWeakCycles],
+      ["maxConsecutiveWeakCycles", params.auto?.maxConsecutiveWeakCycles]
     ]),
     greedy: compactRecord([
       ["timeLimitSeconds", params.greedy?.timeLimitSeconds],
@@ -194,7 +194,7 @@ function summarizeCrossModeSolverParams(params: SolverParams): CrossModeBenchmar
       ["serviceExactMaxCombinations", params.greedy?.serviceExactMaxCombinations],
       ["serviceMasterDecomposition", params.greedy?.serviceMasterDecomposition],
       ["serviceMasterPoolLimit", params.greedy?.serviceMasterPoolLimit],
-      ["serviceMasterMaxLayouts", params.greedy?.serviceMasterMaxLayouts],
+      ["serviceMasterMaxLayouts", params.greedy?.serviceMasterMaxLayouts]
     ]),
     lns: compactRecord([
       ["wallClockLimitSeconds", params.lns?.wallClockLimitSeconds],
@@ -209,7 +209,7 @@ function summarizeCrossModeSolverParams(params: SolverParams): CrossModeBenchmar
       ["repairTimeLimitSeconds", params.lns?.repairTimeLimitSeconds],
       ["focusedRepairTimeLimitSeconds", params.lns?.focusedRepairTimeLimitSeconds],
       ["escalatedRepairTimeLimitSeconds", params.lns?.escalatedRepairTimeLimitSeconds],
-      ["seedHintSource", hintSource(params.lns?.seedHint)],
+      ["seedHintSource", hintSource(params.lns?.seedHint)]
     ]),
     cpSat: compactRecord([
       ["timeLimitSeconds", cpSat?.timeLimitSeconds],
@@ -223,7 +223,7 @@ function summarizeCrossModeSolverParams(params: SolverParams): CrossModeBenchmar
       ["warmStartHintSource", hintSource(cpSat?.warmStartHint)],
       ["objectiveLowerBound", cpSat?.objectiveLowerBound],
       ["streamProgress", cpSat?.streamProgress],
-      ["progressIntervalSeconds", cpSat?.progressIntervalSeconds],
+      ["progressIntervalSeconds", cpSat?.progressIntervalSeconds]
     ]),
     portfolio: compactRecord([
       ["workerCount", portfolio?.workerCount],
@@ -232,8 +232,8 @@ function summarizeCrossModeSolverParams(params: SolverParams): CrossModeBenchmar
       ["perWorkerTimeLimitSeconds", portfolio?.perWorkerTimeLimitSeconds],
       ["perWorkerMaxDeterministicTime", portfolio?.perWorkerMaxDeterministicTime],
       ["perWorkerNumWorkers", portfolio?.perWorkerNumWorkers],
-      ["randomizeSearch", portfolio?.randomizeSearch],
-    ]),
+      ["randomizeSearch", portfolio?.randomizeSearch]
+    ])
   };
 }
 
@@ -251,7 +251,7 @@ function greedyCandidateCounts(counters: GreedyProfileCounters | undefined): Rec
     serviceCandidateScans: counters.servicePhase.candidateScans,
     residentialCandidateScans: counters.residentialPhase.candidateScans,
     localSearchCandidateScans: counters.localSearch.candidateScans,
-    roadProbeCalls: counters.roads.probeCalls,
+    roadProbeCalls: counters.roads.probeCalls
   };
 }
 
@@ -268,7 +268,7 @@ function cpSatCandidateCounts(modelSize: CpSatModelSizeTelemetry | null | undefi
     allowedCells: modelSize.allowedCellCount,
     roadEligibleCells: modelSize.roadEligibleCellCount,
     roadVariables: modelSize.roadVariableCount,
-    directedEdges: modelSize.directedEdgeCount,
+    directedEdges: modelSize.directedEdgeCount
   };
 }
 
@@ -302,7 +302,7 @@ function pushGreedyProfileStages(
       exactGap: null,
       cpSatStatus: null,
       candidateCounts,
-      cpSatModelSize: null,
+      cpSatModelSize: null
     });
   }
 }
@@ -329,9 +329,9 @@ function lnsOutcomeStage(outcome: LnsNeighborhoodOutcome): CrossModeBenchmarkSta
       windowRows: outcome.window.rows,
       windowCols: outcome.window.cols,
       windowArea: outcome.window.rows * outcome.window.cols,
-      stagnantIterationsBefore: outcome.stagnantIterationsBefore,
+      stagnantIterationsBefore: outcome.stagnantIterationsBefore
     },
-    cpSatModelSize: null,
+    cpSatModelSize: null
   };
 }
 
@@ -363,9 +363,9 @@ function buildCrossModeStageTelemetry(solution: Solution): CrossModeBenchmarkSta
         ["lnsIterationsStarted", run.lnsIterationsStarted],
         ["lnsIterationsCompleted", run.lnsIterationsCompleted],
         ["lnsImprovingIterations", run.lnsImprovingIterations],
-        ["lnsNeutralIterations", run.lnsNeutralIterations],
+        ["lnsNeutralIterations", run.lnsNeutralIterations]
       ]),
-      cpSatModelSize: null,
+      cpSatModelSize: null
     });
   }
 
@@ -394,9 +394,9 @@ function buildCrossModeStageTelemetry(solution: Solution): CrossModeBenchmarkSta
         improvingIterations: telemetry.improvingIterations,
         neutralIterations: telemetry.neutralIterations,
         recoverableFailures: telemetry.recoverableFailures,
-        skippedIterations: telemetry.skippedIterations,
+        skippedIterations: telemetry.skippedIterations
       },
-      cpSatModelSize: null,
+      cpSatModelSize: null
     });
     stages.push(...telemetry.outcomes.map(lnsOutcomeStage));
   }
@@ -421,7 +421,7 @@ function buildCrossModeStageTelemetry(solution: Solution): CrossModeBenchmarkSta
       exactGap: telemetry?.populationGapUpperBound ?? null,
       cpSatStatus: solution.cpSatStatus ?? null,
       candidateCounts: cpSatCandidateCounts(telemetry?.modelSize),
-      cpSatModelSize: cpSatModelSizeRecord(telemetry?.modelSize),
+      cpSatModelSize: cpSatModelSizeRecord(telemetry?.modelSize)
     });
   }
 
@@ -444,7 +444,7 @@ function buildCrossModeStageTelemetry(solution: Solution): CrossModeBenchmarkSta
       exactGap: worker.telemetry?.populationGapUpperBound ?? null,
       cpSatStatus: worker.status,
       candidateCounts: cpSatCandidateCounts(worker.telemetry?.modelSize),
-      cpSatModelSize: cpSatModelSizeRecord(worker.telemetry?.modelSize),
+      cpSatModelSize: cpSatModelSizeRecord(worker.telemetry?.modelSize)
     });
   }
 
@@ -452,8 +452,9 @@ function buildCrossModeStageTelemetry(solution: Solution): CrossModeBenchmarkSta
 }
 
 export function buildCrossModeRunTelemetry(options: BuildCrossModeRunTelemetryOptions): CrossModeBenchmarkRunTelemetry {
-  const runId = options.traceArtifacts.decisionTrace[0]?.runId
-    ?? `${options.benchmarkCase.name}:${options.mode}:budget-${options.budgetSeconds}:seed-${options.seed}`;
+  const runId =
+    options.traceArtifacts.decisionTrace[0]?.runId ??
+    `${options.benchmarkCase.name}:${options.mode}:budget-${options.budgetSeconds}:seed-${options.seed}`;
   const stages = buildCrossModeStageTelemetry(options.solution);
   return {
     schemaVersion: 1,
@@ -471,7 +472,7 @@ export function buildCrossModeRunTelemetry(options: BuildCrossModeRunTelemetryOp
       wallClockSeconds: roundBenchmarkMetric(options.wallClockSeconds),
       firstFeasibleSeconds: secondsFromMs(options.traceArtifacts.timeToQuality.firstFeasibleAtMs),
       firstImprovementSeconds: secondsFromMs(options.traceArtifacts.timeToQuality.firstImprovementAtMs),
-      bestScoreSeconds: secondsFromMs(options.traceArtifacts.timeToQuality.bestScoreAtMs),
+      bestScoreSeconds: secondsFromMs(options.traceArtifacts.timeToQuality.bestScoreAtMs)
     },
     score: {
       finalPopulation: options.solution.totalPopulation,
@@ -480,14 +481,14 @@ export function buildCrossModeRunTelemetry(options: BuildCrossModeRunTelemetryOp
       exactGap: options.solution.cpSatTelemetry?.populationGapUpperBound ?? null,
       lnsStopReason: options.solution.lnsTelemetry?.stopReason ?? null,
       autoStopReason: options.solution.autoStage?.stopReason ?? null,
-      stoppedByUser: Boolean(options.solution.stoppedByUser),
+      stoppedByUser: Boolean(options.solution.stoppedByUser)
     },
     cpu: {
       workerCpuBudgetSeconds: roundBenchmarkMetric(options.workerCpuBudgetSeconds),
-      observedWorkerCpuSeconds: options.observedWorkerCpuSeconds,
+      observedWorkerCpuSeconds: options.observedWorkerCpuSeconds
     },
     stageCount: stages.length,
-    stages,
+    stages
   };
 }
 
@@ -510,8 +511,8 @@ export function buildCrossModeBenchmarkTelemetryManifest(
       selectedCaseNames: [...result.selectedCaseNames],
       modes: [...result.modes],
       budgetsSeconds: [...result.budgetsSeconds],
-      seeds: [...result.seeds],
+      seeds: [...result.seeds]
     },
-    runs,
+    runs
   };
 }

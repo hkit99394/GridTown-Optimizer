@@ -5,40 +5,35 @@ import {
   benchmarkGeneratedAt,
   positiveIntegerOrDefault,
   sumBenchmarkBy,
-  uniqueBenchmarkValues,
+  uniqueBenchmarkValues
 } from "./benchmarkOptions.js";
 import { DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS } from "./deterministicAblationGates.js";
-import {
-  DEFAULT_GREEDY_DETERMINISTIC_ABLATION_CORPUS,
-} from "./greedyDeterministicAblations.js";
+import { DEFAULT_GREEDY_DETERMINISTIC_ABLATION_CORPUS } from "./greedyDeterministicAblations.js";
 import { runGreedyBenchmarkSuite } from "./greedy.js";
 import {
   buildModelExperimentFingerprint,
   buildModelExperimentRegistryEntryDraft,
-  buildModelExperimentTelemetryManifest,
+  buildModelExperimentTelemetryManifest
 } from "./modelExperimentArtifacts.js";
 import {
   collectGreedyOrderingLabelsFromBenchmarkSuite,
-  DEFAULT_LEARNED_RANKING_LABEL_SPLITS,
+  DEFAULT_LEARNED_RANKING_LABEL_SPLITS
 } from "./learnedRankingLabels.js";
 import { hashString, stableStringify } from "../core/cpSatContinuation.js";
 
-import type {
-  GreedyBenchmarkCase,
-  GreedyBenchmarkOptions,
-} from "./greedy.js";
+import type { GreedyBenchmarkCase, GreedyBenchmarkOptions } from "./greedy.js";
 import type {
   GreedyOrderingLabel,
   GreedyOrderingLabelSource,
   GreedyOrderingLabelSplitResult,
   GreedyOrderingPlacementFeatures,
   LearnedRankingLabelSplit,
-  LearnedRankingLabelSplitConfig,
+  LearnedRankingLabelSplitConfig
 } from "./learnedRankingLabels.js";
 import type {
   ModelExperimentRegistryEntryDraftOptions,
   ModelExperimentTelemetryManifest,
-  ModelExperimentTelemetryManifestOptions,
+  ModelExperimentTelemetryManifestOptions
 } from "./modelExperimentArtifacts.js";
 
 export const GREEDY_OFFLINE_RANKER_FEATURE_NAMES = Object.freeze([
@@ -53,10 +48,10 @@ export const GREEDY_OFFLINE_RANKER_FEATURE_NAMES = Object.freeze([
   "higherBonus",
   "higherRange",
   "smallerArea",
-  "lowerTypeIndex",
+  "lowerTypeIndex"
 ] as const);
 
-export type GreedyOfflineRankerFeatureName = typeof GREEDY_OFFLINE_RANKER_FEATURE_NAMES[number];
+export type GreedyOfflineRankerFeatureName = (typeof GREEDY_OFFLINE_RANKER_FEATURE_NAMES)[number];
 
 export interface GreedyOfflineRankerTrainingOptions {
   epochs?: number;
@@ -177,35 +172,42 @@ export interface GreedyOfflineRankerExperimentResult {
   modelFingerprint: string;
 }
 
-export interface GreedyOfflineRankerExperimentSnapshot
-  extends Omit<GreedyOfflineRankerExperimentResult, "generatedAt" | "training"> {
+export interface GreedyOfflineRankerExperimentSnapshot extends Omit<
+  GreedyOfflineRankerExperimentResult,
+  "generatedAt" | "training"
+> {
   training: Omit<GreedyOfflineRankerExperimentResult["training"], "wallClockSeconds">;
 }
 
-export interface GreedyOfflineRankerTelemetryManifestOptions
-  extends Pick<ModelExperimentTelemetryManifestOptions, "command" | "git" | "hardware" | "inputArtifacts" | "outputArtifacts" | "notes"> {}
+export interface GreedyOfflineRankerTelemetryManifestOptions extends Pick<
+  ModelExperimentTelemetryManifestOptions,
+  "command" | "git" | "hardware" | "inputArtifacts" | "outputArtifacts" | "notes"
+> {}
 
-export interface GreedyOfflineRankerRegistryEntryDraftOptions
-  extends Pick<ModelExperimentRegistryEntryDraftOptions, "runId" | "commands" | "artifactPaths" | "decision" | "summary"> {}
+export interface GreedyOfflineRankerRegistryEntryDraftOptions extends Pick<
+  ModelExperimentRegistryEntryDraftOptions,
+  "runId" | "commands" | "artifactPaths" | "decision" | "summary"
+> {}
 
 type FeatureVector = Record<GreedyOfflineRankerFeatureName, number>;
 
 const DEFAULT_GREEDY_OFFLINE_RANKER_TRAINING: Required<GreedyOfflineRankerTrainingOptions> = Object.freeze({
   epochs: 12,
   learningRate: 0.25,
-  marginWeightCap: 10,
+  marginWeightCap: 10
 });
 
-const DETERMINISTIC_BASELINE_WEIGHTS: Readonly<Partial<Record<GreedyOfflineRankerFeatureName, number>>> =
-  Object.freeze({
+const DETERMINISTIC_BASELINE_WEIGHTS: Readonly<Partial<Record<GreedyOfflineRankerFeatureName, number>>> = Object.freeze(
+  {
     lowerRoadCost: 0.5,
     higherScore: 1,
     lowerShadowPenalty: 4,
     higherReachableAfter: 0.25,
     lowerLostCells: 2.5,
     lowerDisconnectedCells: 1,
-    smallerArea: 0.2,
-  });
+    smallerArea: 0.2
+  }
+);
 
 function positiveFiniteNumberOrDefault(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : fallback;
@@ -218,7 +220,7 @@ function roundMetric(value: number): number {
 function emptySourceCounts(): Record<GreedyOrderingLabelSource, number> {
   return {
     "connectivity-shadow-decision": 0,
-    "road-opportunity-counterfactual": 0,
+    "road-opportunity-counterfactual": 0
   };
 }
 
@@ -230,14 +232,16 @@ function countSources(labels: readonly GreedyOrderingLabel[]): Record<GreedyOrde
   return counts;
 }
 
-function sumSourceCounts(
-  splits: readonly GreedyOrderingLabelSplitResult[]
-): Record<GreedyOrderingLabelSource, number> {
+function sumSourceCounts(splits: readonly GreedyOrderingLabelSplitResult[]): Record<GreedyOrderingLabelSource, number> {
   return {
-    "connectivity-shadow-decision":
-      sumBenchmarkBy(splits, (split) => split.sourceCounts["connectivity-shadow-decision"]),
-    "road-opportunity-counterfactual":
-      sumBenchmarkBy(splits, (split) => split.sourceCounts["road-opportunity-counterfactual"]),
+    "connectivity-shadow-decision": sumBenchmarkBy(
+      splits,
+      (split) => split.sourceCounts["connectivity-shadow-decision"]
+    ),
+    "road-opportunity-counterfactual": sumBenchmarkBy(
+      splits,
+      (split) => split.sourceCounts["road-opportunity-counterfactual"]
+    )
   };
 }
 
@@ -274,13 +278,15 @@ function buildGreedyLeakageReport(
     developmentGreedyCases: [...development.greedyCaseNames],
     holdoutGreedyCases: [...holdout.greedyCaseNames],
     greedyOverlap,
-    protectedHoldout: greedyOverlap.length === 0,
+    protectedHoldout: greedyOverlap.length === 0
   };
 }
 
 function assertProtectedGreedyHoldout(leakage: GreedyOfflineRankerLeakageReport): void {
   if (!leakage.protectedHoldout) {
-    throw new Error(`Greedy offline ranker development/holdout split overlap is not allowed. Greedy: ${leakage.greedyOverlap.join(", ")}`);
+    throw new Error(
+      `Greedy offline ranker development/holdout split overlap is not allowed. Greedy: ${leakage.greedyOverlap.join(", ")}`
+    );
   }
 }
 
@@ -296,7 +302,7 @@ function normalizeTrainingOptions(
     marginWeightCap: positiveFiniteNumberOrDefault(
       options?.marginWeightCap,
       DEFAULT_GREEDY_OFFLINE_RANKER_TRAINING.marginWeightCap
-    ),
+    )
   };
 }
 
@@ -325,7 +331,7 @@ function placementSignalVector(placement: GreedyOrderingPlacementFeatures): Feat
     higherBonus: numericFeature(placement, "bonus") / 200,
     higherRange: numericFeature(placement, "range") / 10,
     smallerArea: -placementArea(placement) / 20,
-    lowerTypeIndex: -numericFeature(placement, "typeIndex") / 10,
+    lowerTypeIndex: -numericFeature(placement, "typeIndex") / 10
   };
 }
 
@@ -363,7 +369,10 @@ function sourceMetrics(
 ): GreedyOfflineRankerSourceMetrics[] {
   return (Object.keys(emptySourceCounts()) as GreedyOrderingLabelSource[]).map((source) => ({
     source,
-    ...evaluatePairMetrics(labels.filter((label) => label.source === source), scorePair),
+    ...evaluatePairMetrics(
+      labels.filter((label) => label.source === source),
+      scorePair
+    )
   }));
 }
 
@@ -388,7 +397,7 @@ function evaluatePairMetrics(
     accuracy: labels.length === 0 ? 0 : roundMetric(correctScore / labels.length),
     marginWeightedCorrect: roundMetric(marginWeightedCorrect),
     marginWeightedTotal: roundMetric(marginWeightedTotal),
-    marginWeightedAccuracy: marginWeightedTotal === 0 ? 0 : roundMetric(marginWeightedCorrect / marginWeightedTotal),
+    marginWeightedAccuracy: marginWeightedTotal === 0 ? 0 : roundMetric(marginWeightedCorrect / marginWeightedTotal)
   };
 }
 
@@ -399,7 +408,7 @@ function evaluateSplit(
   return {
     split: split.split,
     ...evaluatePairMetrics(split.labels, scorePair),
-    sourceMetrics: sourceMetrics(split.labels, scorePair),
+    sourceMetrics: sourceMetrics(split.labels, scorePair)
   };
 }
 
@@ -421,7 +430,7 @@ function evaluateModel(
   const scorePair = (label: GreedyOrderingLabel) => scoreWithWeights(label, weights);
   return {
     development: evaluateSplit(splitByName(splits, "development"), scorePair),
-    holdout: evaluateSplit(splitByName(splits, "holdout"), scorePair),
+    holdout: evaluateSplit(splitByName(splits, "holdout"), scorePair)
   };
 }
 
@@ -448,10 +457,7 @@ function trainLinearPairwiseModel(
     epochs.push({
       epoch: epoch + 1,
       mistakes,
-      developmentAccuracy: evaluatePairMetrics(
-        developmentLabels,
-        (label) => scoreWithWeights(label, weights)
-      ).accuracy,
+      developmentAccuracy: evaluatePairMetrics(developmentLabels, (label) => scoreWithWeights(label, weights)).accuracy
     });
   }
   return { weights, epochs };
@@ -487,7 +493,7 @@ function baselineEvaluation(
     description,
     selectedFeatureName,
     development: evaluateSplit(splitByName(splits, "development"), scorePair),
-    holdout: evaluateSplit(splitByName(splits, "holdout"), scorePair),
+    holdout: evaluateSplit(splitByName(splits, "holdout"), scorePair)
   };
 }
 
@@ -504,9 +510,10 @@ function buildBaselineEvaluations(
       (label) => singleFeatureScore(label, featureName)
     )
   );
-  const bestSingleFeature = [...singleFeatureCandidates].sort((left, right) =>
-    right.development.accuracy - left.development.accuracy
-    || left.selectedFeatureName!.localeCompare(right.selectedFeatureName!)
+  const bestSingleFeature = [...singleFeatureCandidates].sort(
+    (left, right) =>
+      right.development.accuracy - left.development.accuracy ||
+      left.selectedFeatureName!.localeCompare(right.selectedFeatureName!)
   )[0];
 
   return [
@@ -517,14 +524,10 @@ function buildBaselineEvaluations(
       splits,
       deterministicBaselineScore
     ),
-    baselineEvaluation(
-      "stable-random",
-      "Stable pseudo-random ordering keyed by label id.",
-      null,
-      splits,
-      (label) => stableRandomBaselineScore(label, randomBaselineSeed)
+    baselineEvaluation("stable-random", "Stable pseudo-random ordering keyed by label id.", null, splits, (label) =>
+      stableRandomBaselineScore(label, randomBaselineSeed)
     ),
-    bestSingleFeature,
+    bestSingleFeature
   ];
 }
 
@@ -533,9 +536,8 @@ function buildSummary(
   baselines: readonly GreedyOfflineRankerBaselineEvaluation[],
   leakage: GreedyOfflineRankerLeakageReport
 ): GreedyOfflineRankerSummary {
-  const bestBaseline = [...baselines].sort((left, right) =>
-    right.holdout.accuracy - left.holdout.accuracy
-    || left.name.localeCompare(right.name)
+  const bestBaseline = [...baselines].sort(
+    (left, right) => right.holdout.accuracy - left.holdout.accuracy || left.name.localeCompare(right.name)
   )[0];
   const failedReasons: string[] = [];
   if (!leakage.protectedHoldout) {
@@ -558,7 +560,7 @@ function buildSummary(
     bestBaselineName: bestBaseline.name,
     bestBaselineHoldoutAccuracy: bestBaseline.holdout.accuracy,
     modelHoldoutAccuracy: modelEvaluation.holdout.accuracy,
-    holdoutAccuracyDeltaVsBestBaseline: roundMetric(modelEvaluation.holdout.accuracy - bestBaseline.holdout.accuracy),
+    holdoutAccuracyDeltaVsBestBaseline: roundMetric(modelEvaluation.holdout.accuracy - bestBaseline.holdout.accuracy)
   };
 }
 
@@ -576,8 +578,8 @@ function collectGreedyLabelSplits(options: {
           ...(options.greedy ?? {}),
           profile: true,
           connectivityShadowScoring: true,
-          randomSeed: seed,
-        },
+          randomSeed: seed
+        }
       });
       return collectGreedyOrderingLabelsFromBenchmarkSuite(result, config.split, seed);
     });
@@ -587,7 +589,7 @@ function collectGreedyLabelSplits(options: {
       seeds: [...options.seeds],
       labelCount: labels.length,
       sourceCounts: countSources(labels),
-      labels,
+      labels
     };
   });
 }
@@ -600,17 +602,21 @@ function labelSplitSummaries(
     selectedCaseNames: [...split.selectedCaseNames],
     seeds: [...split.seeds],
     labelCount: split.labelCount,
-    sourceCounts: { ...split.sourceCounts },
+    sourceCounts: { ...split.sourceCounts }
   }));
 }
 
 function buildDatasetFingerprint(splits: readonly GreedyOrderingLabelSplitResult[]): string {
-  return `fnv1a:${hashString(stableStringify(splits.map((split) => ({
-    split: split.split,
-    selectedCaseNames: split.selectedCaseNames,
-    seeds: split.seeds,
-    labels: split.labels,
-  }))))}`;
+  return `fnv1a:${hashString(
+    stableStringify(
+      splits.map((split) => ({
+        split: split.split,
+        selectedCaseNames: split.selectedCaseNames,
+        seeds: split.seeds,
+        labels: split.labels
+      }))
+    )
+  )}`;
 }
 
 function summaryMetrics(result: GreedyOfflineRankerExperimentResult): Record<string, unknown> {
@@ -623,7 +629,7 @@ function summaryMetrics(result: GreedyOfflineRankerExperimentResult): Record<str
     holdoutAccuracyDeltaVsBestBaseline: result.evaluation.summary.holdoutAccuracyDeltaVsBestBaseline,
     developmentLabelCount: result.evaluation.model.development.labelCount,
     holdoutLabelCount: result.evaluation.model.holdout.labelCount,
-    protectedHoldout: result.leakage.protectedHoldout,
+    protectedHoldout: result.leakage.protectedHoldout
   };
 }
 
@@ -638,15 +644,16 @@ export function runGreedyOfflineRankerExperiment(
   validateGreedySplitConfigs(splitConfigs);
   const leakage = buildGreedyLeakageReport(splitConfigs);
   assertProtectedGreedyHoldout(leakage);
-  const seeds = normalizeBenchmarkSeeds(options.seeds, "Greedy offline ranker seeds")
-    ?? [...DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS];
+  const seeds = normalizeBenchmarkSeeds(options.seeds, "Greedy offline ranker seeds") ?? [
+    ...DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS
+  ];
   const greedyCorpus = options.greedyCorpus ?? DEFAULT_GREEDY_DETERMINISTIC_ABLATION_CORPUS;
   const training = normalizeTrainingOptions(options.training);
   const splits = collectGreedyLabelSplits({
     splitConfigs,
     seeds,
     greedyCorpus,
-    greedy: options.greedy,
+    greedy: options.greedy
   });
   const developmentLabels = splitByName(splits, "development").labels;
   const startedAtMs = performance.now();
@@ -663,7 +670,7 @@ export function runGreedyOfflineRankerExperiment(
     intercept: 0,
     training,
     trainedLabelCount: developmentLabels.length,
-    trainingSplit: "development",
+    trainingSplit: "development"
   };
   const modelEvaluation = evaluateModel(splits, weightArrayFromRecord(weights));
   const baselines = buildBaselineEvaluations(splits, options.randomBaselineSeed ?? 17);
@@ -680,26 +687,26 @@ export function runGreedyOfflineRankerExperiment(
       runtimeDefaultChanged: false,
       solverDefaultChanged: false,
       usesCaseNameFeature: false,
-      learnedRuntimeHook: null,
+      learnedRuntimeHook: null
     },
     labels: {
       labelCount: sumBenchmarkBy(splits, (split) => split.labelCount),
       sourceCounts: sumSourceCounts(splits),
-      splits: labelSplitSummaries(splits),
+      splits: labelSplitSummaries(splits)
     },
     leakage,
     training: {
       wallClockSeconds: trainingWallClockSeconds,
-      epochs: trained.epochs,
+      epochs: trained.epochs
     },
     model,
     evaluation: {
       model: modelEvaluation,
       baselines,
-      summary: buildSummary(modelEvaluation, baselines, leakage),
+      summary: buildSummary(modelEvaluation, baselines, leakage)
     },
     datasetFingerprint,
-    modelFingerprint,
+    modelFingerprint
   };
 }
 
@@ -710,7 +717,7 @@ export function createGreedyOfflineRankerSnapshot(
   const { wallClockSeconds: _wallClockSeconds, ...stableTraining } = training;
   return {
     ...snapshot,
-    training: stableTraining,
+    training: stableTraining
   };
 }
 
@@ -729,7 +736,7 @@ export function buildGreedyOfflineRankerTelemetryManifest(
     datasetFingerprint: result.datasetFingerprint,
     modelFingerprint: result.modelFingerprint,
     metrics: summaryMetrics(result),
-    notes: options.notes ?? "CPU-first Greedy offline ranker diagnostics only; no solver default changed.",
+    notes: options.notes ?? "CPU-first Greedy offline ranker diagnostics only; no solver default changed."
   });
 }
 
@@ -744,17 +751,14 @@ export function buildGreedyOfflineRankerRegistryEntryDraft(
     artifactPaths: options.artifactPaths,
     cases: {
       development: [...result.leakage.developmentGreedyCases],
-      holdout: [...result.leakage.holdoutGreedyCases],
+      holdout: [...result.leakage.holdoutGreedyCases]
     },
-    caseFamilies: [
-      "greedy-connectivity-shadow",
-      "greedy-road-opportunity",
-    ],
+    caseFamilies: ["greedy-connectivity-shadow", "greedy-road-opportunity"],
     seeds: result.seeds,
     splitStatus: {
       protectedHoldout: result.leakage.protectedHoldout,
       leakage: result.leakage,
-      usesCaseNameFeature: result.audit.usesCaseNameFeature,
+      usesCaseNameFeature: result.audit.usesCaseNameFeature
     },
     budget: {
       cpuOnly: 1,
@@ -763,22 +767,22 @@ export function buildGreedyOfflineRankerRegistryEntryDraft(
       trainingMarginWeightCap: result.model.training.marginWeightCap,
       trainingWallClockSeconds: roundMetric(result.training.wallClockSeconds),
       developmentLabelCount: result.evaluation.model.development.labelCount,
-      holdoutLabelCount: result.evaluation.model.holdout.labelCount,
+      holdoutLabelCount: result.evaluation.model.holdout.labelCount
     },
     model: modelRecord(result.model),
-    decision: options.decision ?? (
-      result.evaluation.summary.passed
+    decision:
+      options.decision ??
+      (result.evaluation.summary.passed
         ? "offline-greedy-ranker-beats-baselines"
-        : "offline-greedy-ranker-insufficient"
-    ),
-    summary: options.summary ?? (
-      result.evaluation.summary.passed
+        : "offline-greedy-ranker-insufficient"),
+    summary:
+      options.summary ??
+      (result.evaluation.summary.passed
         ? `CPU-first Greedy offline ranker beat deterministic, random, and single-feature baselines by ${result.evaluation.summary.holdoutAccuracyDeltaVsBestBaseline.toFixed(4)} holdout accuracy.`
-        : `CPU-first Greedy offline ranker did not clear the offline gate: ${result.evaluation.summary.failedReasons.join("; ")}.`
-    ),
+        : `CPU-first Greedy offline ranker did not clear the offline gate: ${result.evaluation.summary.failedReasons.join("; ")}.`),
     datasetFingerprint: result.datasetFingerprint,
     modelFingerprint: result.modelFingerprint,
-    summaryMetrics: summaryMetrics(result),
+    summaryMetrics: summaryMetrics(result)
   });
 }
 

@@ -1,39 +1,24 @@
 import { existsSync } from "node:fs";
 
-import type {
-  Grid,
-  GreedyProfileCounters,
-  GreedyProfilePhaseName,
-  Solution,
-  SolverParams,
-} from "../../core/index.js";
+import type { Grid, GreedyProfileCounters, GreedyProfilePhaseName, Solution, SolverParams } from "../../core/index.js";
 import { writeSolutionSnapshot } from "../../core/index.js";
 import {
   createGreedyProfilePhaseRecorder,
   createGreedyProfilePhaseSummaries,
-  runGreedyProfilePhase,
+  runGreedyProfilePhase
 } from "./profile.js";
 import type { GreedyProfilePhaseRecorder } from "./profile.js";
 import {
   CONNECTIVITY_SHADOW_DECISION_TRACE_LIMIT,
   buildConnectivityShadowBaselineGuardParams,
   chooseConnectivityShadowGuardedSolution,
-  createConnectivityShadowDecisionRecorder,
+  createConnectivityShadowDecisionRecorder
 } from "./connectivityShadowScoring.js";
-import {
-  ROAD_OPPORTUNITY_TRACE_LIMIT,
-  createRoadOpportunityRecorder,
-} from "./roadOpportunity.js";
+import { ROAD_OPPORTUNITY_TRACE_LIMIT, createRoadOpportunityRecorder } from "./roadOpportunity.js";
 import { GreedyStopError } from "./runtime.js";
-import {
-  isBetterDensityAwareSearchSolution,
-  isBetterSearchSolution,
-} from "./solutionRanking.js";
+import { isBetterDensityAwareSearchSolution, isBetterSearchSolution } from "./solutionRanking.js";
 import { buildGreedyDiagnostics } from "./diagnostics.js";
-import type {
-  GreedyBestUpdater,
-  GreedyPreparedInputs,
-} from "./types.js";
+import type { GreedyBestUpdater, GreedyPreparedInputs } from "./types.js";
 
 export interface GreedyRunLifecycle {
   maybeStop: (force?: boolean) => void;
@@ -82,7 +67,7 @@ export function createGreedyRunLifecycle(options: {
     roadOpportunityTraces,
     getBest,
     setBest,
-    baselineSolver,
+    baselineSolver
   } = options;
   let stopCounter = 0;
   const startedAtMs = Date.now();
@@ -94,7 +79,7 @@ export function createGreedyRunLifecycle(options: {
       phase,
       recordProfilePhase,
       getBestPopulation,
-      run,
+      run
     });
   };
   const maybeStop = (force = false): void => {
@@ -139,8 +124,8 @@ export function createGreedyRunLifecycle(options: {
             solution,
             preparedInputs,
             maxServices,
-            maxResidentials,
-          }),
+            maxResidentials
+          })
         }
       : solution;
     if (!profileCounters) return withDiagnostics;
@@ -152,14 +137,13 @@ export function createGreedyRunLifecycle(options: {
         connectivityShadowDecisions: structuredClone(connectivityShadowDecisions ?? []),
         connectivityShadowDecisionTraceLimit: CONNECTIVITY_SHADOW_DECISION_TRACE_LIMIT,
         roadOpportunityTraces: structuredClone(roadOpportunityTraces ?? []),
-        roadOpportunityTraceLimit: ROAD_OPPORTUNITY_TRACE_LIMIT,
-      },
+        roadOpportunityTraceLimit: ROAD_OPPORTUNITY_TRACE_LIMIT
+      }
     };
   };
   const applyConnectivityShadowBaselineGuard = (solution: Solution): Solution => {
     if (!connectivityShadowScoring) return solution;
-    const remainingSeconds =
-      deadlineAtMs === null ? undefined : Math.max(0, (deadlineAtMs - Date.now()) / 1000);
+    const remainingSeconds = deadlineAtMs === null ? undefined : Math.max(0, (deadlineAtMs - Date.now()) / 1000);
     if (remainingSeconds !== undefined && remainingSeconds <= 0) {
       return solution;
     }
@@ -184,16 +168,9 @@ export function createGreedyRunLifecycle(options: {
     requireBest,
     recordProfilePhase,
     runProfiledPhase,
-    finalizeWithBaselineGuard: (
-      solution,
-      preparedInputs,
-      maxServices,
-      maxResidentials
-    ) => applyConnectivityShadowBaselineGuard(finalizeGreedySolution(
-      solution,
-      preparedInputs,
-      maxServices,
-      maxResidentials
-    )),
+    finalizeWithBaselineGuard: (solution, preparedInputs, maxServices, maxResidentials) =>
+      applyConnectivityShadowBaselineGuard(
+        finalizeGreedySolution(solution, preparedInputs, maxServices, maxResidentials)
+      )
   };
 }

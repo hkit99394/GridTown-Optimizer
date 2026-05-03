@@ -29,7 +29,10 @@ export function isCliFlag(arg: string, ...names: string[]): boolean {
   return names.includes(arg);
 }
 
-export function applyInlineOptionHandlers(arg: string, handlers: Readonly<Record<string, (value: string) => void>>): boolean {
+export function applyInlineOptionHandlers(
+  arg: string,
+  handlers: Readonly<Record<string, (value: string) => void>>
+): boolean {
   if (!arg.startsWith("--")) return false;
   const separatorIndex = arg.indexOf("=");
   if (separatorIndex < 0) return false;
@@ -44,11 +47,13 @@ export function countEnabledCliModes(values: readonly boolean[]): number {
 }
 
 export function parseNumberList(value: string, label: string): number[] {
-  const parts = value
-    .split(",")
-    .map((entry) => entry.trim());
+  const parts = value.split(",").map((entry) => entry.trim());
   const numbers = parts.map((entry) => Number(entry));
-  if (parts.length === 0 || parts.some((entry) => entry.length === 0) || numbers.some((number) => !Number.isFinite(number))) {
+  if (
+    parts.length === 0 ||
+    parts.some((entry) => entry.length === 0) ||
+    numbers.some((number) => !Number.isFinite(number))
+  ) {
     throw new Error(`Expected ${label} to contain only finite numbers.`);
   }
   return numbers;

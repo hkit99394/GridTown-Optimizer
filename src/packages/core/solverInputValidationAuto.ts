@@ -3,7 +3,7 @@ import type { SolverParams } from "./types.js";
 import {
   requireOptionalFiniteNumberInRange,
   requireOptionalIntegerInRange,
-  requireValidationRecord,
+  requireValidationRecord
 } from "./solverInputValidationShared.js";
 
 const GREEDY_RANDOM_SEED_MAX = 0x7fffffff;
@@ -25,13 +25,7 @@ export function assertValidAutoOptions(params: SolverParams): void {
     0,
     AUTO_MAX_WALL_CLOCK_LIMIT_SECONDS
   );
-  requireOptionalIntegerInRange(
-    auto,
-    "randomSeed",
-    "Auto option auto.randomSeed",
-    0,
-    GREEDY_RANDOM_SEED_MAX
-  );
+  requireOptionalIntegerInRange(auto, "randomSeed", "Auto option auto.randomSeed", 0, GREEDY_RANDOM_SEED_MAX);
   requireOptionalFiniteNumberInRange(
     auto,
     "weakCycleImprovementThreshold",

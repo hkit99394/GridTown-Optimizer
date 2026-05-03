@@ -7,7 +7,7 @@ import {
   groupBenchmarkValuesBy,
   meanNullableBenchmarkValue,
   selectBenchmarkCasesByName,
-  sumBenchmarkBy,
+  sumBenchmarkBy
 } from "./benchmarkOptions.js";
 import { DEFAULT_GREEDY_BENCHMARK_CORPUS } from "./greedy.js";
 import { DEFAULT_LNS_BENCHMARK_CORPUS } from "./lns.js";
@@ -16,7 +16,7 @@ import {
   DEFAULT_CROSS_MODE_BENCHMARK_BUDGET_SECONDS,
   DEFAULT_CROSS_MODE_BENCHMARK_CORPUS,
   formatCrossModeBenchmarkSuite,
-  runCrossModeBenchmarkSuite,
+  runCrossModeBenchmarkSuite
 } from "./crossMode.js";
 
 import type {
@@ -29,7 +29,7 @@ import type {
   CrossModeBenchmarkRunOptions,
   CrossModeBenchmarkSuiteResult,
   CrossModeProblemSizeBand,
-  CrossModeBudgetPolicyRecommendation,
+  CrossModeBudgetPolicyRecommendation
 } from "./crossMode.js";
 import type { SolverDecisionTraceEvent } from "../core/index.js";
 
@@ -96,20 +96,20 @@ export const DEFAULT_CROSS_MODE_BUDGET_ABLATION_MODES = Object.freeze([
   "auto",
   "greedy",
   "lns",
-  "cp-sat",
+  "cp-sat"
 ] satisfies CrossModeBenchmarkMode[]);
 
 export const DEFAULT_CROSS_MODE_BUDGET_ABLATION_POLICIES = Object.freeze([
   {
     name: "baseline",
-    description: "Current Auto/LNS budget policy.",
+    description: "Current Auto/LNS budget policy."
   },
   {
     name: "seed-light",
     description: "Spend a smaller fixed share on LNS seeding and keep repair passes short.",
     lnsSeedBudgetRatio: 0.05,
     lnsRepairBudgetRatio: 0.1,
-    lnsEscalatedRepairBudgetRatio: 0.15,
+    lnsEscalatedRepairBudgetRatio: 0.15
   },
   {
     name: "repair-heavy",
@@ -117,7 +117,7 @@ export const DEFAULT_CROSS_MODE_BUDGET_ABLATION_POLICIES = Object.freeze([
     lnsSeedBudgetRatio: 0.05,
     lnsRepairBudgetRatio: 0.2,
     lnsEscalatedRepairBudgetRatio: 0.3,
-    autoCpSatStageReserveRatio: 0.1,
+    autoCpSatStageReserveRatio: 0.1
   },
   {
     name: "cp-sat-reserve-heavy",
@@ -125,26 +125,24 @@ export const DEFAULT_CROSS_MODE_BUDGET_ABLATION_POLICIES = Object.freeze([
     lnsSeedBudgetRatio: 0.05,
     lnsRepairBudgetRatio: 0.1,
     lnsEscalatedRepairBudgetRatio: 0.15,
-    autoCpSatStageReserveRatio: 0.35,
-  },
+    autoCpSatStageReserveRatio: 0.35
+  }
 ] satisfies CrossModeBenchmarkBudgetAblationPolicy[]);
 
 const GREEDY_COVERAGE_CASE_NAMES = Object.freeze([
   "typed-footprint-pressure",
   "deferred-road-packing-gain",
-  "service-local-neighborhood",
+  "service-local-neighborhood"
 ] satisfies string[]);
 
-const LNS_COVERAGE_CASE_NAMES = Object.freeze([
-  "row0-anchor-repair",
-] satisfies string[]);
+const LNS_COVERAGE_CASE_NAMES = Object.freeze(["row0-anchor-repair"] satisfies string[]);
 
 const MODE_LABELS: Record<CrossModeBenchmarkMode, string> = {
   auto: "Auto",
   greedy: "Greedy",
   lns: "LNS",
   "cp-sat": "CP-SAT",
-  "cp-sat-portfolio": "CP-SAT portfolio",
+  "cp-sat-portfolio": "CP-SAT portfolio"
 };
 
 function inferCoverageProblemSizeBand(benchmarkCase: CrossModeBenchmarkCase): CrossModeProblemSizeBand {
@@ -160,11 +158,11 @@ function selectCoverageCases(
 ): CrossModeBenchmarkCase[] {
   return selectBenchmarkCasesByName(corpus, names, {
     caseLabel: "cross-mode budget ablation coverage",
-    corpusLabel: "Cross-mode budget ablation coverage",
+    corpusLabel: "Cross-mode budget ablation coverage"
   }).map((benchmarkCase) => {
     return {
       ...benchmarkCase,
-      problemSizeBand: benchmarkCase.problemSizeBand ?? inferCoverageProblemSizeBand(benchmarkCase),
+      problemSizeBand: benchmarkCase.problemSizeBand ?? inferCoverageProblemSizeBand(benchmarkCase)
     };
   });
 }
@@ -172,7 +170,7 @@ function selectCoverageCases(
 export const DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS: readonly CrossModeBenchmarkCase[] = Object.freeze([
   ...DEFAULT_CROSS_MODE_BENCHMARK_CORPUS,
   ...selectCoverageCases(DEFAULT_GREEDY_BENCHMARK_CORPUS, GREEDY_COVERAGE_CASE_NAMES),
-  ...selectCoverageCases(DEFAULT_LNS_BENCHMARK_CORPUS, LNS_COVERAGE_CASE_NAMES),
+  ...selectCoverageCases(DEFAULT_LNS_BENCHMARK_CORPUS, LNS_COVERAGE_CASE_NAMES)
 ]);
 
 function normalizeBudgetAblationPolicies(
@@ -220,7 +218,7 @@ function countRecommendations(
     "shift-auto-budget-to-lns": 0,
     "shift-auto-budget-to-cp-sat": 0,
     "keep-portfolio-experimental": 0,
-    "investigate-auto-loss": 0,
+    "investigate-auto-loss": 0
   };
   for (const signal of signals) {
     counts[signal.recommendation] += 1;
@@ -242,10 +240,7 @@ function meanBestPopulationByBudget(suite: CrossModeBenchmarkSuiteResult): Map<n
   const scorecardBuckets = scorecardsByBudget(suite);
   for (const budgetSeconds of suite.budgetsSeconds) {
     const scorecards = scorecardBuckets.get(budgetSeconds) ?? [];
-    byBudget.set(
-      budgetSeconds,
-      meanNullableBenchmarkValue(scorecards.map((scorecard) => scorecard.bestScore)) ?? 0
-    );
+    byBudget.set(budgetSeconds, meanNullableBenchmarkValue(scorecards.map((scorecard) => scorecard.bestScore)) ?? 0);
   }
   return byBudget;
 }
@@ -260,9 +255,7 @@ function meanModePopulationByBudget(
     const scorecards = scorecardBuckets.get(budgetSeconds) ?? [];
     byBudget.set(
       budgetSeconds,
-      meanNullableBenchmarkValue(
-        modeResultsInScorecards(scorecards, mode).map((result) => result.totalPopulation)
-      )
+      meanNullableBenchmarkValue(modeResultsInScorecards(scorecards, mode).map((result) => result.totalPopulation))
     );
   }
   return byBudget;
@@ -282,8 +275,7 @@ function summarizeBudget(
 ): CrossModeBenchmarkBudgetAblationBudgetSummary {
   const autoResults = modeResultsInScorecards(scorecards, "auto");
   const lnsResults = modeResultsInScorecards(scorecards, "lns");
-  const meanBestPopulation =
-    meanNullableBenchmarkValue(scorecards.map((scorecard) => scorecard.bestScore)) ?? 0;
+  const meanBestPopulation = meanNullableBenchmarkValue(scorecards.map((scorecard) => scorecard.bestScore)) ?? 0;
   const meanAutoPopulation = meanNullableBenchmarkValue(autoResults.map((result) => result.totalPopulation));
   const meanLnsPopulation = meanNullableBenchmarkValue(lnsResults.map((result) => result.totalPopulation));
   return {
@@ -293,12 +285,11 @@ function summarizeBudget(
     meanAutoPopulation,
     meanLnsPopulation,
     meanAutoDeltaToBest: meanNullableBenchmarkValue(signals.map((signal) => signal.autoDeltaToBest)),
-    deltaVsBaselineMeanBestPopulation: baselineMeanBestPopulation === null
-      ? null
-      : meanBestPopulation - baselineMeanBestPopulation,
+    deltaVsBaselineMeanBestPopulation:
+      baselineMeanBestPopulation === null ? null : meanBestPopulation - baselineMeanBestPopulation,
     deltaVsBaselineMeanAutoPopulation: deltaFromBaseline(meanAutoPopulation, baselineMeanAutoPopulation),
     deltaVsBaselineMeanLnsPopulation: deltaFromBaseline(meanLnsPopulation, baselineMeanLnsPopulation),
-    recommendationCounts: countRecommendations(signals),
+    recommendationCounts: countRecommendations(signals)
   };
 }
 
@@ -351,8 +342,7 @@ function summarizeBudgetAblationPolicy(
 ): CrossModeBenchmarkBudgetAblationPolicyResult {
   const autoResults = modeResults(suite, "auto");
   const lnsResults = modeResults(suite, "lns");
-  const meanBestPopulation =
-    meanNullableBenchmarkValue(suite.cases.map((scorecard) => scorecard.bestScore)) ?? 0;
+  const meanBestPopulation = meanNullableBenchmarkValue(suite.cases.map((scorecard) => scorecard.bestScore)) ?? 0;
   const meanAutoPopulation = meanNullableBenchmarkValue(autoResults.map((result) => result.totalPopulation));
   const meanLnsPopulation = meanNullableBenchmarkValue(lnsResults.map((result) => result.totalPopulation));
   return {
@@ -362,18 +352,15 @@ function summarizeBudgetAblationPolicy(
     meanBestPopulation,
     meanAutoPopulation,
     meanLnsPopulation,
-    meanAutoDeltaToBest: meanNullableBenchmarkValue(
-      suite.budgetPolicySignals.map((signal) => signal.autoDeltaToBest)
-    ),
+    meanAutoDeltaToBest: meanNullableBenchmarkValue(suite.budgetPolicySignals.map((signal) => signal.autoDeltaToBest)),
     meanAutoLnsStageElapsedSeconds: meanNullableBenchmarkValue(
       suite.budgetPolicySignals.map((signal) => signal.autoLnsStageElapsedSeconds)
     ),
     meanAutoCpSatStageElapsedSeconds: meanNullableBenchmarkValue(
       suite.budgetPolicySignals.map((signal) => signal.autoCpSatStageElapsedSeconds)
     ),
-    deltaVsBaselineMeanBestPopulation: baselineMeanBestPopulation === null
-      ? null
-      : meanBestPopulation - baselineMeanBestPopulation,
+    deltaVsBaselineMeanBestPopulation:
+      baselineMeanBestPopulation === null ? null : meanBestPopulation - baselineMeanBestPopulation,
     deltaVsBaselineMeanAutoPopulation: deltaFromBaseline(meanAutoPopulation, baselineMeanAutoPopulation),
     deltaVsBaselineMeanLnsPopulation: deltaFromBaseline(meanLnsPopulation, baselineMeanLnsPopulation),
     budgetSummaries: summarizeBudgets(
@@ -382,7 +369,7 @@ function summarizeBudgetAblationPolicy(
       baselineMeanAutoPopulationByBudget,
       baselineMeanLnsPopulationByBudget
     ),
-    recommendationCounts: countRecommendations(suite.budgetPolicySignals),
+    recommendationCounts: countRecommendations(suite.budgetPolicySignals)
   };
 }
 
@@ -429,15 +416,12 @@ function topPolicyTiedNames(
 }
 
 function countBudgetedModeSecondsInSuite(suite: CrossModeBenchmarkSuiteResult): number {
-  return sumBenchmarkBy(
-    suite.cases,
-    (scorecard) => sumBenchmarkBy(scorecard.results, (modeResult) => modeResult.budgetSeconds)
+  return sumBenchmarkBy(suite.cases, (scorecard) =>
+    sumBenchmarkBy(scorecard.results, (modeResult) => modeResult.budgetSeconds)
   );
 }
 
-function countBudgetedModeSecondsInPolicies(
-  policies: readonly CrossModeBenchmarkBudgetAblationPolicyResult[]
-): number {
+function countBudgetedModeSecondsInPolicies(policies: readonly CrossModeBenchmarkBudgetAblationPolicyResult[]): number {
   return sumBenchmarkBy(policies, (policy) => countBudgetedModeSecondsInSuite(policy.suite));
 }
 
@@ -470,20 +454,21 @@ export async function runCrossModeBenchmarkBudgetAblations(
   } = options;
   const modes = suiteOptions.modes ?? [...DEFAULT_CROSS_MODE_BUDGET_ABLATION_MODES];
   const resolvedBaselinePolicyName = resolveBaselinePolicyName(policies, baselinePolicyName);
-  const policySuites: Array<{ policy: CrossModeBenchmarkBudgetAblationPolicy; suite: CrossModeBenchmarkSuiteResult }> = [];
+  const policySuites: Array<{ policy: CrossModeBenchmarkBudgetAblationPolicy; suite: CrossModeBenchmarkSuiteResult }> =
+    [];
 
   for (const policy of policies) {
     const suite = await runCrossModeBenchmarkSuite(corpus, {
       ...suiteOptions,
       modes,
-      budgetAblationPolicy: policy,
+      budgetAblationPolicy: policy
     });
     policySuites.push({ policy, suite });
   }
 
   const baseline = policySuites.find((entry) => entry.policy.name === resolvedBaselinePolicyName) ?? null;
   const baselineMeanBestPopulation = baseline
-    ? meanNullableBenchmarkValue(baseline.suite.cases.map((scorecard) => scorecard.bestScore)) ?? 0
+    ? (meanNullableBenchmarkValue(baseline.suite.cases.map((scorecard) => scorecard.bestScore)) ?? 0)
     : null;
   const baselineMeanAutoPopulation = baseline
     ? meanNullableBenchmarkValue(modeResults(baseline.suite, "auto").map((result) => result.totalPopulation))
@@ -515,9 +500,10 @@ export async function runCrossModeBenchmarkBudgetAblations(
 
   const firstSuite = policyResults[0]?.suite;
   const topPolicyRankingBasis = budgetAblationRankingBasis(policyResults);
-  const topPolicy = [...policyResults].sort((left, right) =>
-    compareBudgetAblationPolicyResults(left, right, topPolicyRankingBasis, baseline?.policy.name ?? null)
-  )[0] ?? null;
+  const topPolicy =
+    [...policyResults].sort((left, right) =>
+      compareBudgetAblationPolicyResults(left, right, topPolicyRankingBasis, baseline?.policy.name ?? null)
+    )[0] ?? null;
   const topPolicyName = topPolicy?.policyName ?? null;
   return {
     generatedAt: benchmarkGeneratedAt(),
@@ -533,7 +519,7 @@ export async function runCrossModeBenchmarkBudgetAblations(
     topPolicyTiedPolicyNames: topPolicyTiedNames(policyResults, topPolicyRankingBasis, topPolicy),
     budgetedModeSeconds: countBudgetedModeSecondsInPolicies(policyResults),
     bestPolicyName: topPolicyName,
-    policies: policyResults,
+    policies: policyResults
   };
 }
 
@@ -561,9 +547,8 @@ function countScorecards(result: CrossModeBenchmarkBudgetAblationSuiteResult): n
 }
 
 function countModeRuns(result: CrossModeBenchmarkBudgetAblationSuiteResult): number {
-  return sumBenchmarkBy(
-    result.policies,
-    (policy) => sumBenchmarkBy(policy.suite.cases, (scorecard) => scorecard.results.length)
+  return sumBenchmarkBy(result.policies, (policy) =>
+    sumBenchmarkBy(policy.suite.cases, (scorecard) => scorecard.results.length)
   );
 }
 
@@ -573,9 +558,7 @@ function formatRankingBasis(basis: CrossModeBenchmarkBudgetAblationRankingBasis)
   return "best mean population";
 }
 
-export function formatCrossModeBenchmarkBudgetAblations(
-  result: CrossModeBenchmarkBudgetAblationSuiteResult
-): string {
+export function formatCrossModeBenchmarkBudgetAblations(result: CrossModeBenchmarkBudgetAblationSuiteResult): string {
   const lines: string[] = [];
   lines.push("=== Cross-Mode Budget Ablations ===");
   lines.push(`Generated: ${result.generatedAt}`);
@@ -583,7 +566,9 @@ export function formatCrossModeBenchmarkBudgetAblations(
   lines.push(`Modes: ${result.modes.map((mode) => MODE_LABELS[mode]).join(", ")}`);
   lines.push(`Equal wall-clock budgets: ${result.budgetsSeconds.join(", ")}s per mode`);
   lines.push(`Seeds: ${result.seeds.join(", ")}`);
-  lines.push(`Coverage: policies=${result.policies.length} scorecards=${countScorecards(result)} mode-runs=${countModeRuns(result)} budgeted-mode-seconds=${result.budgetedModeSeconds}`);
+  lines.push(
+    `Coverage: policies=${result.policies.length} scorecards=${countScorecards(result)} mode-runs=${countModeRuns(result)} budgeted-mode-seconds=${result.budgetedModeSeconds}`
+  );
   lines.push(`Baseline policy: ${result.baselinePolicyName ?? "n/a"}`);
   lines.push(
     `Top policy by ${formatRankingBasis(result.topPolicyRankingBasis)}: ${result.topPolicyName ?? "n/a"} tied=${result.topPolicyTiedPolicyNames.join(",") || "none"} (ties prefer baseline; inspect budget signals before promotion)`

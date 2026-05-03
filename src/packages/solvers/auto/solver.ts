@@ -14,7 +14,7 @@ import {
   MAX_STAGE_RANDOM_SEED,
   buildAutoGreedyStageOptions,
   buildAutoLnsStageBudget,
-  normalizeAutoOptions,
+  normalizeAutoOptions
 } from "./stagePolicy.js";
 
 import type {
@@ -29,7 +29,7 @@ import type {
   CpSatWarmStartHint,
   Grid,
   Solution,
-  SolverParams,
+  SolverParams
 } from "../../core/index.js";
 import type { NormalizedAutoOptions } from "./stagePolicy.js";
 
@@ -37,7 +37,7 @@ export {
   describeAutoCompletedSolution,
   describeAutoRecoveredSolution,
   describeAutoStopReason,
-  normalizeAutoTerminalSolution,
+  normalizeAutoTerminalSolution
 } from "./terminal.js";
 export type { AutoTerminalSolutionContext } from "./terminal.js";
 
@@ -149,13 +149,11 @@ function optionalBoolean(value: unknown): boolean | null {
   return typeof value === "boolean" ? value : null;
 }
 
-function cloneGreedySeedStageSummary(
-  summary: AutoGreedySeedStageSummary | null
-): AutoGreedySeedStageSummary | null {
+function cloneGreedySeedStageSummary(summary: AutoGreedySeedStageSummary | null): AutoGreedySeedStageSummary | null {
   if (!summary) return null;
   return {
     ...summary,
-    ...(summary.phases ? { phases: summary.phases.map((phase) => ({ ...phase })) } : {}),
+    ...(summary.phases ? { phases: summary.phases.map((phase) => ({ ...phase })) } : {})
   };
 }
 
@@ -179,9 +177,7 @@ function buildGreedySeedStageSummary(
     serviceMasterMaxLayouts: optionalNumber(greedy.serviceMasterMaxLayouts),
     totalPopulation: solution?.totalPopulation ?? null,
     elapsedSeconds,
-    ...(solution?.greedyProfile?.phases
-      ? { phases: solution.greedyProfile.phases.map((phase) => ({ ...phase })) }
-      : {}),
+    ...(solution?.greedyProfile?.phases ? { phases: solution.greedyProfile.phases.map((phase) => ({ ...phase })) } : {})
   };
 }
 
@@ -199,7 +195,7 @@ function createAutoRuntimeState(): AutoRuntimeState {
     stopReason: null,
     generatedSeeds: [],
     stageRuns: [],
-    greedySeedStage: null,
+    greedySeedStage: null
   };
 }
 
@@ -209,11 +205,7 @@ function recordGreedySeedStageSummary(
   solution: Solution | null,
   startedAtMs: number
 ): void {
-  state.greedySeedStage = buildGreedySeedStageSummary(
-    stageParams,
-    solution,
-    elapsedSecondsSince(startedAtMs)
-  );
+  state.greedySeedStage = buildGreedySeedStageSummary(stageParams, solution, elapsedSecondsSince(startedAtMs));
 }
 
 function acceptedStagePopulation(candidatePopulation: number | null, baselinePopulation: number | null): number | null {
@@ -231,9 +223,9 @@ function buildCpSatStageRunEvidence(solution: Solution | null): Partial<AutoStag
       ? {
           cpSatSolveWallTimeSeconds: telemetry.solveWallTimeSeconds,
           cpSatLastImprovementAtSeconds: telemetry.lastImprovementAtSeconds,
-          cpSatPopulationGapUpperBound: telemetry.populationGapUpperBound,
+          cpSatPopulationGapUpperBound: telemetry.populationGapUpperBound
         }
-      : {}),
+      : {})
   };
 }
 
@@ -249,7 +241,7 @@ function buildLnsStageRunEvidence(solution: Solution | null): Partial<AutoStageR
     lnsIterationsStarted: telemetry.iterationsStarted,
     lnsIterationsCompleted: telemetry.iterationsCompleted,
     lnsImprovingIterations: telemetry.improvingIterations,
-    lnsNeutralIterations: telemetry.neutralIterations,
+    lnsNeutralIterations: telemetry.neutralIterations
   };
 }
 
@@ -279,11 +271,12 @@ function recordAutoStageRunSummary(
     populationBefore: baselinePopulation,
     candidatePopulation,
     acceptedPopulation,
-    improvement: acceptedPopulation === null || baselinePopulation === null
-      ? null
-      : Math.max(0, acceptedPopulation - baselinePopulation),
+    improvement:
+      acceptedPopulation === null || baselinePopulation === null
+        ? null
+        : Math.max(0, acceptedPopulation - baselinePopulation),
     ...buildCpSatStageRunEvidence(solution),
-    ...buildLnsStageRunEvidence(solution),
+    ...buildLnsStageRunEvidence(solution)
   });
 }
 
@@ -291,7 +284,7 @@ function stripAutoMetadata(solution: Solution): Solution {
   return {
     ...solution,
     activeOptimizer: undefined,
-    autoStage: undefined,
+    autoStage: undefined
   };
 }
 
@@ -314,9 +307,7 @@ function isSolutionWarmStartHint(value: CpSatWarmStartHint | Solution | undefine
   return value !== undefined && value.roads instanceof Set;
 }
 
-function cloneWarmStartHint(
-  value: CpSatWarmStartHint | Solution | undefined
-): CpSatWarmStartHint | undefined {
+function cloneWarmStartHint(value: CpSatWarmStartHint | Solution | undefined): CpSatWarmStartHint | undefined {
   if (!value) return undefined;
   if (isSolutionWarmStartHint(value)) {
     return solutionToLnsSeedHint(value);
@@ -334,14 +325,16 @@ function cloneWarmStartHint(
           solution: {
             ...value.solution,
             ...(value.solution.roads ? { roads: [...value.solution.roads] } : {}),
-            ...(value.solution.services ? { services: value.solution.services.map((service) => ({ ...service })) } : {}),
+            ...(value.solution.services
+              ? { services: value.solution.services.map((service) => ({ ...service })) }
+              : {}),
             ...(value.solution.residentials
               ? { residentials: value.solution.residentials.map((residential) => ({ ...residential })) }
               : {}),
-            ...(value.solution.populations ? { populations: [...value.solution.populations] } : {}),
-          },
+            ...(value.solution.populations ? { populations: [...value.solution.populations] } : {})
+          }
         }
-      : {}),
+      : {})
   };
 }
 
@@ -388,10 +381,12 @@ function buildAutoCpSatWarmStartHint(
     ...(cloneWarmStartHint(existingWarmStartHint) ?? {}),
     ...incumbentHint,
     ...(incumbentHint.solution?.roads ? { roads: [...incumbentHint.solution.roads] } : {}),
-    ...(incumbentHint.solution?.services ? { services: incumbentHint.solution.services.map((service) => ({ ...service })) } : {}),
+    ...(incumbentHint.solution?.services
+      ? { services: incumbentHint.solution.services.map((service) => ({ ...service })) }
+      : {}),
     ...(incumbentHint.solution?.residentials
       ? { residentials: incumbentHint.solution.residentials.map((residential) => ({ ...residential })) }
-      : {}),
+      : {})
   };
   const mergedObjectiveLowerBound = maxNumericValue(
     cloneWarmStartHint(existingWarmStartHint)?.objectiveLowerBound,
@@ -400,7 +395,7 @@ function buildAutoCpSatWarmStartHint(
   );
   return {
     ...mergedWarmStartHint,
-    ...(mergedObjectiveLowerBound !== undefined ? { objectiveLowerBound: mergedObjectiveLowerBound } : {}),
+    ...(mergedObjectiveLowerBound !== undefined ? { objectiveLowerBound: mergedObjectiveLowerBound } : {})
   };
 }
 
@@ -408,13 +403,13 @@ function createSyncAutoStopController(deadlineAtMs: number | null, params: Solve
   const upstreamStopFilePaths = [
     params.greedy?.stopFilePath,
     params.lns?.stopFilePath,
-    params.cpSat?.stopFilePath,
+    params.cpSat?.stopFilePath
   ].filter((value): value is string => typeof value === "string" && value.trim().length > 0);
   if (deadlineAtMs === null && upstreamStopFilePaths.length === 0) {
     return {
       stopFilePath: "",
       currentStopReason: () => null,
-      cleanup: () => {},
+      cleanup: () => {}
     };
   }
   const tempDirectory = mkdtempSync(join(tmpdir(), "city-builder-auto-stop-"));
@@ -441,7 +436,7 @@ function createSyncAutoStopController(deadlineAtMs: number | null, params: Solve
         timerProcess.kill();
       } catch {}
       rmSync(tempDirectory, { recursive: true, force: true });
-    },
+    }
   };
 }
 
@@ -463,7 +458,7 @@ function buildAutoStageMetadata(state: AutoRuntimeState): AutoSolveStageMetadata
     lastCycleImprovementRatio: state.lastCycleImprovementRatio,
     stopReason: state.stopReason ?? null,
     generatedSeeds: state.generatedSeeds.map((seed) => ({ ...seed })),
-    stageRuns: state.stageRuns.map((run) => ({ ...run })),
+    stageRuns: state.stageRuns.map((run) => ({ ...run }))
   };
   const greedySeedStage = cloneGreedySeedStageSummary(state.greedySeedStage);
   if (greedySeedStage) {
@@ -482,14 +477,14 @@ function decorateAutoSolution(
   return {
     ...base,
     optimizer: "auto",
-    ...(activeStageOverride ?? solutionStageName(base)
-      ? { activeOptimizer: (activeStageOverride ?? solutionStageName(base)) ?? undefined }
+    ...((activeStageOverride ?? solutionStageName(base))
+      ? { activeOptimizer: activeStageOverride ?? solutionStageName(base) ?? undefined }
       : {}),
     autoStage: buildAutoStageMetadata({
       ...state,
-      activeStage: activeStageOverride ?? state.activeStage,
+      activeStage: activeStageOverride ?? state.activeStage
     }),
-    stoppedByUser: stoppedByUserOverride ?? base.stoppedByUser,
+    stoppedByUser: stoppedByUserOverride ?? base.stoppedByUser
   };
 }
 
@@ -510,7 +505,7 @@ function solutionToLnsSeedHint(solution: Solution): CpSatWarmStartHint {
           cols: normalized.cols,
           range: normalized.range,
           typeIndex: base.serviceTypeIndices[index] ?? NO_TYPE_INDEX,
-          bonus: base.servicePopulationIncreases[index] ?? 0,
+          bonus: base.servicePopulationIncreases[index] ?? 0
         };
       }),
       residentials: base.residentials.map((residential, index) => ({
@@ -519,13 +514,13 @@ function solutionToLnsSeedHint(solution: Solution): CpSatWarmStartHint {
         rows: residential.rows,
         cols: residential.cols,
         typeIndex: base.residentialTypeIndices[index] ?? NO_TYPE_INDEX,
-        population: base.populations[index] ?? 0,
+        population: base.populations[index] ?? 0
       })),
       populations: [...base.populations],
-      totalPopulation: base.totalPopulation,
+      totalPopulation: base.totalPopulation
     },
     totalPopulation: base.totalPopulation,
-    objectiveLowerBound: base.totalPopulation,
+    objectiveLowerBound: base.totalPopulation
   };
 }
 
@@ -542,19 +537,22 @@ function stageSeedParams(
   const stageBaseParams: SolverParams = params.cpSat
     ? {
         ...params,
-        cpSat: stageCpSatOptions,
+        cpSat: stageCpSatOptions
       }
     : params;
 
   if (stage === "greedy") {
     const greedy = buildAutoGreedyStageOptions(params);
     const configuredGreedyTimeLimit =
-      typeof greedy.timeLimitSeconds === "number" && Number.isFinite(greedy.timeLimitSeconds) && greedy.timeLimitSeconds > 0
+      typeof greedy.timeLimitSeconds === "number" &&
+      Number.isFinite(greedy.timeLimitSeconds) &&
+      greedy.timeLimitSeconds > 0
         ? greedy.timeLimitSeconds
         : undefined;
-    const greedyTimeLimitSeconds = remainingSeconds === null
-      ? configuredGreedyTimeLimit
-      : Math.max(0.001, Math.min(configuredGreedyTimeLimit ?? remainingSeconds, remainingSeconds));
+    const greedyTimeLimitSeconds =
+      remainingSeconds === null
+        ? configuredGreedyTimeLimit
+        : Math.max(0.001, Math.min(configuredGreedyTimeLimit ?? remainingSeconds, remainingSeconds));
     return {
       ...stageBaseParams,
       optimizer: "greedy",
@@ -562,8 +560,8 @@ function stageSeedParams(
         ...greedy,
         ...(sharedStopFilePath ? { stopFilePath: sharedStopFilePath } : {}),
         ...(greedyTimeLimitSeconds !== undefined ? { timeLimitSeconds: greedyTimeLimitSeconds } : {}),
-        randomSeed: generatedSeed,
-      },
+        randomSeed: generatedSeed
+      }
     };
   }
 
@@ -574,7 +572,7 @@ function stageSeedParams(
       optimizer: "lns",
       cpSat: {
         ...stageCpSatOptions,
-        randomSeed: generatedSeed,
+        randomSeed: generatedSeed
       },
       lns: {
         ...(params.lns ?? {}),
@@ -583,29 +581,32 @@ function stageSeedParams(
         ...(lnsBudget.wallClockLimitSeconds !== null
           ? {
               wallClockLimitSeconds: lnsBudget.wallClockLimitSeconds,
-              repairTimeLimitSeconds: lnsBudget.repairTimeLimitSeconds,
+              repairTimeLimitSeconds: lnsBudget.repairTimeLimitSeconds
             }
           : {
-              repairTimeLimitSeconds: lnsBudget.repairTimeLimitSeconds,
+              repairTimeLimitSeconds: lnsBudget.repairTimeLimitSeconds
             }),
-        ...(lnsBudget.seedTimeLimitSeconds !== undefined ? { seedTimeLimitSeconds: lnsBudget.seedTimeLimitSeconds } : {}),
+        ...(lnsBudget.seedTimeLimitSeconds !== undefined
+          ? { seedTimeLimitSeconds: lnsBudget.seedTimeLimitSeconds }
+          : {}),
         ...(lnsBudget.iterations !== undefined ? { iterations: lnsBudget.iterations } : {}),
         ...(lnsBudget.maxNoImprovementIterations !== undefined
           ? { maxNoImprovementIterations: lnsBudget.maxNoImprovementIterations }
           : {}),
         focusedRepairTimeLimitSeconds: lnsBudget.focusedRepairTimeLimitSeconds,
-        escalatedRepairTimeLimitSeconds: lnsBudget.escalatedRepairTimeLimitSeconds,
-      },
+        escalatedRepairTimeLimitSeconds: lnsBudget.escalatedRepairTimeLimitSeconds
+      }
     };
   }
 
   const configuredTimeLimit = stageCpSatOptions.timeLimitSeconds ?? options.cpSatStageTimeLimitSeconds;
   const configuredNoImprovementTimeout =
     stageCpSatOptions.noImprovementTimeoutSeconds ?? options.cpSatStageNoImprovementTimeoutSeconds;
-  const warmStartHint = incumbent ? buildAutoCpSatWarmStartHint(incumbent, stageCpSatOptions.warmStartHint) : stageCpSatOptions.warmStartHint;
-  const cappedTimeLimit = remainingSeconds === null
-    ? configuredTimeLimit
-    : Math.max(0.001, Math.min(configuredTimeLimit, remainingSeconds));
+  const warmStartHint = incumbent
+    ? buildAutoCpSatWarmStartHint(incumbent, stageCpSatOptions.warmStartHint)
+    : stageCpSatOptions.warmStartHint;
+  const cappedTimeLimit =
+    remainingSeconds === null ? configuredTimeLimit : Math.max(0.001, Math.min(configuredTimeLimit, remainingSeconds));
   const objectiveLowerBound = maxNumericValue(
     stageCpSatOptions.objectiveLowerBound,
     cloneWarmStartHint(warmStartHint)?.objectiveLowerBound,
@@ -622,8 +623,8 @@ function stageSeedParams(
       timeLimitSeconds: cappedTimeLimit,
       noImprovementTimeoutSeconds: Math.max(0.001, Math.min(configuredNoImprovementTimeout, cappedTimeLimit)),
       ...(warmStartHint ? { warmStartHint } : {}),
-      ...(objectiveLowerBound !== undefined ? { objectiveLowerBound } : {}),
-    },
+      ...(objectiveLowerBound !== undefined ? { objectiveLowerBound } : {})
+    }
   };
 }
 
@@ -643,7 +644,7 @@ function buildSnapshotState(snapshot: Solution | null): BackgroundSolveSnapshotS
     totalPopulation: snapshot?.totalPopulation ?? null,
     activeOptimizer: snapshot?.activeOptimizer ?? null,
     autoStage: snapshot?.autoStage ?? null,
-    cpSatStatus: snapshot?.cpSatStatus ?? null,
+    cpSatStatus: snapshot?.cpSatStatus ?? null
   };
 }
 
@@ -675,7 +676,7 @@ async function runBackgroundStage(
     stage,
     stageIndex: state.stageIndex,
     cycleIndex,
-    randomSeed: generatedSeed,
+    randomSeed: generatedSeed
   });
 
   const stageParams = stageSeedParams(params, stage, incumbentRef.current, generatedSeed, options, secondsRemaining);
@@ -752,11 +753,7 @@ function finalizeAutoSolution(incumbent: Solution, state: AutoRuntimeState): Sol
   return decorateAutoSolution(incumbent, state, finalActiveStage, stoppedByUser);
 }
 
-function chooseInitialIncumbent(
-  G: Grid,
-  params: SolverParams,
-  greedySolution: Solution | null
-): Solution | null {
+function chooseInitialIncumbent(G: Grid, params: SolverParams, greedySolution: Solution | null): Solution | null {
   const requestedSeed = materializeValidLnsSeedSolution(G, params, params.lns?.seedHint);
   return pickBetterSolution(greedySolution, requestedSeed ? stripAutoMetadata(requestedSeed) : null);
 }
@@ -809,9 +806,7 @@ function acceptAutoStageResult(
 
 function shouldStopAfterAutoCpSatStage(cpSatSolution: Solution | null, incumbent: Solution | null): boolean {
   return Boolean(
-    cpSatSolution?.cpSatStatus === "OPTIMAL"
-    && incumbent
-    && incumbent.totalPopulation === cpSatSolution.totalPopulation
+    cpSatSolution?.cpSatStatus === "OPTIMAL" && incumbent && incumbent.totalPopulation === cpSatSolution.totalPopulation
   );
 }
 
@@ -851,7 +846,7 @@ function createAutoPlanStepper(
       return {
         stage: nextStage,
         cycleIndex,
-        incumbent,
+        incumbent
       };
     },
     accept: (request, stageSolution) => {
@@ -895,7 +890,7 @@ function createAutoPlanStepper(
       cycleStart = incumbent;
       nextStage = "lns";
     },
-    finalize: () => finalizeCompletedAutoPlan(incumbent, state),
+    finalize: () => finalizeCompletedAutoPlan(incumbent, state)
   };
 }
 
@@ -951,12 +946,17 @@ export function solveAuto(G: Grid, params: SolverParams): Solution {
   const options = normalizeAutoOptions(params);
   const state = createAutoRuntimeState();
   const startedAtMs = Date.now();
-  const deadlineAtMs = options.wallClockLimitSeconds === null ? null : startedAtMs + options.wallClockLimitSeconds * 1000;
+  const deadlineAtMs =
+    options.wallClockLimitSeconds === null ? null : startedAtMs + options.wallClockLimitSeconds * 1000;
   const stopController = createSyncAutoStopController(deadlineAtMs, params);
   const nextStageSeed = createAutoStageSeedGenerator(options.randomSeed);
 
   try {
-    const runStage = (stage: AutoStageOptimizerName, cycleIndex: number, incumbent: Solution | null): Solution | null => {
+    const runStage = (
+      stage: AutoStageOptimizerName,
+      cycleIndex: number,
+      incumbent: Solution | null
+    ): Solution | null => {
       const secondsRemaining = remainingSeconds(deadlineAtMs);
       if (secondsRemaining !== null && secondsRemaining <= 0) {
         state.stopReason = "wall-clock-cap";
@@ -977,7 +977,7 @@ export function solveAuto(G: Grid, params: SolverParams): Solution {
         stage,
         stageIndex: state.stageIndex,
         cycleIndex,
-        randomSeed: generatedSeed,
+        randomSeed: generatedSeed
       });
       const stageParams = stageSeedParams(
         params,
@@ -1019,13 +1019,7 @@ export function solveAuto(G: Grid, params: SolverParams): Solution {
           stageStartedAtMs
         );
         const explicitStopReason = stopController.currentStopReason() ?? deadlineStopReason(deadlineAtMs);
-        return applyRecoverableStageError(
-          stage,
-          incumbent,
-          state,
-          error,
-          explicitStopReason
-        );
+        return applyRecoverableStageError(stage, incumbent, state, error, explicitStopReason);
       }
       const stopReasonAfterStage = stopController.currentStopReason();
       if (stopReasonAfterStage && !state.stopReason) {
@@ -1048,7 +1042,8 @@ export function startAutoSolveWithStages(
   const options = normalizeAutoOptions(params);
   const state = createAutoRuntimeState();
   const startedAtMs = Date.now();
-  const deadlineAtMs = options.wallClockLimitSeconds === null ? null : startedAtMs + options.wallClockLimitSeconds * 1000;
+  const deadlineAtMs =
+    options.wallClockLimitSeconds === null ? null : startedAtMs + options.wallClockLimitSeconds * 1000;
   const incumbentRef: { current: Solution | null } = { current: null };
   const currentHandleRef: { current: BackgroundSolveHandle | null } = { current: null };
   const nextStageSeed = createAutoStageSeedGenerator(options.randomSeed);
@@ -1059,11 +1054,15 @@ export function startAutoSolveWithStages(
     currentHandleRef.current?.cancel();
   };
 
-  const wallClockTimer = deadlineAtMs === null
-    ? null
-    : setTimeout(() => {
-        requestStop("wall-clock-cap");
-      }, Math.max(1, deadlineAtMs - Date.now()));
+  const wallClockTimer =
+    deadlineAtMs === null
+      ? null
+      : setTimeout(
+          () => {
+            requestStop("wall-clock-cap");
+          },
+          Math.max(1, deadlineAtMs - Date.now())
+        );
   wallClockTimer?.unref?.();
 
   const promise = (async () => {
@@ -1095,7 +1094,7 @@ export function startAutoSolveWithStages(
       return runAutoPlan(G, params, state, options, runStage, {
         onIncumbentChange: (incumbent) => {
           incumbentRef.current = incumbent;
-        },
+        }
       });
     } finally {
       if (wallClockTimer) {
@@ -1125,6 +1124,6 @@ export function startAutoSolveWithStages(
       requestStop("cancelled");
     },
     getLatestSnapshot,
-    getLatestSnapshotState: () => buildSnapshotState(getLatestSnapshot()),
+    getLatestSnapshotState: () => buildSnapshotState(getLatestSnapshot())
   };
 }

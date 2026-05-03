@@ -85,13 +85,13 @@ async function invoke(handler, { method = "GET", url = "/", json = undefined, bo
     statusCode: res.statusCode,
     headers: res.headers,
     body: res.body,
-    payload,
+    payload
   };
 }
 
 function createAcceptanceRequestHandler() {
   return createPlannerRequestHandler({
-    webRoot: path.resolve(__dirname, "../../apps/planner-web"),
+    webRoot: path.resolve(__dirname, "../../apps/planner-web")
   });
 }
 
@@ -102,8 +102,8 @@ function buildTinySolvePayload() {
       optimizer: "greedy",
       residentialTypes: [{ name: "Test Residence", w: 1, h: 1, min: 10, max: 10, avail: 1 }],
       availableBuildings: { residentials: 1, services: 0 },
-      greedy: { localSearch: false },
-    },
+      greedy: { localSearch: false }
+    }
   };
 }
 
@@ -120,9 +120,9 @@ function backgroundHandleForSolution(solution) {
         totalPopulation: solution.totalPopulation,
         activeOptimizer: solution.activeOptimizer,
         autoStage: solution.autoStage,
-        cpSatStatus: solution.cpSatStatus ?? null,
+        cpSatStatus: solution.cpSatStatus ?? null
       };
-    },
+    }
   };
 }
 
@@ -139,10 +139,8 @@ function withAutoMetadata(solution) {
       consecutiveWeakCycles: 0,
       lastCycleImprovementRatio: null,
       stopReason: "completed-plan",
-      generatedSeeds: [
-        { stage: "greedy", stageIndex: 1, cycleIndex: 0, randomSeed: 11 },
-      ],
-    },
+      generatedSeeds: [{ stage: "greedy", stageIndex: 1, cycleIndex: 0, randomSeed: 11 }]
+    }
   };
 }
 
@@ -153,7 +151,7 @@ scenario(
     const params = {
       serviceTypes: [{ rows: 2, cols: 2, bonus: 80, range: 2, avail: 1 }],
       residentialTypes: [{ w: 2, h: 2, min: 100, max: 150, avail: 1 }],
-      availableBuildings: { services: 1, residentials: 1 },
+      availableBuildings: { services: 1, residentials: 1 }
     };
     const roads = new Set(["0,1", "0,4"]);
     const services = [{ r: 1, c: 1, rows: 2, cols: 2, range: 2, bonus: 80 }];
@@ -175,14 +173,14 @@ scenario(
       solution: {
         optimizer: "greedy",
         roads,
-        services: services.map(({ bonus, ...service }) => service),
+        services: services.map(({ bonus: _bonus, ...service }) => service),
         serviceTypeIndices: [0],
         servicePopulationIncreases: [80],
         residentials,
         residentialTypeIndices: [0],
         populations: [150],
-        totalPopulation: 150,
-      },
+        totalPopulation: 150
+      }
     });
 
     assertValid(validation);
@@ -195,7 +193,7 @@ scenario(
     const grid = allowedGrid(4, 4);
     const params = {
       residentialTypes: [{ w: 1, h: 1, min: 10, max: 10, avail: 1 }],
-      availableBuildings: { services: 0, residentials: 1 },
+      availableBuildings: { services: 0, residentials: 1 }
     };
 
     const validation = validateSolution({
@@ -210,8 +208,8 @@ scenario(
         residentials: [{ r: 2, c: 3, rows: 1, cols: 1 }],
         residentialTypeIndices: [0],
         populations: [10],
-        totalPopulation: 10,
-      },
+        totalPopulation: 10
+      }
     });
 
     assertInvalid(validation, /row 0 or column 0/);
@@ -225,7 +223,7 @@ scenario(
     const params = {
       serviceTypes: [{ rows: 2, cols: 2, bonus: 10, range: 1, avail: 1 }],
       residentialTypes: [{ w: 1, h: 1, min: 10, max: 20, avail: 1 }],
-      availableBuildings: { services: 1, residentials: 1 },
+      availableBuildings: { services: 1, residentials: 1 }
     };
 
     const validation = validateSolution({
@@ -240,8 +238,8 @@ scenario(
         residentials: [{ r: 2, c: 2, rows: 1, cols: 1 }],
         residentialTypeIndices: [0],
         populations: [20],
-        totalPopulation: 20,
-      },
+        totalPopulation: 20
+      }
     });
 
     assertInvalid(validation, /overlap|already occupied/i);
@@ -254,11 +252,11 @@ scenario(
     const grid = [
       [0, 1, 1],
       [1, 1, 1],
-      [1, 1, 0],
+      [1, 1, 0]
     ];
     const params = {
       residentialTypes: [{ w: 1, h: 1, min: 10, max: 10, avail: 1 }],
-      availableBuildings: { services: 0, residentials: 1 },
+      availableBuildings: { services: 0, residentials: 1 }
     };
 
     const validation = validateSolution({
@@ -273,13 +271,13 @@ scenario(
         residentials: [{ r: 2, c: 2, rows: 1, cols: 1 }],
         residentialTypeIndices: [0],
         populations: [10],
-        totalPopulation: 10,
-      },
+        totalPopulation: 10
+      }
     });
 
     assertInvalidMatches(validation, [
       /Road cell \(0,0\) is not allowed/,
-      /Residential at \(2,2\) uses non-allowed cell \(2,2\)/,
+      /Residential at \(2,2\) uses non-allowed cell \(2,2\)/
     ]);
   }
 );
@@ -290,7 +288,7 @@ scenario(
     const grid = allowedGrid(3, 4);
     const params = {
       residentialTypes: [{ w: 1, h: 1, min: 10, max: 10, avail: 1 }],
-      availableBuildings: { services: 0, residentials: 1 },
+      availableBuildings: { services: 0, residentials: 1 }
     };
 
     const interiorDisconnected = validateSolution({
@@ -305,8 +303,8 @@ scenario(
         residentials: [{ r: 2, c: 2, rows: 1, cols: 1 }],
         residentialTypeIndices: [0],
         populations: [10],
-        totalPopulation: 10,
-      },
+        totalPopulation: 10
+      }
     });
 
     assertInvalid(interiorDisconnected, /not adjacent to a road/);
@@ -323,8 +321,8 @@ scenario(
         residentials: [{ r: 0, c: 3, rows: 1, cols: 1 }],
         residentialTypeIndices: [0],
         populations: [10],
-        totalPopulation: 10,
-      },
+        totalPopulation: 10
+      }
     });
 
     assertValid(boundaryConnected);
@@ -353,7 +351,7 @@ scenario(
         },
         startBackgroundSolve() {
           return backgroundHandleForSolution(autoSolution);
-        },
+        }
       };
     };
 
@@ -363,8 +361,8 @@ scenario(
         url: "/api/solve",
         json: {
           grid: solvePayload.grid,
-          params: paramsWithoutOptimizer,
-        },
+          params: paramsWithoutOptimizer
+        }
       });
 
       assert.equal(result.statusCode, 200);
@@ -394,14 +392,14 @@ scenario(
       },
       startBackgroundSolve() {
         return backgroundHandleForSolution(solved);
-      },
+      }
     });
 
     try {
       const result = await invoke(handler, {
         method: "POST",
         url: "/api/solve",
-        json: solvePayload,
+        json: solvePayload
       });
 
       assert.equal(result.statusCode, 200);

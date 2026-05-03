@@ -4,16 +4,10 @@ import type {
   GreedyProfileCounters,
   ServiceCandidate,
   Solution,
-  SolverParams,
+  SolverParams
 } from "../../core/index.js";
-import type {
-  GreedyAttemptState,
-  PlacementRect,
-} from "./attemptState.js";
-import {
-  getCandidateTypeIndex,
-  roadCostFromTieBreakProbe,
-} from "./candidates.js";
+import type { GreedyAttemptState, PlacementRect } from "./attemptState.js";
+import { getCandidateTypeIndex, roadCostFromTieBreakProbe } from "./candidates.js";
 import type { ResidentialCandidateLike, TieBreakProbe } from "./candidates.js";
 
 export const CONNECTIVITY_SHADOW_DECISION_TRACE_LIMIT = 80;
@@ -31,7 +25,7 @@ export function createConnectivityShadowDecisionRecorder(enabled: boolean): {
   if (!enabled) {
     return {
       decisions: undefined,
-      recordDecision: undefined,
+      recordDecision: undefined
     };
   }
 
@@ -42,7 +36,7 @@ export function createConnectivityShadowDecisionRecorder(enabled: boolean): {
       if (decisions.length < CONNECTIVITY_SHADOW_DECISION_TRACE_LIMIT) {
         decisions.push(decision);
       }
-    },
+    }
   };
 }
 
@@ -62,7 +56,7 @@ export function buildConnectivityShadowBaselineGuardParams(
     ...(baselineParams.greedy ?? {}),
     connectivityShadowScoring: false,
     snapshotFilePath: "",
-    ...(timeLimitSeconds !== undefined ? { timeLimitSeconds } : {}),
+    ...(timeLimitSeconds !== undefined ? { timeLimitSeconds } : {})
   };
   return baselineParams;
 }
@@ -81,11 +75,16 @@ export function compareConnectivityShadowPenalty(candidatePenalty: number, incum
   return candidatePenalty < incumbentPenalty ? 1 : -1;
 }
 
-export function canUseConnectivityShadowTieBreak(candidateProbe: TieBreakProbe, incumbentProbe: TieBreakProbe): boolean {
+export function canUseConnectivityShadowTieBreak(
+  candidateProbe: TieBreakProbe,
+  incumbentProbe: TieBreakProbe
+): boolean {
   const candidateRoadCost = roadCostFromTieBreakProbe(candidateProbe);
   const incumbentRoadCost = roadCostFromTieBreakProbe(incumbentProbe);
-  return Math.max(candidateRoadCost, incumbentRoadCost) <= CONNECTIVITY_SHADOW_MAX_ROAD_COST
-    && Math.abs(candidateRoadCost - incumbentRoadCost) <= CONNECTIVITY_SHADOW_MAX_ROAD_COST_DELTA;
+  return (
+    Math.max(candidateRoadCost, incumbentRoadCost) <= CONNECTIVITY_SHADOW_MAX_ROAD_COST &&
+    Math.abs(candidateRoadCost - incumbentRoadCost) <= CONNECTIVITY_SHADOW_MAX_ROAD_COST_DELTA
+  );
 }
 
 export function servicePlacementTrace(
@@ -100,7 +99,7 @@ export function servicePlacementTrace(
     roadCost: roadCostFromTieBreakProbe(probe),
     typeIndex: service.typeIndex,
     bonus: service.bonus,
-    range: service.range,
+    range: service.range
   };
 }
 
@@ -114,7 +113,7 @@ export function residentialPlacementTrace(
     rows: residential.rows,
     cols: residential.cols,
     roadCost: roadCostFromTieBreakProbe(probe),
-    typeIndex: getCandidateTypeIndex(residential),
+    typeIndex: getCandidateTypeIndex(residential)
   };
 }
 
@@ -150,6 +149,6 @@ export function recordConnectivityShadowTieDecision(options: {
     chosen: candidateWon ? options.candidate : options.incumbent,
     rejected: candidateWon ? options.incumbent : options.candidate,
     candidateShadowPenalty: options.candidateShadowPenalty,
-    incumbentShadowPenalty: options.incumbentShadowPenalty,
+    incumbentShadowPenalty: options.incumbentShadowPenalty
   });
 }

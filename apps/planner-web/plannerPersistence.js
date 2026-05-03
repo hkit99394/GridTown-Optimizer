@@ -1,19 +1,8 @@
 (function attachPlannerPersistence(globalObject) {
   function createPlannerPersistence(options) {
-    const {
-      state,
-      elements,
-      constants,
-      helpers,
-      callbacks,
-    } = options;
-    const {
-      CONFIG_STORAGE_KEY,
-      LAYOUT_STORAGE_KEY,
-      defaultResidentialTypes,
-      defaultServiceTypes,
-      sampleGrid,
-    } = constants;
+    const { state, elements, constants, helpers, callbacks } = options;
+    const { CONFIG_STORAGE_KEY, LAYOUT_STORAGE_KEY, defaultResidentialTypes, defaultServiceTypes, sampleGrid } =
+      constants;
     const {
       buildCpSatWarmStartCheckpoint,
       cloneGrid,
@@ -24,16 +13,16 @@
       getSavedLayoutElapsedMs,
       getSavedLayoutPopulation = (entry) => {
         const population = Number(
-          entry?.result?.validation?.recomputedTotalPopulation
-          ?? entry?.result?.stats?.totalPopulation
-          ?? entry?.result?.solution?.totalPopulation
-          ?? entry?.continueCpSat?.incumbent?.objective?.value
+          entry?.result?.validation?.recomputedTotalPopulation ??
+            entry?.result?.stats?.totalPopulation ??
+            entry?.result?.solution?.totalPopulation ??
+            entry?.continueCpSat?.incumbent?.objective?.value
         );
         return Number.isFinite(population) ? Math.max(0, Math.round(population)) : null;
       },
       isGridLike,
       normalizeElapsedMs,
-      normalizeOptimizer,
+      normalizeOptimizer
     } = helpers;
     const {
       applySolveRequestToPlanner,
@@ -43,7 +32,7 @@
       resetSolveTimer,
       setResultElapsed,
       setSolveState,
-      syncPlannerFromState,
+      syncPlannerFromState
     } = callbacks;
 
     function readStoredEntries(storageKey) {
@@ -61,8 +50,7 @@
       globalObject.localStorage.setItem(storageKey, JSON.stringify(entries));
     }
 
-    const PENDING_MANUAL_LAYOUT_ERROR =
-      "Manual edits are pending validation. Use Validate layout when you're ready.";
+    const PENDING_MANUAL_LAYOUT_ERROR = "Manual edits are pending validation. Use Validate layout when you're ready.";
 
     function isManualLayoutResult(result) {
       return Boolean(result?.solution?.manualLayout || result?.stats?.manualLayout);
@@ -70,8 +58,9 @@
 
     function hasPendingManualLayoutValidation(result) {
       if (!isManualLayoutResult(result) || result?.validation?.valid === true) return false;
-      return Array.isArray(result?.validation?.errors)
-        && result.validation.errors.includes(PENDING_MANUAL_LAYOUT_ERROR);
+      return (
+        Array.isArray(result?.validation?.errors) && result.validation.errors.includes(PENDING_MANUAL_LAYOUT_ERROR)
+      );
     }
 
     function readSavedLayoutPendingValidation(entry) {
@@ -102,7 +91,9 @@
       entries.forEach((entry) => {
         const option = document.createElement("option");
         option.value = entry.id;
-        option.textContent = labelBuilder ? labelBuilder(entry) : `${entry.name} • ${formatSavedTimestamp(entry.savedAt)}`;
+        option.textContent = labelBuilder
+          ? labelBuilder(entry)
+          : `${entry.name} • ${formatSavedTimestamp(entry.savedAt)}`;
         selectElement.append(option);
       });
     }
@@ -117,16 +108,12 @@
 
     function refreshSavedLayoutOptions(selectedId = "") {
       const entries = readStoredEntries(LAYOUT_STORAGE_KEY);
-      populateSavedSelect(
-        elements.savedLayoutsSelect,
-        entries,
-        "Select a saved layout",
-        (entry) => {
-          const population = getSavedLayoutPopulation(entry);
-          const populationLabel = population === null ? "Population n/a" : `Population ${Number(population).toLocaleString()}`;
-          return `${entry.name} • ${populationLabel} • ${formatSavedTimestamp(entry.savedAt)}`;
-        }
-      );
+      populateSavedSelect(elements.savedLayoutsSelect, entries, "Select a saved layout", (entry) => {
+        const population = getSavedLayoutPopulation(entry);
+        const populationLabel =
+          population === null ? "Population n/a" : `Population ${Number(population).toLocaleString()}`;
+        return `${entry.name} • ${populationLabel} • ${formatSavedTimestamp(entry.savedAt)}`;
+      });
       if (selectedId && entries.some((entry) => entry.id === selectedId)) {
         elements.savedLayoutsSelect.value = selectedId;
       }
@@ -142,7 +129,7 @@
         greedy: cloneJson(state.greedy),
         cpSat: cloneJson(state.cpSat),
         lns: cloneJson(state.lns),
-        auto: cloneJson(state.auto ?? { wallClockLimitSeconds: "" }),
+        auto: cloneJson(state.auto ?? { wallClockLimitSeconds: "" })
       };
     }
 
@@ -151,37 +138,37 @@
       state.optimizer = normalizeOptimizer(snapshot?.optimizer);
       state.serviceTypes = Array.isArray(snapshot?.serviceTypes)
         ? snapshot.serviceTypes.map((entry) => ({
-          avail: entry?.avail ?? "1",
-          ...entry,
-        }))
+            avail: entry?.avail ?? "1",
+            ...entry
+          }))
         : defaultServiceTypes.map((entry) => ({ ...entry }));
       state.residentialTypes = Array.isArray(snapshot?.residentialTypes)
         ? snapshot.residentialTypes.map((entry) => ({
-          avail: entry?.avail ?? "1",
-          ...entry,
-        }))
+            avail: entry?.avail ?? "1",
+            ...entry
+          }))
         : defaultResidentialTypes.map((entry) => ({ ...entry }));
       state.availableBuildings = {
         services: snapshot?.availableBuildings?.services ?? "",
-        residentials: snapshot?.availableBuildings?.residentials ?? "",
+        residentials: snapshot?.availableBuildings?.residentials ?? ""
       };
       state.greedy = {
         ...state.greedy,
         randomSeed: "",
-        ...(snapshot?.greedy ?? {}),
+        ...(snapshot?.greedy ?? {})
       };
       state.cpSat = {
         ...state.cpSat,
         randomSeed: "",
-        ...(snapshot?.cpSat ?? {}),
+        ...(snapshot?.cpSat ?? {})
       };
       state.lns = {
         ...state.lns,
-        ...(snapshot?.lns ?? {}),
+        ...(snapshot?.lns ?? {})
       };
       state.auto = {
         ...(state.auto ?? { wallClockLimitSeconds: "" }),
-        ...(snapshot?.auto ?? {}),
+        ...(snapshot?.auto ?? {})
       };
     }
 
@@ -194,7 +181,7 @@
         id,
         name,
         savedAt: new Date().toISOString(),
-        snapshot: getConfigSnapshot(),
+        snapshot: getConfigSnapshot()
       };
       if (existingIndex >= 0) {
         entries[existingIndex] = nextEntry;
@@ -209,7 +196,8 @@
 
     function loadSelectedConfig() {
       if (state.isSolving) {
-        elements.configStorageStatus.textContent = "Wait for the current solve to finish before loading a different input setup.";
+        elements.configStorageStatus.textContent =
+          "Wait for the current solve to finish before loading a different input setup.";
         return;
       }
       const selectedId = elements.savedConfigsSelect.value;
@@ -284,7 +272,7 @@
         resultContext: cloneJson(state.resultContext),
         elapsedMs,
         layoutEditorPendingValidation: Boolean(state.layoutEditor.pendingValidation),
-        ...(continueCpSat ? { continueCpSat } : {}),
+        ...(continueCpSat ? { continueCpSat } : {})
       };
       if (existingIndex >= 0) {
         entries[existingIndex] = nextEntry;
@@ -301,7 +289,8 @@
 
     function loadSelectedLayout() {
       if (state.isSolving) {
-        elements.layoutStorageStatus.textContent = "Wait for the current solve to finish before loading a saved layout.";
+        elements.layoutStorageStatus.textContent =
+          "Wait for the current solve to finish before loading a saved layout.";
         return;
       }
       const selectedId = elements.savedLayoutsSelect.value;
@@ -325,15 +314,14 @@
       state.resultError = "";
       applySolveRequestToPlanner(loadedResultContext, {
         preserveCpSatRuntime: false,
-        optimizer: loadedResultContext?.params?.optimizer ?? state.optimizer,
+        optimizer: loadedResultContext?.params?.optimizer ?? state.optimizer
       });
       const elapsedMs = getSavedLayoutElapsedMs(entry);
       setResultElapsed(elapsedMs, { syncTimerWhenIdle: true });
       renderResults();
       elements.layoutStorageName.value = entry.name;
       setSolveState(`Loaded saved layout "${entry.name}" and restored its planner settings.`);
-      elements.layoutStorageStatus.textContent =
-        `Displaying saved layout "${entry.name}" with its saved settings and elapsed ${formatElapsedTime(elapsedMs)}.`;
+      elements.layoutStorageStatus.textContent = `Displaying saved layout "${entry.name}" with its saved settings and elapsed ${formatElapsedTime(elapsedMs)}.`;
     }
 
     function deleteSelectedLayout() {
@@ -349,7 +337,9 @@
         entries.filter((item) => item.id !== selectedId)
       );
       refreshSavedLayoutOptions();
-      elements.layoutStorageStatus.textContent = entry ? `Deleted layout "${entry.name}".` : "Deleted the selected layout.";
+      elements.layoutStorageStatus.textContent = entry
+        ? `Deleted layout "${entry.name}".`
+        : "Deleted the selected layout.";
     }
 
     return {
@@ -360,11 +350,11 @@
       refreshSavedConfigOptions,
       refreshSavedLayoutOptions,
       saveCurrentConfig,
-      saveCurrentLayout,
+      saveCurrentLayout
     };
   }
 
   globalObject.CityBuilderPersistence = Object.freeze({
-    createPlannerPersistence,
+    createPlannerPersistence
   });
 })(window);

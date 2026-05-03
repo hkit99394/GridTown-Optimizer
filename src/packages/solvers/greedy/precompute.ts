@@ -1,30 +1,20 @@
-import type {
-  Grid,
-  GreedyProfileCounters,
-  SolverParams,
-} from "../../core/index.js";
+import type { Grid, GreedyProfileCounters, SolverParams } from "../../core/index.js";
 import {
   buildFootprintGeometryCache,
   buildServiceGeometryCache,
   enumerateResidentialCandidates,
   enumerateResidentialCandidatesFromTypes,
   enumerateServiceCandidates,
-  getResidentialBaseMax,
+  getResidentialBaseMax
 } from "../../core/index.js";
-import {
-  buildFootprintCandidateIndexFromKeys,
-  buildTypedCandidateIndex,
-} from "./candidatePools.js";
-import {
-  getCandidateTypeIndex,
-  serviceCandidateKey,
-} from "./candidates.js";
+import { buildFootprintCandidateIndexFromKeys, buildTypedCandidateIndex } from "./candidatePools.js";
+import { getCandidateTypeIndex, serviceCandidateKey } from "./candidates.js";
 import {
   buildResidentialGroupCellIndex,
   buildResidentialScoringGroups,
   buildServiceCoverageIndex,
   buildServiceCoverageReverseIndex,
-  computeServiceStaticScore,
+  computeServiceStaticScore
 } from "./serviceScoring.js";
 import type { ConnectivityShadowDecisionRecorder } from "./connectivityShadowScoring.js";
 import type { RoadOpportunityRecorder } from "./roadOpportunity.js";
@@ -36,7 +26,7 @@ import type {
   GreedyPreparedInputs,
   GreedyScoringIndexes,
   MaybeStop,
-  ResidentialScoringGroup,
+  ResidentialScoringGroup
 } from "./types.js";
 
 function buildGreedyCandidateCatalog(
@@ -67,7 +57,7 @@ function buildGreedyCandidateCatalog(
     rows: residential.rows,
     cols: residential.cols,
     typeIndex: getCandidateTypeIndex(residential),
-    ...getResidentialBaseMax(params, residential.rows, residential.cols, getCandidateTypeIndex(residential)),
+    ...getResidentialBaseMax(params, residential.rows, residential.cols, getCandidateTypeIndex(residential))
   }));
   maybeStop?.(true);
   if (profileCounters) profileCounters.precompute.residentialCandidates += residentialCandidateStats.length;
@@ -75,7 +65,7 @@ function buildGreedyCandidateCatalog(
     serviceCandidates,
     anyResidentialCandidates,
     residentialCandidatesForLocal,
-    residentialCandidateStats,
+    residentialCandidateStats
   };
 }
 
@@ -108,7 +98,7 @@ function buildGreedyGeometryIndexes(
     serviceGeometryCache,
     serviceEffectZoneSetsByCandidate,
     residentialCandidateGeometryCache,
-    residentialGroupGeometryCache,
+    residentialGroupGeometryCache
   };
 }
 
@@ -150,13 +140,13 @@ function buildGreedyScoringIndexes(
   }
   const serviceOrderSorted = [...serviceCandidates].sort(
     (a, b) =>
-      (serviceScores.get(serviceCandidateKey(b)) ?? 0) - (serviceScores.get(serviceCandidateKey(a)) ?? 0)
-      || serviceCandidateKey(a).localeCompare(serviceCandidateKey(b))
+      (serviceScores.get(serviceCandidateKey(b)) ?? 0) - (serviceScores.get(serviceCandidateKey(a)) ?? 0) ||
+      serviceCandidateKey(a).localeCompare(serviceCandidateKey(b))
   );
   return {
     residentialScoringGroups,
     serviceCoverageGroupsByKey,
-    serviceOrderSorted,
+    serviceOrderSorted
   };
 }
 
@@ -177,7 +167,7 @@ function buildGreedyPrecomputedIndexes(
     serviceGeometryCache,
     serviceEffectZoneSetsByCandidate,
     residentialCandidateGeometryCache,
-    residentialGroupGeometryCache,
+    residentialGroupGeometryCache
   } = geometry;
   return {
     serviceCandidateIndicesByKey: new Map(
@@ -209,7 +199,7 @@ function buildGreedyPrecomputedIndexes(
           (candidateIndex) => getCandidateTypeIndex(anyResidentialCandidates[candidateIndex]),
           params.residentialTypes!.length
         )
-      : null,
+      : null
   };
 }
 
@@ -239,12 +229,12 @@ export function prepareGreedyInputs(
     recordProfilePhase,
     recordConnectivityShadowDecision,
     recordRoadOpportunity,
-    maybeStop,
+    maybeStop
   } = options;
   const catalog = buildGreedyCandidateCatalog(G, params, {
     useTypes,
     profileCounters,
-    maybeStop,
+    maybeStop
   });
   const residentialScoringGroups = buildResidentialScoringGroups(
     catalog.residentialCandidateStats,
@@ -254,27 +244,20 @@ export function prepareGreedyInputs(
   maybeStop?.(true);
   const geometry = buildGreedyGeometryIndexes(G, catalog, residentialScoringGroups, {
     profileCounters,
-    maybeStop,
+    maybeStop
   });
   const scoring = buildGreedyScoringIndexes(params, catalog, residentialScoringGroups, {
     useTypes,
     profileCounters,
-    maybeStop,
+    maybeStop
   });
   const precomputedIndexes = buildGreedyPrecomputedIndexes(params, catalog, scoring, geometry, {
     useServiceTypes,
-    useTypes,
+    useTypes
   });
   maybeStop?.(true);
-  const {
-    serviceCandidates,
-    anyResidentialCandidates,
-    residentialCandidatesForLocal,
-  } = catalog;
-  const {
-    serviceOrderSorted,
-    serviceCoverageGroupsByKey,
-  } = scoring;
+  const { serviceCandidates, anyResidentialCandidates, residentialCandidatesForLocal } = catalog;
+  const { serviceOrderSorted, serviceCoverageGroupsByKey } = scoring;
   return {
     serviceCandidates,
     serviceOrderSorted,
@@ -295,7 +278,7 @@ export function prepareGreedyInputs(
       recordProfilePhase,
       recordConnectivityShadowDecision,
       recordRoadOpportunity,
-      maybeStop,
-    },
+      maybeStop
+    }
   };
 }

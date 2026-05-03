@@ -8,11 +8,11 @@ Maximization problem: choose a feasible placement of roads and buildings so that
 
 ## 2. Input
 
-| Symbol | Type | Description |
-|--------|------|-------------|
-| `G` | `int[H][W]` | 2D grid. `G[r][c] = 1` ⇒ cell `(r, c)` is **allowed**; `G[r][c] = 0` ⇒ **not allowed**. |
-| `H` | `int` | Number of rows (height). |
-| `W` | `int` | Number of columns (width). |
+| Symbol | Type        | Description                                                                             |
+| ------ | ----------- | --------------------------------------------------------------------------------------- |
+| `G`    | `int[H][W]` | 2D grid. `G[r][c] = 1` ⇒ cell `(r, c)` is **allowed**; `G[r][c] = 0` ⇒ **not allowed**. |
+| `H`    | `int`       | Number of rows (height).                                                                |
+| `W`    | `int`       | Number of columns (width).                                                              |
 
 **Assumptions:**
 
@@ -95,7 +95,7 @@ A solution is **feasible** iff all of the following hold.
   - a set of **road** cells,
   - a set of **service** buildings (each with its own rectangle size, population increase, and effect range),
   - a set of **residential** buildings (each with its own rectangular footprint and population bounds),
-  such that **total city population** is **maximized**.
+    such that **total city population** is **maximized**.
 
 - **Total city population** = sum over all residential buildings of (min(base + sum of service bonuses from services that boost it, max population)).
 

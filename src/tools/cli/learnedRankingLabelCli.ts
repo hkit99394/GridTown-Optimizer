@@ -11,15 +11,16 @@ import {
   formatLearnedRankingLabelSuite,
   formatExperimentRegistryIssues,
   runLearnedRankingLabelSuite,
-  resolveExperimentRegistryGitMetadata,
+  resolveExperimentRegistryGitMetadata
 } from "../../benchmarkApi.js";
 import {
   applyInlineOptionHandlers,
   isCliFlag,
+  parseNameList,
   parseNonNegativeInteger,
   parseNumberList,
   parsePositiveInteger,
-  parsePositiveNumber,
+  parsePositiveNumber
 } from "../../apps/cliParsing.js";
 import { runCliMain } from "../../apps/cliEntrypoint.js";
 import { writeCliJsonOrText } from "../../apps/cliOutput.js";
@@ -27,12 +28,10 @@ import {
   completeAppendableRegistryEntry,
   defaultCliReplayCommand,
   normalizeRepoRelativePath,
-  writeJsonArtifact,
+  writeJsonArtifact
 } from "./artifactBundleHelpers.js";
 
-import type {
-  LearnedRankingLabelSuiteResult,
-} from "../../benchmarkApi.js";
+import type { LearnedRankingLabelSuiteResult, LnsWindowReplayStatePolicy } from "../../benchmarkApi.js";
 
 interface ParsedLabelArgs {
   json: boolean;
@@ -40,6 +39,9 @@ interface ParsedLabelArgs {
   maxWindows?: number;
   explorationWindowCount?: number;
   repairTimeLimitSeconds?: number;
+  lnsStatePolicies?: LnsWindowReplayStatePolicy[];
+  lnsStateCollectionIterations?: number;
+  lnsStateCollectionRepairTimeLimitSeconds?: number;
   artifactDir?: string;
   labelRunId?: string;
   labelDecision?: string;
@@ -75,6 +77,9 @@ function parseArgs(argv: string[]): ParsedLabelArgs {
   let maxWindows: number | undefined;
   let explorationWindowCount: number | undefined;
   let repairTimeLimitSeconds: number | undefined;
+  let lnsStatePolicies: LnsWindowReplayStatePolicy[] | undefined;
+  let lnsStateCollectionIterations: number | undefined;
+  let lnsStateCollectionRepairTimeLimitSeconds: number | undefined;
   let artifactDir: string | undefined;
   let labelRunId: string | undefined;
   let labelDecision: string | undefined;
@@ -94,6 +99,15 @@ function parseArgs(argv: string[]): ParsedLabelArgs {
     "repair-time": (value) => {
       repairTimeLimitSeconds = parsePositiveNumber(value, "repair time");
     },
+    "state-policies": (value) => {
+      lnsStatePolicies = parseNameList(value, "state policy") as LnsWindowReplayStatePolicy[];
+    },
+    "state-collection-iterations": (value) => {
+      lnsStateCollectionIterations = parsePositiveInteger(value, "state collection iterations");
+    },
+    "state-collection-repair-time": (value) => {
+      lnsStateCollectionRepairTimeLimitSeconds = parsePositiveNumber(value, "state collection repair time");
+    },
     "artifact-dir": (value) => {
       artifactDir = value;
     },
@@ -108,7 +122,7 @@ function parseArgs(argv: string[]): ParsedLabelArgs {
     },
     "label-registry": (value) => {
       labelRegistryPath = value;
-    },
+    }
   };
 
   for (const arg of argv) {
@@ -135,20 +149,20 @@ function parseArgs(argv: string[]): ParsedLabelArgs {
     maxWindows,
     explorationWindowCount,
     repairTimeLimitSeconds,
+    lnsStatePolicies,
+    lnsStateCollectionIterations,
+    lnsStateCollectionRepairTimeLimitSeconds,
     artifactDir,
     labelRunId,
     labelDecision,
     labelSummary,
     labelRegistryPath,
-    labelRegisterDryRun,
+    labelRegisterDryRun
   };
 }
 
 function defaultLabelArtifactCommand(argv: readonly string[]): string {
-  const replayArgs = argv.filter((arg) =>
-    arg !== "--label-register-dry-run"
-    && !arg.startsWith("--label-registry=")
-  );
+  const replayArgs = argv.filter((arg) => arg !== "--label-register-dry-run" && !arg.startsWith("--label-registry="));
   return defaultCliReplayCommand("dist/learnedRankingLabelCli.js", replayArgs);
 }
 
@@ -169,7 +183,7 @@ function registerLabelArtifacts(
     registryPath,
     dryRun: true,
     appended: false,
-    runId: completedEntry.runId,
+    runId: completedEntry.runId
   };
 }
 
@@ -195,14 +209,14 @@ function writeLearnedRankingLabelArtifactBundle(
   const telemetryManifest = buildLearnedRankingLabelTelemetryManifest(result, {
     command,
     git: resolveExperimentRegistryGitMetadata(),
-    hardware: captureExperimentRegistryHardwareMetadata(),
+    hardware: captureExperimentRegistryHardwareMetadata()
   });
   const registryEntryDraft = buildLearnedRankingLabelRegistryEntryDraft(result, {
     runId: args.labelRunId,
     commands: [command],
     artifactPaths: [labelsJson, labelsText, telemetryManifestJson],
     decision: args.labelDecision,
-    summary: args.labelSummary,
+    summary: args.labelSummary
   });
 
   writeJsonArtifact(absoluteArtifactPath("labels.json"), createLearnedRankingLabelSnapshot(result));
@@ -210,9 +224,7 @@ function writeLearnedRankingLabelArtifactBundle(
   writeJsonArtifact(absoluteArtifactPath("telemetry-manifest.json"), telemetryManifest);
   writeJsonArtifact(absoluteArtifactPath("registry-entry-draft.json"), registryEntryDraft);
 
-  const registry = args.labelRegisterDryRun
-    ? registerLabelArtifacts(registryEntryDraft, args)
-    : undefined;
+  const registry = args.labelRegisterDryRun ? registerLabelArtifacts(registryEntryDraft, args) : undefined;
 
   return {
     artifactDir,
@@ -220,14 +232,14 @@ function writeLearnedRankingLabelArtifactBundle(
       labelsJson,
       labelsText,
       telemetryManifestJson,
-      registryEntryDraftJson,
+      registryEntryDraftJson
     },
     runId: registryEntryDraft.runId,
     generatedAt: result.generatedAt,
     greedyLabelCount: result.greedy.labelCount,
     lnsLabelCount: result.lns.labelCount,
     labelFingerprint: registryEntryDraft.labelFingerprint,
-    registry,
+    registry
   };
 }
 
@@ -238,7 +250,7 @@ function formatLearnedRankingLabelArtifactManifest(manifest: LearnedRankingLabel
     `labels-json=${manifest.artifactPaths.labelsJson}`,
     `labels-text=${manifest.artifactPaths.labelsText}`,
     `telemetry-manifest=${manifest.artifactPaths.telemetryManifestJson}`,
-    `registry-entry-draft=${manifest.artifactPaths.registryEntryDraftJson}`,
+    `registry-entry-draft=${manifest.artifactPaths.registryEntryDraftJson}`
   ];
   if (manifest.registry !== undefined) {
     lines.push(`registry-dry-run=${manifest.registry.registryPath}`);
@@ -261,6 +273,9 @@ export function runLearnedRankingLabelCli(): void {
     maxWindows: args.maxWindows,
     explorationWindowCount: args.explorationWindowCount,
     repairTimeLimitSeconds: args.repairTimeLimitSeconds,
+    lnsStatePolicies: args.lnsStatePolicies,
+    lnsStateCollectionIterations: args.lnsStateCollectionIterations,
+    lnsStateCollectionRepairTimeLimitSeconds: args.lnsStateCollectionRepairTimeLimitSeconds
   });
 
   if (args.artifactDir !== undefined) {
@@ -269,8 +284,10 @@ export function runLearnedRankingLabelCli(): void {
     return;
   }
 
-  writeCliJsonOrText(args.json, () => createLearnedRankingLabelSnapshot(result), () =>
-    formatLearnedRankingLabelSuite(result)
+  writeCliJsonOrText(
+    args.json,
+    () => createLearnedRankingLabelSnapshot(result),
+    () => formatLearnedRankingLabelSuite(result)
   );
 }
 

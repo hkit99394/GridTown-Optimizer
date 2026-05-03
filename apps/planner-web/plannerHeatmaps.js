@@ -1,16 +1,12 @@
 (function attachPlannerHeatmaps(globalObject) {
   function createPlannerHeatmapHelpers(options) {
-    const {
-      state,
-      explainabilityModeLabels,
-      helpers,
-    } = options;
+    const { state, explainabilityModeLabels, helpers } = options;
     const {
       footprintCellsForPlacement,
       getOccupiedCells,
       getTypeAvailabilitySummary,
       isCellInsideAnyServiceFootprint,
-      isCellInsideServiceEffect,
+      isCellInsideServiceEffect
     } = helpers;
 
     function formatExplainabilityNumber(value) {
@@ -27,7 +23,7 @@
       return {
         values: grid.map((row) => row.map(() => 0)),
         details: grid.map((row) => row.map(() => "")),
-        maxValue: 0,
+        maxValue: 0
       };
     }
 
@@ -135,8 +131,8 @@
               if (value <= (heatmap.values[row]?.[col] ?? 0)) continue;
               heatmap.values[row][col] = value;
               heatmap.details[row][col] =
-                `${name} ${orientation.rows}x${orientation.cols}, ${availability.remaining} left, `
-                + `${boost > 0 ? `service boost +${formatExplainabilityNumber(boost)}` : "base population only"}`;
+                `${name} ${orientation.rows}x${orientation.cols}, ${availability.remaining} left, ` +
+                `${boost > 0 ? `service boost +${formatExplainabilityNumber(boost)}` : "base population only"}`;
               heatmap.maxValue = Math.max(heatmap.maxValue, value);
             }
           }
@@ -161,12 +157,7 @@
     }
 
     function getNeighborCellKeys(row, col) {
-      return [
-        `${row - 1},${col}`,
-        `${row + 1},${col}`,
-        `${row},${col - 1}`,
-        `${row},${col + 1}`,
-      ];
+      return [`${row - 1},${col}`, `${row + 1},${col}`, `${row},${col - 1}`, `${row},${col + 1}`];
     }
 
     function floodReachableFromAnchorBoundary(grid, traversable, removedKey = null) {
@@ -214,8 +205,8 @@
         if (lostReachableCells <= 0) continue;
         heatmap.values[row][col] = lostReachableCells;
         heatmap.details[row][col] =
-          `occupying this support cell would strand ${formatExplainabilityNumber(lostReachableCells)} reachable cell`
-          + `${lostReachableCells === 1 ? "" : "s"}`;
+          `occupying this support cell would strand ${formatExplainabilityNumber(lostReachableCells)} reachable cell` +
+          `${lostReachableCells === 1 ? "" : "s"}`;
         heatmap.maxValue = Math.max(heatmap.maxValue, lostReachableCells);
       }
 
@@ -253,8 +244,10 @@
               Number(cell.residentialHeadroom ?? 0) > 0
                 ? `headroom +${formatExplainabilityNumber(cell.residentialHeadroom)}`
                 : "",
-              serviceBonus > 0 ? `best remaining service +${formatExplainabilityNumber(serviceBonus)}` : "",
-            ].filter(Boolean).join(", ");
+              serviceBonus > 0 ? `best remaining service +${formatExplainabilityNumber(serviceBonus)}` : ""
+            ]
+              .filter(Boolean)
+              .join(", ");
             heatmap.maxValue = Math.max(
               heatmap.maxValue,
               map.maxResidentialOpportunity ?? value,
@@ -270,8 +263,10 @@
             heatmap.details[row][col] = [
               disconnected > 0 ? `${formatExplainabilityNumber(disconnected)} disconnected` : "",
               lost > 0 ? `${formatExplainabilityNumber(lost)} lost` : "",
-              footprint > 0 ? `${formatExplainabilityNumber(footprint)} footprint` : "",
-            ].filter(Boolean).join(", ");
+              footprint > 0 ? `${formatExplainabilityNumber(footprint)} footprint` : ""
+            ]
+              .filter(Boolean)
+              .join(", ");
             heatmap.maxValue = Math.max(
               heatmap.maxValue,
               map.maxConnectivityDisconnectedCells ?? disconnected,
@@ -298,7 +293,9 @@
     }
 
     function createExplainabilityHeatmap(mode, grid, solution) {
-      return createBackendExplainabilityHeatmap(mode, grid) ?? createFallbackExplainabilityHeatmap(mode, grid, solution);
+      return (
+        createBackendExplainabilityHeatmap(mode, grid) ?? createFallbackExplainabilityHeatmap(mode, grid, solution)
+      );
     }
 
     function describeExplainabilityValue(mode, value, detail = "") {
@@ -346,11 +343,11 @@
       formatExplainabilityNumber,
       getPlannerExplainabilityCell,
       hidesBuildingOverlayForMode,
-      normalizeExplainabilityMode,
+      normalizeExplainabilityMode
     });
   }
 
   globalObject.PlannerHeatmaps = Object.freeze({
-    createPlannerHeatmapHelpers,
+    createPlannerHeatmapHelpers
   });
 })(window);

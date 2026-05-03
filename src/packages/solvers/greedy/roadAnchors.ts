@@ -10,7 +10,7 @@ import {
   forEachRectangleCell,
   hasAvailableRoadAnchorCell,
   isRoadAnchorCell,
-  normalizeServicePlacement,
+  normalizeServicePlacement
 } from "../../core/index.js";
 import type { Grid, Solution } from "../../core/index.js";
 

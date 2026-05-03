@@ -1,10 +1,7 @@
 export const DEFAULT_PLANNER_PORT = 4173;
 export const DEFAULT_MAX_RUNNING_SOLVES = 1;
 
-export function parseLocalServerPort(
-  value: string | undefined,
-  fallback = DEFAULT_PLANNER_PORT
-): number {
+export function parseLocalServerPort(value: string | undefined, fallback = DEFAULT_PLANNER_PORT): number {
   if (value === undefined) return fallback;
   const normalized = value.trim();
   if (!normalized) return fallback;

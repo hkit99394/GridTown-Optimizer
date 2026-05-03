@@ -23,14 +23,14 @@ The default solver path is incumbent-first:
 3. `CP-SAT` performs exact repair, bounded polish, or proof.
 4. `auto` orchestrates the budget and keeps the best incumbent.
 
-| Mode | Role | Default Use |
-| --- | --- | --- |
-| `auto` | Main quality path | Recommended solver mode |
-| `greedy` | Fast incumbent and diagnostics | Seed generation, baseline, counterfactual traces |
-| `LNS` | Main improvement engine | Adaptive repair around incumbent layouts |
-| `CP-SAT` | Exact backend | Small proofs, local repairs, bounded polishing, semantic checks |
-| CP-SAT portfolio | Explicit research mode | Only after CPU-normalized wins over single CP-SAT |
-| Learned guidance | Future feature-flag path | Only after offline and online holdout gates pass |
+| Mode             | Role                           | Default Use                                                     |
+| ---------------- | ------------------------------ | --------------------------------------------------------------- |
+| `auto`           | Main quality path              | Recommended solver mode                                         |
+| `greedy`         | Fast incumbent and diagnostics | Seed generation, baseline, counterfactual traces                |
+| `LNS`            | Main improvement engine        | Adaptive repair around incumbent layouts                        |
+| `CP-SAT`         | Exact backend                  | Small proofs, local repairs, bounded polishing, semantic checks |
+| CP-SAT portfolio | Explicit research mode         | Only after CPU-normalized wins over single CP-SAT               |
+| Learned guidance | Future feature-flag path       | Only after offline and online holdout gates pass                |
 
 ## Current Baseline
 
@@ -57,24 +57,29 @@ This priority does not change solver defaults, does not promote learned guidance
 Impact: highest near-term enabling value
 
 Why:
+
 - LNS is the main improvement engine after Greedy, and the strongest current seam for guided search is choosing which repair window to try next.
 - Existing replay labels are schema-valid but not promotion-ready; holdout signal is still too neutral for learned window ranking.
 - CP-SAT is already the exact repair, proof, gap, and label backend, so it should be used to generate trustworthy counterfactual replay evidence before any scorer is introduced.
 
-Delivered first slice:
+Delivered so far:
+
 - LNS replay labels now carry feature schema `2`, CP-SAT model fingerprints, model encoding/candidate-key metadata, model-size telemetry when available, wall-clock timing, observed CP-SAT user time, and configured worker CPU budget.
 - Replay feature payloads now include connectivity-shadow, empty-graph fragmentation, and service/residential candidate-loss summaries alongside the existing window occupancy/headroom features.
 - Learned-ranking label telemetry and registry drafts now preserve the LNS feature schema, CP-SAT worker count, CP-SAT model fingerprints, and an input fingerprint for replay-label evidence.
+- Replay state policies are now explicit. Default label generation still uses `initial-incumbent`, while strict runs can request `initial-incumbent`, `post-first-improvement`, and `post-stagnation` with bounded state-collection iterations and a separate CP-SAT repair budget.
+- `lnsBenchmarkCli` and `learnedRankingLabelCli` expose the state-policy and state-collection knobs, and label telemetry/snapshots carry requested and captured state policies.
 
 Concrete work:
+
 - Generate strict LNS replay artifacts across development and holdout pressure families, with at least 3 fixed seeds per family.
-- Capture initial, post-first-improvement, and post-stagnation incumbent states.
+- Use the strict state-policy set: `initial-incumbent`, `post-first-improvement`, and `post-stagnation`.
 - Replay baseline top windows plus tail exploration windows under equal CP-SAT repair budgets.
-- Extend replay collection beyond the current initial-incumbent state policy.
 - Generate and register strict artifacts large enough to test readiness thresholds.
 - Expose the same feature payload shape in broader traces, benchmark summaries, and planner explainability surfaces where useful.
 
 Exit criteria:
+
 - At least 5 pressure families in both development and holdout coverage.
 - At least 200 usable labels and 50 non-neutral usable labels in each split.
 - No pressure family with fewer than 20 usable labels.
@@ -87,15 +92,18 @@ Exit criteria:
 Impact: medium, evidence-only
 
 Why:
+
 - The promotion corpus shows Auto is broadly healthy, but a few 1s/5s rows still lose to standalone LNS or CP-SAT.
 - These misses should be diagnosed before changing Auto stage budgets or default policies.
 
 Concrete work:
+
 - Re-run focused budget-ablation slices on the known short-budget miss families.
 - Compare baseline, LNS-heavy, and CP-SAT-reserve-heavy policies under equal wall-clock budgets and fixed seeds.
 - Treat outcomes as evidence for future policy work only; do not change Auto defaults without clearing the promotion gates below.
 
 Exit criteria:
+
 - A registered artifact explains whether the misses are seed quality, LNS repair allocation, CP-SAT reserve, or case-specific saturation effects.
 - Any proposed Auto policy change has protected development and holdout evidence, worst-decile safety, and CPU-budget efficiency reporting.
 
@@ -103,16 +111,16 @@ Exit criteria:
 
 These are not next actions by default. They become active only when their trigger is satisfied.
 
-| Trigger | Candidate Work | Success Signal |
-| --- | --- | --- |
-| CP-SAT semantics and product corpus stay stable, and exact search quality remains a bottleneck | Geometry-native CP-SAT / `NoOverlap2D` experiment | Better propagation or time-to-best without model-size blowup. |
-| Service-master scorecards show repeatable equal-budget wins | Promote service-master into Auto or Greedy seed policy | Beats current Auto or Greedy seed path on development and holdout pressure families with evaluator-valid layouts. |
-| Strict LNS label artifacts pass readiness and offline baselines | Learned LNS window ranking | Offline holdout beats deterministic, random, and single-feature baselines; online A/B improves fixed-budget quality without worst-decile regression. |
-| Greedy offline ranker evidence is paired with online equal-budget wins | Feature-flagged learned Greedy re-ranking | Online seeded benchmarks improve population or time-to-best with bounded inference overhead. |
-| Portfolio scorecards show wall-clock and CPU-normalized wins | CP-SAT portfolio in Auto | Portfolio beats single CP-SAT on quality and CPU efficiency. |
-| A CPU-first label, training, feature, or inference workflow becomes a measured bottleneck | GPU acceleration | GPU reduces the measured bottleneck while preserving solver quality gates. |
-| Hosted or multi-user execution becomes a product requirement | Durable worker architecture | Status, cancellation, and snapshots survive process restarts and multi-instance routing. |
-| Exact bounds or incumbents remain blocked after CP-SAT tuning | External MILP/SCIP/Gurobi/cuOpt research adapter | Better bounds or incumbents on selected families under exact evaluator validation. |
+| Trigger                                                                                        | Candidate Work                                         | Success Signal                                                                                                                                       |
+| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CP-SAT semantics and product corpus stay stable, and exact search quality remains a bottleneck | Geometry-native CP-SAT / `NoOverlap2D` experiment      | Better propagation or time-to-best without model-size blowup.                                                                                        |
+| Service-master scorecards show repeatable equal-budget wins                                    | Promote service-master into Auto or Greedy seed policy | Beats current Auto or Greedy seed path on development and holdout pressure families with evaluator-valid layouts.                                    |
+| Strict LNS label artifacts pass readiness and offline baselines                                | Learned LNS window ranking                             | Offline holdout beats deterministic, random, and single-feature baselines; online A/B improves fixed-budget quality without worst-decile regression. |
+| Greedy offline ranker evidence is paired with online equal-budget wins                         | Feature-flagged learned Greedy re-ranking              | Online seeded benchmarks improve population or time-to-best with bounded inference overhead.                                                         |
+| Portfolio scorecards show wall-clock and CPU-normalized wins                                   | CP-SAT portfolio in Auto                               | Portfolio beats single CP-SAT on quality and CPU efficiency.                                                                                         |
+| A CPU-first label, training, feature, or inference workflow becomes a measured bottleneck      | GPU acceleration                                       | GPU reduces the measured bottleneck while preserving solver quality gates.                                                                           |
+| Hosted or multi-user execution becomes a product requirement                                   | Durable worker architecture                            | Status, cancellation, and snapshots survive process restarts and multi-instance routing.                                                             |
+| Exact bounds or incumbents remain blocked after CP-SAT tuning                                  | External MILP/SCIP/Gurobi/cuOpt research adapter       | Better bounds or incumbents on selected families under exact evaluator validation.                                                                   |
 
 ## Promotion Gates
 

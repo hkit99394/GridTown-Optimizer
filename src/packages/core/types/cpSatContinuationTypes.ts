@@ -10,7 +10,7 @@ import type {
   CpSatContinuationHintedServicePlacement,
   PersistedResidentialCandidateKey,
   PersistedRoadKey,
-  PersistedServiceCandidateKey,
+  PersistedServiceCandidateKey
 } from "./cpSatTypes.js";
 import type { SolverParams } from "./solverParamTypes.js";
 

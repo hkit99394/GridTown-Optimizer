@@ -18,7 +18,7 @@ const STATIC_FILES: Record<string, string> = {
   "/plannerResults.js": "plannerResults.js",
   "/plannerRequestBuilder.js": "plannerRequestBuilder.js",
   "/plannerWorkbench.js": "plannerWorkbench.js",
-  "/app.js": "app.js",
+  "/app.js": "app.js"
 };
 
 export async function servePlannerStatic(

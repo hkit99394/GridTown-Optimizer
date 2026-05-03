@@ -1,38 +1,22 @@
-import type {
-  Grid,
-  GreedyProfileCounters,
-  ServiceCandidate,
-  Solution,
-  SolverParams,
-} from "../../core/index.js";
+import type { Grid, GreedyProfileCounters, ServiceCandidate, Solution, SolverParams } from "../../core/index.js";
 import type { RoadOpportunityRecorder } from "./roadOpportunity.js";
-import {
-  createSeededRandom,
-  deriveSeed,
-  shuffle,
-} from "./runtime.js";
+import { createSeededRandom, deriveSeed, shuffle } from "./runtime.js";
 import { collectRoadAnchorRefinementSeeds } from "./roadAnchors.js";
-import {
-  buildGreedyServiceCapPolicy,
-  runGreedyServiceCapSearch,
-} from "./serviceCapSearch.js";
+import { buildGreedyServiceCapPolicy, runGreedyServiceCapSearch } from "./serviceCapSearch.js";
 import type { CapSearchPhase } from "./serviceCapSearch.js";
 import { runGreedyServiceMasterDecomposition } from "./serviceMasterDecomposition.js";
 import {
   runGreedyResidualServiceBundleRepair,
-  runGreedyServiceNeighborhoodSearch,
+  runGreedyServiceNeighborhoodSearch
 } from "./serviceNeighborhoodSearch.js";
-import {
-  runGreedyExhaustiveServiceSearch,
-  runGreedyServiceRefinement,
-} from "./serviceSearchPhases.js";
+import { runGreedyExhaustiveServiceSearch, runGreedyServiceRefinement } from "./serviceSearchPhases.js";
 import { isBetterSearchSolution } from "./solutionRanking.js";
 import type { GreedyRunLifecycle } from "./runLifecycle.js";
 import type {
   GreedyForcedServiceEvaluator,
   GreedyPrecomputedIndexes,
   GreedySolveAttempt,
-  ResidentialScoringGroup,
+  ResidentialScoringGroup
 } from "./types.js";
 
 export function runGreedySearchPipeline(options: {
@@ -91,20 +75,11 @@ export function runGreedySearchPipeline(options: {
     serviceMasterMaxLayouts,
     profileCounters,
     recordRoadOpportunity,
-    lifecycle,
+    lifecycle
   } = options;
-  const {
-    maybeStop,
-    updateBest,
-    requireBest,
-    runProfiledPhase,
-  } = lifecycle;
+  const { maybeStop, updateBest, requireBest, runProfiledPhase } = lifecycle;
 
-  const runCapRestarts = (
-    cap: number,
-    bestForCap: Solution | null,
-    restartBudget: number
-  ): Solution | null => {
+  const runCapRestarts = (cap: number, bestForCap: Solution | null, restartBudget: number): Solution | null => {
     if (restartBudget <= 1) return bestForCap;
     if (profileCounters) profileCounters.attempts.restartCaps++;
     let nextBest = bestForCap;
@@ -134,7 +109,7 @@ export function runGreedySearchPipeline(options: {
         if (profileCounters) profileCounters.attempts.serviceRefineTrials++;
         const trial = solveWithOrder(serviceOrderSorted, {
           maxServices: cap,
-          initialRoadSeed: roadSeed,
+          initialRoadSeed: roadSeed
         });
         if (trial && isBetterSearchSolution(trial, refined)) {
           refined = trial;
@@ -184,52 +159,60 @@ export function runGreedySearchPipeline(options: {
   };
 
   const { explicitServiceCap, inferredUpper, capPlan } = buildGreedyServiceCapPolicy(params, maxServices);
-  runProfiledPhase("constructiveCapSearch", () => runGreedyServiceCapSearch({
-    policy: { explicitServiceCap, inferredUpper, capPlan },
-    restarts,
-    profileCounters,
-    evaluateNewCap,
-    refineExistingCap,
-  }));
+  runProfiledPhase("constructiveCapSearch", () =>
+    runGreedyServiceCapSearch({
+      policy: { explicitServiceCap, inferredUpper, capPlan },
+      restarts,
+      profileCounters,
+      evaluateNewCap,
+      refineExistingCap
+    })
+  );
 
   let incumbent = requireBest();
-  let best = runProfiledPhase("serviceRefinement", () => runGreedyServiceRefinement({
-    initialBest: incumbent,
-    serviceRefineIterations,
-    serviceRefineCandidateLimit,
-    serviceOrderSorted,
-    evaluateForcedServiceSet,
-    updateBest,
-    maybeStop,
-  }));
+  let best = runProfiledPhase("serviceRefinement", () =>
+    runGreedyServiceRefinement({
+      initialBest: incumbent,
+      serviceRefineIterations,
+      serviceRefineCandidateLimit,
+      serviceOrderSorted,
+      evaluateForcedServiceSet,
+      updateBest,
+      maybeStop
+    })
+  );
 
   incumbent = best;
-  best = runProfiledPhase("exhaustiveServiceSearch", () => runGreedyExhaustiveServiceSearch({
-    initialBest: incumbent,
-    enabled: exhaustiveServiceSearch,
-    serviceExactPoolLimit,
-    serviceExactMaxCombinations,
-    serviceOrderSorted,
-    evaluateForcedServiceSet,
-    updateBest,
-    profileCounters,
-    maybeStop,
-  }));
+  best = runProfiledPhase("exhaustiveServiceSearch", () =>
+    runGreedyExhaustiveServiceSearch({
+      initialBest: incumbent,
+      enabled: exhaustiveServiceSearch,
+      serviceExactPoolLimit,
+      serviceExactMaxCombinations,
+      serviceOrderSorted,
+      evaluateForcedServiceSet,
+      updateBest,
+      profileCounters,
+      maybeStop
+    })
+  );
 
   incumbent = best;
-  best = runProfiledPhase("serviceMasterDecomposition", () => runGreedyServiceMasterDecomposition({
-    initialBest: incumbent,
-    enabled: serviceMasterDecomposition,
-    serviceMasterPoolLimit,
-    serviceMasterMaxLayouts,
-    serviceOrderSorted,
-    inferredUpper,
-    serviceTypeAvailability: params.serviceTypes?.map((type) => Math.max(0, type.avail)) ?? null,
-    evaluateForcedServiceSet,
-    updateBest,
-    profileCounters,
-    maybeStop,
-  }));
+  best = runProfiledPhase("serviceMasterDecomposition", () =>
+    runGreedyServiceMasterDecomposition({
+      initialBest: incumbent,
+      enabled: serviceMasterDecomposition,
+      serviceMasterPoolLimit,
+      serviceMasterMaxLayouts,
+      serviceOrderSorted,
+      inferredUpper,
+      serviceTypeAvailability: params.serviceTypes?.map((type) => Math.max(0, type.avail)) ?? null,
+      evaluateForcedServiceSet,
+      updateBest,
+      profileCounters,
+      maybeStop
+    })
+  );
 
   if (localSearch) {
     incumbent = best;
@@ -251,7 +234,7 @@ export function runGreedySearchPipeline(options: {
         updateBest,
         profileCounters,
         recordRoadOpportunity,
-        maybeStop,
+        maybeStop
       });
       return runGreedyResidualServiceBundleRepair({
         initialBest: neighborhoodBest,
@@ -269,7 +252,7 @@ export function runGreedySearchPipeline(options: {
         solveWithOrder,
         updateBest,
         profileCounters,
-        maybeStop,
+        maybeStop
       });
     });
     if (isBetterSearchSolution(serviceLocalBest, best)) {

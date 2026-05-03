@@ -4,7 +4,7 @@ import type {
   AutoStageOptimizerName,
   BackgroundSolveSnapshotState,
   SolveProgressLogEntry,
-  Solution,
+  Solution
 } from "../../core/index.js";
 
 export interface AutoTerminalSolutionContext {
@@ -46,9 +46,7 @@ function autoStageCompletenessScore(
   autoStage: AutoSolveStageMetadata | SolveProgressLogEntry["autoStage"] | null | undefined
 ): number {
   if (!autoStage) return -1;
-  return (autoStage.activeStage ? 4 : 0)
-    + (autoStage.stopReason ? 2 : 0)
-    + (autoStage.generatedSeeds?.length ?? 0);
+  return (autoStage.activeStage ? 4 : 0) + (autoStage.stopReason ? 2 : 0) + (autoStage.generatedSeeds?.length ?? 0);
 }
 
 function compareAutoStageRecency(
@@ -100,22 +98,21 @@ function resolveRecoveredAutoActiveStage(
     pickPreferredAutoStage(solution.autoStage ?? null, snapshotState?.autoStage ?? null),
     lastEntry?.autoStage ?? null
   );
-  return preferredAutoStage?.activeStage
-    ?? latestGeneratedAutoStage(preferredAutoStage)
-    ?? (solution.cpSatStatus ? "cp-sat" : null)
-    ?? (snapshotState?.cpSatStatus ? "cp-sat" : null)
-    ?? (lastEntry?.cpSatStatus ? "cp-sat" : null)
-    ?? snapshotState?.activeOptimizer
-    ?? lastEntry?.activeOptimizer
-    ?? solution.activeOptimizer
-    ?? lastEntry?.autoStage?.activeStage
-    ?? null;
+  return (
+    preferredAutoStage?.activeStage ??
+    latestGeneratedAutoStage(preferredAutoStage) ??
+    (solution.cpSatStatus ? "cp-sat" : null) ??
+    (snapshotState?.cpSatStatus ? "cp-sat" : null) ??
+    (lastEntry?.cpSatStatus ? "cp-sat" : null) ??
+    snapshotState?.activeOptimizer ??
+    lastEntry?.activeOptimizer ??
+    solution.activeOptimizer ??
+    lastEntry?.autoStage?.activeStage ??
+    null
+  );
 }
 
-export function normalizeAutoTerminalSolution(
-  solution: Solution,
-  context: AutoTerminalSolutionContext
-): Solution {
+export function normalizeAutoTerminalSolution(solution: Solution, context: AutoTerminalSolutionContext): Solution {
   const lastEntry = context.lastProgressEntry ?? null;
   const snapshotState = context.snapshotState ?? null;
   const preferredAutoStage = pickPreferredAutoStage(
@@ -130,39 +127,39 @@ export function normalizeAutoTerminalSolution(
   );
   const activeStage = resolveRecoveredAutoActiveStage(solution, snapshotState, lastEntry);
   const stopReason: AutoSolveStopReason =
-    solution.autoStage?.stopReason
-    ?? preferredAutoStage?.stopReason
-    ?? fallbackAutoStage?.stopReason
-    ?? lastEntry?.autoStage?.stopReason
-    ?? snapshotState?.autoStage?.stopReason
-    ?? (context.cancelRequested || solution.stoppedByUser ? "cancelled" : null)
-    ?? (activeStage === "cp-sat" && solution.cpSatStatus === "OPTIMAL" ? "optimal" : null)
-    ?? (activeStage === "cp-sat" && snapshotState?.cpSatStatus === "OPTIMAL" ? "optimal" : null)
-    ?? (activeStage === "cp-sat" && lastEntry?.cpSatStatus === "OPTIMAL" ? "optimal" : null)
-    ?? "stage-error";
+    solution.autoStage?.stopReason ??
+    preferredAutoStage?.stopReason ??
+    fallbackAutoStage?.stopReason ??
+    lastEntry?.autoStage?.stopReason ??
+    snapshotState?.autoStage?.stopReason ??
+    (context.cancelRequested || solution.stoppedByUser ? "cancelled" : null) ??
+    (activeStage === "cp-sat" && solution.cpSatStatus === "OPTIMAL" ? "optimal" : null) ??
+    (activeStage === "cp-sat" && snapshotState?.cpSatStatus === "OPTIMAL" ? "optimal" : null) ??
+    (activeStage === "cp-sat" && lastEntry?.cpSatStatus === "OPTIMAL" ? "optimal" : null) ??
+    "stage-error";
   const stageIndex =
-    preferredAutoStage?.stageIndex
-    ?? fallbackAutoStage?.stageIndex
-    ?? snapshotState?.autoStage?.stageIndex
-    ?? solution.autoStage?.stageIndex
-    ?? lastEntry?.autoStage?.stageIndex
-    ?? 0;
+    preferredAutoStage?.stageIndex ??
+    fallbackAutoStage?.stageIndex ??
+    snapshotState?.autoStage?.stageIndex ??
+    solution.autoStage?.stageIndex ??
+    lastEntry?.autoStage?.stageIndex ??
+    0;
   const cycleIndex =
-    preferredAutoStage?.cycleIndex
-    ?? fallbackAutoStage?.cycleIndex
-    ?? snapshotState?.autoStage?.cycleIndex
-    ?? solution.autoStage?.cycleIndex
-    ?? lastEntry?.autoStage?.cycleIndex
-    ?? 0;
+    preferredAutoStage?.cycleIndex ??
+    fallbackAutoStage?.cycleIndex ??
+    snapshotState?.autoStage?.cycleIndex ??
+    solution.autoStage?.cycleIndex ??
+    lastEntry?.autoStage?.cycleIndex ??
+    0;
   const generatedSeeds =
     (preferredAutoStage?.generatedSeeds?.length ?? 0) > 0
       ? (preferredAutoStage?.generatedSeeds ?? [])
       : (fallbackAutoStage?.generatedSeeds?.length ?? 0) > 0
         ? (fallbackAutoStage?.generatedSeeds ?? [])
-        : (snapshotState?.autoStage?.generatedSeeds
-            ?? solution.autoStage?.generatedSeeds
-            ?? lastEntry?.autoStage?.generatedSeeds
-            ?? []);
+        : (snapshotState?.autoStage?.generatedSeeds ??
+          solution.autoStage?.generatedSeeds ??
+          lastEntry?.autoStage?.generatedSeeds ??
+          []);
 
   return {
     ...solution,
@@ -176,23 +173,23 @@ export function normalizeAutoTerminalSolution(
       stageIndex,
       cycleIndex,
       consecutiveWeakCycles:
-        preferredAutoStage?.consecutiveWeakCycles
-        ?? fallbackAutoStage?.consecutiveWeakCycles
-        ?? snapshotState?.autoStage?.consecutiveWeakCycles
-        ?? solution.autoStage?.consecutiveWeakCycles
-        ?? lastEntry?.autoStage?.consecutiveWeakCycles
-        ?? 0,
+        preferredAutoStage?.consecutiveWeakCycles ??
+        fallbackAutoStage?.consecutiveWeakCycles ??
+        snapshotState?.autoStage?.consecutiveWeakCycles ??
+        solution.autoStage?.consecutiveWeakCycles ??
+        lastEntry?.autoStage?.consecutiveWeakCycles ??
+        0,
       lastCycleImprovementRatio:
-        preferredAutoStage?.lastCycleImprovementRatio
-        ?? fallbackAutoStage?.lastCycleImprovementRatio
-        ?? snapshotState?.autoStage?.lastCycleImprovementRatio
-        ?? solution.autoStage?.lastCycleImprovementRatio
-        ?? lastEntry?.autoStage?.lastCycleImprovementRatio
-        ?? null,
+        preferredAutoStage?.lastCycleImprovementRatio ??
+        fallbackAutoStage?.lastCycleImprovementRatio ??
+        snapshotState?.autoStage?.lastCycleImprovementRatio ??
+        solution.autoStage?.lastCycleImprovementRatio ??
+        lastEntry?.autoStage?.lastCycleImprovementRatio ??
+        null,
       generatedSeeds,
-      stopReason,
+      stopReason
     },
-    stoppedByUser: context.cancelRequested ? true : Boolean(solution.stoppedByUser),
+    stoppedByUser: context.cancelRequested ? true : Boolean(solution.stoppedByUser)
   };
 }
 
@@ -201,6 +198,8 @@ export function describeAutoCompletedSolution(solution: Solution): string | null
 }
 
 export function describeAutoRecoveredSolution(solution: Solution): string {
-  return describeAutoStopReason(solution.autoStage?.stopReason)
-    ?? "Auto kept the best available incumbent from the most recent completed stage.";
+  return (
+    describeAutoStopReason(solution.autoStage?.stopReason) ??
+    "Auto kept the best available incumbent from the most recent completed stage."
+  );
 }

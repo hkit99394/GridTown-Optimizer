@@ -1,17 +1,6 @@
-import {
-  residentialFootprint,
-  serviceEffectZone,
-  serviceFootprint,
-} from "./buildings.js";
-import {
-  height,
-  isAllowed,
-  width,
-} from "./grid.js";
-import {
-  computeRoadAnchorReachableEmptyFrontier,
-  measureBuildingConnectivityShadowFromFrontier,
-} from "./roads.js";
+import { residentialFootprint, serviceEffectZone, serviceFootprint } from "./buildings.js";
+import { height, isAllowed, width } from "./grid.js";
+import { computeRoadAnchorReachableEmptyFrontier, measureBuildingConnectivityShadowFromFrontier } from "./roads.js";
 import { getResidentialBaseMax } from "./rules.js";
 import { cellKey } from "./types.js";
 
@@ -21,7 +10,7 @@ import type {
   PlannerExplainabilityMap,
   ServiceTypeSetting,
   Solution,
-  SolverParams,
+  SolverParams
 } from "./types.js";
 
 type OccupiedKind = PlannerExplainabilityCell["occupiedKind"];
@@ -51,9 +40,7 @@ function buildRemainingCounts<T extends { avail?: number }>(
   for (const typeIndex of usedTypeIndices ?? []) {
     incrementCount(used, typeIndex);
   }
-  return types.map((type, index) =>
-    Math.max(0, Math.floor(Number(type.avail ?? 0)) - (used.get(index) ?? 0))
-  );
+  return types.map((type, index) => Math.max(0, Math.floor(Number(type.avail ?? 0)) - (used.get(index) ?? 0)));
 }
 
 function serviceOrientations(type: ServiceTypeSetting): Orientation[] {
@@ -78,10 +65,12 @@ function buildRemainingServiceTypes(params: SolverParams, solution: Solution): R
   return serviceTypes.flatMap((type, index) => {
     const count = remaining[index] ?? 0;
     if (count <= 0) return [];
-    return [{
-      type,
-      orientations: serviceOrientations(type),
-    }];
+    return [
+      {
+        type,
+        orientations: serviceOrientations(type)
+      }
+    ];
   });
 }
 
@@ -91,10 +80,12 @@ function buildRemainingResidentialTypes(params: SolverParams, solution: Solution
   return residentialTypes.flatMap((type, typeIndex) => {
     const count = remaining[typeIndex] ?? 0;
     if (count <= 0) return [];
-    return [{
-      typeIndex,
-      orientations: residentialOrientations(type),
-    }];
+    return [
+      {
+        typeIndex,
+        orientations: residentialOrientations(type)
+      }
+    ];
   });
 }
 
@@ -236,21 +227,22 @@ export function buildPlannerExplainabilityMap(
       const residential = allowed
         ? bestRemainingResidentialOpportunityAt(grid, params, remainingResidentialTypes, occupiedBuildings, r, c)
         : { maxPopulation: 0, headroom: 0 };
-      const shadow = allowed && occupied !== "service" && occupied !== "residential"
-        ? measureBuildingConnectivityShadowFromFrontier(
-            grid,
-            occupiedBuildings,
-            frontier,
-            { r, c, rows: 1, cols: 1 },
-            [key]
-          )
-        : {
-            reachableBefore: frontier.reachable.size,
-            reachableAfter: frontier.reachable.size,
-            lostCells: 0,
-            footprintCells: 0,
-            disconnectedCells: 0,
-          };
+      const shadow =
+        allowed && occupied !== "service" && occupied !== "residential"
+          ? measureBuildingConnectivityShadowFromFrontier(
+              grid,
+              occupiedBuildings,
+              frontier,
+              { r, c, rows: 1, cols: 1 },
+              [key]
+            )
+          : {
+              reachableBefore: frontier.reachable.size,
+              reachableAfter: frontier.reachable.size,
+              lostCells: 0,
+              footprintCells: 0,
+              disconnectedCells: 0
+            };
 
       maxServiceValue = Math.max(maxServiceValue, serviceValue);
       maxBestServiceBonus = Math.max(maxBestServiceBonus, bestServiceBonus);
@@ -272,7 +264,7 @@ export function buildPlannerExplainabilityMap(
         residentialHeadroom: residential.headroom,
         connectivityLostCells: shadow.lostCells,
         connectivityDisconnectedCells: shadow.disconnectedCells,
-        connectivityFootprintCells: shadow.footprintCells,
+        connectivityFootprintCells: shadow.footprintCells
       });
     }
     cells.push(row);
@@ -289,6 +281,6 @@ export function buildPlannerExplainabilityMap(
     maxConnectivityLostCells,
     maxConnectivityDisconnectedCells,
     roadAnchorReachableCellCount: frontier.reachable.size,
-    cells,
+    cells
   };
 }

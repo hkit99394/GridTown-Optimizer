@@ -43,12 +43,12 @@ export function buildCpSatContinuationModelInput(request: {
     ...(params.maxPop != null ? { maxPop: params.maxPop } : {}),
     ...(params.availableBuildings ? { availableBuildings: cloneJson(params.availableBuildings) } : {}),
     ...(params.maxServices != null ? { maxServices: params.maxServices } : {}),
-    ...(params.maxResidentials != null ? { maxResidentials: params.maxResidentials } : {}),
+    ...(params.maxResidentials != null ? { maxResidentials: params.maxResidentials } : {})
   };
 
   return {
     grid: cloneGrid(request.grid),
-    params: modelParams,
+    params: modelParams
   };
 }
 

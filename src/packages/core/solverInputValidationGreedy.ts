@@ -5,7 +5,7 @@ import {
   requireOptionalFiniteNumberInRange,
   requireOptionalIntegerInRange,
   requireOptionalString,
-  requireValidationRecord,
+  requireValidationRecord
 } from "./solverInputValidationShared.js";
 
 const GREEDY_RANDOM_SEED_MAX = 0x7fffffff;
@@ -22,9 +22,7 @@ const GREEDY_MAX_DENSITY_TIE_BREAKER_TOLERANCE_PERCENT = 100;
 export function assertValidGreedyOptions(params: SolverParams): void {
   const paramsRecord = params as Record<string, unknown>;
   const greedyValue = paramsRecord.greedy;
-  const greedy = greedyValue === undefined
-    ? undefined
-    : requireValidationRecord(greedyValue, "Greedy options greedy");
+  const greedy = greedyValue === undefined ? undefined : requireValidationRecord(greedyValue, "Greedy options greedy");
 
   if (greedy) {
     requireOptionalBoolean(greedy, "localSearch", "Greedy option greedy.localSearch");
@@ -54,13 +52,7 @@ export function assertValidGreedyOptions(params: SolverParams): void {
       true
     );
     requireOptionalBoolean(greedy, "connectivityShadowScoring", "Greedy option greedy.connectivityShadowScoring");
-    requireOptionalIntegerInRange(
-      greedy,
-      "randomSeed",
-      "Greedy option greedy.randomSeed",
-      0,
-      GREEDY_RANDOM_SEED_MAX
-    );
+    requireOptionalIntegerInRange(greedy, "randomSeed", "Greedy option greedy.randomSeed", 0, GREEDY_RANDOM_SEED_MAX);
     requireOptionalBoolean(greedy, "profile", "Greedy option greedy.profile");
     requireOptionalBoolean(greedy, "diagnostics", "Greedy option greedy.diagnostics");
     requireOptionalFiniteNumberInRange(
@@ -70,13 +62,7 @@ export function assertValidGreedyOptions(params: SolverParams): void {
       0,
       GREEDY_MAX_TIME_LIMIT_SECONDS
     );
-    requireOptionalIntegerInRange(
-      greedy,
-      "restarts",
-      "Greedy option greedy.restarts",
-      1,
-      GREEDY_MAX_RESTARTS
-    );
+    requireOptionalIntegerInRange(greedy, "restarts", "Greedy option greedy.restarts", 1, GREEDY_MAX_RESTARTS);
     requireOptionalIntegerInRange(
       greedy,
       "serviceRefineIterations",
@@ -126,13 +112,7 @@ export function assertValidGreedyOptions(params: SolverParams): void {
   }
 
   requireOptionalBoolean(paramsRecord, "localSearch", "Legacy greedy option localSearch");
-  requireOptionalIntegerInRange(
-    paramsRecord,
-    "restarts",
-    "Legacy greedy option restarts",
-    1,
-    GREEDY_MAX_RESTARTS
-  );
+  requireOptionalIntegerInRange(paramsRecord, "restarts", "Legacy greedy option restarts", 1, GREEDY_MAX_RESTARTS);
   requireOptionalIntegerInRange(
     paramsRecord,
     "serviceRefineIterations",

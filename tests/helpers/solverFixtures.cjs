@@ -6,7 +6,7 @@ function buildMockSolution({
   roads,
   services,
   residentials,
-  cpSatTelemetry,
+  cpSatTelemetry
 } = {}) {
   const hasPopulation = totalPopulation > 0;
   const resolvedRoads = roads ?? ["0,0"];
@@ -22,12 +22,14 @@ function buildMockSolution({
     servicePopulationIncreases: [],
     residentials: resolvedResidentials,
     residentialTypeIndices: resolvedResidentials.map(() => -1),
-    populations: resolvedResidentials.length ? [totalPopulation, ...Array(Math.max(0, resolvedResidentials.length - 1)).fill(0)] : [],
+    populations: resolvedResidentials.length
+      ? [totalPopulation, ...Array(Math.max(0, resolvedResidentials.length - 1)).fill(0)]
+      : [],
     totalPopulation,
-    ...(cpSatTelemetry ? { cpSatTelemetry } : {}),
+    ...(cpSatTelemetry ? { cpSatTelemetry } : {})
   };
 }
 
 module.exports = {
-  buildMockSolution,
+  buildMockSolution
 };

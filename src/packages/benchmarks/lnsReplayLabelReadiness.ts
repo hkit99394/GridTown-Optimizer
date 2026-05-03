@@ -3,7 +3,7 @@ import {
   groupBenchmarkValuesBy,
   sumBenchmarkBy,
   uniqueBenchmarkValues,
-  uniqueBenchmarkValuesBy,
+  uniqueBenchmarkValuesBy
 } from "./benchmarkOptions.js";
 
 type LnsReplayLabelReadinessPressureFamilyLabel =
@@ -82,7 +82,7 @@ export const DEFAULT_LNS_REPLAY_LABEL_SCALE_THRESHOLDS: Readonly<LnsReplayLabelS
   minUsableLabelsPerSplit: 200,
   minNonNeutralLabelsPerSplit: 50,
   minUsableLabelsPerFamily: 20,
-  maxNeutralLabelRatio: 0.85,
+  maxNeutralLabelRatio: 0.85
 });
 
 function lnsLabelIsNonNeutral(label: LnsReplayLabelReadinessLabel): boolean {
@@ -112,7 +112,7 @@ function summarizeLnsReplayFamily(
     usableLabelCount: usableLabels.length,
     nonNeutralUsableLabelCount,
     neutralUsableLabelCount,
-    neutralLabelRatio: usableLabels.length === 0 ? 1 : neutralUsableLabelCount / usableLabels.length,
+    neutralLabelRatio: usableLabels.length === 0 ? 1 : neutralUsableLabelCount / usableLabels.length
   };
 }
 
@@ -121,7 +121,7 @@ function buildLnsReplayLabelSplitScaleReadiness<Split extends string>(
   thresholds: LnsReplayLabelScaleThresholds
 ): LnsReplayLabelSplitScaleReadiness<Split> {
   const families = [
-    ...groupBenchmarkValuesBy(split.replay.cases, (benchmarkCase) => benchmarkCase.pressureFamily).entries(),
+    ...groupBenchmarkValuesBy(split.replay.cases, (benchmarkCase) => benchmarkCase.pressureFamily).entries()
   ]
     .map(([pressureFamily, cases]) => summarizeLnsReplayFamily(pressureFamily, cases))
     .sort((left, right) => left.pressureFamily.localeCompare(right.pressureFamily));
@@ -148,7 +148,9 @@ function buildLnsReplayLabelSplitScaleReadiness<Split extends string>(
       failedReasons.push(`${family.pressureFamily} seeds ${family.seeds.length}/${thresholds.minSeedsPerFamily}`);
     }
     if (family.usableLabelCount < thresholds.minUsableLabelsPerFamily) {
-      failedReasons.push(`${family.pressureFamily} usable-labels ${family.usableLabelCount}/${thresholds.minUsableLabelsPerFamily}`);
+      failedReasons.push(
+        `${family.pressureFamily} usable-labels ${family.usableLabelCount}/${thresholds.minUsableLabelsPerFamily}`
+      );
     }
   }
 
@@ -162,7 +164,7 @@ function buildLnsReplayLabelSplitScaleReadiness<Split extends string>(
     neutralLabelRatio,
     passed: failedReasons.length === 0,
     failedReasons,
-    families,
+    families
   };
 }
 
@@ -174,6 +176,6 @@ export function buildLnsReplayLabelScaleReadiness<Split extends string>(
   return {
     thresholds: { ...thresholds },
     passed: splitReadiness.length > 0 && splitReadiness.every((split) => split.passed),
-    splitReadiness,
+    splitReadiness
   };
 }

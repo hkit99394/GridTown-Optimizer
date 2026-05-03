@@ -7,7 +7,7 @@ const {
   buildTinySolvePayload,
   buildWarmStartHintFromSolution,
   createRouteTestHandler,
-  invoke,
+  invoke
 } = require("./routeTestServer.cjs");
 
 async function testJsonRoutesRejectNonJsonContentType(handler) {
@@ -17,8 +17,8 @@ async function testJsonRoutesRejectNonJsonContentType(handler) {
     json: buildTinySolvePayload(),
     headers: {
       "content-type": "text/plain",
-      host: "127.0.0.1:4173",
-    },
+      host: "127.0.0.1:4173"
+    }
   });
 
   assert.equal(result.statusCode, 415);
@@ -34,8 +34,8 @@ async function testJsonRoutesRejectCrossOrigin(handler) {
     headers: {
       "content-type": "application/json",
       host: "127.0.0.1:4173",
-      origin: "https://example.invalid",
-    },
+      origin: "https://example.invalid"
+    }
   });
 
   assert.equal(result.statusCode, 403);
@@ -58,10 +58,10 @@ async function testImmediateSolveRejectsInvalidLnsSeedHint(handler) {
           maxNoImprovementIterations: 1,
           neighborhoodRows: 2,
           neighborhoodCols: 2,
-          seedHint: {},
-        },
-      },
-    },
+          seedHint: {}
+        }
+      }
+    }
   });
 
   assert.equal(result.statusCode, 400);
@@ -82,10 +82,10 @@ async function testImmediateSolveRejectsInvalidLnsSeedHint(handler) {
           maxNoImprovementIterations: 1,
           neighborhoodRows: 2,
           neighborhoodCols: 2,
-          seedHint: {},
-        },
-      },
-    },
+          seedHint: {}
+        }
+      }
+    }
   });
 
   assert.equal(omittedOptimizerResult.statusCode, 400);
@@ -115,21 +115,22 @@ async function testImmediateSolveRejectsMalformedLnsSeedFields(handler) {
             solution: {
               roads: [],
               services: [],
-              residentials: [
-                { r: null, c: 0, rows: 2, cols: 2, typeIndex: 0, population: 100 },
-              ],
+              residentials: [{ r: null, c: 0, rows: 2, cols: 2, typeIndex: 0, population: 100 }],
               populations: [100],
-              totalPopulation: 100,
-            },
-          },
-        },
-      },
-    },
+              totalPopulation: 100
+            }
+          }
+        }
+      }
+    }
   });
 
   assert.equal(result.statusCode, 400);
   assert.equal(result.payload.ok, false);
-  assert.equal(result.payload.error, "Invalid solver input: LNS seed hint solution.residentials[0].r must be an integer >= 0.");
+  assert.equal(
+    result.payload.error,
+    "Invalid solver input: LNS seed hint solution.residentials[0].r must be an integer >= 0."
+  );
 }
 
 async function testImmediateSolveRejectsStaleLnsSeedHintBeforeStartingBackend(handler) {
@@ -147,7 +148,7 @@ async function testImmediateSolveRejectsStaleLnsSeedHintBeforeStartingBackend(ha
       },
       startBackgroundSolve() {
         throw new Error("Stale LNS seed should be rejected before starting the backend.");
-      },
+      }
     };
   };
 
@@ -166,16 +167,19 @@ async function testImmediateSolveRejectsStaleLnsSeedHintBeforeStartingBackend(ha
             neighborhoodRows: 2,
             neighborhoodCols: 2,
             seedHint: buildWarmStartHintFromSolution(reusableSolution, {
-              modelFingerprint: "fnv1a:00000000",
-            }),
-          },
-        },
-      },
+              modelFingerprint: "fnv1a:00000000"
+            })
+          }
+        }
+      }
     });
 
     assert.equal(result.statusCode, 400);
     assert.equal(result.payload.ok, false);
-    assert.equal(result.payload.error, "Invalid solver input: LNS seed hint is stale for the current grid or building settings.");
+    assert.equal(
+      result.payload.error,
+      "Invalid solver input: LNS seed hint is stale for the current grid or building settings."
+    );
     assert.equal(optimizerAdapterRequested, false);
   } finally {
     optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
@@ -197,93 +201,94 @@ async function testImmediateSolveRejectsInvalidCpSatOptionsBeforeStartingBackend
       },
       startBackgroundSolve() {
         throw new Error("Invalid CP-SAT input should be rejected before starting the backend.");
-      },
+      }
     };
   };
 
   const cases = [
     {
       cpSat: { numWorkers: 0 },
-      expectedError: "Invalid solver input: CP-SAT runtime option cpSat.numWorkers must be an integer between 1 and 64.",
+      expectedError: "Invalid solver input: CP-SAT runtime option cpSat.numWorkers must be an integer between 1 and 64."
     },
     {
       cpSat: { randomSeed: 2147483648 },
-      expectedError: "Invalid solver input: CP-SAT runtime option cpSat.randomSeed must be an integer between 0 and 2147483647.",
+      expectedError:
+        "Invalid solver input: CP-SAT runtime option cpSat.randomSeed must be an integer between 0 and 2147483647."
     },
     {
       cpSat: { timeLimitSeconds: 86401 },
       expectedError:
-        "Invalid solver input: CP-SAT runtime option cpSat.timeLimitSeconds must be a finite number > 0 and <= 86400.",
+        "Invalid solver input: CP-SAT runtime option cpSat.timeLimitSeconds must be a finite number > 0 and <= 86400."
     },
     {
       cpSat: { roadConnectivityMode: "single-root" },
       expectedError:
-        "Invalid solver input: CP-SAT runtime option cpSat.roadConnectivityMode is no longer supported; CP-SAT always uses anchor-components road connectivity.",
+        "Invalid solver input: CP-SAT runtime option cpSat.roadConnectivityMode is no longer supported; CP-SAT always uses anchor-components road connectivity."
     },
     {
       cpSat: {
         numWorkers: 1,
         portfolio: {
-          randomSeeds: [11, "bad"],
-        },
+          randomSeeds: [11, "bad"]
+        }
       },
       expectedError:
-        "Invalid solver input: CP-SAT portfolio option cpSat.portfolio.randomSeeds[1] must be an integer between 0 and 2147483647.",
-    },
-    {
-      cpSat: {
-        numWorkers: 1,
-        timeLimitSeconds: 30,
-        portfolio: {
-          randomSeeds: [2147483648],
-        },
-      },
-      expectedError:
-        "Invalid solver input: CP-SAT portfolio option cpSat.portfolio.randomSeeds[0] must be an integer between 0 and 2147483647.",
+        "Invalid solver input: CP-SAT portfolio option cpSat.portfolio.randomSeeds[1] must be an integer between 0 and 2147483647."
     },
     {
       cpSat: {
         numWorkers: 1,
         timeLimitSeconds: 30,
         portfolio: {
-          workerCount: 9,
-        },
+          randomSeeds: [2147483648]
+        }
       },
       expectedError:
-        "Invalid solver input: CP-SAT portfolio option cpSat.portfolio.workerCount must be an integer between 1 and 8.",
+        "Invalid solver input: CP-SAT portfolio option cpSat.portfolio.randomSeeds[0] must be an integer between 0 and 2147483647."
     },
     {
       cpSat: {
         numWorkers: 1,
         timeLimitSeconds: 30,
         portfolio: {
-          randomSeeds: [],
-        },
+          workerCount: 9
+        }
       },
       expectedError:
-        "Invalid solver input: CP-SAT portfolio option cpSat.portfolio.randomSeeds must contain between 1 and 8 seeds.",
+        "Invalid solver input: CP-SAT portfolio option cpSat.portfolio.workerCount must be an integer between 1 and 8."
     },
     {
       cpSat: {
         numWorkers: 1,
         timeLimitSeconds: 30,
         portfolio: {
-          randomSeeds: [11, 11],
-        },
+          randomSeeds: []
+        }
       },
       expectedError:
-        "Invalid solver input: CP-SAT portfolio option cpSat.portfolio.randomSeeds must not contain duplicate seeds.",
+        "Invalid solver input: CP-SAT portfolio option cpSat.portfolio.randomSeeds must contain between 1 and 8 seeds."
+    },
+    {
+      cpSat: {
+        numWorkers: 1,
+        timeLimitSeconds: 30,
+        portfolio: {
+          randomSeeds: [11, 11]
+        }
+      },
+      expectedError:
+        "Invalid solver input: CP-SAT portfolio option cpSat.portfolio.randomSeeds must not contain duplicate seeds."
     },
     {
       cpSat: {
         numWorkers: 1,
         portfolio: {
           workerCount: 2,
-          totalCpuBudgetSeconds: 60,
-        },
+          totalCpuBudgetSeconds: 60
+        }
       },
       expectedError:
-        "Invalid solver input: CP-SAT portfolio option cpSat.portfolio.totalCpuBudgetSeconds requires cpSat.timeLimitSeconds or CP-SAT portfolio option cpSat.portfolio.perWorkerTimeLimitSeconds.",
+        "Invalid solver input: CP-SAT portfolio option cpSat.portfolio.totalCpuBudgetSeconds requires cpSat.timeLimitSeconds or CP-SAT portfolio option cpSat.portfolio.perWorkerTimeLimitSeconds."
     },
     {
       cpSat: {
@@ -291,11 +296,11 @@ async function testImmediateSolveRejectsInvalidCpSatOptionsBeforeStartingBackend
         portfolio: {
           workerCount: 4,
           perWorkerNumWorkers: 3,
-          perWorkerTimeLimitSeconds: 30,
-        },
+          perWorkerTimeLimitSeconds: 30
+        }
       },
       expectedError:
-        "Invalid solver input: CP-SAT portfolio option cpSat.portfolio requests 12 parallel CP-SAT workers, exceeding the 8 worker portfolio limit.",
+        "Invalid solver input: CP-SAT portfolio option cpSat.portfolio requests 12 parallel CP-SAT workers, exceeding the 8 worker portfolio limit."
     },
     {
       cpSat: {
@@ -303,21 +308,21 @@ async function testImmediateSolveRejectsInvalidCpSatOptionsBeforeStartingBackend
         portfolio: {
           workerCount: 8,
           perWorkerNumWorkers: 1,
-          perWorkerTimeLimitSeconds: 4000,
-        },
+          perWorkerTimeLimitSeconds: 4000
+        }
       },
       expectedError:
-        "Invalid solver input: CP-SAT portfolio option cpSat.portfolio requests 32000 total CPU seconds, exceeding the 28800 second portfolio budget.",
+        "Invalid solver input: CP-SAT portfolio option cpSat.portfolio requests 32000 total CPU seconds, exceeding the 28800 second portfolio budget."
     },
     {
       cpSat: {
         numWorkers: 1,
         warmStartHint: buildWarmStartHintFromSolution(reusableSolution, {
-          modelFingerprint: "fnv1a:00000000",
-        }),
+          modelFingerprint: "fnv1a:00000000"
+        })
       },
       expectedError:
-        "Invalid solver input: CP-SAT warm-start hint cpSat.warmStartHint is stale for the current grid or building settings.",
+        "Invalid solver input: CP-SAT warm-start hint cpSat.warmStartHint is stale for the current grid or building settings."
     },
     {
       cpSat: {
@@ -325,11 +330,11 @@ async function testImmediateSolveRejectsInvalidCpSatOptionsBeforeStartingBackend
         warmStartHint: {
           roadKeys: ["0,0"],
           serviceCandidateKeys: [],
-          residentialCandidateKeys: [],
-        },
+          residentialCandidateKeys: []
+        }
       },
       expectedError:
-        "Invalid solver input: CP-SAT warm-start hint cpSat.warmStartHint.modelFingerprint is required for hint-only reusable payloads.",
+        "Invalid solver input: CP-SAT warm-start hint cpSat.warmStartHint.modelFingerprint is required for hint-only reusable payloads."
     },
     {
       cpSat: {
@@ -338,16 +343,14 @@ async function testImmediateSolveRejectsInvalidCpSatOptionsBeforeStartingBackend
           solution: {
             roads: [],
             services: [],
-            residentials: [
-              { r: 0, c: 0, rows: 2, cols: 2, population: 100 },
-            ],
+            residentials: [{ r: 0, c: 0, rows: 2, cols: 2, population: 100 }],
             populations: [100],
-            totalPopulation: 100,
-          },
-        },
+            totalPopulation: 100
+          }
+        }
       },
       expectedError:
-        "Invalid solver input: CP-SAT warm-start hint cpSat.warmStartHint.solution.residentials[0].typeIndex must be an integer >= -1.",
+        "Invalid solver input: CP-SAT warm-start hint cpSat.warmStartHint.solution.residentials[0].typeIndex must be an integer >= -1."
     },
     {
       cpSat: {
@@ -356,17 +359,15 @@ async function testImmediateSolveRejectsInvalidCpSatOptionsBeforeStartingBackend
           solution: {
             roads: [],
             services: [],
-            residentials: [
-              { r: 0, c: 0, rows: 2, cols: 2, typeIndex: 0, population: 100 },
-            ],
+            residentials: [{ r: 0, c: 0, rows: 2, cols: 2, typeIndex: 0, population: 100 }],
             populations: [100],
-            totalPopulation: 100,
-          },
-        },
+            totalPopulation: 100
+          }
+        }
       },
       expectedError:
-        "Invalid solver input: CP-SAT warm-start hint cpSat.warmStartHint.solution is invalid: Road network does not touch row 0 or column 0.",
-    },
+        "Invalid solver input: CP-SAT warm-start hint cpSat.warmStartHint.solution is invalid: Road network does not touch row 0 or column 0."
+    }
   ];
 
   try {
@@ -379,9 +380,9 @@ async function testImmediateSolveRejectsInvalidCpSatOptionsBeforeStartingBackend
           params: {
             ...solvePayload.params,
             optimizer: "cp-sat",
-            cpSat: testCase.cpSat,
-          },
-        },
+            cpSat: testCase.cpSat
+          }
+        }
       });
 
       assert.equal(result.statusCode, 400);
@@ -403,11 +404,11 @@ async function testImmediateSolveRejectsInvalidCpSatOptionsBeforeStartingBackend
               timeLimitSeconds: 30,
               portfolio: {
                 workerCount: 2,
-                perWorkerNumWorkers: 1,
-              },
-            },
-          },
-        },
+                perWorkerNumWorkers: 1
+              }
+            }
+          }
+        }
       });
 
       assert.equal(result.statusCode, 400);
@@ -437,32 +438,33 @@ async function testImmediateSolveRejectsInvalidGreedyOptionsBeforeStartingBacken
       },
       startBackgroundSolve() {
         throw new Error("Invalid greedy input should be rejected before starting the backend.");
-      },
+      }
     };
   };
 
   const cases = [
     {
       greedy: "fast",
-      expectedError: "Invalid solver input: Greedy options greedy must be an object.",
+      expectedError: "Invalid solver input: Greedy options greedy must be an object."
     },
     {
       greedy: { restarts: 0 },
-      expectedError: "Invalid solver input: Greedy option greedy.restarts must be an integer between 1 and 100.",
+      expectedError: "Invalid solver input: Greedy option greedy.restarts must be an integer between 1 and 100."
     },
     {
       greedy: { serviceLookaheadCandidates: "many" },
       expectedError:
-        "Invalid solver input: Greedy option greedy.serviceLookaheadCandidates must be an integer between 0 and 2000.",
+        "Invalid solver input: Greedy option greedy.serviceLookaheadCandidates must be an integer between 0 and 2000."
     },
     {
       greedy: { timeLimitSeconds: 0 },
-      expectedError: "Invalid solver input: Greedy option greedy.timeLimitSeconds must be a finite number > 0 and <= 86400.",
+      expectedError:
+        "Invalid solver input: Greedy option greedy.timeLimitSeconds must be a finite number > 0 and <= 86400."
     },
     {
       greedy: { diagnostics: "yes" },
-      expectedError: "Invalid solver input: Greedy option greedy.diagnostics must be a boolean.",
-    },
+      expectedError: "Invalid solver input: Greedy option greedy.diagnostics must be a boolean."
+    }
   ];
 
   try {
@@ -474,9 +476,9 @@ async function testImmediateSolveRejectsInvalidGreedyOptionsBeforeStartingBacken
           ...solvePayload,
           params: {
             ...solvePayload.params,
-            greedy: testCase.greedy,
-          },
-        },
+            greedy: testCase.greedy
+          }
+        }
       });
 
       assert.equal(result.statusCode, 400);
@@ -503,7 +505,7 @@ async function testSolveRoutesRejectInvalidAutoOptionsBeforeStartingBackend(hand
       },
       startBackgroundSolve() {
         throw new Error("Invalid auto input should be rejected before starting the backend.");
-      },
+      }
     };
   };
 
@@ -511,38 +513,38 @@ async function testSolveRoutesRejectInvalidAutoOptionsBeforeStartingBackend(hand
     {
       url: "/api/solve",
       auto: "fast",
-      expectedError: "Invalid solver input: Auto options auto must be an object.",
+      expectedError: "Invalid solver input: Auto options auto must be an object."
     },
     {
       url: "/api/solve/start",
       auto: { wallClockLimitSeconds: 0 },
       expectedError:
-        "Invalid solver input: Auto option auto.wallClockLimitSeconds must be a finite number > 0 and <= 86400.",
+        "Invalid solver input: Auto option auto.wallClockLimitSeconds must be a finite number > 0 and <= 86400."
     },
     {
       url: "/api/solve/start",
       auto: { weakCycleImprovementThreshold: -0.1 },
       expectedError:
-        "Invalid solver input: Auto option auto.weakCycleImprovementThreshold must be a finite number >= 0 and <= 1.",
+        "Invalid solver input: Auto option auto.weakCycleImprovementThreshold must be a finite number >= 0 and <= 1."
     },
     {
       url: "/api/solve",
       auto: { maxConsecutiveWeakCycles: 0 },
       expectedError:
-        "Invalid solver input: Auto option auto.maxConsecutiveWeakCycles must be an integer between 1 and 100.",
+        "Invalid solver input: Auto option auto.maxConsecutiveWeakCycles must be an integer between 1 and 100."
     },
     {
       url: "/api/solve",
       auto: { cpSatStageTimeLimitSeconds: "30" },
       expectedError:
-        "Invalid solver input: Auto option auto.cpSatStageTimeLimitSeconds must be a finite number > 0 and <= 86400.",
+        "Invalid solver input: Auto option auto.cpSatStageTimeLimitSeconds must be a finite number > 0 and <= 86400."
     },
     {
       url: "/api/solve",
       auto: { cpSatStageReserveRatio: 2 },
       expectedError:
-        "Invalid solver input: Auto option auto.cpSatStageReserveRatio must be a finite number >= 0 and <= 1.",
-    },
+        "Invalid solver input: Auto option auto.cpSatStageReserveRatio must be a finite number >= 0 and <= 1."
+    }
   ];
 
   try {
@@ -555,9 +557,9 @@ async function testSolveRoutesRejectInvalidAutoOptionsBeforeStartingBackend(hand
           params: {
             ...solvePayload.params,
             optimizer: "auto",
-            auto: testCase.auto,
-          },
-        },
+            auto: testCase.auto
+          }
+        }
       });
 
       assert.equal(result.statusCode, 400);
@@ -584,7 +586,7 @@ async function testSolveRoutesRejectInvalidLnsOptionsBeforeStartingBackend(handl
       },
       startBackgroundSolve() {
         throw new Error("Invalid LNS input should be rejected before starting the backend.");
-      },
+      }
     };
   };
 
@@ -592,24 +594,24 @@ async function testSolveRoutesRejectInvalidLnsOptionsBeforeStartingBackend(handl
     {
       url: "/api/solve",
       lns: "repair",
-      expectedError: "Invalid solver input: LNS options lns must be an object.",
+      expectedError: "Invalid solver input: LNS options lns must be an object."
     },
     {
       url: "/api/solve/start",
       lns: { iterations: 0 },
-      expectedError: "Invalid solver input: LNS option lns.iterations must be an integer between 1 and 10000.",
+      expectedError: "Invalid solver input: LNS option lns.iterations must be an integer between 1 and 10000."
     },
     {
       url: "/api/solve",
       lns: { wallClockLimitSeconds: 0 },
       expectedError:
-        "Invalid solver input: LNS option lns.wallClockLimitSeconds must be a finite number > 0 and <= 86400.",
+        "Invalid solver input: LNS option lns.wallClockLimitSeconds must be a finite number > 0 and <= 86400."
     },
     {
       url: "/api/solve/start",
       lns: { stopFilePath: false },
-      expectedError: "Invalid solver input: LNS runtime option lns.stopFilePath must be a string.",
-    },
+      expectedError: "Invalid solver input: LNS runtime option lns.stopFilePath must be a string."
+    }
   ];
 
   try {
@@ -622,9 +624,9 @@ async function testSolveRoutesRejectInvalidLnsOptionsBeforeStartingBackend(handl
           params: {
             ...solvePayload.params,
             optimizer: "lns",
-            lns: testCase.lns,
-          },
-        },
+            lns: testCase.lns
+          }
+        }
       });
 
       assert.equal(result.statusCode, 400);
@@ -658,11 +660,11 @@ async function testImmediateSolvePreservesTypedSolverInputErrors(handler) {
         getLatestSnapshotState() {
           return {
             hasFeasibleSolution: false,
-            totalPopulation: null,
+            totalPopulation: null
           };
-        },
+        }
       };
-    },
+    }
   });
 
   try {
@@ -678,10 +680,10 @@ async function testImmediateSolvePreservesTypedSolverInputErrors(handler) {
             iterations: 1,
             maxNoImprovementIterations: 1,
             neighborhoodRows: 2,
-            neighborhoodCols: 2,
-          },
-        },
-      },
+            neighborhoodCols: 2
+          }
+        }
+      }
     });
 
     assert.equal(result.statusCode, 400);
@@ -708,10 +710,10 @@ async function testStartSolveRejectsInvalidLnsSeedHint(handler) {
           maxNoImprovementIterations: 1,
           neighborhoodRows: 2,
           neighborhoodCols: 2,
-          seedHint: {},
-        },
-      },
-    },
+          seedHint: {}
+        }
+      }
+    }
   });
 
   assert.equal(result.statusCode, 400);
@@ -733,7 +735,7 @@ async function testStartSolveRejectsInvalidCpSatOptionsBeforeStartingJob(handler
       },
       startBackgroundSolve() {
         throw new Error("Invalid CP-SAT input should be rejected before starting a solve job.");
-      },
+      }
     };
   };
 
@@ -751,11 +753,11 @@ async function testStartSolveRejectsInvalidCpSatOptionsBeforeStartingJob(handler
           cpSat: {
             numWorkers: 1,
             portfolio: {
-              perWorkerNumWorkers: 0,
-            },
-          },
-        },
-      },
+              perWorkerNumWorkers: 0
+            }
+          }
+        }
+      }
     });
 
     assert.equal(result.statusCode, 400);
@@ -768,7 +770,7 @@ async function testStartSolveRejectsInvalidCpSatOptionsBeforeStartingJob(handler
 
     const statusResult = await invoke(handler, {
       method: "GET",
-      url: `/api/solve/status?${new URLSearchParams({ requestId }).toString()}`,
+      url: `/api/solve/status?${new URLSearchParams({ requestId }).toString()}`
     });
     assert.equal(statusResult.statusCode, 404);
   } finally {
@@ -790,7 +792,7 @@ async function testStartSolveRejectsInvalidCpSatWarmStartBeforeStartingJob(handl
       },
       startBackgroundSolve() {
         throw new Error("Invalid CP-SAT warm start should be rejected before starting a solve job.");
-      },
+      }
     };
   };
 
@@ -811,16 +813,14 @@ async function testStartSolveRejectsInvalidCpSatWarmStartBeforeStartingJob(handl
               solution: {
                 roads: [],
                 services: [],
-                residentials: [
-                  { r: 0, c: 0, rows: 2, cols: 2, typeIndex: 0, population: 100 },
-                ],
+                residentials: [{ r: 0, c: 0, rows: 2, cols: 2, typeIndex: 0, population: 100 }],
                 populations: [100],
-                totalPopulation: 100,
-              },
-            },
-          },
-        },
-      },
+                totalPopulation: 100
+              }
+            }
+          }
+        }
+      }
     });
 
     assert.equal(result.statusCode, 400);
@@ -833,7 +833,7 @@ async function testStartSolveRejectsInvalidCpSatWarmStartBeforeStartingJob(handl
 
     const statusResult = await invoke(handler, {
       method: "GET",
-      url: `/api/solve/status?${new URLSearchParams({ requestId }).toString()}`,
+      url: `/api/solve/status?${new URLSearchParams({ requestId }).toString()}`
     });
     assert.equal(statusResult.statusCode, 404);
   } finally {
@@ -855,7 +855,7 @@ async function testStartSolveRejectsInvalidGreedyOptionsBeforeStartingJob(handle
       },
       startBackgroundSolve() {
         throw new Error("Invalid greedy input should be rejected before starting a solve job.");
-      },
+      }
     };
   };
 
@@ -869,9 +869,9 @@ async function testStartSolveRejectsInvalidGreedyOptionsBeforeStartingJob(handle
         requestId,
         params: {
           ...solvePayload.params,
-          serviceExactMaxCombinations: 0,
-        },
-      },
+          serviceExactMaxCombinations: 0
+        }
+      }
     });
 
     assert.equal(result.statusCode, 400);
@@ -884,7 +884,7 @@ async function testStartSolveRejectsInvalidGreedyOptionsBeforeStartingJob(handle
 
     const statusResult = await invoke(handler, {
       method: "GET",
-      url: `/api/solve/status?${new URLSearchParams({ requestId }).toString()}`,
+      url: `/api/solve/status?${new URLSearchParams({ requestId }).toString()}`
     });
     assert.equal(statusResult.statusCode, 404);
   } finally {

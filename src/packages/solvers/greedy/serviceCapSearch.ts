@@ -53,7 +53,7 @@ function buildAdaptiveServiceCapPlan(inferredUpper: number): GreedyServiceCapPla
     return {
       coarseCaps: Array.from({ length: inferredUpper + 1 }, (_, index) => index),
       refineCaps: [],
-      usesAdaptiveSearch: false,
+      usesAdaptiveSearch: false
     };
   }
 
@@ -63,17 +63,15 @@ function buildAdaptiveServiceCapPlan(inferredUpper: number): GreedyServiceCapPla
       inferredUpper,
       Math.floor(inferredUpper / 4),
       Math.floor(inferredUpper / 2),
-      Math.ceil((3 * inferredUpper) / 4),
+      Math.ceil((3 * inferredUpper) / 4)
     ]),
     refineCaps: [],
-    usesAdaptiveSearch: true,
+    usesAdaptiveSearch: true
   };
 }
 
 function compareCapResults(a: CapResult, b: CapResult): number {
-  return b.totalPopulation - a.totalPopulation
-    || a.serviceCount - b.serviceCount
-    || a.cap - b.cap;
+  return b.totalPopulation - a.totalPopulation || a.serviceCount - b.serviceCount || a.cap - b.cap;
 }
 
 function summarizeCapResult(cap: number, phase: CapSearchPhase, solution: Solution | null): CapResult {
@@ -82,11 +80,14 @@ function summarizeCapResult(cap: number, phase: CapSearchPhase, solution: Soluti
     phase,
     solution,
     totalPopulation: solution?.totalPopulation ?? -1,
-    serviceCount: solution?.services.length ?? Number.POSITIVE_INFINITY,
+    serviceCount: solution?.services.length ?? Number.POSITIVE_INFINITY
   };
 }
 
-export function buildGreedyServiceCapPolicy(params: SolverParams, maxServices: number | undefined): GreedyServiceCapPolicy {
+export function buildGreedyServiceCapPolicy(
+  params: SolverParams,
+  maxServices: number | undefined
+): GreedyServiceCapPolicy {
   // Explicit service caps are maxima, so lower counts remain eligible when extra services block housing.
   const explicitServiceCap = maxServices;
   const positiveBonuses = (params.serviceTypes ?? []).reduce(
@@ -94,21 +95,24 @@ export function buildGreedyServiceCapPolicy(params: SolverParams, maxServices: n
     0
   );
   const totalServiceAvail = (params.serviceTypes ?? []).reduce((sum, type) => sum + Math.max(0, type.avail), 0);
-  const serviceAvailabilityUpper = positiveBonuses > 0 ? Math.min(totalServiceAvail, positiveBonuses) : totalServiceAvail;
-  const inferredUpper = explicitServiceCap !== undefined
-    ? Math.min(explicitServiceCap, serviceAvailabilityUpper)
-    : serviceAvailabilityUpper;
-  const capPlan = explicitServiceCap !== undefined
-    ? {
-        coarseCaps: Array.from({ length: inferredUpper + 1 }, (_, cap) => cap),
-        refineCaps: [],
-        usesAdaptiveSearch: false,
-      }
-    : buildAdaptiveServiceCapPlan(inferredUpper);
+  const serviceAvailabilityUpper =
+    positiveBonuses > 0 ? Math.min(totalServiceAvail, positiveBonuses) : totalServiceAvail;
+  const inferredUpper =
+    explicitServiceCap !== undefined
+      ? Math.min(explicitServiceCap, serviceAvailabilityUpper)
+      : serviceAvailabilityUpper;
+  const capPlan =
+    explicitServiceCap !== undefined
+      ? {
+          coarseCaps: Array.from({ length: inferredUpper + 1 }, (_, cap) => cap),
+          refineCaps: [],
+          usesAdaptiveSearch: false
+        }
+      : buildAdaptiveServiceCapPlan(inferredUpper);
   return {
     explicitServiceCap,
     inferredUpper,
-    capPlan,
+    capPlan
   };
 }
 
@@ -119,13 +123,7 @@ export function runGreedyServiceCapSearch(options: {
   evaluateNewCap: GreedyCapEvaluator;
   refineExistingCap: GreedyExistingCapRefiner;
 }): void {
-  const {
-    policy,
-    restarts,
-    profileCounters,
-    evaluateNewCap,
-    refineExistingCap,
-  } = options;
+  const { policy, restarts, profileCounters, evaluateNewCap, refineExistingCap } = options;
   const { explicitServiceCap, inferredUpper, capPlan } = policy;
   const capResultsByCap = new Map<number, CapResult>();
   const evaluatedCaps = new Set<number>();
@@ -149,9 +147,7 @@ export function runGreedyServiceCapSearch(options: {
     .filter((entry) => entry.phase === "coarse")
     .sort(compareCapResults);
   const focusCaps = new Set(coarseResults.slice(0, 2).map((entry) => entry.cap));
-  const refineCaps = dedupeSortedNumbers(
-    [...focusCaps].flatMap((cap) => inclusiveCapBand(cap, inferredUpper, 2))
-  );
+  const refineCaps = dedupeSortedNumbers([...focusCaps].flatMap((cap) => inclusiveCapBand(cap, inferredUpper, 2)));
   const refineCapSet = new Set(refineCaps);
 
   for (const cap of refineCaps) {
@@ -172,9 +168,7 @@ export function runGreedyServiceCapSearch(options: {
       .sort(compareCapResults)
       .slice(0, 2)
       .map((entry) => entry.cap),
-    ...[...focusCaps].flatMap((cap) =>
-      inclusiveCapBand(cap, inferredUpper, 1).filter((neighbor) => neighbor > 0)
-    ),
+    ...[...focusCaps].flatMap((cap) => inclusiveCapBand(cap, inferredUpper, 1).filter((neighbor) => neighbor > 0))
   ]);
 
   for (const cap of restartFocusCaps) {

@@ -11,7 +11,7 @@ import type {
   SolutionValidationInput,
   SolutionValidationResult,
   SolverParams,
-  EvaluatedServicePlacement,
+  EvaluatedServicePlacement
 } from "./types.js";
 import { cellFromKey } from "./types.js";
 import { isAllowed } from "./grid.js";
@@ -19,7 +19,7 @@ import {
   serviceFootprint,
   residentialFootprint,
   buildServiceEffectZoneSet,
-  normalizeServicePlacement,
+  normalizeServicePlacement
 } from "./buildings.js";
 import { isAdjacentToRoads, roadsConnectedToRoadAnchor } from "./roads.js";
 import {
@@ -27,7 +27,7 @@ import {
   getBuildingLimits,
   getResidentialBaseMax,
   NO_TYPE_INDEX,
-  normalizeSize,
+  normalizeSize
 } from "./rules.js";
 
 export interface SolutionValidationOptions {
@@ -78,11 +78,7 @@ type GroupAssignment = { ok: boolean; assignedPop: number[] };
  * Exact assignment for one size-group of residentials:
  * choose a type (with remaining avail) per building to maximize total population.
  */
-function assignGroupExact(
-  boosts: number[],
-  typeIndices: number[],
-  params: SolverParams
-): GroupAssignment {
+function assignGroupExact(boosts: number[], typeIndices: number[], params: SolverParams): GroupAssignment {
   const types = params.residentialTypes ?? [];
   const m = typeIndices.length;
   const n = boosts.length;
@@ -205,10 +201,11 @@ export function validateLayoutConstraints(input: LayoutEvaluationInput): LayoutC
   }
   if (connected.size !== roads.size) {
     const disconnectedRoads = [...roads].filter((key) => !connected.has(key));
-    const disconnectedSummary = disconnectedRoads.length > 0
-      ? ` Disconnected road cells: ${summarizeCellKeys(disconnectedRoads)}.`
-      : "";
-    errors.push(`Some road cells are not connected to any row-0-or-column-0-connected road component.${disconnectedSummary}`);
+    const disconnectedSummary =
+      disconnectedRoads.length > 0 ? ` Disconnected road cells: ${summarizeCellKeys(disconnectedRoads)}.` : "";
+    errors.push(
+      `Some road cells are not connected to any row-0-or-column-0-connected road component.${disconnectedSummary}`
+    );
   }
 
   // Building-road adjacency.
@@ -227,7 +224,7 @@ export function validateLayoutConstraints(input: LayoutEvaluationInput): LayoutC
 
   return {
     valid: errors.length === 0,
-    errors,
+    errors
   };
 }
 
@@ -276,7 +273,7 @@ export function evaluateLayout(input: LayoutEvaluationInput): LayoutEvaluationRe
 
   const popRows: EvaluatedResidentialResult[] = residentials.map((res, i) => ({
     ...res,
-    population: populations[i],
+    population: populations[i]
   }));
   const totalPopulation = popRows.reduce((acc, r) => acc + r.population, 0);
 
@@ -285,7 +282,7 @@ export function evaluateLayout(input: LayoutEvaluationInput): LayoutEvaluationRe
     errors,
     populations: popRows,
     totalPopulation,
-    boosts,
+    boosts
   };
 }
 
@@ -310,7 +307,10 @@ export function assertValidLayoutConstraints(
   return validation;
 }
 
-export function assertValidLayout(input: LayoutEvaluationInput, messagePrefix = "Invalid layout"): LayoutEvaluationResult {
+export function assertValidLayout(
+  input: LayoutEvaluationInput,
+  messagePrefix = "Invalid layout"
+): LayoutEvaluationResult {
   const evaluation = evaluateLayout(input);
   if (!evaluation.valid) {
     throw new Error(`${messagePrefix}: ${formatLayoutValidationErrors(evaluation)}`);
@@ -321,14 +321,18 @@ export function assertValidLayout(input: LayoutEvaluationInput, messagePrefix = 
 function validateServiceTypeAssignments(solution: Solution, params: SolverParams, errors: string[]): void {
   const usingTypes = (params.serviceTypes?.length ?? 0) > 0;
   if (solution.serviceTypeIndices.length !== solution.services.length) {
-    errors.push(`Solution reports ${solution.serviceTypeIndices.length} service type indices for ${solution.services.length} services.`);
+    errors.push(
+      `Solution reports ${solution.serviceTypeIndices.length} service type indices for ${solution.services.length} services.`
+    );
     return;
   }
 
   if (!usingTypes) {
     for (let i = 0; i < solution.serviceTypeIndices.length; i++) {
       if (solution.serviceTypeIndices[i] !== NO_TYPE_INDEX) {
-        errors.push(`Service ${i} reports type index ${solution.serviceTypeIndices[i]} but no service types were configured.`);
+        errors.push(
+          `Service ${i} reports type index ${solution.serviceTypeIndices[i]} but no service types were configured.`
+        );
       }
     }
     return;
@@ -347,10 +351,12 @@ function validateServiceTypeAssignments(solution: Solution, params: SolverParams
     const compatibleOrientation =
       (service.rows === type.rows && service.cols === type.cols) ||
       ((type.allowRotation ?? true) && service.rows === type.cols && service.cols === type.rows);
-    if (!compatibleOrientation || service.range !== type.range || (solution.servicePopulationIncreases[i] ?? 0) !== type.bonus) {
-      errors.push(
-        `Service ${i} does not match configured service type ${typeIndex}.`
-      );
+    if (
+      !compatibleOrientation ||
+      service.range !== type.range ||
+      (solution.servicePopulationIncreases[i] ?? 0) !== type.bonus
+    ) {
+      errors.push(`Service ${i} does not match configured service type ${typeIndex}.`);
       continue;
     }
     counts[typeIndex]++;
@@ -363,11 +369,7 @@ function validateServiceTypeAssignments(solution: Solution, params: SolverParams
   }
 }
 
-function validateResidentialTypeAssignments(
-  solution: Solution,
-  params: SolverParams,
-  errors: string[]
-): void {
+function validateResidentialTypeAssignments(solution: Solution, params: SolverParams, errors: string[]): void {
   const usingTypes = (params.residentialTypes?.length ?? 0) > 0;
   if (solution.residentialTypeIndices.length !== solution.residentials.length) {
     errors.push(
@@ -379,7 +381,9 @@ function validateResidentialTypeAssignments(
   if (!usingTypes) {
     for (let i = 0; i < solution.residentialTypeIndices.length; i++) {
       if (solution.residentialTypeIndices[i] !== NO_TYPE_INDEX) {
-        errors.push(`Residential ${i} reports type index ${solution.residentialTypeIndices[i]} but no residential types were configured.`);
+        errors.push(
+          `Residential ${i} reports type index ${solution.residentialTypeIndices[i]} but no residential types were configured.`
+        );
       }
     }
     return;
@@ -442,14 +446,14 @@ export function validateSolution(
 
   const services = solution.services.map((service, index) => ({
     ...service,
-    bonus: solution.servicePopulationIncreases[index] ?? 0,
+    bonus: solution.servicePopulationIncreases[index] ?? 0
   }));
   const layoutEvaluation = evaluateLayout({
     grid,
     roads: solution.roads,
     services,
     residentials: solution.residentials,
-    params,
+    params
   });
 
   for (const error of layoutEvaluation.errors) errors.push(error);
@@ -481,6 +485,6 @@ export function validateSolution(
     errors,
     recomputedPopulations,
     recomputedTotalPopulation,
-    layoutEvaluation,
+    layoutEvaluation
   };
 }

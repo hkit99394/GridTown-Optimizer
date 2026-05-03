@@ -46,27 +46,17 @@ export function rectangleBlockedCount(
 ): number {
   const r2 = r + rows;
   const c2 = c + cols;
-  return (
-    blockedPrefixSum[r2][c2]
-    - blockedPrefixSum[r][c2]
-    - blockedPrefixSum[r2][c]
-    + blockedPrefixSum[r][c]
-  );
+  return blockedPrefixSum[r2][c2] - blockedPrefixSum[r][c2] - blockedPrefixSum[r2][c] + blockedPrefixSum[r][c];
 }
 
 const ORTH: [number, number][] = [
   [-1, 0],
   [1, 0],
   [0, -1],
-  [0, 1],
+  [0, 1]
 ];
 
-export function forEachOrthogonalNeighbor(
-  G: Grid,
-  r: number,
-  c: number,
-  visit: (r: number, c: number) => void
-): void {
+export function forEachOrthogonalNeighbor(G: Grid, r: number, c: number, visit: (r: number, c: number) => void): void {
   const H = height(G);
   const W = width(G);
   for (const [dr, dc] of ORTH) {
@@ -160,12 +150,7 @@ export function forEachRectangleBorderCell(
 }
 
 /** Cells that are orthogonally adjacent to the rectangle (outside it) */
-export function rectangleBorderCells(
-  r: number,
-  c: number,
-  rows: number,
-  cols: number
-): [number, number][] {
+export function rectangleBorderCells(r: number, c: number, rows: number, cols: number): [number, number][] {
   const out: [number, number][] = [];
   forEachRectangleBorderCell(r, c, rows, cols, (rr, cc) => out.push([rr, cc]));
   return out;

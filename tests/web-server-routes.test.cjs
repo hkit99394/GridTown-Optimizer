@@ -6,13 +6,13 @@ const routeTestFiles = [
   "solve-routes.test.cjs",
   "validation-routes.test.cjs",
   "layout-evaluate-routes.test.cjs",
-  "status-routes.test.cjs",
+  "status-routes.test.cjs"
 ];
 
 for (const fileName of routeTestFiles) {
   const result = childProcess.spawnSync(process.execPath, [path.join(__dirname, "web-server", fileName)], {
     encoding: "utf8",
-    stdio: "inherit",
+    stdio: "inherit"
   });
   if (result.status !== 0) {
     process.exitCode = result.status ?? 1;

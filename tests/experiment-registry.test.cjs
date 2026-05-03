@@ -11,7 +11,7 @@ const {
   checkExperimentRegistryFile,
   completeExperimentRegistryEntry,
   formatExperimentRegistryIssues,
-  validateExperimentRegistryEntry,
+  validateExperimentRegistryEntry
 } = require("city-builder/benchmarks");
 
 const repoRoot = path.join(__dirname, "..");
@@ -39,12 +39,12 @@ function createBaseEntry(overrides = {}) {
       cpuModel: "Test CPU",
       logicalCores: 8,
       memoryGb: 16,
-      gpuUsed: false,
+      gpuUsed: false
     },
     model: null,
     decision: "no-default-promotion",
     summary: "Benchmark registry test fixture.",
-    ...overrides,
+    ...overrides
   };
 }
 
@@ -55,7 +55,7 @@ function testSeedRegistryChecksWithoutShapeErrors() {
 
   const strictResult = checkExperimentRegistryFile("artifacts/experiments/index.jsonl", {
     rootDir: repoRoot,
-    strict: true,
+    strict: true
   });
   assert.equal(
     strictResult.issues.some((issue) => issue.code === "strict-missing-hardware"),
@@ -70,22 +70,36 @@ function testStrictMetadataRulesForBenchmarkAndLabelEntries() {
     splitStatus: null,
     seeds: null,
     cases: null,
-    caseFamilies: null,
+    caseFamilies: null
   });
-  const benchmarkResult = validateExperimentRegistryEntry(benchmark, { rootDir: repoRoot, validateArtifactPaths: false, strict: true });
+  const benchmarkResult = validateExperimentRegistryEntry(benchmark, {
+    rootDir: repoRoot,
+    validateArtifactPaths: false,
+    strict: true
+  });
 
   assert.equal(benchmarkResult.issues.length >= 5, true);
-  assert.match(formatExperimentRegistryIssues(benchmarkResult.issues), /strict registry checks require captured hardware metadata/);
+  assert.match(
+    formatExperimentRegistryIssues(benchmarkResult.issues),
+    /strict registry checks require captured hardware metadata/
+  );
   assert.match(formatExperimentRegistryIssues(benchmarkResult.issues), /Field 'seeds' must be a non-empty array/);
 
   const labelBundle = createBaseEntry({
     runId: "registry-test-labels",
     artifactType: "label-bundle",
-    model: null,
+    model: null
   });
-  const labelResult = validateExperimentRegistryEntry(labelBundle, { rootDir: repoRoot, validateArtifactPaths: false, strict: true });
+  const labelResult = validateExperimentRegistryEntry(labelBundle, {
+    rootDir: repoRoot,
+    validateArtifactPaths: false,
+    strict: true
+  });
 
-  assert.equal(labelResult.issues.some((issue) => /label-bundle entries must include model metadata/.test(issue.message)), true);
+  assert.equal(
+    labelResult.issues.some((issue) => /label-bundle entries must include model metadata/.test(issue.message)),
+    true
+  );
 }
 
 function testModelExperimentManifestAndRegistryDraft() {
@@ -100,7 +114,7 @@ function testModelExperimentManifestAndRegistryDraft() {
     labelFingerprint: "fnv1a:labels001",
     modelFingerprint: "fnv1a:model0001",
     metrics: { holdoutAccuracy: 0.75 },
-    notes: "Registry helper contract only; no solver default changed.",
+    notes: "Registry helper contract only; no solver default changed."
   });
 
   assert.equal(telemetryManifest.source, "model-experiment");
@@ -110,12 +124,12 @@ function testModelExperimentManifestAndRegistryDraft() {
   const inferredTelemetryManifest = buildModelExperimentTelemetryManifest({
     command: telemetryManifest.command,
     generatedAt: telemetryManifest.generatedAt,
-    model: { trained: true, version: "test-model-v1", format: "json" },
+    model: { trained: true, version: "test-model-v1", format: "json" }
   });
   const inferredDraft = buildModelExperimentRegistryEntryDraft({
     commands: [telemetryManifest.command],
     artifactPaths: ["artifacts/models/test/model.json"],
-    model: { trained: true, version: "test-model-v1", format: "json" },
+    model: { trained: true, version: "test-model-v1", format: "json" }
   });
   assert.equal(inferredTelemetryManifest.modelFingerprint, inferredDraft.modelFingerprint);
 
@@ -123,10 +137,7 @@ function testModelExperimentManifestAndRegistryDraft() {
     runId: "model-experiment-test",
     generatedAt: telemetryManifest.generatedAt,
     commands: [telemetryManifest.command],
-    artifactPaths: [
-      "artifacts/models/test/model.json",
-      "artifacts/models/test/telemetry-manifest.json",
-    ],
+    artifactPaths: ["artifacts/models/test/model.json", "artifacts/models/test/telemetry-manifest.json"],
     cases: { development: ["case-a"], holdout: ["case-b"] },
     caseFamilies: ["model-fixture"],
     seeds: [7],
@@ -135,7 +146,7 @@ function testModelExperimentManifestAndRegistryDraft() {
     model: telemetryManifest.model,
     labelFingerprint: telemetryManifest.labelFingerprint,
     modelFingerprint: telemetryManifest.modelFingerprint,
-    summaryMetrics: telemetryManifest.metrics,
+    summaryMetrics: telemetryManifest.metrics
   });
   assert.equal(draft.artifactType, "model-experiment");
   assert.equal(draft.decision, "model-experiment-only");
@@ -146,12 +157,12 @@ function testModelExperimentManifestAndRegistryDraft() {
     indexedGitCommit: testCommit,
     branch: "features/model-contract-test",
     artifactGitCommit: testCommit,
-    hardware: { captured: true, cpuModel: "Test CPU", logicalCores: 8, memoryGb: 16, gpuUsed: false },
+    hardware: { captured: true, cpuModel: "Test CPU", logicalCores: 8, memoryGb: 16, gpuUsed: false }
   });
   const validation = validateExperimentRegistryEntry(entry, {
     rootDir: repoRoot,
     validateArtifactPaths: false,
-    strict: true,
+    strict: true
   });
   assert.equal(validation.issues.length, 0, formatExperimentRegistryIssues(validation.issues));
 }
@@ -164,11 +175,11 @@ function testAppendHelperAddsCommitCommandBudgetHardwareModelAndDecisionMetadata
     indexedAt: "2026-04-28",
     indexedGitCommit: testCommit,
     branch: "features/registry-test",
-    artifactGitCommit: testCommit,
+    artifactGitCommit: testCommit
   });
   const appended = appendExperimentRegistryEntry("index.jsonl", entry, {
     rootDir: tempDir,
-    strict: true,
+    strict: true
   });
 
   assert.equal(appended.indexedAt, "2026-04-28");
@@ -182,7 +193,7 @@ function testAppendHelperAddsCommitCommandBudgetHardwareModelAndDecisionMetadata
   assert.equal(registry.length, 1);
   const validation = checkExperimentRegistryFile("index.jsonl", {
     rootDir: tempDir,
-    strict: true,
+    strict: true
   });
   assert.equal(validation.valid, true, formatExperimentRegistryIssues(validation.issues));
 }
@@ -192,7 +203,7 @@ function testCompleteEntryPreservesExplicitNullArtifactCommit() {
     indexedAt: "2026-04-28",
     indexedGitCommit: testCommit,
     branch: "features/registry-test",
-    artifactGitCommit: testCommit,
+    artifactGitCommit: testCommit
   });
 
   assert.equal(entry.artifactGitCommit, null);
@@ -202,7 +213,7 @@ function runRegistryCli(args, cwd) {
   const cliPath = path.join(repoRoot, "dist", "experimentRegistryCli.js");
   return childProcess.spawnSync(process.execPath, [cliPath, ...args], {
     cwd,
-    encoding: "utf8",
+    encoding: "utf8"
   });
 }
 
@@ -225,7 +236,7 @@ function testRegistryCliCanAppendAndCheckLabelArtifacts() {
       hardware: { captured: true, cpuModel: "Test CPU", logicalCores: 8, memoryGb: 16, gpuUsed: false },
       model: { trained: false, version: null },
       decision: "offline-diagnostics-only",
-      summary: "CLI label append fixture.",
+      summary: "CLI label append fixture."
     })}\n`
   );
 
@@ -237,7 +248,7 @@ function testRegistryCliCanAppendAndCheckLabelArtifacts() {
       "--indexed-at=2026-04-28",
       `--indexed-git-commit=${testCommit}`,
       "--branch=features/registry-test",
-      `--artifact-git-commit=${testCommit}`,
+      `--artifact-git-commit=${testCommit}`
     ],
     tempDir
   );

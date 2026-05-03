@@ -15,13 +15,13 @@ function createRouteTestHandler({
   progressLogIntervalMs = 10,
   progressLogPollIntervalMs = 5,
   maxRunningSolves = undefined,
-  completedJobRetentionMs = undefined,
+  completedJobRetentionMs = undefined
 } = {}) {
   const resolvedProgressLogRoot = progressLogRoot ?? fs.mkdtempSync(path.join(os.tmpdir(), progressLogRootPrefix));
   const solveJobManagerOptions = {
     progressLogRoot: resolvedProgressLogRoot,
     progressLogIntervalMs,
-    progressLogPollIntervalMs,
+    progressLogPollIntervalMs
   };
   if (maxRunningSolves !== undefined) solveJobManagerOptions.maxRunningSolves = maxRunningSolves;
   if (completedJobRetentionMs !== undefined) solveJobManagerOptions.completedJobRetentionMs = completedJobRetentionMs;
@@ -29,9 +29,9 @@ function createRouteTestHandler({
   return {
     handler: createPlannerRequestHandler({
       webRoot,
-      solveJobManager: new SolveJobManager(solveJobManagerOptions),
+      solveJobManager: new SolveJobManager(solveJobManagerOptions)
     }),
-    progressLogRoot: resolvedProgressLogRoot,
+    progressLogRoot: resolvedProgressLogRoot
   };
 }
 
@@ -87,7 +87,7 @@ async function invoke(handler, { method = "GET", url = "/", json = undefined, bo
     statusCode: res.statusCode,
     headers: res.headers,
     body: res.body,
-    payload,
+    payload
   };
 }
 
@@ -95,7 +95,7 @@ async function waitForSolve(handler, requestId) {
   for (let attempt = 0; attempt < 50; attempt += 1) {
     const result = await invoke(handler, {
       method: "GET",
-      url: `/api/solve/status?${new URLSearchParams({ requestId }).toString()}`,
+      url: `/api/solve/status?${new URLSearchParams({ requestId }).toString()}`
     });
     assert.equal(result.statusCode, 200);
     assert.equal(result.payload.ok, true);
@@ -113,16 +113,14 @@ function buildTinySolvePayload() {
       [1, 1, 1, 1],
       [1, 1, 1, 1],
       [1, 1, 1, 1],
-      [1, 1, 1, 1],
+      [1, 1, 1, 1]
     ],
     params: {
       optimizer: "greedy",
-      residentialTypes: [
-        { name: "Test Residence", w: 2, h: 2, min: 100, max: 100, avail: 1 },
-      ],
+      residentialTypes: [{ name: "Test Residence", w: 2, h: 2, min: 100, max: 100, avail: 1 }],
       availableBuildings: { residentials: 1, services: 0 },
-      greedy: { localSearch: false },
-    },
+      greedy: { localSearch: false }
+    }
   };
 }
 
@@ -151,16 +149,16 @@ function buildWarmStartHintFromSolution(solution, overrides = {}) {
       services: solution.services.map((service, index) => ({
         ...service,
         typeIndex: solution.serviceTypeIndices[index],
-        bonus: solution.servicePopulationIncreases[index],
+        bonus: solution.servicePopulationIncreases[index]
       })),
       residentials: solution.residentials.map((residential, index) => ({
         ...residential,
         typeIndex: solution.residentialTypeIndices[index],
-        population: solution.populations[index],
+        population: solution.populations[index]
       })),
       populations: [...solution.populations],
-      totalPopulation: solution.totalPopulation,
-    },
+      totalPopulation: solution.totalPopulation
+    }
   };
 }
 
@@ -174,5 +172,5 @@ module.exports = {
   createRouteTestHandler,
   invoke,
   waitForNextTurn,
-  waitForSolve,
+  waitForSolve
 };

@@ -7,12 +7,12 @@ export class GreedyStopError extends Error {
   ) {
     super(
       bestSolution
-        ? (reason === "time-limit" ? "Greedy solve reached its time limit." : "Greedy solve was stopped.")
-        : (
-            reason === "time-limit"
-              ? "Greedy solve reached its time limit before finding a feasible solution."
-              : "Greedy solve was stopped before finding a feasible solution."
-          )
+        ? reason === "time-limit"
+          ? "Greedy solve reached its time limit."
+          : "Greedy solve was stopped."
+        : reason === "time-limit"
+          ? "Greedy solve reached its time limit before finding a feasible solution."
+          : "Greedy solve was stopped before finding a feasible solution."
     );
   }
 }
@@ -52,11 +52,12 @@ export function shuffle<T>(a: T[], random: RandomSource = Math.random): T[] {
 
 export function getGreedyOptions(params: SolverParams): NormalizedGreedyOptions {
   const greedy = params.greedy ?? {};
-  const randomSeed = typeof greedy.randomSeed === "number" && Number.isInteger(greedy.randomSeed)
-    ? greedy.randomSeed
-    : undefined;
+  const randomSeed =
+    typeof greedy.randomSeed === "number" && Number.isInteger(greedy.randomSeed) ? greedy.randomSeed : undefined;
   const timeLimitSeconds =
-    typeof greedy.timeLimitSeconds === "number" && Number.isFinite(greedy.timeLimitSeconds) && greedy.timeLimitSeconds > 0
+    typeof greedy.timeLimitSeconds === "number" &&
+    Number.isFinite(greedy.timeLimitSeconds) &&
+    greedy.timeLimitSeconds > 0
       ? greedy.timeLimitSeconds
       : undefined;
   return {
@@ -82,6 +83,6 @@ export function getGreedyOptions(params: SolverParams): NormalizedGreedyOptions 
     serviceMasterPoolLimit: greedy.serviceMasterPoolLimit ?? 12,
     serviceMasterMaxLayouts: greedy.serviceMasterMaxLayouts ?? 256,
     stopFilePath: greedy.stopFilePath ?? "",
-    snapshotFilePath: greedy.snapshotFilePath ?? "",
+    snapshotFilePath: greedy.snapshotFilePath ?? ""
   };
 }

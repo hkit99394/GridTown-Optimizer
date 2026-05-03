@@ -13,5 +13,5 @@ export const CP_SAT_PORTFOLIO_CAPABILITY_LIMITS: Readonly<CpSatPortfolioCapabili
   maxWorkers: 8,
   maxTotalWorkerThreads: 8,
   maxPerWorkerThreads: 4,
-  maxTotalCpuBudgetSeconds: 8 * 60 * 60,
+  maxTotalCpuBudgetSeconds: 8 * 60 * 60
 });

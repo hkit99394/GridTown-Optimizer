@@ -6,7 +6,7 @@ import {
   requireOptionalIntegerInRange,
   requireOptionalString,
   requireOptionalStringInSet,
-  requireValidationRecord,
+  requireValidationRecord
 } from "./solverInputValidationShared.js";
 
 const LNS_MAX_ITERATIONS = 10_000;
@@ -21,7 +21,7 @@ const LNS_NEIGHBORHOOD_ANCHOR_POLICIES = [
   "weak-service-first",
   "residential-opportunity-first",
   "frontier-congestion-first",
-  "placed-buildings-first",
+  "placed-buildings-first"
 ] as const;
 
 export function assertValidLnsOptions(params: SolverParams): void {
@@ -29,13 +29,7 @@ export function assertValidLnsOptions(params: SolverParams): void {
   if (lnsValue === undefined) return;
 
   const lns = requireValidationRecord(lnsValue, "LNS options lns");
-  requireOptionalIntegerInRange(
-    lns,
-    "iterations",
-    "LNS option lns.iterations",
-    1,
-    LNS_MAX_ITERATIONS
-  );
+  requireOptionalIntegerInRange(lns, "iterations", "LNS option lns.iterations", 1, LNS_MAX_ITERATIONS);
   requireOptionalIntegerInRange(
     lns,
     "maxNoImprovementIterations",

@@ -68,7 +68,7 @@ function relativeImportToPattern(targetDir, minParentSegments = 1, options = {})
       `from\\s*["']${relativeTarget}`,
       `import\\s*["']${relativeTarget}`,
       `import\\(\\s*["']${relativeTarget}`,
-      `export\\s+[^"']*\\s+from\\s*["']${relativeTarget}`,
+      `export\\s+[^"']*\\s+from\\s*["']${relativeTarget}`
     ].join("|")
   );
 }
@@ -79,7 +79,7 @@ function findRelativeImportOffenders(rootDirs, targetDir, options = {}) {
     minParentSegments = 1,
     includeCurrent = false,
     relativeBaseDir = roots[0],
-    allowRelativePaths = new Set(),
+    allowRelativePaths = new Set()
   } = options;
   const importPattern = relativeImportToPattern(targetDir, minParentSegments, { includeCurrent });
   return roots.flatMap((rootDir) =>
@@ -97,9 +97,7 @@ function isPathWithin(childPath, parentPath) {
 
 function resolveSourceImport(filePath, specifier) {
   if (!specifier.startsWith(".")) return null;
-  const sourceSpecifier = specifier.endsWith(".js")
-    ? `${specifier.slice(0, -".js".length)}.ts`
-    : specifier;
+  const sourceSpecifier = specifier.endsWith(".js") ? `${specifier.slice(0, -".js".length)}.ts` : specifier;
   return path.resolve(path.dirname(filePath), sourceSpecifier);
 }
 
@@ -119,7 +117,10 @@ function testInternalTestsUseDedicatedEntrypoints() {
     .filter((filePath) => path.basename(filePath) !== "public-api.test.cjs")
     .filter((filePath) => legacyEntrypointPattern.test(fs.readFileSync(filePath, "utf8")));
 
-  assert.deepEqual(offenders.map((filePath) => path.relative(__dirname, filePath)), []);
+  assert.deepEqual(
+    offenders.map((filePath) => path.relative(__dirname, filePath)),
+    []
+  );
 }
 
 function testBenchmarkToolingUsesBenchmarkApiBoundary() {
@@ -128,8 +129,9 @@ function testBenchmarkToolingUsesBenchmarkApiBoundary() {
   const benchmarkAppNamePattern = /(?:BenchmarkCli|learnedRankingLabelCli|experimentRegistryCli)\.ts$/;
   const legacyBenchmarkImportPattern = /\.\.\/benchmarks\/(?:index|experimentRegistry)\.js/;
   const appOffenders = listFiles(appsDir, (fileName) => benchmarkAppNamePattern.test(fileName));
-  const toolImportOffenders = listFiles(toolsCliDir, (fileName) => fileName.endsWith(".ts"))
-    .filter((filePath) => legacyBenchmarkImportPattern.test(fs.readFileSync(filePath, "utf8")));
+  const toolImportOffenders = listFiles(toolsCliDir, (fileName) => fileName.endsWith(".ts")).filter((filePath) =>
+    legacyBenchmarkImportPattern.test(fs.readFileSync(filePath, "utf8"))
+  );
 
   assert.deepEqual(
     [...appOffenders, ...toolImportOffenders].map((filePath) => path.relative(path.join(__dirname, ".."), filePath)),
@@ -150,7 +152,7 @@ function testBenchmarkInternalsAreHiddenBehindBenchmarkApi() {
         .filter((targetPath) => targetPath && isPathWithin(targetPath, benchmarkPackageDir));
       return importTargets.map((targetPath) => ({
         importer: path.relative(srcDir, filePath),
-        target: path.relative(srcDir, targetPath),
+        target: path.relative(srcDir, targetPath)
       }));
     });
 
@@ -160,16 +162,7 @@ function testBenchmarkInternalsAreHiddenBehindBenchmarkApi() {
 function testScriptEntrypointWrappersRemain() {
   const srcDir = path.join(__dirname, "..", "src");
   const expectedWrappers = new Map([
-    [
-      "cli.ts",
-      [
-        "/**",
-        " * CLI entry point compatibility wrapper.",
-        " */",
-        "",
-        `import "./apps/cli.js";`,
-      ].join("\n"),
-    ],
+    ["cli.ts", ["/**", " * CLI entry point compatibility wrapper.", " */", "", `import "./apps/cli.js";`].join("\n")],
     [
       "webServer.ts",
       [
@@ -177,8 +170,8 @@ function testScriptEntrypointWrappersRemain() {
         " * Web server entry point compatibility wrapper.",
         " */",
         "",
-        `import "./apps/planner-server/webServer.js";`,
-      ].join("\n"),
+        `import "./apps/planner-server/webServer.js";`
+      ].join("\n")
     ],
     [
       "greedyBenchmarkCli.ts",
@@ -187,8 +180,8 @@ function testScriptEntrypointWrappersRemain() {
         " * Greedy benchmark CLI compatibility wrapper.",
         " */",
         "",
-        `import "./tools/cli/greedyBenchmarkCli.js";`,
-      ].join("\n"),
+        `import "./tools/cli/greedyBenchmarkCli.js";`
+      ].join("\n")
     ],
     [
       "cpSatBenchmarkCli.ts",
@@ -197,8 +190,8 @@ function testScriptEntrypointWrappersRemain() {
         " * CP-SAT benchmark CLI compatibility wrapper.",
         " */",
         "",
-        `import "./tools/cli/cpSatBenchmarkCli.js";`,
-      ].join("\n"),
+        `import "./tools/cli/cpSatBenchmarkCli.js";`
+      ].join("\n")
     ],
     [
       "lnsBenchmarkCli.ts",
@@ -207,8 +200,8 @@ function testScriptEntrypointWrappersRemain() {
         " * LNS benchmark CLI compatibility wrapper.",
         " */",
         "",
-        `import "./tools/cli/lnsBenchmarkCli.js";`,
-      ].join("\n"),
+        `import "./tools/cli/lnsBenchmarkCli.js";`
+      ].join("\n")
     ],
     [
       "crossModeBenchmarkCli.ts",
@@ -217,8 +210,8 @@ function testScriptEntrypointWrappersRemain() {
         " * Cross-mode benchmark scorecard CLI compatibility wrapper.",
         " */",
         "",
-        `import "./tools/cli/crossModeBenchmarkCli.js";`,
-      ].join("\n"),
+        `import "./tools/cli/crossModeBenchmarkCli.js";`
+      ].join("\n")
     ],
     [
       "learnedRankingLabelCli.ts",
@@ -227,8 +220,8 @@ function testScriptEntrypointWrappersRemain() {
         " * Learned-ranking label CLI compatibility wrapper.",
         " */",
         "",
-        `import "./tools/cli/learnedRankingLabelCli.js";`,
-      ].join("\n"),
+        `import "./tools/cli/learnedRankingLabelCli.js";`
+      ].join("\n")
     ],
     [
       "greedyOfflineRankerCli.ts",
@@ -237,8 +230,8 @@ function testScriptEntrypointWrappersRemain() {
         " * Greedy offline ranker CLI compatibility wrapper.",
         " */",
         "",
-        `import "./tools/cli/greedyOfflineRankerCli.js";`,
-      ].join("\n"),
+        `import "./tools/cli/greedyOfflineRankerCli.js";`
+      ].join("\n")
     ],
     [
       "experimentRegistryCli.ts",
@@ -247,9 +240,9 @@ function testScriptEntrypointWrappersRemain() {
         " * Experiment registry CLI compatibility wrapper.",
         " */",
         "",
-        `import "./tools/cli/experimentRegistryCli.js";`,
-      ].join("\n"),
-    ],
+        `import "./tools/cli/experimentRegistryCli.js";`
+      ].join("\n")
+    ]
   ]);
 
   const offenders = [...expectedWrappers]
@@ -270,10 +263,9 @@ function testLegacyDeepImportWrappersAreRemoved() {
     "lns",
     "runtime",
     "server",
-    path.join("apps", "webServer.ts"),
+    path.join("apps", "webServer.ts")
   ];
-  const existingPaths = legacyPaths
-    .filter((relativePath) => fs.existsSync(path.join(srcDir, relativePath)));
+  const existingPaths = legacyPaths.filter((relativePath) => fs.existsSync(path.join(srcDir, relativePath)));
 
   assert.deepEqual(existingPaths, []);
 }
@@ -286,10 +278,14 @@ function testPlannerWebLivesInAppFolder() {
 function testCorePackageDoesNotImportOutsidePackage() {
   const corePackageDir = path.join(__dirname, "..", "src", "packages", "core");
   const parentImportPattern = /(?:from|import\(|export\s+[^"']*\s+from)\s*["']\.\.\//;
-  const offenders = listFiles(corePackageDir, (fileName) => fileName.endsWith(".ts"))
-    .filter((filePath) => parentImportPattern.test(fs.readFileSync(filePath, "utf8")));
+  const offenders = listFiles(corePackageDir, (fileName) => fileName.endsWith(".ts")).filter((filePath) =>
+    parentImportPattern.test(fs.readFileSync(filePath, "utf8"))
+  );
 
-  assert.deepEqual(offenders.map((filePath) => path.relative(corePackageDir, filePath)), []);
+  assert.deepEqual(
+    offenders.map((filePath) => path.relative(corePackageDir, filePath)),
+    []
+  );
 }
 
 function testSolverApiUsesCorePackageBoundary() {
@@ -307,10 +303,7 @@ function testBenchmarkPackageUsesCorePackageBoundary() {
 
 function testAppsAndToolsUseCorePackageBoundary() {
   const srcDir = path.join(__dirname, "..", "src");
-  const offenderRoots = [
-    path.join(srcDir, "apps"),
-    path.join(srcDir, "tools"),
-  ];
+  const offenderRoots = [path.join(srcDir, "apps"), path.join(srcDir, "tools")];
   const offenders = findRelativeImportOffenders(offenderRoots, "core", { relativeBaseDir: srcDir });
 
   assert.deepEqual(offenders, []);
@@ -318,13 +311,10 @@ function testAppsAndToolsUseCorePackageBoundary() {
 
 function testRuntimeAndServerUseCorePackageBoundary() {
   const srcDir = path.join(__dirname, "..", "src");
-  const offenderRoots = [
-    path.join(srcDir, "packages", "runtime"),
-    path.join(srcDir, "apps", "planner-server"),
-  ];
+  const offenderRoots = [path.join(srcDir, "packages", "runtime"), path.join(srcDir, "apps", "planner-server")];
   const offenders = findRelativeImportOffenders(offenderRoots, "core", {
     minParentSegments: 3,
-    relativeBaseDir: srcDir,
+    relativeBaseDir: srcDir
   });
 
   assert.deepEqual(offenders, []);
@@ -335,7 +325,7 @@ function testSolversUseCorePackageBoundary() {
   const solverPackageDir = path.join(srcDir, "packages", "solvers");
   const offenders = findRelativeImportOffenders(solverPackageDir, "core", {
     minParentSegments: 3,
-    relativeBaseDir: srcDir,
+    relativeBaseDir: srcDir
   });
 
   assert.deepEqual(offenders, []);

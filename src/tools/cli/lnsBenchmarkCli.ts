@@ -13,7 +13,7 @@ import {
   listLnsWindowReplayCaseNames,
   runLnsNeighborhoodAblation,
   runLnsWindowReplayLabels,
-  runLnsBenchmarkSuite,
+  runLnsBenchmarkSuite
 } from "../../benchmarkApi.js";
 import {
   applyInlineOptionHandlers,
@@ -22,13 +22,17 @@ import {
   parseNonNegativeInteger,
   parseNumberList,
   parsePositiveInteger,
-  parsePositiveNumber,
+  parsePositiveNumber
 } from "../../apps/cliParsing.js";
 import { runCliMain } from "../../apps/cliEntrypoint.js";
-import { optionalCliNames, writeCliJson, writeCliJsonOrText, writeCliList, writeCliText } from "../../apps/cliOutput.js";
-import type {
-  LnsNeighborhoodAblationVariantName,
-} from "../../benchmarkApi.js";
+import {
+  optionalCliNames,
+  writeCliJson,
+  writeCliJsonOrText,
+  writeCliList,
+  writeCliText
+} from "../../apps/cliOutput.js";
+import type { LnsNeighborhoodAblationVariantName, LnsWindowReplayStatePolicy } from "../../benchmarkApi.js";
 
 interface ParsedBenchmarkArgs {
   json: boolean;
@@ -43,6 +47,9 @@ interface ParsedBenchmarkArgs {
   maxWindows?: number;
   explorationWindowCount?: number;
   repairTimeLimitSeconds?: number;
+  statePolicies?: LnsWindowReplayStatePolicy[];
+  stateCollectionIterations?: number;
+  stateCollectionRepairTimeLimitSeconds?: number;
 }
 
 function parseArgs(argv: string[]): ParsedBenchmarkArgs {
@@ -58,12 +65,12 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let maxWindows: number | undefined;
   let explorationWindowCount: number | undefined;
   let repairTimeLimitSeconds: number | undefined;
+  let statePolicies: LnsWindowReplayStatePolicy[] | undefined;
+  let stateCollectionIterations: number | undefined;
+  let stateCollectionRepairTimeLimitSeconds: number | undefined;
   const inlineOptions: Record<string, (value: string) => void> = {
     "ablation-variants": (value) => {
-      ablationVariantNames = parseNameList(
-        value,
-        "ablation variant"
-      ) as LnsNeighborhoodAblationVariantName[];
+      ablationVariantNames = parseNameList(value, "ablation variant") as LnsNeighborhoodAblationVariantName[];
     },
     seeds: (value) => {
       seeds = parseNumberList(value, "seeds");
@@ -77,6 +84,15 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     "repair-time": (value) => {
       repairTimeLimitSeconds = parsePositiveNumber(value, "--repair-time");
     },
+    "state-policies": (value) => {
+      statePolicies = parseNameList(value, "state policy") as LnsWindowReplayStatePolicy[];
+    },
+    "state-collection-iterations": (value) => {
+      stateCollectionIterations = parsePositiveInteger(value, "--state-collection-iterations");
+    },
+    "state-collection-repair-time": (value) => {
+      stateCollectionRepairTimeLimitSeconds = parsePositiveNumber(value, "--state-collection-repair-time");
+    }
   };
 
   for (const arg of argv) {
@@ -108,7 +124,15 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
       rotateVariantRunOrder = false;
       continue;
     }
-    if (isCliFlag(arg, "--neighborhood-ablation", "--neighborhood-ablations", "--deterministic-ablation", "--deterministic-ablations")) {
+    if (
+      isCliFlag(
+        arg,
+        "--neighborhood-ablation",
+        "--neighborhood-ablations",
+        "--deterministic-ablation",
+        "--deterministic-ablations"
+      )
+    ) {
       neighborhoodAblation = true;
       continue;
     }
@@ -131,6 +155,9 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     maxWindows,
     explorationWindowCount,
     repairTimeLimitSeconds,
+    statePolicies,
+    stateCollectionIterations,
+    stateCollectionRepairTimeLimitSeconds
   };
 }
 
@@ -147,7 +174,7 @@ export function runLnsBenchmarkCli(): void {
       ? listLnsNeighborhoodAblationCaseNames()
       : args.windowReplayLabels
         ? listLnsWindowReplayCaseNames()
-      : listLnsBenchmarkCaseNames();
+        : listLnsBenchmarkCaseNames();
     writeCliList(names);
     return;
   }
@@ -159,10 +186,15 @@ export function runLnsBenchmarkCli(): void {
       maxWindows: args.maxWindows,
       explorationWindowCount: args.explorationWindowCount,
       repairTimeLimitSeconds: args.repairTimeLimitSeconds,
+      statePolicies: args.statePolicies,
+      stateCollectionIterations: args.stateCollectionIterations,
+      stateCollectionRepairTimeLimitSeconds: args.stateCollectionRepairTimeLimitSeconds
     });
 
-    writeCliJsonOrText(args.json, () => createLnsWindowReplaySnapshot(result), () =>
-      formatLnsWindowReplayLabels(result)
+    writeCliJsonOrText(
+      args.json,
+      () => createLnsWindowReplaySnapshot(result),
+      () => formatLnsWindowReplayLabels(result)
     );
     return;
   }
@@ -172,7 +204,7 @@ export function runLnsBenchmarkCli(): void {
       names: optionalCliNames(args.names),
       variantNames: args.ablationVariantNames,
       seeds: args.seeds ?? (args.gateReport ? DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS : undefined),
-      rotateVariantRunOrder: args.rotateVariantRunOrder,
+      rotateVariantRunOrder: args.rotateVariantRunOrder
     });
 
     if (args.gateReport) {
@@ -185,17 +217,23 @@ export function runLnsBenchmarkCli(): void {
       return;
     }
 
-    writeCliJsonOrText(args.json, () => createLnsNeighborhoodAblationSnapshot(result), () =>
-      formatLnsNeighborhoodAblation(result)
+    writeCliJsonOrText(
+      args.json,
+      () => createLnsNeighborhoodAblationSnapshot(result),
+      () => formatLnsNeighborhoodAblation(result)
     );
     return;
   }
 
   const result = runLnsBenchmarkSuite(undefined, {
-    names: optionalCliNames(args.names),
+    names: optionalCliNames(args.names)
   });
 
-  writeCliJsonOrText(args.json, () => createLnsBenchmarkSnapshot(result), () => formatLnsBenchmarkSuite(result));
+  writeCliJsonOrText(
+    args.json,
+    () => createLnsBenchmarkSnapshot(result),
+    () => formatLnsBenchmarkSuite(result)
+  );
 }
 
 runCliMain(runLnsBenchmarkCli);

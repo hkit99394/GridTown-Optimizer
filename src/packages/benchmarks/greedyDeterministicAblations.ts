@@ -16,24 +16,21 @@ import {
   snapshotBenchmarkVariantResult,
   snapshotBenchmarkVariantSummary,
   summarizeBenchmarkVariantMetrics,
-  uniqueBenchmarkValuesBy,
+  uniqueBenchmarkValuesBy
 } from "./benchmarkOptions.js";
-import {
-  DEFAULT_GREEDY_BENCHMARK_CORPUS,
-  runGreedyBenchmarkSuite,
-} from "./greedy.js";
+import { DEFAULT_GREEDY_BENCHMARK_CORPUS, runGreedyBenchmarkSuite } from "./greedy.js";
 
 import type {
   GreedyBenchmarkCase,
   GreedyBenchmarkCaseResult,
   GreedyBenchmarkOptions,
-  GreedyBenchmarkRunOptions,
+  GreedyBenchmarkRunOptions
 } from "./greedy.js";
 import type {
   BenchmarkVariantCoverageMetrics,
   BenchmarkVariantResultSnapshot,
   BenchmarkVariantSummaryMetrics,
-  BenchmarkVariantSummarySnapshot,
+  BenchmarkVariantSummarySnapshot
 } from "./benchmarkOptions.js";
 
 export type GreedyDeterministicAblationVariantName =
@@ -90,8 +87,7 @@ export interface GreedyDeterministicAblationCaseResult {
   variants: GreedyDeterministicAblationVariantResult[];
 }
 
-export interface GreedyDeterministicAblationVariantSummary
-  extends BenchmarkVariantSummaryMetrics<GreedyDeterministicAblationVariantName> {
+export interface GreedyDeterministicAblationVariantSummary extends BenchmarkVariantSummaryMetrics<GreedyDeterministicAblationVariantName> {
   description: string;
 }
 
@@ -112,20 +108,22 @@ export interface GreedyDeterministicAblationSuiteResult {
   cases: GreedyDeterministicAblationCaseResult[];
 }
 
-export interface GreedyDeterministicAblationSnapshotVariantResult
-  extends BenchmarkVariantResultSnapshot<GreedyDeterministicAblationVariantResult> {}
+export interface GreedyDeterministicAblationSnapshotVariantResult extends BenchmarkVariantResultSnapshot<GreedyDeterministicAblationVariantResult> {}
 
-export interface GreedyDeterministicAblationSnapshotCaseResult
-  extends Omit<GreedyDeterministicAblationCaseResult, "baseline" | "variants"> {
+export interface GreedyDeterministicAblationSnapshotCaseResult extends Omit<
+  GreedyDeterministicAblationCaseResult,
+  "baseline" | "variants"
+> {
   baseline: GreedyDeterministicAblationSnapshotVariantResult;
   variants: GreedyDeterministicAblationSnapshotVariantResult[];
 }
 
-export interface GreedyDeterministicAblationSnapshotVariantSummary
-  extends BenchmarkVariantSummarySnapshot<GreedyDeterministicAblationVariantSummary> {}
+export interface GreedyDeterministicAblationSnapshotVariantSummary extends BenchmarkVariantSummarySnapshot<GreedyDeterministicAblationVariantSummary> {}
 
-export interface GreedyDeterministicAblationSnapshot
-  extends Omit<GreedyDeterministicAblationSuiteResult, "generatedAt" | "variantSummaries" | "cases"> {
+export interface GreedyDeterministicAblationSnapshot extends Omit<
+  GreedyDeterministicAblationSuiteResult,
+  "generatedAt" | "variantSummaries" | "cases"
+> {
   variantSummaries: GreedyDeterministicAblationSnapshotVariantSummary[];
   cases: GreedyDeterministicAblationSnapshotCaseResult[];
 }
@@ -135,58 +133,58 @@ export const DEFAULT_GREEDY_DETERMINISTIC_ABLATION_VARIANTS: readonly GreedyDete
     {
       name: "baseline",
       description: "Current deterministic Greedy settings inherited from each benchmark case.",
-      greedy: {},
+      greedy: {}
     },
     {
       name: "no-restarts",
       description: "Disable restart exploration by forcing a single constructive pass.",
-      greedy: { restarts: 1 },
+      greedy: { restarts: 1 }
     },
     {
       name: "no-local-search",
       description: "Disable residential and service local-search improvement.",
-      greedy: { localSearch: false, localSearchServiceMoves: false },
+      greedy: { localSearch: false, localSearchServiceMoves: false }
     },
     {
       name: "no-service-neighborhood",
       description: "Keep residential local search but disable service remove/add/swap neighborhoods.",
-      greedy: { localSearchServiceMoves: false },
+      greedy: { localSearchServiceMoves: false }
     },
     {
       name: "no-service-refinement",
       description: "Disable fixed-service refinement reruns.",
-      greedy: { serviceRefineIterations: 0 },
+      greedy: { serviceRefineIterations: 0 }
     },
     {
       name: "no-exhaustive-service-search",
       description: "Disable exhaustive fixed-service-set checks.",
-      greedy: { exhaustiveServiceSearch: false },
+      greedy: { exhaustiveServiceSearch: false }
     },
     {
       name: "no-service-master-decomposition",
       description: "Disable the experimental service-layout master pass.",
-      greedy: { serviceMasterDecomposition: false },
+      greedy: { serviceMasterDecomposition: false }
     },
     {
       name: "no-service-lookahead",
       description: "Disable Step 14 service lookahead reranking.",
-      greedy: { serviceLookaheadCandidates: 0 },
+      greedy: { serviceLookaheadCandidates: 0 }
     },
     {
       name: "explicit-roads",
       description: "Force immediate explicit road commitment.",
-      greedy: { deferRoadCommitment: false },
+      greedy: { deferRoadCommitment: false }
     },
     {
       name: "deferred-roads",
       description: "Enable deferred road commitment where the case can use it.",
-      greedy: { deferRoadCommitment: true },
+      greedy: { deferRoadCommitment: true }
     },
     {
       name: "connectivity-shadow-scoring",
       description: "Enable guarded connectivity-shadow tie-break scoring.",
-      greedy: { connectivityShadowScoring: true },
-    },
+      greedy: { connectivityShadowScoring: true }
+    }
   ]);
 
 export const DEFAULT_GREEDY_DETERMINISTIC_ABLATION_CASE_NAMES = Object.freeze([
@@ -199,25 +197,21 @@ export const DEFAULT_GREEDY_DETERMINISTIC_ABLATION_CASE_NAMES = Object.freeze([
   "geometry-occupancy-hot-path",
   "typed-footprint-pressure",
   "typed-availability-pressure",
-  "row0-corridor-repair-pressure",
+  "row0-corridor-repair-pressure"
 ] satisfies string[]);
 
 function selectDefaultAblationCases(corpus: readonly GreedyBenchmarkCase[]): GreedyBenchmarkCase[] {
   return selectBenchmarkCasesByName(corpus, DEFAULT_GREEDY_DETERMINISTIC_ABLATION_CASE_NAMES, {
     caseLabel: "Greedy deterministic ablation",
-    corpusLabel: "Greedy deterministic ablation",
+    corpusLabel: "Greedy deterministic ablation"
   });
 }
 
-export const DEFAULT_GREEDY_DETERMINISTIC_ABLATION_CORPUS: readonly GreedyBenchmarkCase[] =
-  Object.freeze(
-    selectDefaultAblationCases(
-      dedupeBenchmarkCases([
-        DEFAULT_GREEDY_BENCHMARK_CORPUS,
-        DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS,
-      ])
-    )
-  );
+export const DEFAULT_GREEDY_DETERMINISTIC_ABLATION_CORPUS: readonly GreedyBenchmarkCase[] = Object.freeze(
+  selectDefaultAblationCases(
+    dedupeBenchmarkCases([DEFAULT_GREEDY_BENCHMARK_CORPUS, DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS])
+  )
+);
 
 function variantResult(
   variant: GreedyDeterministicAblationVariant,
@@ -239,7 +233,7 @@ function variantResult(
     residentialCount: result.residentialCount,
     greedyOptions: result.greedyOptions,
     profileEnabled: result.greedyProfile !== null,
-    phaseCount: result.greedyProfile?.phases.length ?? 0,
+    phaseCount: result.greedyProfile?.phases.length ?? 0
   };
 }
 
@@ -257,7 +251,7 @@ function buildVariantSummary(
       seedCount,
       `Greedy deterministic ablation variant result missing: ${variant.name}.`
     ),
-    description: variant.description,
+    description: variant.description
   };
 }
 
@@ -270,7 +264,7 @@ function buildCoverage(
   const variants = cases.flatMap((entry) => entry.variants);
   return {
     ...coverage,
-    profileEnabledRuns: countBenchmarkMatches(variants, (entry) => entry.profileEnabled),
+    profileEnabledRuns: countBenchmarkMatches(variants, (entry) => entry.profileEnabled)
   };
 }
 
@@ -286,7 +280,7 @@ function normalizeVariants(
       suiteLabel: "Greedy deterministic ablations",
       variantSetLabel: "Greedy deterministic ablation variants",
       requestedVariantSetLabel: "Greedy deterministic ablation requested variants",
-      unknownVariantLabel: "Greedy deterministic ablation variant",
+      unknownVariantLabel: "Greedy deterministic ablation variant"
     },
     "baseline"
   );
@@ -297,7 +291,7 @@ export function listGreedyDeterministicAblationCaseNames(
 ): string[] {
   return listBenchmarkCaseNames(corpus, {
     caseLabel: "Greedy deterministic ablation",
-    corpusLabel: "Greedy deterministic ablation",
+    corpusLabel: "Greedy deterministic ablation"
   });
 }
 
@@ -314,7 +308,7 @@ export function runGreedyDeterministicAblation(
   const { seeds, seedRuns } = buildBenchmarkSeedRunPlan(options.seeds, "Greedy deterministic ablation seeds");
   const baseGreedy = {
     profile: false,
-    ...(options.greedy ?? {}),
+    ...(options.greedy ?? {})
   };
   const suites = new Map<string, ReturnType<typeof runGreedyBenchmarkSuite>>();
   for (const seed of seedRuns) {
@@ -325,10 +319,10 @@ export function runGreedyDeterministicAblation(
           names,
           greedy: {
             ...baseGreedy,
-            ...(variant.name === "baseline" ? options.baselineGreedy ?? {} : {}),
+            ...(variant.name === "baseline" ? (options.baselineGreedy ?? {}) : {}),
             ...variant.greedy,
-            ...(seed !== null ? { randomSeed: seed } : {}),
-          },
+            ...(seed !== null ? { randomSeed: seed } : {})
+          }
         })
       );
     }
@@ -344,7 +338,9 @@ export function runGreedyDeterministicAblation(
         const suite = suites.get(`${seed ?? "case-default"}:${variant.name}`);
         const result = suite?.results.find((entry) => entry.name === baselineResult.name);
         if (!result) {
-          throw new Error(`Greedy deterministic ablation result missing: ${variant.name}/${baselineResult.name}/${seed ?? "case-default"}.`);
+          throw new Error(
+            `Greedy deterministic ablation result missing: ${variant.name}/${baselineResult.name}/${seed ?? "case-default"}.`
+          );
         }
         return variantResult(variant, result, baselineResult, seed);
       });
@@ -356,7 +352,7 @@ export function runGreedyDeterministicAblation(
         gridCols: baselineResult.gridCols,
         gridCells: baselineResult.gridRows * baselineResult.gridCols,
         baseline: variantResults.find((entry) => entry.variantName === "baseline")!,
-        variants: variantResults,
+        variants: variantResults
       };
     });
   });
@@ -370,8 +366,10 @@ export function runGreedyDeterministicAblation(
     seeds,
     variants: variants.map((variant) => variant.name),
     coverage: buildCoverage(cases, selectedCaseNames.length, seedRuns.length),
-    variantSummaries: variants.map((variant) => buildVariantSummary(variant, cases, selectedCaseNames.length, seedRuns.length)),
-    cases,
+    variantSummaries: variants.map((variant) =>
+      buildVariantSummary(variant, cases, selectedCaseNames.length, seedRuns.length)
+    ),
+    cases
   };
 }
 
@@ -390,8 +388,8 @@ export function createGreedyDeterministicAblationSnapshot(
     cases: result.cases.map((benchmarkCase) => ({
       ...benchmarkCase,
       baseline: snapshotBenchmarkVariantResult(benchmarkCase.baseline),
-      variants: benchmarkCase.variants.map(snapshotBenchmarkVariantResult),
-    })),
+      variants: benchmarkCase.variants.map(snapshotBenchmarkVariantResult)
+    }))
   };
 }
 

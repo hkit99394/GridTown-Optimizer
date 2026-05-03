@@ -9,14 +9,14 @@ import type { SerializedSolution, Solution } from "./types.js";
 export function serializeSolution(solution: Solution): SerializedSolution {
   return {
     ...solution,
-    roads: Array.from(solution.roads),
+    roads: Array.from(solution.roads)
   };
 }
 
 export function materializeSerializedSolution(solution: SerializedSolution): Solution {
   return {
     ...solution,
-    roads: new Set(solution.roads),
+    roads: new Set(solution.roads)
   };
 }
 

@@ -25,7 +25,7 @@ export function sendJson(
   const body = JSON.stringify(payload, null, 2);
   res.writeHead(statusCode, {
     "Content-Type": "application/json; charset=utf-8",
-    "Cache-Control": "no-store",
+    "Cache-Control": "no-store"
   });
   res.end(headOnly ? undefined : body);
 }
@@ -39,7 +39,7 @@ export function sendText(
 ): void {
   res.writeHead(statusCode, {
     "Content-Type": contentType,
-    "Cache-Control": "no-store",
+    "Cache-Control": "no-store"
   });
   res.end(headOnly ? undefined : body);
 }
@@ -60,21 +60,17 @@ export function getErrorStatusCode(error: unknown): number {
   if (isSolverInputError(error)) return 400;
   const message = getErrorMessage(error);
   if (
-    message === "Invalid JSON request body."
-    || message.includes("Invalid solve payload")
-    || message.includes("Invalid layout-evaluate payload")
-    || message.includes("Invalid cancel payload")
-    || isSolverInputErrorMessage(message)
+    message === "Invalid JSON request body." ||
+    message.includes("Invalid solve payload") ||
+    message.includes("Invalid layout-evaluate payload") ||
+    message.includes("Invalid cancel payload") ||
+    isSolverInputErrorMessage(message)
   ) {
     return 400;
   }
   if (message.includes("Request body is too large")) return 413;
   if (message.includes("was stopped")) return 409;
-  if (
-    message.includes("backend failed")
-    || message.includes("Failed to launch")
-    || message.includes("exceeded")
-  ) {
+  if (message.includes("backend failed") || message.includes("Failed to launch") || message.includes("exceeded")) {
     return 500;
   }
   return 500;
@@ -137,7 +133,7 @@ function validateJsonRequest(req: IncomingMessage): JsonRequestGuardError | null
   if (!isJsonContentType(normalizeHeaderValue(req.headers["content-type"]))) {
     return {
       statusCode: 415,
-      message: "Unsupported media type. JSON endpoints require Content-Type: application/json.",
+      message: "Unsupported media type. JSON endpoints require Content-Type: application/json."
     };
   }
 
@@ -145,7 +141,7 @@ function validateJsonRequest(req: IncomingMessage): JsonRequestGuardError | null
   if (origin && !isTrustedBrowserOrigin(req, origin)) {
     return {
       statusCode: 403,
-      message: "Forbidden cross-origin planner request.",
+      message: "Forbidden cross-origin planner request."
     };
   }
 
@@ -162,7 +158,7 @@ export async function readValidatedJsonBody<T>(
   if (guardError) {
     sendJson(res, guardError.statusCode, {
       ok: false,
-      error: guardError.message,
+      error: guardError.message
     });
     return null;
   }
@@ -171,7 +167,7 @@ export async function readValidatedJsonBody<T>(
   if (!validate(payload)) {
     sendJson(res, 400, {
       ok: false,
-      error: invalidError,
+      error: invalidError
     });
     return null;
   }
@@ -199,6 +195,6 @@ export function monitorClientDisconnect(
       req.removeListener("aborted", handleDisconnect);
       res.removeListener("close", handleDisconnect);
     },
-    isDisconnected: () => disconnected || res.writableEnded,
+    isDisconnected: () => disconnected || res.writableEnded
   };
 }

@@ -237,11 +237,7 @@ export type GreedyRoadOpportunityPhase =
   | "service-neighborhood"
   | "residential-local-search";
 
-export type GreedyRoadOpportunityMoveKind =
-  | "residential-add"
-  | "residential-move"
-  | "service-add"
-  | "service-swap";
+export type GreedyRoadOpportunityMoveKind = "residential-add" | "residential-move" | "service-add" | "service-swap";
 
 export type GreedyRoadOpportunityCounterfactualReason =
   | "same-score-tie"

@@ -14,7 +14,7 @@ import type {
   Solution,
   SolveResponseStats,
   SolveResponseValidation,
-  SolverParams,
+  SolverParams
 } from "../../../packages/core/index.js";
 
 export function buildSolveResponsePayload(
@@ -23,11 +23,14 @@ export function buildSolveResponsePayload(
   solution: Solution,
   options: SolutionValidationOptions = {}
 ): SolutionMapValidationResult {
-  return validateSolutionMap({
-    grid,
-    solution,
-    params,
-  }, options);
+  return validateSolutionMap(
+    {
+      grid,
+      solution,
+      params
+    },
+    options
+  );
 }
 
 function buildResponseValidation(validation: SolutionMapValidationResult): SolveResponseValidation {
@@ -37,7 +40,7 @@ function buildResponseValidation(validation: SolutionMapValidationResult): Solve
     recomputedPopulations: validation.recomputedPopulations,
     recomputedTotalPopulation: validation.recomputedTotalPopulation,
     mapRows: validation.mapRows,
-    mapText: validation.mapText,
+    mapText: validation.mapText
   };
 }
 
@@ -55,7 +58,7 @@ function buildResponseStats(solution: Solution, params: SolverParams): SolveResp
     totalPopulation: solution.totalPopulation,
     roadCount: solution.roads.size,
     serviceCount: solution.services.length,
-    residentialCount: solution.residentials.length,
+    residentialCount: solution.residentials.length
   };
 }
 
@@ -69,17 +72,12 @@ function buildPlannerSolutionResponse(
     solution: serializeSolution(solution),
     validation: buildResponseValidation(validation),
     stats: buildResponseStats(solution, params),
-    explainability: buildPlannerExplainabilityMap(grid, params, solution),
+    explainability: buildPlannerExplainabilityMap(grid, params, solution)
   };
 }
 
 export function buildSolveResponse(grid: Grid, params: SolverParams, solution: Solution) {
-  return buildPlannerSolutionResponse(
-    grid,
-    params,
-    solution,
-    buildSolveResponsePayload(grid, params, solution)
-  );
+  return buildPlannerSolutionResponse(grid, params, solution, buildSolveResponsePayload(grid, params, solution));
 }
 
 function addPlacementCellsForCleanup(
@@ -100,10 +98,7 @@ function addPlacementCellsForCleanup(
   return true;
 }
 
-function collectRoadCleanupBuildings(
-  grid: Grid,
-  solution: Solution
-): BuildingPlacementForRoadMaterialization[] | null {
+function collectRoadCleanupBuildings(grid: Grid, solution: Solution): BuildingPlacementForRoadMaterialization[] | null {
   const buildingCells = new Set<string>();
   const buildings: BuildingPlacementForRoadMaterialization[] = [];
 
@@ -138,14 +133,11 @@ function cleanManualLayoutRoads(grid: Grid, solution: Solution): Solution {
 
   return {
     ...solution,
-    roads: cleanedRoads,
+    roads: cleanedRoads
   };
 }
 
-function normalizeManualLayoutSolution(
-  solution: Solution,
-  validation: SolutionMapValidationResult
-): Solution {
+function normalizeManualLayoutSolution(solution: Solution, validation: SolutionMapValidationResult): Solution {
   return {
     ...solution,
     optimizer: undefined,
@@ -158,14 +150,14 @@ function normalizeManualLayoutSolution(
     stoppedByUser: false,
     stoppedByTimeLimit: false,
     populations: [...validation.recomputedPopulations],
-    totalPopulation: validation.recomputedTotalPopulation,
+    totalPopulation: validation.recomputedTotalPopulation
   };
 }
 
 export function buildManualLayoutResponse(grid: Grid, params: SolverParams, solution: Solution) {
   const cleanedSolution = cleanManualLayoutRoads(grid, solution);
   const validation = buildSolveResponsePayload(grid, params, cleanedSolution, {
-    ignoreReportedPopulation: true,
+    ignoreReportedPopulation: true
   });
   return buildPlannerSolutionResponse(
     grid,

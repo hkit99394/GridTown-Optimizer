@@ -1,14 +1,7 @@
 (function attachPlannerShell(globalObject) {
   function createPlannerShellController(options) {
-    const {
-      state,
-      elements,
-      callbacks,
-    } = options;
-    const {
-      hasSelectedBuilding,
-      readExpansionCandidateFlags,
-    } = callbacks;
+    const { state, elements, callbacks } = options;
+    const { hasSelectedBuilding, readExpansionCandidateFlags } = callbacks;
 
     function hasEditableResult() {
       return Boolean(state.result && state.resultContext);
@@ -16,16 +9,13 @@
 
     function isManualLayoutResult() {
       return Boolean(
-        state.layoutEditor.edited
-        || state.result?.solution?.manualLayout
-        || state.result?.stats?.manualLayout
+        state.layoutEditor.edited || state.result?.solution?.manualLayout || state.result?.stats?.manualLayout
       );
     }
 
     function requiresManualLayoutValidation() {
       return Boolean(
-        state.layoutEditor.pendingValidation
-        || (isManualLayoutResult() && state.result?.validation?.valid === false)
+        state.layoutEditor.pendingValidation || (isManualLayoutResult() && state.result?.validation?.valid === false)
       );
     }
 
@@ -62,30 +52,23 @@
       elements.expansionNextService.disabled = editorBusy;
       elements.expansionNextResidential.disabled = editorBusy;
       elements.compareExpansionButton.disabled =
-        editorBusy
-        || manualLayoutNeedsValidation
-        || !editableResult
-        || !hasAnyCandidate;
+        editorBusy || manualLayoutNeedsValidation || !editableResult || !hasAnyCandidate;
 
       if (elements.moveSelectedBuildingButton) {
-        elements.moveSelectedBuildingButton.disabled =
-          editorControlsDisabled || !selectedBuildingActive;
+        elements.moveSelectedBuildingButton.disabled = editorControlsDisabled || !selectedBuildingActive;
       }
       if (elements.removeSelectedBuildingButton) {
-        elements.removeSelectedBuildingButton.disabled =
-          editorControlsDisabled || !selectedBuildingActive;
+        elements.removeSelectedBuildingButton.disabled = editorControlsDisabled || !selectedBuildingActive;
       }
       setActionButtonsDisabled(elements.layoutEditModeToggle, "button", editorControlsDisabled);
       if (elements.rotatePendingPlacementButton) {
         elements.rotatePendingPlacementButton.disabled =
-          editorControlsDisabled
-          || !state.layoutEditor.pendingPlacement
-          || !state.layoutEditor.pendingPlacement.canRotate;
+          editorControlsDisabled ||
+          !state.layoutEditor.pendingPlacement ||
+          !state.layoutEditor.pendingPlacement.canRotate;
       }
       if (elements.validateEditedLayoutButton) {
-        elements.validateEditedLayoutButton.disabled =
-          editorControlsDisabled
-          || !state.layoutEditor.pendingValidation;
+        elements.validateEditedLayoutButton.disabled = editorControlsDisabled || !state.layoutEditor.pendingValidation;
       }
       setActionButtonsDisabled(elements.remainingServiceList, "button[data-action]", editorControlsDisabled);
       setActionButtonsDisabled(elements.remainingResidentialList, "button[data-action]", editorControlsDisabled);
@@ -99,11 +82,11 @@
     return {
       getOptimizerLabel,
       setSolveState,
-      syncActionAvailability,
+      syncActionAvailability
     };
   }
 
   globalObject.CityBuilderShell = Object.freeze({
-    createPlannerShellController,
+    createPlannerShellController
   });
 })(window);

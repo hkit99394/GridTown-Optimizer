@@ -35,7 +35,9 @@ export interface BenchmarkVariantResultMetrics<TName extends string = string> {
   wallClockDeltaVsBaselineSeconds: number;
 }
 
-export interface BenchmarkVariantCaseMetrics<TResult extends BenchmarkVariantResultMetrics = BenchmarkVariantResultMetrics> {
+export interface BenchmarkVariantCaseMetrics<
+  TResult extends BenchmarkVariantResultMetrics = BenchmarkVariantResultMetrics
+> {
   name: string;
   variants: readonly TResult[];
 }
@@ -82,14 +84,19 @@ export interface BenchmarkVariantCoverageCase<TVariant = unknown> {
   variants: readonly TVariant[];
 }
 
-export type BenchmarkVariantResultSnapshot<TResult extends BenchmarkVariantResultMetrics> =
-  Omit<TResult, "wallClockSeconds" | "wallClockDeltaVsBaselineSeconds">;
+export type BenchmarkVariantResultSnapshot<TResult extends BenchmarkVariantResultMetrics> = Omit<
+  TResult,
+  "wallClockSeconds" | "wallClockDeltaVsBaselineSeconds"
+>;
 
-export type BenchmarkVariantSummarySnapshot<TSummary extends BenchmarkVariantSummaryMetrics> =
-  Omit<TSummary, "meanWallClockSeconds" | "meanWallClockDeltaVsBaselineSeconds">;
+export type BenchmarkVariantSummarySnapshot<TSummary extends BenchmarkVariantSummaryMetrics> = Omit<
+  TSummary,
+  "meanWallClockSeconds" | "meanWallClockDeltaVsBaselineSeconds"
+>;
 
-export type BenchmarkOptionsWithDefaults<TOptions extends object, TDefaults extends Partial<TOptions>> =
-  TOptions & { [K in keyof TDefaults]-?: NonNullable<TDefaults[K]> };
+export type BenchmarkOptionsWithDefaults<TOptions extends object, TDefaults extends Partial<TOptions>> = TOptions & {
+  [K in keyof TDefaults]-?: NonNullable<TDefaults[K]>;
+};
 
 export function cloneBenchmarkGrid(grid: Grid): Grid {
   return grid.map((row) => [...row]);
@@ -131,10 +138,7 @@ export function meanNullableBenchmarkValue(values: ReadonlyArray<number | null |
 export function percentileBenchmarkValue(values: readonly number[], percentileValue: number): number {
   if (values.length === 0) return 0;
   const sorted = [...values].sort((left, right) => left - right);
-  const index = Math.max(
-    0,
-    Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * percentileValue))
-  );
+  const index = Math.max(0, Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * percentileValue)));
   return sorted[index]!;
 }
 
@@ -208,14 +212,11 @@ export function buildBenchmarkSuiteMetadata(caseNames: readonly string[]): Bench
   return {
     generatedAt: benchmarkGeneratedAt(),
     caseCount: caseNames.length,
-    selectedCaseNames: [...caseNames],
+    selectedCaseNames: [...caseNames]
   };
 }
 
-export function assertBenchmarkCasesSelected<TCase>(
-  selected: readonly TCase[],
-  emptySelectionMessage: string
-): void {
+export function assertBenchmarkCasesSelected<TCase>(selected: readonly TCase[], emptySelectionMessage: string): void {
   if (selected.length === 0) {
     throw new Error(emptySelectionMessage);
   }
@@ -234,10 +235,7 @@ export function applyBenchmarkOptionDefaults<TOptions extends object, TDefaults 
   return normalized as BenchmarkOptionsWithDefaults<TOptions, TDefaults>;
 }
 
-export function selectBenchmarkVariants<
-  TName extends string,
-  TVariant extends NamedBenchmarkVariant<TName>,
->(
+export function selectBenchmarkVariants<TName extends string, TVariant extends NamedBenchmarkVariant<TName>>(
   variants: readonly TVariant[] | undefined,
   defaultVariants: readonly TVariant[],
   requestedVariantNames: readonly TName[] | undefined,
@@ -261,10 +259,7 @@ export function selectBenchmarkVariants<
   }
 
   const byName = new Map(normalized.map((variant) => [variant.name, variant]));
-  const requestedNames = [
-    baselineName,
-    ...requestedVariantNames.filter((name) => name !== baselineName),
-  ];
+  const requestedNames = [baselineName, ...requestedVariantNames.filter((name) => name !== baselineName)];
   if (new Set(requestedNames).size !== requestedNames.length) {
     throw new Error(`${labels.requestedVariantSetLabel} must use unique names.`);
   }
@@ -278,10 +273,7 @@ export function selectBenchmarkVariants<
   return requestedNames.map((name) => byName.get(name)!);
 }
 
-function findBenchmarkVariantResult<
-  TName extends string,
-  TResult extends BenchmarkVariantResultMetrics<TName>,
->(
+function findBenchmarkVariantResult<TName extends string, TResult extends BenchmarkVariantResultMetrics<TName>>(
   variantName: TName,
   entry: BenchmarkVariantCaseMetrics<TResult>,
   missingResultMessage: string
@@ -293,10 +285,7 @@ function findBenchmarkVariantResult<
   return result;
 }
 
-function benchmarkVariantSeedCaseLabel<
-  TName extends string,
-  TResult extends BenchmarkVariantResultMetrics<TName>,
->(
+function benchmarkVariantSeedCaseLabel<TName extends string, TResult extends BenchmarkVariantResultMetrics<TName>>(
   result: TResult | null,
   cases: readonly BenchmarkVariantCaseMetrics<TResult>[]
 ): { caseName: string | null; seed: number | null } {
@@ -308,13 +297,13 @@ function benchmarkVariantSeedCaseLabel<
   );
   return {
     caseName: match?.name ?? null,
-    seed: result.seed,
+    seed: result.seed
   };
 }
 
 export function summarizeBenchmarkVariantMetrics<
   TName extends string,
-  TResult extends BenchmarkVariantResultMetrics<TName>,
+  TResult extends BenchmarkVariantResultMetrics<TName>
 >(
   variantName: TName,
   cases: readonly BenchmarkVariantCaseMetrics<TResult>[],
@@ -329,7 +318,8 @@ export function summarizeBenchmarkVariantMetrics<
   const regressedCaseCount = countBenchmarkMatches(results, (entry) => entry.populationDeltaVsBaseline < 0);
   const unchangedCaseCount = countBenchmarkMatches(results, (entry) => entry.populationDeltaVsBaseline === 0);
   const worstDeltaResult = results.reduce<TResult | null>(
-    (worst, entry) => (worst === null || entry.populationDeltaVsBaseline < worst.populationDeltaVsBaseline ? entry : worst),
+    (worst, entry) =>
+      worst === null || entry.populationDeltaVsBaseline < worst.populationDeltaVsBaseline ? entry : worst,
     null
   );
   const bestDeltaResult = results.reduce<TResult | null>(
@@ -366,7 +356,7 @@ export function summarizeBenchmarkVariantMetrics<
     worstPopulationDeltaCaseName: worstDeltaLabel.caseName,
     worstPopulationDeltaSeed: worstDeltaLabel.seed,
     bestPopulationDeltaCaseName: bestDeltaLabel.caseName,
-    bestPopulationDeltaSeed: bestDeltaLabel.seed,
+    bestPopulationDeltaSeed: bestDeltaLabel.seed
   };
 }
 
@@ -382,7 +372,7 @@ export function buildBenchmarkVariantCoverage<TVariant>(
     comparisonCount: cases.length,
     variantCount: cases[0]?.variants.length ?? 0,
     runCount: variants.length,
-    gridCellCount: sumBenchmarkBy(cases, (entry) => entry.gridCells),
+    gridCellCount: sumBenchmarkBy(cases, (entry) => entry.gridCells)
   };
 }
 
@@ -438,7 +428,7 @@ export function inheritGreedyBenchmarkOptions<TGreedyOptions extends GreedyOptio
     serviceRefineCandidateLimit: benchmarkGreedy.serviceRefineCandidateLimit ?? params.serviceRefineCandidateLimit,
     exhaustiveServiceSearch: benchmarkGreedy.exhaustiveServiceSearch ?? params.exhaustiveServiceSearch,
     serviceExactPoolLimit: benchmarkGreedy.serviceExactPoolLimit ?? params.serviceExactPoolLimit,
-    serviceExactMaxCombinations: benchmarkGreedy.serviceExactMaxCombinations ?? params.serviceExactMaxCombinations,
+    serviceExactMaxCombinations: benchmarkGreedy.serviceExactMaxCombinations ?? params.serviceExactMaxCombinations
   };
 }
 
@@ -457,7 +447,7 @@ export function applyNormalizedGreedyBenchmarkParams<TGreedyOptions extends Gree
     serviceRefineCandidateLimit: greedy.serviceRefineCandidateLimit,
     exhaustiveServiceSearch: greedy.exhaustiveServiceSearch,
     serviceExactPoolLimit: greedy.serviceExactPoolLimit,
-    serviceExactMaxCombinations: greedy.serviceExactMaxCombinations,
+    serviceExactMaxCombinations: greedy.serviceExactMaxCombinations
   };
 }
 

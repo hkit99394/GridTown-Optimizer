@@ -3,7 +3,7 @@ import {
   formatNullableBenchmarkSeconds as formatSeconds,
   meanBenchmarkValue,
   roundBenchmarkMetric,
-  uniqueBenchmarkValuesBy,
+  uniqueBenchmarkValuesBy
 } from "./benchmarkOptions.js";
 import { MODE_LABELS } from "./crossModeLabels.js";
 import { compareModeResults } from "./crossModeResultOrder.js";
@@ -19,7 +19,7 @@ import type {
   CrossModeBudgetAllocationSignalKind,
   CrossModeBudgetPolicyRecommendation,
   CrossModePortfolioEfficiencyRecommendation,
-  CrossModePortfolioEfficiencySignal,
+  CrossModePortfolioEfficiencySignal
 } from "./crossMode.js";
 
 function roundSignalValue(value: number): number {
@@ -41,23 +41,22 @@ export function buildCrossModeBudgetAllocationSignal(
   }
 ): CrossModeBudgetAllocationSignal {
   const budgetSeconds = Math.max(benchmark.budgetSeconds, 0.001);
-  const finalElapsedSeconds = millisecondsToSignalSeconds(benchmark.timeToQuality.finalElapsedMs)
-    ?? roundSignalValue(benchmark.wallClockSeconds);
+  const finalElapsedSeconds =
+    millisecondsToSignalSeconds(benchmark.timeToQuality.finalElapsedMs) ?? roundSignalValue(benchmark.wallClockSeconds);
   const firstImprovementSeconds = millisecondsToSignalSeconds(benchmark.timeToQuality.firstImprovementAtMs);
   const bestScoreSeconds = millisecondsToSignalSeconds(benchmark.timeToQuality.bestScoreAtMs);
   const autoBestScoreSeconds = millisecondsToSignalSeconds(options.autoBestScoreAtMs);
   const budgetRemainingSeconds = roundSignalValue(Math.max(0, benchmark.budgetSeconds - benchmark.wallClockSeconds));
   const budgetOverrunSeconds = roundSignalValue(Math.max(0, benchmark.wallClockSeconds - benchmark.budgetSeconds));
   const budgetUtilizationRatio = roundSignalValue(benchmark.wallClockSeconds / budgetSeconds);
-  const secondsAfterBest = bestScoreSeconds === null
-    ? null
-    : roundSignalValue(Math.max(0, finalElapsedSeconds - bestScoreSeconds));
-  const improvementsPerSecond = finalElapsedSeconds > 0
-    ? roundSignalValue(benchmark.timeToQuality.improvementCount / finalElapsedSeconds)
-    : null;
-  const autoBestScoreSecondsDelta = bestScoreSeconds === null || autoBestScoreSeconds === null
-    ? null
-    : roundSignalValue(bestScoreSeconds - autoBestScoreSeconds);
+  const secondsAfterBest =
+    bestScoreSeconds === null ? null : roundSignalValue(Math.max(0, finalElapsedSeconds - bestScoreSeconds));
+  const improvementsPerSecond =
+    finalElapsedSeconds > 0 ? roundSignalValue(benchmark.timeToQuality.improvementCount / finalElapsedSeconds) : null;
+  const autoBestScoreSecondsDelta =
+    bestScoreSeconds === null || autoBestScoreSeconds === null
+      ? null
+      : roundSignalValue(bestScoreSeconds - autoBestScoreSeconds);
 
   let signal: CrossModeBudgetAllocationSignalKind = "steady";
   let reason = "Trace shows no obvious budget-allocation pressure.";
@@ -71,17 +70,17 @@ export function buildCrossModeBudgetAllocationSignal(
     signal = "under-used-budget";
     reason = "Observed wall time used only a small share of the configured benchmark budget.";
   } else if (
-    secondsAfterBest !== null
-    && secondsAfterBest >= Math.max(1, budgetSeconds * 0.5)
-    && (options.scoreDeltaVsAuto ?? 0) <= 0
+    secondsAfterBest !== null &&
+    secondsAfterBest >= Math.max(1, budgetSeconds * 0.5) &&
+    (options.scoreDeltaVsAuto ?? 0) <= 0
   ) {
     signal = "early-plateau";
     reason = "Best score arrived early, then the run spent a large budget tail without beating Auto.";
   } else if (
-    bestScoreSeconds !== null
-    && bestScoreSeconds >= budgetSeconds * 0.75
-    && benchmark.timeToQuality.improvementCount > 0
-    && (options.scoreDeltaVsAuto ?? 0) >= 0
+    bestScoreSeconds !== null &&
+    bestScoreSeconds >= budgetSeconds * 0.75 &&
+    benchmark.timeToQuality.improvementCount > 0 &&
+    (options.scoreDeltaVsAuto ?? 0) >= 0
   ) {
     signal = "late-improvement";
     reason = "Best score arrived late in the budget while matching or beating Auto.";
@@ -98,7 +97,7 @@ export function buildCrossModeBudgetAllocationSignal(
     improvementsPerSecond,
     scoreDeltaVsAuto: options.scoreDeltaVsAuto,
     autoBestScoreSecondsDelta,
-    reason,
+    reason
   };
 }
 
@@ -108,7 +107,10 @@ function standardDeviation(values: readonly number[]): number {
   return Math.sqrt(meanBenchmarkValue(values.map((value) => (value - average) ** 2)));
 }
 
-function summarizeMode(mode: CrossModeBenchmarkMode, results: readonly CrossModeBenchmarkModeResult[]): CrossModeBenchmarkModeSummary {
+function summarizeMode(
+  mode: CrossModeBenchmarkMode,
+  results: readonly CrossModeBenchmarkModeResult[]
+): CrossModeBenchmarkModeSummary {
   const populations = results.map((result) => result.totalPopulation);
   const comparable = results.filter((result) => result.winVsAuto !== "baseline" && result.winVsAuto !== "no-auto");
   const wins = countBenchmarkMatches(comparable, (result) => result.winVsAuto === "win");
@@ -126,7 +128,7 @@ function summarizeMode(mode: CrossModeBenchmarkMode, results: readonly CrossMode
     populationStdDev: standardDeviation(populations),
     meanWallClockSeconds: meanBenchmarkValue(results.map((result) => result.wallClockSeconds)),
     winRateVsAuto: comparable.length ? (wins + ties * 0.5) / comparable.length : null,
-    meanScoreDeltaVsAuto: deltas.length ? meanBenchmarkValue(deltas) : null,
+    meanScoreDeltaVsAuto: deltas.length ? meanBenchmarkValue(deltas) : null
   };
 }
 
@@ -136,16 +138,23 @@ export function buildSummaries(cases: readonly CrossModeBenchmarkCaseScorecard[]
 } {
   const results = cases.flatMap((scorecard) => scorecard.results);
   const modes = uniqueBenchmarkValuesBy(results, (result) => result.mode);
-  const modeSummaries = modes.map((mode) => summarizeMode(mode, results.filter((result) => result.mode === mode)));
+  const modeSummaries = modes.map((mode) =>
+    summarizeMode(
+      mode,
+      results.filter((result) => result.mode === mode)
+    )
+  );
   const problemSizeBands = uniqueBenchmarkValuesBy(results, (result) => result.problemSizeBand);
   const problemSizeSummaries = problemSizeBands.flatMap((problemSizeBand) =>
-    modes.map((mode) => ({
-      problemSizeBand,
-      ...summarizeMode(
-        mode,
-        results.filter((result) => result.mode === mode && result.problemSizeBand === problemSizeBand)
-      ),
-    })).filter((summary) => summary.runs > 0)
+    modes
+      .map((mode) => ({
+        problemSizeBand,
+        ...summarizeMode(
+          mode,
+          results.filter((result) => result.mode === mode && result.problemSizeBand === problemSizeBand)
+        )
+      }))
+      .filter((summary) => summary.runs > 0)
   );
   return { modeSummaries, problemSizeSummaries };
 }
@@ -164,17 +173,17 @@ function recommendationForBestMode(
   return "investigate-auto-loss";
 }
 
-function buildBudgetPolicyReason(
-  signal: Omit<CrossModeBenchmarkBudgetPolicySignal, "reason">
-): string {
+function buildBudgetPolicyReason(signal: Omit<CrossModeBenchmarkBudgetPolicySignal, "reason">): string {
   const stageEvidence = [
     signal.autoLnsStageElapsedSeconds !== null
       ? `Auto LNS used ${formatSeconds(signal.autoLnsStageElapsedSeconds)} for +${signal.autoLnsStageImprovement ?? "n/a"} accepted population`
       : null,
     signal.autoCpSatStageElapsedSeconds !== null
       ? `Auto CP-SAT used ${formatSeconds(signal.autoCpSatStageElapsedSeconds)} for +${signal.autoCpSatStageImprovement ?? "n/a"} accepted population`
-      : null,
-  ].filter((entry): entry is string => entry !== null).join("; ");
+      : null
+  ]
+    .filter((entry): entry is string => entry !== null)
+    .join("; ");
   const stageSuffix = stageEvidence ? ` ${stageEvidence}.` : "";
 
   if (signal.autoScore === null) {
@@ -227,7 +236,7 @@ function summarizeAutoStageEvidence(result: CrossModeBenchmarkModeResult | null)
     autoLnsStageElapsedSeconds: roundEvidenceTotal(lnsElapsedSeconds),
     autoLnsStageImprovement: roundEvidenceTotal(lnsImprovement),
     autoCpSatStageElapsedSeconds: roundEvidenceTotal(cpSatElapsedSeconds),
-    autoCpSatStageImprovement: roundEvidenceTotal(cpSatImprovement),
+    autoCpSatStageImprovement: roundEvidenceTotal(cpSatImprovement)
   };
 }
 
@@ -254,11 +263,11 @@ export function buildBudgetPolicySignals(
       autoGreedySeedElapsedSeconds: auto?.autoGreedySeedElapsedSeconds ?? null,
       ...autoStageEvidence,
       lnsScoreDeltaVsAuto: auto && lns ? lns.totalPopulation - auto.totalPopulation : null,
-      lnsSeedWallClockSeconds: lns?.lnsSeedWallClockSeconds ?? null,
+      lnsSeedWallClockSeconds: lns?.lnsSeedWallClockSeconds ?? null
     };
     return {
       ...partial,
-      reason: buildBudgetPolicyReason(partial),
+      reason: buildBudgetPolicyReason(partial)
     };
   });
 }
@@ -292,9 +301,9 @@ export function buildPortfolioEfficiencySignals(
     const wallClockDeltaSeconds = roundSignalValue(portfolio.wallClockSeconds - single.wallClockSeconds);
     const cpuBudgetDeltaSeconds = roundSignalValue(portfolio.workerCpuBudgetSeconds - single.workerCpuBudgetSeconds);
     const cpuBudgetEfficiencyRatio =
-      single.populationPerWorkerCpuBudgetSecond !== null
-      && single.populationPerWorkerCpuBudgetSecond > 0
-      && portfolio.populationPerWorkerCpuBudgetSecond !== null
+      single.populationPerWorkerCpuBudgetSecond !== null &&
+      single.populationPerWorkerCpuBudgetSecond > 0 &&
+      portfolio.populationPerWorkerCpuBudgetSecond !== null
         ? roundSignalValue(portfolio.populationPerWorkerCpuBudgetSecond / single.populationPerWorkerCpuBudgetSecond)
         : null;
     const recommendation: CrossModePortfolioEfficiencyRecommendation =
@@ -322,13 +331,12 @@ export function buildPortfolioEfficiencySignals(
       singlePopulationPerCpuBudgetSecond: single.populationPerWorkerCpuBudgetSecond,
       portfolioPopulationPerCpuBudgetSecond: portfolio.populationPerWorkerCpuBudgetSecond,
       cpuBudgetEfficiencyRatio,
-      recommendation,
+      recommendation
     };
     signals.push({
       ...partial,
-      reason: buildPortfolioEfficiencyReason(partial),
+      reason: buildPortfolioEfficiencyReason(partial)
     });
   }
   return signals;
 }
-

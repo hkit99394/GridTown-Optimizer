@@ -11,7 +11,7 @@ import type {
   ResidentialCandidate,
   ResidentialTypeSetting,
   ServiceTypeSetting,
-  SolverParams,
+  SolverParams
 } from "./types.js";
 import {
   buildBlockedPrefixSum,
@@ -21,7 +21,7 @@ import {
   rectangleBlockedCount,
   rectangleCells,
   rectangleCountCells,
-  rectangleSomeCell,
+  rectangleSomeCell
 } from "./grid.js";
 import { normalizeSize } from "./rules.js";
 
@@ -31,7 +31,7 @@ export function normalizeServicePlacement(service: ServicePlacement): Required<S
     c: service.c,
     rows: service.rows,
     cols: service.cols,
-    range: service.range,
+    range: service.range
   };
 }
 
@@ -56,13 +56,14 @@ function residentialTypePriority(type: ResidentialTypeSetting): number {
 function sortedServiceTypeIndices(types: ServiceTypeSetting[]): number[] {
   return types
     .map((type, index) => ({ type, index }))
-    .sort((a, b) =>
-      serviceTypePriority(b.type) - serviceTypePriority(a.type)
-      || b.type.bonus - a.type.bonus
-      || b.type.range - a.type.range
-      || a.type.rows * a.type.cols - b.type.rows * b.type.cols
-      || b.type.avail - a.type.avail
-      || a.index - b.index
+    .sort(
+      (a, b) =>
+        serviceTypePriority(b.type) - serviceTypePriority(a.type) ||
+        b.type.bonus - a.type.bonus ||
+        b.type.range - a.type.range ||
+        a.type.rows * a.type.cols - b.type.rows * b.type.cols ||
+        b.type.avail - a.type.avail ||
+        a.index - b.index
     )
     .map((entry) => entry.index);
 }
@@ -70,13 +71,14 @@ function sortedServiceTypeIndices(types: ServiceTypeSetting[]): number[] {
 function sortedResidentialTypeIndices(types: ResidentialTypeSetting[]): number[] {
   return types
     .map((type, index) => ({ type, index }))
-    .sort((a, b) =>
-      residentialTypePriority(b.type) - residentialTypePriority(a.type)
-      || b.type.max - a.type.max
-      || b.type.min - a.type.min
-      || a.type.w * a.type.h - b.type.w * b.type.h
-      || b.type.avail - a.type.avail
-      || a.index - b.index
+    .sort(
+      (a, b) =>
+        residentialTypePriority(b.type) - residentialTypePriority(a.type) ||
+        b.type.max - a.type.max ||
+        b.type.min - a.type.min ||
+        a.type.w * a.type.h - b.type.w * b.type.h ||
+        b.type.avail - a.type.avail ||
+        a.index - b.index
     )
     .map((entry) => entry.index);
 }
@@ -100,12 +102,7 @@ function rectangleKey(r: number, c: number, rows: number, cols: number): string 
   return `${r},${c},${rows},${cols}`;
 }
 
-function getOrBuildRectangleCellKeys(
-  r: number,
-  c: number,
-  rows: number,
-  cols: number
-): readonly string[] {
+function getOrBuildRectangleCellKeys(r: number, c: number, rows: number, cols: number): readonly string[] {
   const key = rectangleKey(r, c, rows, cols);
   const cached = rectangleCellKeyCache.get(key);
   if (cached) return cached;
@@ -127,10 +124,7 @@ function getServiceEffectZoneCache(G: Grid): Map<string, readonly string[]> {
   return cache;
 }
 
-function getOrBuildServiceEffectZoneKeys(
-  G: Grid,
-  service: Required<ServicePlacement>
-): readonly string[] {
+function getOrBuildServiceEffectZoneKeys(G: Grid, service: Required<ServicePlacement>): readonly string[] {
   const cache = getServiceEffectZoneCache(G);
   const key = serviceEffectZoneKey(service);
   const cached = cache.get(key);
@@ -145,10 +139,8 @@ function getOrBuildServiceEffectZoneKeys(
   const cMax = Math.min(W - 1, service.c + service.cols - 1 + service.range);
   for (let rr = rMin; rr <= rMax; rr++) {
     for (let cc = cMin; cc <= cMax; cc++) {
-      const inFootprint = rr >= service.r
-        && rr < service.r + service.rows
-        && cc >= service.c
-        && cc < service.c + service.cols;
+      const inFootprint =
+        rr >= service.r && rr < service.r + service.rows && cc >= service.c && cc < service.c + service.cols;
       if (inFootprint) continue;
       if (isAllowed(G, rr, cc)) zone.push(cellKey(rr, cc));
     }
@@ -167,7 +159,7 @@ export function buildFootprintGeometryCache<T extends FootprintGeometrySource>(
     return [...getOrBuildRectangleCellKeys(placement.r, placement.c, placement.rows, placement.cols)];
   });
   return {
-    footprintKeysByIndex: Object.freeze(footprintKeysByIndex),
+    footprintKeysByIndex: Object.freeze(footprintKeysByIndex)
   };
 }
 
@@ -176,18 +168,22 @@ export function buildServiceGeometryCache<T extends ServicePlacement>(
   services: readonly T[],
   maybeStop?: StopCheck
 ): ServiceGeometryCache {
-  const footprintKeysByIndex = Object.freeze(services.map((service) => {
-    maybeStop?.();
-    const placement = normalizeServicePlacement(service);
-    return getOrBuildRectangleCellKeys(placement.r, placement.c, placement.rows, placement.cols);
-  }));
-  const effectZoneKeysByIndex = Object.freeze(services.map((service) => {
-    maybeStop?.();
-    return getOrBuildServiceEffectZoneKeys(G, normalizeServicePlacement(service));
-  }));
+  const footprintKeysByIndex = Object.freeze(
+    services.map((service) => {
+      maybeStop?.();
+      const placement = normalizeServicePlacement(service);
+      return getOrBuildRectangleCellKeys(placement.r, placement.c, placement.rows, placement.cols);
+    })
+  );
+  const effectZoneKeysByIndex = Object.freeze(
+    services.map((service) => {
+      maybeStop?.();
+      return getOrBuildServiceEffectZoneKeys(G, normalizeServicePlacement(service));
+    })
+  );
   return {
     footprintKeysByIndex,
-    effectZoneKeysByIndex,
+    effectZoneKeysByIndex
   };
 }
 
@@ -271,7 +267,7 @@ export function enumerateServiceCandidates(G: Grid, params: SolverParams, maybeS
           cols,
           range: type.range,
           typeIndex,
-          bonus: type.bonus,
+          bonus: type.bonus
         });
       }
     }
@@ -288,13 +284,13 @@ export function enumerateResidentialCandidates(G: Grid, maybeStop?: StopCheck): 
     blockedPrefixSum,
     [
       [2, 2],
-      [2, 3],
+      [2, 3]
     ],
     maybeStop
   );
   for (const [rows, cols] of [
     [2, 2],
-    [2, 3],
+    [2, 3]
   ] as [number, number][]) {
     maybeStop?.();
     for (const placement of placementMap.get(`${rows}x${cols}`) ?? []) {

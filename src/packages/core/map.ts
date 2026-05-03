@@ -2,12 +2,7 @@
  * Solution map rendering and validation helpers.
  */
 
-import type {
-  Grid,
-  Solution,
-  SolutionValidationInput,
-  SolutionValidationResult,
-} from "./types.js";
+import type { Grid, Solution, SolutionValidationInput, SolutionValidationResult } from "./types.js";
 import { height, width, isAllowed } from "./grid.js";
 import { normalizeServicePlacement } from "./buildings.js";
 import { validateSolution } from "./evaluator.js";
@@ -82,6 +77,6 @@ export function validateSolutionMap(
   return {
     ...validation,
     mapRows,
-    mapText: mapRows.join("\n"),
+    mapText: mapRows.join("\n")
   };
 }

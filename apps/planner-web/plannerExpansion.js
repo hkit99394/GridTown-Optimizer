@@ -1,16 +1,7 @@
 (function attachPlannerExpansion(globalObject) {
   function createExpansionAdviceController(options) {
-    const {
-      state,
-      elements,
-      constants,
-      helpers,
-      callbacks,
-    } = options;
-    const {
-      COMPARISON_PROGRESS_HINT_INTERVAL_MS,
-      SOLVE_STATUS_POLL_INTERVAL_MS,
-    } = constants;
+    const { state, elements, constants, helpers, callbacks } = options;
+    const { COMPARISON_PROGRESS_HINT_INTERVAL_MS, SOLVE_STATUS_POLL_INTERVAL_MS } = constants;
     const {
       buildCpSatContinuationModelInput,
       cloneJson,
@@ -18,14 +9,14 @@
       createSolveRequestId,
       delay,
       parseResidentialCatalogEntry,
-      parseServiceCatalogEntry,
+      parseServiceCatalogEntry
     } = helpers;
     const {
       buildSolveRequest,
       getDisplayedLayoutCheckpoint,
       getDisplayedLayoutSourceLabel,
       getOptimizerLabel,
-      syncActionAvailability,
+      syncActionAvailability
     } = callbacks;
 
     function clearExpansionAdvice() {
@@ -49,7 +40,7 @@
         hasServiceCandidate,
         hasResidentialCandidate,
         hasAnyCandidate: hasServiceCandidate || hasResidentialCandidate,
-        hasBothCandidates: hasServiceCandidate && hasResidentialCandidate,
+        hasBothCandidates: hasServiceCandidate && hasResidentialCandidate
       };
     }
 
@@ -60,7 +51,9 @@
       return {
         totalPopulation: Number(state.result.stats?.totalPopulation ?? state.result.solution?.totalPopulation ?? 0),
         serviceCount: Number(state.result.stats?.serviceCount ?? state.result.solution?.services?.length ?? 0),
-        residentialCount: Number(state.result.stats?.residentialCount ?? state.result.solution?.residentials?.length ?? 0),
+        residentialCount: Number(
+          state.result.stats?.residentialCount ?? state.result.solution?.residentials?.length ?? 0
+        )
       };
     }
 
@@ -70,7 +63,7 @@
       const plannerSolveRequest = buildSolveRequest({
         hintMismatch: "ignore",
         includeWarmStartHint: false,
-        includeLnsSeed: false,
+        includeLnsSeed: false
       });
       request.params.optimizer = plannerSolveRequest.params.optimizer;
       request.params.greedy = cloneJson(plannerSolveRequest.params.greedy ?? {});
@@ -80,11 +73,11 @@
       delete request.params.maxResidentials;
       request.params.availableBuildings = {
         services: summary.serviceCount,
-        residentials: summary.residentialCount,
+        residentials: summary.residentialCount
       };
       return {
         request,
-        baseline: summary,
+        baseline: summary
       };
     }
 
@@ -103,7 +96,7 @@
         serviceCandidateKeys: cloneJson(checkpoint.hint.serviceCandidateKeys),
         residentialCandidateKeys: cloneJson(checkpoint.hint.residentialCandidateKeys),
         solution: cloneJson(checkpoint.hint.solution),
-        hintConflictLimit: 20,
+        hintConflictLimit: 20
       };
     }
 
@@ -124,24 +117,24 @@
       if (request.params.optimizer === "cp-sat") {
         request.params.cpSat = {
           ...(request.params.cpSat ?? {}),
-          warmStartHint: cloneJson(payload),
+          warmStartHint: cloneJson(payload)
         };
       } else if (request.params.optimizer === "lns") {
         request.params.lns = {
           ...(request.params.lns ?? {}),
-          seedHint: cloneJson(payload),
+          seedHint: cloneJson(payload)
         };
       } else if (request.params.optimizer === "auto") {
         if (state.cpSat.useDisplayedHint) {
           request.params.cpSat = {
             ...(request.params.cpSat ?? {}),
-            warmStartHint: cloneJson(payload),
+            warmStartHint: cloneJson(payload)
           };
         }
         if (state.lns.useDisplayedSeed) {
           request.params.lns = {
             ...(request.params.lns ?? {}),
-            seedHint: cloneJson(payload),
+            seedHint: cloneJson(payload)
           };
         }
       }
@@ -150,7 +143,9 @@
     }
 
     function parseExpansionServiceCandidate(text) {
-      const match = String(text ?? "").trim().match(/^\s*(.+?)(?:\s*,\s*|\t+)(\d+)(?:\s*,\s*|\t+)(\d+\s*x\s*\d+)(?:\s*,\s*|\t+)(\d+\s*x\s*\d+)\s*$/i);
+      const match = String(text ?? "")
+        .trim()
+        .match(/^\s*(.+?)(?:\s*,\s*|\t+)(\d+)(?:\s*,\s*|\t+)(\d+\s*x\s*\d+)(?:\s*,\s*|\t+)(\d+\s*x\s*\d+)\s*$/i);
       if (!match) {
         throw new Error("Next service must look like: Name, Bonus, 2x2, 12x12");
       }
@@ -160,14 +155,16 @@
           name: name.trim(),
           bonus: bonus.trim(),
           size: size.replaceAll(" ", ""),
-          effective: effective.replaceAll(" ", ""),
+          effective: effective.replaceAll(" ", "")
         },
         state.serviceTypes.length
       );
     }
 
     function parseExpansionResidentialCandidate(text) {
-      const match = String(text ?? "").trim().match(/^\s*(.+?)(?:\s*,\s*|\t+)(\d+\s*\/\s*\d+)(?:\s*,\s*|\t+|\s+)(\d+\s*x\s*\d+)\s*$/i);
+      const match = String(text ?? "")
+        .trim()
+        .match(/^\s*(.+?)(?:\s*,\s*|\t+)(\d+\s*\/\s*\d+)(?:\s*,\s*|\t+|\s+)(\d+\s*x\s*\d+)\s*$/i);
       if (!match) {
         throw new Error("Next residential must look like: Name, 780/2340, 2x3");
       }
@@ -177,7 +174,7 @@
           name: name.trim(),
           resident: resident.replaceAll(" ", ""),
           size: size.replaceAll(" ", ""),
-          avail: "1",
+          avail: "1"
         },
         state.residentialTypes.length
       );
@@ -187,7 +184,7 @@
       const { request, baseline } = buildExpansionBaseRequest();
       request.params.availableBuildings = {
         services: baseline.serviceCount + (kind === "service" ? 1 : 0),
-        residentials: baseline.residentialCount + (kind === "residential" ? 1 : 0),
+        residentials: baseline.residentialCount + (kind === "residential" ? 1 : 0)
       };
 
       if (kind === "service") {
@@ -196,7 +193,7 @@
         return {
           request: attachComparisonSeedOrHint(request),
           candidateName: serviceCandidate.name,
-          baseline,
+          baseline
         };
       }
 
@@ -205,7 +202,7 @@
       return {
         request: attachComparisonSeedOrHint(request),
         candidateName: residentialCandidate.name,
-        baseline,
+        baseline
       };
     }
 
@@ -225,12 +222,12 @@
       const startResponse = await fetch("/api/solve/start", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           ...request,
-          requestId,
-        }),
+          requestId
+        })
       });
       const startPayload = await startResponse.json();
       if (!startResponse.ok || !startPayload.ok) {
@@ -240,7 +237,7 @@
       let nextProgressHintAt = Date.now() + COMPARISON_PROGRESS_HINT_INTERVAL_MS;
       while (true) {
         const response = await fetch(`/api/solve/status?${new URLSearchParams({ requestId }).toString()}`, {
-          cache: "no-store",
+          cache: "no-store"
         });
         const payload = await response.json();
         if (!response.ok || !payload.ok) {
@@ -269,7 +266,8 @@
       if (!elements.expansionAdviceStatus || !elements.expansionAdviceMetrics) return;
 
       const hasResult = Boolean(state.result && state.resultContext);
-      const { hasAnyCandidate, hasBothCandidates, hasServiceCandidate, hasResidentialCandidate } = readExpansionCandidateFlags();
+      const { hasAnyCandidate, hasBothCandidates, hasServiceCandidate, hasResidentialCandidate } =
+        readExpansionCandidateFlags();
 
       if (!hasResult) {
         elements.expansionAdviceStatus.textContent =
@@ -323,7 +321,8 @@
       if (state.isSolving || state.expansionAdvice.isRunning) return;
 
       try {
-        const { hasAnyCandidate, hasServiceCandidate, hasResidentialCandidate, hasBothCandidates } = readExpansionCandidateFlags();
+        const { hasAnyCandidate, hasServiceCandidate, hasResidentialCandidate, hasBothCandidates } =
+          readExpansionCandidateFlags();
         if (!hasAnyCandidate) {
           throw new Error("Enter at least one next-building candidate before estimating the impact.");
         }
@@ -336,24 +335,22 @@
         state.expansionAdvice.isRunning = true;
         state.expansionAdvice.error = "";
         state.expansionAdvice.result = null;
-        state.expansionAdvice.status =
-          `Using the displayed layout as the baseline at ${baselinePopulation.toLocaleString()}.`;
+        state.expansionAdvice.status = `Using the displayed layout as the baseline at ${baselinePopulation.toLocaleString()}.`;
         renderExpansionAdvice();
         syncActionAvailability();
 
         const servicePayload = serviceScenario
-          ? (
-            state.expansionAdvice.status = `Testing service option "${serviceScenario.candidateName}"...`,
+          ? ((state.expansionAdvice.status = `Testing service option "${serviceScenario.candidateName}"...`),
             renderExpansionAdvice(),
-            await runComparisonSolve(serviceScenario.request, `service option "${serviceScenario.candidateName}"`)
-          )
+            await runComparisonSolve(serviceScenario.request, `service option "${serviceScenario.candidateName}"`))
           : null;
         const residentialPayload = residentialScenario
-          ? (
-            state.expansionAdvice.status = `Testing residential option "${residentialScenario.candidateName}"...`,
+          ? ((state.expansionAdvice.status = `Testing residential option "${residentialScenario.candidateName}"...`),
             renderExpansionAdvice(),
-            await runComparisonSolve(residentialScenario.request, `residential option "${residentialScenario.candidateName}"`)
-          )
+            await runComparisonSolve(
+              residentialScenario.request,
+              `residential option "${residentialScenario.candidateName}"`
+            ))
           : null;
         const servicePopulation = servicePayload
           ? Number(servicePayload.stats?.totalPopulation ?? servicePayload.solution?.totalPopulation ?? 0)
@@ -367,18 +364,24 @@
         let winner = "Remain current layout";
         let detail = `Baseline reaches ${baselinePopulation.toLocaleString()}.`;
 
-        if (hasBothCandidates && serviceScenario && residentialScenario && serviceDelta != null && residentialDelta != null) {
+        if (
+          hasBothCandidates &&
+          serviceScenario &&
+          residentialScenario &&
+          serviceDelta != null &&
+          residentialDelta != null
+        ) {
           detail =
-            `Baseline reaches ${baselinePopulation.toLocaleString()}, ${serviceScenario.candidateName} reaches `
-            + `${servicePopulation.toLocaleString()} (${formatSignedPopulationDelta(serviceDelta)}), `
-            + `${residentialScenario.candidateName} reaches ${residentialPopulation.toLocaleString()} `
-            + `(${formatSignedPopulationDelta(residentialDelta)}).`;
+            `Baseline reaches ${baselinePopulation.toLocaleString()}, ${serviceScenario.candidateName} reaches ` +
+            `${servicePopulation.toLocaleString()} (${formatSignedPopulationDelta(serviceDelta)}), ` +
+            `${residentialScenario.candidateName} reaches ${residentialPopulation.toLocaleString()} ` +
+            `(${formatSignedPopulationDelta(residentialDelta)}).`;
 
           if (serviceDelta <= 0 && residentialDelta <= 0) {
             winner = "Remain current layout";
             detail =
-              `Neither typed addition improves the current ${getOptimizerLabel(baselineScenario.request.params.optimizer)} baseline `
-              + `of ${baselinePopulation.toLocaleString()}.`;
+              `Neither typed addition improves the current ${getOptimizerLabel(baselineScenario.request.params.optimizer)} baseline ` +
+              `of ${baselinePopulation.toLocaleString()}.`;
           } else if (serviceDelta > residentialDelta) {
             winner = `Add ${serviceScenario.candidateName}`;
           } else if (residentialDelta > serviceDelta) {
@@ -386,27 +389,29 @@
           } else {
             winner = "Tie";
             detail =
-              `Both additions improve the current ${getOptimizerLabel(baselineScenario.request.params.optimizer)} baseline by `
-              + `${formatSignedPopulationDelta(serviceDelta)}.`;
+              `Both additions improve the current ${getOptimizerLabel(baselineScenario.request.params.optimizer)} baseline by ` +
+              `${formatSignedPopulationDelta(serviceDelta)}.`;
           }
         } else if (serviceScenario && serviceDelta != null) {
           winner = serviceDelta > 0 ? `Add ${serviceScenario.candidateName}` : "Remain current layout";
-          detail = serviceDelta > 0
-            ? `${serviceScenario.candidateName} raises the current ${getOptimizerLabel(baselineScenario.request.params.optimizer)} baseline from `
-              + `${baselinePopulation.toLocaleString()} to ${servicePopulation.toLocaleString()} `
-              + `(${formatSignedPopulationDelta(serviceDelta)}).`
-            : `${serviceScenario.candidateName} reaches ${servicePopulation.toLocaleString()} `
-              + `(${formatSignedPopulationDelta(serviceDelta)}), so keeping the current layout is still better than the baseline `
-              + `of ${baselinePopulation.toLocaleString()}.`;
+          detail =
+            serviceDelta > 0
+              ? `${serviceScenario.candidateName} raises the current ${getOptimizerLabel(baselineScenario.request.params.optimizer)} baseline from ` +
+                `${baselinePopulation.toLocaleString()} to ${servicePopulation.toLocaleString()} ` +
+                `(${formatSignedPopulationDelta(serviceDelta)}).`
+              : `${serviceScenario.candidateName} reaches ${servicePopulation.toLocaleString()} ` +
+                `(${formatSignedPopulationDelta(serviceDelta)}), so keeping the current layout is still better than the baseline ` +
+                `of ${baselinePopulation.toLocaleString()}.`;
         } else if (residentialScenario && residentialDelta != null) {
           winner = residentialDelta > 0 ? `Add ${residentialScenario.candidateName}` : "Remain current layout";
-          detail = residentialDelta > 0
-            ? `${residentialScenario.candidateName} raises the current ${getOptimizerLabel(baselineScenario.request.params.optimizer)} baseline from `
-              + `${baselinePopulation.toLocaleString()} to ${residentialPopulation.toLocaleString()} `
-              + `(${formatSignedPopulationDelta(residentialDelta)}).`
-            : `${residentialScenario.candidateName} reaches ${residentialPopulation.toLocaleString()} `
-              + `(${formatSignedPopulationDelta(residentialDelta)}), so keeping the current layout is still better than the baseline `
-              + `of ${baselinePopulation.toLocaleString()}.`;
+          detail =
+            residentialDelta > 0
+              ? `${residentialScenario.candidateName} raises the current ${getOptimizerLabel(baselineScenario.request.params.optimizer)} baseline from ` +
+                `${baselinePopulation.toLocaleString()} to ${residentialPopulation.toLocaleString()} ` +
+                `(${formatSignedPopulationDelta(residentialDelta)}).`
+              : `${residentialScenario.candidateName} reaches ${residentialPopulation.toLocaleString()} ` +
+                `(${formatSignedPopulationDelta(residentialDelta)}), so keeping the current layout is still better than the baseline ` +
+                `of ${baselinePopulation.toLocaleString()}.`;
         }
 
         state.expansionAdvice.isRunning = false;
@@ -418,15 +423,13 @@
           servicePopulation,
           serviceDelta,
           residentialPopulation,
-          residentialDelta,
+          residentialDelta
         };
         renderExpansionAdvice();
       } catch (error) {
         state.expansionAdvice.isRunning = false;
         state.expansionAdvice.result = null;
-        state.expansionAdvice.error = error instanceof Error
-          ? error.message
-          : "Failed to compare the typed additions.";
+        state.expansionAdvice.error = error instanceof Error ? error.message : "Failed to compare the typed additions.";
         renderExpansionAdvice();
       } finally {
         syncActionAvailability();
@@ -437,11 +440,11 @@
       clearExpansionAdvice,
       compareExpansionOptions,
       readExpansionCandidateFlags,
-      renderExpansionAdvice,
+      renderExpansionAdvice
     });
   }
 
   globalObject.CityBuilderExpansion = Object.freeze({
-    createExpansionAdviceController,
+    createExpansionAdviceController
   });
 })(window);

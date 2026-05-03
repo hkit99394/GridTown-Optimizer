@@ -6,7 +6,7 @@ export type ActiveCandidatePool = {
 export function createActiveCandidatePool(candidateCount: number): ActiveCandidatePool {
   return {
     activeIndices: Array.from({ length: candidateCount }, (_, index) => index),
-    positions: Array.from({ length: candidateCount }, (_, index) => index),
+    positions: Array.from({ length: candidateCount }, (_, index) => index)
   };
 }
 
@@ -83,10 +83,7 @@ export function mapGlobalCandidateIndicesToLocal(
   return [...mapped];
 }
 
-export function invalidateCandidatePoolEntries(
-  pool: ActiveCandidatePool,
-  candidateIndices: Iterable<number>
-): number {
+export function invalidateCandidatePoolEntries(pool: ActiveCandidatePool, candidateIndices: Iterable<number>): number {
   let invalidated = 0;
   for (const candidateIndex of candidateIndices) {
     if (removeActiveCandidate(pool, candidateIndex)) {

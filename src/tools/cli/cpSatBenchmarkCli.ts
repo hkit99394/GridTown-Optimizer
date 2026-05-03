@@ -2,10 +2,15 @@ import {
   DEFAULT_CP_SAT_ROAD_SEMANTICS_SCORECARD_CASE_NAMES,
   formatCpSatBenchmarkSuite,
   listCpSatBenchmarkCaseNames,
-  runCpSatBenchmarkSuite,
+  runCpSatBenchmarkSuite
 } from "../../benchmarkApi.js";
 import { runCliMain } from "../../apps/cliEntrypoint.js";
-import { applyInlineOptionHandlers, isCliFlag, parsePositiveInteger, parsePositiveNumber } from "../../apps/cliParsing.js";
+import {
+  applyInlineOptionHandlers,
+  isCliFlag,
+  parsePositiveInteger,
+  parsePositiveNumber
+} from "../../apps/cliParsing.js";
 import { optionalCliNames, writeCliJsonOrText, writeCliList } from "../../apps/cliOutput.js";
 
 import type { CpSatOptions } from "../../packages/core/index.js";
@@ -39,7 +44,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     },
     "progress-interval": (value) => {
       cpSat.progressIntervalSeconds = parsePositiveNumber(value, "CP-SAT benchmark --progress-interval");
-    },
+    }
   };
 
   for (const arg of argv) {
@@ -67,9 +72,9 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
 export async function runCpSatBenchmarkCli(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   if (args.list) {
-    writeCliList(args.roadSemanticsScorecard
-      ? DEFAULT_CP_SAT_ROAD_SEMANTICS_SCORECARD_CASE_NAMES
-      : listCpSatBenchmarkCaseNames());
+    writeCliList(
+      args.roadSemanticsScorecard ? DEFAULT_CP_SAT_ROAD_SEMANTICS_SCORECARD_CASE_NAMES : listCpSatBenchmarkCaseNames()
+    );
     return;
   }
   const selectedNames =
@@ -79,7 +84,7 @@ export async function runCpSatBenchmarkCli(): Promise<void> {
   const result = await runCpSatBenchmarkSuite(undefined, {
     names: selectedNames,
     includeProgressTimeline: true,
-    cpSat: args.cpSat,
+    cpSat: args.cpSat
   });
   writeCliJsonOrText(args.json, result, () => formatCpSatBenchmarkSuite(result));
 }

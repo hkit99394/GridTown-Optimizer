@@ -13,7 +13,7 @@ import {
   assertValidCpSatReusableInputs,
   assertValidProblemDefinition,
   materializeValidLnsSeedSolution,
-  resolveOptimizerName,
+  resolveOptimizerName
 } from "./solverInputValidationShared.js";
 
 import type { Grid, SolverParams } from "./types.js";
@@ -26,7 +26,7 @@ export {
   assertValidSerializedSolutionPayload,
   isSolverInputError,
   isSolverInputErrorMessage,
-  materializeValidLnsSeedSolution,
+  materializeValidLnsSeedSolution
 } from "./solverInputValidationShared.js";
 
 export function assertValidSolveInputs(G: Grid, params: SolverParams): void {

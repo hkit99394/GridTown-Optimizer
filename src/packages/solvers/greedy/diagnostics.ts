@@ -6,38 +6,31 @@ import type {
   GreedyPlacementDiagnosticReason,
   ServiceCandidate,
   Solution,
-  SolverParams,
+  SolverParams
 } from "../../core/index.js";
 import {
   createRoadProbeScratch,
   getResidentialBaseMax,
   NO_TYPE_INDEX,
   normalizeServicePlacement,
-  overlaps,
+  overlaps
 } from "../../core/index.js";
 import {
   getCandidateTypeIndex,
   materializeChosenServiceCandidate,
   serviceCandidateKey,
-  stableResidentialPlacementKey,
+  stableResidentialPlacementKey
 } from "./candidates.js";
 import { probeExplicitRoadConnection } from "./attemptState.js";
 import type { ResidentialCandidateLike } from "./candidates.js";
-import {
-  addPlacementCellsToSet,
-  overlapsCachedFootprint,
-} from "./placementUtils.js";
+import { addPlacementCellsToSet, overlapsCachedFootprint } from "./placementUtils.js";
 import {
   computeResidentialPopulation,
   computeServiceMarginalScore,
   getCachedServiceEffectZoneSet,
-  getCachedServiceFootprintKeys,
+  getCachedServiceFootprintKeys
 } from "./serviceScoring.js";
-import type {
-  GreedyPrecomputedIndexes,
-  GreedyPreparedInputs,
-  ResidentialScoringGroup,
-} from "./types.js";
+import type { GreedyPrecomputedIndexes, GreedyPreparedInputs, ResidentialScoringGroup } from "./types.js";
 
 const GREEDY_DIAGNOSTIC_CANDIDATE_LIMIT = 2_000;
 const GREEDY_DIAGNOSTIC_EXAMPLES_PER_REASON = 3;
@@ -59,11 +52,11 @@ function createDiagnosticKindReport(options: {
     overallAvailability: {
       limit: overallLimit,
       used: placedCount,
-      remaining: overallLimit === null ? null : Math.max(0, overallLimit - placedCount),
+      remaining: overallLimit === null ? null : Math.max(0, overallLimit - placedCount)
     },
     availabilityByType,
     reasonCounts: {},
-    examplesByReason: {},
+    examplesByReason: {}
   };
 }
 
@@ -87,7 +80,7 @@ function buildTypedAvailabilityDiagnostics(
     return {
       byType: [],
       usageByType: [],
-      totalAvailability: null,
+      totalAvailability: null
     };
   }
   const usageByType = countTypeUsage(typeIndices, types.length);
@@ -101,9 +94,9 @@ function buildTypedAvailabilityDiagnostics(
         ...(type.name ? { name: type.name } : {}),
         available: type.avail,
         used,
-        remaining: Math.max(0, type.avail - used),
+        remaining: Math.max(0, type.avail - used)
       };
-    }),
+    })
   };
 }
 
@@ -118,7 +111,7 @@ function addDiagnosticReasons(
     if (examples.length < GREEDY_DIAGNOSTIC_EXAMPLES_PER_REASON) {
       examples.push({
         ...exampleSeed,
-        reason,
+        reason
       });
       report.examplesByReason[reason] = examples;
     }
@@ -140,16 +133,20 @@ function buildSolutionOccupiedSet(solution: Solution): Set<string> {
 }
 
 function buildPlacedServiceCandidateKeys(solution: Solution): Set<string> {
-  return new Set(solution.services.map((_, index) => serviceCandidateKey(materializeChosenServiceCandidate(solution, index))));
+  return new Set(
+    solution.services.map((_, index) => serviceCandidateKey(materializeChosenServiceCandidate(solution, index)))
+  );
 }
 
 function buildPlacedResidentialCandidateKeys(solution: Solution): Set<string> {
-  return new Set(solution.residentials.map((residential, index) =>
-    stableResidentialPlacementKey({
-      ...residential,
-      typeIndex: solution.residentialTypeIndices[index] ?? NO_TYPE_INDEX,
-    })
-  ));
+  return new Set(
+    solution.residentials.map((residential, index) =>
+      stableResidentialPlacementKey({
+        ...residential,
+        typeIndex: solution.residentialTypeIndices[index] ?? NO_TYPE_INDEX
+      })
+    )
+  );
 }
 
 function buildCurrentResidentialGroupBoosts(
@@ -208,13 +205,15 @@ function isDiagnosticRoadPathMissing(
   context: GreedyDiagnosticBuildContext,
   placement: { r: number; c: number; rows: number; cols: number }
 ): boolean {
-  return probeExplicitRoadConnection(
-    context.G,
-    context.solution.roads,
-    context.occupied,
-    placement,
-    context.roadProbeScratch
-  ) === null;
+  return (
+    probeExplicitRoadConnection(
+      context.G,
+      context.solution.roads,
+      context.occupied,
+      placement,
+      context.roadProbeScratch
+    ) === null
+  );
 }
 
 function markDiagnosticScanLimit(
@@ -243,17 +242,16 @@ function buildGreedyServiceDiagnostics(options: {
     currentResidentialGroupBoosts,
     serviceAvailability,
     serviceOverallLimit,
-    remainingResidentialAvail,
+    remainingResidentialAvail
   } = options;
   const { params, solution, occupied, precomputedIndexes } = context;
   const placedServiceKeys = buildPlacedServiceCandidateKeys(solution);
   const serviceReport = createDiagnosticKindReport({
     placedCount: solution.services.length,
     overallLimit: serviceOverallLimit,
-    availabilityByType: serviceAvailability.byType,
+    availabilityByType: serviceAvailability.byType
   });
-  const serviceOverallCapped =
-    serviceOverallLimit !== null && solution.services.length >= serviceOverallLimit;
+  const serviceOverallCapped = serviceOverallLimit !== null && solution.services.length >= serviceOverallLimit;
   const serviceCandidatesToScan = serviceOrderSorted.slice(0, GREEDY_DIAGNOSTIC_CANDIDATE_LIMIT);
   markDiagnosticScanLimit(serviceReport, serviceOrderSorted.length, serviceCandidatesToScan.length);
 
@@ -265,12 +263,14 @@ function buildGreedyServiceDiagnostics(options: {
     serviceReport.candidatesScanned++;
     const reasons: GreedyPlacementDiagnosticReason[] = [];
     const serviceType = params.serviceTypes?.[service.typeIndex];
-    if (isAvailabilityCappedForCandidate(
-      serviceOverallCapped,
-      serviceType,
-      serviceAvailability.usageByType,
-      service.typeIndex
-    )) {
+    if (
+      isAvailabilityCappedForCandidate(
+        serviceOverallCapped,
+        serviceType,
+        serviceAvailability.usageByType,
+        service.typeIndex
+      )
+    ) {
       pushDiagnosticReason(reasons, "availability-cap");
     }
 
@@ -310,7 +310,7 @@ function buildGreedyServiceDiagnostics(options: {
       cols: service.cols,
       typeIndex: service.typeIndex,
       ...(serviceType?.name ? { typeName: serviceType.name } : {}),
-      score,
+      score
     });
   }
 
@@ -323,27 +323,18 @@ function buildGreedyResidentialDiagnostics(options: {
   residentialAvailability: GreedyTypedAvailabilityDiagnostics;
   residentialOverallLimit: number | null;
 }): GreedyDiagnosticKindReport {
-  const {
-    context,
-    residentialCandidates,
-    residentialAvailability,
-    residentialOverallLimit,
-  } = options;
+  const { context, residentialCandidates, residentialAvailability, residentialOverallLimit } = options;
   const { G, params, solution, occupied, precomputedIndexes } = context;
   const placedResidentialKeys = buildPlacedResidentialCandidateKeys(solution);
   const residentialReport = createDiagnosticKindReport({
     placedCount: solution.residentials.length,
     overallLimit: residentialOverallLimit,
-    availabilityByType: residentialAvailability.byType,
+    availabilityByType: residentialAvailability.byType
   });
   const residentialOverallCapped =
     residentialOverallLimit !== null && solution.residentials.length >= residentialOverallLimit;
   const residentialCandidatesToScan = residentialCandidates.slice(0, GREEDY_DIAGNOSTIC_CANDIDATE_LIMIT);
-  markDiagnosticScanLimit(
-    residentialReport,
-    residentialCandidates.length,
-    residentialCandidatesToScan.length
-  );
+  markDiagnosticScanLimit(residentialReport, residentialCandidates.length, residentialCandidatesToScan.length);
   const finalEffectZones = solution.services.map((_, index) =>
     getCachedServiceEffectZoneSet(G, precomputedIndexes, materializeChosenServiceCandidate(solution, index))
   );
@@ -356,12 +347,14 @@ function buildGreedyResidentialDiagnostics(options: {
     const reasons: GreedyPlacementDiagnosticReason[] = [];
     const typeIndex = getCandidateTypeIndex(residential);
     const residentialType = params.residentialTypes?.[typeIndex];
-    if (isAvailabilityCappedForCandidate(
-      residentialOverallCapped,
-      residentialType,
-      residentialAvailability.usageByType,
-      typeIndex
-    )) {
+    if (
+      isAvailabilityCappedForCandidate(
+        residentialOverallCapped,
+        residentialType,
+        residentialAvailability.usageByType,
+        typeIndex
+      )
+    ) {
       pushDiagnosticReason(reasons, "availability-cap");
     }
 
@@ -382,11 +375,7 @@ function buildGreedyResidentialDiagnostics(options: {
     if (!blocked && !noRoadPath && population <= base) {
       pushDiagnosticReason(reasons, "base-only");
     }
-    if (
-      !blocked
-      && !noRoadPath
-      && population > base
-    ) {
+    if (!blocked && !noRoadPath && population > base) {
       pushDiagnosticReason(reasons, "lower-score-no-improvement");
     }
 
@@ -401,7 +390,7 @@ function buildGreedyResidentialDiagnostics(options: {
       ...(residentialType?.name ? { typeName: residentialType.name } : {}),
       population,
       basePopulation: base,
-      ...(Number.isFinite(max) ? { maxPopulation: max } : {}),
+      ...(Number.isFinite(max) ? { maxPopulation: max } : {})
     });
   }
 
@@ -416,22 +405,15 @@ export function buildGreedyDiagnostics(options: {
   maxServices: number | undefined;
   maxResidentials: number | undefined;
 }): GreedyDiagnostics {
-  const {
-    G,
-    params,
-    solution,
-    preparedInputs,
-    maxServices,
-    maxResidentials,
-  } = options;
+  const { G, params, solution, preparedInputs, maxServices, maxResidentials } = options;
   const {
     serviceOrderSorted,
     baseSolveContext: {
       anyResidentialCandidates,
       residentialScoringGroups,
       serviceCoverageGroupsByKey,
-      precomputedIndexes,
-    },
+      precomputedIndexes
+    }
   } = preparedInputs;
   const context: GreedyDiagnosticBuildContext = {
     G,
@@ -439,10 +421,13 @@ export function buildGreedyDiagnostics(options: {
     solution,
     occupied: buildSolutionOccupiedSet(solution),
     roadProbeScratch: createRoadProbeScratch(G),
-    precomputedIndexes,
+    precomputedIndexes
   };
   const serviceAvailability = buildTypedAvailabilityDiagnostics(params.serviceTypes, solution.serviceTypeIndices);
-  const residentialAvailability = buildTypedAvailabilityDiagnostics(params.residentialTypes, solution.residentialTypeIndices);
+  const residentialAvailability = buildTypedAvailabilityDiagnostics(
+    params.residentialTypes,
+    solution.residentialTypeIndices
+  );
   const remainingResidentialAvail = params.residentialTypes?.length
     ? params.residentialTypes.map((type, typeIndex) =>
         Math.max(0, type.avail - (residentialAvailability.usageByType[typeIndex] ?? 0))
@@ -466,13 +451,13 @@ export function buildGreedyDiagnostics(options: {
       currentResidentialGroupBoosts,
       serviceAvailability,
       serviceOverallLimit: resolveDiagnosticOverallLimit(maxServices, serviceAvailability),
-      remainingResidentialAvail,
+      remainingResidentialAvail
     }),
     residentials: buildGreedyResidentialDiagnostics({
       context,
       residentialCandidates: anyResidentialCandidates,
       residentialAvailability,
-      residentialOverallLimit: resolveDiagnosticOverallLimit(maxResidentials, residentialAvailability),
-    }),
+      residentialOverallLimit: resolveDiagnosticOverallLimit(maxResidentials, residentialAvailability)
+    })
   };
 }

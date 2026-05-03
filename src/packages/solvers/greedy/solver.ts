@@ -8,54 +8,32 @@ import type {
   ServicePlacement,
   ResidentialPlacement,
   SolverParams,
-  Solution,
+  Solution
 } from "../../core/index.js";
-import {
-  createGreedyProfileCounters,
-  createGreedyProfilePhaseSummaries,
-} from "./profile.js";
-import {
-  GreedyAttemptState,
-} from "./attemptState.js";
-import {
-  createConnectivityShadowDecisionRecorder,
-} from "./connectivityShadowScoring.js";
-import {
-  createRoadOpportunityRecorder,
-} from "./roadOpportunity.js";
+import { createGreedyProfileCounters, createGreedyProfilePhaseSummaries } from "./profile.js";
+import { GreedyAttemptState } from "./attemptState.js";
+import { createConnectivityShadowDecisionRecorder } from "./connectivityShadowScoring.js";
+import { createRoadOpportunityRecorder } from "./roadOpportunity.js";
 import {
   createRoadProbeScratch,
   ensureBuildingConnectedToRoads,
   roadsConnectedToRoadAnchor,
   findAvailableRoadAnchorCell,
-  pruneRedundantRoads,
+  pruneRedundantRoads
 } from "../../core/index.js";
 import { assertValidLayoutConstraints } from "../../core/index.js";
 import { applyDeterministicDominanceUpgrades } from "../../core/index.js";
-import {
-  normalizeServicePlacement,
-} from "../../core/index.js";
+import { normalizeServicePlacement } from "../../core/index.js";
 import { getBuildingLimits } from "../../core/index.js";
-import {
-  GreedyStopError,
-  getGreedyOptions,
-} from "./runtime.js";
-import type {
-  GreedySolveAttempt,
-  GreedySolveContext,
-  SolveOneOptions,
-} from "./types.js";
-import {
-  addPlacementCellsToSet,
-} from "./placementUtils.js";
+import { GreedyStopError, getGreedyOptions } from "./runtime.js";
+import type { GreedySolveAttempt, GreedySolveContext, SolveOneOptions } from "./types.js";
+import { addPlacementCellsToSet } from "./placementUtils.js";
 import { constructGreedyServicePhase } from "./serviceConstruction.js";
 import { constructGreedyResidentialPhase } from "./residentialConstruction.js";
 import { runResidentialLocalSearchPhase } from "./residentialLocalSearch.js";
 import { createGreedyRunLifecycle } from "./runLifecycle.js";
 import { prepareGreedyInputs } from "./precompute.js";
-import {
-  createGreedyForcedServiceEvaluator,
-} from "./serviceSearchPhases.js";
+import { createGreedyForcedServiceEvaluator } from "./serviceSearchPhases.js";
 import { runGreedySearchPipeline } from "./searchPipeline.js";
 
 function finalizeGreedyConstructiveLayout(options: {
@@ -84,7 +62,7 @@ function finalizeGreedyConstructiveLayout(options: {
     populations,
     totalPopulation,
     profileCounters,
-    explicitRoadProbeScratch,
+    explicitRoadProbeScratch
   } = options;
   const occupiedBuildings = new Set<string>();
   for (const s of services) addPlacementCellsToSet(occupiedBuildings, s);
@@ -115,21 +93,33 @@ function finalizeGreedyConstructiveLayout(options: {
   }
   for (const r of residentials) {
     if (profileCounters) profileCounters.roads.ensureConnectedCalls++;
-    ensureBuildingConnectedToRoads(G, roadsValid, occupiedBuildings, r.r, r.c, r.rows, r.cols, explicitRoadProbeScratch);
+    ensureBuildingConnectedToRoads(
+      G,
+      roadsValid,
+      occupiedBuildings,
+      r.r,
+      r.c,
+      r.rows,
+      r.cols,
+      explicitRoadProbeScratch
+    );
   }
 
   roadsValid = pruneRedundantRoads(G, roadsValid, roadConnectedBuildings);
 
-  assertValidLayoutConstraints({
-    grid: G,
-    roads: roadsValid,
-    services: services.map((service, index) => ({
-      ...service,
-      bonus: serviceBonuses[index] ?? 0,
-    })),
-    residentials,
-    params,
-  }, "Invalid greedy layout");
+  assertValidLayoutConstraints(
+    {
+      grid: G,
+      roads: roadsValid,
+      services: services.map((service, index) => ({
+        ...service,
+        bonus: serviceBonuses[index] ?? 0
+      })),
+      residentials,
+      params
+    },
+    "Invalid greedy layout"
+  );
 
   return {
     optimizer: "greedy",
@@ -140,14 +130,11 @@ function finalizeGreedyConstructiveLayout(options: {
     residentials,
     residentialTypeIndices,
     populations,
-    totalPopulation,
+    totalPopulation
   };
 }
 
-function solveOne(
-  context: GreedySolveContext,
-  options: SolveOneOptions
-): Solution | null {
+function solveOne(context: GreedySolveContext, options: SolveOneOptions): Solution | null {
   const {
     grid: G,
     params,
@@ -165,14 +152,9 @@ function solveOne(
     recordProfilePhase,
     recordConnectivityShadowDecision,
     recordRoadOpportunity,
-    maybeStop,
+    maybeStop
   } = context;
-  const {
-    maxServices,
-    initialRoadSeed,
-    fixedServices,
-    profileCounters,
-  } = options;
+  const { maxServices, initialRoadSeed, fixedServices, profileCounters } = options;
   const attemptState = new GreedyAttemptState(
     G,
     initialRoadSeed,
@@ -187,7 +169,9 @@ function solveOne(
   const densityTieBreakerToleranceRatio =
     densityTieBreaker && typeof params.greedy?.densityTieBreakerTolerancePercent === "number"
       ? Math.max(0, params.greedy.densityTieBreakerTolerancePercent) / 100
-      : (densityTieBreaker ? 0.02 : 0);
+      : densityTieBreaker
+        ? 0.02
+        : 0;
   const connectivityShadowScoring = Boolean(params.greedy?.connectivityShadowScoring);
 
   const servicePhase = constructGreedyServicePhase({
@@ -216,15 +200,10 @@ function solveOne(
     profileCounters,
     recordConnectivityShadowDecision,
     recordRoadOpportunity,
-    maybeStop,
+    maybeStop
   });
   if (!servicePhase) return null;
-  const {
-    services,
-    serviceTypeIndices,
-    serviceBonuses,
-    effectZones,
-  } = servicePhase;
+  const { services, serviceTypeIndices, serviceBonuses, effectZones } = servicePhase;
 
   const residentialPhase = constructGreedyResidentialPhase({
     G,
@@ -247,14 +226,9 @@ function solveOne(
     profileCounters,
     recordConnectivityShadowDecision,
     recordRoadOpportunity,
-    maybeStop,
+    maybeStop
   });
-  const {
-    residentials,
-    residentialTypeIndices,
-    populations,
-    residentialPopulationCacheForLocal,
-  } = residentialPhase;
+  const { residentials, residentialTypeIndices, populations, residentialPopulationCacheForLocal } = residentialPhase;
 
   if (useDeferredRoadCommitment && !attemptState.materializeDeferredRoads(services, residentials)) {
     return null;
@@ -279,7 +253,7 @@ function solveOne(
     recordRoadOpportunity,
     maybeStop,
     explicitRoadProbeScratch,
-    recordProfilePhase,
+    recordProfilePhase
   });
 
   return finalizeGreedyConstructiveLayout({
@@ -294,7 +268,7 @@ function solveOne(
     populations,
     totalPopulation,
     profileCounters,
-    explicitRoadProbeScratch,
+    explicitRoadProbeScratch
   });
 }
 
@@ -333,18 +307,13 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     serviceMasterPoolLimit,
     serviceMasterMaxLayouts,
     stopFilePath,
-    snapshotFilePath,
+    snapshotFilePath
   } = getGreedyOptions(params);
   const profileCounters = profile ? createGreedyProfileCounters() : undefined;
   const profilePhases = profile ? createGreedyProfilePhaseSummaries() : undefined;
-  const {
-    decisions: connectivityShadowDecisions,
-    recordDecision: recordConnectivityShadowDecision,
-  } = createConnectivityShadowDecisionRecorder(profile);
-  const {
-    traces: roadOpportunityTraces,
-    recordRoadOpportunity,
-  } = createRoadOpportunityRecorder(profile);
+  const { decisions: connectivityShadowDecisions, recordDecision: recordConnectivityShadowDecision } =
+    createConnectivityShadowDecisionRecorder(profile);
+  const { traces: roadOpportunityTraces, recordRoadOpportunity } = createRoadOpportunityRecorder(profile);
   const { maxServices, maxResidentials } = getBuildingLimits(params);
   const useServiceTypes = (params.serviceTypes?.length ?? 0) > 0;
   const useTypes = (params.residentialTypes?.length ?? 0) > 0;
@@ -366,35 +335,27 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     setBest: (solution) => {
       best = solution;
     },
-    baselineSolver: solveGreedy,
+    baselineSolver: solveGreedy
   });
-  const {
-    maybeStop,
-    updateBest,
-    getBestPopulation,
-    recordProfilePhase,
-    runProfiledPhase,
-    finalizeWithBaselineGuard,
-  } = lifecycle;
+  const { maybeStop, updateBest, getBestPopulation, recordProfilePhase, runProfiledPhase, finalizeWithBaselineGuard } =
+    lifecycle;
 
-  const preparedInputs = runProfiledPhase("precompute", () => prepareGreedyInputs(G, params, {
-    maxResidentials,
-    useServiceTypes,
-    useTypes,
-    localSearch,
-    serviceLookaheadCandidates,
-    profileCounters,
-    recordProfilePhase,
-    recordConnectivityShadowDecision,
-    recordRoadOpportunity,
-    maybeStop,
-  }));
+  const preparedInputs = runProfiledPhase("precompute", () =>
+    prepareGreedyInputs(G, params, {
+      maxResidentials,
+      useServiceTypes,
+      useTypes,
+      localSearch,
+      serviceLookaheadCandidates,
+      profileCounters,
+      recordProfilePhase,
+      recordConnectivityShadowDecision,
+      recordRoadOpportunity,
+      maybeStop
+    })
+  );
   const { serviceOrderSorted, baseSolveContext } = preparedInputs;
-  const {
-    residentialScoringGroups,
-    serviceCoverageGroupsByKey,
-    precomputedIndexes,
-  } = baseSolveContext;
+  const { residentialScoringGroups, serviceCoverageGroupsByKey, precomputedIndexes } = baseSolveContext;
   const solveWithOrder = createGreedySolveAttempt(G, params, baseSolveContext, profileCounters);
 
   const evaluateForcedServiceSet = createGreedyForcedServiceEvaluator({
@@ -405,7 +366,7 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     profileCounters,
     recordProfilePhase,
     getBestPopulation,
-    maybeStop,
+    maybeStop
   });
 
   try {
@@ -436,7 +397,7 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
       serviceMasterMaxLayouts,
       profileCounters,
       recordRoadOpportunity,
-      lifecycle,
+      lifecycle
     });
   } catch (error) {
     if (error instanceof GreedyStopError) {

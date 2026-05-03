@@ -1,9 +1,4 @@
-import type {
-  Grid,
-  GreedyProfileCounters,
-  ServiceCandidate,
-  Solution,
-} from "../../core/index.js";
+import type { Grid, GreedyProfileCounters, ServiceCandidate, Solution } from "../../core/index.js";
 import { roadAnchorRepresentativeSeedCandidates } from "../../core/index.js";
 import { startGreedyProfilePhase } from "./profile.js";
 import type { GreedyProfilePhaseRecorder } from "./profile.js";
@@ -12,26 +7,21 @@ import {
   compareServiceTieBreaks,
   materializeChosenServiceCandidate,
   sameServicePlacement,
-  serviceCandidateKey,
+  serviceCandidateKey
 } from "./candidates.js";
 import { isBetterSearchSolution } from "./solutionRanking.js";
-import type {
-  GreedyBestUpdater,
-  GreedyForcedServiceEvaluator,
-  GreedySolveAttempt,
-  MaybeStop,
-} from "./types.js";
+import type { GreedyBestUpdater, GreedyForcedServiceEvaluator, GreedySolveAttempt, MaybeStop } from "./types.js";
 
 const SERVICE_REFINE_FIXED_SERVICE_EVALUATION = {
   maxOrders: 6,
   maxSeededOrders: 2,
-  maxSeeds: 4,
+  maxSeeds: 4
 };
 
 const EXHAUSTIVE_FIXED_SERVICE_EVALUATION = {
   maxOrders: 4,
   maxSeededOrders: 1,
-  maxSeeds: 3,
+  maxSeeds: 3
 };
 
 function combinationsOfK(n: number, k: number, maxCount: number): number[][] {
@@ -93,7 +83,7 @@ export function runGreedyServiceRefinement(options: {
     serviceOrderSorted,
     evaluateForcedServiceSet,
     updateBest,
-    maybeStop,
+    maybeStop
   } = options;
   let best = initialBest;
   const refineLimit = Math.min(serviceRefineCandidateLimit, serviceOrderSorted.length);
@@ -111,11 +101,7 @@ export function runGreedyServiceRefinement(options: {
         if (best.services.some((s, idx) => idx !== i && sameServicePlacement(s, cand))) continue;
         const forced = best.services.map((_, idx) => materializeChosenServiceCandidate(best, idx));
         forced[i] = cand;
-        const trial = evaluateForcedServiceSet(
-          forced,
-          best.services.length,
-          SERVICE_REFINE_FIXED_SERVICE_EVALUATION
-        );
+        const trial = evaluateForcedServiceSet(forced, best.services.length, SERVICE_REFINE_FIXED_SERVICE_EVALUATION);
         if (trial && trial.totalPopulation > localBest.totalPopulation) {
           localBest = trial;
         }
@@ -151,7 +137,7 @@ export function runGreedyExhaustiveServiceSearch(options: {
     evaluateForcedServiceSet,
     updateBest,
     profileCounters,
-    maybeStop,
+    maybeStop
   } = options;
   let best = initialBest;
   if (!enabled) return best;
@@ -164,11 +150,7 @@ export function runGreedyExhaustiveServiceSearch(options: {
     maybeStop?.();
     if (profileCounters) profileCounters.attempts.exhaustiveTrials++;
     const forced = idxs.map((i) => pool[i]);
-    const trial = evaluateForcedServiceSet(
-      forced,
-      best.services.length,
-      EXHAUSTIVE_FIXED_SERVICE_EVALUATION
-    );
+    const trial = evaluateForcedServiceSet(forced, best.services.length, EXHAUSTIVE_FIXED_SERVICE_EVALUATION);
     if (trial && isBetterSearchSolution(trial, best)) {
       best = trial;
       updateBest(best);
@@ -194,36 +176,32 @@ export function createGreedyForcedServiceEvaluator(options: {
     profileCounters,
     recordProfilePhase,
     getBestPopulation,
-    maybeStop,
+    maybeStop
   } = options;
   const serviceOrderRankByKey = new Map(
     serviceOrderSorted.map((candidate, index) => [serviceCandidateKey(candidate), index])
   );
 
   const compareForcedServiceByRank = (left: ServiceCandidate, right: ServiceCandidate): number =>
-    (serviceOrderRankByKey.get(serviceCandidateKey(left)) ?? Number.POSITIVE_INFINITY)
-      - (serviceOrderRankByKey.get(serviceCandidateKey(right)) ?? Number.POSITIVE_INFINITY)
-    || compareServiceTieBreaks(
-      left,
-      { kind: "explicit", roadCost: 0, roadProbe: { path: null } },
-      right,
-      { kind: "explicit", roadCost: 0, roadProbe: { path: null } }
-    );
+    (serviceOrderRankByKey.get(serviceCandidateKey(left)) ?? Number.POSITIVE_INFINITY) -
+      (serviceOrderRankByKey.get(serviceCandidateKey(right)) ?? Number.POSITIVE_INFINITY) ||
+    compareServiceTieBreaks(left, { kind: "explicit", roadCost: 0, roadProbe: { path: null } }, right, {
+      kind: "explicit",
+      roadCost: 0,
+      roadProbe: { path: null }
+    });
 
   const compareForcedServiceRowMajor = (left: ServiceCandidate, right: ServiceCandidate): number =>
-    left.r - right.r
-    || left.c - right.c
-    || left.rows - right.rows
-    || left.cols - right.cols
-    || left.range - right.range
-    || left.typeIndex - right.typeIndex
-    || left.bonus - right.bonus
-    || serviceCandidateKey(left).localeCompare(serviceCandidateKey(right));
+    left.r - right.r ||
+    left.c - right.c ||
+    left.rows - right.rows ||
+    left.cols - right.cols ||
+    left.range - right.range ||
+    left.typeIndex - right.typeIndex ||
+    left.bonus - right.bonus ||
+    serviceCandidateKey(left).localeCompare(serviceCandidateKey(right));
 
-  const buildForcedServiceOrders = (
-    forcedServices: ServiceCandidate[],
-    maxOrders: number
-  ): ServiceCandidate[][] => {
+  const buildForcedServiceOrders = (forcedServices: ServiceCandidate[], maxOrders: number): ServiceCandidate[][] => {
     if (forcedServices.length === 0 || maxOrders <= 0) return [forcedServices];
     const orders: ServiceCandidate[][] = [];
     const seenKeys = new Set<string>();
@@ -289,7 +267,7 @@ export function createGreedyForcedServiceEvaluator(options: {
 
   return (forcedServices, maxForcedServices, budget) => {
     const phaseStartedAtMs = startGreedyProfilePhase(recordProfilePhase);
-    const bestPopulationBefore = recordProfilePhase ? getBestPopulation?.() ?? null : null;
+    const bestPopulationBefore = recordProfilePhase ? (getBestPopulation?.() ?? null) : null;
     const orders = buildForcedServiceOrders(forcedServices, budget.maxOrders);
     const baseResults: { order: ServiceCandidate[]; solution: Solution | null }[] = [];
     let bestForced: Solution | null = null;
@@ -300,7 +278,7 @@ export function createGreedyForcedServiceEvaluator(options: {
         if (profileCounters) profileCounters.attempts.fixedServiceRealizationTrials++;
         const trial = solveWithOrder(serviceOrderSorted, {
           maxServices: maxForcedServices,
-          fixedServices: order,
+          fixedServices: order
         });
         baseResults.push({ order, solution: trial });
         if (isBetterSearchSolution(trial, bestForced)) {
@@ -311,13 +289,13 @@ export function createGreedyForcedServiceEvaluator(options: {
 
       const successfulBaseResults = baseResults
         .filter((entry): entry is { order: ServiceCandidate[]; solution: Solution } => entry.solution !== null)
-        .sort((left, right) => (
+        .sort((left, right) =>
           isBetterSearchSolution(left.solution, right.solution)
             ? -1
             : isBetterSearchSolution(right.solution, left.solution)
               ? 1
               : 0
-        ));
+        );
       if (successfulBaseResults.length === 0) return bestForced;
 
       const seeds = collectForcedServiceSeeds(
@@ -333,7 +311,7 @@ export function createGreedyForcedServiceEvaluator(options: {
           const trial = solveWithOrder(serviceOrderSorted, {
             maxServices: maxForcedServices,
             fixedServices: order,
-            initialRoadSeed: seed,
+            initialRoadSeed: seed
           });
           if (isBetterSearchSolution(trial, bestForced)) {
             bestForced = trial;
@@ -347,7 +325,7 @@ export function createGreedyForcedServiceEvaluator(options: {
       if (recordProfilePhase) {
         recordProfilePhase("forcedServiceRealization", phaseStartedAtMs, {
           bestPopulationBefore,
-          bestPopulationAfter: getBestPopulation?.() ?? null,
+          bestPopulationAfter: getBestPopulation?.() ?? null
         });
       }
     }

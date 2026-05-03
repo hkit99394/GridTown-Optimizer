@@ -9,6 +9,6 @@ export function startAutoSolve(G: Grid, params: SolverParams): AutoSolveHandle {
   return startAutoSolveWithStages(G, params, {
     greedy: backgroundSolvers.startGreedySolve,
     lns: backgroundSolvers.startLnsSolve,
-    cpSat: backgroundSolvers.startCpSatSolve,
+    cpSat: backgroundSolvers.startCpSatSolve
   });
 }

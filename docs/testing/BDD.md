@@ -63,11 +63,14 @@ Keep acceptance tests as close as possible to the behavior boundary:
 Route-level acceptance scenarios can use the same shape:
 
 ```js
-scenario("[CB-BDD-020] Given an invalid solve request, when POST /api/solve runs, then validation errors are returned", async () => {
-  // Arrange request payload
-  // Act through the HTTP route handler or local server
-  // Assert status, response shape, and user-visible validation fields
-});
+scenario(
+  "[CB-BDD-020] Given an invalid solve request, when POST /api/solve runs, then validation errors are returned",
+  async () => {
+    // Arrange request payload
+    // Act through the HTTP route handler or local server
+    // Assert status, response shape, and user-visible validation fields
+  }
+);
 ```
 
 Prefer ordinary unit tests when a change affects:
@@ -91,12 +94,12 @@ For behavior changes, aim for this loop:
 
 ## Scenario Coverage
 
-| ID | Scenario | Spec area | Feature draft | Executable test | Status |
-|----|----------|-----------|---------------|-----------------|--------|
-| `CB-BDD-001` | Service effect range boosts residential population and caps it at the residential max. | Service effects and population scoring | `docs/requirements/features/city-builder-core.feature` | `tests/acceptance/city-builder-bdd.test.cjs` | Covered |
-| `CB-BDD-002` | Road components must touch row `0` or column `0`. | Road connectivity | `docs/requirements/features/city-builder-core.feature` | `tests/acceptance/city-builder-bdd.test.cjs` | Covered |
-| `CB-BDD-003` | Buildings must not overlap. | Disjoint placement | `docs/requirements/features/city-builder-core.feature` | `tests/acceptance/city-builder-bdd.test.cjs` | Covered |
-| `CB-BDD-004` | Buildings and roads must be on allowed cells. | Allowed cells | `docs/requirements/features/city-builder-core.feature` | `tests/acceptance/city-builder-bdd.test.cjs` | Covered |
-| `CB-BDD-005` | Buildings must be road-connected unless their footprint touches the road-anchor boundary. | Building-road connectivity | `docs/requirements/features/city-builder-core.feature` | `tests/acceptance/city-builder-bdd.test.cjs` | Covered |
-| `CB-BDD-006` | The default interactive optimizer remains `auto`. | Optimizer selection | `docs/requirements/features/planner-api.feature` | `tests/acceptance/city-builder-bdd.test.cjs` | Covered |
-| `CB-BDD-007` | The solve API returns validation and stats that match the solved layout. | HTTP solve contract | `docs/requirements/features/planner-api.feature` | `tests/acceptance/city-builder-bdd.test.cjs` | Covered |
+| ID           | Scenario                                                                                  | Spec area                              | Feature draft                                          | Executable test                              | Status  |
+| ------------ | ----------------------------------------------------------------------------------------- | -------------------------------------- | ------------------------------------------------------ | -------------------------------------------- | ------- |
+| `CB-BDD-001` | Service effect range boosts residential population and caps it at the residential max.    | Service effects and population scoring | `docs/requirements/features/city-builder-core.feature` | `tests/acceptance/city-builder-bdd.test.cjs` | Covered |
+| `CB-BDD-002` | Road components must touch row `0` or column `0`.                                         | Road connectivity                      | `docs/requirements/features/city-builder-core.feature` | `tests/acceptance/city-builder-bdd.test.cjs` | Covered |
+| `CB-BDD-003` | Buildings must not overlap.                                                               | Disjoint placement                     | `docs/requirements/features/city-builder-core.feature` | `tests/acceptance/city-builder-bdd.test.cjs` | Covered |
+| `CB-BDD-004` | Buildings and roads must be on allowed cells.                                             | Allowed cells                          | `docs/requirements/features/city-builder-core.feature` | `tests/acceptance/city-builder-bdd.test.cjs` | Covered |
+| `CB-BDD-005` | Buildings must be road-connected unless their footprint touches the road-anchor boundary. | Building-road connectivity             | `docs/requirements/features/city-builder-core.feature` | `tests/acceptance/city-builder-bdd.test.cjs` | Covered |
+| `CB-BDD-006` | The default interactive optimizer remains `auto`.                                         | Optimizer selection                    | `docs/requirements/features/planner-api.feature`       | `tests/acceptance/city-builder-bdd.test.cjs` | Covered |
+| `CB-BDD-007` | The solve API returns validation and stats that match the solved layout.                  | HTTP solve contract                    | `docs/requirements/features/planner-api.feature`       | `tests/acceptance/city-builder-bdd.test.cjs` | Covered |

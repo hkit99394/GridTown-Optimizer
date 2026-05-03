@@ -7,17 +7,10 @@ export interface BenchmarkSeedRunPlan {
   seedRuns: BenchmarkSeedRun[];
 }
 
-export function normalizeBenchmarkSeeds(
-  seeds: readonly number[] | undefined,
-  label: string
-): number[] | undefined {
+export function normalizeBenchmarkSeeds(seeds: readonly number[] | undefined, label: string): number[] | undefined {
   if (!seeds?.length) return undefined;
   const invalid = seeds.filter(
-    (value) =>
-      !Number.isFinite(value)
-      || !Number.isInteger(value)
-      || value < 0
-      || value > MAX_BENCHMARK_RANDOM_SEED
+    (value) => !Number.isFinite(value) || !Number.isInteger(value) || value < 0 || value > MAX_BENCHMARK_RANDOM_SEED
   );
   if (invalid.length > 0) {
     throw new Error(`${label} must contain only integer seeds between 0 and ${MAX_BENCHMARK_RANDOM_SEED}.`);
@@ -28,14 +21,11 @@ export function normalizeBenchmarkSeeds(
   return [...seeds];
 }
 
-export function buildBenchmarkSeedRunPlan(
-  seeds: readonly number[] | undefined,
-  label: string
-): BenchmarkSeedRunPlan {
+export function buildBenchmarkSeedRunPlan(seeds: readonly number[] | undefined, label: string): BenchmarkSeedRunPlan {
   const normalizedSeeds = normalizeBenchmarkSeeds(seeds, label) ?? [];
   return {
     seeds: normalizedSeeds,
-    seedRuns: normalizedSeeds.length ? normalizedSeeds : [null],
+    seedRuns: normalizedSeeds.length ? normalizedSeeds : [null]
   };
 }
 

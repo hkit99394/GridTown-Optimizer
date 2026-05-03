@@ -5,7 +5,7 @@ const {
   assertPlannerExplainabilityPayload,
   buildTinySolvePayload,
   createRouteTestHandler,
-  invoke,
+  invoke
 } = require("./routeTestServer.cjs");
 
 async function testLayoutEvaluateRoute(handler) {
@@ -13,7 +13,7 @@ async function testLayoutEvaluateRoute(handler) {
   const solved = solve(solvePayload.grid, solvePayload.params);
   const serializedSolution = {
     ...solved,
-    roads: Array.from(solved.roads),
+    roads: Array.from(solved.roads)
   };
 
   const result = await invoke(handler, {
@@ -21,8 +21,8 @@ async function testLayoutEvaluateRoute(handler) {
     url: "/api/layout/evaluate",
     json: {
       ...solvePayload,
-      solution: serializedSolution,
-    },
+      solution: serializedSolution
+    }
   });
 
   assert.equal(result.statusCode, 200);
@@ -43,12 +43,12 @@ async function testLayoutEvaluateCleansRedundantRoads(handler) {
       grid: [
         [1, 1, 1],
         [1, 1, 1],
-        [1, 1, 1],
+        [1, 1, 1]
       ],
       params: {
         optimizer: "greedy",
         residentialTypes: [{ name: "House", w: 1, h: 1, min: 10, max: 10, avail: 1 }],
-        availableBuildings: { residentials: 1, services: 0 },
+        availableBuildings: { residentials: 1, services: 0 }
       },
       solution: {
         roads: ["0,1", "1,1", "2,1", "2,0"],
@@ -58,9 +58,9 @@ async function testLayoutEvaluateCleansRedundantRoads(handler) {
         residentials: [{ r: 2, c: 2, rows: 1, cols: 1 }],
         residentialTypeIndices: [0],
         populations: [0],
-        totalPopulation: 0,
-      },
-    },
+        totalPopulation: 0
+      }
+    }
   });
 
   assert.equal(result.statusCode, 200);
@@ -76,7 +76,7 @@ async function testLayoutEvaluateRejectsMalformedSerializedSolutions(handler) {
   const solved = solve(solvePayload.grid, solvePayload.params);
   const serializedSolution = {
     ...solved,
-    roads: [{}],
+    roads: [{}]
   };
 
   const result = await invoke(handler, {
@@ -84,15 +84,15 @@ async function testLayoutEvaluateRejectsMalformedSerializedSolutions(handler) {
     url: "/api/layout/evaluate",
     json: {
       ...solvePayload,
-      solution: serializedSolution,
-    },
+      solution: serializedSolution
+    }
   });
 
   assert.equal(result.statusCode, 400);
   assert.equal(result.payload.ok, false);
   assert.equal(
     result.payload.error,
-    "Invalid solver input: Manual layout solution.roads[0] must be a road key like \"r,c\"."
+    'Invalid solver input: Manual layout solution.roads[0] must be a road key like "r,c".'
   );
 }
 
@@ -101,7 +101,7 @@ async function testLayoutEvaluateReportsWellFormedInvalidManualLayout(handler) {
   const solved = solve(solvePayload.grid, solvePayload.params);
   const serializedSolution = {
     ...solved,
-    roads: [],
+    roads: []
   };
 
   const result = await invoke(handler, {
@@ -109,8 +109,8 @@ async function testLayoutEvaluateReportsWellFormedInvalidManualLayout(handler) {
     url: "/api/layout/evaluate",
     json: {
       ...solvePayload,
-      solution: serializedSolution,
-    },
+      solution: serializedSolution
+    }
   });
 
   assert.equal(result.statusCode, 200);
@@ -125,7 +125,7 @@ async function testLayoutEvaluateRejectsInvalidProblemDefinition(handler) {
   const solved = solve(solvePayload.grid, solvePayload.params);
   const serializedSolution = {
     ...solved,
-    roads: Array.from(solved.roads),
+    roads: Array.from(solved.roads)
   };
 
   const result = await invoke(handler, {
@@ -135,12 +135,10 @@ async function testLayoutEvaluateRejectsInvalidProblemDefinition(handler) {
       ...solvePayload,
       params: {
         ...solvePayload.params,
-        residentialTypes: [
-          { ...solvePayload.params.residentialTypes[0], avail: "1" },
-        ],
+        residentialTypes: [{ ...solvePayload.params.residentialTypes[0], avail: "1" }]
       },
-      solution: serializedSolution,
-    },
+      solution: serializedSolution
+    }
   });
 
   assert.equal(result.statusCode, 400);

@@ -12,7 +12,7 @@ import {
   orthogonalNeighbors,
   width,
   getResidentialBaseMax,
-  NO_TYPE_INDEX,
+  NO_TYPE_INDEX
 } from "../../core/index.js";
 import type {
   CpSatNeighborhoodWindow,
@@ -21,7 +21,7 @@ import type {
   LnsOperatorWeight,
   LnsNeighborhoodAnchorPolicy,
   Solution,
-  SolverParams,
+  SolverParams
 } from "../../core/index.js";
 import { cellFromKey, cellKey } from "../../core/index.js";
 
@@ -85,10 +85,7 @@ function clampNeighborhoodWindow(
   return { top, left, rows, cols };
 }
 
-function addWindow(
-  dedupe: Map<string, CpSatNeighborhoodWindow>,
-  window: CpSatNeighborhoodWindow | null
-): void {
+function addWindow(dedupe: Map<string, CpSatNeighborhoodWindow>, window: CpSatNeighborhoodWindow | null): void {
   if (!window) return;
   dedupe.set(windowKey(window), window);
 }
@@ -286,7 +283,8 @@ function buildWeakServiceAnchors(
         const typeIndex = incumbent.residentialTypeIndices[residentialIndex] ?? NO_TYPE_INDEX;
         const { base, max } = getResidentialBaseMax(params, residential.rows, residential.cols, typeIndex);
         const populationWithoutService = Math.min(Math.max(base + boosts[residentialIndex] - serviceBonus, base), max);
-        const populationWithService = incumbent.populations[residentialIndex] ?? Math.min(Math.max(base + boosts[residentialIndex], base), max);
+        const populationWithService =
+          incumbent.populations[residentialIndex] ?? Math.min(Math.max(base + boosts[residentialIndex], base), max);
         marginalGain += populationWithService - populationWithoutService;
       }
 
@@ -295,16 +293,17 @@ function buildWeakServiceAnchors(
         score: marginalGain * 1000 + coveredResidentials,
         marginalGain,
         coveredResidentials,
-        serviceBonus,
+        serviceBonus
       };
     })
-    .sort((a, b) =>
-      a.score - b.score
-      || a.marginalGain - b.marginalGain
-      || a.coveredResidentials - b.coveredResidentials
-      || a.serviceBonus - b.serviceBonus
-      || a.r - b.r
-      || a.c - b.c
+    .sort(
+      (a, b) =>
+        a.score - b.score ||
+        a.marginalGain - b.marginalGain ||
+        a.coveredResidentials - b.coveredResidentials ||
+        a.serviceBonus - b.serviceBonus ||
+        a.r - b.r ||
+        a.c - b.c
     )
     .slice(0, limit)
     .map(({ r, c, rows, cols }) => ({ r, c, rows, cols }));
@@ -328,26 +327,18 @@ function buildResidentialOpportunityAnchors(
         ...residential,
         score: headroom * 1000 + Math.round((headroom / totalBoostCapacity) * 100),
         headroom,
-        population,
+        population
       };
     })
     .filter((entry) => entry.headroom > 0)
-    .sort((a, b) =>
-      b.score - a.score
-      || b.headroom - a.headroom
-      || a.population - b.population
-      || a.r - b.r
-      || a.c - b.c
+    .sort(
+      (a, b) => b.score - a.score || b.headroom - a.headroom || a.population - b.population || a.r - b.r || a.c - b.c
     )
     .slice(0, limit)
     .map(({ r, c, rows, cols }) => ({ r, c, rows, cols }));
 }
 
-function buildFrontierCongestionAnchors(
-  G: Grid,
-  incumbent: Solution,
-  limit: number
-): NeighborhoodAnchor[] {
+function buildFrontierCongestionAnchors(G: Grid, incumbent: Solution, limit: number): NeighborhoodAnchor[] {
   if (limit <= 0) return [];
 
   const occupied = buildOccupiedCellSet(incumbent);
@@ -394,7 +385,7 @@ function buildFrontierCongestionAnchors(
         c,
         rows: 1,
         cols: 1,
-        score: occupiedNeighbors * 3 + roadNeighbors * 2,
+        score: occupiedNeighbors * 3 + roadNeighbors * 2
       });
     }
   }
@@ -405,11 +396,7 @@ function buildFrontierCongestionAnchors(
     .map(({ r, c, rows, cols }) => ({ r, c, rows, cols }));
 }
 
-function buildGateChokeAnchors(
-  G: Grid,
-  incumbent: Solution,
-  limit: number
-): NeighborhoodAnchor[] {
+function buildGateChokeAnchors(G: Grid, incumbent: Solution, limit: number): NeighborhoodAnchor[] {
   if (limit <= 0) return [];
 
   const occupied = buildOccupiedCellSet(incumbent);
@@ -444,7 +431,7 @@ function buildGateChokeAnchors(
       c,
       rows: 1,
       cols: 1,
-      score: (isBoundaryGate ? 6 : 0) + (2 - Math.min(2, roadNeighbors)) * 4 + occupiedNeighbors * 3 + frontierNeighbors,
+      score: (isBoundaryGate ? 6 : 0) + (2 - Math.min(2, roadNeighbors)) * 4 + occupiedNeighbors * 3 + frontierNeighbors
     });
   }
 
@@ -454,11 +441,7 @@ function buildGateChokeAnchors(
     .map(({ r, c, rows, cols }) => ({ r, c, rows, cols }));
 }
 
-function buildServiceOverlapAnchors(
-  G: Grid,
-  incumbent: Solution,
-  limit: number
-): NeighborhoodAnchor[] {
+function buildServiceOverlapAnchors(G: Grid, incumbent: Solution, limit: number): NeighborhoodAnchor[] {
   if (incumbent.services.length < 2 || limit <= 0) return [];
 
   const serviceEffectZones = incumbent.services.map((service) => new Set(serviceEffectZone(G, service)));
@@ -474,9 +457,11 @@ function buildServiceOverlapAnchors(
 
       for (const footprint of residentialFootprints) {
         if (!footprint.some((cell) => effectZone.has(cell))) continue;
-        if (serviceEffectZones.some((otherZone, otherIndex) =>
-          otherIndex !== serviceIndex && footprint.some((cell) => otherZone.has(cell))
-        )) {
+        if (
+          serviceEffectZones.some(
+            (otherZone, otherIndex) => otherIndex !== serviceIndex && footprint.some((cell) => otherZone.has(cell))
+          )
+        ) {
           sharedResidentials += 1;
         }
       }
@@ -494,39 +479,36 @@ function buildServiceOverlapAnchors(
         ...normalizeServicePlacement(service),
         score: sharedResidentials * 1000 + serviceZoneOverlap,
         sharedResidentials,
-        serviceZoneOverlap,
+        serviceZoneOverlap
       };
     })
     .filter((entry) => entry.score > 0)
-    .sort((a, b) =>
-      b.score - a.score
-      || b.sharedResidentials - a.sharedResidentials
-      || b.serviceZoneOverlap - a.serviceZoneOverlap
-      || a.r - b.r
-      || a.c - b.c
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        b.sharedResidentials - a.sharedResidentials ||
+        b.serviceZoneOverlap - a.serviceZoneOverlap ||
+        a.r - b.r ||
+        a.c - b.c
     )
     .slice(0, limit)
     .map(({ r, c, rows, cols }) => ({ r, c, rows, cols }));
 }
 
-function buildRandomExplorationAnchors(
-  G: Grid,
-  incumbent: Solution,
-  limit: number
-): NeighborhoodAnchor[] {
+function buildRandomExplorationAnchors(G: Grid, incumbent: Solution, limit: number): NeighborhoodAnchor[] {
   const H = height(G);
   const W = width(G);
   const repairRowStart = H > 1 ? 1 : 0;
   const repairableRows = H - repairRowStart;
   if (limit <= 0 || repairableRows <= 0 || W <= 0) return [];
 
-  let seed = (
-    Math.imul(H + 1, 73856093)
-    ^ Math.imul(W + 1, 19349663)
-    ^ Math.imul((incumbent.totalPopulation ?? 0) + 1, 83492791)
-    ^ Math.imul(incumbent.roads.size + 1, 265443576)
-    ^ Math.imul(incumbent.services.length + incumbent.residentials.length + 1, 97531)
-  ) >>> 0;
+  let seed =
+    (Math.imul(H + 1, 73856093) ^
+      Math.imul(W + 1, 19349663) ^
+      Math.imul((incumbent.totalPopulation ?? 0) + 1, 83492791) ^
+      Math.imul(incumbent.roads.size + 1, 265443576) ^
+      Math.imul(incumbent.services.length + incumbent.residentials.length + 1, 97531)) >>>
+    0;
 
   const anchors: NeighborhoodAnchor[] = [];
   for (let index = 0; index < limit; index++) {
@@ -583,7 +565,7 @@ function addEscalatedNeighborhoodWindows(
     top: repairRowStart,
     left: Math.max(0, W - verticalBandCols),
     rows: repairableRows,
-    cols: verticalBandCols,
+    cols: verticalBandCols
   });
   addRoadAnchorRepairWindows(windows, G, topBandRows, verticalBandCols);
 
@@ -591,13 +573,18 @@ function addEscalatedNeighborhoodWindows(
   for (let top = repairRowStart; top <= H - horizontalBandRows; top += horizontalStride) {
     addWindow(windows, { top, left: 0, rows: horizontalBandRows, cols: W });
   }
-  addWindow(windows, { top: Math.max(repairRowStart, H - horizontalBandRows), left: 0, rows: horizontalBandRows, cols: W });
+  addWindow(windows, {
+    top: Math.max(repairRowStart, H - horizontalBandRows),
+    left: 0,
+    rows: horizontalBandRows,
+    cols: W
+  });
 
   const escalatedAnchors = [...focusedAnchors, ...weakResidentials].slice(0, Math.max(4, stageIndex * 3));
   addClampedWindowsForAnchors(windows, G, escalatedAnchors, [
     { rows: expandedRows, cols: expandedCols },
     { rows: repairableRows, cols: verticalBandCols },
-    { rows: horizontalBandRows, cols: W },
+    { rows: horizontalBandRows, cols: W }
   ]);
 
   if (stageIndex >= stageCount) {
@@ -640,9 +627,10 @@ export function selectNeighborhoodWindow(
   }
 
   const largeNeighborhoodTrigger = getLargeNeighborhoodTrigger(options);
-  const neighborhoodIndex = repairAttempt >= largeNeighborhoodTrigger
-    ? (repairAttempt - largeNeighborhoodTrigger) % windows.length
-    : iteration % windows.length;
+  const neighborhoodIndex =
+    repairAttempt >= largeNeighborhoodTrigger
+      ? (repairAttempt - largeNeighborhoodTrigger) % windows.length
+      : iteration % windows.length;
   return windows[neighborhoodIndex];
 }
 
@@ -666,10 +654,13 @@ export function selectAdaptiveNeighborhoodOperator(
       const bestArea = best.window.rows * best.window.cols;
       const candidateArea = candidate.window.rows * candidate.window.cols;
       if (candidateArea !== bestArea) return candidateArea > bestArea ? candidate : best;
-      if (candidate.window.rows !== best.window.rows) return candidate.window.rows > best.window.rows ? candidate : best;
-      if (candidate.window.cols !== best.window.cols) return candidate.window.cols > best.window.cols ? candidate : best;
+      if (candidate.window.rows !== best.window.rows)
+        return candidate.window.rows > best.window.rows ? candidate : best;
+      if (candidate.window.cols !== best.window.cols)
+        return candidate.window.cols > best.window.cols ? candidate : best;
       if (candidate.window.top !== best.window.top) return candidate.window.top < best.window.top ? candidate : best;
-      if (candidate.window.left !== best.window.left) return candidate.window.left < best.window.left ? candidate : best;
+      if (candidate.window.left !== best.window.left)
+        return candidate.window.left < best.window.left ? candidate : best;
       return best;
     });
   }
@@ -683,9 +674,10 @@ export function selectAdaptiveNeighborhoodOperator(
     .map((entry) => entry.candidate);
 
   const largeNeighborhoodTrigger = getLargeNeighborhoodTrigger(options);
-  const neighborhoodIndex = repairAttempt >= largeNeighborhoodTrigger
-    ? (repairAttempt - largeNeighborhoodTrigger) % rankedCandidates.length
-    : iteration % rankedCandidates.length;
+  const neighborhoodIndex =
+    repairAttempt >= largeNeighborhoodTrigger
+      ? (repairAttempt - largeNeighborhoodTrigger) % rankedCandidates.length
+      : iteration % rankedCandidates.length;
   return rankedCandidates[neighborhoodIndex];
 }
 
@@ -719,7 +711,7 @@ export function buildAdaptiveNeighborhoodCandidates(
   const weakResidentials = incumbent.residentials
     .map((residential, index) => ({
       ...residential,
-      population: incumbent.populations[index] ?? 0,
+      population: incumbent.populations[index] ?? 0
     }))
     .sort((a, b) => a.population - b.population);
 
@@ -729,42 +721,48 @@ export function buildAdaptiveNeighborhoodCandidates(
   const gateChokeAnchors = buildGateChokeAnchors(G, incumbent, focusedAnchorLimit);
   const serviceOverlapAnchors = buildServiceOverlapAnchors(G, incumbent, focusedAnchorLimit);
   const randomExplorationAnchors = buildRandomExplorationAnchors(G, incumbent, Math.max(2, focusedAnchorLimit));
-  const focusedAnchors = anchorPolicy === "ranked"
-    ? interleaveAnchors([
-      weakServiceAnchors,
-      residentialOpportunityAnchors,
-      frontierCongestionAnchors,
-      gateChokeAnchors,
-      serviceOverlapAnchors,
-    ])
-    : anchorPolicy === "weak-service-first"
-      ? weakServiceAnchors
-      : anchorPolicy === "residential-opportunity-first"
-        ? residentialOpportunityAnchors
-        : anchorPolicy === "frontier-congestion-first"
-          ? frontierCongestionAnchors
-          : [];
-  const focusedOperatorAnchors = anchorPolicy === "ranked"
-    ? interleaveAnchors([
-      operatorAnchors("weak-service", weakServiceAnchors),
-      operatorAnchors("residential-headroom", residentialOpportunityAnchors),
-      operatorAnchors("frontier-congestion", frontierCongestionAnchors),
-      operatorAnchors("gate-choke", gateChokeAnchors),
-      operatorAnchors("service-overlap", serviceOverlapAnchors),
-    ])
-    : anchorPolicy === "weak-service-first"
-      ? operatorAnchors("weak-service", weakServiceAnchors)
-      : anchorPolicy === "residential-opportunity-first"
-        ? operatorAnchors("residential-headroom", residentialOpportunityAnchors)
-        : anchorPolicy === "frontier-congestion-first"
-          ? operatorAnchors("frontier-congestion", frontierCongestionAnchors)
-          : [];
+  const focusedAnchors =
+    anchorPolicy === "ranked"
+      ? interleaveAnchors([
+          weakServiceAnchors,
+          residentialOpportunityAnchors,
+          frontierCongestionAnchors,
+          gateChokeAnchors,
+          serviceOverlapAnchors
+        ])
+      : anchorPolicy === "weak-service-first"
+        ? weakServiceAnchors
+        : anchorPolicy === "residential-opportunity-first"
+          ? residentialOpportunityAnchors
+          : anchorPolicy === "frontier-congestion-first"
+            ? frontierCongestionAnchors
+            : [];
+  const focusedOperatorAnchors =
+    anchorPolicy === "ranked"
+      ? interleaveAnchors([
+          operatorAnchors("weak-service", weakServiceAnchors),
+          operatorAnchors("residential-headroom", residentialOpportunityAnchors),
+          operatorAnchors("frontier-congestion", frontierCongestionAnchors),
+          operatorAnchors("gate-choke", gateChokeAnchors),
+          operatorAnchors("service-overlap", serviceOverlapAnchors)
+        ])
+      : anchorPolicy === "weak-service-first"
+        ? operatorAnchors("weak-service", weakServiceAnchors)
+        : anchorPolicy === "residential-opportunity-first"
+          ? operatorAnchors("residential-headroom", residentialOpportunityAnchors)
+          : anchorPolicy === "frontier-congestion-first"
+            ? operatorAnchors("frontier-congestion", frontierCongestionAnchors)
+            : [];
 
   addEscalatedNeighborhoodCandidates(candidates, G, focusedAnchors, weakResidentials, options, stagnantIterations);
 
-  addClampedCandidateWindowsForOperatorAnchors(candidates, G, focusedOperatorAnchors, [
-    { rows: options.neighborhoodRows, cols: options.neighborhoodCols },
-  ], 1500);
+  addClampedCandidateWindowsForOperatorAnchors(
+    candidates,
+    G,
+    focusedOperatorAnchors,
+    [{ rows: options.neighborhoodRows, cols: options.neighborhoodCols }],
+    1500
+  );
   if (anchorPolicy === "ranked" || anchorPolicy === "placed-buildings-first") {
     addClampedCandidateWindowsForAnchors(
       candidates,
@@ -774,14 +772,24 @@ export function buildAdaptiveNeighborhoodCandidates(
       [{ rows: options.neighborhoodRows, cols: options.neighborhoodCols }],
       900
     );
-    addClampedCandidateWindowsForAnchors(candidates, "placed-buildings", G, weakResidentials, [
-      { rows: options.neighborhoodRows, cols: options.neighborhoodCols },
-    ], 850);
+    addClampedCandidateWindowsForAnchors(
+      candidates,
+      "placed-buildings",
+      G,
+      weakResidentials,
+      [{ rows: options.neighborhoodRows, cols: options.neighborhoodCols }],
+      850
+    );
   }
   if (anchorPolicy === "ranked") {
-    addClampedCandidateWindowsForAnchors(candidates, "random-exploration", G, randomExplorationAnchors, [
-      { rows: options.neighborhoodRows, cols: options.neighborhoodCols },
-    ], 750);
+    addClampedCandidateWindowsForAnchors(
+      candidates,
+      "random-exploration",
+      G,
+      randomExplorationAnchors,
+      [{ rows: options.neighborhoodRows, cols: options.neighborhoodCols }],
+      750
+    );
   }
 
   addSlidingNeighborhoodCandidates(candidates, G, options.neighborhoodRows, options.neighborhoodCols);

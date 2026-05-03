@@ -1,8 +1,4 @@
-import {
-  cloneBenchmarkGrid,
-  cloneBenchmarkSolverParams,
-  selectBenchmarkCasesByName,
-} from "./benchmarkOptions.js";
+import { cloneBenchmarkGrid, cloneBenchmarkSolverParams, selectBenchmarkCasesByName } from "./benchmarkOptions.js";
 import { DEFAULT_CP_SAT_BENCHMARK_CORPUS } from "./cpSat.js";
 import { DEFAULT_CROSS_MODE_BENCHMARK_CORPUS } from "./crossMode.js";
 import { DEFAULT_GREEDY_BENCHMARK_CORPUS } from "./greedy.js";
@@ -10,10 +6,7 @@ import { DEFAULT_LNS_BENCHMARK_CORPUS } from "./lns.js";
 import { materializeValidLnsSeedSolution } from "../core/index.js";
 import { buildManualLayoutResponse } from "../../apps/planner-server/http/solutionResponse.js";
 
-import type {
-  CpSatWarmStartHint,
-  Solution,
-} from "../core/index.js";
+import type { CpSatWarmStartHint, Solution } from "../core/index.js";
 import type {
   CrossModeBenchmarkCaseScorecard,
   CrossModeBenchmarkCase,
@@ -21,7 +14,7 @@ import type {
   CrossModeBenchmarkSplit,
   CrossModeBenchmarkSuiteResult,
   CrossModeProblemSizeBand,
-  CrossModeWorkflowTag,
+  CrossModeWorkflowTag
 } from "./crossMode.js";
 
 export interface CrossModeProductWorkflowRegistryEntryDraftOptions {
@@ -193,50 +186,50 @@ const PRODUCT_WORKFLOW_CASE_SPECS = Object.freeze([
     corpus: DEFAULT_CROSS_MODE_BENCHMARK_CORPUS,
     name: "typed-housing-single",
     split: "development",
-    workflowTags: ["solver-smoke"],
+    workflowTags: ["solver-smoke"]
   },
   {
     corpus: DEFAULT_CROSS_MODE_BENCHMARK_CORPUS,
     name: "row0-corridor-repair-pressure",
     split: "holdout",
-    workflowTags: ["corridor"],
+    workflowTags: ["corridor"]
   },
   {
     corpus: DEFAULT_GREEDY_BENCHMARK_CORPUS,
     name: "typed-footprint-pressure",
     split: "development",
-    workflowTags: ["footprint-pressure"],
+    workflowTags: ["footprint-pressure"]
   },
   {
     corpus: DEFAULT_GREEDY_BENCHMARK_CORPUS,
     name: "service-local-neighborhood",
     split: "holdout",
-    workflowTags: ["service-pressure"],
+    workflowTags: ["service-pressure"]
   },
   {
     corpus: DEFAULT_LNS_BENCHMARK_CORPUS,
     name: "seeded-service-anchor-pressure",
     split: "development",
-    workflowTags: ["anchor-service"],
+    workflowTags: ["anchor-service"]
   },
   {
     corpus: DEFAULT_CP_SAT_BENCHMARK_CORPUS,
     name: "road-semantics-gate-choke",
     split: "holdout",
-    workflowTags: ["gate"],
+    workflowTags: ["gate"]
   },
   {
     corpus: DEFAULT_CP_SAT_BENCHMARK_CORPUS,
     name: "road-semantics-service-pressure",
     split: "development",
-    workflowTags: ["service-pressure"],
+    workflowTags: ["service-pressure"]
   },
   {
     corpus: DEFAULT_CP_SAT_BENCHMARK_CORPUS,
     name: "multi-anchor-road-components",
     split: "holdout",
-    workflowTags: ["multi-anchor"],
-  },
+    workflowTags: ["multi-anchor"]
+  }
 ] satisfies ProductWorkflowCaseSpec[]);
 
 const MANUAL_LAYOUT_REPLAY_HINT = {
@@ -247,12 +240,12 @@ const MANUAL_LAYOUT_REPLAY_HINT = {
     services: [{ r: 1, c: 0, rows: 1, cols: 1, range: 1, typeIndex: 0, bonus: 40 }],
     residentials: [
       { r: 1, c: 2, rows: 2, cols: 2, typeIndex: 0, population: 80 },
-      { r: 3, c: 2, rows: 2, cols: 2, typeIndex: 0, population: 80 },
+      { r: 3, c: 2, rows: 2, cols: 2, typeIndex: 0, population: 80 }
     ],
     populations: [80, 80],
-    totalPopulation: 160,
+    totalPopulation: 160
   },
-  objectiveLowerBound: 160,
+  objectiveLowerBound: 160
 };
 
 const EXPANSION_COMPARISON_REPLAY_HINT = {
@@ -263,9 +256,9 @@ const EXPANSION_COMPARISON_REPLAY_HINT = {
     services: [{ r: 1, c: 3, rows: 1, cols: 1, range: 1, typeIndex: 0, bonus: 35 }],
     residentials: [{ r: 2, c: 3, rows: 2, cols: 2, typeIndex: 0, population: 115 }],
     populations: [115],
-    totalPopulation: 115,
+    totalPopulation: 115
   },
-  objectiveLowerBound: 115,
+  objectiveLowerBound: 115
 };
 
 const PRODUCT_WORKFLOW_REPLAY_CASES: readonly CrossModeBenchmarkCase[] = Object.freeze([
@@ -280,7 +273,7 @@ const PRODUCT_WORKFLOW_REPLAY_CASES: readonly CrossModeBenchmarkCase[] = Object.
       [1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1],
-      [1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1]
     ],
     params: {
       serviceTypes: [{ rows: 1, cols: 1, bonus: 40, range: 1, avail: 1 }],
@@ -292,12 +285,12 @@ const PRODUCT_WORKFLOW_REPLAY_CASES: readonly CrossModeBenchmarkCase[] = Object.
         neighborhoodRows: 3,
         neighborhoodCols: 3,
         repairTimeLimitSeconds: 0.5,
-        seedHint: MANUAL_LAYOUT_REPLAY_HINT,
+        seedHint: MANUAL_LAYOUT_REPLAY_HINT
       },
       cpSat: {
         timeLimitSeconds: 1,
         maxDeterministicTime: 1,
-        warmStartHint: MANUAL_LAYOUT_REPLAY_HINT,
+        warmStartHint: MANUAL_LAYOUT_REPLAY_HINT
       },
       greedy: {
         localSearch: true,
@@ -307,9 +300,9 @@ const PRODUCT_WORKFLOW_REPLAY_CASES: readonly CrossModeBenchmarkCase[] = Object.
         serviceRefineCandidateLimit: 6,
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 6,
-        serviceExactMaxCombinations: 64,
-      },
-    },
+        serviceExactMaxCombinations: 64
+      }
+    }
   },
   {
     name: "expansion-comparison-replay",
@@ -323,16 +316,16 @@ const PRODUCT_WORKFLOW_REPLAY_CASES: readonly CrossModeBenchmarkCase[] = Object.
       [1, 1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1, 1],
-      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1]
     ],
     params: {
       serviceTypes: [
         { rows: 1, cols: 1, bonus: 35, range: 1, avail: 1 },
-        { rows: 2, cols: 1, bonus: 65, range: 2, avail: 1 },
+        { rows: 2, cols: 1, bonus: 65, range: 2, avail: 1 }
       ],
       residentialTypes: [
         { w: 2, h: 2, min: 80, max: 180, avail: 3 },
-        { w: 2, h: 3, min: 140, max: 280, avail: 1 },
+        { w: 2, h: 3, min: 140, max: 280, avail: 1 }
       ],
       availableBuildings: { services: 2, residentials: 4 },
       lns: {
@@ -341,12 +334,12 @@ const PRODUCT_WORKFLOW_REPLAY_CASES: readonly CrossModeBenchmarkCase[] = Object.
         neighborhoodRows: 3,
         neighborhoodCols: 3,
         repairTimeLimitSeconds: 0.5,
-        seedHint: EXPANSION_COMPARISON_REPLAY_HINT,
+        seedHint: EXPANSION_COMPARISON_REPLAY_HINT
       },
       cpSat: {
         timeLimitSeconds: 1,
         maxDeterministicTime: 1,
-        warmStartHint: EXPANSION_COMPARISON_REPLAY_HINT,
+        warmStartHint: EXPANSION_COMPARISON_REPLAY_HINT
       },
       greedy: {
         localSearch: true,
@@ -356,10 +349,10 @@ const PRODUCT_WORKFLOW_REPLAY_CASES: readonly CrossModeBenchmarkCase[] = Object.
         serviceRefineCandidateLimit: 8,
         exhaustiveServiceSearch: false,
         serviceExactPoolLimit: 8,
-        serviceExactMaxCombinations: 128,
-      },
-    },
-  },
+        serviceExactMaxCombinations: 128
+      }
+    }
+  }
 ]);
 
 function inferProductProblemSizeBand(benchmarkCase: CrossModeBenchmarkCase): CrossModeProblemSizeBand {
@@ -381,21 +374,21 @@ function withProductWorkflowMetadata(
     ...benchmarkCase,
     problemSizeBand: benchmarkCase.problemSizeBand ?? inferProductProblemSizeBand(benchmarkCase),
     split: spec.split,
-    workflowTags: uniqueWorkflowTags([...(benchmarkCase.workflowTags ?? []), ...spec.workflowTags]),
+    workflowTags: uniqueWorkflowTags([...(benchmarkCase.workflowTags ?? []), ...spec.workflowTags])
   };
 }
 
 function selectProductWorkflowCase(spec: ProductWorkflowCaseSpec): CrossModeBenchmarkCase {
   const [benchmarkCase] = selectBenchmarkCasesByName(spec.corpus, [spec.name], {
     caseLabel: "cross-mode product workflow benchmark",
-    corpusLabel: "Cross-mode product workflow benchmark",
+    corpusLabel: "Cross-mode product workflow benchmark"
   });
   return withProductWorkflowMetadata(benchmarkCase, spec);
 }
 
 export const DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS: readonly CrossModeBenchmarkCase[] = Object.freeze([
   ...PRODUCT_WORKFLOW_CASE_SPECS.map(selectProductWorkflowCase),
-  ...PRODUCT_WORKFLOW_REPLAY_CASES,
+  ...PRODUCT_WORKFLOW_REPLAY_CASES
 ]);
 
 export const PRODUCT_WORKFLOW_PROMOTION_BUDGETS_SECONDS = Object.freeze([1, 5, 30, 120]);
@@ -405,24 +398,26 @@ export const PRODUCT_WORKFLOW_PROMOTION_MODES = Object.freeze([
   "auto",
   "greedy",
   "lns",
-  "cp-sat",
+  "cp-sat"
 ] satisfies CrossModeBenchmarkMode[]);
 
 function dateSlug(value: string): string {
   return value.slice(0, 10);
 }
 
-function caseNamesBySplit(result: Pick<CrossModeBenchmarkSuiteResult, "cases">): Record<CrossModeBenchmarkSplit, string[]> {
+function caseNamesBySplit(
+  result: Pick<CrossModeBenchmarkSuiteResult, "cases">
+): Record<CrossModeBenchmarkSplit, string[]> {
   const splitCases: Record<CrossModeBenchmarkSplit, Set<string>> = {
     development: new Set(),
-    holdout: new Set(),
+    holdout: new Set()
   };
   for (const scorecard of result.cases) {
     splitCases[scorecard.split].add(scorecard.name);
   }
   return {
     development: [...splitCases.development],
-    holdout: [...splitCases.holdout],
+    holdout: [...splitCases.holdout]
   };
 }
 
@@ -469,10 +464,12 @@ function scorecardKey(caseName: string, budgetSeconds: number, seed: number): st
 
 function buildPromotionCoverage(result: CrossModeBenchmarkSuiteResult): CrossModeProductWorkflowPromotionCoverage {
   const requiredCaseNames = DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS.map((benchmarkCase) => benchmarkCase.name);
-  const requiredSplitByCaseName = new Map(DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS.map((benchmarkCase) => [
-    benchmarkCase.name,
-    benchmarkCase.split ?? "development",
-  ]));
+  const requiredSplitByCaseName = new Map(
+    DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS.map((benchmarkCase) => [
+      benchmarkCase.name,
+      benchmarkCase.split ?? "development"
+    ])
+  );
   const selectedCaseNames = uniqueSorted(result.cases.map((scorecard) => scorecard.name));
   const missingCaseNames = includesAllStrings(selectedCaseNames, requiredCaseNames);
   const splitMismatchesByCaseName = new Map<string, CrossModeProductWorkflowSplitMismatch>();
@@ -482,22 +479,24 @@ function buildPromotionCoverage(result: CrossModeBenchmarkSuiteResult): CrossMod
     splitMismatchesByCaseName.set(scorecard.name, {
       caseName: scorecard.name,
       expectedSplit,
-      actualSplit: scorecard.split,
+      actualSplit: scorecard.split
     });
   }
-  const splitMismatches = [...splitMismatchesByCaseName.values()]
-    .sort((left, right) => left.caseName.localeCompare(right.caseName));
+  const splitMismatches = [...splitMismatchesByCaseName.values()].sort((left, right) =>
+    left.caseName.localeCompare(right.caseName)
+  );
   const missingModes = includesAllStrings(result.modes, PRODUCT_WORKFLOW_PROMOTION_MODES);
   const missingBudgetsSeconds = includesAllNumbers(result.budgetsSeconds, PRODUCT_WORKFLOW_PROMOTION_BUDGETS_SECONDS);
   const missingSeeds = includesAllNumbers(result.seeds, PRODUCT_WORKFLOW_PROMOTION_SEEDS);
   const unexpectedSeeds = includesAllNumbers(PRODUCT_WORKFLOW_PROMOTION_SEEDS, result.seeds);
   const seedCount = new Set(result.seeds).size;
-  const scorecardsByKey = new Map(result.cases.map((scorecard) => [
-    scorecardKey(scorecard.name, scorecard.budgetSeconds, scorecard.seed),
-    scorecard,
-  ]));
+  const scorecardsByKey = new Map(
+    result.cases.map((scorecard) => [scorecardKey(scorecard.name, scorecard.budgetSeconds, scorecard.seed), scorecard])
+  );
   const expectedScorecardCount =
-    requiredCaseNames.length * PRODUCT_WORKFLOW_PROMOTION_BUDGETS_SECONDS.length * PRODUCT_WORKFLOW_PROMOTION_SEEDS.length;
+    requiredCaseNames.length *
+    PRODUCT_WORKFLOW_PROMOTION_BUDGETS_SECONDS.length *
+    PRODUCT_WORKFLOW_PROMOTION_SEEDS.length;
   const missingScorecards: CrossModeProductWorkflowMissingScorecard[] = [];
   const scorecardsMissingModes: CrossModeProductWorkflowScorecardModeGap[] = [];
 
@@ -550,21 +549,19 @@ function buildPromotionCoverage(result: CrossModeBenchmarkSuiteResult): CrossMod
     requiredSeedCoverage,
     requiredScorecardCoverage,
     requiredScorecardModeCoverage,
-    protectedHoldout: fullCorpus
-      && requiredSplitCoverage
-      && requiredModeCoverage
-      && requiredBudgetCoverage
-      && requiredSeedCoverage
-      && requiredScorecardCoverage
-      && requiredScorecardModeCoverage,
+    protectedHoldout:
+      fullCorpus &&
+      requiredSplitCoverage &&
+      requiredModeCoverage &&
+      requiredBudgetCoverage &&
+      requiredSeedCoverage &&
+      requiredScorecardCoverage &&
+      requiredScorecardModeCoverage
   };
 }
 
 function isSolutionWarmStartHint(value: unknown): value is Solution {
-  return typeof value === "object"
-    && value !== null
-    && "roads" in value
-    && value.roads instanceof Set;
+  return typeof value === "object" && value !== null && "roads" in value && value.roads instanceof Set;
 }
 
 function asReusableHint(value: unknown): CpSatWarmStartHint | null {
@@ -580,9 +577,7 @@ function replayTagForCase(benchmarkCase: CrossModeBenchmarkCase): CrossModeProdu
 }
 
 function replayHintForCase(benchmarkCase: CrossModeBenchmarkCase): CpSatWarmStartHint | null {
-  return benchmarkCase.params.lns?.seedHint
-    ?? asReusableHint(benchmarkCase.params.cpSat?.warmStartHint)
-    ?? null;
+  return benchmarkCase.params.lns?.seedHint ?? asReusableHint(benchmarkCase.params.cpSat?.warmStartHint) ?? null;
 }
 
 function scorecardsByCase(
@@ -604,7 +599,7 @@ function replayScoreSource(
   return {
     budgetSeconds: scorecard.budgetSeconds,
     seed: scorecard.seed,
-    mode,
+    mode
   };
 }
 
@@ -616,7 +611,7 @@ function bestAutoScore(scorecards: readonly CrossModeBenchmarkCaseScorecard[]): 
     if (best === null || autoResult.totalPopulation > best.score) {
       best = {
         score: autoResult.totalPopulation,
-        source: replayScoreSource(scorecard, "auto"),
+        source: replayScoreSource(scorecard, "auto")
       };
     }
   }
@@ -627,13 +622,14 @@ function bestScore(scorecards: readonly CrossModeBenchmarkCaseScorecard[]): Repl
   let best: ReplayScoreSelection | null = null;
   for (const scorecard of scorecards) {
     if (scorecard.bestScore === null) continue;
-    const bestResult = scorecard.results.find((entry) => entry.rank === 1)
-      ?? scorecard.results.find((entry) => entry.totalPopulation === scorecard.bestScore);
+    const bestResult =
+      scorecard.results.find((entry) => entry.rank === 1) ??
+      scorecard.results.find((entry) => entry.totalPopulation === scorecard.bestScore);
     if (bestResult === undefined) continue;
     if (best === null || scorecard.bestScore > best.score) {
       best = {
         score: scorecard.bestScore,
-        source: replayScoreSource(scorecard, bestResult.mode),
+        source: replayScoreSource(scorecard, bestResult.mode)
       };
     }
   }
@@ -669,9 +665,9 @@ function buildReplayMetric(
     scorecardCount: scorecards.length,
     budgetsSeconds: uniqueSortedNumbers(scorecards.map((scorecard) => scorecard.budgetSeconds)),
     seeds: uniqueSortedNumbers(scorecards.map((scorecard) => scorecard.seed)),
-    modes: uniqueSorted(scorecards.flatMap((scorecard) =>
-      scorecard.results.map((entry) => entry.mode)
-    )) as CrossModeBenchmarkMode[],
+    modes: uniqueSorted(
+      scorecards.flatMap((scorecard) => scorecard.results.map((entry) => entry.mode))
+    ) as CrossModeBenchmarkMode[],
     valid: response.validation.valid,
     validationErrorCount: response.validation.errors.length,
     reportedPopulation: solution.totalPopulation,
@@ -686,9 +682,8 @@ function buildReplayMetric(
     autoScore: replayAutoScore?.score ?? null,
     autoScoreSource: replayAutoScore?.source ?? null,
     autoScoreDeltaFromEvaluated,
-    expansionComparisonLift: replayTag === "expansion-comparison"
-      ? (autoScoreDeltaFromEvaluated ?? bestScoreDeltaFromEvaluated)
-      : null,
+    expansionComparisonLift:
+      replayTag === "expansion-comparison" ? (autoScoreDeltaFromEvaluated ?? bestScoreDeltaFromEvaluated) : null
   };
 }
 
@@ -704,12 +699,9 @@ export function buildCrossModeProductWorkflowReplayMetrics(
     const replayTag = replayTagForCase(benchmarkCase);
     const hint = replayHintForCase(benchmarkCase);
     if (!replayTag || !hint) continue;
-    metrics.push(buildReplayMetric(
-      benchmarkCase,
-      replayTag,
-      hint,
-      scorecardsByCase(options.result, benchmarkCase.name)
-    ));
+    metrics.push(
+      buildReplayMetric(benchmarkCase, replayTag, hint, scorecardsByCase(options.result, benchmarkCase.name))
+    );
   }
 
   return metrics;
@@ -721,7 +713,7 @@ export function buildCrossModeProductWorkflowReplayTelemetryManifest(
 ): CrossModeProductWorkflowReplayTelemetryManifest {
   const replays = buildCrossModeProductWorkflowReplayMetrics({
     result,
-    corpus: options.corpus,
+    corpus: options.corpus
   });
   return {
     schemaVersion: 1,
@@ -739,9 +731,9 @@ export function buildCrossModeProductWorkflowReplayTelemetryManifest(
       workflowTags: uniqueSorted(replays.map((metric) => metric.workflowTag)) as CrossModeProductWorkflowReplayTag[],
       budgetsSeconds: uniqueSortedNumbers(replays.flatMap((metric) => metric.budgetsSeconds)),
       seeds: uniqueSortedNumbers(replays.flatMap((metric) => metric.seeds)),
-      modes: uniqueSorted(replays.flatMap((metric) => metric.modes)) as CrossModeBenchmarkMode[],
+      modes: uniqueSorted(replays.flatMap((metric) => metric.modes)) as CrossModeBenchmarkMode[]
     },
-    replays,
+    replays
   };
 }
 
@@ -752,7 +744,7 @@ export function buildCrossModeProductWorkflowEvidenceSummary(
   const tagCounts = Object.fromEntries(
     productWorkflowCaseFamilies(result).map((tag) => [
       tag,
-      result.cases.filter((scorecard) => scorecard.workflowTags.includes(tag as CrossModeWorkflowTag)).length,
+      result.cases.filter((scorecard) => scorecard.workflowTags.includes(tag as CrossModeWorkflowTag)).length
     ])
   ) as Partial<Record<CrossModeWorkflowTag, number>>;
 
@@ -763,7 +755,7 @@ export function buildCrossModeProductWorkflowEvidenceSummary(
     seeds: [...result.seeds],
     splitCaseCounts: {
       development: splitCases.development.length,
-      holdout: splitCases.holdout.length,
+      holdout: splitCases.holdout.length
     },
     workflowTagCounts: tagCounts,
     promotionCoverage: buildPromotionCoverage(result),
@@ -793,18 +785,16 @@ export function buildCrossModeProductWorkflowEvidenceSummary(
             .filter((entry): entry is string => entry !== null)
         ),
         cpSatStatuses: uniqueSorted(
-          scorecard.results
-            .map((entry) => entry.cpSatStatus)
-            .filter((entry): entry is string => entry !== null)
+          scorecard.results.map((entry) => entry.cpSatStatus).filter((entry): entry is string => entry !== null)
         ),
         minimumExactGap: exactGap,
         manualReplayCoverage: scorecard.workflowTags.includes("manual-layout-replay")
           ? "scorecard-replay-case"
           : "not-applicable",
-        expansionComparisonLift: scorecard.workflowTags.includes("expansion-comparison") ? autoDeltaToBest : null,
+        expansionComparisonLift: scorecard.workflowTags.includes("expansion-comparison") ? autoDeltaToBest : null
       };
     }),
-    replayMetrics: buildCrossModeProductWorkflowReplayMetrics({ result }),
+    replayMetrics: buildCrossModeProductWorkflowReplayMetrics({ result })
   };
 }
 
@@ -838,18 +828,19 @@ export function buildCrossModeProductWorkflowRegistryEntryDraft(
       leakage: protectedHoldout ? "none" : "not-evaluated",
       notes: protectedHoldout
         ? "Product workflow corpus scorecard covers the full promotion matrix with explicit development/holdout split metadata."
-        : "Partial product workflow corpus scorecard; not protected holdout promotion evidence.",
+        : "Partial product workflow corpus scorecard; not protected holdout promotion evidence."
     },
     budget: {
       wallClockBudgetsSeconds: [...result.budgetsSeconds],
       caseCount: result.caseCount,
       modeCount: result.modes.length,
-      totalRuns: result.cases.reduce((sum, scorecard) => sum + scorecard.results.length, 0),
+      totalRuns: result.cases.reduce((sum, scorecard) => sum + scorecard.results.length, 0)
     },
     model: null,
     decision: options.decision ?? "no-default-promotion",
-    summary: options.summary
-      ?? `Product workflow corpus scorecard over ${result.caseCount} cases, ${result.modes.length} modes, ${result.budgetsSeconds.length} budget(s), and ${result.seeds.length} seed(s).`,
+    summary:
+      options.summary ??
+      `Product workflow corpus scorecard over ${result.caseCount} cases, ${result.modes.length} modes, ${result.budgetsSeconds.length} budget(s), and ${result.seeds.length} seed(s).`,
     summaryMetrics: {
       splitCaseCounts: evidenceSummary.splitCaseCounts,
       workflowTagCounts: evidenceSummary.workflowTagCounts,
@@ -857,7 +848,7 @@ export function buildCrossModeProductWorkflowRegistryEntryDraft(
       caseMetricCount: evidenceSummary.caseMetrics.length,
       caseMetrics: evidenceSummary.caseMetrics,
       replayMetricCount: evidenceSummary.replayMetrics.length,
-      replayMetrics: evidenceSummary.replayMetrics,
-    },
+      replayMetrics: evidenceSummary.replayMetrics
+    }
   };
 }

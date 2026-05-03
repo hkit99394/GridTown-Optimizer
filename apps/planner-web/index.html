@@ -134,7 +134,9 @@
                     ></textarea>
                   </label>
                   <div class="actions-row compact-actions">
-                    <button id="importCatalogTextButton" type="button" class="button secondary">Import pasted tables</button>
+                    <button id="importCatalogTextButton" type="button" class="button secondary">
+                      Import pasted tables
+                    </button>
                     <p id="catalogImportStatus" class="status-text" aria-live="polite">
                       Paste one or both tables to replace the current catalogs.
                     </p>
@@ -160,7 +162,9 @@
                       <p class="eyebrow">Catalog</p>
                       <h3>Residential types</h3>
                     </div>
-                    <button id="addResidentialTypeButton" type="button" class="button secondary">Add residential</button>
+                    <button id="addResidentialTypeButton" type="button" class="button secondary">
+                      Add residential
+                    </button>
                   </div>
                   <div id="residentialList"></div>
                 </section>
@@ -326,8 +330,12 @@
                       <span class="legend-chip"><span class="legend-swatch blocked"></span>Blocked</span>
                       <span class="legend-chip"><span class="legend-swatch overlay"></span>Building IDs</span>
                       <span class="legend-chip"><span class="legend-swatch service-value"></span>Service value</span>
-                      <span class="legend-chip"><span class="legend-swatch placement-opportunity"></span>Placement opportunity</span>
-                      <span class="legend-chip"><span class="legend-swatch connectivity-risk"></span>Connectivity risk</span>
+                      <span class="legend-chip"
+                        ><span class="legend-swatch placement-opportunity"></span>Placement opportunity</span
+                      >
+                      <span class="legend-chip"
+                        ><span class="legend-swatch connectivity-risk"></span>Connectivity risk</span
+                      >
                     </div>
                     <div class="editor-toolbar">
                       <div
@@ -338,10 +346,19 @@
                       >
                         <button type="button" data-result-explainability-mode="layout">Layout</button>
                         <button type="button" data-result-explainability-mode="service-value">Service value</button>
-                        <button type="button" data-result-explainability-mode="placement-opportunity">Placement opportunity</button>
-                        <button type="button" data-result-explainability-mode="connectivity-risk">Connectivity risk</button>
+                        <button type="button" data-result-explainability-mode="placement-opportunity">
+                          Placement opportunity
+                        </button>
+                        <button type="button" data-result-explainability-mode="connectivity-risk">
+                          Connectivity risk
+                        </button>
                       </div>
-                      <div class="segmented segmented-wide" id="layoutEditModeToggle" role="group" aria-label="Layout edit mode">
+                      <div
+                        class="segmented segmented-wide"
+                        id="layoutEditModeToggle"
+                        role="group"
+                        aria-label="Layout edit mode"
+                      >
                         <button type="button" data-layout-edit-mode="inspect">Inspect</button>
                         <button type="button" data-layout-edit-mode="road">Road</button>
                         <button type="button" data-layout-edit-mode="erase">Erase</button>
@@ -349,7 +366,9 @@
                       </div>
                       <div class="actions-row compact-actions">
                         <button id="rotatePendingPlacementButton" type="button" class="button ghost">Rotate 90°</button>
-                        <button id="validateEditedLayoutButton" type="button" class="button ghost">Validate layout</button>
+                        <button id="validateEditedLayoutButton" type="button" class="button ghost">
+                          Validate layout
+                        </button>
                       </div>
                       <p id="layoutEditorStatus" class="status-text" aria-live="polite">
                         Run or load a layout to edit it.
@@ -376,8 +395,12 @@
                           Click a service or residential building on the solved map to inspect it here.
                         </p>
                         <div class="actions-row compact-actions inspector-actions">
-                          <button id="moveSelectedBuildingButton" type="button" class="button ghost">Move selected</button>
-                          <button id="removeSelectedBuildingButton" type="button" class="button ghost danger">Remove selected</button>
+                          <button id="moveSelectedBuildingButton" type="button" class="button ghost">
+                            Move selected
+                          </button>
+                          <button id="removeSelectedBuildingButton" type="button" class="button ghost danger">
+                            Remove selected
+                          </button>
                         </div>
                         <dl id="selectedBuildingFacts" class="detail-facts" hidden>
                           <div>
@@ -408,7 +431,6 @@
                       </aside>
                     </div>
                   </section>
-
                 </div>
               </div>
             </div>
@@ -488,8 +510,7 @@
               </div>
 
               <p id="runtimePresetStatus" class="status-text" aria-live="polite">
-                Presets keep Greedy, LNS, and bounded CP-SAT one click away.
-                Auto remains the recommended quality path.
+                Presets keep Greedy, LNS, and bounded CP-SAT one click away. Auto remains the recommended quality path.
               </p>
 
               <div class="segmented segmented-wide" id="solverToggle" role="group" aria-label="Optimizer">
@@ -521,8 +542,8 @@
                 </section>
                 <section id="greedyPanel" class="solver-panel">
                   <div class="notice info">
-                    Greedy is the heavy standalone heuristic / advanced inspection mode. Use Auto when you want the
-                    fast seed stage plus LNS and bounded CP-SAT follow-on improvement.
+                    Greedy is the heavy standalone heuristic / advanced inspection mode. Use Auto when you want the fast
+                    seed stage plus LNS and bounded CP-SAT follow-on improvement.
                   </div>
                   <div class="form-grid two-up">
                     <label class="check-field">
@@ -555,7 +576,13 @@
                     </label>
                     <label class="field">
                       <span>Time limit (seconds, optional)</span>
-                      <input id="greedyTimeLimitSeconds" type="number" min="1" step="1" placeholder="Blank = unlimited" />
+                      <input
+                        id="greedyTimeLimitSeconds"
+                        type="number"
+                        min="1"
+                        step="1"
+                        placeholder="Blank = unlimited"
+                      />
                     </label>
                     <label class="field">
                       <span>Density tolerance (%)</span>
@@ -638,7 +665,13 @@
                     </label>
                     <label class="field">
                       <span>Random seed</span>
-                      <input id="cpSatRandomSeed" type="number" min="0" step="1" placeholder="Blank = auto-fill on solve" />
+                      <input
+                        id="cpSatRandomSeed"
+                        type="number"
+                        min="0"
+                        step="1"
+                        placeholder="Blank = auto-fill on solve"
+                      />
                     </label>
                     <label class="field">
                       <span>Workers</span>
@@ -660,9 +693,9 @@
                     </label>
                   </div>
                   <div class="notice info">
-                    Portfolio CP-SAT launches multiple exact paths. Add a CP-SAT or per-worker time limit for a
-                    bounded run, or leave both blank to run until all paths finish or you stop them. Internal worker
-                    lanes are capped at eight total.
+                    Portfolio CP-SAT launches multiple exact paths. Add a CP-SAT or per-worker time limit for a bounded
+                    run, or leave both blank to run until all paths finish or you stop them. Internal worker lanes are
+                    capped at eight total.
                   </div>
                   <div class="form-grid two-up">
                     <label class="check-field">
@@ -792,28 +825,19 @@
               <div class="form-grid two-up">
                 <label class="field">
                   <span>Next service to add</span>
-                  <input
-                    id="expansionNextService"
-                    type="text"
-                    placeholder="Police Station, 408, 2x2, 12x12"
-                  />
+                  <input id="expansionNextService" type="text" placeholder="Police Station, 408, 2x2, 12x12" />
                 </label>
                 <label class="field">
                   <span>Next residential to add</span>
-                  <input
-                    id="expansionNextResidential"
-                    type="text"
-                    placeholder="Plaza Midwood, 780/2340, 2x3"
-                  />
+                  <input id="expansionNextResidential" type="text" placeholder="Plaza Midwood, 780/2340, 2x3" />
                 </label>
               </div>
               <div class="actions-row compact-actions">
-                <button id="compareExpansionButton" type="button" class="button secondary">
-                  Compare additions
-                </button>
+                <button id="compareExpansionButton" type="button" class="button secondary">Compare additions</button>
               </div>
               <p id="expansionAdviceStatus" class="status-text" aria-live="polite">
-                Run or load a layout first, then enter the next service and/or next residential candidate to estimate the impact.
+                Run or load a layout first, then enter the next service and/or next residential candidate to estimate
+                the impact.
               </p>
               <div id="expansionAdviceMetrics" class="metric-strip summary-metrics" hidden>
                 <article class="metric-card accent">

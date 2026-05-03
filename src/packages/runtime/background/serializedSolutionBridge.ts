@@ -12,7 +12,7 @@ import type {
   Grid,
   SerializedSolution,
   Solution,
-  SolverParams,
+  SolverParams
 } from "../../core/index.js";
 import type { JsonBackgroundSolverConfig } from "./runner.js";
 
@@ -25,10 +25,7 @@ type SerializedBackgroundSolverConfig = Omit<
 
 type SerializedSolverOptionKey = "greedy" | "lns";
 
-type SerializedSolverProcessConfig = Omit<
-  SerializedBackgroundSolverConfig,
-  "command" | "args" | "buildRequest"
-> & {
+type SerializedSolverProcessConfig = Omit<SerializedBackgroundSolverConfig, "command" | "args" | "buildRequest"> & {
   grid: Grid;
   params: SolverParams;
   solverOptionKey: SerializedSolverOptionKey;
@@ -50,22 +47,17 @@ export function parseSerializedBackgroundSolution(stdout: string, solverLabel: s
   return parsed;
 }
 
-export function materializeSerializedBackgroundSolution(
-  raw: SerializedSolution,
-  stoppedByUser: boolean
-): Solution {
+export function materializeSerializedBackgroundSolution(raw: SerializedSolution, stoppedByUser: boolean): Solution {
   return materializeSerializedSolution({
     ...raw,
-    stoppedByUser: stoppedByUser || Boolean(raw.stoppedByUser),
+    stoppedByUser: stoppedByUser || Boolean(raw.stoppedByUser)
   });
 }
 
-export function buildSerializedBackgroundSnapshotState(
-  raw: SerializedSolution | null
-): BackgroundSolveSnapshotState {
+export function buildSerializedBackgroundSnapshotState(raw: SerializedSolution | null): BackgroundSolveSnapshotState {
   return {
     hasFeasibleSolution: Boolean(raw),
-    totalPopulation: raw?.totalPopulation ?? null,
+    totalPopulation: raw?.totalPopulation ?? null
   };
 }
 
@@ -82,7 +74,7 @@ export function startSerializedSolutionBackgroundSolve(
     parseRaw: (stdout) => parseSerializedBackgroundSolution(stdout, backgroundConfig.solverLabel),
     materializeSolution: materializeSolution ?? materializeSerializedBackgroundSolution,
     getSnapshotState: buildSerializedBackgroundSnapshotState,
-    readStoppedByUser: readSerializedBackgroundStoppedByUser,
+    readStoppedByUser: readSerializedBackgroundStoppedByUser
   });
 }
 
@@ -99,21 +91,18 @@ function buildSerializedSolverRequest(
       [solverOptionKey]: {
         ...(params[solverOptionKey] ?? {}),
         stopFilePath: paths.stopFilePath,
-        snapshotFilePath: paths.snapshotFilePath,
-      },
-    },
+        snapshotFilePath: paths.snapshotFilePath
+      }
+    }
   };
 }
 
-export function startSerializedSolutionSolverProcess(
-  config: SerializedSolverProcessConfig
-): BackgroundSolveHandle {
+export function startSerializedSolutionSolverProcess(config: SerializedSolverProcessConfig): BackgroundSolveHandle {
   const { grid, params, solverOptionKey, workerScriptPath, ...backgroundConfig } = config;
   return startSerializedSolutionBackgroundSolve({
     ...backgroundConfig,
     command: process.execPath,
     args: [workerScriptPath],
-    buildRequest: (paths) =>
-      buildSerializedSolverRequest(grid, params, solverOptionKey, paths),
+    buildRequest: (paths) => buildSerializedSolverRequest(grid, params, solverOptionKey, paths)
   });
 }

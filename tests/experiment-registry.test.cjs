@@ -11,6 +11,7 @@ const {
   checkExperimentRegistryFile,
   completeExperimentRegistryEntry,
   formatExperimentRegistryIssues,
+  validateExperimentRegistryFile,
   validateExperimentRegistryEntry
 } = require("city-builder/benchmarks");
 
@@ -209,6 +210,83 @@ function testCompleteEntryPreservesExplicitNullArtifactCommit() {
   assert.equal(entry.artifactGitCommit, null);
 }
 
+function testSeedRegistryHistoricalWarningBudget() {
+  const result = validateExperimentRegistryFile("artifacts/experiments/index.jsonl", { rootDir: repoRoot });
+  assert.equal(result.valid, true, formatExperimentRegistryIssues(result.issues));
+  assert.equal(result.errorCount, 0, formatExperimentRegistryIssues(result.issues));
+  assert.deepEqual(
+    result.issues.map(({ lineNumber, runId, code, severity }) => ({ lineNumber, runId, code, severity })),
+    [
+      {
+        lineNumber: 1,
+        runId: "deterministic-ablations-2026-04-27",
+        code: "historical-missing-artifact-commit",
+        severity: "warning"
+      },
+      {
+        lineNumber: 1,
+        runId: "deterministic-ablations-2026-04-27",
+        code: "historical-missing-hardware",
+        severity: "warning"
+      },
+      {
+        lineNumber: 1,
+        runId: "deterministic-ablations-2026-04-27",
+        code: "historical-abbreviated-command",
+        severity: "warning"
+      },
+      {
+        lineNumber: 2,
+        runId: "learned-ranking-labels-2026-04-27",
+        code: "historical-missing-artifact-commit",
+        severity: "warning"
+      },
+      {
+        lineNumber: 2,
+        runId: "learned-ranking-labels-2026-04-27",
+        code: "historical-missing-hardware",
+        severity: "warning"
+      },
+      {
+        lineNumber: 3,
+        runId: "cp-sat-portfolio-measurement-2026-04-28",
+        code: "historical-missing-artifact-commit",
+        severity: "warning"
+      },
+      {
+        lineNumber: 3,
+        runId: "cp-sat-portfolio-measurement-2026-04-28",
+        code: "historical-missing-hardware",
+        severity: "warning"
+      },
+      {
+        lineNumber: 4,
+        runId: "next-stage-health-check-2026-04-28",
+        code: "historical-missing-hardware",
+        severity: "warning"
+      },
+      {
+        lineNumber: 5,
+        runId: "cp-sat-road-semantics-scorecard-2026-04-30",
+        code: "historical-missing-artifact-commit",
+        severity: "warning"
+      },
+      {
+        lineNumber: 6,
+        runId: "product-corpus-scorecard-2026-04-30-initial-1s-5s-seed7",
+        code: "historical-missing-artifact-commit",
+        severity: "warning"
+      },
+      {
+        lineNumber: 7,
+        runId: "product-corpus-scorecard-2026-04-30-initial-1s-5s-seed7-v2",
+        code: "historical-missing-artifact-commit",
+        severity: "warning"
+      }
+    ]
+  );
+}
+
 function runRegistryCli(args, cwd) {
   const cliPath = path.join(repoRoot, "dist", "experimentRegistryCli.js");
   return childProcess.spawnSync(process.execPath, [cliPath, ...args], {
@@ -268,6 +346,7 @@ testStrictMetadataRulesForBenchmarkAndLabelEntries();
 testModelExperimentManifestAndRegistryDraft();
 testAppendHelperAddsCommitCommandBudgetHardwareModelAndDecisionMetadata();
 testCompleteEntryPreservesExplicitNullArtifactCommit();
+testSeedRegistryHistoricalWarningBudget();
 testRegistryCliCanAppendAndCheckLabelArtifacts();
 
 console.log("Experiment registry tests passed.");

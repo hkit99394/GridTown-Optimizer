@@ -1,3 +1,20 @@
+/**
+ * @typedef {{ r: number, c: number, rows: number, cols: number }} BuildingPlacement
+ * @typedef {{
+ *   optimizer?: string,
+ *   totalPopulation?: number,
+ *   cpSatStatus?: string,
+ *   stoppedByUser?: boolean,
+ *   roads?: Iterable<string>,
+ *   services?: BuildingPlacement[],
+ *   residentials?: BuildingPlacement[],
+ *   cpSatTelemetry?: Record<string, unknown>
+ * }} MockSolutionOptions
+ */
+
+/**
+ * @param {MockSolutionOptions} [options]
+ */
 function buildMockSolution({
   optimizer = "greedy",
   totalPopulation = 0,

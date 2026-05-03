@@ -3,13 +3,17 @@ const childProcess = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
 
+/**
+ * @param {string} [repoRoot]
+ * @returns {string | null}
+ */
 function resolveCpSatPython(repoRoot = path.resolve(__dirname, "../..")) {
   const venvPython = path.resolve(repoRoot, ".venv-cp-sat/bin/python");
   const candidates = [
     fs.existsSync(venvPython) ? venvPython : null,
     process.env.CITY_BUILDER_CP_SAT_PYTHON || null,
     "python3"
-  ].filter(Boolean);
+  ].flatMap((candidate) => (typeof candidate === "string" && candidate.length > 0 ? [candidate] : []));
 
   for (const pythonExecutable of candidates) {
     const importCheck = childProcess.spawnSync(pythonExecutable, ["-c", "import ortools"], {
@@ -24,10 +28,19 @@ function resolveCpSatPython(repoRoot = path.resolve(__dirname, "../..")) {
   return null;
 }
 
+/**
+ * @param {number} ms
+ * @returns {Promise<void>}
+ */
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/**
+ * @param {string} filePath
+ * @param {number} [timeoutMs]
+ * @returns {Promise<void>}
+ */
 async function waitForFile(filePath, timeoutMs = 1000) {
   const startedAt = Date.now();
   while (Date.now() - startedAt < timeoutMs) {
@@ -37,6 +50,10 @@ async function waitForFile(filePath, timeoutMs = 1000) {
   assert.fail(`Timed out waiting for ${filePath}.`);
 }
 
+/**
+ * @param {string} filePath
+ * @returns {string}
+ */
 function readFileIfPresent(filePath) {
   try {
     return fs.readFileSync(filePath, "utf8");
@@ -45,6 +62,11 @@ function readFileIfPresent(filePath) {
   }
 }
 
+/**
+ * @param {string} heartbeatPath
+ * @param {number} [timeoutMs]
+ * @returns {Promise<void>}
+ */
 async function waitForHeartbeatToStop(heartbeatPath, timeoutMs = 1500) {
   const startedAt = Date.now();
   let previousHeartbeat = readFileIfPresent(heartbeatPath);

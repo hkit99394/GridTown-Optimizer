@@ -183,11 +183,32 @@ The example CP-SAT command is bounded for local use: by default it runs with a 3
 npm test
 ```
 
+## Quality Gates
+
+The default test gate includes the TypeScript build, Prettier formatting check, ESLint for browser/test JavaScript, code-hygiene checks, file-size budget checks, route/API tests, and optimizer regression suites:
+
+```bash
+npm test
+```
+
+For the broader release-quality gate, run:
+
+```bash
+npm run quality
+```
+
+That adds the experiment registry check and a high-severity npm dependency audit. The audit contacts the npm registry.
+
 ## CLI Commands
 
 Available scripts from [package.json](./package.json):
 
 - `npm run build`
+- `npm run format`
+- `npm run format:check`
+- `npm run lint`
+- `npm run quality`
+- `npm run security:audit`
 - `npm run web`
 - `npm run solve`
 - `npm run solve:auto`

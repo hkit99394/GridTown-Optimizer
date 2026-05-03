@@ -1,6 +1,84 @@
+/**
+ * @param {Window & { CityBuilderRequestBuilder?: unknown, CityBuilderShared?: { CP_SAT_PORTFOLIO_CAPABILITY_LIMITS?: Record<string, number> }, crypto?: Crypto }} globalObject
+ */
 (function attachPlannerRequestBuilder(globalObject) {
+  /**
+   * @typedef {Record<string, any>} JsonObject
+   * @typedef {"auto" | "greedy" | "cp-sat" | "lns"} OptimizerName
+   */
+
+  /**
+   * @typedef {object} RequestBuilderState
+   * @property {OptimizerName | string} optimizer
+   * @property {number[][]} grid
+   * @property {JsonObject[]} serviceTypes
+   * @property {JsonObject[]} residentialTypes
+   * @property {JsonObject} availableBuildings
+   * @property {JsonObject} greedy
+   * @property {JsonObject} cpSat
+   * @property {JsonObject} lns
+   * @property {JsonObject | null | undefined} auto
+   * @property {JsonObject | null | undefined} result
+   * @property {JsonObject | null | undefined} resultContext
+   * @property {number} resultElapsedMs
+   */
+
+  /**
+   * @typedef {object} RequestBuilderHelpers
+   * @property {(request: JsonObject) => JsonObject} buildCpSatContinuationModelInput
+   * @property {(result: JsonObject, resultContext: JsonObject, elapsedMs: number) => JsonObject} buildCpSatWarmStartCheckpoint
+   * @property {(value: any, fallback: number, min?: number) => number} clampInteger
+   * @property {(grid: number[][]) => number[][]} cloneGrid
+   * @property {<T>(value: T) => T} cloneJson
+   * @property {(modelInput: JsonObject) => string} computeCpSatModelFingerprint
+   * @property {(entry: JsonObject) => number} getSavedLayoutElapsedMs
+   * @property {(value: any, min?: number) => number | undefined} readOptionalInteger
+   * @property {(entry: JsonObject, index: number) => JsonObject} parseResidentialCatalogEntry
+   * @property {(entry: JsonObject, index: number) => JsonObject} parseServiceCatalogEntry
+   */
+
+  /**
+   * @typedef {object} RequestBuilderOptions
+   * @property {RequestBuilderState} state
+   * @property {JsonObject} elements
+   * @property {RequestBuilderHelpers} helpers
+   */
+
+  /**
+   * @typedef {object} ContinuationStatusOptions
+   * @property {{ textContent: string } | null | undefined} element
+   * @property {boolean} enabled
+   * @property {string} disabledMessage
+   * @property {string} missingMessage
+   * @property {OptimizerName} activeOptimizer
+   * @property {string} defaultLabel
+   * @property {string} readyLabel
+   * @property {string} mismatchLabel
+   * @property {SolveRequestOptions} previewRequestOptions
+   */
+
+  /**
+   * @typedef {object} ContinuationPayloadOptions
+   * @property {OptimizerName} optimizer
+   * @property {boolean} enabled
+   * @property {"error" | "ignore"} hintMismatch
+   * @property {string} mismatchMessage
+   */
+
+  /**
+   * @typedef {object} SolveRequestOptions
+   * @property {"error" | "ignore"} [hintMismatch]
+   * @property {boolean} [includeWarmStartHint]
+   * @property {boolean} [includeLnsSeed]
+   */
+
+  const requestBuilderGlobal =
+    /** @type {Window & { CityBuilderRequestBuilder?: unknown, CityBuilderShared?: { CP_SAT_PORTFOLIO_CAPABILITY_LIMITS?: Record<string, number> }, crypto?: Crypto }} */ (
+      globalObject
+    );
+
   const CP_SAT_PORTFOLIO_CAPABILITY_LIMITS =
-    globalObject.CityBuilderShared?.CP_SAT_PORTFOLIO_CAPABILITY_LIMITS ??
+    requestBuilderGlobal.CityBuilderShared?.CP_SAT_PORTFOLIO_CAPABILITY_LIMITS ??
     Object.freeze({
       defaultWorkers: 3,
       defaultPerWorkerTimeLimitSeconds: 30,
@@ -16,6 +94,9 @@
   const CP_SAT_PORTFOLIO_MAX_PER_WORKER_THREADS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxPerWorkerThreads;
   const CP_SAT_PORTFOLIO_MAX_TOTAL_CPU_SECONDS = CP_SAT_PORTFOLIO_CAPABILITY_LIMITS.maxTotalCpuBudgetSeconds;
 
+  /**
+   * @param {RequestBuilderOptions} options
+   */
   function createPlannerRequestBuilderController(options) {
     const { state, elements, helpers } = options;
     const {
@@ -53,13 +134,23 @@
       return generatedSeed;
     }
 
+    /**
+     * @param {unknown} error
+     * @returns {string}
+     */
     function getCheckpointBuildErrorMessage(error) {
-      if (error && typeof error === "object" && typeof error.message === "string") {
-        return error.message;
+      if (error && typeof error === "object" && "message" in error && typeof error.message === "string") {
+        return /** @type {{ message: string }} */ (error).message;
       }
       return "The displayed output cannot be reused as a continuation checkpoint.";
     }
 
+    /**
+     * @param {JsonObject | null | undefined} result
+     * @param {JsonObject | null | undefined} resultContext
+     * @param {number} elapsedMs
+     * @returns {{ checkpoint: JsonObject | null, error: string | null }}
+     */
     function tryBuildCheckpoint(result, resultContext, elapsedMs) {
       if (!result?.solution || !resultContext?.grid || !resultContext?.params) {
         return {
@@ -80,6 +171,10 @@
       }
     }
 
+    /**
+     * @param {JsonObject | null | undefined} entry
+     * @returns {JsonObject | null}
+     */
     function getSavedLayoutCheckpoint(entry) {
       if (entry?.result?.validation?.valid !== true) {
         return null;
@@ -115,11 +210,18 @@
       return name || "the displayed output";
     }
 
+    /**
+     * @param {SolveRequestOptions} requestOptions
+     * @returns {string}
+     */
     function buildCurrentModelFingerprint(requestOptions) {
       const previewRequest = buildSolveRequest(requestOptions);
       return computeCpSatModelFingerprint(buildCpSatContinuationModelInput(previewRequest));
     }
 
+    /**
+     * @param {ContinuationStatusOptions} options
+     */
     function renderDisplayedLayoutContinuationStatus(options) {
       const {
         element,
@@ -203,6 +305,12 @@
       });
     }
 
+    /**
+     * @param {number[][]} grid
+     * @param {JsonObject} params
+     * @param {ContinuationPayloadOptions} options
+     * @returns {{ checkpoint: JsonObject, sourceLabel: string, payload: JsonObject } | undefined}
+     */
     function buildDisplayedLayoutContinuationBasePayload(grid, params, options) {
       const { optimizer, enabled, hintMismatch, mismatchMessage } = options;
       if ((params.optimizer !== optimizer && params.optimizer !== "auto") || !enabled) return undefined;
@@ -236,6 +344,12 @@
       };
     }
 
+    /**
+     * @param {number[][]} grid
+     * @param {JsonObject} params
+     * @param {"error" | "ignore"} [hintMismatch]
+     * @returns {JsonObject | undefined}
+     */
     function buildCpSatWarmStartHintPayload(grid, params, hintMismatch = "error") {
       const continuation = buildDisplayedLayoutContinuationBasePayload(grid, params, {
         optimizer: "cp-sat",
@@ -246,6 +360,12 @@
       return continuation?.payload;
     }
 
+    /**
+     * @param {number[][]} grid
+     * @param {JsonObject} params
+     * @param {"error" | "ignore"} [hintMismatch]
+     * @returns {JsonObject | undefined}
+     */
     function buildLnsSeedPayload(grid, params, hintMismatch = "error") {
       const continuation = buildDisplayedLayoutContinuationBasePayload(grid, params, {
         optimizer: "lns",
@@ -261,6 +381,11 @@
       };
     }
 
+    /**
+     * @param {any} value
+     * @param {number} [min]
+     * @returns {number | undefined}
+     */
     function readOptionalFiniteNumber(value, min = 0) {
       if (value === "" || value == null) return undefined;
       const number = Number(value);
@@ -268,11 +393,21 @@
       return Math.max(min, number);
     }
 
+    /**
+     * @param {any} value
+     * @param {number} min
+     * @param {number} max
+     * @returns {number | undefined}
+     */
     function clampOptionalFiniteNumber(value, min, max) {
       const number = readOptionalFiniteNumber(value, min);
       return number === undefined ? undefined : Math.min(max, number);
     }
 
+    /**
+     * @param {OptimizerName} optimizer
+     * @returns {JsonObject}
+     */
     function buildGreedyPayload(optimizer) {
       const randomSeed = optimizer === "auto" ? undefined : readOptionalInteger(state.greedy.randomSeed, 0);
       const timeLimitSeconds =
@@ -319,12 +454,20 @@
       };
     }
 
+    /**
+     * @param {any} optimizer
+     * @returns {OptimizerName}
+     */
     function normalizeRequestOptimizer(optimizer) {
       return optimizer === "auto" || optimizer === "greedy" || optimizer === "cp-sat" || optimizer === "lns"
         ? optimizer
         : "auto";
     }
 
+    /**
+     * @param {any} value
+     * @returns {number[] | undefined}
+     */
     function parseCpSatPortfolioRandomSeeds(value) {
       const seedText = String(value ?? "").trim();
       if (!seedText) return undefined;
@@ -350,6 +493,11 @@
       return seeds;
     }
 
+    /**
+     * @param {OptimizerName} optimizer
+     * @param {number | undefined} outerTimeLimitSeconds
+     * @returns {JsonObject | undefined}
+     */
     function buildCpSatPortfolioPayload(optimizer, outerTimeLimitSeconds) {
       const portfolio = state.cpSat.portfolio ?? {};
       if (optimizer !== "cp-sat" || !portfolio.enabled) return undefined;
@@ -392,6 +540,10 @@
       };
     }
 
+    /**
+     * @param {SolveRequestOptions} [options]
+     * @returns {{ grid: number[][], params: JsonObject }}
+     */
     function buildSolveRequest(options = {}) {
       const { hintMismatch = "error", includeWarmStartHint = true, includeLnsSeed = true } = options;
       const optimizer = normalizeRequestOptimizer(state.optimizer);
@@ -402,6 +554,7 @@
       const defaultNeighborhoodRows = Math.max(1, Math.ceil(state.grid.length / 2));
       const defaultNeighborhoodCols = Math.max(1, Math.ceil((state.grid[0]?.length ?? 1) / 2));
       const grid = cloneGrid(state.grid);
+      /** @type {JsonObject} */
       const params = {
         optimizer,
         serviceTypes: state.serviceTypes.map((entry, index) => parseServiceCatalogEntry(entry, index)),
@@ -488,7 +641,7 @@
     });
   }
 
-  globalObject.CityBuilderRequestBuilder = Object.freeze({
+  requestBuilderGlobal.CityBuilderRequestBuilder = Object.freeze({
     createPlannerRequestBuilderController
   });
 })(window);

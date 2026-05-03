@@ -10,5 +10,10 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "skipLibCheck": true
   },
-  "include": ["apps/planner-web/plannerShell.js"]
+  "include": [
+    "apps/planner-web/plannerExpansion.js",
+    "apps/planner-web/plannerPersistence.js",
+    "apps/planner-web/plannerRequestBuilder.js",
+    "apps/planner-web/plannerShell.js"
+  ]
 }

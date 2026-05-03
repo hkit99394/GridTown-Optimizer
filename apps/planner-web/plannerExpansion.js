@@ -1,4 +1,84 @@
+/**
+ * @param {Window & { CityBuilderExpansion?: unknown }} globalObject
+ */
 (function attachPlannerExpansion(globalObject) {
+  /**
+   * @typedef {Record<string, any>} JsonObject
+   * @typedef {{ textContent: string, hidden?: boolean }} ExpansionElement
+   */
+
+  /**
+   * @typedef {object} ExpansionAdviceState
+   * @property {boolean} isRunning
+   * @property {string} status
+   * @property {JsonObject | null} result
+   * @property {string} error
+   * @property {string} nextServiceText
+   * @property {string} nextResidentialText
+   */
+
+  /**
+   * @typedef {object} ExpansionState
+   * @property {boolean} isSolving
+   * @property {string} optimizer
+   * @property {JsonObject | null} result
+   * @property {JsonObject | null} resultContext
+   * @property {{ useDisplayedHint: boolean }} cpSat
+   * @property {{ useDisplayedSeed: boolean }} lns
+   * @property {JsonObject[]} serviceTypes
+   * @property {JsonObject[]} residentialTypes
+   * @property {ExpansionAdviceState} expansionAdvice
+   */
+
+  /**
+   * @typedef {object} ExpansionElements
+   * @property {ExpansionElement | null | undefined} expansionAdviceStatus
+   * @property {ExpansionElement | null | undefined} expansionAdviceMetrics
+   * @property {ExpansionElement} expansionAdviceWinner
+   * @property {ExpansionElement} expansionAdviceBaseline
+   * @property {ExpansionElement} expansionAdviceServiceOutcome
+   * @property {ExpansionElement} expansionAdviceResidentialOutcome
+   */
+
+  /**
+   * @typedef {object} ExpansionHelpers
+   * @property {(request: JsonObject) => JsonObject} buildCpSatContinuationModelInput
+   * @property {<T>(value: T) => T} cloneJson
+   * @property {(modelInput: JsonObject) => string} computeCpSatModelFingerprint
+   * @property {() => string} createSolveRequestId
+   * @property {(ms: number) => Promise<void>} delay
+   * @property {(entry: JsonObject, typeIndex: number) => JsonObject} parseResidentialCatalogEntry
+   * @property {(entry: JsonObject, typeIndex: number) => JsonObject} parseServiceCatalogEntry
+   */
+
+  /**
+   * @typedef {object} ExpansionCallbacks
+   * @property {(options: JsonObject) => JsonObject} buildSolveRequest
+   * @property {() => JsonObject | null} getDisplayedLayoutCheckpoint
+   * @property {() => string} getDisplayedLayoutSourceLabel
+   * @property {(optimizer: string) => string} getOptimizerLabel
+   * @property {() => void} syncActionAvailability
+   */
+
+  /**
+   * @typedef {object} ExpansionControllerOptions
+   * @property {ExpansionState} state
+   * @property {ExpansionElements} elements
+   * @property {{ COMPARISON_PROGRESS_HINT_INTERVAL_MS: number, SOLVE_STATUS_POLL_INTERVAL_MS: number }} constants
+   * @property {ExpansionHelpers} helpers
+   * @property {ExpansionCallbacks} callbacks
+   */
+
+  /**
+   * @typedef {object} ExpansionScenario
+   * @property {JsonObject} request
+   * @property {string} candidateName
+   * @property {{ totalPopulation: number, serviceCount: number, residentialCount: number }} baseline
+   */
+
+  /**
+   * @param {ExpansionControllerOptions} options
+   */
   function createExpansionAdviceController(options) {
     const { state, elements, constants, helpers, callbacks } = options;
     const { COMPARISON_PROGRESS_HINT_INTERVAL_MS, SOLVE_STATUS_POLL_INTERVAL_MS } = constants;
@@ -26,6 +106,10 @@
       state.expansionAdvice.error = "";
     }
 
+    /**
+     * @param {number | null | undefined} delta
+     * @returns {string}
+     */
     function formatSignedPopulationDelta(delta) {
       const amount = Number(delta ?? 0);
       if (amount > 0) return `+${amount.toLocaleString()}`;
@@ -59,7 +143,7 @@
 
     function buildExpansionBaseRequest() {
       const summary = getDisplayedResultSummary();
-      const request = cloneJson(state.resultContext);
+      const request = /** @type {JsonObject} */ (cloneJson(state.resultContext));
       const plannerSolveRequest = buildSolveRequest({
         hintMismatch: "ignore",
         includeWarmStartHint: false,
@@ -81,11 +165,20 @@
       };
     }
 
+    /**
+     * @param {JsonObject} checkpoint
+     * @param {JsonObject} request
+     * @returns {boolean}
+     */
     function checkpointMatchesComparisonRequest(checkpoint, request) {
       const currentFingerprint = computeCpSatModelFingerprint(buildCpSatContinuationModelInput(request));
       return currentFingerprint === checkpoint.compatibility.modelFingerprint;
     }
 
+    /**
+     * @param {JsonObject} request
+     * @returns {JsonObject | null}
+     */
     function buildComparisonDisplayedLayoutCheckpointPayload(request) {
       const checkpoint = getDisplayedLayoutCheckpoint();
       if (!checkpoint || !checkpointMatchesComparisonRequest(checkpoint, request)) return null;
@@ -100,6 +193,10 @@
       };
     }
 
+    /**
+     * @param {JsonObject} request
+     * @returns {JsonObject}
+     */
     function attachComparisonSeedOrHint(request) {
       if (request.params.optimizer === "cp-sat" && !state.cpSat.useDisplayedHint) {
         return request;
@@ -142,6 +239,10 @@
       return request;
     }
 
+    /**
+     * @param {string} text
+     * @returns {JsonObject}
+     */
     function parseExpansionServiceCandidate(text) {
       const match = String(text ?? "")
         .trim()
@@ -161,6 +262,10 @@
       );
     }
 
+    /**
+     * @param {string} text
+     * @returns {JsonObject}
+     */
     function parseExpansionResidentialCandidate(text) {
       const match = String(text ?? "")
         .trim()
@@ -180,6 +285,10 @@
       );
     }
 
+    /**
+     * @param {"service" | "residential"} kind
+     * @returns {ExpansionScenario}
+     */
     function buildExpansionScenarioRequest(kind) {
       const { request, baseline } = buildExpansionBaseRequest();
       request.params.availableBuildings = {
@@ -206,6 +315,11 @@
       };
     }
 
+    /**
+     * @param {string} candidateName
+     * @param {JsonObject} payload
+     * @returns {string}
+     */
     function buildExpansionProgressMessage(candidateName, payload) {
       const optimizerLabel = getOptimizerLabel(payload?.optimizer || state.optimizer);
       if (typeof payload?.bestTotalPopulation === "number") {
@@ -217,6 +331,11 @@
       return `Testing ${candidateName} with ${optimizerLabel}. Still searching for the first feasible layout.`;
     }
 
+    /**
+     * @param {JsonObject} request
+     * @param {string} candidateName
+     * @returns {Promise<JsonObject>}
+     */
     async function runComparisonSolve(request, candidateName) {
       const requestId = `${createSolveRequestId()}-compare`;
       const startResponse = await fetch("/api/solve/start", {
@@ -373,8 +492,8 @@
         ) {
           detail =
             `Baseline reaches ${baselinePopulation.toLocaleString()}, ${serviceScenario.candidateName} reaches ` +
-            `${servicePopulation.toLocaleString()} (${formatSignedPopulationDelta(serviceDelta)}), ` +
-            `${residentialScenario.candidateName} reaches ${residentialPopulation.toLocaleString()} ` +
+            `${Number(servicePopulation).toLocaleString()} (${formatSignedPopulationDelta(serviceDelta)}), ` +
+            `${residentialScenario.candidateName} reaches ${Number(residentialPopulation).toLocaleString()} ` +
             `(${formatSignedPopulationDelta(residentialDelta)}).`;
 
           if (serviceDelta <= 0 && residentialDelta <= 0) {
@@ -397,9 +516,9 @@
           detail =
             serviceDelta > 0
               ? `${serviceScenario.candidateName} raises the current ${getOptimizerLabel(baselineScenario.request.params.optimizer)} baseline from ` +
-                `${baselinePopulation.toLocaleString()} to ${servicePopulation.toLocaleString()} ` +
+                `${baselinePopulation.toLocaleString()} to ${Number(servicePopulation).toLocaleString()} ` +
                 `(${formatSignedPopulationDelta(serviceDelta)}).`
-              : `${serviceScenario.candidateName} reaches ${servicePopulation.toLocaleString()} ` +
+              : `${serviceScenario.candidateName} reaches ${Number(servicePopulation).toLocaleString()} ` +
                 `(${formatSignedPopulationDelta(serviceDelta)}), so keeping the current layout is still better than the baseline ` +
                 `of ${baselinePopulation.toLocaleString()}.`;
         } else if (residentialScenario && residentialDelta != null) {
@@ -407,9 +526,9 @@
           detail =
             residentialDelta > 0
               ? `${residentialScenario.candidateName} raises the current ${getOptimizerLabel(baselineScenario.request.params.optimizer)} baseline from ` +
-                `${baselinePopulation.toLocaleString()} to ${residentialPopulation.toLocaleString()} ` +
+                `${baselinePopulation.toLocaleString()} to ${Number(residentialPopulation).toLocaleString()} ` +
                 `(${formatSignedPopulationDelta(residentialDelta)}).`
-              : `${residentialScenario.candidateName} reaches ${residentialPopulation.toLocaleString()} ` +
+              : `${residentialScenario.candidateName} reaches ${Number(residentialPopulation).toLocaleString()} ` +
                 `(${formatSignedPopulationDelta(residentialDelta)}), so keeping the current layout is still better than the baseline ` +
                 `of ${baselinePopulation.toLocaleString()}.`;
         }
@@ -444,7 +563,8 @@
     });
   }
 
-  globalObject.CityBuilderExpansion = Object.freeze({
+  const plannerExpansionGlobal = /** @type {Window & { CityBuilderExpansion?: unknown }} */ (globalObject);
+  plannerExpansionGlobal.CityBuilderExpansion = Object.freeze({
     createExpansionAdviceController
   });
 })(window);

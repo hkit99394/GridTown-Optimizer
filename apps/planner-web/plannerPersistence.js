@@ -1,5 +1,63 @@
+/**
+ * @param {Window & { CityBuilderPersistence?: unknown }} globalObject
+ */
 (function attachPlannerPersistence(globalObject) {
+  /**
+   * @typedef {Record<string, any>} JsonObject
+   * @typedef {{ id: string, name: string, savedAt: string, [key: string]: any }} SavedEntry
+   */
+
+  /**
+   * @typedef {object} PersistenceConstants
+   * @property {string} CONFIG_STORAGE_KEY
+   * @property {string} LAYOUT_STORAGE_KEY
+   * @property {JsonObject[]} defaultResidentialTypes
+   * @property {JsonObject[]} defaultServiceTypes
+   * @property {any} sampleGrid
+   */
+
+  /**
+   * @typedef {object} PersistenceHelpers
+   * @property {(result: JsonObject, resultContext: JsonObject, elapsedMs: number) => JsonObject} buildCpSatWarmStartCheckpoint
+   * @property {(grid: any) => any} cloneGrid
+   * @property {<T>(value: T) => T} cloneJson
+   * @property {() => string} createSavedEntryId
+   * @property {(ms: number) => string} formatElapsedTime
+   * @property {(savedAt: string) => string} formatSavedTimestamp
+   * @property {(entry: SavedEntry) => number} getSavedLayoutElapsedMs
+   * @property {(entry: SavedEntry) => number | null} [getSavedLayoutPopulation]
+   * @property {(value: any) => boolean} isGridLike
+   * @property {(value: any) => number} normalizeElapsedMs
+   * @property {(optimizer: any) => string} normalizeOptimizer
+   */
+
+  /**
+   * @typedef {object} PersistenceOptions
+   * @property {JsonObject} state
+   * @property {JsonObject} elements
+   * @property {PersistenceConstants} constants
+   * @property {PersistenceHelpers} helpers
+   * @property {JsonObject} callbacks
+   */
+
+  /**
+   * @param {PersistenceOptions} options
+   */
   function createPlannerPersistence(options) {
+    /**
+     * @param {SavedEntry} entry
+     * @returns {number | null}
+     */
+    function getDefaultSavedLayoutPopulation(entry) {
+      const population = Number(
+        entry?.result?.validation?.recomputedTotalPopulation ??
+          entry?.result?.stats?.totalPopulation ??
+          entry?.result?.solution?.totalPopulation ??
+          entry?.continueCpSat?.incumbent?.objective?.value
+      );
+      return Number.isFinite(population) ? Math.max(0, Math.round(population)) : null;
+    }
+
     const { state, elements, constants, helpers, callbacks } = options;
     const { CONFIG_STORAGE_KEY, LAYOUT_STORAGE_KEY, defaultResidentialTypes, defaultServiceTypes, sampleGrid } =
       constants;
@@ -11,15 +69,7 @@
       formatElapsedTime,
       formatSavedTimestamp,
       getSavedLayoutElapsedMs,
-      getSavedLayoutPopulation = (entry) => {
-        const population = Number(
-          entry?.result?.validation?.recomputedTotalPopulation ??
-            entry?.result?.stats?.totalPopulation ??
-            entry?.result?.solution?.totalPopulation ??
-            entry?.continueCpSat?.incumbent?.objective?.value
-        );
-        return Number.isFinite(population) ? Math.max(0, Math.round(population)) : null;
-      },
+      getSavedLayoutPopulation = getDefaultSavedLayoutPopulation,
       isGridLike,
       normalizeElapsedMs,
       normalizeOptimizer
@@ -35,6 +85,10 @@
       syncPlannerFromState
     } = callbacks;
 
+    /**
+     * @param {string} storageKey
+     * @returns {SavedEntry[]}
+     */
     function readStoredEntries(storageKey) {
       try {
         const raw = globalObject.localStorage.getItem(storageKey);
@@ -46,16 +100,28 @@
       }
     }
 
+    /**
+     * @param {string} storageKey
+     * @param {SavedEntry[]} entries
+     */
     function writeStoredEntries(storageKey, entries) {
       globalObject.localStorage.setItem(storageKey, JSON.stringify(entries));
     }
 
     const PENDING_MANUAL_LAYOUT_ERROR = "Manual edits are pending validation. Use Validate layout when you're ready.";
 
+    /**
+     * @param {JsonObject | null | undefined} result
+     * @returns {boolean}
+     */
     function isManualLayoutResult(result) {
       return Boolean(result?.solution?.manualLayout || result?.stats?.manualLayout);
     }
 
+    /**
+     * @param {JsonObject | null | undefined} result
+     * @returns {boolean}
+     */
     function hasPendingManualLayoutValidation(result) {
       if (!isManualLayoutResult(result) || result?.validation?.valid === true) return false;
       return (
@@ -63,12 +129,19 @@
       );
     }
 
+    /**
+     * @param {SavedEntry} entry
+     * @returns {boolean}
+     */
     function readSavedLayoutPendingValidation(entry) {
       if (entry?.layoutEditorPendingValidation === true) return true;
       if (entry?.layoutEditorPendingValidation === false) return false;
       return hasPendingManualLayoutValidation(entry?.result);
     }
 
+    /**
+     * @param {boolean} pendingValidation
+     */
     function resetLayoutEditorForLoadedResult(pendingValidation) {
       state.selectedMapBuilding = null;
       state.selectedMapCell = null;
@@ -80,6 +153,12 @@
       state.layoutEditor.isApplying = false;
     }
 
+    /**
+     * @param {HTMLSelectElement} selectElement
+     * @param {SavedEntry[]} entries
+     * @param {string} placeholder
+     * @param {((entry: SavedEntry) => string) | null} [labelBuilder]
+     */
     function populateSavedSelect(selectElement, entries, placeholder, labelBuilder = null) {
       selectElement.innerHTML = "";
 
@@ -98,6 +177,9 @@
       });
     }
 
+    /**
+     * @param {string} [selectedId]
+     */
     function refreshSavedConfigOptions(selectedId = "") {
       const entries = readStoredEntries(CONFIG_STORAGE_KEY);
       populateSavedSelect(elements.savedConfigsSelect, entries, "Select a saved input setup");
@@ -106,6 +188,9 @@
       }
     }
 
+    /**
+     * @param {string} [selectedId]
+     */
     function refreshSavedLayoutOptions(selectedId = "") {
       const entries = readStoredEntries(LAYOUT_STORAGE_KEY);
       populateSavedSelect(elements.savedLayoutsSelect, entries, "Select a saved layout", (entry) => {
@@ -119,6 +204,9 @@
       }
     }
 
+    /**
+     * @returns {JsonObject}
+     */
     function getConfigSnapshot() {
       return {
         grid: cloneGrid(state.grid),
@@ -133,6 +221,9 @@
       };
     }
 
+    /**
+     * @param {JsonObject} snapshot
+     */
     function applyConfigSnapshot(snapshot) {
       state.grid = isGridLike(snapshot?.grid) ? cloneGrid(snapshot.grid) : cloneGrid(sampleGrid);
       state.optimizer = normalizeOptimizer(snapshot?.optimizer);
@@ -354,7 +445,8 @@
     };
   }
 
-  globalObject.CityBuilderPersistence = Object.freeze({
+  const plannerPersistenceGlobal = /** @type {Window & { CityBuilderPersistence?: unknown }} */ (globalObject);
+  plannerPersistenceGlobal.CityBuilderPersistence = Object.freeze({
     createPlannerPersistence
   });
 })(window);

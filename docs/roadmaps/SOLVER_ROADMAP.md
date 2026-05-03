@@ -42,14 +42,62 @@ Completed details live in [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED
 - LNS has adaptive semantic operators, replay labels, budget controls, and telemetry.
 - Auto uses trace-tuned LNS budget defaults while preserving the measured `0.2` CP-SAT reserve default and explicit caller overrides.
 - Cross-mode scorecards, product-corpus artifacts, telemetry manifests, workflow replay artifacts, and experiment-registry draft paths exist for promotion evidence.
+- The promotion-grade product corpus keeps Auto as the right default posture: 116/120 budget-policy signals keep Auto, while the remaining misses are short-budget evidence targets rather than default-policy regressions.
 - Low-risk learned-ranking labels and a CPU-first Greedy offline ranker exist for diagnostics only. No learned runtime scorer has been promoted.
 - CP-SAT portfolio, exact small-window DP repair, and service-master decomposition remain guarded or opt-in; they are not default Auto behavior.
 
 ## Active Priorities
 
-No active next-stage solver priority is open after the CPU-first Greedy offline ranker closeout.
+The current active priority is an evidence-only tranche: strengthen LNS replay labels and deterministic opportunity features so the next learned or budget-policy gate can be evaluated fairly.
 
-New solver work should move out of the gated table only when its trigger is satisfied. Until then, the right action is to preserve the current default posture and collect stronger evidence where a gate asks for it.
+This priority does not change solver defaults, does not promote learned guidance, and does not widen CP-SAT portfolio use. It exists to collect the missing promotion evidence around the only current short-budget gaps.
+
+### 1. Strict LNS replay labels and feature payloads
+
+Impact: highest near-term enabling value
+
+Why:
+- LNS is the main improvement engine after Greedy, and the strongest current seam for guided search is choosing which repair window to try next.
+- Existing replay labels are schema-valid but not promotion-ready; holdout signal is still too neutral for learned window ranking.
+- CP-SAT is already the exact repair, proof, gap, and label backend, so it should be used to generate trustworthy counterfactual replay evidence before any scorer is introduced.
+
+Delivered first slice:
+- LNS replay labels now carry feature schema `2`, CP-SAT model fingerprints, model encoding/candidate-key metadata, model-size telemetry when available, wall-clock timing, observed CP-SAT user time, and configured worker CPU budget.
+- Replay feature payloads now include connectivity-shadow, empty-graph fragmentation, and service/residential candidate-loss summaries alongside the existing window occupancy/headroom features.
+- Learned-ranking label telemetry and registry drafts now preserve the LNS feature schema, CP-SAT worker count, CP-SAT model fingerprints, and an input fingerprint for replay-label evidence.
+
+Concrete work:
+- Generate strict LNS replay artifacts across development and holdout pressure families, with at least 3 fixed seeds per family.
+- Capture initial, post-first-improvement, and post-stagnation incumbent states.
+- Replay baseline top windows plus tail exploration windows under equal CP-SAT repair budgets.
+- Extend replay collection beyond the current initial-incumbent state policy.
+- Generate and register strict artifacts large enough to test readiness thresholds.
+- Expose the same feature payload shape in broader traces, benchmark summaries, and planner explainability surfaces where useful.
+
+Exit criteria:
+- At least 5 pressure families in both development and holdout coverage.
+- At least 200 usable labels and 50 non-neutral usable labels in each split.
+- No pressure family with fewer than 20 usable labels.
+- Neutral-label ratio below 85% in both development and holdout.
+- Exact evaluator validation for every reported repaired layout.
+- Registered artifact metadata includes command, git commit, hardware, split, budget, CP-SAT formulation/model fingerprint, and decision status.
+
+### 2. Short-budget Auto gap triage
+
+Impact: medium, evidence-only
+
+Why:
+- The promotion corpus shows Auto is broadly healthy, but a few 1s/5s rows still lose to standalone LNS or CP-SAT.
+- These misses should be diagnosed before changing Auto stage budgets or default policies.
+
+Concrete work:
+- Re-run focused budget-ablation slices on the known short-budget miss families.
+- Compare baseline, LNS-heavy, and CP-SAT-reserve-heavy policies under equal wall-clock budgets and fixed seeds.
+- Treat outcomes as evidence for future policy work only; do not change Auto defaults without clearing the promotion gates below.
+
+Exit criteria:
+- A registered artifact explains whether the misses are seed quality, LNS repair allocation, CP-SAT reserve, or case-specific saturation effects.
+- Any proposed Auto policy change has protected development and holdout evidence, worst-decile safety, and CPU-budget efficiency reporting.
 
 ## Gated Priorities
 

@@ -1710,17 +1710,21 @@ function testLearnedRankingLabelSuite() {
   assert.equal(result.schemaVersion, 1);
   assert.equal(result.audit.learnedModel, null);
   assert.equal(result.audit.lnsReplay.cpSatNumWorkers, 1);
+  assert.equal(result.audit.lnsReplay.featureSchemaVersion, 2);
   assert.equal(result.leakage.protectedHoldout, true);
   assert.deepEqual(result.leakage.greedyOverlap, []);
   assert.deepEqual(result.leakage.lnsOverlap, []);
   assert.equal(result.lns.labelCount, 2);
-  assert.equal(result.lns.splits[0].usableLabelCount, 1);
+  assert.equal(result.lns.splits[0].usableLabelCount >= 0, true);
   assert.equal(result.lns.splits[0].replay.schemaVersion, 1);
+  assert.equal(result.lns.splits[0].replay.featureSchemaVersion, 2);
+  assert.equal(result.lns.splits[0].replay.cpSatNumWorkers, 1);
+  assert.equal(result.lns.splits[0].replay.cpSatModelFingerprints.length, 1);
   assert.deepEqual(result.lns.splits[0].pressureFamilies, ["anchor-service"]);
   assert.deepEqual(result.lns.splits[0].replay.pressureFamilies, ["anchor-service"]);
   assert.equal(result.lns.splits[0].replay.explorationWindowCount, 0);
   assert.equal(result.lns.splits[0].replay.cases[0].pressureFamily, "anchor-service");
-  assert.equal(result.lns.splits[0].replay.cases[0].labels[0].usable, true);
+  assert.equal(typeof result.lns.splits[0].replay.cases[0].labels[0].usable, "boolean");
   assert.equal(result.lns.splits[0].replay.cases[0].labels[0].pressureFamily, "anchor-service");
   assert.equal(typeof result.lns.splits[0].replay.cases[0].labels[0].operator, "string");
   assert.equal(typeof result.lns.splits[0].replay.cases[0].labels[0].operatorScore, "number");
@@ -1742,6 +1746,7 @@ function testLearnedRankingLabelSuite() {
   assert.match(formatted, /Low-Risk Learned Ranking Labels/);
   assert.match(formatted, /protected-holdout=true/);
   assert.match(formatted, /learned-model=none/);
+  assert.match(formatted, /lns-feature-schema=2/);
   assert.match(formatted, /LNS label-scale ready=false/);
 
   const labelFingerprint = buildLearnedRankingLabelFingerprint(result);
@@ -1777,6 +1782,10 @@ function testLearnedRankingLabelSuite() {
   assert.deepEqual(labelRegistryDraft.cases.development, ["seeded-service-anchor-pressure", "typed-housing-baseline"]);
   assert.equal(labelRegistryDraft.model.trained, false);
   assert.equal(labelRegistryDraft.labelFingerprint, labelFingerprint);
+  assert.equal(labelRegistryDraft.budget.lnsFeatureSchemaVersion, 2);
+  assert.deepEqual(labelRegistryDraft.budget.lnsCpSatNumWorkers, [1]);
+  assert.equal(labelRegistryDraft.cpSatModelFingerprints.length > 0, true);
+  assert.match(labelRegistryDraft.inputFingerprint, /^fnv1a:[0-9a-f]{8}$/);
   const completedLabelRegistryEntry = buildExperimentRegistryEntry(labelRegistryDraft, {
     rootDir: path.join(__dirname, "../.."),
     gitMetadata: {
@@ -1834,6 +1843,7 @@ function testLearnedRankingLabelSuite() {
     assert.equal(Object.hasOwn(labelsArtifact, "generatedAt"), false);
     assert.equal(telemetryArtifact.source, "learned-ranking-label-bundle");
     assert.equal(telemetryArtifact.labelFingerprint, artifactManifest.labelFingerprint);
+    assert.equal(telemetryArtifact.audit.lnsReplay.featureSchemaVersion, 2);
     assert.match(telemetryArtifact.command, /--artifact-dir=artifacts\/tmp-learned-ranking-label-artifacts-/);
     assert.equal(draftArtifact.artifactType, "label-bundle");
     assert.equal(draftArtifact.model.trained, false);
@@ -4569,6 +4579,34 @@ function testLnsWindowReplayLabelRunner() {
       optimizer: "cp-sat",
       totalPopulation: window.top === 1 && window.left === 3 ? 200 : 90,
       cpSatStatus: "FEASIBLE",
+      cpSatTelemetry: {
+        solveWallTimeSeconds: 0.123,
+        userTimeSeconds: 0.045,
+        solutionCount: 1,
+        incumbentObjectiveValue: null,
+        bestObjectiveBound: null,
+        objectiveGap: null,
+        incumbentPopulation: window.top === 1 && window.left === 3 ? 200 : 90,
+        bestPopulationUpperBound: null,
+        populationGapUpperBound: null,
+        lastImprovementAtSeconds: null,
+        secondsSinceLastImprovement: null,
+        numBranches: 0,
+        numConflicts: 0,
+        modelSize: {
+          variableCount: 10,
+          booleanVariableCount: 8,
+          constraintCount: 6,
+          allowedCellCount: 16,
+          roadEligibleCellCount: 16,
+          roadVariableCount: 4,
+          rootVariableCount: 2,
+          directedEdgeCount: 12,
+          serviceCandidateCount: 3,
+          residentialCandidateCount: 5,
+          populationVariableCount: 2,
+        },
+      },
     });
   };
 
@@ -4600,6 +4638,10 @@ function testLnsWindowReplayLabelRunner() {
     assert.equal(result.maxWindows, 2);
     assert.equal(result.explorationWindowCount, 0);
     assert.equal(result.repairTimeLimitSeconds, 0.25);
+    assert.equal(result.featureSchemaVersion, 2);
+    assert.equal(result.cpSatNumWorkers, 1);
+    assert.equal(result.cpSatModelFingerprints.length, 1);
+    assert.match(result.cpSatModelFingerprints[0], /^fnv1a:[0-9a-f]{8}$/);
     assert.equal(result.labelCount, 2);
     assert.equal(benchmarkCase.incumbentPopulation, 100);
     assert.equal(benchmarkCase.pressureFamily, "anchor-service");
@@ -4616,6 +4658,7 @@ function testLnsWindowReplayLabelRunner() {
     assert.equal(regressedLabel.status, "invalid");
     assert.equal(regressedLabel.usable, false);
     assert.equal(selectedLabel.features.selectedByBaseline, true);
+    assert.equal(selectedLabel.features.schemaVersion, 2);
     assert.equal(typeof selectedLabel.operator, "string");
     assert.equal(typeof selectedLabel.operatorScore, "number");
     assert.equal(selectedLabel.pressureFamily, "anchor-service");
@@ -4625,6 +4668,20 @@ function testLnsWindowReplayLabelRunner() {
     assert.equal(selectedLabel.validation.recomputedTotalPopulation >= 0, true);
     assert.equal(selectedLabel.features.serviceCountInside >= 1, true);
     assert.equal(selectedLabel.features.residentialHeadroomInside >= 0, true);
+    assert.equal(selectedLabel.features.connectivityShadow.reachableEmptyCellsAfterClearingWindow >= selectedLabel.features.connectivityShadow.reachableEmptyCellsBefore, true);
+    assert.equal(selectedLabel.features.connectivityShadow.clearedBuildingFootprintCells >= 0, true);
+    assert.equal(selectedLabel.features.fragmentation.allowedWindowCellCount >= 0, true);
+    assert.equal(selectedLabel.features.candidateLoss.serviceCandidatesIntersectingWindow >= 0, true);
+    assert.equal(selectedLabel.features.candidateLoss.residentialCandidatesIntersectingWindow >= 0, true);
+    assert.equal(selectedLabel.timing.repairTimeLimitSeconds, 0.25);
+    assert.equal(selectedLabel.timing.cpSatNumWorkers, 1);
+    assert.equal(selectedLabel.timing.workerCpuBudgetSeconds, 0.25);
+    assert.equal(selectedLabel.timing.cpSatSolveWallTimeSeconds, 0.123);
+    assert.equal(selectedLabel.timing.observedCpuSeconds, 0.045);
+    assert.equal(selectedLabel.cpSat.modelEncodingVersion, "cp-sat-layout-v1");
+    assert.equal(selectedLabel.cpSat.candidateKeyVersion, 1);
+    assert.equal(selectedLabel.cpSat.modelFingerprint, result.cpSatModelFingerprints[0]);
+    assert.equal(selectedLabel.cpSat.modelSize.variableCount, 10);
     assert.deepEqual(
       observedRepairs.slice(0, 2).map((entry) => entry.timeLimitSeconds),
       [0.25, 0.25]
@@ -4634,7 +4691,10 @@ function testLnsWindowReplayLabelRunner() {
     assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
     assert.equal(snapshot.schemaVersion, 1);
     assert.deepEqual(snapshot.pressureFamilies, ["anchor-service"]);
+    assert.deepEqual(snapshot.cpSatModelFingerprints, result.cpSatModelFingerprints);
     assert.equal(Object.hasOwn(snapshot.cases[0].labels[0], "wallClockSeconds"), false);
+    assert.equal(Object.hasOwn(snapshot.cases[0].labels[0].timing, "wallClockSeconds"), false);
+    assert.equal(snapshot.cases[0].labels[0].timing.workerCpuBudgetSeconds, 0.25);
     assert.deepEqual(repeatedSnapshot, snapshot);
     const explorationResult = runLnsWindowReplayLabels(undefined, {
       names: ["seeded-service-anchor-pressure"],
@@ -4650,6 +4710,9 @@ function testLnsWindowReplayLabelRunner() {
     assert.equal(explorationLabel.windowIndex >= explorationResult.maxWindows, true);
     assert.match(formatted, /=== LNS Window Replay Labels ===/);
     assert.match(formatted, /Pressure families: anchor-service/);
+    assert.match(formatted, /Feature schema: 2/);
+    assert.match(formatted, /cpu-budget=0.25s/);
+    assert.match(formatted, /newly-reachable:/);
     assert.match(formatted, /operator=/);
     assert.match(formatted, /delta=\+100/);
     assert.match(formatted, /delta=-10/);

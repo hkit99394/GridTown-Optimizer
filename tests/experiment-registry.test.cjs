@@ -295,6 +295,26 @@ function runRegistryCli(args, cwd) {
   });
 }
 
+function testRegistryCliDefaultCheckHidesAcceptedHistoricalWarnings() {
+  const checkResult = runRegistryCli(["check", "--json"], repoRoot);
+  assert.equal(checkResult.status, 0, checkResult.stderr || checkResult.stdout);
+  const payload = JSON.parse(checkResult.stdout);
+  assert.equal(payload.valid, true);
+  assert.equal(payload.errorCount, 0);
+  assert.equal(payload.warningCount, 0);
+
+  const historicalResult = runRegistryCli(["check", "--historical-warnings", "--json"], repoRoot);
+  assert.equal(historicalResult.status, 0, historicalResult.stderr || historicalResult.stdout);
+  const historicalPayload = JSON.parse(historicalResult.stdout);
+  assert.equal(historicalPayload.valid, true);
+  assert.equal(historicalPayload.errorCount, 0);
+  assert.equal(historicalPayload.warningCount, 11);
+  assert.equal(
+    historicalPayload.issues.some((issue) => issue.code === "historical-missing-artifact-commit"),
+    true
+  );
+}
+
 function testRegistryCliCanAppendAndCheckLabelArtifacts() {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "experiment-registry-cli-"));
   fs.writeFileSync(path.join(tempDir, "labels.json"), "{}\n");
@@ -347,6 +367,7 @@ testModelExperimentManifestAndRegistryDraft();
 testAppendHelperAddsCommitCommandBudgetHardwareModelAndDecisionMetadata();
 testCompleteEntryPreservesExplicitNullArtifactCommit();
 testSeedRegistryHistoricalWarningBudget();
+testRegistryCliDefaultCheckHidesAcceptedHistoricalWarnings();
 testRegistryCliCanAppendAndCheckLabelArtifacts();
 
 console.log("Experiment registry tests passed.");

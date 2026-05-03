@@ -33,6 +33,12 @@ Check the seeded registry:
 npm run experiment-registry:check
 ```
 
+Audit accepted historical metadata debt:
+
+```sh
+npm run experiment-registry:check -- --historical-warnings
+```
+
 Append a new entry:
 
 ```sh
@@ -60,4 +66,4 @@ The entry JSON should include the artifact metadata itself:
 }
 ```
 
-`append` fills `indexedAt`, `indexedGitCommit`, `branch`, `artifactGitCommit`, and hardware metadata from the current checkout and runtime unless the entry or flags supply them explicitly. New appends are strict by default: they must include command, split, budget, hardware, model, and decision metadata, plus case coverage and seeds. Existing seeded entries that predate full hardware capture pass the default check; use `--strict` when deciding whether an artifact is promotion-grade.
+`append` fills `indexedAt`, `indexedGitCommit`, `branch`, `artifactGitCommit`, and hardware metadata from the current checkout and runtime unless the entry or flags supply them explicitly. New appends are strict by default: they must include command, split, budget, hardware, model, and decision metadata, plus case coverage and seeds. Existing seeded entries that predate full hardware capture pass the default check without noisy historical warnings; use `--historical-warnings` to audit accepted historical debt, and use `--strict` when deciding whether an artifact is promotion-grade.

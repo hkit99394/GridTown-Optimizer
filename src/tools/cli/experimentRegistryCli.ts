@@ -5,6 +5,7 @@ import path from "node:path";
 import {
   appendExperimentRegistryEntry,
   captureExperimentRegistryHardwareMetadata,
+  checkExperimentRegistryFile,
   completeExperimentRegistryEntry,
   DEFAULT_EXPERIMENT_REGISTRY_PATH,
   ExperimentRegistryValidationError,
@@ -31,6 +32,7 @@ interface ParsedRegistryArgs {
   dryRun: boolean;
   json: boolean;
   strict: boolean;
+  historicalWarnings: boolean;
   validateArtifactPaths: boolean;
   allowHistorical: boolean;
   commands: string[];
@@ -74,6 +76,7 @@ function usage(): string {
     "  --json                         Print machine-readable output.",
     "  --strict                       Enforce promotion-grade metadata on check/validate.",
     "  --strict-metadata              Alias for --strict.",
+    "  --historical-warnings          Include accepted historical metadata warnings on check.",
     "  --allow-historical             Let append use historical completeness rules.",
     "  --no-artifacts                 Skip artifact path existence checks.",
     "  --indexed-at=<date>            Override index date.",
@@ -118,6 +121,7 @@ function parseArgs(argv: string[]): ParsedRegistryArgs {
   let dryRun = false;
   let json = false;
   let strict = false;
+  let historicalWarnings = false;
   let validateArtifactPaths = true;
   let allowHistorical = false;
   const commands: string[] = [];
@@ -248,6 +252,10 @@ function parseArgs(argv: string[]): ParsedRegistryArgs {
       strict = true;
       continue;
     }
+    if (isCliFlag(arg, "--historical-warnings")) {
+      historicalWarnings = true;
+      continue;
+    }
     if (isCliFlag(arg, "--allow-historical")) {
       allowHistorical = true;
       continue;
@@ -269,6 +277,7 @@ function parseArgs(argv: string[]): ParsedRegistryArgs {
     dryRun,
     json,
     strict,
+    historicalWarnings,
     validateArtifactPaths,
     allowHistorical,
     commands,
@@ -438,9 +447,11 @@ export function runExperimentRegistryCli(argv = process.argv.slice(2)): void {
   };
 
   if (args.command === "check") {
-    const result = validateExperimentRegistryFile(args.registryPath, baseOptions);
+    const result = args.historicalWarnings
+      ? validateExperimentRegistryFile(args.registryPath, baseOptions)
+      : checkExperimentRegistryFile(args.registryPath, baseOptions);
     printCheckResult(result.entries, result.issues, args.json);
-    if (result.errorCount > 0) process.exitCode = 1;
+    if (result.issues.some((issue) => issue.severity !== "warning")) process.exitCode = 1;
     return;
   }
 

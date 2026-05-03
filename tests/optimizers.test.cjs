@@ -1,11 +1,11 @@
-const { OPTIMIZER_TEST_GROUP_NAMES, runOptimizerTestGroup } = require("./optimizers/optimizerHarness.cjs");
+const {
+  OPTIMIZER_TEST_GROUP_NAMES,
+  runOptimizerTestGroup,
+  runRequestedOptimizerTestGroups
+} = require("./optimizers/optimizerGroups.cjs");
 
 async function main() {
-  const requestedGroups = process.argv.slice(2);
-  const groupsToRun = requestedGroups.length > 0 ? requestedGroups : OPTIMIZER_TEST_GROUP_NAMES;
-  for (const groupName of groupsToRun) {
-    await runOptimizerTestGroup(groupName);
-  }
+  await runRequestedOptimizerTestGroups();
   console.log("Optimizer backend tests passed.");
 }
 

@@ -131,12 +131,17 @@ function loadPlannerManualLayoutModule() {
   return loadBrowserModule("apps/planner-web/plannerManualLayout.js").PlannerManualLayout;
 }
 
+function loadPlannerResultProgressModule(options = {}) {
+  return loadBrowserModule("apps/planner-web/plannerResultProgress.js", options).PlannerResultProgress;
+}
+
 function loadPlannerResultsModule(options = {}) {
   return loadBrowserModule("apps/planner-web/plannerResults.js", {
     ...options,
     window: {
       PlannerHeatmaps: loadPlannerHeatmapsModule(),
       PlannerManualLayout: loadPlannerManualLayoutModule(),
+      PlannerResultProgress: loadPlannerResultProgressModule(options),
       ...(options.window ?? {})
     }
   }).CityBuilderResults;
@@ -161,6 +166,7 @@ module.exports = {
   createFakeDomElement,
   loadPlannerExpansionModule,
   loadPlannerPersistenceModule,
+  loadPlannerResultProgressModule,
   loadPlannerRequestBuilderModule,
   loadPlannerResultsModule,
   loadPlannerSharedModule,

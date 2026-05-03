@@ -15,6 +15,7 @@ const STATIC_FILES: Record<string, string> = {
   "/plannerExpansion.js": "plannerExpansion.js",
   "/plannerHeatmaps.js": "plannerHeatmaps.js",
   "/plannerManualLayout.js": "plannerManualLayout.js",
+  "/plannerResultProgress.js": "plannerResultProgress.js",
   "/plannerResults.js": "plannerResults.js",
   "/plannerRequestBuilder.js": "plannerRequestBuilder.js",
   "/plannerWorkbench.js": "plannerWorkbench.js",

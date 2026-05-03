@@ -17,6 +17,7 @@
     "apps/planner-web/plannerManualLayout.js",
     "apps/planner-web/plannerPersistence.js",
     "apps/planner-web/plannerRequestBuilder.js",
+    "apps/planner-web/plannerResultProgress.js",
     "apps/planner-web/plannerResults.js",
     "apps/planner-web/plannerShared.js",
     "apps/planner-web/plannerSolveRuntime.js",

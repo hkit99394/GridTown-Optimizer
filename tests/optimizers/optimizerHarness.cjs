@@ -9433,44 +9433,11 @@ async function runBenchmarksOptimizerTests() {
   await maybeTestCpSatBenchmarkSuite();
 }
 
-const OPTIMIZER_TEST_GROUPS = {
-  core: runCoreOptimizerTests,
-  greedy: runGreedyOptimizerTests,
-  cpSat: runCpSatOptimizerTests,
-  auto: runAutoOptimizerTests,
-  lns: runLnsOptimizerTests,
-  benchmarks: runBenchmarksOptimizerTests
-};
-
-const OPTIMIZER_TEST_GROUP_NAMES = Object.freeze(Object.keys(OPTIMIZER_TEST_GROUPS));
-
-async function runOptimizerTestGroup(groupName) {
-  const runner = OPTIMIZER_TEST_GROUPS[groupName];
-  if (!runner) {
-    throw new Error(
-      `Unknown optimizer test group: ${groupName}. Expected one of: ${OPTIMIZER_TEST_GROUP_NAMES.join(", ")}.`
-    );
-  }
-  await runner();
-}
-
-async function main() {
-  const requestedGroups = process.argv.slice(2);
-  const groupsToRun = requestedGroups.length > 0 ? requestedGroups : OPTIMIZER_TEST_GROUP_NAMES;
-  for (const groupName of groupsToRun) {
-    await runOptimizerTestGroup(groupName);
-  }
-  console.log("Optimizer backend tests passed.");
-}
-
-if (require.main === module) {
-  main().catch((error) => {
-    console.error(error);
-    process.exitCode = 1;
-  });
-}
-
 module.exports = {
-  OPTIMIZER_TEST_GROUP_NAMES,
-  runOptimizerTestGroup
+  runAutoOptimizerTests,
+  runBenchmarksOptimizerTests,
+  runCoreOptimizerTests,
+  runCpSatOptimizerTests,
+  runGreedyOptimizerTests,
+  runLnsOptimizerTests
 };

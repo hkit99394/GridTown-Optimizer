@@ -70,6 +70,7 @@ Delivered so far:
 - Replay state policies are now explicit. Default label generation still uses `initial-incumbent`, while strict runs can request `initial-incumbent`, `post-first-improvement`, and `post-stagnation` with bounded state-collection iterations and a separate CP-SAT repair budget.
 - `lnsBenchmarkCli` and `learnedRankingLabelCli` expose the state-policy and state-collection knobs, and label telemetry/snapshots carry requested and captured state policies.
 - Learned-ranking label generation now has a `strict-lns-replay` preset that records the preset in audit/registry metadata and applies the strict three-state replay policy with the standard three fixed seeds unless the caller explicitly overrides them.
+- LNS replay-label readiness now reports required, captured, and missing replay state policies; the strict preset enables the three-state coverage gate so artifact readiness fails clearly if a requested state is absent.
 
 Concrete work:
 

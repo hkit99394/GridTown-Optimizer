@@ -22,6 +22,7 @@ const {
   DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS,
   DEFAULT_LEARNED_RANKING_LABEL_SPLITS,
   STRICT_LNS_REPLAY_LABEL_PRESET,
+  STRICT_LNS_REPLAY_LABEL_SCALE_THRESHOLDS,
   STRICT_LNS_REPLAY_LABEL_SEEDS,
   STRICT_LNS_REPLAY_LABEL_STATE_POLICIES,
   DEFAULT_LNS_REPLAY_LABEL_CASE_NAMES,
@@ -1867,6 +1868,9 @@ function testLearnedRankingLabelSuite() {
     result.lns.scaleReadiness.thresholds.minPressureFamilies,
     DEFAULT_LNS_REPLAY_LABEL_SCALE_THRESHOLDS.minPressureFamilies
   );
+  assert.deepEqual(result.lns.scaleReadiness.thresholds.requiredStatePolicies, []);
+  assert.deepEqual(result.lns.scaleReadiness.splitReadiness[0].capturedStatePolicies, ["initial-incumbent"]);
+  assert.deepEqual(result.lns.scaleReadiness.splitReadiness[0].missingStatePolicies, []);
   assert.equal(result.lns.scaleReadiness.splitReadiness[0].failedReasons.length > 0, true);
   assert.equal(
     buildLnsReplayLabelScaleReadiness(result.lns.splits, {
@@ -1901,6 +1905,9 @@ function testLearnedRankingLabelSuite() {
     lnsStateCollectionIterations: 2
   });
   assert.deepEqual(STRICT_LNS_REPLAY_LABEL_SEEDS, DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS);
+  assert.deepEqual(STRICT_LNS_REPLAY_LABEL_SCALE_THRESHOLDS.requiredStatePolicies, [
+    ...STRICT_LNS_REPLAY_LABEL_STATE_POLICIES
+  ]);
   assert.equal(strictPresetResult.audit.lnsReplay.preset, STRICT_LNS_REPLAY_LABEL_PRESET);
   assert.deepEqual(strictPresetResult.audit.lnsReplay.incumbentStatePolicies, [
     ...STRICT_LNS_REPLAY_LABEL_STATE_POLICIES
@@ -1908,6 +1915,13 @@ function testLearnedRankingLabelSuite() {
   assert.deepEqual(strictPresetResult.lns.splits[0].replay.statePolicies, [
     ...STRICT_LNS_REPLAY_LABEL_STATE_POLICIES
   ]);
+  assert.deepEqual(strictPresetResult.lns.scaleReadiness.thresholds.requiredStatePolicies, [
+    ...STRICT_LNS_REPLAY_LABEL_STATE_POLICIES
+  ]);
+  assert.equal(
+    strictPresetResult.lns.scaleReadiness.splitReadiness[0].capturedStatePolicies.includes("initial-incumbent"),
+    true
+  );
   assert.equal(strictPresetResult.audit.lnsReplay.stateCollectionIterations, 2);
 
   const labelFingerprint = buildLearnedRankingLabelFingerprint(result);

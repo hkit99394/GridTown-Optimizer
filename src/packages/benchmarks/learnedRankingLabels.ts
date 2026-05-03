@@ -17,7 +17,10 @@ import {
   sumBenchmarkBy,
   uniqueBenchmarkValues
 } from "./benchmarkOptions.js";
-import { buildLnsReplayLabelScaleReadiness } from "./lnsReplayLabelReadiness.js";
+import {
+  DEFAULT_LNS_REPLAY_LABEL_SCALE_THRESHOLDS,
+  buildLnsReplayLabelScaleReadiness
+} from "./lnsReplayLabelReadiness.js";
 import { DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS } from "./deterministicAblationGates.js";
 import { runGreedyBenchmarkSuite } from "./greedy.js";
 import { hashString, stableStringify } from "../core/cpSatContinuation.js";
@@ -92,6 +95,10 @@ export const STRICT_LNS_REPLAY_LABEL_STATE_POLICIES: readonly LnsWindowReplaySta
   "post-stagnation"
 ]);
 export const STRICT_LNS_REPLAY_LABEL_STATE_COLLECTION_ITERATIONS = 4;
+export const STRICT_LNS_REPLAY_LABEL_SCALE_THRESHOLDS = Object.freeze({
+  ...DEFAULT_LNS_REPLAY_LABEL_SCALE_THRESHOLDS,
+  requiredStatePolicies: STRICT_LNS_REPLAY_LABEL_STATE_POLICIES
+});
 
 function normalizeLearnedRankingLabelRunPreset(
   preset: LearnedRankingLabelRunPreset | undefined
@@ -424,6 +431,7 @@ export function runLearnedRankingLabelSuite(
   );
   const greedySplits: GreedyOrderingLabelSplitResult[] = [];
   const lnsSplits: LnsReplayLabelSplitResult[] = [];
+  const lnsScaleThresholds = strictPreset ? STRICT_LNS_REPLAY_LABEL_SCALE_THRESHOLDS : undefined;
 
   for (const config of splitConfigs) {
     const greedyLabels = seeds.flatMap((seed) => {
@@ -513,7 +521,7 @@ export function runLearnedRankingLabelSuite(
     },
     lns: {
       labelCount: sumBenchmarkBy(lnsSplits, (split) => split.labelCount),
-      scaleReadiness: buildLnsReplayLabelScaleReadiness(lnsSplits),
+      scaleReadiness: buildLnsReplayLabelScaleReadiness(lnsSplits, lnsScaleThresholds),
       splits: lnsSplits
     },
     leakage

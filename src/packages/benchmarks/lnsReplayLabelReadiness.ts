@@ -6,6 +6,8 @@ import {
   uniqueBenchmarkValuesBy
 } from "./benchmarkOptions.js";
 
+import type { LnsWindowReplayStatePolicy } from "./lnsWindowReplayLabels.js";
+
 type LnsReplayLabelReadinessPressureFamilyLabel =
   | "baseline"
   | "corridor"
@@ -24,6 +26,7 @@ interface LnsReplayLabelReadinessCase {
   name: string;
   pressureFamily: LnsReplayLabelReadinessPressureFamilyLabel;
   seed: number | null;
+  statePolicy?: LnsWindowReplayStatePolicy;
   labels: readonly LnsReplayLabelReadinessLabel[];
 }
 
@@ -38,6 +41,7 @@ export interface LnsReplayLabelScaleThresholds {
   minNonNeutralLabelsPerSplit: number;
   minUsableLabelsPerFamily: number;
   maxNeutralLabelRatio: number;
+  requiredStatePolicies?: readonly LnsWindowReplayStatePolicy[];
 }
 
 export interface LnsReplayLabelFamilyScaleSummary {
@@ -61,6 +65,9 @@ export interface LnsReplayLabelSplitScaleReadiness<Split extends string = string
   split: Split;
   pressureFamilyCount: number;
   seedCount: number;
+  requiredStatePolicies: LnsWindowReplayStatePolicy[];
+  capturedStatePolicies: LnsWindowReplayStatePolicy[];
+  missingStatePolicies: LnsWindowReplayStatePolicy[];
   usableLabelCount: number;
   nonNeutralUsableLabelCount: number;
   neutralUsableLabelCount: number;
@@ -82,7 +89,8 @@ export const DEFAULT_LNS_REPLAY_LABEL_SCALE_THRESHOLDS: Readonly<LnsReplayLabelS
   minUsableLabelsPerSplit: 200,
   minNonNeutralLabelsPerSplit: 50,
   minUsableLabelsPerFamily: 20,
-  maxNeutralLabelRatio: 0.85
+  maxNeutralLabelRatio: 0.85,
+  requiredStatePolicies: Object.freeze([])
 });
 
 function lnsLabelIsNonNeutral(label: LnsReplayLabelReadinessLabel): boolean {
@@ -129,6 +137,14 @@ function buildLnsReplayLabelSplitScaleReadiness<Split extends string>(
   const nonNeutralUsableLabelCount = sumBenchmarkBy(families, (family) => family.nonNeutralUsableLabelCount);
   const neutralUsableLabelCount = sumBenchmarkBy(families, (family) => family.neutralUsableLabelCount);
   const neutralLabelRatio = usableLabelCount === 0 ? 1 : neutralUsableLabelCount / usableLabelCount;
+  const requiredStatePolicies = [...(thresholds.requiredStatePolicies ?? [])];
+  const capturedStatePolicies = uniqueBenchmarkValues(
+    split.replay.cases
+      .map((benchmarkCase) => benchmarkCase.statePolicy)
+      .filter((statePolicy): statePolicy is LnsWindowReplayStatePolicy => statePolicy !== undefined)
+  ) as LnsWindowReplayStatePolicy[];
+  const capturedStatePolicySet = new Set(capturedStatePolicies);
+  const missingStatePolicies = requiredStatePolicies.filter((statePolicy) => !capturedStatePolicySet.has(statePolicy));
   const failedReasons: string[] = [];
 
   if (families.length < thresholds.minPressureFamilies) {
@@ -142,6 +158,9 @@ function buildLnsReplayLabelSplitScaleReadiness<Split extends string>(
   }
   if (neutralLabelRatio > thresholds.maxNeutralLabelRatio) {
     failedReasons.push(`neutral-ratio ${neutralLabelRatio.toFixed(3)}/${thresholds.maxNeutralLabelRatio}`);
+  }
+  if (missingStatePolicies.length > 0) {
+    failedReasons.push(`state-policies missing:${missingStatePolicies.join(",")}`);
   }
   for (const family of families) {
     if (family.seeds.length < thresholds.minSeedsPerFamily) {
@@ -158,6 +177,9 @@ function buildLnsReplayLabelSplitScaleReadiness<Split extends string>(
     split: split.split,
     pressureFamilyCount: families.length,
     seedCount: split.seeds.length,
+    requiredStatePolicies,
+    capturedStatePolicies,
+    missingStatePolicies,
     usableLabelCount,
     nonNeutralUsableLabelCount,
     neutralUsableLabelCount,
@@ -174,7 +196,10 @@ export function buildLnsReplayLabelScaleReadiness<Split extends string>(
 ): LnsReplayLabelScaleReadiness<Split> {
   const splitReadiness = splits.map((split) => buildLnsReplayLabelSplitScaleReadiness(split, thresholds));
   return {
-    thresholds: { ...thresholds },
+    thresholds: {
+      ...thresholds,
+      requiredStatePolicies: [...(thresholds.requiredStatePolicies ?? [])]
+    },
     passed: splitReadiness.length > 0 && splitReadiness.every((split) => split.passed),
     splitReadiness
   };

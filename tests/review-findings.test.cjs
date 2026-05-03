@@ -540,11 +540,7 @@ function testPlannerBuildSolveRequestEnablesGreedyDiagnosticsOnlyForStandaloneGr
 
   state.optimizer = "auto";
   const autoRequest = controller.buildSolveRequest({ includeWarmStartHint: false, includeLnsSeed: false });
-  assert.equal(autoRequest.params.greedy.diagnostics, false);
-  assert.equal(autoRequest.params.greedy.profile, false);
-  assert.equal(autoRequest.params.greedy.timeLimitSeconds, undefined);
-  assert.equal(autoRequest.params.greedy.densityTieBreaker, false);
-  assert.equal(autoRequest.params.greedy.densityTieBreakerTolerancePercent, undefined);
+  assert.equal(autoRequest.params.greedy, undefined);
 
   state.optimizer = "cp-sat";
   const cpSatRequest = controller.buildSolveRequest({ includeWarmStartHint: false });
@@ -1073,6 +1069,13 @@ function testPlannerAutoMarksIgnoredSeedControlsUnavailable() {
       updatePayloadPreview() {},
     },
   });
+
+  controller.setOptimizer("auto");
+
+  assert.equal(elements.autoPanel.hidden, false);
+  assert.equal(elements.greedyPanel.hidden, true);
+  assert.equal(elements.lnsPanel.hidden, true);
+  assert.equal(elements.cpSatPanel.hidden, true);
 
   controller.syncSolverFields();
 
@@ -3388,6 +3391,12 @@ function testPlannerRequestBuilderIncludesHintAndSeedForAuto() {
   assert.equal(request.params.optimizer, "auto");
   assert.ok(request.params.cpSat.warmStartHint);
   assert.ok(request.params.lns.seedHint);
+
+  state.availableBuildings.residentials = "2";
+  const staleAutoRequest = controller.buildSolveRequest();
+  assert.equal(staleAutoRequest.params.optimizer, "auto");
+  assert.equal(staleAutoRequest.params.cpSat, undefined);
+  assert.equal(staleAutoRequest.params.lns, undefined);
 }
 
 async function testPlannerExpansionOmitsStaleComparisonHint() {
@@ -3619,7 +3628,7 @@ function testPlannerRequestBuilderTreatsBlankAutoCapAsUnlimited() {
   assert.equal(cappedRequest.params.auto.wallClockLimitSeconds, 90);
 }
 
-function testPlannerRequestBuilderUsesBoundedGreedyProfileForAuto() {
+function testPlannerRequestBuilderKeepsAutoPayloadMinimal() {
   const plannerShared = loadPlannerSharedModule();
   const plannerRequestBuilder = loadPlannerRequestBuilderModule();
   const state = {
@@ -3699,25 +3708,24 @@ function testPlannerRequestBuilderUsesBoundedGreedyProfileForAuto() {
   });
 
   const request = controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false });
-  assert.equal(request.params.greedy.localSearch, true);
-  assert.equal(request.params.greedy.randomSeed, undefined);
-  assert.equal(request.params.greedy.timeLimitSeconds, undefined);
-  assert.equal(request.params.greedy.profile, false);
-  assert.equal(request.params.greedy.densityTieBreaker, false);
-  assert.equal(request.params.greedy.densityTieBreakerTolerancePercent, undefined);
-  assert.equal(request.params.cpSat.randomSeed, undefined);
-  assert.equal(request.params.greedy.restarts, 4);
-  assert.equal(request.params.greedy.serviceRefineIterations, 1);
-  assert.equal(request.params.greedy.serviceRefineCandidateLimit, 24);
-  assert.equal(request.params.greedy.exhaustiveServiceSearch, false);
-  assert.equal(request.params.greedy.serviceExactPoolLimit, 8);
-  assert.equal(request.params.greedy.serviceExactMaxCombinations, 512);
+  assert.equal(request.params.optimizer, "auto");
+  assert.equal(request.params.greedy, undefined);
+  assert.equal(request.params.cpSat, undefined);
+  assert.equal(request.params.lns, undefined);
 
   state.optimizer = "legacy-or-missing";
   const normalizedRequest = controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false });
   assert.equal(normalizedRequest.params.optimizer, "auto");
-  assert.equal(normalizedRequest.params.greedy.restarts, 4);
-  assert.equal(normalizedRequest.params.greedy.exhaustiveServiceSearch, false);
+  assert.equal(normalizedRequest.params.greedy, undefined);
+  assert.equal(normalizedRequest.params.cpSat, undefined);
+  assert.equal(normalizedRequest.params.lns, undefined);
+
+  state.optimizer = "greedy";
+  const greedyRequest = controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false });
+  assert.equal(greedyRequest.params.greedy.localSearch, true);
+  assert.equal(greedyRequest.params.greedy.randomSeed, 17);
+  assert.equal(greedyRequest.params.greedy.densityTieBreaker, true);
+  assert.equal(greedyRequest.params.greedy.serviceExactMaxCombinations, 12000);
 }
 
 function testPlannerRequestBuilderKeepsPortfolioStandaloneOnly() {
@@ -3803,7 +3811,7 @@ function testPlannerRequestBuilderKeepsPortfolioStandaloneOnly() {
   });
 
   const autoRequest = controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false });
-  assert.equal(autoRequest.params.cpSat.portfolio, undefined);
+  assert.equal(autoRequest.params.cpSat, undefined);
 
   state.optimizer = "lns";
   const lnsRequest = controller.buildSolveRequest({ hintMismatch: "ignore", includeWarmStartHint: false, includeLnsSeed: false });
@@ -4174,7 +4182,7 @@ async function main() {
   testPlannerRequestBuilderIncludesHintAndSeedForAuto();
   await testPlannerExpansionOmitsStaleComparisonHint();
   testPlannerRequestBuilderTreatsBlankAutoCapAsUnlimited();
-  testPlannerRequestBuilderUsesBoundedGreedyProfileForAuto();
+  testPlannerRequestBuilderKeepsAutoPayloadMinimal();
   testPlannerRequestBuilderKeepsPortfolioStandaloneOnly();
   testPlannerSolveProgressLogCapturesSnapshotAndFinalResult();
   testPlannerSolveProgressLogPrefersBackendProgressEntry();

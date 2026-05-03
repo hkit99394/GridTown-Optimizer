@@ -218,7 +218,7 @@
       const sourceLabel = getDisplayedLayoutSourceLabel();
       const currentFingerprint = computeCpSatModelFingerprint(buildCpSatContinuationModelInput({ grid, params }));
       if (currentFingerprint !== checkpoint.compatibility.modelFingerprint) {
-        if (hintMismatch === "error") {
+        if (hintMismatch === "error" && params.optimizer !== "auto") {
           throw new Error(`${sourceLabel} no longer matches the current grid or building settings. ${mismatchMessage}`);
         }
         return undefined;
@@ -406,21 +406,6 @@
         optimizer,
         serviceTypes: state.serviceTypes.map((entry, index) => parseServiceCatalogEntry(entry, index)),
         residentialTypes: state.residentialTypes.map((entry, index) => parseResidentialCatalogEntry(entry, index)),
-        greedy: buildGreedyPayload(optimizer),
-        cpSat: {
-          numWorkers: clampInteger(state.cpSat.numWorkers, 8, 1),
-          logSearchProgress: Boolean(state.cpSat.logSearchProgress),
-          ...(optimizer !== "auto" && cpSatRandomSeed !== undefined ? { randomSeed: cpSatRandomSeed } : {}),
-          ...(timeLimitSeconds !== undefined ? { timeLimitSeconds } : {}),
-          ...(noImprovementTimeoutSeconds !== undefined ? { noImprovementTimeoutSeconds } : {}),
-        },
-        lns: {
-          iterations: clampInteger(state.lns.iterations, 12, 1),
-          maxNoImprovementIterations: clampInteger(state.lns.maxNoImprovementIterations, 4, 1),
-          neighborhoodRows: clampInteger(state.lns.neighborhoodRows, defaultNeighborhoodRows, 1),
-          neighborhoodCols: clampInteger(state.lns.neighborhoodCols, defaultNeighborhoodCols, 1),
-          repairTimeLimitSeconds: clampInteger(state.lns.repairTimeLimitSeconds, 5, 1),
-        },
         ...(autoWallClockLimitSeconds !== undefined
           ? {
               auto: {
@@ -429,6 +414,23 @@
             }
           : {}),
       };
+      if (optimizer !== "auto") {
+        params.greedy = buildGreedyPayload(optimizer);
+        params.cpSat = {
+          numWorkers: clampInteger(state.cpSat.numWorkers, 8, 1),
+          logSearchProgress: Boolean(state.cpSat.logSearchProgress),
+          ...(cpSatRandomSeed !== undefined ? { randomSeed: cpSatRandomSeed } : {}),
+          ...(timeLimitSeconds !== undefined ? { timeLimitSeconds } : {}),
+          ...(noImprovementTimeoutSeconds !== undefined ? { noImprovementTimeoutSeconds } : {}),
+        };
+        params.lns = {
+          iterations: clampInteger(state.lns.iterations, 12, 1),
+          maxNoImprovementIterations: clampInteger(state.lns.maxNoImprovementIterations, 4, 1),
+          neighborhoodRows: clampInteger(state.lns.neighborhoodRows, defaultNeighborhoodRows, 1),
+          neighborhoodCols: clampInteger(state.lns.neighborhoodCols, defaultNeighborhoodCols, 1),
+          repairTimeLimitSeconds: clampInteger(state.lns.repairTimeLimitSeconds, 5, 1),
+        };
+      }
       const cpSatPortfolio = buildCpSatPortfolioPayload(optimizer, timeLimitSeconds);
       if (cpSatPortfolio) {
         params.cpSat.portfolio = cpSatPortfolio;
@@ -445,6 +447,7 @@
       if (includeWarmStartHint && (params.optimizer === "cp-sat" || params.optimizer === "auto")) {
         const warmStartHint = buildCpSatWarmStartHintPayload(grid, params, hintMismatch);
         if (warmStartHint) {
+          params.cpSat ??= {};
           params.cpSat.warmStartHint = warmStartHint;
         }
       }
@@ -452,6 +455,7 @@
       if (includeLnsSeed && (params.optimizer === "lns" || params.optimizer === "auto")) {
         const seedHint = buildLnsSeedPayload(grid, params, hintMismatch);
         if (seedHint) {
+          params.lns ??= {};
           params.lns.seedHint = seedHint;
         }
       }

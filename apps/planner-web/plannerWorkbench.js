@@ -154,18 +154,17 @@
 
     function setOptimizer(optimizer) {
       state.optimizer = normalizeOptimizer(optimizer);
-      const showAutoPanels = state.optimizer === "auto";
       for (const button of elements.solverToggle.querySelectorAll("button")) {
         const isActive = button.dataset.optimizer === state.optimizer;
         button.classList.toggle("active", isActive);
         button.setAttribute("aria-pressed", String(isActive));
       }
       if (elements.autoPanel) {
-        elements.autoPanel.hidden = !showAutoPanels;
+        elements.autoPanel.hidden = state.optimizer !== "auto";
       }
-      elements.greedyPanel.hidden = !showAutoPanels && state.optimizer !== "greedy";
-      elements.lnsPanel.hidden = !showAutoPanels && state.optimizer !== "lns";
-      elements.cpSatPanel.hidden = !showAutoPanels && state.optimizer !== "cp-sat";
+      elements.greedyPanel.hidden = state.optimizer !== "greedy";
+      elements.lnsPanel.hidden = state.optimizer !== "lns";
+      elements.cpSatPanel.hidden = state.optimizer !== "cp-sat";
       syncSolverFields();
       updateSummary();
     }

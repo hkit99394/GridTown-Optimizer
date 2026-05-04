@@ -7,6 +7,7 @@ import {
   captureExperimentRegistryHardwareMetadata,
   createLearnedRankingLabelSnapshot,
   DEFAULT_EXPERIMENT_REGISTRY_PATH,
+  DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS,
   ExperimentRegistryValidationError,
   formatLearnedRankingLabelSuite,
   formatExperimentRegistryIssues,
@@ -50,6 +51,7 @@ interface ParsedLabelArgs {
   lnsStatePolicies?: LnsWindowReplayStatePolicy[];
   lnsStateCollectionIterations?: number;
   lnsStateCollectionRepairTimeLimitSeconds?: number;
+  naturalLnsReplaySeeds: boolean;
   artifactDir?: string;
   labelRunId?: string;
   labelDecision?: string;
@@ -96,6 +98,7 @@ function parseArgs(argv: string[]): ParsedLabelArgs {
   let lnsStatePolicies: LnsWindowReplayStatePolicy[] | undefined;
   let lnsStateCollectionIterations: number | undefined;
   let lnsStateCollectionRepairTimeLimitSeconds: number | undefined;
+  let naturalLnsReplaySeeds = false;
   let artifactDir: string | undefined;
   let labelRunId: string | undefined;
   let labelDecision: string | undefined;
@@ -165,6 +168,10 @@ function parseArgs(argv: string[]): ParsedLabelArgs {
     if (isCliFlag(arg, "--pressure-corpus")) {
       continue;
     }
+    if (isCliFlag(arg, "--natural-lns-replay-seeds", "--natural-replay-seeds", "--no-weak-replay-seeds")) {
+      naturalLnsReplaySeeds = true;
+      continue;
+    }
     if (isCliFlag(arg, "--label-register-dry-run")) {
       labelRegisterDryRun = true;
       continue;
@@ -184,6 +191,7 @@ function parseArgs(argv: string[]): ParsedLabelArgs {
     lnsStatePolicies,
     lnsStateCollectionIterations,
     lnsStateCollectionRepairTimeLimitSeconds,
+    naturalLnsReplaySeeds,
     artifactDir,
     labelRunId,
     labelDecision,
@@ -310,7 +318,8 @@ export function runLearnedRankingLabelCli(): void {
     lnsRollForwardRepairTimeLimitSeconds: args.lnsRollForwardRepairTimeLimitSeconds,
     lnsStatePolicies: args.lnsStatePolicies,
     lnsStateCollectionIterations: args.lnsStateCollectionIterations,
-    lnsStateCollectionRepairTimeLimitSeconds: args.lnsStateCollectionRepairTimeLimitSeconds
+    lnsStateCollectionRepairTimeLimitSeconds: args.lnsStateCollectionRepairTimeLimitSeconds,
+    lnsCorpus: args.naturalLnsReplaySeeds ? DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS : undefined
   });
 
   if (args.artifactDir !== undefined) {

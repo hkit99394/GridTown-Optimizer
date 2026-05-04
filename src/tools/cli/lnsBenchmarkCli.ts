@@ -15,6 +15,7 @@ import {
   createLnsWindowReplaySnapshot,
   DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS,
   DEFAULT_EXPERIMENT_REGISTRY_PATH,
+  DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS,
   DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS,
   ExperimentRegistryValidationError,
   formatDeterministicAblationGateReport,
@@ -73,6 +74,7 @@ interface ParsedBenchmarkArgs {
   json: boolean;
   neighborhoodAblation: boolean;
   windowReplayLabels: boolean;
+  naturalReplaySeeds: boolean;
   windowRankerOnlineAblation: boolean;
   gateReport: boolean;
   list: boolean;
@@ -143,6 +145,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let json = false;
   let neighborhoodAblation = false;
   let windowReplayLabels = false;
+  let naturalReplaySeeds = false;
   let windowRankerOnlineAblation = false;
   let windowRankerThresholdSweep = false;
   let gateReport = false;
@@ -271,6 +274,11 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
       windowReplayLabels = true;
       continue;
     }
+    if (isCliFlag(arg, "--natural-replay-seeds", "--no-weak-replay-seeds")) {
+      windowReplayLabels = true;
+      naturalReplaySeeds = true;
+      continue;
+    }
     if (isCliFlag(arg, "--rotate-variant-run-order")) {
       rotateVariantRunOrder = true;
       continue;
@@ -301,6 +309,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     json,
     neighborhoodAblation,
     windowReplayLabels,
+    naturalReplaySeeds,
     windowRankerOnlineAblation,
     gateReport,
     list,
@@ -649,7 +658,9 @@ export function runLnsBenchmarkCli(): void {
     const names = args.neighborhoodAblation
       ? listLnsNeighborhoodAblationCaseNames()
       : args.windowReplayLabels
-        ? listLnsWindowReplayCaseNames()
+        ? listLnsWindowReplayCaseNames(
+            args.naturalReplaySeeds ? DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS : undefined
+          )
         : args.windowRankerOnlineAblation
           ? listLnsWindowRankerOnlineAblationCaseNames(
               args.windowRankerProtectedHoldout ? DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS : undefined
@@ -660,18 +671,21 @@ export function runLnsBenchmarkCli(): void {
   }
 
   if (args.windowReplayLabels) {
-    const result = runLnsWindowReplayLabels(undefined, {
-      names: optionalCliNames(args.names),
-      seeds: args.seeds,
-      maxWindows: args.maxWindows,
-      explorationWindowCount: args.explorationWindowCount,
-      repairTimeLimitSeconds: args.repairTimeLimitSeconds,
-      rollForwardIterations: args.rollForwardIterations,
-      rollForwardRepairTimeLimitSeconds: args.rollForwardRepairTimeLimitSeconds,
-      statePolicies: args.statePolicies,
-      stateCollectionIterations: args.stateCollectionIterations,
-      stateCollectionRepairTimeLimitSeconds: args.stateCollectionRepairTimeLimitSeconds
-    });
+    const result = runLnsWindowReplayLabels(
+      args.naturalReplaySeeds ? DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS : undefined,
+      {
+        names: optionalCliNames(args.names),
+        seeds: args.seeds,
+        maxWindows: args.maxWindows,
+        explorationWindowCount: args.explorationWindowCount,
+        repairTimeLimitSeconds: args.repairTimeLimitSeconds,
+        rollForwardIterations: args.rollForwardIterations,
+        rollForwardRepairTimeLimitSeconds: args.rollForwardRepairTimeLimitSeconds,
+        statePolicies: args.statePolicies,
+        stateCollectionIterations: args.stateCollectionIterations,
+        stateCollectionRepairTimeLimitSeconds: args.stateCollectionRepairTimeLimitSeconds
+      }
+    );
 
     writeCliJsonOrText(
       args.json,

@@ -455,6 +455,10 @@ export const DEFAULT_LNS_REPLAY_LABEL_CORPUS: readonly LnsBenchmarkCase[] = Obje
   selectReplayLabelCases(DEFAULT_LNS_BENCHMARK_CORPUS).map(withReplayLabelSeedHint)
 );
 
+export const DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS: readonly LnsBenchmarkCase[] = Object.freeze(
+  selectReplayLabelCases(DEFAULT_LNS_BENCHMARK_CORPUS)
+);
+
 export function listLnsReplayPressureFamilies(
   corpus: readonly LnsBenchmarkCase[] = DEFAULT_LNS_REPLAY_LABEL_CORPUS
 ): LnsReplayPressureFamilyLabel[] {

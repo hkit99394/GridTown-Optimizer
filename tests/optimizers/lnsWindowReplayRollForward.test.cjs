@@ -1,11 +1,13 @@
 const assert = require("node:assert/strict");
+const childProcess = require("node:child_process");
+const path = require("node:path");
 
 const {
   buildLearnedRankingLabelRegistryEntryDraft,
   buildLearnedRankingLabelTelemetryManifest,
   createLnsWindowReplaySnapshot,
   DEFAULT_GREEDY_BENCHMARK_CORPUS,
-  DEFAULT_LNS_BENCHMARK_CORPUS,
+  DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS,
   formatLearnedRankingLabelSuite,
   formatLnsWindowReplayLabels,
   runLearnedRankingLabelSuite,
@@ -15,6 +17,7 @@ const cpSatModule = require("../../dist/packages/solvers/cp-sat/solver.js");
 const { buildMockSolution } = require("../helpers/solverFixtures.cjs");
 
 const originalSolveCpSat = cpSatModule.solveCpSat;
+const repoRoot = path.join(__dirname, "../..");
 
 function zeroPopulationRepair() {
   return buildMockSolution({
@@ -28,6 +31,20 @@ function zeroPopulationRepair() {
 }
 
 try {
+  const naturalReplayCase = DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS.find(
+    (benchmarkCase) => benchmarkCase.name === "lns-service-overlap-pressure"
+  );
+  const naturalReplayList = childProcess.spawnSync(
+    process.execPath,
+    [path.join(repoRoot, "dist", "lnsBenchmarkCli.js"), "--list", "--natural-replay-seeds"],
+    { cwd: repoRoot, encoding: "utf8" }
+  );
+
+  assert(naturalReplayCase);
+  assert.equal(naturalReplayCase.params.lns?.seedHint, undefined);
+  assert.equal(naturalReplayList.status, 0, naturalReplayList.stderr);
+  assert.match(naturalReplayList.stdout, /lns-service-overlap-pressure/);
+
   cpSatModule.solveCpSat = zeroPopulationRepair;
 
   const replay = runLnsWindowReplayLabels(undefined, {
@@ -74,6 +91,16 @@ try {
   assert.match(formatLnsWindowReplayLabels(replay), /roll-forward=population:0/);
   assert.match(formatLnsWindowReplayLabels(replay), /final-status:neutral/);
 
+  const naturalReplay = runLnsWindowReplayLabels(DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS, {
+    names: ["lns-service-overlap-pressure"],
+    seeds: [7],
+    maxWindows: 1,
+    repairTimeLimitSeconds: 0.25
+  });
+  assert.equal(naturalReplay.cases[0].seedHintKind, "none");
+  assert.equal(naturalReplay.cases[0].seedHintSourceName, null);
+  assert.equal(naturalReplay.cases[0].labels[0].seedHintKind, "none");
+
   const splitConfigs = [
     {
       split: "development",
@@ -90,7 +117,7 @@ try {
     seeds: [7],
     splitConfigs,
     greedyCorpus: DEFAULT_GREEDY_BENCHMARK_CORPUS,
-    lnsCorpus: DEFAULT_LNS_BENCHMARK_CORPUS,
+    lnsCorpus: DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS,
     maxWindows: 1,
     explorationWindowCount: 0,
     repairTimeLimitSeconds: 0.1,
@@ -103,6 +130,8 @@ try {
     commands: ["test"],
     artifactPaths: ["artifacts/test/labels.json"]
   });
+  const developmentReplayCase = learned.lns.splits.find((split) => split.split === "development").replay.cases[0];
+  const holdoutReplayCase = learned.lns.splits.find((split) => split.split === "holdout").replay.cases[0];
 
   assert.deepEqual(
     {
@@ -126,6 +155,8 @@ try {
       summaryIterations: 1
     }
   );
+  assert.equal(developmentReplayCase.seedHintKind, "curated");
+  assert.equal(holdoutReplayCase.seedHintKind, "none");
   assert.equal(registry.budget.lnsRollForwardLabelCount, 2);
   assert.match(formatLearnedRankingLabelSuite(learned), /lns-roll-forward=1x0.05s/);
 } finally {

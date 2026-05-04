@@ -23,12 +23,17 @@ import {
   writeJsonArtifact
 } from "./artifactBundleHelpers.js";
 
-import type { LearnedRankingLabelSnapshot, LnsWindowRankerBaselineExperimentResult } from "../../benchmarkApi.js";
+import type {
+  LearnedRankingLabelSnapshot,
+  LnsWindowRankerBaselineExperimentResult,
+  LnsWindowRankerLabelTarget
+} from "../../benchmarkApi.js";
 
 interface ParsedLnsWindowRankerArgs {
   json: boolean;
   labelsPath?: string;
   topK?: number;
+  target?: LnsWindowRankerLabelTarget;
   randomBaselineSeed?: number;
   artifactDir?: string;
   baselineRunId?: string;
@@ -67,6 +72,7 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
   let json = false;
   let labelsPath: string | undefined;
   let topK: number | undefined;
+  let target: LnsWindowRankerLabelTarget | undefined;
   let randomBaselineSeed: number | undefined;
   let artifactDir: string | undefined;
   let baselineRunId: string | undefined;
@@ -83,6 +89,12 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
     },
     "top-k": (value) => {
       topK = parsePositiveInteger(value, "top k");
+    },
+    target: (value) => {
+      if (value !== "immediate-improvement" && value !== "roll-forward-final-lift") {
+        throw new Error(`Unknown LNS window ranker baseline target: ${value}`);
+      }
+      target = value;
     },
     "random-seed": (value) => {
       randomBaselineSeed = parsePositiveInteger(value, "random seed");
@@ -113,6 +125,10 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
       baselineRegisterDryRun = true;
       continue;
     }
+    if (isCliFlag(arg, "--roll-forward-final-lift", "--final-lift-target")) {
+      target = "roll-forward-final-lift";
+      continue;
+    }
     if (applyInlineOptionHandlers(arg, inlineOptions)) {
       continue;
     }
@@ -123,6 +139,7 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
     json,
     labelsPath,
     topK,
+    target,
     randomBaselineSeed,
     artifactDir,
     baselineRunId,
@@ -277,7 +294,8 @@ export function runLnsWindowRankerBaselineCli(): void {
   const labelSnapshot = readLabelSnapshot(args.labelsPath);
   const result = runLnsWindowRankerBaselineExperiment(labelSnapshot, {
     randomBaselineSeed: args.randomBaselineSeed,
-    topK: args.topK
+    topK: args.topK,
+    target: args.target
   });
 
   if (args.artifactDir !== undefined) {

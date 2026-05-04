@@ -269,6 +269,35 @@ function cloneFixtureWithBaselineReplayTies() {
   return fixture;
 }
 
+function cloneFixtureWithRollForwardTargets() {
+  const fixture = JSON.parse(JSON.stringify(buildFixture()));
+  fixture.audit.lnsReplay.rollForwardIterations = 1;
+  fixture.audit.lnsReplay.rollForwardRepairTimeLimitSeconds = 0.1;
+  for (const split of fixture.lns.splits) {
+    split.replay.rollForwardIterations = 1;
+    split.replay.rollForwardRepairTimeLimitSeconds = 0.1;
+    split.replay.rollForwardLabelCount = split.labelCount;
+    for (const benchmarkCase of split.replay.cases) {
+      for (const label of benchmarkCase.labels) {
+        const finalDelta = label.windowIndex === 2 ? label.improvement + 100 : label.windowIndex === 1 ? 0 : -10;
+        label.rollForward = {
+          iterations: 1,
+          repairTimeLimitSeconds: 0.1,
+          seedPopulation: label.totalPopulation,
+          totalPopulation: benchmarkCase.incumbentPopulation + finalDelta,
+          populationDeltaFromIncumbent: finalDelta,
+          populationDeltaFromRepair: finalDelta - label.populationDelta,
+          baselineTotalPopulation: benchmarkCase.incumbentPopulation,
+          populationDeltaVsBaseline: finalDelta,
+          improvementVsBaseline: Math.max(0, finalDelta),
+          statusVsBaseline: finalDelta > 0 ? "improved" : finalDelta < 0 ? "regressed" : "neutral"
+        };
+      }
+    }
+  }
+  return fixture;
+}
+
 function testLnsWindowRankerExperiment() {
   const fixture = buildFixture();
   const result = runLnsWindowRankerExperiment(fixture, {
@@ -350,6 +379,33 @@ function testLnsWindowRankerExperiment() {
     strict: true
   });
   assert.deepEqual(registryValidation.issues, []);
+}
+
+function testLnsWindowRankerRollForwardTarget() {
+  const fixture = cloneFixtureWithRollForwardTargets();
+  const result = runLnsWindowRankerExperiment(fixture, {
+    topK: 2,
+    training: {
+      epochs: 4,
+      learningRate: 0.05,
+      marginWeightCap: 500,
+      target: "roll-forward-final-lift"
+    }
+  });
+
+  assert.equal(result.audit.labelTarget, "roll-forward-final-lift");
+  assert.equal(result.model.training.target, "roll-forward-final-lift");
+  assert.equal(result.labels.usableLabelCount, 21);
+  assert.equal(result.labels.opportunityCount, 7);
+  assert.equal(result.evaluation.model.holdout.opportunityCount, 4);
+  assert.equal(result.evaluation.baselines[0].holdout.opportunityCount, 4);
+  const registryDraft = buildLnsWindowRankerRegistryEntryDraft(result, fixture, {
+    runId: "lns-window-ranker-roll-forward-target-test",
+    commands: ["node dist/lnsWindowRankerCli.js --labels=labels.json --final-lift-target"],
+    artifactPaths: ["artifacts/lns-ranker/lns-window-ranker.json"]
+  });
+  assert.equal(registryDraft.budget.trainingTargetRollForwardFinalLift, 1);
+  assert.equal(registryDraft.summaryMetrics.target, "roll-forward-final-lift");
 }
 
 function testLnsWindowRankerBaselineTieBreakTraining() {
@@ -436,5 +492,6 @@ function testLnsWindowRankerCliArtifacts() {
 }
 
 testLnsWindowRankerExperiment();
+testLnsWindowRankerRollForwardTarget();
 testLnsWindowRankerBaselineTieBreakTraining();
 testLnsWindowRankerCliArtifacts();

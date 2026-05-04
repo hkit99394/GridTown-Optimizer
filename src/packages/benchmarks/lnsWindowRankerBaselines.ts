@@ -27,10 +27,12 @@ export const LNS_WINDOW_RANKER_BASELINE_NAMES = Object.freeze([
 ] as const);
 
 export type LnsWindowRankerBaselineName = (typeof LNS_WINDOW_RANKER_BASELINE_NAMES)[number];
+export type LnsWindowRankerLabelTarget = "immediate-improvement" | "roll-forward-final-lift";
 
 export interface LnsWindowRankerBaselineRunOptions {
   randomBaselineSeed?: number;
   topK?: number;
+  target?: LnsWindowRankerLabelTarget;
 }
 
 export interface LnsWindowRankerMetricSummary {
@@ -98,6 +100,7 @@ export interface LnsWindowRankerBaselineModel {
   solverDefaultChanged: false;
   featureSchemaVersion: number | null;
   topK: number;
+  target: LnsWindowRankerLabelTarget;
   baselineNames: LnsWindowRankerBaselineName[];
   bestBaselineName: LnsWindowRankerBaselineName;
 }
@@ -168,8 +171,22 @@ function positiveIntegerOrDefault(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isInteger(value) && value > 0 ? value : fallback;
 }
 
+export function normalizeLnsWindowRankerLabelTarget(value: unknown): LnsWindowRankerLabelTarget {
+  if (value === undefined || value === "immediate-improvement") return "immediate-improvement";
+  if (value === "roll-forward-final-lift") return "roll-forward-final-lift";
+  throw new Error(`Unknown LNS window ranker label target: ${String(value)}.`);
+}
+
 function numericValue(value: unknown): number {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function hasTargetValue(label: LnsWindowReplaySnapshotLabel, target: LnsWindowRankerLabelTarget): boolean {
+  return target === "immediate-improvement" || typeof label.rollForward?.populationDeltaVsBaseline === "number";
+}
+
+function targetValue(label: LnsWindowReplaySnapshotLabel, target: LnsWindowRankerLabelTarget): number {
+  return target === "roll-forward-final-lift" ? (label.rollForward?.populationDeltaVsBaseline ?? 0) : label.improvement;
 }
 
 function stableRandomScore(seed: number, group: ReplayDecisionGroup, label: LnsWindowReplaySnapshotLabel): number {
@@ -285,15 +302,16 @@ function evaluateMetricSummary(
   groups: readonly ReplayDecisionGroup[],
   baselineName: LnsWindowRankerBaselineName,
   randomBaselineSeed: number,
-  topK: number
+  topK: number,
+  target: LnsWindowRankerLabelTarget
 ): LnsWindowRankerMetricSummary {
   const summary = emptyMetricSummary();
   for (const group of groups) {
     if (group.labels.length === 0) continue;
     const ranked = rankLabels(group, baselineName, randomBaselineSeed);
     const selected = ranked[0]!.label;
-    const bestImprovement = Math.max(...group.labels.map((label) => label.improvement));
-    const selectedImprovement = Math.max(0, selected.improvement);
+    const bestImprovement = Math.max(...group.labels.map((label) => targetValue(label, target)));
+    const selectedImprovement = Math.max(0, targetValue(selected, target));
     const opportunity = bestImprovement > 0;
 
     summary.decisionCount++;
@@ -307,7 +325,7 @@ function evaluateMetricSummary(
     summary.selectedImprovementTotal += Math.min(selectedImprovement, bestImprovement);
     summary.regretTotal += Math.max(0, bestImprovementDelta(bestImprovement, selectedImprovement));
     if (selectedImprovement === bestImprovement) summary.hitAt1Count++;
-    if (topKLabels.some((label) => label.improvement === bestImprovement)) summary.hitAtKCount++;
+    if (topKLabels.some((label) => targetValue(label, target) === bestImprovement)) summary.hitAtKCount++;
   }
 
   return finalizeMetricSummary(summary);
@@ -357,12 +375,13 @@ function breakdownMetrics(
   baselineName: LnsWindowRankerBaselineName,
   randomBaselineSeed: number,
   topK: number,
+  target: LnsWindowRankerLabelTarget,
   keyForGroup: (group: ReplayDecisionGroup) => string
 ): LnsWindowRankerBreakdownMetrics[] {
   return [...groupByKey(groups, keyForGroup).entries()]
     .map(([key, keyGroups]) => ({
       key,
-      ...evaluateMetricSummary(keyGroups, baselineName, randomBaselineSeed, topK)
+      ...evaluateMetricSummary(keyGroups, baselineName, randomBaselineSeed, topK, target)
     }))
     .sort((left, right) => left.key.localeCompare(right.key));
 }
@@ -372,19 +391,28 @@ function evaluateSplit(
   groups: readonly ReplayDecisionGroup[],
   baselineName: LnsWindowRankerBaselineName,
   randomBaselineSeed: number,
-  topK: number
+  topK: number,
+  target: LnsWindowRankerLabelTarget
 ): LnsWindowRankerSplitEvaluation {
   return {
     split,
-    ...evaluateMetricSummary(groups, baselineName, randomBaselineSeed, topK),
+    ...evaluateMetricSummary(groups, baselineName, randomBaselineSeed, topK, target),
     pressureFamilyMetrics: breakdownMetrics(
       groups,
       baselineName,
       randomBaselineSeed,
       topK,
+      target,
       (group) => group.pressureFamily
     ),
-    statePolicyMetrics: breakdownMetrics(groups, baselineName, randomBaselineSeed, topK, (group) => group.statePolicy)
+    statePolicyMetrics: breakdownMetrics(
+      groups,
+      baselineName,
+      randomBaselineSeed,
+      topK,
+      target,
+      (group) => group.statePolicy
+    )
   };
 }
 
@@ -395,15 +423,16 @@ function splitGroups(groups: readonly ReplayDecisionGroup[], split: LearnedRanki
 function buildBaselineEvaluations(
   groups: readonly ReplayDecisionGroup[],
   randomBaselineSeed: number,
-  topK: number
+  topK: number,
+  target: LnsWindowRankerLabelTarget
 ): LnsWindowRankerBaselineEvaluation[] {
   const developmentGroups = splitGroups(groups, "development");
   const holdoutGroups = splitGroups(groups, "holdout");
   return LNS_WINDOW_RANKER_BASELINE_NAMES.map((name) => ({
     name,
     description: baselineDescription(name),
-    development: evaluateSplit("development", developmentGroups, name, randomBaselineSeed, topK),
-    holdout: evaluateSplit("holdout", holdoutGroups, name, randomBaselineSeed, topK)
+    development: evaluateSplit("development", developmentGroups, name, randomBaselineSeed, topK, target),
+    holdout: evaluateSplit("holdout", holdoutGroups, name, randomBaselineSeed, topK, target)
   }));
 }
 
@@ -470,10 +499,13 @@ function assertLabelSnapshot(value: LearnedRankingLabelSnapshot): void {
   }
 }
 
-function collectReplayDecisionGroups(labelSnapshot: LearnedRankingLabelSnapshot): ReplayDecisionGroup[] {
+function collectReplayDecisionGroups(
+  labelSnapshot: LearnedRankingLabelSnapshot,
+  target: LnsWindowRankerLabelTarget
+): ReplayDecisionGroup[] {
   return labelSnapshot.lns.splits.flatMap((split) =>
     split.replay.cases.flatMap((benchmarkCase: LnsWindowReplaySnapshotCaseResult): ReplayDecisionGroup[] => {
-      const labels = benchmarkCase.labels.filter((label) => label.usable);
+      const labels = benchmarkCase.labels.filter((label) => label.usable && hasTargetValue(label, target));
       if (labels.length === 0) return [];
       return [
         {
@@ -492,7 +524,8 @@ function collectReplayDecisionGroups(labelSnapshot: LearnedRankingLabelSnapshot)
 
 function labelSplitSummaries(
   labelSnapshot: LearnedRankingLabelSnapshot,
-  groups: readonly ReplayDecisionGroup[]
+  groups: readonly ReplayDecisionGroup[],
+  target: LnsWindowRankerLabelTarget
 ): LnsWindowRankerLabelSplitSummary[] {
   return labelSnapshot.lns.splits.map((split) => {
     const splitDecisionGroups = splitGroups(groups, split.split);
@@ -502,9 +535,9 @@ function labelSplitSummaries(
       pressureFamilies: [...split.pressureFamilies],
       seeds: [...split.seeds],
       labelCount: split.labelCount,
-      usableLabelCount: split.usableLabelCount,
+      usableLabelCount: splitDecisionGroups.reduce((total, group) => total + group.labels.length, 0),
       opportunityCount: splitDecisionGroups.filter(
-        (group) => Math.max(...group.labels.map((label) => label.improvement)) > 0
+        (group) => Math.max(...group.labels.map((label) => targetValue(label, target))) > 0
       ).length,
       capturedStatePolicies: [...split.replay.capturedStatePolicies]
     };
@@ -532,6 +565,7 @@ function summaryMetrics(result: LnsWindowRankerBaselineExperimentResult): Record
     bestBaselineHoldoutHitAtK: result.evaluation.summary.bestBaselineHoldoutHitAtK,
     deterministicHoldoutCaptureRate: result.evaluation.summary.deterministicHoldoutCaptureRate,
     randomHoldoutCaptureRate: result.evaluation.summary.randomHoldoutCaptureRate,
+    target: result.model.target,
     developmentDecisionCount: baselineByName(result.evaluation.baselines, "operator-score").development.decisionCount,
     holdoutDecisionCount: baselineByName(result.evaluation.baselines, "operator-score").holdout.decisionCount,
     developmentOpportunityCount: baselineByName(result.evaluation.baselines, "operator-score").development
@@ -548,8 +582,9 @@ export function runLnsWindowRankerBaselineExperiment(
   assertLabelSnapshot(labelSnapshot);
   const randomBaselineSeed = positiveIntegerOrDefault(options.randomBaselineSeed, 17);
   const topK = positiveIntegerOrDefault(options.topK, 3);
-  const groups = collectReplayDecisionGroups(labelSnapshot);
-  const baselines = buildBaselineEvaluations(groups, randomBaselineSeed, topK);
+  const target = normalizeLnsWindowRankerLabelTarget(options.target);
+  const groups = collectReplayDecisionGroups(labelSnapshot, target);
+  const baselines = buildBaselineEvaluations(groups, randomBaselineSeed, topK, target);
   const summary = buildSummary(labelSnapshot, baselines);
   const model: LnsWindowRankerBaselineModel = {
     schemaVersion: 1,
@@ -560,13 +595,14 @@ export function runLnsWindowRankerBaselineExperiment(
     solverDefaultChanged: false,
     featureSchemaVersion: labelSnapshot.audit.lnsReplay.featureSchemaVersion ?? null,
     topK,
+    target,
     baselineNames: [...LNS_WINDOW_RANKER_BASELINE_NAMES],
     bestBaselineName: summary.bestBaselineName
   };
   const datasetFingerprint = buildDatasetFingerprint(labelSnapshot);
   const labelFingerprint = buildLabelFingerprint(labelSnapshot);
   const modelFingerprint = buildModelExperimentFingerprint(model);
-  const splitSummaries = labelSplitSummaries(labelSnapshot, groups);
+  const splitSummaries = labelSplitSummaries(labelSnapshot, groups, target);
 
   return {
     generatedAt: benchmarkGeneratedAt(),
@@ -653,6 +689,7 @@ export function buildLnsWindowRankerBaselineRegistryEntryDraft(
     budget: {
       cpuOnly: 1,
       topK: result.model.topK,
+      targetRollForwardFinalLift: result.model.target === "roll-forward-final-lift" ? 1 : 0,
       baselineCount: result.evaluation.baselines.length,
       lnsLabelCount: result.labels.labelCount,
       usableLabelCount: result.labels.usableLabelCount,
@@ -692,13 +729,13 @@ export function formatLnsWindowRankerBaselineExperiment(result: LnsWindowRankerB
   lines.push(`Generated: ${result.generatedAt}`);
   lines.push(`Schema: ${result.schemaVersion}`);
   lines.push(
-    `Audit: cpu-only=${result.audit.cpuOnly} runtime-default-changed=${result.audit.runtimeDefaultChanged} source-preset=${result.audit.sourceLabelPreset ?? "none"} source-lns-scale-ready=${result.audit.sourceLnsScaleReady}`
+    `Audit: cpu-only=${result.audit.cpuOnly} runtime-default-changed=${result.audit.runtimeDefaultChanged} source-preset=${result.audit.sourceLabelPreset ?? "none"} source-lns-scale-ready=${result.audit.sourceLnsScaleReady} target=${result.model.target}`
   );
   lines.push(
     `Labels: total=${result.labels.labelCount} usable=${result.labels.usableLabelCount} opportunities=${result.labels.opportunityCount} label-fingerprint=${result.labelFingerprint}`
   );
   lines.push(
-    `Model: ${result.model.modelType} trained=${result.model.trained} top-k=${result.model.topK} model-fingerprint=${result.modelFingerprint}`
+    `Model: ${result.model.modelType} trained=${result.model.trained} target=${result.model.target} top-k=${result.model.topK} model-fingerprint=${result.modelFingerprint}`
   );
   for (const split of result.labels.splits) {
     lines.push(

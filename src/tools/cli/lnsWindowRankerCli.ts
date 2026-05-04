@@ -29,6 +29,7 @@ import {
 } from "./artifactBundleHelpers.js";
 
 import type { LearnedRankingLabelSnapshot, LnsWindowRankerExperimentResult } from "../../benchmarkApi.js";
+import type { LnsWindowRankerLabelTarget } from "../../benchmarkApi.js";
 
 interface ParsedLnsWindowRankerArgs {
   json: boolean;
@@ -37,6 +38,7 @@ interface ParsedLnsWindowRankerArgs {
   learningRate?: number;
   marginWeightCap?: number;
   baselineTieBreak: boolean;
+  target?: LnsWindowRankerLabelTarget;
   topK?: number;
   randomBaselineSeed?: number;
   artifactDir?: string;
@@ -81,6 +83,7 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
   let learningRate: number | undefined;
   let marginWeightCap: number | undefined;
   let baselineTieBreak = false;
+  let target: LnsWindowRankerLabelTarget | undefined;
   let topK: number | undefined;
   let randomBaselineSeed: number | undefined;
   let artifactDir: string | undefined;
@@ -104,6 +107,12 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
     },
     "margin-weight-cap": (value) => {
       marginWeightCap = parsePositiveNumber(value, "margin weight cap");
+    },
+    target: (value) => {
+      if (value !== "immediate-improvement" && value !== "roll-forward-final-lift") {
+        throw new Error(`Unknown LNS window ranker target: ${value}`);
+      }
+      target = value;
     },
     "top-k": (value) => {
       topK = parsePositiveInteger(value, "top k");
@@ -141,6 +150,10 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
       baselineTieBreak = true;
       continue;
     }
+    if (isCliFlag(arg, "--roll-forward-final-lift", "--final-lift-target")) {
+      target = "roll-forward-final-lift";
+      continue;
+    }
     if (applyInlineOptionHandlers(arg, inlineOptions)) {
       continue;
     }
@@ -154,6 +167,7 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
     learningRate,
     marginWeightCap,
     baselineTieBreak,
+    target,
     topK,
     randomBaselineSeed,
     artifactDir,
@@ -310,7 +324,8 @@ export function runLnsWindowRankerCli(): void {
       epochs: args.epochs,
       learningRate: args.learningRate,
       marginWeightCap: args.marginWeightCap,
-      baselineTieBreak: args.baselineTieBreak
+      baselineTieBreak: args.baselineTieBreak,
+      target: args.target
     }
   });
 

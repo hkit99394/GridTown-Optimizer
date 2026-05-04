@@ -1,0 +1,527 @@
+{
+  "schemaVersion": 1,
+  "runId": "lns-window-ranker-2026-05-04-strict-replay-seed-v2-roll-forward-1x0-1-final-lift-lr0-02-cap100",
+  "artifactType": "model-experiment",
+  "generatedAt": "2026-05-04T14:08:54.777Z",
+  "commands": [
+    "node dist/lnsWindowRankerCli.js --labels=artifacts/learned-ranking-labels/2026-05-04/strict-lns-replay-labels-replay-seed-v2-roll-forward-1x0.1/labels.json --artifact-dir=artifacts/lns-window-ranker/2026-05-04/strict-replay-seed-v2-roll-forward-1x0.1-final-lift-cpu-ranker-lr0.02-cap100 --epochs=5 --learning-rate=0.02 --margin-weight-cap=100 --final-lift-target --ranker-run-id=lns-window-ranker-2026-05-04-strict-replay-seed-v2-roll-forward-1x0-1-final-lift-lr0-02-cap100 --ranker-decision=offline-lns-window-ranker-final-lift-beats-baselines '--ranker-summary=CPU-first LNS window ranker trained on one-iteration roll-forward final-lift labels beat final-lift baselines offline; diagnostics only, no solver default changed.' --json"
+  ],
+  "artifactPaths": [
+    "artifacts/lns-window-ranker/2026-05-04/strict-replay-seed-v2-roll-forward-1x0.1-final-lift-cpu-ranker-lr0.02-cap100/lns-window-ranker.json",
+    "artifacts/lns-window-ranker/2026-05-04/strict-replay-seed-v2-roll-forward-1x0.1-final-lift-cpu-ranker-lr0.02-cap100/lns-window-ranker.txt",
+    "artifacts/lns-window-ranker/2026-05-04/strict-replay-seed-v2-roll-forward-1x0.1-final-lift-cpu-ranker-lr0.02-cap100/model.json",
+    "artifacts/lns-window-ranker/2026-05-04/strict-replay-seed-v2-roll-forward-1x0.1-final-lift-cpu-ranker-lr0.02-cap100/telemetry-manifest.json"
+  ],
+  "cases": {
+    "development": [
+      "compact-service-repair",
+      "seeded-service-anchor-pressure",
+      "lns-corridor-squeeze-pressure",
+      "lns-gate-choke-pressure",
+      "lns-footprint-mix-pressure"
+    ],
+    "holdout": [
+      "row0-anchor-repair",
+      "lns-service-overlap-pressure",
+      "lns-anchor-service-corner-pressure",
+      "lns-gate-side-channel-pressure",
+      "lns-footprint-bottleneck-pressure"
+    ]
+  },
+  "caseFamilies": [
+    "lns-service-pressure",
+    "lns-anchor-service",
+    "lns-corridor",
+    "lns-gate",
+    "lns-footprint-pressure"
+  ],
+  "seeds": [
+    7,
+    19,
+    37
+  ],
+  "splitStatus": {
+    "protectedHoldout": true,
+    "leakage": {
+      "developmentGreedyCases": [
+        "cap-sweep-mixed",
+        "service-local-neighborhood",
+        "step14-service-lookahead-reranker",
+        "row0-corridor-repair-pressure"
+      ],
+      "holdoutGreedyCases": [
+        "fixed-service-realization-complete",
+        "geometry-occupancy-hot-path",
+        "typed-footprint-pressure",
+        "typed-availability-pressure"
+      ],
+      "developmentLnsCases": [
+        "compact-service-repair",
+        "seeded-service-anchor-pressure",
+        "lns-corridor-squeeze-pressure",
+        "lns-gate-choke-pressure",
+        "lns-footprint-mix-pressure"
+      ],
+      "holdoutLnsCases": [
+        "row0-anchor-repair",
+        "lns-service-overlap-pressure",
+        "lns-anchor-service-corner-pressure",
+        "lns-gate-side-channel-pressure",
+        "lns-footprint-bottleneck-pressure"
+      ],
+      "greedyOverlap": [],
+      "lnsOverlap": [],
+      "protectedHoldout": true
+    },
+    "lnsScaleReadiness": {
+      "thresholds": {
+        "minPressureFamilies": 5,
+        "minSeedsPerFamily": 3,
+        "minUsableLabelsPerSplit": 200,
+        "minNonNeutralLabelsPerSplit": 50,
+        "minUsableLabelsPerFamily": 20,
+        "maxNeutralLabelRatio": 0.85,
+        "requiredStatePolicies": [
+          "initial-incumbent",
+          "post-first-improvement",
+          "post-stagnation"
+        ]
+      },
+      "passed": true,
+      "splitReadiness": [
+        {
+          "split": "development",
+          "pressureFamilyCount": 5,
+          "seedCount": 3,
+          "requiredStatePolicies": [
+            "initial-incumbent",
+            "post-first-improvement",
+            "post-stagnation"
+          ],
+          "capturedStatePolicies": [
+            "initial-incumbent",
+            "post-first-improvement",
+            "post-stagnation"
+          ],
+          "missingStatePolicies": [],
+          "usableLabelCount": 810,
+          "nonNeutralUsableLabelCount": 333,
+          "neutralUsableLabelCount": 477,
+          "neutralLabelRatio": 0.5888888888888889,
+          "passed": true,
+          "failedReasons": [],
+          "families": [
+            {
+              "pressureFamily": "anchor-service",
+              "caseNames": [
+                "seeded-service-anchor-pressure"
+              ],
+              "seeds": [
+                7,
+                19,
+                37
+              ],
+              "requiredStatePolicies": [
+                "initial-incumbent",
+                "post-first-improvement",
+                "post-stagnation"
+              ],
+              "capturedStatePolicies": [
+                "initial-incumbent",
+                "post-first-improvement",
+                "post-stagnation"
+              ],
+              "missingStatePolicies": [],
+              "labelCount": 162,
+              "usableLabelCount": 162,
+              "nonNeutralUsableLabelCount": 42,
+              "neutralUsableLabelCount": 120,
+              "neutralLabelRatio": 0.7407407407407407
+            },
+            {
+              "pressureFamily": "corridor",
+              "caseNames": [
+                "lns-corridor-squeeze-pressure"
+              ],
+              "seeds": [
+                7,
+                19,
+                37
+              ],
+              "requiredStatePolicies": [
+                "initial-incumbent",
+                "post-first-improvement",
+                "post-stagnation"
+              ],
+              "capturedStatePolicies": [
+                "initial-incumbent",
+                "post-first-improvement",
+                "post-stagnation"
+              ],
+              "missingStatePolicies": [],
+              "labelCount": 162,
+              "usableLabelCount": 162,
+              "nonNeutralUsableLabelCount": 57,
+              "neutralUsableLabelCount": 105,
+              "neutralLabelRatio": 0.6481481481481481
+            },
+            {
+              "pressureFamily": "footprint-pressure",
+              "caseNames": [
+                "lns-footprint-mix-pressure"
+              ],
+              "seeds": [
+                7,
+                19,
+                37
+              ],
+              "requiredStatePolicies": [
+                "initial-incumbent",
+                "post-first-improvement",
+                "post-stagnation"
+              ],
+              "capturedStatePolicies": [
+                "initial-incumbent",
+                "post-first-improvement",
+                "post-stagnation"
+              ],
+              "missingStatePolicies": [],
+              "labelCount": 162,
+              "usableLabelCount": 162,
+              "nonNeutralUsableLabelCount": 78,
+              "neutralUsableLabelCount": 84,
+              "neutralLabelRatio": 0.5185185185185185
+            },
+            {
+              "pressureFamily": "gate",
+              "caseNames": [
+                "lns-gate-choke-pressure"
+              ],
+              "seeds": [
+                7,
+                19,
+                37
+              ],
+              "requiredStatePolicies": [
+                "initial-incumbent",
+                "post-first-improvement",
+                "post-stagnation"
+              ],
+              "capturedStatePolicies": [
+                "initial-incumbent",
+                "post-first-improvement",
+                "post-stagnation"
+              ],
+              "missingStatePolicies": [],
+              "labelCount": 162,
+              "usableLabelCount": 162,
+              "nonNeutralUsableLabelCount": 105,
+              "neutralUsableLabelCount": 57,
+              "neutralLabelRatio": 0.35185185185185186
+            },
+            {
+              "pressureFamily": "service-pressure",
+              "caseNames": [
+                "compact-service-repair"
+              ],
+              "seeds": [
+                7,
+                19,
+                37
+              ],
+              "requiredStatePolicies": [
+                "initial-incumbent",
+                "post-first-improvement",
+                "post-stagnation"
+              ],
+              "capturedStatePolicies": [
+                "initial-incumbent",
+                "post-first-improvement",
+                "post-stagnation"
+              ],
+              "missingStatePolicies": [],
+              "labelCount": 162,
+              "usableLabelCount": 162,
+              "nonNeutralUsableLabelCount": 51,
+              "neutralUsableLabelCount": 111,
+              "neutralLabelRatio": 0.6851851851851852
+            }
+          ]
+        },
+        {
+          "split": "holdout",
+          "pressureFamilyCount": 5,
+          "seedCount": 3,
+          "requiredStatePolicies": [
+            "initial-incumbent",
+            "post-first-improvement",
+            "post-stagnation"
+          ],
+          "capturedStatePolicies": [
+            "initial-incumbent",
+            "post-first-improvement",
+            "post-stagnation"
+          ],
+          "missingStatePolicies": [],
+          "usableLabelCount": 735,
+          "nonNeutralUsableLabelCount": 363,
+          "neutralUsableLabelCount": 372,
+          "neutralLabelRatio": 0.5061224489795918,
+          "passed": true,
+          "failedReasons": [],
+          "families": [
+            {
+              "pressureFamily": "anchor-service",
+              "caseNames": [
+                "lns-anchor-service-corner-pressure"
+              ],
+              "seeds": [
+                7,
+                19,
+                37
+              ],
+              "requiredStatePolicies": [
+                "initial-incumbent",
+                "post-first-improvement",
+                "post-stagnation"
+              ],
+              "capturedStatePolicies": [
+                "initial-incumbent",
+                "post-first-improvement",
+                "post-stagnation"
+              ],
+              "missingStatePolicies": [],
+              "labelCount": 162,
+              "usableLabelCount": 162,
+              "nonNeutralUsableLabelCount": 87,
+              "neutralUsableLabelCount": 75,
+              "neutralLabelRatio": 0.46296296296296297
+            },
+            {
+              "pressureFamily": "corridor",
+              "caseNames": [
+                "row0-anchor-repair"
+              ],
+              "seeds": [
+                7,
+                19,
+                37
+              ],
+              "requiredStatePolicies": [
+                "initial-incumbent",
+                "post-first-improvement",
+                "post-stagnation"
+              ],
+              "capturedStatePolicies": [
+                "initial-incumbent",
+                "post-first-improvement",
+                "post-stagnation"
+              ],
+              "missingStatePolicies": [],
+              "labelCount": 87,
+              "usableLabelCount": 87,
+              "nonNeutralUsableLabelCount": 18,
+              "neutralUsableLabelCount": 69,
+              "neutralLabelRatio": 0.7931034482758621
+            },
+            {
+              "pressureFamily": "footprint-pressure",
+              "caseNames": [
+                "lns-footprint-bottleneck-pressure"
+              ],
+              "seeds": [
+                7,
+                19,
+                37
+              ],
+              "requiredStatePolicies": [
+                "initial-incumbent",
+                "post-first-improvement",
+                "post-stagnation"
+              ],
+              "capturedStatePolicies": [
+                "initial-incumbent",
+                "post-first-improvement",
+                "post-stagnation"
+              ],
+              "missingStatePolicies": [],
+              "labelCount": 162,
+              "usableLabelCount": 162,
+              "nonNeutralUsableLabelCount": 93,
+              "neutralUsableLabelCount": 69,
+              "neutralLabelRatio": 0.42592592592592593
+            },
+            {
+              "pressureFamily": "gate",
+              "caseNames": [
+                "lns-gate-side-channel-pressure"
+              ],
+              "seeds": [
+                7,
+                19,
+                37
+              ],
+              "requiredStatePolicies": [
+                "initial-incumbent",
+                "post-first-improvement",
+                "post-stagnation"
+              ],
+              "capturedStatePolicies": [
+                "initial-incumbent",
+                "post-first-improvement",
+                "post-stagnation"
+              ],
+              "missingStatePolicies": [],
+              "labelCount": 162,
+              "usableLabelCount": 162,
+              "nonNeutralUsableLabelCount": 87,
+              "neutralUsableLabelCount": 75,
+              "neutralLabelRatio": 0.46296296296296297
+            },
+            {
+              "pressureFamily": "service-pressure",
+              "caseNames": [
+                "lns-service-overlap-pressure"
+              ],
+              "seeds": [
+                7,
+                19,
+                37
+              ],
+              "requiredStatePolicies": [
+                "initial-incumbent",
+                "post-first-improvement",
+                "post-stagnation"
+              ],
+              "capturedStatePolicies": [
+                "initial-incumbent",
+                "post-first-improvement",
+                "post-stagnation"
+              ],
+              "missingStatePolicies": [],
+              "labelCount": 162,
+              "usableLabelCount": 162,
+              "nonNeutralUsableLabelCount": 78,
+              "neutralUsableLabelCount": 84,
+              "neutralLabelRatio": 0.5185185185185185
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "budget": {
+    "cpuOnly": 1,
+    "topK": 3,
+    "trainingEpochs": 5,
+    "trainingLearningRate": 0.02,
+    "trainingMarginWeightCap": 100,
+    "trainingBaselineTieBreak": 0,
+    "trainingTargetRollForwardFinalLift": 1,
+    "trainingWallClockSeconds": 0.0463,
+    "trainedDecisionCount": 45,
+    "trainedPairCount": 3960,
+    "lnsLabelCount": 1545,
+    "usableLabelCount": 1545,
+    "opportunityCount": 55,
+    "baselineCount": 8
+  },
+  "model": {
+    "schemaVersion": 1,
+    "modelType": "lns-window-linear-pairwise-ranker",
+    "purpose": "offline-diagnostics-only",
+    "trained": true,
+    "runtimeDefaultChanged": false,
+    "solverDefaultChanged": false,
+    "featureSchemaVersion": 2,
+    "featureNames": [
+      "operatorScore",
+      "selectedByBaseline",
+      "area",
+      "roadCountInside",
+      "serviceCountInside",
+      "residentialCountInside",
+      "residentialHeadroomInside",
+      "serviceBonusInside",
+      "reachableBefore",
+      "reachableAfter",
+      "newlyReachable",
+      "disconnectedBefore",
+      "disconnectedAfter",
+      "clearedFootprint",
+      "emptyComponentsBefore",
+      "emptyComponentsAfter",
+      "componentDelta",
+      "allowedWindowCells",
+      "anchorReachableWindowCells",
+      "narrowGateCells",
+      "serviceCandidatesIntersecting",
+      "residentialCandidatesIntersecting",
+      "serviceCandidatesBlocked",
+      "residentialCandidatesBlocked",
+      "serviceCandidateBonus",
+      "maxServiceCandidateBonus",
+      "residentialCandidateHeadroom"
+    ],
+    "weights": {
+      "operatorScore": 0.0244,
+      "selectedByBaseline": -0.382,
+      "area": 0.2934,
+      "roadCountInside": 0,
+      "serviceCountInside": -0.213,
+      "residentialCountInside": -0.073,
+      "residentialHeadroomInside": 0.0472,
+      "serviceBonusInside": -0.0868,
+      "reachableBefore": 0,
+      "reachableAfter": -0.0239,
+      "newlyReachable": -0.0239,
+      "disconnectedBefore": 0,
+      "disconnectedAfter": 0,
+      "clearedFootprint": -0.0597,
+      "emptyComponentsBefore": 0,
+      "emptyComponentsAfter": 0.086,
+      "componentDelta": 0.086,
+      "allowedWindowCells": 0.0879,
+      "anchorReachableWindowCells": 0.0879,
+      "narrowGateCells": 0.167,
+      "serviceCandidatesIntersecting": 0.0218,
+      "residentialCandidatesIntersecting": -0.0108,
+      "serviceCandidatesBlocked": 0.19,
+      "residentialCandidatesBlocked": -0.1978,
+      "serviceCandidateBonus": -0.0242,
+      "maxServiceCandidateBonus": 0,
+      "residentialCandidateHeadroom": 0.0368
+    },
+    "intercept": 0,
+    "topK": 3,
+    "training": {
+      "epochs": 5,
+      "learningRate": 0.02,
+      "marginWeightCap": 100,
+      "baselineTieBreak": false,
+      "target": "roll-forward-final-lift"
+    },
+    "trainedDecisionCount": 45,
+    "trainedPairCount": 3960,
+    "trainingSplit": "development"
+  },
+  "decision": "offline-lns-window-ranker-final-lift-beats-baselines",
+  "summary": "CPU-first LNS window ranker trained on one-iteration roll-forward final-lift labels beat final-lift baselines offline; diagnostics only, no solver default changed.",
+  "labelFingerprint": "fnv1a:5bc48690",
+  "datasetFingerprint": "fnv1a:23524ccc",
+  "modelFingerprint": "fnv1a:51fb7b72",
+  "summaryMetrics": {
+    "passed": true,
+    "bestBaselineName": "fragmentation",
+    "bestBaselineHoldoutCaptureRate": 0.631,
+    "modelHoldoutCaptureRate": 0.8339,
+    "holdoutCaptureDeltaVsBestBaseline": 0.2029,
+    "modelHoldoutHitAt1": 0.9091,
+    "modelHoldoutHitAtK": 1,
+    "target": "roll-forward-final-lift",
+    "developmentDecisionCount": 45,
+    "holdoutDecisionCount": 45,
+    "opportunityCount": 55,
+    "sourceLnsScaleReady": true
+  }
+}

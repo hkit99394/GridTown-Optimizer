@@ -45,6 +45,8 @@ interface ParsedLabelArgs {
   maxWindows?: number;
   explorationWindowCount?: number;
   repairTimeLimitSeconds?: number;
+  lnsRollForwardIterations?: number;
+  lnsRollForwardRepairTimeLimitSeconds?: number;
   lnsStatePolicies?: LnsWindowReplayStatePolicy[];
   lnsStateCollectionIterations?: number;
   lnsStateCollectionRepairTimeLimitSeconds?: number;
@@ -89,6 +91,8 @@ function parseArgs(argv: string[]): ParsedLabelArgs {
   let maxWindows: number | undefined;
   let explorationWindowCount: number | undefined;
   let repairTimeLimitSeconds: number | undefined;
+  let lnsRollForwardIterations: number | undefined;
+  let lnsRollForwardRepairTimeLimitSeconds: number | undefined;
   let lnsStatePolicies: LnsWindowReplayStatePolicy[] | undefined;
   let lnsStateCollectionIterations: number | undefined;
   let lnsStateCollectionRepairTimeLimitSeconds: number | undefined;
@@ -113,6 +117,12 @@ function parseArgs(argv: string[]): ParsedLabelArgs {
     },
     "repair-time": (value) => {
       repairTimeLimitSeconds = parsePositiveNumber(value, "repair time");
+    },
+    "roll-forward-iterations": (value) => {
+      lnsRollForwardIterations = parseNonNegativeInteger(value, "roll forward iterations");
+    },
+    "roll-forward-repair-time": (value) => {
+      lnsRollForwardRepairTimeLimitSeconds = parsePositiveNumber(value, "roll forward repair time");
     },
     "state-policies": (value) => {
       lnsStatePolicies = parseNameList(value, "state policy") as LnsWindowReplayStatePolicy[];
@@ -169,6 +179,8 @@ function parseArgs(argv: string[]): ParsedLabelArgs {
     maxWindows,
     explorationWindowCount,
     repairTimeLimitSeconds,
+    lnsRollForwardIterations,
+    lnsRollForwardRepairTimeLimitSeconds,
     lnsStatePolicies,
     lnsStateCollectionIterations,
     lnsStateCollectionRepairTimeLimitSeconds,
@@ -294,6 +306,8 @@ export function runLearnedRankingLabelCli(): void {
     maxWindows: args.maxWindows,
     explorationWindowCount: args.explorationWindowCount,
     repairTimeLimitSeconds: args.repairTimeLimitSeconds,
+    lnsRollForwardIterations: args.lnsRollForwardIterations,
+    lnsRollForwardRepairTimeLimitSeconds: args.lnsRollForwardRepairTimeLimitSeconds,
     lnsStatePolicies: args.lnsStatePolicies,
     lnsStateCollectionIterations: args.lnsStateCollectionIterations,
     lnsStateCollectionRepairTimeLimitSeconds: args.lnsStateCollectionRepairTimeLimitSeconds

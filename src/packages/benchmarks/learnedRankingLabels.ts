@@ -462,6 +462,8 @@ export function runLearnedRankingLabelSuite(
       maxWindows,
       explorationWindowCount,
       repairTimeLimitSeconds: options.repairTimeLimitSeconds,
+      rollForwardIterations: options.lnsRollForwardIterations,
+      rollForwardRepairTimeLimitSeconds: options.lnsRollForwardRepairTimeLimitSeconds,
       statePolicies: lnsStatePolicies,
       stateCollectionIterations: lnsStateCollectionIterations,
       stateCollectionRepairTimeLimitSeconds: options.lnsStateCollectionRepairTimeLimitSeconds
@@ -488,6 +490,8 @@ export function runLearnedRankingLabelSuite(
   const lnsReplayStateCollectionIterations = lnsSplits[0]?.replay.stateCollectionIterations ?? 4;
   const lnsReplayStateCollectionRepairTimeLimitSeconds =
     lnsSplits[0]?.replay.stateCollectionRepairTimeLimitSeconds ?? options.repairTimeLimitSeconds ?? 1;
+  const lnsReplayRollForwardIterations = lnsSplits[0]?.replay.rollForwardIterations ?? 0;
+  const lnsReplayRollForwardRepairTimeLimitSeconds = lnsSplits[0]?.replay.rollForwardRepairTimeLimitSeconds ?? null;
 
   return {
     generatedAt: benchmarkGeneratedAt(),
@@ -507,6 +511,8 @@ export function runLearnedRankingLabelSuite(
         incumbentStatePolicies: lnsReplayStatePolicies,
         stateCollectionIterations: lnsReplayStateCollectionIterations,
         stateCollectionRepairTimeLimitSeconds: lnsReplayStateCollectionRepairTimeLimitSeconds,
+        rollForwardIterations: lnsReplayRollForwardIterations,
+        rollForwardRepairTimeLimitSeconds: lnsReplayRollForwardRepairTimeLimitSeconds,
         candidateWindowPolicy:
           explorationWindowCount > 0 ? "baseline-ranked-top-k-plus-tail-exploration" : "baseline-ranked-top-k",
         explorationWindowCount,
@@ -632,6 +638,9 @@ export function buildLearnedRankingLabelTelemetryManifest(
         capturedStatePolicies: [...split.replay.capturedStatePolicies],
         stateCollectionIterations: split.replay.stateCollectionIterations,
         stateCollectionRepairTimeLimitSeconds: split.replay.stateCollectionRepairTimeLimitSeconds,
+        rollForwardIterations: split.replay.rollForwardIterations,
+        rollForwardRepairTimeLimitSeconds: split.replay.rollForwardRepairTimeLimitSeconds,
+        rollForwardLabelCount: split.replay.rollForwardLabelCount,
         stateCount: split.replay.stateCount,
         featureSchemaVersion: split.replay.featureSchemaVersion,
         cpSatNumWorkers: split.replay.cpSatNumWorkers,
@@ -665,6 +674,10 @@ export function buildLearnedRankingLabelRegistryEntryDraft(
     ),
     stateCollectionRepairTimeLimitSeconds: uniqueBenchmarkValues(
       result.lns.splits.map((split) => split.replay.stateCollectionRepairTimeLimitSeconds)
+    ),
+    rollForwardIterations: uniqueBenchmarkValues(result.lns.splits.map((split) => split.replay.rollForwardIterations)),
+    rollForwardRepairTimeLimitSeconds: uniqueBenchmarkValues(
+      result.lns.splits.map((split) => split.replay.rollForwardRepairTimeLimitSeconds)
     )
   };
   return {
@@ -709,6 +722,13 @@ export function buildLearnedRankingLabelRegistryEntryDraft(
       lnsStateCollectionRepairTimeLimitSeconds: uniqueBenchmarkValues(
         result.lns.splits.map((split) => split.replay.stateCollectionRepairTimeLimitSeconds)
       ),
+      lnsRollForwardIterations: uniqueBenchmarkValues(
+        result.lns.splits.map((split) => split.replay.rollForwardIterations)
+      ),
+      lnsRollForwardRepairTimeLimitSeconds: uniqueBenchmarkValues(
+        result.lns.splits.map((split) => split.replay.rollForwardRepairTimeLimitSeconds)
+      ),
+      lnsRollForwardLabelCount: sumBenchmarkBy(result.lns.splits, (split) => split.replay.rollForwardLabelCount),
       lnsFeatureSchemaVersion: result.audit.lnsReplay.featureSchemaVersion,
       lnsCpSatNumWorkers: uniqueBenchmarkValues(result.lns.splits.map((split) => split.replay.cpSatNumWorkers))
     },
@@ -732,6 +752,8 @@ export function buildLearnedRankingLabelRegistryEntryDraft(
       lnsReplayPreset: result.audit.lnsReplay.preset,
       lnsStatePolicies: [...result.audit.lnsReplay.incumbentStatePolicies],
       lnsCapturedStatePolicies,
+      lnsRollForwardIterations: result.audit.lnsReplay.rollForwardIterations,
+      lnsRollForwardLabelCount: sumBenchmarkBy(result.lns.splits, (split) => split.replay.rollForwardLabelCount),
       lnsCpSatModelFingerprints
     }
   };
@@ -741,6 +763,10 @@ function formatCaseList(values: readonly string[]): string {
   return values.length === 0 ? "none" : values.join(", ");
 }
 
+function formatNullableSeconds(value: number | null): string {
+  return value === null ? "n/a" : `${value}s`;
+}
+
 export function formatLearnedRankingLabelSuite(result: LearnedRankingLabelSuiteResult): string {
   const lines: string[] = [];
   lines.push("=== Low-Risk Learned Ranking Labels ===");
@@ -748,7 +774,7 @@ export function formatLearnedRankingLabelSuite(result: LearnedRankingLabelSuiteR
   lines.push(`Schema: ${result.schemaVersion}`);
   lines.push(`Seeds: ${result.seeds.join(", ")}`);
   lines.push(
-    `Audit: learned-model=${result.audit.learnedModel ?? "none"} greedy-profile=${result.audit.greedy.profile} greedy-connectivity-shadow=${result.audit.greedy.connectivityShadowScoring} lns-preset=${result.audit.lnsReplay.preset ?? "none"} lns-cp-sat-workers=${result.audit.lnsReplay.cpSatNumWorkers} lns-state=${result.audit.lnsReplay.incumbentStatePolicies.join(",")} lns-state-collection=${result.audit.lnsReplay.stateCollectionIterations}x${result.audit.lnsReplay.stateCollectionRepairTimeLimitSeconds}s lns-windows=${result.audit.lnsReplay.candidateWindowPolicy} lns-exploration=${result.audit.lnsReplay.explorationWindowCount} lns-feature-schema=${result.audit.lnsReplay.featureSchemaVersion}`
+    `Audit: learned-model=${result.audit.learnedModel ?? "none"} greedy-profile=${result.audit.greedy.profile} greedy-connectivity-shadow=${result.audit.greedy.connectivityShadowScoring} lns-preset=${result.audit.lnsReplay.preset ?? "none"} lns-cp-sat-workers=${result.audit.lnsReplay.cpSatNumWorkers} lns-state=${result.audit.lnsReplay.incumbentStatePolicies.join(",")} lns-state-collection=${result.audit.lnsReplay.stateCollectionIterations}x${result.audit.lnsReplay.stateCollectionRepairTimeLimitSeconds}s lns-roll-forward=${result.audit.lnsReplay.rollForwardIterations}x${formatNullableSeconds(result.audit.lnsReplay.rollForwardRepairTimeLimitSeconds)} lns-windows=${result.audit.lnsReplay.candidateWindowPolicy} lns-exploration=${result.audit.lnsReplay.explorationWindowCount} lns-feature-schema=${result.audit.lnsReplay.featureSchemaVersion}`
   );
   lines.push(
     `Leakage: protected-holdout=${result.leakage.protectedHoldout} greedy-overlap=${formatCaseList(result.leakage.greedyOverlap)} lns-overlap=${formatCaseList(result.leakage.lnsOverlap)}`
@@ -770,7 +796,7 @@ export function formatLearnedRankingLabelSuite(result: LearnedRankingLabelSuiteR
   }
   for (const split of result.lns.splits) {
     lines.push(
-      `- lns ${split.split}: cases=${split.selectedCaseNames.join(", ")} families=${split.pressureFamilies.join(", ")} labels=${split.labelCount} usable=${split.usableLabelCount} improved=${split.statusCounts.improved} neutral=${split.statusCounts.neutral} regressed=${split.statusCounts.regressed} invalid=${split.statusCounts.invalid} recoverable-failure=${split.statusCounts["recoverable-failure"]} repair=${split.replay.repairTimeLimitSeconds}s max-windows=${split.replay.maxWindows} exploration=${split.replay.explorationWindowCount}`
+      `- lns ${split.split}: cases=${split.selectedCaseNames.join(", ")} families=${split.pressureFamilies.join(", ")} labels=${split.labelCount} usable=${split.usableLabelCount} improved=${split.statusCounts.improved} neutral=${split.statusCounts.neutral} regressed=${split.statusCounts.regressed} invalid=${split.statusCounts.invalid} recoverable-failure=${split.statusCounts["recoverable-failure"]} repair=${split.replay.repairTimeLimitSeconds}s roll-forward=${split.replay.rollForwardLabelCount} max-windows=${split.replay.maxWindows} exploration=${split.replay.explorationWindowCount}`
     );
   }
   return lines.join("\n");

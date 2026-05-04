@@ -101,6 +101,8 @@ export interface LearnedRankingAuditMetadata {
     incumbentStatePolicies: LnsWindowReplayStatePolicy[];
     stateCollectionIterations: number;
     stateCollectionRepairTimeLimitSeconds: number;
+    rollForwardIterations: number;
+    rollForwardRepairTimeLimitSeconds: number | null;
     candidateWindowPolicy: "baseline-ranked-top-k" | "baseline-ranked-top-k-plus-tail-exploration";
     explorationWindowCount: number;
     featureSchemaVersion: typeof LNS_WINDOW_REPLAY_FEATURE_SCHEMA_VERSION;
@@ -182,6 +184,9 @@ export interface LearnedRankingLabelTelemetryManifest {
       capturedStatePolicies: LnsWindowReplayStatePolicy[];
       stateCollectionIterations: number;
       stateCollectionRepairTimeLimitSeconds: number;
+      rollForwardIterations: number;
+      rollForwardRepairTimeLimitSeconds: number | null;
+      rollForwardLabelCount: number;
       stateCount: number;
       featureSchemaVersion: number;
       cpSatNumWorkers: number;
@@ -210,6 +215,8 @@ export interface LearnedRankingLabelRunOptions {
   maxWindows?: number;
   repairTimeLimitSeconds?: number;
   explorationWindowCount?: number;
+  lnsRollForwardIterations?: number;
+  lnsRollForwardRepairTimeLimitSeconds?: number;
   lnsStatePolicies?: readonly LnsWindowReplayStatePolicy[];
   lnsStateCollectionIterations?: number;
   lnsStateCollectionRepairTimeLimitSeconds?: number;

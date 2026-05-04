@@ -67,6 +67,7 @@ Delivered so far:
 - LNS replay labels now carry feature schema `2`, CP-SAT model fingerprints, model encoding/candidate-key metadata, model-size telemetry when available, wall-clock timing, observed CP-SAT user time, and configured worker CPU budget.
 - Replay feature payloads now include connectivity-shadow, empty-graph fragmentation, and service/residential candidate-loss summaries alongside the existing window occupancy/headroom features.
 - Learned-ranking label telemetry and registry drafts now preserve the LNS feature schema, CP-SAT worker count, CP-SAT model fingerprints, and an input fingerprint for replay-label evidence.
+- LNS replay labels now support opt-in roll-forward final-score payloads via `--roll-forward-iterations` and `--roll-forward-repair-time`. When enabled, valid replay repairs are warm-started into a bounded LNS continuation, then each label records final population deltas from the incumbent, from the repaired seed, and versus the deterministic baseline-selected replay label. Learned-ranking label snapshots, telemetry manifests, registry drafts, and text summaries carry the roll-forward budget and label counts.
 - Replay state policies are now explicit. Default label generation still uses `initial-incumbent`, while strict runs can request `initial-incumbent`, `post-first-improvement`, and `post-stagnation` with bounded state-collection iterations and a separate CP-SAT repair budget.
 - `lnsBenchmarkCli` and `learnedRankingLabelCli` expose the state-policy and state-collection knobs, and label telemetry/snapshots carry requested and captured state policies.
 - Learned-ranking label generation now has a `strict-lns-replay` preset that records the preset in audit/registry metadata and applies the strict three-state replay policy with the standard three fixed seeds unless the caller explicitly overrides them.
@@ -95,7 +96,7 @@ Delivered so far:
 Concrete work:
 
 - Check whether weak-seed replay labels need weighting, stratification, or a separate diagnostic flag before any online scorer consumes them.
-- Improve protected online signal before any feature flag: add roll-forward/final-score lift labels to the strict replay bundle so training can learn from durable final improvements rather than intermediate repairs alone, then rerun protected holdout.
+- Improve protected online signal before any feature flag: regenerate the strict replay bundle with roll-forward final-score labels enabled, train/evaluate a final-lift-aware window ranker, then rerun protected holdout.
 - Expose the same feature payload shape in broader traces, benchmark summaries, and planner explainability surfaces where useful.
 
 Exit criteria:

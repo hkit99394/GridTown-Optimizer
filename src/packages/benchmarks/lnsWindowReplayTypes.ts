@@ -31,6 +31,8 @@ export interface LnsWindowReplayLabelRunOptions {
   maxWindows?: number;
   explorationWindowCount?: number;
   repairTimeLimitSeconds?: number;
+  rollForwardIterations?: number;
+  rollForwardRepairTimeLimitSeconds?: number;
   statePolicies?: readonly LnsWindowReplayStatePolicy[];
   stateCollectionIterations?: number;
   stateCollectionRepairTimeLimitSeconds?: number;
@@ -107,6 +109,21 @@ export interface LnsWindowReplayCpSatMetadata {
   modelSize: CpSatModelSizeTelemetry | null;
 }
 
+export type LnsWindowReplayRollForwardStatus = "improved" | "neutral" | "regressed" | "unknown";
+
+export interface LnsWindowReplayRollForwardOutcome {
+  iterations: number;
+  repairTimeLimitSeconds: number;
+  seedPopulation: number;
+  totalPopulation: number;
+  populationDeltaFromIncumbent: number;
+  populationDeltaFromRepair: number;
+  baselineTotalPopulation: number | null;
+  populationDeltaVsBaseline: number | null;
+  improvementVsBaseline: number | null;
+  statusVsBaseline: LnsWindowReplayRollForwardStatus;
+}
+
 export interface LnsWindowReplayLabel {
   caseName: string;
   pressureFamily: LnsReplayPressureFamilyLabel;
@@ -138,6 +155,7 @@ export interface LnsWindowReplayLabel {
     recomputedTotalPopulation: number;
   };
   features: LnsWindowReplayFeatures;
+  rollForward?: LnsWindowReplayRollForwardOutcome;
 }
 
 export interface LnsWindowReplayCaseResult {
@@ -172,6 +190,9 @@ export interface LnsWindowReplaySuiteResult {
   maxWindows: number;
   explorationWindowCount: number;
   repairTimeLimitSeconds: number;
+  rollForwardIterations: number;
+  rollForwardRepairTimeLimitSeconds: number | null;
+  rollForwardLabelCount: number;
   statePolicies: LnsWindowReplayStatePolicy[];
   capturedStatePolicies: LnsWindowReplayStatePolicy[];
   stateCollectionIterations: number;

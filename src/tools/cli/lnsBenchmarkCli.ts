@@ -81,6 +81,8 @@ interface ParsedBenchmarkArgs {
   maxWindows?: number;
   explorationWindowCount?: number;
   repairTimeLimitSeconds?: number;
+  rollForwardIterations?: number;
+  rollForwardRepairTimeLimitSeconds?: number;
   statePolicies?: LnsWindowReplayStatePolicy[];
   stateCollectionIterations?: number;
   stateCollectionRepairTimeLimitSeconds?: number;
@@ -137,6 +139,8 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let maxWindows: number | undefined;
   let explorationWindowCount: number | undefined;
   let repairTimeLimitSeconds: number | undefined;
+  let rollForwardIterations: number | undefined;
+  let rollForwardRepairTimeLimitSeconds: number | undefined;
   let statePolicies: LnsWindowReplayStatePolicy[] | undefined;
   let stateCollectionIterations: number | undefined;
   let stateCollectionRepairTimeLimitSeconds: number | undefined;
@@ -165,6 +169,12 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     },
     "repair-time": (value) => {
       repairTimeLimitSeconds = parsePositiveNumber(value, "--repair-time");
+    },
+    "roll-forward-iterations": (value) => {
+      rollForwardIterations = parseNonNegativeInteger(value, "--roll-forward-iterations");
+    },
+    "roll-forward-repair-time": (value) => {
+      rollForwardRepairTimeLimitSeconds = parsePositiveNumber(value, "--roll-forward-repair-time");
     },
     "state-policies": (value) => {
       statePolicies = parseNameList(value, "state policy") as LnsWindowReplayStatePolicy[];
@@ -288,6 +298,8 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     maxWindows,
     explorationWindowCount,
     repairTimeLimitSeconds,
+    rollForwardIterations,
+    rollForwardRepairTimeLimitSeconds,
     statePolicies,
     stateCollectionIterations,
     stateCollectionRepairTimeLimitSeconds,
@@ -525,6 +537,8 @@ export function runLnsBenchmarkCli(): void {
       maxWindows: args.maxWindows,
       explorationWindowCount: args.explorationWindowCount,
       repairTimeLimitSeconds: args.repairTimeLimitSeconds,
+      rollForwardIterations: args.rollForwardIterations,
+      rollForwardRepairTimeLimitSeconds: args.rollForwardRepairTimeLimitSeconds,
       statePolicies: args.statePolicies,
       stateCollectionIterations: args.stateCollectionIterations,
       stateCollectionRepairTimeLimitSeconds: args.stateCollectionRepairTimeLimitSeconds

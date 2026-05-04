@@ -13,7 +13,8 @@ import {
   buildAdaptiveNeighborhoodCandidates,
   selectAdaptiveNeighborhoodOperator,
   solveCpSat,
-  solveGreedy
+  solveGreedy,
+  solveLns
 } from "../solvers/index.js";
 import { normalizeCpSatBenchmarkOptions } from "./cpSat.js";
 import { normalizeGreedyBenchmarkOptions } from "./greedy.js";
@@ -51,6 +52,7 @@ import type {
   LnsWindowReplayCpSatMetadata,
   LnsWindowReplayLabel,
   LnsWindowReplayLabelRunOptions,
+  LnsWindowReplayRollForwardOutcome,
   LnsWindowReplaySnapshot,
   LnsWindowReplaySnapshotLabel,
   LnsWindowReplayStatePolicy,
@@ -76,6 +78,8 @@ export type {
   LnsWindowReplayFragmentationFeatures,
   LnsWindowReplayLabel,
   LnsWindowReplayLabelRunOptions,
+  LnsWindowReplayRollForwardOutcome,
+  LnsWindowReplayRollForwardStatus,
   LnsWindowReplaySnapshot,
   LnsWindowReplaySnapshotCaseResult,
   LnsWindowReplaySnapshotLabel,
@@ -206,6 +210,54 @@ function statusForPopulationDelta(populationDelta: number): LnsWindowReplayLabel
   return "neutral";
 }
 
+function rollForwardStatusForPopulationDelta(
+  populationDelta: number | null
+): LnsWindowReplayRollForwardOutcome["statusVsBaseline"] {
+  if (populationDelta === null) return "unknown";
+  if (populationDelta > 0) return "improved";
+  if (populationDelta < 0) return "regressed";
+  return "neutral";
+}
+
+interface RollForwardOptions {
+  iterations: number;
+  repairTimeLimitSeconds: number;
+}
+
+function buildRollForwardOutcome(
+  G: Grid,
+  params: SolverParams,
+  incumbent: Solution,
+  repairedSolution: Solution,
+  window: LnsWindowReplayLabel["window"],
+  options: RollForwardOptions
+): LnsWindowReplayRollForwardOutcome {
+  const rollForwardSolution = solveLns(G, {
+    ...params,
+    optimizer: "lns",
+    lns: {
+      ...(params.lns ?? {}),
+      iterations: options.iterations,
+      repairTimeLimitSeconds: options.repairTimeLimitSeconds,
+      focusedRepairTimeLimitSeconds: options.repairTimeLimitSeconds,
+      escalatedRepairTimeLimitSeconds: options.repairTimeLimitSeconds,
+      seedHint: buildLnsWarmStartHint(repairedSolution, window)
+    }
+  });
+  return {
+    iterations: options.iterations,
+    repairTimeLimitSeconds: options.repairTimeLimitSeconds,
+    seedPopulation: repairedSolution.totalPopulation,
+    totalPopulation: rollForwardSolution.totalPopulation,
+    populationDeltaFromIncumbent: rollForwardSolution.totalPopulation - incumbent.totalPopulation,
+    populationDeltaFromRepair: rollForwardSolution.totalPopulation - repairedSolution.totalPopulation,
+    baselineTotalPopulation: null,
+    populationDeltaVsBaseline: null,
+    improvementVsBaseline: null,
+    statusVsBaseline: "unknown"
+  };
+}
+
 function isRecoverableCpSatFailure(error: unknown): boolean {
   return error instanceof Error && /No feasible solution found with CP-SAT\./.test(error.message);
 }
@@ -227,7 +279,8 @@ function replayWindow(
   selectionSource: LnsWindowReplayLabel["selectionSource"],
   selectedCandidate: LnsAdaptiveNeighborhoodCandidate | null,
   cpSatModelFingerprint: string,
-  repairTimeLimitSeconds: number
+  repairTimeLimitSeconds: number,
+  rollForwardOptions: RollForwardOptions | null
 ): LnsWindowReplayLabel {
   const startedAtMs = performance.now();
   const { window } = candidate;
@@ -255,6 +308,10 @@ function replayWindow(
     const populationDelta = repairedSolution.totalPopulation - incumbent.totalPopulation;
     const validation = validateReplaySolution(G, params, repairedSolution);
     const status = validation.valid ? statusForPopulationDelta(populationDelta) : "invalid";
+    const rollForward =
+      validation.valid && rollForwardOptions
+        ? buildRollForwardOutcome(G, params, incumbent, repairedSolution, window, rollForwardOptions)
+        : undefined;
     const timing: LnsWindowReplayTiming = {
       repairTimeLimitSeconds,
       cpSatNumWorkers: LNS_WINDOW_REPLAY_CP_SAT_NUM_WORKERS,
@@ -294,7 +351,8 @@ function replayWindow(
         modelSize: repairedSolution.cpSatTelemetry?.modelSize ?? null
       },
       validation,
-      features
+      features,
+      ...(rollForward ? { rollForward } : {})
     };
   } catch (error) {
     if (!isRecoverableCpSatFailure(error)) {
@@ -386,6 +444,25 @@ function selectReplayWindowPlans(
   }
 
   return [...selected.values()];
+}
+
+function withRollForwardBaselineComparisons(labels: readonly LnsWindowReplayLabel[]): LnsWindowReplayLabel[] {
+  const baseline = labels.find((label) => label.selectedByBaseline && label.rollForward)?.rollForward;
+  if (!baseline) return [...labels];
+  return labels.map((label) => {
+    if (!label.rollForward) return label;
+    const populationDeltaVsBaseline = label.rollForward.totalPopulation - baseline.totalPopulation;
+    return {
+      ...label,
+      rollForward: {
+        ...label.rollForward,
+        baselineTotalPopulation: baseline.totalPopulation,
+        populationDeltaVsBaseline,
+        improvementVsBaseline: Math.max(0, populationDeltaVsBaseline),
+        statusVsBaseline: rollForwardStatusForPopulationDelta(populationDeltaVsBaseline)
+      }
+    };
+  });
 }
 
 interface CapturedReplayState {
@@ -521,6 +598,15 @@ export function runLnsWindowReplayLabels(
   const maxWindows = positiveIntegerOrDefault(options.maxWindows, 8);
   const explorationWindowCount = nonNegativeIntegerOrDefault(options.explorationWindowCount, 0);
   const replayRepairTimeLimitSeconds = positiveFiniteNumberOrDefault(options.repairTimeLimitSeconds, 1);
+  const rollForwardIterations = nonNegativeIntegerOrDefault(options.rollForwardIterations, 0);
+  const rollForwardRepairTimeLimitSeconds =
+    rollForwardIterations > 0
+      ? positiveFiniteNumberOrDefault(options.rollForwardRepairTimeLimitSeconds, replayRepairTimeLimitSeconds)
+      : null;
+  const rollForwardOptions =
+    rollForwardIterations > 0 && rollForwardRepairTimeLimitSeconds !== null
+      ? { iterations: rollForwardIterations, repairTimeLimitSeconds: rollForwardRepairTimeLimitSeconds }
+      : null;
   const statePolicies = normalizeLnsWindowReplayStatePolicies(options.statePolicies);
   const stateCollectionIterations = positiveIntegerOrDefault(options.stateCollectionIterations, 4);
   const stateCollectionRepairTimeLimitSeconds = positiveFiniteNumberOrDefault(
@@ -554,25 +640,28 @@ export function runLnsWindowReplayLabels(
           ? selectAdaptiveNeighborhoodOperator(candidates, 0, 0, neighborhoodOptions)
           : null;
         const replayWindows = selectReplayWindowPlans(candidates, maxWindows, explorationWindowCount);
-        const labels = replayWindows.map(({ candidate, windowIndex, selectionSource }) =>
-          replayWindow(
-            G,
-            params,
-            benchmarkCase.name,
-            pressureFamily,
-            seed,
-            state.statePolicy,
-            state.stateIndex,
-            state.stateSourceIteration,
-            state.stateSourceStatus,
-            state.stateStagnantIterations,
-            state.incumbent,
-            candidate,
-            windowIndex,
-            selectionSource,
-            selectedCandidate,
-            cpSatModelFingerprint,
-            replayRepairTimeLimitSeconds
+        const labels = withRollForwardBaselineComparisons(
+          replayWindows.map(({ candidate, windowIndex, selectionSource }) =>
+            replayWindow(
+              G,
+              params,
+              benchmarkCase.name,
+              pressureFamily,
+              seed,
+              state.statePolicy,
+              state.stateIndex,
+              state.stateSourceIteration,
+              state.stateSourceStatus,
+              state.stateStagnantIterations,
+              state.incumbent,
+              candidate,
+              windowIndex,
+              selectionSource,
+              selectedCandidate,
+              cpSatModelFingerprint,
+              replayRepairTimeLimitSeconds,
+              rollForwardOptions
+            )
           )
         );
         return {
@@ -610,6 +699,8 @@ export function runLnsWindowReplayLabels(
     maxWindows,
     explorationWindowCount,
     repairTimeLimitSeconds: replayRepairTimeLimitSeconds,
+    rollForwardIterations,
+    rollForwardRepairTimeLimitSeconds,
     statePolicies: [...statePolicies],
     capturedStatePolicies: uniqueBenchmarkValuesBy(cases, (benchmarkCase) => benchmarkCase.statePolicy),
     stateCollectionIterations,
@@ -620,6 +711,10 @@ export function runLnsWindowReplayLabels(
     cpSatModelFingerprints: uniqueBenchmarkValuesBy(
       cases.flatMap((benchmarkCase) => benchmarkCase.labels),
       (label) => label.cpSat.modelFingerprint
+    ),
+    rollForwardLabelCount: sumBenchmarkBy(
+      cases,
+      (benchmarkCase) => benchmarkCase.labels.filter((label) => label.rollForward).length
     ),
     labelCount: sumBenchmarkBy(cases, (benchmarkCase) => benchmarkCase.labels.length),
     cases
@@ -638,6 +733,9 @@ export function createLnsWindowReplaySnapshot(result: LnsWindowReplaySuiteResult
     maxWindows: result.maxWindows,
     explorationWindowCount: result.explorationWindowCount,
     repairTimeLimitSeconds: result.repairTimeLimitSeconds,
+    rollForwardIterations: result.rollForwardIterations,
+    rollForwardRepairTimeLimitSeconds: result.rollForwardRepairTimeLimitSeconds,
+    rollForwardLabelCount: result.rollForwardLabelCount,
     statePolicies: [...result.statePolicies],
     capturedStatePolicies: [...result.capturedStatePolicies],
     stateCollectionIterations: result.stateCollectionIterations,

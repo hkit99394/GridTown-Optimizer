@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "source": "model-experiment",
+  "command": "node dist/lnsWindowRankerBaselineCli.js --labels=artifacts/learned-ranking-labels/2026-05-04/strict-lns-replay-labels-replay-seed-v2/labels.json --artifact-dir=artifacts/lns-window-ranker-baselines/2026-05-04/strict-replay-seed-v2-baselines --baseline-run-id=lns-window-ranker-baselines-2026-05-04-strict-replay-seed-v2 --baseline-decision=offline-lns-window-baselines-evidence '--baseline-summary=Offline LNS window-ranking baseline sweep over the passing strict replay-seed-v2 label bundle.' --json",
+  "generatedAt": "2026-05-04T00:59:32.196Z",
+  "git": {
+    "commit": "14391f85f80280c1837f9bb55edb8306b068738a",
+    "branch": "features/validated-solver-improvement-loop"
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "model": {
+    "schemaVersion": 1,
+    "modelType": "lns-window-ranking-baseline-sweep",
+    "purpose": "offline-diagnostics-only",
+    "trained": false,
+    "runtimeDefaultChanged": false,
+    "solverDefaultChanged": false,
+    "featureSchemaVersion": 2,
+    "topK": 3,
+    "baselineNames": [
+      "baseline-selected-window",
+      "operator-score",
+      "stable-random",
+      "connectivity-shadow",
+      "fragmentation",
+      "candidate-loss",
+      "residential-headroom",
+      "service-bonus"
+    ],
+    "bestBaselineName": "fragmentation"
+  },
+  "inputArtifacts": [
+    "artifacts/learned-ranking-labels/2026-05-04/strict-lns-replay-labels-replay-seed-v2/labels.json"
+  ],
+  "outputArtifacts": [
+    "artifacts/lns-window-ranker-baselines/2026-05-04/strict-replay-seed-v2-baselines/lns-window-ranker-baselines.json",
+    "artifacts/lns-window-ranker-baselines/2026-05-04/strict-replay-seed-v2-baselines/lns-window-ranker-baselines.txt",
+    "artifacts/lns-window-ranker-baselines/2026-05-04/strict-replay-seed-v2-baselines/model.json",
+    "artifacts/lns-window-ranker-baselines/2026-05-04/strict-replay-seed-v2-baselines/telemetry-manifest.json"
+  ],
+  "labelFingerprint": "fnv1a:850a26f9",
+  "datasetFingerprint": "fnv1a:1c1cb973",
+  "modelFingerprint": "fnv1a:a7271187",
+  "metrics": {
+    "passed": true,
+    "bestBaselineName": "fragmentation",
+    "bestBaselineHoldoutCaptureRate": 0.7765,
+    "bestBaselineHoldoutHitAt1": 0.6154,
+    "bestBaselineHoldoutHitAtK": 0.7692,
+    "deterministicHoldoutCaptureRate": 0.6307,
+    "randomHoldoutCaptureRate": 0.6429,
+    "developmentDecisionCount": 45,
+    "holdoutDecisionCount": 45,
+    "developmentOpportunityCount": 30,
+    "holdoutOpportunityCount": 39,
+    "sourceLnsScaleReady": true
+  },
+  "notes": "CPU-only LNS window-ranking baseline sweep; no learned runtime scorer or solver default changed."
+}

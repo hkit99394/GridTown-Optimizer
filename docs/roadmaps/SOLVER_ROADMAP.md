@@ -76,11 +76,15 @@ Delivered so far:
 - Replay-label corpus cases without curated seed hints now use a minimal valid anchor-road seed for label collection only; the normal LNS benchmark corpus remains unchanged, but strict replay can collect post-improvement states from intentionally weak incumbents.
 - The follow-up bundle `strict-lns-replay-labels-2026-05-04-replay-seed-v2` is generated and registered under `artifacts/learned-ranking-labels/2026-05-04/strict-lns-replay-labels-replay-seed-v2/` with 4,677 Greedy labels, 1,545 LNS replay labels, protected holdout, feature schema `2`, CP-SAT worker count `1`, seeds `7`, `19`, and `37`, all three requested replay states captured in every pressure family, label fingerprint `fnv1a:850a26f9`, and LNS scale readiness passing.
 - The passing strict bundle clears the label-scale gate: development has 810 usable LNS labels, 333 non-neutral labels, and neutral ratio `0.589`; holdout has 735 usable LNS labels, 363 non-neutral labels, and neutral ratio `0.506`.
+- Offline LNS window-ranking baseline tooling now evaluates recorded replay decisions without running CP-SAT, reports improvement capture, hit@1, hit@k, regret, split/family/state breakdowns, telemetry, and registry drafts via `benchmark:lns-ranker`.
+- The registered baseline sweep `lns-window-ranker-baselines-2026-05-04-strict-replay-seed-v2` shows useful holdout ranking signal but sets a high non-learned bar: current operator score captures `0.6307` of available holdout improvement, stable random captures `0.6429`, candidate-loss captures `0.7084`, and the best simple baseline, fragmentation, captures `0.7765` with hit@1 `0.6154`.
+- CPU-first LNS window-ranker tooling now trains a linear pairwise replay model from the strict label bundle without running CP-SAT, writes model/telemetry/registry artifacts via `benchmark:lns-window-ranker`, and remains diagnostics-only with no runtime hook or solver default change.
+- The registered ranker artifact `lns-window-ranker-2026-05-04-strict-replay-seed-v2` is generated under `artifacts/lns-window-ranker/2026-05-04/strict-replay-seed-v2-cpu-ranker/` with model fingerprint `fnv1a:2d6b2b9f`, dataset fingerprint `fnv1a:1c1cb973`, and label fingerprint `fnv1a:850a26f9`. It beats the best fragmentation baseline on protected holdout: model capture `0.8780` versus `0.7765`, delta `+0.1015`, hit@1 `0.6154`, hit@k `0.7692`, and mean regret `29.62`.
 
 Concrete work:
 
-- Run offline LNS window-ranking baselines against the passing strict bundle before introducing any runtime scorer.
-- Check whether weak-seed replay labels need weighting, stratification, or a separate diagnostic flag before model training.
+- Check whether weak-seed replay labels need weighting, stratification, or a separate diagnostic flag before any online scorer consumes them.
+- Prototype a feature-flagged online LNS window scorer with strict fallback to the existing deterministic ranker, then run equal-budget A/B scorecards before considering promotion.
 - Expose the same feature payload shape in broader traces, benchmark summaries, and planner explainability surfaces where useful.
 
 Exit criteria:

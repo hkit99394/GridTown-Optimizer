@@ -16,9 +16,12 @@ const {
   buildLnsReplayLabelScaleReadiness,
   buildGreedyOfflineRankerRegistryEntryDraft,
   buildGreedyOfflineRankerTelemetryManifest,
+  buildLnsWindowRankerBaselineRegistryEntryDraft,
+  buildLnsWindowRankerBaselineTelemetryManifest,
   collectGreedyOrderingLabelsFromBenchmarkSuite,
   createGreedyOfflineRankerSnapshot,
   createLearnedRankingLabelSnapshot,
+  createLnsWindowRankerBaselineSnapshot,
   DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS,
   DEFAULT_LEARNED_RANKING_LABEL_SPLITS,
   STRICT_LNS_REPLAY_LABEL_PRESET,
@@ -52,6 +55,7 @@ const {
   formatLearnedRankingLabelSuite,
   formatLnsNeighborhoodAblation,
   formatLnsBenchmarkSuite,
+  formatLnsWindowRankerBaselineExperiment,
   formatLnsWindowReplayLabels,
   listCrossModeBenchmarkCaseNames,
   listGreedyConnectivityShadowOrderingLabelCaseNames,
@@ -65,6 +69,7 @@ const {
   runGreedyConnectivityShadowOrderingLabels,
   runGreedyOfflineRankerExperiment,
   runLearnedRankingLabelSuite,
+  runLnsWindowRankerBaselineExperiment,
   runLnsNeighborhoodAblation,
   runLnsWindowReplayLabels,
   runLnsBenchmarkSuite,
@@ -1964,9 +1969,7 @@ function testLearnedRankingLabelSuite() {
   assert.deepEqual(strictPresetResult.audit.lnsReplay.incumbentStatePolicies, [
     ...STRICT_LNS_REPLAY_LABEL_STATE_POLICIES
   ]);
-  assert.deepEqual(strictPresetResult.lns.splits[0].replay.statePolicies, [
-    ...STRICT_LNS_REPLAY_LABEL_STATE_POLICIES
-  ]);
+  assert.deepEqual(strictPresetResult.lns.splits[0].replay.statePolicies, [...STRICT_LNS_REPLAY_LABEL_STATE_POLICIES]);
   assert.deepEqual(strictPresetResult.lns.scaleReadiness.thresholds.requiredStatePolicies, [
     ...STRICT_LNS_REPLAY_LABEL_STATE_POLICIES
   ]);
@@ -5084,6 +5087,353 @@ function testLnsWindowReplayLabelRunner() {
     assert.match(formatted, /improvement=\+100/);
   } finally {
     cpSatModule.solveCpSat = originalSolveCpSat;
+  }
+}
+
+function buildLnsWindowRankerBaselineLabel({
+  windowIndex,
+  operatorScore,
+  improvement,
+  selectedByBaseline = false,
+  candidateLoss = 0,
+  residentialHeadroom = 0,
+  serviceBonus = 0,
+  newlyReachable = 0,
+  anchorReachable = 0
+}) {
+  return {
+    windowIndex,
+    operatorScore,
+    selectedByBaseline,
+    improvement,
+    populationDelta: improvement,
+    status: improvement > 0 ? "improved" : "neutral",
+    usable: true,
+    features: {
+      schemaVersion: 2,
+      area: 4,
+      touchesRoadAnchorBoundary: false,
+      roadCountInside: 0,
+      serviceCountInside: 0,
+      residentialCountInside: 0,
+      residentialHeadroomInside: residentialHeadroom,
+      serviceBonusInside: serviceBonus,
+      connectivityShadow: {
+        reachableEmptyCellsBefore: 0,
+        reachableEmptyCellsAfterClearingWindow: newlyReachable,
+        newlyReachableEmptyCellsIfCleared: newlyReachable,
+        disconnectedEmptyCellsBefore: 0,
+        disconnectedEmptyCellsAfterClearingWindow: 0,
+        clearedBuildingFootprintCells: 0
+      },
+      fragmentation: {
+        emptyComponentCountBefore: 1,
+        emptyComponentCountAfterClearingWindow: 1,
+        componentDeltaAfterClearingWindow: 0,
+        allowedWindowCellCount: 4,
+        anchorReachableWindowCellCount: anchorReachable,
+        narrowGateCellCount: 0
+      },
+      candidateLoss: {
+        serviceCandidatesIntersectingWindow: candidateLoss,
+        residentialCandidatesIntersectingWindow: candidateLoss,
+        serviceCandidatesBlockedByIncumbent: 0,
+        residentialCandidatesBlockedByIncumbent: 0,
+        serviceCandidateBonusInside: candidateLoss * 10,
+        maxServiceCandidateBonusInside: candidateLoss * 10,
+        residentialCandidateHeadroomInside: candidateLoss * 20,
+        serviceTypeCounts: {},
+        residentialTypeCounts: {}
+      }
+    }
+  };
+}
+
+function buildLnsWindowRankerBaselineCase(name, split, pressureFamily, labels) {
+  return {
+    name,
+    description: `${name} replay fixture`,
+    pressureFamily,
+    seed: 7,
+    statePolicy: "initial-incumbent",
+    stateIndex: 0,
+    stateSourceIteration: null,
+    stateSourceStatus: "initial-incumbent",
+    stateStagnantIterations: 0,
+    gridRows: 4,
+    gridCols: 4,
+    incumbentPopulation: 0,
+    candidateWindowCount: labels.length,
+    replayedWindowCount: labels.length,
+    baselineSelectedWindow: null,
+    baselineSelectedOperator: null,
+    labels: labels.map((label) => ({
+      ...label,
+      caseName: name,
+      pressureFamily,
+      seed: 7,
+      statePolicy: "initial-incumbent",
+      stateIndex: 0,
+      stateSourceIteration: null,
+      stateSourceStatus: "initial-incumbent",
+      stateStagnantIterations: 0,
+      operator: "service-anchor",
+      selectionSource: "baseline-top-k",
+      window: { top: 0, left: label.windowIndex, rows: 2, cols: 2 },
+      incumbentPopulation: 0,
+      totalPopulation: label.improvement,
+      cpSatStatus: "OPTIMAL",
+      repairTimeLimitSeconds: 1,
+      cpSat: {
+        modelEncodingVersion: "cp-sat-layout-v1",
+        candidateKeyVersion: 1,
+        modelFingerprint: "fnv1a:00000000",
+        warmStartFixOutsideNeighborhood: true,
+        modelSize: null
+      },
+      validation: {
+        valid: true,
+        recomputedTotalPopulation: label.improvement
+      }
+    })),
+    split
+  };
+}
+
+function buildLnsWindowRankerBaselineFixture() {
+  const developmentCases = [
+    buildLnsWindowRankerBaselineCase("dev-service", "development", "service-pressure", [
+      buildLnsWindowRankerBaselineLabel({
+        windowIndex: 0,
+        operatorScore: 10,
+        improvement: 0,
+        selectedByBaseline: true
+      }),
+      buildLnsWindowRankerBaselineLabel({ windowIndex: 1, operatorScore: 4, improvement: 30, candidateLoss: 8 }),
+      buildLnsWindowRankerBaselineLabel({ windowIndex: 2, operatorScore: 2, improvement: 10, candidateLoss: 2 })
+    ]),
+    buildLnsWindowRankerBaselineCase("dev-gate", "development", "gate", [
+      buildLnsWindowRankerBaselineLabel({ windowIndex: 0, operatorScore: 9, improvement: 0, selectedByBaseline: true }),
+      buildLnsWindowRankerBaselineLabel({ windowIndex: 1, operatorScore: 5, improvement: 20, candidateLoss: 7 }),
+      buildLnsWindowRankerBaselineLabel({ windowIndex: 2, operatorScore: 1, improvement: 5, candidateLoss: 1 })
+    ])
+  ];
+  const holdoutCases = [
+    buildLnsWindowRankerBaselineCase("holdout-service", "holdout", "service-pressure", [
+      buildLnsWindowRankerBaselineLabel({
+        windowIndex: 0,
+        operatorScore: 10,
+        improvement: 0,
+        selectedByBaseline: true
+      }),
+      buildLnsWindowRankerBaselineLabel({ windowIndex: 1, operatorScore: 3, improvement: 40, candidateLoss: 9 }),
+      buildLnsWindowRankerBaselineLabel({ windowIndex: 2, operatorScore: 2, improvement: 10, candidateLoss: 2 })
+    ]),
+    buildLnsWindowRankerBaselineCase("holdout-gate", "holdout", "gate", [
+      buildLnsWindowRankerBaselineLabel({ windowIndex: 0, operatorScore: 8, improvement: 0, selectedByBaseline: true }),
+      buildLnsWindowRankerBaselineLabel({ windowIndex: 1, operatorScore: 4, improvement: 25, candidateLoss: 6 }),
+      buildLnsWindowRankerBaselineLabel({ windowIndex: 2, operatorScore: 1, improvement: 5, candidateLoss: 1 })
+    ])
+  ];
+  const split = (name, cases) => ({
+    split: name,
+    selectedCaseNames: cases.map((entry) => entry.name),
+    pressureFamilies: [...new Set(cases.map((entry) => entry.pressureFamily))],
+    seeds: [7],
+    labelCount: cases.reduce((total, entry) => total + entry.labels.length, 0),
+    usableLabelCount: cases.reduce((total, entry) => total + entry.labels.length, 0),
+    statusCounts: { improved: 4, neutral: 2, regressed: 0, invalid: 0, "recoverable-failure": 0 },
+    replay: {
+      schemaVersion: 1,
+      caseCount: cases.length,
+      seedCount: 1,
+      comparisonCount: cases.length,
+      seeds: [7],
+      selectedCaseNames: cases.map((entry) => entry.name),
+      pressureFamilies: [...new Set(cases.map((entry) => entry.pressureFamily))],
+      maxWindows: 3,
+      explorationWindowCount: 0,
+      repairTimeLimitSeconds: 1,
+      statePolicies: ["initial-incumbent"],
+      capturedStatePolicies: ["initial-incumbent"],
+      stateCollectionIterations: 4,
+      stateCollectionRepairTimeLimitSeconds: 1,
+      stateCount: cases.length,
+      featureSchemaVersion: 2,
+      cpSatNumWorkers: 1,
+      cpSatModelFingerprints: ["fnv1a:00000000"],
+      labelCount: cases.reduce((total, entry) => total + entry.labels.length, 0),
+      cases
+    }
+  });
+
+  return {
+    schemaVersion: 1,
+    seeds: [7],
+    splitCount: 2,
+    audit: {
+      learnedModel: null,
+      greedy: { profile: true, connectivityShadowScoring: true },
+      lnsReplay: {
+        preset: "strict-lns-replay",
+        cpSatNumWorkers: 1,
+        incumbentStatePolicy: "initial-incumbent",
+        incumbentStatePolicies: ["initial-incumbent"],
+        stateCollectionIterations: 4,
+        stateCollectionRepairTimeLimitSeconds: 1,
+        candidateWindowPolicy: "baseline-ranked-top-k",
+        explorationWindowCount: 0,
+        featureSchemaVersion: 2
+      }
+    },
+    greedy: {
+      labelCount: 0,
+      sourceCounts: { "connectivity-shadow-decision": 0, "road-opportunity-counterfactual": 0 },
+      splits: []
+    },
+    lns: {
+      labelCount: 12,
+      scaleReadiness: { passed: true, thresholds: {}, splitReadiness: [] },
+      splits: [split("development", developmentCases), split("holdout", holdoutCases)]
+    },
+    leakage: {
+      developmentGreedyCases: [],
+      holdoutGreedyCases: [],
+      developmentLnsCases: developmentCases.map((entry) => entry.name),
+      holdoutLnsCases: holdoutCases.map((entry) => entry.name),
+      greedyOverlap: [],
+      lnsOverlap: [],
+      protectedHoldout: true
+    }
+  };
+}
+
+function testLnsWindowRankerBaselineExperiment() {
+  const fixture = buildLnsWindowRankerBaselineFixture();
+  const result = runLnsWindowRankerBaselineExperiment(fixture, { topK: 2, randomBaselineSeed: 3 });
+  const snapshot = createLnsWindowRankerBaselineSnapshot(result);
+  const formatted = formatLnsWindowRankerBaselineExperiment(result);
+  const candidateLoss = result.evaluation.baselines.find((entry) => entry.name === "candidate-loss");
+  const operatorScore = result.evaluation.baselines.find((entry) => entry.name === "operator-score");
+
+  assert.equal(result.schemaVersion, 1);
+  assert.equal(result.audit.cpuOnly, true);
+  assert.equal(result.audit.runtimeDefaultChanged, false);
+  assert.equal(result.audit.solverDefaultChanged, false);
+  assert.equal(result.audit.sourceLnsScaleReady, true);
+  assert.equal(result.model.trained, false);
+  assert.equal(result.model.modelType, "lns-window-ranking-baseline-sweep");
+  assert.equal(result.model.topK, 2);
+  assert.equal(result.labels.labelCount, 12);
+  assert.equal(result.labels.opportunityCount, 4);
+  assert.equal(result.evaluation.summary.passed, true);
+  assert.equal(result.evaluation.summary.bestBaselineName, "candidate-loss");
+  assert.equal(candidateLoss.holdout.improvementCaptureRate, 1);
+  assert.equal(candidateLoss.holdout.hitAt1, 1);
+  assert.equal(operatorScore.holdout.improvementCaptureRate, 0);
+  assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
+  assert.match(result.datasetFingerprint, /^fnv1a:[0-9a-f]{8}$/);
+  assert.match(result.labelFingerprint, /^fnv1a:[0-9a-f]{8}$/);
+  assert.match(result.modelFingerprint, /^fnv1a:[0-9a-f]{8}$/);
+  assert.match(formatted, /LNS Window-Ranking Baselines/);
+  assert.match(formatted, /best-baseline=candidate-loss/);
+  assert.match(formatted, /offline diagnostics only/);
+
+  const telemetryManifest = buildLnsWindowRankerBaselineTelemetryManifest(result, {
+    command: "node dist/lnsWindowRankerBaselineCli.js --labels=labels.json",
+    git: {
+      commit: "1234567890abcdef1234567890abcdef12345678",
+      branch: "features/lns-window-ranker-baseline-test"
+    },
+    hardware: {
+      captured: true,
+      cpuModel: "Test CPU",
+      logicalCpuCount: 8,
+      memoryBytes: 16,
+      gpuUsed: false
+    },
+    inputArtifacts: ["artifacts/labels.json"]
+  });
+  assert.equal(telemetryManifest.source, "model-experiment");
+  assert.equal(telemetryManifest.model.trained, false);
+  assert.equal(telemetryManifest.labelFingerprint, result.labelFingerprint);
+  assert.equal(telemetryManifest.metrics.bestBaselineName, "candidate-loss");
+
+  const registryDraft = buildLnsWindowRankerBaselineRegistryEntryDraft(result, fixture, {
+    runId: "lns-window-ranker-baseline-test",
+    commands: ["node dist/lnsWindowRankerBaselineCli.js --labels=labels.json"],
+    artifactPaths: ["artifacts/lns-ranker/lns-window-ranker-baselines.json"]
+  });
+  assert.equal(registryDraft.artifactType, "model-experiment");
+  assert.equal(registryDraft.decision, "offline-lns-window-baselines-evidence");
+  assert.equal(registryDraft.model.trained, false);
+  assert.equal(registryDraft.labelFingerprint, result.labelFingerprint);
+  assert.equal(registryDraft.splitStatus.protectedHoldout, true);
+  assert.equal(registryDraft.summaryMetrics.bestBaselineName, "candidate-loss");
+  const completedRegistryEntry = buildExperimentRegistryEntry(registryDraft, {
+    rootDir: path.join(__dirname, "../.."),
+    gitMetadata: {
+      commit: "1234567890abcdef1234567890abcdef12345678",
+      branch: "features/lns-window-ranker-baseline-test"
+    }
+  });
+  const registryValidation = validateExperimentRegistryEntry(completedRegistryEntry, {
+    rootDir: path.join(__dirname, "../.."),
+    validateArtifactPaths: false,
+    strict: true
+  });
+  assert.deepEqual(registryValidation.issues, []);
+
+  const repoRoot = path.join(__dirname, "../..");
+  const cliPath = path.join(repoRoot, "dist", "lnsWindowRankerBaselineCli.js");
+  const artifactDir = `artifacts/tmp-lns-window-ranker-baselines-${process.pid}`;
+  const labelsPath = `${artifactDir}/labels.json`;
+  const absoluteArtifactDir = path.join(repoRoot, artifactDir);
+  fs.rmSync(absoluteArtifactDir, { recursive: true, force: true });
+  fs.mkdirSync(absoluteArtifactDir, { recursive: true });
+  fs.writeFileSync(path.join(repoRoot, labelsPath), `${JSON.stringify(fixture, null, 2)}\n`);
+  try {
+    const artifactResult = childProcess.spawnSync(
+      process.execPath,
+      [
+        cliPath,
+        `--labels=${labelsPath}`,
+        `--artifact-dir=${artifactDir}`,
+        "--top-k=2",
+        "--baseline-run-id=tmp-lns-window-ranker-baseline-test",
+        "--baseline-register-dry-run",
+        "--json"
+      ],
+      {
+        cwd: repoRoot,
+        encoding: "utf8"
+      }
+    );
+    assert.equal(artifactResult.status, 0, artifactResult.stderr || artifactResult.stdout);
+    const artifactManifest = JSON.parse(artifactResult.stdout);
+    assert.equal(artifactManifest.artifactDir, artifactDir);
+    assert.equal(artifactManifest.runId, "tmp-lns-window-ranker-baseline-test");
+    assert.equal(artifactManifest.passed, true);
+    assert.equal(artifactManifest.bestBaselineName, "candidate-loss");
+    assert.equal(artifactManifest.registry.appended, false);
+    assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.experimentJson)), true);
+    assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.experimentText)), true);
+    assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.modelJson)), true);
+    assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.telemetryManifestJson)), true);
+    assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.registryEntryDraftJson)), true);
+    const modelArtifact = JSON.parse(
+      fs.readFileSync(path.join(repoRoot, artifactManifest.artifactPaths.modelJson), "utf8")
+    );
+    assert.equal(modelArtifact.trained, false);
+
+    const registryGuard = childProcess.spawnSync(process.execPath, [cliPath, "--baseline-register-dry-run"], {
+      cwd: repoRoot,
+      encoding: "utf8"
+    });
+    assert.notEqual(registryGuard.status, 0);
+    assert.match(registryGuard.stderr, /--labels=<path> is required/);
+  } finally {
+    fs.rmSync(absoluteArtifactDir, { recursive: true, force: true });
   }
 }
 
@@ -9098,6 +9448,7 @@ async function runBenchmarksOptimizerTests() {
   testGreedyConnectivityShadowOrderingLabelRunner();
   testLearnedRankingLabelSuite();
   testGreedyOfflineRankerExperiment();
+  testLnsWindowRankerBaselineExperiment();
   testGreedyBenchmarkCorpusHelpers();
   testGreedyConnectivityShadowScoringAblationRunner();
   testGreedyDeterministicAblationRunner();

@@ -234,6 +234,26 @@ function testScriptEntrypointWrappersRemain() {
       ].join("\n")
     ],
     [
+      "lnsWindowRankerBaselineCli.ts",
+      [
+        "/**",
+        " * LNS window ranker baseline CLI compatibility wrapper.",
+        " */",
+        "",
+        `import "./tools/cli/lnsWindowRankerBaselineCli.js";`
+      ].join("\n")
+    ],
+    [
+      "lnsWindowRankerCli.ts",
+      [
+        "/**",
+        " * LNS window ranker CLI compatibility wrapper.",
+        " */",
+        "",
+        `import "./tools/cli/lnsWindowRankerCli.js";`
+      ].join("\n")
+    ],
+    [
       "experimentRegistryCli.ts",
       [
         "/**",

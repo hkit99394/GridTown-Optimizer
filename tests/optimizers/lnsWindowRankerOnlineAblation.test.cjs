@@ -155,6 +155,11 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(result.variantSummaries[1].rankerFallbackDecisionCount, 1);
     assert.equal(result.variantSummaries[1].improvedCaseCount, 1);
     assert.equal(result.variantSummaries[1].regressedCaseCount, 0);
+    assert.equal(result.variantSummaries[1].overrideOutcomeCount, 1);
+    assert.equal(result.variantSummaries[1].overrideImprovedOutcomeCount, 1);
+    assert.equal(result.variantSummaries[1].overrideNeutralOutcomeCount, 0);
+    assert.equal(result.variantSummaries[1].fallbackOutcomeCount, 0);
+    assert.equal(result.variantSummaries[1].meanOverrideScoreDelta, 0.3);
 
     assert.equal(observedParams.length, 2);
     assert.equal(observedParams[0].lns.iterations, observedParams[1].lns.iterations);
@@ -172,6 +177,7 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(Object.hasOwn(snapshot.cases[0].variants[1], "wallClockSeconds"), false);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /=== LNS Window Ranker Online A\/B ===/);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /overrides=1/);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /override-improved=1/);
 
     const telemetryManifest = buildLnsWindowRankerOnlineAblationTelemetryManifest(result, {
       command: "node dist/lnsBenchmarkCli.js --window-ranker-online-ablation",
@@ -182,6 +188,8 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(telemetryManifest.modelFingerprint, "fnv1a:test-online");
     assert.equal(telemetryManifest.metrics.meanPopulationDeltaVsBaseline, 20);
     assert.equal(telemetryManifest.metrics.rankerOverrideCount, 1);
+    assert.equal(telemetryManifest.metrics.overrideImprovedOutcomeCount, 1);
+    assert.equal(telemetryManifest.metrics.overrideNeutralOutcomeCount, 0);
 
     const registryDraft = buildLnsWindowRankerOnlineAblationRegistryEntryDraft(result, {
       commands: ["node dist/lnsBenchmarkCli.js --window-ranker-online-ablation"],
@@ -193,6 +201,8 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.deepEqual(registryDraft.seeds, [7]);
     assert.equal(registryDraft.budget.minScoreDelta, 0.05);
     assert.equal(registryDraft.budget.comparisonCount, 1);
+    assert.equal(registryDraft.budget.overrideImprovedOutcomeCount, 1);
+    assert.equal(registryDraft.budget.overrideNeutralOutcomeCount, 0);
     assert.equal(registryDraft.model.modelPath, "artifacts/model.json");
     assert.equal(registryDraft.splitStatus.protectedHoldout, false);
     assert.equal(registryDraft.summaryMetrics.meanPopulationDeltaVsBaseline, 20);

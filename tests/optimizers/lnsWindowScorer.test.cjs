@@ -80,6 +80,12 @@ function testWindowRankerCanOverrideAdaptiveBaseline() {
   assert.equal(decision.telemetry.modelFingerprint, "fnv1a:test0001");
   assert.equal(decision.telemetry.featureSchemaVersion, 2);
   assert.equal(decision.telemetry.selectedByBaseline, false);
+  assert.equal(decision.telemetry.baselineCandidateIndex >= 0, true);
+  assert.equal(decision.telemetry.selectedCandidateIndex >= 0, true);
+  assert.equal(decision.telemetry.baselineOperator, fixture.baseline.operator);
+  assert.equal(decision.telemetry.selectedOperator, decision.candidate.operator);
+  assert.deepEqual(decision.telemetry.baselineWindow, fixture.baseline.window);
+  assert.deepEqual(decision.telemetry.selectedWindow, decision.candidate.window);
   assert.notDeepEqual(decision.candidate.window, fixture.baseline.window);
 }
 
@@ -100,6 +106,9 @@ function testWindowRankerFallsBackWhenScoreDeltaIsTooSmall() {
 
   assert.deepEqual(decision.candidate.window, fixture.baseline.window);
   assert.equal(decision.telemetry.selectedByBaseline, true);
+  assert.equal(decision.telemetry.selectedCandidateIndex, decision.telemetry.baselineCandidateIndex);
+  assert.equal(decision.telemetry.selectedOperator, decision.telemetry.baselineOperator);
+  assert.deepEqual(decision.telemetry.selectedWindow, decision.telemetry.baselineWindow);
   assert.equal(decision.telemetry.fallbackReason, "score-delta-below-threshold");
 }
 
@@ -172,6 +181,8 @@ function testSolveLnsWindowRankerTelemetryAndDefaultSafety() {
     assert.equal(rankedSolution.lnsTelemetry.windowRanker.decisions, 1);
     assert.equal(rankedSolution.lnsTelemetry.windowRanker.overrides, 1);
     assert.equal(rankedSolution.lnsTelemetry.outcomes[0].windowRankerSelection.selectedByBaseline, false);
+    assert.equal(typeof rankedSolution.lnsTelemetry.outcomes[0].windowRankerSelection.selectedOperator, "string");
+    assert.equal(typeof rankedSolution.lnsTelemetry.outcomes[0].windowRankerSelection.selectedWindow.top, "number");
     assert.equal(cpSatCalls, 3);
   } finally {
     cpSatModule.solveCpSat = originalSolveCpSat;

@@ -504,9 +504,6 @@ export function runLnsBenchmarkCli(): void {
   if (args.windowRankerArtifactDir !== undefined && args.windowRankerThresholdSweep) {
     throw new Error("--window-ranker-artifact-dir cannot be combined with --window-ranker-threshold-sweep.");
   }
-  if (args.windowRankerProtectedHoldout && args.windowRankerThresholdSweep) {
-    throw new Error("--window-ranker-protected-holdout cannot be combined with --window-ranker-threshold-sweep.");
-  }
   if (args.windowRankerRegisterDryRun && args.windowRankerArtifactDir === undefined) {
     throw new Error("--window-ranker-register-dry-run requires --window-ranker-artifact-dir=<path>.");
   }
@@ -556,7 +553,11 @@ export function runLnsBenchmarkCli(): void {
     if (!args.windowRankerModelPath) {
       throw new Error("--window-ranker-online-ablation requires --window-ranker-model=<path>.");
     }
-    if (args.windowRankerProtectedHoldout && args.windowRankerMinScoreDelta === undefined) {
+    if (
+      args.windowRankerProtectedHoldout &&
+      !args.windowRankerThresholdSweep &&
+      args.windowRankerMinScoreDelta === undefined
+    ) {
       throw new Error("--window-ranker-protected-holdout requires --window-ranker-min-score-delta=<value>.");
     }
     if (args.windowRankerThresholdSweep && args.windowRankerMinScoreDelta !== undefined) {

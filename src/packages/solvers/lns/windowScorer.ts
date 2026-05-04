@@ -450,6 +450,12 @@ export function selectLnsWindowRankerCandidate(
       baselineScore: roundedScore(baseline.score),
       selectedScore: roundedScore(selected.score),
       scoreDelta: roundedScore(selected.score - baseline.score),
+      baselineCandidateIndex: baseline.index,
+      selectedCandidateIndex: selected.index,
+      baselineOperator: baseline.candidate.operator,
+      selectedOperator: selected.candidate.operator,
+      baselineWindow: { ...baseline.candidate.window },
+      selectedWindow: { ...selected.candidate.window },
       selectedByBaseline: sameCandidate(selected.candidate, baselineCandidate),
       ...(useBaseline ? { fallbackReason: "score-delta-below-threshold" as const } : {})
     }

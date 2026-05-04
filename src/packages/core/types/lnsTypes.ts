@@ -130,6 +130,12 @@ export interface LnsWindowRankerSelectionTelemetry {
   baselineScore: number;
   selectedScore: number;
   scoreDelta: number;
+  baselineCandidateIndex: number;
+  selectedCandidateIndex: number;
+  baselineOperator: LnsAdaptiveOperatorName;
+  selectedOperator: LnsAdaptiveOperatorName;
+  baselineWindow: CpSatNeighborhoodWindow;
+  selectedWindow: CpSatNeighborhoodWindow;
   selectedByBaseline: boolean;
   fallbackReason?: "score-delta-below-threshold";
 }

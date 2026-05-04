@@ -29,6 +29,14 @@ function buildMockSolution(params) {
         baselineScore: 0.1,
         selectedScore: overridesBaseline ? 0.4 : 0.25,
         scoreDelta: overridesBaseline ? 0.3 : 0.15,
+        baselineCandidateIndex: 0,
+        selectedCandidateIndex: overridesBaseline ? 1 : 0,
+        baselineOperator: "sliding",
+        selectedOperator: overridesBaseline ? "service-overlap" : "sliding",
+        baselineWindow: { top: 0, left: 0, rows: 2, cols: 2 },
+        selectedWindow: overridesBaseline
+          ? { top: 0, left: 1, rows: 2, cols: 2 }
+          : { top: 0, left: 0, rows: 2, cols: 2 },
         selectedByBaseline: !overridesBaseline,
         ...(overridesBaseline ? {} : { fallbackReason: "score-delta-below-threshold" })
       }
@@ -160,10 +168,20 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(result.variantSummaries[1].overrideNeutralOutcomeCount, 0);
     assert.equal(result.variantSummaries[1].fallbackOutcomeCount, 0);
     assert.equal(result.variantSummaries[1].meanOverrideScoreDelta, 0.3);
+    assert.equal(result.variantSummaries[1].overrideChangedWindowCount, 1);
+    assert.equal(result.variantSummaries[1].fallbackChangedWindowCount, 0);
+    assert.deepEqual(result.variantSummaries[1].overrideTransitionCounts, { "sliding->service-overlap": 1 });
+    assert.deepEqual(result.variantSummaries[1].fallbackTransitionCounts, {});
     assert.equal(result.variantSummaries[1].overrideFinalImprovedCaseCount, 1);
     assert.equal(result.variantSummaries[1].overrideFinalNeutralCaseCount, 0);
     assert.equal(result.variantSummaries[1].overrideFinalRegressedCaseCount, 0);
     assert.equal(result.variantSummaries[1].meanOverrideFinalPopulationDelta, 20);
+    assert.deepEqual(result.cases[0].variants[1].selectionDiagnostics, {
+      overrideTransitionCounts: { "sliding->service-overlap": 1 },
+      fallbackTransitionCounts: {},
+      overrideChangedWindowCount: 1,
+      fallbackChangedWindowCount: 0
+    });
     assert.deepEqual(result.cases[0].variants[1].finalOutcome, {
       status: "improved",
       populationDeltaVsBaseline: 20,
@@ -203,6 +221,10 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(telemetryManifest.metrics.overrideNeutralOutcomeCount, 0);
     assert.equal(telemetryManifest.metrics.overrideFinalImprovedCaseCount, 1);
     assert.equal(telemetryManifest.metrics.meanOverrideFinalPopulationDelta, 20);
+    assert.equal(telemetryManifest.metrics.overrideChangedWindowCount, 1);
+    assert.equal(telemetryManifest.metrics.fallbackChangedWindowCount, 0);
+    assert.deepEqual(telemetryManifest.metrics.overrideTransitionCounts, { "sliding->service-overlap": 1 });
+    assert.deepEqual(telemetryManifest.metrics.fallbackTransitionCounts, {});
 
     const registryDraft = buildLnsWindowRankerOnlineAblationRegistryEntryDraft(result, {
       commands: ["node dist/lnsBenchmarkCli.js --window-ranker-online-ablation"],
@@ -222,6 +244,10 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(registryDraft.model.modelPath, "artifacts/model.json");
     assert.equal(registryDraft.splitStatus.protectedHoldout, false);
     assert.equal(registryDraft.summaryMetrics.meanPopulationDeltaVsBaseline, 20);
+    assert.equal(registryDraft.summaryMetrics.overrideChangedWindowCount, 1);
+    assert.equal(registryDraft.summaryMetrics.fallbackChangedWindowCount, 0);
+    assert.deepEqual(registryDraft.summaryMetrics.overrideTransitionCounts, { "sliding->service-overlap": 1 });
+    assert.deepEqual(registryDraft.summaryMetrics.fallbackTransitionCounts, {});
 
     const protectedDraft = buildLnsWindowRankerOnlineAblationRegistryEntryDraft(result, {
       commands: ["node dist/lnsBenchmarkCli.js --window-ranker-online-ablation --window-ranker-protected-holdout"],
@@ -260,6 +286,19 @@ function testLnsBenchmarkCliListsOnlineAblationCases() {
   assert.match(protectedResult.stdout, /lns-holdout-corridor-weave-pressure/);
   assert.match(protectedResult.stdout, /lns-holdout-anchor-service-shelf-pressure/);
   assert.equal(DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS.length, 5);
+
+  const protectedSweepResult = childProcess.spawnSync(
+    process.execPath,
+    [cliPath, "--list", "--window-ranker-threshold-sweep", "--window-ranker-protected-holdout"],
+    {
+      cwd: repoRoot,
+      encoding: "utf8"
+    }
+  );
+
+  assert.equal(protectedSweepResult.status, 0, protectedSweepResult.stderr);
+  assert.match(protectedSweepResult.stdout, /lns-holdout-corridor-weave-pressure/);
+  assert.match(protectedSweepResult.stdout, /lns-holdout-anchor-service-shelf-pressure/);
 }
 
 function testOnlineCalibrationSummarizesThresholdSweep() {
@@ -305,15 +344,22 @@ function testOnlineCalibrationSummarizesThresholdSweep() {
     assert.equal(result.topSafeMinScoreDelta, 0);
     assert.equal(result.thresholdSummaries[0].meanPopulationDeltaVsBaseline, 20);
     assert.equal(result.thresholdSummaries[0].rankerOverrideCount, 1);
+    assert.equal(result.thresholdSummaries[0].overrideChangedWindowCount, 1);
+    assert.deepEqual(result.thresholdSummaries[0].overrideTransitionCounts, { "sliding->service-overlap": 1 });
     assert.equal(result.thresholdSummaries[1].meanPopulationDeltaVsBaseline, 0);
     assert.equal(result.thresholdSummaries[1].rankerFallbackDecisionCount, 2);
+    assert.equal(result.thresholdSummaries[1].fallbackChangedWindowCount, 0);
+    assert.deepEqual(result.thresholdSummaries[1].fallbackTransitionCounts, { "sliding->sliding": 1 });
     assert.equal(result.thresholdSummaries[1].safetyGatePassed, true);
 
     const snapshot = createLnsWindowRankerOnlineCalibrationSnapshot(result);
     assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
     assert.equal(Object.hasOwn(snapshot.thresholdSummaries[0], "meanWallClockDeltaVsBaselineSeconds"), false);
-    assert.match(formatLnsWindowRankerOnlineCalibration(result), /=== LNS Window Ranker Threshold Sweep ===/);
-    assert.match(formatLnsWindowRankerOnlineCalibration(result), /min-score-delta=0.2/);
+    const formatted = formatLnsWindowRankerOnlineCalibration(result);
+    assert.match(formatted, /=== LNS Window Ranker Threshold Sweep ===/);
+    assert.match(formatted, /min-score-delta=0.2/);
+    assert.match(formatted, /override-transitions=sliding->service-overlap:1/);
+    assert.match(formatted, /fallback-transitions=sliding->sliding:1/);
   } finally {
     lnsSolverModule.solveLns = originalSolveLns;
   }

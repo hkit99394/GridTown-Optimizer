@@ -12,16 +12,12 @@ import {
   uniqueBenchmarkValuesBy
 } from "./benchmarkOptions.js";
 import { DEFAULT_LNS_REPLAY_LABEL_CORPUS, getLnsReplayPressureFamily, runLnsBenchmarkSuite } from "./lns.js";
-import { DEFAULT_LEARNED_RANKING_LABEL_SPLITS } from "./learnedRankingLabels.js";
 import { GENERATED_LNS_PROTECTED_HOLDOUT_PRESSURE_CASES } from "./lnsPressureCases.js";
-import {
-  buildModelExperimentFingerprint,
-  buildModelExperimentRegistryEntryDraft,
-  buildModelExperimentTelemetryManifest
-} from "./modelExperimentArtifacts.js";
+import { buildModelExperimentFingerprint } from "./modelExperimentArtifacts.js";
 import * as finalOutcomes from "./lnsWindowRankerOnlineFinalOutcomes.js";
 import {
   buildLnsWindowRankerOnlineSelectionDiagnostics,
+  buildLnsWindowRankerOnlineTransitionOutcomeDiagnostics,
   mergeLnsWindowRankerOnlineSelectionDiagnostics
 } from "./lnsWindowRankerOnlineSelectionDiagnostics.js";
 
@@ -33,11 +29,10 @@ import type {
   BenchmarkVariantSummarySnapshot
 } from "./benchmarkOptions.js";
 import type { LnsBenchmarkCase, LnsBenchmarkCaseResult, LnsBenchmarkRunOptions } from "./lns.js";
-import type { LnsWindowRankerOnlineSelectionDiagnostics } from "./lnsWindowRankerOnlineSelectionDiagnostics.js";
 import type {
-  ModelExperimentRegistryEntryDraftOptions,
-  ModelExperimentTelemetryManifestOptions
-} from "./modelExperimentArtifacts.js";
+  LnsWindowRankerOnlineSelectionDiagnostics,
+  LnsWindowRankerOnlineTransitionStatusCounts
+} from "./lnsWindowRankerOnlineSelectionDiagnostics.js";
 
 export type LnsWindowRankerOnlineAblationVariantName = "baseline" | "window-ranker";
 
@@ -122,6 +117,10 @@ export interface LnsWindowRankerOnlineAblationSummary
   fallbackTransitionCounts: Record<string, number>;
   overrideChangedWindowCount: number;
   fallbackChangedWindowCount: number;
+  overrideTransitionFinalOutcomeCounts: Record<string, LnsWindowRankerOnlineTransitionStatusCounts>;
+  fallbackTransitionFinalOutcomeCounts: Record<string, LnsWindowRankerOnlineTransitionStatusCounts>;
+  overrideTransitionPressureFamilyCounts: Record<string, Record<string, number>>;
+  fallbackTransitionPressureFamilyCounts: Record<string, Record<string, number>>;
 }
 
 export interface LnsWindowRankerOnlineAblationCoverage extends BenchmarkVariantCoverageMetrics {}
@@ -195,6 +194,10 @@ export interface LnsWindowRankerOnlineCalibrationThresholdSummary {
   fallbackTransitionCounts: Record<string, number>;
   overrideChangedWindowCount: number;
   fallbackChangedWindowCount: number;
+  overrideTransitionFinalOutcomeCounts: Record<string, LnsWindowRankerOnlineTransitionStatusCounts>;
+  fallbackTransitionFinalOutcomeCounts: Record<string, LnsWindowRankerOnlineTransitionStatusCounts>;
+  overrideTransitionPressureFamilyCounts: Record<string, Record<string, number>>;
+  fallbackTransitionPressureFamilyCounts: Record<string, Record<string, number>>;
   safetyGatePassed: boolean;
 }
 
@@ -222,19 +225,6 @@ export interface LnsWindowRankerOnlineCalibrationSnapshot extends Omit<
   "generatedAt" | "thresholdSummaries"
 > {
   thresholdSummaries: LnsWindowRankerOnlineCalibrationThresholdSnapshot[];
-}
-
-export interface LnsWindowRankerOnlineAblationTelemetryManifestOptions extends Pick<
-  ModelExperimentTelemetryManifestOptions,
-  "command" | "git" | "hardware" | "inputArtifacts" | "outputArtifacts" | "notes"
-> {}
-
-export interface LnsWindowRankerOnlineAblationRegistryEntryDraftOptions extends Pick<
-  ModelExperimentRegistryEntryDraftOptions,
-  "runId" | "commands" | "artifactPaths" | "decision" | "summary"
-> {
-  modelPath?: string;
-  protectedHoldout?: boolean;
 }
 
 const ONLINE_ABLATION_VARIANTS: readonly LnsWindowRankerOnlineAblationVariantName[] = Object.freeze([
@@ -299,14 +289,6 @@ function modelWithFingerprint(model: LnsWindowRankerRuntimeModel): LnsWindowRank
     ...model,
     modelFingerprint: model.modelFingerprint ?? buildModelExperimentFingerprint(model)
   };
-}
-
-function modelFromAblationResult(result: LnsWindowRankerOnlineAblationSuiteResult): LnsWindowRankerRuntimeModel {
-  const model = result.cases
-    .flatMap((entry) => entry.variants)
-    .find((variant) => variant.variantName === "window-ranker")?.lnsOptions.windowRanker?.model;
-  assertRuntimeModel(model);
-  return modelWithFingerprint(model);
 }
 
 function rankerLnsOptions(
@@ -431,13 +413,14 @@ function buildVariantSummary(
   seedCount: number
 ): LnsWindowRankerOnlineAblationSummary {
   const missingResultMessage = `LNS window ranker online ablation result missing: ${variantName}.`;
-  const results = cases.map((entry) => {
+  const caseResults = cases.map((entry) => {
     const result = entry.variants.find((candidate) => candidate.variantName === variantName);
     if (!result) {
       throw new Error(missingResultMessage);
     }
-    return result;
+    return { benchmarkCase: entry, result };
   });
+  const results = caseResults.map((entry) => entry.result);
   const decisionCount = sumBenchmarkBy(results, (entry) => entry.windowRanker?.decisions ?? 0);
   const overrideCount = sumBenchmarkBy(results, (entry) => entry.windowRanker?.overrides ?? 0);
   const fallbackDecisionCount = sumBenchmarkBy(results, (entry) => entry.windowRanker?.fallbackDecisions ?? 0);
@@ -450,6 +433,13 @@ function buildVariantSummary(
     .map((entry) => entry.selectionDiagnostics)
     .filter((entry): entry is LnsWindowRankerOnlineSelectionDiagnostics => entry !== null);
   const mergedDiagnostics = mergeLnsWindowRankerOnlineSelectionDiagnostics(diagnostics);
+  const transitionOutcomeDiagnostics = buildLnsWindowRankerOnlineTransitionOutcomeDiagnostics(
+    caseResults.map(({ benchmarkCase, result }) => ({
+      pressureFamily: benchmarkCase.pressureFamily,
+      finalOutcomeStatus: result.finalOutcome.status,
+      selectionDiagnostics: result.selectionDiagnostics
+    }))
+  );
   return {
     ...summarizeBenchmarkVariantMetrics(variantName, cases, caseCount, seedCount, missingResultMessage),
     description: VARIANT_DESCRIPTIONS[variantName],
@@ -469,6 +459,10 @@ function buildVariantSummary(
     fallbackTransitionCounts: mergedDiagnostics.fallbackTransitionCounts,
     overrideChangedWindowCount: mergedDiagnostics.overrideChangedWindowCount,
     fallbackChangedWindowCount: mergedDiagnostics.fallbackChangedWindowCount,
+    overrideTransitionFinalOutcomeCounts: transitionOutcomeDiagnostics.overrideTransitionFinalOutcomeCounts,
+    fallbackTransitionFinalOutcomeCounts: transitionOutcomeDiagnostics.fallbackTransitionFinalOutcomeCounts,
+    overrideTransitionPressureFamilyCounts: transitionOutcomeDiagnostics.overrideTransitionPressureFamilyCounts,
+    fallbackTransitionPressureFamilyCounts: transitionOutcomeDiagnostics.fallbackTransitionPressureFamilyCounts,
     ...finalOutcomes.summarizeLnsWindowRankerFinalOutcomes(results)
   };
 }
@@ -491,94 +485,6 @@ function getRankerSummary(result: LnsWindowRankerOnlineAblationSuiteResult): Lns
     throw new Error("LNS window ranker online calibration result missing window-ranker summary.");
   }
   return summary;
-}
-
-function getBaselineSummary(result: LnsWindowRankerOnlineAblationSuiteResult): LnsWindowRankerOnlineAblationSummary {
-  const summary = result.variantSummaries.find((entry) => entry.variantName === "baseline");
-  if (!summary) {
-    throw new Error("LNS window ranker online ablation result missing baseline summary.");
-  }
-  return summary;
-}
-
-function lnsWindowRankerOnlineCasesBySplit(
-  selectedCaseNames: readonly string[],
-  protectedHoldout: boolean
-): Record<"development" | "holdout", string[]> {
-  if (protectedHoldout) {
-    return { development: [], holdout: [...selectedCaseNames] };
-  }
-  const selected = new Set(selectedCaseNames);
-  const development =
-    DEFAULT_LEARNED_RANKING_LABEL_SPLITS.find((split) => split.split === "development")?.lnsCaseNames.filter((name) =>
-      selected.has(name)
-    ) ?? [];
-  const holdout =
-    DEFAULT_LEARNED_RANKING_LABEL_SPLITS.find((split) => split.split === "holdout")?.lnsCaseNames.filter((name) =>
-      selected.has(name)
-    ) ?? [];
-  if (development.length + holdout.length === 0) {
-    return { development: [...selectedCaseNames], holdout: [] };
-  }
-  return { development, holdout };
-}
-
-function lnsWindowRankerOnlineCaseFamilies(cases: readonly LnsWindowRankerOnlineAblationCaseResult[]): string[] {
-  return uniqueBenchmarkValuesBy(cases, (benchmarkCase) => `lns-${benchmarkCase.pressureFamily}`);
-}
-
-function lnsWindowRankerOnlineAblationSummaryMetrics(
-  result: LnsWindowRankerOnlineAblationSuiteResult
-): Record<string, unknown> {
-  const baseline = getBaselineSummary(result);
-  const ranker = getRankerSummary(result);
-  return {
-    baselineMeanPopulation: baseline.meanPopulation,
-    rankerMeanPopulation: ranker.meanPopulation,
-    meanPopulationDeltaVsBaseline: ranker.meanPopulationDeltaVsBaseline,
-    medianPopulationDeltaVsBaseline: ranker.medianPopulationDeltaVsBaseline,
-    worstDecilePopulationDeltaVsBaseline: ranker.worstDecilePopulationDeltaVsBaseline,
-    bestPopulationDeltaVsBaseline: ranker.bestPopulationDeltaVsBaseline,
-    worstPopulationDeltaVsBaseline: ranker.worstPopulationDeltaVsBaseline,
-    worstPopulationDeltaCaseName: ranker.worstPopulationDeltaCaseName,
-    worstPopulationDeltaSeed: ranker.worstPopulationDeltaSeed,
-    bestPopulationDeltaCaseName: ranker.bestPopulationDeltaCaseName,
-    bestPopulationDeltaSeed: ranker.bestPopulationDeltaSeed,
-    meanWallClockDeltaVsBaselineSeconds: ranker.meanWallClockDeltaVsBaselineSeconds,
-    improvedCaseCount: ranker.improvedCaseCount,
-    regressedCaseCount: ranker.regressedCaseCount,
-    unchangedCaseCount: ranker.unchangedCaseCount,
-    winRate: ranker.winRate,
-    regressionRate: ranker.regressionRate,
-    rankerDecisionCount: ranker.rankerDecisionCount,
-    rankerOverrideCount: ranker.rankerOverrideCount,
-    rankerFallbackDecisionCount: ranker.rankerFallbackDecisionCount,
-    rankerOverrideRate: ranker.rankerOverrideRate,
-    rankerFallbackRate: ranker.rankerFallbackRate,
-    overrideOutcomeCount: ranker.overrideOutcomeCount,
-    overrideImprovedOutcomeCount: ranker.overrideImprovedOutcomeCount,
-    overrideNeutralOutcomeCount: ranker.overrideNeutralOutcomeCount,
-    fallbackOutcomeCount: ranker.fallbackOutcomeCount,
-    fallbackImprovedOutcomeCount: ranker.fallbackImprovedOutcomeCount,
-    fallbackNeutralOutcomeCount: ranker.fallbackNeutralOutcomeCount,
-    meanOverrideScoreDelta: ranker.meanOverrideScoreDelta,
-    overrideFinalImprovedCaseCount: ranker.overrideFinalImprovedCaseCount,
-    overrideFinalNeutralCaseCount: ranker.overrideFinalNeutralCaseCount,
-    overrideFinalRegressedCaseCount: ranker.overrideFinalRegressedCaseCount,
-    meanOverrideFinalPopulationDelta: ranker.meanOverrideFinalPopulationDelta,
-    overrideChangedWindowCount: ranker.overrideChangedWindowCount,
-    fallbackChangedWindowCount: ranker.fallbackChangedWindowCount,
-    overrideTransitionCounts: ranker.overrideTransitionCounts,
-    fallbackTransitionCounts: ranker.fallbackTransitionCounts,
-    safetyGatePassed: ranker.regressedCaseCount === 0 && ranker.worstPopulationDeltaVsBaseline >= 0
-  };
-}
-
-function ablationMinScoreDelta(result: LnsWindowRankerOnlineAblationSuiteResult): number | null {
-  return (
-    result.cases.flatMap((entry) => entry.variants).find((variant) => variant.variantName === "window-ranker")
-      ?.windowRanker?.minScoreDelta ?? null
-  );
 }
 
 function thresholdSummary(
@@ -615,6 +521,10 @@ function thresholdSummary(
     fallbackTransitionCounts: summary.fallbackTransitionCounts,
     overrideChangedWindowCount: summary.overrideChangedWindowCount,
     fallbackChangedWindowCount: summary.fallbackChangedWindowCount,
+    overrideTransitionFinalOutcomeCounts: summary.overrideTransitionFinalOutcomeCounts,
+    fallbackTransitionFinalOutcomeCounts: summary.fallbackTransitionFinalOutcomeCounts,
+    overrideTransitionPressureFamilyCounts: summary.overrideTransitionPressureFamilyCounts,
+    fallbackTransitionPressureFamilyCounts: summary.fallbackTransitionPressureFamilyCounts,
     safetyGatePassed: summary.regressedCaseCount === 0 && summary.worstPopulationDeltaVsBaseline >= 0
   };
 }
@@ -731,79 +641,6 @@ export function createLnsWindowRankerOnlineAblationSnapshot(
       variants: benchmarkCase.variants.map(snapshotBenchmarkVariantResult)
     }))
   };
-}
-
-export function buildLnsWindowRankerOnlineAblationTelemetryManifest(
-  result: LnsWindowRankerOnlineAblationSuiteResult,
-  options: LnsWindowRankerOnlineAblationTelemetryManifestOptions
-): ReturnType<typeof buildModelExperimentTelemetryManifest> {
-  const model = modelFromAblationResult(result) as unknown as Record<string, unknown>;
-  return buildModelExperimentTelemetryManifest({
-    ...options,
-    generatedAt: result.generatedAt,
-    model,
-    modelFingerprint: model.modelFingerprint as string,
-    metrics: lnsWindowRankerOnlineAblationSummaryMetrics(result)
-  });
-}
-
-export function buildLnsWindowRankerOnlineAblationRegistryEntryDraft(
-  result: LnsWindowRankerOnlineAblationSuiteResult,
-  options: LnsWindowRankerOnlineAblationRegistryEntryDraftOptions
-): Record<string, unknown> {
-  const model = modelFromAblationResult(result) as unknown as Record<string, unknown>;
-  const modelFingerprint = model.modelFingerprint as string;
-  const minScoreDelta = ablationMinScoreDelta(result);
-  const protectedHoldout = options.protectedHoldout ?? false;
-  const cases = lnsWindowRankerOnlineCasesBySplit(result.selectedCaseNames, protectedHoldout);
-  const summaryMetrics = lnsWindowRankerOnlineAblationSummaryMetrics(result);
-  return buildModelExperimentRegistryEntryDraft({
-    runId: options.runId ?? `lns-window-ranker-online-ablation-${result.generatedAt.slice(0, 10)}`,
-    commands: options.commands,
-    artifactPaths: options.artifactPaths,
-    generatedAt: result.generatedAt,
-    cases,
-    caseFamilies: lnsWindowRankerOnlineCaseFamilies(result.cases),
-    seeds: result.seeds,
-    splitStatus: {
-      protectedHoldout,
-      splitField: protectedHoldout
-        ? "DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS"
-        : "DEFAULT_LEARNED_RANKING_LABEL_SPLITS.lnsCaseNames",
-      developmentCaseCount: cases.development.length,
-      holdoutCaseCount: cases.holdout.length,
-      leakage: protectedHoldout ? "none" : "threshold-calibration-used-replay-pressure-corpus",
-      notes: protectedHoldout
-        ? "Online LNS ranker A/B scorecard over independent protected holdout cases."
-        : "Online LNS ranker A/B calibration scorecard over replay-pressure cases; not protected holdout promotion evidence."
-    },
-    budget: {
-      minScoreDelta,
-      caseCount: result.caseCount,
-      seedCount: result.seedCount,
-      comparisonCount: result.comparisonCount,
-      variantCount: result.variants.length,
-      totalRuns: result.coverage.runCount,
-      rankerDecisionCount: summaryMetrics.rankerDecisionCount,
-      rankerOverrideCount: summaryMetrics.rankerOverrideCount,
-      rankerFallbackDecisionCount: summaryMetrics.rankerFallbackDecisionCount,
-      overrideImprovedOutcomeCount: summaryMetrics.overrideImprovedOutcomeCount,
-      overrideNeutralOutcomeCount: summaryMetrics.overrideNeutralOutcomeCount,
-      overrideFinalImprovedCaseCount: summaryMetrics.overrideFinalImprovedCaseCount,
-      overrideFinalNeutralCaseCount: summaryMetrics.overrideFinalNeutralCaseCount,
-      overrideFinalRegressedCaseCount: summaryMetrics.overrideFinalRegressedCaseCount
-    },
-    model: {
-      ...model,
-      ...(options.modelPath === undefined ? {} : { modelPath: options.modelPath })
-    },
-    decision: options.decision ?? "online-lns-window-ranker-calibration-evidence",
-    summary:
-      options.summary ??
-      `Online LNS window-ranker A/B scorecard at minScoreDelta=${minScoreDelta ?? "n/a"}; no solver default changed.`,
-    modelFingerprint,
-    summaryMetrics
-  });
 }
 
 export function runLnsWindowRankerOnlineCalibration(

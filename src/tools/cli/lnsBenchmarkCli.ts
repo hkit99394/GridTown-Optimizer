@@ -5,6 +5,8 @@ import {
   buildDeterministicAblationGateReport,
   buildLnsWindowRankerOnlineAblationRegistryEntryDraft,
   buildLnsWindowRankerOnlineAblationTelemetryManifest,
+  buildLnsWindowRankerOnlineCalibrationRegistryEntryDraft,
+  buildLnsWindowRankerOnlineCalibrationTelemetryManifest,
   captureExperimentRegistryHardwareMetadata,
   createLnsBenchmarkSnapshot,
   createLnsNeighborhoodAblationSnapshot,
@@ -60,6 +62,7 @@ import {
 } from "./artifactBundleHelpers.js";
 import type {
   LnsNeighborhoodAblationVariantName,
+  LnsWindowRankerOnlineCalibrationSuiteResult,
   LnsWindowRankerOnlineAblationSuiteResult,
   LnsWindowReplayStatePolicy
 } from "../../benchmarkApi.js";
@@ -113,6 +116,9 @@ interface LnsWindowRankerOnlineArtifactManifest {
   comparisonCount: number;
   modelFingerprint: string | null;
   minScoreDelta: number | null;
+  minScoreDeltas?: number[];
+  topMeanPopulationDeltaMinScoreDelta?: number | null;
+  topSafeMinScoreDelta?: number | null;
   meanPopulationDeltaVsBaseline: number;
   worstPopulationDeltaVsBaseline: number;
   regressedCaseCount: number;
@@ -122,6 +128,14 @@ interface LnsWindowRankerOnlineArtifactManifest {
     appended: boolean;
     runId: unknown;
   };
+}
+
+interface WindowRankerOnlineArtifactBundlePaths {
+  artifactDir: string;
+  artifactPaths: LnsWindowRankerOnlineArtifactManifest["artifactPaths"];
+  absoluteArtifactPaths: LnsWindowRankerOnlineArtifactManifest["artifactPaths"];
+  command: string;
+  modelPath: string;
 }
 
 function parseArgs(argv: string[]): ParsedBenchmarkArgs {
@@ -389,11 +403,18 @@ function onlineAblationMinScoreDelta(result: LnsWindowRankerOnlineAblationSuiteR
   );
 }
 
-function writeWindowRankerOnlineArtifactBundle(
-  result: LnsWindowRankerOnlineAblationSuiteResult,
+function onlineCalibrationTopMeanSummary(result: LnsWindowRankerOnlineCalibrationSuiteResult) {
+  return (
+    result.thresholdSummaries.find((entry) => entry.minScoreDelta === result.topMeanPopulationDeltaMinScoreDelta) ??
+    result.thresholdSummaries[0]
+  );
+}
+
+function prepareWindowRankerOnlineArtifactBundle(
   args: ParsedBenchmarkArgs,
-  argv: readonly string[]
-): LnsWindowRankerOnlineArtifactManifest {
+  argv: readonly string[],
+  scorecardBaseName: string
+): WindowRankerOnlineArtifactBundlePaths {
   if (args.windowRankerArtifactDir === undefined) {
     throw new Error("LNS window ranker online artifact directory is required.");
   }
@@ -406,39 +427,81 @@ function writeWindowRankerOnlineArtifactBundle(
 
   const artifactPath = (fileName: string) => path.posix.join(artifactDir, fileName);
   const absoluteArtifactPath = (fileName: string) => path.join(absoluteArtifactDir, fileName);
-  const scorecardJson = artifactPath("lns-window-ranker-online-ablation.json");
-  const scorecardText = artifactPath("lns-window-ranker-online-ablation.txt");
-  const telemetryManifestJson = artifactPath("telemetry-manifest.json");
-  const registryEntryDraftJson = artifactPath("registry-entry-draft.json");
-  const command = defaultWindowRankerOnlineArtifactCommand(argv);
-  const modelPath = normalizeRepoRelativePath(args.windowRankerModelPath, "--window-ranker-model");
+  const scorecardJsonFile = `${scorecardBaseName}.json`;
+  const scorecardTextFile = `${scorecardBaseName}.txt`;
+  return {
+    artifactDir,
+    artifactPaths: {
+      scorecardJson: artifactPath(scorecardJsonFile),
+      scorecardText: artifactPath(scorecardTextFile),
+      telemetryManifestJson: artifactPath("telemetry-manifest.json"),
+      registryEntryDraftJson: artifactPath("registry-entry-draft.json")
+    },
+    absoluteArtifactPaths: {
+      scorecardJson: absoluteArtifactPath(scorecardJsonFile),
+      scorecardText: absoluteArtifactPath(scorecardTextFile),
+      telemetryManifestJson: absoluteArtifactPath("telemetry-manifest.json"),
+      registryEntryDraftJson: absoluteArtifactPath("registry-entry-draft.json")
+    },
+    command: defaultWindowRankerOnlineArtifactCommand(argv),
+    modelPath: normalizeRepoRelativePath(args.windowRankerModelPath, "--window-ranker-model")
+  };
+}
+
+function writeWindowRankerOnlineArtifactFiles(
+  paths: WindowRankerOnlineArtifactBundlePaths,
+  scorecardSnapshot: Record<string, unknown>,
+  scorecardText: string,
+  telemetryManifest: unknown,
+  registryEntryDraft: Record<string, unknown>
+): void {
+  writeJsonArtifact(paths.absoluteArtifactPaths.scorecardJson, scorecardSnapshot);
+  fs.writeFileSync(paths.absoluteArtifactPaths.scorecardText, `${scorecardText}\n`);
+  writeJsonArtifact(paths.absoluteArtifactPaths.telemetryManifestJson, telemetryManifest);
+  writeJsonArtifact(paths.absoluteArtifactPaths.registryEntryDraftJson, registryEntryDraft);
+}
+
+function writeWindowRankerOnlineArtifactBundle(
+  result: LnsWindowRankerOnlineAblationSuiteResult,
+  args: ParsedBenchmarkArgs,
+  argv: readonly string[]
+): LnsWindowRankerOnlineArtifactManifest {
+  const paths = prepareWindowRankerOnlineArtifactBundle(args, argv, "lns-window-ranker-online-ablation");
   const telemetryManifest = buildLnsWindowRankerOnlineAblationTelemetryManifest(result, {
-    command,
+    command: paths.command,
     git: resolveExperimentRegistryGitMetadata(),
     hardware: captureExperimentRegistryHardwareMetadata(),
-    inputArtifacts: [modelPath],
-    outputArtifacts: [scorecardJson, scorecardText, telemetryManifestJson]
+    inputArtifacts: [paths.modelPath],
+    outputArtifacts: [
+      paths.artifactPaths.scorecardJson,
+      paths.artifactPaths.scorecardText,
+      paths.artifactPaths.telemetryManifestJson
+    ]
   });
   const registryEntryDraft = buildLnsWindowRankerOnlineAblationRegistryEntryDraft(result, {
     runId: args.windowRankerRunId,
-    commands: [command],
-    artifactPaths: [scorecardJson, scorecardText, telemetryManifestJson],
+    commands: [paths.command],
+    artifactPaths: [
+      paths.artifactPaths.scorecardJson,
+      paths.artifactPaths.scorecardText,
+      paths.artifactPaths.telemetryManifestJson
+    ],
     decision: args.windowRankerDecision,
     summary: args.windowRankerSummary,
-    modelPath,
+    modelPath: paths.modelPath,
     protectedHoldout: args.windowRankerProtectedHoldout
   });
 
-  writeJsonArtifact(absoluteArtifactPath("lns-window-ranker-online-ablation.json"), {
-    ...createLnsWindowRankerOnlineAblationSnapshot(result),
-    generatedAt: result.generatedAt
-  });
-  fs.writeFileSync(
-    absoluteArtifactPath("lns-window-ranker-online-ablation.txt"),
-    `${formatLnsWindowRankerOnlineAblation(result)}\n`
+  writeWindowRankerOnlineArtifactFiles(
+    paths,
+    {
+      ...createLnsWindowRankerOnlineAblationSnapshot(result),
+      generatedAt: result.generatedAt
+    },
+    formatLnsWindowRankerOnlineAblation(result),
+    telemetryManifest,
+    registryEntryDraft
   );
-  writeJsonArtifact(absoluteArtifactPath("telemetry-manifest.json"), telemetryManifest);
-  writeJsonArtifact(absoluteArtifactPath("registry-entry-draft.json"), registryEntryDraft);
 
   const summary = onlineAblationRankerSummary(result);
   const registry = args.windowRankerRegisterDryRun
@@ -446,13 +509,8 @@ function writeWindowRankerOnlineArtifactBundle(
     : undefined;
 
   return {
-    artifactDir,
-    artifactPaths: {
-      scorecardJson,
-      scorecardText,
-      telemetryManifestJson,
-      registryEntryDraftJson
-    },
+    artifactDir: paths.artifactDir,
+    artifactPaths: paths.artifactPaths,
     runId: registryEntryDraft.runId,
     generatedAt: result.generatedAt,
     caseCount: result.caseCount,
@@ -467,12 +525,89 @@ function writeWindowRankerOnlineArtifactBundle(
   };
 }
 
+function writeWindowRankerOnlineCalibrationArtifactBundle(
+  result: LnsWindowRankerOnlineCalibrationSuiteResult,
+  model: LnsWindowRankerRuntimeModel,
+  args: ParsedBenchmarkArgs,
+  argv: readonly string[]
+): LnsWindowRankerOnlineArtifactManifest {
+  const paths = prepareWindowRankerOnlineArtifactBundle(args, argv, "lns-window-ranker-online-calibration");
+  const telemetryManifest = buildLnsWindowRankerOnlineCalibrationTelemetryManifest(result, {
+    command: paths.command,
+    git: resolveExperimentRegistryGitMetadata(),
+    hardware: captureExperimentRegistryHardwareMetadata(),
+    model,
+    inputArtifacts: [paths.modelPath],
+    outputArtifacts: [
+      paths.artifactPaths.scorecardJson,
+      paths.artifactPaths.scorecardText,
+      paths.artifactPaths.telemetryManifestJson
+    ]
+  });
+  const registryEntryDraft = buildLnsWindowRankerOnlineCalibrationRegistryEntryDraft(result, {
+    runId: args.windowRankerRunId,
+    commands: [paths.command],
+    artifactPaths: [
+      paths.artifactPaths.scorecardJson,
+      paths.artifactPaths.scorecardText,
+      paths.artifactPaths.telemetryManifestJson
+    ],
+    decision: args.windowRankerDecision,
+    summary: args.windowRankerSummary,
+    model,
+    modelPath: paths.modelPath,
+    protectedHoldout: args.windowRankerProtectedHoldout
+  });
+
+  writeWindowRankerOnlineArtifactFiles(
+    paths,
+    {
+      ...createLnsWindowRankerOnlineCalibrationSnapshot(result),
+      generatedAt: result.generatedAt
+    },
+    formatLnsWindowRankerOnlineCalibration(result),
+    telemetryManifest,
+    registryEntryDraft
+  );
+
+  const summary = onlineCalibrationTopMeanSummary(result);
+  const registry = args.windowRankerRegisterDryRun
+    ? registerWindowRankerOnlineArtifacts(registryEntryDraft, args)
+    : undefined;
+
+  return {
+    artifactDir: paths.artifactDir,
+    artifactPaths: paths.artifactPaths,
+    runId: registryEntryDraft.runId,
+    generatedAt: result.generatedAt,
+    caseCount: result.caseCount,
+    seedCount: result.seedCount,
+    comparisonCount: result.comparisonCount,
+    modelFingerprint: result.modelFingerprint,
+    minScoreDelta: summary?.minScoreDelta ?? null,
+    minScoreDeltas: [...result.minScoreDeltas],
+    topMeanPopulationDeltaMinScoreDelta: result.topMeanPopulationDeltaMinScoreDelta,
+    topSafeMinScoreDelta: result.topSafeMinScoreDelta,
+    meanPopulationDeltaVsBaseline: summary?.meanPopulationDeltaVsBaseline ?? 0,
+    worstPopulationDeltaVsBaseline: summary?.worstPopulationDeltaVsBaseline ?? 0,
+    regressedCaseCount: summary?.regressedCaseCount ?? 0,
+    registry
+  };
+}
+
 function formatWindowRankerOnlineArtifactManifest(manifest: LnsWindowRankerOnlineArtifactManifest): string {
   const lines = [
     `LNS window ranker online artifacts written to ${manifest.artifactDir}`,
     `run-id=${manifest.runId}`,
     `model-fingerprint=${manifest.modelFingerprint ?? "n/a"}`,
     `min-score-delta=${manifest.minScoreDelta ?? "n/a"}`,
+    ...(manifest.minScoreDeltas === undefined ? [] : [`min-score-deltas=${manifest.minScoreDeltas.join(",")}`]),
+    ...(manifest.topMeanPopulationDeltaMinScoreDelta === undefined
+      ? []
+      : [`top-mean-delta-threshold=${manifest.topMeanPopulationDeltaMinScoreDelta ?? "n/a"}`]),
+    ...(manifest.topSafeMinScoreDelta === undefined
+      ? []
+      : [`top-no-regression-threshold=${manifest.topSafeMinScoreDelta ?? "n/a"}`]),
     `mean-delta=${manifest.meanPopulationDeltaVsBaseline}`,
     `worst-delta=${manifest.worstPopulationDeltaVsBaseline}`,
     `regressed=${manifest.regressedCaseCount}`,
@@ -500,9 +635,6 @@ export function runLnsBenchmarkCli(): void {
   }
   if (args.windowRankerArtifactDir !== undefined && !args.windowRankerOnlineAblation) {
     throw new Error("--window-ranker-artifact-dir is only available with --window-ranker-online-ablation.");
-  }
-  if (args.windowRankerArtifactDir !== undefined && args.windowRankerThresholdSweep) {
-    throw new Error("--window-ranker-artifact-dir cannot be combined with --window-ranker-threshold-sweep.");
   }
   if (args.windowRankerRegisterDryRun && args.windowRankerArtifactDir === undefined) {
     throw new Error("--window-ranker-register-dry-run requires --window-ranker-artifact-dir=<path>.");
@@ -581,6 +713,16 @@ export function runLnsBenchmarkCli(): void {
         minScoreDeltas: args.windowRankerMinScoreDeltas,
         lns
       });
+
+      if (args.windowRankerArtifactDir !== undefined) {
+        const manifest = writeWindowRankerOnlineCalibrationArtifactBundle(result, model, args, argv);
+        writeCliJsonOrText(
+          args.json,
+          () => manifest,
+          () => formatWindowRankerOnlineArtifactManifest(manifest)
+        );
+        return;
+      }
 
       writeCliJsonOrText(
         args.json,

@@ -26,6 +26,7 @@ export * from "./learnedRankingLabels.js";
 export * from "./greedyOfflineRanker.js";
 export * from "./lnsWindowRankerBaselines.js";
 export * from "./lnsWindowRanker.js";
+export * from "./lnsWindowRankerOnlineFinalOutcomes.js";
 export * from "./lnsWindowRankerOnlineAblations.js";
 export * from "./modelExperimentArtifacts.js";
 export * from "./experimentRegistry.js";

@@ -160,6 +160,16 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(result.variantSummaries[1].overrideNeutralOutcomeCount, 0);
     assert.equal(result.variantSummaries[1].fallbackOutcomeCount, 0);
     assert.equal(result.variantSummaries[1].meanOverrideScoreDelta, 0.3);
+    assert.equal(result.variantSummaries[1].overrideFinalImprovedCaseCount, 1);
+    assert.equal(result.variantSummaries[1].overrideFinalNeutralCaseCount, 0);
+    assert.equal(result.variantSummaries[1].overrideFinalRegressedCaseCount, 0);
+    assert.equal(result.variantSummaries[1].meanOverrideFinalPopulationDelta, 20);
+    assert.deepEqual(result.cases[0].variants[1].finalOutcome, {
+      status: "improved",
+      populationDeltaVsBaseline: 20,
+      hasOverride: true,
+      hasFallback: false
+    });
 
     assert.equal(observedParams.length, 2);
     assert.equal(observedParams[0].lns.iterations, observedParams[1].lns.iterations);
@@ -178,6 +188,7 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.match(formatLnsWindowRankerOnlineAblation(result), /=== LNS Window Ranker Online A\/B ===/);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /overrides=1/);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /override-improved=1/);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /override-final=1\/0\/0/);
 
     const telemetryManifest = buildLnsWindowRankerOnlineAblationTelemetryManifest(result, {
       command: "node dist/lnsBenchmarkCli.js --window-ranker-online-ablation",
@@ -190,6 +201,8 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(telemetryManifest.metrics.rankerOverrideCount, 1);
     assert.equal(telemetryManifest.metrics.overrideImprovedOutcomeCount, 1);
     assert.equal(telemetryManifest.metrics.overrideNeutralOutcomeCount, 0);
+    assert.equal(telemetryManifest.metrics.overrideFinalImprovedCaseCount, 1);
+    assert.equal(telemetryManifest.metrics.meanOverrideFinalPopulationDelta, 20);
 
     const registryDraft = buildLnsWindowRankerOnlineAblationRegistryEntryDraft(result, {
       commands: ["node dist/lnsBenchmarkCli.js --window-ranker-online-ablation"],
@@ -203,6 +216,9 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(registryDraft.budget.comparisonCount, 1);
     assert.equal(registryDraft.budget.overrideImprovedOutcomeCount, 1);
     assert.equal(registryDraft.budget.overrideNeutralOutcomeCount, 0);
+    assert.equal(registryDraft.budget.overrideFinalImprovedCaseCount, 1);
+    assert.equal(registryDraft.budget.overrideFinalNeutralCaseCount, 0);
+    assert.equal(registryDraft.budget.overrideFinalRegressedCaseCount, 0);
     assert.equal(registryDraft.model.modelPath, "artifacts/model.json");
     assert.equal(registryDraft.splitStatus.protectedHoldout, false);
     assert.equal(registryDraft.summaryMetrics.meanPopulationDeltaVsBaseline, 20);

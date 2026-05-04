@@ -24,6 +24,7 @@ import {
   buildModelExperimentRegistryEntryDraft,
   buildModelExperimentTelemetryManifest
 } from "./modelExperimentArtifacts.js";
+import * as finalOutcomes from "./lnsWindowRankerOnlineFinalOutcomes.js";
 
 import type { LnsOptions, LnsWindowRankerRuntimeModel } from "../core/index.js";
 import type {
@@ -83,6 +84,7 @@ export interface LnsWindowRankerOnlineAblationVariantResult {
   fallbackImprovedOutcomeCount: number;
   fallbackNeutralOutcomeCount: number;
   meanOverrideScoreDelta: number | null;
+  finalOutcome: finalOutcomes.LnsWindowRankerOnlineFinalOutcome;
   windowRanker: LnsWindowRankerOnlineAblationTelemetrySummary | null;
 }
 
@@ -98,7 +100,10 @@ export interface LnsWindowRankerOnlineAblationCaseResult {
   variants: LnsWindowRankerOnlineAblationVariantResult[];
 }
 
-export interface LnsWindowRankerOnlineAblationSummary extends BenchmarkVariantSummaryMetrics<LnsWindowRankerOnlineAblationVariantName> {
+export interface LnsWindowRankerOnlineAblationSummary
+  extends
+    BenchmarkVariantSummaryMetrics<LnsWindowRankerOnlineAblationVariantName>,
+    finalOutcomes.LnsWindowRankerOnlineFinalOutcomeSummary {
   description: string;
   rankerDecisionCount: number;
   rankerOverrideCount: number;
@@ -376,12 +381,15 @@ function variantResult(
   baseline: LnsBenchmarkCaseResult,
   seed: number | null
 ): LnsWindowRankerOnlineAblationVariantResult {
+  const populationDeltaVsBaseline = result.totalPopulation - baseline.totalPopulation;
+  const overrides = overrideOutcomeCount(result);
+  const fallbacks = fallbackOutcomeCount(result);
   return {
     variantName,
     description: VARIANT_DESCRIPTIONS[variantName],
     seed,
     totalPopulation: result.totalPopulation,
-    populationDeltaVsBaseline: result.totalPopulation - baseline.totalPopulation,
+    populationDeltaVsBaseline,
     wallClockSeconds: result.wallClockSeconds,
     wallClockDeltaVsBaselineSeconds: result.wallClockSeconds - baseline.wallClockSeconds,
     roadCount: result.roadCount,
@@ -394,13 +402,14 @@ function variantResult(
     improvingIterations: result.lnsTelemetry?.improvingIterations ?? null,
     neutralIterations: result.lnsTelemetry?.neutralIterations ?? null,
     recoverableFailures: result.lnsTelemetry?.recoverableFailures ?? null,
-    overrideOutcomeCount: overrideOutcomeCount(result),
-    fallbackOutcomeCount: fallbackOutcomeCount(result),
+    overrideOutcomeCount: overrides,
+    fallbackOutcomeCount: fallbacks,
     overrideImprovedOutcomeCount: overrideOutcomeStatusCount(result, "improved"),
     overrideNeutralOutcomeCount: overrideOutcomeStatusCount(result, "neutral"),
     fallbackImprovedOutcomeCount: fallbackOutcomeStatusCount(result, "improved"),
     fallbackNeutralOutcomeCount: fallbackOutcomeStatusCount(result, "neutral"),
     meanOverrideScoreDelta: meanOverrideScoreDelta(result),
+    finalOutcome: finalOutcomes.buildLnsWindowRankerFinalOutcome(populationDeltaVsBaseline, overrides, fallbacks),
     windowRanker: summarizeWindowRanker(result)
   };
 }
@@ -441,7 +450,8 @@ function buildVariantSummary(
     overrideNeutralOutcomeCount: sumBenchmarkBy(results, (entry) => entry.overrideNeutralOutcomeCount),
     fallbackImprovedOutcomeCount: sumBenchmarkBy(results, (entry) => entry.fallbackImprovedOutcomeCount),
     fallbackNeutralOutcomeCount: sumBenchmarkBy(results, (entry) => entry.fallbackNeutralOutcomeCount),
-    meanOverrideScoreDelta: overrideOutcomeCount > 0 ? overrideScoreDeltaWeightedSum / overrideOutcomeCount : null
+    meanOverrideScoreDelta: overrideOutcomeCount > 0 ? overrideScoreDeltaWeightedSum / overrideOutcomeCount : null,
+    ...finalOutcomes.summarizeLnsWindowRankerFinalOutcomes(results)
   };
 }
 
@@ -534,6 +544,10 @@ function lnsWindowRankerOnlineAblationSummaryMetrics(
     fallbackImprovedOutcomeCount: ranker.fallbackImprovedOutcomeCount,
     fallbackNeutralOutcomeCount: ranker.fallbackNeutralOutcomeCount,
     meanOverrideScoreDelta: ranker.meanOverrideScoreDelta,
+    overrideFinalImprovedCaseCount: ranker.overrideFinalImprovedCaseCount,
+    overrideFinalNeutralCaseCount: ranker.overrideFinalNeutralCaseCount,
+    overrideFinalRegressedCaseCount: ranker.overrideFinalRegressedCaseCount,
+    meanOverrideFinalPopulationDelta: ranker.meanOverrideFinalPopulationDelta,
     safetyGatePassed: ranker.regressedCaseCount === 0 && ranker.worstPopulationDeltaVsBaseline >= 0
   };
 }
@@ -748,7 +762,10 @@ export function buildLnsWindowRankerOnlineAblationRegistryEntryDraft(
       rankerOverrideCount: summaryMetrics.rankerOverrideCount,
       rankerFallbackDecisionCount: summaryMetrics.rankerFallbackDecisionCount,
       overrideImprovedOutcomeCount: summaryMetrics.overrideImprovedOutcomeCount,
-      overrideNeutralOutcomeCount: summaryMetrics.overrideNeutralOutcomeCount
+      overrideNeutralOutcomeCount: summaryMetrics.overrideNeutralOutcomeCount,
+      overrideFinalImprovedCaseCount: summaryMetrics.overrideFinalImprovedCaseCount,
+      overrideFinalNeutralCaseCount: summaryMetrics.overrideFinalNeutralCaseCount,
+      overrideFinalRegressedCaseCount: summaryMetrics.overrideFinalRegressedCaseCount
     },
     model: {
       ...model,
@@ -845,7 +862,7 @@ function formatNullableDecimal(value: number | null): string {
 function formatRankerSummary(variant: LnsWindowRankerOnlineAblationVariantResult): string {
   const ranker = variant.windowRanker;
   if (!ranker) return "ranker=disabled";
-  return `ranker=decisions:${ranker.decisions} overrides:${ranker.overrides} fallback:${ranker.fallbackDecisions} override-rate:${formatRate(ranker.overrideRate)} override-improved:${variant.overrideImprovedOutcomeCount} override-neutral:${variant.overrideNeutralOutcomeCount} override-score-delta-mean:${formatNullableDecimal(variant.meanOverrideScoreDelta)} fingerprint:${ranker.modelFingerprint ?? "n/a"}`;
+  return `ranker=decisions:${ranker.decisions} overrides:${ranker.overrides} fallback:${ranker.fallbackDecisions} override-rate:${formatRate(ranker.overrideRate)} override-improved:${variant.overrideImprovedOutcomeCount} override-neutral:${variant.overrideNeutralOutcomeCount} final:${variant.finalOutcome.status}/${formatSigned(variant.finalOutcome.populationDeltaVsBaseline)} override-score-delta-mean:${formatNullableDecimal(variant.meanOverrideScoreDelta)} fingerprint:${ranker.modelFingerprint ?? "n/a"}`;
 }
 
 export function formatLnsWindowRankerOnlineAblation(result: LnsWindowRankerOnlineAblationSuiteResult): string {
@@ -861,7 +878,7 @@ export function formatLnsWindowRankerOnlineAblation(result: LnsWindowRankerOnlin
   lines.push("Summary:");
   for (const summary of result.variantSummaries) {
     lines.push(
-      `- ${summary.variantName}: mean=${formatDecimal(summary.meanPopulation)} median=${formatDecimal(summary.medianPopulation)} worst-decile=${formatDecimal(summary.worstDecilePopulation)} best=${formatDecimal(summary.bestPopulation)} delta-mean=${formatSigned(summary.meanPopulationDeltaVsBaseline)} delta-median=${formatSigned(summary.medianPopulationDeltaVsBaseline)} delta-worst-decile=${formatSigned(summary.worstDecilePopulationDeltaVsBaseline)} delta-best=${formatSigned(summary.bestPopulationDeltaVsBaseline)} delta-worst=${formatSigned(summary.worstPopulationDeltaVsBaseline)} wall-mean=${formatSeconds(summary.meanWallClockSeconds)} wall-delta-mean=${formatSeconds(summary.meanWallClockDeltaVsBaselineSeconds)} improved=${summary.improvedCaseCount} regressed=${summary.regressedCaseCount} unchanged=${summary.unchangedCaseCount} win-rate=${formatRate(summary.winRate)} regression-rate=${formatRate(summary.regressionRate)} decisions=${summary.rankerDecisionCount} overrides=${summary.rankerOverrideCount} fallbacks=${summary.rankerFallbackDecisionCount} override-rate=${formatRate(summary.rankerOverrideRate)} fallback-rate=${formatRate(summary.rankerFallbackRate)} override-improved=${summary.overrideImprovedOutcomeCount} override-neutral=${summary.overrideNeutralOutcomeCount} override-score-delta-mean=${formatNullableDecimal(summary.meanOverrideScoreDelta)} best-case=${formatSeedCase(summary.bestPopulationDeltaCaseName, summary.bestPopulationDeltaSeed)} worst-case=${formatSeedCase(summary.worstPopulationDeltaCaseName, summary.worstPopulationDeltaSeed)}`
+      `- ${summary.variantName}: mean=${formatDecimal(summary.meanPopulation)} median=${formatDecimal(summary.medianPopulation)} worst-decile=${formatDecimal(summary.worstDecilePopulation)} best=${formatDecimal(summary.bestPopulation)} delta-mean=${formatSigned(summary.meanPopulationDeltaVsBaseline)} delta-median=${formatSigned(summary.medianPopulationDeltaVsBaseline)} delta-worst-decile=${formatSigned(summary.worstDecilePopulationDeltaVsBaseline)} delta-best=${formatSigned(summary.bestPopulationDeltaVsBaseline)} delta-worst=${formatSigned(summary.worstPopulationDeltaVsBaseline)} wall-mean=${formatSeconds(summary.meanWallClockSeconds)} wall-delta-mean=${formatSeconds(summary.meanWallClockDeltaVsBaselineSeconds)} improved=${summary.improvedCaseCount} regressed=${summary.regressedCaseCount} unchanged=${summary.unchangedCaseCount} win-rate=${formatRate(summary.winRate)} regression-rate=${formatRate(summary.regressionRate)} decisions=${summary.rankerDecisionCount} overrides=${summary.rankerOverrideCount} fallbacks=${summary.rankerFallbackDecisionCount} override-rate=${formatRate(summary.rankerOverrideRate)} fallback-rate=${formatRate(summary.rankerFallbackRate)} override-improved=${summary.overrideImprovedOutcomeCount} override-neutral=${summary.overrideNeutralOutcomeCount} override-final=${summary.overrideFinalImprovedCaseCount}/${summary.overrideFinalNeutralCaseCount}/${summary.overrideFinalRegressedCaseCount} override-final-delta-mean=${formatNullableDecimal(summary.meanOverrideFinalPopulationDelta)} override-score-delta-mean=${formatNullableDecimal(summary.meanOverrideScoreDelta)} best-case=${formatSeedCase(summary.bestPopulationDeltaCaseName, summary.bestPopulationDeltaSeed)} worst-case=${formatSeedCase(summary.worstPopulationDeltaCaseName, summary.worstPopulationDeltaSeed)}`
     );
   }
   lines.push("");

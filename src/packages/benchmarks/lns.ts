@@ -412,8 +412,47 @@ function selectReplayLabelCases(corpus: readonly LnsBenchmarkCase[]): LnsBenchma
   });
 }
 
+function firstAnchorRoadKey(G: Grid): string {
+  for (let c = 0; c < (G[0]?.length ?? 0); c++) {
+    if (G[0][c] === 1) return `0,${c}`;
+  }
+  for (let r = 1; r < G.length; r++) {
+    if (G[r]?.[0] === 1) return `${r},0`;
+  }
+  throw new Error("LNS replay label weak seed requires a road-eligible row-0 or column-0 anchor cell.");
+}
+
+function buildWeakReplaySeedHint(
+  benchmarkCase: Pick<LnsBenchmarkCase, "name" | "grid">
+): NonNullable<LnsOptions["seedHint"]> {
+  return {
+    sourceName: `${benchmarkCase.name}-weak-replay-seed`,
+    solution: {
+      roads: [firstAnchorRoadKey(benchmarkCase.grid)],
+      services: [],
+      residentials: [],
+      populations: [],
+      totalPopulation: 0
+    }
+  };
+}
+
+function withReplayLabelSeedHint(benchmarkCase: LnsBenchmarkCase): LnsBenchmarkCase {
+  if (benchmarkCase.params.lns?.seedHint) return benchmarkCase;
+  return {
+    ...benchmarkCase,
+    params: {
+      ...benchmarkCase.params,
+      lns: {
+        ...(benchmarkCase.params.lns ?? {}),
+        seedHint: buildWeakReplaySeedHint(benchmarkCase)
+      }
+    }
+  };
+}
+
 export const DEFAULT_LNS_REPLAY_LABEL_CORPUS: readonly LnsBenchmarkCase[] = Object.freeze(
-  selectReplayLabelCases(DEFAULT_LNS_BENCHMARK_CORPUS)
+  selectReplayLabelCases(DEFAULT_LNS_BENCHMARK_CORPUS).map(withReplayLabelSeedHint)
 );
 
 export function listLnsReplayPressureFamilies(

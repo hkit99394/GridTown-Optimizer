@@ -4850,6 +4850,24 @@ function testLnsWindowReplayLabelRunner() {
   const cpSatModule = require("../../dist/packages/solvers/cp-sat/solver.js");
   const originalSolveCpSat = cpSatModule.solveCpSat;
   const observedRepairs = [];
+  const replaySeededCase = DEFAULT_LNS_REPLAY_LABEL_CORPUS.find(
+    (benchmarkCase) => benchmarkCase.name === "lns-service-overlap-pressure"
+  );
+  const benchmarkSeededCase = DEFAULT_LNS_BENCHMARK_CORPUS.find(
+    (benchmarkCase) => benchmarkCase.name === "lns-service-overlap-pressure"
+  );
+  const curatedReplaySeedCase = DEFAULT_LNS_REPLAY_LABEL_CORPUS.find(
+    (benchmarkCase) => benchmarkCase.name === "seeded-service-anchor-pressure"
+  );
+
+  assert(replaySeededCase);
+  assert(benchmarkSeededCase);
+  assert(curatedReplaySeedCase);
+  assert.equal(replaySeededCase.params.lns.seedHint.sourceName, "lns-service-overlap-pressure-weak-replay-seed");
+  assert.deepEqual(replaySeededCase.params.lns.seedHint.solution.roads, ["0,0"]);
+  assert.equal(replaySeededCase.params.lns.seedHint.solution.totalPopulation, 0);
+  assert.equal(benchmarkSeededCase.params.lns?.seedHint, undefined);
+  assert.equal(curatedReplaySeedCase.params.lns.seedHint.sourceName, "seeded-service-anchor-pressure");
 
   cpSatModule.solveCpSat = (_grid, params) => {
     const window = params.cpSat.warmStartHint.neighborhoodWindow;

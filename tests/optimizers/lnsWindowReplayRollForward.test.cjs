@@ -140,9 +140,15 @@ try {
       splitIterations: telemetry.lns.splits[0].rollForwardIterations,
       splitRepairTime: telemetry.lns.splits[0].rollForwardRepairTimeLimitSeconds,
       splitLabels: telemetry.lns.splits[0].rollForwardLabelCount,
+      splitFinalStatus: telemetry.lns.splits[0].rollForwardStatusCounts.neutral,
+      splitOpportunityLabels: telemetry.lns.splits[0].rollForwardOpportunityLabelCount,
+      splitOpportunityCases: telemetry.lns.splits[0].rollForwardOpportunityCaseCount,
       budgetIterations: registry.budget.lnsRollForwardIterations[0],
       budgetRepairTime: registry.budget.lnsRollForwardRepairTimeLimitSeconds[0],
-      summaryIterations: registry.summaryMetrics.lnsRollForwardIterations
+      summaryIterations: registry.summaryMetrics.lnsRollForwardIterations,
+      summaryFinalStatus: registry.summaryMetrics.lnsRollForwardStatusCounts.neutral,
+      summaryOpportunityLabels: registry.summaryMetrics.lnsRollForwardOpportunityLabelCount,
+      summaryOpportunityCases: registry.summaryMetrics.lnsRollForwardOpportunityCaseCount
     },
     {
       auditIterations: 1,
@@ -150,15 +156,37 @@ try {
       splitIterations: 1,
       splitRepairTime: 0.05,
       splitLabels: 1,
+      splitFinalStatus: 1,
+      splitOpportunityLabels: 0,
+      splitOpportunityCases: 0,
       budgetIterations: 1,
       budgetRepairTime: 0.05,
-      summaryIterations: 1
+      summaryIterations: 1,
+      summaryFinalStatus: 2,
+      summaryOpportunityLabels: 0,
+      summaryOpportunityCases: 0
     }
   );
+  assert.deepEqual(telemetry.lns.rollForwardStatusCounts, { improved: 0, neutral: 2, regressed: 0, unknown: 0 });
+  assert.equal(telemetry.lns.rollForwardOpportunityLabelCount, 0);
+  assert.equal(telemetry.lns.rollForwardOpportunityCaseCount, 0);
+  assert.deepEqual(registry.summaryMetrics.lnsRollForwardSplitDiagnostics[0], {
+    split: "development",
+    statusCounts: { improved: 0, neutral: 1, regressed: 0, unknown: 0 },
+    opportunityLabelCount: 0,
+    opportunityCaseCount: 0
+  });
   assert.equal(developmentReplayCase.seedHintKind, "curated");
   assert.equal(holdoutReplayCase.seedHintKind, "none");
   assert.equal(registry.budget.lnsRollForwardLabelCount, 2);
+  assert.equal(registry.budget.lnsRollForwardOpportunityLabelCount, 0);
+  assert.equal(registry.budget.lnsRollForwardOpportunityCaseCount, 0);
   assert.match(formatLearnedRankingLabelSuite(learned), /lns-roll-forward=1x0.05s/);
+  assert.match(
+    formatLearnedRankingLabelSuite(learned),
+    /roll-forward-status=improved:0 neutral:1 regressed:0 unknown:0/
+  );
+  assert.match(formatLearnedRankingLabelSuite(learned), /roll-forward-opportunities=labels:0 cases:0/);
 } finally {
   cpSatModule.solveCpSat = originalSolveCpSat;
 }

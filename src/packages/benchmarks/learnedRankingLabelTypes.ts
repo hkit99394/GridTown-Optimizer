@@ -3,6 +3,7 @@ import type { LnsBenchmarkCase, LnsReplayPressureFamilyLabel } from "./lns.js";
 import type { LnsReplayLabelScaleReadiness } from "./lnsReplayLabelReadiness.js";
 import type {
   LNS_WINDOW_REPLAY_FEATURE_SCHEMA_VERSION,
+  LnsWindowReplayRollForwardStatus,
   LnsWindowReplaySnapshot,
   LnsWindowReplaySnapshotLabel,
   LnsWindowReplayStatePolicy
@@ -19,6 +20,8 @@ export type LearnedRankingLabelSplit = "development" | "holdout";
 export type LearnedRankingLabelRunPreset = "strict-lns-replay";
 
 export type GreedyOrderingLabelSource = "connectivity-shadow-decision" | "road-opportunity-counterfactual";
+
+export type LnsReplayRollForwardStatusCounts = Record<LnsWindowReplayRollForwardStatus, number>;
 
 export interface LearnedRankingLabelSplitConfig {
   split: LearnedRankingLabelSplit;
@@ -170,6 +173,9 @@ export interface LearnedRankingLabelTelemetryManifest {
   lns: {
     scaleReadiness: LnsReplayLabelScaleReadiness<LearnedRankingLabelSplit>;
     statusCounts: Record<LnsWindowReplaySnapshotLabel["status"], number>;
+    rollForwardStatusCounts: LnsReplayRollForwardStatusCounts;
+    rollForwardOpportunityLabelCount: number;
+    rollForwardOpportunityCaseCount: number;
     splits: Array<{
       split: LearnedRankingLabelSplit;
       selectedCaseNames: string[];
@@ -177,6 +183,9 @@ export interface LearnedRankingLabelTelemetryManifest {
       labelCount: number;
       usableLabelCount: number;
       statusCounts: Record<LnsWindowReplaySnapshotLabel["status"], number>;
+      rollForwardStatusCounts: LnsReplayRollForwardStatusCounts;
+      rollForwardOpportunityLabelCount: number;
+      rollForwardOpportunityCaseCount: number;
       repairTimeLimitSeconds: number;
       maxWindows: number;
       explorationWindowCount: number;

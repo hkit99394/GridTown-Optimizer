@@ -34,6 +34,7 @@ import type {
 import type {
   LnsWindowReplaySnapshot,
   LnsWindowReplaySnapshotLabel,
+  LnsWindowReplayRollForwardStatus,
   LnsWindowReplayStatePolicy
 } from "./lnsWindowReplayLabels.js";
 import type {
@@ -51,7 +52,8 @@ import type {
   LearnedRankingLabelTelemetryManifest,
   LearnedRankingLabelTelemetryManifestOptions,
   LearnedRankingLeakageReport,
-  LnsReplayLabelSplitResult
+  LnsReplayLabelSplitResult,
+  LnsReplayRollForwardStatusCounts
 } from "./learnedRankingLabelTypes.js";
 
 export {
@@ -205,6 +207,52 @@ function countLnsStatuses(replay: LnsWindowReplaySnapshot): Record<LnsWindowRepl
     }
   }
   return counts;
+}
+
+function emptyLnsRollForwardStatusCounts(): LnsReplayRollForwardStatusCounts {
+  return {
+    improved: 0,
+    neutral: 0,
+    regressed: 0,
+    unknown: 0
+  };
+}
+
+function addLnsRollForwardStatusCounts(
+  left: LnsReplayRollForwardStatusCounts,
+  right: LnsReplayRollForwardStatusCounts
+): LnsReplayRollForwardStatusCounts {
+  return {
+    improved: left.improved + right.improved,
+    neutral: left.neutral + right.neutral,
+    regressed: left.regressed + right.regressed,
+    unknown: left.unknown + right.unknown
+  };
+}
+
+function countLnsRollForwardStatuses(replay: LnsWindowReplaySnapshot): LnsReplayRollForwardStatusCounts {
+  const counts = emptyLnsRollForwardStatusCounts();
+  for (const benchmarkCase of replay.cases) {
+    for (const label of benchmarkCase.labels) {
+      if (!label.rollForward) continue;
+      counts[label.rollForward.statusVsBaseline]++;
+    }
+  }
+  return counts;
+}
+
+function hasRollForwardOpportunity(label: LnsWindowReplaySnapshotLabel): boolean {
+  return label.usable && (label.rollForward?.improvementVsBaseline ?? 0) > 0;
+}
+
+function countLnsRollForwardOpportunityLabels(replay: LnsWindowReplaySnapshot): number {
+  return sumBenchmarkBy(replay.cases, (benchmarkCase) =>
+    countBenchmarkMatches(benchmarkCase.labels, hasRollForwardOpportunity)
+  );
+}
+
+function countLnsRollForwardOpportunityCases(replay: LnsWindowReplaySnapshot): number {
+  return countBenchmarkMatches(replay.cases, (benchmarkCase) => benchmarkCase.labels.some(hasRollForwardOpportunity));
 }
 
 function countUsableLnsLabels(replay: LnsWindowReplaySnapshot): number {
@@ -589,10 +637,28 @@ function aggregateLnsStatusCounts(
   return splits.reduce((counts, split) => addLnsStatusCounts(counts, split.statusCounts), emptyLnsStatusCounts());
 }
 
+function aggregateLnsRollForwardStatusCounts(
+  splits: readonly LnsReplayLabelSplitResult[]
+): LnsReplayRollForwardStatusCounts {
+  return splits.reduce(
+    (counts, split) => addLnsRollForwardStatusCounts(counts, countLnsRollForwardStatuses(split.replay)),
+    emptyLnsRollForwardStatusCounts()
+  );
+}
+
+function sumLnsRollForwardOpportunityLabels(splits: readonly LnsReplayLabelSplitResult[]): number {
+  return sumBenchmarkBy(splits, (split) => countLnsRollForwardOpportunityLabels(split.replay));
+}
+
+function sumLnsRollForwardOpportunityCases(splits: readonly LnsReplayLabelSplitResult[]): number {
+  return sumBenchmarkBy(splits, (split) => countLnsRollForwardOpportunityCases(split.replay));
+}
+
 export function buildLearnedRankingLabelTelemetryManifest(
   result: LearnedRankingLabelSuiteResult,
   options: LearnedRankingLabelTelemetryManifestOptions
 ): LearnedRankingLabelTelemetryManifest {
+  const lnsRollForwardStatusCounts = aggregateLnsRollForwardStatusCounts(result.lns.splits);
   return {
     schemaVersion: 1,
     source: "learned-ranking-label-bundle",
@@ -624,6 +690,9 @@ export function buildLearnedRankingLabelTelemetryManifest(
     lns: {
       scaleReadiness: structuredClone(result.lns.scaleReadiness),
       statusCounts: aggregateLnsStatusCounts(result.lns.splits),
+      rollForwardStatusCounts: lnsRollForwardStatusCounts,
+      rollForwardOpportunityLabelCount: sumLnsRollForwardOpportunityLabels(result.lns.splits),
+      rollForwardOpportunityCaseCount: sumLnsRollForwardOpportunityCases(result.lns.splits),
       splits: result.lns.splits.map((split) => ({
         split: split.split,
         selectedCaseNames: [...split.selectedCaseNames],
@@ -631,6 +700,9 @@ export function buildLearnedRankingLabelTelemetryManifest(
         labelCount: split.labelCount,
         usableLabelCount: split.usableLabelCount,
         statusCounts: { ...split.statusCounts },
+        rollForwardStatusCounts: countLnsRollForwardStatuses(split.replay),
+        rollForwardOpportunityLabelCount: countLnsRollForwardOpportunityLabels(split.replay),
+        rollForwardOpportunityCaseCount: countLnsRollForwardOpportunityCases(split.replay),
         repairTimeLimitSeconds: split.replay.repairTimeLimitSeconds,
         maxWindows: split.replay.maxWindows,
         explorationWindowCount: split.replay.explorationWindowCount,
@@ -659,6 +731,13 @@ export function buildLearnedRankingLabelRegistryEntryDraft(
 
   const splitCases = learnedRankingCasesBySplit(result);
   const lnsStatusCounts = aggregateLnsStatusCounts(result.lns.splits);
+  const lnsRollForwardStatusCounts = aggregateLnsRollForwardStatusCounts(result.lns.splits);
+  const lnsRollForwardSplitDiagnostics = result.lns.splits.map((split) => ({
+    split: split.split,
+    statusCounts: countLnsRollForwardStatuses(split.replay),
+    opportunityLabelCount: countLnsRollForwardOpportunityLabels(split.replay),
+    opportunityCaseCount: countLnsRollForwardOpportunityCases(split.replay)
+  }));
   const lnsCpSatModelFingerprints = uniqueBenchmarkValues(
     result.lns.splits.flatMap((split) => split.replay.cpSatModelFingerprints)
   );
@@ -729,6 +808,8 @@ export function buildLearnedRankingLabelRegistryEntryDraft(
         result.lns.splits.map((split) => split.replay.rollForwardRepairTimeLimitSeconds)
       ),
       lnsRollForwardLabelCount: sumBenchmarkBy(result.lns.splits, (split) => split.replay.rollForwardLabelCount),
+      lnsRollForwardOpportunityLabelCount: sumLnsRollForwardOpportunityLabels(result.lns.splits),
+      lnsRollForwardOpportunityCaseCount: sumLnsRollForwardOpportunityCases(result.lns.splits),
       lnsFeatureSchemaVersion: result.audit.lnsReplay.featureSchemaVersion,
       lnsCpSatNumWorkers: uniqueBenchmarkValues(result.lns.splits.map((split) => split.replay.cpSatNumWorkers))
     },
@@ -754,6 +835,10 @@ export function buildLearnedRankingLabelRegistryEntryDraft(
       lnsCapturedStatePolicies,
       lnsRollForwardIterations: result.audit.lnsReplay.rollForwardIterations,
       lnsRollForwardLabelCount: sumBenchmarkBy(result.lns.splits, (split) => split.replay.rollForwardLabelCount),
+      lnsRollForwardStatusCounts,
+      lnsRollForwardOpportunityLabelCount: sumLnsRollForwardOpportunityLabels(result.lns.splits),
+      lnsRollForwardOpportunityCaseCount: sumLnsRollForwardOpportunityCases(result.lns.splits),
+      lnsRollForwardSplitDiagnostics,
       lnsCpSatModelFingerprints
     }
   };
@@ -767,8 +852,13 @@ function formatNullableSeconds(value: number | null): string {
   return value === null ? "n/a" : `${value}s`;
 }
 
+function formatRollForwardStatusCounts(counts: Record<LnsWindowReplayRollForwardStatus, number>): string {
+  return `improved:${counts.improved} neutral:${counts.neutral} regressed:${counts.regressed} unknown:${counts.unknown}`;
+}
+
 export function formatLearnedRankingLabelSuite(result: LearnedRankingLabelSuiteResult): string {
   const lines: string[] = [];
+  const lnsRollForwardStatusCounts = aggregateLnsRollForwardStatusCounts(result.lns.splits);
   lines.push("=== Low-Risk Learned Ranking Labels ===");
   lines.push(`Generated: ${result.generatedAt}`);
   lines.push(`Schema: ${result.schemaVersion}`);
@@ -788,6 +878,9 @@ export function formatLearnedRankingLabelSuite(result: LearnedRankingLabelSuiteR
     );
   }
   lines.push(`LNS replay labels: total=${result.lns.labelCount}`);
+  lines.push(
+    `LNS roll-forward: labels=${sumBenchmarkBy(result.lns.splits, (split) => split.replay.rollForwardLabelCount)} status=${formatRollForwardStatusCounts(lnsRollForwardStatusCounts)} opportunities=labels:${sumLnsRollForwardOpportunityLabels(result.lns.splits)} cases:${sumLnsRollForwardOpportunityCases(result.lns.splits)}`
+  );
   lines.push(`LNS label-scale ready=${result.lns.scaleReadiness.passed}`);
   for (const readiness of result.lns.scaleReadiness.splitReadiness) {
     lines.push(
@@ -795,8 +888,9 @@ export function formatLearnedRankingLabelSuite(result: LearnedRankingLabelSuiteR
     );
   }
   for (const split of result.lns.splits) {
+    const rollForwardStatusCounts = countLnsRollForwardStatuses(split.replay);
     lines.push(
-      `- lns ${split.split}: cases=${split.selectedCaseNames.join(", ")} families=${split.pressureFamilies.join(", ")} labels=${split.labelCount} usable=${split.usableLabelCount} improved=${split.statusCounts.improved} neutral=${split.statusCounts.neutral} regressed=${split.statusCounts.regressed} invalid=${split.statusCounts.invalid} recoverable-failure=${split.statusCounts["recoverable-failure"]} repair=${split.replay.repairTimeLimitSeconds}s roll-forward=${split.replay.rollForwardLabelCount} max-windows=${split.replay.maxWindows} exploration=${split.replay.explorationWindowCount}`
+      `- lns ${split.split}: cases=${split.selectedCaseNames.join(", ")} families=${split.pressureFamilies.join(", ")} labels=${split.labelCount} usable=${split.usableLabelCount} improved=${split.statusCounts.improved} neutral=${split.statusCounts.neutral} regressed=${split.statusCounts.regressed} invalid=${split.statusCounts.invalid} recoverable-failure=${split.statusCounts["recoverable-failure"]} repair=${split.replay.repairTimeLimitSeconds}s roll-forward=${split.replay.rollForwardLabelCount} roll-forward-status=${formatRollForwardStatusCounts(rollForwardStatusCounts)} roll-forward-opportunities=labels:${countLnsRollForwardOpportunityLabels(split.replay)} cases:${countLnsRollForwardOpportunityCases(split.replay)} max-windows=${split.replay.maxWindows} exploration=${split.replay.explorationWindowCount}`
     );
   }
   return lines.join("\n");

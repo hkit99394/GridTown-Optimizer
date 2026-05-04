@@ -451,12 +451,69 @@ function withReplayLabelSeedHint(benchmarkCase: LnsBenchmarkCase): LnsBenchmarkC
   };
 }
 
+const CURATED_REPLAY_SEED_HINTS: Readonly<Partial<Record<string, NonNullable<LnsOptions["seedHint"]>>>> = Object.freeze(
+  {
+    "lns-gate-choke-pressure": {
+      sourceName: "lns-gate-choke-pressure-curated-first-improvement-seed",
+      roadKeys: ["0,0"],
+      solution: {
+        roads: ["0,0"],
+        services: [],
+        residentials: [
+          { r: 1, c: 0, rows: 2, cols: 2, typeIndex: 0, population: 90 },
+          { r: 3, c: 0, rows: 2, cols: 3, typeIndex: 1, population: 150 }
+        ],
+        populations: [90, 150],
+        totalPopulation: 240
+      },
+      totalPopulation: 240,
+      objectiveLowerBound: 240
+    },
+    "lns-service-overlap-pressure": {
+      sourceName: "lns-service-overlap-pressure-curated-first-improvement-seed",
+      roadKeys: ["0,0", "2,0", "2,1"],
+      solution: {
+        roads: ["0,0", "2,0", "2,1"],
+        services: [{ r: 0, c: 1, rows: 2, cols: 1, range: 2, typeIndex: 1, bonus: 90 }],
+        residentials: [
+          { r: 0, c: 2, rows: 2, cols: 2, typeIndex: 0, population: 170 },
+          { r: 3, c: 0, rows: 2, cols: 2, typeIndex: 0, population: 170 },
+          { r: 2, c: 2, rows: 2, cols: 3, typeIndex: 1, population: 250 }
+        ],
+        populations: [170, 170, 250],
+        totalPopulation: 590
+      },
+      totalPopulation: 590,
+      objectiveLowerBound: 590
+    }
+  }
+);
+
+function withCuratedReplaySeedHint(benchmarkCase: LnsBenchmarkCase): LnsBenchmarkCase {
+  const seedHint = CURATED_REPLAY_SEED_HINTS[benchmarkCase.name];
+  if (!seedHint) return benchmarkCase;
+  return {
+    ...benchmarkCase,
+    params: {
+      ...benchmarkCase.params,
+      lns: {
+        ...(benchmarkCase.params.lns ?? {}),
+        seedHint: cloneBenchmarkOptions(seedHint)
+      }
+    }
+  };
+}
+
 export const DEFAULT_LNS_REPLAY_LABEL_CORPUS: readonly LnsBenchmarkCase[] = Object.freeze(
   selectReplayLabelCases(DEFAULT_LNS_BENCHMARK_CORPUS).map(withReplayLabelSeedHint)
 );
 
 export const DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS: readonly LnsBenchmarkCase[] = Object.freeze(
   selectReplayLabelCases(DEFAULT_LNS_BENCHMARK_CORPUS)
+);
+
+export const DEFAULT_LNS_REPLAY_LABEL_CURATED_SEED_CORPUS: readonly LnsBenchmarkCase[] = Object.freeze(
+  selectReplayLabelCases(DEFAULT_LNS_BENCHMARK_CORPUS).map(withCuratedReplaySeedHint)
 );
 
 export function listLnsReplayPressureFamilies(

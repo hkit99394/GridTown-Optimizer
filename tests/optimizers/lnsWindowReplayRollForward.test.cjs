@@ -7,11 +7,14 @@ const {
   buildLearnedRankingLabelTelemetryManifest,
   createLnsWindowReplaySnapshot,
   DEFAULT_GREEDY_BENCHMARK_CORPUS,
+  DEFAULT_LNS_REPLAY_LABEL_CURATED_SEED_CORPUS,
   DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS,
   formatLearnedRankingLabelSuite,
   formatLnsWindowReplayLabels,
   runLearnedRankingLabelSuite,
-  runLnsWindowReplayLabels
+  runLnsWindowReplayLabels,
+  STRICT_LNS_REPLAY_LABEL_STATE_COLLECTION_ITERATIONS,
+  STRICT_LNS_REPLAY_LABEL_STATE_POLICIES
 } = require("../../dist/benchmarkApi.js");
 const cpSatModule = require("../../dist/packages/solvers/cp-sat/solver.js");
 const { buildMockSolution } = require("../helpers/solverFixtures.cjs");
@@ -39,11 +42,41 @@ try {
     [path.join(repoRoot, "dist", "lnsBenchmarkCli.js"), "--list", "--natural-replay-seeds"],
     { cwd: repoRoot, encoding: "utf8" }
   );
+  const curatedReplayCase = DEFAULT_LNS_REPLAY_LABEL_CURATED_SEED_CORPUS.find(
+    (benchmarkCase) => benchmarkCase.name === "lns-service-overlap-pressure"
+  );
+  const curatedReplayList = childProcess.spawnSync(
+    process.execPath,
+    [path.join(repoRoot, "dist", "lnsBenchmarkCli.js"), "--list", "--curated-replay-seeds"],
+    { cwd: repoRoot, encoding: "utf8" }
+  );
 
   assert(naturalReplayCase);
+  assert(curatedReplayCase);
   assert.equal(naturalReplayCase.params.lns?.seedHint, undefined);
+  assert.match(curatedReplayCase.params.lns?.seedHint?.sourceName, /curated-first-improvement-seed$/);
   assert.equal(naturalReplayList.status, 0, naturalReplayList.stderr);
   assert.match(naturalReplayList.stdout, /lns-service-overlap-pressure/);
+  assert.equal(curatedReplayList.status, 0, curatedReplayList.stderr);
+  assert.match(curatedReplayList.stdout, /lns-service-overlap-pressure/);
+
+  const curatedReplay = runLnsWindowReplayLabels(DEFAULT_LNS_REPLAY_LABEL_CURATED_SEED_CORPUS, {
+    names: ["lns-gate-choke-pressure", "lns-service-overlap-pressure"],
+    seeds: [7],
+    maxWindows: 14,
+    explorationWindowCount: 4,
+    repairTimeLimitSeconds: 0.1,
+    statePolicies: STRICT_LNS_REPLAY_LABEL_STATE_POLICIES,
+    stateCollectionIterations: STRICT_LNS_REPLAY_LABEL_STATE_COLLECTION_ITERATIONS,
+    stateCollectionRepairTimeLimitSeconds: 0.1,
+    rollForwardIterations: 1,
+    rollForwardRepairTimeLimitSeconds: 0.1
+  });
+  const curatedOpportunityLabels = curatedReplay.cases
+    .flatMap((benchmarkCase) => benchmarkCase.labels)
+    .filter((label) => label.usable && label.rollForward?.improvementVsBaseline > 0);
+  assert(curatedReplay.cases.every((benchmarkCase) => benchmarkCase.seedHintKind === "curated"));
+  assert(curatedOpportunityLabels.length >= 2);
 
   cpSatModule.solveCpSat = zeroPopulationRepair;
 

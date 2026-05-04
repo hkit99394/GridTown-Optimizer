@@ -15,6 +15,7 @@ import {
   createLnsWindowReplaySnapshot,
   DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS,
   DEFAULT_EXPERIMENT_REGISTRY_PATH,
+  DEFAULT_LNS_REPLAY_LABEL_CURATED_SEED_CORPUS,
   DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS,
   DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS,
   ExperimentRegistryValidationError,
@@ -74,6 +75,7 @@ interface ParsedBenchmarkArgs {
   json: boolean;
   neighborhoodAblation: boolean;
   windowReplayLabels: boolean;
+  curatedReplaySeeds: boolean;
   naturalReplaySeeds: boolean;
   windowRankerOnlineAblation: boolean;
   gateReport: boolean;
@@ -145,6 +147,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let json = false;
   let neighborhoodAblation = false;
   let windowReplayLabels = false;
+  let curatedReplaySeeds = false;
   let naturalReplaySeeds = false;
   let windowRankerOnlineAblation = false;
   let windowRankerThresholdSweep = false;
@@ -279,6 +282,11 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
       naturalReplaySeeds = true;
       continue;
     }
+    if (isCliFlag(arg, "--curated-replay-seeds", "--curated-lns-replay-seeds")) {
+      windowReplayLabels = true;
+      curatedReplaySeeds = true;
+      continue;
+    }
     if (isCliFlag(arg, "--rotate-variant-run-order")) {
       rotateVariantRunOrder = true;
       continue;
@@ -309,6 +317,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     json,
     neighborhoodAblation,
     windowReplayLabels,
+    curatedReplaySeeds,
     naturalReplaySeeds,
     windowRankerOnlineAblation,
     gateReport,
@@ -659,7 +668,11 @@ export function runLnsBenchmarkCli(): void {
       ? listLnsNeighborhoodAblationCaseNames()
       : args.windowReplayLabels
         ? listLnsWindowReplayCaseNames(
-            args.naturalReplaySeeds ? DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS : undefined
+            args.curatedReplaySeeds
+              ? DEFAULT_LNS_REPLAY_LABEL_CURATED_SEED_CORPUS
+              : args.naturalReplaySeeds
+                ? DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS
+                : undefined
           )
         : args.windowRankerOnlineAblation
           ? listLnsWindowRankerOnlineAblationCaseNames(
@@ -672,7 +685,11 @@ export function runLnsBenchmarkCli(): void {
 
   if (args.windowReplayLabels) {
     const result = runLnsWindowReplayLabels(
-      args.naturalReplaySeeds ? DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS : undefined,
+      args.curatedReplaySeeds
+        ? DEFAULT_LNS_REPLAY_LABEL_CURATED_SEED_CORPUS
+        : args.naturalReplaySeeds
+          ? DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS
+          : undefined,
       {
         names: optionalCliNames(args.names),
         seeds: args.seeds,

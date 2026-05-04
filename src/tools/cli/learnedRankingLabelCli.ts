@@ -7,6 +7,7 @@ import {
   captureExperimentRegistryHardwareMetadata,
   createLearnedRankingLabelSnapshot,
   DEFAULT_EXPERIMENT_REGISTRY_PATH,
+  DEFAULT_LNS_REPLAY_LABEL_CURATED_SEED_CORPUS,
   DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS,
   ExperimentRegistryValidationError,
   formatLearnedRankingLabelSuite,
@@ -51,6 +52,7 @@ interface ParsedLabelArgs {
   lnsStatePolicies?: LnsWindowReplayStatePolicy[];
   lnsStateCollectionIterations?: number;
   lnsStateCollectionRepairTimeLimitSeconds?: number;
+  curatedLnsReplaySeeds: boolean;
   naturalLnsReplaySeeds: boolean;
   artifactDir?: string;
   labelRunId?: string;
@@ -98,6 +100,7 @@ function parseArgs(argv: string[]): ParsedLabelArgs {
   let lnsStatePolicies: LnsWindowReplayStatePolicy[] | undefined;
   let lnsStateCollectionIterations: number | undefined;
   let lnsStateCollectionRepairTimeLimitSeconds: number | undefined;
+  let curatedLnsReplaySeeds = false;
   let naturalLnsReplaySeeds = false;
   let artifactDir: string | undefined;
   let labelRunId: string | undefined;
@@ -172,6 +175,10 @@ function parseArgs(argv: string[]): ParsedLabelArgs {
       naturalLnsReplaySeeds = true;
       continue;
     }
+    if (isCliFlag(arg, "--curated-lns-replay-seeds", "--curated-replay-seeds")) {
+      curatedLnsReplaySeeds = true;
+      continue;
+    }
     if (isCliFlag(arg, "--label-register-dry-run")) {
       labelRegisterDryRun = true;
       continue;
@@ -191,6 +198,7 @@ function parseArgs(argv: string[]): ParsedLabelArgs {
     lnsStatePolicies,
     lnsStateCollectionIterations,
     lnsStateCollectionRepairTimeLimitSeconds,
+    curatedLnsReplaySeeds,
     naturalLnsReplaySeeds,
     artifactDir,
     labelRunId,
@@ -319,7 +327,11 @@ export function runLearnedRankingLabelCli(): void {
     lnsStatePolicies: args.lnsStatePolicies,
     lnsStateCollectionIterations: args.lnsStateCollectionIterations,
     lnsStateCollectionRepairTimeLimitSeconds: args.lnsStateCollectionRepairTimeLimitSeconds,
-    lnsCorpus: args.naturalLnsReplaySeeds ? DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS : undefined
+    lnsCorpus: args.curatedLnsReplaySeeds
+      ? DEFAULT_LNS_REPLAY_LABEL_CURATED_SEED_CORPUS
+      : args.naturalLnsReplaySeeds
+        ? DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS
+        : undefined
   });
 
   if (args.artifactDir !== undefined) {

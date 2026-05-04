@@ -423,12 +423,11 @@ export function runLearnedRankingLabelSuite(
     options.explorationWindowCount,
     DEFAULT_LEARNED_RANKING_LNS_REPLAY_EXPLORATION_WINDOWS
   );
-  const lnsStatePolicies = options.lnsStatePolicies ?? (
-    strictPreset ? STRICT_LNS_REPLAY_LABEL_STATE_POLICIES : undefined
-  );
-  const lnsStateCollectionIterations = options.lnsStateCollectionIterations ?? (
-    strictPreset ? STRICT_LNS_REPLAY_LABEL_STATE_COLLECTION_ITERATIONS : undefined
-  );
+  const lnsStatePolicies =
+    options.lnsStatePolicies ?? (strictPreset ? STRICT_LNS_REPLAY_LABEL_STATE_POLICIES : undefined);
+  const lnsStateCollectionIterations =
+    options.lnsStateCollectionIterations ??
+    (strictPreset ? STRICT_LNS_REPLAY_LABEL_STATE_COLLECTION_ITERATIONS : undefined);
   const greedySplits: GreedyOrderingLabelSplitResult[] = [];
   const lnsSplits: LnsReplayLabelSplitResult[] = [];
   const lnsScaleThresholds = strictPreset ? STRICT_LNS_REPLAY_LABEL_SCALE_THRESHOLDS : undefined;

@@ -1,0 +1,100 @@
+=== LNS Window Ranker Online A/B ===
+Generated: 2026-05-04T10:45:12.402Z
+Cases: 10
+Seeds: 7, 19, 37
+Variants: baseline, window-ranker
+Coverage: cases=10 seeds=3 comparisons=30 runs=60 variants=2 grid-cells=1104
+Summary:
+- baseline: mean=360.5 median=350 worst-decile=10 best=590 delta-mean=0 delta-median=0 delta-worst-decile=0 delta-best=0 delta-worst=0 wall-mean=1.138s wall-delta-mean=0.000s improved=0 regressed=0 unchanged=30 win-rate=0.0% regression-rate=0.0% decisions=0 overrides=0 fallbacks=0 override-rate=0.0% fallback-rate=0.0% best-case=compact-service-repair/seed:7 worst-case=compact-service-repair/seed:7
+- window-ranker: mean=378.2 median=380 worst-decile=10 best=740 delta-mean=+17.667 delta-median=0 delta-worst-decile=0 delta-best=+150 delta-worst=0 wall-mean=1.125s wall-delta-mean=-0.014s improved=4 regressed=0 unchanged=26 win-rate=13.3% regression-rate=0.0% decisions=57 overrides=18 fallbacks=39 override-rate=31.6% fallback-rate=68.4% best-case=lns-service-overlap-pressure/seed:7 worst-case=compact-service-repair/seed:7
+
+- compact-service-repair seed=7: Small mixed case for measuring service-aware neighborhood repair overhead.
+  baseline=population:570 delta:0 wall:1.646s wall-delta:0.000s roads:1 road-delta:0 services:1 residentials:3 stop:iteration-limit improved:1 neutral:1 ranker=disabled
+  window-ranker=population:570 delta:0 wall:1.351s wall-delta:-0.295s roads:1 road-delta:0 services:1 residentials:3 stop:iteration-limit improved:1 neutral:1 ranker=decisions:2 overrides:2 fallback:0 override-rate:100.0% fingerprint:fnv1a:2d6b2b9f
+- seeded-service-anchor-pressure seed=7: Seeded LNS case where ranked service anchors find a service move that sliding windows miss.
+  baseline=population:200 delta:0 wall:0.582s wall-delta:0.000s roads:11 road-delta:0 services:1 residentials:1 stop:iteration-limit improved:1 neutral:0 ranker=disabled
+  window-ranker=population:200 delta:0 wall:0.551s wall-delta:-0.031s roads:11 road-delta:0 services:1 residentials:1 stop:iteration-limit improved:1 neutral:0 ranker=decisions:1 overrides:0 fallback:1 override-rate:0.0% fingerprint:fnv1a:2d6b2b9f
+- row0-anchor-repair seed=7: Sparse road-anchor access case that exercises LNS repair around road anchors.
+  baseline=population:10 delta:0 wall:1.120s wall-delta:0.000s roads:1 road-delta:0 services:0 residentials:1 stop:iteration-limit improved:1 neutral:1 ranker=disabled
+  window-ranker=population:10 delta:0 wall:1.108s wall-delta:-0.012s roads:1 road-delta:0 services:0 residentials:1 stop:iteration-limit improved:1 neutral:1 ranker=decisions:2 overrides:2 fallback:0 override-rate:100.0% fingerprint:fnv1a:2d6b2b9f
+- lns-corridor-squeeze-pressure seed=7: Generated corridor pressure case with narrow anchor access and mixed footprints.
+  baseline=population:340 delta:0 wall:1.124s wall-delta:0.000s roads:1 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:1 neutral:1 ranker=disabled
+  window-ranker=population:420 delta:+80 wall:1.156s wall-delta:0.032s roads:4 road-delta:+3 services:1 residentials:3 stop:iteration-limit improved:2 neutral:0 ranker=decisions:2 overrides:1 fallback:1 override-rate:50.0% fingerprint:fnv1a:2d6b2b9f
+- lns-gate-choke-pressure seed=7: Generated gate pressure case where a central choke point separates high-value placements.
+  baseline=population:380 delta:0 wall:1.126s wall-delta:0.000s roads:1 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:2 neutral:0 ranker=disabled
+  window-ranker=population:380 delta:0 wall:1.160s wall-delta:0.033s roads:1 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:2 neutral:0 ranker=decisions:2 overrides:0 fallback:2 override-rate:0.0% fingerprint:fnv1a:2d6b2b9f
+- lns-footprint-mix-pressure seed=7: Generated footprint-pressure case with competing 2x2 and 3x2 residential placements.
+  baseline=population:350 delta:0 wall:1.160s wall-delta:0.000s roads:1 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:1 neutral:1 ranker=disabled
+  window-ranker=population:350 delta:0 wall:1.158s wall-delta:-0.002s roads:1 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:1 neutral:1 ranker=decisions:2 overrides:0 fallback:2 override-rate:0.0% fingerprint:fnv1a:2d6b2b9f
+- lns-service-overlap-pressure seed=7: Generated service-pressure case with overlapping service ranges and scarce premium housing.
+  baseline=population:590 delta:0 wall:1.326s wall-delta:0.000s roads:3 road-delta:0 services:1 residentials:3 stop:iteration-limit improved:1 neutral:1 ranker=disabled
+  window-ranker=population:740 delta:+150 wall:1.316s wall-delta:-0.010s roads:5 road-delta:+2 services:2 residentials:3 stop:iteration-limit improved:2 neutral:0 ranker=decisions:2 overrides:1 fallback:1 override-rate:50.0% fingerprint:fnv1a:2d6b2b9f
+- lns-anchor-service-corner-pressure seed=7: Generated anchor-service holdout case where service relocation competes with anchor-side road pressure.
+  baseline=population:450 delta:0 wall:1.136s wall-delta:0.000s roads:3 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:1 neutral:1 ranker=disabled
+  window-ranker=population:450 delta:0 wall:1.111s wall-delta:-0.024s roads:3 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:1 neutral:1 ranker=decisions:2 overrides:0 fallback:2 override-rate:0.0% fingerprint:fnv1a:2d6b2b9f
+- lns-gate-side-channel-pressure seed=7: Generated gate holdout case with two asymmetric passages around a blocked center.
+  baseline=population:400 delta:0 wall:1.138s wall-delta:0.000s roads:1 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:2 neutral:0 ranker=disabled
+  window-ranker=population:400 delta:0 wall:1.130s wall-delta:-0.008s roads:1 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:2 neutral:0 ranker=decisions:2 overrides:0 fallback:2 override-rate:0.0% fingerprint:fnv1a:2d6b2b9f
+- lns-footprint-bottleneck-pressure seed=7: Generated footprint holdout case where larger buildings fight for a narrow buildable pocket.
+  baseline=population:315 delta:0 wall:1.131s wall-delta:0.000s roads:3 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:1 neutral:1 ranker=disabled
+  window-ranker=population:315 delta:0 wall:1.239s wall-delta:0.108s roads:3 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:1 neutral:1 ranker=decisions:2 overrides:0 fallback:2 override-rate:0.0% fingerprint:fnv1a:2d6b2b9f
+- compact-service-repair seed=19: Small mixed case for measuring service-aware neighborhood repair overhead.
+  baseline=population:570 delta:0 wall:1.354s wall-delta:0.000s roads:1 road-delta:0 services:1 residentials:3 stop:iteration-limit improved:1 neutral:1 ranker=disabled
+  window-ranker=population:570 delta:0 wall:1.301s wall-delta:-0.054s roads:1 road-delta:0 services:1 residentials:3 stop:iteration-limit improved:1 neutral:1 ranker=decisions:2 overrides:2 fallback:0 override-rate:100.0% fingerprint:fnv1a:2d6b2b9f
+- seeded-service-anchor-pressure seed=19: Seeded LNS case where ranked service anchors find a service move that sliding windows miss.
+  baseline=population:200 delta:0 wall:0.559s wall-delta:0.000s roads:11 road-delta:0 services:1 residentials:1 stop:iteration-limit improved:1 neutral:0 ranker=disabled
+  window-ranker=population:200 delta:0 wall:0.570s wall-delta:0.011s roads:11 road-delta:0 services:1 residentials:1 stop:iteration-limit improved:1 neutral:0 ranker=decisions:1 overrides:0 fallback:1 override-rate:0.0% fingerprint:fnv1a:2d6b2b9f
+- row0-anchor-repair seed=19: Sparse road-anchor access case that exercises LNS repair around road anchors.
+  baseline=population:10 delta:0 wall:1.106s wall-delta:0.000s roads:1 road-delta:0 services:0 residentials:1 stop:iteration-limit improved:1 neutral:1 ranker=disabled
+  window-ranker=population:10 delta:0 wall:1.186s wall-delta:0.080s roads:1 road-delta:0 services:0 residentials:1 stop:iteration-limit improved:1 neutral:1 ranker=decisions:2 overrides:2 fallback:0 override-rate:100.0% fingerprint:fnv1a:2d6b2b9f
+- lns-corridor-squeeze-pressure seed=19: Generated corridor pressure case with narrow anchor access and mixed footprints.
+  baseline=population:340 delta:0 wall:1.208s wall-delta:0.000s roads:1 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:1 neutral:1 ranker=disabled
+  window-ranker=population:340 delta:0 wall:1.199s wall-delta:-0.010s roads:1 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:1 neutral:1 ranker=decisions:2 overrides:1 fallback:1 override-rate:50.0% fingerprint:fnv1a:2d6b2b9f
+- lns-gate-choke-pressure seed=19: Generated gate pressure case where a central choke point separates high-value placements.
+  baseline=population:380 delta:0 wall:1.127s wall-delta:0.000s roads:1 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:2 neutral:0 ranker=disabled
+  window-ranker=population:380 delta:0 wall:1.114s wall-delta:-0.013s roads:1 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:2 neutral:0 ranker=decisions:2 overrides:0 fallback:2 override-rate:0.0% fingerprint:fnv1a:2d6b2b9f
+- lns-footprint-mix-pressure seed=19: Generated footprint-pressure case with competing 2x2 and 3x2 residential placements.
+  baseline=population:350 delta:0 wall:1.158s wall-delta:0.000s roads:1 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:1 neutral:1 ranker=disabled
+  window-ranker=population:350 delta:0 wall:1.133s wall-delta:-0.025s roads:1 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:1 neutral:1 ranker=decisions:2 overrides:0 fallback:2 override-rate:0.0% fingerprint:fnv1a:2d6b2b9f
+- lns-service-overlap-pressure seed=19: Generated service-pressure case with overlapping service ranges and scarce premium housing.
+  baseline=population:590 delta:0 wall:1.252s wall-delta:0.000s roads:3 road-delta:0 services:1 residentials:3 stop:iteration-limit improved:1 neutral:1 ranker=disabled
+  window-ranker=population:740 delta:+150 wall:1.209s wall-delta:-0.043s roads:5 road-delta:+2 services:2 residentials:3 stop:iteration-limit improved:2 neutral:0 ranker=decisions:2 overrides:1 fallback:1 override-rate:50.0% fingerprint:fnv1a:2d6b2b9f
+- lns-anchor-service-corner-pressure seed=19: Generated anchor-service holdout case where service relocation competes with anchor-side road pressure.
+  baseline=population:450 delta:0 wall:1.155s wall-delta:0.000s roads:3 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:1 neutral:1 ranker=disabled
+  window-ranker=population:450 delta:0 wall:1.135s wall-delta:-0.020s roads:3 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:1 neutral:1 ranker=decisions:2 overrides:0 fallback:2 override-rate:0.0% fingerprint:fnv1a:2d6b2b9f
+- lns-gate-side-channel-pressure seed=19: Generated gate holdout case with two asymmetric passages around a blocked center.
+  baseline=population:400 delta:0 wall:1.086s wall-delta:0.000s roads:1 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:2 neutral:0 ranker=disabled
+  window-ranker=population:400 delta:0 wall:1.103s wall-delta:0.017s roads:1 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:2 neutral:0 ranker=decisions:2 overrides:0 fallback:2 override-rate:0.0% fingerprint:fnv1a:2d6b2b9f
+- lns-footprint-bottleneck-pressure seed=19: Generated footprint holdout case where larger buildings fight for a narrow buildable pocket.
+  baseline=population:315 delta:0 wall:1.134s wall-delta:0.000s roads:3 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:1 neutral:1 ranker=disabled
+  window-ranker=population:315 delta:0 wall:1.103s wall-delta:-0.030s roads:3 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:1 neutral:1 ranker=decisions:2 overrides:0 fallback:2 override-rate:0.0% fingerprint:fnv1a:2d6b2b9f
+- compact-service-repair seed=37: Small mixed case for measuring service-aware neighborhood repair overhead.
+  baseline=population:570 delta:0 wall:1.246s wall-delta:0.000s roads:1 road-delta:0 services:1 residentials:3 stop:iteration-limit improved:1 neutral:1 ranker=disabled
+  window-ranker=population:570 delta:0 wall:1.338s wall-delta:0.092s roads:1 road-delta:0 services:1 residentials:3 stop:iteration-limit improved:1 neutral:1 ranker=decisions:2 overrides:2 fallback:0 override-rate:100.0% fingerprint:fnv1a:2d6b2b9f
+- seeded-service-anchor-pressure seed=37: Seeded LNS case where ranked service anchors find a service move that sliding windows miss.
+  baseline=population:200 delta:0 wall:0.557s wall-delta:0.000s roads:11 road-delta:0 services:1 residentials:1 stop:iteration-limit improved:1 neutral:0 ranker=disabled
+  window-ranker=population:200 delta:0 wall:0.574s wall-delta:0.016s roads:11 road-delta:0 services:1 residentials:1 stop:iteration-limit improved:1 neutral:0 ranker=decisions:1 overrides:0 fallback:1 override-rate:0.0% fingerprint:fnv1a:2d6b2b9f
+- row0-anchor-repair seed=37: Sparse road-anchor access case that exercises LNS repair around road anchors.
+  baseline=population:10 delta:0 wall:1.056s wall-delta:0.000s roads:1 road-delta:0 services:0 residentials:1 stop:iteration-limit improved:1 neutral:1 ranker=disabled
+  window-ranker=population:10 delta:0 wall:1.087s wall-delta:0.031s roads:1 road-delta:0 services:0 residentials:1 stop:iteration-limit improved:1 neutral:1 ranker=decisions:2 overrides:2 fallback:0 override-rate:100.0% fingerprint:fnv1a:2d6b2b9f
+- lns-corridor-squeeze-pressure seed=37: Generated corridor pressure case with narrow anchor access and mixed footprints.
+  baseline=population:340 delta:0 wall:1.236s wall-delta:0.000s roads:1 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:1 neutral:1 ranker=disabled
+  window-ranker=population:340 delta:0 wall:1.135s wall-delta:-0.101s roads:1 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:1 neutral:1 ranker=decisions:2 overrides:1 fallback:1 override-rate:50.0% fingerprint:fnv1a:2d6b2b9f
+- lns-gate-choke-pressure seed=37: Generated gate pressure case where a central choke point separates high-value placements.
+  baseline=population:380 delta:0 wall:1.203s wall-delta:0.000s roads:1 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:2 neutral:0 ranker=disabled
+  window-ranker=population:380 delta:0 wall:1.202s wall-delta:-0.000s roads:1 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:2 neutral:0 ranker=decisions:2 overrides:0 fallback:2 override-rate:0.0% fingerprint:fnv1a:2d6b2b9f
+- lns-footprint-mix-pressure seed=37: Generated footprint-pressure case with competing 2x2 and 3x2 residential placements.
+  baseline=population:350 delta:0 wall:1.223s wall-delta:0.000s roads:1 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:1 neutral:1 ranker=disabled
+  window-ranker=population:350 delta:0 wall:1.182s wall-delta:-0.041s roads:1 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:1 neutral:1 ranker=decisions:2 overrides:0 fallback:2 override-rate:0.0% fingerprint:fnv1a:2d6b2b9f
+- lns-service-overlap-pressure seed=37: Generated service-pressure case with overlapping service ranges and scarce premium housing.
+  baseline=population:590 delta:0 wall:1.440s wall-delta:0.000s roads:3 road-delta:0 services:1 residentials:3 stop:iteration-limit improved:1 neutral:1 ranker=disabled
+  window-ranker=population:740 delta:+150 wall:1.311s wall-delta:-0.128s roads:5 road-delta:+2 services:2 residentials:3 stop:iteration-limit improved:2 neutral:0 ranker=decisions:2 overrides:1 fallback:1 override-rate:50.0% fingerprint:fnv1a:2d6b2b9f
+- lns-anchor-service-corner-pressure seed=37: Generated anchor-service holdout case where service relocation competes with anchor-side road pressure.
+  baseline=population:450 delta:0 wall:1.186s wall-delta:0.000s roads:3 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:1 neutral:1 ranker=disabled
+  window-ranker=population:450 delta:0 wall:1.108s wall-delta:-0.079s roads:3 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:1 neutral:1 ranker=decisions:2 overrides:0 fallback:2 override-rate:0.0% fingerprint:fnv1a:2d6b2b9f
+- lns-gate-side-channel-pressure seed=37: Generated gate holdout case with two asymmetric passages around a blocked center.
+  baseline=population:400 delta:0 wall:1.144s wall-delta:0.000s roads:1 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:2 neutral:0 ranker=disabled
+  window-ranker=population:400 delta:0 wall:1.138s wall-delta:-0.005s roads:1 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:2 neutral:0 ranker=decisions:2 overrides:0 fallback:2 override-rate:0.0% fingerprint:fnv1a:2d6b2b9f
+- lns-footprint-bottleneck-pressure seed=37: Generated footprint holdout case where larger buildings fight for a narrow buildable pocket.
+  baseline=population:315 delta:0 wall:1.234s wall-delta:0.000s roads:3 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:1 neutral:1 ranker=disabled
+  window-ranker=population:315 delta:0 wall:1.334s wall-delta:0.099s roads:3 road-delta:0 services:1 residentials:2 stop:iteration-limit improved:1 neutral:1 ranker=decisions:2 overrides:0 fallback:2 override-rate:0.0% fingerprint:fnv1a:2d6b2b9f

@@ -4,15 +4,21 @@ const path = require("node:path");
 
 const repoRoot = path.join(__dirname, "../..");
 const {
+  buildLnsWindowRankerOnlineAblationRegistryEntryDraft,
+  buildLnsWindowRankerOnlineAblationTelemetryManifest,
+  createLnsWindowRankerOnlineCalibrationSnapshot,
   createLnsWindowRankerOnlineAblationSnapshot,
+  formatLnsWindowRankerOnlineCalibration,
   formatLnsWindowRankerOnlineAblation,
+  runLnsWindowRankerOnlineCalibration,
   runLnsWindowRankerOnlineAblation
 } = require("../../dist/benchmarkApi.js");
 
 function buildMockSolution(params) {
   const ranker = params.lns?.windowRanker;
   const usesRanker = Boolean(ranker?.model);
-  const totalPopulation = usesRanker ? 120 : 100;
+  const overridesBaseline = usesRanker && (ranker.minScoreDelta ?? 0) < 0.2;
+  const totalPopulation = overridesBaseline ? 120 : 100;
   const windowRankerSelection = usesRanker
     ? {
         source: "learned-window-ranker",
@@ -20,9 +26,10 @@ function buildMockSolution(params) {
         featureSchemaVersion: 2,
         candidateCount: 2,
         baselineScore: 0.1,
-        selectedScore: 0.4,
-        scoreDelta: 0.3,
-        selectedByBaseline: false
+        selectedScore: overridesBaseline ? 0.4 : 0.25,
+        scoreDelta: overridesBaseline ? 0.3 : 0.15,
+        selectedByBaseline: !overridesBaseline,
+        ...(overridesBaseline ? {} : { fallbackReason: "score-delta-below-threshold" })
       }
     : undefined;
 
@@ -61,8 +68,8 @@ function buildMockSolution(params) {
             featureSchemaVersion: 2,
             minScoreDelta: ranker.minScoreDelta ?? 0,
             decisions: 2,
-            overrides: 1,
-            fallbackDecisions: 1
+            overrides: overridesBaseline ? 1 : 0,
+            fallbackDecisions: overridesBaseline ? 1 : 2
           }
         : undefined,
       outcomes: [
@@ -164,6 +171,30 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(Object.hasOwn(snapshot.cases[0].variants[1], "wallClockSeconds"), false);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /=== LNS Window Ranker Online A\/B ===/);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /overrides=1/);
+
+    const telemetryManifest = buildLnsWindowRankerOnlineAblationTelemetryManifest(result, {
+      command: "node dist/lnsBenchmarkCli.js --window-ranker-online-ablation",
+      inputArtifacts: ["artifacts/model.json"],
+      outputArtifacts: ["artifact.json"]
+    });
+    assert.equal(telemetryManifest.source, "model-experiment");
+    assert.equal(telemetryManifest.modelFingerprint, "fnv1a:test-online");
+    assert.equal(telemetryManifest.metrics.meanPopulationDeltaVsBaseline, 20);
+    assert.equal(telemetryManifest.metrics.rankerOverrideCount, 1);
+
+    const registryDraft = buildLnsWindowRankerOnlineAblationRegistryEntryDraft(result, {
+      commands: ["node dist/lnsBenchmarkCli.js --window-ranker-online-ablation"],
+      artifactPaths: ["artifact.json"],
+      modelPath: "artifacts/model.json"
+    });
+    assert.equal(registryDraft.artifactType, "model-experiment");
+    assert.equal(registryDraft.modelFingerprint, "fnv1a:test-online");
+    assert.deepEqual(registryDraft.seeds, [7]);
+    assert.equal(registryDraft.budget.minScoreDelta, 0.05);
+    assert.equal(registryDraft.budget.comparisonCount, 1);
+    assert.equal(registryDraft.model.modelPath, "artifacts/model.json");
+    assert.equal(registryDraft.splitStatus.protectedHoldout, false);
+    assert.equal(registryDraft.summaryMetrics.meanPopulationDeltaVsBaseline, 20);
   } finally {
     lnsSolverModule.solveLns = originalSolveLns;
   }
@@ -181,5 +212,63 @@ function testLnsBenchmarkCliListsOnlineAblationCases() {
   assert.match(result.stdout, /lns-gate-choke-pressure/);
 }
 
+function testOnlineCalibrationSummarizesThresholdSweep() {
+  const lnsSolverModule = require("../../dist/packages/solvers/lns/solver.js");
+  const originalSolveLns = lnsSolverModule.solveLns;
+  lnsSolverModule.solveLns = (_grid, params) => buildMockSolution(params);
+
+  try {
+    const result = runLnsWindowRankerOnlineCalibration(
+      [
+        {
+          name: "online-ranker-calibration-fixture",
+          description: "Small fixture for online LNS ranker threshold calibration.",
+          grid: [
+            [1, 1, 1],
+            [1, 1, 1],
+            [1, 1, 1]
+          ],
+          params: {
+            optimizer: "lns",
+            residentialTypes: [{ w: 1, h: 1, min: 10, max: 20, avail: 1 }]
+          }
+        }
+      ],
+      {
+        seeds: [7],
+        minScoreDeltas: [0, 0.2],
+        model: {
+          modelType: "lns-window-linear-pairwise-ranker",
+          modelFingerprint: "fnv1a:test-online",
+          featureSchemaVersion: 2,
+          weights: { selectedByBaseline: -1 }
+        },
+        lns: {
+          iterations: 2,
+          repairTimeLimitSeconds: 0.25
+        }
+      }
+    );
+
+    assert.deepEqual(result.minScoreDeltas, [0, 0.2]);
+    assert.equal(result.topMeanPopulationDeltaMinScoreDelta, 0);
+    assert.equal(result.topSafeMinScoreDelta, 0);
+    assert.equal(result.thresholdSummaries[0].meanPopulationDeltaVsBaseline, 20);
+    assert.equal(result.thresholdSummaries[0].rankerOverrideCount, 1);
+    assert.equal(result.thresholdSummaries[1].meanPopulationDeltaVsBaseline, 0);
+    assert.equal(result.thresholdSummaries[1].rankerFallbackDecisionCount, 2);
+    assert.equal(result.thresholdSummaries[1].safetyGatePassed, true);
+
+    const snapshot = createLnsWindowRankerOnlineCalibrationSnapshot(result);
+    assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
+    assert.equal(Object.hasOwn(snapshot.thresholdSummaries[0], "meanWallClockDeltaVsBaselineSeconds"), false);
+    assert.match(formatLnsWindowRankerOnlineCalibration(result), /=== LNS Window Ranker Threshold Sweep ===/);
+    assert.match(formatLnsWindowRankerOnlineCalibration(result), /min-score-delta=0.2/);
+  } finally {
+    lnsSolverModule.solveLns = originalSolveLns;
+  }
+}
+
 testOnlineAblationRunnerComparesEqualBudgets();
 testLnsBenchmarkCliListsOnlineAblationCases();
+testOnlineCalibrationSummarizesThresholdSweep();

@@ -16,8 +16,13 @@ import {
   summarizeBenchmarkVariantMetrics,
   uniqueBenchmarkValuesBy
 } from "./benchmarkOptions.js";
-import { DEFAULT_LNS_REPLAY_LABEL_CORPUS, runLnsBenchmarkSuite } from "./lns.js";
-import { buildModelExperimentFingerprint } from "./modelExperimentArtifacts.js";
+import { DEFAULT_LNS_REPLAY_LABEL_CORPUS, getLnsReplayPressureFamily, runLnsBenchmarkSuite } from "./lns.js";
+import { DEFAULT_LEARNED_RANKING_LABEL_SPLITS } from "./learnedRankingLabels.js";
+import {
+  buildModelExperimentFingerprint,
+  buildModelExperimentRegistryEntryDraft,
+  buildModelExperimentTelemetryManifest
+} from "./modelExperimentArtifacts.js";
 
 import type { LnsOptions, LnsWindowRankerRuntimeModel } from "../core/index.js";
 import type {
@@ -27,6 +32,10 @@ import type {
   BenchmarkVariantSummarySnapshot
 } from "./benchmarkOptions.js";
 import type { LnsBenchmarkCase, LnsBenchmarkCaseResult, LnsBenchmarkRunOptions } from "./lns.js";
+import type {
+  ModelExperimentRegistryEntryDraftOptions,
+  ModelExperimentTelemetryManifestOptions
+} from "./modelExperimentArtifacts.js";
 
 export type LnsWindowRankerOnlineAblationVariantName = "baseline" | "window-ranker";
 
@@ -128,6 +137,79 @@ export interface LnsWindowRankerOnlineAblationSnapshot extends Omit<
   cases: LnsWindowRankerOnlineAblationSnapshotCaseResult[];
 }
 
+export interface LnsWindowRankerOnlineCalibrationRunOptions extends Omit<
+  LnsWindowRankerOnlineAblationRunOptions,
+  "minScoreDelta"
+> {
+  minScoreDeltas?: readonly number[];
+}
+
+export interface LnsWindowRankerOnlineCalibrationThresholdSummary {
+  minScoreDelta: number;
+  caseCount: number;
+  seedCount: number;
+  comparisonCount: number;
+  meanPopulationDeltaVsBaseline: number;
+  medianPopulationDeltaVsBaseline: number;
+  worstDecilePopulationDeltaVsBaseline: number;
+  bestPopulationDeltaVsBaseline: number;
+  worstPopulationDeltaVsBaseline: number;
+  worstPopulationDeltaCaseName: string | null;
+  worstPopulationDeltaSeed: number | null;
+  bestPopulationDeltaCaseName: string | null;
+  bestPopulationDeltaSeed: number | null;
+  meanWallClockDeltaVsBaselineSeconds: number;
+  improvedCaseCount: number;
+  regressedCaseCount: number;
+  unchangedCaseCount: number;
+  winRate: number;
+  regressionRate: number;
+  rankerDecisionCount: number;
+  rankerOverrideCount: number;
+  rankerFallbackDecisionCount: number;
+  rankerOverrideRate: number;
+  rankerFallbackRate: number;
+  safetyGatePassed: boolean;
+}
+
+export interface LnsWindowRankerOnlineCalibrationSuiteResult {
+  generatedAt: string;
+  caseCount: number;
+  seedCount: number;
+  comparisonCount: number;
+  seeds: number[];
+  selectedCaseNames: string[];
+  modelFingerprint: string | null;
+  minScoreDeltas: number[];
+  topMeanPopulationDeltaMinScoreDelta: number | null;
+  topSafeMinScoreDelta: number | null;
+  thresholdSummaries: LnsWindowRankerOnlineCalibrationThresholdSummary[];
+}
+
+export interface LnsWindowRankerOnlineCalibrationThresholdSnapshot extends Omit<
+  LnsWindowRankerOnlineCalibrationThresholdSummary,
+  "meanWallClockDeltaVsBaselineSeconds"
+> {}
+
+export interface LnsWindowRankerOnlineCalibrationSnapshot extends Omit<
+  LnsWindowRankerOnlineCalibrationSuiteResult,
+  "generatedAt" | "thresholdSummaries"
+> {
+  thresholdSummaries: LnsWindowRankerOnlineCalibrationThresholdSnapshot[];
+}
+
+export interface LnsWindowRankerOnlineAblationTelemetryManifestOptions extends Pick<
+  ModelExperimentTelemetryManifestOptions,
+  "command" | "git" | "hardware" | "inputArtifacts" | "outputArtifacts" | "notes"
+> {}
+
+export interface LnsWindowRankerOnlineAblationRegistryEntryDraftOptions extends Pick<
+  ModelExperimentRegistryEntryDraftOptions,
+  "runId" | "commands" | "artifactPaths" | "decision" | "summary"
+> {
+  modelPath?: string;
+}
+
 const ONLINE_ABLATION_VARIANTS: readonly LnsWindowRankerOnlineAblationVariantName[] = Object.freeze([
   "baseline",
   "window-ranker"
@@ -140,6 +222,10 @@ const VARIANT_DESCRIPTIONS: Record<LnsWindowRankerOnlineAblationVariantName, str
 
 export const DEFAULT_LNS_WINDOW_RANKER_ONLINE_ABLATION_CORPUS: readonly LnsBenchmarkCase[] = Object.freeze([
   ...DEFAULT_LNS_REPLAY_LABEL_CORPUS
+]);
+
+export const DEFAULT_LNS_WINDOW_RANKER_MIN_SCORE_DELTA_SWEEP: readonly number[] = Object.freeze([
+  0, 0.05, 0.1, 0.15, 0.2
 ]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -182,6 +268,14 @@ function modelWithFingerprint(model: LnsWindowRankerRuntimeModel): LnsWindowRank
     ...model,
     modelFingerprint: model.modelFingerprint ?? buildModelExperimentFingerprint(model)
   };
+}
+
+function modelFromAblationResult(result: LnsWindowRankerOnlineAblationSuiteResult): LnsWindowRankerRuntimeModel {
+  const model = result.cases
+    .flatMap((entry) => entry.variants)
+    .find((variant) => variant.variantName === "window-ranker")?.lnsOptions.windowRanker?.model;
+  assertRuntimeModel(model);
+  return modelWithFingerprint(model);
 }
 
 function rankerLnsOptions(
@@ -299,6 +393,157 @@ function buildVariantSummary(
   };
 }
 
+function normalizeMinScoreDeltas(values: readonly number[] | undefined): number[] {
+  const minScoreDeltas = values?.length ? [...values] : [...DEFAULT_LNS_WINDOW_RANKER_MIN_SCORE_DELTA_SWEEP];
+  const invalid = minScoreDeltas.filter((value) => !Number.isFinite(value) || value < 0);
+  if (invalid.length > 0) {
+    throw new Error("LNS window ranker min score delta sweep must contain only non-negative finite numbers.");
+  }
+  if (new Set(minScoreDeltas).size !== minScoreDeltas.length) {
+    throw new Error("LNS window ranker min score delta sweep must not contain duplicate values.");
+  }
+  return minScoreDeltas;
+}
+
+function getRankerSummary(result: LnsWindowRankerOnlineAblationSuiteResult): LnsWindowRankerOnlineAblationSummary {
+  const summary = result.variantSummaries.find((entry) => entry.variantName === "window-ranker");
+  if (!summary) {
+    throw new Error("LNS window ranker online calibration result missing window-ranker summary.");
+  }
+  return summary;
+}
+
+function getBaselineSummary(result: LnsWindowRankerOnlineAblationSuiteResult): LnsWindowRankerOnlineAblationSummary {
+  const summary = result.variantSummaries.find((entry) => entry.variantName === "baseline");
+  if (!summary) {
+    throw new Error("LNS window ranker online ablation result missing baseline summary.");
+  }
+  return summary;
+}
+
+function lnsWindowRankerOnlineCasesBySplit(
+  selectedCaseNames: readonly string[]
+): Record<"development" | "holdout", string[]> {
+  const selected = new Set(selectedCaseNames);
+  const development =
+    DEFAULT_LEARNED_RANKING_LABEL_SPLITS.find((split) => split.split === "development")?.lnsCaseNames.filter((name) =>
+      selected.has(name)
+    ) ?? [];
+  const holdout =
+    DEFAULT_LEARNED_RANKING_LABEL_SPLITS.find((split) => split.split === "holdout")?.lnsCaseNames.filter((name) =>
+      selected.has(name)
+    ) ?? [];
+  return { development, holdout };
+}
+
+function lnsWindowRankerOnlineCaseFamilies(selectedCaseNames: readonly string[]): string[] {
+  const selected = new Set(selectedCaseNames);
+  return uniqueBenchmarkValuesBy(
+    DEFAULT_LNS_REPLAY_LABEL_CORPUS.filter((benchmarkCase) => selected.has(benchmarkCase.name)),
+    (benchmarkCase) => `lns-${getLnsReplayPressureFamily(benchmarkCase)}`
+  );
+}
+
+function lnsWindowRankerOnlineAblationSummaryMetrics(
+  result: LnsWindowRankerOnlineAblationSuiteResult
+): Record<string, unknown> {
+  const baseline = getBaselineSummary(result);
+  const ranker = getRankerSummary(result);
+  return {
+    baselineMeanPopulation: baseline.meanPopulation,
+    rankerMeanPopulation: ranker.meanPopulation,
+    meanPopulationDeltaVsBaseline: ranker.meanPopulationDeltaVsBaseline,
+    medianPopulationDeltaVsBaseline: ranker.medianPopulationDeltaVsBaseline,
+    worstDecilePopulationDeltaVsBaseline: ranker.worstDecilePopulationDeltaVsBaseline,
+    bestPopulationDeltaVsBaseline: ranker.bestPopulationDeltaVsBaseline,
+    worstPopulationDeltaVsBaseline: ranker.worstPopulationDeltaVsBaseline,
+    worstPopulationDeltaCaseName: ranker.worstPopulationDeltaCaseName,
+    worstPopulationDeltaSeed: ranker.worstPopulationDeltaSeed,
+    bestPopulationDeltaCaseName: ranker.bestPopulationDeltaCaseName,
+    bestPopulationDeltaSeed: ranker.bestPopulationDeltaSeed,
+    meanWallClockDeltaVsBaselineSeconds: ranker.meanWallClockDeltaVsBaselineSeconds,
+    improvedCaseCount: ranker.improvedCaseCount,
+    regressedCaseCount: ranker.regressedCaseCount,
+    unchangedCaseCount: ranker.unchangedCaseCount,
+    winRate: ranker.winRate,
+    regressionRate: ranker.regressionRate,
+    rankerDecisionCount: ranker.rankerDecisionCount,
+    rankerOverrideCount: ranker.rankerOverrideCount,
+    rankerFallbackDecisionCount: ranker.rankerFallbackDecisionCount,
+    rankerOverrideRate: ranker.rankerOverrideRate,
+    rankerFallbackRate: ranker.rankerFallbackRate,
+    safetyGatePassed: ranker.regressedCaseCount === 0 && ranker.worstPopulationDeltaVsBaseline >= 0
+  };
+}
+
+function ablationMinScoreDelta(result: LnsWindowRankerOnlineAblationSuiteResult): number | null {
+  return (
+    result.cases.flatMap((entry) => entry.variants).find((variant) => variant.variantName === "window-ranker")
+      ?.windowRanker?.minScoreDelta ?? null
+  );
+}
+
+function thresholdSummary(
+  minScoreDelta: number,
+  result: LnsWindowRankerOnlineAblationSuiteResult
+): LnsWindowRankerOnlineCalibrationThresholdSummary {
+  const summary = getRankerSummary(result);
+  return {
+    minScoreDelta,
+    caseCount: summary.caseCount,
+    seedCount: summary.seedCount,
+    comparisonCount: summary.comparisonCount,
+    meanPopulationDeltaVsBaseline: summary.meanPopulationDeltaVsBaseline,
+    medianPopulationDeltaVsBaseline: summary.medianPopulationDeltaVsBaseline,
+    worstDecilePopulationDeltaVsBaseline: summary.worstDecilePopulationDeltaVsBaseline,
+    bestPopulationDeltaVsBaseline: summary.bestPopulationDeltaVsBaseline,
+    worstPopulationDeltaVsBaseline: summary.worstPopulationDeltaVsBaseline,
+    worstPopulationDeltaCaseName: summary.worstPopulationDeltaCaseName,
+    worstPopulationDeltaSeed: summary.worstPopulationDeltaSeed,
+    bestPopulationDeltaCaseName: summary.bestPopulationDeltaCaseName,
+    bestPopulationDeltaSeed: summary.bestPopulationDeltaSeed,
+    meanWallClockDeltaVsBaselineSeconds: summary.meanWallClockDeltaVsBaselineSeconds,
+    improvedCaseCount: summary.improvedCaseCount,
+    regressedCaseCount: summary.regressedCaseCount,
+    unchangedCaseCount: summary.unchangedCaseCount,
+    winRate: summary.winRate,
+    regressionRate: summary.regressionRate,
+    rankerDecisionCount: summary.rankerDecisionCount,
+    rankerOverrideCount: summary.rankerOverrideCount,
+    rankerFallbackDecisionCount: summary.rankerFallbackDecisionCount,
+    rankerOverrideRate: summary.rankerOverrideRate,
+    rankerFallbackRate: summary.rankerFallbackRate,
+    safetyGatePassed: summary.regressedCaseCount === 0 && summary.worstPopulationDeltaVsBaseline >= 0
+  };
+}
+
+function betterCalibrationSummary(
+  candidate: LnsWindowRankerOnlineCalibrationThresholdSummary,
+  best: LnsWindowRankerOnlineCalibrationThresholdSummary | null
+): boolean {
+  if (!best) return true;
+  if (candidate.meanPopulationDeltaVsBaseline !== best.meanPopulationDeltaVsBaseline) {
+    return candidate.meanPopulationDeltaVsBaseline > best.meanPopulationDeltaVsBaseline;
+  }
+  if (candidate.worstPopulationDeltaVsBaseline !== best.worstPopulationDeltaVsBaseline) {
+    return candidate.worstPopulationDeltaVsBaseline > best.worstPopulationDeltaVsBaseline;
+  }
+  return candidate.rankerFallbackRate < best.rankerFallbackRate;
+}
+
+function topThreshold(
+  summaries: readonly LnsWindowRankerOnlineCalibrationThresholdSummary[],
+  predicate: (summary: LnsWindowRankerOnlineCalibrationThresholdSummary) => boolean
+): number | null {
+  const best = summaries
+    .filter(predicate)
+    .reduce<LnsWindowRankerOnlineCalibrationThresholdSummary | null>(
+      (currentBest, candidate) => (betterCalibrationSummary(candidate, currentBest) ? candidate : currentBest),
+      null
+    );
+  return best?.minScoreDelta ?? null;
+}
+
 export function listLnsWindowRankerOnlineAblationCaseNames(
   corpus: readonly LnsBenchmarkCase[] = DEFAULT_LNS_WINDOW_RANKER_ONLINE_ABLATION_CORPUS
 ): string[] {
@@ -378,6 +623,145 @@ export function createLnsWindowRankerOnlineAblationSnapshot(
       variants: benchmarkCase.variants.map(snapshotBenchmarkVariantResult)
     }))
   };
+}
+
+export function buildLnsWindowRankerOnlineAblationTelemetryManifest(
+  result: LnsWindowRankerOnlineAblationSuiteResult,
+  options: LnsWindowRankerOnlineAblationTelemetryManifestOptions
+): ReturnType<typeof buildModelExperimentTelemetryManifest> {
+  const model = modelFromAblationResult(result) as unknown as Record<string, unknown>;
+  return buildModelExperimentTelemetryManifest({
+    ...options,
+    generatedAt: result.generatedAt,
+    model,
+    modelFingerprint: model.modelFingerprint as string,
+    metrics: lnsWindowRankerOnlineAblationSummaryMetrics(result)
+  });
+}
+
+export function buildLnsWindowRankerOnlineAblationRegistryEntryDraft(
+  result: LnsWindowRankerOnlineAblationSuiteResult,
+  options: LnsWindowRankerOnlineAblationRegistryEntryDraftOptions
+): Record<string, unknown> {
+  const model = modelFromAblationResult(result) as unknown as Record<string, unknown>;
+  const modelFingerprint = model.modelFingerprint as string;
+  const minScoreDelta = ablationMinScoreDelta(result);
+  const cases = lnsWindowRankerOnlineCasesBySplit(result.selectedCaseNames);
+  const summaryMetrics = lnsWindowRankerOnlineAblationSummaryMetrics(result);
+  return buildModelExperimentRegistryEntryDraft({
+    runId: options.runId ?? `lns-window-ranker-online-ablation-${result.generatedAt.slice(0, 10)}`,
+    commands: options.commands,
+    artifactPaths: options.artifactPaths,
+    generatedAt: result.generatedAt,
+    cases,
+    caseFamilies: lnsWindowRankerOnlineCaseFamilies(result.selectedCaseNames),
+    seeds: result.seeds,
+    splitStatus: {
+      protectedHoldout: false,
+      splitField: "DEFAULT_LEARNED_RANKING_LABEL_SPLITS.lnsCaseNames",
+      developmentCaseCount: cases.development.length,
+      holdoutCaseCount: cases.holdout.length,
+      leakage: "threshold-calibration-used-replay-pressure-corpus",
+      notes:
+        "Online LNS ranker A/B calibration scorecard over replay-pressure cases; not protected holdout promotion evidence."
+    },
+    budget: {
+      minScoreDelta,
+      caseCount: result.caseCount,
+      seedCount: result.seedCount,
+      comparisonCount: result.comparisonCount,
+      variantCount: result.variants.length,
+      totalRuns: result.coverage.runCount,
+      rankerDecisionCount: summaryMetrics.rankerDecisionCount,
+      rankerOverrideCount: summaryMetrics.rankerOverrideCount,
+      rankerFallbackDecisionCount: summaryMetrics.rankerFallbackDecisionCount
+    },
+    model: {
+      ...model,
+      ...(options.modelPath === undefined ? {} : { modelPath: options.modelPath })
+    },
+    decision: options.decision ?? "online-lns-window-ranker-calibration-evidence",
+    summary:
+      options.summary ??
+      `Online LNS window-ranker A/B scorecard at minScoreDelta=${minScoreDelta ?? "n/a"}; no solver default changed.`,
+    modelFingerprint,
+    summaryMetrics
+  });
+}
+
+export function runLnsWindowRankerOnlineCalibration(
+  corpus: readonly LnsBenchmarkCase[] = DEFAULT_LNS_WINDOW_RANKER_ONLINE_ABLATION_CORPUS,
+  options: LnsWindowRankerOnlineCalibrationRunOptions
+): LnsWindowRankerOnlineCalibrationSuiteResult {
+  const minScoreDeltas = normalizeMinScoreDeltas(options.minScoreDeltas);
+  const suites = minScoreDeltas.map((minScoreDelta) =>
+    runLnsWindowRankerOnlineAblation(corpus, {
+      ...options,
+      minScoreDelta
+    })
+  );
+  const firstSuite = suites[0];
+  if (!firstSuite) {
+    throw new Error("LNS window ranker online calibration requires at least one threshold.");
+  }
+  const thresholdSummaries = suites.map((suite, index) => thresholdSummary(minScoreDeltas[index]!, suite));
+  return {
+    generatedAt: firstSuite.generatedAt,
+    caseCount: firstSuite.caseCount,
+    seedCount: firstSuite.seedCount,
+    comparisonCount: firstSuite.comparisonCount,
+    seeds: [...firstSuite.seeds],
+    selectedCaseNames: [...firstSuite.selectedCaseNames],
+    modelFingerprint: thresholdSummaries.find((entry) => entry.rankerDecisionCount > 0)
+      ? (modelWithFingerprint(options.model).modelFingerprint ?? null)
+      : null,
+    minScoreDeltas,
+    topMeanPopulationDeltaMinScoreDelta: topThreshold(thresholdSummaries, () => true),
+    topSafeMinScoreDelta: topThreshold(thresholdSummaries, (summary) => summary.safetyGatePassed),
+    thresholdSummaries
+  };
+}
+
+export function createLnsWindowRankerOnlineCalibrationSnapshot(
+  result: LnsWindowRankerOnlineCalibrationSuiteResult
+): LnsWindowRankerOnlineCalibrationSnapshot {
+  return {
+    caseCount: result.caseCount,
+    seedCount: result.seedCount,
+    comparisonCount: result.comparisonCount,
+    seeds: [...result.seeds],
+    selectedCaseNames: [...result.selectedCaseNames],
+    modelFingerprint: result.modelFingerprint,
+    minScoreDeltas: [...result.minScoreDeltas],
+    topMeanPopulationDeltaMinScoreDelta: result.topMeanPopulationDeltaMinScoreDelta,
+    topSafeMinScoreDelta: result.topSafeMinScoreDelta,
+    thresholdSummaries: result.thresholdSummaries.map(
+      ({ meanWallClockDeltaVsBaselineSeconds: _meanWallClockDeltaVsBaselineSeconds, ...summary }) => summary
+    )
+  };
+}
+
+function formatNullableThreshold(value: number | null): string {
+  return value === null ? "n/a" : String(value);
+}
+
+export function formatLnsWindowRankerOnlineCalibration(result: LnsWindowRankerOnlineCalibrationSuiteResult): string {
+  const lines: string[] = [];
+  lines.push("=== LNS Window Ranker Threshold Sweep ===");
+  lines.push(`Generated: ${result.generatedAt}`);
+  lines.push(`Cases: ${result.caseCount}`);
+  lines.push(`Seeds: ${formatBenchmarkSeeds(result.seeds)}`);
+  lines.push(`Model fingerprint: ${result.modelFingerprint ?? "n/a"}`);
+  lines.push(`Thresholds: ${result.minScoreDeltas.join(", ")}`);
+  lines.push(`Top mean-delta threshold: ${formatNullableThreshold(result.topMeanPopulationDeltaMinScoreDelta)}`);
+  lines.push(`Top no-regression threshold: ${formatNullableThreshold(result.topSafeMinScoreDelta)}`);
+  lines.push("Summary:");
+  for (const summary of result.thresholdSummaries) {
+    lines.push(
+      `- min-score-delta=${summary.minScoreDelta}: delta-mean=${formatSigned(summary.meanPopulationDeltaVsBaseline)} delta-median=${formatSigned(summary.medianPopulationDeltaVsBaseline)} delta-worst-decile=${formatSigned(summary.worstDecilePopulationDeltaVsBaseline)} delta-best=${formatSigned(summary.bestPopulationDeltaVsBaseline)} delta-worst=${formatSigned(summary.worstPopulationDeltaVsBaseline)} wall-delta-mean=${formatSeconds(summary.meanWallClockDeltaVsBaselineSeconds)} improved=${summary.improvedCaseCount} regressed=${summary.regressedCaseCount} unchanged=${summary.unchangedCaseCount} win-rate=${formatRate(summary.winRate)} regression-rate=${formatRate(summary.regressionRate)} decisions=${summary.rankerDecisionCount} overrides=${summary.rankerOverrideCount} fallbacks=${summary.rankerFallbackDecisionCount} override-rate=${formatRate(summary.rankerOverrideRate)} fallback-rate=${formatRate(summary.rankerFallbackRate)} safety=${summary.safetyGatePassed ? "pass" : "fail"} best-case=${formatSeedCase(summary.bestPopulationDeltaCaseName, summary.bestPopulationDeltaSeed)} worst-case=${formatSeedCase(summary.worstPopulationDeltaCaseName, summary.worstPopulationDeltaSeed)}`
+    );
+  }
+  return lines.join("\n");
 }
 
 function formatRankerSummary(variant: LnsWindowRankerOnlineAblationVariantResult): string {

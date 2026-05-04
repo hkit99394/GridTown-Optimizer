@@ -28,6 +28,7 @@ function testSolverApiDoesNotExposeBenchmarkSurface() {
 
 function testBenchmarkApiExposesBenchmarkSurface() {
   assert.equal(typeof benchmarkApi.runGreedyBenchmarkSuite, "function");
+  assert.equal(typeof benchmarkApi.runLnsWindowRankerOnlineAblation, "function");
   assert.equal(typeof benchmarkApi.appendExperimentRegistryEntry, "function");
   assert.equal(typeof benchmarkApi.DEFAULT_GREEDY_BENCHMARK_CORPUS, "object");
 }

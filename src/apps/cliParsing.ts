@@ -82,3 +82,11 @@ export function parsePositiveNumber(value: string, label: string): number {
   }
   return number;
 }
+
+export function parseNonNegativeNumber(value: string, label: string): number {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < 0) {
+    throw new Error(`Expected ${label} to be a non-negative finite number.`);
+  }
+  return number;
+}

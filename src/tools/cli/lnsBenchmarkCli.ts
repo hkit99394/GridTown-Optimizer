@@ -1,24 +1,33 @@
+import fs from "node:fs";
+import path from "node:path";
+
 import {
   buildDeterministicAblationGateReport,
   createLnsBenchmarkSnapshot,
   createLnsNeighborhoodAblationSnapshot,
+  createLnsWindowRankerOnlineAblationSnapshot,
   createLnsWindowReplaySnapshot,
   DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS,
   formatDeterministicAblationGateReport,
   formatLnsNeighborhoodAblation,
   formatLnsBenchmarkSuite,
+  formatLnsWindowRankerOnlineAblation,
   formatLnsWindowReplayLabels,
+  listLnsWindowRankerOnlineAblationCaseNames,
   listLnsNeighborhoodAblationCaseNames,
   listLnsBenchmarkCaseNames,
   listLnsWindowReplayCaseNames,
   runLnsNeighborhoodAblation,
+  runLnsWindowRankerOnlineAblation,
   runLnsWindowReplayLabels,
   runLnsBenchmarkSuite
 } from "../../benchmarkApi.js";
 import {
   applyInlineOptionHandlers,
+  countEnabledCliModes,
   isCliFlag,
   parseNameList,
+  parseNonNegativeNumber,
   parseNonNegativeInteger,
   parseNumberList,
   parsePositiveInteger,
@@ -32,12 +41,16 @@ import {
   writeCliList,
   writeCliText
 } from "../../apps/cliOutput.js";
+import { normalizeRepoRelativePath } from "./artifactBundleHelpers.js";
 import type { LnsNeighborhoodAblationVariantName, LnsWindowReplayStatePolicy } from "../../benchmarkApi.js";
+
+type LnsWindowRankerRuntimeModel = Parameters<typeof runLnsWindowRankerOnlineAblation>[1]["model"];
 
 interface ParsedBenchmarkArgs {
   json: boolean;
   neighborhoodAblation: boolean;
   windowReplayLabels: boolean;
+  windowRankerOnlineAblation: boolean;
   gateReport: boolean;
   list: boolean;
   names: string[];
@@ -50,6 +63,8 @@ interface ParsedBenchmarkArgs {
   statePolicies?: LnsWindowReplayStatePolicy[];
   stateCollectionIterations?: number;
   stateCollectionRepairTimeLimitSeconds?: number;
+  windowRankerModelPath?: string;
+  windowRankerMinScoreDelta?: number;
 }
 
 function parseArgs(argv: string[]): ParsedBenchmarkArgs {
@@ -57,6 +72,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let json = false;
   let neighborhoodAblation = false;
   let windowReplayLabels = false;
+  let windowRankerOnlineAblation = false;
   let gateReport = false;
   let list = false;
   let ablationVariantNames: LnsNeighborhoodAblationVariantName[] | undefined;
@@ -68,6 +84,8 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let statePolicies: LnsWindowReplayStatePolicy[] | undefined;
   let stateCollectionIterations: number | undefined;
   let stateCollectionRepairTimeLimitSeconds: number | undefined;
+  let windowRankerModelPath: string | undefined;
+  let windowRankerMinScoreDelta: number | undefined;
   const inlineOptions: Record<string, (value: string) => void> = {
     "ablation-variants": (value) => {
       ablationVariantNames = parseNameList(value, "ablation variant") as LnsNeighborhoodAblationVariantName[];
@@ -92,6 +110,12 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     },
     "state-collection-repair-time": (value) => {
       stateCollectionRepairTimeLimitSeconds = parsePositiveNumber(value, "--state-collection-repair-time");
+    },
+    "window-ranker-model": (value) => {
+      windowRankerModelPath = value;
+    },
+    "window-ranker-min-score-delta": (value) => {
+      windowRankerMinScoreDelta = parseNonNegativeNumber(value, "--window-ranker-min-score-delta");
     }
   };
 
@@ -110,6 +134,12 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     }
     if (isCliFlag(arg, "--window-replay-labels", "--window-replay-label")) {
       windowReplayLabels = true;
+      continue;
+    }
+    if (
+      isCliFlag(arg, "--window-ranker-online-ablation", "--window-ranker-ablation", "--online-window-ranker-ablation")
+    ) {
+      windowRankerOnlineAblation = true;
       continue;
     }
     if (isCliFlag(arg, "--pressure-corpus")) {
@@ -146,6 +176,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     json,
     neighborhoodAblation,
     windowReplayLabels,
+    windowRankerOnlineAblation,
     gateReport,
     list,
     names,
@@ -157,8 +188,25 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     repairTimeLimitSeconds,
     statePolicies,
     stateCollectionIterations,
-    stateCollectionRepairTimeLimitSeconds
+    stateCollectionRepairTimeLimitSeconds,
+    windowRankerModelPath,
+    windowRankerMinScoreDelta
   };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function readWindowRankerModel(modelPath: string): LnsWindowRankerRuntimeModel {
+  const repoRelativePath = normalizeRepoRelativePath(modelPath, "--window-ranker-model");
+  const parsed = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), repoRelativePath), "utf8"));
+  const candidate =
+    isRecord(parsed) && isRecord(parsed.model) && isRecord(parsed.model.weights) ? parsed.model : parsed;
+  if (!isRecord(candidate) || !isRecord(candidate.weights)) {
+    throw new Error("--window-ranker-model must point to a model JSON object with a weights object.");
+  }
+  return candidate as unknown as LnsWindowRankerRuntimeModel;
 }
 
 export function runLnsBenchmarkCli(): void {
@@ -166,15 +214,19 @@ export function runLnsBenchmarkCli(): void {
   if (args.gateReport && !args.neighborhoodAblation) {
     throw new Error("--gate-report is only available with --neighborhood-ablation.");
   }
-  if (args.windowReplayLabels && args.neighborhoodAblation) {
-    throw new Error("Choose either --window-replay-labels or --neighborhood-ablation, not both.");
+  if (countEnabledCliModes([args.windowReplayLabels, args.neighborhoodAblation, args.windowRankerOnlineAblation]) > 1) {
+    throw new Error(
+      "Choose only one LNS benchmark mode: --window-replay-labels, --neighborhood-ablation, or --window-ranker-online-ablation."
+    );
   }
   if (args.list) {
     const names = args.neighborhoodAblation
       ? listLnsNeighborhoodAblationCaseNames()
       : args.windowReplayLabels
         ? listLnsWindowReplayCaseNames()
-        : listLnsBenchmarkCaseNames();
+        : args.windowRankerOnlineAblation
+          ? listLnsWindowRankerOnlineAblationCaseNames()
+          : listLnsBenchmarkCaseNames();
     writeCliList(names);
     return;
   }
@@ -195,6 +247,31 @@ export function runLnsBenchmarkCli(): void {
       args.json,
       () => createLnsWindowReplaySnapshot(result),
       () => formatLnsWindowReplayLabels(result)
+    );
+    return;
+  }
+
+  if (args.windowRankerOnlineAblation) {
+    if (!args.windowRankerModelPath) {
+      throw new Error("--window-ranker-online-ablation requires --window-ranker-model=<path>.");
+    }
+    const result = runLnsWindowRankerOnlineAblation(undefined, {
+      names: optionalCliNames(args.names),
+      seeds: args.seeds,
+      model: readWindowRankerModel(args.windowRankerModelPath),
+      minScoreDelta: args.windowRankerMinScoreDelta,
+      lns:
+        args.repairTimeLimitSeconds === undefined
+          ? undefined
+          : {
+              repairTimeLimitSeconds: args.repairTimeLimitSeconds
+            }
+    });
+
+    writeCliJsonOrText(
+      args.json,
+      () => createLnsWindowRankerOnlineAblationSnapshot(result),
+      () => formatLnsWindowRankerOnlineAblation(result)
     );
     return;
   }

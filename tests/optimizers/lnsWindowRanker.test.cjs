@@ -250,6 +250,25 @@ function buildFixture() {
   };
 }
 
+function cloneFixtureWithBaselineReplayTies() {
+  const fixture = JSON.parse(JSON.stringify(buildFixture()));
+  for (const split of fixture.lns.splits) {
+    const statusCounts = { improved: 0, neutral: 0, regressed: 0, invalid: 0, "recoverable-failure": 0 };
+    for (const benchmarkCase of split.replay.cases) {
+      const bestImprovement = Math.max(...benchmarkCase.labels.map((label) => label.improvement));
+      const baselineLabel = benchmarkCase.labels.find((label) => label.selectedByBaseline);
+      baselineLabel.improvement = bestImprovement;
+      baselineLabel.populationDelta = bestImprovement;
+      baselineLabel.status = "improved";
+      baselineLabel.totalPopulation = bestImprovement;
+      baselineLabel.validation.recomputedTotalPopulation = bestImprovement;
+      for (const label of benchmarkCase.labels) statusCounts[label.status]++;
+    }
+    split.statusCounts = statusCounts;
+  }
+  return fixture;
+}
+
 function testLnsWindowRankerExperiment() {
   const fixture = buildFixture();
   const result = runLnsWindowRankerExperiment(fixture, {
@@ -333,6 +352,28 @@ function testLnsWindowRankerExperiment() {
   assert.deepEqual(registryValidation.issues, []);
 }
 
+function testLnsWindowRankerBaselineTieBreakTraining() {
+  const fixture = cloneFixtureWithBaselineReplayTies();
+  const defaultResult = runLnsWindowRankerExperiment(fixture, {
+    topK: 2,
+    training: { epochs: 4, learningRate: 0.05, marginWeightCap: 500 }
+  });
+  const tieBreakResult = runLnsWindowRankerExperiment(fixture, {
+    topK: 2,
+    training: { epochs: 4, learningRate: 0.05, marginWeightCap: 500, baselineTieBreak: true }
+  });
+
+  assert.equal(defaultResult.model.training.baselineTieBreak, false);
+  assert.equal(tieBreakResult.model.training.baselineTieBreak, true);
+  assert(tieBreakResult.model.trainedPairCount < defaultResult.model.trainedPairCount);
+  const registryDraft = buildLnsWindowRankerRegistryEntryDraft(tieBreakResult, fixture, {
+    runId: "lns-window-ranker-baseline-tie-break-test",
+    commands: ["node dist/lnsWindowRankerCli.js --labels=labels.json --baseline-tie-break"],
+    artifactPaths: ["artifacts/lns-ranker/lns-window-ranker.json"]
+  });
+  assert.equal(registryDraft.budget.trainingBaselineTieBreak, 1);
+}
+
 function testLnsWindowRankerCliArtifacts() {
   const repoRoot = path.join(__dirname, "../..");
   const cliPath = path.join(repoRoot, "dist", "lnsWindowRankerCli.js");
@@ -353,6 +394,7 @@ function testLnsWindowRankerCliArtifacts() {
         "--epochs=4",
         "--learning-rate=0.05",
         "--margin-weight-cap=500",
+        "--baseline-tie-break",
         "--ranker-run-id=tmp-lns-window-ranker-test",
         "--ranker-register-dry-run",
         "--json"
@@ -380,6 +422,7 @@ function testLnsWindowRankerCliArtifacts() {
     );
     assert.equal(modelArtifact.trained, true);
     assert.equal(modelArtifact.runtimeDefaultChanged, false);
+    assert.equal(modelArtifact.training.baselineTieBreak, true);
 
     const registryGuard = childProcess.spawnSync(process.execPath, [cliPath, "--ranker-register-dry-run"], {
       cwd: repoRoot,
@@ -393,4 +436,5 @@ function testLnsWindowRankerCliArtifacts() {
 }
 
 testLnsWindowRankerExperiment();
+testLnsWindowRankerBaselineTieBreakTraining();
 testLnsWindowRankerCliArtifacts();

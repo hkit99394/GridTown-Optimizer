@@ -36,6 +36,7 @@ interface ParsedLnsWindowRankerArgs {
   epochs?: number;
   learningRate?: number;
   marginWeightCap?: number;
+  baselineTieBreak: boolean;
   topK?: number;
   randomBaselineSeed?: number;
   artifactDir?: string;
@@ -79,6 +80,7 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
   let epochs: number | undefined;
   let learningRate: number | undefined;
   let marginWeightCap: number | undefined;
+  let baselineTieBreak = false;
   let topK: number | undefined;
   let randomBaselineSeed: number | undefined;
   let artifactDir: string | undefined;
@@ -135,6 +137,10 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
       rankerRegisterDryRun = true;
       continue;
     }
+    if (isCliFlag(arg, "--baseline-tie-break", "--prefer-baseline-on-ties")) {
+      baselineTieBreak = true;
+      continue;
+    }
     if (applyInlineOptionHandlers(arg, inlineOptions)) {
       continue;
     }
@@ -147,6 +153,7 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
     epochs,
     learningRate,
     marginWeightCap,
+    baselineTieBreak,
     topK,
     randomBaselineSeed,
     artifactDir,
@@ -302,7 +309,8 @@ export function runLnsWindowRankerCli(): void {
     training: {
       epochs: args.epochs,
       learningRate: args.learningRate,
-      marginWeightCap: args.marginWeightCap
+      marginWeightCap: args.marginWeightCap,
+      baselineTieBreak: args.baselineTieBreak
     }
   });
 

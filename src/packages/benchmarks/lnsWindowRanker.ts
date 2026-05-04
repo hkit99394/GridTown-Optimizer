@@ -58,6 +58,7 @@ export interface LnsWindowRankerTrainingOptions {
   epochs?: number;
   learningRate?: number;
   marginWeightCap?: number;
+  baselineTieBreak?: boolean;
 }
 
 export interface LnsWindowRankerRunOptions {
@@ -178,7 +179,8 @@ interface ReplayDecisionGroup {
 const DEFAULT_LNS_WINDOW_RANKER_TRAINING: Required<LnsWindowRankerTrainingOptions> = Object.freeze({
   epochs: 5,
   learningRate: 0.05,
-  marginWeightCap: 500
+  marginWeightCap: 500,
+  baselineTieBreak: false
 });
 
 function roundMetric(value: number): number {
@@ -202,7 +204,8 @@ function normalizeTrainingOptions(
     marginWeightCap: positiveFiniteNumberOrDefault(
       options?.marginWeightCap,
       DEFAULT_LNS_WINDOW_RANKER_TRAINING.marginWeightCap
-    )
+    ),
+    baselineTieBreak: options?.baselineTieBreak === true
   };
 }
 
@@ -284,6 +287,20 @@ function maxImprovement(group: ReplayDecisionGroup): number {
 
 function marginWeight(delta: number, cap: number): number {
   return Math.min(cap, Math.max(1, Math.abs(delta))) / cap;
+}
+
+function positiveLabelsForTraining(
+  group: ReplayDecisionGroup,
+  bestImprovement: number,
+  training: Required<LnsWindowRankerTrainingOptions>
+): LnsWindowReplaySnapshotLabel[] {
+  if (training.baselineTieBreak) {
+    const baselineBest = group.labels.find(
+      (label) => label.selectedByBaseline && label.improvement === bestImprovement
+    );
+    if (baselineBest) return [baselineBest];
+  }
+  return group.labels.filter((label) => label.improvement === bestImprovement);
 }
 
 function evaluateMetricSummary(
@@ -402,7 +419,7 @@ function trainLinearRanker(
     for (const group of developmentGroups) {
       const bestImprovement = maxImprovement(group);
       if (bestImprovement <= 0) continue;
-      const positives = group.labels.filter((label) => label.improvement === bestImprovement);
+      const positives = positiveLabelsForTraining(group, bestImprovement, training);
       for (const positive of positives) {
         const positiveVector = featureVector(positive);
         for (const negative of group.labels) {
@@ -638,6 +655,7 @@ export function buildLnsWindowRankerRegistryEntryDraft(
       trainingEpochs: result.model.training.epochs,
       trainingLearningRate: result.model.training.learningRate,
       trainingMarginWeightCap: result.model.training.marginWeightCap,
+      trainingBaselineTieBreak: result.model.training.baselineTieBreak ? 1 : 0,
       trainingWallClockSeconds: roundMetric(result.training.wallClockSeconds),
       trainedDecisionCount: result.model.trainedDecisionCount,
       trainedPairCount: result.model.trainedPairCount,
@@ -680,7 +698,7 @@ export function formatLnsWindowRankerExperiment(result: LnsWindowRankerExperimen
     `Labels: total=${result.labels.labelCount} usable=${result.labels.usableLabelCount} opportunities=${result.labels.opportunityCount} label-fingerprint=${result.labelFingerprint}`
   );
   lines.push(
-    `Model: ${result.model.modelType} features=${result.model.featureNames.length} epochs=${result.model.training.epochs} trained-decisions=${result.model.trainedDecisionCount} model-fingerprint=${result.modelFingerprint}`
+    `Model: ${result.model.modelType} features=${result.model.featureNames.length} epochs=${result.model.training.epochs} baseline-tie-break=${result.model.training.baselineTieBreak} trained-decisions=${result.model.trainedDecisionCount} model-fingerprint=${result.modelFingerprint}`
   );
   lines.push(
     `Model capture: development=${formatMetric(result.evaluation.model.development)} holdout=${formatMetric(result.evaluation.model.holdout)}`

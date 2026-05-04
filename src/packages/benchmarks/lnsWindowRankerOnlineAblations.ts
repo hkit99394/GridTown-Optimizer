@@ -121,6 +121,10 @@ export interface LnsWindowRankerOnlineAblationSummary
   fallbackFeatureDeltaCount: number;
   overrideMeanFeatureDeltas: Record<string, number>;
   fallbackMeanFeatureDeltas: Record<string, number>;
+  overrideTransitionFeatureDeltaCounts: Record<string, number>;
+  fallbackTransitionFeatureDeltaCounts: Record<string, number>;
+  overrideTransitionMeanFeatureDeltas: Record<string, Record<string, number>>;
+  fallbackTransitionMeanFeatureDeltas: Record<string, Record<string, number>>;
   overrideTransitionFinalOutcomeCounts: Record<string, LnsWindowRankerOnlineTransitionStatusCounts>;
   fallbackTransitionFinalOutcomeCounts: Record<string, LnsWindowRankerOnlineTransitionStatusCounts>;
   overrideTransitionPressureFamilyCounts: Record<string, Record<string, number>>;
@@ -202,6 +206,10 @@ export interface LnsWindowRankerOnlineCalibrationThresholdSummary {
   fallbackFeatureDeltaCount: number;
   overrideMeanFeatureDeltas: Record<string, number>;
   fallbackMeanFeatureDeltas: Record<string, number>;
+  overrideTransitionFeatureDeltaCounts: Record<string, number>;
+  fallbackTransitionFeatureDeltaCounts: Record<string, number>;
+  overrideTransitionMeanFeatureDeltas: Record<string, Record<string, number>>;
+  fallbackTransitionMeanFeatureDeltas: Record<string, Record<string, number>>;
   overrideTransitionFinalOutcomeCounts: Record<string, LnsWindowRankerOnlineTransitionStatusCounts>;
   fallbackTransitionFinalOutcomeCounts: Record<string, LnsWindowRankerOnlineTransitionStatusCounts>;
   overrideTransitionPressureFamilyCounts: Record<string, Record<string, number>>;
@@ -471,6 +479,10 @@ function buildVariantSummary(
     fallbackFeatureDeltaCount: mergedDiagnostics.fallbackFeatureDeltaCount,
     overrideMeanFeatureDeltas: mergedDiagnostics.overrideMeanFeatureDeltas,
     fallbackMeanFeatureDeltas: mergedDiagnostics.fallbackMeanFeatureDeltas,
+    overrideTransitionFeatureDeltaCounts: mergedDiagnostics.overrideTransitionFeatureDeltaCounts,
+    fallbackTransitionFeatureDeltaCounts: mergedDiagnostics.fallbackTransitionFeatureDeltaCounts,
+    overrideTransitionMeanFeatureDeltas: mergedDiagnostics.overrideTransitionMeanFeatureDeltas,
+    fallbackTransitionMeanFeatureDeltas: mergedDiagnostics.fallbackTransitionMeanFeatureDeltas,
     overrideTransitionFinalOutcomeCounts: transitionOutcomeDiagnostics.overrideTransitionFinalOutcomeCounts,
     fallbackTransitionFinalOutcomeCounts: transitionOutcomeDiagnostics.fallbackTransitionFinalOutcomeCounts,
     overrideTransitionPressureFamilyCounts: transitionOutcomeDiagnostics.overrideTransitionPressureFamilyCounts,
@@ -537,6 +549,10 @@ function thresholdSummary(
     fallbackFeatureDeltaCount: summary.fallbackFeatureDeltaCount,
     overrideMeanFeatureDeltas: summary.overrideMeanFeatureDeltas,
     fallbackMeanFeatureDeltas: summary.fallbackMeanFeatureDeltas,
+    overrideTransitionFeatureDeltaCounts: summary.overrideTransitionFeatureDeltaCounts,
+    fallbackTransitionFeatureDeltaCounts: summary.fallbackTransitionFeatureDeltaCounts,
+    overrideTransitionMeanFeatureDeltas: summary.overrideTransitionMeanFeatureDeltas,
+    fallbackTransitionMeanFeatureDeltas: summary.fallbackTransitionMeanFeatureDeltas,
     overrideTransitionFinalOutcomeCounts: summary.overrideTransitionFinalOutcomeCounts,
     fallbackTransitionFinalOutcomeCounts: summary.fallbackTransitionFinalOutcomeCounts,
     overrideTransitionPressureFamilyCounts: summary.overrideTransitionPressureFamilyCounts,

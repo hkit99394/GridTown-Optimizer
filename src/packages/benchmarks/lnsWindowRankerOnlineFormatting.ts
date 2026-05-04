@@ -8,6 +8,7 @@ import {
 } from "./benchmarkOptions.js";
 import {
   formatLnsWindowRankerOnlineFeatureDeltas as formatFeatureDeltas,
+  formatLnsWindowRankerOnlineTransitionFeatureDeltas as formatTransitionFeatureDeltas,
   formatLnsWindowRankerOnlineTransitionCounts as formatTransitionCounts,
   formatLnsWindowRankerOnlineTransitionFinalOutcomeCounts as formatTransitionFinalOutcomeCounts,
   formatLnsWindowRankerOnlineTransitionPressureFamilyCounts as formatTransitionPressureFamilyCounts
@@ -25,6 +26,8 @@ interface LnsWindowRankerOnlineTransitionSummary {
   fallbackTransitionCounts: Record<string, number>;
   overrideMeanFeatureDeltas: Record<string, number>;
   fallbackMeanFeatureDeltas: Record<string, number>;
+  overrideTransitionMeanFeatureDeltas: Record<string, Record<string, number>>;
+  fallbackTransitionMeanFeatureDeltas: Record<string, Record<string, number>>;
   overrideTransitionFinalOutcomeCounts: Record<string, LnsWindowRankerOnlineTransitionStatusCounts>;
   fallbackTransitionFinalOutcomeCounts: Record<string, LnsWindowRankerOnlineTransitionStatusCounts>;
   overrideTransitionPressureFamilyCounts: Record<string, Record<string, number>>;
@@ -46,7 +49,7 @@ function formatRankerSummary(variant: LnsWindowRankerOnlineAblationVariantResult
 }
 
 function formatTransitionSummary(summary: LnsWindowRankerOnlineTransitionSummary): string {
-  return `override-transitions=${formatTransitionCounts(summary.overrideTransitionCounts)} fallback-transitions=${formatTransitionCounts(summary.fallbackTransitionCounts)} override-feature-deltas=${formatFeatureDeltas(summary.overrideMeanFeatureDeltas)} fallback-feature-deltas=${formatFeatureDeltas(summary.fallbackMeanFeatureDeltas)} override-transition-finals=${formatTransitionFinalOutcomeCounts(summary.overrideTransitionFinalOutcomeCounts)} fallback-transition-finals=${formatTransitionFinalOutcomeCounts(summary.fallbackTransitionFinalOutcomeCounts)} override-transition-families=${formatTransitionPressureFamilyCounts(summary.overrideTransitionPressureFamilyCounts)} fallback-transition-families=${formatTransitionPressureFamilyCounts(summary.fallbackTransitionPressureFamilyCounts)}`;
+  return `override-transitions=${formatTransitionCounts(summary.overrideTransitionCounts)} fallback-transitions=${formatTransitionCounts(summary.fallbackTransitionCounts)} override-feature-deltas=${formatFeatureDeltas(summary.overrideMeanFeatureDeltas)} fallback-feature-deltas=${formatFeatureDeltas(summary.fallbackMeanFeatureDeltas)} override-transition-feature-deltas=${formatTransitionFeatureDeltas(summary.overrideTransitionMeanFeatureDeltas)} fallback-transition-feature-deltas=${formatTransitionFeatureDeltas(summary.fallbackTransitionMeanFeatureDeltas)} override-transition-finals=${formatTransitionFinalOutcomeCounts(summary.overrideTransitionFinalOutcomeCounts)} fallback-transition-finals=${formatTransitionFinalOutcomeCounts(summary.fallbackTransitionFinalOutcomeCounts)} override-transition-families=${formatTransitionPressureFamilyCounts(summary.overrideTransitionPressureFamilyCounts)} fallback-transition-families=${formatTransitionPressureFamilyCounts(summary.fallbackTransitionPressureFamilyCounts)}`;
 }
 
 export function formatLnsWindowRankerOnlineCalibration(result: LnsWindowRankerOnlineCalibrationSuiteResult): string {

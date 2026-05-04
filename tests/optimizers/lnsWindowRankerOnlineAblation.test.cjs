@@ -8,6 +8,7 @@ const {
   buildLnsWindowRankerOnlineAblationTelemetryManifest,
   createLnsWindowRankerOnlineCalibrationSnapshot,
   createLnsWindowRankerOnlineAblationSnapshot,
+  DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS,
   formatLnsWindowRankerOnlineCalibration,
   formatLnsWindowRankerOnlineAblation,
   runLnsWindowRankerOnlineCalibration,
@@ -195,6 +196,15 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(registryDraft.model.modelPath, "artifacts/model.json");
     assert.equal(registryDraft.splitStatus.protectedHoldout, false);
     assert.equal(registryDraft.summaryMetrics.meanPopulationDeltaVsBaseline, 20);
+
+    const protectedDraft = buildLnsWindowRankerOnlineAblationRegistryEntryDraft(result, {
+      commands: ["node dist/lnsBenchmarkCli.js --window-ranker-online-ablation --window-ranker-protected-holdout"],
+      artifactPaths: ["artifact.json"],
+      protectedHoldout: true
+    });
+    assert.equal(protectedDraft.splitStatus.protectedHoldout, true);
+    assert.deepEqual(protectedDraft.cases, { development: [], holdout: ["online-ranker-fixture"] });
+    assert.equal(protectedDraft.splitStatus.leakage, "none");
   } finally {
     lnsSolverModule.solveLns = originalSolveLns;
   }
@@ -210,6 +220,20 @@ function testLnsBenchmarkCliListsOnlineAblationCases() {
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /compact-service-repair/);
   assert.match(result.stdout, /lns-gate-choke-pressure/);
+
+  const protectedResult = childProcess.spawnSync(
+    process.execPath,
+    [cliPath, "--list", "--window-ranker-online-ablation", "--window-ranker-protected-holdout"],
+    {
+      cwd: repoRoot,
+      encoding: "utf8"
+    }
+  );
+
+  assert.equal(protectedResult.status, 0, protectedResult.stderr);
+  assert.match(protectedResult.stdout, /lns-holdout-corridor-weave-pressure/);
+  assert.match(protectedResult.stdout, /lns-holdout-anchor-service-shelf-pressure/);
+  assert.equal(DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS.length, 5);
 }
 
 function testOnlineCalibrationSummarizesThresholdSweep() {

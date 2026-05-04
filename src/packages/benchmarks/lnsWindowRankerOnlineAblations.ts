@@ -18,6 +18,7 @@ import {
 } from "./benchmarkOptions.js";
 import { DEFAULT_LNS_REPLAY_LABEL_CORPUS, getLnsReplayPressureFamily, runLnsBenchmarkSuite } from "./lns.js";
 import { DEFAULT_LEARNED_RANKING_LABEL_SPLITS } from "./learnedRankingLabels.js";
+import { GENERATED_LNS_PROTECTED_HOLDOUT_PRESSURE_CASES } from "./lnsPressureCases.js";
 import {
   buildModelExperimentFingerprint,
   buildModelExperimentRegistryEntryDraft,
@@ -83,6 +84,7 @@ export interface LnsWindowRankerOnlineAblationVariantResult {
 export interface LnsWindowRankerOnlineAblationCaseResult {
   name: string;
   description: string;
+  pressureFamily: string;
   seed: number | null;
   gridRows: number;
   gridCols: number;
@@ -208,6 +210,7 @@ export interface LnsWindowRankerOnlineAblationRegistryEntryDraftOptions extends 
   "runId" | "commands" | "artifactPaths" | "decision" | "summary"
 > {
   modelPath?: string;
+  protectedHoldout?: boolean;
 }
 
 const ONLINE_ABLATION_VARIANTS: readonly LnsWindowRankerOnlineAblationVariantName[] = Object.freeze([
@@ -222,6 +225,10 @@ const VARIANT_DESCRIPTIONS: Record<LnsWindowRankerOnlineAblationVariantName, str
 
 export const DEFAULT_LNS_WINDOW_RANKER_ONLINE_ABLATION_CORPUS: readonly LnsBenchmarkCase[] = Object.freeze([
   ...DEFAULT_LNS_REPLAY_LABEL_CORPUS
+]);
+
+export const DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS: readonly LnsBenchmarkCase[] = Object.freeze([
+  ...GENERATED_LNS_PROTECTED_HOLDOUT_PRESSURE_CASES
 ]);
 
 export const DEFAULT_LNS_WINDOW_RANKER_MIN_SCORE_DELTA_SWEEP: readonly number[] = Object.freeze([
@@ -422,8 +429,12 @@ function getBaselineSummary(result: LnsWindowRankerOnlineAblationSuiteResult): L
 }
 
 function lnsWindowRankerOnlineCasesBySplit(
-  selectedCaseNames: readonly string[]
+  selectedCaseNames: readonly string[],
+  protectedHoldout: boolean
 ): Record<"development" | "holdout", string[]> {
+  if (protectedHoldout) {
+    return { development: [], holdout: [...selectedCaseNames] };
+  }
   const selected = new Set(selectedCaseNames);
   const development =
     DEFAULT_LEARNED_RANKING_LABEL_SPLITS.find((split) => split.split === "development")?.lnsCaseNames.filter((name) =>
@@ -433,15 +444,14 @@ function lnsWindowRankerOnlineCasesBySplit(
     DEFAULT_LEARNED_RANKING_LABEL_SPLITS.find((split) => split.split === "holdout")?.lnsCaseNames.filter((name) =>
       selected.has(name)
     ) ?? [];
+  if (development.length + holdout.length === 0) {
+    return { development: [...selectedCaseNames], holdout: [] };
+  }
   return { development, holdout };
 }
 
-function lnsWindowRankerOnlineCaseFamilies(selectedCaseNames: readonly string[]): string[] {
-  const selected = new Set(selectedCaseNames);
-  return uniqueBenchmarkValuesBy(
-    DEFAULT_LNS_REPLAY_LABEL_CORPUS.filter((benchmarkCase) => selected.has(benchmarkCase.name)),
-    (benchmarkCase) => `lns-${getLnsReplayPressureFamily(benchmarkCase)}`
-  );
+function lnsWindowRankerOnlineCaseFamilies(cases: readonly LnsWindowRankerOnlineAblationCaseResult[]): string[] {
+  return uniqueBenchmarkValuesBy(cases, (benchmarkCase) => `lns-${benchmarkCase.pressureFamily}`);
 }
 
 function lnsWindowRankerOnlineAblationSummaryMetrics(
@@ -560,6 +570,7 @@ export function runLnsWindowRankerOnlineAblation(
   assertRuntimeModel(options.model);
   const rankerModel = modelWithFingerprint(options.model);
   const selected = selectOnlineAblationCases(corpus, options.names?.length ? options.names : undefined);
+  const selectedCaseByName = new Map(selected.map((benchmarkCase) => [benchmarkCase.name, benchmarkCase]));
   const { seeds, seedRuns } = buildBenchmarkSeedRunPlan(options.seeds, "LNS window ranker online ablation seeds");
   const cases = seedRuns.flatMap((seed) => {
     const baselineSuite = runLnsBenchmarkSuite(selected, seededOptions(options, seed, baselineLnsOptions(options)));
@@ -575,11 +586,16 @@ export function runLnsWindowRankerOnlineAblation(
           `LNS window ranker online ablation result missing: window-ranker/${baselineResult.name}/${seed ?? "case-default"}.`
         );
       }
+      const benchmarkCase = selectedCaseByName.get(baselineResult.name);
+      if (!benchmarkCase) {
+        throw new Error(`LNS window ranker online ablation case metadata missing: ${baselineResult.name}.`);
+      }
       const baselineVariant = variantResult("baseline", baselineResult, baselineResult, seed);
       const rankerVariant = variantResult("window-ranker", rankerResult, baselineResult, seed);
       return {
         name: baselineResult.name,
         description: baselineResult.description,
+        pressureFamily: getLnsReplayPressureFamily(benchmarkCase),
         seed,
         gridRows: baselineResult.gridRows,
         gridCols: baselineResult.gridCols,
@@ -646,7 +662,8 @@ export function buildLnsWindowRankerOnlineAblationRegistryEntryDraft(
   const model = modelFromAblationResult(result) as unknown as Record<string, unknown>;
   const modelFingerprint = model.modelFingerprint as string;
   const minScoreDelta = ablationMinScoreDelta(result);
-  const cases = lnsWindowRankerOnlineCasesBySplit(result.selectedCaseNames);
+  const protectedHoldout = options.protectedHoldout ?? false;
+  const cases = lnsWindowRankerOnlineCasesBySplit(result.selectedCaseNames, protectedHoldout);
   const summaryMetrics = lnsWindowRankerOnlineAblationSummaryMetrics(result);
   return buildModelExperimentRegistryEntryDraft({
     runId: options.runId ?? `lns-window-ranker-online-ablation-${result.generatedAt.slice(0, 10)}`,
@@ -654,16 +671,19 @@ export function buildLnsWindowRankerOnlineAblationRegistryEntryDraft(
     artifactPaths: options.artifactPaths,
     generatedAt: result.generatedAt,
     cases,
-    caseFamilies: lnsWindowRankerOnlineCaseFamilies(result.selectedCaseNames),
+    caseFamilies: lnsWindowRankerOnlineCaseFamilies(result.cases),
     seeds: result.seeds,
     splitStatus: {
-      protectedHoldout: false,
-      splitField: "DEFAULT_LEARNED_RANKING_LABEL_SPLITS.lnsCaseNames",
+      protectedHoldout,
+      splitField: protectedHoldout
+        ? "DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS"
+        : "DEFAULT_LEARNED_RANKING_LABEL_SPLITS.lnsCaseNames",
       developmentCaseCount: cases.development.length,
       holdoutCaseCount: cases.holdout.length,
-      leakage: "threshold-calibration-used-replay-pressure-corpus",
-      notes:
-        "Online LNS ranker A/B calibration scorecard over replay-pressure cases; not protected holdout promotion evidence."
+      leakage: protectedHoldout ? "none" : "threshold-calibration-used-replay-pressure-corpus",
+      notes: protectedHoldout
+        ? "Online LNS ranker A/B scorecard over independent protected holdout cases."
+        : "Online LNS ranker A/B calibration scorecard over replay-pressure cases; not protected holdout promotion evidence."
     },
     budget: {
       minScoreDelta,

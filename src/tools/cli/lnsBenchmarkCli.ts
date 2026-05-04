@@ -13,6 +13,7 @@ import {
   createLnsWindowReplaySnapshot,
   DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS,
   DEFAULT_EXPERIMENT_REGISTRY_PATH,
+  DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS,
   ExperimentRegistryValidationError,
   formatDeterministicAblationGateReport,
   formatExperimentRegistryIssues,
@@ -87,6 +88,7 @@ interface ParsedBenchmarkArgs {
   windowRankerMinScoreDelta?: number;
   windowRankerMinScoreDeltas?: number[];
   windowRankerArtifactDir?: string;
+  windowRankerProtectedHoldout: boolean;
   windowRankerRunId?: string;
   windowRankerDecision?: string;
   windowRankerSummary?: string;
@@ -142,6 +144,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let windowRankerMinScoreDelta: number | undefined;
   let windowRankerMinScoreDeltas: number[] | undefined;
   let windowRankerArtifactDir: string | undefined;
+  let windowRankerProtectedHoldout = false;
   let windowRankerRunId: string | undefined;
   let windowRankerDecision: string | undefined;
   let windowRankerSummary: string | undefined;
@@ -231,6 +234,11 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
       windowRankerThresholdSweep = true;
       continue;
     }
+    if (isCliFlag(arg, "--window-ranker-protected-holdout", "--protected-holdout")) {
+      windowRankerOnlineAblation = true;
+      windowRankerProtectedHoldout = true;
+      continue;
+    }
     if (isCliFlag(arg, "--window-ranker-register-dry-run")) {
       windowRankerRegisterDryRun = true;
       continue;
@@ -287,6 +295,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     windowRankerMinScoreDelta,
     windowRankerMinScoreDeltas,
     windowRankerArtifactDir,
+    windowRankerProtectedHoldout,
     windowRankerRunId,
     windowRankerDecision,
     windowRankerSummary,
@@ -404,7 +413,8 @@ function writeWindowRankerOnlineArtifactBundle(
     artifactPaths: [scorecardJson, scorecardText, telemetryManifestJson],
     decision: args.windowRankerDecision,
     summary: args.windowRankerSummary,
-    modelPath
+    modelPath,
+    protectedHoldout: args.windowRankerProtectedHoldout
   });
 
   writeJsonArtifact(absoluteArtifactPath("lns-window-ranker-online-ablation.json"), {
@@ -482,6 +492,9 @@ export function runLnsBenchmarkCli(): void {
   if (args.windowRankerArtifactDir !== undefined && args.windowRankerThresholdSweep) {
     throw new Error("--window-ranker-artifact-dir cannot be combined with --window-ranker-threshold-sweep.");
   }
+  if (args.windowRankerProtectedHoldout && args.windowRankerThresholdSweep) {
+    throw new Error("--window-ranker-protected-holdout cannot be combined with --window-ranker-threshold-sweep.");
+  }
   if (args.windowRankerRegisterDryRun && args.windowRankerArtifactDir === undefined) {
     throw new Error("--window-ranker-register-dry-run requires --window-ranker-artifact-dir=<path>.");
   }
@@ -497,7 +510,9 @@ export function runLnsBenchmarkCli(): void {
       : args.windowReplayLabels
         ? listLnsWindowReplayCaseNames()
         : args.windowRankerOnlineAblation
-          ? listLnsWindowRankerOnlineAblationCaseNames()
+          ? listLnsWindowRankerOnlineAblationCaseNames(
+              args.windowRankerProtectedHoldout ? DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS : undefined
+            )
           : listLnsBenchmarkCaseNames();
     writeCliList(names);
     return;
@@ -527,6 +542,9 @@ export function runLnsBenchmarkCli(): void {
     if (!args.windowRankerModelPath) {
       throw new Error("--window-ranker-online-ablation requires --window-ranker-model=<path>.");
     }
+    if (args.windowRankerProtectedHoldout && args.windowRankerMinScoreDelta === undefined) {
+      throw new Error("--window-ranker-protected-holdout requires --window-ranker-min-score-delta=<value>.");
+    }
     if (args.windowRankerThresholdSweep && args.windowRankerMinScoreDelta !== undefined) {
       throw new Error("Choose either --window-ranker-min-score-delta or --window-ranker-min-score-deltas, not both.");
     }
@@ -537,8 +555,11 @@ export function runLnsBenchmarkCli(): void {
             repairTimeLimitSeconds: args.repairTimeLimitSeconds
           };
     const model = readWindowRankerModel(args.windowRankerModelPath);
+    const corpus = args.windowRankerProtectedHoldout
+      ? DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS
+      : undefined;
     if (args.windowRankerThresholdSweep) {
-      const result = runLnsWindowRankerOnlineCalibration(undefined, {
+      const result = runLnsWindowRankerOnlineCalibration(corpus, {
         names: optionalCliNames(args.names),
         seeds: args.seeds,
         model,
@@ -554,7 +575,7 @@ export function runLnsBenchmarkCli(): void {
       return;
     }
 
-    const result = runLnsWindowRankerOnlineAblation(undefined, {
+    const result = runLnsWindowRankerOnlineAblation(corpus, {
       names: optionalCliNames(args.names),
       seeds: args.seeds,
       model,

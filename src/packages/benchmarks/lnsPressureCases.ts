@@ -222,3 +222,111 @@ export const GENERATED_LNS_PRESSURE_CASES: readonly GeneratedLnsBenchmarkCase[] 
     randomSeed: 67
   })
 ]);
+
+export const GENERATED_LNS_PROTECTED_HOLDOUT_PRESSURE_CASES: readonly GeneratedLnsBenchmarkCase[] = Object.freeze([
+  buildGeneratedLnsPressureCase({
+    name: "lns-holdout-corridor-weave-pressure",
+    description: "Protected corridor holdout with alternating narrow passages and mixed footprints.",
+    pressureFamily: "corridor",
+    grid: [
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 0, 1, 1, 0, 1, 1],
+      [1, 1, 1, 0, 1, 1, 1],
+      [1, 0, 1, 1, 1, 0, 1],
+      [1, 1, 1, 0, 1, 1, 1],
+      [1, 1, 0, 1, 1, 1, 1]
+    ],
+    serviceTypes: [{ rows: 1, cols: 2, bonus: 65, range: 2, avail: 1 }],
+    residentialTypes: [
+      { w: 2, h: 2, min: 90, max: 190, avail: 2 },
+      { w: 2, h: 3, min: 150, max: 320, avail: 1 }
+    ],
+    availableBuildings: { services: 1, residentials: 3 },
+    randomSeed: 71
+  }),
+  buildGeneratedLnsPressureCase({
+    name: "lns-holdout-gate-offset-pressure",
+    description: "Protected gate holdout with offset obstructions and asymmetric repair choices.",
+    pressureFamily: "gate",
+    grid: [
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 0, 1, 1, 1],
+      [1, 1, 0, 1, 0, 1],
+      [1, 1, 1, 1, 0, 1],
+      [1, 0, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1]
+    ],
+    serviceTypes: [{ rows: 1, cols: 1, bonus: 80, range: 2, avail: 1 }],
+    residentialTypes: [
+      { w: 2, h: 2, min: 100, max: 210, avail: 2 },
+      { w: 3, h: 2, min: 160, max: 350, avail: 1 }
+    ],
+    availableBuildings: { services: 1, residentials: 3 },
+    randomSeed: 73
+  }),
+  buildGeneratedLnsPressureCase({
+    name: "lns-holdout-footprint-stagger-pressure",
+    description: "Protected footprint holdout where staggered blocks compete with larger residences.",
+    pressureFamily: "footprint-pressure",
+    grid: [
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 0, 1, 1, 1],
+      [1, 0, 1, 1, 1, 0, 1],
+      [1, 1, 1, 1, 0, 1, 1],
+      [1, 1, 0, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1]
+    ],
+    serviceTypes: [{ rows: 1, cols: 2, bonus: 55, range: 1, avail: 1 }],
+    residentialTypes: [
+      { w: 2, h: 2, min: 90, max: 200, avail: 2 },
+      { w: 3, h: 2, min: 180, max: 370, avail: 1 },
+      { w: 2, h: 3, min: 170, max: 350, avail: 1 }
+    ],
+    availableBuildings: { services: 1, residentials: 4 },
+    randomSeed: 79
+  }),
+  buildGeneratedLnsPressureCase({
+    name: "lns-holdout-service-ridge-pressure",
+    description: "Protected service holdout with two service shapes fighting over a buildable ridge.",
+    pressureFamily: "service-pressure",
+    grid: [
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 0, 1, 1, 1],
+      [1, 1, 1, 1, 0, 1],
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1]
+    ],
+    serviceTypes: [
+      { rows: 1, cols: 1, bonus: 45, range: 1, avail: 1 },
+      { rows: 2, cols: 1, bonus: 95, range: 2, avail: 1 }
+    ],
+    residentialTypes: [
+      { w: 2, h: 2, min: 90, max: 230, avail: 2 },
+      { w: 2, h: 3, min: 170, max: 380, avail: 1 }
+    ],
+    availableBuildings: { services: 2, residentials: 3 },
+    randomSeed: 83,
+    serviceRefineCandidateLimit: 10
+  }),
+  buildGeneratedLnsPressureCase({
+    name: "lns-holdout-anchor-service-shelf-pressure",
+    description: "Protected anchor-service holdout where service relocation competes with shelf access.",
+    pressureFamily: "anchor-service",
+    grid: [
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 0, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+      [1, 0, 1, 1, 1, 1],
+      [1, 1, 1, 1, 0, 1],
+      [1, 1, 1, 1, 1, 1]
+    ],
+    serviceTypes: [{ rows: 2, cols: 2, bonus: 110, range: 1, avail: 1 }],
+    residentialTypes: [
+      { w: 2, h: 2, min: 100, max: 270, avail: 2 },
+      { w: 2, h: 3, min: 160, max: 380, avail: 1 }
+    ],
+    availableBuildings: { services: 1, residentials: 3 },
+    randomSeed: 89
+  })
+]);

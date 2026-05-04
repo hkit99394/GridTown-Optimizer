@@ -1,0 +1,205 @@
+const assert = require("node:assert/strict");
+
+const { solveLns } = require("city-builder/solver");
+const {
+  buildAdaptiveNeighborhoodCandidates,
+  selectAdaptiveNeighborhoodOperator
+} = require("../../dist/packages/solvers/lns/neighborhoods.js");
+const {
+  normalizeLnsWindowRankerOptions,
+  selectLnsWindowRankerCandidate
+} = require("../../dist/packages/solvers/lns/windowScorer.js");
+
+function buildGrid(rows, cols) {
+  return Array.from({ length: rows }, () => Array.from({ length: cols }, () => 1));
+}
+
+function buildSelectionFixture() {
+  const grid = buildGrid(6, 6);
+  const params = {
+    serviceTypes: [
+      { rows: 2, cols: 2, bonus: 30, range: 1, avail: 1 },
+      { rows: 2, cols: 2, bonus: 180, range: 4, avail: 1 }
+    ],
+    residentialTypes: [
+      { w: 2, h: 2, min: 100, max: 160, avail: 1 },
+      { w: 2, h: 2, min: 120, max: 320, avail: 1 }
+    ]
+  };
+  const incumbent = {
+    optimizer: "lns",
+    roads: new Set(["0,0", "0,1", "0,2", "0,3", "0,4", "0,5", "1,0", "2,0", "3,0", "4,0", "5,0"]),
+    services: [
+      { r: 1, c: 4, rows: 2, cols: 2, range: 1 },
+      { r: 1, c: 0, rows: 2, cols: 2, range: 4 }
+    ],
+    serviceTypeIndices: [0, 1],
+    servicePopulationIncreases: [30, 180],
+    residentials: [
+      { r: 4, c: 0, rows: 2, cols: 2 },
+      { r: 4, c: 4, rows: 2, cols: 2 }
+    ],
+    residentialTypeIndices: [1, 0],
+    populations: [280, 150],
+    totalPopulation: 430
+  };
+  const options = {
+    maxNoImprovementIterations: 4,
+    neighborhoodRows: 3,
+    neighborhoodCols: 3
+  };
+  const candidates = buildAdaptiveNeighborhoodCandidates(grid, params, incumbent, options, 1);
+  const baseline = selectAdaptiveNeighborhoodOperator(candidates, 0, 0, options);
+  return { grid, params, incumbent, candidates, baseline };
+}
+
+function runtimeModel(weights) {
+  return {
+    model: {
+      modelType: "lns-window-linear-pairwise-ranker",
+      modelFingerprint: "fnv1a:test0001",
+      featureSchemaVersion: 2,
+      weights
+    }
+  };
+}
+
+function testWindowRankerCanOverrideAdaptiveBaseline() {
+  const fixture = buildSelectionFixture();
+  const options = normalizeLnsWindowRankerOptions(runtimeModel({ selectedByBaseline: -1 }));
+  const decision = selectLnsWindowRankerCandidate(
+    fixture.grid,
+    fixture.params,
+    fixture.incumbent,
+    fixture.candidates,
+    fixture.baseline,
+    options
+  );
+
+  assert.equal(decision.telemetry.source, "learned-window-ranker");
+  assert.equal(decision.telemetry.modelFingerprint, "fnv1a:test0001");
+  assert.equal(decision.telemetry.featureSchemaVersion, 2);
+  assert.equal(decision.telemetry.selectedByBaseline, false);
+  assert.notDeepEqual(decision.candidate.window, fixture.baseline.window);
+}
+
+function testWindowRankerFallsBackWhenScoreDeltaIsTooSmall() {
+  const fixture = buildSelectionFixture();
+  const options = normalizeLnsWindowRankerOptions({
+    ...runtimeModel({ selectedByBaseline: -1 }),
+    minScoreDelta: 10
+  });
+  const decision = selectLnsWindowRankerCandidate(
+    fixture.grid,
+    fixture.params,
+    fixture.incumbent,
+    fixture.candidates,
+    fixture.baseline,
+    options
+  );
+
+  assert.deepEqual(decision.candidate.window, fixture.baseline.window);
+  assert.equal(decision.telemetry.selectedByBaseline, true);
+  assert.equal(decision.telemetry.fallbackReason, "score-delta-below-threshold");
+}
+
+function testSolveLnsWindowRankerTelemetryAndDefaultSafety() {
+  const cpSatModule = require("../../dist/packages/solvers/cp-sat/solver.js");
+  const originalSolveCpSat = cpSatModule.solveCpSat;
+  let cpSatCalls = 0;
+  cpSatModule.solveCpSat = (_grid, params) => {
+    cpSatCalls += 1;
+    const roads = new Set(params.cpSat.warmStartHint.solution.roads);
+    return {
+      optimizer: "cp-sat",
+      roads,
+      services: [],
+      serviceTypeIndices: [],
+      servicePopulationIncreases: [],
+      residentials: [],
+      residentialTypeIndices: [],
+      populations: [],
+      totalPopulation: 0,
+      cpSatStatus: "FEASIBLE"
+    };
+  };
+
+  try {
+    const grid = buildGrid(4, 4);
+    const baseParams = {
+      optimizer: "lns",
+      residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 1 }],
+      availableBuildings: { residentials: 1, services: 0 },
+      lns: {
+        iterations: 1,
+        maxNoImprovementIterations: 4,
+        neighborhoodRows: 2,
+        neighborhoodCols: 2,
+        seedHint: {
+          solution: {
+            roads: ["0,0"],
+            services: [],
+            residentials: [],
+            populations: [],
+            totalPopulation: 0
+          }
+        }
+      }
+    };
+
+    const defaultSolution = solveLns(grid, baseParams);
+    assert.equal(defaultSolution.lnsTelemetry.windowRanker, undefined);
+    assert.equal(defaultSolution.lnsTelemetry.outcomes[0].windowRankerSelection, undefined);
+
+    const disabledSolution = solveLns(grid, {
+      ...baseParams,
+      lns: {
+        ...baseParams.lns,
+        windowRanker: { enabled: false }
+      }
+    });
+    assert.equal(disabledSolution.lnsTelemetry.windowRanker, undefined);
+    assert.equal(disabledSolution.lnsTelemetry.outcomes[0].windowRankerSelection, undefined);
+
+    const rankedSolution = solveLns(grid, {
+      ...baseParams,
+      lns: {
+        ...baseParams.lns,
+        windowRanker: runtimeModel({ selectedByBaseline: -1 })
+      }
+    });
+    assert.equal(rankedSolution.lnsTelemetry.windowRanker.enabled, true);
+    assert.equal(rankedSolution.lnsTelemetry.windowRanker.decisions, 1);
+    assert.equal(rankedSolution.lnsTelemetry.windowRanker.overrides, 1);
+    assert.equal(rankedSolution.lnsTelemetry.outcomes[0].windowRankerSelection.selectedByBaseline, false);
+    assert.equal(cpSatCalls, 3);
+  } finally {
+    cpSatModule.solveCpSat = originalSolveCpSat;
+  }
+}
+
+function testWindowRankerValidationRejectsBadWeights() {
+  assert.throws(
+    () =>
+      solveLns(buildGrid(3, 3), {
+        optimizer: "lns",
+        availableBuildings: { residentials: 0, services: 0 },
+        lns: {
+          iterations: 1,
+          windowRanker: {
+            model: {
+              modelType: "lns-window-linear-pairwise-ranker",
+              featureSchemaVersion: 2,
+              weights: { selectedByBaseline: "bad" }
+            }
+          }
+        }
+      }),
+    /lns\.windowRanker\.model\.weights\.selectedByBaseline must be a finite number/
+  );
+}
+
+testWindowRankerCanOverrideAdaptiveBaseline();
+testWindowRankerFallsBackWhenScoreDeltaIsTooSmall();
+testSolveLnsWindowRankerTelemetryAndDefaultSafety();
+testWindowRankerValidationRejectsBadWeights();

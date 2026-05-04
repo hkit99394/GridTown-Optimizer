@@ -80,11 +80,12 @@ Delivered so far:
 - The registered baseline sweep `lns-window-ranker-baselines-2026-05-04-strict-replay-seed-v2` shows useful holdout ranking signal but sets a high non-learned bar: current operator score captures `0.6307` of available holdout improvement, stable random captures `0.6429`, candidate-loss captures `0.7084`, and the best simple baseline, fragmentation, captures `0.7765` with hit@1 `0.6154`.
 - CPU-first LNS window-ranker tooling now trains a linear pairwise replay model from the strict label bundle without running CP-SAT, writes model/telemetry/registry artifacts via `benchmark:lns-window-ranker`, and remains diagnostics-only with no runtime hook or solver default change.
 - The registered ranker artifact `lns-window-ranker-2026-05-04-strict-replay-seed-v2` is generated under `artifacts/lns-window-ranker/2026-05-04/strict-replay-seed-v2-cpu-ranker/` with model fingerprint `fnv1a:2d6b2b9f`, dataset fingerprint `fnv1a:1c1cb973`, and label fingerprint `fnv1a:850a26f9`. It beats the best fragmentation baseline on protected holdout: model capture `0.8780` versus `0.7765`, delta `+0.1015`, hit@1 `0.6154`, hit@k `0.7692`, and mean regret `29.62`.
+- LNS now has an opt-in `lns.windowRanker` runtime hook for online experiments. It accepts the offline linear model shape, scores candidate repair windows after the existing adaptive baseline selector runs, records per-outcome selection telemetry, and falls back to the deterministic selector when disabled or when `minScoreDelta` is not cleared. Solver defaults remain unchanged.
 
 Concrete work:
 
 - Check whether weak-seed replay labels need weighting, stratification, or a separate diagnostic flag before any online scorer consumes them.
-- Prototype a feature-flagged online LNS window scorer with strict fallback to the existing deterministic ranker, then run equal-budget A/B scorecards before considering promotion.
+- Run equal-budget A/B scorecards for the opt-in online scorer against the existing deterministic ranker before considering promotion.
 - Expose the same feature payload shape in broader traces, benchmark summaries, and planner explainability surfaces where useful.
 
 Exit criteria:

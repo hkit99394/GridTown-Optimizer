@@ -11,6 +11,11 @@ import { solveCpSat } from "../cp-sat/solver.js";
 import { height, width } from "../../core/index.js";
 import { buildAdaptiveNeighborhoodCandidates, selectAdaptiveNeighborhoodOperator } from "./neighborhoods.js";
 import { repairSmallWindowWithDp } from "./smallWindowDpRepair.js";
+import {
+  normalizeLnsWindowRankerOptions,
+  selectLnsWindowRankerCandidate,
+  type NormalizedLnsWindowRankerOptions
+} from "./windowScorer.js";
 import { NO_TYPE_INDEX } from "../../core/index.js";
 import { writeSolutionSnapshot } from "../../core/index.js";
 import { assertValidLnsOptions, materializeValidLnsSeedSolution } from "../../core/index.js";
@@ -28,6 +33,8 @@ import type {
   LnsOperatorWeight,
   LnsRepairBackend,
   LnsRepairPhase,
+  LnsWindowRankerSelectionTelemetry,
+  LnsWindowRankerTelemetry,
   SmallWindowDpRepairTelemetry,
   LnsStopReason,
   LnsTelemetry,
@@ -51,6 +58,7 @@ type NormalizedLnsOptions = {
   smallWindowDpMaxMutableCells: number;
   smallWindowDpMaxCandidates: number;
   smallWindowDpMaxStates: number;
+  windowRanker: NormalizedLnsWindowRankerOptions | null;
   seedHint?: CpSatWarmStartHint;
   stopFilePath: string;
   snapshotFilePath: string;
@@ -73,6 +81,7 @@ interface LnsRepairAttempt {
   repairTimeLimitSeconds: number;
   populationBefore: number;
   startedAtMs: number | null;
+  windowRankerSelection?: LnsWindowRankerSelectionTelemetry;
 }
 
 const DEFAULT_LNS_ITERATIONS = 12;
@@ -285,6 +294,7 @@ function getLnsOptions(G: Grid, params: SolverParams): NormalizedLnsOptions {
       lns.smallWindowDpMaxStates,
       DEFAULT_LNS_SMALL_WINDOW_DP_MAX_STATES
     ),
+    windowRanker: normalizeLnsWindowRankerOptions(lns.windowRanker),
     seedHint: lns.seedHint,
     stopFilePath: lns.stopFilePath ?? "",
     snapshotFilePath: lns.snapshotFilePath ?? ""
@@ -399,6 +409,7 @@ function buildLnsTelemetry(
   outcomes: LnsTelemetry["outcomes"],
   operatorSummaries: LnsOperatorSummary[]
 ): LnsTelemetry {
+  const windowRanker = buildWindowRankerTelemetry(options.windowRanker, outcomes);
   return {
     stopReason,
     seedSource: initialIncumbent.seedSource,
@@ -419,8 +430,28 @@ function buildLnsTelemetry(
       .length,
     finalStagnantIterations: stagnantIterations,
     elapsedSeconds: (performance.now() - startedAtMs) / 1000,
+    ...(windowRanker ? { windowRanker } : {}),
     operatorSummaries,
     outcomes: [...outcomes]
+  };
+}
+
+function buildWindowRankerTelemetry(
+  options: NormalizedLnsWindowRankerOptions | null,
+  outcomes: LnsTelemetry["outcomes"]
+): LnsWindowRankerTelemetry | undefined {
+  if (!options) return undefined;
+  const selections = outcomes
+    .map((outcome) => outcome.windowRankerSelection)
+    .filter((selection): selection is LnsWindowRankerSelectionTelemetry => selection !== undefined);
+  return {
+    enabled: true,
+    ...(options.model.modelFingerprint ? { modelFingerprint: options.model.modelFingerprint } : {}),
+    featureSchemaVersion: options.model.featureSchemaVersion ?? null,
+    minScoreDelta: options.minScoreDelta,
+    decisions: selections.length,
+    overrides: selections.filter((selection) => !selection.selectedByBaseline).length,
+    fallbackDecisions: selections.filter((selection) => selection.fallbackReason !== undefined).length
   };
 }
 
@@ -444,7 +475,8 @@ function buildRepairAttempt(
 ): LnsRepairAttempt {
   return {
     ...input,
-    startedAtMs: input.startedAtMs ?? null
+    startedAtMs: input.startedAtMs ?? null,
+    ...(input.windowRankerSelection ? { windowRankerSelection: input.windowRankerSelection } : {})
   };
 }
 
@@ -474,6 +506,7 @@ function buildRepairOutcome(
     improvement,
     status,
     ...(metadata.repairBackend ? { repairBackend: metadata.repairBackend } : {}),
+    ...(attempt.windowRankerSelection ? { windowRankerSelection: attempt.windowRankerSelection } : {}),
     ...(cpSatStatus !== undefined ? { cpSatStatus } : {}),
     ...(metadata.smallWindowDp ? { smallWindowDp: metadata.smallWindowDp } : {})
   };
@@ -551,13 +584,17 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
       return finish("no-neighborhoods");
     }
 
-    const selectedNeighborhood = selectAdaptiveNeighborhoodOperator(
+    const baselineNeighborhood = selectAdaptiveNeighborhoodOperator(
       candidates,
       iteration,
       stagnantIterations,
       options,
       currentOperatorWeights(operatorSummaries)
     );
+    const windowRankerDecision = options.windowRanker
+      ? selectLnsWindowRankerCandidate(G, params, incumbent, candidates, baselineNeighborhood, options.windowRanker)
+      : null;
+    const selectedNeighborhood = windowRankerDecision?.candidate ?? baselineNeighborhood;
     const neighborhoodWindow = selectedNeighborhood.window;
     const operatorSummary = getOperatorSummary(operatorSummaries, selectedNeighborhood.operator);
     const phase = getRepairPhase(stagnantIterations, options);
@@ -579,7 +616,8 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
             stagnantIterationsBefore: stagnantIterations,
             staleSecondsBefore,
             repairTimeLimitSeconds: 0,
-            populationBefore
+            populationBefore,
+            ...(windowRankerDecision ? { windowRankerSelection: windowRankerDecision.telemetry } : {})
           }),
           "skipped-budget",
           populationBefore
@@ -600,7 +638,8 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
       staleSecondsBefore,
       repairTimeLimitSeconds,
       populationBefore,
-      startedAtMs: repairStartedAtMs
+      startedAtMs: repairStartedAtMs,
+      ...(windowRankerDecision ? { windowRankerSelection: windowRankerDecision.telemetry } : {})
     });
     try {
       let smallWindowDp: SmallWindowDpRepairTelemetry | undefined;

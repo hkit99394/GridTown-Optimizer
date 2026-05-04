@@ -47,6 +47,8 @@ export interface LnsOptions {
   smallWindowDpMaxCandidates?: number;
   /** Maximum memo/search states for one opt-in small-window DP repair attempt. */
   smallWindowDpMaxStates?: number;
+  /** Opt-in learned window scorer. Disabled unless a caller provides this object. */
+  windowRanker?: LnsWindowRankerRuntimeOptions;
   /** Optional saved-layout seed used instead of rebuilding the initial greedy incumbent. */
   seedHint?: CpSatWarmStartHint;
   /** Internal stop-token path used by the local web server. */
@@ -105,6 +107,43 @@ export interface LnsOperatorSummary extends LnsOperatorWeight {
   elapsedSeconds: number;
 }
 
+export interface LnsWindowRankerRuntimeModel {
+  modelType?: "lns-window-linear-pairwise-ranker";
+  modelFingerprint?: string;
+  featureSchemaVersion?: number | null;
+  featureNames?: readonly string[];
+  weights: Record<string, number>;
+  intercept?: number;
+}
+
+export interface LnsWindowRankerRuntimeOptions {
+  enabled?: boolean;
+  model: LnsWindowRankerRuntimeModel;
+  minScoreDelta?: number;
+}
+
+export interface LnsWindowRankerSelectionTelemetry {
+  source: "learned-window-ranker";
+  modelFingerprint?: string;
+  featureSchemaVersion?: number | null;
+  candidateCount: number;
+  baselineScore: number;
+  selectedScore: number;
+  scoreDelta: number;
+  selectedByBaseline: boolean;
+  fallbackReason?: "score-delta-below-threshold";
+}
+
+export interface LnsWindowRankerTelemetry {
+  enabled: true;
+  modelFingerprint?: string;
+  featureSchemaVersion?: number | null;
+  minScoreDelta: number;
+  decisions: number;
+  overrides: number;
+  fallbackDecisions: number;
+}
+
 export type LnsNeighborhoodOutcomeStatus =
   | "improved"
   | "neutral"
@@ -136,6 +175,7 @@ export interface LnsNeighborhoodOutcome {
   improvement: number;
   status: LnsNeighborhoodOutcomeStatus;
   repairBackend?: LnsRepairBackend;
+  windowRankerSelection?: LnsWindowRankerSelectionTelemetry;
   cpSatStatus?: string | null;
   smallWindowDp?: SmallWindowDpRepairTelemetry;
 }
@@ -157,6 +197,7 @@ export interface LnsTelemetry {
   skippedIterations: number;
   finalStagnantIterations: number;
   elapsedSeconds: number;
+  windowRanker?: LnsWindowRankerTelemetry;
   operatorSummaries?: LnsOperatorSummary[];
   outcomes: LnsNeighborhoodOutcome[];
 }

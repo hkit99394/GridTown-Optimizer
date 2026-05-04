@@ -17,11 +17,32 @@ const {
   runLnsWindowRankerOnlineAblation
 } = require("../../dist/benchmarkApi.js");
 
+function featureDeltas(selected, baseline) {
+  return Object.fromEntries(
+    [...new Set([...Object.keys(selected), ...Object.keys(baseline)])].map((featureName) => [
+      featureName,
+      (selected[featureName] ?? 0) - (baseline[featureName] ?? 0)
+    ])
+  );
+}
+
 function buildMockSolution(params) {
   const ranker = params.lns?.windowRanker;
   const usesRanker = Boolean(ranker?.model);
   const overridesBaseline = usesRanker && (ranker.minScoreDelta ?? 0) < 0.2;
   const totalPopulation = overridesBaseline ? 120 : 100;
+  const baselineFeatures = {
+    selectedByBaseline: 1,
+    serviceCandidatesIntersecting: 0,
+    residentialCandidateHeadroom: 0.1
+  };
+  const selectedFeatures = overridesBaseline
+    ? {
+        selectedByBaseline: 0,
+        serviceCandidatesIntersecting: 0.5,
+        residentialCandidateHeadroom: 0.3
+      }
+    : baselineFeatures;
   const windowRankerSelection = usesRanker
     ? {
         source: "learned-window-ranker",
@@ -40,6 +61,9 @@ function buildMockSolution(params) {
           ? { top: 0, left: 1, rows: 2, cols: 2 }
           : { top: 0, left: 0, rows: 2, cols: 2 },
         selectedByBaseline: !overridesBaseline,
+        baselineFeatures,
+        selectedFeatures,
+        featureDeltas: featureDeltas(selectedFeatures, baselineFeatures),
         ...(overridesBaseline ? {} : { fallbackReason: "score-delta-below-threshold" })
       }
     : undefined;
@@ -172,6 +196,14 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(result.variantSummaries[1].meanOverrideScoreDelta, 0.3);
     assert.equal(result.variantSummaries[1].overrideChangedWindowCount, 1);
     assert.equal(result.variantSummaries[1].fallbackChangedWindowCount, 0);
+    assert.equal(result.variantSummaries[1].overrideFeatureDeltaCount, 1);
+    assert.equal(result.variantSummaries[1].fallbackFeatureDeltaCount, 0);
+    assert.deepEqual(result.variantSummaries[1].overrideMeanFeatureDeltas, {
+      residentialCandidateHeadroom: 0.2,
+      selectedByBaseline: -1,
+      serviceCandidatesIntersecting: 0.5
+    });
+    assert.deepEqual(result.variantSummaries[1].fallbackMeanFeatureDeltas, {});
     assert.deepEqual(result.variantSummaries[1].overrideTransitionCounts, { "sliding->service-overlap": 1 });
     assert.deepEqual(result.variantSummaries[1].fallbackTransitionCounts, {});
     assert.deepEqual(result.variantSummaries[1].overrideTransitionFinalOutcomeCounts, {
@@ -190,7 +222,15 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
       overrideTransitionCounts: { "sliding->service-overlap": 1 },
       fallbackTransitionCounts: {},
       overrideChangedWindowCount: 1,
-      fallbackChangedWindowCount: 0
+      fallbackChangedWindowCount: 0,
+      overrideFeatureDeltaCount: 1,
+      fallbackFeatureDeltaCount: 0,
+      overrideMeanFeatureDeltas: {
+        residentialCandidateHeadroom: 0.2,
+        selectedByBaseline: -1,
+        serviceCandidatesIntersecting: 0.5
+      },
+      fallbackMeanFeatureDeltas: {}
     });
     assert.deepEqual(result.cases[0].variants[1].finalOutcome, {
       status: "improved",
@@ -241,6 +281,12 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(telemetryManifest.metrics.meanOverrideFinalPopulationDelta, 20);
     assert.equal(telemetryManifest.metrics.overrideChangedWindowCount, 1);
     assert.equal(telemetryManifest.metrics.fallbackChangedWindowCount, 0);
+    assert.equal(telemetryManifest.metrics.overrideFeatureDeltaCount, 1);
+    assert.deepEqual(telemetryManifest.metrics.overrideMeanFeatureDeltas, {
+      residentialCandidateHeadroom: 0.2,
+      selectedByBaseline: -1,
+      serviceCandidatesIntersecting: 0.5
+    });
     assert.deepEqual(telemetryManifest.metrics.overrideTransitionCounts, { "sliding->service-overlap": 1 });
     assert.deepEqual(telemetryManifest.metrics.fallbackTransitionCounts, {});
     assert.deepEqual(telemetryManifest.metrics.overrideTransitionFinalOutcomeCounts, {
@@ -272,6 +318,12 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(registryDraft.summaryMetrics.meanPopulationDeltaVsBaseline, 20);
     assert.equal(registryDraft.summaryMetrics.overrideChangedWindowCount, 1);
     assert.equal(registryDraft.summaryMetrics.fallbackChangedWindowCount, 0);
+    assert.equal(registryDraft.summaryMetrics.overrideFeatureDeltaCount, 1);
+    assert.deepEqual(registryDraft.summaryMetrics.overrideMeanFeatureDeltas, {
+      residentialCandidateHeadroom: 0.2,
+      selectedByBaseline: -1,
+      serviceCandidatesIntersecting: 0.5
+    });
     assert.deepEqual(registryDraft.summaryMetrics.overrideTransitionCounts, { "sliding->service-overlap": 1 });
     assert.deepEqual(registryDraft.summaryMetrics.fallbackTransitionCounts, {});
     assert.deepEqual(registryDraft.summaryMetrics.overrideTransitionFinalOutcomeCounts, {
@@ -380,6 +432,12 @@ function testOnlineCalibrationSummarizesThresholdSweep() {
     assert.equal(result.thresholdSummaries[0].meanPopulationDeltaVsBaseline, 20);
     assert.equal(result.thresholdSummaries[0].rankerOverrideCount, 1);
     assert.equal(result.thresholdSummaries[0].overrideChangedWindowCount, 1);
+    assert.equal(result.thresholdSummaries[0].overrideFeatureDeltaCount, 1);
+    assert.deepEqual(result.thresholdSummaries[0].overrideMeanFeatureDeltas, {
+      residentialCandidateHeadroom: 0.2,
+      selectedByBaseline: -1,
+      serviceCandidatesIntersecting: 0.5
+    });
     assert.deepEqual(result.thresholdSummaries[0].overrideTransitionCounts, { "sliding->service-overlap": 1 });
     assert.deepEqual(result.thresholdSummaries[0].overrideTransitionFinalOutcomeCounts, {
       "sliding->service-overlap": { improved: 1, neutral: 0, regressed: 0 }
@@ -390,6 +448,12 @@ function testOnlineCalibrationSummarizesThresholdSweep() {
     assert.equal(result.thresholdSummaries[1].meanPopulationDeltaVsBaseline, 0);
     assert.equal(result.thresholdSummaries[1].rankerFallbackDecisionCount, 2);
     assert.equal(result.thresholdSummaries[1].fallbackChangedWindowCount, 0);
+    assert.equal(result.thresholdSummaries[1].fallbackFeatureDeltaCount, 1);
+    assert.deepEqual(result.thresholdSummaries[1].fallbackMeanFeatureDeltas, {
+      residentialCandidateHeadroom: 0,
+      selectedByBaseline: 0,
+      serviceCandidatesIntersecting: 0
+    });
     assert.deepEqual(result.thresholdSummaries[1].fallbackTransitionCounts, { "sliding->sliding": 1 });
     assert.deepEqual(result.thresholdSummaries[1].fallbackTransitionFinalOutcomeCounts, {
       "sliding->sliding": { improved: 0, neutral: 1, regressed: 0 }
@@ -406,6 +470,7 @@ function testOnlineCalibrationSummarizesThresholdSweep() {
     assert.match(formatted, /=== LNS Window Ranker Threshold Sweep ===/);
     assert.match(formatted, /min-score-delta=0.2/);
     assert.match(formatted, /override-transitions=sliding->service-overlap:1/);
+    assert.match(formatted, /override-feature-deltas=selectedByBaseline:-1/);
     assert.match(formatted, /fallback-transitions=sliding->sliding:1/);
     assert.match(formatted, /override-transition-finals=sliding->service-overlap:1\/0\/0/);
     assert.match(formatted, /fallback-transition-finals=sliding->sliding:0\/1\/0/);

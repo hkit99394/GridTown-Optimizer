@@ -14,6 +14,10 @@ export interface LnsWindowRankerOnlineSelectionDiagnostics {
   fallbackTransitionCounts: Record<string, number>;
   overrideChangedWindowCount: number;
   fallbackChangedWindowCount: number;
+  overrideFeatureDeltaCount: number;
+  fallbackFeatureDeltaCount: number;
+  overrideMeanFeatureDeltas: Record<string, number>;
+  fallbackMeanFeatureDeltas: Record<string, number>;
 }
 
 export interface LnsWindowRankerOnlineTransitionOutcomeDiagnostics {
@@ -34,7 +38,11 @@ function emptyDiagnostics(): LnsWindowRankerOnlineSelectionDiagnostics {
     overrideTransitionCounts: {},
     fallbackTransitionCounts: {},
     overrideChangedWindowCount: 0,
-    fallbackChangedWindowCount: 0
+    fallbackChangedWindowCount: 0,
+    overrideFeatureDeltaCount: 0,
+    fallbackFeatureDeltaCount: 0,
+    overrideMeanFeatureDeltas: {},
+    fallbackMeanFeatureDeltas: {}
   };
 }
 
@@ -68,6 +76,65 @@ function mergeCounts(left: Record<string, number>, right: Record<string, number>
     merged[key] = (merged[key] ?? 0) + value;
   }
   return merged;
+}
+
+function roundedFeatureDelta(value: number): number {
+  return Math.round(value * 1000000) / 1000000;
+}
+
+function selectionFeatureDeltas(selection: LnsWindowRankerSelectionTelemetry): Record<string, number> | null {
+  if (selection.featureDeltas) return selection.featureDeltas;
+  if (!selection.baselineFeatures || !selection.selectedFeatures) return null;
+  const featureNames = new Set([
+    ...Object.keys(selection.baselineFeatures),
+    ...Object.keys(selection.selectedFeatures)
+  ]);
+  return Object.fromEntries(
+    [...featureNames].map((featureName) => [
+      featureName,
+      (selection.selectedFeatures?.[featureName] ?? 0) - (selection.baselineFeatures?.[featureName] ?? 0)
+    ])
+  );
+}
+
+function addFeatureDeltas(sums: Record<string, number>, selection: LnsWindowRankerSelectionTelemetry): boolean {
+  const deltas = selectionFeatureDeltas(selection);
+  if (!deltas) return false;
+  for (const [featureName, delta] of Object.entries(deltas)) {
+    if (!Number.isFinite(delta)) continue;
+    sums[featureName] = (sums[featureName] ?? 0) + delta;
+  }
+  return true;
+}
+
+function meanFeatureDeltas(sums: Record<string, number>, count: number): Record<string, number> {
+  if (count <= 0) return {};
+  return Object.fromEntries(
+    Object.entries(sums)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([featureName, sum]) => [featureName, roundedFeatureDelta(sum / count)])
+  );
+}
+
+function mergeMeanFeatureDeltas(
+  leftMean: Record<string, number>,
+  leftCount: number,
+  rightMean: Record<string, number>,
+  rightCount: number
+): Record<string, number> {
+  const totalCount = leftCount + rightCount;
+  if (totalCount <= 0) return {};
+  const featureNames = new Set([...Object.keys(leftMean), ...Object.keys(rightMean)]);
+  return Object.fromEntries(
+    [...featureNames]
+      .sort((left, right) => left.localeCompare(right))
+      .map((featureName) => [
+        featureName,
+        roundedFeatureDelta(
+          ((leftMean[featureName] ?? 0) * leftCount + (rightMean[featureName] ?? 0) * rightCount) / totalCount
+        )
+      ])
+  );
 }
 
 function addStatusCount(
@@ -113,6 +180,8 @@ export function buildLnsWindowRankerOnlineSelectionDiagnostics(
 ): LnsWindowRankerOnlineSelectionDiagnostics | null {
   let seen = false;
   const diagnostics = emptyDiagnostics();
+  const overrideFeatureDeltaSums: Record<string, number> = {};
+  const fallbackFeatureDeltaSums: Record<string, number> = {};
 
   for (const outcome of result.lnsTelemetry?.outcomes ?? []) {
     const selection = outcome.windowRankerSelection;
@@ -122,12 +191,23 @@ export function buildLnsWindowRankerOnlineSelectionDiagnostics(
     if (selection.selectedByBaseline === false) {
       incrementCount(diagnostics.overrideTransitionCounts, transitionKey(selection));
       if (changedWindow) diagnostics.overrideChangedWindowCount += 1;
+      if (addFeatureDeltas(overrideFeatureDeltaSums, selection)) diagnostics.overrideFeatureDeltaCount += 1;
     }
     if (selection.fallbackReason) {
       incrementCount(diagnostics.fallbackTransitionCounts, transitionKey(selection));
       if (changedWindow) diagnostics.fallbackChangedWindowCount += 1;
+      if (addFeatureDeltas(fallbackFeatureDeltaSums, selection)) diagnostics.fallbackFeatureDeltaCount += 1;
     }
   }
+
+  diagnostics.overrideMeanFeatureDeltas = meanFeatureDeltas(
+    overrideFeatureDeltaSums,
+    diagnostics.overrideFeatureDeltaCount
+  );
+  diagnostics.fallbackMeanFeatureDeltas = meanFeatureDeltas(
+    fallbackFeatureDeltaSums,
+    diagnostics.fallbackFeatureDeltaCount
+  );
 
   return seen ? diagnostics : null;
 }
@@ -140,7 +220,21 @@ export function mergeLnsWindowRankerOnlineSelectionDiagnostics(
       overrideTransitionCounts: mergeCounts(merged.overrideTransitionCounts, entry.overrideTransitionCounts),
       fallbackTransitionCounts: mergeCounts(merged.fallbackTransitionCounts, entry.fallbackTransitionCounts),
       overrideChangedWindowCount: merged.overrideChangedWindowCount + entry.overrideChangedWindowCount,
-      fallbackChangedWindowCount: merged.fallbackChangedWindowCount + entry.fallbackChangedWindowCount
+      fallbackChangedWindowCount: merged.fallbackChangedWindowCount + entry.fallbackChangedWindowCount,
+      overrideFeatureDeltaCount: merged.overrideFeatureDeltaCount + entry.overrideFeatureDeltaCount,
+      fallbackFeatureDeltaCount: merged.fallbackFeatureDeltaCount + entry.fallbackFeatureDeltaCount,
+      overrideMeanFeatureDeltas: mergeMeanFeatureDeltas(
+        merged.overrideMeanFeatureDeltas,
+        merged.overrideFeatureDeltaCount,
+        entry.overrideMeanFeatureDeltas,
+        entry.overrideFeatureDeltaCount
+      ),
+      fallbackMeanFeatureDeltas: mergeMeanFeatureDeltas(
+        merged.fallbackMeanFeatureDeltas,
+        merged.fallbackFeatureDeltaCount,
+        entry.fallbackMeanFeatureDeltas,
+        entry.fallbackFeatureDeltaCount
+      )
     }),
     emptyDiagnostics()
   );
@@ -196,4 +290,16 @@ export function formatLnsWindowRankerOnlineTransitionPressureFamilyCounts(
       return `${key}[${formattedFamilies}]`;
     })
     .join(",");
+}
+
+export function formatLnsWindowRankerOnlineFeatureDeltas(deltas: Record<string, number>, limit = 5): string {
+  const entries = Object.entries(deltas)
+    .filter(([, value]) => Number.isFinite(value) && value !== 0)
+    .sort(
+      ([leftName, leftValue], [rightName, rightValue]) =>
+        Math.abs(rightValue) - Math.abs(leftValue) || leftName.localeCompare(rightName)
+    )
+    .slice(0, limit);
+  if (entries.length === 0) return "none";
+  return entries.map(([featureName, value]) => `${featureName}:${value >= 0 ? "+" : ""}${value}`).join(",");
 }

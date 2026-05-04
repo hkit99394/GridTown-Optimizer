@@ -7,8 +7,13 @@ import {
 import { hashString, stableStringify } from "../core/cpSatContinuation.js";
 
 import type { LearnedRankingLabelSnapshot, LearnedRankingLabelSplit } from "./learnedRankingLabels.js";
+import { DEFAULT_LNS_REPLAY_LABEL_CORPUS } from "./lns.js";
 import type { LnsReplayPressureFamilyLabel } from "./lns.js";
-import type { LnsWindowReplaySnapshotCaseResult, LnsWindowReplaySnapshotLabel } from "./lnsWindowReplayLabels.js";
+import type {
+  LnsWindowReplaySeedHintKind,
+  LnsWindowReplaySnapshotCaseResult,
+  LnsWindowReplaySnapshotLabel
+} from "./lnsWindowReplayLabels.js";
 import type {
   ModelExperimentRegistryEntryDraftOptions,
   ModelExperimentTelemetryManifest,
@@ -33,6 +38,7 @@ export interface LnsWindowRankerBaselineRunOptions {
   randomBaselineSeed?: number;
   topK?: number;
   target?: LnsWindowRankerLabelTarget;
+  allowWeakSeedReplayLabels?: boolean;
 }
 
 export interface LnsWindowRankerMetricSummary {
@@ -60,6 +66,7 @@ export interface LnsWindowRankerSplitEvaluation extends LnsWindowRankerMetricSum
   split: LearnedRankingLabelSplit;
   pressureFamilyMetrics: LnsWindowRankerBreakdownMetrics[];
   statePolicyMetrics: LnsWindowRankerBreakdownMetrics[];
+  seedHintMetrics: LnsWindowRankerBreakdownMetrics[];
 }
 
 export interface LnsWindowRankerBaselineEvaluation {
@@ -101,6 +108,7 @@ export interface LnsWindowRankerBaselineModel {
   featureSchemaVersion: number | null;
   topK: number;
   target: LnsWindowRankerLabelTarget;
+  weakSeedReplayLabelsAllowed: boolean;
   baselineNames: LnsWindowRankerBaselineName[];
   bestBaselineName: LnsWindowRankerBaselineName;
 }
@@ -115,7 +123,7 @@ export interface LnsWindowRankerBaselineExperimentResult {
     learnedRuntimeHook: null;
     sourceLabelPreset: string | null;
     sourceLnsScaleReady: boolean;
-    weakSeedReplayLabelsAllowed: true;
+    weakSeedReplayLabelsAllowed: boolean;
   };
   labels: {
     labelCount: number;
@@ -153,6 +161,7 @@ interface ReplayDecisionGroup {
   caseName: string;
   pressureFamily: LnsReplayPressureFamilyLabel;
   seed: number | null;
+  seedHintKind: LnsWindowReplaySeedHintKind | "unknown";
   statePolicy: string;
   stateIndex: number;
   labels: LnsWindowReplaySnapshotLabel[];
@@ -175,6 +184,33 @@ export function normalizeLnsWindowRankerLabelTarget(value: unknown): LnsWindowRa
   if (value === undefined || value === "immediate-improvement") return "immediate-improvement";
   if (value === "roll-forward-final-lift") return "roll-forward-final-lift";
   throw new Error(`Unknown LNS window ranker label target: ${String(value)}.`);
+}
+
+export function normalizeLnsWindowRankerWeakSeedAllowance(value: unknown): boolean {
+  return value !== false;
+}
+
+function seedHintKindFromSource(
+  sourceName: string | null | undefined,
+  hasSeedHint: boolean
+): LnsWindowReplaySeedHintKind {
+  if (!hasSeedHint) return "none";
+  return sourceName?.endsWith("-weak-replay-seed") ? "weak-replay" : "curated";
+}
+
+const DEFAULT_REPLAY_SEED_HINT_KIND_BY_CASE = new Map(
+  DEFAULT_LNS_REPLAY_LABEL_CORPUS.map((benchmarkCase) => [
+    benchmarkCase.name,
+    seedHintKindFromSource(benchmarkCase.params.lns?.seedHint?.sourceName, Boolean(benchmarkCase.params.lns?.seedHint))
+  ])
+);
+
+export function inferLnsWindowRankerReplaySeedHintKind(
+  benchmarkCase: Pick<LnsWindowReplaySnapshotCaseResult, "name" | "seedHintKind" | "seedHintSourceName">
+): LnsWindowReplaySeedHintKind | "unknown" {
+  if (benchmarkCase.seedHintKind) return benchmarkCase.seedHintKind;
+  if (benchmarkCase.seedHintSourceName) return seedHintKindFromSource(benchmarkCase.seedHintSourceName, true);
+  return DEFAULT_REPLAY_SEED_HINT_KIND_BY_CASE.get(benchmarkCase.name) ?? "unknown";
 }
 
 function numericValue(value: unknown): number {
@@ -412,6 +448,14 @@ function evaluateSplit(
       topK,
       target,
       (group) => group.statePolicy
+    ),
+    seedHintMetrics: breakdownMetrics(
+      groups,
+      baselineName,
+      randomBaselineSeed,
+      topK,
+      target,
+      (group) => group.seedHintKind
     )
   };
 }
@@ -501,10 +545,13 @@ function assertLabelSnapshot(value: LearnedRankingLabelSnapshot): void {
 
 function collectReplayDecisionGroups(
   labelSnapshot: LearnedRankingLabelSnapshot,
-  target: LnsWindowRankerLabelTarget
+  target: LnsWindowRankerLabelTarget,
+  allowWeakSeedReplayLabels: boolean
 ): ReplayDecisionGroup[] {
   return labelSnapshot.lns.splits.flatMap((split) =>
     split.replay.cases.flatMap((benchmarkCase: LnsWindowReplaySnapshotCaseResult): ReplayDecisionGroup[] => {
+      const seedKind = inferLnsWindowRankerReplaySeedHintKind(benchmarkCase);
+      if (!allowWeakSeedReplayLabels && seedKind === "weak-replay") return [];
       const labels = benchmarkCase.labels.filter((label) => label.usable && hasTargetValue(label, target));
       if (labels.length === 0) return [];
       return [
@@ -513,6 +560,7 @@ function collectReplayDecisionGroups(
           caseName: benchmarkCase.name,
           pressureFamily: benchmarkCase.pressureFamily,
           seed: benchmarkCase.seed,
+          seedHintKind: seedKind,
           statePolicy: benchmarkCase.statePolicy,
           stateIndex: benchmarkCase.stateIndex,
           labels
@@ -566,6 +614,7 @@ function summaryMetrics(result: LnsWindowRankerBaselineExperimentResult): Record
     deterministicHoldoutCaptureRate: result.evaluation.summary.deterministicHoldoutCaptureRate,
     randomHoldoutCaptureRate: result.evaluation.summary.randomHoldoutCaptureRate,
     target: result.model.target,
+    weakSeedReplayLabelsAllowed: result.model.weakSeedReplayLabelsAllowed,
     developmentDecisionCount: baselineByName(result.evaluation.baselines, "operator-score").development.decisionCount,
     holdoutDecisionCount: baselineByName(result.evaluation.baselines, "operator-score").holdout.decisionCount,
     developmentOpportunityCount: baselineByName(result.evaluation.baselines, "operator-score").development
@@ -583,7 +632,8 @@ export function runLnsWindowRankerBaselineExperiment(
   const randomBaselineSeed = positiveIntegerOrDefault(options.randomBaselineSeed, 17);
   const topK = positiveIntegerOrDefault(options.topK, 3);
   const target = normalizeLnsWindowRankerLabelTarget(options.target);
-  const groups = collectReplayDecisionGroups(labelSnapshot, target);
+  const allowWeakSeedReplayLabels = normalizeLnsWindowRankerWeakSeedAllowance(options.allowWeakSeedReplayLabels);
+  const groups = collectReplayDecisionGroups(labelSnapshot, target, allowWeakSeedReplayLabels);
   const baselines = buildBaselineEvaluations(groups, randomBaselineSeed, topK, target);
   const summary = buildSummary(labelSnapshot, baselines);
   const model: LnsWindowRankerBaselineModel = {
@@ -596,6 +646,7 @@ export function runLnsWindowRankerBaselineExperiment(
     featureSchemaVersion: labelSnapshot.audit.lnsReplay.featureSchemaVersion ?? null,
     topK,
     target,
+    weakSeedReplayLabelsAllowed: allowWeakSeedReplayLabels,
     baselineNames: [...LNS_WINDOW_RANKER_BASELINE_NAMES],
     bestBaselineName: summary.bestBaselineName
   };
@@ -614,7 +665,7 @@ export function runLnsWindowRankerBaselineExperiment(
       learnedRuntimeHook: null,
       sourceLabelPreset: labelSnapshot.audit.lnsReplay.preset,
       sourceLnsScaleReady: labelSnapshot.lns.scaleReadiness.passed,
-      weakSeedReplayLabelsAllowed: true
+      weakSeedReplayLabelsAllowed: allowWeakSeedReplayLabels
     },
     labels: {
       labelCount: labelSnapshot.lns.labelCount,
@@ -690,6 +741,7 @@ export function buildLnsWindowRankerBaselineRegistryEntryDraft(
       cpuOnly: 1,
       topK: result.model.topK,
       targetRollForwardFinalLift: result.model.target === "roll-forward-final-lift" ? 1 : 0,
+      weakSeedReplayLabelsAllowed: result.model.weakSeedReplayLabelsAllowed ? 1 : 0,
       baselineCount: result.evaluation.baselines.length,
       lnsLabelCount: result.labels.labelCount,
       usableLabelCount: result.labels.usableLabelCount,
@@ -729,13 +781,13 @@ export function formatLnsWindowRankerBaselineExperiment(result: LnsWindowRankerB
   lines.push(`Generated: ${result.generatedAt}`);
   lines.push(`Schema: ${result.schemaVersion}`);
   lines.push(
-    `Audit: cpu-only=${result.audit.cpuOnly} runtime-default-changed=${result.audit.runtimeDefaultChanged} source-preset=${result.audit.sourceLabelPreset ?? "none"} source-lns-scale-ready=${result.audit.sourceLnsScaleReady} target=${result.model.target}`
+    `Audit: cpu-only=${result.audit.cpuOnly} runtime-default-changed=${result.audit.runtimeDefaultChanged} source-preset=${result.audit.sourceLabelPreset ?? "none"} source-lns-scale-ready=${result.audit.sourceLnsScaleReady} target=${result.model.target} weak-seed-labels=${result.audit.weakSeedReplayLabelsAllowed}`
   );
   lines.push(
     `Labels: total=${result.labels.labelCount} usable=${result.labels.usableLabelCount} opportunities=${result.labels.opportunityCount} label-fingerprint=${result.labelFingerprint}`
   );
   lines.push(
-    `Model: ${result.model.modelType} trained=${result.model.trained} target=${result.model.target} top-k=${result.model.topK} model-fingerprint=${result.modelFingerprint}`
+    `Model: ${result.model.modelType} trained=${result.model.trained} target=${result.model.target} top-k=${result.model.topK} weak-seed-labels=${result.model.weakSeedReplayLabelsAllowed} model-fingerprint=${result.modelFingerprint}`
   );
   for (const split of result.labels.splits) {
     lines.push(

@@ -16,6 +16,7 @@ import {
 import type {
   CpSatNeighborhoodWindow,
   Grid,
+  LnsWindowRankerFeatureTelemetry,
   LnsWindowRankerRuntimeModel,
   LnsWindowRankerRuntimeOptions,
   LnsWindowRankerSelectionTelemetry,
@@ -77,6 +78,13 @@ interface EmptyGraphSummary {
 }
 
 interface WindowRankerFeatureValues extends Record<LnsWindowRankerFeatureName, number> {}
+
+interface ScoredWindowRankerCandidate {
+  candidate: LnsAdaptiveNeighborhoodCandidate;
+  index: number;
+  features: WindowRankerFeatureValues;
+  score: number;
+}
 
 function finiteNumberOrDefault(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
@@ -407,6 +415,28 @@ function roundedScore(value: number): number {
   return Math.round(value * 10000) / 10000;
 }
 
+function roundedFeature(value: number): number {
+  return Math.round(value * 1000000) / 1000000;
+}
+
+function featureTelemetry(values: WindowRankerFeatureValues): LnsWindowRankerFeatureTelemetry {
+  return Object.fromEntries(
+    LNS_WINDOW_RANKER_FEATURE_NAMES.map((featureName) => [featureName, roundedFeature(values[featureName])])
+  );
+}
+
+function featureDeltaTelemetry(
+  selected: WindowRankerFeatureValues,
+  baseline: WindowRankerFeatureValues
+): LnsWindowRankerFeatureTelemetry {
+  return Object.fromEntries(
+    LNS_WINDOW_RANKER_FEATURE_NAMES.map((featureName) => [
+      featureName,
+      roundedFeature(selected[featureName] - baseline[featureName])
+    ])
+  );
+}
+
 export function selectLnsWindowRankerCandidate(
   G: Grid,
   params: SolverParams,
@@ -416,24 +446,27 @@ export function selectLnsWindowRankerCandidate(
   options: NormalizedLnsWindowRankerOptions
 ): LnsWindowRankerSelectionDecision {
   const scored = candidates
-    .map((candidate, index) => ({
-      candidate,
-      index,
-      score: scoreFeatureValues(
-        buildFeatureValues(G, params, incumbent, candidate, sameCandidate(candidate, baselineCandidate)),
-        options.model
-      )
-    }))
+    .map<ScoredWindowRankerCandidate>((candidate, index) => {
+      const features = buildFeatureValues(G, params, incumbent, candidate, sameCandidate(candidate, baselineCandidate));
+      return {
+        candidate,
+        index,
+        features,
+        score: scoreFeatureValues(features, options.model)
+      };
+    })
     .sort(
       (left, right) =>
         right.score - left.score || right.candidate.score - left.candidate.score || left.index - right.index
     );
-  const best = scored[0] ?? { candidate: baselineCandidate, index: 0, score: Number.NEGATIVE_INFINITY };
+  const baselineFeatures = buildFeatureValues(G, params, incumbent, baselineCandidate, true);
   const baseline = scored.find((entry) => sameCandidate(entry.candidate, baselineCandidate)) ?? {
     candidate: baselineCandidate,
     index: 0,
-    score: scoreFeatureValues(buildFeatureValues(G, params, incumbent, baselineCandidate, true), options.model)
+    features: baselineFeatures,
+    score: scoreFeatureValues(baselineFeatures, options.model)
   };
+  const best = scored[0] ?? baseline;
   const scoreDelta = best.score - baseline.score;
   const useBaseline = scoreDelta < options.minScoreDelta;
   const selected = useBaseline ? baseline : best;
@@ -457,6 +490,9 @@ export function selectLnsWindowRankerCandidate(
       baselineWindow: { ...baseline.candidate.window },
       selectedWindow: { ...selected.candidate.window },
       selectedByBaseline: sameCandidate(selected.candidate, baselineCandidate),
+      baselineFeatures: featureTelemetry(baseline.features),
+      selectedFeatures: featureTelemetry(selected.features),
+      featureDeltas: featureDeltaTelemetry(selected.features, baseline.features),
       ...(useBaseline ? { fallbackReason: "score-delta-below-threshold" as const } : {})
     }
   };

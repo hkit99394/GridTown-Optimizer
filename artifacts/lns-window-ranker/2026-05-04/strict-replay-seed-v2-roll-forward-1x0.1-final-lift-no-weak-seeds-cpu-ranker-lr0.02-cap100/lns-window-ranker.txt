@@ -1,0 +1,17 @@
+=== CPU-First LNS Window Ranker ===
+Generated: 2026-05-04T16:20:53.470Z
+Schema: 1
+Audit: cpu-only=true runtime-default-changed=false source-preset=strict-lns-replay source-lns-scale-ready=true target=roll-forward-final-lift weak-seed-labels=false
+Labels: total=1545 usable=162 opportunities=0 label-fingerprint=fnv1a:5bc48690
+Model: lns-window-linear-pairwise-ranker features=27 epochs=5 baseline-tie-break=false target=roll-forward-final-lift weak-seed-labels=false trained-decisions=9 model-fingerprint=fnv1a:2e36b926
+Model capture: development=capture=0.0000 hit@1=0.0000 hit@k=0.0000 regret=0.00 opportunities=0/9 holdout=capture=0.0000 hit@1=0.0000 hit@k=0.0000 regret=0.00 opportunities=0/0
+- baseline baseline-selected-window: development=capture=0.0000 hit@1=0.0000 hit@k=0.0000 regret=0.00 opportunities=0/9 holdout=capture=0.0000 hit@1=0.0000 hit@k=0.0000 regret=0.00 opportunities=0/0
+- baseline operator-score: development=capture=0.0000 hit@1=0.0000 hit@k=0.0000 regret=0.00 opportunities=0/9 holdout=capture=0.0000 hit@1=0.0000 hit@k=0.0000 regret=0.00 opportunities=0/0
+- baseline stable-random: development=capture=0.0000 hit@1=0.0000 hit@k=0.0000 regret=0.00 opportunities=0/9 holdout=capture=0.0000 hit@1=0.0000 hit@k=0.0000 regret=0.00 opportunities=0/0
+- baseline connectivity-shadow: development=capture=0.0000 hit@1=0.0000 hit@k=0.0000 regret=0.00 opportunities=0/9 holdout=capture=0.0000 hit@1=0.0000 hit@k=0.0000 regret=0.00 opportunities=0/0
+- baseline fragmentation: development=capture=0.0000 hit@1=0.0000 hit@k=0.0000 regret=0.00 opportunities=0/9 holdout=capture=0.0000 hit@1=0.0000 hit@k=0.0000 regret=0.00 opportunities=0/0
+- baseline candidate-loss: development=capture=0.0000 hit@1=0.0000 hit@k=0.0000 regret=0.00 opportunities=0/9 holdout=capture=0.0000 hit@1=0.0000 hit@k=0.0000 regret=0.00 opportunities=0/0
+- baseline residential-headroom: development=capture=0.0000 hit@1=0.0000 hit@k=0.0000 regret=0.00 opportunities=0/9 holdout=capture=0.0000 hit@1=0.0000 hit@k=0.0000 regret=0.00 opportunities=0/0
+- baseline service-bonus: development=capture=0.0000 hit@1=0.0000 hit@k=0.0000 regret=0.00 opportunities=0/9 holdout=capture=0.0000 hit@1=0.0000 hit@k=0.0000 regret=0.00 opportunities=0/0
+Gate: passed=false best-baseline=baseline-selected-window holdout-delta=0.0000 failures=holdout improvement opportunity count is zero; holdout capture 0.0000 does not beat best baseline baseline-selected-window 0.0000
+Decision: offline diagnostics only; no LNS runtime scorer or solver default changed.

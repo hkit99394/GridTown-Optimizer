@@ -53,6 +53,7 @@ import type {
   LnsWindowReplayLabel,
   LnsWindowReplayLabelRunOptions,
   LnsWindowReplayRollForwardOutcome,
+  LnsWindowReplaySeedHintKind,
   LnsWindowReplaySnapshot,
   LnsWindowReplaySnapshotLabel,
   LnsWindowReplayStatePolicy,
@@ -80,6 +81,7 @@ export type {
   LnsWindowReplayLabelRunOptions,
   LnsWindowReplayRollForwardOutcome,
   LnsWindowReplayRollForwardStatus,
+  LnsWindowReplaySeedHintKind,
   LnsWindowReplaySnapshot,
   LnsWindowReplaySnapshotCaseResult,
   LnsWindowReplaySnapshotLabel,
@@ -184,6 +186,16 @@ function buildInitialIncumbent(G: Grid, params: SolverParams): Solution {
   });
 }
 
+function seedHintSourceName(params: SolverParams): string | null {
+  const sourceName = params.lns?.seedHint?.sourceName;
+  return typeof sourceName === "string" && sourceName.length > 0 ? sourceName : null;
+}
+
+function seedHintKind(params: SolverParams): LnsWindowReplaySeedHintKind {
+  if (!params.lns?.seedHint) return "none";
+  return seedHintSourceName(params)?.endsWith("-weak-replay-seed") ? "weak-replay" : "curated";
+}
+
 function labelWithoutWallClock(label: LnsWindowReplayLabel): LnsWindowReplaySnapshotLabel {
   const { wallClockSeconds: _wallClockSeconds, timing, ...snapshot } = label;
   return {
@@ -268,6 +280,8 @@ function replayWindow(
   caseName: string,
   pressureFamily: LnsReplayPressureFamilyLabel,
   seed: number | null,
+  seedHintKind: LnsWindowReplaySeedHintKind,
+  seedHintSourceName: string | null,
   statePolicy: LnsWindowReplayStatePolicy,
   stateIndex: number,
   stateSourceIteration: number | null,
@@ -325,6 +339,8 @@ function replayWindow(
       caseName,
       pressureFamily,
       seed,
+      seedHintKind,
+      seedHintSourceName,
       statePolicy,
       stateIndex,
       stateSourceIteration,
@@ -363,6 +379,8 @@ function replayWindow(
       caseName,
       pressureFamily,
       seed,
+      seedHintKind,
+      seedHintSourceName,
       statePolicy,
       stateIndex,
       stateSourceIteration,
@@ -617,6 +635,8 @@ export function runLnsWindowReplayLabels(
     selectedCases.flatMap((benchmarkCase): LnsWindowReplayCaseResult[] => {
       const G = cloneBenchmarkGrid(benchmarkCase.grid);
       const params = buildReplayParams(benchmarkCase, seed, options);
+      const replaySeedHintKind = seedHintKind(params);
+      const replaySeedHintSourceName = seedHintSourceName(params);
       const cpSatModelFingerprint = computeCpSatRequestFingerprint(G, {
         ...params,
         optimizer: "cp-sat"
@@ -648,6 +668,8 @@ export function runLnsWindowReplayLabels(
               benchmarkCase.name,
               pressureFamily,
               seed,
+              replaySeedHintKind,
+              replaySeedHintSourceName,
               state.statePolicy,
               state.stateIndex,
               state.stateSourceIteration,
@@ -669,6 +691,8 @@ export function runLnsWindowReplayLabels(
           description: benchmarkCase.description,
           pressureFamily,
           seed,
+          seedHintKind: replaySeedHintKind,
+          seedHintSourceName: replaySeedHintSourceName,
           statePolicy: state.statePolicy,
           stateIndex: state.stateIndex,
           stateSourceIteration: state.stateSourceIteration,

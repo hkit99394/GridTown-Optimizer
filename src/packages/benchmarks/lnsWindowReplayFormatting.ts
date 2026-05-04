@@ -43,7 +43,7 @@ export function formatLnsWindowReplayLabels(result: LnsWindowReplaySuiteResult):
   for (const benchmarkCase of result.cases) {
     const seedLabel = benchmarkCase.seed === null ? "case-default" : benchmarkCase.seed;
     lines.push(
-      `- ${benchmarkCase.name} family=${benchmarkCase.pressureFamily} seed=${seedLabel} state=${benchmarkCase.statePolicy}#${benchmarkCase.stateIndex} source=${benchmarkCase.stateSourceStatus}@${benchmarkCase.stateSourceIteration ?? "initial"} stagnant=${benchmarkCase.stateStagnantIterations}: incumbent=${benchmarkCase.incumbentPopulation} windows=${benchmarkCase.replayedWindowCount}/${benchmarkCase.candidateWindowCount} selected=${benchmarkCase.baselineSelectedOperator ?? "n/a"}:${formatWindow(benchmarkCase.baselineSelectedWindow)}`
+      `- ${benchmarkCase.name} family=${benchmarkCase.pressureFamily} seed=${seedLabel} seed-hint=${benchmarkCase.seedHintKind}:${benchmarkCase.seedHintSourceName ?? "none"} state=${benchmarkCase.statePolicy}#${benchmarkCase.stateIndex} source=${benchmarkCase.stateSourceStatus}@${benchmarkCase.stateSourceIteration ?? "initial"} stagnant=${benchmarkCase.stateStagnantIterations}: incumbent=${benchmarkCase.incumbentPopulation} windows=${benchmarkCase.replayedWindowCount}/${benchmarkCase.candidateWindowCount} selected=${benchmarkCase.baselineSelectedOperator ?? "n/a"}:${formatWindow(benchmarkCase.baselineSelectedWindow)}`
     );
     for (const label of benchmarkCase.labels) {
       const rollForward =

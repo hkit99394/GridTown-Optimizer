@@ -25,6 +25,8 @@ export type LnsWindowReplayStatePolicy = (typeof LNS_WINDOW_REPLAY_STATE_POLICIE
 
 export type LnsWindowReplayStateSourceStatus = "initial-incumbent" | "improved" | "neutral" | "recoverable-failure";
 
+export type LnsWindowReplaySeedHintKind = "none" | "curated" | "weak-replay";
+
 export interface LnsWindowReplayLabelRunOptions {
   names?: readonly string[];
   seeds?: readonly number[];
@@ -128,6 +130,8 @@ export interface LnsWindowReplayLabel {
   caseName: string;
   pressureFamily: LnsReplayPressureFamilyLabel;
   seed: number | null;
+  seedHintKind: LnsWindowReplaySeedHintKind;
+  seedHintSourceName: string | null;
   statePolicy: LnsWindowReplayStatePolicy;
   stateIndex: number;
   stateSourceIteration: number | null;
@@ -163,6 +167,8 @@ export interface LnsWindowReplayCaseResult {
   description: string;
   pressureFamily: LnsReplayPressureFamilyLabel;
   seed: number | null;
+  seedHintKind: LnsWindowReplaySeedHintKind;
+  seedHintSourceName: string | null;
   statePolicy: LnsWindowReplayStatePolicy;
   stateIndex: number;
   stateSourceIteration: number | null;

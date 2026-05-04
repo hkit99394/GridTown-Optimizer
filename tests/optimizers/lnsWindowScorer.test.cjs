@@ -86,6 +86,11 @@ function testWindowRankerCanOverrideAdaptiveBaseline() {
   assert.equal(decision.telemetry.selectedOperator, decision.candidate.operator);
   assert.deepEqual(decision.telemetry.baselineWindow, fixture.baseline.window);
   assert.deepEqual(decision.telemetry.selectedWindow, decision.candidate.window);
+  assert.equal(typeof decision.telemetry.baselineFeatures.selectedByBaseline, "number");
+  assert.equal(decision.telemetry.baselineFeatures.selectedByBaseline, 1);
+  assert.equal(decision.telemetry.selectedFeatures.selectedByBaseline, 0);
+  assert.equal(decision.telemetry.featureDeltas.selectedByBaseline, -1);
+  assert.equal(typeof decision.telemetry.featureDeltas.serviceCandidatesIntersecting, "number");
   assert.notDeepEqual(decision.candidate.window, fixture.baseline.window);
 }
 
@@ -183,6 +188,10 @@ function testSolveLnsWindowRankerTelemetryAndDefaultSafety() {
     assert.equal(rankedSolution.lnsTelemetry.outcomes[0].windowRankerSelection.selectedByBaseline, false);
     assert.equal(typeof rankedSolution.lnsTelemetry.outcomes[0].windowRankerSelection.selectedOperator, "string");
     assert.equal(typeof rankedSolution.lnsTelemetry.outcomes[0].windowRankerSelection.selectedWindow.top, "number");
+    assert.equal(
+      typeof rankedSolution.lnsTelemetry.outcomes[0].windowRankerSelection.featureDeltas.selectedByBaseline,
+      "number"
+    );
     assert.equal(cpSatCalls, 3);
   } finally {
     cpSatModule.solveCpSat = originalSolveCpSat;

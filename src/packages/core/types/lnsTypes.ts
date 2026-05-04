@@ -122,6 +122,8 @@ export interface LnsWindowRankerRuntimeOptions {
   minScoreDelta?: number;
 }
 
+export type LnsWindowRankerFeatureTelemetry = Record<string, number>;
+
 export interface LnsWindowRankerSelectionTelemetry {
   source: "learned-window-ranker";
   modelFingerprint?: string;
@@ -137,6 +139,9 @@ export interface LnsWindowRankerSelectionTelemetry {
   baselineWindow: CpSatNeighborhoodWindow;
   selectedWindow: CpSatNeighborhoodWindow;
   selectedByBaseline: boolean;
+  baselineFeatures?: LnsWindowRankerFeatureTelemetry;
+  selectedFeatures?: LnsWindowRankerFeatureTelemetry;
+  featureDeltas?: LnsWindowRankerFeatureTelemetry;
   fallbackReason?: "score-delta-below-threshold";
 }
 

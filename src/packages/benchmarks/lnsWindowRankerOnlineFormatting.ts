@@ -7,6 +7,7 @@ import {
   formatBenchmarkSignedNumber as formatSigned
 } from "./benchmarkOptions.js";
 import {
+  formatLnsWindowRankerOnlineFeatureDeltas as formatFeatureDeltas,
   formatLnsWindowRankerOnlineTransitionCounts as formatTransitionCounts,
   formatLnsWindowRankerOnlineTransitionFinalOutcomeCounts as formatTransitionFinalOutcomeCounts,
   formatLnsWindowRankerOnlineTransitionPressureFamilyCounts as formatTransitionPressureFamilyCounts
@@ -22,6 +23,8 @@ import type { LnsWindowRankerOnlineTransitionStatusCounts } from "./lnsWindowRan
 interface LnsWindowRankerOnlineTransitionSummary {
   overrideTransitionCounts: Record<string, number>;
   fallbackTransitionCounts: Record<string, number>;
+  overrideMeanFeatureDeltas: Record<string, number>;
+  fallbackMeanFeatureDeltas: Record<string, number>;
   overrideTransitionFinalOutcomeCounts: Record<string, LnsWindowRankerOnlineTransitionStatusCounts>;
   fallbackTransitionFinalOutcomeCounts: Record<string, LnsWindowRankerOnlineTransitionStatusCounts>;
   overrideTransitionPressureFamilyCounts: Record<string, Record<string, number>>;
@@ -39,11 +42,11 @@ function formatNullableDecimal(value: number | null): string {
 function formatRankerSummary(variant: LnsWindowRankerOnlineAblationVariantResult): string {
   const ranker = variant.windowRanker;
   if (!ranker) return "ranker=disabled";
-  return `ranker=decisions:${ranker.decisions} overrides:${ranker.overrides} fallback:${ranker.fallbackDecisions} override-rate:${formatRate(ranker.overrideRate)} override-improved:${variant.overrideImprovedOutcomeCount} override-neutral:${variant.overrideNeutralOutcomeCount} final:${variant.finalOutcome.status}/${formatSigned(variant.finalOutcome.populationDeltaVsBaseline)} override-score-delta-mean:${formatNullableDecimal(variant.meanOverrideScoreDelta)} override-window-changes:${variant.selectionDiagnostics?.overrideChangedWindowCount ?? 0} fallback-window-changes:${variant.selectionDiagnostics?.fallbackChangedWindowCount ?? 0} override-transitions:${formatTransitionCounts(variant.selectionDiagnostics?.overrideTransitionCounts ?? {})} fallback-transitions:${formatTransitionCounts(variant.selectionDiagnostics?.fallbackTransitionCounts ?? {})} fingerprint:${ranker.modelFingerprint ?? "n/a"}`;
+  return `ranker=decisions:${ranker.decisions} overrides:${ranker.overrides} fallback:${ranker.fallbackDecisions} override-rate:${formatRate(ranker.overrideRate)} override-improved:${variant.overrideImprovedOutcomeCount} override-neutral:${variant.overrideNeutralOutcomeCount} final:${variant.finalOutcome.status}/${formatSigned(variant.finalOutcome.populationDeltaVsBaseline)} override-score-delta-mean:${formatNullableDecimal(variant.meanOverrideScoreDelta)} override-window-changes:${variant.selectionDiagnostics?.overrideChangedWindowCount ?? 0} fallback-window-changes:${variant.selectionDiagnostics?.fallbackChangedWindowCount ?? 0} override-feature-deltas:${formatFeatureDeltas(variant.selectionDiagnostics?.overrideMeanFeatureDeltas ?? {})} fallback-feature-deltas:${formatFeatureDeltas(variant.selectionDiagnostics?.fallbackMeanFeatureDeltas ?? {})} override-transitions:${formatTransitionCounts(variant.selectionDiagnostics?.overrideTransitionCounts ?? {})} fallback-transitions:${formatTransitionCounts(variant.selectionDiagnostics?.fallbackTransitionCounts ?? {})} fingerprint:${ranker.modelFingerprint ?? "n/a"}`;
 }
 
 function formatTransitionSummary(summary: LnsWindowRankerOnlineTransitionSummary): string {
-  return `override-transitions=${formatTransitionCounts(summary.overrideTransitionCounts)} fallback-transitions=${formatTransitionCounts(summary.fallbackTransitionCounts)} override-transition-finals=${formatTransitionFinalOutcomeCounts(summary.overrideTransitionFinalOutcomeCounts)} fallback-transition-finals=${formatTransitionFinalOutcomeCounts(summary.fallbackTransitionFinalOutcomeCounts)} override-transition-families=${formatTransitionPressureFamilyCounts(summary.overrideTransitionPressureFamilyCounts)} fallback-transition-families=${formatTransitionPressureFamilyCounts(summary.fallbackTransitionPressureFamilyCounts)}`;
+  return `override-transitions=${formatTransitionCounts(summary.overrideTransitionCounts)} fallback-transitions=${formatTransitionCounts(summary.fallbackTransitionCounts)} override-feature-deltas=${formatFeatureDeltas(summary.overrideMeanFeatureDeltas)} fallback-feature-deltas=${formatFeatureDeltas(summary.fallbackMeanFeatureDeltas)} override-transition-finals=${formatTransitionFinalOutcomeCounts(summary.overrideTransitionFinalOutcomeCounts)} fallback-transition-finals=${formatTransitionFinalOutcomeCounts(summary.fallbackTransitionFinalOutcomeCounts)} override-transition-families=${formatTransitionPressureFamilyCounts(summary.overrideTransitionPressureFamilyCounts)} fallback-transition-families=${formatTransitionPressureFamilyCounts(summary.fallbackTransitionPressureFamilyCounts)}`;
 }
 
 export function formatLnsWindowRankerOnlineCalibration(result: LnsWindowRankerOnlineCalibrationSuiteResult): string {

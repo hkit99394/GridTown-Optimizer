@@ -73,7 +73,7 @@ function buildLabel({
   };
 }
 
-function buildCase(name, split, pressureFamily, bestImprovement) {
+function buildCase(name, split, pressureFamily, bestImprovement, seedHintKind = "curated") {
   const labels = [
     buildLabel({
       windowIndex: 0,
@@ -110,6 +110,8 @@ function buildCase(name, split, pressureFamily, bestImprovement) {
     description: `${name} replay fixture`,
     pressureFamily,
     seed: 7,
+    seedHintKind,
+    seedHintSourceName: seedHintKind === "weak-replay" ? `${name}-weak-replay-seed` : name,
     statePolicy: "initial-incumbent",
     stateIndex: 0,
     stateSourceIteration: null,
@@ -127,6 +129,8 @@ function buildCase(name, split, pressureFamily, bestImprovement) {
       caseName: name,
       pressureFamily,
       seed: 7,
+      seedHintKind,
+      seedHintSourceName: seedHintKind === "weak-replay" ? `${name}-weak-replay-seed` : name,
       statePolicy: "initial-incumbent",
       stateIndex: 0,
       stateSourceIteration: null,
@@ -153,6 +157,23 @@ function buildCase(name, split, pressureFamily, bestImprovement) {
     })),
     split
   };
+}
+
+function cloneFixtureWithWeakReplaySeedCases() {
+  const fixture = JSON.parse(JSON.stringify(buildFixture()));
+  const weakNames = new Set(["dev-service-a", "holdout-service-a"]);
+  for (const split of fixture.lns.splits) {
+    for (const benchmarkCase of split.replay.cases) {
+      if (!weakNames.has(benchmarkCase.name)) continue;
+      benchmarkCase.seedHintKind = "weak-replay";
+      benchmarkCase.seedHintSourceName = `${benchmarkCase.name}-weak-replay-seed`;
+      for (const label of benchmarkCase.labels) {
+        label.seedHintKind = benchmarkCase.seedHintKind;
+        label.seedHintSourceName = benchmarkCase.seedHintSourceName;
+      }
+    }
+  }
+  return fixture;
 }
 
 function buildSplit(name, cases) {
@@ -314,10 +335,12 @@ function testLnsWindowRankerExperiment() {
   assert.equal(result.audit.solverDefaultChanged, false);
   assert.equal(result.audit.learnedRuntimeHook, null);
   assert.equal(result.audit.sourceLnsScaleReady, true);
+  assert.equal(result.audit.weakSeedReplayLabelsAllowed, true);
   assert.equal(result.model.trained, true);
   assert.equal(result.model.modelType, "lns-window-linear-pairwise-ranker");
   assert.equal(result.model.purpose, "offline-diagnostics-only");
   assert.equal(result.model.topK, 2);
+  assert.equal(result.model.training.allowWeakSeedReplayLabels, true);
   assert.equal(result.labels.labelCount, 21);
   assert.equal(result.labels.developmentDecisionCount, 3);
   assert.equal(result.labels.holdoutDecisionCount, 4);
@@ -325,6 +348,10 @@ function testLnsWindowRankerExperiment() {
   assert.equal(result.evaluation.summary.failedReasons.length, 0);
   assert(result.evaluation.summary.modelHoldoutCaptureRate > result.evaluation.summary.bestBaselineHoldoutCaptureRate);
   assert.equal(result.evaluation.summary.modelHoldoutCaptureRate, 1);
+  assert.deepEqual(
+    result.evaluation.model.holdout.seedHintMetrics.map((entry) => entry.key),
+    ["curated"]
+  );
   assert.match(result.datasetFingerprint, /^fnv1a:[0-9a-f]{8}$/);
   assert.match(result.labelFingerprint, /^fnv1a:[0-9a-f]{8}$/);
   assert.match(result.modelFingerprint, /^fnv1a:[0-9a-f]{8}$/);
@@ -366,6 +393,7 @@ function testLnsWindowRankerExperiment() {
   assert.equal(registryDraft.labelFingerprint, result.labelFingerprint);
   assert.equal(registryDraft.splitStatus.protectedHoldout, true);
   assert.equal(registryDraft.summaryMetrics.modelHoldoutCaptureRate, 1);
+  assert.equal(registryDraft.summaryMetrics.weakSeedReplayLabelsAllowed, true);
   const completedRegistryEntry = buildExperimentRegistryEntry(registryDraft, {
     rootDir: path.join(__dirname, "../.."),
     gitMetadata: {
@@ -379,6 +407,48 @@ function testLnsWindowRankerExperiment() {
     strict: true
   });
   assert.deepEqual(registryValidation.issues, []);
+}
+
+function testLnsWindowRankerWeakReplaySeedFilter() {
+  const fixture = cloneFixtureWithWeakReplaySeedCases();
+  const defaultResult = runLnsWindowRankerExperiment(fixture, {
+    topK: 2,
+    training: { epochs: 4, learningRate: 0.05, marginWeightCap: 500 }
+  });
+  const filteredResult = runLnsWindowRankerExperiment(fixture, {
+    topK: 2,
+    training: {
+      epochs: 4,
+      learningRate: 0.05,
+      marginWeightCap: 500,
+      allowWeakSeedReplayLabels: false
+    }
+  });
+
+  assert.equal(defaultResult.model.training.allowWeakSeedReplayLabels, true);
+  assert.equal(filteredResult.model.training.allowWeakSeedReplayLabels, false);
+  assert.equal(defaultResult.model.trainedDecisionCount, 3);
+  assert.equal(filteredResult.model.trainedDecisionCount, 2);
+  assert.equal(defaultResult.labels.holdoutDecisionCount, 4);
+  assert.equal(filteredResult.labels.holdoutDecisionCount, 3);
+  assert.deepEqual(
+    defaultResult.evaluation.model.development.seedHintMetrics.map((entry) => entry.key),
+    ["curated", "weak-replay"]
+  );
+  assert.deepEqual(
+    filteredResult.evaluation.model.development.seedHintMetrics.map((entry) => entry.key),
+    ["curated"]
+  );
+  assert.equal(filteredResult.evaluation.baselines[0].development.decisionCount, 2);
+  assert.match(formatLnsWindowRankerExperiment(filteredResult), /weak-seed-labels=false/);
+
+  const registryDraft = buildLnsWindowRankerRegistryEntryDraft(filteredResult, fixture, {
+    runId: "lns-window-ranker-weak-seed-filter-test",
+    commands: ["node dist/lnsWindowRankerCli.js --labels=labels.json --exclude-weak-replay-seed-labels"],
+    artifactPaths: ["artifacts/lns-ranker/lns-window-ranker.json"]
+  });
+  assert.equal(registryDraft.budget.trainingAllowWeakSeedReplayLabels, 0);
+  assert.equal(registryDraft.summaryMetrics.weakSeedReplayLabelsAllowed, false);
 }
 
 function testLnsWindowRankerRollForwardTarget() {
@@ -451,6 +521,7 @@ function testLnsWindowRankerCliArtifacts() {
         "--learning-rate=0.05",
         "--margin-weight-cap=500",
         "--baseline-tie-break",
+        "--exclude-weak-replay-seed-labels",
         "--ranker-run-id=tmp-lns-window-ranker-test",
         "--ranker-register-dry-run",
         "--json"
@@ -479,6 +550,7 @@ function testLnsWindowRankerCliArtifacts() {
     assert.equal(modelArtifact.trained, true);
     assert.equal(modelArtifact.runtimeDefaultChanged, false);
     assert.equal(modelArtifact.training.baselineTieBreak, true);
+    assert.equal(modelArtifact.training.allowWeakSeedReplayLabels, false);
 
     const registryGuard = childProcess.spawnSync(process.execPath, [cliPath, "--ranker-register-dry-run"], {
       cwd: repoRoot,
@@ -494,4 +566,5 @@ function testLnsWindowRankerCliArtifacts() {
 testLnsWindowRankerExperiment();
 testLnsWindowRankerRollForwardTarget();
 testLnsWindowRankerBaselineTieBreakTraining();
+testLnsWindowRankerWeakReplaySeedFilter();
 testLnsWindowRankerCliArtifacts();

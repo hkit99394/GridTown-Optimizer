@@ -39,6 +39,7 @@ interface ParsedLnsWindowRankerArgs {
   marginWeightCap?: number;
   baselineTieBreak: boolean;
   target?: LnsWindowRankerLabelTarget;
+  allowWeakSeedReplayLabels: boolean;
   topK?: number;
   randomBaselineSeed?: number;
   artifactDir?: string;
@@ -84,6 +85,7 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
   let marginWeightCap: number | undefined;
   let baselineTieBreak = false;
   let target: LnsWindowRankerLabelTarget | undefined;
+  let allowWeakSeedReplayLabels = true;
   let topK: number | undefined;
   let randomBaselineSeed: number | undefined;
   let artifactDir: string | undefined;
@@ -154,6 +156,10 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
       target = "roll-forward-final-lift";
       continue;
     }
+    if (isCliFlag(arg, "--exclude-weak-replay-seed-labels", "--no-weak-replay-seed-labels")) {
+      allowWeakSeedReplayLabels = false;
+      continue;
+    }
     if (applyInlineOptionHandlers(arg, inlineOptions)) {
       continue;
     }
@@ -168,6 +174,7 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
     marginWeightCap,
     baselineTieBreak,
     target,
+    allowWeakSeedReplayLabels,
     topK,
     randomBaselineSeed,
     artifactDir,
@@ -325,7 +332,8 @@ export function runLnsWindowRankerCli(): void {
       learningRate: args.learningRate,
       marginWeightCap: args.marginWeightCap,
       baselineTieBreak: args.baselineTieBreak,
-      target: args.target
+      target: args.target,
+      allowWeakSeedReplayLabels: args.allowWeakSeedReplayLabels
     }
   });
 

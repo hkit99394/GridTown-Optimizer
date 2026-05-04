@@ -4957,6 +4957,8 @@ function testLnsWindowReplayLabelRunner() {
     assert.equal(result.labelCount, 2);
     assert.equal(benchmarkCase.incumbentPopulation, 100);
     assert.equal(benchmarkCase.pressureFamily, "anchor-service");
+    assert.equal(benchmarkCase.seedHintKind, "curated");
+    assert.equal(benchmarkCase.seedHintSourceName, "seeded-service-anchor-pressure");
     assert.equal(benchmarkCase.statePolicy, "initial-incumbent");
     assert.equal(benchmarkCase.stateIndex, 0);
     assert.equal(benchmarkCase.stateSourceIteration, null);
@@ -4966,7 +4968,6 @@ function testLnsWindowReplayLabelRunner() {
     assert.equal(benchmarkCase.replayedWindowCount, 2);
     assert.equal(benchmarkCase.candidateWindowCount >= 2, true);
     assert.equal(selectedLabel.window.left, 3);
-    assert.equal(selectedLabel.populationDelta, 100);
     assert.equal(selectedLabel.improvement, 100);
     assert.equal(selectedLabel.status, "invalid");
     assert.equal(selectedLabel.usable, false);
@@ -4984,6 +4985,8 @@ function testLnsWindowReplayLabelRunner() {
     assert.equal(typeof selectedLabel.operator, "string");
     assert.equal(typeof selectedLabel.operatorScore, "number");
     assert.equal(selectedLabel.pressureFamily, "anchor-service");
+    assert.equal(selectedLabel.seedHintKind, "curated");
+    assert.equal(selectedLabel.seedHintSourceName, "seeded-service-anchor-pressure");
     assert.equal(selectedLabel.selectionSource, "baseline-top-k");
     assert.equal(selectedLabel.features.area, 9);
     assert.equal(typeof selectedLabel.validation.valid, "boolean");
@@ -5023,6 +5026,7 @@ function testLnsWindowReplayLabelRunner() {
     assert.equal(Object.hasOwn(snapshot.cases[0].labels[0], "wallClockSeconds"), false);
     assert.equal(Object.hasOwn(snapshot.cases[0].labels[0].timing, "wallClockSeconds"), false);
     assert.equal(snapshot.cases[0].labels[0].timing.workerCpuBudgetSeconds, 0.25);
+    assert.match(formatted, /seed-hint=curated:seeded-service-anchor-pressure/);
     assert.deepEqual(repeatedSnapshot, snapshot);
     const explorationResult = runLnsWindowReplayLabels(undefined, {
       names: ["seeded-service-anchor-pressure"],

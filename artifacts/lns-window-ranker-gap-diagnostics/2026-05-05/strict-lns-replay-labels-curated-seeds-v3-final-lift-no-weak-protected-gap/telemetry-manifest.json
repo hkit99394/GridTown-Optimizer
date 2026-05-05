@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "source": "model-experiment",
   "command": "node dist/lnsWindowRankerCli.js --gap-diagnostics --labels=artifacts/learned-ranking-labels/2026-05-04/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1/labels.json --model=artifacts/lns-window-ranker/2026-05-05/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1-final-lift-no-weak-cpu-ranker-lr0.02-cap100/model.json --online-scorecard=artifacts/lns-window-ranker-online/2026-05-05/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1-final-lift-no-weak-protected-holdout-min-score-delta-0.1/lns-window-ranker-online-ablation.json --artifact-dir=artifacts/lns-window-ranker-gap-diagnostics/2026-05-05/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-protected-gap --ranker-run-id=lns-window-ranker-gap-2026-05-05-curated-seeds-v3-final-lift-no-weak-protected --ranker-decision=offline-online-lns-window-ranker-gap-diagnostics '--ranker-summary=Offline-to-online gap diagnostic joining full-family curated non-weak final-lift replay labels to the protected online neutral override scorecard; no solver default changed.' --json",
-  "generatedAt": "2026-05-05T21:55:27.467Z",
+  "generatedAt": "2026-05-05T22:45:53.204Z",
   "git": {
-    "commit": "ffd7a1e4316e0237d840c4248ff20433cffab1e2",
+    "commit": "f44ac60e3d9e2f8968cd938705858bdc1bbaccd6",
     "branch": "features/validated-solver-improvement-loop"
   },
   "hardware": {
@@ -77,7 +77,20 @@
       "remainingBlockers": [
         "unmatched-protected-replay-evidence",
         "changed-layout-no-lift-trajectory-depth"
-      ]
+      ],
+      "protectedReplayEvidenceGate": {
+        "suppressedDiagnosis": "online-active-no-offline-match",
+        "suppressedTraceComparisonCount": 4,
+        "remainingTraceComparisonCount": 1,
+        "remainingOfflinePositiveOnlineNeutralCount": 1,
+        "changedLayoutNoLiftTrajectoryDepthCount": 1,
+        "missingLayoutDeltaCount": 0,
+        "mixedFinalOutcomeCount": 0,
+        "remainingPromotionBlocked": true,
+        "remainingBlockers": [
+          "changed-layout-no-lift-trajectory-depth"
+        ]
+      }
     },
     "traceComparisonCount": 9,
     "traceComparisonOnlineTraceCount": 27,

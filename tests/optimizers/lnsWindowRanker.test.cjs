@@ -653,6 +653,12 @@ function testLnsWindowRankerGapDiagnostics() {
   assert.equal(result.summary.promotionSensitivity.remainingTraceComparisonCount, 1);
   assert.equal(result.summary.promotionSensitivity.remainingPromotionBlocked, true);
   assert.deepEqual(result.summary.promotionSensitivity.remainingBlockers, ["changed-layout-no-lift-trajectory-depth"]);
+  assert.equal(result.summary.promotionSensitivity.protectedReplayEvidenceGate.suppressedTraceComparisonCount, 0);
+  assert.equal(result.summary.promotionSensitivity.protectedReplayEvidenceGate.remainingTraceComparisonCount, 1);
+  assert.equal(result.summary.promotionSensitivity.protectedReplayEvidenceGate.remainingPromotionBlocked, true);
+  assert.deepEqual(result.summary.promotionSensitivity.protectedReplayEvidenceGate.remainingBlockers, [
+    "changed-layout-no-lift-trajectory-depth"
+  ]);
   const join = result.joins.find((entry) => entry.key === "service-pressure:weak-service->sliding");
   assert.equal(join.diagnosis, "offline-positive-online-neutral");
   assert(join.offline.selectedPositiveCount > 0);
@@ -677,6 +683,7 @@ function testLnsWindowRankerGapDiagnostics() {
   assert.match(formatted, /Trace comparisons:/);
   assert.match(formatted, /Layout signatures: changed-layout-final-neutral:1/);
   assert.match(formatted, /Promotion sensitivity: suppress=zero-layout-final-neutral:0 remaining=1/);
+  assert.match(formatted, /evidence-gate-suppress=online-active-no-offline-match:0/);
   assert.match(formatted, /online-traces=1/);
   assert.match(formatted, /layout-signature=changed-layout-final-neutral/);
   assert.match(formatted, /online-layout-changed=1/);
@@ -696,6 +703,13 @@ function testLnsWindowRankerGapDiagnostics() {
   assert.deepEqual(telemetryManifest.metrics.promotionSensitivity.remainingBlockers, [
     "changed-layout-no-lift-trajectory-depth"
   ]);
+  assert.equal(
+    telemetryManifest.metrics.promotionSensitivity.protectedReplayEvidenceGate.remainingPromotionBlocked,
+    true
+  );
+  assert.deepEqual(telemetryManifest.metrics.promotionSensitivity.protectedReplayEvidenceGate.remainingBlockers, [
+    "changed-layout-no-lift-trajectory-depth"
+  ]);
   assert.equal(telemetryManifest.metrics.traceComparisonLayoutSignatureCounts["changed-layout-final-neutral"], 1);
   assert.equal(telemetryManifest.labelFingerprint, result.inputs.labelFingerprint);
 
@@ -713,6 +727,9 @@ function testLnsWindowRankerGapDiagnostics() {
   assert.equal(registryDraft.budget.suppressedZeroLayoutFinalNeutralTraceComparisonCount, 0);
   assert.equal(registryDraft.budget.sensitivityRemainingTraceComparisonCount, 1);
   assert.equal(registryDraft.budget.sensitivityRemainingPromotionBlocked, 1);
+  assert.equal(registryDraft.budget.protectedReplayEvidenceSuppressedTraceComparisonCount, 0);
+  assert.equal(registryDraft.budget.protectedReplayEvidenceRemainingTraceComparisonCount, 1);
+  assert.equal(registryDraft.budget.protectedReplayEvidenceRemainingPromotionBlocked, 1);
   assert.equal(registryDraft.summaryMetrics.promotionBlocked, true);
 
   const zeroLayoutScorecard = JSON.parse(JSON.stringify(buildOnlineScorecardFixture()));
@@ -737,6 +754,19 @@ function testLnsWindowRankerGapDiagnostics() {
   assert.equal(zeroLayoutResult.summary.promotionSensitivity.remainingTraceComparisonCount, 0);
   assert.equal(zeroLayoutResult.summary.promotionSensitivity.remainingPromotionBlocked, false);
   assert.deepEqual(zeroLayoutResult.summary.promotionSensitivity.remainingBlockers, []);
+  assert.equal(
+    zeroLayoutResult.summary.promotionSensitivity.protectedReplayEvidenceGate.suppressedTraceComparisonCount,
+    0
+  );
+  assert.equal(
+    zeroLayoutResult.summary.promotionSensitivity.protectedReplayEvidenceGate.remainingTraceComparisonCount,
+    0
+  );
+  assert.equal(
+    zeroLayoutResult.summary.promotionSensitivity.protectedReplayEvidenceGate.remainingPromotionBlocked,
+    false
+  );
+  assert.deepEqual(zeroLayoutResult.summary.promotionSensitivity.protectedReplayEvidenceGate.remainingBlockers, []);
 }
 
 function testLnsWindowRankerRollForwardTarget() {

@@ -145,6 +145,19 @@ export interface LnsWindowRankerGapPromotionSensitivity {
   mixedFinalOutcomeCount: number;
   remainingPromotionBlocked: boolean;
   remainingBlockers: LnsWindowRankerGapPromotionSensitivityBlocker[];
+  protectedReplayEvidenceGate: LnsWindowRankerGapProtectedReplayEvidenceGateSensitivity;
+}
+
+export interface LnsWindowRankerGapProtectedReplayEvidenceGateSensitivity {
+  suppressedDiagnosis: "online-active-no-offline-match";
+  suppressedTraceComparisonCount: number;
+  remainingTraceComparisonCount: number;
+  remainingOfflinePositiveOnlineNeutralCount: number;
+  changedLayoutNoLiftTrajectoryDepthCount: number;
+  missingLayoutDeltaCount: number;
+  mixedFinalOutcomeCount: number;
+  remainingPromotionBlocked: boolean;
+  remainingBlockers: Exclude<LnsWindowRankerGapPromotionSensitivityBlocker, "unmatched-protected-replay-evidence">[];
 }
 
 export interface LnsWindowRankerGapDiagnosticsResult {
@@ -548,6 +561,22 @@ function buildPromotionSensitivity(
     ...(missingLayoutDeltaCount > 0 ? (["missing-layout-delta"] as const) : []),
     ...(mixedFinalOutcomeCount > 0 ? (["mixed-final-outcome"] as const) : [])
   ];
+  const evidenceMatched = remaining.filter((entry) => entry.diagnosis !== "online-active-no-offline-match");
+  const evidenceMatchedChangedLayoutNoLiftCount = evidenceMatched.filter(
+    (entry) =>
+      entry.layoutSignature === "changed-layout-final-neutral" || entry.layoutSignature === "mixed-layout-final-neutral"
+  ).length;
+  const evidenceMatchedMissingLayoutDeltaCount = evidenceMatched.filter(
+    (entry) => entry.layoutSignature === "missing-layout-delta"
+  ).length;
+  const evidenceMatchedMixedFinalOutcomeCount = evidenceMatched.filter(
+    (entry) => entry.layoutSignature === "mixed-final-outcome"
+  ).length;
+  const evidenceMatchedBlockers: LnsWindowRankerGapProtectedReplayEvidenceGateSensitivity["remainingBlockers"] = [
+    ...(evidenceMatchedChangedLayoutNoLiftCount > 0 ? (["changed-layout-no-lift-trajectory-depth"] as const) : []),
+    ...(evidenceMatchedMissingLayoutDeltaCount > 0 ? (["missing-layout-delta"] as const) : []),
+    ...(evidenceMatchedMixedFinalOutcomeCount > 0 ? (["mixed-final-outcome"] as const) : [])
+  ];
   return {
     suppressedLayoutSignature,
     suppressedTraceComparisonCount: traceComparisons.length - remaining.length,
@@ -560,7 +589,20 @@ function buildPromotionSensitivity(
     missingLayoutDeltaCount,
     mixedFinalOutcomeCount,
     remainingPromotionBlocked: remainingBlockers.length > 0,
-    remainingBlockers
+    remainingBlockers,
+    protectedReplayEvidenceGate: {
+      suppressedDiagnosis: "online-active-no-offline-match",
+      suppressedTraceComparisonCount: remaining.length - evidenceMatched.length,
+      remainingTraceComparisonCount: evidenceMatched.length,
+      remainingOfflinePositiveOnlineNeutralCount: evidenceMatched.filter(
+        (entry) => entry.diagnosis === "offline-positive-online-neutral"
+      ).length,
+      changedLayoutNoLiftTrajectoryDepthCount: evidenceMatchedChangedLayoutNoLiftCount,
+      missingLayoutDeltaCount: evidenceMatchedMissingLayoutDeltaCount,
+      mixedFinalOutcomeCount: evidenceMatchedMixedFinalOutcomeCount,
+      remainingPromotionBlocked: evidenceMatchedBlockers.length > 0,
+      remainingBlockers: evidenceMatchedBlockers
+    }
   };
 }
 
@@ -740,6 +782,14 @@ export function buildLnsWindowRankerGapDiagnosticsRegistryEntryDraft(
         result.summary.promotionSensitivity.suppressedTraceComparisonCount,
       sensitivityRemainingTraceComparisonCount: result.summary.promotionSensitivity.remainingTraceComparisonCount,
       sensitivityRemainingPromotionBlocked: result.summary.promotionSensitivity.remainingPromotionBlocked ? 1 : 0,
+      protectedReplayEvidenceSuppressedTraceComparisonCount:
+        result.summary.promotionSensitivity.protectedReplayEvidenceGate.suppressedTraceComparisonCount,
+      protectedReplayEvidenceRemainingTraceComparisonCount:
+        result.summary.promotionSensitivity.protectedReplayEvidenceGate.remainingTraceComparisonCount,
+      protectedReplayEvidenceRemainingPromotionBlocked: result.summary.promotionSensitivity.protectedReplayEvidenceGate
+        .remainingPromotionBlocked
+        ? 1
+        : 0,
       traceComparisonCount: result.traceComparisons.length,
       traceComparisonOnlineTraceCount: sumBenchmarkBy(result.traceComparisons, (entry) => entry.onlineTraceCount),
       traceComparisonChangedFinalLayoutTraceCount: sumBenchmarkBy(
@@ -781,7 +831,9 @@ function formatLayoutSignatureCounts(counts: Record<LnsWindowRankerGapLayoutSign
 
 function formatPromotionSensitivity(sensitivity: LnsWindowRankerGapPromotionSensitivity): string {
   const blockers = sensitivity.remainingBlockers.length ? sensitivity.remainingBlockers.join(",") : "none";
-  return `suppress=${sensitivity.suppressedLayoutSignature}:${sensitivity.suppressedTraceComparisonCount} remaining=${sensitivity.remainingTraceComparisonCount} remaining-blocked=${sensitivity.remainingPromotionBlocked} blockers=${blockers} unmatched=${sensitivity.remainingOnlineActiveNoOfflineMatchCount} changed-layout-no-lift=${sensitivity.changedLayoutNoLiftTrajectoryDepthCount}`;
+  const evidenceGate = sensitivity.protectedReplayEvidenceGate;
+  const evidenceBlockers = evidenceGate.remainingBlockers.length ? evidenceGate.remainingBlockers.join(",") : "none";
+  return `suppress=${sensitivity.suppressedLayoutSignature}:${sensitivity.suppressedTraceComparisonCount} remaining=${sensitivity.remainingTraceComparisonCount} remaining-blocked=${sensitivity.remainingPromotionBlocked} blockers=${blockers} unmatched=${sensitivity.remainingOnlineActiveNoOfflineMatchCount} changed-layout-no-lift=${sensitivity.changedLayoutNoLiftTrajectoryDepthCount} evidence-gate-suppress=${evidenceGate.suppressedDiagnosis}:${evidenceGate.suppressedTraceComparisonCount} evidence-gate-remaining=${evidenceGate.remainingTraceComparisonCount} evidence-gate-blocked=${evidenceGate.remainingPromotionBlocked} evidence-gate-blockers=${evidenceBlockers}`;
 }
 
 export function formatLnsWindowRankerGapDiagnostics(result: LnsWindowRankerGapDiagnosticsResult): string {

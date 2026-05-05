@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-05T21:55:27.467Z",
+  "generatedAt": "2026-05-05T22:45:53.204Z",
   "schemaVersion": 1,
   "audit": {
     "runtimeDefaultChanged": false,
@@ -3012,7 +3012,20 @@
       "remainingBlockers": [
         "unmatched-protected-replay-evidence",
         "changed-layout-no-lift-trajectory-depth"
-      ]
+      ],
+      "protectedReplayEvidenceGate": {
+        "suppressedDiagnosis": "online-active-no-offline-match",
+        "suppressedTraceComparisonCount": 4,
+        "remainingTraceComparisonCount": 1,
+        "remainingOfflinePositiveOnlineNeutralCount": 1,
+        "changedLayoutNoLiftTrajectoryDepthCount": 1,
+        "missingLayoutDeltaCount": 0,
+        "mixedFinalOutcomeCount": 0,
+        "remainingPromotionBlocked": true,
+        "remainingBlockers": [
+          "changed-layout-no-lift-trajectory-depth"
+        ]
+      }
     },
     "promotionBlocked": true
   }

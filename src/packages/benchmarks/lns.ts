@@ -453,6 +453,19 @@ function withReplayLabelSeedHint(benchmarkCase: LnsBenchmarkCase): LnsBenchmarkC
 
 const CURATED_REPLAY_SEED_HINTS: Readonly<Partial<Record<string, NonNullable<LnsOptions["seedHint"]>>>> = Object.freeze(
   {
+    "compact-service-repair": {
+      sourceName: "compact-service-repair-curated-partial-service-seed",
+      roadKeys: ["2,0"],
+      solution: {
+        roads: ["2,0"],
+        services: [{ r: 0, c: 2, rows: 2, cols: 2, range: 2, typeIndex: 0, bonus: 80 }],
+        residentials: [{ r: 0, c: 0, rows: 2, cols: 2, typeIndex: 0, population: 180 }],
+        populations: [180],
+        totalPopulation: 180
+      },
+      totalPopulation: 180,
+      objectiveLowerBound: 180
+    },
     "lns-gate-choke-pressure": {
       sourceName: "lns-gate-choke-pressure-curated-first-improvement-seed",
       roadKeys: ["0,0"],
@@ -468,6 +481,51 @@ const CURATED_REPLAY_SEED_HINTS: Readonly<Partial<Record<string, NonNullable<Lns
       },
       totalPopulation: 240,
       objectiveLowerBound: 240
+    },
+    "lns-corridor-squeeze-pressure": {
+      sourceName: "lns-corridor-squeeze-pressure-curated-first-improvement-seed",
+      roadKeys: ["0,0"],
+      solution: {
+        roads: ["0,0"],
+        services: [{ r: 1, c: 0, rows: 2, cols: 1, range: 2, typeIndex: 0, bonus: 60 }],
+        residentials: [
+          { r: 3, c: 0, rows: 2, cols: 2, typeIndex: 0, population: 140 },
+          { r: 0, c: 2, rows: 2, cols: 3, typeIndex: 1, population: 200 }
+        ],
+        populations: [140, 200],
+        totalPopulation: 340
+      },
+      totalPopulation: 340,
+      objectiveLowerBound: 340
+    },
+    "lns-footprint-mix-pressure": {
+      sourceName: "lns-footprint-mix-pressure-curated-first-improvement-seed",
+      roadKeys: ["0,0"],
+      solution: {
+        roads: ["0,0"],
+        services: [{ r: 2, c: 0, rows: 1, cols: 2, range: 1, typeIndex: 0, bonus: 50 }],
+        residentials: [
+          { r: 0, c: 2, rows: 2, cols: 2, typeIndex: 0, population: 130 },
+          { r: 3, c: 0, rows: 3, cols: 2, typeIndex: 1, population: 220 }
+        ],
+        populations: [130, 220],
+        totalPopulation: 350
+      },
+      totalPopulation: 350,
+      objectiveLowerBound: 350
+    },
+    "row0-anchor-repair": {
+      sourceName: "row0-anchor-repair-curated-first-improvement-seed",
+      roadKeys: ["0,0"],
+      solution: {
+        roads: ["0,0"],
+        services: [],
+        residentials: [],
+        populations: [],
+        totalPopulation: 0
+      },
+      totalPopulation: 0,
+      objectiveLowerBound: 0
     },
     "lns-service-overlap-pressure": {
       sourceName: "lns-service-overlap-pressure-curated-first-improvement-seed",
@@ -485,6 +543,51 @@ const CURATED_REPLAY_SEED_HINTS: Readonly<Partial<Record<string, NonNullable<Lns
       },
       totalPopulation: 590,
       objectiveLowerBound: 590
+    },
+    "lns-anchor-service-corner-pressure": {
+      sourceName: "lns-anchor-service-corner-pressure-curated-first-improvement-seed",
+      roadKeys: ["0,0", "3,0", "3,1"],
+      solution: {
+        roads: ["0,0", "3,0", "3,1"],
+        services: [{ r: 1, c: 0, rows: 2, cols: 2, range: 1, typeIndex: 0, bonus: 105 }],
+        residentials: [
+          { r: 0, c: 2, rows: 2, cols: 2, typeIndex: 0, population: 195 },
+          { r: 3, c: 2, rows: 2, cols: 3, typeIndex: 1, population: 255 }
+        ],
+        populations: [195, 255],
+        totalPopulation: 450
+      },
+      totalPopulation: 450,
+      objectiveLowerBound: 450
+    },
+    "lns-gate-side-channel-pressure": {
+      sourceName: "lns-gate-side-channel-pressure-curated-first-improvement-seed",
+      roadKeys: ["0,0"],
+      solution: {
+        roads: ["0,0"],
+        services: [{ r: 3, c: 0, rows: 2, cols: 1, range: 2, typeIndex: 0, bonus: 75 }],
+        residentials: [{ r: 1, c: 0, rows: 2, cols: 2, typeIndex: 0, population: 165 }],
+        populations: [165],
+        totalPopulation: 165
+      },
+      totalPopulation: 165,
+      objectiveLowerBound: 165
+    },
+    "lns-footprint-bottleneck-pressure": {
+      sourceName: "lns-footprint-bottleneck-pressure-curated-first-improvement-seed",
+      roadKeys: ["0,0", "2,0", "2,1"],
+      solution: {
+        roads: ["0,0", "2,0", "2,1"],
+        services: [{ r: 1, c: 0, rows: 1, cols: 1, range: 1, typeIndex: 0, bonus: 55 }],
+        residentials: [
+          { r: 0, c: 1, rows: 2, cols: 2, typeIndex: 0, population: 135 },
+          { r: 2, c: 2, rows: 2, cols: 3, typeIndex: 1, population: 180 }
+        ],
+        populations: [135, 180],
+        totalPopulation: 315
+      },
+      totalPopulation: 315,
+      objectiveLowerBound: 315
     }
   }
 );

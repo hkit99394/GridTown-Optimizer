@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-05T18:47:08.668Z",
+  "generatedAt": "2026-05-05T19:11:23.234Z",
   "schemaVersion": 1,
   "audit": {
     "runtimeDefaultChanged": false,
@@ -1268,6 +1268,1244 @@
         "meanPopulationDelta": 0
       },
       "diagnosis": "online-active-no-offline-match"
+    }
+  ],
+  "traceComparisons": [
+    {
+      "key": "anchor-service:random-exploration->random-exploration",
+      "pressureFamily": "anchor-service",
+      "transition": "random-exploration->random-exploration",
+      "diagnosis": "online-active-no-offline-match",
+      "offlineDecisionCount": 0,
+      "offlineSelectedPositiveCount": 0,
+      "offlineMeanSelectedDeltaVsBaseline": null,
+      "offlineMeanScoreDeltaVsBaseline": null,
+      "onlineTraceCount": 3,
+      "onlineNeutralTraceCount": 3,
+      "onlineMeanImprovement": 110,
+      "onlineMeanScoreDelta": 0.5211,
+      "topFeatureDeltaGaps": [
+        {
+          "featureName": "selectedByBaseline",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": -1,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "allowedWindowCells",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.3,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "anchorReachableWindowCells",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.3,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "area",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.3,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "clearedFootprint",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.1,
+          "meanDeltaGap": null
+        }
+      ],
+      "offlineSamples": [],
+      "onlineSamples": [
+        {
+          "caseName": "lns-holdout-anchor-service-shelf-pressure",
+          "seed": 7,
+          "iteration": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 6,
+            "cols": 6
+          },
+          "outcomeStatus": "improved",
+          "finalOutcomeStatus": "neutral",
+          "improvement": 110,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.5211
+        },
+        {
+          "caseName": "lns-holdout-anchor-service-shelf-pressure",
+          "seed": 19,
+          "iteration": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 6,
+            "cols": 6
+          },
+          "outcomeStatus": "improved",
+          "finalOutcomeStatus": "neutral",
+          "improvement": 110,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.5211
+        },
+        {
+          "caseName": "lns-holdout-anchor-service-shelf-pressure",
+          "seed": 37,
+          "iteration": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 6,
+            "cols": 6
+          },
+          "outcomeStatus": "improved",
+          "finalOutcomeStatus": "neutral",
+          "improvement": 110,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.5211
+        }
+      ]
+    },
+    {
+      "key": "corridor:random-exploration->random-exploration",
+      "pressureFamily": "corridor",
+      "transition": "random-exploration->random-exploration",
+      "diagnosis": "offline-positive-online-neutral",
+      "offlineDecisionCount": 9,
+      "offlineSelectedPositiveCount": 6,
+      "offlineMeanSelectedDeltaVsBaseline": 6.6667,
+      "offlineMeanScoreDeltaVsBaseline": 0.4289,
+      "onlineTraceCount": 3,
+      "onlineNeutralTraceCount": 3,
+      "onlineMeanImprovement": 65,
+      "onlineMeanScoreDelta": 0.6974,
+      "topFeatureDeltaGaps": [
+        {
+          "featureName": "serviceCandidateBonus",
+          "offlineMeanDelta": 0,
+          "onlineMeanDelta": 0.78,
+          "meanDeltaGap": 0.78
+        },
+        {
+          "featureName": "serviceCandidatesIntersecting",
+          "offlineMeanDelta": 0,
+          "onlineMeanDelta": 0.3,
+          "meanDeltaGap": 0.3
+        },
+        {
+          "featureName": "allowedWindowCells",
+          "offlineMeanDelta": 0.1,
+          "onlineMeanDelta": 0.3,
+          "meanDeltaGap": 0.2
+        },
+        {
+          "featureName": "anchorReachableWindowCells",
+          "offlineMeanDelta": 0.1,
+          "onlineMeanDelta": 0.3,
+          "meanDeltaGap": 0.2
+        },
+        {
+          "featureName": "serviceCandidatesBlocked",
+          "offlineMeanDelta": 0,
+          "onlineMeanDelta": 0.15,
+          "meanDeltaGap": 0.15
+        }
+      ],
+      "offlineSamples": [
+        {
+          "caseName": "row0-anchor-repair",
+          "seed": 7,
+          "statePolicy": "initial-incumbent",
+          "stateIndex": 0,
+          "baselineWindowIndex": 0,
+          "selectedWindowIndex": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 2,
+            "cols": 4
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 3,
+            "cols": 4
+          },
+          "selectedDeltaVsBaseline": 10,
+          "scoreDeltaVsBaseline": 0.4289
+        },
+        {
+          "caseName": "row0-anchor-repair",
+          "seed": 7,
+          "statePolicy": "post-stagnation",
+          "stateIndex": 2,
+          "baselineWindowIndex": 0,
+          "selectedWindowIndex": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 2,
+            "cols": 4
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 3,
+            "cols": 4
+          },
+          "selectedDeltaVsBaseline": 10,
+          "scoreDeltaVsBaseline": 0.4289
+        },
+        {
+          "caseName": "row0-anchor-repair",
+          "seed": 19,
+          "statePolicy": "initial-incumbent",
+          "stateIndex": 0,
+          "baselineWindowIndex": 0,
+          "selectedWindowIndex": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 2,
+            "cols": 4
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 3,
+            "cols": 4
+          },
+          "selectedDeltaVsBaseline": 10,
+          "scoreDeltaVsBaseline": 0.4289
+        }
+      ],
+      "onlineSamples": [
+        {
+          "caseName": "lns-holdout-corridor-weave-pressure",
+          "seed": 7,
+          "iteration": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 6,
+            "cols": 6
+          },
+          "outcomeStatus": "improved",
+          "finalOutcomeStatus": "neutral",
+          "improvement": 65,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.6974
+        },
+        {
+          "caseName": "lns-holdout-corridor-weave-pressure",
+          "seed": 19,
+          "iteration": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 6,
+            "cols": 6
+          },
+          "outcomeStatus": "improved",
+          "finalOutcomeStatus": "neutral",
+          "improvement": 65,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.6974
+        },
+        {
+          "caseName": "lns-holdout-corridor-weave-pressure",
+          "seed": 37,
+          "iteration": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 6,
+            "cols": 6
+          },
+          "outcomeStatus": "improved",
+          "finalOutcomeStatus": "neutral",
+          "improvement": 65,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.6974
+        }
+      ]
+    },
+    {
+      "key": "corridor:weak-service->sliding",
+      "pressureFamily": "corridor",
+      "transition": "weak-service->sliding",
+      "diagnosis": "online-active-no-offline-match",
+      "offlineDecisionCount": 0,
+      "offlineSelectedPositiveCount": 0,
+      "offlineMeanSelectedDeltaVsBaseline": null,
+      "offlineMeanScoreDeltaVsBaseline": null,
+      "onlineTraceCount": 3,
+      "onlineNeutralTraceCount": 3,
+      "onlineMeanImprovement": 0,
+      "onlineMeanScoreDelta": 0.6266,
+      "topFeatureDeltaGaps": [
+        {
+          "featureName": "operatorScore",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": -5.15,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "selectedByBaseline",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": -1,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "residentialCandidateHeadroom",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": -0.54,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "narrowGateCells",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.4,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "serviceCandidateBonus",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.39,
+          "meanDeltaGap": null
+        }
+      ],
+      "offlineSamples": [],
+      "onlineSamples": [
+        {
+          "caseName": "lns-holdout-corridor-weave-pressure",
+          "seed": 7,
+          "iteration": 0,
+          "baselineWindow": {
+            "top": 1,
+            "left": 4,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 4,
+            "cols": 3
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.6266
+        },
+        {
+          "caseName": "lns-holdout-corridor-weave-pressure",
+          "seed": 19,
+          "iteration": 0,
+          "baselineWindow": {
+            "top": 1,
+            "left": 4,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 4,
+            "cols": 3
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.6266
+        },
+        {
+          "caseName": "lns-holdout-corridor-weave-pressure",
+          "seed": 37,
+          "iteration": 0,
+          "baselineWindow": {
+            "top": 1,
+            "left": 4,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 4,
+            "cols": 3
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.6266
+        }
+      ]
+    },
+    {
+      "key": "footprint-pressure:random-exploration->random-exploration",
+      "pressureFamily": "footprint-pressure",
+      "transition": "random-exploration->random-exploration",
+      "diagnosis": "online-active-no-offline-match",
+      "offlineDecisionCount": 0,
+      "offlineSelectedPositiveCount": 0,
+      "offlineMeanSelectedDeltaVsBaseline": null,
+      "offlineMeanScoreDeltaVsBaseline": null,
+      "onlineTraceCount": 3,
+      "onlineNeutralTraceCount": 3,
+      "onlineMeanImprovement": 0,
+      "onlineMeanScoreDelta": 0.7108,
+      "topFeatureDeltaGaps": [
+        {
+          "featureName": "selectedByBaseline",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": -1,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "serviceCandidateBonus",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.66,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "narrowGateCells",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.4,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "allowedWindowCells",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.3,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "anchorReachableWindowCells",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.3,
+          "meanDeltaGap": null
+        }
+      ],
+      "offlineSamples": [],
+      "onlineSamples": [
+        {
+          "caseName": "lns-holdout-footprint-stagger-pressure",
+          "seed": 7,
+          "iteration": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 1,
+            "rows": 6,
+            "cols": 6
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.7108
+        },
+        {
+          "caseName": "lns-holdout-footprint-stagger-pressure",
+          "seed": 19,
+          "iteration": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 1,
+            "rows": 6,
+            "cols": 6
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.7108
+        },
+        {
+          "caseName": "lns-holdout-footprint-stagger-pressure",
+          "seed": 37,
+          "iteration": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 1,
+            "rows": 6,
+            "cols": 6
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.7108
+        }
+      ]
+    },
+    {
+      "key": "footprint-pressure:weak-service->sliding",
+      "pressureFamily": "footprint-pressure",
+      "transition": "weak-service->sliding",
+      "diagnosis": "offline-positive-online-neutral",
+      "offlineDecisionCount": 9,
+      "offlineSelectedPositiveCount": 6,
+      "offlineMeanSelectedDeltaVsBaseline": 166.6667,
+      "offlineMeanScoreDeltaVsBaseline": 0.5982,
+      "onlineTraceCount": 3,
+      "onlineNeutralTraceCount": 3,
+      "onlineMeanImprovement": 0,
+      "onlineMeanScoreDelta": 0.5137,
+      "topFeatureDeltaGaps": [
+        {
+          "featureName": "residentialCandidateHeadroom",
+          "offlineMeanDelta": -2.6,
+          "onlineMeanDelta": 0,
+          "meanDeltaGap": 2.6
+        },
+        {
+          "featureName": "residentialCandidatesBlocked",
+          "offlineMeanDelta": -0.6722,
+          "onlineMeanDelta": 0,
+          "meanDeltaGap": 0.6722
+        },
+        {
+          "featureName": "roadCountInside",
+          "offlineMeanDelta": -0.1667,
+          "onlineMeanDelta": 0.3,
+          "meanDeltaGap": 0.4667
+        },
+        {
+          "featureName": "residentialCandidatesIntersecting",
+          "offlineMeanDelta": -0.4,
+          "onlineMeanDelta": 0,
+          "meanDeltaGap": 0.4
+        },
+        {
+          "featureName": "narrowGateCells",
+          "offlineMeanDelta": 0.1,
+          "onlineMeanDelta": 0.4,
+          "meanDeltaGap": 0.3
+        }
+      ],
+      "offlineSamples": [
+        {
+          "caseName": "lns-footprint-bottleneck-pressure",
+          "seed": 7,
+          "statePolicy": "initial-incumbent",
+          "stateIndex": 0,
+          "baselineWindowIndex": 0,
+          "selectedWindowIndex": 39,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "selectedDeltaVsBaseline": 250,
+          "scoreDeltaVsBaseline": 0.6255
+        },
+        {
+          "caseName": "lns-footprint-bottleneck-pressure",
+          "seed": 7,
+          "statePolicy": "post-stagnation",
+          "stateIndex": 2,
+          "baselineWindowIndex": 0,
+          "selectedWindowIndex": 39,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "selectedDeltaVsBaseline": 250,
+          "scoreDeltaVsBaseline": 0.6255
+        },
+        {
+          "caseName": "lns-footprint-bottleneck-pressure",
+          "seed": 19,
+          "statePolicy": "initial-incumbent",
+          "stateIndex": 0,
+          "baselineWindowIndex": 0,
+          "selectedWindowIndex": 39,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "selectedDeltaVsBaseline": 250,
+          "scoreDeltaVsBaseline": 0.6255
+        }
+      ],
+      "onlineSamples": [
+        {
+          "caseName": "lns-holdout-footprint-stagger-pressure",
+          "seed": 7,
+          "iteration": 0,
+          "baselineWindow": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 3,
+            "rows": 4,
+            "cols": 3
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.5137
+        },
+        {
+          "caseName": "lns-holdout-footprint-stagger-pressure",
+          "seed": 19,
+          "iteration": 0,
+          "baselineWindow": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 3,
+            "rows": 4,
+            "cols": 3
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.5137
+        },
+        {
+          "caseName": "lns-holdout-footprint-stagger-pressure",
+          "seed": 37,
+          "iteration": 0,
+          "baselineWindow": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 3,
+            "rows": 4,
+            "cols": 3
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.5137
+        }
+      ]
+    },
+    {
+      "key": "gate:random-exploration->random-exploration",
+      "pressureFamily": "gate",
+      "transition": "random-exploration->random-exploration",
+      "diagnosis": "online-active-no-offline-match",
+      "offlineDecisionCount": 0,
+      "offlineSelectedPositiveCount": 0,
+      "offlineMeanSelectedDeltaVsBaseline": null,
+      "offlineMeanScoreDeltaVsBaseline": null,
+      "onlineTraceCount": 3,
+      "onlineNeutralTraceCount": 3,
+      "onlineMeanImprovement": 0,
+      "onlineMeanScoreDelta": 0.6669,
+      "topFeatureDeltaGaps": [
+        {
+          "featureName": "selectedByBaseline",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": -1,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "serviceCandidateBonus",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.96,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "allowedWindowCells",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.3,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "anchorReachableWindowCells",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.3,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "area",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.3,
+          "meanDeltaGap": null
+        }
+      ],
+      "offlineSamples": [],
+      "onlineSamples": [
+        {
+          "caseName": "lns-holdout-gate-offset-pressure",
+          "seed": 7,
+          "iteration": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 6,
+            "cols": 6
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.6669
+        },
+        {
+          "caseName": "lns-holdout-gate-offset-pressure",
+          "seed": 19,
+          "iteration": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 6,
+            "cols": 6
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.6669
+        },
+        {
+          "caseName": "lns-holdout-gate-offset-pressure",
+          "seed": 37,
+          "iteration": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 6,
+            "cols": 6
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.6669
+        }
+      ]
+    },
+    {
+      "key": "gate:weak-service->sliding",
+      "pressureFamily": "gate",
+      "transition": "weak-service->sliding",
+      "diagnosis": "offline-positive-online-neutral",
+      "offlineDecisionCount": 9,
+      "offlineSelectedPositiveCount": 9,
+      "offlineMeanSelectedDeltaVsBaseline": 90,
+      "offlineMeanScoreDeltaVsBaseline": 0.5386,
+      "onlineTraceCount": 3,
+      "onlineNeutralTraceCount": 3,
+      "onlineMeanImprovement": 0,
+      "onlineMeanScoreDelta": 0.5525,
+      "topFeatureDeltaGaps": [
+        {
+          "featureName": "residentialCandidateHeadroom",
+          "offlineMeanDelta": 0,
+          "onlineMeanDelta": -1.58,
+          "meanDeltaGap": -1.58
+        },
+        {
+          "featureName": "serviceCandidatesBlocked",
+          "offlineMeanDelta": -0.35,
+          "onlineMeanDelta": 0,
+          "meanDeltaGap": 0.35
+        },
+        {
+          "featureName": "narrowGateCells",
+          "offlineMeanDelta": -0.1,
+          "onlineMeanDelta": 0.2,
+          "meanDeltaGap": 0.3
+        },
+        {
+          "featureName": "residentialCandidatesIntersecting",
+          "offlineMeanDelta": 0,
+          "onlineMeanDelta": -0.25,
+          "meanDeltaGap": -0.25
+        },
+        {
+          "featureName": "clearedFootprint",
+          "offlineMeanDelta": -0.2,
+          "onlineMeanDelta": 0,
+          "meanDeltaGap": 0.2
+        }
+      ],
+      "offlineSamples": [
+        {
+          "caseName": "lns-gate-side-channel-pressure",
+          "seed": 7,
+          "statePolicy": "initial-incumbent",
+          "stateIndex": 0,
+          "baselineWindowIndex": 0,
+          "selectedWindowIndex": 37,
+          "baselineWindow": {
+            "top": 3,
+            "left": 0,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "selectedDeltaVsBaseline": 90,
+          "scoreDeltaVsBaseline": 0.5645
+        },
+        {
+          "caseName": "lns-gate-side-channel-pressure",
+          "seed": 19,
+          "statePolicy": "initial-incumbent",
+          "stateIndex": 0,
+          "baselineWindowIndex": 0,
+          "selectedWindowIndex": 37,
+          "baselineWindow": {
+            "top": 3,
+            "left": 0,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "selectedDeltaVsBaseline": 90,
+          "scoreDeltaVsBaseline": 0.5645
+        },
+        {
+          "caseName": "lns-gate-side-channel-pressure",
+          "seed": 37,
+          "statePolicy": "initial-incumbent",
+          "stateIndex": 0,
+          "baselineWindowIndex": 0,
+          "selectedWindowIndex": 37,
+          "baselineWindow": {
+            "top": 3,
+            "left": 0,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "selectedDeltaVsBaseline": 90,
+          "scoreDeltaVsBaseline": 0.5645
+        }
+      ],
+      "onlineSamples": [
+        {
+          "caseName": "lns-holdout-gate-offset-pressure",
+          "seed": 7,
+          "iteration": 0,
+          "baselineWindow": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 3,
+            "rows": 4,
+            "cols": 3
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.5525
+        },
+        {
+          "caseName": "lns-holdout-gate-offset-pressure",
+          "seed": 19,
+          "iteration": 0,
+          "baselineWindow": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 3,
+            "rows": 4,
+            "cols": 3
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.5525
+        },
+        {
+          "caseName": "lns-holdout-gate-offset-pressure",
+          "seed": 37,
+          "iteration": 0,
+          "baselineWindow": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 3,
+            "rows": 4,
+            "cols": 3
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.5525
+        }
+      ]
+    },
+    {
+      "key": "service-pressure:random-exploration->random-exploration",
+      "pressureFamily": "service-pressure",
+      "transition": "random-exploration->random-exploration",
+      "diagnosis": "online-active-no-offline-match",
+      "offlineDecisionCount": 0,
+      "offlineSelectedPositiveCount": 0,
+      "offlineMeanSelectedDeltaVsBaseline": null,
+      "offlineMeanScoreDeltaVsBaseline": null,
+      "onlineTraceCount": 3,
+      "onlineNeutralTraceCount": 3,
+      "onlineMeanImprovement": 45,
+      "onlineMeanScoreDelta": 0.8463,
+      "topFeatureDeltaGaps": [
+        {
+          "featureName": "serviceCandidateBonus",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 1.49,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "selectedByBaseline",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": -1,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "serviceCandidatesIntersecting",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.55,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "serviceCandidatesBlocked",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.45,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "allowedWindowCells",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.3,
+          "meanDeltaGap": null
+        }
+      ],
+      "offlineSamples": [],
+      "onlineSamples": [
+        {
+          "caseName": "lns-holdout-service-ridge-pressure",
+          "seed": 7,
+          "iteration": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 6,
+            "cols": 6
+          },
+          "outcomeStatus": "improved",
+          "finalOutcomeStatus": "neutral",
+          "improvement": 45,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.8463
+        },
+        {
+          "caseName": "lns-holdout-service-ridge-pressure",
+          "seed": 19,
+          "iteration": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 6,
+            "cols": 6
+          },
+          "outcomeStatus": "improved",
+          "finalOutcomeStatus": "neutral",
+          "improvement": 45,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.8463
+        },
+        {
+          "caseName": "lns-holdout-service-ridge-pressure",
+          "seed": 37,
+          "iteration": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 6,
+            "cols": 6
+          },
+          "outcomeStatus": "improved",
+          "finalOutcomeStatus": "neutral",
+          "improvement": 45,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.8463
+        }
+      ]
+    },
+    {
+      "key": "service-pressure:weak-service->sliding",
+      "pressureFamily": "service-pressure",
+      "transition": "weak-service->sliding",
+      "diagnosis": "online-active-no-offline-match",
+      "offlineDecisionCount": 0,
+      "offlineSelectedPositiveCount": 0,
+      "offlineMeanSelectedDeltaVsBaseline": null,
+      "offlineMeanScoreDeltaVsBaseline": null,
+      "onlineTraceCount": 3,
+      "onlineNeutralTraceCount": 3,
+      "onlineMeanImprovement": 0,
+      "onlineMeanScoreDelta": 0.7263,
+      "topFeatureDeltaGaps": [
+        {
+          "featureName": "operatorScore",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": -5.13,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "residentialCandidateHeadroom",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 1.82,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "serviceCandidateBonus",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 1.41,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "selectedByBaseline",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": -1,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "serviceCandidatesIntersecting",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.45,
+          "meanDeltaGap": null
+        }
+      ],
+      "offlineSamples": [],
+      "onlineSamples": [
+        {
+          "caseName": "lns-holdout-service-ridge-pressure",
+          "seed": 7,
+          "iteration": 0,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 1,
+            "rows": 4,
+            "cols": 3
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.7263
+        },
+        {
+          "caseName": "lns-holdout-service-ridge-pressure",
+          "seed": 19,
+          "iteration": 0,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 1,
+            "rows": 4,
+            "cols": 3
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.7263
+        },
+        {
+          "caseName": "lns-holdout-service-ridge-pressure",
+          "seed": 37,
+          "iteration": 0,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 1,
+            "rows": 4,
+            "cols": 3
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.7263
+        }
+      ]
     }
   ],
   "summary": {

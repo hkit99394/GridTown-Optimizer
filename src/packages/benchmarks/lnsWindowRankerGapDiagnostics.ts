@@ -18,6 +18,13 @@ import {
   buildModelExperimentTelemetryManifest
 } from "./modelExperimentArtifacts.js";
 import { scoreLnsWindowRankerReplayLabel, type LnsWindowRankerModel } from "./lnsWindowRanker.js";
+import {
+  buildLnsWindowRankerGapOfflineFeatureDeltas,
+  buildLnsWindowRankerGapTraceComparisons,
+  formatLnsWindowRankerGapTraceComparison,
+  type LnsWindowRankerGapDiagnosis,
+  type LnsWindowRankerGapTraceComparison
+} from "./lnsWindowRankerGapTraceComparisons.js";
 import { hashString, stableStringify } from "../core/cpSatContinuation.js";
 
 import type { LearnedRankingLabelSnapshot, LearnedRankingLabelSplit } from "./learnedRankingLabels.js";
@@ -61,6 +68,9 @@ export interface LnsWindowRankerGapOfflineDecision {
   selectedDeltaVsBaseline: number;
   regret: number;
   scoreDeltaVsBaseline: number;
+  baselineWindow: LnsWindowReplaySnapshotLabel["window"];
+  selectedWindow: LnsWindowReplaySnapshotLabel["window"];
+  featureDeltas: Record<string, number>;
 }
 
 export interface LnsWindowRankerGapOfflineSummary {
@@ -114,7 +124,7 @@ export interface LnsWindowRankerGapTransitionJoin {
   transition: string;
   offline: LnsWindowRankerGapOfflineSummary | null;
   online: LnsWindowRankerGapOnlineSummary | null;
-  diagnosis: "offline-positive-online-neutral" | "offline-neutral-online-neutral" | "online-active-no-offline-match";
+  diagnosis: LnsWindowRankerGapDiagnosis;
 }
 
 export interface LnsWindowRankerGapDiagnosticsResult {
@@ -158,6 +168,7 @@ export interface LnsWindowRankerGapDiagnosticsResult {
     transitionCases: LnsWindowRankerGapOnlineTransitionCase[];
   };
   joins: LnsWindowRankerGapTransitionJoin[];
+  traceComparisons: LnsWindowRankerGapTraceComparison[];
   summary: {
     joinedTransitionFamilyCount: number;
     offlinePositiveOnlineNeutralCount: number;
@@ -283,7 +294,10 @@ function buildOfflineDecision(
     selectedTargetValue,
     selectedDeltaVsBaseline: selectedTargetValue - baselineTargetValue,
     regret: Math.max(0, bestTargetValue - selectedTargetValue),
-    scoreDeltaVsBaseline: selected.score - scoreLnsWindowRankerReplayLabel(baseline, model)
+    scoreDeltaVsBaseline: selected.score - scoreLnsWindowRankerReplayLabel(baseline, model),
+    baselineWindow: { ...baseline.window },
+    selectedWindow: { ...selected.label.window },
+    featureDeltas: buildLnsWindowRankerGapOfflineFeatureDeltas(selected.label, baseline)
   };
 }
 
@@ -489,6 +503,7 @@ export function runLnsWindowRankerGapDiagnostics(
     offlineTransitionFamilySummaries.filter((entry) => entry.split === "holdout"),
     onlineTransitionFamilySummaries
   );
+  const traceComparisons = buildLnsWindowRankerGapTraceComparisons(joins, decisions, onlineScorecard);
   const minScoreDeltas = onlineScorecard.cases
     .map((entry) => onlineRankerVariant(entry).windowRanker?.minScoreDelta)
     .filter((entry): entry is number => typeof entry === "number");
@@ -535,6 +550,7 @@ export function runLnsWindowRankerGapDiagnostics(
       transitionCases: onlineTransitionCases
     },
     joins,
+    traceComparisons,
     summary: {
       joinedTransitionFamilyCount: joins.length,
       offlinePositiveOnlineNeutralCount: joins.filter((entry) => entry.diagnosis === "offline-positive-online-neutral")
@@ -574,6 +590,9 @@ function summaryMetrics(result: LnsWindowRankerGapDiagnosticsResult): Record<str
     joinedTransitionFamilyCount: result.summary.joinedTransitionFamilyCount,
     offlinePositiveOnlineNeutralCount: result.summary.offlinePositiveOnlineNeutralCount,
     onlineActiveNoOfflineMatchCount: result.summary.onlineActiveNoOfflineMatchCount,
+    traceComparisonCount: result.traceComparisons.length,
+    traceComparisonOnlineTraceCount: sumBenchmarkBy(result.traceComparisons, (entry) => entry.onlineTraceCount),
+    traceComparisonOfflineDecisionCount: sumBenchmarkBy(result.traceComparisons, (entry) => entry.offlineDecisionCount),
     promotionBlocked: result.summary.promotionBlocked
   };
 }
@@ -617,7 +636,9 @@ export function buildLnsWindowRankerGapDiagnosticsRegistryEntryDraft(
       onlineFinalNeutralOverrideCount: result.online.finalNeutralOverrideCount,
       offlineDecisionCount: result.offline.decisionCount,
       offlineOpportunityCount: result.offline.opportunityCount,
-      offlinePositiveOnlineNeutralCount: result.summary.offlinePositiveOnlineNeutralCount
+      offlinePositiveOnlineNeutralCount: result.summary.offlinePositiveOnlineNeutralCount,
+      traceComparisonCount: result.traceComparisons.length,
+      traceComparisonOnlineTraceCount: sumBenchmarkBy(result.traceComparisons, (entry) => entry.onlineTraceCount)
     },
     model: modelRecord(result),
     decision: options.decision ?? "offline-online-lns-window-ranker-gap-diagnostics",
@@ -649,6 +670,7 @@ export function formatLnsWindowRankerGapDiagnostics(result: LnsWindowRankerGapDi
     .filter((entry) => entry.diagnosis !== "offline-neutral-online-neutral")
     .slice(0, 10)
     .map(formatJoin);
+  const traceComparisons = result.traceComparisons.slice(0, 10).map(formatLnsWindowRankerGapTraceComparison);
   return [
     "=== LNS Window Ranker Offline/Online Gap Diagnostics ===",
     `Generated: ${result.generatedAt}`,
@@ -661,6 +683,8 @@ export function formatLnsWindowRankerGapDiagnostics(result: LnsWindowRankerGapDi
     `Online neutral override rate: ${formatBenchmarkRate(benchmarkRatio(result.online.finalNeutralOverrideCount, result.online.overrideCount))}`,
     "Joined evidence:",
     ...(joins.length ? joins : ["- none"]),
+    "Trace comparisons:",
+    ...(traceComparisons.length ? traceComparisons : ["- none"]),
     "Decision: diagnostics only; no LNS runtime scorer or solver default changed."
   ].join("\n");
 }

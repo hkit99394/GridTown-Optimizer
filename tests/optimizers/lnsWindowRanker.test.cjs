@@ -514,6 +514,39 @@ function buildOnlineScorecardFixture() {
               hasOverride: true,
               hasFallback: false
             },
+            selectionTrace: [
+              {
+                iteration: 0,
+                phase: "focused",
+                outcomeStatus: "neutral",
+                populationBefore: 100,
+                populationAfter: 100,
+                improvement: 0,
+                stagnantIterationsBefore: 0,
+                repairTimeLimitSeconds: 0.25,
+                appliedOperator: "sliding",
+                appliedWindow: { top: 0, left: 1, rows: 2, cols: 2 },
+                transition: "weak-service->sliding",
+                changedWindow: true,
+                selectionStatus: "override",
+                candidateCount: 2,
+                baselineCandidateIndex: 0,
+                selectedCandidateIndex: 1,
+                baselineOperator: "weak-service",
+                selectedOperator: "sliding",
+                baselineWindow: { top: 0, left: 0, rows: 2, cols: 2 },
+                selectedWindow: { top: 0, left: 1, rows: 2, cols: 2 },
+                selectedByBaseline: false,
+                baselineScore: 0.1,
+                selectedScore: 0.4,
+                scoreDelta: 0.3,
+                modelFingerprint: "fnv1a:test",
+                featureSchemaVersion: 2,
+                baselineFeatures: { selectedByBaseline: 1, residentialCandidateHeadroom: 1.8 },
+                selectedFeatures: { selectedByBaseline: 0, residentialCandidateHeadroom: 1 },
+                featureDeltas: { selectedByBaseline: -1, residentialCandidateHeadroom: -0.8 }
+              }
+            ],
             windowRanker: {
               enabled: true,
               modelFingerprint: "fnv1a:test",
@@ -550,6 +583,7 @@ function testLnsWindowRankerGapDiagnostics() {
   assert.equal(result.audit.target, "roll-forward-final-lift");
   assert.equal(result.offline.decisionCount, 7);
   assert.equal(result.online.overrideCount, 1);
+  assert.equal(result.online.selectionTraceCount, 1);
   assert.equal(result.online.finalNeutralOverrideCount, 1);
   assert.equal(result.summary.promotionBlocked, true);
   assert.equal(result.summary.offlinePositiveOnlineNeutralCount, 1);
@@ -557,7 +591,19 @@ function testLnsWindowRankerGapDiagnostics() {
   assert.equal(join.diagnosis, "offline-positive-online-neutral");
   assert(join.offline.selectedPositiveCount > 0);
   assert.equal(join.online.finalNeutralCount, 1);
+  const traceComparison = result.traceComparisons.find(
+    (entry) => entry.key === "service-pressure:weak-service->sliding"
+  );
+  assert.equal(traceComparison.diagnosis, "offline-positive-online-neutral");
+  assert.equal(traceComparison.offlineDecisionCount, 2);
+  assert.equal(traceComparison.onlineTraceCount, 1);
+  assert.equal(traceComparison.onlineNeutralTraceCount, 1);
+  assert.equal(traceComparison.onlineMeanImprovement, 0);
+  assert.equal(traceComparison.onlineSamples[0].selectedWindow.left, 1);
+  assert(traceComparison.topFeatureDeltaGaps.some((entry) => entry.featureName === "residentialCandidateHeadroom"));
   assert.match(formatted, /offline-positive-online-neutral/);
+  assert.match(formatted, /Trace comparisons:/);
+  assert.match(formatted, /online-traces=1/);
 
   const telemetryManifest = buildLnsWindowRankerGapDiagnosticsTelemetryManifest(result, {
     command: "node dist/lnsWindowRankerCli.js --gap-diagnostics",
@@ -565,6 +611,8 @@ function testLnsWindowRankerGapDiagnostics() {
     outputArtifacts: ["gap.json"]
   });
   assert.equal(telemetryManifest.metrics.promotionBlocked, true);
+  assert.equal(telemetryManifest.metrics.traceComparisonCount, 1);
+  assert.equal(telemetryManifest.metrics.traceComparisonOnlineTraceCount, 1);
   assert.equal(telemetryManifest.labelFingerprint, result.inputs.labelFingerprint);
 
   const registryDraft = buildLnsWindowRankerGapDiagnosticsRegistryEntryDraft(result, {
@@ -574,6 +622,7 @@ function testLnsWindowRankerGapDiagnostics() {
   });
   assert.equal(registryDraft.artifactType, "model-experiment");
   assert.equal(registryDraft.budget.offlinePositiveOnlineNeutralCount, 1);
+  assert.equal(registryDraft.budget.traceComparisonCount, 1);
   assert.equal(registryDraft.summaryMetrics.promotionBlocked, true);
 }
 

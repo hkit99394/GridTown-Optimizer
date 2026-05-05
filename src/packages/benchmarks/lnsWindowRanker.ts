@@ -270,6 +270,13 @@ function scoreLabel(label: LnsWindowReplaySnapshotLabel, weights: readonly numbe
   return dot(featureVector(label), weights);
 }
 
+export function scoreLnsWindowRankerReplayLabel(
+  label: LnsWindowReplaySnapshotLabel,
+  model: Pick<LnsWindowRankerModel, "weights">
+): number {
+  return scoreLabel(label, weightArrayFromRecord(model.weights));
+}
+
 function hasTargetValue(label: LnsWindowReplaySnapshotLabel, target: LnsWindowRankerLabelTarget): boolean {
   return target === "immediate-improvement" || typeof label.rollForward?.populationDeltaVsBaseline === "number";
 }

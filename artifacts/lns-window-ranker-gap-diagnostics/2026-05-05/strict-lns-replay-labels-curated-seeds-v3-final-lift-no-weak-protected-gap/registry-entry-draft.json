@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "runId": "lns-window-ranker-gap-2026-05-05-curated-seeds-v3-final-lift-no-weak-protected",
+  "artifactType": "model-experiment",
+  "generatedAt": "2026-05-05T18:22:03.013Z",
+  "commands": [
+    "node dist/lnsWindowRankerCli.js --gap-diagnostics --labels=artifacts/learned-ranking-labels/2026-05-04/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1/labels.json --model=artifacts/lns-window-ranker/2026-05-05/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1-final-lift-no-weak-cpu-ranker-lr0.02-cap100/model.json --online-scorecard=artifacts/lns-window-ranker-online/2026-05-05/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1-final-lift-no-weak-protected-holdout-min-score-delta-0.1/lns-window-ranker-online-ablation.json --artifact-dir=artifacts/lns-window-ranker-gap-diagnostics/2026-05-05/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-protected-gap --ranker-run-id=lns-window-ranker-gap-2026-05-05-curated-seeds-v3-final-lift-no-weak-protected --ranker-decision=offline-online-lns-window-ranker-gap-diagnostics '--ranker-summary=Offline-to-online gap diagnostic joining full-family curated non-weak final-lift replay labels to the protected online neutral override scorecard; no solver default changed.' --json"
+  ],
+  "artifactPaths": [
+    "artifacts/lns-window-ranker-gap-diagnostics/2026-05-05/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-protected-gap/lns-window-ranker-gap-diagnostics.json",
+    "artifacts/lns-window-ranker-gap-diagnostics/2026-05-05/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-protected-gap/lns-window-ranker-gap-diagnostics.txt",
+    "artifacts/lns-window-ranker-gap-diagnostics/2026-05-05/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-protected-gap/telemetry-manifest.json"
+  ],
+  "cases": [
+    "lns-holdout-corridor-weave-pressure",
+    "lns-holdout-gate-offset-pressure",
+    "lns-holdout-footprint-stagger-pressure",
+    "lns-holdout-service-ridge-pressure",
+    "lns-holdout-anchor-service-shelf-pressure"
+  ],
+  "caseFamilies": [
+    "corridor",
+    "gate",
+    "footprint-pressure",
+    "service-pressure",
+    "anchor-service"
+  ],
+  "seeds": [
+    7,
+    19,
+    37
+  ],
+  "splitStatus": {
+    "protectedHoldout": true,
+    "sourceLnsScaleReady": true,
+    "promotionBlocked": true
+  },
+  "budget": {
+    "minScoreDelta": 0.1,
+    "onlineComparisonCount": 15,
+    "onlineOverrideCount": 30,
+    "onlineFinalNeutralOverrideCount": 30,
+    "offlineDecisionCount": 90,
+    "offlineOpportunityCount": 54,
+    "offlinePositiveOnlineNeutralCount": 3
+  },
+  "model": {
+    "schemaVersion": 1,
+    "modelType": "lns-window-ranker-gap-diagnostics",
+    "purpose": "offline-diagnostics-only",
+    "runtimeDefaultChanged": false,
+    "solverDefaultChanged": false,
+    "target": "roll-forward-final-lift",
+    "weakSeedReplayLabelsAllowed": false,
+    "rankerModelFingerprint": "fnv1a:fa22b085",
+    "onlineScorecardType": "lns-window-ranker-online-ablation"
+  },
+  "decision": "offline-online-lns-window-ranker-gap-diagnostics",
+  "summary": "Offline-to-online gap diagnostic joining full-family curated non-weak final-lift replay labels to the protected online neutral override scorecard; no solver default changed.",
+  "labelFingerprint": "fnv1a:58ce487f",
+  "datasetFingerprint": "fnv1a:b3c3fe8b",
+  "inputFingerprint": "fnv1a:16f7ed71",
+  "modelFingerprint": "fnv1a:59993b67",
+  "summaryMetrics": {
+    "target": "roll-forward-final-lift",
+    "weakSeedReplayLabelsAllowed": false,
+    "offlineDecisionCount": 90,
+    "offlineOverrideCount": 90,
+    "offlineOpportunityCount": 54,
+    "onlineComparisonCount": 15,
+    "onlineOverrideCount": 30,
+    "onlineFinalNeutralOverrideCount": 30,
+    "joinedTransitionFamilyCount": 10,
+    "offlinePositiveOnlineNeutralCount": 3,
+    "onlineActiveNoOfflineMatchCount": 6,
+    "promotionBlocked": true
+  }
+}

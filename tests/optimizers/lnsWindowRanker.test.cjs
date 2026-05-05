@@ -5,10 +5,14 @@ const path = require("node:path");
 
 const {
   buildExperimentRegistryEntry,
+  buildLnsWindowRankerGapDiagnosticsRegistryEntryDraft,
+  buildLnsWindowRankerGapDiagnosticsTelemetryManifest,
   buildLnsWindowRankerRegistryEntryDraft,
   buildLnsWindowRankerTelemetryManifest,
+  formatLnsWindowRankerGapDiagnostics,
   createLnsWindowRankerSnapshot,
   formatLnsWindowRankerExperiment,
+  runLnsWindowRankerGapDiagnostics,
   runLnsWindowRankerExperiment,
   validateExperimentRegistryEntry
 } = require("city-builder/benchmarks");
@@ -23,12 +27,14 @@ function buildLabel({
   residentialHeadroom = 0,
   serviceBonus = 0,
   anchorReachable = 0,
-  newlyReachable = 0
+  newlyReachable = 0,
+  operator = "service-anchor"
 }) {
   return {
     windowIndex,
     operatorScore,
     selectedByBaseline,
+    operator,
     improvement,
     populationDelta: improvement,
     status: improvement > 0 ? "improved" : "neutral",
@@ -80,6 +86,7 @@ function buildCase(name, split, pressureFamily, bestImprovement, seedHintKind = 
       operatorScore: 10,
       improvement: 0,
       selectedByBaseline: true,
+      operator: "weak-service",
       residentialHeadroom: 900,
       residentialHeadroomCandidate: 900,
       anchorReachable: 4,
@@ -89,6 +96,7 @@ function buildCase(name, split, pressureFamily, bestImprovement, seedHintKind = 
       windowIndex: 1,
       operatorScore: 2,
       improvement: bestImprovement,
+      operator: "service-overlap",
       serviceCandidates: 10,
       residentialHeadroomCandidate: 0,
       anchorReachable: 1,
@@ -98,6 +106,7 @@ function buildCase(name, split, pressureFamily, bestImprovement, seedHintKind = 
       windowIndex: 2,
       operatorScore: 1,
       improvement: Math.floor(bestImprovement / 4),
+      operator: "sliding",
       serviceCandidates: 2,
       residentialHeadroomCandidate: 500,
       anchorReachable: 1,
@@ -136,7 +145,7 @@ function buildCase(name, split, pressureFamily, bestImprovement, seedHintKind = 
       stateSourceIteration: null,
       stateSourceStatus: "initial-incumbent",
       stateStagnantIterations: 0,
-      operator: "service-anchor",
+      operator: label.operator,
       selectionSource: "baseline-top-k",
       window: { top: 0, left: label.windowIndex, rows: 2, cols: 2 },
       incumbentPopulation: 0,
@@ -451,6 +460,123 @@ function testLnsWindowRankerWeakReplaySeedFilter() {
   assert.equal(registryDraft.summaryMetrics.weakSeedReplayLabelsAllowed, false);
 }
 
+function buildOnlineScorecardFixture() {
+  return {
+    caseCount: 1,
+    seedCount: 1,
+    comparisonCount: 1,
+    seeds: [7],
+    selectedCaseNames: ["protected-service"],
+    variants: ["baseline", "window-ranker"],
+    coverage: {
+      caseCount: 1,
+      seedCount: 1,
+      comparisonCount: 1,
+      variantCount: 2,
+      runCount: 2,
+      gridCellCount: 16
+    },
+    variantSummaries: [],
+    cases: [
+      {
+        name: "protected-service",
+        description: "Protected service online fixture",
+        pressureFamily: "service-pressure",
+        seed: 7,
+        gridRows: 4,
+        gridCols: 4,
+        gridCells: 16,
+        baseline: { variantName: "baseline", seed: 7, totalPopulation: 100, populationDeltaVsBaseline: 0 },
+        variants: [
+          { variantName: "baseline", seed: 7, totalPopulation: 100, populationDeltaVsBaseline: 0 },
+          {
+            variantName: "window-ranker",
+            seed: 7,
+            totalPopulation: 100,
+            populationDeltaVsBaseline: 0,
+            selectionDiagnostics: {
+              overrideTransitionCounts: { "weak-service->sliding": 1 },
+              fallbackTransitionCounts: {},
+              overrideChangedWindowCount: 1,
+              fallbackChangedWindowCount: 0,
+              overrideFeatureDeltaCount: 1,
+              fallbackFeatureDeltaCount: 0,
+              overrideMeanFeatureDeltas: { selectedByBaseline: -1 },
+              fallbackMeanFeatureDeltas: {},
+              overrideTransitionFeatureDeltaCounts: { "weak-service->sliding": 1 },
+              fallbackTransitionFeatureDeltaCounts: {},
+              overrideTransitionMeanFeatureDeltas: { "weak-service->sliding": { selectedByBaseline: -1 } },
+              fallbackTransitionMeanFeatureDeltas: {}
+            },
+            finalOutcome: {
+              status: "neutral",
+              populationDeltaVsBaseline: 0,
+              hasOverride: true,
+              hasFallback: false
+            },
+            windowRanker: {
+              enabled: true,
+              modelFingerprint: "fnv1a:test",
+              featureSchemaVersion: 2,
+              minScoreDelta: 0.1,
+              decisions: 1,
+              overrides: 1,
+              fallbackDecisions: 0,
+              overrideRate: 1,
+              fallbackRate: 0
+            }
+          }
+        ]
+      }
+    ],
+    generatedAt: "2026-05-05T00:00:00.000Z"
+  };
+}
+
+function testLnsWindowRankerGapDiagnostics() {
+  const fixture = cloneFixtureWithRollForwardTargets();
+  const ranker = runLnsWindowRankerExperiment(fixture, {
+    topK: 2,
+    training: {
+      epochs: 4,
+      learningRate: 0.05,
+      marginWeightCap: 500,
+      target: "roll-forward-final-lift"
+    }
+  });
+  const result = runLnsWindowRankerGapDiagnostics(fixture, ranker.model, buildOnlineScorecardFixture());
+  const formatted = formatLnsWindowRankerGapDiagnostics(result);
+
+  assert.equal(result.audit.target, "roll-forward-final-lift");
+  assert.equal(result.offline.decisionCount, 7);
+  assert.equal(result.online.overrideCount, 1);
+  assert.equal(result.online.finalNeutralOverrideCount, 1);
+  assert.equal(result.summary.promotionBlocked, true);
+  assert.equal(result.summary.offlinePositiveOnlineNeutralCount, 1);
+  const join = result.joins.find((entry) => entry.key === "service-pressure:weak-service->sliding");
+  assert.equal(join.diagnosis, "offline-positive-online-neutral");
+  assert(join.offline.selectedPositiveCount > 0);
+  assert.equal(join.online.finalNeutralCount, 1);
+  assert.match(formatted, /offline-positive-online-neutral/);
+
+  const telemetryManifest = buildLnsWindowRankerGapDiagnosticsTelemetryManifest(result, {
+    command: "node dist/lnsWindowRankerCli.js --gap-diagnostics",
+    inputArtifacts: ["labels.json", "model.json", "scorecard.json"],
+    outputArtifacts: ["gap.json"]
+  });
+  assert.equal(telemetryManifest.metrics.promotionBlocked, true);
+  assert.equal(telemetryManifest.labelFingerprint, result.inputs.labelFingerprint);
+
+  const registryDraft = buildLnsWindowRankerGapDiagnosticsRegistryEntryDraft(result, {
+    runId: "lns-window-ranker-gap-test",
+    commands: ["node dist/lnsWindowRankerCli.js --gap-diagnostics"],
+    artifactPaths: ["artifacts/gap/lns-window-ranker-gap-diagnostics.json"]
+  });
+  assert.equal(registryDraft.artifactType, "model-experiment");
+  assert.equal(registryDraft.budget.offlinePositiveOnlineNeutralCount, 1);
+  assert.equal(registryDraft.summaryMetrics.promotionBlocked, true);
+}
+
 function testLnsWindowRankerRollForwardTarget() {
   const fixture = cloneFixtureWithRollForwardTargets();
   const result = runLnsWindowRankerExperiment(fixture, {
@@ -567,4 +693,5 @@ testLnsWindowRankerExperiment();
 testLnsWindowRankerRollForwardTarget();
 testLnsWindowRankerBaselineTieBreakTraining();
 testLnsWindowRankerWeakReplaySeedFilter();
+testLnsWindowRankerGapDiagnostics();
 testLnsWindowRankerCliArtifacts();

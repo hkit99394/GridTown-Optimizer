@@ -1,0 +1,20 @@
+=== LNS Window Ranker Offline/Online Gap Diagnostics ===
+Generated: 2026-05-05T18:22:03.013Z
+Schema: 1
+Audit: runtime-default-changed=false solver-default-changed=false target=roll-forward-final-lift weak-seed-labels=false
+Inputs: label=fnv1a:58ce487f model=fnv1a:fa22b085 online=fnv1a:16f7ed71
+Offline: decisions=90 overrides=90 opportunities=54 selected-positive=54
+Online: cases=5 seeds=7,19,37 comparisons=15 min-score-delta=0.1 overrides=30 final-neutral-overrides=30
+Gap: joined-transition-families=10 offline-positive-online-neutral=3 online-active-no-offline-match=6 promotion-blocked=true
+Online neutral override rate: 100.0%
+Joined evidence:
+- online-active-no-offline-match anchor-service/random-exploration->random-exploration: offline=none online-overrides=3 finals=0/3/0 mean-delta=0
+- offline-positive-online-neutral corridor/random-exploration->random-exploration: decisions=9 selected-positive=6 hit-best=6/6 selected-delta=+60 capture=1.0000 baseline-capture=0.0000 online-overrides=3 finals=0/3/0 mean-delta=0
+- online-active-no-offline-match corridor/weak-service->sliding: offline=none online-overrides=3 finals=0/3/0 mean-delta=0
+- online-active-no-offline-match footprint-pressure/random-exploration->random-exploration: offline=none online-overrides=3 finals=0/3/0 mean-delta=0
+- offline-positive-online-neutral footprint-pressure/weak-service->sliding: decisions=9 selected-positive=6 hit-best=6/6 selected-delta=+1,500 capture=1.0000 baseline-capture=0.0000 online-overrides=3 finals=0/3/0 mean-delta=0
+- online-active-no-offline-match gate/random-exploration->random-exploration: offline=none online-overrides=3 finals=0/3/0 mean-delta=0
+- offline-positive-online-neutral gate/weak-service->sliding: decisions=9 selected-positive=9 hit-best=9/9 selected-delta=+810 capture=1.0000 baseline-capture=0.0000 online-overrides=3 finals=0/3/0 mean-delta=0
+- online-active-no-offline-match service-pressure/random-exploration->random-exploration: offline=none online-overrides=3 finals=0/3/0 mean-delta=0
+- online-active-no-offline-match service-pressure/weak-service->sliding: offline=none online-overrides=3 finals=0/3/0 mean-delta=0
+Decision: diagnostics only; no LNS runtime scorer or solver default changed.

@@ -26,6 +26,11 @@ import {
   type LnsWindowRankerGapLayoutSignature,
   type LnsWindowRankerGapTraceComparison
 } from "./lnsWindowRankerGapTraceComparisons.js";
+import {
+  buildLnsWindowRankerGapRecommendedExperiments,
+  formatLnsWindowRankerGapRecommendedExperiment,
+  type LnsWindowRankerGapRecommendedExperiment
+} from "./lnsWindowRankerGapRecommendations.js";
 import { hashString, stableStringify } from "../core/cpSatContinuation.js";
 
 import type { LearnedRankingLabelSnapshot, LearnedRankingLabelSplit } from "./learnedRankingLabels.js";
@@ -202,6 +207,7 @@ export interface LnsWindowRankerGapDiagnosticsResult {
   };
   joins: LnsWindowRankerGapTransitionJoin[];
   traceComparisons: LnsWindowRankerGapTraceComparison[];
+  recommendedExperiments: LnsWindowRankerGapRecommendedExperiment[];
   summary: {
     joinedTransitionFamilyCount: number;
     offlinePositiveOnlineNeutralCount: number;
@@ -626,6 +632,7 @@ export function runLnsWindowRankerGapDiagnostics(
     onlineTransitionFamilySummaries
   );
   const traceComparisons = buildLnsWindowRankerGapTraceComparisons(joins, decisions, onlineScorecard);
+  const recommendedExperiments = buildLnsWindowRankerGapRecommendedExperiments(traceComparisons);
   const layoutSignatureCounts = buildLayoutSignatureCounts(traceComparisons);
   const promotionSensitivity = buildPromotionSensitivity(traceComparisons);
   const minScoreDeltas = onlineScorecard.cases
@@ -675,6 +682,7 @@ export function runLnsWindowRankerGapDiagnostics(
     },
     joins,
     traceComparisons,
+    recommendedExperiments,
     summary: {
       joinedTransitionFamilyCount: joins.length,
       offlinePositiveOnlineNeutralCount: joins.filter((entry) => entry.diagnosis === "offline-positive-online-neutral")
@@ -735,6 +743,13 @@ function summaryMetrics(result: LnsWindowRankerGapDiagnosticsResult): Record<str
       (entry) => entry.onlinePostSelectionImprovementTraceCount
     ),
     traceComparisonOfflineDecisionCount: sumBenchmarkBy(result.traceComparisons, (entry) => entry.offlineDecisionCount),
+    recommendedExperimentCount: result.recommendedExperiments.length,
+    longerRollForwardReplayRecommendationCount: result.recommendedExperiments.filter(
+      (entry) => entry.kind === "longer-roll-forward-replay"
+    ).length,
+    targetedProtectedReplayLabelRecommendationCount: result.recommendedExperiments.filter(
+      (entry) => entry.kind === "targeted-protected-replay-labels"
+    ).length,
     promotionBlocked: result.summary.promotionBlocked
   };
 }
@@ -803,7 +818,14 @@ export function buildLnsWindowRankerGapDiagnosticsRegistryEntryDraft(
       traceComparisonPostSelectionImprovementTraceCount: sumBenchmarkBy(
         result.traceComparisons,
         (entry) => entry.onlinePostSelectionImprovementTraceCount
-      )
+      ),
+      recommendedExperimentCount: result.recommendedExperiments.length,
+      longerRollForwardReplayRecommendationCount: result.recommendedExperiments.filter(
+        (entry) => entry.kind === "longer-roll-forward-replay"
+      ).length,
+      targetedProtectedReplayLabelRecommendationCount: result.recommendedExperiments.filter(
+        (entry) => entry.kind === "targeted-protected-replay-labels"
+      ).length
     },
     model: modelRecord(result),
     decision: options.decision ?? "offline-online-lns-window-ranker-gap-diagnostics",
@@ -850,6 +872,9 @@ export function formatLnsWindowRankerGapDiagnostics(result: LnsWindowRankerGapDi
     .slice(0, 10)
     .map(formatJoin);
   const traceComparisons = result.traceComparisons.slice(0, 10).map(formatLnsWindowRankerGapTraceComparison);
+  const recommendedExperiments = result.recommendedExperiments
+    .slice(0, 10)
+    .map(formatLnsWindowRankerGapRecommendedExperiment);
   return [
     "=== LNS Window Ranker Offline/Online Gap Diagnostics ===",
     `Generated: ${result.generatedAt}`,
@@ -866,6 +891,8 @@ export function formatLnsWindowRankerGapDiagnostics(result: LnsWindowRankerGapDi
     ...(joins.length ? joins : ["- none"]),
     "Trace comparisons:",
     ...(traceComparisons.length ? traceComparisons : ["- none"]),
+    "Recommended experiments:",
+    ...(recommendedExperiments.length ? recommendedExperiments : ["- none"]),
     "Decision: diagnostics only; no LNS runtime scorer or solver default changed."
   ].join("\n");
 }

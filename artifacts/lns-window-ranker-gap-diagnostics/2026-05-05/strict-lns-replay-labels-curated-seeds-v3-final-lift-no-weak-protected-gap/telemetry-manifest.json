@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "source": "model-experiment",
   "command": "node dist/lnsWindowRankerCli.js --gap-diagnostics --labels=artifacts/learned-ranking-labels/2026-05-04/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1/labels.json --model=artifacts/lns-window-ranker/2026-05-05/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1-final-lift-no-weak-cpu-ranker-lr0.02-cap100/model.json --online-scorecard=artifacts/lns-window-ranker-online/2026-05-05/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1-final-lift-no-weak-protected-holdout-min-score-delta-0.1/lns-window-ranker-online-ablation.json --artifact-dir=artifacts/lns-window-ranker-gap-diagnostics/2026-05-05/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-protected-gap --ranker-run-id=lns-window-ranker-gap-2026-05-05-curated-seeds-v3-final-lift-no-weak-protected --ranker-decision=offline-online-lns-window-ranker-gap-diagnostics '--ranker-summary=Offline-to-online gap diagnostic joining full-family curated non-weak final-lift replay labels to the protected online neutral override scorecard; no solver default changed.' --json",
-  "generatedAt": "2026-05-05T22:58:11.585Z",
+  "generatedAt": "2026-05-05T23:09:13.568Z",
   "git": {
-    "commit": "55e7237e0dbf2a0d68b3619c54efd421e7c9abb2",
+    "commit": "676c9647be911fca2e9e4b448e23a28fb02f8bc7",
     "branch": "features/validated-solver-improvement-loop"
   },
   "hardware": {
@@ -97,6 +97,9 @@
     "traceComparisonChangedFinalLayoutTraceCount": 14,
     "traceComparisonPostSelectionImprovementTraceCount": 6,
     "traceComparisonOfflineDecisionCount": 27,
+    "recommendedExperimentCount": 5,
+    "longerRollForwardReplayRecommendationCount": 1,
+    "targetedProtectedReplayLabelRecommendationCount": 4,
     "promotionBlocked": true
   },
   "notes": "Offline-to-online LNS window-ranker gap diagnostics; no solver default changed."

@@ -659,6 +659,10 @@ function testLnsWindowRankerGapDiagnostics() {
   assert.deepEqual(result.summary.promotionSensitivity.protectedReplayEvidenceGate.remainingBlockers, [
     "changed-layout-no-lift-trajectory-depth"
   ]);
+  assert.equal(result.recommendedExperiments.length, 1);
+  assert.equal(result.recommendedExperiments[0].kind, "longer-roll-forward-replay");
+  assert.equal(result.recommendedExperiments[0].evidenceStatus, "evidence-backed-blocker");
+  assert.equal(result.recommendedExperiments[0].key, "service-pressure:weak-service->sliding");
   const join = result.joins.find((entry) => entry.key === "service-pressure:weak-service->sliding");
   assert.equal(join.diagnosis, "offline-positive-online-neutral");
   assert(join.offline.selectedPositiveCount > 0);
@@ -692,6 +696,8 @@ function testLnsWindowRankerGapDiagnostics() {
   assert.match(formatted, /layout-signature=changed-layout-final-neutral/);
   assert.match(formatted, /online-layout-changed=1/);
   assert.match(formatted, /online-ranker-post-improvements=0/);
+  assert.match(formatted, /Recommended experiments:/);
+  assert.match(formatted, /longer-roll-forward-replay/);
 
   const telemetryManifest = buildLnsWindowRankerGapDiagnosticsTelemetryManifest(result, {
     command: "node dist/lnsWindowRankerCli.js --gap-diagnostics",
@@ -703,6 +709,9 @@ function testLnsWindowRankerGapDiagnostics() {
   assert.equal(telemetryManifest.metrics.traceComparisonOnlineTraceCount, 1);
   assert.equal(telemetryManifest.metrics.traceComparisonChangedFinalLayoutTraceCount, 1);
   assert.equal(telemetryManifest.metrics.traceComparisonPostSelectionImprovementTraceCount, 0);
+  assert.equal(telemetryManifest.metrics.recommendedExperimentCount, 1);
+  assert.equal(telemetryManifest.metrics.longerRollForwardReplayRecommendationCount, 1);
+  assert.equal(telemetryManifest.metrics.targetedProtectedReplayLabelRecommendationCount, 0);
   assert.equal(telemetryManifest.metrics.changedLayoutFinalNeutralTraceComparisonCount, 1);
   assert.equal(telemetryManifest.metrics.zeroLayoutFinalNeutralTraceComparisonCount, 0);
   assert.equal(telemetryManifest.metrics.promotionSensitivity.remainingPromotionBlocked, true);
@@ -729,6 +738,9 @@ function testLnsWindowRankerGapDiagnostics() {
   assert.equal(registryDraft.budget.traceComparisonCount, 1);
   assert.equal(registryDraft.budget.traceComparisonChangedFinalLayoutTraceCount, 1);
   assert.equal(registryDraft.budget.traceComparisonPostSelectionImprovementTraceCount, 0);
+  assert.equal(registryDraft.budget.recommendedExperimentCount, 1);
+  assert.equal(registryDraft.budget.longerRollForwardReplayRecommendationCount, 1);
+  assert.equal(registryDraft.budget.targetedProtectedReplayLabelRecommendationCount, 0);
   assert.equal(registryDraft.budget.changedLayoutFinalNeutralTraceComparisonCount, 1);
   assert.equal(registryDraft.budget.zeroLayoutFinalNeutralTraceComparisonCount, 0);
   assert.equal(registryDraft.budget.suppressedZeroLayoutFinalNeutralTraceComparisonCount, 0);
@@ -774,6 +786,7 @@ function testLnsWindowRankerGapDiagnostics() {
     false
   );
   assert.deepEqual(zeroLayoutResult.summary.promotionSensitivity.protectedReplayEvidenceGate.remainingBlockers, []);
+  assert.deepEqual(zeroLayoutResult.recommendedExperiments, []);
 }
 
 function testLnsWindowRankerRollForwardTarget() {

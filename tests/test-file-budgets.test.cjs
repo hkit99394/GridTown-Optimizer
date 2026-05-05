@@ -6,7 +6,7 @@ const repoRoot = path.resolve(__dirname, "..");
 const defaultTestFileBudget = 1500;
 
 const temporaryOversizedBudgets = new Map([
-  ["tests/optimizers/optimizerHarness.cjs", 9500],
+  ["tests/optimizers/optimizerHarness.cjs", 8600],
   ["tests/review-findings.test.cjs", 4450]
 ]);
 

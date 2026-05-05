@@ -3,6 +3,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
+import { MAX_BENCHMARK_RANDOM_SEED, isBenchmarkSeed } from "./benchmarkSeeds.js";
+
 export const EXPERIMENT_REGISTRY_SCHEMA_VERSION = 1;
 export const DEFAULT_EXPERIMENT_REGISTRY_PATH = "artifacts/experiments/index.jsonl";
 export const EXPERIMENT_REGISTRY_ARTIFACT_TYPES = [
@@ -333,16 +335,24 @@ function validateSeeds(
     return false;
   }
   const seen = new Set<number>();
+  let valid = true;
   value.forEach((seed, index) => {
-    if (!Number.isSafeInteger(seed)) {
-      issue(issues, "invalid-seed", `Field 'seeds[${index}]' must be a safe integer.`, {
-        lineNumber,
-        runId,
-        field: "seeds"
-      });
+    if (!isBenchmarkSeed(seed)) {
+      valid = false;
+      issue(
+        issues,
+        "invalid-seed",
+        `Field 'seeds[${index}]' must be an integer between 0 and ${MAX_BENCHMARK_RANDOM_SEED}.`,
+        {
+          lineNumber,
+          runId,
+          field: "seeds"
+        }
+      );
       return;
     }
     if (seen.has(seed)) {
+      valid = false;
       issue(issues, "duplicate-value", `Field 'seeds' contains duplicate value '${seed}'.`, {
         lineNumber,
         runId,
@@ -351,7 +361,7 @@ function validateSeeds(
     }
     seen.add(seed);
   });
-  return true;
+  return valid;
 }
 
 function validateBudgetValue(

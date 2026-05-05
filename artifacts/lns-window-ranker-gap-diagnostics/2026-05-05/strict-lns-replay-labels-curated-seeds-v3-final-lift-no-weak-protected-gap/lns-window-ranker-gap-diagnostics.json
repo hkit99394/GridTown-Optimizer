@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-05T21:26:52.379Z",
+  "generatedAt": "2026-05-05T21:55:27.467Z",
   "schemaVersion": 1,
   "audit": {
     "runtimeDefaultChanged": false,
@@ -2999,6 +2999,21 @@
     "zeroLayoutFinalNeutralTraceComparisonCount": 4,
     "changedLayoutFinalNeutralTraceComparisonCount": 4,
     "mixedLayoutFinalNeutralTraceComparisonCount": 1,
+    "promotionSensitivity": {
+      "suppressedLayoutSignature": "zero-layout-final-neutral",
+      "suppressedTraceComparisonCount": 4,
+      "remainingTraceComparisonCount": 5,
+      "remainingOfflinePositiveOnlineNeutralCount": 1,
+      "remainingOnlineActiveNoOfflineMatchCount": 4,
+      "changedLayoutNoLiftTrajectoryDepthCount": 5,
+      "missingLayoutDeltaCount": 0,
+      "mixedFinalOutcomeCount": 0,
+      "remainingPromotionBlocked": true,
+      "remainingBlockers": [
+        "unmatched-protected-replay-evidence",
+        "changed-layout-no-lift-trajectory-depth"
+      ]
+    },
     "promotionBlocked": true
   }
 }

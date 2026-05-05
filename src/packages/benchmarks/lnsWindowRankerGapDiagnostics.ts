@@ -128,6 +128,25 @@ export interface LnsWindowRankerGapTransitionJoin {
   diagnosis: LnsWindowRankerGapDiagnosis;
 }
 
+export type LnsWindowRankerGapPromotionSensitivityBlocker =
+  | "changed-layout-no-lift-trajectory-depth"
+  | "missing-layout-delta"
+  | "mixed-final-outcome"
+  | "unmatched-protected-replay-evidence";
+
+export interface LnsWindowRankerGapPromotionSensitivity {
+  suppressedLayoutSignature: "zero-layout-final-neutral";
+  suppressedTraceComparisonCount: number;
+  remainingTraceComparisonCount: number;
+  remainingOfflinePositiveOnlineNeutralCount: number;
+  remainingOnlineActiveNoOfflineMatchCount: number;
+  changedLayoutNoLiftTrajectoryDepthCount: number;
+  missingLayoutDeltaCount: number;
+  mixedFinalOutcomeCount: number;
+  remainingPromotionBlocked: boolean;
+  remainingBlockers: LnsWindowRankerGapPromotionSensitivityBlocker[];
+}
+
 export interface LnsWindowRankerGapDiagnosticsResult {
   generatedAt: string;
   schemaVersion: 1;
@@ -178,6 +197,7 @@ export interface LnsWindowRankerGapDiagnosticsResult {
     zeroLayoutFinalNeutralTraceComparisonCount: number;
     changedLayoutFinalNeutralTraceComparisonCount: number;
     mixedLayoutFinalNeutralTraceComparisonCount: number;
+    promotionSensitivity: LnsWindowRankerGapPromotionSensitivity;
     promotionBlocked: boolean;
   };
 }
@@ -508,6 +528,42 @@ function buildLayoutSignatureCounts(
   ) as Record<LnsWindowRankerGapLayoutSignature, number>;
 }
 
+function buildPromotionSensitivity(
+  traceComparisons: readonly LnsWindowRankerGapTraceComparison[]
+): LnsWindowRankerGapPromotionSensitivity {
+  const suppressedLayoutSignature = "zero-layout-final-neutral";
+  const remaining = traceComparisons.filter((entry) => entry.layoutSignature !== suppressedLayoutSignature);
+  const remainingOnlineActiveNoOfflineMatchCount = remaining.filter(
+    (entry) => entry.diagnosis === "online-active-no-offline-match"
+  ).length;
+  const changedLayoutNoLiftTrajectoryDepthCount = remaining.filter(
+    (entry) =>
+      entry.layoutSignature === "changed-layout-final-neutral" || entry.layoutSignature === "mixed-layout-final-neutral"
+  ).length;
+  const missingLayoutDeltaCount = remaining.filter((entry) => entry.layoutSignature === "missing-layout-delta").length;
+  const mixedFinalOutcomeCount = remaining.filter((entry) => entry.layoutSignature === "mixed-final-outcome").length;
+  const remainingBlockers: LnsWindowRankerGapPromotionSensitivityBlocker[] = [
+    ...(remainingOnlineActiveNoOfflineMatchCount > 0 ? (["unmatched-protected-replay-evidence"] as const) : []),
+    ...(changedLayoutNoLiftTrajectoryDepthCount > 0 ? (["changed-layout-no-lift-trajectory-depth"] as const) : []),
+    ...(missingLayoutDeltaCount > 0 ? (["missing-layout-delta"] as const) : []),
+    ...(mixedFinalOutcomeCount > 0 ? (["mixed-final-outcome"] as const) : [])
+  ];
+  return {
+    suppressedLayoutSignature,
+    suppressedTraceComparisonCount: traceComparisons.length - remaining.length,
+    remainingTraceComparisonCount: remaining.length,
+    remainingOfflinePositiveOnlineNeutralCount: remaining.filter(
+      (entry) => entry.diagnosis === "offline-positive-online-neutral"
+    ).length,
+    remainingOnlineActiveNoOfflineMatchCount,
+    changedLayoutNoLiftTrajectoryDepthCount,
+    missingLayoutDeltaCount,
+    mixedFinalOutcomeCount,
+    remainingPromotionBlocked: remainingBlockers.length > 0,
+    remainingBlockers
+  };
+}
+
 export function runLnsWindowRankerGapDiagnostics(
   labelSnapshot: LearnedRankingLabelSnapshot,
   model: LnsWindowRankerModel,
@@ -529,6 +585,7 @@ export function runLnsWindowRankerGapDiagnostics(
   );
   const traceComparisons = buildLnsWindowRankerGapTraceComparisons(joins, decisions, onlineScorecard);
   const layoutSignatureCounts = buildLayoutSignatureCounts(traceComparisons);
+  const promotionSensitivity = buildPromotionSensitivity(traceComparisons);
   const minScoreDeltas = onlineScorecard.cases
     .map((entry) => onlineRankerVariant(entry).windowRanker?.minScoreDelta)
     .filter((entry): entry is number => typeof entry === "number");
@@ -586,6 +643,7 @@ export function runLnsWindowRankerGapDiagnostics(
       zeroLayoutFinalNeutralTraceComparisonCount: layoutSignatureCounts["zero-layout-final-neutral"],
       changedLayoutFinalNeutralTraceComparisonCount: layoutSignatureCounts["changed-layout-final-neutral"],
       mixedLayoutFinalNeutralTraceComparisonCount: layoutSignatureCounts["mixed-layout-final-neutral"],
+      promotionSensitivity,
       promotionBlocked: joins.some((entry) => entry.diagnosis !== "offline-neutral-online-neutral")
     }
   };
@@ -623,6 +681,7 @@ function summaryMetrics(result: LnsWindowRankerGapDiagnosticsResult): Record<str
     zeroLayoutFinalNeutralTraceComparisonCount: result.summary.zeroLayoutFinalNeutralTraceComparisonCount,
     changedLayoutFinalNeutralTraceComparisonCount: result.summary.changedLayoutFinalNeutralTraceComparisonCount,
     mixedLayoutFinalNeutralTraceComparisonCount: result.summary.mixedLayoutFinalNeutralTraceComparisonCount,
+    promotionSensitivity: result.summary.promotionSensitivity,
     traceComparisonCount: result.traceComparisons.length,
     traceComparisonOnlineTraceCount: sumBenchmarkBy(result.traceComparisons, (entry) => entry.onlineTraceCount),
     traceComparisonChangedFinalLayoutTraceCount: sumBenchmarkBy(
@@ -677,6 +736,10 @@ export function buildLnsWindowRankerGapDiagnosticsRegistryEntryDraft(
       zeroLayoutFinalNeutralTraceComparisonCount: result.summary.zeroLayoutFinalNeutralTraceComparisonCount,
       changedLayoutFinalNeutralTraceComparisonCount: result.summary.changedLayoutFinalNeutralTraceComparisonCount,
       mixedLayoutFinalNeutralTraceComparisonCount: result.summary.mixedLayoutFinalNeutralTraceComparisonCount,
+      suppressedZeroLayoutFinalNeutralTraceComparisonCount:
+        result.summary.promotionSensitivity.suppressedTraceComparisonCount,
+      sensitivityRemainingTraceComparisonCount: result.summary.promotionSensitivity.remainingTraceComparisonCount,
+      sensitivityRemainingPromotionBlocked: result.summary.promotionSensitivity.remainingPromotionBlocked ? 1 : 0,
       traceComparisonCount: result.traceComparisons.length,
       traceComparisonOnlineTraceCount: sumBenchmarkBy(result.traceComparisons, (entry) => entry.onlineTraceCount),
       traceComparisonChangedFinalLayoutTraceCount: sumBenchmarkBy(
@@ -716,6 +779,11 @@ function formatLayoutSignatureCounts(counts: Record<LnsWindowRankerGapLayoutSign
   return formatted.length ? formatted.join(",") : "none";
 }
 
+function formatPromotionSensitivity(sensitivity: LnsWindowRankerGapPromotionSensitivity): string {
+  const blockers = sensitivity.remainingBlockers.length ? sensitivity.remainingBlockers.join(",") : "none";
+  return `suppress=${sensitivity.suppressedLayoutSignature}:${sensitivity.suppressedTraceComparisonCount} remaining=${sensitivity.remainingTraceComparisonCount} remaining-blocked=${sensitivity.remainingPromotionBlocked} blockers=${blockers} unmatched=${sensitivity.remainingOnlineActiveNoOfflineMatchCount} changed-layout-no-lift=${sensitivity.changedLayoutNoLiftTrajectoryDepthCount}`;
+}
+
 export function formatLnsWindowRankerGapDiagnostics(result: LnsWindowRankerGapDiagnosticsResult): string {
   const joins = result.joins
     .filter((entry) => entry.diagnosis !== "offline-neutral-online-neutral")
@@ -732,6 +800,7 @@ export function formatLnsWindowRankerGapDiagnostics(result: LnsWindowRankerGapDi
     `Online: cases=${result.online.selectedCaseNames.length} seeds=${result.online.seeds.join(",")} comparisons=${result.online.comparisonCount} min-score-delta=${result.online.minScoreDelta ?? "n/a"} overrides=${result.online.overrideCount} selection-trace=${result.online.selectionTraceCount} final-neutral-overrides=${result.online.finalNeutralOverrideCount}`,
     `Gap: joined-transition-families=${result.summary.joinedTransitionFamilyCount} offline-positive-online-neutral=${result.summary.offlinePositiveOnlineNeutralCount} online-active-no-offline-match=${result.summary.onlineActiveNoOfflineMatchCount} promotion-blocked=${result.summary.promotionBlocked}`,
     `Layout signatures: ${formatLayoutSignatureCounts(result.summary.traceComparisonLayoutSignatureCounts)}`,
+    `Promotion sensitivity: ${formatPromotionSensitivity(result.summary.promotionSensitivity)}`,
     `Online neutral override rate: ${formatBenchmarkRate(benchmarkRatio(result.online.finalNeutralOverrideCount, result.online.overrideCount))}`,
     "Joined evidence:",
     ...(joins.length ? joins : ["- none"]),

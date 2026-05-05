@@ -7,11 +7,19 @@ export interface BenchmarkSeedRunPlan {
   seedRuns: BenchmarkSeedRun[];
 }
 
+export function isBenchmarkSeed(value: unknown): value is number {
+  return (
+    typeof value === "number" &&
+    Number.isFinite(value) &&
+    Number.isInteger(value) &&
+    value >= 0 &&
+    value <= MAX_BENCHMARK_RANDOM_SEED
+  );
+}
+
 export function normalizeBenchmarkSeeds(seeds: readonly number[] | undefined, label: string): number[] | undefined {
   if (!seeds?.length) return undefined;
-  const invalid = seeds.filter(
-    (value) => !Number.isFinite(value) || !Number.isInteger(value) || value < 0 || value > MAX_BENCHMARK_RANDOM_SEED
-  );
+  const invalid = seeds.filter((value) => !isBenchmarkSeed(value));
   if (invalid.length > 0) {
     throw new Error(`${label} must contain only integer seeds between 0 and ${MAX_BENCHMARK_RANDOM_SEED}.`);
   }

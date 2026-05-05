@@ -649,6 +649,10 @@ function testLnsWindowRankerGapDiagnostics() {
   assert.equal(result.summary.zeroLayoutFinalNeutralTraceComparisonCount, 0);
   assert.equal(result.summary.mixedLayoutFinalNeutralTraceComparisonCount, 0);
   assert.equal(result.summary.traceComparisonLayoutSignatureCounts["changed-layout-final-neutral"], 1);
+  assert.equal(result.summary.promotionSensitivity.suppressedTraceComparisonCount, 0);
+  assert.equal(result.summary.promotionSensitivity.remainingTraceComparisonCount, 1);
+  assert.equal(result.summary.promotionSensitivity.remainingPromotionBlocked, true);
+  assert.deepEqual(result.summary.promotionSensitivity.remainingBlockers, ["changed-layout-no-lift-trajectory-depth"]);
   const join = result.joins.find((entry) => entry.key === "service-pressure:weak-service->sliding");
   assert.equal(join.diagnosis, "offline-positive-online-neutral");
   assert(join.offline.selectedPositiveCount > 0);
@@ -672,6 +676,7 @@ function testLnsWindowRankerGapDiagnostics() {
   assert.match(formatted, /offline-positive-online-neutral/);
   assert.match(formatted, /Trace comparisons:/);
   assert.match(formatted, /Layout signatures: changed-layout-final-neutral:1/);
+  assert.match(formatted, /Promotion sensitivity: suppress=zero-layout-final-neutral:0 remaining=1/);
   assert.match(formatted, /online-traces=1/);
   assert.match(formatted, /layout-signature=changed-layout-final-neutral/);
   assert.match(formatted, /online-layout-changed=1/);
@@ -687,6 +692,10 @@ function testLnsWindowRankerGapDiagnostics() {
   assert.equal(telemetryManifest.metrics.traceComparisonChangedFinalLayoutTraceCount, 1);
   assert.equal(telemetryManifest.metrics.changedLayoutFinalNeutralTraceComparisonCount, 1);
   assert.equal(telemetryManifest.metrics.zeroLayoutFinalNeutralTraceComparisonCount, 0);
+  assert.equal(telemetryManifest.metrics.promotionSensitivity.remainingPromotionBlocked, true);
+  assert.deepEqual(telemetryManifest.metrics.promotionSensitivity.remainingBlockers, [
+    "changed-layout-no-lift-trajectory-depth"
+  ]);
   assert.equal(telemetryManifest.metrics.traceComparisonLayoutSignatureCounts["changed-layout-final-neutral"], 1);
   assert.equal(telemetryManifest.labelFingerprint, result.inputs.labelFingerprint);
 
@@ -701,7 +710,33 @@ function testLnsWindowRankerGapDiagnostics() {
   assert.equal(registryDraft.budget.traceComparisonChangedFinalLayoutTraceCount, 1);
   assert.equal(registryDraft.budget.changedLayoutFinalNeutralTraceComparisonCount, 1);
   assert.equal(registryDraft.budget.zeroLayoutFinalNeutralTraceComparisonCount, 0);
+  assert.equal(registryDraft.budget.suppressedZeroLayoutFinalNeutralTraceComparisonCount, 0);
+  assert.equal(registryDraft.budget.sensitivityRemainingTraceComparisonCount, 1);
+  assert.equal(registryDraft.budget.sensitivityRemainingPromotionBlocked, 1);
   assert.equal(registryDraft.summaryMetrics.promotionBlocked, true);
+
+  const zeroLayoutScorecard = JSON.parse(JSON.stringify(buildOnlineScorecardFixture()));
+  Object.assign(zeroLayoutScorecard.cases[0].variants[1].finalLayoutDeltaVsBaseline, {
+    variantFingerprint: "fnv1a:baseline",
+    sameFinalLayout: true,
+    roadAddedCount: 0,
+    roadRemovedCount: 0,
+    roadDeltaCount: 0,
+    serviceAddedCount: 0,
+    serviceRemovedCount: 0,
+    serviceDeltaCount: 0,
+    residentialAddedCount: 0,
+    residentialRemovedCount: 0,
+    residentialDeltaCount: 0,
+    buildingDeltaCount: 0,
+    placementDeltaCount: 0
+  });
+  const zeroLayoutResult = runLnsWindowRankerGapDiagnostics(fixture, ranker.model, zeroLayoutScorecard);
+  assert.equal(zeroLayoutResult.summary.zeroLayoutFinalNeutralTraceComparisonCount, 1);
+  assert.equal(zeroLayoutResult.summary.promotionSensitivity.suppressedTraceComparisonCount, 1);
+  assert.equal(zeroLayoutResult.summary.promotionSensitivity.remainingTraceComparisonCount, 0);
+  assert.equal(zeroLayoutResult.summary.promotionSensitivity.remainingPromotionBlocked, false);
+  assert.deepEqual(zeroLayoutResult.summary.promotionSensitivity.remainingBlockers, []);
 }
 
 function testLnsWindowRankerRollForwardTarget() {

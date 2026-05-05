@@ -21,6 +21,7 @@ import {
   selectBenchmarkCasesByName,
   uniqueBenchmarkValues
 } from "./benchmarkOptions.js";
+import { normalizeBenchmarkSeeds } from "./benchmarkSeeds.js";
 import { buildCpSatBenchmarkCpuPlan, normalizeCpSatBenchmarkOptions } from "./cpSat.js";
 import { normalizeGreedyBenchmarkOptions } from "./greedy.js";
 import { normalizeLnsBenchmarkOptions } from "./lns.js";
@@ -146,15 +147,32 @@ function normalizeBudgetList(options: CrossModeBenchmarkRunOptions): number[] {
   return uniqueBenchmarkValues(budgets);
 }
 
-function normalizeSeeds(seeds: readonly number[] | undefined): number[] {
-  const requested = seeds?.length ? seeds : DEFAULT_CROSS_MODE_BENCHMARK_SEEDS;
-  const normalized = requested
-    .map((value) => (Number.isFinite(value) ? Math.max(0, Math.floor(value)) : -1))
-    .filter((value) => value >= 0);
-  if (normalized.length === 0) {
-    throw new Error("Cross-mode benchmark suite must include at least one non-negative seed.");
+function normalizeSingleRunBudgetSeconds(options: CrossModeBenchmarkRunOptions): number {
+  if (options.budgetSeconds !== undefined) {
+    return normalizeBudgetSeconds(options.budgetSeconds);
   }
-  return uniqueBenchmarkValues(normalized);
+  if (options.budgetsSeconds?.length) {
+    return normalizeBudgetSeconds(options.budgetsSeconds[0]);
+  }
+  return DEFAULT_CROSS_MODE_BENCHMARK_BUDGET_SECONDS;
+}
+
+function normalizeSeeds(seeds: readonly number[] | undefined): number[] {
+  return normalizeBenchmarkSeeds(seeds, "Cross-mode benchmark seeds") ?? [...DEFAULT_CROSS_MODE_BENCHMARK_SEEDS];
+}
+
+function isCrossModeBenchmarkMode(mode: unknown): mode is CrossModeBenchmarkMode {
+  return typeof mode === "string" && mode in MODE_LABELS;
+}
+
+function formatUnknownCrossModeBenchmarkModes(modes: readonly unknown[]): string {
+  return `Unknown cross-mode benchmark mode(s): ${modes.map(String).join(", ")}. Available modes: ${DEFAULT_CROSS_MODE_BENCHMARK_MODES.join(", ")}.`;
+}
+
+function assertCrossModeBenchmarkMode(mode: CrossModeBenchmarkMode): void {
+  if (!isCrossModeBenchmarkMode(mode)) {
+    throw new Error(formatUnknownCrossModeBenchmarkModes([mode]));
+  }
 }
 
 function modeToOptimizer(mode: CrossModeBenchmarkMode): OptimizerName {
@@ -360,7 +378,8 @@ export function buildCrossModeBenchmarkParams(
   mode: CrossModeBenchmarkMode,
   options: CrossModeBenchmarkRunOptions = {}
 ): SolverParams {
-  const budgetSeconds = normalizeBudgetSeconds(options.budgetSeconds);
+  assertCrossModeBenchmarkMode(mode);
+  const budgetSeconds = normalizeSingleRunBudgetSeconds(options);
   const seed = normalizeSeeds(options.seeds)[0] ?? DEFAULT_CROSS_MODE_BENCHMARK_SEEDS[0];
   const params = cloneBenchmarkSolverParams(benchmarkCase.params);
   const optimizer = modeToOptimizer(mode);
@@ -432,10 +451,14 @@ function selectBenchmarkCases(
 
 function normalizeModes(modes: readonly CrossModeBenchmarkMode[] | undefined): CrossModeBenchmarkMode[] {
   const selected = modes?.length ? [...modes] : [...DEFAULT_CROSS_MODE_BENCHMARK_MODES];
+  const unknownModes = uniqueBenchmarkValues(selected.filter((mode) => !isCrossModeBenchmarkMode(mode)));
+  if (unknownModes.length > 0) {
+    throw new Error(formatUnknownCrossModeBenchmarkModes(unknownModes));
+  }
   const seen = new Set<CrossModeBenchmarkMode>();
   const normalized: CrossModeBenchmarkMode[] = [];
   for (const mode of selected) {
-    if (!(mode in MODE_LABELS) || seen.has(mode)) continue;
+    if (seen.has(mode)) continue;
     seen.add(mode);
     normalized.push(mode);
   }

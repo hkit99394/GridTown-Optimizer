@@ -103,6 +103,30 @@ function testStrictMetadataRulesForBenchmarkAndLabelEntries() {
   );
 }
 
+function testRegistryRejectsOutOfRangeSeeds() {
+  const negativeSeedResult = validateExperimentRegistryEntry(createBaseEntry({ seeds: [-1] }), {
+    rootDir: repoRoot,
+    validateArtifactPaths: false
+  });
+  assert.equal(
+    negativeSeedResult.issues.some(
+      (issue) => issue.code === "invalid-seed" && /between 0 and 2147483647/.test(issue.message)
+    ),
+    true
+  );
+
+  const overflowSeedResult = validateExperimentRegistryEntry(createBaseEntry({ seeds: [2147483648] }), {
+    rootDir: repoRoot,
+    validateArtifactPaths: false
+  });
+  assert.equal(
+    overflowSeedResult.issues.some(
+      (issue) => issue.code === "invalid-seed" && /between 0 and 2147483647/.test(issue.message)
+    ),
+    true
+  );
+}
+
 function testModelExperimentManifestAndRegistryDraft() {
   const telemetryManifest = buildModelExperimentTelemetryManifest({
     command: "python python/ml/train.py --config=config.json",
@@ -363,6 +387,7 @@ function testRegistryCliCanAppendAndCheckLabelArtifacts() {
 
 testSeedRegistryChecksWithoutShapeErrors();
 testStrictMetadataRulesForBenchmarkAndLabelEntries();
+testRegistryRejectsOutOfRangeSeeds();
 testModelExperimentManifestAndRegistryDraft();
 testAppendHelperAddsCommitCommandBudgetHardwareModelAndDecisionMetadata();
 testCompleteEntryPreservesExplicitNullArtifactCommit();

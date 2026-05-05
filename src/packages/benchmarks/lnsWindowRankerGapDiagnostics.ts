@@ -730,6 +730,10 @@ function summaryMetrics(result: LnsWindowRankerGapDiagnosticsResult): Record<str
       result.traceComparisons,
       (entry) => entry.onlineChangedFinalLayoutTraceCount
     ),
+    traceComparisonPostSelectionImprovementTraceCount: sumBenchmarkBy(
+      result.traceComparisons,
+      (entry) => entry.onlinePostSelectionImprovementTraceCount
+    ),
     traceComparisonOfflineDecisionCount: sumBenchmarkBy(result.traceComparisons, (entry) => entry.offlineDecisionCount),
     promotionBlocked: result.summary.promotionBlocked
   };
@@ -795,6 +799,10 @@ export function buildLnsWindowRankerGapDiagnosticsRegistryEntryDraft(
       traceComparisonChangedFinalLayoutTraceCount: sumBenchmarkBy(
         result.traceComparisons,
         (entry) => entry.onlineChangedFinalLayoutTraceCount
+      ),
+      traceComparisonPostSelectionImprovementTraceCount: sumBenchmarkBy(
+        result.traceComparisons,
+        (entry) => entry.onlinePostSelectionImprovementTraceCount
       )
     },
     model: modelRecord(result),

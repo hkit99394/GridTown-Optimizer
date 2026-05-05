@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-05T22:45:53.204Z",
+  "generatedAt": "2026-05-05T22:58:11.585Z",
   "schemaVersion": 1,
   "audit": {
     "runtimeDefaultChanged": false,
@@ -1289,6 +1289,11 @@
       "layoutSignature": "mixed-layout-final-neutral",
       "onlineMeanImprovement": 110,
       "onlineMeanScoreDelta": 0.5211,
+      "onlineMeanPostSelectionTraceCount": 0,
+      "onlinePostSelectionImprovementTraceCount": 0,
+      "onlineMeanPostSelectionImprovementTotal": 0,
+      "onlineMeanPostSelectionBestPopulationDeltaFromSelectedAfter": 0,
+      "onlineMeanFinalPopulationDeltaFromSelectedAfter": 0,
       "topFeatureDeltaGaps": [
         {
           "featureName": "selectedByBaseline",
@@ -1359,7 +1364,15 @@
           },
           "improvement": 110,
           "populationDeltaVsBaseline": 0,
-          "scoreDelta": 0.5211
+          "scoreDelta": 0.5211,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 0,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
         },
         {
           "caseName": "lns-holdout-anchor-service-shelf-pressure",
@@ -1397,7 +1410,15 @@
           },
           "improvement": 110,
           "populationDeltaVsBaseline": 0,
-          "scoreDelta": 0.5211
+          "scoreDelta": 0.5211,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 0,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
         },
         {
           "caseName": "lns-holdout-anchor-service-shelf-pressure",
@@ -1435,7 +1456,15 @@
           },
           "improvement": 110,
           "populationDeltaVsBaseline": 0,
-          "scoreDelta": 0.5211
+          "scoreDelta": 0.5211,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 0,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
         }
       ]
     },
@@ -1457,6 +1486,11 @@
       "layoutSignature": "changed-layout-final-neutral",
       "onlineMeanImprovement": 65,
       "onlineMeanScoreDelta": 0.6974,
+      "onlineMeanPostSelectionTraceCount": 0,
+      "onlinePostSelectionImprovementTraceCount": 0,
+      "onlineMeanPostSelectionImprovementTotal": 0,
+      "onlineMeanPostSelectionBestPopulationDeltaFromSelectedAfter": 0,
+      "onlineMeanFinalPopulationDeltaFromSelectedAfter": 0,
       "topFeatureDeltaGaps": [
         {
           "featureName": "serviceCandidateBonus",
@@ -1594,7 +1628,15 @@
           },
           "improvement": 65,
           "populationDeltaVsBaseline": 0,
-          "scoreDelta": 0.6974
+          "scoreDelta": 0.6974,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 0,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
         },
         {
           "caseName": "lns-holdout-corridor-weave-pressure",
@@ -1632,7 +1674,15 @@
           },
           "improvement": 65,
           "populationDeltaVsBaseline": 0,
-          "scoreDelta": 0.6974
+          "scoreDelta": 0.6974,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 0,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
         },
         {
           "caseName": "lns-holdout-corridor-weave-pressure",
@@ -1670,7 +1720,15 @@
           },
           "improvement": 65,
           "populationDeltaVsBaseline": 0,
-          "scoreDelta": 0.6974
+          "scoreDelta": 0.6974,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 0,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
         }
       ]
     },
@@ -1692,6 +1750,11 @@
       "layoutSignature": "changed-layout-final-neutral",
       "onlineMeanImprovement": 0,
       "onlineMeanScoreDelta": 0.6266,
+      "onlineMeanPostSelectionTraceCount": 1,
+      "onlinePostSelectionImprovementTraceCount": 3,
+      "onlineMeanPostSelectionImprovementTotal": 65,
+      "onlineMeanPostSelectionBestPopulationDeltaFromSelectedAfter": 65,
+      "onlineMeanFinalPopulationDeltaFromSelectedAfter": 65,
       "topFeatureDeltaGaps": [
         {
           "featureName": "operatorScore",
@@ -1762,7 +1825,15 @@
           },
           "improvement": 0,
           "populationDeltaVsBaseline": 0,
-          "scoreDelta": 0.6266
+          "scoreDelta": 0.6266,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 1,
+            "postSelectionImprovementTraceCount": 1,
+            "postSelectionImprovementTotal": 65,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 65,
+            "finalPopulationDeltaFromSelectedAfter": 65,
+            "firstPostSelectionImprovementIterationGap": 1
+          }
         },
         {
           "caseName": "lns-holdout-corridor-weave-pressure",
@@ -1800,7 +1871,15 @@
           },
           "improvement": 0,
           "populationDeltaVsBaseline": 0,
-          "scoreDelta": 0.6266
+          "scoreDelta": 0.6266,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 1,
+            "postSelectionImprovementTraceCount": 1,
+            "postSelectionImprovementTotal": 65,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 65,
+            "finalPopulationDeltaFromSelectedAfter": 65,
+            "firstPostSelectionImprovementIterationGap": 1
+          }
         },
         {
           "caseName": "lns-holdout-corridor-weave-pressure",
@@ -1838,7 +1917,15 @@
           },
           "improvement": 0,
           "populationDeltaVsBaseline": 0,
-          "scoreDelta": 0.6266
+          "scoreDelta": 0.6266,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 1,
+            "postSelectionImprovementTraceCount": 1,
+            "postSelectionImprovementTotal": 65,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 65,
+            "finalPopulationDeltaFromSelectedAfter": 65,
+            "firstPostSelectionImprovementIterationGap": 1
+          }
         }
       ]
     },
@@ -1860,6 +1947,11 @@
       "layoutSignature": "zero-layout-final-neutral",
       "onlineMeanImprovement": 0,
       "onlineMeanScoreDelta": 0.7108,
+      "onlineMeanPostSelectionTraceCount": 0,
+      "onlinePostSelectionImprovementTraceCount": 0,
+      "onlineMeanPostSelectionImprovementTotal": 0,
+      "onlineMeanPostSelectionBestPopulationDeltaFromSelectedAfter": 0,
+      "onlineMeanFinalPopulationDeltaFromSelectedAfter": 0,
       "topFeatureDeltaGaps": [
         {
           "featureName": "selectedByBaseline",
@@ -1930,7 +2022,15 @@
           },
           "improvement": 0,
           "populationDeltaVsBaseline": 0,
-          "scoreDelta": 0.7108
+          "scoreDelta": 0.7108,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 0,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
         },
         {
           "caseName": "lns-holdout-footprint-stagger-pressure",
@@ -1968,7 +2068,15 @@
           },
           "improvement": 0,
           "populationDeltaVsBaseline": 0,
-          "scoreDelta": 0.7108
+          "scoreDelta": 0.7108,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 0,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
         },
         {
           "caseName": "lns-holdout-footprint-stagger-pressure",
@@ -2006,7 +2114,15 @@
           },
           "improvement": 0,
           "populationDeltaVsBaseline": 0,
-          "scoreDelta": 0.7108
+          "scoreDelta": 0.7108,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 0,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
         }
       ]
     },
@@ -2028,6 +2144,11 @@
       "layoutSignature": "zero-layout-final-neutral",
       "onlineMeanImprovement": 0,
       "onlineMeanScoreDelta": 0.5137,
+      "onlineMeanPostSelectionTraceCount": 1,
+      "onlinePostSelectionImprovementTraceCount": 0,
+      "onlineMeanPostSelectionImprovementTotal": 0,
+      "onlineMeanPostSelectionBestPopulationDeltaFromSelectedAfter": 0,
+      "onlineMeanFinalPopulationDeltaFromSelectedAfter": 0,
       "topFeatureDeltaGaps": [
         {
           "featureName": "residentialCandidateHeadroom",
@@ -2165,7 +2286,15 @@
           },
           "improvement": 0,
           "populationDeltaVsBaseline": 0,
-          "scoreDelta": 0.5137
+          "scoreDelta": 0.5137,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 1,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
         },
         {
           "caseName": "lns-holdout-footprint-stagger-pressure",
@@ -2203,7 +2332,15 @@
           },
           "improvement": 0,
           "populationDeltaVsBaseline": 0,
-          "scoreDelta": 0.5137
+          "scoreDelta": 0.5137,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 1,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
         },
         {
           "caseName": "lns-holdout-footprint-stagger-pressure",
@@ -2241,7 +2378,15 @@
           },
           "improvement": 0,
           "populationDeltaVsBaseline": 0,
-          "scoreDelta": 0.5137
+          "scoreDelta": 0.5137,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 1,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
         }
       ]
     },
@@ -2263,6 +2408,11 @@
       "layoutSignature": "zero-layout-final-neutral",
       "onlineMeanImprovement": 0,
       "onlineMeanScoreDelta": 0.6669,
+      "onlineMeanPostSelectionTraceCount": 0,
+      "onlinePostSelectionImprovementTraceCount": 0,
+      "onlineMeanPostSelectionImprovementTotal": 0,
+      "onlineMeanPostSelectionBestPopulationDeltaFromSelectedAfter": 0,
+      "onlineMeanFinalPopulationDeltaFromSelectedAfter": 0,
       "topFeatureDeltaGaps": [
         {
           "featureName": "selectedByBaseline",
@@ -2333,7 +2483,15 @@
           },
           "improvement": 0,
           "populationDeltaVsBaseline": 0,
-          "scoreDelta": 0.6669
+          "scoreDelta": 0.6669,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 0,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
         },
         {
           "caseName": "lns-holdout-gate-offset-pressure",
@@ -2371,7 +2529,15 @@
           },
           "improvement": 0,
           "populationDeltaVsBaseline": 0,
-          "scoreDelta": 0.6669
+          "scoreDelta": 0.6669,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 0,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
         },
         {
           "caseName": "lns-holdout-gate-offset-pressure",
@@ -2409,7 +2575,15 @@
           },
           "improvement": 0,
           "populationDeltaVsBaseline": 0,
-          "scoreDelta": 0.6669
+          "scoreDelta": 0.6669,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 0,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
         }
       ]
     },
@@ -2431,6 +2605,11 @@
       "layoutSignature": "zero-layout-final-neutral",
       "onlineMeanImprovement": 0,
       "onlineMeanScoreDelta": 0.5525,
+      "onlineMeanPostSelectionTraceCount": 1,
+      "onlinePostSelectionImprovementTraceCount": 0,
+      "onlineMeanPostSelectionImprovementTotal": 0,
+      "onlineMeanPostSelectionBestPopulationDeltaFromSelectedAfter": 0,
+      "onlineMeanFinalPopulationDeltaFromSelectedAfter": 0,
       "topFeatureDeltaGaps": [
         {
           "featureName": "residentialCandidateHeadroom",
@@ -2568,7 +2747,15 @@
           },
           "improvement": 0,
           "populationDeltaVsBaseline": 0,
-          "scoreDelta": 0.5525
+          "scoreDelta": 0.5525,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 1,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
         },
         {
           "caseName": "lns-holdout-gate-offset-pressure",
@@ -2606,7 +2793,15 @@
           },
           "improvement": 0,
           "populationDeltaVsBaseline": 0,
-          "scoreDelta": 0.5525
+          "scoreDelta": 0.5525,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 1,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
         },
         {
           "caseName": "lns-holdout-gate-offset-pressure",
@@ -2644,7 +2839,15 @@
           },
           "improvement": 0,
           "populationDeltaVsBaseline": 0,
-          "scoreDelta": 0.5525
+          "scoreDelta": 0.5525,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 1,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
         }
       ]
     },
@@ -2666,6 +2869,11 @@
       "layoutSignature": "changed-layout-final-neutral",
       "onlineMeanImprovement": 45,
       "onlineMeanScoreDelta": 0.8463,
+      "onlineMeanPostSelectionTraceCount": 0,
+      "onlinePostSelectionImprovementTraceCount": 0,
+      "onlineMeanPostSelectionImprovementTotal": 0,
+      "onlineMeanPostSelectionBestPopulationDeltaFromSelectedAfter": 0,
+      "onlineMeanFinalPopulationDeltaFromSelectedAfter": 0,
       "topFeatureDeltaGaps": [
         {
           "featureName": "serviceCandidateBonus",
@@ -2736,7 +2944,15 @@
           },
           "improvement": 45,
           "populationDeltaVsBaseline": 0,
-          "scoreDelta": 0.8463
+          "scoreDelta": 0.8463,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 0,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
         },
         {
           "caseName": "lns-holdout-service-ridge-pressure",
@@ -2774,7 +2990,15 @@
           },
           "improvement": 45,
           "populationDeltaVsBaseline": 0,
-          "scoreDelta": 0.8463
+          "scoreDelta": 0.8463,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 0,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
         },
         {
           "caseName": "lns-holdout-service-ridge-pressure",
@@ -2812,7 +3036,15 @@
           },
           "improvement": 45,
           "populationDeltaVsBaseline": 0,
-          "scoreDelta": 0.8463
+          "scoreDelta": 0.8463,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 0,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
         }
       ]
     },
@@ -2834,6 +3066,11 @@
       "layoutSignature": "changed-layout-final-neutral",
       "onlineMeanImprovement": 0,
       "onlineMeanScoreDelta": 0.7263,
+      "onlineMeanPostSelectionTraceCount": 1,
+      "onlinePostSelectionImprovementTraceCount": 3,
+      "onlineMeanPostSelectionImprovementTotal": 45,
+      "onlineMeanPostSelectionBestPopulationDeltaFromSelectedAfter": 45,
+      "onlineMeanFinalPopulationDeltaFromSelectedAfter": 45,
       "topFeatureDeltaGaps": [
         {
           "featureName": "operatorScore",
@@ -2904,7 +3141,15 @@
           },
           "improvement": 0,
           "populationDeltaVsBaseline": 0,
-          "scoreDelta": 0.7263
+          "scoreDelta": 0.7263,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 1,
+            "postSelectionImprovementTraceCount": 1,
+            "postSelectionImprovementTotal": 45,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 45,
+            "finalPopulationDeltaFromSelectedAfter": 45,
+            "firstPostSelectionImprovementIterationGap": 1
+          }
         },
         {
           "caseName": "lns-holdout-service-ridge-pressure",
@@ -2942,7 +3187,15 @@
           },
           "improvement": 0,
           "populationDeltaVsBaseline": 0,
-          "scoreDelta": 0.7263
+          "scoreDelta": 0.7263,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 1,
+            "postSelectionImprovementTraceCount": 1,
+            "postSelectionImprovementTotal": 45,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 45,
+            "finalPopulationDeltaFromSelectedAfter": 45,
+            "firstPostSelectionImprovementIterationGap": 1
+          }
         },
         {
           "caseName": "lns-holdout-service-ridge-pressure",
@@ -2980,7 +3233,15 @@
           },
           "improvement": 0,
           "populationDeltaVsBaseline": 0,
-          "scoreDelta": 0.7263
+          "scoreDelta": 0.7263,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 1,
+            "postSelectionImprovementTraceCount": 1,
+            "postSelectionImprovementTotal": 45,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 45,
+            "finalPopulationDeltaFromSelectedAfter": 45,
+            "firstPostSelectionImprovementIterationGap": 1
+          }
         }
       ]
     }

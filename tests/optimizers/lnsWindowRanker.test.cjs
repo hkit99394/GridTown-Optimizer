@@ -676,8 +676,12 @@ function testLnsWindowRankerGapDiagnostics() {
   assert.equal(traceComparison.onlineMissingFinalLayoutTraceCount, 0);
   assert.equal(traceComparison.onlineMeanFinalLayoutPlacementDelta, 2);
   assert.equal(traceComparison.onlineMeanImprovement, 0);
+  assert.equal(traceComparison.onlineMeanPostSelectionTraceCount, 0);
+  assert.equal(traceComparison.onlinePostSelectionImprovementTraceCount, 0);
+  assert.equal(traceComparison.onlineMeanFinalPopulationDeltaFromSelectedAfter, 0);
   assert.equal(traceComparison.onlineSamples[0].selectedWindow.left, 1);
   assert.equal(traceComparison.onlineSamples[0].finalLayoutDeltaVsBaseline.placementDeltaCount, 2);
+  assert.equal(traceComparison.onlineSamples[0].rankerTrajectoryAfterSelection.postSelectionTraceCount, 0);
   assert(traceComparison.topFeatureDeltaGaps.some((entry) => entry.featureName === "residentialCandidateHeadroom"));
   assert.match(formatted, /offline-positive-online-neutral/);
   assert.match(formatted, /Trace comparisons:/);
@@ -687,6 +691,7 @@ function testLnsWindowRankerGapDiagnostics() {
   assert.match(formatted, /online-traces=1/);
   assert.match(formatted, /layout-signature=changed-layout-final-neutral/);
   assert.match(formatted, /online-layout-changed=1/);
+  assert.match(formatted, /online-ranker-post-improvements=0/);
 
   const telemetryManifest = buildLnsWindowRankerGapDiagnosticsTelemetryManifest(result, {
     command: "node dist/lnsWindowRankerCli.js --gap-diagnostics",
@@ -697,6 +702,7 @@ function testLnsWindowRankerGapDiagnostics() {
   assert.equal(telemetryManifest.metrics.traceComparisonCount, 1);
   assert.equal(telemetryManifest.metrics.traceComparisonOnlineTraceCount, 1);
   assert.equal(telemetryManifest.metrics.traceComparisonChangedFinalLayoutTraceCount, 1);
+  assert.equal(telemetryManifest.metrics.traceComparisonPostSelectionImprovementTraceCount, 0);
   assert.equal(telemetryManifest.metrics.changedLayoutFinalNeutralTraceComparisonCount, 1);
   assert.equal(telemetryManifest.metrics.zeroLayoutFinalNeutralTraceComparisonCount, 0);
   assert.equal(telemetryManifest.metrics.promotionSensitivity.remainingPromotionBlocked, true);
@@ -722,6 +728,7 @@ function testLnsWindowRankerGapDiagnostics() {
   assert.equal(registryDraft.budget.offlinePositiveOnlineNeutralCount, 1);
   assert.equal(registryDraft.budget.traceComparisonCount, 1);
   assert.equal(registryDraft.budget.traceComparisonChangedFinalLayoutTraceCount, 1);
+  assert.equal(registryDraft.budget.traceComparisonPostSelectionImprovementTraceCount, 0);
   assert.equal(registryDraft.budget.changedLayoutFinalNeutralTraceComparisonCount, 1);
   assert.equal(registryDraft.budget.zeroLayoutFinalNeutralTraceComparisonCount, 0);
   assert.equal(registryDraft.budget.suppressedZeroLayoutFinalNeutralTraceComparisonCount, 0);

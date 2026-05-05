@@ -32,6 +32,7 @@ interface OnlineTraceWithCase {
   finalOutcomeStatus: "improved" | "neutral" | "regressed";
   populationDeltaVsBaseline: number;
   finalLayoutDeltaVsBaseline: LnsWindowRankerOnlineFinalLayoutDelta | null;
+  rankerTrajectoryAfterSelection: LnsWindowRankerGapOnlineRankerTrajectoryAfterSelection;
   trace: LnsWindowRankerOnlineTraceEntry;
 }
 
@@ -55,6 +56,15 @@ export interface LnsWindowRankerGapOfflineTraceSample {
   scoreDeltaVsBaseline: number;
 }
 
+export interface LnsWindowRankerGapOnlineRankerTrajectoryAfterSelection {
+  postSelectionTraceCount: number;
+  postSelectionImprovementTraceCount: number;
+  postSelectionImprovementTotal: number;
+  postSelectionBestPopulationDeltaFromSelectedAfter: number;
+  finalPopulationDeltaFromSelectedAfter: number;
+  firstPostSelectionImprovementIterationGap: number | null;
+}
+
 export interface LnsWindowRankerGapOnlineTraceSample {
   caseName: string;
   seed: number | null;
@@ -67,6 +77,7 @@ export interface LnsWindowRankerGapOnlineTraceSample {
   improvement: number;
   populationDeltaVsBaseline: number;
   scoreDelta: number;
+  rankerTrajectoryAfterSelection: LnsWindowRankerGapOnlineRankerTrajectoryAfterSelection;
 }
 
 export interface LnsWindowRankerGapTraceComparison {
@@ -87,6 +98,11 @@ export interface LnsWindowRankerGapTraceComparison {
   layoutSignature: LnsWindowRankerGapLayoutSignature;
   onlineMeanImprovement: number | null;
   onlineMeanScoreDelta: number | null;
+  onlineMeanPostSelectionTraceCount: number | null;
+  onlinePostSelectionImprovementTraceCount: number;
+  onlineMeanPostSelectionImprovementTotal: number | null;
+  onlineMeanPostSelectionBestPopulationDeltaFromSelectedAfter: number | null;
+  onlineMeanFinalPopulationDeltaFromSelectedAfter: number | null;
   topFeatureDeltaGaps: LnsWindowRankerGapTraceFeatureDelta[];
   offlineSamples: LnsWindowRankerGapOfflineTraceSample[];
   onlineSamples: LnsWindowRankerGapOnlineTraceSample[];
@@ -160,6 +176,31 @@ function onlineRankerVariant(benchmarkCase: LnsWindowRankerOnlineAblationSnapsho
   return variant;
 }
 
+function buildRankerTrajectoryAfterSelection(
+  selectedTrace: LnsWindowRankerOnlineTraceEntry,
+  selectionTrace: readonly LnsWindowRankerOnlineTraceEntry[],
+  finalPopulation: number
+): LnsWindowRankerGapOnlineRankerTrajectoryAfterSelection {
+  const subsequentTraces = selectionTrace
+    .filter((trace) => trace.iteration > selectedTrace.iteration)
+    .sort((left, right) => left.iteration - right.iteration);
+  const improvingTraces = subsequentTraces.filter((trace) => trace.improvement > 0);
+  const bestPopulationAfter = Math.max(
+    selectedTrace.populationAfter,
+    ...subsequentTraces.map((trace) => trace.populationAfter)
+  );
+  return {
+    postSelectionTraceCount: subsequentTraces.length,
+    postSelectionImprovementTraceCount: improvingTraces.length,
+    postSelectionImprovementTotal: roundMetric(sumBenchmarkBy(improvingTraces, (trace) => trace.improvement)),
+    postSelectionBestPopulationDeltaFromSelectedAfter: roundMetric(bestPopulationAfter - selectedTrace.populationAfter),
+    finalPopulationDeltaFromSelectedAfter: roundMetric(finalPopulation - selectedTrace.populationAfter),
+    firstPostSelectionImprovementIterationGap: improvingTraces[0]
+      ? improvingTraces[0].iteration - selectedTrace.iteration
+      : null
+  };
+}
+
 function collectOnlineSelectionTraces(onlineScorecard: LnsWindowRankerOnlineAblationSnapshot): OnlineTraceWithCase[] {
   return onlineScorecard.cases.flatMap((benchmarkCase) => {
     const variant = onlineRankerVariant(benchmarkCase);
@@ -172,6 +213,11 @@ function collectOnlineSelectionTraces(onlineScorecard: LnsWindowRankerOnlineAbla
         finalOutcomeStatus: variant.finalOutcome.status,
         populationDeltaVsBaseline: variant.finalOutcome.populationDeltaVsBaseline,
         finalLayoutDeltaVsBaseline: variant.finalLayoutDeltaVsBaseline ?? null,
+        rankerTrajectoryAfterSelection: buildRankerTrajectoryAfterSelection(
+          trace,
+          variant.selectionTrace ?? [],
+          variant.totalPopulation
+        ),
         trace
       }));
   });
@@ -278,7 +324,8 @@ function buildOnlineTraceSamples(traces: readonly OnlineTraceWithCase[]): LnsWin
       finalLayoutDeltaVsBaseline: entry.finalLayoutDeltaVsBaseline,
       improvement: entry.trace.improvement,
       populationDeltaVsBaseline: entry.populationDeltaVsBaseline,
-      scoreDelta: entry.trace.scoreDelta
+      scoreDelta: entry.trace.scoreDelta,
+      rankerTrajectoryAfterSelection: { ...entry.rankerTrajectoryAfterSelection }
     }));
 }
 
@@ -308,6 +355,7 @@ export function buildLnsWindowRankerGapTraceComparisons(
         (entry) => !entry.finalLayoutDeltaVsBaseline.sameFinalLayout
       ).length;
       const onlineNeutralTraceCount = online.filter((entry) => entry.finalOutcomeStatus === "neutral").length;
+      const onlineTrajectories = online.map((entry) => entry.rankerTrajectoryAfterSelection);
       const offlineMeanFeatures = offline.length
         ? meanFeatureDeltas(offline.map((entry) => entry.featureDeltas))
         : null;
@@ -338,6 +386,23 @@ export function buildLnsWindowRankerGapTraceComparisons(
         ),
         onlineMeanImprovement: meanOrNull(online, (entry) => entry.trace.improvement),
         onlineMeanScoreDelta: meanOrNull(online, (entry) => entry.trace.scoreDelta),
+        onlineMeanPostSelectionTraceCount: meanOrNull(onlineTrajectories, (entry) => entry.postSelectionTraceCount),
+        onlinePostSelectionImprovementTraceCount: sumBenchmarkBy(
+          onlineTrajectories,
+          (entry) => entry.postSelectionImprovementTraceCount
+        ),
+        onlineMeanPostSelectionImprovementTotal: meanOrNull(
+          onlineTrajectories,
+          (entry) => entry.postSelectionImprovementTotal
+        ),
+        onlineMeanPostSelectionBestPopulationDeltaFromSelectedAfter: meanOrNull(
+          onlineTrajectories,
+          (entry) => entry.postSelectionBestPopulationDeltaFromSelectedAfter
+        ),
+        onlineMeanFinalPopulationDeltaFromSelectedAfter: meanOrNull(
+          onlineTrajectories,
+          (entry) => entry.finalPopulationDeltaFromSelectedAfter
+        ),
         topFeatureDeltaGaps: topFeatureDeltaGaps(offlineMeanFeatures, onlineMeanFeatures),
         offlineSamples: buildOfflineTraceSamples(offline),
         onlineSamples: buildOnlineTraceSamples(online)
@@ -347,6 +412,10 @@ export function buildLnsWindowRankerGapTraceComparisons(
 
 function formatNullableSigned(value: number | null): string {
   return value === null ? "n/a" : formatBenchmarkSignedNumber(value);
+}
+
+function formatNullableNumber(value: number | null): string {
+  return value === null ? "n/a" : String(value);
 }
 
 function formatTraceFeatureDeltas(features: readonly LnsWindowRankerGapTraceFeatureDelta[]): string {
@@ -362,5 +431,5 @@ function formatTraceFeatureDeltas(features: readonly LnsWindowRankerGapTraceFeat
 }
 
 export function formatLnsWindowRankerGapTraceComparison(comparison: LnsWindowRankerGapTraceComparison): string {
-  return `- ${comparison.diagnosis} ${comparison.pressureFamily}/${comparison.transition}: offline-decisions=${comparison.offlineDecisionCount} offline-selected-positive=${comparison.offlineSelectedPositiveCount} offline-mean-selected-delta=${formatNullableSigned(comparison.offlineMeanSelectedDeltaVsBaseline)} online-traces=${comparison.onlineTraceCount} online-neutral-traces=${comparison.onlineNeutralTraceCount} layout-signature=${comparison.layoutSignature} online-layout-same=${comparison.onlineSameFinalLayoutTraceCount} online-layout-changed=${comparison.onlineChangedFinalLayoutTraceCount} online-layout-missing=${comparison.onlineMissingFinalLayoutTraceCount} online-layout-delta-mean=${formatNullableSigned(comparison.onlineMeanFinalLayoutPlacementDelta)} online-mean-improvement=${formatNullableSigned(comparison.onlineMeanImprovement)} online-mean-score-delta=${formatNullableSigned(comparison.onlineMeanScoreDelta)} features=${formatTraceFeatureDeltas(comparison.topFeatureDeltaGaps)}`;
+  return `- ${comparison.diagnosis} ${comparison.pressureFamily}/${comparison.transition}: offline-decisions=${comparison.offlineDecisionCount} offline-selected-positive=${comparison.offlineSelectedPositiveCount} offline-mean-selected-delta=${formatNullableSigned(comparison.offlineMeanSelectedDeltaVsBaseline)} online-traces=${comparison.onlineTraceCount} online-neutral-traces=${comparison.onlineNeutralTraceCount} layout-signature=${comparison.layoutSignature} online-layout-same=${comparison.onlineSameFinalLayoutTraceCount} online-layout-changed=${comparison.onlineChangedFinalLayoutTraceCount} online-layout-missing=${comparison.onlineMissingFinalLayoutTraceCount} online-layout-delta-mean=${formatNullableSigned(comparison.onlineMeanFinalLayoutPlacementDelta)} online-mean-improvement=${formatNullableSigned(comparison.onlineMeanImprovement)} online-mean-score-delta=${formatNullableSigned(comparison.onlineMeanScoreDelta)} online-ranker-post-traces-mean=${formatNullableNumber(comparison.onlineMeanPostSelectionTraceCount)} online-ranker-post-improvements=${comparison.onlinePostSelectionImprovementTraceCount} online-ranker-post-improvement-total-mean=${formatNullableSigned(comparison.onlineMeanPostSelectionImprovementTotal)} online-ranker-post-best-delta-mean=${formatNullableSigned(comparison.onlineMeanPostSelectionBestPopulationDeltaFromSelectedAfter)} online-ranker-final-from-selected-mean=${formatNullableSigned(comparison.onlineMeanFinalPopulationDeltaFromSelectedAfter)} features=${formatTraceFeatureDeltas(comparison.topFeatureDeltaGaps)}`;
 }

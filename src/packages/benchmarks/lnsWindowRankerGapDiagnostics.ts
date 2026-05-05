@@ -23,6 +23,7 @@ import {
   buildLnsWindowRankerGapTraceComparisons,
   formatLnsWindowRankerGapTraceComparison,
   type LnsWindowRankerGapDiagnosis,
+  type LnsWindowRankerGapLayoutSignature,
   type LnsWindowRankerGapTraceComparison
 } from "./lnsWindowRankerGapTraceComparisons.js";
 import { hashString, stableStringify } from "../core/cpSatContinuation.js";
@@ -173,6 +174,10 @@ export interface LnsWindowRankerGapDiagnosticsResult {
     joinedTransitionFamilyCount: number;
     offlinePositiveOnlineNeutralCount: number;
     onlineActiveNoOfflineMatchCount: number;
+    traceComparisonLayoutSignatureCounts: Record<LnsWindowRankerGapLayoutSignature, number>;
+    zeroLayoutFinalNeutralTraceComparisonCount: number;
+    changedLayoutFinalNeutralTraceComparisonCount: number;
+    mixedLayoutFinalNeutralTraceComparisonCount: number;
     promotionBlocked: boolean;
   };
 }
@@ -484,6 +489,25 @@ function modelWeakSeedAllowance(model: LnsWindowRankerModel): boolean {
   return normalizeLnsWindowRankerWeakSeedAllowance(model.training?.allowWeakSeedReplayLabels);
 }
 
+const LAYOUT_SIGNATURES: readonly LnsWindowRankerGapLayoutSignature[] = Object.freeze([
+  "changed-layout-final-neutral",
+  "mixed-final-outcome",
+  "mixed-layout-final-neutral",
+  "missing-layout-delta",
+  "zero-layout-final-neutral"
+]);
+
+function buildLayoutSignatureCounts(
+  traceComparisons: readonly LnsWindowRankerGapTraceComparison[]
+): Record<LnsWindowRankerGapLayoutSignature, number> {
+  return Object.fromEntries(
+    LAYOUT_SIGNATURES.map((signature) => [
+      signature,
+      traceComparisons.filter((entry) => entry.layoutSignature === signature).length
+    ])
+  ) as Record<LnsWindowRankerGapLayoutSignature, number>;
+}
+
 export function runLnsWindowRankerGapDiagnostics(
   labelSnapshot: LearnedRankingLabelSnapshot,
   model: LnsWindowRankerModel,
@@ -504,6 +528,7 @@ export function runLnsWindowRankerGapDiagnostics(
     onlineTransitionFamilySummaries
   );
   const traceComparisons = buildLnsWindowRankerGapTraceComparisons(joins, decisions, onlineScorecard);
+  const layoutSignatureCounts = buildLayoutSignatureCounts(traceComparisons);
   const minScoreDeltas = onlineScorecard.cases
     .map((entry) => onlineRankerVariant(entry).windowRanker?.minScoreDelta)
     .filter((entry): entry is number => typeof entry === "number");
@@ -557,6 +582,10 @@ export function runLnsWindowRankerGapDiagnostics(
         .length,
       onlineActiveNoOfflineMatchCount: joins.filter((entry) => entry.diagnosis === "online-active-no-offline-match")
         .length,
+      traceComparisonLayoutSignatureCounts: layoutSignatureCounts,
+      zeroLayoutFinalNeutralTraceComparisonCount: layoutSignatureCounts["zero-layout-final-neutral"],
+      changedLayoutFinalNeutralTraceComparisonCount: layoutSignatureCounts["changed-layout-final-neutral"],
+      mixedLayoutFinalNeutralTraceComparisonCount: layoutSignatureCounts["mixed-layout-final-neutral"],
       promotionBlocked: joins.some((entry) => entry.diagnosis !== "offline-neutral-online-neutral")
     }
   };
@@ -590,6 +619,10 @@ function summaryMetrics(result: LnsWindowRankerGapDiagnosticsResult): Record<str
     joinedTransitionFamilyCount: result.summary.joinedTransitionFamilyCount,
     offlinePositiveOnlineNeutralCount: result.summary.offlinePositiveOnlineNeutralCount,
     onlineActiveNoOfflineMatchCount: result.summary.onlineActiveNoOfflineMatchCount,
+    traceComparisonLayoutSignatureCounts: result.summary.traceComparisonLayoutSignatureCounts,
+    zeroLayoutFinalNeutralTraceComparisonCount: result.summary.zeroLayoutFinalNeutralTraceComparisonCount,
+    changedLayoutFinalNeutralTraceComparisonCount: result.summary.changedLayoutFinalNeutralTraceComparisonCount,
+    mixedLayoutFinalNeutralTraceComparisonCount: result.summary.mixedLayoutFinalNeutralTraceComparisonCount,
     traceComparisonCount: result.traceComparisons.length,
     traceComparisonOnlineTraceCount: sumBenchmarkBy(result.traceComparisons, (entry) => entry.onlineTraceCount),
     traceComparisonChangedFinalLayoutTraceCount: sumBenchmarkBy(
@@ -641,6 +674,9 @@ export function buildLnsWindowRankerGapDiagnosticsRegistryEntryDraft(
       offlineDecisionCount: result.offline.decisionCount,
       offlineOpportunityCount: result.offline.opportunityCount,
       offlinePositiveOnlineNeutralCount: result.summary.offlinePositiveOnlineNeutralCount,
+      zeroLayoutFinalNeutralTraceComparisonCount: result.summary.zeroLayoutFinalNeutralTraceComparisonCount,
+      changedLayoutFinalNeutralTraceComparisonCount: result.summary.changedLayoutFinalNeutralTraceComparisonCount,
+      mixedLayoutFinalNeutralTraceComparisonCount: result.summary.mixedLayoutFinalNeutralTraceComparisonCount,
       traceComparisonCount: result.traceComparisons.length,
       traceComparisonOnlineTraceCount: sumBenchmarkBy(result.traceComparisons, (entry) => entry.onlineTraceCount),
       traceComparisonChangedFinalLayoutTraceCount: sumBenchmarkBy(
@@ -673,6 +709,13 @@ function formatJoin(join: LnsWindowRankerGapTransitionJoin): string {
   return `- ${join.diagnosis} ${offline} ${online}`;
 }
 
+function formatLayoutSignatureCounts(counts: Record<LnsWindowRankerGapLayoutSignature, number>): string {
+  const formatted = LAYOUT_SIGNATURES.filter((signature) => counts[signature] > 0).map(
+    (signature) => `${signature}:${counts[signature]}`
+  );
+  return formatted.length ? formatted.join(",") : "none";
+}
+
 export function formatLnsWindowRankerGapDiagnostics(result: LnsWindowRankerGapDiagnosticsResult): string {
   const joins = result.joins
     .filter((entry) => entry.diagnosis !== "offline-neutral-online-neutral")
@@ -688,6 +731,7 @@ export function formatLnsWindowRankerGapDiagnostics(result: LnsWindowRankerGapDi
     `Offline: decisions=${result.offline.decisionCount} overrides=${result.offline.overrideCount} opportunities=${result.offline.opportunityCount} selected-positive=${result.offline.selectedPositiveCount}`,
     `Online: cases=${result.online.selectedCaseNames.length} seeds=${result.online.seeds.join(",")} comparisons=${result.online.comparisonCount} min-score-delta=${result.online.minScoreDelta ?? "n/a"} overrides=${result.online.overrideCount} selection-trace=${result.online.selectionTraceCount} final-neutral-overrides=${result.online.finalNeutralOverrideCount}`,
     `Gap: joined-transition-families=${result.summary.joinedTransitionFamilyCount} offline-positive-online-neutral=${result.summary.offlinePositiveOnlineNeutralCount} online-active-no-offline-match=${result.summary.onlineActiveNoOfflineMatchCount} promotion-blocked=${result.summary.promotionBlocked}`,
+    `Layout signatures: ${formatLayoutSignatureCounts(result.summary.traceComparisonLayoutSignatureCounts)}`,
     `Online neutral override rate: ${formatBenchmarkRate(benchmarkRatio(result.online.finalNeutralOverrideCount, result.online.overrideCount))}`,
     "Joined evidence:",
     ...(joins.length ? joins : ["- none"]),

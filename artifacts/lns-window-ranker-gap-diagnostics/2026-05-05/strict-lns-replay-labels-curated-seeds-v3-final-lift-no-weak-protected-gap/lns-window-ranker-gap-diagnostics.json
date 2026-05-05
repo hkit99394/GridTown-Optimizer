@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-05T19:35:46.863Z",
+  "generatedAt": "2026-05-05T21:26:52.379Z",
   "schemaVersion": 1,
   "audit": {
     "runtimeDefaultChanged": false,
@@ -1282,8 +1282,11 @@
       "offlineMeanScoreDeltaVsBaseline": null,
       "onlineTraceCount": 3,
       "onlineNeutralTraceCount": 3,
+      "onlineSameFinalLayoutTraceCount": 1,
       "onlineChangedFinalLayoutTraceCount": 2,
+      "onlineMissingFinalLayoutTraceCount": 0,
       "onlineMeanFinalLayoutPlacementDelta": 4,
+      "layoutSignature": "mixed-layout-final-neutral",
       "onlineMeanImprovement": 110,
       "onlineMeanScoreDelta": 0.5211,
       "topFeatureDeltaGaps": [
@@ -1447,8 +1450,11 @@
       "offlineMeanScoreDeltaVsBaseline": 0.4289,
       "onlineTraceCount": 3,
       "onlineNeutralTraceCount": 3,
+      "onlineSameFinalLayoutTraceCount": 0,
       "onlineChangedFinalLayoutTraceCount": 3,
+      "onlineMissingFinalLayoutTraceCount": 0,
       "onlineMeanFinalLayoutPlacementDelta": 5,
+      "layoutSignature": "changed-layout-final-neutral",
       "onlineMeanImprovement": 65,
       "onlineMeanScoreDelta": 0.6974,
       "topFeatureDeltaGaps": [
@@ -1679,8 +1685,11 @@
       "offlineMeanScoreDeltaVsBaseline": null,
       "onlineTraceCount": 3,
       "onlineNeutralTraceCount": 3,
+      "onlineSameFinalLayoutTraceCount": 0,
       "onlineChangedFinalLayoutTraceCount": 3,
+      "onlineMissingFinalLayoutTraceCount": 0,
       "onlineMeanFinalLayoutPlacementDelta": 5,
+      "layoutSignature": "changed-layout-final-neutral",
       "onlineMeanImprovement": 0,
       "onlineMeanScoreDelta": 0.6266,
       "topFeatureDeltaGaps": [
@@ -1844,8 +1853,11 @@
       "offlineMeanScoreDeltaVsBaseline": null,
       "onlineTraceCount": 3,
       "onlineNeutralTraceCount": 3,
+      "onlineSameFinalLayoutTraceCount": 3,
       "onlineChangedFinalLayoutTraceCount": 0,
+      "onlineMissingFinalLayoutTraceCount": 0,
       "onlineMeanFinalLayoutPlacementDelta": 0,
+      "layoutSignature": "zero-layout-final-neutral",
       "onlineMeanImprovement": 0,
       "onlineMeanScoreDelta": 0.7108,
       "topFeatureDeltaGaps": [
@@ -2009,8 +2021,11 @@
       "offlineMeanScoreDeltaVsBaseline": 0.5982,
       "onlineTraceCount": 3,
       "onlineNeutralTraceCount": 3,
+      "onlineSameFinalLayoutTraceCount": 3,
       "onlineChangedFinalLayoutTraceCount": 0,
+      "onlineMissingFinalLayoutTraceCount": 0,
       "onlineMeanFinalLayoutPlacementDelta": 0,
+      "layoutSignature": "zero-layout-final-neutral",
       "onlineMeanImprovement": 0,
       "onlineMeanScoreDelta": 0.5137,
       "topFeatureDeltaGaps": [
@@ -2241,8 +2256,11 @@
       "offlineMeanScoreDeltaVsBaseline": null,
       "onlineTraceCount": 3,
       "onlineNeutralTraceCount": 3,
+      "onlineSameFinalLayoutTraceCount": 3,
       "onlineChangedFinalLayoutTraceCount": 0,
+      "onlineMissingFinalLayoutTraceCount": 0,
       "onlineMeanFinalLayoutPlacementDelta": 0,
+      "layoutSignature": "zero-layout-final-neutral",
       "onlineMeanImprovement": 0,
       "onlineMeanScoreDelta": 0.6669,
       "topFeatureDeltaGaps": [
@@ -2406,8 +2424,11 @@
       "offlineMeanScoreDeltaVsBaseline": 0.5386,
       "onlineTraceCount": 3,
       "onlineNeutralTraceCount": 3,
+      "onlineSameFinalLayoutTraceCount": 3,
       "onlineChangedFinalLayoutTraceCount": 0,
+      "onlineMissingFinalLayoutTraceCount": 0,
       "onlineMeanFinalLayoutPlacementDelta": 0,
+      "layoutSignature": "zero-layout-final-neutral",
       "onlineMeanImprovement": 0,
       "onlineMeanScoreDelta": 0.5525,
       "topFeatureDeltaGaps": [
@@ -2638,8 +2659,11 @@
       "offlineMeanScoreDeltaVsBaseline": null,
       "onlineTraceCount": 3,
       "onlineNeutralTraceCount": 3,
+      "onlineSameFinalLayoutTraceCount": 0,
       "onlineChangedFinalLayoutTraceCount": 3,
+      "onlineMissingFinalLayoutTraceCount": 0,
       "onlineMeanFinalLayoutPlacementDelta": 19,
+      "layoutSignature": "changed-layout-final-neutral",
       "onlineMeanImprovement": 45,
       "onlineMeanScoreDelta": 0.8463,
       "topFeatureDeltaGaps": [
@@ -2803,8 +2827,11 @@
       "offlineMeanScoreDeltaVsBaseline": null,
       "onlineTraceCount": 3,
       "onlineNeutralTraceCount": 3,
+      "onlineSameFinalLayoutTraceCount": 0,
       "onlineChangedFinalLayoutTraceCount": 3,
+      "onlineMissingFinalLayoutTraceCount": 0,
       "onlineMeanFinalLayoutPlacementDelta": 19,
+      "layoutSignature": "changed-layout-final-neutral",
       "onlineMeanImprovement": 0,
       "onlineMeanScoreDelta": 0.7263,
       "topFeatureDeltaGaps": [
@@ -2962,6 +2989,16 @@
     "joinedTransitionFamilyCount": 10,
     "offlinePositiveOnlineNeutralCount": 3,
     "onlineActiveNoOfflineMatchCount": 6,
+    "traceComparisonLayoutSignatureCounts": {
+      "changed-layout-final-neutral": 4,
+      "mixed-final-outcome": 0,
+      "mixed-layout-final-neutral": 1,
+      "missing-layout-delta": 0,
+      "zero-layout-final-neutral": 4
+    },
+    "zeroLayoutFinalNeutralTraceComparisonCount": 4,
+    "changedLayoutFinalNeutralTraceComparisonCount": 4,
+    "mixedLayoutFinalNeutralTraceComparisonCount": 1,
     "promotionBlocked": true
   }
 }

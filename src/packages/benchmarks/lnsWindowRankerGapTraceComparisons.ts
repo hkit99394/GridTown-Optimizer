@@ -15,6 +15,13 @@ export type LnsWindowRankerGapDiagnosis =
   | "offline-neutral-online-neutral"
   | "online-active-no-offline-match";
 
+export type LnsWindowRankerGapLayoutSignature =
+  | "changed-layout-final-neutral"
+  | "mixed-final-outcome"
+  | "mixed-layout-final-neutral"
+  | "missing-layout-delta"
+  | "zero-layout-final-neutral";
+
 type LnsWindowRankerOnlineTraceEntry =
   LnsWindowRankerOnlineAblationSnapshot["cases"][number]["variants"][number]["selectionTrace"][number];
 
@@ -73,8 +80,11 @@ export interface LnsWindowRankerGapTraceComparison {
   offlineMeanScoreDeltaVsBaseline: number | null;
   onlineTraceCount: number;
   onlineNeutralTraceCount: number;
+  onlineSameFinalLayoutTraceCount: number;
   onlineChangedFinalLayoutTraceCount: number;
+  onlineMissingFinalLayoutTraceCount: number;
   onlineMeanFinalLayoutPlacementDelta: number | null;
+  layoutSignature: LnsWindowRankerGapLayoutSignature;
   onlineMeanImprovement: number | null;
   onlineMeanScoreDelta: number | null;
   topFeatureDeltaGaps: LnsWindowRankerGapTraceFeatureDelta[];
@@ -214,6 +224,19 @@ function meanOrNull<T>(entries: readonly T[], selector: (entry: T) => number): n
   return entries.length === 0 ? null : roundMetric(sumBenchmarkBy(entries, selector) / entries.length);
 }
 
+function layoutSignature(
+  onlineTraceCount: number,
+  onlineNeutralTraceCount: number,
+  onlineWithLayoutCount: number,
+  changedFinalLayoutCount: number
+): LnsWindowRankerGapLayoutSignature {
+  if (onlineTraceCount === 0 || onlineWithLayoutCount < onlineTraceCount) return "missing-layout-delta";
+  if (onlineNeutralTraceCount !== onlineTraceCount) return "mixed-final-outcome";
+  if (changedFinalLayoutCount === 0) return "zero-layout-final-neutral";
+  if (changedFinalLayoutCount === onlineTraceCount) return "changed-layout-final-neutral";
+  return "mixed-layout-final-neutral";
+}
+
 function buildOfflineTraceSamples(
   decisions: readonly LnsWindowRankerGapOfflineDecision[]
 ): LnsWindowRankerGapOfflineTraceSample[] {
@@ -281,6 +304,10 @@ export function buildLnsWindowRankerGapTraceComparisons(
         (entry): entry is OnlineTraceWithCase & { finalLayoutDeltaVsBaseline: LnsWindowRankerOnlineFinalLayoutDelta } =>
           entry.finalLayoutDeltaVsBaseline !== null
       );
+      const onlineChangedFinalLayoutTraceCount = onlineWithLayout.filter(
+        (entry) => !entry.finalLayoutDeltaVsBaseline.sameFinalLayout
+      ).length;
+      const onlineNeutralTraceCount = online.filter((entry) => entry.finalOutcomeStatus === "neutral").length;
       const offlineMeanFeatures = offline.length
         ? meanFeatureDeltas(offline.map((entry) => entry.featureDeltas))
         : null;
@@ -295,13 +322,19 @@ export function buildLnsWindowRankerGapTraceComparisons(
         offlineMeanSelectedDeltaVsBaseline: meanOrNull(offline, (entry) => entry.selectedDeltaVsBaseline),
         offlineMeanScoreDeltaVsBaseline: meanOrNull(offline, (entry) => entry.scoreDeltaVsBaseline),
         onlineTraceCount: online.length,
-        onlineNeutralTraceCount: online.filter((entry) => entry.finalOutcomeStatus === "neutral").length,
-        onlineChangedFinalLayoutTraceCount: onlineWithLayout.filter(
-          (entry) => !entry.finalLayoutDeltaVsBaseline.sameFinalLayout
-        ).length,
+        onlineNeutralTraceCount,
+        onlineSameFinalLayoutTraceCount: onlineWithLayout.length - onlineChangedFinalLayoutTraceCount,
+        onlineChangedFinalLayoutTraceCount,
+        onlineMissingFinalLayoutTraceCount: online.length - onlineWithLayout.length,
         onlineMeanFinalLayoutPlacementDelta: meanOrNull(
           onlineWithLayout,
           (entry) => entry.finalLayoutDeltaVsBaseline.placementDeltaCount
+        ),
+        layoutSignature: layoutSignature(
+          online.length,
+          onlineNeutralTraceCount,
+          onlineWithLayout.length,
+          onlineChangedFinalLayoutTraceCount
         ),
         onlineMeanImprovement: meanOrNull(online, (entry) => entry.trace.improvement),
         onlineMeanScoreDelta: meanOrNull(online, (entry) => entry.trace.scoreDelta),
@@ -329,5 +362,5 @@ function formatTraceFeatureDeltas(features: readonly LnsWindowRankerGapTraceFeat
 }
 
 export function formatLnsWindowRankerGapTraceComparison(comparison: LnsWindowRankerGapTraceComparison): string {
-  return `- ${comparison.diagnosis} ${comparison.pressureFamily}/${comparison.transition}: offline-decisions=${comparison.offlineDecisionCount} offline-selected-positive=${comparison.offlineSelectedPositiveCount} offline-mean-selected-delta=${formatNullableSigned(comparison.offlineMeanSelectedDeltaVsBaseline)} online-traces=${comparison.onlineTraceCount} online-neutral-traces=${comparison.onlineNeutralTraceCount} online-layout-changed=${comparison.onlineChangedFinalLayoutTraceCount} online-layout-delta-mean=${formatNullableSigned(comparison.onlineMeanFinalLayoutPlacementDelta)} online-mean-improvement=${formatNullableSigned(comparison.onlineMeanImprovement)} online-mean-score-delta=${formatNullableSigned(comparison.onlineMeanScoreDelta)} features=${formatTraceFeatureDeltas(comparison.topFeatureDeltaGaps)}`;
+  return `- ${comparison.diagnosis} ${comparison.pressureFamily}/${comparison.transition}: offline-decisions=${comparison.offlineDecisionCount} offline-selected-positive=${comparison.offlineSelectedPositiveCount} offline-mean-selected-delta=${formatNullableSigned(comparison.offlineMeanSelectedDeltaVsBaseline)} online-traces=${comparison.onlineTraceCount} online-neutral-traces=${comparison.onlineNeutralTraceCount} layout-signature=${comparison.layoutSignature} online-layout-same=${comparison.onlineSameFinalLayoutTraceCount} online-layout-changed=${comparison.onlineChangedFinalLayoutTraceCount} online-layout-missing=${comparison.onlineMissingFinalLayoutTraceCount} online-layout-delta-mean=${formatNullableSigned(comparison.onlineMeanFinalLayoutPlacementDelta)} online-mean-improvement=${formatNullableSigned(comparison.onlineMeanImprovement)} online-mean-score-delta=${formatNullableSigned(comparison.onlineMeanScoreDelta)} features=${formatTraceFeatureDeltas(comparison.topFeatureDeltaGaps)}`;
 }

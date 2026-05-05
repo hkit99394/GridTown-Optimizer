@@ -645,6 +645,10 @@ function testLnsWindowRankerGapDiagnostics() {
   assert.equal(result.online.finalNeutralOverrideCount, 1);
   assert.equal(result.summary.promotionBlocked, true);
   assert.equal(result.summary.offlinePositiveOnlineNeutralCount, 1);
+  assert.equal(result.summary.changedLayoutFinalNeutralTraceComparisonCount, 1);
+  assert.equal(result.summary.zeroLayoutFinalNeutralTraceComparisonCount, 0);
+  assert.equal(result.summary.mixedLayoutFinalNeutralTraceComparisonCount, 0);
+  assert.equal(result.summary.traceComparisonLayoutSignatureCounts["changed-layout-final-neutral"], 1);
   const join = result.joins.find((entry) => entry.key === "service-pressure:weak-service->sliding");
   assert.equal(join.diagnosis, "offline-positive-online-neutral");
   assert(join.offline.selectedPositiveCount > 0);
@@ -656,7 +660,10 @@ function testLnsWindowRankerGapDiagnostics() {
   assert.equal(traceComparison.offlineDecisionCount, 2);
   assert.equal(traceComparison.onlineTraceCount, 1);
   assert.equal(traceComparison.onlineNeutralTraceCount, 1);
+  assert.equal(traceComparison.layoutSignature, "changed-layout-final-neutral");
+  assert.equal(traceComparison.onlineSameFinalLayoutTraceCount, 0);
   assert.equal(traceComparison.onlineChangedFinalLayoutTraceCount, 1);
+  assert.equal(traceComparison.onlineMissingFinalLayoutTraceCount, 0);
   assert.equal(traceComparison.onlineMeanFinalLayoutPlacementDelta, 2);
   assert.equal(traceComparison.onlineMeanImprovement, 0);
   assert.equal(traceComparison.onlineSamples[0].selectedWindow.left, 1);
@@ -664,7 +671,9 @@ function testLnsWindowRankerGapDiagnostics() {
   assert(traceComparison.topFeatureDeltaGaps.some((entry) => entry.featureName === "residentialCandidateHeadroom"));
   assert.match(formatted, /offline-positive-online-neutral/);
   assert.match(formatted, /Trace comparisons:/);
+  assert.match(formatted, /Layout signatures: changed-layout-final-neutral:1/);
   assert.match(formatted, /online-traces=1/);
+  assert.match(formatted, /layout-signature=changed-layout-final-neutral/);
   assert.match(formatted, /online-layout-changed=1/);
 
   const telemetryManifest = buildLnsWindowRankerGapDiagnosticsTelemetryManifest(result, {
@@ -676,6 +685,9 @@ function testLnsWindowRankerGapDiagnostics() {
   assert.equal(telemetryManifest.metrics.traceComparisonCount, 1);
   assert.equal(telemetryManifest.metrics.traceComparisonOnlineTraceCount, 1);
   assert.equal(telemetryManifest.metrics.traceComparisonChangedFinalLayoutTraceCount, 1);
+  assert.equal(telemetryManifest.metrics.changedLayoutFinalNeutralTraceComparisonCount, 1);
+  assert.equal(telemetryManifest.metrics.zeroLayoutFinalNeutralTraceComparisonCount, 0);
+  assert.equal(telemetryManifest.metrics.traceComparisonLayoutSignatureCounts["changed-layout-final-neutral"], 1);
   assert.equal(telemetryManifest.labelFingerprint, result.inputs.labelFingerprint);
 
   const registryDraft = buildLnsWindowRankerGapDiagnosticsRegistryEntryDraft(result, {
@@ -687,6 +699,8 @@ function testLnsWindowRankerGapDiagnostics() {
   assert.equal(registryDraft.budget.offlinePositiveOnlineNeutralCount, 1);
   assert.equal(registryDraft.budget.traceComparisonCount, 1);
   assert.equal(registryDraft.budget.traceComparisonChangedFinalLayoutTraceCount, 1);
+  assert.equal(registryDraft.budget.changedLayoutFinalNeutralTraceComparisonCount, 1);
+  assert.equal(registryDraft.budget.zeroLayoutFinalNeutralTraceComparisonCount, 0);
   assert.equal(registryDraft.summaryMetrics.promotionBlocked, true);
 }
 

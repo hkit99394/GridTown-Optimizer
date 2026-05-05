@@ -592,6 +592,10 @@ function summaryMetrics(result: LnsWindowRankerGapDiagnosticsResult): Record<str
     onlineActiveNoOfflineMatchCount: result.summary.onlineActiveNoOfflineMatchCount,
     traceComparisonCount: result.traceComparisons.length,
     traceComparisonOnlineTraceCount: sumBenchmarkBy(result.traceComparisons, (entry) => entry.onlineTraceCount),
+    traceComparisonChangedFinalLayoutTraceCount: sumBenchmarkBy(
+      result.traceComparisons,
+      (entry) => entry.onlineChangedFinalLayoutTraceCount
+    ),
     traceComparisonOfflineDecisionCount: sumBenchmarkBy(result.traceComparisons, (entry) => entry.offlineDecisionCount),
     promotionBlocked: result.summary.promotionBlocked
   };
@@ -638,7 +642,11 @@ export function buildLnsWindowRankerGapDiagnosticsRegistryEntryDraft(
       offlineOpportunityCount: result.offline.opportunityCount,
       offlinePositiveOnlineNeutralCount: result.summary.offlinePositiveOnlineNeutralCount,
       traceComparisonCount: result.traceComparisons.length,
-      traceComparisonOnlineTraceCount: sumBenchmarkBy(result.traceComparisons, (entry) => entry.onlineTraceCount)
+      traceComparisonOnlineTraceCount: sumBenchmarkBy(result.traceComparisons, (entry) => entry.onlineTraceCount),
+      traceComparisonChangedFinalLayoutTraceCount: sumBenchmarkBy(
+        result.traceComparisons,
+        (entry) => entry.onlineChangedFinalLayoutTraceCount
+      )
     },
     model: modelRecord(result),
     decision: options.decision ?? "offline-online-lns-window-ranker-gap-diagnostics",

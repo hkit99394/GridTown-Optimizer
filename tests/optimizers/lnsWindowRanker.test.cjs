@@ -486,14 +486,72 @@ function buildOnlineScorecardFixture() {
         gridRows: 4,
         gridCols: 4,
         gridCells: 16,
-        baseline: { variantName: "baseline", seed: 7, totalPopulation: 100, populationDeltaVsBaseline: 0 },
+        baseline: {
+          variantName: "baseline",
+          seed: 7,
+          totalPopulation: 100,
+          populationDeltaVsBaseline: 0,
+          finalLayoutDeltaVsBaseline: {
+            baselineFingerprint: "fnv1a:baseline",
+            variantFingerprint: "fnv1a:baseline",
+            sameFinalLayout: true,
+            roadAddedCount: 0,
+            roadRemovedCount: 0,
+            roadDeltaCount: 0,
+            serviceAddedCount: 0,
+            serviceRemovedCount: 0,
+            serviceDeltaCount: 0,
+            residentialAddedCount: 0,
+            residentialRemovedCount: 0,
+            residentialDeltaCount: 0,
+            buildingDeltaCount: 0,
+            placementDeltaCount: 0
+          }
+        },
         variants: [
-          { variantName: "baseline", seed: 7, totalPopulation: 100, populationDeltaVsBaseline: 0 },
+          {
+            variantName: "baseline",
+            seed: 7,
+            totalPopulation: 100,
+            populationDeltaVsBaseline: 0,
+            finalLayoutDeltaVsBaseline: {
+              baselineFingerprint: "fnv1a:baseline",
+              variantFingerprint: "fnv1a:baseline",
+              sameFinalLayout: true,
+              roadAddedCount: 0,
+              roadRemovedCount: 0,
+              roadDeltaCount: 0,
+              serviceAddedCount: 0,
+              serviceRemovedCount: 0,
+              serviceDeltaCount: 0,
+              residentialAddedCount: 0,
+              residentialRemovedCount: 0,
+              residentialDeltaCount: 0,
+              buildingDeltaCount: 0,
+              placementDeltaCount: 0
+            }
+          },
           {
             variantName: "window-ranker",
             seed: 7,
             totalPopulation: 100,
             populationDeltaVsBaseline: 0,
+            finalLayoutDeltaVsBaseline: {
+              baselineFingerprint: "fnv1a:baseline",
+              variantFingerprint: "fnv1a:ranker",
+              sameFinalLayout: false,
+              roadAddedCount: 1,
+              roadRemovedCount: 0,
+              roadDeltaCount: 1,
+              serviceAddedCount: 0,
+              serviceRemovedCount: 0,
+              serviceDeltaCount: 0,
+              residentialAddedCount: 1,
+              residentialRemovedCount: 0,
+              residentialDeltaCount: 1,
+              buildingDeltaCount: 1,
+              placementDeltaCount: 2
+            },
             selectionDiagnostics: {
               overrideTransitionCounts: { "weak-service->sliding": 1 },
               fallbackTransitionCounts: {},
@@ -598,12 +656,16 @@ function testLnsWindowRankerGapDiagnostics() {
   assert.equal(traceComparison.offlineDecisionCount, 2);
   assert.equal(traceComparison.onlineTraceCount, 1);
   assert.equal(traceComparison.onlineNeutralTraceCount, 1);
+  assert.equal(traceComparison.onlineChangedFinalLayoutTraceCount, 1);
+  assert.equal(traceComparison.onlineMeanFinalLayoutPlacementDelta, 2);
   assert.equal(traceComparison.onlineMeanImprovement, 0);
   assert.equal(traceComparison.onlineSamples[0].selectedWindow.left, 1);
+  assert.equal(traceComparison.onlineSamples[0].finalLayoutDeltaVsBaseline.placementDeltaCount, 2);
   assert(traceComparison.topFeatureDeltaGaps.some((entry) => entry.featureName === "residentialCandidateHeadroom"));
   assert.match(formatted, /offline-positive-online-neutral/);
   assert.match(formatted, /Trace comparisons:/);
   assert.match(formatted, /online-traces=1/);
+  assert.match(formatted, /online-layout-changed=1/);
 
   const telemetryManifest = buildLnsWindowRankerGapDiagnosticsTelemetryManifest(result, {
     command: "node dist/lnsWindowRankerCli.js --gap-diagnostics",
@@ -613,6 +675,7 @@ function testLnsWindowRankerGapDiagnostics() {
   assert.equal(telemetryManifest.metrics.promotionBlocked, true);
   assert.equal(telemetryManifest.metrics.traceComparisonCount, 1);
   assert.equal(telemetryManifest.metrics.traceComparisonOnlineTraceCount, 1);
+  assert.equal(telemetryManifest.metrics.traceComparisonChangedFinalLayoutTraceCount, 1);
   assert.equal(telemetryManifest.labelFingerprint, result.inputs.labelFingerprint);
 
   const registryDraft = buildLnsWindowRankerGapDiagnosticsRegistryEntryDraft(result, {
@@ -623,6 +686,7 @@ function testLnsWindowRankerGapDiagnostics() {
   assert.equal(registryDraft.artifactType, "model-experiment");
   assert.equal(registryDraft.budget.offlinePositiveOnlineNeutralCount, 1);
   assert.equal(registryDraft.budget.traceComparisonCount, 1);
+  assert.equal(registryDraft.budget.traceComparisonChangedFinalLayoutTraceCount, 1);
   assert.equal(registryDraft.summaryMetrics.promotionBlocked, true);
 }
 

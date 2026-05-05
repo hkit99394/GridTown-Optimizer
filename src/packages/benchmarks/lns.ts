@@ -1,5 +1,6 @@
 import { performance } from "node:perf_hooks";
 
+import { hashString, stableStringify } from "../core/cpSatContinuation.js";
 import { buildSolverProgressSummary, formatSolverProgressSummary } from "../core/index.js";
 import { solveLns } from "../solvers/index.js";
 import {
@@ -29,6 +30,7 @@ import type {
   Grid,
   LnsOptions,
   LnsTelemetry,
+  Solution,
   SolverParams,
   SolverProgressSummary
 } from "../core/index.js";
@@ -66,6 +68,13 @@ export interface LnsBenchmarkRunOptions {
   greedy?: Partial<GreedyOptions>;
 }
 
+export interface LnsBenchmarkLayoutSnapshot {
+  fingerprint: string;
+  roadKeys: string[];
+  serviceKeys: string[];
+  residentialKeys: string[];
+}
+
 export interface LnsBenchmarkCaseResult {
   name: string;
   description: string;
@@ -75,6 +84,7 @@ export interface LnsBenchmarkCaseResult {
   roadCount: number;
   serviceCount: number;
   residentialCount: number;
+  layout: LnsBenchmarkLayoutSnapshot;
   stoppedByUser: boolean;
   lnsOptions: LnsOptions;
   cpSatOptions: CpSatOptions;
@@ -139,6 +149,34 @@ function buildBenchmarkParams(benchmarkCase: LnsBenchmarkCase, options?: LnsBenc
   };
 }
 
+function sortedKeys(values: Iterable<string>): string[] {
+  return [...values].sort((left, right) => left.localeCompare(right));
+}
+
+function snapshotLnsBenchmarkLayout(solution: Solution): LnsBenchmarkLayoutSnapshot {
+  const roadKeys = sortedKeys(solution.roads);
+  const serviceKeys = sortedKeys(
+    solution.services.map((service, index) => {
+      const typeIndex = solution.serviceTypeIndices[index] ?? -1;
+      const populationIncrease = solution.servicePopulationIncreases[index] ?? 0;
+      return `${service.r},${service.c},${service.rows}x${service.cols},range=${service.range},type=${typeIndex},pop=${populationIncrease}`;
+    })
+  );
+  const residentialKeys = sortedKeys(
+    solution.residentials.map((residential, index) => {
+      const typeIndex = solution.residentialTypeIndices[index] ?? -1;
+      const population = solution.populations[index] ?? 0;
+      return `${residential.r},${residential.c},${residential.rows}x${residential.cols},type=${typeIndex},pop=${population}`;
+    })
+  );
+  return {
+    fingerprint: `fnv1a:${hashString(stableStringify({ roadKeys, serviceKeys, residentialKeys }))}`,
+    roadKeys,
+    serviceKeys,
+    residentialKeys
+  };
+}
+
 function selectBenchmarkCases(
   corpus: readonly LnsBenchmarkCase[],
   names: readonly string[] | undefined
@@ -177,6 +215,7 @@ function runLnsBenchmarkCase(
     roadCount: solution.roads.size,
     serviceCount: solution.services.length,
     residentialCount: solution.residentials.length,
+    layout: snapshotLnsBenchmarkLayout(solution),
     stoppedByUser: solution.stoppedByUser ?? false,
     lnsOptions: cloneBenchmarkOptions(params.lns ?? {}),
     cpSatOptions: cloneBenchmarkOptions(params.cpSat ?? {}),

@@ -20,6 +20,7 @@ import {
   buildLnsWindowRankerOnlineTransitionOutcomeDiagnostics,
   mergeLnsWindowRankerOnlineSelectionDiagnostics
 } from "./lnsWindowRankerOnlineSelectionDiagnostics.js";
+import { buildLnsWindowRankerOnlineFinalLayoutDelta } from "./lnsWindowRankerOnlineLayoutDeltas.js";
 
 import type {
   CpSatNeighborhoodWindow,
@@ -38,6 +39,7 @@ import type {
   BenchmarkVariantSummarySnapshot
 } from "./benchmarkOptions.js";
 import type { LnsBenchmarkCase, LnsBenchmarkCaseResult, LnsBenchmarkRunOptions } from "./lns.js";
+import type { LnsWindowRankerOnlineFinalLayoutDelta } from "./lnsWindowRankerOnlineLayoutDeltas.js";
 import type {
   LnsWindowRankerOnlineSelectionDiagnostics,
   LnsWindowRankerOnlineTransitionStatusCounts
@@ -125,6 +127,7 @@ export interface LnsWindowRankerOnlineAblationVariantResult {
   meanOverrideScoreDelta: number | null;
   selectionDiagnostics: LnsWindowRankerOnlineSelectionDiagnostics | null;
   selectionTrace: LnsWindowRankerOnlineSelectionTraceEntry[];
+  finalLayoutDeltaVsBaseline: LnsWindowRankerOnlineFinalLayoutDelta;
   finalOutcome: finalOutcomes.LnsWindowRankerOnlineFinalOutcome;
   windowRanker: LnsWindowRankerOnlineAblationTelemetrySummary | null;
 }
@@ -175,6 +178,9 @@ export interface LnsWindowRankerOnlineAblationSummary
   overrideTransitionPressureFamilyCounts: Record<string, Record<string, number>>;
   fallbackTransitionPressureFamilyCounts: Record<string, Record<string, number>>;
   selectionTraceCount: number;
+  sameFinalLayoutCount: number;
+  changedFinalLayoutCount: number;
+  meanFinalLayoutPlacementDelta: number;
 }
 
 export interface LnsWindowRankerOnlineAblationCoverage extends BenchmarkVariantCoverageMetrics {}
@@ -261,6 +267,9 @@ export interface LnsWindowRankerOnlineCalibrationThresholdSummary {
   overrideTransitionPressureFamilyCounts: Record<string, Record<string, number>>;
   fallbackTransitionPressureFamilyCounts: Record<string, Record<string, number>>;
   selectionTraceCount: number;
+  sameFinalLayoutCount: number;
+  changedFinalLayoutCount: number;
+  meanFinalLayoutPlacementDelta: number;
   safetyGatePassed: boolean;
 }
 
@@ -516,6 +525,7 @@ function variantResult(
     meanOverrideScoreDelta: meanOverrideScoreDelta(result),
     selectionDiagnostics: buildLnsWindowRankerOnlineSelectionDiagnostics(result),
     selectionTrace: selectionTrace(result),
+    finalLayoutDeltaVsBaseline: buildLnsWindowRankerOnlineFinalLayoutDelta(result, baseline),
     finalOutcome: finalOutcomes.buildLnsWindowRankerFinalOutcome(populationDeltaVsBaseline, overrides, fallbacks),
     windowRanker: summarizeWindowRanker(result)
   };
@@ -540,6 +550,10 @@ function buildVariantSummary(
   const overrideCount = sumBenchmarkBy(results, (entry) => entry.windowRanker?.overrides ?? 0);
   const fallbackDecisionCount = sumBenchmarkBy(results, (entry) => entry.windowRanker?.fallbackDecisions ?? 0);
   const overrideOutcomeCount = sumBenchmarkBy(results, (entry) => entry.overrideOutcomeCount);
+  const totalFinalLayoutPlacementDelta = sumBenchmarkBy(
+    results,
+    (entry) => entry.finalLayoutDeltaVsBaseline.placementDeltaCount
+  );
   const overrideScoreDeltaWeightedSum = sumBenchmarkBy(
     results,
     (entry) => (entry.meanOverrideScoreDelta ?? 0) * entry.overrideOutcomeCount
@@ -587,6 +601,13 @@ function buildVariantSummary(
     overrideTransitionPressureFamilyCounts: transitionOutcomeDiagnostics.overrideTransitionPressureFamilyCounts,
     fallbackTransitionPressureFamilyCounts: transitionOutcomeDiagnostics.fallbackTransitionPressureFamilyCounts,
     selectionTraceCount: sumBenchmarkBy(results, (entry) => entry.selectionTrace.length),
+    sameFinalLayoutCount: sumBenchmarkBy(results, (entry) =>
+      entry.finalLayoutDeltaVsBaseline.sameFinalLayout ? 1 : 0
+    ),
+    changedFinalLayoutCount: sumBenchmarkBy(results, (entry) =>
+      entry.finalLayoutDeltaVsBaseline.sameFinalLayout ? 0 : 1
+    ),
+    meanFinalLayoutPlacementDelta: benchmarkRatio(totalFinalLayoutPlacementDelta, results.length),
     ...finalOutcomes.summarizeLnsWindowRankerFinalOutcomes(results)
   };
 }
@@ -658,6 +679,9 @@ function thresholdSummary(
     overrideTransitionPressureFamilyCounts: summary.overrideTransitionPressureFamilyCounts,
     fallbackTransitionPressureFamilyCounts: summary.fallbackTransitionPressureFamilyCounts,
     selectionTraceCount: summary.selectionTraceCount,
+    sameFinalLayoutCount: summary.sameFinalLayoutCount,
+    changedFinalLayoutCount: summary.changedFinalLayoutCount,
+    meanFinalLayoutPlacementDelta: summary.meanFinalLayoutPlacementDelta,
     safetyGatePassed: summary.regressedCaseCount === 0 && summary.worstPopulationDeltaVsBaseline >= 0
   };
 }

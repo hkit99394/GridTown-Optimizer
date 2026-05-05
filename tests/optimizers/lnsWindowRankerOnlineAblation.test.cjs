@@ -67,16 +67,19 @@ function buildMockSolution(params) {
         ...(overridesBaseline ? {} : { fallbackReason: "score-delta-below-threshold" })
       }
     : undefined;
+  const roads = new Set(overridesBaseline ? ["0,0", "0,1"] : ["0,0"]);
+  const services = overridesBaseline ? [{ r: 0, c: 1, rows: 1, cols: 1, range: 2 }] : [];
+  const residentials = overridesBaseline ? [{ r: 1, c: 1, rows: 1, cols: 1 }] : [];
 
   return {
     optimizer: "lns",
-    roads: new Set(["0,0"]),
-    services: [],
-    serviceTypeIndices: [],
-    servicePopulationIncreases: [],
-    residentials: [],
-    residentialTypeIndices: [],
-    populations: [],
+    roads,
+    services,
+    serviceTypeIndices: services.map(() => 0),
+    servicePopulationIncreases: services.map(() => 5),
+    residentials,
+    residentialTypeIndices: residentials.map(() => 0),
+    populations: residentials.map(() => totalPopulation),
     totalPopulation,
     cpSatStatus: "FEASIBLE",
     lnsTelemetry: {
@@ -230,6 +233,18 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(result.variantSummaries[1].overrideFinalNeutralCaseCount, 0);
     assert.equal(result.variantSummaries[1].overrideFinalRegressedCaseCount, 0);
     assert.equal(result.variantSummaries[1].meanOverrideFinalPopulationDelta, 20);
+    assert.equal(result.variantSummaries[1].sameFinalLayoutCount, 0);
+    assert.equal(result.variantSummaries[1].changedFinalLayoutCount, 1);
+    assert.equal(result.variantSummaries[1].meanFinalLayoutPlacementDelta, 3);
+    assert.equal(result.cases[0].variants[0].finalLayoutDeltaVsBaseline.sameFinalLayout, true);
+    assert.equal(result.cases[0].variants[0].finalLayoutDeltaVsBaseline.placementDeltaCount, 0);
+    assert.equal(result.cases[0].variants[1].finalLayoutDeltaVsBaseline.sameFinalLayout, false);
+    assert.equal(result.cases[0].variants[1].finalLayoutDeltaVsBaseline.roadAddedCount, 1);
+    assert.equal(result.cases[0].variants[1].finalLayoutDeltaVsBaseline.serviceAddedCount, 1);
+    assert.equal(result.cases[0].variants[1].finalLayoutDeltaVsBaseline.residentialAddedCount, 1);
+    assert.equal(result.cases[0].variants[1].finalLayoutDeltaVsBaseline.placementDeltaCount, 3);
+    assert.match(result.cases[0].variants[1].finalLayoutDeltaVsBaseline.baselineFingerprint, /^fnv1a:/);
+    assert.match(result.cases[0].variants[1].finalLayoutDeltaVsBaseline.variantFingerprint, /^fnv1a:/);
     assert.deepEqual(result.cases[0].variants[1].selectionDiagnostics, {
       overrideTransitionCounts: { "sliding->service-overlap": 1 },
       fallbackTransitionCounts: {},
@@ -323,10 +338,13 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
     assert.equal(Object.hasOwn(snapshot.cases[0].variants[1], "wallClockSeconds"), false);
     assert.equal(snapshot.cases[0].variants[1].selectionTrace.length, 1);
+    assert.equal(snapshot.cases[0].variants[1].finalLayoutDeltaVsBaseline.placementDeltaCount, 3);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /=== LNS Window Ranker Online A\/B ===/);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /overrides=1/);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /traces=1/);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /trace:1/);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /layout-changed=1/);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /layout-delta:3/);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /override-improved=1/);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /override-final=1\/0\/0/);
     assert.match(
@@ -348,6 +366,8 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(telemetryManifest.metrics.meanPopulationDeltaVsBaseline, 20);
     assert.equal(telemetryManifest.metrics.rankerOverrideCount, 1);
     assert.equal(telemetryManifest.metrics.selectionTraceCount, 1);
+    assert.equal(telemetryManifest.metrics.changedFinalLayoutCount, 1);
+    assert.equal(telemetryManifest.metrics.meanFinalLayoutPlacementDelta, 3);
     assert.equal(telemetryManifest.metrics.overrideImprovedOutcomeCount, 1);
     assert.equal(telemetryManifest.metrics.overrideNeutralOutcomeCount, 0);
     assert.equal(telemetryManifest.metrics.overrideFinalImprovedCaseCount, 1);
@@ -394,12 +414,16 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(registryDraft.budget.overrideImprovedOutcomeCount, 1);
     assert.equal(registryDraft.budget.overrideNeutralOutcomeCount, 0);
     assert.equal(registryDraft.budget.selectionTraceCount, 1);
+    assert.equal(registryDraft.budget.changedFinalLayoutCount, 1);
+    assert.equal(registryDraft.budget.meanFinalLayoutPlacementDelta, 3);
     assert.equal(registryDraft.budget.overrideFinalImprovedCaseCount, 1);
     assert.equal(registryDraft.budget.overrideFinalNeutralCaseCount, 0);
     assert.equal(registryDraft.budget.overrideFinalRegressedCaseCount, 0);
     assert.equal(registryDraft.model.modelPath, "artifacts/model.json");
     assert.equal(registryDraft.splitStatus.protectedHoldout, false);
     assert.equal(registryDraft.summaryMetrics.meanPopulationDeltaVsBaseline, 20);
+    assert.equal(registryDraft.summaryMetrics.changedFinalLayoutCount, 1);
+    assert.equal(registryDraft.summaryMetrics.meanFinalLayoutPlacementDelta, 3);
     assert.equal(registryDraft.summaryMetrics.overrideChangedWindowCount, 1);
     assert.equal(registryDraft.summaryMetrics.fallbackChangedWindowCount, 0);
     assert.equal(registryDraft.summaryMetrics.overrideFeatureDeltaCount, 1);
@@ -525,6 +549,8 @@ function testOnlineCalibrationSummarizesThresholdSweep() {
     assert.equal(result.topSafeMinScoreDelta, 0);
     assert.equal(result.thresholdSummaries[0].meanPopulationDeltaVsBaseline, 20);
     assert.equal(result.thresholdSummaries[0].rankerOverrideCount, 1);
+    assert.equal(result.thresholdSummaries[0].changedFinalLayoutCount, 1);
+    assert.equal(result.thresholdSummaries[0].meanFinalLayoutPlacementDelta, 3);
     assert.equal(result.thresholdSummaries[0].overrideChangedWindowCount, 1);
     assert.equal(result.thresholdSummaries[0].overrideFeatureDeltaCount, 1);
     assert.deepEqual(result.thresholdSummaries[0].overrideMeanFeatureDeltas, {
@@ -551,6 +577,8 @@ function testOnlineCalibrationSummarizesThresholdSweep() {
     });
     assert.equal(result.thresholdSummaries[1].meanPopulationDeltaVsBaseline, 0);
     assert.equal(result.thresholdSummaries[1].rankerFallbackDecisionCount, 2);
+    assert.equal(result.thresholdSummaries[1].changedFinalLayoutCount, 0);
+    assert.equal(result.thresholdSummaries[1].meanFinalLayoutPlacementDelta, 0);
     assert.equal(result.thresholdSummaries[1].fallbackChangedWindowCount, 0);
     assert.equal(result.thresholdSummaries[1].fallbackFeatureDeltaCount, 1);
     assert.deepEqual(result.thresholdSummaries[1].fallbackMeanFeatureDeltas, {
@@ -603,6 +631,8 @@ function testOnlineCalibrationSummarizesThresholdSweep() {
       telemetryManifest.metrics.thresholdSummaries[1].fallbackTransitionFinalOutcomeCounts["sliding->sliding"].neutral,
       1
     );
+    assert.equal(telemetryManifest.metrics.thresholdSummaries[0].changedFinalLayoutCount, 1);
+    assert.equal(telemetryManifest.metrics.thresholdSummaries[1].changedFinalLayoutCount, 0);
 
     const registryDraft = buildLnsWindowRankerOnlineCalibrationRegistryEntryDraft(result, {
       commands: ["node dist/lnsBenchmarkCli.js --window-ranker-threshold-sweep"],

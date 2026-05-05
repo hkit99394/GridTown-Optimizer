@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "runId": "lns-window-ranker-gap-2026-05-05-curated-seeds-v3-final-lift-no-weak-protected",
   "artifactType": "model-experiment",
-  "generatedAt": "2026-05-05T19:11:23.234Z",
+  "generatedAt": "2026-05-05T19:35:46.863Z",
   "commands": [
     "node dist/lnsWindowRankerCli.js --gap-diagnostics --labels=artifacts/learned-ranking-labels/2026-05-04/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1/labels.json --model=artifacts/lns-window-ranker/2026-05-05/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1-final-lift-no-weak-cpu-ranker-lr0.02-cap100/model.json --online-scorecard=artifacts/lns-window-ranker-online/2026-05-05/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1-final-lift-no-weak-protected-holdout-min-score-delta-0.1/lns-window-ranker-online-ablation.json --artifact-dir=artifacts/lns-window-ranker-gap-diagnostics/2026-05-05/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-protected-gap --ranker-run-id=lns-window-ranker-gap-2026-05-05-curated-seeds-v3-final-lift-no-weak-protected --ranker-decision=offline-online-lns-window-ranker-gap-diagnostics '--ranker-summary=Offline-to-online gap diagnostic joining full-family curated non-weak final-lift replay labels to the protected online neutral override scorecard; no solver default changed.' --json"
   ],
@@ -45,7 +45,8 @@
     "offlineOpportunityCount": 54,
     "offlinePositiveOnlineNeutralCount": 3,
     "traceComparisonCount": 9,
-    "traceComparisonOnlineTraceCount": 27
+    "traceComparisonOnlineTraceCount": 27,
+    "traceComparisonChangedFinalLayoutTraceCount": 14
   },
   "model": {
     "schemaVersion": 1,
@@ -62,7 +63,7 @@
   "summary": "Offline-to-online gap diagnostic joining full-family curated non-weak final-lift replay labels to the protected online neutral override scorecard; no solver default changed.",
   "labelFingerprint": "fnv1a:58ce487f",
   "datasetFingerprint": "fnv1a:b3c3fe8b",
-  "inputFingerprint": "fnv1a:17d43053",
+  "inputFingerprint": "fnv1a:17e1fd8e",
   "modelFingerprint": "fnv1a:59993b67",
   "summaryMetrics": {
     "target": "roll-forward-final-lift",
@@ -79,6 +80,7 @@
     "onlineActiveNoOfflineMatchCount": 6,
     "traceComparisonCount": 9,
     "traceComparisonOnlineTraceCount": 27,
+    "traceComparisonChangedFinalLayoutTraceCount": 14,
     "traceComparisonOfflineDecisionCount": 27,
     "promotionBlocked": true
   }

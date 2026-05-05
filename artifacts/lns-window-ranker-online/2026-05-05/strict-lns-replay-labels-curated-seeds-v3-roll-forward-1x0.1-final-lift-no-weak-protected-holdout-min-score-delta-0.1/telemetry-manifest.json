@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "source": "model-experiment",
   "command": "node dist/lnsBenchmarkCli.js --window-ranker-online-ablation --window-ranker-protected-holdout --window-ranker-model=artifacts/lns-window-ranker/2026-05-05/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1-final-lift-no-weak-cpu-ranker-lr0.02-cap100/model.json --window-ranker-min-score-delta=0.1 --seeds=7,19,37 --artifact-dir=artifacts/lns-window-ranker-online/2026-05-05/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1-final-lift-no-weak-protected-holdout-min-score-delta-0.1 --window-ranker-run-id=lns-window-ranker-online-2026-05-05-curated-seeds-v3-roll-forward-1x0-1-final-lift-no-weak-protected-holdout-min-score-delta-0-1 --window-ranker-decision=online-lns-window-ranker-final-lift-non-weak-protected-holdout-evidence '--window-ranker-summary=Protected independent holdout scorecard for the full-family curated non-weak roll-forward final-lift LNS window ranker at minScoreDelta=0.1; no solver default changed.' --json",
-  "generatedAt": "2026-05-05T18:46:43.636Z",
+  "generatedAt": "2026-05-05T19:35:24.580Z",
   "git": {
-    "commit": "a2561e4becca8ae1cdaed13924041bc8ecd62849",
+    "commit": "723bf5fe0217b568a46453c280ab5f2aae720e3e",
     "branch": "features/validated-solver-improvement-loop"
   },
   "hardware": {
@@ -119,7 +119,7 @@
     "worstPopulationDeltaSeed": 7,
     "bestPopulationDeltaCaseName": "lns-holdout-corridor-weave-pressure",
     "bestPopulationDeltaSeed": 7,
-    "meanWallClockDeltaVsBaselineSeconds": -0.04371098606666668,
+    "meanWallClockDeltaVsBaselineSeconds": 0.026632894533333323,
     "improvedCaseCount": 0,
     "regressedCaseCount": 0,
     "unchangedCaseCount": 15,
@@ -277,6 +277,9 @@
     },
     "fallbackTransitionPressureFamilyCounts": {},
     "selectionTraceCount": 30,
+    "sameFinalLayoutCount": 7,
+    "changedFinalLayoutCount": 8,
+    "meanFinalLayoutPlacementDelta": 5.6,
     "safetyGatePassed": true
   }
 }

@@ -81,6 +81,9 @@
       "overrideTransitionPressureFamilyCounts": {},
       "fallbackTransitionPressureFamilyCounts": {},
       "selectionTraceCount": 0,
+      "sameFinalLayoutCount": 15,
+      "changedFinalLayoutCount": 0,
+      "meanFinalLayoutPlacementDelta": 0,
       "overrideFinalImprovedCaseCount": 0,
       "overrideFinalNeutralCaseCount": 0,
       "overrideFinalRegressedCaseCount": 0,
@@ -262,6 +265,9 @@
       },
       "fallbackTransitionPressureFamilyCounts": {},
       "selectionTraceCount": 30,
+      "sameFinalLayoutCount": 7,
+      "changedFinalLayoutCount": 8,
+      "meanFinalLayoutPlacementDelta": 5.6,
       "overrideFinalImprovedCaseCount": 0,
       "overrideFinalNeutralCaseCount": 15,
       "overrideFinalRegressedCaseCount": 0,
@@ -311,6 +317,22 @@
         "meanOverrideScoreDelta": null,
         "selectionDiagnostics": null,
         "selectionTrace": [],
+        "finalLayoutDeltaVsBaseline": {
+          "baselineFingerprint": "fnv1a:f742485f",
+          "variantFingerprint": "fnv1a:f742485f",
+          "sameFinalLayout": true,
+          "roadAddedCount": 0,
+          "roadRemovedCount": 0,
+          "roadDeltaCount": 0,
+          "serviceAddedCount": 0,
+          "serviceRemovedCount": 0,
+          "serviceDeltaCount": 0,
+          "residentialAddedCount": 0,
+          "residentialRemovedCount": 0,
+          "residentialDeltaCount": 0,
+          "buildingDeltaCount": 0,
+          "placementDeltaCount": 0
+        },
         "finalOutcome": {
           "status": "neutral",
           "populationDeltaVsBaseline": 0,
@@ -351,6 +373,22 @@
           "meanOverrideScoreDelta": null,
           "selectionDiagnostics": null,
           "selectionTrace": [],
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:f742485f",
+            "variantFingerprint": "fnv1a:f742485f",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
           "finalOutcome": {
             "status": "neutral",
             "populationDeltaVsBaseline": 0,
@@ -841,6 +879,22 @@
               }
             }
           ],
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:f742485f",
+            "variantFingerprint": "fnv1a:e926669f",
+            "sameFinalLayout": false,
+            "roadAddedCount": 1,
+            "roadRemovedCount": 2,
+            "roadDeltaCount": 3,
+            "serviceAddedCount": 1,
+            "serviceRemovedCount": 1,
+            "serviceDeltaCount": 2,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 2,
+            "placementDeltaCount": 5
+          },
           "finalOutcome": {
             "status": "neutral",
             "populationDeltaVsBaseline": 0,
@@ -900,6 +954,22 @@
         "meanOverrideScoreDelta": null,
         "selectionDiagnostics": null,
         "selectionTrace": [],
+        "finalLayoutDeltaVsBaseline": {
+          "baselineFingerprint": "fnv1a:7ef083f0",
+          "variantFingerprint": "fnv1a:7ef083f0",
+          "sameFinalLayout": true,
+          "roadAddedCount": 0,
+          "roadRemovedCount": 0,
+          "roadDeltaCount": 0,
+          "serviceAddedCount": 0,
+          "serviceRemovedCount": 0,
+          "serviceDeltaCount": 0,
+          "residentialAddedCount": 0,
+          "residentialRemovedCount": 0,
+          "residentialDeltaCount": 0,
+          "buildingDeltaCount": 0,
+          "placementDeltaCount": 0
+        },
         "finalOutcome": {
           "status": "neutral",
           "populationDeltaVsBaseline": 0,
@@ -940,6 +1010,22 @@
           "meanOverrideScoreDelta": null,
           "selectionDiagnostics": null,
           "selectionTrace": [],
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:7ef083f0",
+            "variantFingerprint": "fnv1a:7ef083f0",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
           "finalOutcome": {
             "status": "neutral",
             "populationDeltaVsBaseline": 0,
@@ -1430,6 +1516,22 @@
               }
             }
           ],
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:7ef083f0",
+            "variantFingerprint": "fnv1a:7ef083f0",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
           "finalOutcome": {
             "status": "neutral",
             "populationDeltaVsBaseline": 0,
@@ -1489,6 +1591,22 @@
         "meanOverrideScoreDelta": null,
         "selectionDiagnostics": null,
         "selectionTrace": [],
+        "finalLayoutDeltaVsBaseline": {
+          "baselineFingerprint": "fnv1a:a41eaa19",
+          "variantFingerprint": "fnv1a:a41eaa19",
+          "sameFinalLayout": true,
+          "roadAddedCount": 0,
+          "roadRemovedCount": 0,
+          "roadDeltaCount": 0,
+          "serviceAddedCount": 0,
+          "serviceRemovedCount": 0,
+          "serviceDeltaCount": 0,
+          "residentialAddedCount": 0,
+          "residentialRemovedCount": 0,
+          "residentialDeltaCount": 0,
+          "buildingDeltaCount": 0,
+          "placementDeltaCount": 0
+        },
         "finalOutcome": {
           "status": "neutral",
           "populationDeltaVsBaseline": 0,
@@ -1529,6 +1647,22 @@
           "meanOverrideScoreDelta": null,
           "selectionDiagnostics": null,
           "selectionTrace": [],
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:a41eaa19",
+            "variantFingerprint": "fnv1a:a41eaa19",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
           "finalOutcome": {
             "status": "neutral",
             "populationDeltaVsBaseline": 0,
@@ -2019,6 +2153,22 @@
               }
             }
           ],
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:a41eaa19",
+            "variantFingerprint": "fnv1a:a41eaa19",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
           "finalOutcome": {
             "status": "neutral",
             "populationDeltaVsBaseline": 0,
@@ -2078,6 +2228,22 @@
         "meanOverrideScoreDelta": null,
         "selectionDiagnostics": null,
         "selectionTrace": [],
+        "finalLayoutDeltaVsBaseline": {
+          "baselineFingerprint": "fnv1a:76257ef1",
+          "variantFingerprint": "fnv1a:76257ef1",
+          "sameFinalLayout": true,
+          "roadAddedCount": 0,
+          "roadRemovedCount": 0,
+          "roadDeltaCount": 0,
+          "serviceAddedCount": 0,
+          "serviceRemovedCount": 0,
+          "serviceDeltaCount": 0,
+          "residentialAddedCount": 0,
+          "residentialRemovedCount": 0,
+          "residentialDeltaCount": 0,
+          "buildingDeltaCount": 0,
+          "placementDeltaCount": 0
+        },
         "finalOutcome": {
           "status": "neutral",
           "populationDeltaVsBaseline": 0,
@@ -2118,6 +2284,22 @@
           "meanOverrideScoreDelta": null,
           "selectionDiagnostics": null,
           "selectionTrace": [],
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:76257ef1",
+            "variantFingerprint": "fnv1a:76257ef1",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
           "finalOutcome": {
             "status": "neutral",
             "populationDeltaVsBaseline": 0,
@@ -2608,6 +2790,22 @@
               }
             }
           ],
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:76257ef1",
+            "variantFingerprint": "fnv1a:e7c96d71",
+            "sameFinalLayout": false,
+            "roadAddedCount": 3,
+            "roadRemovedCount": 5,
+            "roadDeltaCount": 8,
+            "serviceAddedCount": 2,
+            "serviceRemovedCount": 2,
+            "serviceDeltaCount": 4,
+            "residentialAddedCount": 3,
+            "residentialRemovedCount": 3,
+            "residentialDeltaCount": 6,
+            "buildingDeltaCount": 10,
+            "placementDeltaCount": 18
+          },
           "finalOutcome": {
             "status": "neutral",
             "populationDeltaVsBaseline": 0,
@@ -2667,6 +2865,22 @@
         "meanOverrideScoreDelta": null,
         "selectionDiagnostics": null,
         "selectionTrace": [],
+        "finalLayoutDeltaVsBaseline": {
+          "baselineFingerprint": "fnv1a:1db2e577",
+          "variantFingerprint": "fnv1a:1db2e577",
+          "sameFinalLayout": true,
+          "roadAddedCount": 0,
+          "roadRemovedCount": 0,
+          "roadDeltaCount": 0,
+          "serviceAddedCount": 0,
+          "serviceRemovedCount": 0,
+          "serviceDeltaCount": 0,
+          "residentialAddedCount": 0,
+          "residentialRemovedCount": 0,
+          "residentialDeltaCount": 0,
+          "buildingDeltaCount": 0,
+          "placementDeltaCount": 0
+        },
         "finalOutcome": {
           "status": "neutral",
           "populationDeltaVsBaseline": 0,
@@ -2707,6 +2921,22 @@
           "meanOverrideScoreDelta": null,
           "selectionDiagnostics": null,
           "selectionTrace": [],
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:1db2e577",
+            "variantFingerprint": "fnv1a:1db2e577",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
           "finalOutcome": {
             "status": "neutral",
             "populationDeltaVsBaseline": 0,
@@ -3197,6 +3427,22 @@
               }
             }
           ],
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:1db2e577",
+            "variantFingerprint": "fnv1a:4d23bd1f",
+            "sameFinalLayout": false,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 2,
+            "residentialRemovedCount": 2,
+            "residentialDeltaCount": 4,
+            "buildingDeltaCount": 4,
+            "placementDeltaCount": 4
+          },
           "finalOutcome": {
             "status": "neutral",
             "populationDeltaVsBaseline": 0,
@@ -3256,6 +3502,22 @@
         "meanOverrideScoreDelta": null,
         "selectionDiagnostics": null,
         "selectionTrace": [],
+        "finalLayoutDeltaVsBaseline": {
+          "baselineFingerprint": "fnv1a:f742485f",
+          "variantFingerprint": "fnv1a:f742485f",
+          "sameFinalLayout": true,
+          "roadAddedCount": 0,
+          "roadRemovedCount": 0,
+          "roadDeltaCount": 0,
+          "serviceAddedCount": 0,
+          "serviceRemovedCount": 0,
+          "serviceDeltaCount": 0,
+          "residentialAddedCount": 0,
+          "residentialRemovedCount": 0,
+          "residentialDeltaCount": 0,
+          "buildingDeltaCount": 0,
+          "placementDeltaCount": 0
+        },
         "finalOutcome": {
           "status": "neutral",
           "populationDeltaVsBaseline": 0,
@@ -3296,6 +3558,22 @@
           "meanOverrideScoreDelta": null,
           "selectionDiagnostics": null,
           "selectionTrace": [],
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:f742485f",
+            "variantFingerprint": "fnv1a:f742485f",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
           "finalOutcome": {
             "status": "neutral",
             "populationDeltaVsBaseline": 0,
@@ -3786,6 +4064,22 @@
               }
             }
           ],
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:f742485f",
+            "variantFingerprint": "fnv1a:e926669f",
+            "sameFinalLayout": false,
+            "roadAddedCount": 1,
+            "roadRemovedCount": 2,
+            "roadDeltaCount": 3,
+            "serviceAddedCount": 1,
+            "serviceRemovedCount": 1,
+            "serviceDeltaCount": 2,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 2,
+            "placementDeltaCount": 5
+          },
           "finalOutcome": {
             "status": "neutral",
             "populationDeltaVsBaseline": 0,
@@ -3845,6 +4139,22 @@
         "meanOverrideScoreDelta": null,
         "selectionDiagnostics": null,
         "selectionTrace": [],
+        "finalLayoutDeltaVsBaseline": {
+          "baselineFingerprint": "fnv1a:7ef083f0",
+          "variantFingerprint": "fnv1a:7ef083f0",
+          "sameFinalLayout": true,
+          "roadAddedCount": 0,
+          "roadRemovedCount": 0,
+          "roadDeltaCount": 0,
+          "serviceAddedCount": 0,
+          "serviceRemovedCount": 0,
+          "serviceDeltaCount": 0,
+          "residentialAddedCount": 0,
+          "residentialRemovedCount": 0,
+          "residentialDeltaCount": 0,
+          "buildingDeltaCount": 0,
+          "placementDeltaCount": 0
+        },
         "finalOutcome": {
           "status": "neutral",
           "populationDeltaVsBaseline": 0,
@@ -3885,6 +4195,22 @@
           "meanOverrideScoreDelta": null,
           "selectionDiagnostics": null,
           "selectionTrace": [],
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:7ef083f0",
+            "variantFingerprint": "fnv1a:7ef083f0",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
           "finalOutcome": {
             "status": "neutral",
             "populationDeltaVsBaseline": 0,
@@ -4375,6 +4701,22 @@
               }
             }
           ],
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:7ef083f0",
+            "variantFingerprint": "fnv1a:7ef083f0",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
           "finalOutcome": {
             "status": "neutral",
             "populationDeltaVsBaseline": 0,
@@ -4434,6 +4776,22 @@
         "meanOverrideScoreDelta": null,
         "selectionDiagnostics": null,
         "selectionTrace": [],
+        "finalLayoutDeltaVsBaseline": {
+          "baselineFingerprint": "fnv1a:a41eaa19",
+          "variantFingerprint": "fnv1a:a41eaa19",
+          "sameFinalLayout": true,
+          "roadAddedCount": 0,
+          "roadRemovedCount": 0,
+          "roadDeltaCount": 0,
+          "serviceAddedCount": 0,
+          "serviceRemovedCount": 0,
+          "serviceDeltaCount": 0,
+          "residentialAddedCount": 0,
+          "residentialRemovedCount": 0,
+          "residentialDeltaCount": 0,
+          "buildingDeltaCount": 0,
+          "placementDeltaCount": 0
+        },
         "finalOutcome": {
           "status": "neutral",
           "populationDeltaVsBaseline": 0,
@@ -4474,6 +4832,22 @@
           "meanOverrideScoreDelta": null,
           "selectionDiagnostics": null,
           "selectionTrace": [],
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:a41eaa19",
+            "variantFingerprint": "fnv1a:a41eaa19",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
           "finalOutcome": {
             "status": "neutral",
             "populationDeltaVsBaseline": 0,
@@ -4964,6 +5338,22 @@
               }
             }
           ],
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:a41eaa19",
+            "variantFingerprint": "fnv1a:a41eaa19",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
           "finalOutcome": {
             "status": "neutral",
             "populationDeltaVsBaseline": 0,
@@ -5023,6 +5413,22 @@
         "meanOverrideScoreDelta": null,
         "selectionDiagnostics": null,
         "selectionTrace": [],
+        "finalLayoutDeltaVsBaseline": {
+          "baselineFingerprint": "fnv1a:f9f0bd36",
+          "variantFingerprint": "fnv1a:f9f0bd36",
+          "sameFinalLayout": true,
+          "roadAddedCount": 0,
+          "roadRemovedCount": 0,
+          "roadDeltaCount": 0,
+          "serviceAddedCount": 0,
+          "serviceRemovedCount": 0,
+          "serviceDeltaCount": 0,
+          "residentialAddedCount": 0,
+          "residentialRemovedCount": 0,
+          "residentialDeltaCount": 0,
+          "buildingDeltaCount": 0,
+          "placementDeltaCount": 0
+        },
         "finalOutcome": {
           "status": "neutral",
           "populationDeltaVsBaseline": 0,
@@ -5063,6 +5469,22 @@
           "meanOverrideScoreDelta": null,
           "selectionDiagnostics": null,
           "selectionTrace": [],
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:f9f0bd36",
+            "variantFingerprint": "fnv1a:f9f0bd36",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
           "finalOutcome": {
             "status": "neutral",
             "populationDeltaVsBaseline": 0,
@@ -5553,6 +5975,22 @@
               }
             }
           ],
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:f9f0bd36",
+            "variantFingerprint": "fnv1a:95bf8f72",
+            "sameFinalLayout": false,
+            "roadAddedCount": 6,
+            "roadRemovedCount": 4,
+            "roadDeltaCount": 10,
+            "serviceAddedCount": 2,
+            "serviceRemovedCount": 2,
+            "serviceDeltaCount": 4,
+            "residentialAddedCount": 3,
+            "residentialRemovedCount": 3,
+            "residentialDeltaCount": 6,
+            "buildingDeltaCount": 10,
+            "placementDeltaCount": 20
+          },
           "finalOutcome": {
             "status": "neutral",
             "populationDeltaVsBaseline": 0,
@@ -5612,6 +6050,22 @@
         "meanOverrideScoreDelta": null,
         "selectionDiagnostics": null,
         "selectionTrace": [],
+        "finalLayoutDeltaVsBaseline": {
+          "baselineFingerprint": "fnv1a:4d23bd1f",
+          "variantFingerprint": "fnv1a:4d23bd1f",
+          "sameFinalLayout": true,
+          "roadAddedCount": 0,
+          "roadRemovedCount": 0,
+          "roadDeltaCount": 0,
+          "serviceAddedCount": 0,
+          "serviceRemovedCount": 0,
+          "serviceDeltaCount": 0,
+          "residentialAddedCount": 0,
+          "residentialRemovedCount": 0,
+          "residentialDeltaCount": 0,
+          "buildingDeltaCount": 0,
+          "placementDeltaCount": 0
+        },
         "finalOutcome": {
           "status": "neutral",
           "populationDeltaVsBaseline": 0,
@@ -5652,6 +6106,22 @@
           "meanOverrideScoreDelta": null,
           "selectionDiagnostics": null,
           "selectionTrace": [],
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:4d23bd1f",
+            "variantFingerprint": "fnv1a:4d23bd1f",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
           "finalOutcome": {
             "status": "neutral",
             "populationDeltaVsBaseline": 0,
@@ -6142,6 +6612,22 @@
               }
             }
           ],
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:4d23bd1f",
+            "variantFingerprint": "fnv1a:4d23bd1f",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
           "finalOutcome": {
             "status": "neutral",
             "populationDeltaVsBaseline": 0,
@@ -6201,6 +6687,22 @@
         "meanOverrideScoreDelta": null,
         "selectionDiagnostics": null,
         "selectionTrace": [],
+        "finalLayoutDeltaVsBaseline": {
+          "baselineFingerprint": "fnv1a:f742485f",
+          "variantFingerprint": "fnv1a:f742485f",
+          "sameFinalLayout": true,
+          "roadAddedCount": 0,
+          "roadRemovedCount": 0,
+          "roadDeltaCount": 0,
+          "serviceAddedCount": 0,
+          "serviceRemovedCount": 0,
+          "serviceDeltaCount": 0,
+          "residentialAddedCount": 0,
+          "residentialRemovedCount": 0,
+          "residentialDeltaCount": 0,
+          "buildingDeltaCount": 0,
+          "placementDeltaCount": 0
+        },
         "finalOutcome": {
           "status": "neutral",
           "populationDeltaVsBaseline": 0,
@@ -6241,6 +6743,22 @@
           "meanOverrideScoreDelta": null,
           "selectionDiagnostics": null,
           "selectionTrace": [],
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:f742485f",
+            "variantFingerprint": "fnv1a:f742485f",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
           "finalOutcome": {
             "status": "neutral",
             "populationDeltaVsBaseline": 0,
@@ -6731,6 +7249,22 @@
               }
             }
           ],
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:f742485f",
+            "variantFingerprint": "fnv1a:e926669f",
+            "sameFinalLayout": false,
+            "roadAddedCount": 1,
+            "roadRemovedCount": 2,
+            "roadDeltaCount": 3,
+            "serviceAddedCount": 1,
+            "serviceRemovedCount": 1,
+            "serviceDeltaCount": 2,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 2,
+            "placementDeltaCount": 5
+          },
           "finalOutcome": {
             "status": "neutral",
             "populationDeltaVsBaseline": 0,
@@ -6790,6 +7324,22 @@
         "meanOverrideScoreDelta": null,
         "selectionDiagnostics": null,
         "selectionTrace": [],
+        "finalLayoutDeltaVsBaseline": {
+          "baselineFingerprint": "fnv1a:7ef083f0",
+          "variantFingerprint": "fnv1a:7ef083f0",
+          "sameFinalLayout": true,
+          "roadAddedCount": 0,
+          "roadRemovedCount": 0,
+          "roadDeltaCount": 0,
+          "serviceAddedCount": 0,
+          "serviceRemovedCount": 0,
+          "serviceDeltaCount": 0,
+          "residentialAddedCount": 0,
+          "residentialRemovedCount": 0,
+          "residentialDeltaCount": 0,
+          "buildingDeltaCount": 0,
+          "placementDeltaCount": 0
+        },
         "finalOutcome": {
           "status": "neutral",
           "populationDeltaVsBaseline": 0,
@@ -6830,6 +7380,22 @@
           "meanOverrideScoreDelta": null,
           "selectionDiagnostics": null,
           "selectionTrace": [],
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:7ef083f0",
+            "variantFingerprint": "fnv1a:7ef083f0",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
           "finalOutcome": {
             "status": "neutral",
             "populationDeltaVsBaseline": 0,
@@ -7320,6 +7886,22 @@
               }
             }
           ],
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:7ef083f0",
+            "variantFingerprint": "fnv1a:7ef083f0",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
           "finalOutcome": {
             "status": "neutral",
             "populationDeltaVsBaseline": 0,
@@ -7379,6 +7961,22 @@
         "meanOverrideScoreDelta": null,
         "selectionDiagnostics": null,
         "selectionTrace": [],
+        "finalLayoutDeltaVsBaseline": {
+          "baselineFingerprint": "fnv1a:a41eaa19",
+          "variantFingerprint": "fnv1a:a41eaa19",
+          "sameFinalLayout": true,
+          "roadAddedCount": 0,
+          "roadRemovedCount": 0,
+          "roadDeltaCount": 0,
+          "serviceAddedCount": 0,
+          "serviceRemovedCount": 0,
+          "serviceDeltaCount": 0,
+          "residentialAddedCount": 0,
+          "residentialRemovedCount": 0,
+          "residentialDeltaCount": 0,
+          "buildingDeltaCount": 0,
+          "placementDeltaCount": 0
+        },
         "finalOutcome": {
           "status": "neutral",
           "populationDeltaVsBaseline": 0,
@@ -7419,6 +8017,22 @@
           "meanOverrideScoreDelta": null,
           "selectionDiagnostics": null,
           "selectionTrace": [],
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:a41eaa19",
+            "variantFingerprint": "fnv1a:a41eaa19",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
           "finalOutcome": {
             "status": "neutral",
             "populationDeltaVsBaseline": 0,
@@ -7909,6 +8523,22 @@
               }
             }
           ],
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:a41eaa19",
+            "variantFingerprint": "fnv1a:a41eaa19",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
           "finalOutcome": {
             "status": "neutral",
             "populationDeltaVsBaseline": 0,
@@ -7968,6 +8598,22 @@
         "meanOverrideScoreDelta": null,
         "selectionDiagnostics": null,
         "selectionTrace": [],
+        "finalLayoutDeltaVsBaseline": {
+          "baselineFingerprint": "fnv1a:f9f0bd36",
+          "variantFingerprint": "fnv1a:f9f0bd36",
+          "sameFinalLayout": true,
+          "roadAddedCount": 0,
+          "roadRemovedCount": 0,
+          "roadDeltaCount": 0,
+          "serviceAddedCount": 0,
+          "serviceRemovedCount": 0,
+          "serviceDeltaCount": 0,
+          "residentialAddedCount": 0,
+          "residentialRemovedCount": 0,
+          "residentialDeltaCount": 0,
+          "buildingDeltaCount": 0,
+          "placementDeltaCount": 0
+        },
         "finalOutcome": {
           "status": "neutral",
           "populationDeltaVsBaseline": 0,
@@ -8008,6 +8654,22 @@
           "meanOverrideScoreDelta": null,
           "selectionDiagnostics": null,
           "selectionTrace": [],
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:f9f0bd36",
+            "variantFingerprint": "fnv1a:f9f0bd36",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
           "finalOutcome": {
             "status": "neutral",
             "populationDeltaVsBaseline": 0,
@@ -8498,6 +9160,22 @@
               }
             }
           ],
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:f9f0bd36",
+            "variantFingerprint": "fnv1a:eb1339f8",
+            "sameFinalLayout": false,
+            "roadAddedCount": 9,
+            "roadRemovedCount": 4,
+            "roadDeltaCount": 13,
+            "serviceAddedCount": 1,
+            "serviceRemovedCount": 1,
+            "serviceDeltaCount": 2,
+            "residentialAddedCount": 2,
+            "residentialRemovedCount": 2,
+            "residentialDeltaCount": 4,
+            "buildingDeltaCount": 6,
+            "placementDeltaCount": 19
+          },
           "finalOutcome": {
             "status": "neutral",
             "populationDeltaVsBaseline": 0,
@@ -8557,6 +9235,22 @@
         "meanOverrideScoreDelta": null,
         "selectionDiagnostics": null,
         "selectionTrace": [],
+        "finalLayoutDeltaVsBaseline": {
+          "baselineFingerprint": "fnv1a:577371cb",
+          "variantFingerprint": "fnv1a:577371cb",
+          "sameFinalLayout": true,
+          "roadAddedCount": 0,
+          "roadRemovedCount": 0,
+          "roadDeltaCount": 0,
+          "serviceAddedCount": 0,
+          "serviceRemovedCount": 0,
+          "serviceDeltaCount": 0,
+          "residentialAddedCount": 0,
+          "residentialRemovedCount": 0,
+          "residentialDeltaCount": 0,
+          "buildingDeltaCount": 0,
+          "placementDeltaCount": 0
+        },
         "finalOutcome": {
           "status": "neutral",
           "populationDeltaVsBaseline": 0,
@@ -8597,6 +9291,22 @@
           "meanOverrideScoreDelta": null,
           "selectionDiagnostics": null,
           "selectionTrace": [],
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:577371cb",
+            "variantFingerprint": "fnv1a:577371cb",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
           "finalOutcome": {
             "status": "neutral",
             "populationDeltaVsBaseline": 0,
@@ -9087,6 +9797,22 @@
               }
             }
           ],
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:577371cb",
+            "variantFingerprint": "fnv1a:d72d58a7",
+            "sameFinalLayout": false,
+            "roadAddedCount": 2,
+            "roadRemovedCount": 2,
+            "roadDeltaCount": 4,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 2,
+            "residentialRemovedCount": 2,
+            "residentialDeltaCount": 4,
+            "buildingDeltaCount": 4,
+            "placementDeltaCount": 8
+          },
           "finalOutcome": {
             "status": "neutral",
             "populationDeltaVsBaseline": 0,
@@ -9108,5 +9834,5 @@
       ]
     }
   ],
-  "generatedAt": "2026-05-05T18:46:43.636Z"
+  "generatedAt": "2026-05-05T19:35:24.580Z"
 }

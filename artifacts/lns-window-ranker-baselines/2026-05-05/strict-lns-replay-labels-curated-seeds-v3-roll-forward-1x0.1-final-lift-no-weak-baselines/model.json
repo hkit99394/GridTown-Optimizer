@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "modelType": "lns-window-ranking-baseline-sweep",
+  "purpose": "offline-diagnostics-only",
+  "trained": false,
+  "runtimeDefaultChanged": false,
+  "solverDefaultChanged": false,
+  "featureSchemaVersion": 2,
+  "topK": 3,
+  "target": "roll-forward-final-lift",
+  "weakSeedReplayLabelsAllowed": false,
+  "baselineNames": [
+    "baseline-selected-window",
+    "operator-score",
+    "stable-random",
+    "connectivity-shadow",
+    "fragmentation",
+    "candidate-loss",
+    "residential-headroom",
+    "service-bonus"
+  ],
+  "bestBaselineName": "fragmentation"
+}

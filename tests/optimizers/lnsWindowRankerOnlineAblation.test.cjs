@@ -111,8 +111,8 @@ function buildMockSolution(params) {
         {
           iteration: 0,
           phase: "focused",
-          operator: "sliding",
-          window: { top: 0, left: 0, rows: 2, cols: 2 },
+          operator: windowRankerSelection?.selectedOperator ?? "sliding",
+          window: windowRankerSelection?.selectedWindow ?? { top: 0, left: 0, rows: 2, cols: 2 },
           stagnantIterationsBefore: 0,
           staleSecondsBefore: 0,
           repairTimeLimitSeconds: 0.25,
@@ -256,6 +256,51 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
       },
       fallbackTransitionMeanFeatureDeltas: {}
     });
+    assert.deepEqual(result.cases[0].variants[1].selectionTrace, [
+      {
+        iteration: 0,
+        phase: "focused",
+        outcomeStatus: "improved",
+        populationBefore: 100,
+        populationAfter: 120,
+        improvement: 20,
+        stagnantIterationsBefore: 0,
+        repairTimeLimitSeconds: 0.25,
+        appliedOperator: "service-overlap",
+        appliedWindow: { top: 0, left: 1, rows: 2, cols: 2 },
+        transition: "sliding->service-overlap",
+        changedWindow: true,
+        selectionStatus: "override",
+        candidateCount: 2,
+        baselineCandidateIndex: 0,
+        selectedCandidateIndex: 1,
+        baselineOperator: "sliding",
+        selectedOperator: "service-overlap",
+        baselineWindow: { top: 0, left: 0, rows: 2, cols: 2 },
+        selectedWindow: { top: 0, left: 1, rows: 2, cols: 2 },
+        selectedByBaseline: false,
+        baselineScore: 0.1,
+        selectedScore: 0.4,
+        scoreDelta: 0.3,
+        modelFingerprint: "fnv1a:test-online",
+        featureSchemaVersion: 2,
+        baselineFeatures: {
+          residentialCandidateHeadroom: 0.1,
+          selectedByBaseline: 1,
+          serviceCandidatesIntersecting: 0
+        },
+        selectedFeatures: {
+          residentialCandidateHeadroom: 0.3,
+          selectedByBaseline: 0,
+          serviceCandidatesIntersecting: 0.5
+        },
+        featureDeltas: {
+          residentialCandidateHeadroom: 0.19999999999999998,
+          selectedByBaseline: -1,
+          serviceCandidatesIntersecting: 0.5
+        }
+      }
+    ]);
     assert.deepEqual(result.cases[0].variants[1].finalOutcome, {
       status: "improved",
       populationDeltaVsBaseline: 20,
@@ -277,8 +322,11 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     const snapshot = createLnsWindowRankerOnlineAblationSnapshot(result);
     assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
     assert.equal(Object.hasOwn(snapshot.cases[0].variants[1], "wallClockSeconds"), false);
+    assert.equal(snapshot.cases[0].variants[1].selectionTrace.length, 1);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /=== LNS Window Ranker Online A\/B ===/);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /overrides=1/);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /traces=1/);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /trace:1/);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /override-improved=1/);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /override-final=1\/0\/0/);
     assert.match(
@@ -299,6 +347,7 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(telemetryManifest.modelFingerprint, "fnv1a:test-online");
     assert.equal(telemetryManifest.metrics.meanPopulationDeltaVsBaseline, 20);
     assert.equal(telemetryManifest.metrics.rankerOverrideCount, 1);
+    assert.equal(telemetryManifest.metrics.selectionTraceCount, 1);
     assert.equal(telemetryManifest.metrics.overrideImprovedOutcomeCount, 1);
     assert.equal(telemetryManifest.metrics.overrideNeutralOutcomeCount, 0);
     assert.equal(telemetryManifest.metrics.overrideFinalImprovedCaseCount, 1);
@@ -344,6 +393,7 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(registryDraft.budget.comparisonCount, 1);
     assert.equal(registryDraft.budget.overrideImprovedOutcomeCount, 1);
     assert.equal(registryDraft.budget.overrideNeutralOutcomeCount, 0);
+    assert.equal(registryDraft.budget.selectionTraceCount, 1);
     assert.equal(registryDraft.budget.overrideFinalImprovedCaseCount, 1);
     assert.equal(registryDraft.budget.overrideFinalNeutralCaseCount, 0);
     assert.equal(registryDraft.budget.overrideFinalRegressedCaseCount, 0);

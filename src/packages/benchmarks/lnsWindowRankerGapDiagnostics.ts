@@ -151,6 +151,7 @@ export interface LnsWindowRankerGapDiagnosticsResult {
     comparisonCount: number;
     minScoreDelta: number | null;
     overrideCount: number;
+    selectionTraceCount: number;
     finalNeutralOverrideCount: number;
     transitionSummaries: LnsWindowRankerGapOnlineSummary[];
     transitionFamilySummaries: LnsWindowRankerGapOnlineSummary[];
@@ -380,6 +381,13 @@ function collectOnlineTransitionCases(
   });
 }
 
+function countOnlineSelectionTraceEntries(onlineScorecard: LnsWindowRankerOnlineAblationSnapshot): number {
+  return sumBenchmarkBy(
+    onlineScorecard.cases.map((benchmarkCase) => onlineRankerVariant(benchmarkCase)),
+    (variant) => variant.selectionTrace?.length ?? 0
+  );
+}
+
 function summarizeOnlineTransitionCases(
   key: string,
   pressureFamily: string | "all",
@@ -518,6 +526,7 @@ export function runLnsWindowRankerGapDiagnostics(
       comparisonCount: onlineScorecard.comparisonCount,
       minScoreDelta: minScoreDeltas.length ? minScoreDeltas[0]! : null,
       overrideCount: sumBenchmarkBy(onlineTransitionCases, (entry) => entry.count),
+      selectionTraceCount: countOnlineSelectionTraceEntries(onlineScorecard),
       finalNeutralOverrideCount: sumBenchmarkBy(onlineTransitionCases, (entry) =>
         entry.finalOutcomeStatus === "neutral" ? entry.count : 0
       ),
@@ -560,6 +569,7 @@ function summaryMetrics(result: LnsWindowRankerGapDiagnosticsResult): Record<str
     offlineOpportunityCount: result.offline.opportunityCount,
     onlineComparisonCount: result.online.comparisonCount,
     onlineOverrideCount: result.online.overrideCount,
+    onlineSelectionTraceCount: result.online.selectionTraceCount,
     onlineFinalNeutralOverrideCount: result.online.finalNeutralOverrideCount,
     joinedTransitionFamilyCount: result.summary.joinedTransitionFamilyCount,
     offlinePositiveOnlineNeutralCount: result.summary.offlinePositiveOnlineNeutralCount,
@@ -603,6 +613,7 @@ export function buildLnsWindowRankerGapDiagnosticsRegistryEntryDraft(
       minScoreDelta: result.online.minScoreDelta,
       onlineComparisonCount: result.online.comparisonCount,
       onlineOverrideCount: result.online.overrideCount,
+      onlineSelectionTraceCount: result.online.selectionTraceCount,
       onlineFinalNeutralOverrideCount: result.online.finalNeutralOverrideCount,
       offlineDecisionCount: result.offline.decisionCount,
       offlineOpportunityCount: result.offline.opportunityCount,
@@ -645,7 +656,7 @@ export function formatLnsWindowRankerGapDiagnostics(result: LnsWindowRankerGapDi
     `Audit: runtime-default-changed=false solver-default-changed=false target=${result.audit.target} weak-seed-labels=${result.audit.weakSeedReplayLabelsAllowed}`,
     `Inputs: label=${result.inputs.labelFingerprint} model=${result.inputs.rankerModelFingerprint} online=${result.inputs.onlineScorecardFingerprint}`,
     `Offline: decisions=${result.offline.decisionCount} overrides=${result.offline.overrideCount} opportunities=${result.offline.opportunityCount} selected-positive=${result.offline.selectedPositiveCount}`,
-    `Online: cases=${result.online.selectedCaseNames.length} seeds=${result.online.seeds.join(",")} comparisons=${result.online.comparisonCount} min-score-delta=${result.online.minScoreDelta ?? "n/a"} overrides=${result.online.overrideCount} final-neutral-overrides=${result.online.finalNeutralOverrideCount}`,
+    `Online: cases=${result.online.selectedCaseNames.length} seeds=${result.online.seeds.join(",")} comparisons=${result.online.comparisonCount} min-score-delta=${result.online.minScoreDelta ?? "n/a"} overrides=${result.online.overrideCount} selection-trace=${result.online.selectionTraceCount} final-neutral-overrides=${result.online.finalNeutralOverrideCount}`,
     `Gap: joined-transition-families=${result.summary.joinedTransitionFamilyCount} offline-positive-online-neutral=${result.summary.offlinePositiveOnlineNeutralCount} online-active-no-offline-match=${result.summary.onlineActiveNoOfflineMatchCount} promotion-blocked=${result.summary.promotionBlocked}`,
     `Online neutral override rate: ${formatBenchmarkRate(benchmarkRatio(result.online.finalNeutralOverrideCount, result.online.overrideCount))}`,
     "Joined evidence:",

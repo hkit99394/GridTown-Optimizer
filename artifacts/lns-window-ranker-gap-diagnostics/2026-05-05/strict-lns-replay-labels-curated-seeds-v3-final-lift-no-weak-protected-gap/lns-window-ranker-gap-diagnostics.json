@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-05T18:22:03.013Z",
+  "generatedAt": "2026-05-05T18:47:08.668Z",
   "schemaVersion": 1,
   "audit": {
     "runtimeDefaultChanged": false,
@@ -15,7 +15,7 @@
     "labelFingerprint": "fnv1a:58ce487f",
     "datasetFingerprint": "fnv1a:b3c3fe8b",
     "rankerModelFingerprint": "fnv1a:fa22b085",
-    "onlineScorecardFingerprint": "fnv1a:16f7ed71"
+    "onlineScorecardFingerprint": "fnv1a:17d43053"
   },
   "offline": {
     "decisionCount": 90,
@@ -575,6 +575,7 @@
     "comparisonCount": 15,
     "minScoreDelta": 0.1,
     "overrideCount": 30,
+    "selectionTraceCount": 30,
     "finalNeutralOverrideCount": 30,
     "transitionSummaries": [
       {

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "runId": "lns-window-ranker-online-2026-05-05-curated-seeds-v3-roll-forward-1x0-1-final-lift-no-weak-protected-holdout-min-score-delta-0-1",
   "artifactType": "model-experiment",
-  "generatedAt": "2026-05-05T07:30:14.369Z",
+  "generatedAt": "2026-05-05T18:46:43.636Z",
   "commands": [
     "node dist/lnsBenchmarkCli.js --window-ranker-online-ablation --window-ranker-protected-holdout --window-ranker-model=artifacts/lns-window-ranker/2026-05-05/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1-final-lift-no-weak-cpu-ranker-lr0.02-cap100/model.json --window-ranker-min-score-delta=0.1 --seeds=7,19,37 --artifact-dir=artifacts/lns-window-ranker-online/2026-05-05/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1-final-lift-no-weak-protected-holdout-min-score-delta-0.1 --window-ranker-run-id=lns-window-ranker-online-2026-05-05-curated-seeds-v3-roll-forward-1x0-1-final-lift-no-weak-protected-holdout-min-score-delta-0-1 --window-ranker-decision=online-lns-window-ranker-final-lift-non-weak-protected-holdout-evidence '--window-ranker-summary=Protected independent holdout scorecard for the full-family curated non-weak roll-forward final-lift LNS window ranker at minScoreDelta=0.1; no solver default changed.' --json"
   ],
@@ -51,6 +51,7 @@
     "rankerDecisionCount": 30,
     "rankerOverrideCount": 30,
     "rankerFallbackDecisionCount": 0,
+    "selectionTraceCount": 30,
     "overrideImprovedOutcomeCount": 9,
     "overrideNeutralOutcomeCount": 21,
     "overrideFinalImprovedCaseCount": 0,
@@ -154,7 +155,7 @@
     "worstPopulationDeltaSeed": 7,
     "bestPopulationDeltaCaseName": "lns-holdout-corridor-weave-pressure",
     "bestPopulationDeltaSeed": 7,
-    "meanWallClockDeltaVsBaselineSeconds": -0.02325769726666622,
+    "meanWallClockDeltaVsBaselineSeconds": -0.04371098606666668,
     "improvedCaseCount": 0,
     "regressedCaseCount": 0,
     "unchangedCaseCount": 15,
@@ -311,6 +312,7 @@
       }
     },
     "fallbackTransitionPressureFamilyCounts": {},
+    "selectionTraceCount": 30,
     "safetyGatePassed": true
   }
 }

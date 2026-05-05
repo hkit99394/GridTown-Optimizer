@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "runId": "lns-window-ranker-gap-2026-05-05-curated-seeds-v3-final-lift-no-weak-protected",
   "artifactType": "model-experiment",
-  "generatedAt": "2026-05-05T18:22:03.013Z",
+  "generatedAt": "2026-05-05T18:47:08.668Z",
   "commands": [
     "node dist/lnsWindowRankerCli.js --gap-diagnostics --labels=artifacts/learned-ranking-labels/2026-05-04/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1/labels.json --model=artifacts/lns-window-ranker/2026-05-05/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1-final-lift-no-weak-cpu-ranker-lr0.02-cap100/model.json --online-scorecard=artifacts/lns-window-ranker-online/2026-05-05/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1-final-lift-no-weak-protected-holdout-min-score-delta-0.1/lns-window-ranker-online-ablation.json --artifact-dir=artifacts/lns-window-ranker-gap-diagnostics/2026-05-05/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-protected-gap --ranker-run-id=lns-window-ranker-gap-2026-05-05-curated-seeds-v3-final-lift-no-weak-protected --ranker-decision=offline-online-lns-window-ranker-gap-diagnostics '--ranker-summary=Offline-to-online gap diagnostic joining full-family curated non-weak final-lift replay labels to the protected online neutral override scorecard; no solver default changed.' --json"
   ],
@@ -39,6 +39,7 @@
     "minScoreDelta": 0.1,
     "onlineComparisonCount": 15,
     "onlineOverrideCount": 30,
+    "onlineSelectionTraceCount": 30,
     "onlineFinalNeutralOverrideCount": 30,
     "offlineDecisionCount": 90,
     "offlineOpportunityCount": 54,
@@ -59,7 +60,7 @@
   "summary": "Offline-to-online gap diagnostic joining full-family curated non-weak final-lift replay labels to the protected online neutral override scorecard; no solver default changed.",
   "labelFingerprint": "fnv1a:58ce487f",
   "datasetFingerprint": "fnv1a:b3c3fe8b",
-  "inputFingerprint": "fnv1a:16f7ed71",
+  "inputFingerprint": "fnv1a:17d43053",
   "modelFingerprint": "fnv1a:59993b67",
   "summaryMetrics": {
     "target": "roll-forward-final-lift",
@@ -69,6 +70,7 @@
     "offlineOpportunityCount": 54,
     "onlineComparisonCount": 15,
     "onlineOverrideCount": 30,
+    "onlineSelectionTraceCount": 30,
     "onlineFinalNeutralOverrideCount": 30,
     "joinedTransitionFamilyCount": 10,
     "offlinePositiveOnlineNeutralCount": 3,

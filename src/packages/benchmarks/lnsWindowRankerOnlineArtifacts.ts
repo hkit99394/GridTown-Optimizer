@@ -172,6 +172,7 @@ function lnsWindowRankerOnlineAblationSummaryMetrics(
     fallbackTransitionFinalOutcomeCounts: ranker.fallbackTransitionFinalOutcomeCounts,
     overrideTransitionPressureFamilyCounts: ranker.overrideTransitionPressureFamilyCounts,
     fallbackTransitionPressureFamilyCounts: ranker.fallbackTransitionPressureFamilyCounts,
+    selectionTraceCount: ranker.selectionTraceCount,
     safetyGatePassed: ranker.regressedCaseCount === 0 && ranker.worstPopulationDeltaVsBaseline >= 0
   };
 }
@@ -265,6 +266,7 @@ export function buildLnsWindowRankerOnlineAblationRegistryEntryDraft(
       rankerDecisionCount: summaryMetrics.rankerDecisionCount,
       rankerOverrideCount: summaryMetrics.rankerOverrideCount,
       rankerFallbackDecisionCount: summaryMetrics.rankerFallbackDecisionCount,
+      selectionTraceCount: summaryMetrics.selectionTraceCount,
       overrideImprovedOutcomeCount: summaryMetrics.overrideImprovedOutcomeCount,
       overrideNeutralOutcomeCount: summaryMetrics.overrideNeutralOutcomeCount,
       overrideFinalImprovedCaseCount: summaryMetrics.overrideFinalImprovedCaseCount,

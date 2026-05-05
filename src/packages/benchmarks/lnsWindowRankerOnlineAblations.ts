@@ -21,7 +21,16 @@ import {
   mergeLnsWindowRankerOnlineSelectionDiagnostics
 } from "./lnsWindowRankerOnlineSelectionDiagnostics.js";
 
-import type { LnsOptions, LnsWindowRankerRuntimeModel } from "../core/index.js";
+import type {
+  CpSatNeighborhoodWindow,
+  LnsAdaptiveOperatorName,
+  LnsNeighborhoodOutcomeStatus,
+  LnsOptions,
+  LnsRepairPhase,
+  LnsWindowRankerFeatureTelemetry,
+  LnsWindowRankerRuntimeModel,
+  LnsWindowRankerSelectionTelemetry
+} from "../core/index.js";
 import type {
   BenchmarkVariantCoverageMetrics,
   BenchmarkVariantResultSnapshot,
@@ -54,6 +63,41 @@ export interface LnsWindowRankerOnlineAblationTelemetrySummary {
   fallbackRate: number;
 }
 
+export type LnsWindowRankerOnlineSelectionTraceStatus = "override" | "fallback" | "baseline";
+
+export interface LnsWindowRankerOnlineSelectionTraceEntry {
+  iteration: number;
+  phase: LnsRepairPhase;
+  outcomeStatus: LnsNeighborhoodOutcomeStatus;
+  populationBefore: number;
+  populationAfter: number;
+  improvement: number;
+  stagnantIterationsBefore: number;
+  repairTimeLimitSeconds: number;
+  appliedOperator: LnsAdaptiveOperatorName | null;
+  appliedWindow: CpSatNeighborhoodWindow;
+  transition: string;
+  changedWindow: boolean;
+  selectionStatus: LnsWindowRankerOnlineSelectionTraceStatus;
+  candidateCount: number;
+  baselineCandidateIndex: number;
+  selectedCandidateIndex: number;
+  baselineOperator: LnsAdaptiveOperatorName;
+  selectedOperator: LnsAdaptiveOperatorName;
+  baselineWindow: CpSatNeighborhoodWindow;
+  selectedWindow: CpSatNeighborhoodWindow;
+  selectedByBaseline: boolean;
+  fallbackReason?: LnsWindowRankerSelectionTelemetry["fallbackReason"];
+  baselineScore: number;
+  selectedScore: number;
+  scoreDelta: number;
+  modelFingerprint: string | null;
+  featureSchemaVersion: number | null;
+  baselineFeatures?: LnsWindowRankerFeatureTelemetry;
+  selectedFeatures?: LnsWindowRankerFeatureTelemetry;
+  featureDeltas?: LnsWindowRankerFeatureTelemetry;
+}
+
 export interface LnsWindowRankerOnlineAblationVariantResult {
   variantName: LnsWindowRankerOnlineAblationVariantName;
   description: string;
@@ -80,6 +124,7 @@ export interface LnsWindowRankerOnlineAblationVariantResult {
   fallbackNeutralOutcomeCount: number;
   meanOverrideScoreDelta: number | null;
   selectionDiagnostics: LnsWindowRankerOnlineSelectionDiagnostics | null;
+  selectionTrace: LnsWindowRankerOnlineSelectionTraceEntry[];
   finalOutcome: finalOutcomes.LnsWindowRankerOnlineFinalOutcome;
   windowRanker: LnsWindowRankerOnlineAblationTelemetrySummary | null;
 }
@@ -129,6 +174,7 @@ export interface LnsWindowRankerOnlineAblationSummary
   fallbackTransitionFinalOutcomeCounts: Record<string, LnsWindowRankerOnlineTransitionStatusCounts>;
   overrideTransitionPressureFamilyCounts: Record<string, Record<string, number>>;
   fallbackTransitionPressureFamilyCounts: Record<string, Record<string, number>>;
+  selectionTraceCount: number;
 }
 
 export interface LnsWindowRankerOnlineAblationCoverage extends BenchmarkVariantCoverageMetrics {}
@@ -214,6 +260,7 @@ export interface LnsWindowRankerOnlineCalibrationThresholdSummary {
   fallbackTransitionFinalOutcomeCounts: Record<string, LnsWindowRankerOnlineTransitionStatusCounts>;
   overrideTransitionPressureFamilyCounts: Record<string, Record<string, number>>;
   fallbackTransitionPressureFamilyCounts: Record<string, Record<string, number>>;
+  selectionTraceCount: number;
   safetyGatePassed: boolean;
 }
 
@@ -382,6 +429,57 @@ function meanOverrideScoreDelta(result: LnsBenchmarkCaseResult): number | null {
   return deltas.length ? sumBenchmarkBy(deltas, (delta) => delta) / deltas.length : null;
 }
 
+function sameTraceWindow(left: CpSatNeighborhoodWindow, right: CpSatNeighborhoodWindow): boolean {
+  return left.top === right.top && left.left === right.left && left.rows === right.rows && left.cols === right.cols;
+}
+
+function selectionTraceStatus(selection: LnsWindowRankerSelectionTelemetry): LnsWindowRankerOnlineSelectionTraceStatus {
+  if (selection.selectedByBaseline === false) return "override";
+  if (selection.fallbackReason) return "fallback";
+  return "baseline";
+}
+
+function selectionTrace(result: LnsBenchmarkCaseResult): LnsWindowRankerOnlineSelectionTraceEntry[] {
+  return (result.lnsTelemetry?.outcomes ?? []).flatMap((outcome) => {
+    const selection = outcome.windowRankerSelection;
+    if (!selection) return [];
+    return [
+      {
+        iteration: outcome.iteration,
+        phase: outcome.phase,
+        outcomeStatus: outcome.status,
+        populationBefore: outcome.populationBefore,
+        populationAfter: outcome.populationAfter,
+        improvement: outcome.improvement,
+        stagnantIterationsBefore: outcome.stagnantIterationsBefore,
+        repairTimeLimitSeconds: outcome.repairTimeLimitSeconds,
+        appliedOperator: outcome.operator ?? null,
+        appliedWindow: { ...outcome.window },
+        transition: `${selection.baselineOperator}->${selection.selectedOperator}`,
+        changedWindow: !sameTraceWindow(selection.baselineWindow, selection.selectedWindow),
+        selectionStatus: selectionTraceStatus(selection),
+        candidateCount: selection.candidateCount,
+        baselineCandidateIndex: selection.baselineCandidateIndex,
+        selectedCandidateIndex: selection.selectedCandidateIndex,
+        baselineOperator: selection.baselineOperator,
+        selectedOperator: selection.selectedOperator,
+        baselineWindow: { ...selection.baselineWindow },
+        selectedWindow: { ...selection.selectedWindow },
+        selectedByBaseline: selection.selectedByBaseline,
+        ...(selection.fallbackReason ? { fallbackReason: selection.fallbackReason } : {}),
+        baselineScore: selection.baselineScore,
+        selectedScore: selection.selectedScore,
+        scoreDelta: selection.scoreDelta,
+        modelFingerprint: selection.modelFingerprint ?? null,
+        featureSchemaVersion: selection.featureSchemaVersion ?? null,
+        ...(selection.baselineFeatures ? { baselineFeatures: { ...selection.baselineFeatures } } : {}),
+        ...(selection.selectedFeatures ? { selectedFeatures: { ...selection.selectedFeatures } } : {}),
+        ...(selection.featureDeltas ? { featureDeltas: { ...selection.featureDeltas } } : {})
+      }
+    ];
+  });
+}
+
 function variantResult(
   variantName: LnsWindowRankerOnlineAblationVariantName,
   result: LnsBenchmarkCaseResult,
@@ -417,6 +515,7 @@ function variantResult(
     fallbackNeutralOutcomeCount: fallbackOutcomeStatusCount(result, "neutral"),
     meanOverrideScoreDelta: meanOverrideScoreDelta(result),
     selectionDiagnostics: buildLnsWindowRankerOnlineSelectionDiagnostics(result),
+    selectionTrace: selectionTrace(result),
     finalOutcome: finalOutcomes.buildLnsWindowRankerFinalOutcome(populationDeltaVsBaseline, overrides, fallbacks),
     windowRanker: summarizeWindowRanker(result)
   };
@@ -487,6 +586,7 @@ function buildVariantSummary(
     fallbackTransitionFinalOutcomeCounts: transitionOutcomeDiagnostics.fallbackTransitionFinalOutcomeCounts,
     overrideTransitionPressureFamilyCounts: transitionOutcomeDiagnostics.overrideTransitionPressureFamilyCounts,
     fallbackTransitionPressureFamilyCounts: transitionOutcomeDiagnostics.fallbackTransitionPressureFamilyCounts,
+    selectionTraceCount: sumBenchmarkBy(results, (entry) => entry.selectionTrace.length),
     ...finalOutcomes.summarizeLnsWindowRankerFinalOutcomes(results)
   };
 }
@@ -557,6 +657,7 @@ function thresholdSummary(
     fallbackTransitionFinalOutcomeCounts: summary.fallbackTransitionFinalOutcomeCounts,
     overrideTransitionPressureFamilyCounts: summary.overrideTransitionPressureFamilyCounts,
     fallbackTransitionPressureFamilyCounts: summary.fallbackTransitionPressureFamilyCounts,
+    selectionTraceCount: summary.selectionTraceCount,
     safetyGatePassed: summary.regressedCaseCount === 0 && summary.worstPopulationDeltaVsBaseline >= 0
   };
 }

@@ -19,7 +19,11 @@ import { hashString, stableStringify } from "../core/cpSatContinuation.js";
 
 import type { LearnedRankingLabelSnapshot, LearnedRankingLabelSplit } from "./learnedRankingLabels.js";
 import type { LnsReplayPressureFamilyLabel } from "./lns.js";
-import type { LnsWindowReplaySeedHintKind, LnsWindowReplaySnapshotLabel } from "./lnsWindowReplayLabels.js";
+import type {
+  LnsWindowReplaySeedHintKind,
+  LnsWindowReplaySnapshot,
+  LnsWindowReplaySnapshotLabel
+} from "./lnsWindowReplayLabels.js";
 import type {
   ModelExperimentRegistryEntryDraftOptions,
   ModelExperimentTelemetryManifest,
@@ -65,10 +69,12 @@ export interface LnsWindowRankerTrainingOptions {
   baselineTieBreak?: boolean;
   target?: LnsWindowRankerLabelTarget;
   allowWeakSeedReplayLabels?: boolean;
+  supplementalReplayCalibration?: boolean;
 }
 
 export interface LnsWindowRankerRunOptions {
   training?: LnsWindowRankerTrainingOptions;
+  supplementalReplaySnapshots?: readonly LnsWindowReplaySnapshot[];
   randomBaselineSeed?: number;
   topK?: number;
 }
@@ -131,6 +137,8 @@ export interface LnsWindowRankerExperimentResult {
     sourceLnsScaleReady: boolean;
     weakSeedReplayLabelsAllowed: boolean;
     labelTarget: LnsWindowRankerLabelTarget;
+    supplementalReplayCalibration: boolean;
+    supplementalReplaySnapshotCount: number;
   };
   labels: {
     labelCount: number;
@@ -138,6 +146,8 @@ export interface LnsWindowRankerExperimentResult {
     opportunityCount: number;
     developmentDecisionCount: number;
     holdoutDecisionCount: number;
+    supplementalReplayDecisionCount: number;
+    supplementalReplayLabelCount: number;
   };
   training: {
     wallClockSeconds: number;
@@ -176,6 +186,7 @@ export interface LnsWindowRankerRegistryEntryDraftOptions extends Pick<
 
 interface ReplayDecisionGroup {
   split: LearnedRankingLabelSplit;
+  source: "label-snapshot" | "supplemental-replay";
   caseName: string;
   pressureFamily: LnsReplayPressureFamilyLabel;
   seed: number | null;
@@ -191,7 +202,8 @@ const DEFAULT_LNS_WINDOW_RANKER_TRAINING: Required<LnsWindowRankerTrainingOption
   marginWeightCap: 500,
   baselineTieBreak: false,
   target: "immediate-improvement",
-  allowWeakSeedReplayLabels: true
+  allowWeakSeedReplayLabels: true,
+  supplementalReplayCalibration: false
 });
 
 function roundMetric(value: number): number {
@@ -218,7 +230,8 @@ function normalizeTrainingOptions(
     ),
     baselineTieBreak: options?.baselineTieBreak === true,
     target: normalizeLnsWindowRankerLabelTarget(options?.target),
-    allowWeakSeedReplayLabels: normalizeLnsWindowRankerWeakSeedAllowance(options?.allowWeakSeedReplayLabels)
+    allowWeakSeedReplayLabels: normalizeLnsWindowRankerWeakSeedAllowance(options?.allowWeakSeedReplayLabels),
+    supplementalReplayCalibration: options?.supplementalReplayCalibration === true
   };
 }
 
@@ -299,6 +312,35 @@ function collectReplayDecisionGroups(
       return [
         {
           split: split.split,
+          source: "label-snapshot",
+          caseName: benchmarkCase.name,
+          pressureFamily: benchmarkCase.pressureFamily,
+          seed: benchmarkCase.seed,
+          seedHintKind: seedKind,
+          statePolicy: benchmarkCase.statePolicy,
+          stateIndex: benchmarkCase.stateIndex,
+          labels
+        }
+      ];
+    })
+  );
+}
+
+function collectSupplementalReplayDecisionGroups(
+  snapshots: readonly LnsWindowReplaySnapshot[],
+  target: LnsWindowRankerLabelTarget,
+  allowWeakSeedReplayLabels: boolean
+): ReplayDecisionGroup[] {
+  return snapshots.flatMap((snapshot) =>
+    snapshot.cases.flatMap((benchmarkCase): ReplayDecisionGroup[] => {
+      const seedKind = inferLnsWindowRankerReplaySeedHintKind(benchmarkCase);
+      if (!allowWeakSeedReplayLabels && seedKind === "weak-replay") return [];
+      const labels = benchmarkCase.labels.filter((label) => label.usable && hasTargetValue(label, target));
+      if (labels.length === 0) return [];
+      return [
+        {
+          split: "development",
+          source: "supplemental-replay",
           caseName: benchmarkCase.name,
           pressureFamily: benchmarkCase.pressureFamily,
           seed: benchmarkCase.seed,
@@ -329,6 +371,9 @@ function positiveLabelsForTraining(
   bestImprovement: number,
   training: Required<LnsWindowRankerTrainingOptions>
 ): LnsWindowReplaySnapshotLabel[] {
+  if (useSupplementalNeutralBaselineCalibration(group, bestImprovement, training)) {
+    return group.labels.filter((label) => label.selectedByBaseline);
+  }
   if (training.baselineTieBreak) {
     const baselineBest = group.labels.find(
       (label) => label.selectedByBaseline && targetValue(label, training.target) === bestImprovement
@@ -336,6 +381,32 @@ function positiveLabelsForTraining(
     if (baselineBest) return [baselineBest];
   }
   return group.labels.filter((label) => targetValue(label, training.target) === bestImprovement);
+}
+
+function useSupplementalNeutralBaselineCalibration(
+  group: ReplayDecisionGroup,
+  bestImprovement: number,
+  training: Required<LnsWindowRankerTrainingOptions>
+): boolean {
+  return (
+    training.supplementalReplayCalibration &&
+    group.source === "supplemental-replay" &&
+    group.statePolicy === "online-decision" &&
+    bestImprovement <= 0 &&
+    group.labels.some((label) => label.selectedByBaseline)
+  );
+}
+
+function trainingDelta(
+  group: ReplayDecisionGroup,
+  negative: LnsWindowReplaySnapshotLabel,
+  bestImprovement: number,
+  training: Required<LnsWindowRankerTrainingOptions>
+): number {
+  if (useSupplementalNeutralBaselineCalibration(group, bestImprovement, training)) {
+    return negative.selectedByBaseline ? 0 : training.marginWeightCap;
+  }
+  return bestImprovement - targetValue(negative, training.target);
 }
 
 function evaluateMetricSummary(
@@ -457,12 +528,12 @@ function trainLinearRanker(
     let mistakes = 0;
     for (const group of developmentGroups) {
       const bestImprovement = maxImprovement(group, training.target);
-      if (bestImprovement <= 0) continue;
       const positives = positiveLabelsForTraining(group, bestImprovement, training);
+      if (positives.length === 0) continue;
       for (const positive of positives) {
         const positiveVector = featureVector(positive);
         for (const negative of group.labels) {
-          const delta = bestImprovement - targetValue(negative, training.target);
+          const delta = trainingDelta(group, negative, bestImprovement, training);
           if (delta <= 0) continue;
           trainedPairCount++;
           const negativeVector = featureVector(negative);
@@ -500,11 +571,15 @@ function weightArrayFromRecord(weights: Record<LnsWindowRankerFeatureName, numbe
 function buildSummary(
   labelSnapshot: LearnedRankingLabelSnapshot,
   baselineResult: LnsWindowRankerBaselineExperimentResult,
-  holdoutEvaluation: LnsWindowRankerModelSplitEvaluation
+  holdoutEvaluation: LnsWindowRankerModelSplitEvaluation,
+  supplementalReplayCalibration: boolean
 ): LnsWindowRankerSummary {
   const bestBaseline = baselineResult.evaluation.summary;
   const failedReasons: string[] = [];
   if (!labelSnapshot.leakage.protectedHoldout) failedReasons.push("development/holdout label cases overlap");
+  if (supplementalReplayCalibration) {
+    failedReasons.push("supplemental replay calibration is diagnostics-only and cannot promote a model");
+  }
   if (!labelSnapshot.lns.scaleReadiness.passed) failedReasons.push("source LNS label-scale readiness did not pass");
   if (holdoutEvaluation.opportunityCount === 0) failedReasons.push("holdout improvement opportunity count is zero");
   if (holdoutEvaluation.improvementCaptureRate <= bestBaseline.bestBaselineHoldoutCaptureRate) {
@@ -526,8 +601,11 @@ function buildSummary(
   };
 }
 
-function buildDatasetFingerprint(labelSnapshot: LearnedRankingLabelSnapshot): string {
-  return `fnv1a:${hashString(stableStringify(labelSnapshot.lns))}`;
+function buildDatasetFingerprint(
+  labelSnapshot: LearnedRankingLabelSnapshot,
+  supplementalReplaySnapshots: readonly LnsWindowReplaySnapshot[]
+): string {
+  return `fnv1a:${hashString(stableStringify({ lns: labelSnapshot.lns, supplementalReplaySnapshots }))}`;
 }
 
 function buildLabelFingerprint(labelSnapshot: LearnedRankingLabelSnapshot): string {
@@ -549,8 +627,12 @@ function summaryMetrics(result: LnsWindowRankerExperimentResult): Record<string,
     modelHoldoutHitAtK: result.evaluation.summary.modelHoldoutHitAtK,
     target: result.model.training.target,
     weakSeedReplayLabelsAllowed: result.model.training.allowWeakSeedReplayLabels,
+    supplementalReplayCalibration: result.model.training.supplementalReplayCalibration,
+    supplementalReplaySnapshotCount: result.audit.supplementalReplaySnapshotCount,
     developmentDecisionCount: result.labels.developmentDecisionCount,
     holdoutDecisionCount: result.labels.holdoutDecisionCount,
+    supplementalReplayDecisionCount: result.labels.supplementalReplayDecisionCount,
+    supplementalReplayLabelCount: result.labels.supplementalReplayLabelCount,
     opportunityCount: result.labels.opportunityCount,
     sourceLnsScaleReady: result.audit.sourceLnsScaleReady
   };
@@ -561,6 +643,8 @@ export function runLnsWindowRankerExperiment(
   options: LnsWindowRankerRunOptions = {}
 ): LnsWindowRankerExperimentResult {
   const training = normalizeTrainingOptions(options.training);
+  const supplementalReplaySnapshots =
+    training.supplementalReplayCalibration ? (options.supplementalReplaySnapshots ?? []) : [];
   const topK = positiveIntegerOrDefault(options.topK, 3);
   const baselineResult = runLnsWindowRankerBaselineExperiment(labelSnapshot, {
     randomBaselineSeed: options.randomBaselineSeed,
@@ -568,7 +652,15 @@ export function runLnsWindowRankerExperiment(
     target: training.target,
     allowWeakSeedReplayLabels: training.allowWeakSeedReplayLabels
   });
-  const groups = collectReplayDecisionGroups(labelSnapshot, training.target, training.allowWeakSeedReplayLabels);
+  const supplementalGroups = collectSupplementalReplayDecisionGroups(
+    supplementalReplaySnapshots,
+    training.target,
+    training.allowWeakSeedReplayLabels
+  );
+  const groups = [
+    ...collectReplayDecisionGroups(labelSnapshot, training.target, training.allowWeakSeedReplayLabels),
+    ...supplementalGroups
+  ];
   const developmentGroups = splitGroups(groups, "development");
   const holdoutGroups = splitGroups(groups, "holdout");
   const startedAtMs = performance.now();
@@ -598,7 +690,7 @@ export function runLnsWindowRankerExperiment(
     holdout: evaluateSplit("holdout", holdoutGroups, roundedWeights, topK, training.target)
   };
   const labelFingerprint = buildLabelFingerprint(labelSnapshot);
-  const datasetFingerprint = buildDatasetFingerprint(labelSnapshot);
+  const datasetFingerprint = buildDatasetFingerprint(labelSnapshot, supplementalReplaySnapshots);
   const modelFingerprint = buildModelExperimentFingerprint(model);
 
   return {
@@ -612,14 +704,18 @@ export function runLnsWindowRankerExperiment(
       sourceLabelPreset: labelSnapshot.audit.lnsReplay.preset,
       sourceLnsScaleReady: labelSnapshot.lns.scaleReadiness.passed,
       weakSeedReplayLabelsAllowed: training.allowWeakSeedReplayLabels,
-      labelTarget: training.target
+      labelTarget: training.target,
+      supplementalReplayCalibration: training.supplementalReplayCalibration,
+      supplementalReplaySnapshotCount: supplementalReplaySnapshots.length
     },
     labels: {
       labelCount: labelSnapshot.lns.labelCount,
       usableLabelCount: baselineResult.labels.usableLabelCount,
       opportunityCount: baselineResult.labels.opportunityCount,
       developmentDecisionCount: developmentGroups.length,
-      holdoutDecisionCount: holdoutGroups.length
+      holdoutDecisionCount: holdoutGroups.length,
+      supplementalReplayDecisionCount: supplementalGroups.length,
+      supplementalReplayLabelCount: supplementalGroups.reduce((total, group) => total + group.labels.length, 0)
     },
     training: {
       wallClockSeconds: trainingWallClockSeconds,
@@ -629,7 +725,7 @@ export function runLnsWindowRankerExperiment(
     evaluation: {
       model: modelEvaluation,
       baselines: baselineResult.evaluation.baselines,
-      summary: buildSummary(labelSnapshot, baselineResult, modelEvaluation.holdout)
+      summary: buildSummary(labelSnapshot, baselineResult, modelEvaluation.holdout, training.supplementalReplayCalibration)
     },
     datasetFingerprint,
     labelFingerprint,
@@ -703,10 +799,13 @@ export function buildLnsWindowRankerRegistryEntryDraft(
       trainingBaselineTieBreak: result.model.training.baselineTieBreak ? 1 : 0,
       trainingTargetRollForwardFinalLift: result.model.training.target === "roll-forward-final-lift" ? 1 : 0,
       trainingAllowWeakSeedReplayLabels: result.model.training.allowWeakSeedReplayLabels ? 1 : 0,
+      trainingSupplementalReplayCalibration: result.model.training.supplementalReplayCalibration ? 1 : 0,
       trainingWallClockSeconds: roundMetric(result.training.wallClockSeconds),
       trainedDecisionCount: result.model.trainedDecisionCount,
       trainedPairCount: result.model.trainedPairCount,
       lnsLabelCount: result.labels.labelCount,
+      supplementalReplayDecisionCount: result.labels.supplementalReplayDecisionCount,
+      supplementalReplayLabelCount: result.labels.supplementalReplayLabelCount,
       usableLabelCount: result.labels.usableLabelCount,
       opportunityCount: result.labels.opportunityCount,
       baselineCount: result.evaluation.baselines.length
@@ -739,13 +838,13 @@ export function formatLnsWindowRankerExperiment(result: LnsWindowRankerExperimen
   lines.push(`Generated: ${result.generatedAt}`);
   lines.push(`Schema: ${result.schemaVersion}`);
   lines.push(
-    `Audit: cpu-only=${result.audit.cpuOnly} runtime-default-changed=${result.audit.runtimeDefaultChanged} source-preset=${result.audit.sourceLabelPreset ?? "none"} source-lns-scale-ready=${result.audit.sourceLnsScaleReady} target=${result.audit.labelTarget} weak-seed-labels=${result.audit.weakSeedReplayLabelsAllowed}`
+    `Audit: cpu-only=${result.audit.cpuOnly} runtime-default-changed=${result.audit.runtimeDefaultChanged} source-preset=${result.audit.sourceLabelPreset ?? "none"} source-lns-scale-ready=${result.audit.sourceLnsScaleReady} target=${result.audit.labelTarget} weak-seed-labels=${result.audit.weakSeedReplayLabelsAllowed} supplemental-replay-calibration=${result.audit.supplementalReplayCalibration} supplemental-replay-snapshots=${result.audit.supplementalReplaySnapshotCount}`
   );
   lines.push(
-    `Labels: total=${result.labels.labelCount} usable=${result.labels.usableLabelCount} opportunities=${result.labels.opportunityCount} label-fingerprint=${result.labelFingerprint}`
+    `Labels: total=${result.labels.labelCount} usable=${result.labels.usableLabelCount} opportunities=${result.labels.opportunityCount} supplemental-decisions=${result.labels.supplementalReplayDecisionCount} supplemental-labels=${result.labels.supplementalReplayLabelCount} label-fingerprint=${result.labelFingerprint}`
   );
   lines.push(
-    `Model: ${result.model.modelType} features=${result.model.featureNames.length} epochs=${result.model.training.epochs} baseline-tie-break=${result.model.training.baselineTieBreak} target=${result.model.training.target} weak-seed-labels=${result.model.training.allowWeakSeedReplayLabels} trained-decisions=${result.model.trainedDecisionCount} model-fingerprint=${result.modelFingerprint}`
+    `Model: ${result.model.modelType} features=${result.model.featureNames.length} epochs=${result.model.training.epochs} baseline-tie-break=${result.model.training.baselineTieBreak} target=${result.model.training.target} weak-seed-labels=${result.model.training.allowWeakSeedReplayLabels} supplemental-replay-calibration=${result.model.training.supplementalReplayCalibration} trained-decisions=${result.model.trainedDecisionCount} model-fingerprint=${result.modelFingerprint}`
   );
   lines.push(
     `Model capture: development=${formatMetric(result.evaluation.model.development)} holdout=${formatMetric(result.evaluation.model.holdout)}`

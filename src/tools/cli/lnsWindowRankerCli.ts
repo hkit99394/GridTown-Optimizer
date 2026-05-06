@@ -53,6 +53,7 @@ interface ParsedLnsWindowRankerArgs {
   marginWeightCap?: number;
   baselineTieBreak: boolean;
   gapDiagnostics: boolean;
+  supplementalReplayCalibration: boolean;
   target?: LnsWindowRankerLabelTarget;
   allowWeakSeedReplayLabels: boolean;
   topK?: number;
@@ -130,6 +131,7 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
   let marginWeightCap: number | undefined;
   let baselineTieBreak = false;
   let gapDiagnostics = false;
+  let supplementalReplayCalibration = false;
   let target: LnsWindowRankerLabelTarget | undefined;
   let allowWeakSeedReplayLabels = true;
   let topK: number | undefined;
@@ -227,6 +229,17 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
       gapDiagnostics = true;
       continue;
     }
+    if (
+      isCliFlag(
+        arg,
+        "--supplemental-replay-calibration",
+        "--supplemental-replay-training",
+        "--calibrate-supplemental-replay"
+      )
+    ) {
+      supplementalReplayCalibration = true;
+      continue;
+    }
     if (isCliFlag(arg, "--roll-forward-final-lift", "--final-lift-target")) {
       target = "roll-forward-final-lift";
       continue;
@@ -252,6 +265,7 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
     marginWeightCap,
     baselineTieBreak,
     gapDiagnostics,
+    supplementalReplayCalibration,
     target,
     allowWeakSeedReplayLabels,
     topK,
@@ -337,11 +351,17 @@ function writeLnsWindowRankerArtifactBundle(
   const registryEntryDraftJson = artifactPath("registry-entry-draft.json");
   const command = defaultRankerArtifactCommand(argv);
   const labelSnapshot = readLabelSnapshot(labelsPath);
+  const inputArtifacts = [
+    normalizeRepoRelativePath(labelsPath, "--labels"),
+    ...args.supplementalReplayLabelPaths.map((replayPath) =>
+      normalizeRepoRelativePath(replayPath, "--supplemental-replay-labels")
+    )
+  ];
   const telemetryManifest = buildLnsWindowRankerTelemetryManifest(result, {
     command,
     git: resolveExperimentRegistryGitMetadata(),
     hardware: captureExperimentRegistryHardwareMetadata(),
-    inputArtifacts: [normalizeRepoRelativePath(labelsPath, "--labels")],
+    inputArtifacts,
     outputArtifacts: [experimentJson, experimentText, modelJson, telemetryManifestJson]
   });
   const registryEntryDraft = buildLnsWindowRankerRegistryEntryDraft(result, labelSnapshot, {
@@ -554,15 +574,20 @@ export function runLnsWindowRankerCli(): void {
   if (
     args.modelPath !== undefined ||
     args.onlineScorecardPath !== undefined ||
-    args.supplementalReplayLabelPaths.length > 0
+    (args.supplementalReplayLabelPaths.length > 0 && !args.supplementalReplayCalibration)
   ) {
     throw new Error(
-      "--model, --online-scorecard, and --supplemental-replay-labels are only available with --gap-diagnostics."
+      "--model and --online-scorecard are only available with --gap-diagnostics; --supplemental-replay-labels also requires --supplemental-replay-calibration for ranker training."
     );
+  }
+  if (args.supplementalReplayCalibration && args.supplementalReplayLabelPaths.length === 0) {
+    throw new Error("--supplemental-replay-calibration requires --supplemental-replay-labels=<path>.");
   }
 
   const labelSnapshot = readLabelSnapshot(args.labelsPath);
+  const supplementalReplaySnapshots = args.supplementalReplayLabelPaths.map(readSupplementalReplaySnapshot);
   const result = runLnsWindowRankerExperiment(labelSnapshot, {
+    supplementalReplaySnapshots,
     randomBaselineSeed: args.randomBaselineSeed,
     topK: args.topK,
     training: {
@@ -571,7 +596,8 @@ export function runLnsWindowRankerCli(): void {
       marginWeightCap: args.marginWeightCap,
       baselineTieBreak: args.baselineTieBreak,
       target: args.target,
-      allowWeakSeedReplayLabels: args.allowWeakSeedReplayLabels
+      allowWeakSeedReplayLabels: args.allowWeakSeedReplayLabels,
+      supplementalReplayCalibration: args.supplementalReplayCalibration
     }
   });
 

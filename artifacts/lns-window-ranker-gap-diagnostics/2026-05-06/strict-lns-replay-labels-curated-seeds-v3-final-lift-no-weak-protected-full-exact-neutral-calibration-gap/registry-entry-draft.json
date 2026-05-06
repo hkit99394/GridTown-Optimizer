@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "runId": "lns-window-ranker-gap-2026-05-06-curated-seeds-v3-final-lift-no-weak-protected-full-exact-neutral-calibration",
+  "artifactType": "model-experiment",
+  "generatedAt": "2026-05-06T18:03:10.200Z",
+  "commands": [
+    "node dist/lnsWindowRankerCli.js --gap-diagnostics --labels=artifacts/learned-ranking-labels/2026-05-04/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1/labels.json --model=artifacts/lns-window-ranker/2026-05-06/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-full-exact-neutral-calibration-lr0.02-cap100/model.json --online-scorecard=artifacts/lns-window-ranker-online/2026-05-06/protected-full-exact-neutral-calibration-min-score-delta-0.1/lns-window-ranker-online-ablation.json --supplemental-replay-labels=artifacts/lns-window-replay-labels/2026-05-06/protected-full-online-decision-state-roll-forward-4x0.1/lns-window-replay-labels.json --artifact-dir=artifacts/lns-window-ranker-gap-diagnostics/2026-05-06/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-protected-full-exact-neutral-calibration-gap --ranker-run-id=lns-window-ranker-gap-2026-05-06-curated-seeds-v3-final-lift-no-weak-protected-full-exact-neutral-calibration --ranker-decision=offline-online-lns-window-ranker-gap-diagnostics-calibrated-no-overrides '--ranker-summary=Calibrated diagnostics-only LNS ranker produces no protected online overrides at minScoreDelta 0.1; no solver default changed.' --json"
+  ],
+  "artifactPaths": [
+    "artifacts/lns-window-ranker-gap-diagnostics/2026-05-06/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-protected-full-exact-neutral-calibration-gap/lns-window-ranker-gap-diagnostics.json",
+    "artifacts/lns-window-ranker-gap-diagnostics/2026-05-06/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-protected-full-exact-neutral-calibration-gap/lns-window-ranker-gap-diagnostics.txt",
+    "artifacts/lns-window-ranker-gap-diagnostics/2026-05-06/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-protected-full-exact-neutral-calibration-gap/telemetry-manifest.json"
+  ],
+  "cases": [
+    "lns-holdout-corridor-weave-pressure",
+    "lns-holdout-gate-offset-pressure",
+    "lns-holdout-footprint-stagger-pressure",
+    "lns-holdout-service-ridge-pressure",
+    "lns-holdout-anchor-service-shelf-pressure"
+  ],
+  "caseFamilies": [
+    "corridor",
+    "gate",
+    "footprint-pressure",
+    "service-pressure",
+    "anchor-service"
+  ],
+  "seeds": [
+    7,
+    19,
+    37
+  ],
+  "splitStatus": {
+    "protectedHoldout": true,
+    "sourceLnsScaleReady": true,
+    "promotionBlocked": false
+  },
+  "budget": {
+    "minScoreDelta": 0.1,
+    "onlineComparisonCount": 15,
+    "onlineOverrideCount": 0,
+    "onlineSelectionTraceCount": 30,
+    "onlineFinalNeutralOverrideCount": 0,
+    "offlineDecisionCount": 120,
+    "offlineSupplementalDecisionCount": 30,
+    "offlineOpportunityCount": 54,
+    "offlinePositiveOnlineNeutralCount": 0,
+    "exactReplayNeutralizedOfflinePositiveOnlineNeutralCount": 0,
+    "zeroLayoutFinalNeutralTraceComparisonCount": 0,
+    "changedLayoutFinalNeutralTraceComparisonCount": 0,
+    "mixedLayoutFinalNeutralTraceComparisonCount": 0,
+    "suppressedZeroLayoutFinalNeutralTraceComparisonCount": 0,
+    "sensitivityRemainingTraceComparisonCount": 0,
+    "sensitivityRemainingPromotionBlocked": 0,
+    "protectedReplayEvidenceSuppressedTraceComparisonCount": 0,
+    "protectedReplayEvidenceRemainingTraceComparisonCount": 0,
+    "protectedReplayEvidenceRemainingPromotionBlocked": 0,
+    "traceComparisonCount": 0,
+    "traceComparisonOnlineTraceCount": 0,
+    "traceComparisonChangedFinalLayoutTraceCount": 0,
+    "traceComparisonPostSelectionImprovementTraceCount": 0,
+    "recommendedExperimentCount": 0,
+    "longerRollForwardReplayRecommendationCount": 0,
+    "targetedProtectedReplayLabelRecommendationCount": 0
+  },
+  "model": {
+    "schemaVersion": 1,
+    "modelType": "lns-window-ranker-gap-diagnostics",
+    "purpose": "offline-diagnostics-only",
+    "runtimeDefaultChanged": false,
+    "solverDefaultChanged": false,
+    "target": "roll-forward-final-lift",
+    "weakSeedReplayLabelsAllowed": false,
+    "supplementalReplaySnapshotCount": 1,
+    "rankerModelFingerprint": "fnv1a:759a0f1a",
+    "onlineScorecardType": "lns-window-ranker-online-ablation"
+  },
+  "decision": "offline-online-lns-window-ranker-gap-diagnostics-calibrated-no-overrides",
+  "summary": "Calibrated diagnostics-only LNS ranker produces no protected online overrides at minScoreDelta 0.1; no solver default changed.",
+  "labelFingerprint": "fnv1a:58ce487f",
+  "datasetFingerprint": "fnv1a:b3c3fe8b",
+  "inputFingerprint": "fnv1a:433f1833",
+  "modelFingerprint": "fnv1a:1b7e5cb8",
+  "summaryMetrics": {
+    "target": "roll-forward-final-lift",
+    "weakSeedReplayLabelsAllowed": false,
+    "supplementalReplaySnapshotCount": 1,
+    "offlineDecisionCount": 120,
+    "offlineSupplementalDecisionCount": 30,
+    "offlineOverrideCount": 31,
+    "offlineOpportunityCount": 54,
+    "onlineComparisonCount": 15,
+    "onlineOverrideCount": 0,
+    "onlineSelectionTraceCount": 30,
+    "onlineFinalNeutralOverrideCount": 0,
+    "joinedTransitionFamilyCount": 0,
+    "offlinePositiveOnlineNeutralCount": 0,
+    "onlineActiveNoOfflineMatchCount": 0,
+    "exactReplayNeutralizedOfflinePositiveOnlineNeutralCount": 0,
+    "traceComparisonLayoutSignatureCounts": {
+      "changed-layout-final-neutral": 0,
+      "mixed-final-outcome": 0,
+      "mixed-layout-final-neutral": 0,
+      "missing-layout-delta": 0,
+      "zero-layout-final-neutral": 0
+    },
+    "zeroLayoutFinalNeutralTraceComparisonCount": 0,
+    "changedLayoutFinalNeutralTraceComparisonCount": 0,
+    "mixedLayoutFinalNeutralTraceComparisonCount": 0,
+    "promotionSensitivity": {
+      "suppressedLayoutSignature": "zero-layout-final-neutral",
+      "suppressedTraceComparisonCount": 0,
+      "remainingTraceComparisonCount": 0,
+      "remainingOfflinePositiveOnlineNeutralCount": 0,
+      "remainingOnlineActiveNoOfflineMatchCount": 0,
+      "changedLayoutNoLiftTrajectoryDepthCount": 0,
+      "missingLayoutDeltaCount": 0,
+      "mixedFinalOutcomeCount": 0,
+      "remainingPromotionBlocked": false,
+      "remainingBlockers": [],
+      "protectedReplayEvidenceGate": {
+        "suppressedDiagnosis": "online-active-no-offline-match",
+        "suppressedTraceComparisonCount": 0,
+        "remainingTraceComparisonCount": 0,
+        "remainingOfflinePositiveOnlineNeutralCount": 0,
+        "changedLayoutNoLiftTrajectoryDepthCount": 0,
+        "missingLayoutDeltaCount": 0,
+        "mixedFinalOutcomeCount": 0,
+        "remainingPromotionBlocked": false,
+        "remainingBlockers": []
+      }
+    },
+    "traceComparisonCount": 0,
+    "traceComparisonOnlineTraceCount": 0,
+    "traceComparisonChangedFinalLayoutTraceCount": 0,
+    "traceComparisonPostSelectionImprovementTraceCount": 0,
+    "traceComparisonOfflineDecisionCount": 0,
+    "recommendedExperimentCount": 0,
+    "longerRollForwardReplayRecommendationCount": 0,
+    "targetedProtectedReplayLabelRecommendationCount": 0,
+    "promotionBlocked": false
+  }
+}

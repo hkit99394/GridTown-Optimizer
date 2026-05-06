@@ -966,6 +966,60 @@ function testLnsWindowRankerGapDiagnosticsSupplementalReplayLabels() {
   assert.equal(neutralizedRegistryDraft.summaryMetrics.exactReplayNeutralizedOfflinePositiveOnlineNeutralCount, 1);
 }
 
+function testLnsWindowRankerSupplementalReplayCalibration() {
+  const fixture = cloneFixtureWithRollForwardTargets();
+  const holdoutSplit = fixture.lns.splits.find((split) => split.split === "holdout");
+  const supplementalReplay = buildNeutralSupplementalReplaySnapshot(
+    holdoutSplit.replay.cases[0],
+    "protected-service-calibration",
+    "service-pressure"
+  );
+  const baseline = runLnsWindowRankerExperiment(fixture, {
+    topK: 2,
+    training: {
+      epochs: 4,
+      learningRate: 0.05,
+      marginWeightCap: 500,
+      target: "roll-forward-final-lift"
+    }
+  });
+  const calibrated = runLnsWindowRankerExperiment(fixture, {
+    supplementalReplaySnapshots: [supplementalReplay],
+    topK: 2,
+    training: {
+      epochs: 4,
+      learningRate: 0.05,
+      marginWeightCap: 500,
+      target: "roll-forward-final-lift",
+      supplementalReplayCalibration: true
+    }
+  });
+  const formatted = formatLnsWindowRankerExperiment(calibrated);
+  assert.equal(calibrated.audit.supplementalReplayCalibration, true);
+  assert.equal(calibrated.audit.supplementalReplaySnapshotCount, 1);
+  assert.equal(calibrated.model.training.supplementalReplayCalibration, true);
+  assert.equal(calibrated.labels.supplementalReplayDecisionCount, 1);
+  assert.equal(calibrated.labels.supplementalReplayLabelCount, 3);
+  assert.equal(calibrated.model.trainedDecisionCount, baseline.model.trainedDecisionCount + 1);
+  assert(calibrated.model.trainedPairCount > baseline.model.trainedPairCount);
+  assert(calibrated.model.weights.selectedByBaseline > baseline.model.weights.selectedByBaseline);
+  assert.equal(calibrated.evaluation.summary.passed, false);
+  assert(calibrated.evaluation.summary.failedReasons.includes("supplemental replay calibration is diagnostics-only and cannot promote a model"));
+  assert.match(formatted, /supplemental-replay-calibration=true/);
+  assert.match(formatted, /supplemental-decisions=1/);
+
+  const registryDraft = buildLnsWindowRankerRegistryEntryDraft(calibrated, fixture, {
+    runId: "lns-window-ranker-supplemental-calibration-test",
+    commands: ["node dist/lnsWindowRankerCli.js --labels=labels.json --supplemental-replay-calibration"],
+    artifactPaths: ["artifacts/lns-ranker/lns-window-ranker.json"]
+  });
+  assert.equal(registryDraft.decision, "offline-lns-window-ranker-insufficient");
+  assert.equal(registryDraft.budget.trainingSupplementalReplayCalibration, 1);
+  assert.equal(registryDraft.budget.supplementalReplayDecisionCount, 1);
+  assert.equal(registryDraft.budget.supplementalReplayLabelCount, 3);
+  assert.equal(registryDraft.summaryMetrics.supplementalReplayCalibration, true);
+}
+
 function testLnsWindowRankerRollForwardTarget() {
   const fixture = cloneFixtureWithRollForwardTargets();
   const result = runLnsWindowRankerExperiment(fixture, {
@@ -1084,4 +1138,5 @@ testLnsWindowRankerBaselineTieBreakTraining();
 testLnsWindowRankerWeakReplaySeedFilter();
 testLnsWindowRankerGapDiagnostics();
 testLnsWindowRankerGapDiagnosticsSupplementalReplayLabels();
+testLnsWindowRankerSupplementalReplayCalibration();
 testLnsWindowRankerCliArtifacts();

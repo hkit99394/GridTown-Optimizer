@@ -1,0 +1,265 @@
+{
+  "schemaVersion": 1,
+  "runId": "cross-mode-budget-ablation-2026-05-06-short-budget-auto-gap-triage-known-misses",
+  "artifactType": "ablation-gate",
+  "generatedAt": "2026-05-06T18:19:58.244Z",
+  "commands": [
+    "node dist/crossModeBenchmarkCli.js --product-corpus --budget-ablation --ablation-policies=baseline,repair-heavy,cp-sat-reserve-heavy --modes=auto,lns,cp-sat --budgets=1,5 --seeds=7,19,37 --artifact-dir=artifacts/cross-mode-budget-ablations/2026-05-06/short-budget-auto-gap-triage-known-misses --ablation-run-id=cross-mode-budget-ablation-2026-05-06-short-budget-auto-gap-triage-known-misses --ablation-decision=diagnostics-only-short-budget-auto-gap-triage-no-default-change '--ablation-summary=Focused short-budget Auto gap triage on known 1s/5s miss families after Strict LNS replay label work; no solver default changed.' --json expansion-comparison-replay typed-footprint-pressure service-local-neighborhood"
+  ],
+  "artifactPaths": [
+    "artifacts/cross-mode-budget-ablations/2026-05-06/short-budget-auto-gap-triage-known-misses/budget-ablation.json",
+    "artifacts/cross-mode-budget-ablations/2026-05-06/short-budget-auto-gap-triage-known-misses/budget-ablation.txt",
+    "artifacts/cross-mode-budget-ablations/2026-05-06/short-budget-auto-gap-triage-known-misses/decision-trace.jsonl",
+    "artifacts/cross-mode-budget-ablations/2026-05-06/short-budget-auto-gap-triage-known-misses/telemetry-manifest.json"
+  ],
+  "cases": {
+    "development": [
+      "typed-footprint-pressure"
+    ],
+    "holdout": [
+      "expansion-comparison-replay",
+      "service-local-neighborhood"
+    ]
+  },
+  "caseFamilies": [
+    "cross-mode-budget-ablation",
+    "expansion-comparison",
+    "footprint-pressure",
+    "service-pressure",
+    "small"
+  ],
+  "seeds": [
+    7,
+    19,
+    37
+  ],
+  "splitStatus": {
+    "splitField": "CrossModeBenchmarkCase.split",
+    "policyCount": 3,
+    "caseCount": 3,
+    "casesBySplit": {
+      "development": [
+        "typed-footprint-pressure"
+      ],
+      "holdout": [
+        "expansion-comparison-replay",
+        "service-local-neighborhood"
+      ]
+    },
+    "leakage": "not-promotion-evidence",
+    "notes": "Budget ablation artifact is diagnostic evidence for Auto policy triage; it does not promote solver defaults."
+  },
+  "budget": {
+    "wallClockBudgetsSeconds": [
+      1,
+      5
+    ],
+    "policyCount": 3,
+    "caseCount": 3,
+    "modeCount": 3,
+    "totalRuns": 162,
+    "budgetedModeSeconds": 486
+  },
+  "model": null,
+  "decision": "diagnostics-only-short-budget-auto-gap-triage-no-default-change",
+  "summary": "Focused short-budget Auto gap triage on known 1s/5s miss families after Strict LNS replay label work; no solver default changed.",
+  "summaryMetrics": {
+    "baselinePolicyName": "baseline",
+    "topPolicyName": "baseline",
+    "topPolicyRankingBasis": "mean-auto-population",
+    "topPolicyTiedPolicyNames": [
+      "baseline"
+    ],
+    "policies": [
+      {
+        "policyName": "baseline",
+        "meanBestPopulation": 586.3888888888889,
+        "meanAutoPopulation": 573.3333333333334,
+        "meanLnsPopulation": 560,
+        "meanAutoDeltaToBest": 13.055555555555555,
+        "meanAutoLnsStageElapsedSeconds": 3.1142222222222227,
+        "meanAutoCpSatStageElapsedSeconds": 1.1808,
+        "deltaVsBaselineMeanBestPopulation": 0,
+        "deltaVsBaselineMeanAutoPopulation": 0,
+        "deltaVsBaselineMeanLnsPopulation": 0,
+        "recommendationCounts": {
+          "keep-auto": 9,
+          "add-auto-baseline": 0,
+          "shift-auto-budget-to-greedy": 0,
+          "shift-auto-budget-to-lns": 5,
+          "shift-auto-budget-to-cp-sat": 4,
+          "keep-portfolio-experimental": 0,
+          "investigate-auto-loss": 0
+        },
+        "budgetSummaries": [
+          {
+            "budgetSeconds": 1,
+            "caseCount": 9,
+            "meanBestPopulation": 581.1111111111111,
+            "meanAutoPopulation": 567.2222222222222,
+            "meanLnsPopulation": 572.2222222222222,
+            "meanAutoDeltaToBest": 13.88888888888889,
+            "deltaVsBaselineMeanBestPopulation": 0,
+            "deltaVsBaselineMeanAutoPopulation": 0,
+            "deltaVsBaselineMeanLnsPopulation": 0,
+            "recommendationCounts": {
+              "keep-auto": 5,
+              "add-auto-baseline": 0,
+              "shift-auto-budget-to-greedy": 0,
+              "shift-auto-budget-to-lns": 4,
+              "shift-auto-budget-to-cp-sat": 0,
+              "keep-portfolio-experimental": 0,
+              "investigate-auto-loss": 0
+            }
+          },
+          {
+            "budgetSeconds": 5,
+            "caseCount": 9,
+            "meanBestPopulation": 591.6666666666666,
+            "meanAutoPopulation": 579.4444444444445,
+            "meanLnsPopulation": 547.7777777777778,
+            "meanAutoDeltaToBest": 12.222222222222221,
+            "deltaVsBaselineMeanBestPopulation": 0,
+            "deltaVsBaselineMeanAutoPopulation": 0,
+            "deltaVsBaselineMeanLnsPopulation": 0,
+            "recommendationCounts": {
+              "keep-auto": 4,
+              "add-auto-baseline": 0,
+              "shift-auto-budget-to-greedy": 0,
+              "shift-auto-budget-to-lns": 1,
+              "shift-auto-budget-to-cp-sat": 4,
+              "keep-portfolio-experimental": 0,
+              "investigate-auto-loss": 0
+            }
+          }
+        ]
+      },
+      {
+        "policyName": "repair-heavy",
+        "meanBestPopulation": 576.0555555555555,
+        "meanAutoPopulation": 566.6666666666666,
+        "meanLnsPopulation": 521.9444444444445,
+        "meanAutoDeltaToBest": 9.38888888888889,
+        "meanAutoLnsStageElapsedSeconds": 2.777222222222223,
+        "meanAutoCpSatStageElapsedSeconds": 1.04425,
+        "deltaVsBaselineMeanBestPopulation": -10.333333333333371,
+        "deltaVsBaselineMeanAutoPopulation": -6.6666666666667425,
+        "deltaVsBaselineMeanLnsPopulation": -38.05555555555554,
+        "recommendationCounts": {
+          "keep-auto": 12,
+          "add-auto-baseline": 0,
+          "shift-auto-budget-to-greedy": 0,
+          "shift-auto-budget-to-lns": 0,
+          "shift-auto-budget-to-cp-sat": 6,
+          "keep-portfolio-experimental": 0,
+          "investigate-auto-loss": 0
+        },
+        "budgetSummaries": [
+          {
+            "budgetSeconds": 1,
+            "caseCount": 9,
+            "meanBestPopulation": 560.4444444444445,
+            "meanAutoPopulation": 548.3333333333334,
+            "meanLnsPopulation": 496.1111111111111,
+            "meanAutoDeltaToBest": 12.11111111111111,
+            "deltaVsBaselineMeanBestPopulation": -20.66666666666663,
+            "deltaVsBaselineMeanAutoPopulation": -18.8888888888888,
+            "deltaVsBaselineMeanLnsPopulation": -76.11111111111109,
+            "recommendationCounts": {
+              "keep-auto": 6,
+              "add-auto-baseline": 0,
+              "shift-auto-budget-to-greedy": 0,
+              "shift-auto-budget-to-lns": 0,
+              "shift-auto-budget-to-cp-sat": 3,
+              "keep-portfolio-experimental": 0,
+              "investigate-auto-loss": 0
+            }
+          },
+          {
+            "budgetSeconds": 5,
+            "caseCount": 9,
+            "meanBestPopulation": 591.6666666666666,
+            "meanAutoPopulation": 585,
+            "meanLnsPopulation": 547.7777777777778,
+            "meanAutoDeltaToBest": 6.666666666666667,
+            "deltaVsBaselineMeanBestPopulation": 0,
+            "deltaVsBaselineMeanAutoPopulation": 5.555555555555543,
+            "deltaVsBaselineMeanLnsPopulation": 0,
+            "recommendationCounts": {
+              "keep-auto": 6,
+              "add-auto-baseline": 0,
+              "shift-auto-budget-to-greedy": 0,
+              "shift-auto-budget-to-lns": 0,
+              "shift-auto-budget-to-cp-sat": 3,
+              "keep-portfolio-experimental": 0,
+              "investigate-auto-loss": 0
+            }
+          }
+        ]
+      },
+      {
+        "policyName": "cp-sat-reserve-heavy",
+        "meanBestPopulation": 576.0555555555555,
+        "meanAutoPopulation": 563.8888888888889,
+        "meanLnsPopulation": 506.6666666666667,
+        "meanAutoDeltaToBest": 12.166666666666666,
+        "meanAutoLnsStageElapsedSeconds": 2.2605000000000004,
+        "meanAutoCpSatStageElapsedSeconds": 2.021777777777778,
+        "deltaVsBaselineMeanBestPopulation": -10.333333333333371,
+        "deltaVsBaselineMeanAutoPopulation": -9.444444444444457,
+        "deltaVsBaselineMeanLnsPopulation": -53.333333333333314,
+        "recommendationCounts": {
+          "keep-auto": 10,
+          "add-auto-baseline": 0,
+          "shift-auto-budget-to-greedy": 0,
+          "shift-auto-budget-to-lns": 0,
+          "shift-auto-budget-to-cp-sat": 8,
+          "keep-portfolio-experimental": 0,
+          "investigate-auto-loss": 0
+        },
+        "budgetSummaries": [
+          {
+            "budgetSeconds": 1,
+            "caseCount": 9,
+            "meanBestPopulation": 560.4444444444445,
+            "meanAutoPopulation": 548.3333333333334,
+            "meanLnsPopulation": 476.1111111111111,
+            "meanAutoDeltaToBest": 12.11111111111111,
+            "deltaVsBaselineMeanBestPopulation": -20.66666666666663,
+            "deltaVsBaselineMeanAutoPopulation": -18.8888888888888,
+            "deltaVsBaselineMeanLnsPopulation": -96.11111111111109,
+            "recommendationCounts": {
+              "keep-auto": 6,
+              "add-auto-baseline": 0,
+              "shift-auto-budget-to-greedy": 0,
+              "shift-auto-budget-to-lns": 0,
+              "shift-auto-budget-to-cp-sat": 3,
+              "keep-portfolio-experimental": 0,
+              "investigate-auto-loss": 0
+            }
+          },
+          {
+            "budgetSeconds": 5,
+            "caseCount": 9,
+            "meanBestPopulation": 591.6666666666666,
+            "meanAutoPopulation": 579.4444444444445,
+            "meanLnsPopulation": 537.2222222222222,
+            "meanAutoDeltaToBest": 12.222222222222221,
+            "deltaVsBaselineMeanBestPopulation": 0,
+            "deltaVsBaselineMeanAutoPopulation": 0,
+            "deltaVsBaselineMeanLnsPopulation": -10.555555555555657,
+            "recommendationCounts": {
+              "keep-auto": 4,
+              "add-auto-baseline": 0,
+              "shift-auto-budget-to-greedy": 0,
+              "shift-auto-budget-to-lns": 0,
+              "shift-auto-budget-to-cp-sat": 5,
+              "keep-portfolio-experimental": 0,
+              "investigate-auto-loss": 0
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

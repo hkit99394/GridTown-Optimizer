@@ -861,16 +861,60 @@ async function testCrossModeBenchmarkHelpers() {
     assert.equal(telemetryArtifact.runs[0].seed, 7);
     assert.equal(typeof telemetryArtifact.hardware.captured, "boolean");
 
-    const ablationConflict = childProcess.spawnSync(
+    const ablationArtifactDir = `${artifactDir}-ablation`;
+    const absoluteAblationArtifactDir = path.join(repoRoot, ablationArtifactDir);
+    fs.rmSync(absoluteAblationArtifactDir, { recursive: true, force: true });
+    const ablationArtifactResult = childProcess.spawnSync(
       process.execPath,
-      [cliPath, `--artifact-dir=${artifactDir}`, "--budget-ablation", "--modes=greedy"],
+      [
+        cliPath,
+        `--artifact-dir=${ablationArtifactDir}`,
+        "--budget-ablation",
+        "--ablation-policies=baseline,seed-light",
+        "--modes=greedy",
+        "--budgets=1",
+        "--seeds=7",
+        "--json",
+        "typed-housing-single"
+      ],
       {
         cwd: repoRoot,
         encoding: "utf8"
       }
     );
-    assert.notEqual(ablationConflict.status, 0);
-    assert.match(ablationConflict.stderr, /--artifact-dir cannot be combined with --budget-ablation/);
+    assert.equal(ablationArtifactResult.status, 0, ablationArtifactResult.stderr || ablationArtifactResult.stdout);
+    const ablationArtifactManifest = JSON.parse(ablationArtifactResult.stdout);
+    assert.equal(ablationArtifactManifest.artifactDir, ablationArtifactDir);
+    assert.deepEqual(Object.keys(ablationArtifactManifest.artifactPaths).sort(), [
+      "budgetAblationJson",
+      "budgetAblationText",
+      "decisionTraceJsonl",
+      "registryEntryDraftJson",
+      "telemetryManifestJson"
+    ]);
+    assert.equal(fs.existsSync(path.join(repoRoot, ablationArtifactManifest.artifactPaths.budgetAblationJson)), true);
+    assert.equal(fs.existsSync(path.join(repoRoot, ablationArtifactManifest.artifactPaths.budgetAblationText)), true);
+    assert.equal(fs.existsSync(path.join(repoRoot, ablationArtifactManifest.artifactPaths.decisionTraceJsonl)), true);
+    assert.equal(fs.existsSync(path.join(repoRoot, ablationArtifactManifest.artifactPaths.telemetryManifestJson)), true);
+    assert.equal(fs.existsSync(path.join(repoRoot, ablationArtifactManifest.artifactPaths.registryEntryDraftJson)), true);
+    const budgetAblationArtifact = JSON.parse(
+      fs.readFileSync(path.join(repoRoot, ablationArtifactManifest.artifactPaths.budgetAblationJson), "utf8")
+    );
+    const ablationTelemetryArtifact = JSON.parse(
+      fs.readFileSync(path.join(repoRoot, ablationArtifactManifest.artifactPaths.telemetryManifestJson), "utf8")
+    );
+    const ablationRegistryDraft = JSON.parse(
+      fs.readFileSync(path.join(repoRoot, ablationArtifactManifest.artifactPaths.registryEntryDraftJson), "utf8")
+    );
+    assert.deepEqual(budgetAblationArtifact.selectedCaseNames, ["typed-housing-single"]);
+    assert.equal(budgetAblationArtifact.policies.length, 2);
+    assert.equal(ablationTelemetryArtifact.source, "cross-mode-budget-ablation");
+    assert.equal(ablationTelemetryArtifact.suite.policyCount, 2);
+    assert.equal(ablationTelemetryArtifact.runs.length, 2);
+    assert.equal(ablationTelemetryArtifact.runs[0].budgetAblationPolicyName, "baseline");
+    assert.equal(ablationRegistryDraft.artifactType, "ablation-gate");
+    assert.equal(ablationRegistryDraft.budget.policyCount, 2);
+    assert.deepEqual(ablationRegistryDraft.cases.development, ["typed-housing-single"]);
 
     const artifactWriterConflict = childProcess.spawnSync(
       process.execPath,
@@ -885,6 +929,7 @@ async function testCrossModeBenchmarkHelpers() {
   } finally {
     fs.rmSync(absoluteArtifactDir, { recursive: true, force: true });
     fs.rmSync(`${absoluteArtifactDir}-product`, { recursive: true, force: true });
+    fs.rmSync(`${absoluteArtifactDir}-ablation`, { recursive: true, force: true });
   }
 
   const ablations = await runCrossModeBenchmarkBudgetAblations([benchmarkCase], {

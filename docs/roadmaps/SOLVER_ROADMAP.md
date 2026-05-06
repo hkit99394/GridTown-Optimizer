@@ -148,15 +148,23 @@ Why:
 - The promotion corpus shows Auto is broadly healthy, but a few 1s/5s rows still lose to standalone LNS or CP-SAT.
 - These misses should be diagnosed before changing Auto stage budgets or default policies.
 
+Delivered so far:
+
+- Cross-mode budget ablations now support artifact bundles through `crossModeBenchmarkCli --budget-ablation --artifact-dir=...`. The bundle writes `budget-ablation.json`, `budget-ablation.txt`, `decision-trace.jsonl`, `telemetry-manifest.json`, and `registry-entry-draft.json`, so focused policy slices can be registered like the other benchmark evidence.
+- The registered ablation-gate artifact `cross-mode-budget-ablation-2026-05-06-short-budget-auto-gap-triage-known-misses` is generated under `artifacts/cross-mode-budget-ablations/2026-05-06/short-budget-auto-gap-triage-known-misses/`. It covers the three known short-budget miss families (`expansion-comparison-replay`, `typed-footprint-pressure`, and `service-local-neighborhood`), budgets `1s` and `5s`, seeds `7`, `19`, and `37`, modes `auto`, `lns`, and `cp-sat`, and policies `baseline`, `repair-heavy`, and `cp-sat-reserve-heavy`, for 162 total mode runs and 486 budgeted mode-seconds.
+- Baseline remains the top policy by Auto mean population. Baseline mean Auto population is `573.3` with mean Auto gap `13.056`; `repair-heavy` drops overall Auto mean by `-6.667`, and `cp-sat-reserve-heavy` drops it by `-9.444`.
+- The miss shape is budget-specific. At `1s`, both heavier policies hurt Auto by `-18.889` mean population versus baseline, mainly by degrading seed quality on `service-local-neighborhood` and `expansion-comparison-replay`. At `5s`, `repair-heavy` improves Auto by `+5.556` and cuts mean Auto gap to `6.667`, while `cp-sat-reserve-heavy` ties baseline Auto mean but leaves LNS worse.
+- The evidence does not support changing Auto defaults. It points instead to a possible future conditional policy: preserve the current 1s seed posture, then investigate a guarded 5s-only repair/CP-SAT handoff on the footprint and expansion-comparison misses with protected safety and CPU-efficiency reporting.
+
 Concrete work:
 
-- Re-run focused budget-ablation slices on the known short-budget miss families.
-- Compare baseline, LNS-heavy, and CP-SAT-reserve-heavy policies under equal wall-clock budgets and fixed seeds.
+- Keep the current Auto budget policy as the baseline; the focused ablation did not justify a broad LNS-heavy or CP-SAT-reserve-heavy default.
+- If Auto policy work resumes, test a conditional 5s-only handoff that preserves the baseline 1s seed budget and proves it does not regress `service-local-neighborhood` or seed-sensitive expansion cases.
 - Treat outcomes as evidence for future policy work only; do not change Auto defaults without clearing the promotion gates below.
 
 Exit criteria:
 
-- A registered artifact explains whether the misses are seed quality, LNS repair allocation, CP-SAT reserve, or case-specific saturation effects.
+- A registered artifact explains whether the misses are seed quality, LNS repair allocation, CP-SAT reserve, or case-specific saturation effects. The 2026-05-06 focused artifact satisfies this for the known 1s/5s miss slice and leaves default Auto unchanged.
 - Any proposed Auto policy change has protected development and holdout evidence, worst-decile safety, and CPU-budget efficiency reporting.
 
 ## Gated Priorities

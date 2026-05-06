@@ -21,6 +21,7 @@ export * from "./greedyDeterministicAblations.js";
 export * from "./lnsNeighborhoodAblations.js";
 export * from "./deterministicAblationGates.js";
 export * from "./lnsWindowReplayLabels.js";
+export * from "./lnsWindowReplayOnlineDecisionLabels.js";
 export * from "./lnsReplayLabelReadiness.js";
 export * from "./learnedRankingLabels.js";
 export * from "./greedyOfflineRanker.js";

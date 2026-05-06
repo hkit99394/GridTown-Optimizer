@@ -32,6 +32,7 @@ function assertValidWindowRankerOptions(lns: Record<string, unknown>): void {
   const windowRanker = requireValidationRecord(value, "LNS option lns.windowRanker");
   requireOptionalBoolean(windowRanker, "enabled", "LNS option lns.windowRanker.enabled");
   if (windowRanker.enabled === false) return;
+  requireOptionalBoolean(windowRanker, "captureDecisionState", "LNS option lns.windowRanker.captureDecisionState");
   requireOptionalFiniteNumberInRange(
     windowRanker,
     "minScoreDelta",

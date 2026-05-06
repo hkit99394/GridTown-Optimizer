@@ -1,0 +1,21 @@
+{
+  "artifactDir": "artifacts/lns-window-replay-labels/2026-05-06/protected-corridor-online-decision-state-roll-forward-4x0.1",
+  "artifactPaths": {
+    "replayJson": "artifacts/lns-window-replay-labels/2026-05-06/protected-corridor-online-decision-state-roll-forward-4x0.1/lns-window-replay-labels.json",
+    "replayText": "artifacts/lns-window-replay-labels/2026-05-06/protected-corridor-online-decision-state-roll-forward-4x0.1/lns-window-replay-labels.txt",
+    "manifestJson": "artifacts/lns-window-replay-labels/2026-05-06/protected-corridor-online-decision-state-roll-forward-4x0.1/manifest.json"
+  },
+  "command": "node dist/lnsBenchmarkCli.js --window-replay-labels --window-replay-protected-holdout --window-replay-online-scorecard=artifacts/lns-window-ranker-online/2026-05-06/protected-corridor-decision-state-capture-min-score-delta-0.1/lns-window-ranker-online-ablation.json --seeds=7,19,37 --max-windows=1 --exploration-windows=0 --repair-time=1 --roll-forward-iterations=4 --roll-forward-repair-time=0.1 --window-replay-artifact-dir=artifacts/lns-window-replay-labels/2026-05-06/protected-corridor-online-decision-state-roll-forward-4x0.1 --json lns-holdout-corridor-weave-pressure",
+  "generatedAt": "2026-05-05T23:49:34.317Z",
+  "caseCount": 1,
+  "seedCount": 3,
+  "stateCount": 6,
+  "labelCount": 12,
+  "rollForwardLabelCount": 12,
+  "selectedCaseNames": [
+    "lns-holdout-corridor-weave-pressure"
+  ],
+  "pressureFamilies": [
+    "corridor"
+  ]
+}

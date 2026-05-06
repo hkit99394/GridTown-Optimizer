@@ -34,6 +34,7 @@ import {
   runLnsNeighborhoodAblation,
   runLnsWindowRankerOnlineCalibration,
   runLnsWindowRankerOnlineAblation,
+  runLnsWindowReplayLabelsFromOnlineDecisionStates,
   runLnsWindowReplayLabels,
   runLnsBenchmarkSuite
 } from "../../benchmarkApi.js";
@@ -62,8 +63,13 @@ import {
   normalizeRepoRelativePath,
   writeJsonArtifact
 } from "./artifactBundleHelpers.js";
+import {
+  formatLnsWindowReplayArtifactManifest,
+  writeLnsWindowReplayArtifactBundle
+} from "./lnsWindowReplayArtifactBundle.js";
 import type {
   LnsNeighborhoodAblationVariantName,
+  LnsWindowRankerOnlineAblationSnapshot,
   LnsWindowRankerOnlineCalibrationSuiteResult,
   LnsWindowRankerOnlineAblationSuiteResult,
   LnsWindowReplayStatePolicy
@@ -77,6 +83,7 @@ interface ParsedBenchmarkArgs {
   windowReplayLabels: boolean;
   curatedReplaySeeds: boolean;
   naturalReplaySeeds: boolean;
+  windowReplayProtectedHoldout: boolean;
   windowRankerOnlineAblation: boolean;
   gateReport: boolean;
   list: boolean;
@@ -93,6 +100,8 @@ interface ParsedBenchmarkArgs {
   statePolicies?: LnsWindowReplayStatePolicy[];
   stateCollectionIterations?: number;
   stateCollectionRepairTimeLimitSeconds?: number;
+  windowReplayArtifactDir?: string;
+  windowReplayOnlineScorecardPath?: string;
   windowRankerModelPath?: string;
   windowRankerMinScoreDelta?: number;
   windowRankerMinScoreDeltas?: number[];
@@ -149,6 +158,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let windowReplayLabels = false;
   let curatedReplaySeeds = false;
   let naturalReplaySeeds = false;
+  let windowReplayProtectedHoldout = false;
   let windowRankerOnlineAblation = false;
   let windowRankerThresholdSweep = false;
   let gateReport = false;
@@ -164,6 +174,8 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let statePolicies: LnsWindowReplayStatePolicy[] | undefined;
   let stateCollectionIterations: number | undefined;
   let stateCollectionRepairTimeLimitSeconds: number | undefined;
+  let windowReplayArtifactDir: string | undefined;
+  let windowReplayOnlineScorecardPath: string | undefined;
   let windowRankerModelPath: string | undefined;
   let windowRankerMinScoreDelta: number | undefined;
   let windowRankerMinScoreDeltas: number[] | undefined;
@@ -204,6 +216,13 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     },
     "state-collection-repair-time": (value) => {
       stateCollectionRepairTimeLimitSeconds = parsePositiveNumber(value, "--state-collection-repair-time");
+    },
+    "window-replay-artifact-dir": (value) => {
+      windowReplayArtifactDir = value;
+    },
+    "window-replay-online-scorecard": (value) => {
+      windowReplayLabels = true;
+      windowReplayOnlineScorecardPath = value;
     },
     "window-ranker-model": (value) => {
       windowRankerModelPath = value;
@@ -251,6 +270,11 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     }
     if (isCliFlag(arg, "--window-replay-labels", "--window-replay-label")) {
       windowReplayLabels = true;
+      continue;
+    }
+    if (isCliFlag(arg, "--window-replay-protected-holdout", "--protected-window-replay-labels")) {
+      windowReplayLabels = true;
+      windowReplayProtectedHoldout = true;
       continue;
     }
     if (
@@ -319,6 +343,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     windowReplayLabels,
     curatedReplaySeeds,
     naturalReplaySeeds,
+    windowReplayProtectedHoldout,
     windowRankerOnlineAblation,
     gateReport,
     list,
@@ -335,6 +360,8 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     statePolicies,
     stateCollectionIterations,
     stateCollectionRepairTimeLimitSeconds,
+    windowReplayArtifactDir,
+    windowReplayOnlineScorecardPath,
     windowRankerModelPath,
     windowRankerMinScoreDelta,
     windowRankerMinScoreDeltas,
@@ -346,6 +373,13 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     windowRankerRegistryPath,
     windowRankerRegisterDryRun
   };
+}
+
+function windowReplayCorpus(args: ParsedBenchmarkArgs) {
+  if (args.windowReplayProtectedHoldout) return DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS;
+  if (args.curatedReplaySeeds) return DEFAULT_LNS_REPLAY_LABEL_CURATED_SEED_CORPUS;
+  if (args.naturalReplaySeeds) return DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS;
+  return undefined;
 }
 
 function parseNonNegativeNumberList(value: string, label: string): number[] {
@@ -369,6 +403,11 @@ function readWindowRankerModel(modelPath: string): LnsWindowRankerRuntimeModel {
     throw new Error("--window-ranker-model must point to a model JSON object with a weights object.");
   }
   return candidate as unknown as LnsWindowRankerRuntimeModel;
+}
+
+function readWindowRankerOnlineScorecard(scorecardPath: string): LnsWindowRankerOnlineAblationSnapshot {
+  const repoRelativePath = normalizeRepoRelativePath(scorecardPath, "--window-replay-online-scorecard");
+  return JSON.parse(fs.readFileSync(path.resolve(process.cwd(), repoRelativePath), "utf8"));
 }
 
 function defaultWindowRankerOnlineArtifactCommand(argv: readonly string[]): string {
@@ -654,6 +693,12 @@ export function runLnsBenchmarkCli(): void {
   if (args.windowRankerArtifactDir !== undefined && !args.windowRankerOnlineAblation) {
     throw new Error("--window-ranker-artifact-dir is only available with --window-ranker-online-ablation.");
   }
+  if (args.windowReplayArtifactDir !== undefined && !args.windowReplayLabels) {
+    throw new Error("--window-replay-artifact-dir is only available with --window-replay-labels.");
+  }
+  if (args.windowReplayOnlineScorecardPath !== undefined && !args.windowReplayLabels) {
+    throw new Error("--window-replay-online-scorecard is only available with --window-replay-labels.");
+  }
   if (args.windowRankerRegisterDryRun && args.windowRankerArtifactDir === undefined) {
     throw new Error("--window-ranker-register-dry-run requires --window-ranker-artifact-dir=<path>.");
   }
@@ -663,17 +708,17 @@ export function runLnsBenchmarkCli(): void {
   if (args.list && args.windowRankerArtifactDir !== undefined) {
     throw new Error("--list cannot be combined with --window-ranker-artifact-dir.");
   }
+  if (args.list && args.windowReplayArtifactDir !== undefined) {
+    throw new Error("--list cannot be combined with --window-replay-artifact-dir.");
+  }
+  if (args.list && args.windowReplayOnlineScorecardPath !== undefined) {
+    throw new Error("--list cannot be combined with --window-replay-online-scorecard.");
+  }
   if (args.list) {
     const names = args.neighborhoodAblation
       ? listLnsNeighborhoodAblationCaseNames()
       : args.windowReplayLabels
-        ? listLnsWindowReplayCaseNames(
-            args.curatedReplaySeeds
-              ? DEFAULT_LNS_REPLAY_LABEL_CURATED_SEED_CORPUS
-              : args.naturalReplaySeeds
-                ? DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS
-                : undefined
-          )
+        ? listLnsWindowReplayCaseNames(windowReplayCorpus(args))
         : args.windowRankerOnlineAblation
           ? listLnsWindowRankerOnlineAblationCaseNames(
               args.windowRankerProtectedHoldout ? DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS : undefined
@@ -684,25 +729,36 @@ export function runLnsBenchmarkCli(): void {
   }
 
   if (args.windowReplayLabels) {
-    const result = runLnsWindowReplayLabels(
-      args.curatedReplaySeeds
-        ? DEFAULT_LNS_REPLAY_LABEL_CURATED_SEED_CORPUS
-        : args.naturalReplaySeeds
-          ? DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS
-          : undefined,
-      {
-        names: optionalCliNames(args.names),
-        seeds: args.seeds,
-        maxWindows: args.maxWindows,
-        explorationWindowCount: args.explorationWindowCount,
-        repairTimeLimitSeconds: args.repairTimeLimitSeconds,
-        rollForwardIterations: args.rollForwardIterations,
-        rollForwardRepairTimeLimitSeconds: args.rollForwardRepairTimeLimitSeconds,
-        statePolicies: args.statePolicies,
-        stateCollectionIterations: args.stateCollectionIterations,
-        stateCollectionRepairTimeLimitSeconds: args.stateCollectionRepairTimeLimitSeconds
-      }
-    );
+    const replayOptions = {
+      names: optionalCliNames(args.names),
+      seeds: args.seeds,
+      maxWindows: args.maxWindows,
+      explorationWindowCount: args.explorationWindowCount,
+      repairTimeLimitSeconds: args.repairTimeLimitSeconds,
+      rollForwardIterations: args.rollForwardIterations,
+      rollForwardRepairTimeLimitSeconds: args.rollForwardRepairTimeLimitSeconds,
+      statePolicies: args.statePolicies,
+      stateCollectionIterations: args.stateCollectionIterations,
+      stateCollectionRepairTimeLimitSeconds: args.stateCollectionRepairTimeLimitSeconds
+    };
+    const result =
+      args.windowReplayOnlineScorecardPath === undefined
+        ? runLnsWindowReplayLabels(windowReplayCorpus(args), replayOptions)
+        : runLnsWindowReplayLabelsFromOnlineDecisionStates(
+            readWindowRankerOnlineScorecard(args.windowReplayOnlineScorecardPath),
+            windowReplayCorpus(args),
+            replayOptions
+          );
+
+    if (args.windowReplayArtifactDir !== undefined) {
+      const manifest = writeLnsWindowReplayArtifactBundle(result, args.windowReplayArtifactDir, argv);
+      writeCliJsonOrText(
+        args.json,
+        () => manifest,
+        () => formatLnsWindowReplayArtifactManifest(manifest)
+      );
+      return;
+    }
 
     writeCliJsonOrText(
       args.json,

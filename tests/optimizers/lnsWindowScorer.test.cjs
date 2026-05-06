@@ -91,7 +91,27 @@ function testWindowRankerCanOverrideAdaptiveBaseline() {
   assert.equal(decision.telemetry.selectedFeatures.selectedByBaseline, 0);
   assert.equal(decision.telemetry.featureDeltas.selectedByBaseline, -1);
   assert.equal(typeof decision.telemetry.featureDeltas.serviceCandidatesIntersecting, "number");
+  assert.equal(decision.telemetry.decisionState, undefined);
   assert.notDeepEqual(decision.candidate.window, fixture.baseline.window);
+
+  const capturedDecision = selectLnsWindowRankerCandidate(
+    fixture.grid,
+    fixture.params,
+    fixture.incumbent,
+    fixture.candidates,
+    fixture.baseline,
+    normalizeLnsWindowRankerOptions({
+      ...runtimeModel({ selectedByBaseline: -1 }),
+      captureDecisionState: true
+    })
+  );
+  assert.equal(capturedDecision.telemetry.decisionState.source, "online-window-ranker-decision-state");
+  assert.equal(capturedDecision.telemetry.decisionState.incumbentPopulation, fixture.incumbent.totalPopulation);
+  assert.deepEqual(capturedDecision.telemetry.decisionState.seedHint.solution.roads, [...fixture.incumbent.roads]);
+  assert.equal(
+    capturedDecision.telemetry.decisionState.seedHint.solution.residentials[0].population,
+    fixture.incumbent.populations[0]
+  );
 }
 
 function testWindowRankerFallsBackWhenScoreDeltaIsTooSmall() {
@@ -216,6 +236,26 @@ function testWindowRankerValidationRejectsBadWeights() {
         }
       }),
     /lns\.windowRanker\.model\.weights\.selectedByBaseline must be a finite number/
+  );
+
+  assert.throws(
+    () =>
+      solveLns(buildGrid(3, 3), {
+        optimizer: "lns",
+        availableBuildings: { residentials: 0, services: 0 },
+        lns: {
+          iterations: 1,
+          windowRanker: {
+            model: {
+              modelType: "lns-window-linear-pairwise-ranker",
+              featureSchemaVersion: 2,
+              weights: { selectedByBaseline: 1 }
+            },
+            captureDecisionState: "yes"
+          }
+        }
+      }),
+    /lns\.windowRanker\.captureDecisionState must be a boolean/
   );
 }
 

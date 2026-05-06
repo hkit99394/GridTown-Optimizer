@@ -20,12 +20,43 @@ export const LNS_WINDOW_REPLAY_STATE_POLICIES = Object.freeze([
   "post-stagnation"
 ] as const);
 export const DEFAULT_LNS_WINDOW_REPLAY_STATE_POLICIES = Object.freeze(["initial-incumbent"] as const);
+export const LNS_WINDOW_REPLAY_ONLINE_DECISION_STATE_POLICY = "online-decision" as const;
 
-export type LnsWindowReplayStatePolicy = (typeof LNS_WINDOW_REPLAY_STATE_POLICIES)[number];
+export type LnsWindowReplayStatePolicy =
+  | (typeof LNS_WINDOW_REPLAY_STATE_POLICIES)[number]
+  | typeof LNS_WINDOW_REPLAY_ONLINE_DECISION_STATE_POLICY;
 
-export type LnsWindowReplayStateSourceStatus = "initial-incumbent" | "improved" | "neutral" | "recoverable-failure";
+export type LnsWindowReplayStateSourceStatus =
+  | "initial-incumbent"
+  | "improved"
+  | "neutral"
+  | "recoverable-failure"
+  | "skipped-budget"
+  | "stopped";
 
-export type LnsWindowReplaySeedHintKind = "none" | "curated" | "weak-replay";
+export type LnsWindowReplaySeedHintKind = "none" | "curated" | "weak-replay" | "online-decision";
+
+export type LnsWindowReplaySelectionSource =
+  | "baseline-top-k"
+  | "exploration-tail"
+  | "online-baseline"
+  | "online-selected";
+
+export interface LnsWindowReplayOnlineDecisionTrace {
+  selectionStatus: "override" | "fallback" | "baseline";
+  transition: string;
+  iteration: number;
+  phase: string;
+  outcomeStatus: string;
+  baselineOperator: LnsAdaptiveOperatorName;
+  selectedOperator: LnsAdaptiveOperatorName;
+  baselineWindow: CpSatNeighborhoodWindow;
+  selectedWindow: CpSatNeighborhoodWindow;
+  changedWindow: boolean;
+  scoreDelta: number;
+  baselineScore: number;
+  selectedScore: number;
+}
 
 export interface LnsWindowReplayLabelRunOptions {
   names?: readonly string[];
@@ -140,7 +171,7 @@ export interface LnsWindowReplayLabel {
   windowIndex: number;
   operator: LnsAdaptiveOperatorName;
   operatorScore: number;
-  selectionSource: "baseline-top-k" | "exploration-tail";
+  selectionSource: LnsWindowReplaySelectionSource;
   window: CpSatNeighborhoodWindow;
   selectedByBaseline: boolean;
   incumbentPopulation: number;
@@ -159,6 +190,7 @@ export interface LnsWindowReplayLabel {
     recomputedTotalPopulation: number;
   };
   features: LnsWindowReplayFeatures;
+  onlineDecisionTrace?: LnsWindowReplayOnlineDecisionTrace;
   rollForward?: LnsWindowReplayRollForwardOutcome;
 }
 
@@ -181,6 +213,7 @@ export interface LnsWindowReplayCaseResult {
   replayedWindowCount: number;
   baselineSelectedWindow: CpSatNeighborhoodWindow | null;
   baselineSelectedOperator: LnsAdaptiveOperatorName | null;
+  onlineDecisionTrace?: LnsWindowReplayOnlineDecisionTrace;
   labels: LnsWindowReplayLabel[];
 }
 

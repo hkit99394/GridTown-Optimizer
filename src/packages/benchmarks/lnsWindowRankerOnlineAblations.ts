@@ -28,6 +28,7 @@ import type {
   LnsNeighborhoodOutcomeStatus,
   LnsOptions,
   LnsRepairPhase,
+  LnsWindowRankerDecisionStateTelemetry,
   LnsWindowRankerFeatureTelemetry,
   LnsWindowRankerRuntimeModel,
   LnsWindowRankerSelectionTelemetry
@@ -98,6 +99,7 @@ export interface LnsWindowRankerOnlineSelectionTraceEntry {
   baselineFeatures?: LnsWindowRankerFeatureTelemetry;
   selectedFeatures?: LnsWindowRankerFeatureTelemetry;
   featureDeltas?: LnsWindowRankerFeatureTelemetry;
+  decisionState?: LnsWindowRankerDecisionStateTelemetry;
 }
 
 export interface LnsWindowRankerOnlineAblationVariantResult {
@@ -371,7 +373,8 @@ function rankerLnsOptions(
     ...withoutWindowRanker(options.lns),
     windowRanker: {
       model,
-      ...(options.minScoreDelta === undefined ? {} : { minScoreDelta: options.minScoreDelta })
+      ...(options.minScoreDelta === undefined ? {} : { minScoreDelta: options.minScoreDelta }),
+      captureDecisionState: true
     }
   };
 }
@@ -483,7 +486,8 @@ function selectionTrace(result: LnsBenchmarkCaseResult): LnsWindowRankerOnlineSe
         featureSchemaVersion: selection.featureSchemaVersion ?? null,
         ...(selection.baselineFeatures ? { baselineFeatures: { ...selection.baselineFeatures } } : {}),
         ...(selection.selectedFeatures ? { selectedFeatures: { ...selection.selectedFeatures } } : {}),
-        ...(selection.featureDeltas ? { featureDeltas: { ...selection.featureDeltas } } : {})
+        ...(selection.featureDeltas ? { featureDeltas: { ...selection.featureDeltas } } : {}),
+        ...(selection.decisionState ? { decisionState: selection.decisionState } : {})
       }
     ];
   });

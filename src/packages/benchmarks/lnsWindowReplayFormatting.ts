@@ -42,8 +42,12 @@ export function formatLnsWindowReplayLabels(result: LnsWindowReplaySuiteResult):
   lines.push(`Pressure families: ${result.pressureFamilies.join(", ")}`);
   for (const benchmarkCase of result.cases) {
     const seedLabel = benchmarkCase.seed === null ? "case-default" : benchmarkCase.seed;
+    const onlineTrace =
+      benchmarkCase.onlineDecisionTrace === undefined
+        ? ""
+        : ` online=${benchmarkCase.onlineDecisionTrace.selectionStatus}:${benchmarkCase.onlineDecisionTrace.transition}@${benchmarkCase.onlineDecisionTrace.iteration} score-delta=${formatSigned(benchmarkCase.onlineDecisionTrace.scoreDelta)}`;
     lines.push(
-      `- ${benchmarkCase.name} family=${benchmarkCase.pressureFamily} seed=${seedLabel} seed-hint=${benchmarkCase.seedHintKind}:${benchmarkCase.seedHintSourceName ?? "none"} state=${benchmarkCase.statePolicy}#${benchmarkCase.stateIndex} source=${benchmarkCase.stateSourceStatus}@${benchmarkCase.stateSourceIteration ?? "initial"} stagnant=${benchmarkCase.stateStagnantIterations}: incumbent=${benchmarkCase.incumbentPopulation} windows=${benchmarkCase.replayedWindowCount}/${benchmarkCase.candidateWindowCount} selected=${benchmarkCase.baselineSelectedOperator ?? "n/a"}:${formatWindow(benchmarkCase.baselineSelectedWindow)}`
+      `- ${benchmarkCase.name} family=${benchmarkCase.pressureFamily} seed=${seedLabel} seed-hint=${benchmarkCase.seedHintKind}:${benchmarkCase.seedHintSourceName ?? "none"} state=${benchmarkCase.statePolicy}#${benchmarkCase.stateIndex} source=${benchmarkCase.stateSourceStatus}@${benchmarkCase.stateSourceIteration ?? "initial"} stagnant=${benchmarkCase.stateStagnantIterations}: incumbent=${benchmarkCase.incumbentPopulation} windows=${benchmarkCase.replayedWindowCount}/${benchmarkCase.candidateWindowCount} selected=${benchmarkCase.baselineSelectedOperator ?? "n/a"}:${formatWindow(benchmarkCase.baselineSelectedWindow)}${onlineTrace}`
     );
     for (const label of benchmarkCase.labels) {
       const rollForward =

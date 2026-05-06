@@ -1,18 +1,22 @@
 const assert = require("node:assert/strict");
 const childProcess = require("node:child_process");
+const fs = require("node:fs");
 const path = require("node:path");
 
 const {
   buildLearnedRankingLabelRegistryEntryDraft,
   buildLearnedRankingLabelTelemetryManifest,
   createLnsWindowReplaySnapshot,
+  createLnsWindowRankerOnlineAblationSnapshot,
   DEFAULT_GREEDY_BENCHMARK_CORPUS,
   DEFAULT_LNS_REPLAY_LABEL_CURATED_SEED_CORPUS,
   DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS,
   formatLearnedRankingLabelSuite,
   formatLnsWindowReplayLabels,
   runLearnedRankingLabelSuite,
+  runLnsWindowRankerOnlineAblation,
   runLnsWindowReplayLabels,
+  runLnsWindowReplayLabelsFromOnlineDecisionStates,
   STRICT_LNS_REPLAY_LABEL_STATE_COLLECTION_ITERATIONS,
   STRICT_LNS_REPLAY_LABEL_STATE_POLICIES
 } = require("../../dist/benchmarkApi.js");
@@ -50,6 +54,11 @@ try {
     [path.join(repoRoot, "dist", "lnsBenchmarkCli.js"), "--list", "--curated-replay-seeds"],
     { cwd: repoRoot, encoding: "utf8" }
   );
+  const protectedReplayList = childProcess.spawnSync(
+    process.execPath,
+    [path.join(repoRoot, "dist", "lnsBenchmarkCli.js"), "--list", "--window-replay-protected-holdout"],
+    { cwd: repoRoot, encoding: "utf8" }
+  );
 
   assert(naturalReplayCase);
   assert(curatedReplayCase);
@@ -59,6 +68,8 @@ try {
   assert.match(naturalReplayList.stdout, /lns-service-overlap-pressure/);
   assert.equal(curatedReplayList.status, 0, curatedReplayList.stderr);
   assert.match(curatedReplayList.stdout, /lns-service-overlap-pressure/);
+  assert.equal(protectedReplayList.status, 0, protectedReplayList.stderr);
+  assert.match(protectedReplayList.stdout, /lns-holdout-corridor-weave-pressure/);
 
   const curatedReplay = runLnsWindowReplayLabels(DEFAULT_LNS_REPLAY_LABEL_CURATED_SEED_CORPUS, {
     names: ["lns-gate-choke-pressure", "lns-service-overlap-pressure"],
@@ -123,6 +134,73 @@ try {
   );
   assert.match(formatLnsWindowReplayLabels(replay), /roll-forward=population:0/);
   assert.match(formatLnsWindowReplayLabels(replay), /final-status:neutral/);
+
+  const artifactDir = path.join(repoRoot, `artifacts/tmp-lns-window-replay-${process.pid}`);
+  fs.rmSync(artifactDir, { recursive: true, force: true });
+  const artifactResult = childProcess.spawnSync(
+    process.execPath,
+    [
+      path.join(repoRoot, "dist", "lnsBenchmarkCli.js"),
+      "--window-replay-labels",
+      "--seeds=7",
+      "--max-windows=1",
+      "--repair-time=0.05",
+      "--state-policies=initial-incumbent",
+      `--window-replay-artifact-dir=${path.relative(repoRoot, artifactDir)}`,
+      "seeded-service-anchor-pressure",
+      "--json"
+    ],
+    { cwd: repoRoot, encoding: "utf8" }
+  );
+  assert.equal(artifactResult.status, 0, artifactResult.stderr || artifactResult.stdout);
+  const artifactManifest = JSON.parse(artifactResult.stdout);
+  assert.equal(artifactManifest.caseCount, 1);
+  assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.replayJson)), true);
+  assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.replayText)), true);
+  assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.manifestJson)), true);
+  fs.rmSync(artifactDir, { recursive: true, force: true });
+
+  const onlineScorecard = runLnsWindowRankerOnlineAblation(DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS, {
+    names: ["seeded-service-anchor-pressure"],
+    seeds: [7],
+    model: {
+      modelType: "lns-window-linear-pairwise-ranker",
+      featureSchemaVersion: 2,
+      weights: { selectedByBaseline: -1 }
+    },
+    minScoreDelta: 0,
+    lns: {
+      iterations: 1,
+      repairTimeLimitSeconds: 0.05
+    }
+  });
+  const onlineSnapshot = createLnsWindowRankerOnlineAblationSnapshot(onlineScorecard);
+  const onlineTrace = onlineSnapshot.cases[0].variants.find((variant) => variant.variantName === "window-ranker")
+    .selectionTrace[0];
+  assert.equal(onlineTrace.decisionState.source, "online-window-ranker-decision-state");
+  assert.equal(onlineTrace.decisionState.incumbentPopulation, onlineTrace.populationBefore);
+
+  const onlineDecisionReplay = runLnsWindowReplayLabelsFromOnlineDecisionStates(
+    onlineSnapshot,
+    DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS,
+    {
+      names: ["seeded-service-anchor-pressure"],
+      seeds: [7],
+      maxWindows: 1,
+      repairTimeLimitSeconds: 0.05,
+      rollForwardIterations: 1,
+      rollForwardRepairTimeLimitSeconds: 0.05
+    }
+  );
+  assert.equal(onlineDecisionReplay.cases[0].statePolicy, "online-decision");
+  assert.equal(onlineDecisionReplay.cases[0].seedHintKind, "online-decision");
+  assert.equal(onlineDecisionReplay.cases[0].onlineDecisionTrace.transition, onlineTrace.transition);
+  assert(onlineDecisionReplay.cases[0].labels.some((label) => label.selectionSource === "online-baseline"));
+  assert(
+    onlineDecisionReplay.cases[0].labels.every(
+      (label) => label.onlineDecisionTrace.transition === onlineTrace.transition
+    )
+  );
 
   const naturalReplay = runLnsWindowReplayLabels(DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS, {
     names: ["lns-service-overlap-pressure"],

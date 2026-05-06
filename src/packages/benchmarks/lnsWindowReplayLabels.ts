@@ -52,6 +52,7 @@ import type {
   LnsWindowReplayCpSatMetadata,
   LnsWindowReplayLabel,
   LnsWindowReplayLabelRunOptions,
+  LnsWindowReplayOnlineDecisionTrace,
   LnsWindowReplayRollForwardOutcome,
   LnsWindowReplaySeedHintKind,
   LnsWindowReplaySnapshot,
@@ -79,6 +80,7 @@ export type {
   LnsWindowReplayFragmentationFeatures,
   LnsWindowReplayLabel,
   LnsWindowReplayLabelRunOptions,
+  LnsWindowReplayOnlineDecisionTrace,
   LnsWindowReplayRollForwardOutcome,
   LnsWindowReplayRollForwardStatus,
   LnsWindowReplaySeedHintKind,
@@ -95,7 +97,7 @@ export { formatLnsWindowReplayLabels } from "./lnsWindowReplayFormatting.js";
 
 type ReplayValidationSummary = LnsWindowReplayLabel["validation"];
 
-function selectReplayCases(
+export function selectReplayCases(
   corpus: readonly LnsBenchmarkCase[],
   names: readonly string[] | undefined
 ): LnsBenchmarkCase[] {
@@ -130,7 +132,7 @@ function normalizeLnsWindowReplayStatePolicies(
   return normalized;
 }
 
-function buildReplayParams(
+export function buildReplayParams(
   benchmarkCase: LnsBenchmarkCase,
   seed: number | null,
   options: LnsWindowReplayLabelRunOptions
@@ -151,14 +153,14 @@ function buildReplayParams(
   };
 }
 
-interface ReplayNeighborhoodOptions {
+export interface ReplayNeighborhoodOptions {
   maxNoImprovementIterations: number;
   neighborhoodRows: number;
   neighborhoodCols: number;
   neighborhoodAnchorPolicy: LnsOptions["neighborhoodAnchorPolicy"];
 }
 
-function buildReplayNeighborhoodOptions(G: Grid, params: SolverParams): ReplayNeighborhoodOptions {
+export function buildReplayNeighborhoodOptions(G: Grid, params: SolverParams): ReplayNeighborhoodOptions {
   const lns = params.lns ?? {};
   return {
     maxNoImprovementIterations: lns.maxNoImprovementIterations ?? 4,
@@ -231,7 +233,7 @@ function rollForwardStatusForPopulationDelta(
   return "neutral";
 }
 
-interface RollForwardOptions {
+export interface RollForwardOptions {
   iterations: number;
   repairTimeLimitSeconds: number;
 }
@@ -274,7 +276,7 @@ function isRecoverableCpSatFailure(error: unknown): boolean {
   return error instanceof Error && /No feasible solution found with CP-SAT\./.test(error.message);
 }
 
-function replayWindow(
+export function replayWindow(
   G: Grid,
   params: SolverParams,
   caseName: string,
@@ -294,7 +296,8 @@ function replayWindow(
   selectedCandidate: LnsAdaptiveNeighborhoodCandidate | null,
   cpSatModelFingerprint: string,
   repairTimeLimitSeconds: number,
-  rollForwardOptions: RollForwardOptions | null
+  rollForwardOptions: RollForwardOptions | null,
+  onlineDecisionTrace?: LnsWindowReplayOnlineDecisionTrace
 ): LnsWindowReplayLabel {
   const startedAtMs = performance.now();
   const { window } = candidate;
@@ -368,6 +371,7 @@ function replayWindow(
       },
       validation,
       features,
+      ...(onlineDecisionTrace ? { onlineDecisionTrace } : {}),
       ...(rollForward ? { rollForward } : {})
     };
   } catch (error) {
@@ -412,23 +416,24 @@ function replayWindow(
       },
       cpSat: baseCpSatMetadata,
       validation: validateReplaySolution(G, params, incumbent),
-      features
+      features,
+      ...(onlineDecisionTrace ? { onlineDecisionTrace } : {})
     };
   }
 }
 
-interface ReplayWindowPlan {
+export interface ReplayWindowPlan {
   candidate: LnsAdaptiveNeighborhoodCandidate;
   windowIndex: number;
   selectionSource: LnsWindowReplayLabel["selectionSource"];
 }
 
-function replayCandidateKey(candidate: LnsAdaptiveNeighborhoodCandidate): string {
+export function replayCandidateKey(candidate: LnsAdaptiveNeighborhoodCandidate): string {
   const { window } = candidate;
   return `${candidate.operator}:${window.top}:${window.left}:${window.rows}:${window.cols}`;
 }
 
-function selectReplayWindowPlans(
+export function selectReplayWindowPlans(
   candidates: readonly LnsAdaptiveNeighborhoodCandidate[],
   maxWindows: number,
   explorationWindowCount: number
@@ -464,7 +469,7 @@ function selectReplayWindowPlans(
   return [...selected.values()];
 }
 
-function withRollForwardBaselineComparisons(labels: readonly LnsWindowReplayLabel[]): LnsWindowReplayLabel[] {
+export function withRollForwardBaselineComparisons(labels: readonly LnsWindowReplayLabel[]): LnsWindowReplayLabel[] {
   const baseline = labels.find((label) => label.selectedByBaseline && label.rollForward)?.rollForward;
   if (!baseline) return [...labels];
   return labels.map((label) => {

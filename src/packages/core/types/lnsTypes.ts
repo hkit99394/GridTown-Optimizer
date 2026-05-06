@@ -120,9 +120,21 @@ export interface LnsWindowRankerRuntimeOptions {
   enabled?: boolean;
   model: LnsWindowRankerRuntimeModel;
   minScoreDelta?: number;
+  /** Diagnostics-only: include the exact incumbent layout at each ranker decision. */
+  captureDecisionState?: boolean;
 }
 
 export type LnsWindowRankerFeatureTelemetry = Record<string, number>;
+
+export interface LnsWindowRankerDecisionStateTelemetry {
+  schemaVersion: 1;
+  source: "online-window-ranker-decision-state";
+  incumbentPopulation: number;
+  roadCount: number;
+  serviceCount: number;
+  residentialCount: number;
+  seedHint: CpSatWarmStartHint;
+}
 
 export interface LnsWindowRankerSelectionTelemetry {
   source: "learned-window-ranker";
@@ -142,6 +154,7 @@ export interface LnsWindowRankerSelectionTelemetry {
   baselineFeatures?: LnsWindowRankerFeatureTelemetry;
   selectedFeatures?: LnsWindowRankerFeatureTelemetry;
   featureDeltas?: LnsWindowRankerFeatureTelemetry;
+  decisionState?: LnsWindowRankerDecisionStateTelemetry;
   fallbackReason?: "score-delta-below-threshold";
 }
 

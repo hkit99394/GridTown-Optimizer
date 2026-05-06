@@ -6,6 +6,7 @@ import {
   getResidentialBaseMax,
   height,
   isAllowed,
+  NO_TYPE_INDEX,
   normalizeServicePlacement,
   orthogonalNeighbors,
   residentialFootprint,
@@ -17,6 +18,7 @@ import type {
   CpSatNeighborhoodWindow,
   Grid,
   LnsWindowRankerFeatureTelemetry,
+  LnsWindowRankerDecisionStateTelemetry,
   LnsWindowRankerRuntimeModel,
   LnsWindowRankerRuntimeOptions,
   LnsWindowRankerSelectionTelemetry,
@@ -62,6 +64,7 @@ type LnsWindowRankerFeatureName = (typeof LNS_WINDOW_RANKER_FEATURE_NAMES)[numbe
 export interface NormalizedLnsWindowRankerOptions {
   model: LnsWindowRankerRuntimeModel;
   minScoreDelta: number;
+  captureDecisionState: boolean;
 }
 
 export interface LnsWindowRankerSelectionDecision {
@@ -96,7 +99,8 @@ export function normalizeLnsWindowRankerOptions(
   if (!options || options.enabled === false) return null;
   return {
     model: options.model,
-    minScoreDelta: Math.max(0, finiteNumberOrDefault(options.minScoreDelta, 0))
+    minScoreDelta: Math.max(0, finiteNumberOrDefault(options.minScoreDelta, 0)),
+    captureDecisionState: options.captureDecisionState === true
   };
 }
 
@@ -437,6 +441,49 @@ function featureDeltaTelemetry(
   );
 }
 
+function buildDecisionStateTelemetry(incumbent: Solution): LnsWindowRankerDecisionStateTelemetry {
+  const roadKeys = Array.from(incumbent.roads);
+  return {
+    schemaVersion: 1,
+    source: "online-window-ranker-decision-state",
+    incumbentPopulation: incumbent.totalPopulation,
+    roadCount: roadKeys.length,
+    serviceCount: incumbent.services.length,
+    residentialCount: incumbent.residentials.length,
+    seedHint: {
+      sourceName: "lns-window-ranker-online-decision-state",
+      roadKeys,
+      solution: {
+        roads: roadKeys,
+        services: incumbent.services.map((service, index) => {
+          const normalized = normalizeServicePlacement(service);
+          return {
+            r: normalized.r,
+            c: normalized.c,
+            rows: normalized.rows,
+            cols: normalized.cols,
+            range: normalized.range,
+            typeIndex: incumbent.serviceTypeIndices[index] ?? NO_TYPE_INDEX,
+            bonus: incumbent.servicePopulationIncreases[index] ?? 0
+          };
+        }),
+        residentials: incumbent.residentials.map((residential, index) => ({
+          r: residential.r,
+          c: residential.c,
+          rows: residential.rows,
+          cols: residential.cols,
+          typeIndex: incumbent.residentialTypeIndices[index] ?? NO_TYPE_INDEX,
+          population: incumbent.populations[index] ?? 0
+        })),
+        populations: [...incumbent.populations],
+        totalPopulation: incumbent.totalPopulation
+      },
+      totalPopulation: incumbent.totalPopulation,
+      objectiveLowerBound: incumbent.totalPopulation
+    }
+  };
+}
+
 export function selectLnsWindowRankerCandidate(
   G: Grid,
   params: SolverParams,
@@ -493,6 +540,7 @@ export function selectLnsWindowRankerCandidate(
       baselineFeatures: featureTelemetry(baseline.features),
       selectedFeatures: featureTelemetry(selected.features),
       featureDeltas: featureDeltaTelemetry(selected.features, baseline.features),
+      ...(options.captureDecisionState ? { decisionState: buildDecisionStateTelemetry(incumbent) } : {}),
       ...(useBaseline ? { fallbackReason: "score-delta-below-threshold" as const } : {})
     }
   };

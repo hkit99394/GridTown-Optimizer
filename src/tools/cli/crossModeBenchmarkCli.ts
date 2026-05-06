@@ -597,6 +597,7 @@ function buildBudgetAblationTelemetryManifest(
       deltaVsBaselineMeanBestPopulation: policy.deltaVsBaselineMeanBestPopulation,
       deltaVsBaselineMeanAutoPopulation: policy.deltaVsBaselineMeanAutoPopulation,
       deltaVsBaselineMeanLnsPopulation: policy.deltaVsBaselineMeanLnsPopulation,
+      autoSafetySummary: policy.autoSafetySummary,
       recommendationCounts: policy.recommendationCounts,
       budgetSummaries: policy.budgetSummaries
     })),
@@ -622,6 +623,7 @@ function buildBudgetAblationRegistryEntryDraft(
     deltaVsBaselineMeanBestPopulation: policy.deltaVsBaselineMeanBestPopulation,
     deltaVsBaselineMeanAutoPopulation: policy.deltaVsBaselineMeanAutoPopulation,
     deltaVsBaselineMeanLnsPopulation: policy.deltaVsBaselineMeanLnsPopulation,
+    autoSafetySummary: policy.autoSafetySummary,
     recommendationCounts: policy.recommendationCounts,
     budgetSummaries: policy.budgetSummaries
   }));

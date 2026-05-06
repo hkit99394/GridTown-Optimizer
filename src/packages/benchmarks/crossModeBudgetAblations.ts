@@ -1,11 +1,15 @@
 import { serializeDecisionTraceJsonl } from "../core/index.js";
 import {
+  benchmarkRatio,
   benchmarkGeneratedAt,
+  countBenchmarkMatches,
   formatNullableBenchmarkNumber as formatPopulationGap,
   formatNullableBenchmarkSeconds as formatSeconds,
   formatNullableBenchmarkSignedNumber as formatScoreDeltaVsAuto,
   groupBenchmarkValuesBy,
+  meanBenchmarkValue,
   meanNullableBenchmarkValue,
+  percentileBenchmarkValue,
   selectBenchmarkCasesByName,
   sumBenchmarkBy
 } from "./benchmarkOptions.js";
@@ -49,7 +53,33 @@ export interface CrossModeBenchmarkBudgetAblationBudgetSummary {
   deltaVsBaselineMeanBestPopulation: number | null;
   deltaVsBaselineMeanAutoPopulation: number | null;
   deltaVsBaselineMeanLnsPopulation: number | null;
+  autoSafetySummary: CrossModeBenchmarkBudgetAblationAutoSafetySummary;
   recommendationCounts: Record<CrossModeBudgetPolicyRecommendation, number>;
+}
+
+export interface CrossModeBenchmarkBudgetAblationAutoSafetySummary {
+  comparisonCount: number;
+  improvedAutoCount: number;
+  regressedAutoCount: number;
+  unchangedAutoCount: number;
+  regressionRate: number;
+  meanAutoPopulationDeltaVsBaseline: number | null;
+  medianAutoPopulationDeltaVsBaseline: number | null;
+  worstDecileAutoPopulationDeltaVsBaseline: number | null;
+  worstAutoPopulationDeltaVsBaseline: number | null;
+  bestAutoPopulationDeltaVsBaseline: number | null;
+  worstAutoPopulationDeltaCaseName: string | null;
+  worstAutoPopulationDeltaSeed: number | null;
+  worstAutoPopulationDeltaBudgetSeconds: number | null;
+  bestAutoPopulationDeltaCaseName: string | null;
+  bestAutoPopulationDeltaSeed: number | null;
+  bestAutoPopulationDeltaBudgetSeconds: number | null;
+  meanAutoWallClockSeconds: number | null;
+  baselineMeanAutoWallClockSeconds: number | null;
+  meanAutoWallClockDeltaVsBaselineSeconds: number | null;
+  meanAutoPopulationPerCpuBudgetSecond: number | null;
+  baselineMeanAutoPopulationPerCpuBudgetSecond: number | null;
+  autoCpuBudgetEfficiencyRatioVsBaseline: number | null;
 }
 
 export interface CrossModeBenchmarkBudgetAblationPolicyResult {
@@ -65,6 +95,7 @@ export interface CrossModeBenchmarkBudgetAblationPolicyResult {
   deltaVsBaselineMeanBestPopulation: number | null;
   deltaVsBaselineMeanAutoPopulation: number | null;
   deltaVsBaselineMeanLnsPopulation: number | null;
+  autoSafetySummary: CrossModeBenchmarkBudgetAblationAutoSafetySummary;
   budgetSummaries: CrossModeBenchmarkBudgetAblationBudgetSummary[];
   recommendationCounts: Record<CrossModeBudgetPolicyRecommendation, number>;
 }
@@ -287,13 +318,141 @@ function deltaFromBaseline(value: number | null, baseline: number | null): numbe
   return value === null || baseline === null ? null : value - baseline;
 }
 
+function autoComparisonKey(scorecard: CrossModeBenchmarkCaseScorecard): string {
+  return `${scorecard.name}\u0000${scorecard.budgetSeconds}\u0000${scorecard.seed}`;
+}
+
+function autoResult(scorecard: CrossModeBenchmarkCaseScorecard): CrossModeBenchmarkModeResult | null {
+  return scorecard.results.find((result) => result.mode === "auto") ?? null;
+}
+
+function autoResultsByScorecardKey(
+  scorecards: readonly CrossModeBenchmarkCaseScorecard[]
+): Map<string, CrossModeBenchmarkModeResult> {
+  const byKey = new Map<string, CrossModeBenchmarkModeResult>();
+  for (const scorecard of scorecards) {
+    const result = autoResult(scorecard);
+    if (result !== null) byKey.set(autoComparisonKey(scorecard), result);
+  }
+  return byKey;
+}
+
+function ratioFromMeans(value: number | null, baseline: number | null): number | null {
+  return value === null || baseline === null || baseline <= 0 ? null : value / baseline;
+}
+
+function emptyAutoSafetySummary(): CrossModeBenchmarkBudgetAblationAutoSafetySummary {
+  return {
+    comparisonCount: 0,
+    improvedAutoCount: 0,
+    regressedAutoCount: 0,
+    unchangedAutoCount: 0,
+    regressionRate: 0,
+    meanAutoPopulationDeltaVsBaseline: null,
+    medianAutoPopulationDeltaVsBaseline: null,
+    worstDecileAutoPopulationDeltaVsBaseline: null,
+    worstAutoPopulationDeltaVsBaseline: null,
+    bestAutoPopulationDeltaVsBaseline: null,
+    worstAutoPopulationDeltaCaseName: null,
+    worstAutoPopulationDeltaSeed: null,
+    worstAutoPopulationDeltaBudgetSeconds: null,
+    bestAutoPopulationDeltaCaseName: null,
+    bestAutoPopulationDeltaSeed: null,
+    bestAutoPopulationDeltaBudgetSeconds: null,
+    meanAutoWallClockSeconds: null,
+    baselineMeanAutoWallClockSeconds: null,
+    meanAutoWallClockDeltaVsBaselineSeconds: null,
+    meanAutoPopulationPerCpuBudgetSecond: null,
+    baselineMeanAutoPopulationPerCpuBudgetSecond: null,
+    autoCpuBudgetEfficiencyRatioVsBaseline: null
+  };
+}
+
+function summarizeAutoSafety(
+  scorecards: readonly CrossModeBenchmarkCaseScorecard[],
+  baselineAutoByKey: ReadonlyMap<string, CrossModeBenchmarkModeResult>
+): CrossModeBenchmarkBudgetAblationAutoSafetySummary {
+  const comparisons = scorecards
+    .map((scorecard) => {
+      const candidate = autoResult(scorecard);
+      const baseline = baselineAutoByKey.get(autoComparisonKey(scorecard)) ?? null;
+      return candidate === null || baseline === null ? null : { scorecard, candidate, baseline };
+    })
+    .filter(
+      (
+        comparison
+      ): comparison is {
+        scorecard: CrossModeBenchmarkCaseScorecard;
+        candidate: CrossModeBenchmarkModeResult;
+        baseline: CrossModeBenchmarkModeResult;
+      } => comparison !== null
+    );
+  if (comparisons.length === 0) return emptyAutoSafetySummary();
+
+  const populationDeltas = comparisons.map(
+    ({ candidate, baseline }) => candidate.totalPopulation - baseline.totalPopulation
+  );
+  const improvedAutoCount = countBenchmarkMatches(populationDeltas, (delta) => delta > 0);
+  const regressedAutoCount = countBenchmarkMatches(populationDeltas, (delta) => delta < 0);
+  const unchangedAutoCount = countBenchmarkMatches(populationDeltas, (delta) => delta === 0);
+  const worst = comparisons.reduce<(typeof comparisons)[number] | null>((currentWorst, comparison) => {
+    if (currentWorst === null) return comparison;
+    const currentDelta = comparison.candidate.totalPopulation - comparison.baseline.totalPopulation;
+    const worstDelta = currentWorst.candidate.totalPopulation - currentWorst.baseline.totalPopulation;
+    return currentDelta < worstDelta ? comparison : currentWorst;
+  }, null);
+  const best = comparisons.reduce<(typeof comparisons)[number] | null>((currentBest, comparison) => {
+    if (currentBest === null) return comparison;
+    const currentDelta = comparison.candidate.totalPopulation - comparison.baseline.totalPopulation;
+    const bestDelta = currentBest.candidate.totalPopulation - currentBest.baseline.totalPopulation;
+    return currentDelta > bestDelta ? comparison : currentBest;
+  }, null);
+  const meanAutoPopulationPerCpuBudgetSecond = meanNullableBenchmarkValue(
+    comparisons.map(({ candidate }) => candidate.populationPerWorkerCpuBudgetSecond)
+  );
+  const baselineMeanAutoPopulationPerCpuBudgetSecond = meanNullableBenchmarkValue(
+    comparisons.map(({ baseline }) => baseline.populationPerWorkerCpuBudgetSecond)
+  );
+
+  return {
+    comparisonCount: comparisons.length,
+    improvedAutoCount,
+    regressedAutoCount,
+    unchangedAutoCount,
+    regressionRate: benchmarkRatio(regressedAutoCount, comparisons.length),
+    meanAutoPopulationDeltaVsBaseline: meanBenchmarkValue(populationDeltas),
+    medianAutoPopulationDeltaVsBaseline: percentileBenchmarkValue(populationDeltas, 0.5),
+    worstDecileAutoPopulationDeltaVsBaseline: percentileBenchmarkValue(populationDeltas, 0.1),
+    worstAutoPopulationDeltaVsBaseline: Math.min(...populationDeltas),
+    bestAutoPopulationDeltaVsBaseline: Math.max(...populationDeltas),
+    worstAutoPopulationDeltaCaseName: worst?.scorecard.name ?? null,
+    worstAutoPopulationDeltaSeed: worst?.scorecard.seed ?? null,
+    worstAutoPopulationDeltaBudgetSeconds: worst?.scorecard.budgetSeconds ?? null,
+    bestAutoPopulationDeltaCaseName: best?.scorecard.name ?? null,
+    bestAutoPopulationDeltaSeed: best?.scorecard.seed ?? null,
+    bestAutoPopulationDeltaBudgetSeconds: best?.scorecard.budgetSeconds ?? null,
+    meanAutoWallClockSeconds: meanBenchmarkValue(comparisons.map(({ candidate }) => candidate.wallClockSeconds)),
+    baselineMeanAutoWallClockSeconds: meanBenchmarkValue(comparisons.map(({ baseline }) => baseline.wallClockSeconds)),
+    meanAutoWallClockDeltaVsBaselineSeconds: meanBenchmarkValue(
+      comparisons.map(({ candidate, baseline }) => candidate.wallClockSeconds - baseline.wallClockSeconds)
+    ),
+    meanAutoPopulationPerCpuBudgetSecond,
+    baselineMeanAutoPopulationPerCpuBudgetSecond,
+    autoCpuBudgetEfficiencyRatioVsBaseline: ratioFromMeans(
+      meanAutoPopulationPerCpuBudgetSecond,
+      baselineMeanAutoPopulationPerCpuBudgetSecond
+    )
+  };
+}
+
 function summarizeBudget(
   budgetSeconds: number,
   scorecards: readonly CrossModeBenchmarkCaseScorecard[],
   signals: readonly CrossModeBenchmarkBudgetPolicySignal[],
   baselineMeanBestPopulation: number | null,
   baselineMeanAutoPopulation: number | null,
-  baselineMeanLnsPopulation: number | null
+  baselineMeanLnsPopulation: number | null,
+  baselineAutoByKey: ReadonlyMap<string, CrossModeBenchmarkModeResult>
 ): CrossModeBenchmarkBudgetAblationBudgetSummary {
   const autoResults = modeResultsInScorecards(scorecards, "auto");
   const lnsResults = modeResultsInScorecards(scorecards, "lns");
@@ -311,6 +470,7 @@ function summarizeBudget(
       baselineMeanBestPopulation === null ? null : meanBestPopulation - baselineMeanBestPopulation,
     deltaVsBaselineMeanAutoPopulation: deltaFromBaseline(meanAutoPopulation, baselineMeanAutoPopulation),
     deltaVsBaselineMeanLnsPopulation: deltaFromBaseline(meanLnsPopulation, baselineMeanLnsPopulation),
+    autoSafetySummary: summarizeAutoSafety(scorecards, baselineAutoByKey),
     recommendationCounts: countRecommendations(signals)
   };
 }
@@ -336,7 +496,8 @@ function summarizeBudgets(
   suite: CrossModeBenchmarkSuiteResult,
   baselineMeanBestPopulationByBudget: ReadonlyMap<number, number>,
   baselineMeanAutoPopulationByBudget: ReadonlyMap<number, number | null>,
-  baselineMeanLnsPopulationByBudget: ReadonlyMap<number, number | null>
+  baselineMeanLnsPopulationByBudget: ReadonlyMap<number, number | null>,
+  baselineAutoByKey: ReadonlyMap<string, CrossModeBenchmarkModeResult>
 ): CrossModeBenchmarkBudgetAblationBudgetSummary[] {
   const scorecardBuckets = scorecardsByBudget(suite);
   const signalBuckets = signalsByBudget(suite);
@@ -347,7 +508,8 @@ function summarizeBudgets(
       signalBuckets.get(budgetSeconds) ?? [],
       baselineMeanBestPopulationByBudget.get(budgetSeconds) ?? null,
       baselineMeanAutoPopulationByBudget.get(budgetSeconds) ?? null,
-      baselineMeanLnsPopulationByBudget.get(budgetSeconds) ?? null
+      baselineMeanLnsPopulationByBudget.get(budgetSeconds) ?? null,
+      baselineAutoByKey
     )
   );
 }
@@ -360,7 +522,8 @@ function summarizeBudgetAblationPolicy(
   baselineMeanLnsPopulation: number | null,
   baselineMeanBestPopulationByBudget: ReadonlyMap<number, number>,
   baselineMeanAutoPopulationByBudget: ReadonlyMap<number, number | null>,
-  baselineMeanLnsPopulationByBudget: ReadonlyMap<number, number | null>
+  baselineMeanLnsPopulationByBudget: ReadonlyMap<number, number | null>,
+  baselineAutoByKey: ReadonlyMap<string, CrossModeBenchmarkModeResult>
 ): CrossModeBenchmarkBudgetAblationPolicyResult {
   const autoResults = modeResults(suite, "auto");
   const lnsResults = modeResults(suite, "lns");
@@ -385,11 +548,13 @@ function summarizeBudgetAblationPolicy(
       baselineMeanBestPopulation === null ? null : meanBestPopulation - baselineMeanBestPopulation,
     deltaVsBaselineMeanAutoPopulation: deltaFromBaseline(meanAutoPopulation, baselineMeanAutoPopulation),
     deltaVsBaselineMeanLnsPopulation: deltaFromBaseline(meanLnsPopulation, baselineMeanLnsPopulation),
+    autoSafetySummary: summarizeAutoSafety(suite.cases, baselineAutoByKey),
     budgetSummaries: summarizeBudgets(
       suite,
       baselineMeanBestPopulationByBudget,
       baselineMeanAutoPopulationByBudget,
-      baselineMeanLnsPopulationByBudget
+      baselineMeanLnsPopulationByBudget,
+      baselineAutoByKey
     ),
     recommendationCounts: countRecommendations(suite.budgetPolicySignals)
   };
@@ -507,6 +672,7 @@ export async function runCrossModeBenchmarkBudgetAblations(
   const baselineMeanLnsPopulationByBudget = baseline
     ? meanModePopulationByBudget(baseline.suite, "lns")
     : new Map<number, number | null>();
+  const baselineAutoByKey = baseline ? autoResultsByScorecardKey(baseline.suite.cases) : new Map();
   const policyResults = policySuites.map(({ policy, suite }) =>
     summarizeBudgetAblationPolicy(
       policy,
@@ -516,7 +682,8 @@ export async function runCrossModeBenchmarkBudgetAblations(
       baselineMeanLnsPopulation,
       baselineMeanBestPopulationByBudget,
       baselineMeanAutoPopulationByBudget,
-      baselineMeanLnsPopulationByBudget
+      baselineMeanLnsPopulationByBudget,
+      baselineAutoByKey
     )
   );
 
@@ -580,6 +747,33 @@ function formatRankingBasis(basis: CrossModeBenchmarkBudgetAblationRankingBasis)
   return "best mean population";
 }
 
+function formatRate(value: number): string {
+  return value.toFixed(3);
+}
+
+function formatNullableRatio(value: number | null): string {
+  return value === null ? "n/a" : value.toFixed(3);
+}
+
+function formatSignedSeconds(value: number | null): string {
+  if (value === null) return "n/a";
+  return `${value > 0 ? "+" : ""}${value.toFixed(3)}s`;
+}
+
+function formatAutoSafetySummary(summary: CrossModeBenchmarkBudgetAblationAutoSafetySummary): string {
+  return [
+    `paired=${summary.comparisonCount}`,
+    `delta-mean=${formatScoreDeltaVsAuto(summary.meanAutoPopulationDeltaVsBaseline)}`,
+    `delta-median=${formatScoreDeltaVsAuto(summary.medianAutoPopulationDeltaVsBaseline)}`,
+    `delta-worst-decile=${formatScoreDeltaVsAuto(summary.worstDecileAutoPopulationDeltaVsBaseline)}`,
+    `delta-worst=${formatScoreDeltaVsAuto(summary.worstAutoPopulationDeltaVsBaseline)}`,
+    `regressed=${summary.regressedAutoCount}`,
+    `regression-rate=${formatRate(summary.regressionRate)}`,
+    `cpu-eff-ratio=${formatNullableRatio(summary.autoCpuBudgetEfficiencyRatioVsBaseline)}`,
+    `wall-delta-mean=${formatSignedSeconds(summary.meanAutoWallClockDeltaVsBaselineSeconds)}`
+  ].join(" ");
+}
+
 export function formatCrossModeBenchmarkBudgetAblations(result: CrossModeBenchmarkBudgetAblationSuiteResult): string {
   const lines: string[] = [];
   lines.push("=== Cross-Mode Budget Ablations ===");
@@ -605,9 +799,10 @@ export function formatCrossModeBenchmarkBudgetAblations(result: CrossModeBenchma
     lines.push(
       `  auto-stage-mean=lns:${formatSeconds(policy.meanAutoLnsStageElapsedSeconds)} cp-sat:${formatSeconds(policy.meanAutoCpSatStageElapsedSeconds)} recommendations=${formatRecommendationCounts(policy.recommendationCounts)}`
     );
+    lines.push(`  auto-safety=${formatAutoSafetySummary(policy.autoSafetySummary)}`);
     for (const budget of policy.budgetSummaries) {
       lines.push(
-        `  budget=${budget.budgetSeconds}s cases=${budget.caseCount} mean-best=${budget.meanBestPopulation.toFixed(1)} delta-vs-baseline=${formatScoreDeltaVsAuto(budget.deltaVsBaselineMeanBestPopulation)} mean-auto=${budget.meanAutoPopulation === null ? "n/a" : budget.meanAutoPopulation.toFixed(1)} auto-delta-vs-baseline=${formatScoreDeltaVsAuto(budget.deltaVsBaselineMeanAutoPopulation)} mean-lns=${budget.meanLnsPopulation === null ? "n/a" : budget.meanLnsPopulation.toFixed(1)} lns-delta-vs-baseline=${formatScoreDeltaVsAuto(budget.deltaVsBaselineMeanLnsPopulation)} mean-auto-gap=${formatPopulationGap(budget.meanAutoDeltaToBest)} recommendations=${formatRecommendationCounts(budget.recommendationCounts)}`
+        `  budget=${budget.budgetSeconds}s cases=${budget.caseCount} mean-best=${budget.meanBestPopulation.toFixed(1)} delta-vs-baseline=${formatScoreDeltaVsAuto(budget.deltaVsBaselineMeanBestPopulation)} mean-auto=${budget.meanAutoPopulation === null ? "n/a" : budget.meanAutoPopulation.toFixed(1)} auto-delta-vs-baseline=${formatScoreDeltaVsAuto(budget.deltaVsBaselineMeanAutoPopulation)} mean-lns=${budget.meanLnsPopulation === null ? "n/a" : budget.meanLnsPopulation.toFixed(1)} lns-delta-vs-baseline=${formatScoreDeltaVsAuto(budget.deltaVsBaselineMeanLnsPopulation)} mean-auto-gap=${formatPopulationGap(budget.meanAutoDeltaToBest)} auto-safety=${formatAutoSafetySummary(budget.autoSafetySummary)} recommendations=${formatRecommendationCounts(budget.recommendationCounts)}`
       );
     }
   }

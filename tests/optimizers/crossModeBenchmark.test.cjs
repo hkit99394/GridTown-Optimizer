@@ -1004,12 +1004,20 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(ablations.policies[1].deltaVsBaselineMeanBestPopulation, 5);
   assert.equal(ablations.policies[1].deltaVsBaselineMeanAutoPopulation, 5);
   assert.equal(ablations.policies[1].deltaVsBaselineMeanLnsPopulation, 0);
+  assert.equal(ablations.policies[1].autoSafetySummary.comparisonCount, 1);
+  assert.equal(ablations.policies[1].autoSafetySummary.meanAutoPopulationDeltaVsBaseline, 5);
+  assert.equal(ablations.policies[1].autoSafetySummary.worstDecileAutoPopulationDeltaVsBaseline, 5);
+  assert.equal(ablations.policies[1].autoSafetySummary.worstAutoPopulationDeltaVsBaseline, 5);
+  assert.equal(ablations.policies[1].autoSafetySummary.regressedAutoCount, 0);
+  assert(Math.abs(ablations.policies[1].autoSafetySummary.autoCpuBudgetEfficiencyRatioVsBaseline - 1.5) < 0.001);
   assert.equal(ablations.policies[1].budgetSummaries.length, 1);
   assert.equal(ablations.policies[1].budgetSummaries[0].budgetSeconds, 3);
   assert.equal(ablations.policies[1].budgetSummaries[0].meanAutoPopulation, 15);
   assert.equal(ablations.policies[1].budgetSummaries[0].deltaVsBaselineMeanBestPopulation, 5);
   assert.equal(ablations.policies[1].budgetSummaries[0].deltaVsBaselineMeanAutoPopulation, 5);
   assert.equal(ablations.policies[1].budgetSummaries[0].deltaVsBaselineMeanLnsPopulation, 0);
+  assert.equal(ablations.policies[1].budgetSummaries[0].autoSafetySummary.comparisonCount, 1);
+  assert.equal(ablations.policies[1].budgetSummaries[0].autoSafetySummary.meanAutoPopulationDeltaVsBaseline, 5);
   assert.equal(ablations.budgetedModeSeconds, 12);
   assert(
     ablations.policies[1].suite.cases[0].results
@@ -1023,6 +1031,8 @@ async function testCrossModeBenchmarkHelpers() {
   assert.match(ablationText, /delta-vs-baseline=\+5/);
   assert.match(ablationText, /auto-delta-vs-baseline=\+5/);
   assert.match(ablationText, /lns-delta-vs-baseline=0/);
+  assert.match(ablationText, /auto-safety=paired=1 delta-mean=\+5/);
+  assert.match(ablationText, /cpu-eff-ratio=1\.500/);
   assert.match(ablationText, /budget=3s cases=1 mean-best=15\.0/);
 
   const reorderedAblations = await runCrossModeBenchmarkBudgetAblations([benchmarkCase], {
@@ -1083,6 +1093,8 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(lnsOnlyAblations.topPolicyName, "lns-win");
   assert.equal(lnsOnlyAblations.bestPolicyName, "lns-win");
   assert.deepEqual(lnsOnlyAblations.topPolicyTiedPolicyNames, ["lns-win"]);
+  assert.equal(lnsOnlyAblations.policies[0].autoSafetySummary.comparisonCount, 0);
+  assert.equal(lnsOnlyAblations.policies[1].autoSafetySummary.meanAutoPopulationDeltaVsBaseline, null);
 
   const guardedBudgetAblations = await runCrossModeBenchmarkBudgetAblations([benchmarkCase], {
     modes: ["auto"],
@@ -1105,12 +1117,28 @@ async function testCrossModeBenchmarkHelpers() {
   );
   assert.equal(guardedBudgetAblations.topPolicyName, "repair-heavy-5s-guarded");
   assert.equal(guardedPolicyResult.deltaVsBaselineMeanAutoPopulation, 2.5);
+  assert.equal(guardedPolicyResult.autoSafetySummary.comparisonCount, 2);
+  assert.equal(guardedPolicyResult.autoSafetySummary.meanAutoPopulationDeltaVsBaseline, 2.5);
+  assert.equal(guardedPolicyResult.autoSafetySummary.worstDecileAutoPopulationDeltaVsBaseline, 0);
+  assert.equal(guardedPolicyResult.autoSafetySummary.worstAutoPopulationDeltaVsBaseline, 0);
+  assert.equal(guardedPolicyResult.autoSafetySummary.bestAutoPopulationDeltaVsBaseline, 5);
+  assert.equal(guardedPolicyResult.autoSafetySummary.regressedAutoCount, 0);
   assert.equal(
     guardedPolicyResult.budgetSummaries.find((budget) => budget.budgetSeconds === 1).deltaVsBaselineMeanAutoPopulation,
     0
   );
   assert.equal(
+    guardedPolicyResult.budgetSummaries.find((budget) => budget.budgetSeconds === 1).autoSafetySummary
+      .worstAutoPopulationDeltaVsBaseline,
+    0
+  );
+  assert.equal(
     guardedPolicyResult.budgetSummaries.find((budget) => budget.budgetSeconds === 5).deltaVsBaselineMeanAutoPopulation,
+    5
+  );
+  assert.equal(
+    guardedPolicyResult.budgetSummaries.find((budget) => budget.budgetSeconds === 5).autoSafetySummary
+      .bestAutoPopulationDeltaVsBaseline,
     5
   );
 

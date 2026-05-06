@@ -1004,7 +1004,11 @@ function testLnsWindowRankerSupplementalReplayCalibration() {
   assert(calibrated.model.trainedPairCount > baseline.model.trainedPairCount);
   assert(calibrated.model.weights.selectedByBaseline > baseline.model.weights.selectedByBaseline);
   assert.equal(calibrated.evaluation.summary.passed, false);
-  assert(calibrated.evaluation.summary.failedReasons.includes("supplemental replay calibration is diagnostics-only and cannot promote a model"));
+  assert(
+    calibrated.evaluation.summary.failedReasons.includes(
+      "supplemental replay calibration is diagnostics-only and cannot promote a model"
+    )
+  );
   assert.match(formatted, /supplemental-replay-calibration=true/);
   assert.match(formatted, /supplemental-decisions=1/);
 

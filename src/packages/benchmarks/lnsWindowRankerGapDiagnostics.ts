@@ -964,8 +964,7 @@ export function formatLnsWindowRankerGapDiagnostics(result: LnsWindowRankerGapDi
   const joins = result.joins
     .filter(
       (entry) =>
-        entry.diagnosis !== "offline-neutral-online-neutral" ||
-        entry.exactReplayNeutralizedOfflinePositiveOnlineNeutral
+        entry.diagnosis !== "offline-neutral-online-neutral" || entry.exactReplayNeutralizedOfflinePositiveOnlineNeutral
     )
     .slice(0, 10)
     .map(formatJoin);

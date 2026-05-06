@@ -643,8 +643,9 @@ export function runLnsWindowRankerExperiment(
   options: LnsWindowRankerRunOptions = {}
 ): LnsWindowRankerExperimentResult {
   const training = normalizeTrainingOptions(options.training);
-  const supplementalReplaySnapshots =
-    training.supplementalReplayCalibration ? (options.supplementalReplaySnapshots ?? []) : [];
+  const supplementalReplaySnapshots = training.supplementalReplayCalibration
+    ? (options.supplementalReplaySnapshots ?? [])
+    : [];
   const topK = positiveIntegerOrDefault(options.topK, 3);
   const baselineResult = runLnsWindowRankerBaselineExperiment(labelSnapshot, {
     randomBaselineSeed: options.randomBaselineSeed,
@@ -725,7 +726,12 @@ export function runLnsWindowRankerExperiment(
     evaluation: {
       model: modelEvaluation,
       baselines: baselineResult.evaluation.baselines,
-      summary: buildSummary(labelSnapshot, baselineResult, modelEvaluation.holdout, training.supplementalReplayCalibration)
+      summary: buildSummary(
+        labelSnapshot,
+        baselineResult,
+        modelEvaluation.holdout,
+        training.supplementalReplayCalibration
+      )
     },
     datasetFingerprint,
     labelFingerprint,

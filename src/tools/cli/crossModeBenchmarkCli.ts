@@ -549,6 +549,28 @@ function countBudgetAblationModeRuns(result: CrossModeBenchmarkBudgetAblationSui
   );
 }
 
+function budgetAblationPolicySummary(
+  policy: CrossModeBenchmarkBudgetAblationSuiteResult["policies"][number]
+): Record<string, unknown> {
+  return {
+    policyName: policy.policyName,
+    description: policy.description,
+    meanBestPopulation: policy.meanBestPopulation,
+    meanAutoPopulation: policy.meanAutoPopulation,
+    meanLnsPopulation: policy.meanLnsPopulation,
+    meanAutoDeltaToBest: policy.meanAutoDeltaToBest,
+    meanAutoLnsStageElapsedSeconds: policy.meanAutoLnsStageElapsedSeconds,
+    meanAutoCpSatStageElapsedSeconds: policy.meanAutoCpSatStageElapsedSeconds,
+    deltaVsBaselineMeanBestPopulation: policy.deltaVsBaselineMeanBestPopulation,
+    deltaVsBaselineMeanAutoPopulation: policy.deltaVsBaselineMeanAutoPopulation,
+    deltaVsBaselineMeanLnsPopulation: policy.deltaVsBaselineMeanLnsPopulation,
+    autoSafetySummary: policy.autoSafetySummary,
+    autoReplayDiagnostics: policy.autoReplayDiagnostics,
+    recommendationCounts: policy.recommendationCounts,
+    budgetSummaries: policy.budgetSummaries
+  };
+}
+
 function buildBudgetAblationTelemetryManifest(
   result: CrossModeBenchmarkBudgetAblationSuiteResult,
   options: {
@@ -585,22 +607,7 @@ function buildBudgetAblationTelemetryManifest(
       topPolicyTiedPolicyNames: [...result.topPolicyTiedPolicyNames],
       budgetedModeSeconds: result.budgetedModeSeconds
     },
-    policies: result.policies.map((policy) => ({
-      policyName: policy.policyName,
-      description: policy.description,
-      meanBestPopulation: policy.meanBestPopulation,
-      meanAutoPopulation: policy.meanAutoPopulation,
-      meanLnsPopulation: policy.meanLnsPopulation,
-      meanAutoDeltaToBest: policy.meanAutoDeltaToBest,
-      meanAutoLnsStageElapsedSeconds: policy.meanAutoLnsStageElapsedSeconds,
-      meanAutoCpSatStageElapsedSeconds: policy.meanAutoCpSatStageElapsedSeconds,
-      deltaVsBaselineMeanBestPopulation: policy.deltaVsBaselineMeanBestPopulation,
-      deltaVsBaselineMeanAutoPopulation: policy.deltaVsBaselineMeanAutoPopulation,
-      deltaVsBaselineMeanLnsPopulation: policy.deltaVsBaselineMeanLnsPopulation,
-      autoSafetySummary: policy.autoSafetySummary,
-      recommendationCounts: policy.recommendationCounts,
-      budgetSummaries: policy.budgetSummaries
-    })),
+    policies: result.policies.map(budgetAblationPolicySummary),
     runs
   };
 }
@@ -612,21 +619,7 @@ function buildBudgetAblationRegistryEntryDraft(
   command: string
 ): Record<string, unknown> {
   const casesBySplit = budgetAblationCasesBySplit(result);
-  const budgetSummaries = result.policies.map((policy) => ({
-    policyName: policy.policyName,
-    meanBestPopulation: policy.meanBestPopulation,
-    meanAutoPopulation: policy.meanAutoPopulation,
-    meanLnsPopulation: policy.meanLnsPopulation,
-    meanAutoDeltaToBest: policy.meanAutoDeltaToBest,
-    meanAutoLnsStageElapsedSeconds: policy.meanAutoLnsStageElapsedSeconds,
-    meanAutoCpSatStageElapsedSeconds: policy.meanAutoCpSatStageElapsedSeconds,
-    deltaVsBaselineMeanBestPopulation: policy.deltaVsBaselineMeanBestPopulation,
-    deltaVsBaselineMeanAutoPopulation: policy.deltaVsBaselineMeanAutoPopulation,
-    deltaVsBaselineMeanLnsPopulation: policy.deltaVsBaselineMeanLnsPopulation,
-    autoSafetySummary: policy.autoSafetySummary,
-    recommendationCounts: policy.recommendationCounts,
-    budgetSummaries: policy.budgetSummaries
-  }));
+  const budgetSummaries = result.policies.map(budgetAblationPolicySummary);
   return {
     schemaVersion: 1,
     runId: args.ablationRunId ?? `cross-mode-budget-ablation-${dateSlug(result.generatedAt)}`,

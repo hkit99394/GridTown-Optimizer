@@ -22,6 +22,10 @@ import {
   formatCrossModeBenchmarkSuite,
   runCrossModeBenchmarkSuite
 } from "./crossMode.js";
+import {
+  buildCrossModeBudgetAblationAutoReplayDiagnostics,
+  formatCrossModeBudgetAblationAutoReplayDiagnostic
+} from "./crossModeBudgetAblationDiagnostics.js";
 
 import type {
   CrossModeBenchmarkBudgetAblationPolicy,
@@ -35,6 +39,7 @@ import type {
   CrossModeProblemSizeBand,
   CrossModeBudgetPolicyRecommendation
 } from "./crossMode.js";
+import type { CrossModeBenchmarkBudgetAblationAutoReplayDiagnostic } from "./crossModeBudgetAblationDiagnostics.js";
 import type { SolverDecisionTraceEvent } from "../core/index.js";
 
 export interface CrossModeBenchmarkBudgetAblationRunOptions extends CrossModeBenchmarkRunOptions {
@@ -96,6 +101,7 @@ export interface CrossModeBenchmarkBudgetAblationPolicyResult {
   deltaVsBaselineMeanAutoPopulation: number | null;
   deltaVsBaselineMeanLnsPopulation: number | null;
   autoSafetySummary: CrossModeBenchmarkBudgetAblationAutoSafetySummary;
+  autoReplayDiagnostics: CrossModeBenchmarkBudgetAblationAutoReplayDiagnostic[];
   budgetSummaries: CrossModeBenchmarkBudgetAblationBudgetSummary[];
   recommendationCounts: Record<CrossModeBudgetPolicyRecommendation, number>;
 }
@@ -528,7 +534,8 @@ function summarizeBudgetAblationPolicy(
   baselineMeanBestPopulationByBudget: ReadonlyMap<number, number>,
   baselineMeanAutoPopulationByBudget: ReadonlyMap<number, number | null>,
   baselineMeanLnsPopulationByBudget: ReadonlyMap<number, number | null>,
-  baselineAutoByKey: ReadonlyMap<string, CrossModeBenchmarkModeResult>
+  baselineAutoByKey: ReadonlyMap<string, CrossModeBenchmarkModeResult>,
+  baselinePolicyName: string | null
 ): CrossModeBenchmarkBudgetAblationPolicyResult {
   const autoResults = modeResults(suite, "auto");
   const lnsResults = modeResults(suite, "lns");
@@ -554,6 +561,12 @@ function summarizeBudgetAblationPolicy(
     deltaVsBaselineMeanAutoPopulation: deltaFromBaseline(meanAutoPopulation, baselineMeanAutoPopulation),
     deltaVsBaselineMeanLnsPopulation: deltaFromBaseline(meanLnsPopulation, baselineMeanLnsPopulation),
     autoSafetySummary: summarizeAutoSafety(suite.cases, baselineAutoByKey),
+    autoReplayDiagnostics: buildCrossModeBudgetAblationAutoReplayDiagnostics(
+      policy.name,
+      baselineAutoByKey.size > 0 ? baselinePolicyName : null,
+      suite.cases,
+      baselineAutoByKey
+    ),
     budgetSummaries: summarizeBudgets(
       suite,
       baselineMeanBestPopulationByBudget,
@@ -688,7 +701,8 @@ export async function runCrossModeBenchmarkBudgetAblations(
       baselineMeanBestPopulationByBudget,
       baselineMeanAutoPopulationByBudget,
       baselineMeanLnsPopulationByBudget,
-      baselineAutoByKey
+      baselineAutoByKey,
+      baseline?.policy.name ?? null
     )
   );
 
@@ -805,6 +819,12 @@ export function formatCrossModeBenchmarkBudgetAblations(result: CrossModeBenchma
       `  auto-stage-mean=lns:${formatSeconds(policy.meanAutoLnsStageElapsedSeconds)} cp-sat:${formatSeconds(policy.meanAutoCpSatStageElapsedSeconds)} recommendations=${formatRecommendationCounts(policy.recommendationCounts)}`
     );
     lines.push(`  auto-safety=${formatAutoSafetySummary(policy.autoSafetySummary)}`);
+    if (policy.autoReplayDiagnostics.length > 0) {
+      lines.push(`  auto-replay-diagnostics=${policy.autoReplayDiagnostics.length} nonzero paired Auto rows`);
+      for (const diagnostic of policy.autoReplayDiagnostics) {
+        lines.push(`    ${formatCrossModeBudgetAblationAutoReplayDiagnostic(diagnostic)}`);
+      }
+    }
     for (const budget of policy.budgetSummaries) {
       lines.push(
         `  budget=${budget.budgetSeconds}s cases=${budget.caseCount} mean-best=${budget.meanBestPopulation.toFixed(1)} delta-vs-baseline=${formatScoreDeltaVsAuto(budget.deltaVsBaselineMeanBestPopulation)} mean-auto=${budget.meanAutoPopulation === null ? "n/a" : budget.meanAutoPopulation.toFixed(1)} auto-delta-vs-baseline=${formatScoreDeltaVsAuto(budget.deltaVsBaselineMeanAutoPopulation)} mean-lns=${budget.meanLnsPopulation === null ? "n/a" : budget.meanLnsPopulation.toFixed(1)} lns-delta-vs-baseline=${formatScoreDeltaVsAuto(budget.deltaVsBaselineMeanLnsPopulation)} mean-auto-gap=${formatPopulationGap(budget.meanAutoDeltaToBest)} auto-safety=${formatAutoSafetySummary(budget.autoSafetySummary)} recommendations=${formatRecommendationCounts(budget.recommendationCounts)}`

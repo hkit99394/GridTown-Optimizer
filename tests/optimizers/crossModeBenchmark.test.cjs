@@ -1010,6 +1010,13 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(ablations.policies[1].autoSafetySummary.worstAutoPopulationDeltaVsBaseline, 5);
   assert.equal(ablations.policies[1].autoSafetySummary.regressedAutoCount, 0);
   assert(Math.abs(ablations.policies[1].autoSafetySummary.autoCpuBudgetEfficiencyRatioVsBaseline - 1.5) < 0.001);
+  assert.equal(ablations.policies[0].autoReplayDiagnostics.length, 0);
+  assert.equal(ablations.policies[1].autoReplayDiagnostics.length, 1);
+  assert.equal(ablations.policies[1].autoReplayDiagnostics[0].caseName, "mock-scorecard");
+  assert.equal(ablations.policies[1].autoReplayDiagnostics[0].autoPopulationDeltaVsBaseline, 5);
+  assert.equal(ablations.policies[1].autoReplayDiagnostics[0].baseline.finalPopulation, 10);
+  assert.equal(ablations.policies[1].autoReplayDiagnostics[0].candidate.finalPopulation, 15);
+  assert.equal(ablations.policies[1].autoReplayDiagnostics[0].candidate.params.autoCpSatStageReserveRatio, 0.35);
   assert.equal(ablations.policies[1].budgetSummaries.length, 1);
   assert.equal(ablations.policies[1].budgetSummaries[0].budgetSeconds, 3);
   assert.equal(ablations.policies[1].budgetSummaries[0].meanAutoPopulation, 15);
@@ -1032,6 +1039,8 @@ async function testCrossModeBenchmarkHelpers() {
   assert.match(ablationText, /auto-delta-vs-baseline=\+5/);
   assert.match(ablationText, /lns-delta-vs-baseline=0/);
   assert.match(ablationText, /auto-safety=paired=1 delta-mean=\+5/);
+  assert.match(ablationText, /auto-replay-diagnostics=1 nonzero paired Auto rows/);
+  assert.match(ablationText, /row=mock-scorecard\/budget:3s\/seed:5 delta=\+5/);
   assert.match(ablationText, /cpu-eff-ratio=1\.500/);
   assert.match(ablationText, /budget=3s cases=1 mean-best=15\.0/);
 
@@ -1162,6 +1171,10 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(repeatPolicyResult.autoSafetySummary.meanAutoPopulationDeltaVsBaseline, -1);
   assert.equal(repeatPolicyResult.autoSafetySummary.worstAutoPopulationDeltaVsBaseline, -2);
   assert.equal(repeatPolicyResult.autoSafetySummary.worstAutoPopulationDeltaSeed, 11);
+  assert.equal(repeatPolicyResult.autoReplayDiagnostics.length, 1);
+  assert.equal(repeatPolicyResult.autoReplayDiagnostics[0].seed, 11);
+  assert.equal(repeatPolicyResult.autoReplayDiagnostics[0].autoPopulationDeltaVsBaseline, -2);
+  assert.match(repeatPolicyResult.autoReplayDiagnostics[0].reason, /regressed/);
   assert.equal(
     repeatPolicyResult.suite.cases[0].results[0].telemetry.solverParams.auto.cpSatStageReserveRatio,
     undefined

@@ -162,6 +162,11 @@ export const DEFAULT_CROSS_MODE_BUDGET_ABLATION_POLICIES = Object.freeze([
 
 export const OPTIONAL_CROSS_MODE_BUDGET_ABLATION_POLICIES = Object.freeze([
   {
+    name: "baseline-repeat",
+    description:
+      "Repeat the current Auto/LNS budget policy as a named control for short-budget run-to-run variance checks."
+  },
+  {
     name: "repair-heavy-5s-guarded",
     description:
       "Preserve the baseline short-budget seed posture, then apply repair-heavy LNS allocation only at the 5s budget.",

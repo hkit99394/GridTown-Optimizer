@@ -81,7 +81,7 @@ async function testCrossModeBenchmarkHelpers() {
   );
   assert.deepEqual(
     OPTIONAL_CROSS_MODE_BUDGET_ABLATION_POLICIES.map((policy) => policy.name),
-    ["repair-heavy-5s-guarded"]
+    ["baseline-repeat", "repair-heavy-5s-guarded"]
   );
   const coverageNames = DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS.map((entry) => entry.name);
   assert.equal(new Set(coverageNames).size, coverageNames.length);
@@ -1140,6 +1140,35 @@ async function testCrossModeBenchmarkHelpers() {
     guardedPolicyResult.budgetSummaries.find((budget) => budget.budgetSeconds === 5).autoSafetySummary
       .bestAutoPopulationDeltaVsBaseline,
     5
+  );
+  const repeatabilityAblations = await runCrossModeBenchmarkBudgetAblations([benchmarkCase], {
+    modes: ["auto"],
+    budgetsSeconds: [1],
+    seeds: [5, 11],
+    policyNames: ["baseline", "baseline-repeat"],
+    solve: async (_grid, params, context) => {
+      const repeatDrift = context.budgetAblationPolicyName === "baseline-repeat" && context.seed === 11 ? -2 : 0;
+      return buildMockSolution({
+        optimizer: params.optimizer,
+        totalPopulation: 10 + repeatDrift
+      });
+    }
+  });
+  const repeatPolicyResult = repeatabilityAblations.policies.find((policy) => policy.policyName === "baseline-repeat");
+  assert.equal(repeatabilityAblations.baselinePolicyName, "baseline");
+  assert.equal(repeatabilityAblations.topPolicyName, "baseline");
+  assert.equal(repeatPolicyResult.autoSafetySummary.comparisonCount, 2);
+  assert.equal(repeatPolicyResult.autoSafetySummary.regressedAutoCount, 1);
+  assert.equal(repeatPolicyResult.autoSafetySummary.meanAutoPopulationDeltaVsBaseline, -1);
+  assert.equal(repeatPolicyResult.autoSafetySummary.worstAutoPopulationDeltaVsBaseline, -2);
+  assert.equal(repeatPolicyResult.autoSafetySummary.worstAutoPopulationDeltaSeed, 11);
+  assert.equal(
+    repeatPolicyResult.suite.cases[0].results[0].telemetry.solverParams.auto.cpSatStageReserveRatio,
+    undefined
+  );
+  assert.equal(
+    repeatPolicyResult.suite.cases[0].results[0].telemetry.solverParams.lns.seedTimeLimitSeconds,
+    baselineOneSecondAutoParams.lns.seedTimeLimitSeconds
   );
 
   await assert.rejects(

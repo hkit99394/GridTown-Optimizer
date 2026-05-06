@@ -187,6 +187,25 @@ export const OPTIONAL_CROSS_MODE_BUDGET_ABLATION_POLICIES = Object.freeze([
     lnsRepairBudgetRatio: 0.2,
     lnsEscalatedRepairBudgetRatio: 0.3,
     autoCpSatStageReserveRatio: 0.1
+  },
+  {
+    name: "lns-seed-short-5s-guarded",
+    description: "Shorten only the LNS seed slice at the 5s budget; keep repair and CP-SAT reserve at baseline.",
+    activeBudgetSeconds: [5],
+    lnsSeedBudgetRatio: 0.05
+  },
+  {
+    name: "lns-repair-time-5s-guarded",
+    description: "Lengthen only the LNS repair-time slice at the 5s budget; keep seed and CP-SAT reserve at baseline.",
+    activeBudgetSeconds: [5],
+    lnsRepairBudgetRatio: 0.2,
+    lnsEscalatedRepairBudgetRatio: 0.3
+  },
+  {
+    name: "cp-sat-reserve-5s-guarded",
+    description: "Reserve only a small Auto CP-SAT slice at the 5s budget; keep LNS timing at baseline.",
+    activeBudgetSeconds: [5],
+    autoCpSatStageReserveRatio: 0.1
   }
 ] satisfies CrossModeBenchmarkBudgetAblationPolicy[]);
 

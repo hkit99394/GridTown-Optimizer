@@ -624,6 +624,77 @@ function buildOnlineScorecardFixture() {
   };
 }
 
+function buildOnlineOnlyAnchorScorecardFixture() {
+  const scorecard = JSON.parse(JSON.stringify(buildOnlineScorecardFixture()));
+  scorecard.selectedCaseNames = ["protected-anchor"];
+  scorecard.cases[0].name = "protected-anchor";
+  scorecard.cases[0].description = "Protected anchor online fixture";
+  scorecard.cases[0].pressureFamily = "anchor-service";
+  return scorecard;
+}
+
+function buildNeutralSupplementalReplaySnapshot(sourceCase, name, pressureFamily) {
+  const benchmarkCase = JSON.parse(JSON.stringify(sourceCase));
+  benchmarkCase.name = name;
+  benchmarkCase.description = `${name} supplemental replay fixture`;
+  benchmarkCase.pressureFamily = pressureFamily;
+  benchmarkCase.statePolicy = "online-decision";
+  benchmarkCase.stateIndex = 0;
+  benchmarkCase.baselineSelectedOperator = "weak-service";
+  benchmarkCase.labels = benchmarkCase.labels.map((label) => ({
+    ...label,
+    caseName: name,
+    pressureFamily,
+    statePolicy: "online-decision",
+    stateIndex: 0,
+    rollForward: {
+      iterations: 1,
+      repairTimeLimitSeconds: 0.1,
+      seedPopulation: label.totalPopulation,
+      totalPopulation: benchmarkCase.incumbentPopulation,
+      populationDeltaFromIncumbent: 0,
+      populationDeltaFromRepair: -label.populationDelta,
+      baselineTotalPopulation: benchmarkCase.incumbentPopulation,
+      populationDeltaVsBaseline: 0,
+      improvementVsBaseline: 0,
+      statusVsBaseline: "neutral"
+    }
+  }));
+  return {
+    schemaVersion: 1,
+    caseCount: 1,
+    seedCount: 1,
+    comparisonCount: 1,
+    seeds: [benchmarkCase.seed],
+    selectedCaseNames: [benchmarkCase.name],
+    pressureFamilies: [benchmarkCase.pressureFamily],
+    maxWindows: benchmarkCase.labels.length,
+    explorationWindowCount: 0,
+    repairTimeLimitSeconds: 1,
+    rollForwardIterations: 1,
+    rollForwardRepairTimeLimitSeconds: 0.1,
+    rollForwardLabelCount: benchmarkCase.labels.length,
+    statePolicies: ["online-decision"],
+    capturedStatePolicies: ["online-decision"],
+    stateCollectionIterations: 4,
+    stateCollectionRepairTimeLimitSeconds: 1,
+    stateCount: 1,
+    featureSchemaVersion: 2,
+    cpSatNumWorkers: 1,
+    cpSatModelFingerprints: [...new Set(benchmarkCase.labels.map((label) => label.cpSat.modelFingerprint))],
+    labelCount: benchmarkCase.labels.length,
+    cases: [benchmarkCase]
+  };
+}
+
+function buildSlidingSelectorModel(model) {
+  const slidingSelector = JSON.parse(JSON.stringify(model));
+  slidingSelector.weights = Object.fromEntries(slidingSelector.featureNames.map((featureName) => [featureName, 0]));
+  slidingSelector.weights.selectedByBaseline = -1;
+  slidingSelector.weights.residentialCandidateHeadroom = 1;
+  return slidingSelector;
+}
+
 function testLnsWindowRankerGapDiagnostics() {
   const fixture = cloneFixtureWithRollForwardTargets();
   const ranker = runLnsWindowRankerExperiment(fixture, {
@@ -789,6 +860,69 @@ function testLnsWindowRankerGapDiagnostics() {
   assert.deepEqual(zeroLayoutResult.recommendedExperiments, []);
 }
 
+function testLnsWindowRankerGapDiagnosticsSupplementalReplayLabels() {
+  const fixture = cloneFixtureWithRollForwardTargets();
+  const ranker = runLnsWindowRankerExperiment(fixture, {
+    topK: 2,
+    training: {
+      epochs: 4,
+      learningRate: 0.05,
+      marginWeightCap: 500,
+      target: "roll-forward-final-lift"
+    }
+  });
+  const model = buildSlidingSelectorModel(ranker.model);
+  const onlineScorecard = buildOnlineOnlyAnchorScorecardFixture();
+  const baseline = runLnsWindowRankerGapDiagnostics(fixture, model, onlineScorecard);
+
+  assert.equal(baseline.summary.onlineActiveNoOfflineMatchCount, 1);
+  assert.equal(baseline.recommendedExperiments.length, 1);
+  assert.equal(baseline.recommendedExperiments[0].kind, "targeted-protected-replay-labels");
+  assert.equal(baseline.recommendedExperiments[0].key, "anchor-service:weak-service->sliding");
+
+  const holdoutSplit = fixture.lns.splits.find((split) => split.split === "holdout");
+  const supplementalReplay = buildNeutralSupplementalReplaySnapshot(
+    holdoutSplit.replay.cases[0],
+    "protected-anchor-supplemental",
+    "anchor-service"
+  );
+  const result = runLnsWindowRankerGapDiagnostics(fixture, model, onlineScorecard, {
+    supplementalReplaySnapshots: [supplementalReplay]
+  });
+  const formatted = formatLnsWindowRankerGapDiagnostics(result);
+
+  assert.equal(result.audit.supplementalReplaySnapshotCount, 1);
+  assert.equal(result.inputs.supplementalReplayFingerprints.length, 1);
+  assert.equal(result.offline.supplementalDecisionCount, 1);
+  assert.equal(result.summary.onlineActiveNoOfflineMatchCount, 0);
+  assert.equal(result.summary.promotionBlocked, false);
+  assert.equal(result.traceComparisons.length, 0);
+  assert.deepEqual(result.recommendedExperiments, []);
+  const join = result.joins.find((entry) => entry.key === "anchor-service:weak-service->sliding");
+  assert.equal(join.diagnosis, "offline-neutral-online-neutral");
+  assert.equal(join.offline.decisionCount, 1);
+  assert.equal(join.offline.selectedPositiveCount, 0);
+  assert.match(formatted, /supplemental-replay=1/);
+  assert.match(formatted, /Offline: decisions=8 supplemental=1/);
+
+  const telemetryManifest = buildLnsWindowRankerGapDiagnosticsTelemetryManifest(result, {
+    command: "node dist/lnsWindowRankerCli.js --gap-diagnostics --supplemental-replay-labels=supplemental.json",
+    inputArtifacts: ["labels.json", "model.json", "scorecard.json", "supplemental.json"],
+    outputArtifacts: ["gap.json"]
+  });
+  assert.equal(telemetryManifest.metrics.offlineSupplementalDecisionCount, 1);
+  assert.equal(telemetryManifest.metrics.targetedProtectedReplayLabelRecommendationCount, 0);
+
+  const registryDraft = buildLnsWindowRankerGapDiagnosticsRegistryEntryDraft(result, {
+    runId: "lns-window-ranker-gap-supplemental-test",
+    commands: ["node dist/lnsWindowRankerCli.js --gap-diagnostics --supplemental-replay-labels=supplemental.json"],
+    artifactPaths: ["artifacts/gap/lns-window-ranker-gap-diagnostics.json"]
+  });
+  assert.equal(registryDraft.budget.offlineSupplementalDecisionCount, 1);
+  assert.equal(registryDraft.budget.targetedProtectedReplayLabelRecommendationCount, 0);
+  assert.equal(registryDraft.summaryMetrics.offlineSupplementalDecisionCount, 1);
+}
+
 function testLnsWindowRankerRollForwardTarget() {
   const fixture = cloneFixtureWithRollForwardTargets();
   const result = runLnsWindowRankerExperiment(fixture, {
@@ -906,4 +1040,5 @@ testLnsWindowRankerRollForwardTarget();
 testLnsWindowRankerBaselineTieBreakTraining();
 testLnsWindowRankerWeakReplaySeedFilter();
 testLnsWindowRankerGapDiagnostics();
+testLnsWindowRankerGapDiagnosticsSupplementalReplayLabels();
 testLnsWindowRankerCliArtifacts();

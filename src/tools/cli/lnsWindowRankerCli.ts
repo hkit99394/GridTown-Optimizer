@@ -37,7 +37,8 @@ import type {
   LnsWindowRankerExperimentResult,
   LnsWindowRankerGapDiagnosticsResult,
   LnsWindowRankerModel,
-  LnsWindowRankerOnlineAblationSnapshot
+  LnsWindowRankerOnlineAblationSnapshot,
+  LnsWindowReplaySnapshot
 } from "../../benchmarkApi.js";
 import type { LnsWindowRankerLabelTarget } from "../../benchmarkApi.js";
 
@@ -46,6 +47,7 @@ interface ParsedLnsWindowRankerArgs {
   labelsPath?: string;
   modelPath?: string;
   onlineScorecardPath?: string;
+  supplementalReplayLabelPaths: string[];
   epochs?: number;
   learningRate?: number;
   marginWeightCap?: number;
@@ -107,6 +109,8 @@ interface LnsWindowRankerGapArtifactManifest {
   rankerModelFingerprint: string;
   labelFingerprint: string;
   onlineScorecardFingerprint: string;
+  supplementalReplayFingerprints: string[];
+  offlineSupplementalDecisionCount: number;
   registry?: {
     registryPath: string;
     dryRun: boolean;
@@ -120,6 +124,7 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
   let labelsPath: string | undefined;
   let modelPath: string | undefined;
   let onlineScorecardPath: string | undefined;
+  let supplementalReplayLabelPaths: string[] = [];
   let epochs: number | undefined;
   let learningRate: number | undefined;
   let marginWeightCap: number | undefined;
@@ -135,6 +140,16 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
   let rankerSummary: string | undefined;
   let rankerRegistryPath: string | undefined;
   let rankerRegisterDryRun = false;
+  const appendSupplementalReplayLabelPaths = (value: string) => {
+    const paths = value
+      .split(",")
+      .map((entry) => entry.trim())
+      .filter((entry) => entry.length > 0);
+    if (paths.length === 0) {
+      throw new Error("--supplemental-replay-labels requires at least one path.");
+    }
+    supplementalReplayLabelPaths = [...supplementalReplayLabelPaths, ...paths];
+  };
   const inlineOptions: Record<string, (value: string) => void> = {
     labels: (value) => {
       labelsPath = value;
@@ -154,6 +169,9 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
     "online-ablation": (value) => {
       onlineScorecardPath = value;
     },
+    "supplemental-replay-labels": appendSupplementalReplayLabelPaths,
+    "supplemental-lns-replay": appendSupplementalReplayLabelPaths,
+    "supplemental-window-replay-labels": appendSupplementalReplayLabelPaths,
     epochs: (value) => {
       epochs = parsePositiveInteger(value, "epochs");
     },
@@ -228,6 +246,7 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
     labelsPath,
     modelPath,
     onlineScorecardPath,
+    supplementalReplayLabelPaths,
     epochs,
     learningRate,
     marginWeightCap,
@@ -262,6 +281,12 @@ function readOnlineScorecard(scorecardPath: string): LnsWindowRankerOnlineAblati
   const repoRelativePath = normalizeRepoRelativePath(scorecardPath, "--online-scorecard");
   const parsed = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), repoRelativePath), "utf8"));
   return parsed as LnsWindowRankerOnlineAblationSnapshot;
+}
+
+function readSupplementalReplaySnapshot(replayPath: string): LnsWindowReplaySnapshot {
+  const repoRelativePath = normalizeRepoRelativePath(replayPath, "--supplemental-replay-labels");
+  const parsed = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), repoRelativePath), "utf8"));
+  return parsed as LnsWindowReplaySnapshot;
 }
 
 function defaultRankerArtifactCommand(argv: readonly string[]): string {
@@ -383,7 +408,10 @@ function writeLnsWindowRankerGapArtifactBundle(
   const inputArtifacts = [
     normalizeRepoRelativePath(labelsPath, "--labels"),
     normalizeRepoRelativePath(modelPath, "--model"),
-    normalizeRepoRelativePath(onlineScorecardPath, "--online-scorecard")
+    normalizeRepoRelativePath(onlineScorecardPath, "--online-scorecard"),
+    ...args.supplementalReplayLabelPaths.map((replayPath) =>
+      normalizeRepoRelativePath(replayPath, "--supplemental-replay-labels")
+    )
   ];
   const telemetryManifest = buildLnsWindowRankerGapDiagnosticsTelemetryManifest(result, {
     command,
@@ -427,6 +455,8 @@ function writeLnsWindowRankerGapArtifactBundle(
     rankerModelFingerprint: result.inputs.rankerModelFingerprint,
     labelFingerprint: result.inputs.labelFingerprint,
     onlineScorecardFingerprint: result.inputs.onlineScorecardFingerprint,
+    supplementalReplayFingerprints: result.inputs.supplementalReplayFingerprints,
+    offlineSupplementalDecisionCount: result.offline.supplementalDecisionCount,
     registry
   };
 }
@@ -466,6 +496,8 @@ function formatLnsWindowRankerGapArtifactManifest(manifest: LnsWindowRankerGapAr
     `model-fingerprint=${manifest.rankerModelFingerprint}`,
     `label-fingerprint=${manifest.labelFingerprint}`,
     `online-scorecard-fingerprint=${manifest.onlineScorecardFingerprint}`,
+    `supplemental-replay-fingerprints=${manifest.supplementalReplayFingerprints.length ? manifest.supplementalReplayFingerprints.join(",") : "none"}`,
+    `offline-supplemental-decisions=${manifest.offlineSupplementalDecisionCount}`,
     `diagnostics-json=${manifest.artifactPaths.diagnosticsJson}`,
     `diagnostics-text=${manifest.artifactPaths.diagnosticsText}`,
     `telemetry-manifest=${manifest.artifactPaths.telemetryManifestJson}`,
@@ -499,7 +531,10 @@ export function runLnsWindowRankerCli(): void {
     const labelSnapshot = readLabelSnapshot(args.labelsPath);
     const model = readRankerModel(args.modelPath);
     const onlineScorecard = readOnlineScorecard(args.onlineScorecardPath);
-    const result = runLnsWindowRankerGapDiagnostics(labelSnapshot, model, onlineScorecard);
+    const supplementalReplaySnapshots = args.supplementalReplayLabelPaths.map(readSupplementalReplaySnapshot);
+    const result = runLnsWindowRankerGapDiagnostics(labelSnapshot, model, onlineScorecard, {
+      supplementalReplaySnapshots
+    });
     if (args.artifactDir !== undefined) {
       const manifest = writeLnsWindowRankerGapArtifactBundle(
         result,
@@ -516,8 +551,14 @@ export function runLnsWindowRankerCli(): void {
     writeCliJsonOrText(args.json, result, () => formatLnsWindowRankerGapDiagnostics(result));
     return;
   }
-  if (args.modelPath !== undefined || args.onlineScorecardPath !== undefined) {
-    throw new Error("--model and --online-scorecard are only available with --gap-diagnostics.");
+  if (
+    args.modelPath !== undefined ||
+    args.onlineScorecardPath !== undefined ||
+    args.supplementalReplayLabelPaths.length > 0
+  ) {
+    throw new Error(
+      "--model, --online-scorecard, and --supplemental-replay-labels are only available with --gap-diagnostics."
+    );
   }
 
   const labelSnapshot = readLabelSnapshot(args.labelsPath);

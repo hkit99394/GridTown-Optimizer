@@ -36,7 +36,11 @@ import { hashString, stableStringify } from "../core/cpSatContinuation.js";
 import type { LearnedRankingLabelSnapshot, LearnedRankingLabelSplit } from "./learnedRankingLabels.js";
 import type { LnsReplayPressureFamilyLabel } from "./lns.js";
 import type { LnsWindowRankerOnlineAblationSnapshot } from "./lnsWindowRankerOnlineAblations.js";
-import type { LnsWindowReplaySeedHintKind, LnsWindowReplaySnapshotLabel } from "./lnsWindowReplayLabels.js";
+import type {
+  LnsWindowReplaySeedHintKind,
+  LnsWindowReplaySnapshot,
+  LnsWindowReplaySnapshotLabel
+} from "./lnsWindowReplayLabels.js";
 import type {
   ModelExperimentRegistryEntryDraftOptions,
   ModelExperimentTelemetryManifest,
@@ -177,15 +181,18 @@ export interface LnsWindowRankerGapDiagnosticsResult {
     sourceLabelPreset: string | null;
     sourceLnsScaleReady: boolean;
     onlineScorecardType: "lns-window-ranker-online-ablation";
+    supplementalReplaySnapshotCount: number;
   };
   inputs: {
     labelFingerprint: string;
     datasetFingerprint: string;
     rankerModelFingerprint: string;
     onlineScorecardFingerprint: string;
+    supplementalReplayFingerprints: string[];
   };
   offline: {
     decisionCount: number;
+    supplementalDecisionCount: number;
     overrideCount: number;
     opportunityCount: number;
     selectedPositiveCount: number;
@@ -219,6 +226,10 @@ export interface LnsWindowRankerGapDiagnosticsResult {
     promotionSensitivity: LnsWindowRankerGapPromotionSensitivity;
     promotionBlocked: boolean;
   };
+}
+
+export interface LnsWindowRankerGapDiagnosticsOptions {
+  supplementalReplaySnapshots?: readonly LnsWindowReplaySnapshot[];
 }
 
 export interface LnsWindowRankerGapDiagnosticsTelemetryManifestOptions extends Pick<
@@ -273,6 +284,33 @@ function collectDecisionGroups(
       return [
         {
           split: split.split,
+          caseName: benchmarkCase.name,
+          pressureFamily: benchmarkCase.pressureFamily,
+          seed: benchmarkCase.seed,
+          seedHintKind,
+          statePolicy: benchmarkCase.statePolicy,
+          stateIndex: benchmarkCase.stateIndex,
+          labels
+        }
+      ];
+    })
+  );
+}
+
+function collectSupplementalDecisionGroups(
+  snapshots: readonly LnsWindowReplaySnapshot[],
+  target: LnsWindowRankerLabelTarget,
+  allowWeakSeedReplayLabels: boolean
+): OfflineDecisionGroup[] {
+  return snapshots.flatMap((snapshot) =>
+    snapshot.cases.flatMap((benchmarkCase): OfflineDecisionGroup[] => {
+      const seedHintKind = inferLnsWindowRankerReplaySeedHintKind(benchmarkCase);
+      if (!allowWeakSeedReplayLabels && seedHintKind === "weak-replay") return [];
+      const labels = benchmarkCase.labels.filter((label) => label.usable && hasTargetValue(label, target));
+      if (labels.length === 0) return [];
+      return [
+        {
+          split: "holdout",
           caseName: benchmarkCase.name,
           pressureFamily: benchmarkCase.pressureFamily,
           seed: benchmarkCase.seed,
@@ -615,13 +653,22 @@ function buildPromotionSensitivity(
 export function runLnsWindowRankerGapDiagnostics(
   labelSnapshot: LearnedRankingLabelSnapshot,
   model: LnsWindowRankerModel,
-  onlineScorecard: LnsWindowRankerOnlineAblationSnapshot
+  onlineScorecard: LnsWindowRankerOnlineAblationSnapshot,
+  options: LnsWindowRankerGapDiagnosticsOptions = {}
 ): LnsWindowRankerGapDiagnosticsResult {
   const target = modelTarget(model);
   const allowWeakSeedReplayLabels = modelWeakSeedAllowance(model);
-  const decisions = collectDecisionGroups(labelSnapshot, target, allowWeakSeedReplayLabels).map((group) =>
-    buildOfflineDecision(group, model, target)
+  const supplementalReplaySnapshots = options.supplementalReplaySnapshots ?? [];
+  const supplementalDecisionGroups = collectSupplementalDecisionGroups(
+    supplementalReplaySnapshots,
+    target,
+    allowWeakSeedReplayLabels
   );
+  const decisionGroups = [
+    ...collectDecisionGroups(labelSnapshot, target, allowWeakSeedReplayLabels),
+    ...supplementalDecisionGroups
+  ];
+  const decisions = decisionGroups.map((group) => buildOfflineDecision(group, model, target));
   const onlineTransitionCases = collectOnlineTransitionCases(onlineScorecard);
   const offlineTransitionSummaries = groupOfflineSummaries(decisions, false);
   const offlineTransitionFamilySummaries = groupOfflineSummaries(decisions, true);
@@ -649,16 +696,19 @@ export function runLnsWindowRankerGapDiagnostics(
       weakSeedReplayLabelsAllowed: allowWeakSeedReplayLabels,
       sourceLabelPreset: labelSnapshot.audit.lnsReplay.preset,
       sourceLnsScaleReady: labelSnapshot.lns.scaleReadiness.passed,
-      onlineScorecardType: "lns-window-ranker-online-ablation"
+      onlineScorecardType: "lns-window-ranker-online-ablation",
+      supplementalReplaySnapshotCount: supplementalReplaySnapshots.length
     },
     inputs: {
       labelFingerprint: fingerprint(labelSnapshot),
       datasetFingerprint: fingerprint(labelSnapshot.lns),
       rankerModelFingerprint: buildModelExperimentFingerprint(model),
-      onlineScorecardFingerprint: fingerprint(onlineScorecard)
+      onlineScorecardFingerprint: fingerprint(onlineScorecard),
+      supplementalReplayFingerprints: supplementalReplaySnapshots.map((snapshot) => fingerprint(snapshot))
     },
     offline: {
       decisionCount: decisions.length,
+      supplementalDecisionCount: supplementalDecisionGroups.length,
       overrideCount: decisions.filter((entry) => !entry.selectedByBaseline).length,
       opportunityCount: decisions.filter((entry) => entry.bestTargetValue > 0).length,
       selectedPositiveCount: decisions.filter((entry) => entry.selectedTargetValue > 0).length,
@@ -708,6 +758,7 @@ function modelRecord(result: LnsWindowRankerGapDiagnosticsResult): Record<string
     solverDefaultChanged: false,
     target: result.audit.target,
     weakSeedReplayLabelsAllowed: result.audit.weakSeedReplayLabelsAllowed,
+    supplementalReplaySnapshotCount: result.audit.supplementalReplaySnapshotCount,
     rankerModelFingerprint: result.inputs.rankerModelFingerprint,
     onlineScorecardType: result.audit.onlineScorecardType
   };
@@ -717,7 +768,9 @@ function summaryMetrics(result: LnsWindowRankerGapDiagnosticsResult): Record<str
   return {
     target: result.audit.target,
     weakSeedReplayLabelsAllowed: result.audit.weakSeedReplayLabelsAllowed,
+    supplementalReplaySnapshotCount: result.audit.supplementalReplaySnapshotCount,
     offlineDecisionCount: result.offline.decisionCount,
+    offlineSupplementalDecisionCount: result.offline.supplementalDecisionCount,
     offlineOverrideCount: result.offline.overrideCount,
     offlineOpportunityCount: result.offline.opportunityCount,
     onlineComparisonCount: result.online.comparisonCount,
@@ -792,6 +845,7 @@ export function buildLnsWindowRankerGapDiagnosticsRegistryEntryDraft(
       onlineSelectionTraceCount: result.online.selectionTraceCount,
       onlineFinalNeutralOverrideCount: result.online.finalNeutralOverrideCount,
       offlineDecisionCount: result.offline.decisionCount,
+      offlineSupplementalDecisionCount: result.offline.supplementalDecisionCount,
       offlineOpportunityCount: result.offline.opportunityCount,
       offlinePositiveOnlineNeutralCount: result.summary.offlinePositiveOnlineNeutralCount,
       zeroLayoutFinalNeutralTraceComparisonCount: result.summary.zeroLayoutFinalNeutralTraceComparisonCount,
@@ -879,9 +933,9 @@ export function formatLnsWindowRankerGapDiagnostics(result: LnsWindowRankerGapDi
     "=== LNS Window Ranker Offline/Online Gap Diagnostics ===",
     `Generated: ${result.generatedAt}`,
     `Schema: ${result.schemaVersion}`,
-    `Audit: runtime-default-changed=false solver-default-changed=false target=${result.audit.target} weak-seed-labels=${result.audit.weakSeedReplayLabelsAllowed}`,
-    `Inputs: label=${result.inputs.labelFingerprint} model=${result.inputs.rankerModelFingerprint} online=${result.inputs.onlineScorecardFingerprint}`,
-    `Offline: decisions=${result.offline.decisionCount} overrides=${result.offline.overrideCount} opportunities=${result.offline.opportunityCount} selected-positive=${result.offline.selectedPositiveCount}`,
+    `Audit: runtime-default-changed=false solver-default-changed=false target=${result.audit.target} weak-seed-labels=${result.audit.weakSeedReplayLabelsAllowed} supplemental-replay=${result.audit.supplementalReplaySnapshotCount}`,
+    `Inputs: label=${result.inputs.labelFingerprint} model=${result.inputs.rankerModelFingerprint} online=${result.inputs.onlineScorecardFingerprint} supplemental=${result.inputs.supplementalReplayFingerprints.length ? result.inputs.supplementalReplayFingerprints.join(",") : "none"}`,
+    `Offline: decisions=${result.offline.decisionCount} supplemental=${result.offline.supplementalDecisionCount} overrides=${result.offline.overrideCount} opportunities=${result.offline.opportunityCount} selected-positive=${result.offline.selectedPositiveCount}`,
     `Online: cases=${result.online.selectedCaseNames.length} seeds=${result.online.seeds.join(",")} comparisons=${result.online.comparisonCount} min-score-delta=${result.online.minScoreDelta ?? "n/a"} overrides=${result.online.overrideCount} selection-trace=${result.online.selectionTraceCount} final-neutral-overrides=${result.online.finalNeutralOverrideCount}`,
     `Gap: joined-transition-families=${result.summary.joinedTransitionFamilyCount} offline-positive-online-neutral=${result.summary.offlinePositiveOnlineNeutralCount} online-active-no-offline-match=${result.summary.onlineActiveNoOfflineMatchCount} promotion-blocked=${result.summary.promotionBlocked}`,
     `Layout signatures: ${formatLayoutSignatureCounts(result.summary.traceComparisonLayoutSignatureCounts)}`,

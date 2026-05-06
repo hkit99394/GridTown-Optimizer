@@ -1,0 +1,25 @@
+{
+  "artifactDir": "artifacts/lns-window-replay-labels/2026-05-06/protected-priority2-online-decision-state-roll-forward-4x0.1",
+  "artifactPaths": {
+    "replayJson": "artifacts/lns-window-replay-labels/2026-05-06/protected-priority2-online-decision-state-roll-forward-4x0.1/lns-window-replay-labels.json",
+    "replayText": "artifacts/lns-window-replay-labels/2026-05-06/protected-priority2-online-decision-state-roll-forward-4x0.1/lns-window-replay-labels.txt",
+    "manifestJson": "artifacts/lns-window-replay-labels/2026-05-06/protected-priority2-online-decision-state-roll-forward-4x0.1/manifest.json"
+  },
+  "command": "node dist/lnsBenchmarkCli.js --window-replay-labels --window-replay-protected-holdout --window-replay-online-scorecard=artifacts/lns-window-ranker-online/2026-05-06/protected-priority2-decision-state-capture-min-score-delta-0.1/lns-window-ranker-online-ablation.json --seeds=7,19,37 --max-windows=1 --exploration-windows=0 --repair-time=1 --roll-forward-iterations=4 --roll-forward-repair-time=0.1 --window-replay-artifact-dir=artifacts/lns-window-replay-labels/2026-05-06/protected-priority2-online-decision-state-roll-forward-4x0.1 --json lns-holdout-corridor-weave-pressure lns-holdout-service-ridge-pressure lns-holdout-anchor-service-shelf-pressure",
+  "generatedAt": "2026-05-06T07:32:42.562Z",
+  "caseCount": 3,
+  "seedCount": 3,
+  "stateCount": 18,
+  "labelCount": 36,
+  "rollForwardLabelCount": 36,
+  "selectedCaseNames": [
+    "lns-holdout-corridor-weave-pressure",
+    "lns-holdout-service-ridge-pressure",
+    "lns-holdout-anchor-service-shelf-pressure"
+  ],
+  "pressureFamilies": [
+    "corridor",
+    "service-pressure",
+    "anchor-service"
+  ]
+}

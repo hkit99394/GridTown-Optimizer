@@ -905,6 +905,34 @@ function testLnsWindowRankerGapDiagnosticsSupplementalReplayLabels() {
   assert.match(formatted, /supplemental-replay=1/);
   assert.match(formatted, /Offline: decisions=8 supplemental=1/);
 
+  const conflictBaseline = runLnsWindowRankerGapDiagnostics(fixture, model, buildOnlineScorecardFixture());
+  assert.equal(conflictBaseline.summary.offlinePositiveOnlineNeutralCount, 1);
+  assert.equal(conflictBaseline.summary.exactReplayNeutralizedOfflinePositiveOnlineNeutralCount, 0);
+  assert.equal(conflictBaseline.summary.promotionBlocked, true);
+
+  const neutralizingReplay = buildNeutralSupplementalReplaySnapshot(
+    holdoutSplit.replay.cases[0],
+    "protected-service-supplemental",
+    "service-pressure"
+  );
+  const neutralized = runLnsWindowRankerGapDiagnostics(fixture, model, buildOnlineScorecardFixture(), {
+    supplementalReplaySnapshots: [neutralizingReplay]
+  });
+  const neutralizedFormatted = formatLnsWindowRankerGapDiagnostics(neutralized);
+  const neutralizedJoin = neutralized.joins.find((entry) => entry.key === "service-pressure:weak-service->sliding");
+  assert.equal(neutralized.summary.offlinePositiveOnlineNeutralCount, 0);
+  assert.equal(neutralized.summary.exactReplayNeutralizedOfflinePositiveOnlineNeutralCount, 1);
+  assert.equal(neutralized.summary.promotionBlocked, false);
+  assert.equal(neutralized.traceComparisons.length, 0);
+  assert.equal(neutralized.recommendedExperiments.length, 0);
+  assert.equal(neutralizedJoin.diagnosis, "offline-neutral-online-neutral");
+  assert.equal(neutralizedJoin.exactReplayNeutralizedOfflinePositiveOnlineNeutral, true);
+  assert(neutralizedJoin.offline.selectedPositiveCount > 0);
+  assert.equal(neutralizedJoin.offline.exactOnlineDecisionSupplementalDecisionCount, 1);
+  assert.equal(neutralizedJoin.offline.exactOnlineDecisionSupplementalSelectedPositiveCount, 0);
+  assert.match(neutralizedFormatted, /exact-replay-neutralized=1/);
+  assert.match(neutralizedFormatted, /exact-replay-neutralized=true/);
+
   const telemetryManifest = buildLnsWindowRankerGapDiagnosticsTelemetryManifest(result, {
     command: "node dist/lnsWindowRankerCli.js --gap-diagnostics --supplemental-replay-labels=supplemental.json",
     inputArtifacts: ["labels.json", "model.json", "scorecard.json", "supplemental.json"],
@@ -912,6 +940,14 @@ function testLnsWindowRankerGapDiagnosticsSupplementalReplayLabels() {
   });
   assert.equal(telemetryManifest.metrics.offlineSupplementalDecisionCount, 1);
   assert.equal(telemetryManifest.metrics.targetedProtectedReplayLabelRecommendationCount, 0);
+  assert.equal(
+    buildLnsWindowRankerGapDiagnosticsTelemetryManifest(neutralized, {
+      command: "node dist/lnsWindowRankerCli.js --gap-diagnostics --supplemental-replay-labels=supplemental.json",
+      inputArtifacts: ["labels.json", "model.json", "scorecard.json", "supplemental.json"],
+      outputArtifacts: ["gap.json"]
+    }).metrics.exactReplayNeutralizedOfflinePositiveOnlineNeutralCount,
+    1
+  );
 
   const registryDraft = buildLnsWindowRankerGapDiagnosticsRegistryEntryDraft(result, {
     runId: "lns-window-ranker-gap-supplemental-test",
@@ -921,6 +957,13 @@ function testLnsWindowRankerGapDiagnosticsSupplementalReplayLabels() {
   assert.equal(registryDraft.budget.offlineSupplementalDecisionCount, 1);
   assert.equal(registryDraft.budget.targetedProtectedReplayLabelRecommendationCount, 0);
   assert.equal(registryDraft.summaryMetrics.offlineSupplementalDecisionCount, 1);
+  const neutralizedRegistryDraft = buildLnsWindowRankerGapDiagnosticsRegistryEntryDraft(neutralized, {
+    runId: "lns-window-ranker-gap-neutralized-test",
+    commands: ["node dist/lnsWindowRankerCli.js --gap-diagnostics --supplemental-replay-labels=supplemental.json"],
+    artifactPaths: ["artifacts/gap/lns-window-ranker-gap-diagnostics.json"]
+  });
+  assert.equal(neutralizedRegistryDraft.budget.exactReplayNeutralizedOfflinePositiveOnlineNeutralCount, 1);
+  assert.equal(neutralizedRegistryDraft.summaryMetrics.exactReplayNeutralizedOfflinePositiveOnlineNeutralCount, 1);
 }
 
 function testLnsWindowRankerRollForwardTarget() {

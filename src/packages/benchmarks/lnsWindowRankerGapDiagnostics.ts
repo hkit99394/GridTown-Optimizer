@@ -49,6 +49,7 @@ import type {
 
 interface OfflineDecisionGroup {
   split: LearnedRankingLabelSplit;
+  source: "label-snapshot" | "supplemental-replay";
   caseName: string;
   pressureFamily: LnsReplayPressureFamilyLabel;
   seed: number | null;
@@ -60,12 +61,14 @@ interface OfflineDecisionGroup {
 
 export interface LnsWindowRankerGapOfflineDecision {
   split: LearnedRankingLabelSplit;
+  source: "label-snapshot" | "supplemental-replay";
   caseName: string;
   pressureFamily: string;
   seed: number | null;
   seedHintKind: string;
   statePolicy: string;
   stateIndex: number;
+  exactOnlineDecisionSupplemental: boolean;
   transition: string;
   selectedByBaseline: boolean;
   baselineOperator: string;
@@ -89,10 +92,14 @@ export interface LnsWindowRankerGapOfflineSummary {
   pressureFamily: string | "all";
   transition: string;
   decisionCount: number;
+  supplementalDecisionCount: number;
+  exactOnlineDecisionSupplementalDecisionCount: number;
   overrideCount: number;
   opportunityCount: number;
   hitBestCount: number;
   selectedPositiveCount: number;
+  supplementalSelectedPositiveCount: number;
+  exactOnlineDecisionSupplementalSelectedPositiveCount: number;
   baselinePositiveCount: number;
   bestTargetTotal: number;
   selectedTargetTotal: number;
@@ -135,6 +142,7 @@ export interface LnsWindowRankerGapTransitionJoin {
   offline: LnsWindowRankerGapOfflineSummary | null;
   online: LnsWindowRankerGapOnlineSummary | null;
   diagnosis: LnsWindowRankerGapDiagnosis;
+  exactReplayNeutralizedOfflinePositiveOnlineNeutral: boolean;
 }
 
 export type LnsWindowRankerGapPromotionSensitivityBlocker =
@@ -219,6 +227,7 @@ export interface LnsWindowRankerGapDiagnosticsResult {
     joinedTransitionFamilyCount: number;
     offlinePositiveOnlineNeutralCount: number;
     onlineActiveNoOfflineMatchCount: number;
+    exactReplayNeutralizedOfflinePositiveOnlineNeutralCount: number;
     traceComparisonLayoutSignatureCounts: Record<LnsWindowRankerGapLayoutSignature, number>;
     zeroLayoutFinalNeutralTraceComparisonCount: number;
     changedLayoutFinalNeutralTraceComparisonCount: number;
@@ -284,6 +293,7 @@ function collectDecisionGroups(
       return [
         {
           split: split.split,
+          source: "label-snapshot",
           caseName: benchmarkCase.name,
           pressureFamily: benchmarkCase.pressureFamily,
           seed: benchmarkCase.seed,
@@ -311,6 +321,7 @@ function collectSupplementalDecisionGroups(
       return [
         {
           split: "holdout",
+          source: "supplemental-replay",
           caseName: benchmarkCase.name,
           pressureFamily: benchmarkCase.pressureFamily,
           seed: benchmarkCase.seed,
@@ -359,12 +370,14 @@ function buildOfflineDecision(
   const bestTargetValue = Math.max(...group.labels.map((label) => targetValue(label, target)));
   return {
     split: group.split,
+    source: group.source,
     caseName: group.caseName,
     pressureFamily: group.pressureFamily,
     seed: group.seed,
     seedHintKind: group.seedHintKind,
     statePolicy: group.statePolicy,
     stateIndex: group.stateIndex,
+    exactOnlineDecisionSupplemental: group.source === "supplemental-replay" && group.statePolicy === "online-decision",
     transition: transitionKey(baseline.operator, selected.label.operator),
     selectedByBaseline: selected.label.selectedByBaseline,
     baselineOperator: baseline.operator,
@@ -391,6 +404,8 @@ function summarizeOfflineDecisions(
   decisions: readonly LnsWindowRankerGapOfflineDecision[]
 ): LnsWindowRankerGapOfflineSummary {
   const decisionCount = decisions.length;
+  const supplementalDecisions = decisions.filter((entry) => entry.source === "supplemental-replay");
+  const exactOnlineDecisionSupplementalDecisions = decisions.filter((entry) => entry.exactOnlineDecisionSupplemental);
   const opportunityCount = decisions.filter((entry) => entry.bestTargetValue > 0).length;
   const bestTargetTotal = sumBenchmarkBy(decisions, (entry) => Math.max(0, entry.bestTargetValue));
   const selectedTargetTotal = sumBenchmarkBy(decisions, (entry) => Math.max(0, entry.selectedTargetValue));
@@ -402,12 +417,18 @@ function summarizeOfflineDecisions(
     pressureFamily,
     transition,
     decisionCount,
+    supplementalDecisionCount: supplementalDecisions.length,
+    exactOnlineDecisionSupplementalDecisionCount: exactOnlineDecisionSupplementalDecisions.length,
     overrideCount: decisions.filter((entry) => !entry.selectedByBaseline).length,
     opportunityCount,
     hitBestCount: decisions.filter(
       (entry) => entry.bestTargetValue > 0 && entry.selectedTargetValue === entry.bestTargetValue
     ).length,
     selectedPositiveCount: decisions.filter((entry) => entry.selectedTargetValue > 0).length,
+    supplementalSelectedPositiveCount: supplementalDecisions.filter((entry) => entry.selectedTargetValue > 0).length,
+    exactOnlineDecisionSupplementalSelectedPositiveCount: exactOnlineDecisionSupplementalDecisions.filter(
+      (entry) => entry.selectedTargetValue > 0
+    ).length,
     baselinePositiveCount: decisions.filter((entry) => entry.baselineTargetValue > 0).length,
     bestTargetTotal: roundMetric(bestTargetTotal),
     selectedTargetTotal: roundMetric(selectedTargetTotal),
@@ -541,10 +562,18 @@ function buildJoins(
     const offlineSummary = offlineByKey.get(key) ?? null;
     const onlineAllNeutral =
       onlineSummary.overrideCount > 0 && onlineSummary.finalNeutralCount === onlineSummary.overrideCount;
+    const exactReplayNeutralizedOfflinePositiveOnlineNeutral =
+      onlineAllNeutral &&
+      offlineSummary !== null &&
+      offlineSummary.selectedPositiveCount > 0 &&
+      offlineSummary.exactOnlineDecisionSupplementalDecisionCount > 0 &&
+      offlineSummary.exactOnlineDecisionSupplementalSelectedPositiveCount === 0;
     const diagnosis =
       offlineSummary === null
         ? "online-active-no-offline-match"
-        : onlineAllNeutral && offlineSummary.selectedPositiveCount > 0
+        : onlineAllNeutral &&
+            offlineSummary.selectedPositiveCount > 0 &&
+            !exactReplayNeutralizedOfflinePositiveOnlineNeutral
           ? "offline-positive-online-neutral"
           : "offline-neutral-online-neutral";
     return {
@@ -553,7 +582,8 @@ function buildJoins(
       transition: onlineSummary.transition,
       offline: offlineSummary,
       online: onlineSummary,
-      diagnosis
+      diagnosis,
+      exactReplayNeutralizedOfflinePositiveOnlineNeutral
     };
   });
 }
@@ -739,6 +769,9 @@ export function runLnsWindowRankerGapDiagnostics(
         .length,
       onlineActiveNoOfflineMatchCount: joins.filter((entry) => entry.diagnosis === "online-active-no-offline-match")
         .length,
+      exactReplayNeutralizedOfflinePositiveOnlineNeutralCount: joins.filter(
+        (entry) => entry.exactReplayNeutralizedOfflinePositiveOnlineNeutral
+      ).length,
       traceComparisonLayoutSignatureCounts: layoutSignatureCounts,
       zeroLayoutFinalNeutralTraceComparisonCount: layoutSignatureCounts["zero-layout-final-neutral"],
       changedLayoutFinalNeutralTraceComparisonCount: layoutSignatureCounts["changed-layout-final-neutral"],
@@ -780,6 +813,8 @@ function summaryMetrics(result: LnsWindowRankerGapDiagnosticsResult): Record<str
     joinedTransitionFamilyCount: result.summary.joinedTransitionFamilyCount,
     offlinePositiveOnlineNeutralCount: result.summary.offlinePositiveOnlineNeutralCount,
     onlineActiveNoOfflineMatchCount: result.summary.onlineActiveNoOfflineMatchCount,
+    exactReplayNeutralizedOfflinePositiveOnlineNeutralCount:
+      result.summary.exactReplayNeutralizedOfflinePositiveOnlineNeutralCount,
     traceComparisonLayoutSignatureCounts: result.summary.traceComparisonLayoutSignatureCounts,
     zeroLayoutFinalNeutralTraceComparisonCount: result.summary.zeroLayoutFinalNeutralTraceComparisonCount,
     changedLayoutFinalNeutralTraceComparisonCount: result.summary.changedLayoutFinalNeutralTraceComparisonCount,
@@ -848,6 +883,8 @@ export function buildLnsWindowRankerGapDiagnosticsRegistryEntryDraft(
       offlineSupplementalDecisionCount: result.offline.supplementalDecisionCount,
       offlineOpportunityCount: result.offline.opportunityCount,
       offlinePositiveOnlineNeutralCount: result.summary.offlinePositiveOnlineNeutralCount,
+      exactReplayNeutralizedOfflinePositiveOnlineNeutralCount:
+        result.summary.exactReplayNeutralizedOfflinePositiveOnlineNeutralCount,
       zeroLayoutFinalNeutralTraceComparisonCount: result.summary.zeroLayoutFinalNeutralTraceComparisonCount,
       changedLayoutFinalNeutralTraceComparisonCount: result.summary.changedLayoutFinalNeutralTraceComparisonCount,
       mixedLayoutFinalNeutralTraceComparisonCount: result.summary.mixedLayoutFinalNeutralTraceComparisonCount,
@@ -893,7 +930,7 @@ export function buildLnsWindowRankerGapDiagnosticsRegistryEntryDraft(
 }
 
 function formatOfflineSummary(summary: LnsWindowRankerGapOfflineSummary): string {
-  return `${summary.pressureFamily}/${summary.transition}: decisions=${summary.decisionCount} selected-positive=${summary.selectedPositiveCount} hit-best=${summary.hitBestCount}/${summary.opportunityCount} selected-delta=${formatBenchmarkSignedNumber(summary.selectedDeltaVsBaselineTotal)} capture=${summary.selectedCaptureRate.toFixed(4)} baseline-capture=${summary.baselineCaptureRate.toFixed(4)}`;
+  return `${summary.pressureFamily}/${summary.transition}: decisions=${summary.decisionCount} supplemental=${summary.supplementalDecisionCount} exact-online-supplemental=${summary.exactOnlineDecisionSupplementalDecisionCount} selected-positive=${summary.selectedPositiveCount} exact-online-selected-positive=${summary.exactOnlineDecisionSupplementalSelectedPositiveCount} hit-best=${summary.hitBestCount}/${summary.opportunityCount} selected-delta=${formatBenchmarkSignedNumber(summary.selectedDeltaVsBaselineTotal)} capture=${summary.selectedCaptureRate.toFixed(4)} baseline-capture=${summary.baselineCaptureRate.toFixed(4)}`;
 }
 
 function formatJoin(join: LnsWindowRankerGapTransitionJoin): string {
@@ -903,7 +940,10 @@ function formatJoin(join: LnsWindowRankerGapTransitionJoin): string {
   const online = join.online
     ? `online-overrides=${join.online.overrideCount} finals=${join.online.finalImprovedCount}/${join.online.finalNeutralCount}/${join.online.finalRegressedCount} mean-delta=${formatBenchmarkSignedNumber(join.online.meanPopulationDelta)}`
     : "online=none";
-  return `- ${join.diagnosis} ${offline} ${online}`;
+  const exactNeutralized = join.exactReplayNeutralizedOfflinePositiveOnlineNeutral
+    ? " exact-replay-neutralized=true"
+    : "";
+  return `- ${join.diagnosis}${exactNeutralized} ${offline} ${online}`;
 }
 
 function formatLayoutSignatureCounts(counts: Record<LnsWindowRankerGapLayoutSignature, number>): string {
@@ -922,7 +962,11 @@ function formatPromotionSensitivity(sensitivity: LnsWindowRankerGapPromotionSens
 
 export function formatLnsWindowRankerGapDiagnostics(result: LnsWindowRankerGapDiagnosticsResult): string {
   const joins = result.joins
-    .filter((entry) => entry.diagnosis !== "offline-neutral-online-neutral")
+    .filter(
+      (entry) =>
+        entry.diagnosis !== "offline-neutral-online-neutral" ||
+        entry.exactReplayNeutralizedOfflinePositiveOnlineNeutral
+    )
     .slice(0, 10)
     .map(formatJoin);
   const traceComparisons = result.traceComparisons.slice(0, 10).map(formatLnsWindowRankerGapTraceComparison);
@@ -937,7 +981,7 @@ export function formatLnsWindowRankerGapDiagnostics(result: LnsWindowRankerGapDi
     `Inputs: label=${result.inputs.labelFingerprint} model=${result.inputs.rankerModelFingerprint} online=${result.inputs.onlineScorecardFingerprint} supplemental=${result.inputs.supplementalReplayFingerprints.length ? result.inputs.supplementalReplayFingerprints.join(",") : "none"}`,
     `Offline: decisions=${result.offline.decisionCount} supplemental=${result.offline.supplementalDecisionCount} overrides=${result.offline.overrideCount} opportunities=${result.offline.opportunityCount} selected-positive=${result.offline.selectedPositiveCount}`,
     `Online: cases=${result.online.selectedCaseNames.length} seeds=${result.online.seeds.join(",")} comparisons=${result.online.comparisonCount} min-score-delta=${result.online.minScoreDelta ?? "n/a"} overrides=${result.online.overrideCount} selection-trace=${result.online.selectionTraceCount} final-neutral-overrides=${result.online.finalNeutralOverrideCount}`,
-    `Gap: joined-transition-families=${result.summary.joinedTransitionFamilyCount} offline-positive-online-neutral=${result.summary.offlinePositiveOnlineNeutralCount} online-active-no-offline-match=${result.summary.onlineActiveNoOfflineMatchCount} promotion-blocked=${result.summary.promotionBlocked}`,
+    `Gap: joined-transition-families=${result.summary.joinedTransitionFamilyCount} offline-positive-online-neutral=${result.summary.offlinePositiveOnlineNeutralCount} online-active-no-offline-match=${result.summary.onlineActiveNoOfflineMatchCount} exact-replay-neutralized=${result.summary.exactReplayNeutralizedOfflinePositiveOnlineNeutralCount} promotion-blocked=${result.summary.promotionBlocked}`,
     `Layout signatures: ${formatLayoutSignatureCounts(result.summary.traceComparisonLayoutSignatureCounts)}`,
     `Promotion sensitivity: ${formatPromotionSensitivity(result.summary.promotionSensitivity)}`,
     `Online neutral override rate: ${formatBenchmarkRate(benchmarkRatio(result.online.finalNeutralOverrideCount, result.online.overrideCount))}`,

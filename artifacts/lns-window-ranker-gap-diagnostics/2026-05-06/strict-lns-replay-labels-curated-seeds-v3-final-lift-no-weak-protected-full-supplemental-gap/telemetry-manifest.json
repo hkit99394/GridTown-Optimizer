@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "source": "model-experiment",
-  "command": "node dist/lnsWindowRankerCli.js --gap-diagnostics --labels=artifacts/learned-ranking-labels/2026-05-04/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1/labels.json --model=artifacts/lns-window-ranker/2026-05-05/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1-final-lift-no-weak-cpu-ranker-lr0.02-cap100/model.json --online-scorecard=artifacts/lns-window-ranker-online/2026-05-06/protected-priority2-decision-state-capture-min-score-delta-0.1/lns-window-ranker-online-ablation.json --supplemental-replay-labels=artifacts/lns-window-replay-labels/2026-05-06/protected-priority2-online-decision-state-roll-forward-4x0.1/lns-window-replay-labels.json --artifact-dir=artifacts/lns-window-ranker-gap-diagnostics/2026-05-06/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-protected-priority2-supplemental-gap --ranker-run-id=lns-window-ranker-gap-2026-05-06-curated-seeds-v3-final-lift-no-weak-protected-priority2-supplemental --ranker-decision=offline-online-lns-window-ranker-gap-diagnostics-with-priority2-supplemental-replay '--ranker-summary=Priority-2 protected online decision-state replay labels consumed as supplemental holdout gap evidence with exact replay neutralization; no solver default changed.' --json",
-  "generatedAt": "2026-05-06T17:43:26.946Z",
+  "command": "node dist/lnsWindowRankerCli.js --gap-diagnostics --labels=artifacts/learned-ranking-labels/2026-05-04/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1/labels.json --model=artifacts/lns-window-ranker/2026-05-05/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1-final-lift-no-weak-cpu-ranker-lr0.02-cap100/model.json --online-scorecard=artifacts/lns-window-ranker-online/2026-05-06/protected-full-decision-state-capture-min-score-delta-0.1/lns-window-ranker-online-ablation.json --supplemental-replay-labels=artifacts/lns-window-replay-labels/2026-05-06/protected-full-online-decision-state-roll-forward-4x0.1/lns-window-replay-labels.json --artifact-dir=artifacts/lns-window-ranker-gap-diagnostics/2026-05-06/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-protected-full-supplemental-gap --ranker-run-id=lns-window-ranker-gap-2026-05-06-curated-seeds-v3-final-lift-no-weak-protected-full-supplemental --ranker-decision=offline-online-lns-window-ranker-gap-diagnostics-with-full-protected-supplemental-replay '--ranker-summary=Full protected online decision-state replay labels consumed as supplemental holdout gap evidence with exact replay neutralization; no solver default changed.' --json",
+  "generatedAt": "2026-05-06T17:50:07.073Z",
   "git": {
     "commit": "783317c280c35ef88bb525ed2401c9008c2b7ffd",
     "branch": "features/validated-solver-improvement-loop"
@@ -32,13 +32,13 @@
   "inputArtifacts": [
     "artifacts/learned-ranking-labels/2026-05-04/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1/labels.json",
     "artifacts/lns-window-ranker/2026-05-05/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1-final-lift-no-weak-cpu-ranker-lr0.02-cap100/model.json",
-    "artifacts/lns-window-ranker-online/2026-05-06/protected-priority2-decision-state-capture-min-score-delta-0.1/lns-window-ranker-online-ablation.json",
-    "artifacts/lns-window-replay-labels/2026-05-06/protected-priority2-online-decision-state-roll-forward-4x0.1/lns-window-replay-labels.json"
+    "artifacts/lns-window-ranker-online/2026-05-06/protected-full-decision-state-capture-min-score-delta-0.1/lns-window-ranker-online-ablation.json",
+    "artifacts/lns-window-replay-labels/2026-05-06/protected-full-online-decision-state-roll-forward-4x0.1/lns-window-replay-labels.json"
   ],
   "outputArtifacts": [
-    "artifacts/lns-window-ranker-gap-diagnostics/2026-05-06/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-protected-priority2-supplemental-gap/lns-window-ranker-gap-diagnostics.json",
-    "artifacts/lns-window-ranker-gap-diagnostics/2026-05-06/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-protected-priority2-supplemental-gap/lns-window-ranker-gap-diagnostics.txt",
-    "artifacts/lns-window-ranker-gap-diagnostics/2026-05-06/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-protected-priority2-supplemental-gap/telemetry-manifest.json"
+    "artifacts/lns-window-ranker-gap-diagnostics/2026-05-06/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-protected-full-supplemental-gap/lns-window-ranker-gap-diagnostics.json",
+    "artifacts/lns-window-ranker-gap-diagnostics/2026-05-06/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-protected-full-supplemental-gap/lns-window-ranker-gap-diagnostics.txt",
+    "artifacts/lns-window-ranker-gap-diagnostics/2026-05-06/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-protected-full-supplemental-gap/telemetry-manifest.json"
   ],
   "labelFingerprint": "fnv1a:58ce487f",
   "datasetFingerprint": "fnv1a:b3c3fe8b",
@@ -47,18 +47,18 @@
     "target": "roll-forward-final-lift",
     "weakSeedReplayLabelsAllowed": false,
     "supplementalReplaySnapshotCount": 1,
-    "offlineDecisionCount": 108,
-    "offlineSupplementalDecisionCount": 18,
-    "offlineOverrideCount": 108,
+    "offlineDecisionCount": 120,
+    "offlineSupplementalDecisionCount": 30,
+    "offlineOverrideCount": 120,
     "offlineOpportunityCount": 54,
-    "onlineComparisonCount": 9,
-    "onlineOverrideCount": 18,
-    "onlineSelectionTraceCount": 18,
-    "onlineFinalNeutralOverrideCount": 18,
-    "joinedTransitionFamilyCount": 6,
+    "onlineComparisonCount": 15,
+    "onlineOverrideCount": 30,
+    "onlineSelectionTraceCount": 30,
+    "onlineFinalNeutralOverrideCount": 30,
+    "joinedTransitionFamilyCount": 10,
     "offlinePositiveOnlineNeutralCount": 0,
     "onlineActiveNoOfflineMatchCount": 0,
-    "exactReplayNeutralizedOfflinePositiveOnlineNeutralCount": 1,
+    "exactReplayNeutralizedOfflinePositiveOnlineNeutralCount": 3,
     "traceComparisonLayoutSignatureCounts": {
       "changed-layout-final-neutral": 0,
       "mixed-final-outcome": 0,

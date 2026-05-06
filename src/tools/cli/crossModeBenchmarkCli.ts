@@ -566,6 +566,7 @@ function budgetAblationPolicySummary(
     deltaVsBaselineMeanLnsPopulation: policy.deltaVsBaselineMeanLnsPopulation,
     autoSafetySummary: policy.autoSafetySummary,
     autoReplayDiagnostics: policy.autoReplayDiagnostics,
+    autoVarianceSummary: policy.autoVarianceSummary,
     recommendationCounts: policy.recommendationCounts,
     budgetSummaries: policy.budgetSummaries
   };

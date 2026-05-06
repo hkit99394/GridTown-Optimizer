@@ -1017,6 +1017,7 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(ablations.policies[1].autoReplayDiagnostics[0].baseline.finalPopulation, 10);
   assert.equal(ablations.policies[1].autoReplayDiagnostics[0].candidate.finalPopulation, 15);
   assert.equal(ablations.policies[1].autoReplayDiagnostics[0].candidate.params.autoCpSatStageReserveRatio, 0.35);
+  assert.equal(ablations.policies[1].autoVarianceSummary, null);
   assert.equal(ablations.policies[1].budgetSummaries.length, 1);
   assert.equal(ablations.policies[1].budgetSummaries[0].budgetSeconds, 3);
   assert.equal(ablations.policies[1].budgetSummaries[0].meanAutoPopulation, 15);
@@ -1175,6 +1176,12 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(repeatPolicyResult.autoReplayDiagnostics[0].seed, 11);
   assert.equal(repeatPolicyResult.autoReplayDiagnostics[0].autoPopulationDeltaVsBaseline, -2);
   assert.match(repeatPolicyResult.autoReplayDiagnostics[0].reason, /regressed/);
+  assert.equal(repeatPolicyResult.autoVarianceSummary.baselineRepeatPolicyName, "baseline-repeat");
+  assert.equal(repeatPolicyResult.autoVarianceSummary.comparisonCount, 2);
+  assert.equal(repeatPolicyResult.autoVarianceSummary.insideRepeatEnvelopeCount, 2);
+  assert.equal(repeatPolicyResult.autoVarianceSummary.outsideRepeatEnvelopeCount, 0);
+  assert.equal(repeatPolicyResult.autoVarianceSummary.repeatAutoPopulationDeltaMin, -2);
+  assert.equal(repeatPolicyResult.autoVarianceSummary.repeatAutoPopulationDeltaMax, 0);
   assert.equal(
     repeatPolicyResult.suite.cases[0].results[0].telemetry.solverParams.auto.cpSatStageReserveRatio,
     undefined
@@ -1182,6 +1189,42 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(
     repeatPolicyResult.suite.cases[0].results[0].telemetry.solverParams.lns.seedTimeLimitSeconds,
     baselineOneSecondAutoParams.lns.seedTimeLimitSeconds
+  );
+
+  const varianceGateAblations = await runCrossModeBenchmarkBudgetAblations([benchmarkCase], {
+    modes: ["auto"],
+    budgetsSeconds: [1],
+    seeds: [5, 11],
+    policies: [
+      { name: "baseline", description: "Mock baseline." },
+      { name: "baseline-repeat", description: "Mock baseline repeat." },
+      { name: "candidate", description: "Mock candidate outside repeat envelope." }
+    ],
+    solve: async (_grid, params, context) => {
+      const repeatDrift = context.budgetAblationPolicyName === "baseline-repeat" && context.seed === 11 ? -2 : 0;
+      const candidateDrift = context.budgetAblationPolicyName === "candidate" ? (context.seed === 5 ? 1 : -4) : 0;
+      return buildMockSolution({
+        optimizer: params.optimizer,
+        totalPopulation: 10 + repeatDrift + candidateDrift
+      });
+    }
+  });
+  const varianceCandidate = varianceGateAblations.policies.find((policy) => policy.policyName === "candidate");
+  assert.equal(varianceCandidate.autoVarianceSummary.comparisonCount, 2);
+  assert.equal(varianceCandidate.autoVarianceSummary.insideRepeatEnvelopeCount, 0);
+  assert.equal(varianceCandidate.autoVarianceSummary.outsideRepeatEnvelopeCount, 2);
+  assert.equal(varianceCandidate.autoVarianceSummary.outsideNegativeRepeatEnvelopeCount, 1);
+  assert.equal(varianceCandidate.autoVarianceSummary.outsidePositiveRepeatEnvelopeCount, 1);
+  assert.equal(varianceCandidate.autoVarianceSummary.repeatAutoPopulationDeltaMin, -2);
+  assert.equal(varianceCandidate.autoVarianceSummary.repeatAutoPopulationDeltaMax, 0);
+  assert.equal(varianceCandidate.autoVarianceSummary.candidateAutoPopulationDeltaMin, -4);
+  assert.equal(varianceCandidate.autoVarianceSummary.candidateAutoPopulationDeltaMax, 1);
+  assert.equal(varianceCandidate.autoVarianceSummary.meanAbsoluteCandidateDeltaBeyondRepeatEnvelope, 1.5);
+  assert.equal(varianceCandidate.autoVarianceSummary.worstCandidateDeltaBeyondRepeatEnvelope, -2);
+  assert.equal(varianceCandidate.autoVarianceSummary.bestCandidateDeltaBeyondRepeatEnvelope, 1);
+  assert.match(
+    formatCrossModeBenchmarkBudgetAblations(varianceGateAblations),
+    /auto-variance=repeat=baseline-repeat paired=2 inside=0 outside=2 outside-neg=1 outside-pos=1/
   );
 
   await assert.rejects(

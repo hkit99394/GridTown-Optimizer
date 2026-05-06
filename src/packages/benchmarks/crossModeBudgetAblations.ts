@@ -26,6 +26,10 @@ import {
   buildCrossModeBudgetAblationAutoReplayDiagnostics,
   formatCrossModeBudgetAblationAutoReplayDiagnostic
 } from "./crossModeBudgetAblationDiagnostics.js";
+import {
+  buildCrossModeBudgetAblationAutoVarianceSummary,
+  formatCrossModeBudgetAblationAutoVarianceSummary
+} from "./crossModeBudgetAblationVariance.js";
 
 import type {
   CrossModeBenchmarkBudgetAblationPolicy,
@@ -40,6 +44,7 @@ import type {
   CrossModeBudgetPolicyRecommendation
 } from "./crossMode.js";
 import type { CrossModeBenchmarkBudgetAblationAutoReplayDiagnostic } from "./crossModeBudgetAblationDiagnostics.js";
+import type { CrossModeBenchmarkBudgetAblationAutoVarianceSummary } from "./crossModeBudgetAblationVariance.js";
 import type { SolverDecisionTraceEvent } from "../core/index.js";
 
 export interface CrossModeBenchmarkBudgetAblationRunOptions extends CrossModeBenchmarkRunOptions {
@@ -102,6 +107,7 @@ export interface CrossModeBenchmarkBudgetAblationPolicyResult {
   deltaVsBaselineMeanLnsPopulation: number | null;
   autoSafetySummary: CrossModeBenchmarkBudgetAblationAutoSafetySummary;
   autoReplayDiagnostics: CrossModeBenchmarkBudgetAblationAutoReplayDiagnostic[];
+  autoVarianceSummary: CrossModeBenchmarkBudgetAblationAutoVarianceSummary | null;
   budgetSummaries: CrossModeBenchmarkBudgetAblationBudgetSummary[];
   recommendationCounts: Record<CrossModeBudgetPolicyRecommendation, number>;
 }
@@ -535,7 +541,9 @@ function summarizeBudgetAblationPolicy(
   baselineMeanAutoPopulationByBudget: ReadonlyMap<number, number | null>,
   baselineMeanLnsPopulationByBudget: ReadonlyMap<number, number | null>,
   baselineAutoByKey: ReadonlyMap<string, CrossModeBenchmarkModeResult>,
-  baselinePolicyName: string | null
+  baselinePolicyName: string | null,
+  baselineRepeatAutoByKey: ReadonlyMap<string, CrossModeBenchmarkModeResult>,
+  baselineRepeatPolicyName: string | null
 ): CrossModeBenchmarkBudgetAblationPolicyResult {
   const autoResults = modeResults(suite, "auto");
   const lnsResults = modeResults(suite, "lns");
@@ -566,6 +574,12 @@ function summarizeBudgetAblationPolicy(
       baselineAutoByKey.size > 0 ? baselinePolicyName : null,
       suite.cases,
       baselineAutoByKey
+    ),
+    autoVarianceSummary: buildCrossModeBudgetAblationAutoVarianceSummary(
+      suite.cases,
+      baselineAutoByKey,
+      baselineRepeatAutoByKey,
+      baselineRepeatPolicyName
     ),
     budgetSummaries: summarizeBudgets(
       suite,
@@ -691,6 +705,8 @@ export async function runCrossModeBenchmarkBudgetAblations(
     ? meanModePopulationByBudget(baseline.suite, "lns")
     : new Map<number, number | null>();
   const baselineAutoByKey = baseline ? autoResultsByScorecardKey(baseline.suite.cases) : new Map();
+  const baselineRepeat = policySuites.find((entry) => entry.policy.name === "baseline-repeat") ?? null;
+  const baselineRepeatAutoByKey = baselineRepeat ? autoResultsByScorecardKey(baselineRepeat.suite.cases) : new Map();
   const policyResults = policySuites.map(({ policy, suite }) =>
     summarizeBudgetAblationPolicy(
       policy,
@@ -702,7 +718,9 @@ export async function runCrossModeBenchmarkBudgetAblations(
       baselineMeanAutoPopulationByBudget,
       baselineMeanLnsPopulationByBudget,
       baselineAutoByKey,
-      baseline?.policy.name ?? null
+      baseline?.policy.name ?? null,
+      baselineRepeatAutoByKey,
+      baselineRepeat?.policy.name ?? null
     )
   );
 
@@ -819,6 +837,9 @@ export function formatCrossModeBenchmarkBudgetAblations(result: CrossModeBenchma
       `  auto-stage-mean=lns:${formatSeconds(policy.meanAutoLnsStageElapsedSeconds)} cp-sat:${formatSeconds(policy.meanAutoCpSatStageElapsedSeconds)} recommendations=${formatRecommendationCounts(policy.recommendationCounts)}`
     );
     lines.push(`  auto-safety=${formatAutoSafetySummary(policy.autoSafetySummary)}`);
+    if (policy.autoVarianceSummary !== null) {
+      lines.push(`  auto-variance=${formatCrossModeBudgetAblationAutoVarianceSummary(policy.autoVarianceSummary)}`);
+    }
     if (policy.autoReplayDiagnostics.length > 0) {
       lines.push(`  auto-replay-diagnostics=${policy.autoReplayDiagnostics.length} nonzero paired Auto rows`);
       for (const diagnostic of policy.autoReplayDiagnostics) {

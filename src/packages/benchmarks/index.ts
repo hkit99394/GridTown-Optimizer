@@ -14,6 +14,7 @@ export * from "./lnsPressureCases.js";
 export * from "./crossMode.js";
 export * from "./crossModeTelemetry.js";
 export * from "./crossModeBudgetAblationDiagnostics.js";
+export * from "./crossModeBudgetAblationVariance.js";
 export * from "./crossModeBudgetAblations.js";
 export * from "./crossModeProductWorkflows.js";
 export * from "./greedyConnectivityShadowAblations.js";

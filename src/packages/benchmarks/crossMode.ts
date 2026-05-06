@@ -282,11 +282,22 @@ function ratioBudgetSeconds(value: unknown, budgetSeconds: number): number | nul
     : null;
 }
 
+function budgetAblationPolicyApplies(
+  policy: CrossModeBenchmarkBudgetAblationPolicy | undefined,
+  budgetSeconds: number
+): boolean {
+  if (!policy?.activeBudgetSeconds?.length) return true;
+  return policy.activeBudgetSeconds.some(
+    (activeBudgetSeconds) =>
+      Number.isFinite(activeBudgetSeconds) && Math.abs(activeBudgetSeconds - budgetSeconds) <= 1e-9
+  );
+}
+
 function budgetAblationLnsOptions(
   policy: CrossModeBenchmarkBudgetAblationPolicy | undefined,
   budgetSeconds: number
 ): Partial<LnsOptions> {
-  if (!policy) return {};
+  if (!policy || !budgetAblationPolicyApplies(policy, budgetSeconds)) return {};
   const seedTimeLimitSeconds = ratioBudgetSeconds(policy.lnsSeedBudgetRatio, budgetSeconds);
   const repairTimeLimitSeconds = ratioBudgetSeconds(policy.lnsRepairBudgetRatio, budgetSeconds);
   const escalatedRepairTimeLimitSeconds = ratioBudgetSeconds(policy.lnsEscalatedRepairBudgetRatio, budgetSeconds);
@@ -303,8 +314,11 @@ function budgetAblationLnsOptions(
   };
 }
 
-function budgetAblationAutoOptions(policy: CrossModeBenchmarkBudgetAblationPolicy | undefined): Partial<AutoOptions> {
-  if (!policy) return {};
+function budgetAblationAutoOptions(
+  policy: CrossModeBenchmarkBudgetAblationPolicy | undefined,
+  budgetSeconds: number
+): Partial<AutoOptions> {
+  if (!policy || !budgetAblationPolicyApplies(policy, budgetSeconds)) return {};
   return {
     ...(policy.auto ?? {}),
     ...(typeof policy.autoCpSatStageReserveRatio === "number" && Number.isFinite(policy.autoCpSatStageReserveRatio)
@@ -387,7 +401,7 @@ export function buildCrossModeBenchmarkParams(
   const baseWithGreedy = applyGreedyCompatibilityFields(params, greedy);
   const portfolio = mode === "cp-sat-portfolio" ? buildPortfolioOptions(options, budgetSeconds, seed) : undefined;
   const cpSat = buildBudgetedCpSatOptions(baseWithGreedy, options, budgetSeconds, seed, portfolio);
-  const autoPolicyOverrides = budgetAblationAutoOptions(options.budgetAblationPolicy);
+  const autoPolicyOverrides = budgetAblationAutoOptions(options.budgetAblationPolicy, budgetSeconds);
 
   if (mode === "greedy") {
     return {

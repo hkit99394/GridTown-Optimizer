@@ -544,8 +544,7 @@ function budgetAblationCaseFamilies(result: CrossModeBenchmarkBudgetAblationSuit
 
 function countBudgetAblationModeRuns(result: CrossModeBenchmarkBudgetAblationSuiteResult): number {
   return result.policies.reduce(
-    (sum, policy) =>
-      sum + policy.suite.cases.reduce((caseSum, scorecard) => caseSum + scorecard.results.length, 0),
+    (sum, policy) => sum + policy.suite.cases.reduce((caseSum, scorecard) => caseSum + scorecard.results.length, 0),
     0
   );
 }

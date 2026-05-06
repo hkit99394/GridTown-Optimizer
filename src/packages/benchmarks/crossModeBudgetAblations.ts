@@ -129,6 +129,19 @@ export const DEFAULT_CROSS_MODE_BUDGET_ABLATION_POLICIES = Object.freeze([
   }
 ] satisfies CrossModeBenchmarkBudgetAblationPolicy[]);
 
+export const OPTIONAL_CROSS_MODE_BUDGET_ABLATION_POLICIES = Object.freeze([
+  {
+    name: "repair-heavy-5s-guarded",
+    description:
+      "Preserve the baseline short-budget seed posture, then apply repair-heavy LNS allocation only at the 5s budget.",
+    activeBudgetSeconds: [5],
+    lnsSeedBudgetRatio: 0.05,
+    lnsRepairBudgetRatio: 0.2,
+    lnsEscalatedRepairBudgetRatio: 0.3,
+    autoCpSatStageReserveRatio: 0.1
+  }
+] satisfies CrossModeBenchmarkBudgetAblationPolicy[]);
+
 const GREEDY_COVERAGE_CASE_NAMES = Object.freeze([
   "typed-footprint-pressure",
   "deferred-road-packing-gain",
@@ -174,9 +187,15 @@ export const DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS: readonly CrossM
 ]);
 
 function normalizeBudgetAblationPolicies(
-  policies: readonly CrossModeBenchmarkBudgetAblationPolicy[] | undefined
+  policies: readonly CrossModeBenchmarkBudgetAblationPolicy[] | undefined,
+  includeOptionalPolicies = false
 ): CrossModeBenchmarkBudgetAblationPolicy[] {
-  const requested = policies?.length ? [...policies] : [...DEFAULT_CROSS_MODE_BUDGET_ABLATION_POLICIES];
+  const requested = policies?.length
+    ? [...policies]
+    : [
+        ...DEFAULT_CROSS_MODE_BUDGET_ABLATION_POLICIES,
+        ...(includeOptionalPolicies ? OPTIONAL_CROSS_MODE_BUDGET_ABLATION_POLICIES : [])
+      ];
   const seen = new Set<string>();
   const normalized: CrossModeBenchmarkBudgetAblationPolicy[] = [];
   for (const policy of requested) {
@@ -195,7 +214,10 @@ function selectBudgetAblationPolicies(
   policies: readonly CrossModeBenchmarkBudgetAblationPolicy[] | undefined,
   policyNames: readonly string[] | undefined
 ): CrossModeBenchmarkBudgetAblationPolicy[] {
-  const normalized = normalizeBudgetAblationPolicies(policies);
+  const normalized = normalizeBudgetAblationPolicies(
+    policies,
+    !policies?.length && policyNames !== undefined && policyNames.length > 0
+  );
   if (!policyNames?.length) return normalized;
 
   const byName = new Map(normalized.map((policy) => [policy.name, policy]));

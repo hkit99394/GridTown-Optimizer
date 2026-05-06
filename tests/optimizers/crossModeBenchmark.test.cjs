@@ -13,6 +13,7 @@ const {
   DEFAULT_CROSS_MODE_BENCHMARK_MODES,
   DEFAULT_CROSS_MODE_BENCHMARK_SEEDS,
   DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS,
+  OPTIONAL_CROSS_MODE_BUDGET_ABLATION_POLICIES,
   formatCrossModeBenchmarkBudgetAblations,
   formatCrossModeBenchmarkDecisionTraceJsonl,
   formatCrossModeBenchmarkSuite,
@@ -77,6 +78,10 @@ async function testCrossModeBenchmarkHelpers() {
   assert.deepEqual(
     DEFAULT_CROSS_MODE_BUDGET_ABLATION_POLICIES.map((policy) => policy.name),
     ["baseline", "seed-light", "repair-heavy", "cp-sat-reserve-heavy"]
+  );
+  assert.deepEqual(
+    OPTIONAL_CROSS_MODE_BUDGET_ABLATION_POLICIES.map((policy) => policy.name),
+    ["repair-heavy-5s-guarded"]
   );
   const coverageNames = DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS.map((entry) => entry.name);
   assert.equal(new Set(coverageNames).size, coverageNames.length);
@@ -231,6 +236,39 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(reserveHeavyParams.auto.cpSatStageReserveRatio, 0.35);
   assert.equal(reserveHeavyParams.lns.seedTimeLimitSeconds, 1);
   assert.equal(reserveHeavyParams.lns.repairTimeLimitSeconds, 2);
+  const guardedRepairPolicy = OPTIONAL_CROSS_MODE_BUDGET_ABLATION_POLICIES.find(
+    (policy) => policy.name === "repair-heavy-5s-guarded"
+  );
+  const baselineOneSecondAutoParams = buildCrossModeBenchmarkParams(benchmarkCase, "auto", {
+    budgetSeconds: 1,
+    seeds: [5]
+  });
+  const guardedOneSecondAutoParams = buildCrossModeBenchmarkParams(benchmarkCase, "auto", {
+    budgetSeconds: 1,
+    seeds: [5],
+    budgetAblationPolicy: guardedRepairPolicy
+  });
+  assert.equal(
+    guardedOneSecondAutoParams.auto.cpSatStageReserveRatio,
+    baselineOneSecondAutoParams.auto.cpSatStageReserveRatio
+  );
+  assert.equal(
+    guardedOneSecondAutoParams.lns.seedTimeLimitSeconds,
+    baselineOneSecondAutoParams.lns.seedTimeLimitSeconds
+  );
+  assert.equal(
+    guardedOneSecondAutoParams.lns.repairTimeLimitSeconds,
+    baselineOneSecondAutoParams.lns.repairTimeLimitSeconds
+  );
+  const guardedFiveSecondAutoParams = buildCrossModeBenchmarkParams(benchmarkCase, "auto", {
+    budgetSeconds: 5,
+    seeds: [5],
+    budgetAblationPolicy: guardedRepairPolicy
+  });
+  assert.equal(guardedFiveSecondAutoParams.auto.cpSatStageReserveRatio, 0.1);
+  assert.equal(guardedFiveSecondAutoParams.lns.seedTimeLimitSeconds, 0.25);
+  assert.equal(guardedFiveSecondAutoParams.lns.repairTimeLimitSeconds, 1);
+  assert.equal(guardedFiveSecondAutoParams.lns.escalatedRepairTimeLimitSeconds, 1.5);
 
   const portfolioParams = buildCrossModeBenchmarkParams(benchmarkCase, "cp-sat-portfolio", {
     budgetSeconds: 3,
@@ -895,8 +933,14 @@ async function testCrossModeBenchmarkHelpers() {
     assert.equal(fs.existsSync(path.join(repoRoot, ablationArtifactManifest.artifactPaths.budgetAblationJson)), true);
     assert.equal(fs.existsSync(path.join(repoRoot, ablationArtifactManifest.artifactPaths.budgetAblationText)), true);
     assert.equal(fs.existsSync(path.join(repoRoot, ablationArtifactManifest.artifactPaths.decisionTraceJsonl)), true);
-    assert.equal(fs.existsSync(path.join(repoRoot, ablationArtifactManifest.artifactPaths.telemetryManifestJson)), true);
-    assert.equal(fs.existsSync(path.join(repoRoot, ablationArtifactManifest.artifactPaths.registryEntryDraftJson)), true);
+    assert.equal(
+      fs.existsSync(path.join(repoRoot, ablationArtifactManifest.artifactPaths.telemetryManifestJson)),
+      true
+    );
+    assert.equal(
+      fs.existsSync(path.join(repoRoot, ablationArtifactManifest.artifactPaths.registryEntryDraftJson)),
+      true
+    );
     const budgetAblationArtifact = JSON.parse(
       fs.readFileSync(path.join(repoRoot, ablationArtifactManifest.artifactPaths.budgetAblationJson), "utf8")
     );
@@ -1039,6 +1083,36 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(lnsOnlyAblations.topPolicyName, "lns-win");
   assert.equal(lnsOnlyAblations.bestPolicyName, "lns-win");
   assert.deepEqual(lnsOnlyAblations.topPolicyTiedPolicyNames, ["lns-win"]);
+
+  const guardedBudgetAblations = await runCrossModeBenchmarkBudgetAblations([benchmarkCase], {
+    modes: ["auto"],
+    budgetsSeconds: [1, 5],
+    seeds: [5],
+    policyNames: ["baseline", "repair-heavy-5s-guarded"],
+    solve: async (_grid, params, context) => {
+      const guardedPolicyActive =
+        context.budgetAblationPolicyName === "repair-heavy-5s-guarded" &&
+        params.auto?.cpSatStageReserveRatio === 0.1 &&
+        params.lns?.repairTimeLimitSeconds === 1;
+      return buildMockSolution({
+        optimizer: params.optimizer,
+        totalPopulation: 10 + (guardedPolicyActive ? 5 : 0)
+      });
+    }
+  });
+  const guardedPolicyResult = guardedBudgetAblations.policies.find(
+    (policy) => policy.policyName === "repair-heavy-5s-guarded"
+  );
+  assert.equal(guardedBudgetAblations.topPolicyName, "repair-heavy-5s-guarded");
+  assert.equal(guardedPolicyResult.deltaVsBaselineMeanAutoPopulation, 2.5);
+  assert.equal(
+    guardedPolicyResult.budgetSummaries.find((budget) => budget.budgetSeconds === 1).deltaVsBaselineMeanAutoPopulation,
+    0
+  );
+  assert.equal(
+    guardedPolicyResult.budgetSummaries.find((budget) => budget.budgetSeconds === 5).deltaVsBaselineMeanAutoPopulation,
+    5
+  );
 
   await assert.rejects(
     () =>

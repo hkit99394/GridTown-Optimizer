@@ -250,6 +250,7 @@ export interface CrossModeBenchmarkSuiteResult {
 export interface CrossModeBenchmarkBudgetAblationPolicy {
   name: string;
   description: string;
+  activeBudgetSeconds?: readonly number[];
   auto?: Partial<AutoOptions>;
   lns?: Partial<LnsOptions>;
   lnsSeedBudgetRatio?: number;

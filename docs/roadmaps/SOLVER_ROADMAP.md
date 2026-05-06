@@ -155,11 +155,14 @@ Delivered so far:
 - Baseline remains the top policy by Auto mean population. Baseline mean Auto population is `573.3` with mean Auto gap `13.056`; `repair-heavy` drops overall Auto mean by `-6.667`, and `cp-sat-reserve-heavy` drops it by `-9.444`.
 - The miss shape is budget-specific. At `1s`, both heavier policies hurt Auto by `-18.889` mean population versus baseline, mainly by degrading seed quality on `service-local-neighborhood` and `expansion-comparison-replay`. At `5s`, `repair-heavy` improves Auto by `+5.556` and cuts mean Auto gap to `6.667`, while `cp-sat-reserve-heavy` ties baseline Auto mean but leaves LNS worse.
 - The evidence does not support changing Auto defaults. It points instead to a possible future conditional policy: preserve the current 1s seed posture, then investigate a guarded 5s-only repair/CP-SAT handoff on the footprint and expansion-comparison misses with protected safety and CPU-efficiency reporting.
+- Budget-ablation policy definitions now support optional `activeBudgetSeconds`, and the built-in optional policy `repair-heavy-5s-guarded` applies the repair-heavy LNS allocation only at the 5s budget. It is selectable by name through `--ablation-policies=repair-heavy-5s-guarded` but is not included in the default policy sweep, and it does not change solver defaults.
+- The registered guarded ablation artifact `cross-mode-budget-ablation-2026-05-06-short-budget-auto-gap-triage-guarded-5s-repair-heavy` is generated under `artifacts/cross-mode-budget-ablations/2026-05-06/short-budget-auto-gap-triage-guarded-5s-repair-heavy/`. It compares `baseline` against `repair-heavy-5s-guarded` on the same three miss families, budgets `1s` and `5s`, seeds `7`, `19`, and `37`, modes `auto`, `lns`, and `cp-sat`, for 108 total mode runs and 324 budgeted mode-seconds.
+- In that guarded slice, `repair-heavy-5s-guarded` is the top policy by Auto mean population: mean Auto `577.5` versus baseline `573.6`, delta `+3.889`, and mean Auto gap `8.889` versus baseline `11.944`. At `5s`, guarded Auto mean is `582.8` versus baseline `579.4`, delta `+3.333`. The observed `1s` delta is `+4.444`, but the guarded policy is inactive at `1s`, so this is repeatability/wall-clock variance evidence rather than causal policy lift. The per-row diff has one observed guarded regression, `typed-footprint-pressure` at `5s` seed `37`, delta `-5`, so this remains diagnostics-only.
 
 Concrete work:
 
 - Keep the current Auto budget policy as the baseline; the focused ablation did not justify a broad LNS-heavy or CP-SAT-reserve-heavy default.
-- If Auto policy work resumes, test a conditional 5s-only handoff that preserves the baseline 1s seed budget and proves it does not regress `service-local-neighborhood` or seed-sensitive expansion cases.
+- Before any Auto policy change, repeat the guarded 5s-only handoff on the full product-corpus promotion matrix with paired baseline repeats, worst-decile safety, and CPU-budget efficiency reporting.
 - Treat outcomes as evidence for future policy work only; do not change Auto defaults without clearing the promotion gates below.
 
 Exit criteria:

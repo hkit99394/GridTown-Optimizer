@@ -86,7 +86,10 @@ async function testCrossModeBenchmarkHelpers() {
       "repair-heavy-5s-guarded",
       "lns-seed-short-5s-guarded",
       "lns-repair-time-5s-guarded",
-      "cp-sat-reserve-5s-guarded"
+      "cp-sat-reserve-5s-guarded",
+      "lns-seed-repair-5s-guarded",
+      "lns-seed-reserve-5s-guarded",
+      "lns-repair-reserve-5s-guarded"
     ]
   );
   const coverageNames = DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS.map((entry) => entry.name);
@@ -308,6 +311,39 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(cpSatReserveFiveSecondAutoParams.lns.seedTimeLimitSeconds, 1);
   assert.equal(cpSatReserveFiveSecondAutoParams.lns.repairTimeLimitSeconds, 1);
   assert.equal(cpSatReserveFiveSecondAutoParams.lns.escalatedRepairTimeLimitSeconds, 1);
+  const seedRepairFiveSecondAutoParams = buildCrossModeBenchmarkParams(benchmarkCase, "auto", {
+    budgetSeconds: 5,
+    seeds: [5],
+    budgetAblationPolicy: OPTIONAL_CROSS_MODE_BUDGET_ABLATION_POLICIES.find(
+      (policy) => policy.name === "lns-seed-repair-5s-guarded"
+    )
+  });
+  assert.equal(seedRepairFiveSecondAutoParams.auto.cpSatStageReserveRatio, undefined);
+  assert.equal(seedRepairFiveSecondAutoParams.lns.seedTimeLimitSeconds, 0.25);
+  assert.equal(seedRepairFiveSecondAutoParams.lns.repairTimeLimitSeconds, 1);
+  assert.equal(seedRepairFiveSecondAutoParams.lns.escalatedRepairTimeLimitSeconds, 1.5);
+  const seedReserveFiveSecondAutoParams = buildCrossModeBenchmarkParams(benchmarkCase, "auto", {
+    budgetSeconds: 5,
+    seeds: [5],
+    budgetAblationPolicy: OPTIONAL_CROSS_MODE_BUDGET_ABLATION_POLICIES.find(
+      (policy) => policy.name === "lns-seed-reserve-5s-guarded"
+    )
+  });
+  assert.equal(seedReserveFiveSecondAutoParams.auto.cpSatStageReserveRatio, 0.1);
+  assert.equal(seedReserveFiveSecondAutoParams.lns.seedTimeLimitSeconds, 0.25);
+  assert.equal(seedReserveFiveSecondAutoParams.lns.repairTimeLimitSeconds, 1);
+  assert.equal(seedReserveFiveSecondAutoParams.lns.escalatedRepairTimeLimitSeconds, 1);
+  const repairReserveFiveSecondAutoParams = buildCrossModeBenchmarkParams(benchmarkCase, "auto", {
+    budgetSeconds: 5,
+    seeds: [5],
+    budgetAblationPolicy: OPTIONAL_CROSS_MODE_BUDGET_ABLATION_POLICIES.find(
+      (policy) => policy.name === "lns-repair-reserve-5s-guarded"
+    )
+  });
+  assert.equal(repairReserveFiveSecondAutoParams.auto.cpSatStageReserveRatio, 0.1);
+  assert.equal(repairReserveFiveSecondAutoParams.lns.seedTimeLimitSeconds, 1);
+  assert.equal(repairReserveFiveSecondAutoParams.lns.repairTimeLimitSeconds, 1);
+  assert.equal(repairReserveFiveSecondAutoParams.lns.escalatedRepairTimeLimitSeconds, 1.5);
 
   const portfolioParams = buildCrossModeBenchmarkParams(benchmarkCase, "cp-sat-portfolio", {
     budgetSeconds: 3,

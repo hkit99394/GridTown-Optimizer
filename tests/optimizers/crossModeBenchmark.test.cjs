@@ -83,6 +83,8 @@ async function testCrossModeBenchmarkHelpers() {
     OPTIONAL_CROSS_MODE_BUDGET_ABLATION_POLICIES.map((policy) => policy.name),
     [
       "baseline-repeat",
+      "service-pressure-cp-sat-reserve-5s-guarded",
+      "service-present-lns-seed-reserve-5s-guarded",
       "repair-heavy-5s-guarded",
       "lns-seed-short-5s-guarded",
       "lns-repair-time-5s-guarded",
@@ -311,6 +313,96 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(cpSatReserveFiveSecondAutoParams.lns.seedTimeLimitSeconds, 1);
   assert.equal(cpSatReserveFiveSecondAutoParams.lns.repairTimeLimitSeconds, 1);
   assert.equal(cpSatReserveFiveSecondAutoParams.lns.escalatedRepairTimeLimitSeconds, 1);
+  const servicePressureReservePolicy = OPTIONAL_CROSS_MODE_BUDGET_ABLATION_POLICIES.find(
+    (policy) => policy.name === "service-pressure-cp-sat-reserve-5s-guarded"
+  );
+  const servicePressureCase = DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS.find(
+    (entry) => entry.name === "service-local-neighborhood"
+  );
+  const typedFootprintCase = DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS.find(
+    (entry) => entry.name === "typed-footprint-pressure"
+  );
+  const typedHousingCase = DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS.find(
+    (entry) => entry.name === "typed-housing-single"
+  );
+  const row0CorridorCase = DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS.find(
+    (entry) => entry.name === "row0-corridor-repair-pressure"
+  );
+  const multiAnchorCase = DEFAULT_CROSS_MODE_PRODUCT_WORKFLOW_CORPUS.find(
+    (entry) => entry.name === "multi-anchor-road-components"
+  );
+  assert(servicePressureReservePolicy);
+  assert(servicePressureCase);
+  assert(typedFootprintCase);
+  assert(typedHousingCase);
+  assert(row0CorridorCase);
+  assert(multiAnchorCase);
+  const servicePressureFiveSecondAutoParams = buildCrossModeBenchmarkParams(servicePressureCase, "auto", {
+    budgetSeconds: 5,
+    seeds: [5],
+    budgetAblationPolicy: servicePressureReservePolicy
+  });
+  assert.equal(servicePressureFiveSecondAutoParams.auto.cpSatStageReserveRatio, 0.1);
+  assert.equal(servicePressureFiveSecondAutoParams.lns.seedTimeLimitSeconds, 1);
+  assert.equal(servicePressureFiveSecondAutoParams.lns.repairTimeLimitSeconds, 1);
+  const servicePressureOneSecondAutoParams = buildCrossModeBenchmarkParams(servicePressureCase, "auto", {
+    budgetSeconds: 1,
+    seeds: [5],
+    budgetAblationPolicy: servicePressureReservePolicy
+  });
+  assert.equal(servicePressureOneSecondAutoParams.auto.cpSatStageReserveRatio, undefined);
+  const row0ReserveFiveSecondAutoParams = buildCrossModeBenchmarkParams(row0CorridorCase, "auto", {
+    budgetSeconds: 5,
+    seeds: [5],
+    budgetAblationPolicy: servicePressureReservePolicy
+  });
+  assert.equal(row0ReserveFiveSecondAutoParams.auto.cpSatStageReserveRatio, undefined);
+  const multiAnchorReserveFiveSecondAutoParams = buildCrossModeBenchmarkParams(multiAnchorCase, "auto", {
+    budgetSeconds: 5,
+    seeds: [5],
+    budgetAblationPolicy: servicePressureReservePolicy
+  });
+  assert.equal(multiAnchorReserveFiveSecondAutoParams.auto.cpSatStageReserveRatio, undefined);
+  const servicePresentSeedReservePolicy = OPTIONAL_CROSS_MODE_BUDGET_ABLATION_POLICIES.find(
+    (policy) => policy.name === "service-present-lns-seed-reserve-5s-guarded"
+  );
+  assert(servicePresentSeedReservePolicy);
+  const servicePresentTypedFiveSecondAutoParams = buildCrossModeBenchmarkParams(typedFootprintCase, "auto", {
+    budgetSeconds: 5,
+    seeds: [5],
+    budgetAblationPolicy: servicePresentSeedReservePolicy
+  });
+  assert.equal(servicePresentTypedFiveSecondAutoParams.auto.cpSatStageReserveRatio, 0.1);
+  assert.equal(servicePresentTypedFiveSecondAutoParams.lns.seedTimeLimitSeconds, 0.25);
+  assert.equal(servicePresentTypedFiveSecondAutoParams.lns.repairTimeLimitSeconds, 1);
+  const servicePresentRow0FiveSecondAutoParams = buildCrossModeBenchmarkParams(row0CorridorCase, "auto", {
+    budgetSeconds: 5,
+    seeds: [5],
+    budgetAblationPolicy: servicePresentSeedReservePolicy
+  });
+  assert.equal(servicePresentRow0FiveSecondAutoParams.auto.cpSatStageReserveRatio, 0.1);
+  assert.equal(servicePresentRow0FiveSecondAutoParams.lns.seedTimeLimitSeconds, 0.25);
+  const servicePresentTypedOneSecondAutoParams = buildCrossModeBenchmarkParams(typedFootprintCase, "auto", {
+    budgetSeconds: 1,
+    seeds: [5],
+    budgetAblationPolicy: servicePresentSeedReservePolicy
+  });
+  assert.equal(servicePresentTypedOneSecondAutoParams.auto.cpSatStageReserveRatio, undefined);
+  assert.equal(servicePresentTypedOneSecondAutoParams.lns.seedTimeLimitSeconds, 0.2);
+  const servicePresentTypedHousingFiveSecondAutoParams = buildCrossModeBenchmarkParams(typedHousingCase, "auto", {
+    budgetSeconds: 5,
+    seeds: [5],
+    budgetAblationPolicy: servicePresentSeedReservePolicy
+  });
+  assert.equal(servicePresentTypedHousingFiveSecondAutoParams.auto.cpSatStageReserveRatio, undefined);
+  assert.equal(servicePresentTypedHousingFiveSecondAutoParams.lns.seedTimeLimitSeconds, 1);
+  const servicePresentMultiAnchorFiveSecondAutoParams = buildCrossModeBenchmarkParams(multiAnchorCase, "auto", {
+    budgetSeconds: 5,
+    seeds: [5],
+    budgetAblationPolicy: servicePresentSeedReservePolicy
+  });
+  assert.equal(servicePresentMultiAnchorFiveSecondAutoParams.auto.cpSatStageReserveRatio, undefined);
+  assert.equal(servicePresentMultiAnchorFiveSecondAutoParams.lns.seedTimeLimitSeconds, 1);
   const seedRepairFiveSecondAutoParams = buildCrossModeBenchmarkParams(benchmarkCase, "auto", {
     budgetSeconds: 5,
     seeds: [5],

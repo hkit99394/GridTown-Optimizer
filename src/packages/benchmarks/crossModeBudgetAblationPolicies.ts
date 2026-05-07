@@ -39,10 +39,35 @@ export const DEFAULT_CROSS_MODE_BUDGET_ABLATION_POLICIES = Object.freeze([
   }
 ] satisfies CrossModeBenchmarkBudgetAblationPolicy[]);
 
+function isServicePressureCpSatReserveCandidate(benchmarkCase: CrossModeBenchmarkCase): boolean {
+  const serviceTypeCount = benchmarkCase.params.serviceTypes?.length ?? 0;
+  return serviceTypeCount >= 3 && benchmarkCase.params.greedy?.serviceRefineIterations === 0;
+}
+
+function hasServiceTypes(benchmarkCase: CrossModeBenchmarkCase): boolean {
+  return (benchmarkCase.params.serviceTypes?.length ?? 0) > 0;
+}
+
 export const OPTIONAL_CROSS_MODE_BUDGET_ABLATION_POLICIES = Object.freeze([
   {
     name: "baseline-repeat",
     description: "Repeat the current Auto/LNS budget policy as a short-budget variance control."
+  },
+  {
+    name: "service-pressure-cp-sat-reserve-5s-guarded",
+    description:
+      "Reserve a small Auto CP-SAT slice at 5s only for service-pressure cases with disabled greedy refinement.",
+    activeBudgetSeconds: [5],
+    appliesToCase: isServicePressureCpSatReserveCandidate,
+    autoCpSatStageReserveRatio: 0.1
+  },
+  {
+    name: "service-present-lns-seed-reserve-5s-guarded",
+    description: "Shorten LNS seed and reserve a small Auto CP-SAT slice at 5s only when service types are present.",
+    activeBudgetSeconds: [5],
+    appliesToCase: hasServiceTypes,
+    lnsSeedBudgetRatio: 0.05,
+    autoCpSatStageReserveRatio: 0.1
   },
   {
     name: "repair-heavy-5s-guarded",

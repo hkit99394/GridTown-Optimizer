@@ -1,0 +1,395 @@
+{
+  "schemaVersion": 1,
+  "runId": "cross-mode-budget-ablation-2026-05-07-product-corpus-short-budget-seed-reserve-typed-footprint-seed37-repeat-5s-row-diagnostics",
+  "artifactType": "ablation-gate",
+  "generatedAt": "2026-05-07T20:14:25.596Z",
+  "commands": [
+    "node dist/crossModeBenchmarkCli.js --product-corpus --budget-ablation --ablation-policies=baseline,baseline-repeat,lns-seed-reserve-5s-guarded --modes=auto --budgets=5 --seeds=37 --artifact-dir=artifacts/cross-mode-budget-ablations/2026-05-07/product-corpus-short-budget-seed-reserve-typed-footprint-seed37-repeat-5s-row-diagnostics --ablation-run-id=cross-mode-budget-ablation-2026-05-07-product-corpus-short-budget-seed-reserve-typed-footprint-seed37-repeat-5s-row-diagnostics --ablation-decision=diagnostics-only-seed-reserve-typed-footprint-seed37-repeat-5s-no-default-change '--ablation-summary=Focused 5s Auto repeat diagnostic for the remaining typed-footprint-pressure seed 37 seed+reserve regression using baseline-repeat variance envelope; no solver default changed.' --json typed-footprint-pressure"
+  ],
+  "artifactPaths": [
+    "artifacts/cross-mode-budget-ablations/2026-05-07/product-corpus-short-budget-seed-reserve-typed-footprint-seed37-repeat-5s-row-diagnostics/budget-ablation.json",
+    "artifacts/cross-mode-budget-ablations/2026-05-07/product-corpus-short-budget-seed-reserve-typed-footprint-seed37-repeat-5s-row-diagnostics/budget-ablation.txt",
+    "artifacts/cross-mode-budget-ablations/2026-05-07/product-corpus-short-budget-seed-reserve-typed-footprint-seed37-repeat-5s-row-diagnostics/decision-trace.jsonl",
+    "artifacts/cross-mode-budget-ablations/2026-05-07/product-corpus-short-budget-seed-reserve-typed-footprint-seed37-repeat-5s-row-diagnostics/telemetry-manifest.json"
+  ],
+  "cases": {
+    "development": [
+      "typed-footprint-pressure"
+    ]
+  },
+  "caseFamilies": [
+    "cross-mode-budget-ablation",
+    "footprint-pressure",
+    "small"
+  ],
+  "seeds": [
+    37
+  ],
+  "splitStatus": {
+    "splitField": "CrossModeBenchmarkCase.split",
+    "policyCount": 3,
+    "caseCount": 1,
+    "casesBySplit": {
+      "development": [
+        "typed-footprint-pressure"
+      ]
+    },
+    "leakage": "not-promotion-evidence",
+    "notes": "Budget ablation artifact is diagnostic evidence for Auto policy triage; it does not promote solver defaults."
+  },
+  "budget": {
+    "wallClockBudgetsSeconds": [
+      5
+    ],
+    "policyCount": 3,
+    "caseCount": 1,
+    "modeCount": 1,
+    "totalRuns": 3,
+    "budgetedModeSeconds": 15
+  },
+  "model": null,
+  "decision": "diagnostics-only-seed-reserve-typed-footprint-seed37-repeat-5s-no-default-change",
+  "summary": "Focused 5s Auto repeat diagnostic for the remaining typed-footprint-pressure seed 37 seed+reserve regression using baseline-repeat variance envelope; no solver default changed.",
+  "summaryMetrics": {
+    "baselinePolicyName": "baseline",
+    "topPolicyName": "baseline",
+    "topPolicyRankingBasis": "mean-auto-population",
+    "topPolicyTiedPolicyNames": [
+      "baseline",
+      "baseline-repeat",
+      "lns-seed-reserve-5s-guarded"
+    ],
+    "policies": [
+      {
+        "policyName": "baseline",
+        "description": "Current Auto/LNS budget policy.",
+        "meanBestPopulation": 505,
+        "meanAutoPopulation": 505,
+        "meanLnsPopulation": null,
+        "meanAutoDeltaToBest": 0,
+        "meanAutoLnsStageElapsedSeconds": 4.795,
+        "meanAutoCpSatStageElapsedSeconds": null,
+        "deltaVsBaselineMeanBestPopulation": 0,
+        "deltaVsBaselineMeanAutoPopulation": 0,
+        "deltaVsBaselineMeanLnsPopulation": null,
+        "autoSafetySummary": {
+          "comparisonCount": 1,
+          "improvedAutoCount": 0,
+          "regressedAutoCount": 0,
+          "unchangedAutoCount": 1,
+          "regressionRate": 0,
+          "meanAutoPopulationDeltaVsBaseline": 0,
+          "medianAutoPopulationDeltaVsBaseline": 0,
+          "worstDecileAutoPopulationDeltaVsBaseline": 0,
+          "worstAutoPopulationDeltaVsBaseline": 0,
+          "bestAutoPopulationDeltaVsBaseline": 0,
+          "worstAutoPopulationDeltaCaseName": "typed-footprint-pressure",
+          "worstAutoPopulationDeltaSeed": 37,
+          "worstAutoPopulationDeltaBudgetSeconds": 5,
+          "bestAutoPopulationDeltaCaseName": "typed-footprint-pressure",
+          "bestAutoPopulationDeltaSeed": 37,
+          "bestAutoPopulationDeltaBudgetSeconds": 5,
+          "meanAutoWallClockSeconds": 5.324892167,
+          "baselineMeanAutoWallClockSeconds": 5.324892167,
+          "meanAutoWallClockDeltaVsBaselineSeconds": 0,
+          "meanAutoPopulationPerCpuBudgetSecond": 101,
+          "baselineMeanAutoPopulationPerCpuBudgetSecond": 101,
+          "autoCpuBudgetEfficiencyRatioVsBaseline": 1
+        },
+        "autoReplayDiagnostics": [],
+        "autoVarianceSummary": {
+          "baselineRepeatPolicyName": "baseline-repeat",
+          "comparisonCount": 1,
+          "insideRepeatEnvelopeCount": 1,
+          "outsideRepeatEnvelopeCount": 0,
+          "outsideNegativeRepeatEnvelopeCount": 0,
+          "outsidePositiveRepeatEnvelopeCount": 0,
+          "repeatAutoPopulationDeltaMin": 0,
+          "repeatAutoPopulationDeltaMax": 0,
+          "repeatMeanAbsoluteAutoPopulationDelta": 0,
+          "candidateAutoPopulationDeltaMin": 0,
+          "candidateAutoPopulationDeltaMax": 0,
+          "candidateMeanAutoPopulationDelta": 0,
+          "meanAbsoluteCandidateDeltaBeyondRepeatEnvelope": 0,
+          "worstCandidateDeltaBeyondRepeatEnvelope": 0,
+          "bestCandidateDeltaBeyondRepeatEnvelope": 0
+        },
+        "recommendationCounts": {
+          "keep-auto": 1,
+          "add-auto-baseline": 0,
+          "shift-auto-budget-to-greedy": 0,
+          "shift-auto-budget-to-lns": 0,
+          "shift-auto-budget-to-cp-sat": 0,
+          "keep-portfolio-experimental": 0,
+          "investigate-auto-loss": 0
+        },
+        "budgetSummaries": [
+          {
+            "budgetSeconds": 5,
+            "caseCount": 1,
+            "meanBestPopulation": 505,
+            "meanAutoPopulation": 505,
+            "meanLnsPopulation": null,
+            "meanAutoDeltaToBest": 0,
+            "deltaVsBaselineMeanBestPopulation": 0,
+            "deltaVsBaselineMeanAutoPopulation": 0,
+            "deltaVsBaselineMeanLnsPopulation": null,
+            "autoSafetySummary": {
+              "comparisonCount": 1,
+              "improvedAutoCount": 0,
+              "regressedAutoCount": 0,
+              "unchangedAutoCount": 1,
+              "regressionRate": 0,
+              "meanAutoPopulationDeltaVsBaseline": 0,
+              "medianAutoPopulationDeltaVsBaseline": 0,
+              "worstDecileAutoPopulationDeltaVsBaseline": 0,
+              "worstAutoPopulationDeltaVsBaseline": 0,
+              "bestAutoPopulationDeltaVsBaseline": 0,
+              "worstAutoPopulationDeltaCaseName": "typed-footprint-pressure",
+              "worstAutoPopulationDeltaSeed": 37,
+              "worstAutoPopulationDeltaBudgetSeconds": 5,
+              "bestAutoPopulationDeltaCaseName": "typed-footprint-pressure",
+              "bestAutoPopulationDeltaSeed": 37,
+              "bestAutoPopulationDeltaBudgetSeconds": 5,
+              "meanAutoWallClockSeconds": 5.324892167,
+              "baselineMeanAutoWallClockSeconds": 5.324892167,
+              "meanAutoWallClockDeltaVsBaselineSeconds": 0,
+              "meanAutoPopulationPerCpuBudgetSecond": 101,
+              "baselineMeanAutoPopulationPerCpuBudgetSecond": 101,
+              "autoCpuBudgetEfficiencyRatioVsBaseline": 1
+            },
+            "recommendationCounts": {
+              "keep-auto": 1,
+              "add-auto-baseline": 0,
+              "shift-auto-budget-to-greedy": 0,
+              "shift-auto-budget-to-lns": 0,
+              "shift-auto-budget-to-cp-sat": 0,
+              "keep-portfolio-experimental": 0,
+              "investigate-auto-loss": 0
+            }
+          }
+        ]
+      },
+      {
+        "policyName": "baseline-repeat",
+        "description": "Repeat the current Auto/LNS budget policy as a short-budget variance control.",
+        "meanBestPopulation": 505,
+        "meanAutoPopulation": 505,
+        "meanLnsPopulation": null,
+        "meanAutoDeltaToBest": 0,
+        "meanAutoLnsStageElapsedSeconds": 4.893,
+        "meanAutoCpSatStageElapsedSeconds": null,
+        "deltaVsBaselineMeanBestPopulation": 0,
+        "deltaVsBaselineMeanAutoPopulation": 0,
+        "deltaVsBaselineMeanLnsPopulation": null,
+        "autoSafetySummary": {
+          "comparisonCount": 1,
+          "improvedAutoCount": 0,
+          "regressedAutoCount": 0,
+          "unchangedAutoCount": 1,
+          "regressionRate": 0,
+          "meanAutoPopulationDeltaVsBaseline": 0,
+          "medianAutoPopulationDeltaVsBaseline": 0,
+          "worstDecileAutoPopulationDeltaVsBaseline": 0,
+          "worstAutoPopulationDeltaVsBaseline": 0,
+          "bestAutoPopulationDeltaVsBaseline": 0,
+          "worstAutoPopulationDeltaCaseName": "typed-footprint-pressure",
+          "worstAutoPopulationDeltaSeed": 37,
+          "worstAutoPopulationDeltaBudgetSeconds": 5,
+          "bestAutoPopulationDeltaCaseName": "typed-footprint-pressure",
+          "bestAutoPopulationDeltaSeed": 37,
+          "bestAutoPopulationDeltaBudgetSeconds": 5,
+          "meanAutoWallClockSeconds": 5.522696000000001,
+          "baselineMeanAutoWallClockSeconds": 5.324892167,
+          "meanAutoWallClockDeltaVsBaselineSeconds": 0.19780383300000093,
+          "meanAutoPopulationPerCpuBudgetSecond": 101,
+          "baselineMeanAutoPopulationPerCpuBudgetSecond": 101,
+          "autoCpuBudgetEfficiencyRatioVsBaseline": 1
+        },
+        "autoReplayDiagnostics": [],
+        "autoVarianceSummary": {
+          "baselineRepeatPolicyName": "baseline-repeat",
+          "comparisonCount": 1,
+          "insideRepeatEnvelopeCount": 1,
+          "outsideRepeatEnvelopeCount": 0,
+          "outsideNegativeRepeatEnvelopeCount": 0,
+          "outsidePositiveRepeatEnvelopeCount": 0,
+          "repeatAutoPopulationDeltaMin": 0,
+          "repeatAutoPopulationDeltaMax": 0,
+          "repeatMeanAbsoluteAutoPopulationDelta": 0,
+          "candidateAutoPopulationDeltaMin": 0,
+          "candidateAutoPopulationDeltaMax": 0,
+          "candidateMeanAutoPopulationDelta": 0,
+          "meanAbsoluteCandidateDeltaBeyondRepeatEnvelope": 0,
+          "worstCandidateDeltaBeyondRepeatEnvelope": 0,
+          "bestCandidateDeltaBeyondRepeatEnvelope": 0
+        },
+        "recommendationCounts": {
+          "keep-auto": 1,
+          "add-auto-baseline": 0,
+          "shift-auto-budget-to-greedy": 0,
+          "shift-auto-budget-to-lns": 0,
+          "shift-auto-budget-to-cp-sat": 0,
+          "keep-portfolio-experimental": 0,
+          "investigate-auto-loss": 0
+        },
+        "budgetSummaries": [
+          {
+            "budgetSeconds": 5,
+            "caseCount": 1,
+            "meanBestPopulation": 505,
+            "meanAutoPopulation": 505,
+            "meanLnsPopulation": null,
+            "meanAutoDeltaToBest": 0,
+            "deltaVsBaselineMeanBestPopulation": 0,
+            "deltaVsBaselineMeanAutoPopulation": 0,
+            "deltaVsBaselineMeanLnsPopulation": null,
+            "autoSafetySummary": {
+              "comparisonCount": 1,
+              "improvedAutoCount": 0,
+              "regressedAutoCount": 0,
+              "unchangedAutoCount": 1,
+              "regressionRate": 0,
+              "meanAutoPopulationDeltaVsBaseline": 0,
+              "medianAutoPopulationDeltaVsBaseline": 0,
+              "worstDecileAutoPopulationDeltaVsBaseline": 0,
+              "worstAutoPopulationDeltaVsBaseline": 0,
+              "bestAutoPopulationDeltaVsBaseline": 0,
+              "worstAutoPopulationDeltaCaseName": "typed-footprint-pressure",
+              "worstAutoPopulationDeltaSeed": 37,
+              "worstAutoPopulationDeltaBudgetSeconds": 5,
+              "bestAutoPopulationDeltaCaseName": "typed-footprint-pressure",
+              "bestAutoPopulationDeltaSeed": 37,
+              "bestAutoPopulationDeltaBudgetSeconds": 5,
+              "meanAutoWallClockSeconds": 5.522696000000001,
+              "baselineMeanAutoWallClockSeconds": 5.324892167,
+              "meanAutoWallClockDeltaVsBaselineSeconds": 0.19780383300000093,
+              "meanAutoPopulationPerCpuBudgetSecond": 101,
+              "baselineMeanAutoPopulationPerCpuBudgetSecond": 101,
+              "autoCpuBudgetEfficiencyRatioVsBaseline": 1
+            },
+            "recommendationCounts": {
+              "keep-auto": 1,
+              "add-auto-baseline": 0,
+              "shift-auto-budget-to-greedy": 0,
+              "shift-auto-budget-to-lns": 0,
+              "shift-auto-budget-to-cp-sat": 0,
+              "keep-portfolio-experimental": 0,
+              "investigate-auto-loss": 0
+            }
+          }
+        ]
+      },
+      {
+        "policyName": "lns-seed-reserve-5s-guarded",
+        "description": "Shorten LNS seed and reserve a small Auto CP-SAT slice at the 5s budget.",
+        "meanBestPopulation": 505,
+        "meanAutoPopulation": 505,
+        "meanLnsPopulation": null,
+        "meanAutoDeltaToBest": 0,
+        "meanAutoLnsStageElapsedSeconds": 5.113,
+        "meanAutoCpSatStageElapsedSeconds": null,
+        "deltaVsBaselineMeanBestPopulation": 0,
+        "deltaVsBaselineMeanAutoPopulation": 0,
+        "deltaVsBaselineMeanLnsPopulation": null,
+        "autoSafetySummary": {
+          "comparisonCount": 1,
+          "improvedAutoCount": 0,
+          "regressedAutoCount": 0,
+          "unchangedAutoCount": 1,
+          "regressionRate": 0,
+          "meanAutoPopulationDeltaVsBaseline": 0,
+          "medianAutoPopulationDeltaVsBaseline": 0,
+          "worstDecileAutoPopulationDeltaVsBaseline": 0,
+          "worstAutoPopulationDeltaVsBaseline": 0,
+          "bestAutoPopulationDeltaVsBaseline": 0,
+          "worstAutoPopulationDeltaCaseName": "typed-footprint-pressure",
+          "worstAutoPopulationDeltaSeed": 37,
+          "worstAutoPopulationDeltaBudgetSeconds": 5,
+          "bestAutoPopulationDeltaCaseName": "typed-footprint-pressure",
+          "bestAutoPopulationDeltaSeed": 37,
+          "bestAutoPopulationDeltaBudgetSeconds": 5,
+          "meanAutoWallClockSeconds": 5.790754417000002,
+          "baselineMeanAutoWallClockSeconds": 5.324892167,
+          "meanAutoWallClockDeltaVsBaselineSeconds": 0.4658622500000025,
+          "meanAutoPopulationPerCpuBudgetSecond": 101,
+          "baselineMeanAutoPopulationPerCpuBudgetSecond": 101,
+          "autoCpuBudgetEfficiencyRatioVsBaseline": 1
+        },
+        "autoReplayDiagnostics": [],
+        "autoVarianceSummary": {
+          "baselineRepeatPolicyName": "baseline-repeat",
+          "comparisonCount": 1,
+          "insideRepeatEnvelopeCount": 1,
+          "outsideRepeatEnvelopeCount": 0,
+          "outsideNegativeRepeatEnvelopeCount": 0,
+          "outsidePositiveRepeatEnvelopeCount": 0,
+          "repeatAutoPopulationDeltaMin": 0,
+          "repeatAutoPopulationDeltaMax": 0,
+          "repeatMeanAbsoluteAutoPopulationDelta": 0,
+          "candidateAutoPopulationDeltaMin": 0,
+          "candidateAutoPopulationDeltaMax": 0,
+          "candidateMeanAutoPopulationDelta": 0,
+          "meanAbsoluteCandidateDeltaBeyondRepeatEnvelope": 0,
+          "worstCandidateDeltaBeyondRepeatEnvelope": 0,
+          "bestCandidateDeltaBeyondRepeatEnvelope": 0
+        },
+        "recommendationCounts": {
+          "keep-auto": 1,
+          "add-auto-baseline": 0,
+          "shift-auto-budget-to-greedy": 0,
+          "shift-auto-budget-to-lns": 0,
+          "shift-auto-budget-to-cp-sat": 0,
+          "keep-portfolio-experimental": 0,
+          "investigate-auto-loss": 0
+        },
+        "budgetSummaries": [
+          {
+            "budgetSeconds": 5,
+            "caseCount": 1,
+            "meanBestPopulation": 505,
+            "meanAutoPopulation": 505,
+            "meanLnsPopulation": null,
+            "meanAutoDeltaToBest": 0,
+            "deltaVsBaselineMeanBestPopulation": 0,
+            "deltaVsBaselineMeanAutoPopulation": 0,
+            "deltaVsBaselineMeanLnsPopulation": null,
+            "autoSafetySummary": {
+              "comparisonCount": 1,
+              "improvedAutoCount": 0,
+              "regressedAutoCount": 0,
+              "unchangedAutoCount": 1,
+              "regressionRate": 0,
+              "meanAutoPopulationDeltaVsBaseline": 0,
+              "medianAutoPopulationDeltaVsBaseline": 0,
+              "worstDecileAutoPopulationDeltaVsBaseline": 0,
+              "worstAutoPopulationDeltaVsBaseline": 0,
+              "bestAutoPopulationDeltaVsBaseline": 0,
+              "worstAutoPopulationDeltaCaseName": "typed-footprint-pressure",
+              "worstAutoPopulationDeltaSeed": 37,
+              "worstAutoPopulationDeltaBudgetSeconds": 5,
+              "bestAutoPopulationDeltaCaseName": "typed-footprint-pressure",
+              "bestAutoPopulationDeltaSeed": 37,
+              "bestAutoPopulationDeltaBudgetSeconds": 5,
+              "meanAutoWallClockSeconds": 5.790754417000002,
+              "baselineMeanAutoWallClockSeconds": 5.324892167,
+              "meanAutoWallClockDeltaVsBaselineSeconds": 0.4658622500000025,
+              "meanAutoPopulationPerCpuBudgetSecond": 101,
+              "baselineMeanAutoPopulationPerCpuBudgetSecond": 101,
+              "autoCpuBudgetEfficiencyRatioVsBaseline": 1
+            },
+            "recommendationCounts": {
+              "keep-auto": 1,
+              "add-auto-baseline": 0,
+              "shift-auto-budget-to-greedy": 0,
+              "shift-auto-budget-to-lns": 0,
+              "shift-auto-budget-to-cp-sat": 0,
+              "keep-portfolio-experimental": 0,
+              "investigate-auto-loss": 0
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

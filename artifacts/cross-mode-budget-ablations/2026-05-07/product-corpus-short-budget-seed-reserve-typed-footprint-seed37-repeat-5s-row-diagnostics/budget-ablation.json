@@ -1,0 +1,3549 @@
+{
+  "generatedAt": "2026-05-07T20:14:25.596Z",
+  "budgetSeconds": 5,
+  "budgetsSeconds": [
+    5
+  ],
+  "seeds": [
+    37
+  ],
+  "caseCount": 1,
+  "selectedCaseNames": [
+    "typed-footprint-pressure"
+  ],
+  "modes": [
+    "auto"
+  ],
+  "baselinePolicyName": "baseline",
+  "topPolicyName": "baseline",
+  "topPolicyRankingBasis": "mean-auto-population",
+  "topPolicyTiedPolicyNames": [
+    "baseline",
+    "baseline-repeat",
+    "lns-seed-reserve-5s-guarded"
+  ],
+  "budgetedModeSeconds": 15,
+  "bestPolicyName": "baseline",
+  "policies": [
+    {
+      "policyName": "baseline",
+      "description": "Current Auto/LNS budget policy.",
+      "suite": {
+        "generatedAt": "2026-05-07T20:14:14.231Z",
+        "caseCount": 1,
+        "selectedCaseNames": [
+          "typed-footprint-pressure"
+        ],
+        "budgetSeconds": 5,
+        "budgetsSeconds": [
+          5
+        ],
+        "seeds": [
+          37
+        ],
+        "modeCount": 1,
+        "modes": [
+          "auto"
+        ],
+        "cases": [
+          {
+            "name": "typed-footprint-pressure",
+            "description": "Typed 2x2 variants share footprints, and a second service keeps the dynamic grouped scorer hot.",
+            "problemSizeBand": "small",
+            "split": "development",
+            "workflowTags": [
+              "footprint-pressure"
+            ],
+            "gridRows": 6,
+            "gridCols": 6,
+            "budgetSeconds": 5,
+            "seed": 37,
+            "bestScore": 505,
+            "winnerModes": [
+              "auto"
+            ],
+            "results": [
+              {
+                "mode": "auto",
+                "optimizer": "auto",
+                "label": "Auto",
+                "problemSizeBand": "small",
+                "budgetSeconds": 5,
+                "seed": 37,
+                "totalPopulation": 505,
+                "wallClockSeconds": 5.324892167,
+                "workerCpuBudgetSeconds": 5,
+                "observedWorkerCpuSeconds": null,
+                "populationPerWorkerCpuBudgetSecond": 101,
+                "populationPerObservedCpuSecond": null,
+                "roadCount": 5,
+                "roadSemantics": {
+                  "status": "anchor-connected",
+                  "anchorRoadCount": 1,
+                  "anchorConnectedRoadCount": 5,
+                  "disconnectedRoadCount": 0,
+                  "anchorConnectedRoadRatio": 1,
+                  "roadAdjacentBuildingCount": 6,
+                  "roadUnadjacentBuildingCount": 0
+                },
+                "serviceCount": 2,
+                "residentialCount": 4,
+                "cpSatStatus": null,
+                "lnsStopReason": "wall-clock-limit",
+                "lnsSeedTimeLimitSeconds": 1,
+                "lnsSeedWallClockSeconds": 0.005342500000000001,
+                "lnsSeedProfilePhaseCount": 0,
+                "autoStopReason": "wall-clock-cap",
+                "autoGreedySeedTimeLimitSeconds": 5,
+                "autoGreedySeedElapsedSeconds": 0.527,
+                "autoGreedySeedProfilePhaseCount": 8,
+                "stoppedByUser": false,
+                "progressSummary": {
+                  "currentScore": 505,
+                  "bestScore": 505,
+                  "activeStage": "lns",
+                  "reuseSource": "hint",
+                  "elapsedTimeSeconds": 5.325,
+                  "timeSinceImprovementSeconds": null,
+                  "stopReason": "wall-clock-cap",
+                  "exactGap": null,
+                  "portfolioWorkerSummary": null
+                },
+                "telemetry": {
+                  "schemaVersion": 1,
+                  "runId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37",
+                  "caseName": "typed-footprint-pressure",
+                  "split": "development",
+                  "workflowTags": [
+                    "footprint-pressure"
+                  ],
+                  "problemSizeBand": "small",
+                  "mode": "auto",
+                  "optimizer": "auto",
+                  "budgetSeconds": 5,
+                  "seed": 37,
+                  "solverParams": {
+                    "optimizer": "auto",
+                    "auto": {
+                      "wallClockLimitSeconds": 5,
+                      "randomSeed": 37,
+                      "cpSatStageTimeLimitSeconds": 5
+                    },
+                    "greedy": {
+                      "timeLimitSeconds": 5,
+                      "randomSeed": 37,
+                      "localSearch": true,
+                      "restarts": 2,
+                      "serviceRefineIterations": 1,
+                      "serviceRefineCandidateLimit": 8,
+                      "exhaustiveServiceSearch": false,
+                      "serviceExactPoolLimit": 8,
+                      "serviceExactMaxCombinations": 64
+                    },
+                    "lns": {
+                      "wallClockLimitSeconds": 5,
+                      "timeLimitSeconds": 5,
+                      "seedTimeLimitSeconds": 1,
+                      "iterations": 4,
+                      "maxNoImprovementIterations": 4,
+                      "neighborhoodRows": 3,
+                      "neighborhoodCols": 3,
+                      "repairTimeLimitSeconds": 1,
+                      "focusedRepairTimeLimitSeconds": 1,
+                      "escalatedRepairTimeLimitSeconds": 1
+                    },
+                    "cpSat": {
+                      "timeLimitSeconds": 5,
+                      "maxDeterministicTime": 5,
+                      "numWorkers": 1,
+                      "randomSeed": 37,
+                      "randomizeSearch": false,
+                      "progressIntervalSeconds": 0.5
+                    },
+                    "portfolio": null
+                  },
+                  "timing": {
+                    "wallClockSeconds": 5.325,
+                    "firstFeasibleSeconds": 0.284,
+                    "firstImprovementSeconds": 0.284,
+                    "bestScoreSeconds": 0.284
+                  },
+                  "score": {
+                    "finalPopulation": 505,
+                    "bestScore": 505,
+                    "cpSatStatus": null,
+                    "exactGap": null,
+                    "lnsStopReason": "wall-clock-limit",
+                    "autoStopReason": "wall-clock-cap",
+                    "stoppedByUser": false
+                  },
+                  "cpu": {
+                    "workerCpuBudgetSeconds": 5,
+                    "observedWorkerCpuSeconds": null
+                  },
+                  "stageCount": 13,
+                  "stages": [
+                    {
+                      "kind": "greedy-profile",
+                      "stage": "greedy",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": "precompute",
+                      "iteration": null,
+                      "status": "stalled",
+                      "operatorOutcome": null,
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 0.024,
+                      "completedAtSeconds": 0.024,
+                      "scoreBefore": null,
+                      "scoreAfter": null,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": null,
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "greedy-profile",
+                      "stage": "greedy",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": "constructiveCapSearch",
+                      "iteration": null,
+                      "status": "improved",
+                      "operatorOutcome": null,
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 0.26,
+                      "completedAtSeconds": 0.284,
+                      "scoreBefore": null,
+                      "scoreAfter": 505,
+                      "improvement": 505,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": null,
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "greedy-profile",
+                      "stage": "greedy",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": "forcedServiceRealization",
+                      "iteration": null,
+                      "status": "stalled",
+                      "operatorOutcome": null,
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 0.043,
+                      "completedAtSeconds": 0.327,
+                      "scoreBefore": 505,
+                      "scoreAfter": 505,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": null,
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "greedy-profile",
+                      "stage": "greedy",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": "serviceRefinement",
+                      "iteration": null,
+                      "status": "stalled",
+                      "operatorOutcome": null,
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 0.044,
+                      "completedAtSeconds": 0.371,
+                      "scoreBefore": 505,
+                      "scoreAfter": 505,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": null,
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "greedy-profile",
+                      "stage": "greedy",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": "exhaustiveServiceSearch",
+                      "iteration": null,
+                      "status": "stalled",
+                      "operatorOutcome": null,
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 0,
+                      "completedAtSeconds": 0.371,
+                      "scoreBefore": 505,
+                      "scoreAfter": 505,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": null,
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "greedy-profile",
+                      "stage": "greedy",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": "serviceMasterDecomposition",
+                      "iteration": null,
+                      "status": "stalled",
+                      "operatorOutcome": null,
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 0,
+                      "completedAtSeconds": 0.371,
+                      "scoreBefore": 505,
+                      "scoreAfter": 505,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": null,
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "greedy-profile",
+                      "stage": "greedy",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": "residentialLocalSearch",
+                      "iteration": null,
+                      "status": "stalled",
+                      "operatorOutcome": null,
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 0.033,
+                      "completedAtSeconds": 0.404,
+                      "scoreBefore": null,
+                      "scoreAfter": null,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": null,
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "greedy-profile",
+                      "stage": "greedy",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": "serviceNeighborhoodSearch",
+                      "iteration": null,
+                      "status": "stalled",
+                      "operatorOutcome": null,
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 0.006,
+                      "completedAtSeconds": 0.41,
+                      "scoreBefore": 505,
+                      "scoreAfter": 505,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": null,
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "auto-stage",
+                      "stage": "greedy",
+                      "stageIndex": 1,
+                      "cycleIndex": 0,
+                      "phase": null,
+                      "iteration": null,
+                      "status": "stalled",
+                      "operatorOutcome": "greedy",
+                      "startedAtSeconds": 0.001,
+                      "wallClockSeconds": 0.527,
+                      "completedAtSeconds": 0.528,
+                      "scoreBefore": null,
+                      "scoreAfter": 505,
+                      "improvement": null,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": null,
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "auto-stage",
+                      "stage": "lns",
+                      "stageIndex": 2,
+                      "cycleIndex": 1,
+                      "phase": null,
+                      "iteration": null,
+                      "status": "stalled",
+                      "operatorOutcome": "lns",
+                      "startedAtSeconds": 0.528,
+                      "wallClockSeconds": 4.795,
+                      "completedAtSeconds": 5.323,
+                      "scoreBefore": 505,
+                      "scoreAfter": 505,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": {
+                        "lnsIterationsStarted": 2,
+                        "lnsIterationsCompleted": 2,
+                        "lnsImprovingIterations": 0,
+                        "lnsNeutralIterations": 2
+                      },
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "lns",
+                      "stage": "lns",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": null,
+                      "iteration": null,
+                      "status": "wall-clock-limit",
+                      "operatorOutcome": "wall-clock-limit",
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 4.575,
+                      "completedAtSeconds": 4.575,
+                      "scoreBefore": 505,
+                      "scoreAfter": 505,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": {
+                        "iterationsStarted": 2,
+                        "iterationsCompleted": 2,
+                        "improvingIterations": 0,
+                        "neutralIterations": 2,
+                        "recoverableFailures": 0,
+                        "skippedIterations": 0
+                      },
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "lns-neighborhood",
+                      "stage": "lns",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": "focused",
+                      "iteration": 0,
+                      "status": "neutral",
+                      "operatorOutcome": "neutral",
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 2.625,
+                      "completedAtSeconds": null,
+                      "scoreBefore": 505,
+                      "scoreAfter": 505,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": "OPTIMAL",
+                      "candidateCounts": {
+                        "windowRows": 3,
+                        "windowCols": 3,
+                        "windowArea": 9,
+                        "stagnantIterationsBefore": 0
+                      },
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "lns-neighborhood",
+                      "stage": "lns",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": "escalated",
+                      "iteration": 1,
+                      "status": "neutral",
+                      "operatorOutcome": "neutral",
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 1.935,
+                      "completedAtSeconds": null,
+                      "scoreBefore": 505,
+                      "scoreAfter": 505,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": "FEASIBLE",
+                      "candidateCounts": {
+                        "windowRows": 5,
+                        "windowCols": 6,
+                        "windowArea": 30,
+                        "stagnantIterationsBefore": 1
+                      },
+                      "cpSatModelSize": null
+                    }
+                  ]
+                },
+                "decisionTrace": [
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37",
+                    "sequence": 0,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37:0000:auto-stage",
+                    "optimizer": "auto",
+                    "activeStage": "greedy",
+                    "kind": "auto-stage",
+                    "decision": "started",
+                    "reason": "Auto started greedy stage 1.",
+                    "score": {
+                      "before": null,
+                      "after": null,
+                      "best": null,
+                      "delta": null,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "stageIndex": 1,
+                      "cycleIndex": 0
+                    },
+                    "evidence": {
+                      "randomSeed": 1075491649
+                    },
+                    "elapsedMs": 1
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37",
+                    "sequence": 1,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37:0001:greedy-phase",
+                    "optimizer": "auto",
+                    "activeStage": "greedy",
+                    "kind": "greedy-phase",
+                    "decision": "stalled",
+                    "reason": "Greedy precompute did not improve the incumbent.",
+                    "score": {
+                      "before": null,
+                      "after": null,
+                      "best": null,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "phase": "precompute"
+                    },
+                    "evidence": {
+                      "runs": 1,
+                      "improvements": 0,
+                      "candidateDelta": 0
+                    },
+                    "elapsedMs": 24
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37",
+                    "sequence": 2,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37:0002:greedy-phase",
+                    "optimizer": "auto",
+                    "activeStage": "greedy",
+                    "kind": "greedy-phase",
+                    "decision": "improved",
+                    "reason": "Greedy constructiveCapSearch improved best population by 505.",
+                    "score": {
+                      "before": null,
+                      "after": 505,
+                      "best": 505,
+                      "delta": 505,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "phase": "constructiveCapSearch"
+                    },
+                    "evidence": {
+                      "runs": 1,
+                      "improvements": 1,
+                      "candidateDelta": 0
+                    },
+                    "elapsedMs": 284
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37",
+                    "sequence": 3,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37:0003:greedy-phase",
+                    "optimizer": "auto",
+                    "activeStage": "greedy",
+                    "kind": "greedy-phase",
+                    "decision": "stalled",
+                    "reason": "Greedy forcedServiceRealization did not improve the incumbent.",
+                    "score": {
+                      "before": 505,
+                      "after": 505,
+                      "best": 505,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "phase": "forcedServiceRealization"
+                    },
+                    "evidence": {
+                      "runs": 12,
+                      "improvements": 0,
+                      "candidateDelta": 0
+                    },
+                    "elapsedMs": 327
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37",
+                    "sequence": 4,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37:0004:greedy-phase",
+                    "optimizer": "auto",
+                    "activeStage": "greedy",
+                    "kind": "greedy-phase",
+                    "decision": "stalled",
+                    "reason": "Greedy serviceRefinement did not improve the incumbent.",
+                    "score": {
+                      "before": 505,
+                      "after": 505,
+                      "best": 505,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "phase": "serviceRefinement"
+                    },
+                    "evidence": {
+                      "runs": 1,
+                      "improvements": 0,
+                      "candidateDelta": 0
+                    },
+                    "elapsedMs": 371
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37",
+                    "sequence": 5,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37:0005:greedy-phase",
+                    "optimizer": "auto",
+                    "activeStage": "greedy",
+                    "kind": "greedy-phase",
+                    "decision": "stalled",
+                    "reason": "Greedy exhaustiveServiceSearch did not improve the incumbent.",
+                    "score": {
+                      "before": 505,
+                      "after": 505,
+                      "best": 505,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "phase": "exhaustiveServiceSearch"
+                    },
+                    "evidence": {
+                      "runs": 1,
+                      "improvements": 0,
+                      "candidateDelta": 0
+                    },
+                    "elapsedMs": 371
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37",
+                    "sequence": 6,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37:0006:greedy-phase",
+                    "optimizer": "auto",
+                    "activeStage": "greedy",
+                    "kind": "greedy-phase",
+                    "decision": "stalled",
+                    "reason": "Greedy serviceMasterDecomposition did not improve the incumbent.",
+                    "score": {
+                      "before": 505,
+                      "after": 505,
+                      "best": 505,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "phase": "serviceMasterDecomposition"
+                    },
+                    "evidence": {
+                      "runs": 1,
+                      "improvements": 0,
+                      "candidateDelta": 0
+                    },
+                    "elapsedMs": 371
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37",
+                    "sequence": 7,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37:0007:greedy-phase",
+                    "optimizer": "auto",
+                    "activeStage": "greedy",
+                    "kind": "greedy-phase",
+                    "decision": "stalled",
+                    "reason": "Greedy residentialLocalSearch did not improve the incumbent.",
+                    "score": {
+                      "before": null,
+                      "after": null,
+                      "best": null,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "phase": "residentialLocalSearch"
+                    },
+                    "evidence": {
+                      "runs": 88,
+                      "improvements": 0,
+                      "candidateDelta": 0
+                    },
+                    "elapsedMs": 404
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37",
+                    "sequence": 8,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37:0008:greedy-phase",
+                    "optimizer": "auto",
+                    "activeStage": "greedy",
+                    "kind": "greedy-phase",
+                    "decision": "stalled",
+                    "reason": "Greedy serviceNeighborhoodSearch did not improve the incumbent.",
+                    "score": {
+                      "before": 505,
+                      "after": 505,
+                      "best": 505,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "phase": "serviceNeighborhoodSearch"
+                    },
+                    "evidence": {
+                      "runs": 1,
+                      "improvements": 0,
+                      "candidateDelta": 0
+                    },
+                    "elapsedMs": 410
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37",
+                    "sequence": 9,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37:0009:auto-stage",
+                    "optimizer": "auto",
+                    "activeStage": "greedy",
+                    "kind": "auto-stage",
+                    "decision": "improved",
+                    "reason": "Auto greedy seed produced population 505.",
+                    "score": {
+                      "before": null,
+                      "after": 505,
+                      "best": 505,
+                      "delta": null,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "evidence": {
+                      "timeLimitSeconds": 5,
+                      "localSearch": true,
+                      "restarts": 2,
+                      "serviceRefineIterations": 1,
+                      "serviceRefineCandidateLimit": 8
+                    },
+                    "elapsedMs": 527
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37",
+                    "sequence": 10,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37:0010:auto-stage",
+                    "optimizer": "auto",
+                    "activeStage": "lns",
+                    "kind": "auto-stage",
+                    "decision": "started",
+                    "reason": "Auto started lns stage 2.",
+                    "score": {
+                      "before": null,
+                      "after": null,
+                      "best": null,
+                      "delta": null,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "stageIndex": 2,
+                      "cycleIndex": 1
+                    },
+                    "evidence": {
+                      "randomSeed": 578129313
+                    },
+                    "elapsedMs": 528
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37",
+                    "sequence": 11,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37:0011:checkpoint",
+                    "optimizer": "auto",
+                    "activeStage": "lns",
+                    "kind": "checkpoint",
+                    "decision": "started",
+                    "reason": "LNS seeded from hint.",
+                    "score": {
+                      "before": null,
+                      "after": 505,
+                      "best": 505,
+                      "delta": null,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "evidence": {
+                      "seedSource": "hint",
+                      "seedTimeLimitSeconds": 1,
+                      "seedWallClockSeconds": 0.005342500000000001
+                    },
+                    "elapsedMs": 533
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37",
+                    "sequence": 12,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37:0012:lns-neighborhood",
+                    "optimizer": "auto",
+                    "activeStage": "lns",
+                    "kind": "lns-neighborhood",
+                    "decision": "stalled",
+                    "reason": "LNS focused neighborhood 1 neutral.",
+                    "score": {
+                      "before": 505,
+                      "after": 505,
+                      "best": 505,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "phase": "focused",
+                      "iteration": 0
+                    },
+                    "evidence": {
+                      "status": "neutral",
+                      "repairTimeLimitSeconds": 1,
+                      "staleSecondsBefore": 0.004399208999999985,
+                      "stagnantIterationsBefore": 0,
+                      "cpSatStatus": "OPTIMAL"
+                    },
+                    "elapsedMs": 3158
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37",
+                    "sequence": 13,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37:0013:lns-neighborhood",
+                    "optimizer": "auto",
+                    "activeStage": "lns",
+                    "kind": "lns-neighborhood",
+                    "decision": "stalled",
+                    "reason": "LNS escalated neighborhood 2 neutral.",
+                    "score": {
+                      "before": 505,
+                      "after": 505,
+                      "best": 505,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "phase": "escalated",
+                      "iteration": 1
+                    },
+                    "evidence": {
+                      "status": "neutral",
+                      "repairTimeLimitSeconds": 0.8326789170000002,
+                      "staleSecondsBefore": 2.63286075,
+                      "stagnantIterationsBefore": 1,
+                      "cpSatStatus": "FEASIBLE"
+                    },
+                    "elapsedMs": 5093
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37",
+                    "sequence": 14,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37:0014:auto-stage",
+                    "optimizer": "auto",
+                    "activeStage": "lns",
+                    "kind": "auto-stage",
+                    "decision": "stalled",
+                    "reason": "Auto lns stage 2 completed with candidate population 505.",
+                    "score": {
+                      "before": 505,
+                      "after": 505,
+                      "best": 505,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "stageIndex": 2,
+                      "cycleIndex": 1
+                    },
+                    "evidence": {
+                      "randomSeed": 578129313,
+                      "startedAtSeconds": 0.528,
+                      "elapsedSeconds": 4.795,
+                      "completedAtSeconds": 5.323,
+                      "populationBefore": 505,
+                      "candidatePopulation": 505,
+                      "acceptedPopulation": 505,
+                      "improvement": 0,
+                      "cpSatStatus": null,
+                      "cpSatSolveWallTimeSeconds": null,
+                      "cpSatLastImprovementAtSeconds": null,
+                      "cpSatPopulationGapUpperBound": null,
+                      "lnsStopReason": "wall-clock-limit",
+                      "lnsSeedTimeLimitSeconds": 1,
+                      "lnsSeedWallClockSeconds": 0.005342500000000001,
+                      "lnsFocusedRepairTimeLimitSeconds": 1,
+                      "lnsEscalatedRepairTimeLimitSeconds": 1,
+                      "lnsIterationsStarted": 2,
+                      "lnsIterationsCompleted": 2,
+                      "lnsImprovingIterations": 0,
+                      "lnsNeutralIterations": 2
+                    },
+                    "elapsedMs": 5323
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37",
+                    "sequence": 15,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37:0015:auto-stage",
+                    "optimizer": "auto",
+                    "activeStage": "lns",
+                    "kind": "auto-stage",
+                    "decision": "stopped",
+                    "reason": "Auto stopped: wall-clock-cap.",
+                    "score": {
+                      "before": null,
+                      "after": 505,
+                      "best": 505,
+                      "delta": null,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "stageIndex": 2,
+                      "cycleIndex": 1
+                    },
+                    "evidence": {
+                      "consecutiveWeakCycles": 0,
+                      "lastCycleImprovementRatio": null
+                    },
+                    "elapsedMs": 5325
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37",
+                    "sequence": 16,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline:budget-5:seed-37:0016:checkpoint",
+                    "optimizer": "auto",
+                    "activeStage": "lns",
+                    "kind": "checkpoint",
+                    "decision": "stalled",
+                    "reason": "auto final incumbent population 505.",
+                    "score": {
+                      "before": 505,
+                      "after": 505,
+                      "best": 505,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "evidence": {
+                      "stoppedByUser": false,
+                      "stoppedByTimeLimit": false,
+                      "roadCount": 5,
+                      "serviceCount": 2,
+                      "residentialCount": 4
+                    },
+                    "elapsedMs": 5325
+                  }
+                ],
+                "timeToQuality": {
+                  "finalElapsedMs": 5325,
+                  "finalScore": 505,
+                  "bestScore": 505,
+                  "firstFeasibleAtMs": 284,
+                  "firstImprovementAtMs": 284,
+                  "bestScoreAtMs": 284,
+                  "improvementCount": 2,
+                  "timeCheckpoints": [
+                    {
+                      "elapsedMs": 5000,
+                      "bestScore": 505,
+                      "scoreDeltaToBest": 0,
+                      "scoreRatioToBest": 1,
+                      "reached": true
+                    },
+                    {
+                      "elapsedMs": 30000,
+                      "bestScore": 505,
+                      "scoreDeltaToBest": 0,
+                      "scoreRatioToBest": 1,
+                      "reached": true
+                    },
+                    {
+                      "elapsedMs": 120000,
+                      "bestScore": 505,
+                      "scoreDeltaToBest": 0,
+                      "scoreRatioToBest": 1,
+                      "reached": true
+                    }
+                  ],
+                  "qualityTargets": [
+                    {
+                      "ratio": 0.5,
+                      "targetScore": 253,
+                      "reachedAtMs": 284,
+                      "reachedScore": 505
+                    },
+                    {
+                      "ratio": 0.9,
+                      "targetScore": 455,
+                      "reachedAtMs": 284,
+                      "reachedScore": 505
+                    },
+                    {
+                      "ratio": 1,
+                      "targetScore": 505,
+                      "reachedAtMs": 284,
+                      "reachedScore": 505
+                    }
+                  ]
+                },
+                "checkpointReason": "Auto greedy seed produced population 505.",
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "winVsAuto": "baseline",
+                "rank": 1,
+                "scoreDeltaVsAuto": 0,
+                "budgetAllocationSignal": {
+                  "signal": "over-budget",
+                  "budgetUtilizationRatio": 1.065,
+                  "budgetRemainingSeconds": 0,
+                  "budgetOverrunSeconds": 0.325,
+                  "firstImprovementSeconds": 0.284,
+                  "bestScoreSeconds": 0.284,
+                  "secondsAfterBest": 5.041,
+                  "improvementsPerSecond": 0.376,
+                  "scoreDeltaVsAuto": 0,
+                  "autoBestScoreSecondsDelta": 0,
+                  "reason": "Observed wall time exceeded the configured benchmark budget."
+                }
+              }
+            ]
+          }
+        ],
+        "budgetPolicySignals": [
+          {
+            "caseName": "typed-footprint-pressure",
+            "problemSizeBand": "small",
+            "budgetSeconds": 5,
+            "seed": 37,
+            "bestMode": "auto",
+            "bestScore": 505,
+            "autoScore": 505,
+            "autoDeltaToBest": 0,
+            "recommendation": "keep-auto",
+            "autoStopReason": "wall-clock-cap",
+            "autoGreedySeedElapsedSeconds": 0.527,
+            "autoLnsStageElapsedSeconds": 4.795,
+            "autoLnsStageImprovement": 0,
+            "autoCpSatStageElapsedSeconds": null,
+            "autoCpSatStageImprovement": null,
+            "lnsScoreDeltaVsAuto": null,
+            "lnsSeedWallClockSeconds": null,
+            "reason": "Auto matched the best score 505 at 5s. Auto LNS used 4.795s for +0 accepted population."
+          }
+        ],
+        "portfolioEfficiencySignals": [],
+        "modeSummaries": [
+          {
+            "mode": "auto",
+            "label": "Auto",
+            "runs": 1,
+            "meanPopulation": 505,
+            "bestPopulation": 505,
+            "worstPopulation": 505,
+            "populationStdDev": 0,
+            "meanWallClockSeconds": 5.324892167,
+            "winRateVsAuto": null,
+            "meanScoreDeltaVsAuto": 0
+          }
+        ],
+        "problemSizeSummaries": [
+          {
+            "problemSizeBand": "small",
+            "mode": "auto",
+            "label": "Auto",
+            "runs": 1,
+            "meanPopulation": 505,
+            "bestPopulation": 505,
+            "worstPopulation": 505,
+            "populationStdDev": 0,
+            "meanWallClockSeconds": 5.324892167,
+            "winRateVsAuto": null,
+            "meanScoreDeltaVsAuto": 0
+          }
+        ]
+      },
+      "meanBestPopulation": 505,
+      "meanAutoPopulation": 505,
+      "meanLnsPopulation": null,
+      "meanAutoDeltaToBest": 0,
+      "meanAutoLnsStageElapsedSeconds": 4.795,
+      "meanAutoCpSatStageElapsedSeconds": null,
+      "deltaVsBaselineMeanBestPopulation": 0,
+      "deltaVsBaselineMeanAutoPopulation": 0,
+      "deltaVsBaselineMeanLnsPopulation": null,
+      "autoSafetySummary": {
+        "comparisonCount": 1,
+        "improvedAutoCount": 0,
+        "regressedAutoCount": 0,
+        "unchangedAutoCount": 1,
+        "regressionRate": 0,
+        "meanAutoPopulationDeltaVsBaseline": 0,
+        "medianAutoPopulationDeltaVsBaseline": 0,
+        "worstDecileAutoPopulationDeltaVsBaseline": 0,
+        "worstAutoPopulationDeltaVsBaseline": 0,
+        "bestAutoPopulationDeltaVsBaseline": 0,
+        "worstAutoPopulationDeltaCaseName": "typed-footprint-pressure",
+        "worstAutoPopulationDeltaSeed": 37,
+        "worstAutoPopulationDeltaBudgetSeconds": 5,
+        "bestAutoPopulationDeltaCaseName": "typed-footprint-pressure",
+        "bestAutoPopulationDeltaSeed": 37,
+        "bestAutoPopulationDeltaBudgetSeconds": 5,
+        "meanAutoWallClockSeconds": 5.324892167,
+        "baselineMeanAutoWallClockSeconds": 5.324892167,
+        "meanAutoWallClockDeltaVsBaselineSeconds": 0,
+        "meanAutoPopulationPerCpuBudgetSecond": 101,
+        "baselineMeanAutoPopulationPerCpuBudgetSecond": 101,
+        "autoCpuBudgetEfficiencyRatioVsBaseline": 1
+      },
+      "autoReplayDiagnostics": [],
+      "autoVarianceSummary": {
+        "baselineRepeatPolicyName": "baseline-repeat",
+        "comparisonCount": 1,
+        "insideRepeatEnvelopeCount": 1,
+        "outsideRepeatEnvelopeCount": 0,
+        "outsideNegativeRepeatEnvelopeCount": 0,
+        "outsidePositiveRepeatEnvelopeCount": 0,
+        "repeatAutoPopulationDeltaMin": 0,
+        "repeatAutoPopulationDeltaMax": 0,
+        "repeatMeanAbsoluteAutoPopulationDelta": 0,
+        "candidateAutoPopulationDeltaMin": 0,
+        "candidateAutoPopulationDeltaMax": 0,
+        "candidateMeanAutoPopulationDelta": 0,
+        "meanAbsoluteCandidateDeltaBeyondRepeatEnvelope": 0,
+        "worstCandidateDeltaBeyondRepeatEnvelope": 0,
+        "bestCandidateDeltaBeyondRepeatEnvelope": 0
+      },
+      "budgetSummaries": [
+        {
+          "budgetSeconds": 5,
+          "caseCount": 1,
+          "meanBestPopulation": 505,
+          "meanAutoPopulation": 505,
+          "meanLnsPopulation": null,
+          "meanAutoDeltaToBest": 0,
+          "deltaVsBaselineMeanBestPopulation": 0,
+          "deltaVsBaselineMeanAutoPopulation": 0,
+          "deltaVsBaselineMeanLnsPopulation": null,
+          "autoSafetySummary": {
+            "comparisonCount": 1,
+            "improvedAutoCount": 0,
+            "regressedAutoCount": 0,
+            "unchangedAutoCount": 1,
+            "regressionRate": 0,
+            "meanAutoPopulationDeltaVsBaseline": 0,
+            "medianAutoPopulationDeltaVsBaseline": 0,
+            "worstDecileAutoPopulationDeltaVsBaseline": 0,
+            "worstAutoPopulationDeltaVsBaseline": 0,
+            "bestAutoPopulationDeltaVsBaseline": 0,
+            "worstAutoPopulationDeltaCaseName": "typed-footprint-pressure",
+            "worstAutoPopulationDeltaSeed": 37,
+            "worstAutoPopulationDeltaBudgetSeconds": 5,
+            "bestAutoPopulationDeltaCaseName": "typed-footprint-pressure",
+            "bestAutoPopulationDeltaSeed": 37,
+            "bestAutoPopulationDeltaBudgetSeconds": 5,
+            "meanAutoWallClockSeconds": 5.324892167,
+            "baselineMeanAutoWallClockSeconds": 5.324892167,
+            "meanAutoWallClockDeltaVsBaselineSeconds": 0,
+            "meanAutoPopulationPerCpuBudgetSecond": 101,
+            "baselineMeanAutoPopulationPerCpuBudgetSecond": 101,
+            "autoCpuBudgetEfficiencyRatioVsBaseline": 1
+          },
+          "recommendationCounts": {
+            "keep-auto": 1,
+            "add-auto-baseline": 0,
+            "shift-auto-budget-to-greedy": 0,
+            "shift-auto-budget-to-lns": 0,
+            "shift-auto-budget-to-cp-sat": 0,
+            "keep-portfolio-experimental": 0,
+            "investigate-auto-loss": 0
+          }
+        }
+      ],
+      "recommendationCounts": {
+        "keep-auto": 1,
+        "add-auto-baseline": 0,
+        "shift-auto-budget-to-greedy": 0,
+        "shift-auto-budget-to-lns": 0,
+        "shift-auto-budget-to-cp-sat": 0,
+        "keep-portfolio-experimental": 0,
+        "investigate-auto-loss": 0
+      }
+    },
+    {
+      "policyName": "baseline-repeat",
+      "description": "Repeat the current Auto/LNS budget policy as a short-budget variance control.",
+      "suite": {
+        "generatedAt": "2026-05-07T20:14:19.762Z",
+        "caseCount": 1,
+        "selectedCaseNames": [
+          "typed-footprint-pressure"
+        ],
+        "budgetSeconds": 5,
+        "budgetsSeconds": [
+          5
+        ],
+        "seeds": [
+          37
+        ],
+        "modeCount": 1,
+        "modes": [
+          "auto"
+        ],
+        "cases": [
+          {
+            "name": "typed-footprint-pressure",
+            "description": "Typed 2x2 variants share footprints, and a second service keeps the dynamic grouped scorer hot.",
+            "problemSizeBand": "small",
+            "split": "development",
+            "workflowTags": [
+              "footprint-pressure"
+            ],
+            "gridRows": 6,
+            "gridCols": 6,
+            "budgetSeconds": 5,
+            "seed": 37,
+            "bestScore": 505,
+            "winnerModes": [
+              "auto"
+            ],
+            "results": [
+              {
+                "mode": "auto",
+                "optimizer": "auto",
+                "label": "Auto",
+                "problemSizeBand": "small",
+                "budgetSeconds": 5,
+                "seed": 37,
+                "totalPopulation": 505,
+                "wallClockSeconds": 5.522696000000001,
+                "workerCpuBudgetSeconds": 5,
+                "observedWorkerCpuSeconds": null,
+                "populationPerWorkerCpuBudgetSecond": 101,
+                "populationPerObservedCpuSecond": null,
+                "roadCount": 5,
+                "roadSemantics": {
+                  "status": "anchor-connected",
+                  "anchorRoadCount": 1,
+                  "anchorConnectedRoadCount": 5,
+                  "disconnectedRoadCount": 0,
+                  "anchorConnectedRoadRatio": 1,
+                  "roadAdjacentBuildingCount": 6,
+                  "roadUnadjacentBuildingCount": 0
+                },
+                "serviceCount": 2,
+                "residentialCount": 4,
+                "cpSatStatus": null,
+                "lnsStopReason": "wall-clock-limit",
+                "lnsSeedTimeLimitSeconds": 1,
+                "lnsSeedWallClockSeconds": 0.008030374999999992,
+                "lnsSeedProfilePhaseCount": 0,
+                "autoStopReason": "wall-clock-cap",
+                "autoGreedySeedTimeLimitSeconds": 5,
+                "autoGreedySeedElapsedSeconds": 0.629,
+                "autoGreedySeedProfilePhaseCount": 8,
+                "stoppedByUser": false,
+                "progressSummary": {
+                  "currentScore": 505,
+                  "bestScore": 505,
+                  "activeStage": "lns",
+                  "reuseSource": "hint",
+                  "elapsedTimeSeconds": 5.523,
+                  "timeSinceImprovementSeconds": null,
+                  "stopReason": "wall-clock-cap",
+                  "exactGap": null,
+                  "portfolioWorkerSummary": null
+                },
+                "telemetry": {
+                  "schemaVersion": 1,
+                  "runId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37",
+                  "caseName": "typed-footprint-pressure",
+                  "split": "development",
+                  "workflowTags": [
+                    "footprint-pressure"
+                  ],
+                  "problemSizeBand": "small",
+                  "mode": "auto",
+                  "optimizer": "auto",
+                  "budgetSeconds": 5,
+                  "seed": 37,
+                  "solverParams": {
+                    "optimizer": "auto",
+                    "auto": {
+                      "wallClockLimitSeconds": 5,
+                      "randomSeed": 37,
+                      "cpSatStageTimeLimitSeconds": 5
+                    },
+                    "greedy": {
+                      "timeLimitSeconds": 5,
+                      "randomSeed": 37,
+                      "localSearch": true,
+                      "restarts": 2,
+                      "serviceRefineIterations": 1,
+                      "serviceRefineCandidateLimit": 8,
+                      "exhaustiveServiceSearch": false,
+                      "serviceExactPoolLimit": 8,
+                      "serviceExactMaxCombinations": 64
+                    },
+                    "lns": {
+                      "wallClockLimitSeconds": 5,
+                      "timeLimitSeconds": 5,
+                      "seedTimeLimitSeconds": 1,
+                      "iterations": 4,
+                      "maxNoImprovementIterations": 4,
+                      "neighborhoodRows": 3,
+                      "neighborhoodCols": 3,
+                      "repairTimeLimitSeconds": 1,
+                      "focusedRepairTimeLimitSeconds": 1,
+                      "escalatedRepairTimeLimitSeconds": 1
+                    },
+                    "cpSat": {
+                      "timeLimitSeconds": 5,
+                      "maxDeterministicTime": 5,
+                      "numWorkers": 1,
+                      "randomSeed": 37,
+                      "randomizeSearch": false,
+                      "progressIntervalSeconds": 0.5
+                    },
+                    "portfolio": null
+                  },
+                  "timing": {
+                    "wallClockSeconds": 5.523,
+                    "firstFeasibleSeconds": 0.314,
+                    "firstImprovementSeconds": 0.314,
+                    "bestScoreSeconds": 0.314
+                  },
+                  "score": {
+                    "finalPopulation": 505,
+                    "bestScore": 505,
+                    "cpSatStatus": null,
+                    "exactGap": null,
+                    "lnsStopReason": "wall-clock-limit",
+                    "autoStopReason": "wall-clock-cap",
+                    "stoppedByUser": false
+                  },
+                  "cpu": {
+                    "workerCpuBudgetSeconds": 5,
+                    "observedWorkerCpuSeconds": null
+                  },
+                  "stageCount": 13,
+                  "stages": [
+                    {
+                      "kind": "greedy-profile",
+                      "stage": "greedy",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": "precompute",
+                      "iteration": null,
+                      "status": "stalled",
+                      "operatorOutcome": null,
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 0.034,
+                      "completedAtSeconds": 0.034,
+                      "scoreBefore": null,
+                      "scoreAfter": null,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": null,
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "greedy-profile",
+                      "stage": "greedy",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": "constructiveCapSearch",
+                      "iteration": null,
+                      "status": "improved",
+                      "operatorOutcome": null,
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 0.28,
+                      "completedAtSeconds": 0.314,
+                      "scoreBefore": null,
+                      "scoreAfter": 505,
+                      "improvement": 505,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": null,
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "greedy-profile",
+                      "stage": "greedy",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": "forcedServiceRealization",
+                      "iteration": null,
+                      "status": "stalled",
+                      "operatorOutcome": null,
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 0.04,
+                      "completedAtSeconds": 0.354,
+                      "scoreBefore": 505,
+                      "scoreAfter": 505,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": null,
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "greedy-profile",
+                      "stage": "greedy",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": "serviceRefinement",
+                      "iteration": null,
+                      "status": "stalled",
+                      "operatorOutcome": null,
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 0.042,
+                      "completedAtSeconds": 0.396,
+                      "scoreBefore": 505,
+                      "scoreAfter": 505,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": null,
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "greedy-profile",
+                      "stage": "greedy",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": "exhaustiveServiceSearch",
+                      "iteration": null,
+                      "status": "stalled",
+                      "operatorOutcome": null,
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 0,
+                      "completedAtSeconds": 0.396,
+                      "scoreBefore": 505,
+                      "scoreAfter": 505,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": null,
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "greedy-profile",
+                      "stage": "greedy",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": "serviceMasterDecomposition",
+                      "iteration": null,
+                      "status": "stalled",
+                      "operatorOutcome": null,
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 0,
+                      "completedAtSeconds": 0.396,
+                      "scoreBefore": 505,
+                      "scoreAfter": 505,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": null,
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "greedy-profile",
+                      "stage": "greedy",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": "residentialLocalSearch",
+                      "iteration": null,
+                      "status": "stalled",
+                      "operatorOutcome": null,
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 0.045,
+                      "completedAtSeconds": 0.441,
+                      "scoreBefore": null,
+                      "scoreAfter": null,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": null,
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "greedy-profile",
+                      "stage": "greedy",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": "serviceNeighborhoodSearch",
+                      "iteration": null,
+                      "status": "stalled",
+                      "operatorOutcome": null,
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 0.011,
+                      "completedAtSeconds": 0.452,
+                      "scoreBefore": 505,
+                      "scoreAfter": 505,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": null,
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "auto-stage",
+                      "stage": "greedy",
+                      "stageIndex": 1,
+                      "cycleIndex": 0,
+                      "phase": null,
+                      "iteration": null,
+                      "status": "stalled",
+                      "operatorOutcome": "greedy",
+                      "startedAtSeconds": 0,
+                      "wallClockSeconds": 0.629,
+                      "completedAtSeconds": 0.629,
+                      "scoreBefore": null,
+                      "scoreAfter": 505,
+                      "improvement": null,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": null,
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "auto-stage",
+                      "stage": "lns",
+                      "stageIndex": 2,
+                      "cycleIndex": 1,
+                      "phase": null,
+                      "iteration": null,
+                      "status": "stalled",
+                      "operatorOutcome": "lns",
+                      "startedAtSeconds": 0.629,
+                      "wallClockSeconds": 4.893,
+                      "completedAtSeconds": 5.522,
+                      "scoreBefore": 505,
+                      "scoreAfter": 505,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": {
+                        "lnsIterationsStarted": 2,
+                        "lnsIterationsCompleted": 2,
+                        "lnsImprovingIterations": 0,
+                        "lnsNeutralIterations": 2
+                      },
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "lns",
+                      "stage": "lns",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": null,
+                      "iteration": null,
+                      "status": "wall-clock-limit",
+                      "operatorOutcome": "wall-clock-limit",
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 4.479,
+                      "completedAtSeconds": 4.479,
+                      "scoreBefore": 505,
+                      "scoreAfter": 505,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": {
+                        "iterationsStarted": 2,
+                        "iterationsCompleted": 2,
+                        "improvingIterations": 0,
+                        "neutralIterations": 2,
+                        "recoverableFailures": 0,
+                        "skippedIterations": 0
+                      },
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "lns-neighborhood",
+                      "stage": "lns",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": "focused",
+                      "iteration": 0,
+                      "status": "neutral",
+                      "operatorOutcome": "neutral",
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 1.843,
+                      "completedAtSeconds": null,
+                      "scoreBefore": 505,
+                      "scoreAfter": 505,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": "OPTIMAL",
+                      "candidateCounts": {
+                        "windowRows": 3,
+                        "windowCols": 3,
+                        "windowArea": 9,
+                        "stagnantIterationsBefore": 0
+                      },
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "lns-neighborhood",
+                      "stage": "lns",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": "escalated",
+                      "iteration": 1,
+                      "status": "neutral",
+                      "operatorOutcome": "neutral",
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 2.612,
+                      "completedAtSeconds": null,
+                      "scoreBefore": 505,
+                      "scoreAfter": 505,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": "FEASIBLE",
+                      "candidateCounts": {
+                        "windowRows": 5,
+                        "windowCols": 6,
+                        "windowArea": 30,
+                        "stagnantIterationsBefore": 1
+                      },
+                      "cpSatModelSize": null
+                    }
+                  ]
+                },
+                "decisionTrace": [
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37",
+                    "sequence": 0,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37:0000:auto-stage",
+                    "optimizer": "auto",
+                    "activeStage": "greedy",
+                    "kind": "auto-stage",
+                    "decision": "started",
+                    "reason": "Auto started greedy stage 1.",
+                    "score": {
+                      "before": null,
+                      "after": null,
+                      "best": null,
+                      "delta": null,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "stageIndex": 1,
+                      "cycleIndex": 0
+                    },
+                    "evidence": {
+                      "randomSeed": 1075491649
+                    },
+                    "elapsedMs": 0
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37",
+                    "sequence": 1,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37:0001:greedy-phase",
+                    "optimizer": "auto",
+                    "activeStage": "greedy",
+                    "kind": "greedy-phase",
+                    "decision": "stalled",
+                    "reason": "Greedy precompute did not improve the incumbent.",
+                    "score": {
+                      "before": null,
+                      "after": null,
+                      "best": null,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "phase": "precompute"
+                    },
+                    "evidence": {
+                      "runs": 1,
+                      "improvements": 0,
+                      "candidateDelta": 0
+                    },
+                    "elapsedMs": 34
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37",
+                    "sequence": 2,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37:0002:greedy-phase",
+                    "optimizer": "auto",
+                    "activeStage": "greedy",
+                    "kind": "greedy-phase",
+                    "decision": "improved",
+                    "reason": "Greedy constructiveCapSearch improved best population by 505.",
+                    "score": {
+                      "before": null,
+                      "after": 505,
+                      "best": 505,
+                      "delta": 505,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "phase": "constructiveCapSearch"
+                    },
+                    "evidence": {
+                      "runs": 1,
+                      "improvements": 1,
+                      "candidateDelta": 0
+                    },
+                    "elapsedMs": 314
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37",
+                    "sequence": 3,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37:0003:greedy-phase",
+                    "optimizer": "auto",
+                    "activeStage": "greedy",
+                    "kind": "greedy-phase",
+                    "decision": "stalled",
+                    "reason": "Greedy forcedServiceRealization did not improve the incumbent.",
+                    "score": {
+                      "before": 505,
+                      "after": 505,
+                      "best": 505,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "phase": "forcedServiceRealization"
+                    },
+                    "evidence": {
+                      "runs": 12,
+                      "improvements": 0,
+                      "candidateDelta": 0
+                    },
+                    "elapsedMs": 354
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37",
+                    "sequence": 4,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37:0004:greedy-phase",
+                    "optimizer": "auto",
+                    "activeStage": "greedy",
+                    "kind": "greedy-phase",
+                    "decision": "stalled",
+                    "reason": "Greedy serviceRefinement did not improve the incumbent.",
+                    "score": {
+                      "before": 505,
+                      "after": 505,
+                      "best": 505,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "phase": "serviceRefinement"
+                    },
+                    "evidence": {
+                      "runs": 1,
+                      "improvements": 0,
+                      "candidateDelta": 0
+                    },
+                    "elapsedMs": 396
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37",
+                    "sequence": 5,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37:0005:greedy-phase",
+                    "optimizer": "auto",
+                    "activeStage": "greedy",
+                    "kind": "greedy-phase",
+                    "decision": "stalled",
+                    "reason": "Greedy exhaustiveServiceSearch did not improve the incumbent.",
+                    "score": {
+                      "before": 505,
+                      "after": 505,
+                      "best": 505,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "phase": "exhaustiveServiceSearch"
+                    },
+                    "evidence": {
+                      "runs": 1,
+                      "improvements": 0,
+                      "candidateDelta": 0
+                    },
+                    "elapsedMs": 396
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37",
+                    "sequence": 6,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37:0006:greedy-phase",
+                    "optimizer": "auto",
+                    "activeStage": "greedy",
+                    "kind": "greedy-phase",
+                    "decision": "stalled",
+                    "reason": "Greedy serviceMasterDecomposition did not improve the incumbent.",
+                    "score": {
+                      "before": 505,
+                      "after": 505,
+                      "best": 505,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "phase": "serviceMasterDecomposition"
+                    },
+                    "evidence": {
+                      "runs": 1,
+                      "improvements": 0,
+                      "candidateDelta": 0
+                    },
+                    "elapsedMs": 396
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37",
+                    "sequence": 7,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37:0007:greedy-phase",
+                    "optimizer": "auto",
+                    "activeStage": "greedy",
+                    "kind": "greedy-phase",
+                    "decision": "stalled",
+                    "reason": "Greedy residentialLocalSearch did not improve the incumbent.",
+                    "score": {
+                      "before": null,
+                      "after": null,
+                      "best": null,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "phase": "residentialLocalSearch"
+                    },
+                    "evidence": {
+                      "runs": 88,
+                      "improvements": 0,
+                      "candidateDelta": 0
+                    },
+                    "elapsedMs": 441
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37",
+                    "sequence": 8,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37:0008:greedy-phase",
+                    "optimizer": "auto",
+                    "activeStage": "greedy",
+                    "kind": "greedy-phase",
+                    "decision": "stalled",
+                    "reason": "Greedy serviceNeighborhoodSearch did not improve the incumbent.",
+                    "score": {
+                      "before": 505,
+                      "after": 505,
+                      "best": 505,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "phase": "serviceNeighborhoodSearch"
+                    },
+                    "evidence": {
+                      "runs": 1,
+                      "improvements": 0,
+                      "candidateDelta": 0
+                    },
+                    "elapsedMs": 452
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37",
+                    "sequence": 9,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37:0009:auto-stage",
+                    "optimizer": "auto",
+                    "activeStage": "lns",
+                    "kind": "auto-stage",
+                    "decision": "started",
+                    "reason": "Auto started lns stage 2.",
+                    "score": {
+                      "before": null,
+                      "after": null,
+                      "best": null,
+                      "delta": null,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "stageIndex": 2,
+                      "cycleIndex": 1
+                    },
+                    "evidence": {
+                      "randomSeed": 578129313
+                    },
+                    "elapsedMs": 629
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37",
+                    "sequence": 10,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37:0010:auto-stage",
+                    "optimizer": "auto",
+                    "activeStage": "greedy",
+                    "kind": "auto-stage",
+                    "decision": "improved",
+                    "reason": "Auto greedy seed produced population 505.",
+                    "score": {
+                      "before": null,
+                      "after": 505,
+                      "best": 505,
+                      "delta": null,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "evidence": {
+                      "timeLimitSeconds": 5,
+                      "localSearch": true,
+                      "restarts": 2,
+                      "serviceRefineIterations": 1,
+                      "serviceRefineCandidateLimit": 8
+                    },
+                    "elapsedMs": 629
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37",
+                    "sequence": 11,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37:0011:checkpoint",
+                    "optimizer": "auto",
+                    "activeStage": "lns",
+                    "kind": "checkpoint",
+                    "decision": "started",
+                    "reason": "LNS seeded from hint.",
+                    "score": {
+                      "before": null,
+                      "after": 505,
+                      "best": 505,
+                      "delta": null,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "evidence": {
+                      "seedSource": "hint",
+                      "seedTimeLimitSeconds": 1,
+                      "seedWallClockSeconds": 0.008030374999999992
+                    },
+                    "elapsedMs": 637
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37",
+                    "sequence": 12,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37:0012:lns-neighborhood",
+                    "optimizer": "auto",
+                    "activeStage": "lns",
+                    "kind": "lns-neighborhood",
+                    "decision": "stalled",
+                    "reason": "LNS focused neighborhood 1 neutral.",
+                    "score": {
+                      "before": 505,
+                      "after": 505,
+                      "best": 505,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "phase": "focused",
+                      "iteration": 0
+                    },
+                    "evidence": {
+                      "status": "neutral",
+                      "repairTimeLimitSeconds": 1,
+                      "staleSecondsBefore": 0.007331333000000029,
+                      "stagnantIterationsBefore": 0,
+                      "cpSatStatus": "OPTIMAL"
+                    },
+                    "elapsedMs": 2480
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37",
+                    "sequence": 13,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37:0013:lns-neighborhood",
+                    "optimizer": "auto",
+                    "activeStage": "lns",
+                    "kind": "lns-neighborhood",
+                    "decision": "stalled",
+                    "reason": "LNS escalated neighborhood 2 neutral.",
+                    "score": {
+                      "before": 505,
+                      "after": 505,
+                      "best": 505,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "phase": "escalated",
+                      "iteration": 1
+                    },
+                    "evidence": {
+                      "status": "neutral",
+                      "repairTimeLimitSeconds": 1,
+                      "staleSecondsBefore": 1.8568865829999999,
+                      "stagnantIterationsBefore": 1,
+                      "cpSatStatus": "FEASIBLE"
+                    },
+                    "elapsedMs": 5092
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37",
+                    "sequence": 14,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37:0014:auto-stage",
+                    "optimizer": "auto",
+                    "activeStage": "lns",
+                    "kind": "auto-stage",
+                    "decision": "stalled",
+                    "reason": "Auto lns stage 2 completed with candidate population 505.",
+                    "score": {
+                      "before": 505,
+                      "after": 505,
+                      "best": 505,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "stageIndex": 2,
+                      "cycleIndex": 1
+                    },
+                    "evidence": {
+                      "randomSeed": 578129313,
+                      "startedAtSeconds": 0.629,
+                      "elapsedSeconds": 4.893000000000001,
+                      "completedAtSeconds": 5.522,
+                      "populationBefore": 505,
+                      "candidatePopulation": 505,
+                      "acceptedPopulation": 505,
+                      "improvement": 0,
+                      "cpSatStatus": null,
+                      "cpSatSolveWallTimeSeconds": null,
+                      "cpSatLastImprovementAtSeconds": null,
+                      "cpSatPopulationGapUpperBound": null,
+                      "lnsStopReason": "wall-clock-limit",
+                      "lnsSeedTimeLimitSeconds": 1,
+                      "lnsSeedWallClockSeconds": 0.008030374999999992,
+                      "lnsFocusedRepairTimeLimitSeconds": 1,
+                      "lnsEscalatedRepairTimeLimitSeconds": 1,
+                      "lnsIterationsStarted": 2,
+                      "lnsIterationsCompleted": 2,
+                      "lnsImprovingIterations": 0,
+                      "lnsNeutralIterations": 2
+                    },
+                    "elapsedMs": 5522
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37",
+                    "sequence": 15,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37:0015:auto-stage",
+                    "optimizer": "auto",
+                    "activeStage": "lns",
+                    "kind": "auto-stage",
+                    "decision": "stopped",
+                    "reason": "Auto stopped: wall-clock-cap.",
+                    "score": {
+                      "before": null,
+                      "after": 505,
+                      "best": 505,
+                      "delta": null,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "stageIndex": 2,
+                      "cycleIndex": 1
+                    },
+                    "evidence": {
+                      "consecutiveWeakCycles": 0,
+                      "lastCycleImprovementRatio": null
+                    },
+                    "elapsedMs": 5523
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37",
+                    "sequence": 16,
+                    "eventId": "typed-footprint-pressure:auto:policy-baseline-repeat:budget-5:seed-37:0016:checkpoint",
+                    "optimizer": "auto",
+                    "activeStage": "lns",
+                    "kind": "checkpoint",
+                    "decision": "stalled",
+                    "reason": "auto final incumbent population 505.",
+                    "score": {
+                      "before": 505,
+                      "after": 505,
+                      "best": 505,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "evidence": {
+                      "stoppedByUser": false,
+                      "stoppedByTimeLimit": false,
+                      "roadCount": 5,
+                      "serviceCount": 2,
+                      "residentialCount": 4
+                    },
+                    "elapsedMs": 5523
+                  }
+                ],
+                "timeToQuality": {
+                  "finalElapsedMs": 5523,
+                  "finalScore": 505,
+                  "bestScore": 505,
+                  "firstFeasibleAtMs": 314,
+                  "firstImprovementAtMs": 314,
+                  "bestScoreAtMs": 314,
+                  "improvementCount": 2,
+                  "timeCheckpoints": [
+                    {
+                      "elapsedMs": 5000,
+                      "bestScore": 505,
+                      "scoreDeltaToBest": 0,
+                      "scoreRatioToBest": 1,
+                      "reached": true
+                    },
+                    {
+                      "elapsedMs": 30000,
+                      "bestScore": 505,
+                      "scoreDeltaToBest": 0,
+                      "scoreRatioToBest": 1,
+                      "reached": true
+                    },
+                    {
+                      "elapsedMs": 120000,
+                      "bestScore": 505,
+                      "scoreDeltaToBest": 0,
+                      "scoreRatioToBest": 1,
+                      "reached": true
+                    }
+                  ],
+                  "qualityTargets": [
+                    {
+                      "ratio": 0.5,
+                      "targetScore": 253,
+                      "reachedAtMs": 314,
+                      "reachedScore": 505
+                    },
+                    {
+                      "ratio": 0.9,
+                      "targetScore": 455,
+                      "reachedAtMs": 314,
+                      "reachedScore": 505
+                    },
+                    {
+                      "ratio": 1,
+                      "targetScore": 505,
+                      "reachedAtMs": 314,
+                      "reachedScore": 505
+                    }
+                  ]
+                },
+                "checkpointReason": "Auto greedy seed produced population 505.",
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "winVsAuto": "baseline",
+                "rank": 1,
+                "scoreDeltaVsAuto": 0,
+                "budgetAllocationSignal": {
+                  "signal": "over-budget",
+                  "budgetUtilizationRatio": 1.105,
+                  "budgetRemainingSeconds": 0,
+                  "budgetOverrunSeconds": 0.523,
+                  "firstImprovementSeconds": 0.314,
+                  "bestScoreSeconds": 0.314,
+                  "secondsAfterBest": 5.209,
+                  "improvementsPerSecond": 0.362,
+                  "scoreDeltaVsAuto": 0,
+                  "autoBestScoreSecondsDelta": 0,
+                  "reason": "Observed wall time exceeded the configured benchmark budget."
+                }
+              }
+            ]
+          }
+        ],
+        "budgetPolicySignals": [
+          {
+            "caseName": "typed-footprint-pressure",
+            "problemSizeBand": "small",
+            "budgetSeconds": 5,
+            "seed": 37,
+            "bestMode": "auto",
+            "bestScore": 505,
+            "autoScore": 505,
+            "autoDeltaToBest": 0,
+            "recommendation": "keep-auto",
+            "autoStopReason": "wall-clock-cap",
+            "autoGreedySeedElapsedSeconds": 0.629,
+            "autoLnsStageElapsedSeconds": 4.893,
+            "autoLnsStageImprovement": 0,
+            "autoCpSatStageElapsedSeconds": null,
+            "autoCpSatStageImprovement": null,
+            "lnsScoreDeltaVsAuto": null,
+            "lnsSeedWallClockSeconds": null,
+            "reason": "Auto matched the best score 505 at 5s. Auto LNS used 4.893s for +0 accepted population."
+          }
+        ],
+        "portfolioEfficiencySignals": [],
+        "modeSummaries": [
+          {
+            "mode": "auto",
+            "label": "Auto",
+            "runs": 1,
+            "meanPopulation": 505,
+            "bestPopulation": 505,
+            "worstPopulation": 505,
+            "populationStdDev": 0,
+            "meanWallClockSeconds": 5.522696000000001,
+            "winRateVsAuto": null,
+            "meanScoreDeltaVsAuto": 0
+          }
+        ],
+        "problemSizeSummaries": [
+          {
+            "problemSizeBand": "small",
+            "mode": "auto",
+            "label": "Auto",
+            "runs": 1,
+            "meanPopulation": 505,
+            "bestPopulation": 505,
+            "worstPopulation": 505,
+            "populationStdDev": 0,
+            "meanWallClockSeconds": 5.522696000000001,
+            "winRateVsAuto": null,
+            "meanScoreDeltaVsAuto": 0
+          }
+        ]
+      },
+      "meanBestPopulation": 505,
+      "meanAutoPopulation": 505,
+      "meanLnsPopulation": null,
+      "meanAutoDeltaToBest": 0,
+      "meanAutoLnsStageElapsedSeconds": 4.893,
+      "meanAutoCpSatStageElapsedSeconds": null,
+      "deltaVsBaselineMeanBestPopulation": 0,
+      "deltaVsBaselineMeanAutoPopulation": 0,
+      "deltaVsBaselineMeanLnsPopulation": null,
+      "autoSafetySummary": {
+        "comparisonCount": 1,
+        "improvedAutoCount": 0,
+        "regressedAutoCount": 0,
+        "unchangedAutoCount": 1,
+        "regressionRate": 0,
+        "meanAutoPopulationDeltaVsBaseline": 0,
+        "medianAutoPopulationDeltaVsBaseline": 0,
+        "worstDecileAutoPopulationDeltaVsBaseline": 0,
+        "worstAutoPopulationDeltaVsBaseline": 0,
+        "bestAutoPopulationDeltaVsBaseline": 0,
+        "worstAutoPopulationDeltaCaseName": "typed-footprint-pressure",
+        "worstAutoPopulationDeltaSeed": 37,
+        "worstAutoPopulationDeltaBudgetSeconds": 5,
+        "bestAutoPopulationDeltaCaseName": "typed-footprint-pressure",
+        "bestAutoPopulationDeltaSeed": 37,
+        "bestAutoPopulationDeltaBudgetSeconds": 5,
+        "meanAutoWallClockSeconds": 5.522696000000001,
+        "baselineMeanAutoWallClockSeconds": 5.324892167,
+        "meanAutoWallClockDeltaVsBaselineSeconds": 0.19780383300000093,
+        "meanAutoPopulationPerCpuBudgetSecond": 101,
+        "baselineMeanAutoPopulationPerCpuBudgetSecond": 101,
+        "autoCpuBudgetEfficiencyRatioVsBaseline": 1
+      },
+      "autoReplayDiagnostics": [],
+      "autoVarianceSummary": {
+        "baselineRepeatPolicyName": "baseline-repeat",
+        "comparisonCount": 1,
+        "insideRepeatEnvelopeCount": 1,
+        "outsideRepeatEnvelopeCount": 0,
+        "outsideNegativeRepeatEnvelopeCount": 0,
+        "outsidePositiveRepeatEnvelopeCount": 0,
+        "repeatAutoPopulationDeltaMin": 0,
+        "repeatAutoPopulationDeltaMax": 0,
+        "repeatMeanAbsoluteAutoPopulationDelta": 0,
+        "candidateAutoPopulationDeltaMin": 0,
+        "candidateAutoPopulationDeltaMax": 0,
+        "candidateMeanAutoPopulationDelta": 0,
+        "meanAbsoluteCandidateDeltaBeyondRepeatEnvelope": 0,
+        "worstCandidateDeltaBeyondRepeatEnvelope": 0,
+        "bestCandidateDeltaBeyondRepeatEnvelope": 0
+      },
+      "budgetSummaries": [
+        {
+          "budgetSeconds": 5,
+          "caseCount": 1,
+          "meanBestPopulation": 505,
+          "meanAutoPopulation": 505,
+          "meanLnsPopulation": null,
+          "meanAutoDeltaToBest": 0,
+          "deltaVsBaselineMeanBestPopulation": 0,
+          "deltaVsBaselineMeanAutoPopulation": 0,
+          "deltaVsBaselineMeanLnsPopulation": null,
+          "autoSafetySummary": {
+            "comparisonCount": 1,
+            "improvedAutoCount": 0,
+            "regressedAutoCount": 0,
+            "unchangedAutoCount": 1,
+            "regressionRate": 0,
+            "meanAutoPopulationDeltaVsBaseline": 0,
+            "medianAutoPopulationDeltaVsBaseline": 0,
+            "worstDecileAutoPopulationDeltaVsBaseline": 0,
+            "worstAutoPopulationDeltaVsBaseline": 0,
+            "bestAutoPopulationDeltaVsBaseline": 0,
+            "worstAutoPopulationDeltaCaseName": "typed-footprint-pressure",
+            "worstAutoPopulationDeltaSeed": 37,
+            "worstAutoPopulationDeltaBudgetSeconds": 5,
+            "bestAutoPopulationDeltaCaseName": "typed-footprint-pressure",
+            "bestAutoPopulationDeltaSeed": 37,
+            "bestAutoPopulationDeltaBudgetSeconds": 5,
+            "meanAutoWallClockSeconds": 5.522696000000001,
+            "baselineMeanAutoWallClockSeconds": 5.324892167,
+            "meanAutoWallClockDeltaVsBaselineSeconds": 0.19780383300000093,
+            "meanAutoPopulationPerCpuBudgetSecond": 101,
+            "baselineMeanAutoPopulationPerCpuBudgetSecond": 101,
+            "autoCpuBudgetEfficiencyRatioVsBaseline": 1
+          },
+          "recommendationCounts": {
+            "keep-auto": 1,
+            "add-auto-baseline": 0,
+            "shift-auto-budget-to-greedy": 0,
+            "shift-auto-budget-to-lns": 0,
+            "shift-auto-budget-to-cp-sat": 0,
+            "keep-portfolio-experimental": 0,
+            "investigate-auto-loss": 0
+          }
+        }
+      ],
+      "recommendationCounts": {
+        "keep-auto": 1,
+        "add-auto-baseline": 0,
+        "shift-auto-budget-to-greedy": 0,
+        "shift-auto-budget-to-lns": 0,
+        "shift-auto-budget-to-cp-sat": 0,
+        "keep-portfolio-experimental": 0,
+        "investigate-auto-loss": 0
+      }
+    },
+    {
+      "policyName": "lns-seed-reserve-5s-guarded",
+      "description": "Shorten LNS seed and reserve a small Auto CP-SAT slice at the 5s budget.",
+      "suite": {
+        "generatedAt": "2026-05-07T20:14:25.559Z",
+        "caseCount": 1,
+        "selectedCaseNames": [
+          "typed-footprint-pressure"
+        ],
+        "budgetSeconds": 5,
+        "budgetsSeconds": [
+          5
+        ],
+        "seeds": [
+          37
+        ],
+        "modeCount": 1,
+        "modes": [
+          "auto"
+        ],
+        "cases": [
+          {
+            "name": "typed-footprint-pressure",
+            "description": "Typed 2x2 variants share footprints, and a second service keeps the dynamic grouped scorer hot.",
+            "problemSizeBand": "small",
+            "split": "development",
+            "workflowTags": [
+              "footprint-pressure"
+            ],
+            "gridRows": 6,
+            "gridCols": 6,
+            "budgetSeconds": 5,
+            "seed": 37,
+            "bestScore": 505,
+            "winnerModes": [
+              "auto"
+            ],
+            "results": [
+              {
+                "mode": "auto",
+                "optimizer": "auto",
+                "label": "Auto",
+                "problemSizeBand": "small",
+                "budgetSeconds": 5,
+                "seed": 37,
+                "totalPopulation": 505,
+                "wallClockSeconds": 5.790754417000002,
+                "workerCpuBudgetSeconds": 5,
+                "observedWorkerCpuSeconds": null,
+                "populationPerWorkerCpuBudgetSecond": 101,
+                "populationPerObservedCpuSecond": null,
+                "roadCount": 5,
+                "roadSemantics": {
+                  "status": "anchor-connected",
+                  "anchorRoadCount": 1,
+                  "anchorConnectedRoadCount": 5,
+                  "disconnectedRoadCount": 0,
+                  "anchorConnectedRoadRatio": 1,
+                  "roadAdjacentBuildingCount": 6,
+                  "roadUnadjacentBuildingCount": 0
+                },
+                "serviceCount": 2,
+                "residentialCount": 4,
+                "cpSatStatus": null,
+                "lnsStopReason": "wall-clock-limit",
+                "lnsSeedTimeLimitSeconds": 0.25,
+                "lnsSeedWallClockSeconds": 0.003669375000000002,
+                "lnsSeedProfilePhaseCount": 0,
+                "autoStopReason": "wall-clock-cap",
+                "autoGreedySeedTimeLimitSeconds": 5,
+                "autoGreedySeedElapsedSeconds": 0.676,
+                "autoGreedySeedProfilePhaseCount": 8,
+                "stoppedByUser": false,
+                "progressSummary": {
+                  "currentScore": 505,
+                  "bestScore": 505,
+                  "activeStage": "lns",
+                  "reuseSource": "hint",
+                  "elapsedTimeSeconds": 5.791,
+                  "timeSinceImprovementSeconds": null,
+                  "stopReason": "wall-clock-cap",
+                  "exactGap": null,
+                  "portfolioWorkerSummary": null
+                },
+                "telemetry": {
+                  "schemaVersion": 1,
+                  "runId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37",
+                  "caseName": "typed-footprint-pressure",
+                  "split": "development",
+                  "workflowTags": [
+                    "footprint-pressure"
+                  ],
+                  "problemSizeBand": "small",
+                  "mode": "auto",
+                  "optimizer": "auto",
+                  "budgetSeconds": 5,
+                  "seed": 37,
+                  "solverParams": {
+                    "optimizer": "auto",
+                    "auto": {
+                      "wallClockLimitSeconds": 5,
+                      "randomSeed": 37,
+                      "cpSatStageTimeLimitSeconds": 5,
+                      "cpSatStageReserveRatio": 0.1
+                    },
+                    "greedy": {
+                      "timeLimitSeconds": 5,
+                      "randomSeed": 37,
+                      "localSearch": true,
+                      "restarts": 2,
+                      "serviceRefineIterations": 1,
+                      "serviceRefineCandidateLimit": 8,
+                      "exhaustiveServiceSearch": false,
+                      "serviceExactPoolLimit": 8,
+                      "serviceExactMaxCombinations": 64
+                    },
+                    "lns": {
+                      "wallClockLimitSeconds": 5,
+                      "timeLimitSeconds": 5,
+                      "seedTimeLimitSeconds": 0.25,
+                      "iterations": 4,
+                      "maxNoImprovementIterations": 4,
+                      "neighborhoodRows": 3,
+                      "neighborhoodCols": 3,
+                      "repairTimeLimitSeconds": 1,
+                      "focusedRepairTimeLimitSeconds": 1,
+                      "escalatedRepairTimeLimitSeconds": 1
+                    },
+                    "cpSat": {
+                      "timeLimitSeconds": 5,
+                      "maxDeterministicTime": 5,
+                      "numWorkers": 1,
+                      "randomSeed": 37,
+                      "randomizeSearch": false,
+                      "progressIntervalSeconds": 0.5
+                    },
+                    "portfolio": null
+                  },
+                  "timing": {
+                    "wallClockSeconds": 5.791,
+                    "firstFeasibleSeconds": 0.466,
+                    "firstImprovementSeconds": 0.466,
+                    "bestScoreSeconds": 0.466
+                  },
+                  "score": {
+                    "finalPopulation": 505,
+                    "bestScore": 505,
+                    "cpSatStatus": null,
+                    "exactGap": null,
+                    "lnsStopReason": "wall-clock-limit",
+                    "autoStopReason": "wall-clock-cap",
+                    "stoppedByUser": false
+                  },
+                  "cpu": {
+                    "workerCpuBudgetSeconds": 5,
+                    "observedWorkerCpuSeconds": null
+                  },
+                  "stageCount": 13,
+                  "stages": [
+                    {
+                      "kind": "greedy-profile",
+                      "stage": "greedy",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": "precompute",
+                      "iteration": null,
+                      "status": "stalled",
+                      "operatorOutcome": null,
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 0.025,
+                      "completedAtSeconds": 0.025,
+                      "scoreBefore": null,
+                      "scoreAfter": null,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": null,
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "greedy-profile",
+                      "stage": "greedy",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": "constructiveCapSearch",
+                      "iteration": null,
+                      "status": "improved",
+                      "operatorOutcome": null,
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 0.441,
+                      "completedAtSeconds": 0.466,
+                      "scoreBefore": null,
+                      "scoreAfter": 505,
+                      "improvement": 505,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": null,
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "greedy-profile",
+                      "stage": "greedy",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": "forcedServiceRealization",
+                      "iteration": null,
+                      "status": "stalled",
+                      "operatorOutcome": null,
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 0.052,
+                      "completedAtSeconds": 0.518,
+                      "scoreBefore": 505,
+                      "scoreAfter": 505,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": null,
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "greedy-profile",
+                      "stage": "greedy",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": "serviceRefinement",
+                      "iteration": null,
+                      "status": "stalled",
+                      "operatorOutcome": null,
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 0.053,
+                      "completedAtSeconds": 0.571,
+                      "scoreBefore": 505,
+                      "scoreAfter": 505,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": null,
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "greedy-profile",
+                      "stage": "greedy",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": "exhaustiveServiceSearch",
+                      "iteration": null,
+                      "status": "stalled",
+                      "operatorOutcome": null,
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 0,
+                      "completedAtSeconds": 0.571,
+                      "scoreBefore": 505,
+                      "scoreAfter": 505,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": null,
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "greedy-profile",
+                      "stage": "greedy",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": "serviceMasterDecomposition",
+                      "iteration": null,
+                      "status": "stalled",
+                      "operatorOutcome": null,
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 0,
+                      "completedAtSeconds": 0.571,
+                      "scoreBefore": 505,
+                      "scoreAfter": 505,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": null,
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "greedy-profile",
+                      "stage": "greedy",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": "residentialLocalSearch",
+                      "iteration": null,
+                      "status": "stalled",
+                      "operatorOutcome": null,
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 0.067,
+                      "completedAtSeconds": 0.638,
+                      "scoreBefore": null,
+                      "scoreAfter": null,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": null,
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "greedy-profile",
+                      "stage": "greedy",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": "serviceNeighborhoodSearch",
+                      "iteration": null,
+                      "status": "stalled",
+                      "operatorOutcome": null,
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 0.009,
+                      "completedAtSeconds": 0.647,
+                      "scoreBefore": 505,
+                      "scoreAfter": 505,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": null,
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "auto-stage",
+                      "stage": "greedy",
+                      "stageIndex": 1,
+                      "cycleIndex": 0,
+                      "phase": null,
+                      "iteration": null,
+                      "status": "stalled",
+                      "operatorOutcome": "greedy",
+                      "startedAtSeconds": 0,
+                      "wallClockSeconds": 0.676,
+                      "completedAtSeconds": 0.676,
+                      "scoreBefore": null,
+                      "scoreAfter": 505,
+                      "improvement": null,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": null,
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "auto-stage",
+                      "stage": "lns",
+                      "stageIndex": 2,
+                      "cycleIndex": 1,
+                      "phase": null,
+                      "iteration": null,
+                      "status": "stalled",
+                      "operatorOutcome": "lns",
+                      "startedAtSeconds": 0.676,
+                      "wallClockSeconds": 5.113,
+                      "completedAtSeconds": 5.789,
+                      "scoreBefore": 505,
+                      "scoreAfter": 505,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": {
+                        "lnsIterationsStarted": 2,
+                        "lnsIterationsCompleted": 2,
+                        "lnsImprovingIterations": 0,
+                        "lnsNeutralIterations": 2
+                      },
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "lns",
+                      "stage": "lns",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": null,
+                      "iteration": null,
+                      "status": "wall-clock-limit",
+                      "operatorOutcome": "wall-clock-limit",
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 4.747,
+                      "completedAtSeconds": 4.747,
+                      "scoreBefore": 505,
+                      "scoreAfter": 505,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": null,
+                      "candidateCounts": {
+                        "iterationsStarted": 2,
+                        "iterationsCompleted": 2,
+                        "improvingIterations": 0,
+                        "neutralIterations": 2,
+                        "recoverableFailures": 0,
+                        "skippedIterations": 0
+                      },
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "lns-neighborhood",
+                      "stage": "lns",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": "focused",
+                      "iteration": 0,
+                      "status": "neutral",
+                      "operatorOutcome": "neutral",
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 1.948,
+                      "completedAtSeconds": null,
+                      "scoreBefore": 505,
+                      "scoreAfter": 505,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": "OPTIMAL",
+                      "candidateCounts": {
+                        "windowRows": 3,
+                        "windowCols": 3,
+                        "windowArea": 9,
+                        "stagnantIterationsBefore": 0
+                      },
+                      "cpSatModelSize": null
+                    },
+                    {
+                      "kind": "lns-neighborhood",
+                      "stage": "lns",
+                      "stageIndex": null,
+                      "cycleIndex": null,
+                      "phase": "escalated",
+                      "iteration": 1,
+                      "status": "neutral",
+                      "operatorOutcome": "neutral",
+                      "startedAtSeconds": null,
+                      "wallClockSeconds": 2.786,
+                      "completedAtSeconds": null,
+                      "scoreBefore": 505,
+                      "scoreAfter": 505,
+                      "improvement": 0,
+                      "exactGap": null,
+                      "cpSatStatus": "FEASIBLE",
+                      "candidateCounts": {
+                        "windowRows": 5,
+                        "windowCols": 6,
+                        "windowArea": 30,
+                        "stagnantIterationsBefore": 1
+                      },
+                      "cpSatModelSize": null
+                    }
+                  ]
+                },
+                "decisionTrace": [
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37",
+                    "sequence": 0,
+                    "eventId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37:0000:auto-stage",
+                    "optimizer": "auto",
+                    "activeStage": "greedy",
+                    "kind": "auto-stage",
+                    "decision": "started",
+                    "reason": "Auto started greedy stage 1.",
+                    "score": {
+                      "before": null,
+                      "after": null,
+                      "best": null,
+                      "delta": null,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "stageIndex": 1,
+                      "cycleIndex": 0
+                    },
+                    "evidence": {
+                      "randomSeed": 1075491649
+                    },
+                    "elapsedMs": 0
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37",
+                    "sequence": 1,
+                    "eventId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37:0001:greedy-phase",
+                    "optimizer": "auto",
+                    "activeStage": "greedy",
+                    "kind": "greedy-phase",
+                    "decision": "stalled",
+                    "reason": "Greedy precompute did not improve the incumbent.",
+                    "score": {
+                      "before": null,
+                      "after": null,
+                      "best": null,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "phase": "precompute"
+                    },
+                    "evidence": {
+                      "runs": 1,
+                      "improvements": 0,
+                      "candidateDelta": 0
+                    },
+                    "elapsedMs": 25
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37",
+                    "sequence": 2,
+                    "eventId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37:0002:greedy-phase",
+                    "optimizer": "auto",
+                    "activeStage": "greedy",
+                    "kind": "greedy-phase",
+                    "decision": "improved",
+                    "reason": "Greedy constructiveCapSearch improved best population by 505.",
+                    "score": {
+                      "before": null,
+                      "after": 505,
+                      "best": 505,
+                      "delta": 505,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "phase": "constructiveCapSearch"
+                    },
+                    "evidence": {
+                      "runs": 1,
+                      "improvements": 1,
+                      "candidateDelta": 0
+                    },
+                    "elapsedMs": 466
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37",
+                    "sequence": 3,
+                    "eventId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37:0003:greedy-phase",
+                    "optimizer": "auto",
+                    "activeStage": "greedy",
+                    "kind": "greedy-phase",
+                    "decision": "stalled",
+                    "reason": "Greedy forcedServiceRealization did not improve the incumbent.",
+                    "score": {
+                      "before": 505,
+                      "after": 505,
+                      "best": 505,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "phase": "forcedServiceRealization"
+                    },
+                    "evidence": {
+                      "runs": 12,
+                      "improvements": 0,
+                      "candidateDelta": 0
+                    },
+                    "elapsedMs": 518
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37",
+                    "sequence": 4,
+                    "eventId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37:0004:greedy-phase",
+                    "optimizer": "auto",
+                    "activeStage": "greedy",
+                    "kind": "greedy-phase",
+                    "decision": "stalled",
+                    "reason": "Greedy serviceRefinement did not improve the incumbent.",
+                    "score": {
+                      "before": 505,
+                      "after": 505,
+                      "best": 505,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "phase": "serviceRefinement"
+                    },
+                    "evidence": {
+                      "runs": 1,
+                      "improvements": 0,
+                      "candidateDelta": 0
+                    },
+                    "elapsedMs": 571
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37",
+                    "sequence": 5,
+                    "eventId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37:0005:greedy-phase",
+                    "optimizer": "auto",
+                    "activeStage": "greedy",
+                    "kind": "greedy-phase",
+                    "decision": "stalled",
+                    "reason": "Greedy exhaustiveServiceSearch did not improve the incumbent.",
+                    "score": {
+                      "before": 505,
+                      "after": 505,
+                      "best": 505,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "phase": "exhaustiveServiceSearch"
+                    },
+                    "evidence": {
+                      "runs": 1,
+                      "improvements": 0,
+                      "candidateDelta": 0
+                    },
+                    "elapsedMs": 571
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37",
+                    "sequence": 6,
+                    "eventId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37:0006:greedy-phase",
+                    "optimizer": "auto",
+                    "activeStage": "greedy",
+                    "kind": "greedy-phase",
+                    "decision": "stalled",
+                    "reason": "Greedy serviceMasterDecomposition did not improve the incumbent.",
+                    "score": {
+                      "before": 505,
+                      "after": 505,
+                      "best": 505,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "phase": "serviceMasterDecomposition"
+                    },
+                    "evidence": {
+                      "runs": 1,
+                      "improvements": 0,
+                      "candidateDelta": 0
+                    },
+                    "elapsedMs": 571
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37",
+                    "sequence": 7,
+                    "eventId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37:0007:greedy-phase",
+                    "optimizer": "auto",
+                    "activeStage": "greedy",
+                    "kind": "greedy-phase",
+                    "decision": "stalled",
+                    "reason": "Greedy residentialLocalSearch did not improve the incumbent.",
+                    "score": {
+                      "before": null,
+                      "after": null,
+                      "best": null,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "phase": "residentialLocalSearch"
+                    },
+                    "evidence": {
+                      "runs": 88,
+                      "improvements": 0,
+                      "candidateDelta": 0
+                    },
+                    "elapsedMs": 638
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37",
+                    "sequence": 8,
+                    "eventId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37:0008:greedy-phase",
+                    "optimizer": "auto",
+                    "activeStage": "greedy",
+                    "kind": "greedy-phase",
+                    "decision": "stalled",
+                    "reason": "Greedy serviceNeighborhoodSearch did not improve the incumbent.",
+                    "score": {
+                      "before": 505,
+                      "after": 505,
+                      "best": 505,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "phase": "serviceNeighborhoodSearch"
+                    },
+                    "evidence": {
+                      "runs": 1,
+                      "improvements": 0,
+                      "candidateDelta": 0
+                    },
+                    "elapsedMs": 647
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37",
+                    "sequence": 9,
+                    "eventId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37:0009:auto-stage",
+                    "optimizer": "auto",
+                    "activeStage": "lns",
+                    "kind": "auto-stage",
+                    "decision": "started",
+                    "reason": "Auto started lns stage 2.",
+                    "score": {
+                      "before": null,
+                      "after": null,
+                      "best": null,
+                      "delta": null,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "stageIndex": 2,
+                      "cycleIndex": 1
+                    },
+                    "evidence": {
+                      "randomSeed": 578129313
+                    },
+                    "elapsedMs": 676
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37",
+                    "sequence": 10,
+                    "eventId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37:0010:auto-stage",
+                    "optimizer": "auto",
+                    "activeStage": "greedy",
+                    "kind": "auto-stage",
+                    "decision": "improved",
+                    "reason": "Auto greedy seed produced population 505.",
+                    "score": {
+                      "before": null,
+                      "after": 505,
+                      "best": 505,
+                      "delta": null,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "evidence": {
+                      "timeLimitSeconds": 5,
+                      "localSearch": true,
+                      "restarts": 2,
+                      "serviceRefineIterations": 1,
+                      "serviceRefineCandidateLimit": 8
+                    },
+                    "elapsedMs": 676
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37",
+                    "sequence": 11,
+                    "eventId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37:0011:checkpoint",
+                    "optimizer": "auto",
+                    "activeStage": "lns",
+                    "kind": "checkpoint",
+                    "decision": "started",
+                    "reason": "LNS seeded from hint.",
+                    "score": {
+                      "before": null,
+                      "after": 505,
+                      "best": 505,
+                      "delta": null,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "evidence": {
+                      "seedSource": "hint",
+                      "seedTimeLimitSeconds": 0.25,
+                      "seedWallClockSeconds": 0.003669375000000002
+                    },
+                    "elapsedMs": 680
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37",
+                    "sequence": 12,
+                    "eventId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37:0012:lns-neighborhood",
+                    "optimizer": "auto",
+                    "activeStage": "lns",
+                    "kind": "lns-neighborhood",
+                    "decision": "stalled",
+                    "reason": "LNS focused neighborhood 1 neutral.",
+                    "score": {
+                      "before": 505,
+                      "after": 505,
+                      "best": 505,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "phase": "focused",
+                      "iteration": 0
+                    },
+                    "evidence": {
+                      "status": "neutral",
+                      "repairTimeLimitSeconds": 1,
+                      "staleSecondsBefore": 0.0027185839999999926,
+                      "stagnantIterationsBefore": 0,
+                      "cpSatStatus": "OPTIMAL"
+                    },
+                    "elapsedMs": 2628
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37",
+                    "sequence": 13,
+                    "eventId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37:0013:lns-neighborhood",
+                    "optimizer": "auto",
+                    "activeStage": "lns",
+                    "kind": "lns-neighborhood",
+                    "decision": "stalled",
+                    "reason": "LNS escalated neighborhood 2 neutral.",
+                    "score": {
+                      "before": 505,
+                      "after": 505,
+                      "best": 505,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "phase": "escalated",
+                      "iteration": 1
+                    },
+                    "evidence": {
+                      "status": "neutral",
+                      "repairTimeLimitSeconds": 1,
+                      "staleSecondsBefore": 1.955723209,
+                      "stagnantIterationsBefore": 1,
+                      "cpSatStatus": "FEASIBLE"
+                    },
+                    "elapsedMs": 5414
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37",
+                    "sequence": 14,
+                    "eventId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37:0014:auto-stage",
+                    "optimizer": "auto",
+                    "activeStage": "lns",
+                    "kind": "auto-stage",
+                    "decision": "stalled",
+                    "reason": "Auto lns stage 2 completed with candidate population 505.",
+                    "score": {
+                      "before": 505,
+                      "after": 505,
+                      "best": 505,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "stageIndex": 2,
+                      "cycleIndex": 1
+                    },
+                    "evidence": {
+                      "randomSeed": 578129313,
+                      "startedAtSeconds": 0.676,
+                      "elapsedSeconds": 5.1129999999999995,
+                      "completedAtSeconds": 5.789,
+                      "populationBefore": 505,
+                      "candidatePopulation": 505,
+                      "acceptedPopulation": 505,
+                      "improvement": 0,
+                      "cpSatStatus": null,
+                      "cpSatSolveWallTimeSeconds": null,
+                      "cpSatLastImprovementAtSeconds": null,
+                      "cpSatPopulationGapUpperBound": null,
+                      "lnsStopReason": "wall-clock-limit",
+                      "lnsSeedTimeLimitSeconds": 0.25,
+                      "lnsSeedWallClockSeconds": 0.003669375000000002,
+                      "lnsFocusedRepairTimeLimitSeconds": 1,
+                      "lnsEscalatedRepairTimeLimitSeconds": 1,
+                      "lnsIterationsStarted": 2,
+                      "lnsIterationsCompleted": 2,
+                      "lnsImprovingIterations": 0,
+                      "lnsNeutralIterations": 2
+                    },
+                    "elapsedMs": 5789
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37",
+                    "sequence": 15,
+                    "eventId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37:0015:auto-stage",
+                    "optimizer": "auto",
+                    "activeStage": "lns",
+                    "kind": "auto-stage",
+                    "decision": "stopped",
+                    "reason": "Auto stopped: wall-clock-cap.",
+                    "score": {
+                      "before": null,
+                      "after": 505,
+                      "best": 505,
+                      "delta": null,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "stage": {
+                      "stageIndex": 2,
+                      "cycleIndex": 1
+                    },
+                    "evidence": {
+                      "consecutiveWeakCycles": 0,
+                      "lastCycleImprovementRatio": null
+                    },
+                    "elapsedMs": 5791
+                  },
+                  {
+                    "schemaVersion": 1,
+                    "runId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37",
+                    "sequence": 16,
+                    "eventId": "typed-footprint-pressure:auto:policy-lns-seed-reserve-5s-guarded:budget-5:seed-37:0016:checkpoint",
+                    "optimizer": "auto",
+                    "activeStage": "lns",
+                    "kind": "checkpoint",
+                    "decision": "stalled",
+                    "reason": "auto final incumbent population 505.",
+                    "score": {
+                      "before": 505,
+                      "after": 505,
+                      "best": 505,
+                      "delta": 0,
+                      "upperBound": null,
+                      "gap": null
+                    },
+                    "evidence": {
+                      "stoppedByUser": false,
+                      "stoppedByTimeLimit": false,
+                      "roadCount": 5,
+                      "serviceCount": 2,
+                      "residentialCount": 4
+                    },
+                    "elapsedMs": 5791
+                  }
+                ],
+                "timeToQuality": {
+                  "finalElapsedMs": 5791,
+                  "finalScore": 505,
+                  "bestScore": 505,
+                  "firstFeasibleAtMs": 466,
+                  "firstImprovementAtMs": 466,
+                  "bestScoreAtMs": 466,
+                  "improvementCount": 2,
+                  "timeCheckpoints": [
+                    {
+                      "elapsedMs": 5000,
+                      "bestScore": 505,
+                      "scoreDeltaToBest": 0,
+                      "scoreRatioToBest": 1,
+                      "reached": true
+                    },
+                    {
+                      "elapsedMs": 30000,
+                      "bestScore": 505,
+                      "scoreDeltaToBest": 0,
+                      "scoreRatioToBest": 1,
+                      "reached": true
+                    },
+                    {
+                      "elapsedMs": 120000,
+                      "bestScore": 505,
+                      "scoreDeltaToBest": 0,
+                      "scoreRatioToBest": 1,
+                      "reached": true
+                    }
+                  ],
+                  "qualityTargets": [
+                    {
+                      "ratio": 0.5,
+                      "targetScore": 253,
+                      "reachedAtMs": 466,
+                      "reachedScore": 505
+                    },
+                    {
+                      "ratio": 0.9,
+                      "targetScore": 455,
+                      "reachedAtMs": 466,
+                      "reachedScore": 505
+                    },
+                    {
+                      "ratio": 1,
+                      "targetScore": 505,
+                      "reachedAtMs": 466,
+                      "reachedScore": 505
+                    }
+                  ]
+                },
+                "checkpointReason": "Auto greedy seed produced population 505.",
+                "scoreDeltaToBest": 0,
+                "scoreRatioToBest": 1,
+                "winVsAuto": "baseline",
+                "rank": 1,
+                "scoreDeltaVsAuto": 0,
+                "budgetAllocationSignal": {
+                  "signal": "over-budget",
+                  "budgetUtilizationRatio": 1.158,
+                  "budgetRemainingSeconds": 0,
+                  "budgetOverrunSeconds": 0.791,
+                  "firstImprovementSeconds": 0.466,
+                  "bestScoreSeconds": 0.466,
+                  "secondsAfterBest": 5.325,
+                  "improvementsPerSecond": 0.345,
+                  "scoreDeltaVsAuto": 0,
+                  "autoBestScoreSecondsDelta": 0,
+                  "reason": "Observed wall time exceeded the configured benchmark budget."
+                }
+              }
+            ]
+          }
+        ],
+        "budgetPolicySignals": [
+          {
+            "caseName": "typed-footprint-pressure",
+            "problemSizeBand": "small",
+            "budgetSeconds": 5,
+            "seed": 37,
+            "bestMode": "auto",
+            "bestScore": 505,
+            "autoScore": 505,
+            "autoDeltaToBest": 0,
+            "recommendation": "keep-auto",
+            "autoStopReason": "wall-clock-cap",
+            "autoGreedySeedElapsedSeconds": 0.676,
+            "autoLnsStageElapsedSeconds": 5.113,
+            "autoLnsStageImprovement": 0,
+            "autoCpSatStageElapsedSeconds": null,
+            "autoCpSatStageImprovement": null,
+            "lnsScoreDeltaVsAuto": null,
+            "lnsSeedWallClockSeconds": null,
+            "reason": "Auto matched the best score 505 at 5s. Auto LNS used 5.113s for +0 accepted population."
+          }
+        ],
+        "portfolioEfficiencySignals": [],
+        "modeSummaries": [
+          {
+            "mode": "auto",
+            "label": "Auto",
+            "runs": 1,
+            "meanPopulation": 505,
+            "bestPopulation": 505,
+            "worstPopulation": 505,
+            "populationStdDev": 0,
+            "meanWallClockSeconds": 5.790754417000002,
+            "winRateVsAuto": null,
+            "meanScoreDeltaVsAuto": 0
+          }
+        ],
+        "problemSizeSummaries": [
+          {
+            "problemSizeBand": "small",
+            "mode": "auto",
+            "label": "Auto",
+            "runs": 1,
+            "meanPopulation": 505,
+            "bestPopulation": 505,
+            "worstPopulation": 505,
+            "populationStdDev": 0,
+            "meanWallClockSeconds": 5.790754417000002,
+            "winRateVsAuto": null,
+            "meanScoreDeltaVsAuto": 0
+          }
+        ]
+      },
+      "meanBestPopulation": 505,
+      "meanAutoPopulation": 505,
+      "meanLnsPopulation": null,
+      "meanAutoDeltaToBest": 0,
+      "meanAutoLnsStageElapsedSeconds": 5.113,
+      "meanAutoCpSatStageElapsedSeconds": null,
+      "deltaVsBaselineMeanBestPopulation": 0,
+      "deltaVsBaselineMeanAutoPopulation": 0,
+      "deltaVsBaselineMeanLnsPopulation": null,
+      "autoSafetySummary": {
+        "comparisonCount": 1,
+        "improvedAutoCount": 0,
+        "regressedAutoCount": 0,
+        "unchangedAutoCount": 1,
+        "regressionRate": 0,
+        "meanAutoPopulationDeltaVsBaseline": 0,
+        "medianAutoPopulationDeltaVsBaseline": 0,
+        "worstDecileAutoPopulationDeltaVsBaseline": 0,
+        "worstAutoPopulationDeltaVsBaseline": 0,
+        "bestAutoPopulationDeltaVsBaseline": 0,
+        "worstAutoPopulationDeltaCaseName": "typed-footprint-pressure",
+        "worstAutoPopulationDeltaSeed": 37,
+        "worstAutoPopulationDeltaBudgetSeconds": 5,
+        "bestAutoPopulationDeltaCaseName": "typed-footprint-pressure",
+        "bestAutoPopulationDeltaSeed": 37,
+        "bestAutoPopulationDeltaBudgetSeconds": 5,
+        "meanAutoWallClockSeconds": 5.790754417000002,
+        "baselineMeanAutoWallClockSeconds": 5.324892167,
+        "meanAutoWallClockDeltaVsBaselineSeconds": 0.4658622500000025,
+        "meanAutoPopulationPerCpuBudgetSecond": 101,
+        "baselineMeanAutoPopulationPerCpuBudgetSecond": 101,
+        "autoCpuBudgetEfficiencyRatioVsBaseline": 1
+      },
+      "autoReplayDiagnostics": [],
+      "autoVarianceSummary": {
+        "baselineRepeatPolicyName": "baseline-repeat",
+        "comparisonCount": 1,
+        "insideRepeatEnvelopeCount": 1,
+        "outsideRepeatEnvelopeCount": 0,
+        "outsideNegativeRepeatEnvelopeCount": 0,
+        "outsidePositiveRepeatEnvelopeCount": 0,
+        "repeatAutoPopulationDeltaMin": 0,
+        "repeatAutoPopulationDeltaMax": 0,
+        "repeatMeanAbsoluteAutoPopulationDelta": 0,
+        "candidateAutoPopulationDeltaMin": 0,
+        "candidateAutoPopulationDeltaMax": 0,
+        "candidateMeanAutoPopulationDelta": 0,
+        "meanAbsoluteCandidateDeltaBeyondRepeatEnvelope": 0,
+        "worstCandidateDeltaBeyondRepeatEnvelope": 0,
+        "bestCandidateDeltaBeyondRepeatEnvelope": 0
+      },
+      "budgetSummaries": [
+        {
+          "budgetSeconds": 5,
+          "caseCount": 1,
+          "meanBestPopulation": 505,
+          "meanAutoPopulation": 505,
+          "meanLnsPopulation": null,
+          "meanAutoDeltaToBest": 0,
+          "deltaVsBaselineMeanBestPopulation": 0,
+          "deltaVsBaselineMeanAutoPopulation": 0,
+          "deltaVsBaselineMeanLnsPopulation": null,
+          "autoSafetySummary": {
+            "comparisonCount": 1,
+            "improvedAutoCount": 0,
+            "regressedAutoCount": 0,
+            "unchangedAutoCount": 1,
+            "regressionRate": 0,
+            "meanAutoPopulationDeltaVsBaseline": 0,
+            "medianAutoPopulationDeltaVsBaseline": 0,
+            "worstDecileAutoPopulationDeltaVsBaseline": 0,
+            "worstAutoPopulationDeltaVsBaseline": 0,
+            "bestAutoPopulationDeltaVsBaseline": 0,
+            "worstAutoPopulationDeltaCaseName": "typed-footprint-pressure",
+            "worstAutoPopulationDeltaSeed": 37,
+            "worstAutoPopulationDeltaBudgetSeconds": 5,
+            "bestAutoPopulationDeltaCaseName": "typed-footprint-pressure",
+            "bestAutoPopulationDeltaSeed": 37,
+            "bestAutoPopulationDeltaBudgetSeconds": 5,
+            "meanAutoWallClockSeconds": 5.790754417000002,
+            "baselineMeanAutoWallClockSeconds": 5.324892167,
+            "meanAutoWallClockDeltaVsBaselineSeconds": 0.4658622500000025,
+            "meanAutoPopulationPerCpuBudgetSecond": 101,
+            "baselineMeanAutoPopulationPerCpuBudgetSecond": 101,
+            "autoCpuBudgetEfficiencyRatioVsBaseline": 1
+          },
+          "recommendationCounts": {
+            "keep-auto": 1,
+            "add-auto-baseline": 0,
+            "shift-auto-budget-to-greedy": 0,
+            "shift-auto-budget-to-lns": 0,
+            "shift-auto-budget-to-cp-sat": 0,
+            "keep-portfolio-experimental": 0,
+            "investigate-auto-loss": 0
+          }
+        }
+      ],
+      "recommendationCounts": {
+        "keep-auto": 1,
+        "add-auto-baseline": 0,
+        "shift-auto-budget-to-greedy": 0,
+        "shift-auto-budget-to-lns": 0,
+        "shift-auto-budget-to-cp-sat": 0,
+        "keep-portfolio-experimental": 0,
+        "investigate-auto-loss": 0
+      }
+    }
+  ]
+}

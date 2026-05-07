@@ -251,6 +251,7 @@ export interface CrossModeBenchmarkBudgetAblationPolicy {
   name: string;
   description: string;
   activeBudgetSeconds?: readonly number[];
+  appliesToCase?: (benchmarkCase: CrossModeBenchmarkCase) => boolean;
   auto?: Partial<AutoOptions>;
   lns?: Partial<LnsOptions>;
   lnsSeedBudgetRatio?: number;

@@ -284,20 +284,26 @@ function ratioBudgetSeconds(value: unknown, budgetSeconds: number): number | nul
 
 function budgetAblationPolicyApplies(
   policy: CrossModeBenchmarkBudgetAblationPolicy | undefined,
-  budgetSeconds: number
+  budgetSeconds: number,
+  benchmarkCase: CrossModeBenchmarkCase
 ): boolean {
-  if (!policy?.activeBudgetSeconds?.length) return true;
-  return policy.activeBudgetSeconds.some(
-    (activeBudgetSeconds) =>
-      Number.isFinite(activeBudgetSeconds) && Math.abs(activeBudgetSeconds - budgetSeconds) <= 1e-9
-  );
+  if (!policy) return false;
+  const budgetApplies =
+    !policy.activeBudgetSeconds?.length ||
+    policy.activeBudgetSeconds.some(
+      (activeBudgetSeconds) =>
+        Number.isFinite(activeBudgetSeconds) && Math.abs(activeBudgetSeconds - budgetSeconds) <= 1e-9
+    );
+  if (!budgetApplies) return false;
+  return policy.appliesToCase ? policy.appliesToCase(benchmarkCase) : true;
 }
 
 function budgetAblationLnsOptions(
   policy: CrossModeBenchmarkBudgetAblationPolicy | undefined,
-  budgetSeconds: number
+  budgetSeconds: number,
+  benchmarkCase: CrossModeBenchmarkCase
 ): Partial<LnsOptions> {
-  if (!policy || !budgetAblationPolicyApplies(policy, budgetSeconds)) return {};
+  if (!policy || !budgetAblationPolicyApplies(policy, budgetSeconds, benchmarkCase)) return {};
   const seedTimeLimitSeconds = ratioBudgetSeconds(policy.lnsSeedBudgetRatio, budgetSeconds);
   const repairTimeLimitSeconds = ratioBudgetSeconds(policy.lnsRepairBudgetRatio, budgetSeconds);
   const escalatedRepairTimeLimitSeconds = ratioBudgetSeconds(policy.lnsEscalatedRepairBudgetRatio, budgetSeconds);
@@ -316,9 +322,10 @@ function budgetAblationLnsOptions(
 
 function budgetAblationAutoOptions(
   policy: CrossModeBenchmarkBudgetAblationPolicy | undefined,
-  budgetSeconds: number
+  budgetSeconds: number,
+  benchmarkCase: CrossModeBenchmarkCase
 ): Partial<AutoOptions> {
-  if (!policy || !budgetAblationPolicyApplies(policy, budgetSeconds)) return {};
+  if (!policy || !budgetAblationPolicyApplies(policy, budgetSeconds, benchmarkCase)) return {};
   return {
     ...(policy.auto ?? {}),
     ...(typeof policy.autoCpSatStageReserveRatio === "number" && Number.isFinite(policy.autoCpSatStageReserveRatio)
@@ -342,13 +349,14 @@ function defaultTraceTunedLnsEscalatedRepairBudgetSeconds(
 }
 
 function buildBudgetedLnsOptions(
+  benchmarkCase: CrossModeBenchmarkCase,
   params: SolverParams,
   options: CrossModeBenchmarkRunOptions,
   budgetSeconds: number
 ): LnsOptions {
   const overrideLns = {
     ...(options.lns ?? {}),
-    ...budgetAblationLnsOptions(options.budgetAblationPolicy, budgetSeconds)
+    ...budgetAblationLnsOptions(options.budgetAblationPolicy, budgetSeconds, benchmarkCase)
   };
   const explicitRepairTimeLimitSeconds = firstPositiveFiniteNumber(overrideLns.repairTimeLimitSeconds);
   const repairTimeLimitSeconds = Math.min(
@@ -401,7 +409,7 @@ export function buildCrossModeBenchmarkParams(
   const baseWithGreedy = applyGreedyCompatibilityFields(params, greedy);
   const portfolio = mode === "cp-sat-portfolio" ? buildPortfolioOptions(options, budgetSeconds, seed) : undefined;
   const cpSat = buildBudgetedCpSatOptions(baseWithGreedy, options, budgetSeconds, seed, portfolio);
-  const autoPolicyOverrides = budgetAblationAutoOptions(options.budgetAblationPolicy, budgetSeconds);
+  const autoPolicyOverrides = budgetAblationAutoOptions(options.budgetAblationPolicy, budgetSeconds, benchmarkCase);
 
   if (mode === "greedy") {
     return {
@@ -415,7 +423,7 @@ export function buildCrossModeBenchmarkParams(
       ...baseWithGreedy,
       optimizer,
       cpSat: withoutPortfolio(cpSat),
-      lns: buildBudgetedLnsOptions(baseWithGreedy, options, budgetSeconds)
+      lns: buildBudgetedLnsOptions(benchmarkCase, baseWithGreedy, options, budgetSeconds)
     };
   }
 
@@ -435,7 +443,7 @@ export function buildCrossModeBenchmarkParams(
         )
       },
       cpSat: withoutPortfolio(cpSat),
-      lns: buildBudgetedLnsOptions(baseWithGreedy, options, budgetSeconds)
+      lns: buildBudgetedLnsOptions(benchmarkCase, baseWithGreedy, options, budgetSeconds)
     };
   }
 

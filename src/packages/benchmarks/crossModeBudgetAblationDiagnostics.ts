@@ -72,6 +72,7 @@ export interface CrossModeBenchmarkBudgetAblationAutoReplayDiagnostic {
   caseName: string;
   budgetSeconds: number;
   seed: number;
+  policyApplied: boolean;
   autoPopulationDeltaVsBaseline: number;
   autoWallClockDeltaVsBaselineSeconds: number;
   baseline: CrossModeBenchmarkBudgetAblationAutoReplayRunDiagnostics;
@@ -248,6 +249,7 @@ export function buildCrossModeBudgetAblationAutoReplayDiagnostics(
         caseName: scorecard.name,
         budgetSeconds: scorecard.budgetSeconds,
         seed: scorecard.seed,
+        policyApplied: candidateResult.budgetAblationPolicyApplied === true,
         autoPopulationDeltaVsBaseline: delta,
         autoWallClockDeltaVsBaselineSeconds: roundBenchmarkMetric(
           candidateResult.wallClockSeconds - baselineResult.wallClockSeconds
@@ -279,6 +281,7 @@ export function formatCrossModeBudgetAblationAutoReplayDiagnostic(
 ): string {
   return [
     `row=${diagnostic.caseName}/budget:${diagnostic.budgetSeconds}s/seed:${diagnostic.seed}`,
+    `applied=${diagnostic.policyApplied ? "yes" : "no"}`,
     `delta=${formatSigned(diagnostic.autoPopulationDeltaVsBaseline)}`,
     `wall=${formatSeconds(diagnostic.autoWallClockDeltaVsBaselineSeconds)}`,
     `baseline=${diagnostic.baseline.finalPopulation}`,

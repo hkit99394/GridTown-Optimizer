@@ -64,6 +64,7 @@ export interface CrossModeBenchmarkSolveContext {
   budgetSeconds: number;
   seed: number;
   budgetAblationPolicyName?: string;
+  budgetAblationPolicyApplied?: boolean;
 }
 
 export type CrossModeBenchmarkSolve = (
@@ -106,6 +107,8 @@ export interface CrossModeBenchmarkModeResult {
   mode: CrossModeBenchmarkMode;
   optimizer: OptimizerName;
   label: string;
+  budgetAblationPolicyName?: string;
+  budgetAblationPolicyApplied?: boolean;
   problemSizeBand: CrossModeProblemSizeBand;
   budgetSeconds: number;
   seed: number;

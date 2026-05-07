@@ -585,6 +585,12 @@ async function runCrossModeBenchmarkCase(
   const solve = options.solve ?? defaultCrossModeSolve;
   const rawResults: CrossModeBenchmarkModeResultDraft[] = [];
   const problemSizeBand = inferProblemSizeBand(benchmarkCase);
+  const budgetAblationPolicyName = options.budgetAblationPolicy?.name;
+  const budgetAblationPolicyApplied = budgetAblationPolicyApplies(
+    options.budgetAblationPolicy,
+    budgetSeconds,
+    benchmarkCase
+  );
 
   for (const mode of modes) {
     const params = buildCrossModeBenchmarkParams(benchmarkCase, mode, {
@@ -598,7 +604,12 @@ async function runCrossModeBenchmarkCase(
       mode,
       budgetSeconds,
       seed,
-      ...(options.budgetAblationPolicy?.name ? { budgetAblationPolicyName: options.budgetAblationPolicy.name } : {})
+      ...(budgetAblationPolicyName
+        ? {
+            budgetAblationPolicyName,
+            budgetAblationPolicyApplied
+          }
+        : {})
     });
     const finishedAt = performance.now();
     const wallClockSeconds = (finishedAt - startedAt) / 1000;
@@ -625,6 +636,12 @@ async function runCrossModeBenchmarkCase(
       problemSizeBand,
       budgetSeconds,
       seed,
+      ...(budgetAblationPolicyName
+        ? {
+            budgetAblationPolicyName,
+            budgetAblationPolicyApplied
+          }
+        : {}),
       wallClockSeconds,
       workerCpuBudgetSeconds: workerCpuBudgetSecondsValue,
       observedWorkerCpuSeconds: observedWorkerCpuSecondsValue
@@ -634,6 +651,12 @@ async function runCrossModeBenchmarkCase(
       mode,
       optimizer,
       label: MODE_LABELS[mode],
+      ...(budgetAblationPolicyName
+        ? {
+            budgetAblationPolicyName,
+            budgetAblationPolicyApplied
+          }
+        : {}),
       problemSizeBand,
       budgetSeconds,
       seed,

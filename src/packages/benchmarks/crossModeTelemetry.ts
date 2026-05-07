@@ -67,6 +67,8 @@ export interface CrossModeBenchmarkRunTelemetry {
   problemSizeBand: CrossModeProblemSizeBand;
   mode: CrossModeBenchmarkMode;
   optimizer: OptimizerName;
+  budgetAblationPolicyName?: string;
+  budgetAblationPolicyApplied?: boolean;
   budgetSeconds: number;
   seed: number;
   solverParams: CrossModeBenchmarkSolverParamSummary;
@@ -136,6 +138,8 @@ export interface BuildCrossModeRunTelemetryOptions {
   problemSizeBand: CrossModeProblemSizeBand;
   budgetSeconds: number;
   seed: number;
+  budgetAblationPolicyName?: string;
+  budgetAblationPolicyApplied?: boolean;
   wallClockSeconds: number;
   workerCpuBudgetSeconds: number;
   observedWorkerCpuSeconds: number | null;
@@ -465,6 +469,12 @@ export function buildCrossModeRunTelemetry(options: BuildCrossModeRunTelemetryOp
     problemSizeBand: options.problemSizeBand,
     mode: options.mode,
     optimizer: options.params.optimizer ?? modeToOptimizer(options.mode),
+    ...(options.budgetAblationPolicyName
+      ? {
+          budgetAblationPolicyName: options.budgetAblationPolicyName,
+          budgetAblationPolicyApplied: Boolean(options.budgetAblationPolicyApplied)
+        }
+      : {}),
     budgetSeconds: options.budgetSeconds,
     seed: options.seed,
     solverParams: summarizeCrossModeSolverParams(options.params),

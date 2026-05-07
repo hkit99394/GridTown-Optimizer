@@ -564,6 +564,7 @@ function budgetAblationPolicySummary(
     deltaVsBaselineMeanBestPopulation: policy.deltaVsBaselineMeanBestPopulation,
     deltaVsBaselineMeanAutoPopulation: policy.deltaVsBaselineMeanAutoPopulation,
     deltaVsBaselineMeanLnsPopulation: policy.deltaVsBaselineMeanLnsPopulation,
+    policyApplicationSummary: policy.policyApplicationSummary,
     autoSafetySummary: policy.autoSafetySummary,
     autoReplayDiagnostics: policy.autoReplayDiagnostics,
     autoVarianceSummary: policy.autoVarianceSummary,
@@ -580,11 +581,8 @@ function buildBudgetAblationTelemetryManifest(
     hardware: Record<string, unknown>;
   }
 ): Record<string, unknown> {
-  const runs = result.policies.flatMap((policy) =>
-    buildCrossModeBenchmarkTelemetryManifest(policy.suite, options).runs.map((run) => ({
-      ...run,
-      budgetAblationPolicyName: policy.policyName
-    }))
+  const runs = result.policies.flatMap(
+    (policy) => buildCrossModeBenchmarkTelemetryManifest(policy.suite, options).runs
   );
   return {
     schemaVersion: 1,

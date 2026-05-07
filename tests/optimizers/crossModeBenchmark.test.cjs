@@ -1123,7 +1123,9 @@ async function testCrossModeBenchmarkHelpers() {
     assert.equal(ablationTelemetryArtifact.suite.policyCount, 2);
     assert.equal(ablationTelemetryArtifact.runs.length, 2);
     assert.equal(ablationTelemetryArtifact.runs[0].budgetAblationPolicyName, "baseline");
+    assert.equal(ablationTelemetryArtifact.runs[0].budgetAblationPolicyApplied, true);
     assert.equal(ablationRegistryDraft.artifactType, "ablation-gate");
+    assert.equal(ablationRegistryDraft.summaryMetrics.policies[0].policyApplicationSummary.appliedScorecardCount, 1);
     assert.equal(ablationRegistryDraft.budget.policyCount, 2);
     assert.deepEqual(ablationRegistryDraft.cases.development, ["typed-housing-single"]);
 
@@ -1171,6 +1173,13 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(ablations.policies[1].deltaVsBaselineMeanBestPopulation, 5);
   assert.equal(ablations.policies[1].deltaVsBaselineMeanAutoPopulation, 5);
   assert.equal(ablations.policies[1].deltaVsBaselineMeanLnsPopulation, 0);
+  assert.equal(ablations.policies[1].policyApplicationSummary.scorecardCount, 1);
+  assert.equal(ablations.policies[1].policyApplicationSummary.appliedScorecardCount, 1);
+  assert.equal(ablations.policies[1].policyApplicationSummary.inactiveScorecardCount, 0);
+  assert.equal(ablations.policies[1].policyApplicationSummary.appliedNonzeroAutoDeltaCount, 1);
+  assert.equal(ablations.policies[1].policyApplicationSummary.inactiveNonzeroAutoDeltaCount, 0);
+  assert.equal(ablations.policies[1].policyApplicationSummary.meanAutoPopulationDeltaVsBaselineWhenApplied, 5);
+  assert.equal(ablations.policies[1].policyApplicationSummary.meanAutoPopulationDeltaVsBaselineWhenInactive, null);
   assert.equal(ablations.policies[1].autoSafetySummary.comparisonCount, 1);
   assert.equal(ablations.policies[1].autoSafetySummary.meanAutoPopulationDeltaVsBaseline, 5);
   assert.equal(ablations.policies[1].autoSafetySummary.worstDecileAutoPopulationDeltaVsBaseline, 5);
@@ -1180,6 +1189,7 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(ablations.policies[0].autoReplayDiagnostics.length, 0);
   assert.equal(ablations.policies[1].autoReplayDiagnostics.length, 1);
   assert.equal(ablations.policies[1].autoReplayDiagnostics[0].caseName, "mock-scorecard");
+  assert.equal(ablations.policies[1].autoReplayDiagnostics[0].policyApplied, true);
   assert.equal(ablations.policies[1].autoReplayDiagnostics[0].autoPopulationDeltaVsBaseline, 5);
   assert.equal(ablations.policies[1].autoReplayDiagnostics[0].baseline.finalPopulation, 10);
   assert.equal(ablations.policies[1].autoReplayDiagnostics[0].candidate.finalPopulation, 15);
@@ -1206,11 +1216,51 @@ async function testCrossModeBenchmarkHelpers() {
   assert.match(ablationText, /delta-vs-baseline=\+5/);
   assert.match(ablationText, /auto-delta-vs-baseline=\+5/);
   assert.match(ablationText, /lns-delta-vs-baseline=0/);
+  assert.match(ablationText, /policy-application=scorecards=1 applied=1 inactive=0/);
   assert.match(ablationText, /auto-safety=paired=1 delta-mean=\+5/);
   assert.match(ablationText, /auto-replay-diagnostics=1 nonzero paired Auto rows/);
-  assert.match(ablationText, /row=mock-scorecard\/budget:3s\/seed:5 delta=\+5/);
+  assert.match(ablationText, /row=mock-scorecard\/budget:3s\/seed:5 applied=yes delta=\+5/);
   assert.match(ablationText, /cpu-eff-ratio=1\.500/);
   assert.match(ablationText, /budget=3s cases=1 mean-best=15\.0/);
+
+  const inactivePolicyAblations = await runCrossModeBenchmarkBudgetAblations([benchmarkCase], {
+    modes: ["auto"],
+    budgetsSeconds: [3],
+    seeds: [5],
+    policies: [
+      { name: "baseline", description: "Mock baseline." },
+      {
+        name: "inactive-drift",
+        description: "Mock policy with inactive predicate but observed run drift.",
+        appliesToCase: () => false,
+        autoCpSatStageReserveRatio: 0.35
+      }
+    ],
+    solve: async (_grid, params, context) => {
+      assert.equal(params.auto?.cpSatStageReserveRatio, undefined);
+      if (context.budgetAblationPolicyName === "inactive-drift") {
+        assert.equal(context.budgetAblationPolicyApplied, false);
+      } else {
+        assert.equal(context.budgetAblationPolicyApplied, true);
+      }
+      const inactiveDrift = context.budgetAblationPolicyName === "inactive-drift" ? 5 : 0;
+      return buildMockSolution({ optimizer: params.optimizer, totalPopulation: 10 + inactiveDrift });
+    }
+  });
+  const inactivePolicyResult = inactivePolicyAblations.policies.find(
+    (policy) => policy.policyName === "inactive-drift"
+  );
+  assert.equal(inactivePolicyResult.policyApplicationSummary.appliedScorecardCount, 0);
+  assert.equal(inactivePolicyResult.policyApplicationSummary.inactiveScorecardCount, 1);
+  assert.equal(inactivePolicyResult.policyApplicationSummary.appliedNonzeroAutoDeltaCount, 0);
+  assert.equal(inactivePolicyResult.policyApplicationSummary.inactiveNonzeroAutoDeltaCount, 1);
+  assert.equal(inactivePolicyResult.policyApplicationSummary.meanAutoPopulationDeltaVsBaselineWhenApplied, null);
+  assert.equal(inactivePolicyResult.policyApplicationSummary.meanAutoPopulationDeltaVsBaselineWhenInactive, 5);
+  assert.equal(inactivePolicyResult.autoReplayDiagnostics[0].policyApplied, false);
+  assert.match(
+    formatCrossModeBenchmarkBudgetAblations(inactivePolicyAblations),
+    /policy-application=scorecards=1 applied=0 inactive=1[\s\S]*row=mock-scorecard\/budget:3s\/seed:5 applied=no delta=\+5/
+  );
 
   const reorderedAblations = await runCrossModeBenchmarkBudgetAblations([benchmarkCase], {
     modes: ["auto"],
@@ -1281,6 +1331,7 @@ async function testCrossModeBenchmarkHelpers() {
     solve: async (_grid, params, context) => {
       const guardedPolicyActive =
         context.budgetAblationPolicyName === "repair-heavy-5s-guarded" &&
+        context.budgetAblationPolicyApplied === true &&
         params.auto?.cpSatStageReserveRatio === 0.1 &&
         params.lns?.repairTimeLimitSeconds === 1;
       return buildMockSolution({
@@ -1294,6 +1345,15 @@ async function testCrossModeBenchmarkHelpers() {
   );
   assert.equal(guardedBudgetAblations.topPolicyName, "repair-heavy-5s-guarded");
   assert.equal(guardedPolicyResult.deltaVsBaselineMeanAutoPopulation, 2.5);
+  assert.equal(guardedPolicyResult.policyApplicationSummary.scorecardCount, 2);
+  assert.equal(guardedPolicyResult.policyApplicationSummary.appliedScorecardCount, 1);
+  assert.equal(guardedPolicyResult.policyApplicationSummary.inactiveScorecardCount, 1);
+  assert.equal(guardedPolicyResult.policyApplicationSummary.appliedAutoComparisonCount, 1);
+  assert.equal(guardedPolicyResult.policyApplicationSummary.inactiveAutoComparisonCount, 1);
+  assert.equal(guardedPolicyResult.policyApplicationSummary.appliedNonzeroAutoDeltaCount, 1);
+  assert.equal(guardedPolicyResult.policyApplicationSummary.inactiveNonzeroAutoDeltaCount, 0);
+  assert.equal(guardedPolicyResult.policyApplicationSummary.meanAutoPopulationDeltaVsBaselineWhenApplied, 5);
+  assert.equal(guardedPolicyResult.policyApplicationSummary.meanAutoPopulationDeltaVsBaselineWhenInactive, 0);
   assert.equal(guardedPolicyResult.autoSafetySummary.comparisonCount, 2);
   assert.equal(guardedPolicyResult.autoSafetySummary.meanAutoPopulationDeltaVsBaseline, 2.5);
   assert.equal(guardedPolicyResult.autoSafetySummary.worstDecileAutoPopulationDeltaVsBaseline, 0);

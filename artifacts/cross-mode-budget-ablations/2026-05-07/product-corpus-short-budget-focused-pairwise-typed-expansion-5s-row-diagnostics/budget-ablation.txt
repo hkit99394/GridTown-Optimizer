@@ -1,0 +1,423 @@
+=== Cross-Mode Budget Ablations ===
+Generated: 2026-05-07T07:29:37.282Z
+Cases: 2
+Modes: Auto
+Equal wall-clock budgets: 5s per mode
+Seeds: 19, 37
+Coverage: policies=6 scorecards=24 mode-runs=24 budgeted-mode-seconds=120
+Baseline policy: baseline
+Top policy by Auto mean population: repair-heavy-5s-guarded tied=repair-heavy-5s-guarded (ties prefer baseline; inspect budget signals before promotion)
+
+- baseline: Current Auto/LNS budget policy.
+  mean-best=638.8 delta-vs-baseline=0 mean-auto=638.8 auto-delta-vs-baseline=0 mean-lns=n/a lns-delta-vs-baseline=n/a mean-auto-gap=0
+  auto-stage-mean=lns:4.432s cp-sat:1.006s recommendations=keep-auto:4
+  auto-safety=paired=4 delta-mean=0 delta-median=0 delta-worst-decile=0 delta-worst=0 regressed=0 regression-rate=0.000 cpu-eff-ratio=1.000 wall-delta-mean=0.000s
+  auto-variance=repeat=baseline-repeat paired=4 inside=4 outside=0 outside-neg=0 outside-pos=0 repeat-range=-5..0 candidate-range=0..0 candidate-mean=0 beyond-mean-abs=0 beyond-worst=0 beyond-best=0
+  budget=5s cases=4 mean-best=638.8 delta-vs-baseline=0 mean-auto=638.8 auto-delta-vs-baseline=0 mean-lns=n/a lns-delta-vs-baseline=n/a mean-auto-gap=0 auto-safety=paired=4 delta-mean=0 delta-median=0 delta-worst-decile=0 delta-worst=0 regressed=0 regression-rate=0.000 cpu-eff-ratio=1.000 wall-delta-mean=0.000s recommendations=keep-auto:4
+- baseline-repeat: Repeat the current Auto/LNS budget policy as a short-budget variance control.
+  mean-best=637.5 delta-vs-baseline=-1.25 mean-auto=637.5 auto-delta-vs-baseline=-1.25 mean-lns=n/a lns-delta-vs-baseline=n/a mean-auto-gap=0
+  auto-stage-mean=lns:4.577s cp-sat:1.072s recommendations=keep-auto:4
+  auto-safety=paired=4 delta-mean=-1.25 delta-median=0 delta-worst-decile=-5 delta-worst=-5 regressed=1 regression-rate=0.250 cpu-eff-ratio=0.998 wall-delta-mean=-0.336s
+  auto-variance=repeat=baseline-repeat paired=4 inside=4 outside=0 outside-neg=0 outside-pos=0 repeat-range=-5..0 candidate-range=-5..0 candidate-mean=-1.25 beyond-mean-abs=0 beyond-worst=0 beyond-best=0
+  auto-replay-diagnostics=1 nonzero paired Auto rows
+    row=typed-footprint-pressure/budget:5s/seed:37 delta=-5 wall=0.049s baseline=525 candidate=520 lns=baseline+20/candidate+15 cp-sat=baseline+0/candidate+0 seed=1vs1 reserve=n/avsn/a improved-neighborhoods=baseline:not-captured candidate:not-captured reason=Baseline LNS repaired +20 while candidate LNS repaired +15; LNS seed 1 vs 1, CP-SAT reserve n/a vs n/a. Candidate final incumbent no longer carries detailed LNS neighborhoods after a later stage handoff.
+  budget=5s cases=4 mean-best=637.5 delta-vs-baseline=-1.25 mean-auto=637.5 auto-delta-vs-baseline=-1.25 mean-lns=n/a lns-delta-vs-baseline=n/a mean-auto-gap=0 auto-safety=paired=4 delta-mean=-1.25 delta-median=0 delta-worst-decile=-5 delta-worst=-5 regressed=1 regression-rate=0.250 cpu-eff-ratio=0.998 wall-delta-mean=-0.336s recommendations=keep-auto:4
+- lns-seed-repair-5s-guarded: Shorten LNS seed and lengthen repair at the 5s budget.
+  mean-best=637.5 delta-vs-baseline=-1.25 mean-auto=637.5 auto-delta-vs-baseline=-1.25 mean-lns=n/a lns-delta-vs-baseline=n/a mean-auto-gap=0
+  auto-stage-mean=lns:4.505s cp-sat:0.936s recommendations=keep-auto:4
+  auto-safety=paired=4 delta-mean=-1.25 delta-median=-5 delta-worst-decile=-35 delta-worst=-35 regressed=2 regression-rate=0.500 cpu-eff-ratio=0.998 wall-delta-mean=-0.030s
+  auto-variance=repeat=baseline-repeat paired=4 inside=2 outside=2 outside-neg=1 outside-pos=1 repeat-range=-5..0 candidate-range=-35..+35 candidate-mean=-1.25 beyond-mean-abs=17.5 beyond-worst=-35 beyond-best=+35
+  auto-replay-diagnostics=3 nonzero paired Auto rows
+    row=expansion-comparison-replay/budget:5s/seed:37 delta=-35 wall=-0.062s baseline=780 candidate=745 lns=baseline+35/candidate+0 cp-sat=baseline+0/candidate+0 seed=0.25vs1 reserve=n/avsn/a improved-neighborhoods=baseline:escalated#2+35 candidate:not-captured reason=Baseline LNS repaired +35 while candidate LNS repaired +0; LNS seed 0.25 vs 1, CP-SAT reserve n/a vs n/a. Candidate final incumbent no longer carries detailed LNS neighborhoods after a later stage handoff.
+    row=typed-footprint-pressure/budget:5s/seed:37 delta=-5 wall=0.073s baseline=525 candidate=520 lns=baseline+20/candidate+15 cp-sat=baseline+0/candidate+0 seed=0.25vs1 reserve=n/avsn/a improved-neighborhoods=baseline:not-captured candidate:not-captured reason=Baseline LNS repaired +20 while candidate LNS repaired +15; LNS seed 0.25 vs 1, CP-SAT reserve n/a vs n/a. Candidate final incumbent no longer carries detailed LNS neighborhoods after a later stage handoff.
+    row=expansion-comparison-replay/budget:5s/seed:19 delta=+35 wall=0.080s baseline=745 candidate=780 lns=baseline+0/candidate+35 cp-sat=baseline+0/candidate+0 seed=0.25vs1 reserve=n/avsn/a improved-neighborhoods=baseline:not-captured candidate:not-captured reason=Candidate improved because LNS repaired +35 versus baseline +0; LNS seed 0.25 vs 1, CP-SAT reserve n/a vs n/a.
+  budget=5s cases=4 mean-best=637.5 delta-vs-baseline=-1.25 mean-auto=637.5 auto-delta-vs-baseline=-1.25 mean-lns=n/a lns-delta-vs-baseline=n/a mean-auto-gap=0 auto-safety=paired=4 delta-mean=-1.25 delta-median=-5 delta-worst-decile=-35 delta-worst=-35 regressed=2 regression-rate=0.500 cpu-eff-ratio=0.998 wall-delta-mean=-0.030s recommendations=keep-auto:4
+- lns-seed-reserve-5s-guarded: Shorten LNS seed and reserve a small Auto CP-SAT slice at the 5s budget.
+  mean-best=643.8 delta-vs-baseline=+5 mean-auto=643.8 auto-delta-vs-baseline=+5 mean-lns=n/a lns-delta-vs-baseline=n/a mean-auto-gap=0
+  auto-stage-mean=lns:4.406s cp-sat:0.995s recommendations=keep-auto:4
+  auto-safety=paired=4 delta-mean=+5 delta-median=0 delta-worst-decile=0 delta-worst=0 regressed=0 regression-rate=0.000 cpu-eff-ratio=1.008 wall-delta-mean=-0.048s
+  auto-variance=repeat=baseline-repeat paired=4 inside=3 outside=1 outside-neg=0 outside-pos=1 repeat-range=-5..0 candidate-range=0..+20 candidate-mean=+5 beyond-mean-abs=5 beyond-worst=0 beyond-best=+20
+  auto-replay-diagnostics=1 nonzero paired Auto rows
+    row=typed-footprint-pressure/budget:5s/seed:19 delta=+20 wall=-0.015s baseline=505 candidate=525 lns=baseline+0/candidate+20 cp-sat=baseline+0/candidate+0 seed=0.25vs1 reserve=0.1vsn/a improved-neighborhoods=baseline:not-captured candidate:not-captured reason=Candidate improved because LNS repaired +20 versus baseline +0; LNS seed 0.25 vs 1, CP-SAT reserve 0.1 vs n/a.
+  budget=5s cases=4 mean-best=643.8 delta-vs-baseline=+5 mean-auto=643.8 auto-delta-vs-baseline=+5 mean-lns=n/a lns-delta-vs-baseline=n/a mean-auto-gap=0 auto-safety=paired=4 delta-mean=+5 delta-median=0 delta-worst-decile=0 delta-worst=0 regressed=0 regression-rate=0.000 cpu-eff-ratio=1.008 wall-delta-mean=-0.048s recommendations=keep-auto:4
+- lns-repair-reserve-5s-guarded: Lengthen LNS repair and reserve a small Auto CP-SAT slice at the 5s budget.
+  mean-best=633.8 delta-vs-baseline=-5 mean-auto=633.8 auto-delta-vs-baseline=-5 mean-lns=n/a lns-delta-vs-baseline=n/a mean-auto-gap=0
+  auto-stage-mean=lns:4.438s cp-sat:0.879s recommendations=keep-auto:4
+  auto-safety=paired=4 delta-mean=-5 delta-median=-20 delta-worst-decile=-35 delta-worst=-35 regressed=2 regression-rate=0.500 cpu-eff-ratio=0.992 wall-delta-mean=-0.050s
+  auto-variance=repeat=baseline-repeat paired=4 inside=1 outside=3 outside-neg=2 outside-pos=1 repeat-range=-5..0 candidate-range=-35..+35 candidate-mean=-5 beyond-mean-abs=21.25 beyond-worst=-35 beyond-best=+35
+  auto-replay-diagnostics=3 nonzero paired Auto rows
+    row=expansion-comparison-replay/budget:5s/seed:37 delta=-35 wall=-0.191s baseline=780 candidate=745 lns=baseline+35/candidate+0 cp-sat=baseline+0/candidate+0 seed=1vs1 reserve=0.1vsn/a improved-neighborhoods=baseline:escalated#2+35 candidate:not-captured reason=Baseline LNS repaired +35 while candidate LNS repaired +0; LNS seed 1 vs 1, CP-SAT reserve 0.1 vs n/a. Candidate final incumbent no longer carries detailed LNS neighborhoods after a later stage handoff.
+    row=typed-footprint-pressure/budget:5s/seed:37 delta=-20 wall=0.256s baseline=525 candidate=505 lns=baseline+20/candidate+0 cp-sat=baseline+0/candidate+0 seed=1vs1 reserve=0.1vsn/a improved-neighborhoods=baseline:not-captured candidate:none reason=Baseline LNS repaired +20 while candidate LNS repaired +0; LNS seed 1 vs 1, CP-SAT reserve 0.1 vs n/a.
+    row=expansion-comparison-replay/budget:5s/seed:19 delta=+35 wall=-0.205s baseline=745 candidate=780 lns=baseline+0/candidate+35 cp-sat=baseline+0/candidate+0 seed=1vs1 reserve=0.1vsn/a improved-neighborhoods=baseline:not-captured candidate:escalated#1+35 reason=Candidate improved because LNS repaired +35 versus baseline +0; LNS seed 1 vs 1, CP-SAT reserve 0.1 vs n/a.
+  budget=5s cases=4 mean-best=633.8 delta-vs-baseline=-5 mean-auto=633.8 auto-delta-vs-baseline=-5 mean-lns=n/a lns-delta-vs-baseline=n/a mean-auto-gap=0 auto-safety=paired=4 delta-mean=-5 delta-median=-20 delta-worst-decile=-35 delta-worst=-35 regressed=2 regression-rate=0.500 cpu-eff-ratio=0.992 wall-delta-mean=-0.050s recommendations=keep-auto:4
+- repair-heavy-5s-guarded: Apply the combined guarded repair-heavy LNS allocation only at the 5s budget.
+  mean-best=646.3 delta-vs-baseline=+7.5 mean-auto=646.3 auto-delta-vs-baseline=+7.5 mean-lns=n/a lns-delta-vs-baseline=n/a mean-auto-gap=0
+  auto-stage-mean=lns:4.476s cp-sat:0.819s recommendations=keep-auto:4
+  auto-safety=paired=4 delta-mean=+7.5 delta-median=0 delta-worst-decile=-5 delta-worst=-5 regressed=1 regression-rate=0.250 cpu-eff-ratio=1.012 wall-delta-mean=-0.209s
+  auto-variance=repeat=baseline-repeat paired=4 inside=3 outside=1 outside-neg=0 outside-pos=1 repeat-range=-5..0 candidate-range=-5..+35 candidate-mean=+7.5 beyond-mean-abs=8.75 beyond-worst=0 beyond-best=+35
+  auto-replay-diagnostics=2 nonzero paired Auto rows
+    row=typed-footprint-pressure/budget:5s/seed:37 delta=-5 wall=-0.088s baseline=525 candidate=520 lns=baseline+20/candidate+15 cp-sat=baseline+0/candidate+0 seed=0.25vs1 reserve=0.1vsn/a improved-neighborhoods=baseline:not-captured candidate:not-captured reason=Baseline LNS repaired +20 while candidate LNS repaired +15; LNS seed 0.25 vs 1, CP-SAT reserve 0.1 vs n/a. Candidate final incumbent no longer carries detailed LNS neighborhoods after a later stage handoff.
+    row=expansion-comparison-replay/budget:5s/seed:19 delta=+35 wall=-0.309s baseline=745 candidate=780 lns=baseline+0/candidate+35 cp-sat=baseline+0/candidate+0 seed=0.25vs1 reserve=0.1vsn/a improved-neighborhoods=baseline:not-captured candidate:not-captured reason=Candidate improved because LNS repaired +35 versus baseline +0; LNS seed 0.25 vs 1, CP-SAT reserve 0.1 vs n/a.
+  budget=5s cases=4 mean-best=646.3 delta-vs-baseline=+7.5 mean-auto=646.3 auto-delta-vs-baseline=+7.5 mean-lns=n/a lns-delta-vs-baseline=n/a mean-auto-gap=0 auto-safety=paired=4 delta-mean=+7.5 delta-median=0 delta-worst-decile=-5 delta-worst=-5 regressed=1 regression-rate=0.250 cpu-eff-ratio=1.012 wall-delta-mean=-0.209s recommendations=keep-auto:4
+
+Policy scorecards:
+
+## baseline
+=== Cross-Mode Benchmark Scorecard ===
+Generated: 2026-05-07T07:27:43.645Z
+Cases: 2
+Modes: Auto
+Equal wall-clock budgets: 5s per mode
+Seeds: 19, 37
+
+- typed-footprint-pressure: Typed 2x2 variants share footprints, and a second service keeps the dynamic grouped scorer hot.
+  band=small split=development workflow=footprint-pressure budget=5s seed=19 best=505 winner=Auto grid=6x6
+  Auto: rank=1 score=505 delta=best win-vs-auto=baseline auto-delta=0 wall=5.851s cpu-budget=5s observed-cpu=0.125s pop/cpu-budget=101.000 roads=5 services=2 residentials=4
+    progress=current=505 best=505 stage=cp-sat reuse=none elapsed=5.851s since-improve=0.03s stop=wall-clock-cap gap=20
+    quality=first-feasible=0.185s first-improve=0.185s best=505@0.185s improvements=3 time-checkpoints=5.000s:505,30.000s:505,120.000s:505 quality-targets=50%:0.185s,90%:0.185s,100%:0.185s trace-events=18
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=117.0% unused=0.000s overrun=0.851s first-improve=0.185s best=0.185s after-best=5.666s improvements/s=0.513 auto-best-delta=0.000s
+    reason=CP-SAT FEASIBLE with population gap 20.
+    seed-policy=auto-greedy-seed-limit:5.000s auto-greedy-seed-wall:0.324s auto-greedy-seed-phases:8
+- typed-footprint-pressure: Typed 2x2 variants share footprints, and a second service keeps the dynamic grouped scorer hot.
+  band=small split=development workflow=footprint-pressure budget=5s seed=37 best=525 winner=Auto grid=6x6
+  Auto: rank=1 score=525 delta=best win-vs-auto=baseline auto-delta=0 wall=5.668s cpu-budget=5s observed-cpu=0.333s pop/cpu-budget=105.000 roads=6 services=2 residentials=4
+    progress=current=525 best=525 stage=cp-sat reuse=none elapsed=5.668s since-improve=0.254s stop=wall-clock-cap gap=0
+    quality=first-feasible=0.189s first-improve=0.189s best=525@4.667s improvements=4 time-checkpoints=5.000s:525,30.000s:525,120.000s:525 quality-targets=50%:0.189s,90%:0.189s,100%:4.667s trace-events=18
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=6 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=113.4% unused=0.000s overrun=0.668s first-improve=0.189s best=4.667s after-best=1.001s improvements/s=0.706 auto-best-delta=0.000s
+    reason=CP-SAT FEASIBLE with population gap 0.
+    seed-policy=auto-greedy-seed-limit:5.000s auto-greedy-seed-wall:0.328s auto-greedy-seed-phases:8
+- expansion-comparison-replay: Planner expansion-comparison replay with a saved pre-expansion layout as the incumbent.
+  band=small split=holdout workflow=expansion-comparison budget=5s seed=19 best=745 winner=Auto grid=6x6
+  Auto: rank=1 score=745 delta=best win-vs-auto=baseline auto-delta=0 wall=5.856s cpu-budget=5s observed-cpu=0.231s pop/cpu-budget=149.000 roads=3 services=2 residentials=4
+    progress=current=745 best=745 stage=cp-sat reuse=expansion-comparison-replay elapsed=5.856s since-improve=0.149s stop=wall-clock-cap gap=35
+    quality=first-feasible=0.240s first-improve=0.240s best=745@0.269s improvements=5 time-checkpoints=5.000s:745,30.000s:745,120.000s:745 quality-targets=50%:0.240s,90%:0.240s,100%:0.269s trace-events=18
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=3 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=117.1% unused=0.000s overrun=0.856s first-improve=0.240s best=0.269s after-best=5.587s improvements/s=0.854 auto-best-delta=0.000s
+    reason=CP-SAT FEASIBLE with population gap 35.
+    seed-policy=auto-greedy-seed-limit:5.000s auto-greedy-seed-wall:0.411s auto-greedy-seed-phases:8
+- expansion-comparison-replay: Planner expansion-comparison replay with a saved pre-expansion layout as the incumbent.
+  band=small split=holdout workflow=expansion-comparison budget=5s seed=37 best=780 winner=Auto grid=6x6
+  Auto: rank=1 score=780 delta=best win-vs-auto=baseline auto-delta=0 wall=5.880s cpu-budget=5s observed-cpu=1.001s pop/cpu-budget=156.000 roads=8 services=2 residentials=4
+    progress=current=780 best=780 stage=cp-sat reuse=expansion-comparison-replay elapsed=5.88s since-improve=0.239s stop=wall-clock-cap gap=0
+    quality=first-feasible=0.265s first-improve=0.265s best=780@0.762s improvements=7 time-checkpoints=5.000s:780,30.000s:780,120.000s:780 quality-targets=50%:0.265s,90%:0.265s,100%:0.762s trace-events=22
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=8 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=117.6% unused=0.000s overrun=0.880s first-improve=0.265s best=0.762s after-best=5.118s improvements/s=1.190 auto-best-delta=0.000s
+    reason=CP-SAT FEASIBLE with population gap 0.
+    seed-policy=lns-seed-limit:1.000s lns-seed-wall:0.002s lns-seed-phases:0 auto-greedy-seed-limit:5.000s auto-greedy-seed-wall:0.434s auto-greedy-seed-phases:8
+
+Mode summaries:
+- Auto: runs=4 mean=638.8 best=780 worst=505 seed-stddev=124.6 win-rate-vs-auto=n/a
+
+Budget policy signals:
+- typed-footprint-pressure budget=5s seed=19 recommendation=keep-auto auto=505 best=Auto:505 auto-gap=0 lns-vs-auto=n/a auto-lns=4.548s/+0 auto-cp-sat=0.976s/+0 reason=Auto matched the best score 505 at 5s. Auto LNS used 4.548s for +0 accepted population; Auto CP-SAT used 0.976s for +0 accepted population.
+- typed-footprint-pressure budget=5s seed=37 recommendation=keep-auto auto=525 best=Auto:525 auto-gap=0 lns-vs-auto=n/a auto-lns=4.339s/+20 auto-cp-sat=1.001s/+0 reason=Auto matched the best score 525 at 5s. Auto LNS used 4.339s for +20 accepted population; Auto CP-SAT used 1.001s for +0 accepted population.
+- expansion-comparison-replay budget=5s seed=19 recommendation=keep-auto auto=745 best=Auto:745 auto-gap=0 lns-vs-auto=n/a auto-lns=4.357s/+0 auto-cp-sat=1.085s/+0 reason=Auto matched the best score 745 at 5s. Auto LNS used 4.357s for +0 accepted population; Auto CP-SAT used 1.085s for +0 accepted population.
+- expansion-comparison-replay budget=5s seed=37 recommendation=keep-auto auto=780 best=Auto:780 auto-gap=0 lns-vs-auto=n/a auto-lns=4.484s/+35 auto-cp-sat=0.960s/+0 reason=Auto matched the best score 780 at 5s. Auto LNS used 4.484s for +35 accepted population; Auto CP-SAT used 0.960s for +0 accepted population.
+
+Portfolio efficiency signals:
+- No paired CP-SAT / CP-SAT portfolio runs.
+
+Problem-size summaries:
+- small Auto: mean=638.8 best=780 win-rate-vs-auto=n/a
+
+## baseline-repeat
+=== Cross-Mode Benchmark Scorecard ===
+Generated: 2026-05-07T07:28:05.570Z
+Cases: 2
+Modes: Auto
+Equal wall-clock budgets: 5s per mode
+Seeds: 19, 37
+
+- typed-footprint-pressure: Typed 2x2 variants share footprints, and a second service keeps the dynamic grouped scorer hot.
+  band=small split=development workflow=footprint-pressure budget=5s seed=19 best=505 winner=Auto grid=6x6
+  Auto: rank=1 score=505 delta=best win-vs-auto=baseline auto-delta=0 wall=5.922s cpu-budget=5s observed-cpu=0.221s pop/cpu-budget=101.000 roads=5 services=2 residentials=4
+    progress=current=505 best=505 stage=cp-sat reuse=none elapsed=5.922s since-improve=0.082s stop=wall-clock-cap gap=20
+    quality=first-feasible=0.199s first-improve=0.199s best=505@0.199s improvements=3 time-checkpoints=5.000s:505,30.000s:505,120.000s:505 quality-targets=50%:0.199s,90%:0.199s,100%:0.199s trace-events=18
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=118.4% unused=0.000s overrun=0.922s first-improve=0.199s best=0.199s after-best=5.723s improvements/s=0.507 auto-best-delta=0.000s
+    reason=CP-SAT FEASIBLE with population gap 20.
+    seed-policy=auto-greedy-seed-limit:5.000s auto-greedy-seed-wall:0.342s auto-greedy-seed-phases:8
+- typed-footprint-pressure: Typed 2x2 variants share footprints, and a second service keeps the dynamic grouped scorer hot.
+  band=small split=development workflow=footprint-pressure budget=5s seed=37 best=520 winner=Auto grid=6x6
+  Auto: rank=1 score=520 delta=best win-vs-auto=baseline auto-delta=0 wall=5.717s cpu-budget=5s observed-cpu=0.284s pop/cpu-budget=104.000 roads=5 services=2 residentials=4
+    progress=current=520 best=520 stage=cp-sat reuse=none elapsed=5.717s since-improve=0.188s stop=wall-clock-cap gap=5
+    quality=first-feasible=0.169s first-improve=0.169s best=520@4.716s improvements=4 time-checkpoints=5.000s:520,30.000s:520,120.000s:520 quality-targets=50%:0.169s,90%:0.169s,100%:4.716s trace-events=18
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=114.3% unused=0.000s overrun=0.717s first-improve=0.169s best=4.716s after-best=1.001s improvements/s=0.700 auto-best-delta=0.000s
+    reason=CP-SAT FEASIBLE with population gap 5.
+    seed-policy=auto-greedy-seed-limit:5.000s auto-greedy-seed-wall:0.312s auto-greedy-seed-phases:8
+- expansion-comparison-replay: Planner expansion-comparison replay with a saved pre-expansion layout as the incumbent.
+  band=small split=holdout workflow=expansion-comparison budget=5s seed=19 best=745 winner=Auto grid=6x6
+  Auto: rank=1 score=745 delta=best win-vs-auto=baseline auto-delta=0 wall=5.074s cpu-budget=5s observed-cpu=n/a pop/cpu-budget=149.000 roads=3 services=2 residentials=4
+    progress=current=745 best=745 stage=lns reuse=expansion-comparison-replay elapsed=5.074s since-improve=n/a stop=wall-clock-cap gap=n/a
+    quality=first-feasible=0.199s first-improve=0.199s best=745@0.231s improvements=4 time-checkpoints=5.000s:745,30.000s:745,120.000s:745 quality-targets=50%:0.199s,90%:0.199s,100%:0.231s trace-events=18
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=3 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=early-plateau use=101.5% unused=0.000s overrun=0.074s first-improve=0.199s best=0.231s after-best=4.843s improvements/s=0.788 auto-best-delta=0.000s
+    reason=Auto greedy seed produced population 745.
+    seed-policy=lns-seed-limit:1.000s lns-seed-wall:0.002s lns-seed-phases:0 auto-greedy-seed-limit:5.000s auto-greedy-seed-wall:0.364s auto-greedy-seed-phases:8
+- expansion-comparison-replay: Planner expansion-comparison replay with a saved pre-expansion layout as the incumbent.
+  band=small split=holdout workflow=expansion-comparison budget=5s seed=37 best=780 winner=Auto grid=6x6
+  Auto: rank=1 score=780 delta=best win-vs-auto=baseline auto-delta=0 wall=5.200s cpu-budget=5s observed-cpu=0.601s pop/cpu-budget=156.000 roads=8 services=2 residentials=4
+    progress=current=780 best=780 stage=lns reuse=expansion-comparison-replay elapsed=5.2s since-improve=0.097s stop=wall-clock-cap gap=0
+    quality=first-feasible=0.240s first-improve=0.240s best=780@0.503s improvements=7 time-checkpoints=5.000s:780,30.000s:780,120.000s:780 quality-targets=50%:0.240s,90%:0.240s,100%:0.503s trace-events=20
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=8 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=early-plateau use=104.0% unused=0.000s overrun=0.200s first-improve=0.240s best=0.503s after-best=4.697s improvements/s=1.346 auto-best-delta=0.000s
+    reason=CP-SAT FEASIBLE with population gap 0.
+    seed-policy=lns-seed-limit:1.000s lns-seed-wall:0.002s lns-seed-phases:0 auto-greedy-seed-limit:5.000s auto-greedy-seed-wall:0.442s auto-greedy-seed-phases:8
+
+Mode summaries:
+- Auto: runs=4 mean=637.5 best=780 worst=505 seed-stddev=125.7 win-rate-vs-auto=n/a
+
+Budget policy signals:
+- typed-footprint-pressure budget=5s seed=19 recommendation=keep-auto auto=505 best=Auto:505 auto-gap=0 lns-vs-auto=n/a auto-lns=4.437s/+0 auto-cp-sat=1.143s/+0 reason=Auto matched the best score 505 at 5s. Auto LNS used 4.437s for +0 accepted population; Auto CP-SAT used 1.143s for +0 accepted population.
+- typed-footprint-pressure budget=5s seed=37 recommendation=keep-auto auto=520 best=Auto:520 auto-gap=0 lns-vs-auto=n/a auto-lns=4.404s/+15 auto-cp-sat=1.001s/+0 reason=Auto matched the best score 520 at 5s. Auto LNS used 4.404s for +15 accepted population; Auto CP-SAT used 1.001s for +0 accepted population.
+- expansion-comparison-replay budget=5s seed=19 recommendation=keep-auto auto=745 best=Auto:745 auto-gap=0 lns-vs-auto=n/a auto-lns=4.710s/+0 auto-cp-sat=n/a/+n/a reason=Auto matched the best score 745 at 5s. Auto LNS used 4.710s for +0 accepted population.
+- expansion-comparison-replay budget=5s seed=37 recommendation=keep-auto auto=780 best=Auto:780 auto-gap=0 lns-vs-auto=n/a auto-lns=4.756s/+35 auto-cp-sat=n/a/+n/a reason=Auto matched the best score 780 at 5s. Auto LNS used 4.756s for +35 accepted population.
+
+Portfolio efficiency signals:
+- No paired CP-SAT / CP-SAT portfolio runs.
+
+Problem-size summaries:
+- small Auto: mean=637.5 best=780 win-rate-vs-auto=n/a
+
+## lns-seed-repair-5s-guarded
+=== Cross-Mode Benchmark Scorecard ===
+Generated: 2026-05-07T07:28:28.708Z
+Cases: 2
+Modes: Auto
+Equal wall-clock budgets: 5s per mode
+Seeds: 19, 37
+
+- typed-footprint-pressure: Typed 2x2 variants share footprints, and a second service keeps the dynamic grouped scorer hot.
+  band=small split=development workflow=footprint-pressure budget=5s seed=19 best=505 winner=Auto grid=6x6
+  Auto: rank=1 score=505 delta=best win-vs-auto=baseline auto-delta=0 wall=5.639s cpu-budget=5s observed-cpu=n/a pop/cpu-budget=101.000 roads=5 services=2 residentials=4
+    progress=current=505 best=505 stage=cp-sat reuse=hint elapsed=5.639s since-improve=n/a stop=wall-clock-cap gap=n/a
+    quality=first-feasible=0.183s first-improve=0.183s best=505@0.183s improvements=2 time-checkpoints=5.000s:505,30.000s:505,120.000s:505 quality-targets=50%:0.183s,90%:0.183s,100%:0.183s trace-events=20
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=112.8% unused=0.000s overrun=0.639s first-improve=0.183s best=0.183s after-best=5.456s improvements/s=0.355 auto-best-delta=0.000s
+    reason=Auto greedy seed produced population 505.
+    seed-policy=lns-seed-limit:0.250s lns-seed-wall:0.005s lns-seed-phases:0 auto-greedy-seed-limit:5.000s auto-greedy-seed-wall:0.340s auto-greedy-seed-phases:8
+- typed-footprint-pressure: Typed 2x2 variants share footprints, and a second service keeps the dynamic grouped scorer hot.
+  band=small split=development workflow=footprint-pressure budget=5s seed=37 best=520 winner=Auto grid=6x6
+  Auto: rank=1 score=520 delta=best win-vs-auto=baseline auto-delta=0 wall=5.741s cpu-budget=5s observed-cpu=0.244s pop/cpu-budget=104.000 roads=5 services=2 residentials=4
+    progress=current=520 best=520 stage=cp-sat reuse=none elapsed=5.741s since-improve=0.158s stop=wall-clock-cap gap=5
+    quality=first-feasible=0.168s first-improve=0.168s best=520@4.756s improvements=4 time-checkpoints=5.000s:520,30.000s:520,120.000s:520 quality-targets=50%:0.168s,90%:0.168s,100%:4.756s trace-events=18
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=114.8% unused=0.000s overrun=0.741s first-improve=0.168s best=4.756s after-best=0.985s improvements/s=0.697 auto-best-delta=0.000s
+    reason=CP-SAT FEASIBLE with population gap 5.
+    seed-policy=auto-greedy-seed-limit:5.000s auto-greedy-seed-wall:0.328s auto-greedy-seed-phases:8
+- expansion-comparison-replay: Planner expansion-comparison replay with a saved pre-expansion layout as the incumbent.
+  band=small split=holdout workflow=expansion-comparison budget=5s seed=19 best=780 winner=Auto grid=6x6
+  Auto: rank=1 score=780 delta=best win-vs-auto=baseline auto-delta=0 wall=5.936s cpu-budget=5s observed-cpu=0.119s pop/cpu-budget=156.000 roads=7 services=2 residentials=4
+    progress=current=780 best=780 stage=cp-sat reuse=expansion-comparison-replay elapsed=5.936s since-improve=0.036s stop=wall-clock-cap gap=0
+    quality=first-feasible=0.193s first-improve=0.193s best=780@4.881s improvements=6 time-checkpoints=5.000s:780,30.000s:780,120.000s:780 quality-targets=50%:0.193s,90%:0.193s,100%:4.881s trace-events=18
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=7 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=118.7% unused=0.000s overrun=0.936s first-improve=0.193s best=4.881s after-best=1.055s improvements/s=1.011 auto-best-delta=0.000s
+    reason=CP-SAT FEASIBLE with population gap 0.
+    seed-policy=auto-greedy-seed-limit:5.000s auto-greedy-seed-wall:0.360s auto-greedy-seed-phases:8
+- expansion-comparison-replay: Planner expansion-comparison replay with a saved pre-expansion layout as the incumbent.
+  band=small split=holdout workflow=expansion-comparison budget=5s seed=37 best=745 winner=Auto grid=6x6
+  Auto: rank=1 score=745 delta=best win-vs-auto=baseline auto-delta=0 wall=5.818s cpu-budget=5s observed-cpu=0.168s pop/cpu-budget=149.000 roads=3 services=2 residentials=4
+    progress=current=745 best=745 stage=cp-sat reuse=expansion-comparison-replay elapsed=5.818s since-improve=0.086s stop=wall-clock-cap gap=35
+    quality=first-feasible=0.196s first-improve=0.196s best=745@0.229s improvements=5 time-checkpoints=5.000s:745,30.000s:745,120.000s:745 quality-targets=50%:0.196s,90%:0.196s,100%:0.229s trace-events=18
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=3 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=116.4% unused=0.000s overrun=0.818s first-improve=0.196s best=0.229s after-best=5.589s improvements/s=0.859 auto-best-delta=0.000s
+    reason=CP-SAT FEASIBLE with population gap 35.
+    seed-policy=auto-greedy-seed-limit:5.000s auto-greedy-seed-wall:0.338s auto-greedy-seed-phases:8
+
+Mode summaries:
+- Auto: runs=4 mean=637.5 best=780 worst=505 seed-stddev=125.7 win-rate-vs-auto=n/a
+
+Budget policy signals:
+- typed-footprint-pressure budget=5s seed=19 recommendation=keep-auto auto=505 best=Auto:505 auto-gap=0 lns-vs-auto=n/a auto-lns=4.579s/+0 auto-cp-sat=0.720s/+0 reason=Auto matched the best score 505 at 5s. Auto LNS used 4.579s for +0 accepted population; Auto CP-SAT used 0.720s for +0 accepted population.
+- typed-footprint-pressure budget=5s seed=37 recommendation=keep-auto auto=520 best=Auto:520 auto-gap=0 lns-vs-auto=n/a auto-lns=4.428s/+15 auto-cp-sat=0.985s/+0 reason=Auto matched the best score 520 at 5s. Auto LNS used 4.428s for +15 accepted population; Auto CP-SAT used 0.985s for +0 accepted population.
+- expansion-comparison-replay budget=5s seed=19 recommendation=keep-auto auto=780 best=Auto:780 auto-gap=0 lns-vs-auto=n/a auto-lns=4.521s/+35 auto-cp-sat=1.053s/+0 reason=Auto matched the best score 780 at 5s. Auto LNS used 4.521s for +35 accepted population; Auto CP-SAT used 1.053s for +0 accepted population.
+- expansion-comparison-replay budget=5s seed=37 recommendation=keep-auto auto=745 best=Auto:745 auto-gap=0 lns-vs-auto=n/a auto-lns=4.494s/+0 auto-cp-sat=0.986s/+0 reason=Auto matched the best score 745 at 5s. Auto LNS used 4.494s for +0 accepted population; Auto CP-SAT used 0.986s for +0 accepted population.
+
+Portfolio efficiency signals:
+- No paired CP-SAT / CP-SAT portfolio runs.
+
+Problem-size summaries:
+- small Auto: mean=637.5 best=780 win-rate-vs-auto=n/a
+
+## lns-seed-reserve-5s-guarded
+=== Cross-Mode Benchmark Scorecard ===
+Generated: 2026-05-07T07:28:51.776Z
+Cases: 2
+Modes: Auto
+Equal wall-clock budgets: 5s per mode
+Seeds: 19, 37
+
+- typed-footprint-pressure: Typed 2x2 variants share footprints, and a second service keeps the dynamic grouped scorer hot.
+  band=small split=development workflow=footprint-pressure budget=5s seed=19 best=525 winner=Auto grid=6x6
+  Auto: rank=1 score=525 delta=best win-vs-auto=baseline auto-delta=0 wall=5.836s cpu-budget=5s observed-cpu=0.156s pop/cpu-budget=105.000 roads=9 services=2 residentials=4
+    progress=current=525 best=525 stage=cp-sat reuse=none elapsed=5.836s since-improve=0.058s stop=wall-clock-cap gap=0
+    quality=first-feasible=0.236s first-improve=0.236s best=525@4.845s improvements=4 time-checkpoints=5.000s:525,30.000s:525,120.000s:525 quality-targets=50%:0.236s,90%:0.236s,100%:4.845s trace-events=18
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=9 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=116.7% unused=0.000s overrun=0.836s first-improve=0.236s best=4.845s after-best=0.991s improvements/s=0.685 auto-best-delta=0.000s
+    reason=CP-SAT FEASIBLE with population gap 0.
+    seed-policy=auto-greedy-seed-limit:5.000s auto-greedy-seed-wall:0.382s auto-greedy-seed-phases:8
+- typed-footprint-pressure: Typed 2x2 variants share footprints, and a second service keeps the dynamic grouped scorer hot.
+  band=small split=development workflow=footprint-pressure budget=5s seed=37 best=525 winner=Auto grid=6x6
+  Auto: rank=1 score=525 delta=best win-vs-auto=baseline auto-delta=0 wall=5.728s cpu-budget=5s observed-cpu=0.316s pop/cpu-budget=105.000 roads=4 services=2 residentials=4
+    progress=current=525 best=525 stage=cp-sat reuse=none elapsed=5.728s since-improve=0.233s stop=wall-clock-cap gap=0
+    quality=first-feasible=0.172s first-improve=0.172s best=525@4.684s improvements=4 time-checkpoints=5.000s:525,30.000s:525,120.000s:525 quality-targets=50%:0.172s,90%:0.172s,100%:4.684s trace-events=18
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=4 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=114.6% unused=0.000s overrun=0.728s first-improve=0.172s best=4.684s after-best=1.044s improvements/s=0.698 auto-best-delta=0.000s
+    reason=CP-SAT FEASIBLE with population gap 0.
+    seed-policy=auto-greedy-seed-limit:5.000s auto-greedy-seed-wall:0.298s auto-greedy-seed-phases:8
+- expansion-comparison-replay: Planner expansion-comparison replay with a saved pre-expansion layout as the incumbent.
+  band=small split=holdout workflow=expansion-comparison budget=5s seed=19 best=745 winner=Auto grid=6x6
+  Auto: rank=1 score=745 delta=best win-vs-auto=baseline auto-delta=0 wall=5.739s cpu-budget=5s observed-cpu=0.297s pop/cpu-budget=149.000 roads=3 services=2 residentials=4
+    progress=current=745 best=745 stage=cp-sat reuse=expansion-comparison-replay elapsed=5.739s since-improve=0.221s stop=wall-clock-cap gap=35
+    quality=first-feasible=0.174s first-improve=0.174s best=745@0.202s improvements=5 time-checkpoints=5.000s:745,30.000s:745,120.000s:745 quality-targets=50%:0.174s,90%:0.174s,100%:0.202s trace-events=18
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=3 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=114.8% unused=0.000s overrun=0.739s first-improve=0.174s best=0.202s after-best=5.537s improvements/s=0.871 auto-best-delta=0.000s
+    reason=CP-SAT FEASIBLE with population gap 35.
+    seed-policy=auto-greedy-seed-limit:5.000s auto-greedy-seed-wall:0.317s auto-greedy-seed-phases:8
+- expansion-comparison-replay: Planner expansion-comparison replay with a saved pre-expansion layout as the incumbent.
+  band=small split=holdout workflow=expansion-comparison budget=5s seed=37 best=780 winner=Auto grid=6x6
+  Auto: rank=1 score=780 delta=best win-vs-auto=baseline auto-delta=0 wall=5.761s cpu-budget=5s observed-cpu=0.153s pop/cpu-budget=156.000 roads=8 services=2 residentials=4
+    progress=current=780 best=780 stage=cp-sat reuse=expansion-comparison-replay elapsed=5.761s since-improve=0.074s stop=wall-clock-cap gap=0
+    quality=first-feasible=0.210s first-improve=0.210s best=780@4.845s improvements=6 time-checkpoints=5.000s:780,30.000s:780,120.000s:780 quality-targets=50%:0.210s,90%:0.210s,100%:4.845s trace-events=18
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=8 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=115.2% unused=0.000s overrun=0.761s first-improve=0.210s best=4.845s after-best=0.916s improvements/s=1.041 auto-best-delta=0.000s
+    reason=CP-SAT FEASIBLE with population gap 0.
+    seed-policy=auto-greedy-seed-limit:4.999s auto-greedy-seed-wall:0.455s auto-greedy-seed-phases:8
+
+Mode summaries:
+- Auto: runs=4 mean=643.8 best=780 worst=525 seed-stddev=119.4 win-rate-vs-auto=n/a
+
+Budget policy signals:
+- typed-footprint-pressure budget=5s seed=19 recommendation=keep-auto auto=525 best=Auto:525 auto-gap=0 lns-vs-auto=n/a auto-lns=4.463s/+20 auto-cp-sat=0.991s/+0 reason=Auto matched the best score 525 at 5s. Auto LNS used 4.463s for +20 accepted population; Auto CP-SAT used 0.991s for +0 accepted population.
+- typed-footprint-pressure budget=5s seed=37 recommendation=keep-auto auto=525 best=Auto:525 auto-gap=0 lns-vs-auto=n/a auto-lns=4.386s/+20 auto-cp-sat=1.043s/+0 reason=Auto matched the best score 525 at 5s. Auto LNS used 4.386s for +20 accepted population; Auto CP-SAT used 1.043s for +0 accepted population.
+- expansion-comparison-replay budget=5s seed=19 recommendation=keep-auto auto=745 best=Auto:745 auto-gap=0 lns-vs-auto=n/a auto-lns=4.386s/+0 auto-cp-sat=1.035s/+0 reason=Auto matched the best score 745 at 5s. Auto LNS used 4.386s for +0 accepted population; Auto CP-SAT used 1.035s for +0 accepted population.
+- expansion-comparison-replay budget=5s seed=37 recommendation=keep-auto auto=780 best=Auto:780 auto-gap=0 lns-vs-auto=n/a auto-lns=4.389s/+35 auto-cp-sat=0.911s/+0 reason=Auto matched the best score 780 at 5s. Auto LNS used 4.389s for +35 accepted population; Auto CP-SAT used 0.911s for +0 accepted population.
+
+Portfolio efficiency signals:
+- No paired CP-SAT / CP-SAT portfolio runs.
+
+Problem-size summaries:
+- small Auto: mean=643.8 best=780 win-rate-vs-auto=n/a
+
+## lns-repair-reserve-5s-guarded
+=== Cross-Mode Benchmark Scorecard ===
+Generated: 2026-05-07T07:29:14.838Z
+Cases: 2
+Modes: Auto
+Equal wall-clock budgets: 5s per mode
+Seeds: 19, 37
+
+- typed-footprint-pressure: Typed 2x2 variants share footprints, and a second service keeps the dynamic grouped scorer hot.
+  band=small split=development workflow=footprint-pressure budget=5s seed=19 best=505 winner=Auto grid=6x6
+  Auto: rank=1 score=505 delta=best win-vs-auto=baseline auto-delta=0 wall=5.792s cpu-budget=5s observed-cpu=0.218s pop/cpu-budget=101.000 roads=5 services=2 residentials=4
+    progress=current=505 best=505 stage=cp-sat reuse=none elapsed=5.792s since-improve=0.116s stop=wall-clock-cap gap=20
+    quality=first-feasible=0.257s first-improve=0.257s best=505@0.257s improvements=3 time-checkpoints=5.000s:505,30.000s:505,120.000s:505 quality-targets=50%:0.257s,90%:0.257s,100%:0.257s trace-events=18
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=115.8% unused=0.000s overrun=0.792s first-improve=0.257s best=0.257s after-best=5.535s improvements/s=0.518 auto-best-delta=0.000s
+    reason=CP-SAT FEASIBLE with population gap 20.
+    seed-policy=auto-greedy-seed-limit:5.000s auto-greedy-seed-wall:0.422s auto-greedy-seed-phases:8
+- typed-footprint-pressure: Typed 2x2 variants share footprints, and a second service keeps the dynamic grouped scorer hot.
+  band=small split=development workflow=footprint-pressure budget=5s seed=37 best=505 winner=Auto grid=6x6
+  Auto: rank=1 score=505 delta=best win-vs-auto=baseline auto-delta=0 wall=5.925s cpu-budget=5s observed-cpu=n/a pop/cpu-budget=101.000 roads=5 services=2 residentials=4
+    progress=current=505 best=505 stage=cp-sat reuse=hint elapsed=5.925s since-improve=n/a stop=wall-clock-cap gap=n/a
+    quality=first-feasible=0.216s first-improve=0.216s best=505@0.216s improvements=2 time-checkpoints=5.000s:505,30.000s:505,120.000s:505 quality-targets=50%:0.216s,90%:0.216s,100%:0.216s trace-events=20
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=118.5% unused=0.000s overrun=0.925s first-improve=0.216s best=0.216s after-best=5.709s improvements/s=0.338 auto-best-delta=0.000s
+    reason=Auto greedy seed produced population 505.
+    seed-policy=lns-seed-limit:1.000s lns-seed-wall:0.007s lns-seed-phases:0 auto-greedy-seed-limit:5.000s auto-greedy-seed-wall:0.367s auto-greedy-seed-phases:8
+- expansion-comparison-replay: Planner expansion-comparison replay with a saved pre-expansion layout as the incumbent.
+  band=small split=holdout workflow=expansion-comparison budget=5s seed=19 best=780 winner=Auto grid=6x6
+  Auto: rank=1 score=780 delta=best win-vs-auto=baseline auto-delta=0 wall=5.651s cpu-budget=5s observed-cpu=1.501s pop/cpu-budget=156.000 roads=11 services=2 residentials=4
+    progress=current=780 best=780 stage=cp-sat reuse=expansion-comparison-replay elapsed=5.651s since-improve=0.152s stop=wall-clock-cap gap=0
+    quality=first-feasible=0.317s first-improve=0.317s best=780@1.349s improvements=7 time-checkpoints=5.000s:780,30.000s:780,120.000s:780 quality-targets=50%:0.317s,90%:0.317s,100%:1.349s trace-events=21
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=11 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=113.0% unused=0.000s overrun=0.651s first-improve=0.317s best=1.349s after-best=4.302s improvements/s=1.239 auto-best-delta=0.000s
+    reason=CP-SAT FEASIBLE with population gap 0.
+    seed-policy=lns-seed-limit:1.000s lns-seed-wall:0.003s lns-seed-phases:0 auto-greedy-seed-limit:5.000s auto-greedy-seed-wall:0.543s auto-greedy-seed-phases:8
+- expansion-comparison-replay: Planner expansion-comparison replay with a saved pre-expansion layout as the incumbent.
+  band=small split=holdout workflow=expansion-comparison budget=5s seed=37 best=745 winner=Auto grid=6x6
+  Auto: rank=1 score=745 delta=best win-vs-auto=baseline auto-delta=0 wall=5.690s cpu-budget=5s observed-cpu=0.077s pop/cpu-budget=149.000 roads=3 services=2 residentials=4
+    progress=current=745 best=745 stage=cp-sat reuse=expansion-comparison-replay elapsed=5.69s since-improve=0.002s stop=wall-clock-cap gap=35
+    quality=first-feasible=0.225s first-improve=0.225s best=745@0.258s improvements=5 time-checkpoints=5.000s:745,30.000s:745,120.000s:745 quality-targets=50%:0.225s,90%:0.225s,100%:0.258s trace-events=18
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=3 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=113.8% unused=0.000s overrun=0.690s first-improve=0.225s best=0.258s after-best=5.432s improvements/s=0.879 auto-best-delta=0.000s
+    reason=CP-SAT FEASIBLE with population gap 35.
+    seed-policy=auto-greedy-seed-limit:5.000s auto-greedy-seed-wall:0.448s auto-greedy-seed-phases:8
+
+Mode summaries:
+- Auto: runs=4 mean=633.8 best=780 worst=505 seed-stddev=129.3 win-rate-vs-auto=n/a
+
+Budget policy signals:
+- typed-footprint-pressure budget=5s seed=19 recommendation=keep-auto auto=505 best=Auto:505 auto-gap=0 lns-vs-auto=n/a auto-lns=4.360s/+0 auto-cp-sat=1.009s/+0 reason=Auto matched the best score 505 at 5s. Auto LNS used 4.360s for +0 accepted population; Auto CP-SAT used 1.009s for +0 accepted population.
+- typed-footprint-pressure budget=5s seed=37 recommendation=keep-auto auto=505 best=Auto:505 auto-gap=0 lns-vs-auto=n/a auto-lns=4.526s/+0 auto-cp-sat=1.029s/+0 reason=Auto matched the best score 505 at 5s. Auto LNS used 4.526s for +0 accepted population; Auto CP-SAT used 1.029s for +0 accepted population.
+- expansion-comparison-replay budget=5s seed=19 recommendation=keep-auto auto=780 best=Auto:780 auto-gap=0 lns-vs-auto=n/a auto-lns=4.392s/+35 auto-cp-sat=0.714s/+0 reason=Auto matched the best score 780 at 5s. Auto LNS used 4.392s for +35 accepted population; Auto CP-SAT used 0.714s for +0 accepted population.
+- expansion-comparison-replay budget=5s seed=37 recommendation=keep-auto auto=745 best=Auto:745 auto-gap=0 lns-vs-auto=n/a auto-lns=4.475s/+0 auto-cp-sat=0.766s/+0 reason=Auto matched the best score 745 at 5s. Auto LNS used 4.475s for +0 accepted population; Auto CP-SAT used 0.766s for +0 accepted population.
+
+Portfolio efficiency signals:
+- No paired CP-SAT / CP-SAT portfolio runs.
+
+Problem-size summaries:
+- small Auto: mean=633.8 best=780 win-rate-vs-auto=n/a
+
+## repair-heavy-5s-guarded
+=== Cross-Mode Benchmark Scorecard ===
+Generated: 2026-05-07T07:29:37.261Z
+Cases: 2
+Modes: Auto
+Equal wall-clock budgets: 5s per mode
+Seeds: 19, 37
+
+- typed-footprint-pressure: Typed 2x2 variants share footprints, and a second service keeps the dynamic grouped scorer hot.
+  band=small split=development workflow=footprint-pressure budget=5s seed=19 best=505 winner=Auto grid=6x6
+  Auto: rank=1 score=505 delta=best win-vs-auto=baseline auto-delta=0 wall=5.728s cpu-budget=5s observed-cpu=n/a pop/cpu-budget=101.000 roads=5 services=2 residentials=4
+    progress=current=505 best=505 stage=cp-sat reuse=hint elapsed=5.728s since-improve=n/a stop=wall-clock-cap gap=n/a
+    quality=first-feasible=0.191s first-improve=0.191s best=505@0.191s improvements=2 time-checkpoints=5.000s:505,30.000s:505,120.000s:505 quality-targets=50%:0.191s,90%:0.191s,100%:0.191s trace-events=20
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=114.6% unused=0.000s overrun=0.728s first-improve=0.191s best=0.191s after-best=5.537s improvements/s=0.349 auto-best-delta=0.000s
+    reason=Auto greedy seed produced population 505.
+    seed-policy=lns-seed-limit:0.250s lns-seed-wall:0.002s lns-seed-phases:0 auto-greedy-seed-limit:5.000s auto-greedy-seed-wall:0.317s auto-greedy-seed-phases:8
+- typed-footprint-pressure: Typed 2x2 variants share footprints, and a second service keeps the dynamic grouped scorer hot.
+  band=small split=development workflow=footprint-pressure budget=5s seed=37 best=520 winner=Auto grid=6x6
+  Auto: rank=1 score=520 delta=best win-vs-auto=baseline auto-delta=0 wall=5.581s cpu-budget=5s observed-cpu=0.238s pop/cpu-budget=104.000 roads=5 services=2 residentials=4
+    progress=current=520 best=520 stage=cp-sat reuse=none elapsed=5.581s since-improve=0.159s stop=wall-clock-cap gap=5
+    quality=first-feasible=0.163s first-improve=0.163s best=520@4.762s improvements=4 time-checkpoints=5.000s:520,30.000s:520,120.000s:520 quality-targets=50%:0.163s,90%:0.163s,100%:4.762s trace-events=18
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=111.6% unused=0.000s overrun=0.581s first-improve=0.163s best=4.762s after-best=0.819s improvements/s=0.717 auto-best-delta=0.000s
+    reason=CP-SAT FEASIBLE with population gap 5.
+    seed-policy=auto-greedy-seed-limit:5.000s auto-greedy-seed-wall:0.293s auto-greedy-seed-phases:8
+- expansion-comparison-replay: Planner expansion-comparison replay with a saved pre-expansion layout as the incumbent.
+  band=small split=holdout workflow=expansion-comparison budget=5s seed=19 best=780 winner=Auto grid=6x6
+  Auto: rank=1 score=780 delta=best win-vs-auto=baseline auto-delta=0 wall=5.547s cpu-budget=5s observed-cpu=0.307s pop/cpu-budget=156.000 roads=6 services=2 residentials=4
+    progress=current=780 best=780 stage=cp-sat reuse=expansion-comparison-replay elapsed=5.547s since-improve=0.01s stop=wall-clock-cap gap=0
+    quality=first-feasible=0.171s first-improve=0.171s best=780@4.693s improvements=6 time-checkpoints=5.000s:780,30.000s:780,120.000s:780 quality-targets=50%:0.171s,90%:0.171s,100%:4.693s trace-events=18
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=6 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=110.9% unused=0.000s overrun=0.547s first-improve=0.171s best=4.693s after-best=0.854s improvements/s=1.082 auto-best-delta=0.000s
+    reason=CP-SAT FEASIBLE with population gap 0.
+    seed-policy=auto-greedy-seed-limit:5.000s auto-greedy-seed-wall:0.343s auto-greedy-seed-phases:8
+- expansion-comparison-replay: Planner expansion-comparison replay with a saved pre-expansion layout as the incumbent.
+  band=small split=holdout workflow=expansion-comparison budget=5s seed=37 best=780 winner=Auto grid=6x6
+  Auto: rank=1 score=780 delta=best win-vs-auto=baseline auto-delta=0 wall=5.563s cpu-budget=5s observed-cpu=0.285s pop/cpu-budget=156.000 roads=10 services=2 residentials=4
+    progress=current=780 best=780 stage=cp-sat reuse=expansion-comparison-replay elapsed=5.563s since-improve=0.206s stop=wall-clock-cap gap=0
+    quality=first-feasible=0.161s first-improve=0.161s best=780@4.715s improvements=6 time-checkpoints=5.000s:780,30.000s:780,120.000s:780 quality-targets=50%:0.161s,90%:0.161s,100%:4.715s trace-events=18
+    road-semantics=anchor-connected anchor-roads=2 anchor-connected=10 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=111.3% unused=0.000s overrun=0.563s first-improve=0.161s best=4.715s after-best=0.848s improvements/s=1.079 auto-best-delta=0.000s
+    reason=CP-SAT FEASIBLE with population gap 0.
+    seed-policy=auto-greedy-seed-limit:5.000s auto-greedy-seed-wall:0.287s auto-greedy-seed-phases:8
+
+Mode summaries:
+- Auto: runs=4 mean=646.3 best=780 worst=505 seed-stddev=133.9 win-rate-vs-auto=n/a
+
+Budget policy signals:
+- typed-footprint-pressure budget=5s seed=19 recommendation=keep-auto auto=505 best=Auto:505 auto-gap=0 lns-vs-auto=n/a auto-lns=4.656s/+0 auto-cp-sat=0.755s/+0 reason=Auto matched the best score 505 at 5s. Auto LNS used 4.656s for +0 accepted population; Auto CP-SAT used 0.755s for +0 accepted population.
+- typed-footprint-pressure budget=5s seed=37 recommendation=keep-auto auto=520 best=Auto:520 auto-gap=0 lns-vs-auto=n/a auto-lns=4.469s/+15 auto-cp-sat=0.818s/+0 reason=Auto matched the best score 520 at 5s. Auto LNS used 4.469s for +15 accepted population; Auto CP-SAT used 0.818s for +0 accepted population.
+- expansion-comparison-replay budget=5s seed=19 recommendation=keep-auto auto=780 best=Auto:780 auto-gap=0 lns-vs-auto=n/a auto-lns=4.350s/+35 auto-cp-sat=0.853s/+0 reason=Auto matched the best score 780 at 5s. Auto LNS used 4.350s for +35 accepted population; Auto CP-SAT used 0.853s for +0 accepted population.
+- expansion-comparison-replay budget=5s seed=37 recommendation=keep-auto auto=780 best=Auto:780 auto-gap=0 lns-vs-auto=n/a auto-lns=4.428s/+35 auto-cp-sat=0.848s/+0 reason=Auto matched the best score 780 at 5s. Auto LNS used 4.428s for +35 accepted population; Auto CP-SAT used 0.848s for +0 accepted population.
+
+Portfolio efficiency signals:
+- No paired CP-SAT / CP-SAT portfolio runs.
+
+Problem-size summaries:
+- small Auto: mean=646.3 best=780 win-rate-vs-auto=n/a

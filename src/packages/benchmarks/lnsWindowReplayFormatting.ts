@@ -1,4 +1,8 @@
 import { formatBenchmarkSignedNumber as formatSigned } from "./benchmarkOptions.js";
+import {
+  formatLnsWindowReplayRepeatabilitySummary,
+  summarizeLnsWindowReplayRepeatability
+} from "./lnsWindowReplayRepeatability.js";
 
 import type { CpSatNeighborhoodWindow } from "../core/index.js";
 import type { LnsWindowReplaySuiteResult } from "./lnsWindowReplayTypes.js";
@@ -40,6 +44,9 @@ export function formatLnsWindowReplayLabels(result: LnsWindowReplaySuiteResult):
   lines.push(`CP-SAT workers: ${result.cpSatNumWorkers}`);
   lines.push(`CP-SAT fingerprints: ${result.cpSatModelFingerprints.join(", ") || "none"}`);
   lines.push(`Pressure families: ${result.pressureFamilies.join(", ")}`);
+  if (result.rollForwardLabelCount > 0) {
+    lines.push(formatLnsWindowReplayRepeatabilitySummary(summarizeLnsWindowReplayRepeatability(result)));
+  }
   for (const benchmarkCase of result.cases) {
     const seedLabel = benchmarkCase.seed === null ? "case-default" : benchmarkCase.seed;
     const onlineTrace =

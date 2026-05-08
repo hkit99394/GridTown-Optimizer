@@ -10,16 +10,22 @@ import {
   inferLnsWindowRankerReplaySeedHintKind,
   runLnsWindowRankerBaselineExperiment,
   normalizeLnsWindowRankerLabelTarget,
+  normalizeLnsWindowRankerFeatureIdenticalRepeatabilityConflictExclusion,
   normalizeLnsWindowRankerWeakSeedAllowance,
   type LnsWindowRankerBaselineExperimentResult,
   type LnsWindowRankerLabelTarget,
   type LnsWindowRankerMetricSummary
 } from "./lnsWindowRankerBaselines.js";
+import {
+  buildLnsWindowReplayRepeatabilityConflictIndex,
+  lnsWindowReplayRepeatabilityBucketKey
+} from "./lnsWindowReplayRepeatability.js";
 import { hashString, stableStringify } from "../core/cpSatContinuation.js";
 import { LNS_WINDOW_RANKER_FEATURE_NAMES } from "../core/index.js";
 
 import type { LearnedRankingLabelSnapshot, LearnedRankingLabelSplit } from "./learnedRankingLabels.js";
 import type { LnsReplayPressureFamilyLabel } from "./lns.js";
+import type { LnsWindowReplayRepeatabilitySummary } from "./lnsWindowReplayRepeatability.js";
 import type {
   LnsWindowReplaySeedHintKind,
   LnsWindowReplaySnapshot,
@@ -44,6 +50,7 @@ export interface LnsWindowRankerTrainingOptions {
   allowWeakSeedReplayLabels?: boolean;
   supplementalReplayCalibration?: boolean;
   supplementalReplayCalibrationIgnoreBaselineFeature?: boolean;
+  excludeFeatureIdenticalRepeatabilityConflicts?: boolean;
 }
 
 export interface LnsWindowRankerRunOptions {
@@ -113,15 +120,21 @@ export interface LnsWindowRankerExperimentResult {
     labelTarget: LnsWindowRankerLabelTarget;
     supplementalReplayCalibration: boolean;
     supplementalReplaySnapshotCount: number;
+    sourceRepeatabilityFeatureIdenticalConflictBucketCount: number;
+    sourceRepeatabilityFeatureIdenticalConflictLabelCount: number;
   };
   labels: {
     labelCount: number;
     usableLabelCount: number;
+    excludedFeatureIdenticalRepeatabilityConflictLabelCount: number;
+    excludedFeatureIdenticalRepeatabilityConflictDecisionCount: number;
     opportunityCount: number;
     developmentDecisionCount: number;
     holdoutDecisionCount: number;
     supplementalReplayDecisionCount: number;
     supplementalReplayLabelCount: number;
+    repeatabilitySummary: LnsWindowReplayRepeatabilitySummary;
+    supplementalRepeatabilitySummary: LnsWindowReplayRepeatabilitySummary;
   };
   training: {
     wallClockSeconds: number;
@@ -170,6 +183,12 @@ interface ReplayDecisionGroup {
   labels: LnsWindowReplaySnapshotLabel[];
 }
 
+interface ReplayDecisionGroupCollection {
+  groups: ReplayDecisionGroup[];
+  excludedFeatureIdenticalRepeatabilityConflictLabelCount: number;
+  excludedFeatureIdenticalRepeatabilityConflictDecisionCount: number;
+}
+
 const DEFAULT_LNS_WINDOW_RANKER_TRAINING: Required<LnsWindowRankerTrainingOptions> = Object.freeze({
   epochs: 5,
   learningRate: 0.05,
@@ -178,7 +197,8 @@ const DEFAULT_LNS_WINDOW_RANKER_TRAINING: Required<LnsWindowRankerTrainingOption
   target: "immediate-improvement",
   allowWeakSeedReplayLabels: true,
   supplementalReplayCalibration: false,
-  supplementalReplayCalibrationIgnoreBaselineFeature: false
+  supplementalReplayCalibrationIgnoreBaselineFeature: false,
+  excludeFeatureIdenticalRepeatabilityConflicts: false
 });
 
 const SELECTED_BY_BASELINE_FEATURE_INDEX = LNS_WINDOW_RANKER_FEATURE_NAMES.indexOf("selectedByBaseline");
@@ -210,7 +230,11 @@ function normalizeTrainingOptions(
     allowWeakSeedReplayLabels: normalizeLnsWindowRankerWeakSeedAllowance(options?.allowWeakSeedReplayLabels),
     supplementalReplayCalibration: options?.supplementalReplayCalibration === true,
     supplementalReplayCalibrationIgnoreBaselineFeature:
-      options?.supplementalReplayCalibrationIgnoreBaselineFeature === true
+      options?.supplementalReplayCalibrationIgnoreBaselineFeature === true,
+    excludeFeatureIdenticalRepeatabilityConflicts:
+      normalizeLnsWindowRankerFeatureIdenticalRepeatabilityConflictExclusion(
+        options?.excludeFeatureIdenticalRepeatabilityConflicts
+      )
   };
 }
 
@@ -280,57 +304,85 @@ function targetValue(label: LnsWindowReplaySnapshotLabel, target: LnsWindowRanke
 function collectReplayDecisionGroups(
   labelSnapshot: LearnedRankingLabelSnapshot,
   target: LnsWindowRankerLabelTarget,
-  allowWeakSeedReplayLabels: boolean
-): ReplayDecisionGroup[] {
-  return labelSnapshot.lns.splits.flatMap((split) =>
-    split.replay.cases.flatMap((benchmarkCase): ReplayDecisionGroup[] => {
+  allowWeakSeedReplayLabels: boolean,
+  featureIdenticalConflictBucketKeys: ReadonlySet<string>
+): ReplayDecisionGroupCollection {
+  const collection: ReplayDecisionGroupCollection = {
+    groups: [],
+    excludedFeatureIdenticalRepeatabilityConflictLabelCount: 0,
+    excludedFeatureIdenticalRepeatabilityConflictDecisionCount: 0
+  };
+  for (const split of labelSnapshot.lns.splits) {
+    for (const benchmarkCase of split.replay.cases) {
       const seedKind = inferLnsWindowRankerReplaySeedHintKind(benchmarkCase);
-      if (!allowWeakSeedReplayLabels && seedKind === "weak-replay") return [];
-      const labels = benchmarkCase.labels.filter((label) => label.usable && hasTargetValue(label, target));
-      if (labels.length === 0) return [];
-      return [
-        {
-          split: split.split,
-          source: "label-snapshot",
-          caseName: benchmarkCase.name,
-          pressureFamily: benchmarkCase.pressureFamily,
-          seed: benchmarkCase.seed,
-          seedHintKind: seedKind,
-          statePolicy: benchmarkCase.statePolicy,
-          stateIndex: benchmarkCase.stateIndex,
-          labels
-        }
-      ];
-    })
-  );
+      if (!allowWeakSeedReplayLabels && seedKind === "weak-replay") continue;
+      const eligibleLabels = benchmarkCase.labels.filter((label) => label.usable && hasTargetValue(label, target));
+      if (eligibleLabels.length === 0) continue;
+      const labels = eligibleLabels.filter(
+        (label) => !featureIdenticalConflictBucketKeys.has(lnsWindowReplayRepeatabilityBucketKey(label))
+      );
+      const excludedLabelCount = eligibleLabels.length - labels.length;
+      collection.excludedFeatureIdenticalRepeatabilityConflictLabelCount += excludedLabelCount;
+      if (excludedLabelCount > 0 && labels.length === 0) {
+        collection.excludedFeatureIdenticalRepeatabilityConflictDecisionCount += 1;
+      }
+      if (labels.length === 0) continue;
+      collection.groups.push({
+        split: split.split,
+        source: "label-snapshot",
+        caseName: benchmarkCase.name,
+        pressureFamily: benchmarkCase.pressureFamily,
+        seed: benchmarkCase.seed,
+        seedHintKind: seedKind,
+        statePolicy: benchmarkCase.statePolicy,
+        stateIndex: benchmarkCase.stateIndex,
+        labels
+      });
+    }
+  }
+  return collection;
 }
 
 function collectSupplementalReplayDecisionGroups(
   snapshots: readonly LnsWindowReplaySnapshot[],
   target: LnsWindowRankerLabelTarget,
-  allowWeakSeedReplayLabels: boolean
-): ReplayDecisionGroup[] {
-  return snapshots.flatMap((snapshot) =>
-    snapshot.cases.flatMap((benchmarkCase): ReplayDecisionGroup[] => {
+  allowWeakSeedReplayLabels: boolean,
+  featureIdenticalConflictBucketKeys: ReadonlySet<string>
+): ReplayDecisionGroupCollection {
+  const collection: ReplayDecisionGroupCollection = {
+    groups: [],
+    excludedFeatureIdenticalRepeatabilityConflictLabelCount: 0,
+    excludedFeatureIdenticalRepeatabilityConflictDecisionCount: 0
+  };
+  for (const snapshot of snapshots) {
+    for (const benchmarkCase of snapshot.cases) {
       const seedKind = inferLnsWindowRankerReplaySeedHintKind(benchmarkCase);
-      if (!allowWeakSeedReplayLabels && seedKind === "weak-replay") return [];
-      const labels = benchmarkCase.labels.filter((label) => label.usable && hasTargetValue(label, target));
-      if (labels.length === 0) return [];
-      return [
-        {
-          split: "development",
-          source: "supplemental-replay",
-          caseName: benchmarkCase.name,
-          pressureFamily: benchmarkCase.pressureFamily,
-          seed: benchmarkCase.seed,
-          seedHintKind: seedKind,
-          statePolicy: benchmarkCase.statePolicy,
-          stateIndex: benchmarkCase.stateIndex,
-          labels
-        }
-      ];
-    })
-  );
+      if (!allowWeakSeedReplayLabels && seedKind === "weak-replay") continue;
+      const eligibleLabels = benchmarkCase.labels.filter((label) => label.usable && hasTargetValue(label, target));
+      if (eligibleLabels.length === 0) continue;
+      const labels = eligibleLabels.filter(
+        (label) => !featureIdenticalConflictBucketKeys.has(lnsWindowReplayRepeatabilityBucketKey(label))
+      );
+      const excludedLabelCount = eligibleLabels.length - labels.length;
+      collection.excludedFeatureIdenticalRepeatabilityConflictLabelCount += excludedLabelCount;
+      if (excludedLabelCount > 0 && labels.length === 0) {
+        collection.excludedFeatureIdenticalRepeatabilityConflictDecisionCount += 1;
+      }
+      if (labels.length === 0) continue;
+      collection.groups.push({
+        split: "development",
+        source: "supplemental-replay",
+        caseName: benchmarkCase.name,
+        pressureFamily: benchmarkCase.pressureFamily,
+        seed: benchmarkCase.seed,
+        seedHintKind: seedKind,
+        statePolicy: benchmarkCase.statePolicy,
+        stateIndex: benchmarkCase.stateIndex,
+        labels
+      });
+    }
+  }
+  return collection;
 }
 
 function splitGroups(groups: readonly ReplayDecisionGroup[], split: LearnedRankingLabelSplit): ReplayDecisionGroup[] {
@@ -569,7 +621,9 @@ function buildSummary(
   labelSnapshot: LearnedRankingLabelSnapshot,
   baselineResult: LnsWindowRankerBaselineExperimentResult,
   holdoutEvaluation: LnsWindowRankerModelSplitEvaluation,
-  supplementalReplayCalibration: boolean
+  supplementalReplayCalibration: boolean,
+  repeatabilitySummary: LnsWindowReplayRepeatabilitySummary,
+  excludeFeatureIdenticalRepeatabilityConflicts: boolean
 ): LnsWindowRankerSummary {
   const bestBaseline = baselineResult.evaluation.summary;
   const failedReasons: string[] = [];
@@ -578,6 +632,11 @@ function buildSummary(
     failedReasons.push("supplemental replay calibration is diagnostics-only and cannot promote a model");
   }
   if (!labelSnapshot.lns.scaleReadiness.passed) failedReasons.push("source LNS label-scale readiness did not pass");
+  if (repeatabilitySummary.featureIdenticalConflictBucketCount > 0 && !excludeFeatureIdenticalRepeatabilityConflicts) {
+    failedReasons.push(
+      `source LNS replay repeatability has feature-identical conflicts ${repeatabilitySummary.featureIdenticalConflictBucketCount} buckets/${repeatabilitySummary.featureIdenticalConflictLabelCount} labels`
+    );
+  }
   if (holdoutEvaluation.opportunityCount === 0) failedReasons.push("holdout improvement opportunity count is zero");
   if (holdoutEvaluation.improvementCaptureRate <= bestBaseline.bestBaselineHoldoutCaptureRate) {
     failedReasons.push(
@@ -609,6 +668,18 @@ function buildLabelFingerprint(labelSnapshot: LearnedRankingLabelSnapshot): stri
   return `fnv1a:${hashString(stableStringify(labelSnapshot))}`;
 }
 
+function lnsRepeatabilityInput(labelSnapshot: LearnedRankingLabelSnapshot) {
+  return {
+    cases: labelSnapshot.lns.splits.flatMap((split) => split.replay.cases)
+  };
+}
+
+function supplementalRepeatabilityInput(snapshots: readonly LnsWindowReplaySnapshot[]) {
+  return {
+    cases: snapshots.flatMap((snapshot) => snapshot.cases)
+  };
+}
+
 function modelRecord(model: LnsWindowRankerModel): Record<string, unknown> {
   return model as unknown as Record<string, unknown>;
 }
@@ -627,7 +698,20 @@ function summaryMetrics(result: LnsWindowRankerExperimentResult): Record<string,
     supplementalReplayCalibration: result.model.training.supplementalReplayCalibration,
     supplementalReplayCalibrationIgnoreBaselineFeature:
       result.model.training.supplementalReplayCalibrationIgnoreBaselineFeature,
+    excludeFeatureIdenticalRepeatabilityConflicts: result.model.training.excludeFeatureIdenticalRepeatabilityConflicts,
     supplementalReplaySnapshotCount: result.audit.supplementalReplaySnapshotCount,
+    sourceRepeatabilityFeatureIdenticalConflictBucketCount:
+      result.labels.repeatabilitySummary.featureIdenticalConflictBucketCount,
+    sourceRepeatabilityFeatureIdenticalConflictLabelCount:
+      result.labels.repeatabilitySummary.featureIdenticalConflictLabelCount,
+    supplementalRepeatabilityFeatureIdenticalConflictBucketCount:
+      result.labels.supplementalRepeatabilitySummary.featureIdenticalConflictBucketCount,
+    supplementalRepeatabilityFeatureIdenticalConflictLabelCount:
+      result.labels.supplementalRepeatabilitySummary.featureIdenticalConflictLabelCount,
+    excludedFeatureIdenticalRepeatabilityConflictLabelCount:
+      result.labels.excludedFeatureIdenticalRepeatabilityConflictLabelCount,
+    excludedFeatureIdenticalRepeatabilityConflictDecisionCount:
+      result.labels.excludedFeatureIdenticalRepeatabilityConflictDecisionCount,
     developmentDecisionCount: result.labels.developmentDecisionCount,
     holdoutDecisionCount: result.labels.holdoutDecisionCount,
     supplementalReplayDecisionCount: result.labels.supplementalReplayDecisionCount,
@@ -650,17 +734,33 @@ export function runLnsWindowRankerExperiment(
     randomBaselineSeed: options.randomBaselineSeed,
     topK,
     target: training.target,
-    allowWeakSeedReplayLabels: training.allowWeakSeedReplayLabels
+    allowWeakSeedReplayLabels: training.allowWeakSeedReplayLabels,
+    excludeFeatureIdenticalRepeatabilityConflicts: training.excludeFeatureIdenticalRepeatabilityConflicts
   });
-  const supplementalGroups = collectSupplementalReplayDecisionGroups(
+  const repeatabilityIndex = buildLnsWindowReplayRepeatabilityConflictIndex(lnsRepeatabilityInput(labelSnapshot));
+  const supplementalRepeatabilityIndex = buildLnsWindowReplayRepeatabilityConflictIndex(
+    supplementalRepeatabilityInput(supplementalReplaySnapshots)
+  );
+  const sourceConflictBucketKeys = training.excludeFeatureIdenticalRepeatabilityConflicts
+    ? new Set(repeatabilityIndex.featureIdenticalConflictBucketKeys)
+    : new Set<string>();
+  const supplementalConflictBucketKeys = training.excludeFeatureIdenticalRepeatabilityConflicts
+    ? new Set(supplementalRepeatabilityIndex.featureIdenticalConflictBucketKeys)
+    : new Set<string>();
+  const sourceGroupCollection = collectReplayDecisionGroups(
+    labelSnapshot,
+    training.target,
+    training.allowWeakSeedReplayLabels,
+    sourceConflictBucketKeys
+  );
+  const supplementalGroupCollection = collectSupplementalReplayDecisionGroups(
     supplementalReplaySnapshots,
     training.target,
-    training.allowWeakSeedReplayLabels
+    training.allowWeakSeedReplayLabels,
+    supplementalConflictBucketKeys
   );
-  const groups = [
-    ...collectReplayDecisionGroups(labelSnapshot, training.target, training.allowWeakSeedReplayLabels),
-    ...supplementalGroups
-  ];
+  const supplementalGroups = supplementalGroupCollection.groups;
+  const groups = [...sourceGroupCollection.groups, ...supplementalGroups];
   const developmentGroups = splitGroups(groups, "development");
   const holdoutGroups = splitGroups(groups, "holdout");
   const startedAtMs = performance.now();
@@ -706,16 +806,28 @@ export function runLnsWindowRankerExperiment(
       weakSeedReplayLabelsAllowed: training.allowWeakSeedReplayLabels,
       labelTarget: training.target,
       supplementalReplayCalibration: training.supplementalReplayCalibration,
-      supplementalReplaySnapshotCount: supplementalReplaySnapshots.length
+      supplementalReplaySnapshotCount: supplementalReplaySnapshots.length,
+      sourceRepeatabilityFeatureIdenticalConflictBucketCount:
+        repeatabilityIndex.summary.featureIdenticalConflictBucketCount,
+      sourceRepeatabilityFeatureIdenticalConflictLabelCount:
+        repeatabilityIndex.summary.featureIdenticalConflictLabelCount
     },
     labels: {
       labelCount: labelSnapshot.lns.labelCount,
       usableLabelCount: baselineResult.labels.usableLabelCount,
+      excludedFeatureIdenticalRepeatabilityConflictLabelCount:
+        sourceGroupCollection.excludedFeatureIdenticalRepeatabilityConflictLabelCount +
+        supplementalGroupCollection.excludedFeatureIdenticalRepeatabilityConflictLabelCount,
+      excludedFeatureIdenticalRepeatabilityConflictDecisionCount:
+        sourceGroupCollection.excludedFeatureIdenticalRepeatabilityConflictDecisionCount +
+        supplementalGroupCollection.excludedFeatureIdenticalRepeatabilityConflictDecisionCount,
       opportunityCount: baselineResult.labels.opportunityCount,
       developmentDecisionCount: developmentGroups.length,
       holdoutDecisionCount: holdoutGroups.length,
       supplementalReplayDecisionCount: supplementalGroups.length,
-      supplementalReplayLabelCount: supplementalGroups.reduce((total, group) => total + group.labels.length, 0)
+      supplementalReplayLabelCount: supplementalGroups.reduce((total, group) => total + group.labels.length, 0),
+      repeatabilitySummary: repeatabilityIndex.summary,
+      supplementalRepeatabilitySummary: supplementalRepeatabilityIndex.summary
     },
     training: {
       wallClockSeconds: trainingWallClockSeconds,
@@ -729,7 +841,9 @@ export function runLnsWindowRankerExperiment(
         labelSnapshot,
         baselineResult,
         modelEvaluation.holdout,
-        training.supplementalReplayCalibration
+        training.supplementalReplayCalibration,
+        repeatabilityIndex.summary,
+        training.excludeFeatureIdenticalRepeatabilityConflicts
       )
     },
     datasetFingerprint,
@@ -809,6 +923,10 @@ export function buildLnsWindowRankerRegistryEntryDraft(
         .supplementalReplayCalibrationIgnoreBaselineFeature
         ? 1
         : 0,
+      trainingExcludeFeatureIdenticalRepeatabilityConflicts: result.model.training
+        .excludeFeatureIdenticalRepeatabilityConflicts
+        ? 1
+        : 0,
       trainingWallClockSeconds: roundMetric(result.training.wallClockSeconds),
       trainedDecisionCount: result.model.trainedDecisionCount,
       trainedPairCount: result.model.trainedPairCount,
@@ -816,6 +934,18 @@ export function buildLnsWindowRankerRegistryEntryDraft(
       supplementalReplayDecisionCount: result.labels.supplementalReplayDecisionCount,
       supplementalReplayLabelCount: result.labels.supplementalReplayLabelCount,
       usableLabelCount: result.labels.usableLabelCount,
+      repeatabilityFeatureIdenticalConflictBucketCount:
+        result.labels.repeatabilitySummary.featureIdenticalConflictBucketCount,
+      repeatabilityFeatureIdenticalConflictLabelCount:
+        result.labels.repeatabilitySummary.featureIdenticalConflictLabelCount,
+      supplementalRepeatabilityFeatureIdenticalConflictBucketCount:
+        result.labels.supplementalRepeatabilitySummary.featureIdenticalConflictBucketCount,
+      supplementalRepeatabilityFeatureIdenticalConflictLabelCount:
+        result.labels.supplementalRepeatabilitySummary.featureIdenticalConflictLabelCount,
+      excludedFeatureIdenticalRepeatabilityConflictLabelCount:
+        result.labels.excludedFeatureIdenticalRepeatabilityConflictLabelCount,
+      excludedFeatureIdenticalRepeatabilityConflictDecisionCount:
+        result.labels.excludedFeatureIdenticalRepeatabilityConflictDecisionCount,
       opportunityCount: result.labels.opportunityCount,
       baselineCount: result.evaluation.baselines.length
     },
@@ -847,13 +977,13 @@ export function formatLnsWindowRankerExperiment(result: LnsWindowRankerExperimen
   lines.push(`Generated: ${result.generatedAt}`);
   lines.push(`Schema: ${result.schemaVersion}`);
   lines.push(
-    `Audit: cpu-only=${result.audit.cpuOnly} runtime-default-changed=${result.audit.runtimeDefaultChanged} source-preset=${result.audit.sourceLabelPreset ?? "none"} source-lns-scale-ready=${result.audit.sourceLnsScaleReady} target=${result.audit.labelTarget} weak-seed-labels=${result.audit.weakSeedReplayLabelsAllowed} supplemental-replay-calibration=${result.audit.supplementalReplayCalibration} supplemental-replay-snapshots=${result.audit.supplementalReplaySnapshotCount}`
+    `Audit: cpu-only=${result.audit.cpuOnly} runtime-default-changed=${result.audit.runtimeDefaultChanged} source-preset=${result.audit.sourceLabelPreset ?? "none"} source-lns-scale-ready=${result.audit.sourceLnsScaleReady} target=${result.audit.labelTarget} weak-seed-labels=${result.audit.weakSeedReplayLabelsAllowed} supplemental-replay-calibration=${result.audit.supplementalReplayCalibration} supplemental-replay-snapshots=${result.audit.supplementalReplaySnapshotCount} repeatability-feature-identical-conflicts=${result.audit.sourceRepeatabilityFeatureIdenticalConflictBucketCount}/${result.audit.sourceRepeatabilityFeatureIdenticalConflictLabelCount}`
   );
   lines.push(
-    `Labels: total=${result.labels.labelCount} usable=${result.labels.usableLabelCount} opportunities=${result.labels.opportunityCount} supplemental-decisions=${result.labels.supplementalReplayDecisionCount} supplemental-labels=${result.labels.supplementalReplayLabelCount} label-fingerprint=${result.labelFingerprint}`
+    `Labels: total=${result.labels.labelCount} usable=${result.labels.usableLabelCount} opportunities=${result.labels.opportunityCount} supplemental-decisions=${result.labels.supplementalReplayDecisionCount} supplemental-labels=${result.labels.supplementalReplayLabelCount} supplemental-repeatability-feature-identical-conflicts=${result.labels.supplementalRepeatabilitySummary.featureIdenticalConflictBucketCount}/${result.labels.supplementalRepeatabilitySummary.featureIdenticalConflictLabelCount} repeatability-excluded=${result.labels.excludedFeatureIdenticalRepeatabilityConflictLabelCount}/${result.labels.excludedFeatureIdenticalRepeatabilityConflictDecisionCount} label-fingerprint=${result.labelFingerprint}`
   );
   lines.push(
-    `Model: ${result.model.modelType} features=${result.model.featureNames.length} epochs=${result.model.training.epochs} baseline-tie-break=${result.model.training.baselineTieBreak} target=${result.model.training.target} weak-seed-labels=${result.model.training.allowWeakSeedReplayLabels} supplemental-replay-calibration=${result.model.training.supplementalReplayCalibration} supplemental-replay-calibration-ignore-baseline-feature=${result.model.training.supplementalReplayCalibrationIgnoreBaselineFeature} trained-decisions=${result.model.trainedDecisionCount} model-fingerprint=${result.modelFingerprint}`
+    `Model: ${result.model.modelType} features=${result.model.featureNames.length} epochs=${result.model.training.epochs} baseline-tie-break=${result.model.training.baselineTieBreak} target=${result.model.training.target} weak-seed-labels=${result.model.training.allowWeakSeedReplayLabels} supplemental-replay-calibration=${result.model.training.supplementalReplayCalibration} supplemental-replay-calibration-ignore-baseline-feature=${result.model.training.supplementalReplayCalibrationIgnoreBaselineFeature} repeatability-conflicts-excluded=${result.model.training.excludeFeatureIdenticalRepeatabilityConflicts} trained-decisions=${result.model.trainedDecisionCount} model-fingerprint=${result.modelFingerprint}`
   );
   lines.push(
     `Model capture: development=${formatMetric(result.evaluation.model.development)} holdout=${formatMetric(result.evaluation.model.holdout)}`

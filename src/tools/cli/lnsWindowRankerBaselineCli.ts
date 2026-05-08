@@ -35,6 +35,7 @@ interface ParsedLnsWindowRankerArgs {
   topK?: number;
   target?: LnsWindowRankerLabelTarget;
   allowWeakSeedReplayLabels: boolean;
+  excludeFeatureIdenticalRepeatabilityConflicts: boolean;
   randomBaselineSeed?: number;
   artifactDir?: string;
   baselineRunId?: string;
@@ -75,6 +76,7 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
   let topK: number | undefined;
   let target: LnsWindowRankerLabelTarget | undefined;
   let allowWeakSeedReplayLabels = true;
+  let excludeFeatureIdenticalRepeatabilityConflicts = false;
   let randomBaselineSeed: number | undefined;
   let artifactDir: string | undefined;
   let baselineRunId: string | undefined;
@@ -135,6 +137,10 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
       allowWeakSeedReplayLabels = false;
       continue;
     }
+    if (isCliFlag(arg, "--exclude-feature-identical-repeatability-conflicts", "--exclude-repeatability-conflicts")) {
+      excludeFeatureIdenticalRepeatabilityConflicts = true;
+      continue;
+    }
     if (applyInlineOptionHandlers(arg, inlineOptions)) {
       continue;
     }
@@ -147,6 +153,7 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
     topK,
     target,
     allowWeakSeedReplayLabels,
+    excludeFeatureIdenticalRepeatabilityConflicts,
     randomBaselineSeed,
     artifactDir,
     baselineRunId,
@@ -303,7 +310,8 @@ export function runLnsWindowRankerBaselineCli(): void {
     randomBaselineSeed: args.randomBaselineSeed,
     topK: args.topK,
     target: args.target,
-    allowWeakSeedReplayLabels: args.allowWeakSeedReplayLabels
+    allowWeakSeedReplayLabels: args.allowWeakSeedReplayLabels,
+    excludeFeatureIdenticalRepeatabilityConflicts: args.excludeFeatureIdenticalRepeatabilityConflicts
   });
 
   if (args.artifactDir !== undefined) {

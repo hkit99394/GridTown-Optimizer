@@ -8,7 +8,12 @@ import { hashString, stableStringify } from "../core/cpSatContinuation.js";
 
 import type { LearnedRankingLabelSnapshot, LearnedRankingLabelSplit } from "./learnedRankingLabels.js";
 import { DEFAULT_LNS_REPLAY_LABEL_CORPUS } from "./lns.js";
+import {
+  buildLnsWindowReplayRepeatabilityConflictIndex,
+  lnsWindowReplayRepeatabilityBucketKey
+} from "./lnsWindowReplayRepeatability.js";
 import type { LnsReplayPressureFamilyLabel } from "./lns.js";
+import type { LnsWindowReplayRepeatabilitySummary } from "./lnsWindowReplayRepeatability.js";
 import type {
   LnsWindowReplaySeedHintKind,
   LnsWindowReplaySnapshotCaseResult,
@@ -39,6 +44,7 @@ export interface LnsWindowRankerBaselineRunOptions {
   topK?: number;
   target?: LnsWindowRankerLabelTarget;
   allowWeakSeedReplayLabels?: boolean;
+  excludeFeatureIdenticalRepeatabilityConflicts?: boolean;
 }
 
 export interface LnsWindowRankerMetricSummary {
@@ -83,6 +89,7 @@ export interface LnsWindowRankerLabelSplitSummary {
   seeds: number[];
   labelCount: number;
   usableLabelCount: number;
+  excludedFeatureIdenticalRepeatabilityConflictLabelCount: number;
   opportunityCount: number;
   capturedStatePolicies: string[];
 }
@@ -109,6 +116,7 @@ export interface LnsWindowRankerBaselineModel {
   topK: number;
   target: LnsWindowRankerLabelTarget;
   weakSeedReplayLabelsAllowed: boolean;
+  featureIdenticalRepeatabilityConflictsExcluded: boolean;
   baselineNames: LnsWindowRankerBaselineName[];
   bestBaselineName: LnsWindowRankerBaselineName;
 }
@@ -124,11 +132,15 @@ export interface LnsWindowRankerBaselineExperimentResult {
     sourceLabelPreset: string | null;
     sourceLnsScaleReady: boolean;
     weakSeedReplayLabelsAllowed: boolean;
+    featureIdenticalRepeatabilityConflictsExcluded: boolean;
   };
   labels: {
     labelCount: number;
     usableLabelCount: number;
+    excludedFeatureIdenticalRepeatabilityConflictLabelCount: number;
+    excludedFeatureIdenticalRepeatabilityConflictDecisionCount: number;
     opportunityCount: number;
+    repeatabilitySummary: LnsWindowReplayRepeatabilitySummary;
     splits: LnsWindowRankerLabelSplitSummary[];
   };
   evaluation: {
@@ -172,6 +184,12 @@ interface ScoredReplayLabel {
   score: number;
 }
 
+interface ReplayDecisionGroupCollection {
+  groups: ReplayDecisionGroup[];
+  excludedFeatureIdenticalRepeatabilityConflictLabelCount: number;
+  excludedFeatureIdenticalRepeatabilityConflictDecisionCount: number;
+}
+
 function roundMetric(value: number): number {
   return Math.round(value * 10000) / 10000;
 }
@@ -188,6 +206,10 @@ export function normalizeLnsWindowRankerLabelTarget(value: unknown): LnsWindowRa
 
 export function normalizeLnsWindowRankerWeakSeedAllowance(value: unknown): boolean {
   return value !== false;
+}
+
+export function normalizeLnsWindowRankerFeatureIdenticalRepeatabilityConflictExclusion(value: unknown): boolean {
+  return value === true;
 }
 
 function seedHintKindFromSource(
@@ -500,7 +522,9 @@ function baselineByName(
 
 function buildSummary(
   labelSnapshot: LearnedRankingLabelSnapshot,
-  baselines: readonly LnsWindowRankerBaselineEvaluation[]
+  baselines: readonly LnsWindowRankerBaselineEvaluation[],
+  repeatabilitySummary: LnsWindowReplayRepeatabilitySummary,
+  excludeFeatureIdenticalRepeatabilityConflicts: boolean
 ): LnsWindowRankerBaselineSummary {
   const bestBaseline = [...baselines].sort(compareBaselines)[0]!;
   const deterministic = baselineByName(baselines, "operator-score");
@@ -511,6 +535,11 @@ function buildSummary(
   }
   if (!labelSnapshot.lns.scaleReadiness.passed) {
     failedReasons.push("source LNS label-scale readiness did not pass");
+  }
+  if (repeatabilitySummary.featureIdenticalConflictBucketCount > 0 && !excludeFeatureIdenticalRepeatabilityConflicts) {
+    failedReasons.push(
+      `source LNS replay repeatability has feature-identical conflicts ${repeatabilitySummary.featureIdenticalConflictBucketCount} buckets/${repeatabilitySummary.featureIdenticalConflictLabelCount} labels`
+    );
   }
   if (deterministic.development.decisionCount === 0) {
     failedReasons.push("development decision count is zero");
@@ -546,37 +575,63 @@ function assertLabelSnapshot(value: LearnedRankingLabelSnapshot): void {
 function collectReplayDecisionGroups(
   labelSnapshot: LearnedRankingLabelSnapshot,
   target: LnsWindowRankerLabelTarget,
-  allowWeakSeedReplayLabels: boolean
-): ReplayDecisionGroup[] {
-  return labelSnapshot.lns.splits.flatMap((split) =>
-    split.replay.cases.flatMap((benchmarkCase: LnsWindowReplaySnapshotCaseResult): ReplayDecisionGroup[] => {
+  allowWeakSeedReplayLabels: boolean,
+  featureIdenticalConflictBucketKeys: ReadonlySet<string>
+): ReplayDecisionGroupCollection {
+  const collection: ReplayDecisionGroupCollection = {
+    groups: [],
+    excludedFeatureIdenticalRepeatabilityConflictLabelCount: 0,
+    excludedFeatureIdenticalRepeatabilityConflictDecisionCount: 0
+  };
+  for (const split of labelSnapshot.lns.splits) {
+    for (const benchmarkCase of split.replay.cases as readonly LnsWindowReplaySnapshotCaseResult[]) {
       const seedKind = inferLnsWindowRankerReplaySeedHintKind(benchmarkCase);
-      if (!allowWeakSeedReplayLabels && seedKind === "weak-replay") return [];
-      const labels = benchmarkCase.labels.filter((label) => label.usable && hasTargetValue(label, target));
-      if (labels.length === 0) return [];
-      return [
-        {
-          split: split.split,
-          caseName: benchmarkCase.name,
-          pressureFamily: benchmarkCase.pressureFamily,
-          seed: benchmarkCase.seed,
-          seedHintKind: seedKind,
-          statePolicy: benchmarkCase.statePolicy,
-          stateIndex: benchmarkCase.stateIndex,
-          labels
-        }
-      ];
-    })
-  );
+      if (!allowWeakSeedReplayLabels && seedKind === "weak-replay") continue;
+      const eligibleLabels = benchmarkCase.labels.filter((label) => label.usable && hasTargetValue(label, target));
+      if (eligibleLabels.length === 0) continue;
+      const labels = eligibleLabels.filter(
+        (label) => !featureIdenticalConflictBucketKeys.has(lnsWindowReplayRepeatabilityBucketKey(label))
+      );
+      const excludedLabelCount = eligibleLabels.length - labels.length;
+      collection.excludedFeatureIdenticalRepeatabilityConflictLabelCount += excludedLabelCount;
+      if (excludedLabelCount > 0 && labels.length === 0) {
+        collection.excludedFeatureIdenticalRepeatabilityConflictDecisionCount += 1;
+      }
+      if (labels.length === 0) continue;
+      collection.groups.push({
+        split: split.split,
+        caseName: benchmarkCase.name,
+        pressureFamily: benchmarkCase.pressureFamily,
+        seed: benchmarkCase.seed,
+        seedHintKind: seedKind,
+        statePolicy: benchmarkCase.statePolicy,
+        stateIndex: benchmarkCase.stateIndex,
+        labels
+      });
+    }
+  }
+  return collection;
 }
 
 function labelSplitSummaries(
   labelSnapshot: LearnedRankingLabelSnapshot,
   groups: readonly ReplayDecisionGroup[],
-  target: LnsWindowRankerLabelTarget
+  target: LnsWindowRankerLabelTarget,
+  featureIdenticalConflictBucketKeys: ReadonlySet<string>
 ): LnsWindowRankerLabelSplitSummary[] {
   return labelSnapshot.lns.splits.map((split) => {
     const splitDecisionGroups = splitGroups(groups, split.split);
+    const excludedFeatureIdenticalRepeatabilityConflictLabelCount = split.replay.cases.reduce(
+      (total, benchmarkCase) =>
+        total +
+        benchmarkCase.labels.filter(
+          (label) =>
+            label.usable &&
+            hasTargetValue(label, target) &&
+            featureIdenticalConflictBucketKeys.has(lnsWindowReplayRepeatabilityBucketKey(label))
+        ).length,
+      0
+    );
     return {
       split: split.split,
       selectedCaseNames: [...split.selectedCaseNames],
@@ -584,6 +639,7 @@ function labelSplitSummaries(
       seeds: [...split.seeds],
       labelCount: split.labelCount,
       usableLabelCount: splitDecisionGroups.reduce((total, group) => total + group.labels.length, 0),
+      excludedFeatureIdenticalRepeatabilityConflictLabelCount,
       opportunityCount: splitDecisionGroups.filter(
         (group) => Math.max(...group.labels.map((label) => targetValue(label, target))) > 0
       ).length,
@@ -598,6 +654,12 @@ function buildDatasetFingerprint(labelSnapshot: LearnedRankingLabelSnapshot): st
 
 function buildLabelFingerprint(labelSnapshot: LearnedRankingLabelSnapshot): string {
   return `fnv1a:${hashString(stableStringify(labelSnapshot))}`;
+}
+
+function lnsRepeatabilityInput(labelSnapshot: LearnedRankingLabelSnapshot) {
+  return {
+    cases: labelSnapshot.lns.splits.flatMap((split) => split.replay.cases)
+  };
 }
 
 function modelRecord(model: LnsWindowRankerBaselineModel): Record<string, unknown> {
@@ -615,6 +677,15 @@ function summaryMetrics(result: LnsWindowRankerBaselineExperimentResult): Record
     randomHoldoutCaptureRate: result.evaluation.summary.randomHoldoutCaptureRate,
     target: result.model.target,
     weakSeedReplayLabelsAllowed: result.model.weakSeedReplayLabelsAllowed,
+    featureIdenticalRepeatabilityConflictsExcluded: result.model.featureIdenticalRepeatabilityConflictsExcluded,
+    repeatabilityFeatureIdenticalConflictBucketCount:
+      result.labels.repeatabilitySummary.featureIdenticalConflictBucketCount,
+    repeatabilityFeatureIdenticalConflictLabelCount:
+      result.labels.repeatabilitySummary.featureIdenticalConflictLabelCount,
+    excludedFeatureIdenticalRepeatabilityConflictLabelCount:
+      result.labels.excludedFeatureIdenticalRepeatabilityConflictLabelCount,
+    excludedFeatureIdenticalRepeatabilityConflictDecisionCount:
+      result.labels.excludedFeatureIdenticalRepeatabilityConflictDecisionCount,
     developmentDecisionCount: baselineByName(result.evaluation.baselines, "operator-score").development.decisionCount,
     holdoutDecisionCount: baselineByName(result.evaluation.baselines, "operator-score").holdout.decisionCount,
     developmentOpportunityCount: baselineByName(result.evaluation.baselines, "operator-score").development
@@ -633,9 +704,28 @@ export function runLnsWindowRankerBaselineExperiment(
   const topK = positiveIntegerOrDefault(options.topK, 3);
   const target = normalizeLnsWindowRankerLabelTarget(options.target);
   const allowWeakSeedReplayLabels = normalizeLnsWindowRankerWeakSeedAllowance(options.allowWeakSeedReplayLabels);
-  const groups = collectReplayDecisionGroups(labelSnapshot, target, allowWeakSeedReplayLabels);
+  const excludeFeatureIdenticalRepeatabilityConflicts =
+    normalizeLnsWindowRankerFeatureIdenticalRepeatabilityConflictExclusion(
+      options.excludeFeatureIdenticalRepeatabilityConflicts
+    );
+  const repeatabilityIndex = buildLnsWindowReplayRepeatabilityConflictIndex(lnsRepeatabilityInput(labelSnapshot));
+  const featureIdenticalConflictBucketKeys = excludeFeatureIdenticalRepeatabilityConflicts
+    ? new Set(repeatabilityIndex.featureIdenticalConflictBucketKeys)
+    : new Set<string>();
+  const groupCollection = collectReplayDecisionGroups(
+    labelSnapshot,
+    target,
+    allowWeakSeedReplayLabels,
+    featureIdenticalConflictBucketKeys
+  );
+  const groups = groupCollection.groups;
   const baselines = buildBaselineEvaluations(groups, randomBaselineSeed, topK, target);
-  const summary = buildSummary(labelSnapshot, baselines);
+  const summary = buildSummary(
+    labelSnapshot,
+    baselines,
+    repeatabilityIndex.summary,
+    excludeFeatureIdenticalRepeatabilityConflicts
+  );
   const model: LnsWindowRankerBaselineModel = {
     schemaVersion: 1,
     modelType: "lns-window-ranking-baseline-sweep",
@@ -647,13 +737,14 @@ export function runLnsWindowRankerBaselineExperiment(
     topK,
     target,
     weakSeedReplayLabelsAllowed: allowWeakSeedReplayLabels,
+    featureIdenticalRepeatabilityConflictsExcluded: excludeFeatureIdenticalRepeatabilityConflicts,
     baselineNames: [...LNS_WINDOW_RANKER_BASELINE_NAMES],
     bestBaselineName: summary.bestBaselineName
   };
   const datasetFingerprint = buildDatasetFingerprint(labelSnapshot);
   const labelFingerprint = buildLabelFingerprint(labelSnapshot);
   const modelFingerprint = buildModelExperimentFingerprint(model);
-  const splitSummaries = labelSplitSummaries(labelSnapshot, groups, target);
+  const splitSummaries = labelSplitSummaries(labelSnapshot, groups, target, featureIdenticalConflictBucketKeys);
 
   return {
     generatedAt: benchmarkGeneratedAt(),
@@ -665,12 +756,18 @@ export function runLnsWindowRankerBaselineExperiment(
       learnedRuntimeHook: null,
       sourceLabelPreset: labelSnapshot.audit.lnsReplay.preset,
       sourceLnsScaleReady: labelSnapshot.lns.scaleReadiness.passed,
-      weakSeedReplayLabelsAllowed: allowWeakSeedReplayLabels
+      weakSeedReplayLabelsAllowed: allowWeakSeedReplayLabels,
+      featureIdenticalRepeatabilityConflictsExcluded: excludeFeatureIdenticalRepeatabilityConflicts
     },
     labels: {
       labelCount: labelSnapshot.lns.labelCount,
       usableLabelCount: splitSummaries.reduce((total, split) => total + split.usableLabelCount, 0),
+      excludedFeatureIdenticalRepeatabilityConflictLabelCount:
+        groupCollection.excludedFeatureIdenticalRepeatabilityConflictLabelCount,
+      excludedFeatureIdenticalRepeatabilityConflictDecisionCount:
+        groupCollection.excludedFeatureIdenticalRepeatabilityConflictDecisionCount,
       opportunityCount: splitSummaries.reduce((total, split) => total + split.opportunityCount, 0),
+      repeatabilitySummary: repeatabilityIndex.summary,
       splits: splitSummaries
     },
     evaluation: {
@@ -742,9 +839,20 @@ export function buildLnsWindowRankerBaselineRegistryEntryDraft(
       topK: result.model.topK,
       targetRollForwardFinalLift: result.model.target === "roll-forward-final-lift" ? 1 : 0,
       weakSeedReplayLabelsAllowed: result.model.weakSeedReplayLabelsAllowed ? 1 : 0,
+      featureIdenticalRepeatabilityConflictsExcluded: result.model.featureIdenticalRepeatabilityConflictsExcluded
+        ? 1
+        : 0,
       baselineCount: result.evaluation.baselines.length,
       lnsLabelCount: result.labels.labelCount,
       usableLabelCount: result.labels.usableLabelCount,
+      repeatabilityFeatureIdenticalConflictBucketCount:
+        result.labels.repeatabilitySummary.featureIdenticalConflictBucketCount,
+      repeatabilityFeatureIdenticalConflictLabelCount:
+        result.labels.repeatabilitySummary.featureIdenticalConflictLabelCount,
+      excludedFeatureIdenticalRepeatabilityConflictLabelCount:
+        result.labels.excludedFeatureIdenticalRepeatabilityConflictLabelCount,
+      excludedFeatureIdenticalRepeatabilityConflictDecisionCount:
+        result.labels.excludedFeatureIdenticalRepeatabilityConflictDecisionCount,
       opportunityCount: result.labels.opportunityCount,
       repairTimeLimitSeconds: uniqueBenchmarkValues(
         labelSnapshot.lns.splits.map((split) => split.replay.repairTimeLimitSeconds)
@@ -781,13 +889,13 @@ export function formatLnsWindowRankerBaselineExperiment(result: LnsWindowRankerB
   lines.push(`Generated: ${result.generatedAt}`);
   lines.push(`Schema: ${result.schemaVersion}`);
   lines.push(
-    `Audit: cpu-only=${result.audit.cpuOnly} runtime-default-changed=${result.audit.runtimeDefaultChanged} source-preset=${result.audit.sourceLabelPreset ?? "none"} source-lns-scale-ready=${result.audit.sourceLnsScaleReady} target=${result.model.target} weak-seed-labels=${result.audit.weakSeedReplayLabelsAllowed}`
+    `Audit: cpu-only=${result.audit.cpuOnly} runtime-default-changed=${result.audit.runtimeDefaultChanged} source-preset=${result.audit.sourceLabelPreset ?? "none"} source-lns-scale-ready=${result.audit.sourceLnsScaleReady} target=${result.model.target} weak-seed-labels=${result.audit.weakSeedReplayLabelsAllowed} repeatability-conflicts-excluded=${result.audit.featureIdenticalRepeatabilityConflictsExcluded}`
   );
   lines.push(
-    `Labels: total=${result.labels.labelCount} usable=${result.labels.usableLabelCount} opportunities=${result.labels.opportunityCount} label-fingerprint=${result.labelFingerprint}`
+    `Labels: total=${result.labels.labelCount} usable=${result.labels.usableLabelCount} opportunities=${result.labels.opportunityCount} repeatability-feature-identical-conflicts=${result.labels.repeatabilitySummary.featureIdenticalConflictBucketCount}/${result.labels.repeatabilitySummary.featureIdenticalConflictLabelCount} repeatability-excluded=${result.labels.excludedFeatureIdenticalRepeatabilityConflictLabelCount}/${result.labels.excludedFeatureIdenticalRepeatabilityConflictDecisionCount} label-fingerprint=${result.labelFingerprint}`
   );
   lines.push(
-    `Model: ${result.model.modelType} trained=${result.model.trained} target=${result.model.target} top-k=${result.model.topK} weak-seed-labels=${result.model.weakSeedReplayLabelsAllowed} model-fingerprint=${result.modelFingerprint}`
+    `Model: ${result.model.modelType} trained=${result.model.trained} target=${result.model.target} top-k=${result.model.topK} weak-seed-labels=${result.model.weakSeedReplayLabelsAllowed} repeatability-conflicts-excluded=${result.model.featureIdenticalRepeatabilityConflictsExcluded} model-fingerprint=${result.modelFingerprint}`
   );
   for (const split of result.labels.splits) {
     lines.push(

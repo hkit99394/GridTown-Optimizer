@@ -13,10 +13,12 @@ const {
   DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS,
   formatLearnedRankingLabelSuite,
   formatLnsWindowReplayLabels,
+  formatLnsWindowReplayRepeatabilitySummary,
   runLearnedRankingLabelSuite,
   runLnsWindowRankerOnlineAblation,
   runLnsWindowReplayLabels,
   runLnsWindowReplayLabelsFromOnlineDecisionStates,
+  summarizeLnsWindowReplayRepeatability,
   STRICT_LNS_REPLAY_LABEL_STATE_COLLECTION_ITERATIONS,
   STRICT_LNS_REPLAY_LABEL_STATE_POLICIES
 } = require("../../dist/benchmarkApi.js");
@@ -134,6 +136,60 @@ try {
   );
   assert.match(formatLnsWindowReplayLabels(replay), /roll-forward=population:0/);
   assert.match(formatLnsWindowReplayLabels(replay), /final-status:neutral/);
+  const repeatabilitySummary = summarizeLnsWindowReplayRepeatability(replay);
+  assert.deepEqual(
+    {
+      labels: repeatabilitySummary.rollForwardLabelCount,
+      buckets: repeatabilitySummary.bucketCount,
+      conflicts: repeatabilitySummary.conflictingFinalStatusBucketCount
+    },
+    { labels: 1, buckets: 1, conflicts: 0 }
+  );
+  assert.match(formatLnsWindowReplayLabels(replay), /Repeatability: roll-forward-labels=1/);
+
+  const conflictingReplay = JSON.parse(JSON.stringify(replay));
+  const cloneConflictCase = (seed, finalDelta, finalStatus, totalPopulation, baselineTotalPopulation) => {
+    const benchmarkCase = JSON.parse(JSON.stringify(replay.cases[0]));
+    const label = benchmarkCase.labels[0];
+    benchmarkCase.seed = seed;
+    benchmarkCase.labels = [label];
+    label.seed = seed;
+    label.totalPopulation = totalPopulation;
+    label.rollForward.totalPopulation = totalPopulation;
+    label.rollForward.baselineTotalPopulation = baselineTotalPopulation;
+    label.rollForward.populationDeltaVsBaseline = finalDelta;
+    label.rollForward.improvementVsBaseline = Math.max(0, finalDelta);
+    label.rollForward.statusVsBaseline = finalStatus;
+    return benchmarkCase;
+  };
+  conflictingReplay.seeds = [7, 19];
+  conflictingReplay.seedCount = 2;
+  conflictingReplay.caseCount = 2;
+  conflictingReplay.stateCount = 2;
+  conflictingReplay.comparisonCount = 2;
+  conflictingReplay.labelCount = 2;
+  conflictingReplay.rollForwardLabelCount = 2;
+  conflictingReplay.cases = [
+    cloneConflictCase(7, 10, "improved", 10, 0),
+    cloneConflictCase(19, -10, "regressed", 0, 10)
+  ];
+  const conflictingRepeatability = summarizeLnsWindowReplayRepeatability(conflictingReplay);
+  assert.deepEqual(
+    {
+      buckets: conflictingRepeatability.bucketCount,
+      conflicts: conflictingRepeatability.conflictingFinalStatusBucketCount,
+      featureIdenticalConflicts: conflictingRepeatability.featureIdenticalConflictBucketCount,
+      conflictLabels: conflictingRepeatability.conflictingLabelCount
+    },
+    { buckets: 1, conflicts: 1, featureIdenticalConflicts: 1, conflictLabels: 2 }
+  );
+  assert.deepEqual(conflictingRepeatability.examples[0].statusCounts, {
+    improved: 1,
+    neutral: 0,
+    regressed: 1,
+    unknown: 0
+  });
+  assert.match(formatLnsWindowReplayRepeatabilitySummary(conflictingRepeatability), /feature-identical-conflicts=1/);
 
   const artifactDir = path.join(repoRoot, `artifacts/tmp-lns-window-replay-${process.pid}`);
   fs.rmSync(artifactDir, { recursive: true, force: true });
@@ -157,7 +213,9 @@ try {
   assert.equal(artifactManifest.caseCount, 1);
   assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.replayJson)), true);
   assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.replayText)), true);
+  assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.repeatabilitySummaryJson)), true);
   assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.manifestJson)), true);
+  assert.equal(artifactManifest.repeatabilitySummary.conflictingFinalStatusBucketCount, 0);
   fs.rmSync(artifactDir, { recursive: true, force: true });
 
   const onlineScorecard = runLnsWindowRankerOnlineAblation(DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS, {

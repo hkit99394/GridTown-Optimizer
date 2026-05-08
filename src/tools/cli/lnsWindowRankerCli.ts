@@ -57,6 +57,7 @@ interface ParsedLnsWindowRankerArgs {
   supplementalReplayCalibrationIgnoreBaselineFeature: boolean;
   target?: LnsWindowRankerLabelTarget;
   allowWeakSeedReplayLabels: boolean;
+  excludeFeatureIdenticalRepeatabilityConflicts: boolean;
   topK?: number;
   randomBaselineSeed?: number;
   artifactDir?: string;
@@ -136,6 +137,7 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
   let supplementalReplayCalibrationIgnoreBaselineFeature = false;
   let target: LnsWindowRankerLabelTarget | undefined;
   let allowWeakSeedReplayLabels = true;
+  let excludeFeatureIdenticalRepeatabilityConflicts = false;
   let topK: number | undefined;
   let randomBaselineSeed: number | undefined;
   let artifactDir: string | undefined;
@@ -260,6 +262,10 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
       allowWeakSeedReplayLabels = false;
       continue;
     }
+    if (isCliFlag(arg, "--exclude-feature-identical-repeatability-conflicts", "--exclude-repeatability-conflicts")) {
+      excludeFeatureIdenticalRepeatabilityConflicts = true;
+      continue;
+    }
     if (applyInlineOptionHandlers(arg, inlineOptions)) {
       continue;
     }
@@ -281,6 +287,7 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
     supplementalReplayCalibrationIgnoreBaselineFeature,
     target,
     allowWeakSeedReplayLabels,
+    excludeFeatureIdenticalRepeatabilityConflicts,
     topK,
     randomBaselineSeed,
     artifactDir,
@@ -616,7 +623,8 @@ export function runLnsWindowRankerCli(): void {
       target: args.target,
       allowWeakSeedReplayLabels: args.allowWeakSeedReplayLabels,
       supplementalReplayCalibration: args.supplementalReplayCalibration,
-      supplementalReplayCalibrationIgnoreBaselineFeature: args.supplementalReplayCalibrationIgnoreBaselineFeature
+      supplementalReplayCalibrationIgnoreBaselineFeature: args.supplementalReplayCalibrationIgnoreBaselineFeature,
+      excludeFeatureIdenticalRepeatabilityConflicts: args.excludeFeatureIdenticalRepeatabilityConflicts
     }
   });
 

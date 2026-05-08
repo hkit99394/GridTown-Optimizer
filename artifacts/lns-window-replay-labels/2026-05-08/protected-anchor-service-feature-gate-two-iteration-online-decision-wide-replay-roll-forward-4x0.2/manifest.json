@@ -1,0 +1,40 @@
+{
+  "artifactDir": "artifacts/lns-window-replay-labels/2026-05-08/protected-anchor-service-feature-gate-two-iteration-online-decision-wide-replay-roll-forward-4x0.2",
+  "artifactPaths": {
+    "replayJson": "artifacts/lns-window-replay-labels/2026-05-08/protected-anchor-service-feature-gate-two-iteration-online-decision-wide-replay-roll-forward-4x0.2/lns-window-replay-labels.json",
+    "replayText": "artifacts/lns-window-replay-labels/2026-05-08/protected-anchor-service-feature-gate-two-iteration-online-decision-wide-replay-roll-forward-4x0.2/lns-window-replay-labels.txt",
+    "manifestJson": "artifacts/lns-window-replay-labels/2026-05-08/protected-anchor-service-feature-gate-two-iteration-online-decision-wide-replay-roll-forward-4x0.2/manifest.json",
+    "repeatabilitySummaryJson": "artifacts/lns-window-replay-labels/2026-05-08/protected-anchor-service-feature-gate-two-iteration-online-decision-wide-replay-roll-forward-4x0.2/repeatability-summary.json"
+  },
+  "command": "node dist/lnsBenchmarkCli.js --window-replay-protected-holdout --window-replay-online-scorecard=artifacts/lns-window-ranker-online/2026-05-08/protected-broadened-coverage-two-iteration-feature-gate-operator-score-max-neg6-min-score-delta-1.18/lns-window-ranker-online-ablation.json --seeds=7,19,37 --max-windows=16 --exploration-windows=8 --roll-forward-iterations=4 --roll-forward-repair-time=0.2 --window-replay-artifact-dir=artifacts/lns-window-replay-labels/2026-05-08/protected-anchor-service-feature-gate-two-iteration-online-decision-wide-replay-roll-forward-4x0.2 --json lns-holdout-anchor-service-shelf-pressure",
+  "generatedAt": "2026-05-08T15:55:23.557Z",
+  "caseCount": 1,
+  "seedCount": 3,
+  "stateCount": 6,
+  "labelCount": 144,
+  "rollForwardLabelCount": 144,
+  "selectedCaseNames": [
+    "lns-holdout-anchor-service-shelf-pressure"
+  ],
+  "pressureFamilies": [
+    "anchor-service"
+  ],
+  "repeatabilitySummary": {
+    "schemaVersion": 1,
+    "rollForwardLabelCount": 144,
+    "bucketCount": 36,
+    "repeatedBucketCount": 36,
+    "mixedFinalStatusBucketCount": 0,
+    "conflictingFinalStatusBucketCount": 0,
+    "conflictingLabelCount": 0,
+    "conflictingStatusCounts": {
+      "improved": 0,
+      "neutral": 0,
+      "regressed": 0,
+      "unknown": 0
+    },
+    "featureIdenticalConflictBucketCount": 0,
+    "featureIdenticalConflictLabelCount": 0,
+    "examples": []
+  }
+}

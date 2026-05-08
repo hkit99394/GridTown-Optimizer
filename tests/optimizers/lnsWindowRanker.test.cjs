@@ -328,6 +328,38 @@ function cloneFixtureWithRollForwardTargets() {
   return fixture;
 }
 
+function cloneFixtureWithFeatureIdenticalRepeatabilityConflict() {
+  const fixture = cloneFixtureWithRollForwardTargets();
+  const developmentSplit = fixture.lns.splits.find((split) => split.split === "development");
+  const sourceCase = developmentSplit.replay.cases[0];
+  const conflictCase = JSON.parse(JSON.stringify(sourceCase));
+  conflictCase.seed = 19;
+  for (const label of conflictCase.labels) {
+    label.seed = 19;
+    if (label.windowIndex !== 2) continue;
+    label.rollForward.totalPopulation = 0;
+    label.rollForward.populationDeltaFromIncumbent = -50;
+    label.rollForward.populationDeltaFromRepair = -50 - label.populationDelta;
+    label.rollForward.populationDeltaVsBaseline = -50;
+    label.rollForward.improvementVsBaseline = 0;
+    label.rollForward.statusVsBaseline = "regressed";
+  }
+  developmentSplit.replay.cases.push(conflictCase);
+  developmentSplit.replay.caseCount += 1;
+  developmentSplit.replay.comparisonCount += 1;
+  developmentSplit.replay.stateCount += 1;
+  developmentSplit.replay.seeds = [7, 19];
+  developmentSplit.replay.seedCount = 2;
+  developmentSplit.seeds = [7, 19];
+  developmentSplit.labelCount += conflictCase.labels.length;
+  developmentSplit.usableLabelCount += conflictCase.labels.length;
+  developmentSplit.replay.labelCount += conflictCase.labels.length;
+  developmentSplit.replay.rollForwardLabelCount += conflictCase.labels.length;
+  fixture.lns.labelCount += conflictCase.labels.length;
+  fixture.seeds = [7, 19];
+  return fixture;
+}
+
 function testLnsWindowRankerExperiment() {
   const fixture = buildFixture();
   const result = runLnsWindowRankerExperiment(fixture, {
@@ -416,6 +448,54 @@ function testLnsWindowRankerExperiment() {
     strict: true
   });
   assert.deepEqual(registryValidation.issues, []);
+}
+
+function testLnsWindowRankerRepeatabilityConflictGate() {
+  const fixture = cloneFixtureWithFeatureIdenticalRepeatabilityConflict();
+  const blocked = runLnsWindowRankerExperiment(fixture, {
+    topK: 2,
+    training: {
+      epochs: 4,
+      learningRate: 0.05,
+      marginWeightCap: 500,
+      target: "roll-forward-final-lift"
+    }
+  });
+  const filtered = runLnsWindowRankerExperiment(fixture, {
+    topK: 2,
+    training: {
+      epochs: 4,
+      learningRate: 0.05,
+      marginWeightCap: 500,
+      target: "roll-forward-final-lift",
+      excludeFeatureIdenticalRepeatabilityConflicts: true
+    }
+  });
+
+  assert.equal(blocked.labels.repeatabilitySummary.featureIdenticalConflictBucketCount, 1);
+  assert.equal(blocked.labels.repeatabilitySummary.featureIdenticalConflictLabelCount, 2);
+  assert.equal(blocked.evaluation.summary.passed, false);
+  assert.match(blocked.evaluation.summary.failedReasons.join("; "), /feature-identical conflicts 1 buckets\/2 labels/);
+  assert.equal(blocked.labels.excludedFeatureIdenticalRepeatabilityConflictLabelCount, 0);
+  assert.equal(filtered.model.training.excludeFeatureIdenticalRepeatabilityConflicts, true);
+  assert.equal(filtered.labels.excludedFeatureIdenticalRepeatabilityConflictLabelCount, 2);
+  assert.equal(filtered.labels.repeatabilitySummary.featureIdenticalConflictBucketCount, 1);
+  assert.doesNotMatch(
+    filtered.evaluation.summary.failedReasons.join("; "),
+    /feature-identical conflicts 1 buckets\/2 labels/
+  );
+  assert.match(formatLnsWindowRankerExperiment(filtered), /repeatability-conflicts-excluded=true/);
+
+  const registryDraft = buildLnsWindowRankerRegistryEntryDraft(filtered, fixture, {
+    runId: "lns-window-ranker-repeatability-filter-test",
+    commands: [
+      "node dist/lnsWindowRankerCli.js --labels=labels.json --roll-forward-final-lift --exclude-repeatability-conflicts"
+    ],
+    artifactPaths: ["artifacts/lns-ranker/lns-window-ranker.json"]
+  });
+  assert.equal(registryDraft.budget.trainingExcludeFeatureIdenticalRepeatabilityConflicts, 1);
+  assert.equal(registryDraft.summaryMetrics.excludeFeatureIdenticalRepeatabilityConflicts, true);
+  assert.equal(registryDraft.summaryMetrics.excludedFeatureIdenticalRepeatabilityConflictLabelCount, 2);
 }
 
 function testLnsWindowRankerWeakReplaySeedFilter() {
@@ -1135,6 +1215,7 @@ function testLnsWindowRankerCliArtifacts() {
         "--margin-weight-cap=500",
         "--baseline-tie-break",
         "--exclude-weak-replay-seed-labels",
+        "--exclude-repeatability-conflicts",
         "--ranker-run-id=tmp-lns-window-ranker-test",
         "--ranker-register-dry-run",
         "--json"
@@ -1164,6 +1245,7 @@ function testLnsWindowRankerCliArtifacts() {
     assert.equal(modelArtifact.runtimeDefaultChanged, false);
     assert.equal(modelArtifact.training.baselineTieBreak, true);
     assert.equal(modelArtifact.training.allowWeakSeedReplayLabels, false);
+    assert.equal(modelArtifact.training.excludeFeatureIdenticalRepeatabilityConflicts, true);
 
     const registryGuard = childProcess.spawnSync(process.execPath, [cliPath, "--ranker-register-dry-run"], {
       cwd: repoRoot,
@@ -1177,6 +1259,7 @@ function testLnsWindowRankerCliArtifacts() {
 }
 
 testLnsWindowRankerExperiment();
+testLnsWindowRankerRepeatabilityConflictGate();
 testLnsWindowRankerRollForwardTarget();
 testLnsWindowRankerBaselineTieBreakTraining();
 testLnsWindowRankerWeakReplaySeedFilter();

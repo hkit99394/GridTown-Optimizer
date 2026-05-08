@@ -4,6 +4,7 @@ import {
   buildBenchmarkSuiteMetadata,
   buildBenchmarkVariantCoverage,
   listBenchmarkCaseNames,
+  meanNullableBenchmarkValue,
   selectBenchmarkCasesByName,
   snapshotBenchmarkVariantResult,
   snapshotBenchmarkVariantSummary,
@@ -66,6 +67,11 @@ export interface LnsWindowRankerOnlineAblationTelemetrySummary {
   fallbackRate: number;
 }
 
+export interface LnsWindowRankerOnlineTimeToBestSummary {
+  timeToBestIteration: number | null;
+  timeToBestWallClockSeconds: number | null;
+}
+
 export type LnsWindowRankerOnlineSelectionTraceStatus = "override" | "fallback" | "baseline";
 
 export interface LnsWindowRankerOnlineSelectionTraceEntry {
@@ -110,6 +116,10 @@ export interface LnsWindowRankerOnlineAblationVariantResult {
   populationDeltaVsBaseline: number;
   wallClockSeconds: number;
   wallClockDeltaVsBaselineSeconds: number;
+  timeToBestIteration: number | null;
+  timeToBestIterationDeltaVsBaseline: number | null;
+  timeToBestWallClockSeconds: number | null;
+  timeToBestWallClockDeltaVsBaselineSeconds: number | null;
   roadCount: number;
   roadDeltaVsBaseline: number;
   serviceCount: number;
@@ -183,6 +193,14 @@ export interface LnsWindowRankerOnlineAblationSummary
   sameFinalLayoutCount: number;
   changedFinalLayoutCount: number;
   meanFinalLayoutPlacementDelta: number;
+  meanTimeToBestIteration: number | null;
+  meanTimeToBestIterationDeltaVsBaseline: number | null;
+  meanTimeToBestWallClockSeconds: number | null;
+  meanTimeToBestWallClockDeltaVsBaselineSeconds: number | null;
+  earlierTimeToBestCount: number;
+  sameTimeToBestCount: number;
+  laterTimeToBestCount: number;
+  unknownTimeToBestCount: number;
 }
 
 export interface LnsWindowRankerOnlineAblationCoverage extends BenchmarkVariantCoverageMetrics {}
@@ -242,6 +260,12 @@ export interface LnsWindowRankerOnlineCalibrationThresholdSummary {
   bestPopulationDeltaCaseName: string | null;
   bestPopulationDeltaSeed: number | null;
   meanWallClockDeltaVsBaselineSeconds: number;
+  meanTimeToBestIterationDeltaVsBaseline: number | null;
+  meanTimeToBestWallClockDeltaVsBaselineSeconds: number | null;
+  earlierTimeToBestCount: number;
+  sameTimeToBestCount: number;
+  laterTimeToBestCount: number;
+  unknownTimeToBestCount: number;
   improvedCaseCount: number;
   regressedCaseCount: number;
   unchangedCaseCount: number;
@@ -291,7 +315,7 @@ export interface LnsWindowRankerOnlineCalibrationSuiteResult {
 
 export interface LnsWindowRankerOnlineCalibrationThresholdSnapshot extends Omit<
   LnsWindowRankerOnlineCalibrationThresholdSummary,
-  "meanWallClockDeltaVsBaselineSeconds"
+  "meanWallClockDeltaVsBaselineSeconds" | "meanTimeToBestWallClockDeltaVsBaselineSeconds"
 > {}
 
 export interface LnsWindowRankerOnlineCalibrationSnapshot extends Omit<
@@ -441,6 +465,50 @@ function meanOverrideScoreDelta(result: LnsBenchmarkCaseResult): number | null {
   return deltas.length ? sumBenchmarkBy(deltas, (delta) => delta) / deltas.length : null;
 }
 
+function nullableDelta(value: number | null, baseline: number | null): number | null {
+  return value === null || baseline === null ? null : value - baseline;
+}
+
+function timeToBestSummary(result: LnsBenchmarkCaseResult): LnsWindowRankerOnlineTimeToBestSummary {
+  const telemetry = result.lnsTelemetry;
+  if (!telemetry) {
+    return {
+      timeToBestIteration: null,
+      timeToBestWallClockSeconds: result.wallClockSeconds
+    };
+  }
+
+  const outcomes = telemetry.outcomes ?? [];
+  const bestPopulation = Math.max(
+    result.totalPopulation,
+    ...outcomes.flatMap((outcome) => [outcome.populationBefore, outcome.populationAfter])
+  );
+  const seedWallClockSeconds = telemetry.seedWallClockSeconds ?? 0;
+  const seedPopulation = outcomes[0]?.populationBefore ?? result.totalPopulation;
+  if (seedPopulation >= bestPopulation) {
+    return {
+      timeToBestIteration: 0,
+      timeToBestWallClockSeconds: seedWallClockSeconds
+    };
+  }
+
+  let elapsedSeconds = seedWallClockSeconds;
+  for (const [index, outcome] of outcomes.entries()) {
+    elapsedSeconds += outcome.wallClockSeconds;
+    if (outcome.populationAfter >= bestPopulation) {
+      return {
+        timeToBestIteration: index + 1,
+        timeToBestWallClockSeconds: elapsedSeconds
+      };
+    }
+  }
+
+  return {
+    timeToBestIteration: null,
+    timeToBestWallClockSeconds: result.wallClockSeconds
+  };
+}
+
 function sameTraceWindow(left: CpSatNeighborhoodWindow, right: CpSatNeighborhoodWindow): boolean {
   return left.top === right.top && left.left === right.left && left.rows === right.rows && left.cols === right.cols;
 }
@@ -502,6 +570,8 @@ function variantResult(
   const populationDeltaVsBaseline = result.totalPopulation - baseline.totalPopulation;
   const overrides = overrideOutcomeCount(result);
   const fallbacks = fallbackOutcomeCount(result);
+  const trajectory = timeToBestSummary(result);
+  const baselineTrajectory = timeToBestSummary(baseline);
   return {
     variantName,
     description: VARIANT_DESCRIPTIONS[variantName],
@@ -510,6 +580,16 @@ function variantResult(
     populationDeltaVsBaseline,
     wallClockSeconds: result.wallClockSeconds,
     wallClockDeltaVsBaselineSeconds: result.wallClockSeconds - baseline.wallClockSeconds,
+    timeToBestIteration: trajectory.timeToBestIteration,
+    timeToBestIterationDeltaVsBaseline: nullableDelta(
+      trajectory.timeToBestIteration,
+      baselineTrajectory.timeToBestIteration
+    ),
+    timeToBestWallClockSeconds: trajectory.timeToBestWallClockSeconds,
+    timeToBestWallClockDeltaVsBaselineSeconds: nullableDelta(
+      trajectory.timeToBestWallClockSeconds,
+      baselineTrajectory.timeToBestWallClockSeconds
+    ),
     roadCount: result.roadCount,
     roadDeltaVsBaseline: result.roadCount - baseline.roadCount,
     serviceCount: result.serviceCount,
@@ -550,6 +630,8 @@ function buildVariantSummary(
     return { benchmarkCase: entry, result };
   });
   const results = caseResults.map((entry) => entry.result);
+  const timeToBestIterationDeltas = results.map((entry) => entry.timeToBestIterationDeltaVsBaseline);
+  const knownTimeToBestIterationDeltas = timeToBestIterationDeltas.filter((delta): delta is number => delta !== null);
   const decisionCount = sumBenchmarkBy(results, (entry) => entry.windowRanker?.decisions ?? 0);
   const overrideCount = sumBenchmarkBy(results, (entry) => entry.windowRanker?.overrides ?? 0);
   const fallbackDecisionCount = sumBenchmarkBy(results, (entry) => entry.windowRanker?.fallbackDecisions ?? 0);
@@ -612,6 +694,18 @@ function buildVariantSummary(
       entry.finalLayoutDeltaVsBaseline.sameFinalLayout ? 0 : 1
     ),
     meanFinalLayoutPlacementDelta: benchmarkRatio(totalFinalLayoutPlacementDelta, results.length),
+    meanTimeToBestIteration: meanNullableBenchmarkValue(results.map((entry) => entry.timeToBestIteration)),
+    meanTimeToBestIterationDeltaVsBaseline: meanNullableBenchmarkValue(timeToBestIterationDeltas),
+    meanTimeToBestWallClockSeconds: meanNullableBenchmarkValue(
+      results.map((entry) => entry.timeToBestWallClockSeconds)
+    ),
+    meanTimeToBestWallClockDeltaVsBaselineSeconds: meanNullableBenchmarkValue(
+      results.map((entry) => entry.timeToBestWallClockDeltaVsBaselineSeconds)
+    ),
+    earlierTimeToBestCount: sumBenchmarkBy(knownTimeToBestIterationDeltas, (delta) => (delta < 0 ? 1 : 0)),
+    sameTimeToBestCount: sumBenchmarkBy(knownTimeToBestIterationDeltas, (delta) => (delta === 0 ? 1 : 0)),
+    laterTimeToBestCount: sumBenchmarkBy(knownTimeToBestIterationDeltas, (delta) => (delta > 0 ? 1 : 0)),
+    unknownTimeToBestCount: results.length - knownTimeToBestIterationDeltas.length,
     ...finalOutcomes.summarizeLnsWindowRankerFinalOutcomes(results)
   };
 }
@@ -656,6 +750,12 @@ function thresholdSummary(
     bestPopulationDeltaCaseName: summary.bestPopulationDeltaCaseName,
     bestPopulationDeltaSeed: summary.bestPopulationDeltaSeed,
     meanWallClockDeltaVsBaselineSeconds: summary.meanWallClockDeltaVsBaselineSeconds,
+    meanTimeToBestIterationDeltaVsBaseline: summary.meanTimeToBestIterationDeltaVsBaseline,
+    meanTimeToBestWallClockDeltaVsBaselineSeconds: summary.meanTimeToBestWallClockDeltaVsBaselineSeconds,
+    earlierTimeToBestCount: summary.earlierTimeToBestCount,
+    sameTimeToBestCount: summary.sameTimeToBestCount,
+    laterTimeToBestCount: summary.laterTimeToBestCount,
+    unknownTimeToBestCount: summary.unknownTimeToBestCount,
     improvedCaseCount: summary.improvedCaseCount,
     regressedCaseCount: summary.regressedCaseCount,
     unchangedCaseCount: summary.unchangedCaseCount,
@@ -851,7 +951,11 @@ export function createLnsWindowRankerOnlineCalibrationSnapshot(
     topMeanPopulationDeltaMinScoreDelta: result.topMeanPopulationDeltaMinScoreDelta,
     topSafeMinScoreDelta: result.topSafeMinScoreDelta,
     thresholdSummaries: result.thresholdSummaries.map(
-      ({ meanWallClockDeltaVsBaselineSeconds: _meanWallClockDeltaVsBaselineSeconds, ...summary }) => summary
+      ({
+        meanWallClockDeltaVsBaselineSeconds: _meanWallClockDeltaVsBaselineSeconds,
+        meanTimeToBestWallClockDeltaVsBaselineSeconds: _meanTimeToBestWallClockDeltaVsBaselineSeconds,
+        ...summary
+      }) => summary
     )
   };
 }

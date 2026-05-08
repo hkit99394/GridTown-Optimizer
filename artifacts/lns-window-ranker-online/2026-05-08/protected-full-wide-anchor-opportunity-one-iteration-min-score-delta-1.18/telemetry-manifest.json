@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "source": "model-experiment",
   "command": "node dist/lnsBenchmarkCli.js --window-ranker-online-ablation --window-ranker-protected-holdout --window-ranker-model=artifacts/lns-window-ranker/2026-05-08/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-wide-anchor-opportunity-exact-neutral-calibration-lr0.02-cap100/model.json --window-ranker-min-score-delta=1.18 --lns-iterations=1 --seeds=7,19,37 --artifact-dir=artifacts/lns-window-ranker-online/2026-05-08/protected-full-wide-anchor-opportunity-one-iteration-min-score-delta-1.18 --window-ranker-run-id=lns-window-ranker-online-2026-05-08-wide-anchor-opportunity-protected-full-one-iteration-min-score-delta-1-18 --window-ranker-decision=online-lns-window-ranker-wide-anchor-opportunity-protected-full-one-iteration-selective-threshold-diagnostics '--window-ranker-summary=Full protected one-iteration online LNS ranker diagnostic at minScoreDelta=1.18 for selective anchor-service lift; no solver default changed.' --json lns-holdout-corridor-weave-pressure lns-holdout-gate-offset-pressure lns-holdout-footprint-stagger-pressure lns-holdout-service-ridge-pressure lns-holdout-anchor-service-shelf-pressure",
-  "generatedAt": "2026-05-08T13:06:38.282Z",
+  "generatedAt": "2026-05-08T13:30:35.164Z",
   "git": {
-    "commit": "7d34ed8c851d38e54d37e05ddee0ca7ab9f4a530",
+    "commit": "028abdf609201fa69ace301323b45632bdec25e3",
     "branch": "features/validated-solver-improvement-loop"
   },
   "hardware": {
@@ -120,7 +120,15 @@
     "worstPopulationDeltaSeed": 7,
     "bestPopulationDeltaCaseName": "lns-holdout-anchor-service-shelf-pressure",
     "bestPopulationDeltaSeed": 7,
-    "meanWallClockDeltaVsBaselineSeconds": -0.023856552666666468,
+    "meanWallClockDeltaVsBaselineSeconds": 0.21351539460000019,
+    "baselineMeanTimeToBestIteration": 0.2,
+    "rankerMeanTimeToBestIteration": 0.4,
+    "meanTimeToBestIterationDeltaVsBaseline": 0.2,
+    "meanTimeToBestWallClockDeltaVsBaselineSeconds": 0.2593408609333333,
+    "earlierTimeToBestCount": 0,
+    "sameTimeToBestCount": 12,
+    "laterTimeToBestCount": 3,
+    "unknownTimeToBestCount": 0,
     "improvedCaseCount": 3,
     "regressedCaseCount": 0,
     "unchangedCaseCount": 12,

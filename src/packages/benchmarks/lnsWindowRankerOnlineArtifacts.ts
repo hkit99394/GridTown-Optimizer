@@ -135,6 +135,14 @@ function lnsWindowRankerOnlineAblationSummaryMetrics(
     bestPopulationDeltaCaseName: ranker.bestPopulationDeltaCaseName,
     bestPopulationDeltaSeed: ranker.bestPopulationDeltaSeed,
     meanWallClockDeltaVsBaselineSeconds: ranker.meanWallClockDeltaVsBaselineSeconds,
+    baselineMeanTimeToBestIteration: baseline.meanTimeToBestIteration,
+    rankerMeanTimeToBestIteration: ranker.meanTimeToBestIteration,
+    meanTimeToBestIterationDeltaVsBaseline: ranker.meanTimeToBestIterationDeltaVsBaseline,
+    meanTimeToBestWallClockDeltaVsBaselineSeconds: ranker.meanTimeToBestWallClockDeltaVsBaselineSeconds,
+    earlierTimeToBestCount: ranker.earlierTimeToBestCount,
+    sameTimeToBestCount: ranker.sameTimeToBestCount,
+    laterTimeToBestCount: ranker.laterTimeToBestCount,
+    unknownTimeToBestCount: ranker.unknownTimeToBestCount,
     improvedCaseCount: ranker.improvedCaseCount,
     regressedCaseCount: ranker.regressedCaseCount,
     unchangedCaseCount: ranker.unchangedCaseCount,
@@ -210,6 +218,12 @@ function lnsWindowRankerOnlineCalibrationSummaryMetrics(
     topSafeMinScoreDelta: result.topSafeMinScoreDelta,
     topSafeMeanPopulationDeltaVsBaseline: topSafeSummary?.meanPopulationDeltaVsBaseline ?? null,
     topSafeWorstPopulationDeltaVsBaseline: topSafeSummary?.worstPopulationDeltaVsBaseline ?? null,
+    topMeanTimeToBestIterationDeltaVsBaseline: topMeanSummary?.meanTimeToBestIterationDeltaVsBaseline ?? null,
+    topSafeTimeToBestIterationDeltaVsBaseline: topSafeSummary?.meanTimeToBestIterationDeltaVsBaseline ?? null,
+    topMeanTimeToBestWallClockDeltaVsBaselineSeconds:
+      topMeanSummary?.meanTimeToBestWallClockDeltaVsBaselineSeconds ?? null,
+    topSafeTimeToBestWallClockDeltaVsBaselineSeconds:
+      topSafeSummary?.meanTimeToBestWallClockDeltaVsBaselineSeconds ?? null,
     safeThresholdCount: result.thresholdSummaries.filter((entry) => entry.safetyGatePassed).length,
     thresholdSummaries: result.thresholdSummaries.map((entry) => ({ ...entry }))
   };
@@ -276,7 +290,12 @@ export function buildLnsWindowRankerOnlineAblationRegistryEntryDraft(
       overrideNeutralOutcomeCount: summaryMetrics.overrideNeutralOutcomeCount,
       overrideFinalImprovedCaseCount: summaryMetrics.overrideFinalImprovedCaseCount,
       overrideFinalNeutralCaseCount: summaryMetrics.overrideFinalNeutralCaseCount,
-      overrideFinalRegressedCaseCount: summaryMetrics.overrideFinalRegressedCaseCount
+      overrideFinalRegressedCaseCount: summaryMetrics.overrideFinalRegressedCaseCount,
+      meanTimeToBestIterationDeltaVsBaseline: summaryMetrics.meanTimeToBestIterationDeltaVsBaseline,
+      earlierTimeToBestCount: summaryMetrics.earlierTimeToBestCount,
+      sameTimeToBestCount: summaryMetrics.sameTimeToBestCount,
+      laterTimeToBestCount: summaryMetrics.laterTimeToBestCount,
+      unknownTimeToBestCount: summaryMetrics.unknownTimeToBestCount
     },
     model: {
       ...model,

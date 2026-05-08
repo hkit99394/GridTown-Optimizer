@@ -33,6 +33,8 @@ export interface BenchmarkVariantResultMetrics<TName extends string = string> {
   populationDeltaVsBaseline: number;
   wallClockSeconds: number;
   wallClockDeltaVsBaselineSeconds: number;
+  timeToBestWallClockSeconds?: number | null;
+  timeToBestWallClockDeltaVsBaselineSeconds?: number | null;
 }
 
 export interface BenchmarkVariantCaseMetrics<
@@ -57,6 +59,8 @@ export interface BenchmarkVariantSummaryMetrics<TName extends string = string> {
   bestPopulationDeltaVsBaseline: number;
   meanWallClockSeconds: number;
   meanWallClockDeltaVsBaselineSeconds: number;
+  meanTimeToBestWallClockSeconds?: number | null;
+  meanTimeToBestWallClockDeltaVsBaselineSeconds?: number | null;
   improvedCaseCount: number;
   regressedCaseCount: number;
   unchangedCaseCount: number;
@@ -86,12 +90,18 @@ export interface BenchmarkVariantCoverageCase<TVariant = unknown> {
 
 export type BenchmarkVariantResultSnapshot<TResult extends BenchmarkVariantResultMetrics> = Omit<
   TResult,
-  "wallClockSeconds" | "wallClockDeltaVsBaselineSeconds"
+  | "wallClockSeconds"
+  | "wallClockDeltaVsBaselineSeconds"
+  | "timeToBestWallClockSeconds"
+  | "timeToBestWallClockDeltaVsBaselineSeconds"
 >;
 
 export type BenchmarkVariantSummarySnapshot<TSummary extends BenchmarkVariantSummaryMetrics> = Omit<
   TSummary,
-  "meanWallClockSeconds" | "meanWallClockDeltaVsBaselineSeconds"
+  | "meanWallClockSeconds"
+  | "meanWallClockDeltaVsBaselineSeconds"
+  | "meanTimeToBestWallClockSeconds"
+  | "meanTimeToBestWallClockDeltaVsBaselineSeconds"
 >;
 
 export type BenchmarkOptionsWithDefaults<TOptions extends object, TDefaults extends Partial<TOptions>> = TOptions & {
@@ -382,6 +392,8 @@ export function snapshotBenchmarkVariantResult<TResult extends BenchmarkVariantR
   const {
     wallClockSeconds: _wallClockSeconds,
     wallClockDeltaVsBaselineSeconds: _wallClockDeltaVsBaselineSeconds,
+    timeToBestWallClockSeconds: _timeToBestWallClockSeconds,
+    timeToBestWallClockDeltaVsBaselineSeconds: _timeToBestWallClockDeltaVsBaselineSeconds,
     ...snapshot
   } = result;
   return snapshot;
@@ -393,6 +405,8 @@ export function snapshotBenchmarkVariantSummary<TSummary extends BenchmarkVarian
   const {
     meanWallClockSeconds: _meanWallClockSeconds,
     meanWallClockDeltaVsBaselineSeconds: _meanWallClockDeltaVsBaselineSeconds,
+    meanTimeToBestWallClockSeconds: _meanTimeToBestWallClockSeconds,
+    meanTimeToBestWallClockDeltaVsBaselineSeconds: _meanTimeToBestWallClockDeltaVsBaselineSeconds,
     ...snapshot
   } = summary;
   return snapshot;

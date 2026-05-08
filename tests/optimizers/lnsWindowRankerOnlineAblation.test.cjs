@@ -187,6 +187,12 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(result.cases[0].baseline.totalPopulation, 100);
     assert.equal(result.cases[0].variants[1].totalPopulation, 120);
     assert.equal(result.cases[0].variants[1].populationDeltaVsBaseline, 20);
+    assert.equal(result.cases[0].variants[0].timeToBestIteration, 0);
+    assert.equal(result.cases[0].variants[0].timeToBestIterationDeltaVsBaseline, 0);
+    assert.equal(result.cases[0].variants[1].timeToBestIteration, 1);
+    assert.equal(result.cases[0].variants[1].timeToBestIterationDeltaVsBaseline, 1);
+    assert.equal(result.cases[0].variants[1].timeToBestWallClockSeconds, 0);
+    assert.equal(result.cases[0].variants[1].timeToBestWallClockDeltaVsBaselineSeconds, 0);
     assert.equal(result.variantSummaries[1].rankerDecisionCount, 2);
     assert.equal(result.variantSummaries[1].rankerOverrideCount, 1);
     assert.equal(result.variantSummaries[1].rankerFallbackDecisionCount, 1);
@@ -236,6 +242,14 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(result.variantSummaries[1].sameFinalLayoutCount, 0);
     assert.equal(result.variantSummaries[1].changedFinalLayoutCount, 1);
     assert.equal(result.variantSummaries[1].meanFinalLayoutPlacementDelta, 3);
+    assert.equal(result.variantSummaries[1].meanTimeToBestIteration, 1);
+    assert.equal(result.variantSummaries[1].meanTimeToBestIterationDeltaVsBaseline, 1);
+    assert.equal(result.variantSummaries[1].meanTimeToBestWallClockSeconds, 0);
+    assert.equal(result.variantSummaries[1].meanTimeToBestWallClockDeltaVsBaselineSeconds, 0);
+    assert.equal(result.variantSummaries[1].earlierTimeToBestCount, 0);
+    assert.equal(result.variantSummaries[1].sameTimeToBestCount, 0);
+    assert.equal(result.variantSummaries[1].laterTimeToBestCount, 1);
+    assert.equal(result.variantSummaries[1].unknownTimeToBestCount, 0);
     assert.equal(result.cases[0].variants[0].finalLayoutDeltaVsBaseline.sameFinalLayout, true);
     assert.equal(result.cases[0].variants[0].finalLayoutDeltaVsBaseline.placementDeltaCount, 0);
     assert.equal(result.cases[0].variants[1].finalLayoutDeltaVsBaseline.sameFinalLayout, false);
@@ -337,6 +351,8 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     const snapshot = createLnsWindowRankerOnlineAblationSnapshot(result);
     assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
     assert.equal(Object.hasOwn(snapshot.cases[0].variants[1], "wallClockSeconds"), false);
+    assert.equal(Object.hasOwn(snapshot.cases[0].variants[1], "timeToBestWallClockSeconds"), false);
+    assert.equal(snapshot.cases[0].variants[1].timeToBestIteration, 1);
     assert.equal(snapshot.cases[0].variants[1].selectionTrace.length, 1);
     assert.equal(snapshot.cases[0].variants[1].finalLayoutDeltaVsBaseline.placementDeltaCount, 3);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /=== LNS Window Ranker Online A\/B ===/);
@@ -345,6 +361,8 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.match(formatLnsWindowRankerOnlineAblation(result), /trace:1/);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /layout-changed=1/);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /layout-delta:3/);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /ttb-iter:1/);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /ttb-earlier\/same\/later\/unknown=0\/0\/1\/0/);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /override-improved=1/);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /override-final=1\/0\/0/);
     assert.match(
@@ -368,6 +386,9 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(telemetryManifest.metrics.selectionTraceCount, 1);
     assert.equal(telemetryManifest.metrics.changedFinalLayoutCount, 1);
     assert.equal(telemetryManifest.metrics.meanFinalLayoutPlacementDelta, 3);
+    assert.equal(telemetryManifest.metrics.rankerMeanTimeToBestIteration, 1);
+    assert.equal(telemetryManifest.metrics.meanTimeToBestIterationDeltaVsBaseline, 1);
+    assert.equal(telemetryManifest.metrics.laterTimeToBestCount, 1);
     assert.equal(telemetryManifest.metrics.overrideImprovedOutcomeCount, 1);
     assert.equal(telemetryManifest.metrics.overrideNeutralOutcomeCount, 0);
     assert.equal(telemetryManifest.metrics.overrideFinalImprovedCaseCount, 1);
@@ -416,6 +437,8 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(registryDraft.budget.selectionTraceCount, 1);
     assert.equal(registryDraft.budget.changedFinalLayoutCount, 1);
     assert.equal(registryDraft.budget.meanFinalLayoutPlacementDelta, 3);
+    assert.equal(registryDraft.budget.meanTimeToBestIterationDeltaVsBaseline, 1);
+    assert.equal(registryDraft.budget.laterTimeToBestCount, 1);
     assert.equal(registryDraft.budget.overrideFinalImprovedCaseCount, 1);
     assert.equal(registryDraft.budget.overrideFinalNeutralCaseCount, 0);
     assert.equal(registryDraft.budget.overrideFinalRegressedCaseCount, 0);
@@ -424,6 +447,9 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(registryDraft.summaryMetrics.meanPopulationDeltaVsBaseline, 20);
     assert.equal(registryDraft.summaryMetrics.changedFinalLayoutCount, 1);
     assert.equal(registryDraft.summaryMetrics.meanFinalLayoutPlacementDelta, 3);
+    assert.equal(registryDraft.summaryMetrics.rankerMeanTimeToBestIteration, 1);
+    assert.equal(registryDraft.summaryMetrics.meanTimeToBestIterationDeltaVsBaseline, 1);
+    assert.equal(registryDraft.summaryMetrics.laterTimeToBestCount, 1);
     assert.equal(registryDraft.summaryMetrics.overrideChangedWindowCount, 1);
     assert.equal(registryDraft.summaryMetrics.fallbackChangedWindowCount, 0);
     assert.equal(registryDraft.summaryMetrics.overrideFeatureDeltaCount, 1);
@@ -548,6 +574,12 @@ function testOnlineCalibrationSummarizesThresholdSweep() {
     assert.equal(result.topMeanPopulationDeltaMinScoreDelta, 0);
     assert.equal(result.topSafeMinScoreDelta, 0);
     assert.equal(result.thresholdSummaries[0].meanPopulationDeltaVsBaseline, 20);
+    assert.equal(result.thresholdSummaries[0].meanTimeToBestIterationDeltaVsBaseline, 1);
+    assert.equal(result.thresholdSummaries[0].meanTimeToBestWallClockDeltaVsBaselineSeconds, 0);
+    assert.equal(result.thresholdSummaries[0].earlierTimeToBestCount, 0);
+    assert.equal(result.thresholdSummaries[0].sameTimeToBestCount, 0);
+    assert.equal(result.thresholdSummaries[0].laterTimeToBestCount, 1);
+    assert.equal(result.thresholdSummaries[0].unknownTimeToBestCount, 0);
     assert.equal(result.thresholdSummaries[0].rankerOverrideCount, 1);
     assert.equal(result.thresholdSummaries[0].changedFinalLayoutCount, 1);
     assert.equal(result.thresholdSummaries[0].meanFinalLayoutPlacementDelta, 3);
@@ -576,6 +608,9 @@ function testOnlineCalibrationSummarizesThresholdSweep() {
       "sliding->service-overlap": { uncategorized: 1 }
     });
     assert.equal(result.thresholdSummaries[1].meanPopulationDeltaVsBaseline, 0);
+    assert.equal(result.thresholdSummaries[1].meanTimeToBestIterationDeltaVsBaseline, 0);
+    assert.equal(result.thresholdSummaries[1].sameTimeToBestCount, 1);
+    assert.equal(result.thresholdSummaries[1].laterTimeToBestCount, 0);
     assert.equal(result.thresholdSummaries[1].rankerFallbackDecisionCount, 2);
     assert.equal(result.thresholdSummaries[1].changedFinalLayoutCount, 0);
     assert.equal(result.thresholdSummaries[1].meanFinalLayoutPlacementDelta, 0);
@@ -606,9 +641,13 @@ function testOnlineCalibrationSummarizesThresholdSweep() {
     const snapshot = createLnsWindowRankerOnlineCalibrationSnapshot(result);
     assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
     assert.equal(Object.hasOwn(snapshot.thresholdSummaries[0], "meanWallClockDeltaVsBaselineSeconds"), false);
+    assert.equal(Object.hasOwn(snapshot.thresholdSummaries[0], "meanTimeToBestWallClockDeltaVsBaselineSeconds"), false);
+    assert.equal(snapshot.thresholdSummaries[0].meanTimeToBestIterationDeltaVsBaseline, 1);
     const formatted = formatLnsWindowRankerOnlineCalibration(result);
     assert.match(formatted, /=== LNS Window Ranker Threshold Sweep ===/);
     assert.match(formatted, /min-score-delta=0.2/);
+    assert.match(formatted, /ttb-iter-delta-mean=1/);
+    assert.match(formatted, /ttb-earlier\/same\/later\/unknown=0\/0\/1\/0/);
     assert.match(formatted, /override-transitions=sliding->service-overlap:1/);
     assert.match(formatted, /override-feature-deltas=selectedByBaseline:-1/);
     assert.match(formatted, /override-transition-feature-deltas=sliding->service-overlap\[selectedByBaseline:-1/);
@@ -625,8 +664,11 @@ function testOnlineCalibrationSummarizesThresholdSweep() {
     assert.equal(telemetryManifest.modelFingerprint, "fnv1a:test-online");
     assert.equal(telemetryManifest.metrics.thresholdCount, 2);
     assert.equal(telemetryManifest.metrics.topMeanPopulationDeltaMinScoreDelta, 0);
+    assert.equal(telemetryManifest.metrics.topMeanTimeToBestIterationDeltaVsBaseline, 1);
     assert.equal(telemetryManifest.metrics.safeThresholdCount, 2);
     assert.equal(telemetryManifest.metrics.thresholdSummaries[1].fallbackTransitionCounts["sliding->sliding"], 1);
+    assert.equal(telemetryManifest.metrics.thresholdSummaries[0].laterTimeToBestCount, 1);
+    assert.equal(telemetryManifest.metrics.thresholdSummaries[1].sameTimeToBestCount, 1);
     assert.equal(
       telemetryManifest.metrics.thresholdSummaries[1].fallbackTransitionFinalOutcomeCounts["sliding->sliding"].neutral,
       1
@@ -645,6 +687,7 @@ function testOnlineCalibrationSummarizesThresholdSweep() {
     assert.equal(registryDraft.splitStatus.protectedHoldout, true);
     assert.equal(registryDraft.budget.thresholdCount, 2);
     assert.equal(registryDraft.budget.totalRuns, 4);
+    assert.equal(registryDraft.summaryMetrics.topMeanTimeToBestIterationDeltaVsBaseline, 1);
     assert.equal(registryDraft.summaryMetrics.thresholdSummaries[0].overrideChangedWindowCount, 1);
     assert.equal(
       registryDraft.summaryMetrics.thresholdSummaries[0].overrideTransitionPressureFamilyCounts[

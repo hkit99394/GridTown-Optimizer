@@ -994,15 +994,36 @@ function testLnsWindowRankerSupplementalReplayCalibration() {
       supplementalReplayCalibration: true
     }
   });
+  const calibratedIgnoringBaselineFeature = runLnsWindowRankerExperiment(fixture, {
+    supplementalReplaySnapshots: [supplementalReplay],
+    topK: 2,
+    training: {
+      epochs: 4,
+      learningRate: 0.05,
+      marginWeightCap: 500,
+      target: "roll-forward-final-lift",
+      supplementalReplayCalibration: true,
+      supplementalReplayCalibrationIgnoreBaselineFeature: true
+    }
+  });
   const formatted = formatLnsWindowRankerExperiment(calibrated);
+  const ignoreBaselineFormatted = formatLnsWindowRankerExperiment(calibratedIgnoringBaselineFeature);
   assert.equal(calibrated.audit.supplementalReplayCalibration, true);
   assert.equal(calibrated.audit.supplementalReplaySnapshotCount, 1);
   assert.equal(calibrated.model.training.supplementalReplayCalibration, true);
+  assert.equal(calibrated.model.training.supplementalReplayCalibrationIgnoreBaselineFeature, false);
+  assert.equal(
+    calibratedIgnoringBaselineFeature.model.training.supplementalReplayCalibrationIgnoreBaselineFeature,
+    true
+  );
   assert.equal(calibrated.labels.supplementalReplayDecisionCount, 1);
   assert.equal(calibrated.labels.supplementalReplayLabelCount, 3);
   assert.equal(calibrated.model.trainedDecisionCount, baseline.model.trainedDecisionCount + 1);
   assert(calibrated.model.trainedPairCount > baseline.model.trainedPairCount);
   assert(calibrated.model.weights.selectedByBaseline > baseline.model.weights.selectedByBaseline);
+  assert(
+    calibratedIgnoringBaselineFeature.model.weights.selectedByBaseline < calibrated.model.weights.selectedByBaseline
+  );
   assert.equal(calibrated.evaluation.summary.passed, false);
   assert(
     calibrated.evaluation.summary.failedReasons.includes(
@@ -1010,6 +1031,8 @@ function testLnsWindowRankerSupplementalReplayCalibration() {
     )
   );
   assert.match(formatted, /supplemental-replay-calibration=true/);
+  assert.match(formatted, /supplemental-replay-calibration-ignore-baseline-feature=false/);
+  assert.match(ignoreBaselineFormatted, /supplemental-replay-calibration-ignore-baseline-feature=true/);
   assert.match(formatted, /supplemental-decisions=1/);
 
   const registryDraft = buildLnsWindowRankerRegistryEntryDraft(calibrated, fixture, {
@@ -1019,9 +1042,26 @@ function testLnsWindowRankerSupplementalReplayCalibration() {
   });
   assert.equal(registryDraft.decision, "offline-lns-window-ranker-insufficient");
   assert.equal(registryDraft.budget.trainingSupplementalReplayCalibration, 1);
+  assert.equal(registryDraft.budget.trainingSupplementalReplayCalibrationIgnoreBaselineFeature, 0);
   assert.equal(registryDraft.budget.supplementalReplayDecisionCount, 1);
   assert.equal(registryDraft.budget.supplementalReplayLabelCount, 3);
   assert.equal(registryDraft.summaryMetrics.supplementalReplayCalibration, true);
+  assert.equal(registryDraft.summaryMetrics.supplementalReplayCalibrationIgnoreBaselineFeature, false);
+
+  const ignoreBaselineRegistryDraft = buildLnsWindowRankerRegistryEntryDraft(
+    calibratedIgnoringBaselineFeature,
+    fixture,
+    {
+      runId: "lns-window-ranker-supplemental-calibration-ignore-baseline-test",
+      commands: [
+        "node dist/lnsWindowRankerCli.js --labels=labels.json --supplemental-replay-calibration --supplemental-replay-calibration-ignore-baseline-feature"
+      ],
+      artifactPaths: ["artifacts/lns-ranker/lns-window-ranker-ignore-baseline.json"]
+    }
+  );
+  assert.equal(ignoreBaselineRegistryDraft.budget.trainingSupplementalReplayCalibration, 1);
+  assert.equal(ignoreBaselineRegistryDraft.budget.trainingSupplementalReplayCalibrationIgnoreBaselineFeature, 1);
+  assert.equal(ignoreBaselineRegistryDraft.summaryMetrics.supplementalReplayCalibrationIgnoreBaselineFeature, true);
 }
 
 function testLnsWindowRankerRollForwardTarget() {

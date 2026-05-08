@@ -1,0 +1,17 @@
+=== CPU-First LNS Window Ranker ===
+Generated: 2026-05-08T15:34:01.561Z
+Schema: 1
+Audit: cpu-only=true runtime-default-changed=false source-preset=strict-lns-replay source-lns-scale-ready=true target=roll-forward-final-lift weak-seed-labels=false supplemental-replay-calibration=true supplemental-replay-snapshots=3
+Labels: total=1545 usable=1545 opportunities=54 supplemental-decisions=48 supplemental-labels=357 label-fingerprint=fnv1a:58ce487f
+Model: lns-window-linear-pairwise-ranker features=27 epochs=5 baseline-tie-break=false target=roll-forward-final-lift weak-seed-labels=false supplemental-replay-calibration=true supplemental-replay-calibration-ignore-baseline-feature=true trained-decisions=93 model-fingerprint=fnv1a:b6a2e6aa
+Model capture: development=capture=0.4607 hit@1=0.3667 hit@k=0.8000 regret=66.33 opportunities=30/93 holdout=capture=0.1709 hit@1=0.1818 hit@k=0.3636 regret=88.18 opportunities=33/45
+- baseline baseline-selected-window: development=capture=0.0000 hit@1=0.0000 hit@k=0.2857 regret=128.57 opportunities=21/45 holdout=capture=0.0000 hit@1=0.0000 hit@k=0.3636 regret=106.36 opportunities=33/45
+- baseline operator-score: development=capture=0.0000 hit@1=0.0000 hit@k=0.2857 regret=128.57 opportunities=21/45 holdout=capture=0.0000 hit@1=0.0000 hit@k=0.3636 regret=106.36 opportunities=33/45
+- baseline stable-random: development=capture=0.2259 hit@1=0.1429 hit@k=0.4286 regret=99.52 opportunities=21/45 holdout=capture=0.5499 hit@1=0.5455 hit@k=0.6667 regret=47.88 opportunities=33/45
+- baseline connectivity-shadow: development=capture=0.2889 hit@1=0.2857 hit@k=0.2857 regret=91.43 opportunities=21/45 holdout=capture=0.1709 hit@1=0.1818 hit@k=0.3636 regret=88.18 opportunities=33/45
+- baseline fragmentation: development=capture=0.7111 hit@1=0.4286 hit@k=0.4286 regret=37.14 opportunities=21/45 holdout=capture=0.5726 hit@1=0.8182 hit@k=0.8182 regret=45.45 opportunities=33/45
+- baseline candidate-loss: development=capture=0.3556 hit@1=0.2857 hit@k=0.4286 regret=82.86 opportunities=21/45 holdout=capture=0.5556 hit@1=0.6364 hit@k=0.8182 regret=47.27 opportunities=33/45
+- baseline residential-headroom: development=capture=0.0000 hit@1=0.0000 hit@k=0.2857 regret=128.57 opportunities=21/45 holdout=capture=0.0000 hit@1=0.0000 hit@k=0.3636 regret=106.36 opportunities=33/45
+- baseline service-bonus: development=capture=0.0000 hit@1=0.0000 hit@k=0.0000 regret=128.57 opportunities=21/45 holdout=capture=0.0000 hit@1=0.0000 hit@k=0.1818 regret=106.36 opportunities=33/45
+Gate: passed=false best-baseline=fragmentation holdout-delta=-0.4017 failures=supplemental replay calibration is diagnostics-only and cannot promote a model; holdout capture 0.1709 does not beat best baseline fragmentation 0.5726
+Decision: offline diagnostics only; no LNS runtime scorer or solver default changed.

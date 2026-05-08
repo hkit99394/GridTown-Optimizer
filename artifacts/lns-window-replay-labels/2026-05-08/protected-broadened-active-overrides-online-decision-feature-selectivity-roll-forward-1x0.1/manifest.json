@@ -1,0 +1,25 @@
+{
+  "artifactDir": "artifacts/lns-window-replay-labels/2026-05-08/protected-broadened-active-overrides-online-decision-feature-selectivity-roll-forward-1x0.1",
+  "artifactPaths": {
+    "replayJson": "artifacts/lns-window-replay-labels/2026-05-08/protected-broadened-active-overrides-online-decision-feature-selectivity-roll-forward-1x0.1/lns-window-replay-labels.json",
+    "replayText": "artifacts/lns-window-replay-labels/2026-05-08/protected-broadened-active-overrides-online-decision-feature-selectivity-roll-forward-1x0.1/lns-window-replay-labels.txt",
+    "manifestJson": "artifacts/lns-window-replay-labels/2026-05-08/protected-broadened-active-overrides-online-decision-feature-selectivity-roll-forward-1x0.1/manifest.json"
+  },
+  "command": "node dist/lnsBenchmarkCli.js --window-replay-protected-holdout --window-replay-online-scorecard=artifacts/lns-window-ranker-online/2026-05-08/protected-broadened-coverage-one-iteration-feature-selectivity-min-score-delta-1.18/lns-window-ranker-online-ablation.json --seeds=7,19,37 --max-windows=8 --exploration-windows=0 --roll-forward-iterations=1 --roll-forward-repair-time=0.1 --window-replay-artifact-dir=artifacts/lns-window-replay-labels/2026-05-08/protected-broadened-active-overrides-online-decision-feature-selectivity-roll-forward-1x0.1 --json lns-holdout-anchor-service-shelf-pressure lns-holdout-gate-double-choke-pressure lns-holdout-service-braid-pressure",
+  "generatedAt": "2026-05-08T15:29:45.296Z",
+  "caseCount": 3,
+  "seedCount": 3,
+  "stateCount": 9,
+  "labelCount": 81,
+  "rollForwardLabelCount": 81,
+  "selectedCaseNames": [
+    "lns-holdout-anchor-service-shelf-pressure",
+    "lns-holdout-gate-double-choke-pressure",
+    "lns-holdout-service-braid-pressure"
+  ],
+  "pressureFamilies": [
+    "anchor-service",
+    "gate",
+    "service-pressure"
+  ]
+}

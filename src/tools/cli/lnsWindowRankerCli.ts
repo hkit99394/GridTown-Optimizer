@@ -54,6 +54,7 @@ interface ParsedLnsWindowRankerArgs {
   baselineTieBreak: boolean;
   gapDiagnostics: boolean;
   supplementalReplayCalibration: boolean;
+  supplementalReplayCalibrationIgnoreBaselineFeature: boolean;
   target?: LnsWindowRankerLabelTarget;
   allowWeakSeedReplayLabels: boolean;
   topK?: number;
@@ -132,6 +133,7 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
   let baselineTieBreak = false;
   let gapDiagnostics = false;
   let supplementalReplayCalibration = false;
+  let supplementalReplayCalibrationIgnoreBaselineFeature = false;
   let target: LnsWindowRankerLabelTarget | undefined;
   let allowWeakSeedReplayLabels = true;
   let topK: number | undefined;
@@ -240,6 +242,16 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
       supplementalReplayCalibration = true;
       continue;
     }
+    if (
+      isCliFlag(
+        arg,
+        "--supplemental-replay-calibration-ignore-baseline-feature",
+        "--supplemental-replay-ignore-baseline-feature"
+      )
+    ) {
+      supplementalReplayCalibrationIgnoreBaselineFeature = true;
+      continue;
+    }
     if (isCliFlag(arg, "--roll-forward-final-lift", "--final-lift-target")) {
       target = "roll-forward-final-lift";
       continue;
@@ -266,6 +278,7 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
     baselineTieBreak,
     gapDiagnostics,
     supplementalReplayCalibration,
+    supplementalReplayCalibrationIgnoreBaselineFeature,
     target,
     allowWeakSeedReplayLabels,
     topK,
@@ -583,6 +596,11 @@ export function runLnsWindowRankerCli(): void {
   if (args.supplementalReplayCalibration && args.supplementalReplayLabelPaths.length === 0) {
     throw new Error("--supplemental-replay-calibration requires --supplemental-replay-labels=<path>.");
   }
+  if (args.supplementalReplayCalibrationIgnoreBaselineFeature && !args.supplementalReplayCalibration) {
+    throw new Error(
+      "--supplemental-replay-calibration-ignore-baseline-feature requires --supplemental-replay-calibration."
+    );
+  }
 
   const labelSnapshot = readLabelSnapshot(args.labelsPath);
   const supplementalReplaySnapshots = args.supplementalReplayLabelPaths.map(readSupplementalReplaySnapshot);
@@ -597,7 +615,8 @@ export function runLnsWindowRankerCli(): void {
       baselineTieBreak: args.baselineTieBreak,
       target: args.target,
       allowWeakSeedReplayLabels: args.allowWeakSeedReplayLabels,
-      supplementalReplayCalibration: args.supplementalReplayCalibration
+      supplementalReplayCalibration: args.supplementalReplayCalibration,
+      supplementalReplayCalibrationIgnoreBaselineFeature: args.supplementalReplayCalibrationIgnoreBaselineFeature
     }
   });
 

@@ -1,0 +1,34 @@
+{
+  "artifactDir": "artifacts/lns-window-replay-labels/2026-05-08/protected-broadened-one-iteration-online-decision-feature-selectivity-roll-forward-1x0.1",
+  "artifactPaths": {
+    "replayJson": "artifacts/lns-window-replay-labels/2026-05-08/protected-broadened-one-iteration-online-decision-feature-selectivity-roll-forward-1x0.1/lns-window-replay-labels.json",
+    "replayText": "artifacts/lns-window-replay-labels/2026-05-08/protected-broadened-one-iteration-online-decision-feature-selectivity-roll-forward-1x0.1/lns-window-replay-labels.txt",
+    "manifestJson": "artifacts/lns-window-replay-labels/2026-05-08/protected-broadened-one-iteration-online-decision-feature-selectivity-roll-forward-1x0.1/manifest.json"
+  },
+  "command": "node dist/lnsBenchmarkCli.js --window-replay-protected-holdout --window-replay-online-scorecard=artifacts/lns-window-ranker-online/2026-05-08/protected-broadened-coverage-one-iteration-feature-selectivity-min-score-delta-1.18/lns-window-ranker-online-ablation.json --seeds=7,19,37 --max-windows=8 --exploration-windows=0 --roll-forward-iterations=1 --roll-forward-repair-time=0.1 --window-replay-artifact-dir=artifacts/lns-window-replay-labels/2026-05-08/protected-broadened-one-iteration-online-decision-feature-selectivity-roll-forward-1x0.1 --json",
+  "generatedAt": "2026-05-08T15:24:58.207Z",
+  "caseCount": 10,
+  "seedCount": 3,
+  "stateCount": 30,
+  "labelCount": 249,
+  "rollForwardLabelCount": 249,
+  "selectedCaseNames": [
+    "lns-holdout-corridor-weave-pressure",
+    "lns-holdout-gate-offset-pressure",
+    "lns-holdout-footprint-stagger-pressure",
+    "lns-holdout-service-ridge-pressure",
+    "lns-holdout-anchor-service-shelf-pressure",
+    "lns-holdout-corridor-switchback-pressure",
+    "lns-holdout-gate-double-choke-pressure",
+    "lns-holdout-footprint-lattice-pressure",
+    "lns-holdout-service-braid-pressure",
+    "lns-holdout-anchor-service-harbor-pressure"
+  ],
+  "pressureFamilies": [
+    "corridor",
+    "gate",
+    "footprint-pressure",
+    "service-pressure",
+    "anchor-service"
+  ]
+}

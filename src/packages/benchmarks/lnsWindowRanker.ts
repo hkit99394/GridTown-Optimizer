@@ -43,6 +43,7 @@ export interface LnsWindowRankerTrainingOptions {
   target?: LnsWindowRankerLabelTarget;
   allowWeakSeedReplayLabels?: boolean;
   supplementalReplayCalibration?: boolean;
+  supplementalReplayCalibrationIgnoreBaselineFeature?: boolean;
 }
 
 export interface LnsWindowRankerRunOptions {
@@ -176,8 +177,11 @@ const DEFAULT_LNS_WINDOW_RANKER_TRAINING: Required<LnsWindowRankerTrainingOption
   baselineTieBreak: false,
   target: "immediate-improvement",
   allowWeakSeedReplayLabels: true,
-  supplementalReplayCalibration: false
+  supplementalReplayCalibration: false,
+  supplementalReplayCalibrationIgnoreBaselineFeature: false
 });
+
+const SELECTED_BY_BASELINE_FEATURE_INDEX = LNS_WINDOW_RANKER_FEATURE_NAMES.indexOf("selectedByBaseline");
 
 function roundMetric(value: number): number {
   return Math.round(value * 10000) / 10000;
@@ -204,7 +208,9 @@ function normalizeTrainingOptions(
     baselineTieBreak: options?.baselineTieBreak === true,
     target: normalizeLnsWindowRankerLabelTarget(options?.target),
     allowWeakSeedReplayLabels: normalizeLnsWindowRankerWeakSeedAllowance(options?.allowWeakSeedReplayLabels),
-    supplementalReplayCalibration: options?.supplementalReplayCalibration === true
+    supplementalReplayCalibration: options?.supplementalReplayCalibration === true,
+    supplementalReplayCalibrationIgnoreBaselineFeature:
+      options?.supplementalReplayCalibrationIgnoreBaselineFeature === true
   };
 }
 
@@ -382,6 +388,24 @@ function trainingDelta(
   return bestImprovement - targetValue(negative, training.target);
 }
 
+function featureDiffForTraining(
+  group: ReplayDecisionGroup,
+  positiveVector: readonly number[],
+  negativeVector: readonly number[],
+  bestImprovement: number,
+  training: Required<LnsWindowRankerTrainingOptions>
+): number[] {
+  const diff = positiveVector.map((value, index) => value - (negativeVector[index] ?? 0));
+  if (
+    training.supplementalReplayCalibrationIgnoreBaselineFeature &&
+    SELECTED_BY_BASELINE_FEATURE_INDEX >= 0 &&
+    useSupplementalNeutralBaselineCalibration(group, bestImprovement, training)
+  ) {
+    diff[SELECTED_BY_BASELINE_FEATURE_INDEX] = 0;
+  }
+  return diff;
+}
+
 function evaluateMetricSummary(
   groups: readonly ReplayDecisionGroup[],
   weights: readonly number[],
@@ -510,7 +534,7 @@ function trainLinearRanker(
           if (delta <= 0) continue;
           trainedPairCount++;
           const negativeVector = featureVector(negative);
-          const diff = positiveVector.map((value, index) => value - (negativeVector[index] ?? 0));
+          const diff = featureDiffForTraining(group, positiveVector, negativeVector, bestImprovement, training);
           if (dot(diff, weights) > 0) continue;
           const update = training.learningRate * marginWeight(delta, training.marginWeightCap);
           for (let index = 0; index < weights.length; index++) {
@@ -601,6 +625,8 @@ function summaryMetrics(result: LnsWindowRankerExperimentResult): Record<string,
     target: result.model.training.target,
     weakSeedReplayLabelsAllowed: result.model.training.allowWeakSeedReplayLabels,
     supplementalReplayCalibration: result.model.training.supplementalReplayCalibration,
+    supplementalReplayCalibrationIgnoreBaselineFeature:
+      result.model.training.supplementalReplayCalibrationIgnoreBaselineFeature,
     supplementalReplaySnapshotCount: result.audit.supplementalReplaySnapshotCount,
     developmentDecisionCount: result.labels.developmentDecisionCount,
     holdoutDecisionCount: result.labels.holdoutDecisionCount,
@@ -779,6 +805,10 @@ export function buildLnsWindowRankerRegistryEntryDraft(
       trainingTargetRollForwardFinalLift: result.model.training.target === "roll-forward-final-lift" ? 1 : 0,
       trainingAllowWeakSeedReplayLabels: result.model.training.allowWeakSeedReplayLabels ? 1 : 0,
       trainingSupplementalReplayCalibration: result.model.training.supplementalReplayCalibration ? 1 : 0,
+      trainingSupplementalReplayCalibrationIgnoreBaselineFeature: result.model.training
+        .supplementalReplayCalibrationIgnoreBaselineFeature
+        ? 1
+        : 0,
       trainingWallClockSeconds: roundMetric(result.training.wallClockSeconds),
       trainedDecisionCount: result.model.trainedDecisionCount,
       trainedPairCount: result.model.trainedPairCount,
@@ -823,7 +853,7 @@ export function formatLnsWindowRankerExperiment(result: LnsWindowRankerExperimen
     `Labels: total=${result.labels.labelCount} usable=${result.labels.usableLabelCount} opportunities=${result.labels.opportunityCount} supplemental-decisions=${result.labels.supplementalReplayDecisionCount} supplemental-labels=${result.labels.supplementalReplayLabelCount} label-fingerprint=${result.labelFingerprint}`
   );
   lines.push(
-    `Model: ${result.model.modelType} features=${result.model.featureNames.length} epochs=${result.model.training.epochs} baseline-tie-break=${result.model.training.baselineTieBreak} target=${result.model.training.target} weak-seed-labels=${result.model.training.allowWeakSeedReplayLabels} supplemental-replay-calibration=${result.model.training.supplementalReplayCalibration} trained-decisions=${result.model.trainedDecisionCount} model-fingerprint=${result.modelFingerprint}`
+    `Model: ${result.model.modelType} features=${result.model.featureNames.length} epochs=${result.model.training.epochs} baseline-tie-break=${result.model.training.baselineTieBreak} target=${result.model.training.target} weak-seed-labels=${result.model.training.allowWeakSeedReplayLabels} supplemental-replay-calibration=${result.model.training.supplementalReplayCalibration} supplemental-replay-calibration-ignore-baseline-feature=${result.model.training.supplementalReplayCalibrationIgnoreBaselineFeature} trained-decisions=${result.model.trainedDecisionCount} model-fingerprint=${result.modelFingerprint}`
   );
   lines.push(
     `Model capture: development=${formatMetric(result.evaluation.model.development)} holdout=${formatMetric(result.evaluation.model.holdout)}`

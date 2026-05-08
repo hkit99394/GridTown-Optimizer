@@ -1162,7 +1162,85 @@ async function testCrossModeBenchmarkHelpers() {
     solve: async (_grid, params, context) => {
       const reserveBonus = params.auto?.cpSatStageReserveRatio === 0.35 ? 5 : 0;
       const totalPopulation = context.mode === "auto" ? 10 + reserveBonus : 9;
-      return buildMockSolution({ optimizer: params.optimizer, totalPopulation });
+      const solution = buildMockSolution({ optimizer: params.optimizer, totalPopulation });
+      if (context.mode !== "auto") return solution;
+      return {
+        ...solution,
+        autoStage: {
+          requestedOptimizer: "auto",
+          activeStage: "cp-sat",
+          stageIndex: 3,
+          cycleIndex: 1,
+          consecutiveWeakCycles: 0,
+          lastCycleImprovementRatio: reserveBonus > 0 ? 0.5 : 0,
+          stopReason: "completed-plan",
+          generatedSeeds: [],
+          stageRuns: [
+            {
+              stage: "greedy",
+              stageIndex: 1,
+              cycleIndex: 0,
+              randomSeed: 101,
+              startedAtSeconds: 0,
+              elapsedSeconds: 0.1,
+              completedAtSeconds: 0.1,
+              populationBefore: null,
+              candidatePopulation: 10,
+              acceptedPopulation: 10,
+              improvement: null
+            },
+            {
+              stage: "lns",
+              stageIndex: 2,
+              cycleIndex: 1,
+              randomSeed: 102,
+              startedAtSeconds: 0.1,
+              elapsedSeconds: 0.2,
+              completedAtSeconds: 0.3,
+              populationBefore: 10,
+              candidatePopulation: totalPopulation,
+              acceptedPopulation: totalPopulation,
+              improvement: reserveBonus,
+              lnsIterationsStarted: 1,
+              lnsIterationsCompleted: 1,
+              lnsImprovingIterations: reserveBonus > 0 ? 1 : 0,
+              lnsNeutralIterations: reserveBonus > 0 ? 0 : 1,
+              lnsNeighborhoods: [
+                {
+                  iteration: 0,
+                  phase: "focused",
+                  status: reserveBonus > 0 ? "improved" : "neutral",
+                  repairTimeLimitSeconds: 1,
+                  wallClockSeconds: 0.15,
+                  populationBefore: 10,
+                  populationAfter: totalPopulation,
+                  improvement: reserveBonus,
+                  windowTop: 1,
+                  windowLeft: 0,
+                  windowRows: 2,
+                  windowCols: 2,
+                  stagnantIterationsBefore: 0,
+                  cpSatStatus: "FEASIBLE"
+                }
+              ]
+            },
+            {
+              stage: "cp-sat",
+              stageIndex: 3,
+              cycleIndex: 1,
+              randomSeed: 103,
+              startedAtSeconds: 0.3,
+              elapsedSeconds: 0.2,
+              completedAtSeconds: 0.5,
+              populationBefore: totalPopulation,
+              candidatePopulation: totalPopulation,
+              acceptedPopulation: totalPopulation,
+              improvement: 0,
+              cpSatStatus: "FEASIBLE"
+            }
+          ]
+        }
+      };
     }
   });
   assert.equal(ablations.policies.length, 2);
@@ -1194,6 +1272,13 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(ablations.policies[1].autoReplayDiagnostics[0].baseline.finalPopulation, 10);
   assert.equal(ablations.policies[1].autoReplayDiagnostics[0].candidate.finalPopulation, 15);
   assert.equal(ablations.policies[1].autoReplayDiagnostics[0].candidate.params.autoCpSatStageReserveRatio, 0.35);
+  assert.equal(ablations.policies[1].autoReplayDiagnostics[0].candidate.lnsNeighborhoodTraceCaptured, true);
+  assert.equal(ablations.policies[1].autoReplayDiagnostics[0].candidate.lnsNeighborhoods[0].stageIndex, 2);
+  assert.equal(ablations.policies[1].autoReplayDiagnostics[0].candidate.lnsNeighborhoods[0].windowTop, 1);
+  assert.doesNotMatch(
+    ablations.policies[1].autoReplayDiagnostics[0].reason,
+    /no longer carries detailed LNS neighborhoods/
+  );
   assert.equal(ablations.policies[1].autoVarianceSummary, null);
   assert.equal(ablations.policies[1].budgetSummaries.length, 1);
   assert.equal(ablations.policies[1].budgetSummaries[0].budgetSeconds, 3);
@@ -1220,6 +1305,7 @@ async function testCrossModeBenchmarkHelpers() {
   assert.match(ablationText, /auto-safety=paired=1 delta-mean=\+5/);
   assert.match(ablationText, /auto-replay-diagnostics=1 nonzero paired Auto rows/);
   assert.match(ablationText, /row=mock-scorecard\/budget:3s\/seed:5 applied=yes delta=\+5/);
+  assert.match(ablationText, /improved-neighborhoods=baseline:none candidate:s2\/focused#0@1,0:2x2\+5/);
   assert.match(ablationText, /cpu-eff-ratio=1\.500/);
   assert.match(ablationText, /budget=3s cases=1 mean-best=15\.0/);
 

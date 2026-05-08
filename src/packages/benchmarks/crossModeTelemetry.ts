@@ -1,6 +1,8 @@
 import { roundBenchmarkMetric } from "./benchmarkOptions.js";
 
 import type {
+  AutoLnsNeighborhoodOutcomeSummary,
+  AutoStageRunSummary,
   CpSatModelSizeTelemetry,
   GreedyProfileCounters,
   GreedyProfilePhaseSummary,
@@ -330,9 +332,44 @@ function lnsOutcomeStage(outcome: LnsNeighborhoodOutcome): CrossModeBenchmarkSta
     exactGap: null,
     cpSatStatus: outcome.cpSatStatus ?? null,
     candidateCounts: {
+      windowTop: outcome.window.top,
+      windowLeft: outcome.window.left,
       windowRows: outcome.window.rows,
       windowCols: outcome.window.cols,
       windowArea: outcome.window.rows * outcome.window.cols,
+      stagnantIterationsBefore: outcome.stagnantIterationsBefore
+    },
+    cpSatModelSize: null
+  };
+}
+
+function autoLnsOutcomeStage(
+  run: AutoStageRunSummary,
+  outcome: AutoLnsNeighborhoodOutcomeSummary
+): CrossModeBenchmarkStageTelemetry {
+  return {
+    kind: "lns-neighborhood",
+    stage: "lns",
+    stageIndex: run.stageIndex,
+    cycleIndex: run.cycleIndex,
+    phase: outcome.phase,
+    iteration: outcome.iteration,
+    status: outcome.status,
+    operatorOutcome: outcome.status,
+    startedAtSeconds: null,
+    wallClockSeconds: roundBenchmarkMetric(outcome.wallClockSeconds),
+    completedAtSeconds: null,
+    scoreBefore: outcome.populationBefore,
+    scoreAfter: outcome.populationAfter,
+    improvement: outcome.improvement,
+    exactGap: null,
+    cpSatStatus: outcome.cpSatStatus ?? null,
+    candidateCounts: {
+      windowTop: outcome.windowTop,
+      windowLeft: outcome.windowLeft,
+      windowRows: outcome.windowRows,
+      windowCols: outcome.windowCols,
+      windowArea: outcome.windowRows * outcome.windowCols,
       stagnantIterationsBefore: outcome.stagnantIterationsBefore
     },
     cpSatModelSize: null
@@ -344,6 +381,7 @@ function buildCrossModeStageTelemetry(solution: Solution): CrossModeBenchmarkSta
   const greedyCounts = greedyCandidateCounts(solution.greedyProfile?.counters);
   pushGreedyProfileStages(stages, solution.greedyProfile?.phases, greedyCounts);
   pushGreedyProfileStages(stages, solution.autoStage?.greedySeedStage?.phases, greedyCounts);
+  const autoLnsNeighborhoodStages: CrossModeBenchmarkStageTelemetry[] = [];
 
   for (const run of solution.autoStage?.stageRuns ?? []) {
     stages.push({
@@ -371,9 +409,16 @@ function buildCrossModeStageTelemetry(solution: Solution): CrossModeBenchmarkSta
       ]),
       cpSatModelSize: null
     });
+    if (run.stage === "lns") {
+      autoLnsNeighborhoodStages.push(
+        ...(run.lnsNeighborhoods ?? []).map((outcome) => autoLnsOutcomeStage(run, outcome))
+      );
+    }
   }
 
-  if (solution.lnsTelemetry) {
+  stages.push(...autoLnsNeighborhoodStages);
+
+  if (solution.lnsTelemetry && autoLnsNeighborhoodStages.length === 0) {
     const telemetry = solution.lnsTelemetry;
     stages.push({
       kind: "lns",

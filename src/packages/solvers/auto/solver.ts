@@ -10,6 +10,7 @@ import { createSyncAutoStopController } from "./stopController.js";
 
 import type {
   AutoGreedySeedStageSummary,
+  AutoLnsNeighborhoodOutcomeSummary,
   AutoSolveGeneratedSeed,
   AutoStageRunSummary,
   AutoSolveStageMetadata,
@@ -189,7 +190,27 @@ function buildLnsStageRunEvidence(solution: Solution | null): Partial<AutoStageR
     lnsIterationsStarted: telemetry.iterationsStarted,
     lnsIterationsCompleted: telemetry.iterationsCompleted,
     lnsImprovingIterations: telemetry.improvingIterations,
-    lnsNeutralIterations: telemetry.neutralIterations
+    lnsNeutralIterations: telemetry.neutralIterations,
+    lnsNeighborhoods: telemetry.outcomes.map(
+      (outcome): AutoLnsNeighborhoodOutcomeSummary => ({
+        iteration: outcome.iteration,
+        phase: outcome.phase,
+        ...(outcome.operator ? { operator: outcome.operator } : {}),
+        status: outcome.status,
+        ...(outcome.repairBackend ? { repairBackend: outcome.repairBackend } : {}),
+        repairTimeLimitSeconds: outcome.repairTimeLimitSeconds,
+        wallClockSeconds: outcome.wallClockSeconds,
+        populationBefore: outcome.populationBefore,
+        populationAfter: outcome.populationAfter,
+        improvement: outcome.improvement,
+        windowTop: outcome.window.top,
+        windowLeft: outcome.window.left,
+        windowRows: outcome.window.rows,
+        windowCols: outcome.window.cols,
+        stagnantIterationsBefore: outcome.stagnantIterationsBefore,
+        cpSatStatus: outcome.cpSatStatus ?? null
+      })
+    )
   };
 }
 

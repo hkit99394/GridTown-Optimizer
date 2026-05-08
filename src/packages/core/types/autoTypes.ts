@@ -6,6 +6,12 @@
 
 import type { AutoStageOptimizerName } from "./baseTypes.js";
 import type { GreedyProfilePhaseSummary } from "./greedyTypes.js";
+import type {
+  LnsAdaptiveOperatorName,
+  LnsNeighborhoodOutcomeStatus,
+  LnsRepairBackend,
+  LnsRepairPhase
+} from "./lnsTypes.js";
 
 export type AutoSolveStopReason =
   | "completed-plan"
@@ -56,6 +62,25 @@ export interface AutoGreedySeedStageSummary {
   phases?: GreedyProfilePhaseSummary[];
 }
 
+export interface AutoLnsNeighborhoodOutcomeSummary {
+  iteration: number;
+  phase: LnsRepairPhase;
+  operator?: LnsAdaptiveOperatorName;
+  status: LnsNeighborhoodOutcomeStatus;
+  repairBackend?: LnsRepairBackend;
+  repairTimeLimitSeconds: number;
+  wallClockSeconds: number;
+  populationBefore: number;
+  populationAfter: number;
+  improvement: number;
+  windowTop: number;
+  windowLeft: number;
+  windowRows: number;
+  windowCols: number;
+  stagnantIterationsBefore: number;
+  cpSatStatus?: string | null;
+}
+
 export interface AutoStageRunSummary {
   stage: AutoStageOptimizerName;
   stageIndex: number;
@@ -81,6 +106,7 @@ export interface AutoStageRunSummary {
   lnsIterationsCompleted?: number | null;
   lnsImprovingIterations?: number | null;
   lnsNeutralIterations?: number | null;
+  lnsNeighborhoods?: AutoLnsNeighborhoodOutcomeSummary[];
 }
 
 export interface AutoSolveStageMetadata {

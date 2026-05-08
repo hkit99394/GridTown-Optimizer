@@ -38,6 +38,8 @@ export interface CrossModeBenchmarkBudgetAblationAutoReplayStageSummary {
 }
 
 export interface CrossModeBenchmarkBudgetAblationLnsNeighborhoodReplaySummary {
+  stageIndex: number | null;
+  cycleIndex: number | null;
   phase: string | null;
   iteration: number | null;
   status: string | null;
@@ -45,6 +47,8 @@ export interface CrossModeBenchmarkBudgetAblationLnsNeighborhoodReplaySummary {
   scoreBefore: number | null;
   scoreAfter: number | null;
   improvement: number | null;
+  windowTop: number | null;
+  windowLeft: number | null;
   windowRows: number | null;
   windowCols: number | null;
   windowArea: number | null;
@@ -139,6 +143,8 @@ function summarizeLnsNeighborhood(
   stage: CrossModeBenchmarkStageTelemetry
 ): CrossModeBenchmarkBudgetAblationLnsNeighborhoodReplaySummary {
   return {
+    stageIndex: stage.stageIndex,
+    cycleIndex: stage.cycleIndex,
     phase: stage.phase,
     iteration: stage.iteration,
     status: stage.status,
@@ -146,6 +152,8 @@ function summarizeLnsNeighborhood(
     scoreBefore: stage.scoreBefore,
     scoreAfter: stage.scoreAfter,
     improvement: stage.improvement,
+    windowTop: stageCountValue(stage, "windowTop"),
+    windowLeft: stageCountValue(stage, "windowLeft"),
     windowRows: stageCountValue(stage, "windowRows"),
     windowCols: stageCountValue(stage, "windowCols"),
     windowArea: stageCountValue(stage, "windowArea"),
@@ -273,7 +281,12 @@ export function buildCrossModeBudgetAblationAutoReplayDiagnostics(
 function formatImprovingNeighborhoods(run: CrossModeBenchmarkBudgetAblationAutoReplayRunDiagnostics): string {
   const improved = run.lnsNeighborhoods.filter((entry) => (entry.improvement ?? 0) > 0);
   if (!improved.length) return run.lnsNeighborhoodTraceCaptured ? "none" : "not-captured";
-  return improved.map((entry) => `${entry.phase ?? "n/a"}#${entry.iteration ?? "n/a"}+${entry.improvement}`).join(",");
+  return improved
+    .map(
+      (entry) =>
+        `s${entry.stageIndex ?? "n/a"}/${entry.phase ?? "n/a"}#${entry.iteration ?? "n/a"}@${entry.windowTop ?? "n/a"},${entry.windowLeft ?? "n/a"}:${entry.windowRows ?? "n/a"}x${entry.windowCols ?? "n/a"}+${entry.improvement}`
+    )
+    .join(",");
 }
 
 export function formatCrossModeBudgetAblationAutoReplayDiagnostic(

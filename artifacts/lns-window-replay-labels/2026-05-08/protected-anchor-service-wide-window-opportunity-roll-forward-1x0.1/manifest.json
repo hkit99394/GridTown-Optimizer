@@ -1,0 +1,21 @@
+{
+  "artifactDir": "artifacts/lns-window-replay-labels/2026-05-08/protected-anchor-service-wide-window-opportunity-roll-forward-1x0.1",
+  "artifactPaths": {
+    "replayJson": "artifacts/lns-window-replay-labels/2026-05-08/protected-anchor-service-wide-window-opportunity-roll-forward-1x0.1/lns-window-replay-labels.json",
+    "replayText": "artifacts/lns-window-replay-labels/2026-05-08/protected-anchor-service-wide-window-opportunity-roll-forward-1x0.1/lns-window-replay-labels.txt",
+    "manifestJson": "artifacts/lns-window-replay-labels/2026-05-08/protected-anchor-service-wide-window-opportunity-roll-forward-1x0.1/manifest.json"
+  },
+  "command": "node dist/lnsBenchmarkCli.js --window-replay-labels --window-replay-protected-holdout --seeds=7,19,37 --max-windows=16 --exploration-windows=8 --repair-time=0.1 --state-policies=initial-incumbent,post-first-improvement,post-stagnation --state-collection-iterations=4 --state-collection-repair-time=0.1 --roll-forward-iterations=1 --roll-forward-repair-time=0.1 --window-replay-artifact-dir=artifacts/lns-window-replay-labels/2026-05-08/protected-anchor-service-wide-window-opportunity-roll-forward-1x0.1 lns-holdout-anchor-service-shelf-pressure --json",
+  "generatedAt": "2026-05-08T12:40:50.824Z",
+  "caseCount": 1,
+  "seedCount": 3,
+  "stateCount": 9,
+  "labelCount": 216,
+  "rollForwardLabelCount": 216,
+  "selectedCaseNames": [
+    "lns-holdout-anchor-service-shelf-pressure"
+  ],
+  "pressureFamilies": [
+    "anchor-service"
+  ]
+}

@@ -1,0 +1,22 @@
+=== LNS Window Ranker Offline/Online Gap Diagnostics ===
+Generated: 2026-05-08T13:05:52.436Z
+Schema: 1
+Audit: runtime-default-changed=false solver-default-changed=false target=roll-forward-final-lift weak-seed-labels=false supplemental-replay=2
+Inputs: label=fnv1a:58ce487f model=fnv1a:79bd43a0 online=fnv1a:30773987 supplemental=fnv1a:dcdf459c,fnv1a:b6510add
+Offline: decisions=129 supplemental=39 overrides=123 opportunities=60 selected-positive=27
+Online: cases=5 seeds=7,19,37 comparisons=15 min-score-delta=0.1 overrides=15 selection-trace=15 final-neutral-overrides=12
+Gap: joined-transition-families=5 offline-positive-online-neutral=0 online-active-no-offline-match=3 exact-replay-neutralized=0 promotion-blocked=true
+Layout signatures: zero-layout-final-neutral:3
+Promotion sensitivity: suppress=zero-layout-final-neutral:3 remaining=0 remaining-blocked=false blockers=none unmatched=0 changed-layout-no-lift=0 evidence-gate-suppress=online-active-no-offline-match:0 evidence-gate-remaining=0 evidence-gate-blocked=false evidence-gate-blockers=none
+Online neutral override rate: 80.0%
+Joined evidence:
+- online-active-no-offline-match corridor/weak-service->random-exploration: offline=none online-overrides=3 finals=0/3/0 mean-delta=0
+- online-active-no-offline-match footprint-pressure/weak-service->random-exploration: offline=none online-overrides=3 finals=0/3/0 mean-delta=0
+- online-active-no-offline-match service-pressure/weak-service->random-exploration: offline=none online-overrides=3 finals=0/3/0 mean-delta=0
+Trace comparisons:
+- online-active-no-offline-match corridor/weak-service->random-exploration: offline-decisions=0 offline-selected-positive=0 offline-mean-selected-delta=n/a online-traces=3 online-neutral-traces=3 layout-signature=zero-layout-final-neutral online-layout-same=3 online-layout-changed=0 online-layout-missing=0 online-layout-delta-mean=0 online-mean-improvement=+65 online-mean-score-delta=+0.727 online-ranker-post-traces-mean=0 online-ranker-post-improvements=0 online-ranker-post-improvement-total-mean=0 online-ranker-post-best-delta-mean=0 online-ranker-final-from-selected-mean=0 features=operatorScore:offline=n/a/online=-7.53/gap=n/a,selectedByBaseline:offline=n/a/online=-1/gap=n/a,residentialCandidateHeadroom:offline=n/a/online=+0.54/gap=n/a,narrowGateCells:offline=n/a/online=+0.3/gap=n/a,serviceCandidateBonus:offline=n/a/online=+0.26/gap=n/a
+- online-active-no-offline-match footprint-pressure/weak-service->random-exploration: offline-decisions=0 offline-selected-positive=0 offline-mean-selected-delta=n/a online-traces=3 online-neutral-traces=3 layout-signature=zero-layout-final-neutral online-layout-same=3 online-layout-changed=0 online-layout-missing=0 online-layout-delta-mean=0 online-mean-improvement=0 online-mean-score-delta=+0.662 online-ranker-post-traces-mean=0 online-ranker-post-improvements=0 online-ranker-post-improvement-total-mean=0 online-ranker-post-best-delta-mean=0 online-ranker-final-from-selected-mean=0 features=operatorScore:offline=n/a/online=-7.51/gap=n/a,selectedByBaseline:offline=n/a/online=-1/gap=n/a,residentialCandidateHeadroom:offline=n/a/online=+0.74/gap=n/a,anchorReachableWindowCells:offline=n/a/online=-0.35/gap=n/a,residentialHeadroomInside:offline=n/a/online=-0.27/gap=n/a
+- online-active-no-offline-match service-pressure/weak-service->random-exploration: offline-decisions=0 offline-selected-positive=0 offline-mean-selected-delta=n/a online-traces=3 online-neutral-traces=3 layout-signature=zero-layout-final-neutral online-layout-same=3 online-layout-changed=0 online-layout-missing=0 online-layout-delta-mean=0 online-mean-improvement=0 online-mean-score-delta=+1.154 online-ranker-post-traces-mean=0 online-ranker-post-improvements=0 online-ranker-post-improvement-total-mean=0 online-ranker-post-best-delta-mean=0 online-ranker-final-from-selected-mean=0 features=operatorScore:offline=n/a/online=-7.54/gap=n/a,residentialCandidateHeadroom:offline=n/a/online=+1.82/gap=n/a,selectedByBaseline:offline=n/a/online=-1/gap=n/a,serviceCandidateBonus:offline=n/a/online=+0.38/gap=n/a,serviceCandidatesBlocked:offline=n/a/online=-0.3/gap=n/a
+Recommended experiments:
+- none
+Decision: diagnostics only; no LNS runtime scorer or solver default changed.

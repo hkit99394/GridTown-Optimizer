@@ -479,7 +479,7 @@ function testLnsBenchmarkCliListsOnlineAblationCases() {
 
   const protectedResult = childProcess.spawnSync(
     process.execPath,
-    [cliPath, "--list", "--window-ranker-online-ablation", "--window-ranker-protected-holdout"],
+    [cliPath, "--list", "--window-ranker-online-ablation", "--window-ranker-protected-holdout", "--lns-iterations=1"],
     {
       cwd: repoRoot,
       encoding: "utf8"

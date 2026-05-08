@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "runId": "lns-window-ranker-gap-2026-05-08-wide-anchor-opportunity-exact-neutral-calibration-protected-min-score-delta-1-5",
+  "artifactType": "model-experiment",
+  "generatedAt": "2026-05-08T12:55:24.262Z",
+  "commands": [
+    "node dist/lnsWindowRankerCli.js --gap-diagnostics --labels=artifacts/learned-ranking-labels/2026-05-04/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1/labels.json --model=artifacts/lns-window-ranker/2026-05-08/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-wide-anchor-opportunity-exact-neutral-calibration-lr0.02-cap100/model.json --online-scorecard=artifacts/lns-window-ranker-online/2026-05-08/protected-full-wide-anchor-opportunity-exact-neutral-calibration-min-score-delta-1.5/lns-window-ranker-online-ablation.json --supplemental-replay-labels=artifacts/lns-window-replay-labels/2026-05-08/protected-full-online-decision-state-roll-forward-8x0.2/lns-window-replay-labels.json,artifacts/lns-window-replay-labels/2026-05-08/protected-anchor-service-wide-window-opportunity-roll-forward-1x0.1/lns-window-replay-labels.json --artifact-dir=artifacts/lns-window-ranker-gap-diagnostics/2026-05-08/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-wide-anchor-opportunity-exact-neutral-calibration-protected-min-score-delta-1.5-gap --ranker-run-id=lns-window-ranker-gap-2026-05-08-wide-anchor-opportunity-exact-neutral-calibration-protected-min-score-delta-1-5 --ranker-decision=offline-online-lns-window-ranker-wide-anchor-opportunity-exact-neutral-calibration-suppression-gap-diagnostics '--ranker-summary=Gap diagnostics for the minScoreDelta=1.5 suppression guardrail on the wide-anchor-opportunity/exact-neutral-calibration diagnostics model; diagnostics only.' --json"
+  ],
+  "artifactPaths": [
+    "artifacts/lns-window-ranker-gap-diagnostics/2026-05-08/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-wide-anchor-opportunity-exact-neutral-calibration-protected-min-score-delta-1.5-gap/lns-window-ranker-gap-diagnostics.json",
+    "artifacts/lns-window-ranker-gap-diagnostics/2026-05-08/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-wide-anchor-opportunity-exact-neutral-calibration-protected-min-score-delta-1.5-gap/lns-window-ranker-gap-diagnostics.txt",
+    "artifacts/lns-window-ranker-gap-diagnostics/2026-05-08/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-wide-anchor-opportunity-exact-neutral-calibration-protected-min-score-delta-1.5-gap/telemetry-manifest.json"
+  ],
+  "cases": [
+    "lns-holdout-corridor-weave-pressure",
+    "lns-holdout-gate-offset-pressure",
+    "lns-holdout-footprint-stagger-pressure",
+    "lns-holdout-service-ridge-pressure",
+    "lns-holdout-anchor-service-shelf-pressure"
+  ],
+  "caseFamilies": [
+    "corridor",
+    "gate",
+    "footprint-pressure",
+    "service-pressure",
+    "anchor-service"
+  ],
+  "seeds": [
+    7,
+    19,
+    37
+  ],
+  "splitStatus": {
+    "protectedHoldout": true,
+    "sourceLnsScaleReady": true,
+    "promotionBlocked": false
+  },
+  "budget": {
+    "minScoreDelta": 1.5,
+    "onlineComparisonCount": 15,
+    "onlineOverrideCount": 0,
+    "onlineSelectionTraceCount": 30,
+    "onlineFinalNeutralOverrideCount": 0,
+    "offlineDecisionCount": 129,
+    "offlineSupplementalDecisionCount": 39,
+    "offlineOpportunityCount": 60,
+    "offlinePositiveOnlineNeutralCount": 0,
+    "exactReplayNeutralizedOfflinePositiveOnlineNeutralCount": 0,
+    "zeroLayoutFinalNeutralTraceComparisonCount": 0,
+    "changedLayoutFinalNeutralTraceComparisonCount": 0,
+    "mixedLayoutFinalNeutralTraceComparisonCount": 0,
+    "suppressedZeroLayoutFinalNeutralTraceComparisonCount": 0,
+    "sensitivityRemainingTraceComparisonCount": 0,
+    "sensitivityRemainingPromotionBlocked": 0,
+    "protectedReplayEvidenceSuppressedTraceComparisonCount": 0,
+    "protectedReplayEvidenceRemainingTraceComparisonCount": 0,
+    "protectedReplayEvidenceRemainingPromotionBlocked": 0,
+    "traceComparisonCount": 0,
+    "traceComparisonOnlineTraceCount": 0,
+    "traceComparisonChangedFinalLayoutTraceCount": 0,
+    "traceComparisonPostSelectionImprovementTraceCount": 0,
+    "recommendedExperimentCount": 0,
+    "longerRollForwardReplayRecommendationCount": 0,
+    "targetedProtectedReplayLabelRecommendationCount": 0
+  },
+  "model": {
+    "schemaVersion": 1,
+    "modelType": "lns-window-ranker-gap-diagnostics",
+    "purpose": "offline-diagnostics-only",
+    "runtimeDefaultChanged": false,
+    "solverDefaultChanged": false,
+    "target": "roll-forward-final-lift",
+    "weakSeedReplayLabelsAllowed": false,
+    "supplementalReplaySnapshotCount": 2,
+    "rankerModelFingerprint": "fnv1a:79bd43a0",
+    "onlineScorecardType": "lns-window-ranker-online-ablation"
+  },
+  "decision": "offline-online-lns-window-ranker-wide-anchor-opportunity-exact-neutral-calibration-suppression-gap-diagnostics",
+  "summary": "Gap diagnostics for the minScoreDelta=1.5 suppression guardrail on the wide-anchor-opportunity/exact-neutral-calibration diagnostics model; diagnostics only.",
+  "labelFingerprint": "fnv1a:58ce487f",
+  "datasetFingerprint": "fnv1a:b3c3fe8b",
+  "inputFingerprint": "fnv1a:394db005",
+  "modelFingerprint": "fnv1a:d8677c95",
+  "summaryMetrics": {
+    "target": "roll-forward-final-lift",
+    "weakSeedReplayLabelsAllowed": false,
+    "supplementalReplaySnapshotCount": 2,
+    "offlineDecisionCount": 129,
+    "offlineSupplementalDecisionCount": 39,
+    "offlineOverrideCount": 123,
+    "offlineOpportunityCount": 60,
+    "onlineComparisonCount": 15,
+    "onlineOverrideCount": 0,
+    "onlineSelectionTraceCount": 30,
+    "onlineFinalNeutralOverrideCount": 0,
+    "joinedTransitionFamilyCount": 0,
+    "offlinePositiveOnlineNeutralCount": 0,
+    "onlineActiveNoOfflineMatchCount": 0,
+    "exactReplayNeutralizedOfflinePositiveOnlineNeutralCount": 0,
+    "traceComparisonLayoutSignatureCounts": {
+      "changed-layout-final-neutral": 0,
+      "mixed-final-outcome": 0,
+      "mixed-layout-final-neutral": 0,
+      "missing-layout-delta": 0,
+      "zero-layout-final-neutral": 0
+    },
+    "zeroLayoutFinalNeutralTraceComparisonCount": 0,
+    "changedLayoutFinalNeutralTraceComparisonCount": 0,
+    "mixedLayoutFinalNeutralTraceComparisonCount": 0,
+    "promotionSensitivity": {
+      "suppressedLayoutSignature": "zero-layout-final-neutral",
+      "suppressedTraceComparisonCount": 0,
+      "remainingTraceComparisonCount": 0,
+      "remainingOfflinePositiveOnlineNeutralCount": 0,
+      "remainingOnlineActiveNoOfflineMatchCount": 0,
+      "changedLayoutNoLiftTrajectoryDepthCount": 0,
+      "missingLayoutDeltaCount": 0,
+      "mixedFinalOutcomeCount": 0,
+      "remainingPromotionBlocked": false,
+      "remainingBlockers": [],
+      "protectedReplayEvidenceGate": {
+        "suppressedDiagnosis": "online-active-no-offline-match",
+        "suppressedTraceComparisonCount": 0,
+        "remainingTraceComparisonCount": 0,
+        "remainingOfflinePositiveOnlineNeutralCount": 0,
+        "changedLayoutNoLiftTrajectoryDepthCount": 0,
+        "missingLayoutDeltaCount": 0,
+        "mixedFinalOutcomeCount": 0,
+        "remainingPromotionBlocked": false,
+        "remainingBlockers": []
+      }
+    },
+    "traceComparisonCount": 0,
+    "traceComparisonOnlineTraceCount": 0,
+    "traceComparisonChangedFinalLayoutTraceCount": 0,
+    "traceComparisonPostSelectionImprovementTraceCount": 0,
+    "traceComparisonOfflineDecisionCount": 0,
+    "recommendedExperimentCount": 0,
+    "longerRollForwardReplayRecommendationCount": 0,
+    "targetedProtectedReplayLabelRecommendationCount": 0,
+    "promotionBlocked": false
+  }
+}

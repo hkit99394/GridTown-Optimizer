@@ -94,6 +94,7 @@ interface ParsedBenchmarkArgs {
   rotateVariantRunOrder?: boolean;
   maxWindows?: number;
   explorationWindowCount?: number;
+  lnsIterations?: number;
   repairTimeLimitSeconds?: number;
   rollForwardIterations?: number;
   rollForwardRepairTimeLimitSeconds?: number;
@@ -168,6 +169,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let rotateVariantRunOrder: boolean | undefined;
   let maxWindows: number | undefined;
   let explorationWindowCount: number | undefined;
+  let lnsIterations: number | undefined;
   let repairTimeLimitSeconds: number | undefined;
   let rollForwardIterations: number | undefined;
   let rollForwardRepairTimeLimitSeconds: number | undefined;
@@ -198,6 +200,12 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     },
     "exploration-windows": (value) => {
       explorationWindowCount = parseNonNegativeInteger(value, "--exploration-windows");
+    },
+    iterations: (value) => {
+      lnsIterations = parsePositiveInteger(value, "--iterations");
+    },
+    "lns-iterations": (value) => {
+      lnsIterations = parsePositiveInteger(value, "--lns-iterations");
     },
     "repair-time": (value) => {
       repairTimeLimitSeconds = parsePositiveNumber(value, "--repair-time");
@@ -354,6 +362,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     rotateVariantRunOrder,
     maxWindows,
     explorationWindowCount,
+    lnsIterations,
     repairTimeLimitSeconds,
     rollForwardIterations,
     rollForwardRepairTimeLimitSeconds,
@@ -783,10 +792,13 @@ export function runLnsBenchmarkCli(): void {
       throw new Error("Choose either --window-ranker-min-score-delta or --window-ranker-min-score-deltas, not both.");
     }
     const lns =
-      args.repairTimeLimitSeconds === undefined
+      args.repairTimeLimitSeconds === undefined && args.lnsIterations === undefined
         ? undefined
         : {
-            repairTimeLimitSeconds: args.repairTimeLimitSeconds
+            ...(args.lnsIterations === undefined ? {} : { iterations: args.lnsIterations }),
+            ...(args.repairTimeLimitSeconds === undefined
+              ? {}
+              : { repairTimeLimitSeconds: args.repairTimeLimitSeconds })
           };
     const model = readWindowRankerModel(args.windowRankerModelPath);
     const corpus = args.windowRankerProtectedHoldout

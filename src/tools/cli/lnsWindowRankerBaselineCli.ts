@@ -95,7 +95,11 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
       topK = parsePositiveInteger(value, "top k");
     },
     target: (value) => {
-      if (value !== "immediate-improvement" && value !== "roll-forward-final-lift") {
+      if (
+        value !== "immediate-improvement" &&
+        value !== "roll-forward-final-lift" &&
+        value !== "roll-forward-baseline-stall-lift"
+      ) {
         throw new Error(`Unknown LNS window ranker baseline target: ${value}`);
       }
       target = value;
@@ -131,6 +135,10 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
     }
     if (isCliFlag(arg, "--roll-forward-final-lift", "--final-lift-target")) {
       target = "roll-forward-final-lift";
+      continue;
+    }
+    if (isCliFlag(arg, "--roll-forward-baseline-stall-lift", "--baseline-stall-target")) {
+      target = "roll-forward-baseline-stall-lift";
       continue;
     }
     if (isCliFlag(arg, "--exclude-weak-replay-seed-labels", "--no-weak-replay-seed-labels")) {

@@ -12,6 +12,7 @@ const {
   formatLnsWindowRankerGapDiagnostics,
   createLnsWindowRankerSnapshot,
   formatLnsWindowRankerExperiment,
+  runLnsWindowRankerBaselineExperiment,
   runLnsWindowRankerGapDiagnostics,
   runLnsWindowRankerExperiment,
   validateExperimentRegistryEntry
@@ -336,13 +337,20 @@ function cloneFixtureWithFeatureIdenticalRepeatabilityConflict() {
   conflictCase.seed = 19;
   for (const label of conflictCase.labels) {
     label.seed = 19;
-    if (label.windowIndex !== 2) continue;
-    label.rollForward.totalPopulation = 0;
-    label.rollForward.populationDeltaFromIncumbent = -50;
-    label.rollForward.populationDeltaFromRepair = -50 - label.populationDelta;
-    label.rollForward.populationDeltaVsBaseline = -50;
-    label.rollForward.improvementVsBaseline = 0;
-    label.rollForward.statusVsBaseline = "regressed";
+    label.rollForward.baselineTotalPopulation = 50;
+    if (label.windowIndex === 2) {
+      label.rollForward.totalPopulation = 0;
+      label.rollForward.populationDeltaFromIncumbent = 0;
+      label.rollForward.populationDeltaFromRepair = -label.populationDelta;
+    }
+    label.rollForward.populationDeltaVsBaseline = label.rollForward.totalPopulation - 50;
+    label.rollForward.improvementVsBaseline = Math.max(0, label.rollForward.populationDeltaVsBaseline);
+    label.rollForward.statusVsBaseline =
+      label.rollForward.populationDeltaVsBaseline > 0
+        ? "improved"
+        : label.rollForward.populationDeltaVsBaseline < 0
+          ? "regressed"
+          : "neutral";
   }
   developmentSplit.replay.cases.push(conflictCase);
   developmentSplit.replay.caseCount += 1;
@@ -471,6 +479,19 @@ function testLnsWindowRankerRepeatabilityConflictGate() {
       excludeFeatureIdenticalRepeatabilityConflicts: true
     }
   });
+  const baselineStallTarget = runLnsWindowRankerExperiment(fixture, {
+    topK: 2,
+    training: {
+      epochs: 4,
+      learningRate: 0.05,
+      marginWeightCap: 500,
+      target: "roll-forward-baseline-stall-lift"
+    }
+  });
+  const baselineSweep = runLnsWindowRankerBaselineExperiment(fixture, {
+    topK: 2,
+    target: "roll-forward-baseline-stall-lift"
+  });
 
   assert.equal(blocked.labels.repeatabilitySummary.featureIdenticalConflictBucketCount, 1);
   assert.equal(blocked.labels.repeatabilitySummary.featureIdenticalConflictLabelCount, 2);
@@ -485,6 +506,18 @@ function testLnsWindowRankerRepeatabilityConflictGate() {
     /feature-identical conflicts 1 buckets\/2 labels/
   );
   assert.match(formatLnsWindowRankerExperiment(filtered), /repeatability-conflicts-excluded=true/);
+  assert.equal(baselineStallTarget.model.training.target, "roll-forward-baseline-stall-lift");
+  assert.equal(baselineStallTarget.labels.repeatabilitySummary.featureIdenticalConflictBucketCount, 1);
+  assert.doesNotMatch(
+    baselineStallTarget.evaluation.summary.failedReasons.join("; "),
+    /feature-identical conflicts 1 buckets\/2 labels/
+  );
+  assert.equal(baselineSweep.model.target, "roll-forward-baseline-stall-lift");
+  assert.equal(baselineSweep.labels.repeatabilitySummary.featureIdenticalConflictBucketCount, 1);
+  assert.doesNotMatch(
+    baselineSweep.evaluation.summary.failedReasons.join("; "),
+    /feature-identical conflicts 1 buckets\/2 labels/
+  );
 
   const registryDraft = buildLnsWindowRankerRegistryEntryDraft(filtered, fixture, {
     runId: "lns-window-ranker-repeatability-filter-test",
@@ -496,6 +529,13 @@ function testLnsWindowRankerRepeatabilityConflictGate() {
   assert.equal(registryDraft.budget.trainingExcludeFeatureIdenticalRepeatabilityConflicts, 1);
   assert.equal(registryDraft.summaryMetrics.excludeFeatureIdenticalRepeatabilityConflicts, true);
   assert.equal(registryDraft.summaryMetrics.excludedFeatureIdenticalRepeatabilityConflictLabelCount, 2);
+  const baselineStallRegistryDraft = buildLnsWindowRankerRegistryEntryDraft(baselineStallTarget, fixture, {
+    runId: "lns-window-ranker-baseline-stall-target-test",
+    commands: ["node dist/lnsWindowRankerCli.js --labels=labels.json --baseline-stall-target"],
+    artifactPaths: ["artifacts/lns-ranker/lns-window-ranker.json"]
+  });
+  assert.equal(baselineStallRegistryDraft.budget.trainingTargetRollForwardBaselineStallLift, 1);
+  assert.equal(baselineStallRegistryDraft.summaryMetrics.targetRollForwardBaselineStallLift, 1);
 }
 
 function testLnsWindowRankerWeakReplaySeedFilter() {

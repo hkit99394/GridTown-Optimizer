@@ -231,7 +231,17 @@ function fingerprint(value: unknown): string {
 }
 
 function targetValue(label: LnsWindowReplaySnapshotLabel, target: LnsWindowRankerLabelTarget): number {
-  return target === "roll-forward-final-lift" ? (label.rollForward?.populationDeltaVsBaseline ?? 0) : label.improvement;
+  if (target === "immediate-improvement") return label.improvement;
+  const rollForward = label.rollForward;
+  if (!rollForward || typeof rollForward.populationDeltaVsBaseline !== "number") return 0;
+  if (target === "roll-forward-baseline-stall-lift") {
+    const baselineGainFromIncumbent =
+      rollForward.baselineTotalPopulation === null
+        ? 0
+        : rollForward.baselineTotalPopulation - label.incumbentPopulation;
+    return baselineGainFromIncumbent > 0 ? 0 : rollForward.populationDeltaVsBaseline;
+  }
+  return rollForward.populationDeltaVsBaseline;
 }
 
 function hasTargetValue(label: LnsWindowReplaySnapshotLabel, target: LnsWindowRankerLabelTarget): boolean {

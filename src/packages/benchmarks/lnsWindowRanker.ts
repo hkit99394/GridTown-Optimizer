@@ -298,7 +298,21 @@ function hasTargetValue(label: LnsWindowReplaySnapshotLabel, target: LnsWindowRa
 }
 
 function targetValue(label: LnsWindowReplaySnapshotLabel, target: LnsWindowRankerLabelTarget): number {
-  return target === "roll-forward-final-lift" ? (label.rollForward?.populationDeltaVsBaseline ?? 0) : label.improvement;
+  if (target === "immediate-improvement") return label.improvement;
+  const rollForward = label.rollForward;
+  if (!rollForward || typeof rollForward.populationDeltaVsBaseline !== "number") return 0;
+  if (target === "roll-forward-baseline-stall-lift") {
+    const baselineGainFromIncumbent =
+      rollForward.baselineTotalPopulation === null
+        ? 0
+        : rollForward.baselineTotalPopulation - label.incumbentPopulation;
+    return baselineGainFromIncumbent > 0 ? 0 : rollForward.populationDeltaVsBaseline;
+  }
+  return rollForward.populationDeltaVsBaseline;
+}
+
+function targetAllowsFeatureIdenticalRepeatabilityConflicts(target: LnsWindowRankerLabelTarget): boolean {
+  return target === "roll-forward-baseline-stall-lift";
 }
 
 function collectReplayDecisionGroups(
@@ -622,6 +636,7 @@ function buildSummary(
   baselineResult: LnsWindowRankerBaselineExperimentResult,
   holdoutEvaluation: LnsWindowRankerModelSplitEvaluation,
   supplementalReplayCalibration: boolean,
+  target: LnsWindowRankerLabelTarget,
   repeatabilitySummary: LnsWindowReplayRepeatabilitySummary,
   excludeFeatureIdenticalRepeatabilityConflicts: boolean
 ): LnsWindowRankerSummary {
@@ -632,7 +647,11 @@ function buildSummary(
     failedReasons.push("supplemental replay calibration is diagnostics-only and cannot promote a model");
   }
   if (!labelSnapshot.lns.scaleReadiness.passed) failedReasons.push("source LNS label-scale readiness did not pass");
-  if (repeatabilitySummary.featureIdenticalConflictBucketCount > 0 && !excludeFeatureIdenticalRepeatabilityConflicts) {
+  if (
+    repeatabilitySummary.featureIdenticalConflictBucketCount > 0 &&
+    !targetAllowsFeatureIdenticalRepeatabilityConflicts(target) &&
+    !excludeFeatureIdenticalRepeatabilityConflicts
+  ) {
     failedReasons.push(
       `source LNS replay repeatability has feature-identical conflicts ${repeatabilitySummary.featureIdenticalConflictBucketCount} buckets/${repeatabilitySummary.featureIdenticalConflictLabelCount} labels`
     );
@@ -694,6 +713,7 @@ function summaryMetrics(result: LnsWindowRankerExperimentResult): Record<string,
     modelHoldoutHitAt1: result.evaluation.summary.modelHoldoutHitAt1,
     modelHoldoutHitAtK: result.evaluation.summary.modelHoldoutHitAtK,
     target: result.model.training.target,
+    targetRollForwardBaselineStallLift: result.model.training.target === "roll-forward-baseline-stall-lift" ? 1 : 0,
     weakSeedReplayLabelsAllowed: result.model.training.allowWeakSeedReplayLabels,
     supplementalReplayCalibration: result.model.training.supplementalReplayCalibration,
     supplementalReplayCalibrationIgnoreBaselineFeature:
@@ -842,6 +862,7 @@ export function runLnsWindowRankerExperiment(
         baselineResult,
         modelEvaluation.holdout,
         training.supplementalReplayCalibration,
+        training.target,
         repeatabilityIndex.summary,
         training.excludeFeatureIdenticalRepeatabilityConflicts
       )
@@ -917,6 +938,8 @@ export function buildLnsWindowRankerRegistryEntryDraft(
       trainingMarginWeightCap: result.model.training.marginWeightCap,
       trainingBaselineTieBreak: result.model.training.baselineTieBreak ? 1 : 0,
       trainingTargetRollForwardFinalLift: result.model.training.target === "roll-forward-final-lift" ? 1 : 0,
+      trainingTargetRollForwardBaselineStallLift:
+        result.model.training.target === "roll-forward-baseline-stall-lift" ? 1 : 0,
       trainingAllowWeakSeedReplayLabels: result.model.training.allowWeakSeedReplayLabels ? 1 : 0,
       trainingSupplementalReplayCalibration: result.model.training.supplementalReplayCalibration ? 1 : 0,
       trainingSupplementalReplayCalibrationIgnoreBaselineFeature: result.model.training

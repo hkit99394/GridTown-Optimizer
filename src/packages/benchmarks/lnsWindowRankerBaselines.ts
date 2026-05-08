@@ -37,7 +37,10 @@ export const LNS_WINDOW_RANKER_BASELINE_NAMES = Object.freeze([
 ] as const);
 
 export type LnsWindowRankerBaselineName = (typeof LNS_WINDOW_RANKER_BASELINE_NAMES)[number];
-export type LnsWindowRankerLabelTarget = "immediate-improvement" | "roll-forward-final-lift";
+export type LnsWindowRankerLabelTarget =
+  | "immediate-improvement"
+  | "roll-forward-final-lift"
+  | "roll-forward-baseline-stall-lift";
 
 export interface LnsWindowRankerBaselineRunOptions {
   randomBaselineSeed?: number;
@@ -201,6 +204,7 @@ function positiveIntegerOrDefault(value: unknown, fallback: number): number {
 export function normalizeLnsWindowRankerLabelTarget(value: unknown): LnsWindowRankerLabelTarget {
   if (value === undefined || value === "immediate-improvement") return "immediate-improvement";
   if (value === "roll-forward-final-lift") return "roll-forward-final-lift";
+  if (value === "roll-forward-baseline-stall-lift") return "roll-forward-baseline-stall-lift";
   throw new Error(`Unknown LNS window ranker label target: ${String(value)}.`);
 }
 
@@ -244,7 +248,21 @@ function hasTargetValue(label: LnsWindowReplaySnapshotLabel, target: LnsWindowRa
 }
 
 function targetValue(label: LnsWindowReplaySnapshotLabel, target: LnsWindowRankerLabelTarget): number {
-  return target === "roll-forward-final-lift" ? (label.rollForward?.populationDeltaVsBaseline ?? 0) : label.improvement;
+  if (target === "immediate-improvement") return label.improvement;
+  const rollForward = label.rollForward;
+  if (!rollForward || typeof rollForward.populationDeltaVsBaseline !== "number") return 0;
+  if (target === "roll-forward-baseline-stall-lift") {
+    const baselineGainFromIncumbent =
+      rollForward.baselineTotalPopulation === null
+        ? 0
+        : rollForward.baselineTotalPopulation - label.incumbentPopulation;
+    return baselineGainFromIncumbent > 0 ? 0 : rollForward.populationDeltaVsBaseline;
+  }
+  return rollForward.populationDeltaVsBaseline;
+}
+
+function targetAllowsFeatureIdenticalRepeatabilityConflicts(target: LnsWindowRankerLabelTarget): boolean {
+  return target === "roll-forward-baseline-stall-lift";
 }
 
 function stableRandomScore(seed: number, group: ReplayDecisionGroup, label: LnsWindowReplaySnapshotLabel): number {
@@ -523,6 +541,7 @@ function baselineByName(
 function buildSummary(
   labelSnapshot: LearnedRankingLabelSnapshot,
   baselines: readonly LnsWindowRankerBaselineEvaluation[],
+  target: LnsWindowRankerLabelTarget,
   repeatabilitySummary: LnsWindowReplayRepeatabilitySummary,
   excludeFeatureIdenticalRepeatabilityConflicts: boolean
 ): LnsWindowRankerBaselineSummary {
@@ -536,7 +555,11 @@ function buildSummary(
   if (!labelSnapshot.lns.scaleReadiness.passed) {
     failedReasons.push("source LNS label-scale readiness did not pass");
   }
-  if (repeatabilitySummary.featureIdenticalConflictBucketCount > 0 && !excludeFeatureIdenticalRepeatabilityConflicts) {
+  if (
+    repeatabilitySummary.featureIdenticalConflictBucketCount > 0 &&
+    !targetAllowsFeatureIdenticalRepeatabilityConflicts(target) &&
+    !excludeFeatureIdenticalRepeatabilityConflicts
+  ) {
     failedReasons.push(
       `source LNS replay repeatability has feature-identical conflicts ${repeatabilitySummary.featureIdenticalConflictBucketCount} buckets/${repeatabilitySummary.featureIdenticalConflictLabelCount} labels`
     );
@@ -676,6 +699,7 @@ function summaryMetrics(result: LnsWindowRankerBaselineExperimentResult): Record
     deterministicHoldoutCaptureRate: result.evaluation.summary.deterministicHoldoutCaptureRate,
     randomHoldoutCaptureRate: result.evaluation.summary.randomHoldoutCaptureRate,
     target: result.model.target,
+    targetRollForwardBaselineStallLift: result.model.target === "roll-forward-baseline-stall-lift" ? 1 : 0,
     weakSeedReplayLabelsAllowed: result.model.weakSeedReplayLabelsAllowed,
     featureIdenticalRepeatabilityConflictsExcluded: result.model.featureIdenticalRepeatabilityConflictsExcluded,
     repeatabilityFeatureIdenticalConflictBucketCount:
@@ -723,6 +747,7 @@ export function runLnsWindowRankerBaselineExperiment(
   const summary = buildSummary(
     labelSnapshot,
     baselines,
+    target,
     repeatabilityIndex.summary,
     excludeFeatureIdenticalRepeatabilityConflicts
   );
@@ -838,6 +863,7 @@ export function buildLnsWindowRankerBaselineRegistryEntryDraft(
       cpuOnly: 1,
       topK: result.model.topK,
       targetRollForwardFinalLift: result.model.target === "roll-forward-final-lift" ? 1 : 0,
+      targetRollForwardBaselineStallLift: result.model.target === "roll-forward-baseline-stall-lift" ? 1 : 0,
       weakSeedReplayLabelsAllowed: result.model.weakSeedReplayLabelsAllowed ? 1 : 0,
       featureIdenticalRepeatabilityConflictsExcluded: result.model.featureIdenticalRepeatabilityConflictsExcluded
         ? 1

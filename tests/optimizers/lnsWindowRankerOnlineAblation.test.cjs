@@ -8,6 +8,7 @@ const {
   buildLnsWindowRankerOnlineAblationTelemetryManifest,
   buildLnsWindowRankerOnlineCalibrationRegistryEntryDraft,
   buildLnsWindowRankerOnlineCalibrationTelemetryManifest,
+  buildLnsWindowRankerOnlineTransitionOutcomeDiagnostics,
   createLnsWindowRankerOnlineCalibrationSnapshot,
   createLnsWindowRankerOnlineAblationSnapshot,
   DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS,
@@ -70,6 +71,8 @@ function buildMockSolution(params) {
   const roads = new Set(overridesBaseline ? ["0,0", "0,1"] : ["0,0"]);
   const services = overridesBaseline ? [{ r: 0, c: 1, rows: 1, cols: 1, range: 2 }] : [];
   const residentials = overridesBaseline ? [{ r: 1, c: 1, rows: 1, cols: 1 }] : [];
+  const seedWallClockSeconds = usesRanker && !overridesBaseline ? 0.5 : 1;
+  const outcomeWallClockSeconds = overridesBaseline ? 0.5 : 0;
 
   return {
     optimizer: "lns",
@@ -85,7 +88,7 @@ function buildMockSolution(params) {
     lnsTelemetry: {
       stopReason: "iteration-limit",
       seedSource: "hint",
-      seedWallClockSeconds: 0,
+      seedWallClockSeconds,
       seedTimeLimitSeconds: null,
       wallClockLimitSeconds: null,
       noImprovementTimeoutSeconds: null,
@@ -98,7 +101,7 @@ function buildMockSolution(params) {
       recoverableFailures: 0,
       skippedIterations: 0,
       finalStagnantIterations: usesRanker ? 0 : 1,
-      elapsedSeconds: 0,
+      elapsedSeconds: seedWallClockSeconds + outcomeWallClockSeconds,
       windowRanker: usesRanker
         ? {
             enabled: true,
@@ -120,7 +123,7 @@ function buildMockSolution(params) {
           stagnantIterationsBefore: 0,
           staleSecondsBefore: 0,
           repairTimeLimitSeconds: 0.25,
-          wallClockSeconds: 0,
+          wallClockSeconds: outcomeWallClockSeconds,
           populationBefore: 100,
           populationAfter: totalPopulation,
           improvement: totalPopulation - 100,
@@ -193,8 +196,8 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(result.cases[0].variants[0].timeToBestIterationDeltaVsBaseline, 0);
     assert.equal(result.cases[0].variants[1].timeToBestIteration, 1);
     assert.equal(result.cases[0].variants[1].timeToBestIterationDeltaVsBaseline, 1);
-    assert.equal(result.cases[0].variants[1].timeToBestWallClockSeconds, 0);
-    assert.equal(result.cases[0].variants[1].timeToBestWallClockDeltaVsBaselineSeconds, 0);
+    assert.equal(result.cases[0].variants[1].timeToBestWallClockSeconds, 1.5);
+    assert.equal(result.cases[0].variants[1].timeToBestWallClockDeltaVsBaselineSeconds, 0.5);
     assert.equal(result.variantSummaries[1].rankerDecisionCount, 2);
     assert.equal(result.variantSummaries[1].rankerOverrideCount, 1);
     assert.equal(result.variantSummaries[1].rankerFallbackDecisionCount, 1);
@@ -234,6 +237,18 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
       "sliding->service-overlap": { improved: 1, neutral: 0, regressed: 0 }
     });
     assert.deepEqual(result.variantSummaries[1].fallbackTransitionFinalOutcomeCounts, {});
+    assert.deepEqual(result.variantSummaries[1].overrideFinalOutcomeFeatureDeltaCounts, {
+      improved: 1,
+      neutral: 0,
+      regressed: 0
+    });
+    assert.deepEqual(result.variantSummaries[1].overrideFinalOutcomeMeanFeatureDeltas.improved, {
+      residentialCandidateHeadroom: 0.2,
+      selectedByBaseline: -1,
+      serviceCandidatesIntersecting: 0.5
+    });
+    assert.deepEqual(result.variantSummaries[1].overrideFinalOutcomeMeanFeatureDeltas.neutral, {});
+    assert.deepEqual(result.variantSummaries[1].overrideImprovedVsNeutralMeanFeatureDeltaGaps, {});
     assert.deepEqual(result.variantSummaries[1].overrideTransitionPressureFamilyCounts, {
       "sliding->service-overlap": { uncategorized: 1 }
     });
@@ -247,8 +262,18 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(result.variantSummaries[1].meanFinalLayoutPlacementDelta, 3);
     assert.equal(result.variantSummaries[1].meanTimeToBestIteration, 1);
     assert.equal(result.variantSummaries[1].meanTimeToBestIterationDeltaVsBaseline, 1);
-    assert.equal(result.variantSummaries[1].meanTimeToBestWallClockSeconds, 0);
-    assert.equal(result.variantSummaries[1].meanTimeToBestWallClockDeltaVsBaselineSeconds, 0);
+    assert.equal(result.variantSummaries[1].meanTimeToBestWallClockSeconds, 1.5);
+    assert.equal(result.variantSummaries[1].meanTimeToBestWallClockDeltaVsBaselineSeconds, 0.5);
+    assert.equal(result.variantSummaries[1].timeToBestWallClockKnownPairCount, 1);
+    assert.equal(result.variantSummaries[1].timeToBestWallClockUnknownPairCount, 0);
+    assert.equal(result.variantSummaries[1].meanTimeToBestWallClockRatioVsBaseline, 1.5);
+    assert.equal(result.variantSummaries[1].medianTimeToBestWallClockRatioVsBaseline, 1.5);
+    assert.equal(result.variantSummaries[1].timeToBestWallClockFaster10PercentCount, 0);
+    assert.equal(result.variantSummaries[1].timeToBestWallClockSlower10PercentCount, 1);
+    assert.equal(result.variantSummaries[1].timeToBestWallClockFaster10PercentRate, 0);
+    assert.equal(result.variantSummaries[1].timeToBestWallClockSlower10PercentRate, 1);
+    assert.equal(result.variantSummaries[1].equalPopulationTimeToBestGatePassed, false);
+    assert.equal(result.variantSummaries[1].timeToBestPromotionGatePassed, false);
     assert.equal(result.variantSummaries[1].earlierTimeToBestCount, 0);
     assert.equal(result.variantSummaries[1].sameTimeToBestCount, 0);
     assert.equal(result.variantSummaries[1].laterTimeToBestCount, 1);
@@ -367,6 +392,9 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.match(formatLnsWindowRankerOnlineAblation(result), /layout-changed=1/);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /layout-delta:3/);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /ttb-iter:1/);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /ttb-wall-ratio-mean=1\.500/);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /ttb-wall-fast10\/slower10\/known=0\/1\/1/);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /ttb-promotion=fail/);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /ttb-earlier\/same\/later\/unknown=0\/0\/1\/0/);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /override-improved=1/);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /override-final=1\/0\/0/);
@@ -374,6 +402,7 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
       formatLnsWindowRankerOnlineAblation(result),
       /override-transition-finals=sliding->service-overlap:1\/0\/0/
     );
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /override-final-feature-deltas=improved:1/);
     assert.match(
       formatLnsWindowRankerOnlineAblation(result),
       /override-transition-families=sliding->service-overlap\[uncategorized:1\]/
@@ -394,6 +423,14 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(telemetryManifest.metrics.meanFinalLayoutPlacementDelta, 3);
     assert.equal(telemetryManifest.metrics.rankerMeanTimeToBestIteration, 1);
     assert.equal(telemetryManifest.metrics.meanTimeToBestIterationDeltaVsBaseline, 1);
+    assert.equal(telemetryManifest.metrics.timeToBestWallClockKnownPairCount, 1);
+    assert.equal(telemetryManifest.metrics.timeToBestWallClockUnknownPairCount, 0);
+    assert.equal(telemetryManifest.metrics.meanTimeToBestWallClockRatioVsBaseline, 1.5);
+    assert.equal(telemetryManifest.metrics.medianTimeToBestWallClockRatioVsBaseline, 1.5);
+    assert.equal(telemetryManifest.metrics.timeToBestWallClockFaster10PercentCount, 0);
+    assert.equal(telemetryManifest.metrics.timeToBestWallClockSlower10PercentCount, 1);
+    assert.equal(telemetryManifest.metrics.equalPopulationTimeToBestGatePassed, false);
+    assert.equal(telemetryManifest.metrics.timeToBestPromotionGatePassed, false);
     assert.equal(telemetryManifest.metrics.laterTimeToBestCount, 1);
     assert.equal(telemetryManifest.metrics.overrideImprovedOutcomeCount, 1);
     assert.equal(telemetryManifest.metrics.overrideNeutralOutcomeCount, 0);
@@ -423,6 +460,17 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
       "sliding->service-overlap": { improved: 1, neutral: 0, regressed: 0 }
     });
     assert.deepEqual(telemetryManifest.metrics.fallbackTransitionFinalOutcomeCounts, {});
+    assert.deepEqual(telemetryManifest.metrics.overrideFinalOutcomeFeatureDeltaCounts, {
+      improved: 1,
+      neutral: 0,
+      regressed: 0
+    });
+    assert.deepEqual(telemetryManifest.metrics.overrideFinalOutcomeMeanFeatureDeltas.improved, {
+      residentialCandidateHeadroom: 0.2,
+      selectedByBaseline: -1,
+      serviceCandidatesIntersecting: 0.5
+    });
+    assert.deepEqual(telemetryManifest.metrics.overrideImprovedVsNeutralMeanFeatureDeltaGaps, {});
     assert.deepEqual(telemetryManifest.metrics.overrideTransitionPressureFamilyCounts, {
       "sliding->service-overlap": { uncategorized: 1 }
     });
@@ -437,14 +485,19 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(registryDraft.modelFingerprint, "fnv1a:test-online");
     assert.deepEqual(registryDraft.seeds, [7]);
     assert.equal(registryDraft.budget.minScoreDelta, 0.05);
-    assert.deepEqual(registryDraft.budget.allowedTransitions, ["sliding->service-overlap"]);
+    assert.equal(registryDraft.budget.allowedTransitionCount, 1);
     assert.equal(registryDraft.budget.comparisonCount, 1);
     assert.equal(registryDraft.budget.overrideImprovedOutcomeCount, 1);
     assert.equal(registryDraft.budget.overrideNeutralOutcomeCount, 0);
     assert.equal(registryDraft.budget.selectionTraceCount, 1);
     assert.equal(registryDraft.budget.changedFinalLayoutCount, 1);
     assert.equal(registryDraft.budget.meanFinalLayoutPlacementDelta, 3);
-    assert.equal(registryDraft.budget.meanTimeToBestIterationDeltaVsBaseline, 1);
+    assert.equal(registryDraft.budget.timeToBestWallClockKnownPairCount, 1);
+    assert.equal(registryDraft.budget.timeToBestWallClockUnknownPairCount, 0);
+    assert.equal(registryDraft.budget.meanTimeToBestWallClockRatioVsBaseline, 1.5);
+    assert.equal(registryDraft.budget.medianTimeToBestWallClockRatioVsBaseline, 1.5);
+    assert.equal(registryDraft.budget.timeToBestWallClockFaster10PercentCount, 0);
+    assert.equal(registryDraft.budget.timeToBestWallClockSlower10PercentCount, 1);
     assert.equal(registryDraft.budget.laterTimeToBestCount, 1);
     assert.equal(registryDraft.budget.overrideFinalImprovedCaseCount, 1);
     assert.equal(registryDraft.budget.overrideFinalNeutralCaseCount, 0);
@@ -457,6 +510,14 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(registryDraft.summaryMetrics.meanFinalLayoutPlacementDelta, 3);
     assert.equal(registryDraft.summaryMetrics.rankerMeanTimeToBestIteration, 1);
     assert.equal(registryDraft.summaryMetrics.meanTimeToBestIterationDeltaVsBaseline, 1);
+    assert.equal(registryDraft.summaryMetrics.timeToBestWallClockKnownPairCount, 1);
+    assert.equal(registryDraft.summaryMetrics.timeToBestWallClockUnknownPairCount, 0);
+    assert.equal(registryDraft.summaryMetrics.meanTimeToBestWallClockRatioVsBaseline, 1.5);
+    assert.equal(registryDraft.summaryMetrics.medianTimeToBestWallClockRatioVsBaseline, 1.5);
+    assert.equal(registryDraft.summaryMetrics.timeToBestWallClockFaster10PercentCount, 0);
+    assert.equal(registryDraft.summaryMetrics.timeToBestWallClockSlower10PercentCount, 1);
+    assert.equal(registryDraft.summaryMetrics.equalPopulationTimeToBestGatePassed, false);
+    assert.equal(registryDraft.summaryMetrics.timeToBestPromotionGatePassed, false);
     assert.equal(registryDraft.summaryMetrics.laterTimeToBestCount, 1);
     assert.equal(registryDraft.summaryMetrics.overrideChangedWindowCount, 1);
     assert.equal(registryDraft.summaryMetrics.fallbackChangedWindowCount, 0);
@@ -482,6 +543,17 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
       "sliding->service-overlap": { improved: 1, neutral: 0, regressed: 0 }
     });
     assert.deepEqual(registryDraft.summaryMetrics.fallbackTransitionFinalOutcomeCounts, {});
+    assert.deepEqual(registryDraft.summaryMetrics.overrideFinalOutcomeFeatureDeltaCounts, {
+      improved: 1,
+      neutral: 0,
+      regressed: 0
+    });
+    assert.deepEqual(registryDraft.summaryMetrics.overrideFinalOutcomeMeanFeatureDeltas.improved, {
+      residentialCandidateHeadroom: 0.2,
+      selectedByBaseline: -1,
+      serviceCandidatesIntersecting: 0.5
+    });
+    assert.deepEqual(registryDraft.summaryMetrics.overrideImprovedVsNeutralMeanFeatureDeltaGaps, {});
     assert.deepEqual(registryDraft.summaryMetrics.overrideTransitionPressureFamilyCounts, {
       "sliding->service-overlap": { uncategorized: 1 }
     });
@@ -585,7 +657,17 @@ function testOnlineCalibrationSummarizesThresholdSweep() {
     assert.equal(result.topSafeMinScoreDelta, 0);
     assert.equal(result.thresholdSummaries[0].meanPopulationDeltaVsBaseline, 20);
     assert.equal(result.thresholdSummaries[0].meanTimeToBestIterationDeltaVsBaseline, 1);
-    assert.equal(result.thresholdSummaries[0].meanTimeToBestWallClockDeltaVsBaselineSeconds, 0);
+    assert.equal(result.thresholdSummaries[0].meanTimeToBestWallClockDeltaVsBaselineSeconds, 0.5);
+    assert.equal(result.thresholdSummaries[0].timeToBestWallClockKnownPairCount, 1);
+    assert.equal(result.thresholdSummaries[0].timeToBestWallClockUnknownPairCount, 0);
+    assert.equal(result.thresholdSummaries[0].meanTimeToBestWallClockRatioVsBaseline, 1.5);
+    assert.equal(result.thresholdSummaries[0].medianTimeToBestWallClockRatioVsBaseline, 1.5);
+    assert.equal(result.thresholdSummaries[0].timeToBestWallClockFaster10PercentCount, 0);
+    assert.equal(result.thresholdSummaries[0].timeToBestWallClockSlower10PercentCount, 1);
+    assert.equal(result.thresholdSummaries[0].timeToBestWallClockFaster10PercentRate, 0);
+    assert.equal(result.thresholdSummaries[0].timeToBestWallClockSlower10PercentRate, 1);
+    assert.equal(result.thresholdSummaries[0].equalPopulationTimeToBestGatePassed, false);
+    assert.equal(result.thresholdSummaries[0].timeToBestPromotionGatePassed, false);
     assert.equal(result.thresholdSummaries[0].earlierTimeToBestCount, 0);
     assert.equal(result.thresholdSummaries[0].sameTimeToBestCount, 0);
     assert.equal(result.thresholdSummaries[0].laterTimeToBestCount, 1);
@@ -614,11 +696,27 @@ function testOnlineCalibrationSummarizesThresholdSweep() {
     assert.deepEqual(result.thresholdSummaries[0].overrideTransitionFinalOutcomeCounts, {
       "sliding->service-overlap": { improved: 1, neutral: 0, regressed: 0 }
     });
+    assert.deepEqual(result.thresholdSummaries[0].overrideFinalOutcomeFeatureDeltaCounts, {
+      improved: 1,
+      neutral: 0,
+      regressed: 0
+    });
     assert.deepEqual(result.thresholdSummaries[0].overrideTransitionPressureFamilyCounts, {
       "sliding->service-overlap": { uncategorized: 1 }
     });
     assert.equal(result.thresholdSummaries[1].meanPopulationDeltaVsBaseline, 0);
     assert.equal(result.thresholdSummaries[1].meanTimeToBestIterationDeltaVsBaseline, 0);
+    assert.equal(result.thresholdSummaries[1].meanTimeToBestWallClockDeltaVsBaselineSeconds, -0.5);
+    assert.equal(result.thresholdSummaries[1].timeToBestWallClockKnownPairCount, 1);
+    assert.equal(result.thresholdSummaries[1].timeToBestWallClockUnknownPairCount, 0);
+    assert.equal(result.thresholdSummaries[1].meanTimeToBestWallClockRatioVsBaseline, 0.5);
+    assert.equal(result.thresholdSummaries[1].medianTimeToBestWallClockRatioVsBaseline, 0.5);
+    assert.equal(result.thresholdSummaries[1].timeToBestWallClockFaster10PercentCount, 1);
+    assert.equal(result.thresholdSummaries[1].timeToBestWallClockSlower10PercentCount, 0);
+    assert.equal(result.thresholdSummaries[1].timeToBestWallClockFaster10PercentRate, 1);
+    assert.equal(result.thresholdSummaries[1].timeToBestWallClockSlower10PercentRate, 0);
+    assert.equal(result.thresholdSummaries[1].equalPopulationTimeToBestGatePassed, true);
+    assert.equal(result.thresholdSummaries[1].timeToBestPromotionGatePassed, true);
     assert.equal(result.thresholdSummaries[1].sameTimeToBestCount, 1);
     assert.equal(result.thresholdSummaries[1].laterTimeToBestCount, 0);
     assert.equal(result.thresholdSummaries[1].rankerFallbackDecisionCount, 2);
@@ -643,6 +741,16 @@ function testOnlineCalibrationSummarizesThresholdSweep() {
     assert.deepEqual(result.thresholdSummaries[1].fallbackTransitionFinalOutcomeCounts, {
       "sliding->sliding": { improved: 0, neutral: 1, regressed: 0 }
     });
+    assert.deepEqual(result.thresholdSummaries[1].fallbackFinalOutcomeFeatureDeltaCounts, {
+      improved: 0,
+      neutral: 1,
+      regressed: 0
+    });
+    assert.deepEqual(result.thresholdSummaries[1].fallbackFinalOutcomeMeanFeatureDeltas.neutral, {
+      residentialCandidateHeadroom: 0,
+      selectedByBaseline: 0,
+      serviceCandidatesIntersecting: 0
+    });
     assert.deepEqual(result.thresholdSummaries[1].fallbackTransitionPressureFamilyCounts, {
       "sliding->sliding": { uncategorized: 1 }
     });
@@ -653,10 +761,15 @@ function testOnlineCalibrationSummarizesThresholdSweep() {
     assert.equal(Object.hasOwn(snapshot.thresholdSummaries[0], "meanWallClockDeltaVsBaselineSeconds"), false);
     assert.equal(Object.hasOwn(snapshot.thresholdSummaries[0], "meanTimeToBestWallClockDeltaVsBaselineSeconds"), false);
     assert.equal(snapshot.thresholdSummaries[0].meanTimeToBestIterationDeltaVsBaseline, 1);
+    assert.equal(snapshot.thresholdSummaries[1].meanTimeToBestWallClockRatioVsBaseline, 0.5);
+    assert.equal(snapshot.thresholdSummaries[1].timeToBestPromotionGatePassed, true);
     const formatted = formatLnsWindowRankerOnlineCalibration(result);
     assert.match(formatted, /=== LNS Window Ranker Threshold Sweep ===/);
     assert.match(formatted, /min-score-delta=0.2/);
     assert.match(formatted, /ttb-iter-delta-mean=1/);
+    assert.match(formatted, /ttb-wall-ratio-mean=1\.500/);
+    assert.match(formatted, /ttb-wall-fast10\/slower10\/known=1\/0\/1/);
+    assert.match(formatted, /ttb-promotion=pass/);
     assert.match(formatted, /ttb-earlier\/same\/later\/unknown=0\/0\/1\/0/);
     assert.match(formatted, /override-transitions=sliding->service-overlap:1/);
     assert.match(formatted, /override-feature-deltas=selectedByBaseline:-1/);
@@ -675,14 +788,18 @@ function testOnlineCalibrationSummarizesThresholdSweep() {
     assert.equal(telemetryManifest.metrics.thresholdCount, 2);
     assert.equal(telemetryManifest.metrics.topMeanPopulationDeltaMinScoreDelta, 0);
     assert.equal(telemetryManifest.metrics.topMeanTimeToBestIterationDeltaVsBaseline, 1);
+    assert.equal(telemetryManifest.metrics.topMeanTimeToBestWallClockRatioVsBaseline, 1.5);
+    assert.equal(telemetryManifest.metrics.timeToBestPromotionThresholdCount, 1);
     assert.equal(telemetryManifest.metrics.safeThresholdCount, 2);
     assert.equal(telemetryManifest.metrics.thresholdSummaries[1].fallbackTransitionCounts["sliding->sliding"], 1);
     assert.equal(telemetryManifest.metrics.thresholdSummaries[0].laterTimeToBestCount, 1);
     assert.equal(telemetryManifest.metrics.thresholdSummaries[1].sameTimeToBestCount, 1);
+    assert.equal(telemetryManifest.metrics.thresholdSummaries[1].timeToBestPromotionGatePassed, true);
     assert.equal(
       telemetryManifest.metrics.thresholdSummaries[1].fallbackTransitionFinalOutcomeCounts["sliding->sliding"].neutral,
       1
     );
+    assert.equal(telemetryManifest.metrics.thresholdSummaries[1].fallbackFinalOutcomeFeatureDeltaCounts.neutral, 1);
     assert.equal(telemetryManifest.metrics.thresholdSummaries[0].changedFinalLayoutCount, 1);
     assert.equal(telemetryManifest.metrics.thresholdSummaries[1].changedFinalLayoutCount, 0);
 
@@ -698,6 +815,8 @@ function testOnlineCalibrationSummarizesThresholdSweep() {
     assert.equal(registryDraft.budget.thresholdCount, 2);
     assert.equal(registryDraft.budget.totalRuns, 4);
     assert.equal(registryDraft.summaryMetrics.topMeanTimeToBestIterationDeltaVsBaseline, 1);
+    assert.equal(registryDraft.summaryMetrics.timeToBestPromotionThresholdCount, 1);
+    assert.equal(registryDraft.summaryMetrics.thresholdSummaries[1].timeToBestPromotionGatePassed, true);
     assert.equal(registryDraft.summaryMetrics.thresholdSummaries[0].overrideChangedWindowCount, 1);
     assert.equal(
       registryDraft.summaryMetrics.thresholdSummaries[0].overrideTransitionPressureFamilyCounts[
@@ -710,6 +829,58 @@ function testOnlineCalibrationSummarizesThresholdSweep() {
   }
 }
 
+function selectionDiagnosticsFixture(meanDeltas, count) {
+  return {
+    overrideTransitionCounts: { "weak-service->random-exploration": count },
+    fallbackTransitionCounts: {},
+    overrideChangedWindowCount: count,
+    fallbackChangedWindowCount: 0,
+    overrideFeatureDeltaCount: count,
+    fallbackFeatureDeltaCount: 0,
+    overrideMeanFeatureDeltas: meanDeltas,
+    fallbackMeanFeatureDeltas: {},
+    overrideTransitionFeatureDeltaCounts: { "weak-service->random-exploration": count },
+    fallbackTransitionFeatureDeltaCounts: {},
+    overrideTransitionMeanFeatureDeltas: { "weak-service->random-exploration": meanDeltas },
+    fallbackTransitionMeanFeatureDeltas: {}
+  };
+}
+
+function testTransitionOutcomeFeatureDeltaDiagnostics() {
+  const diagnostics = buildLnsWindowRankerOnlineTransitionOutcomeDiagnostics([
+    {
+      pressureFamily: "anchor-service",
+      finalOutcomeStatus: "improved",
+      selectionDiagnostics: selectionDiagnosticsFixture({ candidateHeadroom: 3, operatorScore: -7 }, 2)
+    },
+    {
+      pressureFamily: "service-pressure",
+      finalOutcomeStatus: "neutral",
+      selectionDiagnostics: selectionDiagnosticsFixture({ candidateHeadroom: 1, serviceCandidateBonus: 4 }, 1)
+    }
+  ]);
+
+  assert.deepEqual(diagnostics.overrideFinalOutcomeFeatureDeltaCounts, {
+    improved: 2,
+    neutral: 1,
+    regressed: 0
+  });
+  assert.deepEqual(diagnostics.overrideFinalOutcomeMeanFeatureDeltas.improved, {
+    candidateHeadroom: 3,
+    operatorScore: -7
+  });
+  assert.deepEqual(diagnostics.overrideFinalOutcomeMeanFeatureDeltas.neutral, {
+    candidateHeadroom: 1,
+    serviceCandidateBonus: 4
+  });
+  assert.deepEqual(diagnostics.overrideImprovedVsNeutralMeanFeatureDeltaGaps, {
+    candidateHeadroom: 2,
+    operatorScore: -7,
+    serviceCandidateBonus: -4
+  });
+}
+
 testOnlineAblationRunnerComparesEqualBudgets();
 testLnsBenchmarkCliListsOnlineAblationCases();
 testOnlineCalibrationSummarizesThresholdSweep();
+testTransitionOutcomeFeatureDeltaDiagnostics();

@@ -5,6 +5,7 @@ import {
   buildBenchmarkVariantCoverage,
   listBenchmarkCaseNames,
   meanNullableBenchmarkValue,
+  percentileBenchmarkValue,
   selectBenchmarkCasesByName,
   snapshotBenchmarkVariantResult,
   snapshotBenchmarkVariantSummary,
@@ -44,6 +45,7 @@ import type {
 import type { LnsBenchmarkCase, LnsBenchmarkCaseResult, LnsBenchmarkRunOptions } from "./lns.js";
 import type { LnsWindowRankerOnlineFinalLayoutDelta } from "./lnsWindowRankerOnlineLayoutDeltas.js";
 import type {
+  LnsWindowRankerOnlineFinalTransitionStatus,
   LnsWindowRankerOnlineSelectionDiagnostics,
   LnsWindowRankerOnlineTransitionStatusCounts
 } from "./lnsWindowRankerOnlineSelectionDiagnostics.js";
@@ -192,6 +194,12 @@ export interface LnsWindowRankerOnlineAblationSummary
   fallbackTransitionFinalOutcomeCounts: Record<string, LnsWindowRankerOnlineTransitionStatusCounts>;
   overrideTransitionPressureFamilyCounts: Record<string, Record<string, number>>;
   fallbackTransitionPressureFamilyCounts: Record<string, Record<string, number>>;
+  overrideFinalOutcomeFeatureDeltaCounts: Record<LnsWindowRankerOnlineFinalTransitionStatus, number>;
+  fallbackFinalOutcomeFeatureDeltaCounts: Record<LnsWindowRankerOnlineFinalTransitionStatus, number>;
+  overrideFinalOutcomeMeanFeatureDeltas: Record<LnsWindowRankerOnlineFinalTransitionStatus, Record<string, number>>;
+  fallbackFinalOutcomeMeanFeatureDeltas: Record<LnsWindowRankerOnlineFinalTransitionStatus, Record<string, number>>;
+  overrideImprovedVsNeutralMeanFeatureDeltaGaps: Record<string, number>;
+  overrideRegressedVsNeutralMeanFeatureDeltaGaps: Record<string, number>;
   selectionTraceCount: number;
   sameFinalLayoutCount: number;
   changedFinalLayoutCount: number;
@@ -200,6 +208,16 @@ export interface LnsWindowRankerOnlineAblationSummary
   meanTimeToBestIterationDeltaVsBaseline: number | null;
   meanTimeToBestWallClockSeconds: number | null;
   meanTimeToBestWallClockDeltaVsBaselineSeconds: number | null;
+  timeToBestWallClockKnownPairCount: number;
+  timeToBestWallClockUnknownPairCount: number;
+  meanTimeToBestWallClockRatioVsBaseline: number | null;
+  medianTimeToBestWallClockRatioVsBaseline: number | null;
+  timeToBestWallClockFaster10PercentCount: number;
+  timeToBestWallClockSlower10PercentCount: number;
+  timeToBestWallClockFaster10PercentRate: number;
+  timeToBestWallClockSlower10PercentRate: number;
+  equalPopulationTimeToBestGatePassed: boolean;
+  timeToBestPromotionGatePassed: boolean;
   earlierTimeToBestCount: number;
   sameTimeToBestCount: number;
   laterTimeToBestCount: number;
@@ -265,6 +283,16 @@ export interface LnsWindowRankerOnlineCalibrationThresholdSummary {
   meanWallClockDeltaVsBaselineSeconds: number;
   meanTimeToBestIterationDeltaVsBaseline: number | null;
   meanTimeToBestWallClockDeltaVsBaselineSeconds: number | null;
+  timeToBestWallClockKnownPairCount: number;
+  timeToBestWallClockUnknownPairCount: number;
+  meanTimeToBestWallClockRatioVsBaseline: number | null;
+  medianTimeToBestWallClockRatioVsBaseline: number | null;
+  timeToBestWallClockFaster10PercentCount: number;
+  timeToBestWallClockSlower10PercentCount: number;
+  timeToBestWallClockFaster10PercentRate: number;
+  timeToBestWallClockSlower10PercentRate: number;
+  equalPopulationTimeToBestGatePassed: boolean;
+  timeToBestPromotionGatePassed: boolean;
   earlierTimeToBestCount: number;
   sameTimeToBestCount: number;
   laterTimeToBestCount: number;
@@ -295,6 +323,12 @@ export interface LnsWindowRankerOnlineCalibrationThresholdSummary {
   fallbackTransitionFinalOutcomeCounts: Record<string, LnsWindowRankerOnlineTransitionStatusCounts>;
   overrideTransitionPressureFamilyCounts: Record<string, Record<string, number>>;
   fallbackTransitionPressureFamilyCounts: Record<string, Record<string, number>>;
+  overrideFinalOutcomeFeatureDeltaCounts: Record<LnsWindowRankerOnlineFinalTransitionStatus, number>;
+  fallbackFinalOutcomeFeatureDeltaCounts: Record<LnsWindowRankerOnlineFinalTransitionStatus, number>;
+  overrideFinalOutcomeMeanFeatureDeltas: Record<LnsWindowRankerOnlineFinalTransitionStatus, Record<string, number>>;
+  fallbackFinalOutcomeMeanFeatureDeltas: Record<LnsWindowRankerOnlineFinalTransitionStatus, Record<string, number>>;
+  overrideImprovedVsNeutralMeanFeatureDeltaGaps: Record<string, number>;
+  overrideRegressedVsNeutralMeanFeatureDeltaGaps: Record<string, number>;
   selectionTraceCount: number;
   sameFinalLayoutCount: number;
   changedFinalLayoutCount: number;
@@ -475,6 +509,29 @@ function nullableDelta(value: number | null, baseline: number | null): number | 
   return value === null || baseline === null ? null : value - baseline;
 }
 
+function finiteTimeToBestWallClockRatio(
+  result: LnsWindowRankerOnlineAblationVariantResult,
+  baseline: LnsWindowRankerOnlineAblationVariantResult
+): number | null {
+  const baselineSeconds = baseline.timeToBestWallClockSeconds;
+  const resultSeconds = result.timeToBestWallClockSeconds;
+  if (
+    typeof baselineSeconds !== "number" ||
+    !Number.isFinite(baselineSeconds) ||
+    baselineSeconds <= 0 ||
+    typeof resultSeconds !== "number" ||
+    !Number.isFinite(resultSeconds)
+  ) {
+    return null;
+  }
+  return resultSeconds / baselineSeconds;
+}
+
+function medianNullableBenchmarkValue(values: ReadonlyArray<number | null | undefined>): number | null {
+  const finiteValues = values.filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+  return finiteValues.length ? percentileBenchmarkValue(finiteValues, 0.5) : null;
+}
+
 function timeToBestSummary(result: LnsBenchmarkCaseResult): LnsWindowRankerOnlineTimeToBestSummary {
   const telemetry = result.lnsTelemetry;
   if (!telemetry) {
@@ -638,6 +695,16 @@ function buildVariantSummary(
   const results = caseResults.map((entry) => entry.result);
   const timeToBestIterationDeltas = results.map((entry) => entry.timeToBestIterationDeltaVsBaseline);
   const knownTimeToBestIterationDeltas = timeToBestIterationDeltas.filter((delta): delta is number => delta !== null);
+  const timeToBestWallClockRatios = caseResults.map(({ benchmarkCase, result }) =>
+    finiteTimeToBestWallClockRatio(result, benchmarkCase.baseline)
+  );
+  const knownTimeToBestWallClockRatios = timeToBestWallClockRatios.filter((ratio): ratio is number => ratio !== null);
+  const timeToBestWallClockFaster10PercentCount = sumBenchmarkBy(knownTimeToBestWallClockRatios, (ratio) =>
+    ratio <= 0.9 ? 1 : 0
+  );
+  const timeToBestWallClockSlower10PercentCount = sumBenchmarkBy(knownTimeToBestWallClockRatios, (ratio) =>
+    ratio >= 1.1 ? 1 : 0
+  );
   const decisionCount = sumBenchmarkBy(results, (entry) => entry.windowRanker?.decisions ?? 0);
   const overrideCount = sumBenchmarkBy(results, (entry) => entry.windowRanker?.overrides ?? 0);
   const fallbackDecisionCount = sumBenchmarkBy(results, (entry) => entry.windowRanker?.fallbackDecisions ?? 0);
@@ -661,8 +728,20 @@ function buildVariantSummary(
       selectionDiagnostics: result.selectionDiagnostics
     }))
   );
+  const variantMetrics = summarizeBenchmarkVariantMetrics(
+    variantName,
+    cases,
+    caseCount,
+    seedCount,
+    missingResultMessage
+  );
+  const equalPopulationTimeToBestGatePassed =
+    variantMetrics.improvedCaseCount === 0 &&
+    variantMetrics.regressedCaseCount === 0 &&
+    variantMetrics.unchangedCaseCount === results.length;
+  const medianTimeToBestWallClockRatioVsBaseline = medianNullableBenchmarkValue(timeToBestWallClockRatios);
   return {
-    ...summarizeBenchmarkVariantMetrics(variantName, cases, caseCount, seedCount, missingResultMessage),
+    ...variantMetrics,
     description: VARIANT_DESCRIPTIONS[variantName],
     rankerDecisionCount: decisionCount,
     rankerOverrideCount: overrideCount,
@@ -692,6 +771,14 @@ function buildVariantSummary(
     fallbackTransitionFinalOutcomeCounts: transitionOutcomeDiagnostics.fallbackTransitionFinalOutcomeCounts,
     overrideTransitionPressureFamilyCounts: transitionOutcomeDiagnostics.overrideTransitionPressureFamilyCounts,
     fallbackTransitionPressureFamilyCounts: transitionOutcomeDiagnostics.fallbackTransitionPressureFamilyCounts,
+    overrideFinalOutcomeFeatureDeltaCounts: transitionOutcomeDiagnostics.overrideFinalOutcomeFeatureDeltaCounts,
+    fallbackFinalOutcomeFeatureDeltaCounts: transitionOutcomeDiagnostics.fallbackFinalOutcomeFeatureDeltaCounts,
+    overrideFinalOutcomeMeanFeatureDeltas: transitionOutcomeDiagnostics.overrideFinalOutcomeMeanFeatureDeltas,
+    fallbackFinalOutcomeMeanFeatureDeltas: transitionOutcomeDiagnostics.fallbackFinalOutcomeMeanFeatureDeltas,
+    overrideImprovedVsNeutralMeanFeatureDeltaGaps:
+      transitionOutcomeDiagnostics.overrideImprovedVsNeutralMeanFeatureDeltaGaps,
+    overrideRegressedVsNeutralMeanFeatureDeltaGaps:
+      transitionOutcomeDiagnostics.overrideRegressedVsNeutralMeanFeatureDeltaGaps,
     selectionTraceCount: sumBenchmarkBy(results, (entry) => entry.selectionTrace.length),
     sameFinalLayoutCount: sumBenchmarkBy(results, (entry) =>
       entry.finalLayoutDeltaVsBaseline.sameFinalLayout ? 1 : 0
@@ -708,6 +795,27 @@ function buildVariantSummary(
     meanTimeToBestWallClockDeltaVsBaselineSeconds: meanNullableBenchmarkValue(
       results.map((entry) => entry.timeToBestWallClockDeltaVsBaselineSeconds)
     ),
+    timeToBestWallClockKnownPairCount: knownTimeToBestWallClockRatios.length,
+    timeToBestWallClockUnknownPairCount: results.length - knownTimeToBestWallClockRatios.length,
+    meanTimeToBestWallClockRatioVsBaseline: meanNullableBenchmarkValue(timeToBestWallClockRatios),
+    medianTimeToBestWallClockRatioVsBaseline,
+    timeToBestWallClockFaster10PercentCount,
+    timeToBestWallClockSlower10PercentCount,
+    timeToBestWallClockFaster10PercentRate: benchmarkRatio(
+      timeToBestWallClockFaster10PercentCount,
+      knownTimeToBestWallClockRatios.length
+    ),
+    timeToBestWallClockSlower10PercentRate: benchmarkRatio(
+      timeToBestWallClockSlower10PercentCount,
+      knownTimeToBestWallClockRatios.length
+    ),
+    equalPopulationTimeToBestGatePassed,
+    timeToBestPromotionGatePassed:
+      equalPopulationTimeToBestGatePassed &&
+      knownTimeToBestWallClockRatios.length === results.length &&
+      medianTimeToBestWallClockRatioVsBaseline !== null &&
+      medianTimeToBestWallClockRatioVsBaseline <= 0.9 &&
+      timeToBestWallClockSlower10PercentCount === 0,
     earlierTimeToBestCount: sumBenchmarkBy(knownTimeToBestIterationDeltas, (delta) => (delta < 0 ? 1 : 0)),
     sameTimeToBestCount: sumBenchmarkBy(knownTimeToBestIterationDeltas, (delta) => (delta === 0 ? 1 : 0)),
     laterTimeToBestCount: sumBenchmarkBy(knownTimeToBestIterationDeltas, (delta) => (delta > 0 ? 1 : 0)),
@@ -758,6 +866,16 @@ function thresholdSummary(
     meanWallClockDeltaVsBaselineSeconds: summary.meanWallClockDeltaVsBaselineSeconds,
     meanTimeToBestIterationDeltaVsBaseline: summary.meanTimeToBestIterationDeltaVsBaseline,
     meanTimeToBestWallClockDeltaVsBaselineSeconds: summary.meanTimeToBestWallClockDeltaVsBaselineSeconds,
+    timeToBestWallClockKnownPairCount: summary.timeToBestWallClockKnownPairCount,
+    timeToBestWallClockUnknownPairCount: summary.timeToBestWallClockUnknownPairCount,
+    meanTimeToBestWallClockRatioVsBaseline: summary.meanTimeToBestWallClockRatioVsBaseline,
+    medianTimeToBestWallClockRatioVsBaseline: summary.medianTimeToBestWallClockRatioVsBaseline,
+    timeToBestWallClockFaster10PercentCount: summary.timeToBestWallClockFaster10PercentCount,
+    timeToBestWallClockSlower10PercentCount: summary.timeToBestWallClockSlower10PercentCount,
+    timeToBestWallClockFaster10PercentRate: summary.timeToBestWallClockFaster10PercentRate,
+    timeToBestWallClockSlower10PercentRate: summary.timeToBestWallClockSlower10PercentRate,
+    equalPopulationTimeToBestGatePassed: summary.equalPopulationTimeToBestGatePassed,
+    timeToBestPromotionGatePassed: summary.timeToBestPromotionGatePassed,
     earlierTimeToBestCount: summary.earlierTimeToBestCount,
     sameTimeToBestCount: summary.sameTimeToBestCount,
     laterTimeToBestCount: summary.laterTimeToBestCount,
@@ -788,6 +906,12 @@ function thresholdSummary(
     fallbackTransitionFinalOutcomeCounts: summary.fallbackTransitionFinalOutcomeCounts,
     overrideTransitionPressureFamilyCounts: summary.overrideTransitionPressureFamilyCounts,
     fallbackTransitionPressureFamilyCounts: summary.fallbackTransitionPressureFamilyCounts,
+    overrideFinalOutcomeFeatureDeltaCounts: summary.overrideFinalOutcomeFeatureDeltaCounts,
+    fallbackFinalOutcomeFeatureDeltaCounts: summary.fallbackFinalOutcomeFeatureDeltaCounts,
+    overrideFinalOutcomeMeanFeatureDeltas: summary.overrideFinalOutcomeMeanFeatureDeltas,
+    fallbackFinalOutcomeMeanFeatureDeltas: summary.fallbackFinalOutcomeMeanFeatureDeltas,
+    overrideImprovedVsNeutralMeanFeatureDeltaGaps: summary.overrideImprovedVsNeutralMeanFeatureDeltaGaps,
+    overrideRegressedVsNeutralMeanFeatureDeltaGaps: summary.overrideRegressedVsNeutralMeanFeatureDeltaGaps,
     selectionTraceCount: summary.selectionTraceCount,
     sameFinalLayoutCount: summary.sameFinalLayoutCount,
     changedFinalLayoutCount: summary.changedFinalLayoutCount,

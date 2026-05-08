@@ -29,6 +29,12 @@ export interface LnsWindowRankerOnlineTransitionOutcomeDiagnostics {
   fallbackTransitionFinalOutcomeCounts: Record<string, LnsWindowRankerOnlineTransitionStatusCounts>;
   overrideTransitionPressureFamilyCounts: Record<string, Record<string, number>>;
   fallbackTransitionPressureFamilyCounts: Record<string, Record<string, number>>;
+  overrideFinalOutcomeFeatureDeltaCounts: Record<LnsWindowRankerOnlineFinalTransitionStatus, number>;
+  fallbackFinalOutcomeFeatureDeltaCounts: Record<LnsWindowRankerOnlineFinalTransitionStatus, number>;
+  overrideFinalOutcomeMeanFeatureDeltas: Record<LnsWindowRankerOnlineFinalTransitionStatus, Record<string, number>>;
+  fallbackFinalOutcomeMeanFeatureDeltas: Record<LnsWindowRankerOnlineFinalTransitionStatus, Record<string, number>>;
+  overrideImprovedVsNeutralMeanFeatureDeltaGaps: Record<string, number>;
+  overrideRegressedVsNeutralMeanFeatureDeltaGaps: Record<string, number>;
 }
 
 export interface LnsWindowRankerOnlineTransitionOutcomeInput {
@@ -58,12 +64,35 @@ function emptyStatusCounts(): LnsWindowRankerOnlineTransitionStatusCounts {
   return { improved: 0, neutral: 0, regressed: 0 };
 }
 
-function emptyOutcomeDiagnostics(): LnsWindowRankerOnlineTransitionOutcomeDiagnostics {
+const FINAL_OUTCOME_STATUSES: readonly LnsWindowRankerOnlineFinalTransitionStatus[] = Object.freeze([
+  "improved",
+  "neutral",
+  "regressed"
+]);
+
+function emptyFinalOutcomeCounts(): Record<LnsWindowRankerOnlineFinalTransitionStatus, number> {
+  return { improved: 0, neutral: 0, regressed: 0 };
+}
+
+function emptyFinalOutcomeFeatureDeltas(): Record<LnsWindowRankerOnlineFinalTransitionStatus, Record<string, number>> {
+  return { improved: {}, neutral: {}, regressed: {} };
+}
+
+function emptyOutcomeDiagnostics(
+  overrides: Partial<LnsWindowRankerOnlineTransitionOutcomeDiagnostics> = {}
+): LnsWindowRankerOnlineTransitionOutcomeDiagnostics {
   return {
     overrideTransitionFinalOutcomeCounts: {},
     fallbackTransitionFinalOutcomeCounts: {},
     overrideTransitionPressureFamilyCounts: {},
-    fallbackTransitionPressureFamilyCounts: {}
+    fallbackTransitionPressureFamilyCounts: {},
+    overrideFinalOutcomeFeatureDeltaCounts: emptyFinalOutcomeCounts(),
+    fallbackFinalOutcomeFeatureDeltaCounts: emptyFinalOutcomeCounts(),
+    overrideFinalOutcomeMeanFeatureDeltas: emptyFinalOutcomeFeatureDeltas(),
+    fallbackFinalOutcomeMeanFeatureDeltas: emptyFinalOutcomeFeatureDeltas(),
+    overrideImprovedVsNeutralMeanFeatureDeltaGaps: {},
+    overrideRegressedVsNeutralMeanFeatureDeltaGaps: {},
+    ...overrides
   };
 }
 
@@ -113,6 +142,18 @@ function addDeltasToSums(sums: Record<string, number>, deltas: Record<string, nu
     added = true;
   }
   return added;
+}
+
+function addMeanFeatureDeltasToSums(
+  sums: Record<string, number>,
+  meanDeltas: Record<string, number>,
+  count: number
+): boolean {
+  if (count <= 0) return false;
+  return addDeltasToSums(
+    sums,
+    Object.fromEntries(Object.entries(meanDeltas).map(([featureName, mean]) => [featureName, mean * count]))
+  );
 }
 
 function addFeatureDeltas(sums: Record<string, number>, selection: LnsWindowRankerSelectionTelemetry): boolean {
@@ -176,6 +217,34 @@ function meanTransitionFeatureDeltas(
   );
 }
 
+function meanFinalOutcomeFeatureDeltas(
+  sumsByStatus: Record<LnsWindowRankerOnlineFinalTransitionStatus, Record<string, number>>,
+  countsByStatus: Record<LnsWindowRankerOnlineFinalTransitionStatus, number>
+): Record<LnsWindowRankerOnlineFinalTransitionStatus, Record<string, number>> {
+  return Object.fromEntries(
+    FINAL_OUTCOME_STATUSES.map((status) => [
+      status,
+      meanFeatureDeltas(sumsByStatus[status] ?? {}, countsByStatus[status] ?? 0)
+    ])
+  ) as Record<LnsWindowRankerOnlineFinalTransitionStatus, Record<string, number>>;
+}
+
+function featureDeltaGaps(
+  left: Record<string, number>,
+  leftCount: number,
+  right: Record<string, number>,
+  rightCount: number
+): Record<string, number> {
+  if (leftCount <= 0 || rightCount <= 0) return {};
+  const featureNames = new Set([...Object.keys(left), ...Object.keys(right)]);
+  return Object.fromEntries(
+    [...featureNames]
+      .sort((leftName, rightName) => leftName.localeCompare(rightName))
+      .map((featureName) => [featureName, roundedFeatureDelta((left[featureName] ?? 0) - (right[featureName] ?? 0))])
+      .filter(([, value]) => value !== 0)
+  );
+}
+
 function mergeTransitionMeanFeatureDeltas(
   leftMeanByTransition: Record<string, Record<string, number>>,
   leftCountsByTransition: Record<string, number>,
@@ -231,6 +300,19 @@ function addTransitionOutcomeCounts(
     addStatusCount(finalOutcomeCounts, transition, input.finalOutcomeStatus, count);
     addFamilyCount(pressureFamilyCounts, transition, input.pressureFamily, count);
   }
+}
+
+function addFinalOutcomeFeatureDeltas(
+  sumsByStatus: Record<LnsWindowRankerOnlineFinalTransitionStatus, Record<string, number>>,
+  countsByStatus: Record<LnsWindowRankerOnlineFinalTransitionStatus, number>,
+  status: LnsWindowRankerOnlineFinalTransitionStatus,
+  meanDeltas: Record<string, number>,
+  count: number
+): void {
+  const sums = sumsByStatus[status] ?? {};
+  if (!addMeanFeatureDeltasToSums(sums, meanDeltas, count)) return;
+  sumsByStatus[status] = sums;
+  countsByStatus[status] = (countsByStatus[status] ?? 0) + count;
 }
 
 function transitionKey(selection: LnsWindowRankerSelectionTelemetry): string {
@@ -348,7 +430,14 @@ export function mergeLnsWindowRankerOnlineSelectionDiagnostics(
 export function buildLnsWindowRankerOnlineTransitionOutcomeDiagnostics(
   inputs: readonly LnsWindowRankerOnlineTransitionOutcomeInput[]
 ): LnsWindowRankerOnlineTransitionOutcomeDiagnostics {
-  const diagnostics = emptyOutcomeDiagnostics();
+  const overrideFinalOutcomeFeatureDeltaCounts = emptyFinalOutcomeCounts();
+  const fallbackFinalOutcomeFeatureDeltaCounts = emptyFinalOutcomeCounts();
+  const overrideFinalOutcomeFeatureDeltaSums = emptyFinalOutcomeFeatureDeltas();
+  const fallbackFinalOutcomeFeatureDeltaSums = emptyFinalOutcomeFeatureDeltas();
+  const diagnostics = emptyOutcomeDiagnostics({
+    overrideFinalOutcomeFeatureDeltaCounts,
+    fallbackFinalOutcomeFeatureDeltaCounts
+  });
   for (const input of inputs) {
     if (!input.selectionDiagnostics) continue;
     addTransitionOutcomeCounts(
@@ -363,7 +452,41 @@ export function buildLnsWindowRankerOnlineTransitionOutcomeDiagnostics(
       diagnostics.fallbackTransitionPressureFamilyCounts,
       input
     );
+    addFinalOutcomeFeatureDeltas(
+      overrideFinalOutcomeFeatureDeltaSums,
+      overrideFinalOutcomeFeatureDeltaCounts,
+      input.finalOutcomeStatus,
+      input.selectionDiagnostics.overrideMeanFeatureDeltas,
+      input.selectionDiagnostics.overrideFeatureDeltaCount
+    );
+    addFinalOutcomeFeatureDeltas(
+      fallbackFinalOutcomeFeatureDeltaSums,
+      fallbackFinalOutcomeFeatureDeltaCounts,
+      input.finalOutcomeStatus,
+      input.selectionDiagnostics.fallbackMeanFeatureDeltas,
+      input.selectionDiagnostics.fallbackFeatureDeltaCount
+    );
   }
+  diagnostics.overrideFinalOutcomeMeanFeatureDeltas = meanFinalOutcomeFeatureDeltas(
+    overrideFinalOutcomeFeatureDeltaSums,
+    overrideFinalOutcomeFeatureDeltaCounts
+  );
+  diagnostics.fallbackFinalOutcomeMeanFeatureDeltas = meanFinalOutcomeFeatureDeltas(
+    fallbackFinalOutcomeFeatureDeltaSums,
+    fallbackFinalOutcomeFeatureDeltaCounts
+  );
+  diagnostics.overrideImprovedVsNeutralMeanFeatureDeltaGaps = featureDeltaGaps(
+    diagnostics.overrideFinalOutcomeMeanFeatureDeltas.improved,
+    overrideFinalOutcomeFeatureDeltaCounts.improved,
+    diagnostics.overrideFinalOutcomeMeanFeatureDeltas.neutral,
+    overrideFinalOutcomeFeatureDeltaCounts.neutral
+  );
+  diagnostics.overrideRegressedVsNeutralMeanFeatureDeltaGaps = featureDeltaGaps(
+    diagnostics.overrideFinalOutcomeMeanFeatureDeltas.regressed,
+    overrideFinalOutcomeFeatureDeltaCounts.regressed,
+    diagnostics.overrideFinalOutcomeMeanFeatureDeltas.neutral,
+    overrideFinalOutcomeFeatureDeltaCounts.neutral
+  );
   return diagnostics;
 }
 
@@ -418,5 +541,17 @@ export function formatLnsWindowRankerOnlineTransitionFeatureDeltas(
     .sort(([left], [right]) => left.localeCompare(right))
     .slice(0, transitionLimit)
     .map(([transition, deltas]) => `${transition}[${formatLnsWindowRankerOnlineFeatureDeltas(deltas, featureLimit)}]`);
+  return entries.length > 0 ? entries.join(",") : "none";
+}
+
+export function formatLnsWindowRankerOnlineFinalOutcomeFeatureDeltas(
+  counts: Record<LnsWindowRankerOnlineFinalTransitionStatus, number>,
+  deltasByStatus: Record<LnsWindowRankerOnlineFinalTransitionStatus, Record<string, number>>,
+  featureLimit = 3
+): string {
+  const entries = FINAL_OUTCOME_STATUSES.filter((status) => (counts[status] ?? 0) > 0).map(
+    (status) =>
+      `${status}:${counts[status]}[${formatLnsWindowRankerOnlineFeatureDeltas(deltasByStatus[status] ?? {}, featureLimit)}]`
+  );
   return entries.length > 0 ? entries.join(",") : "none";
 }

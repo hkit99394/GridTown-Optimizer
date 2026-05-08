@@ -19,6 +19,7 @@ import type {
   Grid,
   LnsWindowRankerFeatureTelemetry,
   LnsWindowRankerDecisionStateTelemetry,
+  LnsWindowRankerOperatorTransition,
   LnsWindowRankerRuntimeModel,
   LnsWindowRankerRuntimeOptions,
   LnsWindowRankerSelectionTelemetry,
@@ -64,6 +65,7 @@ type LnsWindowRankerFeatureName = (typeof LNS_WINDOW_RANKER_FEATURE_NAMES)[numbe
 export interface NormalizedLnsWindowRankerOptions {
   model: LnsWindowRankerRuntimeModel;
   minScoreDelta: number;
+  allowedTransitions: readonly LnsWindowRankerOperatorTransition[] | null;
   captureDecisionState: boolean;
 }
 
@@ -93,6 +95,12 @@ function finiteNumberOrDefault(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
 
+function normalizeAllowedTransitions(
+  allowedTransitions: readonly LnsWindowRankerOperatorTransition[] | undefined
+): readonly LnsWindowRankerOperatorTransition[] | null {
+  return allowedTransitions === undefined ? null : [...new Set(allowedTransitions)];
+}
+
 export function normalizeLnsWindowRankerOptions(
   options: LnsWindowRankerRuntimeOptions | undefined
 ): NormalizedLnsWindowRankerOptions | null {
@@ -100,8 +108,16 @@ export function normalizeLnsWindowRankerOptions(
   return {
     model: options.model,
     minScoreDelta: Math.max(0, finiteNumberOrDefault(options.minScoreDelta, 0)),
+    allowedTransitions: normalizeAllowedTransitions(options.allowedTransitions),
     captureDecisionState: options.captureDecisionState === true
   };
+}
+
+function operatorTransition(
+  baselineOperator: LnsAdaptiveNeighborhoodCandidate["operator"],
+  selectedOperator: LnsAdaptiveNeighborhoodCandidate["operator"]
+): LnsWindowRankerOperatorTransition {
+  return `${baselineOperator}->${selectedOperator}` as LnsWindowRankerOperatorTransition;
 }
 
 function sameWindow(left: CpSatNeighborhoodWindow, right: CpSatNeighborhoodWindow): boolean {
@@ -515,8 +531,17 @@ export function selectLnsWindowRankerCandidate(
   };
   const best = scored[0] ?? baseline;
   const scoreDelta = best.score - baseline.score;
-  const useBaseline = scoreDelta < options.minScoreDelta;
-  const selected = useBaseline ? baseline : best;
+  const selectedTransition = operatorTransition(baseline.candidate.operator, best.candidate.operator);
+  const bestIsBaseline = sameCandidate(best.candidate, baselineCandidate);
+  const transitionAllowed =
+    bestIsBaseline || options.allowedTransitions === null || options.allowedTransitions.includes(selectedTransition);
+  const fallbackReason =
+    scoreDelta < options.minScoreDelta
+      ? ("score-delta-below-threshold" as const)
+      : transitionAllowed
+        ? undefined
+        : ("operator-transition-not-allowed" as const);
+  const selected = fallbackReason ? baseline : best;
   return {
     candidate: selected.candidate,
     telemetry: {
@@ -541,7 +566,7 @@ export function selectLnsWindowRankerCandidate(
       selectedFeatures: featureTelemetry(selected.features),
       featureDeltas: featureDeltaTelemetry(selected.features, baseline.features),
       ...(options.captureDecisionState ? { decisionState: buildDecisionStateTelemetry(incumbent) } : {}),
-      ...(useBaseline ? { fallbackReason: "score-delta-below-threshold" as const } : {})
+      ...(fallbackReason ? { fallbackReason } : {})
     }
   };
 }

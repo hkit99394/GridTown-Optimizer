@@ -91,6 +91,8 @@ export type LnsAdaptiveOperatorName =
   | "placed-buildings"
   | "sliding";
 
+export type LnsWindowRankerOperatorTransition = `${LnsAdaptiveOperatorName}->${LnsAdaptiveOperatorName}`;
+
 export interface LnsOperatorWeight {
   operator: LnsAdaptiveOperatorName;
   weight: number;
@@ -120,6 +122,8 @@ export interface LnsWindowRankerRuntimeOptions {
   enabled?: boolean;
   model: LnsWindowRankerRuntimeModel;
   minScoreDelta?: number;
+  /** Diagnostics-only: only allow learned overrides whose baseline->selected operator transition is listed. */
+  allowedTransitions?: readonly LnsWindowRankerOperatorTransition[];
   /** Diagnostics-only: include the exact incumbent layout at each ranker decision. */
   captureDecisionState?: boolean;
 }
@@ -155,7 +159,7 @@ export interface LnsWindowRankerSelectionTelemetry {
   selectedFeatures?: LnsWindowRankerFeatureTelemetry;
   featureDeltas?: LnsWindowRankerFeatureTelemetry;
   decisionState?: LnsWindowRankerDecisionStateTelemetry;
-  fallbackReason?: "score-delta-below-threshold";
+  fallbackReason?: "score-delta-below-threshold" | "operator-transition-not-allowed";
 }
 
 export interface LnsWindowRankerTelemetry {
@@ -163,6 +167,7 @@ export interface LnsWindowRankerTelemetry {
   modelFingerprint?: string;
   featureSchemaVersion?: number | null;
   minScoreDelta: number;
+  allowedTransitions?: readonly LnsWindowRankerOperatorTransition[];
   decisions: number;
   overrides: number;
   fallbackDecisions: number;

@@ -76,6 +76,9 @@ import type {
 } from "../../benchmarkApi.js";
 
 type LnsWindowRankerRuntimeModel = Parameters<typeof runLnsWindowRankerOnlineAblation>[1]["model"];
+type LnsWindowRankerOperatorTransition = NonNullable<
+  Parameters<typeof runLnsWindowRankerOnlineAblation>[1]["allowedTransitions"]
+>[number];
 
 interface ParsedBenchmarkArgs {
   json: boolean;
@@ -106,6 +109,7 @@ interface ParsedBenchmarkArgs {
   windowRankerModelPath?: string;
   windowRankerMinScoreDelta?: number;
   windowRankerMinScoreDeltas?: number[];
+  windowRankerAllowedTransitions?: LnsWindowRankerOperatorTransition[];
   windowRankerArtifactDir?: string;
   windowRankerProtectedHoldout: boolean;
   windowRankerRunId?: string;
@@ -130,6 +134,7 @@ interface LnsWindowRankerOnlineArtifactManifest {
   comparisonCount: number;
   modelFingerprint: string | null;
   minScoreDelta: number | null;
+  allowedTransitions?: string[];
   minScoreDeltas?: number[];
   topMeanPopulationDeltaMinScoreDelta?: number | null;
   topSafeMinScoreDelta?: number | null;
@@ -181,6 +186,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let windowRankerModelPath: string | undefined;
   let windowRankerMinScoreDelta: number | undefined;
   let windowRankerMinScoreDeltas: number[] | undefined;
+  let windowRankerAllowedTransitions: LnsWindowRankerOperatorTransition[] | undefined;
   let windowRankerArtifactDir: string | undefined;
   let windowRankerProtectedHoldout = false;
   let windowRankerRunId: string | undefined;
@@ -242,6 +248,12 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
       windowRankerOnlineAblation = true;
       windowRankerThresholdSweep = true;
       windowRankerMinScoreDeltas = parseNonNegativeNumberList(value, "--window-ranker-min-score-deltas");
+    },
+    "window-ranker-allowed-transitions": (value) => {
+      windowRankerAllowedTransitions = parseNameList(
+        value,
+        "window ranker allowed transition"
+      ) as LnsWindowRankerOperatorTransition[];
     },
     "window-ranker-artifact-dir": (value) => {
       windowRankerArtifactDir = value;
@@ -374,6 +386,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     windowRankerModelPath,
     windowRankerMinScoreDelta,
     windowRankerMinScoreDeltas,
+    windowRankerAllowedTransitions,
     windowRankerArtifactDir,
     windowRankerProtectedHoldout,
     windowRankerRunId,
@@ -467,6 +480,13 @@ function onlineAblationMinScoreDelta(result: LnsWindowRankerOnlineAblationSuiteR
     result.cases.flatMap((entry) => entry.variants).find((variant) => variant.variantName === "window-ranker")
       ?.windowRanker?.minScoreDelta ?? null
   );
+}
+
+function onlineAblationAllowedTransitions(result: LnsWindowRankerOnlineAblationSuiteResult): string[] | undefined {
+  const allowedTransitions = result.cases
+    .flatMap((entry) => entry.variants)
+    .find((variant) => variant.variantName === "window-ranker")?.windowRanker?.allowedTransitions;
+  return allowedTransitions ? [...allowedTransitions] : undefined;
 }
 
 function onlineCalibrationTopMeanSummary(result: LnsWindowRankerOnlineCalibrationSuiteResult) {
@@ -584,6 +604,7 @@ function writeWindowRankerOnlineArtifactBundle(
     comparisonCount: result.comparisonCount,
     modelFingerprint: onlineAblationModelFingerprint(result),
     minScoreDelta: onlineAblationMinScoreDelta(result),
+    allowedTransitions: onlineAblationAllowedTransitions(result),
     meanPopulationDeltaVsBaseline: summary.meanPopulationDeltaVsBaseline,
     worstPopulationDeltaVsBaseline: summary.worstPopulationDeltaVsBaseline,
     regressedCaseCount: summary.regressedCaseCount,
@@ -651,6 +672,7 @@ function writeWindowRankerOnlineCalibrationArtifactBundle(
     comparisonCount: result.comparisonCount,
     modelFingerprint: result.modelFingerprint,
     minScoreDelta: summary?.minScoreDelta ?? null,
+    ...(result.allowedTransitions === undefined ? {} : { allowedTransitions: [...result.allowedTransitions] }),
     minScoreDeltas: [...result.minScoreDeltas],
     topMeanPopulationDeltaMinScoreDelta: result.topMeanPopulationDeltaMinScoreDelta,
     topSafeMinScoreDelta: result.topSafeMinScoreDelta,
@@ -667,6 +689,9 @@ function formatWindowRankerOnlineArtifactManifest(manifest: LnsWindowRankerOnlin
     `run-id=${manifest.runId}`,
     `model-fingerprint=${manifest.modelFingerprint ?? "n/a"}`,
     `min-score-delta=${manifest.minScoreDelta ?? "n/a"}`,
+    ...(manifest.allowedTransitions === undefined
+      ? []
+      : [`allowed-transitions=${manifest.allowedTransitions.join(",")}`]),
     ...(manifest.minScoreDeltas === undefined ? [] : [`min-score-deltas=${manifest.minScoreDeltas.join(",")}`]),
     ...(manifest.topMeanPopulationDeltaMinScoreDelta === undefined
       ? []
@@ -701,6 +726,9 @@ export function runLnsBenchmarkCli(): void {
   }
   if (args.windowRankerArtifactDir !== undefined && !args.windowRankerOnlineAblation) {
     throw new Error("--window-ranker-artifact-dir is only available with --window-ranker-online-ablation.");
+  }
+  if (args.windowRankerAllowedTransitions !== undefined && !args.windowRankerOnlineAblation) {
+    throw new Error("--window-ranker-allowed-transitions is only available with --window-ranker-online-ablation.");
   }
   if (args.windowReplayArtifactDir !== undefined && !args.windowReplayLabels) {
     throw new Error("--window-replay-artifact-dir is only available with --window-replay-labels.");
@@ -810,6 +838,7 @@ export function runLnsBenchmarkCli(): void {
         seeds: args.seeds,
         model,
         minScoreDeltas: args.windowRankerMinScoreDeltas,
+        allowedTransitions: args.windowRankerAllowedTransitions,
         lns
       });
 
@@ -836,6 +865,7 @@ export function runLnsBenchmarkCli(): void {
       seeds: args.seeds,
       model,
       minScoreDelta: args.windowRankerMinScoreDelta,
+      allowedTransitions: args.windowRankerAllowedTransitions,
       lns
     });
 

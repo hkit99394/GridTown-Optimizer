@@ -29,6 +29,7 @@ import type {
   LnsNeighborhoodOutcomeStatus,
   LnsOptions,
   LnsRepairPhase,
+  LnsWindowRankerOperatorTransition,
   LnsWindowRankerDecisionStateTelemetry,
   LnsWindowRankerFeatureTelemetry,
   LnsWindowRankerRuntimeModel,
@@ -52,6 +53,7 @@ export type LnsWindowRankerOnlineAblationVariantName = "baseline" | "window-rank
 export interface LnsWindowRankerOnlineAblationRunOptions extends LnsBenchmarkRunOptions {
   model: LnsWindowRankerRuntimeModel;
   minScoreDelta?: number;
+  allowedTransitions?: readonly LnsWindowRankerOperatorTransition[];
   seeds?: readonly number[];
 }
 
@@ -60,6 +62,7 @@ export interface LnsWindowRankerOnlineAblationTelemetrySummary {
   modelFingerprint: string | null;
   featureSchemaVersion: number | null;
   minScoreDelta: number | null;
+  allowedTransitions: readonly LnsWindowRankerOperatorTransition[] | null;
   decisions: number;
   overrides: number;
   fallbackDecisions: number;
@@ -307,6 +310,7 @@ export interface LnsWindowRankerOnlineCalibrationSuiteResult {
   seeds: number[];
   selectedCaseNames: string[];
   modelFingerprint: string | null;
+  allowedTransitions?: readonly LnsWindowRankerOperatorTransition[];
   minScoreDeltas: number[];
   topMeanPopulationDeltaMinScoreDelta: number | null;
   topSafeMinScoreDelta: number | null;
@@ -398,6 +402,7 @@ function rankerLnsOptions(
     windowRanker: {
       model,
       ...(options.minScoreDelta === undefined ? {} : { minScoreDelta: options.minScoreDelta }),
+      ...(options.allowedTransitions === undefined ? {} : { allowedTransitions: [...options.allowedTransitions] }),
       captureDecisionState: true
     }
   };
@@ -425,6 +430,7 @@ function summarizeWindowRanker(result: LnsBenchmarkCaseResult): LnsWindowRankerO
     modelFingerprint: ranker.modelFingerprint ?? null,
     featureSchemaVersion: ranker.featureSchemaVersion ?? null,
     minScoreDelta: ranker.minScoreDelta,
+    allowedTransitions: ranker.allowedTransitions ? [...ranker.allowedTransitions] : null,
     decisions: ranker.decisions,
     overrides: ranker.overrides,
     fallbackDecisions: ranker.fallbackDecisions,
@@ -930,6 +936,7 @@ export function runLnsWindowRankerOnlineCalibration(
     modelFingerprint: thresholdSummaries.find((entry) => entry.rankerDecisionCount > 0)
       ? (modelWithFingerprint(options.model).modelFingerprint ?? null)
       : null,
+    ...(options.allowedTransitions === undefined ? {} : { allowedTransitions: [...options.allowedTransitions] }),
     minScoreDeltas,
     topMeanPopulationDeltaMinScoreDelta: topThreshold(thresholdSummaries, () => true),
     topSafeMinScoreDelta: topThreshold(thresholdSummaries, (summary) => summary.safetyGatePassed),
@@ -947,6 +954,7 @@ export function createLnsWindowRankerOnlineCalibrationSnapshot(
     seeds: [...result.seeds],
     selectedCaseNames: [...result.selectedCaseNames],
     modelFingerprint: result.modelFingerprint,
+    ...(result.allowedTransitions === undefined ? {} : { allowedTransitions: [...result.allowedTransitions] }),
     minScoreDeltas: [...result.minScoreDeltas],
     topMeanPopulationDeltaMinScoreDelta: result.topMeanPopulationDeltaMinScoreDelta,
     topSafeMinScoreDelta: result.topSafeMinScoreDelta,

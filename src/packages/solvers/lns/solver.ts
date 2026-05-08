@@ -449,6 +449,7 @@ function buildWindowRankerTelemetry(
     ...(options.model.modelFingerprint ? { modelFingerprint: options.model.modelFingerprint } : {}),
     featureSchemaVersion: options.model.featureSchemaVersion ?? null,
     minScoreDelta: options.minScoreDelta,
+    ...(options.allowedTransitions === null ? {} : { allowedTransitions: [...options.allowedTransitions] }),
     decisions: selections.length,
     overrides: selections.filter((selection) => !selection.selectedByBaseline).length,
     fallbackDecisions: selections.filter((selection) => selection.fallbackReason !== undefined).length

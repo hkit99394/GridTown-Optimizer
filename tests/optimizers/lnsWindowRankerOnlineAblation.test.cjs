@@ -105,6 +105,7 @@ function buildMockSolution(params) {
             modelFingerprint: "fnv1a:test-online",
             featureSchemaVersion: 2,
             minScoreDelta: ranker.minScoreDelta ?? 0,
+            ...(ranker.allowedTransitions ? { allowedTransitions: [...ranker.allowedTransitions] } : {}),
             decisions: 2,
             overrides: overridesBaseline ? 1 : 0,
             fallbackDecisions: overridesBaseline ? 1 : 2
@@ -166,6 +167,7 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
           weights: { selectedByBaseline: -1 }
         },
         minScoreDelta: 0.05,
+        allowedTransitions: ["sliding->service-overlap"],
         lns: {
           iterations: 2,
           repairTimeLimitSeconds: 0.25
@@ -196,6 +198,7 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(result.variantSummaries[1].rankerDecisionCount, 2);
     assert.equal(result.variantSummaries[1].rankerOverrideCount, 1);
     assert.equal(result.variantSummaries[1].rankerFallbackDecisionCount, 1);
+    assert.deepEqual(result.cases[0].variants[1].windowRanker.allowedTransitions, ["sliding->service-overlap"]);
     assert.equal(result.variantSummaries[1].improvedCaseCount, 1);
     assert.equal(result.variantSummaries[1].regressedCaseCount, 0);
     assert.equal(result.variantSummaries[1].overrideOutcomeCount, 1);
@@ -259,6 +262,7 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(result.cases[0].variants[1].finalLayoutDeltaVsBaseline.placementDeltaCount, 3);
     assert.match(result.cases[0].variants[1].finalLayoutDeltaVsBaseline.baselineFingerprint, /^fnv1a:/);
     assert.match(result.cases[0].variants[1].finalLayoutDeltaVsBaseline.variantFingerprint, /^fnv1a:/);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /Allowed transitions: sliding->service-overlap/);
     assert.deepEqual(result.cases[0].variants[1].selectionDiagnostics, {
       overrideTransitionCounts: { "sliding->service-overlap": 1 },
       fallbackTransitionCounts: {},
@@ -343,6 +347,7 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(observedParams[0].lns.windowRanker, undefined);
     assert.equal(observedParams[1].lns.windowRanker.model.modelFingerprint, "fnv1a:test-online");
     assert.equal(observedParams[1].lns.windowRanker.minScoreDelta, 0.05);
+    assert.deepEqual(observedParams[1].lns.windowRanker.allowedTransitions, ["sliding->service-overlap"]);
     assert.equal(observedParams[0].greedy.randomSeed, 7);
     assert.equal(observedParams[1].greedy.randomSeed, 7);
     assert.equal(observedParams[0].cpSat.randomSeed, 7);
@@ -382,6 +387,7 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(telemetryManifest.source, "model-experiment");
     assert.equal(telemetryManifest.modelFingerprint, "fnv1a:test-online");
     assert.equal(telemetryManifest.metrics.meanPopulationDeltaVsBaseline, 20);
+    assert.deepEqual(telemetryManifest.metrics.allowedTransitions, ["sliding->service-overlap"]);
     assert.equal(telemetryManifest.metrics.rankerOverrideCount, 1);
     assert.equal(telemetryManifest.metrics.selectionTraceCount, 1);
     assert.equal(telemetryManifest.metrics.changedFinalLayoutCount, 1);
@@ -431,6 +437,7 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(registryDraft.modelFingerprint, "fnv1a:test-online");
     assert.deepEqual(registryDraft.seeds, [7]);
     assert.equal(registryDraft.budget.minScoreDelta, 0.05);
+    assert.deepEqual(registryDraft.budget.allowedTransitions, ["sliding->service-overlap"]);
     assert.equal(registryDraft.budget.comparisonCount, 1);
     assert.equal(registryDraft.budget.overrideImprovedOutcomeCount, 1);
     assert.equal(registryDraft.budget.overrideNeutralOutcomeCount, 0);
@@ -445,6 +452,7 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(registryDraft.model.modelPath, "artifacts/model.json");
     assert.equal(registryDraft.splitStatus.protectedHoldout, false);
     assert.equal(registryDraft.summaryMetrics.meanPopulationDeltaVsBaseline, 20);
+    assert.deepEqual(registryDraft.summaryMetrics.allowedTransitions, ["sliding->service-overlap"]);
     assert.equal(registryDraft.summaryMetrics.changedFinalLayoutCount, 1);
     assert.equal(registryDraft.summaryMetrics.meanFinalLayoutPlacementDelta, 3);
     assert.equal(registryDraft.summaryMetrics.rankerMeanTimeToBestIteration, 1);

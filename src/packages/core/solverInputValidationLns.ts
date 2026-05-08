@@ -25,6 +25,40 @@ const LNS_NEIGHBORHOOD_ANCHOR_POLICIES = [
   "frontier-congestion-first",
   "placed-buildings-first"
 ] as const;
+const LNS_ADAPTIVE_OPERATORS = [
+  "weak-service",
+  "residential-headroom",
+  "frontier-congestion",
+  "gate-choke",
+  "service-overlap",
+  "random-exploration",
+  "placed-buildings",
+  "sliding"
+] as const;
+
+function assertValidWindowRankerAllowedTransitions(windowRanker: Record<string, unknown>): void {
+  const value = windowRanker.allowedTransitions;
+  if (value === undefined) return;
+  if (!Array.isArray(value) || value.some((entry) => typeof entry !== "string")) {
+    throw new SolverInputError("LNS option lns.windowRanker.allowedTransitions must be an array of strings.");
+  }
+
+  const operators = new Set<string>(LNS_ADAPTIVE_OPERATORS);
+  for (const transition of value) {
+    const [baselineOperator, selectedOperator, extra] = transition.split("->");
+    if (
+      extra !== undefined ||
+      baselineOperator === undefined ||
+      selectedOperator === undefined ||
+      !operators.has(baselineOperator) ||
+      !operators.has(selectedOperator)
+    ) {
+      throw new SolverInputError(
+        "LNS option lns.windowRanker.allowedTransitions must contain operator transitions like weak-service->random-exploration."
+      );
+    }
+  }
+}
 
 function assertValidWindowRankerOptions(lns: Record<string, unknown>): void {
   const value = lns.windowRanker;
@@ -41,6 +75,7 @@ function assertValidWindowRankerOptions(lns: Record<string, unknown>): void {
     LNS_MAX_WINDOW_RANKER_SCORE_DELTA,
     true
   );
+  assertValidWindowRankerAllowedTransitions(windowRanker);
 
   const model = requireValidationRecord(windowRanker.model, "LNS option lns.windowRanker.model");
   requireOptionalString(model, "modelFingerprint", "LNS option lns.windowRanker.model.modelFingerprint");

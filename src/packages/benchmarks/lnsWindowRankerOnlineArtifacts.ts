@@ -122,7 +122,9 @@ function lnsWindowRankerOnlineAblationSummaryMetrics(
 ): Record<string, unknown> {
   const baseline = getBaselineSummary(result);
   const ranker = getRankerSummary(result);
+  const allowedTransitions = ablationAllowedTransitions(result);
   return {
+    ...(allowedTransitions === null ? {} : { allowedTransitions: [...allowedTransitions] }),
     baselineMeanPopulation: baseline.meanPopulation,
     rankerMeanPopulation: ranker.meanPopulation,
     meanPopulationDeltaVsBaseline: ranker.meanPopulationDeltaVsBaseline,
@@ -195,6 +197,13 @@ function ablationMinScoreDelta(result: LnsWindowRankerOnlineAblationSuiteResult)
   );
 }
 
+function ablationAllowedTransitions(result: LnsWindowRankerOnlineAblationSuiteResult): readonly string[] | null {
+  return (
+    result.cases.flatMap((entry) => entry.variants).find((variant) => variant.variantName === "window-ranker")
+      ?.windowRanker?.allowedTransitions ?? null
+  );
+}
+
 function calibrationThresholdByDelta(
   result: LnsWindowRankerOnlineCalibrationSuiteResult,
   minScoreDelta: number | null
@@ -210,6 +219,7 @@ function lnsWindowRankerOnlineCalibrationSummaryMetrics(
   const topMeanSummary = calibrationThresholdByDelta(result, result.topMeanPopulationDeltaMinScoreDelta);
   const topSafeSummary = calibrationThresholdByDelta(result, result.topSafeMinScoreDelta);
   return {
+    ...(result.allowedTransitions === undefined ? {} : { allowedTransitions: [...result.allowedTransitions] }),
     thresholdCount: result.minScoreDeltas.length,
     minScoreDeltas: [...result.minScoreDeltas],
     topMeanPopulationDeltaMinScoreDelta: result.topMeanPopulationDeltaMinScoreDelta,
@@ -250,6 +260,7 @@ export function buildLnsWindowRankerOnlineAblationRegistryEntryDraft(
   const model = modelFromAblationResult(result) as unknown as Record<string, unknown>;
   const modelFingerprint = model.modelFingerprint as string;
   const minScoreDelta = ablationMinScoreDelta(result);
+  const allowedTransitions = ablationAllowedTransitions(result);
   const protectedHoldout = options.protectedHoldout ?? false;
   const cases = lnsWindowRankerOnlineCasesBySplit(result.selectedCaseNames, protectedHoldout);
   const summaryMetrics = lnsWindowRankerOnlineAblationSummaryMetrics(result);
@@ -275,6 +286,7 @@ export function buildLnsWindowRankerOnlineAblationRegistryEntryDraft(
     },
     budget: {
       minScoreDelta,
+      ...(allowedTransitions === null ? {} : { allowedTransitions: [...allowedTransitions] }),
       caseCount: result.caseCount,
       seedCount: result.seedCount,
       comparisonCount: result.comparisonCount,
@@ -356,6 +368,7 @@ export function buildLnsWindowRankerOnlineCalibrationRegistryEntryDraft(
         : "Online LNS ranker threshold sweep over replay-pressure cases; not protected holdout promotion evidence."
     },
     budget: {
+      ...(result.allowedTransitions === undefined ? {} : { allowedTransitions: [...result.allowedTransitions] }),
       minScoreDeltas: [...result.minScoreDeltas],
       thresholdCount: result.minScoreDeltas.length,
       caseCount: result.caseCount,

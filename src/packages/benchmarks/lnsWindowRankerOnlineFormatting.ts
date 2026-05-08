@@ -65,6 +65,9 @@ export function formatLnsWindowRankerOnlineCalibration(result: LnsWindowRankerOn
   lines.push(`Cases: ${result.caseCount}`);
   lines.push(`Seeds: ${formatBenchmarkSeeds(result.seeds)}`);
   lines.push(`Model fingerprint: ${result.modelFingerprint ?? "n/a"}`);
+  if (result.allowedTransitions !== undefined) {
+    lines.push(`Allowed transitions: ${result.allowedTransitions.join(", ")}`);
+  }
   lines.push(`Thresholds: ${result.minScoreDeltas.join(", ")}`);
   lines.push(`Top mean-delta threshold: ${formatNullableThreshold(result.topMeanPopulationDeltaMinScoreDelta)}`);
   lines.push(`Top no-regression threshold: ${formatNullableThreshold(result.topSafeMinScoreDelta)}`);
@@ -84,6 +87,12 @@ export function formatLnsWindowRankerOnlineAblation(result: LnsWindowRankerOnlin
   lines.push(`Cases: ${result.caseCount}`);
   lines.push(`Seeds: ${formatBenchmarkSeeds(result.seeds)}`);
   lines.push(`Variants: ${result.variants.join(", ")}`);
+  const allowedTransitions =
+    result.cases.flatMap((entry) => entry.variants).find((variant) => variant.variantName === "window-ranker")
+      ?.windowRanker?.allowedTransitions ?? null;
+  if (allowedTransitions !== null) {
+    lines.push(`Allowed transitions: ${allowedTransitions.join(", ")}`);
+  }
   lines.push(
     `Coverage: cases=${result.coverage.caseCount} seeds=${result.coverage.seedCount} comparisons=${result.coverage.comparisonCount} runs=${result.coverage.runCount} variants=${result.coverage.variantCount} grid-cells=${result.coverage.gridCellCount}`
   );

@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "source": "model-experiment",
+  "command": "node dist/lnsWindowRankerBaselineCli.js --labels=artifacts/learned-ranking-labels/2026-05-04/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1/labels.json --artifact-dir=artifacts/lns-window-ranker-baselines/2026-05-08/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1-baseline-stall-no-weak-baselines --baseline-stall-target --no-weak-replay-seed-labels --baseline-run-id=lns-window-ranker-baselines-2026-05-08-curated-seeds-v3-roll-forward-1x0-1-baseline-stall-no-weak --baseline-decision=offline-lns-window-baselines-baseline-stall-non-weak-evidence '--baseline-summary=Offline LNS window-ranking baseline sweep over the full-family curated non-weak strict replay label bundle using the roll-forward baseline-stall target.' --json",
+  "generatedAt": "2026-05-08T18:34:38.750Z",
+  "git": {
+    "commit": "abf9bde871da663e0204d7bc7940b2dcbe07908d",
+    "branch": "features/validated-solver-improvement-loop"
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "model": {
+    "schemaVersion": 1,
+    "modelType": "lns-window-ranking-baseline-sweep",
+    "purpose": "offline-diagnostics-only",
+    "trained": false,
+    "runtimeDefaultChanged": false,
+    "solverDefaultChanged": false,
+    "featureSchemaVersion": 2,
+    "topK": 3,
+    "target": "roll-forward-baseline-stall-lift",
+    "weakSeedReplayLabelsAllowed": false,
+    "featureIdenticalRepeatabilityConflictsExcluded": false,
+    "baselineNames": [
+      "baseline-selected-window",
+      "operator-score",
+      "stable-random",
+      "connectivity-shadow",
+      "fragmentation",
+      "candidate-loss",
+      "residential-headroom",
+      "service-bonus"
+    ],
+    "bestBaselineName": "stable-random"
+  },
+  "inputArtifacts": [
+    "artifacts/learned-ranking-labels/2026-05-04/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1/labels.json"
+  ],
+  "outputArtifacts": [
+    "artifacts/lns-window-ranker-baselines/2026-05-08/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1-baseline-stall-no-weak-baselines/lns-window-ranker-baselines.json",
+    "artifacts/lns-window-ranker-baselines/2026-05-08/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1-baseline-stall-no-weak-baselines/lns-window-ranker-baselines.txt",
+    "artifacts/lns-window-ranker-baselines/2026-05-08/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1-baseline-stall-no-weak-baselines/model.json",
+    "artifacts/lns-window-ranker-baselines/2026-05-08/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1-baseline-stall-no-weak-baselines/telemetry-manifest.json"
+  ],
+  "labelFingerprint": "fnv1a:58ce487f",
+  "datasetFingerprint": "fnv1a:b3c3fe8b",
+  "modelFingerprint": "fnv1a:28e703f0",
+  "metrics": {
+    "passed": true,
+    "bestBaselineName": "stable-random",
+    "bestBaselineHoldoutCaptureRate": 0.5679,
+    "bestBaselineHoldoutHitAt1": 0.5667,
+    "bestBaselineHoldoutHitAtK": 0.7,
+    "deterministicHoldoutCaptureRate": 0,
+    "randomHoldoutCaptureRate": 0.5679,
+    "target": "roll-forward-baseline-stall-lift",
+    "targetRollForwardBaselineStallLift": 1,
+    "weakSeedReplayLabelsAllowed": false,
+    "featureIdenticalRepeatabilityConflictsExcluded": false,
+    "repeatabilityFeatureIdenticalConflictBucketCount": 0,
+    "repeatabilityFeatureIdenticalConflictLabelCount": 0,
+    "excludedFeatureIdenticalRepeatabilityConflictLabelCount": 0,
+    "excludedFeatureIdenticalRepeatabilityConflictDecisionCount": 0,
+    "developmentDecisionCount": 45,
+    "holdoutDecisionCount": 45,
+    "developmentOpportunityCount": 18,
+    "holdoutOpportunityCount": 30,
+    "sourceLnsScaleReady": true
+  },
+  "notes": "CPU-only LNS window-ranking baseline sweep; no learned runtime scorer or solver default changed."
+}

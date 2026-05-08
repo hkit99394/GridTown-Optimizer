@@ -1,0 +1,18 @@
+=== LNS Window Ranker Offline/Online Gap Diagnostics ===
+Generated: 2026-05-08T14:21:50.961Z
+Schema: 1
+Audit: runtime-default-changed=false solver-default-changed=false target=roll-forward-final-lift weak-seed-labels=false supplemental-replay=2
+Inputs: label=fnv1a:58ce487f model=fnv1a:79bd43a0 online=fnv1a:96c9fb0e supplemental=fnv1a:dcdf459c,fnv1a:b6510add
+Offline: decisions=129 supplemental=39 overrides=123 opportunities=60 selected-positive=27
+Online: cases=10 seeds=7,19,37 comparisons=30 min-score-delta=1.18 overrides=3 selection-trace=60 final-neutral-overrides=3
+Gap: joined-transition-families=1 offline-positive-online-neutral=1 online-active-no-offline-match=0 exact-replay-neutralized=0 promotion-blocked=true
+Layout signatures: mixed-layout-final-neutral:1
+Promotion sensitivity: suppress=zero-layout-final-neutral:0 remaining=1 remaining-blocked=true blockers=changed-layout-no-lift-trajectory-depth unmatched=0 changed-layout-no-lift=1 evidence-gate-suppress=online-active-no-offline-match:0 evidence-gate-remaining=1 evidence-gate-blocked=true evidence-gate-blockers=changed-layout-no-lift-trajectory-depth
+Online neutral override rate: 100.0%
+Joined evidence:
+- offline-positive-online-neutral anchor-service/weak-service->random-exploration: decisions=6 supplemental=6 exact-online-supplemental=0 selected-positive=6 exact-online-selected-positive=0 hit-best=6/6 selected-delta=+660 capture=1.0000 baseline-capture=0.0000 online-overrides=3 finals=0/3/0 mean-delta=0
+Trace comparisons:
+- offline-positive-online-neutral anchor-service/weak-service->random-exploration: offline-decisions=6 offline-selected-positive=6 offline-mean-selected-delta=+110 online-traces=3 online-neutral-traces=3 layout-signature=mixed-layout-final-neutral online-layout-same=1 online-layout-changed=2 online-layout-missing=0 online-layout-delta-mean=+2.667 online-mean-improvement=+110 online-mean-score-delta=+1.197 online-ranker-post-traces-mean=1 online-ranker-post-improvements=0 online-ranker-post-improvement-total-mean=0 online-ranker-post-best-delta-mean=0 online-ranker-final-from-selected-mean=0 features=clearedFootprint:offline=-0.05/online=-0.05/gap=0,componentDelta:offline=+0.1/online=+0.1/gap=0,disconnectedAfter:offline=+0.06/online=+0.06/gap=0,emptyComponentsAfter:offline=+0.1/online=+0.1/gap=0,newlyReachable:offline=-0.08/online=-0.08/gap=0
+Recommended experiments:
+- p1 longer-roll-forward-replay anchor-service/weak-service->random-exploration: evidence=evidence-backed-blocker layout=mixed-layout-final-neutral online-traces=3 changed-layout=2 final-from-selected=0 reason=Offline holdout says this transition can lift final score, but protected online traces changed layout without final lift; post-selection improvements=0, final-from-selected=0.
+Decision: diagnostics only; no LNS runtime scorer or solver default changed.

@@ -23,7 +23,9 @@ async function testHealthRoute(handler) {
  */
 async function testStaticPlannerModules(handler) {
   /** @type {Array<[string, RegExp]>} */
-  const expectedStaticModules = [
+  const expectedStaticAssets = [
+    ["/styles.css", /page-shell/],
+    ["/results.css", /result-details-body/],
     ["/plannerShell.js", /CityBuilderShell/],
     ["/plannerShared.js", /CityBuilderShared/],
     ["/plannerPersistence.js", /CityBuilderPersistence/],
@@ -38,7 +40,7 @@ async function testStaticPlannerModules(handler) {
     ["/app.js", /const state =/]
   ];
 
-  for (const [url, bodyPattern] of expectedStaticModules) {
+  for (const [url, bodyPattern] of expectedStaticAssets) {
     const result = await invoke(handler, { method: "GET", url });
     assert.equal(result.statusCode, 200, `${url} should be served`);
     assert.match(result.body, bodyPattern);

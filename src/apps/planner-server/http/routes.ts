@@ -6,7 +6,8 @@ import {
   getOptimizerAdapter,
   resolveOptimizerName,
   SolveJobManager,
-  type SolveJob
+  type SolveJob,
+  type SolveProgressLogReadResult
 } from "../../../packages/runtime/index.js";
 import {
   assertValidSerializedSolutionPayload,
@@ -16,7 +17,7 @@ import {
   materializeSerializedSolution,
   sanitizeSolveRequest
 } from "./contracts.js";
-import { buildManualLayoutResponse, buildSolveResponse } from "./solutionResponse.js";
+import { buildCompactSolveResponse, buildManualLayoutResponse, buildSolveResponse } from "./solutionResponse.js";
 import { monitorClientDisconnect, readValidatedJsonBody, sendJson } from "./transport.js";
 
 import type { CancelSolveRequest, LayoutEvaluateRequest, SolveRequest } from "./contracts.js";
@@ -62,6 +63,38 @@ function sendSolveCapacityFull(res: ServerResponse<IncomingMessage>): void {
     error:
       "Another solve is already running. Stop the running solve or wait for it to finish before starting a new one."
   });
+}
+
+function buildOrphanedProgressLogMessage(progressLog: SolveProgressLogReadResult): string {
+  const { status, error, message } = progressLog.document;
+  if (status === "running") {
+    return "Solver status was lost because the local server is no longer tracking this run. The progress log still shows it as running, so the server was likely stopped or restarted before the solve finished.";
+  }
+  return error ?? message ?? "Solver status was lost because the local server is no longer tracking this run.";
+}
+
+function sendOrphanedProgressLogStatus(
+  res: ServerResponse<IncomingMessage>,
+  progressLog: SolveProgressLogReadResult,
+  headOnly: boolean
+): void {
+  const { document, filePath } = progressLog;
+  const progressEntry = document.entries[document.entries.length - 1] ?? null;
+  sendJson(
+    res,
+    410,
+    {
+      ok: false,
+      requestId: document.requestId,
+      optimizer: document.optimizer,
+      jobStatus: document.status === "running" ? "failed" : document.status,
+      cancelRequested: false,
+      progressLogFilePath: filePath,
+      ...(progressEntry ? { progressEntry } : {}),
+      error: buildOrphanedProgressLogMessage(progressLog)
+    },
+    headOnly
+  );
 }
 
 function requestUrl(req: IncomingMessage): URL {
@@ -245,6 +278,12 @@ export function handleSolveStatus(
 
   const jobStatus = solveJobManager.getStatus(requestId, includeSnapshot);
   if (!jobStatus) {
+    const orphanedProgressLog = solveJobManager.getOrphanedProgressLog(requestId);
+    if (orphanedProgressLog) {
+      sendOrphanedProgressLogStatus(res, orphanedProgressLog, route.headOnly);
+      return true;
+    }
+
     sendJson(
       res,
       404,
@@ -267,7 +306,7 @@ export function handleSolveStatus(
         ...buildSolveJobResponseBase(job),
         ...(job.message ? { message: job.message } : {}),
         ...(progressEntry ? { progressEntry } : {}),
-        ...buildSolveResponse(job.grid, job.params, job.solution)
+        ...buildCompactSolveResponse(job.grid, job.params, job.solution)
       },
       route.headOnly
     );
@@ -301,7 +340,7 @@ export function handleSolveStatus(
         progressEntry,
         liveSnapshot: true,
         ...(job.message ? { message: job.message } : {}),
-        ...buildSolveResponse(job.grid, job.params, liveSnapshot)
+        ...buildCompactSolveResponse(job.grid, job.params, liveSnapshot)
       },
       route.headOnly
     );

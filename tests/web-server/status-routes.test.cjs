@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 
 const optimizerRegistry = require("../../dist/packages/runtime/dispatch/optimizerRegistry.js");
+const { SolveProgressLogWriter } = require("../../dist/packages/runtime/jobs/solveProgressLog.js");
 const { solve } = require("city-builder/solver");
 const {
   buildTinySolvePayload,
@@ -48,6 +49,7 @@ async function testBackgroundSolveRoutes(handler) {
   assert.equal(finalPayload.jobStatus, "completed");
   assert.equal(finalPayload.stats.totalPopulation, 100);
   assert.equal(finalPayload.solution.residentials.length, 1);
+  assert.equal(finalPayload.explainability, undefined);
   assert.equal(finalPayload.progressLogFilePath, startResult.payload.progressLogFilePath);
 
   const persistedLog = JSON.parse(fs.readFileSync(startResult.payload.progressLogFilePath, "utf8"));
@@ -250,6 +252,9 @@ async function testSolveStatusIncludesAutoStageMetadata(handler) {
     assert.equal(snapshotStatusResult.payload.progressEntry.activeOptimizer, "lns");
     assert.equal(snapshotStatusResult.payload.progressEntry.autoStage.stageIndex, 2);
     assert.equal(snapshotStatusResult.payload.progressEntry.totalPopulation, backgroundSolution.totalPopulation);
+    assert.equal(snapshotStatusResult.payload.liveSnapshot, true);
+    assert.equal(snapshotStatusResult.payload.validation.valid, true);
+    assert.equal(snapshotStatusResult.payload.explainability, undefined);
 
     handlePromiseDeferred.resolve(backgroundSolution);
     await waitForSolve(handler, requestId);
@@ -431,6 +436,40 @@ async function testCompletedSolveJobsExpire() {
   assert.equal(fs.existsSync(startResult.payload.progressLogFilePath), true);
 }
 
+async function testOrphanedRunningProgressLogReportsLostStatus() {
+  const { handler, progressLogRoot } = createRouteTestHandler({
+    progressLogRootPrefix: "planner-route-orphaned-status-"
+  });
+  const solvePayload = buildTinySolvePayload();
+  const requestId = "orphaned-running-status";
+  const writer = new SolveProgressLogWriter({
+    rootDirectory: progressLogRoot,
+    requestId,
+    optimizer: "greedy",
+    grid: solvePayload.grid,
+    params: solvePayload.params,
+    createdAtMs: Date.now()
+  });
+  writer.appendPendingSample({
+    elapsedMs: 125,
+    note: "Still running before the server exited."
+  });
+
+  const result = await invoke(handler, {
+    method: "GET",
+    url: `/api/solve/status?${new URLSearchParams({ requestId }).toString()}`
+  });
+
+  assert.equal(result.statusCode, 410);
+  assert.equal(result.payload.ok, false);
+  assert.equal(result.payload.requestId, requestId);
+  assert.equal(result.payload.jobStatus, "failed");
+  assert.equal(result.payload.progressLogFilePath, writer.filePath);
+  assert.match(result.payload.error, /status was lost/);
+  assert.match(result.payload.error, /stopped or restarted/);
+  assert.equal(result.payload.progressEntry.note, "Still running before the server exited.");
+}
+
 async function main() {
   const { handler } = createRouteTestHandler();
   await testBackgroundSolveRoutes(handler);
@@ -439,6 +478,7 @@ async function main() {
   await testRecoveredAutoFailureNormalizesTerminalMetadata();
   await testCancelMissingSolveRoute(handler);
   await testCompletedSolveJobsExpire();
+  await testOrphanedRunningProgressLogReportsLostStatus();
 
   console.log("Web server status route tests passed.");
 }

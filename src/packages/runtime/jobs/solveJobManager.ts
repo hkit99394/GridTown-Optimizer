@@ -7,7 +7,13 @@ import type {
   SolverParams
 } from "../../core/index.js";
 import { getOptimizerAdapter, type OptimizerFinalizationContext } from "../dispatch/optimizerRegistry.js";
-import { progressLogSolutionSampleChanged, SolveProgressLogWriter } from "./solveProgressLog.js";
+import {
+  DEFAULT_SOLVE_PROGRESS_LOG_ROOT,
+  progressLogSolutionSampleChanged,
+  readLatestSolveProgressLogByRequestId,
+  SolveProgressLogWriter,
+  type SolveProgressLogReadResult
+} from "./solveProgressLog.js";
 
 export type SolveJobStatus = "running" | "completed" | "stopped" | "failed";
 
@@ -83,7 +89,7 @@ function normalizeTerminalSolution(job: SolveJob, solution: Solution): Solution 
 
 export class SolveJobManager {
   private readonly jobs = new Map<string, SolveJob>();
-  private readonly progressLogRoot?: string;
+  private readonly progressLogRoot: string;
   private readonly progressLogIntervalMs: number;
   private readonly progressLogPollIntervalMs: number;
   private readonly completedJobRetentionMs: number;
@@ -92,7 +98,7 @@ export class SolveJobManager {
   private runningImmediateSolves = 0;
 
   constructor(options: SolveJobManagerOptions = {}) {
-    this.progressLogRoot = options.progressLogRoot;
+    this.progressLogRoot = options.progressLogRoot ?? DEFAULT_SOLVE_PROGRESS_LOG_ROOT;
     this.progressLogIntervalMs = options.progressLogIntervalMs ?? DEFAULT_PROGRESS_LOG_INTERVAL_MS;
     this.progressLogPollIntervalMs = options.progressLogPollIntervalMs ?? DEFAULT_PROGRESS_LOG_POLL_INTERVAL_MS;
     this.completedJobRetentionMs = Math.max(0, options.completedJobRetentionMs ?? DEFAULT_COMPLETED_JOB_RETENTION_MS);
@@ -182,6 +188,7 @@ export class SolveJobManager {
 
     void handle.promise
       .then((solution) => {
+        if (job.status !== "running") return;
         solution = normalizeTerminalSolution(job, solution);
         const status = solution.stoppedByUser || job.cancelRequested ? "stopped" : "completed";
         const message =
@@ -191,6 +198,7 @@ export class SolveJobManager {
         this.finalizeJobWithSolution(job, solution, status, message);
       })
       .catch((error) => {
+        if (job.status !== "running") return;
         const recoveredSolution = job.handle?.getLatestSnapshot() ?? null;
         if (recoveredSolution) {
           let solution: Solution = {
@@ -251,6 +259,13 @@ export class SolveJobManager {
     };
   }
 
+  getOrphanedProgressLog(requestId: string): SolveProgressLogReadResult | null {
+    this.pruneJobs();
+    if (this.jobs.has(requestId)) return null;
+    const progressLog = readLatestSolveProgressLogByRequestId(this.progressLogRoot, requestId);
+    return progressLog && !progressLog.document.finalResult ? progressLog : null;
+  }
+
   cancel(requestId: string): SolveJob | null {
     this.pruneJobs();
     const job = this.jobs.get(requestId) ?? null;
@@ -261,6 +276,20 @@ export class SolveJobManager {
     job.cancelRequested = true;
     job.handle.cancel();
     return job;
+  }
+
+  shutdownRunningSolves(error = "Local web server stopped before the solve finished."): void {
+    for (const job of this.jobs.values()) {
+      if (job.status !== "running") continue;
+      job.cancelRequested = true;
+      if (job.handle?.forceKill) {
+        job.handle.forceKill();
+      } else {
+        job.handle?.cancel();
+      }
+      this.finalizeJobWithoutSolution(job, "failed", null, error);
+      this.releaseJobResources(job);
+    }
   }
 
   private pruneJobs(now = Date.now()): void {

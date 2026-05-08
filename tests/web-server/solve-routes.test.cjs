@@ -113,6 +113,70 @@ async function testHttpSolveStripsLocalRuntimePathOptions(handler) {
  * @param {RouteTestHandler} handler
  * @returns {Promise<void>}
  */
+async function testStartSolveLeavesStandaloneGreedyTimeLimitUnset(handler) {
+  const solvePayload = buildTinySolvePayload();
+  const backgroundSolution = solve(solvePayload.grid, solvePayload.params);
+  const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+  /** @type {SolverParams | null} */
+  let capturedParams = null;
+
+  optimizerRegistry.getOptimizerAdapter = (params) => ({
+    name: "greedy",
+    solve() {
+      throw new Error("Greedy unset time-limit test should use the background adapter.");
+    },
+    startBackgroundSolve(_grid, paramsFromStart) {
+      capturedParams = paramsFromStart ?? params;
+      return {
+        promise: Promise.resolve(backgroundSolution),
+        cancel() {},
+        getLatestSnapshot() {
+          return backgroundSolution;
+        },
+        getLatestSnapshotState() {
+          return {
+            hasFeasibleSolution: true,
+            totalPopulation: backgroundSolution.totalPopulation
+          };
+        }
+      };
+    }
+  });
+
+  try {
+    const result = await invoke(handler, {
+      method: "POST",
+      url: "/api/solve/start",
+      json: {
+        ...solvePayload,
+        params: {
+          ...solvePayload.params,
+          optimizer: "greedy",
+          greedy: {
+            ...solvePayload.params.greedy,
+            timeLimitSeconds: undefined
+          }
+        },
+        requestId: "unset-greedy-time-limit"
+      }
+    });
+
+    assert.equal(result.statusCode, 202);
+    const unsetTimeLimitParams = capturedParams;
+    if (unsetTimeLimitParams === null) {
+      assert.fail("Expected solver params to be captured.");
+    }
+    const sanitizedParams = /** @type {CapturedSanitizedParams} */ (/** @type {unknown} */ (unsetTimeLimitParams));
+    assert.equal(sanitizedParams.greedy.timeLimitSeconds, undefined);
+  } finally {
+    optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
+  }
+}
+
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testImmediateSolveRoute(handler) {
   const solvePayload = buildTinySolvePayload();
   const backgroundSolution = solve(solvePayload.grid, solvePayload.params);
@@ -415,6 +479,7 @@ async function testImmediateSolveRejectsBackgroundSolveAtCapacity() {
 async function main() {
   const { handler } = createRouteTestHandler();
   await testHttpSolveStripsLocalRuntimePathOptions(handler);
+  await testStartSolveLeavesStandaloneGreedyTimeLimitUnset(handler);
   await testImmediateSolveRoute(handler);
   await testImmediateSolveBackendJsonErrorsReturnInternalServerError(handler);
   await testImmediateSolveCancelsOnDisconnect(handler);

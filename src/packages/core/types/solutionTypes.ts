@@ -75,6 +75,7 @@ export interface BackgroundSolveSnapshotState {
 export interface BackgroundSolveHandle {
   promise: Promise<Solution>;
   cancel: () => void;
+  forceKill?: () => void;
   getLatestSnapshot: () => Solution | null;
   getLatestSnapshotState: () => BackgroundSolveSnapshotState;
 }

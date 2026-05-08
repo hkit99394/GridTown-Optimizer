@@ -207,8 +207,11 @@
                     </label>
                     <div class="storage-button-row storage-button-row-inline">
                       <button id="loadLayoutButton" type="button" class="button ghost">Display saved</button>
+                      <button id="exportLayoutsButton" type="button" class="button ghost">Export layouts</button>
+                      <button id="importLayoutsButton" type="button" class="button ghost">Import layouts</button>
                       <button id="deleteLayoutButton" type="button" class="button ghost danger">Delete</button>
                     </div>
+                    <input id="layoutImportFileInput" type="file" accept="application/json,.json" hidden />
                   </div>
                 </div>
                 <p id="layoutStorageStatus" class="status-text" aria-live="polite"></p>
@@ -784,8 +787,11 @@
                 </label>
                 <div class="storage-button-row">
                   <button id="loadConfigButton" type="button" class="button ghost">Load selected input</button>
+                  <button id="exportConfigsButton" type="button" class="button ghost">Export inputs</button>
+                  <button id="importConfigsButton" type="button" class="button ghost">Import inputs</button>
                   <button id="deleteConfigButton" type="button" class="button ghost danger">Delete</button>
                 </div>
+                <input id="configImportFileInput" type="file" accept="application/json,.json" hidden />
               </div>
               <p id="configStorageStatus" class="status-text" aria-live="polite">
                 Saved inputs include the grid, catalogs, and solver settings.

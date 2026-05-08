@@ -3776,6 +3776,96 @@ function testPlannerRequestBuilderTreatsBlankAutoCapAsUnlimited() {
   assert.equal(cappedRequest.params.auto.wallClockLimitSeconds, 90);
 }
 
+function testPlannerRequestBuilderLeavesStandaloneGreedyTimeLimitUnset() {
+  const plannerShared = loadPlannerSharedModule();
+  const plannerRequestBuilder = loadPlannerRequestBuilderModule();
+  const state = {
+    optimizer: "greedy",
+    auto: { wallClockLimitSeconds: "" },
+    grid: [
+      [1, 1],
+      [1, 1]
+    ],
+    serviceTypes: [],
+    residentialTypes: [plannerShared.serializeResidentialTypeForCatalog({ w: 2, h: 2, min: 10, max: 10, avail: 1 })],
+    availableBuildings: {
+      services: "",
+      residentials: "1"
+    },
+    greedy: {
+      localSearch: false,
+      randomSeed: "",
+      timeLimitSeconds: "",
+      profile: false,
+      densityTieBreaker: false,
+      densityTieBreakerTolerancePercent: "",
+      restarts: 1,
+      serviceRefineIterations: 0,
+      serviceRefineCandidateLimit: 1,
+      exhaustiveServiceSearch: false,
+      diagnostics: false,
+      serviceExactPoolLimit: 1,
+      serviceExactMaxCombinations: 1
+    },
+    cpSat: {
+      timeLimitSeconds: "",
+      noImprovementTimeoutSeconds: "",
+      randomSeed: "",
+      numWorkers: 1,
+      logSearchProgress: false,
+      useDisplayedHint: false
+    },
+    lns: {
+      iterations: 1,
+      maxNoImprovementIterations: 1,
+      neighborhoodRows: 1,
+      neighborhoodCols: 1,
+      repairTimeLimitSeconds: 1,
+      useDisplayedSeed: false
+    },
+    result: null,
+    resultContext: null,
+    resultElapsedMs: 0
+  };
+  const controller = plannerRequestBuilder.createPlannerRequestBuilderController({
+    state,
+    elements: {
+      cpSatRandomSeed: { value: "" },
+      cpSatHintStatus: { textContent: "" },
+      lnsSeedStatus: { textContent: "" },
+      payloadPreview: { textContent: "" },
+      layoutStorageName: { value: "" }
+    },
+    helpers: {
+      buildCpSatContinuationModelInput: plannerShared.buildCpSatContinuationModelInput,
+      buildCpSatWarmStartCheckpoint: plannerShared.buildCpSatWarmStartCheckpoint,
+      clampInteger: plannerShared.clampInteger,
+      cloneGrid: plannerShared.cloneGrid,
+      cloneJson: plannerShared.cloneJson,
+      computeCpSatModelFingerprint: plannerShared.computeCpSatModelFingerprint,
+      getSavedLayoutElapsedMs: plannerShared.getSavedLayoutElapsedMs,
+      readOptionalInteger: plannerShared.readOptionalInteger,
+      parseResidentialCatalogEntry: plannerShared.parseResidentialCatalogEntry,
+      parseServiceCatalogEntry: plannerShared.parseServiceCatalogEntry
+    }
+  });
+
+  const uncappedRequest = controller.buildSolveRequest({
+    hintMismatch: "ignore",
+    includeWarmStartHint: false,
+    includeLnsSeed: false
+  });
+  assert.equal(uncappedRequest.params.greedy.timeLimitSeconds, undefined);
+
+  state.greedy.timeLimitSeconds = "7";
+  const explicitCappedRequest = controller.buildSolveRequest({
+    hintMismatch: "ignore",
+    includeWarmStartHint: false,
+    includeLnsSeed: false
+  });
+  assert.equal(explicitCappedRequest.params.greedy.timeLimitSeconds, 7);
+}
+
 function testPlannerRequestBuilderKeepsAutoPayloadMinimal() {
   const plannerShared = loadPlannerSharedModule();
   const plannerRequestBuilder = loadPlannerRequestBuilderModule();
@@ -4091,6 +4181,7 @@ async function main() {
   testPlannerRequestBuilderIncludesHintAndSeedForAuto();
   await testPlannerExpansionOmitsStaleComparisonHint();
   testPlannerRequestBuilderTreatsBlankAutoCapAsUnlimited();
+  testPlannerRequestBuilderLeavesStandaloneGreedyTimeLimitUnset();
   testPlannerRequestBuilderKeepsAutoPayloadMinimal();
   testPlannerRequestBuilderKeepsPortfolioStandaloneOnly();
   console.log("All review finding regression tests passed.");

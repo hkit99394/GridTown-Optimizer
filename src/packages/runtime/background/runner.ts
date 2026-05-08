@@ -229,6 +229,12 @@ export function startJsonBackgroundSolve<TRaw>(config: JsonBackgroundSolverConfi
     scheduleForcedTermination();
   };
 
+  const forceKill = (): void => {
+    stopRequested = true;
+    if (forcedTerminationTimer) clearTimeout(forcedTerminationTimer);
+    killChildProcessGroup("SIGKILL");
+  };
+
   const promise = new Promise<Solution>((resolvePromise, rejectPromise) => {
     child.once("error", (error) => {
       cleanupTempDirectory();
@@ -286,6 +292,7 @@ export function startJsonBackgroundSolve<TRaw>(config: JsonBackgroundSolverConfi
   return {
     promise,
     cancel,
+    forceKill,
     getLatestSnapshot: () => materializeSnapshot(stopRequested),
     getLatestSnapshotState: () => config.getSnapshotState(readLatestSnapshotRaw())
   };

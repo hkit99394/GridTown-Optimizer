@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 import { renderSolutionMap } from "../../core/index.js";
@@ -12,9 +12,9 @@ import type {
   SolverParams
 } from "../../core/index.js";
 
-type PersistedSolveStatus = "running" | "completed" | "stopped" | "failed";
+export type PersistedSolveStatus = "running" | "completed" | "stopped" | "failed";
 
-interface SolveProgressLogDocument {
+export interface SolveProgressLogDocument {
   version: 2;
   requestId: string;
   optimizer: OptimizerName;
@@ -44,6 +44,11 @@ interface SolveProgressLogDocument {
   } | null;
 }
 
+export interface SolveProgressLogReadResult {
+  filePath: string;
+  document: SolveProgressLogDocument;
+}
+
 export interface SolveProgressLogWriterOptions {
   rootDirectory?: string;
   requestId: string;
@@ -66,6 +71,7 @@ export interface AppendPendingProgressLogEntryOptions {
 }
 
 const DEFAULT_PROGRESS_LOG_ROOT = resolve(process.cwd(), "artifacts", "solve-progress");
+const PERSISTED_SOLVE_STATUSES = new Set<PersistedSolveStatus>(["running", "completed", "stopped", "failed"]);
 
 function sanitizeFileNameSegment(value: string, fallback: string): string {
   const sanitized = value
@@ -127,6 +133,65 @@ function cloneProgressLogInput<T>(value: T): T {
 
 function resolveCapturedAt(value: string | undefined): string {
   return typeof value === "string" && value.trim() ? value : new Date().toISOString();
+}
+
+function isPersistedSolveStatus(value: unknown): value is PersistedSolveStatus {
+  return typeof value === "string" && PERSISTED_SOLVE_STATUSES.has(value as PersistedSolveStatus);
+}
+
+function isSolveProgressLogDocument(value: unknown): value is SolveProgressLogDocument {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<SolveProgressLogDocument>;
+  return (
+    candidate.version === 2 &&
+    typeof candidate.requestId === "string" &&
+    typeof candidate.optimizer === "string" &&
+    typeof candidate.createdAt === "string" &&
+    typeof candidate.updatedAt === "string" &&
+    isPersistedSolveStatus(candidate.status) &&
+    Boolean(candidate.input) &&
+    Array.isArray(candidate.entries)
+  );
+}
+
+export function readLatestSolveProgressLogByRequestId(
+  rootDirectory: string | undefined,
+  requestId: string
+): SolveProgressLogReadResult | null {
+  const normalizedRequestId = requestId.trim();
+  if (!normalizedRequestId) return null;
+
+  const resolvedRoot = resolve(rootDirectory ?? DEFAULT_PROGRESS_LOG_ROOT);
+  let fileNames: string[];
+  try {
+    fileNames = readdirSync(resolvedRoot);
+  } catch {
+    return null;
+  }
+
+  let latestResult: SolveProgressLogReadResult | null = null;
+  let latestUpdatedAtMs = -1;
+  for (const fileName of fileNames) {
+    if (!fileName.endsWith(".json")) continue;
+    const filePath = join(resolvedRoot, fileName);
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(readFileSync(filePath, "utf8"));
+    } catch {
+      continue;
+    }
+    if (!isSolveProgressLogDocument(parsed) || parsed.requestId !== normalizedRequestId) continue;
+
+    const updatedAtMs = Date.parse(parsed.updatedAt) || Date.parse(parsed.createdAt) || 0;
+    if (updatedAtMs <= latestUpdatedAtMs) continue;
+    latestUpdatedAtMs = updatedAtMs;
+    latestResult = {
+      filePath,
+      document: parsed
+    };
+  }
+
+  return latestResult;
 }
 
 function solveStartedAtElapsedMsFromTelemetry(solution: Solution, elapsedMs: number): number | null {

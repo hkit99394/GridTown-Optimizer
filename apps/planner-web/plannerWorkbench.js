@@ -417,6 +417,7 @@
           ...state.greedy,
           localSearch: true,
           restarts: 20,
+          timeLimitSeconds: "",
           serviceRefineIterations: 4,
           serviceRefineCandidateLimit: 60,
           exhaustiveServiceSearch: true,

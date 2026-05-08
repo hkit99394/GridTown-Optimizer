@@ -1,6 +1,7 @@
 import { normalizeServicePlacement } from "../../../packages/core/index.js";
 import { isAllowed } from "../../../packages/core/index.js";
 import { validateSolutionMap, type SolutionMapValidationResult } from "../../../packages/core/index.js";
+import { renderSolutionMap, validateLayoutConstraints } from "../../../packages/core/index.js";
 import { buildPlannerExplainabilityMap } from "../../../packages/core/index.js";
 import { buildSolverProgressSummary } from "../../../packages/core/index.js";
 import { pruneRedundantRoads } from "../../../packages/core/index.js";
@@ -16,6 +17,10 @@ import type {
   SolveResponseValidation,
   SolverParams
 } from "../../../packages/core/index.js";
+
+interface PlannerSolutionResponseOptions {
+  includeExplainability?: boolean;
+}
 
 export function buildSolveResponsePayload(
   grid: Grid,
@@ -66,18 +71,93 @@ function buildPlannerSolutionResponse(
   grid: Grid,
   params: SolverParams,
   solution: Solution,
-  validation: SolutionMapValidationResult
+  validation: SolutionMapValidationResult,
+  options: PlannerSolutionResponseOptions = {}
 ) {
-  return {
+  const response = {
     solution: serializeSolution(solution),
     validation: buildResponseValidation(validation),
-    stats: buildResponseStats(solution, params),
+    stats: buildResponseStats(solution, params)
+  };
+  if (options.includeExplainability === false) return response;
+  return {
+    ...response,
     explainability: buildPlannerExplainabilityMap(grid, params, solution)
   };
 }
 
 export function buildSolveResponse(grid: Grid, params: SolverParams, solution: Solution) {
   return buildPlannerSolutionResponse(grid, params, solution, buildSolveResponsePayload(grid, params, solution));
+}
+
+function buildCompactSolveResponsePayload(
+  grid: Grid,
+  params: SolverParams,
+  solution: Solution
+): SolutionMapValidationResult {
+  // Status polling must stay cheap; strict typed population assignment can be too expensive for large groups.
+  const errors: string[] = [];
+  if (solution.servicePopulationIncreases.length !== solution.services.length) {
+    errors.push(
+      `Solution reports ${solution.servicePopulationIncreases.length} service bonuses for ${solution.services.length} services.`
+    );
+  }
+  if (solution.populations.length !== solution.residentials.length) {
+    errors.push(
+      `Solution reports ${solution.populations.length} residential populations for ${solution.residentials.length} residentials.`
+    );
+  }
+
+  const services = solution.services.map((service, index) => ({
+    ...service,
+    bonus: solution.servicePopulationIncreases[index] ?? 0
+  }));
+  const constraintValidation = validateLayoutConstraints({
+    grid,
+    roads: solution.roads,
+    services,
+    residentials: solution.residentials,
+    params
+  });
+  errors.push(...constraintValidation.errors);
+
+  const mapRows = renderSolutionMap(grid, solution);
+  const recomputedPopulations = [...solution.populations];
+  const recomputedTotalPopulation =
+    typeof solution.totalPopulation === "number"
+      ? solution.totalPopulation
+      : recomputedPopulations.reduce((sum, population) => sum + population, 0);
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    recomputedPopulations,
+    recomputedTotalPopulation,
+    layoutEvaluation: {
+      valid: constraintValidation.valid,
+      errors: constraintValidation.errors,
+      populations: solution.residentials.map((residential, index) => ({
+        ...residential,
+        population: solution.populations[index] ?? 0
+      })),
+      totalPopulation: recomputedTotalPopulation,
+      boosts: new Array(solution.residentials.length).fill(0)
+    },
+    mapRows,
+    mapText: mapRows.join("\n")
+  };
+}
+
+export function buildCompactSolveResponse(grid: Grid, params: SolverParams, solution: Solution) {
+  return buildPlannerSolutionResponse(
+    grid,
+    params,
+    solution,
+    buildCompactSolveResponsePayload(grid, params, solution),
+    {
+      includeExplainability: false
+    }
+  );
 }
 
 function addPlacementCellsForCleanup(

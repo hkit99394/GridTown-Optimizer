@@ -243,6 +243,9 @@ const elements = /** @type {JsonObject} */ ({
   saveConfigButton: document.querySelector("#saveConfigButton"),
   savedConfigsSelect: document.querySelector("#savedConfigsSelect"),
   loadConfigButton: document.querySelector("#loadConfigButton"),
+  exportConfigsButton: document.querySelector("#exportConfigsButton"),
+  importConfigsButton: document.querySelector("#importConfigsButton"),
+  configImportFileInput: document.querySelector("#configImportFileInput"),
   deleteConfigButton: document.querySelector("#deleteConfigButton"),
   configStorageStatus: document.querySelector("#configStorageStatus"),
   payloadPreview: document.querySelector("#payloadPreview"),
@@ -299,6 +302,9 @@ const elements = /** @type {JsonObject} */ ({
   saveLayoutButton: document.querySelector("#saveLayoutButton"),
   savedLayoutsSelect: document.querySelector("#savedLayoutsSelect"),
   loadLayoutButton: document.querySelector("#loadLayoutButton"),
+  exportLayoutsButton: document.querySelector("#exportLayoutsButton"),
+  importLayoutsButton: document.querySelector("#importLayoutsButton"),
+  layoutImportFileInput: document.querySelector("#layoutImportFileInput"),
   deleteLayoutButton: document.querySelector("#deleteLayoutButton"),
   layoutStorageStatus: document.querySelector("#layoutStorageStatus"),
   greedyLocalSearch: document.querySelector("#greedyLocalSearch"),
@@ -847,6 +853,12 @@ function init() {
   elements.loadConfigButton.addEventListener("click", () => {
     persistenceController.loadSelectedConfig();
   });
+  elements.exportConfigsButton.addEventListener("click", () => persistenceController.exportSavedConfigs());
+  elements.importConfigsButton.addEventListener("click", () => elements.configImportFileInput.click());
+  elements.configImportFileInput.addEventListener("change", async () => {
+    await persistenceController.importSavedConfigsFromFile(elements.configImportFileInput.files?.[0]);
+    elements.configImportFileInput.value = "";
+  });
 
   elements.deleteConfigButton.addEventListener("click", () => {
     persistenceController.deleteSelectedConfig();
@@ -858,6 +870,12 @@ function init() {
 
   elements.loadLayoutButton.addEventListener("click", () => {
     persistenceController.loadSelectedLayout();
+  });
+  elements.exportLayoutsButton.addEventListener("click", () => persistenceController.exportSavedLayouts());
+  elements.importLayoutsButton.addEventListener("click", () => elements.layoutImportFileInput.click());
+  elements.layoutImportFileInput.addEventListener("change", async () => {
+    await persistenceController.importSavedLayoutsFromFile(elements.layoutImportFileInput.files?.[0]);
+    elements.layoutImportFileInput.value = "";
   });
 
   elements.deleteLayoutButton.addEventListener("click", () => {

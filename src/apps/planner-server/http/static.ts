@@ -8,6 +8,7 @@ const STATIC_FILES: Record<string, string> = {
   "/": "index.html",
   "/index.html": "index.html",
   "/styles.css": "styles.css",
+  "/results.css": "results.css",
   "/plannerShell.js": "plannerShell.js",
   "/plannerShared.js": "plannerShared.js",
   "/plannerPersistence.js": "plannerPersistence.js",

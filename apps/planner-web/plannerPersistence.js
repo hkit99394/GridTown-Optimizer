@@ -108,6 +108,170 @@
       globalObject.localStorage.setItem(storageKey, JSON.stringify(entries));
     }
 
+    /**
+     * @param {string} propertyName
+     * @param {SavedEntry[]} entries
+     * @returns {JsonObject}
+     */
+    function buildStorageExportPayload(propertyName, entries) {
+      return {
+        schemaVersion: 1,
+        kind: `city-builder.planner-${propertyName}.v1`,
+        exportedAt: new Date().toISOString(),
+        [propertyName]: entries
+      };
+    }
+
+    /**
+     * @param {string} fileName
+     * @param {JsonObject} payload
+     */
+    function downloadJsonFile(fileName, payload) {
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = globalObject.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      link.click();
+      globalObject.URL.revokeObjectURL(url);
+    }
+
+    /**
+     * @param {string} storageKey
+     * @param {string} propertyName
+     * @param {string} emptyLabel
+     * @param {HTMLElement} statusElement
+     * @returns {JsonObject | null}
+     */
+    function exportStoredEntries(storageKey, propertyName, emptyLabel, statusElement) {
+      const entries = readStoredEntries(storageKey);
+      if (!entries.length) {
+        statusElement.textContent = `No saved ${emptyLabel} to export.`;
+        return null;
+      }
+      const payload = buildStorageExportPayload(propertyName, entries);
+      downloadJsonFile(`city-builder-${propertyName}-${new Date().toISOString().slice(0, 10)}.json`, payload);
+      statusElement.textContent = `Exported ${entries.length} saved ${emptyLabel}.`;
+      return payload;
+    }
+
+    /**
+     * @param {any} value
+     * @param {string} fallbackName
+     * @param {string[]} requiredProperties
+     * @returns {SavedEntry | null}
+     */
+    function normalizeImportedEntry(value, fallbackName, requiredProperties) {
+      if (!value || typeof value !== "object" || requiredProperties.some((property) => !value[property])) return null;
+      const entry = cloneJson(value);
+      entry.id = typeof entry.id === "string" && entry.id.trim() ? entry.id : createSavedEntryId();
+      entry.name = typeof entry.name === "string" && entry.name.trim() ? entry.name.trim() : fallbackName;
+      entry.savedAt =
+        typeof entry.savedAt === "string" && entry.savedAt.trim() ? entry.savedAt : new Date().toISOString();
+      return entry;
+    }
+
+    /**
+     * @param {string} importText
+     * @param {string} propertyName
+     * @param {string[]} requiredProperties
+     * @param {string} fallbackPrefix
+     * @returns {SavedEntry[]}
+     */
+    function parseImportedEntries(importText, propertyName, requiredProperties, fallbackPrefix) {
+      const parsed = JSON.parse(importText);
+      const rawEntries = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray(parsed?.[propertyName])
+          ? parsed[propertyName]
+          : null;
+      if (!rawEntries) throw new Error(`Import JSON must contain a ${propertyName} array.`);
+      /** @type {SavedEntry[]} */
+      const entries = [];
+      rawEntries.forEach((entry, index) => {
+        const normalizedEntry = normalizeImportedEntry(entry, `${fallbackPrefix} ${index + 1}`, requiredProperties);
+        if (normalizedEntry) entries.push(normalizedEntry);
+      });
+      if (!entries.length)
+        throw new Error(`Import JSON did not contain valid saved ${fallbackPrefix.toLowerCase()} entries.`);
+      return entries;
+    }
+
+    /**
+     * @param {string} storageKey
+     * @param {SavedEntry[]} importedEntries
+     * @returns {{ added: number, updated: number, total: number, selectedId: string }}
+     */
+    function mergeStoredEntries(storageKey, importedEntries) {
+      const entries = readStoredEntries(storageKey);
+      let added = 0;
+      let updated = 0;
+      importedEntries.forEach((entry) => {
+        const lowerName = entry.name.toLowerCase();
+        const existingIndex = entries.findIndex(
+          (item) => item.id === entry.id || String(item.name ?? "").toLowerCase() === lowerName
+        );
+        if (existingIndex >= 0) {
+          entries[existingIndex] = entry;
+          updated += 1;
+        } else {
+          entries.unshift(entry);
+          added += 1;
+        }
+      });
+      writeStoredEntries(storageKey, entries);
+      return { added, updated, total: importedEntries.length, selectedId: importedEntries[0]?.id ?? "" };
+    }
+
+    /**
+     * @param {string} storageKey
+     * @param {string} propertyName
+     * @param {string[]} requiredProperties
+     * @param {string} fallbackPrefix
+     * @param {HTMLElement} statusElement
+     * @param {(selectedId?: string) => void} refreshOptions
+     * @param {string} importText
+     * @returns {{ added: number, updated: number, total: number, selectedId: string } | null}
+     */
+    function importStoredEntriesFromText(
+      storageKey,
+      propertyName,
+      requiredProperties,
+      fallbackPrefix,
+      statusElement,
+      refreshOptions,
+      importText
+    ) {
+      try {
+        const summary = mergeStoredEntries(
+          storageKey,
+          parseImportedEntries(importText, propertyName, requiredProperties, fallbackPrefix)
+        );
+        refreshOptions(summary.selectedId);
+        statusElement.textContent = `Imported ${summary.total} saved ${fallbackPrefix.toLowerCase()} entries (${summary.added} new, ${summary.updated} updated).`;
+        return summary;
+      } catch (error) {
+        statusElement.textContent = `Could not import saved ${fallbackPrefix.toLowerCase()} entries: ${
+          error instanceof Error ? error.message : "Invalid JSON."
+        }`;
+        return null;
+      }
+    }
+
+    /**
+     * @param {File | undefined} file
+     * @param {(importText: string) => any} importText
+     * @param {HTMLElement} statusElement
+     * @param {string} label
+     */
+    async function importStoredEntriesFromFile(file, importText, statusElement, label) {
+      if (!file) {
+        statusElement.textContent = `Choose a saved ${label} JSON file first.`;
+        return null;
+      }
+      return importText(await file.text());
+    }
+
     const PENDING_MANUAL_LAYOUT_ERROR = "Manual edits are pending validation. Use Validate layout when you're ready.";
 
     /**
@@ -285,6 +449,32 @@
       elements.configStorageStatus.textContent = `Saved input setup "${name}".`;
     }
 
+    function exportSavedConfigs() {
+      return exportStoredEntries(CONFIG_STORAGE_KEY, "configs", "input setup", elements.configStorageStatus);
+    }
+
+    /**
+     * @param {string} importText
+     */
+    function importSavedConfigsFromText(importText) {
+      return importStoredEntriesFromText(
+        CONFIG_STORAGE_KEY,
+        "configs",
+        ["snapshot"],
+        "Input setup",
+        elements.configStorageStatus,
+        refreshSavedConfigOptions,
+        importText
+      );
+    }
+
+    /**
+     * @param {File | undefined} file
+     */
+    function importSavedConfigsFromFile(file) {
+      return importStoredEntriesFromFile(file, importSavedConfigsFromText, elements.configStorageStatus, "input setup");
+    }
+
     function loadSelectedConfig() {
       if (state.isSolving) {
         elements.configStorageStatus.textContent =
@@ -378,6 +568,32 @@
         : `Saved layout "${name}" with elapsed ${formatElapsedTime(elapsedMs)}.${continuationStatus}`;
     }
 
+    function exportSavedLayouts() {
+      return exportStoredEntries(LAYOUT_STORAGE_KEY, "layouts", "layout", elements.layoutStorageStatus);
+    }
+
+    /**
+     * @param {string} importText
+     */
+    function importSavedLayoutsFromText(importText) {
+      return importStoredEntriesFromText(
+        LAYOUT_STORAGE_KEY,
+        "layouts",
+        ["result", "resultContext"],
+        "Layout",
+        elements.layoutStorageStatus,
+        refreshSavedLayoutOptions,
+        importText
+      );
+    }
+
+    /**
+     * @param {File | undefined} file
+     */
+    function importSavedLayoutsFromFile(file) {
+      return importStoredEntriesFromFile(file, importSavedLayoutsFromText, elements.layoutStorageStatus, "layout");
+    }
+
     function loadSelectedLayout() {
       if (state.isSolving) {
         elements.layoutStorageStatus.textContent =
@@ -436,6 +652,12 @@
     return {
       deleteSelectedConfig,
       deleteSelectedLayout,
+      exportSavedConfigs,
+      exportSavedLayouts,
+      importSavedConfigsFromFile,
+      importSavedConfigsFromText,
+      importSavedLayoutsFromFile,
+      importSavedLayoutsFromText,
       loadSelectedConfig,
       loadSelectedLayout,
       refreshSavedConfigOptions,

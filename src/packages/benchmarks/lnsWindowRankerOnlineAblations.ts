@@ -32,6 +32,7 @@ import type {
   LnsRepairPhase,
   LnsWindowRankerOperatorTransition,
   LnsWindowRankerDecisionStateTelemetry,
+  LnsWindowRankerFeatureDeltaGate,
   LnsWindowRankerFeatureTelemetry,
   LnsWindowRankerRuntimeModel,
   LnsWindowRankerSelectionTelemetry
@@ -56,6 +57,7 @@ export interface LnsWindowRankerOnlineAblationRunOptions extends LnsBenchmarkRun
   model: LnsWindowRankerRuntimeModel;
   minScoreDelta?: number;
   allowedTransitions?: readonly LnsWindowRankerOperatorTransition[];
+  featureDeltaGates?: readonly LnsWindowRankerFeatureDeltaGate[];
   seeds?: readonly number[];
 }
 
@@ -65,6 +67,7 @@ export interface LnsWindowRankerOnlineAblationTelemetrySummary {
   featureSchemaVersion: number | null;
   minScoreDelta: number | null;
   allowedTransitions: readonly LnsWindowRankerOperatorTransition[] | null;
+  featureDeltaGates: readonly LnsWindowRankerFeatureDeltaGate[];
   decisions: number;
   overrides: number;
   fallbackDecisions: number;
@@ -345,6 +348,7 @@ export interface LnsWindowRankerOnlineCalibrationSuiteResult {
   selectedCaseNames: string[];
   modelFingerprint: string | null;
   allowedTransitions?: readonly LnsWindowRankerOperatorTransition[];
+  featureDeltaGates?: readonly LnsWindowRankerFeatureDeltaGate[];
   minScoreDeltas: number[];
   topMeanPopulationDeltaMinScoreDelta: number | null;
   topSafeMinScoreDelta: number | null;
@@ -437,6 +441,7 @@ function rankerLnsOptions(
       model,
       ...(options.minScoreDelta === undefined ? {} : { minScoreDelta: options.minScoreDelta }),
       ...(options.allowedTransitions === undefined ? {} : { allowedTransitions: [...options.allowedTransitions] }),
+      ...(options.featureDeltaGates === undefined ? {} : { featureDeltaGates: [...options.featureDeltaGates] }),
       captureDecisionState: true
     }
   };
@@ -465,6 +470,7 @@ function summarizeWindowRanker(result: LnsBenchmarkCaseResult): LnsWindowRankerO
     featureSchemaVersion: ranker.featureSchemaVersion ?? null,
     minScoreDelta: ranker.minScoreDelta,
     allowedTransitions: ranker.allowedTransitions ? [...ranker.allowedTransitions] : null,
+    featureDeltaGates: ranker.featureDeltaGates ? [...ranker.featureDeltaGates] : [],
     decisions: ranker.decisions,
     overrides: ranker.overrides,
     fallbackDecisions: ranker.fallbackDecisions,
@@ -1061,6 +1067,7 @@ export function runLnsWindowRankerOnlineCalibration(
       ? (modelWithFingerprint(options.model).modelFingerprint ?? null)
       : null,
     ...(options.allowedTransitions === undefined ? {} : { allowedTransitions: [...options.allowedTransitions] }),
+    ...(options.featureDeltaGates === undefined ? {} : { featureDeltaGates: [...options.featureDeltaGates] }),
     minScoreDeltas,
     topMeanPopulationDeltaMinScoreDelta: topThreshold(thresholdSummaries, () => true),
     topSafeMinScoreDelta: topThreshold(thresholdSummaries, (summary) => summary.safetyGatePassed),
@@ -1079,6 +1086,7 @@ export function createLnsWindowRankerOnlineCalibrationSnapshot(
     selectedCaseNames: [...result.selectedCaseNames],
     modelFingerprint: result.modelFingerprint,
     ...(result.allowedTransitions === undefined ? {} : { allowedTransitions: [...result.allowedTransitions] }),
+    ...(result.featureDeltaGates === undefined ? {} : { featureDeltaGates: [...result.featureDeltaGates] }),
     minScoreDeltas: [...result.minScoreDeltas],
     topMeanPopulationDeltaMinScoreDelta: result.topMeanPopulationDeltaMinScoreDelta,
     topSafeMinScoreDelta: result.topSafeMinScoreDelta,

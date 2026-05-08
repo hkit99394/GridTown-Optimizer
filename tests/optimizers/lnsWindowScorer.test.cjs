@@ -186,6 +186,52 @@ function testWindowRankerFallsBackWhenTransitionIsNotAllowed() {
   );
 }
 
+function testWindowRankerFallsBackWhenFeatureDeltaGateFails() {
+  const fixture = buildSelectionFixture();
+  const model = runtimeModel({ selectedByBaseline: -1 });
+  const openDecision = selectLnsWindowRankerCandidate(
+    fixture.grid,
+    fixture.params,
+    fixture.incumbent,
+    fixture.candidates,
+    fixture.baseline,
+    normalizeLnsWindowRankerOptions(model)
+  );
+  assert.equal(openDecision.telemetry.selectedByBaseline, false);
+  assert.equal(openDecision.telemetry.featureDeltas.selectedByBaseline, -1);
+
+  const blockedDecision = selectLnsWindowRankerCandidate(
+    fixture.grid,
+    fixture.params,
+    fixture.incumbent,
+    fixture.candidates,
+    fixture.baseline,
+    normalizeLnsWindowRankerOptions({
+      ...model,
+      featureDeltaGates: [{ feature: "selectedByBaseline", minDelta: 0 }]
+    })
+  );
+  assert.deepEqual(blockedDecision.candidate.window, fixture.baseline.window);
+  assert.equal(blockedDecision.telemetry.selectedByBaseline, true);
+  assert.equal(blockedDecision.telemetry.fallbackReason, "feature-delta-gate-not-met");
+  assert.equal(blockedDecision.telemetry.featureDeltas.selectedByBaseline, 0);
+
+  const allowedDecision = selectLnsWindowRankerCandidate(
+    fixture.grid,
+    fixture.params,
+    fixture.incumbent,
+    fixture.candidates,
+    fixture.baseline,
+    normalizeLnsWindowRankerOptions({
+      ...model,
+      featureDeltaGates: [{ feature: "selectedByBaseline", maxDelta: -1 }]
+    })
+  );
+  assert.equal(allowedDecision.telemetry.selectedByBaseline, false);
+  assert.equal(allowedDecision.telemetry.fallbackReason, undefined);
+  assert.equal(allowedDecision.telemetry.featureDeltas.selectedByBaseline, -1);
+}
+
 function testSolveLnsWindowRankerTelemetryAndDefaultSafety() {
   const cpSatModule = require("../../dist/packages/solvers/cp-sat/solver.js");
   const originalSolveCpSat = cpSatModule.solveCpSat;
@@ -255,6 +301,7 @@ function testSolveLnsWindowRankerTelemetryAndDefaultSafety() {
     assert.equal(rankedSolution.lnsTelemetry.windowRanker.decisions, 1);
     assert.equal(rankedSolution.lnsTelemetry.windowRanker.overrides, 1);
     assert.equal(rankedSolution.lnsTelemetry.windowRanker.allowedTransitions, undefined);
+    assert.equal(rankedSolution.lnsTelemetry.windowRanker.featureDeltaGates, undefined);
     assert.equal(rankedSolution.lnsTelemetry.outcomes[0].windowRankerSelection.selectedByBaseline, false);
     assert.equal(typeof rankedSolution.lnsTelemetry.outcomes[0].windowRankerSelection.selectedOperator, "string");
     assert.equal(typeof rankedSolution.lnsTelemetry.outcomes[0].windowRankerSelection.selectedWindow.top, "number");
@@ -327,10 +374,51 @@ function testWindowRankerValidationRejectsBadWeights() {
       }),
     /lns\.windowRanker\.allowedTransitions must contain operator transitions/
   );
+
+  assert.throws(
+    () =>
+      solveLns(buildGrid(3, 3), {
+        optimizer: "lns",
+        availableBuildings: { residentials: 0, services: 0 },
+        lns: {
+          iterations: 1,
+          windowRanker: {
+            model: {
+              modelType: "lns-window-linear-pairwise-ranker",
+              featureSchemaVersion: 2,
+              weights: { selectedByBaseline: 1 }
+            },
+            featureDeltaGates: [{ feature: "selectedByBaseline" }]
+          }
+        }
+      }),
+    /lns\.windowRanker\.featureDeltaGates\[0\] must include minDelta or maxDelta/
+  );
+
+  assert.throws(
+    () =>
+      solveLns(buildGrid(3, 3), {
+        optimizer: "lns",
+        availableBuildings: { residentials: 0, services: 0 },
+        lns: {
+          iterations: 1,
+          windowRanker: {
+            model: {
+              modelType: "lns-window-linear-pairwise-ranker",
+              featureSchemaVersion: 2,
+              weights: { selectedByBaseline: 1 }
+            },
+            featureDeltaGates: [{ feature: "notAFeature", maxDelta: 0 }]
+          }
+        }
+      }),
+    /lns\.windowRanker\.featureDeltaGates\[0\]\.feature must be one of the LNS window ranker feature names/
+  );
 }
 
 testWindowRankerCanOverrideAdaptiveBaseline();
 testWindowRankerFallsBackWhenScoreDeltaIsTooSmall();
 testWindowRankerFallsBackWhenTransitionIsNotAllowed();
+testWindowRankerFallsBackWhenFeatureDeltaGateFails();
 testSolveLnsWindowRankerTelemetryAndDefaultSafety();
 testWindowRankerValidationRejectsBadWeights();

@@ -1,3 +1,4 @@
+import { LNS_WINDOW_RANKER_FEATURE_NAMES } from "./types.js";
 import type { SolverParams } from "./types.js";
 
 import {
@@ -60,6 +61,48 @@ function assertValidWindowRankerAllowedTransitions(windowRanker: Record<string, 
   }
 }
 
+function assertValidWindowRankerFeatureDeltaGates(windowRanker: Record<string, unknown>): void {
+  const value = windowRanker.featureDeltaGates;
+  if (value === undefined) return;
+  if (!Array.isArray(value)) {
+    throw new SolverInputError("LNS option lns.windowRanker.featureDeltaGates must be an array of objects.");
+  }
+
+  const knownFeatures = new Set<string>(LNS_WINDOW_RANKER_FEATURE_NAMES);
+  for (const [index, entry] of value.entries()) {
+    const label = `LNS option lns.windowRanker.featureDeltaGates[${index}]`;
+    const gate = requireValidationRecord(entry, label);
+    if (typeof gate.feature !== "string" || gate.feature.trim().length === 0) {
+      throw new SolverInputError(`${label}.feature must be a non-empty string.`);
+    }
+    if (!knownFeatures.has(gate.feature)) {
+      throw new SolverInputError(`${label}.feature must be one of the LNS window ranker feature names.`);
+    }
+    requireOptionalFiniteNumberInRange(
+      gate,
+      "minDelta",
+      `${label}.minDelta`,
+      -LNS_MAX_WINDOW_RANKER_SCORE_DELTA,
+      LNS_MAX_WINDOW_RANKER_SCORE_DELTA,
+      true
+    );
+    requireOptionalFiniteNumberInRange(
+      gate,
+      "maxDelta",
+      `${label}.maxDelta`,
+      -LNS_MAX_WINDOW_RANKER_SCORE_DELTA,
+      LNS_MAX_WINDOW_RANKER_SCORE_DELTA,
+      true
+    );
+    if (gate.minDelta === undefined && gate.maxDelta === undefined) {
+      throw new SolverInputError(`${label} must include minDelta or maxDelta.`);
+    }
+    if (typeof gate.minDelta === "number" && typeof gate.maxDelta === "number" && gate.minDelta > gate.maxDelta) {
+      throw new SolverInputError(`${label}.minDelta must be less than or equal to maxDelta.`);
+    }
+  }
+}
+
 function assertValidWindowRankerOptions(lns: Record<string, unknown>): void {
   const value = lns.windowRanker;
   if (value === undefined) return;
@@ -76,6 +119,7 @@ function assertValidWindowRankerOptions(lns: Record<string, unknown>): void {
     true
   );
   assertValidWindowRankerAllowedTransitions(windowRanker);
+  assertValidWindowRankerFeatureDeltaGates(windowRanker);
 
   const model = requireValidationRecord(windowRanker.model, "LNS option lns.windowRanker.model");
   requireOptionalString(model, "modelFingerprint", "LNS option lns.windowRanker.model.modelFingerprint");

@@ -79,6 +79,9 @@ type LnsWindowRankerRuntimeModel = Parameters<typeof runLnsWindowRankerOnlineAbl
 type LnsWindowRankerOperatorTransition = NonNullable<
   Parameters<typeof runLnsWindowRankerOnlineAblation>[1]["allowedTransitions"]
 >[number];
+type LnsWindowRankerFeatureDeltaGate = NonNullable<
+  Parameters<typeof runLnsWindowRankerOnlineAblation>[1]["featureDeltaGates"]
+>[number];
 
 interface ParsedBenchmarkArgs {
   json: boolean;
@@ -110,6 +113,7 @@ interface ParsedBenchmarkArgs {
   windowRankerMinScoreDelta?: number;
   windowRankerMinScoreDeltas?: number[];
   windowRankerAllowedTransitions?: LnsWindowRankerOperatorTransition[];
+  windowRankerFeatureDeltaGates?: LnsWindowRankerFeatureDeltaGate[];
   windowRankerArtifactDir?: string;
   windowRankerProtectedHoldout: boolean;
   windowRankerRunId?: string;
@@ -135,6 +139,7 @@ interface LnsWindowRankerOnlineArtifactManifest {
   modelFingerprint: string | null;
   minScoreDelta: number | null;
   allowedTransitions?: string[];
+  featureDeltaGates?: LnsWindowRankerFeatureDeltaGate[];
   minScoreDeltas?: number[];
   topMeanPopulationDeltaMinScoreDelta?: number | null;
   topSafeMinScoreDelta?: number | null;
@@ -187,6 +192,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let windowRankerMinScoreDelta: number | undefined;
   let windowRankerMinScoreDeltas: number[] | undefined;
   let windowRankerAllowedTransitions: LnsWindowRankerOperatorTransition[] | undefined;
+  let windowRankerFeatureDeltaGates: LnsWindowRankerFeatureDeltaGate[] | undefined;
   let windowRankerArtifactDir: string | undefined;
   let windowRankerProtectedHoldout = false;
   let windowRankerRunId: string | undefined;
@@ -254,6 +260,12 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
         value,
         "window ranker allowed transition"
       ) as LnsWindowRankerOperatorTransition[];
+    },
+    "window-ranker-feature-delta-gates": (value) => {
+      windowRankerFeatureDeltaGates = parseWindowRankerFeatureDeltaGates(value);
+    },
+    "window-ranker-feature-gates": (value) => {
+      windowRankerFeatureDeltaGates = parseWindowRankerFeatureDeltaGates(value);
     },
     "window-ranker-artifact-dir": (value) => {
       windowRankerArtifactDir = value;
@@ -387,6 +399,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     windowRankerMinScoreDelta,
     windowRankerMinScoreDeltas,
     windowRankerAllowedTransitions,
+    windowRankerFeatureDeltaGates,
     windowRankerArtifactDir,
     windowRankerProtectedHoldout,
     windowRankerRunId,
@@ -410,6 +423,30 @@ function parseNonNegativeNumberList(value: string, label: string): number[] {
     throw new Error(`Expected ${label} to contain only non-negative finite numbers.`);
   }
   return values;
+}
+
+function parseWindowRankerFeatureDeltaGates(value: string): LnsWindowRankerFeatureDeltaGate[] {
+  const entries = value
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+  if (entries.length === 0) {
+    throw new Error("--window-ranker-feature-delta-gates must include at least one feature comparison.");
+  }
+  return entries.map((entry) => {
+    const match = /^([A-Za-z][A-Za-z0-9_]*)\s*(<=|>=)\s*(-?(?:\d+\.?\d*|\.\d+))$/.exec(entry);
+    if (!match) {
+      throw new Error(
+        "--window-ranker-feature-delta-gates entries must look like operatorScore<=-6 or serviceCandidateBonus>=0.2."
+      );
+    }
+    const feature = match[1] as LnsWindowRankerFeatureDeltaGate["feature"];
+    const threshold = Number(match[3]);
+    if (!Number.isFinite(threshold)) {
+      throw new Error("--window-ranker-feature-delta-gates thresholds must be finite numbers.");
+    }
+    return match[2] === "<=" ? { feature, maxDelta: threshold } : { feature, minDelta: threshold };
+  });
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -487,6 +524,15 @@ function onlineAblationAllowedTransitions(result: LnsWindowRankerOnlineAblationS
     .flatMap((entry) => entry.variants)
     .find((variant) => variant.variantName === "window-ranker")?.windowRanker?.allowedTransitions;
   return allowedTransitions ? [...allowedTransitions] : undefined;
+}
+
+function onlineAblationFeatureDeltaGates(
+  result: LnsWindowRankerOnlineAblationSuiteResult
+): LnsWindowRankerFeatureDeltaGate[] | undefined {
+  const featureDeltaGates = result.cases
+    .flatMap((entry) => entry.variants)
+    .find((variant) => variant.variantName === "window-ranker")?.windowRanker?.featureDeltaGates;
+  return featureDeltaGates && featureDeltaGates.length > 0 ? [...featureDeltaGates] : undefined;
 }
 
 function onlineCalibrationTopMeanSummary(result: LnsWindowRankerOnlineCalibrationSuiteResult) {
@@ -605,6 +651,7 @@ function writeWindowRankerOnlineArtifactBundle(
     modelFingerprint: onlineAblationModelFingerprint(result),
     minScoreDelta: onlineAblationMinScoreDelta(result),
     allowedTransitions: onlineAblationAllowedTransitions(result),
+    featureDeltaGates: onlineAblationFeatureDeltaGates(result),
     meanPopulationDeltaVsBaseline: summary.meanPopulationDeltaVsBaseline,
     worstPopulationDeltaVsBaseline: summary.worstPopulationDeltaVsBaseline,
     regressedCaseCount: summary.regressedCaseCount,
@@ -673,6 +720,7 @@ function writeWindowRankerOnlineCalibrationArtifactBundle(
     modelFingerprint: result.modelFingerprint,
     minScoreDelta: summary?.minScoreDelta ?? null,
     ...(result.allowedTransitions === undefined ? {} : { allowedTransitions: [...result.allowedTransitions] }),
+    ...(result.featureDeltaGates === undefined ? {} : { featureDeltaGates: [...result.featureDeltaGates] }),
     minScoreDeltas: [...result.minScoreDeltas],
     topMeanPopulationDeltaMinScoreDelta: result.topMeanPopulationDeltaMinScoreDelta,
     topSafeMinScoreDelta: result.topSafeMinScoreDelta,
@@ -692,6 +740,19 @@ function formatWindowRankerOnlineArtifactManifest(manifest: LnsWindowRankerOnlin
     ...(manifest.allowedTransitions === undefined
       ? []
       : [`allowed-transitions=${manifest.allowedTransitions.join(",")}`]),
+    ...(manifest.featureDeltaGates === undefined
+      ? []
+      : [
+          `feature-delta-gates=${manifest.featureDeltaGates
+            .map((gate) =>
+              gate.minDelta === undefined
+                ? `${gate.feature}<=${gate.maxDelta}`
+                : gate.maxDelta === undefined
+                  ? `${gate.feature}>=${gate.minDelta}`
+                  : `${gate.minDelta}<=${gate.feature}<=${gate.maxDelta}`
+            )
+            .join(",")}`
+        ]),
     ...(manifest.minScoreDeltas === undefined ? [] : [`min-score-deltas=${manifest.minScoreDeltas.join(",")}`]),
     ...(manifest.topMeanPopulationDeltaMinScoreDelta === undefined
       ? []
@@ -729,6 +790,9 @@ export function runLnsBenchmarkCli(): void {
   }
   if (args.windowRankerAllowedTransitions !== undefined && !args.windowRankerOnlineAblation) {
     throw new Error("--window-ranker-allowed-transitions is only available with --window-ranker-online-ablation.");
+  }
+  if (args.windowRankerFeatureDeltaGates !== undefined && !args.windowRankerOnlineAblation) {
+    throw new Error("--window-ranker-feature-delta-gates is only available with --window-ranker-online-ablation.");
   }
   if (args.windowReplayArtifactDir !== undefined && !args.windowReplayLabels) {
     throw new Error("--window-replay-artifact-dir is only available with --window-replay-labels.");
@@ -839,6 +903,7 @@ export function runLnsBenchmarkCli(): void {
         model,
         minScoreDeltas: args.windowRankerMinScoreDeltas,
         allowedTransitions: args.windowRankerAllowedTransitions,
+        featureDeltaGates: args.windowRankerFeatureDeltaGates,
         lns
       });
 
@@ -866,6 +931,7 @@ export function runLnsBenchmarkCli(): void {
       model,
       minScoreDelta: args.windowRankerMinScoreDelta,
       allowedTransitions: args.windowRankerAllowedTransitions,
+      featureDeltaGates: args.windowRankerFeatureDeltaGates,
       lns
     });
 

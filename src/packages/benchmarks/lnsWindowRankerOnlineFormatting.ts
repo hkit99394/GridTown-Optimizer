@@ -27,6 +27,7 @@ import type {
   LnsWindowRankerOnlineFinalTransitionStatus,
   LnsWindowRankerOnlineTransitionStatusCounts
 } from "./lnsWindowRankerOnlineSelectionDiagnostics.js";
+import type { LnsWindowRankerFeatureDeltaGate } from "../core/index.js";
 
 interface LnsWindowRankerOnlineTransitionSummary {
   overrideTransitionCounts: Record<string, number>;
@@ -62,6 +63,18 @@ function formatNullableRatio(value: number | null): string {
   return value === null ? "n/a" : value.toFixed(3);
 }
 
+function formatFeatureDeltaGate(gate: LnsWindowRankerFeatureDeltaGate): string {
+  if (gate.minDelta !== undefined && gate.maxDelta !== undefined) {
+    return `${gate.minDelta}<=${gate.feature}<=${gate.maxDelta}`;
+  }
+  if (gate.minDelta !== undefined) return `${gate.feature}>=${gate.minDelta}`;
+  return `${gate.feature}<=${gate.maxDelta}`;
+}
+
+function formatFeatureDeltaGates(gates: readonly LnsWindowRankerFeatureDeltaGate[]): string {
+  return gates.map(formatFeatureDeltaGate).join(", ");
+}
+
 function formatRankerSummary(variant: LnsWindowRankerOnlineAblationVariantResult): string {
   const ranker = variant.windowRanker;
   if (!ranker) return "ranker=disabled";
@@ -81,6 +94,9 @@ export function formatLnsWindowRankerOnlineCalibration(result: LnsWindowRankerOn
   lines.push(`Model fingerprint: ${result.modelFingerprint ?? "n/a"}`);
   if (result.allowedTransitions !== undefined) {
     lines.push(`Allowed transitions: ${result.allowedTransitions.join(", ")}`);
+  }
+  if (result.featureDeltaGates !== undefined) {
+    lines.push(`Feature delta gates: ${formatFeatureDeltaGates(result.featureDeltaGates)}`);
   }
   lines.push(`Thresholds: ${result.minScoreDeltas.join(", ")}`);
   lines.push(`Top mean-delta threshold: ${formatNullableThreshold(result.topMeanPopulationDeltaMinScoreDelta)}`);
@@ -106,6 +122,12 @@ export function formatLnsWindowRankerOnlineAblation(result: LnsWindowRankerOnlin
       ?.windowRanker?.allowedTransitions ?? null;
   if (allowedTransitions !== null) {
     lines.push(`Allowed transitions: ${allowedTransitions.join(", ")}`);
+  }
+  const featureDeltaGates =
+    result.cases.flatMap((entry) => entry.variants).find((variant) => variant.variantName === "window-ranker")
+      ?.windowRanker?.featureDeltaGates ?? [];
+  if (featureDeltaGates.length > 0) {
+    lines.push(`Feature delta gates: ${formatFeatureDeltaGates(featureDeltaGates)}`);
   }
   lines.push(
     `Coverage: cases=${result.coverage.caseCount} seeds=${result.coverage.seedCount} comparisons=${result.coverage.comparisonCount} runs=${result.coverage.runCount} variants=${result.coverage.variantCount} grid-cells=${result.coverage.gridCellCount}`

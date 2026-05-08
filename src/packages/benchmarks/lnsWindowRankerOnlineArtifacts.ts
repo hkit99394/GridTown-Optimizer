@@ -6,7 +6,7 @@ import {
   buildModelExperimentTelemetryManifest
 } from "./modelExperimentArtifacts.js";
 
-import type { LnsWindowRankerRuntimeModel } from "../core/index.js";
+import type { LnsWindowRankerFeatureDeltaGate, LnsWindowRankerRuntimeModel } from "../core/index.js";
 import type {
   LnsWindowRankerOnlineAblationSuiteResult,
   LnsWindowRankerOnlineCalibrationSuiteResult,
@@ -123,8 +123,10 @@ function lnsWindowRankerOnlineAblationSummaryMetrics(
   const baseline = getBaselineSummary(result);
   const ranker = getRankerSummary(result);
   const allowedTransitions = ablationAllowedTransitions(result);
+  const featureDeltaGates = ablationFeatureDeltaGates(result);
   return {
     ...(allowedTransitions === null ? {} : { allowedTransitions: [...allowedTransitions] }),
+    ...(featureDeltaGates.length === 0 ? {} : { featureDeltaGates: [...featureDeltaGates] }),
     baselineMeanPopulation: baseline.meanPopulation,
     rankerMeanPopulation: ranker.meanPopulation,
     meanPopulationDeltaVsBaseline: ranker.meanPopulationDeltaVsBaseline,
@@ -220,6 +222,15 @@ function ablationAllowedTransitions(result: LnsWindowRankerOnlineAblationSuiteRe
   );
 }
 
+function ablationFeatureDeltaGates(
+  result: LnsWindowRankerOnlineAblationSuiteResult
+): readonly LnsWindowRankerFeatureDeltaGate[] {
+  return (
+    result.cases.flatMap((entry) => entry.variants).find((variant) => variant.variantName === "window-ranker")
+      ?.windowRanker?.featureDeltaGates ?? []
+  );
+}
+
 function calibrationThresholdByDelta(
   result: LnsWindowRankerOnlineCalibrationSuiteResult,
   minScoreDelta: number | null
@@ -236,6 +247,7 @@ function lnsWindowRankerOnlineCalibrationSummaryMetrics(
   const topSafeSummary = calibrationThresholdByDelta(result, result.topSafeMinScoreDelta);
   return {
     ...(result.allowedTransitions === undefined ? {} : { allowedTransitions: [...result.allowedTransitions] }),
+    ...(result.featureDeltaGates === undefined ? {} : { featureDeltaGates: [...result.featureDeltaGates] }),
     thresholdCount: result.minScoreDeltas.length,
     minScoreDeltas: [...result.minScoreDeltas],
     topMeanPopulationDeltaMinScoreDelta: result.topMeanPopulationDeltaMinScoreDelta,
@@ -283,6 +295,7 @@ export function buildLnsWindowRankerOnlineAblationRegistryEntryDraft(
   const modelFingerprint = model.modelFingerprint as string;
   const minScoreDelta = ablationMinScoreDelta(result);
   const allowedTransitions = ablationAllowedTransitions(result);
+  const featureDeltaGates = ablationFeatureDeltaGates(result);
   const protectedHoldout = options.protectedHoldout ?? false;
   const cases = lnsWindowRankerOnlineCasesBySplit(result.selectedCaseNames, protectedHoldout);
   const summaryMetrics = lnsWindowRankerOnlineAblationSummaryMetrics(result);
@@ -309,6 +322,7 @@ export function buildLnsWindowRankerOnlineAblationRegistryEntryDraft(
     budget: {
       minScoreDelta,
       ...(allowedTransitions === null ? {} : { allowedTransitionCount: allowedTransitions.length }),
+      ...(featureDeltaGates.length === 0 ? {} : { featureDeltaGateCount: featureDeltaGates.length }),
       caseCount: result.caseCount,
       seedCount: result.seedCount,
       comparisonCount: result.comparisonCount,
@@ -396,6 +410,7 @@ export function buildLnsWindowRankerOnlineCalibrationRegistryEntryDraft(
     },
     budget: {
       ...(result.allowedTransitions === undefined ? {} : { allowedTransitions: [...result.allowedTransitions] }),
+      ...(result.featureDeltaGates === undefined ? {} : { featureDeltaGateCount: result.featureDeltaGates.length }),
       minScoreDeltas: [...result.minScoreDeltas],
       thresholdCount: result.minScoreDeltas.length,
       caseCount: result.caseCount,

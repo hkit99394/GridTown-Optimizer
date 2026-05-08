@@ -16,6 +16,7 @@ import {
   type LnsWindowRankerMetricSummary
 } from "./lnsWindowRankerBaselines.js";
 import { hashString, stableStringify } from "../core/cpSatContinuation.js";
+import { LNS_WINDOW_RANKER_FEATURE_NAMES } from "../core/index.js";
 
 import type { LearnedRankingLabelSnapshot, LearnedRankingLabelSplit } from "./learnedRankingLabels.js";
 import type { LnsReplayPressureFamilyLabel } from "./lns.js";
@@ -29,38 +30,10 @@ import type {
   ModelExperimentTelemetryManifest,
   ModelExperimentTelemetryManifestOptions
 } from "./modelExperimentArtifacts.js";
+import type { LnsWindowRankerFeatureName } from "../core/index.js";
 
-export const LNS_WINDOW_RANKER_FEATURE_NAMES = Object.freeze([
-  "operatorScore",
-  "selectedByBaseline",
-  "area",
-  "roadCountInside",
-  "serviceCountInside",
-  "residentialCountInside",
-  "residentialHeadroomInside",
-  "serviceBonusInside",
-  "reachableBefore",
-  "reachableAfter",
-  "newlyReachable",
-  "disconnectedBefore",
-  "disconnectedAfter",
-  "clearedFootprint",
-  "emptyComponentsBefore",
-  "emptyComponentsAfter",
-  "componentDelta",
-  "allowedWindowCells",
-  "anchorReachableWindowCells",
-  "narrowGateCells",
-  "serviceCandidatesIntersecting",
-  "residentialCandidatesIntersecting",
-  "serviceCandidatesBlocked",
-  "residentialCandidatesBlocked",
-  "serviceCandidateBonus",
-  "maxServiceCandidateBonus",
-  "residentialCandidateHeadroom"
-] as const);
-
-export type LnsWindowRankerFeatureName = (typeof LNS_WINDOW_RANKER_FEATURE_NAMES)[number];
+export { LNS_WINDOW_RANKER_FEATURE_NAMES };
+export type { LnsWindowRankerFeatureName };
 
 export interface LnsWindowRankerTrainingOptions {
   epochs?: number;

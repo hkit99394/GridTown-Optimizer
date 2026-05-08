@@ -515,7 +515,9 @@ function testLnsBenchmarkCliListsOnlineAblationCases() {
   assert.equal(protectedResult.status, 0, protectedResult.stderr);
   assert.match(protectedResult.stdout, /lns-holdout-corridor-weave-pressure/);
   assert.match(protectedResult.stdout, /lns-holdout-anchor-service-shelf-pressure/);
-  assert.equal(DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS.length, 5);
+  assert.match(protectedResult.stdout, /lns-holdout-corridor-switchback-pressure/);
+  assert.match(protectedResult.stdout, /lns-holdout-anchor-service-harbor-pressure/);
+  assert.equal(DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS.length, 10);
 
   const protectedSweepResult = childProcess.spawnSync(
     process.execPath,

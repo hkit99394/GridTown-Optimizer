@@ -115,6 +115,7 @@ export interface LnsWindowRankerRuntimeModel {
   featureSchemaVersion?: number | null;
   featureNames?: readonly string[];
   weights: Record<string, number>;
+  interactionWeights?: Record<string, number>;
   intercept?: number;
 }
 

@@ -1233,6 +1233,37 @@ function testLnsWindowRankerBaselineTieBreakTraining() {
   assert.equal(registryDraft.budget.trainingBaselineTieBreak, 1);
 }
 
+function testLnsWindowRankerFeatureInteractionTraining() {
+  const result = runLnsWindowRankerExperiment(buildFixture(), {
+    topK: 2,
+    training: {
+      epochs: 4,
+      learningRate: 0.05,
+      marginWeightCap: 500,
+      featureInteractions: true
+    }
+  });
+  const formatted = formatLnsWindowRankerExperiment(result);
+  const baseFeatureCount = Object.keys(result.model.weights).length;
+  const interactionFeatureCount = Object.keys(result.model.interactionWeights ?? {}).length;
+
+  assert.equal(result.model.training.featureInteractions, true);
+  assert(result.model.featureNames.length > baseFeatureCount);
+  assert(interactionFeatureCount > 0);
+  assert.match(formatted, /feature-interactions=true/);
+  assert.match(formatted, /interaction-features=/);
+
+  const registryDraft = buildLnsWindowRankerRegistryEntryDraft(result, buildFixture(), {
+    runId: "lns-window-ranker-feature-interactions-test",
+    commands: ["node dist/lnsWindowRankerCli.js --labels=labels.json --feature-interactions"],
+    artifactPaths: ["artifacts/lns-ranker/lns-window-ranker.json"]
+  });
+  assert.equal(registryDraft.budget.trainingFeatureInteractions, 1);
+  assert.equal(registryDraft.budget.interactionFeatureCount, interactionFeatureCount);
+  assert.equal(registryDraft.summaryMetrics.featureInteractions, true);
+  assert.equal(registryDraft.summaryMetrics.interactionFeatureCount, interactionFeatureCount);
+}
+
 function testLnsWindowRankerCliArtifacts() {
   const repoRoot = path.join(__dirname, "../..");
   const cliPath = path.join(repoRoot, "dist", "lnsWindowRankerCli.js");
@@ -1306,4 +1337,5 @@ testLnsWindowRankerWeakReplaySeedFilter();
 testLnsWindowRankerGapDiagnostics();
 testLnsWindowRankerGapDiagnosticsSupplementalReplayLabels();
 testLnsWindowRankerSupplementalReplayCalibration();
+testLnsWindowRankerFeatureInteractionTraining();
 testLnsWindowRankerCliArtifacts();

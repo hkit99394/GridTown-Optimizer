@@ -55,6 +55,7 @@ interface ParsedLnsWindowRankerArgs {
   gapDiagnostics: boolean;
   supplementalReplayCalibration: boolean;
   supplementalReplayCalibrationIgnoreBaselineFeature: boolean;
+  featureInteractions: boolean;
   target?: LnsWindowRankerLabelTarget;
   allowWeakSeedReplayLabels: boolean;
   excludeFeatureIdenticalRepeatabilityConflicts: boolean;
@@ -135,6 +136,7 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
   let gapDiagnostics = false;
   let supplementalReplayCalibration = false;
   let supplementalReplayCalibrationIgnoreBaselineFeature = false;
+  let featureInteractions = false;
   let target: LnsWindowRankerLabelTarget | undefined;
   let allowWeakSeedReplayLabels = true;
   let excludeFeatureIdenticalRepeatabilityConflicts = false;
@@ -258,6 +260,10 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
       supplementalReplayCalibrationIgnoreBaselineFeature = true;
       continue;
     }
+    if (isCliFlag(arg, "--feature-interactions", "--ranker-feature-interactions")) {
+      featureInteractions = true;
+      continue;
+    }
     if (isCliFlag(arg, "--roll-forward-final-lift", "--final-lift-target")) {
       target = "roll-forward-final-lift";
       continue;
@@ -293,6 +299,7 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
     gapDiagnostics,
     supplementalReplayCalibration,
     supplementalReplayCalibrationIgnoreBaselineFeature,
+    featureInteractions,
     target,
     allowWeakSeedReplayLabels,
     excludeFeatureIdenticalRepeatabilityConflicts,
@@ -632,6 +639,7 @@ export function runLnsWindowRankerCli(): void {
       allowWeakSeedReplayLabels: args.allowWeakSeedReplayLabels,
       supplementalReplayCalibration: args.supplementalReplayCalibration,
       supplementalReplayCalibrationIgnoreBaselineFeature: args.supplementalReplayCalibrationIgnoreBaselineFeature,
+      featureInteractions: args.featureInteractions,
       excludeFeatureIdenticalRepeatabilityConflicts: args.excludeFeatureIdenticalRepeatabilityConflicts
     }
   });

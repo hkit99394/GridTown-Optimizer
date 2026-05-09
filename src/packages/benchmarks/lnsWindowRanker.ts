@@ -51,6 +51,7 @@ export interface LnsWindowRankerTrainingOptions {
   supplementalReplayCalibration?: boolean;
   supplementalReplayCalibrationIgnoreBaselineFeature?: boolean;
   excludeFeatureIdenticalRepeatabilityConflicts?: boolean;
+  featureInteractions?: boolean;
 }
 
 export interface LnsWindowRankerRunOptions {
@@ -85,8 +86,9 @@ export interface LnsWindowRankerModel {
   runtimeDefaultChanged: false;
   solverDefaultChanged: false;
   featureSchemaVersion: number | null;
-  featureNames: LnsWindowRankerFeatureName[];
+  featureNames: string[];
   weights: Record<LnsWindowRankerFeatureName, number>;
+  interactionWeights?: Record<string, number>;
   intercept: 0;
   topK: number;
   training: Required<LnsWindowRankerTrainingOptions>;
@@ -198,10 +200,16 @@ const DEFAULT_LNS_WINDOW_RANKER_TRAINING: Required<LnsWindowRankerTrainingOption
   allowWeakSeedReplayLabels: true,
   supplementalReplayCalibration: false,
   supplementalReplayCalibrationIgnoreBaselineFeature: false,
-  excludeFeatureIdenticalRepeatabilityConflicts: false
+  excludeFeatureIdenticalRepeatabilityConflicts: false,
+  featureInteractions: false
 });
 
 const SELECTED_BY_BASELINE_FEATURE_INDEX = LNS_WINDOW_RANKER_FEATURE_NAMES.indexOf("selectedByBaseline");
+const LNS_WINDOW_RANKER_INTERACTION_FEATURE_NAMES = Object.freeze(
+  LNS_WINDOW_RANKER_FEATURE_NAMES.flatMap((left, leftIndex) =>
+    LNS_WINDOW_RANKER_FEATURE_NAMES.slice(leftIndex).map((right) => `${left}*${right}`)
+  )
+);
 
 function roundMetric(value: number): number {
   return Math.round(value * 10000) / 10000;
@@ -234,7 +242,8 @@ function normalizeTrainingOptions(
     excludeFeatureIdenticalRepeatabilityConflicts:
       normalizeLnsWindowRankerFeatureIdenticalRepeatabilityConflictExclusion(
         options?.excludeFeatureIdenticalRepeatabilityConflicts
-      )
+      ),
+    featureInteractions: options?.featureInteractions === true
   };
 }
 
@@ -242,7 +251,7 @@ function numericValue(value: unknown): number {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
 }
 
-function featureVector(label: LnsWindowReplaySnapshotLabel): number[] {
+function baseFeatureVector(label: LnsWindowReplaySnapshotLabel): number[] {
   const features = label.features;
   const connectivity = features.connectivityShadow;
   const fragmentation = features.fragmentation;
@@ -278,19 +287,51 @@ function featureVector(label: LnsWindowReplaySnapshotLabel): number[] {
   ];
 }
 
+function featureNamesForTraining(training: Required<LnsWindowRankerTrainingOptions>): string[] {
+  return training.featureInteractions
+    ? [...LNS_WINDOW_RANKER_FEATURE_NAMES, ...LNS_WINDOW_RANKER_INTERACTION_FEATURE_NAMES]
+    : [...LNS_WINDOW_RANKER_FEATURE_NAMES];
+}
+
+function featureVector(label: LnsWindowReplaySnapshotLabel, featureNames: readonly string[]): number[] {
+  const base = baseFeatureVector(label);
+  if (featureNames.length === LNS_WINDOW_RANKER_FEATURE_NAMES.length) return base;
+  const baseByName = new Map<string, number>(
+    LNS_WINDOW_RANKER_FEATURE_NAMES.map((featureName, index) => [featureName, base[index] ?? 0])
+  );
+  return featureNames.map((featureName) => {
+    const baseValue = baseByName.get(featureName);
+    if (baseValue !== undefined) return baseValue;
+    const [left, right, extra] = featureName.split("*");
+    if (extra !== undefined || left === undefined || right === undefined) return 0;
+    return (baseByName.get(left) ?? 0) * (baseByName.get(right) ?? 0);
+  });
+}
+
 function dot(left: readonly number[], right: readonly number[]): number {
   return left.reduce((total, value, index) => total + value * (right[index] ?? 0), 0);
 }
 
-function scoreLabel(label: LnsWindowReplaySnapshotLabel, weights: readonly number[]): number {
-  return dot(featureVector(label), weights);
+function scoreLabel(
+  label: LnsWindowReplaySnapshotLabel,
+  weights: readonly number[],
+  featureNames: readonly string[]
+): number {
+  return dot(featureVector(label, featureNames), weights);
 }
 
 export function scoreLnsWindowRankerReplayLabel(
   label: LnsWindowReplaySnapshotLabel,
-  model: Pick<LnsWindowRankerModel, "weights">
+  model: Pick<LnsWindowRankerModel, "weights" | "interactionWeights" | "featureNames">
 ): number {
-  return scoreLabel(label, weightArrayFromRecord(model.weights));
+  const featureNames = modelFeatureNames(model);
+  return scoreLabel(label, weightArrayFromModel(model, featureNames), featureNames);
+}
+
+function modelFeatureNames(model: Pick<LnsWindowRankerModel, "featureNames" | "interactionWeights">): string[] {
+  return model.featureNames.length > 0
+    ? [...model.featureNames]
+    : [...LNS_WINDOW_RANKER_FEATURE_NAMES, ...Object.keys(model.interactionWeights ?? {})];
 }
 
 function hasTargetValue(label: LnsWindowReplaySnapshotLabel, target: LnsWindowRankerLabelTarget): boolean {
@@ -476,7 +517,8 @@ function evaluateMetricSummary(
   groups: readonly ReplayDecisionGroup[],
   weights: readonly number[],
   topK: number,
-  target: LnsWindowRankerLabelTarget
+  target: LnsWindowRankerLabelTarget,
+  featureNames: readonly string[]
 ): LnsWindowRankerMetricSummary {
   let decisionCount = 0;
   let opportunityCount = 0;
@@ -493,7 +535,7 @@ function evaluateMetricSummary(
     const bestImprovement = maxImprovement(group, target);
     const ranked = [...group.labels].sort(
       (left, right) =>
-        scoreLabel(right, weights) - scoreLabel(left, weights) ||
+        scoreLabel(right, weights, featureNames) - scoreLabel(left, weights, featureNames) ||
         right.operatorScore - left.operatorScore ||
         left.windowIndex - right.windowIndex
     );
@@ -548,12 +590,13 @@ function breakdownMetrics(
   weights: readonly number[],
   topK: number,
   target: LnsWindowRankerLabelTarget,
+  featureNames: readonly string[],
   keyForGroup: (group: ReplayDecisionGroup) => string
 ): LnsWindowRankerModelBreakdownMetrics[] {
   return [...groupByKey(groups, keyForGroup).entries()]
     .map(([key, keyGroups]) => ({
       key,
-      ...evaluateMetricSummary(keyGroups, weights, topK, target)
+      ...evaluateMetricSummary(keyGroups, weights, topK, target, featureNames)
     }))
     .sort((left, right) => left.key.localeCompare(right.key));
 }
@@ -563,27 +606,36 @@ function evaluateSplit(
   groups: readonly ReplayDecisionGroup[],
   weights: readonly number[],
   topK: number,
-  target: LnsWindowRankerLabelTarget
+  target: LnsWindowRankerLabelTarget,
+  featureNames: readonly string[]
 ): LnsWindowRankerModelSplitEvaluation {
   return {
     split,
-    ...evaluateMetricSummary(groups, weights, topK, target),
-    pressureFamilyMetrics: breakdownMetrics(groups, weights, topK, target, (group) => group.pressureFamily),
-    statePolicyMetrics: breakdownMetrics(groups, weights, topK, target, (group) => group.statePolicy),
-    seedHintMetrics: breakdownMetrics(groups, weights, topK, target, (group) => group.seedHintKind)
+    ...evaluateMetricSummary(groups, weights, topK, target, featureNames),
+    pressureFamilyMetrics: breakdownMetrics(
+      groups,
+      weights,
+      topK,
+      target,
+      featureNames,
+      (group) => group.pressureFamily
+    ),
+    statePolicyMetrics: breakdownMetrics(groups, weights, topK, target, featureNames, (group) => group.statePolicy),
+    seedHintMetrics: breakdownMetrics(groups, weights, topK, target, featureNames, (group) => group.seedHintKind)
   };
 }
 
 function trainLinearRanker(
   developmentGroups: readonly ReplayDecisionGroup[],
   training: Required<LnsWindowRankerTrainingOptions>,
-  topK: number
+  topK: number,
+  featureNames: readonly string[]
 ): {
   weights: number[];
   epochs: LnsWindowRankerEpochSummary[];
   trainedPairCount: number;
 } {
-  const weights = LNS_WINDOW_RANKER_FEATURE_NAMES.map(() => 0);
+  const weights = featureNames.map(() => 0);
   const epochs: LnsWindowRankerEpochSummary[] = [];
   let trainedPairCount = 0;
 
@@ -594,12 +646,12 @@ function trainLinearRanker(
       const positives = positiveLabelsForTraining(group, bestImprovement, training);
       if (positives.length === 0) continue;
       for (const positive of positives) {
-        const positiveVector = featureVector(positive);
+        const positiveVector = featureVector(positive, featureNames);
         for (const negative of group.labels) {
           const delta = trainingDelta(group, negative, bestImprovement, training);
           if (delta <= 0) continue;
           trainedPairCount++;
-          const negativeVector = featureVector(negative);
+          const negativeVector = featureVector(negative, featureNames);
           const diff = featureDiffForTraining(group, positiveVector, negativeVector, bestImprovement, training);
           if (dot(diff, weights) > 0) continue;
           const update = training.learningRate * marginWeight(delta, training.marginWeightCap);
@@ -613,7 +665,7 @@ function trainLinearRanker(
     epochs.push({
       epoch: epoch + 1,
       mistakes,
-      developmentCaptureRate: evaluateMetricSummary(developmentGroups, weights, topK, training.target)
+      developmentCaptureRate: evaluateMetricSummary(developmentGroups, weights, topK, training.target, featureNames)
         .improvementCaptureRate
     });
   }
@@ -621,14 +673,36 @@ function trainLinearRanker(
   return { weights, epochs, trainedPairCount };
 }
 
-function weightsRecord(weights: readonly number[]): Record<LnsWindowRankerFeatureName, number> {
+function weightsRecord(
+  weights: readonly number[],
+  featureNames: readonly string[]
+): Record<LnsWindowRankerFeatureName, number> {
   return Object.fromEntries(
-    LNS_WINDOW_RANKER_FEATURE_NAMES.map((featureName, index) => [featureName, roundMetric(weights[index] ?? 0)])
+    LNS_WINDOW_RANKER_FEATURE_NAMES.map((featureName) => [
+      featureName,
+      roundMetric(weights[featureNames.indexOf(featureName)] ?? 0)
+    ])
   ) as Record<LnsWindowRankerFeatureName, number>;
 }
 
-function weightArrayFromRecord(weights: Record<LnsWindowRankerFeatureName, number>): number[] {
-  return LNS_WINDOW_RANKER_FEATURE_NAMES.map((featureName) => weights[featureName]);
+function interactionWeightsRecord(weights: readonly number[], featureNames: readonly string[]): Record<string, number> {
+  return Object.fromEntries(
+    featureNames
+      .filter((featureName) => featureName.includes("*"))
+      .map((featureName) => [featureName, roundMetric(weights[featureNames.indexOf(featureName)] ?? 0)])
+      .filter(([, value]) => value !== 0)
+  ) as Record<string, number>;
+}
+
+function weightArrayFromModel(
+  model: Pick<LnsWindowRankerModel, "weights" | "interactionWeights">,
+  featureNames: readonly string[]
+): number[] {
+  return featureNames.map((featureName) =>
+    featureName.includes("*")
+      ? (model.interactionWeights?.[featureName] ?? 0)
+      : (model.weights[featureName as LnsWindowRankerFeatureName] ?? 0)
+  );
 }
 
 function buildSummary(
@@ -719,6 +793,8 @@ function summaryMetrics(result: LnsWindowRankerExperimentResult): Record<string,
     supplementalReplayCalibrationIgnoreBaselineFeature:
       result.model.training.supplementalReplayCalibrationIgnoreBaselineFeature,
     excludeFeatureIdenticalRepeatabilityConflicts: result.model.training.excludeFeatureIdenticalRepeatabilityConflicts,
+    featureInteractions: result.model.training.featureInteractions,
+    interactionFeatureCount: Object.keys(result.model.interactionWeights ?? {}).length,
     supplementalReplaySnapshotCount: result.audit.supplementalReplaySnapshotCount,
     sourceRepeatabilityFeatureIdenticalConflictBucketCount:
       result.labels.repeatabilitySummary.featureIdenticalConflictBucketCount,
@@ -783,10 +859,12 @@ export function runLnsWindowRankerExperiment(
   const groups = [...sourceGroupCollection.groups, ...supplementalGroups];
   const developmentGroups = splitGroups(groups, "development");
   const holdoutGroups = splitGroups(groups, "holdout");
+  const featureNames = featureNamesForTraining(training);
   const startedAtMs = performance.now();
-  const trained = trainLinearRanker(developmentGroups, training, topK);
+  const trained = trainLinearRanker(developmentGroups, training, topK, featureNames);
   const trainingWallClockSeconds = (performance.now() - startedAtMs) / 1000;
-  const weights = weightsRecord(trained.weights);
+  const weights = weightsRecord(trained.weights, featureNames);
+  const interactionWeights = interactionWeightsRecord(trained.weights, featureNames);
   const model: LnsWindowRankerModel = {
     schemaVersion: 1,
     modelType: "lns-window-linear-pairwise-ranker",
@@ -795,8 +873,9 @@ export function runLnsWindowRankerExperiment(
     runtimeDefaultChanged: false,
     solverDefaultChanged: false,
     featureSchemaVersion: labelSnapshot.audit.lnsReplay.featureSchemaVersion ?? null,
-    featureNames: [...LNS_WINDOW_RANKER_FEATURE_NAMES],
+    featureNames,
     weights,
+    ...(training.featureInteractions ? { interactionWeights } : {}),
     intercept: 0,
     topK,
     training,
@@ -804,10 +883,10 @@ export function runLnsWindowRankerExperiment(
     trainedPairCount: trained.trainedPairCount,
     trainingSplit: "development"
   };
-  const roundedWeights = weightArrayFromRecord(weights);
+  const roundedWeights = weightArrayFromModel(model, featureNames);
   const modelEvaluation = {
-    development: evaluateSplit("development", developmentGroups, roundedWeights, topK, training.target),
-    holdout: evaluateSplit("holdout", holdoutGroups, roundedWeights, topK, training.target)
+    development: evaluateSplit("development", developmentGroups, roundedWeights, topK, training.target, featureNames),
+    holdout: evaluateSplit("holdout", holdoutGroups, roundedWeights, topK, training.target, featureNames)
   };
   const labelFingerprint = buildLabelFingerprint(labelSnapshot);
   const datasetFingerprint = buildDatasetFingerprint(labelSnapshot, supplementalReplaySnapshots);
@@ -946,6 +1025,7 @@ export function buildLnsWindowRankerRegistryEntryDraft(
         .supplementalReplayCalibrationIgnoreBaselineFeature
         ? 1
         : 0,
+      trainingFeatureInteractions: result.model.training.featureInteractions ? 1 : 0,
       trainingExcludeFeatureIdenticalRepeatabilityConflicts: result.model.training
         .excludeFeatureIdenticalRepeatabilityConflicts
         ? 1
@@ -953,6 +1033,7 @@ export function buildLnsWindowRankerRegistryEntryDraft(
       trainingWallClockSeconds: roundMetric(result.training.wallClockSeconds),
       trainedDecisionCount: result.model.trainedDecisionCount,
       trainedPairCount: result.model.trainedPairCount,
+      interactionFeatureCount: Object.keys(result.model.interactionWeights ?? {}).length,
       lnsLabelCount: result.labels.labelCount,
       supplementalReplayDecisionCount: result.labels.supplementalReplayDecisionCount,
       supplementalReplayLabelCount: result.labels.supplementalReplayLabelCount,
@@ -1006,7 +1087,7 @@ export function formatLnsWindowRankerExperiment(result: LnsWindowRankerExperimen
     `Labels: total=${result.labels.labelCount} usable=${result.labels.usableLabelCount} opportunities=${result.labels.opportunityCount} supplemental-decisions=${result.labels.supplementalReplayDecisionCount} supplemental-labels=${result.labels.supplementalReplayLabelCount} supplemental-repeatability-feature-identical-conflicts=${result.labels.supplementalRepeatabilitySummary.featureIdenticalConflictBucketCount}/${result.labels.supplementalRepeatabilitySummary.featureIdenticalConflictLabelCount} repeatability-excluded=${result.labels.excludedFeatureIdenticalRepeatabilityConflictLabelCount}/${result.labels.excludedFeatureIdenticalRepeatabilityConflictDecisionCount} label-fingerprint=${result.labelFingerprint}`
   );
   lines.push(
-    `Model: ${result.model.modelType} features=${result.model.featureNames.length} epochs=${result.model.training.epochs} baseline-tie-break=${result.model.training.baselineTieBreak} target=${result.model.training.target} weak-seed-labels=${result.model.training.allowWeakSeedReplayLabels} supplemental-replay-calibration=${result.model.training.supplementalReplayCalibration} supplemental-replay-calibration-ignore-baseline-feature=${result.model.training.supplementalReplayCalibrationIgnoreBaselineFeature} repeatability-conflicts-excluded=${result.model.training.excludeFeatureIdenticalRepeatabilityConflicts} trained-decisions=${result.model.trainedDecisionCount} model-fingerprint=${result.modelFingerprint}`
+    `Model: ${result.model.modelType} features=${result.model.featureNames.length} interaction-features=${Object.keys(result.model.interactionWeights ?? {}).length} epochs=${result.model.training.epochs} baseline-tie-break=${result.model.training.baselineTieBreak} target=${result.model.training.target} weak-seed-labels=${result.model.training.allowWeakSeedReplayLabels} supplemental-replay-calibration=${result.model.training.supplementalReplayCalibration} supplemental-replay-calibration-ignore-baseline-feature=${result.model.training.supplementalReplayCalibrationIgnoreBaselineFeature} feature-interactions=${result.model.training.featureInteractions} repeatability-conflicts-excluded=${result.model.training.excludeFeatureIdenticalRepeatabilityConflicts} trained-decisions=${result.model.trainedDecisionCount} model-fingerprint=${result.modelFingerprint}`
   );
   lines.push(
     `Model capture: development=${formatMetric(result.evaluation.model.development)} holdout=${formatMetric(result.evaluation.model.holdout)}`

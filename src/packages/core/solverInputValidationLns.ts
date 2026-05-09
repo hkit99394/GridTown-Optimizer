@@ -103,6 +103,32 @@ function assertValidWindowRankerFeatureDeltaGates(windowRanker: Record<string, u
   }
 }
 
+function assertValidWindowRankerInteractionWeights(model: Record<string, unknown>): void {
+  const value = model.interactionWeights;
+  if (value === undefined) return;
+  const weights = requireValidationRecord(value, "LNS option lns.windowRanker.model.interactionWeights");
+  const knownFeatures = new Set<string>(LNS_WINDOW_RANKER_FEATURE_NAMES);
+  for (const [featureName, weight] of Object.entries(weights)) {
+    const [left, right, extra] = featureName.split("*");
+    if (
+      extra !== undefined ||
+      left === undefined ||
+      right === undefined ||
+      !knownFeatures.has(left) ||
+      !knownFeatures.has(right)
+    ) {
+      throw new SolverInputError(
+        "LNS option lns.windowRanker.model.interactionWeights keys must be pairwise feature names like operatorScore*selectedByBaseline."
+      );
+    }
+    if (typeof weight !== "number" || !Number.isFinite(weight)) {
+      throw new SolverInputError(
+        `LNS option lns.windowRanker.model.interactionWeights.${featureName} must be a finite number.`
+      );
+    }
+  }
+}
+
 function assertValidWindowRankerOptions(lns: Record<string, unknown>): void {
   const value = lns.windowRanker;
   if (value === undefined) return;
@@ -157,6 +183,7 @@ function assertValidWindowRankerOptions(lns: Record<string, unknown>): void {
       throw new SolverInputError(`LNS option lns.windowRanker.model.weights.${featureName} must be a finite number.`);
     }
   }
+  assertValidWindowRankerInteractionWeights(model);
 }
 
 export function assertValidLnsOptions(params: SolverParams): void {

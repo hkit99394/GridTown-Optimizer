@@ -53,13 +53,14 @@ function buildSelectionFixture() {
   return { grid, params, incumbent, candidates, baseline };
 }
 
-function runtimeModel(weights) {
+function runtimeModel(weights, interactionWeights) {
   return {
     model: {
       modelType: "lns-window-linear-pairwise-ranker",
       modelFingerprint: "fnv1a:test0001",
       featureSchemaVersion: 2,
-      weights
+      weights,
+      ...(interactionWeights === undefined ? {} : { interactionWeights })
     }
   };
 }
@@ -112,6 +113,23 @@ function testWindowRankerCanOverrideAdaptiveBaseline() {
     capturedDecision.telemetry.decisionState.seedHint.solution.residentials[0].population,
     fixture.incumbent.populations[0]
   );
+}
+
+function testWindowRankerInteractionWeightsCanOverrideAdaptiveBaseline() {
+  const fixture = buildSelectionFixture();
+  const options = normalizeLnsWindowRankerOptions(runtimeModel({}, { "selectedByBaseline*selectedByBaseline": -1 }));
+  const decision = selectLnsWindowRankerCandidate(
+    fixture.grid,
+    fixture.params,
+    fixture.incumbent,
+    fixture.candidates,
+    fixture.baseline,
+    options
+  );
+
+  assert.equal(decision.telemetry.selectedByBaseline, false);
+  assert.equal(decision.telemetry.baselineScore, -1);
+  assert.equal(decision.telemetry.selectedScore, 0);
 }
 
 function testWindowRankerFallsBackWhenScoreDeltaIsTooSmall() {
@@ -414,9 +432,30 @@ function testWindowRankerValidationRejectsBadWeights() {
       }),
     /lns\.windowRanker\.featureDeltaGates\[0\]\.feature must be one of the LNS window ranker feature names/
   );
+
+  assert.throws(
+    () =>
+      solveLns(buildGrid(3, 3), {
+        optimizer: "lns",
+        availableBuildings: { residentials: 0, services: 0 },
+        lns: {
+          iterations: 1,
+          windowRanker: {
+            model: {
+              modelType: "lns-window-linear-pairwise-ranker",
+              featureSchemaVersion: 2,
+              weights: { selectedByBaseline: 1 },
+              interactionWeights: { "selectedByBaseline*notAFeature": 1 }
+            }
+          }
+        }
+      }),
+    /lns\.windowRanker\.model\.interactionWeights keys must be pairwise feature names/
+  );
 }
 
 testWindowRankerCanOverrideAdaptiveBaseline();
+testWindowRankerInteractionWeightsCanOverrideAdaptiveBaseline();
 testWindowRankerFallsBackWhenScoreDeltaIsTooSmall();
 testWindowRankerFallsBackWhenTransitionIsNotAllowed();
 testWindowRankerFallsBackWhenFeatureDeltaGateFails();

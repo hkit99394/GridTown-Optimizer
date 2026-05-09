@@ -413,7 +413,20 @@ function scoreFeatureValues(values: WindowRankerFeatureValues, model: LnsWindowR
   for (const featureName of LNS_WINDOW_RANKER_FEATURE_NAMES) {
     score += finiteNumberOrDefault(model.weights[featureName], 0) * values[featureName];
   }
+  for (const [interactionName, weight] of Object.entries(model.interactionWeights ?? {})) {
+    score += finiteNumberOrDefault(weight, 0) * interactionFeatureValue(values, interactionName);
+  }
   return score;
+}
+
+function interactionFeatureValue(values: WindowRankerFeatureValues, interactionName: string): number {
+  const [left, right, extra] = interactionName.split("*");
+  if (extra !== undefined || !isWindowRankerFeatureName(left) || !isWindowRankerFeatureName(right)) return 0;
+  return values[left] * values[right];
+}
+
+function isWindowRankerFeatureName(value: string | undefined): value is LnsWindowRankerFeatureName {
+  return value !== undefined && (LNS_WINDOW_RANKER_FEATURE_NAMES as readonly string[]).includes(value);
 }
 
 function roundedScore(value: number): number {

@@ -1,7 +1,12 @@
 import {
+  isLnsWindowRankerFeatureName,
   isLnsWindowRankerInteractionFeatureName,
-  LNS_WINDOW_RANKER_FEATURE_NAMES,
-  LNS_WINDOW_RANKER_INTERACTION_FEATURE_NAMES
+  lnsWindowRankerBaselineOperatorFeatureName,
+  lnsWindowRankerOperatorTransitionFeatureName,
+  lnsWindowRankerSelectedOperatorFeatureName,
+  LNS_ADAPTIVE_OPERATOR_NAMES,
+  LNS_WINDOW_RANKER_BASE_FEATURE_NAMES,
+  LNS_WINDOW_RANKER_FEATURE_NAMES
 } from "../core/index.js";
 import { lnsWindowReplayRepeatabilityBucketKey } from "./lnsWindowReplayRepeatability.js";
 import {
@@ -18,7 +23,11 @@ import {
   targetValue
 } from "./lnsWindowRankerShared.js";
 
-import type { LnsWindowRankerFeatureName } from "../core/index.js";
+import type {
+  LnsAdaptiveOperatorName,
+  LnsWindowRankerFeatureName,
+  LnsWindowRankerOperatorTrajectoryFeatureName
+} from "../core/index.js";
 import type { LearnedRankingLabelSnapshot, LearnedRankingLabelSplit } from "./learnedRankingLabels.js";
 import type { LnsReplayPressureFamilyLabel } from "./lns.js";
 import type {
@@ -45,6 +54,7 @@ export interface ReplayDecisionGroup {
   seedHintKind: LnsWindowReplaySeedHintKind | "unknown";
   statePolicy: string;
   stateIndex: number;
+  baselineOperator: LnsAdaptiveOperatorName | null;
   labels: LnsWindowReplaySnapshotLabel[];
 }
 
@@ -64,10 +74,11 @@ const DEFAULT_LNS_WINDOW_RANKER_TRAINING: Required<LnsWindowRankerTrainingOption
   supplementalReplayCalibration: false,
   supplementalReplayCalibrationIgnoreBaselineFeature: false,
   excludeFeatureIdenticalRepeatabilityConflicts: false,
+  trajectoryFeatures: false,
   featureInteractions: false
 });
 
-const SELECTED_BY_BASELINE_FEATURE_INDEX = LNS_WINDOW_RANKER_FEATURE_NAMES.indexOf("selectedByBaseline");
+const SELECTED_BY_BASELINE_FEATURE_INDEX = LNS_WINDOW_RANKER_BASE_FEATURE_NAMES.indexOf("selectedByBaseline");
 
 export function normalizeTrainingOptions(
   options: LnsWindowRankerTrainingOptions | undefined
@@ -89,6 +100,7 @@ export function normalizeTrainingOptions(
       normalizeLnsWindowRankerFeatureIdenticalRepeatabilityConflictExclusion(
         options?.excludeFeatureIdenticalRepeatabilityConflicts
       ),
+    trajectoryFeatures: options?.trajectoryFeatures === true,
     featureInteractions: options?.featureInteractions === true
   };
 }
@@ -129,18 +141,61 @@ function baseFeatureVector(label: LnsWindowReplaySnapshotLabel): number[] {
   ];
 }
 
-export function featureNamesForTraining(training: Required<LnsWindowRankerTrainingOptions>): string[] {
-  return training.featureInteractions
-    ? [...LNS_WINDOW_RANKER_FEATURE_NAMES, ...LNS_WINDOW_RANKER_INTERACTION_FEATURE_NAMES]
-    : [...LNS_WINDOW_RANKER_FEATURE_NAMES];
+function baselineOperatorForReplayCase(benchmarkCase: {
+  baselineSelectedOperator?: LnsAdaptiveOperatorName | null;
+  labels: readonly LnsWindowReplaySnapshotLabel[];
+}): LnsAdaptiveOperatorName | null {
+  return (
+    benchmarkCase.baselineSelectedOperator ??
+    benchmarkCase.labels.find((label) => label.selectedByBaseline)?.operator ??
+    null
+  );
 }
 
-function featureVector(label: LnsWindowReplaySnapshotLabel, featureNames: readonly string[]): number[] {
+function pairwiseInteractionFeatureNames(featureNames: readonly string[]): string[] {
+  return featureNames.flatMap((left, leftIndex) => featureNames.slice(leftIndex).map((right) => `${left}*${right}`));
+}
+
+export function featureNamesForTraining(training: Required<LnsWindowRankerTrainingOptions>): string[] {
+  const featureNames = training.trajectoryFeatures
+    ? [...LNS_WINDOW_RANKER_FEATURE_NAMES]
+    : [...LNS_WINDOW_RANKER_BASE_FEATURE_NAMES];
+  return training.featureInteractions
+    ? [...featureNames, ...pairwiseInteractionFeatureNames(featureNames)]
+    : featureNames;
+}
+
+function operatorTrajectoryFeatureValues(
+  label: LnsWindowReplaySnapshotLabel,
+  baselineOperator: LnsAdaptiveOperatorName | null
+): Record<LnsWindowRankerOperatorTrajectoryFeatureName, number> {
+  const values: Partial<Record<LnsWindowRankerOperatorTrajectoryFeatureName, number>> = {};
+  for (const operator of LNS_ADAPTIVE_OPERATOR_NAMES) {
+    values[lnsWindowRankerBaselineOperatorFeatureName(operator)] = operator === baselineOperator ? 1 : 0;
+    values[lnsWindowRankerSelectedOperatorFeatureName(operator)] = operator === label.operator ? 1 : 0;
+    for (const selectedOperator of LNS_ADAPTIVE_OPERATOR_NAMES) {
+      values[lnsWindowRankerOperatorTransitionFeatureName(operator, selectedOperator)] =
+        operator === baselineOperator && selectedOperator === label.operator ? 1 : 0;
+    }
+  }
+  return values as Record<LnsWindowRankerOperatorTrajectoryFeatureName, number>;
+}
+
+function featureVector(
+  label: LnsWindowReplaySnapshotLabel,
+  featureNames: readonly string[],
+  group?: ReplayDecisionGroup
+): number[] {
   const base = baseFeatureVector(label);
-  if (featureNames.length === LNS_WINDOW_RANKER_FEATURE_NAMES.length) return base;
+  if (featureNames.length === LNS_WINDOW_RANKER_BASE_FEATURE_NAMES.length) return base;
+  const baselineOperator = group?.baselineOperator ?? (label.selectedByBaseline ? label.operator : null);
+  const trajectoryValues = operatorTrajectoryFeatureValues(label, baselineOperator);
   const baseByName = new Map<string, number>(
-    LNS_WINDOW_RANKER_FEATURE_NAMES.map((featureName, index) => [featureName, base[index] ?? 0])
+    LNS_WINDOW_RANKER_BASE_FEATURE_NAMES.map((featureName, index) => [featureName, base[index] ?? 0])
   );
+  for (const [featureName, value] of Object.entries(trajectoryValues)) {
+    baseByName.set(featureName, value);
+  }
   return featureNames.map((featureName) => {
     const baseValue = baseByName.get(featureName);
     if (baseValue !== undefined) return baseValue;
@@ -157,9 +212,10 @@ function dot(left: readonly number[], right: readonly number[]): number {
 export function scoreLabel(
   label: LnsWindowReplaySnapshotLabel,
   weights: readonly number[],
-  featureNames: readonly string[]
+  featureNames: readonly string[],
+  group?: ReplayDecisionGroup
 ): number {
-  return dot(featureVector(label, featureNames), weights);
+  return dot(featureVector(label, featureNames, group), weights);
 }
 
 export function modelFeatureNames(model: Pick<LnsWindowRankerModel, "featureNames" | "interactionWeights">): string[] {
@@ -205,6 +261,7 @@ export function collectReplayDecisionGroups(
         seedHintKind: seedKind,
         statePolicy: benchmarkCase.statePolicy,
         stateIndex: benchmarkCase.stateIndex,
+        baselineOperator: baselineOperatorForReplayCase(benchmarkCase),
         labels
       });
     }
@@ -247,6 +304,7 @@ export function collectSupplementalReplayDecisionGroups(
         seedHintKind: seedKind,
         statePolicy: benchmarkCase.statePolicy,
         stateIndex: benchmarkCase.stateIndex,
+        baselineOperator: baselineOperatorForReplayCase(benchmarkCase),
         labels
       });
     }
@@ -352,7 +410,7 @@ function evaluateMetricSummary(
     const bestImprovement = maxImprovement(group, target);
     const ranked = [...group.labels].sort(
       (left, right) =>
-        scoreLabel(right, weights, featureNames) - scoreLabel(left, weights, featureNames) ||
+        scoreLabel(right, weights, featureNames, group) - scoreLabel(left, weights, featureNames, group) ||
         right.operatorScore - left.operatorScore ||
         left.windowIndex - right.windowIndex
     );
@@ -463,12 +521,12 @@ export function trainLinearRanker(
       const positives = positiveLabelsForTraining(group, bestImprovement, training);
       if (positives.length === 0) continue;
       for (const positive of positives) {
-        const positiveVector = featureVector(positive, featureNames);
+        const positiveVector = featureVector(positive, featureNames, group);
         for (const negative of group.labels) {
           const delta = trainingDelta(group, negative, bestImprovement, training);
           if (delta <= 0) continue;
           trainedPairCount++;
-          const negativeVector = featureVector(negative, featureNames);
+          const negativeVector = featureVector(negative, featureNames, group);
           const diff = featureDiffForTraining(group, positiveVector, negativeVector, bestImprovement, training);
           if (dot(diff, weights) > 0) continue;
           const update = training.learningRate * marginWeight(delta, training.marginWeightCap);
@@ -495,10 +553,9 @@ export function weightsRecord(
   featureNames: readonly string[]
 ): Record<LnsWindowRankerFeatureName, number> {
   return Object.fromEntries(
-    LNS_WINDOW_RANKER_FEATURE_NAMES.map((featureName) => [
-      featureName,
-      roundMetric(weights[featureNames.indexOf(featureName)] ?? 0)
-    ])
+    featureNames
+      .filter(isLnsWindowRankerFeatureName)
+      .map((featureName) => [featureName, roundMetric(weights[featureNames.indexOf(featureName)] ?? 0)])
   ) as Record<LnsWindowRankerFeatureName, number>;
 }
 

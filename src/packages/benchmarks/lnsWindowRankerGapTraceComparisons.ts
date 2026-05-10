@@ -1,7 +1,14 @@
 import { formatBenchmarkSignedNumber, sumBenchmarkBy } from "./benchmarkOptions.js";
 import { LNS_WINDOW_RANKER_FEATURE_NAMES } from "./lnsWindowRanker.js";
+import {
+  lnsWindowRankerBaselineOperatorFeatureName,
+  lnsWindowRankerOperatorTransitionFeatureName,
+  lnsWindowRankerSelectedOperatorFeatureName,
+  LNS_ADAPTIVE_OPERATOR_NAMES
+} from "../core/index.js";
 
 import type { LnsWindowRankerFeatureName } from "./lnsWindowRanker.js";
+import type { LnsAdaptiveOperatorName, LnsWindowRankerOperatorTrajectoryFeatureName } from "../core/index.js";
 import type { LnsWindowRankerOnlineAblationSnapshot } from "./lnsWindowRankerOnlineAblations.js";
 import type { LnsWindowRankerOnlineFinalLayoutDelta } from "./lnsWindowRankerOnlineLayoutDeltas.js";
 import type { LnsWindowReplaySnapshotLabel } from "./lnsWindowReplayLabels.js";
@@ -116,7 +123,26 @@ function numericValue(value: unknown): number {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
 }
 
-function labelFeatureRecord(label: LnsWindowReplaySnapshotLabel): Record<LnsWindowRankerFeatureName, number> {
+function operatorTrajectoryFeatureValues(
+  label: LnsWindowReplaySnapshotLabel,
+  baselineOperator: LnsAdaptiveOperatorName | null
+): Record<LnsWindowRankerOperatorTrajectoryFeatureName, number> {
+  const values: Partial<Record<LnsWindowRankerOperatorTrajectoryFeatureName, number>> = {};
+  for (const operator of LNS_ADAPTIVE_OPERATOR_NAMES) {
+    values[lnsWindowRankerBaselineOperatorFeatureName(operator)] = operator === baselineOperator ? 1 : 0;
+    values[lnsWindowRankerSelectedOperatorFeatureName(operator)] = operator === label.operator ? 1 : 0;
+    for (const selectedOperator of LNS_ADAPTIVE_OPERATOR_NAMES) {
+      values[lnsWindowRankerOperatorTransitionFeatureName(operator, selectedOperator)] =
+        operator === baselineOperator && selectedOperator === label.operator ? 1 : 0;
+    }
+  }
+  return values as Record<LnsWindowRankerOperatorTrajectoryFeatureName, number>;
+}
+
+function labelFeatureRecord(
+  label: LnsWindowReplaySnapshotLabel,
+  baselineOperator: LnsAdaptiveOperatorName | null
+): Record<LnsWindowRankerFeatureName, number> {
   const features = label.features;
   const connectivity = features.connectivityShadow;
   const fragmentation = features.fragmentation;
@@ -150,17 +176,21 @@ function labelFeatureRecord(label: LnsWindowReplaySnapshotLabel): Record<LnsWind
     numericValue(candidateLoss.maxServiceCandidateBonusInside) / 500,
     numericValue(candidateLoss.residentialCandidateHeadroomInside) / 500
   ];
-  return Object.fromEntries(
+  const valuesByName = Object.fromEntries(
     LNS_WINDOW_RANKER_FEATURE_NAMES.map((featureName, index) => [featureName, roundMetric(values[index] ?? 0)])
   ) as Record<LnsWindowRankerFeatureName, number>;
+  for (const [featureName, value] of Object.entries(operatorTrajectoryFeatureValues(label, baselineOperator))) {
+    valuesByName[featureName as LnsWindowRankerFeatureName] = value;
+  }
+  return valuesByName;
 }
 
 export function buildLnsWindowRankerGapOfflineFeatureDeltas(
   selected: LnsWindowReplaySnapshotLabel,
   baseline: LnsWindowReplaySnapshotLabel
 ): Record<string, number> {
-  const selectedFeatures = labelFeatureRecord(selected);
-  const baselineFeatures = labelFeatureRecord(baseline);
+  const selectedFeatures = labelFeatureRecord(selected, baseline.operator);
+  const baselineFeatures = labelFeatureRecord(baseline, baseline.operator);
   return Object.fromEntries(
     LNS_WINDOW_RANKER_FEATURE_NAMES.map((featureName) => [
       featureName,
@@ -240,6 +270,14 @@ function meanFeatureDeltas(records: readonly Record<string, number>[]): Record<s
   );
 }
 
+function isOperatorTrajectoryFeatureName(featureName: string): boolean {
+  return (
+    featureName.startsWith("baselineOperator") ||
+    featureName.startsWith("selectedOperator") ||
+    featureName.startsWith("transition")
+  );
+}
+
 function topFeatureDeltaGaps(
   offlineMean: Record<string, number> | null,
   onlineMean: Record<string, number>,
@@ -247,6 +285,7 @@ function topFeatureDeltaGaps(
 ): LnsWindowRankerGapTraceFeatureDelta[] {
   const featureNames = new Set([...Object.keys(offlineMean ?? {}), ...Object.keys(onlineMean)]);
   return [...featureNames]
+    .filter((featureName) => !isOperatorTrajectoryFeatureName(featureName))
     .map((featureName) => {
       const offlineMeanDelta = offlineMean?.[featureName] ?? null;
       const onlineMeanDelta = onlineMean[featureName] ?? 0;

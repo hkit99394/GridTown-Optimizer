@@ -2,7 +2,8 @@ import { LNS_WINDOW_RANKER_FEATURE_NAMES } from "./types.js";
 
 import type { LnsWindowRankerFeatureName, LnsWindowRankerRuntimeModel } from "./types.js";
 
-export const LNS_WINDOW_RANKER_FEATURE_SCHEMA_VERSION = 2;
+export const LNS_WINDOW_RANKER_FEATURE_SCHEMA_VERSION = 3;
+export const LNS_WINDOW_RANKER_SUPPORTED_FEATURE_SCHEMA_VERSIONS = Object.freeze([2, 3] as const);
 
 export type LnsWindowRankerInteractionFeatureName = `${LnsWindowRankerFeatureName}*${LnsWindowRankerFeatureName}`;
 
@@ -95,9 +96,11 @@ export function lnsWindowRankerRuntimeModelValidationError(
   if (
     model.featureSchemaVersion !== undefined &&
     model.featureSchemaVersion !== null &&
-    model.featureSchemaVersion !== LNS_WINDOW_RANKER_FEATURE_SCHEMA_VERSION
+    !LNS_WINDOW_RANKER_SUPPORTED_FEATURE_SCHEMA_VERSIONS.includes(
+      model.featureSchemaVersion as (typeof LNS_WINDOW_RANKER_SUPPORTED_FEATURE_SCHEMA_VERSIONS)[number]
+    )
   ) {
-    return `${label}.featureSchemaVersion must be null or ${LNS_WINDOW_RANKER_FEATURE_SCHEMA_VERSION}.`;
+    return `${label}.featureSchemaVersion must be null or one of ${LNS_WINDOW_RANKER_SUPPORTED_FEATURE_SCHEMA_VERSIONS.join(", ")}.`;
   }
 
   return (

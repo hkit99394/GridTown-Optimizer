@@ -17,17 +17,23 @@ import {
 import {
   assertValidLnsWindowRankerRuntimeModel,
   isLnsWindowRankerFeatureName,
+  lnsWindowRankerBaselineOperatorFeatureName,
+  lnsWindowRankerOperatorTransitionFeatureName,
+  lnsWindowRankerSelectedOperatorFeatureName,
+  LNS_ADAPTIVE_OPERATOR_NAMES,
   LNS_WINDOW_RANKER_FEATURE_NAMES,
   LNS_WINDOW_RANKER_FEATURE_SCHEMA_VERSION
 } from "../../core/index.js";
 import type {
   CpSatNeighborhoodWindow,
   Grid,
+  LnsAdaptiveOperatorName,
   LnsWindowRankerDecisionStateTelemetry,
   LnsWindowRankerFeatureDeltaGate,
   LnsWindowRankerFeatureName,
   LnsWindowRankerFeatureTelemetry,
   LnsWindowRankerOperatorTransition,
+  LnsWindowRankerOperatorTrajectoryFeatureName,
   LnsWindowRankerRuntimeModel,
   LnsWindowRankerRuntimeOptions,
   LnsWindowRankerSelectedFeatureGate,
@@ -358,14 +364,31 @@ function candidateLossValues(
   };
 }
 
+function operatorTrajectoryFeatureValues(
+  baselineOperator: LnsAdaptiveOperatorName,
+  selectedOperator: LnsAdaptiveOperatorName
+): Record<LnsWindowRankerOperatorTrajectoryFeatureName, number> {
+  const values: Partial<Record<LnsWindowRankerOperatorTrajectoryFeatureName, number>> = {};
+  for (const operator of LNS_ADAPTIVE_OPERATOR_NAMES) {
+    values[lnsWindowRankerBaselineOperatorFeatureName(operator)] = operator === baselineOperator ? 1 : 0;
+    values[lnsWindowRankerSelectedOperatorFeatureName(operator)] = operator === selectedOperator ? 1 : 0;
+    for (const nextOperator of LNS_ADAPTIVE_OPERATOR_NAMES) {
+      values[lnsWindowRankerOperatorTransitionFeatureName(operator, nextOperator)] =
+        operator === baselineOperator && nextOperator === selectedOperator ? 1 : 0;
+    }
+  }
+  return values as Record<LnsWindowRankerOperatorTrajectoryFeatureName, number>;
+}
+
 function buildFeatureValues(
   G: Grid,
   params: SolverParams,
   incumbent: Solution,
   candidate: LnsAdaptiveNeighborhoodCandidate,
-  selectedByBaseline: boolean
+  baselineCandidate: LnsAdaptiveNeighborhoodCandidate
 ): WindowRankerFeatureValues {
   const { window } = candidate;
+  const selectedByBaseline = sameCandidate(candidate, baselineCandidate);
   let serviceCountInside = 0;
   let serviceBonusInside = 0;
   for (let serviceIndex = 0; serviceIndex < incumbent.services.length; serviceIndex++) {
@@ -411,7 +434,8 @@ function buildFeatureValues(
     allowedWindowCells: countAllowedWindowCells(G, cleared.occupied, window) / 20,
     anchorReachableWindowCells: countReachableWindowCells(window, afterGraph.reachableKeys) / 20,
     narrowGateCells: countNarrowGateCells(G, cleared.occupied, window) / 10,
-    ...normalizeCandidateLoss(candidateLossValues(G, params, window, occupied))
+    ...normalizeCandidateLoss(candidateLossValues(G, params, window, occupied)),
+    ...operatorTrajectoryFeatureValues(baselineCandidate.operator, candidate.operator)
   };
 }
 
@@ -568,7 +592,7 @@ export function selectLnsWindowRankerCandidate(
 ): LnsWindowRankerSelectionDecision {
   const scored = candidates
     .map<ScoredWindowRankerCandidate>((candidate, index) => {
-      const features = buildFeatureValues(G, params, incumbent, candidate, sameCandidate(candidate, baselineCandidate));
+      const features = buildFeatureValues(G, params, incumbent, candidate, baselineCandidate);
       return {
         candidate,
         index,
@@ -580,7 +604,7 @@ export function selectLnsWindowRankerCandidate(
       (left, right) =>
         right.score - left.score || right.candidate.score - left.candidate.score || left.index - right.index
     );
-  const baselineFeatures = buildFeatureValues(G, params, incumbent, baselineCandidate, true);
+  const baselineFeatures = buildFeatureValues(G, params, incumbent, baselineCandidate, baselineCandidate);
   const baseline = scored.find((entry) => sameCandidate(entry.candidate, baselineCandidate)) ?? {
     candidate: baselineCandidate,
     index: 0,

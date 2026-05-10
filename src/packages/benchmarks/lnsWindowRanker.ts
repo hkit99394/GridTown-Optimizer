@@ -29,7 +29,11 @@ import {
 } from "./lnsWindowRankerTraining.js";
 import { buildLnsWindowReplayRepeatabilityConflictIndex } from "./lnsWindowReplayRepeatability.js";
 import { hashString, stableStringify } from "../core/cpSatContinuation.js";
-import { assertValidLnsWindowRankerRuntimeModel, LNS_WINDOW_RANKER_FEATURE_NAMES } from "../core/index.js";
+import {
+  assertValidLnsWindowRankerRuntimeModel,
+  LNS_WINDOW_RANKER_FEATURE_NAMES,
+  LNS_WINDOW_RANKER_FEATURE_SCHEMA_VERSION
+} from "../core/index.js";
 
 import type { LearnedRankingLabelSnapshot, LearnedRankingLabelSplit } from "./learnedRankingLabels.js";
 import type { LnsWindowReplayRepeatabilitySummary } from "./lnsWindowReplayRepeatability.js";
@@ -56,6 +60,7 @@ export interface LnsWindowRankerTrainingOptions {
   supplementalReplayCalibration?: boolean;
   supplementalReplayCalibrationIgnoreBaselineFeature?: boolean;
   excludeFeatureIdenticalRepeatabilityConflicts?: boolean;
+  trajectoryFeatures?: boolean;
   featureInteractions?: boolean;
 }
 
@@ -275,6 +280,13 @@ function summaryMetrics(result: LnsWindowRankerExperimentResult): Record<string,
     supplementalReplayCalibrationIgnoreBaselineFeature:
       result.model.training.supplementalReplayCalibrationIgnoreBaselineFeature,
     excludeFeatureIdenticalRepeatabilityConflicts: result.model.training.excludeFeatureIdenticalRepeatabilityConflicts,
+    trajectoryFeatures: result.model.training.trajectoryFeatures,
+    trajectoryFeatureCount: result.model.featureNames.filter(
+      (featureName) =>
+        featureName.startsWith("baselineOperator") ||
+        featureName.startsWith("selectedOperator") ||
+        featureName.startsWith("transition")
+    ).length,
     featureInteractions: result.model.training.featureInteractions,
     interactionFeatureCount: Object.keys(result.model.interactionWeights ?? {}).length,
     supplementalReplaySnapshotCount: result.audit.supplementalReplaySnapshotCount,
@@ -354,7 +366,9 @@ export function runLnsWindowRankerExperiment(
     trained: true,
     runtimeDefaultChanged: false,
     solverDefaultChanged: false,
-    featureSchemaVersion: labelSnapshot.audit.lnsReplay.featureSchemaVersion ?? null,
+    featureSchemaVersion: training.trajectoryFeatures
+      ? LNS_WINDOW_RANKER_FEATURE_SCHEMA_VERSION
+      : (labelSnapshot.audit.lnsReplay.featureSchemaVersion ?? null),
     featureNames,
     weights,
     ...(training.featureInteractions ? { interactionWeights } : {}),
@@ -508,6 +522,7 @@ export function buildLnsWindowRankerRegistryEntryDraft(
         .supplementalReplayCalibrationIgnoreBaselineFeature
         ? 1
         : 0,
+      trainingTrajectoryFeatures: result.model.training.trajectoryFeatures ? 1 : 0,
       trainingFeatureInteractions: result.model.training.featureInteractions ? 1 : 0,
       trainingExcludeFeatureIdenticalRepeatabilityConflicts: result.model.training
         .excludeFeatureIdenticalRepeatabilityConflicts
@@ -516,6 +531,12 @@ export function buildLnsWindowRankerRegistryEntryDraft(
       trainingWallClockSeconds: roundMetric(result.training.wallClockSeconds),
       trainedDecisionCount: result.model.trainedDecisionCount,
       trainedPairCount: result.model.trainedPairCount,
+      trajectoryFeatureCount: result.model.featureNames.filter(
+        (featureName) =>
+          featureName.startsWith("baselineOperator") ||
+          featureName.startsWith("selectedOperator") ||
+          featureName.startsWith("transition")
+      ).length,
       interactionFeatureCount: Object.keys(result.model.interactionWeights ?? {}).length,
       lnsLabelCount: result.labels.labelCount,
       supplementalReplayDecisionCount: result.labels.supplementalReplayDecisionCount,
@@ -570,7 +591,7 @@ export function formatLnsWindowRankerExperiment(result: LnsWindowRankerExperimen
     `Labels: total=${result.labels.labelCount} usable=${result.labels.usableLabelCount} opportunities=${result.labels.opportunityCount} supplemental-decisions=${result.labels.supplementalReplayDecisionCount} supplemental-labels=${result.labels.supplementalReplayLabelCount} supplemental-repeatability-feature-identical-conflicts=${result.labels.supplementalRepeatabilitySummary.featureIdenticalConflictBucketCount}/${result.labels.supplementalRepeatabilitySummary.featureIdenticalConflictLabelCount} repeatability-excluded=${result.labels.excludedFeatureIdenticalRepeatabilityConflictLabelCount}/${result.labels.excludedFeatureIdenticalRepeatabilityConflictDecisionCount} label-fingerprint=${result.labelFingerprint}`
   );
   lines.push(
-    `Model: ${result.model.modelType} features=${result.model.featureNames.length} interaction-features=${Object.keys(result.model.interactionWeights ?? {}).length} epochs=${result.model.training.epochs} baseline-tie-break=${result.model.training.baselineTieBreak} target=${result.model.training.target} weak-seed-labels=${result.model.training.allowWeakSeedReplayLabels} supplemental-replay-calibration=${result.model.training.supplementalReplayCalibration} supplemental-replay-calibration-ignore-baseline-feature=${result.model.training.supplementalReplayCalibrationIgnoreBaselineFeature} feature-interactions=${result.model.training.featureInteractions} repeatability-conflicts-excluded=${result.model.training.excludeFeatureIdenticalRepeatabilityConflicts} trained-decisions=${result.model.trainedDecisionCount} model-fingerprint=${result.modelFingerprint}`
+    `Model: ${result.model.modelType} features=${result.model.featureNames.length} interaction-features=${Object.keys(result.model.interactionWeights ?? {}).length} epochs=${result.model.training.epochs} baseline-tie-break=${result.model.training.baselineTieBreak} target=${result.model.training.target} weak-seed-labels=${result.model.training.allowWeakSeedReplayLabels} supplemental-replay-calibration=${result.model.training.supplementalReplayCalibration} supplemental-replay-calibration-ignore-baseline-feature=${result.model.training.supplementalReplayCalibrationIgnoreBaselineFeature} trajectory-features=${result.model.training.trajectoryFeatures} feature-interactions=${result.model.training.featureInteractions} repeatability-conflicts-excluded=${result.model.training.excludeFeatureIdenticalRepeatabilityConflicts} trained-decisions=${result.model.trainedDecisionCount} model-fingerprint=${result.modelFingerprint}`
   );
   lines.push(
     `Model capture: development=${formatMetric(result.evaluation.model.development)} holdout=${formatMetric(result.evaluation.model.holdout)}`

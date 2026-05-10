@@ -1,0 +1,19 @@
+=== LNS Window Ranker Offline/Online Gap Diagnostics ===
+Generated: 2026-05-10T21:54:24.581Z
+Schema: 1
+Audit: runtime-default-changed=false solver-default-changed=false target=roll-forward-final-lift weak-seed-labels=false supplemental-replay=4
+Inputs: label=fnv1a:58ce487f model=fnv1a:09853445 online=fnv1a:ea594237 supplemental=fnv1a:dcdf459c,fnv1a:b6510add,fnv1a:84fd7aa3,fnv1a:9cee3765
+Offline: decisions=177 supplemental=87 overrides=177 opportunities=81 selected-positive=42
+Online: cases=10 seeds=7,19,37 comparisons=30 min-score-delta=0 overrides=60 selection-trace=60 final-neutral-overrides=54
+Gap: joined-transition-families=13 offline-positive-online-neutral=1 online-active-no-offline-match=0 exact-replay-neutralized=1 promotion-blocked=true
+Layout signatures: zero-layout-final-neutral:1
+Promotion sensitivity: suppress=zero-layout-final-neutral:1 remaining=0 remaining-blocked=false blockers=none unmatched=0 changed-layout-no-lift=0 evidence-gate-suppress=online-active-no-offline-match:0 evidence-gate-remaining=0 evidence-gate-blocked=false evidence-gate-blockers=none
+Online neutral override rate: 90.0%
+Joined evidence:
+- offline-positive-online-neutral anchor-service/weak-service->frontier-congestion: decisions=18 supplemental=9 exact-online-supplemental=3 selected-positive=9 exact-online-selected-positive=3 hit-best=9/15 selected-delta=+990 capture=0.6471 baseline-capture=0.0000 online-overrides=3 finals=0/3/0 mean-delta=0
+- offline-neutral-online-neutral exact-replay-neutralized=true corridor/random-exploration->random-exploration: decisions=12 supplemental=3 exact-online-supplemental=3 selected-positive=6 exact-online-selected-positive=0 hit-best=6/6 selected-delta=+60 capture=1.0000 baseline-capture=0.0000 online-overrides=6 finals=0/6/0 mean-delta=0
+Trace comparisons:
+- offline-positive-online-neutral anchor-service/weak-service->frontier-congestion: offline-decisions=18 offline-selected-positive=9 offline-mean-selected-delta=+55 online-traces=3 online-neutral-traces=3 layout-signature=zero-layout-final-neutral online-layout-same=3 online-layout-changed=0 online-layout-missing=0 online-layout-delta-mean=0 online-mean-improvement=0 online-mean-score-delta=+0.282 online-ranker-post-traces-mean=1 online-ranker-post-improvements=0 online-ranker-post-improvement-total-mean=0 online-ranker-post-best-delta-mean=0 online-ranker-final-from-selected-mean=0 features=residentialCandidateHeadroom:offline=-0.832/online=-1.27/gap=-0.438,residentialCandidatesBlocked:offline=-0.233/online=-0.6/gap=-0.367,residentialCountInside:offline=+0.028/online=-0.25/gap=-0.278,narrowGateCells:offline=+0.128/online=-0.1/gap=-0.228,serviceCandidatesBlocked:offline=-0.086/online=-0.3/gap=-0.214
+Recommended experiments:
+- none
+Decision: diagnostics only; no LNS runtime scorer or solver default changed.

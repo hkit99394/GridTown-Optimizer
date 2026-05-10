@@ -65,6 +65,19 @@ function runtimeModel(weights, interactionWeights) {
   };
 }
 
+function operatorFeatureSuffix(operator) {
+  return {
+    "weak-service": "WeakService",
+    "residential-headroom": "ResidentialHeadroom",
+    "frontier-congestion": "FrontierCongestion",
+    "gate-choke": "GateChoke",
+    "service-overlap": "ServiceOverlap",
+    "random-exploration": "RandomExploration",
+    "placed-buildings": "PlacedBuildings",
+    sliding: "Sliding"
+  }[operator];
+}
+
 function testWindowRankerCanOverrideAdaptiveBaseline() {
   const fixture = buildSelectionFixture();
   const options = normalizeLnsWindowRankerOptions(runtimeModel({ selectedByBaseline: -1 }));
@@ -91,6 +104,14 @@ function testWindowRankerCanOverrideAdaptiveBaseline() {
   assert.equal(decision.telemetry.baselineFeatures.selectedByBaseline, 1);
   assert.equal(decision.telemetry.selectedFeatures.selectedByBaseline, 0);
   assert.equal(decision.telemetry.featureDeltas.selectedByBaseline, -1);
+  assert.equal(
+    decision.telemetry.baselineFeatures[`baselineOperator${operatorFeatureSuffix(fixture.baseline.operator)}`],
+    1
+  );
+  assert.equal(
+    decision.telemetry.selectedFeatures[`selectedOperator${operatorFeatureSuffix(decision.candidate.operator)}`],
+    1
+  );
   assert.equal(typeof decision.telemetry.featureDeltas.serviceCandidatesIntersecting, "number");
   assert.equal(decision.telemetry.decisionState, undefined);
   assert.notDeepEqual(decision.candidate.window, fixture.baseline.window);
@@ -113,6 +134,27 @@ function testWindowRankerCanOverrideAdaptiveBaseline() {
     capturedDecision.telemetry.decisionState.seedHint.solution.residentials[0].population,
     fixture.incumbent.populations[0]
   );
+}
+
+function testWindowRankerTrajectoryFeaturesCanOverrideByTransition() {
+  const fixture = buildSelectionFixture();
+  assert.notEqual(fixture.baseline.operator, "sliding");
+  assert(fixture.candidates.some((candidate) => candidate.operator === "sliding"));
+  const transitionFeature = `transition${operatorFeatureSuffix(fixture.baseline.operator)}ToSliding`;
+  const decision = selectLnsWindowRankerCandidate(
+    fixture.grid,
+    fixture.params,
+    fixture.incumbent,
+    fixture.candidates,
+    fixture.baseline,
+    normalizeLnsWindowRankerOptions(runtimeModel({ [transitionFeature]: 1 }))
+  );
+
+  assert.equal(decision.telemetry.selectedByBaseline, false);
+  assert.equal(decision.telemetry.selectedOperator, "sliding");
+  assert.equal(decision.telemetry.selectedFeatures[transitionFeature], 1);
+  assert.equal(decision.telemetry.baselineFeatures[transitionFeature], 0);
+  assert.equal(decision.telemetry.featureDeltas[transitionFeature], 1);
 }
 
 function testWindowRankerInteractionWeightsCanOverrideAdaptiveBaseline() {
@@ -505,7 +547,7 @@ function testWindowRankerValidationRejectsBadWeights() {
           weights: { selectedByBaseline: 1 }
         }
       }),
-    /LNS window ranker model\.featureSchemaVersion must be null or 2/
+    /LNS window ranker model\.featureSchemaVersion must be null or one of 2, 3/
   );
 
   assert.throws(
@@ -696,6 +738,7 @@ function testWindowRankerValidationRejectsBadWeights() {
 }
 
 testWindowRankerCanOverrideAdaptiveBaseline();
+testWindowRankerTrajectoryFeaturesCanOverrideByTransition();
 testWindowRankerInteractionWeightsCanOverrideAdaptiveBaseline();
 testWindowRankerFallsBackWhenScoreDeltaIsTooSmall();
 testWindowRankerFallsBackWhenTransitionIsNotAllowed();

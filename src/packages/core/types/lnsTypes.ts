@@ -81,15 +81,41 @@ export interface SmallWindowDpRepairTelemetry {
   stateCount: number;
 }
 
-export type LnsAdaptiveOperatorName =
-  | "weak-service"
-  | "residential-headroom"
-  | "frontier-congestion"
-  | "gate-choke"
-  | "service-overlap"
-  | "random-exploration"
-  | "placed-buildings"
-  | "sliding";
+export const LNS_ADAPTIVE_OPERATOR_NAMES = Object.freeze([
+  "weak-service",
+  "residential-headroom",
+  "frontier-congestion",
+  "gate-choke",
+  "service-overlap",
+  "random-exploration",
+  "placed-buildings",
+  "sliding"
+] as const);
+
+export type LnsAdaptiveOperatorName = (typeof LNS_ADAPTIVE_OPERATOR_NAMES)[number];
+
+export const LNS_ADAPTIVE_OPERATOR_FEATURE_SUFFIX_BY_OPERATOR = Object.freeze({
+  "weak-service": "WeakService",
+  "residential-headroom": "ResidentialHeadroom",
+  "frontier-congestion": "FrontierCongestion",
+  "gate-choke": "GateChoke",
+  "service-overlap": "ServiceOverlap",
+  "random-exploration": "RandomExploration",
+  "placed-buildings": "PlacedBuildings",
+  sliding: "Sliding"
+} satisfies Record<LnsAdaptiveOperatorName, string>);
+
+export type LnsAdaptiveOperatorFeatureSuffix =
+  (typeof LNS_ADAPTIVE_OPERATOR_FEATURE_SUFFIX_BY_OPERATOR)[LnsAdaptiveOperatorName];
+
+export type LnsWindowRankerBaselineOperatorFeatureName = `baselineOperator${LnsAdaptiveOperatorFeatureSuffix}`;
+export type LnsWindowRankerSelectedOperatorFeatureName = `selectedOperator${LnsAdaptiveOperatorFeatureSuffix}`;
+export type LnsWindowRankerOperatorTransitionFeatureName =
+  `transition${LnsAdaptiveOperatorFeatureSuffix}To${LnsAdaptiveOperatorFeatureSuffix}`;
+export type LnsWindowRankerOperatorTrajectoryFeatureName =
+  | LnsWindowRankerBaselineOperatorFeatureName
+  | LnsWindowRankerSelectedOperatorFeatureName
+  | LnsWindowRankerOperatorTransitionFeatureName;
 
 export type LnsWindowRankerOperatorTransition = `${LnsAdaptiveOperatorName}->${LnsAdaptiveOperatorName}`;
 
@@ -119,7 +145,7 @@ export interface LnsWindowRankerRuntimeModel {
   intercept?: number;
 }
 
-export const LNS_WINDOW_RANKER_FEATURE_NAMES = Object.freeze([
+export const LNS_WINDOW_RANKER_BASE_FEATURE_NAMES = Object.freeze([
   "operatorScore",
   "selectedByBaseline",
   "area",
@@ -149,7 +175,50 @@ export const LNS_WINDOW_RANKER_FEATURE_NAMES = Object.freeze([
   "residentialCandidateHeadroom"
 ] as const);
 
+export type LnsWindowRankerBaseFeatureName = (typeof LNS_WINDOW_RANKER_BASE_FEATURE_NAMES)[number];
+
+export const LNS_WINDOW_RANKER_OPERATOR_TRAJECTORY_FEATURE_NAMES = Object.freeze([
+  ...LNS_ADAPTIVE_OPERATOR_NAMES.map(
+    (operator) =>
+      `baselineOperator${LNS_ADAPTIVE_OPERATOR_FEATURE_SUFFIX_BY_OPERATOR[operator]}` as LnsWindowRankerBaselineOperatorFeatureName
+  ),
+  ...LNS_ADAPTIVE_OPERATOR_NAMES.map(
+    (operator) =>
+      `selectedOperator${LNS_ADAPTIVE_OPERATOR_FEATURE_SUFFIX_BY_OPERATOR[operator]}` as LnsWindowRankerSelectedOperatorFeatureName
+  ),
+  ...LNS_ADAPTIVE_OPERATOR_NAMES.flatMap((baselineOperator) =>
+    LNS_ADAPTIVE_OPERATOR_NAMES.map(
+      (selectedOperator) =>
+        `transition${LNS_ADAPTIVE_OPERATOR_FEATURE_SUFFIX_BY_OPERATOR[baselineOperator]}To${LNS_ADAPTIVE_OPERATOR_FEATURE_SUFFIX_BY_OPERATOR[selectedOperator]}` as LnsWindowRankerOperatorTransitionFeatureName
+    )
+  )
+] as const) as readonly LnsWindowRankerOperatorTrajectoryFeatureName[];
+
+export const LNS_WINDOW_RANKER_FEATURE_NAMES = Object.freeze([
+  ...LNS_WINDOW_RANKER_BASE_FEATURE_NAMES,
+  ...LNS_WINDOW_RANKER_OPERATOR_TRAJECTORY_FEATURE_NAMES
+] as const) as readonly (LnsWindowRankerBaseFeatureName | LnsWindowRankerOperatorTrajectoryFeatureName)[];
+
 export type LnsWindowRankerFeatureName = (typeof LNS_WINDOW_RANKER_FEATURE_NAMES)[number];
+
+export function lnsWindowRankerBaselineOperatorFeatureName(
+  operator: LnsAdaptiveOperatorName
+): LnsWindowRankerBaselineOperatorFeatureName {
+  return `baselineOperator${LNS_ADAPTIVE_OPERATOR_FEATURE_SUFFIX_BY_OPERATOR[operator]}`;
+}
+
+export function lnsWindowRankerSelectedOperatorFeatureName(
+  operator: LnsAdaptiveOperatorName
+): LnsWindowRankerSelectedOperatorFeatureName {
+  return `selectedOperator${LNS_ADAPTIVE_OPERATOR_FEATURE_SUFFIX_BY_OPERATOR[operator]}`;
+}
+
+export function lnsWindowRankerOperatorTransitionFeatureName(
+  baselineOperator: LnsAdaptiveOperatorName,
+  selectedOperator: LnsAdaptiveOperatorName
+): LnsWindowRankerOperatorTransitionFeatureName {
+  return `transition${LNS_ADAPTIVE_OPERATOR_FEATURE_SUFFIX_BY_OPERATOR[baselineOperator]}To${LNS_ADAPTIVE_OPERATOR_FEATURE_SUFFIX_BY_OPERATOR[selectedOperator]}`;
+}
 
 export interface LnsWindowRankerFeatureDeltaGate {
   feature: LnsWindowRankerFeatureName;

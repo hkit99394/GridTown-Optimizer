@@ -57,6 +57,7 @@ interface ParsedLnsWindowRankerArgs {
   gapDiagnostics: boolean;
   supplementalReplayCalibration: boolean;
   supplementalReplayCalibrationIgnoreBaselineFeature: boolean;
+  trajectoryFeatures: boolean;
   featureInteractions: boolean;
   target?: LnsWindowRankerLabelTarget;
   allowWeakSeedReplayLabels: boolean;
@@ -139,6 +140,7 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
   let gapDiagnostics = false;
   let supplementalReplayCalibration = false;
   let supplementalReplayCalibrationIgnoreBaselineFeature = false;
+  let trajectoryFeatures = false;
   let featureInteractions = false;
   let target: LnsWindowRankerLabelTarget | undefined;
   let allowWeakSeedReplayLabels = true;
@@ -272,6 +274,10 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
       featureInteractions = true;
       continue;
     }
+    if (isCliFlag(arg, "--trajectory-features", "--ranker-trajectory-features", "--operator-trajectory-features")) {
+      trajectoryFeatures = true;
+      continue;
+    }
     if (isCliFlag(arg, "--roll-forward-final-lift", "--final-lift-target")) {
       target = "roll-forward-final-lift";
       continue;
@@ -307,6 +313,7 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
     gapDiagnostics,
     supplementalReplayCalibration,
     supplementalReplayCalibrationIgnoreBaselineFeature,
+    trajectoryFeatures,
     featureInteractions,
     target,
     allowWeakSeedReplayLabels,
@@ -662,6 +669,7 @@ export function runLnsWindowRankerCli(): void {
       allowWeakSeedReplayLabels: args.allowWeakSeedReplayLabels,
       supplementalReplayCalibration: args.supplementalReplayCalibration,
       supplementalReplayCalibrationIgnoreBaselineFeature: args.supplementalReplayCalibrationIgnoreBaselineFeature,
+      trajectoryFeatures: args.trajectoryFeatures,
       featureInteractions: args.featureInteractions,
       excludeFeatureIdenticalRepeatabilityConflicts: args.excludeFeatureIdenticalRepeatabilityConflicts
     }

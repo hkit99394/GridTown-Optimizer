@@ -312,6 +312,44 @@ function testLnsWindowRankerFeatureInteractionTraining() {
   assert.equal(registryDraft.summaryMetrics.interactionFeatureCount, interactionFeatureCount);
 }
 
+function testLnsWindowRankerTrajectoryFeatureTraining() {
+  const result = runLnsWindowRankerExperiment(buildFixture(), {
+    topK: 2,
+    training: {
+      epochs: 4,
+      learningRate: 0.05,
+      marginWeightCap: 500,
+      trajectoryFeatures: true
+    }
+  });
+  const formatted = formatLnsWindowRankerExperiment(result);
+  const trajectoryFeatureCount = result.model.featureNames.filter(
+    (featureName) =>
+      featureName.startsWith("baselineOperator") ||
+      featureName.startsWith("selectedOperator") ||
+      featureName.startsWith("transition")
+  ).length;
+
+  assert.equal(result.model.training.trajectoryFeatures, true);
+  assert.equal(result.model.featureSchemaVersion, 3);
+  assert(trajectoryFeatureCount > 0);
+  assert.equal(result.model.featureNames.includes("baselineOperatorWeakService"), true);
+  assert.equal(result.model.featureNames.includes("selectedOperatorServiceOverlap"), true);
+  assert.equal(result.model.featureNames.includes("transitionWeakServiceToServiceOverlap"), true);
+  assert.equal(Object.hasOwn(result.model.weights, "transitionWeakServiceToServiceOverlap"), true);
+  assert.match(formatted, /trajectory-features=true/);
+
+  const registryDraft = buildLnsWindowRankerRegistryEntryDraft(result, buildFixture(), {
+    runId: "lns-window-ranker-trajectory-features-test",
+    commands: ["node dist/lnsWindowRankerCli.js --labels=labels.json --trajectory-features"],
+    artifactPaths: ["artifacts/lns-ranker/lns-window-ranker.json"]
+  });
+  assert.equal(registryDraft.budget.trainingTrajectoryFeatures, 1);
+  assert.equal(registryDraft.budget.trajectoryFeatureCount, trajectoryFeatureCount);
+  assert.equal(registryDraft.summaryMetrics.trajectoryFeatures, true);
+  assert.equal(registryDraft.summaryMetrics.trajectoryFeatureCount, trajectoryFeatureCount);
+}
+
 function testLnsWindowRankerModelSchemaValidation() {
   const fixture = buildFixture();
   const result = runLnsWindowRankerExperiment(fixture, {
@@ -358,6 +396,7 @@ function runLnsWindowRankerExperimentAssertions() {
   testLnsWindowRankerBaselineTieBreakTraining();
   testLnsWindowRankerWeakReplaySeedFilter();
   testLnsWindowRankerFeatureInteractionTraining();
+  testLnsWindowRankerTrajectoryFeatureTraining();
   testLnsWindowRankerModelSchemaValidation();
 }
 

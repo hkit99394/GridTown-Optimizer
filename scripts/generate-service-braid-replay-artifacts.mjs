@@ -246,6 +246,105 @@ function generatedServiceBraidRightValueNeighborhoodMutations() {
   ];
 }
 
+function generatedServiceBraidRightGeometryNeighborhoodMutations() {
+  const rightAnchorGrid = embeddedServiceBraidGrid({ rows: 7, cols: 8, left: 1 });
+  return [
+    {
+      caseName: "lns-holdout-service-braid-family-embed-7x8-right-upper-cap-geometry-candidate",
+      description: "Generated right-shift service-braid candidate adding an upper cap blocker near the useful window.",
+      generatedGridFamily: "base-blocker-embed-right-geometry-neighborhood",
+      gridOverride: rightAnchorGrid,
+      gridCellMutations: [{ r: 0, c: 4, value: 0 }]
+    },
+    {
+      caseName: "lns-holdout-service-braid-family-embed-7x8-right-upper-left-cap-geometry-candidate",
+      description:
+        "Generated right-shift service-braid candidate adding an upper-left cap blocker near the useful window.",
+      generatedGridFamily: "base-blocker-embed-right-geometry-neighborhood",
+      gridOverride: rightAnchorGrid,
+      gridCellMutations: [{ r: 0, c: 2, value: 0 }]
+    },
+    {
+      caseName: "lns-holdout-service-braid-family-embed-7x8-right-central-double-geometry-candidate",
+      description: "Generated right-shift service-braid candidate doubling the upper central choke.",
+      generatedGridFamily: "base-blocker-embed-right-geometry-neighborhood",
+      gridOverride: rightAnchorGrid,
+      gridCellMutations: [{ r: 2, c: 4, value: 0 }]
+    },
+    {
+      caseName: "lns-holdout-service-braid-family-embed-7x8-right-left-double-geometry-candidate",
+      description:
+        "Generated right-shift service-braid candidate doubling the left-side choke inside the useful window.",
+      generatedGridFamily: "base-blocker-embed-right-geometry-neighborhood",
+      gridOverride: rightAnchorGrid,
+      gridCellMutations: [{ r: 2, c: 2, value: 0 }]
+    },
+    {
+      caseName: "lns-holdout-service-braid-family-embed-7x8-right-outer-upper-choke-geometry-candidate",
+      description:
+        "Generated right-shift service-braid candidate adding an outer upper choke east of the useful window.",
+      generatedGridFamily: "base-blocker-embed-right-geometry-neighborhood",
+      gridOverride: rightAnchorGrid,
+      gridCellMutations: [{ r: 2, c: 6, value: 0 }]
+    },
+    {
+      caseName: "lns-holdout-service-braid-family-embed-7x8-right-outer-lower-choke-geometry-candidate",
+      description:
+        "Generated right-shift service-braid candidate adding an outer lower choke east of the useful window.",
+      generatedGridFamily: "base-blocker-embed-right-geometry-neighborhood",
+      gridOverride: rightAnchorGrid,
+      gridCellMutations: [{ r: 4, c: 6, value: 0 }]
+    },
+    {
+      caseName: "lns-holdout-service-braid-family-embed-7x8-right-window-pair-geometry-candidate",
+      description: "Generated right-shift service-braid candidate adding paired blockers around the useful window.",
+      generatedGridFamily: "base-blocker-embed-right-geometry-neighborhood",
+      gridOverride: rightAnchorGrid,
+      gridCellMutations: [
+        { r: 0, c: 4, value: 0 },
+        { r: 2, c: 2, value: 0 }
+      ]
+    },
+    {
+      caseName: "lns-holdout-service-braid-family-embed-7x8-right-outer-pair-geometry-candidate",
+      description: "Generated right-shift service-braid candidate adding paired blockers on the eastern braid.",
+      generatedGridFamily: "base-blocker-embed-right-geometry-neighborhood",
+      gridOverride: rightAnchorGrid,
+      gridCellMutations: [
+        { r: 2, c: 6, value: 0 },
+        { r: 4, c: 6, value: 0 }
+      ]
+    },
+    {
+      caseName: "lns-holdout-service-braid-family-embed-8x8-right-bottom-shelf-geometry-candidate",
+      description:
+        "Generated right-shift service-braid candidate adding a southern shelf row and lower central blocker.",
+      generatedGridFamily: "base-blocker-embed-right-geometry-neighborhood",
+      gridOverride: embeddedServiceBraidGrid({ rows: 8, cols: 8, left: 1 }),
+      gridCellMutations: [{ r: 7, c: 4, value: 0 }]
+    },
+    {
+      caseName: "lns-holdout-service-braid-family-embed-8x8-right-bottom-open-shelf-geometry-candidate",
+      description: "Generated right-shift service-braid candidate adding a southern open shelf row.",
+      generatedGridFamily: "base-blocker-embed-right-geometry-neighborhood",
+      gridOverride: embeddedServiceBraidGrid({ rows: 8, cols: 8, left: 1 })
+    },
+    {
+      caseName: "lns-holdout-service-braid-family-embed-7x9-right-west-lane-geometry-candidate",
+      description: "Generated service-braid candidate shifting the anchor one more cell right to add a western lane.",
+      generatedGridFamily: "base-blocker-embed-right-geometry-neighborhood",
+      gridOverride: embeddedServiceBraidGrid({ rows: 7, cols: 9, left: 2 })
+    },
+    {
+      caseName: "lns-holdout-service-braid-family-embed-7x9-right-west-lane-upper-cap-geometry-candidate",
+      description: "Generated west-lane service-braid candidate with an upper cap blocker near the useful window.",
+      generatedGridFamily: "base-blocker-embed-right-geometry-neighborhood",
+      gridOverride: embeddedServiceBraidGrid({ rows: 7, cols: 9, left: 2 }),
+      gridCellMutations: [{ r: 0, c: 5, value: 0 }]
+    }
+  ];
+}
+
 const BUNDLES = Object.freeze({
   "service-braid-range1-big-service120": {
     artifactDir:
@@ -571,6 +670,21 @@ const BUNDLES = Object.freeze({
     candidateSummaryMode: "byCase",
     selectivitySummary: true,
     selectivitySummaryTitle: "Service-braid generated-grid right value-neighborhood compact screen selectivity summary"
+  },
+  "service-braid-generated-grid-right-geometry-neighborhood-screen": {
+    artifactDir:
+      "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-right-geometry-neighborhood-screen-roll-forward-2x0.1",
+    description: "Protected service-braid compact generated-grid geometry screen around the right-shift family hit.",
+    mutations: generatedServiceBraidRightGeometryNeighborhoodMutations(),
+    options: {
+      seeds: [7, 19, 37],
+      statePolicies: ["initial-incumbent", "post-stagnation"],
+      ...COMPACT_SCREEN_OPTIONS
+    },
+    candidateSummaryMode: "byCase",
+    selectivitySummary: true,
+    selectivitySummaryTitle:
+      "Service-braid generated-grid right geometry-neighborhood compact screen selectivity summary"
   }
 });
 

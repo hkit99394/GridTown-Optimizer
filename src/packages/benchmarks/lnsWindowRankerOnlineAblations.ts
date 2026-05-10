@@ -27,6 +27,7 @@ import type {
   LnsWindowRankerFeatureTelemetry,
   LnsWindowRankerRuntimeModel,
   LnsWindowRankerSelectedFeatureGate,
+  LnsWindowRankerSelectedFeatureGateGroup,
   LnsWindowRankerSelectionTelemetry
 } from "../core/index.js";
 import type {
@@ -50,6 +51,7 @@ export interface LnsWindowRankerOnlineAblationRunOptions extends LnsBenchmarkRun
   minScoreDelta?: number;
   allowedTransitions?: readonly LnsWindowRankerOperatorTransition[];
   selectedFeatureGates?: readonly LnsWindowRankerSelectedFeatureGate[];
+  selectedFeatureGateGroups?: readonly LnsWindowRankerSelectedFeatureGateGroup[];
   featureDeltaGates?: readonly LnsWindowRankerFeatureDeltaGate[];
   seeds?: readonly number[];
 }
@@ -61,6 +63,7 @@ export interface LnsWindowRankerOnlineAblationTelemetrySummary {
   minScoreDelta: number | null;
   allowedTransitions: readonly LnsWindowRankerOperatorTransition[] | null;
   selectedFeatureGates: readonly LnsWindowRankerSelectedFeatureGate[];
+  selectedFeatureGateGroups: readonly LnsWindowRankerSelectedFeatureGateGroup[];
   featureDeltaGates: readonly LnsWindowRankerFeatureDeltaGate[];
   decisions: number;
   overrides: number;
@@ -343,6 +346,7 @@ export interface LnsWindowRankerOnlineCalibrationSuiteResult {
   modelFingerprint: string | null;
   allowedTransitions?: readonly LnsWindowRankerOperatorTransition[];
   selectedFeatureGates?: readonly LnsWindowRankerSelectedFeatureGate[];
+  selectedFeatureGateGroups?: readonly LnsWindowRankerSelectedFeatureGateGroup[];
   featureDeltaGates?: readonly LnsWindowRankerFeatureDeltaGate[];
   minScoreDeltas: number[];
   topMeanPopulationDeltaMinScoreDelta: number | null;
@@ -428,6 +432,9 @@ function rankerLnsOptions(
       ...(options.selectedFeatureGates === undefined
         ? {}
         : { selectedFeatureGates: [...options.selectedFeatureGates] }),
+      ...(options.selectedFeatureGateGroups === undefined
+        ? {}
+        : { selectedFeatureGateGroups: options.selectedFeatureGateGroups.map((group) => [...group]) }),
       ...(options.featureDeltaGates === undefined ? {} : { featureDeltaGates: [...options.featureDeltaGates] }),
       captureDecisionState: true
     }
@@ -686,6 +693,9 @@ export function runLnsWindowRankerOnlineCalibration(
       : null,
     ...(options.allowedTransitions === undefined ? {} : { allowedTransitions: [...options.allowedTransitions] }),
     ...(options.selectedFeatureGates === undefined ? {} : { selectedFeatureGates: [...options.selectedFeatureGates] }),
+    ...(options.selectedFeatureGateGroups === undefined
+      ? {}
+      : { selectedFeatureGateGroups: options.selectedFeatureGateGroups.map((group) => [...group]) }),
     ...(options.featureDeltaGates === undefined ? {} : { featureDeltaGates: [...options.featureDeltaGates] }),
     minScoreDeltas,
     topMeanPopulationDeltaMinScoreDelta: topThreshold(thresholdSummaries, () => true),
@@ -706,6 +716,9 @@ export function createLnsWindowRankerOnlineCalibrationSnapshot(
     modelFingerprint: result.modelFingerprint,
     ...(result.allowedTransitions === undefined ? {} : { allowedTransitions: [...result.allowedTransitions] }),
     ...(result.selectedFeatureGates === undefined ? {} : { selectedFeatureGates: [...result.selectedFeatureGates] }),
+    ...(result.selectedFeatureGateGroups === undefined
+      ? {}
+      : { selectedFeatureGateGroups: result.selectedFeatureGateGroups.map((group) => [...group]) }),
     ...(result.featureDeltaGates === undefined ? {} : { featureDeltaGates: [...result.featureDeltaGates] }),
     minScoreDeltas: [...result.minScoreDeltas],
     topMeanPopulationDeltaMinScoreDelta: result.topMeanPopulationDeltaMinScoreDelta,

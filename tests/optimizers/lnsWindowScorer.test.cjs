@@ -311,6 +311,40 @@ function testWindowRankerFallsBackWhenSelectedFeatureGateFails() {
   assert.equal(allowedDecision.telemetry.fallbackReason, undefined);
   assert.equal(allowedDecision.telemetry.selectedFeatures.selectedByBaseline, 0);
 
+  const groupedAllowedDecision = selectLnsWindowRankerCandidate(
+    fixture.grid,
+    fixture.params,
+    fixture.incumbent,
+    fixture.candidates,
+    fixture.baseline,
+    normalizeLnsWindowRankerOptions({
+      ...model,
+      selectedFeatureGateGroups: [
+        [{ feature: "selectedByBaseline", minValue: 1 }],
+        [{ feature: "selectedByBaseline", maxValue: 0 }]
+      ]
+    })
+  );
+  assert.equal(groupedAllowedDecision.telemetry.selectedByBaseline, false);
+  assert.equal(groupedAllowedDecision.telemetry.fallbackReason, undefined);
+
+  const groupedBlockedDecision = selectLnsWindowRankerCandidate(
+    fixture.grid,
+    fixture.params,
+    fixture.incumbent,
+    fixture.candidates,
+    fixture.baseline,
+    normalizeLnsWindowRankerOptions({
+      ...model,
+      selectedFeatureGateGroups: [
+        [{ feature: "selectedByBaseline", minValue: 1 }],
+        [{ feature: "selectedByBaseline", minValue: 2 }]
+      ]
+    })
+  );
+  assert.deepEqual(groupedBlockedDecision.candidate.window, fixture.baseline.window);
+  assert.equal(groupedBlockedDecision.telemetry.fallbackReason, "selected-feature-gate-not-met");
+
   const invalidFeatureDecision = selectLnsWindowRankerCandidate(
     fixture.grid,
     fixture.params,
@@ -592,6 +626,46 @@ function testWindowRankerValidationRejectsBadWeights() {
         }
       }),
     /lns\.windowRanker\.selectedFeatureGates\[0\]\.feature must be one of the LNS window ranker feature names/
+  );
+
+  assert.throws(
+    () =>
+      solveLns(buildGrid(3, 3), {
+        optimizer: "lns",
+        availableBuildings: { residentials: 0, services: 0 },
+        lns: {
+          iterations: 1,
+          windowRanker: {
+            model: {
+              modelType: "lns-window-linear-pairwise-ranker",
+              featureSchemaVersion: 2,
+              weights: { selectedByBaseline: 1 }
+            },
+            selectedFeatureGateGroups: [[]]
+          }
+        }
+      }),
+    /lns\.windowRanker\.selectedFeatureGateGroups\[0\] must be a non-empty array of gate objects/
+  );
+
+  assert.throws(
+    () =>
+      solveLns(buildGrid(3, 3), {
+        optimizer: "lns",
+        availableBuildings: { residentials: 0, services: 0 },
+        lns: {
+          iterations: 1,
+          windowRanker: {
+            model: {
+              modelType: "lns-window-linear-pairwise-ranker",
+              featureSchemaVersion: 2,
+              weights: { selectedByBaseline: 1 }
+            },
+            selectedFeatureGateGroups: [[{ feature: "notAFeature", maxValue: 0 }]]
+          }
+        }
+      }),
+    /lns\.windowRanker\.selectedFeatureGateGroups\[0\]\[0\]\.feature must be one of the LNS window ranker feature names/
   );
 
   assert.throws(

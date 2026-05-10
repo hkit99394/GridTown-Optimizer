@@ -451,6 +451,9 @@ function buildWindowRankerTelemetry(
     minScoreDelta: options.minScoreDelta,
     ...(options.allowedTransitions === null ? {} : { allowedTransitions: [...options.allowedTransitions] }),
     ...(options.selectedFeatureGates.length === 0 ? {} : { selectedFeatureGates: [...options.selectedFeatureGates] }),
+    ...(options.selectedFeatureGateGroups.length === 0
+      ? {}
+      : { selectedFeatureGateGroups: options.selectedFeatureGateGroups.map((group) => [...group]) }),
     ...(options.featureDeltaGates.length === 0 ? {} : { featureDeltaGates: [...options.featureDeltaGates] }),
     decisions: selections.length,
     overrides: selections.filter((selection) => !selection.selectedByBaseline).length,

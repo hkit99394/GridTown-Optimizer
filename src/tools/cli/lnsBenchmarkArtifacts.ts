@@ -36,6 +36,9 @@ export type LnsWindowRankerFeatureDeltaGate = NonNullable<
 export type LnsWindowRankerSelectedFeatureGate = NonNullable<
   Parameters<typeof runLnsWindowRankerOnlineAblation>[1]["selectedFeatureGates"]
 >[number];
+export type LnsWindowRankerSelectedFeatureGateGroup = NonNullable<
+  Parameters<typeof runLnsWindowRankerOnlineAblation>[1]["selectedFeatureGateGroups"]
+>[number];
 
 export interface LnsWindowRankerOnlineArtifactArgs {
   windowRankerModelPath?: string;
@@ -66,6 +69,7 @@ export interface LnsWindowRankerOnlineArtifactManifest {
   minScoreDelta: number | null;
   allowedTransitions?: string[];
   selectedFeatureGates?: LnsWindowRankerSelectedFeatureGate[];
+  selectedFeatureGateGroups?: LnsWindowRankerSelectedFeatureGateGroup[];
   featureDeltaGates?: LnsWindowRankerFeatureDeltaGate[];
   minScoreDeltas?: number[];
   topMeanPopulationDeltaMinScoreDelta?: number | null;
@@ -184,6 +188,17 @@ function onlineAblationSelectedFeatureGates(
   return selectedFeatureGates && selectedFeatureGates.length > 0 ? [...selectedFeatureGates] : undefined;
 }
 
+function onlineAblationSelectedFeatureGateGroups(
+  result: LnsWindowRankerOnlineAblationSuiteResult
+): LnsWindowRankerSelectedFeatureGateGroup[] | undefined {
+  const selectedFeatureGateGroups = result.cases
+    .flatMap((entry) => entry.variants)
+    .find((variant) => variant.variantName === "window-ranker")?.windowRanker?.selectedFeatureGateGroups;
+  return selectedFeatureGateGroups && selectedFeatureGateGroups.length > 0
+    ? selectedFeatureGateGroups.map((group) => [...group])
+    : undefined;
+}
+
 function onlineCalibrationTopMeanSummary(result: LnsWindowRankerOnlineCalibrationSuiteResult) {
   return (
     result.thresholdSummaries.find((entry) => entry.minScoreDelta === result.topMeanPopulationDeltaMinScoreDelta) ??
@@ -300,6 +315,7 @@ export function writeWindowRankerOnlineArtifactBundle(
     minScoreDelta: onlineAblationMinScoreDelta(result),
     allowedTransitions: onlineAblationAllowedTransitions(result),
     selectedFeatureGates: onlineAblationSelectedFeatureGates(result),
+    selectedFeatureGateGroups: onlineAblationSelectedFeatureGateGroups(result),
     featureDeltaGates: onlineAblationFeatureDeltaGates(result),
     meanPopulationDeltaVsBaseline: summary.meanPopulationDeltaVsBaseline,
     worstPopulationDeltaVsBaseline: summary.worstPopulationDeltaVsBaseline,
@@ -371,6 +387,9 @@ export function writeWindowRankerOnlineCalibrationArtifactBundle(
     minScoreDelta: summary?.minScoreDelta ?? null,
     ...(result.allowedTransitions === undefined ? {} : { allowedTransitions: [...result.allowedTransitions] }),
     ...(result.selectedFeatureGates === undefined ? {} : { selectedFeatureGates: [...result.selectedFeatureGates] }),
+    ...(result.selectedFeatureGateGroups === undefined
+      ? {}
+      : { selectedFeatureGateGroups: result.selectedFeatureGateGroups.map((group) => [...group]) }),
     ...(result.featureDeltaGates === undefined ? {} : { featureDeltaGates: [...result.featureDeltaGates] }),
     minScoreDeltas: [...result.minScoreDeltas],
     topMeanPopulationDeltaMinScoreDelta: result.topMeanPopulationDeltaMinScoreDelta,
@@ -403,6 +422,23 @@ export function formatWindowRankerOnlineArtifactManifest(manifest: LnsWindowRank
                   : `${gate.minValue}<=${gate.feature}<=${gate.maxValue}`
             )
             .join(",")}`
+        ]),
+    ...(manifest.selectedFeatureGateGroups === undefined
+      ? []
+      : [
+          `selected-feature-gate-groups=${manifest.selectedFeatureGateGroups
+            .map((group) =>
+              group
+                .map((gate) =>
+                  gate.minValue === undefined
+                    ? `${gate.feature}<=${gate.maxValue}`
+                    : gate.maxValue === undefined
+                      ? `${gate.feature}>=${gate.minValue}`
+                      : `${gate.minValue}<=${gate.feature}<=${gate.maxValue}`
+                )
+                .join(",")
+            )
+            .join(";")}`
         ]),
     ...(manifest.featureDeltaGates === undefined
       ? []

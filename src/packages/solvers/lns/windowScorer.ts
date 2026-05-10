@@ -31,6 +31,7 @@ import type {
   LnsWindowRankerRuntimeModel,
   LnsWindowRankerRuntimeOptions,
   LnsWindowRankerSelectedFeatureGate,
+  LnsWindowRankerSelectedFeatureGateGroup,
   LnsWindowRankerSelectionTelemetry,
   Solution,
   SolverParams
@@ -42,6 +43,7 @@ export interface NormalizedLnsWindowRankerOptions {
   minScoreDelta: number;
   allowedTransitions: readonly LnsWindowRankerOperatorTransition[] | null;
   selectedFeatureGates: readonly LnsWindowRankerSelectedFeatureGate[];
+  selectedFeatureGateGroups: readonly LnsWindowRankerSelectedFeatureGateGroup[];
   featureDeltaGates: readonly LnsWindowRankerFeatureDeltaGate[];
   captureDecisionState: boolean;
 }
@@ -102,6 +104,14 @@ function normalizeSelectedFeatureGates(
       }));
 }
 
+function normalizeSelectedFeatureGateGroups(
+  selectedFeatureGateGroups: readonly LnsWindowRankerSelectedFeatureGateGroup[] | undefined
+): readonly LnsWindowRankerSelectedFeatureGateGroup[] {
+  return selectedFeatureGateGroups === undefined
+    ? []
+    : selectedFeatureGateGroups.map((group) => normalizeSelectedFeatureGates(group));
+}
+
 export function normalizeLnsWindowRankerOptions(
   options: LnsWindowRankerRuntimeOptions | undefined
 ): NormalizedLnsWindowRankerOptions | null {
@@ -112,6 +122,7 @@ export function normalizeLnsWindowRankerOptions(
     minScoreDelta: Math.max(0, finiteNumberOrDefault(options.minScoreDelta, 0)),
     allowedTransitions: normalizeAllowedTransitions(options.allowedTransitions),
     selectedFeatureGates: normalizeSelectedFeatureGates(options.selectedFeatureGates),
+    selectedFeatureGateGroups: normalizeSelectedFeatureGateGroups(options.selectedFeatureGateGroups),
     featureDeltaGates: normalizeFeatureDeltaGates(options.featureDeltaGates),
     captureDecisionState: options.captureDecisionState === true
   };
@@ -495,6 +506,15 @@ function selectedFeatureGatesPassed(
   });
 }
 
+function selectedFeatureGateGroupsPassed(
+  selected: WindowRankerFeatureValues,
+  gates: readonly LnsWindowRankerSelectedFeatureGate[],
+  gateGroups: readonly LnsWindowRankerSelectedFeatureGateGroup[]
+): boolean {
+  const effectiveGroups = [...(gates.length === 0 ? [] : [gates]), ...gateGroups.filter((group) => group.length > 0)];
+  return effectiveGroups.length === 0 || effectiveGroups.some((group) => selectedFeatureGatesPassed(selected, group));
+}
+
 function buildDecisionStateTelemetry(incumbent: Solution): LnsWindowRankerDecisionStateTelemetry {
   const roadKeys = Array.from(incumbent.roads);
   return {
@@ -574,7 +594,8 @@ export function selectLnsWindowRankerCandidate(
   const transitionAllowed =
     bestIsBaseline || options.allowedTransitions === null || options.allowedTransitions.includes(selectedTransition);
   const selectedFeatureGatePassed =
-    bestIsBaseline || selectedFeatureGatesPassed(best.features, options.selectedFeatureGates);
+    bestIsBaseline ||
+    selectedFeatureGateGroupsPassed(best.features, options.selectedFeatureGates, options.selectedFeatureGateGroups);
   const featureGatePassed =
     bestIsBaseline || featureDeltaGatesPassed(best.features, baseline.features, options.featureDeltaGates);
   const fallbackReason =

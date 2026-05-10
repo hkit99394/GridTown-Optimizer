@@ -163,6 +163,8 @@ export interface LnsWindowRankerSelectedFeatureGate {
   maxValue?: number;
 }
 
+export type LnsWindowRankerSelectedFeatureGateGroup = readonly LnsWindowRankerSelectedFeatureGate[];
+
 export interface LnsWindowRankerRuntimeOptions {
   enabled?: boolean;
   model: LnsWindowRankerRuntimeModel;
@@ -171,6 +173,8 @@ export interface LnsWindowRankerRuntimeOptions {
   allowedTransitions?: readonly LnsWindowRankerOperatorTransition[];
   /** Diagnostics-only: only allow learned overrides whose selected-window feature values satisfy these bounds. */
   selectedFeatureGates?: readonly LnsWindowRankerSelectedFeatureGate[];
+  /** Diagnostics-only: only allow learned overrides whose selected-window feature values satisfy at least one group. */
+  selectedFeatureGateGroups?: readonly LnsWindowRankerSelectedFeatureGateGroup[];
   /** Diagnostics-only: only allow learned overrides whose selected-baseline feature deltas satisfy these bounds. */
   featureDeltaGates?: readonly LnsWindowRankerFeatureDeltaGate[];
   /** Diagnostics-only: include the exact incumbent layout at each ranker decision. */
@@ -222,6 +226,7 @@ export interface LnsWindowRankerTelemetry {
   minScoreDelta: number;
   allowedTransitions?: readonly LnsWindowRankerOperatorTransition[];
   selectedFeatureGates?: readonly LnsWindowRankerSelectedFeatureGate[];
+  selectedFeatureGateGroups?: readonly LnsWindowRankerSelectedFeatureGateGroup[];
   featureDeltaGates?: readonly LnsWindowRankerFeatureDeltaGate[];
   decisions: number;
   overrides: number;

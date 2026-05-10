@@ -111,35 +111,59 @@ function assertValidWindowRankerSelectedFeatureGates(windowRanker: Record<string
 
   for (const [index, entry] of value.entries()) {
     const label = `LNS option lns.windowRanker.selectedFeatureGates[${index}]`;
-    const gate = requireValidationRecord(entry, label);
-    if (typeof gate.feature !== "string" || gate.feature.trim().length === 0) {
-      throw new SolverInputError(`${label}.feature must be a non-empty string.`);
-    }
-    if (!isLnsWindowRankerFeatureName(gate.feature)) {
-      throw new SolverInputError(`${label}.feature must be one of the LNS window ranker feature names.`);
-    }
-    requireOptionalFiniteNumberInRange(
-      gate,
-      "minValue",
-      `${label}.minValue`,
-      -LNS_MAX_WINDOW_RANKER_SCORE_DELTA,
-      LNS_MAX_WINDOW_RANKER_SCORE_DELTA,
-      true
+    assertValidWindowRankerSelectedFeatureGate(entry, label);
+  }
+}
+
+function assertValidWindowRankerSelectedFeatureGateGroups(windowRanker: Record<string, unknown>): void {
+  const value = windowRanker.selectedFeatureGateGroups;
+  if (value === undefined) return;
+  if (!Array.isArray(value)) {
+    throw new SolverInputError(
+      "LNS option lns.windowRanker.selectedFeatureGateGroups must be an array of non-empty gate arrays."
     );
-    requireOptionalFiniteNumberInRange(
-      gate,
-      "maxValue",
-      `${label}.maxValue`,
-      -LNS_MAX_WINDOW_RANKER_SCORE_DELTA,
-      LNS_MAX_WINDOW_RANKER_SCORE_DELTA,
-      true
-    );
-    if (gate.minValue === undefined && gate.maxValue === undefined) {
-      throw new SolverInputError(`${label} must include minValue or maxValue.`);
+  }
+
+  for (const [groupIndex, group] of value.entries()) {
+    const groupLabel = `LNS option lns.windowRanker.selectedFeatureGateGroups[${groupIndex}]`;
+    if (!Array.isArray(group) || group.length === 0) {
+      throw new SolverInputError(`${groupLabel} must be a non-empty array of gate objects.`);
     }
-    if (typeof gate.minValue === "number" && typeof gate.maxValue === "number" && gate.minValue > gate.maxValue) {
-      throw new SolverInputError(`${label}.minValue must be less than or equal to maxValue.`);
+    for (const [gateIndex, entry] of group.entries()) {
+      assertValidWindowRankerSelectedFeatureGate(entry, `${groupLabel}[${gateIndex}]`);
     }
+  }
+}
+
+function assertValidWindowRankerSelectedFeatureGate(entry: unknown, label: string): void {
+  const gate = requireValidationRecord(entry, label);
+  if (typeof gate.feature !== "string" || gate.feature.trim().length === 0) {
+    throw new SolverInputError(`${label}.feature must be a non-empty string.`);
+  }
+  if (!isLnsWindowRankerFeatureName(gate.feature)) {
+    throw new SolverInputError(`${label}.feature must be one of the LNS window ranker feature names.`);
+  }
+  requireOptionalFiniteNumberInRange(
+    gate,
+    "minValue",
+    `${label}.minValue`,
+    -LNS_MAX_WINDOW_RANKER_SCORE_DELTA,
+    LNS_MAX_WINDOW_RANKER_SCORE_DELTA,
+    true
+  );
+  requireOptionalFiniteNumberInRange(
+    gate,
+    "maxValue",
+    `${label}.maxValue`,
+    -LNS_MAX_WINDOW_RANKER_SCORE_DELTA,
+    LNS_MAX_WINDOW_RANKER_SCORE_DELTA,
+    true
+  );
+  if (gate.minValue === undefined && gate.maxValue === undefined) {
+    throw new SolverInputError(`${label} must include minValue or maxValue.`);
+  }
+  if (typeof gate.minValue === "number" && typeof gate.maxValue === "number" && gate.minValue > gate.maxValue) {
+    throw new SolverInputError(`${label}.minValue must be less than or equal to maxValue.`);
   }
 }
 
@@ -160,6 +184,7 @@ function assertValidWindowRankerOptions(lns: Record<string, unknown>): void {
   );
   assertValidWindowRankerAllowedTransitions(windowRanker);
   assertValidWindowRankerSelectedFeatureGates(windowRanker);
+  assertValidWindowRankerSelectedFeatureGateGroups(windowRanker);
   assertValidWindowRankerFeatureDeltaGates(windowRanker);
 
   const model = requireValidationRecord(windowRanker.model, "LNS option lns.windowRanker.model");

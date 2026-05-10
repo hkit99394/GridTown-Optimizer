@@ -27,7 +27,11 @@ import type {
   LnsWindowRankerOnlineFinalTransitionStatus,
   LnsWindowRankerOnlineTransitionStatusCounts
 } from "./lnsWindowRankerOnlineSelectionDiagnostics.js";
-import type { LnsWindowRankerFeatureDeltaGate, LnsWindowRankerSelectedFeatureGate } from "../core/index.js";
+import type {
+  LnsWindowRankerFeatureDeltaGate,
+  LnsWindowRankerSelectedFeatureGate,
+  LnsWindowRankerSelectedFeatureGateGroup
+} from "../core/index.js";
 
 interface LnsWindowRankerOnlineTransitionSummary {
   overrideTransitionCounts: Record<string, number>;
@@ -87,6 +91,14 @@ function formatSelectedFeatureGates(gates: readonly LnsWindowRankerSelectedFeatu
   return gates.map(formatSelectedFeatureGate).join(", ");
 }
 
+function formatSelectedFeatureGateGroup(group: LnsWindowRankerSelectedFeatureGateGroup): string {
+  return group.map(formatSelectedFeatureGate).join(", ");
+}
+
+function formatSelectedFeatureGateGroups(groups: readonly LnsWindowRankerSelectedFeatureGateGroup[]): string {
+  return groups.map((group) => `(${formatSelectedFeatureGateGroup(group)})`).join(" OR ");
+}
+
 function formatRankerSummary(variant: LnsWindowRankerOnlineAblationVariantResult): string {
   const ranker = variant.windowRanker;
   if (!ranker) return "ranker=disabled";
@@ -109,6 +121,9 @@ export function formatLnsWindowRankerOnlineCalibration(result: LnsWindowRankerOn
   }
   if (result.selectedFeatureGates !== undefined) {
     lines.push(`Selected feature gates: ${formatSelectedFeatureGates(result.selectedFeatureGates)}`);
+  }
+  if (result.selectedFeatureGateGroups !== undefined) {
+    lines.push(`Selected feature gate groups: ${formatSelectedFeatureGateGroups(result.selectedFeatureGateGroups)}`);
   }
   if (result.featureDeltaGates !== undefined) {
     lines.push(`Feature delta gates: ${formatFeatureDeltaGates(result.featureDeltaGates)}`);
@@ -143,6 +158,12 @@ export function formatLnsWindowRankerOnlineAblation(result: LnsWindowRankerOnlin
       ?.windowRanker?.selectedFeatureGates ?? [];
   if (selectedFeatureGates.length > 0) {
     lines.push(`Selected feature gates: ${formatSelectedFeatureGates(selectedFeatureGates)}`);
+  }
+  const selectedFeatureGateGroups =
+    result.cases.flatMap((entry) => entry.variants).find((variant) => variant.variantName === "window-ranker")
+      ?.windowRanker?.selectedFeatureGateGroups ?? [];
+  if (selectedFeatureGateGroups.length > 0) {
+    lines.push(`Selected feature gate groups: ${formatSelectedFeatureGateGroups(selectedFeatureGateGroups)}`);
   }
   const featureDeltaGates =
     result.cases.flatMap((entry) => entry.variants).find((variant) => variant.variantName === "window-ranker")

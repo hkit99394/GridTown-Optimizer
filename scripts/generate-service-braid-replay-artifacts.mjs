@@ -103,6 +103,54 @@ function generatedServiceBraidFamilyMutations() {
   ];
 }
 
+function generatedServiceBraidRightNeighborhoodMutations() {
+  return [
+    {
+      caseName: "lns-holdout-service-braid-family-embed-7x8-right-neighborhood-anchor-candidate",
+      description: "Generated service-braid right-shift anchor candidate from the prior repeatability hit.",
+      generatedGridFamily: "base-blocker-embed-right-neighborhood",
+      gridOverride: embeddedServiceBraidGrid({ rows: 7, cols: 8, left: 1 })
+    },
+    {
+      caseName: "lns-holdout-service-braid-family-embed-8x8-down-right-neighborhood-candidate",
+      description:
+        "Generated service-braid candidate shifting the base blocker pattern down and right in an 8x8 board.",
+      generatedGridFamily: "base-blocker-embed-right-neighborhood",
+      gridOverride: embeddedServiceBraidGrid({ rows: 8, cols: 8, top: 1, left: 1 })
+    },
+    {
+      caseName: "lns-holdout-service-braid-family-embed-7x9-wide-right-neighborhood-candidate",
+      description: "Generated service-braid right-shift candidate with an extra eastern lane.",
+      generatedGridFamily: "base-blocker-embed-right-neighborhood",
+      gridOverride: embeddedServiceBraidGrid({ rows: 7, cols: 9, left: 1 })
+    },
+    {
+      caseName: "lns-holdout-service-braid-family-embed-7x8-right-open-upper-neighborhood-candidate",
+      description: "Generated service-braid right-shift candidate opening the upper central braid blocker.",
+      generatedGridFamily: "base-blocker-embed-right-neighborhood",
+      gridOverride: embeddedServiceBraidGrid({ rows: 7, cols: 8, left: 1 }),
+      gridCellMutations: [{ r: 1, c: 4, value: 1 }]
+    },
+    {
+      caseName: "lns-holdout-service-braid-family-embed-7x8-right-open-lower-neighborhood-candidate",
+      description: "Generated service-braid right-shift candidate opening the lower-left notch blocker.",
+      generatedGridFamily: "base-blocker-embed-right-neighborhood",
+      gridOverride: embeddedServiceBraidGrid({ rows: 7, cols: 8, left: 1 }),
+      gridCellMutations: [{ r: 5, c: 3, value: 1 }]
+    },
+    {
+      caseName: "lns-holdout-service-braid-family-embed-7x8-right-choke-inward-neighborhood-candidate",
+      description: "Generated service-braid right-shift candidate moving the right-side choke one cell inward.",
+      generatedGridFamily: "base-blocker-embed-right-neighborhood",
+      gridOverride: embeddedServiceBraidGrid({ rows: 7, cols: 8, left: 1 }),
+      gridCellMutations: [
+        { r: 3, c: 6, value: 1 },
+        { r: 3, c: 5, value: 0 }
+      ]
+    }
+  ];
+}
+
 const BUNDLES = Object.freeze({
   "service-braid-range1-big-service120": {
     artifactDir:
@@ -399,6 +447,21 @@ const BUNDLES = Object.freeze({
     candidateSummaryMode: "bySeed",
     selectivitySummary: true,
     selectivitySummaryTitle: "Service-braid generated-grid right-shift repeatability selectivity summary"
+  },
+  "service-braid-generated-grid-right-neighborhood-screen": {
+    artifactDir:
+      "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-right-neighborhood-screen-roll-forward-2x0.1",
+    description:
+      "Protected service-braid compact generated-grid right-neighborhood screen around the right-shift family hit.",
+    mutations: generatedServiceBraidRightNeighborhoodMutations(),
+    options: {
+      seeds: [7, 19, 37],
+      statePolicies: ["initial-incumbent", "post-stagnation"],
+      ...COMPACT_SCREEN_OPTIONS
+    },
+    candidateSummaryMode: "byCase",
+    selectivitySummary: true,
+    selectivitySummaryTitle: "Service-braid generated-grid right-neighborhood compact screen selectivity summary"
   }
 });
 
@@ -408,7 +471,7 @@ function usage() {
     .join("\n");
   return [
     "Usage: node scripts/generate-service-braid-replay-artifacts.mjs --bundle=<name> [--force-artifact-dir]",
-    "       node scripts/generate-service-braid-replay-artifacts.mjs --bundle=<name> --online-ablation --online-artifact-dir=<dir> --window-ranker-model=<path> --window-ranker-min-score-delta=<n> [--window-ranker-selected-feature-gates=<feature>=...] [--lns-iterations=<n>] [--force-artifact-dir]",
+    "       node scripts/generate-service-braid-replay-artifacts.mjs --bundle=<name> --online-ablation --online-artifact-dir=<dir> --window-ranker-model=<path> --window-ranker-min-score-delta=<n> [--window-ranker-selected-feature-gates=<feature>=...] [--window-ranker-selected-feature-gate-groups=<gates;gates>] [--lns-iterations=<n>] [--force-artifact-dir]",
     "",
     "Regenerates custom protected service-braid LNS replay-label artifacts from built dist/ modules.",
     "With --online-ablation, generates diagnostics-only online ranker scorecards for the custom candidate cases.",
@@ -454,6 +517,19 @@ function parseSelectedFeatureGates(value) {
   });
 }
 
+function parseSelectedFeatureGateGroups(value) {
+  const groups = value
+    .split(";")
+    .map((group) => group.trim())
+    .filter((group) => group.length > 0);
+  if (groups.length === 0) {
+    throw new Error(
+      "--window-ranker-selected-feature-gate-groups must include at least one semicolon-separated gate group."
+    );
+  }
+  return groups.map((group) => parseSelectedFeatureGates(group));
+}
+
 function parseArgs(argv) {
   let bundleName;
   let forceArtifactDir = false;
@@ -462,6 +538,7 @@ function parseArgs(argv) {
   let windowRankerModelPath;
   let windowRankerMinScoreDelta;
   let windowRankerSelectedFeatureGates;
+  let windowRankerSelectedFeatureGateGroups;
   let onlineLnsIterations = DEFAULT_ONLINE_LNS_OPTIONS.iterations;
   for (const arg of argv) {
     if (arg === "--help" || arg === "-h") {
@@ -508,6 +585,18 @@ function parseArgs(argv) {
       );
       continue;
     }
+    if (arg.startsWith("--window-ranker-selected-feature-gate-groups=")) {
+      windowRankerSelectedFeatureGateGroups = parseSelectedFeatureGateGroups(
+        arg.slice("--window-ranker-selected-feature-gate-groups=".length)
+      );
+      continue;
+    }
+    if (arg.startsWith("--window-ranker-feature-value-gate-groups=")) {
+      windowRankerSelectedFeatureGateGroups = parseSelectedFeatureGateGroups(
+        arg.slice("--window-ranker-feature-value-gate-groups=".length)
+      );
+      continue;
+    }
     if (arg.startsWith("--lns-iterations=")) {
       onlineLnsIterations = parsePositiveInteger(arg.slice("--lns-iterations=".length), "--lns-iterations");
       continue;
@@ -533,6 +622,7 @@ function parseArgs(argv) {
     windowRankerModelPath,
     windowRankerMinScoreDelta,
     windowRankerSelectedFeatureGates,
+    windowRankerSelectedFeatureGateGroups,
     onlineLnsIterations
   };
 }
@@ -729,6 +819,13 @@ function onlineCommand(defaultCliReplayCommand, args) {
   if (args.windowRankerSelectedFeatureGates?.length) {
     argv.push(
       `--window-ranker-selected-feature-gates=${args.windowRankerSelectedFeatureGates.map(selectedFeatureGateArg).join(",")}`
+    );
+  }
+  if (args.windowRankerSelectedFeatureGateGroups?.length) {
+    argv.push(
+      `--window-ranker-selected-feature-gate-groups=${args.windowRankerSelectedFeatureGateGroups
+        .map((group) => group.map(selectedFeatureGateArg).join(","))
+        .join(";")}`
     );
   }
   if (args.forceArtifactDir) argv.push("--force-artifact-dir");
@@ -978,6 +1075,9 @@ if (args.mode === "online") {
     ...(args.windowRankerSelectedFeatureGates === undefined
       ? {}
       : { selectedFeatureGates: args.windowRankerSelectedFeatureGates }),
+    ...(args.windowRankerSelectedFeatureGateGroups === undefined
+      ? {}
+      : { selectedFeatureGateGroups: args.windowRankerSelectedFeatureGateGroups }),
     lns: {
       ...DEFAULT_ONLINE_LNS_OPTIONS,
       iterations: args.onlineLnsIterations
@@ -1033,7 +1133,10 @@ if (args.mode === "online") {
       minScoreDelta: args.windowRankerMinScoreDelta,
       ...(args.windowRankerSelectedFeatureGates === undefined
         ? {}
-        : { selectedFeatureGates: args.windowRankerSelectedFeatureGates })
+        : { selectedFeatureGates: args.windowRankerSelectedFeatureGates }),
+      ...(args.windowRankerSelectedFeatureGateGroups === undefined
+        ? {}
+        : { selectedFeatureGateGroups: args.windowRankerSelectedFeatureGateGroups })
     },
     summary: summary
       ? {

@@ -10,7 +10,8 @@ import { assertValidLnsWindowRankerRuntimeModel } from "../core/index.js";
 import type {
   LnsWindowRankerFeatureDeltaGate,
   LnsWindowRankerRuntimeModel,
-  LnsWindowRankerSelectedFeatureGate
+  LnsWindowRankerSelectedFeatureGate,
+  LnsWindowRankerSelectedFeatureGateGroup
 } from "../core/index.js";
 import type {
   LnsWindowRankerOnlineAblationSuiteResult,
@@ -123,10 +124,14 @@ function lnsWindowRankerOnlineAblationSummaryMetrics(
   const ranker = getRankerSummary(result);
   const allowedTransitions = ablationAllowedTransitions(result);
   const selectedFeatureGates = ablationSelectedFeatureGates(result);
+  const selectedFeatureGateGroups = ablationSelectedFeatureGateGroups(result);
   const featureDeltaGates = ablationFeatureDeltaGates(result);
   return {
     ...(allowedTransitions === null ? {} : { allowedTransitions: [...allowedTransitions] }),
     ...(selectedFeatureGates.length === 0 ? {} : { selectedFeatureGates: [...selectedFeatureGates] }),
+    ...(selectedFeatureGateGroups.length === 0
+      ? {}
+      : { selectedFeatureGateGroups: selectedFeatureGateGroups.map((group) => [...group]) }),
     ...(featureDeltaGates.length === 0 ? {} : { featureDeltaGates: [...featureDeltaGates] }),
     baselineMeanPopulation: baseline.meanPopulation,
     rankerMeanPopulation: ranker.meanPopulation,
@@ -241,6 +246,15 @@ function ablationSelectedFeatureGates(
   );
 }
 
+function ablationSelectedFeatureGateGroups(
+  result: LnsWindowRankerOnlineAblationSuiteResult
+): readonly LnsWindowRankerSelectedFeatureGateGroup[] {
+  return (
+    result.cases.flatMap((entry) => entry.variants).find((variant) => variant.variantName === "window-ranker")
+      ?.windowRanker?.selectedFeatureGateGroups ?? []
+  );
+}
+
 function calibrationThresholdByDelta(
   result: LnsWindowRankerOnlineCalibrationSuiteResult,
   minScoreDelta: number | null
@@ -258,6 +272,9 @@ function lnsWindowRankerOnlineCalibrationSummaryMetrics(
   return {
     ...(result.allowedTransitions === undefined ? {} : { allowedTransitions: [...result.allowedTransitions] }),
     ...(result.selectedFeatureGates === undefined ? {} : { selectedFeatureGates: [...result.selectedFeatureGates] }),
+    ...(result.selectedFeatureGateGroups === undefined
+      ? {}
+      : { selectedFeatureGateGroups: result.selectedFeatureGateGroups.map((group) => [...group]) }),
     ...(result.featureDeltaGates === undefined ? {} : { featureDeltaGates: [...result.featureDeltaGates] }),
     thresholdCount: result.minScoreDeltas.length,
     minScoreDeltas: [...result.minScoreDeltas],
@@ -307,6 +324,7 @@ export function buildLnsWindowRankerOnlineAblationRegistryEntryDraft(
   const minScoreDelta = ablationMinScoreDelta(result);
   const allowedTransitions = ablationAllowedTransitions(result);
   const selectedFeatureGates = ablationSelectedFeatureGates(result);
+  const selectedFeatureGateGroups = ablationSelectedFeatureGateGroups(result);
   const featureDeltaGates = ablationFeatureDeltaGates(result);
   const protectedHoldout = options.protectedHoldout ?? false;
   const cases = lnsWindowRankerOnlineCasesBySplit(result.selectedCaseNames, protectedHoldout);
@@ -335,6 +353,9 @@ export function buildLnsWindowRankerOnlineAblationRegistryEntryDraft(
       minScoreDelta,
       ...(allowedTransitions === null ? {} : { allowedTransitionCount: allowedTransitions.length }),
       ...(selectedFeatureGates.length === 0 ? {} : { selectedFeatureGateCount: selectedFeatureGates.length }),
+      ...(selectedFeatureGateGroups.length === 0
+        ? {}
+        : { selectedFeatureGateGroupCount: selectedFeatureGateGroups.length }),
       ...(featureDeltaGates.length === 0 ? {} : { featureDeltaGateCount: featureDeltaGates.length }),
       caseCount: result.caseCount,
       seedCount: result.seedCount,
@@ -426,6 +447,9 @@ export function buildLnsWindowRankerOnlineCalibrationRegistryEntryDraft(
       ...(result.selectedFeatureGates === undefined
         ? {}
         : { selectedFeatureGateCount: result.selectedFeatureGates.length }),
+      ...(result.selectedFeatureGateGroups === undefined
+        ? {}
+        : { selectedFeatureGateGroupCount: result.selectedFeatureGateGroups.length }),
       ...(result.featureDeltaGates === undefined ? {} : { featureDeltaGateCount: result.featureDeltaGates.length }),
       minScoreDeltas: [...result.minScoreDeltas],
       thresholdCount: result.minScoreDeltas.length,

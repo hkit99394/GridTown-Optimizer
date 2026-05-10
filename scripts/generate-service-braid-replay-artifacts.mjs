@@ -151,6 +151,101 @@ function generatedServiceBraidRightNeighborhoodMutations() {
   ];
 }
 
+function generatedServiceBraidRightValueNeighborhoodMutations() {
+  const rightAnchorGrid = embeddedServiceBraidGrid({ rows: 7, cols: 8, left: 1 });
+  return [
+    {
+      caseName: "lns-holdout-service-braid-family-embed-7x8-right-big-service85-value-candidate",
+      description: "Generated service-braid right-shift candidate with the large service bonus reduced to 85.",
+      generatedGridFamily: "base-blocker-embed-right-value-neighborhood",
+      gridOverride: rightAnchorGrid,
+      serviceTypeIndex: SERVICE_TYPE_INDEX,
+      bonus: 85
+    },
+    {
+      caseName: "lns-holdout-service-braid-family-embed-7x8-right-big-service105-value-candidate",
+      description: "Generated service-braid right-shift candidate with the large service bonus raised to 105.",
+      generatedGridFamily: "base-blocker-embed-right-value-neighborhood",
+      gridOverride: rightAnchorGrid,
+      serviceTypeIndex: SERVICE_TYPE_INDEX,
+      bonus: 105
+    },
+    {
+      caseName: "lns-holdout-service-braid-family-embed-7x8-right-big-service120-value-candidate",
+      description: "Generated service-braid right-shift candidate with the large service bonus raised to 120.",
+      generatedGridFamily: "base-blocker-embed-right-value-neighborhood",
+      gridOverride: rightAnchorGrid,
+      serviceTypeIndex: SERVICE_TYPE_INDEX,
+      bonus: 120
+    },
+    {
+      caseName: "lns-holdout-service-braid-family-embed-7x8-right-range1-big-service95-value-candidate",
+      description: "Generated service-braid right-shift candidate with the large service range constrained to 1.",
+      generatedGridFamily: "base-blocker-embed-right-value-neighborhood",
+      gridOverride: rightAnchorGrid,
+      serviceTypeIndex: SERVICE_TYPE_INDEX,
+      range: 1,
+      bonus: 95
+    },
+    {
+      caseName: "lns-holdout-service-braid-family-embed-7x8-right-range1-big-service120-value-candidate",
+      description:
+        "Generated service-braid right-shift candidate with the large service range constrained to 1 and bonus raised to 120.",
+      generatedGridFamily: "base-blocker-embed-right-value-neighborhood",
+      gridOverride: rightAnchorGrid,
+      serviceTypeIndex: SERVICE_TYPE_INDEX,
+      range: 1,
+      bonus: 120
+    },
+    {
+      caseName: "lns-holdout-service-braid-family-embed-7x8-right-range3-big-service95-value-candidate",
+      description: "Generated service-braid right-shift candidate with the large service range expanded to 3.",
+      generatedGridFamily: "base-blocker-embed-right-value-neighborhood",
+      gridOverride: rightAnchorGrid,
+      serviceTypeIndex: SERVICE_TYPE_INDEX,
+      range: 3,
+      bonus: 95
+    },
+    {
+      caseName: "lns-holdout-service-braid-family-embed-7x8-right-res-headroom-plus20-value-candidate",
+      description: "Generated service-braid right-shift candidate with residential max values raised by about 20%.",
+      generatedGridFamily: "base-blocker-embed-right-value-neighborhood",
+      gridOverride: rightAnchorGrid,
+      residentialTypeMutations: [
+        { typeIndex: 0, max: 290 },
+        { typeIndex: 1, max: 480 }
+      ]
+    },
+    {
+      caseName: "lns-holdout-service-braid-family-embed-7x8-right-premium-scarcity-value-candidate",
+      description:
+        "Generated service-braid right-shift candidate with higher premium residential max and scarcity pressure.",
+      generatedGridFamily: "base-blocker-embed-right-value-neighborhood",
+      gridOverride: rightAnchorGrid,
+      residentialTypeMutations: [
+        { typeIndex: 0, max: 260 },
+        { typeIndex: 1, min: 220, max: 560 }
+      ]
+    },
+    {
+      caseName: "lns-holdout-service-braid-family-embed-8x8-down-right-big-service105-value-candidate",
+      description: "Generated down-right service-braid neighbor with the large service bonus raised to 105.",
+      generatedGridFamily: "base-blocker-embed-right-value-neighborhood",
+      gridOverride: embeddedServiceBraidGrid({ rows: 8, cols: 8, top: 1, left: 1 }),
+      serviceTypeIndex: SERVICE_TYPE_INDEX,
+      bonus: 105
+    },
+    {
+      caseName: "lns-holdout-service-braid-family-embed-7x9-wide-right-big-service85-value-candidate",
+      description: "Generated wide right service-braid neighbor with the large service bonus reduced to 85.",
+      generatedGridFamily: "base-blocker-embed-right-value-neighborhood",
+      gridOverride: embeddedServiceBraidGrid({ rows: 7, cols: 9, left: 1 }),
+      serviceTypeIndex: SERVICE_TYPE_INDEX,
+      bonus: 85
+    }
+  ];
+}
+
 const BUNDLES = Object.freeze({
   "service-braid-range1-big-service120": {
     artifactDir:
@@ -462,6 +557,20 @@ const BUNDLES = Object.freeze({
     candidateSummaryMode: "byCase",
     selectivitySummary: true,
     selectivitySummaryTitle: "Service-braid generated-grid right-neighborhood compact screen selectivity summary"
+  },
+  "service-braid-generated-grid-right-value-neighborhood-screen": {
+    artifactDir:
+      "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-right-value-neighborhood-screen-roll-forward-2x0.1",
+    description: "Protected service-braid compact generated-grid value/range screen around the right-shift family hit.",
+    mutations: generatedServiceBraidRightValueNeighborhoodMutations(),
+    options: {
+      seeds: [7, 19, 37],
+      statePolicies: ["initial-incumbent", "post-stagnation"],
+      ...COMPACT_SCREEN_OPTIONS
+    },
+    candidateSummaryMode: "byCase",
+    selectivitySummary: true,
+    selectivitySummaryTitle: "Service-braid generated-grid right value-neighborhood compact screen selectivity summary"
   }
 });
 

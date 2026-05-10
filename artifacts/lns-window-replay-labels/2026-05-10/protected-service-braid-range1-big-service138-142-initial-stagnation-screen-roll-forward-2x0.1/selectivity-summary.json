@@ -1,0 +1,1028 @@
+{
+  "generatedAt": "2026-05-10T12:07:47.804Z",
+  "title": "Service-braid compact bonus sweep selectivity summary",
+  "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range1-big-service138-142-initial-stagnation-screen-roll-forward-2x0.1",
+  "totalLabels": 216,
+  "gates": {
+    "slidingArea12": {
+      "selected": 18,
+      "pos": 10,
+      "neg": 0,
+      "neu": 8,
+      "best": 60,
+      "worst": 0,
+      "bySeed": {
+        "7": {
+          "pos": 4,
+          "neg": 0,
+          "neu": 2
+        },
+        "19": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 4
+        },
+        "37": {
+          "pos": 4,
+          "neg": 0,
+          "neu": 2
+        }
+      },
+      "byCase": {
+        "lns-holdout-service-braid-range1-big-service138-initial-stagnation-screen-candidate": {
+          "pos": 4,
+          "neg": 0,
+          "neu": 2
+        },
+        "lns-holdout-service-braid-range1-big-service140-initial-stagnation-screen-candidate": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 0
+        },
+        "lns-holdout-service-braid-range1-big-service142-initial-stagnation-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        }
+      },
+      "examples": [
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 5,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 5,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 19,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 19,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 37,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 48,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 5,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 37,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 48,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 5,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 37,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 60,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 37,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 60,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        }
+      ]
+    },
+    "slidingArea12ComponentsMax2": {
+      "selected": 18,
+      "pos": 10,
+      "neg": 0,
+      "neu": 8,
+      "best": 60,
+      "worst": 0,
+      "bySeed": {
+        "7": {
+          "pos": 4,
+          "neg": 0,
+          "neu": 2
+        },
+        "19": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 4
+        },
+        "37": {
+          "pos": 4,
+          "neg": 0,
+          "neu": 2
+        }
+      },
+      "byCase": {
+        "lns-holdout-service-braid-range1-big-service138-initial-stagnation-screen-candidate": {
+          "pos": 4,
+          "neg": 0,
+          "neu": 2
+        },
+        "lns-holdout-service-braid-range1-big-service140-initial-stagnation-screen-candidate": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 0
+        },
+        "lns-holdout-service-braid-range1-big-service142-initial-stagnation-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        }
+      },
+      "examples": [
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 5,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 5,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 19,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 19,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 37,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 48,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 5,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 37,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 48,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 5,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 37,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 60,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 37,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 60,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        }
+      ]
+    },
+    "slidingComponentsMax2": {
+      "selected": 42,
+      "pos": 18,
+      "neg": 2,
+      "neu": 22,
+      "best": 60,
+      "worst": -48,
+      "bySeed": {
+        "7": {
+          "pos": 8,
+          "neg": 0,
+          "neu": 6
+        },
+        "19": {
+          "pos": 4,
+          "neg": 2,
+          "neu": 8
+        },
+        "37": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 8
+        }
+      },
+      "byCase": {
+        "lns-holdout-service-braid-range1-big-service138-initial-stagnation-screen-candidate": {
+          "pos": 6,
+          "neg": 2,
+          "neu": 4
+        },
+        "lns-holdout-service-braid-range1-big-service140-initial-stagnation-screen-candidate": {
+          "pos": 12,
+          "neg": 0,
+          "neu": 0
+        },
+        "lns-holdout-service-braid-range1-big-service142-initial-stagnation-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 18
+        }
+      },
+      "examples": [
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 5,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 3,
+            "left": 2,
+            "rows": 3,
+            "cols": 3
+          },
+          "delta": 7,
+          "area": 9,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 5,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 3,
+            "left": 2,
+            "rows": 3,
+            "cols": 3
+          },
+          "delta": 7,
+          "area": 9,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 3,
+            "left": 2,
+            "rows": 3,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 9,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 3,
+            "left": 2,
+            "rows": 3,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 9,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 19,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 3,
+            "left": 2,
+            "rows": 3,
+            "cols": 3
+          },
+          "delta": -48,
+          "area": 9,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 19,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 3,
+            "left": 2,
+            "rows": 3,
+            "cols": 3
+          },
+          "delta": -48,
+          "area": 9,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        }
+      ]
+    },
+    "slidingTopOrLeft2": {
+      "selected": 18,
+      "pos": 10,
+      "neg": 0,
+      "neu": 8,
+      "best": 60,
+      "worst": 0,
+      "bySeed": {
+        "7": {
+          "pos": 4,
+          "neg": 0,
+          "neu": 2
+        },
+        "19": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 4
+        },
+        "37": {
+          "pos": 4,
+          "neg": 0,
+          "neu": 2
+        }
+      },
+      "byCase": {
+        "lns-holdout-service-braid-range1-big-service138-initial-stagnation-screen-candidate": {
+          "pos": 4,
+          "neg": 0,
+          "neu": 2
+        },
+        "lns-holdout-service-braid-range1-big-service140-initial-stagnation-screen-candidate": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 0
+        },
+        "lns-holdout-service-braid-range1-big-service142-initial-stagnation-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        }
+      },
+      "examples": [
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 5,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 5,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 19,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 19,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 37,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 48,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 5,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 37,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 48,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 5,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 37,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 60,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 37,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 60,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        }
+      ]
+    },
+    "allNonBaselineSliding": {
+      "selected": 54,
+      "pos": 26,
+      "neg": 4,
+      "neu": 24,
+      "best": 60,
+      "worst": -48,
+      "bySeed": {
+        "7": {
+          "pos": 12,
+          "neg": 0,
+          "neu": 6
+        },
+        "19": {
+          "pos": 6,
+          "neg": 4,
+          "neu": 8
+        },
+        "37": {
+          "pos": 8,
+          "neg": 0,
+          "neu": 10
+        }
+      },
+      "byCase": {
+        "lns-holdout-service-braid-range1-big-service138-initial-stagnation-screen-candidate": {
+          "pos": 8,
+          "neg": 4,
+          "neu": 6
+        },
+        "lns-holdout-service-braid-range1-big-service140-initial-stagnation-screen-candidate": {
+          "pos": 18,
+          "neg": 0,
+          "neu": 0
+        },
+        "lns-holdout-service-braid-range1-big-service142-initial-stagnation-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 18
+        }
+      },
+      "examples": [
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 5,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 3,
+            "left": 2,
+            "rows": 3,
+            "cols": 3
+          },
+          "delta": 7,
+          "area": 9,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 3,
+            "left": 0,
+            "rows": 3,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 9,
+          "componentsAfter": 3,
+          "newReach": 2,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 5,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 3,
+            "left": 2,
+            "rows": 3,
+            "cols": 3
+          },
+          "delta": 7,
+          "area": 9,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 3,
+            "left": 0,
+            "rows": 3,
+            "cols": 3
+          },
+          "delta": 7,
+          "area": 9,
+          "componentsAfter": 3,
+          "newReach": 2,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 3,
+            "left": 2,
+            "rows": 3,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 9,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 3,
+            "left": 0,
+            "rows": 3,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 9,
+          "componentsAfter": 3,
+          "newReach": 2,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        }
+      ]
+    }
+  }
+}

@@ -1,6 +1,6 @@
 import { randomInt } from "node:crypto";
 
-import { materializeValidLnsSeedSolution } from "../../core/index.js";
+import { assertValidSolveInputs, materializeValidLnsSeedSolution } from "../../core/index.js";
 import { solveCpSat } from "../cp-sat/solver.js";
 import { solveLns } from "../lns/solver.js";
 import { solveGreedy } from "../greedy/solver.js";
@@ -660,6 +660,7 @@ function runAutoPlan(
 }
 
 export function solveAuto(G: Grid, params: SolverParams): Solution {
+  assertValidSolveInputs(G, params);
   const options = normalizeAutoOptions(params);
   const state = createAutoRuntimeState();
   const startedAtMs = Date.now();

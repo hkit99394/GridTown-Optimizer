@@ -20,7 +20,9 @@ import {
   completeAppendableRegistryEntry,
   defaultCliReplayCommand,
   normalizeRepoRelativePath,
-  writeJsonArtifact
+  prepareArtifactBundleDirectory,
+  writeJsonArtifact,
+  writeTextArtifact
 } from "./artifactBundleHelpers.js";
 
 import type {
@@ -43,6 +45,7 @@ interface ParsedLnsWindowRankerArgs {
   baselineSummary?: string;
   baselineRegistryPath?: string;
   baselineRegisterDryRun: boolean;
+  forceArtifactDir: boolean;
 }
 
 interface LnsWindowRankerArtifactManifest {
@@ -84,6 +87,7 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
   let baselineSummary: string | undefined;
   let baselineRegistryPath: string | undefined;
   let baselineRegisterDryRun = false;
+  let forceArtifactDir = false;
   const inlineOptions: Record<string, (value: string) => void> = {
     labels: (value) => {
       labelsPath = value;
@@ -133,6 +137,10 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
       baselineRegisterDryRun = true;
       continue;
     }
+    if (isCliFlag(arg, "--force-artifact-dir")) {
+      forceArtifactDir = true;
+      continue;
+    }
     if (isCliFlag(arg, "--roll-forward-final-lift", "--final-lift-target")) {
       target = "roll-forward-final-lift";
       continue;
@@ -168,7 +176,8 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
     baselineDecision,
     baselineSummary,
     baselineRegistryPath,
-    baselineRegisterDryRun
+    baselineRegisterDryRun,
+    forceArtifactDir
   };
 }
 
@@ -215,17 +224,14 @@ function writeLnsWindowRankerArtifactBundle(
   if (args.artifactDir === undefined) {
     throw new Error("LNS window ranker baseline artifact directory is required.");
   }
-  const artifactDir = normalizeRepoRelativePath(args.artifactDir, "--artifact-dir");
-  const absoluteArtifactDir = path.resolve(process.cwd(), artifactDir);
-  fs.mkdirSync(absoluteArtifactDir, { recursive: true });
-
-  const artifactPath = (fileName: string) => path.posix.join(artifactDir, fileName);
-  const absoluteArtifactPath = (fileName: string) => path.join(absoluteArtifactDir, fileName);
-  const experimentJson = artifactPath("lns-window-ranker-baselines.json");
-  const experimentText = artifactPath("lns-window-ranker-baselines.txt");
-  const modelJson = artifactPath("model.json");
-  const telemetryManifestJson = artifactPath("telemetry-manifest.json");
-  const registryEntryDraftJson = artifactPath("registry-entry-draft.json");
+  const artifacts = prepareArtifactBundleDirectory(args.artifactDir, "--artifact-dir", {
+    force: args.forceArtifactDir
+  });
+  const experimentJson = artifacts.artifactPath("lns-window-ranker-baselines.json");
+  const experimentText = artifacts.artifactPath("lns-window-ranker-baselines.txt");
+  const modelJson = artifacts.artifactPath("model.json");
+  const telemetryManifestJson = artifacts.artifactPath("telemetry-manifest.json");
+  const registryEntryDraftJson = artifacts.artifactPath("registry-entry-draft.json");
   const command = defaultBaselineArtifactCommand(argv);
   const labelSnapshot = readLabelSnapshot(labelsPath);
   const telemetryManifest = buildLnsWindowRankerBaselineTelemetryManifest(result, {
@@ -244,21 +250,27 @@ function writeLnsWindowRankerArtifactBundle(
   });
 
   writeJsonArtifact(
-    absoluteArtifactPath("lns-window-ranker-baselines.json"),
-    createLnsWindowRankerBaselineSnapshot(result)
+    artifacts.absoluteArtifactPath("lns-window-ranker-baselines.json"),
+    createLnsWindowRankerBaselineSnapshot(result),
+    { force: args.forceArtifactDir }
   );
-  fs.writeFileSync(
-    absoluteArtifactPath("lns-window-ranker-baselines.txt"),
-    `${formatLnsWindowRankerBaselineExperiment(result)}\n`
+  writeTextArtifact(
+    artifacts.absoluteArtifactPath("lns-window-ranker-baselines.txt"),
+    `${formatLnsWindowRankerBaselineExperiment(result)}\n`,
+    { force: args.forceArtifactDir }
   );
-  writeJsonArtifact(absoluteArtifactPath("model.json"), result.model);
-  writeJsonArtifact(absoluteArtifactPath("telemetry-manifest.json"), telemetryManifest);
-  writeJsonArtifact(absoluteArtifactPath("registry-entry-draft.json"), registryEntryDraft);
+  writeJsonArtifact(artifacts.absoluteArtifactPath("model.json"), result.model, { force: args.forceArtifactDir });
+  writeJsonArtifact(artifacts.absoluteArtifactPath("telemetry-manifest.json"), telemetryManifest, {
+    force: args.forceArtifactDir
+  });
+  writeJsonArtifact(artifacts.absoluteArtifactPath("registry-entry-draft.json"), registryEntryDraft, {
+    force: args.forceArtifactDir
+  });
 
   const registry = args.baselineRegisterDryRun ? registerBaselineArtifacts(registryEntryDraft, args) : undefined;
 
   return {
-    artifactDir,
+    artifactDir: artifacts.artifactDir,
     artifactPaths: {
       experimentJson,
       experimentText,
@@ -311,6 +323,9 @@ export function runLnsWindowRankerBaselineCli(): void {
   }
   if (args.baselineRegistryPath !== undefined && !args.baselineRegisterDryRun) {
     throw new Error("--baseline-registry requires --baseline-register-dry-run.");
+  }
+  if (args.forceArtifactDir && args.artifactDir === undefined) {
+    throw new Error("--force-artifact-dir requires --artifact-dir.");
   }
 
   const labelSnapshot = readLabelSnapshot(args.labelsPath);

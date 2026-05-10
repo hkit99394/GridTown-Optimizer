@@ -1,0 +1,10 @@
+Service-braid range1/bonus140 south-shelf repeatability selectivity summary
+generatedAt=2026-05-10T13:19:23.218Z
+source=artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range1-big-service140-south-shelf-repeatability-wide-state-search-roll-forward-4x0.2
+totalLabels=432
+
+slidingArea12: selected=36 pos=0 neg=1 neu=35 best=0 worst=-55
+slidingArea12ComponentsMax2: selected=0 pos=0 neg=0 neu=0 best=0 worst=0
+slidingComponentsMax2: selected=54 pos=0 neg=0 neu=54 best=0 worst=0
+slidingTopOrLeft2: selected=36 pos=0 neg=1 neu=35 best=0 worst=-55
+allNonBaselineSliding: selected=126 pos=0 neg=1 neu=125 best=0 worst=-55

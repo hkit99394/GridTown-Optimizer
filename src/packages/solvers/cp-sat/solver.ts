@@ -22,7 +22,7 @@ import type {
   SolverParams,
   Solution
 } from "../../core/index.js";
-import { assertValidLayout } from "../../core/index.js";
+import { assertValidLayout, assertValidSolveInputs, validateSolution } from "../../core/index.js";
 
 interface CpSatResidentialPlacement {
   r: number;
@@ -630,7 +630,7 @@ function validateCpSatLayout(
 
 export function materializeCpSatSolution(G: Grid, params: SolverParams, raw: CpSatRawSolution): Solution {
   const layout = validateCpSatLayout(G, params, raw);
-  return {
+  const solution: Solution = {
     optimizer: "cp-sat",
     cpSatStatus: raw.status,
     cpSatObjectivePolicy: raw.objectivePolicy,
@@ -646,6 +646,31 @@ export function materializeCpSatSolution(G: Grid, params: SolverParams, raw: CpS
     populations: raw.populations,
     totalPopulation: raw.totalPopulation
   };
+  const validation = validateSolution({ grid: G, solution, params }, { ignoreReportedPopulation: true });
+  if (!validation.valid) {
+    throw new Error(`CP-SAT backend produced an invalid solution payload: ${validation.errors.join(" ")}`);
+  }
+  const populationErrors: string[] = [];
+  for (let i = 0; i < validation.recomputedPopulations.length; i++) {
+    if (raw.populations[i] < 0 || raw.populations[i] > validation.recomputedPopulations[i]) {
+      populationErrors.push(
+        `Residential ${i} reports population ${raw.populations[i]}, expected ${validation.recomputedPopulations[i]}.`
+      );
+    }
+  }
+  if (raw.totalPopulation < 0 || raw.totalPopulation > validation.recomputedTotalPopulation) {
+    populationErrors.push(
+      `Solution reports total population ${raw.totalPopulation}, expected ${validation.recomputedTotalPopulation}.`
+    );
+  }
+  if (populationErrors.length > 0) {
+    throw new Error(`CP-SAT backend produced an invalid solution payload: ${populationErrors.join(" ")}`);
+  }
+  return {
+    ...solution,
+    populations: validation.recomputedPopulations,
+    totalPopulation: validation.recomputedTotalPopulation
+  };
 }
 
 export async function solveCpSatAsync(
@@ -653,11 +678,13 @@ export async function solveCpSatAsync(
   params: SolverParams,
   asyncOptions?: CpSatAsyncOptions
 ): Promise<Solution> {
+  assertValidSolveInputs(G, params);
   const raw = await runCpSatBackendAsync(G, params, asyncOptions);
   return materializeCpSatSolution(G, params, raw);
 }
 
 export function solveCpSat(G: Grid, params: SolverParams): Solution {
+  assertValidSolveInputs(G, params);
   const raw = parseCpSatRawSolution(runCpSatBackend(G, params));
   return materializeCpSatSolution(G, params, raw);
 }

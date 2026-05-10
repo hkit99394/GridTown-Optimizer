@@ -57,6 +57,18 @@ function buildLiveProgressEntry(job: SolveJob, solution: Solution) {
   });
 }
 
+function buildProgressLogStatusResponseBase(progressLog: SolveProgressLogReadResult) {
+  const { document, filePath } = progressLog;
+  return {
+    ok: true,
+    requestId: document.requestId,
+    optimizer: document.optimizer,
+    jobStatus: document.status,
+    cancelRequested: document.status === "stopped" || Boolean(document.finalResult?.stoppedByUser),
+    progressLogFilePath: filePath
+  };
+}
+
 function sendSolveCapacityFull(res: ServerResponse<IncomingMessage>): void {
   sendJson(res, 429, {
     ok: false,
@@ -65,21 +77,103 @@ function sendSolveCapacityFull(res: ServerResponse<IncomingMessage>): void {
   });
 }
 
-function buildOrphanedProgressLogMessage(progressLog: SolveProgressLogReadResult): string {
-  const { status, error, message } = progressLog.document;
-  if (status === "running") {
-    return "Solver status was lost because the local server is no longer tracking this run. The progress log still shows it as running, so the server was likely stopped or restarted before the solve finished.";
-  }
-  return error ?? message ?? "Solver status was lost because the local server is no longer tracking this run.";
+function buildOrphanedRunningProgressLogMessage(): string {
+  return "Solver status was lost because the local server is no longer tracking this run. The progress log still shows it as running, so the server was likely stopped or restarted before the solve finished.";
 }
 
-function sendOrphanedProgressLogStatus(
+function buildTerminalProgressLogError(progressLog: SolveProgressLogReadResult): string {
+  const { status, error } = progressLog.document;
+  return (
+    error ??
+    (status === "stopped"
+      ? "Solve was stopped."
+      : status === "failed"
+        ? "Solve failed."
+        : "Solve completed without a persisted final result.")
+  );
+}
+
+function getRecoveredProgressLogValidationError(error: unknown): string {
+  const detail = error instanceof Error ? error.message : "Unknown validation error.";
+  return `Recovered solve progress log is invalid and cannot be materialized: ${detail}`;
+}
+
+function buildRecoveredProgressLogTerminalErrorResponse(
+  progressLog: SolveProgressLogReadResult,
+  progressEntry: SolveProgressLogReadResult["document"]["entries"][number] | null,
+  error: string
+) {
+  const { document } = progressLog;
+  return {
+    ...buildProgressLogStatusResponseBase(progressLog),
+    ...(document.message ? { message: document.message } : {}),
+    ...(progressEntry ? { progressEntry } : {}),
+    error
+  };
+}
+
+function sendRecoveredProgressLogStatus(
   res: ServerResponse<IncomingMessage>,
   progressLog: SolveProgressLogReadResult,
   headOnly: boolean
 ): void {
   const { document, filePath } = progressLog;
   const progressEntry = document.entries[document.entries.length - 1] ?? null;
+  if (document.status !== "running") {
+    if (document.finalResult) {
+      let compactResponse: ReturnType<typeof buildCompactSolveResponse>;
+      try {
+        assertValidSolveInputs(document.input.grid, document.input.params);
+        assertValidSerializedSolutionPayload(
+          document.finalResult.solution,
+          "Recovered progress log finalResult.solution"
+        );
+        const solution = materializeSerializedSolution(document.finalResult.solution);
+        compactResponse = buildCompactSolveResponse(document.input.grid, document.input.params, solution, {
+          validationMode: "full"
+        });
+      } catch (error) {
+        sendJson(
+          res,
+          200,
+          buildRecoveredProgressLogTerminalErrorResponse(
+            progressLog,
+            progressEntry,
+            getRecoveredProgressLogValidationError(error)
+          ),
+          headOnly
+        );
+        return;
+      }
+      sendJson(
+        res,
+        200,
+        {
+          ...buildProgressLogStatusResponseBase(progressLog),
+          ...(document.message ? { message: document.message } : {}),
+          ...(document.error ? { error: document.error } : {}),
+          ...(progressEntry ? { progressEntry } : {}),
+          ...compactResponse
+        },
+        headOnly
+      );
+      return;
+    }
+
+    sendJson(
+      res,
+      200,
+      {
+        ...buildProgressLogStatusResponseBase(progressLog),
+        ...(document.message ? { message: document.message } : {}),
+        ...(progressEntry ? { progressEntry } : {}),
+        error: buildTerminalProgressLogError(progressLog)
+      },
+      headOnly
+    );
+    return;
+  }
+
   sendJson(
     res,
     410,
@@ -91,7 +185,7 @@ function sendOrphanedProgressLogStatus(
       cancelRequested: false,
       progressLogFilePath: filePath,
       ...(progressEntry ? { progressEntry } : {}),
-      error: buildOrphanedProgressLogMessage(progressLog)
+      error: buildOrphanedRunningProgressLogMessage()
     },
     headOnly
   );
@@ -278,9 +372,9 @@ export function handleSolveStatus(
 
   const jobStatus = solveJobManager.getStatus(requestId, includeSnapshot);
   if (!jobStatus) {
-    const orphanedProgressLog = solveJobManager.getOrphanedProgressLog(requestId);
-    if (orphanedProgressLog) {
-      sendOrphanedProgressLogStatus(res, orphanedProgressLog, route.headOnly);
+    const progressLogStatus = solveJobManager.getProgressLogStatus(requestId);
+    if (progressLogStatus) {
+      sendRecoveredProgressLogStatus(res, progressLogStatus, route.headOnly);
       return true;
     }
 
@@ -306,7 +400,7 @@ export function handleSolveStatus(
         ...buildSolveJobResponseBase(job),
         ...(job.message ? { message: job.message } : {}),
         ...(progressEntry ? { progressEntry } : {}),
-        ...buildCompactSolveResponse(job.grid, job.params, job.solution)
+        ...buildCompactSolveResponse(job.grid, job.params, job.solution, { validationMode: "full" })
       },
       route.headOnly
     );
@@ -340,7 +434,7 @@ export function handleSolveStatus(
         progressEntry,
         liveSnapshot: true,
         ...(job.message ? { message: job.message } : {}),
-        ...buildCompactSolveResponse(job.grid, job.params, liveSnapshot)
+        ...buildCompactSolveResponse(job.grid, job.params, liveSnapshot, { validationMode: "lightweight" })
       },
       route.headOnly
     );

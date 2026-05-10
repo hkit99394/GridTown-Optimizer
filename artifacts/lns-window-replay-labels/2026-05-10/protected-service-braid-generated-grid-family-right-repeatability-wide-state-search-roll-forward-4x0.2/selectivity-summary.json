@@ -1,0 +1,872 @@
+{
+  "generatedAt": "2026-05-10T18:41:29.885Z",
+  "title": "Service-braid generated-grid right-shift repeatability selectivity summary",
+  "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-right-repeatability-wide-state-search-roll-forward-4x0.2",
+  "totalLabels": 432,
+  "gates": {
+    "slidingArea12": {
+      "selected": 36,
+      "pos": 20,
+      "neg": 0,
+      "neu": 16,
+      "best": 50,
+      "worst": 0,
+      "bySeed": {
+        "5": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 2
+        },
+        "7": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 2
+        },
+        "11": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 2
+        },
+        "13": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 2
+        },
+        "17": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 2
+        },
+        "19": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 2
+        },
+        "23": {
+          "pos": 4,
+          "neg": 0,
+          "neu": 0
+        },
+        "29": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 2
+        },
+        "37": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 2
+        }
+      },
+      "byCase": {
+        "lns-holdout-service-braid-family-embed-7x8-right-repeatability-candidate": {
+          "pos": 20,
+          "neg": 0,
+          "neu": 16
+        }
+      },
+      "examples": [
+        {
+          "seed": 5,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 5,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 5,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 5,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 5,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 11,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 5,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 11,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 5,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 13,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 5,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 13,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 5,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 17,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 5,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 17,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 5,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 4,
+          "source": "exploration-tail"
+        }
+      ]
+    },
+    "slidingArea12ComponentsMax2": {
+      "selected": 18,
+      "pos": 2,
+      "neg": 0,
+      "neu": 16,
+      "best": 50,
+      "worst": 0,
+      "bySeed": {
+        "5": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 2
+        },
+        "7": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 2
+        },
+        "11": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 2
+        },
+        "13": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 2
+        },
+        "17": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 2
+        },
+        "19": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 2
+        },
+        "23": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 0
+        },
+        "29": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 2
+        },
+        "37": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 2
+        }
+      },
+      "byCase": {
+        "lns-holdout-service-braid-family-embed-7x8-right-repeatability-candidate": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 16
+        }
+      },
+      "examples": [
+        {
+          "seed": 23,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 1,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 1,
+          "newReach": 10,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 23,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 1,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 1,
+          "newReach": 10,
+          "source": "exploration-tail"
+        }
+      ]
+    },
+    "slidingComponentsMax2": {
+      "selected": 54,
+      "pos": 2,
+      "neg": 0,
+      "neu": 52,
+      "best": 50,
+      "worst": 0,
+      "bySeed": {
+        "5": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "7": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "11": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "13": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "17": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "19": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "23": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 4
+        },
+        "29": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "37": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        }
+      },
+      "byCase": {
+        "lns-holdout-service-braid-family-embed-7x8-right-repeatability-candidate": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 52
+        }
+      },
+      "examples": [
+        {
+          "seed": 23,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 1,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 1,
+          "newReach": 10,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 23,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 1,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 1,
+          "newReach": 10,
+          "source": "exploration-tail"
+        }
+      ]
+    },
+    "slidingTopOrLeft2": {
+      "selected": 36,
+      "pos": 20,
+      "neg": 0,
+      "neu": 16,
+      "best": 50,
+      "worst": 0,
+      "bySeed": {
+        "5": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 2
+        },
+        "7": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 2
+        },
+        "11": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 2
+        },
+        "13": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 2
+        },
+        "17": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 2
+        },
+        "19": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 2
+        },
+        "23": {
+          "pos": 4,
+          "neg": 0,
+          "neu": 0
+        },
+        "29": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 2
+        },
+        "37": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 2
+        }
+      },
+      "byCase": {
+        "lns-holdout-service-braid-family-embed-7x8-right-repeatability-candidate": {
+          "pos": 20,
+          "neg": 0,
+          "neu": 16
+        }
+      },
+      "examples": [
+        {
+          "seed": 5,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 5,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 5,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 5,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 5,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 11,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 5,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 11,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 5,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 13,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 5,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 13,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 5,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 17,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 5,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 17,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 5,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 4,
+          "source": "exploration-tail"
+        }
+      ]
+    },
+    "allNonBaselineSliding": {
+      "selected": 144,
+      "pos": 20,
+      "neg": 0,
+      "neu": 124,
+      "best": 50,
+      "worst": 0,
+      "bySeed": {
+        "5": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 14
+        },
+        "7": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 14
+        },
+        "11": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 14
+        },
+        "13": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 14
+        },
+        "17": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 14
+        },
+        "19": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 14
+        },
+        "23": {
+          "pos": 4,
+          "neg": 0,
+          "neu": 12
+        },
+        "29": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 14
+        },
+        "37": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 14
+        }
+      },
+      "byCase": {
+        "lns-holdout-service-braid-family-embed-7x8-right-repeatability-candidate": {
+          "pos": 20,
+          "neg": 0,
+          "neu": 124
+        }
+      },
+      "examples": [
+        {
+          "seed": 5,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 5,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 5,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 5,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 5,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 11,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 5,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 11,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 5,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 13,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 5,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 13,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 5,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 17,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 5,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 17,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 5,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 4,
+          "source": "exploration-tail"
+        }
+      ]
+    }
+  }
+}

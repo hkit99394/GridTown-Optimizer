@@ -13,11 +13,25 @@ export function cellKey(r: number, c: number): string {
   return `${r},${c}`;
 }
 
-export function cellFromKey(key: string): Cell {
-  const comma = key.indexOf(",");
-  const r = Number(key.slice(0, comma));
-  const c = Number(key.slice(comma + 1));
+const CELL_KEY_PATTERN = /^(0|[1-9]\d*),(0|[1-9]\d*)$/;
+
+export function parseCellKey(key: string): Cell | null {
+  const match = CELL_KEY_PATTERN.exec(key);
+  if (!match) return null;
+  const r = Number(match[1]);
+  const c = Number(match[2]);
+  if (!Number.isSafeInteger(r) || !Number.isSafeInteger(c)) return null;
   return { r, c };
+}
+
+export function isCellKey(value: unknown): value is string {
+  return typeof value === "string" && parseCellKey(value) !== null;
+}
+
+export function cellFromKey(key: string): Cell {
+  const cell = parseCellKey(key);
+  if (!cell) throw new Error(`Invalid cell key: ${key}`);
+  return cell;
 }
 
 /** Rectangle: top-left (r, c), size (rows × cols) */

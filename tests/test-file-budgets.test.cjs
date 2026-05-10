@@ -5,10 +5,7 @@ const path = require("node:path");
 const repoRoot = path.resolve(__dirname, "..");
 const defaultTestFileBudget = 1500;
 
-const temporaryOversizedBudgets = new Map([
-  ["tests/optimizers/optimizerHarness.cjs", 8600],
-  ["tests/review-findings.test.cjs", 4450]
-]);
+const temporaryOversizedBudgets = new Map();
 
 function listFiles(dir, predicate) {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {

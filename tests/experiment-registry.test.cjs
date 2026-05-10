@@ -10,6 +10,7 @@ const {
   buildModelExperimentTelemetryManifest,
   checkExperimentRegistryFile,
   completeExperimentRegistryEntry,
+  ExperimentRegistryValidationError,
   formatExperimentRegistryIssues,
   validateExperimentRegistryFile,
   validateExperimentRegistryEntry
@@ -223,6 +224,49 @@ function testAppendHelperAddsCommitCommandBudgetHardwareModelAndDecisionMetadata
   assert.equal(validation.valid, true, formatExperimentRegistryIssues(validation.issues));
 }
 
+function isInvalidRegistryPathError(error) {
+  assert.equal(error instanceof ExperimentRegistryValidationError, true);
+  assert.equal(
+    error.issues.some((issue) => issue.code === "invalid-registry-path"),
+    true
+  );
+  return true;
+}
+
+function testRegistryFileHelpersRejectUnsafeRegistryPaths() {
+  const parentDir = fs.mkdtempSync(path.join(os.tmpdir(), "experiment-registry-path-parent-"));
+  const tempDir = path.join(parentDir, "repo");
+  fs.mkdirSync(tempDir);
+
+  assert.throws(
+    () => checkExperimentRegistryFile("../outside.jsonl", { rootDir: tempDir }),
+    isInvalidRegistryPathError
+  );
+  assert.throws(
+    () => validateExperimentRegistryFile(path.join(tempDir, "absolute.jsonl"), { rootDir: tempDir }),
+    isInvalidRegistryPathError
+  );
+  assert.throws(
+    () =>
+      appendExperimentRegistryEntry("../outside.jsonl", createBaseEntry(), {
+        rootDir: tempDir,
+        validateArtifactPaths: false
+      }),
+    isInvalidRegistryPathError
+  );
+  assert.throws(
+    () =>
+      appendExperimentRegistryEntry(path.join(tempDir, "absolute.jsonl"), createBaseEntry(), {
+        rootDir: tempDir,
+        validateArtifactPaths: false
+      }),
+    isInvalidRegistryPathError
+  );
+
+  assert.equal(fs.existsSync(path.join(parentDir, "outside.jsonl")), false);
+  assert.equal(fs.existsSync(path.join(tempDir, "absolute.jsonl")), false);
+}
+
 function testCompleteEntryPreservesExplicitNullArtifactCommit() {
   const entry = completeExperimentRegistryEntry(createBaseEntry({ artifactGitCommit: null }), {
     indexedAt: "2026-04-28",
@@ -311,6 +355,48 @@ function testSeedRegistryHistoricalWarningBudget() {
   );
 }
 
+function testHistoricalWarningsUseOriginalRegistryLineNumbers() {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "experiment-registry-line-numbers-"));
+  fs.writeFileSync(path.join(tempDir, "artifact.json"), "{}\n");
+  const historicalEntry = createBaseEntry({
+    runId: "historical-warning-after-skipped-lines",
+    artifactGitCommit: null,
+    artifactPaths: ["artifact.json"],
+    hardware: { captured: false, gpuUsed: false }
+  });
+  fs.writeFileSync(
+    path.join(tempDir, "index.jsonl"),
+    [
+      "",
+      "# registry note before the next accepted row",
+      JSON.stringify({ schemaVersion: 1, runId: "invalid-before-historical-warning" }),
+      JSON.stringify(historicalEntry)
+    ].join("\n")
+  );
+
+  const result = validateExperimentRegistryFile("index.jsonl", { rootDir: tempDir });
+  assert.equal(result.valid, false);
+  assert.equal(
+    result.issues.some((issue) => issue.code === "malformed-json" && issue.lineNumber === 2),
+    true,
+    formatExperimentRegistryIssues(result.issues)
+  );
+  assert.equal(
+    result.issues.some((issue) => issue.code === "missing-field" && issue.lineNumber === 3),
+    true,
+    formatExperimentRegistryIssues(result.issues)
+  );
+  assert.deepEqual(
+    result.issues
+      .filter((issue) => issue.runId === "historical-warning-after-skipped-lines" && issue.severity === "warning")
+      .map(({ lineNumber, code }) => ({ lineNumber, code })),
+    [
+      { lineNumber: 4, code: "historical-missing-artifact-commit" },
+      { lineNumber: 4, code: "historical-missing-hardware" }
+    ]
+  );
+}
+
 function runRegistryCli(args, cwd) {
   const cliPath = path.join(repoRoot, "dist", "experimentRegistryCli.js");
   return childProcess.spawnSync(process.execPath, [cliPath, ...args], {
@@ -385,14 +471,42 @@ function testRegistryCliCanAppendAndCheckLabelArtifacts() {
   assert.deepEqual(payload.issues, []);
 }
 
+function testRegistryCliRejectsUnsafeDryRunAppendRegistryPath() {
+  const parentDir = fs.mkdtempSync(path.join(os.tmpdir(), "experiment-registry-cli-path-parent-"));
+  const tempDir = path.join(parentDir, "repo");
+  fs.mkdirSync(tempDir);
+  fs.writeFileSync(path.join(tempDir, "artifact.json"), "{}\n");
+  fs.writeFileSync(path.join(tempDir, "entry.json"), `${JSON.stringify(createBaseEntry())}\n`);
+
+  const traversalResult = runRegistryCli(
+    ["append", "--dry-run", "--registry=../outside.jsonl", "--entry=entry.json"],
+    tempDir
+  );
+  assert.equal(traversalResult.status, 1, traversalResult.stderr || traversalResult.stdout);
+  assert.match(traversalResult.stderr, /invalid-registry-path/);
+  assert.equal(fs.existsSync(path.join(parentDir, "outside.jsonl")), false);
+
+  const absoluteRegistryPath = path.join(tempDir, "absolute.jsonl");
+  const absoluteResult = runRegistryCli(
+    ["append", "--dry-run", `--registry=${absoluteRegistryPath}`, "--entry=entry.json"],
+    tempDir
+  );
+  assert.equal(absoluteResult.status, 1, absoluteResult.stderr || absoluteResult.stdout);
+  assert.match(absoluteResult.stderr, /invalid-registry-path/);
+  assert.equal(fs.existsSync(absoluteRegistryPath), false);
+}
+
 testSeedRegistryChecksWithoutShapeErrors();
 testStrictMetadataRulesForBenchmarkAndLabelEntries();
 testRegistryRejectsOutOfRangeSeeds();
 testModelExperimentManifestAndRegistryDraft();
 testAppendHelperAddsCommitCommandBudgetHardwareModelAndDecisionMetadata();
+testRegistryFileHelpersRejectUnsafeRegistryPaths();
 testCompleteEntryPreservesExplicitNullArtifactCommit();
 testSeedRegistryHistoricalWarningBudget();
+testHistoricalWarningsUseOriginalRegistryLineNumbers();
 testRegistryCliDefaultCheckHidesAcceptedHistoricalWarnings();
 testRegistryCliCanAppendAndCheckLabelArtifacts();
+testRegistryCliRejectsUnsafeDryRunAppendRegistryPath();
 
 console.log("Experiment registry tests passed.");

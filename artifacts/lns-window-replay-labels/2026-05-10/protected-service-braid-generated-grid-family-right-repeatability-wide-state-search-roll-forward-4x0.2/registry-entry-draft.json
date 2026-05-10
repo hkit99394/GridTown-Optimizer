@@ -1,0 +1,204 @@
+{
+  "schemaVersion": 1,
+  "runId": "service-braid-service-braid-generated-grid-family-right-repeatability",
+  "artifactType": "label-bundle",
+  "generatedAt": "2026-05-10T18:41:29.794Z",
+  "commands": [
+    "node scripts/generate-service-braid-replay-artifacts.mjs --bundle=service-braid-generated-grid-family-right-repeatability"
+  ],
+  "artifactPaths": [
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-right-repeatability-wide-state-search-roll-forward-4x0.2/lns-window-replay-labels.json",
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-right-repeatability-wide-state-search-roll-forward-4x0.2/lns-window-replay-labels.txt",
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-right-repeatability-wide-state-search-roll-forward-4x0.2/repeatability-summary.json",
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-right-repeatability-wide-state-search-roll-forward-4x0.2/candidate-summary.json",
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-right-repeatability-wide-state-search-roll-forward-4x0.2/selectivity-summary.json",
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-right-repeatability-wide-state-search-roll-forward-4x0.2/selectivity-summary.txt",
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-right-repeatability-wide-state-search-roll-forward-4x0.2/telemetry-manifest.json",
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-right-repeatability-wide-state-search-roll-forward-4x0.2/manifest.json"
+  ],
+  "cases": [
+    "lns-holdout-service-braid-family-embed-7x8-right-repeatability-candidate"
+  ],
+  "caseFamilies": [
+    "lns-service-pressure",
+    "lns-window-replay"
+  ],
+  "seeds": [
+    5,
+    7,
+    11,
+    13,
+    17,
+    19,
+    23,
+    29,
+    37
+  ],
+  "inputFingerprint": "fnv1a:b9d210fe",
+  "labelFingerprint": "fnv1a:9cee3765",
+  "splitStatus": {
+    "diagnosticsOnly": true,
+    "source": "lns-window-replay-diagnostic-bundle",
+    "statePolicies": [
+      "initial-incumbent",
+      "post-stagnation"
+    ],
+    "capturedStatePolicies": [
+      "initial-incumbent",
+      "post-stagnation"
+    ],
+    "repeatabilitySummary": {
+      "schemaVersion": 1,
+      "rollForwardLabelCount": 432,
+      "bucketCount": 48,
+      "repeatedBucketCount": 48,
+      "mixedFinalStatusBucketCount": 4,
+      "conflictingFinalStatusBucketCount": 2,
+      "conflictingLabelCount": 18,
+      "conflictingStatusCounts": {
+        "improved": 2,
+        "neutral": 14,
+        "regressed": 2,
+        "unknown": 0
+      },
+      "featureIdenticalConflictBucketCount": 2,
+      "featureIdenticalConflictLabelCount": 18,
+      "examples": [
+        {
+          "caseName": "lns-holdout-service-braid-family-embed-7x8-right-repeatability-candidate",
+          "pressureFamily": "service-pressure",
+          "statePolicy": "initial-incumbent",
+          "operator": "random-exploration",
+          "window": "3:1:3x3",
+          "labelCount": 9,
+          "seedCount": 9,
+          "seeds": [
+            5,
+            7,
+            11,
+            13,
+            17,
+            19,
+            23,
+            29,
+            37
+          ],
+          "statusCounts": {
+            "improved": 1,
+            "neutral": 7,
+            "regressed": 1,
+            "unknown": 0
+          },
+          "finalDeltas": [
+            -45,
+            0,
+            50
+          ],
+          "baselineTotals": [
+            710,
+            755
+          ],
+          "totalPopulations": [
+            710,
+            760
+          ],
+          "featureFingerprintCount": 1
+        },
+        {
+          "caseName": "lns-holdout-service-braid-family-embed-7x8-right-repeatability-candidate",
+          "pressureFamily": "service-pressure",
+          "statePolicy": "post-stagnation",
+          "operator": "random-exploration",
+          "window": "3:1:3x3",
+          "labelCount": 9,
+          "seedCount": 9,
+          "seeds": [
+            5,
+            7,
+            11,
+            13,
+            17,
+            19,
+            23,
+            29,
+            37
+          ],
+          "statusCounts": {
+            "improved": 1,
+            "neutral": 7,
+            "regressed": 1,
+            "unknown": 0
+          },
+          "finalDeltas": [
+            -45,
+            0,
+            50
+          ],
+          "baselineTotals": [
+            710,
+            755
+          ],
+          "totalPopulations": [
+            710,
+            760
+          ],
+          "featureFingerprintCount": 1
+        }
+      ]
+    }
+  },
+  "budget": {
+    "seeds": [
+      5,
+      7,
+      11,
+      13,
+      17,
+      19,
+      23,
+      29,
+      37
+    ],
+    "maxWindows": 16,
+    "explorationWindowCount": 8,
+    "repairTimeLimitSeconds": 0.2,
+    "rollForwardIterations": 4,
+    "rollForwardRepairTimeLimitSeconds": 0.2,
+    "stateCollectionIterations": 4,
+    "stateCollectionRepairTimeLimitSeconds": 0.2,
+    "cpSatNumWorkers": 1,
+    "caseCount": 1,
+    "stateCount": 18,
+    "labelCount": 432,
+    "rollForwardLabelCount": 432
+  },
+  "model": {
+    "trained": false,
+    "diagnosticsOnly": true,
+    "labelSource": "lns-window-replay-labels",
+    "featureSchemaVersion": 2
+  },
+  "decision": "diagnostics-only",
+  "summary": "Protected service-braid LNS replay diagnostic label bundle; no solver default changed.",
+  "summaryMetrics": {
+    "caseCount": 1,
+    "seedCount": 9,
+    "stateCount": 18,
+    "labelCount": 432,
+    "rollForwardLabelCount": 432,
+    "repeatabilityConflictBucketCount": 2,
+    "repeatabilityFeatureIdenticalConflictBucketCount": 2,
+    "repeatabilityFeatureIdenticalConflictLabelCount": 18,
+    "statePolicies": [
+      "initial-incumbent",
+      "post-stagnation"
+    ],
+    "capturedStatePolicies": [
+      "initial-incumbent",
+      "post-stagnation"
+    ],
+    "cpSatModelFingerprints": [
+      "fnv1a:4516a3fe"
+    ]
+  }
+}

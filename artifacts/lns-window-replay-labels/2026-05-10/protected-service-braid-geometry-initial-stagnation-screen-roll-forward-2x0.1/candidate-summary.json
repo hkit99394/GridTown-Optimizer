@@ -1,0 +1,99 @@
+{
+  "outDir": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-geometry-initial-stagnation-screen-roll-forward-2x0.1",
+  "labels": 216,
+  "states": 18,
+  "pos": 0,
+  "neg": 0,
+  "neu": 216,
+  "immPos": 9,
+  "best": 0,
+  "worst": 0,
+  "repeatabilitySummary": {
+    "schemaVersion": 1,
+    "rollForwardLabelCount": 216,
+    "bucketCount": 73,
+    "repeatedBucketCount": 72,
+    "mixedFinalStatusBucketCount": 0,
+    "conflictingFinalStatusBucketCount": 0,
+    "conflictingLabelCount": 0,
+    "conflictingStatusCounts": {
+      "improved": 0,
+      "neutral": 0,
+      "regressed": 0,
+      "unknown": 0
+    },
+    "featureIdenticalConflictBucketCount": 0,
+    "featureIdenticalConflictLabelCount": 0,
+    "examples": []
+  },
+  "byCase": {
+    "lns-holdout-service-braid-open-upper-braid-screen-candidate": {
+      "mutation": {
+        "caseName": "lns-holdout-service-braid-open-upper-braid-screen-candidate",
+        "description": "Protected service-braid candidate that opens the upper central braid blocker.",
+        "gridCellMutations": [
+          {
+            "r": 1,
+            "c": 3,
+            "value": 1
+          }
+        ]
+      },
+      "pos": 0,
+      "neg": 0,
+      "neu": 72,
+      "immPos": 9,
+      "best": 0,
+      "worst": 0,
+      "states": 6,
+      "nonNeutralStates": []
+    },
+    "lns-holdout-service-braid-open-lower-notch-screen-candidate": {
+      "mutation": {
+        "caseName": "lns-holdout-service-braid-open-lower-notch-screen-candidate",
+        "description": "Protected service-braid candidate that opens the lower-left notch blocker.",
+        "gridCellMutations": [
+          {
+            "r": 5,
+            "c": 2,
+            "value": 1
+          }
+        ]
+      },
+      "pos": 0,
+      "neg": 0,
+      "neu": 72,
+      "immPos": 0,
+      "best": 0,
+      "worst": 0,
+      "states": 6,
+      "nonNeutralStates": []
+    },
+    "lns-holdout-service-braid-shift-right-choke-screen-candidate": {
+      "mutation": {
+        "caseName": "lns-holdout-service-braid-shift-right-choke-screen-candidate",
+        "description": "Protected service-braid candidate that shifts the right-side choke one cell inward.",
+        "gridCellMutations": [
+          {
+            "r": 3,
+            "c": 5,
+            "value": 1
+          },
+          {
+            "r": 3,
+            "c": 4,
+            "value": 0
+          }
+        ]
+      },
+      "pos": 0,
+      "neg": 0,
+      "neu": 72,
+      "immPos": 0,
+      "best": 0,
+      "worst": 0,
+      "states": 6,
+      "nonNeutralStates": []
+    }
+  }
+}

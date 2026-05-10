@@ -1,0 +1,342 @@
+{
+  "outDir": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range1-big-service140-structural-geometry-screen-roll-forward-2x0.1",
+  "labels": 216,
+  "states": 18,
+  "pos": 4,
+  "neg": 0,
+  "neu": 212,
+  "immPos": 12,
+  "best": 55,
+  "worst": 0,
+  "repeatabilitySummary": {
+    "schemaVersion": 1,
+    "rollForwardLabelCount": 216,
+    "bucketCount": 72,
+    "repeatedBucketCount": 72,
+    "mixedFinalStatusBucketCount": 2,
+    "conflictingFinalStatusBucketCount": 0,
+    "conflictingLabelCount": 0,
+    "conflictingStatusCounts": {
+      "improved": 0,
+      "neutral": 0,
+      "regressed": 0,
+      "unknown": 0
+    },
+    "featureIdenticalConflictBucketCount": 0,
+    "featureIdenticalConflictLabelCount": 0,
+    "examples": []
+  },
+  "byCase": {
+    "lns-holdout-service-braid-range1-big-service140-south-shelf-screen-candidate": {
+      "mutation": {
+        "caseName": "lns-holdout-service-braid-range1-big-service140-south-shelf-screen-candidate",
+        "description": "Protected service-braid range1/bonus140 candidate with an added southern shelf row.",
+        "serviceTypeIndex": 1,
+        "range": 1,
+        "bonus": 140,
+        "gridOverride": [
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            0,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            0,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            0,
+            1,
+            1,
+            1
+          ]
+        ]
+      },
+      "pos": 4,
+      "neg": 0,
+      "neu": 68,
+      "immPos": 0,
+      "best": 55,
+      "worst": 0,
+      "states": 6,
+      "nonNeutralStates": [
+        {
+          "seed": 19,
+          "statePolicy": "initial-incumbent",
+          "stateIndex": 0,
+          "stateSourceStatus": "initial-incumbent",
+          "incumbentPopulation": 795,
+          "baseline": {
+            "top": 1,
+            "left": 3,
+            "rows": 3,
+            "cols": 3
+          },
+          "pos": 1,
+          "neg": 0,
+          "neu": 11,
+          "best": 50,
+          "worst": 0,
+          "baselineFinal": 795
+        },
+        {
+          "seed": 19,
+          "statePolicy": "post-stagnation",
+          "stateIndex": 1,
+          "stateSourceStatus": "neutral",
+          "incumbentPopulation": 795,
+          "baseline": {
+            "top": 1,
+            "left": 3,
+            "rows": 3,
+            "cols": 3
+          },
+          "pos": 1,
+          "neg": 0,
+          "neu": 11,
+          "best": 50,
+          "worst": 0,
+          "baselineFinal": 795
+        },
+        {
+          "seed": 37,
+          "statePolicy": "initial-incumbent",
+          "stateIndex": 0,
+          "stateSourceStatus": "initial-incumbent",
+          "incumbentPopulation": 795,
+          "baseline": {
+            "top": 1,
+            "left": 3,
+            "rows": 3,
+            "cols": 3
+          },
+          "pos": 1,
+          "neg": 0,
+          "neu": 11,
+          "best": 55,
+          "worst": 0,
+          "baselineFinal": 795
+        },
+        {
+          "seed": 37,
+          "statePolicy": "post-stagnation",
+          "stateIndex": 1,
+          "stateSourceStatus": "neutral",
+          "incumbentPopulation": 795,
+          "baseline": {
+            "top": 1,
+            "left": 3,
+            "rows": 3,
+            "cols": 3
+          },
+          "pos": 1,
+          "neg": 0,
+          "neu": 11,
+          "best": 55,
+          "worst": 0,
+          "baselineFinal": 795
+        }
+      ]
+    },
+    "lns-holdout-service-braid-range1-big-service140-east-lane-screen-candidate": {
+      "mutation": {
+        "caseName": "lns-holdout-service-braid-range1-big-service140-east-lane-screen-candidate",
+        "description": "Protected service-braid range1/bonus140 candidate with an added eastern lane.",
+        "serviceTypeIndex": 1,
+        "range": 1,
+        "bonus": 140,
+        "gridOverride": [
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            0,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            0,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        ]
+      },
+      "pos": 0,
+      "neg": 0,
+      "neu": 72,
+      "immPos": 0,
+      "best": 0,
+      "worst": 0,
+      "states": 6,
+      "nonNeutralStates": []
+    },
+    "lns-holdout-service-braid-range1-big-service140-double-choke-screen-candidate": {
+      "mutation": {
+        "caseName": "lns-holdout-service-braid-range1-big-service140-double-choke-screen-candidate",
+        "description": "Protected service-braid range1/bonus140 candidate with a stronger central double choke.",
+        "serviceTypeIndex": 1,
+        "range": 1,
+        "bonus": 140,
+        "gridOverride": [
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            0,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            0,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            0,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            0,
+            1,
+            1,
+            1,
+            1
+          ]
+        ]
+      },
+      "pos": 0,
+      "neg": 0,
+      "neu": 72,
+      "immPos": 12,
+      "best": 0,
+      "worst": 0,
+      "states": 6,
+      "nonNeutralStates": []
+    }
+  }
+}

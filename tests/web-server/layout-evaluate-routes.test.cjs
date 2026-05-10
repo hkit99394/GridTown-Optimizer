@@ -92,7 +92,7 @@ async function testLayoutEvaluateRejectsMalformedSerializedSolutions(handler) {
   const solved = solve(solvePayload.grid, solvePayload.params);
   const serializedSolution = {
     ...solved,
-    roads: [{}]
+    roads: ["1,"]
   };
 
   const result = await invoke(handler, {

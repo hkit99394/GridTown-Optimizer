@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "source": "lns-window-replay-diagnostic-bundle",
+  "command": "node dist/lnsBenchmarkCli.js --window-replay-labels --window-replay-protected-holdout lns-holdout-corridor-weave-pressure lns-holdout-gate-offset-pressure lns-holdout-footprint-stagger-pressure lns-holdout-service-ridge-pressure --seeds=7,19,37 --state-policies=initial-incumbent,post-stagnation --state-collection-iterations=2 --state-collection-repair-time=0.1 --max-windows=8 --exploration-windows=4 --repair-time=0.1 --roll-forward-iterations=2 --roll-forward-repair-time=0.1 --window-replay-artifact-dir=artifacts/lns-window-replay-labels/2026-05-09/protected-first-broadened-cases-wide-state-screen-roll-forward-2x0.1 --force-artifact-dir --json",
+  "generatedAt": "2026-05-10T04:59:22.037Z",
+  "git": {
+    "commit": "2b069afc38ee665b057765eb80deb7ff5069d561",
+    "branch": "features/validated-solver-improvement-loop"
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "inputFingerprint": "fnv1a:1412695d",
+  "labelFingerprint": "fnv1a:d7572189",
+  "diagnosticsOnly": true,
+  "input": {
+    "schemaVersion": 1,
+    "selectedCaseNames": [
+      "lns-holdout-corridor-weave-pressure",
+      "lns-holdout-footprint-stagger-pressure",
+      "lns-holdout-gate-offset-pressure",
+      "lns-holdout-service-ridge-pressure"
+    ],
+    "pressureFamilies": [
+      "corridor",
+      "footprint-pressure",
+      "gate",
+      "service-pressure"
+    ],
+    "seeds": [
+      7,
+      19,
+      37
+    ],
+    "maxWindows": 8,
+    "explorationWindowCount": 4,
+    "repairTimeLimitSeconds": 0.1,
+    "rollForwardIterations": 2,
+    "rollForwardRepairTimeLimitSeconds": 0.1,
+    "statePolicies": [
+      "initial-incumbent",
+      "post-stagnation"
+    ],
+    "capturedStatePolicies": [
+      "initial-incumbent",
+      "post-stagnation"
+    ],
+    "stateCollectionIterations": 2,
+    "stateCollectionRepairTimeLimitSeconds": 0.1,
+    "featureSchemaVersion": 2,
+    "cpSatNumWorkers": 1,
+    "cpSatModelFingerprints": [
+      "fnv1a:08316803",
+      "fnv1a:12afa59a",
+      "fnv1a:3f9a1d1d",
+      "fnv1a:edca894c"
+    ]
+  },
+  "outputArtifacts": [
+    "artifacts/lns-window-replay-labels/2026-05-09/protected-first-broadened-cases-wide-state-screen-roll-forward-2x0.1/lns-window-replay-labels.json",
+    "artifacts/lns-window-replay-labels/2026-05-09/protected-first-broadened-cases-wide-state-screen-roll-forward-2x0.1/lns-window-replay-labels.txt",
+    "artifacts/lns-window-replay-labels/2026-05-09/protected-first-broadened-cases-wide-state-screen-roll-forward-2x0.1/repeatability-summary.json",
+    "artifacts/lns-window-replay-labels/2026-05-09/protected-first-broadened-cases-wide-state-screen-roll-forward-2x0.1/manifest.json",
+    "artifacts/lns-window-replay-labels/2026-05-09/protected-first-broadened-cases-wide-state-screen-roll-forward-2x0.1/telemetry-manifest.json"
+  ],
+  "repeatabilitySummary": {
+    "schemaVersion": 1,
+    "rollForwardLabelCount": 288,
+    "bucketCount": 96,
+    "repeatedBucketCount": 96,
+    "mixedFinalStatusBucketCount": 0,
+    "conflictingFinalStatusBucketCount": 0,
+    "conflictingLabelCount": 0,
+    "conflictingStatusCounts": {
+      "improved": 0,
+      "neutral": 0,
+      "regressed": 0,
+      "unknown": 0
+    },
+    "featureIdenticalConflictBucketCount": 0,
+    "featureIdenticalConflictLabelCount": 0,
+    "examples": []
+  },
+  "metrics": {
+    "caseCount": 4,
+    "seedCount": 3,
+    "stateCount": 24,
+    "labelCount": 288,
+    "rollForwardLabelCount": 288,
+    "repeatabilityConflictBucketCount": 0,
+    "repeatabilityFeatureIdenticalConflictBucketCount": 0
+  }
+}

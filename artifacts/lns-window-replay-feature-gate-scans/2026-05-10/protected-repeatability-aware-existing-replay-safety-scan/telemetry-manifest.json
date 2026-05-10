@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "source": "lns-window-replay-feature-gate-scan",
+  "command": "node scripts/summarize-lns-replay-feature-gate-scan.mjs --source-root=artifacts/lns-window-replay-labels --artifact-dir=artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-repeatability-aware-existing-replay-safety-scan --force-artifact-dir",
+  "generatedAt": "2026-05-10T18:47:16.646Z",
+  "git": {
+    "commit": "2b069afc38ee665b057765eb80deb7ff5069d561",
+    "branch": "features/validated-solver-improvement-loop"
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "diagnosticsOnly": true,
+  "inputFingerprint": "fnv1a:94ac36cc",
+  "scanFingerprint": "fnv1a:557c581d",
+  "sourceRoot": "artifacts/lns-window-replay-labels",
+  "outputArtifacts": [
+    "artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-repeatability-aware-existing-replay-safety-scan/feature-gate-scan.json",
+    "artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-repeatability-aware-existing-replay-safety-scan/feature-gate-scan.txt",
+    "artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-repeatability-aware-existing-replay-safety-scan/telemetry-manifest.json",
+    "artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-repeatability-aware-existing-replay-safety-scan/manifest.json"
+  ],
+  "metrics": {
+    "sourceArtifactCount": 27,
+    "caseCount": 35,
+    "seedCount": 9,
+    "labelCount": 6300,
+    "rollForwardLabelCount": 6300,
+    "gates": {
+      "slidingArea12": {
+        "selected": 587,
+        "improved": 134,
+        "regressed": 27,
+        "neutral": 426,
+        "unknown": 0,
+        "bestDelta": 60,
+        "worstDelta": -60,
+        "safeNoRegression": false,
+        "promotionReadyPocket": false
+      },
+      "slidingArea12NoFeatureIdenticalRepeatabilityConflict": {
+        "selected": 539,
+        "improved": 120,
+        "regressed": 9,
+        "neutral": 410,
+        "unknown": 0,
+        "bestDelta": 60,
+        "worstDelta": -60,
+        "safeNoRegression": false,
+        "promotionReadyPocket": false
+      },
+      "slidingArea12RepeatabilitySafeBucket": {
+        "selected": 144,
+        "improved": 120,
+        "regressed": 0,
+        "neutral": 24,
+        "unknown": 0,
+        "bestDelta": 60,
+        "worstDelta": 0,
+        "safeNoRegression": true,
+        "promotionReadyPocket": true
+      },
+      "slidingArea12ComponentsMax2": {
+        "selected": 460,
+        "improved": 106,
+        "regressed": 20,
+        "neutral": 334,
+        "unknown": 0,
+        "bestDelta": 60,
+        "worstDelta": -50,
+        "safeNoRegression": false,
+        "promotionReadyPocket": false
+      },
+      "slidingComponentsMax2": {
+        "selected": 1277,
+        "improved": 131,
+        "regressed": 28,
+        "neutral": 1118,
+        "unknown": 0,
+        "bestDelta": 60,
+        "worstDelta": -55,
+        "safeNoRegression": false,
+        "promotionReadyPocket": false
+      },
+      "slidingTopOrLeft2": {
+        "selected": 672,
+        "improved": 148,
+        "regressed": 29,
+        "neutral": 495,
+        "unknown": 0,
+        "bestDelta": 60,
+        "worstDelta": -60,
+        "safeNoRegression": false,
+        "promotionReadyPocket": false
+      },
+      "allNonBaselineSliding": {
+        "selected": 1769,
+        "improved": 167,
+        "regressed": 52,
+        "neutral": 1550,
+        "unknown": 0,
+        "bestDelta": 60,
+        "worstDelta": -60,
+        "safeNoRegression": false,
+        "promotionReadyPocket": false
+      }
+    }
+  },
+  "notes": "Static and repeatability-aware feature-gate scan over existing LNS replay labels; no solver default changed."
+}

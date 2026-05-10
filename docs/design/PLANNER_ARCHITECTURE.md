@@ -90,6 +90,17 @@ Owns:
 - save/load/delete input setups
 - save/load/delete solved layouts
 - restoring saved planner state
+- import/export orchestration for persisted planner data
+
+### `apps/planner-web/plannerPersistenceValidation.js`
+
+Validation helpers for imported and persisted planner data.
+
+Owns:
+
+- saved input entry shape validation
+- saved layout entry shape validation
+- catalog, road-key, and placement schema checks used by persistence
 
 ### `apps/planner-web/plannerSolveRuntime.js`
 
@@ -115,7 +126,19 @@ Owns:
 
 ### `apps/planner-web/plannerResults.js`
 
-Solved output rendering and manual layout editing.
+Solved output coordination and manual layout editing.
+
+Owns:
+
+- solved-result state transitions
+- live snapshot result refresh cadence
+- manual road/building edits
+- `/api/layout/evaluate` round-trip
+- delegating solved-map, overlay, availability, and inspector rendering
+
+### `apps/planner-web/plannerResultRendering.js`
+
+Solved result display and map projection helpers.
 
 Owns:
 
@@ -123,8 +146,7 @@ Owns:
 - placement and remaining-availability rendering
 - solved-map rendering and overlays
 - inspector rendering
-- manual road/building edits
-- `/api/layout/evaluate` round-trip
+- CP-SAT seed status and Greedy diagnostic display
 
 ## Backend Modules
 
@@ -370,10 +392,12 @@ When adding a new behavior:
 - If it changes shared button availability or solver status messaging across modules, put it in `plannerShell.js`.
 - If it changes how planner payloads are built, put it in `plannerRequestBuilder.js`.
 - If it changes grid/catalog editing or summary behavior, put it in `plannerWorkbench.js`.
-- If it changes saved input/layout handling, put it in `plannerPersistence.js`.
+- If it changes saved input/layout storage flow, put it in `plannerPersistence.js`.
+- If it changes imported saved-data validation, put it in `plannerPersistenceValidation.js`.
 - If it changes solve lifecycle or polling, put it in `plannerSolveRuntime.js`.
 - If it changes compare-addition behavior, put it in `plannerExpansion.js`.
-- If it changes result display, map interaction, or manual editing, put it in `plannerResults.js`.
+- If it changes solved-result rendering, overlays, availability summaries, or inspector display, put it in `plannerResultRendering.js`.
+- If it changes result state coordination, map selection/manual editing commands, or layout validation, put it in `plannerResults.js`.
 - If it changes planner API routing behavior, update `src/apps/planner-server/http/routes.ts`.
 - If it changes request shape validation or browser runtime-parameter stripping, update `src/apps/planner-server/http/contracts.ts`.
 - If it changes solver/manual-layout response shape, stats, validation projection, or explainability attachment, update `src/apps/planner-server/http/solutionResponse.ts`.
@@ -556,14 +580,13 @@ Reviewed on 2026-05-02:
 - Boundary guards now cover the benchmark split, supported script entry
   wrappers, removed legacy deep-import wrappers, package dependency direction,
   and the planner-web location.
-- The optimizer test harness has more temporary-budget headroom after
+- The optimizer test harness is within the default file budget after
   CP-SAT Python helper-introspection assertions moved to
   `tests/optimizers/cpSatPythonHelperAssertions.cjs`.
-- The review-finding regression test has more temporary-budget headroom after
+- The review-finding regression test is within the default file budget after
   browser VM loaders moved to `tests/helpers/plannerBrowserModules.cjs`.
-- Temporary budgets were tightened to preserve that headroom:
-  `tests/optimizers/optimizerHarness.cjs` is capped at 9,300 lines and
-  `tests/review-findings.test.cjs` at 4,250 lines.
+- Temporary file-budget exemptions have been removed; source and test files now
+  use the default budget checks.
 - A true npm workspace split remains optional future work if build/test time or
   package ownership needs it.
 
@@ -571,11 +594,17 @@ The remaining cleanup candidates should stay benchmark- or behavior-driven
 rather than migration prerequisites:
 
 - `src/packages/solvers/greedy/solver.ts`: split stable profiling, scratch-state, and local-search helpers only when benchmark evidence justifies the boundary.
-- `apps/planner-web/plannerResults.js`: separate manual-edit command state from rendering/overlay projection.
 
 Cleanup completed during this migration pass:
 
 - `src/packages/solvers/auto/solver.ts`: stage policy and terminal metadata normalization now live in `src/packages/solvers/auto/stagePolicy.ts` and `src/packages/solvers/auto/terminal.ts`.
+- `apps/planner-web/plannerPersistence.js`: import and saved-entry validation now
+  lives in `apps/planner-web/plannerPersistenceValidation.js`, keeping storage
+  orchestration separate from schema checks.
+- `apps/planner-web/plannerResults.js`: solved-result rendering, overlays,
+  availability summaries, and inspector display now live in
+  `apps/planner-web/plannerResultRendering.js`, keeping manual-edit coordination
+  separate from result projection.
 - `tests/optimizers/optimizerHarness.cjs`: CP-SAT Python helper inspections now
   live behind `tests/optimizers/cpSatPythonHelperAssertions.cjs`, keeping the
   harness focused on grouped test orchestration.

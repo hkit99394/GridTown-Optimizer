@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "rollForwardLabelCount": 216,
+  "bucketCount": 91,
+  "repeatedBucketCount": 66,
+  "mixedFinalStatusBucketCount": 15,
+  "conflictingFinalStatusBucketCount": 1,
+  "conflictingLabelCount": 3,
+  "conflictingStatusCounts": {
+    "improved": 1,
+    "neutral": 1,
+    "regressed": 1,
+    "unknown": 0
+  },
+  "featureIdenticalConflictBucketCount": 0,
+  "featureIdenticalConflictLabelCount": 0,
+  "examples": [
+    {
+      "caseName": "lns-holdout-service-braid-range1-big-service120-candidate",
+      "pressureFamily": "service-pressure",
+      "statePolicy": "post-first-improvement",
+      "operator": "frontier-congestion",
+      "window": "1:0:3x3",
+      "labelCount": 3,
+      "seedCount": 3,
+      "seeds": [
+        7,
+        19,
+        37
+      ],
+      "statusCounts": {
+        "improved": 1,
+        "neutral": 1,
+        "regressed": 1,
+        "unknown": 0
+      },
+      "finalDeltas": [
+        -25,
+        0,
+        25
+      ],
+      "baselineTotals": [
+        785,
+        810
+      ],
+      "totalPopulations": [
+        785,
+        810
+      ],
+      "featureFingerprintCount": 3
+    }
+  ]
+}

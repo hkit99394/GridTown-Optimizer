@@ -22,6 +22,55 @@ interface PlannerSolutionResponseOptions {
   includeExplainability?: boolean;
 }
 
+interface CompactSolveResponseOptions {
+  validationMode?: "full" | "lightweight";
+}
+
+interface ResponsePopulationValidation {
+  mode: "full-recompute" | "reported-invariants";
+  populationSource: "layout-recomputed" | "solver-reported";
+  totalPopulationSource: "layout-recomputed" | "reported-population-sum";
+  reportedTotalPopulation: number | null;
+  reportedPopulationSum: number | null;
+}
+
+function readReportedTotalPopulation(solution: Solution): number | null {
+  return typeof solution.totalPopulation === "number" && Number.isFinite(solution.totalPopulation)
+    ? solution.totalPopulation
+    : null;
+}
+
+function sumReportedPopulations(value: unknown): number | null {
+  if (!Array.isArray(value)) return null;
+  let sum = 0;
+  for (const population of value) {
+    if (typeof population !== "number" || !Number.isFinite(population)) return null;
+    sum += population;
+  }
+  return sum;
+}
+
+function buildPopulationValidation(
+  solution: Solution,
+  mode: ResponsePopulationValidation["mode"]
+): ResponsePopulationValidation {
+  return mode === "reported-invariants"
+    ? {
+        mode,
+        populationSource: "solver-reported",
+        totalPopulationSource: "reported-population-sum",
+        reportedTotalPopulation: readReportedTotalPopulation(solution),
+        reportedPopulationSum: sumReportedPopulations(solution.populations)
+      }
+    : {
+        mode,
+        populationSource: "layout-recomputed",
+        totalPopulationSource: "layout-recomputed",
+        reportedTotalPopulation: readReportedTotalPopulation(solution),
+        reportedPopulationSum: sumReportedPopulations(solution.populations)
+      };
+}
+
 export function buildSolveResponsePayload(
   grid: Grid,
   params: SolverParams,
@@ -38,14 +87,18 @@ export function buildSolveResponsePayload(
   );
 }
 
-function buildResponseValidation(validation: SolutionMapValidationResult): SolveResponseValidation {
+function buildResponseValidation(
+  validation: SolutionMapValidationResult,
+  populationValidation: ResponsePopulationValidation
+): SolveResponseValidation & { populationValidation: ResponsePopulationValidation } {
   return {
     valid: validation.valid,
     errors: validation.errors,
     recomputedPopulations: validation.recomputedPopulations,
     recomputedTotalPopulation: validation.recomputedTotalPopulation,
     mapRows: validation.mapRows,
-    mapText: validation.mapText
+    mapText: validation.mapText,
+    populationValidation
   };
 }
 
@@ -72,11 +125,14 @@ function buildPlannerSolutionResponse(
   params: SolverParams,
   solution: Solution,
   validation: SolutionMapValidationResult,
-  options: PlannerSolutionResponseOptions = {}
+  options: PlannerSolutionResponseOptions & { populationValidation?: ResponsePopulationValidation } = {}
 ) {
   const response = {
     solution: serializeSolution(solution),
-    validation: buildResponseValidation(validation),
+    validation: buildResponseValidation(
+      validation,
+      options.populationValidation ?? buildPopulationValidation(solution, "full-recompute")
+    ),
     stats: buildResponseStats(solution, params)
   };
   if (options.includeExplainability === false) return response;
@@ -93,40 +149,84 @@ export function buildSolveResponse(grid: Grid, params: SolverParams, solution: S
 function buildCompactSolveResponsePayload(
   grid: Grid,
   params: SolverParams,
-  solution: Solution
+  solution: Solution,
+  options: CompactSolveResponseOptions = {}
 ): SolutionMapValidationResult {
+  if (options.validationMode !== "lightweight") {
+    return buildSolveResponsePayload(grid, params, solution);
+  }
+
   // Status polling must stay cheap; strict typed population assignment can be too expensive for large groups.
   const errors: string[] = [];
-  if (solution.servicePopulationIncreases.length !== solution.services.length) {
+  const services = Array.isArray(solution.services) ? solution.services : [];
+  const serviceTypeIndices = Array.isArray(solution.serviceTypeIndices) ? solution.serviceTypeIndices : [];
+  const servicePopulationIncreases = Array.isArray(solution.servicePopulationIncreases)
+    ? solution.servicePopulationIncreases
+    : [];
+  const residentials = Array.isArray(solution.residentials) ? solution.residentials : [];
+  const residentialTypeIndices = Array.isArray(solution.residentialTypeIndices) ? solution.residentialTypeIndices : [];
+  const populations = Array.isArray(solution.populations) ? solution.populations : [];
+
+  if (!Array.isArray(solution.services)) errors.push("Solution services must be an array.");
+  if (!Array.isArray(solution.serviceTypeIndices)) errors.push("Solution serviceTypeIndices must be an array.");
+  if (!Array.isArray(solution.servicePopulationIncreases)) {
+    errors.push("Solution servicePopulationIncreases must be an array.");
+  }
+  if (!Array.isArray(solution.residentials)) errors.push("Solution residentials must be an array.");
+  if (!Array.isArray(solution.residentialTypeIndices)) errors.push("Solution residentialTypeIndices must be an array.");
+  if (!Array.isArray(solution.populations)) errors.push("Solution populations must be an array.");
+
+  if (serviceTypeIndices.length !== services.length) {
+    errors.push(`Solution reports ${serviceTypeIndices.length} service type indices for ${services.length} services.`);
+  }
+  if (servicePopulationIncreases.length !== services.length) {
     errors.push(
-      `Solution reports ${solution.servicePopulationIncreases.length} service bonuses for ${solution.services.length} services.`
+      `Solution reports ${servicePopulationIncreases.length} service bonuses for ${services.length} services.`
     );
   }
-  if (solution.populations.length !== solution.residentials.length) {
+  if (residentialTypeIndices.length !== residentials.length) {
     errors.push(
-      `Solution reports ${solution.populations.length} residential populations for ${solution.residentials.length} residentials.`
+      `Solution reports ${residentialTypeIndices.length} residential type indices for ${residentials.length} residentials.`
+    );
+  }
+  if (populations.length !== residentials.length) {
+    errors.push(
+      `Solution reports ${populations.length} residential populations for ${residentials.length} residentials.`
     );
   }
 
-  const services = solution.services.map((service, index) => ({
+  const invalidPopulationIndex = populations.findIndex(
+    (population) => typeof population !== "number" || !Number.isFinite(population)
+  );
+  if (invalidPopulationIndex !== -1) {
+    errors.push(`Solution reports a non-numeric population for residential ${invalidPopulationIndex}.`);
+  }
+  const reportedPopulationSum = invalidPopulationIndex === -1 ? sumReportedPopulations(populations) : null;
+  const reportedTotalPopulation = readReportedTotalPopulation(solution);
+  if (reportedTotalPopulation === null) {
+    errors.push("Solution reports a non-numeric total population.");
+  } else if (reportedPopulationSum !== null && reportedTotalPopulation !== reportedPopulationSum) {
+    errors.push(
+      `Solution reports total population ${reportedTotalPopulation}, but reported residential populations sum to ${reportedPopulationSum}.`
+    );
+  }
+
+  const servicesWithBonuses = services.map((service, index) => ({
     ...service,
-    bonus: solution.servicePopulationIncreases[index] ?? 0
+    bonus: servicePopulationIncreases[index] ?? 0
   }));
   const constraintValidation = validateLayoutConstraints({
     grid,
-    roads: solution.roads,
-    services,
-    residentials: solution.residentials,
+    roads: solution.roads instanceof Set ? solution.roads : new Set<string>(),
+    services: servicesWithBonuses,
+    residentials,
     params
   });
   errors.push(...constraintValidation.errors);
 
   const mapRows = renderSolutionMap(grid, solution);
-  const recomputedPopulations = [...solution.populations];
-  const recomputedTotalPopulation =
-    typeof solution.totalPopulation === "number"
-      ? solution.totalPopulation
-      : recomputedPopulations.reduce((sum, population) => sum + population, 0);
+  const recomputedPopulations = [...populations];
+  const recomputedTotalPopulation = reportedPopulationSum ?? 0;
 
   return {
     valid: errors.length === 0,
@@ -136,26 +236,36 @@ function buildCompactSolveResponsePayload(
     layoutEvaluation: {
       valid: constraintValidation.valid,
       errors: constraintValidation.errors,
-      populations: solution.residentials.map((residential, index) => ({
+      populations: residentials.map((residential, index) => ({
         ...residential,
-        population: solution.populations[index] ?? 0
+        population: populations[index] ?? 0
       })),
       totalPopulation: recomputedTotalPopulation,
-      boosts: new Array(solution.residentials.length).fill(0)
+      boosts: new Array(residentials.length).fill(0)
     },
     mapRows,
     mapText: mapRows.join("\n")
   };
 }
 
-export function buildCompactSolveResponse(grid: Grid, params: SolverParams, solution: Solution) {
+export function buildCompactSolveResponse(
+  grid: Grid,
+  params: SolverParams,
+  solution: Solution,
+  options: CompactSolveResponseOptions = {}
+) {
+  const populationValidation = buildPopulationValidation(
+    solution,
+    options.validationMode === "lightweight" ? "reported-invariants" : "full-recompute"
+  );
   return buildPlannerSolutionResponse(
     grid,
     params,
     solution,
-    buildCompactSolveResponsePayload(grid, params, solution),
+    buildCompactSolveResponsePayload(grid, params, solution, options),
     {
-      includeExplainability: false
+      includeExplainability: false,
+      populationValidation
     }
   );
 }

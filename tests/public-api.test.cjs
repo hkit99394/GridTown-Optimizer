@@ -5,6 +5,7 @@ const path = require("node:path");
 const rootApi = require("../dist/index.js");
 const solverApi = require("../dist/solverApi.js");
 const benchmarkApi = require("../dist/benchmarkApi.js");
+const { assertValidLayoutEvaluateInputs } = require("../dist/packages/core/solverInputValidation.js");
 const packageRootApi = require("city-builder");
 const packageSolverApi = require("city-builder/solver");
 const packageBenchmarkApi = require("city-builder/benchmarks");
@@ -51,6 +52,37 @@ function testPackageSubpathsResolveToStableEntrypoints() {
   assert.equal(hasOwnExport(packageRootApi, "appendExperimentRegistryEntry"), false);
   assert.equal(hasOwnExport(packageSolverApi, "runGreedyBenchmarkSuite"), false);
   assert.equal(hasOwnExport(packageBenchmarkApi, "solve"), false);
+}
+
+function testPublicSolveRejectsMalformedGridInputs() {
+  const params = { optimizer: "greedy", greedy: { localSearch: false } };
+
+  assert.throws(
+    () => rootApi.solve([], params),
+    /Invalid solver input: Grid must be a non-empty rectangular 0\/1 grid\./
+  );
+  assert.throws(
+    () => rootApi.solve([[1, 1], [1]], params),
+    /Invalid solver input: Grid\[1\] must have length 2 to keep the grid rectangular\./
+  );
+  assert.throws(
+    () =>
+      rootApi.solve(
+        [
+          [1, 2],
+          [1, 1]
+        ],
+        params
+      ),
+    /Invalid solver input: Grid\[0\]\[1\] must be 0 or 1\./
+  );
+}
+
+function testLayoutEvaluateValidatorRejectsMalformedGridInputs() {
+  assert.throws(
+    () => assertValidLayoutEvaluateInputs([[1, 1], [1]], {}),
+    /Invalid solver input: Grid\[1\] must have length 2 to keep the grid rectangular\./
+  );
 }
 
 function listFiles(dir, predicate) {
@@ -367,6 +399,8 @@ testSolverApiDoesNotExposeBenchmarkSurface();
 testBenchmarkApiExposesBenchmarkSurface();
 testBenchmarkApiDoesNotExposeSolverEntrypoints();
 testPackageSubpathsResolveToStableEntrypoints();
+testPublicSolveRejectsMalformedGridInputs();
+testLayoutEvaluateValidatorRejectsMalformedGridInputs();
 testInternalTestsUseDedicatedEntrypoints();
 testBenchmarkToolingUsesBenchmarkApiBoundary();
 testBenchmarkInternalsAreHiddenBehindBenchmarkApi();

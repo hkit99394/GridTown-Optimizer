@@ -6,6 +6,7 @@ const path = require("node:path");
 const {
   buildLearnedRankingLabelRegistryEntryDraft,
   buildLearnedRankingLabelTelemetryManifest,
+  buildExperimentRegistryEntry,
   createLnsWindowReplaySnapshot,
   createLnsWindowRankerOnlineAblationSnapshot,
   DEFAULT_GREEDY_BENCHMARK_CORPUS,
@@ -19,6 +20,7 @@ const {
   runLnsWindowReplayLabels,
   runLnsWindowReplayLabelsFromOnlineDecisionStates,
   summarizeLnsWindowReplayRepeatability,
+  validateExperimentRegistryEntry,
   STRICT_LNS_REPLAY_LABEL_STATE_COLLECTION_ITERATIONS,
   STRICT_LNS_REPLAY_LABEL_STATE_POLICIES
 } = require("../../dist/benchmarkApi.js");
@@ -214,8 +216,49 @@ try {
   assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.replayJson)), true);
   assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.replayText)), true);
   assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.repeatabilitySummaryJson)), true);
+  assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.telemetryManifestJson)), true);
+  assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.registryEntryDraftJson)), true);
   assert.equal(fs.existsSync(path.join(repoRoot, artifactManifest.artifactPaths.manifestJson)), true);
+  assert.match(artifactManifest.inputFingerprint, /^fnv1a:[0-9a-f]{8}$/);
+  assert.match(artifactManifest.labelFingerprint, /^fnv1a:[0-9a-f]{8}$/);
   assert.equal(artifactManifest.repeatabilitySummary.conflictingFinalStatusBucketCount, 0);
+  const telemetryManifest = JSON.parse(
+    fs.readFileSync(path.join(repoRoot, artifactManifest.artifactPaths.telemetryManifestJson), "utf8")
+  );
+  const registryEntryDraft = JSON.parse(
+    fs.readFileSync(path.join(repoRoot, artifactManifest.artifactPaths.registryEntryDraftJson), "utf8")
+  );
+  const expectedDiagnosticArtifacts = [
+    artifactManifest.artifactPaths.replayJson,
+    artifactManifest.artifactPaths.replayText,
+    artifactManifest.artifactPaths.repeatabilitySummaryJson,
+    artifactManifest.artifactPaths.manifestJson,
+    artifactManifest.artifactPaths.telemetryManifestJson
+  ];
+  assert.equal(telemetryManifest.source, "lns-window-replay-diagnostic-bundle");
+  assert.equal(telemetryManifest.diagnosticsOnly, true);
+  assert.equal(telemetryManifest.inputFingerprint, artifactManifest.inputFingerprint);
+  assert.equal(telemetryManifest.labelFingerprint, artifactManifest.labelFingerprint);
+  assert.deepEqual(telemetryManifest.outputArtifacts, expectedDiagnosticArtifacts);
+  assert.equal(registryEntryDraft.artifactType, "label-bundle");
+  assert.equal(registryEntryDraft.decision, "diagnostics-only");
+  assert.equal(registryEntryDraft.inputFingerprint, artifactManifest.inputFingerprint);
+  assert.equal(registryEntryDraft.labelFingerprint, artifactManifest.labelFingerprint);
+  assert.deepEqual(registryEntryDraft.artifactPaths, expectedDiagnosticArtifacts);
+  const completedReplayRegistryEntry = buildExperimentRegistryEntry(registryEntryDraft, {
+    rootDir: repoRoot,
+    gitMetadata: {
+      commit: "1234567890abcdef1234567890abcdef12345678",
+      branch: "features/replay-provenance-test"
+    },
+    now: new Date("2026-05-10T00:00:00.000Z")
+  });
+  const replayRegistryValidation = validateExperimentRegistryEntry(completedReplayRegistryEntry, {
+    rootDir: repoRoot,
+    validateArtifactPaths: true,
+    strict: true
+  });
+  assert.deepEqual(replayRegistryValidation.issues, []);
   fs.rmSync(artifactDir, { recursive: true, force: true });
 
   const onlineScorecard = runLnsWindowRankerOnlineAblation(DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS, {

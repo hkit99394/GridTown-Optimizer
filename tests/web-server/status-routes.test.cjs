@@ -254,7 +254,90 @@ async function testSolveStatusIncludesAutoStageMetadata(handler) {
     assert.equal(snapshotStatusResult.payload.progressEntry.totalPopulation, backgroundSolution.totalPopulation);
     assert.equal(snapshotStatusResult.payload.liveSnapshot, true);
     assert.equal(snapshotStatusResult.payload.validation.valid, true);
+    assert.equal(snapshotStatusResult.payload.validation.populationValidation.mode, "reported-invariants");
+    assert.equal(snapshotStatusResult.payload.validation.populationValidation.populationSource, "solver-reported");
     assert.equal(snapshotStatusResult.payload.explainability, undefined);
+
+    handlePromiseDeferred.resolve(backgroundSolution);
+    await waitForSolve(handler, requestId);
+  } finally {
+    optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
+  }
+}
+
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
+async function testLiveSnapshotStatusValidatesReportedPopulationInvariants(handler) {
+  const solvePayload = buildTinySolvePayload();
+  /** @type {Solution} */
+  const backgroundSolution = solve(solvePayload.grid, solvePayload.params);
+  /** @type {Solution} */
+  const inconsistentSnapshot = {
+    ...backgroundSolution,
+    totalPopulation: backgroundSolution.totalPopulation + 1,
+    residentialTypeIndices: [...backgroundSolution.residentialTypeIndices, 0]
+  };
+  const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+  const handlePromiseDeferred = /** @type {DeferredSolution} */ (createDeferred());
+
+  optimizerRegistry.getOptimizerAdapter = () => ({
+    name: "greedy",
+    solve() {
+      throw new Error("Status invariant route test should use the background adapter.");
+    },
+    startBackgroundSolve() {
+      return {
+        promise: handlePromiseDeferred.promise,
+        cancel() {},
+        getLatestSnapshot() {
+          return inconsistentSnapshot;
+        },
+        getLatestSnapshotState() {
+          return {
+            hasFeasibleSolution: true,
+            totalPopulation: inconsistentSnapshot.totalPopulation,
+            activeOptimizer: null,
+            autoStage: null,
+            cpSatStatus: null
+          };
+        }
+      };
+    }
+  });
+
+  try {
+    const requestId = "route-test-live-population-invariants";
+    await invoke(handler, {
+      method: "POST",
+      url: "/api/solve/start",
+      json: {
+        ...solvePayload,
+        requestId
+      }
+    });
+
+    const snapshotStatusResult = await invoke(handler, {
+      method: "GET",
+      url: `/api/solve/status?${new URLSearchParams({ requestId, includeSnapshot: "1" }).toString()}`
+    });
+
+    assert.equal(snapshotStatusResult.statusCode, 200);
+    assert.equal(snapshotStatusResult.payload.liveSnapshot, true);
+    assert.equal(snapshotStatusResult.payload.validation.valid, false);
+    assert.equal(snapshotStatusResult.payload.validation.populationValidation.mode, "reported-invariants");
+    assert.equal(snapshotStatusResult.payload.validation.populationValidation.reportedTotalPopulation, 101);
+    assert.equal(snapshotStatusResult.payload.validation.populationValidation.reportedPopulationSum, 100);
+    assert.equal(snapshotStatusResult.payload.validation.recomputedTotalPopulation, 100);
+    assert.match(
+      snapshotStatusResult.payload.validation.errors.join("\n"),
+      /residential type indices for 1 residentials/
+    );
+    assert.match(
+      snapshotStatusResult.payload.validation.errors.join("\n"),
+      /reported residential populations sum to 100/
+    );
 
     handlePromiseDeferred.resolve(backgroundSolution);
     await waitForSolve(handler, requestId);
@@ -405,7 +488,7 @@ async function testCancelMissingSolveRoute(handler) {
   assert.equal(result.payload.stopped, false);
 }
 
-async function testCompletedSolveJobsExpire() {
+async function testCompletedSolveStatusRecoversFromProgressLogAfterRetention() {
   const { handler } = createRouteTestHandler({
     progressLogRootPrefix: "planner-route-expiry-",
     completedJobRetentionMs: 50
@@ -430,10 +513,213 @@ async function testCompletedSolveJobsExpire() {
     url: `/api/solve/status?${new URLSearchParams({ requestId }).toString()}`
   });
 
-  assert.equal(expiredResult.statusCode, 404);
-  assert.equal(expiredResult.payload.ok, false);
-  assert.match(expiredResult.payload.error, /No solve job was found/);
+  assert.equal(expiredResult.statusCode, 200);
+  assert.equal(expiredResult.payload.ok, true);
+  assert.equal(expiredResult.payload.requestId, requestId);
+  assert.equal(expiredResult.payload.jobStatus, "completed");
+  assert.equal(expiredResult.payload.cancelRequested, false);
+  assert.equal(expiredResult.payload.progressLogFilePath, startResult.payload.progressLogFilePath);
+  assert.equal(expiredResult.payload.progressEntry.source, "final-result");
+  assert.equal(expiredResult.payload.stats.totalPopulation, 100);
+  assert.equal(expiredResult.payload.solution.residentials.length, 1);
+  assert.equal(expiredResult.payload.explainability, undefined);
   assert.equal(fs.existsSync(startResult.payload.progressLogFilePath), true);
+}
+
+async function testStoppedProgressLogRecoversCompactSolveResponse() {
+  const { handler, progressLogRoot } = createRouteTestHandler({
+    progressLogRootPrefix: "planner-route-stopped-log-"
+  });
+  const solvePayload = buildTinySolvePayload();
+  const requestId = "stopped-progress-log-status";
+  const solution = {
+    ...solve(solvePayload.grid, solvePayload.params),
+    stoppedByUser: true
+  };
+  const writer = new SolveProgressLogWriter({
+    rootDirectory: progressLogRoot,
+    requestId,
+    optimizer: "greedy",
+    grid: solvePayload.grid,
+    params: solvePayload.params,
+    createdAtMs: Date.now()
+  });
+  writer.appendSolutionSample(solution, {
+    elapsedMs: 250,
+    source: "final-result"
+  });
+  writer.finish("stopped", {
+    finishedAtMs: Date.now(),
+    solution,
+    message: "Solve was stopped by user. Showing the best feasible result found so far."
+  });
+
+  const result = await invoke(handler, {
+    method: "GET",
+    url: `/api/solve/status?${new URLSearchParams({ requestId }).toString()}`
+  });
+
+  assert.equal(result.statusCode, 200);
+  assert.equal(result.payload.ok, true);
+  assert.equal(result.payload.requestId, requestId);
+  assert.equal(result.payload.jobStatus, "stopped");
+  assert.equal(result.payload.cancelRequested, true);
+  assert.equal(result.payload.progressLogFilePath, writer.filePath);
+  assert.equal(result.payload.message, "Solve was stopped by user. Showing the best feasible result found so far.");
+  assert.equal(result.payload.progressEntry.source, "final-result");
+  assert.equal(result.payload.stats.stoppedByUser, true);
+  assert.equal(result.payload.stats.totalPopulation, 100);
+  assert.equal(result.payload.solution.stoppedByUser, true);
+  assert.equal(result.payload.validation.valid, true);
+  assert.equal(result.payload.explainability, undefined);
+}
+
+/**
+ * @param {string} progressLogRoot
+ * @param {string} requestId
+ * @param {(payload: any) => void} mutate
+ * @returns {string}
+ */
+function writeCorruptedCompletedProgressLog(progressLogRoot, requestId, mutate) {
+  const solvePayload = buildTinySolvePayload();
+  const solution = solve(solvePayload.grid, solvePayload.params);
+  const writer = new SolveProgressLogWriter({
+    rootDirectory: progressLogRoot,
+    requestId,
+    optimizer: "greedy",
+    grid: solvePayload.grid,
+    params: solvePayload.params,
+    createdAtMs: Date.now()
+  });
+  writer.finishWithSolutionSample("completed", {
+    finishedAtMs: Date.now(),
+    elapsedMs: 100,
+    solution
+  });
+
+  const payload = JSON.parse(fs.readFileSync(writer.filePath, "utf8"));
+  mutate(payload);
+  fs.writeFileSync(writer.filePath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
+  return writer.filePath;
+}
+
+async function testRecoveredProgressLogValidationReportsControlledTerminalError() {
+  const { handler, progressLogRoot } = createRouteTestHandler({
+    progressLogRootPrefix: "planner-route-corrupt-log-"
+  });
+
+  const invalidPopulationRequestId = "invalid-population-final-solution-status";
+  const invalidPopulationFilePath = writeCorruptedCompletedProgressLog(
+    progressLogRoot,
+    invalidPopulationRequestId,
+    (payload) => {
+      payload.finalResult.solution.populations[0] += 1;
+      payload.finalResult.solution.totalPopulation += 1;
+      payload.finalResult.totalPopulation += 1;
+    }
+  );
+
+  const invalidPopulationResult = await invoke(handler, {
+    method: "GET",
+    url: `/api/solve/status?${new URLSearchParams({ requestId: invalidPopulationRequestId }).toString()}`
+  });
+
+  assert.equal(invalidPopulationResult.statusCode, 200);
+  assert.equal(invalidPopulationResult.payload.ok, true);
+  assert.equal(invalidPopulationResult.payload.requestId, invalidPopulationRequestId);
+  assert.equal(invalidPopulationResult.payload.jobStatus, "completed");
+  assert.equal(invalidPopulationResult.payload.progressLogFilePath, invalidPopulationFilePath);
+  assert.equal(invalidPopulationResult.payload.validation.valid, false);
+  assert.match(invalidPopulationResult.payload.validation.errors.join("\n"), /reports population/);
+  assert.match(invalidPopulationResult.payload.validation.errors.join("\n"), /reports total population/);
+  assert.equal(invalidPopulationResult.payload.validation.recomputedTotalPopulation, 100);
+  assert.equal(invalidPopulationResult.payload.explainability, undefined);
+
+  const malformedSolutionRequestId = "malformed-final-solution-status";
+  const malformedSolutionFilePath = writeCorruptedCompletedProgressLog(
+    progressLogRoot,
+    malformedSolutionRequestId,
+    (payload) => {
+      delete payload.finalResult.solution.roads;
+    }
+  );
+
+  const malformedSolutionResult = await invoke(handler, {
+    method: "GET",
+    url: `/api/solve/status?${new URLSearchParams({ requestId: malformedSolutionRequestId }).toString()}`
+  });
+
+  assert.equal(malformedSolutionResult.statusCode, 200);
+  assert.equal(malformedSolutionResult.payload.ok, true);
+  assert.equal(malformedSolutionResult.payload.requestId, malformedSolutionRequestId);
+  assert.equal(malformedSolutionResult.payload.jobStatus, "completed");
+  assert.equal(malformedSolutionResult.payload.progressLogFilePath, malformedSolutionFilePath);
+  assert.match(malformedSolutionResult.payload.error, /Recovered solve progress log is invalid/);
+  assert.match(malformedSolutionResult.payload.error, /finalResult\.solution\.roads/);
+  assert.equal(malformedSolutionResult.payload.stats, undefined);
+  assert.equal(malformedSolutionResult.payload.solution, undefined);
+
+  const malformedInputRequestId = "malformed-input-status";
+  const malformedInputFilePath = writeCorruptedCompletedProgressLog(
+    progressLogRoot,
+    malformedInputRequestId,
+    (payload) => {
+      payload.input.params = null;
+    }
+  );
+
+  const malformedInputResult = await invoke(handler, {
+    method: "GET",
+    url: `/api/solve/status?${new URLSearchParams({ requestId: malformedInputRequestId }).toString()}`
+  });
+
+  assert.equal(malformedInputResult.statusCode, 200);
+  assert.equal(malformedInputResult.payload.ok, true);
+  assert.equal(malformedInputResult.payload.requestId, malformedInputRequestId);
+  assert.equal(malformedInputResult.payload.jobStatus, "completed");
+  assert.equal(malformedInputResult.payload.progressLogFilePath, malformedInputFilePath);
+  assert.match(malformedInputResult.payload.error, /Recovered solve progress log is invalid/);
+  assert.match(malformedInputResult.payload.error, /Solver params/);
+  assert.equal(malformedInputResult.payload.stats, undefined);
+  assert.equal(malformedInputResult.payload.solution, undefined);
+}
+
+async function testFailedProgressLogProjectsTerminalStatus() {
+  const { handler, progressLogRoot } = createRouteTestHandler({
+    progressLogRootPrefix: "planner-route-failed-log-"
+  });
+  const solvePayload = buildTinySolvePayload();
+  const requestId = "failed-progress-log-status";
+  const writer = new SolveProgressLogWriter({
+    rootDirectory: progressLogRoot,
+    requestId,
+    optimizer: "greedy",
+    grid: solvePayload.grid,
+    params: solvePayload.params,
+    createdAtMs: Date.now()
+  });
+  writer.appendPendingSample({
+    elapsedMs: 125,
+    note: "Solver was still searching before it failed."
+  });
+  writer.finish("failed", {
+    finishedAtMs: Date.now(),
+    error: "Backend exited before producing a feasible solution."
+  });
+
+  const result = await invoke(handler, {
+    method: "GET",
+    url: `/api/solve/status?${new URLSearchParams({ requestId }).toString()}`
+  });
+
+  assert.equal(result.statusCode, 200);
+  assert.equal(result.payload.ok, true);
+  assert.equal(result.payload.requestId, requestId);
+  assert.equal(result.payload.jobStatus, "failed");
+  assert.equal(result.payload.progressLogFilePath, writer.filePath);
+  assert.equal(result.payload.progressEntry.note, "Solver was still searching before it failed.");
+  assert.equal(result.payload.error, "Backend exited before producing a feasible solution.");
+  assert.equal(result.payload.stats, undefined);
 }
 
 async function testOrphanedRunningProgressLogReportsLostStatus() {
@@ -475,9 +761,13 @@ async function main() {
   await testBackgroundSolveRoutes(handler);
   await testStartSolveDefaultsOmittedOptimizerToAuto(handler);
   await testSolveStatusIncludesAutoStageMetadata(handler);
+  await testLiveSnapshotStatusValidatesReportedPopulationInvariants(handler);
   await testRecoveredAutoFailureNormalizesTerminalMetadata();
   await testCancelMissingSolveRoute(handler);
-  await testCompletedSolveJobsExpire();
+  await testCompletedSolveStatusRecoversFromProgressLogAfterRetention();
+  await testStoppedProgressLogRecoversCompactSolveResponse();
+  await testRecoveredProgressLogValidationReportsControlledTerminalError();
+  await testFailedProgressLogProjectsTerminalStatus();
   await testOrphanedRunningProgressLogReportsLostStatus();
 
   console.log("Web server status route tests passed.");

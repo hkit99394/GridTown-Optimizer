@@ -4,6 +4,7 @@ export * from "./decisionTrace.js";
 export * from "./dominanceUpgrades.js";
 export * from "./evaluator.js";
 export * from "./grid.js";
+export * from "./lnsWindowRankerSchema.js";
 export * from "./map.js";
 export * from "./plannerExplainability.js";
 export * from "./progress.js";

@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "rollForwardLabelCount": 432,
+  "bucketCount": 48,
+  "repeatedBucketCount": 48,
+  "mixedFinalStatusBucketCount": 4,
+  "conflictingFinalStatusBucketCount": 2,
+  "conflictingLabelCount": 18,
+  "conflictingStatusCounts": {
+    "improved": 2,
+    "neutral": 14,
+    "regressed": 2,
+    "unknown": 0
+  },
+  "featureIdenticalConflictBucketCount": 2,
+  "featureIdenticalConflictLabelCount": 18,
+  "examples": [
+    {
+      "caseName": "lns-holdout-service-braid-family-embed-7x8-right-repeatability-candidate",
+      "pressureFamily": "service-pressure",
+      "statePolicy": "initial-incumbent",
+      "operator": "random-exploration",
+      "window": "3:1:3x3",
+      "labelCount": 9,
+      "seedCount": 9,
+      "seeds": [
+        5,
+        7,
+        11,
+        13,
+        17,
+        19,
+        23,
+        29,
+        37
+      ],
+      "statusCounts": {
+        "improved": 1,
+        "neutral": 7,
+        "regressed": 1,
+        "unknown": 0
+      },
+      "finalDeltas": [
+        -45,
+        0,
+        50
+      ],
+      "baselineTotals": [
+        710,
+        755
+      ],
+      "totalPopulations": [
+        710,
+        760
+      ],
+      "featureFingerprintCount": 1
+    },
+    {
+      "caseName": "lns-holdout-service-braid-family-embed-7x8-right-repeatability-candidate",
+      "pressureFamily": "service-pressure",
+      "statePolicy": "post-stagnation",
+      "operator": "random-exploration",
+      "window": "3:1:3x3",
+      "labelCount": 9,
+      "seedCount": 9,
+      "seeds": [
+        5,
+        7,
+        11,
+        13,
+        17,
+        19,
+        23,
+        29,
+        37
+      ],
+      "statusCounts": {
+        "improved": 1,
+        "neutral": 7,
+        "regressed": 1,
+        "unknown": 0
+      },
+      "finalDeltas": [
+        -45,
+        0,
+        50
+      ],
+      "baselineTotals": [
+        710,
+        755
+      ],
+      "totalPopulations": [
+        710,
+        760
+      ],
+      "featureFingerprintCount": 1
+    }
+  ]
+}

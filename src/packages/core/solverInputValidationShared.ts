@@ -4,8 +4,9 @@
 
 import { validateSolution } from "./evaluator.js";
 import { computeCpSatRequestFingerprint } from "./cpSatContinuation.js";
+import { validateGridShape } from "./gridValidation.js";
 import { NO_TYPE_INDEX } from "./rules.js";
-import { isOptimizerName, OMITTED_SOLVER_OPTIMIZER } from "./types.js";
+import { isCellKey, isOptimizerName, OMITTED_SOLVER_OPTIMIZER } from "./types.js";
 
 import type { CpSatWarmStartHint, Grid, OptimizerName, SerializedSolution, Solution, SolverParams } from "./types.js";
 
@@ -200,6 +201,11 @@ export function requireValidationArray(value: unknown, path: string): unknown[] 
     throw new SolverInputError(`${path} must be an array.`);
   }
   return value;
+}
+
+export function assertValidGrid(value: unknown, path = "Grid"): asserts value is Grid {
+  const result = validateGridShape(value, path);
+  if ("error" in result) throw new SolverInputError(result.error);
 }
 
 export function requireValidationRoadKeys(value: unknown, path: string): string[] {
@@ -484,15 +490,7 @@ export function assertValidCpSatReusableInputs(G: Grid, params: SolverParams): v
 }
 
 export function isRoadKey(value: unknown): value is string {
-  if (typeof value !== "string") return false;
-  const [row, col, ...rest] = value.split(",");
-  return (
-    rest.length === 0 &&
-    Number.isInteger(Number(row)) &&
-    Number(row) >= 0 &&
-    Number.isInteger(Number(col)) &&
-    Number(col) >= 0
-  );
+  return isCellKey(value);
 }
 
 export function requireRoadKeys(value: unknown, path: string): string[] {

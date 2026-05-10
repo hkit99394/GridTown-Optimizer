@@ -1,0 +1,240 @@
+{
+  "artifactDir": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-right-repeatability-wide-state-search-roll-forward-4x0.2",
+  "artifactPaths": {
+    "replayJson": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-right-repeatability-wide-state-search-roll-forward-4x0.2/lns-window-replay-labels.json",
+    "replayText": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-right-repeatability-wide-state-search-roll-forward-4x0.2/lns-window-replay-labels.txt",
+    "repeatabilitySummaryJson": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-right-repeatability-wide-state-search-roll-forward-4x0.2/repeatability-summary.json",
+    "candidateSummaryJson": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-right-repeatability-wide-state-search-roll-forward-4x0.2/candidate-summary.json",
+    "selectivitySummaryJson": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-right-repeatability-wide-state-search-roll-forward-4x0.2/selectivity-summary.json",
+    "selectivitySummaryText": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-right-repeatability-wide-state-search-roll-forward-4x0.2/selectivity-summary.txt",
+    "telemetryManifestJson": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-right-repeatability-wide-state-search-roll-forward-4x0.2/telemetry-manifest.json",
+    "registryEntryDraftJson": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-right-repeatability-wide-state-search-roll-forward-4x0.2/registry-entry-draft.json",
+    "manifestJson": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-right-repeatability-wide-state-search-roll-forward-4x0.2/manifest.json"
+  },
+  "command": "node scripts/generate-service-braid-replay-artifacts.mjs --bundle=service-braid-generated-grid-family-right-repeatability",
+  "generatedAt": "2026-05-10T18:41:29.794Z",
+  "inputFingerprint": "fnv1a:b9d210fe",
+  "labelFingerprint": "fnv1a:9cee3765",
+  "caseCount": 1,
+  "seedCount": 9,
+  "stateCount": 18,
+  "labelCount": 432,
+  "rollForwardLabelCount": 432,
+  "selectedCaseNames": [
+    "lns-holdout-service-braid-family-embed-7x8-right-repeatability-candidate"
+  ],
+  "pressureFamilies": [
+    "service-pressure"
+  ],
+  "options": {
+    "seeds": [
+      5,
+      7,
+      11,
+      13,
+      17,
+      19,
+      23,
+      29,
+      37
+    ],
+    "statePolicies": [
+      "initial-incumbent",
+      "post-stagnation"
+    ],
+    "stateCollectionIterations": 4,
+    "stateCollectionRepairTimeLimitSeconds": 0.2,
+    "maxWindows": 16,
+    "explorationWindowCount": 8,
+    "repairTimeLimitSeconds": 0.2,
+    "rollForwardIterations": 4,
+    "rollForwardRepairTimeLimitSeconds": 0.2
+  },
+  "candidateMutation": {
+    "baseCase": "lns-holdout-service-braid-pressure",
+    "generatedGridFamily": "base-blocker-embed",
+    "gridOverride": [
+      [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      [
+        1,
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        1
+      ],
+      [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0,
+        1
+      ],
+      [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      [
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1
+      ],
+      [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    ],
+    "stateGate": "initial-incumbent,post-stagnation"
+  },
+  "generator": {
+    "script": "scripts/generate-service-braid-replay-artifacts.mjs",
+    "bundle": "service-braid-generated-grid-family-right-repeatability",
+    "requiresBuild": true,
+    "baseCorpus": "DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS",
+    "baseCase": "lns-holdout-service-braid-pressure",
+    "candidateCases": [
+      "lns-holdout-service-braid-family-embed-7x8-right-repeatability-candidate"
+    ],
+    "command": "node scripts/generate-service-braid-replay-artifacts.mjs --bundle=service-braid-generated-grid-family-right-repeatability"
+  },
+  "repeatabilitySummary": {
+    "schemaVersion": 1,
+    "rollForwardLabelCount": 432,
+    "bucketCount": 48,
+    "repeatedBucketCount": 48,
+    "mixedFinalStatusBucketCount": 4,
+    "conflictingFinalStatusBucketCount": 2,
+    "conflictingLabelCount": 18,
+    "conflictingStatusCounts": {
+      "improved": 2,
+      "neutral": 14,
+      "regressed": 2,
+      "unknown": 0
+    },
+    "featureIdenticalConflictBucketCount": 2,
+    "featureIdenticalConflictLabelCount": 18,
+    "examples": [
+      {
+        "caseName": "lns-holdout-service-braid-family-embed-7x8-right-repeatability-candidate",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "initial-incumbent",
+        "operator": "random-exploration",
+        "window": "3:1:3x3",
+        "labelCount": 9,
+        "seedCount": 9,
+        "seeds": [
+          5,
+          7,
+          11,
+          13,
+          17,
+          19,
+          23,
+          29,
+          37
+        ],
+        "statusCounts": {
+          "improved": 1,
+          "neutral": 7,
+          "regressed": 1,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -45,
+          0,
+          50
+        ],
+        "baselineTotals": [
+          710,
+          755
+        ],
+        "totalPopulations": [
+          710,
+          760
+        ],
+        "featureFingerprintCount": 1
+      },
+      {
+        "caseName": "lns-holdout-service-braid-family-embed-7x8-right-repeatability-candidate",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "post-stagnation",
+        "operator": "random-exploration",
+        "window": "3:1:3x3",
+        "labelCount": 9,
+        "seedCount": 9,
+        "seeds": [
+          5,
+          7,
+          11,
+          13,
+          17,
+          19,
+          23,
+          29,
+          37
+        ],
+        "statusCounts": {
+          "improved": 1,
+          "neutral": 7,
+          "regressed": 1,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -45,
+          0,
+          50
+        ],
+        "baselineTotals": [
+          710,
+          755
+        ],
+        "totalPopulations": [
+          710,
+          760
+        ],
+        "featureFingerprintCount": 1
+      }
+    ]
+  }
+}

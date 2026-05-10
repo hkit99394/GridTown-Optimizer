@@ -10,6 +10,7 @@ import {
   DEFAULT_EXPERIMENT_REGISTRY_PATH,
   ExperimentRegistryValidationError,
   formatExperimentRegistryIssues,
+  resolveExperimentRegistryPath,
   validateExperimentRegistryEntry,
   validateExperimentRegistryFile
 } from "../../benchmarkApi.js";
@@ -409,7 +410,8 @@ function assertNoDuplicateRunId(
   options: ExperimentRegistryCheckOptions
 ): void {
   const registryRoot = options.rootDir ?? options.cwd ?? process.cwd();
-  if (!fs.existsSync(path.resolve(registryRoot, registryPath))) {
+  const absoluteRegistryPath = resolveExperimentRegistryPath(registryPath, registryRoot);
+  if (!fs.existsSync(absoluteRegistryPath)) {
     return;
   }
   const registryResult = validateExperimentRegistryFile(registryPath, {

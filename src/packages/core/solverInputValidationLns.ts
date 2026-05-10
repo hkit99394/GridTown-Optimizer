@@ -1,4 +1,4 @@
-import { LNS_WINDOW_RANKER_FEATURE_NAMES } from "./types.js";
+import { isLnsWindowRankerFeatureName, lnsWindowRankerRuntimeModelValidationError } from "./lnsWindowRankerSchema.js";
 import type { SolverParams } from "./types.js";
 
 import {
@@ -68,14 +68,13 @@ function assertValidWindowRankerFeatureDeltaGates(windowRanker: Record<string, u
     throw new SolverInputError("LNS option lns.windowRanker.featureDeltaGates must be an array of objects.");
   }
 
-  const knownFeatures = new Set<string>(LNS_WINDOW_RANKER_FEATURE_NAMES);
   for (const [index, entry] of value.entries()) {
     const label = `LNS option lns.windowRanker.featureDeltaGates[${index}]`;
     const gate = requireValidationRecord(entry, label);
     if (typeof gate.feature !== "string" || gate.feature.trim().length === 0) {
       throw new SolverInputError(`${label}.feature must be a non-empty string.`);
     }
-    if (!knownFeatures.has(gate.feature)) {
+    if (!isLnsWindowRankerFeatureName(gate.feature)) {
       throw new SolverInputError(`${label}.feature must be one of the LNS window ranker feature names.`);
     }
     requireOptionalFiniteNumberInRange(
@@ -99,32 +98,6 @@ function assertValidWindowRankerFeatureDeltaGates(windowRanker: Record<string, u
     }
     if (typeof gate.minDelta === "number" && typeof gate.maxDelta === "number" && gate.minDelta > gate.maxDelta) {
       throw new SolverInputError(`${label}.minDelta must be less than or equal to maxDelta.`);
-    }
-  }
-}
-
-function assertValidWindowRankerInteractionWeights(model: Record<string, unknown>): void {
-  const value = model.interactionWeights;
-  if (value === undefined) return;
-  const weights = requireValidationRecord(value, "LNS option lns.windowRanker.model.interactionWeights");
-  const knownFeatures = new Set<string>(LNS_WINDOW_RANKER_FEATURE_NAMES);
-  for (const [featureName, weight] of Object.entries(weights)) {
-    const [left, right, extra] = featureName.split("*");
-    if (
-      extra !== undefined ||
-      left === undefined ||
-      right === undefined ||
-      !knownFeatures.has(left) ||
-      !knownFeatures.has(right)
-    ) {
-      throw new SolverInputError(
-        "LNS option lns.windowRanker.model.interactionWeights keys must be pairwise feature names like operatorScore*selectedByBaseline."
-      );
-    }
-    if (typeof weight !== "number" || !Number.isFinite(weight)) {
-      throw new SolverInputError(
-        `LNS option lns.windowRanker.model.interactionWeights.${featureName} must be a finite number.`
-      );
     }
   }
 }
@@ -160,30 +133,10 @@ function assertValidWindowRankerOptions(lns: Record<string, unknown>): void {
     LNS_MAX_WINDOW_RANKER_SCORE_DELTA,
     true
   );
-  if (
-    model.featureSchemaVersion !== undefined &&
-    model.featureSchemaVersion !== null &&
-    model.featureSchemaVersion !== 2
-  ) {
-    throw new SolverInputError("LNS option lns.windowRanker.model.featureSchemaVersion must be null or 2.");
+  const schemaError = lnsWindowRankerRuntimeModelValidationError(model, "LNS option lns.windowRanker.model");
+  if (schemaError !== null) {
+    throw new SolverInputError(schemaError);
   }
-  if (model.featureNames !== undefined) {
-    if (!Array.isArray(model.featureNames) || model.featureNames.some((entry) => typeof entry !== "string")) {
-      throw new SolverInputError("LNS option lns.windowRanker.model.featureNames must be an array of strings.");
-    }
-  }
-
-  const weights = requireValidationRecord(model.weights, "LNS option lns.windowRanker.model.weights");
-  const entries = Object.entries(weights);
-  if (entries.length === 0) {
-    throw new SolverInputError("LNS option lns.windowRanker.model.weights must include at least one weight.");
-  }
-  for (const [featureName, weight] of entries) {
-    if (typeof weight !== "number" || !Number.isFinite(weight)) {
-      throw new SolverInputError(`LNS option lns.windowRanker.model.weights.${featureName} must be a finite number.`);
-    }
-  }
-  assertValidWindowRankerInteractionWeights(model);
 }
 
 export function assertValidLnsOptions(params: SolverParams): void {

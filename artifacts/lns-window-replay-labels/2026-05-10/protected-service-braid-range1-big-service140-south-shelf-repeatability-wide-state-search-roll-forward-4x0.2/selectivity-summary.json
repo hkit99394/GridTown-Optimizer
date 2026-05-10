@@ -1,0 +1,322 @@
+{
+  "generatedAt": "2026-05-10T13:19:23.218Z",
+  "title": "Service-braid range1/bonus140 south-shelf repeatability selectivity summary",
+  "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range1-big-service140-south-shelf-repeatability-wide-state-search-roll-forward-4x0.2",
+  "totalLabels": 432,
+  "gates": {
+    "slidingArea12": {
+      "selected": 36,
+      "pos": 0,
+      "neg": 1,
+      "neu": 35,
+      "best": 0,
+      "worst": -55,
+      "bySeed": {
+        "5": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 4
+        },
+        "7": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 4
+        },
+        "11": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 4
+        },
+        "13": {
+          "pos": 0,
+          "neg": 1,
+          "neu": 3
+        },
+        "17": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 4
+        },
+        "19": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 4
+        },
+        "23": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 4
+        },
+        "29": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 4
+        },
+        "37": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 4
+        }
+      },
+      "byCase": {
+        "lns-holdout-service-braid-range1-big-service140-south-shelf-repeatability-candidate": {
+          "pos": 0,
+          "neg": 1,
+          "neu": 35
+        }
+      },
+      "examples": [
+        {
+          "seed": 13,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": -55,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 3,
+          "source": "exploration-tail"
+        }
+      ]
+    },
+    "slidingArea12ComponentsMax2": {
+      "selected": 0,
+      "pos": 0,
+      "neg": 0,
+      "neu": 0,
+      "best": 0,
+      "worst": 0,
+      "bySeed": {},
+      "byCase": {},
+      "examples": []
+    },
+    "slidingComponentsMax2": {
+      "selected": 54,
+      "pos": 0,
+      "neg": 0,
+      "neu": 54,
+      "best": 0,
+      "worst": 0,
+      "bySeed": {
+        "5": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "7": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "11": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "13": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "17": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "19": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "23": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "29": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "37": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        }
+      },
+      "byCase": {
+        "lns-holdout-service-braid-range1-big-service140-south-shelf-repeatability-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 54
+        }
+      },
+      "examples": []
+    },
+    "slidingTopOrLeft2": {
+      "selected": 36,
+      "pos": 0,
+      "neg": 1,
+      "neu": 35,
+      "best": 0,
+      "worst": -55,
+      "bySeed": {
+        "5": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 4
+        },
+        "7": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 4
+        },
+        "11": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 4
+        },
+        "13": {
+          "pos": 0,
+          "neg": 1,
+          "neu": 3
+        },
+        "17": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 4
+        },
+        "19": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 4
+        },
+        "23": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 4
+        },
+        "29": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 4
+        },
+        "37": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 4
+        }
+      },
+      "byCase": {
+        "lns-holdout-service-braid-range1-big-service140-south-shelf-repeatability-candidate": {
+          "pos": 0,
+          "neg": 1,
+          "neu": 35
+        }
+      },
+      "examples": [
+        {
+          "seed": 13,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": -55,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 3,
+          "source": "exploration-tail"
+        }
+      ]
+    },
+    "allNonBaselineSliding": {
+      "selected": 126,
+      "pos": 0,
+      "neg": 1,
+      "neu": 125,
+      "best": 0,
+      "worst": -55,
+      "bySeed": {
+        "5": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 14
+        },
+        "7": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 14
+        },
+        "11": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 14
+        },
+        "13": {
+          "pos": 0,
+          "neg": 1,
+          "neu": 13
+        },
+        "17": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 14
+        },
+        "19": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 14
+        },
+        "23": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 14
+        },
+        "29": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 14
+        },
+        "37": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 14
+        }
+      },
+      "byCase": {
+        "lns-holdout-service-braid-range1-big-service140-south-shelf-repeatability-candidate": {
+          "pos": 0,
+          "neg": 1,
+          "neu": 125
+        }
+      },
+      "examples": [
+        {
+          "seed": 13,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": -55,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 3,
+          "source": "exploration-tail"
+        }
+      ]
+    }
+  }
+}

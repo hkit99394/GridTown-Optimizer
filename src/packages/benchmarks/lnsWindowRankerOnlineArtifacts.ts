@@ -5,6 +5,7 @@ import {
   buildModelExperimentRegistryEntryDraft,
   buildModelExperimentTelemetryManifest
 } from "./modelExperimentArtifacts.js";
+import { assertValidLnsWindowRankerRuntimeModel } from "../core/index.js";
 
 import type { LnsWindowRankerFeatureDeltaGate, LnsWindowRankerRuntimeModel } from "../core/index.js";
 import type {
@@ -55,16 +56,10 @@ function modelWithFingerprint(model: LnsWindowRankerRuntimeModel): LnsWindowRank
   };
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
 function assertRuntimeModel(
   model: LnsWindowRankerRuntimeModel | undefined
 ): asserts model is LnsWindowRankerRuntimeModel {
-  if (!isRecord(model) || !isRecord(model.weights)) {
-    throw new Error("LNS window ranker online artifacts require a runtime model with a weights object.");
-  }
+  assertValidLnsWindowRankerRuntimeModel(model, "LNS window ranker online artifact model");
 }
 
 function modelFromAblationResult(result: LnsWindowRankerOnlineAblationSuiteResult): LnsWindowRankerRuntimeModel {

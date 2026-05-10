@@ -259,11 +259,10 @@ export class SolveJobManager {
     };
   }
 
-  getOrphanedProgressLog(requestId: string): SolveProgressLogReadResult | null {
+  getProgressLogStatus(requestId: string): SolveProgressLogReadResult | null {
     this.pruneJobs();
     if (this.jobs.has(requestId)) return null;
-    const progressLog = readLatestSolveProgressLogByRequestId(this.progressLogRoot, requestId);
-    return progressLog && !progressLog.document.finalResult ? progressLog : null;
+    return readLatestSolveProgressLogByRequestId(this.progressLogRoot, requestId);
   }
 
   cancel(requestId: string): SolveJob | null {
@@ -327,12 +326,9 @@ export class SolveJobManager {
     job.status = status;
     job.message = message;
     job.error = null;
-    job.progressLogWriter.appendSolutionSample(solution, {
-      elapsedMs: finishedAtMs - job.createdAt,
-      source: "final-result"
-    });
-    job.progressLogWriter.finish(status, {
+    job.progressLogWriter.finishWithSolutionSample(status, {
       finishedAtMs,
+      elapsedMs: finishedAtMs - job.createdAt,
       solution,
       message,
       error: null

@@ -1,6 +1,3 @@
-import fs from "node:fs";
-import path from "node:path";
-
 import {
   buildGreedyOfflineRankerRegistryEntryDraft,
   buildGreedyOfflineRankerTelemetryManifest,
@@ -26,7 +23,9 @@ import {
   completeAppendableRegistryEntry,
   defaultCliReplayCommand,
   normalizeRepoRelativePath,
-  writeJsonArtifact
+  prepareArtifactBundleDirectory,
+  writeJsonArtifact,
+  writeTextArtifact
 } from "./artifactBundleHelpers.js";
 
 import type { GreedyOfflineRankerExperimentResult } from "../../benchmarkApi.js";
@@ -42,6 +41,7 @@ interface ParsedGreedyRankerArgs {
   rankerSummary?: string;
   rankerRegistryPath?: string;
   rankerRegisterDryRun: boolean;
+  forceArtifactDir: boolean;
 }
 
 interface GreedyRankerArtifactManifest {
@@ -78,6 +78,7 @@ function parseArgs(argv: string[]): ParsedGreedyRankerArgs {
   let rankerSummary: string | undefined;
   let rankerRegistryPath: string | undefined;
   let rankerRegisterDryRun = false;
+  let forceArtifactDir = false;
   const inlineOptions: Record<string, (value: string) => void> = {
     seeds: (value) => {
       seeds = parseNumberList(value, "seeds");
@@ -114,6 +115,10 @@ function parseArgs(argv: string[]): ParsedGreedyRankerArgs {
       rankerRegisterDryRun = true;
       continue;
     }
+    if (isCliFlag(arg, "--force-artifact-dir")) {
+      forceArtifactDir = true;
+      continue;
+    }
     if (applyInlineOptionHandlers(arg, inlineOptions)) {
       continue;
     }
@@ -130,7 +135,8 @@ function parseArgs(argv: string[]): ParsedGreedyRankerArgs {
     rankerDecision,
     rankerSummary,
     rankerRegistryPath,
-    rankerRegisterDryRun
+    rankerRegisterDryRun,
+    forceArtifactDir
   };
 }
 
@@ -168,17 +174,14 @@ function writeGreedyRankerArtifactBundle(
   if (args.artifactDir === undefined) {
     throw new Error("Greedy offline ranker artifact directory is required.");
   }
-  const artifactDir = normalizeRepoRelativePath(args.artifactDir, "--artifact-dir");
-  const absoluteArtifactDir = path.resolve(process.cwd(), artifactDir);
-  fs.mkdirSync(absoluteArtifactDir, { recursive: true });
-
-  const artifactPath = (fileName: string) => path.posix.join(artifactDir, fileName);
-  const absoluteArtifactPath = (fileName: string) => path.join(absoluteArtifactDir, fileName);
-  const experimentJson = artifactPath("greedy-offline-ranker.json");
-  const experimentText = artifactPath("greedy-offline-ranker.txt");
-  const modelJson = artifactPath("model.json");
-  const telemetryManifestJson = artifactPath("telemetry-manifest.json");
-  const registryEntryDraftJson = artifactPath("registry-entry-draft.json");
+  const artifacts = prepareArtifactBundleDirectory(args.artifactDir, "--artifact-dir", {
+    force: args.forceArtifactDir
+  });
+  const experimentJson = artifacts.artifactPath("greedy-offline-ranker.json");
+  const experimentText = artifacts.artifactPath("greedy-offline-ranker.txt");
+  const modelJson = artifacts.artifactPath("model.json");
+  const telemetryManifestJson = artifacts.artifactPath("telemetry-manifest.json");
+  const registryEntryDraftJson = artifacts.artifactPath("registry-entry-draft.json");
   const command = defaultRankerArtifactCommand(argv);
   const telemetryManifest = buildGreedyOfflineRankerTelemetryManifest(result, {
     command,
@@ -194,19 +197,30 @@ function writeGreedyRankerArtifactBundle(
     summary: args.rankerSummary
   });
 
-  writeJsonArtifact(absoluteArtifactPath("greedy-offline-ranker.json"), createGreedyOfflineRankerSnapshot(result));
-  fs.writeFileSync(
-    absoluteArtifactPath("greedy-offline-ranker.txt"),
-    `${formatGreedyOfflineRankerExperiment(result)}\n`
+  writeJsonArtifact(
+    artifacts.absoluteArtifactPath("greedy-offline-ranker.json"),
+    createGreedyOfflineRankerSnapshot(result),
+    {
+      force: args.forceArtifactDir
+    }
   );
-  writeJsonArtifact(absoluteArtifactPath("model.json"), result.model);
-  writeJsonArtifact(absoluteArtifactPath("telemetry-manifest.json"), telemetryManifest);
-  writeJsonArtifact(absoluteArtifactPath("registry-entry-draft.json"), registryEntryDraft);
+  writeTextArtifact(
+    artifacts.absoluteArtifactPath("greedy-offline-ranker.txt"),
+    `${formatGreedyOfflineRankerExperiment(result)}\n`,
+    { force: args.forceArtifactDir }
+  );
+  writeJsonArtifact(artifacts.absoluteArtifactPath("model.json"), result.model, { force: args.forceArtifactDir });
+  writeJsonArtifact(artifacts.absoluteArtifactPath("telemetry-manifest.json"), telemetryManifest, {
+    force: args.forceArtifactDir
+  });
+  writeJsonArtifact(artifacts.absoluteArtifactPath("registry-entry-draft.json"), registryEntryDraft, {
+    force: args.forceArtifactDir
+  });
 
   const registry = args.rankerRegisterDryRun ? registerRankerArtifacts(registryEntryDraft, args) : undefined;
 
   return {
-    artifactDir,
+    artifactDir: artifacts.artifactDir,
     artifactPaths: {
       experimentJson,
       experimentText,
@@ -252,6 +266,9 @@ export function runGreedyOfflineRankerCli(): void {
   }
   if (args.rankerRegistryPath !== undefined && !args.rankerRegisterDryRun) {
     throw new Error("--ranker-registry requires --ranker-register-dry-run.");
+  }
+  if (args.forceArtifactDir && args.artifactDir === undefined) {
+    throw new Error("--force-artifact-dir requires --artifact-dir.");
   }
 
   const result = runGreedyOfflineRankerExperiment({

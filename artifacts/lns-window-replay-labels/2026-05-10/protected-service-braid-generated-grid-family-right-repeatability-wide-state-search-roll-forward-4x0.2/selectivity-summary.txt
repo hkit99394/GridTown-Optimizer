@@ -1,0 +1,10 @@
+Service-braid generated-grid right-shift repeatability selectivity summary
+generatedAt=2026-05-10T18:41:29.885Z
+source=artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-right-repeatability-wide-state-search-roll-forward-4x0.2
+totalLabels=432
+
+slidingArea12: selected=36 pos=20 neg=0 neu=16 best=50 worst=0
+slidingArea12ComponentsMax2: selected=18 pos=2 neg=0 neu=16 best=50 worst=0
+slidingComponentsMax2: selected=54 pos=2 neg=0 neu=52 best=50 worst=0
+slidingTopOrLeft2: selected=36 pos=20 neg=0 neu=16 best=50 worst=0
+allNonBaselineSliding: selected=144 pos=20 neg=0 neu=124 best=50 worst=0

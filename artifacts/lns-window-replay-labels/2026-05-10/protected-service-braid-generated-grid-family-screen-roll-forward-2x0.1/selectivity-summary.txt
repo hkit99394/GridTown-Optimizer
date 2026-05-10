@@ -1,0 +1,10 @@
+Service-braid generated-grid family compact sweep selectivity summary
+generatedAt=2026-05-10T18:20:44.640Z
+source=artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-screen-roll-forward-2x0.1
+totalLabels=288
+
+slidingArea12: selected=24 pos=6 neg=0 neu=18 best=50 worst=0
+slidingArea12ComponentsMax2: selected=18 pos=0 neg=0 neu=18 best=0 worst=0
+slidingComponentsMax2: selected=60 pos=0 neg=0 neu=60 best=0 worst=0
+slidingTopOrLeft2: selected=24 pos=6 neg=0 neu=18 best=50 worst=0
+allNonBaselineSliding: selected=72 pos=6 neg=0 neu=66 best=50 worst=0

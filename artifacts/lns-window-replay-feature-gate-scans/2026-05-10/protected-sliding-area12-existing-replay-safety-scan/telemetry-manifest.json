@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "source": "lns-window-replay-feature-gate-scan",
+  "command": "node scripts/summarize-lns-replay-feature-gate-scan.mjs --source-root=artifacts/lns-window-replay-labels --artifact-dir=artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-sliding-area12-existing-replay-safety-scan --force-artifact-dir",
+  "generatedAt": "2026-05-10T11:16:23.651Z",
+  "git": {
+    "commit": "2b069afc38ee665b057765eb80deb7ff5069d561",
+    "branch": "features/validated-solver-improvement-loop"
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "diagnosticsOnly": true,
+  "inputFingerprint": "fnv1a:178933cd",
+  "scanFingerprint": "fnv1a:052b9809",
+  "sourceRoot": "artifacts/lns-window-replay-labels",
+  "outputArtifacts": [
+    "artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-sliding-area12-existing-replay-safety-scan/feature-gate-scan.json",
+    "artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-sliding-area12-existing-replay-safety-scan/feature-gate-scan.txt",
+    "artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-sliding-area12-existing-replay-safety-scan/telemetry-manifest.json",
+    "artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-sliding-area12-existing-replay-safety-scan/manifest.json"
+  ],
+  "metrics": {
+    "sourceArtifactCount": 19,
+    "caseCount": 14,
+    "seedCount": 9,
+    "labelCount": 4068,
+    "rollForwardLabelCount": 4068,
+    "gates": {
+      "slidingArea12": {
+        "selected": 401,
+        "improved": 94,
+        "regressed": 26,
+        "neutral": 281,
+        "unknown": 0,
+        "bestDelta": 55,
+        "worstDelta": -60,
+        "safeNoRegression": false,
+        "promotionReadyPocket": false
+      },
+      "slidingArea12ComponentsMax2": {
+        "selected": 346,
+        "improved": 94,
+        "regressed": 20,
+        "neutral": 232,
+        "unknown": 0,
+        "bestDelta": 55,
+        "worstDelta": -50,
+        "safeNoRegression": false,
+        "promotionReadyPocket": false
+      },
+      "slidingComponentsMax2": {
+        "selected": 875,
+        "improved": 111,
+        "regressed": 26,
+        "neutral": 738,
+        "unknown": 0,
+        "bestDelta": 55,
+        "worstDelta": -55,
+        "safeNoRegression": false,
+        "promotionReadyPocket": false
+      },
+      "slidingTopOrLeft2": {
+        "selected": 486,
+        "improved": 108,
+        "regressed": 28,
+        "neutral": 350,
+        "unknown": 0,
+        "bestDelta": 55,
+        "worstDelta": -60,
+        "safeNoRegression": false,
+        "promotionReadyPocket": false
+      },
+      "allNonBaselineSliding": {
+        "selected": 1163,
+        "improved": 111,
+        "regressed": 47,
+        "neutral": 1005,
+        "unknown": 0,
+        "bestDelta": 55,
+        "worstDelta": -60,
+        "safeNoRegression": false,
+        "promotionReadyPocket": false
+      }
+    }
+  },
+  "notes": "Static feature-gate scan over existing LNS replay labels; no solver default changed."
+}

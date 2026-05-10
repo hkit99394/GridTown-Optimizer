@@ -13,7 +13,7 @@ import type {
   SolverParams,
   EvaluatedServicePlacement
 } from "./types.js";
-import { cellFromKey } from "./types.js";
+import { cellFromKey, parseCellKey } from "./types.js";
 import { isAllowed } from "./grid.js";
 import {
   serviceFootprint,
@@ -29,6 +29,7 @@ import {
   NO_TYPE_INDEX,
   normalizeSize
 } from "./rules.js";
+import { validateGridShape } from "./gridValidation.js";
 
 export interface SolutionValidationOptions {
   ignoreReportedPopulation?: boolean;
@@ -54,6 +55,76 @@ function summarizeCellKeys(keys: string[], limit = 12): string {
   const shown = sorted.slice(0, limit).map(formatCellKey).join(", ");
   const hiddenCount = sorted.length - limit;
   return hiddenCount > 0 ? `${shown}, and ${hiddenCount} more` : shown;
+}
+
+function validateGridForValidationApi(grid: number[][]): string[] {
+  const result = validateGridShape(grid);
+  return "error" in result ? [result.error] : [];
+}
+
+function formatGeometryValue(value: unknown): string {
+  if (typeof value === "number") return String(value);
+  if (typeof value === "bigint") return `${value}n`;
+  if (value === undefined) return "undefined";
+  try {
+    return JSON.stringify(value) ?? String(value);
+  } catch {
+    return String(value);
+  }
+}
+
+function validateIntegerGeometryField(value: unknown, field: string, min: number): string | null {
+  if (typeof value === "number" && Number.isSafeInteger(value) && value >= min) return null;
+  return `${field} must be an integer >= ${min} (received ${formatGeometryValue(value)}).`;
+}
+
+function validateServicePlacementGeometry(service: EvaluatedServicePlacement, index: number): string[] {
+  const errors: string[] = [];
+  const checks: [unknown, string, number][] = [
+    [service.r, "r", 0],
+    [service.c, "c", 0],
+    [service.rows, "rows", 1],
+    [service.cols, "cols", 1],
+    [service.range, "range", 0]
+  ];
+  for (const [value, field, min] of checks) {
+    const error = validateIntegerGeometryField(value, field, min);
+    if (error) errors.push(`Service ${index} at (${service.r},${service.c}) has invalid geometry: ${error}`);
+  }
+  return errors;
+}
+
+function validateResidentialPlacementGeometry(
+  residential: { r: number; c: number; rows: number; cols: number },
+  index: number
+): string[] {
+  const errors: string[] = [];
+  const checks: [unknown, string, number][] = [
+    [residential.r, "r", 0],
+    [residential.c, "c", 0],
+    [residential.rows, "rows", 1],
+    [residential.cols, "cols", 1]
+  ];
+  for (const [value, field, min] of checks) {
+    const error = validateIntegerGeometryField(value, field, min);
+    if (error) {
+      errors.push(`Residential ${index} at (${residential.r},${residential.c}) has invalid geometry: ${error}`);
+    }
+  }
+  return errors;
+}
+
+function collectLayoutPlacementGeometryErrors(
+  input: Pick<LayoutEvaluationInput, "services" | "residentials">
+): string[] {
+  const errors: string[] = [];
+  input.services.forEach((service, index) => {
+    errors.push(...validateServicePlacementGeometry(service, index));
+  });
+  input.residentials.forEach((residential, index) => {
+    errors.push(...validateResidentialPlacementGeometry(residential, index));
+  });
+  return errors;
 }
 
 function computeResidentialBoosts(
@@ -144,9 +215,17 @@ function assignGroupExact(boosts: number[], typeIndices: number[], params: Solve
 export function validateLayoutConstraints(input: LayoutEvaluationInput): LayoutConstraintValidationResult {
   const { grid, roads, services, residentials, params } = input;
   const errors: string[] = [];
+  const gridErrors = validateGridForValidationApi(grid);
+  if (gridErrors.length > 0) {
+    return {
+      valid: false,
+      errors: gridErrors
+    };
+  }
   const { maxServices, maxResidentials } = getBuildingLimits(params);
 
   const buildingCells = new Set<string>();
+  const canonicalRoads = new Set<string>();
 
   if (maxServices !== undefined && services.length > maxServices) {
     errors.push(`Layout uses ${services.length} services, exceeding the limit of ${maxServices}.`);
@@ -156,7 +235,13 @@ export function validateLayoutConstraints(input: LayoutEvaluationInput): LayoutC
   }
 
   // Validate services.
-  for (const s of services) {
+  for (let i = 0; i < services.length; i++) {
+    const s = services[i];
+    const geometryErrors = validateServicePlacementGeometry(s, i);
+    if (geometryErrors.length > 0) {
+      errors.push(...geometryErrors);
+      continue;
+    }
     for (const k of serviceFootprint(s)) {
       const [r, c] = k.split(",").map(Number);
       if (!isAllowed(grid, r, c)) {
@@ -170,7 +255,13 @@ export function validateLayoutConstraints(input: LayoutEvaluationInput): LayoutC
   }
 
   // Validate residentials.
-  for (const res of residentials) {
+  for (let i = 0; i < residentials.length; i++) {
+    const res = residentials[i];
+    const geometryErrors = validateResidentialPlacementGeometry(res, i);
+    if (geometryErrors.length > 0) {
+      errors.push(...geometryErrors);
+      continue;
+    }
     for (const k of residentialFootprint(res.r, res.c, res.rows, res.cols)) {
       const [r, c] = k.split(",").map(Number);
       if (!isAllowed(grid, r, c)) {
@@ -185,7 +276,15 @@ export function validateLayoutConstraints(input: LayoutEvaluationInput): LayoutC
 
   // Road basic validation and no overlap with buildings.
   for (const k of roads) {
-    const [r, c] = k.split(",").map(Number);
+    const cell = parseCellKey(k);
+    if (!cell) {
+      errors.push(
+        `Road key ${JSON.stringify(k)} is malformed; expected "r,c" with non-negative integer row and column.`
+      );
+      continue;
+    }
+    const { r, c } = cell;
+    canonicalRoads.add(k);
     if (!isAllowed(grid, r, c)) {
       errors.push(`Road cell (${r},${c}) is not allowed.`);
     }
@@ -195,12 +294,12 @@ export function validateLayoutConstraints(input: LayoutEvaluationInput): LayoutC
   }
 
   // Road connectivity to row 0 or column 0.
-  const connected = roadsConnectedToRoadAnchor(grid, roads);
+  const connected = roadsConnectedToRoadAnchor(grid, canonicalRoads);
   if (connected.size === 0) {
     errors.push("Road network does not touch row 0 or column 0.");
   }
-  if (connected.size !== roads.size) {
-    const disconnectedRoads = [...roads].filter((key) => !connected.has(key));
+  if (connected.size !== canonicalRoads.size) {
+    const disconnectedRoads = [...canonicalRoads].filter((key) => !connected.has(key));
     const disconnectedSummary =
       disconnectedRoads.length > 0 ? ` Disconnected road cells: ${summarizeCellKeys(disconnectedRoads)}.` : "";
     errors.push(
@@ -210,14 +309,18 @@ export function validateLayoutConstraints(input: LayoutEvaluationInput): LayoutC
 
   // Building-road adjacency.
   // Buildings that cover row 0 or column 0 are treated as connected to the road anchor.
-  for (const s of services) {
+  for (let i = 0; i < services.length; i++) {
+    const s = services[i];
+    if (validateServicePlacementGeometry(s, i).length > 0) continue;
     const normalized = normalizeServicePlacement(s);
-    if (!isAdjacentToRoads(roads, normalized.r, normalized.c, normalized.rows, normalized.cols)) {
+    if (!isAdjacentToRoads(canonicalRoads, normalized.r, normalized.c, normalized.rows, normalized.cols)) {
       errors.push(`Service at (${s.r},${s.c}) is not adjacent to a road.`);
     }
   }
-  for (const res of residentials) {
-    if (!isAdjacentToRoads(roads, res.r, res.c, res.rows, res.cols)) {
+  for (let i = 0; i < residentials.length; i++) {
+    const res = residentials[i];
+    if (validateResidentialPlacementGeometry(res, i).length > 0) continue;
+    if (!isAdjacentToRoads(canonicalRoads, res.r, res.c, res.rows, res.cols)) {
       errors.push(`Residential at (${res.r},${res.c}) size ${res.rows}x${res.cols} is not adjacent to a road.`);
     }
   }
@@ -230,8 +333,28 @@ export function validateLayoutConstraints(input: LayoutEvaluationInput): LayoutC
 
 export function evaluateLayout(input: LayoutEvaluationInput): LayoutEvaluationResult {
   const { grid, services, residentials, params } = input;
+  const gridErrors = validateGridForValidationApi(grid);
+  if (gridErrors.length > 0) {
+    return {
+      valid: false,
+      errors: gridErrors,
+      populations: [],
+      totalPopulation: 0,
+      boosts: []
+    };
+  }
+
   const constraintValidation = validateLayoutConstraints(input);
   const errors = [...constraintValidation.errors];
+  if (collectLayoutPlacementGeometryErrors(input).length > 0) {
+    return {
+      valid: false,
+      errors,
+      populations: [],
+      totalPopulation: 0,
+      boosts: []
+    };
+  }
 
   // Population computation.
   const boosts = computeResidentialBoosts(grid, services, residentials);
@@ -444,6 +567,25 @@ export function validateSolution(
   validateServiceTypeAssignments(solution, params, errors);
   validateResidentialTypeAssignments(solution, params, errors);
 
+  const gridErrors = validateGridForValidationApi(grid);
+  if (gridErrors.length > 0) {
+    for (const error of gridErrors) errors.push(error);
+    const layoutEvaluation: LayoutEvaluationResult = {
+      valid: false,
+      errors: gridErrors,
+      populations: [],
+      totalPopulation: 0,
+      boosts: []
+    };
+    return {
+      valid: false,
+      errors,
+      recomputedPopulations: [],
+      recomputedTotalPopulation: 0,
+      layoutEvaluation
+    };
+  }
+
   const services = solution.services.map((service, index) => ({
     ...service,
     bonus: solution.servicePopulationIncreases[index] ?? 0
@@ -459,7 +601,8 @@ export function validateSolution(
   for (const error of layoutEvaluation.errors) errors.push(error);
 
   const recomputedPopulations =
-    solution.residentialTypeIndices.length === solution.residentials.length
+    solution.residentialTypeIndices.length === solution.residentials.length &&
+    layoutEvaluation.boosts.length === solution.residentials.length
       ? recomputeSolutionPopulations(solution, params, layoutEvaluation.boosts)
       : layoutEvaluation.populations.map((row) => row.population);
   const recomputedTotalPopulation = recomputedPopulations.reduce((sum, population) => sum + population, 0);

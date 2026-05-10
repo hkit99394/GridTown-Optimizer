@@ -8,10 +8,7 @@ const defaultSourceFileBudget = 900;
 const sourceRoots = ["src", "apps", "python"];
 const sourceExtensions = new Set([".ts", ".js", ".css", ".html", ".py"]);
 
-const temporaryOversizedBudgets = new Map([
-  ["apps/planner-web/plannerResults.js", 1650],
-  ["src/packages/benchmarks/experimentRegistry.ts", 1150]
-]);
+const temporaryOversizedBudgets = new Map();
 
 function listFiles(dir, predicate) {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {

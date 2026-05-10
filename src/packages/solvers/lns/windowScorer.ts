@@ -14,7 +14,12 @@ import {
   width
 } from "../../core/index.js";
 
-import { LNS_WINDOW_RANKER_FEATURE_NAMES } from "../../core/index.js";
+import {
+  assertValidLnsWindowRankerRuntimeModel,
+  isLnsWindowRankerFeatureName,
+  LNS_WINDOW_RANKER_FEATURE_NAMES,
+  LNS_WINDOW_RANKER_FEATURE_SCHEMA_VERSION
+} from "../../core/index.js";
 import type {
   CpSatNeighborhoodWindow,
   Grid,
@@ -30,8 +35,6 @@ import type {
   SolverParams
 } from "../../core/index.js";
 import type { LnsAdaptiveNeighborhoodCandidate } from "./neighborhoods.js";
-
-const LNS_WINDOW_RANKER_FEATURE_SCHEMA_VERSION = 2;
 
 export interface NormalizedLnsWindowRankerOptions {
   model: LnsWindowRankerRuntimeModel;
@@ -89,6 +92,7 @@ export function normalizeLnsWindowRankerOptions(
   options: LnsWindowRankerRuntimeOptions | undefined
 ): NormalizedLnsWindowRankerOptions | null {
   if (!options || options.enabled === false) return null;
+  assertValidLnsWindowRankerRuntimeModel(options.model);
   return {
     model: options.model,
     minScoreDelta: Math.max(0, finiteNumberOrDefault(options.minScoreDelta, 0)),
@@ -421,12 +425,8 @@ function scoreFeatureValues(values: WindowRankerFeatureValues, model: LnsWindowR
 
 function interactionFeatureValue(values: WindowRankerFeatureValues, interactionName: string): number {
   const [left, right, extra] = interactionName.split("*");
-  if (extra !== undefined || !isWindowRankerFeatureName(left) || !isWindowRankerFeatureName(right)) return 0;
+  if (extra !== undefined || !isLnsWindowRankerFeatureName(left) || !isLnsWindowRankerFeatureName(right)) return 0;
   return values[left] * values[right];
-}
-
-function isWindowRankerFeatureName(value: string | undefined): value is LnsWindowRankerFeatureName {
-  return value !== undefined && (LNS_WINDOW_RANKER_FEATURE_NAMES as readonly string[]).includes(value);
 }
 
 function roundedScore(value: number): number {

@@ -1,0 +1,129 @@
+{
+  "artifactDir": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-residential-headroom-initial-stagnation-screen-roll-forward-2x0.1",
+  "artifactPaths": {
+    "replayJson": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-residential-headroom-initial-stagnation-screen-roll-forward-2x0.1/lns-window-replay-labels.json",
+    "replayText": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-residential-headroom-initial-stagnation-screen-roll-forward-2x0.1/lns-window-replay-labels.txt",
+    "repeatabilitySummaryJson": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-residential-headroom-initial-stagnation-screen-roll-forward-2x0.1/repeatability-summary.json",
+    "candidateSummaryJson": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-residential-headroom-initial-stagnation-screen-roll-forward-2x0.1/candidate-summary.json",
+    "selectivitySummaryJson": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-residential-headroom-initial-stagnation-screen-roll-forward-2x0.1/selectivity-summary.json",
+    "selectivitySummaryText": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-residential-headroom-initial-stagnation-screen-roll-forward-2x0.1/selectivity-summary.txt",
+    "telemetryManifestJson": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-residential-headroom-initial-stagnation-screen-roll-forward-2x0.1/telemetry-manifest.json",
+    "registryEntryDraftJson": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-residential-headroom-initial-stagnation-screen-roll-forward-2x0.1/registry-entry-draft.json",
+    "manifestJson": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-residential-headroom-initial-stagnation-screen-roll-forward-2x0.1/manifest.json"
+  },
+  "command": "node scripts/generate-service-braid-replay-artifacts.mjs --bundle=service-braid-residential-headroom-initial-stagnation-screen --force-artifact-dir",
+  "generatedAt": "2026-05-10T12:32:29.421Z",
+  "inputFingerprint": "fnv1a:0856c29e",
+  "labelFingerprint": "fnv1a:15801d87",
+  "caseCount": 3,
+  "seedCount": 3,
+  "stateCount": 18,
+  "labelCount": 216,
+  "rollForwardLabelCount": 216,
+  "selectedCaseNames": [
+    "lns-holdout-service-braid-res-headroom-plus20-screen-candidate",
+    "lns-holdout-service-braid-res-headroom-plus40-screen-candidate",
+    "lns-holdout-service-braid-premium-scarcity-screen-candidate"
+  ],
+  "pressureFamilies": [
+    "service-pressure"
+  ],
+  "options": {
+    "seeds": [
+      7,
+      19,
+      37
+    ],
+    "statePolicies": [
+      "initial-incumbent",
+      "post-stagnation"
+    ],
+    "stateCollectionIterations": 4,
+    "stateCollectionRepairTimeLimitSeconds": 0.1,
+    "maxWindows": 8,
+    "explorationWindowCount": 4,
+    "repairTimeLimitSeconds": 0.1,
+    "rollForwardIterations": 2,
+    "rollForwardRepairTimeLimitSeconds": 0.1
+  },
+  "candidateMutation": {
+    "baseCase": "lns-holdout-service-braid-pressure",
+    "mutations": [
+      {
+        "caseName": "lns-holdout-service-braid-res-headroom-plus20-screen-candidate",
+        "description": "Protected service-braid candidate with residential max values raised by about 20%.",
+        "residentialTypeMutations": [
+          {
+            "typeIndex": 0,
+            "max": 290
+          },
+          {
+            "typeIndex": 1,
+            "max": 480
+          }
+        ]
+      },
+      {
+        "caseName": "lns-holdout-service-braid-res-headroom-plus40-screen-candidate",
+        "description": "Protected service-braid candidate with residential max values raised by about 40%.",
+        "residentialTypeMutations": [
+          {
+            "typeIndex": 0,
+            "max": 335
+          },
+          {
+            "typeIndex": 1,
+            "max": 560
+          }
+        ]
+      },
+      {
+        "caseName": "lns-holdout-service-braid-premium-scarcity-screen-candidate",
+        "description": "Protected service-braid candidate with higher premium residential max and scarcity pressure.",
+        "residentialTypeMutations": [
+          {
+            "typeIndex": 0,
+            "max": 260
+          },
+          {
+            "typeIndex": 1,
+            "min": 220,
+            "max": 560
+          }
+        ]
+      }
+    ],
+    "stateGate": "initial-incumbent,post-stagnation"
+  },
+  "generator": {
+    "script": "scripts/generate-service-braid-replay-artifacts.mjs",
+    "bundle": "service-braid-residential-headroom-initial-stagnation-screen",
+    "requiresBuild": true,
+    "baseCorpus": "DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS",
+    "baseCase": "lns-holdout-service-braid-pressure",
+    "candidateCases": [
+      "lns-holdout-service-braid-res-headroom-plus20-screen-candidate",
+      "lns-holdout-service-braid-res-headroom-plus40-screen-candidate",
+      "lns-holdout-service-braid-premium-scarcity-screen-candidate"
+    ],
+    "command": "node scripts/generate-service-braid-replay-artifacts.mjs --bundle=service-braid-residential-headroom-initial-stagnation-screen --force-artifact-dir"
+  },
+  "repeatabilitySummary": {
+    "schemaVersion": 1,
+    "rollForwardLabelCount": 216,
+    "bucketCount": 72,
+    "repeatedBucketCount": 72,
+    "mixedFinalStatusBucketCount": 0,
+    "conflictingFinalStatusBucketCount": 0,
+    "conflictingLabelCount": 0,
+    "conflictingStatusCounts": {
+      "improved": 0,
+      "neutral": 0,
+      "regressed": 0,
+      "unknown": 0
+    },
+    "featureIdenticalConflictBucketCount": 0,
+    "featureIdenticalConflictLabelCount": 0,
+    "examples": []
+  }
+}

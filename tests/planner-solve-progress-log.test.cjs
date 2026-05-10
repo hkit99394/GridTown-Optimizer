@@ -3,7 +3,10 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 
-const { SolveProgressLogWriter } = require("../dist/packages/runtime/jobs/solveProgressLog.js");
+const {
+  readLatestSolveProgressLogByRequestId,
+  SolveProgressLogWriter
+} = require("../dist/packages/runtime/jobs/solveProgressLog.js");
 const { loadPlannerSolveRuntimeModule } = require("./helpers/plannerBrowserModules.cjs");
 
 function testPlannerSolveProgressLogCapturesSnapshotAndFinalResult() {
@@ -304,10 +307,236 @@ function testFilesystemSolveLogTracksSolverClockAcrossHeartbeats() {
   );
 }
 
+function testFilesystemSolveLogFinishWithSolutionSampleWritesTerminalDocumentInOneFlush() {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "solve-progress-log-terminal-"));
+  const requestId = "terminal-final-sample";
+  const capturedDocuments = [];
+  const originalWriteFileSync = fs.writeFileSync;
+  let payload;
+
+  fs.writeFileSync = function patchedWriteFileSync(filePath, data, options) {
+    if (
+      typeof filePath === "string" &&
+      filePath.includes(requestId) &&
+      filePath.endsWith(".tmp") &&
+      typeof data === "string"
+    ) {
+      capturedDocuments.push(JSON.parse(data));
+    }
+    return originalWriteFileSync.call(fs, filePath, data, options);
+  };
+
+  try {
+    const writer = new SolveProgressLogWriter({
+      rootDirectory: tempRoot,
+      requestId,
+      optimizer: "greedy",
+      grid: [[1]],
+      params: { optimizer: "greedy" },
+      createdAtMs: Date.parse("2026-04-14T21:00:00.000Z")
+    });
+    const solution = {
+      optimizer: "greedy",
+      stoppedByUser: false,
+      roads: new Set(),
+      services: [],
+      serviceTypeIndices: [],
+      servicePopulationIncreases: [],
+      residentials: [],
+      residentialTypeIndices: [],
+      populations: [],
+      totalPopulation: 10
+    };
+
+    writer.finishWithSolutionSample("completed", {
+      finishedAtMs: Date.parse("2026-04-14T21:00:01.234Z"),
+      elapsedMs: 1234,
+      solution,
+      message: "Solve completed."
+    });
+
+    payload = JSON.parse(fs.readFileSync(writer.filePath, "utf8"));
+  } finally {
+    fs.writeFileSync = originalWriteFileSync;
+  }
+
+  const partialFinalDocuments = capturedDocuments.filter((document) => {
+    const lastEntry = document.entries[document.entries.length - 1] ?? null;
+    return document.status === "running" && lastEntry?.source === "final-result";
+  });
+  const terminalDocuments = capturedDocuments.filter((document) => {
+    const lastEntry = document.entries[document.entries.length - 1] ?? null;
+    return document.status === "completed" && Boolean(document.finalResult) && lastEntry?.source === "final-result";
+  });
+
+  assert.equal(capturedDocuments.length, 1);
+  assert.deepEqual(partialFinalDocuments, []);
+  assert.equal(terminalDocuments.length, 1);
+  assert.equal(payload.status, "completed");
+  assert.equal(payload.message, "Solve completed.");
+  assert.equal(payload.entries.length, 1);
+  assert.equal(payload.entries[0].source, "final-result");
+  assert.equal(payload.entries[0].capturedAt, "2026-04-14T21:00:01.234Z");
+  assert.equal(payload.finalResult.totalPopulation, 10);
+  assert.equal(payload.finalResult.solution.totalPopulation, 10);
+}
+
+function testFilesystemSolveLogUsesUniqueFilesForRepeatedRequestIds() {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "solve-progress-log-collision-"));
+  const requestId = "reused-request-id";
+  const createdAtMs = Date.parse("2026-04-14T22:00:00.123Z");
+  const writerOne = new SolveProgressLogWriter({
+    rootDirectory: tempRoot,
+    requestId,
+    optimizer: "greedy",
+    grid: [[1]],
+    params: { optimizer: "greedy" },
+    createdAtMs
+  });
+  const writerTwo = new SolveProgressLogWriter({
+    rootDirectory: tempRoot,
+    requestId,
+    optimizer: "greedy",
+    grid: [[1]],
+    params: { optimizer: "greedy" },
+    createdAtMs
+  });
+
+  writerOne.appendPendingSample({
+    capturedAt: "2026-04-14T22:00:01.000Z",
+    elapsedMs: 1000,
+    note: "First solve."
+  });
+  writerTwo.appendPendingSample({
+    capturedAt: "2026-04-14T22:00:02.000Z",
+    elapsedMs: 2000,
+    note: "Second solve."
+  });
+
+  assert.notEqual(writerOne.filePath, writerTwo.filePath);
+  assert.match(path.basename(writerOne.filePath), /^20260414T220000123Z-reused-request-id(?:-\d+)?\.json$/);
+  assert.match(path.basename(writerTwo.filePath), /^20260414T220000123Z-reused-request-id(?:-\d+)?\.json$/);
+  assert.equal(fs.existsSync(writerOne.filePath), true);
+  assert.equal(fs.existsSync(writerTwo.filePath), true);
+
+  const firstPayload = JSON.parse(fs.readFileSync(writerOne.filePath, "utf8"));
+  const secondPayload = JSON.parse(fs.readFileSync(writerTwo.filePath, "utf8"));
+  assert.equal(firstPayload.entries[0].note, "First solve.");
+  assert.equal(secondPayload.entries[0].note, "Second solve.");
+
+  const recovered = readLatestSolveProgressLogByRequestId(tempRoot, requestId);
+  assert.ok(recovered);
+  assert.equal(recovered.filePath, writerTwo.filePath);
+  assert.equal(recovered.document.entries[0].note, "Second solve.");
+}
+
+function testFilesystemSolveLogRecoverySkipsTruncatedJsonAndTempWrites() {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "solve-progress-log-recovery-"));
+  const requestId = "recover-truncated-log";
+  const writer = new SolveProgressLogWriter({
+    rootDirectory: tempRoot,
+    requestId,
+    optimizer: "greedy",
+    grid: [[1, 1]],
+    params: { optimizer: "greedy" },
+    createdAtMs: Date.parse("2026-04-14T20:00:00.000Z")
+  });
+
+  writer.appendPendingSample({
+    capturedAt: "2026-04-14T20:00:01.000Z",
+    elapsedMs: 1000,
+    note: "Valid progress survived."
+  });
+
+  const writerTempPrefix = `${path.basename(writer.filePath)}.`;
+  assert.deepEqual(
+    fs.readdirSync(tempRoot).filter((fileName) => fileName.startsWith(writerTempPrefix) && fileName.endsWith(".tmp")),
+    []
+  );
+
+  fs.writeFileSync(
+    path.join(tempRoot, "99991231T235959Z-recover-truncated-log.json"),
+    `{"version":2,"requestId":"${requestId}","updatedAt":"2099-12-31T23:59:59.000Z",`,
+    "utf8"
+  );
+  fs.writeFileSync(
+    `${writer.filePath}.123.tmp`,
+    JSON.stringify({
+      version: 2,
+      requestId,
+      optimizer: "greedy",
+      createdAt: "2099-12-31T23:59:59.000Z",
+      updatedAt: "2099-12-31T23:59:59.000Z",
+      status: "completed",
+      input: { grid: [[1]], params: { optimizer: "greedy" } },
+      entries: []
+    }),
+    "utf8"
+  );
+  const invalidEntryPayload = JSON.parse(fs.readFileSync(writer.filePath, "utf8"));
+  invalidEntryPayload.updatedAt = "2099-12-31T23:59:58.000Z";
+  invalidEntryPayload.entries[0].elapsedMs = -1;
+  fs.writeFileSync(
+    path.join(tempRoot, "99991231T235958Z-recover-truncated-log.json"),
+    `${JSON.stringify(invalidEntryPayload, null, 2)}\n`,
+    "utf8"
+  );
+
+  const recovered = readLatestSolveProgressLogByRequestId(tempRoot, requestId);
+
+  assert.ok(recovered);
+  assert.equal(recovered.filePath, writer.filePath);
+  assert.equal(recovered.document.status, "running");
+  assert.equal(recovered.document.entries.length, 1);
+  assert.equal(recovered.document.entries[0].note, "Valid progress survived.");
+}
+
+function testFilesystemSolveLogRecoveryRejectsInconsistentFinalResult() {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "solve-progress-log-invalid-final-"));
+  const requestId = "invalid-final-log";
+  const writer = new SolveProgressLogWriter({
+    rootDirectory: tempRoot,
+    requestId,
+    optimizer: "greedy",
+    grid: [[1]],
+    params: { optimizer: "greedy" },
+    createdAtMs: Date.parse("2026-04-14T23:00:00.000Z")
+  });
+  const solution = {
+    optimizer: "greedy",
+    stoppedByUser: false,
+    roads: new Set(),
+    services: [],
+    serviceTypeIndices: [],
+    servicePopulationIncreases: [],
+    residentials: [],
+    residentialTypeIndices: [],
+    populations: [],
+    totalPopulation: 0
+  };
+
+  writer.finishWithSolutionSample("completed", {
+    finishedAtMs: Date.parse("2026-04-14T23:00:01.000Z"),
+    elapsedMs: 1000,
+    solution
+  });
+
+  const invalidPayload = JSON.parse(fs.readFileSync(writer.filePath, "utf8"));
+  invalidPayload.finalResult.mapText = "stale-map-text";
+  fs.writeFileSync(writer.filePath, `${JSON.stringify(invalidPayload, null, 2)}\n`, "utf8");
+
+  const recovered = readLatestSolveProgressLogByRequestId(tempRoot, requestId);
+  assert.equal(recovered, null);
+}
+
 function main() {
   testPlannerSolveProgressLogCapturesSnapshotAndFinalResult();
   testPlannerSolveProgressLogPrefersBackendProgressEntry();
   testFilesystemSolveLogTracksSolverClockAcrossHeartbeats();
+  testFilesystemSolveLogFinishWithSolutionSampleWritesTerminalDocumentInOneFlush();
+  testFilesystemSolveLogUsesUniqueFilesForRepeatedRequestIds();
+  testFilesystemSolveLogRecoverySkipsTruncatedJsonAndTempWrites();
+  testFilesystemSolveLogRecoveryRejectsInconsistentFinalResult();
 
   console.log("Planner solve progress log tests passed.");
 }

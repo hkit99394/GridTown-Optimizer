@@ -1,5 +1,5 @@
 /**
- * @param {Window & { CityBuilderPersistence?: unknown }} globalObject
+ * @param {Window & { CityBuilderPersistence?: unknown, CityBuilderPersistenceValidation?: any }} globalObject
  */
 (function attachPlannerPersistence(globalObject) {
   /**
@@ -84,6 +84,17 @@
       setSolveState,
       syncPlannerFromState
     } = callbacks;
+    const persistenceValidationGlobal =
+      /** @type {Window & { CityBuilderPersistenceValidation?: { createPlannerPersistenceValidationHelpers?: (options: { isGridLike: (value: any) => boolean }) => any } }} */ (
+        globalObject
+      );
+    if (!persistenceValidationGlobal.CityBuilderPersistenceValidation?.createPlannerPersistenceValidationHelpers) {
+      throw new Error("Planner persistence validation helpers are not loaded.");
+    }
+    const { isValidSavedConfigEntry, isValidSavedLayoutEntry } =
+      persistenceValidationGlobal.CityBuilderPersistenceValidation.createPlannerPersistenceValidationHelpers({
+        isGridLike
+      });
 
     /**
      * @param {string} storageKey
@@ -159,16 +170,17 @@
      * @param {any} value
      * @param {string} fallbackName
      * @param {string[]} requiredProperties
+     * @param {(entry: SavedEntry) => boolean} validateEntry
      * @returns {SavedEntry | null}
      */
-    function normalizeImportedEntry(value, fallbackName, requiredProperties) {
+    function normalizeImportedEntry(value, fallbackName, requiredProperties, validateEntry) {
       if (!value || typeof value !== "object" || requiredProperties.some((property) => !value[property])) return null;
       const entry = cloneJson(value);
       entry.id = typeof entry.id === "string" && entry.id.trim() ? entry.id : createSavedEntryId();
       entry.name = typeof entry.name === "string" && entry.name.trim() ? entry.name.trim() : fallbackName;
       entry.savedAt =
         typeof entry.savedAt === "string" && entry.savedAt.trim() ? entry.savedAt : new Date().toISOString();
-      return entry;
+      return validateEntry(entry) ? entry : null;
     }
 
     /**
@@ -176,9 +188,10 @@
      * @param {string} propertyName
      * @param {string[]} requiredProperties
      * @param {string} fallbackPrefix
+     * @param {(entry: SavedEntry) => boolean} validateEntry
      * @returns {SavedEntry[]}
      */
-    function parseImportedEntries(importText, propertyName, requiredProperties, fallbackPrefix) {
+    function parseImportedEntries(importText, propertyName, requiredProperties, fallbackPrefix, validateEntry) {
       const parsed = JSON.parse(importText);
       const rawEntries = Array.isArray(parsed)
         ? parsed
@@ -189,7 +202,12 @@
       /** @type {SavedEntry[]} */
       const entries = [];
       rawEntries.forEach((entry, index) => {
-        const normalizedEntry = normalizeImportedEntry(entry, `${fallbackPrefix} ${index + 1}`, requiredProperties);
+        const normalizedEntry = normalizeImportedEntry(
+          entry,
+          `${fallbackPrefix} ${index + 1}`,
+          requiredProperties,
+          validateEntry
+        );
         if (normalizedEntry) entries.push(normalizedEntry);
       });
       if (!entries.length)
@@ -228,6 +246,7 @@
      * @param {string} propertyName
      * @param {string[]} requiredProperties
      * @param {string} fallbackPrefix
+     * @param {(entry: SavedEntry) => boolean} validateEntry
      * @param {HTMLElement} statusElement
      * @param {(selectedId?: string) => void} refreshOptions
      * @param {string} importText
@@ -238,6 +257,7 @@
       propertyName,
       requiredProperties,
       fallbackPrefix,
+      validateEntry,
       statusElement,
       refreshOptions,
       importText
@@ -245,7 +265,7 @@
       try {
         const summary = mergeStoredEntries(
           storageKey,
-          parseImportedEntries(importText, propertyName, requiredProperties, fallbackPrefix)
+          parseImportedEntries(importText, propertyName, requiredProperties, fallbackPrefix, validateEntry)
         );
         refreshOptions(summary.selectedId);
         statusElement.textContent = `Imported ${summary.total} saved ${fallbackPrefix.toLowerCase()} entries (${summary.added} new, ${summary.updated} updated).`;
@@ -273,6 +293,8 @@
     }
 
     const PENDING_MANUAL_LAYOUT_ERROR = "Manual edits are pending validation. Use Validate layout when you're ready.";
+    const PENDING_PERSISTED_LAYOUT_ERROR =
+      "Saved layout validation is pending. Validate the layout before using it as a CP-SAT hint or LNS seed.";
 
     /**
      * @param {JsonObject | null | undefined} result
@@ -294,11 +316,50 @@
     }
 
     /**
+     * @param {JsonObject | null | undefined} result
+     * @returns {boolean}
+     */
+    function hasPendingPersistedLayoutValidation(result) {
+      return (
+        result?.validation?.valid === false &&
+        Array.isArray(result.validation.errors) &&
+        result.validation.errors.includes(PENDING_PERSISTED_LAYOUT_ERROR)
+      );
+    }
+
+    /**
+     * @param {JsonObject} result
+     * @returns {JsonObject}
+     */
+    function markResultPendingPersistedValidation(result) {
+      const nextResult = cloneJson(result);
+      nextResult.validation = {
+        ...(nextResult.validation ?? {}),
+        valid: false,
+        errors: [PENDING_PERSISTED_LAYOUT_ERROR]
+      };
+      return nextResult;
+    }
+
+    /**
+     * @param {SavedEntry} entry
+     * @returns {SavedEntry}
+     */
+    function markImportedLayoutPendingPersistedValidation(entry) {
+      if (entry?.result?.validation?.valid !== true) return entry;
+      entry.result = markResultPendingPersistedValidation(entry.result);
+      entry.layoutEditorPendingValidation = true;
+      delete entry.continueCpSat;
+      return entry;
+    }
+
+    /**
      * @param {SavedEntry} entry
      * @returns {boolean}
      */
     function readSavedLayoutPendingValidation(entry) {
       if (entry?.layoutEditorPendingValidation === true) return true;
+      if (hasPendingPersistedLayoutValidation(entry?.result)) return true;
       if (entry?.layoutEditorPendingValidation === false) return false;
       return hasPendingManualLayoutValidation(entry?.result);
     }
@@ -462,6 +523,7 @@
         "configs",
         ["snapshot"],
         "Input setup",
+        isValidSavedConfigEntry,
         elements.configStorageStatus,
         refreshSavedConfigOptions,
         importText
@@ -487,8 +549,13 @@
         return;
       }
       const entry = readStoredEntries(CONFIG_STORAGE_KEY).find((item) => item.id === selectedId);
-      if (!entry?.snapshot) {
+      if (!entry) {
         elements.configStorageStatus.textContent = "That saved input setup could not be found.";
+        refreshSavedConfigOptions();
+        return;
+      }
+      if (!isValidSavedConfigEntry(entry)) {
+        elements.configStorageStatus.textContent = "That saved input setup is invalid and was not loaded.";
         refreshSavedConfigOptions();
         return;
       }
@@ -581,6 +648,11 @@
         "layouts",
         ["result", "resultContext"],
         "Layout",
+        (entry) => {
+          if (!isValidSavedLayoutEntry(entry)) return false;
+          markImportedLayoutPendingPersistedValidation(entry);
+          return true;
+        },
         elements.layoutStorageStatus,
         refreshSavedLayoutOptions,
         importText
@@ -606,15 +678,24 @@
         return;
       }
       const entry = readStoredEntries(LAYOUT_STORAGE_KEY).find((item) => item.id === selectedId);
-      if (!entry?.result || !entry?.resultContext) {
+      if (!entry) {
         elements.layoutStorageStatus.textContent = "That saved layout could not be found.";
+        refreshSavedLayoutOptions();
+        return;
+      }
+      if (!isValidSavedLayoutEntry(entry)) {
+        elements.layoutStorageStatus.textContent = "That saved layout is invalid and was not loaded.";
         refreshSavedLayoutOptions();
         return;
       }
       clearExpansionAdvice();
       const loadedResultContext = cloneJson(entry.resultContext);
-      resetLayoutEditorForLoadedResult(readSavedLayoutPendingValidation(entry));
-      state.result = cloneJson(entry.result);
+      const persistedValidResultNeedsValidation = entry.result?.validation?.valid === true;
+      const loadedResult = persistedValidResultNeedsValidation
+        ? markResultPendingPersistedValidation(entry.result)
+        : cloneJson(entry.result);
+      resetLayoutEditorForLoadedResult(readSavedLayoutPendingValidation(entry) || persistedValidResultNeedsValidation);
+      state.result = loadedResult;
       state.solveProgressLog = Array.isArray(entry.result?.progressLog) ? cloneJson(entry.result.progressLog) : [];
       state.resultIsLiveSnapshot = false;
       state.resultContext = loadedResultContext;

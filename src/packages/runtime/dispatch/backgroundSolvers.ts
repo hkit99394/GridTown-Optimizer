@@ -11,6 +11,7 @@ import {
   materializeCpSatSolution,
   parseCpSatRawSolution
 } from "../../solvers/cp-sat/solver.js";
+import { assertValidSolveInputs } from "../../core/index.js";
 
 import type { BackgroundSolveHandle, Grid, SerializedSolution, Solution, SolverParams } from "../../core/index.js";
 
@@ -19,6 +20,7 @@ export type GreedySolveHandle = BackgroundSolveHandle;
 export type LnsSolveHandle = BackgroundSolveHandle;
 
 export function startGreedySolve(G: Grid, params: SolverParams): GreedySolveHandle {
+  assertValidSolveInputs(G, params);
   return startSerializedSolutionSolverProcess({
     solverLabel: "Greedy",
     stopDirectoryPrefix: "city-builder-greedy-stop-",
@@ -47,6 +49,7 @@ function materializeLnsSolution(raw: SerializedSolution, stoppedByUser: boolean)
 }
 
 export function startLnsSolve(G: Grid, params: SolverParams): LnsSolveHandle {
+  assertValidSolveInputs(G, params);
   return startSerializedSolutionSolverProcess({
     solverLabel: "LNS",
     stopDirectoryPrefix: "city-builder-lns-stop-",
@@ -61,6 +64,7 @@ export function startLnsSolve(G: Grid, params: SolverParams): LnsSolveHandle {
 }
 
 export function startCpSatSolve(G: Grid, params: SolverParams): CpSatSolveHandle {
+  assertValidSolveInputs(G, params);
   const pythonExecutable =
     params.cpSat?.pythonExecutable ?? process.env.CITY_BUILDER_CP_SAT_PYTHON ?? defaultPythonExecutable();
   const scriptPath = params.cpSat?.scriptPath ?? resolve(__dirname, "../../../../python/cp_sat_solver.py");

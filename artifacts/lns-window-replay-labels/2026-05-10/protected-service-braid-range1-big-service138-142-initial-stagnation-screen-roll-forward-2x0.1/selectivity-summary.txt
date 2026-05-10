@@ -1,0 +1,10 @@
+Service-braid compact bonus sweep selectivity summary
+generatedAt=2026-05-10T12:07:47.804Z
+source=artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range1-big-service138-142-initial-stagnation-screen-roll-forward-2x0.1
+totalLabels=216
+
+slidingArea12: selected=18 pos=10 neg=0 neu=8 best=60 worst=0
+slidingArea12ComponentsMax2: selected=18 pos=10 neg=0 neu=8 best=60 worst=0
+slidingComponentsMax2: selected=42 pos=18 neg=2 neu=22 best=60 worst=-48
+slidingTopOrLeft2: selected=18 pos=10 neg=0 neu=8 best=60 worst=0
+allNonBaselineSliding: selected=54 pos=26 neg=4 neu=24 best=60 worst=-48

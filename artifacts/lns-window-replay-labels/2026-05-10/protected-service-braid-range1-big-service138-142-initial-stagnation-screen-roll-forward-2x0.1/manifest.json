@@ -1,0 +1,514 @@
+{
+  "artifactDir": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range1-big-service138-142-initial-stagnation-screen-roll-forward-2x0.1",
+  "artifactPaths": {
+    "replayJson": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range1-big-service138-142-initial-stagnation-screen-roll-forward-2x0.1/lns-window-replay-labels.json",
+    "replayText": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range1-big-service138-142-initial-stagnation-screen-roll-forward-2x0.1/lns-window-replay-labels.txt",
+    "repeatabilitySummaryJson": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range1-big-service138-142-initial-stagnation-screen-roll-forward-2x0.1/repeatability-summary.json",
+    "candidateSummaryJson": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range1-big-service138-142-initial-stagnation-screen-roll-forward-2x0.1/candidate-summary.json",
+    "selectivitySummaryJson": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range1-big-service138-142-initial-stagnation-screen-roll-forward-2x0.1/selectivity-summary.json",
+    "selectivitySummaryText": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range1-big-service138-142-initial-stagnation-screen-roll-forward-2x0.1/selectivity-summary.txt",
+    "telemetryManifestJson": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range1-big-service138-142-initial-stagnation-screen-roll-forward-2x0.1/telemetry-manifest.json",
+    "registryEntryDraftJson": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range1-big-service138-142-initial-stagnation-screen-roll-forward-2x0.1/registry-entry-draft.json",
+    "manifestJson": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range1-big-service138-142-initial-stagnation-screen-roll-forward-2x0.1/manifest.json"
+  },
+  "command": "node scripts/generate-service-braid-replay-artifacts.mjs --bundle=service-braid-range1-big-service138-142-initial-stagnation-screen --force-artifact-dir",
+  "generatedAt": "2026-05-10T12:07:47.729Z",
+  "inputFingerprint": "fnv1a:a5991107",
+  "labelFingerprint": "fnv1a:a0034790",
+  "caseCount": 3,
+  "seedCount": 3,
+  "stateCount": 18,
+  "labelCount": 216,
+  "rollForwardLabelCount": 216,
+  "selectedCaseNames": [
+    "lns-holdout-service-braid-range1-big-service138-initial-stagnation-screen-candidate",
+    "lns-holdout-service-braid-range1-big-service140-initial-stagnation-screen-candidate",
+    "lns-holdout-service-braid-range1-big-service142-initial-stagnation-screen-candidate"
+  ],
+  "pressureFamilies": [
+    "service-pressure"
+  ],
+  "options": {
+    "seeds": [
+      7,
+      19,
+      37
+    ],
+    "statePolicies": [
+      "initial-incumbent",
+      "post-stagnation"
+    ],
+    "stateCollectionIterations": 4,
+    "stateCollectionRepairTimeLimitSeconds": 0.1,
+    "maxWindows": 8,
+    "explorationWindowCount": 4,
+    "repairTimeLimitSeconds": 0.1,
+    "rollForwardIterations": 2,
+    "rollForwardRepairTimeLimitSeconds": 0.1
+  },
+  "candidateMutation": {
+    "baseCase": "lns-holdout-service-braid-pressure",
+    "mutations": [
+      {
+        "caseName": "lns-holdout-service-braid-range1-big-service138-initial-stagnation-screen-candidate",
+        "serviceTypeIndex": 1,
+        "range": 1,
+        "bonus": 138
+      },
+      {
+        "caseName": "lns-holdout-service-braid-range1-big-service140-initial-stagnation-screen-candidate",
+        "serviceTypeIndex": 1,
+        "range": 1,
+        "bonus": 140
+      },
+      {
+        "caseName": "lns-holdout-service-braid-range1-big-service142-initial-stagnation-screen-candidate",
+        "serviceTypeIndex": 1,
+        "range": 1,
+        "bonus": 142
+      }
+    ],
+    "stateGate": "initial-incumbent,post-stagnation"
+  },
+  "generator": {
+    "script": "scripts/generate-service-braid-replay-artifacts.mjs",
+    "bundle": "service-braid-range1-big-service138-142-initial-stagnation-screen",
+    "requiresBuild": true,
+    "baseCorpus": "DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS",
+    "baseCase": "lns-holdout-service-braid-pressure",
+    "candidateCases": [
+      "lns-holdout-service-braid-range1-big-service138-initial-stagnation-screen-candidate",
+      "lns-holdout-service-braid-range1-big-service140-initial-stagnation-screen-candidate",
+      "lns-holdout-service-braid-range1-big-service142-initial-stagnation-screen-candidate"
+    ],
+    "command": "node scripts/generate-service-braid-replay-artifacts.mjs --bundle=service-braid-range1-big-service138-142-initial-stagnation-screen --force-artifact-dir"
+  },
+  "repeatabilitySummary": {
+    "schemaVersion": 1,
+    "rollForwardLabelCount": 216,
+    "bucketCount": 72,
+    "repeatedBucketCount": 72,
+    "mixedFinalStatusBucketCount": 14,
+    "conflictingFinalStatusBucketCount": 12,
+    "conflictingLabelCount": 36,
+    "conflictingStatusCounts": {
+      "improved": 12,
+      "neutral": 12,
+      "regressed": 12,
+      "unknown": 0
+    },
+    "featureIdenticalConflictBucketCount": 12,
+    "featureIdenticalConflictLabelCount": 36,
+    "examples": [
+      {
+        "caseName": "lns-holdout-service-braid-range1-big-service138-initial-stagnation-screen-candidate",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "initial-incumbent",
+        "operator": "frontier-congestion",
+        "window": "1:0:3x3",
+        "labelCount": 3,
+        "seedCount": 3,
+        "seeds": [
+          7,
+          19,
+          37
+        ],
+        "statusCounts": {
+          "improved": 1,
+          "neutral": 1,
+          "regressed": 1,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -48,
+          0,
+          7
+        ],
+        "baselineTotals": [
+          784,
+          791,
+          839
+        ],
+        "totalPopulations": [
+          791
+        ],
+        "featureFingerprintCount": 1
+      },
+      {
+        "caseName": "lns-holdout-service-braid-range1-big-service138-initial-stagnation-screen-candidate",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "initial-incumbent",
+        "operator": "gate-choke",
+        "window": "1:0:3x3",
+        "labelCount": 3,
+        "seedCount": 3,
+        "seeds": [
+          7,
+          19,
+          37
+        ],
+        "statusCounts": {
+          "improved": 1,
+          "neutral": 1,
+          "regressed": 1,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -48,
+          0,
+          7
+        ],
+        "baselineTotals": [
+          784,
+          791,
+          839
+        ],
+        "totalPopulations": [
+          791
+        ],
+        "featureFingerprintCount": 1
+      },
+      {
+        "caseName": "lns-holdout-service-braid-range1-big-service138-initial-stagnation-screen-candidate",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "initial-incumbent",
+        "operator": "residential-headroom",
+        "window": "1:0:3x3",
+        "labelCount": 3,
+        "seedCount": 3,
+        "seeds": [
+          7,
+          19,
+          37
+        ],
+        "statusCounts": {
+          "improved": 1,
+          "neutral": 1,
+          "regressed": 1,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -48,
+          0,
+          7
+        ],
+        "baselineTotals": [
+          784,
+          791,
+          839
+        ],
+        "totalPopulations": [
+          791
+        ],
+        "featureFingerprintCount": 1
+      },
+      {
+        "caseName": "lns-holdout-service-braid-range1-big-service138-initial-stagnation-screen-candidate",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "initial-incumbent",
+        "operator": "residential-headroom",
+        "window": "3:2:3x3",
+        "labelCount": 3,
+        "seedCount": 3,
+        "seeds": [
+          7,
+          19,
+          37
+        ],
+        "statusCounts": {
+          "improved": 1,
+          "neutral": 1,
+          "regressed": 1,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -48,
+          0,
+          7
+        ],
+        "baselineTotals": [
+          784,
+          791,
+          839
+        ],
+        "totalPopulations": [
+          791
+        ],
+        "featureFingerprintCount": 1
+      },
+      {
+        "caseName": "lns-holdout-service-braid-range1-big-service138-initial-stagnation-screen-candidate",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "initial-incumbent",
+        "operator": "sliding",
+        "window": "3:0:3x3",
+        "labelCount": 3,
+        "seedCount": 3,
+        "seeds": [
+          7,
+          19,
+          37
+        ],
+        "statusCounts": {
+          "improved": 1,
+          "neutral": 1,
+          "regressed": 1,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -48,
+          0,
+          55
+        ],
+        "baselineTotals": [
+          784,
+          791,
+          839
+        ],
+        "totalPopulations": [
+          791,
+          839
+        ],
+        "featureFingerprintCount": 1
+      },
+      {
+        "caseName": "lns-holdout-service-braid-range1-big-service138-initial-stagnation-screen-candidate",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "initial-incumbent",
+        "operator": "sliding",
+        "window": "3:2:3x3",
+        "labelCount": 3,
+        "seedCount": 3,
+        "seeds": [
+          7,
+          19,
+          37
+        ],
+        "statusCounts": {
+          "improved": 1,
+          "neutral": 1,
+          "regressed": 1,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -48,
+          0,
+          7
+        ],
+        "baselineTotals": [
+          784,
+          791,
+          839
+        ],
+        "totalPopulations": [
+          791
+        ],
+        "featureFingerprintCount": 1
+      },
+      {
+        "caseName": "lns-holdout-service-braid-range1-big-service138-initial-stagnation-screen-candidate",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "post-stagnation",
+        "operator": "frontier-congestion",
+        "window": "1:0:3x3",
+        "labelCount": 3,
+        "seedCount": 3,
+        "seeds": [
+          7,
+          19,
+          37
+        ],
+        "statusCounts": {
+          "improved": 1,
+          "neutral": 1,
+          "regressed": 1,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -48,
+          0,
+          7
+        ],
+        "baselineTotals": [
+          784,
+          791,
+          839
+        ],
+        "totalPopulations": [
+          791
+        ],
+        "featureFingerprintCount": 1
+      },
+      {
+        "caseName": "lns-holdout-service-braid-range1-big-service138-initial-stagnation-screen-candidate",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "post-stagnation",
+        "operator": "gate-choke",
+        "window": "1:0:3x3",
+        "labelCount": 3,
+        "seedCount": 3,
+        "seeds": [
+          7,
+          19,
+          37
+        ],
+        "statusCounts": {
+          "improved": 1,
+          "neutral": 1,
+          "regressed": 1,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -48,
+          0,
+          7
+        ],
+        "baselineTotals": [
+          784,
+          791,
+          839
+        ],
+        "totalPopulations": [
+          791
+        ],
+        "featureFingerprintCount": 1
+      },
+      {
+        "caseName": "lns-holdout-service-braid-range1-big-service138-initial-stagnation-screen-candidate",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "post-stagnation",
+        "operator": "residential-headroom",
+        "window": "1:0:3x3",
+        "labelCount": 3,
+        "seedCount": 3,
+        "seeds": [
+          7,
+          19,
+          37
+        ],
+        "statusCounts": {
+          "improved": 1,
+          "neutral": 1,
+          "regressed": 1,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -48,
+          0,
+          7
+        ],
+        "baselineTotals": [
+          784,
+          791,
+          839
+        ],
+        "totalPopulations": [
+          791
+        ],
+        "featureFingerprintCount": 1
+      },
+      {
+        "caseName": "lns-holdout-service-braid-range1-big-service138-initial-stagnation-screen-candidate",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "post-stagnation",
+        "operator": "residential-headroom",
+        "window": "3:2:3x3",
+        "labelCount": 3,
+        "seedCount": 3,
+        "seeds": [
+          7,
+          19,
+          37
+        ],
+        "statusCounts": {
+          "improved": 1,
+          "neutral": 1,
+          "regressed": 1,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -48,
+          0,
+          7
+        ],
+        "baselineTotals": [
+          784,
+          791,
+          839
+        ],
+        "totalPopulations": [
+          791
+        ],
+        "featureFingerprintCount": 1
+      },
+      {
+        "caseName": "lns-holdout-service-braid-range1-big-service138-initial-stagnation-screen-candidate",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "post-stagnation",
+        "operator": "sliding",
+        "window": "3:0:3x3",
+        "labelCount": 3,
+        "seedCount": 3,
+        "seeds": [
+          7,
+          19,
+          37
+        ],
+        "statusCounts": {
+          "improved": 1,
+          "neutral": 1,
+          "regressed": 1,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -48,
+          0,
+          7
+        ],
+        "baselineTotals": [
+          784,
+          791,
+          839
+        ],
+        "totalPopulations": [
+          791
+        ],
+        "featureFingerprintCount": 1
+      },
+      {
+        "caseName": "lns-holdout-service-braid-range1-big-service138-initial-stagnation-screen-candidate",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "post-stagnation",
+        "operator": "sliding",
+        "window": "3:2:3x3",
+        "labelCount": 3,
+        "seedCount": 3,
+        "seeds": [
+          7,
+          19,
+          37
+        ],
+        "statusCounts": {
+          "improved": 1,
+          "neutral": 1,
+          "regressed": 1,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -48,
+          0,
+          7
+        ],
+        "baselineTotals": [
+          784,
+          791,
+          839
+        ],
+        "totalPopulations": [
+          791
+        ],
+        "featureFingerprintCount": 1
+      }
+    ]
+  }
+}

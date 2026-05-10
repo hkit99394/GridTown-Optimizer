@@ -1,6 +1,3 @@
-import fs from "node:fs";
-import path from "node:path";
-
 import {
   buildLearnedRankingLabelRegistryEntryDraft,
   buildLearnedRankingLabelTelemetryManifest,
@@ -31,7 +28,9 @@ import {
   completeAppendableRegistryEntry,
   defaultCliReplayCommand,
   normalizeRepoRelativePath,
-  writeJsonArtifact
+  prepareArtifactBundleDirectory,
+  writeJsonArtifact,
+  writeTextArtifact
 } from "./artifactBundleHelpers.js";
 
 import type {
@@ -60,6 +59,7 @@ interface ParsedLabelArgs {
   labelSummary?: string;
   labelRegistryPath?: string;
   labelRegisterDryRun: boolean;
+  forceArtifactDir: boolean;
 }
 
 interface LearnedRankingLabelArtifactManifest {
@@ -108,6 +108,7 @@ function parseArgs(argv: string[]): ParsedLabelArgs {
   let labelSummary: string | undefined;
   let labelRegistryPath: string | undefined;
   let labelRegisterDryRun = false;
+  let forceArtifactDir = false;
   const inlineOptions: Record<string, (value: string) => void> = {
     preset: (value) => {
       preset = parseLabelPreset(value);
@@ -183,6 +184,10 @@ function parseArgs(argv: string[]): ParsedLabelArgs {
       labelRegisterDryRun = true;
       continue;
     }
+    if (isCliFlag(arg, "--force-artifact-dir")) {
+      forceArtifactDir = true;
+      continue;
+    }
     throw new Error(`Unknown learned-ranking label argument: ${arg}`);
   }
 
@@ -205,7 +210,8 @@ function parseArgs(argv: string[]): ParsedLabelArgs {
     labelDecision,
     labelSummary,
     labelRegistryPath,
-    labelRegisterDryRun
+    labelRegisterDryRun,
+    forceArtifactDir
   };
 }
 
@@ -243,16 +249,13 @@ function writeLearnedRankingLabelArtifactBundle(
   if (args.artifactDir === undefined) {
     throw new Error("Learned ranking label artifact directory is required.");
   }
-  const artifactDir = normalizeRepoRelativePath(args.artifactDir, "--artifact-dir");
-  const absoluteArtifactDir = path.resolve(process.cwd(), artifactDir);
-  fs.mkdirSync(absoluteArtifactDir, { recursive: true });
-
-  const artifactPath = (fileName: string) => path.posix.join(artifactDir, fileName);
-  const absoluteArtifactPath = (fileName: string) => path.join(absoluteArtifactDir, fileName);
-  const labelsJson = artifactPath("labels.json");
-  const labelsText = artifactPath("labels.txt");
-  const telemetryManifestJson = artifactPath("telemetry-manifest.json");
-  const registryEntryDraftJson = artifactPath("registry-entry-draft.json");
+  const artifacts = prepareArtifactBundleDirectory(args.artifactDir, "--artifact-dir", {
+    force: args.forceArtifactDir
+  });
+  const labelsJson = artifacts.artifactPath("labels.json");
+  const labelsText = artifacts.artifactPath("labels.txt");
+  const telemetryManifestJson = artifacts.artifactPath("telemetry-manifest.json");
+  const registryEntryDraftJson = artifacts.artifactPath("registry-entry-draft.json");
   const command = defaultLabelArtifactCommand(argv);
   const telemetryManifest = buildLearnedRankingLabelTelemetryManifest(result, {
     command,
@@ -267,15 +270,23 @@ function writeLearnedRankingLabelArtifactBundle(
     summary: args.labelSummary
   });
 
-  writeJsonArtifact(absoluteArtifactPath("labels.json"), createLearnedRankingLabelSnapshot(result));
-  fs.writeFileSync(absoluteArtifactPath("labels.txt"), `${formatLearnedRankingLabelSuite(result)}\n`);
-  writeJsonArtifact(absoluteArtifactPath("telemetry-manifest.json"), telemetryManifest);
-  writeJsonArtifact(absoluteArtifactPath("registry-entry-draft.json"), registryEntryDraft);
+  writeJsonArtifact(artifacts.absoluteArtifactPath("labels.json"), createLearnedRankingLabelSnapshot(result), {
+    force: args.forceArtifactDir
+  });
+  writeTextArtifact(artifacts.absoluteArtifactPath("labels.txt"), `${formatLearnedRankingLabelSuite(result)}\n`, {
+    force: args.forceArtifactDir
+  });
+  writeJsonArtifact(artifacts.absoluteArtifactPath("telemetry-manifest.json"), telemetryManifest, {
+    force: args.forceArtifactDir
+  });
+  writeJsonArtifact(artifacts.absoluteArtifactPath("registry-entry-draft.json"), registryEntryDraft, {
+    force: args.forceArtifactDir
+  });
 
   const registry = args.labelRegisterDryRun ? registerLabelArtifacts(registryEntryDraft, args) : undefined;
 
   return {
-    artifactDir,
+    artifactDir: artifacts.artifactDir,
     artifactPaths: {
       labelsJson,
       labelsText,
@@ -314,6 +325,9 @@ export function runLearnedRankingLabelCli(): void {
   }
   if (args.labelRegistryPath !== undefined && !args.labelRegisterDryRun) {
     throw new Error("--label-registry requires --label-register-dry-run.");
+  }
+  if (args.forceArtifactDir && args.artifactDir === undefined) {
+    throw new Error("--force-artifact-dir requires --artifact-dir.");
   }
 
   const result = runLearnedRankingLabelSuite({

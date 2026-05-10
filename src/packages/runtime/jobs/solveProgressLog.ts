@@ -1,7 +1,7 @@
-import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, readdirSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-import { renderSolutionMap } from "../../core/index.js";
+import { isOptimizerName, renderSolutionMap } from "../../core/index.js";
 import { buildEmptySolverProgressSummary, buildSolverProgressSummary } from "../../core/index.js";
 import type {
   Grid,
@@ -82,10 +82,40 @@ function sanitizeFileNameSegment(value: string, fallback: string): string {
 }
 
 function formatTimestampForFileName(createdAtMs: number): string {
-  return new Date(createdAtMs)
-    .toISOString()
-    .replace(/[-:]/g, "")
-    .replace(/\.\d{3}Z$/, "Z");
+  return new Date(createdAtMs).toISOString().replace(/[-:]/g, "").replace(".", "");
+}
+
+function isFileAlreadyExistsError(error: unknown): boolean {
+  return Boolean(error && typeof error === "object" && "code" in error && error.code === "EEXIST");
+}
+
+function buildProgressLogFilePath(rootDirectory: string, baseFileName: string, attempt: number): string {
+  const suffix = attempt === 0 ? "" : `-${attempt}`;
+  return join(rootDirectory, `${baseFileName}${suffix}.json`);
+}
+
+function serializeProgressLogDocument(document: SolveProgressLogDocument): string {
+  return `${JSON.stringify(document, null, 2)}\n`;
+}
+
+function createInitialProgressLogFile(
+  rootDirectory: string,
+  baseFileName: string,
+  document: SolveProgressLogDocument
+): string {
+  const serializedDocument = serializeProgressLogDocument(document);
+  for (let attempt = 0; attempt < 1000; attempt += 1) {
+    const filePath = buildProgressLogFilePath(rootDirectory, baseFileName, attempt);
+    try {
+      writeFileSync(filePath, serializedDocument, { encoding: "utf8", flag: "wx" });
+      return filePath;
+    } catch (error) {
+      if (isFileAlreadyExistsError(error)) continue;
+      throw error;
+    }
+  }
+
+  throw new Error(`Unable to allocate a unique solve progress log file for ${baseFileName}.`);
 }
 
 function countAllowedCells(grid: Grid): number {
@@ -139,19 +169,125 @@ function isPersistedSolveStatus(value: unknown): value is PersistedSolveStatus {
   return typeof value === "string" && PERSISTED_SOLVE_STATUSES.has(value as PersistedSolveStatus);
 }
 
-function isSolveProgressLogDocument(value: unknown): value is SolveProgressLogDocument {
-  if (!value || typeof value !== "object") return false;
-  const candidate = value as Partial<SolveProgressLogDocument>;
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isNonNegativeFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0;
+}
+
+function isNullableNonNegativeFiniteNumber(value: unknown): value is number | null {
+  return value === null || isNonNegativeFiniteNumber(value);
+}
+
+function isNullableString(value: unknown): value is string | null {
+  return value === null || typeof value === "string";
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((entry) => typeof entry === "string");
+}
+
+function isProgressLogDateString(value: unknown): value is string {
+  return typeof value === "string" && Number.isFinite(Date.parse(value));
+}
+
+function isProgressLogGridSummary(value: unknown): value is SolveProgressLogDocument["grid"] {
+  if (!isRecord(value)) return false;
   return (
-    candidate.version === 2 &&
-    typeof candidate.requestId === "string" &&
-    typeof candidate.optimizer === "string" &&
-    typeof candidate.createdAt === "string" &&
-    typeof candidate.updatedAt === "string" &&
-    isPersistedSolveStatus(candidate.status) &&
-    Boolean(candidate.input) &&
-    Array.isArray(candidate.entries)
+    Number.isInteger(value.rows) &&
+    Number(value.rows) >= 0 &&
+    Number.isInteger(value.cols) &&
+    Number(value.cols) >= 0 &&
+    Number.isInteger(value.allowedCells) &&
+    Number(value.allowedCells) >= 0
   );
+}
+
+function isProgressLogInput(value: unknown): value is SolveProgressLogDocument["input"] {
+  if (!isRecord(value)) return false;
+  return "grid" in value && "params" in value;
+}
+
+function isProgressLogEntry(value: unknown): value is SolveProgressLogEntry {
+  if (!isRecord(value)) return false;
+  if (!isProgressLogDateString(value.capturedAt)) return false;
+  if (!isNonNegativeFiniteNumber(value.elapsedMs)) return false;
+  if (value.source !== "live-snapshot" && value.source !== "final-result") return false;
+  if (value.optimizer !== null && !isOptimizerName(value.optimizer)) return false;
+  if ("activeOptimizer" in value && value.activeOptimizer !== null && !isOptimizerName(value.activeOptimizer)) {
+    return false;
+  }
+  if ("autoStage" in value && value.autoStage !== null && !isRecord(value.autoStage)) return false;
+  if (typeof value.hasFeasibleSolution !== "boolean") return false;
+  if (!isNullableNonNegativeFiniteNumber(value.totalPopulation)) return false;
+  if (!isNullableString(value.cpSatStatus)) return false;
+  if ("lnsStopReason" in value && !isNullableString(value.lnsStopReason)) return false;
+  if ("lnsNeighborhoodStatus" in value && !isNullableString(value.lnsNeighborhoodStatus)) return false;
+  if ("lnsNeighborhoodImprovement" in value && !isNullableNonNegativeFiniteNumber(value.lnsNeighborhoodImprovement)) {
+    return false;
+  }
+  if ("lnsNeighborhoodsCompleted" in value && !isNullableNonNegativeFiniteNumber(value.lnsNeighborhoodsCompleted)) {
+    return false;
+  }
+  if ("progressSummary" in value && value.progressSummary !== undefined && !isRecord(value.progressSummary)) {
+    return false;
+  }
+  if (!isNullableNonNegativeFiniteNumber(value.bestPopulationUpperBound)) return false;
+  if (!isNullableNonNegativeFiniteNumber(value.populationGapUpperBound)) return false;
+  if (!isNullableNonNegativeFiniteNumber(value.solveWallTimeSeconds)) return false;
+  if (!isNullableNonNegativeFiniteNumber(value.lastImprovementAtSeconds)) return false;
+  if (!isNullableNonNegativeFiniteNumber(value.secondsSinceLastImprovement)) return false;
+  if ("note" in value && !isNullableString(value.note)) return false;
+  return true;
+}
+
+function isProgressLogFinalResult(value: unknown): value is NonNullable<SolveProgressLogDocument["finalResult"]> {
+  if (!isRecord(value)) return false;
+  return (
+    isNullableNonNegativeFiniteNumber(value.totalPopulation) &&
+    isNullableString(value.cpSatStatus) &&
+    typeof value.stoppedByUser === "boolean" &&
+    isRecord(value.solution) &&
+    isStringArray(value.mapRows) &&
+    typeof value.mapText === "string" &&
+    value.mapText === value.mapRows.join("\n")
+  );
+}
+
+function parseSolveProgressLogDocument(value: unknown): SolveProgressLogDocument | null {
+  if (!isRecord(value)) return null;
+  if (value.version !== 2) return null;
+  if (typeof value.requestId !== "string" || !value.requestId.trim()) return null;
+  if (!isOptimizerName(value.optimizer)) return null;
+  if (!isProgressLogDateString(value.createdAt) || !isProgressLogDateString(value.updatedAt)) return null;
+  if (value.finishedAt !== null && !isProgressLogDateString(value.finishedAt)) return null;
+  if (!isPersistedSolveStatus(value.status)) return null;
+  if (!isProgressLogGridSummary(value.grid)) return null;
+  if (!isProgressLogInput(value.input)) return null;
+  if (!Array.isArray(value.entries) || !value.entries.every(isProgressLogEntry)) return null;
+  if (!isNullableString(value.message) || !isNullableString(value.error)) return null;
+
+  if (value.status === "running") {
+    if (value.finishedAt !== null || value.finalResult !== null) return null;
+    if (value.entries.some((entry) => entry.source === "final-result")) return null;
+  }
+  if (value.status === "failed" && value.finalResult !== null) return null;
+
+  if (value.finalResult !== null) {
+    if (
+      (value.status as PersistedSolveStatus) !== "completed" &&
+      (value.status as PersistedSolveStatus) !== "stopped"
+    ) {
+      return null;
+    }
+    if (!isProgressLogFinalResult(value.finalResult)) return null;
+    const finalEntry = value.entries[value.entries.length - 1] ?? null;
+    if (!finalEntry || finalEntry.source !== "final-result" || !finalEntry.hasFeasibleSolution) return null;
+  }
+
+  return value as unknown as SolveProgressLogDocument;
 }
 
 export function readLatestSolveProgressLogByRequestId(
@@ -180,14 +316,15 @@ export function readLatestSolveProgressLogByRequestId(
     } catch {
       continue;
     }
-    if (!isSolveProgressLogDocument(parsed) || parsed.requestId !== normalizedRequestId) continue;
+    const document = parseSolveProgressLogDocument(parsed);
+    if (!document || document.requestId !== normalizedRequestId) continue;
 
-    const updatedAtMs = Date.parse(parsed.updatedAt) || Date.parse(parsed.createdAt) || 0;
+    const updatedAtMs = Date.parse(document.updatedAt) || Date.parse(document.createdAt) || 0;
     if (updatedAtMs <= latestUpdatedAtMs) continue;
     latestUpdatedAtMs = updatedAtMs;
     latestResult = {
       filePath,
-      document: parsed
+      document
     };
   }
 
@@ -431,6 +568,7 @@ export class SolveProgressLogWriter {
 
   private readonly optimizer: OptimizerName;
   private readonly document: SolveProgressLogDocument;
+  private flushSequence = 0;
   private solveStartedAtElapsedMs: number | null = null;
 
   constructor(options: SolveProgressLogWriterOptions) {
@@ -439,7 +577,6 @@ export class SolveProgressLogWriter {
 
     const timestamp = formatTimestampForFileName(options.createdAtMs);
     const safeRequestId = sanitizeFileNameSegment(options.requestId, "solve");
-    this.filePath = join(rootDirectory, `${timestamp}-${safeRequestId}.json`);
     this.optimizer = options.optimizer;
     this.document = {
       version: 2,
@@ -463,7 +600,7 @@ export class SolveProgressLogWriter {
       error: null,
       finalResult: null
     };
-    this.flush();
+    this.filePath = createInitialProgressLogFile(rootDirectory, `${timestamp}-${safeRequestId}`, this.document);
   }
 
   private observeSolutionClock(solution: Solution, elapsedMs: number): void {
@@ -534,6 +671,11 @@ export class SolveProgressLogWriter {
   }
 
   private appendEntry(entry: SolveProgressLogEntry): void {
+    this.recordEntry(entry);
+    this.flush();
+  }
+
+  private recordEntry(entry: SolveProgressLogEntry): void {
     const lastEntry = this.document.entries[this.document.entries.length - 1];
     if (entriesMatch(lastEntry, entry)) {
       this.document.entries[this.document.entries.length - 1] = entry;
@@ -541,10 +683,60 @@ export class SolveProgressLogWriter {
       this.document.entries.push(entry);
     }
     this.document.updatedAt = entry.capturedAt;
+  }
+
+  finishWithSolutionSample(
+    status: PersistedSolveStatus,
+    options: {
+      finishedAtMs: number;
+      elapsedMs: number;
+      solution: Solution;
+      capturedAt?: string;
+      message?: string | null;
+      error?: string | null;
+    }
+  ): void {
+    const finishedAt = new Date(options.finishedAtMs).toISOString();
+    const elapsedMs = normalizeElapsedMs(options.elapsedMs);
+    this.observeSolutionClock(options.solution, elapsedMs);
+    this.recordEntry(
+      buildProgressEntry(
+        options.solution,
+        this.optimizer,
+        {
+          capturedAt: options.capturedAt ?? finishedAt,
+          elapsedMs,
+          source: "final-result"
+        },
+        {
+          solveStartedAtElapsedMs: this.solveStartedAtElapsedMs,
+          params: this.document.input.params
+        }
+      )
+    );
+    this.applyFinish(status, {
+      finishedAtMs: options.finishedAtMs,
+      solution: options.solution,
+      message: options.message,
+      error: options.error
+    });
     this.flush();
   }
 
   finish(
+    status: PersistedSolveStatus,
+    options: {
+      finishedAtMs: number;
+      solution?: Solution | null;
+      message?: string | null;
+      error?: string | null;
+    }
+  ): void {
+    this.applyFinish(status, options);
+    this.flush();
+  }
+
+  private applyFinish(
     status: PersistedSolveStatus,
     options: {
       finishedAtMs: number;
@@ -575,11 +767,21 @@ export class SolveProgressLogWriter {
     } else {
       this.document.finalResult = null;
     }
-    this.flush();
   }
 
   private flush(): void {
-    writeFileSync(this.filePath, `${JSON.stringify(this.document, null, 2)}\n`, "utf8");
+    const tempFilePath = `${this.filePath}.${process.pid}.${this.flushSequence++}.tmp`;
+    try {
+      writeFileSync(tempFilePath, serializeProgressLogDocument(this.document), "utf8");
+      renameSync(tempFilePath, this.filePath);
+    } catch (error) {
+      try {
+        unlinkSync(tempFilePath);
+      } catch {
+        // Best effort cleanup. The reader ignores non-.json temp files if a process exits mid-flush.
+      }
+      throw error;
+    }
   }
 
   getLastEntry(): SolveProgressLogEntry | null {

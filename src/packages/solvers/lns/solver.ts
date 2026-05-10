@@ -18,7 +18,7 @@ import {
 } from "./windowScorer.js";
 import { NO_TYPE_INDEX } from "../../core/index.js";
 import { writeSolutionSnapshot } from "../../core/index.js";
-import { assertValidLnsOptions, materializeValidLnsSeedSolution } from "../../core/index.js";
+import { assertValidLnsOptions, assertValidSolveInputs, materializeValidLnsSeedSolution } from "../../core/index.js";
 import { solveGreedy } from "../greedy/solver.js";
 
 import type {
@@ -515,6 +515,7 @@ function buildRepairOutcome(
 }
 
 export function solveLns(G: Grid, params: SolverParams): Solution {
+  assertValidSolveInputs(G, params);
   assertValidLnsOptions(params);
   const startedAtMs = performance.now();
   const options = getLnsOptions(G, params);

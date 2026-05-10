@@ -127,12 +127,20 @@ function loadPlannerHeatmapsModule() {
   return loadBrowserModule("apps/planner-web/plannerHeatmaps.js").PlannerHeatmaps;
 }
 
+function loadPlannerPersistenceValidationModule() {
+  return loadBrowserModule("apps/planner-web/plannerPersistenceValidation.js").CityBuilderPersistenceValidation;
+}
+
 function loadPlannerManualLayoutModule() {
   return loadBrowserModule("apps/planner-web/plannerManualLayout.js").PlannerManualLayout;
 }
 
 function loadPlannerResultProgressModule(options = {}) {
   return loadBrowserModule("apps/planner-web/plannerResultProgress.js", options).PlannerResultProgress;
+}
+
+function loadPlannerResultRenderingModule(options = {}) {
+  return loadBrowserModule("apps/planner-web/plannerResultRendering.js", options).PlannerResultRendering;
 }
 
 function loadPlannerResultsModule(options = {}) {
@@ -142,6 +150,7 @@ function loadPlannerResultsModule(options = {}) {
       PlannerHeatmaps: loadPlannerHeatmapsModule(),
       PlannerManualLayout: loadPlannerManualLayoutModule(),
       PlannerResultProgress: loadPlannerResultProgressModule(options),
+      PlannerResultRendering: loadPlannerResultRenderingModule(options),
       ...(options.window ?? {})
     }
   }).CityBuilderResults;
@@ -150,7 +159,8 @@ function loadPlannerResultsModule(options = {}) {
 function loadPlannerPersistenceModule(localStorage = undefined) {
   return loadBrowserModule("apps/planner-web/plannerPersistence.js", {
     window: {
-      localStorage
+      localStorage,
+      CityBuilderPersistenceValidation: loadPlannerPersistenceValidationModule()
     },
     context: {
       document: {
@@ -166,7 +176,9 @@ module.exports = {
   createFakeDomElement,
   loadPlannerExpansionModule,
   loadPlannerPersistenceModule,
+  loadPlannerPersistenceValidationModule,
   loadPlannerResultProgressModule,
+  loadPlannerResultRenderingModule,
   loadPlannerRequestBuilderModule,
   loadPlannerResultsModule,
   loadPlannerSharedModule,

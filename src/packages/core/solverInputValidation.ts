@@ -11,6 +11,7 @@ import { assertValidGreedyOptions } from "./solverInputValidationGreedy.js";
 import { assertValidLnsOptions } from "./solverInputValidationLns.js";
 import {
   assertValidCpSatReusableInputs,
+  assertValidGrid,
   assertValidProblemDefinition,
   materializeValidLnsSeedSolution,
   resolveOptimizerName
@@ -30,6 +31,7 @@ export {
 } from "./solverInputValidationShared.js";
 
 export function assertValidSolveInputs(G: Grid, params: SolverParams): void {
+  assertValidGrid(G);
   assertValidProblemDefinition(params);
   const optimizer = resolveOptimizerName(params);
   assertValidAutoOptions(params);
@@ -41,6 +43,7 @@ export function assertValidSolveInputs(G: Grid, params: SolverParams): void {
   materializeValidLnsSeedSolution(G, params, params.lns?.seedHint);
 }
 
-export function assertValidLayoutEvaluateInputs(_G: Grid, params: SolverParams): void {
+export function assertValidLayoutEvaluateInputs(G: Grid, params: SolverParams): void {
+  assertValidGrid(G);
   assertValidProblemDefinition(params);
 }

@@ -117,7 +117,9 @@ function testWindowRankerCanOverrideAdaptiveBaseline() {
 
 function testWindowRankerInteractionWeightsCanOverrideAdaptiveBaseline() {
   const fixture = buildSelectionFixture();
-  const options = normalizeLnsWindowRankerOptions(runtimeModel({}, { "selectedByBaseline*selectedByBaseline": -1 }));
+  const options = normalizeLnsWindowRankerOptions(
+    runtimeModel({ selectedByBaseline: 0 }, { "selectedByBaseline*selectedByBaseline": -1 })
+  );
   const decision = selectLnsWindowRankerCandidate(
     fixture.grid,
     fixture.params,
@@ -364,6 +366,50 @@ function testWindowRankerValidationRejectsBadWeights() {
             model: {
               modelType: "lns-window-linear-pairwise-ranker",
               featureSchemaVersion: 2,
+              weights: { selectedByBaseline: 1, selectedByBasline: 1 }
+            }
+          }
+        }
+      }),
+    /lns\.windowRanker\.model\.weights\.selectedByBasline must be one of the LNS window ranker feature names/
+  );
+
+  assert.throws(
+    () =>
+      normalizeLnsWindowRankerOptions({
+        model: {
+          modelType: "lns-window-linear-pairwise-ranker",
+          featureSchemaVersion: 2,
+          featureNames: ["selectedByBaseline", "selectedByBasline"],
+          weights: { selectedByBaseline: 1 }
+        }
+      }),
+    /LNS window ranker model\.featureNames entries must be LNS window ranker feature names/
+  );
+
+  assert.throws(
+    () =>
+      normalizeLnsWindowRankerOptions({
+        model: {
+          modelType: "lns-window-linear-pairwise-ranker",
+          featureSchemaVersion: 1,
+          weights: { selectedByBaseline: 1 }
+        }
+      }),
+    /LNS window ranker model\.featureSchemaVersion must be null or 2/
+  );
+
+  assert.throws(
+    () =>
+      solveLns(buildGrid(3, 3), {
+        optimizer: "lns",
+        availableBuildings: { residentials: 0, services: 0 },
+        lns: {
+          iterations: 1,
+          windowRanker: {
+            model: {
+              modelType: "lns-window-linear-pairwise-ranker",
+              featureSchemaVersion: 2,
               weights: { selectedByBaseline: 1 }
             },
             captureDecisionState: "yes"
@@ -451,6 +497,12 @@ function testWindowRankerValidationRejectsBadWeights() {
         }
       }),
     /lns\.windowRanker\.model\.interactionWeights keys must be pairwise feature names/
+  );
+
+  assert.doesNotThrow(() =>
+    normalizeLnsWindowRankerOptions(
+      runtimeModel({ selectedByBaseline: 1 }, { "selectedByBaseline*selectedByBaseline": -1 })
+    )
   );
 }
 

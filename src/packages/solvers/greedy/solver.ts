@@ -22,6 +22,7 @@ import {
   pruneRedundantRoads
 } from "../../core/index.js";
 import { assertValidLayoutConstraints } from "../../core/index.js";
+import { assertValidSolveInputs } from "../../core/index.js";
 import { applyDeterministicDominanceUpgrades } from "../../core/index.js";
 import { normalizeServicePlacement } from "../../core/index.js";
 import { getBuildingLimits } from "../../core/index.js";
@@ -284,7 +285,7 @@ function createGreedySolveAttempt(
   };
 }
 
-export function solveGreedy(G: Grid, params: SolverParams): Solution {
+function solveGreedyUnchecked(G: Grid, params: SolverParams): Solution {
   const {
     localSearch,
     localSearchServiceMoves,
@@ -335,7 +336,7 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     setBest: (solution) => {
       best = solution;
     },
-    baselineSolver: solveGreedy
+    baselineSolver: solveGreedyUnchecked
   });
   const { maybeStop, updateBest, getBestPopulation, recordProfilePhase, runProfiledPhase, finalizeWithBaselineGuard } =
     lifecycle;
@@ -410,4 +411,9 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
   }
 
   return finalizeWithBaselineGuard(best as Solution, preparedInputs, maxServices, maxResidentials);
+}
+
+export function solveGreedy(G: Grid, params: SolverParams): Solution {
+  assertValidSolveInputs(G, params);
+  return solveGreedyUnchecked(G, params);
 }

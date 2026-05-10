@@ -33,6 +33,9 @@ export type LnsWindowRankerRuntimeModel = Parameters<typeof runLnsWindowRankerOn
 export type LnsWindowRankerFeatureDeltaGate = NonNullable<
   Parameters<typeof runLnsWindowRankerOnlineAblation>[1]["featureDeltaGates"]
 >[number];
+export type LnsWindowRankerSelectedFeatureGate = NonNullable<
+  Parameters<typeof runLnsWindowRankerOnlineAblation>[1]["selectedFeatureGates"]
+>[number];
 
 export interface LnsWindowRankerOnlineArtifactArgs {
   windowRankerModelPath?: string;
@@ -62,6 +65,7 @@ export interface LnsWindowRankerOnlineArtifactManifest {
   modelFingerprint: string | null;
   minScoreDelta: number | null;
   allowedTransitions?: string[];
+  selectedFeatureGates?: LnsWindowRankerSelectedFeatureGate[];
   featureDeltaGates?: LnsWindowRankerFeatureDeltaGate[];
   minScoreDeltas?: number[];
   topMeanPopulationDeltaMinScoreDelta?: number | null;
@@ -169,6 +173,15 @@ function onlineAblationFeatureDeltaGates(
     .flatMap((entry) => entry.variants)
     .find((variant) => variant.variantName === "window-ranker")?.windowRanker?.featureDeltaGates;
   return featureDeltaGates && featureDeltaGates.length > 0 ? [...featureDeltaGates] : undefined;
+}
+
+function onlineAblationSelectedFeatureGates(
+  result: LnsWindowRankerOnlineAblationSuiteResult
+): LnsWindowRankerSelectedFeatureGate[] | undefined {
+  const selectedFeatureGates = result.cases
+    .flatMap((entry) => entry.variants)
+    .find((variant) => variant.variantName === "window-ranker")?.windowRanker?.selectedFeatureGates;
+  return selectedFeatureGates && selectedFeatureGates.length > 0 ? [...selectedFeatureGates] : undefined;
 }
 
 function onlineCalibrationTopMeanSummary(result: LnsWindowRankerOnlineCalibrationSuiteResult) {
@@ -286,6 +299,7 @@ export function writeWindowRankerOnlineArtifactBundle(
     modelFingerprint: onlineAblationModelFingerprint(result),
     minScoreDelta: onlineAblationMinScoreDelta(result),
     allowedTransitions: onlineAblationAllowedTransitions(result),
+    selectedFeatureGates: onlineAblationSelectedFeatureGates(result),
     featureDeltaGates: onlineAblationFeatureDeltaGates(result),
     meanPopulationDeltaVsBaseline: summary.meanPopulationDeltaVsBaseline,
     worstPopulationDeltaVsBaseline: summary.worstPopulationDeltaVsBaseline,
@@ -356,6 +370,7 @@ export function writeWindowRankerOnlineCalibrationArtifactBundle(
     modelFingerprint: result.modelFingerprint,
     minScoreDelta: summary?.minScoreDelta ?? null,
     ...(result.allowedTransitions === undefined ? {} : { allowedTransitions: [...result.allowedTransitions] }),
+    ...(result.selectedFeatureGates === undefined ? {} : { selectedFeatureGates: [...result.selectedFeatureGates] }),
     ...(result.featureDeltaGates === undefined ? {} : { featureDeltaGates: [...result.featureDeltaGates] }),
     minScoreDeltas: [...result.minScoreDeltas],
     topMeanPopulationDeltaMinScoreDelta: result.topMeanPopulationDeltaMinScoreDelta,
@@ -376,6 +391,19 @@ export function formatWindowRankerOnlineArtifactManifest(manifest: LnsWindowRank
     ...(manifest.allowedTransitions === undefined
       ? []
       : [`allowed-transitions=${manifest.allowedTransitions.join(",")}`]),
+    ...(manifest.selectedFeatureGates === undefined
+      ? []
+      : [
+          `selected-feature-gates=${manifest.selectedFeatureGates
+            .map((gate) =>
+              gate.minValue === undefined
+                ? `${gate.feature}<=${gate.maxValue}`
+                : gate.maxValue === undefined
+                  ? `${gate.feature}>=${gate.minValue}`
+                  : `${gate.minValue}<=${gate.feature}<=${gate.maxValue}`
+            )
+            .join(",")}`
+        ]),
     ...(manifest.featureDeltaGates === undefined
       ? []
       : [

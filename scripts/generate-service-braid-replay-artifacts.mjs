@@ -28,6 +28,14 @@ const COMPACT_SCREEN_OPTIONS = Object.freeze({
   rollForwardRepairTimeLimitSeconds: 0.1
 });
 
+const DEFAULT_ONLINE_LNS_OPTIONS = Object.freeze({
+  iterations: 1,
+  maxNoImprovementIterations: 4,
+  neighborhoodRows: 3,
+  neighborhoodCols: 3,
+  repairTimeLimitSeconds: 0.5
+});
+
 const SERVICE_BRAID_BASE_GRID = Object.freeze([
   Object.freeze([1, 1, 1, 1, 1, 1, 1]),
   Object.freeze([1, 1, 1, 0, 1, 1, 1]),
@@ -400,8 +408,10 @@ function usage() {
     .join("\n");
   return [
     "Usage: node scripts/generate-service-braid-replay-artifacts.mjs --bundle=<name> [--force-artifact-dir]",
+    "       node scripts/generate-service-braid-replay-artifacts.mjs --bundle=<name> --online-ablation --online-artifact-dir=<dir> --window-ranker-model=<path> --window-ranker-min-score-delta=<n> [--window-ranker-selected-feature-gates=<feature>=...] [--lns-iterations=<n>] [--force-artifact-dir]",
     "",
     "Regenerates custom protected service-braid LNS replay-label artifacts from built dist/ modules.",
+    "With --online-ablation, generates diagnostics-only online ranker scorecards for the custom candidate cases.",
     "Run npm run build first when dist/ is stale or absent.",
     "",
     "Bundles:",
@@ -409,13 +419,58 @@ function usage() {
   ].join("\n");
 }
 
+function parseFiniteNumber(value, label) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) throw new Error(`${label} must be a finite number.`);
+  return number;
+}
+
+function parsePositiveInteger(value, label) {
+  const number = Number(value);
+  if (!Number.isInteger(number) || number <= 0) throw new Error(`${label} must be a positive integer.`);
+  return number;
+}
+
+function parseSelectedFeatureGates(value) {
+  const entries = value
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+  if (entries.length === 0) {
+    throw new Error("--window-ranker-selected-feature-gates must include at least one feature comparison.");
+  }
+  return entries.map((entry) => {
+    const match = /^([A-Za-z][A-Za-z0-9_]*)\s*(<=|>=)\s*(-?(?:\d+\.?\d*|\.\d+))$/.exec(entry);
+    if (!match) {
+      throw new Error(
+        "--window-ranker-selected-feature-gates entries must look like serviceCandidateBonus>=5.58 or roadCountInside<=0."
+      );
+    }
+    const threshold = Number(match[3]);
+    if (!Number.isFinite(threshold)) {
+      throw new Error("--window-ranker-selected-feature-gates thresholds must be finite numbers.");
+    }
+    return match[2] === "<=" ? { feature: match[1], maxValue: threshold } : { feature: match[1], minValue: threshold };
+  });
+}
+
 function parseArgs(argv) {
   let bundleName;
   let forceArtifactDir = false;
+  let mode = "replay";
+  let onlineArtifactDir;
+  let windowRankerModelPath;
+  let windowRankerMinScoreDelta;
+  let windowRankerSelectedFeatureGates;
+  let onlineLnsIterations = DEFAULT_ONLINE_LNS_OPTIONS.iterations;
   for (const arg of argv) {
     if (arg === "--help" || arg === "-h") {
       console.log(usage());
       process.exit(0);
+    }
+    if (arg === "--online-ablation" || arg === "--online-ranker" || arg === "--mode=online") {
+      mode = "online";
+      continue;
     }
     if (arg === "--force-artifact-dir") {
       forceArtifactDir = true;
@@ -425,12 +480,61 @@ function parseArgs(argv) {
       bundleName = arg.slice("--bundle=".length);
       continue;
     }
+    if (arg.startsWith("--online-artifact-dir=")) {
+      onlineArtifactDir = arg.slice("--online-artifact-dir=".length);
+      continue;
+    }
+    if (arg.startsWith("--window-ranker-model=")) {
+      windowRankerModelPath = arg.slice("--window-ranker-model=".length);
+      continue;
+    }
+    if (arg.startsWith("--window-ranker-min-score-delta=")) {
+      windowRankerMinScoreDelta = parseFiniteNumber(
+        arg.slice("--window-ranker-min-score-delta=".length),
+        "--window-ranker-min-score-delta"
+      );
+      if (windowRankerMinScoreDelta < 0) throw new Error("--window-ranker-min-score-delta must be non-negative.");
+      continue;
+    }
+    if (arg.startsWith("--window-ranker-selected-feature-gates=")) {
+      windowRankerSelectedFeatureGates = parseSelectedFeatureGates(
+        arg.slice("--window-ranker-selected-feature-gates=".length)
+      );
+      continue;
+    }
+    if (arg.startsWith("--window-ranker-feature-value-gates=")) {
+      windowRankerSelectedFeatureGates = parseSelectedFeatureGates(
+        arg.slice("--window-ranker-feature-value-gates=".length)
+      );
+      continue;
+    }
+    if (arg.startsWith("--lns-iterations=")) {
+      onlineLnsIterations = parsePositiveInteger(arg.slice("--lns-iterations=".length), "--lns-iterations");
+      continue;
+    }
     throw new Error(`Unknown argument: ${arg}`);
   }
   if (!bundleName) throw new Error("--bundle=<name> is required.");
   const bundle = BUNDLES[bundleName];
   if (!bundle) throw new Error(`Unknown bundle '${bundleName}'.\n\n${usage()}`);
-  return { bundleName, bundle, forceArtifactDir };
+  if (mode === "online") {
+    if (!onlineArtifactDir) throw new Error("--online-artifact-dir=<dir> is required with --online-ablation.");
+    if (!windowRankerModelPath) throw new Error("--window-ranker-model=<path> is required with --online-ablation.");
+    if (windowRankerMinScoreDelta === undefined) {
+      throw new Error("--window-ranker-min-score-delta=<n> is required with --online-ablation.");
+    }
+  }
+  return {
+    bundleName,
+    bundle,
+    forceArtifactDir,
+    mode,
+    onlineArtifactDir,
+    windowRankerModelPath,
+    windowRankerMinScoreDelta,
+    windowRankerSelectedFeatureGates,
+    onlineLnsIterations
+  };
 }
 
 function clone(value) {
@@ -485,6 +589,27 @@ function loadLnsWindowReplayArtifactBundle() {
     ["dist", "tools", "cli", "lnsWindowReplayArtifactBundle.js"],
     "Missing dist/tools/cli/lnsWindowReplayArtifactBundle.js. Run npm run build before regenerating service-braid artifacts."
   );
+}
+
+function repoRelativeExistingPath(inputPath, label) {
+  const absolutePath = path.resolve(repoRoot(), inputPath);
+  if (!fs.existsSync(absolutePath)) throw new Error(`${label} does not exist: ${inputPath}`);
+  const relativePath = path.relative(repoRoot(), absolutePath);
+  if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
+    throw new Error(`${label} must be inside the repository: ${inputPath}`);
+  }
+  return relativePath;
+}
+
+function readWindowRankerModel(modelPath) {
+  const repoRelativePath = repoRelativeExistingPath(modelPath, "--window-ranker-model");
+  const parsed = JSON.parse(fs.readFileSync(path.join(repoRoot(), repoRelativePath), "utf8"));
+  const candidate =
+    parsed && typeof parsed === "object" && parsed.model && parsed.model.weights ? parsed.model : parsed;
+  if (!candidate || typeof candidate !== "object" || !candidate.weights || typeof candidate.weights !== "object") {
+    throw new Error("--window-ranker-model must point to a model JSON object with a weights object.");
+  }
+  return { model: candidate, repoRelativePath };
 }
 
 function candidateDefinitions(bundle) {
@@ -575,6 +700,38 @@ function diagnosticArtifactPaths(artifactPaths) {
 function replayCommand(defaultCliReplayCommand, bundleName, forceArtifactDir) {
   const argv = [`--bundle=${bundleName}`];
   if (forceArtifactDir) argv.push("--force-artifact-dir");
+  return defaultCliReplayCommand(SCRIPT_PATH, argv);
+}
+
+function selectedFeatureGateArg(gate) {
+  if (gate.minValue === undefined) return `${gate.feature}<=${gate.maxValue}`;
+  if (gate.maxValue === undefined) return `${gate.feature}>=${gate.minValue}`;
+  return `${gate.minValue}<=${gate.feature}<=${gate.maxValue}`;
+}
+
+function slugForId(value) {
+  return String(value)
+    .trim()
+    .replace(/[^0-9a-zA-Z]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .toLowerCase();
+}
+
+function onlineCommand(defaultCliReplayCommand, args) {
+  const argv = [
+    `--bundle=${args.bundleName}`,
+    "--online-ablation",
+    `--online-artifact-dir=${args.onlineArtifactDir}`,
+    `--window-ranker-model=${args.windowRankerModelPath}`,
+    `--window-ranker-min-score-delta=${args.windowRankerMinScoreDelta}`,
+    `--lns-iterations=${args.onlineLnsIterations}`
+  ];
+  if (args.windowRankerSelectedFeatureGates?.length) {
+    argv.push(
+      `--window-ranker-selected-feature-gates=${args.windowRankerSelectedFeatureGates.map(selectedFeatureGateArg).join(",")}`
+    );
+  }
+  if (args.forceArtifactDir) argv.push("--force-artifact-dir");
   return defaultCliReplayCommand(SCRIPT_PATH, argv);
 }
 
@@ -796,13 +953,10 @@ function formatSelectivitySummary(summary) {
   ].join("\n");
 }
 
-const { bundleName, bundle, forceArtifactDir } = parseArgs(process.argv.slice(2));
+const args = parseArgs(process.argv.slice(2));
+const { bundleName, bundle, forceArtifactDir } = args;
 const artifactHelpers = await loadArtifactBundleHelpers();
-const artifacts = artifactHelpers.prepareArtifactBundleDirectory(bundle.artifactDir, "--artifact-dir", {
-  force: forceArtifactDir
-});
 const benchmarkApi = await loadBenchmarkApi();
-const replayArtifactBundle = await loadLnsWindowReplayArtifactBundle();
 const baseCase = benchmarkApi.DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS.find(
   (benchmarkCase) => benchmarkCase.name === BASE_CASE_NAME
 );
@@ -810,6 +964,140 @@ if (!baseCase) throw new Error(`Missing protected holdout base case: ${BASE_CASE
 
 const definitions = candidateDefinitions(bundle);
 const candidateCases = definitions.map((definition) => buildCandidateCase(baseCase, definition));
+
+if (args.mode === "online") {
+  const artifacts = artifactHelpers.prepareArtifactBundleDirectory(args.onlineArtifactDir, "--online-artifact-dir", {
+    force: forceArtifactDir
+  });
+  const { model, repoRelativePath: modelPath } = readWindowRankerModel(args.windowRankerModelPath);
+  const result = benchmarkApi.runLnsWindowRankerOnlineAblation(candidateCases, {
+    names: candidateCases.map((candidateCase) => candidateCase.name),
+    seeds: bundle.options.seeds,
+    model,
+    minScoreDelta: args.windowRankerMinScoreDelta,
+    ...(args.windowRankerSelectedFeatureGates === undefined
+      ? {}
+      : { selectedFeatureGates: args.windowRankerSelectedFeatureGates }),
+    lns: {
+      ...DEFAULT_ONLINE_LNS_OPTIONS,
+      iterations: args.onlineLnsIterations
+    }
+  });
+  const artifactPaths = {
+    scorecardJson: artifacts.artifactPath("lns-window-ranker-online-ablation.json"),
+    scorecardText: artifacts.artifactPath("lns-window-ranker-online-ablation.txt"),
+    telemetryManifestJson: artifacts.artifactPath("telemetry-manifest.json"),
+    registryEntryDraftJson: artifacts.artifactPath("registry-entry-draft.json"),
+    manifestJson: artifacts.artifactPath("manifest.json")
+  };
+  const command = onlineCommand(artifactHelpers.defaultCliReplayCommand, args);
+  const registryArtifactPaths = [
+    artifactPaths.scorecardJson,
+    artifactPaths.scorecardText,
+    artifactPaths.telemetryManifestJson,
+    artifactPaths.manifestJson
+  ];
+  const telemetryManifest = benchmarkApi.buildLnsWindowRankerOnlineAblationTelemetryManifest(result, {
+    command,
+    git: benchmarkApi.resolveExperimentRegistryGitMetadata(),
+    hardware: benchmarkApi.captureExperimentRegistryHardwareMetadata(),
+    inputArtifacts: [modelPath],
+    outputArtifacts: [artifactPaths.scorecardJson, artifactPaths.scorecardText, artifactPaths.telemetryManifestJson]
+  });
+  const runSlug = slugForId(path.basename(args.onlineArtifactDir) || bundleName);
+  const registryEntryDraft = benchmarkApi.buildLnsWindowRankerOnlineAblationRegistryEntryDraft(result, {
+    runId: `service-braid-${runSlug}`,
+    commands: [command],
+    artifactPaths: registryArtifactPaths,
+    decision: "diagnostics-only",
+    summary: "Custom service-braid generated-case online LNS window-ranker diagnostic; no solver default changed.",
+    modelPath,
+    protectedHoldout: false
+  });
+  const summary = result.variantSummaries.find((entry) => entry.variantName === "window-ranker");
+  const manifest = {
+    artifactDir: artifacts.artifactDir,
+    artifactPaths,
+    command,
+    generatedAt: result.generatedAt,
+    modelPath,
+    modelFingerprint: summary?.modelFingerprint ?? telemetryManifest.modelFingerprint ?? null,
+    caseCount: result.caseCount,
+    seedCount: result.seedCount,
+    comparisonCount: result.comparisonCount,
+    selectedCaseNames: [...result.selectedCaseNames],
+    pressureFamilies: [...new Set(result.cases.map((entry) => entry.pressureFamily))],
+    options: {
+      seeds: [...bundle.options.seeds],
+      lns: { ...DEFAULT_ONLINE_LNS_OPTIONS, iterations: args.onlineLnsIterations },
+      minScoreDelta: args.windowRankerMinScoreDelta,
+      ...(args.windowRankerSelectedFeatureGates === undefined
+        ? {}
+        : { selectedFeatureGates: args.windowRankerSelectedFeatureGates })
+    },
+    summary: summary
+      ? {
+          meanPopulationDeltaVsBaseline: summary.meanPopulationDeltaVsBaseline,
+          worstPopulationDeltaVsBaseline: summary.worstPopulationDeltaVsBaseline,
+          improvedCaseCount: summary.improvedCaseCount,
+          regressedCaseCount: summary.regressedCaseCount,
+          unchangedCaseCount: summary.unchangedCaseCount,
+          rankerDecisionCount: summary.rankerDecisionCount,
+          rankerOverrideCount: summary.rankerOverrideCount,
+          rankerFallbackDecisionCount: summary.rankerFallbackDecisionCount,
+          changedFinalLayoutCount: summary.changedFinalLayoutCount,
+          timeToBestPromotionGatePassed: summary.timeToBestPromotionGatePassed
+        }
+      : null,
+    candidateMutation: {
+      baseCase: BASE_CASE_NAME,
+      ...(definitions.length === 1
+        ? clone(definitions[0].mutation)
+        : {
+            mutations: definitions.map((definition) => ({
+              caseName: definition.caseName,
+              ...clone(definition.mutation)
+            }))
+          })
+    },
+    generator: {
+      script: SCRIPT_PATH,
+      mode: "online",
+      bundle: bundleName,
+      requiresBuild: true,
+      baseCorpus: "DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS",
+      baseCase: BASE_CASE_NAME,
+      candidateCases: candidateCases.map((candidateCase) => candidateCase.name),
+      command
+    }
+  };
+  artifactHelpers.writeJsonArtifact(
+    artifacts.absoluteArtifactPath("lns-window-ranker-online-ablation.json"),
+    { ...benchmarkApi.createLnsWindowRankerOnlineAblationSnapshot(result), generatedAt: result.generatedAt },
+    { force: forceArtifactDir }
+  );
+  artifactHelpers.writeTextArtifact(
+    artifacts.absoluteArtifactPath("lns-window-ranker-online-ablation.txt"),
+    `${benchmarkApi.formatLnsWindowRankerOnlineAblation(result)}\n`,
+    { force: forceArtifactDir }
+  );
+  artifactHelpers.writeJsonArtifact(artifacts.absoluteArtifactPath("telemetry-manifest.json"), telemetryManifest, {
+    force: forceArtifactDir
+  });
+  artifactHelpers.writeJsonArtifact(artifacts.absoluteArtifactPath("registry-entry-draft.json"), registryEntryDraft, {
+    force: forceArtifactDir
+  });
+  artifactHelpers.writeJsonArtifact(artifacts.absoluteArtifactPath("manifest.json"), manifest, {
+    force: forceArtifactDir
+  });
+  console.log(`Generated online ${bundleName} at ${artifacts.artifactDir}`);
+  process.exit(0);
+}
+
+const artifacts = artifactHelpers.prepareArtifactBundleDirectory(bundle.artifactDir, "--artifact-dir", {
+  force: forceArtifactDir
+});
+const replayArtifactBundle = await loadLnsWindowReplayArtifactBundle();
 const result = benchmarkApi.runLnsWindowReplayLabels(candidateCases, {
   names: candidateCases.map((candidateCase) => candidateCase.name),
   ...bundle.options

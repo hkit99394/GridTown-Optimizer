@@ -109,6 +109,7 @@ function buildMockSolution(params) {
             featureSchemaVersion: 2,
             minScoreDelta: ranker.minScoreDelta ?? 0,
             ...(ranker.allowedTransitions ? { allowedTransitions: [...ranker.allowedTransitions] } : {}),
+            ...(ranker.selectedFeatureGates ? { selectedFeatureGates: [...ranker.selectedFeatureGates] } : {}),
             ...(ranker.featureDeltaGates ? { featureDeltaGates: [...ranker.featureDeltaGates] } : {}),
             decisions: 2,
             overrides: overridesBaseline ? 1 : 0,
@@ -172,6 +173,7 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
         },
         minScoreDelta: 0.05,
         allowedTransitions: ["sliding->service-overlap"],
+        selectedFeatureGates: [{ feature: "selectedByBaseline", maxValue: 0 }],
         featureDeltaGates: [{ feature: "selectedByBaseline", maxDelta: -1 }],
         lns: {
           iterations: 2,
@@ -204,6 +206,9 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(result.variantSummaries[1].rankerOverrideCount, 1);
     assert.equal(result.variantSummaries[1].rankerFallbackDecisionCount, 1);
     assert.deepEqual(result.cases[0].variants[1].windowRanker.allowedTransitions, ["sliding->service-overlap"]);
+    assert.deepEqual(result.cases[0].variants[1].windowRanker.selectedFeatureGates, [
+      { feature: "selectedByBaseline", maxValue: 0 }
+    ]);
     assert.deepEqual(result.cases[0].variants[1].windowRanker.featureDeltaGates, [
       { feature: "selectedByBaseline", maxDelta: -1 }
     ]);
@@ -293,6 +298,7 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.match(result.cases[0].variants[1].finalLayoutDeltaVsBaseline.baselineFingerprint, /^fnv1a:/);
     assert.match(result.cases[0].variants[1].finalLayoutDeltaVsBaseline.variantFingerprint, /^fnv1a:/);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /Allowed transitions: sliding->service-overlap/);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /Selected feature gates: selectedByBaseline<=0/);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /Feature delta gates: selectedByBaseline<=-1/);
     assert.deepEqual(result.cases[0].variants[1].selectionDiagnostics, {
       overrideTransitionCounts: { "sliding->service-overlap": 1 },
@@ -379,6 +385,9 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(observedParams[1].lns.windowRanker.model.modelFingerprint, "fnv1a:test-online");
     assert.equal(observedParams[1].lns.windowRanker.minScoreDelta, 0.05);
     assert.deepEqual(observedParams[1].lns.windowRanker.allowedTransitions, ["sliding->service-overlap"]);
+    assert.deepEqual(observedParams[1].lns.windowRanker.selectedFeatureGates, [
+      { feature: "selectedByBaseline", maxValue: 0 }
+    ]);
     assert.deepEqual(observedParams[1].lns.windowRanker.featureDeltaGates, [
       { feature: "selectedByBaseline", maxDelta: -1 }
     ]);
@@ -426,6 +435,7 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(telemetryManifest.modelFingerprint, "fnv1a:test-online");
     assert.equal(telemetryManifest.metrics.meanPopulationDeltaVsBaseline, 20);
     assert.deepEqual(telemetryManifest.metrics.allowedTransitions, ["sliding->service-overlap"]);
+    assert.deepEqual(telemetryManifest.metrics.selectedFeatureGates, [{ feature: "selectedByBaseline", maxValue: 0 }]);
     assert.deepEqual(telemetryManifest.metrics.featureDeltaGates, [{ feature: "selectedByBaseline", maxDelta: -1 }]);
     assert.equal(telemetryManifest.metrics.rankerOverrideCount, 1);
     assert.equal(telemetryManifest.metrics.selectionTraceCount, 1);
@@ -496,6 +506,7 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.deepEqual(registryDraft.seeds, [7]);
     assert.equal(registryDraft.budget.minScoreDelta, 0.05);
     assert.equal(registryDraft.budget.allowedTransitionCount, 1);
+    assert.equal(registryDraft.budget.selectedFeatureGateCount, 1);
     assert.equal(registryDraft.budget.featureDeltaGateCount, 1);
     assert.equal(registryDraft.budget.comparisonCount, 1);
     assert.equal(registryDraft.budget.overrideImprovedOutcomeCount, 1);
@@ -517,6 +528,9 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(registryDraft.splitStatus.protectedHoldout, false);
     assert.equal(registryDraft.summaryMetrics.meanPopulationDeltaVsBaseline, 20);
     assert.deepEqual(registryDraft.summaryMetrics.allowedTransitions, ["sliding->service-overlap"]);
+    assert.deepEqual(registryDraft.summaryMetrics.selectedFeatureGates, [
+      { feature: "selectedByBaseline", maxValue: 0 }
+    ]);
     assert.deepEqual(registryDraft.summaryMetrics.featureDeltaGates, [{ feature: "selectedByBaseline", maxDelta: -1 }]);
     assert.equal(registryDraft.summaryMetrics.changedFinalLayoutCount, 1);
     assert.equal(registryDraft.summaryMetrics.meanFinalLayoutPlacementDelta, 3);

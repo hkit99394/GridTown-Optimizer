@@ -23,12 +23,36 @@ const GATES = Object.freeze({
   slidingArea12RepeatabilitySafeBucket: {
     description:
       "non-baseline sliding windows with area=12 whose repeatability bucket has improvement and no regression/unknown labels",
+    predicate: isRepeatabilitySafeArea12
+  },
+  slidingArea12HighServiceCandidatePressure: {
+    description:
+      "runtime-observable diagnostic: non-baseline sliding area=12 windows with high service candidate bonus and many residential candidates blocked by the incumbent",
     predicate: (label) =>
       isNonBaselineSliding(label) &&
       label.features?.area === 12 &&
-      label.repeatability?.hasImproved === true &&
-      label.repeatability?.hasRegressed !== true &&
-      label.repeatability?.hasUnknown !== true
+      serviceCandidateBonusInside(label) >= 2790 &&
+      residentialCandidatesBlocked(label) >= 13
+  },
+  slidingArea12ServiceComponentPocket: {
+    description:
+      "runtime-observable diagnostic: non-baseline sliding area=12 windows with high service candidate bonus and two empty components after clearing",
+    predicate: (label) =>
+      isNonBaselineSliding(label) &&
+      label.features?.area === 12 &&
+      serviceCandidateBonusInside(label) >= 3227 &&
+      componentsAfter(label) === 2
+  },
+  slidingArea12ObservablePressureEnsemble: {
+    description:
+      "diagnostics-only screened disjunction over runtime-observable state/window features approximating the repeatability-safe bucket",
+    predicate: (label) =>
+      isNonBaselineSliding(label) &&
+      label.features?.area === 12 &&
+      ((serviceCandidateBonusInside(label) >= 2790 && roadCountInside(label) === 0) ||
+        (serviceCandidateBonusInside(label) >= 3227 && componentsAfter(label) === 2) ||
+        (componentsBefore(label) === 3 && operatorScore(label) <= 975) ||
+        (roadCountInside(label) === 3 && incumbentPopulation(label) <= 665))
   },
   slidingArea12ComponentsMax2: {
     description: "non-baseline sliding windows with area=12 and fragmentation components <=2",
@@ -169,8 +193,42 @@ function isNonBaselineSliding(label) {
   return label.operator === "sliding" && label.selectedByBaseline !== true;
 }
 
+function isRepeatabilitySafeArea12(label) {
+  return (
+    isNonBaselineSliding(label) &&
+    label.features?.area === 12 &&
+    label.repeatability?.hasImproved === true &&
+    label.repeatability?.hasRegressed !== true &&
+    label.repeatability?.hasUnknown !== true
+  );
+}
+
 function componentsAfter(label) {
   return label.features?.fragmentation?.emptyComponentCountAfterClearingWindow ?? Number.POSITIVE_INFINITY;
+}
+
+function componentsBefore(label) {
+  return label.features?.fragmentation?.emptyComponentCountBefore ?? Number.NEGATIVE_INFINITY;
+}
+
+function roadCountInside(label) {
+  return label.features?.roadCountInside ?? Number.NaN;
+}
+
+function serviceCandidateBonusInside(label) {
+  return label.features?.candidateLoss?.serviceCandidateBonusInside ?? Number.NEGATIVE_INFINITY;
+}
+
+function residentialCandidatesBlocked(label) {
+  return label.features?.candidateLoss?.residentialCandidatesBlockedByIncumbent ?? Number.NEGATIVE_INFINITY;
+}
+
+function operatorScore(label) {
+  return label.operatorScore ?? Number.POSITIVE_INFINITY;
+}
+
+function incumbentPopulation(label) {
+  return label.incumbentPopulation ?? Number.POSITIVE_INFINITY;
 }
 
 function formatWindow(label) {
@@ -259,6 +317,12 @@ function gateExample(sourceArtifact, caseResult, label) {
     delta: finalDeltaFromLabel(label),
     status: statusFromLabel(label),
     area: label.features?.area ?? null,
+    roadCountInside: label.features?.roadCountInside ?? null,
+    serviceCandidateBonusInside: label.features?.candidateLoss?.serviceCandidateBonusInside ?? null,
+    residentialCandidatesBlockedByIncumbent:
+      label.features?.candidateLoss?.residentialCandidatesBlockedByIncumbent ?? null,
+    incumbentPopulation: label.incumbentPopulation ?? null,
+    operatorScore: label.operatorScore ?? null,
     componentsAfter: label.features?.fragmentation?.emptyComponentCountAfterClearingWindow ?? null,
     newlyReachableCells: label.features?.connectivityShadow?.newlyReachableEmptyCellsIfCleared ?? null,
     selectionSource: label.selectionSource ?? null
@@ -295,6 +359,7 @@ function addGroupedCount(group, key, label) {
 
 function summarizeGate(name, gate, loadedArtifacts) {
   const totals = emptyCounts();
+  const repeatabilitySafeOverlap = emptyCounts();
   const bySourceArtifact = [];
   const byCase = {};
   const byPressureFamily = {};
@@ -307,6 +372,9 @@ function summarizeGate(name, gate, loadedArtifacts) {
       for (const label of caseResult.labels ?? []) {
         if (!gate.predicate(label)) continue;
         addLabel(totals, label);
+        if (isRepeatabilitySafeArea12(label)) {
+          addLabel(repeatabilitySafeOverlap, label);
+        }
         addLabel(artifactCounts, label);
         addGroupedCount(byCase, label.caseName ?? caseResult.name ?? "unknown", label);
         addGroupedCount(byPressureFamily, label.pressureFamily ?? caseResult.pressureFamily ?? "unknown", label);
@@ -334,6 +402,7 @@ function summarizeGate(name, gate, loadedArtifacts) {
     name,
     description: gate.description,
     ...finalizedCounts(totals),
+    repeatabilitySafeOverlap: finalizedCounts(repeatabilitySafeOverlap),
     sourceArtifactCount: bySourceArtifact.length,
     bySourceArtifact,
     byCase: Object.fromEntries(Object.entries(byCase).map(([key, value]) => [key, finalizedCounts(value)])),
@@ -499,6 +568,11 @@ function formatGate(gate) {
   const lines = [
     `${gate.name}: selected=${gate.selected} improved=${gate.improved} regressed=${gate.regressed} neutral=${gate.neutral} unknown=${gate.unknown} best=${gate.bestDelta} worst=${gate.worstDelta} safe=${gate.safeNoRegression} promotion-pocket=${gate.promotionReadyPocket}`
   ];
+  if (gate.repeatabilitySafeOverlap.selected > 0) {
+    lines.push(
+      `  repeatability-safe-overlap: selected=${gate.repeatabilitySafeOverlap.selected} improved=${gate.repeatabilitySafeOverlap.improved} regressed=${gate.repeatabilitySafeOverlap.regressed} neutral=${gate.repeatabilitySafeOverlap.neutral}`
+    );
+  }
   const riskyArtifacts = gate.bySourceArtifact.filter((entry) => entry.regressed > 0).slice(0, 5);
   if (riskyArtifacts.length > 0) {
     lines.push("  regressed-artifacts:");
@@ -597,7 +671,13 @@ const telemetryManifest = {
           bestDelta: gate.bestDelta,
           worstDelta: gate.worstDelta,
           safeNoRegression: gate.safeNoRegression,
-          promotionReadyPocket: gate.promotionReadyPocket
+          promotionReadyPocket: gate.promotionReadyPocket,
+          repeatabilitySafeOverlap: {
+            selected: gate.repeatabilitySafeOverlap.selected,
+            improved: gate.repeatabilitySafeOverlap.improved,
+            regressed: gate.repeatabilitySafeOverlap.regressed,
+            neutral: gate.repeatabilitySafeOverlap.neutral
+          }
         }
       ])
     )

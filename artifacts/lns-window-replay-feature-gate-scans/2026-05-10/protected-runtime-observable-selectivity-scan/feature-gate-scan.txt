@@ -1,0 +1,71 @@
+LNS replay feature-gate safety scan
+generatedAt=2026-05-10T19:02:00.479Z
+sourceRoot=artifacts/lns-window-replay-labels
+sourceArtifacts=27
+cases=35
+seeds=5,7,11,13,17,19,23,29,37
+labels=6300
+rollForwardLabels=6300
+inputFingerprint=fnv1a:94ac36cc
+scanFingerprint=fnv1a:c7437ef9
+
+slidingArea12: selected=587 improved=134 regressed=27 neutral=426 unknown=0 best=60 worst=-60 safe=false promotion-pocket=false
+  repeatability-safe-overlap: selected=144 improved=120 regressed=0 neutral=24
+  regressed-artifacts:
+  - artifacts/lns-window-replay-labels/2026-05-08/protected-corridor-footprint-wide-state-search-roll-forward-4x0.2: selected=30 improved=0 regressed=6 neutral=24 worst=-60
+  - artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range1-big-service140-south-shelf-repeatability-wide-state-search-roll-forward-4x0.2: selected=36 improved=0 regressed=1 neutral=35 worst=-55
+  - artifacts/lns-window-replay-labels/2026-05-08/protected-service-braid-repeatability-wide-state-search-roll-forward-4x0.2: selected=54 improved=8 regressed=14 neutral=32 worst=-50
+  - artifacts/lns-window-replay-labels/2026-05-08/protected-gate-service-wide-state-search-roll-forward-4x0.2: selected=32 improved=6 regressed=4 neutral=22 worst=-50
+  - artifacts/lns-window-replay-labels/2026-05-09/protected-service-braid-range1-big-service135-candidate-wide-state-search-roll-forward-4x0.2: selected=18 improved=0 regressed=2 neutral=16 worst=-10
+
+slidingArea12NoFeatureIdenticalRepeatabilityConflict: selected=539 improved=120 regressed=9 neutral=410 unknown=0 best=60 worst=-60 safe=false promotion-pocket=false
+  repeatability-safe-overlap: selected=144 improved=120 regressed=0 neutral=24
+  regressed-artifacts:
+  - artifacts/lns-window-replay-labels/2026-05-08/protected-corridor-footprint-wide-state-search-roll-forward-4x0.2: selected=30 improved=0 regressed=6 neutral=24 worst=-60
+  - artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range1-big-service140-south-shelf-repeatability-wide-state-search-roll-forward-4x0.2: selected=36 improved=0 regressed=1 neutral=35 worst=-55
+  - artifacts/lns-window-replay-labels/2026-05-09/protected-service-braid-range1-big-service135-candidate-wide-state-search-roll-forward-4x0.2: selected=18 improved=0 regressed=2 neutral=16 worst=-10
+
+slidingArea12RepeatabilitySafeBucket: selected=144 improved=120 regressed=0 neutral=24 unknown=0 best=60 worst=0 safe=true promotion-pocket=true
+  repeatability-safe-overlap: selected=144 improved=120 regressed=0 neutral=24
+
+slidingArea12HighServiceCandidatePressure: selected=147 improved=88 regressed=0 neutral=59 unknown=0 best=60 worst=0 safe=true promotion-pocket=true
+  repeatability-safe-overlap: selected=108 improved=88 regressed=0 neutral=20
+
+slidingArea12ServiceComponentPocket: selected=63 improved=58 regressed=0 neutral=5 unknown=0 best=60 worst=0 safe=true promotion-pocket=true
+  repeatability-safe-overlap: selected=60 improved=58 regressed=0 neutral=2
+
+slidingArea12ObservablePressureEnsemble: selected=173 improved=116 regressed=0 neutral=57 unknown=0 best=60 worst=0 safe=true promotion-pocket=true
+  repeatability-safe-overlap: selected=138 improved=116 regressed=0 neutral=22
+
+slidingArea12ComponentsMax2: selected=460 improved=106 regressed=20 neutral=334 unknown=0 best=60 worst=-50 safe=false promotion-pocket=false
+  repeatability-safe-overlap: selected=114 improved=92 regressed=0 neutral=22
+  regressed-artifacts:
+  - artifacts/lns-window-replay-labels/2026-05-08/protected-service-braid-repeatability-wide-state-search-roll-forward-4x0.2: selected=54 improved=8 regressed=14 neutral=32 worst=-50
+  - artifacts/lns-window-replay-labels/2026-05-08/protected-gate-service-wide-state-search-roll-forward-4x0.2: selected=31 improved=6 regressed=4 neutral=21 worst=-50
+  - artifacts/lns-window-replay-labels/2026-05-09/protected-service-braid-range1-big-service135-candidate-wide-state-search-roll-forward-4x0.2: selected=17 improved=0 regressed=2 neutral=15 worst=-10
+
+slidingComponentsMax2: selected=1277 improved=131 regressed=28 neutral=1118 unknown=0 best=60 worst=-55 safe=false promotion-pocket=false
+  repeatability-safe-overlap: selected=114 improved=92 regressed=0 neutral=22
+  regressed-artifacts:
+  - artifacts/lns-window-replay-labels/2026-05-09/protected-service-braid-range1-big-service135-candidate-wide-state-search-roll-forward-4x0.2: selected=58 improved=0 regressed=6 neutral=52 worst=-55
+  - artifacts/lns-window-replay-labels/2026-05-08/protected-service-braid-repeatability-wide-state-search-roll-forward-4x0.2: selected=144 improved=11 regressed=16 neutral=117 worst=-50
+  - artifacts/lns-window-replay-labels/2026-05-08/protected-gate-service-wide-state-search-roll-forward-4x0.2: selected=94 improved=6 regressed=4 neutral=84 worst=-50
+  - artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range1-big-service138-142-initial-stagnation-screen-roll-forward-2x0.1: selected=42 improved=18 regressed=2 neutral=22 worst=-48
+
+slidingTopOrLeft2: selected=672 improved=148 regressed=29 neutral=495 unknown=0 best=60 worst=-60 safe=false promotion-pocket=false
+  repeatability-safe-overlap: selected=144 improved=120 regressed=0 neutral=24
+  regressed-artifacts:
+  - artifacts/lns-window-replay-labels/2026-05-08/protected-corridor-footprint-wide-state-search-roll-forward-4x0.2: selected=30 improved=0 regressed=6 neutral=24 worst=-60
+  - artifacts/lns-window-replay-labels/2026-05-09/protected-service-braid-range1-big-service135-candidate-wide-state-search-roll-forward-4x0.2: selected=27 improved=0 regressed=3 neutral=24 worst=-55
+  - artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range1-big-service140-south-shelf-repeatability-wide-state-search-roll-forward-4x0.2: selected=36 improved=0 regressed=1 neutral=35 worst=-55
+  - artifacts/lns-window-replay-labels/2026-05-08/protected-service-braid-repeatability-wide-state-search-roll-forward-4x0.2: selected=72 improved=8 regressed=15 neutral=49 worst=-50
+  - artifacts/lns-window-replay-labels/2026-05-08/protected-gate-service-wide-state-search-roll-forward-4x0.2: selected=45 improved=6 regressed=4 neutral=35 worst=-50
+
+allNonBaselineSliding: selected=1769 improved=167 regressed=52 neutral=1550 unknown=0 best=60 worst=-60 safe=false promotion-pocket=false
+  repeatability-safe-overlap: selected=144 improved=120 regressed=0 neutral=24
+  regressed-artifacts:
+  - artifacts/lns-window-replay-labels/2026-05-08/protected-corridor-footprint-wide-state-search-roll-forward-4x0.2: selected=105 improved=0 regressed=21 neutral=84 worst=-60
+  - artifacts/lns-window-replay-labels/2026-05-09/protected-service-braid-range1-big-service135-candidate-wide-state-search-roll-forward-4x0.2: selected=61 improved=0 regressed=6 neutral=55 worst=-55
+  - artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range1-big-service140-south-shelf-repeatability-wide-state-search-roll-forward-4x0.2: selected=126 improved=0 regressed=1 neutral=125 worst=-55
+  - artifacts/lns-window-replay-labels/2026-05-08/protected-service-braid-repeatability-wide-state-search-roll-forward-4x0.2: selected=144 improved=11 regressed=16 neutral=117 worst=-50
+  - artifacts/lns-window-replay-labels/2026-05-08/protected-gate-service-wide-state-search-roll-forward-4x0.2: selected=97 improved=6 regressed=4 neutral=87 worst=-50

@@ -27,7 +27,7 @@ import type {
   LnsWindowRankerOnlineFinalTransitionStatus,
   LnsWindowRankerOnlineTransitionStatusCounts
 } from "./lnsWindowRankerOnlineSelectionDiagnostics.js";
-import type { LnsWindowRankerFeatureDeltaGate } from "../core/index.js";
+import type { LnsWindowRankerFeatureDeltaGate, LnsWindowRankerSelectedFeatureGate } from "../core/index.js";
 
 interface LnsWindowRankerOnlineTransitionSummary {
   overrideTransitionCounts: Record<string, number>;
@@ -75,6 +75,18 @@ function formatFeatureDeltaGates(gates: readonly LnsWindowRankerFeatureDeltaGate
   return gates.map(formatFeatureDeltaGate).join(", ");
 }
 
+function formatSelectedFeatureGate(gate: LnsWindowRankerSelectedFeatureGate): string {
+  if (gate.minValue !== undefined && gate.maxValue !== undefined) {
+    return `${gate.minValue}<=${gate.feature}<=${gate.maxValue}`;
+  }
+  if (gate.minValue !== undefined) return `${gate.feature}>=${gate.minValue}`;
+  return `${gate.feature}<=${gate.maxValue}`;
+}
+
+function formatSelectedFeatureGates(gates: readonly LnsWindowRankerSelectedFeatureGate[]): string {
+  return gates.map(formatSelectedFeatureGate).join(", ");
+}
+
 function formatRankerSummary(variant: LnsWindowRankerOnlineAblationVariantResult): string {
   const ranker = variant.windowRanker;
   if (!ranker) return "ranker=disabled";
@@ -94,6 +106,9 @@ export function formatLnsWindowRankerOnlineCalibration(result: LnsWindowRankerOn
   lines.push(`Model fingerprint: ${result.modelFingerprint ?? "n/a"}`);
   if (result.allowedTransitions !== undefined) {
     lines.push(`Allowed transitions: ${result.allowedTransitions.join(", ")}`);
+  }
+  if (result.selectedFeatureGates !== undefined) {
+    lines.push(`Selected feature gates: ${formatSelectedFeatureGates(result.selectedFeatureGates)}`);
   }
   if (result.featureDeltaGates !== undefined) {
     lines.push(`Feature delta gates: ${formatFeatureDeltaGates(result.featureDeltaGates)}`);
@@ -122,6 +137,12 @@ export function formatLnsWindowRankerOnlineAblation(result: LnsWindowRankerOnlin
       ?.windowRanker?.allowedTransitions ?? null;
   if (allowedTransitions !== null) {
     lines.push(`Allowed transitions: ${allowedTransitions.join(", ")}`);
+  }
+  const selectedFeatureGates =
+    result.cases.flatMap((entry) => entry.variants).find((variant) => variant.variantName === "window-ranker")
+      ?.windowRanker?.selectedFeatureGates ?? [];
+  if (selectedFeatureGates.length > 0) {
+    lines.push(`Selected feature gates: ${formatSelectedFeatureGates(selectedFeatureGates)}`);
   }
   const featureDeltaGates =
     result.cases.flatMap((entry) => entry.variants).find((variant) => variant.variantName === "window-ranker")

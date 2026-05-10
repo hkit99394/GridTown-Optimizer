@@ -1,0 +1,420 @@
+{
+  "schemaVersion": 1,
+  "source": "lns-window-replay-diagnostic-bundle",
+  "command": "node dist/lnsBenchmarkCli.js --window-replay-online-scorecard=artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-one-iteration-selected-feature-gate-high-service-pressure-min-score-delta-1.18/lns-window-ranker-online-ablation.json --window-replay-protected-holdout --seeds=7,19,37 --max-windows=16 --exploration-windows=8 --repair-time=0.2 --roll-forward-iterations=4 --roll-forward-repair-time=0.2 --window-replay-artifact-dir=artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-online-selected-feature-gated-decision-coverage-roll-forward-4x0.2 --force-artifact-dir lns-holdout-service-braid-pressure",
+  "generatedAt": "2026-05-10T19:23:58.526Z",
+  "git": {
+    "commit": "cced03f0ee47eb5015462a5e4434c342cc73b177",
+    "branch": "features/validated-solver-improvement-loop"
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "inputFingerprint": "fnv1a:31b08142",
+  "labelFingerprint": "fnv1a:8ba79afc",
+  "diagnosticsOnly": true,
+  "input": {
+    "schemaVersion": 1,
+    "selectedCaseNames": [
+      "lns-holdout-service-braid-pressure"
+    ],
+    "pressureFamilies": [
+      "service-pressure"
+    ],
+    "seeds": [
+      7,
+      19,
+      37
+    ],
+    "maxWindows": 16,
+    "explorationWindowCount": 8,
+    "repairTimeLimitSeconds": 0.2,
+    "rollForwardIterations": 4,
+    "rollForwardRepairTimeLimitSeconds": 0.2,
+    "statePolicies": [
+      "online-decision"
+    ],
+    "capturedStatePolicies": [
+      "online-decision"
+    ],
+    "stateCollectionIterations": 0,
+    "stateCollectionRepairTimeLimitSeconds": 0.2,
+    "featureSchemaVersion": 2,
+    "cpSatNumWorkers": 1,
+    "cpSatModelFingerprints": [
+      "fnv1a:e8ea4500"
+    ]
+  },
+  "outputArtifacts": [
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-online-selected-feature-gated-decision-coverage-roll-forward-4x0.2/lns-window-replay-labels.json",
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-online-selected-feature-gated-decision-coverage-roll-forward-4x0.2/lns-window-replay-labels.txt",
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-online-selected-feature-gated-decision-coverage-roll-forward-4x0.2/repeatability-summary.json",
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-online-selected-feature-gated-decision-coverage-roll-forward-4x0.2/manifest.json",
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-online-selected-feature-gated-decision-coverage-roll-forward-4x0.2/telemetry-manifest.json"
+  ],
+  "repeatabilitySummary": {
+    "schemaVersion": 1,
+    "rollForwardLabelCount": 72,
+    "bucketCount": 24,
+    "repeatedBucketCount": 24,
+    "mixedFinalStatusBucketCount": 10,
+    "conflictingFinalStatusBucketCount": 10,
+    "conflictingLabelCount": 30,
+    "conflictingStatusCounts": {
+      "improved": 20,
+      "neutral": 0,
+      "regressed": 10,
+      "unknown": 0
+    },
+    "featureIdenticalConflictBucketCount": 10,
+    "featureIdenticalConflictLabelCount": 30,
+    "examples": [
+      {
+        "caseName": "lns-holdout-service-braid-pressure",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "online-decision",
+        "operator": "frontier-congestion",
+        "window": "1:1:3x3",
+        "labelCount": 3,
+        "seedCount": 3,
+        "seeds": [
+          7,
+          19,
+          37
+        ],
+        "statusCounts": {
+          "improved": 2,
+          "neutral": 0,
+          "regressed": 1,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -50,
+          50
+        ],
+        "baselineTotals": [
+          760,
+          810
+        ],
+        "totalPopulations": [
+          760,
+          810
+        ],
+        "featureFingerprintCount": 1
+      },
+      {
+        "caseName": "lns-holdout-service-braid-pressure",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "online-decision",
+        "operator": "gate-choke",
+        "window": "1:1:3x3",
+        "labelCount": 3,
+        "seedCount": 3,
+        "seeds": [
+          7,
+          19,
+          37
+        ],
+        "statusCounts": {
+          "improved": 2,
+          "neutral": 0,
+          "regressed": 1,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -50,
+          50
+        ],
+        "baselineTotals": [
+          760,
+          810
+        ],
+        "totalPopulations": [
+          760,
+          810
+        ],
+        "featureFingerprintCount": 1
+      },
+      {
+        "caseName": "lns-holdout-service-braid-pressure",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "online-decision",
+        "operator": "placed-buildings",
+        "window": "1:0:3x3",
+        "labelCount": 3,
+        "seedCount": 3,
+        "seeds": [
+          7,
+          19,
+          37
+        ],
+        "statusCounts": {
+          "improved": 2,
+          "neutral": 0,
+          "regressed": 1,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -50,
+          50
+        ],
+        "baselineTotals": [
+          760,
+          810
+        ],
+        "totalPopulations": [
+          760,
+          810
+        ],
+        "featureFingerprintCount": 1
+      },
+      {
+        "caseName": "lns-holdout-service-braid-pressure",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "online-decision",
+        "operator": "placed-buildings",
+        "window": "1:2:3x3",
+        "labelCount": 3,
+        "seedCount": 3,
+        "seeds": [
+          7,
+          19,
+          37
+        ],
+        "statusCounts": {
+          "improved": 2,
+          "neutral": 0,
+          "regressed": 1,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -50,
+          50
+        ],
+        "baselineTotals": [
+          760,
+          810
+        ],
+        "totalPopulations": [
+          760,
+          810
+        ],
+        "featureFingerprintCount": 1
+      },
+      {
+        "caseName": "lns-holdout-service-braid-pressure",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "online-decision",
+        "operator": "random-exploration",
+        "window": "1:1:3x3",
+        "labelCount": 3,
+        "seedCount": 3,
+        "seeds": [
+          7,
+          19,
+          37
+        ],
+        "statusCounts": {
+          "improved": 2,
+          "neutral": 0,
+          "regressed": 1,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -50,
+          50
+        ],
+        "baselineTotals": [
+          760,
+          810
+        ],
+        "totalPopulations": [
+          760,
+          810
+        ],
+        "featureFingerprintCount": 1
+      },
+      {
+        "caseName": "lns-holdout-service-braid-pressure",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "online-decision",
+        "operator": "residential-headroom",
+        "window": "1:0:3x3",
+        "labelCount": 3,
+        "seedCount": 3,
+        "seeds": [
+          7,
+          19,
+          37
+        ],
+        "statusCounts": {
+          "improved": 2,
+          "neutral": 0,
+          "regressed": 1,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -50,
+          50
+        ],
+        "baselineTotals": [
+          760,
+          810
+        ],
+        "totalPopulations": [
+          760,
+          810
+        ],
+        "featureFingerprintCount": 1
+      },
+      {
+        "caseName": "lns-holdout-service-braid-pressure",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "online-decision",
+        "operator": "service-overlap",
+        "window": "1:2:3x3",
+        "labelCount": 3,
+        "seedCount": 3,
+        "seeds": [
+          7,
+          19,
+          37
+        ],
+        "statusCounts": {
+          "improved": 2,
+          "neutral": 0,
+          "regressed": 1,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -50,
+          50
+        ],
+        "baselineTotals": [
+          760,
+          810
+        ],
+        "totalPopulations": [
+          760,
+          810
+        ],
+        "featureFingerprintCount": 1
+      },
+      {
+        "caseName": "lns-holdout-service-braid-pressure",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "online-decision",
+        "operator": "sliding",
+        "window": "0:0:4x3",
+        "labelCount": 3,
+        "seedCount": 3,
+        "seeds": [
+          7,
+          19,
+          37
+        ],
+        "statusCounts": {
+          "improved": 2,
+          "neutral": 0,
+          "regressed": 1,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -50,
+          50
+        ],
+        "baselineTotals": [
+          760,
+          810
+        ],
+        "totalPopulations": [
+          760,
+          810
+        ],
+        "featureFingerprintCount": 1
+      },
+      {
+        "caseName": "lns-holdout-service-braid-pressure",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "online-decision",
+        "operator": "sliding",
+        "window": "0:2:4x3",
+        "labelCount": 3,
+        "seedCount": 3,
+        "seeds": [
+          7,
+          19,
+          37
+        ],
+        "statusCounts": {
+          "improved": 2,
+          "neutral": 0,
+          "regressed": 1,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -50,
+          50
+        ],
+        "baselineTotals": [
+          760,
+          810
+        ],
+        "totalPopulations": [
+          760,
+          810
+        ],
+        "featureFingerprintCount": 1
+      },
+      {
+        "caseName": "lns-holdout-service-braid-pressure",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "online-decision",
+        "operator": "weak-service",
+        "window": "1:2:3x3",
+        "labelCount": 3,
+        "seedCount": 3,
+        "seeds": [
+          7,
+          19,
+          37
+        ],
+        "statusCounts": {
+          "improved": 2,
+          "neutral": 0,
+          "regressed": 1,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -50,
+          50
+        ],
+        "baselineTotals": [
+          760,
+          810
+        ],
+        "totalPopulations": [
+          760,
+          810
+        ],
+        "featureFingerprintCount": 1
+      }
+    ]
+  },
+  "metrics": {
+    "caseCount": 1,
+    "seedCount": 3,
+    "stateCount": 3,
+    "labelCount": 72,
+    "rollForwardLabelCount": 72,
+    "repeatabilityConflictBucketCount": 10,
+    "repeatabilityFeatureIdenticalConflictBucketCount": 10
+  }
+}

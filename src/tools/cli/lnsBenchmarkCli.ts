@@ -59,7 +59,7 @@ import {
   writeWindowRankerOnlineCalibrationArtifactBundle
 } from "./lnsBenchmarkArtifacts.js";
 import type { LnsNeighborhoodAblationVariantName, LnsWindowReplayStatePolicy } from "../../benchmarkApi.js";
-import type { LnsWindowRankerFeatureDeltaGate } from "./lnsBenchmarkArtifacts.js";
+import type { LnsWindowRankerFeatureDeltaGate, LnsWindowRankerSelectedFeatureGate } from "./lnsBenchmarkArtifacts.js";
 
 type LnsWindowRankerOperatorTransition = NonNullable<
   Parameters<typeof runLnsWindowRankerOnlineAblation>[1]["allowedTransitions"]
@@ -95,6 +95,7 @@ interface ParsedBenchmarkArgs {
   windowRankerMinScoreDelta?: number;
   windowRankerMinScoreDeltas?: number[];
   windowRankerAllowedTransitions?: LnsWindowRankerOperatorTransition[];
+  windowRankerSelectedFeatureGates?: LnsWindowRankerSelectedFeatureGate[];
   windowRankerFeatureDeltaGates?: LnsWindowRankerFeatureDeltaGate[];
   windowRankerArtifactDir?: string;
   windowRankerProtectedHoldout: boolean;
@@ -136,6 +137,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let windowRankerMinScoreDelta: number | undefined;
   let windowRankerMinScoreDeltas: number[] | undefined;
   let windowRankerAllowedTransitions: LnsWindowRankerOperatorTransition[] | undefined;
+  let windowRankerSelectedFeatureGates: LnsWindowRankerSelectedFeatureGate[] | undefined;
   let windowRankerFeatureDeltaGates: LnsWindowRankerFeatureDeltaGate[] | undefined;
   let windowRankerArtifactDir: string | undefined;
   let windowRankerProtectedHoldout = false;
@@ -205,6 +207,12 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
         value,
         "window ranker allowed transition"
       ) as LnsWindowRankerOperatorTransition[];
+    },
+    "window-ranker-selected-feature-gates": (value) => {
+      windowRankerSelectedFeatureGates = parseWindowRankerSelectedFeatureGates(value);
+    },
+    "window-ranker-feature-value-gates": (value) => {
+      windowRankerSelectedFeatureGates = parseWindowRankerSelectedFeatureGates(value);
     },
     "window-ranker-feature-delta-gates": (value) => {
       windowRankerFeatureDeltaGates = parseWindowRankerFeatureDeltaGates(value);
@@ -348,6 +356,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     windowRankerMinScoreDelta,
     windowRankerMinScoreDeltas,
     windowRankerAllowedTransitions,
+    windowRankerSelectedFeatureGates,
     windowRankerFeatureDeltaGates,
     windowRankerArtifactDir,
     windowRankerProtectedHoldout,
@@ -399,6 +408,30 @@ function parseWindowRankerFeatureDeltaGates(value: string): LnsWindowRankerFeatu
   });
 }
 
+function parseWindowRankerSelectedFeatureGates(value: string): LnsWindowRankerSelectedFeatureGate[] {
+  const entries = value
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+  if (entries.length === 0) {
+    throw new Error("--window-ranker-selected-feature-gates must include at least one feature comparison.");
+  }
+  return entries.map((entry) => {
+    const match = /^([A-Za-z][A-Za-z0-9_]*)\s*(<=|>=)\s*(-?(?:\d+\.?\d*|\.\d+))$/.exec(entry);
+    if (!match) {
+      throw new Error(
+        "--window-ranker-selected-feature-gates entries must look like serviceCandidateBonus>=5.58 or roadCountInside<=0."
+      );
+    }
+    const feature = match[1] as LnsWindowRankerSelectedFeatureGate["feature"];
+    const threshold = Number(match[3]);
+    if (!Number.isFinite(threshold)) {
+      throw new Error("--window-ranker-selected-feature-gates thresholds must be finite numbers.");
+    }
+    return match[2] === "<=" ? { feature, maxValue: threshold } : { feature, minValue: threshold };
+  });
+}
+
 export function runLnsBenchmarkCli(): void {
   const argv = process.argv.slice(2);
   const args = parseArgs(argv);
@@ -415,6 +448,9 @@ export function runLnsBenchmarkCli(): void {
   }
   if (args.windowRankerAllowedTransitions !== undefined && !args.windowRankerOnlineAblation) {
     throw new Error("--window-ranker-allowed-transitions is only available with --window-ranker-online-ablation.");
+  }
+  if (args.windowRankerSelectedFeatureGates !== undefined && !args.windowRankerOnlineAblation) {
+    throw new Error("--window-ranker-selected-feature-gates is only available with --window-ranker-online-ablation.");
   }
   if (args.windowRankerFeatureDeltaGates !== undefined && !args.windowRankerOnlineAblation) {
     throw new Error("--window-ranker-feature-delta-gates is only available with --window-ranker-online-ablation.");
@@ -537,6 +573,7 @@ export function runLnsBenchmarkCli(): void {
         model,
         minScoreDeltas: args.windowRankerMinScoreDeltas,
         allowedTransitions: args.windowRankerAllowedTransitions,
+        selectedFeatureGates: args.windowRankerSelectedFeatureGates,
         featureDeltaGates: args.windowRankerFeatureDeltaGates,
         lns
       });
@@ -565,6 +602,7 @@ export function runLnsBenchmarkCli(): void {
       model,
       minScoreDelta: args.windowRankerMinScoreDelta,
       allowedTransitions: args.windowRankerAllowedTransitions,
+      selectedFeatureGates: args.windowRankerSelectedFeatureGates,
       featureDeltaGates: args.windowRankerFeatureDeltaGates,
       lns
     });

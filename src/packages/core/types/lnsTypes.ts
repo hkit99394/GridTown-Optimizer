@@ -157,12 +157,20 @@ export interface LnsWindowRankerFeatureDeltaGate {
   maxDelta?: number;
 }
 
+export interface LnsWindowRankerSelectedFeatureGate {
+  feature: LnsWindowRankerFeatureName;
+  minValue?: number;
+  maxValue?: number;
+}
+
 export interface LnsWindowRankerRuntimeOptions {
   enabled?: boolean;
   model: LnsWindowRankerRuntimeModel;
   minScoreDelta?: number;
   /** Diagnostics-only: only allow learned overrides whose baseline->selected operator transition is listed. */
   allowedTransitions?: readonly LnsWindowRankerOperatorTransition[];
+  /** Diagnostics-only: only allow learned overrides whose selected-window feature values satisfy these bounds. */
+  selectedFeatureGates?: readonly LnsWindowRankerSelectedFeatureGate[];
   /** Diagnostics-only: only allow learned overrides whose selected-baseline feature deltas satisfy these bounds. */
   featureDeltaGates?: readonly LnsWindowRankerFeatureDeltaGate[];
   /** Diagnostics-only: include the exact incumbent layout at each ranker decision. */
@@ -200,7 +208,11 @@ export interface LnsWindowRankerSelectionTelemetry {
   selectedFeatures?: LnsWindowRankerFeatureTelemetry;
   featureDeltas?: LnsWindowRankerFeatureTelemetry;
   decisionState?: LnsWindowRankerDecisionStateTelemetry;
-  fallbackReason?: "score-delta-below-threshold" | "operator-transition-not-allowed" | "feature-delta-gate-not-met";
+  fallbackReason?:
+    | "score-delta-below-threshold"
+    | "operator-transition-not-allowed"
+    | "selected-feature-gate-not-met"
+    | "feature-delta-gate-not-met";
 }
 
 export interface LnsWindowRankerTelemetry {
@@ -209,6 +221,7 @@ export interface LnsWindowRankerTelemetry {
   featureSchemaVersion?: number | null;
   minScoreDelta: number;
   allowedTransitions?: readonly LnsWindowRankerOperatorTransition[];
+  selectedFeatureGates?: readonly LnsWindowRankerSelectedFeatureGate[];
   featureDeltaGates?: readonly LnsWindowRankerFeatureDeltaGate[];
   decisions: number;
   overrides: number;

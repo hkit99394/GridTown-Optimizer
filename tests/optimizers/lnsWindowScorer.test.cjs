@@ -250,6 +250,80 @@ function testWindowRankerFallsBackWhenFeatureDeltaGateFails() {
   assert.equal(allowedDecision.telemetry.selectedByBaseline, false);
   assert.equal(allowedDecision.telemetry.fallbackReason, undefined);
   assert.equal(allowedDecision.telemetry.featureDeltas.selectedByBaseline, -1);
+
+  const invalidFeatureDecision = selectLnsWindowRankerCandidate(
+    fixture.grid,
+    fixture.params,
+    fixture.incumbent,
+    fixture.candidates,
+    fixture.baseline,
+    normalizeLnsWindowRankerOptions({
+      ...model,
+      featureDeltaGates: [{ feature: "notAFeature", minDelta: 0 }]
+    })
+  );
+  assert.deepEqual(invalidFeatureDecision.candidate.window, fixture.baseline.window);
+  assert.equal(invalidFeatureDecision.telemetry.fallbackReason, "feature-delta-gate-not-met");
+}
+
+function testWindowRankerFallsBackWhenSelectedFeatureGateFails() {
+  const fixture = buildSelectionFixture();
+  const model = runtimeModel({ selectedByBaseline: -1 });
+  const openDecision = selectLnsWindowRankerCandidate(
+    fixture.grid,
+    fixture.params,
+    fixture.incumbent,
+    fixture.candidates,
+    fixture.baseline,
+    normalizeLnsWindowRankerOptions(model)
+  );
+  assert.equal(openDecision.telemetry.selectedByBaseline, false);
+  assert.equal(openDecision.telemetry.selectedFeatures.selectedByBaseline, 0);
+
+  const blockedDecision = selectLnsWindowRankerCandidate(
+    fixture.grid,
+    fixture.params,
+    fixture.incumbent,
+    fixture.candidates,
+    fixture.baseline,
+    normalizeLnsWindowRankerOptions({
+      ...model,
+      selectedFeatureGates: [{ feature: "selectedByBaseline", minValue: 1 }]
+    })
+  );
+  assert.deepEqual(blockedDecision.candidate.window, fixture.baseline.window);
+  assert.equal(blockedDecision.telemetry.selectedByBaseline, true);
+  assert.equal(blockedDecision.telemetry.fallbackReason, "selected-feature-gate-not-met");
+  assert.equal(blockedDecision.telemetry.selectedFeatures.selectedByBaseline, 1);
+
+  const allowedDecision = selectLnsWindowRankerCandidate(
+    fixture.grid,
+    fixture.params,
+    fixture.incumbent,
+    fixture.candidates,
+    fixture.baseline,
+    normalizeLnsWindowRankerOptions({
+      ...model,
+      selectedFeatureGates: [{ feature: "selectedByBaseline", maxValue: 0 }]
+    })
+  );
+  assert.equal(allowedDecision.telemetry.selectedByBaseline, false);
+  assert.equal(allowedDecision.telemetry.fallbackReason, undefined);
+  assert.equal(allowedDecision.telemetry.selectedFeatures.selectedByBaseline, 0);
+
+  const invalidFeatureDecision = selectLnsWindowRankerCandidate(
+    fixture.grid,
+    fixture.params,
+    fixture.incumbent,
+    fixture.candidates,
+    fixture.baseline,
+    normalizeLnsWindowRankerOptions({
+      ...model,
+      selectedFeatureGates: [{ feature: "notAFeature", minValue: 0 }]
+    })
+  );
+  assert.deepEqual(invalidFeatureDecision.candidate.window, fixture.baseline.window);
+  assert.equal(invalidFeatureDecision.telemetry.fallbackReason, "selected-feature-gate-not-met");
 }
 
 function testSolveLnsWindowRankerTelemetryAndDefaultSafety() {
@@ -321,6 +395,7 @@ function testSolveLnsWindowRankerTelemetryAndDefaultSafety() {
     assert.equal(rankedSolution.lnsTelemetry.windowRanker.decisions, 1);
     assert.equal(rankedSolution.lnsTelemetry.windowRanker.overrides, 1);
     assert.equal(rankedSolution.lnsTelemetry.windowRanker.allowedTransitions, undefined);
+    assert.equal(rankedSolution.lnsTelemetry.windowRanker.selectedFeatureGates, undefined);
     assert.equal(rankedSolution.lnsTelemetry.windowRanker.featureDeltaGates, undefined);
     assert.equal(rankedSolution.lnsTelemetry.outcomes[0].windowRankerSelection.selectedByBaseline, false);
     assert.equal(typeof rankedSolution.lnsTelemetry.outcomes[0].windowRankerSelection.selectedOperator, "string");
@@ -490,6 +565,46 @@ function testWindowRankerValidationRejectsBadWeights() {
             model: {
               modelType: "lns-window-linear-pairwise-ranker",
               featureSchemaVersion: 2,
+              weights: { selectedByBaseline: 1 }
+            },
+            selectedFeatureGates: [{ feature: "selectedByBaseline" }]
+          }
+        }
+      }),
+    /lns\.windowRanker\.selectedFeatureGates\[0\] must include minValue or maxValue/
+  );
+
+  assert.throws(
+    () =>
+      solveLns(buildGrid(3, 3), {
+        optimizer: "lns",
+        availableBuildings: { residentials: 0, services: 0 },
+        lns: {
+          iterations: 1,
+          windowRanker: {
+            model: {
+              modelType: "lns-window-linear-pairwise-ranker",
+              featureSchemaVersion: 2,
+              weights: { selectedByBaseline: 1 }
+            },
+            selectedFeatureGates: [{ feature: "notAFeature", maxValue: 0 }]
+          }
+        }
+      }),
+    /lns\.windowRanker\.selectedFeatureGates\[0\]\.feature must be one of the LNS window ranker feature names/
+  );
+
+  assert.throws(
+    () =>
+      solveLns(buildGrid(3, 3), {
+        optimizer: "lns",
+        availableBuildings: { residentials: 0, services: 0 },
+        lns: {
+          iterations: 1,
+          windowRanker: {
+            model: {
+              modelType: "lns-window-linear-pairwise-ranker",
+              featureSchemaVersion: 2,
               weights: { selectedByBaseline: 1 },
               interactionWeights: { "selectedByBaseline*notAFeature": 1 }
             }
@@ -511,5 +626,6 @@ testWindowRankerInteractionWeightsCanOverrideAdaptiveBaseline();
 testWindowRankerFallsBackWhenScoreDeltaIsTooSmall();
 testWindowRankerFallsBackWhenTransitionIsNotAllowed();
 testWindowRankerFallsBackWhenFeatureDeltaGateFails();
+testWindowRankerFallsBackWhenSelectedFeatureGateFails();
 testSolveLnsWindowRankerTelemetryAndDefaultSafety();
 testWindowRankerValidationRejectsBadWeights();

@@ -450,6 +450,7 @@ function buildWindowRankerTelemetry(
     featureSchemaVersion: options.model.featureSchemaVersion ?? null,
     minScoreDelta: options.minScoreDelta,
     ...(options.allowedTransitions === null ? {} : { allowedTransitions: [...options.allowedTransitions] }),
+    ...(options.selectedFeatureGates.length === 0 ? {} : { selectedFeatureGates: [...options.selectedFeatureGates] }),
     ...(options.featureDeltaGates.length === 0 ? {} : { featureDeltaGates: [...options.featureDeltaGates] }),
     decisions: selections.length,
     overrides: selections.filter((selection) => !selection.selectedByBaseline).length,

@@ -41,6 +41,7 @@ function summarizeWindowRanker(result: LnsBenchmarkCaseResult): LnsWindowRankerO
     featureSchemaVersion: ranker.featureSchemaVersion ?? null,
     minScoreDelta: ranker.minScoreDelta,
     allowedTransitions: ranker.allowedTransitions ? [...ranker.allowedTransitions] : null,
+    selectedFeatureGates: ranker.selectedFeatureGates ? [...ranker.selectedFeatureGates] : [],
     featureDeltaGates: ranker.featureDeltaGates ? [...ranker.featureDeltaGates] : [],
     decisions: ranker.decisions,
     overrides: ranker.overrides,

@@ -30,6 +30,7 @@ import type {
   LnsWindowRankerOperatorTransition,
   LnsWindowRankerRuntimeModel,
   LnsWindowRankerRuntimeOptions,
+  LnsWindowRankerSelectedFeatureGate,
   LnsWindowRankerSelectionTelemetry,
   Solution,
   SolverParams
@@ -40,6 +41,7 @@ export interface NormalizedLnsWindowRankerOptions {
   model: LnsWindowRankerRuntimeModel;
   minScoreDelta: number;
   allowedTransitions: readonly LnsWindowRankerOperatorTransition[] | null;
+  selectedFeatureGates: readonly LnsWindowRankerSelectedFeatureGate[];
   featureDeltaGates: readonly LnsWindowRankerFeatureDeltaGate[];
   captureDecisionState: boolean;
 }
@@ -88,6 +90,18 @@ function normalizeFeatureDeltaGates(
       }));
 }
 
+function normalizeSelectedFeatureGates(
+  selectedFeatureGates: readonly LnsWindowRankerSelectedFeatureGate[] | undefined
+): readonly LnsWindowRankerSelectedFeatureGate[] {
+  return selectedFeatureGates === undefined
+    ? []
+    : selectedFeatureGates.map((gate) => ({
+        feature: gate.feature,
+        ...(gate.minValue === undefined ? {} : { minValue: gate.minValue }),
+        ...(gate.maxValue === undefined ? {} : { maxValue: gate.maxValue })
+      }));
+}
+
 export function normalizeLnsWindowRankerOptions(
   options: LnsWindowRankerRuntimeOptions | undefined
 ): NormalizedLnsWindowRankerOptions | null {
@@ -97,6 +111,7 @@ export function normalizeLnsWindowRankerOptions(
     model: options.model,
     minScoreDelta: Math.max(0, finiteNumberOrDefault(options.minScoreDelta, 0)),
     allowedTransitions: normalizeAllowedTransitions(options.allowedTransitions),
+    selectedFeatureGates: normalizeSelectedFeatureGates(options.selectedFeatureGates),
     featureDeltaGates: normalizeFeatureDeltaGates(options.featureDeltaGates),
     captureDecisionState: options.captureDecisionState === true
   };
@@ -462,8 +477,21 @@ function featureDeltaGatesPassed(
 ): boolean {
   return gates.every((gate) => {
     const delta = selected[gate.feature] - baseline[gate.feature];
+    if (!Number.isFinite(delta)) return false;
     if (gate.minDelta !== undefined && delta < gate.minDelta) return false;
     return gate.maxDelta === undefined || delta <= gate.maxDelta;
+  });
+}
+
+function selectedFeatureGatesPassed(
+  selected: WindowRankerFeatureValues,
+  gates: readonly LnsWindowRankerSelectedFeatureGate[]
+): boolean {
+  return gates.every((gate) => {
+    const value = selected[gate.feature];
+    if (!Number.isFinite(value)) return false;
+    if (gate.minValue !== undefined && value < gate.minValue) return false;
+    return gate.maxValue === undefined || value <= gate.maxValue;
   });
 }
 
@@ -545,6 +573,8 @@ export function selectLnsWindowRankerCandidate(
   const bestIsBaseline = sameCandidate(best.candidate, baselineCandidate);
   const transitionAllowed =
     bestIsBaseline || options.allowedTransitions === null || options.allowedTransitions.includes(selectedTransition);
+  const selectedFeatureGatePassed =
+    bestIsBaseline || selectedFeatureGatesPassed(best.features, options.selectedFeatureGates);
   const featureGatePassed =
     bestIsBaseline || featureDeltaGatesPassed(best.features, baseline.features, options.featureDeltaGates);
   const fallbackReason =
@@ -553,8 +583,14 @@ export function selectLnsWindowRankerCandidate(
       : transitionAllowed
         ? undefined
         : ("operator-transition-not-allowed" as const);
+  const selectedFeatureFallbackReason =
+    fallbackReason === undefined && !selectedFeatureGatePassed
+      ? ("selected-feature-gate-not-met" as const)
+      : fallbackReason;
   const featureFallbackReason =
-    fallbackReason === undefined && !featureGatePassed ? ("feature-delta-gate-not-met" as const) : fallbackReason;
+    selectedFeatureFallbackReason === undefined && !featureGatePassed
+      ? ("feature-delta-gate-not-met" as const)
+      : selectedFeatureFallbackReason;
   const selected = featureFallbackReason ? baseline : best;
   return {
     candidate: selected.candidate,

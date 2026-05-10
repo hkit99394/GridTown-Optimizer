@@ -102,6 +102,47 @@ function assertValidWindowRankerFeatureDeltaGates(windowRanker: Record<string, u
   }
 }
 
+function assertValidWindowRankerSelectedFeatureGates(windowRanker: Record<string, unknown>): void {
+  const value = windowRanker.selectedFeatureGates;
+  if (value === undefined) return;
+  if (!Array.isArray(value)) {
+    throw new SolverInputError("LNS option lns.windowRanker.selectedFeatureGates must be an array of objects.");
+  }
+
+  for (const [index, entry] of value.entries()) {
+    const label = `LNS option lns.windowRanker.selectedFeatureGates[${index}]`;
+    const gate = requireValidationRecord(entry, label);
+    if (typeof gate.feature !== "string" || gate.feature.trim().length === 0) {
+      throw new SolverInputError(`${label}.feature must be a non-empty string.`);
+    }
+    if (!isLnsWindowRankerFeatureName(gate.feature)) {
+      throw new SolverInputError(`${label}.feature must be one of the LNS window ranker feature names.`);
+    }
+    requireOptionalFiniteNumberInRange(
+      gate,
+      "minValue",
+      `${label}.minValue`,
+      -LNS_MAX_WINDOW_RANKER_SCORE_DELTA,
+      LNS_MAX_WINDOW_RANKER_SCORE_DELTA,
+      true
+    );
+    requireOptionalFiniteNumberInRange(
+      gate,
+      "maxValue",
+      `${label}.maxValue`,
+      -LNS_MAX_WINDOW_RANKER_SCORE_DELTA,
+      LNS_MAX_WINDOW_RANKER_SCORE_DELTA,
+      true
+    );
+    if (gate.minValue === undefined && gate.maxValue === undefined) {
+      throw new SolverInputError(`${label} must include minValue or maxValue.`);
+    }
+    if (typeof gate.minValue === "number" && typeof gate.maxValue === "number" && gate.minValue > gate.maxValue) {
+      throw new SolverInputError(`${label}.minValue must be less than or equal to maxValue.`);
+    }
+  }
+}
+
 function assertValidWindowRankerOptions(lns: Record<string, unknown>): void {
   const value = lns.windowRanker;
   if (value === undefined) return;
@@ -118,6 +159,7 @@ function assertValidWindowRankerOptions(lns: Record<string, unknown>): void {
     true
   );
   assertValidWindowRankerAllowedTransitions(windowRanker);
+  assertValidWindowRankerSelectedFeatureGates(windowRanker);
   assertValidWindowRankerFeatureDeltaGates(windowRanker);
 
   const model = requireValidationRecord(windowRanker.model, "LNS option lns.windowRanker.model");

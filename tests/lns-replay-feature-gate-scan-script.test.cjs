@@ -24,9 +24,14 @@ function label(overrides) {
     selectionSource: "fixture",
     window: { top: 0, left: 0, rows: 3, cols: 4 },
     features: {
+      roadCountInside: 0,
       area: 12,
-      fragmentation: { emptyComponentCountAfterClearingWindow: 1 },
-      connectivityShadow: { newlyReachableEmptyCellsIfCleared: 2 }
+      fragmentation: { emptyComponentCountBefore: 1, emptyComponentCountAfterClearingWindow: 1 },
+      connectivityShadow: { newlyReachableEmptyCellsIfCleared: 2 },
+      candidateLoss: {
+        serviceCandidateBonusInside: 0,
+        residentialCandidatesBlockedByIncumbent: 0
+      }
     },
     rollForward: { statusVsBaseline: "neutral", populationDeltaVsBaseline: 0 },
     ...overrides
@@ -97,6 +102,22 @@ try {
       },
       rollForward: { statusVsBaseline: "regressed", populationDeltaVsBaseline: -12 }
     }),
+    label({
+      window: { top: 0, left: 2, rows: 3, cols: 4 },
+      operatorScore: 900,
+      incumbentPopulation: 640,
+      features: {
+        roadCountInside: 0,
+        area: 12,
+        fragmentation: { emptyComponentCountBefore: 3, emptyComponentCountAfterClearingWindow: 2 },
+        connectivityShadow: { newlyReachableEmptyCellsIfCleared: 4 },
+        candidateLoss: {
+          serviceCandidateBonusInside: 3300,
+          residentialCandidatesBlockedByIncumbent: 14
+        }
+      },
+      rollForward: { statusVsBaseline: "improved", populationDeltaVsBaseline: 15 }
+    }),
     label({ operator: "weak-service", rollForward: { statusVsBaseline: "improved", populationDeltaVsBaseline: 20 } })
   ]);
   writeReplayArtifact("artifact-b", [
@@ -116,16 +137,21 @@ try {
 
   const scan = JSON.parse(fs.readFileSync(path.join(outputDir, "feature-gate-scan.json"), "utf8"));
   assert.equal(scan.sourceSummary.sourceArtifactCount, 2);
-  assert.equal(scan.sourceSummary.labelCount, 6);
-  assert.equal(scan.gates.slidingArea12.selected, 4);
-  assert.equal(scan.gates.slidingArea12.improved, 2);
+  assert.equal(scan.sourceSummary.labelCount, 7);
+  assert.equal(scan.gates.slidingArea12.selected, 5);
+  assert.equal(scan.gates.slidingArea12.improved, 3);
   assert.equal(scan.gates.slidingArea12.regressed, 2);
   assert.equal(scan.gates.slidingArea12.safeNoRegression, false);
-  assert.equal(scan.gates.slidingArea12NoFeatureIdenticalRepeatabilityConflict.selected, 2);
+  assert.equal(scan.gates.slidingArea12NoFeatureIdenticalRepeatabilityConflict.selected, 3);
   assert.equal(scan.gates.slidingArea12NoFeatureIdenticalRepeatabilityConflict.regressed, 1);
-  assert.equal(scan.gates.slidingArea12RepeatabilitySafeBucket.selected, 0);
-  assert.equal(scan.gates.slidingArea12RepeatabilitySafeBucket.safeNoRegression, false);
-  assert.equal(scan.gates.slidingArea12ComponentsMax2.selected, 1);
+  assert.equal(scan.gates.slidingArea12RepeatabilitySafeBucket.selected, 1);
+  assert.equal(scan.gates.slidingArea12RepeatabilitySafeBucket.safeNoRegression, true);
+  assert.equal(scan.gates.slidingArea12HighServiceCandidatePressure.selected, 1);
+  assert.equal(scan.gates.slidingArea12HighServiceCandidatePressure.repeatabilitySafeOverlap.selected, 1);
+  assert.equal(scan.gates.slidingArea12HighServiceCandidatePressure.safeNoRegression, true);
+  assert.equal(scan.gates.slidingArea12ServiceComponentPocket.selected, 1);
+  assert.equal(scan.gates.slidingArea12ObservablePressureEnsemble.selected, 1);
+  assert.equal(scan.gates.slidingArea12ComponentsMax2.selected, 2);
   assert.equal(scan.gates.slidingArea12ComponentsMax2.safeNoRegression, true);
   assert.match(fs.readFileSync(path.join(outputDir, "feature-gate-scan.txt"), "utf8"), /slidingArea12:/);
 } finally {

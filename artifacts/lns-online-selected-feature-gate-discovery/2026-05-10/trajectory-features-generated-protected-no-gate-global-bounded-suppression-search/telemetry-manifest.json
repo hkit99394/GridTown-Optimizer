@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 2,
+  "source": "lns-online-selected-feature-gate-discovery",
+  "command": "node scripts/discover-lns-online-selected-feature-gates.mjs --source-artifact=artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0 --source-artifact=artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-one-iteration-trajectory-features-no-selected-feature-gate-min-score-delta-0 --source-artifact=artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-two-iteration-trajectory-features-no-selected-feature-gate-min-score-delta-0 --artifact-dir=artifacts/lns-online-selected-feature-gate-discovery/2026-05-10/trajectory-features-generated-protected-no-gate-global-bounded-suppression-search --target=selection-improved --max-group-size=3 --max-atoms-per-feature=20 --max-total-atoms=120 --top=50 --force-artifact-dir",
+  "generatedAt": "2026-05-11T21:20:02.585Z",
+  "git": {
+    "commit": "53a7291c7f187db302c2f577daa21ab3e701b89a",
+    "branch": "features/validated-solver-improvement-loop"
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "diagnosticsOnly": true,
+  "target": "selection-improved",
+  "metricSemantics": {
+    "targetImproved": "Counts rows that match the selected discovery target. final-improved is attributed only to the terminal override trace with selectedFeatures in each variant.",
+    "terminalFinalImproved": "Counts selected terminal override traces with selectedFeatures whose whole variant final outcome improved versus baseline.",
+    "terminalFinalRegressed": "Counts selected terminal override traces with selectedFeatures whose whole variant final outcome regressed versus baseline.",
+    "safetyRegressed": "Counts selected traces with either a regressed immediate selection outcome or a regressed whole-variant final outcome. Whole-variant final regression is applied to every selected trace in that variant."
+  },
+  "v2DeprecatedMetricAliases": {
+    "schemaVersion": 2,
+    "note": "Schema-v2 compatibility aliases only. Do not use these aliases to reinterpret schema-v1 artifacts, where finalRegressed represented combined safety regression.",
+    "aliases": {
+      "finalImproved": "terminalFinalImproved",
+      "finalRegressed": "terminalFinalRegressed"
+    }
+  },
+  "inputFingerprint": "fnv1a:5880fb5e",
+  "discoveryFingerprint": "fnv1a:f6c0f2dc",
+  "reportFingerprint": "fnv1a:cff0beaf",
+  "sourceScorecards": [
+    "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
+    "artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-one-iteration-trajectory-features-no-selected-feature-gate-min-score-delta-0/lns-window-ranker-online-ablation.json",
+    "artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-two-iteration-trajectory-features-no-selected-feature-gate-min-score-delta-0/lns-window-ranker-online-ablation.json"
+  ],
+  "outputArtifacts": [
+    "artifacts/lns-online-selected-feature-gate-discovery/2026-05-10/trajectory-features-generated-protected-no-gate-global-bounded-suppression-search/online-selected-feature-gate-discovery.json",
+    "artifacts/lns-online-selected-feature-gate-discovery/2026-05-10/trajectory-features-generated-protected-no-gate-global-bounded-suppression-search/online-selected-feature-gate-discovery.txt",
+    "artifacts/lns-online-selected-feature-gate-discovery/2026-05-10/trajectory-features-generated-protected-no-gate-global-bounded-suppression-search/telemetry-manifest.json",
+    "artifacts/lns-online-selected-feature-gate-discovery/2026-05-10/trajectory-features-generated-protected-no-gate-global-bounded-suppression-search/manifest.json"
+  ],
+  "metrics": {
+    "overrideTraceCount": 126,
+    "targetImproved": 17,
+    "selectionImproved": 17,
+    "selectionRegressed": 0,
+    "terminalFinalImproved": 7,
+    "terminalFinalRegressed": 11,
+    "finalImproved": 7,
+    "finalRegressed": 11,
+    "safetyRegressed": 16,
+    "totalCandidateAtomCount": 1000,
+    "perFeatureCappedAtomCount": 698,
+    "atomCount": 120,
+    "safeTargetAtomCount": 120,
+    "includedSafeTargetAtomCount": 0,
+    "omittedSafeTargetAtomCount": 120,
+    "includedUnsafeTargetAtomCount": 120,
+    "safeSingletonAdmissionQuota": 0,
+    "conjunctionReservationSearchMaxGroupSize": 3,
+    "conjunctionReservationSupportsRequestedMaxGroupSize": true,
+    "conjunctionReservationSearchExhaustive": false,
+    "conjunctionReservationCoversRequestedMaxGroupSize": false,
+    "conjunctionReservationAvailableUnsafeTargetAtomCount": 880,
+    "conjunctionReservationConsideredUnsafeTargetAtomCount": 120,
+    "conjunctionReservationAvailablePartnerAtomCount": 1000,
+    "conjunctionReservationConsideredPartnerAtomCount": 480,
+    "conjunctionReservationSlicedUnsafeTargetAtoms": true,
+    "conjunctionReservationSlicedPartnerAtoms": true,
+    "conjunctionReservationReachedReservationAtomCap": true,
+    "candidateCount": 41160,
+    "topCandidateCount": 50,
+    "topCandidateCliArg": "operatorScore>=19.96,allowedWindowCells<=1.95,disconnectedBefore<=0.06",
+    "greedySelectedFeatureGateGroups": [
+      [
+        {
+          "feature": "operatorScore",
+          "minValue": 19.96
+        },
+        {
+          "feature": "allowedWindowCells",
+          "maxValue": 1.95
+        },
+        {
+          "feature": "disconnectedBefore",
+          "maxValue": 0.06
+        }
+      ]
+    ],
+    "greedySelectedFeatureGateGroupsCliArg": "operatorScore>=19.96,allowedWindowCells<=1.95,disconnectedBefore<=0.06",
+    "greedyTargetImproved": 17,
+    "greedySelectionImproved": 17,
+    "greedySelectionRegressed": 0,
+    "greedyTerminalFinalImproved": 7,
+    "greedyTerminalFinalRegressed": 0,
+    "greedyFinalImproved": 7,
+    "greedyFinalRegressed": 0,
+    "greedySafetyRegressed": 0,
+    "greedyNeutral": 10,
+    "greedySafeNoRegression": true
+  },
+  "notes": "Diagnostics-only selected-feature gate discovery over online LNS window-ranker override traces; no solver default changed."
+}

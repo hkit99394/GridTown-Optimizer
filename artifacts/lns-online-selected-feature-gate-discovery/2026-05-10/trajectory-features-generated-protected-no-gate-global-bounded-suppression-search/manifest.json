@@ -1,0 +1,27 @@
+{
+  "artifactDir": "artifacts/lns-online-selected-feature-gate-discovery/2026-05-10/trajectory-features-generated-protected-no-gate-global-bounded-suppression-search",
+  "artifactPaths": {
+    "discoveryJson": "artifacts/lns-online-selected-feature-gate-discovery/2026-05-10/trajectory-features-generated-protected-no-gate-global-bounded-suppression-search/online-selected-feature-gate-discovery.json",
+    "discoveryText": "artifacts/lns-online-selected-feature-gate-discovery/2026-05-10/trajectory-features-generated-protected-no-gate-global-bounded-suppression-search/online-selected-feature-gate-discovery.txt",
+    "telemetryManifestJson": "artifacts/lns-online-selected-feature-gate-discovery/2026-05-10/trajectory-features-generated-protected-no-gate-global-bounded-suppression-search/telemetry-manifest.json",
+    "registryEntryDraftJson": "artifacts/lns-online-selected-feature-gate-discovery/2026-05-10/trajectory-features-generated-protected-no-gate-global-bounded-suppression-search/registry-entry-draft.json",
+    "manifestJson": "artifacts/lns-online-selected-feature-gate-discovery/2026-05-10/trajectory-features-generated-protected-no-gate-global-bounded-suppression-search/manifest.json"
+  },
+  "command": "node scripts/discover-lns-online-selected-feature-gates.mjs --source-artifact=artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0 --source-artifact=artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-one-iteration-trajectory-features-no-selected-feature-gate-min-score-delta-0 --source-artifact=artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-two-iteration-trajectory-features-no-selected-feature-gate-min-score-delta-0 --artifact-dir=artifacts/lns-online-selected-feature-gate-discovery/2026-05-10/trajectory-features-generated-protected-no-gate-global-bounded-suppression-search --target=selection-improved --max-group-size=3 --max-atoms-per-feature=20 --max-total-atoms=120 --top=50 --force-artifact-dir",
+  "generatedAt": "2026-05-11T21:20:02.585Z",
+  "target": "selection-improved",
+  "inputFingerprint": "fnv1a:5880fb5e",
+  "discoveryFingerprint": "fnv1a:f6c0f2dc",
+  "reportFingerprint": "fnv1a:cff0beaf",
+  "sourceScorecards": [
+    "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
+    "artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-one-iteration-trajectory-features-no-selected-feature-gate-min-score-delta-0/lns-window-ranker-online-ablation.json",
+    "artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-two-iteration-trajectory-features-no-selected-feature-gate-min-score-delta-0/lns-window-ranker-online-ablation.json"
+  ],
+  "featureAllowlist": null,
+  "generator": {
+    "script": "scripts/discover-lns-online-selected-feature-gates.mjs",
+    "requiresBuild": true,
+    "command": "node scripts/discover-lns-online-selected-feature-gates.mjs --source-artifact=artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0 --source-artifact=artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-one-iteration-trajectory-features-no-selected-feature-gate-min-score-delta-0 --source-artifact=artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-two-iteration-trajectory-features-no-selected-feature-gate-min-score-delta-0 --artifact-dir=artifacts/lns-online-selected-feature-gate-discovery/2026-05-10/trajectory-features-generated-protected-no-gate-global-bounded-suppression-search --target=selection-improved --max-group-size=3 --max-atoms-per-feature=20 --max-total-atoms=120 --top=50 --force-artifact-dir"
+  }
+}

@@ -6,6 +6,31 @@ import url from "node:url";
 
 const SCRIPT_PATH = "scripts/discover-lns-online-selected-feature-gates.mjs";
 const SCORECARD_FILE = "lns-window-ranker-online-ablation.json";
+const DISCOVERY_TARGETS = new Set(["selection-improved", "final-improved"]);
+const DISCOVERY_ARTIFACT_SCHEMA_VERSION = 2;
+const DISCOVERY_IDENTITY_SCHEMA_VERSION = 3;
+const TELEMETRY_MANIFEST_SCHEMA_VERSION = 2;
+const REGISTRY_ENTRY_SCHEMA_VERSION = 2;
+const METRIC_SEMANTICS_VERSION = 2;
+const ATOM_CAP_SUMMARY_SEMANTICS_VERSION = 2;
+const METRIC_SEMANTICS = {
+  targetImproved:
+    "Counts rows that match the selected discovery target. final-improved is attributed only to the terminal override trace with selectedFeatures in each variant.",
+  terminalFinalImproved:
+    "Counts selected terminal override traces with selectedFeatures whose whole variant final outcome improved versus baseline.",
+  terminalFinalRegressed:
+    "Counts selected terminal override traces with selectedFeatures whose whole variant final outcome regressed versus baseline.",
+  safetyRegressed:
+    "Counts selected traces with either a regressed immediate selection outcome or a regressed whole-variant final outcome. Whole-variant final regression is applied to every selected trace in that variant."
+};
+const V2_DEPRECATED_METRIC_ALIASES = {
+  schemaVersion: 2,
+  note: "Schema-v2 compatibility aliases only. Do not use these aliases to reinterpret schema-v1 artifacts, where finalRegressed represented combined safety regression.",
+  aliases: {
+    finalImproved: "terminalFinalImproved",
+    finalRegressed: "terminalFinalRegressed"
+  }
+};
 
 function usage() {
   return [
@@ -18,8 +43,10 @@ function usage() {
     "  --source-scorecard=<path>     Direct path to an online ablation JSON file. Repeatable.",
     "  --artifact-dir=<dir>          Artifact bundle output directory under artifacts/.",
     "  --feature-allowlist=<csv>     Restrict candidate features to these selectedFeatures names.",
+    "  --target=<name>               Gate objective: selection-improved or final-improved. Default: selection-improved.",
     "  --max-group-size=<n>          Maximum conjunction size in atoms. Default: 2.",
     "  --max-atoms-per-feature=<n>   Candidate atom cap per feature. Default: 12.",
+    "  --max-total-atoms=<n>         Global atom cap after per-feature ranking. Default: 120.",
     "  --top=<n>                     Number of ranked groups to keep. Default: 25.",
     "  --force-artifact-dir          Replace an existing artifact directory."
   ].join("\n");
@@ -60,8 +87,10 @@ function parseArgs(argv) {
   const sourceScorecards = [];
   let artifactDir;
   let featureAllowlist;
+  let target = "selection-improved";
   let maxGroupSize = 2;
   let maxAtomsPerFeature = 12;
+  let maxTotalAtoms = 120;
   let top = 25;
   let forceArtifactDir = false;
 
@@ -94,6 +123,10 @@ function parseArgs(argv) {
         .filter((entry) => entry.length > 0);
       continue;
     }
+    if (arg.startsWith("--target=")) {
+      target = normalizeTarget(arg.slice("--target=".length));
+      continue;
+    }
     if (arg.startsWith("--max-group-size=")) {
       maxGroupSize = parsePositiveInteger(arg.slice("--max-group-size=".length), "--max-group-size");
       continue;
@@ -103,6 +136,10 @@ function parseArgs(argv) {
         arg.slice("--max-atoms-per-feature=".length),
         "--max-atoms-per-feature"
       );
+      continue;
+    }
+    if (arg.startsWith("--max-total-atoms=")) {
+      maxTotalAtoms = parsePositiveInteger(arg.slice("--max-total-atoms=".length), "--max-total-atoms");
       continue;
     }
     if (arg.startsWith("--top=")) {
@@ -121,11 +158,22 @@ function parseArgs(argv) {
     sourceScorecards,
     artifactDir,
     featureAllowlist,
+    target,
     maxGroupSize,
     maxAtomsPerFeature,
+    maxTotalAtoms,
     top,
     forceArtifactDir
   };
+}
+
+function normalizeTarget(value) {
+  const normalized = value.trim();
+  const target = normalized === "final" || normalized === "final-lift" ? "final-improved" : normalized;
+  if (!DISCOVERY_TARGETS.has(target)) {
+    throw new Error("--target must be selection-improved or final-improved.");
+  }
+  return target;
 }
 
 function normalizeRepoRelativePath(inputPath) {
@@ -154,12 +202,12 @@ function uniqueSortedNumbers(values) {
   return [...new Set(values.filter(Number.isFinite))].sort((left, right) => left - right);
 }
 
-function formatNumber(value) {
-  return Number.isInteger(value) ? String(value) : String(Number(value.toFixed(6)));
+function stableNumberKey(value) {
+  return Number.isInteger(value) ? String(value) : value.toString();
 }
 
 function rowKey(row) {
-  return `${row.sourceScorecard}\0${row.caseName}\0${row.seed}\0${row.variantIndex}\0${row.traceIndex}`;
+  return `${row.sourceScorecard}\0${row.caseIndex}\0${row.seed}\0${row.variantIndex}\0${row.traceIndex}`;
 }
 
 function extractRows(sourceScorecards) {
@@ -169,17 +217,23 @@ function extractRows(sourceScorecards) {
     for (const [caseIndex, caseResult] of (scorecard.cases ?? []).entries()) {
       for (const [variantIndex, variant] of (caseResult.variants ?? []).entries()) {
         if (variant.variantName !== "window-ranker") continue;
-        for (const [traceIndex, trace] of (variant.selectionTrace ?? []).entries()) {
+        const selectionTrace = variant.selectionTrace ?? [];
+        const terminalSelectedOverrideTraceIndex = selectionTrace.reduce((terminalIndex, trace, traceIndex) => {
+          return trace.selectionStatus === "override" && trace.selectedFeatures ? traceIndex : terminalIndex;
+        }, -1);
+        for (const [traceIndex, trace] of selectionTrace.entries()) {
           if (trace.selectionStatus !== "override" || !trace.selectedFeatures) continue;
+          const finalOutcomeAttributed = traceIndex === terminalSelectedOverrideTraceIndex;
           rows.push({
             key: rowKey({
               sourceScorecard,
-              caseName: caseResult.name ?? `case-${caseIndex}`,
+              caseIndex,
               seed: caseResult.seed ?? variant.seed ?? "unknown",
               variantIndex,
               traceIndex
             }),
             sourceScorecard,
+            caseIndex,
             caseName: caseResult.name ?? `case-${caseIndex}`,
             pressureFamily: caseResult.pressureFamily ?? null,
             seed: caseResult.seed ?? variant.seed ?? null,
@@ -192,6 +246,10 @@ function extractRows(sourceScorecards) {
             scoreDelta: trace.scoreDelta ?? null,
             selectionOutcomeStatus: trace.outcomeStatus ?? "unknown",
             selectionImprovement: trace.improvement ?? 0,
+            finalOutcomeAttributed,
+            finalOutcomeAttribution: finalOutcomeAttributed
+              ? "terminal-selected-override-trace"
+              : "not-terminal-selected-override-trace",
             finalOutcomeStatus: variant.finalOutcome?.status ?? "unknown",
             finalPopulationDelta:
               variant.finalOutcome?.populationDeltaVsBaseline ?? variant.populationDeltaVsBaseline ?? 0,
@@ -204,12 +262,22 @@ function extractRows(sourceScorecards) {
   return rows;
 }
 
-function isPositive(row) {
-  return row.selectionOutcomeStatus === "improved";
+function isPositive(row, target) {
+  return target === "final-improved"
+    ? row.finalOutcomeAttributed && row.finalOutcomeStatus === "improved"
+    : row.selectionOutcomeStatus === "improved";
 }
 
-function isRegression(row) {
-  return row.selectionOutcomeStatus === "regressed" || row.finalOutcomeStatus === "regressed";
+function isSelectionRegression(row) {
+  return row.selectionOutcomeStatus === "regressed";
+}
+
+function isFinalRegression(row) {
+  return row.finalOutcomeAttributed && row.finalOutcomeStatus === "regressed";
+}
+
+function isSafetyRegression(row) {
+  return isSelectionRegression(row) || row.finalOutcomeStatus === "regressed";
 }
 
 function gatePasses(row, gate) {
@@ -233,31 +301,40 @@ function atomToGates(atom) {
 }
 
 function atomSignature(atom) {
-  return `${atom.feature}:${atom.kind}:${formatNumber(atom.value)}`;
+  return `${atom.feature}:${atom.kind}:${stableNumberKey(atom.value)}`;
 }
 
 function gateCliArg(gate) {
   return gate.minValue === undefined
-    ? `${gate.feature}<=${formatNumber(gate.maxValue)}`
-    : `${gate.feature}>=${formatNumber(gate.minValue)}`;
+    ? `${gate.feature}<=${stableNumberKey(gate.maxValue)}`
+    : `${gate.feature}>=${stableNumberKey(gate.minValue)}`;
 }
 
 function gatesCliArg(gates) {
   return gates.map(gateCliArg).join(",");
 }
 
-function evaluatePredicate(rows, predicate) {
+function evaluatePredicate(rows, predicate, target) {
   const selectedRows = rows.filter(predicate);
   const selectedKeys = selectedRows.map((row) => row.key);
-  const positiveKeys = selectedRows.filter(isPositive).map((row) => row.key);
-  const regressionRows = selectedRows.filter(isRegression);
+  const positiveKeys = selectedRows.filter((row) => isPositive(row, target)).map((row) => row.key);
+  const selectionRegressionRows = selectedRows.filter(isSelectionRegression);
+  const finalRegressionRows = selectedRows.filter(isFinalRegression);
+  const safetyRegressionRows = selectedRows.filter(isSafetyRegression);
   return {
     selected: selectedRows.length,
-    selectionImproved: positiveKeys.length,
-    selectionRegressed: selectedRows.filter((row) => row.selectionOutcomeStatus === "regressed").length,
-    finalImproved: selectedRows.filter((row) => row.finalOutcomeStatus === "improved").length,
-    finalRegressed: regressionRows.length,
-    neutral: selectedRows.filter((row) => !isPositive(row) && !isRegression(row)).length,
+    targetImproved: positiveKeys.length,
+    selectionImproved: selectedRows.filter((row) => row.selectionOutcomeStatus === "improved").length,
+    selectionRegressed: selectionRegressionRows.length,
+    terminalFinalImproved: selectedRows.filter(
+      (row) => row.finalOutcomeAttributed && row.finalOutcomeStatus === "improved"
+    ).length,
+    terminalFinalRegressed: finalRegressionRows.length,
+    finalImproved: selectedRows.filter((row) => row.finalOutcomeAttributed && row.finalOutcomeStatus === "improved")
+      .length,
+    finalRegressed: finalRegressionRows.length,
+    safetyRegressed: safetyRegressionRows.length,
+    neutral: selectedRows.filter((row) => !isPositive(row, target) && !isSafetyRegression(row)).length,
     unknown: selectedRows.filter(
       (row) => row.selectionOutcomeStatus === "unknown" || row.finalOutcomeStatus === "unknown"
     ).length,
@@ -265,31 +342,74 @@ function evaluatePredicate(rows, predicate) {
     worstFinalDelta: selectedRows.length ? Math.min(...selectedRows.map((row) => row.finalPopulationDelta ?? 0)) : 0,
     selectedKeys,
     positiveKeys,
-    regressionExamples: regressionRows.slice(0, 8).map(rowExample),
-    positiveExamples: selectedRows.filter(isPositive).slice(0, 8).map(rowExample)
+    regressionExamples: safetyRegressionRows.slice(0, 8).map(rowExample),
+    selectionRegressionExamples: selectionRegressionRows.slice(0, 8).map(rowExample),
+    finalRegressionExamples: finalRegressionRows.slice(0, 8).map(rowExample),
+    safetyRegressionExamples: safetyRegressionRows.slice(0, 8).map(rowExample),
+    positiveExamples: selectedRows
+      .filter((row) => isPositive(row, target))
+      .slice(0, 8)
+      .map(rowExample)
   };
 }
 
 function rowExample(row) {
   return {
     sourceScorecard: row.sourceScorecard,
+    caseIndex: row.caseIndex,
     caseName: row.caseName,
     pressureFamily: row.pressureFamily,
     seed: row.seed,
+    variantIndex: row.variantIndex,
+    traceIndex: row.traceIndex,
     iteration: row.iteration,
     transition: row.transition,
     selectedOperator: row.selectedOperator,
     selectedWindow: row.selectedWindow,
     selectionOutcomeStatus: row.selectionOutcomeStatus,
+    finalOutcomeAttributed: row.finalOutcomeAttributed,
+    finalOutcomeAttribution: row.finalOutcomeAttribution,
     finalOutcomeStatus: row.finalOutcomeStatus,
     finalPopulationDelta: row.finalPopulationDelta,
     selectedFeatures: row.selectedFeatures
   };
 }
 
+function canonicalJsonValue(value) {
+  if (Array.isArray(value)) return value.map(canonicalJsonValue);
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(
+    Object.keys(value)
+      .sort()
+      .map((key) => [key, canonicalJsonValue(value[key])])
+  );
+}
+
+function exampleReportProjection(example) {
+  return {
+    sourceScorecard: example.sourceScorecard,
+    caseIndex: example.caseIndex,
+    caseName: example.caseName,
+    pressureFamily: example.pressureFamily,
+    seed: example.seed,
+    variantIndex: example.variantIndex,
+    traceIndex: example.traceIndex,
+    iteration: example.iteration,
+    transition: example.transition,
+    selectedOperator: example.selectedOperator,
+    selectedWindow: canonicalJsonValue(example.selectedWindow),
+    selectionOutcomeStatus: example.selectionOutcomeStatus,
+    finalOutcomeAttributed: example.finalOutcomeAttributed,
+    finalOutcomeAttribution: example.finalOutcomeAttribution,
+    finalOutcomeStatus: example.finalOutcomeStatus,
+    finalPopulationDelta: example.finalPopulationDelta,
+    selectedFeatures: canonicalJsonValue(example.selectedFeatures)
+  };
+}
+
 function compareCandidates(left, right) {
-  if (left.selectionImproved !== right.selectionImproved) return right.selectionImproved - left.selectionImproved;
-  if (left.finalRegressed !== right.finalRegressed) return left.finalRegressed - right.finalRegressed;
+  if (left.targetImproved !== right.targetImproved) return right.targetImproved - left.targetImproved;
+  if (left.safetyRegressed !== right.safetyRegressed) return left.safetyRegressed - right.safetyRegressed;
   if (left.neutral !== right.neutral) return left.neutral - right.neutral;
   if (left.selected !== right.selected) return left.selected - right.selected;
   if (left.atomCount !== right.atomCount) return left.atomCount - right.atomCount;
@@ -297,15 +417,354 @@ function compareCandidates(left, right) {
 }
 
 function compareAtoms(left, right) {
-  if (left.selectionImproved !== right.selectionImproved) return right.selectionImproved - left.selectionImproved;
-  if (left.finalRegressed !== right.finalRegressed) return left.finalRegressed - right.finalRegressed;
+  if (left.targetImproved !== right.targetImproved) return right.targetImproved - left.targetImproved;
+  if (left.safetyRegressed !== right.safetyRegressed) return left.safetyRegressed - right.safetyRegressed;
   if (left.neutral !== right.neutral) return left.neutral - right.neutral;
   if (left.selected !== right.selected) return left.selected - right.selected;
   return left.signature.localeCompare(right.signature);
 }
 
-function buildAtoms(rows, features, maxAtomsPerFeature) {
-  return features.flatMap((feature) => {
+function compareAtomsSafetyFirst(left, right) {
+  if (left.safetyRegressed !== right.safetyRegressed) return left.safetyRegressed - right.safetyRegressed;
+  if (left.targetImproved !== right.targetImproved) return right.targetImproved - left.targetImproved;
+  if (left.neutral !== right.neutral) return left.neutral - right.neutral;
+  if (left.selected !== right.selected) return left.selected - right.selected;
+  return left.signature.localeCompare(right.signature);
+}
+
+function atomComparatorForTarget(target) {
+  return target === "final-improved" ? compareAtomsSafetyFirst : compareAtoms;
+}
+
+function sortedUniqueAtoms(atoms, compareAtomsForTarget) {
+  const seen = new Set();
+  const unique = [];
+  for (const atom of atoms.sort(compareAtomsForTarget)) {
+    if (seen.has(atom.signature)) continue;
+    seen.add(atom.signature);
+    unique.push(atom);
+  }
+  return unique;
+}
+
+function discoverConjunctionReservations(rawAtoms, rows, target, maxGroupSize, maxTotalAtoms) {
+  if (maxGroupSize < 2 || maxTotalAtoms < 2) {
+    return {
+      reservedAtoms: [],
+      reservedConjunctions: [],
+      reservedPairs: [],
+      requestedMaxGroupSize: maxGroupSize,
+      searchMaxGroupSize: maxGroupSize < 2 ? 1 : maxGroupSize,
+      supportsRequestedMaxGroupSize: true,
+      reservationSearchExhaustive: true,
+      coversRequestedMaxGroupSize: true,
+      searchDescription: "No conjunction reservation search needed for singleton-only discovery.",
+      availableUnsafeTargetAtomCount: 0,
+      consideredUnsafeTargetAtomCount: 0,
+      availablePartnerAtomCount: 0,
+      consideredPartnerAtomCount: 0,
+      evaluatedConjunctionGroupCount: 0,
+      maxEvaluatedConjunctionGroupCount: 0,
+      evaluatedPairCount: 0,
+      maxEvaluatedPairCount: 0
+    };
+  }
+  const compareTargetAtoms = atomComparatorForTarget(target);
+  const availableUnsafeTargetAtoms = rawAtoms
+    .filter((atom) => atom.safetyRegressed > 0 && atom.targetImproved > 0)
+    .sort(compareTargetAtoms);
+  const availablePartnerAtoms = rawAtoms.filter((atom) => atom.targetImproved > 0).sort(compareTargetAtoms);
+  const unsafeTargetAtomConsiderationLimit = Math.max(maxTotalAtoms, 8);
+  const partnerAtomConsiderationLimit = Math.max(maxTotalAtoms * 4, 16);
+  const unsafeTargetAtoms = availableUnsafeTargetAtoms.slice(0, unsafeTargetAtomConsiderationLimit);
+  const partnerAtoms = availablePartnerAtoms.slice(0, partnerAtomConsiderationLimit);
+  const slicedUnsafeTargetAtoms = unsafeTargetAtoms.length < availableUnsafeTargetAtoms.length;
+  const slicedPartnerAtoms = partnerAtoms.length < availablePartnerAtoms.length;
+  const maxEvaluatedConjunctionGroupCount = Math.max(maxTotalAtoms * 128 * (maxGroupSize - 1), 128);
+  const reserved = new Map();
+  const reservedConjunctions = [];
+  const evaluatedSignatures = new Set();
+  let evaluatedConjunctionGroupCount = 0;
+  let evaluatedConjunctionPairCount = 0;
+  let exhaustedSearchBudget = false;
+  let reachedReservationAtomCap = false;
+
+  for (const unsafeAtom of unsafeTargetAtoms) {
+    const group = [unsafeAtom];
+    const usedFeatures = new Set([unsafeAtom.feature]);
+
+    function visit(start) {
+      if (reserved.size >= maxTotalAtoms || exhaustedSearchBudget) {
+        if (reserved.size >= maxTotalAtoms) reachedReservationAtomCap = true;
+        return;
+      }
+      if (group.length >= 2) {
+        const signature = group
+          .map((atom) => atom.signature)
+          .sort()
+          .join("|");
+        if (!evaluatedSignatures.has(signature)) {
+          evaluatedSignatures.add(signature);
+          evaluatedConjunctionGroupCount += 1;
+          if (group.length === 2) evaluatedConjunctionPairCount += 1;
+          if (evaluatedConjunctionGroupCount > maxEvaluatedConjunctionGroupCount) {
+            exhaustedSearchBudget = true;
+            return;
+          }
+          const missingAtoms = group.filter((atom) => !reserved.has(atom.signature));
+          if (reserved.size + missingAtoms.length <= maxTotalAtoms) {
+            const candidate = buildCandidate(group, rows, target);
+            if (candidate.safeNoRegression) {
+              for (const atom of missingAtoms) reserved.set(atom.signature, atom);
+              reservedConjunctions.push({
+                atomCount: candidate.atomCount,
+                cliArg: candidate.cliArg,
+                targetImproved: candidate.targetImproved,
+                selected: candidate.selected
+              });
+              if (reserved.size >= maxTotalAtoms) {
+                reachedReservationAtomCap = true;
+                return;
+              }
+            }
+          }
+        }
+      }
+      if (group.length >= maxGroupSize) return;
+      for (let index = start; index < partnerAtoms.length; index += 1) {
+        const partnerAtom = partnerAtoms[index];
+        if (unsafeAtom.signature === partnerAtom.signature || usedFeatures.has(partnerAtom.feature)) continue;
+        usedFeatures.add(partnerAtom.feature);
+        group.push(partnerAtom);
+        visit(index + 1);
+        group.pop();
+        usedFeatures.delete(partnerAtom.feature);
+        if (reserved.size >= maxTotalAtoms || exhaustedSearchBudget) return;
+      }
+    }
+
+    visit(0);
+    if (exhaustedSearchBudget || reserved.size >= maxTotalAtoms) {
+      if (reserved.size >= maxTotalAtoms) reachedReservationAtomCap = true;
+      break;
+    }
+  }
+
+  const reservedPairs = reservedConjunctions.filter((candidate) => candidate.atomCount === 2);
+  const searchMaxGroupSize = maxGroupSize;
+  const supportsRequestedMaxGroupSize = searchMaxGroupSize >= maxGroupSize;
+  const reservationSearchExhaustive =
+    !slicedUnsafeTargetAtoms && !slicedPartnerAtoms && !exhaustedSearchBudget && !reachedReservationAtomCap;
+  return {
+    reservedAtoms: sortedUniqueAtoms([...reserved.values()], compareTargetAtoms),
+    reservedConjunctions,
+    reservedPairs,
+    requestedMaxGroupSize: maxGroupSize,
+    searchMaxGroupSize,
+    supportsRequestedMaxGroupSize,
+    reservationSearchExhaustive,
+    coversRequestedMaxGroupSize: supportsRequestedMaxGroupSize && reservationSearchExhaustive,
+    searchDescription: reservationSearchExhaustive
+      ? "Exhaustive recursive reservation search up to requested --max-group-size; full candidate enumeration honors --max-group-size."
+      : "Bounded recursive reservation search up to requested --max-group-size; full candidate enumeration honors --max-group-size.",
+    availableUnsafeTargetAtomCount: availableUnsafeTargetAtoms.length,
+    consideredUnsafeTargetAtomCount: unsafeTargetAtoms.length,
+    availablePartnerAtomCount: availablePartnerAtoms.length,
+    consideredPartnerAtomCount: partnerAtoms.length,
+    slicedUnsafeTargetAtoms,
+    slicedPartnerAtoms,
+    reachedReservationAtomCap,
+    exhaustedSearchBudget,
+    evaluatedConjunctionGroupCount,
+    maxEvaluatedConjunctionGroupCount,
+    evaluatedPairCount: evaluatedConjunctionPairCount,
+    maxEvaluatedPairCount: maxEvaluatedConjunctionGroupCount
+  };
+}
+
+function selectCappedAtoms(
+  rawAtoms,
+  maxTotalAtoms,
+  target,
+  { rows = [], maxGroupSize = 1, reservationAtoms = rawAtoms } = {}
+) {
+  const compareTargetAtoms = atomComparatorForTarget(target);
+  const sortedRawAtoms = rawAtoms.slice().sort(compareTargetAtoms);
+  const sortedReservationAtoms = sortedUniqueAtoms(reservationAtoms.slice(), compareTargetAtoms);
+  const conjunctionReservations = discoverConjunctionReservations(
+    sortedReservationAtoms,
+    rows,
+    target,
+    maxGroupSize,
+    maxTotalAtoms
+  );
+  const rawAtomSignatures = new Set(sortedRawAtoms.map((atom) => atom.signature));
+  const hasExternalReservedAtom = conjunctionReservations.reservedAtoms.some(
+    (atom) => !rawAtomSignatures.has(atom.signature)
+  );
+  if (rawAtoms.length <= maxTotalAtoms && !hasExternalReservedAtom) {
+    return {
+      atoms: sortedRawAtoms,
+      capDetails: {
+        strategy: "uncapped",
+        reservationCandidateAtomCount: sortedReservationAtoms.length,
+        conjunctionReservations
+      }
+    };
+  }
+
+  const selectedAtoms = [];
+  const selectedSignatures = new Set();
+  const addAtom = (atom) => {
+    if (selectedAtoms.length >= maxTotalAtoms || selectedSignatures.has(atom.signature)) return false;
+    selectedAtoms.push(atom);
+    selectedSignatures.add(atom.signature);
+    return true;
+  };
+
+  const safeTargetAtoms = sortedRawAtoms.filter((atom) => atom.safetyRegressed === 0 && atom.targetImproved > 0);
+  for (const atom of conjunctionReservations.reservedAtoms) addAtom(atom);
+
+  const safeSingletonCapacity = Math.max(0, maxTotalAtoms - selectedAtoms.length);
+  const safeSingletonAdmissionQuota =
+    safeTargetAtoms.length === 0 || safeSingletonCapacity === 0
+      ? 0
+      : Math.min(safeTargetAtoms.length, safeSingletonCapacity, Math.max(1, Math.ceil(maxTotalAtoms / 2)));
+  for (const safeAtom of safeTargetAtoms.slice(0, safeSingletonAdmissionQuota)) addAtom(safeAtom);
+
+  const safeAtoms = sortedRawAtoms.filter((atom) => atom.safetyRegressed === 0);
+  for (const safeAtom of safeAtoms) addAtom(safeAtom);
+
+  for (const atom of sortedRawAtoms) addAtom(atom);
+
+  return {
+    atoms: selectedAtoms.sort(compareTargetAtoms),
+    capDetails: {
+      strategy: maxGroupSize > 1 ? "conjunction-reservations-first-safe-singleton-fill" : "safe-singleton-first",
+      safeSingletonAdmissionQuota,
+      reservationCandidateAtomCount: sortedReservationAtoms.length,
+      conjunctionReservations
+    }
+  };
+}
+
+function atomCapSummary(totalCandidateAtoms, perFeatureCappedAtoms, atoms, capDetails) {
+  const included = new Set(atoms.map((atom) => atom.signature));
+  const perFeatureCapped = new Set(perFeatureCappedAtoms.map((atom) => atom.signature));
+  const safeTargetAtoms = totalCandidateAtoms.filter((atom) => atom.safetyRegressed === 0 && atom.targetImproved > 0);
+  const unsafeTargetAtoms = totalCandidateAtoms.filter((atom) => atom.safetyRegressed > 0 && atom.targetImproved > 0);
+  const perFeatureCappedSafeTargetAtoms = perFeatureCappedAtoms.filter(
+    (atom) => atom.safetyRegressed === 0 && atom.targetImproved > 0
+  );
+  const perFeatureCappedUnsafeTargetAtoms = perFeatureCappedAtoms.filter(
+    (atom) => atom.safetyRegressed > 0 && atom.targetImproved > 0
+  );
+  const reservedConjunctionAtoms = capDetails?.conjunctionReservations?.reservedAtoms ?? [];
+  const reservedConjunctionAtomSignatures = new Set(reservedConjunctionAtoms.map((atom) => atom.signature));
+  return {
+    strategy: capDetails?.strategy ?? "unknown",
+    safeSingletonAdmissionQuota: capDetails?.safeSingletonAdmissionQuota ?? 0,
+    candidateAtomUniverseCount: totalCandidateAtoms.length,
+    perFeatureCappedAtomCount: perFeatureCappedAtoms.length,
+    perFeatureOmittedAtomCount: totalCandidateAtoms.filter((atom) => !perFeatureCapped.has(atom.signature)).length,
+    reservationCandidateAtomCount:
+      capDetails?.reservationCandidateAtomCount ?? capDetails?.conjunctionReservations?.reservedAtoms?.length ?? 0,
+    safeTargetAtomCount: safeTargetAtoms.length,
+    unsafeTargetAtomCount: unsafeTargetAtoms.length,
+    perFeatureCappedSafeTargetAtomCount: perFeatureCappedSafeTargetAtoms.length,
+    perFeatureCappedUnsafeTargetAtomCount: perFeatureCappedUnsafeTargetAtoms.length,
+    includedSafeTargetAtomCount: safeTargetAtoms.filter((atom) => included.has(atom.signature)).length,
+    omittedSafeTargetAtomCount: safeTargetAtoms.filter((atom) => !included.has(atom.signature)).length,
+    includedUnsafeTargetAtomCount: unsafeTargetAtoms.filter((atom) => included.has(atom.signature)).length,
+    omittedUnsafeTargetAtomCount: unsafeTargetAtoms.filter((atom) => !included.has(atom.signature)).length,
+    reservedConjunctionAtomCount: reservedConjunctionAtoms.length,
+    reservedPerFeatureOmittedConjunctionAtomCount: reservedConjunctionAtoms.filter(
+      (atom) => !perFeatureCapped.has(atom.signature)
+    ).length,
+    includedReservedConjunctionAtomCount: reservedConjunctionAtoms.filter((atom) => included.has(atom.signature))
+      .length,
+    omittedReservedConjunctionAtomCount: reservedConjunctionAtoms.filter((atom) => !included.has(atom.signature))
+      .length,
+    reservedUnsafeConjunctionAtomCount: unsafeTargetAtoms.filter((atom) =>
+      reservedConjunctionAtomSignatures.has(atom.signature)
+    ).length,
+    conjunctionReservationRequestedMaxGroupSize: capDetails?.conjunctionReservations?.requestedMaxGroupSize ?? 1,
+    conjunctionReservationSearchMaxGroupSize: capDetails?.conjunctionReservations?.searchMaxGroupSize ?? 1,
+    conjunctionReservationSupportsRequestedMaxGroupSize:
+      capDetails?.conjunctionReservations?.supportsRequestedMaxGroupSize ?? true,
+    conjunctionReservationSearchExhaustive: capDetails?.conjunctionReservations?.reservationSearchExhaustive ?? true,
+    conjunctionReservationCoversRequestedMaxGroupSize:
+      capDetails?.conjunctionReservations?.coversRequestedMaxGroupSize ?? true,
+    conjunctionReservationSearchDescription:
+      capDetails?.conjunctionReservations?.searchDescription ??
+      "Bounded recursive reservation search up to requested --max-group-size; full candidate enumeration honors --max-group-size.",
+    conjunctionReservationAvailableUnsafeTargetAtomCount:
+      capDetails?.conjunctionReservations?.availableUnsafeTargetAtomCount ?? 0,
+    conjunctionReservationConsideredUnsafeTargetAtomCount:
+      capDetails?.conjunctionReservations?.consideredUnsafeTargetAtomCount ?? 0,
+    conjunctionReservationAvailablePartnerAtomCount:
+      capDetails?.conjunctionReservations?.availablePartnerAtomCount ?? 0,
+    conjunctionReservationConsideredPartnerAtomCount:
+      capDetails?.conjunctionReservations?.consideredPartnerAtomCount ?? 0,
+    conjunctionReservationSlicedUnsafeTargetAtoms:
+      capDetails?.conjunctionReservations?.slicedUnsafeTargetAtoms ?? false,
+    conjunctionReservationSlicedPartnerAtoms: capDetails?.conjunctionReservations?.slicedPartnerAtoms ?? false,
+    conjunctionReservationReachedReservationAtomCap:
+      capDetails?.conjunctionReservations?.reachedReservationAtomCap ?? false,
+    reservedConjunctionGroupCount: capDetails?.conjunctionReservations?.reservedConjunctions?.length ?? 0,
+    reservedConjunctionPairCount: capDetails?.conjunctionReservations?.reservedPairs?.length ?? 0,
+    reservedConjunctionTripleCount:
+      capDetails?.conjunctionReservations?.reservedConjunctions?.filter((candidate) => candidate.atomCount === 3)
+        .length ?? 0,
+    conjunctionReservationExhaustedSearchBudget: capDetails?.conjunctionReservations?.exhaustedSearchBudget ?? false,
+    conjunctionReservationEvaluatedGroupCount: capDetails?.conjunctionReservations?.evaluatedConjunctionGroupCount ?? 0,
+    conjunctionReservationMaxEvaluatedGroupCount:
+      capDetails?.conjunctionReservations?.maxEvaluatedConjunctionGroupCount ?? 0,
+    conjunctionReservationEvaluatedPairCount: capDetails?.conjunctionReservations?.evaluatedPairCount ?? 0,
+    conjunctionReservationMaxEvaluatedPairCount: capDetails?.conjunctionReservations?.maxEvaluatedPairCount ?? 0,
+    reservedConjunctionExamples: (capDetails?.conjunctionReservations?.reservedConjunctions ?? []).slice(0, 8)
+  };
+}
+
+function selectCappedFeatureAtoms(featureAtoms, maxAtomsPerFeature, target, maxGroupSize) {
+  const compareTargetAtoms = atomComparatorForTarget(target);
+  const sortedFeatureAtoms = featureAtoms.slice().sort(compareTargetAtoms);
+  if (sortedFeatureAtoms.length <= maxAtomsPerFeature) return sortedFeatureAtoms;
+
+  const selectedAtoms = [];
+  const selectedSignatures = new Set();
+  const addAtom = (atom) => {
+    if (selectedAtoms.length >= maxAtomsPerFeature || selectedSignatures.has(atom.signature)) return false;
+    selectedAtoms.push(atom);
+    selectedSignatures.add(atom.signature);
+    return true;
+  };
+
+  const unsafeReservation =
+    maxGroupSize > 1 && maxAtomsPerFeature >= 2
+      ? Math.min(
+          sortedFeatureAtoms.filter((atom) => atom.safetyRegressed > 0).length,
+          Math.max(1, Math.floor(maxAtomsPerFeature / 3))
+        )
+      : 0;
+  const safeCapacity = Math.max(0, maxAtomsPerFeature - unsafeReservation);
+  for (const atom of sortedFeatureAtoms.filter((candidate) => candidate.safetyRegressed === 0).slice(0, safeCapacity)) {
+    addAtom(atom);
+  }
+  for (const atom of sortedFeatureAtoms
+    .filter((candidate) => candidate.safetyRegressed > 0)
+    .slice(0, unsafeReservation)) {
+    addAtom(atom);
+  }
+  for (const atom of sortedFeatureAtoms) addAtom(atom);
+  return selectedAtoms.sort(compareTargetAtoms);
+}
+
+function buildAtoms(rows, features, maxAtomsPerFeature, target, maxGroupSize) {
+  const compareTargetAtoms = atomComparatorForTarget(target);
+  const totalCandidateAtoms = [];
+  const perFeatureCappedAtoms = [];
+  for (const feature of features) {
     const featureAtoms = uniqueSortedNumbers(rows.map((row) => row.selectedFeatures[feature]))
       .flatMap((value) => [
         { feature, kind: "eq", value },
@@ -316,39 +775,44 @@ function buildAtoms(rows, features, maxAtomsPerFeature) {
         ...atom,
         signature: atomSignature(atom),
         gates: atomToGates(atom),
-        ...evaluatePredicate(rows, (row) => atomToGates(atom).every((gate) => gatePasses(row, gate)))
+        ...evaluatePredicate(rows, (row) => atomToGates(atom).every((gate) => gatePasses(row, gate)), target)
       }))
-      .filter((atom) => atom.selectionImproved > 0)
-      .sort(compareAtoms);
-    return featureAtoms.slice(0, maxAtomsPerFeature);
-  });
+      .filter((atom) => atom.targetImproved > 0)
+      .sort(compareTargetAtoms);
+    totalCandidateAtoms.push(...featureAtoms);
+    perFeatureCappedAtoms.push(...selectCappedFeatureAtoms(featureAtoms, maxAtomsPerFeature, target, maxGroupSize));
+  }
+  return {
+    totalCandidateAtoms: sortedUniqueAtoms(totalCandidateAtoms, compareTargetAtoms),
+    perFeatureCappedAtoms: sortedUniqueAtoms(perFeatureCappedAtoms, compareTargetAtoms)
+  };
 }
 
-function buildCandidate(atomGroup, rows) {
+function buildCandidate(atomGroup, rows, target) {
   const gates = atomGroup.flatMap(atomToGates);
   const cliArg = gatesCliArg(gates);
-  const metrics = evaluatePredicate(rows, (row) => gates.every((gate) => gatePasses(row, gate)));
+  const metrics = evaluatePredicate(rows, (row) => gates.every((gate) => gatePasses(row, gate)), target);
   return {
     atomCount: atomGroup.length,
     atoms: atomGroup.map(({ feature, kind, value, signature }) => ({ feature, kind, value, signature })),
     gates,
     cliArg,
     ...metrics,
-    safeNoRegression: metrics.selected > 0 && metrics.selectionImproved > 0 && metrics.finalRegressed === 0
+    safeNoRegression: metrics.selected > 0 && metrics.targetImproved > 0 && metrics.safetyRegressed === 0
   };
 }
 
-function enumerateCandidates(rows, atoms, maxGroupSize) {
+function enumerateCandidates(rows, atoms, maxGroupSize, target) {
   const candidates = [];
   const seen = new Set();
 
   function visit(start, group, usedFeatures) {
     if (group.length > 0) {
-      const candidate = buildCandidate(group, rows);
+      const candidate = buildCandidate(group, rows, target);
       const signature = candidate.cliArg;
       if (!seen.has(signature)) {
         seen.add(signature);
-        if (candidate.selectionImproved > 0 && candidate.finalRegressed === 0) candidates.push(candidate);
+        if (candidate.targetImproved > 0 && candidate.safetyRegressed === 0) candidates.push(candidate);
       }
     }
     if (group.length >= maxGroupSize) return;
@@ -367,8 +831,8 @@ function enumerateCandidates(rows, atoms, maxGroupSize) {
   return candidates.sort(compareCandidates);
 }
 
-function buildGreedyGroupSet(rows, candidates) {
-  const uncovered = new Set(rows.filter(isPositive).map((row) => row.key));
+function buildGreedyGroupSet(rows, candidates, target) {
+  const uncovered = new Set(rows.filter((row) => isPositive(row, target)).map((row) => row.key));
   const selectedGroups = [];
   const selectedKeys = new Set();
   for (const candidate of candidates) {
@@ -379,13 +843,19 @@ function buildGreedyGroupSet(rows, candidates) {
     for (const key of candidate.positiveKeys) uncovered.delete(key);
     if (uncovered.size === 0) break;
   }
-  const metrics = evaluatePredicate(rows, (row) => selectedKeys.has(row.key));
+  const metrics = evaluatePredicate(rows, (row) => selectedKeys.has(row.key), target);
   return {
     groups: selectedGroups.map((candidate) => ({
       gates: candidate.gates,
       cliArg: candidate.cliArg,
+      targetImproved: candidate.targetImproved,
       selectionImproved: candidate.selectionImproved,
+      selectionRegressed: candidate.selectionRegressed,
+      terminalFinalImproved: candidate.terminalFinalImproved,
+      terminalFinalRegressed: candidate.terminalFinalRegressed,
+      finalImproved: candidate.finalImproved,
       finalRegressed: candidate.finalRegressed,
+      safetyRegressed: candidate.safetyRegressed,
       neutral: candidate.neutral,
       selected: candidate.selected
     })),
@@ -393,7 +863,198 @@ function buildGreedyGroupSet(rows, candidates) {
     cliArg: selectedGroups.map((candidate) => candidate.cliArg).join(";"),
     uncoveredPositiveCount: uncovered.size,
     ...metrics,
-    safeNoRegression: metrics.selected > 0 && metrics.selectionImproved > 0 && metrics.finalRegressed === 0
+    safeNoRegression: metrics.selected > 0 && metrics.targetImproved > 0 && metrics.safetyRegressed === 0
+  };
+}
+
+function candidateReportProjection(candidate) {
+  return {
+    atomCount: candidate.atomCount,
+    atoms: candidate.atoms,
+    gates: candidate.gates,
+    cliArg: candidate.cliArg,
+    selected: candidate.selected,
+    targetImproved: candidate.targetImproved,
+    selectionImproved: candidate.selectionImproved,
+    selectionRegressed: candidate.selectionRegressed,
+    terminalFinalImproved: candidate.terminalFinalImproved,
+    terminalFinalRegressed: candidate.terminalFinalRegressed,
+    finalImproved: candidate.finalImproved,
+    finalRegressed: candidate.finalRegressed,
+    safetyRegressed: candidate.safetyRegressed,
+    neutral: candidate.neutral,
+    unknown: candidate.unknown,
+    bestFinalDelta: candidate.bestFinalDelta,
+    worstFinalDelta: candidate.worstFinalDelta,
+    safeNoRegression: candidate.safeNoRegression,
+    positiveExamples: candidate.positiveExamples.map(exampleReportProjection),
+    regressionExamples: candidate.regressionExamples.map(exampleReportProjection),
+    selectionRegressionExamples: candidate.selectionRegressionExamples.map(exampleReportProjection),
+    finalRegressionExamples: candidate.finalRegressionExamples.map(exampleReportProjection),
+    safetyRegressionExamples: candidate.safetyRegressionExamples.map(exampleReportProjection)
+  };
+}
+
+function canonicalCappedAtomSummary(summary) {
+  return {
+    semanticsVersion: ATOM_CAP_SUMMARY_SEMANTICS_VERSION,
+    strategy: summary.strategy,
+    safeSingletonAdmissionQuota: summary.safeSingletonAdmissionQuota,
+    candidateAtomUniverseCount: summary.candidateAtomUniverseCount,
+    perFeatureCappedAtomCount: summary.perFeatureCappedAtomCount,
+    perFeatureOmittedAtomCount: summary.perFeatureOmittedAtomCount,
+    reservationCandidateAtomCount: summary.reservationCandidateAtomCount,
+    safeTargetAtomCount: summary.safeTargetAtomCount,
+    unsafeTargetAtomCount: summary.unsafeTargetAtomCount,
+    perFeatureCappedSafeTargetAtomCount: summary.perFeatureCappedSafeTargetAtomCount,
+    perFeatureCappedUnsafeTargetAtomCount: summary.perFeatureCappedUnsafeTargetAtomCount,
+    includedSafeTargetAtomCount: summary.includedSafeTargetAtomCount,
+    omittedSafeTargetAtomCount: summary.omittedSafeTargetAtomCount,
+    includedUnsafeTargetAtomCount: summary.includedUnsafeTargetAtomCount,
+    omittedUnsafeTargetAtomCount: summary.omittedUnsafeTargetAtomCount,
+    reservedConjunctionAtomCount: summary.reservedConjunctionAtomCount,
+    reservedPerFeatureOmittedConjunctionAtomCount: summary.reservedPerFeatureOmittedConjunctionAtomCount,
+    includedReservedConjunctionAtomCount: summary.includedReservedConjunctionAtomCount,
+    omittedReservedConjunctionAtomCount: summary.omittedReservedConjunctionAtomCount,
+    reservedUnsafeConjunctionAtomCount: summary.reservedUnsafeConjunctionAtomCount,
+    conjunctionReservationRequestedMaxGroupSize: summary.conjunctionReservationRequestedMaxGroupSize,
+    conjunctionReservationSearchMaxGroupSize: summary.conjunctionReservationSearchMaxGroupSize,
+    conjunctionReservationSupportsRequestedMaxGroupSize: summary.conjunctionReservationSupportsRequestedMaxGroupSize,
+    conjunctionReservationSearchExhaustive: summary.conjunctionReservationSearchExhaustive,
+    conjunctionReservationCoversRequestedMaxGroupSize: summary.conjunctionReservationCoversRequestedMaxGroupSize,
+    conjunctionReservationAvailableUnsafeTargetAtomCount: summary.conjunctionReservationAvailableUnsafeTargetAtomCount,
+    conjunctionReservationConsideredUnsafeTargetAtomCount:
+      summary.conjunctionReservationConsideredUnsafeTargetAtomCount,
+    conjunctionReservationAvailablePartnerAtomCount: summary.conjunctionReservationAvailablePartnerAtomCount,
+    conjunctionReservationConsideredPartnerAtomCount: summary.conjunctionReservationConsideredPartnerAtomCount,
+    conjunctionReservationSlicedUnsafeTargetAtoms: summary.conjunctionReservationSlicedUnsafeTargetAtoms,
+    conjunctionReservationSlicedPartnerAtoms: summary.conjunctionReservationSlicedPartnerAtoms,
+    conjunctionReservationReachedReservationAtomCap: summary.conjunctionReservationReachedReservationAtomCap,
+    reservedConjunctionGroupCount: summary.reservedConjunctionGroupCount,
+    reservedConjunctionPairCount: summary.reservedConjunctionPairCount,
+    reservedConjunctionTripleCount: summary.reservedConjunctionTripleCount,
+    conjunctionReservationExhaustedSearchBudget: summary.conjunctionReservationExhaustedSearchBudget,
+    conjunctionReservationEvaluatedGroupCount: summary.conjunctionReservationEvaluatedGroupCount,
+    conjunctionReservationMaxEvaluatedGroupCount: summary.conjunctionReservationMaxEvaluatedGroupCount,
+    conjunctionReservationEvaluatedPairCount: summary.conjunctionReservationEvaluatedPairCount,
+    conjunctionReservationMaxEvaluatedPairCount: summary.conjunctionReservationMaxEvaluatedPairCount,
+    reservedConjunctionExamples: summary.reservedConjunctionExamples.map((candidate) => ({
+      atomCount: candidate.atomCount,
+      cliArg: candidate.cliArg,
+      targetImproved: candidate.targetImproved,
+      selected: candidate.selected
+    }))
+  };
+}
+
+function canonicalGreedyGroupSet(greedy) {
+  return {
+    groups: greedy.groups,
+    selectedFeatureGateGroups: greedy.selectedFeatureGateGroups,
+    cliArg: greedy.cliArg,
+    uncoveredPositiveCount: greedy.uncoveredPositiveCount,
+    selected: greedy.selected,
+    targetImproved: greedy.targetImproved,
+    selectionImproved: greedy.selectionImproved,
+    selectionRegressed: greedy.selectionRegressed,
+    terminalFinalImproved: greedy.terminalFinalImproved,
+    terminalFinalRegressed: greedy.terminalFinalRegressed,
+    finalImproved: greedy.finalImproved,
+    finalRegressed: greedy.finalRegressed,
+    safetyRegressed: greedy.safetyRegressed,
+    neutral: greedy.neutral,
+    unknown: greedy.unknown,
+    bestFinalDelta: greedy.bestFinalDelta,
+    worstFinalDelta: greedy.worstFinalDelta,
+    selectedKeys: greedy.selectedKeys.slice().sort(),
+    positiveKeys: greedy.positiveKeys.slice().sort(),
+    safeNoRegression: greedy.safeNoRegression
+  };
+}
+
+function discoveryIdentityPayload(payload) {
+  return {
+    schemaVersion: DISCOVERY_IDENTITY_SCHEMA_VERSION,
+    artifactSchemaVersion: payload.schemaVersion,
+    target: payload.target,
+    metricSemanticsVersion: METRIC_SEMANTICS_VERSION,
+    v2DeprecatedMetricAliasSchemaVersion: payload.v2DeprecatedMetricAliases.schemaVersion,
+    sourceScorecards: payload.sourceScorecards,
+    featureAllowlist: payload.featureAllowlist,
+    features: payload.features,
+    maxGroupSize: payload.maxGroupSize,
+    maxAtomsPerFeature: payload.maxAtomsPerFeature,
+    maxTotalAtoms: payload.maxTotalAtoms,
+    totalCandidateAtomCount: payload.totalCandidateAtomCount,
+    perFeatureCappedAtomCount: payload.perFeatureCappedAtomCount,
+    atomCount: payload.atomCount,
+    cappedAtomSummary: canonicalCappedAtomSummary(payload.cappedAtomSummary),
+    rowSummary: payload.rowSummary,
+    candidateCount: payload.candidateCount,
+    greedySelectedGateGroups: canonicalGreedyGroupSet(payload.greedySelectedGateGroups)
+  };
+}
+
+function reportMetricsPayload(discovery) {
+  return {
+    overrideTraceCount: discovery.rowSummary.overrideTraceCount,
+    targetImproved: discovery.rowSummary.targetImproved,
+    selectionImproved: discovery.rowSummary.selectionImproved,
+    selectionRegressed: discovery.rowSummary.selectionRegressed,
+    terminalFinalImproved: discovery.rowSummary.terminalFinalImproved,
+    terminalFinalRegressed: discovery.rowSummary.terminalFinalRegressed,
+    finalImproved: discovery.rowSummary.finalImproved,
+    finalRegressed: discovery.rowSummary.finalRegressed,
+    safetyRegressed: discovery.rowSummary.safetyRegressed,
+    totalCandidateAtomCount: discovery.totalCandidateAtomCount,
+    perFeatureCappedAtomCount: discovery.perFeatureCappedAtomCount,
+    atomCount: discovery.atomCount,
+    cappedAtomSummary: canonicalCappedAtomSummary(discovery.cappedAtomSummary),
+    candidateCount: discovery.candidateCount,
+    topCandidateCount: discovery.topCandidateCount,
+    topCandidateCliArg: discovery.topCandidates[0]?.cliArg ?? null,
+    topCandidates: discovery.topCandidates.map(candidateReportProjection),
+    greedySelectedGateGroups: {
+      groups: discovery.greedySelectedGateGroups.groups,
+      selectedFeatureGateGroups: discovery.greedySelectedGateGroups.selectedFeatureGateGroups,
+      cliArg: discovery.greedySelectedGateGroups.cliArg,
+      selected: discovery.greedySelectedGateGroups.selected,
+      targetImproved: discovery.greedySelectedGateGroups.targetImproved,
+      selectionImproved: discovery.greedySelectedGateGroups.selectionImproved,
+      selectionRegressed: discovery.greedySelectedGateGroups.selectionRegressed,
+      terminalFinalImproved: discovery.greedySelectedGateGroups.terminalFinalImproved,
+      terminalFinalRegressed: discovery.greedySelectedGateGroups.terminalFinalRegressed,
+      finalImproved: discovery.greedySelectedGateGroups.finalImproved,
+      finalRegressed: discovery.greedySelectedGateGroups.finalRegressed,
+      safetyRegressed: discovery.greedySelectedGateGroups.safetyRegressed,
+      neutral: discovery.greedySelectedGateGroups.neutral,
+      safeNoRegression: discovery.greedySelectedGateGroups.safeNoRegression
+    }
+  };
+}
+
+function registryDisplayProjection(rows) {
+  return {
+    cases: [...new Set(rows.map((row) => row.caseName))].sort(),
+    caseFamilies: [
+      "lns-window-ranker-online",
+      ...new Set(rows.map((row) => row.pressureFamily).filter(Boolean))
+    ].sort(),
+    seeds: [...new Set(rows.map((row) => row.seed).filter((seed) => seed !== null))].sort((left, right) => left - right)
+  };
+}
+
+function reportIdentityPayload({ discovery, command, artifactDir, outputArtifacts, top, registryDisplay }) {
+  return {
+    schemaVersion: REGISTRY_ENTRY_SCHEMA_VERSION,
+    source: "lns-online-selected-feature-gate-discovery",
+    discoveryFingerprint: discovery.discoveryFingerprint,
+    top,
+    reportMetrics: reportMetricsPayload(discovery),
+    registryDisplay,
+    command,
+    artifactDir,
+    outputArtifacts
   };
 }
 
@@ -406,55 +1067,85 @@ function buildDiscovery(rows, options, benchmarkApi, sourceScorecards) {
   )
     .filter((feature) => rows.some((row) => Number.isFinite(row.selectedFeatures[feature])))
     .sort();
-  const atoms = buildAtoms(rows, features, options.maxAtomsPerFeature);
-  const candidates = enumerateCandidates(rows, atoms, options.maxGroupSize).slice(0, options.top);
-  const greedy = buildGreedyGroupSet(rows, candidates);
-  const rowSummary = evaluatePredicate(rows, () => true);
+  const atomBuild = buildAtoms(rows, features, options.maxAtomsPerFeature, options.target, options.maxGroupSize);
+  const totalCandidateAtoms = atomBuild.totalCandidateAtoms.sort(atomComparatorForTarget(options.target));
+  const perFeatureCappedAtoms = atomBuild.perFeatureCappedAtoms.sort(atomComparatorForTarget(options.target));
+  const { atoms, capDetails } = selectCappedAtoms(perFeatureCappedAtoms, options.maxTotalAtoms, options.target, {
+    rows,
+    maxGroupSize: options.maxGroupSize,
+    reservationAtoms: totalCandidateAtoms
+  });
+  const cappedAtomSummary = atomCapSummary(totalCandidateAtoms, perFeatureCappedAtoms, atoms, capDetails);
+  const candidates = enumerateCandidates(rows, atoms, options.maxGroupSize, options.target);
+  const topCandidates = candidates.slice(0, options.top);
+  const greedy = buildGreedyGroupSet(rows, candidates, options.target);
+  const rowSummary = evaluatePredicate(rows, () => true, options.target);
   const generatedAt = new Date().toISOString();
   const payload = {
-    schemaVersion: 1,
+    schemaVersion: DISCOVERY_ARTIFACT_SCHEMA_VERSION,
     generatedAt,
+    target: options.target,
+    metricSemantics: METRIC_SEMANTICS,
+    v2DeprecatedMetricAliases: V2_DEPRECATED_METRIC_ALIASES,
     sourceScorecards,
     featureAllowlist: options.featureAllowlist ?? null,
     features,
     maxGroupSize: options.maxGroupSize,
     maxAtomsPerFeature: options.maxAtomsPerFeature,
+    maxTotalAtoms: options.maxTotalAtoms,
+    totalCandidateAtomCount: totalCandidateAtoms.length,
+    perFeatureCappedAtomCount: perFeatureCappedAtoms.length,
+    atomCount: atoms.length,
+    cappedAtomSummary,
     top: options.top,
     rowSummary: {
       overrideTraceCount: rows.length,
+      targetImproved: rowSummary.targetImproved,
       selectionImproved: rowSummary.selectionImproved,
       selectionRegressed: rowSummary.selectionRegressed,
+      terminalFinalImproved: rowSummary.terminalFinalImproved,
+      terminalFinalRegressed: rowSummary.terminalFinalRegressed,
       finalImproved: rowSummary.finalImproved,
       finalRegressed: rowSummary.finalRegressed,
+      safetyRegressed: rowSummary.safetyRegressed,
       neutral: rowSummary.neutral,
       unknown: rowSummary.unknown,
       bestFinalDelta: rowSummary.bestFinalDelta,
       worstFinalDelta: rowSummary.worstFinalDelta
     },
     candidateCount: candidates.length,
-    topCandidates: candidates.map((candidate) => ({
+    topCandidateCount: topCandidates.length,
+    topCandidates: topCandidates.map((candidate) => ({
       atomCount: candidate.atomCount,
       atoms: candidate.atoms,
       gates: candidate.gates,
       cliArg: candidate.cliArg,
       selected: candidate.selected,
+      targetImproved: candidate.targetImproved,
       selectionImproved: candidate.selectionImproved,
+      selectionRegressed: candidate.selectionRegressed,
+      terminalFinalImproved: candidate.terminalFinalImproved,
+      terminalFinalRegressed: candidate.terminalFinalRegressed,
       finalImproved: candidate.finalImproved,
       finalRegressed: candidate.finalRegressed,
+      safetyRegressed: candidate.safetyRegressed,
       neutral: candidate.neutral,
       unknown: candidate.unknown,
       bestFinalDelta: candidate.bestFinalDelta,
       worstFinalDelta: candidate.worstFinalDelta,
       safeNoRegression: candidate.safeNoRegression,
       positiveExamples: candidate.positiveExamples,
-      regressionExamples: candidate.regressionExamples
+      regressionExamples: candidate.regressionExamples,
+      selectionRegressionExamples: candidate.selectionRegressionExamples,
+      finalRegressionExamples: candidate.finalRegressionExamples,
+      safetyRegressionExamples: candidate.safetyRegressionExamples
     })),
     greedySelectedGateGroups: greedy
   };
   return {
     ...payload,
     inputFingerprint: benchmarkApi.buildModelExperimentFingerprint({ sourceScorecards }),
-    discoveryFingerprint: benchmarkApi.buildModelExperimentFingerprint(payload)
+    discoveryFingerprint: benchmarkApi.buildModelExperimentFingerprint(discoveryIdentityPayload(payload))
   };
 }
 
@@ -462,22 +1153,38 @@ function formatDiscovery(discovery) {
   const lines = [
     "LNS online selected-feature gate discovery",
     `generatedAt=${discovery.generatedAt}`,
+    `target=${discovery.target}`,
     `sourceScorecards=${discovery.sourceScorecards.length}`,
     `overrideTraces=${discovery.rowSummary.overrideTraceCount}`,
+    `targetImproved=${discovery.rowSummary.targetImproved}`,
     `selectionImproved=${discovery.rowSummary.selectionImproved}`,
-    `finalRegressed=${discovery.rowSummary.finalRegressed}`,
+    `selectionRegressed=${discovery.rowSummary.selectionRegressed}`,
+    `terminalFinalImproved=${discovery.rowSummary.terminalFinalImproved}`,
+    `terminalFinalRegressed=${discovery.rowSummary.terminalFinalRegressed}`,
+    `safetyRegressed=${discovery.rowSummary.safetyRegressed}`,
     `features=${discovery.features.join(",")}`,
+    `atoms=${discovery.atomCount} global-capped / ${discovery.perFeatureCappedAtomCount} per-feature-capped / ${discovery.totalCandidateAtomCount} total-candidate`,
+    `safeTargetAtoms=${discovery.cappedAtomSummary.includedSafeTargetAtomCount}/${discovery.cappedAtomSummary.safeTargetAtomCount}`,
+    `safeSingletonAdmissionQuota=${discovery.cappedAtomSummary.safeSingletonAdmissionQuota}`,
+    `conjunctionReservationSearch=${discovery.cappedAtomSummary.conjunctionReservationSearchDescription}`,
+    `conjunctionReservationSearchMaxGroupSize=${discovery.cappedAtomSummary.conjunctionReservationSearchMaxGroupSize}`,
+    `conjunctionReservationSupportsRequestedMaxGroupSize=${discovery.cappedAtomSummary.conjunctionReservationSupportsRequestedMaxGroupSize}`,
+    `conjunctionReservationSearchExhaustive=${discovery.cappedAtomSummary.conjunctionReservationSearchExhaustive}`,
+    `conjunctionReservationCoversRequestedMaxGroupSize=${discovery.cappedAtomSummary.conjunctionReservationCoversRequestedMaxGroupSize}`,
+    `conjunctionReservationUnsafeAtoms=${discovery.cappedAtomSummary.conjunctionReservationConsideredUnsafeTargetAtomCount}/${discovery.cappedAtomSummary.conjunctionReservationAvailableUnsafeTargetAtomCount} considered`,
+    `conjunctionReservationPartnerAtoms=${discovery.cappedAtomSummary.conjunctionReservationConsideredPartnerAtomCount}/${discovery.cappedAtomSummary.conjunctionReservationAvailablePartnerAtomCount} considered`,
+    `candidates=${discovery.candidateCount} total / ${discovery.topCandidateCount} reported`,
     `inputFingerprint=${discovery.inputFingerprint}`,
     `discoveryFingerprint=${discovery.discoveryFingerprint}`,
     "",
     `greedy-selected-groups=${discovery.greedySelectedGateGroups.cliArg || "none"}`,
-    `greedy-selected=${discovery.greedySelectedGateGroups.selected} improved=${discovery.greedySelectedGateGroups.selectionImproved} final-regressed=${discovery.greedySelectedGateGroups.finalRegressed} neutral=${discovery.greedySelectedGateGroups.neutral} safe=${discovery.greedySelectedGateGroups.safeNoRegression}`,
+    `greedy-selected=${discovery.greedySelectedGateGroups.selected} target-improved=${discovery.greedySelectedGateGroups.targetImproved} selection-improved=${discovery.greedySelectedGateGroups.selectionImproved} selection-regressed=${discovery.greedySelectedGateGroups.selectionRegressed} terminal-final-improved=${discovery.greedySelectedGateGroups.terminalFinalImproved} terminal-final-regressed=${discovery.greedySelectedGateGroups.terminalFinalRegressed} safety-regressed=${discovery.greedySelectedGateGroups.safetyRegressed} neutral=${discovery.greedySelectedGateGroups.neutral} safe=${discovery.greedySelectedGateGroups.safeNoRegression}`,
     "",
     "top-candidates:"
   ];
   for (const candidate of discovery.topCandidates) {
     lines.push(
-      `- ${candidate.cliArg}: selected=${candidate.selected} improved=${candidate.selectionImproved} final-regressed=${candidate.finalRegressed} neutral=${candidate.neutral} worst=${candidate.worstFinalDelta} safe=${candidate.safeNoRegression}`
+      `- ${candidate.cliArg}: selected=${candidate.selected} target-improved=${candidate.targetImproved} selection-improved=${candidate.selectionImproved} selection-regressed=${candidate.selectionRegressed} terminal-final-improved=${candidate.terminalFinalImproved} terminal-final-regressed=${candidate.terminalFinalRegressed} safety-regressed=${candidate.safetyRegressed} neutral=${candidate.neutral} worst=${candidate.worstFinalDelta} safe=${candidate.safeNoRegression}`
     );
   }
   return `${lines.join("\n")}\n`;
@@ -504,8 +1211,10 @@ function replayCommand(defaultCliReplayCommand, options) {
     ...options.sourceArtifacts.map((source) => `--source-artifact=${normalizeRepoRelativePath(source)}`),
     ...options.sourceScorecards.map((source) => `--source-scorecard=${normalizeRepoRelativePath(source)}`),
     `--artifact-dir=${options.artifactDir}`,
+    `--target=${options.target}`,
     `--max-group-size=${options.maxGroupSize}`,
     `--max-atoms-per-feature=${options.maxAtomsPerFeature}`,
+    `--max-total-atoms=${options.maxTotalAtoms}`,
     `--top=${options.top}`
   ];
   if (options.featureAllowlist) argv.push(`--feature-allowlist=${options.featureAllowlist.join(",")}`);
@@ -532,28 +1241,83 @@ const discovery = buildDiscovery(rows, options, benchmarkApi, sourceScorecards);
 const artifactPaths = artifactPathsFor(artifacts);
 const outputArtifacts = diagnosticArtifactPaths(artifactPaths);
 const command = replayCommand(artifactHelpers.defaultCliReplayCommand, options);
+const registryDisplay = registryDisplayProjection(rows);
+const reportFingerprint = benchmarkApi.buildModelExperimentFingerprint(
+  reportIdentityPayload({
+    discovery,
+    command,
+    artifactDir: artifacts.artifactDir,
+    outputArtifacts,
+    top: options.top,
+    registryDisplay
+  })
+);
 const telemetryManifest = {
-  schemaVersion: 1,
+  schemaVersion: TELEMETRY_MANIFEST_SCHEMA_VERSION,
   source: "lns-online-selected-feature-gate-discovery",
   command,
   generatedAt: discovery.generatedAt,
   git: benchmarkApi.resolveExperimentRegistryGitMetadata(),
   hardware: benchmarkApi.captureExperimentRegistryHardwareMetadata(),
   diagnosticsOnly: true,
+  target: discovery.target,
+  metricSemantics: METRIC_SEMANTICS,
+  v2DeprecatedMetricAliases: V2_DEPRECATED_METRIC_ALIASES,
   inputFingerprint: discovery.inputFingerprint,
   discoveryFingerprint: discovery.discoveryFingerprint,
+  reportFingerprint,
   sourceScorecards,
   outputArtifacts,
   metrics: {
     overrideTraceCount: discovery.rowSummary.overrideTraceCount,
+    targetImproved: discovery.rowSummary.targetImproved,
     selectionImproved: discovery.rowSummary.selectionImproved,
+    selectionRegressed: discovery.rowSummary.selectionRegressed,
+    terminalFinalImproved: discovery.rowSummary.terminalFinalImproved,
+    terminalFinalRegressed: discovery.rowSummary.terminalFinalRegressed,
+    finalImproved: discovery.rowSummary.finalImproved,
     finalRegressed: discovery.rowSummary.finalRegressed,
+    safetyRegressed: discovery.rowSummary.safetyRegressed,
+    totalCandidateAtomCount: discovery.totalCandidateAtomCount,
+    perFeatureCappedAtomCount: discovery.perFeatureCappedAtomCount,
+    atomCount: discovery.atomCount,
+    safeTargetAtomCount: discovery.cappedAtomSummary.safeTargetAtomCount,
+    includedSafeTargetAtomCount: discovery.cappedAtomSummary.includedSafeTargetAtomCount,
+    omittedSafeTargetAtomCount: discovery.cappedAtomSummary.omittedSafeTargetAtomCount,
+    includedUnsafeTargetAtomCount: discovery.cappedAtomSummary.includedUnsafeTargetAtomCount,
+    safeSingletonAdmissionQuota: discovery.cappedAtomSummary.safeSingletonAdmissionQuota,
+    conjunctionReservationSearchMaxGroupSize: discovery.cappedAtomSummary.conjunctionReservationSearchMaxGroupSize,
+    conjunctionReservationSupportsRequestedMaxGroupSize:
+      discovery.cappedAtomSummary.conjunctionReservationSupportsRequestedMaxGroupSize,
+    conjunctionReservationSearchExhaustive: discovery.cappedAtomSummary.conjunctionReservationSearchExhaustive,
+    conjunctionReservationCoversRequestedMaxGroupSize:
+      discovery.cappedAtomSummary.conjunctionReservationCoversRequestedMaxGroupSize,
+    conjunctionReservationAvailableUnsafeTargetAtomCount:
+      discovery.cappedAtomSummary.conjunctionReservationAvailableUnsafeTargetAtomCount,
+    conjunctionReservationConsideredUnsafeTargetAtomCount:
+      discovery.cappedAtomSummary.conjunctionReservationConsideredUnsafeTargetAtomCount,
+    conjunctionReservationAvailablePartnerAtomCount:
+      discovery.cappedAtomSummary.conjunctionReservationAvailablePartnerAtomCount,
+    conjunctionReservationConsideredPartnerAtomCount:
+      discovery.cappedAtomSummary.conjunctionReservationConsideredPartnerAtomCount,
+    conjunctionReservationSlicedUnsafeTargetAtoms:
+      discovery.cappedAtomSummary.conjunctionReservationSlicedUnsafeTargetAtoms,
+    conjunctionReservationSlicedPartnerAtoms: discovery.cappedAtomSummary.conjunctionReservationSlicedPartnerAtoms,
+    conjunctionReservationReachedReservationAtomCap:
+      discovery.cappedAtomSummary.conjunctionReservationReachedReservationAtomCap,
     candidateCount: discovery.candidateCount,
+    topCandidateCount: discovery.topCandidateCount,
     topCandidateCliArg: discovery.topCandidates[0]?.cliArg ?? null,
     greedySelectedFeatureGateGroups: discovery.greedySelectedGateGroups.selectedFeatureGateGroups,
     greedySelectedFeatureGateGroupsCliArg: discovery.greedySelectedGateGroups.cliArg,
+    greedyTargetImproved: discovery.greedySelectedGateGroups.targetImproved,
     greedySelectionImproved: discovery.greedySelectedGateGroups.selectionImproved,
+    greedySelectionRegressed: discovery.greedySelectedGateGroups.selectionRegressed,
+    greedyTerminalFinalImproved: discovery.greedySelectedGateGroups.terminalFinalImproved,
+    greedyTerminalFinalRegressed: discovery.greedySelectedGateGroups.terminalFinalRegressed,
+    greedyFinalImproved: discovery.greedySelectedGateGroups.finalImproved,
     greedyFinalRegressed: discovery.greedySelectedGateGroups.finalRegressed,
+    greedySafetyRegressed: discovery.greedySelectedGateGroups.safetyRegressed,
     greedyNeutral: discovery.greedySelectedGateGroups.neutral,
     greedySafeNoRegression: discovery.greedySelectedGateGroups.safeNoRegression
   },
@@ -561,33 +1325,54 @@ const telemetryManifest = {
     "Diagnostics-only selected-feature gate discovery over online LNS window-ranker override traces; no solver default changed."
 };
 const registryEntryDraft = {
-  schemaVersion: 1,
-  runId: `lns-online-selected-feature-gate-discovery-${discovery.discoveryFingerprint.slice(-8)}`,
+  schemaVersion: REGISTRY_ENTRY_SCHEMA_VERSION,
+  runId: `lns-online-selected-feature-gate-discovery-${reportFingerprint.slice(-8)}`,
   artifactType: "ablation-gate",
   generatedAt: discovery.generatedAt,
   commands: [command],
   artifactPaths: outputArtifacts,
-  cases: [...new Set(rows.map((row) => row.caseName))].sort(),
-  caseFamilies: ["lns-window-ranker-online", ...new Set(rows.map((row) => row.pressureFamily).filter(Boolean))].sort(),
-  seeds: [...new Set(rows.map((row) => row.seed).filter((seed) => seed !== null))].sort((left, right) => left - right),
+  cases: registryDisplay.cases,
+  caseFamilies: registryDisplay.caseFamilies,
+  seeds: registryDisplay.seeds,
   inputFingerprint: discovery.inputFingerprint,
   datasetFingerprint: discovery.discoveryFingerprint,
+  reportFingerprint,
   splitStatus: {
     diagnosticsOnly: true,
     source: "online-lns-window-ranker-scorecards",
-    sourceScorecardCount: sourceScorecards.length
+    sourceScorecardCount: sourceScorecards.length,
+    metricSemantics: METRIC_SEMANTICS,
+    v2DeprecatedMetricAliases: V2_DEPRECATED_METRIC_ALIASES
   },
   budget: {
     sourceScorecardCount: sourceScorecards.length,
     overrideTraceCount: discovery.rowSummary.overrideTraceCount,
+    target: options.target,
     maxGroupSize: options.maxGroupSize,
     maxAtomsPerFeature: options.maxAtomsPerFeature,
-    candidateCount: discovery.candidateCount
+    maxTotalAtoms: options.maxTotalAtoms,
+    totalCandidateAtomCount: discovery.totalCandidateAtomCount,
+    perFeatureCappedAtomCount: discovery.perFeatureCappedAtomCount,
+    atomCount: discovery.atomCount,
+    conjunctionReservationSupportsRequestedMaxGroupSize:
+      discovery.cappedAtomSummary.conjunctionReservationSupportsRequestedMaxGroupSize,
+    conjunctionReservationSearchExhaustive: discovery.cappedAtomSummary.conjunctionReservationSearchExhaustive,
+    conjunctionReservationAvailableUnsafeTargetAtomCount:
+      discovery.cappedAtomSummary.conjunctionReservationAvailableUnsafeTargetAtomCount,
+    conjunctionReservationConsideredUnsafeTargetAtomCount:
+      discovery.cappedAtomSummary.conjunctionReservationConsideredUnsafeTargetAtomCount,
+    conjunctionReservationAvailablePartnerAtomCount:
+      discovery.cappedAtomSummary.conjunctionReservationAvailablePartnerAtomCount,
+    conjunctionReservationConsideredPartnerAtomCount:
+      discovery.cappedAtomSummary.conjunctionReservationConsideredPartnerAtomCount,
+    candidateCount: discovery.candidateCount,
+    topCandidateCount: discovery.topCandidateCount
   },
   hardware: telemetryManifest.hardware,
   model: {
     trained: false,
     diagnosticsOnly: true,
+    target: options.target,
     gateKind: "online-selected-feature-threshold-search"
   },
   decision: "diagnostics-only",
@@ -600,8 +1385,10 @@ const manifest = {
   artifactPaths,
   command,
   generatedAt: discovery.generatedAt,
+  target: discovery.target,
   inputFingerprint: discovery.inputFingerprint,
   discoveryFingerprint: discovery.discoveryFingerprint,
+  reportFingerprint,
   sourceScorecards,
   featureAllowlist: options.featureAllowlist ?? null,
   generator: {

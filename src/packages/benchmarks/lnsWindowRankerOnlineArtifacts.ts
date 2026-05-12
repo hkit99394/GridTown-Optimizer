@@ -35,7 +35,9 @@ export interface LnsWindowRankerOnlineAblationRegistryEntryDraftOptions extends 
   "runId" | "commands" | "artifactPaths" | "decision" | "summary"
 > {
   modelPath?: string;
+  suppressionModelPath?: string;
   protectedHoldout?: boolean;
+  protectedCorpus?: LnsWindowRankerOnlineProtectedCorpus;
 }
 
 export interface LnsWindowRankerOnlineCalibrationTelemetryManifestOptions extends Pick<
@@ -51,8 +53,15 @@ export interface LnsWindowRankerOnlineCalibrationRegistryEntryDraftOptions exten
 > {
   model: LnsWindowRankerRuntimeModel;
   modelPath?: string;
+  suppressionModelPath?: string;
   protectedHoldout?: boolean;
+  protectedCorpus?: LnsWindowRankerOnlineProtectedCorpus;
 }
+
+export type LnsWindowRankerOnlineProtectedCorpus =
+  | "standard-protected-holdout"
+  | "product-promotion-holdout"
+  | "fresh-pressure-holdout";
 
 function modelWithFingerprint(model: LnsWindowRankerRuntimeModel): LnsWindowRankerRuntimeModel {
   return {
@@ -113,6 +122,40 @@ function lnsWindowRankerOnlineCasesBySplit(
   return { development, holdout };
 }
 
+function protectedCorpusMetadata(protectedHoldout: boolean, protectedCorpus?: LnsWindowRankerOnlineProtectedCorpus) {
+  if (!protectedHoldout) {
+    return {
+      protectedCorpus: null,
+      splitField: "DEFAULT_LEARNED_RANKING_LABEL_SPLITS.lnsCaseNames",
+      leakage: "threshold-calibration-used-replay-pressure-corpus",
+      notes:
+        "Online LNS ranker A/B calibration scorecard over replay-pressure cases; not protected holdout promotion evidence."
+    };
+  }
+  if (protectedCorpus === "product-promotion-holdout") {
+    return {
+      protectedCorpus,
+      splitField: "DEFAULT_LNS_WINDOW_RANKER_ONLINE_PRODUCT_PROMOTION_CORPUS",
+      leakage: "none",
+      notes: "Online LNS ranker A/B scorecard over independent product-promotion protected holdout cases."
+    };
+  }
+  if (protectedCorpus === "fresh-pressure-holdout") {
+    return {
+      protectedCorpus,
+      splitField: "DEFAULT_LNS_WINDOW_RANKER_ONLINE_FRESH_PRESSURE_HOLDOUT_CORPUS",
+      leakage: "none",
+      notes: "Online LNS ranker A/B scorecard over fresh held-out pressure cases."
+    };
+  }
+  return {
+    protectedCorpus: protectedCorpus ?? "standard-protected-holdout",
+    splitField: "DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS",
+    leakage: "none",
+    notes: "Online LNS ranker A/B scorecard over independent protected holdout cases."
+  };
+}
+
 function lnsWindowRankerOnlineCaseFamilies(result: LnsWindowRankerOnlineAblationSuiteResult): string[] {
   return uniqueBenchmarkValuesBy(result.cases, (benchmarkCase) => `lns-${benchmarkCase.pressureFamily}`);
 }
@@ -123,11 +166,15 @@ function lnsWindowRankerOnlineAblationSummaryMetrics(
   const baseline = getBaselineSummary(result);
   const ranker = getRankerSummary(result);
   const allowedTransitions = ablationAllowedTransitions(result);
+  const suppressionModelFingerprint = ablationSuppressionModelFingerprint(result);
+  const suppressionMinScoreDelta = ablationSuppressionMinScoreDelta(result);
   const selectedFeatureGates = ablationSelectedFeatureGates(result);
   const selectedFeatureGateGroups = ablationSelectedFeatureGateGroups(result);
   const featureDeltaGates = ablationFeatureDeltaGates(result);
   return {
     ...(allowedTransitions === null ? {} : { allowedTransitions: [...allowedTransitions] }),
+    ...(suppressionModelFingerprint === null ? {} : { suppressionModelFingerprint }),
+    ...(suppressionMinScoreDelta === null ? {} : { suppressionMinScoreDelta }),
     ...(selectedFeatureGates.length === 0 ? {} : { selectedFeatureGates: [...selectedFeatureGates] }),
     ...(selectedFeatureGateGroups.length === 0
       ? {}
@@ -221,6 +268,20 @@ function ablationMinScoreDelta(result: LnsWindowRankerOnlineAblationSuiteResult)
   );
 }
 
+function ablationSuppressionModelFingerprint(result: LnsWindowRankerOnlineAblationSuiteResult): string | null {
+  return (
+    result.cases.flatMap((entry) => entry.variants).find((variant) => variant.variantName === "window-ranker")
+      ?.windowRanker?.suppressionModelFingerprint ?? null
+  );
+}
+
+function ablationSuppressionMinScoreDelta(result: LnsWindowRankerOnlineAblationSuiteResult): number | null {
+  return (
+    result.cases.flatMap((entry) => entry.variants).find((variant) => variant.variantName === "window-ranker")
+      ?.windowRanker?.suppressionMinScoreDelta ?? null
+  );
+}
+
 function ablationAllowedTransitions(result: LnsWindowRankerOnlineAblationSuiteResult): readonly string[] | null {
   return (
     result.cases.flatMap((entry) => entry.variants).find((variant) => variant.variantName === "window-ranker")
@@ -271,6 +332,12 @@ function lnsWindowRankerOnlineCalibrationSummaryMetrics(
   const topSafeSummary = calibrationThresholdByDelta(result, result.topSafeMinScoreDelta);
   return {
     ...(result.allowedTransitions === undefined ? {} : { allowedTransitions: [...result.allowedTransitions] }),
+    ...(result.suppressionModelFingerprint === undefined || result.suppressionModelFingerprint === null
+      ? {}
+      : { suppressionModelFingerprint: result.suppressionModelFingerprint }),
+    ...(result.suppressionMinScoreDelta === undefined
+      ? {}
+      : { suppressionMinScoreDelta: result.suppressionMinScoreDelta }),
     ...(result.selectedFeatureGates === undefined ? {} : { selectedFeatureGates: [...result.selectedFeatureGates] }),
     ...(result.selectedFeatureGateGroups === undefined
       ? {}
@@ -322,11 +389,14 @@ export function buildLnsWindowRankerOnlineAblationRegistryEntryDraft(
   const model = modelFromAblationResult(result) as unknown as Record<string, unknown>;
   const modelFingerprint = model.modelFingerprint as string;
   const minScoreDelta = ablationMinScoreDelta(result);
+  const suppressionModelFingerprint = ablationSuppressionModelFingerprint(result);
+  const suppressionMinScoreDelta = ablationSuppressionMinScoreDelta(result);
   const allowedTransitions = ablationAllowedTransitions(result);
   const selectedFeatureGates = ablationSelectedFeatureGates(result);
   const selectedFeatureGateGroups = ablationSelectedFeatureGateGroups(result);
   const featureDeltaGates = ablationFeatureDeltaGates(result);
   const protectedHoldout = options.protectedHoldout ?? false;
+  const protectedCorpus = protectedCorpusMetadata(protectedHoldout, options.protectedCorpus);
   const cases = lnsWindowRankerOnlineCasesBySplit(result.selectedCaseNames, protectedHoldout);
   const summaryMetrics = lnsWindowRankerOnlineAblationSummaryMetrics(result);
   return buildModelExperimentRegistryEntryDraft({
@@ -339,18 +409,16 @@ export function buildLnsWindowRankerOnlineAblationRegistryEntryDraft(
     seeds: result.seeds,
     splitStatus: {
       protectedHoldout,
-      splitField: protectedHoldout
-        ? "DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS"
-        : "DEFAULT_LEARNED_RANKING_LABEL_SPLITS.lnsCaseNames",
+      ...(protectedCorpus.protectedCorpus === null ? {} : { protectedCorpus: protectedCorpus.protectedCorpus }),
+      splitField: protectedCorpus.splitField,
       developmentCaseCount: cases.development.length,
       holdoutCaseCount: cases.holdout.length,
-      leakage: protectedHoldout ? "none" : "threshold-calibration-used-replay-pressure-corpus",
-      notes: protectedHoldout
-        ? "Online LNS ranker A/B scorecard over independent protected holdout cases."
-        : "Online LNS ranker A/B calibration scorecard over replay-pressure cases; not protected holdout promotion evidence."
+      leakage: protectedCorpus.leakage,
+      notes: protectedCorpus.notes
     },
     budget: {
       minScoreDelta,
+      ...(suppressionMinScoreDelta === null ? {} : { suppressionMinScoreDelta }),
       ...(allowedTransitions === null ? {} : { allowedTransitionCount: allowedTransitions.length }),
       ...(selectedFeatureGates.length === 0 ? {} : { selectedFeatureGateCount: selectedFeatureGates.length }),
       ...(selectedFeatureGateGroups.length === 0
@@ -386,7 +454,9 @@ export function buildLnsWindowRankerOnlineAblationRegistryEntryDraft(
     },
     model: {
       ...model,
-      ...(options.modelPath === undefined ? {} : { modelPath: options.modelPath })
+      ...(options.modelPath === undefined ? {} : { modelPath: options.modelPath }),
+      ...(suppressionModelFingerprint === null ? {} : { suppressionModelFingerprint }),
+      ...(options.suppressionModelPath === undefined ? {} : { suppressionModelPath: options.suppressionModelPath })
     },
     decision: options.decision ?? "online-lns-window-ranker-calibration-evidence",
     summary:
@@ -420,6 +490,7 @@ export function buildLnsWindowRankerOnlineCalibrationRegistryEntryDraft(
   const model = modelWithFingerprint(options.model) as unknown as Record<string, unknown>;
   const modelFingerprint = model.modelFingerprint as string;
   const protectedHoldout = options.protectedHoldout ?? false;
+  const protectedCorpus = protectedCorpusMetadata(protectedHoldout, options.protectedCorpus);
   const cases = lnsWindowRankerOnlineCasesBySplit(result.selectedCaseNames, protectedHoldout);
   const summaryMetrics = lnsWindowRankerOnlineCalibrationSummaryMetrics(result);
   return buildModelExperimentRegistryEntryDraft({
@@ -432,18 +503,21 @@ export function buildLnsWindowRankerOnlineCalibrationRegistryEntryDraft(
     seeds: result.seeds,
     splitStatus: {
       protectedHoldout,
-      splitField: protectedHoldout
-        ? "DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS"
-        : "DEFAULT_LEARNED_RANKING_LABEL_SPLITS.lnsCaseNames",
+      ...(protectedCorpus.protectedCorpus === null ? {} : { protectedCorpus: protectedCorpus.protectedCorpus }),
+      splitField: protectedCorpus.splitField,
       developmentCaseCount: cases.development.length,
       holdoutCaseCount: cases.holdout.length,
-      leakage: protectedHoldout ? "none" : "threshold-calibration-used-replay-pressure-corpus",
-      notes: protectedHoldout
-        ? "Online LNS ranker threshold sweep over independent protected holdout cases."
-        : "Online LNS ranker threshold sweep over replay-pressure cases; not protected holdout promotion evidence."
+      leakage: protectedCorpus.leakage,
+      notes:
+        protectedCorpus.protectedCorpus === "product-promotion-holdout"
+          ? "Online LNS ranker threshold sweep over independent product-promotion protected holdout cases."
+          : protectedCorpus.notes.replace("A/B scorecard", "threshold sweep")
     },
     budget: {
-      ...(result.allowedTransitions === undefined ? {} : { allowedTransitions: [...result.allowedTransitions] }),
+      ...(result.allowedTransitions === undefined ? {} : { allowedTransitionCount: result.allowedTransitions.length }),
+      ...(result.suppressionMinScoreDelta === undefined
+        ? {}
+        : { suppressionMinScoreDelta: result.suppressionMinScoreDelta }),
       ...(result.selectedFeatureGates === undefined
         ? {}
         : { selectedFeatureGateCount: result.selectedFeatureGates.length }),
@@ -462,7 +536,11 @@ export function buildLnsWindowRankerOnlineCalibrationRegistryEntryDraft(
     },
     model: {
       ...model,
-      ...(options.modelPath === undefined ? {} : { modelPath: options.modelPath })
+      ...(options.modelPath === undefined ? {} : { modelPath: options.modelPath }),
+      ...(result.suppressionModelFingerprint === undefined || result.suppressionModelFingerprint === null
+        ? {}
+        : { suppressionModelFingerprint: result.suppressionModelFingerprint }),
+      ...(options.suppressionModelPath === undefined ? {} : { suppressionModelPath: options.suppressionModelPath })
     },
     decision: options.decision ?? "online-lns-window-ranker-threshold-sweep-evidence",
     summary:

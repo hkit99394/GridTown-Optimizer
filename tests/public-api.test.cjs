@@ -34,6 +34,8 @@ function testBenchmarkApiExposesBenchmarkSurface() {
   assert.equal(typeof benchmarkApi.appendExperimentRegistryEntry, "function");
   assert.equal(typeof benchmarkApi.DEFAULT_GREEDY_BENCHMARK_CORPUS, "object");
   assert.equal(typeof benchmarkApi.DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS, "object");
+  assert.equal(typeof benchmarkApi.DEFAULT_LNS_WINDOW_RANKER_ONLINE_PRODUCT_PROMOTION_CORPUS, "object");
+  assert.equal(typeof benchmarkApi.DEFAULT_LNS_WINDOW_RANKER_ONLINE_FRESH_PRESSURE_HOLDOUT_CORPUS, "object");
 }
 
 function testBenchmarkApiDoesNotExposeSolverEntrypoints() {

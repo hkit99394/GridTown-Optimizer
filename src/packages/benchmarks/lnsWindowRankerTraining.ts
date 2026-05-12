@@ -73,6 +73,10 @@ const DEFAULT_LNS_WINDOW_RANKER_TRAINING: Required<LnsWindowRankerTrainingOption
   allowWeakSeedReplayLabels: true,
   supplementalReplayCalibration: false,
   supplementalReplayCalibrationIgnoreBaselineFeature: false,
+  supplementalReplayOnlineSelectedSuppression: false,
+  supplementalReplayOnlineSelectedSuppressionWeight: 1,
+  supplementalReplayProtectedNeutralSuppression: false,
+  supplementalReplayProtectedNeutralSuppressionWeight: 1,
   excludeFeatureIdenticalRepeatabilityConflicts: false,
   trajectoryFeatures: false,
   featureInteractions: false
@@ -96,6 +100,16 @@ export function normalizeTrainingOptions(
     supplementalReplayCalibration: options?.supplementalReplayCalibration === true,
     supplementalReplayCalibrationIgnoreBaselineFeature:
       options?.supplementalReplayCalibrationIgnoreBaselineFeature === true,
+    supplementalReplayOnlineSelectedSuppression: options?.supplementalReplayOnlineSelectedSuppression === true,
+    supplementalReplayOnlineSelectedSuppressionWeight: positiveFiniteNumberOrDefault(
+      options?.supplementalReplayOnlineSelectedSuppressionWeight,
+      DEFAULT_LNS_WINDOW_RANKER_TRAINING.supplementalReplayOnlineSelectedSuppressionWeight
+    ),
+    supplementalReplayProtectedNeutralSuppression: options?.supplementalReplayProtectedNeutralSuppression === true,
+    supplementalReplayProtectedNeutralSuppressionWeight: positiveFiniteNumberOrDefault(
+      options?.supplementalReplayProtectedNeutralSuppressionWeight,
+      DEFAULT_LNS_WINDOW_RANKER_TRAINING.supplementalReplayProtectedNeutralSuppressionWeight
+    ),
     excludeFeatureIdenticalRepeatabilityConflicts:
       normalizeLnsWindowRankerFeatureIdenticalRepeatabilityConflictExclusion(
         options?.excludeFeatureIdenticalRepeatabilityConflicts
@@ -327,11 +341,20 @@ function marginWeight(delta: number, cap: number): number {
   return Math.min(cap, Math.max(1, Math.abs(delta))) / cap;
 }
 
+function supplementalObjectiveWeight(value: number): number {
+  return Math.max(0, value);
+}
+
 function positiveLabelsForTraining(
   group: ReplayDecisionGroup,
   bestImprovement: number,
   training: Required<LnsWindowRankerTrainingOptions>
 ): LnsWindowReplaySnapshotLabel[] {
+  const protectedNeutralSuppression = supplementalProtectedNeutralSuppression(group, training);
+  if (protectedNeutralSuppression) return protectedNeutralSuppression.positiveLabels;
+  const onlineSelectedSupervision = supplementalOnlineSelectedSupervision(group, training);
+  if (onlineSelectedSupervision) return onlineSelectedSupervision.positiveLabels;
+  if (skipSupplementalProtectedNeutralGroup(group, training)) return [];
   if (useSupplementalNeutralBaselineCalibration(group, bestImprovement, training)) {
     return group.labels.filter((label) => label.selectedByBaseline);
   }
@@ -353,9 +376,94 @@ function useSupplementalNeutralBaselineCalibration(
     training.supplementalReplayCalibration &&
     group.source === "supplemental-replay" &&
     group.statePolicy === "online-decision" &&
+    supplementalOnlineSelectedSupervision(group, training) === null &&
+    supplementalProtectedNeutralSuppression(group, training) === null &&
     bestImprovement <= 0 &&
     group.labels.some((label) => label.selectedByBaseline)
   );
+}
+
+function supplementalOnlineSelectedSupervision(
+  group: ReplayDecisionGroup,
+  training: Required<LnsWindowRankerTrainingOptions>
+): {
+  positiveLabels: LnsWindowReplaySnapshotLabel[];
+  negativeLabels: LnsWindowReplaySnapshotLabel[];
+} | null {
+  if (
+    !training.supplementalReplayCalibration ||
+    !training.supplementalReplayOnlineSelectedSuppression ||
+    group.source !== "supplemental-replay" ||
+    group.statePolicy !== "online-decision" ||
+    (training.supplementalReplayProtectedNeutralSuppression && !isProductPressureFamily(group))
+  ) {
+    return null;
+  }
+  const baselineLabels = group.labels.filter((label) => label.selectedByBaseline);
+  const onlineSelectedLabels = group.labels.filter((label) => label.selectionSource === "online-selected");
+  if (baselineLabels.length === 0 || onlineSelectedLabels.length === 0) return null;
+  const baselineTarget = Math.max(...baselineLabels.map((label) => targetValue(label, training.target)));
+  const onlineSelectedTarget = Math.max(...onlineSelectedLabels.map((label) => targetValue(label, training.target)));
+  return onlineSelectedTarget > baselineTarget
+    ? { positiveLabels: onlineSelectedLabels, negativeLabels: baselineLabels }
+    : { positiveLabels: baselineLabels, negativeLabels: onlineSelectedLabels };
+}
+
+function supplementalProtectedNeutralSuppression(
+  group: ReplayDecisionGroup,
+  training: Required<LnsWindowRankerTrainingOptions>
+): {
+  positiveLabels: LnsWindowReplaySnapshotLabel[];
+  negativeLabels: LnsWindowReplaySnapshotLabel[];
+} | null {
+  if (
+    !training.supplementalReplayCalibration ||
+    !training.supplementalReplayProtectedNeutralSuppression ||
+    group.source !== "supplemental-replay" ||
+    group.statePolicy !== "online-decision" ||
+    isProductPressureFamily(group)
+  ) {
+    return null;
+  }
+  const baselineLabels = group.labels.filter((label) => label.selectedByBaseline);
+  const onlineSelectedLabels = group.labels.filter((label) => label.selectionSource === "online-selected");
+  if (baselineLabels.length === 0 || onlineSelectedLabels.length === 0) return null;
+  const baselineTarget = Math.max(...baselineLabels.map((label) => targetValue(label, training.target)));
+  const onlineSelectedTarget = Math.max(...onlineSelectedLabels.map((label) => targetValue(label, training.target)));
+  return onlineSelectedTarget <= baselineTarget && onlineSelectedTarget <= 0
+    ? { positiveLabels: baselineLabels, negativeLabels: onlineSelectedLabels }
+    : null;
+}
+
+function isProductPressureFamily(group: ReplayDecisionGroup): boolean {
+  return String(group.pressureFamily).startsWith("product-");
+}
+
+function skipSupplementalProtectedNeutralGroup(
+  group: ReplayDecisionGroup,
+  training: Required<LnsWindowRankerTrainingOptions>
+): boolean {
+  return (
+    training.supplementalReplayCalibration &&
+    training.supplementalReplayProtectedNeutralSuppression &&
+    group.source === "supplemental-replay" &&
+    group.statePolicy === "online-decision" &&
+    !isProductPressureFamily(group)
+  );
+}
+
+function useSupplementalOnlineSelectedSuppression(
+  group: ReplayDecisionGroup,
+  training: Required<LnsWindowRankerTrainingOptions>
+): boolean {
+  return supplementalOnlineSelectedSupervision(group, training) !== null;
+}
+
+function useSupplementalProtectedNeutralSuppression(
+  group: ReplayDecisionGroup,
+  training: Required<LnsWindowRankerTrainingOptions>
+): boolean {
+  return supplementalProtectedNeutralSuppression(group, training) !== null;
 }
 
 function trainingDelta(
@@ -364,10 +472,54 @@ function trainingDelta(
   bestImprovement: number,
   training: Required<LnsWindowRankerTrainingOptions>
 ): number {
+  const onlineSelectedSupervision = supplementalOnlineSelectedSupervision(group, training);
+  const protectedNeutralSuppression = supplementalProtectedNeutralSuppression(group, training);
+  if (protectedNeutralSuppression) {
+    return protectedNeutralSuppression.negativeLabels.includes(negative)
+      ? training.marginWeightCap * training.supplementalReplayProtectedNeutralSuppressionWeight
+      : 0;
+  }
+  if (onlineSelectedSupervision) {
+    return onlineSelectedSupervision.negativeLabels.includes(negative)
+      ? training.marginWeightCap * training.supplementalReplayOnlineSelectedSuppressionWeight
+      : 0;
+  }
   if (useSupplementalNeutralBaselineCalibration(group, bestImprovement, training)) {
     return negative.selectedByBaseline ? 0 : training.marginWeightCap;
   }
   return bestImprovement - targetValue(negative, training.target);
+}
+
+function trainingUpdateWeight(
+  group: ReplayDecisionGroup,
+  negative: LnsWindowReplaySnapshotLabel,
+  bestImprovement: number,
+  training: Required<LnsWindowRankerTrainingOptions>
+): number {
+  const protectedNeutralSuppression = supplementalProtectedNeutralSuppression(group, training);
+  if (protectedNeutralSuppression) {
+    return protectedNeutralSuppression.negativeLabels.includes(negative)
+      ? supplementalObjectiveWeight(training.supplementalReplayProtectedNeutralSuppressionWeight)
+      : 0;
+  }
+  const onlineSelectedSupervision = supplementalOnlineSelectedSupervision(group, training);
+  if (onlineSelectedSupervision) {
+    return onlineSelectedSupervision.negativeLabels.includes(negative)
+      ? supplementalObjectiveWeight(training.supplementalReplayOnlineSelectedSuppressionWeight)
+      : 0;
+  }
+  const delta = trainingDelta(group, negative, bestImprovement, training);
+  return delta <= 0 ? 0 : marginWeight(delta, training.marginWeightCap);
+}
+
+function trainingUpdateMarginTarget(
+  group: ReplayDecisionGroup,
+  training: Required<LnsWindowRankerTrainingOptions>,
+  updateWeight: number
+): number {
+  if (supplementalProtectedNeutralSuppression(group, training)) return updateWeight;
+  if (supplementalOnlineSelectedSupervision(group, training)) return updateWeight;
+  return 0;
 }
 
 function featureDiffForTraining(
@@ -381,7 +533,9 @@ function featureDiffForTraining(
   if (
     training.supplementalReplayCalibrationIgnoreBaselineFeature &&
     SELECTED_BY_BASELINE_FEATURE_INDEX >= 0 &&
-    useSupplementalNeutralBaselineCalibration(group, bestImprovement, training)
+    (useSupplementalNeutralBaselineCalibration(group, bestImprovement, training) ||
+      useSupplementalOnlineSelectedSuppression(group, training) ||
+      useSupplementalProtectedNeutralSuppression(group, training))
   ) {
     diff[SELECTED_BY_BASELINE_FEATURE_INDEX] = 0;
   }
@@ -523,13 +677,15 @@ export function trainLinearRanker(
       for (const positive of positives) {
         const positiveVector = featureVector(positive, featureNames, group);
         for (const negative of group.labels) {
-          const delta = trainingDelta(group, negative, bestImprovement, training);
-          if (delta <= 0) continue;
+          const updateWeight = trainingUpdateWeight(group, negative, bestImprovement, training);
+          if (updateWeight <= 0) continue;
           trainedPairCount++;
           const negativeVector = featureVector(negative, featureNames, group);
           const diff = featureDiffForTraining(group, positiveVector, negativeVector, bestImprovement, training);
-          if (dot(diff, weights) > 0) continue;
-          const update = training.learningRate * marginWeight(delta, training.marginWeightCap);
+          const currentMargin = dot(diff, weights);
+          const marginTarget = trainingUpdateMarginTarget(group, training, updateWeight);
+          if (marginTarget === 0 ? currentMargin > 0 : currentMargin >= marginTarget) continue;
+          const update = training.learningRate * updateWeight;
           for (let index = 0; index < weights.length; index++) {
             weights[index] += update * (diff[index] ?? 0);
           }

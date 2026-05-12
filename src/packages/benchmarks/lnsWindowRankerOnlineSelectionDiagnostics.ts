@@ -119,7 +119,24 @@ function roundedFeatureDelta(value: number): number {
   return Math.round(value * 1000000) / 1000000;
 }
 
-function selectionFeatureDeltas(selection: LnsWindowRankerSelectionTelemetry): Record<string, number> | null {
+function selectionFeatureDeltas(
+  selection: LnsWindowRankerSelectionTelemetry,
+  nominated = false
+): Record<string, number> | null {
+  if (nominated) {
+    if (selection.nominatedFeatureDeltas) return selection.nominatedFeatureDeltas;
+    if (!selection.baselineFeatures || !selection.nominatedFeatures) return null;
+    const featureNames = new Set([
+      ...Object.keys(selection.baselineFeatures),
+      ...Object.keys(selection.nominatedFeatures)
+    ]);
+    return Object.fromEntries(
+      [...featureNames].map((featureName) => [
+        featureName,
+        (selection.nominatedFeatures?.[featureName] ?? 0) - (selection.baselineFeatures?.[featureName] ?? 0)
+      ])
+    );
+  }
   if (selection.featureDeltas) return selection.featureDeltas;
   if (!selection.baselineFeatures || !selection.selectedFeatures) return null;
   const featureNames = new Set([
@@ -156,8 +173,12 @@ function addMeanFeatureDeltasToSums(
   );
 }
 
-function addFeatureDeltas(sums: Record<string, number>, selection: LnsWindowRankerSelectionTelemetry): boolean {
-  const deltas = selectionFeatureDeltas(selection);
+function addFeatureDeltas(
+  sums: Record<string, number>,
+  selection: LnsWindowRankerSelectionTelemetry,
+  nominated = false
+): boolean {
+  const deltas = selectionFeatureDeltas(selection, nominated);
   if (!deltas) return false;
   return addDeltasToSums(sums, deltas);
 }
@@ -166,9 +187,10 @@ function addTransitionFeatureDeltas(
   sumsByTransition: Record<string, Record<string, number>>,
   countsByTransition: Record<string, number>,
   transition: string,
-  selection: LnsWindowRankerSelectionTelemetry
+  selection: LnsWindowRankerSelectionTelemetry,
+  nominated = false
 ): void {
-  const deltas = selectionFeatureDeltas(selection);
+  const deltas = selectionFeatureDeltas(selection, nominated);
   if (!deltas) return;
   const sums = sumsByTransition[transition] ?? {};
   if (!addDeltasToSums(sums, deltas)) return;
@@ -319,6 +341,14 @@ function transitionKey(selection: LnsWindowRankerSelectionTelemetry): string {
   return `${selection.baselineOperator}->${selection.selectedOperator}`;
 }
 
+function nominatedTransitionKey(selection: LnsWindowRankerSelectionTelemetry): string {
+  return `${selection.baselineOperator}->${selection.nominatedOperator ?? selection.selectedOperator}`;
+}
+
+function fallbackChangedWindow(selection: LnsWindowRankerSelectionTelemetry): boolean {
+  return !sameTelemetryWindow(selection.baselineWindow, selection.nominatedWindow ?? selection.selectedWindow);
+}
+
 export function buildLnsWindowRankerOnlineSelectionDiagnostics(
   result: LnsBenchmarkCaseResult
 ): LnsWindowRankerOnlineSelectionDiagnostics | null {
@@ -347,14 +377,16 @@ export function buildLnsWindowRankerOnlineSelectionDiagnostics(
       );
     }
     if (selection.fallbackReason) {
-      incrementCount(diagnostics.fallbackTransitionCounts, transition);
-      if (changedWindow) diagnostics.fallbackChangedWindowCount += 1;
-      if (addFeatureDeltas(fallbackFeatureDeltaSums, selection)) diagnostics.fallbackFeatureDeltaCount += 1;
+      const fallbackTransition = nominatedTransitionKey(selection);
+      incrementCount(diagnostics.fallbackTransitionCounts, fallbackTransition);
+      if (fallbackChangedWindow(selection)) diagnostics.fallbackChangedWindowCount += 1;
+      if (addFeatureDeltas(fallbackFeatureDeltaSums, selection, true)) diagnostics.fallbackFeatureDeltaCount += 1;
       addTransitionFeatureDeltas(
         fallbackTransitionFeatureDeltaSums,
         diagnostics.fallbackTransitionFeatureDeltaCounts,
-        transition,
-        selection
+        fallbackTransition,
+        selection,
+        true
       );
     }
   }

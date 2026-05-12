@@ -26,6 +26,7 @@ import {
 import { runCliMain } from "../../apps/cliEntrypoint.js";
 import { writeCliJsonOrText } from "../../apps/cliOutput.js";
 import {
+  assertArtifactPathNotObsolete,
   completeAppendableRegistryEntry,
   defaultCliReplayCommand,
   normalizeRepoRelativePath,
@@ -57,6 +58,10 @@ interface ParsedLnsWindowRankerArgs {
   gapDiagnostics: boolean;
   supplementalReplayCalibration: boolean;
   supplementalReplayCalibrationIgnoreBaselineFeature: boolean;
+  supplementalReplayOnlineSelectedSuppression: boolean;
+  supplementalReplayOnlineSelectedSuppressionWeight?: number;
+  supplementalReplayProtectedNeutralSuppression: boolean;
+  supplementalReplayProtectedNeutralSuppressionWeight?: number;
   trajectoryFeatures: boolean;
   featureInteractions: boolean;
   target?: LnsWindowRankerLabelTarget;
@@ -140,6 +145,10 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
   let gapDiagnostics = false;
   let supplementalReplayCalibration = false;
   let supplementalReplayCalibrationIgnoreBaselineFeature = false;
+  let supplementalReplayOnlineSelectedSuppression = false;
+  let supplementalReplayOnlineSelectedSuppressionWeight: number | undefined;
+  let supplementalReplayProtectedNeutralSuppression = false;
+  let supplementalReplayProtectedNeutralSuppressionWeight: number | undefined;
   let trajectoryFeatures = false;
   let featureInteractions = false;
   let target: LnsWindowRankerLabelTarget | undefined;
@@ -194,6 +203,18 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
     },
     "margin-weight-cap": (value) => {
       marginWeightCap = parsePositiveNumber(value, "margin weight cap");
+    },
+    "supplemental-replay-online-selected-suppression-weight": (value) => {
+      supplementalReplayOnlineSelectedSuppressionWeight = parsePositiveNumber(
+        value,
+        "supplemental replay online selected suppression weight"
+      );
+    },
+    "supplemental-replay-protected-neutral-suppression-weight": (value) => {
+      supplementalReplayProtectedNeutralSuppressionWeight = parsePositiveNumber(
+        value,
+        "supplemental replay protected neutral suppression weight"
+      );
     },
     target: (value) => {
       if (
@@ -270,6 +291,20 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
       supplementalReplayCalibrationIgnoreBaselineFeature = true;
       continue;
     }
+    if (
+      isCliFlag(
+        arg,
+        "--supplemental-replay-online-selected-suppression",
+        "--supplemental-replay-online-selection-suppression"
+      )
+    ) {
+      supplementalReplayOnlineSelectedSuppression = true;
+      continue;
+    }
+    if (isCliFlag(arg, "--supplemental-replay-protected-neutral-suppression")) {
+      supplementalReplayProtectedNeutralSuppression = true;
+      continue;
+    }
     if (isCliFlag(arg, "--feature-interactions", "--ranker-feature-interactions")) {
       featureInteractions = true;
       continue;
@@ -313,6 +348,10 @@ function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
     gapDiagnostics,
     supplementalReplayCalibration,
     supplementalReplayCalibrationIgnoreBaselineFeature,
+    supplementalReplayOnlineSelectedSuppression,
+    supplementalReplayOnlineSelectedSuppressionWeight,
+    supplementalReplayProtectedNeutralSuppression,
+    supplementalReplayProtectedNeutralSuppressionWeight,
     trajectoryFeatures,
     featureInteractions,
     target,
@@ -338,6 +377,7 @@ function readLabelSnapshot(labelsPath: string): LearnedRankingLabelSnapshot {
 
 function readRankerModel(modelPath: string): LnsWindowRankerModel {
   const repoRelativePath = normalizeRepoRelativePath(modelPath, "--model");
+  assertArtifactPathNotObsolete(repoRelativePath, "--model");
   const parsed = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), repoRelativePath), "utf8"));
   return parsed as LnsWindowRankerModel;
 }
@@ -653,6 +693,28 @@ export function runLnsWindowRankerCli(): void {
       "--supplemental-replay-calibration-ignore-baseline-feature requires --supplemental-replay-calibration."
     );
   }
+  if (args.supplementalReplayOnlineSelectedSuppression && !args.supplementalReplayCalibration) {
+    throw new Error("--supplemental-replay-online-selected-suppression requires --supplemental-replay-calibration.");
+  }
+  if (
+    args.supplementalReplayOnlineSelectedSuppressionWeight !== undefined &&
+    !args.supplementalReplayOnlineSelectedSuppression
+  ) {
+    throw new Error(
+      "--supplemental-replay-online-selected-suppression-weight requires --supplemental-replay-online-selected-suppression."
+    );
+  }
+  if (args.supplementalReplayProtectedNeutralSuppression && !args.supplementalReplayCalibration) {
+    throw new Error("--supplemental-replay-protected-neutral-suppression requires --supplemental-replay-calibration.");
+  }
+  if (
+    args.supplementalReplayProtectedNeutralSuppressionWeight !== undefined &&
+    !args.supplementalReplayProtectedNeutralSuppression
+  ) {
+    throw new Error(
+      "--supplemental-replay-protected-neutral-suppression-weight requires --supplemental-replay-protected-neutral-suppression."
+    );
+  }
 
   const labelSnapshot = readLabelSnapshot(args.labelsPath);
   const supplementalReplaySnapshots = args.supplementalReplayLabelPaths.map(readSupplementalReplaySnapshot);
@@ -669,6 +731,10 @@ export function runLnsWindowRankerCli(): void {
       allowWeakSeedReplayLabels: args.allowWeakSeedReplayLabels,
       supplementalReplayCalibration: args.supplementalReplayCalibration,
       supplementalReplayCalibrationIgnoreBaselineFeature: args.supplementalReplayCalibrationIgnoreBaselineFeature,
+      supplementalReplayOnlineSelectedSuppression: args.supplementalReplayOnlineSelectedSuppression,
+      supplementalReplayOnlineSelectedSuppressionWeight: args.supplementalReplayOnlineSelectedSuppressionWeight,
+      supplementalReplayProtectedNeutralSuppression: args.supplementalReplayProtectedNeutralSuppression,
+      supplementalReplayProtectedNeutralSuppressionWeight: args.supplementalReplayProtectedNeutralSuppressionWeight,
       trajectoryFeatures: args.trajectoryFeatures,
       featureInteractions: args.featureInteractions,
       excludeFeatureIdenticalRepeatabilityConflicts: args.excludeFeatureIdenticalRepeatabilityConflicts

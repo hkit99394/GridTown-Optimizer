@@ -47,6 +47,8 @@ import type { LnsAdaptiveNeighborhoodCandidate } from "./neighborhoods.js";
 export interface NormalizedLnsWindowRankerOptions {
   model: LnsWindowRankerRuntimeModel;
   minScoreDelta: number;
+  suppressionModel: LnsWindowRankerRuntimeModel | null;
+  suppressionMinScoreDelta: number;
   allowedTransitions: readonly LnsWindowRankerOperatorTransition[] | null;
   selectedFeatureGates: readonly LnsWindowRankerSelectedFeatureGate[];
   selectedFeatureGateGroups: readonly LnsWindowRankerSelectedFeatureGateGroup[];
@@ -123,9 +125,14 @@ export function normalizeLnsWindowRankerOptions(
 ): NormalizedLnsWindowRankerOptions | null {
   if (!options || options.enabled === false) return null;
   assertValidLnsWindowRankerRuntimeModel(options.model);
+  if (options.suppressionModel !== undefined) {
+    assertValidLnsWindowRankerRuntimeModel(options.suppressionModel);
+  }
   return {
     model: options.model,
     minScoreDelta: Math.max(0, finiteNumberOrDefault(options.minScoreDelta, 0)),
+    suppressionModel: options.suppressionModel ?? null,
+    suppressionMinScoreDelta: Math.max(0, finiteNumberOrDefault(options.suppressionMinScoreDelta, 0)),
     allowedTransitions: normalizeAllowedTransitions(options.allowedTransitions),
     selectedFeatureGates: normalizeSelectedFeatureGates(options.selectedFeatureGates),
     selectedFeatureGateGroups: normalizeSelectedFeatureGateGroups(options.selectedFeatureGateGroups),
@@ -636,7 +643,21 @@ export function selectLnsWindowRankerCandidate(
     selectedFeatureFallbackReason === undefined && !featureGatePassed
       ? ("feature-delta-gate-not-met" as const)
       : selectedFeatureFallbackReason;
-  const selected = featureFallbackReason ? baseline : best;
+  const suppressionEvaluation =
+    featureFallbackReason === undefined && !bestIsBaseline && options.suppressionModel !== null
+      ? {
+          baselineScore: scoreFeatureValues(baseline.features, options.suppressionModel),
+          selectedScore: scoreFeatureValues(best.features, options.suppressionModel)
+        }
+      : null;
+  const suppressionScoreDelta =
+    suppressionEvaluation === null ? null : suppressionEvaluation.baselineScore - suppressionEvaluation.selectedScore;
+  const suppressionFallbackReason =
+    suppressionScoreDelta !== null && suppressionScoreDelta >= options.suppressionMinScoreDelta
+      ? ("suppression-model-veto" as const)
+      : undefined;
+  const finalFallbackReason = featureFallbackReason ?? suppressionFallbackReason;
+  const selected = finalFallbackReason ? baseline : best;
   return {
     candidate: selected.candidate,
     telemetry: {
@@ -650,18 +671,36 @@ export function selectLnsWindowRankerCandidate(
       baselineScore: roundedScore(baseline.score),
       selectedScore: roundedScore(selected.score),
       scoreDelta: roundedScore(selected.score - baseline.score),
+      nominatedScore: roundedScore(best.score),
+      nominatedScoreDelta: roundedScore(best.score - baseline.score),
+      ...(options.suppressionModel?.modelFingerprint
+        ? { suppressionModelFingerprint: options.suppressionModel.modelFingerprint }
+        : {}),
+      ...(suppressionEvaluation === null
+        ? {}
+        : {
+            suppressionBaselineScore: roundedScore(suppressionEvaluation.baselineScore),
+            suppressionSelectedScore: roundedScore(suppressionEvaluation.selectedScore),
+            suppressionScoreDelta: roundedScore(suppressionScoreDelta!)
+          }),
       baselineCandidateIndex: baseline.index,
       selectedCandidateIndex: selected.index,
+      nominatedCandidateIndex: best.index,
       baselineOperator: baseline.candidate.operator,
       selectedOperator: selected.candidate.operator,
+      nominatedOperator: best.candidate.operator,
       baselineWindow: { ...baseline.candidate.window },
       selectedWindow: { ...selected.candidate.window },
+      nominatedWindow: { ...best.candidate.window },
       selectedByBaseline: sameCandidate(selected.candidate, baselineCandidate),
+      nominatedByBaseline: bestIsBaseline,
       baselineFeatures: featureTelemetry(baseline.features),
       selectedFeatures: featureTelemetry(selected.features),
       featureDeltas: featureDeltaTelemetry(selected.features, baseline.features),
+      nominatedFeatures: featureTelemetry(best.features),
+      nominatedFeatureDeltas: featureDeltaTelemetry(best.features, baseline.features),
       ...(options.captureDecisionState ? { decisionState: buildDecisionStateTelemetry(incumbent) } : {}),
-      ...(featureFallbackReason ? { fallbackReason: featureFallbackReason } : {})
+      ...(finalFallbackReason ? { fallbackReason: finalFallbackReason } : {})
     }
   };
 }

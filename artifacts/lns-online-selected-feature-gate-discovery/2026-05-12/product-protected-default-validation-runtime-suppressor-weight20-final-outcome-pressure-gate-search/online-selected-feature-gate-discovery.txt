@@ -1,0 +1,65 @@
+LNS online selected-feature gate discovery
+generatedAt=2026-05-12T09:51:58.560Z
+target=final-improved
+sourceScorecards=2
+validationSourceScorecards=1
+overrideTraces=45
+targetImproved=9
+selectionImproved=9
+selectionRegressed=0
+terminalFinalImproved=9
+terminalFinalRegressed=0
+safetyRegressed=0
+validationOverrideTraces=72
+validationTargetImproved=36
+validationSelectionImproved=63
+validationSelectionRegressed=0
+validationTerminalFinalImproved=36
+validationTerminalFinalRegressed=9
+validationSafetyRegressed=9
+features=residentialCandidateHeadroom,serviceCandidatesIntersecting
+atoms=14 global-capped / 14 per-feature-capped / 14 total-candidate
+safeTargetAtoms=14/14
+safeSingletonAdmissionQuota=0
+conjunctionReservationSearch=Exhaustive recursive reservation search up to requested --max-group-size; full candidate enumeration honors --max-group-size.
+conjunctionReservationSearchMaxGroupSize=2
+conjunctionReservationSupportsRequestedMaxGroupSize=true
+conjunctionReservationSearchExhaustive=true
+conjunctionReservationCoversRequestedMaxGroupSize=true
+conjunctionReservationUnsafeAtoms=0/0 considered
+conjunctionReservationPartnerAtoms=14/14 considered
+candidates=63 total / 25 reported
+inputFingerprint=fnv1a:f82348f2
+discoveryFingerprint=fnv1a:1310728d
+
+greedy-selected-groups=residentialCandidateHeadroom>=4.86
+greedy-selected=27 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=18 safe=true
+validation-greedy-selected-groups=residentialCandidateHeadroom>=4.86
+validation-greedy-selected=54 target-improved=36 selection-improved=45 selection-regressed=0 terminal-final-improved=36 terminal-final-regressed=0 safety-regressed=0 neutral=18 safe=true
+
+top-candidates:
+- residentialCandidateHeadroom>=4.86: selected=27 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=18 worst=0 safe=true validation-selected=54 validation-target-improved=36 validation-selection-regressed=0 validation-terminal-final-regressed=0 validation-safety-regressed=0 validation-neutral=18 validation-safe=true
+- residentialCandidateHeadroom>=4.86,serviceCandidatesIntersecting<=1.65: selected=27 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=18 worst=0 safe=true validation-selected=54 validation-target-improved=36 validation-selection-regressed=0 validation-terminal-final-regressed=0 validation-safety-regressed=0 validation-neutral=18 validation-safe=true
+- residentialCandidateHeadroom>=4.86,serviceCandidatesIntersecting>=0.3: selected=27 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=18 worst=0 safe=true validation-selected=54 validation-target-improved=36 validation-selection-regressed=0 validation-terminal-final-regressed=0 validation-safety-regressed=0 validation-neutral=18 validation-safe=true
+- residentialCandidateHeadroom>=2.36: selected=36 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=27 worst=0 safe=true validation-selected=63 validation-target-improved=36 validation-selection-regressed=0 validation-terminal-final-regressed=0 validation-safety-regressed=0 validation-neutral=27 validation-safe=true
+- residentialCandidateHeadroom>=2.36,serviceCandidatesIntersecting<=1.65: selected=36 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=27 worst=0 safe=true validation-selected=63 validation-target-improved=36 validation-selection-regressed=0 validation-terminal-final-regressed=0 validation-safety-regressed=0 validation-neutral=27 validation-safe=true
+- residentialCandidateHeadroom>=2.36,serviceCandidatesIntersecting>=0.3: selected=36 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=27 worst=0 safe=true validation-selected=63 validation-target-improved=36 validation-selection-regressed=0 validation-terminal-final-regressed=0 validation-safety-regressed=0 validation-neutral=27 validation-safe=true
+- serviceCandidatesIntersecting>=0.9,residentialCandidateHeadroom<=12.16: selected=18 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=9 worst=0 safe=true validation-selected=9 validation-target-improved=9 validation-selection-regressed=0 validation-terminal-final-regressed=0 validation-safety-regressed=0 validation-neutral=0 validation-safe=true
+- residentialCandidateHeadroom>=7.56: selected=18 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=9 worst=0 safe=true validation-selected=18 validation-target-improved=9 validation-selection-regressed=0 validation-terminal-final-regressed=0 validation-safety-regressed=0 validation-neutral=9 validation-safe=true
+- serviceCandidatesIntersecting>=0.9: selected=18 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=9 worst=0 safe=true validation-selected=18 validation-target-improved=9 validation-selection-regressed=0 validation-terminal-final-regressed=0 validation-safety-regressed=0 validation-neutral=9 validation-safe=true
+- residentialCandidateHeadroom>=7.56,serviceCandidatesIntersecting<=1.65: selected=18 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=9 worst=0 safe=true validation-selected=18 validation-target-improved=9 validation-selection-regressed=0 validation-terminal-final-regressed=0 validation-safety-regressed=0 validation-neutral=9 validation-safe=true
+- residentialCandidateHeadroom>=7.56,serviceCandidatesIntersecting>=0.3: selected=18 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=9 worst=0 safe=true validation-selected=18 validation-target-improved=9 validation-selection-regressed=0 validation-terminal-final-regressed=0 validation-safety-regressed=0 validation-neutral=9 validation-safe=true
+- serviceCandidatesIntersecting>=0.9,residentialCandidateHeadroom>=0.2: selected=18 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=9 worst=0 safe=true validation-selected=18 validation-target-improved=9 validation-selection-regressed=0 validation-terminal-final-regressed=0 validation-safety-regressed=0 validation-neutral=9 validation-safe=true
+- serviceCandidatesIntersecting>=0.9,residentialCandidateHeadroom>=2.36: selected=18 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=9 worst=0 safe=true validation-selected=18 validation-target-improved=9 validation-selection-regressed=0 validation-terminal-final-regressed=0 validation-safety-regressed=0 validation-neutral=9 validation-safe=true
+- serviceCandidatesIntersecting>=0.9,residentialCandidateHeadroom>=4.86: selected=18 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=9 worst=0 safe=true validation-selected=18 validation-target-improved=9 validation-selection-regressed=0 validation-terminal-final-regressed=0 validation-safety-regressed=0 validation-neutral=9 validation-safe=true
+- residentialCandidateHeadroom>=4.86,serviceCandidatesIntersecting>=0.75: selected=18 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=9 worst=0 safe=true validation-selected=27 validation-target-improved=9 validation-selection-regressed=0 validation-terminal-final-regressed=0 validation-safety-regressed=0 validation-neutral=18 validation-safe=true
+- residentialCandidateHeadroom>=4.86,serviceCandidatesIntersecting>=0.8: selected=18 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=9 worst=0 safe=true validation-selected=27 validation-target-improved=9 validation-selection-regressed=0 validation-terminal-final-regressed=0 validation-safety-regressed=0 validation-neutral=18 validation-safe=true
+- serviceCandidatesIntersecting>=0.8,residentialCandidateHeadroom<=12.16: selected=27 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=18 worst=0 safe=true validation-selected=27 validation-target-improved=9 validation-selection-regressed=0 validation-terminal-final-regressed=0 validation-safety-regressed=0 validation-neutral=18 validation-safe=true
+- serviceCandidatesIntersecting>=0.75,residentialCandidateHeadroom<=12.16: selected=36 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=27 worst=0 safe=true validation-selected=27 validation-target-improved=9 validation-selection-regressed=0 validation-terminal-final-regressed=0 validation-safety-regressed=0 validation-neutral=18 validation-safe=true
+- serviceCandidatesIntersecting>=0.8: selected=27 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=18 worst=0 safe=true validation-selected=36 validation-target-improved=9 validation-selection-regressed=0 validation-terminal-final-regressed=0 validation-safety-regressed=0 validation-neutral=27 validation-safe=true
+- residentialCandidateHeadroom>=2.36,serviceCandidatesIntersecting>=0.75: selected=27 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=18 worst=0 safe=true validation-selected=36 validation-target-improved=9 validation-selection-regressed=0 validation-terminal-final-regressed=0 validation-safety-regressed=0 validation-neutral=27 validation-safe=true
+- serviceCandidatesIntersecting>=0.8,residentialCandidateHeadroom>=0.2: selected=27 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=18 worst=0 safe=true validation-selected=36 validation-target-improved=9 validation-selection-regressed=0 validation-terminal-final-regressed=0 validation-safety-regressed=0 validation-neutral=27 validation-safe=true
+- serviceCandidatesIntersecting>=0.8,residentialCandidateHeadroom>=2.36: selected=27 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=18 worst=0 safe=true validation-selected=36 validation-target-improved=9 validation-selection-regressed=0 validation-terminal-final-regressed=0 validation-safety-regressed=0 validation-neutral=27 validation-safe=true
+- serviceCandidatesIntersecting>=0.75: selected=36 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=27 worst=0 safe=true validation-selected=36 validation-target-improved=9 validation-selection-regressed=0 validation-terminal-final-regressed=0 validation-safety-regressed=0 validation-neutral=27 validation-safe=true
+- serviceCandidatesIntersecting>=0.75,residentialCandidateHeadroom>=0.2: selected=36 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=27 worst=0 safe=true validation-selected=36 validation-target-improved=9 validation-selection-regressed=0 validation-terminal-final-regressed=0 validation-safety-regressed=0 validation-neutral=27 validation-safe=true
+- residentialCandidateHeadroom>=12.16,residentialCandidateHeadroom<=12.16: selected=9 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=0 worst=35 safe=true validation-selected=0 validation-target-improved=0 validation-selection-regressed=0 validation-terminal-final-regressed=0 validation-safety-regressed=0 validation-neutral=0 validation-safe=false

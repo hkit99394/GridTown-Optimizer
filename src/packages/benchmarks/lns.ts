@@ -49,7 +49,11 @@ export type LnsReplayPressureFamily =
   | "gate"
   | "footprint-pressure"
   | "service-pressure"
-  | "anchor-service";
+  | "anchor-service"
+  | "product-expansion"
+  | "product-footprint"
+  | "product-service"
+  | "product-warm-start";
 
 export const UNCATEGORIZED_LNS_REPLAY_PRESSURE_FAMILY = "uncategorized" as const;
 

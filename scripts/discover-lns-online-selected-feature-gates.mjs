@@ -41,6 +41,10 @@ function usage() {
     "Options:",
     "  --source-artifact=<dir>       Online ablation artifact dir containing lns-window-ranker-online-ablation.json. Repeatable.",
     "  --source-scorecard=<path>     Direct path to an online ablation JSON file. Repeatable.",
+    "  --validation-source-artifact=<dir>",
+    "                                  Optional validation artifact dir containing lns-window-ranker-online-ablation.json. Repeatable.",
+    "  --validation-source-scorecard=<path>",
+    "                                  Optional direct validation online ablation JSON path. Repeatable.",
     "  --artifact-dir=<dir>          Artifact bundle output directory under artifacts/.",
     "  --feature-allowlist=<csv>     Restrict candidate features to these selectedFeatures names.",
     "  --target=<name>               Gate objective: selection-improved or final-improved. Default: selection-improved.",
@@ -85,6 +89,8 @@ function parsePositiveInteger(value, label) {
 function parseArgs(argv) {
   const sourceArtifacts = [];
   const sourceScorecards = [];
+  const validationSourceArtifacts = [];
+  const validationSourceScorecards = [];
   let artifactDir;
   let featureAllowlist;
   let target = "selection-improved";
@@ -109,6 +115,14 @@ function parseArgs(argv) {
     }
     if (arg.startsWith("--source-scorecard=")) {
       sourceScorecards.push(arg.slice("--source-scorecard=".length));
+      continue;
+    }
+    if (arg.startsWith("--validation-source-artifact=")) {
+      validationSourceArtifacts.push(arg.slice("--validation-source-artifact=".length));
+      continue;
+    }
+    if (arg.startsWith("--validation-source-scorecard=")) {
+      validationSourceScorecards.push(arg.slice("--validation-source-scorecard=".length));
       continue;
     }
     if (arg.startsWith("--artifact-dir=")) {
@@ -156,6 +170,8 @@ function parseArgs(argv) {
   return {
     sourceArtifacts,
     sourceScorecards,
+    validationSourceArtifacts,
+    validationSourceScorecards,
     artifactDir,
     featureAllowlist,
     target,
@@ -353,6 +369,35 @@ function evaluatePredicate(rows, predicate, target) {
   };
 }
 
+function evaluateGates(rows, gates, target) {
+  return evaluatePredicate(rows, (row) => gates.every((gate) => gatePasses(row, gate)), target);
+}
+
+function withSafetyFlag(metrics) {
+  return {
+    ...metrics,
+    safeNoRegression: metrics.selected > 0 && metrics.targetImproved > 0 && metrics.safetyRegressed === 0
+  };
+}
+
+function rowSummaryFromMetrics(metrics) {
+  return {
+    overrideTraceCount: metrics.selected,
+    targetImproved: metrics.targetImproved,
+    selectionImproved: metrics.selectionImproved,
+    selectionRegressed: metrics.selectionRegressed,
+    terminalFinalImproved: metrics.terminalFinalImproved,
+    terminalFinalRegressed: metrics.terminalFinalRegressed,
+    finalImproved: metrics.finalImproved,
+    finalRegressed: metrics.finalRegressed,
+    safetyRegressed: metrics.safetyRegressed,
+    neutral: metrics.neutral,
+    unknown: metrics.unknown,
+    bestFinalDelta: metrics.bestFinalDelta,
+    worstFinalDelta: metrics.worstFinalDelta
+  };
+}
+
 function rowExample(row) {
   return {
     sourceScorecard: row.sourceScorecard,
@@ -414,6 +459,25 @@ function compareCandidates(left, right) {
   if (left.selected !== right.selected) return left.selected - right.selected;
   if (left.atomCount !== right.atomCount) return left.atomCount - right.atomCount;
   return left.cliArg.localeCompare(right.cliArg);
+}
+
+function compareCandidatesWithValidation(left, right) {
+  const leftValidation = left.validation;
+  const rightValidation = right.validation;
+  if (!leftValidation || !rightValidation) return compareCandidates(left, right);
+
+  const leftSafePositive = leftValidation.safeNoRegression && leftValidation.targetImproved > 0 ? 1 : 0;
+  const rightSafePositive = rightValidation.safeNoRegression && rightValidation.targetImproved > 0 ? 1 : 0;
+  if (leftSafePositive !== rightSafePositive) return rightSafePositive - leftSafePositive;
+  if (leftValidation.safetyRegressed !== rightValidation.safetyRegressed) {
+    return leftValidation.safetyRegressed - rightValidation.safetyRegressed;
+  }
+  if (leftValidation.targetImproved !== rightValidation.targetImproved) {
+    return rightValidation.targetImproved - leftValidation.targetImproved;
+  }
+  if (leftValidation.neutral !== rightValidation.neutral) return leftValidation.neutral - rightValidation.neutral;
+  if (leftValidation.selected !== rightValidation.selected) return leftValidation.selected - rightValidation.selected;
+  return compareCandidates(left, right);
 }
 
 function compareAtoms(left, right) {
@@ -788,27 +852,30 @@ function buildAtoms(rows, features, maxAtomsPerFeature, target, maxGroupSize) {
   };
 }
 
-function buildCandidate(atomGroup, rows, target) {
+function buildCandidate(atomGroup, rows, target, validationRows = []) {
   const gates = atomGroup.flatMap(atomToGates);
   const cliArg = gatesCliArg(gates);
-  const metrics = evaluatePredicate(rows, (row) => gates.every((gate) => gatePasses(row, gate)), target);
+  const metrics = evaluateGates(rows, gates, target);
+  const validationMetrics =
+    validationRows.length > 0 ? withSafetyFlag(evaluateGates(validationRows, gates, target)) : null;
   return {
     atomCount: atomGroup.length,
     atoms: atomGroup.map(({ feature, kind, value, signature }) => ({ feature, kind, value, signature })),
     gates,
     cliArg,
     ...metrics,
-    safeNoRegression: metrics.selected > 0 && metrics.targetImproved > 0 && metrics.safetyRegressed === 0
+    safeNoRegression: metrics.selected > 0 && metrics.targetImproved > 0 && metrics.safetyRegressed === 0,
+    validation: validationMetrics
   };
 }
 
-function enumerateCandidates(rows, atoms, maxGroupSize, target) {
+function enumerateCandidates(rows, atoms, maxGroupSize, target, validationRows = []) {
   const candidates = [];
   const seen = new Set();
 
   function visit(start, group, usedFeatures) {
     if (group.length > 0) {
-      const candidate = buildCandidate(group, rows, target);
+      const candidate = buildCandidate(group, rows, target, validationRows);
       const signature = candidate.cliArg;
       if (!seen.has(signature)) {
         seen.add(signature);
@@ -828,7 +895,7 @@ function enumerateCandidates(rows, atoms, maxGroupSize, target) {
   }
 
   visit(0, [], new Set());
-  return candidates.sort(compareCandidates);
+  return candidates.sort(validationRows.length > 0 ? compareCandidatesWithValidation : compareCandidates);
 }
 
 function buildGreedyGroupSet(rows, candidates, target) {
@@ -867,31 +934,100 @@ function buildGreedyGroupSet(rows, candidates, target) {
   };
 }
 
+function gatesGroupPredicate(selectedGateGroups) {
+  return (row) => selectedGateGroups.some((gates) => gates.every((gate) => gatePasses(row, gate)));
+}
+
+function buildValidationGreedyGroupSet(rows, validationRows, candidates, target) {
+  if (validationRows.length === 0) return null;
+  const uncovered = new Set(validationRows.filter((row) => isPositive(row, target)).map((row) => row.key));
+  const selectedGroups = [];
+  const selectedValidationKeys = new Set();
+  for (const candidate of candidates.filter((candidate) => candidate.validation?.safeNoRegression)) {
+    const positiveGain = candidate.validation.positiveKeys.filter((key) => uncovered.has(key)).length;
+    if (positiveGain === 0) continue;
+    selectedGroups.push(candidate);
+    for (const key of candidate.validation.selectedKeys) selectedValidationKeys.add(key);
+    for (const key of candidate.validation.positiveKeys) uncovered.delete(key);
+    if (uncovered.size === 0) break;
+  }
+  const selectedFeatureGateGroups = selectedGroups.map((candidate) => candidate.gates);
+  const validationMetrics = withSafetyFlag(
+    evaluatePredicate(validationRows, (row) => selectedValidationKeys.has(row.key), target)
+  );
+  const sourceMetrics = withSafetyFlag(
+    selectedFeatureGateGroups.length === 0
+      ? evaluatePredicate(rows, () => false, target)
+      : evaluatePredicate(rows, gatesGroupPredicate(selectedFeatureGateGroups), target)
+  );
+  return {
+    groups: selectedGroups.map((candidate) => ({
+      gates: candidate.gates,
+      cliArg: candidate.cliArg,
+      source: compactMetrics(candidate),
+      validation: compactMetrics(candidate.validation)
+    })),
+    selectedFeatureGateGroups,
+    cliArg: selectedGroups.map((candidate) => candidate.cliArg).join(";"),
+    uncoveredPositiveCount: uncovered.size,
+    source: sourceMetrics,
+    validation: validationMetrics,
+    ...validationMetrics,
+    safeNoRegression: validationMetrics.safeNoRegression
+  };
+}
+
+function compactMetrics(metrics) {
+  return {
+    selected: metrics.selected,
+    targetImproved: metrics.targetImproved,
+    selectionImproved: metrics.selectionImproved,
+    selectionRegressed: metrics.selectionRegressed,
+    terminalFinalImproved: metrics.terminalFinalImproved,
+    terminalFinalRegressed: metrics.terminalFinalRegressed,
+    finalImproved: metrics.finalImproved,
+    finalRegressed: metrics.finalRegressed,
+    safetyRegressed: metrics.safetyRegressed,
+    neutral: metrics.neutral,
+    unknown: metrics.unknown,
+    bestFinalDelta: metrics.bestFinalDelta,
+    worstFinalDelta: metrics.worstFinalDelta,
+    safeNoRegression: metrics.safeNoRegression
+  };
+}
+
+function metricsReportProjection(metrics) {
+  return {
+    selected: metrics.selected,
+    targetImproved: metrics.targetImproved,
+    selectionImproved: metrics.selectionImproved,
+    selectionRegressed: metrics.selectionRegressed,
+    terminalFinalImproved: metrics.terminalFinalImproved,
+    terminalFinalRegressed: metrics.terminalFinalRegressed,
+    finalImproved: metrics.finalImproved,
+    finalRegressed: metrics.finalRegressed,
+    safetyRegressed: metrics.safetyRegressed,
+    neutral: metrics.neutral,
+    unknown: metrics.unknown,
+    bestFinalDelta: metrics.bestFinalDelta,
+    worstFinalDelta: metrics.worstFinalDelta,
+    safeNoRegression: metrics.safeNoRegression,
+    positiveExamples: metrics.positiveExamples.map(exampleReportProjection),
+    regressionExamples: metrics.regressionExamples.map(exampleReportProjection),
+    selectionRegressionExamples: metrics.selectionRegressionExamples.map(exampleReportProjection),
+    finalRegressionExamples: metrics.finalRegressionExamples.map(exampleReportProjection),
+    safetyRegressionExamples: metrics.safetyRegressionExamples.map(exampleReportProjection)
+  };
+}
+
 function candidateReportProjection(candidate) {
   return {
     atomCount: candidate.atomCount,
     atoms: candidate.atoms,
     gates: candidate.gates,
     cliArg: candidate.cliArg,
-    selected: candidate.selected,
-    targetImproved: candidate.targetImproved,
-    selectionImproved: candidate.selectionImproved,
-    selectionRegressed: candidate.selectionRegressed,
-    terminalFinalImproved: candidate.terminalFinalImproved,
-    terminalFinalRegressed: candidate.terminalFinalRegressed,
-    finalImproved: candidate.finalImproved,
-    finalRegressed: candidate.finalRegressed,
-    safetyRegressed: candidate.safetyRegressed,
-    neutral: candidate.neutral,
-    unknown: candidate.unknown,
-    bestFinalDelta: candidate.bestFinalDelta,
-    worstFinalDelta: candidate.worstFinalDelta,
-    safeNoRegression: candidate.safeNoRegression,
-    positiveExamples: candidate.positiveExamples.map(exampleReportProjection),
-    regressionExamples: candidate.regressionExamples.map(exampleReportProjection),
-    selectionRegressionExamples: candidate.selectionRegressionExamples.map(exampleReportProjection),
-    finalRegressionExamples: candidate.finalRegressionExamples.map(exampleReportProjection),
-    safetyRegressionExamples: candidate.safetyRegressionExamples.map(exampleReportProjection)
+    ...metricsReportProjection(candidate),
+    validation: candidate.validation ? metricsReportProjection(candidate.validation) : null
   };
 }
 
@@ -972,6 +1108,26 @@ function canonicalGreedyGroupSet(greedy) {
   };
 }
 
+function canonicalValidationGreedyGroupSet(greedy) {
+  if (!greedy) return null;
+  return {
+    groups: greedy.groups,
+    selectedFeatureGateGroups: greedy.selectedFeatureGateGroups,
+    cliArg: greedy.cliArg,
+    uncoveredPositiveCount: greedy.uncoveredPositiveCount,
+    source: {
+      ...compactMetrics(greedy.source),
+      selectedKeys: greedy.source.selectedKeys.slice().sort(),
+      positiveKeys: greedy.source.positiveKeys.slice().sort()
+    },
+    validation: {
+      ...compactMetrics(greedy.validation),
+      selectedKeys: greedy.validation.selectedKeys.slice().sort(),
+      positiveKeys: greedy.validation.positiveKeys.slice().sort()
+    }
+  };
+}
+
 function discoveryIdentityPayload(payload) {
   return {
     schemaVersion: DISCOVERY_IDENTITY_SCHEMA_VERSION,
@@ -980,6 +1136,7 @@ function discoveryIdentityPayload(payload) {
     metricSemanticsVersion: METRIC_SEMANTICS_VERSION,
     v2DeprecatedMetricAliasSchemaVersion: payload.v2DeprecatedMetricAliases.schemaVersion,
     sourceScorecards: payload.sourceScorecards,
+    validationSourceScorecards: payload.validationSourceScorecards,
     featureAllowlist: payload.featureAllowlist,
     features: payload.features,
     maxGroupSize: payload.maxGroupSize,
@@ -990,13 +1147,17 @@ function discoveryIdentityPayload(payload) {
     atomCount: payload.atomCount,
     cappedAtomSummary: canonicalCappedAtomSummary(payload.cappedAtomSummary),
     rowSummary: payload.rowSummary,
+    validationRowSummary: payload.validationRowSummary,
     candidateCount: payload.candidateCount,
-    greedySelectedGateGroups: canonicalGreedyGroupSet(payload.greedySelectedGateGroups)
+    greedySelectedGateGroups: canonicalGreedyGroupSet(payload.greedySelectedGateGroups),
+    validationGreedySelectedGateGroups: canonicalValidationGreedyGroupSet(payload.validationGreedySelectedGateGroups)
   };
 }
 
 function reportMetricsPayload(discovery) {
   return {
+    sourceScorecardCount: discovery.sourceScorecards.length,
+    validationSourceScorecardCount: discovery.validationSourceScorecards.length,
     overrideTraceCount: discovery.rowSummary.overrideTraceCount,
     targetImproved: discovery.rowSummary.targetImproved,
     selectionImproved: discovery.rowSummary.selectionImproved,
@@ -1006,6 +1167,15 @@ function reportMetricsPayload(discovery) {
     finalImproved: discovery.rowSummary.finalImproved,
     finalRegressed: discovery.rowSummary.finalRegressed,
     safetyRegressed: discovery.rowSummary.safetyRegressed,
+    validationOverrideTraceCount: discovery.validationRowSummary.overrideTraceCount,
+    validationTargetImproved: discovery.validationRowSummary.targetImproved,
+    validationSelectionImproved: discovery.validationRowSummary.selectionImproved,
+    validationSelectionRegressed: discovery.validationRowSummary.selectionRegressed,
+    validationTerminalFinalImproved: discovery.validationRowSummary.terminalFinalImproved,
+    validationTerminalFinalRegressed: discovery.validationRowSummary.terminalFinalRegressed,
+    validationFinalImproved: discovery.validationRowSummary.finalImproved,
+    validationFinalRegressed: discovery.validationRowSummary.finalRegressed,
+    validationSafetyRegressed: discovery.validationRowSummary.safetyRegressed,
     totalCandidateAtomCount: discovery.totalCandidateAtomCount,
     perFeatureCappedAtomCount: discovery.perFeatureCappedAtomCount,
     atomCount: discovery.atomCount,
@@ -1029,7 +1199,27 @@ function reportMetricsPayload(discovery) {
       safetyRegressed: discovery.greedySelectedGateGroups.safetyRegressed,
       neutral: discovery.greedySelectedGateGroups.neutral,
       safeNoRegression: discovery.greedySelectedGateGroups.safeNoRegression
-    }
+    },
+    validationGreedySelectedGateGroups: discovery.validationGreedySelectedGateGroups
+      ? {
+          groups: discovery.validationGreedySelectedGateGroups.groups,
+          selectedFeatureGateGroups: discovery.validationGreedySelectedGateGroups.selectedFeatureGateGroups,
+          cliArg: discovery.validationGreedySelectedGateGroups.cliArg,
+          selected: discovery.validationGreedySelectedGateGroups.selected,
+          targetImproved: discovery.validationGreedySelectedGateGroups.targetImproved,
+          selectionImproved: discovery.validationGreedySelectedGateGroups.selectionImproved,
+          selectionRegressed: discovery.validationGreedySelectedGateGroups.selectionRegressed,
+          terminalFinalImproved: discovery.validationGreedySelectedGateGroups.terminalFinalImproved,
+          terminalFinalRegressed: discovery.validationGreedySelectedGateGroups.terminalFinalRegressed,
+          finalImproved: discovery.validationGreedySelectedGateGroups.finalImproved,
+          finalRegressed: discovery.validationGreedySelectedGateGroups.finalRegressed,
+          safetyRegressed: discovery.validationGreedySelectedGateGroups.safetyRegressed,
+          neutral: discovery.validationGreedySelectedGateGroups.neutral,
+          safeNoRegression: discovery.validationGreedySelectedGateGroups.safeNoRegression,
+          source: compactMetrics(discovery.validationGreedySelectedGateGroups.source),
+          validation: compactMetrics(discovery.validationGreedySelectedGateGroups.validation)
+        }
+      : null
   };
 }
 
@@ -1058,7 +1248,7 @@ function reportIdentityPayload({ discovery, command, artifactDir, outputArtifact
   };
 }
 
-function buildDiscovery(rows, options, benchmarkApi, sourceScorecards) {
+function buildDiscovery(rows, validationRows, options, benchmarkApi, sourceScorecards, validationSourceScorecards) {
   const features = (
     options.featureAllowlist ??
     [...new Set(rows.flatMap((row) => Object.keys(row.selectedFeatures)))].filter(
@@ -1076,10 +1266,12 @@ function buildDiscovery(rows, options, benchmarkApi, sourceScorecards) {
     reservationAtoms: totalCandidateAtoms
   });
   const cappedAtomSummary = atomCapSummary(totalCandidateAtoms, perFeatureCappedAtoms, atoms, capDetails);
-  const candidates = enumerateCandidates(rows, atoms, options.maxGroupSize, options.target);
+  const candidates = enumerateCandidates(rows, atoms, options.maxGroupSize, options.target, validationRows);
   const topCandidates = candidates.slice(0, options.top);
   const greedy = buildGreedyGroupSet(rows, candidates, options.target);
+  const validationGreedy = buildValidationGreedyGroupSet(rows, validationRows, candidates, options.target);
   const rowSummary = evaluatePredicate(rows, () => true, options.target);
+  const validationRowSummary = evaluatePredicate(validationRows, () => true, options.target);
   const generatedAt = new Date().toISOString();
   const payload = {
     schemaVersion: DISCOVERY_ARTIFACT_SCHEMA_VERSION,
@@ -1088,6 +1280,7 @@ function buildDiscovery(rows, options, benchmarkApi, sourceScorecards) {
     metricSemantics: METRIC_SEMANTICS,
     v2DeprecatedMetricAliases: V2_DEPRECATED_METRIC_ALIASES,
     sourceScorecards,
+    validationSourceScorecards,
     featureAllowlist: options.featureAllowlist ?? null,
     features,
     maxGroupSize: options.maxGroupSize,
@@ -1098,21 +1291,8 @@ function buildDiscovery(rows, options, benchmarkApi, sourceScorecards) {
     atomCount: atoms.length,
     cappedAtomSummary,
     top: options.top,
-    rowSummary: {
-      overrideTraceCount: rows.length,
-      targetImproved: rowSummary.targetImproved,
-      selectionImproved: rowSummary.selectionImproved,
-      selectionRegressed: rowSummary.selectionRegressed,
-      terminalFinalImproved: rowSummary.terminalFinalImproved,
-      terminalFinalRegressed: rowSummary.terminalFinalRegressed,
-      finalImproved: rowSummary.finalImproved,
-      finalRegressed: rowSummary.finalRegressed,
-      safetyRegressed: rowSummary.safetyRegressed,
-      neutral: rowSummary.neutral,
-      unknown: rowSummary.unknown,
-      bestFinalDelta: rowSummary.bestFinalDelta,
-      worstFinalDelta: rowSummary.worstFinalDelta
-    },
+    rowSummary: rowSummaryFromMetrics(rowSummary),
+    validationRowSummary: rowSummaryFromMetrics(validationRowSummary),
     candidateCount: candidates.length,
     topCandidateCount: topCandidates.length,
     topCandidates: topCandidates.map((candidate) => ({
@@ -1134,17 +1314,19 @@ function buildDiscovery(rows, options, benchmarkApi, sourceScorecards) {
       bestFinalDelta: candidate.bestFinalDelta,
       worstFinalDelta: candidate.worstFinalDelta,
       safeNoRegression: candidate.safeNoRegression,
+      validation: candidate.validation ? metricsReportProjection(candidate.validation) : null,
       positiveExamples: candidate.positiveExamples,
       regressionExamples: candidate.regressionExamples,
       selectionRegressionExamples: candidate.selectionRegressionExamples,
       finalRegressionExamples: candidate.finalRegressionExamples,
       safetyRegressionExamples: candidate.safetyRegressionExamples
     })),
-    greedySelectedGateGroups: greedy
+    greedySelectedGateGroups: greedy,
+    validationGreedySelectedGateGroups: validationGreedy
   };
   return {
     ...payload,
-    inputFingerprint: benchmarkApi.buildModelExperimentFingerprint({ sourceScorecards }),
+    inputFingerprint: benchmarkApi.buildModelExperimentFingerprint({ sourceScorecards, validationSourceScorecards }),
     discoveryFingerprint: benchmarkApi.buildModelExperimentFingerprint(discoveryIdentityPayload(payload))
   };
 }
@@ -1155,6 +1337,7 @@ function formatDiscovery(discovery) {
     `generatedAt=${discovery.generatedAt}`,
     `target=${discovery.target}`,
     `sourceScorecards=${discovery.sourceScorecards.length}`,
+    `validationSourceScorecards=${discovery.validationSourceScorecards.length}`,
     `overrideTraces=${discovery.rowSummary.overrideTraceCount}`,
     `targetImproved=${discovery.rowSummary.targetImproved}`,
     `selectionImproved=${discovery.rowSummary.selectionImproved}`,
@@ -1162,6 +1345,13 @@ function formatDiscovery(discovery) {
     `terminalFinalImproved=${discovery.rowSummary.terminalFinalImproved}`,
     `terminalFinalRegressed=${discovery.rowSummary.terminalFinalRegressed}`,
     `safetyRegressed=${discovery.rowSummary.safetyRegressed}`,
+    `validationOverrideTraces=${discovery.validationRowSummary.overrideTraceCount}`,
+    `validationTargetImproved=${discovery.validationRowSummary.targetImproved}`,
+    `validationSelectionImproved=${discovery.validationRowSummary.selectionImproved}`,
+    `validationSelectionRegressed=${discovery.validationRowSummary.selectionRegressed}`,
+    `validationTerminalFinalImproved=${discovery.validationRowSummary.terminalFinalImproved}`,
+    `validationTerminalFinalRegressed=${discovery.validationRowSummary.terminalFinalRegressed}`,
+    `validationSafetyRegressed=${discovery.validationRowSummary.safetyRegressed}`,
     `features=${discovery.features.join(",")}`,
     `atoms=${discovery.atomCount} global-capped / ${discovery.perFeatureCappedAtomCount} per-feature-capped / ${discovery.totalCandidateAtomCount} total-candidate`,
     `safeTargetAtoms=${discovery.cappedAtomSummary.includedSafeTargetAtomCount}/${discovery.cappedAtomSummary.safeTargetAtomCount}`,
@@ -1179,12 +1369,21 @@ function formatDiscovery(discovery) {
     "",
     `greedy-selected-groups=${discovery.greedySelectedGateGroups.cliArg || "none"}`,
     `greedy-selected=${discovery.greedySelectedGateGroups.selected} target-improved=${discovery.greedySelectedGateGroups.targetImproved} selection-improved=${discovery.greedySelectedGateGroups.selectionImproved} selection-regressed=${discovery.greedySelectedGateGroups.selectionRegressed} terminal-final-improved=${discovery.greedySelectedGateGroups.terminalFinalImproved} terminal-final-regressed=${discovery.greedySelectedGateGroups.terminalFinalRegressed} safety-regressed=${discovery.greedySelectedGateGroups.safetyRegressed} neutral=${discovery.greedySelectedGateGroups.neutral} safe=${discovery.greedySelectedGateGroups.safeNoRegression}`,
+    discovery.validationGreedySelectedGateGroups
+      ? `validation-greedy-selected-groups=${discovery.validationGreedySelectedGateGroups.cliArg || "none"}`
+      : null,
+    discovery.validationGreedySelectedGateGroups
+      ? `validation-greedy-selected=${discovery.validationGreedySelectedGateGroups.selected} target-improved=${discovery.validationGreedySelectedGateGroups.targetImproved} selection-improved=${discovery.validationGreedySelectedGateGroups.selectionImproved} selection-regressed=${discovery.validationGreedySelectedGateGroups.selectionRegressed} terminal-final-improved=${discovery.validationGreedySelectedGateGroups.terminalFinalImproved} terminal-final-regressed=${discovery.validationGreedySelectedGateGroups.terminalFinalRegressed} safety-regressed=${discovery.validationGreedySelectedGateGroups.safetyRegressed} neutral=${discovery.validationGreedySelectedGateGroups.neutral} safe=${discovery.validationGreedySelectedGateGroups.safeNoRegression}`
+      : null,
     "",
     "top-candidates:"
-  ];
+  ].filter((line) => line !== null);
   for (const candidate of discovery.topCandidates) {
+    const validationText = candidate.validation
+      ? ` validation-selected=${candidate.validation.selected} validation-target-improved=${candidate.validation.targetImproved} validation-selection-regressed=${candidate.validation.selectionRegressed} validation-terminal-final-regressed=${candidate.validation.terminalFinalRegressed} validation-safety-regressed=${candidate.validation.safetyRegressed} validation-neutral=${candidate.validation.neutral} validation-safe=${candidate.validation.safeNoRegression}`
+      : "";
     lines.push(
-      `- ${candidate.cliArg}: selected=${candidate.selected} target-improved=${candidate.targetImproved} selection-improved=${candidate.selectionImproved} selection-regressed=${candidate.selectionRegressed} terminal-final-improved=${candidate.terminalFinalImproved} terminal-final-regressed=${candidate.terminalFinalRegressed} safety-regressed=${candidate.safetyRegressed} neutral=${candidate.neutral} worst=${candidate.worstFinalDelta} safe=${candidate.safeNoRegression}`
+      `- ${candidate.cliArg}: selected=${candidate.selected} target-improved=${candidate.targetImproved} selection-improved=${candidate.selectionImproved} selection-regressed=${candidate.selectionRegressed} terminal-final-improved=${candidate.terminalFinalImproved} terminal-final-regressed=${candidate.terminalFinalRegressed} safety-regressed=${candidate.safetyRegressed} neutral=${candidate.neutral} worst=${candidate.worstFinalDelta} safe=${candidate.safeNoRegression}${validationText}`
     );
   }
   return `${lines.join("\n")}\n`;
@@ -1210,6 +1409,12 @@ function replayCommand(defaultCliReplayCommand, options) {
   const argv = [
     ...options.sourceArtifacts.map((source) => `--source-artifact=${normalizeRepoRelativePath(source)}`),
     ...options.sourceScorecards.map((source) => `--source-scorecard=${normalizeRepoRelativePath(source)}`),
+    ...options.validationSourceArtifacts.map(
+      (source) => `--validation-source-artifact=${normalizeRepoRelativePath(source)}`
+    ),
+    ...options.validationSourceScorecards.map(
+      (source) => `--validation-source-scorecard=${normalizeRepoRelativePath(source)}`
+    ),
     `--artifact-dir=${options.artifactDir}`,
     `--target=${options.target}`,
     `--max-group-size=${options.maxGroupSize}`,
@@ -1229,19 +1434,36 @@ const sourceScorecards = [
   ...options.sourceArtifacts.map(scorecardPathFromArtifact),
   ...options.sourceScorecards.map(normalizeRepoRelativePath)
 ];
+const validationSourceScorecards = [
+  ...options.validationSourceArtifacts.map(scorecardPathFromArtifact),
+  ...options.validationSourceScorecards.map(normalizeRepoRelativePath)
+];
 const rows = extractRows(sourceScorecards);
 if (rows.length === 0) {
   throw new Error("No window-ranker override traces with selectedFeatures found in the supplied source scorecards.");
+}
+const validationRows = extractRows(validationSourceScorecards);
+if (validationSourceScorecards.length > 0 && validationRows.length === 0) {
+  throw new Error(
+    "No window-ranker override traces with selectedFeatures found in the supplied validation source scorecards."
+  );
 }
 
 const artifacts = artifactHelpers.prepareArtifactBundleDirectory(options.artifactDir, "--artifact-dir", {
   force: options.forceArtifactDir
 });
-const discovery = buildDiscovery(rows, options, benchmarkApi, sourceScorecards);
+const discovery = buildDiscovery(
+  rows,
+  validationRows,
+  options,
+  benchmarkApi,
+  sourceScorecards,
+  validationSourceScorecards
+);
 const artifactPaths = artifactPathsFor(artifacts);
 const outputArtifacts = diagnosticArtifactPaths(artifactPaths);
 const command = replayCommand(artifactHelpers.defaultCliReplayCommand, options);
-const registryDisplay = registryDisplayProjection(rows);
+const registryDisplay = registryDisplayProjection([...rows, ...validationRows]);
 const reportFingerprint = benchmarkApi.buildModelExperimentFingerprint(
   reportIdentityPayload({
     discovery,
@@ -1267,8 +1489,11 @@ const telemetryManifest = {
   discoveryFingerprint: discovery.discoveryFingerprint,
   reportFingerprint,
   sourceScorecards,
+  validationSourceScorecards,
   outputArtifacts,
   metrics: {
+    sourceScorecardCount: sourceScorecards.length,
+    validationSourceScorecardCount: validationSourceScorecards.length,
     overrideTraceCount: discovery.rowSummary.overrideTraceCount,
     targetImproved: discovery.rowSummary.targetImproved,
     selectionImproved: discovery.rowSummary.selectionImproved,
@@ -1278,6 +1503,15 @@ const telemetryManifest = {
     finalImproved: discovery.rowSummary.finalImproved,
     finalRegressed: discovery.rowSummary.finalRegressed,
     safetyRegressed: discovery.rowSummary.safetyRegressed,
+    validationOverrideTraceCount: discovery.validationRowSummary.overrideTraceCount,
+    validationTargetImproved: discovery.validationRowSummary.targetImproved,
+    validationSelectionImproved: discovery.validationRowSummary.selectionImproved,
+    validationSelectionRegressed: discovery.validationRowSummary.selectionRegressed,
+    validationTerminalFinalImproved: discovery.validationRowSummary.terminalFinalImproved,
+    validationTerminalFinalRegressed: discovery.validationRowSummary.terminalFinalRegressed,
+    validationFinalImproved: discovery.validationRowSummary.finalImproved,
+    validationFinalRegressed: discovery.validationRowSummary.finalRegressed,
+    validationSafetyRegressed: discovery.validationRowSummary.safetyRegressed,
     totalCandidateAtomCount: discovery.totalCandidateAtomCount,
     perFeatureCappedAtomCount: discovery.perFeatureCappedAtomCount,
     atomCount: discovery.atomCount,
@@ -1319,7 +1553,25 @@ const telemetryManifest = {
     greedyFinalRegressed: discovery.greedySelectedGateGroups.finalRegressed,
     greedySafetyRegressed: discovery.greedySelectedGateGroups.safetyRegressed,
     greedyNeutral: discovery.greedySelectedGateGroups.neutral,
-    greedySafeNoRegression: discovery.greedySelectedGateGroups.safeNoRegression
+    greedySafeNoRegression: discovery.greedySelectedGateGroups.safeNoRegression,
+    validationGreedySelectedFeatureGateGroups:
+      discovery.validationGreedySelectedGateGroups?.selectedFeatureGateGroups ?? null,
+    validationGreedySelectedFeatureGateGroupsCliArg: discovery.validationGreedySelectedGateGroups?.cliArg ?? null,
+    validationGreedyTargetImproved: discovery.validationGreedySelectedGateGroups?.targetImproved ?? null,
+    validationGreedySelectionImproved: discovery.validationGreedySelectedGateGroups?.selectionImproved ?? null,
+    validationGreedySelectionRegressed: discovery.validationGreedySelectedGateGroups?.selectionRegressed ?? null,
+    validationGreedyTerminalFinalImproved: discovery.validationGreedySelectedGateGroups?.terminalFinalImproved ?? null,
+    validationGreedyTerminalFinalRegressed:
+      discovery.validationGreedySelectedGateGroups?.terminalFinalRegressed ?? null,
+    validationGreedyFinalImproved: discovery.validationGreedySelectedGateGroups?.finalImproved ?? null,
+    validationGreedyFinalRegressed: discovery.validationGreedySelectedGateGroups?.finalRegressed ?? null,
+    validationGreedySafetyRegressed: discovery.validationGreedySelectedGateGroups?.safetyRegressed ?? null,
+    validationGreedyNeutral: discovery.validationGreedySelectedGateGroups?.neutral ?? null,
+    validationGreedySafeNoRegression: discovery.validationGreedySelectedGateGroups?.safeNoRegression ?? null,
+    topCandidateValidationTargetImproved: discovery.topCandidates[0]?.validation?.targetImproved ?? null,
+    topCandidateValidationSafetyRegressed: discovery.topCandidates[0]?.validation?.safetyRegressed ?? null,
+    topCandidateValidationNeutral: discovery.topCandidates[0]?.validation?.neutral ?? null,
+    topCandidateValidationSafeNoRegression: discovery.topCandidates[0]?.validation?.safeNoRegression ?? null
   },
   notes:
     "Diagnostics-only selected-feature gate discovery over online LNS window-ranker override traces; no solver default changed."
@@ -1341,12 +1593,15 @@ const registryEntryDraft = {
     diagnosticsOnly: true,
     source: "online-lns-window-ranker-scorecards",
     sourceScorecardCount: sourceScorecards.length,
+    validationSourceScorecardCount: validationSourceScorecards.length,
     metricSemantics: METRIC_SEMANTICS,
     v2DeprecatedMetricAliases: V2_DEPRECATED_METRIC_ALIASES
   },
   budget: {
     sourceScorecardCount: sourceScorecards.length,
+    validationSourceScorecardCount: validationSourceScorecards.length,
     overrideTraceCount: discovery.rowSummary.overrideTraceCount,
+    validationOverrideTraceCount: discovery.validationRowSummary.overrideTraceCount,
     target: options.target,
     maxGroupSize: options.maxGroupSize,
     maxAtomsPerFeature: options.maxAtomsPerFeature,
@@ -1390,6 +1645,7 @@ const manifest = {
   discoveryFingerprint: discovery.discoveryFingerprint,
   reportFingerprint,
   sourceScorecards,
+  validationSourceScorecards,
   featureAllowlist: options.featureAllowlist ?? null,
   generator: {
     script: SCRIPT_PATH,

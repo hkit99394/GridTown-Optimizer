@@ -33,6 +33,21 @@ export function normalizeRepoRelativePath(value: string, label: string): string 
   return normalized.split(path.sep).join(path.posix.sep);
 }
 
+export function assertArtifactPathNotObsolete(repoRelativePath: string, label: string): void {
+  let currentDir = path.resolve(process.cwd(), path.dirname(repoRelativePath));
+  const repoRoot = path.resolve(process.cwd());
+  const artifactsRoot = path.resolve(repoRoot, "artifacts");
+
+  while (currentDir.startsWith(artifactsRoot)) {
+    if (fs.existsSync(path.join(currentDir, "OBSOLETE.md")) || fs.existsSync(path.join(currentDir, "OBSOLETE.json"))) {
+      const displayPath = path.relative(repoRoot, currentDir).split(path.sep).join(path.posix.sep);
+      throw new Error(`${label} points to obsolete artifact bundle '${displayPath}'.`);
+    }
+    if (currentDir === artifactsRoot) break;
+    currentDir = path.dirname(currentDir);
+  }
+}
+
 export function prepareArtifactBundleDirectory(
   value: string,
   label: string,

@@ -1,0 +1,83 @@
+{
+  "artifactDir": "artifacts/lns-window-replay-state-conditioned-pockets/2026-05-11/protected-existing-replay-durable-pocket-discovery",
+  "artifactPaths": {
+    "scanJson": "artifacts/lns-window-replay-state-conditioned-pockets/2026-05-11/protected-existing-replay-durable-pocket-discovery/state-conditioned-pockets.json",
+    "scanText": "artifacts/lns-window-replay-state-conditioned-pockets/2026-05-11/protected-existing-replay-durable-pocket-discovery/state-conditioned-pockets.txt",
+    "telemetryManifestJson": "artifacts/lns-window-replay-state-conditioned-pockets/2026-05-11/protected-existing-replay-durable-pocket-discovery/telemetry-manifest.json",
+    "registryEntryDraftJson": "artifacts/lns-window-replay-state-conditioned-pockets/2026-05-11/protected-existing-replay-durable-pocket-discovery/registry-entry-draft.json",
+    "manifestJson": "artifacts/lns-window-replay-state-conditioned-pockets/2026-05-11/protected-existing-replay-durable-pocket-discovery/manifest.json"
+  },
+  "command": "node scripts/discover-lns-replay-state-conditioned-pockets.mjs --source-root=artifacts/lns-window-replay-labels --artifact-dir=artifacts/lns-window-replay-state-conditioned-pockets/2026-05-11/protected-existing-replay-durable-pocket-discovery --min-improved-labels=1 --max-atoms=180 --max-group-size=2 --top=30 --force-artifact-dir",
+  "generatedAt": "2026-05-11T23:14:39.472Z",
+  "inputFingerprint": "fnv1a:0e816613",
+  "scanFingerprint": "fnv1a:2830eab0",
+  "sourceRoot": "artifacts/lns-window-replay-labels",
+  "sourceSummary": {
+    "sourceArtifactCount": 28,
+    "caseCount": 35,
+    "cases": [
+      "lns-holdout-anchor-service-harbor-pressure",
+      "lns-holdout-anchor-service-shelf-pressure",
+      "lns-holdout-corridor-switchback-pressure",
+      "lns-holdout-corridor-weave-pressure",
+      "lns-holdout-footprint-lattice-pressure",
+      "lns-holdout-footprint-stagger-pressure",
+      "lns-holdout-gate-double-choke-pressure",
+      "lns-holdout-gate-offset-pressure",
+      "lns-holdout-service-braid-family-embed-7x8-down-screen-candidate",
+      "lns-holdout-service-braid-family-embed-7x8-mirror-screen-candidate",
+      "lns-holdout-service-braid-family-embed-7x8-origin-screen-candidate",
+      "lns-holdout-service-braid-family-embed-7x8-right-repeatability-candidate",
+      "lns-holdout-service-braid-family-embed-7x8-right-screen-candidate",
+      "lns-holdout-service-braid-open-lower-notch-screen-candidate",
+      "lns-holdout-service-braid-open-upper-braid-screen-candidate",
+      "lns-holdout-service-braid-premium-scarcity-screen-candidate",
+      "lns-holdout-service-braid-pressure",
+      "lns-holdout-service-braid-range1-big-service120-candidate",
+      "lns-holdout-service-braid-range1-big-service135-candidate",
+      "lns-holdout-service-braid-range1-big-service138-initial-stagnation-screen-candidate",
+      "lns-holdout-service-braid-range1-big-service140-candidate",
+      "lns-holdout-service-braid-range1-big-service140-double-choke-screen-candidate",
+      "lns-holdout-service-braid-range1-big-service140-east-lane-screen-candidate",
+      "lns-holdout-service-braid-range1-big-service140-initial-stagnation-candidate",
+      "lns-holdout-service-braid-range1-big-service140-initial-stagnation-screen-candidate",
+      "lns-holdout-service-braid-range1-big-service140-south-shelf-repeatability-candidate",
+      "lns-holdout-service-braid-range1-big-service140-south-shelf-screen-candidate",
+      "lns-holdout-service-braid-range1-big-service142-initial-stagnation-screen-candidate",
+      "lns-holdout-service-braid-range2-big-service120-initial-stagnation-screen-candidate",
+      "lns-holdout-service-braid-range2-big-service140-initial-stagnation-screen-candidate",
+      "lns-holdout-service-braid-range2-big-service160-initial-stagnation-screen-candidate",
+      "lns-holdout-service-braid-res-headroom-plus20-screen-candidate",
+      "lns-holdout-service-braid-res-headroom-plus40-screen-candidate",
+      "lns-holdout-service-braid-shift-right-choke-screen-candidate",
+      "lns-holdout-service-ridge-pressure"
+    ],
+    "pressureFamilies": [
+      "anchor-service",
+      "corridor",
+      "footprint-pressure",
+      "gate",
+      "service-pressure"
+    ],
+    "seeds": [
+      5,
+      7,
+      11,
+      13,
+      17,
+      19,
+      23,
+      29,
+      37
+    ],
+    "stateCount": 439,
+    "labelCount": 6372,
+    "rollForwardLabelCount": 6372,
+    "scannedRollForwardLabels": 6372
+  },
+  "generator": {
+    "script": "scripts/discover-lns-replay-state-conditioned-pockets.mjs",
+    "requiresBuild": true,
+    "command": "node scripts/discover-lns-replay-state-conditioned-pockets.mjs --source-root=artifacts/lns-window-replay-labels --artifact-dir=artifacts/lns-window-replay-state-conditioned-pockets/2026-05-11/protected-existing-replay-durable-pocket-discovery --min-improved-labels=1 --max-atoms=180 --max-group-size=2 --top=30 --force-artifact-dir"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "artifactDir": "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-11/protected-broadened-two-iteration-validation-aware-gate-validation-greedy-9seed-min-score-delta-0",
+  "artifactPaths": {
+    "evaluationJson": "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-11/protected-broadened-two-iteration-validation-aware-gate-validation-greedy-9seed-min-score-delta-0/lns-online-selected-feature-gate-nomination-evaluation.json",
+    "evaluationText": "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-11/protected-broadened-two-iteration-validation-aware-gate-validation-greedy-9seed-min-score-delta-0/lns-online-selected-feature-gate-nomination-evaluation.txt",
+    "telemetryManifestJson": "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-11/protected-broadened-two-iteration-validation-aware-gate-validation-greedy-9seed-min-score-delta-0/telemetry-manifest.json",
+    "registryEntryDraftJson": "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-11/protected-broadened-two-iteration-validation-aware-gate-validation-greedy-9seed-min-score-delta-0/registry-entry-draft.json",
+    "manifestJson": "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-11/protected-broadened-two-iteration-validation-aware-gate-validation-greedy-9seed-min-score-delta-0/manifest.json"
+  },
+  "command": "node scripts/evaluate-lns-online-selected-feature-gates.mjs --discovery-artifact=artifacts/lns-online-selected-feature-gate-discovery/2026-05-11/trajectory-features-broadened-generated-protected-two-iteration-validation-aware-final-outcome-search --artifact-dir=artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-11/protected-broadened-two-iteration-validation-aware-gate-validation-greedy-9seed-min-score-delta-0 --candidate-source=validation-greedy --candidate-count=1 --runner=dist/lnsBenchmarkCli.js --window-ranker-model=artifacts/lns-window-ranker/2026-05-10/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-generated-right-repeatability-trajectory-features-ignore-baseline-conflict-excluded-calibration-lr0.02-cap100/model.json --window-ranker-min-score-delta=0 --seeds=5,7,11,13,17,19,23,29,37 --lns-iterations=2 --window-ranker-protected-holdout --run-id-prefix=lns-online-selected-feature-gate-nomination-2026-05-11-protected-validation-greedy-9seed --decision=online-lns-window-ranker-validation-aware-gate-nomination-evaluation '--summary=Nomination-aware nine-seed protected recheck for the validation-greedy selected-feature gate from protected-validation-aware discovery. No solver default changed.'",
+  "generatedAt": "2026-05-11T23:58:03.053Z",
+  "discoveryJson": "artifacts/lns-online-selected-feature-gate-discovery/2026-05-11/trajectory-features-broadened-generated-protected-two-iteration-validation-aware-final-outcome-search/online-selected-feature-gate-discovery.json",
+  "discoveryFingerprint": "fnv1a:b6b9c80d",
+  "inputFingerprint": "fnv1a:34b0d192",
+  "evaluationFingerprint": "fnv1a:3068260c",
+  "reportFingerprint": "fnv1a:c5b91615",
+  "benchmark": {
+    "runner": "dist/lnsBenchmarkCli.js",
+    "protectedHoldout": true,
+    "seeds": "5,7,11,13,17,19,23,29,37",
+    "lnsIterations": 2,
+    "windowRankerModel": "artifacts/lns-window-ranker/2026-05-10/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-generated-right-repeatability-trajectory-features-ignore-baseline-conflict-excluded-calibration-lr0.02-cap100/model.json",
+    "windowRankerMinScoreDelta": 0,
+    "benchmarkArgs": []
+  },
+  "candidateArtifacts": [
+    {
+      "evaluationIndex": 1,
+      "cliArg": "area>=2.1,area<=2.1,clearedFootprint>=0.75",
+      "artifactDir": "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-11/protected-broadened-two-iteration-validation-aware-gate-validation-greedy-9seed-min-score-delta-0/candidate-001-area-2-1-area-2-1-clearedfootprint-0-75",
+      "scorecardPath": "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-11/protected-broadened-two-iteration-validation-aware-gate-validation-greedy-9seed-min-score-delta-0/candidate-001-area-2-1-area-2-1-clearedfootprint-0-75/lns-window-ranker-online-ablation.json"
+    }
+  ],
+  "generator": {
+    "script": "scripts/evaluate-lns-online-selected-feature-gates.mjs",
+    "requiresBuild": true,
+    "command": "node scripts/evaluate-lns-online-selected-feature-gates.mjs --discovery-artifact=artifacts/lns-online-selected-feature-gate-discovery/2026-05-11/trajectory-features-broadened-generated-protected-two-iteration-validation-aware-final-outcome-search --artifact-dir=artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-11/protected-broadened-two-iteration-validation-aware-gate-validation-greedy-9seed-min-score-delta-0 --candidate-source=validation-greedy --candidate-count=1 --runner=dist/lnsBenchmarkCli.js --window-ranker-model=artifacts/lns-window-ranker/2026-05-10/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-generated-right-repeatability-trajectory-features-ignore-baseline-conflict-excluded-calibration-lr0.02-cap100/model.json --window-ranker-min-score-delta=0 --seeds=5,7,11,13,17,19,23,29,37 --lns-iterations=2 --window-ranker-protected-holdout --run-id-prefix=lns-online-selected-feature-gate-nomination-2026-05-11-protected-validation-greedy-9seed --decision=online-lns-window-ranker-validation-aware-gate-nomination-evaluation '--summary=Nomination-aware nine-seed protected recheck for the validation-greedy selected-feature gate from protected-validation-aware discovery. No solver default changed.'"
+  }
+}

@@ -199,6 +199,59 @@ function testWindowRankerFallsBackWhenScoreDeltaIsTooSmall() {
   assert.equal(decision.telemetry.fallbackReason, "score-delta-below-threshold");
 }
 
+function testWindowRankerSuppressionModelCanVetoOverride() {
+  const fixture = buildSelectionFixture();
+  const primaryModel = runtimeModel({ selectedByBaseline: -1 });
+  const suppressionModel = {
+    modelType: "lns-window-linear-pairwise-ranker",
+    modelFingerprint: "fnv1a:suppress",
+    featureSchemaVersion: 2,
+    weights: { selectedByBaseline: 1 }
+  };
+  const openDecision = selectLnsWindowRankerCandidate(
+    fixture.grid,
+    fixture.params,
+    fixture.incumbent,
+    fixture.candidates,
+    fixture.baseline,
+    normalizeLnsWindowRankerOptions({
+      ...primaryModel,
+      suppressionModel,
+      suppressionMinScoreDelta: 2
+    })
+  );
+  assert.equal(openDecision.telemetry.selectedByBaseline, false);
+  assert.equal(openDecision.telemetry.suppressionScoreDelta, 1);
+  assert.equal(openDecision.telemetry.fallbackReason, undefined);
+
+  const vetoedDecision = selectLnsWindowRankerCandidate(
+    fixture.grid,
+    fixture.params,
+    fixture.incumbent,
+    fixture.candidates,
+    fixture.baseline,
+    normalizeLnsWindowRankerOptions({
+      ...primaryModel,
+      suppressionModel,
+      suppressionMinScoreDelta: 0.5
+    })
+  );
+  assert.deepEqual(vetoedDecision.candidate.window, fixture.baseline.window);
+  assert.equal(vetoedDecision.telemetry.selectedByBaseline, true);
+  assert.equal(vetoedDecision.telemetry.fallbackReason, "suppression-model-veto");
+  assert.equal(vetoedDecision.telemetry.nominatedCandidateIndex, openDecision.telemetry.selectedCandidateIndex);
+  assert.equal(vetoedDecision.telemetry.nominatedOperator, openDecision.telemetry.selectedOperator);
+  assert.deepEqual(vetoedDecision.telemetry.nominatedWindow, openDecision.telemetry.selectedWindow);
+  assert.equal(vetoedDecision.telemetry.nominatedByBaseline, false);
+  assert.equal(vetoedDecision.telemetry.nominatedScore, openDecision.telemetry.selectedScore);
+  assert.equal(vetoedDecision.telemetry.nominatedScoreDelta, openDecision.telemetry.scoreDelta);
+  assert.equal(vetoedDecision.telemetry.nominatedFeatureDeltas.selectedByBaseline, -1);
+  assert.equal(vetoedDecision.telemetry.suppressionModelFingerprint, "fnv1a:suppress");
+  assert.equal(vetoedDecision.telemetry.suppressionBaselineScore, 1);
+  assert.equal(vetoedDecision.telemetry.suppressionSelectedScore, 0);
+  assert.equal(vetoedDecision.telemetry.suppressionScoreDelta, 1);
+}
+
 function testWindowRankerFallsBackWhenTransitionIsNotAllowed() {
   const fixture = buildSelectionFixture();
   const model = runtimeModel({ selectedByBaseline: -1 });
@@ -730,6 +783,39 @@ function testWindowRankerValidationRejectsBadWeights() {
     /lns\.windowRanker\.model\.interactionWeights keys must be pairwise feature names/
   );
 
+  assert.throws(
+    () =>
+      normalizeLnsWindowRankerOptions({
+        ...runtimeModel({ selectedByBaseline: 1 }),
+        suppressionModel: {
+          modelType: "lns-window-linear-pairwise-ranker",
+          featureSchemaVersion: 2,
+          weights: { selectedByBasline: 1 }
+        }
+      }),
+    /LNS window ranker model\.weights\.selectedByBasline must be one of the LNS window ranker feature names/
+  );
+
+  assert.throws(
+    () =>
+      solveLns(buildGrid(3, 3), {
+        optimizer: "lns",
+        availableBuildings: { residentials: 0, services: 0 },
+        lns: {
+          iterations: 1,
+          windowRanker: {
+            model: {
+              modelType: "lns-window-linear-pairwise-ranker",
+              featureSchemaVersion: 2,
+              weights: { selectedByBaseline: 1 }
+            },
+            suppressionMinScoreDelta: 0.25
+          }
+        }
+      }),
+    /lns\.windowRanker\.suppressionMinScoreDelta requires lns\.windowRanker\.suppressionModel/
+  );
+
   assert.doesNotThrow(() =>
     normalizeLnsWindowRankerOptions(
       runtimeModel({ selectedByBaseline: 1 }, { "selectedByBaseline*selectedByBaseline": -1 })
@@ -741,6 +827,7 @@ testWindowRankerCanOverrideAdaptiveBaseline();
 testWindowRankerTrajectoryFeaturesCanOverrideByTransition();
 testWindowRankerInteractionWeightsCanOverrideAdaptiveBaseline();
 testWindowRankerFallsBackWhenScoreDeltaIsTooSmall();
+testWindowRankerSuppressionModelCanVetoOverride();
 testWindowRankerFallsBackWhenTransitionIsNotAllowed();
 testWindowRankerFallsBackWhenFeatureDeltaGateFails();
 testWindowRankerFallsBackWhenSelectedFeatureGateFails();

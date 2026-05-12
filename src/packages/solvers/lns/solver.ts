@@ -449,6 +449,10 @@ function buildWindowRankerTelemetry(
     ...(options.model.modelFingerprint ? { modelFingerprint: options.model.modelFingerprint } : {}),
     featureSchemaVersion: options.model.featureSchemaVersion ?? null,
     minScoreDelta: options.minScoreDelta,
+    ...(options.suppressionModel?.modelFingerprint
+      ? { suppressionModelFingerprint: options.suppressionModel.modelFingerprint }
+      : {}),
+    ...(options.suppressionModel === null ? {} : { suppressionMinScoreDelta: options.suppressionMinScoreDelta }),
     ...(options.allowedTransitions === null ? {} : { allowedTransitions: [...options.allowedTransitions] }),
     ...(options.selectedFeatureGates.length === 0 ? {} : { selectedFeatureGates: [...options.selectedFeatureGates] }),
     ...(options.selectedFeatureGateGroups.length === 0

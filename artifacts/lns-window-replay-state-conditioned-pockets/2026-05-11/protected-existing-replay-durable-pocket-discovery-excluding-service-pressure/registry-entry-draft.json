@@ -1,0 +1,797 @@
+{
+  "schemaVersion": 1,
+  "runId": "lns-replay-state-conditioned-pockets-f6240775",
+  "artifactType": "ablation-gate",
+  "generatedAt": "2026-05-11T23:14:39.472Z",
+  "commands": [
+    "node scripts/discover-lns-replay-state-conditioned-pockets.mjs --source-root=artifacts/lns-window-replay-labels --artifact-dir=artifacts/lns-window-replay-state-conditioned-pockets/2026-05-11/protected-existing-replay-durable-pocket-discovery-excluding-service-pressure --exclude-pressure-family=service-pressure --min-improved-labels=1 --max-atoms=180 --max-group-size=2 --top=30 --force-artifact-dir"
+  ],
+  "artifactPaths": [
+    "artifacts/lns-window-replay-state-conditioned-pockets/2026-05-11/protected-existing-replay-durable-pocket-discovery-excluding-service-pressure/state-conditioned-pockets.json",
+    "artifacts/lns-window-replay-state-conditioned-pockets/2026-05-11/protected-existing-replay-durable-pocket-discovery-excluding-service-pressure/state-conditioned-pockets.txt",
+    "artifacts/lns-window-replay-state-conditioned-pockets/2026-05-11/protected-existing-replay-durable-pocket-discovery-excluding-service-pressure/telemetry-manifest.json",
+    "artifacts/lns-window-replay-state-conditioned-pockets/2026-05-11/protected-existing-replay-durable-pocket-discovery-excluding-service-pressure/manifest.json"
+  ],
+  "cases": [
+    "lns-holdout-anchor-service-harbor-pressure",
+    "lns-holdout-anchor-service-shelf-pressure",
+    "lns-holdout-corridor-switchback-pressure",
+    "lns-holdout-corridor-weave-pressure",
+    "lns-holdout-footprint-lattice-pressure",
+    "lns-holdout-footprint-stagger-pressure",
+    "lns-holdout-gate-double-choke-pressure",
+    "lns-holdout-gate-offset-pressure"
+  ],
+  "caseFamilies": [
+    "lns-anchor-service",
+    "lns-corridor",
+    "lns-footprint-pressure",
+    "lns-gate",
+    "lns-window-replay"
+  ],
+  "seeds": [
+    5,
+    7,
+    11,
+    13,
+    17,
+    19,
+    23,
+    29,
+    37
+  ],
+  "inputFingerprint": "fnv1a:01ab4640",
+  "datasetFingerprint": "fnv1a:f6240775",
+  "splitStatus": {
+    "diagnosticsOnly": true,
+    "source": "existing-lns-window-replay-state-conditioned-pocket-discovery",
+    "sourceRoot": "artifacts/lns-window-replay-labels",
+    "sourceArtifactCount": 14
+  },
+  "budget": {
+    "sourceArtifactCount": 14,
+    "caseCount": 8,
+    "seedCount": 9,
+    "labelCount": 2202,
+    "rollForwardLabelCount": 2202,
+    "atomCount": 107,
+    "searchedCandidateCount": 5665
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "model": {
+    "trained": false,
+    "diagnosticsOnly": true,
+    "labelSource": "existing-lns-window-replay-labels",
+    "discoveryKind": "state-conditioned-repeatability-safe-pocket-search"
+  },
+  "decision": "diagnostics-only",
+  "summary": "Existing protected LNS replay labels mined for state-conditioned repeatability-safe durable pockets; no solver default changed.",
+  "summaryMetrics": {
+    "sourceArtifactCount": 14,
+    "caseCount": 8,
+    "seedCount": 9,
+    "labelCount": 2202,
+    "rollForwardLabelCount": 2202,
+    "repeatabilitySafeBucketCount": 9,
+    "featureIdenticalConflictBucketCount": 0,
+    "atomCount": 107,
+    "searchedCandidateCount": 5665,
+    "safeCandidateCount": 2814,
+    "blockedCandidateCount": 2811,
+    "topSafeCandidate": {
+      "expression": "narrowGateCells==3 AND serviceCandidateBonus>=880",
+      "atomCount": 2,
+      "atoms": [
+        {
+          "expression": "narrowGateCells==3",
+          "field": "narrowGateCells",
+          "fieldPath": "features.fragmentation.narrowGateCellCount",
+          "kind": "feature",
+          "operator": "==",
+          "value": 3
+        },
+        {
+          "expression": "serviceCandidateBonus>=880",
+          "field": "serviceCandidateBonus",
+          "fieldPath": "features.candidateLoss.serviceCandidateBonusInside",
+          "kind": "feature",
+          "operator": ">=",
+          "value": 880
+        }
+      ],
+      "selected": 99,
+      "improved": 36,
+      "regressed": 0,
+      "neutral": 63,
+      "unknown": 0,
+      "repeatabilitySafeSelected": 99,
+      "repeatabilitySafeImproved": 36,
+      "bestDelta": 110,
+      "worstDelta": 0,
+      "safeNoRegression": true,
+      "durablePocket": true,
+      "improvedRate": 0.36363636363636365,
+      "repeatabilitySafeRate": 1,
+      "byStatePolicy": {
+        "online-decision": {
+          "selected": 27,
+          "improved": 18,
+          "regressed": 0,
+          "neutral": 9,
+          "unknown": 0,
+          "repeatabilitySafeSelected": 27,
+          "repeatabilitySafeImproved": 18,
+          "bestDelta": 110,
+          "worstDelta": 0,
+          "safeNoRegression": true,
+          "durablePocket": true,
+          "improvedRate": 0.6666666666666666,
+          "repeatabilitySafeRate": 1
+        },
+        "initial-incumbent": {
+          "selected": 36,
+          "improved": 9,
+          "regressed": 0,
+          "neutral": 27,
+          "unknown": 0,
+          "repeatabilitySafeSelected": 36,
+          "repeatabilitySafeImproved": 9,
+          "bestDelta": 110,
+          "worstDelta": 0,
+          "safeNoRegression": true,
+          "durablePocket": true,
+          "improvedRate": 0.25,
+          "repeatabilitySafeRate": 1
+        },
+        "post-stagnation": {
+          "selected": 36,
+          "improved": 9,
+          "regressed": 0,
+          "neutral": 27,
+          "unknown": 0,
+          "repeatabilitySafeSelected": 36,
+          "repeatabilitySafeImproved": 9,
+          "bestDelta": 110,
+          "worstDelta": 0,
+          "safeNoRegression": true,
+          "durablePocket": true,
+          "improvedRate": 0.25,
+          "repeatabilitySafeRate": 1
+        }
+      },
+      "byPressureFamily": {
+        "anchor-service": {
+          "selected": 99,
+          "improved": 36,
+          "regressed": 0,
+          "neutral": 63,
+          "unknown": 0,
+          "repeatabilitySafeSelected": 99,
+          "repeatabilitySafeImproved": 36,
+          "bestDelta": 110,
+          "worstDelta": 0,
+          "safeNoRegression": true,
+          "durablePocket": true,
+          "improvedRate": 0.36363636363636365,
+          "repeatabilitySafeRate": 1
+        }
+      },
+      "bySourceArtifact": {
+        "artifacts/lns-window-replay-labels/2026-05-08/protected-anchor-service-feature-gate-two-iteration-online-decision-wide-replay-roll-forward-4x0.2": {
+          "selected": 9,
+          "improved": 0,
+          "regressed": 0,
+          "neutral": 9,
+          "unknown": 0,
+          "repeatabilitySafeSelected": 9,
+          "repeatabilitySafeImproved": 0,
+          "bestDelta": 0,
+          "worstDelta": 0,
+          "safeNoRegression": true,
+          "durablePocket": false,
+          "improvedRate": 0,
+          "repeatabilitySafeRate": 1
+        },
+        "artifacts/lns-window-replay-labels/2026-05-08/protected-anchor-service-shelf-repeatability-wide-state-search-roll-forward-4x0.2": {
+          "selected": 54,
+          "improved": 0,
+          "regressed": 0,
+          "neutral": 54,
+          "unknown": 0,
+          "repeatabilitySafeSelected": 54,
+          "repeatabilitySafeImproved": 0,
+          "bestDelta": 0,
+          "worstDelta": 0,
+          "safeNoRegression": true,
+          "durablePocket": false,
+          "improvedRate": 0,
+          "repeatabilitySafeRate": 1
+        },
+        "artifacts/lns-window-replay-labels/2026-05-08/protected-anchor-service-wide-window-opportunity-roll-forward-1x0.1": {
+          "selected": 18,
+          "improved": 18,
+          "regressed": 0,
+          "neutral": 0,
+          "unknown": 0,
+          "repeatabilitySafeSelected": 18,
+          "repeatabilitySafeImproved": 18,
+          "bestDelta": 110,
+          "worstDelta": 110,
+          "safeNoRegression": true,
+          "durablePocket": true,
+          "improvedRate": 1,
+          "repeatabilitySafeRate": 1
+        },
+        "artifacts/lns-window-replay-labels/2026-05-08/protected-broadened-active-overrides-online-decision-feature-selectivity-roll-forward-1x0.1": {
+          "selected": 9,
+          "improved": 9,
+          "regressed": 0,
+          "neutral": 0,
+          "unknown": 0,
+          "repeatabilitySafeSelected": 9,
+          "repeatabilitySafeImproved": 9,
+          "bestDelta": 110,
+          "worstDelta": 110,
+          "safeNoRegression": true,
+          "durablePocket": true,
+          "improvedRate": 1,
+          "repeatabilitySafeRate": 1
+        },
+        "artifacts/lns-window-replay-labels/2026-05-08/protected-broadened-one-iteration-online-decision-feature-selectivity-roll-forward-1x0.1": {
+          "selected": 9,
+          "improved": 9,
+          "regressed": 0,
+          "neutral": 0,
+          "unknown": 0,
+          "repeatabilitySafeSelected": 9,
+          "repeatabilitySafeImproved": 9,
+          "bestDelta": 110,
+          "worstDelta": 110,
+          "safeNoRegression": true,
+          "durablePocket": true,
+          "improvedRate": 1,
+          "repeatabilitySafeRate": 1
+        }
+      },
+      "examples": [
+        {
+          "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-08/protected-anchor-service-wide-window-opportunity-roll-forward-1x0.1",
+          "caseName": "lns-holdout-anchor-service-shelf-pressure",
+          "pressureFamily": "anchor-service",
+          "seed": 7,
+          "statePolicy": "initial-incumbent",
+          "stateIndex": 0,
+          "stateSourceStatus": "initial-incumbent",
+          "stateSourceIteration": null,
+          "stateStagnantIterations": 0,
+          "operator": "frontier-congestion",
+          "selectionSource": "baseline-top-k",
+          "window": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "status": "improved",
+          "delta": 110,
+          "repeatability": {
+            "bucketKey": "lns-holdout-anchor-service-shelf-pressure\u0000initial-incumbent\u0000frontier-congestion\u00002:1:3x3",
+            "labelCount": 12,
+            "statusCounts": {
+              "improved": 3,
+              "neutral": 9,
+              "regressed": 0,
+              "unknown": 0
+            },
+            "featureIdenticalConflictBucket": false
+          },
+          "selectedFeatures": {
+            "area": 9,
+            "roadCountInside": 2,
+            "serviceCandidateBonusInside": 880,
+            "residentialCandidatesBlockedByIncumbent": 12,
+            "componentsBefore": 2,
+            "componentsAfter": 2,
+            "allowedWindowCells": 8,
+            "newlyReachable": 5,
+            "incumbentPopulation": 580,
+            "operatorScore": 1498
+          }
+        },
+        {
+          "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-08/protected-anchor-service-wide-window-opportunity-roll-forward-1x0.1",
+          "caseName": "lns-holdout-anchor-service-shelf-pressure",
+          "pressureFamily": "anchor-service",
+          "seed": 7,
+          "statePolicy": "initial-incumbent",
+          "stateIndex": 0,
+          "stateSourceStatus": "initial-incumbent",
+          "stateSourceIteration": null,
+          "stateStagnantIterations": 0,
+          "operator": "gate-choke",
+          "selectionSource": "baseline-top-k",
+          "window": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "status": "improved",
+          "delta": 110,
+          "repeatability": {
+            "bucketKey": "lns-holdout-anchor-service-shelf-pressure\u0000initial-incumbent\u0000gate-choke\u00002:1:3x3",
+            "labelCount": 12,
+            "statusCounts": {
+              "improved": 3,
+              "neutral": 9,
+              "regressed": 0,
+              "unknown": 0
+            },
+            "featureIdenticalConflictBucket": false
+          },
+          "selectedFeatures": {
+            "area": 9,
+            "roadCountInside": 2,
+            "serviceCandidateBonusInside": 880,
+            "residentialCandidatesBlockedByIncumbent": 12,
+            "componentsBefore": 2,
+            "componentsAfter": 2,
+            "allowedWindowCells": 8,
+            "newlyReachable": 5,
+            "incumbentPopulation": 580,
+            "operatorScore": 1494
+          }
+        },
+        {
+          "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-08/protected-anchor-service-wide-window-opportunity-roll-forward-1x0.1",
+          "caseName": "lns-holdout-anchor-service-shelf-pressure",
+          "pressureFamily": "anchor-service",
+          "seed": 7,
+          "statePolicy": "initial-incumbent",
+          "stateIndex": 0,
+          "stateSourceStatus": "initial-incumbent",
+          "stateSourceIteration": null,
+          "stateStagnantIterations": 0,
+          "operator": "random-exploration",
+          "selectionSource": "baseline-top-k",
+          "window": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "status": "improved",
+          "delta": 110,
+          "repeatability": {
+            "bucketKey": "lns-holdout-anchor-service-shelf-pressure\u0000initial-incumbent\u0000random-exploration\u00002:1:3x3",
+            "labelCount": 12,
+            "statusCounts": {
+              "improved": 3,
+              "neutral": 9,
+              "regressed": 0,
+              "unknown": 0
+            },
+            "featureIdenticalConflictBucket": false
+          },
+          "selectedFeatures": {
+            "area": 9,
+            "roadCountInside": 2,
+            "serviceCandidateBonusInside": 880,
+            "residentialCandidatesBlockedByIncumbent": 12,
+            "componentsBefore": 2,
+            "componentsAfter": 2,
+            "allowedWindowCells": 8,
+            "newlyReachable": 5,
+            "incumbentPopulation": 580,
+            "operatorScore": 749
+          }
+        },
+        {
+          "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-08/protected-anchor-service-wide-window-opportunity-roll-forward-1x0.1",
+          "caseName": "lns-holdout-anchor-service-shelf-pressure",
+          "pressureFamily": "anchor-service",
+          "seed": 7,
+          "statePolicy": "post-stagnation",
+          "stateIndex": 2,
+          "stateSourceStatus": "neutral",
+          "stateSourceIteration": 0,
+          "stateStagnantIterations": 1,
+          "operator": "frontier-congestion",
+          "selectionSource": "baseline-top-k",
+          "window": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "status": "improved",
+          "delta": 110,
+          "repeatability": {
+            "bucketKey": "lns-holdout-anchor-service-shelf-pressure\u0000post-stagnation\u0000frontier-congestion\u00002:1:3x3",
+            "labelCount": 12,
+            "statusCounts": {
+              "improved": 3,
+              "neutral": 9,
+              "regressed": 0,
+              "unknown": 0
+            },
+            "featureIdenticalConflictBucket": false
+          },
+          "selectedFeatures": {
+            "area": 9,
+            "roadCountInside": 2,
+            "serviceCandidateBonusInside": 880,
+            "residentialCandidatesBlockedByIncumbent": 12,
+            "componentsBefore": 2,
+            "componentsAfter": 2,
+            "allowedWindowCells": 8,
+            "newlyReachable": 5,
+            "incumbentPopulation": 580,
+            "operatorScore": 1498
+          }
+        },
+        {
+          "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-08/protected-anchor-service-wide-window-opportunity-roll-forward-1x0.1",
+          "caseName": "lns-holdout-anchor-service-shelf-pressure",
+          "pressureFamily": "anchor-service",
+          "seed": 7,
+          "statePolicy": "post-stagnation",
+          "stateIndex": 2,
+          "stateSourceStatus": "neutral",
+          "stateSourceIteration": 0,
+          "stateStagnantIterations": 1,
+          "operator": "gate-choke",
+          "selectionSource": "baseline-top-k",
+          "window": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "status": "improved",
+          "delta": 110,
+          "repeatability": {
+            "bucketKey": "lns-holdout-anchor-service-shelf-pressure\u0000post-stagnation\u0000gate-choke\u00002:1:3x3",
+            "labelCount": 12,
+            "statusCounts": {
+              "improved": 3,
+              "neutral": 9,
+              "regressed": 0,
+              "unknown": 0
+            },
+            "featureIdenticalConflictBucket": false
+          },
+          "selectedFeatures": {
+            "area": 9,
+            "roadCountInside": 2,
+            "serviceCandidateBonusInside": 880,
+            "residentialCandidatesBlockedByIncumbent": 12,
+            "componentsBefore": 2,
+            "componentsAfter": 2,
+            "allowedWindowCells": 8,
+            "newlyReachable": 5,
+            "incumbentPopulation": 580,
+            "operatorScore": 1494
+          }
+        },
+        {
+          "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-08/protected-anchor-service-wide-window-opportunity-roll-forward-1x0.1",
+          "caseName": "lns-holdout-anchor-service-shelf-pressure",
+          "pressureFamily": "anchor-service",
+          "seed": 7,
+          "statePolicy": "post-stagnation",
+          "stateIndex": 2,
+          "stateSourceStatus": "neutral",
+          "stateSourceIteration": 0,
+          "stateStagnantIterations": 1,
+          "operator": "random-exploration",
+          "selectionSource": "baseline-top-k",
+          "window": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "status": "improved",
+          "delta": 110,
+          "repeatability": {
+            "bucketKey": "lns-holdout-anchor-service-shelf-pressure\u0000post-stagnation\u0000random-exploration\u00002:1:3x3",
+            "labelCount": 12,
+            "statusCounts": {
+              "improved": 3,
+              "neutral": 9,
+              "regressed": 0,
+              "unknown": 0
+            },
+            "featureIdenticalConflictBucket": false
+          },
+          "selectedFeatures": {
+            "area": 9,
+            "roadCountInside": 2,
+            "serviceCandidateBonusInside": 880,
+            "residentialCandidatesBlockedByIncumbent": 12,
+            "componentsBefore": 2,
+            "componentsAfter": 2,
+            "allowedWindowCells": 8,
+            "newlyReachable": 5,
+            "incumbentPopulation": 580,
+            "operatorScore": 749
+          }
+        },
+        {
+          "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-08/protected-anchor-service-wide-window-opportunity-roll-forward-1x0.1",
+          "caseName": "lns-holdout-anchor-service-shelf-pressure",
+          "pressureFamily": "anchor-service",
+          "seed": 19,
+          "statePolicy": "initial-incumbent",
+          "stateIndex": 0,
+          "stateSourceStatus": "initial-incumbent",
+          "stateSourceIteration": null,
+          "stateStagnantIterations": 0,
+          "operator": "frontier-congestion",
+          "selectionSource": "baseline-top-k",
+          "window": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "status": "improved",
+          "delta": 110,
+          "repeatability": {
+            "bucketKey": "lns-holdout-anchor-service-shelf-pressure\u0000initial-incumbent\u0000frontier-congestion\u00002:1:3x3",
+            "labelCount": 12,
+            "statusCounts": {
+              "improved": 3,
+              "neutral": 9,
+              "regressed": 0,
+              "unknown": 0
+            },
+            "featureIdenticalConflictBucket": false
+          },
+          "selectedFeatures": {
+            "area": 9,
+            "roadCountInside": 2,
+            "serviceCandidateBonusInside": 880,
+            "residentialCandidatesBlockedByIncumbent": 12,
+            "componentsBefore": 2,
+            "componentsAfter": 2,
+            "allowedWindowCells": 8,
+            "newlyReachable": 5,
+            "incumbentPopulation": 580,
+            "operatorScore": 1498
+          }
+        },
+        {
+          "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-08/protected-anchor-service-wide-window-opportunity-roll-forward-1x0.1",
+          "caseName": "lns-holdout-anchor-service-shelf-pressure",
+          "pressureFamily": "anchor-service",
+          "seed": 19,
+          "statePolicy": "initial-incumbent",
+          "stateIndex": 0,
+          "stateSourceStatus": "initial-incumbent",
+          "stateSourceIteration": null,
+          "stateStagnantIterations": 0,
+          "operator": "gate-choke",
+          "selectionSource": "baseline-top-k",
+          "window": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "status": "improved",
+          "delta": 110,
+          "repeatability": {
+            "bucketKey": "lns-holdout-anchor-service-shelf-pressure\u0000initial-incumbent\u0000gate-choke\u00002:1:3x3",
+            "labelCount": 12,
+            "statusCounts": {
+              "improved": 3,
+              "neutral": 9,
+              "regressed": 0,
+              "unknown": 0
+            },
+            "featureIdenticalConflictBucket": false
+          },
+          "selectedFeatures": {
+            "area": 9,
+            "roadCountInside": 2,
+            "serviceCandidateBonusInside": 880,
+            "residentialCandidatesBlockedByIncumbent": 12,
+            "componentsBefore": 2,
+            "componentsAfter": 2,
+            "allowedWindowCells": 8,
+            "newlyReachable": 5,
+            "incumbentPopulation": 580,
+            "operatorScore": 1494
+          }
+        },
+        {
+          "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-08/protected-anchor-service-wide-window-opportunity-roll-forward-1x0.1",
+          "caseName": "lns-holdout-anchor-service-shelf-pressure",
+          "pressureFamily": "anchor-service",
+          "seed": 19,
+          "statePolicy": "initial-incumbent",
+          "stateIndex": 0,
+          "stateSourceStatus": "initial-incumbent",
+          "stateSourceIteration": null,
+          "stateStagnantIterations": 0,
+          "operator": "random-exploration",
+          "selectionSource": "baseline-top-k",
+          "window": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "status": "improved",
+          "delta": 110,
+          "repeatability": {
+            "bucketKey": "lns-holdout-anchor-service-shelf-pressure\u0000initial-incumbent\u0000random-exploration\u00002:1:3x3",
+            "labelCount": 12,
+            "statusCounts": {
+              "improved": 3,
+              "neutral": 9,
+              "regressed": 0,
+              "unknown": 0
+            },
+            "featureIdenticalConflictBucket": false
+          },
+          "selectedFeatures": {
+            "area": 9,
+            "roadCountInside": 2,
+            "serviceCandidateBonusInside": 880,
+            "residentialCandidatesBlockedByIncumbent": 12,
+            "componentsBefore": 2,
+            "componentsAfter": 2,
+            "allowedWindowCells": 8,
+            "newlyReachable": 5,
+            "incumbentPopulation": 580,
+            "operatorScore": 749
+          }
+        },
+        {
+          "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-08/protected-anchor-service-wide-window-opportunity-roll-forward-1x0.1",
+          "caseName": "lns-holdout-anchor-service-shelf-pressure",
+          "pressureFamily": "anchor-service",
+          "seed": 19,
+          "statePolicy": "post-stagnation",
+          "stateIndex": 2,
+          "stateSourceStatus": "neutral",
+          "stateSourceIteration": 0,
+          "stateStagnantIterations": 1,
+          "operator": "frontier-congestion",
+          "selectionSource": "baseline-top-k",
+          "window": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "status": "improved",
+          "delta": 110,
+          "repeatability": {
+            "bucketKey": "lns-holdout-anchor-service-shelf-pressure\u0000post-stagnation\u0000frontier-congestion\u00002:1:3x3",
+            "labelCount": 12,
+            "statusCounts": {
+              "improved": 3,
+              "neutral": 9,
+              "regressed": 0,
+              "unknown": 0
+            },
+            "featureIdenticalConflictBucket": false
+          },
+          "selectedFeatures": {
+            "area": 9,
+            "roadCountInside": 2,
+            "serviceCandidateBonusInside": 880,
+            "residentialCandidatesBlockedByIncumbent": 12,
+            "componentsBefore": 2,
+            "componentsAfter": 2,
+            "allowedWindowCells": 8,
+            "newlyReachable": 5,
+            "incumbentPopulation": 580,
+            "operatorScore": 1498
+          }
+        },
+        {
+          "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-08/protected-anchor-service-wide-window-opportunity-roll-forward-1x0.1",
+          "caseName": "lns-holdout-anchor-service-shelf-pressure",
+          "pressureFamily": "anchor-service",
+          "seed": 19,
+          "statePolicy": "post-stagnation",
+          "stateIndex": 2,
+          "stateSourceStatus": "neutral",
+          "stateSourceIteration": 0,
+          "stateStagnantIterations": 1,
+          "operator": "gate-choke",
+          "selectionSource": "baseline-top-k",
+          "window": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "status": "improved",
+          "delta": 110,
+          "repeatability": {
+            "bucketKey": "lns-holdout-anchor-service-shelf-pressure\u0000post-stagnation\u0000gate-choke\u00002:1:3x3",
+            "labelCount": 12,
+            "statusCounts": {
+              "improved": 3,
+              "neutral": 9,
+              "regressed": 0,
+              "unknown": 0
+            },
+            "featureIdenticalConflictBucket": false
+          },
+          "selectedFeatures": {
+            "area": 9,
+            "roadCountInside": 2,
+            "serviceCandidateBonusInside": 880,
+            "residentialCandidatesBlockedByIncumbent": 12,
+            "componentsBefore": 2,
+            "componentsAfter": 2,
+            "allowedWindowCells": 8,
+            "newlyReachable": 5,
+            "incumbentPopulation": 580,
+            "operatorScore": 1494
+          }
+        },
+        {
+          "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-08/protected-anchor-service-wide-window-opportunity-roll-forward-1x0.1",
+          "caseName": "lns-holdout-anchor-service-shelf-pressure",
+          "pressureFamily": "anchor-service",
+          "seed": 19,
+          "statePolicy": "post-stagnation",
+          "stateIndex": 2,
+          "stateSourceStatus": "neutral",
+          "stateSourceIteration": 0,
+          "stateStagnantIterations": 1,
+          "operator": "random-exploration",
+          "selectionSource": "baseline-top-k",
+          "window": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "status": "improved",
+          "delta": 110,
+          "repeatability": {
+            "bucketKey": "lns-holdout-anchor-service-shelf-pressure\u0000post-stagnation\u0000random-exploration\u00002:1:3x3",
+            "labelCount": 12,
+            "statusCounts": {
+              "improved": 3,
+              "neutral": 9,
+              "regressed": 0,
+              "unknown": 0
+            },
+            "featureIdenticalConflictBucket": false
+          },
+          "selectedFeatures": {
+            "area": 9,
+            "roadCountInside": 2,
+            "serviceCandidateBonusInside": 880,
+            "residentialCandidatesBlockedByIncumbent": 12,
+            "componentsBefore": 2,
+            "componentsAfter": 2,
+            "allowedWindowCells": 8,
+            "newlyReachable": 5,
+            "incumbentPopulation": 580,
+            "operatorScore": 749
+          }
+        }
+      ]
+    }
+  }
+}

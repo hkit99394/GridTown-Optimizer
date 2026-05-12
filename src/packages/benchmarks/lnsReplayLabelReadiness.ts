@@ -15,6 +15,10 @@ type LnsReplayLabelReadinessPressureFamilyLabel =
   | "footprint-pressure"
   | "service-pressure"
   | "anchor-service"
+  | "product-expansion"
+  | "product-footprint"
+  | "product-service"
+  | "product-warm-start"
   | "uncategorized";
 
 interface LnsReplayLabelReadinessLabel {

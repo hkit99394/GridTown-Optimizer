@@ -238,6 +238,10 @@ export interface LnsWindowRankerRuntimeOptions {
   enabled?: boolean;
   model: LnsWindowRankerRuntimeModel;
   minScoreDelta?: number;
+  /** Diagnostics-only: optional second head that can veto learned overrides when it prefers the baseline window. */
+  suppressionModel?: LnsWindowRankerRuntimeModel;
+  /** Minimum suppression-model baseline-minus-selected score delta required to veto an override. */
+  suppressionMinScoreDelta?: number;
   /** Diagnostics-only: only allow learned overrides whose baseline->selected operator transition is listed. */
   allowedTransitions?: readonly LnsWindowRankerOperatorTransition[];
   /** Diagnostics-only: only allow learned overrides whose selected-window feature values satisfy these bounds. */
@@ -270,20 +274,33 @@ export interface LnsWindowRankerSelectionTelemetry {
   baselineScore: number;
   selectedScore: number;
   scoreDelta: number;
+  nominatedScore?: number;
+  nominatedScoreDelta?: number;
+  suppressionModelFingerprint?: string;
+  suppressionBaselineScore?: number;
+  suppressionSelectedScore?: number;
+  suppressionScoreDelta?: number;
   baselineCandidateIndex: number;
   selectedCandidateIndex: number;
+  nominatedCandidateIndex?: number;
   baselineOperator: LnsAdaptiveOperatorName;
   selectedOperator: LnsAdaptiveOperatorName;
+  nominatedOperator?: LnsAdaptiveOperatorName;
   baselineWindow: CpSatNeighborhoodWindow;
   selectedWindow: CpSatNeighborhoodWindow;
+  nominatedWindow?: CpSatNeighborhoodWindow;
   selectedByBaseline: boolean;
+  nominatedByBaseline?: boolean;
   baselineFeatures?: LnsWindowRankerFeatureTelemetry;
   selectedFeatures?: LnsWindowRankerFeatureTelemetry;
   featureDeltas?: LnsWindowRankerFeatureTelemetry;
+  nominatedFeatures?: LnsWindowRankerFeatureTelemetry;
+  nominatedFeatureDeltas?: LnsWindowRankerFeatureTelemetry;
   decisionState?: LnsWindowRankerDecisionStateTelemetry;
   fallbackReason?:
     | "score-delta-below-threshold"
     | "operator-transition-not-allowed"
+    | "suppression-model-veto"
     | "selected-feature-gate-not-met"
     | "feature-delta-gate-not-met";
 }
@@ -293,6 +310,8 @@ export interface LnsWindowRankerTelemetry {
   modelFingerprint?: string;
   featureSchemaVersion?: number | null;
   minScoreDelta: number;
+  suppressionModelFingerprint?: string;
+  suppressionMinScoreDelta?: number;
   allowedTransitions?: readonly LnsWindowRankerOperatorTransition[];
   selectedFeatureGates?: readonly LnsWindowRankerSelectedFeatureGate[];
   selectedFeatureGateGroups?: readonly LnsWindowRankerSelectedFeatureGateGroup[];

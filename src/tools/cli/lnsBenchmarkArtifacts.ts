@@ -18,9 +18,11 @@ import type {
   LnsWindowRankerOnlineAblationSnapshot,
   LnsWindowRankerOnlineAblationSuiteResult,
   LnsWindowRankerOnlineCalibrationSuiteResult,
+  LnsWindowRankerOnlineProtectedCorpus,
   runLnsWindowRankerOnlineAblation
 } from "../../benchmarkApi.js";
 import {
+  assertArtifactPathNotObsolete,
   completeAppendableRegistryEntry,
   defaultCliReplayCommand,
   normalizeRepoRelativePath,
@@ -42,8 +44,10 @@ export type LnsWindowRankerSelectedFeatureGateGroup = NonNullable<
 
 export interface LnsWindowRankerOnlineArtifactArgs {
   windowRankerModelPath?: string;
+  windowRankerSuppressionModelPath?: string;
   windowRankerArtifactDir?: string;
   windowRankerProtectedHoldout: boolean;
+  windowRankerProtectedCorpus?: LnsWindowRankerOnlineProtectedCorpus;
   windowRankerRunId?: string;
   windowRankerDecision?: string;
   windowRankerSummary?: string;
@@ -66,6 +70,9 @@ export interface LnsWindowRankerOnlineArtifactManifest {
   seedCount: number;
   comparisonCount: number;
   modelFingerprint: string | null;
+  suppressionModelFingerprint?: string | null;
+  suppressionMinScoreDelta?: number | null;
+  protectedCorpus?: LnsWindowRankerOnlineProtectedCorpus;
   minScoreDelta: number | null;
   allowedTransitions?: string[];
   selectedFeatureGates?: LnsWindowRankerSelectedFeatureGate[];
@@ -91,19 +98,24 @@ interface WindowRankerOnlineArtifactBundlePaths {
   absoluteArtifactPaths: LnsWindowRankerOnlineArtifactManifest["artifactPaths"];
   command: string;
   modelPath: string;
+  suppressionModelPath?: string;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
-export function readWindowRankerModel(modelPath: string): LnsWindowRankerRuntimeModel {
-  const repoRelativePath = normalizeRepoRelativePath(modelPath, "--window-ranker-model");
+export function readWindowRankerModel(
+  modelPath: string,
+  label: "--window-ranker-model" | "--window-ranker-suppression-model" = "--window-ranker-model"
+): LnsWindowRankerRuntimeModel {
+  const repoRelativePath = normalizeRepoRelativePath(modelPath, label);
+  assertArtifactPathNotObsolete(repoRelativePath, label);
   const parsed = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), repoRelativePath), "utf8"));
   const candidate =
     isRecord(parsed) && isRecord(parsed.model) && isRecord(parsed.model.weights) ? parsed.model : parsed;
   if (!isRecord(candidate) || !isRecord(candidate.weights)) {
-    throw new Error("--window-ranker-model must point to a model JSON object with a weights object.");
+    throw new Error(`${label} must point to a model JSON object with a weights object.`);
   }
   return candidate as unknown as LnsWindowRankerRuntimeModel;
 }
@@ -160,6 +172,20 @@ function onlineAblationMinScoreDelta(result: LnsWindowRankerOnlineAblationSuiteR
   return (
     result.cases.flatMap((entry) => entry.variants).find((variant) => variant.variantName === "window-ranker")
       ?.windowRanker?.minScoreDelta ?? null
+  );
+}
+
+function onlineAblationSuppressionModelFingerprint(result: LnsWindowRankerOnlineAblationSuiteResult): string | null {
+  return (
+    result.cases.flatMap((entry) => entry.variants).find((variant) => variant.variantName === "window-ranker")
+      ?.windowRanker?.suppressionModelFingerprint ?? null
+  );
+}
+
+function onlineAblationSuppressionMinScoreDelta(result: LnsWindowRankerOnlineAblationSuiteResult): number | null {
+  return (
+    result.cases.flatMap((entry) => entry.variants).find((variant) => variant.variantName === "window-ranker")
+      ?.windowRanker?.suppressionMinScoreDelta ?? null
   );
 }
 
@@ -237,7 +263,15 @@ function prepareWindowRankerOnlineArtifactBundle(
       registryEntryDraftJson: artifacts.absoluteArtifactPath("registry-entry-draft.json")
     },
     command: defaultWindowRankerOnlineArtifactCommand(argv),
-    modelPath: normalizeRepoRelativePath(args.windowRankerModelPath, "--window-ranker-model")
+    modelPath: normalizeRepoRelativePath(args.windowRankerModelPath, "--window-ranker-model"),
+    ...(args.windowRankerSuppressionModelPath === undefined
+      ? {}
+      : {
+          suppressionModelPath: normalizeRepoRelativePath(
+            args.windowRankerSuppressionModelPath,
+            "--window-ranker-suppression-model"
+          )
+        })
   };
 }
 
@@ -265,7 +299,10 @@ export function writeWindowRankerOnlineArtifactBundle(
     command: paths.command,
     git: resolveExperimentRegistryGitMetadata(),
     hardware: captureExperimentRegistryHardwareMetadata(),
-    inputArtifacts: [paths.modelPath],
+    inputArtifacts: [
+      paths.modelPath,
+      ...(paths.suppressionModelPath === undefined ? [] : [paths.suppressionModelPath])
+    ],
     outputArtifacts: [
       paths.artifactPaths.scorecardJson,
       paths.artifactPaths.scorecardText,
@@ -283,7 +320,9 @@ export function writeWindowRankerOnlineArtifactBundle(
     decision: args.windowRankerDecision,
     summary: args.windowRankerSummary,
     modelPath: paths.modelPath,
-    protectedHoldout: args.windowRankerProtectedHoldout
+    suppressionModelPath: paths.suppressionModelPath,
+    protectedHoldout: args.windowRankerProtectedHoldout,
+    protectedCorpus: args.windowRankerProtectedCorpus
   });
 
   writeWindowRankerOnlineArtifactFiles(
@@ -312,6 +351,9 @@ export function writeWindowRankerOnlineArtifactBundle(
     seedCount: result.seedCount,
     comparisonCount: result.comparisonCount,
     modelFingerprint: onlineAblationModelFingerprint(result),
+    suppressionModelFingerprint: onlineAblationSuppressionModelFingerprint(result),
+    suppressionMinScoreDelta: onlineAblationSuppressionMinScoreDelta(result),
+    protectedCorpus: args.windowRankerProtectedCorpus,
     minScoreDelta: onlineAblationMinScoreDelta(result),
     allowedTransitions: onlineAblationAllowedTransitions(result),
     selectedFeatureGates: onlineAblationSelectedFeatureGates(result),
@@ -336,7 +378,10 @@ export function writeWindowRankerOnlineCalibrationArtifactBundle(
     git: resolveExperimentRegistryGitMetadata(),
     hardware: captureExperimentRegistryHardwareMetadata(),
     model,
-    inputArtifacts: [paths.modelPath],
+    inputArtifacts: [
+      paths.modelPath,
+      ...(paths.suppressionModelPath === undefined ? [] : [paths.suppressionModelPath])
+    ],
     outputArtifacts: [
       paths.artifactPaths.scorecardJson,
       paths.artifactPaths.scorecardText,
@@ -355,7 +400,9 @@ export function writeWindowRankerOnlineCalibrationArtifactBundle(
     summary: args.windowRankerSummary,
     model,
     modelPath: paths.modelPath,
-    protectedHoldout: args.windowRankerProtectedHoldout
+    suppressionModelPath: paths.suppressionModelPath,
+    protectedHoldout: args.windowRankerProtectedHoldout,
+    protectedCorpus: args.windowRankerProtectedCorpus
   });
 
   writeWindowRankerOnlineArtifactFiles(
@@ -384,6 +431,9 @@ export function writeWindowRankerOnlineCalibrationArtifactBundle(
     seedCount: result.seedCount,
     comparisonCount: result.comparisonCount,
     modelFingerprint: result.modelFingerprint,
+    suppressionModelFingerprint: result.suppressionModelFingerprint,
+    suppressionMinScoreDelta: result.suppressionMinScoreDelta,
+    protectedCorpus: args.windowRankerProtectedCorpus,
     minScoreDelta: summary?.minScoreDelta ?? null,
     ...(result.allowedTransitions === undefined ? {} : { allowedTransitions: [...result.allowedTransitions] }),
     ...(result.selectedFeatureGates === undefined ? {} : { selectedFeatureGates: [...result.selectedFeatureGates] }),
@@ -406,6 +456,13 @@ export function formatWindowRankerOnlineArtifactManifest(manifest: LnsWindowRank
     `LNS window ranker online artifacts written to ${manifest.artifactDir}`,
     `run-id=${manifest.runId}`,
     `model-fingerprint=${manifest.modelFingerprint ?? "n/a"}`,
+    ...(manifest.suppressionModelFingerprint === undefined || manifest.suppressionModelFingerprint === null
+      ? []
+      : [`suppression-model-fingerprint=${manifest.suppressionModelFingerprint}`]),
+    ...(manifest.suppressionMinScoreDelta === undefined || manifest.suppressionMinScoreDelta === null
+      ? []
+      : [`suppression-min-score-delta=${manifest.suppressionMinScoreDelta}`]),
+    ...(manifest.protectedCorpus === undefined ? [] : [`protected-corpus=${manifest.protectedCorpus}`]),
     `min-score-delta=${manifest.minScoreDelta ?? "n/a"}`,
     ...(manifest.allowedTransitions === undefined
       ? []

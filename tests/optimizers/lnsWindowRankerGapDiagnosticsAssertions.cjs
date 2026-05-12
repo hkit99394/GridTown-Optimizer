@@ -7,7 +7,8 @@ const {
   formatLnsWindowRankerGapDiagnostics,
   formatLnsWindowRankerExperiment,
   runLnsWindowRankerGapDiagnostics,
-  runLnsWindowRankerExperiment
+  runLnsWindowRankerExperiment,
+  scoreLnsWindowRankerReplayLabel
 } = require("city-builder/benchmarks");
 const { cloneFixtureWithRollForwardTargets } = require("./lnsWindowRankerFixtures.cjs");
 
@@ -557,8 +558,184 @@ function testLnsWindowRankerSupplementalReplayCalibration() {
       supplementalReplayCalibrationIgnoreBaselineFeature: true
     }
   });
+  const suppressionReplay = buildNeutralSupplementalReplaySnapshot(
+    holdoutSplit.replay.cases[0],
+    "protected-service-online-selected-suppression",
+    "service-pressure"
+  );
+  const suppressionCase = suppressionReplay.cases[0];
+  const suppressionBaseline = suppressionCase.labels.find((label) => label.selectedByBaseline);
+  const unsafeOnlineSelected = suppressionCase.labels.find(
+    (label) => !label.selectedByBaseline && label.windowIndex === 1
+  );
+  const positiveCounterfactual = suppressionCase.labels.find(
+    (label) => !label.selectedByBaseline && label.windowIndex === 2
+  );
+  suppressionBaseline.selectionSource = "online-baseline";
+  unsafeOnlineSelected.selectionSource = "online-selected";
+  unsafeOnlineSelected.rollForward.populationDeltaVsBaseline = -25;
+  unsafeOnlineSelected.rollForward.improvementVsBaseline = 0;
+  unsafeOnlineSelected.rollForward.statusVsBaseline = "regressed";
+  positiveCounterfactual.rollForward.populationDeltaVsBaseline = 60;
+  positiveCounterfactual.rollForward.improvementVsBaseline = 60;
+  positiveCounterfactual.rollForward.statusVsBaseline = "improved";
+  const calibratedWithoutSuppression = runLnsWindowRankerExperiment(fixture, {
+    supplementalReplaySnapshots: [suppressionReplay],
+    topK: 2,
+    training: {
+      epochs: 4,
+      learningRate: 0.05,
+      marginWeightCap: 500,
+      target: "roll-forward-final-lift",
+      supplementalReplayCalibration: true
+    }
+  });
+  const calibratedWithSuppression = runLnsWindowRankerExperiment(fixture, {
+    supplementalReplaySnapshots: [suppressionReplay],
+    topK: 2,
+    training: {
+      epochs: 4,
+      learningRate: 0.05,
+      marginWeightCap: 500,
+      target: "roll-forward-final-lift",
+      supplementalReplayCalibration: true,
+      supplementalReplayOnlineSelectedSuppression: true
+    }
+  });
+  const calibratedWithWeakSuppression = runLnsWindowRankerExperiment(fixture, {
+    supplementalReplaySnapshots: [suppressionReplay],
+    topK: 2,
+    training: {
+      epochs: 4,
+      learningRate: 0.05,
+      marginWeightCap: 500,
+      target: "roll-forward-final-lift",
+      supplementalReplayCalibration: true,
+      supplementalReplayOnlineSelectedSuppression: true,
+      supplementalReplayOnlineSelectedSuppressionWeight: 0.25
+    }
+  });
+  const calibratedWithStrongSuppression = runLnsWindowRankerExperiment(fixture, {
+    supplementalReplaySnapshots: [suppressionReplay],
+    topK: 2,
+    training: {
+      epochs: 4,
+      learningRate: 0.05,
+      marginWeightCap: 500,
+      target: "roll-forward-final-lift",
+      supplementalReplayCalibration: true,
+      supplementalReplayOnlineSelectedSuppression: true,
+      supplementalReplayOnlineSelectedSuppressionWeight: 2
+    }
+  });
+  const calibratedWithProtectedNeutralSuppression = runLnsWindowRankerExperiment(fixture, {
+    supplementalReplaySnapshots: [suppressionReplay],
+    topK: 2,
+    training: {
+      epochs: 4,
+      learningRate: 0.05,
+      marginWeightCap: 500,
+      target: "roll-forward-final-lift",
+      supplementalReplayCalibration: true,
+      supplementalReplayProtectedNeutralSuppression: true,
+      supplementalReplayProtectedNeutralSuppressionWeight: 0.25
+    }
+  });
+  const positiveProtectedReplay = buildNeutralSupplementalReplaySnapshot(
+    holdoutSplit.replay.cases[0],
+    "protected-service-positive-online-selected-neutral-suppression",
+    "service-pressure"
+  );
+  const positiveProtectedCase = positiveProtectedReplay.cases[0];
+  const positiveProtectedBaseline = positiveProtectedCase.labels.find((label) => label.selectedByBaseline);
+  const positiveProtectedOnlineSelected = positiveProtectedCase.labels.find(
+    (label) => !label.selectedByBaseline && label.windowIndex === 1
+  );
+  positiveProtectedBaseline.selectionSource = "online-baseline";
+  positiveProtectedOnlineSelected.selectionSource = "online-selected";
+  positiveProtectedOnlineSelected.rollForward.populationDeltaVsBaseline = 60;
+  positiveProtectedOnlineSelected.rollForward.improvementVsBaseline = 60;
+  positiveProtectedOnlineSelected.rollForward.statusVsBaseline = "improved";
+  const positiveProtectedNeutralSuppression = runLnsWindowRankerExperiment(fixture, {
+    supplementalReplaySnapshots: [positiveProtectedReplay],
+    topK: 2,
+    training: {
+      epochs: 4,
+      learningRate: 0.05,
+      marginWeightCap: 500,
+      target: "roll-forward-final-lift",
+      supplementalReplayCalibration: true,
+      supplementalReplayProtectedNeutralSuppression: true
+    }
+  });
+  const productNeutralReplay = buildNeutralSupplementalReplaySnapshot(
+    holdoutSplit.replay.cases[0],
+    "product-expansion-neutral-suppression",
+    "product-expansion"
+  );
+  const productNeutralCase = productNeutralReplay.cases[0];
+  const productNeutralBaseline = productNeutralCase.labels.find((label) => label.selectedByBaseline);
+  const productNeutralOnlineSelected = productNeutralCase.labels.find(
+    (label) => !label.selectedByBaseline && label.windowIndex === 1
+  );
+  productNeutralBaseline.selectionSource = "online-baseline";
+  productNeutralOnlineSelected.selectionSource = "online-selected";
+  const productProtectedNeutralSuppression = runLnsWindowRankerExperiment(fixture, {
+    supplementalReplaySnapshots: [productNeutralReplay],
+    topK: 2,
+    training: {
+      epochs: 4,
+      learningRate: 0.05,
+      marginWeightCap: 500,
+      target: "roll-forward-final-lift",
+      supplementalReplayCalibration: true,
+      supplementalReplayProtectedNeutralSuppression: true
+    }
+  });
+  const noPositiveSuppressionReplay = buildNeutralSupplementalReplaySnapshot(
+    holdoutSplit.replay.cases[0],
+    "protected-service-online-selected-no-positive-suppression",
+    "service-pressure"
+  );
+  const noPositiveSuppressionCase = noPositiveSuppressionReplay.cases[0];
+  const noPositiveBaseline = noPositiveSuppressionCase.labels.find((label) => label.selectedByBaseline);
+  const noPositiveOnlineSelected = noPositiveSuppressionCase.labels.find(
+    (label) => !label.selectedByBaseline && label.windowIndex === 1
+  );
+  noPositiveBaseline.selectionSource = "online-baseline";
+  noPositiveBaseline.rollForward.populationDeltaVsBaseline = -10;
+  noPositiveBaseline.rollForward.improvementVsBaseline = 0;
+  noPositiveBaseline.rollForward.statusVsBaseline = "regressed";
+  noPositiveOnlineSelected.selectionSource = "online-selected";
+  noPositiveOnlineSelected.rollForward.populationDeltaVsBaseline = 0;
+  noPositiveOnlineSelected.rollForward.improvementVsBaseline = 0;
+  noPositiveOnlineSelected.rollForward.statusVsBaseline = "neutral";
+  const noPositiveUnsuppressed = runLnsWindowRankerExperiment(fixture, {
+    supplementalReplaySnapshots: [noPositiveSuppressionReplay],
+    topK: 2,
+    training: {
+      epochs: 4,
+      learningRate: 0.05,
+      marginWeightCap: 500,
+      target: "roll-forward-final-lift",
+      supplementalReplayCalibration: true
+    }
+  });
+  const noPositiveSuppressed = runLnsWindowRankerExperiment(fixture, {
+    supplementalReplaySnapshots: [noPositiveSuppressionReplay],
+    topK: 2,
+    training: {
+      epochs: 4,
+      learningRate: 0.05,
+      marginWeightCap: 500,
+      target: "roll-forward-final-lift",
+      supplementalReplayCalibration: true,
+      supplementalReplayOnlineSelectedSuppression: true
+    }
+  });
   const formatted = formatLnsWindowRankerExperiment(calibrated);
   const ignoreBaselineFormatted = formatLnsWindowRankerExperiment(calibratedIgnoringBaselineFeature);
+  const suppressionFormatted = formatLnsWindowRankerExperiment(calibratedWithSuppression);
   assert.equal(calibrated.audit.supplementalReplayCalibration, true);
   assert.equal(calibrated.audit.supplementalReplaySnapshotCount, 1);
   assert.equal(calibrated.model.training.supplementalReplayCalibration, true);
@@ -575,6 +752,55 @@ function testLnsWindowRankerSupplementalReplayCalibration() {
   assert(
     calibratedIgnoringBaselineFeature.model.weights.selectedByBaseline < calibrated.model.weights.selectedByBaseline
   );
+  assert.equal(calibratedWithSuppression.model.training.supplementalReplayOnlineSelectedSuppression, true);
+  assert.equal(calibratedWithSuppression.model.training.supplementalReplayOnlineSelectedSuppressionWeight, 1);
+  assert.equal(calibratedWithWeakSuppression.model.training.supplementalReplayOnlineSelectedSuppressionWeight, 0.25);
+  assert.equal(calibratedWithStrongSuppression.model.training.supplementalReplayOnlineSelectedSuppressionWeight, 2);
+  assert.equal(
+    calibratedWithProtectedNeutralSuppression.model.training.supplementalReplayProtectedNeutralSuppression,
+    true
+  );
+  assert.equal(
+    calibratedWithProtectedNeutralSuppression.model.training.supplementalReplayProtectedNeutralSuppressionWeight,
+    0.25
+  );
+  assert.equal(calibratedWithoutSuppression.model.training.supplementalReplayOnlineSelectedSuppression, false);
+  const unsuppressedScoreGap =
+    scoreLnsWindowRankerReplayLabel(suppressionBaseline, calibratedWithoutSuppression.model) -
+    scoreLnsWindowRankerReplayLabel(unsafeOnlineSelected, calibratedWithoutSuppression.model);
+  const weakSuppressedScoreGap =
+    scoreLnsWindowRankerReplayLabel(suppressionBaseline, calibratedWithWeakSuppression.model) -
+    scoreLnsWindowRankerReplayLabel(unsafeOnlineSelected, calibratedWithWeakSuppression.model);
+  const suppressedScoreGap =
+    scoreLnsWindowRankerReplayLabel(suppressionBaseline, calibratedWithSuppression.model) -
+    scoreLnsWindowRankerReplayLabel(unsafeOnlineSelected, calibratedWithSuppression.model);
+  const strongSuppressedScoreGap =
+    scoreLnsWindowRankerReplayLabel(suppressionBaseline, calibratedWithStrongSuppression.model) -
+    scoreLnsWindowRankerReplayLabel(unsafeOnlineSelected, calibratedWithStrongSuppression.model);
+  assert(weakSuppressedScoreGap > unsuppressedScoreGap);
+  assert(suppressedScoreGap > weakSuppressedScoreGap);
+  assert(strongSuppressedScoreGap > suppressedScoreGap);
+  assert(suppressedScoreGap > unsuppressedScoreGap);
+  const protectedNeutralSuppressedScoreGap =
+    scoreLnsWindowRankerReplayLabel(suppressionBaseline, calibratedWithProtectedNeutralSuppression.model) -
+    scoreLnsWindowRankerReplayLabel(unsafeOnlineSelected, calibratedWithProtectedNeutralSuppression.model);
+  assert(protectedNeutralSuppressedScoreGap > unsuppressedScoreGap);
+  const positiveProtectedScoreGap =
+    scoreLnsWindowRankerReplayLabel(positiveProtectedOnlineSelected, positiveProtectedNeutralSuppression.model) -
+    scoreLnsWindowRankerReplayLabel(positiveProtectedBaseline, positiveProtectedNeutralSuppression.model);
+  assert(positiveProtectedScoreGap > 0);
+  const productNeutralScoreGap =
+    scoreLnsWindowRankerReplayLabel(productNeutralBaseline, productProtectedNeutralSuppression.model) -
+    scoreLnsWindowRankerReplayLabel(productNeutralOnlineSelected, productProtectedNeutralSuppression.model);
+  assert(productNeutralScoreGap > 0);
+  const noPositiveUnsuppressedScoreGap =
+    scoreLnsWindowRankerReplayLabel(noPositiveOnlineSelected, noPositiveUnsuppressed.model) -
+    scoreLnsWindowRankerReplayLabel(noPositiveBaseline, noPositiveUnsuppressed.model);
+  const noPositiveSuppressedScoreGap =
+    scoreLnsWindowRankerReplayLabel(noPositiveOnlineSelected, noPositiveSuppressed.model) -
+    scoreLnsWindowRankerReplayLabel(noPositiveBaseline, noPositiveSuppressed.model);
+  assert(noPositiveSuppressedScoreGap > noPositiveUnsuppressedScoreGap);
+  assert(noPositiveSuppressedScoreGap > 0);
   assert.equal(calibrated.evaluation.summary.passed, false);
   assert(
     calibrated.evaluation.summary.failedReasons.includes(
@@ -584,6 +810,12 @@ function testLnsWindowRankerSupplementalReplayCalibration() {
   assert.match(formatted, /supplemental-replay-calibration=true/);
   assert.match(formatted, /supplemental-replay-calibration-ignore-baseline-feature=false/);
   assert.match(ignoreBaselineFormatted, /supplemental-replay-calibration-ignore-baseline-feature=true/);
+  assert.match(suppressionFormatted, /supplemental-replay-online-selected-suppression=true/);
+  assert.match(suppressionFormatted, /supplemental-replay-online-selected-suppression-weight=1/);
+  assert.match(
+    formatLnsWindowRankerExperiment(calibratedWithProtectedNeutralSuppression),
+    /supplemental-replay-protected-neutral-suppression=true/
+  );
   assert.match(formatted, /supplemental-decisions=1/);
 
   const registryDraft = buildLnsWindowRankerRegistryEntryDraft(calibrated, fixture, {
@@ -613,6 +845,34 @@ function testLnsWindowRankerSupplementalReplayCalibration() {
   assert.equal(ignoreBaselineRegistryDraft.budget.trainingSupplementalReplayCalibration, 1);
   assert.equal(ignoreBaselineRegistryDraft.budget.trainingSupplementalReplayCalibrationIgnoreBaselineFeature, 1);
   assert.equal(ignoreBaselineRegistryDraft.summaryMetrics.supplementalReplayCalibrationIgnoreBaselineFeature, true);
+
+  const suppressionRegistryDraft = buildLnsWindowRankerRegistryEntryDraft(calibratedWithSuppression, fixture, {
+    runId: "lns-window-ranker-supplemental-online-selected-suppression-test",
+    commands: [
+      "node dist/lnsWindowRankerCli.js --labels=labels.json --supplemental-replay-calibration --supplemental-replay-online-selected-suppression"
+    ],
+    artifactPaths: ["artifacts/lns-ranker/lns-window-ranker-suppression.json"]
+  });
+  assert.equal(suppressionRegistryDraft.budget.trainingSupplementalReplayOnlineSelectedSuppression, 1);
+  assert.equal(suppressionRegistryDraft.budget.trainingSupplementalReplayOnlineSelectedSuppressionWeight, 1);
+  assert.equal(suppressionRegistryDraft.summaryMetrics.supplementalReplayOnlineSelectedSuppression, true);
+  assert.equal(suppressionRegistryDraft.summaryMetrics.supplementalReplayOnlineSelectedSuppressionWeight, 1);
+
+  const protectedNeutralRegistryDraft = buildLnsWindowRankerRegistryEntryDraft(
+    calibratedWithProtectedNeutralSuppression,
+    fixture,
+    {
+      runId: "lns-window-ranker-supplemental-protected-neutral-suppression-test",
+      commands: [
+        "node dist/lnsWindowRankerCli.js --labels=labels.json --supplemental-replay-calibration --supplemental-replay-protected-neutral-suppression"
+      ],
+      artifactPaths: ["artifacts/lns-ranker/lns-window-ranker-protected-neutral-suppression.json"]
+    }
+  );
+  assert.equal(protectedNeutralRegistryDraft.budget.trainingSupplementalReplayProtectedNeutralSuppression, 1);
+  assert.equal(protectedNeutralRegistryDraft.budget.trainingSupplementalReplayProtectedNeutralSuppressionWeight, 0.25);
+  assert.equal(protectedNeutralRegistryDraft.summaryMetrics.supplementalReplayProtectedNeutralSuppression, true);
+  assert.equal(protectedNeutralRegistryDraft.summaryMetrics.supplementalReplayProtectedNeutralSuppressionWeight, 0.25);
 }
 
 function runLnsWindowRankerGapDiagnosticsAssertions() {

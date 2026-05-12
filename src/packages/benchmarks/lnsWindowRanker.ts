@@ -59,6 +59,10 @@ export interface LnsWindowRankerTrainingOptions {
   allowWeakSeedReplayLabels?: boolean;
   supplementalReplayCalibration?: boolean;
   supplementalReplayCalibrationIgnoreBaselineFeature?: boolean;
+  supplementalReplayOnlineSelectedSuppression?: boolean;
+  supplementalReplayOnlineSelectedSuppressionWeight?: number;
+  supplementalReplayProtectedNeutralSuppression?: boolean;
+  supplementalReplayProtectedNeutralSuppressionWeight?: number;
   excludeFeatureIdenticalRepeatabilityConflicts?: boolean;
   trajectoryFeatures?: boolean;
   featureInteractions?: boolean;
@@ -279,6 +283,12 @@ function summaryMetrics(result: LnsWindowRankerExperimentResult): Record<string,
     supplementalReplayCalibration: result.model.training.supplementalReplayCalibration,
     supplementalReplayCalibrationIgnoreBaselineFeature:
       result.model.training.supplementalReplayCalibrationIgnoreBaselineFeature,
+    supplementalReplayOnlineSelectedSuppression: result.model.training.supplementalReplayOnlineSelectedSuppression,
+    supplementalReplayOnlineSelectedSuppressionWeight:
+      result.model.training.supplementalReplayOnlineSelectedSuppressionWeight,
+    supplementalReplayProtectedNeutralSuppression: result.model.training.supplementalReplayProtectedNeutralSuppression,
+    supplementalReplayProtectedNeutralSuppressionWeight:
+      result.model.training.supplementalReplayProtectedNeutralSuppressionWeight,
     excludeFeatureIdenticalRepeatabilityConflicts: result.model.training.excludeFeatureIdenticalRepeatabilityConflicts,
     trajectoryFeatures: result.model.training.trajectoryFeatures,
     trajectoryFeatureCount: result.model.featureNames.filter(
@@ -522,6 +532,18 @@ export function buildLnsWindowRankerRegistryEntryDraft(
         .supplementalReplayCalibrationIgnoreBaselineFeature
         ? 1
         : 0,
+      trainingSupplementalReplayOnlineSelectedSuppression: result.model.training
+        .supplementalReplayOnlineSelectedSuppression
+        ? 1
+        : 0,
+      trainingSupplementalReplayOnlineSelectedSuppressionWeight:
+        result.model.training.supplementalReplayOnlineSelectedSuppressionWeight,
+      trainingSupplementalReplayProtectedNeutralSuppression: result.model.training
+        .supplementalReplayProtectedNeutralSuppression
+        ? 1
+        : 0,
+      trainingSupplementalReplayProtectedNeutralSuppressionWeight:
+        result.model.training.supplementalReplayProtectedNeutralSuppressionWeight,
       trainingTrajectoryFeatures: result.model.training.trajectoryFeatures ? 1 : 0,
       trainingFeatureInteractions: result.model.training.featureInteractions ? 1 : 0,
       trainingExcludeFeatureIdenticalRepeatabilityConflicts: result.model.training
@@ -591,7 +613,7 @@ export function formatLnsWindowRankerExperiment(result: LnsWindowRankerExperimen
     `Labels: total=${result.labels.labelCount} usable=${result.labels.usableLabelCount} opportunities=${result.labels.opportunityCount} supplemental-decisions=${result.labels.supplementalReplayDecisionCount} supplemental-labels=${result.labels.supplementalReplayLabelCount} supplemental-repeatability-feature-identical-conflicts=${result.labels.supplementalRepeatabilitySummary.featureIdenticalConflictBucketCount}/${result.labels.supplementalRepeatabilitySummary.featureIdenticalConflictLabelCount} repeatability-excluded=${result.labels.excludedFeatureIdenticalRepeatabilityConflictLabelCount}/${result.labels.excludedFeatureIdenticalRepeatabilityConflictDecisionCount} label-fingerprint=${result.labelFingerprint}`
   );
   lines.push(
-    `Model: ${result.model.modelType} features=${result.model.featureNames.length} interaction-features=${Object.keys(result.model.interactionWeights ?? {}).length} epochs=${result.model.training.epochs} baseline-tie-break=${result.model.training.baselineTieBreak} target=${result.model.training.target} weak-seed-labels=${result.model.training.allowWeakSeedReplayLabels} supplemental-replay-calibration=${result.model.training.supplementalReplayCalibration} supplemental-replay-calibration-ignore-baseline-feature=${result.model.training.supplementalReplayCalibrationIgnoreBaselineFeature} trajectory-features=${result.model.training.trajectoryFeatures} feature-interactions=${result.model.training.featureInteractions} repeatability-conflicts-excluded=${result.model.training.excludeFeatureIdenticalRepeatabilityConflicts} trained-decisions=${result.model.trainedDecisionCount} model-fingerprint=${result.modelFingerprint}`
+    `Model: ${result.model.modelType} features=${result.model.featureNames.length} interaction-features=${Object.keys(result.model.interactionWeights ?? {}).length} epochs=${result.model.training.epochs} baseline-tie-break=${result.model.training.baselineTieBreak} target=${result.model.training.target} weak-seed-labels=${result.model.training.allowWeakSeedReplayLabels} supplemental-replay-calibration=${result.model.training.supplementalReplayCalibration} supplemental-replay-calibration-ignore-baseline-feature=${result.model.training.supplementalReplayCalibrationIgnoreBaselineFeature} supplemental-replay-online-selected-suppression=${result.model.training.supplementalReplayOnlineSelectedSuppression} supplemental-replay-online-selected-suppression-weight=${result.model.training.supplementalReplayOnlineSelectedSuppressionWeight} supplemental-replay-protected-neutral-suppression=${result.model.training.supplementalReplayProtectedNeutralSuppression} supplemental-replay-protected-neutral-suppression-weight=${result.model.training.supplementalReplayProtectedNeutralSuppressionWeight} trajectory-features=${result.model.training.trajectoryFeatures} feature-interactions=${result.model.training.featureInteractions} repeatability-conflicts-excluded=${result.model.training.excludeFeatureIdenticalRepeatabilityConflicts} trained-decisions=${result.model.trainedDecisionCount} model-fingerprint=${result.modelFingerprint}`
   );
   lines.push(
     `Model capture: development=${formatMetric(result.evaluation.model.development)} holdout=${formatMetric(result.evaluation.model.holdout)}`

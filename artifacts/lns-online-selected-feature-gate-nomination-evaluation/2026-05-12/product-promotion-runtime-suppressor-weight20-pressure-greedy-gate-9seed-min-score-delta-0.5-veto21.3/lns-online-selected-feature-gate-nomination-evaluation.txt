@@ -1,0 +1,12 @@
+LNS online selected-feature gate nomination evaluation
+generatedAt=2026-05-12T09:35:05.694Z
+discoveryJson=artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-runtime-suppressor-weight20-final-outcome-pressure-gate-search/online-selected-feature-gate-discovery.json
+candidateSource=greedy
+candidates=1/1
+evaluationFingerprint=fnv1a:88710b43
+
+best-candidate=1 residentialCandidateHeadroom>=12.16
+best-summary mean=32.916666666666664 worst=0 improved=9 regressed=0 overrides=9 fallbacks=63 all-fallback=false promotion=true
+
+candidates:
+- 1 residentialCandidateHeadroom>=12.16: mean=32.916666666666664 worst=0 improved=9 regressed=0 overrides=9 fallbacks=63 active=true all-fallback=false value=true promotion=true

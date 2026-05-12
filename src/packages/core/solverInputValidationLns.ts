@@ -182,6 +182,19 @@ function assertValidWindowRankerOptions(lns: Record<string, unknown>): void {
     LNS_MAX_WINDOW_RANKER_SCORE_DELTA,
     true
   );
+  requireOptionalFiniteNumberInRange(
+    windowRanker,
+    "suppressionMinScoreDelta",
+    "LNS option lns.windowRanker.suppressionMinScoreDelta",
+    0,
+    LNS_MAX_WINDOW_RANKER_SCORE_DELTA,
+    true
+  );
+  if (windowRanker.suppressionMinScoreDelta !== undefined && windowRanker.suppressionModel === undefined) {
+    throw new SolverInputError(
+      "LNS option lns.windowRanker.suppressionMinScoreDelta requires lns.windowRanker.suppressionModel."
+    );
+  }
   assertValidWindowRankerAllowedTransitions(windowRanker);
   assertValidWindowRankerSelectedFeatureGates(windowRanker);
   assertValidWindowRankerSelectedFeatureGateGroups(windowRanker);
@@ -203,6 +216,38 @@ function assertValidWindowRankerOptions(lns: Record<string, unknown>): void {
   const schemaError = lnsWindowRankerRuntimeModelValidationError(model, "LNS option lns.windowRanker.model");
   if (schemaError !== null) {
     throw new SolverInputError(schemaError);
+  }
+  if (windowRanker.suppressionModel !== undefined) {
+    const suppressionModel = requireValidationRecord(
+      windowRanker.suppressionModel,
+      "LNS option lns.windowRanker.suppressionModel"
+    );
+    requireOptionalString(
+      suppressionModel,
+      "modelFingerprint",
+      "LNS option lns.windowRanker.suppressionModel.modelFingerprint"
+    );
+    requireOptionalStringInSet(
+      suppressionModel,
+      "modelType",
+      "LNS option lns.windowRanker.suppressionModel.modelType",
+      ["lns-window-linear-pairwise-ranker"]
+    );
+    requireOptionalFiniteNumberInRange(
+      suppressionModel,
+      "intercept",
+      "LNS option lns.windowRanker.suppressionModel.intercept",
+      -LNS_MAX_WINDOW_RANKER_SCORE_DELTA,
+      LNS_MAX_WINDOW_RANKER_SCORE_DELTA,
+      true
+    );
+    const suppressionSchemaError = lnsWindowRankerRuntimeModelValidationError(
+      suppressionModel,
+      "LNS option lns.windowRanker.suppressionModel"
+    );
+    if (suppressionSchemaError !== null) {
+      throw new SolverInputError(suppressionSchemaError);
+    }
   }
 }
 

@@ -116,6 +116,12 @@ export function formatLnsWindowRankerOnlineCalibration(result: LnsWindowRankerOn
   lines.push(`Cases: ${result.caseCount}`);
   lines.push(`Seeds: ${formatBenchmarkSeeds(result.seeds)}`);
   lines.push(`Model fingerprint: ${result.modelFingerprint ?? "n/a"}`);
+  if (result.suppressionModelFingerprint !== undefined && result.suppressionModelFingerprint !== null) {
+    lines.push(`Suppression model fingerprint: ${result.suppressionModelFingerprint}`);
+  }
+  if (result.suppressionMinScoreDelta !== undefined) {
+    lines.push(`Suppression min score delta: ${result.suppressionMinScoreDelta}`);
+  }
   if (result.allowedTransitions !== undefined) {
     lines.push(`Allowed transitions: ${result.allowedTransitions.join(", ")}`);
   }
@@ -152,6 +158,18 @@ export function formatLnsWindowRankerOnlineAblation(result: LnsWindowRankerOnlin
       ?.windowRanker?.allowedTransitions ?? null;
   if (allowedTransitions !== null) {
     lines.push(`Allowed transitions: ${allowedTransitions.join(", ")}`);
+  }
+  const windowRankerSummary = result.cases
+    .flatMap((entry) => entry.variants)
+    .find((variant) => variant.variantName === "window-ranker")?.windowRanker;
+  if (windowRankerSummary?.suppressionModelFingerprint) {
+    lines.push(`Suppression model fingerprint: ${windowRankerSummary.suppressionModelFingerprint}`);
+  }
+  if (
+    windowRankerSummary?.suppressionMinScoreDelta !== null &&
+    windowRankerSummary?.suppressionMinScoreDelta !== undefined
+  ) {
+    lines.push(`Suppression min score delta: ${windowRankerSummary.suppressionMinScoreDelta}`);
   }
   const selectedFeatureGates =
     result.cases.flatMap((entry) => entry.variants).find((variant) => variant.variantName === "window-ranker")

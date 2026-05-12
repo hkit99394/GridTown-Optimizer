@@ -1,0 +1,32 @@
+{
+  "artifactDir": "artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-default-validation-runtime-suppressor-weight20-final-outcome-pressure-gate-search",
+  "artifactPaths": {
+    "discoveryJson": "artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-default-validation-runtime-suppressor-weight20-final-outcome-pressure-gate-search/online-selected-feature-gate-discovery.json",
+    "discoveryText": "artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-default-validation-runtime-suppressor-weight20-final-outcome-pressure-gate-search/online-selected-feature-gate-discovery.txt",
+    "telemetryManifestJson": "artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-default-validation-runtime-suppressor-weight20-final-outcome-pressure-gate-search/telemetry-manifest.json",
+    "registryEntryDraftJson": "artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-default-validation-runtime-suppressor-weight20-final-outcome-pressure-gate-search/registry-entry-draft.json",
+    "manifestJson": "artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-default-validation-runtime-suppressor-weight20-final-outcome-pressure-gate-search/manifest.json"
+  },
+  "command": "node scripts/discover-lns-online-selected-feature-gates.mjs --source-artifact=artifacts/lns-window-ranker-online/2026-05-12/product-promotion-two-iteration-product-pair-weight0.1-runtime-suppressor-weight20-9seed-min-score-delta-0.5-suppression-delta-21.3 --source-artifact=artifacts/lns-window-ranker-online/2026-05-12/protected-holdout-two-iteration-product-pair-weight0.1-runtime-suppressor-weight20-9seed-min-score-delta-0.5-suppression-delta-21.3 --validation-source-artifact=artifacts/lns-window-ranker-online/2026-05-12/default-replay-pressure-two-iteration-product-pair-weight0.1-runtime-suppressor-weight20-no-selected-feature-gate-9seed-min-score-delta-0.5-suppression-delta-21.3 --artifact-dir=artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-default-validation-runtime-suppressor-weight20-final-outcome-pressure-gate-search --target=final-improved --max-group-size=2 --max-atoms-per-feature=12 --max-total-atoms=120 --top=25 --feature-allowlist=serviceCandidatesIntersecting,residentialCandidateHeadroom --force-artifact-dir",
+  "generatedAt": "2026-05-12T09:51:58.560Z",
+  "target": "final-improved",
+  "inputFingerprint": "fnv1a:f82348f2",
+  "discoveryFingerprint": "fnv1a:1310728d",
+  "reportFingerprint": "fnv1a:d3d811c5",
+  "sourceScorecards": [
+    "artifacts/lns-window-ranker-online/2026-05-12/product-promotion-two-iteration-product-pair-weight0.1-runtime-suppressor-weight20-9seed-min-score-delta-0.5-suppression-delta-21.3/lns-window-ranker-online-ablation.json",
+    "artifacts/lns-window-ranker-online/2026-05-12/protected-holdout-two-iteration-product-pair-weight0.1-runtime-suppressor-weight20-9seed-min-score-delta-0.5-suppression-delta-21.3/lns-window-ranker-online-ablation.json"
+  ],
+  "validationSourceScorecards": [
+    "artifacts/lns-window-ranker-online/2026-05-12/default-replay-pressure-two-iteration-product-pair-weight0.1-runtime-suppressor-weight20-no-selected-feature-gate-9seed-min-score-delta-0.5-suppression-delta-21.3/lns-window-ranker-online-ablation.json"
+  ],
+  "featureAllowlist": [
+    "serviceCandidatesIntersecting",
+    "residentialCandidateHeadroom"
+  ],
+  "generator": {
+    "script": "scripts/discover-lns-online-selected-feature-gates.mjs",
+    "requiresBuild": true,
+    "command": "node scripts/discover-lns-online-selected-feature-gates.mjs --source-artifact=artifacts/lns-window-ranker-online/2026-05-12/product-promotion-two-iteration-product-pair-weight0.1-runtime-suppressor-weight20-9seed-min-score-delta-0.5-suppression-delta-21.3 --source-artifact=artifacts/lns-window-ranker-online/2026-05-12/protected-holdout-two-iteration-product-pair-weight0.1-runtime-suppressor-weight20-9seed-min-score-delta-0.5-suppression-delta-21.3 --validation-source-artifact=artifacts/lns-window-ranker-online/2026-05-12/default-replay-pressure-two-iteration-product-pair-weight0.1-runtime-suppressor-weight20-no-selected-feature-gate-9seed-min-score-delta-0.5-suppression-delta-21.3 --artifact-dir=artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-default-validation-runtime-suppressor-weight20-final-outcome-pressure-gate-search --target=final-improved --max-group-size=2 --max-atoms-per-feature=12 --max-total-atoms=120 --top=25 --feature-allowlist=serviceCandidatesIntersecting,residentialCandidateHeadroom --force-artifact-dir"
+  }
+}

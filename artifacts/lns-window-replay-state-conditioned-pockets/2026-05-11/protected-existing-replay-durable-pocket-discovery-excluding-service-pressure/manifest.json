@@ -1,0 +1,55 @@
+{
+  "artifactDir": "artifacts/lns-window-replay-state-conditioned-pockets/2026-05-11/protected-existing-replay-durable-pocket-discovery-excluding-service-pressure",
+  "artifactPaths": {
+    "scanJson": "artifacts/lns-window-replay-state-conditioned-pockets/2026-05-11/protected-existing-replay-durable-pocket-discovery-excluding-service-pressure/state-conditioned-pockets.json",
+    "scanText": "artifacts/lns-window-replay-state-conditioned-pockets/2026-05-11/protected-existing-replay-durable-pocket-discovery-excluding-service-pressure/state-conditioned-pockets.txt",
+    "telemetryManifestJson": "artifacts/lns-window-replay-state-conditioned-pockets/2026-05-11/protected-existing-replay-durable-pocket-discovery-excluding-service-pressure/telemetry-manifest.json",
+    "registryEntryDraftJson": "artifacts/lns-window-replay-state-conditioned-pockets/2026-05-11/protected-existing-replay-durable-pocket-discovery-excluding-service-pressure/registry-entry-draft.json",
+    "manifestJson": "artifacts/lns-window-replay-state-conditioned-pockets/2026-05-11/protected-existing-replay-durable-pocket-discovery-excluding-service-pressure/manifest.json"
+  },
+  "command": "node scripts/discover-lns-replay-state-conditioned-pockets.mjs --source-root=artifacts/lns-window-replay-labels --artifact-dir=artifacts/lns-window-replay-state-conditioned-pockets/2026-05-11/protected-existing-replay-durable-pocket-discovery-excluding-service-pressure --exclude-pressure-family=service-pressure --min-improved-labels=1 --max-atoms=180 --max-group-size=2 --top=30 --force-artifact-dir",
+  "generatedAt": "2026-05-11T23:14:39.472Z",
+  "inputFingerprint": "fnv1a:01ab4640",
+  "scanFingerprint": "fnv1a:f6240775",
+  "sourceRoot": "artifacts/lns-window-replay-labels",
+  "sourceSummary": {
+    "sourceArtifactCount": 14,
+    "caseCount": 8,
+    "cases": [
+      "lns-holdout-anchor-service-harbor-pressure",
+      "lns-holdout-anchor-service-shelf-pressure",
+      "lns-holdout-corridor-switchback-pressure",
+      "lns-holdout-corridor-weave-pressure",
+      "lns-holdout-footprint-lattice-pressure",
+      "lns-holdout-footprint-stagger-pressure",
+      "lns-holdout-gate-double-choke-pressure",
+      "lns-holdout-gate-offset-pressure"
+    ],
+    "pressureFamilies": [
+      "anchor-service",
+      "corridor",
+      "footprint-pressure",
+      "gate"
+    ],
+    "seeds": [
+      5,
+      7,
+      11,
+      13,
+      17,
+      19,
+      23,
+      29,
+      37
+    ],
+    "stateCount": 183,
+    "labelCount": 2202,
+    "rollForwardLabelCount": 2202,
+    "scannedRollForwardLabels": 2202
+  },
+  "generator": {
+    "script": "scripts/discover-lns-replay-state-conditioned-pockets.mjs",
+    "requiresBuild": true,
+    "command": "node scripts/discover-lns-replay-state-conditioned-pockets.mjs --source-root=artifacts/lns-window-replay-labels --artifact-dir=artifacts/lns-window-replay-state-conditioned-pockets/2026-05-11/protected-existing-replay-durable-pocket-discovery-excluding-service-pressure --exclude-pressure-family=service-pressure --min-improved-labels=1 --max-atoms=180 --max-group-size=2 --top=30 --force-artifact-dir"
+  }
+}

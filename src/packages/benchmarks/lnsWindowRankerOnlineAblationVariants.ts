@@ -40,6 +40,8 @@ function summarizeWindowRanker(result: LnsBenchmarkCaseResult): LnsWindowRankerO
     modelFingerprint: ranker.modelFingerprint ?? null,
     featureSchemaVersion: ranker.featureSchemaVersion ?? null,
     minScoreDelta: ranker.minScoreDelta,
+    suppressionModelFingerprint: ranker.suppressionModelFingerprint ?? null,
+    suppressionMinScoreDelta: ranker.suppressionMinScoreDelta ?? null,
     allowedTransitions: ranker.allowedTransitions ? [...ranker.allowedTransitions] : null,
     selectedFeatureGates: ranker.selectedFeatureGates ? [...ranker.selectedFeatureGates] : [],
     selectedFeatureGateGroups: ranker.selectedFeatureGateGroups
@@ -181,6 +183,12 @@ function selectionTrace(result: LnsBenchmarkCaseResult): LnsWindowRankerOnlineSe
         appliedWindow: { ...outcome.window },
         transition: `${selection.baselineOperator}->${selection.selectedOperator}`,
         changedWindow: !sameTraceWindow(selection.baselineWindow, selection.selectedWindow),
+        ...(selection.nominatedOperator === undefined
+          ? {}
+          : { nominatedTransition: `${selection.baselineOperator}->${selection.nominatedOperator}` }),
+        ...(selection.nominatedWindow === undefined
+          ? {}
+          : { nominatedChangedWindow: !sameTraceWindow(selection.baselineWindow, selection.nominatedWindow) }),
         selectionStatus: selectionTraceStatus(selection),
         candidateCount: selection.candidateCount,
         baselineCandidateIndex: selection.baselineCandidateIndex,
@@ -194,11 +202,35 @@ function selectionTrace(result: LnsBenchmarkCaseResult): LnsWindowRankerOnlineSe
         baselineScore: selection.baselineScore,
         selectedScore: selection.selectedScore,
         scoreDelta: selection.scoreDelta,
+        ...(selection.nominatedCandidateIndex === undefined
+          ? {}
+          : { nominatedCandidateIndex: selection.nominatedCandidateIndex }),
+        ...(selection.nominatedOperator === undefined ? {} : { nominatedOperator: selection.nominatedOperator }),
+        ...(selection.nominatedWindow === undefined ? {} : { nominatedWindow: { ...selection.nominatedWindow } }),
+        ...(selection.nominatedByBaseline === undefined ? {} : { nominatedByBaseline: selection.nominatedByBaseline }),
+        ...(selection.nominatedScore === undefined ? {} : { nominatedScore: selection.nominatedScore }),
+        ...(selection.nominatedScoreDelta === undefined ? {} : { nominatedScoreDelta: selection.nominatedScoreDelta }),
+        ...(selection.suppressionModelFingerprint
+          ? { suppressionModelFingerprint: selection.suppressionModelFingerprint }
+          : {}),
+        ...(selection.suppressionBaselineScore === undefined
+          ? {}
+          : { suppressionBaselineScore: selection.suppressionBaselineScore }),
+        ...(selection.suppressionSelectedScore === undefined
+          ? {}
+          : { suppressionSelectedScore: selection.suppressionSelectedScore }),
+        ...(selection.suppressionScoreDelta === undefined
+          ? {}
+          : { suppressionScoreDelta: selection.suppressionScoreDelta }),
         modelFingerprint: selection.modelFingerprint ?? null,
         featureSchemaVersion: selection.featureSchemaVersion ?? null,
         ...(selection.baselineFeatures ? { baselineFeatures: { ...selection.baselineFeatures } } : {}),
         ...(selection.selectedFeatures ? { selectedFeatures: { ...selection.selectedFeatures } } : {}),
         ...(selection.featureDeltas ? { featureDeltas: { ...selection.featureDeltas } } : {}),
+        ...(selection.nominatedFeatures ? { nominatedFeatures: { ...selection.nominatedFeatures } } : {}),
+        ...(selection.nominatedFeatureDeltas
+          ? { nominatedFeatureDeltas: { ...selection.nominatedFeatureDeltas } }
+          : {}),
         ...(selection.decisionState ? { decisionState: selection.decisionState } : {})
       }
     ];

@@ -1,0 +1,12 @@
+LNS online selected-feature gate nomination evaluation
+generatedAt=2026-05-12T10:16:17.094Z
+discoveryJson=artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-default-validation-runtime-suppressor-weight20-final-outcome-pressure-gate-search/online-selected-feature-gate-discovery.json
+candidateSource=validation-greedy
+candidates=1/1
+evaluationFingerprint=fnv1a:7d12abbf
+
+best-candidate=1 residentialCandidateHeadroom>=4.86
+best-summary mean=50 worst=0 improved=36 regressed=0 overrides=54 fallbacks=126 all-fallback=false promotion=false
+
+candidates:
+- 1 residentialCandidateHeadroom>=4.86: mean=50 worst=0 improved=36 regressed=0 overrides=54 fallbacks=126 active=true all-fallback=false value=true promotion=false

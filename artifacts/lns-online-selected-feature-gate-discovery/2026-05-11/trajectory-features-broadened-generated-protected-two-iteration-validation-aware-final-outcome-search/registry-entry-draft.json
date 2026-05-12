@@ -1,0 +1,308 @@
+{
+  "schemaVersion": 2,
+  "runId": "lns-online-selected-feature-gate-discovery-b0d738f8",
+  "artifactType": "ablation-gate",
+  "generatedAt": "2026-05-11T23:41:44.094Z",
+  "commands": [
+    "node scripts/discover-lns-online-selected-feature-gates.mjs --source-scorecard=artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json --source-scorecard=artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json --source-scorecard=artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json --source-scorecard=artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-two-iteration-trajectory-features-no-selected-feature-gate-min-score-delta-0/lns-window-ranker-online-ablation.json --validation-source-scorecard=artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-two-iteration-trajectory-features-no-selected-feature-gate-min-score-delta-0/lns-window-ranker-online-ablation.json --artifact-dir=artifacts/lns-online-selected-feature-gate-discovery/2026-05-11/trajectory-features-broadened-generated-protected-two-iteration-validation-aware-final-outcome-search --target=final-improved --max-group-size=3 --max-atoms-per-feature=20 --max-total-atoms=120 --top=25"
+  ],
+  "artifactPaths": [
+    "artifacts/lns-online-selected-feature-gate-discovery/2026-05-11/trajectory-features-broadened-generated-protected-two-iteration-validation-aware-final-outcome-search/online-selected-feature-gate-discovery.json",
+    "artifacts/lns-online-selected-feature-gate-discovery/2026-05-11/trajectory-features-broadened-generated-protected-two-iteration-validation-aware-final-outcome-search/online-selected-feature-gate-discovery.txt",
+    "artifacts/lns-online-selected-feature-gate-discovery/2026-05-11/trajectory-features-broadened-generated-protected-two-iteration-validation-aware-final-outcome-search/telemetry-manifest.json",
+    "artifacts/lns-online-selected-feature-gate-discovery/2026-05-11/trajectory-features-broadened-generated-protected-two-iteration-validation-aware-final-outcome-search/manifest.json"
+  ],
+  "cases": [
+    "lns-holdout-anchor-service-harbor-pressure",
+    "lns-holdout-anchor-service-shelf-pressure",
+    "lns-holdout-corridor-switchback-pressure",
+    "lns-holdout-corridor-weave-pressure",
+    "lns-holdout-footprint-lattice-pressure",
+    "lns-holdout-footprint-stagger-pressure",
+    "lns-holdout-gate-double-choke-pressure",
+    "lns-holdout-gate-offset-pressure",
+    "lns-holdout-service-braid-family-embed-7x8-right-big-service105-value-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-right-big-service120-value-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-right-big-service85-value-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-right-central-double-geometry-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-right-choke-inward-neighborhood-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-right-left-double-geometry-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-right-neighborhood-anchor-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-right-open-lower-neighborhood-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-right-open-upper-neighborhood-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-right-outer-lower-choke-geometry-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-right-outer-pair-geometry-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-right-outer-upper-choke-geometry-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-right-premium-scarcity-value-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-right-range1-big-service120-value-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-right-range1-big-service95-value-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-right-range3-big-service95-value-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-right-res-headroom-plus20-value-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-right-upper-cap-geometry-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-right-upper-left-cap-geometry-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-right-window-pair-geometry-candidate",
+    "lns-holdout-service-braid-family-embed-7x9-right-west-lane-geometry-candidate",
+    "lns-holdout-service-braid-family-embed-7x9-right-west-lane-upper-cap-geometry-candidate",
+    "lns-holdout-service-braid-family-embed-7x9-wide-right-big-service85-value-candidate",
+    "lns-holdout-service-braid-family-embed-7x9-wide-right-neighborhood-candidate",
+    "lns-holdout-service-braid-family-embed-8x8-down-right-big-service105-value-candidate",
+    "lns-holdout-service-braid-family-embed-8x8-down-right-neighborhood-candidate",
+    "lns-holdout-service-braid-family-embed-8x8-right-bottom-open-shelf-geometry-candidate",
+    "lns-holdout-service-braid-family-embed-8x8-right-bottom-shelf-geometry-candidate",
+    "lns-holdout-service-braid-pressure",
+    "lns-holdout-service-ridge-pressure"
+  ],
+  "caseFamilies": [
+    "anchor-service",
+    "corridor",
+    "footprint-pressure",
+    "gate",
+    "lns-window-ranker-online",
+    "service-pressure"
+  ],
+  "seeds": [
+    7,
+    19,
+    37
+  ],
+  "inputFingerprint": "fnv1a:c8f0ad40",
+  "datasetFingerprint": "fnv1a:b6b9c80d",
+  "reportFingerprint": "fnv1a:b0d738f8",
+  "splitStatus": {
+    "diagnosticsOnly": true,
+    "source": "online-lns-window-ranker-scorecards",
+    "sourceScorecardCount": 4,
+    "validationSourceScorecardCount": 1,
+    "metricSemantics": {
+      "targetImproved": "Counts rows that match the selected discovery target. final-improved is attributed only to the terminal override trace with selectedFeatures in each variant.",
+      "terminalFinalImproved": "Counts selected terminal override traces with selectedFeatures whose whole variant final outcome improved versus baseline.",
+      "terminalFinalRegressed": "Counts selected terminal override traces with selectedFeatures whose whole variant final outcome regressed versus baseline.",
+      "safetyRegressed": "Counts selected traces with either a regressed immediate selection outcome or a regressed whole-variant final outcome. Whole-variant final regression is applied to every selected trace in that variant."
+    },
+    "v2DeprecatedMetricAliases": {
+      "schemaVersion": 2,
+      "note": "Schema-v2 compatibility aliases only. Do not use these aliases to reinterpret schema-v1 artifacts, where finalRegressed represented combined safety regression.",
+      "aliases": {
+        "finalImproved": "terminalFinalImproved",
+        "finalRegressed": "terminalFinalRegressed"
+      }
+    }
+  },
+  "budget": {
+    "sourceScorecardCount": 4,
+    "validationSourceScorecardCount": 1,
+    "overrideTraceCount": 228,
+    "validationOverrideTraceCount": 60,
+    "target": "final-improved",
+    "maxGroupSize": 3,
+    "maxAtomsPerFeature": 20,
+    "maxTotalAtoms": 120,
+    "totalCandidateAtomCount": 1135,
+    "perFeatureCappedAtomCount": 693,
+    "atomCount": 120,
+    "conjunctionReservationSupportsRequestedMaxGroupSize": true,
+    "conjunctionReservationSearchExhaustive": false,
+    "conjunctionReservationAvailableUnsafeTargetAtomCount": 1025,
+    "conjunctionReservationConsideredUnsafeTargetAtomCount": 120,
+    "conjunctionReservationAvailablePartnerAtomCount": 1135,
+    "conjunctionReservationConsideredPartnerAtomCount": 480,
+    "candidateCount": 88103,
+    "topCandidateCount": 25
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "model": {
+    "trained": false,
+    "diagnosticsOnly": true,
+    "target": "final-improved",
+    "gateKind": "online-selected-feature-threshold-search"
+  },
+  "decision": "diagnostics-only",
+  "summary": "Online LNS window-ranker override traces scanned for safe selected-feature gate groups; no solver default changed.",
+  "summaryMetrics": {
+    "sourceScorecardCount": 4,
+    "validationSourceScorecardCount": 1,
+    "overrideTraceCount": 228,
+    "targetImproved": 27,
+    "selectionImproved": 70,
+    "selectionRegressed": 0,
+    "terminalFinalImproved": 27,
+    "terminalFinalRegressed": 14,
+    "finalImproved": 27,
+    "finalRegressed": 14,
+    "safetyRegressed": 28,
+    "validationOverrideTraceCount": 60,
+    "validationTargetImproved": 3,
+    "validationSelectionImproved": 12,
+    "validationSelectionRegressed": 0,
+    "validationTerminalFinalImproved": 3,
+    "validationTerminalFinalRegressed": 0,
+    "validationFinalImproved": 3,
+    "validationFinalRegressed": 0,
+    "validationSafetyRegressed": 0,
+    "totalCandidateAtomCount": 1135,
+    "perFeatureCappedAtomCount": 693,
+    "atomCount": 120,
+    "safeTargetAtomCount": 110,
+    "includedSafeTargetAtomCount": 60,
+    "omittedSafeTargetAtomCount": 50,
+    "includedUnsafeTargetAtomCount": 60,
+    "safeSingletonAdmissionQuota": 0,
+    "conjunctionReservationSearchMaxGroupSize": 3,
+    "conjunctionReservationSupportsRequestedMaxGroupSize": true,
+    "conjunctionReservationSearchExhaustive": false,
+    "conjunctionReservationCoversRequestedMaxGroupSize": false,
+    "conjunctionReservationAvailableUnsafeTargetAtomCount": 1025,
+    "conjunctionReservationConsideredUnsafeTargetAtomCount": 120,
+    "conjunctionReservationAvailablePartnerAtomCount": 1135,
+    "conjunctionReservationConsideredPartnerAtomCount": 480,
+    "conjunctionReservationSlicedUnsafeTargetAtoms": true,
+    "conjunctionReservationSlicedPartnerAtoms": true,
+    "conjunctionReservationReachedReservationAtomCap": true,
+    "candidateCount": 88103,
+    "topCandidateCount": 25,
+    "topCandidateCliArg": "area>=2.1,area<=2.1,clearedFootprint>=0.75",
+    "greedySelectedFeatureGateGroups": [
+      [
+        {
+          "feature": "area",
+          "minValue": 2.1
+        },
+        {
+          "feature": "area",
+          "maxValue": 2.1
+        },
+        {
+          "feature": "clearedFootprint",
+          "minValue": 0.75
+        }
+      ],
+      [
+        {
+          "feature": "area",
+          "minValue": 2.1
+        },
+        {
+          "feature": "area",
+          "maxValue": 2.1
+        },
+        {
+          "feature": "emptyComponentsBefore",
+          "minValue": 0.3
+        }
+      ],
+      [
+        {
+          "feature": "reachableBefore",
+          "maxValue": 0.64
+        },
+        {
+          "feature": "componentDelta",
+          "minValue": -0.2
+        },
+        {
+          "feature": "componentDelta",
+          "maxValue": -0.2
+        },
+        {
+          "feature": "narrowGateCells",
+          "minValue": 0.6
+        }
+      ],
+      [
+        {
+          "feature": "residentialHeadroomInside",
+          "minValue": 0.34
+        },
+        {
+          "feature": "componentDelta",
+          "minValue": -0.2
+        },
+        {
+          "feature": "componentDelta",
+          "maxValue": -0.2
+        }
+      ],
+      [
+        {
+          "feature": "residentialHeadroomInside",
+          "minValue": 0.34
+        },
+        {
+          "feature": "roadCountInside",
+          "minValue": 0.5
+        }
+      ],
+      [
+        {
+          "feature": "residentialHeadroomInside",
+          "minValue": 0.34
+        },
+        {
+          "feature": "reachableAfter",
+          "minValue": 1
+        }
+      ],
+      [
+        {
+          "feature": "residentialCandidatesBlocked",
+          "minValue": 1.4
+        },
+        {
+          "feature": "residentialCandidatesBlocked",
+          "maxValue": 1.4
+        }
+      ]
+    ],
+    "greedySelectedFeatureGateGroupsCliArg": "area>=2.1,area<=2.1,clearedFootprint>=0.75;area>=2.1,area<=2.1,emptyComponentsBefore>=0.3;reachableBefore<=0.64,componentDelta>=-0.2,componentDelta<=-0.2,narrowGateCells>=0.6;residentialHeadroomInside>=0.34,componentDelta>=-0.2,componentDelta<=-0.2;residentialHeadroomInside>=0.34,roadCountInside>=0.5;residentialHeadroomInside>=0.34,reachableAfter>=1;residentialCandidatesBlocked>=1.4,residentialCandidatesBlocked<=1.4",
+    "greedyTargetImproved": 25,
+    "greedySelectionImproved": 42,
+    "greedySelectionRegressed": 0,
+    "greedyTerminalFinalImproved": 25,
+    "greedyTerminalFinalRegressed": 0,
+    "greedyFinalImproved": 25,
+    "greedyFinalRegressed": 0,
+    "greedySafetyRegressed": 0,
+    "greedyNeutral": 29,
+    "greedySafeNoRegression": true,
+    "validationGreedySelectedFeatureGateGroups": [
+      [
+        {
+          "feature": "area",
+          "minValue": 2.1
+        },
+        {
+          "feature": "area",
+          "maxValue": 2.1
+        },
+        {
+          "feature": "clearedFootprint",
+          "minValue": 0.75
+        }
+      ]
+    ],
+    "validationGreedySelectedFeatureGateGroupsCliArg": "area>=2.1,area<=2.1,clearedFootprint>=0.75",
+    "validationGreedyTargetImproved": 3,
+    "validationGreedySelectionImproved": 3,
+    "validationGreedySelectionRegressed": 0,
+    "validationGreedyTerminalFinalImproved": 3,
+    "validationGreedyTerminalFinalRegressed": 0,
+    "validationGreedyFinalImproved": 3,
+    "validationGreedyFinalRegressed": 0,
+    "validationGreedySafetyRegressed": 0,
+    "validationGreedyNeutral": 0,
+    "validationGreedySafeNoRegression": true,
+    "topCandidateValidationTargetImproved": 3,
+    "topCandidateValidationSafetyRegressed": 0,
+    "topCandidateValidationNeutral": 0,
+    "topCandidateValidationSafeNoRegression": true
+  }
+}

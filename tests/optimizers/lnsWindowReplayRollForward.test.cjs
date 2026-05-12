@@ -63,6 +63,16 @@ try {
     [path.join(repoRoot, "dist", "lnsBenchmarkCli.js"), "--list", "--window-replay-protected-holdout"],
     { cwd: repoRoot, encoding: "utf8" }
   );
+  const productReplayList = childProcess.spawnSync(
+    process.execPath,
+    [path.join(repoRoot, "dist", "lnsBenchmarkCli.js"), "--list", "--window-replay-product-promotion-holdout"],
+    { cwd: repoRoot, encoding: "utf8" }
+  );
+  const freshReplayList = childProcess.spawnSync(
+    process.execPath,
+    [path.join(repoRoot, "dist", "lnsBenchmarkCli.js"), "--list", "--window-replay-fresh-pressure-holdout"],
+    { cwd: repoRoot, encoding: "utf8" }
+  );
 
   assert(naturalReplayCase);
   assert(curatedReplayCase);
@@ -74,6 +84,10 @@ try {
   assert.match(curatedReplayList.stdout, /lns-service-overlap-pressure/);
   assert.equal(protectedReplayList.status, 0, protectedReplayList.stderr);
   assert.match(protectedReplayList.stdout, /lns-holdout-corridor-weave-pressure/);
+  assert.equal(productReplayList.status, 0, productReplayList.stderr);
+  assert.match(productReplayList.stdout, /lns-product-expansion-comparison-replay-pressure/);
+  assert.equal(freshReplayList.status, 0, freshReplayList.stderr);
+  assert.match(freshReplayList.stdout, /lns-fresh-product-expansion-side-pocket-pressure/);
 
   const curatedReplay = runLnsWindowReplayLabels(DEFAULT_LNS_REPLAY_LABEL_CURATED_SEED_CORPUS, {
     names: ["lns-gate-choke-pressure", "lns-service-overlap-pressure"],

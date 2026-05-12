@@ -9,7 +9,11 @@ import {
   uniqueBenchmarkValuesBy
 } from "./benchmarkOptions.js";
 import { DEFAULT_LNS_REPLAY_LABEL_CORPUS, getLnsReplayPressureFamily, runLnsBenchmarkSuite } from "./lns.js";
-import { GENERATED_LNS_PROTECTED_HOLDOUT_PRESSURE_CASES } from "./lnsPressureCases.js";
+import {
+  GENERATED_LNS_FRESH_PRESSURE_HOLDOUT_CASES,
+  GENERATED_LNS_PRODUCT_PROMOTION_PRESSURE_CASES,
+  GENERATED_LNS_PROTECTED_HOLDOUT_PRESSURE_CASES
+} from "./lnsPressureCases.js";
 import { buildModelExperimentFingerprint } from "./modelExperimentArtifacts.js";
 import type * as finalOutcomes from "./lnsWindowRankerOnlineFinalOutcomes.js";
 import { buildVariantSummary, variantResult } from "./lnsWindowRankerOnlineAblationVariants.js";
@@ -49,6 +53,8 @@ export type LnsWindowRankerOnlineAblationVariantName = "baseline" | "window-rank
 export interface LnsWindowRankerOnlineAblationRunOptions extends LnsBenchmarkRunOptions {
   model: LnsWindowRankerRuntimeModel;
   minScoreDelta?: number;
+  suppressionModel?: LnsWindowRankerRuntimeModel;
+  suppressionMinScoreDelta?: number;
   allowedTransitions?: readonly LnsWindowRankerOperatorTransition[];
   selectedFeatureGates?: readonly LnsWindowRankerSelectedFeatureGate[];
   selectedFeatureGateGroups?: readonly LnsWindowRankerSelectedFeatureGateGroup[];
@@ -61,6 +67,8 @@ export interface LnsWindowRankerOnlineAblationTelemetrySummary {
   modelFingerprint: string | null;
   featureSchemaVersion: number | null;
   minScoreDelta: number | null;
+  suppressionModelFingerprint: string | null;
+  suppressionMinScoreDelta: number | null;
   allowedTransitions: readonly LnsWindowRankerOperatorTransition[] | null;
   selectedFeatureGates: readonly LnsWindowRankerSelectedFeatureGate[];
   selectedFeatureGateGroups: readonly LnsWindowRankerSelectedFeatureGateGroup[];
@@ -92,6 +100,8 @@ export interface LnsWindowRankerOnlineSelectionTraceEntry {
   appliedWindow: CpSatNeighborhoodWindow;
   transition: string;
   changedWindow: boolean;
+  nominatedTransition?: string;
+  nominatedChangedWindow?: boolean;
   selectionStatus: LnsWindowRankerOnlineSelectionTraceStatus;
   candidateCount: number;
   baselineCandidateIndex: number;
@@ -105,11 +115,23 @@ export interface LnsWindowRankerOnlineSelectionTraceEntry {
   baselineScore: number;
   selectedScore: number;
   scoreDelta: number;
+  nominatedCandidateIndex?: number;
+  nominatedOperator?: LnsAdaptiveOperatorName;
+  nominatedWindow?: CpSatNeighborhoodWindow;
+  nominatedByBaseline?: boolean;
+  nominatedScore?: number;
+  nominatedScoreDelta?: number;
+  suppressionModelFingerprint?: string;
+  suppressionBaselineScore?: number;
+  suppressionSelectedScore?: number;
+  suppressionScoreDelta?: number;
   modelFingerprint: string | null;
   featureSchemaVersion: number | null;
   baselineFeatures?: LnsWindowRankerFeatureTelemetry;
   selectedFeatures?: LnsWindowRankerFeatureTelemetry;
   featureDeltas?: LnsWindowRankerFeatureTelemetry;
+  nominatedFeatures?: LnsWindowRankerFeatureTelemetry;
+  nominatedFeatureDeltas?: LnsWindowRankerFeatureTelemetry;
   decisionState?: LnsWindowRankerDecisionStateTelemetry;
 }
 
@@ -344,6 +366,8 @@ export interface LnsWindowRankerOnlineCalibrationSuiteResult {
   seeds: number[];
   selectedCaseNames: string[];
   modelFingerprint: string | null;
+  suppressionModelFingerprint?: string | null;
+  suppressionMinScoreDelta?: number;
   allowedTransitions?: readonly LnsWindowRankerOperatorTransition[];
   selectedFeatureGates?: readonly LnsWindowRankerSelectedFeatureGate[];
   selectedFeatureGateGroups?: readonly LnsWindowRankerSelectedFeatureGateGroup[];
@@ -378,6 +402,13 @@ export const DEFAULT_LNS_WINDOW_RANKER_ONLINE_ABLATION_CORPUS: readonly LnsBench
 export const DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS: readonly LnsBenchmarkCase[] = Object.freeze([
   ...GENERATED_LNS_PROTECTED_HOLDOUT_PRESSURE_CASES
 ]);
+
+export const DEFAULT_LNS_WINDOW_RANKER_ONLINE_PRODUCT_PROMOTION_CORPUS: readonly LnsBenchmarkCase[] = Object.freeze([
+  ...GENERATED_LNS_PRODUCT_PROMOTION_PRESSURE_CASES
+]);
+
+export const DEFAULT_LNS_WINDOW_RANKER_ONLINE_FRESH_PRESSURE_HOLDOUT_CORPUS: readonly LnsBenchmarkCase[] =
+  Object.freeze([...GENERATED_LNS_FRESH_PRESSURE_HOLDOUT_CASES]);
 
 export const DEFAULT_LNS_WINDOW_RANKER_MIN_SCORE_DELTA_SWEEP: readonly number[] = Object.freeze([
   0, 0.05, 0.1, 0.15, 0.2
@@ -428,6 +459,12 @@ function rankerLnsOptions(
     windowRanker: {
       model,
       ...(options.minScoreDelta === undefined ? {} : { minScoreDelta: options.minScoreDelta }),
+      ...(options.suppressionModel === undefined
+        ? {}
+        : { suppressionModel: modelWithFingerprint(options.suppressionModel) }),
+      ...(options.suppressionMinScoreDelta === undefined
+        ? {}
+        : { suppressionMinScoreDelta: options.suppressionMinScoreDelta }),
       ...(options.allowedTransitions === undefined ? {} : { allowedTransitions: [...options.allowedTransitions] }),
       ...(options.selectedFeatureGates === undefined
         ? {}
@@ -691,6 +728,12 @@ export function runLnsWindowRankerOnlineCalibration(
     modelFingerprint: thresholdSummaries.find((entry) => entry.rankerDecisionCount > 0)
       ? (modelWithFingerprint(options.model).modelFingerprint ?? null)
       : null,
+    ...(options.suppressionModel === undefined
+      ? {}
+      : { suppressionModelFingerprint: modelWithFingerprint(options.suppressionModel).modelFingerprint ?? null }),
+    ...(options.suppressionModel === undefined
+      ? {}
+      : { suppressionMinScoreDelta: options.suppressionMinScoreDelta ?? 0 }),
     ...(options.allowedTransitions === undefined ? {} : { allowedTransitions: [...options.allowedTransitions] }),
     ...(options.selectedFeatureGates === undefined ? {} : { selectedFeatureGates: [...options.selectedFeatureGates] }),
     ...(options.selectedFeatureGateGroups === undefined
@@ -714,6 +757,12 @@ export function createLnsWindowRankerOnlineCalibrationSnapshot(
     seeds: [...result.seeds],
     selectedCaseNames: [...result.selectedCaseNames],
     modelFingerprint: result.modelFingerprint,
+    ...(result.suppressionModelFingerprint === undefined
+      ? {}
+      : { suppressionModelFingerprint: result.suppressionModelFingerprint }),
+    ...(result.suppressionMinScoreDelta === undefined
+      ? {}
+      : { suppressionMinScoreDelta: result.suppressionMinScoreDelta }),
     ...(result.allowedTransitions === undefined ? {} : { allowedTransitions: [...result.allowedTransitions] }),
     ...(result.selectedFeatureGates === undefined ? {} : { selectedFeatureGates: [...result.selectedFeatureGates] }),
     ...(result.selectedFeatureGateGroups === undefined

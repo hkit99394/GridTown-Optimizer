@@ -1,5 +1,6 @@
 const assert = require("node:assert/strict");
 const childProcess = require("node:child_process");
+const fs = require("node:fs");
 const path = require("node:path");
 
 const repoRoot = path.join(__dirname, "../..");
@@ -11,6 +12,8 @@ const {
   buildLnsWindowRankerOnlineTransitionOutcomeDiagnostics,
   createLnsWindowRankerOnlineCalibrationSnapshot,
   createLnsWindowRankerOnlineAblationSnapshot,
+  DEFAULT_LNS_WINDOW_RANKER_ONLINE_FRESH_PRESSURE_HOLDOUT_CORPUS,
+  DEFAULT_LNS_WINDOW_RANKER_ONLINE_PRODUCT_PROMOTION_CORPUS,
   DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS,
   formatLnsWindowRankerOnlineCalibration,
   formatLnsWindowRankerOnlineAblation,
@@ -44,6 +47,11 @@ function buildMockSolution(params) {
         residentialCandidateHeadroom: 0.3
       }
     : baselineFeatures;
+  const nominatedFeatures = {
+    selectedByBaseline: 0,
+    serviceCandidatesIntersecting: 0.5,
+    residentialCandidateHeadroom: 0.3
+  };
   const windowRankerSelection = usesRanker
     ? {
         source: "learned-window-ranker",
@@ -53,18 +61,34 @@ function buildMockSolution(params) {
         baselineScore: 0.1,
         selectedScore: overridesBaseline ? 0.4 : 0.25,
         scoreDelta: overridesBaseline ? 0.3 : 0.15,
+        ...(ranker.suppressionModel
+          ? {
+              suppressionModelFingerprint: ranker.suppressionModel.modelFingerprint,
+              suppressionBaselineScore: 0.1,
+              suppressionSelectedScore: 0,
+              suppressionScoreDelta: 0.1
+            }
+          : {}),
         baselineCandidateIndex: 0,
         selectedCandidateIndex: overridesBaseline ? 1 : 0,
+        nominatedCandidateIndex: 1,
         baselineOperator: "sliding",
         selectedOperator: overridesBaseline ? "service-overlap" : "sliding",
+        nominatedOperator: "service-overlap",
         baselineWindow: { top: 0, left: 0, rows: 2, cols: 2 },
         selectedWindow: overridesBaseline
           ? { top: 0, left: 1, rows: 2, cols: 2 }
           : { top: 0, left: 0, rows: 2, cols: 2 },
+        nominatedWindow: { top: 0, left: 1, rows: 2, cols: 2 },
         selectedByBaseline: !overridesBaseline,
+        nominatedByBaseline: false,
         baselineFeatures,
         selectedFeatures,
+        nominatedFeatures,
         featureDeltas: featureDeltas(selectedFeatures, baselineFeatures),
+        nominatedFeatureDeltas: featureDeltas(nominatedFeatures, baselineFeatures),
+        nominatedScore: overridesBaseline ? 0.4 : 0.25,
+        nominatedScoreDelta: overridesBaseline ? 0.3 : 0.15,
         ...(overridesBaseline ? {} : { fallbackReason: "score-delta-below-threshold" })
       }
     : undefined;
@@ -108,6 +132,10 @@ function buildMockSolution(params) {
             modelFingerprint: "fnv1a:test-online",
             featureSchemaVersion: 2,
             minScoreDelta: ranker.minScoreDelta ?? 0,
+            ...(ranker.suppressionModel?.modelFingerprint
+              ? { suppressionModelFingerprint: ranker.suppressionModel.modelFingerprint }
+              : {}),
+            ...(ranker.suppressionModel ? { suppressionMinScoreDelta: ranker.suppressionMinScoreDelta ?? 0 } : {}),
             ...(ranker.allowedTransitions ? { allowedTransitions: [...ranker.allowedTransitions] } : {}),
             ...(ranker.selectedFeatureGates ? { selectedFeatureGates: [...ranker.selectedFeatureGates] } : {}),
             ...(ranker.selectedFeatureGateGroups
@@ -175,6 +203,13 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
           weights: { selectedByBaseline: -1 }
         },
         minScoreDelta: 0.05,
+        suppressionModel: {
+          modelType: "lns-window-linear-pairwise-ranker",
+          modelFingerprint: "fnv1a:test-suppression",
+          featureSchemaVersion: 2,
+          weights: { selectedByBaseline: 1 }
+        },
+        suppressionMinScoreDelta: 0.25,
         allowedTransitions: ["sliding->service-overlap"],
         selectedFeatureGates: [{ feature: "selectedByBaseline", maxValue: 0 }],
         selectedFeatureGateGroups: [
@@ -215,6 +250,10 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(result.variantSummaries[1].rankerDecisionCount, 2);
     assert.equal(result.variantSummaries[1].rankerOverrideCount, 1);
     assert.equal(result.variantSummaries[1].rankerFallbackDecisionCount, 1);
+    assert.equal(result.cases[0].variants[1].windowRanker.suppressionModelFingerprint, "fnv1a:test-suppression");
+    assert.equal(result.cases[0].variants[1].windowRanker.suppressionMinScoreDelta, 0.25);
+    assert.equal(result.cases[0].variants[1].selectionTrace[0].suppressionModelFingerprint, "fnv1a:test-suppression");
+    assert.equal(result.cases[0].variants[1].selectionTrace[0].suppressionScoreDelta, 0.1);
     assert.deepEqual(result.cases[0].variants[1].windowRanker.allowedTransitions, ["sliding->service-overlap"]);
     assert.deepEqual(result.cases[0].variants[1].windowRanker.selectedFeatureGates, [
       { feature: "selectedByBaseline", maxValue: 0 }
@@ -357,6 +396,8 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
         appliedWindow: { top: 0, left: 1, rows: 2, cols: 2 },
         transition: "sliding->service-overlap",
         changedWindow: true,
+        nominatedTransition: "sliding->service-overlap",
+        nominatedChangedWindow: true,
         selectionStatus: "override",
         candidateCount: 2,
         baselineCandidateIndex: 0,
@@ -369,6 +410,16 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
         baselineScore: 0.1,
         selectedScore: 0.4,
         scoreDelta: 0.3,
+        nominatedCandidateIndex: 1,
+        nominatedOperator: "service-overlap",
+        nominatedWindow: { top: 0, left: 1, rows: 2, cols: 2 },
+        nominatedByBaseline: false,
+        nominatedScore: 0.4,
+        nominatedScoreDelta: 0.3,
+        suppressionModelFingerprint: "fnv1a:test-suppression",
+        suppressionBaselineScore: 0.1,
+        suppressionSelectedScore: 0,
+        suppressionScoreDelta: 0.1,
         modelFingerprint: "fnv1a:test-online",
         featureSchemaVersion: 2,
         baselineFeatures: {
@@ -382,6 +433,16 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
           serviceCandidatesIntersecting: 0.5
         },
         featureDeltas: {
+          residentialCandidateHeadroom: 0.19999999999999998,
+          selectedByBaseline: -1,
+          serviceCandidatesIntersecting: 0.5
+        },
+        nominatedFeatures: {
+          residentialCandidateHeadroom: 0.3,
+          selectedByBaseline: 0,
+          serviceCandidatesIntersecting: 0.5
+        },
+        nominatedFeatureDeltas: {
           residentialCandidateHeadroom: 0.19999999999999998,
           selectedByBaseline: -1,
           serviceCandidatesIntersecting: 0.5
@@ -401,6 +462,8 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(observedParams[0].lns.windowRanker, undefined);
     assert.equal(observedParams[1].lns.windowRanker.model.modelFingerprint, "fnv1a:test-online");
     assert.equal(observedParams[1].lns.windowRanker.minScoreDelta, 0.05);
+    assert.equal(observedParams[1].lns.windowRanker.suppressionModel.modelFingerprint, "fnv1a:test-suppression");
+    assert.equal(observedParams[1].lns.windowRanker.suppressionMinScoreDelta, 0.25);
     assert.deepEqual(observedParams[1].lns.windowRanker.allowedTransitions, ["sliding->service-overlap"]);
     assert.deepEqual(observedParams[1].lns.windowRanker.selectedFeatureGates, [
       { feature: "selectedByBaseline", maxValue: 0 }
@@ -428,6 +491,7 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(snapshot.cases[0].variants[1].selectionTrace.length, 1);
     assert.equal(snapshot.cases[0].variants[1].finalLayoutDeltaVsBaseline.placementDeltaCount, 3);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /=== LNS Window Ranker Online A\/B ===/);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /Suppression model fingerprint: fnv1a:test-suppression/);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /overrides=1/);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /traces=1/);
     assert.match(formatLnsWindowRankerOnlineAblation(result), /trace:1/);
@@ -458,6 +522,8 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(telemetryManifest.source, "model-experiment");
     assert.equal(telemetryManifest.modelFingerprint, "fnv1a:test-online");
     assert.equal(telemetryManifest.metrics.meanPopulationDeltaVsBaseline, 20);
+    assert.equal(telemetryManifest.metrics.suppressionModelFingerprint, "fnv1a:test-suppression");
+    assert.equal(telemetryManifest.metrics.suppressionMinScoreDelta, 0.25);
     assert.deepEqual(telemetryManifest.metrics.allowedTransitions, ["sliding->service-overlap"]);
     assert.deepEqual(telemetryManifest.metrics.selectedFeatureGates, [{ feature: "selectedByBaseline", maxValue: 0 }]);
     assert.deepEqual(telemetryManifest.metrics.selectedFeatureGateGroups, [
@@ -536,6 +602,8 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(registryDraft.modelFingerprint, "fnv1a:test-online");
     assert.deepEqual(registryDraft.seeds, [7]);
     assert.equal(registryDraft.budget.minScoreDelta, 0.05);
+    assert.equal("suppressionModelFingerprint" in registryDraft.budget, false);
+    assert.equal(registryDraft.budget.suppressionMinScoreDelta, 0.25);
     assert.equal(registryDraft.budget.allowedTransitionCount, 1);
     assert.equal(registryDraft.budget.selectedFeatureGateCount, 1);
     assert.equal(registryDraft.budget.selectedFeatureGateGroupCount, 2);
@@ -557,6 +625,9 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(registryDraft.budget.overrideFinalNeutralCaseCount, 0);
     assert.equal(registryDraft.budget.overrideFinalRegressedCaseCount, 0);
     assert.equal(registryDraft.model.modelPath, "artifacts/model.json");
+    assert.equal(registryDraft.model.suppressionModelFingerprint, "fnv1a:test-suppression");
+    assert.equal(registryDraft.summaryMetrics.suppressionModelFingerprint, "fnv1a:test-suppression");
+    assert.equal(registryDraft.summaryMetrics.suppressionMinScoreDelta, 0.25);
     assert.equal(registryDraft.splitStatus.protectedHoldout, false);
     assert.equal(registryDraft.summaryMetrics.meanPopulationDeltaVsBaseline, 20);
     assert.deepEqual(registryDraft.summaryMetrics.allowedTransitions, ["sliding->service-overlap"]);
@@ -632,6 +703,33 @@ function testOnlineAblationRunnerComparesEqualBudgets() {
     assert.equal(protectedDraft.splitStatus.protectedHoldout, true);
     assert.deepEqual(protectedDraft.cases, { development: [], holdout: ["online-ranker-fixture"] });
     assert.equal(protectedDraft.splitStatus.leakage, "none");
+
+    const productProtectedDraft = buildLnsWindowRankerOnlineAblationRegistryEntryDraft(result, {
+      commands: [
+        "node dist/lnsBenchmarkCli.js --window-ranker-online-ablation --window-ranker-product-promotion-holdout"
+      ],
+      artifactPaths: ["artifact.json"],
+      protectedHoldout: true,
+      protectedCorpus: "product-promotion-holdout"
+    });
+    assert.equal(productProtectedDraft.splitStatus.protectedCorpus, "product-promotion-holdout");
+    assert.equal(
+      productProtectedDraft.splitStatus.splitField,
+      "DEFAULT_LNS_WINDOW_RANKER_ONLINE_PRODUCT_PROMOTION_CORPUS"
+    );
+    assert.equal(Object.hasOwn(productProtectedDraft.budget, "protectedCorpus"), false);
+
+    const freshPressureDraft = buildLnsWindowRankerOnlineAblationRegistryEntryDraft(result, {
+      commands: ["node dist/lnsBenchmarkCli.js --window-ranker-online-ablation --window-ranker-fresh-pressure-holdout"],
+      artifactPaths: ["artifact.json"],
+      protectedHoldout: true,
+      protectedCorpus: "fresh-pressure-holdout"
+    });
+    assert.equal(freshPressureDraft.splitStatus.protectedCorpus, "fresh-pressure-holdout");
+    assert.equal(
+      freshPressureDraft.splitStatus.splitField,
+      "DEFAULT_LNS_WINDOW_RANKER_ONLINE_FRESH_PRESSURE_HOLDOUT_CORPUS"
+    );
   } finally {
     lnsSolverModule.solveLns = originalSolveLns;
   }
@@ -664,6 +762,34 @@ function testLnsBenchmarkCliListsOnlineAblationCases() {
   assert.match(protectedResult.stdout, /lns-holdout-anchor-service-harbor-pressure/);
   assert.equal(DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS.length, 10);
 
+  const productProtectedResult = childProcess.spawnSync(
+    process.execPath,
+    [cliPath, "--list", "--window-ranker-online-ablation", "--window-ranker-product-promotion-holdout"],
+    {
+      cwd: repoRoot,
+      encoding: "utf8"
+    }
+  );
+
+  assert.equal(productProtectedResult.status, 0, productProtectedResult.stderr);
+  assert.match(productProtectedResult.stdout, /lns-product-typed-footprint-pressure/);
+  assert.match(productProtectedResult.stdout, /lns-product-expansion-comparison-replay-pressure/);
+  assert.equal(DEFAULT_LNS_WINDOW_RANKER_ONLINE_PRODUCT_PROMOTION_CORPUS.length, 4);
+
+  const freshPressureResult = childProcess.spawnSync(
+    process.execPath,
+    [cliPath, "--list", "--window-ranker-online-ablation", "--window-ranker-fresh-pressure-holdout"],
+    {
+      cwd: repoRoot,
+      encoding: "utf8"
+    }
+  );
+
+  assert.equal(freshPressureResult.status, 0, freshPressureResult.stderr);
+  assert.match(freshPressureResult.stdout, /lns-fresh-product-expansion-side-pocket-pressure/);
+  assert.match(freshPressureResult.stdout, /lns-fresh-anchor-service-inlet-pressure/);
+  assert.equal(DEFAULT_LNS_WINDOW_RANKER_ONLINE_FRESH_PRESSURE_HOLDOUT_CORPUS.length, 6);
+
   const protectedSweepResult = childProcess.spawnSync(
     process.execPath,
     [cliPath, "--list", "--window-ranker-threshold-sweep", "--window-ranker-protected-holdout"],
@@ -690,6 +816,12 @@ function testOnlineCalibrationSummarizesThresholdSweep() {
       featureSchemaVersion: 2,
       weights: { selectedByBaseline: -1 }
     };
+    const suppressionModel = {
+      modelType: "lns-window-linear-pairwise-ranker",
+      modelFingerprint: "fnv1a:test-suppression",
+      featureSchemaVersion: 2,
+      weights: { selectedByBaseline: 1 }
+    };
     const result = runLnsWindowRankerOnlineCalibration(
       [
         {
@@ -710,6 +842,7 @@ function testOnlineCalibrationSummarizesThresholdSweep() {
         seeds: [7],
         minScoreDeltas: [0, 0.2],
         model,
+        suppressionModel,
         lns: {
           iterations: 2,
           repairTimeLimitSeconds: 0.25
@@ -718,6 +851,8 @@ function testOnlineCalibrationSummarizesThresholdSweep() {
     );
 
     assert.deepEqual(result.minScoreDeltas, [0, 0.2]);
+    assert.equal(result.suppressionModelFingerprint, "fnv1a:test-suppression");
+    assert.equal(result.suppressionMinScoreDelta, 0);
     assert.equal(result.topMeanPopulationDeltaMinScoreDelta, 0);
     assert.equal(result.topSafeMinScoreDelta, 0);
     assert.equal(result.thresholdSummaries[0].meanPopulationDeltaVsBaseline, 20);
@@ -787,24 +922,26 @@ function testOnlineCalibrationSummarizesThresholdSweep() {
     assert.equal(result.thresholdSummaries[1].rankerFallbackDecisionCount, 2);
     assert.equal(result.thresholdSummaries[1].changedFinalLayoutCount, 0);
     assert.equal(result.thresholdSummaries[1].meanFinalLayoutPlacementDelta, 0);
-    assert.equal(result.thresholdSummaries[1].fallbackChangedWindowCount, 0);
+    assert.equal(result.thresholdSummaries[1].fallbackChangedWindowCount, 1);
     assert.equal(result.thresholdSummaries[1].fallbackFeatureDeltaCount, 1);
     assert.deepEqual(result.thresholdSummaries[1].fallbackMeanFeatureDeltas, {
-      residentialCandidateHeadroom: 0,
-      selectedByBaseline: 0,
-      serviceCandidatesIntersecting: 0
+      residentialCandidateHeadroom: 0.2,
+      selectedByBaseline: -1,
+      serviceCandidatesIntersecting: 0.5
     });
-    assert.deepEqual(result.thresholdSummaries[1].fallbackTransitionFeatureDeltaCounts, { "sliding->sliding": 1 });
+    assert.deepEqual(result.thresholdSummaries[1].fallbackTransitionFeatureDeltaCounts, {
+      "sliding->service-overlap": 1
+    });
     assert.deepEqual(result.thresholdSummaries[1].fallbackTransitionMeanFeatureDeltas, {
-      "sliding->sliding": {
-        residentialCandidateHeadroom: 0,
-        selectedByBaseline: 0,
-        serviceCandidatesIntersecting: 0
+      "sliding->service-overlap": {
+        residentialCandidateHeadroom: 0.2,
+        selectedByBaseline: -1,
+        serviceCandidatesIntersecting: 0.5
       }
     });
-    assert.deepEqual(result.thresholdSummaries[1].fallbackTransitionCounts, { "sliding->sliding": 1 });
+    assert.deepEqual(result.thresholdSummaries[1].fallbackTransitionCounts, { "sliding->service-overlap": 1 });
     assert.deepEqual(result.thresholdSummaries[1].fallbackTransitionFinalOutcomeCounts, {
-      "sliding->sliding": { improved: 0, neutral: 1, regressed: 0 }
+      "sliding->service-overlap": { improved: 0, neutral: 1, regressed: 0 }
     });
     assert.deepEqual(result.thresholdSummaries[1].fallbackFinalOutcomeFeatureDeltaCounts, {
       improved: 0,
@@ -812,12 +949,12 @@ function testOnlineCalibrationSummarizesThresholdSweep() {
       regressed: 0
     });
     assert.deepEqual(result.thresholdSummaries[1].fallbackFinalOutcomeMeanFeatureDeltas.neutral, {
-      residentialCandidateHeadroom: 0,
-      selectedByBaseline: 0,
-      serviceCandidatesIntersecting: 0
+      residentialCandidateHeadroom: 0.2,
+      selectedByBaseline: -1,
+      serviceCandidatesIntersecting: 0.5
     });
     assert.deepEqual(result.thresholdSummaries[1].fallbackTransitionPressureFamilyCounts, {
-      "sliding->sliding": { uncategorized: 1 }
+      "sliding->service-overlap": { uncategorized: 1 }
     });
     assert.equal(result.thresholdSummaries[1].safetyGatePassed, true);
 
@@ -825,11 +962,15 @@ function testOnlineCalibrationSummarizesThresholdSweep() {
     assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
     assert.equal(Object.hasOwn(snapshot.thresholdSummaries[0], "meanWallClockDeltaVsBaselineSeconds"), false);
     assert.equal(Object.hasOwn(snapshot.thresholdSummaries[0], "meanTimeToBestWallClockDeltaVsBaselineSeconds"), false);
+    assert.equal(snapshot.suppressionModelFingerprint, "fnv1a:test-suppression");
+    assert.equal(snapshot.suppressionMinScoreDelta, 0);
     assert.equal(snapshot.thresholdSummaries[0].meanTimeToBestIterationDeltaVsBaseline, 1);
     assert.equal(snapshot.thresholdSummaries[1].meanTimeToBestWallClockRatioVsBaseline, 0.5);
     assert.equal(snapshot.thresholdSummaries[1].timeToBestPromotionGatePassed, true);
     const formatted = formatLnsWindowRankerOnlineCalibration(result);
     assert.match(formatted, /=== LNS Window Ranker Threshold Sweep ===/);
+    assert.match(formatted, /Suppression model fingerprint: fnv1a:test-suppression/);
+    assert.match(formatted, /Suppression min score delta: 0/);
     assert.match(formatted, /min-score-delta=0.2/);
     assert.match(formatted, /ttb-iter-delta-mean=1/);
     assert.match(formatted, /ttb-wall-ratio-mean=1\.500/);
@@ -839,9 +980,9 @@ function testOnlineCalibrationSummarizesThresholdSweep() {
     assert.match(formatted, /override-transitions=sliding->service-overlap:1/);
     assert.match(formatted, /override-feature-deltas=selectedByBaseline:-1/);
     assert.match(formatted, /override-transition-feature-deltas=sliding->service-overlap\[selectedByBaseline:-1/);
-    assert.match(formatted, /fallback-transitions=sliding->sliding:1/);
+    assert.match(formatted, /fallback-transitions=sliding->service-overlap:1/);
     assert.match(formatted, /override-transition-finals=sliding->service-overlap:1\/0\/0/);
-    assert.match(formatted, /fallback-transition-finals=sliding->sliding:0\/1\/0/);
+    assert.match(formatted, /fallback-transition-finals=sliding->service-overlap:0\/1\/0/);
 
     const telemetryManifest = buildLnsWindowRankerOnlineCalibrationTelemetryManifest(result, {
       command: "node dist/lnsBenchmarkCli.js --window-ranker-threshold-sweep",
@@ -850,18 +991,24 @@ function testOnlineCalibrationSummarizesThresholdSweep() {
       outputArtifacts: ["artifacts/calibration.json"]
     });
     assert.equal(telemetryManifest.modelFingerprint, "fnv1a:test-online");
+    assert.equal(telemetryManifest.metrics.suppressionModelFingerprint, "fnv1a:test-suppression");
+    assert.equal(telemetryManifest.metrics.suppressionMinScoreDelta, 0);
     assert.equal(telemetryManifest.metrics.thresholdCount, 2);
     assert.equal(telemetryManifest.metrics.topMeanPopulationDeltaMinScoreDelta, 0);
     assert.equal(telemetryManifest.metrics.topMeanTimeToBestIterationDeltaVsBaseline, 1);
     assert.equal(telemetryManifest.metrics.topMeanTimeToBestWallClockRatioVsBaseline, 1.5);
     assert.equal(telemetryManifest.metrics.timeToBestPromotionThresholdCount, 1);
     assert.equal(telemetryManifest.metrics.safeThresholdCount, 2);
-    assert.equal(telemetryManifest.metrics.thresholdSummaries[1].fallbackTransitionCounts["sliding->sliding"], 1);
+    assert.equal(
+      telemetryManifest.metrics.thresholdSummaries[1].fallbackTransitionCounts["sliding->service-overlap"],
+      1
+    );
     assert.equal(telemetryManifest.metrics.thresholdSummaries[0].laterTimeToBestCount, 1);
     assert.equal(telemetryManifest.metrics.thresholdSummaries[1].sameTimeToBestCount, 1);
     assert.equal(telemetryManifest.metrics.thresholdSummaries[1].timeToBestPromotionGatePassed, true);
     assert.equal(
-      telemetryManifest.metrics.thresholdSummaries[1].fallbackTransitionFinalOutcomeCounts["sliding->sliding"].neutral,
+      telemetryManifest.metrics.thresholdSummaries[1].fallbackTransitionFinalOutcomeCounts["sliding->service-overlap"]
+        .neutral,
       1
     );
     assert.equal(telemetryManifest.metrics.thresholdSummaries[1].fallbackFinalOutcomeFeatureDeltaCounts.neutral, 1);
@@ -876,9 +1023,14 @@ function testOnlineCalibrationSummarizesThresholdSweep() {
       protectedHoldout: true
     });
     assert.equal(registryDraft.model.modelPath, "artifacts/model.json");
+    assert.equal(registryDraft.model.suppressionModelFingerprint, "fnv1a:test-suppression");
     assert.equal(registryDraft.splitStatus.protectedHoldout, true);
+    assert.equal("suppressionModelFingerprint" in registryDraft.budget, false);
+    assert.equal(registryDraft.budget.suppressionMinScoreDelta, 0);
     assert.equal(registryDraft.budget.thresholdCount, 2);
     assert.equal(registryDraft.budget.totalRuns, 4);
+    assert.equal(registryDraft.summaryMetrics.suppressionModelFingerprint, "fnv1a:test-suppression");
+    assert.equal(registryDraft.summaryMetrics.suppressionMinScoreDelta, 0);
     assert.equal(registryDraft.summaryMetrics.topMeanTimeToBestIterationDeltaVsBaseline, 1);
     assert.equal(registryDraft.summaryMetrics.timeToBestPromotionThresholdCount, 1);
     assert.equal(registryDraft.summaryMetrics.thresholdSummaries[1].timeToBestPromotionGatePassed, true);
@@ -945,7 +1097,31 @@ function testTransitionOutcomeFeatureDeltaDiagnostics() {
   });
 }
 
+function testOnlineAblationRejectsObsoleteRankerArtifacts() {
+  const { readWindowRankerModel } = require("../../dist/tools/cli/lnsBenchmarkArtifacts.js");
+  const tempRoot = `artifacts/tmp-lns-window-ranker-online-${process.pid}`;
+  const obsoleteDir = `${tempRoot}/obsolete-model`;
+  const obsoleteModelPath = `${obsoleteDir}/model.json`;
+  fs.rmSync(path.join(repoRoot, tempRoot), { recursive: true, force: true });
+  fs.mkdirSync(path.join(repoRoot, obsoleteDir), { recursive: true });
+  fs.writeFileSync(path.join(repoRoot, `${obsoleteDir}/OBSOLETE.md`), "Obsolete test bundle.\n");
+  fs.writeFileSync(
+    path.join(repoRoot, obsoleteModelPath),
+    `${JSON.stringify({ modelType: "lns-window-linear-pairwise-ranker", featureSchemaVersion: 2, weights: {} })}\n`
+  );
+
+  try {
+    assert.throws(
+      () => readWindowRankerModel(obsoleteModelPath),
+      /--window-ranker-model points to obsolete artifact bundle/
+    );
+  } finally {
+    fs.rmSync(path.join(repoRoot, tempRoot), { recursive: true, force: true });
+  }
+}
+
 testOnlineAblationRunnerComparesEqualBudgets();
 testLnsBenchmarkCliListsOnlineAblationCases();
 testOnlineCalibrationSummarizesThresholdSweep();
 testTransitionOutcomeFeatureDeltaDiagnostics();
+testOnlineAblationRejectsObsoleteRankerArtifacts();

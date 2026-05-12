@@ -8,6 +8,8 @@ import {
   DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS,
   DEFAULT_LNS_REPLAY_LABEL_CURATED_SEED_CORPUS,
   DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS,
+  DEFAULT_LNS_WINDOW_RANKER_ONLINE_FRESH_PRESSURE_HOLDOUT_CORPUS,
+  DEFAULT_LNS_WINDOW_RANKER_ONLINE_PRODUCT_PROMOTION_CORPUS,
   DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS,
   ExperimentRegistryValidationError,
   formatDeterministicAblationGateReport,
@@ -58,7 +60,11 @@ import {
   writeWindowRankerOnlineArtifactBundle,
   writeWindowRankerOnlineCalibrationArtifactBundle
 } from "./lnsBenchmarkArtifacts.js";
-import type { LnsNeighborhoodAblationVariantName, LnsWindowReplayStatePolicy } from "../../benchmarkApi.js";
+import type {
+  LnsNeighborhoodAblationVariantName,
+  LnsWindowRankerOnlineProtectedCorpus,
+  LnsWindowReplayStatePolicy
+} from "../../benchmarkApi.js";
 import type {
   LnsWindowRankerFeatureDeltaGate,
   LnsWindowRankerSelectedFeatureGate,
@@ -76,6 +82,8 @@ interface ParsedBenchmarkArgs {
   curatedReplaySeeds: boolean;
   naturalReplaySeeds: boolean;
   windowReplayProtectedHoldout: boolean;
+  windowReplayProductPromotionHoldout: boolean;
+  windowReplayFreshPressureHoldout: boolean;
   windowRankerOnlineAblation: boolean;
   gateReport: boolean;
   list: boolean;
@@ -98,12 +106,17 @@ interface ParsedBenchmarkArgs {
   windowRankerModelPath?: string;
   windowRankerMinScoreDelta?: number;
   windowRankerMinScoreDeltas?: number[];
+  windowRankerSuppressionModelPath?: string;
+  windowRankerSuppressionMinScoreDelta?: number;
   windowRankerAllowedTransitions?: LnsWindowRankerOperatorTransition[];
   windowRankerSelectedFeatureGates?: LnsWindowRankerSelectedFeatureGate[];
   windowRankerSelectedFeatureGateGroups?: LnsWindowRankerSelectedFeatureGateGroup[];
   windowRankerFeatureDeltaGates?: LnsWindowRankerFeatureDeltaGate[];
   windowRankerArtifactDir?: string;
   windowRankerProtectedHoldout: boolean;
+  windowRankerProductPromotionHoldout: boolean;
+  windowRankerFreshPressureHoldout: boolean;
+  windowRankerProtectedCorpus?: LnsWindowRankerOnlineProtectedCorpus;
   windowRankerRunId?: string;
   windowRankerDecision?: string;
   windowRankerSummary?: string;
@@ -120,6 +133,8 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let curatedReplaySeeds = false;
   let naturalReplaySeeds = false;
   let windowReplayProtectedHoldout = false;
+  let windowReplayProductPromotionHoldout = false;
+  let windowReplayFreshPressureHoldout = false;
   let windowRankerOnlineAblation = false;
   let windowRankerThresholdSweep = false;
   let gateReport = false;
@@ -141,12 +156,16 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let windowRankerModelPath: string | undefined;
   let windowRankerMinScoreDelta: number | undefined;
   let windowRankerMinScoreDeltas: number[] | undefined;
+  let windowRankerSuppressionModelPath: string | undefined;
+  let windowRankerSuppressionMinScoreDelta: number | undefined;
   let windowRankerAllowedTransitions: LnsWindowRankerOperatorTransition[] | undefined;
   let windowRankerSelectedFeatureGates: LnsWindowRankerSelectedFeatureGate[] | undefined;
   let windowRankerSelectedFeatureGateGroups: LnsWindowRankerSelectedFeatureGateGroup[] | undefined;
   let windowRankerFeatureDeltaGates: LnsWindowRankerFeatureDeltaGate[] | undefined;
   let windowRankerArtifactDir: string | undefined;
   let windowRankerProtectedHoldout = false;
+  let windowRankerProductPromotionHoldout = false;
+  let windowRankerFreshPressureHoldout = false;
   let windowRankerRunId: string | undefined;
   let windowRankerDecision: string | undefined;
   let windowRankerSummary: string | undefined;
@@ -207,6 +226,15 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
       windowRankerOnlineAblation = true;
       windowRankerThresholdSweep = true;
       windowRankerMinScoreDeltas = parseNonNegativeNumberList(value, "--window-ranker-min-score-deltas");
+    },
+    "window-ranker-suppression-model": (value) => {
+      windowRankerSuppressionModelPath = value;
+    },
+    "window-ranker-suppression-min-score-delta": (value) => {
+      windowRankerSuppressionMinScoreDelta = parseNonNegativeNumber(
+        value,
+        "--window-ranker-suppression-min-score-delta"
+      );
     },
     "window-ranker-allowed-transitions": (value) => {
       windowRankerAllowedTransitions = parseNameList(
@@ -274,6 +302,16 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
       windowReplayProtectedHoldout = true;
       continue;
     }
+    if (isCliFlag(arg, "--window-replay-product-promotion-holdout")) {
+      windowReplayLabels = true;
+      windowReplayProductPromotionHoldout = true;
+      continue;
+    }
+    if (isCliFlag(arg, "--window-replay-fresh-pressure-holdout")) {
+      windowReplayLabels = true;
+      windowReplayFreshPressureHoldout = true;
+      continue;
+    }
     if (
       isCliFlag(arg, "--window-ranker-online-ablation", "--window-ranker-ablation", "--online-window-ranker-ablation")
     ) {
@@ -288,6 +326,16 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     if (isCliFlag(arg, "--window-ranker-protected-holdout", "--protected-holdout")) {
       windowRankerOnlineAblation = true;
       windowRankerProtectedHoldout = true;
+      continue;
+    }
+    if (isCliFlag(arg, "--window-ranker-product-promotion-holdout")) {
+      windowRankerOnlineAblation = true;
+      windowRankerProductPromotionHoldout = true;
+      continue;
+    }
+    if (isCliFlag(arg, "--window-ranker-fresh-pressure-holdout")) {
+      windowRankerOnlineAblation = true;
+      windowRankerFreshPressureHoldout = true;
       continue;
     }
     if (isCliFlag(arg, "--window-ranker-register-dry-run")) {
@@ -345,6 +393,8 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     curatedReplaySeeds,
     naturalReplaySeeds,
     windowReplayProtectedHoldout,
+    windowReplayProductPromotionHoldout,
+    windowReplayFreshPressureHoldout,
     windowRankerOnlineAblation,
     gateReport,
     list,
@@ -367,12 +417,23 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     windowRankerModelPath,
     windowRankerMinScoreDelta,
     windowRankerMinScoreDeltas,
+    windowRankerSuppressionModelPath,
+    windowRankerSuppressionMinScoreDelta,
     windowRankerAllowedTransitions,
     windowRankerSelectedFeatureGates,
     windowRankerSelectedFeatureGateGroups,
     windowRankerFeatureDeltaGates,
     windowRankerArtifactDir,
     windowRankerProtectedHoldout,
+    windowRankerProductPromotionHoldout,
+    windowRankerFreshPressureHoldout,
+    windowRankerProtectedCorpus: windowRankerFreshPressureHoldout
+      ? "fresh-pressure-holdout"
+      : windowRankerProductPromotionHoldout
+        ? "product-promotion-holdout"
+        : windowRankerProtectedHoldout
+          ? "standard-protected-holdout"
+          : undefined,
     windowRankerRunId,
     windowRankerDecision,
     windowRankerSummary,
@@ -383,10 +444,29 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
 }
 
 function windowReplayCorpus(args: ParsedBenchmarkArgs) {
+  if (args.windowReplayFreshPressureHoldout) return DEFAULT_LNS_WINDOW_RANKER_ONLINE_FRESH_PRESSURE_HOLDOUT_CORPUS;
+  if (args.windowReplayProductPromotionHoldout) return DEFAULT_LNS_WINDOW_RANKER_ONLINE_PRODUCT_PROMOTION_CORPUS;
   if (args.windowReplayProtectedHoldout) return DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS;
   if (args.curatedReplaySeeds) return DEFAULT_LNS_REPLAY_LABEL_CURATED_SEED_CORPUS;
   if (args.naturalReplaySeeds) return DEFAULT_LNS_REPLAY_LABEL_NATURAL_SEED_CORPUS;
   return undefined;
+}
+
+function windowRankerOnlineCorpus(args: ParsedBenchmarkArgs) {
+  if (args.windowRankerFreshPressureHoldout) return DEFAULT_LNS_WINDOW_RANKER_ONLINE_FRESH_PRESSURE_HOLDOUT_CORPUS;
+  if (args.windowRankerProductPromotionHoldout) return DEFAULT_LNS_WINDOW_RANKER_ONLINE_PRODUCT_PROMOTION_CORPUS;
+  if (args.windowRankerProtectedHoldout) return DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS;
+  return undefined;
+}
+
+function windowRankerArtifactArgs(args: ParsedBenchmarkArgs): ParsedBenchmarkArgs {
+  return {
+    ...args,
+    windowRankerProtectedHoldout:
+      args.windowRankerProtectedHoldout ||
+      args.windowRankerProductPromotionHoldout ||
+      args.windowRankerFreshPressureHoldout
+  };
 }
 
 function parseNonNegativeNumberList(value: string, label: string): number[] {
@@ -469,6 +549,24 @@ export function runLnsBenchmarkCli(): void {
       "Choose only one LNS benchmark mode: --window-replay-labels, --neighborhood-ablation, or --window-ranker-online-ablation."
     );
   }
+  if (
+    [
+      args.windowReplayProtectedHoldout,
+      args.windowReplayProductPromotionHoldout,
+      args.windowReplayFreshPressureHoldout
+    ].filter(Boolean).length > 1
+  ) {
+    throw new Error("Choose only one window-replay protected corpus selector.");
+  }
+  if (
+    [
+      args.windowRankerProtectedHoldout,
+      args.windowRankerProductPromotionHoldout,
+      args.windowRankerFreshPressureHoldout
+    ].filter(Boolean).length > 1
+  ) {
+    throw new Error("Choose only one window-ranker protected corpus selector.");
+  }
   if (args.windowRankerArtifactDir !== undefined && !args.windowRankerOnlineAblation) {
     throw new Error("--window-ranker-artifact-dir is only available with --window-ranker-online-ablation.");
   }
@@ -485,6 +583,17 @@ export function runLnsBenchmarkCli(): void {
   }
   if (args.windowRankerFeatureDeltaGates !== undefined && !args.windowRankerOnlineAblation) {
     throw new Error("--window-ranker-feature-delta-gates is only available with --window-ranker-online-ablation.");
+  }
+  if (args.windowRankerSuppressionModelPath !== undefined && !args.windowRankerOnlineAblation) {
+    throw new Error("--window-ranker-suppression-model is only available with --window-ranker-online-ablation.");
+  }
+  if (args.windowRankerSuppressionMinScoreDelta !== undefined && !args.windowRankerOnlineAblation) {
+    throw new Error(
+      "--window-ranker-suppression-min-score-delta is only available with --window-ranker-online-ablation."
+    );
+  }
+  if (args.windowRankerSuppressionMinScoreDelta !== undefined && args.windowRankerSuppressionModelPath === undefined) {
+    throw new Error("--window-ranker-suppression-min-score-delta requires --window-ranker-suppression-model=<path>.");
   }
   if (args.windowReplayArtifactDir !== undefined && !args.windowReplayLabels) {
     throw new Error("--window-replay-artifact-dir is only available with --window-replay-labels.");
@@ -520,9 +629,7 @@ export function runLnsBenchmarkCli(): void {
       : args.windowReplayLabels
         ? listLnsWindowReplayCaseNames(windowReplayCorpus(args))
         : args.windowRankerOnlineAblation
-          ? listLnsWindowRankerOnlineAblationCaseNames(
-              args.windowRankerProtectedHoldout ? DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS : undefined
-            )
+          ? listLnsWindowRankerOnlineAblationCaseNames(windowRankerOnlineCorpus(args))
           : listLnsBenchmarkCaseNames();
     writeCliList(names);
     return;
@@ -575,7 +682,9 @@ export function runLnsBenchmarkCli(): void {
       throw new Error("--window-ranker-online-ablation requires --window-ranker-model=<path>.");
     }
     if (
-      args.windowRankerProtectedHoldout &&
+      (args.windowRankerProtectedHoldout ||
+        args.windowRankerProductPromotionHoldout ||
+        args.windowRankerFreshPressureHoldout) &&
       !args.windowRankerThresholdSweep &&
       args.windowRankerMinScoreDelta === undefined
     ) {
@@ -594,15 +703,19 @@ export function runLnsBenchmarkCli(): void {
               : { repairTimeLimitSeconds: args.repairTimeLimitSeconds })
           };
     const model = readWindowRankerModel(args.windowRankerModelPath);
-    const corpus = args.windowRankerProtectedHoldout
-      ? DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS
-      : undefined;
+    const suppressionModel =
+      args.windowRankerSuppressionModelPath === undefined
+        ? undefined
+        : readWindowRankerModel(args.windowRankerSuppressionModelPath, "--window-ranker-suppression-model");
+    const corpus = windowRankerOnlineCorpus(args);
     if (args.windowRankerThresholdSweep) {
       const result = runLnsWindowRankerOnlineCalibration(corpus, {
         names: optionalCliNames(args.names),
         seeds: args.seeds,
         model,
         minScoreDeltas: args.windowRankerMinScoreDeltas,
+        suppressionModel,
+        suppressionMinScoreDelta: args.windowRankerSuppressionMinScoreDelta,
         allowedTransitions: args.windowRankerAllowedTransitions,
         selectedFeatureGates: args.windowRankerSelectedFeatureGates,
         selectedFeatureGateGroups: args.windowRankerSelectedFeatureGateGroups,
@@ -611,7 +724,12 @@ export function runLnsBenchmarkCli(): void {
       });
 
       if (args.windowRankerArtifactDir !== undefined) {
-        const manifest = writeWindowRankerOnlineCalibrationArtifactBundle(result, model, args, argv);
+        const manifest = writeWindowRankerOnlineCalibrationArtifactBundle(
+          result,
+          model,
+          windowRankerArtifactArgs(args),
+          argv
+        );
         writeCliJsonOrText(
           args.json,
           () => manifest,
@@ -633,6 +751,8 @@ export function runLnsBenchmarkCli(): void {
       seeds: args.seeds,
       model,
       minScoreDelta: args.windowRankerMinScoreDelta,
+      suppressionModel,
+      suppressionMinScoreDelta: args.windowRankerSuppressionMinScoreDelta,
       allowedTransitions: args.windowRankerAllowedTransitions,
       selectedFeatureGates: args.windowRankerSelectedFeatureGates,
       selectedFeatureGateGroups: args.windowRankerSelectedFeatureGateGroups,
@@ -641,7 +761,7 @@ export function runLnsBenchmarkCli(): void {
     });
 
     if (args.windowRankerArtifactDir !== undefined) {
-      const manifest = writeWindowRankerOnlineArtifactBundle(result, args, argv);
+      const manifest = writeWindowRankerOnlineArtifactBundle(result, windowRankerArtifactArgs(args), argv);
       writeCliJsonOrText(
         args.json,
         () => manifest,

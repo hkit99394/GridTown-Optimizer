@@ -1,0 +1,22 @@
+LNS Window-Ranker Promotion Recheck
+Generated: 2026-05-12T21:59:14.278Z
+Decision: diagnostics-only
+Summary: Promotion-gate recheck for existing online LNS window-ranker candidates; no solver default changed.
+Candidates: 2
+Promotion-ready candidates: 0
+
+selectivity-split (selectivity-split-gate): promotionReady=no, productAxis=pass, productTTB=fail, protectedAxis=fail, freshAxis=fail
+  - product: mean=33.75, worst=0, improved=11/36, regressed=0, overrides=9, finalImproved=9, finalNeutral=0, axis=pass, ttb=fail, medianRatio=0.995, faster10=4, slower10=6
+  - protected: mean=0, worst=0, improved=0/90, regressed=0, overrides=0, finalImproved=0, finalNeutral=0, axis=fail, ttb=fail, medianRatio=0.996, faster10=6, slower10=0
+  - default: mean=50, worst=0, improved=36/90, regressed=0, overrides=45, finalImproved=36, finalNeutral=9, axis=fail, ttb=fail, medianRatio=0.998, faster10=13, slower10=14
+  - fresh: mean=0, worst=0, improved=0/54, regressed=0, overrides=0, finalImproved=0, finalNeutral=0, axis=fail, ttb=fail, medianRatio=0.999, faster10=2, slower10=1
+  blockers: default-final-neutral-overrides-9, fresh-active-value-or-time-to-best-missing, protected-active-value-or-time-to-best-missing
+  diagnostics: default-time-to-best-gate-failed, fresh-all-fallback, fresh-time-to-best-gate-failed, product-time-to-best-gate-failed, protected-all-fallback, protected-time-to-best-gate-failed
+
+fresh-aware (fresh-aware-suppressor): promotionReady=no, productAxis=pass, productTTB=fail, protectedAxis=fail, freshAxis=fail
+  - product: mean=2.917, worst=0, improved=1/36, regressed=0, overrides=1, finalImproved=1, finalNeutral=0, axis=pass, ttb=fail, medianRatio=0.985, faster10=3, slower10=2
+  - protected: mean=0.5, worst=0, improved=1/90, regressed=0, overrides=9, finalImproved=0, finalNeutral=9, axis=fail, ttb=fail, medianRatio=0.99, faster10=5, slower10=3
+  - default: mean=9, worst=0, improved=9/90, regressed=0, overrides=18, finalImproved=9, finalNeutral=9, axis=fail, ttb=fail, medianRatio=0.998, faster10=7, slower10=7
+  - fresh: mean=0, worst=0, improved=0/54, regressed=0, overrides=0, finalImproved=0, finalNeutral=0, axis=fail, ttb=fail, medianRatio=0.997, faster10=3, slower10=1
+  blockers: default-final-neutral-overrides-9, fresh-active-value-or-time-to-best-missing, protected-active-value-or-time-to-best-missing, protected-final-neutral-overrides-9
+  diagnostics: default-time-to-best-gate-failed, fresh-all-fallback, fresh-time-to-best-gate-failed, product-time-to-best-gate-failed, protected-time-to-best-gate-failed

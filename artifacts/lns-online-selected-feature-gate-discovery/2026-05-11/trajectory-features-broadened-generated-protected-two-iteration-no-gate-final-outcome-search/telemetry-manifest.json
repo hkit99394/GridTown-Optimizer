@@ -2,9 +2,9 @@
   "schemaVersion": 2,
   "source": "lns-online-selected-feature-gate-discovery",
   "command": "node scripts/discover-lns-online-selected-feature-gates.mjs --source-artifact=artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0 --source-artifact=artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0 --source-artifact=artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0 --source-artifact=artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-two-iteration-trajectory-features-no-selected-feature-gate-min-score-delta-0 --artifact-dir=artifacts/lns-online-selected-feature-gate-discovery/2026-05-11/trajectory-features-broadened-generated-protected-two-iteration-no-gate-final-outcome-search --target=final-improved --max-group-size=3 --max-atoms-per-feature=20 --max-total-atoms=120 --top=200 --force-artifact-dir",
-  "generatedAt": "2026-05-11T21:19:43.093Z",
+  "generatedAt": "2026-05-12T18:20:15.837Z",
   "git": {
-    "commit": "53a7291c7f187db302c2f577daa21ab3e701b89a",
+    "commit": "b893f4b76416d23438edeb4652ef2f8c2f901d86",
     "branch": "features/validated-solver-improvement-loop"
   },
   "hardware": {
@@ -33,15 +33,16 @@
       "finalRegressed": "terminalFinalRegressed"
     }
   },
-  "inputFingerprint": "fnv1a:dfec44a4",
-  "discoveryFingerprint": "fnv1a:bc796e4a",
-  "reportFingerprint": "fnv1a:1e32662e",
+  "inputFingerprint": "fnv1a:09732d13",
+  "discoveryFingerprint": "fnv1a:49901d13",
+  "reportFingerprint": "fnv1a:a417bcc9",
   "sourceScorecards": [
     "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
     "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
     "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
     "artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-two-iteration-trajectory-features-no-selected-feature-gate-min-score-delta-0/lns-window-ranker-online-ablation.json"
   ],
+  "validationSourceScorecards": [],
   "outputArtifacts": [
     "artifacts/lns-online-selected-feature-gate-discovery/2026-05-11/trajectory-features-broadened-generated-protected-two-iteration-no-gate-final-outcome-search/online-selected-feature-gate-discovery.json",
     "artifacts/lns-online-selected-feature-gate-discovery/2026-05-11/trajectory-features-broadened-generated-protected-two-iteration-no-gate-final-outcome-search/online-selected-feature-gate-discovery.txt",
@@ -49,6 +50,8 @@
     "artifacts/lns-online-selected-feature-gate-discovery/2026-05-11/trajectory-features-broadened-generated-protected-two-iteration-no-gate-final-outcome-search/manifest.json"
   ],
   "metrics": {
+    "sourceScorecardCount": 4,
+    "validationSourceScorecardCount": 0,
     "overrideTraceCount": 228,
     "targetImproved": 27,
     "selectionImproved": 70,
@@ -58,6 +61,15 @@
     "finalImproved": 27,
     "finalRegressed": 14,
     "safetyRegressed": 28,
+    "validationOverrideTraceCount": 0,
+    "validationTargetImproved": 0,
+    "validationSelectionImproved": 0,
+    "validationSelectionRegressed": 0,
+    "validationTerminalFinalImproved": 0,
+    "validationTerminalFinalRegressed": 0,
+    "validationFinalImproved": 0,
+    "validationFinalRegressed": 0,
+    "validationSafetyRegressed": 0,
     "totalCandidateAtomCount": 1135,
     "perFeatureCappedAtomCount": 693,
     "atomCount": 120,
@@ -132,7 +144,23 @@
     "greedyFinalRegressed": 0,
     "greedySafetyRegressed": 0,
     "greedyNeutral": 38,
-    "greedySafeNoRegression": true
+    "greedySafeNoRegression": true,
+    "validationGreedySelectedFeatureGateGroups": null,
+    "validationGreedySelectedFeatureGateGroupsCliArg": null,
+    "validationGreedyTargetImproved": null,
+    "validationGreedySelectionImproved": null,
+    "validationGreedySelectionRegressed": null,
+    "validationGreedyTerminalFinalImproved": null,
+    "validationGreedyTerminalFinalRegressed": null,
+    "validationGreedyFinalImproved": null,
+    "validationGreedyFinalRegressed": null,
+    "validationGreedySafetyRegressed": null,
+    "validationGreedyNeutral": null,
+    "validationGreedySafeNoRegression": null,
+    "topCandidateValidationTargetImproved": null,
+    "topCandidateValidationSafetyRegressed": null,
+    "topCandidateValidationNeutral": null,
+    "topCandidateValidationSafeNoRegression": null
   },
   "notes": "Diagnostics-only selected-feature gate discovery over online LNS window-ranker override traces; no solver default changed."
 }

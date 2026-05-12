@@ -10,7 +10,7 @@ const DISCOVERY_TARGETS = new Set(["selection-improved", "final-improved"]);
 const DISCOVERY_ARTIFACT_SCHEMA_VERSION = 2;
 const DISCOVERY_IDENTITY_SCHEMA_VERSION = 3;
 const TELEMETRY_MANIFEST_SCHEMA_VERSION = 2;
-const REGISTRY_ENTRY_SCHEMA_VERSION = 2;
+const REPORT_IDENTITY_SCHEMA_VERSION = 1;
 const METRIC_SEMANTICS_VERSION = 2;
 const ATOM_CAP_SUMMARY_SEMANTICS_VERSION = 2;
 const METRIC_SEMANTICS = {
@@ -1236,7 +1236,7 @@ function registryDisplayProjection(rows) {
 
 function reportIdentityPayload({ discovery, command, artifactDir, outputArtifacts, top, registryDisplay }) {
   return {
-    schemaVersion: REGISTRY_ENTRY_SCHEMA_VERSION,
+    schemaVersion: REPORT_IDENTITY_SCHEMA_VERSION,
     source: "lns-online-selected-feature-gate-discovery",
     discoveryFingerprint: discovery.discoveryFingerprint,
     top,
@@ -1430,6 +1430,7 @@ function replayCommand(defaultCliReplayCommand, options) {
 const options = parseArgs(process.argv.slice(2));
 const artifactHelpers = await loadArtifactBundleHelpers();
 const benchmarkApi = await loadBenchmarkApi();
+const registryEntrySchemaVersion = benchmarkApi.EXPERIMENT_REGISTRY_SCHEMA_VERSION;
 const sourceScorecards = [
   ...options.sourceArtifacts.map(scorecardPathFromArtifact),
   ...options.sourceScorecards.map(normalizeRepoRelativePath)
@@ -1577,7 +1578,7 @@ const telemetryManifest = {
     "Diagnostics-only selected-feature gate discovery over online LNS window-ranker override traces; no solver default changed."
 };
 const registryEntryDraft = {
-  schemaVersion: REGISTRY_ENTRY_SCHEMA_VERSION,
+  schemaVersion: registryEntrySchemaVersion,
   runId: `lns-online-selected-feature-gate-discovery-${reportFingerprint.slice(-8)}`,
   artifactType: "ablation-gate",
   generatedAt: discovery.generatedAt,
@@ -1602,16 +1603,12 @@ const registryEntryDraft = {
     validationSourceScorecardCount: validationSourceScorecards.length,
     overrideTraceCount: discovery.rowSummary.overrideTraceCount,
     validationOverrideTraceCount: discovery.validationRowSummary.overrideTraceCount,
-    target: options.target,
     maxGroupSize: options.maxGroupSize,
     maxAtomsPerFeature: options.maxAtomsPerFeature,
     maxTotalAtoms: options.maxTotalAtoms,
     totalCandidateAtomCount: discovery.totalCandidateAtomCount,
     perFeatureCappedAtomCount: discovery.perFeatureCappedAtomCount,
     atomCount: discovery.atomCount,
-    conjunctionReservationSupportsRequestedMaxGroupSize:
-      discovery.cappedAtomSummary.conjunctionReservationSupportsRequestedMaxGroupSize,
-    conjunctionReservationSearchExhaustive: discovery.cappedAtomSummary.conjunctionReservationSearchExhaustive,
     conjunctionReservationAvailableUnsafeTargetAtomCount:
       discovery.cappedAtomSummary.conjunctionReservationAvailableUnsafeTargetAtomCount,
     conjunctionReservationConsideredUnsafeTargetAtomCount:

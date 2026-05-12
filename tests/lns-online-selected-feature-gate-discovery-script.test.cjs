@@ -2,6 +2,8 @@ const assert = require("node:assert/strict");
 const childProcess = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
+const benchmarkApi = require("../dist/benchmarkApi.js");
+const { assertRegistryDraftAppendDryRun } = require("./helpers/experimentRegistryAppendDryRun.cjs");
 
 const repoRoot = path.join(__dirname, "..");
 const tempRoot = path.join(repoRoot, "artifacts", `tmp-lns-online-selected-feature-gate-discovery-${process.pid}`);
@@ -260,8 +262,15 @@ try {
   assert.equal(telemetry.metrics.terminalFinalRegressed, 1);
   assert.equal(telemetry.v2DeprecatedMetricAliases.aliases.finalRegressed, "terminalFinalRegressed");
   assert.match(telemetry.v2DeprecatedMetricAliases.note, /schema-v1 artifacts/);
-  const registry = JSON.parse(fs.readFileSync(path.join(outputDir, "registry-entry-draft.json"), "utf8"));
-  assert.equal(registry.schemaVersion, 2);
+  const registryPath = path.join(outputDir, "registry-entry-draft.json");
+  assertRegistryDraftAppendDryRun(repoRoot, registryPath, {
+    scratchRegistryPath: path.posix.join(
+      "artifacts",
+      `tmp-lns-online-selected-feature-gate-discovery-registry-${process.pid}.jsonl`
+    )
+  });
+  const registry = JSON.parse(fs.readFileSync(registryPath, "utf8"));
+  assert.equal(registry.schemaVersion, benchmarkApi.EXPERIMENT_REGISTRY_SCHEMA_VERSION);
   assert.equal(
     registry.splitStatus.metricSemantics.terminalFinalRegressed,
     discovery.metricSemantics.terminalFinalRegressed

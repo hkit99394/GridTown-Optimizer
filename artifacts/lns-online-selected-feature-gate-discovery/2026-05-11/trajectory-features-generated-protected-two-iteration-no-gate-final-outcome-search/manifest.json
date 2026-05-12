@@ -8,15 +8,16 @@
     "manifestJson": "artifacts/lns-online-selected-feature-gate-discovery/2026-05-11/trajectory-features-generated-protected-two-iteration-no-gate-final-outcome-search/manifest.json"
   },
   "command": "node scripts/discover-lns-online-selected-feature-gates.mjs --source-artifact=artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0 --source-artifact=artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-two-iteration-trajectory-features-no-selected-feature-gate-min-score-delta-0 --artifact-dir=artifacts/lns-online-selected-feature-gate-discovery/2026-05-11/trajectory-features-generated-protected-two-iteration-no-gate-final-outcome-search --target=final-improved --max-group-size=3 --max-atoms-per-feature=20 --max-total-atoms=120 --top=50 --force-artifact-dir",
-  "generatedAt": "2026-05-11T21:19:41.527Z",
+  "generatedAt": "2026-05-12T18:20:20.693Z",
   "target": "final-improved",
-  "inputFingerprint": "fnv1a:6c13f21d",
-  "discoveryFingerprint": "fnv1a:36b9a596",
-  "reportFingerprint": "fnv1a:1018d9b4",
+  "inputFingerprint": "fnv1a:c92795ae",
+  "discoveryFingerprint": "fnv1a:3b861c17",
+  "reportFingerprint": "fnv1a:a2f1c683",
   "sourceScorecards": [
     "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
     "artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-two-iteration-trajectory-features-no-selected-feature-gate-min-score-delta-0/lns-window-ranker-online-ablation.json"
   ],
+  "validationSourceScorecards": [],
   "featureAllowlist": null,
   "generator": {
     "script": "scripts/discover-lns-online-selected-feature-gates.mjs",

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-05-11T21:19:43.093Z",
+  "generatedAt": "2026-05-12T18:20:15.837Z",
   "target": "final-improved",
   "metricSemantics": {
     "targetImproved": "Counts rows that match the selected discovery target. final-improved is attributed only to the terminal override trace with selectedFeatures in each variant.",
@@ -22,6 +22,7 @@
     "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
     "artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-two-iteration-trajectory-features-no-selected-feature-gate-min-score-delta-0/lns-window-ranker-online-ablation.json"
   ],
+  "validationSourceScorecards": [],
   "featureAllowlist": null,
   "features": [
     "allowedWindowCells",
@@ -245,6 +246,21 @@
     "bestFinalDelta": 90,
     "worstFinalDelta": -55
   },
+  "validationRowSummary": {
+    "overrideTraceCount": 0,
+    "targetImproved": 0,
+    "selectionImproved": 0,
+    "selectionRegressed": 0,
+    "terminalFinalImproved": 0,
+    "terminalFinalRegressed": 0,
+    "finalImproved": 0,
+    "finalRegressed": 0,
+    "safetyRegressed": 0,
+    "neutral": 0,
+    "unknown": 0,
+    "bestFinalDelta": 0,
+    "worstFinalDelta": 0
+  },
   "candidateCount": 88103,
   "topCandidateCount": 200,
   "topCandidates": [
@@ -283,6 +299,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -1391,6 +1408,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -2495,6 +2513,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -3603,6 +3622,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -4715,6 +4735,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -5833,6 +5854,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -6951,6 +6973,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -8073,6 +8096,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -9181,6 +9205,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -10289,6 +10314,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -11397,6 +11423,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -12505,6 +12532,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -13613,6 +13641,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -14731,6 +14760,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -15849,6 +15879,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -16953,6 +16984,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -18047,6 +18079,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -19165,6 +19198,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -20287,6 +20321,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -21405,6 +21440,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -22523,6 +22559,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -23641,6 +23678,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -24759,6 +24797,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -25877,6 +25916,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -26995,6 +27035,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -28113,6 +28154,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -29221,6 +29263,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -30339,6 +30382,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -31457,6 +31501,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -32575,6 +32620,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -33689,6 +33735,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -34793,6 +34840,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -35907,6 +35955,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -37021,6 +37070,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -38135,6 +38185,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -39249,6 +39300,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -40363,6 +40415,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -41467,6 +41520,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -42571,6 +42625,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -43675,6 +43730,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -44779,6 +44835,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -45893,6 +45950,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -47007,6 +47065,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -48115,6 +48174,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -49091,6 +49151,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -50063,6 +50124,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -51039,6 +51101,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -52025,6 +52088,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -53011,6 +53075,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -53997,6 +54062,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -54979,6 +55045,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -55965,6 +56032,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -56955,6 +57023,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -57931,6 +58000,7 @@
       "bestFinalDelta": 50,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -58913,6 +58983,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -59899,6 +59970,7 @@
       "bestFinalDelta": 50,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -60875,6 +60947,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -61851,6 +61924,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -62837,6 +62911,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -63823,6 +63898,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -64795,6 +64871,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -65767,6 +65844,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -66749,6 +66827,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -67731,6 +67810,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -68713,6 +68793,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -69685,6 +69766,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -70667,6 +70749,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -71639,6 +71722,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -72611,6 +72695,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -73583,6 +73668,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -74545,6 +74631,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -75511,6 +75598,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -76355,6 +76443,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 50,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -77203,6 +77292,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 50,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -78047,6 +78137,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -78895,6 +78986,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -79739,6 +79831,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -80587,6 +80680,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -81431,6 +81525,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -82279,6 +82374,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -83123,6 +83219,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -83971,6 +84068,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -84815,6 +84913,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -85663,6 +85762,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -86507,6 +86607,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -87355,6 +87456,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -88209,6 +88311,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 50,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -89067,6 +89170,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 50,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -89921,6 +90025,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 50,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -90779,6 +90884,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 50,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -91633,6 +91739,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 50,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -92491,6 +92598,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 50,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -93345,6 +93453,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 50,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -94199,6 +94308,7 @@
       "bestFinalDelta": 50,
       "worstFinalDelta": 50,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -95057,6 +95167,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -95919,6 +96030,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -96773,6 +96885,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -97631,6 +97744,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -98485,6 +98599,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -99343,6 +99458,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -100197,6 +100313,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -101055,6 +101172,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -101913,6 +102031,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -102775,6 +102894,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -103633,6 +103753,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -104495,6 +104616,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -105349,6 +105471,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -106207,6 +106330,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -107061,6 +107185,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -107919,6 +108044,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -108777,6 +108903,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -109639,6 +109766,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -110493,6 +110621,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -111351,6 +111480,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -112205,6 +112335,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -113063,6 +113194,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -113917,6 +114049,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -114775,6 +114908,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -115633,6 +115767,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -116495,6 +116630,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -117353,6 +117489,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -118215,6 +118352,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -119073,6 +119211,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -119931,6 +120070,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -120793,6 +120933,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -121651,6 +121792,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -122513,6 +122655,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -123371,6 +123514,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -124233,6 +124377,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -125087,6 +125232,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -125945,6 +126091,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -126799,6 +126946,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -127657,6 +127805,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -128511,6 +128660,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -129369,6 +129519,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -130227,6 +130378,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 40,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-value-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -131071,6 +131223,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -131915,6 +132068,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -132759,6 +132913,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -133603,6 +133758,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -134457,6 +134613,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -135311,6 +135468,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -136165,6 +136323,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -137019,6 +137178,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -137873,6 +138033,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -138727,6 +138888,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -139581,6 +139743,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -140435,6 +140598,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -141289,6 +141453,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -142129,6 +142294,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -142969,6 +143135,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -143809,6 +143976,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -144649,6 +144817,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -145489,6 +145658,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -146329,6 +146499,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -147179,6 +147350,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -148029,6 +148201,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -148879,6 +149052,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -149729,6 +149903,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -150579,6 +150754,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -151429,6 +151605,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -152279,6 +152456,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -153129,6 +153307,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -153979,6 +154158,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -154829,6 +155009,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -155679,6 +155860,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -156529,6 +156711,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -157379,6 +157562,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -158229,6 +158413,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -159079,6 +159264,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -159929,6 +160115,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -160779,6 +160966,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -161609,6 +161797,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -162449,6 +162638,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -163289,6 +163479,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -164139,6 +164330,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -164973,6 +165165,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -165807,6 +166000,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -166637,6 +166831,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -167485,6 +167680,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -168329,6 +168525,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -169173,6 +169370,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -170021,6 +170219,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -170865,6 +171064,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -171709,6 +171909,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -172553,6 +172754,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -173401,6 +173603,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -174249,6 +174452,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -175093,6 +175297,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -175937,6 +176142,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -176785,6 +176991,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -177629,6 +177836,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -178473,6 +178681,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -179317,6 +179526,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -180165,6 +180375,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -181013,6 +181224,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -181861,6 +182073,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -182709,6 +182922,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -183557,6 +183771,7 @@
       "bestFinalDelta": 90,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -184397,6 +184612,7 @@
       "bestFinalDelta": 60,
       "worstFinalDelta": 0,
       "safeNoRegression": true,
+      "validation": null,
       "positiveExamples": [
         {
           "sourceScorecard": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-geometry-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
@@ -186505,6 +186721,7 @@
     ],
     "safeNoRegression": true
   },
-  "inputFingerprint": "fnv1a:dfec44a4",
-  "discoveryFingerprint": "fnv1a:bc796e4a"
+  "validationGreedySelectedGateGroups": null,
+  "inputFingerprint": "fnv1a:09732d13",
+  "discoveryFingerprint": "fnv1a:49901d13"
 }

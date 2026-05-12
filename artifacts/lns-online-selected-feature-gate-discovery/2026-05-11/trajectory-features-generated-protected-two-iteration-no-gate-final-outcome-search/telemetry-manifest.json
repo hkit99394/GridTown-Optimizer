@@ -2,9 +2,9 @@
   "schemaVersion": 2,
   "source": "lns-online-selected-feature-gate-discovery",
   "command": "node scripts/discover-lns-online-selected-feature-gates.mjs --source-artifact=artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0 --source-artifact=artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-two-iteration-trajectory-features-no-selected-feature-gate-min-score-delta-0 --artifact-dir=artifacts/lns-online-selected-feature-gate-discovery/2026-05-11/trajectory-features-generated-protected-two-iteration-no-gate-final-outcome-search --target=final-improved --max-group-size=3 --max-atoms-per-feature=20 --max-total-atoms=120 --top=50 --force-artifact-dir",
-  "generatedAt": "2026-05-11T21:19:41.527Z",
+  "generatedAt": "2026-05-12T18:20:20.693Z",
   "git": {
-    "commit": "53a7291c7f187db302c2f577daa21ab3e701b89a",
+    "commit": "b893f4b76416d23438edeb4652ef2f8c2f901d86",
     "branch": "features/validated-solver-improvement-loop"
   },
   "hardware": {
@@ -33,13 +33,14 @@
       "finalRegressed": "terminalFinalRegressed"
     }
   },
-  "inputFingerprint": "fnv1a:6c13f21d",
-  "discoveryFingerprint": "fnv1a:36b9a596",
-  "reportFingerprint": "fnv1a:1018d9b4",
+  "inputFingerprint": "fnv1a:c92795ae",
+  "discoveryFingerprint": "fnv1a:3b861c17",
+  "reportFingerprint": "fnv1a:a2f1c683",
   "sourceScorecards": [
     "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
     "artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-two-iteration-trajectory-features-no-selected-feature-gate-min-score-delta-0/lns-window-ranker-online-ablation.json"
   ],
+  "validationSourceScorecards": [],
   "outputArtifacts": [
     "artifacts/lns-online-selected-feature-gate-discovery/2026-05-11/trajectory-features-generated-protected-two-iteration-no-gate-final-outcome-search/online-selected-feature-gate-discovery.json",
     "artifacts/lns-online-selected-feature-gate-discovery/2026-05-11/trajectory-features-generated-protected-two-iteration-no-gate-final-outcome-search/online-selected-feature-gate-discovery.txt",
@@ -47,6 +48,8 @@
     "artifacts/lns-online-selected-feature-gate-discovery/2026-05-11/trajectory-features-generated-protected-two-iteration-no-gate-final-outcome-search/manifest.json"
   ],
   "metrics": {
+    "sourceScorecardCount": 2,
+    "validationSourceScorecardCount": 0,
     "overrideTraceCount": 96,
     "targetImproved": 7,
     "selectionImproved": 17,
@@ -56,6 +59,15 @@
     "finalImproved": 7,
     "finalRegressed": 5,
     "safetyRegressed": 10,
+    "validationOverrideTraceCount": 0,
+    "validationTargetImproved": 0,
+    "validationSelectionImproved": 0,
+    "validationSelectionRegressed": 0,
+    "validationTerminalFinalImproved": 0,
+    "validationTerminalFinalRegressed": 0,
+    "validationFinalImproved": 0,
+    "validationFinalRegressed": 0,
+    "validationSafetyRegressed": 0,
     "totalCandidateAtomCount": 841,
     "perFeatureCappedAtomCount": 681,
     "atomCount": 120,
@@ -104,7 +116,23 @@
     "greedyFinalRegressed": 0,
     "greedySafetyRegressed": 0,
     "greedyNeutral": 2,
-    "greedySafeNoRegression": true
+    "greedySafeNoRegression": true,
+    "validationGreedySelectedFeatureGateGroups": null,
+    "validationGreedySelectedFeatureGateGroupsCliArg": null,
+    "validationGreedyTargetImproved": null,
+    "validationGreedySelectionImproved": null,
+    "validationGreedySelectionRegressed": null,
+    "validationGreedyTerminalFinalImproved": null,
+    "validationGreedyTerminalFinalRegressed": null,
+    "validationGreedyFinalImproved": null,
+    "validationGreedyFinalRegressed": null,
+    "validationGreedySafetyRegressed": null,
+    "validationGreedyNeutral": null,
+    "validationGreedySafeNoRegression": null,
+    "topCandidateValidationTargetImproved": null,
+    "topCandidateValidationSafetyRegressed": null,
+    "topCandidateValidationNeutral": null,
+    "topCandidateValidationSafeNoRegression": null
   },
   "notes": "Diagnostics-only selected-feature gate discovery over online LNS window-ranker override traces; no solver default changed."
 }

@@ -25,6 +25,11 @@ interface ArtifactWriteOptions {
   force?: boolean;
 }
 
+interface RepoInputPathOptions {
+  mustExist?: boolean;
+  rejectObsolete?: boolean;
+}
+
 export function normalizeRepoRelativePath(value: string, label: string): string {
   const normalized = path.normalize(value);
   if (normalized === "." || path.isAbsolute(normalized) || normalized.startsWith("..")) {
@@ -33,12 +38,48 @@ export function normalizeRepoRelativePath(value: string, label: string): string 
   return normalized.split(path.sep).join(path.posix.sep);
 }
 
+export function resolveRepoInputPath(value: string, label: string, options: RepoInputPathOptions = {}): string {
+  const repoRoot = path.resolve(process.cwd());
+  const absolutePath = path.isAbsolute(value) ? path.resolve(value) : path.resolve(repoRoot, value);
+  const relativePath = path.relative(repoRoot, absolutePath);
+  if (
+    relativePath === "" ||
+    relativePath === ".." ||
+    relativePath.startsWith(`..${path.sep}`) ||
+    path.isAbsolute(relativePath)
+  ) {
+    throw new Error(`${label} must stay inside the repository: ${value}`);
+  }
+  if (options.mustExist && !fs.existsSync(absolutePath)) {
+    throw new Error(`${label} does not exist: ${value}`);
+  }
+  const repoRelativePath = relativePath.split(path.sep).join(path.posix.sep);
+  if (options.rejectObsolete) assertArtifactPathNotObsolete(repoRelativePath, label);
+  return repoRelativePath;
+}
+
+export function resolveRepoInputArtifactPath(value: string, label: string, options: RepoInputPathOptions = {}): string {
+  return resolveRepoInputPath(value, label, { ...options, rejectObsolete: true });
+}
+
+export function readJsonRepoInputArtifact<T = unknown>(
+  value: string,
+  label: string,
+  options: RepoInputPathOptions = {}
+): { repoRelativePath: string; value: T } {
+  const repoRelativePath = resolveRepoInputArtifactPath(value, label, { ...options, mustExist: true });
+  return {
+    repoRelativePath,
+    value: JSON.parse(fs.readFileSync(path.resolve(process.cwd(), repoRelativePath), "utf8")) as T
+  };
+}
+
 export function assertArtifactPathNotObsolete(repoRelativePath: string, label: string): void {
   let currentDir = path.resolve(process.cwd(), path.dirname(repoRelativePath));
   const repoRoot = path.resolve(process.cwd());
   const artifactsRoot = path.resolve(repoRoot, "artifacts");
 
-  while (currentDir.startsWith(artifactsRoot)) {
+  while (currentDir === artifactsRoot || currentDir.startsWith(`${artifactsRoot}${path.sep}`)) {
     if (fs.existsSync(path.join(currentDir, "OBSOLETE.md")) || fs.existsSync(path.join(currentDir, "OBSOLETE.json"))) {
       const displayPath = path.relative(repoRoot, currentDir).split(path.sep).join(path.posix.sep);
       throw new Error(`${label} points to obsolete artifact bundle '${displayPath}'.`);

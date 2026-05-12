@@ -4,6 +4,7 @@ import type {
   Grid,
   OptimizerName,
   Solution,
+  SolveProgressLogEntry,
   SolverParams
 } from "../../core/index.js";
 import { getOptimizerAdapter, type OptimizerFinalizationContext } from "../dispatch/optimizerRegistry.js";
@@ -62,29 +63,109 @@ export interface SolveAdmissionLease {
   release(): void;
 }
 
-function buildRecoveredSolveMessage(job: SolveJob, solution: Solution, error: unknown): string {
-  const adapter = getOptimizerAdapter(job.optimizer);
+export interface SolveSettlementContext {
+  optimizer: OptimizerName;
+  handle: BackgroundSolveHandle | null;
+  cancelRequested: boolean;
+  lastProgressEntry: SolveProgressLogEntry | null;
+}
+
+export type SolveSettlement =
+  | {
+      status: Exclude<SolveJobStatus, "running" | "failed">;
+      solution: Solution;
+      message: string | null;
+      error: null;
+    }
+  | {
+      status: Exclude<SolveJobStatus, "running" | "completed">;
+      solution: null;
+      message: string | null;
+      error: string;
+    };
+
+function buildRecoveredSolveMessage(optimizer: OptimizerName, solution: Solution, error: unknown): string {
+  const adapter = getOptimizerAdapter(optimizer);
   return (
     adapter.describeRecoveredSolution?.(solution, error) ??
     "Showing the best available solution captured before the solver stopped progressing."
   );
 }
 
-function buildCompletedSolveMessage(job: SolveJob, solution: Solution): string | null {
-  return getOptimizerAdapter(job.optimizer).describeCompletedSolution?.(solution) ?? null;
+function buildCompletedSolveMessage(optimizer: OptimizerName, solution: Solution): string | null {
+  return getOptimizerAdapter(optimizer).describeCompletedSolution?.(solution) ?? null;
 }
 
-function buildOptimizerFinalizationContext(job: SolveJob): OptimizerFinalizationContext {
+function buildStoppedSolveMessage(): string {
+  return "Solve was stopped by user. Showing the best feasible result found so far.";
+}
+
+function buildStoppedBeforeFeasibleMessage(): string {
+  return "Solve was stopped before a feasible solution was found.";
+}
+
+function buildOptimizerFinalizationContext(context: SolveSettlementContext): OptimizerFinalizationContext {
   return {
-    cancelRequested: job.cancelRequested,
-    snapshotState: job.handle?.getLatestSnapshotState() ?? null,
-    lastProgressEntry: job.progressLogWriter.getLastEntry()
+    cancelRequested: context.cancelRequested,
+    snapshotState: context.handle?.getLatestSnapshotState() ?? null,
+    lastProgressEntry: context.lastProgressEntry
   };
 }
 
-function normalizeTerminalSolution(job: SolveJob, solution: Solution): Solution {
-  const adapter = getOptimizerAdapter(job.optimizer);
-  return adapter.normalizeTerminalSolution?.(solution, buildOptimizerFinalizationContext(job)) ?? solution;
+function normalizeTerminalSolution(context: SolveSettlementContext, solution: Solution): Solution {
+  const adapter = getOptimizerAdapter(context.optimizer);
+  return adapter.normalizeTerminalSolution?.(solution, buildOptimizerFinalizationContext(context)) ?? solution;
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "Unknown solver error.";
+}
+
+export function settleSuccessfulSolve(solution: Solution, context: SolveSettlementContext): SolveSettlement {
+  if (context.cancelRequested && !solution.stoppedByUser) {
+    solution = {
+      ...solution,
+      stoppedByUser: true
+    };
+  }
+  solution = normalizeTerminalSolution(context, solution);
+  const status = solution.stoppedByUser || context.cancelRequested ? "stopped" : "completed";
+  const message =
+    status === "stopped" ? buildStoppedSolveMessage() : buildCompletedSolveMessage(context.optimizer, solution);
+  return {
+    status,
+    solution,
+    message,
+    error: null
+  };
+}
+
+export function settleFailedSolve(error: unknown, context: SolveSettlementContext): SolveSettlement {
+  const recoveredSolution = context.handle?.getLatestSnapshot() ?? null;
+  if (recoveredSolution) {
+    let solution: Solution = {
+      ...recoveredSolution,
+      stoppedByUser: context.cancelRequested ? true : Boolean(recoveredSolution.stoppedByUser)
+    };
+    solution = normalizeTerminalSolution(context, solution);
+    const status = context.cancelRequested ? "stopped" : "completed";
+    const message = context.cancelRequested
+      ? buildStoppedSolveMessage()
+      : buildRecoveredSolveMessage(context.optimizer, solution, error);
+    return {
+      status,
+      solution,
+      message,
+      error: null
+    };
+  }
+
+  return {
+    status: context.cancelRequested ? "stopped" : "failed",
+    solution: null,
+    message: context.cancelRequested ? buildStoppedBeforeFeasibleMessage() : null,
+    error: getErrorMessage(error)
+  };
 }
 
 export class SolveJobManager {
@@ -189,37 +270,11 @@ export class SolveJobManager {
     void handle.promise
       .then((solution) => {
         if (job.status !== "running") return;
-        solution = normalizeTerminalSolution(job, solution);
-        const status = solution.stoppedByUser || job.cancelRequested ? "stopped" : "completed";
-        const message =
-          status === "stopped"
-            ? "Solve was stopped by user. Showing the best feasible result found so far."
-            : buildCompletedSolveMessage(job, solution);
-        this.finalizeJobWithSolution(job, solution, status, message);
+        this.finalizeJobWithSettlement(job, settleSuccessfulSolve(solution, this.buildSettlementContext(job)));
       })
       .catch((error) => {
         if (job.status !== "running") return;
-        const recoveredSolution = job.handle?.getLatestSnapshot() ?? null;
-        if (recoveredSolution) {
-          let solution: Solution = {
-            ...recoveredSolution,
-            stoppedByUser: job.cancelRequested ? true : Boolean(recoveredSolution.stoppedByUser)
-          };
-          solution = normalizeTerminalSolution(job, solution);
-          const status = job.cancelRequested ? "stopped" : "completed";
-          const message = job.cancelRequested
-            ? "Solve was stopped by user. Showing the best feasible result found so far."
-            : buildRecoveredSolveMessage(job, solution, error);
-          this.finalizeJobWithSolution(job, solution, status, message);
-          return;
-        }
-
-        this.finalizeJobWithoutSolution(
-          job,
-          job.cancelRequested ? "stopped" : "failed",
-          job.cancelRequested ? "Solve was stopped before a feasible solution was found." : null,
-          error instanceof Error ? error.message : "Unknown solver error."
-        );
+        this.finalizeJobWithSettlement(job, settleFailedSolve(error, this.buildSettlementContext(job)));
       })
       .finally(() => {
         this.releaseJobResources(job);
@@ -286,9 +341,18 @@ export class SolveJobManager {
       } else {
         job.handle?.cancel();
       }
-      this.finalizeJobWithoutSolution(job, "failed", null, error);
+      this.finalizeJobWithSettlement(job, settleFailedSolve(new Error(error), this.buildSettlementContext(job)));
       this.releaseJobResources(job);
     }
+  }
+
+  private buildSettlementContext(job: SolveJob): SolveSettlementContext {
+    return {
+      optimizer: job.optimizer,
+      handle: job.handle,
+      cancelRequested: job.cancelRequested,
+      lastProgressEntry: job.progressLogWriter.getLastEntry()
+    };
   }
 
   private pruneJobs(now = Date.now()): void {
@@ -333,6 +397,14 @@ export class SolveJobManager {
       message,
       error: null
     });
+  }
+
+  private finalizeJobWithSettlement(job: SolveJob, settlement: SolveSettlement): void {
+    if (settlement.solution) {
+      this.finalizeJobWithSolution(job, settlement.solution, settlement.status, settlement.message);
+      return;
+    }
+    this.finalizeJobWithoutSolution(job, settlement.status, settlement.message, settlement.error);
   }
 
   private finalizeJobWithoutSolution(

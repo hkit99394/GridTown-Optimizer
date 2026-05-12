@@ -12,6 +12,8 @@ const tempRoot = path.join(
 const discoveryDir = path.join(tempRoot, "discovery");
 const outputDir = path.join(tempRoot, "out");
 const freshOutputDir = path.join(tempRoot, "fresh-out");
+const obsoleteModelDir = path.join(tempRoot, "obsolete-model");
+const obsoleteOutputDir = path.join(tempRoot, "obsolete-model-out");
 const fakeRunnerPath = path.join(tempRoot, "fake-lns-benchmark-runner.cjs");
 const fakeSuppressionModel = "artifacts/fake-suppression-model.json";
 
@@ -364,6 +366,28 @@ try {
   const freshRegistry = JSON.parse(fs.readFileSync(path.join(freshOutputDir, "registry-entry-draft.json"), "utf8"));
   assert.equal(freshRegistry.splitStatus.protectedCorpus, "fresh-pressure-holdout");
   assert.equal(freshRegistry.budget.freshPressureHoldout, true);
+
+  fs.mkdirSync(obsoleteModelDir, { recursive: true });
+  fs.writeFileSync(path.join(obsoleteModelDir, "OBSOLETE.md"), "Quarantined test model.\n");
+  fs.writeFileSync(path.join(obsoleteModelDir, "model.json"), JSON.stringify({ weights: { area: 1 } }, null, 2));
+  const obsoleteModelResult = childProcess.spawnSync(
+    process.execPath,
+    [
+      "scripts/evaluate-lns-online-selected-feature-gates.mjs",
+      `--discovery-artifact=${repoRelative(discoveryDir)}`,
+      `--artifact-dir=${repoRelative(obsoleteOutputDir)}`,
+      `--runner=${repoRelative(fakeRunnerPath)}`,
+      `--window-ranker-model=${repoRelative(path.join(obsoleteModelDir, "model.json"))}`,
+      "--window-ranker-fresh-pressure-holdout",
+      "--window-ranker-min-score-delta=0",
+      "--seeds=5,7",
+      "--lns-iterations=2",
+      "--candidate-source=validation-greedy"
+    ],
+    { cwd: repoRoot, encoding: "utf8" }
+  );
+  assert.notEqual(obsoleteModelResult.status, 0);
+  assert.match(obsoleteModelResult.stderr, /--window-ranker-model points to obsolete artifact bundle/);
 
   const rejectedResult = childProcess.spawnSync(
     process.execPath,

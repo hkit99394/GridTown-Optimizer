@@ -192,26 +192,19 @@ function normalizeTarget(value) {
   return target;
 }
 
-function normalizeRepoRelativePath(inputPath) {
-  const root = repoRoot();
-  const absolutePath = path.resolve(root, inputPath);
-  const relativePath = path.relative(root, absolutePath);
-  if (relativePath === "" || relativePath.startsWith(`..${path.sep}`) || path.isAbsolute(relativePath)) {
-    throw new Error(`Path must stay inside the repository: ${inputPath}`);
-  }
-  return relativePath.split(path.sep).join(path.posix.sep);
+function normalizeRepoRelativePath(inputPath, label = "Path") {
+  return artifactHelpers.resolveRepoInputPath(inputPath, label);
 }
 
-function absoluteRepoPath(repoRelativePath) {
-  return path.join(repoRoot(), repoRelativePath);
+function readJsonInputArtifact(repoRelativePath, label) {
+  return artifactHelpers.readJsonRepoInputArtifact(repoRelativePath, label).value;
 }
 
-function readJson(repoRelativePath) {
-  return JSON.parse(fs.readFileSync(absoluteRepoPath(repoRelativePath), "utf8"));
-}
-
-function scorecardPathFromArtifact(artifactDir) {
-  return path.posix.join(normalizeRepoRelativePath(artifactDir), SCORECARD_FILE);
+function scorecardPathFromArtifact(artifactDir, label) {
+  const repoRelativeArtifactDir = normalizeRepoRelativePath(artifactDir, label);
+  return artifactHelpers.resolveRepoInputArtifactPath(path.posix.join(repoRelativeArtifactDir, SCORECARD_FILE), label, {
+    mustExist: true
+  });
 }
 
 function uniqueSortedNumbers(values) {
@@ -229,7 +222,7 @@ function rowKey(row) {
 function extractRows(sourceScorecards) {
   const rows = [];
   for (const sourceScorecard of sourceScorecards) {
-    const scorecard = readJson(sourceScorecard);
+    const scorecard = readJsonInputArtifact(sourceScorecard, "--source-scorecard");
     for (const [caseIndex, caseResult] of (scorecard.cases ?? []).entries()) {
       for (const [variantIndex, variant] of (caseResult.variants ?? []).entries()) {
         if (variant.variantName !== "window-ranker") continue;
@@ -1432,12 +1425,18 @@ const artifactHelpers = await loadArtifactBundleHelpers();
 const benchmarkApi = await loadBenchmarkApi();
 const registryEntrySchemaVersion = benchmarkApi.EXPERIMENT_REGISTRY_SCHEMA_VERSION;
 const sourceScorecards = [
-  ...options.sourceArtifacts.map(scorecardPathFromArtifact),
-  ...options.sourceScorecards.map(normalizeRepoRelativePath)
+  ...options.sourceArtifacts.map((source) => scorecardPathFromArtifact(source, "--source-artifact")),
+  ...options.sourceScorecards.map((source) =>
+    artifactHelpers.resolveRepoInputArtifactPath(source, "--source-scorecard", { mustExist: true })
+  )
 ];
 const validationSourceScorecards = [
-  ...options.validationSourceArtifacts.map(scorecardPathFromArtifact),
-  ...options.validationSourceScorecards.map(normalizeRepoRelativePath)
+  ...options.validationSourceArtifacts.map((source) =>
+    scorecardPathFromArtifact(source, "--validation-source-artifact")
+  ),
+  ...options.validationSourceScorecards.map((source) =>
+    artifactHelpers.resolveRepoInputArtifactPath(source, "--validation-source-scorecard", { mustExist: true })
+  )
 ];
 const rows = extractRows(sourceScorecards);
 if (rows.length === 0) {

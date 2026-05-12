@@ -1,7 +1,10 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
 
 const optimizerRegistry = require("../../dist/packages/runtime/dispatch/optimizerRegistry.js");
+const { SolveJobManager } = require("../../dist/packages/runtime/jobs/solveJobManager.js");
 const { SolveProgressLogWriter } = require("../../dist/packages/runtime/jobs/solveProgressLog.js");
 const { solve } = require("city-builder/solver");
 const {
@@ -472,6 +475,70 @@ async function testRecoveredAutoFailureNormalizesTerminalMetadata() {
   }
 }
 
+async function testShutdownRecoversLatestSnapshotBeforeFinalizing() {
+  const solvePayload = buildTinySolvePayload();
+  const backgroundSolution = solve(solvePayload.grid, solvePayload.params);
+  const progressLogRoot = fs.mkdtempSync(path.join(os.tmpdir(), "planner-shutdown-recovery-"));
+  const manager = new SolveJobManager({
+    progressLogRoot,
+    progressLogIntervalMs: 10,
+    progressLogPollIntervalMs: 5
+  });
+  const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+  let forceKillCalled = false;
+
+  optimizerRegistry.getOptimizerAdapter = () => ({
+    name: "greedy",
+    solve() {
+      throw new Error("Shutdown recovery test should use the background adapter.");
+    },
+    startBackgroundSolve() {
+      return {
+        promise: new Promise(() => {}),
+        cancel() {},
+        forceKill() {
+          forceKillCalled = true;
+        },
+        getLatestSnapshot() {
+          return backgroundSolution;
+        },
+        getLatestSnapshotState() {
+          return {
+            hasFeasibleSolution: true,
+            totalPopulation: backgroundSolution.totalPopulation
+          };
+        }
+      };
+    }
+  });
+
+  try {
+    const requestId = "shutdown-recovers-latest-snapshot";
+    const job = manager.start(solvePayload.grid, solvePayload.params, requestId);
+
+    manager.shutdownRunningSolves("Local web server stopped while a feasible incumbent existed.");
+
+    const finalJob = manager.get(requestId);
+    assert.equal(forceKillCalled, true);
+    assert.equal(finalJob, job);
+    assert.equal(finalJob.status, "stopped");
+    const finalSolution = finalJob.solution;
+    if (finalSolution === null) assert.fail("Expected shutdown recovery to preserve the latest feasible solution.");
+    assert.equal(finalSolution.totalPopulation, 100);
+    assert.equal(finalJob.error, null);
+    assert.equal(finalJob.message, "Solve was stopped by user. Showing the best feasible result found so far.");
+    assert.equal(finalJob.handle, null);
+
+    const persistedLog = JSON.parse(fs.readFileSync(job.progressLogFilePath, "utf8"));
+    assert.equal(persistedLog.status, "stopped");
+    assert.equal(persistedLog.error, null);
+    assert.equal(persistedLog.finalResult.solution.totalPopulation, 100);
+    assert.equal(persistedLog.finalResult.solution.stoppedByUser, true);
+  } finally {
+    optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
+  }
+}
+
 /**
  * @param {RouteTestHandler} handler
  * @returns {Promise<void>}
@@ -763,6 +830,7 @@ async function main() {
   await testSolveStatusIncludesAutoStageMetadata(handler);
   await testLiveSnapshotStatusValidatesReportedPopulationInvariants(handler);
   await testRecoveredAutoFailureNormalizesTerminalMetadata();
+  await testShutdownRecoversLatestSnapshotBeforeFinalizing();
   await testCancelMissingSolveRoute(handler);
   await testCompletedSolveStatusRecoversFromProgressLogAfterRetention();
   await testStoppedProgressLogRecoversCompactSolveResponse();

@@ -6,6 +6,8 @@ import {
   getOptimizerAdapter,
   resolveOptimizerName,
   SolveJobManager,
+  settleFailedSolve,
+  settleSuccessfulSolve,
   type SolveJob,
   type SolveProgressLogReadResult
 } from "../../../packages/runtime/index.js";
@@ -267,22 +269,42 @@ export async function handleImmediateSolve(
   }
 
   try {
-    const handle = getOptimizerAdapter(payload.params).startBackgroundSolve(payload.grid, payload.params);
+    const optimizerAdapter = getOptimizerAdapter(payload.params);
+    const handle = optimizerAdapter.startBackgroundSolve(payload.grid, payload.params);
     const disconnectMonitor = monitorClientDisconnect(req, res, () => {
       handle.cancel();
     });
 
     try {
-      const solution = await handle.promise;
+      const settlement = settleSuccessfulSolve(await handle.promise, {
+        optimizer: optimizerAdapter.name,
+        handle,
+        cancelRequested: false,
+        lastProgressEntry: null
+      });
       if (disconnectMonitor.isDisconnected()) return true;
+      if (!settlement.solution) throw new Error("Solve completed without a solution.");
 
       sendJson(res, 200, {
         ok: true,
-        ...buildSolveResponse(payload.grid, payload.params, solution)
+        ...(settlement.message ? { message: settlement.message } : {}),
+        ...buildSolveResponse(payload.grid, payload.params, settlement.solution)
       });
     } catch (error) {
       if (disconnectMonitor.isDisconnected()) return true;
-      throw error;
+      const settlement = settleFailedSolve(error, {
+        optimizer: optimizerAdapter.name,
+        handle,
+        cancelRequested: false,
+        lastProgressEntry: null
+      });
+      if (!settlement.solution) throw error;
+
+      sendJson(res, 200, {
+        ok: true,
+        ...(settlement.message ? { message: settlement.message } : {}),
+        ...buildSolveResponse(payload.grid, payload.params, settlement.solution)
+      });
     } finally {
       disconnectMonitor.dispose();
     }

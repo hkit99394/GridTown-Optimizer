@@ -904,19 +904,11 @@ function loadLnsWindowReplayArtifactBundle() {
   );
 }
 
-function repoRelativeExistingPath(inputPath, label) {
-  const absolutePath = path.resolve(repoRoot(), inputPath);
-  if (!fs.existsSync(absolutePath)) throw new Error(`${label} does not exist: ${inputPath}`);
-  const relativePath = path.relative(repoRoot(), absolutePath);
-  if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
-    throw new Error(`${label} must be inside the repository: ${inputPath}`);
-  }
-  return relativePath;
-}
-
 function readWindowRankerModel(modelPath) {
-  const repoRelativePath = repoRelativeExistingPath(modelPath, "--window-ranker-model");
-  const parsed = JSON.parse(fs.readFileSync(path.join(repoRoot(), repoRelativePath), "utf8"));
+  const { repoRelativePath, value: parsed } = artifactHelpers.readJsonRepoInputArtifact(
+    modelPath,
+    "--window-ranker-model"
+  );
   const candidate =
     parsed && typeof parsed === "object" && parsed.model && parsed.model.weights ? parsed.model : parsed;
   if (!candidate || typeof candidate !== "object" || !candidate.weights || typeof candidate.weights !== "object") {

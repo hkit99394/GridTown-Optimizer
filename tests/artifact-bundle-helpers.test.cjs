@@ -5,6 +5,7 @@ const path = require("node:path");
 
 const {
   prepareArtifactBundleDirectory,
+  resolveRepoInputPath,
   writeJsonArtifact,
   writeTextArtifact
 } = require("../dist/tools/cli/artifactBundleHelpers.js");
@@ -28,6 +29,11 @@ try {
     /--artifact-dir must be under artifacts\//
   );
   assert.throws(() => prepareArtifactBundleDirectory("artifacts", "--artifact-dir"), /must be under artifacts\//);
+  assert.throws(() => resolveRepoInputPath("..", "--input"), /--input must stay inside the repository: \.\./);
+  assert.throws(
+    () => resolveRepoInputPath(path.dirname(repoRoot), "--input"),
+    /--input must stay inside the repository: /
+  );
 
   const nonEmptyDir = `${relativeTempRoot}/non-empty`;
   const absoluteNonEmptyDir = path.join(repoRoot, nonEmptyDir);

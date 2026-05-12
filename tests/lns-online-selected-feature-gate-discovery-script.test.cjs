@@ -20,6 +20,7 @@ const duplicateCaseSourceDir = path.join(tempRoot, "source-duplicate-case");
 const renamedCaseSourceDir = path.join(tempRoot, "source-renamed-case");
 const reportExampleSourceDir = path.join(tempRoot, "source-report-example");
 const safetySourceDir = path.join(tempRoot, "source-final-safety");
+const obsoleteSourceDir = path.join(tempRoot, "source-obsolete");
 const outputDir = path.join(tempRoot, "out");
 const topReportingOutputDirTop1 = path.join(tempRoot, "out-top-reporting-top1");
 const topReportingOutputDirTop5 = path.join(tempRoot, "out-top-reporting-top5");
@@ -36,6 +37,7 @@ const renamedCaseOutputDir = path.join(tempRoot, "out-renamed-case");
 const reportExampleOutputDir = path.join(tempRoot, "out-report-example");
 const finalTargetOutputDir = path.join(tempRoot, "out-final-target");
 const finalTargetSafetyOutputDir = path.join(tempRoot, "out-final-target-safety");
+const obsoleteOutputDir = path.join(tempRoot, "out-obsolete-source");
 
 function repoRelative(absolutePath) {
   return path.relative(repoRoot, absolutePath).split(path.sep).join(path.posix.sep);
@@ -258,6 +260,48 @@ try {
     /safety-regressed=/
   );
   const telemetry = JSON.parse(fs.readFileSync(path.join(outputDir, "telemetry-manifest.json"), "utf8"));
+
+  fs.mkdirSync(obsoleteSourceDir, { recursive: true });
+  fs.writeFileSync(path.join(obsoleteSourceDir, "OBSOLETE.md"), "Quarantined test bundle.\n");
+  fs.writeFileSync(
+    path.join(obsoleteSourceDir, "lns-window-ranker-online-ablation.json"),
+    JSON.stringify(
+      {
+        schemaVersion: 1,
+        cases: [
+          {
+            name: "obsolete-pocket",
+            seed: 7,
+            variants: [
+              variant({
+                finalStatus: "improved",
+                finalDelta: 50,
+                traceStatus: "improved",
+                area: 0.6,
+                operatorScore: 9.74
+              })
+            ]
+          }
+        ]
+      },
+      null,
+      2
+    )
+  );
+  const obsoleteSourceResult = childProcess.spawnSync(
+    process.execPath,
+    [
+      "scripts/discover-lns-online-selected-feature-gates.mjs",
+      `--source-artifact=${repoRelative(obsoleteSourceDir)}`,
+      `--artifact-dir=${repoRelative(obsoleteOutputDir)}`,
+      "--feature-allowlist=area",
+      "--max-group-size=1",
+      "--top=1"
+    ],
+    { cwd: repoRoot, encoding: "utf8" }
+  );
+  assert.notEqual(obsoleteSourceResult.status, 0);
+  assert.match(obsoleteSourceResult.stderr, /--source-artifact points to obsolete artifact bundle/);
   assert.equal(telemetry.schemaVersion, 2);
   assert.equal(telemetry.metrics.terminalFinalRegressed, 1);
   assert.equal(telemetry.v2DeprecatedMetricAliases.aliases.finalRegressed, "terminalFinalRegressed");

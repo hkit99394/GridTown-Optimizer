@@ -245,22 +245,16 @@ function parseArgs(argv) {
   };
 }
 
-function normalizeRepoRelativePath(inputPath) {
-  const root = repoRoot();
-  const absolutePath = path.resolve(root, inputPath);
-  const relativePath = path.relative(root, absolutePath);
-  if (relativePath === "" || relativePath.startsWith(`..${path.sep}`) || path.isAbsolute(relativePath)) {
-    throw new Error(`Path must stay inside the repository: ${inputPath}`);
-  }
-  return relativePath.split(path.sep).join(path.posix.sep);
+function normalizeRepoRelativePath(inputPath, label = "Path") {
+  return artifactHelpers.resolveRepoInputPath(inputPath, label);
 }
 
 function absoluteRepoPath(repoRelativePath) {
   return path.join(repoRoot(), repoRelativePath);
 }
 
-function optionalRepoRelativePath(inputPath) {
-  return inputPath === undefined ? null : normalizeRepoRelativePath(inputPath);
+function optionalInputArtifactPath(inputPath, label) {
+  return inputPath === undefined ? null : artifactHelpers.resolveRepoInputArtifactPath(inputPath, label);
 }
 
 function readJson(repoRelativePath) {
@@ -268,9 +262,14 @@ function readJson(repoRelativePath) {
 }
 
 function discoveryPath(options) {
-  return options.discoveryJson
-    ? normalizeRepoRelativePath(options.discoveryJson)
-    : path.posix.join(normalizeRepoRelativePath(options.discoveryArtifact), DISCOVERY_FILE);
+  const inputPath = options.discoveryJson
+    ? options.discoveryJson
+    : path.posix.join(normalizeRepoRelativePath(options.discoveryArtifact, "--discovery-artifact"), DISCOVERY_FILE);
+  return artifactHelpers.resolveRepoInputArtifactPath(
+    inputPath,
+    options.discoveryJson ? "--discovery-json" : "--discovery-artifact",
+    { mustExist: true }
+  );
 }
 
 function protectedCorpus(options) {
@@ -626,8 +625,18 @@ function artifactPathsFor(artifacts) {
 const options = parseArgs(process.argv.slice(2));
 const artifactHelpers = await loadArtifactBundleHelpers();
 const benchmarkApi = await loadBenchmarkApi();
-const runnerPath = normalizeRepoRelativePath(options.runner);
+const runnerPath = normalizeRepoRelativePath(options.runner, "--runner");
 if (!fs.existsSync(absoluteRepoPath(runnerPath))) throw new Error(`Runner does not exist: ${runnerPath}`);
+options.windowRankerModel = artifactHelpers.resolveRepoInputArtifactPath(
+  options.windowRankerModel,
+  "--window-ranker-model"
+);
+if (options.windowRankerSuppressionModel !== undefined) {
+  options.windowRankerSuppressionModel = artifactHelpers.resolveRepoInputArtifactPath(
+    options.windowRankerSuppressionModel,
+    "--window-ranker-suppression-model"
+  );
+}
 const sourceDiscoveryJson = discoveryPath(options);
 const discovery = readJson(sourceDiscoveryJson);
 const candidates = collectCandidates(discovery, options);
@@ -646,7 +655,10 @@ const rankedCandidates = evaluatedCandidates.slice().sort(compareEvaluatedCandid
 const bestCandidate = rankedCandidates[0] ?? null;
 const generatedAt = new Date().toISOString();
 const benchmarkProtectedCorpus = protectedCorpus(options);
-const windowRankerSuppressionModel = optionalRepoRelativePath(options.windowRankerSuppressionModel);
+const windowRankerSuppressionModel = optionalInputArtifactPath(
+  options.windowRankerSuppressionModel,
+  "--window-ranker-suppression-model"
+);
 const benchmark = {
   runner: runnerPath,
   protectedHoldout: options.protectedHoldout,

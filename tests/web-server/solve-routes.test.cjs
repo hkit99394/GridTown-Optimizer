@@ -282,6 +282,64 @@ async function testImmediateSolveBackendJsonErrorsReturnInternalServerError(hand
  * @param {RouteTestHandler} handler
  * @returns {Promise<void>}
  */
+async function testImmediateSolveRecoversLatestSnapshotAfterBackendFailure(handler) {
+  const solvePayload = buildTinySolvePayload();
+  const backgroundSolution = solve(solvePayload.grid, solvePayload.params);
+  const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+
+  optimizerRegistry.getOptimizerAdapter = () => ({
+    name: "cp-sat",
+    solve() {
+      throw new Error("Immediate recovery route test should use the background adapter.");
+    },
+    startBackgroundSolve() {
+      return {
+        promise: Promise.reject(new Error("CP-SAT backend exited after writing a feasible incumbent.")),
+        cancel() {},
+        getLatestSnapshot() {
+          return backgroundSolution;
+        },
+        getLatestSnapshotState() {
+          return {
+            hasFeasibleSolution: true,
+            totalPopulation: backgroundSolution.totalPopulation
+          };
+        }
+      };
+    }
+  });
+
+  try {
+    const result = await invoke(handler, {
+      method: "POST",
+      url: "/api/solve",
+      json: {
+        ...solvePayload,
+        params: {
+          ...solvePayload.params,
+          optimizer: "cp-sat"
+        }
+      }
+    });
+
+    assert.equal(result.statusCode, 200);
+    assert.equal(result.payload.ok, true);
+    assert.equal(
+      result.payload.message,
+      "Showing the best available solution captured before the solver stopped progressing."
+    );
+    assert.equal(result.payload.stats.totalPopulation, 100);
+    assert.equal(result.payload.solution.residentials.length, 1);
+    assertPlannerExplainabilityPayload(result.payload, solvePayload.grid);
+  } finally {
+    optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
+  }
+}
+
+/**
+ * @param {RouteTestHandler} handler
+ * @returns {Promise<void>}
+ */
 async function testImmediateSolveCancelsOnDisconnect(handler) {
   const solvePayload = buildTinySolvePayload();
   const backgroundSolution = solve(solvePayload.grid, solvePayload.params);
@@ -482,6 +540,7 @@ async function main() {
   await testStartSolveLeavesStandaloneGreedyTimeLimitUnset(handler);
   await testImmediateSolveRoute(handler);
   await testImmediateSolveBackendJsonErrorsReturnInternalServerError(handler);
+  await testImmediateSolveRecoversLatestSnapshotAfterBackendFailure(handler);
   await testImmediateSolveCancelsOnDisconnect(handler);
   await testBackgroundSolveRejectsImmediateSolveAtCapacity();
   await testImmediateSolveRejectsBackgroundSolveAtCapacity();

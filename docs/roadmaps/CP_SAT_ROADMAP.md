@@ -37,24 +37,24 @@ Detailed delivered notes live in [CP_SAT_ROADMAP_DELIVERED.md](./CP_SAT_ROADMAP_
 
 ## Remaining Work By Product Priority
 
-Ordering note: this CP-SAT-specific list follows the consolidated [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md). Road-semantics, telemetry, and async/portfolio failure-mode closeouts are delivered. The next CP-SAT priority is using the exact backend as a label and replay engine; distributed CP-SAT remains gated.
+Ordering note: this CP-SAT-specific list follows the consolidated [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md). Road-semantics, telemetry, async/portfolio failure-mode closeouts, and the local exact backend needed by label/replay workflows are delivered. There is no current active CP-SAT default-path change; future CP-SAT work should start only from a solver-roadmap trigger, and distributed CP-SAT remains gated.
 
-### 1. Use CP-SAT as a label and replay engine
+### 1. Support future solver-roadmap label/replay triggers
 
-Impact on target: high enabling value
+Status: delivered foundation, gated future use
 
 Why it matters:
 
-- learned ranking and better `LNS` control need trustworthy labels for "what would have happened if we repaired this different window?"
+- learned ranking and better `LNS` control still need trustworthy labels for "what would have happened if we repaired this different window?" whenever [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md) reopens learned guidance
 - CP-SAT already owns exact repair, warm starts, objective lower bounds, and progress telemetry
 - replay workloads can use CPU parallelism while still reporting total CPU budget beside wall-clock time
 
 Scope:
 
-- counterfactual `LNS` window replay under equal repair budgets
-- seed-quality comparisons for warm starts and objective lower bounds
-- exact upper-bound and gap export into shared traces
-- benchmark-safe replay harness that keeps final validation through the existing evaluator
+- preserve counterfactual `LNS` window replay under equal repair budgets
+- preserve seed-quality comparison, warm-start, objective-bound, and exact-gap trace support
+- keep benchmark-safe replay harnesses tied to evaluator-validated final layouts
+- wait for a fresh solver-roadmap trigger before expanding label/replay machinery
 
 Guardrails:
 

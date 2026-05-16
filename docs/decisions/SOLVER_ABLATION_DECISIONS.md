@@ -18,7 +18,7 @@ node --input-type=module -e '... runLnsNeighborhoodAblation(... seeds 7,19,37) .
 - No `safe-deterministic-candidate` was produced, so no promotion holdout rerun is required for this pass.
 - Greedy learning evidence exists only for connectivity-shadow scoring: it has isolated wins, zero population regressions, and positive mean wall-clock cost.
 - LNS learning evidence exists for anchor/window variants that move selected windows without population regressions.
-- Learned ranking remains blocked until label collection and held-out evaluation exist.
+- May 2026 posture update: learned label and held-out evaluation infrastructure now exists, but promotion gates are track-specific. Greedy ordering needs fixed-budget online wins against the current ordering with inference overhead accounted; learned-LNS promotion remains parked until protected/fresh value coverage appears or a materially different model class is proposed through the consolidated solver roadmap.
 
 ## Greedy Decisions
 
@@ -60,8 +60,9 @@ The deterministic ablation priority is complete as an evidence gate:
 - Components that tie baseline stay deterministic or default-off.
 - Components with isolated wins or window movement become label-collection targets, not learned-model changes.
 
-Next work should move to low-risk learned guidance preparation:
+This April follow-up plan is superseded by the May 2026 consolidated posture:
 
-1. Collect Greedy ordering labels around connectivity-shadow scoring opportunities.
-2. Expand LNS counterfactual window replay labels on development and holdout cases.
-3. Train nothing until label quality and holdout splits are established.
+1. Greedy ordering labels, LNS replay labels, and held-out evaluation plumbing now exist for diagnostics.
+2. Do not promote learned guidance by default from those diagnostics alone.
+3. Reopen Greedy ordering promotion only with fixed-budget online wins against the current ordering and accounted inference overhead.
+4. Reopen learned-LNS promotion only with new protected/fresh value coverage or a materially different model class.

@@ -2,7 +2,7 @@
 
 This file keeps completed solver-roadmap context out of the active plan. The current plan lives in [SOLVER_ROADMAP.md](SOLVER_ROADMAP.md).
 
-Reviewed through 2026-05-02.
+Reviewed through 2026-05-12.
 
 ## Delivered Snapshot
 
@@ -47,4 +47,4 @@ Reviewed through 2026-05-02.
 - Keep `greedy.profile` observational; profiling must not change placement behavior.
 - Keep Auto budget slicing honest so LNS work does not spend reserved CP-SAT time by accident.
 - Keep the experiment registry append-only; corrected metadata should use a new `runId`.
-- Keep LNS replay pressure cases as label-generation infrastructure until strict artifacts pass readiness, offline baselines, and online gates.
+- Keep LNS replay pressure cases as diagnostics and promotion-evidence infrastructure; strict/readiness/offline milestones have moved beyond a simple blocker, but protected/fresh online value must still clear the current gates before learned LNS promotion.

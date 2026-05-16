@@ -105,7 +105,7 @@ Target alignment:
 - added model-size telemetry to CP-SAT result payloads and benchmark text output
 - registered the scorecard artifact at `artifacts/cp-sat-road-semantics/2026-04-30/`
 - the 5s single-worker scorecard reached `OPTIMAL` on all six cases, including 200 population on `multi-anchor-road-components`
-- no solver default changed; the next CP-SAT priority is label and replay engine work
+- no solver default changed; future label/replay expansion is now gated by the consolidated solver roadmap
 
 ### 14. Initial async and portfolio failure-mode regressions
 
@@ -126,4 +126,4 @@ Target alignment:
 ## Notes
 
 - The library now also exposes an async CP-SAT path through `solveAsync(...)` and `solveCpSatAsync(...)`.
-- Remaining benchmark, distributed-execution, and label/replay work stays in [CP_SAT_ROADMAP.md](./CP_SAT_ROADMAP.md).
+- Remaining benchmark and distributed-execution work stays in [CP_SAT_ROADMAP.md](./CP_SAT_ROADMAP.md); label/replay expansion should only resume from a fresh [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md) trigger.

@@ -1,0 +1,120 @@
+=== Cross-Mode Budget Ablations ===
+Generated: 2026-05-07T20:14:25.596Z
+Cases: 1
+Modes: Auto
+Equal wall-clock budgets: 5s per mode
+Seeds: 37
+Coverage: policies=3 scorecards=3 mode-runs=3 budgeted-mode-seconds=15
+Baseline policy: baseline
+Top policy by Auto mean population: baseline tied=baseline,baseline-repeat,lns-seed-reserve-5s-guarded (ties prefer baseline; inspect budget signals before promotion)
+
+- baseline: Current Auto/LNS budget policy.
+  mean-best=505.0 delta-vs-baseline=0 mean-auto=505.0 auto-delta-vs-baseline=0 mean-lns=n/a lns-delta-vs-baseline=n/a mean-auto-gap=0
+  auto-stage-mean=lns:4.795s cp-sat:n/a recommendations=keep-auto:1
+  auto-safety=paired=1 delta-mean=0 delta-median=0 delta-worst-decile=0 delta-worst=0 regressed=0 regression-rate=0.000 cpu-eff-ratio=1.000 wall-delta-mean=0.000s
+  auto-variance=repeat=baseline-repeat paired=1 inside=1 outside=0 outside-neg=0 outside-pos=0 repeat-range=0..0 candidate-range=0..0 candidate-mean=0 beyond-mean-abs=0 beyond-worst=0 beyond-best=0
+  budget=5s cases=1 mean-best=505.0 delta-vs-baseline=0 mean-auto=505.0 auto-delta-vs-baseline=0 mean-lns=n/a lns-delta-vs-baseline=n/a mean-auto-gap=0 auto-safety=paired=1 delta-mean=0 delta-median=0 delta-worst-decile=0 delta-worst=0 regressed=0 regression-rate=0.000 cpu-eff-ratio=1.000 wall-delta-mean=0.000s recommendations=keep-auto:1
+- baseline-repeat: Repeat the current Auto/LNS budget policy as a short-budget variance control.
+  mean-best=505.0 delta-vs-baseline=0 mean-auto=505.0 auto-delta-vs-baseline=0 mean-lns=n/a lns-delta-vs-baseline=n/a mean-auto-gap=0
+  auto-stage-mean=lns:4.893s cp-sat:n/a recommendations=keep-auto:1
+  auto-safety=paired=1 delta-mean=0 delta-median=0 delta-worst-decile=0 delta-worst=0 regressed=0 regression-rate=0.000 cpu-eff-ratio=1.000 wall-delta-mean=+0.198s
+  auto-variance=repeat=baseline-repeat paired=1 inside=1 outside=0 outside-neg=0 outside-pos=0 repeat-range=0..0 candidate-range=0..0 candidate-mean=0 beyond-mean-abs=0 beyond-worst=0 beyond-best=0
+  budget=5s cases=1 mean-best=505.0 delta-vs-baseline=0 mean-auto=505.0 auto-delta-vs-baseline=0 mean-lns=n/a lns-delta-vs-baseline=n/a mean-auto-gap=0 auto-safety=paired=1 delta-mean=0 delta-median=0 delta-worst-decile=0 delta-worst=0 regressed=0 regression-rate=0.000 cpu-eff-ratio=1.000 wall-delta-mean=+0.198s recommendations=keep-auto:1
+- lns-seed-reserve-5s-guarded: Shorten LNS seed and reserve a small Auto CP-SAT slice at the 5s budget.
+  mean-best=505.0 delta-vs-baseline=0 mean-auto=505.0 auto-delta-vs-baseline=0 mean-lns=n/a lns-delta-vs-baseline=n/a mean-auto-gap=0
+  auto-stage-mean=lns:5.113s cp-sat:n/a recommendations=keep-auto:1
+  auto-safety=paired=1 delta-mean=0 delta-median=0 delta-worst-decile=0 delta-worst=0 regressed=0 regression-rate=0.000 cpu-eff-ratio=1.000 wall-delta-mean=+0.466s
+  auto-variance=repeat=baseline-repeat paired=1 inside=1 outside=0 outside-neg=0 outside-pos=0 repeat-range=0..0 candidate-range=0..0 candidate-mean=0 beyond-mean-abs=0 beyond-worst=0 beyond-best=0
+  budget=5s cases=1 mean-best=505.0 delta-vs-baseline=0 mean-auto=505.0 auto-delta-vs-baseline=0 mean-lns=n/a lns-delta-vs-baseline=n/a mean-auto-gap=0 auto-safety=paired=1 delta-mean=0 delta-median=0 delta-worst-decile=0 delta-worst=0 regressed=0 regression-rate=0.000 cpu-eff-ratio=1.000 wall-delta-mean=+0.466s recommendations=keep-auto:1
+
+Policy scorecards:
+
+## baseline
+=== Cross-Mode Benchmark Scorecard ===
+Generated: 2026-05-07T20:14:14.231Z
+Cases: 1
+Modes: Auto
+Equal wall-clock budgets: 5s per mode
+Seeds: 37
+
+- typed-footprint-pressure: Typed 2x2 variants share footprints, and a second service keeps the dynamic grouped scorer hot.
+  band=small split=development workflow=footprint-pressure budget=5s seed=37 best=505 winner=Auto grid=6x6
+  Auto: rank=1 score=505 delta=best win-vs-auto=baseline auto-delta=0 wall=5.325s cpu-budget=5s observed-cpu=n/a pop/cpu-budget=101.000 roads=5 services=2 residentials=4
+    progress=current=505 best=505 stage=lns reuse=hint elapsed=5.325s since-improve=n/a stop=wall-clock-cap gap=n/a
+    quality=first-feasible=0.284s first-improve=0.284s best=505@0.284s improvements=2 time-checkpoints=5.000s:505,30.000s:505,120.000s:505 quality-targets=50%:0.284s,90%:0.284s,100%:0.284s trace-events=17
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=106.5% unused=0.000s overrun=0.325s first-improve=0.284s best=0.284s after-best=5.041s improvements/s=0.376 auto-best-delta=0.000s
+    reason=Auto greedy seed produced population 505.
+    seed-policy=lns-seed-limit:1.000s lns-seed-wall:0.005s lns-seed-phases:0 auto-greedy-seed-limit:5.000s auto-greedy-seed-wall:0.527s auto-greedy-seed-phases:8
+
+Mode summaries:
+- Auto: runs=1 mean=505.0 best=505 worst=505 seed-stddev=0.0 win-rate-vs-auto=n/a
+
+Budget policy signals:
+- typed-footprint-pressure budget=5s seed=37 recommendation=keep-auto auto=505 best=Auto:505 auto-gap=0 lns-vs-auto=n/a auto-lns=4.795s/+0 auto-cp-sat=n/a/+n/a reason=Auto matched the best score 505 at 5s. Auto LNS used 4.795s for +0 accepted population.
+
+Portfolio efficiency signals:
+- No paired CP-SAT / CP-SAT portfolio runs.
+
+Problem-size summaries:
+- small Auto: mean=505.0 best=505 win-rate-vs-auto=n/a
+
+## baseline-repeat
+=== Cross-Mode Benchmark Scorecard ===
+Generated: 2026-05-07T20:14:19.762Z
+Cases: 1
+Modes: Auto
+Equal wall-clock budgets: 5s per mode
+Seeds: 37
+
+- typed-footprint-pressure: Typed 2x2 variants share footprints, and a second service keeps the dynamic grouped scorer hot.
+  band=small split=development workflow=footprint-pressure budget=5s seed=37 best=505 winner=Auto grid=6x6
+  Auto: rank=1 score=505 delta=best win-vs-auto=baseline auto-delta=0 wall=5.523s cpu-budget=5s observed-cpu=n/a pop/cpu-budget=101.000 roads=5 services=2 residentials=4
+    progress=current=505 best=505 stage=lns reuse=hint elapsed=5.523s since-improve=n/a stop=wall-clock-cap gap=n/a
+    quality=first-feasible=0.314s first-improve=0.314s best=505@0.314s improvements=2 time-checkpoints=5.000s:505,30.000s:505,120.000s:505 quality-targets=50%:0.314s,90%:0.314s,100%:0.314s trace-events=17
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=110.5% unused=0.000s overrun=0.523s first-improve=0.314s best=0.314s after-best=5.209s improvements/s=0.362 auto-best-delta=0.000s
+    reason=Auto greedy seed produced population 505.
+    seed-policy=lns-seed-limit:1.000s lns-seed-wall:0.008s lns-seed-phases:0 auto-greedy-seed-limit:5.000s auto-greedy-seed-wall:0.629s auto-greedy-seed-phases:8
+
+Mode summaries:
+- Auto: runs=1 mean=505.0 best=505 worst=505 seed-stddev=0.0 win-rate-vs-auto=n/a
+
+Budget policy signals:
+- typed-footprint-pressure budget=5s seed=37 recommendation=keep-auto auto=505 best=Auto:505 auto-gap=0 lns-vs-auto=n/a auto-lns=4.893s/+0 auto-cp-sat=n/a/+n/a reason=Auto matched the best score 505 at 5s. Auto LNS used 4.893s for +0 accepted population.
+
+Portfolio efficiency signals:
+- No paired CP-SAT / CP-SAT portfolio runs.
+
+Problem-size summaries:
+- small Auto: mean=505.0 best=505 win-rate-vs-auto=n/a
+
+## lns-seed-reserve-5s-guarded
+=== Cross-Mode Benchmark Scorecard ===
+Generated: 2026-05-07T20:14:25.559Z
+Cases: 1
+Modes: Auto
+Equal wall-clock budgets: 5s per mode
+Seeds: 37
+
+- typed-footprint-pressure: Typed 2x2 variants share footprints, and a second service keeps the dynamic grouped scorer hot.
+  band=small split=development workflow=footprint-pressure budget=5s seed=37 best=505 winner=Auto grid=6x6
+  Auto: rank=1 score=505 delta=best win-vs-auto=baseline auto-delta=0 wall=5.791s cpu-budget=5s observed-cpu=n/a pop/cpu-budget=101.000 roads=5 services=2 residentials=4
+    progress=current=505 best=505 stage=lns reuse=hint elapsed=5.791s since-improve=n/a stop=wall-clock-cap gap=n/a
+    quality=first-feasible=0.466s first-improve=0.466s best=505@0.466s improvements=2 time-checkpoints=5.000s:505,30.000s:505,120.000s:505 quality-targets=50%:0.466s,90%:0.466s,100%:0.466s trace-events=17
+    road-semantics=anchor-connected anchor-roads=1 anchor-connected=5 disconnected=0 connected-ratio=1.000 adjacent-buildings=6 unadjacent-buildings=0
+    budget-signal=over-budget use=115.8% unused=0.000s overrun=0.791s first-improve=0.466s best=0.466s after-best=5.325s improvements/s=0.345 auto-best-delta=0.000s
+    reason=Auto greedy seed produced population 505.
+    seed-policy=lns-seed-limit:0.250s lns-seed-wall:0.004s lns-seed-phases:0 auto-greedy-seed-limit:5.000s auto-greedy-seed-wall:0.676s auto-greedy-seed-phases:8
+
+Mode summaries:
+- Auto: runs=1 mean=505.0 best=505 worst=505 seed-stddev=0.0 win-rate-vs-auto=n/a
+
+Budget policy signals:
+- typed-footprint-pressure budget=5s seed=37 recommendation=keep-auto auto=505 best=Auto:505 auto-gap=0 lns-vs-auto=n/a auto-lns=5.113s/+0 auto-cp-sat=n/a/+n/a reason=Auto matched the best score 505 at 5s. Auto LNS used 5.113s for +0 accepted population.
+
+Portfolio efficiency signals:
+- No paired CP-SAT / CP-SAT portfolio runs.
+
+Problem-size summaries:
+- small Auto: mean=505.0 best=505 win-rate-vs-auto=n/a

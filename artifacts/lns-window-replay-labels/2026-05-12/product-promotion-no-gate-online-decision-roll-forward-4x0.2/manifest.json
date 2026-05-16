@@ -1,0 +1,191 @@
+{
+  "artifactDir": "artifacts/lns-window-replay-labels/2026-05-12/product-promotion-no-gate-online-decision-roll-forward-4x0.2",
+  "artifactPaths": {
+    "replayJson": "artifacts/lns-window-replay-labels/2026-05-12/product-promotion-no-gate-online-decision-roll-forward-4x0.2/lns-window-replay-labels.json",
+    "replayText": "artifacts/lns-window-replay-labels/2026-05-12/product-promotion-no-gate-online-decision-roll-forward-4x0.2/lns-window-replay-labels.txt",
+    "repeatabilitySummaryJson": "artifacts/lns-window-replay-labels/2026-05-12/product-promotion-no-gate-online-decision-roll-forward-4x0.2/repeatability-summary.json",
+    "telemetryManifestJson": "artifacts/lns-window-replay-labels/2026-05-12/product-promotion-no-gate-online-decision-roll-forward-4x0.2/telemetry-manifest.json",
+    "registryEntryDraftJson": "artifacts/lns-window-replay-labels/2026-05-12/product-promotion-no-gate-online-decision-roll-forward-4x0.2/registry-entry-draft.json",
+    "manifestJson": "artifacts/lns-window-replay-labels/2026-05-12/product-promotion-no-gate-online-decision-roll-forward-4x0.2/manifest.json"
+  },
+  "command": "node dist/lnsBenchmarkCli.js --window-replay-labels --window-replay-product-promotion-holdout --window-replay-online-scorecard=artifacts/lns-window-ranker-online/2026-05-12/product-promotion-two-iteration-trajectory-features-no-selected-feature-gate-3seed-min-score-delta-0/lns-window-ranker-online-ablation.json --window-replay-artifact-dir=artifacts/lns-window-replay-labels/2026-05-12/product-promotion-no-gate-online-decision-roll-forward-4x0.2 --roll-forward-iterations=4 --roll-forward-repair-time=0.2",
+  "generatedAt": "2026-05-12T00:26:02.848Z",
+  "inputFingerprint": "fnv1a:56806085",
+  "labelFingerprint": "fnv1a:438524a9",
+  "caseCount": 4,
+  "seedCount": 3,
+  "stateCount": 24,
+  "labelCount": 201,
+  "rollForwardLabelCount": 201,
+  "selectedCaseNames": [
+    "lns-product-typed-footprint-pressure",
+    "lns-product-service-local-pressure",
+    "lns-product-manual-layout-replay-pressure",
+    "lns-product-expansion-comparison-replay-pressure"
+  ],
+  "pressureFamilies": [
+    "product-footprint",
+    "product-service",
+    "product-warm-start",
+    "product-expansion"
+  ],
+  "repeatabilitySummary": {
+    "schemaVersion": 1,
+    "rollForwardLabelCount": 201,
+    "bucketCount": 49,
+    "repeatedBucketCount": 49,
+    "mixedFinalStatusBucketCount": 9,
+    "conflictingFinalStatusBucketCount": 4,
+    "conflictingLabelCount": 18,
+    "conflictingStatusCounts": {
+      "improved": 6,
+      "neutral": 6,
+      "regressed": 6,
+      "unknown": 0
+    },
+    "featureIdenticalConflictBucketCount": 2,
+    "featureIdenticalConflictLabelCount": 6,
+    "examples": [
+      {
+        "caseName": "lns-product-expansion-comparison-replay-pressure",
+        "pressureFamily": "product-expansion",
+        "statePolicy": "online-decision",
+        "operator": "gate-choke",
+        "window": "1:0:3x3",
+        "labelCount": 6,
+        "seedCount": 3,
+        "seeds": [
+          7,
+          19,
+          37
+        ],
+        "statusCounts": {
+          "improved": 3,
+          "neutral": 0,
+          "regressed": 3,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -35,
+          35,
+          70
+        ],
+        "baselineTotals": [
+          675,
+          710,
+          745
+        ],
+        "totalPopulations": [
+          710,
+          745
+        ],
+        "featureFingerprintCount": 2
+      },
+      {
+        "caseName": "lns-product-expansion-comparison-replay-pressure",
+        "pressureFamily": "product-expansion",
+        "statePolicy": "online-decision",
+        "operator": "weak-service",
+        "window": "1:2:3x3",
+        "labelCount": 6,
+        "seedCount": 3,
+        "seeds": [
+          7,
+          19,
+          37
+        ],
+        "statusCounts": {
+          "improved": 1,
+          "neutral": 4,
+          "regressed": 1,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -35,
+          0,
+          35
+        ],
+        "baselineTotals": [
+          675,
+          710,
+          745
+        ],
+        "totalPopulations": [
+          675,
+          710,
+          745,
+          780
+        ],
+        "featureFingerprintCount": 2
+      },
+      {
+        "caseName": "lns-product-expansion-comparison-replay-pressure",
+        "pressureFamily": "product-expansion",
+        "statePolicy": "online-decision",
+        "operator": "residential-headroom",
+        "window": "2:3:3x3",
+        "labelCount": 3,
+        "seedCount": 3,
+        "seeds": [
+          7,
+          19,
+          37
+        ],
+        "statusCounts": {
+          "improved": 1,
+          "neutral": 1,
+          "regressed": 1,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -35,
+          0,
+          35
+        ],
+        "baselineTotals": [
+          675,
+          710
+        ],
+        "totalPopulations": [
+          675,
+          710
+        ],
+        "featureFingerprintCount": 1
+      },
+      {
+        "caseName": "lns-product-expansion-comparison-replay-pressure",
+        "pressureFamily": "product-expansion",
+        "statePolicy": "online-decision",
+        "operator": "service-overlap",
+        "window": "1:2:3x3",
+        "labelCount": 3,
+        "seedCount": 3,
+        "seeds": [
+          7,
+          19,
+          37
+        ],
+        "statusCounts": {
+          "improved": 1,
+          "neutral": 1,
+          "regressed": 1,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -35,
+          0,
+          35
+        ],
+        "baselineTotals": [
+          745
+        ],
+        "totalPopulations": [
+          710,
+          745,
+          780
+        ],
+        "featureFingerprintCount": 1
+      }
+    ]
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "artifactDir": "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-12/product-promotion-runtime-suppressor-weight20-pressure-validation-greedy-default-validation-gate-9seed-min-score-delta-0.5-veto21.3",
+  "artifactPaths": {
+    "evaluationJson": "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-12/product-promotion-runtime-suppressor-weight20-pressure-validation-greedy-default-validation-gate-9seed-min-score-delta-0.5-veto21.3/lns-online-selected-feature-gate-nomination-evaluation.json",
+    "evaluationText": "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-12/product-promotion-runtime-suppressor-weight20-pressure-validation-greedy-default-validation-gate-9seed-min-score-delta-0.5-veto21.3/lns-online-selected-feature-gate-nomination-evaluation.txt",
+    "telemetryManifestJson": "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-12/product-promotion-runtime-suppressor-weight20-pressure-validation-greedy-default-validation-gate-9seed-min-score-delta-0.5-veto21.3/telemetry-manifest.json",
+    "registryEntryDraftJson": "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-12/product-promotion-runtime-suppressor-weight20-pressure-validation-greedy-default-validation-gate-9seed-min-score-delta-0.5-veto21.3/registry-entry-draft.json",
+    "manifestJson": "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-12/product-promotion-runtime-suppressor-weight20-pressure-validation-greedy-default-validation-gate-9seed-min-score-delta-0.5-veto21.3/manifest.json"
+  },
+  "command": "node scripts/evaluate-lns-online-selected-feature-gates.mjs --discovery-artifact=artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-default-validation-runtime-suppressor-weight20-final-outcome-pressure-gate-search --artifact-dir=artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-12/product-promotion-runtime-suppressor-weight20-pressure-validation-greedy-default-validation-gate-9seed-min-score-delta-0.5-veto21.3 --candidate-source=validation-greedy --candidate-count=1 --runner=dist/lnsBenchmarkCli.js --window-ranker-model=artifacts/lns-window-ranker/2026-05-12/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-product-promotion-online-decision-selected-pair-supervision-weight0.1-trajectory-ignore-baseline-conflict-excluded-calibration-lr0.02-cap100/model.json --window-ranker-min-score-delta=0.5 --window-ranker-suppression-model=artifacts/lns-window-ranker/2026-05-12/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-protected-neutral-suppressor-weight20-trajectory-ignore-baseline-conflict-excluded-calibration-lr0.02-cap100/model.json --window-ranker-suppression-min-score-delta=21.3 --seeds=7,11,13,19,23,29,31,37,43 --lns-iterations=2 --window-ranker-product-promotion-holdout --run-id-prefix=lns-online-selected-feature-gate-nomination-2026-05-12-product-runtime-suppressor-weight20-pressure-validation-greedy-default-validation --decision=online-runtime-split-head-validation-aware-nomination-gate-evaluation '--summary=Validation-aware pressure gate evaluation for runtime split-head diagnostics. No solver default changed.' --benchmark-arg=--repair-time=0.2 --force-artifact-dir",
+  "generatedAt": "2026-05-12T10:13:29.453Z",
+  "discoveryJson": "artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-default-validation-runtime-suppressor-weight20-final-outcome-pressure-gate-search/online-selected-feature-gate-discovery.json",
+  "discoveryFingerprint": "fnv1a:1310728d",
+  "inputFingerprint": "fnv1a:d0af9280",
+  "evaluationFingerprint": "fnv1a:08b60a26",
+  "reportFingerprint": "fnv1a:022a695d",
+  "benchmark": {
+    "runner": "dist/lnsBenchmarkCli.js",
+    "protectedHoldout": false,
+    "productPromotionHoldout": true,
+    "protectedCorpus": "product-promotion-holdout",
+    "seeds": "7,11,13,19,23,29,31,37,43",
+    "lnsIterations": 2,
+    "windowRankerModel": "artifacts/lns-window-ranker/2026-05-12/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-product-promotion-online-decision-selected-pair-supervision-weight0.1-trajectory-ignore-baseline-conflict-excluded-calibration-lr0.02-cap100/model.json",
+    "windowRankerMinScoreDelta": 0.5,
+    "windowRankerSuppressionModel": "artifacts/lns-window-ranker/2026-05-12/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-protected-neutral-suppressor-weight20-trajectory-ignore-baseline-conflict-excluded-calibration-lr0.02-cap100/model.json",
+    "windowRankerSuppressionMinScoreDelta": 21.3,
+    "benchmarkArgs": [
+      "--repair-time=0.2"
+    ]
+  },
+  "candidateArtifacts": [
+    {
+      "evaluationIndex": 1,
+      "cliArg": "residentialCandidateHeadroom>=4.86",
+      "artifactDir": "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-12/product-promotion-runtime-suppressor-weight20-pressure-validation-greedy-default-validation-gate-9seed-min-score-delta-0.5-veto21.3/candidate-001-residentialcandidateheadroom-4-86",
+      "scorecardPath": "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-12/product-promotion-runtime-suppressor-weight20-pressure-validation-greedy-default-validation-gate-9seed-min-score-delta-0.5-veto21.3/candidate-001-residentialcandidateheadroom-4-86/lns-window-ranker-online-ablation.json"
+    }
+  ],
+  "generator": {
+    "script": "scripts/evaluate-lns-online-selected-feature-gates.mjs",
+    "requiresBuild": true,
+    "command": "node scripts/evaluate-lns-online-selected-feature-gates.mjs --discovery-artifact=artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-default-validation-runtime-suppressor-weight20-final-outcome-pressure-gate-search --artifact-dir=artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-12/product-promotion-runtime-suppressor-weight20-pressure-validation-greedy-default-validation-gate-9seed-min-score-delta-0.5-veto21.3 --candidate-source=validation-greedy --candidate-count=1 --runner=dist/lnsBenchmarkCli.js --window-ranker-model=artifacts/lns-window-ranker/2026-05-12/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-product-promotion-online-decision-selected-pair-supervision-weight0.1-trajectory-ignore-baseline-conflict-excluded-calibration-lr0.02-cap100/model.json --window-ranker-min-score-delta=0.5 --window-ranker-suppression-model=artifacts/lns-window-ranker/2026-05-12/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-protected-neutral-suppressor-weight20-trajectory-ignore-baseline-conflict-excluded-calibration-lr0.02-cap100/model.json --window-ranker-suppression-min-score-delta=21.3 --seeds=7,11,13,19,23,29,31,37,43 --lns-iterations=2 --window-ranker-product-promotion-holdout --run-id-prefix=lns-online-selected-feature-gate-nomination-2026-05-12-product-runtime-suppressor-weight20-pressure-validation-greedy-default-validation --decision=online-runtime-split-head-validation-aware-nomination-gate-evaluation '--summary=Validation-aware pressure gate evaluation for runtime split-head diagnostics. No solver default changed.' --benchmark-arg=--repair-time=0.2 --force-artifact-dir"
+  }
+}

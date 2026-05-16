@@ -1,0 +1,471 @@
+import type {
+  BackgroundSolveHandle,
+  BackgroundSolveSnapshotState,
+  Grid,
+  OptimizerName,
+  Solution,
+  SolveProgressLogEntry,
+  SolverParams
+} from "../../core/index.js";
+import { getOptimizerAdapter, type OptimizerFinalizationContext } from "../dispatch/optimizerRegistry.js";
+import {
+  DEFAULT_SOLVE_PROGRESS_LOG_ROOT,
+  progressLogSolutionSampleChanged,
+  readLatestSolveProgressLogByRequestId,
+  SolveProgressLogWriter,
+  type SolveProgressLogReadResult
+} from "./solveProgressLog.js";
+
+export type SolveJobStatus = "running" | "completed" | "stopped" | "failed";
+
+const DEFAULT_PROGRESS_LOG_INTERVAL_MS = 60 * 1000;
+const DEFAULT_PROGRESS_LOG_POLL_INTERVAL_MS = 5 * 1000;
+const DEFAULT_COMPLETED_JOB_RETENTION_MS = 15 * 60 * 1000;
+const DEFAULT_MAX_RETAINED_COMPLETED_JOBS = 64;
+const DEFAULT_MAX_RUNNING_SOLVES = 1;
+
+export interface SolveJobManagerOptions {
+  progressLogRoot?: string;
+  progressLogIntervalMs?: number;
+  progressLogPollIntervalMs?: number;
+  completedJobRetentionMs?: number;
+  maxRetainedCompletedJobs?: number;
+  maxRunningSolves?: number;
+}
+
+export interface SolveJob {
+  requestId: string;
+  optimizer: OptimizerName;
+  grid: Grid;
+  params: SolverParams;
+  status: SolveJobStatus;
+  cancelRequested: boolean;
+  handle: BackgroundSolveHandle | null;
+  solution: Solution | null;
+  message: string | null;
+  error: string | null;
+  createdAt: number;
+  finishedAt?: number;
+  progressLogFilePath: string;
+  progressLogWriter: SolveProgressLogWriter;
+  progressLogIntervalHandle: NodeJS.Timeout | null;
+}
+
+export type SolveJobSnapshotState = BackgroundSolveSnapshotState;
+
+export interface SolveJobStatusView {
+  job: SolveJob;
+  snapshotState: SolveJobSnapshotState;
+  liveSnapshot: Solution | null;
+}
+
+export interface SolveAdmissionLease {
+  release(): void;
+}
+
+export interface SolveSettlementContext {
+  optimizer: OptimizerName;
+  handle: BackgroundSolveHandle | null;
+  cancelRequested: boolean;
+  lastProgressEntry: SolveProgressLogEntry | null;
+}
+
+export type SolveSettlement =
+  | {
+      status: Exclude<SolveJobStatus, "running" | "failed">;
+      solution: Solution;
+      message: string | null;
+      error: null;
+    }
+  | {
+      status: Exclude<SolveJobStatus, "running" | "completed">;
+      solution: null;
+      message: string | null;
+      error: string;
+    };
+
+function buildRecoveredSolveMessage(optimizer: OptimizerName, solution: Solution, error: unknown): string {
+  const adapter = getOptimizerAdapter(optimizer);
+  return (
+    adapter.describeRecoveredSolution?.(solution, error) ??
+    "Showing the best available solution captured before the solver stopped progressing."
+  );
+}
+
+function buildCompletedSolveMessage(optimizer: OptimizerName, solution: Solution): string | null {
+  return getOptimizerAdapter(optimizer).describeCompletedSolution?.(solution) ?? null;
+}
+
+function buildStoppedSolveMessage(): string {
+  return "Solve was stopped by user. Showing the best feasible result found so far.";
+}
+
+function buildStoppedBeforeFeasibleMessage(): string {
+  return "Solve was stopped before a feasible solution was found.";
+}
+
+function buildOptimizerFinalizationContext(context: SolveSettlementContext): OptimizerFinalizationContext {
+  return {
+    cancelRequested: context.cancelRequested,
+    snapshotState: context.handle?.getLatestSnapshotState() ?? null,
+    lastProgressEntry: context.lastProgressEntry
+  };
+}
+
+function normalizeTerminalSolution(context: SolveSettlementContext, solution: Solution): Solution {
+  const adapter = getOptimizerAdapter(context.optimizer);
+  return adapter.normalizeTerminalSolution?.(solution, buildOptimizerFinalizationContext(context)) ?? solution;
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "Unknown solver error.";
+}
+
+export function settleSuccessfulSolve(solution: Solution, context: SolveSettlementContext): SolveSettlement {
+  if (context.cancelRequested && !solution.stoppedByUser) {
+    solution = {
+      ...solution,
+      stoppedByUser: true
+    };
+  }
+  solution = normalizeTerminalSolution(context, solution);
+  const status = solution.stoppedByUser || context.cancelRequested ? "stopped" : "completed";
+  const message =
+    status === "stopped" ? buildStoppedSolveMessage() : buildCompletedSolveMessage(context.optimizer, solution);
+  return {
+    status,
+    solution,
+    message,
+    error: null
+  };
+}
+
+export function settleFailedSolve(error: unknown, context: SolveSettlementContext): SolveSettlement {
+  const recoveredSolution = context.handle?.getLatestSnapshot() ?? null;
+  if (recoveredSolution) {
+    let solution: Solution = {
+      ...recoveredSolution,
+      stoppedByUser: context.cancelRequested ? true : Boolean(recoveredSolution.stoppedByUser)
+    };
+    solution = normalizeTerminalSolution(context, solution);
+    const status = context.cancelRequested ? "stopped" : "completed";
+    const message = context.cancelRequested
+      ? buildStoppedSolveMessage()
+      : buildRecoveredSolveMessage(context.optimizer, solution, error);
+    return {
+      status,
+      solution,
+      message,
+      error: null
+    };
+  }
+
+  return {
+    status: context.cancelRequested ? "stopped" : "failed",
+    solution: null,
+    message: context.cancelRequested ? buildStoppedBeforeFeasibleMessage() : null,
+    error: getErrorMessage(error)
+  };
+}
+
+export class SolveJobManager {
+  private readonly jobs = new Map<string, SolveJob>();
+  private readonly progressLogRoot: string;
+  private readonly progressLogIntervalMs: number;
+  private readonly progressLogPollIntervalMs: number;
+  private readonly completedJobRetentionMs: number;
+  private readonly maxRetainedCompletedJobs: number;
+  private readonly maxRunningSolves: number;
+  private runningImmediateSolves = 0;
+
+  constructor(options: SolveJobManagerOptions = {}) {
+    this.progressLogRoot = options.progressLogRoot ?? DEFAULT_SOLVE_PROGRESS_LOG_ROOT;
+    this.progressLogIntervalMs = options.progressLogIntervalMs ?? DEFAULT_PROGRESS_LOG_INTERVAL_MS;
+    this.progressLogPollIntervalMs = options.progressLogPollIntervalMs ?? DEFAULT_PROGRESS_LOG_POLL_INTERVAL_MS;
+    this.completedJobRetentionMs = Math.max(0, options.completedJobRetentionMs ?? DEFAULT_COMPLETED_JOB_RETENTION_MS);
+    this.maxRetainedCompletedJobs = Math.max(
+      1,
+      options.maxRetainedCompletedJobs ?? DEFAULT_MAX_RETAINED_COMPLETED_JOBS
+    );
+    const requestedMaxRunningSolves = options.maxRunningSolves ?? DEFAULT_MAX_RUNNING_SOLVES;
+    this.maxRunningSolves = Number.isFinite(requestedMaxRunningSolves)
+      ? Math.max(1, Math.floor(requestedMaxRunningSolves))
+      : DEFAULT_MAX_RUNNING_SOLVES;
+  }
+
+  getRunningSolveCount(excludedRequestId?: string): number {
+    this.pruneJobs();
+    let runningSolveCount = this.runningImmediateSolves;
+    for (const [requestId, job] of this.jobs) {
+      if (requestId === excludedRequestId) continue;
+      if (job.status === "running") runningSolveCount += 1;
+    }
+    return runningSolveCount;
+  }
+
+  canStartSolve(excludedRequestId?: string): boolean {
+    return this.getRunningSolveCount(excludedRequestId) < this.maxRunningSolves;
+  }
+
+  tryAcquireImmediateSolve(): SolveAdmissionLease | null {
+    if (!this.canStartSolve()) return null;
+
+    this.runningImmediateSolves += 1;
+    let released = false;
+    return {
+      release: () => {
+        if (released) return;
+        released = true;
+        this.runningImmediateSolves = Math.max(0, this.runningImmediateSolves - 1);
+      }
+    };
+  }
+
+  start(grid: Grid, params: SolverParams, requestId: string): SolveJob {
+    this.pruneJobs();
+    const optimizerAdapter = getOptimizerAdapter(params);
+    const optimizer = optimizerAdapter.name;
+    const handle = optimizerAdapter.startBackgroundSolve(grid, params);
+    const createdAt = Date.now();
+
+    let job: SolveJob;
+    try {
+      const progressLogWriter = new SolveProgressLogWriter({
+        rootDirectory: this.progressLogRoot,
+        requestId,
+        optimizer,
+        grid,
+        params,
+        createdAtMs: createdAt
+      });
+      job = {
+        requestId,
+        optimizer,
+        grid,
+        params,
+        status: "running",
+        cancelRequested: false,
+        handle,
+        solution: null,
+        message: null,
+        error: null,
+        createdAt,
+        progressLogFilePath: progressLogWriter.filePath,
+        progressLogWriter,
+        progressLogIntervalHandle: null
+      };
+
+      this.jobs.set(requestId, job);
+      job.progressLogWriter.appendPendingSample({
+        elapsedMs: 0
+      });
+      job.progressLogIntervalHandle = this.startProgressLogTicker(job);
+    } catch (error) {
+      void handle.promise.catch(() => undefined);
+      handle.cancel();
+      this.jobs.delete(requestId);
+      throw error;
+    }
+
+    void handle.promise
+      .then((solution) => {
+        if (job.status !== "running") return;
+        this.finalizeJobWithSettlement(job, settleSuccessfulSolve(solution, this.buildSettlementContext(job)));
+      })
+      .catch((error) => {
+        if (job.status !== "running") return;
+        this.finalizeJobWithSettlement(job, settleFailedSolve(error, this.buildSettlementContext(job)));
+      })
+      .finally(() => {
+        this.releaseJobResources(job);
+      });
+
+    return job;
+  }
+
+  get(requestId: string): SolveJob | null {
+    this.pruneJobs();
+    return this.jobs.get(requestId) ?? null;
+  }
+
+  replaceIfIdle(requestId: string): SolveJob | null {
+    this.pruneJobs();
+    const existingJob = this.jobs.get(requestId) ?? null;
+    if (existingJob && existingJob.status !== "running") {
+      this.jobs.delete(requestId);
+    }
+    return existingJob;
+  }
+
+  getStatus(requestId: string, includeSnapshot: boolean): SolveJobStatusView | null {
+    this.pruneJobs();
+    const job = this.jobs.get(requestId) ?? null;
+    if (!job) return null;
+
+    const snapshotState = job.handle?.getLatestSnapshotState() ?? {
+      hasFeasibleSolution: false,
+      totalPopulation: null
+    };
+
+    return {
+      job,
+      snapshotState,
+      liveSnapshot: includeSnapshot ? (job.handle?.getLatestSnapshot() ?? null) : null
+    };
+  }
+
+  getProgressLogStatus(requestId: string): SolveProgressLogReadResult | null {
+    this.pruneJobs();
+    if (this.jobs.has(requestId)) return null;
+    return readLatestSolveProgressLogByRequestId(this.progressLogRoot, requestId);
+  }
+
+  cancel(requestId: string): SolveJob | null {
+    this.pruneJobs();
+    const job = this.jobs.get(requestId) ?? null;
+    if (!job || job.status !== "running" || !job.handle) {
+      return job;
+    }
+
+    job.cancelRequested = true;
+    job.handle.cancel();
+    return job;
+  }
+
+  shutdownRunningSolves(error = "Local web server stopped before the solve finished."): void {
+    for (const job of this.jobs.values()) {
+      if (job.status !== "running") continue;
+      job.cancelRequested = true;
+      if (job.handle?.forceKill) {
+        job.handle.forceKill();
+      } else {
+        job.handle?.cancel();
+      }
+      this.finalizeJobWithSettlement(job, settleFailedSolve(new Error(error), this.buildSettlementContext(job)));
+      this.releaseJobResources(job);
+    }
+  }
+
+  private buildSettlementContext(job: SolveJob): SolveSettlementContext {
+    return {
+      optimizer: job.optimizer,
+      handle: job.handle,
+      cancelRequested: job.cancelRequested,
+      lastProgressEntry: job.progressLogWriter.getLastEntry()
+    };
+  }
+
+  private pruneJobs(now = Date.now()): void {
+    const retainedCompletedJobs: SolveJob[] = [];
+
+    for (const [requestId, job] of this.jobs) {
+      if (job.status === "running") continue;
+
+      const finishedAt = job.finishedAt ?? job.createdAt;
+      if (now - finishedAt > this.completedJobRetentionMs) {
+        this.jobs.delete(requestId);
+        continue;
+      }
+      retainedCompletedJobs.push(job);
+    }
+
+    if (retainedCompletedJobs.length <= this.maxRetainedCompletedJobs) return;
+
+    retainedCompletedJobs.sort(
+      (left, right) => (left.finishedAt ?? left.createdAt) - (right.finishedAt ?? right.createdAt)
+    );
+    for (const job of retainedCompletedJobs.slice(0, retainedCompletedJobs.length - this.maxRetainedCompletedJobs)) {
+      this.jobs.delete(job.requestId);
+    }
+  }
+
+  private finalizeJobWithSolution(
+    job: SolveJob,
+    solution: Solution,
+    status: Exclude<SolveJobStatus, "running" | "failed"> | "completed",
+    message: string | null
+  ): void {
+    const finishedAtMs = Date.now();
+    job.solution = solution;
+    job.status = status;
+    job.message = message;
+    job.error = null;
+    job.progressLogWriter.finishWithSolutionSample(status, {
+      finishedAtMs,
+      elapsedMs: finishedAtMs - job.createdAt,
+      solution,
+      message,
+      error: null
+    });
+  }
+
+  private finalizeJobWithSettlement(job: SolveJob, settlement: SolveSettlement): void {
+    if (settlement.solution) {
+      this.finalizeJobWithSolution(job, settlement.solution, settlement.status, settlement.message);
+      return;
+    }
+    this.finalizeJobWithoutSolution(job, settlement.status, settlement.message, settlement.error);
+  }
+
+  private finalizeJobWithoutSolution(
+    job: SolveJob,
+    status: Exclude<SolveJobStatus, "running" | "completed">,
+    message: string | null,
+    error: string
+  ): void {
+    const finishedAtMs = Date.now();
+    job.solution = null;
+    job.status = status;
+    job.message = message;
+    job.error = error;
+    job.progressLogWriter.finish(status, {
+      finishedAtMs,
+      solution: null,
+      message,
+      error
+    });
+  }
+
+  private releaseJobResources(job: SolveJob): void {
+    if (job.progressLogIntervalHandle) {
+      clearInterval(job.progressLogIntervalHandle);
+      job.progressLogIntervalHandle = null;
+    }
+    job.handle = null;
+    job.finishedAt = Date.now();
+    this.pruneJobs(job.finishedAt);
+  }
+
+  private startProgressLogTicker(job: SolveJob): NodeJS.Timeout {
+    const tick = () => {
+      const elapsedMs = Date.now() - job.createdAt;
+      const lastEntry = job.progressLogWriter.getLastEntry();
+      const snapshot = job.handle?.getLatestSnapshot() ?? null;
+      if (!snapshot) {
+        if (!lastEntry || lastEntry.hasFeasibleSolution) return;
+        if (elapsedMs - lastEntry.elapsedMs < this.progressLogIntervalMs) return;
+        job.progressLogWriter.appendPendingSample({
+          elapsedMs,
+          note: "Still searching for the first feasible solution."
+        });
+        return;
+      }
+
+      const shouldAppendImmediately = progressLogSolutionSampleChanged(lastEntry, snapshot);
+
+      const shouldAppendHeartbeat =
+        !shouldAppendImmediately && (!lastEntry || elapsedMs - lastEntry.elapsedMs >= this.progressLogIntervalMs);
+
+      if (!shouldAppendImmediately && !shouldAppendHeartbeat) return;
+
+      job.progressLogWriter.appendSolutionSample(snapshot, {
+        elapsedMs,
+        source: "live-snapshot"
+      });
+    };
+
+    const handle = setInterval(tick, this.progressLogPollIntervalMs);
+    handle.unref?.();
+    return handle;
+  }
+}

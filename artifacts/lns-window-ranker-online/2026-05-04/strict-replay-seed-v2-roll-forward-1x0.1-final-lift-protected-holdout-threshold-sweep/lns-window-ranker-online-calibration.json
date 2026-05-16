@@ -1,0 +1,484 @@
+{
+  "caseCount": 5,
+  "seedCount": 3,
+  "comparisonCount": 15,
+  "seeds": [
+    7,
+    19,
+    37
+  ],
+  "selectedCaseNames": [
+    "lns-holdout-corridor-weave-pressure",
+    "lns-holdout-gate-offset-pressure",
+    "lns-holdout-footprint-stagger-pressure",
+    "lns-holdout-service-ridge-pressure",
+    "lns-holdout-anchor-service-shelf-pressure"
+  ],
+  "modelFingerprint": "fnv1a:51fb7b72",
+  "minScoreDeltas": [
+    0.1,
+    0.25,
+    0.5,
+    0.75,
+    1,
+    1.5
+  ],
+  "topMeanPopulationDeltaMinScoreDelta": 1.5,
+  "topSafeMinScoreDelta": 1.5,
+  "thresholdSummaries": [
+    {
+      "minScoreDelta": 0.1,
+      "caseCount": 5,
+      "seedCount": 3,
+      "comparisonCount": 15,
+      "meanPopulationDeltaVsBaseline": 0,
+      "medianPopulationDeltaVsBaseline": 0,
+      "worstDecilePopulationDeltaVsBaseline": 0,
+      "bestPopulationDeltaVsBaseline": 0,
+      "worstPopulationDeltaVsBaseline": 0,
+      "worstPopulationDeltaCaseName": "lns-holdout-corridor-weave-pressure",
+      "worstPopulationDeltaSeed": 7,
+      "bestPopulationDeltaCaseName": "lns-holdout-corridor-weave-pressure",
+      "bestPopulationDeltaSeed": 7,
+      "improvedCaseCount": 0,
+      "regressedCaseCount": 0,
+      "unchangedCaseCount": 15,
+      "winRate": 0,
+      "regressionRate": 0,
+      "rankerDecisionCount": 30,
+      "rankerOverrideCount": 30,
+      "rankerFallbackDecisionCount": 0,
+      "rankerOverrideRate": 1,
+      "rankerFallbackRate": 0,
+      "overrideTransitionCounts": {
+        "weak-service->residential-headroom": 9,
+        "random-exploration->random-exploration": 15,
+        "weak-service->frontier-congestion": 6
+      },
+      "fallbackTransitionCounts": {},
+      "overrideChangedWindowCount": 30,
+      "fallbackChangedWindowCount": 0,
+      "overrideTransitionFinalOutcomeCounts": {
+        "weak-service->residential-headroom": {
+          "improved": 0,
+          "neutral": 9,
+          "regressed": 0
+        },
+        "random-exploration->random-exploration": {
+          "improved": 0,
+          "neutral": 15,
+          "regressed": 0
+        },
+        "weak-service->frontier-congestion": {
+          "improved": 0,
+          "neutral": 6,
+          "regressed": 0
+        }
+      },
+      "fallbackTransitionFinalOutcomeCounts": {},
+      "overrideTransitionPressureFamilyCounts": {
+        "weak-service->residential-headroom": {
+          "corridor": 3,
+          "gate": 3,
+          "service-pressure": 3
+        },
+        "random-exploration->random-exploration": {
+          "corridor": 3,
+          "gate": 3,
+          "footprint-pressure": 3,
+          "service-pressure": 3,
+          "anchor-service": 3
+        },
+        "weak-service->frontier-congestion": {
+          "footprint-pressure": 3,
+          "anchor-service": 3
+        }
+      },
+      "fallbackTransitionPressureFamilyCounts": {},
+      "safetyGatePassed": true
+    },
+    {
+      "minScoreDelta": 0.25,
+      "caseCount": 5,
+      "seedCount": 3,
+      "comparisonCount": 15,
+      "meanPopulationDeltaVsBaseline": 0,
+      "medianPopulationDeltaVsBaseline": 0,
+      "worstDecilePopulationDeltaVsBaseline": 0,
+      "bestPopulationDeltaVsBaseline": 0,
+      "worstPopulationDeltaVsBaseline": 0,
+      "worstPopulationDeltaCaseName": "lns-holdout-corridor-weave-pressure",
+      "worstPopulationDeltaSeed": 7,
+      "bestPopulationDeltaCaseName": "lns-holdout-corridor-weave-pressure",
+      "bestPopulationDeltaSeed": 7,
+      "improvedCaseCount": 0,
+      "regressedCaseCount": 0,
+      "unchangedCaseCount": 15,
+      "winRate": 0,
+      "regressionRate": 0,
+      "rankerDecisionCount": 30,
+      "rankerOverrideCount": 30,
+      "rankerFallbackDecisionCount": 0,
+      "rankerOverrideRate": 1,
+      "rankerFallbackRate": 0,
+      "overrideTransitionCounts": {
+        "weak-service->residential-headroom": 9,
+        "random-exploration->random-exploration": 15,
+        "weak-service->frontier-congestion": 6
+      },
+      "fallbackTransitionCounts": {},
+      "overrideChangedWindowCount": 30,
+      "fallbackChangedWindowCount": 0,
+      "overrideTransitionFinalOutcomeCounts": {
+        "weak-service->residential-headroom": {
+          "improved": 0,
+          "neutral": 9,
+          "regressed": 0
+        },
+        "random-exploration->random-exploration": {
+          "improved": 0,
+          "neutral": 15,
+          "regressed": 0
+        },
+        "weak-service->frontier-congestion": {
+          "improved": 0,
+          "neutral": 6,
+          "regressed": 0
+        }
+      },
+      "fallbackTransitionFinalOutcomeCounts": {},
+      "overrideTransitionPressureFamilyCounts": {
+        "weak-service->residential-headroom": {
+          "corridor": 3,
+          "gate": 3,
+          "service-pressure": 3
+        },
+        "random-exploration->random-exploration": {
+          "corridor": 3,
+          "gate": 3,
+          "footprint-pressure": 3,
+          "service-pressure": 3,
+          "anchor-service": 3
+        },
+        "weak-service->frontier-congestion": {
+          "footprint-pressure": 3,
+          "anchor-service": 3
+        }
+      },
+      "fallbackTransitionPressureFamilyCounts": {},
+      "safetyGatePassed": true
+    },
+    {
+      "minScoreDelta": 0.5,
+      "caseCount": 5,
+      "seedCount": 3,
+      "comparisonCount": 15,
+      "meanPopulationDeltaVsBaseline": 0,
+      "medianPopulationDeltaVsBaseline": 0,
+      "worstDecilePopulationDeltaVsBaseline": 0,
+      "bestPopulationDeltaVsBaseline": 0,
+      "worstPopulationDeltaVsBaseline": 0,
+      "worstPopulationDeltaCaseName": "lns-holdout-corridor-weave-pressure",
+      "worstPopulationDeltaSeed": 7,
+      "bestPopulationDeltaCaseName": "lns-holdout-corridor-weave-pressure",
+      "bestPopulationDeltaSeed": 7,
+      "improvedCaseCount": 0,
+      "regressedCaseCount": 0,
+      "unchangedCaseCount": 15,
+      "winRate": 0,
+      "regressionRate": 0,
+      "rankerDecisionCount": 30,
+      "rankerOverrideCount": 15,
+      "rankerFallbackDecisionCount": 15,
+      "rankerOverrideRate": 0.5,
+      "rankerFallbackRate": 0.5,
+      "overrideTransitionCounts": {
+        "weak-service->residential-headroom": 3,
+        "random-exploration->random-exploration": 9,
+        "weak-service->frontier-congestion": 3
+      },
+      "fallbackTransitionCounts": {
+        "weak-service->weak-service": 9,
+        "residential-headroom->residential-headroom": 3,
+        "random-exploration->random-exploration": 3
+      },
+      "overrideChangedWindowCount": 15,
+      "fallbackChangedWindowCount": 0,
+      "overrideTransitionFinalOutcomeCounts": {
+        "weak-service->residential-headroom": {
+          "improved": 0,
+          "neutral": 3,
+          "regressed": 0
+        },
+        "random-exploration->random-exploration": {
+          "improved": 0,
+          "neutral": 9,
+          "regressed": 0
+        },
+        "weak-service->frontier-congestion": {
+          "improved": 0,
+          "neutral": 3,
+          "regressed": 0
+        }
+      },
+      "fallbackTransitionFinalOutcomeCounts": {
+        "weak-service->weak-service": {
+          "improved": 0,
+          "neutral": 9,
+          "regressed": 0
+        },
+        "residential-headroom->residential-headroom": {
+          "improved": 0,
+          "neutral": 3,
+          "regressed": 0
+        },
+        "random-exploration->random-exploration": {
+          "improved": 0,
+          "neutral": 3,
+          "regressed": 0
+        }
+      },
+      "overrideTransitionPressureFamilyCounts": {
+        "weak-service->residential-headroom": {
+          "gate": 3
+        },
+        "random-exploration->random-exploration": {
+          "footprint-pressure": 3,
+          "service-pressure": 3,
+          "anchor-service": 3
+        },
+        "weak-service->frontier-congestion": {
+          "anchor-service": 3
+        }
+      },
+      "fallbackTransitionPressureFamilyCounts": {
+        "weak-service->weak-service": {
+          "corridor": 3,
+          "footprint-pressure": 3,
+          "service-pressure": 3
+        },
+        "residential-headroom->residential-headroom": {
+          "corridor": 3
+        },
+        "random-exploration->random-exploration": {
+          "gate": 3
+        }
+      },
+      "safetyGatePassed": true
+    },
+    {
+      "minScoreDelta": 0.75,
+      "caseCount": 5,
+      "seedCount": 3,
+      "comparisonCount": 15,
+      "meanPopulationDeltaVsBaseline": 0,
+      "medianPopulationDeltaVsBaseline": 0,
+      "worstDecilePopulationDeltaVsBaseline": 0,
+      "bestPopulationDeltaVsBaseline": 0,
+      "worstPopulationDeltaVsBaseline": 0,
+      "worstPopulationDeltaCaseName": "lns-holdout-corridor-weave-pressure",
+      "worstPopulationDeltaSeed": 7,
+      "bestPopulationDeltaCaseName": "lns-holdout-corridor-weave-pressure",
+      "bestPopulationDeltaSeed": 7,
+      "improvedCaseCount": 0,
+      "regressedCaseCount": 0,
+      "unchangedCaseCount": 15,
+      "winRate": 0,
+      "regressionRate": 0,
+      "rankerDecisionCount": 30,
+      "rankerOverrideCount": 0,
+      "rankerFallbackDecisionCount": 30,
+      "rankerOverrideRate": 0,
+      "rankerFallbackRate": 1,
+      "overrideTransitionCounts": {},
+      "fallbackTransitionCounts": {
+        "weak-service->weak-service": 15,
+        "residential-headroom->residential-headroom": 3,
+        "random-exploration->random-exploration": 12
+      },
+      "overrideChangedWindowCount": 0,
+      "fallbackChangedWindowCount": 0,
+      "overrideTransitionFinalOutcomeCounts": {},
+      "fallbackTransitionFinalOutcomeCounts": {
+        "weak-service->weak-service": {
+          "improved": 0,
+          "neutral": 15,
+          "regressed": 0
+        },
+        "residential-headroom->residential-headroom": {
+          "improved": 0,
+          "neutral": 3,
+          "regressed": 0
+        },
+        "random-exploration->random-exploration": {
+          "improved": 0,
+          "neutral": 12,
+          "regressed": 0
+        }
+      },
+      "overrideTransitionPressureFamilyCounts": {},
+      "fallbackTransitionPressureFamilyCounts": {
+        "weak-service->weak-service": {
+          "corridor": 3,
+          "gate": 3,
+          "footprint-pressure": 3,
+          "service-pressure": 3,
+          "anchor-service": 3
+        },
+        "residential-headroom->residential-headroom": {
+          "corridor": 3
+        },
+        "random-exploration->random-exploration": {
+          "gate": 3,
+          "footprint-pressure": 3,
+          "service-pressure": 3,
+          "anchor-service": 3
+        }
+      },
+      "safetyGatePassed": true
+    },
+    {
+      "minScoreDelta": 1,
+      "caseCount": 5,
+      "seedCount": 3,
+      "comparisonCount": 15,
+      "meanPopulationDeltaVsBaseline": 0,
+      "medianPopulationDeltaVsBaseline": 0,
+      "worstDecilePopulationDeltaVsBaseline": 0,
+      "bestPopulationDeltaVsBaseline": 0,
+      "worstPopulationDeltaVsBaseline": 0,
+      "worstPopulationDeltaCaseName": "lns-holdout-corridor-weave-pressure",
+      "worstPopulationDeltaSeed": 7,
+      "bestPopulationDeltaCaseName": "lns-holdout-corridor-weave-pressure",
+      "bestPopulationDeltaSeed": 7,
+      "improvedCaseCount": 0,
+      "regressedCaseCount": 0,
+      "unchangedCaseCount": 15,
+      "winRate": 0,
+      "regressionRate": 0,
+      "rankerDecisionCount": 30,
+      "rankerOverrideCount": 0,
+      "rankerFallbackDecisionCount": 30,
+      "rankerOverrideRate": 0,
+      "rankerFallbackRate": 1,
+      "overrideTransitionCounts": {},
+      "fallbackTransitionCounts": {
+        "weak-service->weak-service": 15,
+        "residential-headroom->residential-headroom": 3,
+        "random-exploration->random-exploration": 12
+      },
+      "overrideChangedWindowCount": 0,
+      "fallbackChangedWindowCount": 0,
+      "overrideTransitionFinalOutcomeCounts": {},
+      "fallbackTransitionFinalOutcomeCounts": {
+        "weak-service->weak-service": {
+          "improved": 0,
+          "neutral": 15,
+          "regressed": 0
+        },
+        "residential-headroom->residential-headroom": {
+          "improved": 0,
+          "neutral": 3,
+          "regressed": 0
+        },
+        "random-exploration->random-exploration": {
+          "improved": 0,
+          "neutral": 12,
+          "regressed": 0
+        }
+      },
+      "overrideTransitionPressureFamilyCounts": {},
+      "fallbackTransitionPressureFamilyCounts": {
+        "weak-service->weak-service": {
+          "corridor": 3,
+          "gate": 3,
+          "footprint-pressure": 3,
+          "service-pressure": 3,
+          "anchor-service": 3
+        },
+        "residential-headroom->residential-headroom": {
+          "corridor": 3
+        },
+        "random-exploration->random-exploration": {
+          "gate": 3,
+          "footprint-pressure": 3,
+          "service-pressure": 3,
+          "anchor-service": 3
+        }
+      },
+      "safetyGatePassed": true
+    },
+    {
+      "minScoreDelta": 1.5,
+      "caseCount": 5,
+      "seedCount": 3,
+      "comparisonCount": 15,
+      "meanPopulationDeltaVsBaseline": 3,
+      "medianPopulationDeltaVsBaseline": 0,
+      "worstDecilePopulationDeltaVsBaseline": 0,
+      "bestPopulationDeltaVsBaseline": 45,
+      "worstPopulationDeltaVsBaseline": 0,
+      "worstPopulationDeltaCaseName": "lns-holdout-corridor-weave-pressure",
+      "worstPopulationDeltaSeed": 7,
+      "bestPopulationDeltaCaseName": "lns-holdout-service-ridge-pressure",
+      "bestPopulationDeltaSeed": 19,
+      "improvedCaseCount": 1,
+      "regressedCaseCount": 0,
+      "unchangedCaseCount": 14,
+      "winRate": 0.06666666666666667,
+      "regressionRate": 0,
+      "rankerDecisionCount": 30,
+      "rankerOverrideCount": 0,
+      "rankerFallbackDecisionCount": 30,
+      "rankerOverrideRate": 0,
+      "rankerFallbackRate": 1,
+      "overrideTransitionCounts": {},
+      "fallbackTransitionCounts": {
+        "weak-service->weak-service": 15,
+        "residential-headroom->residential-headroom": 3,
+        "random-exploration->random-exploration": 12
+      },
+      "overrideChangedWindowCount": 0,
+      "fallbackChangedWindowCount": 0,
+      "overrideTransitionFinalOutcomeCounts": {},
+      "fallbackTransitionFinalOutcomeCounts": {
+        "weak-service->weak-service": {
+          "improved": 1,
+          "neutral": 14,
+          "regressed": 0
+        },
+        "residential-headroom->residential-headroom": {
+          "improved": 0,
+          "neutral": 3,
+          "regressed": 0
+        },
+        "random-exploration->random-exploration": {
+          "improved": 1,
+          "neutral": 11,
+          "regressed": 0
+        }
+      },
+      "overrideTransitionPressureFamilyCounts": {},
+      "fallbackTransitionPressureFamilyCounts": {
+        "weak-service->weak-service": {
+          "corridor": 3,
+          "gate": 3,
+          "footprint-pressure": 3,
+          "service-pressure": 3,
+          "anchor-service": 3
+        },
+        "residential-headroom->residential-headroom": {
+          "corridor": 3
+        },
+        "random-exploration->random-exploration": {
+          "gate": 3,
+          "footprint-pressure": 3,
+          "service-pressure": 3,
+          "anchor-service": 3
+        }
+      },
+      "safetyGatePassed": true
+    }
+  ],
+  "generatedAt": "2026-05-04T15:47:11.503Z"
+}

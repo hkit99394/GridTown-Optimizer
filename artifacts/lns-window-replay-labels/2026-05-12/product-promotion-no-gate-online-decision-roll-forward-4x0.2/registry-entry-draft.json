@@ -1,0 +1,254 @@
+{
+  "schemaVersion": 1,
+  "runId": "lns-window-replay-diagnostics-2026-05-12-438524a9",
+  "artifactType": "label-bundle",
+  "generatedAt": "2026-05-12T00:26:02.848Z",
+  "commands": [
+    "node dist/lnsBenchmarkCli.js --window-replay-labels --window-replay-product-promotion-holdout --window-replay-online-scorecard=artifacts/lns-window-ranker-online/2026-05-12/product-promotion-two-iteration-trajectory-features-no-selected-feature-gate-3seed-min-score-delta-0/lns-window-ranker-online-ablation.json --window-replay-artifact-dir=artifacts/lns-window-replay-labels/2026-05-12/product-promotion-no-gate-online-decision-roll-forward-4x0.2 --roll-forward-iterations=4 --roll-forward-repair-time=0.2"
+  ],
+  "artifactPaths": [
+    "artifacts/lns-window-replay-labels/2026-05-12/product-promotion-no-gate-online-decision-roll-forward-4x0.2/lns-window-replay-labels.json",
+    "artifacts/lns-window-replay-labels/2026-05-12/product-promotion-no-gate-online-decision-roll-forward-4x0.2/lns-window-replay-labels.txt",
+    "artifacts/lns-window-replay-labels/2026-05-12/product-promotion-no-gate-online-decision-roll-forward-4x0.2/repeatability-summary.json",
+    "artifacts/lns-window-replay-labels/2026-05-12/product-promotion-no-gate-online-decision-roll-forward-4x0.2/manifest.json",
+    "artifacts/lns-window-replay-labels/2026-05-12/product-promotion-no-gate-online-decision-roll-forward-4x0.2/telemetry-manifest.json"
+  ],
+  "cases": [
+    "lns-product-typed-footprint-pressure",
+    "lns-product-service-local-pressure",
+    "lns-product-manual-layout-replay-pressure",
+    "lns-product-expansion-comparison-replay-pressure"
+  ],
+  "caseFamilies": [
+    "lns-product-expansion",
+    "lns-product-footprint",
+    "lns-product-service",
+    "lns-product-warm-start",
+    "lns-window-replay"
+  ],
+  "seeds": [
+    7,
+    19,
+    37
+  ],
+  "inputFingerprint": "fnv1a:56806085",
+  "labelFingerprint": "fnv1a:438524a9",
+  "splitStatus": {
+    "diagnosticsOnly": true,
+    "source": "lns-window-replay-diagnostic-bundle",
+    "statePolicies": [
+      "online-decision"
+    ],
+    "capturedStatePolicies": [
+      "online-decision"
+    ],
+    "repeatabilitySummary": {
+      "schemaVersion": 1,
+      "rollForwardLabelCount": 201,
+      "bucketCount": 49,
+      "repeatedBucketCount": 49,
+      "mixedFinalStatusBucketCount": 9,
+      "conflictingFinalStatusBucketCount": 4,
+      "conflictingLabelCount": 18,
+      "conflictingStatusCounts": {
+        "improved": 6,
+        "neutral": 6,
+        "regressed": 6,
+        "unknown": 0
+      },
+      "featureIdenticalConflictBucketCount": 2,
+      "featureIdenticalConflictLabelCount": 6,
+      "examples": [
+        {
+          "caseName": "lns-product-expansion-comparison-replay-pressure",
+          "pressureFamily": "product-expansion",
+          "statePolicy": "online-decision",
+          "operator": "gate-choke",
+          "window": "1:0:3x3",
+          "labelCount": 6,
+          "seedCount": 3,
+          "seeds": [
+            7,
+            19,
+            37
+          ],
+          "statusCounts": {
+            "improved": 3,
+            "neutral": 0,
+            "regressed": 3,
+            "unknown": 0
+          },
+          "finalDeltas": [
+            -35,
+            35,
+            70
+          ],
+          "baselineTotals": [
+            675,
+            710,
+            745
+          ],
+          "totalPopulations": [
+            710,
+            745
+          ],
+          "featureFingerprintCount": 2
+        },
+        {
+          "caseName": "lns-product-expansion-comparison-replay-pressure",
+          "pressureFamily": "product-expansion",
+          "statePolicy": "online-decision",
+          "operator": "weak-service",
+          "window": "1:2:3x3",
+          "labelCount": 6,
+          "seedCount": 3,
+          "seeds": [
+            7,
+            19,
+            37
+          ],
+          "statusCounts": {
+            "improved": 1,
+            "neutral": 4,
+            "regressed": 1,
+            "unknown": 0
+          },
+          "finalDeltas": [
+            -35,
+            0,
+            35
+          ],
+          "baselineTotals": [
+            675,
+            710,
+            745
+          ],
+          "totalPopulations": [
+            675,
+            710,
+            745,
+            780
+          ],
+          "featureFingerprintCount": 2
+        },
+        {
+          "caseName": "lns-product-expansion-comparison-replay-pressure",
+          "pressureFamily": "product-expansion",
+          "statePolicy": "online-decision",
+          "operator": "residential-headroom",
+          "window": "2:3:3x3",
+          "labelCount": 3,
+          "seedCount": 3,
+          "seeds": [
+            7,
+            19,
+            37
+          ],
+          "statusCounts": {
+            "improved": 1,
+            "neutral": 1,
+            "regressed": 1,
+            "unknown": 0
+          },
+          "finalDeltas": [
+            -35,
+            0,
+            35
+          ],
+          "baselineTotals": [
+            675,
+            710
+          ],
+          "totalPopulations": [
+            675,
+            710
+          ],
+          "featureFingerprintCount": 1
+        },
+        {
+          "caseName": "lns-product-expansion-comparison-replay-pressure",
+          "pressureFamily": "product-expansion",
+          "statePolicy": "online-decision",
+          "operator": "service-overlap",
+          "window": "1:2:3x3",
+          "labelCount": 3,
+          "seedCount": 3,
+          "seeds": [
+            7,
+            19,
+            37
+          ],
+          "statusCounts": {
+            "improved": 1,
+            "neutral": 1,
+            "regressed": 1,
+            "unknown": 0
+          },
+          "finalDeltas": [
+            -35,
+            0,
+            35
+          ],
+          "baselineTotals": [
+            745
+          ],
+          "totalPopulations": [
+            710,
+            745,
+            780
+          ],
+          "featureFingerprintCount": 1
+        }
+      ]
+    }
+  },
+  "budget": {
+    "seeds": [
+      7,
+      19,
+      37
+    ],
+    "maxWindows": 8,
+    "explorationWindowCount": 0,
+    "repairTimeLimitSeconds": 1,
+    "rollForwardIterations": 4,
+    "rollForwardRepairTimeLimitSeconds": 0.2,
+    "stateCollectionIterations": 0,
+    "stateCollectionRepairTimeLimitSeconds": 1,
+    "cpSatNumWorkers": 1,
+    "caseCount": 4,
+    "stateCount": 24,
+    "labelCount": 201,
+    "rollForwardLabelCount": 201
+  },
+  "model": {
+    "trained": false,
+    "diagnosticsOnly": true,
+    "labelSource": "lns-window-replay-labels",
+    "featureSchemaVersion": 2
+  },
+  "decision": "diagnostics-only",
+  "summary": "LNS window replay diagnostic label bundle; no solver default changed.",
+  "summaryMetrics": {
+    "caseCount": 4,
+    "seedCount": 3,
+    "stateCount": 24,
+    "labelCount": 201,
+    "rollForwardLabelCount": 201,
+    "repeatabilityConflictBucketCount": 4,
+    "repeatabilityFeatureIdenticalConflictBucketCount": 2,
+    "repeatabilityFeatureIdenticalConflictLabelCount": 6,
+    "statePolicies": [
+      "online-decision"
+    ],
+    "capturedStatePolicies": [
+      "online-decision"
+    ],
+    "cpSatModelFingerprints": [
+      "fnv1a:fbe5b973",
+      "fnv1a:027ce003",
+      "fnv1a:11e79736",
+      "fnv1a:80e606f0"
+    ]
+  }
+}

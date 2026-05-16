@@ -1,0 +1,124 @@
+{
+  "outDir": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range1-big-service140-south-shelf-repeatability-wide-state-search-roll-forward-4x0.2",
+  "labels": 432,
+  "states": 18,
+  "pos": 0,
+  "neg": 1,
+  "neu": 431,
+  "immPos": 0,
+  "best": 0,
+  "worst": -55,
+  "repeatabilitySummary": {
+    "schemaVersion": 1,
+    "rollForwardLabelCount": 432,
+    "bucketCount": 48,
+    "repeatedBucketCount": 48,
+    "mixedFinalStatusBucketCount": 1,
+    "conflictingFinalStatusBucketCount": 0,
+    "conflictingLabelCount": 0,
+    "conflictingStatusCounts": {
+      "improved": 0,
+      "neutral": 0,
+      "regressed": 0,
+      "unknown": 0
+    },
+    "featureIdenticalConflictBucketCount": 0,
+    "featureIdenticalConflictLabelCount": 0,
+    "examples": []
+  },
+  "bySeed": {
+    "5": {
+      "pos": 0,
+      "neg": 0,
+      "neu": 48,
+      "best": 0,
+      "worst": 0,
+      "states": 2
+    },
+    "7": {
+      "pos": 0,
+      "neg": 0,
+      "neu": 48,
+      "best": 0,
+      "worst": 0,
+      "states": 2
+    },
+    "11": {
+      "pos": 0,
+      "neg": 0,
+      "neu": 48,
+      "best": 0,
+      "worst": 0,
+      "states": 2
+    },
+    "13": {
+      "pos": 0,
+      "neg": 1,
+      "neu": 47,
+      "best": 0,
+      "worst": -55,
+      "states": 2
+    },
+    "17": {
+      "pos": 0,
+      "neg": 0,
+      "neu": 48,
+      "best": 0,
+      "worst": 0,
+      "states": 2
+    },
+    "19": {
+      "pos": 0,
+      "neg": 0,
+      "neu": 48,
+      "best": 0,
+      "worst": 0,
+      "states": 2
+    },
+    "23": {
+      "pos": 0,
+      "neg": 0,
+      "neu": 48,
+      "best": 0,
+      "worst": 0,
+      "states": 2
+    },
+    "29": {
+      "pos": 0,
+      "neg": 0,
+      "neu": 48,
+      "best": 0,
+      "worst": 0,
+      "states": 2
+    },
+    "37": {
+      "pos": 0,
+      "neg": 0,
+      "neu": 48,
+      "best": 0,
+      "worst": 0,
+      "states": 2
+    }
+  },
+  "nonNeutralStates": [
+    {
+      "seed": 13,
+      "statePolicy": "post-stagnation",
+      "stateIndex": 1,
+      "stateSourceStatus": "neutral",
+      "incumbentPopulation": 795,
+      "baseline": {
+        "top": 1,
+        "left": 3,
+        "rows": 3,
+        "cols": 3
+      },
+      "pos": 0,
+      "neg": 1,
+      "neu": 23,
+      "best": 0,
+      "worst": -55,
+      "baselineFinal": 850
+    }
+  ]
+}

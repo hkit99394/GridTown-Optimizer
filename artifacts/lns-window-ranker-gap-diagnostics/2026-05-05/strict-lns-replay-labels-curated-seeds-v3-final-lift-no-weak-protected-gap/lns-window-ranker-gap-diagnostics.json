@@ -1,0 +1,3390 @@
+{
+  "generatedAt": "2026-05-05T23:09:13.568Z",
+  "schemaVersion": 1,
+  "audit": {
+    "runtimeDefaultChanged": false,
+    "solverDefaultChanged": false,
+    "diagnosticOnly": true,
+    "target": "roll-forward-final-lift",
+    "weakSeedReplayLabelsAllowed": false,
+    "sourceLabelPreset": "strict-lns-replay",
+    "sourceLnsScaleReady": true,
+    "onlineScorecardType": "lns-window-ranker-online-ablation"
+  },
+  "inputs": {
+    "labelFingerprint": "fnv1a:58ce487f",
+    "datasetFingerprint": "fnv1a:b3c3fe8b",
+    "rankerModelFingerprint": "fnv1a:fa22b085",
+    "onlineScorecardFingerprint": "fnv1a:17e1fd8e"
+  },
+  "offline": {
+    "decisionCount": 90,
+    "overrideCount": 90,
+    "opportunityCount": 54,
+    "selectedPositiveCount": 54,
+    "transitionSummaries": [
+      {
+        "key": "development:all:random-exploration->random-exploration",
+        "split": "development",
+        "pressureFamily": "all",
+        "transition": "random-exploration->random-exploration",
+        "decisionCount": 9,
+        "overrideCount": 9,
+        "opportunityCount": 0,
+        "hitBestCount": 0,
+        "selectedPositiveCount": 0,
+        "baselinePositiveCount": 0,
+        "bestTargetTotal": 0,
+        "selectedTargetTotal": 0,
+        "baselineTargetTotal": 0,
+        "selectedDeltaVsBaselineTotal": 0,
+        "selectedCaptureRate": 0,
+        "baselineCaptureRate": 0,
+        "hitBestRate": 0,
+        "meanSelectedDeltaVsBaseline": 0,
+        "meanScoreDeltaVsBaseline": 0.5265
+      },
+      {
+        "key": "development:all:residential-headroom->sliding",
+        "split": "development",
+        "pressureFamily": "all",
+        "transition": "residential-headroom->sliding",
+        "decisionCount": 3,
+        "overrideCount": 3,
+        "opportunityCount": 3,
+        "hitBestCount": 3,
+        "selectedPositiveCount": 3,
+        "baselinePositiveCount": 0,
+        "bestTargetTotal": 480,
+        "selectedTargetTotal": 480,
+        "baselineTargetTotal": 0,
+        "selectedDeltaVsBaselineTotal": 480,
+        "selectedCaptureRate": 1,
+        "baselineCaptureRate": 0,
+        "hitBestRate": 1,
+        "meanSelectedDeltaVsBaseline": 160,
+        "meanScoreDeltaVsBaseline": 0.4657
+      },
+      {
+        "key": "development:all:weak-service->gate-choke",
+        "split": "development",
+        "pressureFamily": "all",
+        "transition": "weak-service->gate-choke",
+        "decisionCount": 9,
+        "overrideCount": 9,
+        "opportunityCount": 0,
+        "hitBestCount": 0,
+        "selectedPositiveCount": 0,
+        "baselinePositiveCount": 0,
+        "bestTargetTotal": 0,
+        "selectedTargetTotal": 0,
+        "baselineTargetTotal": 0,
+        "selectedDeltaVsBaselineTotal": 0,
+        "selectedCaptureRate": 0,
+        "baselineCaptureRate": 0,
+        "hitBestRate": 0,
+        "meanSelectedDeltaVsBaseline": 0,
+        "meanScoreDeltaVsBaseline": 0.8231
+      },
+      {
+        "key": "development:all:weak-service->residential-headroom",
+        "split": "development",
+        "pressureFamily": "all",
+        "transition": "weak-service->residential-headroom",
+        "decisionCount": 6,
+        "overrideCount": 6,
+        "opportunityCount": 6,
+        "hitBestCount": 6,
+        "selectedPositiveCount": 6,
+        "baselinePositiveCount": 0,
+        "bestTargetTotal": 780,
+        "selectedTargetTotal": 780,
+        "baselineTargetTotal": 0,
+        "selectedDeltaVsBaselineTotal": 780,
+        "selectedCaptureRate": 1,
+        "baselineCaptureRate": 0,
+        "hitBestRate": 1,
+        "meanSelectedDeltaVsBaseline": 130,
+        "meanScoreDeltaVsBaseline": 0.5361
+      },
+      {
+        "key": "development:all:weak-service->sliding",
+        "split": "development",
+        "pressureFamily": "all",
+        "transition": "weak-service->sliding",
+        "decisionCount": 18,
+        "overrideCount": 18,
+        "opportunityCount": 12,
+        "hitBestCount": 12,
+        "selectedPositiveCount": 12,
+        "baselinePositiveCount": 0,
+        "bestTargetTotal": 1440,
+        "selectedTargetTotal": 1440,
+        "baselineTargetTotal": 0,
+        "selectedDeltaVsBaselineTotal": 1440,
+        "selectedCaptureRate": 1,
+        "baselineCaptureRate": 0,
+        "hitBestRate": 1,
+        "meanSelectedDeltaVsBaseline": 80,
+        "meanScoreDeltaVsBaseline": 0.598
+      },
+      {
+        "key": "holdout:all:random-exploration->random-exploration",
+        "split": "holdout",
+        "pressureFamily": "all",
+        "transition": "random-exploration->random-exploration",
+        "decisionCount": 9,
+        "overrideCount": 9,
+        "opportunityCount": 6,
+        "hitBestCount": 6,
+        "selectedPositiveCount": 6,
+        "baselinePositiveCount": 0,
+        "bestTargetTotal": 60,
+        "selectedTargetTotal": 60,
+        "baselineTargetTotal": 0,
+        "selectedDeltaVsBaselineTotal": 60,
+        "selectedCaptureRate": 1,
+        "baselineCaptureRate": 0,
+        "hitBestRate": 1,
+        "meanSelectedDeltaVsBaseline": 6.6667,
+        "meanScoreDeltaVsBaseline": 0.4289
+      },
+      {
+        "key": "holdout:all:weak-service->frontier-congestion",
+        "split": "holdout",
+        "pressureFamily": "all",
+        "transition": "weak-service->frontier-congestion",
+        "decisionCount": 2,
+        "overrideCount": 2,
+        "opportunityCount": 0,
+        "hitBestCount": 0,
+        "selectedPositiveCount": 0,
+        "baselinePositiveCount": 0,
+        "bestTargetTotal": 0,
+        "selectedTargetTotal": 0,
+        "baselineTargetTotal": 0,
+        "selectedDeltaVsBaselineTotal": 0,
+        "selectedCaptureRate": 0,
+        "baselineCaptureRate": 0,
+        "hitBestRate": 0,
+        "meanSelectedDeltaVsBaseline": 0,
+        "meanScoreDeltaVsBaseline": 0.5472
+      },
+      {
+        "key": "holdout:all:weak-service->placed-buildings",
+        "split": "holdout",
+        "pressureFamily": "all",
+        "transition": "weak-service->placed-buildings",
+        "decisionCount": 1,
+        "overrideCount": 1,
+        "opportunityCount": 0,
+        "hitBestCount": 0,
+        "selectedPositiveCount": 0,
+        "baselinePositiveCount": 0,
+        "bestTargetTotal": 0,
+        "selectedTargetTotal": 0,
+        "baselineTargetTotal": 0,
+        "selectedDeltaVsBaselineTotal": 0,
+        "selectedCaptureRate": 0,
+        "baselineCaptureRate": 0,
+        "hitBestRate": 0,
+        "meanSelectedDeltaVsBaseline": 0,
+        "meanScoreDeltaVsBaseline": 0.9992
+      },
+      {
+        "key": "holdout:all:weak-service->residential-headroom",
+        "split": "holdout",
+        "pressureFamily": "all",
+        "transition": "weak-service->residential-headroom",
+        "decisionCount": 13,
+        "overrideCount": 13,
+        "opportunityCount": 12,
+        "hitBestCount": 12,
+        "selectedPositiveCount": 12,
+        "baselinePositiveCount": 0,
+        "bestTargetTotal": 1140,
+        "selectedTargetTotal": 1140,
+        "baselineTargetTotal": 0,
+        "selectedDeltaVsBaselineTotal": 1140,
+        "selectedCaptureRate": 1,
+        "baselineCaptureRate": 0,
+        "hitBestRate": 1,
+        "meanSelectedDeltaVsBaseline": 87.6923,
+        "meanScoreDeltaVsBaseline": 0.9433
+      },
+      {
+        "key": "holdout:all:weak-service->sliding",
+        "split": "holdout",
+        "pressureFamily": "all",
+        "transition": "weak-service->sliding",
+        "decisionCount": 20,
+        "overrideCount": 20,
+        "opportunityCount": 15,
+        "hitBestCount": 15,
+        "selectedPositiveCount": 15,
+        "baselinePositiveCount": 0,
+        "bestTargetTotal": 2310,
+        "selectedTargetTotal": 2310,
+        "baselineTargetTotal": 0,
+        "selectedDeltaVsBaselineTotal": 2310,
+        "selectedCaptureRate": 1,
+        "baselineCaptureRate": 0,
+        "hitBestRate": 1,
+        "meanSelectedDeltaVsBaseline": 115.5,
+        "meanScoreDeltaVsBaseline": 0.5512
+      }
+    ],
+    "transitionFamilySummaries": [
+      {
+        "key": "development:anchor-service:weak-service->gate-choke",
+        "split": "development",
+        "pressureFamily": "anchor-service",
+        "transition": "weak-service->gate-choke",
+        "decisionCount": 9,
+        "overrideCount": 9,
+        "opportunityCount": 0,
+        "hitBestCount": 0,
+        "selectedPositiveCount": 0,
+        "baselinePositiveCount": 0,
+        "bestTargetTotal": 0,
+        "selectedTargetTotal": 0,
+        "baselineTargetTotal": 0,
+        "selectedDeltaVsBaselineTotal": 0,
+        "selectedCaptureRate": 0,
+        "baselineCaptureRate": 0,
+        "hitBestRate": 0,
+        "meanSelectedDeltaVsBaseline": 0,
+        "meanScoreDeltaVsBaseline": 0.8231
+      },
+      {
+        "key": "development:corridor:weak-service->sliding",
+        "split": "development",
+        "pressureFamily": "corridor",
+        "transition": "weak-service->sliding",
+        "decisionCount": 9,
+        "overrideCount": 9,
+        "opportunityCount": 6,
+        "hitBestCount": 6,
+        "selectedPositiveCount": 6,
+        "baselinePositiveCount": 0,
+        "bestTargetTotal": 480,
+        "selectedTargetTotal": 480,
+        "baselineTargetTotal": 0,
+        "selectedDeltaVsBaselineTotal": 480,
+        "selectedCaptureRate": 1,
+        "baselineCaptureRate": 0,
+        "hitBestRate": 1,
+        "meanSelectedDeltaVsBaseline": 53.3333,
+        "meanScoreDeltaVsBaseline": 0.6705
+      },
+      {
+        "key": "development:footprint-pressure:weak-service->residential-headroom",
+        "split": "development",
+        "pressureFamily": "footprint-pressure",
+        "transition": "weak-service->residential-headroom",
+        "decisionCount": 6,
+        "overrideCount": 6,
+        "opportunityCount": 6,
+        "hitBestCount": 6,
+        "selectedPositiveCount": 6,
+        "baselinePositiveCount": 0,
+        "bestTargetTotal": 780,
+        "selectedTargetTotal": 780,
+        "baselineTargetTotal": 0,
+        "selectedDeltaVsBaselineTotal": 780,
+        "selectedCaptureRate": 1,
+        "baselineCaptureRate": 0,
+        "hitBestRate": 1,
+        "meanSelectedDeltaVsBaseline": 130,
+        "meanScoreDeltaVsBaseline": 0.5361
+      },
+      {
+        "key": "development:footprint-pressure:weak-service->sliding",
+        "split": "development",
+        "pressureFamily": "footprint-pressure",
+        "transition": "weak-service->sliding",
+        "decisionCount": 3,
+        "overrideCount": 3,
+        "opportunityCount": 0,
+        "hitBestCount": 0,
+        "selectedPositiveCount": 0,
+        "baselinePositiveCount": 0,
+        "bestTargetTotal": 0,
+        "selectedTargetTotal": 0,
+        "baselineTargetTotal": 0,
+        "selectedDeltaVsBaselineTotal": 0,
+        "selectedCaptureRate": 0,
+        "baselineCaptureRate": 0,
+        "hitBestRate": 0,
+        "meanSelectedDeltaVsBaseline": 0,
+        "meanScoreDeltaVsBaseline": 0.3513
+      },
+      {
+        "key": "development:gate:residential-headroom->sliding",
+        "split": "development",
+        "pressureFamily": "gate",
+        "transition": "residential-headroom->sliding",
+        "decisionCount": 3,
+        "overrideCount": 3,
+        "opportunityCount": 3,
+        "hitBestCount": 3,
+        "selectedPositiveCount": 3,
+        "baselinePositiveCount": 0,
+        "bestTargetTotal": 480,
+        "selectedTargetTotal": 480,
+        "baselineTargetTotal": 0,
+        "selectedDeltaVsBaselineTotal": 480,
+        "selectedCaptureRate": 1,
+        "baselineCaptureRate": 0,
+        "hitBestRate": 1,
+        "meanSelectedDeltaVsBaseline": 160,
+        "meanScoreDeltaVsBaseline": 0.4657
+      },
+      {
+        "key": "development:gate:weak-service->sliding",
+        "split": "development",
+        "pressureFamily": "gate",
+        "transition": "weak-service->sliding",
+        "decisionCount": 6,
+        "overrideCount": 6,
+        "opportunityCount": 6,
+        "hitBestCount": 6,
+        "selectedPositiveCount": 6,
+        "baselinePositiveCount": 0,
+        "bestTargetTotal": 960,
+        "selectedTargetTotal": 960,
+        "baselineTargetTotal": 0,
+        "selectedDeltaVsBaselineTotal": 960,
+        "selectedCaptureRate": 1,
+        "baselineCaptureRate": 0,
+        "hitBestRate": 1,
+        "meanSelectedDeltaVsBaseline": 160,
+        "meanScoreDeltaVsBaseline": 0.6126
+      },
+      {
+        "key": "development:service-pressure:random-exploration->random-exploration",
+        "split": "development",
+        "pressureFamily": "service-pressure",
+        "transition": "random-exploration->random-exploration",
+        "decisionCount": 9,
+        "overrideCount": 9,
+        "opportunityCount": 0,
+        "hitBestCount": 0,
+        "selectedPositiveCount": 0,
+        "baselinePositiveCount": 0,
+        "bestTargetTotal": 0,
+        "selectedTargetTotal": 0,
+        "baselineTargetTotal": 0,
+        "selectedDeltaVsBaselineTotal": 0,
+        "selectedCaptureRate": 0,
+        "baselineCaptureRate": 0,
+        "hitBestRate": 0,
+        "meanSelectedDeltaVsBaseline": 0,
+        "meanScoreDeltaVsBaseline": 0.5265
+      },
+      {
+        "key": "holdout:anchor-service:weak-service->residential-headroom",
+        "split": "holdout",
+        "pressureFamily": "anchor-service",
+        "transition": "weak-service->residential-headroom",
+        "decisionCount": 7,
+        "overrideCount": 7,
+        "opportunityCount": 6,
+        "hitBestCount": 6,
+        "selectedPositiveCount": 6,
+        "baselinePositiveCount": 0,
+        "bestTargetTotal": 540,
+        "selectedTargetTotal": 540,
+        "baselineTargetTotal": 0,
+        "selectedDeltaVsBaselineTotal": 540,
+        "selectedCaptureRate": 1,
+        "baselineCaptureRate": 0,
+        "hitBestRate": 1,
+        "meanSelectedDeltaVsBaseline": 77.1429,
+        "meanScoreDeltaVsBaseline": 0.9958
+      },
+      {
+        "key": "holdout:anchor-service:weak-service->sliding",
+        "split": "holdout",
+        "pressureFamily": "anchor-service",
+        "transition": "weak-service->sliding",
+        "decisionCount": 2,
+        "overrideCount": 2,
+        "opportunityCount": 0,
+        "hitBestCount": 0,
+        "selectedPositiveCount": 0,
+        "baselinePositiveCount": 0,
+        "bestTargetTotal": 0,
+        "selectedTargetTotal": 0,
+        "baselineTargetTotal": 0,
+        "selectedDeltaVsBaselineTotal": 0,
+        "selectedCaptureRate": 0,
+        "baselineCaptureRate": 0,
+        "hitBestRate": 0,
+        "meanSelectedDeltaVsBaseline": 0,
+        "meanScoreDeltaVsBaseline": 0.3965
+      },
+      {
+        "key": "holdout:corridor:random-exploration->random-exploration",
+        "split": "holdout",
+        "pressureFamily": "corridor",
+        "transition": "random-exploration->random-exploration",
+        "decisionCount": 9,
+        "overrideCount": 9,
+        "opportunityCount": 6,
+        "hitBestCount": 6,
+        "selectedPositiveCount": 6,
+        "baselinePositiveCount": 0,
+        "bestTargetTotal": 60,
+        "selectedTargetTotal": 60,
+        "baselineTargetTotal": 0,
+        "selectedDeltaVsBaselineTotal": 60,
+        "selectedCaptureRate": 1,
+        "baselineCaptureRate": 0,
+        "hitBestRate": 1,
+        "meanSelectedDeltaVsBaseline": 6.6667,
+        "meanScoreDeltaVsBaseline": 0.4289
+      },
+      {
+        "key": "holdout:footprint-pressure:weak-service->sliding",
+        "split": "holdout",
+        "pressureFamily": "footprint-pressure",
+        "transition": "weak-service->sliding",
+        "decisionCount": 9,
+        "overrideCount": 9,
+        "opportunityCount": 6,
+        "hitBestCount": 6,
+        "selectedPositiveCount": 6,
+        "baselinePositiveCount": 0,
+        "bestTargetTotal": 1500,
+        "selectedTargetTotal": 1500,
+        "baselineTargetTotal": 0,
+        "selectedDeltaVsBaselineTotal": 1500,
+        "selectedCaptureRate": 1,
+        "baselineCaptureRate": 0,
+        "hitBestRate": 1,
+        "meanSelectedDeltaVsBaseline": 166.6667,
+        "meanScoreDeltaVsBaseline": 0.5982
+      },
+      {
+        "key": "holdout:gate:weak-service->sliding",
+        "split": "holdout",
+        "pressureFamily": "gate",
+        "transition": "weak-service->sliding",
+        "decisionCount": 9,
+        "overrideCount": 9,
+        "opportunityCount": 9,
+        "hitBestCount": 9,
+        "selectedPositiveCount": 9,
+        "baselinePositiveCount": 0,
+        "bestTargetTotal": 810,
+        "selectedTargetTotal": 810,
+        "baselineTargetTotal": 0,
+        "selectedDeltaVsBaselineTotal": 810,
+        "selectedCaptureRate": 1,
+        "baselineCaptureRate": 0,
+        "hitBestRate": 1,
+        "meanSelectedDeltaVsBaseline": 90,
+        "meanScoreDeltaVsBaseline": 0.5386
+      },
+      {
+        "key": "holdout:service-pressure:weak-service->frontier-congestion",
+        "split": "holdout",
+        "pressureFamily": "service-pressure",
+        "transition": "weak-service->frontier-congestion",
+        "decisionCount": 2,
+        "overrideCount": 2,
+        "opportunityCount": 0,
+        "hitBestCount": 0,
+        "selectedPositiveCount": 0,
+        "baselinePositiveCount": 0,
+        "bestTargetTotal": 0,
+        "selectedTargetTotal": 0,
+        "baselineTargetTotal": 0,
+        "selectedDeltaVsBaselineTotal": 0,
+        "selectedCaptureRate": 0,
+        "baselineCaptureRate": 0,
+        "hitBestRate": 0,
+        "meanSelectedDeltaVsBaseline": 0,
+        "meanScoreDeltaVsBaseline": 0.5472
+      },
+      {
+        "key": "holdout:service-pressure:weak-service->placed-buildings",
+        "split": "holdout",
+        "pressureFamily": "service-pressure",
+        "transition": "weak-service->placed-buildings",
+        "decisionCount": 1,
+        "overrideCount": 1,
+        "opportunityCount": 0,
+        "hitBestCount": 0,
+        "selectedPositiveCount": 0,
+        "baselinePositiveCount": 0,
+        "bestTargetTotal": 0,
+        "selectedTargetTotal": 0,
+        "baselineTargetTotal": 0,
+        "selectedDeltaVsBaselineTotal": 0,
+        "selectedCaptureRate": 0,
+        "baselineCaptureRate": 0,
+        "hitBestRate": 0,
+        "meanSelectedDeltaVsBaseline": 0,
+        "meanScoreDeltaVsBaseline": 0.9992
+      },
+      {
+        "key": "holdout:service-pressure:weak-service->residential-headroom",
+        "split": "holdout",
+        "pressureFamily": "service-pressure",
+        "transition": "weak-service->residential-headroom",
+        "decisionCount": 6,
+        "overrideCount": 6,
+        "opportunityCount": 6,
+        "hitBestCount": 6,
+        "selectedPositiveCount": 6,
+        "baselinePositiveCount": 0,
+        "bestTargetTotal": 600,
+        "selectedTargetTotal": 600,
+        "baselineTargetTotal": 0,
+        "selectedDeltaVsBaselineTotal": 600,
+        "selectedCaptureRate": 1,
+        "baselineCaptureRate": 0,
+        "hitBestRate": 1,
+        "meanSelectedDeltaVsBaseline": 100,
+        "meanScoreDeltaVsBaseline": 0.882
+      }
+    ]
+  },
+  "online": {
+    "selectedCaseNames": [
+      "lns-holdout-corridor-weave-pressure",
+      "lns-holdout-gate-offset-pressure",
+      "lns-holdout-footprint-stagger-pressure",
+      "lns-holdout-service-ridge-pressure",
+      "lns-holdout-anchor-service-shelf-pressure"
+    ],
+    "pressureFamilies": [
+      "corridor",
+      "gate",
+      "footprint-pressure",
+      "service-pressure",
+      "anchor-service"
+    ],
+    "seeds": [
+      7,
+      19,
+      37
+    ],
+    "comparisonCount": 15,
+    "minScoreDelta": 0.1,
+    "overrideCount": 30,
+    "selectionTraceCount": 30,
+    "finalNeutralOverrideCount": 30,
+    "transitionSummaries": [
+      {
+        "key": "all:all:random-exploration->random-exploration",
+        "pressureFamily": "all",
+        "transition": "random-exploration->random-exploration",
+        "overrideCount": 15,
+        "finalImprovedCount": 0,
+        "finalNeutralCount": 15,
+        "finalRegressedCount": 0,
+        "caseCount": 15,
+        "populationDeltaTotal": 0,
+        "meanPopulationDelta": 0
+      },
+      {
+        "key": "all:all:weak-service->sliding",
+        "pressureFamily": "all",
+        "transition": "weak-service->sliding",
+        "overrideCount": 15,
+        "finalImprovedCount": 0,
+        "finalNeutralCount": 15,
+        "finalRegressedCount": 0,
+        "caseCount": 15,
+        "populationDeltaTotal": 0,
+        "meanPopulationDelta": 0
+      }
+    ],
+    "transitionFamilySummaries": [
+      {
+        "key": "all:anchor-service:random-exploration->random-exploration",
+        "pressureFamily": "anchor-service",
+        "transition": "random-exploration->random-exploration",
+        "overrideCount": 3,
+        "finalImprovedCount": 0,
+        "finalNeutralCount": 3,
+        "finalRegressedCount": 0,
+        "caseCount": 3,
+        "populationDeltaTotal": 0,
+        "meanPopulationDelta": 0
+      },
+      {
+        "key": "all:anchor-service:weak-service->sliding",
+        "pressureFamily": "anchor-service",
+        "transition": "weak-service->sliding",
+        "overrideCount": 3,
+        "finalImprovedCount": 0,
+        "finalNeutralCount": 3,
+        "finalRegressedCount": 0,
+        "caseCount": 3,
+        "populationDeltaTotal": 0,
+        "meanPopulationDelta": 0
+      },
+      {
+        "key": "all:corridor:random-exploration->random-exploration",
+        "pressureFamily": "corridor",
+        "transition": "random-exploration->random-exploration",
+        "overrideCount": 3,
+        "finalImprovedCount": 0,
+        "finalNeutralCount": 3,
+        "finalRegressedCount": 0,
+        "caseCount": 3,
+        "populationDeltaTotal": 0,
+        "meanPopulationDelta": 0
+      },
+      {
+        "key": "all:corridor:weak-service->sliding",
+        "pressureFamily": "corridor",
+        "transition": "weak-service->sliding",
+        "overrideCount": 3,
+        "finalImprovedCount": 0,
+        "finalNeutralCount": 3,
+        "finalRegressedCount": 0,
+        "caseCount": 3,
+        "populationDeltaTotal": 0,
+        "meanPopulationDelta": 0
+      },
+      {
+        "key": "all:footprint-pressure:random-exploration->random-exploration",
+        "pressureFamily": "footprint-pressure",
+        "transition": "random-exploration->random-exploration",
+        "overrideCount": 3,
+        "finalImprovedCount": 0,
+        "finalNeutralCount": 3,
+        "finalRegressedCount": 0,
+        "caseCount": 3,
+        "populationDeltaTotal": 0,
+        "meanPopulationDelta": 0
+      },
+      {
+        "key": "all:footprint-pressure:weak-service->sliding",
+        "pressureFamily": "footprint-pressure",
+        "transition": "weak-service->sliding",
+        "overrideCount": 3,
+        "finalImprovedCount": 0,
+        "finalNeutralCount": 3,
+        "finalRegressedCount": 0,
+        "caseCount": 3,
+        "populationDeltaTotal": 0,
+        "meanPopulationDelta": 0
+      },
+      {
+        "key": "all:gate:random-exploration->random-exploration",
+        "pressureFamily": "gate",
+        "transition": "random-exploration->random-exploration",
+        "overrideCount": 3,
+        "finalImprovedCount": 0,
+        "finalNeutralCount": 3,
+        "finalRegressedCount": 0,
+        "caseCount": 3,
+        "populationDeltaTotal": 0,
+        "meanPopulationDelta": 0
+      },
+      {
+        "key": "all:gate:weak-service->sliding",
+        "pressureFamily": "gate",
+        "transition": "weak-service->sliding",
+        "overrideCount": 3,
+        "finalImprovedCount": 0,
+        "finalNeutralCount": 3,
+        "finalRegressedCount": 0,
+        "caseCount": 3,
+        "populationDeltaTotal": 0,
+        "meanPopulationDelta": 0
+      },
+      {
+        "key": "all:service-pressure:random-exploration->random-exploration",
+        "pressureFamily": "service-pressure",
+        "transition": "random-exploration->random-exploration",
+        "overrideCount": 3,
+        "finalImprovedCount": 0,
+        "finalNeutralCount": 3,
+        "finalRegressedCount": 0,
+        "caseCount": 3,
+        "populationDeltaTotal": 0,
+        "meanPopulationDelta": 0
+      },
+      {
+        "key": "all:service-pressure:weak-service->sliding",
+        "pressureFamily": "service-pressure",
+        "transition": "weak-service->sliding",
+        "overrideCount": 3,
+        "finalImprovedCount": 0,
+        "finalNeutralCount": 3,
+        "finalRegressedCount": 0,
+        "caseCount": 3,
+        "populationDeltaTotal": 0,
+        "meanPopulationDelta": 0
+      }
+    ],
+    "transitionCases": [
+      {
+        "caseName": "lns-holdout-corridor-weave-pressure",
+        "pressureFamily": "corridor",
+        "seed": 7,
+        "transition": "weak-service->sliding",
+        "count": 1,
+        "finalOutcomeStatus": "neutral",
+        "populationDeltaVsBaseline": 0
+      },
+      {
+        "caseName": "lns-holdout-corridor-weave-pressure",
+        "pressureFamily": "corridor",
+        "seed": 7,
+        "transition": "random-exploration->random-exploration",
+        "count": 1,
+        "finalOutcomeStatus": "neutral",
+        "populationDeltaVsBaseline": 0
+      },
+      {
+        "caseName": "lns-holdout-gate-offset-pressure",
+        "pressureFamily": "gate",
+        "seed": 7,
+        "transition": "weak-service->sliding",
+        "count": 1,
+        "finalOutcomeStatus": "neutral",
+        "populationDeltaVsBaseline": 0
+      },
+      {
+        "caseName": "lns-holdout-gate-offset-pressure",
+        "pressureFamily": "gate",
+        "seed": 7,
+        "transition": "random-exploration->random-exploration",
+        "count": 1,
+        "finalOutcomeStatus": "neutral",
+        "populationDeltaVsBaseline": 0
+      },
+      {
+        "caseName": "lns-holdout-footprint-stagger-pressure",
+        "pressureFamily": "footprint-pressure",
+        "seed": 7,
+        "transition": "weak-service->sliding",
+        "count": 1,
+        "finalOutcomeStatus": "neutral",
+        "populationDeltaVsBaseline": 0
+      },
+      {
+        "caseName": "lns-holdout-footprint-stagger-pressure",
+        "pressureFamily": "footprint-pressure",
+        "seed": 7,
+        "transition": "random-exploration->random-exploration",
+        "count": 1,
+        "finalOutcomeStatus": "neutral",
+        "populationDeltaVsBaseline": 0
+      },
+      {
+        "caseName": "lns-holdout-service-ridge-pressure",
+        "pressureFamily": "service-pressure",
+        "seed": 7,
+        "transition": "weak-service->sliding",
+        "count": 1,
+        "finalOutcomeStatus": "neutral",
+        "populationDeltaVsBaseline": 0
+      },
+      {
+        "caseName": "lns-holdout-service-ridge-pressure",
+        "pressureFamily": "service-pressure",
+        "seed": 7,
+        "transition": "random-exploration->random-exploration",
+        "count": 1,
+        "finalOutcomeStatus": "neutral",
+        "populationDeltaVsBaseline": 0
+      },
+      {
+        "caseName": "lns-holdout-anchor-service-shelf-pressure",
+        "pressureFamily": "anchor-service",
+        "seed": 7,
+        "transition": "weak-service->sliding",
+        "count": 1,
+        "finalOutcomeStatus": "neutral",
+        "populationDeltaVsBaseline": 0
+      },
+      {
+        "caseName": "lns-holdout-anchor-service-shelf-pressure",
+        "pressureFamily": "anchor-service",
+        "seed": 7,
+        "transition": "random-exploration->random-exploration",
+        "count": 1,
+        "finalOutcomeStatus": "neutral",
+        "populationDeltaVsBaseline": 0
+      },
+      {
+        "caseName": "lns-holdout-corridor-weave-pressure",
+        "pressureFamily": "corridor",
+        "seed": 19,
+        "transition": "weak-service->sliding",
+        "count": 1,
+        "finalOutcomeStatus": "neutral",
+        "populationDeltaVsBaseline": 0
+      },
+      {
+        "caseName": "lns-holdout-corridor-weave-pressure",
+        "pressureFamily": "corridor",
+        "seed": 19,
+        "transition": "random-exploration->random-exploration",
+        "count": 1,
+        "finalOutcomeStatus": "neutral",
+        "populationDeltaVsBaseline": 0
+      },
+      {
+        "caseName": "lns-holdout-gate-offset-pressure",
+        "pressureFamily": "gate",
+        "seed": 19,
+        "transition": "weak-service->sliding",
+        "count": 1,
+        "finalOutcomeStatus": "neutral",
+        "populationDeltaVsBaseline": 0
+      },
+      {
+        "caseName": "lns-holdout-gate-offset-pressure",
+        "pressureFamily": "gate",
+        "seed": 19,
+        "transition": "random-exploration->random-exploration",
+        "count": 1,
+        "finalOutcomeStatus": "neutral",
+        "populationDeltaVsBaseline": 0
+      },
+      {
+        "caseName": "lns-holdout-footprint-stagger-pressure",
+        "pressureFamily": "footprint-pressure",
+        "seed": 19,
+        "transition": "weak-service->sliding",
+        "count": 1,
+        "finalOutcomeStatus": "neutral",
+        "populationDeltaVsBaseline": 0
+      },
+      {
+        "caseName": "lns-holdout-footprint-stagger-pressure",
+        "pressureFamily": "footprint-pressure",
+        "seed": 19,
+        "transition": "random-exploration->random-exploration",
+        "count": 1,
+        "finalOutcomeStatus": "neutral",
+        "populationDeltaVsBaseline": 0
+      },
+      {
+        "caseName": "lns-holdout-service-ridge-pressure",
+        "pressureFamily": "service-pressure",
+        "seed": 19,
+        "transition": "weak-service->sliding",
+        "count": 1,
+        "finalOutcomeStatus": "neutral",
+        "populationDeltaVsBaseline": 0
+      },
+      {
+        "caseName": "lns-holdout-service-ridge-pressure",
+        "pressureFamily": "service-pressure",
+        "seed": 19,
+        "transition": "random-exploration->random-exploration",
+        "count": 1,
+        "finalOutcomeStatus": "neutral",
+        "populationDeltaVsBaseline": 0
+      },
+      {
+        "caseName": "lns-holdout-anchor-service-shelf-pressure",
+        "pressureFamily": "anchor-service",
+        "seed": 19,
+        "transition": "weak-service->sliding",
+        "count": 1,
+        "finalOutcomeStatus": "neutral",
+        "populationDeltaVsBaseline": 0
+      },
+      {
+        "caseName": "lns-holdout-anchor-service-shelf-pressure",
+        "pressureFamily": "anchor-service",
+        "seed": 19,
+        "transition": "random-exploration->random-exploration",
+        "count": 1,
+        "finalOutcomeStatus": "neutral",
+        "populationDeltaVsBaseline": 0
+      },
+      {
+        "caseName": "lns-holdout-corridor-weave-pressure",
+        "pressureFamily": "corridor",
+        "seed": 37,
+        "transition": "weak-service->sliding",
+        "count": 1,
+        "finalOutcomeStatus": "neutral",
+        "populationDeltaVsBaseline": 0
+      },
+      {
+        "caseName": "lns-holdout-corridor-weave-pressure",
+        "pressureFamily": "corridor",
+        "seed": 37,
+        "transition": "random-exploration->random-exploration",
+        "count": 1,
+        "finalOutcomeStatus": "neutral",
+        "populationDeltaVsBaseline": 0
+      },
+      {
+        "caseName": "lns-holdout-gate-offset-pressure",
+        "pressureFamily": "gate",
+        "seed": 37,
+        "transition": "weak-service->sliding",
+        "count": 1,
+        "finalOutcomeStatus": "neutral",
+        "populationDeltaVsBaseline": 0
+      },
+      {
+        "caseName": "lns-holdout-gate-offset-pressure",
+        "pressureFamily": "gate",
+        "seed": 37,
+        "transition": "random-exploration->random-exploration",
+        "count": 1,
+        "finalOutcomeStatus": "neutral",
+        "populationDeltaVsBaseline": 0
+      },
+      {
+        "caseName": "lns-holdout-footprint-stagger-pressure",
+        "pressureFamily": "footprint-pressure",
+        "seed": 37,
+        "transition": "weak-service->sliding",
+        "count": 1,
+        "finalOutcomeStatus": "neutral",
+        "populationDeltaVsBaseline": 0
+      },
+      {
+        "caseName": "lns-holdout-footprint-stagger-pressure",
+        "pressureFamily": "footprint-pressure",
+        "seed": 37,
+        "transition": "random-exploration->random-exploration",
+        "count": 1,
+        "finalOutcomeStatus": "neutral",
+        "populationDeltaVsBaseline": 0
+      },
+      {
+        "caseName": "lns-holdout-service-ridge-pressure",
+        "pressureFamily": "service-pressure",
+        "seed": 37,
+        "transition": "weak-service->sliding",
+        "count": 1,
+        "finalOutcomeStatus": "neutral",
+        "populationDeltaVsBaseline": 0
+      },
+      {
+        "caseName": "lns-holdout-service-ridge-pressure",
+        "pressureFamily": "service-pressure",
+        "seed": 37,
+        "transition": "random-exploration->random-exploration",
+        "count": 1,
+        "finalOutcomeStatus": "neutral",
+        "populationDeltaVsBaseline": 0
+      },
+      {
+        "caseName": "lns-holdout-anchor-service-shelf-pressure",
+        "pressureFamily": "anchor-service",
+        "seed": 37,
+        "transition": "weak-service->sliding",
+        "count": 1,
+        "finalOutcomeStatus": "neutral",
+        "populationDeltaVsBaseline": 0
+      },
+      {
+        "caseName": "lns-holdout-anchor-service-shelf-pressure",
+        "pressureFamily": "anchor-service",
+        "seed": 37,
+        "transition": "random-exploration->random-exploration",
+        "count": 1,
+        "finalOutcomeStatus": "neutral",
+        "populationDeltaVsBaseline": 0
+      }
+    ]
+  },
+  "joins": [
+    {
+      "key": "anchor-service:random-exploration->random-exploration",
+      "pressureFamily": "anchor-service",
+      "transition": "random-exploration->random-exploration",
+      "offline": null,
+      "online": {
+        "key": "all:anchor-service:random-exploration->random-exploration",
+        "pressureFamily": "anchor-service",
+        "transition": "random-exploration->random-exploration",
+        "overrideCount": 3,
+        "finalImprovedCount": 0,
+        "finalNeutralCount": 3,
+        "finalRegressedCount": 0,
+        "caseCount": 3,
+        "populationDeltaTotal": 0,
+        "meanPopulationDelta": 0
+      },
+      "diagnosis": "online-active-no-offline-match"
+    },
+    {
+      "key": "anchor-service:weak-service->sliding",
+      "pressureFamily": "anchor-service",
+      "transition": "weak-service->sliding",
+      "offline": {
+        "key": "holdout:anchor-service:weak-service->sliding",
+        "split": "holdout",
+        "pressureFamily": "anchor-service",
+        "transition": "weak-service->sliding",
+        "decisionCount": 2,
+        "overrideCount": 2,
+        "opportunityCount": 0,
+        "hitBestCount": 0,
+        "selectedPositiveCount": 0,
+        "baselinePositiveCount": 0,
+        "bestTargetTotal": 0,
+        "selectedTargetTotal": 0,
+        "baselineTargetTotal": 0,
+        "selectedDeltaVsBaselineTotal": 0,
+        "selectedCaptureRate": 0,
+        "baselineCaptureRate": 0,
+        "hitBestRate": 0,
+        "meanSelectedDeltaVsBaseline": 0,
+        "meanScoreDeltaVsBaseline": 0.3965
+      },
+      "online": {
+        "key": "all:anchor-service:weak-service->sliding",
+        "pressureFamily": "anchor-service",
+        "transition": "weak-service->sliding",
+        "overrideCount": 3,
+        "finalImprovedCount": 0,
+        "finalNeutralCount": 3,
+        "finalRegressedCount": 0,
+        "caseCount": 3,
+        "populationDeltaTotal": 0,
+        "meanPopulationDelta": 0
+      },
+      "diagnosis": "offline-neutral-online-neutral"
+    },
+    {
+      "key": "corridor:random-exploration->random-exploration",
+      "pressureFamily": "corridor",
+      "transition": "random-exploration->random-exploration",
+      "offline": {
+        "key": "holdout:corridor:random-exploration->random-exploration",
+        "split": "holdout",
+        "pressureFamily": "corridor",
+        "transition": "random-exploration->random-exploration",
+        "decisionCount": 9,
+        "overrideCount": 9,
+        "opportunityCount": 6,
+        "hitBestCount": 6,
+        "selectedPositiveCount": 6,
+        "baselinePositiveCount": 0,
+        "bestTargetTotal": 60,
+        "selectedTargetTotal": 60,
+        "baselineTargetTotal": 0,
+        "selectedDeltaVsBaselineTotal": 60,
+        "selectedCaptureRate": 1,
+        "baselineCaptureRate": 0,
+        "hitBestRate": 1,
+        "meanSelectedDeltaVsBaseline": 6.6667,
+        "meanScoreDeltaVsBaseline": 0.4289
+      },
+      "online": {
+        "key": "all:corridor:random-exploration->random-exploration",
+        "pressureFamily": "corridor",
+        "transition": "random-exploration->random-exploration",
+        "overrideCount": 3,
+        "finalImprovedCount": 0,
+        "finalNeutralCount": 3,
+        "finalRegressedCount": 0,
+        "caseCount": 3,
+        "populationDeltaTotal": 0,
+        "meanPopulationDelta": 0
+      },
+      "diagnosis": "offline-positive-online-neutral"
+    },
+    {
+      "key": "corridor:weak-service->sliding",
+      "pressureFamily": "corridor",
+      "transition": "weak-service->sliding",
+      "offline": null,
+      "online": {
+        "key": "all:corridor:weak-service->sliding",
+        "pressureFamily": "corridor",
+        "transition": "weak-service->sliding",
+        "overrideCount": 3,
+        "finalImprovedCount": 0,
+        "finalNeutralCount": 3,
+        "finalRegressedCount": 0,
+        "caseCount": 3,
+        "populationDeltaTotal": 0,
+        "meanPopulationDelta": 0
+      },
+      "diagnosis": "online-active-no-offline-match"
+    },
+    {
+      "key": "footprint-pressure:random-exploration->random-exploration",
+      "pressureFamily": "footprint-pressure",
+      "transition": "random-exploration->random-exploration",
+      "offline": null,
+      "online": {
+        "key": "all:footprint-pressure:random-exploration->random-exploration",
+        "pressureFamily": "footprint-pressure",
+        "transition": "random-exploration->random-exploration",
+        "overrideCount": 3,
+        "finalImprovedCount": 0,
+        "finalNeutralCount": 3,
+        "finalRegressedCount": 0,
+        "caseCount": 3,
+        "populationDeltaTotal": 0,
+        "meanPopulationDelta": 0
+      },
+      "diagnosis": "online-active-no-offline-match"
+    },
+    {
+      "key": "footprint-pressure:weak-service->sliding",
+      "pressureFamily": "footprint-pressure",
+      "transition": "weak-service->sliding",
+      "offline": {
+        "key": "holdout:footprint-pressure:weak-service->sliding",
+        "split": "holdout",
+        "pressureFamily": "footprint-pressure",
+        "transition": "weak-service->sliding",
+        "decisionCount": 9,
+        "overrideCount": 9,
+        "opportunityCount": 6,
+        "hitBestCount": 6,
+        "selectedPositiveCount": 6,
+        "baselinePositiveCount": 0,
+        "bestTargetTotal": 1500,
+        "selectedTargetTotal": 1500,
+        "baselineTargetTotal": 0,
+        "selectedDeltaVsBaselineTotal": 1500,
+        "selectedCaptureRate": 1,
+        "baselineCaptureRate": 0,
+        "hitBestRate": 1,
+        "meanSelectedDeltaVsBaseline": 166.6667,
+        "meanScoreDeltaVsBaseline": 0.5982
+      },
+      "online": {
+        "key": "all:footprint-pressure:weak-service->sliding",
+        "pressureFamily": "footprint-pressure",
+        "transition": "weak-service->sliding",
+        "overrideCount": 3,
+        "finalImprovedCount": 0,
+        "finalNeutralCount": 3,
+        "finalRegressedCount": 0,
+        "caseCount": 3,
+        "populationDeltaTotal": 0,
+        "meanPopulationDelta": 0
+      },
+      "diagnosis": "offline-positive-online-neutral"
+    },
+    {
+      "key": "gate:random-exploration->random-exploration",
+      "pressureFamily": "gate",
+      "transition": "random-exploration->random-exploration",
+      "offline": null,
+      "online": {
+        "key": "all:gate:random-exploration->random-exploration",
+        "pressureFamily": "gate",
+        "transition": "random-exploration->random-exploration",
+        "overrideCount": 3,
+        "finalImprovedCount": 0,
+        "finalNeutralCount": 3,
+        "finalRegressedCount": 0,
+        "caseCount": 3,
+        "populationDeltaTotal": 0,
+        "meanPopulationDelta": 0
+      },
+      "diagnosis": "online-active-no-offline-match"
+    },
+    {
+      "key": "gate:weak-service->sliding",
+      "pressureFamily": "gate",
+      "transition": "weak-service->sliding",
+      "offline": {
+        "key": "holdout:gate:weak-service->sliding",
+        "split": "holdout",
+        "pressureFamily": "gate",
+        "transition": "weak-service->sliding",
+        "decisionCount": 9,
+        "overrideCount": 9,
+        "opportunityCount": 9,
+        "hitBestCount": 9,
+        "selectedPositiveCount": 9,
+        "baselinePositiveCount": 0,
+        "bestTargetTotal": 810,
+        "selectedTargetTotal": 810,
+        "baselineTargetTotal": 0,
+        "selectedDeltaVsBaselineTotal": 810,
+        "selectedCaptureRate": 1,
+        "baselineCaptureRate": 0,
+        "hitBestRate": 1,
+        "meanSelectedDeltaVsBaseline": 90,
+        "meanScoreDeltaVsBaseline": 0.5386
+      },
+      "online": {
+        "key": "all:gate:weak-service->sliding",
+        "pressureFamily": "gate",
+        "transition": "weak-service->sliding",
+        "overrideCount": 3,
+        "finalImprovedCount": 0,
+        "finalNeutralCount": 3,
+        "finalRegressedCount": 0,
+        "caseCount": 3,
+        "populationDeltaTotal": 0,
+        "meanPopulationDelta": 0
+      },
+      "diagnosis": "offline-positive-online-neutral"
+    },
+    {
+      "key": "service-pressure:random-exploration->random-exploration",
+      "pressureFamily": "service-pressure",
+      "transition": "random-exploration->random-exploration",
+      "offline": null,
+      "online": {
+        "key": "all:service-pressure:random-exploration->random-exploration",
+        "pressureFamily": "service-pressure",
+        "transition": "random-exploration->random-exploration",
+        "overrideCount": 3,
+        "finalImprovedCount": 0,
+        "finalNeutralCount": 3,
+        "finalRegressedCount": 0,
+        "caseCount": 3,
+        "populationDeltaTotal": 0,
+        "meanPopulationDelta": 0
+      },
+      "diagnosis": "online-active-no-offline-match"
+    },
+    {
+      "key": "service-pressure:weak-service->sliding",
+      "pressureFamily": "service-pressure",
+      "transition": "weak-service->sliding",
+      "offline": null,
+      "online": {
+        "key": "all:service-pressure:weak-service->sliding",
+        "pressureFamily": "service-pressure",
+        "transition": "weak-service->sliding",
+        "overrideCount": 3,
+        "finalImprovedCount": 0,
+        "finalNeutralCount": 3,
+        "finalRegressedCount": 0,
+        "caseCount": 3,
+        "populationDeltaTotal": 0,
+        "meanPopulationDelta": 0
+      },
+      "diagnosis": "online-active-no-offline-match"
+    }
+  ],
+  "traceComparisons": [
+    {
+      "key": "anchor-service:random-exploration->random-exploration",
+      "pressureFamily": "anchor-service",
+      "transition": "random-exploration->random-exploration",
+      "diagnosis": "online-active-no-offline-match",
+      "offlineDecisionCount": 0,
+      "offlineSelectedPositiveCount": 0,
+      "offlineMeanSelectedDeltaVsBaseline": null,
+      "offlineMeanScoreDeltaVsBaseline": null,
+      "onlineTraceCount": 3,
+      "onlineNeutralTraceCount": 3,
+      "onlineSameFinalLayoutTraceCount": 1,
+      "onlineChangedFinalLayoutTraceCount": 2,
+      "onlineMissingFinalLayoutTraceCount": 0,
+      "onlineMeanFinalLayoutPlacementDelta": 4,
+      "layoutSignature": "mixed-layout-final-neutral",
+      "onlineMeanImprovement": 110,
+      "onlineMeanScoreDelta": 0.5211,
+      "onlineMeanPostSelectionTraceCount": 0,
+      "onlinePostSelectionImprovementTraceCount": 0,
+      "onlineMeanPostSelectionImprovementTotal": 0,
+      "onlineMeanPostSelectionBestPopulationDeltaFromSelectedAfter": 0,
+      "onlineMeanFinalPopulationDeltaFromSelectedAfter": 0,
+      "topFeatureDeltaGaps": [
+        {
+          "featureName": "selectedByBaseline",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": -1,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "allowedWindowCells",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.3,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "anchorReachableWindowCells",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.3,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "area",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.3,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "clearedFootprint",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.1,
+          "meanDeltaGap": null
+        }
+      ],
+      "offlineSamples": [],
+      "onlineSamples": [
+        {
+          "caseName": "lns-holdout-anchor-service-shelf-pressure",
+          "seed": 7,
+          "iteration": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 6,
+            "cols": 6
+          },
+          "outcomeStatus": "improved",
+          "finalOutcomeStatus": "neutral",
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:1db2e577",
+            "variantFingerprint": "fnv1a:4d23bd1f",
+            "sameFinalLayout": false,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 2,
+            "residentialRemovedCount": 2,
+            "residentialDeltaCount": 4,
+            "buildingDeltaCount": 4,
+            "placementDeltaCount": 4
+          },
+          "improvement": 110,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.5211,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 0,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
+        },
+        {
+          "caseName": "lns-holdout-anchor-service-shelf-pressure",
+          "seed": 19,
+          "iteration": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 6,
+            "cols": 6
+          },
+          "outcomeStatus": "improved",
+          "finalOutcomeStatus": "neutral",
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:4d23bd1f",
+            "variantFingerprint": "fnv1a:4d23bd1f",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
+          "improvement": 110,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.5211,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 0,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
+        },
+        {
+          "caseName": "lns-holdout-anchor-service-shelf-pressure",
+          "seed": 37,
+          "iteration": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 6,
+            "cols": 6
+          },
+          "outcomeStatus": "improved",
+          "finalOutcomeStatus": "neutral",
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:577371cb",
+            "variantFingerprint": "fnv1a:d72d58a7",
+            "sameFinalLayout": false,
+            "roadAddedCount": 2,
+            "roadRemovedCount": 2,
+            "roadDeltaCount": 4,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 2,
+            "residentialRemovedCount": 2,
+            "residentialDeltaCount": 4,
+            "buildingDeltaCount": 4,
+            "placementDeltaCount": 8
+          },
+          "improvement": 110,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.5211,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 0,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
+        }
+      ]
+    },
+    {
+      "key": "corridor:random-exploration->random-exploration",
+      "pressureFamily": "corridor",
+      "transition": "random-exploration->random-exploration",
+      "diagnosis": "offline-positive-online-neutral",
+      "offlineDecisionCount": 9,
+      "offlineSelectedPositiveCount": 6,
+      "offlineMeanSelectedDeltaVsBaseline": 6.6667,
+      "offlineMeanScoreDeltaVsBaseline": 0.4289,
+      "onlineTraceCount": 3,
+      "onlineNeutralTraceCount": 3,
+      "onlineSameFinalLayoutTraceCount": 0,
+      "onlineChangedFinalLayoutTraceCount": 3,
+      "onlineMissingFinalLayoutTraceCount": 0,
+      "onlineMeanFinalLayoutPlacementDelta": 5,
+      "layoutSignature": "changed-layout-final-neutral",
+      "onlineMeanImprovement": 65,
+      "onlineMeanScoreDelta": 0.6974,
+      "onlineMeanPostSelectionTraceCount": 0,
+      "onlinePostSelectionImprovementTraceCount": 0,
+      "onlineMeanPostSelectionImprovementTotal": 0,
+      "onlineMeanPostSelectionBestPopulationDeltaFromSelectedAfter": 0,
+      "onlineMeanFinalPopulationDeltaFromSelectedAfter": 0,
+      "topFeatureDeltaGaps": [
+        {
+          "featureName": "serviceCandidateBonus",
+          "offlineMeanDelta": 0,
+          "onlineMeanDelta": 0.78,
+          "meanDeltaGap": 0.78
+        },
+        {
+          "featureName": "serviceCandidatesIntersecting",
+          "offlineMeanDelta": 0,
+          "onlineMeanDelta": 0.3,
+          "meanDeltaGap": 0.3
+        },
+        {
+          "featureName": "allowedWindowCells",
+          "offlineMeanDelta": 0.1,
+          "onlineMeanDelta": 0.3,
+          "meanDeltaGap": 0.2
+        },
+        {
+          "featureName": "anchorReachableWindowCells",
+          "offlineMeanDelta": 0.1,
+          "onlineMeanDelta": 0.3,
+          "meanDeltaGap": 0.2
+        },
+        {
+          "featureName": "serviceCandidatesBlocked",
+          "offlineMeanDelta": 0,
+          "onlineMeanDelta": 0.15,
+          "meanDeltaGap": 0.15
+        }
+      ],
+      "offlineSamples": [
+        {
+          "caseName": "row0-anchor-repair",
+          "seed": 7,
+          "statePolicy": "initial-incumbent",
+          "stateIndex": 0,
+          "baselineWindowIndex": 0,
+          "selectedWindowIndex": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 2,
+            "cols": 4
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 3,
+            "cols": 4
+          },
+          "selectedDeltaVsBaseline": 10,
+          "scoreDeltaVsBaseline": 0.4289
+        },
+        {
+          "caseName": "row0-anchor-repair",
+          "seed": 7,
+          "statePolicy": "post-stagnation",
+          "stateIndex": 2,
+          "baselineWindowIndex": 0,
+          "selectedWindowIndex": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 2,
+            "cols": 4
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 3,
+            "cols": 4
+          },
+          "selectedDeltaVsBaseline": 10,
+          "scoreDeltaVsBaseline": 0.4289
+        },
+        {
+          "caseName": "row0-anchor-repair",
+          "seed": 19,
+          "statePolicy": "initial-incumbent",
+          "stateIndex": 0,
+          "baselineWindowIndex": 0,
+          "selectedWindowIndex": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 2,
+            "cols": 4
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 3,
+            "cols": 4
+          },
+          "selectedDeltaVsBaseline": 10,
+          "scoreDeltaVsBaseline": 0.4289
+        }
+      ],
+      "onlineSamples": [
+        {
+          "caseName": "lns-holdout-corridor-weave-pressure",
+          "seed": 7,
+          "iteration": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 6,
+            "cols": 6
+          },
+          "outcomeStatus": "improved",
+          "finalOutcomeStatus": "neutral",
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:f742485f",
+            "variantFingerprint": "fnv1a:e926669f",
+            "sameFinalLayout": false,
+            "roadAddedCount": 1,
+            "roadRemovedCount": 2,
+            "roadDeltaCount": 3,
+            "serviceAddedCount": 1,
+            "serviceRemovedCount": 1,
+            "serviceDeltaCount": 2,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 2,
+            "placementDeltaCount": 5
+          },
+          "improvement": 65,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.6974,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 0,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
+        },
+        {
+          "caseName": "lns-holdout-corridor-weave-pressure",
+          "seed": 19,
+          "iteration": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 6,
+            "cols": 6
+          },
+          "outcomeStatus": "improved",
+          "finalOutcomeStatus": "neutral",
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:f742485f",
+            "variantFingerprint": "fnv1a:e926669f",
+            "sameFinalLayout": false,
+            "roadAddedCount": 1,
+            "roadRemovedCount": 2,
+            "roadDeltaCount": 3,
+            "serviceAddedCount": 1,
+            "serviceRemovedCount": 1,
+            "serviceDeltaCount": 2,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 2,
+            "placementDeltaCount": 5
+          },
+          "improvement": 65,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.6974,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 0,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
+        },
+        {
+          "caseName": "lns-holdout-corridor-weave-pressure",
+          "seed": 37,
+          "iteration": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 6,
+            "cols": 6
+          },
+          "outcomeStatus": "improved",
+          "finalOutcomeStatus": "neutral",
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:f742485f",
+            "variantFingerprint": "fnv1a:e926669f",
+            "sameFinalLayout": false,
+            "roadAddedCount": 1,
+            "roadRemovedCount": 2,
+            "roadDeltaCount": 3,
+            "serviceAddedCount": 1,
+            "serviceRemovedCount": 1,
+            "serviceDeltaCount": 2,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 2,
+            "placementDeltaCount": 5
+          },
+          "improvement": 65,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.6974,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 0,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
+        }
+      ]
+    },
+    {
+      "key": "corridor:weak-service->sliding",
+      "pressureFamily": "corridor",
+      "transition": "weak-service->sliding",
+      "diagnosis": "online-active-no-offline-match",
+      "offlineDecisionCount": 0,
+      "offlineSelectedPositiveCount": 0,
+      "offlineMeanSelectedDeltaVsBaseline": null,
+      "offlineMeanScoreDeltaVsBaseline": null,
+      "onlineTraceCount": 3,
+      "onlineNeutralTraceCount": 3,
+      "onlineSameFinalLayoutTraceCount": 0,
+      "onlineChangedFinalLayoutTraceCount": 3,
+      "onlineMissingFinalLayoutTraceCount": 0,
+      "onlineMeanFinalLayoutPlacementDelta": 5,
+      "layoutSignature": "changed-layout-final-neutral",
+      "onlineMeanImprovement": 0,
+      "onlineMeanScoreDelta": 0.6266,
+      "onlineMeanPostSelectionTraceCount": 1,
+      "onlinePostSelectionImprovementTraceCount": 3,
+      "onlineMeanPostSelectionImprovementTotal": 65,
+      "onlineMeanPostSelectionBestPopulationDeltaFromSelectedAfter": 65,
+      "onlineMeanFinalPopulationDeltaFromSelectedAfter": 65,
+      "topFeatureDeltaGaps": [
+        {
+          "featureName": "operatorScore",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": -5.15,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "selectedByBaseline",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": -1,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "residentialCandidateHeadroom",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": -0.54,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "narrowGateCells",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.4,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "serviceCandidateBonus",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.39,
+          "meanDeltaGap": null
+        }
+      ],
+      "offlineSamples": [],
+      "onlineSamples": [
+        {
+          "caseName": "lns-holdout-corridor-weave-pressure",
+          "seed": 7,
+          "iteration": 0,
+          "baselineWindow": {
+            "top": 1,
+            "left": 4,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 4,
+            "cols": 3
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:f742485f",
+            "variantFingerprint": "fnv1a:e926669f",
+            "sameFinalLayout": false,
+            "roadAddedCount": 1,
+            "roadRemovedCount": 2,
+            "roadDeltaCount": 3,
+            "serviceAddedCount": 1,
+            "serviceRemovedCount": 1,
+            "serviceDeltaCount": 2,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 2,
+            "placementDeltaCount": 5
+          },
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.6266,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 1,
+            "postSelectionImprovementTraceCount": 1,
+            "postSelectionImprovementTotal": 65,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 65,
+            "finalPopulationDeltaFromSelectedAfter": 65,
+            "firstPostSelectionImprovementIterationGap": 1
+          }
+        },
+        {
+          "caseName": "lns-holdout-corridor-weave-pressure",
+          "seed": 19,
+          "iteration": 0,
+          "baselineWindow": {
+            "top": 1,
+            "left": 4,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 4,
+            "cols": 3
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:f742485f",
+            "variantFingerprint": "fnv1a:e926669f",
+            "sameFinalLayout": false,
+            "roadAddedCount": 1,
+            "roadRemovedCount": 2,
+            "roadDeltaCount": 3,
+            "serviceAddedCount": 1,
+            "serviceRemovedCount": 1,
+            "serviceDeltaCount": 2,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 2,
+            "placementDeltaCount": 5
+          },
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.6266,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 1,
+            "postSelectionImprovementTraceCount": 1,
+            "postSelectionImprovementTotal": 65,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 65,
+            "finalPopulationDeltaFromSelectedAfter": 65,
+            "firstPostSelectionImprovementIterationGap": 1
+          }
+        },
+        {
+          "caseName": "lns-holdout-corridor-weave-pressure",
+          "seed": 37,
+          "iteration": 0,
+          "baselineWindow": {
+            "top": 1,
+            "left": 4,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 4,
+            "cols": 3
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:f742485f",
+            "variantFingerprint": "fnv1a:e926669f",
+            "sameFinalLayout": false,
+            "roadAddedCount": 1,
+            "roadRemovedCount": 2,
+            "roadDeltaCount": 3,
+            "serviceAddedCount": 1,
+            "serviceRemovedCount": 1,
+            "serviceDeltaCount": 2,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 2,
+            "placementDeltaCount": 5
+          },
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.6266,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 1,
+            "postSelectionImprovementTraceCount": 1,
+            "postSelectionImprovementTotal": 65,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 65,
+            "finalPopulationDeltaFromSelectedAfter": 65,
+            "firstPostSelectionImprovementIterationGap": 1
+          }
+        }
+      ]
+    },
+    {
+      "key": "footprint-pressure:random-exploration->random-exploration",
+      "pressureFamily": "footprint-pressure",
+      "transition": "random-exploration->random-exploration",
+      "diagnosis": "online-active-no-offline-match",
+      "offlineDecisionCount": 0,
+      "offlineSelectedPositiveCount": 0,
+      "offlineMeanSelectedDeltaVsBaseline": null,
+      "offlineMeanScoreDeltaVsBaseline": null,
+      "onlineTraceCount": 3,
+      "onlineNeutralTraceCount": 3,
+      "onlineSameFinalLayoutTraceCount": 3,
+      "onlineChangedFinalLayoutTraceCount": 0,
+      "onlineMissingFinalLayoutTraceCount": 0,
+      "onlineMeanFinalLayoutPlacementDelta": 0,
+      "layoutSignature": "zero-layout-final-neutral",
+      "onlineMeanImprovement": 0,
+      "onlineMeanScoreDelta": 0.7108,
+      "onlineMeanPostSelectionTraceCount": 0,
+      "onlinePostSelectionImprovementTraceCount": 0,
+      "onlineMeanPostSelectionImprovementTotal": 0,
+      "onlineMeanPostSelectionBestPopulationDeltaFromSelectedAfter": 0,
+      "onlineMeanFinalPopulationDeltaFromSelectedAfter": 0,
+      "topFeatureDeltaGaps": [
+        {
+          "featureName": "selectedByBaseline",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": -1,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "serviceCandidateBonus",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.66,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "narrowGateCells",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.4,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "allowedWindowCells",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.3,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "anchorReachableWindowCells",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.3,
+          "meanDeltaGap": null
+        }
+      ],
+      "offlineSamples": [],
+      "onlineSamples": [
+        {
+          "caseName": "lns-holdout-footprint-stagger-pressure",
+          "seed": 7,
+          "iteration": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 1,
+            "rows": 6,
+            "cols": 6
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:a41eaa19",
+            "variantFingerprint": "fnv1a:a41eaa19",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.7108,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 0,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
+        },
+        {
+          "caseName": "lns-holdout-footprint-stagger-pressure",
+          "seed": 19,
+          "iteration": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 1,
+            "rows": 6,
+            "cols": 6
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:a41eaa19",
+            "variantFingerprint": "fnv1a:a41eaa19",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.7108,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 0,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
+        },
+        {
+          "caseName": "lns-holdout-footprint-stagger-pressure",
+          "seed": 37,
+          "iteration": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 1,
+            "rows": 6,
+            "cols": 6
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:a41eaa19",
+            "variantFingerprint": "fnv1a:a41eaa19",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.7108,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 0,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
+        }
+      ]
+    },
+    {
+      "key": "footprint-pressure:weak-service->sliding",
+      "pressureFamily": "footprint-pressure",
+      "transition": "weak-service->sliding",
+      "diagnosis": "offline-positive-online-neutral",
+      "offlineDecisionCount": 9,
+      "offlineSelectedPositiveCount": 6,
+      "offlineMeanSelectedDeltaVsBaseline": 166.6667,
+      "offlineMeanScoreDeltaVsBaseline": 0.5982,
+      "onlineTraceCount": 3,
+      "onlineNeutralTraceCount": 3,
+      "onlineSameFinalLayoutTraceCount": 3,
+      "onlineChangedFinalLayoutTraceCount": 0,
+      "onlineMissingFinalLayoutTraceCount": 0,
+      "onlineMeanFinalLayoutPlacementDelta": 0,
+      "layoutSignature": "zero-layout-final-neutral",
+      "onlineMeanImprovement": 0,
+      "onlineMeanScoreDelta": 0.5137,
+      "onlineMeanPostSelectionTraceCount": 1,
+      "onlinePostSelectionImprovementTraceCount": 0,
+      "onlineMeanPostSelectionImprovementTotal": 0,
+      "onlineMeanPostSelectionBestPopulationDeltaFromSelectedAfter": 0,
+      "onlineMeanFinalPopulationDeltaFromSelectedAfter": 0,
+      "topFeatureDeltaGaps": [
+        {
+          "featureName": "residentialCandidateHeadroom",
+          "offlineMeanDelta": -2.6,
+          "onlineMeanDelta": 0,
+          "meanDeltaGap": 2.6
+        },
+        {
+          "featureName": "residentialCandidatesBlocked",
+          "offlineMeanDelta": -0.6722,
+          "onlineMeanDelta": 0,
+          "meanDeltaGap": 0.6722
+        },
+        {
+          "featureName": "roadCountInside",
+          "offlineMeanDelta": -0.1667,
+          "onlineMeanDelta": 0.3,
+          "meanDeltaGap": 0.4667
+        },
+        {
+          "featureName": "residentialCandidatesIntersecting",
+          "offlineMeanDelta": -0.4,
+          "onlineMeanDelta": 0,
+          "meanDeltaGap": 0.4
+        },
+        {
+          "featureName": "narrowGateCells",
+          "offlineMeanDelta": 0.1,
+          "onlineMeanDelta": 0.4,
+          "meanDeltaGap": 0.3
+        }
+      ],
+      "offlineSamples": [
+        {
+          "caseName": "lns-footprint-bottleneck-pressure",
+          "seed": 7,
+          "statePolicy": "initial-incumbent",
+          "stateIndex": 0,
+          "baselineWindowIndex": 0,
+          "selectedWindowIndex": 39,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "selectedDeltaVsBaseline": 250,
+          "scoreDeltaVsBaseline": 0.6255
+        },
+        {
+          "caseName": "lns-footprint-bottleneck-pressure",
+          "seed": 7,
+          "statePolicy": "post-stagnation",
+          "stateIndex": 2,
+          "baselineWindowIndex": 0,
+          "selectedWindowIndex": 39,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "selectedDeltaVsBaseline": 250,
+          "scoreDeltaVsBaseline": 0.6255
+        },
+        {
+          "caseName": "lns-footprint-bottleneck-pressure",
+          "seed": 19,
+          "statePolicy": "initial-incumbent",
+          "stateIndex": 0,
+          "baselineWindowIndex": 0,
+          "selectedWindowIndex": 39,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "selectedDeltaVsBaseline": 250,
+          "scoreDeltaVsBaseline": 0.6255
+        }
+      ],
+      "onlineSamples": [
+        {
+          "caseName": "lns-holdout-footprint-stagger-pressure",
+          "seed": 7,
+          "iteration": 0,
+          "baselineWindow": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 3,
+            "rows": 4,
+            "cols": 3
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:a41eaa19",
+            "variantFingerprint": "fnv1a:a41eaa19",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.5137,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 1,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
+        },
+        {
+          "caseName": "lns-holdout-footprint-stagger-pressure",
+          "seed": 19,
+          "iteration": 0,
+          "baselineWindow": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 3,
+            "rows": 4,
+            "cols": 3
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:a41eaa19",
+            "variantFingerprint": "fnv1a:a41eaa19",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.5137,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 1,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
+        },
+        {
+          "caseName": "lns-holdout-footprint-stagger-pressure",
+          "seed": 37,
+          "iteration": 0,
+          "baselineWindow": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 3,
+            "rows": 4,
+            "cols": 3
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:a41eaa19",
+            "variantFingerprint": "fnv1a:a41eaa19",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.5137,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 1,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
+        }
+      ]
+    },
+    {
+      "key": "gate:random-exploration->random-exploration",
+      "pressureFamily": "gate",
+      "transition": "random-exploration->random-exploration",
+      "diagnosis": "online-active-no-offline-match",
+      "offlineDecisionCount": 0,
+      "offlineSelectedPositiveCount": 0,
+      "offlineMeanSelectedDeltaVsBaseline": null,
+      "offlineMeanScoreDeltaVsBaseline": null,
+      "onlineTraceCount": 3,
+      "onlineNeutralTraceCount": 3,
+      "onlineSameFinalLayoutTraceCount": 3,
+      "onlineChangedFinalLayoutTraceCount": 0,
+      "onlineMissingFinalLayoutTraceCount": 0,
+      "onlineMeanFinalLayoutPlacementDelta": 0,
+      "layoutSignature": "zero-layout-final-neutral",
+      "onlineMeanImprovement": 0,
+      "onlineMeanScoreDelta": 0.6669,
+      "onlineMeanPostSelectionTraceCount": 0,
+      "onlinePostSelectionImprovementTraceCount": 0,
+      "onlineMeanPostSelectionImprovementTotal": 0,
+      "onlineMeanPostSelectionBestPopulationDeltaFromSelectedAfter": 0,
+      "onlineMeanFinalPopulationDeltaFromSelectedAfter": 0,
+      "topFeatureDeltaGaps": [
+        {
+          "featureName": "selectedByBaseline",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": -1,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "serviceCandidateBonus",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.96,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "allowedWindowCells",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.3,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "anchorReachableWindowCells",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.3,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "area",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.3,
+          "meanDeltaGap": null
+        }
+      ],
+      "offlineSamples": [],
+      "onlineSamples": [
+        {
+          "caseName": "lns-holdout-gate-offset-pressure",
+          "seed": 7,
+          "iteration": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 6,
+            "cols": 6
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:7ef083f0",
+            "variantFingerprint": "fnv1a:7ef083f0",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.6669,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 0,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
+        },
+        {
+          "caseName": "lns-holdout-gate-offset-pressure",
+          "seed": 19,
+          "iteration": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 6,
+            "cols": 6
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:7ef083f0",
+            "variantFingerprint": "fnv1a:7ef083f0",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.6669,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 0,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
+        },
+        {
+          "caseName": "lns-holdout-gate-offset-pressure",
+          "seed": 37,
+          "iteration": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 6,
+            "cols": 6
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:7ef083f0",
+            "variantFingerprint": "fnv1a:7ef083f0",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.6669,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 0,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
+        }
+      ]
+    },
+    {
+      "key": "gate:weak-service->sliding",
+      "pressureFamily": "gate",
+      "transition": "weak-service->sliding",
+      "diagnosis": "offline-positive-online-neutral",
+      "offlineDecisionCount": 9,
+      "offlineSelectedPositiveCount": 9,
+      "offlineMeanSelectedDeltaVsBaseline": 90,
+      "offlineMeanScoreDeltaVsBaseline": 0.5386,
+      "onlineTraceCount": 3,
+      "onlineNeutralTraceCount": 3,
+      "onlineSameFinalLayoutTraceCount": 3,
+      "onlineChangedFinalLayoutTraceCount": 0,
+      "onlineMissingFinalLayoutTraceCount": 0,
+      "onlineMeanFinalLayoutPlacementDelta": 0,
+      "layoutSignature": "zero-layout-final-neutral",
+      "onlineMeanImprovement": 0,
+      "onlineMeanScoreDelta": 0.5525,
+      "onlineMeanPostSelectionTraceCount": 1,
+      "onlinePostSelectionImprovementTraceCount": 0,
+      "onlineMeanPostSelectionImprovementTotal": 0,
+      "onlineMeanPostSelectionBestPopulationDeltaFromSelectedAfter": 0,
+      "onlineMeanFinalPopulationDeltaFromSelectedAfter": 0,
+      "topFeatureDeltaGaps": [
+        {
+          "featureName": "residentialCandidateHeadroom",
+          "offlineMeanDelta": 0,
+          "onlineMeanDelta": -1.58,
+          "meanDeltaGap": -1.58
+        },
+        {
+          "featureName": "serviceCandidatesBlocked",
+          "offlineMeanDelta": -0.35,
+          "onlineMeanDelta": 0,
+          "meanDeltaGap": 0.35
+        },
+        {
+          "featureName": "narrowGateCells",
+          "offlineMeanDelta": -0.1,
+          "onlineMeanDelta": 0.2,
+          "meanDeltaGap": 0.3
+        },
+        {
+          "featureName": "residentialCandidatesIntersecting",
+          "offlineMeanDelta": 0,
+          "onlineMeanDelta": -0.25,
+          "meanDeltaGap": -0.25
+        },
+        {
+          "featureName": "clearedFootprint",
+          "offlineMeanDelta": -0.2,
+          "onlineMeanDelta": 0,
+          "meanDeltaGap": 0.2
+        }
+      ],
+      "offlineSamples": [
+        {
+          "caseName": "lns-gate-side-channel-pressure",
+          "seed": 7,
+          "statePolicy": "initial-incumbent",
+          "stateIndex": 0,
+          "baselineWindowIndex": 0,
+          "selectedWindowIndex": 37,
+          "baselineWindow": {
+            "top": 3,
+            "left": 0,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "selectedDeltaVsBaseline": 90,
+          "scoreDeltaVsBaseline": 0.5645
+        },
+        {
+          "caseName": "lns-gate-side-channel-pressure",
+          "seed": 19,
+          "statePolicy": "initial-incumbent",
+          "stateIndex": 0,
+          "baselineWindowIndex": 0,
+          "selectedWindowIndex": 37,
+          "baselineWindow": {
+            "top": 3,
+            "left": 0,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "selectedDeltaVsBaseline": 90,
+          "scoreDeltaVsBaseline": 0.5645
+        },
+        {
+          "caseName": "lns-gate-side-channel-pressure",
+          "seed": 37,
+          "statePolicy": "initial-incumbent",
+          "stateIndex": 0,
+          "baselineWindowIndex": 0,
+          "selectedWindowIndex": 37,
+          "baselineWindow": {
+            "top": 3,
+            "left": 0,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "selectedDeltaVsBaseline": 90,
+          "scoreDeltaVsBaseline": 0.5645
+        }
+      ],
+      "onlineSamples": [
+        {
+          "caseName": "lns-holdout-gate-offset-pressure",
+          "seed": 7,
+          "iteration": 0,
+          "baselineWindow": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 3,
+            "rows": 4,
+            "cols": 3
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:7ef083f0",
+            "variantFingerprint": "fnv1a:7ef083f0",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.5525,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 1,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
+        },
+        {
+          "caseName": "lns-holdout-gate-offset-pressure",
+          "seed": 19,
+          "iteration": 0,
+          "baselineWindow": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 3,
+            "rows": 4,
+            "cols": 3
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:7ef083f0",
+            "variantFingerprint": "fnv1a:7ef083f0",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.5525,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 1,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
+        },
+        {
+          "caseName": "lns-holdout-gate-offset-pressure",
+          "seed": 37,
+          "iteration": 0,
+          "baselineWindow": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 3,
+            "rows": 4,
+            "cols": 3
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:7ef083f0",
+            "variantFingerprint": "fnv1a:7ef083f0",
+            "sameFinalLayout": true,
+            "roadAddedCount": 0,
+            "roadRemovedCount": 0,
+            "roadDeltaCount": 0,
+            "serviceAddedCount": 0,
+            "serviceRemovedCount": 0,
+            "serviceDeltaCount": 0,
+            "residentialAddedCount": 0,
+            "residentialRemovedCount": 0,
+            "residentialDeltaCount": 0,
+            "buildingDeltaCount": 0,
+            "placementDeltaCount": 0
+          },
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.5525,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 1,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
+        }
+      ]
+    },
+    {
+      "key": "service-pressure:random-exploration->random-exploration",
+      "pressureFamily": "service-pressure",
+      "transition": "random-exploration->random-exploration",
+      "diagnosis": "online-active-no-offline-match",
+      "offlineDecisionCount": 0,
+      "offlineSelectedPositiveCount": 0,
+      "offlineMeanSelectedDeltaVsBaseline": null,
+      "offlineMeanScoreDeltaVsBaseline": null,
+      "onlineTraceCount": 3,
+      "onlineNeutralTraceCount": 3,
+      "onlineSameFinalLayoutTraceCount": 0,
+      "onlineChangedFinalLayoutTraceCount": 3,
+      "onlineMissingFinalLayoutTraceCount": 0,
+      "onlineMeanFinalLayoutPlacementDelta": 19,
+      "layoutSignature": "changed-layout-final-neutral",
+      "onlineMeanImprovement": 45,
+      "onlineMeanScoreDelta": 0.8463,
+      "onlineMeanPostSelectionTraceCount": 0,
+      "onlinePostSelectionImprovementTraceCount": 0,
+      "onlineMeanPostSelectionImprovementTotal": 0,
+      "onlineMeanPostSelectionBestPopulationDeltaFromSelectedAfter": 0,
+      "onlineMeanFinalPopulationDeltaFromSelectedAfter": 0,
+      "topFeatureDeltaGaps": [
+        {
+          "featureName": "serviceCandidateBonus",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 1.49,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "selectedByBaseline",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": -1,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "serviceCandidatesIntersecting",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.55,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "serviceCandidatesBlocked",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.45,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "allowedWindowCells",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.3,
+          "meanDeltaGap": null
+        }
+      ],
+      "offlineSamples": [],
+      "onlineSamples": [
+        {
+          "caseName": "lns-holdout-service-ridge-pressure",
+          "seed": 7,
+          "iteration": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 6,
+            "cols": 6
+          },
+          "outcomeStatus": "improved",
+          "finalOutcomeStatus": "neutral",
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:76257ef1",
+            "variantFingerprint": "fnv1a:e7c96d71",
+            "sameFinalLayout": false,
+            "roadAddedCount": 3,
+            "roadRemovedCount": 5,
+            "roadDeltaCount": 8,
+            "serviceAddedCount": 2,
+            "serviceRemovedCount": 2,
+            "serviceDeltaCount": 4,
+            "residentialAddedCount": 3,
+            "residentialRemovedCount": 3,
+            "residentialDeltaCount": 6,
+            "buildingDeltaCount": 10,
+            "placementDeltaCount": 18
+          },
+          "improvement": 45,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.8463,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 0,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
+        },
+        {
+          "caseName": "lns-holdout-service-ridge-pressure",
+          "seed": 19,
+          "iteration": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 6,
+            "cols": 6
+          },
+          "outcomeStatus": "improved",
+          "finalOutcomeStatus": "neutral",
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:f9f0bd36",
+            "variantFingerprint": "fnv1a:95bf8f72",
+            "sameFinalLayout": false,
+            "roadAddedCount": 6,
+            "roadRemovedCount": 4,
+            "roadDeltaCount": 10,
+            "serviceAddedCount": 2,
+            "serviceRemovedCount": 2,
+            "serviceDeltaCount": 4,
+            "residentialAddedCount": 3,
+            "residentialRemovedCount": 3,
+            "residentialDeltaCount": 6,
+            "buildingDeltaCount": 10,
+            "placementDeltaCount": 20
+          },
+          "improvement": 45,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.8463,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 0,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
+        },
+        {
+          "caseName": "lns-holdout-service-ridge-pressure",
+          "seed": 37,
+          "iteration": 1,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 5,
+            "cols": 6
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 0,
+            "rows": 6,
+            "cols": 6
+          },
+          "outcomeStatus": "improved",
+          "finalOutcomeStatus": "neutral",
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:f9f0bd36",
+            "variantFingerprint": "fnv1a:eb1339f8",
+            "sameFinalLayout": false,
+            "roadAddedCount": 9,
+            "roadRemovedCount": 4,
+            "roadDeltaCount": 13,
+            "serviceAddedCount": 1,
+            "serviceRemovedCount": 1,
+            "serviceDeltaCount": 2,
+            "residentialAddedCount": 2,
+            "residentialRemovedCount": 2,
+            "residentialDeltaCount": 4,
+            "buildingDeltaCount": 6,
+            "placementDeltaCount": 19
+          },
+          "improvement": 45,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.8463,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 0,
+            "postSelectionImprovementTraceCount": 0,
+            "postSelectionImprovementTotal": 0,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 0,
+            "finalPopulationDeltaFromSelectedAfter": 0,
+            "firstPostSelectionImprovementIterationGap": null
+          }
+        }
+      ]
+    },
+    {
+      "key": "service-pressure:weak-service->sliding",
+      "pressureFamily": "service-pressure",
+      "transition": "weak-service->sliding",
+      "diagnosis": "online-active-no-offline-match",
+      "offlineDecisionCount": 0,
+      "offlineSelectedPositiveCount": 0,
+      "offlineMeanSelectedDeltaVsBaseline": null,
+      "offlineMeanScoreDeltaVsBaseline": null,
+      "onlineTraceCount": 3,
+      "onlineNeutralTraceCount": 3,
+      "onlineSameFinalLayoutTraceCount": 0,
+      "onlineChangedFinalLayoutTraceCount": 3,
+      "onlineMissingFinalLayoutTraceCount": 0,
+      "onlineMeanFinalLayoutPlacementDelta": 19,
+      "layoutSignature": "changed-layout-final-neutral",
+      "onlineMeanImprovement": 0,
+      "onlineMeanScoreDelta": 0.7263,
+      "onlineMeanPostSelectionTraceCount": 1,
+      "onlinePostSelectionImprovementTraceCount": 3,
+      "onlineMeanPostSelectionImprovementTotal": 45,
+      "onlineMeanPostSelectionBestPopulationDeltaFromSelectedAfter": 45,
+      "onlineMeanFinalPopulationDeltaFromSelectedAfter": 45,
+      "topFeatureDeltaGaps": [
+        {
+          "featureName": "operatorScore",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": -5.13,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "residentialCandidateHeadroom",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 1.82,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "serviceCandidateBonus",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 1.41,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "selectedByBaseline",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": -1,
+          "meanDeltaGap": null
+        },
+        {
+          "featureName": "serviceCandidatesIntersecting",
+          "offlineMeanDelta": null,
+          "onlineMeanDelta": 0.45,
+          "meanDeltaGap": null
+        }
+      ],
+      "offlineSamples": [],
+      "onlineSamples": [
+        {
+          "caseName": "lns-holdout-service-ridge-pressure",
+          "seed": 7,
+          "iteration": 0,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 1,
+            "rows": 4,
+            "cols": 3
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:76257ef1",
+            "variantFingerprint": "fnv1a:e7c96d71",
+            "sameFinalLayout": false,
+            "roadAddedCount": 3,
+            "roadRemovedCount": 5,
+            "roadDeltaCount": 8,
+            "serviceAddedCount": 2,
+            "serviceRemovedCount": 2,
+            "serviceDeltaCount": 4,
+            "residentialAddedCount": 3,
+            "residentialRemovedCount": 3,
+            "residentialDeltaCount": 6,
+            "buildingDeltaCount": 10,
+            "placementDeltaCount": 18
+          },
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.7263,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 1,
+            "postSelectionImprovementTraceCount": 1,
+            "postSelectionImprovementTotal": 45,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 45,
+            "finalPopulationDeltaFromSelectedAfter": 45,
+            "firstPostSelectionImprovementIterationGap": 1
+          }
+        },
+        {
+          "caseName": "lns-holdout-service-ridge-pressure",
+          "seed": 19,
+          "iteration": 0,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 1,
+            "rows": 4,
+            "cols": 3
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:f9f0bd36",
+            "variantFingerprint": "fnv1a:95bf8f72",
+            "sameFinalLayout": false,
+            "roadAddedCount": 6,
+            "roadRemovedCount": 4,
+            "roadDeltaCount": 10,
+            "serviceAddedCount": 2,
+            "serviceRemovedCount": 2,
+            "serviceDeltaCount": 4,
+            "residentialAddedCount": 3,
+            "residentialRemovedCount": 3,
+            "residentialDeltaCount": 6,
+            "buildingDeltaCount": 10,
+            "placementDeltaCount": 20
+          },
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.7263,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 1,
+            "postSelectionImprovementTraceCount": 1,
+            "postSelectionImprovementTotal": 45,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 45,
+            "finalPopulationDeltaFromSelectedAfter": 45,
+            "firstPostSelectionImprovementIterationGap": 1
+          }
+        },
+        {
+          "caseName": "lns-holdout-service-ridge-pressure",
+          "seed": 37,
+          "iteration": 0,
+          "baselineWindow": {
+            "top": 1,
+            "left": 0,
+            "rows": 3,
+            "cols": 3
+          },
+          "selectedWindow": {
+            "top": 0,
+            "left": 1,
+            "rows": 4,
+            "cols": 3
+          },
+          "outcomeStatus": "neutral",
+          "finalOutcomeStatus": "neutral",
+          "finalLayoutDeltaVsBaseline": {
+            "baselineFingerprint": "fnv1a:f9f0bd36",
+            "variantFingerprint": "fnv1a:eb1339f8",
+            "sameFinalLayout": false,
+            "roadAddedCount": 9,
+            "roadRemovedCount": 4,
+            "roadDeltaCount": 13,
+            "serviceAddedCount": 1,
+            "serviceRemovedCount": 1,
+            "serviceDeltaCount": 2,
+            "residentialAddedCount": 2,
+            "residentialRemovedCount": 2,
+            "residentialDeltaCount": 4,
+            "buildingDeltaCount": 6,
+            "placementDeltaCount": 19
+          },
+          "improvement": 0,
+          "populationDeltaVsBaseline": 0,
+          "scoreDelta": 0.7263,
+          "rankerTrajectoryAfterSelection": {
+            "postSelectionTraceCount": 1,
+            "postSelectionImprovementTraceCount": 1,
+            "postSelectionImprovementTotal": 45,
+            "postSelectionBestPopulationDeltaFromSelectedAfter": 45,
+            "finalPopulationDeltaFromSelectedAfter": 45,
+            "firstPostSelectionImprovementIterationGap": 1
+          }
+        }
+      ]
+    }
+  ],
+  "recommendedExperiments": [
+    {
+      "priority": 1,
+      "kind": "longer-roll-forward-replay",
+      "key": "corridor:random-exploration->random-exploration",
+      "pressureFamily": "corridor",
+      "transition": "random-exploration->random-exploration",
+      "diagnosis": "offline-positive-online-neutral",
+      "layoutSignature": "changed-layout-final-neutral",
+      "evidenceStatus": "evidence-backed-blocker",
+      "offlineDecisionCount": 9,
+      "offlineSelectedPositiveCount": 6,
+      "onlineTraceCount": 3,
+      "onlineChangedFinalLayoutTraceCount": 3,
+      "onlineMeanFinalLayoutPlacementDelta": 5,
+      "onlinePostSelectionImprovementTraceCount": 0,
+      "onlineMeanFinalPopulationDeltaFromSelectedAfter": 0,
+      "reason": "Offline holdout says this transition can lift final score, but protected online traces changed layout without final lift; post-selection improvements=0, final-from-selected=0.",
+      "suggestedExperiment": "Run a targeted longer/chunked roll-forward replay for this pressure family and transition to separate harmless neutral reshuffles from missed final-lift opportunity."
+    },
+    {
+      "priority": 2,
+      "kind": "targeted-protected-replay-labels",
+      "key": "service-pressure:random-exploration->random-exploration",
+      "pressureFamily": "service-pressure",
+      "transition": "random-exploration->random-exploration",
+      "diagnosis": "online-active-no-offline-match",
+      "layoutSignature": "changed-layout-final-neutral",
+      "evidenceStatus": "requires-protected-replay-evidence",
+      "offlineDecisionCount": 0,
+      "offlineSelectedPositiveCount": 0,
+      "onlineTraceCount": 3,
+      "onlineChangedFinalLayoutTraceCount": 3,
+      "onlineMeanFinalLayoutPlacementDelta": 19,
+      "onlinePostSelectionImprovementTraceCount": 0,
+      "onlineMeanFinalPopulationDeltaFromSelectedAfter": 0,
+      "reason": "Protected online scorecard has active final-neutral overrides for this transition, but the offline holdout replay labels have no matching transition/family evidence.",
+      "suggestedExperiment": "Collect targeted protected-holdout replay labels for this pressure family and transition before allowing it to count toward promotion evidence."
+    },
+    {
+      "priority": 2,
+      "kind": "targeted-protected-replay-labels",
+      "key": "service-pressure:weak-service->sliding",
+      "pressureFamily": "service-pressure",
+      "transition": "weak-service->sliding",
+      "diagnosis": "online-active-no-offline-match",
+      "layoutSignature": "changed-layout-final-neutral",
+      "evidenceStatus": "requires-protected-replay-evidence",
+      "offlineDecisionCount": 0,
+      "offlineSelectedPositiveCount": 0,
+      "onlineTraceCount": 3,
+      "onlineChangedFinalLayoutTraceCount": 3,
+      "onlineMeanFinalLayoutPlacementDelta": 19,
+      "onlinePostSelectionImprovementTraceCount": 3,
+      "onlineMeanFinalPopulationDeltaFromSelectedAfter": 45,
+      "reason": "Protected online scorecard has active final-neutral overrides for this transition, but the offline holdout replay labels have no matching transition/family evidence.",
+      "suggestedExperiment": "Collect targeted protected-holdout replay labels for this pressure family and transition before allowing it to count toward promotion evidence."
+    },
+    {
+      "priority": 2,
+      "kind": "targeted-protected-replay-labels",
+      "key": "corridor:weak-service->sliding",
+      "pressureFamily": "corridor",
+      "transition": "weak-service->sliding",
+      "diagnosis": "online-active-no-offline-match",
+      "layoutSignature": "changed-layout-final-neutral",
+      "evidenceStatus": "requires-protected-replay-evidence",
+      "offlineDecisionCount": 0,
+      "offlineSelectedPositiveCount": 0,
+      "onlineTraceCount": 3,
+      "onlineChangedFinalLayoutTraceCount": 3,
+      "onlineMeanFinalLayoutPlacementDelta": 5,
+      "onlinePostSelectionImprovementTraceCount": 3,
+      "onlineMeanFinalPopulationDeltaFromSelectedAfter": 65,
+      "reason": "Protected online scorecard has active final-neutral overrides for this transition, but the offline holdout replay labels have no matching transition/family evidence.",
+      "suggestedExperiment": "Collect targeted protected-holdout replay labels for this pressure family and transition before allowing it to count toward promotion evidence."
+    },
+    {
+      "priority": 2,
+      "kind": "targeted-protected-replay-labels",
+      "key": "anchor-service:random-exploration->random-exploration",
+      "pressureFamily": "anchor-service",
+      "transition": "random-exploration->random-exploration",
+      "diagnosis": "online-active-no-offline-match",
+      "layoutSignature": "mixed-layout-final-neutral",
+      "evidenceStatus": "requires-protected-replay-evidence",
+      "offlineDecisionCount": 0,
+      "offlineSelectedPositiveCount": 0,
+      "onlineTraceCount": 3,
+      "onlineChangedFinalLayoutTraceCount": 2,
+      "onlineMeanFinalLayoutPlacementDelta": 4,
+      "onlinePostSelectionImprovementTraceCount": 0,
+      "onlineMeanFinalPopulationDeltaFromSelectedAfter": 0,
+      "reason": "Protected online scorecard has active final-neutral overrides for this transition, but the offline holdout replay labels have no matching transition/family evidence.",
+      "suggestedExperiment": "Collect targeted protected-holdout replay labels for this pressure family and transition before allowing it to count toward promotion evidence."
+    }
+  ],
+  "summary": {
+    "joinedTransitionFamilyCount": 10,
+    "offlinePositiveOnlineNeutralCount": 3,
+    "onlineActiveNoOfflineMatchCount": 6,
+    "traceComparisonLayoutSignatureCounts": {
+      "changed-layout-final-neutral": 4,
+      "mixed-final-outcome": 0,
+      "mixed-layout-final-neutral": 1,
+      "missing-layout-delta": 0,
+      "zero-layout-final-neutral": 4
+    },
+    "zeroLayoutFinalNeutralTraceComparisonCount": 4,
+    "changedLayoutFinalNeutralTraceComparisonCount": 4,
+    "mixedLayoutFinalNeutralTraceComparisonCount": 1,
+    "promotionSensitivity": {
+      "suppressedLayoutSignature": "zero-layout-final-neutral",
+      "suppressedTraceComparisonCount": 4,
+      "remainingTraceComparisonCount": 5,
+      "remainingOfflinePositiveOnlineNeutralCount": 1,
+      "remainingOnlineActiveNoOfflineMatchCount": 4,
+      "changedLayoutNoLiftTrajectoryDepthCount": 5,
+      "missingLayoutDeltaCount": 0,
+      "mixedFinalOutcomeCount": 0,
+      "remainingPromotionBlocked": true,
+      "remainingBlockers": [
+        "unmatched-protected-replay-evidence",
+        "changed-layout-no-lift-trajectory-depth"
+      ],
+      "protectedReplayEvidenceGate": {
+        "suppressedDiagnosis": "online-active-no-offline-match",
+        "suppressedTraceComparisonCount": 4,
+        "remainingTraceComparisonCount": 1,
+        "remainingOfflinePositiveOnlineNeutralCount": 1,
+        "changedLayoutNoLiftTrajectoryDepthCount": 1,
+        "missingLayoutDeltaCount": 0,
+        "mixedFinalOutcomeCount": 0,
+        "remainingPromotionBlocked": true,
+        "remainingBlockers": [
+          "changed-layout-no-lift-trajectory-depth"
+        ]
+      }
+    },
+    "promotionBlocked": true
+  }
+}

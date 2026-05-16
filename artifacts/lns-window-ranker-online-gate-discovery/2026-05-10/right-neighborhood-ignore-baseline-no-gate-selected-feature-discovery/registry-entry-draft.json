@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "runId": "lns-online-selected-feature-gate-discovery-23a8d3b4",
+  "artifactType": "ablation-gate",
+  "generatedAt": "2026-05-10T20:56:29.169Z",
+  "commands": [
+    "node scripts/discover-lns-online-selected-feature-gates.mjs --source-artifact=artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-ignore-baseline-no-selected-feature-gate-min-score-delta-0 --source-artifact=artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-ignore-baseline-no-selected-feature-gate-two-iteration-min-score-delta-0 --artifact-dir=artifacts/lns-window-ranker-online-gate-discovery/2026-05-10/right-neighborhood-ignore-baseline-no-gate-selected-feature-discovery --max-group-size=3 --max-atoms-per-feature=10 --top=30 --feature-allowlist=area,emptyComponentsBefore,operatorScore,serviceCandidateBonus,residentialCandidatesBlocked,serviceCandidatesIntersecting,residentialCandidatesIntersecting,serviceCandidatesBlocked,allowedWindowCells,anchorReachableWindowCells,narrowGateCells,clearedFootprint,newlyReachable --force-artifact-dir"
+  ],
+  "artifactPaths": [
+    "artifacts/lns-window-ranker-online-gate-discovery/2026-05-10/right-neighborhood-ignore-baseline-no-gate-selected-feature-discovery/online-selected-feature-gate-discovery.json",
+    "artifacts/lns-window-ranker-online-gate-discovery/2026-05-10/right-neighborhood-ignore-baseline-no-gate-selected-feature-discovery/online-selected-feature-gate-discovery.txt",
+    "artifacts/lns-window-ranker-online-gate-discovery/2026-05-10/right-neighborhood-ignore-baseline-no-gate-selected-feature-discovery/telemetry-manifest.json",
+    "artifacts/lns-window-ranker-online-gate-discovery/2026-05-10/right-neighborhood-ignore-baseline-no-gate-selected-feature-discovery/manifest.json"
+  ],
+  "cases": [
+    "lns-holdout-service-braid-family-embed-7x8-right-choke-inward-neighborhood-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-right-neighborhood-anchor-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-right-open-lower-neighborhood-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-right-open-upper-neighborhood-candidate",
+    "lns-holdout-service-braid-family-embed-7x9-wide-right-neighborhood-candidate",
+    "lns-holdout-service-braid-family-embed-8x8-down-right-neighborhood-candidate"
+  ],
+  "caseFamilies": [
+    "lns-window-ranker-online",
+    "service-pressure"
+  ],
+  "seeds": [
+    7,
+    19,
+    37
+  ],
+  "inputFingerprint": "fnv1a:a20eeee4",
+  "datasetFingerprint": "fnv1a:23a8d3b4",
+  "splitStatus": {
+    "diagnosticsOnly": true,
+    "source": "online-lns-window-ranker-scorecards",
+    "sourceScorecardCount": 2
+  },
+  "budget": {
+    "sourceScorecardCount": 2,
+    "overrideTraceCount": 54,
+    "maxGroupSize": 3,
+    "maxAtomsPerFeature": 10,
+    "candidateCount": 30
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "model": {
+    "trained": false,
+    "diagnosticsOnly": true,
+    "gateKind": "online-selected-feature-threshold-search"
+  },
+  "decision": "diagnostics-only",
+  "summary": "Online LNS window-ranker override traces scanned for safe selected-feature gate groups; no solver default changed.",
+  "summaryMetrics": {
+    "overrideTraceCount": 54,
+    "selectionImproved": 6,
+    "finalRegressed": 13,
+    "candidateCount": 30,
+    "topCandidateCliArg": "allowedWindowCells>=0.5",
+    "greedySelectedFeatureGateGroups": [
+      [
+        {
+          "feature": "allowedWindowCells",
+          "minValue": 0.5
+        }
+      ]
+    ],
+    "greedySelectedFeatureGateGroupsCliArg": "allowedWindowCells>=0.5",
+    "greedySelectionImproved": 6,
+    "greedyFinalRegressed": 0,
+    "greedyNeutral": 0,
+    "greedySafeNoRegression": true
+  }
+}

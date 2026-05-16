@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "source": "model-experiment",
+  "command": "node dist/lnsWindowRankerCli.js --gap-diagnostics --labels=artifacts/learned-ranking-labels/2026-05-04/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1/labels.json --model=artifacts/lns-window-ranker/2026-05-08/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-wide-anchor-opportunity-exact-neutral-calibration-lr0.02-cap100/model.json --online-scorecard=artifacts/lns-window-ranker-online/2026-05-08/protected-full-wide-anchor-opportunity-exact-neutral-calibration-min-score-delta-0.1/lns-window-ranker-online-ablation.json --supplemental-replay-labels=artifacts/lns-window-replay-labels/2026-05-08/protected-full-online-decision-state-roll-forward-8x0.2/lns-window-replay-labels.json,artifacts/lns-window-replay-labels/2026-05-08/protected-anchor-service-wide-window-opportunity-roll-forward-1x0.1/lns-window-replay-labels.json --artifact-dir=artifacts/lns-window-ranker-gap-diagnostics/2026-05-08/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-wide-anchor-opportunity-exact-neutral-calibration-protected-gap --ranker-run-id=lns-window-ranker-gap-2026-05-08-wide-anchor-opportunity-exact-neutral-calibration-protected --ranker-decision=offline-online-lns-window-ranker-wide-anchor-opportunity-exact-neutral-calibration-gap-diagnostics '--ranker-summary=Gap diagnostics joining the wide-anchor-opportunity/exact-neutral-calibration model, protected online guardrail scorecard, and supplemental replay labels; diagnostics only.' --json",
+  "generatedAt": "2026-05-08T12:53:28.026Z",
+  "git": {
+    "commit": "7d34ed8c851d38e54d37e05ddee0ca7ab9f4a530",
+    "branch": "features/validated-solver-improvement-loop"
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "model": {
+    "schemaVersion": 1,
+    "modelType": "lns-window-ranker-gap-diagnostics",
+    "purpose": "offline-diagnostics-only",
+    "runtimeDefaultChanged": false,
+    "solverDefaultChanged": false,
+    "target": "roll-forward-final-lift",
+    "weakSeedReplayLabelsAllowed": false,
+    "supplementalReplaySnapshotCount": 2,
+    "rankerModelFingerprint": "fnv1a:79bd43a0",
+    "onlineScorecardType": "lns-window-ranker-online-ablation"
+  },
+  "inputArtifacts": [
+    "artifacts/learned-ranking-labels/2026-05-04/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1/labels.json",
+    "artifacts/lns-window-ranker/2026-05-08/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-wide-anchor-opportunity-exact-neutral-calibration-lr0.02-cap100/model.json",
+    "artifacts/lns-window-ranker-online/2026-05-08/protected-full-wide-anchor-opportunity-exact-neutral-calibration-min-score-delta-0.1/lns-window-ranker-online-ablation.json",
+    "artifacts/lns-window-replay-labels/2026-05-08/protected-full-online-decision-state-roll-forward-8x0.2/lns-window-replay-labels.json",
+    "artifacts/lns-window-replay-labels/2026-05-08/protected-anchor-service-wide-window-opportunity-roll-forward-1x0.1/lns-window-replay-labels.json"
+  ],
+  "outputArtifacts": [
+    "artifacts/lns-window-ranker-gap-diagnostics/2026-05-08/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-wide-anchor-opportunity-exact-neutral-calibration-protected-gap/lns-window-ranker-gap-diagnostics.json",
+    "artifacts/lns-window-ranker-gap-diagnostics/2026-05-08/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-wide-anchor-opportunity-exact-neutral-calibration-protected-gap/lns-window-ranker-gap-diagnostics.txt",
+    "artifacts/lns-window-ranker-gap-diagnostics/2026-05-08/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-wide-anchor-opportunity-exact-neutral-calibration-protected-gap/telemetry-manifest.json"
+  ],
+  "labelFingerprint": "fnv1a:58ce487f",
+  "datasetFingerprint": "fnv1a:b3c3fe8b",
+  "modelFingerprint": "fnv1a:d8677c95",
+  "metrics": {
+    "target": "roll-forward-final-lift",
+    "weakSeedReplayLabelsAllowed": false,
+    "supplementalReplaySnapshotCount": 2,
+    "offlineDecisionCount": 129,
+    "offlineSupplementalDecisionCount": 39,
+    "offlineOverrideCount": 123,
+    "offlineOpportunityCount": 60,
+    "onlineComparisonCount": 15,
+    "onlineOverrideCount": 24,
+    "onlineSelectionTraceCount": 30,
+    "onlineFinalNeutralOverrideCount": 24,
+    "joinedTransitionFamilyCount": 8,
+    "offlinePositiveOnlineNeutralCount": 1,
+    "onlineActiveNoOfflineMatchCount": 4,
+    "exactReplayNeutralizedOfflinePositiveOnlineNeutralCount": 0,
+    "traceComparisonLayoutSignatureCounts": {
+      "changed-layout-final-neutral": 0,
+      "mixed-final-outcome": 0,
+      "mixed-layout-final-neutral": 2,
+      "missing-layout-delta": 0,
+      "zero-layout-final-neutral": 3
+    },
+    "zeroLayoutFinalNeutralTraceComparisonCount": 3,
+    "changedLayoutFinalNeutralTraceComparisonCount": 0,
+    "mixedLayoutFinalNeutralTraceComparisonCount": 2,
+    "promotionSensitivity": {
+      "suppressedLayoutSignature": "zero-layout-final-neutral",
+      "suppressedTraceComparisonCount": 3,
+      "remainingTraceComparisonCount": 2,
+      "remainingOfflinePositiveOnlineNeutralCount": 1,
+      "remainingOnlineActiveNoOfflineMatchCount": 1,
+      "changedLayoutNoLiftTrajectoryDepthCount": 2,
+      "missingLayoutDeltaCount": 0,
+      "mixedFinalOutcomeCount": 0,
+      "remainingPromotionBlocked": true,
+      "remainingBlockers": [
+        "unmatched-protected-replay-evidence",
+        "changed-layout-no-lift-trajectory-depth"
+      ],
+      "protectedReplayEvidenceGate": {
+        "suppressedDiagnosis": "online-active-no-offline-match",
+        "suppressedTraceComparisonCount": 1,
+        "remainingTraceComparisonCount": 1,
+        "remainingOfflinePositiveOnlineNeutralCount": 1,
+        "changedLayoutNoLiftTrajectoryDepthCount": 1,
+        "missingLayoutDeltaCount": 0,
+        "mixedFinalOutcomeCount": 0,
+        "remainingPromotionBlocked": true,
+        "remainingBlockers": [
+          "changed-layout-no-lift-trajectory-depth"
+        ]
+      }
+    },
+    "traceComparisonCount": 5,
+    "traceComparisonOnlineTraceCount": 15,
+    "traceComparisonChangedFinalLayoutTraceCount": 4,
+    "traceComparisonPostSelectionImprovementTraceCount": 3,
+    "traceComparisonOfflineDecisionCount": 6,
+    "recommendedExperimentCount": 2,
+    "longerRollForwardReplayRecommendationCount": 1,
+    "targetedProtectedReplayLabelRecommendationCount": 1,
+    "promotionBlocked": true
+  },
+  "notes": "Offline-to-online LNS window-ranker gap diagnostics; no solver default changed."
+}

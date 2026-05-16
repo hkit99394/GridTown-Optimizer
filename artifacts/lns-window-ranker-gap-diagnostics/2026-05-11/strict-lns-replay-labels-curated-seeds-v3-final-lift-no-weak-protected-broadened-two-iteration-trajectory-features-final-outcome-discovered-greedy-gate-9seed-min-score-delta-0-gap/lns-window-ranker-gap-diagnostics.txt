@@ -1,0 +1,18 @@
+=== LNS Window Ranker Offline/Online Gap Diagnostics ===
+Generated: 2026-05-11T23:32:47.270Z
+Schema: 1
+Audit: runtime-default-changed=false solver-default-changed=false target=roll-forward-final-lift weak-seed-labels=false supplemental-replay=4
+Inputs: label=fnv1a:58ce487f model=fnv1a:09853445 online=fnv1a:a16a6e0a supplemental=fnv1a:dcdf459c,fnv1a:b6510add,fnv1a:84fd7aa3,fnv1a:9cee3765
+Offline: decisions=177 supplemental=87 overrides=177 opportunities=81 selected-positive=42
+Online: cases=10 seeds=5,7,11,13,17,19,23,29,37 comparisons=90 min-score-delta=0 overrides=63 selection-trace=180 final-neutral-overrides=63
+Gap: joined-transition-families=5 offline-positive-online-neutral=0 online-active-no-offline-match=0 exact-replay-neutralized=1 promotion-blocked=false
+Layout signatures: none
+Promotion sensitivity: suppress=zero-layout-final-neutral:0 remaining=0 remaining-blocked=false blockers=none unmatched=0 changed-layout-no-lift=0 evidence-gate-suppress=online-active-no-offline-match:0 evidence-gate-remaining=0 evidence-gate-blocked=false evidence-gate-blockers=none
+Online neutral override rate: 100.0%
+Joined evidence:
+- offline-neutral-online-neutral exact-replay-neutralized=true corridor/random-exploration->random-exploration: decisions=12 supplemental=3 exact-online-supplemental=3 selected-positive=6 exact-online-selected-positive=0 hit-best=6/6 selected-delta=+60 capture=1.0000 baseline-capture=0.0000 online-overrides=18 finals=0/18/0 mean-delta=0
+Trace comparisons:
+- none
+Recommended experiments:
+- none
+Decision: diagnostics only; no LNS runtime scorer or solver default changed.

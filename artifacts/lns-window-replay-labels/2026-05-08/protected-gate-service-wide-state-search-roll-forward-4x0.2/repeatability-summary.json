@@ -1,0 +1,418 @@
+{
+  "schemaVersion": 1,
+  "rollForwardLabelCount": 312,
+  "bucketCount": 120,
+  "repeatedBucketCount": 96,
+  "mixedFinalStatusBucketCount": 20,
+  "conflictingFinalStatusBucketCount": 20,
+  "conflictingLabelCount": 60,
+  "conflictingStatusCounts": {
+    "improved": 29,
+    "neutral": 11,
+    "regressed": 20,
+    "unknown": 0
+  },
+  "featureIdenticalConflictBucketCount": 20,
+  "featureIdenticalConflictLabelCount": 60,
+  "examples": [
+    {
+      "caseName": "lns-holdout-service-braid-pressure",
+      "pressureFamily": "service-pressure",
+      "statePolicy": "initial-incumbent",
+      "operator": "frontier-congestion",
+      "window": "1:1:3x3",
+      "labelCount": 3,
+      "seedCount": 3,
+      "seeds": [
+        7,
+        19,
+        37
+      ],
+      "statusCounts": {
+        "improved": 2,
+        "neutral": 0,
+        "regressed": 1,
+        "unknown": 0
+      },
+      "finalDeltas": [
+        -50,
+        50
+      ],
+      "baselineTotals": [
+        760,
+        810
+      ],
+      "totalPopulations": [
+        760,
+        810
+      ],
+      "featureFingerprintCount": 1
+    },
+    {
+      "caseName": "lns-holdout-service-braid-pressure",
+      "pressureFamily": "service-pressure",
+      "statePolicy": "initial-incumbent",
+      "operator": "service-overlap",
+      "window": "1:2:3x3",
+      "labelCount": 3,
+      "seedCount": 3,
+      "seeds": [
+        7,
+        19,
+        37
+      ],
+      "statusCounts": {
+        "improved": 2,
+        "neutral": 0,
+        "regressed": 1,
+        "unknown": 0
+      },
+      "finalDeltas": [
+        -50,
+        50
+      ],
+      "baselineTotals": [
+        760,
+        810
+      ],
+      "totalPopulations": [
+        760,
+        810
+      ],
+      "featureFingerprintCount": 1
+    },
+    {
+      "caseName": "lns-holdout-service-braid-pressure",
+      "pressureFamily": "service-pressure",
+      "statePolicy": "initial-incumbent",
+      "operator": "sliding",
+      "window": "0:2:4x3",
+      "labelCount": 3,
+      "seedCount": 3,
+      "seeds": [
+        7,
+        19,
+        37
+      ],
+      "statusCounts": {
+        "improved": 2,
+        "neutral": 0,
+        "regressed": 1,
+        "unknown": 0
+      },
+      "finalDeltas": [
+        -50,
+        50
+      ],
+      "baselineTotals": [
+        760,
+        810
+      ],
+      "totalPopulations": [
+        760,
+        810
+      ],
+      "featureFingerprintCount": 1
+    },
+    {
+      "caseName": "lns-holdout-service-braid-pressure",
+      "pressureFamily": "service-pressure",
+      "statePolicy": "post-stagnation",
+      "operator": "frontier-congestion",
+      "window": "1:1:3x3",
+      "labelCount": 3,
+      "seedCount": 3,
+      "seeds": [
+        7,
+        19,
+        37
+      ],
+      "statusCounts": {
+        "improved": 2,
+        "neutral": 0,
+        "regressed": 1,
+        "unknown": 0
+      },
+      "finalDeltas": [
+        -50,
+        50
+      ],
+      "baselineTotals": [
+        760,
+        810
+      ],
+      "totalPopulations": [
+        760,
+        810
+      ],
+      "featureFingerprintCount": 1
+    },
+    {
+      "caseName": "lns-holdout-service-braid-pressure",
+      "pressureFamily": "service-pressure",
+      "statePolicy": "post-stagnation",
+      "operator": "gate-choke",
+      "window": "1:1:3x3",
+      "labelCount": 3,
+      "seedCount": 3,
+      "seeds": [
+        7,
+        19,
+        37
+      ],
+      "statusCounts": {
+        "improved": 2,
+        "neutral": 0,
+        "regressed": 1,
+        "unknown": 0
+      },
+      "finalDeltas": [
+        -50,
+        50
+      ],
+      "baselineTotals": [
+        760,
+        810
+      ],
+      "totalPopulations": [
+        760,
+        810
+      ],
+      "featureFingerprintCount": 1
+    },
+    {
+      "caseName": "lns-holdout-service-braid-pressure",
+      "pressureFamily": "service-pressure",
+      "statePolicy": "post-stagnation",
+      "operator": "placed-buildings",
+      "window": "1:0:3x3",
+      "labelCount": 3,
+      "seedCount": 3,
+      "seeds": [
+        7,
+        19,
+        37
+      ],
+      "statusCounts": {
+        "improved": 2,
+        "neutral": 0,
+        "regressed": 1,
+        "unknown": 0
+      },
+      "finalDeltas": [
+        -50,
+        50
+      ],
+      "baselineTotals": [
+        760,
+        810
+      ],
+      "totalPopulations": [
+        760,
+        810
+      ],
+      "featureFingerprintCount": 1
+    },
+    {
+      "caseName": "lns-holdout-service-braid-pressure",
+      "pressureFamily": "service-pressure",
+      "statePolicy": "post-stagnation",
+      "operator": "placed-buildings",
+      "window": "1:2:3x3",
+      "labelCount": 3,
+      "seedCount": 3,
+      "seeds": [
+        7,
+        19,
+        37
+      ],
+      "statusCounts": {
+        "improved": 2,
+        "neutral": 0,
+        "regressed": 1,
+        "unknown": 0
+      },
+      "finalDeltas": [
+        -50,
+        50
+      ],
+      "baselineTotals": [
+        760,
+        810
+      ],
+      "totalPopulations": [
+        760,
+        810
+      ],
+      "featureFingerprintCount": 1
+    },
+    {
+      "caseName": "lns-holdout-service-braid-pressure",
+      "pressureFamily": "service-pressure",
+      "statePolicy": "post-stagnation",
+      "operator": "random-exploration",
+      "window": "1:1:3x3",
+      "labelCount": 3,
+      "seedCount": 3,
+      "seeds": [
+        7,
+        19,
+        37
+      ],
+      "statusCounts": {
+        "improved": 2,
+        "neutral": 0,
+        "regressed": 1,
+        "unknown": 0
+      },
+      "finalDeltas": [
+        -50,
+        50
+      ],
+      "baselineTotals": [
+        760,
+        810
+      ],
+      "totalPopulations": [
+        760,
+        810
+      ],
+      "featureFingerprintCount": 1
+    },
+    {
+      "caseName": "lns-holdout-service-braid-pressure",
+      "pressureFamily": "service-pressure",
+      "statePolicy": "post-stagnation",
+      "operator": "sliding",
+      "window": "0:2:4x3",
+      "labelCount": 3,
+      "seedCount": 3,
+      "seeds": [
+        7,
+        19,
+        37
+      ],
+      "statusCounts": {
+        "improved": 2,
+        "neutral": 0,
+        "regressed": 1,
+        "unknown": 0
+      },
+      "finalDeltas": [
+        -50,
+        50
+      ],
+      "baselineTotals": [
+        760,
+        810
+      ],
+      "totalPopulations": [
+        760,
+        810
+      ],
+      "featureFingerprintCount": 1
+    },
+    {
+      "caseName": "lns-holdout-service-braid-pressure",
+      "pressureFamily": "service-pressure",
+      "statePolicy": "initial-incumbent",
+      "operator": "gate-choke",
+      "window": "1:1:3x3",
+      "labelCount": 3,
+      "seedCount": 3,
+      "seeds": [
+        7,
+        19,
+        37
+      ],
+      "statusCounts": {
+        "improved": 1,
+        "neutral": 1,
+        "regressed": 1,
+        "unknown": 0
+      },
+      "finalDeltas": [
+        -50,
+        0,
+        50
+      ],
+      "baselineTotals": [
+        760,
+        810
+      ],
+      "totalPopulations": [
+        760,
+        810
+      ],
+      "featureFingerprintCount": 1
+    },
+    {
+      "caseName": "lns-holdout-service-braid-pressure",
+      "pressureFamily": "service-pressure",
+      "statePolicy": "initial-incumbent",
+      "operator": "placed-buildings",
+      "window": "1:0:3x3",
+      "labelCount": 3,
+      "seedCount": 3,
+      "seeds": [
+        7,
+        19,
+        37
+      ],
+      "statusCounts": {
+        "improved": 1,
+        "neutral": 1,
+        "regressed": 1,
+        "unknown": 0
+      },
+      "finalDeltas": [
+        -50,
+        0,
+        50
+      ],
+      "baselineTotals": [
+        760,
+        810
+      ],
+      "totalPopulations": [
+        760,
+        810
+      ],
+      "featureFingerprintCount": 1
+    },
+    {
+      "caseName": "lns-holdout-service-braid-pressure",
+      "pressureFamily": "service-pressure",
+      "statePolicy": "initial-incumbent",
+      "operator": "placed-buildings",
+      "window": "1:2:3x3",
+      "labelCount": 3,
+      "seedCount": 3,
+      "seeds": [
+        7,
+        19,
+        37
+      ],
+      "statusCounts": {
+        "improved": 1,
+        "neutral": 1,
+        "regressed": 1,
+        "unknown": 0
+      },
+      "finalDeltas": [
+        -50,
+        0,
+        50
+      ],
+      "baselineTotals": [
+        760,
+        810
+      ],
+      "totalPopulations": [
+        760,
+        810
+      ],
+      "featureFingerprintCount": 1
+    }
+  ]
+}

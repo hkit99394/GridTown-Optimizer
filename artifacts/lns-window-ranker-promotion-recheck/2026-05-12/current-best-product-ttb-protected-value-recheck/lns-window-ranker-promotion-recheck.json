@@ -1,0 +1,1506 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-12T21:59:14.278Z",
+  "decision": "diagnostics-only",
+  "summary": "Promotion-gate recheck for existing online LNS window-ranker candidates; no solver default changed.",
+  "requiredCorpora": [
+    "product",
+    "protected",
+    "default",
+    "fresh"
+  ],
+  "inputArtifacts": [
+    "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-12/product-promotion-runtime-suppressor-weight20-selectivity-split-greedy-gate-9seed-min-score-delta-0.5-veto21.3/candidate-001-residentialcandidateheadroom-4-86-reachableafter/lns-window-ranker-online-ablation.json",
+    "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-12/protected-runtime-suppressor-weight20-selectivity-split-greedy-gate-9seed-min-score-delta-0.5-veto21.3/candidate-001-residentialcandidateheadroom-4-86-reachableafter/lns-window-ranker-online-ablation.json",
+    "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-12/default-replay-pressure-runtime-suppressor-weight20-selectivity-split-greedy-gate-9seed-min-score-delta-0.5-veto21.3/candidate-001-residentialcandidateheadroom-4-86-reachableafter/lns-window-ranker-online-ablation.json",
+    "artifacts/lns-window-ranker-online/2026-05-12/fresh-pressure-holdout-two-iteration-product-pair-weight0.1-runtime-suppressor-weight20-selectivity-split-greedy-gate-9seed-min-score-delta-0.5-suppression-delta-21.3/lns-window-ranker-online-ablation.json",
+    "artifacts/lns-window-ranker-online/2026-05-12/product-promotion-two-iteration-product-pair-weight0.1-fresh-aware-suppressor-w1pn20-no-gate-9seed-min-score-delta-0.5-suppression-delta-0/lns-window-ranker-online-ablation.json",
+    "artifacts/lns-window-ranker-online/2026-05-12/protected-holdout-two-iteration-product-pair-weight0.1-fresh-aware-suppressor-w1pn20-no-gate-9seed-min-score-delta-0.5-suppression-delta-0/lns-window-ranker-online-ablation.json",
+    "artifacts/lns-window-ranker-online/2026-05-12/default-replay-pressure-two-iteration-product-pair-weight0.1-fresh-aware-suppressor-w1pn20-no-gate-9seed-min-score-delta-0.5-suppression-delta-0/lns-window-ranker-online-ablation.json",
+    "artifacts/lns-window-ranker-online/2026-05-12/fresh-pressure-holdout-two-iteration-product-pair-weight0.1-fresh-aware-suppressor-w1pn20-no-gate-9seed-min-score-delta-0.5-suppression-delta-0/lns-window-ranker-online-ablation.json"
+  ],
+  "candidates": [
+    {
+      "id": "selectivity-split",
+      "label": "selectivity-split-gate",
+      "corpora": [
+        {
+          "corpus": "product",
+          "scorecardPath": "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-12/product-promotion-runtime-suppressor-weight20-selectivity-split-greedy-gate-9seed-min-score-delta-0.5-veto21.3/candidate-001-residentialcandidateheadroom-4-86-reachableafter/lns-window-ranker-online-ablation.json",
+          "caseCount": 4,
+          "seedCount": 9,
+          "comparisonCount": 36,
+          "seeds": [
+            7,
+            11,
+            13,
+            19,
+            23,
+            29,
+            31,
+            37,
+            43
+          ],
+          "selectedCaseNames": [
+            "lns-product-typed-footprint-pressure",
+            "lns-product-service-local-pressure",
+            "lns-product-manual-layout-replay-pressure",
+            "lns-product-expansion-comparison-replay-pressure"
+          ],
+          "model": {
+            "enabled": true,
+            "modelFingerprint": "fnv1a:2c3b5ba6",
+            "featureSchemaVersion": 3,
+            "minScoreDelta": 0.5,
+            "suppressionModelFingerprint": "fnv1a:96afad77",
+            "suppressionMinScoreDelta": 21.3,
+            "allowedTransitions": null,
+            "selectedFeatureGates": [],
+            "selectedFeatureGateGroups": [
+              [
+                {
+                  "feature": "residentialCandidateHeadroom",
+                  "minValue": 4.86
+                },
+                {
+                  "feature": "reachableAfter",
+                  "minValue": 0.58
+                }
+              ]
+            ],
+            "featureDeltaGates": [],
+            "decisions": 2,
+            "overrides": 0,
+            "fallbackDecisions": 2,
+            "overrideRate": 0,
+            "fallbackRate": 1
+          },
+          "meanPopulationDeltaVsBaseline": 33.75,
+          "medianPopulationDeltaVsBaseline": 0,
+          "worstPopulationDeltaVsBaseline": 0,
+          "bestPopulationDeltaVsBaseline": 180,
+          "improvedCaseCount": 11,
+          "regressedCaseCount": 0,
+          "unchangedCaseCount": 25,
+          "rankerDecisionCount": 72,
+          "rankerOverrideCount": 9,
+          "rankerFallbackDecisionCount": 63,
+          "overrideFinalImprovedCaseCount": 9,
+          "overrideFinalNeutralCaseCount": 0,
+          "overrideFinalRegressedCaseCount": 0,
+          "overrideTransitionCounts": {
+            "weak-service->sliding": 9
+          },
+          "overrideTransitionPressureFamilyCounts": {
+            "weak-service->sliding": {
+              "product-expansion": 9
+            }
+          },
+          "equalPopulationTimeToBestGatePassed": false,
+          "timeToBestPromotionGatePassed": false,
+          "meanTimeToBestWallClockRatioVsBaseline": 1.084073300589784,
+          "medianTimeToBestWallClockRatioVsBaseline": 0.9945229170578996,
+          "timeToBestWallClockKnownPairCount": 36,
+          "timeToBestWallClockUnknownPairCount": 0,
+          "timeToBestWallClockFaster10PercentCount": 4,
+          "timeToBestWallClockSlower10PercentCount": 6,
+          "populationSafe": true,
+          "activeOverride": true,
+          "allFallback": false,
+          "finalNeutralClean": true,
+          "activeFinalValue": true,
+          "populationValue": true,
+          "timeToBestValue": false,
+          "axisPassed": true
+        },
+        {
+          "corpus": "protected",
+          "scorecardPath": "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-12/protected-runtime-suppressor-weight20-selectivity-split-greedy-gate-9seed-min-score-delta-0.5-veto21.3/candidate-001-residentialcandidateheadroom-4-86-reachableafter/lns-window-ranker-online-ablation.json",
+          "caseCount": 10,
+          "seedCount": 9,
+          "comparisonCount": 90,
+          "seeds": [
+            7,
+            11,
+            13,
+            19,
+            23,
+            29,
+            31,
+            37,
+            43
+          ],
+          "selectedCaseNames": [
+            "lns-holdout-corridor-weave-pressure",
+            "lns-holdout-gate-offset-pressure",
+            "lns-holdout-footprint-stagger-pressure",
+            "lns-holdout-service-ridge-pressure",
+            "lns-holdout-anchor-service-shelf-pressure",
+            "lns-holdout-corridor-switchback-pressure",
+            "lns-holdout-gate-double-choke-pressure",
+            "lns-holdout-footprint-lattice-pressure",
+            "lns-holdout-service-braid-pressure",
+            "lns-holdout-anchor-service-harbor-pressure"
+          ],
+          "model": {
+            "enabled": true,
+            "modelFingerprint": "fnv1a:2c3b5ba6",
+            "featureSchemaVersion": 3,
+            "minScoreDelta": 0.5,
+            "suppressionModelFingerprint": "fnv1a:96afad77",
+            "suppressionMinScoreDelta": 21.3,
+            "allowedTransitions": null,
+            "selectedFeatureGates": [],
+            "selectedFeatureGateGroups": [
+              [
+                {
+                  "feature": "residentialCandidateHeadroom",
+                  "minValue": 4.86
+                },
+                {
+                  "feature": "reachableAfter",
+                  "minValue": 0.58
+                }
+              ]
+            ],
+            "featureDeltaGates": [],
+            "decisions": 2,
+            "overrides": 0,
+            "fallbackDecisions": 2,
+            "overrideRate": 0,
+            "fallbackRate": 1
+          },
+          "meanPopulationDeltaVsBaseline": 0,
+          "medianPopulationDeltaVsBaseline": 0,
+          "worstPopulationDeltaVsBaseline": 0,
+          "bestPopulationDeltaVsBaseline": 0,
+          "improvedCaseCount": 0,
+          "regressedCaseCount": 0,
+          "unchangedCaseCount": 90,
+          "rankerDecisionCount": 180,
+          "rankerOverrideCount": 0,
+          "rankerFallbackDecisionCount": 180,
+          "overrideFinalImprovedCaseCount": 0,
+          "overrideFinalNeutralCaseCount": 0,
+          "overrideFinalRegressedCaseCount": 0,
+          "overrideTransitionCounts": {},
+          "overrideTransitionPressureFamilyCounts": {},
+          "equalPopulationTimeToBestGatePassed": true,
+          "timeToBestPromotionGatePassed": false,
+          "meanTimeToBestWallClockRatioVsBaseline": 0.9819181796470628,
+          "medianTimeToBestWallClockRatioVsBaseline": 0.9956875393482242,
+          "timeToBestWallClockKnownPairCount": 90,
+          "timeToBestWallClockUnknownPairCount": 0,
+          "timeToBestWallClockFaster10PercentCount": 6,
+          "timeToBestWallClockSlower10PercentCount": 0,
+          "populationSafe": true,
+          "activeOverride": false,
+          "allFallback": true,
+          "finalNeutralClean": true,
+          "activeFinalValue": false,
+          "populationValue": false,
+          "timeToBestValue": false,
+          "axisPassed": false
+        },
+        {
+          "corpus": "default",
+          "scorecardPath": "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-12/default-replay-pressure-runtime-suppressor-weight20-selectivity-split-greedy-gate-9seed-min-score-delta-0.5-veto21.3/candidate-001-residentialcandidateheadroom-4-86-reachableafter/lns-window-ranker-online-ablation.json",
+          "caseCount": 10,
+          "seedCount": 9,
+          "comparisonCount": 90,
+          "seeds": [
+            7,
+            11,
+            13,
+            19,
+            23,
+            29,
+            31,
+            37,
+            43
+          ],
+          "selectedCaseNames": [
+            "compact-service-repair",
+            "seeded-service-anchor-pressure",
+            "row0-anchor-repair",
+            "lns-corridor-squeeze-pressure",
+            "lns-gate-choke-pressure",
+            "lns-footprint-mix-pressure",
+            "lns-service-overlap-pressure",
+            "lns-anchor-service-corner-pressure",
+            "lns-gate-side-channel-pressure",
+            "lns-footprint-bottleneck-pressure"
+          ],
+          "model": {
+            "enabled": true,
+            "modelFingerprint": "fnv1a:2c3b5ba6",
+            "featureSchemaVersion": 3,
+            "minScoreDelta": 0.5,
+            "suppressionModelFingerprint": "fnv1a:96afad77",
+            "suppressionMinScoreDelta": 21.3,
+            "allowedTransitions": null,
+            "selectedFeatureGates": [],
+            "selectedFeatureGateGroups": [
+              [
+                {
+                  "feature": "residentialCandidateHeadroom",
+                  "minValue": 4.86
+                },
+                {
+                  "feature": "reachableAfter",
+                  "minValue": 0.58
+                }
+              ]
+            ],
+            "featureDeltaGates": [],
+            "decisions": 2,
+            "overrides": 0,
+            "fallbackDecisions": 2,
+            "overrideRate": 0,
+            "fallbackRate": 1
+          },
+          "meanPopulationDeltaVsBaseline": 50,
+          "medianPopulationDeltaVsBaseline": 0,
+          "worstPopulationDeltaVsBaseline": 0,
+          "bestPopulationDeltaVsBaseline": 170,
+          "improvedCaseCount": 36,
+          "regressedCaseCount": 0,
+          "unchangedCaseCount": 54,
+          "rankerDecisionCount": 180,
+          "rankerOverrideCount": 45,
+          "rankerFallbackDecisionCount": 135,
+          "overrideFinalImprovedCaseCount": 36,
+          "overrideFinalNeutralCaseCount": 9,
+          "overrideFinalRegressedCaseCount": 0,
+          "overrideTransitionCounts": {
+            "frontier-congestion->random-exploration": 36,
+            "frontier-congestion->sliding": 9
+          },
+          "overrideTransitionPressureFamilyCounts": {
+            "frontier-congestion->random-exploration": {
+              "gate": 9,
+              "footprint-pressure": 18,
+              "service-pressure": 9
+            },
+            "frontier-congestion->sliding": {
+              "anchor-service": 9
+            }
+          },
+          "equalPopulationTimeToBestGatePassed": false,
+          "timeToBestPromotionGatePassed": false,
+          "meanTimeToBestWallClockRatioVsBaseline": 1.073715267572708,
+          "medianTimeToBestWallClockRatioVsBaseline": 0.998398595496568,
+          "timeToBestWallClockKnownPairCount": 90,
+          "timeToBestWallClockUnknownPairCount": 0,
+          "timeToBestWallClockFaster10PercentCount": 13,
+          "timeToBestWallClockSlower10PercentCount": 14,
+          "populationSafe": true,
+          "activeOverride": true,
+          "allFallback": false,
+          "finalNeutralClean": false,
+          "activeFinalValue": false,
+          "populationValue": true,
+          "timeToBestValue": false,
+          "axisPassed": false
+        },
+        {
+          "corpus": "fresh",
+          "scorecardPath": "artifacts/lns-window-ranker-online/2026-05-12/fresh-pressure-holdout-two-iteration-product-pair-weight0.1-runtime-suppressor-weight20-selectivity-split-greedy-gate-9seed-min-score-delta-0.5-suppression-delta-21.3/lns-window-ranker-online-ablation.json",
+          "caseCount": 6,
+          "seedCount": 9,
+          "comparisonCount": 54,
+          "seeds": [
+            7,
+            11,
+            13,
+            19,
+            23,
+            29,
+            31,
+            37,
+            43
+          ],
+          "selectedCaseNames": [
+            "lns-fresh-product-expansion-side-pocket-pressure",
+            "lns-fresh-product-footprint-offset-pressure",
+            "lns-fresh-product-service-island-pressure",
+            "lns-fresh-service-cross-pressure",
+            "lns-fresh-footprint-cascade-pressure",
+            "lns-fresh-anchor-service-inlet-pressure"
+          ],
+          "model": {
+            "enabled": true,
+            "modelFingerprint": "fnv1a:2c3b5ba6",
+            "featureSchemaVersion": 3,
+            "minScoreDelta": 0.5,
+            "suppressionModelFingerprint": "fnv1a:96afad77",
+            "suppressionMinScoreDelta": 21.3,
+            "allowedTransitions": null,
+            "selectedFeatureGates": [],
+            "selectedFeatureGateGroups": [
+              [
+                {
+                  "feature": "residentialCandidateHeadroom",
+                  "minValue": 4.86
+                },
+                {
+                  "feature": "reachableAfter",
+                  "minValue": 0.58
+                }
+              ]
+            ],
+            "featureDeltaGates": [],
+            "decisions": 2,
+            "overrides": 0,
+            "fallbackDecisions": 2,
+            "overrideRate": 0,
+            "fallbackRate": 1
+          },
+          "meanPopulationDeltaVsBaseline": 0,
+          "medianPopulationDeltaVsBaseline": 0,
+          "worstPopulationDeltaVsBaseline": 0,
+          "bestPopulationDeltaVsBaseline": 0,
+          "improvedCaseCount": 0,
+          "regressedCaseCount": 0,
+          "unchangedCaseCount": 54,
+          "rankerDecisionCount": 108,
+          "rankerOverrideCount": 0,
+          "rankerFallbackDecisionCount": 108,
+          "overrideFinalImprovedCaseCount": 0,
+          "overrideFinalNeutralCaseCount": 0,
+          "overrideFinalRegressedCaseCount": 0,
+          "overrideTransitionCounts": {},
+          "overrideTransitionPressureFamilyCounts": {},
+          "equalPopulationTimeToBestGatePassed": true,
+          "timeToBestPromotionGatePassed": false,
+          "meanTimeToBestWallClockRatioVsBaseline": 0.9872187631487017,
+          "medianTimeToBestWallClockRatioVsBaseline": 0.9993580803996807,
+          "timeToBestWallClockKnownPairCount": 54,
+          "timeToBestWallClockUnknownPairCount": 0,
+          "timeToBestWallClockFaster10PercentCount": 2,
+          "timeToBestWallClockSlower10PercentCount": 1,
+          "populationSafe": true,
+          "activeOverride": false,
+          "allFallback": true,
+          "finalNeutralClean": true,
+          "activeFinalValue": false,
+          "populationValue": false,
+          "timeToBestValue": false,
+          "axisPassed": false
+        }
+      ]
+    },
+    {
+      "id": "fresh-aware",
+      "label": "fresh-aware-suppressor",
+      "corpora": [
+        {
+          "corpus": "product",
+          "scorecardPath": "artifacts/lns-window-ranker-online/2026-05-12/product-promotion-two-iteration-product-pair-weight0.1-fresh-aware-suppressor-w1pn20-no-gate-9seed-min-score-delta-0.5-suppression-delta-0/lns-window-ranker-online-ablation.json",
+          "caseCount": 4,
+          "seedCount": 9,
+          "comparisonCount": 36,
+          "seeds": [
+            7,
+            11,
+            13,
+            19,
+            23,
+            29,
+            31,
+            37,
+            43
+          ],
+          "selectedCaseNames": [
+            "lns-product-typed-footprint-pressure",
+            "lns-product-service-local-pressure",
+            "lns-product-manual-layout-replay-pressure",
+            "lns-product-expansion-comparison-replay-pressure"
+          ],
+          "model": {
+            "enabled": true,
+            "modelFingerprint": "fnv1a:2c3b5ba6",
+            "featureSchemaVersion": 3,
+            "minScoreDelta": 0.5,
+            "suppressionModelFingerprint": "fnv1a:25e45341",
+            "suppressionMinScoreDelta": 0,
+            "allowedTransitions": null,
+            "selectedFeatureGates": [],
+            "selectedFeatureGateGroups": [],
+            "featureDeltaGates": [],
+            "decisions": 2,
+            "overrides": 0,
+            "fallbackDecisions": 2,
+            "overrideRate": 0,
+            "fallbackRate": 1
+          },
+          "meanPopulationDeltaVsBaseline": 2.9166666666666665,
+          "medianPopulationDeltaVsBaseline": 0,
+          "worstPopulationDeltaVsBaseline": 0,
+          "bestPopulationDeltaVsBaseline": 105,
+          "improvedCaseCount": 1,
+          "regressedCaseCount": 0,
+          "unchangedCaseCount": 35,
+          "rankerDecisionCount": 72,
+          "rankerOverrideCount": 1,
+          "rankerFallbackDecisionCount": 71,
+          "overrideFinalImprovedCaseCount": 1,
+          "overrideFinalNeutralCaseCount": 0,
+          "overrideFinalRegressedCaseCount": 0,
+          "overrideTransitionCounts": {
+            "residential-headroom->sliding": 1
+          },
+          "overrideTransitionPressureFamilyCounts": {
+            "residential-headroom->sliding": {
+              "product-expansion": 1
+            }
+          },
+          "equalPopulationTimeToBestGatePassed": false,
+          "timeToBestPromotionGatePassed": false,
+          "meanTimeToBestWallClockRatioVsBaseline": 0.9807219552332397,
+          "medianTimeToBestWallClockRatioVsBaseline": 0.9854667205398426,
+          "timeToBestWallClockKnownPairCount": 36,
+          "timeToBestWallClockUnknownPairCount": 0,
+          "timeToBestWallClockFaster10PercentCount": 3,
+          "timeToBestWallClockSlower10PercentCount": 2,
+          "populationSafe": true,
+          "activeOverride": true,
+          "allFallback": false,
+          "finalNeutralClean": true,
+          "activeFinalValue": true,
+          "populationValue": true,
+          "timeToBestValue": false,
+          "axisPassed": true
+        },
+        {
+          "corpus": "protected",
+          "scorecardPath": "artifacts/lns-window-ranker-online/2026-05-12/protected-holdout-two-iteration-product-pair-weight0.1-fresh-aware-suppressor-w1pn20-no-gate-9seed-min-score-delta-0.5-suppression-delta-0/lns-window-ranker-online-ablation.json",
+          "caseCount": 10,
+          "seedCount": 9,
+          "comparisonCount": 90,
+          "seeds": [
+            7,
+            11,
+            13,
+            19,
+            23,
+            29,
+            31,
+            37,
+            43
+          ],
+          "selectedCaseNames": [
+            "lns-holdout-corridor-weave-pressure",
+            "lns-holdout-gate-offset-pressure",
+            "lns-holdout-footprint-stagger-pressure",
+            "lns-holdout-service-ridge-pressure",
+            "lns-holdout-anchor-service-shelf-pressure",
+            "lns-holdout-corridor-switchback-pressure",
+            "lns-holdout-gate-double-choke-pressure",
+            "lns-holdout-footprint-lattice-pressure",
+            "lns-holdout-service-braid-pressure",
+            "lns-holdout-anchor-service-harbor-pressure"
+          ],
+          "model": {
+            "enabled": true,
+            "modelFingerprint": "fnv1a:2c3b5ba6",
+            "featureSchemaVersion": 3,
+            "minScoreDelta": 0.5,
+            "suppressionModelFingerprint": "fnv1a:25e45341",
+            "suppressionMinScoreDelta": 0,
+            "allowedTransitions": null,
+            "selectedFeatureGates": [],
+            "selectedFeatureGateGroups": [],
+            "featureDeltaGates": [],
+            "decisions": 2,
+            "overrides": 1,
+            "fallbackDecisions": 1,
+            "overrideRate": 0.5,
+            "fallbackRate": 0.5
+          },
+          "meanPopulationDeltaVsBaseline": 0.5,
+          "medianPopulationDeltaVsBaseline": 0,
+          "worstPopulationDeltaVsBaseline": 0,
+          "bestPopulationDeltaVsBaseline": 45,
+          "improvedCaseCount": 1,
+          "regressedCaseCount": 0,
+          "unchangedCaseCount": 89,
+          "rankerDecisionCount": 180,
+          "rankerOverrideCount": 9,
+          "rankerFallbackDecisionCount": 171,
+          "overrideFinalImprovedCaseCount": 0,
+          "overrideFinalNeutralCaseCount": 9,
+          "overrideFinalRegressedCaseCount": 0,
+          "overrideTransitionCounts": {
+            "residential-headroom->sliding": 9
+          },
+          "overrideTransitionPressureFamilyCounts": {
+            "residential-headroom->sliding": {
+              "corridor": 9
+            }
+          },
+          "equalPopulationTimeToBestGatePassed": false,
+          "timeToBestPromotionGatePassed": false,
+          "meanTimeToBestWallClockRatioVsBaseline": 1.1993324569968074,
+          "medianTimeToBestWallClockRatioVsBaseline": 0.9903156627375452,
+          "timeToBestWallClockKnownPairCount": 90,
+          "timeToBestWallClockUnknownPairCount": 0,
+          "timeToBestWallClockFaster10PercentCount": 5,
+          "timeToBestWallClockSlower10PercentCount": 3,
+          "populationSafe": true,
+          "activeOverride": true,
+          "allFallback": false,
+          "finalNeutralClean": false,
+          "activeFinalValue": false,
+          "populationValue": true,
+          "timeToBestValue": false,
+          "axisPassed": false
+        },
+        {
+          "corpus": "default",
+          "scorecardPath": "artifacts/lns-window-ranker-online/2026-05-12/default-replay-pressure-two-iteration-product-pair-weight0.1-fresh-aware-suppressor-w1pn20-no-gate-9seed-min-score-delta-0.5-suppression-delta-0/lns-window-ranker-online-ablation.json",
+          "caseCount": 10,
+          "seedCount": 9,
+          "comparisonCount": 90,
+          "seeds": [
+            7,
+            11,
+            13,
+            19,
+            23,
+            29,
+            31,
+            37,
+            43
+          ],
+          "selectedCaseNames": [
+            "compact-service-repair",
+            "seeded-service-anchor-pressure",
+            "row0-anchor-repair",
+            "lns-corridor-squeeze-pressure",
+            "lns-gate-choke-pressure",
+            "lns-footprint-mix-pressure",
+            "lns-service-overlap-pressure",
+            "lns-anchor-service-corner-pressure",
+            "lns-gate-side-channel-pressure",
+            "lns-footprint-bottleneck-pressure"
+          ],
+          "model": {
+            "enabled": true,
+            "modelFingerprint": "fnv1a:2c3b5ba6",
+            "featureSchemaVersion": 3,
+            "minScoreDelta": 0.5,
+            "suppressionModelFingerprint": "fnv1a:25e45341",
+            "suppressionMinScoreDelta": 0,
+            "allowedTransitions": null,
+            "selectedFeatureGates": [],
+            "selectedFeatureGateGroups": [],
+            "featureDeltaGates": [],
+            "decisions": 2,
+            "overrides": 0,
+            "fallbackDecisions": 2,
+            "overrideRate": 0,
+            "fallbackRate": 1
+          },
+          "meanPopulationDeltaVsBaseline": 9,
+          "medianPopulationDeltaVsBaseline": 0,
+          "worstPopulationDeltaVsBaseline": 0,
+          "bestPopulationDeltaVsBaseline": 90,
+          "improvedCaseCount": 9,
+          "regressedCaseCount": 0,
+          "unchangedCaseCount": 81,
+          "rankerDecisionCount": 180,
+          "rankerOverrideCount": 18,
+          "rankerFallbackDecisionCount": 162,
+          "overrideFinalImprovedCaseCount": 9,
+          "overrideFinalNeutralCaseCount": 9,
+          "overrideFinalRegressedCaseCount": 0,
+          "overrideTransitionCounts": {
+            "residential-headroom->sliding": 9,
+            "frontier-congestion->sliding": 9
+          },
+          "overrideTransitionPressureFamilyCounts": {
+            "residential-headroom->sliding": {
+              "anchor-service": 9
+            },
+            "frontier-congestion->sliding": {
+              "anchor-service": 9
+            }
+          },
+          "equalPopulationTimeToBestGatePassed": false,
+          "timeToBestPromotionGatePassed": false,
+          "meanTimeToBestWallClockRatioVsBaseline": 0.9978352210225064,
+          "medianTimeToBestWallClockRatioVsBaseline": 0.9978899436039294,
+          "timeToBestWallClockKnownPairCount": 90,
+          "timeToBestWallClockUnknownPairCount": 0,
+          "timeToBestWallClockFaster10PercentCount": 7,
+          "timeToBestWallClockSlower10PercentCount": 7,
+          "populationSafe": true,
+          "activeOverride": true,
+          "allFallback": false,
+          "finalNeutralClean": false,
+          "activeFinalValue": false,
+          "populationValue": true,
+          "timeToBestValue": false,
+          "axisPassed": false
+        },
+        {
+          "corpus": "fresh",
+          "scorecardPath": "artifacts/lns-window-ranker-online/2026-05-12/fresh-pressure-holdout-two-iteration-product-pair-weight0.1-fresh-aware-suppressor-w1pn20-no-gate-9seed-min-score-delta-0.5-suppression-delta-0/lns-window-ranker-online-ablation.json",
+          "caseCount": 6,
+          "seedCount": 9,
+          "comparisonCount": 54,
+          "seeds": [
+            7,
+            11,
+            13,
+            19,
+            23,
+            29,
+            31,
+            37,
+            43
+          ],
+          "selectedCaseNames": [
+            "lns-fresh-product-expansion-side-pocket-pressure",
+            "lns-fresh-product-footprint-offset-pressure",
+            "lns-fresh-product-service-island-pressure",
+            "lns-fresh-service-cross-pressure",
+            "lns-fresh-footprint-cascade-pressure",
+            "lns-fresh-anchor-service-inlet-pressure"
+          ],
+          "model": {
+            "enabled": true,
+            "modelFingerprint": "fnv1a:2c3b5ba6",
+            "featureSchemaVersion": 3,
+            "minScoreDelta": 0.5,
+            "suppressionModelFingerprint": "fnv1a:25e45341",
+            "suppressionMinScoreDelta": 0,
+            "allowedTransitions": null,
+            "selectedFeatureGates": [],
+            "selectedFeatureGateGroups": [],
+            "featureDeltaGates": [],
+            "decisions": 2,
+            "overrides": 0,
+            "fallbackDecisions": 2,
+            "overrideRate": 0,
+            "fallbackRate": 1
+          },
+          "meanPopulationDeltaVsBaseline": 0,
+          "medianPopulationDeltaVsBaseline": 0,
+          "worstPopulationDeltaVsBaseline": 0,
+          "bestPopulationDeltaVsBaseline": 0,
+          "improvedCaseCount": 0,
+          "regressedCaseCount": 0,
+          "unchangedCaseCount": 54,
+          "rankerDecisionCount": 108,
+          "rankerOverrideCount": 0,
+          "rankerFallbackDecisionCount": 108,
+          "overrideFinalImprovedCaseCount": 0,
+          "overrideFinalNeutralCaseCount": 0,
+          "overrideFinalRegressedCaseCount": 0,
+          "overrideTransitionCounts": {},
+          "overrideTransitionPressureFamilyCounts": {},
+          "equalPopulationTimeToBestGatePassed": true,
+          "timeToBestPromotionGatePassed": false,
+          "meanTimeToBestWallClockRatioVsBaseline": 0.9962161506469843,
+          "medianTimeToBestWallClockRatioVsBaseline": 0.9969724864454197,
+          "timeToBestWallClockKnownPairCount": 54,
+          "timeToBestWallClockUnknownPairCount": 0,
+          "timeToBestWallClockFaster10PercentCount": 3,
+          "timeToBestWallClockSlower10PercentCount": 1,
+          "populationSafe": true,
+          "activeOverride": false,
+          "allFallback": true,
+          "finalNeutralClean": true,
+          "activeFinalValue": false,
+          "populationValue": false,
+          "timeToBestValue": false,
+          "axisPassed": false
+        }
+      ]
+    }
+  ],
+  "summaryMetrics": {
+    "candidateCount": 2,
+    "scorecardCount": 8,
+    "promotionReadyCandidateCount": 0,
+    "populationSafeCandidateCount": 2,
+    "finalNeutralCleanCandidateCount": 0,
+    "productAxisPassedCandidateCount": 2,
+    "productTimeToBestPassedCandidateCount": 0,
+    "protectedAxisPassedCandidateCount": 0,
+    "freshAxisPassedCandidateCount": 0,
+    "candidateSummaries": [
+      {
+        "id": "selectivity-split",
+        "label": "selectivity-split-gate",
+        "corpusCount": 4,
+        "requiredCorporaPresent": true,
+        "promotionReady": false,
+        "populationSafe": true,
+        "finalNeutralClean": false,
+        "productAxisPassed": true,
+        "productTimeToBestPassed": false,
+        "protectedAxisPassed": false,
+        "protectedTimeToBestPassed": false,
+        "freshAxisPassed": false,
+        "freshTimeToBestPassed": false,
+        "blockerCount": 3,
+        "blockers": [
+          "default-final-neutral-overrides-9",
+          "fresh-active-value-or-time-to-best-missing",
+          "protected-active-value-or-time-to-best-missing"
+        ],
+        "diagnostics": [
+          "default-time-to-best-gate-failed",
+          "fresh-all-fallback",
+          "fresh-time-to-best-gate-failed",
+          "product-time-to-best-gate-failed",
+          "protected-all-fallback",
+          "protected-time-to-best-gate-failed"
+        ],
+        "modelFingerprints": [
+          "fnv1a:2c3b5ba6"
+        ],
+        "suppressionModelFingerprints": [
+          "fnv1a:96afad77"
+        ],
+        "suppressionMinScoreDeltas": [
+          21.3
+        ],
+        "corpora": [
+          {
+            "corpus": "product",
+            "scorecardPath": "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-12/product-promotion-runtime-suppressor-weight20-selectivity-split-greedy-gate-9seed-min-score-delta-0.5-veto21.3/candidate-001-residentialcandidateheadroom-4-86-reachableafter/lns-window-ranker-online-ablation.json",
+            "caseCount": 4,
+            "seedCount": 9,
+            "comparisonCount": 36,
+            "seeds": [
+              7,
+              11,
+              13,
+              19,
+              23,
+              29,
+              31,
+              37,
+              43
+            ],
+            "selectedCaseNames": [
+              "lns-product-typed-footprint-pressure",
+              "lns-product-service-local-pressure",
+              "lns-product-manual-layout-replay-pressure",
+              "lns-product-expansion-comparison-replay-pressure"
+            ],
+            "model": {
+              "enabled": true,
+              "modelFingerprint": "fnv1a:2c3b5ba6",
+              "featureSchemaVersion": 3,
+              "minScoreDelta": 0.5,
+              "suppressionModelFingerprint": "fnv1a:96afad77",
+              "suppressionMinScoreDelta": 21.3,
+              "allowedTransitions": null,
+              "selectedFeatureGates": [],
+              "selectedFeatureGateGroups": [
+                [
+                  {
+                    "feature": "residentialCandidateHeadroom",
+                    "minValue": 4.86
+                  },
+                  {
+                    "feature": "reachableAfter",
+                    "minValue": 0.58
+                  }
+                ]
+              ],
+              "featureDeltaGates": [],
+              "decisions": 2,
+              "overrides": 0,
+              "fallbackDecisions": 2,
+              "overrideRate": 0,
+              "fallbackRate": 1
+            },
+            "meanPopulationDeltaVsBaseline": 33.75,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstPopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 180,
+            "improvedCaseCount": 11,
+            "regressedCaseCount": 0,
+            "unchangedCaseCount": 25,
+            "rankerDecisionCount": 72,
+            "rankerOverrideCount": 9,
+            "rankerFallbackDecisionCount": 63,
+            "overrideFinalImprovedCaseCount": 9,
+            "overrideFinalNeutralCaseCount": 0,
+            "overrideFinalRegressedCaseCount": 0,
+            "overrideTransitionCounts": {
+              "weak-service->sliding": 9
+            },
+            "overrideTransitionPressureFamilyCounts": {
+              "weak-service->sliding": {
+                "product-expansion": 9
+              }
+            },
+            "equalPopulationTimeToBestGatePassed": false,
+            "timeToBestPromotionGatePassed": false,
+            "meanTimeToBestWallClockRatioVsBaseline": 1.084073300589784,
+            "medianTimeToBestWallClockRatioVsBaseline": 0.9945229170578996,
+            "timeToBestWallClockKnownPairCount": 36,
+            "timeToBestWallClockUnknownPairCount": 0,
+            "timeToBestWallClockFaster10PercentCount": 4,
+            "timeToBestWallClockSlower10PercentCount": 6,
+            "populationSafe": true,
+            "activeOverride": true,
+            "allFallback": false,
+            "finalNeutralClean": true,
+            "activeFinalValue": true,
+            "populationValue": true,
+            "timeToBestValue": false,
+            "axisPassed": true
+          },
+          {
+            "corpus": "protected",
+            "scorecardPath": "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-12/protected-runtime-suppressor-weight20-selectivity-split-greedy-gate-9seed-min-score-delta-0.5-veto21.3/candidate-001-residentialcandidateheadroom-4-86-reachableafter/lns-window-ranker-online-ablation.json",
+            "caseCount": 10,
+            "seedCount": 9,
+            "comparisonCount": 90,
+            "seeds": [
+              7,
+              11,
+              13,
+              19,
+              23,
+              29,
+              31,
+              37,
+              43
+            ],
+            "selectedCaseNames": [
+              "lns-holdout-corridor-weave-pressure",
+              "lns-holdout-gate-offset-pressure",
+              "lns-holdout-footprint-stagger-pressure",
+              "lns-holdout-service-ridge-pressure",
+              "lns-holdout-anchor-service-shelf-pressure",
+              "lns-holdout-corridor-switchback-pressure",
+              "lns-holdout-gate-double-choke-pressure",
+              "lns-holdout-footprint-lattice-pressure",
+              "lns-holdout-service-braid-pressure",
+              "lns-holdout-anchor-service-harbor-pressure"
+            ],
+            "model": {
+              "enabled": true,
+              "modelFingerprint": "fnv1a:2c3b5ba6",
+              "featureSchemaVersion": 3,
+              "minScoreDelta": 0.5,
+              "suppressionModelFingerprint": "fnv1a:96afad77",
+              "suppressionMinScoreDelta": 21.3,
+              "allowedTransitions": null,
+              "selectedFeatureGates": [],
+              "selectedFeatureGateGroups": [
+                [
+                  {
+                    "feature": "residentialCandidateHeadroom",
+                    "minValue": 4.86
+                  },
+                  {
+                    "feature": "reachableAfter",
+                    "minValue": 0.58
+                  }
+                ]
+              ],
+              "featureDeltaGates": [],
+              "decisions": 2,
+              "overrides": 0,
+              "fallbackDecisions": 2,
+              "overrideRate": 0,
+              "fallbackRate": 1
+            },
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstPopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "improvedCaseCount": 0,
+            "regressedCaseCount": 0,
+            "unchangedCaseCount": 90,
+            "rankerDecisionCount": 180,
+            "rankerOverrideCount": 0,
+            "rankerFallbackDecisionCount": 180,
+            "overrideFinalImprovedCaseCount": 0,
+            "overrideFinalNeutralCaseCount": 0,
+            "overrideFinalRegressedCaseCount": 0,
+            "overrideTransitionCounts": {},
+            "overrideTransitionPressureFamilyCounts": {},
+            "equalPopulationTimeToBestGatePassed": true,
+            "timeToBestPromotionGatePassed": false,
+            "meanTimeToBestWallClockRatioVsBaseline": 0.9819181796470628,
+            "medianTimeToBestWallClockRatioVsBaseline": 0.9956875393482242,
+            "timeToBestWallClockKnownPairCount": 90,
+            "timeToBestWallClockUnknownPairCount": 0,
+            "timeToBestWallClockFaster10PercentCount": 6,
+            "timeToBestWallClockSlower10PercentCount": 0,
+            "populationSafe": true,
+            "activeOverride": false,
+            "allFallback": true,
+            "finalNeutralClean": true,
+            "activeFinalValue": false,
+            "populationValue": false,
+            "timeToBestValue": false,
+            "axisPassed": false
+          },
+          {
+            "corpus": "default",
+            "scorecardPath": "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-12/default-replay-pressure-runtime-suppressor-weight20-selectivity-split-greedy-gate-9seed-min-score-delta-0.5-veto21.3/candidate-001-residentialcandidateheadroom-4-86-reachableafter/lns-window-ranker-online-ablation.json",
+            "caseCount": 10,
+            "seedCount": 9,
+            "comparisonCount": 90,
+            "seeds": [
+              7,
+              11,
+              13,
+              19,
+              23,
+              29,
+              31,
+              37,
+              43
+            ],
+            "selectedCaseNames": [
+              "compact-service-repair",
+              "seeded-service-anchor-pressure",
+              "row0-anchor-repair",
+              "lns-corridor-squeeze-pressure",
+              "lns-gate-choke-pressure",
+              "lns-footprint-mix-pressure",
+              "lns-service-overlap-pressure",
+              "lns-anchor-service-corner-pressure",
+              "lns-gate-side-channel-pressure",
+              "lns-footprint-bottleneck-pressure"
+            ],
+            "model": {
+              "enabled": true,
+              "modelFingerprint": "fnv1a:2c3b5ba6",
+              "featureSchemaVersion": 3,
+              "minScoreDelta": 0.5,
+              "suppressionModelFingerprint": "fnv1a:96afad77",
+              "suppressionMinScoreDelta": 21.3,
+              "allowedTransitions": null,
+              "selectedFeatureGates": [],
+              "selectedFeatureGateGroups": [
+                [
+                  {
+                    "feature": "residentialCandidateHeadroom",
+                    "minValue": 4.86
+                  },
+                  {
+                    "feature": "reachableAfter",
+                    "minValue": 0.58
+                  }
+                ]
+              ],
+              "featureDeltaGates": [],
+              "decisions": 2,
+              "overrides": 0,
+              "fallbackDecisions": 2,
+              "overrideRate": 0,
+              "fallbackRate": 1
+            },
+            "meanPopulationDeltaVsBaseline": 50,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstPopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 170,
+            "improvedCaseCount": 36,
+            "regressedCaseCount": 0,
+            "unchangedCaseCount": 54,
+            "rankerDecisionCount": 180,
+            "rankerOverrideCount": 45,
+            "rankerFallbackDecisionCount": 135,
+            "overrideFinalImprovedCaseCount": 36,
+            "overrideFinalNeutralCaseCount": 9,
+            "overrideFinalRegressedCaseCount": 0,
+            "overrideTransitionCounts": {
+              "frontier-congestion->random-exploration": 36,
+              "frontier-congestion->sliding": 9
+            },
+            "overrideTransitionPressureFamilyCounts": {
+              "frontier-congestion->random-exploration": {
+                "gate": 9,
+                "footprint-pressure": 18,
+                "service-pressure": 9
+              },
+              "frontier-congestion->sliding": {
+                "anchor-service": 9
+              }
+            },
+            "equalPopulationTimeToBestGatePassed": false,
+            "timeToBestPromotionGatePassed": false,
+            "meanTimeToBestWallClockRatioVsBaseline": 1.073715267572708,
+            "medianTimeToBestWallClockRatioVsBaseline": 0.998398595496568,
+            "timeToBestWallClockKnownPairCount": 90,
+            "timeToBestWallClockUnknownPairCount": 0,
+            "timeToBestWallClockFaster10PercentCount": 13,
+            "timeToBestWallClockSlower10PercentCount": 14,
+            "populationSafe": true,
+            "activeOverride": true,
+            "allFallback": false,
+            "finalNeutralClean": false,
+            "activeFinalValue": false,
+            "populationValue": true,
+            "timeToBestValue": false,
+            "axisPassed": false
+          },
+          {
+            "corpus": "fresh",
+            "scorecardPath": "artifacts/lns-window-ranker-online/2026-05-12/fresh-pressure-holdout-two-iteration-product-pair-weight0.1-runtime-suppressor-weight20-selectivity-split-greedy-gate-9seed-min-score-delta-0.5-suppression-delta-21.3/lns-window-ranker-online-ablation.json",
+            "caseCount": 6,
+            "seedCount": 9,
+            "comparisonCount": 54,
+            "seeds": [
+              7,
+              11,
+              13,
+              19,
+              23,
+              29,
+              31,
+              37,
+              43
+            ],
+            "selectedCaseNames": [
+              "lns-fresh-product-expansion-side-pocket-pressure",
+              "lns-fresh-product-footprint-offset-pressure",
+              "lns-fresh-product-service-island-pressure",
+              "lns-fresh-service-cross-pressure",
+              "lns-fresh-footprint-cascade-pressure",
+              "lns-fresh-anchor-service-inlet-pressure"
+            ],
+            "model": {
+              "enabled": true,
+              "modelFingerprint": "fnv1a:2c3b5ba6",
+              "featureSchemaVersion": 3,
+              "minScoreDelta": 0.5,
+              "suppressionModelFingerprint": "fnv1a:96afad77",
+              "suppressionMinScoreDelta": 21.3,
+              "allowedTransitions": null,
+              "selectedFeatureGates": [],
+              "selectedFeatureGateGroups": [
+                [
+                  {
+                    "feature": "residentialCandidateHeadroom",
+                    "minValue": 4.86
+                  },
+                  {
+                    "feature": "reachableAfter",
+                    "minValue": 0.58
+                  }
+                ]
+              ],
+              "featureDeltaGates": [],
+              "decisions": 2,
+              "overrides": 0,
+              "fallbackDecisions": 2,
+              "overrideRate": 0,
+              "fallbackRate": 1
+            },
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstPopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "improvedCaseCount": 0,
+            "regressedCaseCount": 0,
+            "unchangedCaseCount": 54,
+            "rankerDecisionCount": 108,
+            "rankerOverrideCount": 0,
+            "rankerFallbackDecisionCount": 108,
+            "overrideFinalImprovedCaseCount": 0,
+            "overrideFinalNeutralCaseCount": 0,
+            "overrideFinalRegressedCaseCount": 0,
+            "overrideTransitionCounts": {},
+            "overrideTransitionPressureFamilyCounts": {},
+            "equalPopulationTimeToBestGatePassed": true,
+            "timeToBestPromotionGatePassed": false,
+            "meanTimeToBestWallClockRatioVsBaseline": 0.9872187631487017,
+            "medianTimeToBestWallClockRatioVsBaseline": 0.9993580803996807,
+            "timeToBestWallClockKnownPairCount": 54,
+            "timeToBestWallClockUnknownPairCount": 0,
+            "timeToBestWallClockFaster10PercentCount": 2,
+            "timeToBestWallClockSlower10PercentCount": 1,
+            "populationSafe": true,
+            "activeOverride": false,
+            "allFallback": true,
+            "finalNeutralClean": true,
+            "activeFinalValue": false,
+            "populationValue": false,
+            "timeToBestValue": false,
+            "axisPassed": false
+          }
+        ]
+      },
+      {
+        "id": "fresh-aware",
+        "label": "fresh-aware-suppressor",
+        "corpusCount": 4,
+        "requiredCorporaPresent": true,
+        "promotionReady": false,
+        "populationSafe": true,
+        "finalNeutralClean": false,
+        "productAxisPassed": true,
+        "productTimeToBestPassed": false,
+        "protectedAxisPassed": false,
+        "protectedTimeToBestPassed": false,
+        "freshAxisPassed": false,
+        "freshTimeToBestPassed": false,
+        "blockerCount": 4,
+        "blockers": [
+          "default-final-neutral-overrides-9",
+          "fresh-active-value-or-time-to-best-missing",
+          "protected-active-value-or-time-to-best-missing",
+          "protected-final-neutral-overrides-9"
+        ],
+        "diagnostics": [
+          "default-time-to-best-gate-failed",
+          "fresh-all-fallback",
+          "fresh-time-to-best-gate-failed",
+          "product-time-to-best-gate-failed",
+          "protected-time-to-best-gate-failed"
+        ],
+        "modelFingerprints": [
+          "fnv1a:2c3b5ba6"
+        ],
+        "suppressionModelFingerprints": [
+          "fnv1a:25e45341"
+        ],
+        "suppressionMinScoreDeltas": [
+          0
+        ],
+        "corpora": [
+          {
+            "corpus": "product",
+            "scorecardPath": "artifacts/lns-window-ranker-online/2026-05-12/product-promotion-two-iteration-product-pair-weight0.1-fresh-aware-suppressor-w1pn20-no-gate-9seed-min-score-delta-0.5-suppression-delta-0/lns-window-ranker-online-ablation.json",
+            "caseCount": 4,
+            "seedCount": 9,
+            "comparisonCount": 36,
+            "seeds": [
+              7,
+              11,
+              13,
+              19,
+              23,
+              29,
+              31,
+              37,
+              43
+            ],
+            "selectedCaseNames": [
+              "lns-product-typed-footprint-pressure",
+              "lns-product-service-local-pressure",
+              "lns-product-manual-layout-replay-pressure",
+              "lns-product-expansion-comparison-replay-pressure"
+            ],
+            "model": {
+              "enabled": true,
+              "modelFingerprint": "fnv1a:2c3b5ba6",
+              "featureSchemaVersion": 3,
+              "minScoreDelta": 0.5,
+              "suppressionModelFingerprint": "fnv1a:25e45341",
+              "suppressionMinScoreDelta": 0,
+              "allowedTransitions": null,
+              "selectedFeatureGates": [],
+              "selectedFeatureGateGroups": [],
+              "featureDeltaGates": [],
+              "decisions": 2,
+              "overrides": 0,
+              "fallbackDecisions": 2,
+              "overrideRate": 0,
+              "fallbackRate": 1
+            },
+            "meanPopulationDeltaVsBaseline": 2.9166666666666665,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstPopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 105,
+            "improvedCaseCount": 1,
+            "regressedCaseCount": 0,
+            "unchangedCaseCount": 35,
+            "rankerDecisionCount": 72,
+            "rankerOverrideCount": 1,
+            "rankerFallbackDecisionCount": 71,
+            "overrideFinalImprovedCaseCount": 1,
+            "overrideFinalNeutralCaseCount": 0,
+            "overrideFinalRegressedCaseCount": 0,
+            "overrideTransitionCounts": {
+              "residential-headroom->sliding": 1
+            },
+            "overrideTransitionPressureFamilyCounts": {
+              "residential-headroom->sliding": {
+                "product-expansion": 1
+              }
+            },
+            "equalPopulationTimeToBestGatePassed": false,
+            "timeToBestPromotionGatePassed": false,
+            "meanTimeToBestWallClockRatioVsBaseline": 0.9807219552332397,
+            "medianTimeToBestWallClockRatioVsBaseline": 0.9854667205398426,
+            "timeToBestWallClockKnownPairCount": 36,
+            "timeToBestWallClockUnknownPairCount": 0,
+            "timeToBestWallClockFaster10PercentCount": 3,
+            "timeToBestWallClockSlower10PercentCount": 2,
+            "populationSafe": true,
+            "activeOverride": true,
+            "allFallback": false,
+            "finalNeutralClean": true,
+            "activeFinalValue": true,
+            "populationValue": true,
+            "timeToBestValue": false,
+            "axisPassed": true
+          },
+          {
+            "corpus": "protected",
+            "scorecardPath": "artifacts/lns-window-ranker-online/2026-05-12/protected-holdout-two-iteration-product-pair-weight0.1-fresh-aware-suppressor-w1pn20-no-gate-9seed-min-score-delta-0.5-suppression-delta-0/lns-window-ranker-online-ablation.json",
+            "caseCount": 10,
+            "seedCount": 9,
+            "comparisonCount": 90,
+            "seeds": [
+              7,
+              11,
+              13,
+              19,
+              23,
+              29,
+              31,
+              37,
+              43
+            ],
+            "selectedCaseNames": [
+              "lns-holdout-corridor-weave-pressure",
+              "lns-holdout-gate-offset-pressure",
+              "lns-holdout-footprint-stagger-pressure",
+              "lns-holdout-service-ridge-pressure",
+              "lns-holdout-anchor-service-shelf-pressure",
+              "lns-holdout-corridor-switchback-pressure",
+              "lns-holdout-gate-double-choke-pressure",
+              "lns-holdout-footprint-lattice-pressure",
+              "lns-holdout-service-braid-pressure",
+              "lns-holdout-anchor-service-harbor-pressure"
+            ],
+            "model": {
+              "enabled": true,
+              "modelFingerprint": "fnv1a:2c3b5ba6",
+              "featureSchemaVersion": 3,
+              "minScoreDelta": 0.5,
+              "suppressionModelFingerprint": "fnv1a:25e45341",
+              "suppressionMinScoreDelta": 0,
+              "allowedTransitions": null,
+              "selectedFeatureGates": [],
+              "selectedFeatureGateGroups": [],
+              "featureDeltaGates": [],
+              "decisions": 2,
+              "overrides": 1,
+              "fallbackDecisions": 1,
+              "overrideRate": 0.5,
+              "fallbackRate": 0.5
+            },
+            "meanPopulationDeltaVsBaseline": 0.5,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstPopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 45,
+            "improvedCaseCount": 1,
+            "regressedCaseCount": 0,
+            "unchangedCaseCount": 89,
+            "rankerDecisionCount": 180,
+            "rankerOverrideCount": 9,
+            "rankerFallbackDecisionCount": 171,
+            "overrideFinalImprovedCaseCount": 0,
+            "overrideFinalNeutralCaseCount": 9,
+            "overrideFinalRegressedCaseCount": 0,
+            "overrideTransitionCounts": {
+              "residential-headroom->sliding": 9
+            },
+            "overrideTransitionPressureFamilyCounts": {
+              "residential-headroom->sliding": {
+                "corridor": 9
+              }
+            },
+            "equalPopulationTimeToBestGatePassed": false,
+            "timeToBestPromotionGatePassed": false,
+            "meanTimeToBestWallClockRatioVsBaseline": 1.1993324569968074,
+            "medianTimeToBestWallClockRatioVsBaseline": 0.9903156627375452,
+            "timeToBestWallClockKnownPairCount": 90,
+            "timeToBestWallClockUnknownPairCount": 0,
+            "timeToBestWallClockFaster10PercentCount": 5,
+            "timeToBestWallClockSlower10PercentCount": 3,
+            "populationSafe": true,
+            "activeOverride": true,
+            "allFallback": false,
+            "finalNeutralClean": false,
+            "activeFinalValue": false,
+            "populationValue": true,
+            "timeToBestValue": false,
+            "axisPassed": false
+          },
+          {
+            "corpus": "default",
+            "scorecardPath": "artifacts/lns-window-ranker-online/2026-05-12/default-replay-pressure-two-iteration-product-pair-weight0.1-fresh-aware-suppressor-w1pn20-no-gate-9seed-min-score-delta-0.5-suppression-delta-0/lns-window-ranker-online-ablation.json",
+            "caseCount": 10,
+            "seedCount": 9,
+            "comparisonCount": 90,
+            "seeds": [
+              7,
+              11,
+              13,
+              19,
+              23,
+              29,
+              31,
+              37,
+              43
+            ],
+            "selectedCaseNames": [
+              "compact-service-repair",
+              "seeded-service-anchor-pressure",
+              "row0-anchor-repair",
+              "lns-corridor-squeeze-pressure",
+              "lns-gate-choke-pressure",
+              "lns-footprint-mix-pressure",
+              "lns-service-overlap-pressure",
+              "lns-anchor-service-corner-pressure",
+              "lns-gate-side-channel-pressure",
+              "lns-footprint-bottleneck-pressure"
+            ],
+            "model": {
+              "enabled": true,
+              "modelFingerprint": "fnv1a:2c3b5ba6",
+              "featureSchemaVersion": 3,
+              "minScoreDelta": 0.5,
+              "suppressionModelFingerprint": "fnv1a:25e45341",
+              "suppressionMinScoreDelta": 0,
+              "allowedTransitions": null,
+              "selectedFeatureGates": [],
+              "selectedFeatureGateGroups": [],
+              "featureDeltaGates": [],
+              "decisions": 2,
+              "overrides": 0,
+              "fallbackDecisions": 2,
+              "overrideRate": 0,
+              "fallbackRate": 1
+            },
+            "meanPopulationDeltaVsBaseline": 9,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstPopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 90,
+            "improvedCaseCount": 9,
+            "regressedCaseCount": 0,
+            "unchangedCaseCount": 81,
+            "rankerDecisionCount": 180,
+            "rankerOverrideCount": 18,
+            "rankerFallbackDecisionCount": 162,
+            "overrideFinalImprovedCaseCount": 9,
+            "overrideFinalNeutralCaseCount": 9,
+            "overrideFinalRegressedCaseCount": 0,
+            "overrideTransitionCounts": {
+              "residential-headroom->sliding": 9,
+              "frontier-congestion->sliding": 9
+            },
+            "overrideTransitionPressureFamilyCounts": {
+              "residential-headroom->sliding": {
+                "anchor-service": 9
+              },
+              "frontier-congestion->sliding": {
+                "anchor-service": 9
+              }
+            },
+            "equalPopulationTimeToBestGatePassed": false,
+            "timeToBestPromotionGatePassed": false,
+            "meanTimeToBestWallClockRatioVsBaseline": 0.9978352210225064,
+            "medianTimeToBestWallClockRatioVsBaseline": 0.9978899436039294,
+            "timeToBestWallClockKnownPairCount": 90,
+            "timeToBestWallClockUnknownPairCount": 0,
+            "timeToBestWallClockFaster10PercentCount": 7,
+            "timeToBestWallClockSlower10PercentCount": 7,
+            "populationSafe": true,
+            "activeOverride": true,
+            "allFallback": false,
+            "finalNeutralClean": false,
+            "activeFinalValue": false,
+            "populationValue": true,
+            "timeToBestValue": false,
+            "axisPassed": false
+          },
+          {
+            "corpus": "fresh",
+            "scorecardPath": "artifacts/lns-window-ranker-online/2026-05-12/fresh-pressure-holdout-two-iteration-product-pair-weight0.1-fresh-aware-suppressor-w1pn20-no-gate-9seed-min-score-delta-0.5-suppression-delta-0/lns-window-ranker-online-ablation.json",
+            "caseCount": 6,
+            "seedCount": 9,
+            "comparisonCount": 54,
+            "seeds": [
+              7,
+              11,
+              13,
+              19,
+              23,
+              29,
+              31,
+              37,
+              43
+            ],
+            "selectedCaseNames": [
+              "lns-fresh-product-expansion-side-pocket-pressure",
+              "lns-fresh-product-footprint-offset-pressure",
+              "lns-fresh-product-service-island-pressure",
+              "lns-fresh-service-cross-pressure",
+              "lns-fresh-footprint-cascade-pressure",
+              "lns-fresh-anchor-service-inlet-pressure"
+            ],
+            "model": {
+              "enabled": true,
+              "modelFingerprint": "fnv1a:2c3b5ba6",
+              "featureSchemaVersion": 3,
+              "minScoreDelta": 0.5,
+              "suppressionModelFingerprint": "fnv1a:25e45341",
+              "suppressionMinScoreDelta": 0,
+              "allowedTransitions": null,
+              "selectedFeatureGates": [],
+              "selectedFeatureGateGroups": [],
+              "featureDeltaGates": [],
+              "decisions": 2,
+              "overrides": 0,
+              "fallbackDecisions": 2,
+              "overrideRate": 0,
+              "fallbackRate": 1
+            },
+            "meanPopulationDeltaVsBaseline": 0,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstPopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "improvedCaseCount": 0,
+            "regressedCaseCount": 0,
+            "unchangedCaseCount": 54,
+            "rankerDecisionCount": 108,
+            "rankerOverrideCount": 0,
+            "rankerFallbackDecisionCount": 108,
+            "overrideFinalImprovedCaseCount": 0,
+            "overrideFinalNeutralCaseCount": 0,
+            "overrideFinalRegressedCaseCount": 0,
+            "overrideTransitionCounts": {},
+            "overrideTransitionPressureFamilyCounts": {},
+            "equalPopulationTimeToBestGatePassed": true,
+            "timeToBestPromotionGatePassed": false,
+            "meanTimeToBestWallClockRatioVsBaseline": 0.9962161506469843,
+            "medianTimeToBestWallClockRatioVsBaseline": 0.9969724864454197,
+            "timeToBestWallClockKnownPairCount": 54,
+            "timeToBestWallClockUnknownPairCount": 0,
+            "timeToBestWallClockFaster10PercentCount": 3,
+            "timeToBestWallClockSlower10PercentCount": 1,
+            "populationSafe": true,
+            "activeOverride": false,
+            "allFallback": true,
+            "finalNeutralClean": true,
+            "activeFinalValue": false,
+            "populationValue": false,
+            "timeToBestValue": false,
+            "axisPassed": false
+          }
+        ]
+      }
+    ]
+  },
+  "recheckFingerprint": "fnv1a:2e2fc4ae"
+}

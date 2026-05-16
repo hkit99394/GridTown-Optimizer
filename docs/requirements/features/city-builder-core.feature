@@ -5,6 +5,7 @@ Feature: City builder core feasibility and scoring
 
   Rule: Service effects increase residential population within caps
 
+    @CB-BDD-001
     Scenario: A service effect reaches a residential footprint
       Given an allowed grid with one service and one residential
       And the service effect zone intersects the residential footprint
@@ -16,6 +17,7 @@ Feature: City builder core feasibility and scoring
 
   Rule: Road components must be anchored
 
+    @CB-BDD-002
     Scenario: A road component does not touch the anchor boundary
       Given a road component that is away from row 0 and column 0
       And a building is adjacent to that road component
@@ -25,8 +27,30 @@ Feature: City builder core feasibility and scoring
 
   Rule: Building footprints are disjoint
 
+    @CB-BDD-003
     Scenario: A service and residential claim the same cell
       Given a service footprint and a residential footprint overlap
       When the solution is validated
       Then the solution is rejected
       And the validation explains that building footprints cannot overlap
+
+  Rule: Roads and buildings must use allowed cells
+
+    @CB-BDD-004
+    Scenario: A road and residential claim blocked cells
+      Given a grid with blocked cells
+      And a road is placed on a blocked cell
+      And a residential footprint includes a blocked cell
+      When the solution is validated
+      Then the solution is rejected
+      And the validation explains that roads and buildings must use allowed cells
+
+  Rule: Buildings must be connected to the road anchor
+
+    @CB-BDD-005
+    Scenario: Building road connectivity follows the anchor-boundary exception
+      Given an interior residential that is not adjacent to any road
+      And a boundary residential whose footprint touches row 0
+      When the solutions are validated
+      Then the interior residential solution is rejected
+      And the boundary residential solution is accepted without adjacent road

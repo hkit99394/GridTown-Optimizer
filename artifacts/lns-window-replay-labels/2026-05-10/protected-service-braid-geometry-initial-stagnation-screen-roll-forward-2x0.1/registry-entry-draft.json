@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "runId": "service-braid-service-braid-geometry-initial-stagnation-screen",
+  "artifactType": "label-bundle",
+  "generatedAt": "2026-05-10T12:46:53.973Z",
+  "commands": [
+    "node scripts/generate-service-braid-replay-artifacts.mjs --bundle=service-braid-geometry-initial-stagnation-screen"
+  ],
+  "artifactPaths": [
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-geometry-initial-stagnation-screen-roll-forward-2x0.1/lns-window-replay-labels.json",
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-geometry-initial-stagnation-screen-roll-forward-2x0.1/lns-window-replay-labels.txt",
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-geometry-initial-stagnation-screen-roll-forward-2x0.1/repeatability-summary.json",
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-geometry-initial-stagnation-screen-roll-forward-2x0.1/candidate-summary.json",
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-geometry-initial-stagnation-screen-roll-forward-2x0.1/selectivity-summary.json",
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-geometry-initial-stagnation-screen-roll-forward-2x0.1/selectivity-summary.txt",
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-geometry-initial-stagnation-screen-roll-forward-2x0.1/telemetry-manifest.json",
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-geometry-initial-stagnation-screen-roll-forward-2x0.1/manifest.json"
+  ],
+  "cases": [
+    "lns-holdout-service-braid-open-upper-braid-screen-candidate",
+    "lns-holdout-service-braid-open-lower-notch-screen-candidate",
+    "lns-holdout-service-braid-shift-right-choke-screen-candidate"
+  ],
+  "caseFamilies": [
+    "lns-service-pressure",
+    "lns-window-replay"
+  ],
+  "seeds": [
+    7,
+    19,
+    37
+  ],
+  "inputFingerprint": "fnv1a:d3e77e8b",
+  "labelFingerprint": "fnv1a:e62e8a06",
+  "splitStatus": {
+    "diagnosticsOnly": true,
+    "source": "lns-window-replay-diagnostic-bundle",
+    "statePolicies": [
+      "initial-incumbent",
+      "post-stagnation"
+    ],
+    "capturedStatePolicies": [
+      "initial-incumbent",
+      "post-stagnation"
+    ],
+    "repeatabilitySummary": {
+      "schemaVersion": 1,
+      "rollForwardLabelCount": 216,
+      "bucketCount": 73,
+      "repeatedBucketCount": 72,
+      "mixedFinalStatusBucketCount": 0,
+      "conflictingFinalStatusBucketCount": 0,
+      "conflictingLabelCount": 0,
+      "conflictingStatusCounts": {
+        "improved": 0,
+        "neutral": 0,
+        "regressed": 0,
+        "unknown": 0
+      },
+      "featureIdenticalConflictBucketCount": 0,
+      "featureIdenticalConflictLabelCount": 0,
+      "examples": []
+    }
+  },
+  "budget": {
+    "seeds": [
+      7,
+      19,
+      37
+    ],
+    "maxWindows": 8,
+    "explorationWindowCount": 4,
+    "repairTimeLimitSeconds": 0.1,
+    "rollForwardIterations": 2,
+    "rollForwardRepairTimeLimitSeconds": 0.1,
+    "stateCollectionIterations": 4,
+    "stateCollectionRepairTimeLimitSeconds": 0.1,
+    "cpSatNumWorkers": 1,
+    "caseCount": 3,
+    "stateCount": 18,
+    "labelCount": 216,
+    "rollForwardLabelCount": 216
+  },
+  "model": {
+    "trained": false,
+    "diagnosticsOnly": true,
+    "labelSource": "lns-window-replay-labels",
+    "featureSchemaVersion": 2
+  },
+  "decision": "diagnostics-only",
+  "summary": "Protected service-braid LNS replay diagnostic label bundle; no solver default changed.",
+  "summaryMetrics": {
+    "caseCount": 3,
+    "seedCount": 3,
+    "stateCount": 18,
+    "labelCount": 216,
+    "rollForwardLabelCount": 216,
+    "repeatabilityConflictBucketCount": 0,
+    "repeatabilityFeatureIdenticalConflictBucketCount": 0,
+    "repeatabilityFeatureIdenticalConflictLabelCount": 0,
+    "statePolicies": [
+      "initial-incumbent",
+      "post-stagnation"
+    ],
+    "capturedStatePolicies": [
+      "initial-incumbent",
+      "post-stagnation"
+    ],
+    "cpSatModelFingerprints": [
+      "fnv1a:d61e8e4d",
+      "fnv1a:a5b45f55",
+      "fnv1a:a7b71c18"
+    ]
+  }
+}

@@ -1,0 +1,218 @@
+{
+  "generatedAt": "2026-05-10T12:46:54.042Z",
+  "title": "Service-braid geometry compact sweep selectivity summary",
+  "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-geometry-initial-stagnation-screen-roll-forward-2x0.1",
+  "totalLabels": 216,
+  "gates": {
+    "slidingArea12": {
+      "selected": 18,
+      "pos": 0,
+      "neg": 0,
+      "neu": 18,
+      "best": 0,
+      "worst": 0,
+      "bySeed": {
+        "7": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "19": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "37": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        }
+      },
+      "byCase": {
+        "lns-holdout-service-braid-open-upper-braid-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "lns-holdout-service-braid-open-lower-notch-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "lns-holdout-service-braid-shift-right-choke-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        }
+      },
+      "examples": []
+    },
+    "slidingArea12ComponentsMax2": {
+      "selected": 12,
+      "pos": 0,
+      "neg": 0,
+      "neu": 12,
+      "best": 0,
+      "worst": 0,
+      "bySeed": {
+        "7": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 4
+        },
+        "19": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 4
+        },
+        "37": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 4
+        }
+      },
+      "byCase": {
+        "lns-holdout-service-braid-open-lower-notch-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "lns-holdout-service-braid-shift-right-choke-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        }
+      },
+      "examples": []
+    },
+    "slidingComponentsMax2": {
+      "selected": 48,
+      "pos": 0,
+      "neg": 0,
+      "neu": 48,
+      "best": 0,
+      "worst": 0,
+      "bySeed": {
+        "7": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 16
+        },
+        "19": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 16
+        },
+        "37": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 16
+        }
+      },
+      "byCase": {
+        "lns-holdout-service-braid-open-upper-braid-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 12
+        },
+        "lns-holdout-service-braid-open-lower-notch-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 18
+        },
+        "lns-holdout-service-braid-shift-right-choke-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 18
+        }
+      },
+      "examples": []
+    },
+    "slidingTopOrLeft2": {
+      "selected": 18,
+      "pos": 0,
+      "neg": 0,
+      "neu": 18,
+      "best": 0,
+      "worst": 0,
+      "bySeed": {
+        "7": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "19": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "37": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        }
+      },
+      "byCase": {
+        "lns-holdout-service-braid-open-upper-braid-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "lns-holdout-service-braid-open-lower-notch-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "lns-holdout-service-braid-shift-right-choke-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        }
+      },
+      "examples": []
+    },
+    "allNonBaselineSliding": {
+      "selected": 54,
+      "pos": 0,
+      "neg": 0,
+      "neu": 54,
+      "best": 0,
+      "worst": 0,
+      "bySeed": {
+        "7": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 18
+        },
+        "19": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 18
+        },
+        "37": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 18
+        }
+      },
+      "byCase": {
+        "lns-holdout-service-braid-open-upper-braid-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 18
+        },
+        "lns-holdout-service-braid-open-lower-notch-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 18
+        },
+        "lns-holdout-service-braid-shift-right-choke-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 18
+        }
+      },
+      "examples": []
+    }
+  }
+}

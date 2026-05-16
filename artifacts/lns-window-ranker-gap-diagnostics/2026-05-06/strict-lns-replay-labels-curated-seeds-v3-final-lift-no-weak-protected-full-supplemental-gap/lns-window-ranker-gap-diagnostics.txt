@@ -1,0 +1,20 @@
+=== LNS Window Ranker Offline/Online Gap Diagnostics ===
+Generated: 2026-05-06T17:50:07.073Z
+Schema: 1
+Audit: runtime-default-changed=false solver-default-changed=false target=roll-forward-final-lift weak-seed-labels=false supplemental-replay=1
+Inputs: label=fnv1a:58ce487f model=fnv1a:fa22b085 online=fnv1a:85259245 supplemental=fnv1a:77b0ee06
+Offline: decisions=120 supplemental=30 overrides=120 opportunities=54 selected-positive=54
+Online: cases=5 seeds=7,19,37 comparisons=15 min-score-delta=0.1 overrides=30 selection-trace=30 final-neutral-overrides=30
+Gap: joined-transition-families=10 offline-positive-online-neutral=0 online-active-no-offline-match=0 exact-replay-neutralized=3 promotion-blocked=false
+Layout signatures: none
+Promotion sensitivity: suppress=zero-layout-final-neutral:0 remaining=0 remaining-blocked=false blockers=none unmatched=0 changed-layout-no-lift=0 evidence-gate-suppress=online-active-no-offline-match:0 evidence-gate-remaining=0 evidence-gate-blocked=false evidence-gate-blockers=none
+Online neutral override rate: 100.0%
+Joined evidence:
+- offline-neutral-online-neutral exact-replay-neutralized=true corridor/random-exploration->random-exploration: decisions=12 supplemental=3 exact-online-supplemental=3 selected-positive=6 exact-online-selected-positive=0 hit-best=6/6 selected-delta=+60 capture=1.0000 baseline-capture=0.0000 online-overrides=3 finals=0/3/0 mean-delta=0
+- offline-neutral-online-neutral exact-replay-neutralized=true footprint-pressure/weak-service->sliding: decisions=12 supplemental=3 exact-online-supplemental=3 selected-positive=6 exact-online-selected-positive=0 hit-best=6/6 selected-delta=+1,500 capture=1.0000 baseline-capture=0.0000 online-overrides=3 finals=0/3/0 mean-delta=0
+- offline-neutral-online-neutral exact-replay-neutralized=true gate/weak-service->sliding: decisions=12 supplemental=3 exact-online-supplemental=3 selected-positive=9 exact-online-selected-positive=0 hit-best=9/9 selected-delta=+810 capture=1.0000 baseline-capture=0.0000 online-overrides=3 finals=0/3/0 mean-delta=0
+Trace comparisons:
+- none
+Recommended experiments:
+- none
+Decision: diagnostics only; no LNS runtime scorer or solver default changed.

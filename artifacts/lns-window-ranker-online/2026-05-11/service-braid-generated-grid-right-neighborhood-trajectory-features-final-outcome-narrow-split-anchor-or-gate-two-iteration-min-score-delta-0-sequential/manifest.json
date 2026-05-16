@@ -1,0 +1,622 @@
+{
+  "artifactDir": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-neighborhood-trajectory-features-final-outcome-narrow-split-anchor-or-gate-two-iteration-min-score-delta-0-sequential",
+  "artifactPaths": {
+    "scorecardJson": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-neighborhood-trajectory-features-final-outcome-narrow-split-anchor-or-gate-two-iteration-min-score-delta-0-sequential/lns-window-ranker-online-ablation.json",
+    "scorecardText": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-neighborhood-trajectory-features-final-outcome-narrow-split-anchor-or-gate-two-iteration-min-score-delta-0-sequential/lns-window-ranker-online-ablation.txt",
+    "telemetryManifestJson": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-neighborhood-trajectory-features-final-outcome-narrow-split-anchor-or-gate-two-iteration-min-score-delta-0-sequential/telemetry-manifest.json",
+    "registryEntryDraftJson": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-neighborhood-trajectory-features-final-outcome-narrow-split-anchor-or-gate-two-iteration-min-score-delta-0-sequential/registry-entry-draft.json",
+    "manifestJson": "artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-neighborhood-trajectory-features-final-outcome-narrow-split-anchor-or-gate-two-iteration-min-score-delta-0-sequential/manifest.json"
+  },
+  "command": "node scripts/generate-service-braid-replay-artifacts.mjs --bundle=service-braid-generated-grid-right-neighborhood-screen --online-ablation --online-artifact-dir=artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-neighborhood-trajectory-features-final-outcome-narrow-split-anchor-or-gate-two-iteration-min-score-delta-0-sequential --window-ranker-model=artifacts/lns-window-ranker/2026-05-10/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-generated-right-repeatability-trajectory-features-ignore-baseline-conflict-excluded-calibration-lr0.02-cap100/model.json --window-ranker-min-score-delta=0 --lns-iterations=2 '--window-ranker-selected-feature-gate-groups=maxServiceCandidateBonus>=0.12,maxServiceCandidateBonus<=0.12;operatorScore<=9.72,reachableBefore<=0.68;reachableBefore>=0.68,reachableBefore<=0.68,reachableAfter>=0.92,reachableAfter<=0.92' --force-artifact-dir",
+  "generatedAt": "2026-05-11T21:47:17.017Z",
+  "modelPath": "artifacts/lns-window-ranker/2026-05-10/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-generated-right-repeatability-trajectory-features-ignore-baseline-conflict-excluded-calibration-lr0.02-cap100/model.json",
+  "modelFingerprint": "fnv1a:09853445",
+  "caseCount": 6,
+  "seedCount": 3,
+  "comparisonCount": 18,
+  "selectedCaseNames": [
+    "lns-holdout-service-braid-family-embed-7x8-right-neighborhood-anchor-candidate",
+    "lns-holdout-service-braid-family-embed-8x8-down-right-neighborhood-candidate",
+    "lns-holdout-service-braid-family-embed-7x9-wide-right-neighborhood-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-right-open-upper-neighborhood-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-right-open-lower-neighborhood-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-right-choke-inward-neighborhood-candidate"
+  ],
+  "pressureFamilies": [
+    "service-pressure"
+  ],
+  "options": {
+    "seeds": [
+      7,
+      19,
+      37
+    ],
+    "lns": {
+      "iterations": 2,
+      "maxNoImprovementIterations": 4,
+      "neighborhoodRows": 3,
+      "neighborhoodCols": 3,
+      "repairTimeLimitSeconds": 0.5
+    },
+    "minScoreDelta": 0,
+    "selectedFeatureGateGroups": [
+      [
+        {
+          "feature": "maxServiceCandidateBonus",
+          "minValue": 0.12
+        },
+        {
+          "feature": "maxServiceCandidateBonus",
+          "maxValue": 0.12
+        }
+      ],
+      [
+        {
+          "feature": "operatorScore",
+          "maxValue": 9.72
+        },
+        {
+          "feature": "reachableBefore",
+          "maxValue": 0.68
+        }
+      ],
+      [
+        {
+          "feature": "reachableBefore",
+          "minValue": 0.68
+        },
+        {
+          "feature": "reachableBefore",
+          "maxValue": 0.68
+        },
+        {
+          "feature": "reachableAfter",
+          "minValue": 0.92
+        },
+        {
+          "feature": "reachableAfter",
+          "maxValue": 0.92
+        }
+      ]
+    ]
+  },
+  "summary": {
+    "meanPopulationDeltaVsBaseline": 8.333333333333334,
+    "worstPopulationDeltaVsBaseline": 0,
+    "improvedCaseCount": 3,
+    "regressedCaseCount": 0,
+    "unchangedCaseCount": 15,
+    "rankerDecisionCount": 36,
+    "rankerOverrideCount": 6,
+    "rankerFallbackDecisionCount": 30,
+    "changedFinalLayoutCount": 3,
+    "timeToBestPromotionGatePassed": false
+  },
+  "candidateMutation": {
+    "baseCase": "lns-holdout-service-braid-pressure",
+    "mutations": [
+      {
+        "caseName": "lns-holdout-service-braid-family-embed-7x8-right-neighborhood-anchor-candidate",
+        "description": "Generated service-braid right-shift anchor candidate from the prior repeatability hit.",
+        "generatedGridFamily": "base-blocker-embed-right-neighborhood",
+        "gridOverride": [
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            0,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            0,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        ]
+      },
+      {
+        "caseName": "lns-holdout-service-braid-family-embed-8x8-down-right-neighborhood-candidate",
+        "description": "Generated service-braid candidate shifting the base blocker pattern down and right in an 8x8 board.",
+        "generatedGridFamily": "base-blocker-embed-right-neighborhood",
+        "gridOverride": [
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            0,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            0,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        ]
+      },
+      {
+        "caseName": "lns-holdout-service-braid-family-embed-7x9-wide-right-neighborhood-candidate",
+        "description": "Generated service-braid right-shift candidate with an extra eastern lane.",
+        "generatedGridFamily": "base-blocker-embed-right-neighborhood",
+        "gridOverride": [
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            0,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            0,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        ]
+      },
+      {
+        "caseName": "lns-holdout-service-braid-family-embed-7x8-right-open-upper-neighborhood-candidate",
+        "description": "Generated service-braid right-shift candidate opening the upper central braid blocker.",
+        "generatedGridFamily": "base-blocker-embed-right-neighborhood",
+        "gridOverride": [
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            0,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            0,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        ],
+        "gridCellMutations": [
+          {
+            "r": 1,
+            "c": 4,
+            "value": 1
+          }
+        ]
+      },
+      {
+        "caseName": "lns-holdout-service-braid-family-embed-7x8-right-open-lower-neighborhood-candidate",
+        "description": "Generated service-braid right-shift candidate opening the lower-left notch blocker.",
+        "generatedGridFamily": "base-blocker-embed-right-neighborhood",
+        "gridOverride": [
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            0,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            0,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        ],
+        "gridCellMutations": [
+          {
+            "r": 5,
+            "c": 3,
+            "value": 1
+          }
+        ]
+      },
+      {
+        "caseName": "lns-holdout-service-braid-family-embed-7x8-right-choke-inward-neighborhood-candidate",
+        "description": "Generated service-braid right-shift candidate moving the right-side choke one cell inward.",
+        "generatedGridFamily": "base-blocker-embed-right-neighborhood",
+        "gridOverride": [
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            0,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            0,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        ],
+        "gridCellMutations": [
+          {
+            "r": 3,
+            "c": 6,
+            "value": 1
+          },
+          {
+            "r": 3,
+            "c": 5,
+            "value": 0
+          }
+        ]
+      }
+    ]
+  },
+  "generator": {
+    "script": "scripts/generate-service-braid-replay-artifacts.mjs",
+    "mode": "online",
+    "bundle": "service-braid-generated-grid-right-neighborhood-screen",
+    "requiresBuild": true,
+    "baseCorpus": "DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS",
+    "baseCase": "lns-holdout-service-braid-pressure",
+    "candidateCases": [
+      "lns-holdout-service-braid-family-embed-7x8-right-neighborhood-anchor-candidate",
+      "lns-holdout-service-braid-family-embed-8x8-down-right-neighborhood-candidate",
+      "lns-holdout-service-braid-family-embed-7x9-wide-right-neighborhood-candidate",
+      "lns-holdout-service-braid-family-embed-7x8-right-open-upper-neighborhood-candidate",
+      "lns-holdout-service-braid-family-embed-7x8-right-open-lower-neighborhood-candidate",
+      "lns-holdout-service-braid-family-embed-7x8-right-choke-inward-neighborhood-candidate"
+    ],
+    "command": "node scripts/generate-service-braid-replay-artifacts.mjs --bundle=service-braid-generated-grid-right-neighborhood-screen --online-ablation --online-artifact-dir=artifacts/lns-window-ranker-online/2026-05-11/service-braid-generated-grid-right-neighborhood-trajectory-features-final-outcome-narrow-split-anchor-or-gate-two-iteration-min-score-delta-0-sequential --window-ranker-model=artifacts/lns-window-ranker/2026-05-10/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-generated-right-repeatability-trajectory-features-ignore-baseline-conflict-excluded-calibration-lr0.02-cap100/model.json --window-ranker-min-score-delta=0 --lns-iterations=2 '--window-ranker-selected-feature-gate-groups=maxServiceCandidateBonus>=0.12,maxServiceCandidateBonus<=0.12;operatorScore<=9.72,reachableBefore<=0.68;reachableBefore>=0.68,reachableBefore<=0.68,reachableAfter>=0.92,reachableAfter<=0.92' --force-artifact-dir"
+  }
+}

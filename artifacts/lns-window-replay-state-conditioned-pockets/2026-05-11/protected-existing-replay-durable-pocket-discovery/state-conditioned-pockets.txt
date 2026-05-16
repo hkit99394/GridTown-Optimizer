@@ -1,0 +1,201 @@
+LNS replay state-conditioned durable pocket discovery
+generatedAt=2026-05-11T23:14:39.472Z
+sourceRoot=artifacts/lns-window-replay-labels
+sourceArtifacts=28
+cases=35
+seeds=5,7,11,13,17,19,23,29,37
+labels=6372
+rollForwardLabels=6372
+repeatabilitySafeBuckets=68/1504
+repeatabilitySafeBucketLabels=231/429 improved/selected
+featureIdenticalConflictBuckets=44
+atoms=486
+searchedCandidates=15779
+safeCandidates=3183
+blockedCandidates=5130
+inputFingerprint=fnv1a:0e816613
+scanFingerprint=fnv1a:2830eab0
+
+Top safe candidates:
+serviceCandidateBonus>=2950 AND reachableBefore==22: selected=187 improved=96 regressed=0 neutral=91 unknown=0 best=60 worst=0 repeatabilitySafe=108 durable=true
+  states=post-first-improvement:0/1, initial-incumbent:48/93, post-stagnation:48/93
+  families=service-pressure:96/187
+serviceCandidateBonus>=2885 AND reachableBefore==22: selected=188 improved=96 regressed=0 neutral=92 unknown=0 best=60 worst=0 repeatabilitySafe=108 durable=true
+  states=post-first-improvement:0/2, initial-incumbent:48/93, post-stagnation:48/93
+  families=service-pressure:96/188
+reachableBefore==22 AND serviceCandidatesIntersecting>=26: selected=246 improved=96 regressed=0 neutral=150 unknown=0 best=60 worst=0 repeatabilitySafe=108 durable=true
+  states=post-first-improvement:0/6, initial-incumbent:48/120, post-stagnation:48/120
+  families=service-pressure:96/246
+componentsBefore==3 AND serviceCandidatesBlocked>=18: selected=811 improved=86 regressed=0 neutral=725 unknown=0 best=55 worst=0 repeatabilitySafe=114 durable=true
+  states=online-decision:0/69, post-first-improvement:0/54, initial-incumbent:43/345, post-stagnation:43/343
+  families=corridor:0/24, service-pressure:86/787
+maxServiceCandidateBonus>=138 AND serviceCandidatesBlocked>=18: selected=649 improved=84 regressed=0 neutral=565 unknown=0 best=55 worst=0 repeatabilitySafe=96 durable=true
+  states=initial-incumbent:42/306, post-first-improvement:0/37, post-stagnation:42/306
+  families=service-pressure:84/649
+incumbentPopulation>=784 AND serviceCandidatesBlocked>=18: selected=780 improved=84 regressed=0 neutral=696 unknown=0 best=55 worst=0 repeatabilitySafe=96 durable=true
+  states=post-first-improvement:0/89, initial-incumbent:42/336, post-stagnation:42/355
+  families=service-pressure:84/780
+serviceCandidateBonus>=3227 AND reachableBefore==22: selected=84 improved=82 regressed=0 neutral=2 unknown=0 best=60 worst=0 repeatabilitySafe=84 durable=true
+  states=initial-incumbent:41/42, post-stagnation:41/42
+  families=service-pressure:82/84
+reachableBefore==22 AND allowedWindowCells==11: selected=97 improved=82 regressed=0 neutral=15 unknown=0 best=60 worst=0 repeatabilitySafe=84 durable=true
+  states=post-first-improvement:0/1, initial-incumbent:41/48, post-stagnation:41/48
+  families=service-pressure:82/97
+reachableBefore==22 AND allowedWindowCells>=11: selected=97 improved=82 regressed=0 neutral=15 unknown=0 best=60 worst=0 repeatabilitySafe=84 durable=true
+  states=post-first-improvement:0/1, initial-incumbent:41/48, post-stagnation:41/48
+  families=service-pressure:82/97
+reachableBefore==22 AND anchorReachableWindowCells>=11: selected=97 improved=82 regressed=0 neutral=15 unknown=0 best=60 worst=0 repeatabilitySafe=84 durable=true
+  states=post-first-improvement:0/1, initial-incumbent:41/48, post-stagnation:41/48
+  families=service-pressure:82/97
+reachableBefore==22 AND allowedWindowCells>=10: selected=98 improved=82 regressed=0 neutral=16 unknown=0 best=60 worst=0 repeatabilitySafe=84 durable=true
+  states=post-first-improvement:0/2, initial-incumbent:41/48, post-stagnation:41/48
+  families=service-pressure:82/98
+reachableBefore==22 AND anchorReachableWindowCells>=10: selected=98 improved=82 regressed=0 neutral=16 unknown=0 best=60 worst=0 repeatabilitySafe=84 durable=true
+  states=post-first-improvement:0/2, initial-incumbent:41/48, post-stagnation:41/48
+  families=service-pressure:82/98
+reachableBefore==22 AND area==12: selected=98 improved=82 regressed=0 neutral=16 unknown=0 best=60 worst=0 repeatabilitySafe=84 durable=true
+  states=post-first-improvement:0/2, initial-incumbent:41/48, post-stagnation:41/48
+  families=service-pressure:82/98
+reachableBefore==22 AND area>=12: selected=98 improved=82 regressed=0 neutral=16 unknown=0 best=60 worst=0 repeatabilitySafe=84 durable=true
+  states=post-first-improvement:0/2, initial-incumbent:41/48, post-stagnation:41/48
+  families=service-pressure:82/98
+reachableBefore==22 AND serviceCandidatesIntersecting>=30: selected=98 improved=82 regressed=0 neutral=16 unknown=0 best=60 worst=0 repeatabilitySafe=84 durable=true
+  states=post-first-improvement:0/2, initial-incumbent:41/48, post-stagnation:41/48
+  families=service-pressure:82/98
+reachableBefore==22 AND windowRows==4: selected=98 improved=82 regressed=0 neutral=16 unknown=0 best=60 worst=0 repeatabilitySafe=84 durable=true
+  states=post-first-improvement:0/2, initial-incumbent:41/48, post-stagnation:41/48
+  families=service-pressure:82/98
+reachableBefore==22 AND windowRows>=4: selected=98 improved=82 regressed=0 neutral=16 unknown=0 best=60 worst=0 repeatabilitySafe=84 durable=true
+  states=post-first-improvement:0/2, initial-incumbent:41/48, post-stagnation:41/48
+  families=service-pressure:82/98
+reachableBefore==22 AND windowTop<=0: selected=98 improved=82 regressed=0 neutral=16 unknown=0 best=60 worst=0 repeatabilitySafe=84 durable=true
+  states=post-first-improvement:0/2, initial-incumbent:41/48, post-stagnation:41/48
+  families=service-pressure:82/98
+reachableBefore==22 AND windowTop==0: selected=98 improved=82 regressed=0 neutral=16 unknown=0 best=60 worst=0 repeatabilitySafe=84 durable=true
+  states=post-first-improvement:0/2, initial-incumbent:41/48, post-stagnation:41/48
+  families=service-pressure:82/98
+reachableBefore==22 AND serviceCandidatesIntersecting>=27: selected=164 improved=82 regressed=0 neutral=82 unknown=0 best=60 worst=0 repeatabilitySafe=84 durable=true
+  states=post-first-improvement:0/2, initial-incumbent:41/81, post-stagnation:41/81
+  families=service-pressure:82/164
+maxServiceCandidateBonus==140 AND serviceCandidatesBlocked>=18: selected=601 improved=80 regressed=0 neutral=521 unknown=0 best=5 worst=0 repeatabilitySafe=90 durable=true
+  states=initial-incumbent:40/282, post-first-improvement:0/37, post-stagnation:40/282
+  families=service-pressure:80/601
+maxServiceCandidateBonus==140 AND componentsAfter==2: selected=616 improved=80 regressed=0 neutral=536 unknown=0 best=60 worst=0 repeatabilitySafe=90 durable=true
+  states=initial-incumbent:40/300, post-first-improvement:0/16, post-stagnation:40/300
+  families=service-pressure:80/616
+maxServiceCandidateBonus>=140 AND serviceCandidatesBlocked>=18: selected=619 improved=80 regressed=0 neutral=539 unknown=0 best=5 worst=0 repeatabilitySafe=90 durable=true
+  states=initial-incumbent:40/291, post-first-improvement:0/37, post-stagnation:40/291
+  families=service-pressure:80/619
+maxServiceCandidateBonus>=140 AND componentsAfter==2: selected=634 improved=80 regressed=0 neutral=554 unknown=0 best=60 worst=0 repeatabilitySafe=90 durable=true
+  states=initial-incumbent:40/309, post-first-improvement:0/16, post-stagnation:40/309
+  families=service-pressure:80/634
+incumbentPopulation>=790 AND componentsAfter==2: selected=695 improved=80 regressed=0 neutral=615 unknown=0 best=60 worst=0 repeatabilitySafe=90 durable=true
+  states=post-first-improvement:0/74, initial-incumbent:40/297, post-stagnation:40/324
+  families=service-pressure:80/695
+incumbentPopulation>=790 AND serviceCandidatesBlocked>=18: selected=750 improved=80 regressed=0 neutral=670 unknown=0 best=5 worst=0 repeatabilitySafe=90 durable=true
+  states=post-first-improvement:0/89, initial-incumbent:40/321, post-stagnation:40/340
+  families=service-pressure:80/750
+roadCountInside==2 AND residentialCountInside==2: selected=446 improved=78 regressed=0 neutral=368 unknown=0 best=110 worst=0 repeatabilitySafe=141 durable=true
+  states=online-decision:18/42, initial-incumbent:30/195, post-stagnation:30/195, post-first-improvement:0/14
+  families=footprint-pressure:0/15, anchor-service:36/99, gate:0/18, service-pressure:42/314
+roadCountInside==2 AND residentialCountInside>=2: selected=471 improved=78 regressed=0 neutral=393 unknown=0 best=110 worst=0 repeatabilitySafe=141 durable=true
+  states=online-decision:18/42, initial-incumbent:30/204, post-stagnation:30/207, post-first-improvement:0/18
+  families=footprint-pressure:0/15, anchor-service:36/99, gate:0/18, service-pressure:42/339
+serviceCandidateBonus>=2950 AND residentialCandidatesBlocked>=14: selected=333 improved=76 regressed=0 neutral=257 unknown=0 best=60 worst=0 repeatabilitySafe=90 durable=true
+  states=online-decision:0/18, initial-incumbent:38/144, post-stagnation:38/144, post-first-improvement:0/27
+  families=service-pressure:76/333
+serviceCandidateBonus>=2885 AND residentialCandidatesBlocked>=14: selected=353 improved=76 regressed=0 neutral=277 unknown=0 best=60 worst=0 repeatabilitySafe=90 durable=true
+  states=online-decision:0/18, initial-incumbent:38/153, post-first-improvement:0/29, post-stagnation:38/153
+  families=service-pressure:76/353
+
+Top blocked candidates:
+componentsBefore==3 AND serviceCandidatesIntersecting>=26: selected=681 improved=126 regressed=1 neutral=554 unknown=0 best=60 worst=-55 repeatabilitySafe=156 durable=false
+  states=online-decision:0/51, post-first-improvement:0/42, initial-incumbent:63/294, post-stagnation:63/294
+  families=corridor:0/24, service-pressure:126/657
+reachableBefore>=22 AND serviceCandidatesIntersecting>=26: selected=744 improved=126 regressed=1 neutral=617 unknown=0 best=60 worst=-55 repeatabilitySafe=156 durable=false
+  states=post-first-improvement:0/6, initial-incumbent:63/369, post-stagnation:63/369
+  families=service-pressure:126/744
+serviceCandidatesIntersecting>=30 AND reachableBefore>=22: selected=206 improved=112 regressed=1 neutral=93 unknown=0 best=60 worst=-55 repeatabilitySafe=132 durable=false
+  states=post-first-improvement:0/2, initial-incumbent:56/102, post-stagnation:56/102
+  families=service-pressure:112/206
+allowedWindowCells==11 AND reachableBefore>=22: selected=211 improved=112 regressed=1 neutral=98 unknown=0 best=60 worst=-55 repeatabilitySafe=132 durable=false
+  states=initial-incumbent:56/105, post-stagnation:56/105, post-first-improvement:0/1
+  families=anchor-service:0/12, service-pressure:112/199
+allowedWindowCells>=11 AND reachableBefore>=22: selected=217 improved=112 regressed=1 neutral=104 unknown=0 best=60 worst=-55 repeatabilitySafe=132 durable=false
+  states=initial-incumbent:56/108, post-stagnation:56/108, post-first-improvement:0/1
+  families=anchor-service:0/12, service-pressure:112/205
+anchorReachableWindowCells>=11 AND reachableBefore>=22: selected=217 improved=112 regressed=1 neutral=104 unknown=0 best=60 worst=-55 repeatabilitySafe=132 durable=false
+  states=initial-incumbent:56/108, post-stagnation:56/108, post-first-improvement:0/1
+  families=anchor-service:0/12, service-pressure:112/205
+reachableBefore>=22 AND allowedWindowCells>=10: selected=218 improved=112 regressed=1 neutral=105 unknown=0 best=60 worst=-55 repeatabilitySafe=132 durable=false
+  states=initial-incumbent:56/108, post-stagnation:56/108, post-first-improvement:0/2
+  families=anchor-service:0/12, service-pressure:112/206
+reachableBefore>=22 AND anchorReachableWindowCells>=10: selected=218 improved=112 regressed=1 neutral=105 unknown=0 best=60 worst=-55 repeatabilitySafe=132 durable=false
+  states=initial-incumbent:56/108, post-stagnation:56/108, post-first-improvement:0/2
+  families=anchor-service:0/12, service-pressure:112/206
+reachableBefore>=22 AND area==12: selected=218 improved=112 regressed=1 neutral=105 unknown=0 best=60 worst=-55 repeatabilitySafe=132 durable=false
+  states=initial-incumbent:56/108, post-stagnation:56/108, post-first-improvement:0/2
+  families=anchor-service:0/12, service-pressure:112/206
+reachableBefore>=22 AND area>=12: selected=218 improved=112 regressed=1 neutral=105 unknown=0 best=60 worst=-55 repeatabilitySafe=132 durable=false
+  states=initial-incumbent:56/108, post-stagnation:56/108, post-first-improvement:0/2
+  families=anchor-service:0/12, service-pressure:112/206
+reachableBefore>=22 AND windowRows==4: selected=218 improved=112 regressed=1 neutral=105 unknown=0 best=60 worst=-55 repeatabilitySafe=132 durable=false
+  states=initial-incumbent:56/108, post-stagnation:56/108, post-first-improvement:0/2
+  families=anchor-service:0/12, service-pressure:112/206
+reachableBefore>=22 AND windowRows>=4: selected=218 improved=112 regressed=1 neutral=105 unknown=0 best=60 worst=-55 repeatabilitySafe=132 durable=false
+  states=initial-incumbent:56/108, post-stagnation:56/108, post-first-improvement:0/2
+  families=anchor-service:0/12, service-pressure:112/206
+reachableBefore>=22 AND windowTop<=0: selected=218 improved=112 regressed=1 neutral=105 unknown=0 best=60 worst=-55 repeatabilitySafe=132 durable=false
+  states=initial-incumbent:56/108, post-stagnation:56/108, post-first-improvement:0/2
+  families=anchor-service:0/12, service-pressure:112/206
+reachableBefore>=22 AND windowTop==0: selected=218 improved=112 regressed=1 neutral=105 unknown=0 best=60 worst=-55 repeatabilitySafe=132 durable=false
+  states=initial-incumbent:56/108, post-stagnation:56/108, post-first-improvement:0/2
+  families=anchor-service:0/12, service-pressure:112/206
+componentsBefore==3 AND allowedWindowCells==11: selected=225 improved=112 regressed=1 neutral=112 unknown=0 best=60 worst=-55 repeatabilitySafe=132 durable=false
+  states=online-decision:0/18, initial-incumbent:56/96, post-stagnation:56/96, post-first-improvement:0/15
+  families=service-pressure:112/195, anchor-service:0/30
+componentsBefore==3 AND serviceCandidatesIntersecting>=30: selected=241 improved=112 regressed=1 neutral=128 unknown=0 best=60 worst=-55 repeatabilitySafe=132 durable=false
+  states=online-decision:0/51, post-first-improvement:0/10, initial-incumbent:56/90, post-stagnation:56/90
+  families=corridor:0/24, service-pressure:112/217
+componentsBefore==3 AND area==12: selected=262 improved=112 regressed=1 neutral=149 unknown=0 best=60 worst=-55 repeatabilitySafe=132 durable=false
+  states=online-decision:0/33, initial-incumbent:56/102, post-first-improvement:0/25, post-stagnation:56/102
+  families=corridor:0/27, service-pressure:112/199, anchor-service:0/36
+componentsBefore==3 AND windowRows==4: selected=262 improved=112 regressed=1 neutral=149 unknown=0 best=60 worst=-55 repeatabilitySafe=132 durable=false
+  states=online-decision:0/33, initial-incumbent:56/102, post-first-improvement:0/25, post-stagnation:56/102
+  families=corridor:0/27, service-pressure:112/199, anchor-service:0/36
+componentsBefore==3 AND allowedWindowCells>=11: selected=267 improved=112 regressed=1 neutral=154 unknown=0 best=60 worst=-55 repeatabilitySafe=132 durable=false
+  states=online-decision:0/60, initial-incumbent:56/96, post-stagnation:56/96, post-first-improvement:0/15
+  families=corridor:0/24, service-pressure:112/213, anchor-service:0/30
+componentsBefore==3 AND anchorReachableWindowCells>=11: selected=267 improved=112 regressed=1 neutral=154 unknown=0 best=60 worst=-55 repeatabilitySafe=132 durable=false
+  states=online-decision:0/60, initial-incumbent:56/96, post-stagnation:56/96, post-first-improvement:0/15
+  families=corridor:0/24, service-pressure:112/213, anchor-service:0/30
+componentsBefore==3 AND windowTop<=0: selected=283 improved=112 regressed=1 neutral=170 unknown=0 best=60 worst=-55 repeatabilitySafe=132 durable=false
+  states=online-decision:0/54, initial-incumbent:56/102, post-first-improvement:0/25, post-stagnation:56/102
+  families=corridor:0/39, service-pressure:112/208, anchor-service:0/36
+componentsBefore==3 AND windowTop==0: selected=283 improved=112 regressed=1 neutral=170 unknown=0 best=60 worst=-55 repeatabilitySafe=132 durable=false
+  states=online-decision:0/54, initial-incumbent:56/102, post-first-improvement:0/25, post-stagnation:56/102
+  families=corridor:0/39, service-pressure:112/208, anchor-service:0/36
+componentsBefore==3 AND allowedWindowCells>=10: selected=304 improved=112 regressed=1 neutral=191 unknown=0 best=60 worst=-55 repeatabilitySafe=132 durable=false
+  states=online-decision:0/75, initial-incumbent:56/102, post-first-improvement:0/25, post-stagnation:56/102
+  families=corridor:0/51, service-pressure:112/217, anchor-service:0/36
+componentsBefore==3 AND anchorReachableWindowCells>=10: selected=304 improved=112 regressed=1 neutral=191 unknown=0 best=60 worst=-55 repeatabilitySafe=132 durable=false
+  states=online-decision:0/75, initial-incumbent:56/102, post-first-improvement:0/25, post-stagnation:56/102
+  families=corridor:0/51, service-pressure:112/217, anchor-service:0/36
+componentsBefore==3 AND area>=12: selected=304 improved=112 regressed=1 neutral=191 unknown=0 best=60 worst=-55 repeatabilitySafe=132 durable=false
+  states=online-decision:0/75, initial-incumbent:56/102, post-first-improvement:0/25, post-stagnation:56/102
+  families=corridor:0/51, service-pressure:112/217, anchor-service:0/36
+componentsBefore==3 AND windowRows>=4: selected=304 improved=112 regressed=1 neutral=191 unknown=0 best=60 worst=-55 repeatabilitySafe=132 durable=false
+  states=online-decision:0/75, initial-incumbent:56/102, post-first-improvement:0/25, post-stagnation:56/102
+  families=corridor:0/51, service-pressure:112/217, anchor-service:0/36
+componentsBefore==3 AND serviceCandidatesIntersecting>=27: selected=414 improved=112 regressed=1 neutral=301 unknown=0 best=60 worst=-55 repeatabilitySafe=132 durable=false
+  states=online-decision:0/51, post-first-improvement:0/15, initial-incumbent:56/174, post-stagnation:56/174
+  families=corridor:0/24, service-pressure:112/390
+reachableBefore>=22 AND serviceCandidatesIntersecting>=27: selected=476 improved=112 regressed=1 neutral=363 unknown=0 best=60 worst=-55 repeatabilitySafe=132 durable=false
+  states=post-first-improvement:0/2, initial-incumbent:56/237, post-stagnation:56/237
+  families=service-pressure:112/476
+maxServiceCandidateBonus==140 AND operator==sliding: selected=423 improved=108 regressed=1 neutral=314 unknown=0 best=60 worst=-55 repeatabilitySafe=120 durable=false
+  states=initial-incumbent:54/201, post-first-improvement:0/21, post-stagnation:54/201
+  families=service-pressure:108/423
+maxServiceCandidateBonus>=140 AND operator==sliding: selected=459 improved=108 regressed=1 neutral=350 unknown=0 best=60 worst=-55 repeatabilitySafe=120 durable=false
+  states=initial-incumbent:54/219, post-first-improvement:0/21, post-stagnation:54/219
+  families=service-pressure:108/459

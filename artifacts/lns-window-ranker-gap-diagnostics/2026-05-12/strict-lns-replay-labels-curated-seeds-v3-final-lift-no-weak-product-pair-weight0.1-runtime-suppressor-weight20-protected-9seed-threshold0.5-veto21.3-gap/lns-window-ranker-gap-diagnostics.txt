@@ -1,0 +1,18 @@
+=== LNS Window Ranker Offline/Online Gap Diagnostics ===
+Generated: 2026-05-12T08:42:37.677Z
+Schema: 1
+Audit: runtime-default-changed=false solver-default-changed=false target=roll-forward-final-lift weak-seed-labels=false supplemental-replay=2
+Inputs: label=fnv1a:58ce487f model=fnv1a:2c3b5ba6 online=fnv1a:e719676b supplemental=fnv1a:438524a9,fnv1a:408c4ece
+Offline: decisions=294 supplemental=204 overrides=294 opportunities=70 selected-positive=37
+Online: cases=10 seeds=7,11,13,19,23,29,31,37,43 comparisons=90 min-score-delta=0.5 overrides=27 selection-trace=180 final-neutral-overrides=27
+Gap: joined-transition-families=3 offline-positive-online-neutral=0 online-active-no-offline-match=1 exact-replay-neutralized=0 promotion-blocked=true
+Layout signatures: zero-layout-final-neutral:1
+Promotion sensitivity: suppress=zero-layout-final-neutral:1 remaining=0 remaining-blocked=false blockers=none unmatched=0 changed-layout-no-lift=0 evidence-gate-suppress=online-active-no-offline-match:0 evidence-gate-remaining=0 evidence-gate-blocked=false evidence-gate-blockers=none
+Online neutral override rate: 100.0%
+Joined evidence:
+- online-active-no-offline-match corridor/residential-headroom->sliding: offline=none online-overrides=9 finals=0/9/0 mean-delta=0
+Trace comparisons:
+- online-active-no-offline-match corridor/residential-headroom->sliding: offline-decisions=0 offline-selected-positive=0 offline-mean-selected-delta=n/a online-traces=9 online-neutral-traces=9 layout-signature=zero-layout-final-neutral online-layout-same=9 online-layout-changed=0 online-layout-missing=0 online-layout-delta-mean=0 online-mean-improvement=0 online-mean-score-delta=+0.5 online-ranker-post-traces-mean=0 online-ranker-post-improvements=0 online-ranker-post-improvement-total-mean=0 online-ranker-post-best-delta-mean=0 online-ranker-final-from-selected-mean=0 features=operatorScore:offline=n/a/online=-5.14/gap=n/a,selectedByBaseline:offline=n/a/online=-1/gap=n/a,residentialCandidateHeadroom:offline=n/a/online=-0.54/gap=n/a,narrowGateCells:offline=n/a/online=+0.5/gap=n/a,serviceCandidateBonus:offline=n/a/online=+0.26/gap=n/a
+Recommended experiments:
+- none
+Decision: diagnostics only; no LNS runtime scorer or solver default changed.

@@ -1,0 +1,659 @@
+{
+  "schemaVersion": 1,
+  "runId": "product-corpus-scorecard-2026-04-30-initial-1s-5s-seed7",
+  "artifactType": "benchmark",
+  "generatedAt": "2026-04-30T21:21:12.280Z",
+  "commands": [
+    "node dist/crossModeBenchmarkCli.js --product-corpus --product-artifact-dir=artifacts/product-corpus/2026-04-30/initial-1s-5s-seed7 --product-run-id=product-corpus-scorecard-2026-04-30-initial-1s-5s-seed7 --product-decision=benchmark-evidence-only --modes=auto,greedy,lns,cp-sat --budgets=1,5 --seeds=7 --json"
+  ],
+  "artifactPaths": [
+    "artifacts/product-corpus/2026-04-30/initial-1s-5s-seed7/scorecard.json",
+    "artifacts/product-corpus/2026-04-30/initial-1s-5s-seed7/scorecard.txt",
+    "artifacts/product-corpus/2026-04-30/initial-1s-5s-seed7/evidence-summary.json"
+  ],
+  "cases": {
+    "development": [
+      "typed-housing-single",
+      "typed-footprint-pressure",
+      "seeded-service-anchor-pressure",
+      "road-semantics-service-pressure",
+      "manual-layout-replay-warm-start"
+    ],
+    "holdout": [
+      "row0-corridor-repair-pressure",
+      "service-local-neighborhood",
+      "road-semantics-gate-choke",
+      "multi-anchor-road-components",
+      "expansion-comparison-replay"
+    ]
+  },
+  "caseFamilies": [
+    "anchor-service",
+    "corridor",
+    "expansion-comparison",
+    "footprint-pressure",
+    "gate",
+    "manual-layout-replay",
+    "multi-anchor",
+    "service-pressure",
+    "solver-smoke"
+  ],
+  "seeds": [
+    7
+  ],
+  "splitStatus": {
+    "protectedHoldout": false,
+    "splitField": "CrossModeBenchmarkCase.split",
+    "developmentCaseCount": 5,
+    "holdoutCaseCount": 5,
+    "promotionCoverage": {
+      "requiredCaseNames": [
+        "typed-housing-single",
+        "row0-corridor-repair-pressure",
+        "typed-footprint-pressure",
+        "service-local-neighborhood",
+        "seeded-service-anchor-pressure",
+        "road-semantics-gate-choke",
+        "road-semantics-service-pressure",
+        "multi-anchor-road-components",
+        "manual-layout-replay-warm-start",
+        "expansion-comparison-replay"
+      ],
+      "missingCaseNames": [],
+      "requiredModes": [
+        "auto",
+        "greedy",
+        "lns",
+        "cp-sat"
+      ],
+      "missingModes": [],
+      "requiredBudgetsSeconds": [
+        1,
+        5,
+        30,
+        120
+      ],
+      "missingBudgetsSeconds": [
+        30,
+        120
+      ],
+      "minimumSeedCount": 3,
+      "seedCount": 1,
+      "fullCorpus": true,
+      "requiredModeCoverage": true,
+      "requiredBudgetCoverage": false,
+      "requiredSeedCoverage": false,
+      "protectedHoldout": false
+    },
+    "leakage": "not-evaluated",
+    "notes": "Partial product workflow corpus scorecard; not protected holdout promotion evidence."
+  },
+  "budget": {
+    "wallClockBudgetsSeconds": [
+      1,
+      5
+    ],
+    "caseCount": 10,
+    "modeCount": 4,
+    "totalRuns": 80
+  },
+  "model": null,
+  "decision": "benchmark-evidence-only",
+  "summary": "Product workflow corpus scorecard over 10 cases, 4 modes, 2 budget(s), and 1 seed(s).",
+  "summaryMetrics": {
+    "splitCaseCounts": {
+      "development": 5,
+      "holdout": 5
+    },
+    "workflowTagCounts": {
+      "anchor-service": 2,
+      "corridor": 2,
+      "expansion-comparison": 2,
+      "footprint-pressure": 2,
+      "gate": 2,
+      "manual-layout-replay": 2,
+      "multi-anchor": 2,
+      "service-pressure": 4,
+      "solver-smoke": 2
+    },
+    "modes": [
+      "auto",
+      "greedy",
+      "lns",
+      "cp-sat"
+    ],
+    "caseMetricCount": 20,
+    "caseMetrics": [
+      {
+        "caseName": "typed-housing-single",
+        "split": "development",
+        "workflowTags": [
+          "solver-smoke"
+        ],
+        "budgetSeconds": 1,
+        "seed": 7,
+        "bestScore": 110,
+        "bestMode": "greedy",
+        "autoScore": 110,
+        "autoDeltaToBest": 0,
+        "timeToFirstFeasibleSeconds": 0.003,
+        "timeToBestSeconds": 0.003,
+        "reuseSources": [
+          "greedy-seed",
+          "hint"
+        ],
+        "cpSatStatuses": [
+          "OPTIMAL"
+        ],
+        "minimumExactGap": 0,
+        "manualReplayCoverage": "not-applicable",
+        "expansionComparisonLift": null
+      },
+      {
+        "caseName": "typed-housing-single",
+        "split": "development",
+        "workflowTags": [
+          "solver-smoke"
+        ],
+        "budgetSeconds": 5,
+        "seed": 7,
+        "bestScore": 110,
+        "bestMode": "greedy",
+        "autoScore": 110,
+        "autoDeltaToBest": 0,
+        "timeToFirstFeasibleSeconds": 0.004,
+        "timeToBestSeconds": 0.004,
+        "reuseSources": [
+          "greedy-seed"
+        ],
+        "cpSatStatuses": [
+          "OPTIMAL"
+        ],
+        "minimumExactGap": 0,
+        "manualReplayCoverage": "not-applicable",
+        "expansionComparisonLift": null
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "split": "holdout",
+        "workflowTags": [
+          "corridor"
+        ],
+        "budgetSeconds": 1,
+        "seed": 7,
+        "bestScore": 330,
+        "bestMode": "lns",
+        "autoScore": 330,
+        "autoDeltaToBest": 0,
+        "timeToFirstFeasibleSeconds": 0.014,
+        "timeToBestSeconds": 0.014,
+        "reuseSources": [
+          "greedy-seed"
+        ],
+        "cpSatStatuses": [
+          "OPTIMAL"
+        ],
+        "minimumExactGap": 0,
+        "manualReplayCoverage": "not-applicable",
+        "expansionComparisonLift": null
+      },
+      {
+        "caseName": "row0-corridor-repair-pressure",
+        "split": "holdout",
+        "workflowTags": [
+          "corridor"
+        ],
+        "budgetSeconds": 5,
+        "seed": 7,
+        "bestScore": 330,
+        "bestMode": "cp-sat",
+        "autoScore": 330,
+        "autoDeltaToBest": 0,
+        "timeToFirstFeasibleSeconds": 0.012,
+        "timeToBestSeconds": 0.012,
+        "reuseSources": [
+          "greedy-seed"
+        ],
+        "cpSatStatuses": [
+          "OPTIMAL"
+        ],
+        "minimumExactGap": 0,
+        "manualReplayCoverage": "not-applicable",
+        "expansionComparisonLift": null
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "split": "development",
+        "workflowTags": [
+          "footprint-pressure"
+        ],
+        "budgetSeconds": 1,
+        "seed": 7,
+        "bestScore": 505,
+        "bestMode": "greedy",
+        "autoScore": 505,
+        "autoDeltaToBest": 0,
+        "timeToFirstFeasibleSeconds": 0.096,
+        "timeToBestSeconds": 0.096,
+        "reuseSources": [
+          "greedy-seed",
+          "hint"
+        ],
+        "cpSatStatuses": [
+          "FEASIBLE"
+        ],
+        "minimumExactGap": 20,
+        "manualReplayCoverage": "not-applicable",
+        "expansionComparisonLift": null
+      },
+      {
+        "caseName": "typed-footprint-pressure",
+        "split": "development",
+        "workflowTags": [
+          "footprint-pressure"
+        ],
+        "budgetSeconds": 5,
+        "seed": 7,
+        "bestScore": 525,
+        "bestMode": "cp-sat",
+        "autoScore": 505,
+        "autoDeltaToBest": 20,
+        "timeToFirstFeasibleSeconds": 0.092,
+        "timeToBestSeconds": 0.092,
+        "reuseSources": [
+          "greedy-seed"
+        ],
+        "cpSatStatuses": [
+          "FEASIBLE"
+        ],
+        "minimumExactGap": 0,
+        "manualReplayCoverage": "not-applicable",
+        "expansionComparisonLift": null
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "split": "holdout",
+        "workflowTags": [
+          "service-pressure"
+        ],
+        "budgetSeconds": 1,
+        "seed": 7,
+        "bestScore": 470,
+        "bestMode": "lns",
+        "autoScore": 455,
+        "autoDeltaToBest": 15,
+        "timeToFirstFeasibleSeconds": 0.042,
+        "timeToBestSeconds": 0.047,
+        "reuseSources": [
+          "greedy-seed",
+          "hint"
+        ],
+        "cpSatStatuses": [
+          "FEASIBLE",
+          "OPTIMAL"
+        ],
+        "minimumExactGap": 0,
+        "manualReplayCoverage": "not-applicable",
+        "expansionComparisonLift": null
+      },
+      {
+        "caseName": "service-local-neighborhood",
+        "split": "holdout",
+        "workflowTags": [
+          "service-pressure"
+        ],
+        "budgetSeconds": 5,
+        "seed": 7,
+        "bestScore": 470,
+        "bestMode": "cp-sat",
+        "autoScore": 470,
+        "autoDeltaToBest": 0,
+        "timeToFirstFeasibleSeconds": 0.041,
+        "timeToBestSeconds": 0.044,
+        "reuseSources": [
+          "greedy-seed"
+        ],
+        "cpSatStatuses": [
+          "OPTIMAL"
+        ],
+        "minimumExactGap": 0,
+        "manualReplayCoverage": "not-applicable",
+        "expansionComparisonLift": null
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "split": "development",
+        "workflowTags": [
+          "anchor-service"
+        ],
+        "budgetSeconds": 1,
+        "seed": 7,
+        "bestScore": 200,
+        "bestMode": "greedy",
+        "autoScore": 200,
+        "autoDeltaToBest": 0,
+        "timeToFirstFeasibleSeconds": 0,
+        "timeToBestSeconds": 0.012,
+        "reuseSources": [
+          "seeded-service-anchor-pressure"
+        ],
+        "cpSatStatuses": [
+          "OPTIMAL"
+        ],
+        "minimumExactGap": 0,
+        "manualReplayCoverage": "not-applicable",
+        "expansionComparisonLift": null
+      },
+      {
+        "caseName": "seeded-service-anchor-pressure",
+        "split": "development",
+        "workflowTags": [
+          "anchor-service"
+        ],
+        "budgetSeconds": 5,
+        "seed": 7,
+        "bestScore": 200,
+        "bestMode": "greedy",
+        "autoScore": 200,
+        "autoDeltaToBest": 0,
+        "timeToFirstFeasibleSeconds": 0,
+        "timeToBestSeconds": 0.011,
+        "reuseSources": [
+          "seeded-service-anchor-pressure"
+        ],
+        "cpSatStatuses": [
+          "OPTIMAL"
+        ],
+        "minimumExactGap": 0,
+        "manualReplayCoverage": "not-applicable",
+        "expansionComparisonLift": null
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "split": "holdout",
+        "workflowTags": [
+          "gate"
+        ],
+        "budgetSeconds": 1,
+        "seed": 7,
+        "bestScore": 540,
+        "bestMode": "cp-sat",
+        "autoScore": 540,
+        "autoDeltaToBest": 0,
+        "timeToFirstFeasibleSeconds": 0.026,
+        "timeToBestSeconds": 0.026,
+        "reuseSources": [
+          "greedy-seed",
+          "hint"
+        ],
+        "cpSatStatuses": [
+          "OPTIMAL"
+        ],
+        "minimumExactGap": 0,
+        "manualReplayCoverage": "not-applicable",
+        "expansionComparisonLift": null
+      },
+      {
+        "caseName": "road-semantics-gate-choke",
+        "split": "holdout",
+        "workflowTags": [
+          "gate"
+        ],
+        "budgetSeconds": 5,
+        "seed": 7,
+        "bestScore": 540,
+        "bestMode": "cp-sat",
+        "autoScore": 540,
+        "autoDeltaToBest": 0,
+        "timeToFirstFeasibleSeconds": 0.018,
+        "timeToBestSeconds": 0.018,
+        "reuseSources": [
+          "greedy-seed"
+        ],
+        "cpSatStatuses": [
+          "OPTIMAL"
+        ],
+        "minimumExactGap": 0,
+        "manualReplayCoverage": "not-applicable",
+        "expansionComparisonLift": null
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "split": "development",
+        "workflowTags": [
+          "service-pressure"
+        ],
+        "budgetSeconds": 1,
+        "seed": 7,
+        "bestScore": 740,
+        "bestMode": "greedy",
+        "autoScore": 740,
+        "autoDeltaToBest": 0,
+        "timeToFirstFeasibleSeconds": 0.094,
+        "timeToBestSeconds": 0.126,
+        "reuseSources": [
+          "greedy-seed",
+          "hint"
+        ],
+        "cpSatStatuses": [
+          "FEASIBLE"
+        ],
+        "minimumExactGap": 0,
+        "manualReplayCoverage": "not-applicable",
+        "expansionComparisonLift": null
+      },
+      {
+        "caseName": "road-semantics-service-pressure",
+        "split": "development",
+        "workflowTags": [
+          "service-pressure"
+        ],
+        "budgetSeconds": 5,
+        "seed": 7,
+        "bestScore": 740,
+        "bestMode": "greedy",
+        "autoScore": 740,
+        "autoDeltaToBest": 0,
+        "timeToFirstFeasibleSeconds": 0.085,
+        "timeToBestSeconds": 0.119,
+        "reuseSources": [
+          "greedy-seed"
+        ],
+        "cpSatStatuses": [
+          "FEASIBLE",
+          "OPTIMAL"
+        ],
+        "minimumExactGap": 0,
+        "manualReplayCoverage": "not-applicable",
+        "expansionComparisonLift": null
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "split": "holdout",
+        "workflowTags": [
+          "multi-anchor"
+        ],
+        "budgetSeconds": 1,
+        "seed": 7,
+        "bestScore": 200,
+        "bestMode": "cp-sat",
+        "autoScore": 200,
+        "autoDeltaToBest": 0,
+        "timeToFirstFeasibleSeconds": 0,
+        "timeToBestSeconds": 0.001,
+        "reuseSources": [
+          "greedy-seed"
+        ],
+        "cpSatStatuses": [
+          "OPTIMAL"
+        ],
+        "minimumExactGap": 0,
+        "manualReplayCoverage": "not-applicable",
+        "expansionComparisonLift": null
+      },
+      {
+        "caseName": "multi-anchor-road-components",
+        "split": "holdout",
+        "workflowTags": [
+          "multi-anchor"
+        ],
+        "budgetSeconds": 5,
+        "seed": 7,
+        "bestScore": 200,
+        "bestMode": "cp-sat",
+        "autoScore": 200,
+        "autoDeltaToBest": 0,
+        "timeToFirstFeasibleSeconds": 0,
+        "timeToBestSeconds": 0,
+        "reuseSources": [
+          "greedy-seed"
+        ],
+        "cpSatStatuses": [
+          "OPTIMAL"
+        ],
+        "minimumExactGap": 0,
+        "manualReplayCoverage": "not-applicable",
+        "expansionComparisonLift": null
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "split": "development",
+        "workflowTags": [
+          "manual-layout-replay"
+        ],
+        "budgetSeconds": 1,
+        "seed": 7,
+        "bestScore": 240,
+        "bestMode": "greedy",
+        "autoScore": 240,
+        "autoDeltaToBest": 0,
+        "timeToFirstFeasibleSeconds": 0,
+        "timeToBestSeconds": 0.011,
+        "reuseSources": [
+          "manual-layout-replay"
+        ],
+        "cpSatStatuses": [
+          "OPTIMAL"
+        ],
+        "minimumExactGap": 0,
+        "manualReplayCoverage": "scorecard-replay-case",
+        "expansionComparisonLift": null
+      },
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "split": "development",
+        "workflowTags": [
+          "manual-layout-replay"
+        ],
+        "budgetSeconds": 5,
+        "seed": 7,
+        "bestScore": 240,
+        "bestMode": "greedy",
+        "autoScore": 240,
+        "autoDeltaToBest": 0,
+        "timeToFirstFeasibleSeconds": 0,
+        "timeToBestSeconds": 0.008,
+        "reuseSources": [
+          "manual-layout-replay"
+        ],
+        "cpSatStatuses": [
+          "OPTIMAL"
+        ],
+        "minimumExactGap": 0,
+        "manualReplayCoverage": "scorecard-replay-case",
+        "expansionComparisonLift": null
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "split": "holdout",
+        "workflowTags": [
+          "expansion-comparison"
+        ],
+        "budgetSeconds": 1,
+        "seed": 7,
+        "bestScore": 780,
+        "bestMode": "lns",
+        "autoScore": 745,
+        "autoDeltaToBest": 35,
+        "timeToFirstFeasibleSeconds": 0,
+        "timeToBestSeconds": 0.125,
+        "reuseSources": [
+          "expansion-comparison-replay"
+        ],
+        "cpSatStatuses": [
+          "FEASIBLE"
+        ],
+        "minimumExactGap": 0,
+        "manualReplayCoverage": "not-applicable",
+        "expansionComparisonLift": 35
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "split": "holdout",
+        "workflowTags": [
+          "expansion-comparison"
+        ],
+        "budgetSeconds": 5,
+        "seed": 7,
+        "bestScore": 780,
+        "bestMode": "cp-sat",
+        "autoScore": 780,
+        "autoDeltaToBest": 0,
+        "timeToFirstFeasibleSeconds": 0,
+        "timeToBestSeconds": 0.13,
+        "reuseSources": [
+          "expansion-comparison-replay"
+        ],
+        "cpSatStatuses": [
+          "FEASIBLE"
+        ],
+        "minimumExactGap": 0,
+        "manualReplayCoverage": "not-applicable",
+        "expansionComparisonLift": 0
+      }
+    ],
+    "replayMetricCount": 2,
+    "replayMetrics": [
+      {
+        "caseName": "manual-layout-replay-warm-start",
+        "split": "development",
+        "workflowTag": "manual-layout-replay",
+        "apiRoute": "/api/layout/evaluate",
+        "sourceName": "manual-layout-replay",
+        "valid": true,
+        "validationErrorCount": 0,
+        "reportedPopulation": 160,
+        "evaluatedPopulation": 160,
+        "populationDeltaFromReported": 0,
+        "reportedRoadCount": 5,
+        "evaluatedRoadCount": 4,
+        "removedRoadCount": 1,
+        "bestScore": 240,
+        "bestScoreDeltaFromEvaluated": 80,
+        "autoScore": 240,
+        "autoScoreDeltaFromEvaluated": 80,
+        "expansionComparisonLift": null
+      },
+      {
+        "caseName": "expansion-comparison-replay",
+        "split": "holdout",
+        "workflowTag": "expansion-comparison",
+        "apiRoute": "/api/layout/evaluate",
+        "sourceName": "expansion-comparison-replay",
+        "valid": true,
+        "validationErrorCount": 0,
+        "reportedPopulation": 115,
+        "evaluatedPopulation": 115,
+        "populationDeltaFromReported": 0,
+        "reportedRoadCount": 5,
+        "evaluatedRoadCount": 3,
+        "removedRoadCount": 2,
+        "bestScore": 780,
+        "bestScoreDeltaFromEvaluated": 665,
+        "autoScore": 780,
+        "autoScoreDeltaFromEvaluated": 665,
+        "expansionComparisonLift": 665
+      }
+    ]
+  }
+}

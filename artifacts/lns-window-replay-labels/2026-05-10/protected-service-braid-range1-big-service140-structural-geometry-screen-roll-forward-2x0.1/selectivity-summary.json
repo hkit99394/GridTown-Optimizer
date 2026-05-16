@@ -1,0 +1,413 @@
+{
+  "generatedAt": "2026-05-10T12:58:28.011Z",
+  "title": "Service-braid range1/bonus140 structural geometry compact sweep selectivity summary",
+  "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range1-big-service140-structural-geometry-screen-roll-forward-2x0.1",
+  "totalLabels": 216,
+  "gates": {
+    "slidingArea12": {
+      "selected": 18,
+      "pos": 4,
+      "neg": 0,
+      "neu": 14,
+      "best": 55,
+      "worst": 0,
+      "bySeed": {
+        "7": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "19": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 4
+        },
+        "37": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 4
+        }
+      },
+      "byCase": {
+        "lns-holdout-service-braid-range1-big-service140-south-shelf-screen-candidate": {
+          "pos": 4,
+          "neg": 0,
+          "neu": 2
+        },
+        "lns-holdout-service-braid-range1-big-service140-east-lane-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "lns-holdout-service-braid-range1-big-service140-double-choke-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        }
+      },
+      "examples": [
+        {
+          "seed": 19,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 3,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 19,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 3,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 37,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 3,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 37,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 3,
+          "source": "exploration-tail"
+        }
+      ]
+    },
+    "slidingArea12ComponentsMax2": {
+      "selected": 12,
+      "pos": 0,
+      "neg": 0,
+      "neu": 12,
+      "best": 0,
+      "worst": 0,
+      "bySeed": {
+        "7": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 4
+        },
+        "19": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 4
+        },
+        "37": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 4
+        }
+      },
+      "byCase": {
+        "lns-holdout-service-braid-range1-big-service140-east-lane-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "lns-holdout-service-braid-range1-big-service140-double-choke-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        }
+      },
+      "examples": []
+    },
+    "slidingComponentsMax2": {
+      "selected": 36,
+      "pos": 0,
+      "neg": 0,
+      "neu": 36,
+      "best": 0,
+      "worst": 0,
+      "bySeed": {
+        "7": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 12
+        },
+        "19": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 12
+        },
+        "37": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 12
+        }
+      },
+      "byCase": {
+        "lns-holdout-service-braid-range1-big-service140-south-shelf-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "lns-holdout-service-braid-range1-big-service140-east-lane-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 12
+        },
+        "lns-holdout-service-braid-range1-big-service140-double-choke-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 18
+        }
+      },
+      "examples": []
+    },
+    "slidingTopOrLeft2": {
+      "selected": 18,
+      "pos": 4,
+      "neg": 0,
+      "neu": 14,
+      "best": 55,
+      "worst": 0,
+      "bySeed": {
+        "7": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "19": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 4
+        },
+        "37": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 4
+        }
+      },
+      "byCase": {
+        "lns-holdout-service-braid-range1-big-service140-south-shelf-screen-candidate": {
+          "pos": 4,
+          "neg": 0,
+          "neu": 2
+        },
+        "lns-holdout-service-braid-range1-big-service140-east-lane-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "lns-holdout-service-braid-range1-big-service140-double-choke-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        }
+      },
+      "examples": [
+        {
+          "seed": 19,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 3,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 19,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 3,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 37,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 3,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 37,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 3,
+          "source": "exploration-tail"
+        }
+      ]
+    },
+    "allNonBaselineSliding": {
+      "selected": 48,
+      "pos": 4,
+      "neg": 0,
+      "neu": 44,
+      "best": 55,
+      "worst": 0,
+      "bySeed": {
+        "7": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 16
+        },
+        "19": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 14
+        },
+        "37": {
+          "pos": 2,
+          "neg": 0,
+          "neu": 14
+        }
+      },
+      "byCase": {
+        "lns-holdout-service-braid-range1-big-service140-south-shelf-screen-candidate": {
+          "pos": 4,
+          "neg": 0,
+          "neu": 14
+        },
+        "lns-holdout-service-braid-range1-big-service140-east-lane-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 12
+        },
+        "lns-holdout-service-braid-range1-big-service140-double-choke-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 18
+        }
+      },
+      "examples": [
+        {
+          "seed": 19,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 3,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 19,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 50,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 3,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 37,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 3,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 37,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 55,
+          "area": 12,
+          "componentsAfter": 3,
+          "newReach": 3,
+          "source": "exploration-tail"
+        }
+      ]
+    }
+  }
+}

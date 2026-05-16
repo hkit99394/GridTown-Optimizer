@@ -1,0 +1,796 @@
+{
+  "schemaVersion": 1,
+  "runId": "lns-window-replay-diagnostics-2026-05-12-decebc54",
+  "artifactType": "label-bundle",
+  "generatedAt": "2026-05-12T12:47:53.136Z",
+  "commands": [
+    "node dist/lnsBenchmarkCli.js --window-replay-labels --window-replay-online-scorecard=artifacts/lns-window-ranker-online/2026-05-12/fresh-pressure-holdout-two-iteration-product-pair-weight0.1-primary-only-no-selected-feature-gate-9seed-min-score-delta-0.5/lns-window-ranker-online-ablation.json --window-replay-fresh-pressure-holdout --seeds=7,11,13,19,23,29,31,37,43 --max-windows=16 --exploration-windows=8 --repair-time=0.2 --roll-forward-iterations=4 --roll-forward-repair-time=0.2 --window-replay-artifact-dir=artifacts/lns-window-replay-labels/2026-05-12/fresh-pressure-primary-only-no-gate-online-decision-roll-forward-4x0.2 --force-artifact-dir --json"
+  ],
+  "artifactPaths": [
+    "artifacts/lns-window-replay-labels/2026-05-12/fresh-pressure-primary-only-no-gate-online-decision-roll-forward-4x0.2/lns-window-replay-labels.json",
+    "artifacts/lns-window-replay-labels/2026-05-12/fresh-pressure-primary-only-no-gate-online-decision-roll-forward-4x0.2/lns-window-replay-labels.txt",
+    "artifacts/lns-window-replay-labels/2026-05-12/fresh-pressure-primary-only-no-gate-online-decision-roll-forward-4x0.2/repeatability-summary.json",
+    "artifacts/lns-window-replay-labels/2026-05-12/fresh-pressure-primary-only-no-gate-online-decision-roll-forward-4x0.2/manifest.json",
+    "artifacts/lns-window-replay-labels/2026-05-12/fresh-pressure-primary-only-no-gate-online-decision-roll-forward-4x0.2/telemetry-manifest.json"
+  ],
+  "cases": [
+    "lns-fresh-product-expansion-side-pocket-pressure",
+    "lns-fresh-product-footprint-offset-pressure",
+    "lns-fresh-product-service-island-pressure",
+    "lns-fresh-service-cross-pressure",
+    "lns-fresh-footprint-cascade-pressure",
+    "lns-fresh-anchor-service-inlet-pressure"
+  ],
+  "caseFamilies": [
+    "lns-anchor-service",
+    "lns-footprint-pressure",
+    "lns-product-expansion",
+    "lns-product-footprint",
+    "lns-product-service",
+    "lns-service-pressure",
+    "lns-window-replay"
+  ],
+  "seeds": [
+    7,
+    11,
+    13,
+    19,
+    23,
+    29,
+    31,
+    37,
+    43
+  ],
+  "inputFingerprint": "fnv1a:be7b805f",
+  "labelFingerprint": "fnv1a:decebc54",
+  "splitStatus": {
+    "diagnosticsOnly": true,
+    "source": "lns-window-replay-diagnostic-bundle",
+    "statePolicies": [
+      "online-decision"
+    ],
+    "capturedStatePolicies": [
+      "online-decision"
+    ],
+    "repeatabilitySummary": {
+      "schemaVersion": 1,
+      "rollForwardLabelCount": 2612,
+      "bucketCount": 221,
+      "repeatedBucketCount": 213,
+      "mixedFinalStatusBucketCount": 86,
+      "conflictingFinalStatusBucketCount": 57,
+      "conflictingLabelCount": 802,
+      "conflictingStatusCounts": {
+        "improved": 157,
+        "neutral": 400,
+        "regressed": 245,
+        "unknown": 0
+      },
+      "featureIdenticalConflictBucketCount": 40,
+      "featureIdenticalConflictLabelCount": 522,
+      "examples": [
+        {
+          "caseName": "lns-fresh-product-footprint-offset-pressure",
+          "pressureFamily": "product-footprint",
+          "statePolicy": "online-decision",
+          "operator": "frontier-congestion",
+          "window": "1:1:3x3",
+          "labelCount": 18,
+          "seedCount": 9,
+          "seeds": [
+            7,
+            11,
+            13,
+            19,
+            23,
+            29,
+            31,
+            37,
+            43
+          ],
+          "statusCounts": {
+            "improved": 2,
+            "neutral": 4,
+            "regressed": 12,
+            "unknown": 0
+          },
+          "finalDeltas": [
+            -85,
+            -80,
+            -70,
+            -40,
+            -35,
+            -30,
+            -20,
+            -10,
+            -5,
+            0,
+            40
+          ],
+          "baselineTotals": [
+            570,
+            580,
+            585,
+            610,
+            620,
+            630,
+            640,
+            650
+          ],
+          "totalPopulations": [
+            535,
+            540,
+            580,
+            620
+          ],
+          "featureFingerprintCount": 1
+        },
+        {
+          "caseName": "lns-fresh-product-footprint-offset-pressure",
+          "pressureFamily": "product-footprint",
+          "statePolicy": "online-decision",
+          "operator": "gate-choke",
+          "window": "1:1:3x3",
+          "labelCount": 18,
+          "seedCount": 9,
+          "seeds": [
+            7,
+            11,
+            13,
+            19,
+            23,
+            29,
+            31,
+            37,
+            43
+          ],
+          "statusCounts": {
+            "improved": 2,
+            "neutral": 4,
+            "regressed": 12,
+            "unknown": 0
+          },
+          "finalDeltas": [
+            -85,
+            -80,
+            -70,
+            -40,
+            -35,
+            -30,
+            -20,
+            -10,
+            -5,
+            0,
+            40
+          ],
+          "baselineTotals": [
+            570,
+            580,
+            585,
+            610,
+            620,
+            630,
+            640,
+            650
+          ],
+          "totalPopulations": [
+            535,
+            540,
+            580,
+            620
+          ],
+          "featureFingerprintCount": 1
+        },
+        {
+          "caseName": "lns-fresh-product-footprint-offset-pressure",
+          "pressureFamily": "product-footprint",
+          "statePolicy": "online-decision",
+          "operator": "placed-buildings",
+          "window": "1:0:3x3",
+          "labelCount": 18,
+          "seedCount": 9,
+          "seeds": [
+            7,
+            11,
+            13,
+            19,
+            23,
+            29,
+            31,
+            37,
+            43
+          ],
+          "statusCounts": {
+            "improved": 2,
+            "neutral": 4,
+            "regressed": 12,
+            "unknown": 0
+          },
+          "finalDeltas": [
+            -85,
+            -80,
+            -70,
+            -40,
+            -35,
+            -30,
+            -20,
+            -10,
+            -5,
+            0,
+            40
+          ],
+          "baselineTotals": [
+            570,
+            580,
+            585,
+            610,
+            620,
+            630,
+            640,
+            650
+          ],
+          "totalPopulations": [
+            535,
+            540,
+            580,
+            620
+          ],
+          "featureFingerprintCount": 1
+        },
+        {
+          "caseName": "lns-fresh-product-footprint-offset-pressure",
+          "pressureFamily": "product-footprint",
+          "statePolicy": "online-decision",
+          "operator": "random-exploration",
+          "window": "1:3:3x3",
+          "labelCount": 18,
+          "seedCount": 9,
+          "seeds": [
+            7,
+            11,
+            13,
+            19,
+            23,
+            29,
+            31,
+            37,
+            43
+          ],
+          "statusCounts": {
+            "improved": 2,
+            "neutral": 4,
+            "regressed": 12,
+            "unknown": 0
+          },
+          "finalDeltas": [
+            -85,
+            -80,
+            -70,
+            -40,
+            -35,
+            -30,
+            -20,
+            -10,
+            -5,
+            0,
+            40
+          ],
+          "baselineTotals": [
+            570,
+            580,
+            585,
+            610,
+            620,
+            630,
+            640,
+            650
+          ],
+          "totalPopulations": [
+            535,
+            540,
+            580,
+            620
+          ],
+          "featureFingerprintCount": 1
+        },
+        {
+          "caseName": "lns-fresh-product-footprint-offset-pressure",
+          "pressureFamily": "product-footprint",
+          "statePolicy": "online-decision",
+          "operator": "residential-headroom",
+          "window": "2:3:3x3",
+          "labelCount": 18,
+          "seedCount": 9,
+          "seeds": [
+            7,
+            11,
+            13,
+            19,
+            23,
+            29,
+            31,
+            37,
+            43
+          ],
+          "statusCounts": {
+            "improved": 2,
+            "neutral": 4,
+            "regressed": 12,
+            "unknown": 0
+          },
+          "finalDeltas": [
+            -85,
+            -80,
+            -70,
+            -40,
+            -35,
+            -30,
+            -20,
+            -10,
+            -5,
+            0,
+            40
+          ],
+          "baselineTotals": [
+            570,
+            580,
+            585,
+            610,
+            620,
+            630,
+            640,
+            650
+          ],
+          "totalPopulations": [
+            535,
+            540,
+            580,
+            620
+          ],
+          "featureFingerprintCount": 1
+        },
+        {
+          "caseName": "lns-fresh-product-footprint-offset-pressure",
+          "pressureFamily": "product-footprint",
+          "statePolicy": "online-decision",
+          "operator": "residential-headroom",
+          "window": "3:0:3x3",
+          "labelCount": 18,
+          "seedCount": 9,
+          "seeds": [
+            7,
+            11,
+            13,
+            19,
+            23,
+            29,
+            31,
+            37,
+            43
+          ],
+          "statusCounts": {
+            "improved": 2,
+            "neutral": 4,
+            "regressed": 12,
+            "unknown": 0
+          },
+          "finalDeltas": [
+            -85,
+            -80,
+            -70,
+            -40,
+            -35,
+            -30,
+            -20,
+            -10,
+            -5,
+            0,
+            40
+          ],
+          "baselineTotals": [
+            570,
+            580,
+            585,
+            610,
+            620,
+            630,
+            640,
+            650
+          ],
+          "totalPopulations": [
+            535,
+            540,
+            580,
+            620
+          ],
+          "featureFingerprintCount": 1
+        },
+        {
+          "caseName": "lns-fresh-product-footprint-offset-pressure",
+          "pressureFamily": "product-footprint",
+          "statePolicy": "online-decision",
+          "operator": "sliding",
+          "window": "0:0:4x3",
+          "labelCount": 18,
+          "seedCount": 9,
+          "seeds": [
+            7,
+            11,
+            13,
+            19,
+            23,
+            29,
+            31,
+            37,
+            43
+          ],
+          "statusCounts": {
+            "improved": 2,
+            "neutral": 4,
+            "regressed": 12,
+            "unknown": 0
+          },
+          "finalDeltas": [
+            -85,
+            -80,
+            -70,
+            -40,
+            -35,
+            -30,
+            -20,
+            -10,
+            -5,
+            0,
+            40
+          ],
+          "baselineTotals": [
+            570,
+            580,
+            585,
+            610,
+            620,
+            630,
+            640,
+            650
+          ],
+          "totalPopulations": [
+            535,
+            540,
+            580,
+            620
+          ],
+          "featureFingerprintCount": 1
+        },
+        {
+          "caseName": "lns-fresh-product-footprint-offset-pressure",
+          "pressureFamily": "product-footprint",
+          "statePolicy": "online-decision",
+          "operator": "sliding",
+          "window": "0:3:4x3",
+          "labelCount": 18,
+          "seedCount": 9,
+          "seeds": [
+            7,
+            11,
+            13,
+            19,
+            23,
+            29,
+            31,
+            37,
+            43
+          ],
+          "statusCounts": {
+            "improved": 2,
+            "neutral": 4,
+            "regressed": 12,
+            "unknown": 0
+          },
+          "finalDeltas": [
+            -85,
+            -80,
+            -70,
+            -40,
+            -35,
+            -30,
+            -20,
+            -10,
+            -5,
+            0,
+            40
+          ],
+          "baselineTotals": [
+            570,
+            580,
+            585,
+            610,
+            620,
+            630,
+            640,
+            650
+          ],
+          "totalPopulations": [
+            535,
+            540,
+            580,
+            620
+          ],
+          "featureFingerprintCount": 1
+        },
+        {
+          "caseName": "lns-fresh-product-footprint-offset-pressure",
+          "pressureFamily": "product-footprint",
+          "statePolicy": "online-decision",
+          "operator": "sliding",
+          "window": "1:0:3x3",
+          "labelCount": 18,
+          "seedCount": 9,
+          "seeds": [
+            7,
+            11,
+            13,
+            19,
+            23,
+            29,
+            31,
+            37,
+            43
+          ],
+          "statusCounts": {
+            "improved": 2,
+            "neutral": 4,
+            "regressed": 12,
+            "unknown": 0
+          },
+          "finalDeltas": [
+            -85,
+            -80,
+            -70,
+            -40,
+            -35,
+            -30,
+            -20,
+            -10,
+            -5,
+            0,
+            40
+          ],
+          "baselineTotals": [
+            570,
+            580,
+            585,
+            610,
+            620,
+            630,
+            640,
+            650
+          ],
+          "totalPopulations": [
+            535,
+            540,
+            580,
+            620
+          ],
+          "featureFingerprintCount": 1
+        },
+        {
+          "caseName": "lns-fresh-product-footprint-offset-pressure",
+          "pressureFamily": "product-footprint",
+          "statePolicy": "online-decision",
+          "operator": "sliding",
+          "window": "1:3:3x3",
+          "labelCount": 18,
+          "seedCount": 9,
+          "seeds": [
+            7,
+            11,
+            13,
+            19,
+            23,
+            29,
+            31,
+            37,
+            43
+          ],
+          "statusCounts": {
+            "improved": 2,
+            "neutral": 4,
+            "regressed": 12,
+            "unknown": 0
+          },
+          "finalDeltas": [
+            -85,
+            -80,
+            -70,
+            -40,
+            -35,
+            -30,
+            -20,
+            -10,
+            -5,
+            0,
+            40
+          ],
+          "baselineTotals": [
+            570,
+            580,
+            585,
+            610,
+            620,
+            630,
+            640,
+            650
+          ],
+          "totalPopulations": [
+            535,
+            540,
+            580,
+            620
+          ],
+          "featureFingerprintCount": 1
+        },
+        {
+          "caseName": "lns-fresh-product-expansion-side-pocket-pressure",
+          "pressureFamily": "product-expansion",
+          "statePolicy": "online-decision",
+          "operator": "sliding",
+          "window": "0:3:4x3",
+          "labelCount": 18,
+          "seedCount": 9,
+          "seeds": [
+            7,
+            11,
+            13,
+            19,
+            23,
+            29,
+            31,
+            37,
+            43
+          ],
+          "statusCounts": {
+            "improved": 4,
+            "neutral": 6,
+            "regressed": 8,
+            "unknown": 0
+          },
+          "finalDeltas": [
+            -135,
+            -70,
+            -35,
+            0,
+            5,
+            35
+          ],
+          "baselineTotals": [
+            720,
+            750,
+            755,
+            790,
+            825
+          ],
+          "totalPopulations": [
+            620,
+            720,
+            755,
+            790,
+            825
+          ],
+          "featureFingerprintCount": 7
+        },
+        {
+          "caseName": "lns-fresh-product-footprint-offset-pressure",
+          "pressureFamily": "product-footprint",
+          "statePolicy": "online-decision",
+          "operator": "frontier-congestion",
+          "window": "2:2:3x3",
+          "labelCount": 18,
+          "seedCount": 9,
+          "seeds": [
+            7,
+            11,
+            13,
+            19,
+            23,
+            29,
+            31,
+            37,
+            43
+          ],
+          "statusCounts": {
+            "improved": 7,
+            "neutral": 7,
+            "regressed": 4,
+            "unknown": 0
+          },
+          "finalDeltas": [
+            -60,
+            -40,
+            -10,
+            0,
+            10,
+            30,
+            35,
+            40,
+            55,
+            105
+          ],
+          "baselineTotals": [
+            570,
+            580,
+            585,
+            610,
+            620,
+            630,
+            640,
+            650
+          ],
+          "totalPopulations": [
+            580,
+            620,
+            650,
+            675
+          ],
+          "featureFingerprintCount": 1
+        }
+      ]
+    }
+  },
+  "budget": {
+    "seeds": [
+      7,
+      11,
+      13,
+      19,
+      23,
+      29,
+      31,
+      37,
+      43
+    ],
+    "maxWindows": 16,
+    "explorationWindowCount": 8,
+    "repairTimeLimitSeconds": 0.2,
+    "rollForwardIterations": 4,
+    "rollForwardRepairTimeLimitSeconds": 0.2,
+    "stateCollectionIterations": 0,
+    "stateCollectionRepairTimeLimitSeconds": 0.2,
+    "cpSatNumWorkers": 1,
+    "caseCount": 6,
+    "stateCount": 108,
+    "labelCount": 2612,
+    "rollForwardLabelCount": 2612
+  },
+  "model": {
+    "trained": false,
+    "diagnosticsOnly": true,
+    "labelSource": "lns-window-replay-labels",
+    "featureSchemaVersion": 2
+  },
+  "decision": "diagnostics-only",
+  "summary": "LNS window replay diagnostic label bundle; no solver default changed.",
+  "summaryMetrics": {
+    "caseCount": 6,
+    "seedCount": 9,
+    "stateCount": 108,
+    "labelCount": 2612,
+    "rollForwardLabelCount": 2612,
+    "repeatabilityConflictBucketCount": 57,
+    "repeatabilityFeatureIdenticalConflictBucketCount": 40,
+    "repeatabilityFeatureIdenticalConflictLabelCount": 522,
+    "statePolicies": [
+      "online-decision"
+    ],
+    "capturedStatePolicies": [
+      "online-decision"
+    ],
+    "cpSatModelFingerprints": [
+      "fnv1a:591e7f12",
+      "fnv1a:fb7cf307",
+      "fnv1a:e53bc8f0",
+      "fnv1a:04588106",
+      "fnv1a:1ba7190c",
+      "fnv1a:9e32ed6a"
+    ]
+  }
+}

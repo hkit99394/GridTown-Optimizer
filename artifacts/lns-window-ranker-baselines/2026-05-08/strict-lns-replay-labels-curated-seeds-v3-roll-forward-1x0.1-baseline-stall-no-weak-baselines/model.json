@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "modelType": "lns-window-ranking-baseline-sweep",
+  "purpose": "offline-diagnostics-only",
+  "trained": false,
+  "runtimeDefaultChanged": false,
+  "solverDefaultChanged": false,
+  "featureSchemaVersion": 2,
+  "topK": 3,
+  "target": "roll-forward-baseline-stall-lift",
+  "weakSeedReplayLabelsAllowed": false,
+  "featureIdenticalRepeatabilityConflictsExcluded": false,
+  "baselineNames": [
+    "baseline-selected-window",
+    "operator-score",
+    "stable-random",
+    "connectivity-shadow",
+    "fragmentation",
+    "candidate-loss",
+    "residential-headroom",
+    "service-bonus"
+  ],
+  "bestBaselineName": "stable-random"
+}

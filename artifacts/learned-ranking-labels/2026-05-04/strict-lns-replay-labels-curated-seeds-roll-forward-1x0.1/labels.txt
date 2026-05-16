@@ -1,0 +1,16 @@
+=== Low-Risk Learned Ranking Labels ===
+Generated: 2026-05-04T19:35:04.927Z
+Schema: 1
+Seeds: 7, 19, 37
+Audit: learned-model=none greedy-profile=true greedy-connectivity-shadow=true lns-preset=strict-lns-replay lns-cp-sat-workers=1 lns-state=initial-incumbent,post-first-improvement,post-stagnation lns-state-collection=4x1s lns-roll-forward=1x0.1s lns-windows=baseline-ranked-top-k-plus-tail-exploration lns-exploration=4 lns-feature-schema=2
+Leakage: protected-holdout=true greedy-overlap=none lns-overlap=none
+Greedy labels: total=4677 connectivity-shadow=1182 road-opportunity=3495
+- greedy development: cases=cap-sweep-mixed, service-local-neighborhood, step14-service-lookahead-reranker, row0-corridor-repair-pressure labels=1938 connectivity-shadow=462 road-opportunity=1476
+- greedy holdout: cases=fixed-service-realization-complete, geometry-occupancy-hot-path, typed-footprint-pressure, typed-availability-pressure labels=2739 connectivity-shadow=720 road-opportunity=2019
+LNS replay labels: total=1200
+LNS roll-forward: labels=1200 status=improved:90 neutral:1107 regressed:3 unknown:0 opportunities=labels:90 cases:15
+LNS label-scale ready=false
+- lns-scale development: ready=false families=5 usable=648 non-neutral=93 neutral-ratio=0.856 failures=neutral-ratio 0.856/0.85; corridor state-policies missing:post-first-improvement; footprint-pressure state-policies missing:post-first-improvement; service-pressure state-policies missing:post-first-improvement
+- lns-scale holdout: ready=false families=5 usable=552 non-neutral=54 neutral-ratio=0.902 failures=neutral-ratio 0.902/0.85; anchor-service state-policies missing:post-first-improvement; corridor state-policies missing:post-first-improvement; footprint-pressure state-policies missing:post-first-improvement; gate state-policies missing:post-first-improvement
+- lns development: cases=compact-service-repair, seeded-service-anchor-pressure, lns-corridor-squeeze-pressure, lns-gate-choke-pressure, lns-footprint-mix-pressure families=service-pressure, anchor-service, corridor, gate, footprint-pressure labels=648 usable=648 improved=93 neutral=555 regressed=0 invalid=0 recoverable-failure=0 repair=1s roll-forward=648 roll-forward-status=improved:36 neutral:609 regressed:3 unknown:0 roll-forward-opportunities=labels:36 cases:9 max-windows=14 exploration=4
+- lns holdout: cases=row0-anchor-repair, lns-service-overlap-pressure, lns-anchor-service-corner-pressure, lns-gate-side-channel-pressure, lns-footprint-bottleneck-pressure families=corridor, service-pressure, anchor-service, gate, footprint-pressure labels=552 usable=552 improved=54 neutral=498 regressed=0 invalid=0 recoverable-failure=0 repair=1s roll-forward=552 roll-forward-status=improved:54 neutral:498 regressed:0 unknown:0 roll-forward-opportunities=labels:54 cases:6 max-windows=14 exploration=4

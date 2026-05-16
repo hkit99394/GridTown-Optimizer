@@ -1,0 +1,44 @@
+LNS online selected-feature gate discovery
+generatedAt=2026-05-10T20:56:29.169Z
+sourceScorecards=2
+overrideTraces=54
+selectionImproved=6
+finalRegressed=13
+features=allowedWindowCells,anchorReachableWindowCells,area,clearedFootprint,emptyComponentsBefore,narrowGateCells,newlyReachable,operatorScore,residentialCandidatesBlocked,residentialCandidatesIntersecting,serviceCandidateBonus,serviceCandidatesBlocked,serviceCandidatesIntersecting
+inputFingerprint=fnv1a:a20eeee4
+discoveryFingerprint=fnv1a:23a8d3b4
+
+greedy-selected-groups=allowedWindowCells>=0.5
+greedy-selected=6 improved=6 final-regressed=0 neutral=0 safe=true
+
+top-candidates:
+- allowedWindowCells>=0.5: selected=6 improved=6 final-regressed=0 neutral=0 worst=50 safe=true
+- allowedWindowCells>=0.5,allowedWindowCells<=0.5: selected=6 improved=6 final-regressed=0 neutral=0 worst=50 safe=true
+- anchorReachableWindowCells>=0.5: selected=6 improved=6 final-regressed=0 neutral=0 worst=50 safe=true
+- anchorReachableWindowCells>=0.5,anchorReachableWindowCells<=0.5: selected=6 improved=6 final-regressed=0 neutral=0 worst=50 safe=true
+- area>=0.6: selected=6 improved=6 final-regressed=0 neutral=0 worst=50 safe=true
+- area>=0.6,area<=0.6: selected=6 improved=6 final-regressed=0 neutral=0 worst=50 safe=true
+- clearedFootprint>=0.35: selected=6 improved=6 final-regressed=0 neutral=0 worst=50 safe=true
+- clearedFootprint>=0.35,clearedFootprint<=0.35: selected=6 improved=6 final-regressed=0 neutral=0 worst=50 safe=true
+- newlyReachable>=0.16: selected=6 improved=6 final-regressed=0 neutral=0 worst=50 safe=true
+- newlyReachable>=0.16,newlyReachable<=0.16: selected=6 improved=6 final-regressed=0 neutral=0 worst=50 safe=true
+- operatorScore>=9.74,operatorScore<=9.74: selected=6 improved=6 final-regressed=0 neutral=0 worst=50 safe=true
+- residentialCandidatesBlocked>=0.75,residentialCandidatesBlocked<=0.75: selected=6 improved=6 final-regressed=0 neutral=0 worst=50 safe=true
+- residentialCandidatesIntersecting>=0.95,residentialCandidatesIntersecting<=0.95: selected=6 improved=6 final-regressed=0 neutral=0 worst=50 safe=true
+- serviceCandidateBonus>=4.9: selected=6 improved=6 final-regressed=0 neutral=0 worst=50 safe=true
+- serviceCandidateBonus>=4.9,serviceCandidateBonus<=4.9: selected=6 improved=6 final-regressed=0 neutral=0 worst=50 safe=true
+- serviceCandidatesBlocked>=1.15: selected=6 improved=6 final-regressed=0 neutral=0 worst=50 safe=true
+- serviceCandidatesBlocked>=1.15,serviceCandidatesBlocked<=1.15: selected=6 improved=6 final-regressed=0 neutral=0 worst=50 safe=true
+- serviceCandidatesIntersecting>=1.5: selected=6 improved=6 final-regressed=0 neutral=0 worst=50 safe=true
+- serviceCandidatesIntersecting>=1.5,serviceCandidatesIntersecting<=1.5: selected=6 improved=6 final-regressed=0 neutral=0 worst=50 safe=true
+- allowedWindowCells<=0.5,anchorReachableWindowCells>=0.5: selected=6 improved=6 final-regressed=0 neutral=0 worst=50 safe=true
+- allowedWindowCells<=0.5,anchorReachableWindowCells>=0.5,anchorReachableWindowCells<=0.5: selected=6 improved=6 final-regressed=0 neutral=0 worst=50 safe=true
+- allowedWindowCells<=0.5,area>=0.6: selected=6 improved=6 final-regressed=0 neutral=0 worst=50 safe=true
+- allowedWindowCells<=0.5,area>=0.6,area<=0.6: selected=6 improved=6 final-regressed=0 neutral=0 worst=50 safe=true
+- allowedWindowCells<=0.5,clearedFootprint>=0.35: selected=6 improved=6 final-regressed=0 neutral=0 worst=50 safe=true
+- allowedWindowCells<=0.5,clearedFootprint>=0.35,clearedFootprint<=0.35: selected=6 improved=6 final-regressed=0 neutral=0 worst=50 safe=true
+- allowedWindowCells<=0.5,newlyReachable>=0.16: selected=6 improved=6 final-regressed=0 neutral=0 worst=50 safe=true
+- allowedWindowCells<=0.5,newlyReachable>=0.16,newlyReachable<=0.16: selected=6 improved=6 final-regressed=0 neutral=0 worst=50 safe=true
+- allowedWindowCells<=0.5,operatorScore>=9.74,operatorScore<=9.74: selected=6 improved=6 final-regressed=0 neutral=0 worst=50 safe=true
+- allowedWindowCells<=0.5,residentialCandidatesBlocked>=0.75,residentialCandidatesBlocked<=0.75: selected=6 improved=6 final-regressed=0 neutral=0 worst=50 safe=true
+- allowedWindowCells<=0.5,residentialCandidatesIntersecting>=0.95,residentialCandidatesIntersecting<=0.95: selected=6 improved=6 final-regressed=0 neutral=0 worst=50 safe=true

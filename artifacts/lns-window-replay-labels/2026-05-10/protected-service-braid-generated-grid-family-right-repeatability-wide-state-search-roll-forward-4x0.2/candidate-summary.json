@@ -1,0 +1,528 @@
+{
+  "outDir": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-generated-grid-family-right-repeatability-wide-state-search-roll-forward-4x0.2",
+  "labels": 432,
+  "states": 18,
+  "pos": 22,
+  "neg": 2,
+  "neu": 408,
+  "immPos": 18,
+  "best": 50,
+  "worst": -45,
+  "repeatabilitySummary": {
+    "schemaVersion": 1,
+    "rollForwardLabelCount": 432,
+    "bucketCount": 48,
+    "repeatedBucketCount": 48,
+    "mixedFinalStatusBucketCount": 4,
+    "conflictingFinalStatusBucketCount": 2,
+    "conflictingLabelCount": 18,
+    "conflictingStatusCounts": {
+      "improved": 2,
+      "neutral": 14,
+      "regressed": 2,
+      "unknown": 0
+    },
+    "featureIdenticalConflictBucketCount": 2,
+    "featureIdenticalConflictLabelCount": 18,
+    "examples": [
+      {
+        "caseName": "lns-holdout-service-braid-family-embed-7x8-right-repeatability-candidate",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "initial-incumbent",
+        "operator": "random-exploration",
+        "window": "3:1:3x3",
+        "labelCount": 9,
+        "seedCount": 9,
+        "seeds": [
+          5,
+          7,
+          11,
+          13,
+          17,
+          19,
+          23,
+          29,
+          37
+        ],
+        "statusCounts": {
+          "improved": 1,
+          "neutral": 7,
+          "regressed": 1,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -45,
+          0,
+          50
+        ],
+        "baselineTotals": [
+          710,
+          755
+        ],
+        "totalPopulations": [
+          710,
+          760
+        ],
+        "featureFingerprintCount": 1
+      },
+      {
+        "caseName": "lns-holdout-service-braid-family-embed-7x8-right-repeatability-candidate",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "post-stagnation",
+        "operator": "random-exploration",
+        "window": "3:1:3x3",
+        "labelCount": 9,
+        "seedCount": 9,
+        "seeds": [
+          5,
+          7,
+          11,
+          13,
+          17,
+          19,
+          23,
+          29,
+          37
+        ],
+        "statusCounts": {
+          "improved": 1,
+          "neutral": 7,
+          "regressed": 1,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -45,
+          0,
+          50
+        ],
+        "baselineTotals": [
+          710,
+          755
+        ],
+        "totalPopulations": [
+          710,
+          760
+        ],
+        "featureFingerprintCount": 1
+      }
+    ]
+  },
+  "bySeed": {
+    "5": {
+      "pos": 2,
+      "neg": 0,
+      "neu": 46,
+      "best": 50,
+      "worst": 0,
+      "states": 2
+    },
+    "7": {
+      "pos": 2,
+      "neg": 2,
+      "neu": 44,
+      "best": 5,
+      "worst": -45,
+      "states": 2
+    },
+    "11": {
+      "pos": 2,
+      "neg": 0,
+      "neu": 46,
+      "best": 50,
+      "worst": 0,
+      "states": 2
+    },
+    "13": {
+      "pos": 2,
+      "neg": 0,
+      "neu": 46,
+      "best": 50,
+      "worst": 0,
+      "states": 2
+    },
+    "17": {
+      "pos": 2,
+      "neg": 0,
+      "neu": 46,
+      "best": 50,
+      "worst": 0,
+      "states": 2
+    },
+    "19": {
+      "pos": 2,
+      "neg": 0,
+      "neu": 46,
+      "best": 50,
+      "worst": 0,
+      "states": 2
+    },
+    "23": {
+      "pos": 4,
+      "neg": 0,
+      "neu": 44,
+      "best": 50,
+      "worst": 0,
+      "states": 2
+    },
+    "29": {
+      "pos": 4,
+      "neg": 0,
+      "neu": 44,
+      "best": 50,
+      "worst": 0,
+      "states": 2
+    },
+    "37": {
+      "pos": 2,
+      "neg": 0,
+      "neu": 46,
+      "best": 50,
+      "worst": 0,
+      "states": 2
+    }
+  },
+  "nonNeutralStates": [
+    {
+      "seed": 5,
+      "statePolicy": "initial-incumbent",
+      "stateIndex": 0,
+      "stateSourceStatus": "initial-incumbent",
+      "incumbentPopulation": 710,
+      "baseline": {
+        "top": 1,
+        "left": 3,
+        "rows": 3,
+        "cols": 3
+      },
+      "pos": 1,
+      "neg": 0,
+      "neu": 23,
+      "best": 50,
+      "worst": 0,
+      "baselineFinal": 710
+    },
+    {
+      "seed": 5,
+      "statePolicy": "post-stagnation",
+      "stateIndex": 1,
+      "stateSourceStatus": "neutral",
+      "incumbentPopulation": 710,
+      "baseline": {
+        "top": 1,
+        "left": 3,
+        "rows": 3,
+        "cols": 3
+      },
+      "pos": 1,
+      "neg": 0,
+      "neu": 23,
+      "best": 50,
+      "worst": 0,
+      "baselineFinal": 710
+    },
+    {
+      "seed": 7,
+      "statePolicy": "initial-incumbent",
+      "stateIndex": 0,
+      "stateSourceStatus": "initial-incumbent",
+      "incumbentPopulation": 710,
+      "baseline": {
+        "top": 1,
+        "left": 3,
+        "rows": 3,
+        "cols": 3
+      },
+      "pos": 1,
+      "neg": 1,
+      "neu": 22,
+      "best": 5,
+      "worst": -45,
+      "baselineFinal": 755
+    },
+    {
+      "seed": 7,
+      "statePolicy": "post-stagnation",
+      "stateIndex": 1,
+      "stateSourceStatus": "neutral",
+      "incumbentPopulation": 710,
+      "baseline": {
+        "top": 1,
+        "left": 3,
+        "rows": 3,
+        "cols": 3
+      },
+      "pos": 1,
+      "neg": 1,
+      "neu": 22,
+      "best": 5,
+      "worst": -45,
+      "baselineFinal": 755
+    },
+    {
+      "seed": 11,
+      "statePolicy": "initial-incumbent",
+      "stateIndex": 0,
+      "stateSourceStatus": "initial-incumbent",
+      "incumbentPopulation": 710,
+      "baseline": {
+        "top": 1,
+        "left": 3,
+        "rows": 3,
+        "cols": 3
+      },
+      "pos": 1,
+      "neg": 0,
+      "neu": 23,
+      "best": 50,
+      "worst": 0,
+      "baselineFinal": 710
+    },
+    {
+      "seed": 11,
+      "statePolicy": "post-stagnation",
+      "stateIndex": 1,
+      "stateSourceStatus": "neutral",
+      "incumbentPopulation": 710,
+      "baseline": {
+        "top": 1,
+        "left": 3,
+        "rows": 3,
+        "cols": 3
+      },
+      "pos": 1,
+      "neg": 0,
+      "neu": 23,
+      "best": 50,
+      "worst": 0,
+      "baselineFinal": 710
+    },
+    {
+      "seed": 13,
+      "statePolicy": "initial-incumbent",
+      "stateIndex": 0,
+      "stateSourceStatus": "initial-incumbent",
+      "incumbentPopulation": 710,
+      "baseline": {
+        "top": 1,
+        "left": 3,
+        "rows": 3,
+        "cols": 3
+      },
+      "pos": 1,
+      "neg": 0,
+      "neu": 23,
+      "best": 50,
+      "worst": 0,
+      "baselineFinal": 710
+    },
+    {
+      "seed": 13,
+      "statePolicy": "post-stagnation",
+      "stateIndex": 1,
+      "stateSourceStatus": "neutral",
+      "incumbentPopulation": 710,
+      "baseline": {
+        "top": 1,
+        "left": 3,
+        "rows": 3,
+        "cols": 3
+      },
+      "pos": 1,
+      "neg": 0,
+      "neu": 23,
+      "best": 50,
+      "worst": 0,
+      "baselineFinal": 710
+    },
+    {
+      "seed": 17,
+      "statePolicy": "initial-incumbent",
+      "stateIndex": 0,
+      "stateSourceStatus": "initial-incumbent",
+      "incumbentPopulation": 710,
+      "baseline": {
+        "top": 1,
+        "left": 3,
+        "rows": 3,
+        "cols": 3
+      },
+      "pos": 1,
+      "neg": 0,
+      "neu": 23,
+      "best": 50,
+      "worst": 0,
+      "baselineFinal": 710
+    },
+    {
+      "seed": 17,
+      "statePolicy": "post-stagnation",
+      "stateIndex": 1,
+      "stateSourceStatus": "neutral",
+      "incumbentPopulation": 710,
+      "baseline": {
+        "top": 1,
+        "left": 3,
+        "rows": 3,
+        "cols": 3
+      },
+      "pos": 1,
+      "neg": 0,
+      "neu": 23,
+      "best": 50,
+      "worst": 0,
+      "baselineFinal": 710
+    },
+    {
+      "seed": 19,
+      "statePolicy": "initial-incumbent",
+      "stateIndex": 0,
+      "stateSourceStatus": "initial-incumbent",
+      "incumbentPopulation": 710,
+      "baseline": {
+        "top": 1,
+        "left": 3,
+        "rows": 3,
+        "cols": 3
+      },
+      "pos": 1,
+      "neg": 0,
+      "neu": 23,
+      "best": 50,
+      "worst": 0,
+      "baselineFinal": 710
+    },
+    {
+      "seed": 19,
+      "statePolicy": "post-stagnation",
+      "stateIndex": 1,
+      "stateSourceStatus": "neutral",
+      "incumbentPopulation": 710,
+      "baseline": {
+        "top": 1,
+        "left": 3,
+        "rows": 3,
+        "cols": 3
+      },
+      "pos": 1,
+      "neg": 0,
+      "neu": 23,
+      "best": 50,
+      "worst": 0,
+      "baselineFinal": 710
+    },
+    {
+      "seed": 23,
+      "statePolicy": "initial-incumbent",
+      "stateIndex": 0,
+      "stateSourceStatus": "initial-incumbent",
+      "incumbentPopulation": 710,
+      "baseline": {
+        "top": 1,
+        "left": 3,
+        "rows": 3,
+        "cols": 3
+      },
+      "pos": 2,
+      "neg": 0,
+      "neu": 22,
+      "best": 50,
+      "worst": 0,
+      "baselineFinal": 710
+    },
+    {
+      "seed": 23,
+      "statePolicy": "post-stagnation",
+      "stateIndex": 1,
+      "stateSourceStatus": "neutral",
+      "incumbentPopulation": 710,
+      "baseline": {
+        "top": 1,
+        "left": 3,
+        "rows": 3,
+        "cols": 3
+      },
+      "pos": 2,
+      "neg": 0,
+      "neu": 22,
+      "best": 50,
+      "worst": 0,
+      "baselineFinal": 710
+    },
+    {
+      "seed": 29,
+      "statePolicy": "initial-incumbent",
+      "stateIndex": 0,
+      "stateSourceStatus": "initial-incumbent",
+      "incumbentPopulation": 710,
+      "baseline": {
+        "top": 1,
+        "left": 3,
+        "rows": 3,
+        "cols": 3
+      },
+      "pos": 2,
+      "neg": 0,
+      "neu": 22,
+      "best": 50,
+      "worst": 0,
+      "baselineFinal": 710
+    },
+    {
+      "seed": 29,
+      "statePolicy": "post-stagnation",
+      "stateIndex": 1,
+      "stateSourceStatus": "neutral",
+      "incumbentPopulation": 710,
+      "baseline": {
+        "top": 1,
+        "left": 3,
+        "rows": 3,
+        "cols": 3
+      },
+      "pos": 2,
+      "neg": 0,
+      "neu": 22,
+      "best": 50,
+      "worst": 0,
+      "baselineFinal": 710
+    },
+    {
+      "seed": 37,
+      "statePolicy": "initial-incumbent",
+      "stateIndex": 0,
+      "stateSourceStatus": "initial-incumbent",
+      "incumbentPopulation": 710,
+      "baseline": {
+        "top": 1,
+        "left": 3,
+        "rows": 3,
+        "cols": 3
+      },
+      "pos": 1,
+      "neg": 0,
+      "neu": 23,
+      "best": 50,
+      "worst": 0,
+      "baselineFinal": 710
+    },
+    {
+      "seed": 37,
+      "statePolicy": "post-stagnation",
+      "stateIndex": 1,
+      "stateSourceStatus": "neutral",
+      "incumbentPopulation": 710,
+      "baseline": {
+        "top": 1,
+        "left": 3,
+        "rows": 3,
+        "cols": 3
+      },
+      "pos": 1,
+      "neg": 0,
+      "neu": 23,
+      "best": 50,
+      "worst": 0,
+      "baselineFinal": 710
+    }
+  ]
+}

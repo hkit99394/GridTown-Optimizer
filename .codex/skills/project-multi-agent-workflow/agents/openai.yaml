@@ -1,0 +1,4 @@
+interface:
+  display_name: "Project Multi-Agent Workflow"
+  short_description: "Planner, worker, reviewer workflow for this repo"
+  default_prompt: "Use $project-multi-agent-workflow to plan, implement, and review a substantial repo task."

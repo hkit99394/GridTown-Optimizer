@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "source": "model-experiment",
+  "command": "node dist/lnsWindowRankerCli.js --gap-diagnostics --labels=artifacts/learned-ranking-labels/2026-05-04/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1/labels.json --model=artifacts/lns-window-ranker/2026-05-05/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1-final-lift-no-weak-cpu-ranker-lr0.02-cap100/model.json --online-scorecard=artifacts/lns-window-ranker-online/2026-05-06/protected-priority2-decision-state-capture-min-score-delta-0.1/lns-window-ranker-online-ablation.json --supplemental-replay-labels=artifacts/lns-window-replay-labels/2026-05-06/protected-priority2-online-decision-state-roll-forward-4x0.1/lns-window-replay-labels.json --artifact-dir=artifacts/lns-window-ranker-gap-diagnostics/2026-05-06/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-protected-priority2-supplemental-gap --ranker-run-id=lns-window-ranker-gap-2026-05-06-curated-seeds-v3-final-lift-no-weak-protected-priority2-supplemental --ranker-decision=offline-online-lns-window-ranker-gap-diagnostics-with-priority2-supplemental-replay '--ranker-summary=Priority-2 protected online decision-state replay labels consumed as supplemental holdout gap evidence with exact replay neutralization; no solver default changed.' --json",
+  "generatedAt": "2026-05-06T17:43:26.946Z",
+  "git": {
+    "commit": "783317c280c35ef88bb525ed2401c9008c2b7ffd",
+    "branch": "features/validated-solver-improvement-loop"
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "model": {
+    "schemaVersion": 1,
+    "modelType": "lns-window-ranker-gap-diagnostics",
+    "purpose": "offline-diagnostics-only",
+    "runtimeDefaultChanged": false,
+    "solverDefaultChanged": false,
+    "target": "roll-forward-final-lift",
+    "weakSeedReplayLabelsAllowed": false,
+    "supplementalReplaySnapshotCount": 1,
+    "rankerModelFingerprint": "fnv1a:fa22b085",
+    "onlineScorecardType": "lns-window-ranker-online-ablation"
+  },
+  "inputArtifacts": [
+    "artifacts/learned-ranking-labels/2026-05-04/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1/labels.json",
+    "artifacts/lns-window-ranker/2026-05-05/strict-lns-replay-labels-curated-seeds-v3-roll-forward-1x0.1-final-lift-no-weak-cpu-ranker-lr0.02-cap100/model.json",
+    "artifacts/lns-window-ranker-online/2026-05-06/protected-priority2-decision-state-capture-min-score-delta-0.1/lns-window-ranker-online-ablation.json",
+    "artifacts/lns-window-replay-labels/2026-05-06/protected-priority2-online-decision-state-roll-forward-4x0.1/lns-window-replay-labels.json"
+  ],
+  "outputArtifacts": [
+    "artifacts/lns-window-ranker-gap-diagnostics/2026-05-06/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-protected-priority2-supplemental-gap/lns-window-ranker-gap-diagnostics.json",
+    "artifacts/lns-window-ranker-gap-diagnostics/2026-05-06/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-protected-priority2-supplemental-gap/lns-window-ranker-gap-diagnostics.txt",
+    "artifacts/lns-window-ranker-gap-diagnostics/2026-05-06/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-protected-priority2-supplemental-gap/telemetry-manifest.json"
+  ],
+  "labelFingerprint": "fnv1a:58ce487f",
+  "datasetFingerprint": "fnv1a:b3c3fe8b",
+  "modelFingerprint": "fnv1a:d84b6b7a",
+  "metrics": {
+    "target": "roll-forward-final-lift",
+    "weakSeedReplayLabelsAllowed": false,
+    "supplementalReplaySnapshotCount": 1,
+    "offlineDecisionCount": 108,
+    "offlineSupplementalDecisionCount": 18,
+    "offlineOverrideCount": 108,
+    "offlineOpportunityCount": 54,
+    "onlineComparisonCount": 9,
+    "onlineOverrideCount": 18,
+    "onlineSelectionTraceCount": 18,
+    "onlineFinalNeutralOverrideCount": 18,
+    "joinedTransitionFamilyCount": 6,
+    "offlinePositiveOnlineNeutralCount": 0,
+    "onlineActiveNoOfflineMatchCount": 0,
+    "exactReplayNeutralizedOfflinePositiveOnlineNeutralCount": 1,
+    "traceComparisonLayoutSignatureCounts": {
+      "changed-layout-final-neutral": 0,
+      "mixed-final-outcome": 0,
+      "mixed-layout-final-neutral": 0,
+      "missing-layout-delta": 0,
+      "zero-layout-final-neutral": 0
+    },
+    "zeroLayoutFinalNeutralTraceComparisonCount": 0,
+    "changedLayoutFinalNeutralTraceComparisonCount": 0,
+    "mixedLayoutFinalNeutralTraceComparisonCount": 0,
+    "promotionSensitivity": {
+      "suppressedLayoutSignature": "zero-layout-final-neutral",
+      "suppressedTraceComparisonCount": 0,
+      "remainingTraceComparisonCount": 0,
+      "remainingOfflinePositiveOnlineNeutralCount": 0,
+      "remainingOnlineActiveNoOfflineMatchCount": 0,
+      "changedLayoutNoLiftTrajectoryDepthCount": 0,
+      "missingLayoutDeltaCount": 0,
+      "mixedFinalOutcomeCount": 0,
+      "remainingPromotionBlocked": false,
+      "remainingBlockers": [],
+      "protectedReplayEvidenceGate": {
+        "suppressedDiagnosis": "online-active-no-offline-match",
+        "suppressedTraceComparisonCount": 0,
+        "remainingTraceComparisonCount": 0,
+        "remainingOfflinePositiveOnlineNeutralCount": 0,
+        "changedLayoutNoLiftTrajectoryDepthCount": 0,
+        "missingLayoutDeltaCount": 0,
+        "mixedFinalOutcomeCount": 0,
+        "remainingPromotionBlocked": false,
+        "remainingBlockers": []
+      }
+    },
+    "traceComparisonCount": 0,
+    "traceComparisonOnlineTraceCount": 0,
+    "traceComparisonChangedFinalLayoutTraceCount": 0,
+    "traceComparisonPostSelectionImprovementTraceCount": 0,
+    "traceComparisonOfflineDecisionCount": 0,
+    "recommendedExperimentCount": 0,
+    "longerRollForwardReplayRecommendationCount": 0,
+    "targetedProtectedReplayLabelRecommendationCount": 0,
+    "promotionBlocked": false
+  },
+  "notes": "Offline-to-online LNS window-ranker gap diagnostics; no solver default changed."
+}

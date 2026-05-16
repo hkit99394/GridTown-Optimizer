@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "source": "lns-online-selected-feature-gate-nomination-evaluation",
+  "command": "node scripts/evaluate-lns-online-selected-feature-gates.mjs --discovery-artifact=artifacts/lns-online-selected-feature-gate-discovery/2026-05-11/trajectory-features-broadened-generated-protected-two-iteration-validation-aware-final-outcome-search --artifact-dir=artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-11/protected-broadened-two-iteration-validation-aware-gate-validation-greedy-9seed-min-score-delta-0 --candidate-source=validation-greedy --candidate-count=1 --runner=dist/lnsBenchmarkCli.js --window-ranker-model=artifacts/lns-window-ranker/2026-05-10/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-generated-right-repeatability-trajectory-features-ignore-baseline-conflict-excluded-calibration-lr0.02-cap100/model.json --window-ranker-min-score-delta=0 --seeds=5,7,11,13,17,19,23,29,37 --lns-iterations=2 --window-ranker-protected-holdout --run-id-prefix=lns-online-selected-feature-gate-nomination-2026-05-11-protected-validation-greedy-9seed --decision=online-lns-window-ranker-validation-aware-gate-nomination-evaluation '--summary=Nomination-aware nine-seed protected recheck for the validation-greedy selected-feature gate from protected-validation-aware discovery. No solver default changed.'",
+  "generatedAt": "2026-05-11T23:58:03.053Z",
+  "git": {
+    "commit": "d21983c59090c36db60b1f217e5af504db0ed84b",
+    "branch": "features/validated-solver-improvement-loop"
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "diagnosticsOnly": true,
+  "discoveryJson": "artifacts/lns-online-selected-feature-gate-discovery/2026-05-11/trajectory-features-broadened-generated-protected-two-iteration-validation-aware-final-outcome-search/online-selected-feature-gate-discovery.json",
+  "discoveryFingerprint": "fnv1a:b6b9c80d",
+  "inputFingerprint": "fnv1a:34b0d192",
+  "evaluationFingerprint": "fnv1a:3068260c",
+  "reportFingerprint": "fnv1a:c5b91615",
+  "outputArtifacts": [
+    "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-11/protected-broadened-two-iteration-validation-aware-gate-validation-greedy-9seed-min-score-delta-0/lns-online-selected-feature-gate-nomination-evaluation.json",
+    "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-11/protected-broadened-two-iteration-validation-aware-gate-validation-greedy-9seed-min-score-delta-0/lns-online-selected-feature-gate-nomination-evaluation.txt",
+    "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-11/protected-broadened-two-iteration-validation-aware-gate-validation-greedy-9seed-min-score-delta-0/telemetry-manifest.json",
+    "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-11/protected-broadened-two-iteration-validation-aware-gate-validation-greedy-9seed-min-score-delta-0/manifest.json"
+  ],
+  "metrics": {
+    "candidateSource": "validation-greedy",
+    "candidateCountRequested": 1,
+    "evaluatedCandidateCount": 1,
+    "safeCandidateCount": 1,
+    "activeOverrideCandidateCount": 0,
+    "valuePositiveCandidateCount": 0,
+    "promotionCandidateCount": 0,
+    "bestCandidateIndex": 1,
+    "bestCandidateCliArg": "area>=2.1,area<=2.1,clearedFootprint>=0.75",
+    "bestCandidateMeanDelta": 0,
+    "bestCandidateWorstDelta": 0,
+    "bestCandidateImprovedCount": 0,
+    "bestCandidateRegressedCount": 0,
+    "bestCandidateOverrideCount": 0,
+    "bestCandidateFallbackCount": 180,
+    "bestCandidateAllFallback": true,
+    "bestCandidatePromotionCandidate": false
+  },
+  "notes": "Diagnostics-only nomination-aware selected-feature gate evaluation over online LNS window-ranker benchmark runs; no solver default changed."
+}

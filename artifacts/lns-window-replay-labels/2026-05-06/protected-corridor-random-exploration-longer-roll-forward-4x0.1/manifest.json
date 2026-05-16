@@ -1,0 +1,21 @@
+{
+  "artifactDir": "artifacts/lns-window-replay-labels/2026-05-06/protected-corridor-random-exploration-longer-roll-forward-4x0.1",
+  "artifactPaths": {
+    "replayJson": "artifacts/lns-window-replay-labels/2026-05-06/protected-corridor-random-exploration-longer-roll-forward-4x0.1/lns-window-replay-labels.json",
+    "replayText": "artifacts/lns-window-replay-labels/2026-05-06/protected-corridor-random-exploration-longer-roll-forward-4x0.1/lns-window-replay-labels.txt",
+    "manifestJson": "artifacts/lns-window-replay-labels/2026-05-06/protected-corridor-random-exploration-longer-roll-forward-4x0.1/manifest.json"
+  },
+  "command": "node dist/lnsBenchmarkCli.js --window-replay-labels --window-replay-protected-holdout lns-holdout-corridor-weave-pressure --seeds=7,19,37 --max-windows=14 --exploration-windows=4 --repair-time=1 --state-policies=initial-incumbent,post-first-improvement,post-stagnation --state-collection-iterations=4 --state-collection-repair-time=1 --roll-forward-iterations=4 --roll-forward-repair-time=0.1 --window-replay-artifact-dir=artifacts/lns-window-replay-labels/2026-05-06/protected-corridor-random-exploration-longer-roll-forward-4x0.1 --json",
+  "generatedAt": "2026-05-05T23:30:03.222Z",
+  "caseCount": 1,
+  "seedCount": 3,
+  "stateCount": 9,
+  "labelCount": 162,
+  "rollForwardLabelCount": 162,
+  "selectedCaseNames": [
+    "lns-holdout-corridor-weave-pressure"
+  ],
+  "pressureFamilies": [
+    "corridor"
+  ]
+}

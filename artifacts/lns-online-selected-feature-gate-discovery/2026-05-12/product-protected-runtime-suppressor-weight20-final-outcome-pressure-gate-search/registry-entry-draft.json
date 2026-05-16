@@ -1,0 +1,178 @@
+{
+  "schemaVersion": 1,
+  "runId": "lns-online-selected-feature-gate-discovery-0f9d457e",
+  "artifactType": "ablation-gate",
+  "generatedAt": "2026-05-12T09:07:15.730Z",
+  "commands": [
+    "node scripts/discover-lns-online-selected-feature-gates.mjs --source-artifact=artifacts/lns-window-ranker-online/2026-05-12/product-promotion-two-iteration-product-pair-weight0.1-runtime-suppressor-weight20-9seed-min-score-delta-0.5-suppression-delta-21.3 --source-artifact=artifacts/lns-window-ranker-online/2026-05-12/protected-holdout-two-iteration-product-pair-weight0.1-runtime-suppressor-weight20-9seed-min-score-delta-0.5-suppression-delta-21.3 --artifact-dir=artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-runtime-suppressor-weight20-final-outcome-pressure-gate-search --target=final-improved --max-group-size=2 --max-atoms-per-feature=12 --max-total-atoms=40 --top=10 --feature-allowlist=serviceCandidatesIntersecting,residentialCandidateHeadroom --force-artifact-dir"
+  ],
+  "artifactPaths": [
+    "artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-runtime-suppressor-weight20-final-outcome-pressure-gate-search/online-selected-feature-gate-discovery.json",
+    "artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-runtime-suppressor-weight20-final-outcome-pressure-gate-search/online-selected-feature-gate-discovery.txt",
+    "artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-runtime-suppressor-weight20-final-outcome-pressure-gate-search/telemetry-manifest.json",
+    "artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-runtime-suppressor-weight20-final-outcome-pressure-gate-search/manifest.json"
+  ],
+  "cases": [
+    "lns-holdout-anchor-service-harbor-pressure",
+    "lns-holdout-corridor-switchback-pressure",
+    "lns-holdout-corridor-weave-pressure",
+    "lns-product-expansion-comparison-replay-pressure",
+    "lns-product-typed-footprint-pressure"
+  ],
+  "caseFamilies": [
+    "anchor-service",
+    "corridor",
+    "lns-window-ranker-online",
+    "product-expansion",
+    "product-footprint"
+  ],
+  "seeds": [
+    7,
+    11,
+    13,
+    19,
+    23,
+    29,
+    31,
+    37,
+    43
+  ],
+  "inputFingerprint": "fnv1a:9c765f69",
+  "datasetFingerprint": "fnv1a:e34fa5f1",
+  "reportFingerprint": "fnv1a:0f9d457e",
+  "splitStatus": {
+    "diagnosticsOnly": true,
+    "source": "online-lns-window-ranker-scorecards",
+    "sourceScorecardCount": 2,
+    "validationSourceScorecardCount": 0,
+    "metricSemantics": {
+      "targetImproved": "Counts rows that match the selected discovery target. final-improved is attributed only to the terminal override trace with selectedFeatures in each variant.",
+      "terminalFinalImproved": "Counts selected terminal override traces with selectedFeatures whose whole variant final outcome improved versus baseline.",
+      "terminalFinalRegressed": "Counts selected terminal override traces with selectedFeatures whose whole variant final outcome regressed versus baseline.",
+      "safetyRegressed": "Counts selected traces with either a regressed immediate selection outcome or a regressed whole-variant final outcome. Whole-variant final regression is applied to every selected trace in that variant."
+    },
+    "v2DeprecatedMetricAliases": {
+      "schemaVersion": 2,
+      "note": "Schema-v2 compatibility aliases only. Do not use these aliases to reinterpret schema-v1 artifacts, where finalRegressed represented combined safety regression.",
+      "aliases": {
+        "finalImproved": "terminalFinalImproved",
+        "finalRegressed": "terminalFinalRegressed"
+      }
+    }
+  },
+  "budget": {
+    "sourceScorecardCount": 2,
+    "validationSourceScorecardCount": 0,
+    "overrideTraceCount": 45,
+    "validationOverrideTraceCount": 0,
+    "maxGroupSize": 2,
+    "maxAtomsPerFeature": 12,
+    "maxTotalAtoms": 40,
+    "totalCandidateAtomCount": 14,
+    "perFeatureCappedAtomCount": 14,
+    "atomCount": 14,
+    "conjunctionReservationAvailableUnsafeTargetAtomCount": 0,
+    "conjunctionReservationConsideredUnsafeTargetAtomCount": 0,
+    "conjunctionReservationAvailablePartnerAtomCount": 14,
+    "conjunctionReservationConsideredPartnerAtomCount": 14,
+    "candidateCount": 63,
+    "topCandidateCount": 10
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "model": {
+    "trained": false,
+    "diagnosticsOnly": true,
+    "target": "final-improved",
+    "gateKind": "online-selected-feature-threshold-search"
+  },
+  "decision": "diagnostics-only",
+  "summary": "Online LNS window-ranker override traces scanned for safe selected-feature gate groups; no solver default changed.",
+  "summaryMetrics": {
+    "sourceScorecardCount": 2,
+    "validationSourceScorecardCount": 0,
+    "overrideTraceCount": 45,
+    "targetImproved": 9,
+    "selectionImproved": 9,
+    "selectionRegressed": 0,
+    "terminalFinalImproved": 9,
+    "terminalFinalRegressed": 0,
+    "finalImproved": 9,
+    "finalRegressed": 0,
+    "safetyRegressed": 0,
+    "validationOverrideTraceCount": 0,
+    "validationTargetImproved": 0,
+    "validationSelectionImproved": 0,
+    "validationSelectionRegressed": 0,
+    "validationTerminalFinalImproved": 0,
+    "validationTerminalFinalRegressed": 0,
+    "validationFinalImproved": 0,
+    "validationFinalRegressed": 0,
+    "validationSafetyRegressed": 0,
+    "totalCandidateAtomCount": 14,
+    "perFeatureCappedAtomCount": 14,
+    "atomCount": 14,
+    "safeTargetAtomCount": 14,
+    "includedSafeTargetAtomCount": 14,
+    "omittedSafeTargetAtomCount": 0,
+    "includedUnsafeTargetAtomCount": 0,
+    "safeSingletonAdmissionQuota": 0,
+    "conjunctionReservationSearchMaxGroupSize": 2,
+    "conjunctionReservationSupportsRequestedMaxGroupSize": true,
+    "conjunctionReservationSearchExhaustive": true,
+    "conjunctionReservationCoversRequestedMaxGroupSize": true,
+    "conjunctionReservationAvailableUnsafeTargetAtomCount": 0,
+    "conjunctionReservationConsideredUnsafeTargetAtomCount": 0,
+    "conjunctionReservationAvailablePartnerAtomCount": 14,
+    "conjunctionReservationConsideredPartnerAtomCount": 14,
+    "conjunctionReservationSlicedUnsafeTargetAtoms": false,
+    "conjunctionReservationSlicedPartnerAtoms": false,
+    "conjunctionReservationReachedReservationAtomCap": false,
+    "candidateCount": 63,
+    "topCandidateCount": 10,
+    "topCandidateCliArg": "residentialCandidateHeadroom>=12.16",
+    "greedySelectedFeatureGateGroups": [
+      [
+        {
+          "feature": "residentialCandidateHeadroom",
+          "minValue": 12.16
+        }
+      ]
+    ],
+    "greedySelectedFeatureGateGroupsCliArg": "residentialCandidateHeadroom>=12.16",
+    "greedyTargetImproved": 9,
+    "greedySelectionImproved": 9,
+    "greedySelectionRegressed": 0,
+    "greedyTerminalFinalImproved": 9,
+    "greedyTerminalFinalRegressed": 0,
+    "greedyFinalImproved": 9,
+    "greedyFinalRegressed": 0,
+    "greedySafetyRegressed": 0,
+    "greedyNeutral": 0,
+    "greedySafeNoRegression": true,
+    "validationGreedySelectedFeatureGateGroups": null,
+    "validationGreedySelectedFeatureGateGroupsCliArg": null,
+    "validationGreedyTargetImproved": null,
+    "validationGreedySelectionImproved": null,
+    "validationGreedySelectionRegressed": null,
+    "validationGreedyTerminalFinalImproved": null,
+    "validationGreedyTerminalFinalRegressed": null,
+    "validationGreedyFinalImproved": null,
+    "validationGreedyFinalRegressed": null,
+    "validationGreedySafetyRegressed": null,
+    "validationGreedyNeutral": null,
+    "validationGreedySafeNoRegression": null,
+    "topCandidateValidationTargetImproved": null,
+    "topCandidateValidationSafetyRegressed": null,
+    "topCandidateValidationNeutral": null,
+    "topCandidateValidationSafeNoRegression": null
+  }
+}

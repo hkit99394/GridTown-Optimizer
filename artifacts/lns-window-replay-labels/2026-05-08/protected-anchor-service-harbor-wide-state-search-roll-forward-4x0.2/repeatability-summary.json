@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "rollForwardLabelCount": 144,
+  "bucketCount": 48,
+  "repeatedBucketCount": 48,
+  "mixedFinalStatusBucketCount": 0,
+  "conflictingFinalStatusBucketCount": 0,
+  "conflictingLabelCount": 0,
+  "conflictingStatusCounts": {
+    "improved": 0,
+    "neutral": 0,
+    "regressed": 0,
+    "unknown": 0
+  },
+  "featureIdenticalConflictBucketCount": 0,
+  "featureIdenticalConflictLabelCount": 0,
+  "examples": []
+}

@@ -1,0 +1,34 @@
+{
+  "artifactDir": "artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-runtime-suppressor-weight20-final-outcome-service-headroom-search",
+  "artifactPaths": {
+    "discoveryJson": "artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-runtime-suppressor-weight20-final-outcome-service-headroom-search/online-selected-feature-gate-discovery.json",
+    "discoveryText": "artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-runtime-suppressor-weight20-final-outcome-service-headroom-search/online-selected-feature-gate-discovery.txt",
+    "telemetryManifestJson": "artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-runtime-suppressor-weight20-final-outcome-service-headroom-search/telemetry-manifest.json",
+    "registryEntryDraftJson": "artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-runtime-suppressor-weight20-final-outcome-service-headroom-search/registry-entry-draft.json",
+    "manifestJson": "artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-runtime-suppressor-weight20-final-outcome-service-headroom-search/manifest.json"
+  },
+  "command": "node scripts/discover-lns-online-selected-feature-gates.mjs --source-artifact=artifacts/lns-window-ranker-online/2026-05-12/product-promotion-two-iteration-product-pair-weight0.1-runtime-suppressor-weight20-9seed-min-score-delta-0.5-suppression-delta-21.3 --source-artifact=artifacts/lns-window-ranker-online/2026-05-12/protected-holdout-two-iteration-product-pair-weight0.1-runtime-suppressor-weight20-9seed-min-score-delta-0.5-suppression-delta-21.3 --artifact-dir=artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-runtime-suppressor-weight20-final-outcome-service-headroom-search --target=final-improved --max-group-size=2 --max-atoms-per-feature=12 --max-total-atoms=80 --top=10 --feature-allowlist=serviceCandidatesIntersecting,residentialCandidateHeadroom,serviceCandidateBonus,residentialCandidatesIntersecting,allowedWindowCells,operatorScore --force-artifact-dir",
+  "generatedAt": "2026-05-12T09:06:47.193Z",
+  "target": "final-improved",
+  "inputFingerprint": "fnv1a:9c765f69",
+  "discoveryFingerprint": "fnv1a:bb5c988b",
+  "reportFingerprint": "fnv1a:fa4b9c00",
+  "sourceScorecards": [
+    "artifacts/lns-window-ranker-online/2026-05-12/product-promotion-two-iteration-product-pair-weight0.1-runtime-suppressor-weight20-9seed-min-score-delta-0.5-suppression-delta-21.3/lns-window-ranker-online-ablation.json",
+    "artifacts/lns-window-ranker-online/2026-05-12/protected-holdout-two-iteration-product-pair-weight0.1-runtime-suppressor-weight20-9seed-min-score-delta-0.5-suppression-delta-21.3/lns-window-ranker-online-ablation.json"
+  ],
+  "validationSourceScorecards": [],
+  "featureAllowlist": [
+    "serviceCandidatesIntersecting",
+    "residentialCandidateHeadroom",
+    "serviceCandidateBonus",
+    "residentialCandidatesIntersecting",
+    "allowedWindowCells",
+    "operatorScore"
+  ],
+  "generator": {
+    "script": "scripts/discover-lns-online-selected-feature-gates.mjs",
+    "requiresBuild": true,
+    "command": "node scripts/discover-lns-online-selected-feature-gates.mjs --source-artifact=artifacts/lns-window-ranker-online/2026-05-12/product-promotion-two-iteration-product-pair-weight0.1-runtime-suppressor-weight20-9seed-min-score-delta-0.5-suppression-delta-21.3 --source-artifact=artifacts/lns-window-ranker-online/2026-05-12/protected-holdout-two-iteration-product-pair-weight0.1-runtime-suppressor-weight20-9seed-min-score-delta-0.5-suppression-delta-21.3 --artifact-dir=artifacts/lns-online-selected-feature-gate-discovery/2026-05-12/product-protected-runtime-suppressor-weight20-final-outcome-service-headroom-search --target=final-improved --max-group-size=2 --max-atoms-per-feature=12 --max-total-atoms=80 --top=10 --feature-allowlist=serviceCandidatesIntersecting,residentialCandidateHeadroom,serviceCandidateBonus,residentialCandidatesIntersecting,allowedWindowCells,operatorScore --force-artifact-dir"
+  }
+}

@@ -1,0 +1,191 @@
+{
+  "schemaVersion": 1,
+  "runId": "lns-replay-feature-gate-scan-557c581d",
+  "artifactType": "ablation-gate",
+  "generatedAt": "2026-05-10T18:47:16.646Z",
+  "commands": [
+    "node scripts/summarize-lns-replay-feature-gate-scan.mjs --source-root=artifacts/lns-window-replay-labels --artifact-dir=artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-repeatability-aware-existing-replay-safety-scan --force-artifact-dir"
+  ],
+  "artifactPaths": [
+    "artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-repeatability-aware-existing-replay-safety-scan/feature-gate-scan.json",
+    "artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-repeatability-aware-existing-replay-safety-scan/feature-gate-scan.txt",
+    "artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-repeatability-aware-existing-replay-safety-scan/telemetry-manifest.json",
+    "artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-repeatability-aware-existing-replay-safety-scan/manifest.json"
+  ],
+  "cases": [
+    "lns-holdout-anchor-service-harbor-pressure",
+    "lns-holdout-anchor-service-shelf-pressure",
+    "lns-holdout-corridor-switchback-pressure",
+    "lns-holdout-corridor-weave-pressure",
+    "lns-holdout-footprint-lattice-pressure",
+    "lns-holdout-footprint-stagger-pressure",
+    "lns-holdout-gate-double-choke-pressure",
+    "lns-holdout-gate-offset-pressure",
+    "lns-holdout-service-braid-family-embed-7x8-down-screen-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-mirror-screen-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-origin-screen-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-right-repeatability-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-right-screen-candidate",
+    "lns-holdout-service-braid-open-lower-notch-screen-candidate",
+    "lns-holdout-service-braid-open-upper-braid-screen-candidate",
+    "lns-holdout-service-braid-premium-scarcity-screen-candidate",
+    "lns-holdout-service-braid-pressure",
+    "lns-holdout-service-braid-range1-big-service120-candidate",
+    "lns-holdout-service-braid-range1-big-service135-candidate",
+    "lns-holdout-service-braid-range1-big-service138-initial-stagnation-screen-candidate",
+    "lns-holdout-service-braid-range1-big-service140-candidate",
+    "lns-holdout-service-braid-range1-big-service140-double-choke-screen-candidate",
+    "lns-holdout-service-braid-range1-big-service140-east-lane-screen-candidate",
+    "lns-holdout-service-braid-range1-big-service140-initial-stagnation-candidate",
+    "lns-holdout-service-braid-range1-big-service140-initial-stagnation-screen-candidate",
+    "lns-holdout-service-braid-range1-big-service140-south-shelf-repeatability-candidate",
+    "lns-holdout-service-braid-range1-big-service140-south-shelf-screen-candidate",
+    "lns-holdout-service-braid-range1-big-service142-initial-stagnation-screen-candidate",
+    "lns-holdout-service-braid-range2-big-service120-initial-stagnation-screen-candidate",
+    "lns-holdout-service-braid-range2-big-service140-initial-stagnation-screen-candidate",
+    "lns-holdout-service-braid-range2-big-service160-initial-stagnation-screen-candidate",
+    "lns-holdout-service-braid-res-headroom-plus20-screen-candidate",
+    "lns-holdout-service-braid-res-headroom-plus40-screen-candidate",
+    "lns-holdout-service-braid-shift-right-choke-screen-candidate",
+    "lns-holdout-service-ridge-pressure"
+  ],
+  "caseFamilies": [
+    "lns-anchor-service",
+    "lns-corridor",
+    "lns-footprint-pressure",
+    "lns-gate",
+    "lns-service-pressure",
+    "lns-window-replay"
+  ],
+  "seeds": [
+    5,
+    7,
+    11,
+    13,
+    17,
+    19,
+    23,
+    29,
+    37
+  ],
+  "inputFingerprint": "fnv1a:94ac36cc",
+  "datasetFingerprint": "fnv1a:557c581d",
+  "splitStatus": {
+    "diagnosticsOnly": true,
+    "source": "existing-lns-window-replay-feature-gate-scan",
+    "sourceRoot": "artifacts/lns-window-replay-labels",
+    "sourceArtifactCount": 27
+  },
+  "budget": {
+    "sourceArtifactCount": 27,
+    "caseCount": 35,
+    "seedCount": 9,
+    "labelCount": 6300,
+    "rollForwardLabelCount": 6300,
+    "gateCount": 7
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "model": {
+    "trained": false,
+    "diagnosticsOnly": true,
+    "labelSource": "existing-lns-window-replay-labels",
+    "gateKind": "feature-predicate-with-repeatability-bucket-diagnostics"
+  },
+  "decision": "diagnostics-only",
+  "summary": "Existing protected LNS replay labels scanned for static and repeatability-aware feature-gate safety; no solver default changed.",
+  "summaryMetrics": {
+    "sourceArtifactCount": 27,
+    "caseCount": 35,
+    "seedCount": 9,
+    "labelCount": 6300,
+    "rollForwardLabelCount": 6300,
+    "gates": {
+      "slidingArea12": {
+        "selected": 587,
+        "improved": 134,
+        "regressed": 27,
+        "neutral": 426,
+        "unknown": 0,
+        "bestDelta": 60,
+        "worstDelta": -60,
+        "safeNoRegression": false,
+        "promotionReadyPocket": false
+      },
+      "slidingArea12NoFeatureIdenticalRepeatabilityConflict": {
+        "selected": 539,
+        "improved": 120,
+        "regressed": 9,
+        "neutral": 410,
+        "unknown": 0,
+        "bestDelta": 60,
+        "worstDelta": -60,
+        "safeNoRegression": false,
+        "promotionReadyPocket": false
+      },
+      "slidingArea12RepeatabilitySafeBucket": {
+        "selected": 144,
+        "improved": 120,
+        "regressed": 0,
+        "neutral": 24,
+        "unknown": 0,
+        "bestDelta": 60,
+        "worstDelta": 0,
+        "safeNoRegression": true,
+        "promotionReadyPocket": true
+      },
+      "slidingArea12ComponentsMax2": {
+        "selected": 460,
+        "improved": 106,
+        "regressed": 20,
+        "neutral": 334,
+        "unknown": 0,
+        "bestDelta": 60,
+        "worstDelta": -50,
+        "safeNoRegression": false,
+        "promotionReadyPocket": false
+      },
+      "slidingComponentsMax2": {
+        "selected": 1277,
+        "improved": 131,
+        "regressed": 28,
+        "neutral": 1118,
+        "unknown": 0,
+        "bestDelta": 60,
+        "worstDelta": -55,
+        "safeNoRegression": false,
+        "promotionReadyPocket": false
+      },
+      "slidingTopOrLeft2": {
+        "selected": 672,
+        "improved": 148,
+        "regressed": 29,
+        "neutral": 495,
+        "unknown": 0,
+        "bestDelta": 60,
+        "worstDelta": -60,
+        "safeNoRegression": false,
+        "promotionReadyPocket": false
+      },
+      "allNonBaselineSliding": {
+        "selected": 1769,
+        "improved": 167,
+        "regressed": 52,
+        "neutral": 1550,
+        "unknown": 0,
+        "bestDelta": 60,
+        "worstDelta": -60,
+        "safeNoRegression": false,
+        "promotionReadyPocket": false
+      }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+=== Low-Risk Learned Ranking Labels ===
+Generated: 2026-05-04T14:01:13.417Z
+Schema: 1
+Seeds: 7, 19, 37
+Audit: learned-model=none greedy-profile=true greedy-connectivity-shadow=true lns-preset=strict-lns-replay lns-cp-sat-workers=1 lns-state=initial-incumbent,post-first-improvement,post-stagnation lns-state-collection=4x1s lns-roll-forward=1x0.1s lns-windows=baseline-ranked-top-k-plus-tail-exploration lns-exploration=4 lns-feature-schema=2
+Leakage: protected-holdout=true greedy-overlap=none lns-overlap=none
+Greedy labels: total=4677 connectivity-shadow=1182 road-opportunity=3495
+- greedy development: cases=cap-sweep-mixed, service-local-neighborhood, step14-service-lookahead-reranker, row0-corridor-repair-pressure labels=1938 connectivity-shadow=462 road-opportunity=1476
+- greedy holdout: cases=fixed-service-realization-complete, geometry-occupancy-hot-path, typed-footprint-pressure, typed-availability-pressure labels=2739 connectivity-shadow=720 road-opportunity=2019
+LNS replay labels: total=1545
+LNS label-scale ready=true
+- lns-scale development: ready=true families=5 usable=810 non-neutral=333 neutral-ratio=0.589 failures=none
+- lns-scale holdout: ready=true families=5 usable=735 non-neutral=363 neutral-ratio=0.506 failures=none
+- lns development: cases=compact-service-repair, seeded-service-anchor-pressure, lns-corridor-squeeze-pressure, lns-gate-choke-pressure, lns-footprint-mix-pressure families=service-pressure, anchor-service, corridor, gate, footprint-pressure labels=810 usable=810 improved=333 neutral=477 regressed=0 invalid=0 recoverable-failure=0 repair=1s roll-forward=810 max-windows=14 exploration=4
+- lns holdout: cases=row0-anchor-repair, lns-service-overlap-pressure, lns-anchor-service-corner-pressure, lns-gate-side-channel-pressure, lns-footprint-bottleneck-pressure families=corridor, service-pressure, anchor-service, gate, footprint-pressure labels=735 usable=735 improved=363 neutral=372 regressed=0 invalid=0 recoverable-failure=0 repair=1s roll-forward=735 max-windows=14 exploration=4

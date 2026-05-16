@@ -1,0 +1,88 @@
+LNS online selected-feature gate discovery
+generatedAt=2026-05-12T18:20:20.693Z
+target=final-improved
+sourceScorecards=2
+validationSourceScorecards=0
+overrideTraces=96
+targetImproved=7
+selectionImproved=17
+selectionRegressed=0
+terminalFinalImproved=7
+terminalFinalRegressed=5
+safetyRegressed=10
+validationOverrideTraces=0
+validationTargetImproved=0
+validationSelectionImproved=0
+validationSelectionRegressed=0
+validationTerminalFinalImproved=0
+validationTerminalFinalRegressed=0
+validationSafetyRegressed=0
+features=allowedWindowCells,anchorReachableWindowCells,area,baselineOperatorFrontierCongestion,baselineOperatorGateChoke,baselineOperatorPlacedBuildings,baselineOperatorRandomExploration,baselineOperatorResidentialHeadroom,baselineOperatorServiceOverlap,baselineOperatorSliding,baselineOperatorWeakService,clearedFootprint,componentDelta,disconnectedAfter,disconnectedBefore,emptyComponentsAfter,emptyComponentsBefore,maxServiceCandidateBonus,narrowGateCells,newlyReachable,operatorScore,reachableAfter,reachableBefore,residentialCandidateHeadroom,residentialCandidatesBlocked,residentialCandidatesIntersecting,residentialCountInside,residentialHeadroomInside,roadCountInside,selectedOperatorFrontierCongestion,selectedOperatorGateChoke,selectedOperatorPlacedBuildings,selectedOperatorRandomExploration,selectedOperatorResidentialHeadroom,selectedOperatorServiceOverlap,selectedOperatorSliding,selectedOperatorWeakService,serviceBonusInside,serviceCandidateBonus,serviceCandidatesBlocked,serviceCandidatesIntersecting,serviceCountInside,transitionFrontierCongestionToFrontierCongestion,transitionFrontierCongestionToGateChoke,transitionFrontierCongestionToPlacedBuildings,transitionFrontierCongestionToRandomExploration,transitionFrontierCongestionToResidentialHeadroom,transitionFrontierCongestionToServiceOverlap,transitionFrontierCongestionToSliding,transitionFrontierCongestionToWeakService,transitionGateChokeToFrontierCongestion,transitionGateChokeToGateChoke,transitionGateChokeToPlacedBuildings,transitionGateChokeToRandomExploration,transitionGateChokeToResidentialHeadroom,transitionGateChokeToServiceOverlap,transitionGateChokeToSliding,transitionGateChokeToWeakService,transitionPlacedBuildingsToFrontierCongestion,transitionPlacedBuildingsToGateChoke,transitionPlacedBuildingsToPlacedBuildings,transitionPlacedBuildingsToRandomExploration,transitionPlacedBuildingsToResidentialHeadroom,transitionPlacedBuildingsToServiceOverlap,transitionPlacedBuildingsToSliding,transitionPlacedBuildingsToWeakService,transitionRandomExplorationToFrontierCongestion,transitionRandomExplorationToGateChoke,transitionRandomExplorationToPlacedBuildings,transitionRandomExplorationToRandomExploration,transitionRandomExplorationToResidentialHeadroom,transitionRandomExplorationToServiceOverlap,transitionRandomExplorationToSliding,transitionRandomExplorationToWeakService,transitionResidentialHeadroomToFrontierCongestion,transitionResidentialHeadroomToGateChoke,transitionResidentialHeadroomToPlacedBuildings,transitionResidentialHeadroomToRandomExploration,transitionResidentialHeadroomToResidentialHeadroom,transitionResidentialHeadroomToServiceOverlap,transitionResidentialHeadroomToSliding,transitionResidentialHeadroomToWeakService,transitionServiceOverlapToFrontierCongestion,transitionServiceOverlapToGateChoke,transitionServiceOverlapToPlacedBuildings,transitionServiceOverlapToRandomExploration,transitionServiceOverlapToResidentialHeadroom,transitionServiceOverlapToServiceOverlap,transitionServiceOverlapToSliding,transitionServiceOverlapToWeakService,transitionSlidingToFrontierCongestion,transitionSlidingToGateChoke,transitionSlidingToPlacedBuildings,transitionSlidingToRandomExploration,transitionSlidingToResidentialHeadroom,transitionSlidingToServiceOverlap,transitionSlidingToSliding,transitionSlidingToWeakService,transitionWeakServiceToFrontierCongestion,transitionWeakServiceToGateChoke,transitionWeakServiceToPlacedBuildings,transitionWeakServiceToRandomExploration,transitionWeakServiceToResidentialHeadroom,transitionWeakServiceToServiceOverlap,transitionWeakServiceToSliding,transitionWeakServiceToWeakService
+atoms=120 global-capped / 681 per-feature-capped / 841 total-candidate
+safeTargetAtoms=83/106
+safeSingletonAdmissionQuota=0
+conjunctionReservationSearch=Bounded recursive reservation search up to requested --max-group-size; full candidate enumeration honors --max-group-size.
+conjunctionReservationSearchMaxGroupSize=3
+conjunctionReservationSupportsRequestedMaxGroupSize=true
+conjunctionReservationSearchExhaustive=false
+conjunctionReservationCoversRequestedMaxGroupSize=false
+conjunctionReservationUnsafeAtoms=120/735 considered
+conjunctionReservationPartnerAtoms=480/841 considered
+candidates=159536 total / 50 reported
+inputFingerprint=fnv1a:c92795ae
+discoveryFingerprint=fnv1a:3b861c17
+
+greedy-selected-groups=area>=2.1,area<=2.1,allowedWindowCells>=1.75
+greedy-selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 safe=true
+
+top-candidates:
+- area>=2.1,area<=2.1,allowedWindowCells>=1.75: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,anchorReachableWindowCells>=1.75: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,serviceCandidatesBlocked>=1.7: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,serviceCandidatesIntersecting>=2.5: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,allowedWindowCells>=1.6,serviceCandidatesBlocked>=1.7: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,allowedWindowCells>=1.7,serviceCandidatesBlocked>=1.7: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,allowedWindowCells>=1.7,serviceCandidatesIntersecting>=2.5: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,allowedWindowCells>=1.75,anchorReachableWindowCells>=1.6: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,allowedWindowCells>=1.75,anchorReachableWindowCells>=1.7: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,allowedWindowCells>=1.75,anchorReachableWindowCells>=1.75: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,allowedWindowCells>=1.75,serviceCandidateBonus>=5.1: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,allowedWindowCells>=1.75,serviceCandidateBonus>=6: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,allowedWindowCells>=1.75,serviceCandidatesBlocked>=1.4: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,allowedWindowCells>=1.75,serviceCandidatesBlocked>=1.7: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,allowedWindowCells>=1.75,serviceCandidatesIntersecting>=2.4: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,allowedWindowCells>=1.75,serviceCandidatesIntersecting>=2.5: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,anchorReachableWindowCells>=1.6,serviceCandidatesBlocked>=1.7: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,anchorReachableWindowCells>=1.7,serviceCandidatesBlocked>=1.7: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,anchorReachableWindowCells>=1.7,serviceCandidatesIntersecting>=2.5: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,anchorReachableWindowCells>=1.75,allowedWindowCells>=1.6: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,anchorReachableWindowCells>=1.75,allowedWindowCells>=1.7: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,anchorReachableWindowCells>=1.75,serviceCandidateBonus>=5.1: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,anchorReachableWindowCells>=1.75,serviceCandidateBonus>=6: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,anchorReachableWindowCells>=1.75,serviceCandidatesBlocked>=1.4: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,anchorReachableWindowCells>=1.75,serviceCandidatesBlocked>=1.7: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,anchorReachableWindowCells>=1.75,serviceCandidatesIntersecting>=2.4: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,anchorReachableWindowCells>=1.75,serviceCandidatesIntersecting>=2.5: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,serviceCandidateBonus>=6,serviceCandidatesBlocked>=1.7: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,serviceCandidatesBlocked>=1.7,serviceCandidateBonus>=5.1: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,serviceCandidatesBlocked>=1.7,serviceCandidatesIntersecting>=2.4: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,serviceCandidatesIntersecting>=2.5,allowedWindowCells>=1.6: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,serviceCandidatesIntersecting>=2.5,anchorReachableWindowCells>=1.6: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,serviceCandidatesIntersecting>=2.5,serviceCandidateBonus>=5.1: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,serviceCandidatesIntersecting>=2.5,serviceCandidateBonus>=6: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,serviceCandidatesIntersecting>=2.5,serviceCandidatesBlocked>=1.4: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1,serviceCandidatesIntersecting>=2.5,serviceCandidatesBlocked>=1.7: selected=9 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=2 worst=0 safe=true
+- area>=2.1,area<=2.1: selected=12 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=5 worst=0 safe=true
+- area>=2.1,area<=2.1,allowedWindowCells>=1.6: selected=12 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=5 worst=0 safe=true
+- area>=2.1,area<=2.1,allowedWindowCells>=1.7: selected=12 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=5 worst=0 safe=true
+- area>=2.1,area<=2.1,anchorReachableWindowCells>=1.6: selected=12 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=5 worst=0 safe=true
+- area>=2.1,area<=2.1,anchorReachableWindowCells>=1.7: selected=12 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=5 worst=0 safe=true
+- area>=2.1,area<=2.1,serviceCandidateBonus>=5.1: selected=12 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=5 worst=0 safe=true
+- area>=2.1,area<=2.1,serviceCandidateBonus>=6: selected=12 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=5 worst=0 safe=true
+- area>=2.1,area<=2.1,serviceCandidatesBlocked>=1.4: selected=12 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=5 worst=0 safe=true
+- area>=2.1,area<=2.1,serviceCandidatesIntersecting>=2.4: selected=12 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=5 worst=0 safe=true
+- area>=2.1,area<=2.1,allowedWindowCells>=1.6,anchorReachableWindowCells>=1.6: selected=12 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=5 worst=0 safe=true
+- area>=2.1,area<=2.1,allowedWindowCells>=1.6,serviceCandidateBonus>=5.1: selected=12 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=5 worst=0 safe=true
+- area>=2.1,area<=2.1,allowedWindowCells>=1.6,serviceCandidateBonus>=6: selected=12 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=5 worst=0 safe=true
+- area>=2.1,area<=2.1,allowedWindowCells>=1.6,serviceCandidatesBlocked>=1.4: selected=12 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=5 worst=0 safe=true
+- area>=2.1,area<=2.1,allowedWindowCells>=1.6,serviceCandidatesIntersecting>=2.4: selected=12 target-improved=7 selection-improved=8 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=5 worst=0 safe=true

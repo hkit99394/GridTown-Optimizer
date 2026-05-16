@@ -1,0 +1,1660 @@
+{
+  "generatedAt": "2026-04-30T19:48:08.663Z",
+  "caseCount": 6,
+  "selectedCaseNames": [
+    "typed-housing-single",
+    "road-semantics-corridor-pressure",
+    "road-semantics-gate-choke",
+    "road-semantics-service-pressure",
+    "multi-anchor-road-components",
+    "road-semantics-dense-saturated"
+  ],
+  "results": [
+    {
+      "name": "typed-housing-single",
+      "description": "Tiny exact baseline with two residential types and no services.",
+      "gridRows": 4,
+      "gridCols": 4,
+      "totalPopulation": 110,
+      "cpSatStatus": "OPTIMAL",
+      "cpSatTelemetry": {
+        "solveWallTimeSeconds": 0.011785,
+        "userTimeSeconds": 0.011785,
+        "solutionCount": 1,
+        "incumbentObjectiveValue": 1869,
+        "bestObjectiveBound": 1869,
+        "objectiveGap": 0,
+        "incumbentPopulation": 110,
+        "bestPopulationUpperBound": 110,
+        "populationGapUpperBound": 0,
+        "lastImprovementAtSeconds": 0.010951,
+        "secondsSinceLastImprovement": 0.0008339999999999997,
+        "numBranches": 200,
+        "numConflicts": 0,
+        "modelSize": {
+          "variableCount": 118,
+          "booleanVariableCount": 41,
+          "constraintCount": 269,
+          "allowedCellCount": 16,
+          "roadEligibleCellCount": 16,
+          "roadVariableCount": 16,
+          "rootVariableCount": 7,
+          "directedEdgeCount": 48,
+          "serviceCandidateCount": 0,
+          "residentialCandidateCount": 18,
+          "populationVariableCount": 18
+        }
+      },
+      "cpSatObjectiveSummary": "maximize population, then minimize roads + services",
+      "cpSatOptions": {
+        "timeLimitSeconds": 5,
+        "maxDeterministicTime": 5,
+        "numWorkers": 1,
+        "randomSeed": 7,
+        "progressIntervalSeconds": 0.25,
+        "randomizeSearch": false,
+        "logSearchProgress": false
+      },
+      "cpSatCpuPlan": {
+        "mode": "single",
+        "wallClockBudgetSeconds": 5,
+        "workerCount": 1,
+        "perWorkerNumWorkers": 1,
+        "perWorkerTimeLimitSeconds": 5,
+        "parallelWorkerCount": 1,
+        "workerCpuBudgetSeconds": 5,
+        "cpuBudgetMultiplier": 1,
+        "totalCpuBudgetSeconds": null,
+        "cpuBudgetHeadroomSeconds": null,
+        "admission": "within-budget"
+      },
+      "observedWorkerCpuSeconds": 0.012,
+      "populationPerWorkerCpuBudgetSecond": 22,
+      "populationPerObservedCpuSecond": 9166.667,
+      "progressTimeline": [
+        {
+          "atSeconds": 0.697615666,
+          "update": {
+            "kind": "bound",
+            "telemetry": {
+              "solveWallTimeSeconds": 0,
+              "userTimeSeconds": 0,
+              "solutionCount": 0,
+              "incumbentObjectiveValue": null,
+              "bestObjectiveBound": 1869,
+              "objectiveGap": null,
+              "incumbentPopulation": null,
+              "bestPopulationUpperBound": 110,
+              "populationGapUpperBound": null,
+              "lastImprovementAtSeconds": null,
+              "secondsSinceLastImprovement": null,
+              "numBranches": 0,
+              "numConflicts": 0,
+              "modelSize": {
+                "variableCount": 118,
+                "booleanVariableCount": 41,
+                "constraintCount": 269,
+                "allowedCellCount": 16,
+                "roadEligibleCellCount": 16,
+                "roadVariableCount": 16,
+                "rootVariableCount": 7,
+                "directedEdgeCount": 48,
+                "serviceCandidateCount": 0,
+                "residentialCandidateCount": 18,
+                "populationVariableCount": 18
+              }
+            }
+          }
+        },
+        {
+          "atSeconds": 0.699171833,
+          "update": {
+            "kind": "incumbent",
+            "telemetry": {
+              "solveWallTimeSeconds": 0.010951,
+              "userTimeSeconds": 0.010951,
+              "solutionCount": 1,
+              "incumbentObjectiveValue": 1869,
+              "bestObjectiveBound": 1869,
+              "objectiveGap": 0,
+              "incumbentPopulation": 110,
+              "bestPopulationUpperBound": 110,
+              "populationGapUpperBound": 0,
+              "lastImprovementAtSeconds": 0.010951,
+              "secondsSinceLastImprovement": 0,
+              "numBranches": 200,
+              "numConflicts": 0,
+              "modelSize": {
+                "variableCount": 118,
+                "booleanVariableCount": 41,
+                "constraintCount": 269,
+                "allowedCellCount": 16,
+                "roadEligibleCellCount": 16,
+                "roadVariableCount": 16,
+                "rootVariableCount": 7,
+                "directedEdgeCount": 48,
+                "serviceCandidateCount": 0,
+                "residentialCandidateCount": 18,
+                "populationVariableCount": 18
+              }
+            }
+          }
+        }
+      ],
+      "progressSummary": {
+        "currentScore": 110,
+        "bestScore": 110,
+        "activeStage": "cp-sat",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.785,
+        "timeSinceImprovementSeconds": 0.001,
+        "stopReason": null,
+        "exactGap": 0,
+        "portfolioWorkerSummary": null
+      },
+      "wallClockSeconds": 0.784519041
+    },
+    {
+      "name": "road-semantics-corridor-pressure",
+      "description": "Road-semantics scorecard case with narrow anchor access and mixed footprints.",
+      "gridRows": 6,
+      "gridCols": 7,
+      "totalPopulation": 480,
+      "cpSatStatus": "OPTIMAL",
+      "cpSatTelemetry": {
+        "solveWallTimeSeconds": 0.084206,
+        "userTimeSeconds": 0.084206,
+        "solutionCount": 5,
+        "incumbentObjectiveValue": 41756,
+        "bestObjectiveBound": 41756,
+        "objectiveGap": 0,
+        "incumbentPopulation": 480,
+        "bestPopulationUpperBound": 480,
+        "populationGapUpperBound": 0,
+        "lastImprovementAtSeconds": 0.079402,
+        "secondsSinceLastImprovement": 0.004804000000000003,
+        "numBranches": 2544,
+        "numConflicts": 124,
+        "modelSize": {
+          "variableCount": 261,
+          "booleanVariableCount": 122,
+          "constraintCount": 561,
+          "allowedCellCount": 36,
+          "roadEligibleCellCount": 36,
+          "roadVariableCount": 36,
+          "rootVariableCount": 12,
+          "directedEdgeCount": 100,
+          "serviceCandidateCount": 50,
+          "residentialCandidateCount": 24,
+          "populationVariableCount": 24
+        }
+      },
+      "cpSatObjectiveSummary": "maximize population, then minimize roads + services",
+      "cpSatOptions": {
+        "timeLimitSeconds": 5,
+        "maxDeterministicTime": 5,
+        "numWorkers": 1,
+        "randomSeed": 7,
+        "progressIntervalSeconds": 0.25,
+        "randomizeSearch": false,
+        "logSearchProgress": false
+      },
+      "cpSatCpuPlan": {
+        "mode": "single",
+        "wallClockBudgetSeconds": 5,
+        "workerCount": 1,
+        "perWorkerNumWorkers": 1,
+        "perWorkerTimeLimitSeconds": 5,
+        "parallelWorkerCount": 1,
+        "workerCpuBudgetSeconds": 5,
+        "cpuBudgetMultiplier": 1,
+        "totalCpuBudgetSeconds": null,
+        "cpuBudgetHeadroomSeconds": null,
+        "admission": "within-budget"
+      },
+      "observedWorkerCpuSeconds": 0.084,
+      "populationPerWorkerCpuBudgetSecond": 96,
+      "populationPerObservedCpuSecond": 5714.286,
+      "progressTimeline": [
+        {
+          "atSeconds": 0.48108770900000014,
+          "update": {
+            "kind": "bound",
+            "telemetry": {
+              "solveWallTimeSeconds": 0,
+              "userTimeSeconds": 0,
+              "solutionCount": 0,
+              "incumbentObjectiveValue": null,
+              "bestObjectiveBound": 41759,
+              "objectiveGap": null,
+              "incumbentPopulation": null,
+              "bestPopulationUpperBound": 480,
+              "populationGapUpperBound": null,
+              "lastImprovementAtSeconds": null,
+              "secondsSinceLastImprovement": null,
+              "numBranches": 0,
+              "numConflicts": 0,
+              "modelSize": {
+                "variableCount": 261,
+                "booleanVariableCount": 122,
+                "constraintCount": 561,
+                "allowedCellCount": 36,
+                "roadEligibleCellCount": 36,
+                "roadVariableCount": 36,
+                "rootVariableCount": 12,
+                "directedEdgeCount": 100,
+                "serviceCandidateCount": 50,
+                "residentialCandidateCount": 24,
+                "populationVariableCount": 24
+              }
+            }
+          }
+        },
+        {
+          "atSeconds": 0.4900172500000001,
+          "update": {
+            "kind": "incumbent",
+            "telemetry": {
+              "solveWallTimeSeconds": 0.035632000000000004,
+              "userTimeSeconds": 0.035632000000000004,
+              "solutionCount": 1,
+              "incumbentObjectiveValue": 41751,
+              "bestObjectiveBound": 41759,
+              "objectiveGap": 8,
+              "incumbentPopulation": 480,
+              "bestPopulationUpperBound": 480,
+              "populationGapUpperBound": 0,
+              "lastImprovementAtSeconds": 0.035632000000000004,
+              "secondsSinceLastImprovement": 0,
+              "numBranches": 572,
+              "numConflicts": 2,
+              "modelSize": {
+                "variableCount": 261,
+                "booleanVariableCount": 122,
+                "constraintCount": 561,
+                "allowedCellCount": 36,
+                "roadEligibleCellCount": 36,
+                "roadVariableCount": 36,
+                "rootVariableCount": 12,
+                "directedEdgeCount": 100,
+                "serviceCandidateCount": 50,
+                "residentialCandidateCount": 24,
+                "populationVariableCount": 24
+              }
+            }
+          }
+        },
+        {
+          "atSeconds": 0.502475375,
+          "update": {
+            "kind": "incumbent",
+            "telemetry": {
+              "solveWallTimeSeconds": 0.048531000000000005,
+              "userTimeSeconds": 0.048531000000000005,
+              "solutionCount": 2,
+              "incumbentObjectiveValue": 41753,
+              "bestObjectiveBound": 41759,
+              "objectiveGap": 6,
+              "incumbentPopulation": 480,
+              "bestPopulationUpperBound": 480,
+              "populationGapUpperBound": 0,
+              "lastImprovementAtSeconds": 0.048531000000000005,
+              "secondsSinceLastImprovement": 0,
+              "numBranches": 2145,
+              "numConflicts": 28,
+              "modelSize": {
+                "variableCount": 261,
+                "booleanVariableCount": 122,
+                "constraintCount": 561,
+                "allowedCellCount": 36,
+                "roadEligibleCellCount": 36,
+                "roadVariableCount": 36,
+                "rootVariableCount": 12,
+                "directedEdgeCount": 100,
+                "serviceCandidateCount": 50,
+                "residentialCandidateCount": 24,
+                "populationVariableCount": 24
+              }
+            }
+          }
+        },
+        {
+          "atSeconds": 0.5161269589999999,
+          "update": {
+            "kind": "incumbent",
+            "telemetry": {
+              "solveWallTimeSeconds": 0.062110000000000005,
+              "userTimeSeconds": 0.062110000000000005,
+              "solutionCount": 3,
+              "incumbentObjectiveValue": 41754,
+              "bestObjectiveBound": 41758,
+              "objectiveGap": 4,
+              "incumbentPopulation": 480,
+              "bestPopulationUpperBound": 480,
+              "populationGapUpperBound": 0,
+              "lastImprovementAtSeconds": 0.062110000000000005,
+              "secondsSinceLastImprovement": 0,
+              "numBranches": 2232,
+              "numConflicts": 60,
+              "modelSize": {
+                "variableCount": 261,
+                "booleanVariableCount": 122,
+                "constraintCount": 561,
+                "allowedCellCount": 36,
+                "roadEligibleCellCount": 36,
+                "roadVariableCount": 36,
+                "rootVariableCount": 12,
+                "directedEdgeCount": 100,
+                "serviceCandidateCount": 50,
+                "residentialCandidateCount": 24,
+                "populationVariableCount": 24
+              }
+            }
+          }
+        },
+        {
+          "atSeconds": 0.5280663340000001,
+          "update": {
+            "kind": "incumbent",
+            "telemetry": {
+              "solveWallTimeSeconds": 0.073882,
+              "userTimeSeconds": 0.073882,
+              "solutionCount": 4,
+              "incumbentObjectiveValue": 41755,
+              "bestObjectiveBound": 41758,
+              "objectiveGap": 3,
+              "incumbentPopulation": 480,
+              "bestPopulationUpperBound": 480,
+              "populationGapUpperBound": 0,
+              "lastImprovementAtSeconds": 0.073882,
+              "secondsSinceLastImprovement": 0,
+              "numBranches": 2375,
+              "numConflicts": 86,
+              "modelSize": {
+                "variableCount": 261,
+                "booleanVariableCount": 122,
+                "constraintCount": 561,
+                "allowedCellCount": 36,
+                "roadEligibleCellCount": 36,
+                "roadVariableCount": 36,
+                "rootVariableCount": 12,
+                "directedEdgeCount": 100,
+                "serviceCandidateCount": 50,
+                "residentialCandidateCount": 24,
+                "populationVariableCount": 24
+              }
+            }
+          }
+        },
+        {
+          "atSeconds": 0.533413834,
+          "update": {
+            "kind": "incumbent",
+            "telemetry": {
+              "solveWallTimeSeconds": 0.079402,
+              "userTimeSeconds": 0.079402,
+              "solutionCount": 5,
+              "incumbentObjectiveValue": 41756,
+              "bestObjectiveBound": 41758,
+              "objectiveGap": 2,
+              "incumbentPopulation": 480,
+              "bestPopulationUpperBound": 480,
+              "populationGapUpperBound": 0,
+              "lastImprovementAtSeconds": 0.079402,
+              "secondsSinceLastImprovement": 0,
+              "numBranches": 2418,
+              "numConflicts": 93,
+              "modelSize": {
+                "variableCount": 261,
+                "booleanVariableCount": 122,
+                "constraintCount": 561,
+                "allowedCellCount": 36,
+                "roadEligibleCellCount": 36,
+                "roadVariableCount": 36,
+                "rootVariableCount": 12,
+                "directedEdgeCount": 100,
+                "serviceCandidateCount": 50,
+                "residentialCandidateCount": 24,
+                "populationVariableCount": 24
+              }
+            }
+          }
+        }
+      ],
+      "progressSummary": {
+        "currentScore": 480,
+        "bestScore": 480,
+        "activeStage": "cp-sat",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.633,
+        "timeSinceImprovementSeconds": 0.005,
+        "stopReason": null,
+        "exactGap": 0,
+        "portfolioWorkerSummary": null
+      },
+      "wallClockSeconds": 0.6329246250000001
+    },
+    {
+      "name": "road-semantics-gate-choke",
+      "description": "Road-semantics scorecard case where a central choke point separates high-value placements.",
+      "gridRows": 6,
+      "gridCols": 6,
+      "totalPopulation": 540,
+      "cpSatStatus": "OPTIMAL",
+      "cpSatTelemetry": {
+        "solveWallTimeSeconds": 0.045231,
+        "userTimeSeconds": 0.045231,
+        "solutionCount": 2,
+        "incumbentObjectiveValue": 35098,
+        "bestObjectiveBound": 35098,
+        "objectiveGap": 0,
+        "incumbentPopulation": 540,
+        "bestPopulationUpperBound": 540,
+        "populationGapUpperBound": 0,
+        "lastImprovementAtSeconds": 0.043671,
+        "secondsSinceLastImprovement": 0.0015599999999999989,
+        "numBranches": 1744,
+        "numConflicts": 32,
+        "modelSize": {
+          "variableCount": 235,
+          "booleanVariableCount": 102,
+          "constraintCount": 511,
+          "allowedCellCount": 32,
+          "roadEligibleCellCount": 32,
+          "roadVariableCount": 32,
+          "rootVariableCount": 11,
+          "directedEdgeCount": 92,
+          "serviceCandidateCount": 32,
+          "residentialCandidateCount": 27,
+          "populationVariableCount": 27
+        }
+      },
+      "cpSatObjectiveSummary": "maximize population, then minimize roads + services",
+      "cpSatOptions": {
+        "timeLimitSeconds": 5,
+        "maxDeterministicTime": 5,
+        "numWorkers": 1,
+        "randomSeed": 7,
+        "progressIntervalSeconds": 0.25,
+        "randomizeSearch": false,
+        "logSearchProgress": false
+      },
+      "cpSatCpuPlan": {
+        "mode": "single",
+        "wallClockBudgetSeconds": 5,
+        "workerCount": 1,
+        "perWorkerNumWorkers": 1,
+        "perWorkerTimeLimitSeconds": 5,
+        "parallelWorkerCount": 1,
+        "workerCpuBudgetSeconds": 5,
+        "cpuBudgetMultiplier": 1,
+        "totalCpuBudgetSeconds": null,
+        "cpuBudgetHeadroomSeconds": null,
+        "admission": "within-budget"
+      },
+      "observedWorkerCpuSeconds": 0.045,
+      "populationPerWorkerCpuBudgetSecond": 108,
+      "populationPerObservedCpuSecond": 12000,
+      "progressTimeline": [
+        {
+          "atSeconds": 0.4736176660000001,
+          "update": {
+            "kind": "bound",
+            "telemetry": {
+              "solveWallTimeSeconds": 0,
+              "userTimeSeconds": 0,
+              "solutionCount": 0,
+              "incumbentObjectiveValue": null,
+              "bestObjectiveBound": 35099,
+              "objectiveGap": null,
+              "incumbentPopulation": null,
+              "bestPopulationUpperBound": 540,
+              "populationGapUpperBound": null,
+              "lastImprovementAtSeconds": null,
+              "secondsSinceLastImprovement": null,
+              "numBranches": 0,
+              "numConflicts": 0,
+              "modelSize": {
+                "variableCount": 235,
+                "booleanVariableCount": 102,
+                "constraintCount": 511,
+                "allowedCellCount": 32,
+                "roadEligibleCellCount": 32,
+                "roadVariableCount": 32,
+                "rootVariableCount": 11,
+                "directedEdgeCount": 92,
+                "serviceCandidateCount": 32,
+                "residentialCandidateCount": 27,
+                "populationVariableCount": 27
+              }
+            }
+          }
+        },
+        {
+          "atSeconds": 0.4815075830000001,
+          "update": {
+            "kind": "incumbent",
+            "telemetry": {
+              "solveWallTimeSeconds": 0.031601000000000004,
+              "userTimeSeconds": 0.031601000000000004,
+              "solutionCount": 1,
+              "incumbentObjectiveValue": 35085,
+              "bestObjectiveBound": 35099,
+              "objectiveGap": 14,
+              "incumbentPopulation": 540,
+              "bestPopulationUpperBound": 540,
+              "populationGapUpperBound": 0,
+              "lastImprovementAtSeconds": 0.031601000000000004,
+              "secondsSinceLastImprovement": 0,
+              "numBranches": 520,
+              "numConflicts": 2,
+              "modelSize": {
+                "variableCount": 235,
+                "booleanVariableCount": 102,
+                "constraintCount": 511,
+                "allowedCellCount": 32,
+                "roadEligibleCellCount": 32,
+                "roadVariableCount": 32,
+                "rootVariableCount": 11,
+                "directedEdgeCount": 92,
+                "serviceCandidateCount": 32,
+                "residentialCandidateCount": 27,
+                "populationVariableCount": 27
+              }
+            }
+          }
+        },
+        {
+          "atSeconds": 0.4934724160000001,
+          "update": {
+            "kind": "incumbent",
+            "telemetry": {
+              "solveWallTimeSeconds": 0.043671,
+              "userTimeSeconds": 0.043671,
+              "solutionCount": 2,
+              "incumbentObjectiveValue": 35098,
+              "bestObjectiveBound": 35099,
+              "objectiveGap": 1,
+              "incumbentPopulation": 540,
+              "bestPopulationUpperBound": 540,
+              "populationGapUpperBound": 0,
+              "lastImprovementAtSeconds": 0.043671,
+              "secondsSinceLastImprovement": 0,
+              "numBranches": 1744,
+              "numConflicts": 32,
+              "modelSize": {
+                "variableCount": 235,
+                "booleanVariableCount": 102,
+                "constraintCount": 511,
+                "allowedCellCount": 32,
+                "roadEligibleCellCount": 32,
+                "roadVariableCount": 32,
+                "rootVariableCount": 11,
+                "directedEdgeCount": 92,
+                "serviceCandidateCount": 32,
+                "residentialCandidateCount": 27,
+                "populationVariableCount": 27
+              }
+            }
+          }
+        }
+      ],
+      "progressSummary": {
+        "currentScore": 540,
+        "bestScore": 540,
+        "activeStage": "cp-sat",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.581,
+        "timeSinceImprovementSeconds": 0.002,
+        "stopReason": null,
+        "exactGap": 0,
+        "portfolioWorkerSummary": null
+      },
+      "wallClockSeconds": 0.5812401659999998
+    },
+    {
+      "name": "road-semantics-service-pressure",
+      "description": "Road-semantics scorecard case with overlapping service ranges and scarce premium housing.",
+      "gridRows": 6,
+      "gridCols": 6,
+      "totalPopulation": 740,
+      "cpSatStatus": "OPTIMAL",
+      "cpSatTelemetry": {
+        "solveWallTimeSeconds": 1.5635480000000002,
+        "userTimeSeconds": 1.5635480000000002,
+        "solutionCount": 5,
+        "incumbentObjectiveValue": 98416,
+        "bestObjectiveBound": 98416,
+        "objectiveGap": 0,
+        "incumbentPopulation": 740,
+        "bestPopulationUpperBound": 740,
+        "populationGapUpperBound": 0,
+        "lastImprovementAtSeconds": 0.51688,
+        "secondsSinceLastImprovement": 1.0466680000000002,
+        "numBranches": 36335,
+        "numConflicts": 2408,
+        "modelSize": {
+          "variableCount": 407,
+          "booleanVariableCount": 208,
+          "constraintCount": 751,
+          "allowedCellCount": 36,
+          "roadEligibleCellCount": 36,
+          "roadVariableCount": 36,
+          "rootVariableCount": 11,
+          "directedEdgeCount": 120,
+          "serviceCandidateCount": 96,
+          "residentialCandidateCount": 65,
+          "populationVariableCount": 65
+        }
+      },
+      "cpSatObjectiveSummary": "maximize population, then minimize roads + services",
+      "cpSatOptions": {
+        "timeLimitSeconds": 5,
+        "maxDeterministicTime": 5,
+        "numWorkers": 1,
+        "randomSeed": 7,
+        "progressIntervalSeconds": 0.25,
+        "randomizeSearch": false,
+        "logSearchProgress": false
+      },
+      "cpSatCpuPlan": {
+        "mode": "single",
+        "wallClockBudgetSeconds": 5,
+        "workerCount": 1,
+        "perWorkerNumWorkers": 1,
+        "perWorkerTimeLimitSeconds": 5,
+        "parallelWorkerCount": 1,
+        "workerCpuBudgetSeconds": 5,
+        "cpuBudgetMultiplier": 1,
+        "totalCpuBudgetSeconds": null,
+        "cpuBudgetHeadroomSeconds": null,
+        "admission": "within-budget"
+      },
+      "observedWorkerCpuSeconds": 1.564,
+      "populationPerWorkerCpuBudgetSecond": 148,
+      "populationPerObservedCpuSecond": 473.146,
+      "progressTimeline": [
+        {
+          "atSeconds": 0.5372870830000002,
+          "update": {
+            "kind": "bound",
+            "telemetry": {
+              "solveWallTimeSeconds": 0,
+              "userTimeSeconds": 0,
+              "solutionCount": 0,
+              "incumbentObjectiveValue": null,
+              "bestObjectiveBound": 98419,
+              "objectiveGap": null,
+              "incumbentPopulation": null,
+              "bestPopulationUpperBound": 740,
+              "populationGapUpperBound": null,
+              "lastImprovementAtSeconds": null,
+              "secondsSinceLastImprovement": null,
+              "numBranches": 0,
+              "numConflicts": 0,
+              "modelSize": {
+                "variableCount": 407,
+                "booleanVariableCount": 208,
+                "constraintCount": 751,
+                "allowedCellCount": 36,
+                "roadEligibleCellCount": 36,
+                "roadVariableCount": 36,
+                "rootVariableCount": 11,
+                "directedEdgeCount": 120,
+                "serviceCandidateCount": 96,
+                "residentialCandidateCount": 65,
+                "populationVariableCount": 65
+              }
+            }
+          }
+        },
+        {
+          "atSeconds": 0.5573205000000002,
+          "update": {
+            "kind": "incumbent",
+            "telemetry": {
+              "solveWallTimeSeconds": 0.07362500000000001,
+              "userTimeSeconds": 0.07362500000000001,
+              "solutionCount": 1,
+              "incumbentObjectiveValue": 78592,
+              "bestObjectiveBound": 98419,
+              "objectiveGap": 19827,
+              "incumbentPopulation": 591,
+              "bestPopulationUpperBound": 740,
+              "populationGapUpperBound": 149,
+              "lastImprovementAtSeconds": 0.07362500000000001,
+              "secondsSinceLastImprovement": 0,
+              "numBranches": 875,
+              "numConflicts": 2,
+              "modelSize": {
+                "variableCount": 407,
+                "booleanVariableCount": 208,
+                "constraintCount": 751,
+                "allowedCellCount": 36,
+                "roadEligibleCellCount": 36,
+                "roadVariableCount": 36,
+                "rootVariableCount": 11,
+                "directedEdgeCount": 120,
+                "serviceCandidateCount": 96,
+                "residentialCandidateCount": 65,
+                "populationVariableCount": 65
+              }
+            }
+          }
+        },
+        {
+          "atSeconds": 0.6222962500000003,
+          "update": {
+            "kind": "incumbent",
+            "telemetry": {
+              "solveWallTimeSeconds": 0.13853500000000002,
+              "userTimeSeconds": 0.13853500000000002,
+              "solutionCount": 2,
+              "incumbentObjectiveValue": 87900,
+              "bestObjectiveBound": 98419,
+              "objectiveGap": 10519,
+              "incumbentPopulation": 661,
+              "bestPopulationUpperBound": 740,
+              "populationGapUpperBound": 79,
+              "lastImprovementAtSeconds": 0.13853500000000002,
+              "secondsSinceLastImprovement": 0,
+              "numBranches": 4271,
+              "numConflicts": 56,
+              "modelSize": {
+                "variableCount": 407,
+                "booleanVariableCount": 208,
+                "constraintCount": 751,
+                "allowedCellCount": 36,
+                "roadEligibleCellCount": 36,
+                "roadVariableCount": 36,
+                "rootVariableCount": 11,
+                "directedEdgeCount": 120,
+                "serviceCandidateCount": 96,
+                "residentialCandidateCount": 65,
+                "populationVariableCount": 65
+              }
+            }
+          }
+        },
+        {
+          "atSeconds": 0.6558981250000001,
+          "update": {
+            "kind": "incumbent",
+            "telemetry": {
+              "solveWallTimeSeconds": 0.172274,
+              "userTimeSeconds": 0.172274,
+              "solutionCount": 3,
+              "incumbentObjectiveValue": 94288,
+              "bestObjectiveBound": 98419,
+              "objectiveGap": 4131,
+              "incumbentPopulation": 709,
+              "bestPopulationUpperBound": 740,
+              "populationGapUpperBound": 31,
+              "lastImprovementAtSeconds": 0.172274,
+              "secondsSinceLastImprovement": 0,
+              "numBranches": 4369,
+              "numConflicts": 85,
+              "modelSize": {
+                "variableCount": 407,
+                "booleanVariableCount": 208,
+                "constraintCount": 751,
+                "allowedCellCount": 36,
+                "roadEligibleCellCount": 36,
+                "roadVariableCount": 36,
+                "rootVariableCount": 11,
+                "directedEdgeCount": 120,
+                "serviceCandidateCount": 96,
+                "residentialCandidateCount": 65,
+                "populationVariableCount": 65
+              }
+            }
+          }
+        },
+        {
+          "atSeconds": 0.767940208,
+          "update": {
+            "kind": "incumbent",
+            "telemetry": {
+              "solveWallTimeSeconds": 0.284283,
+              "userTimeSeconds": 0.284283,
+              "solutionCount": 4,
+              "incumbentObjectiveValue": 98415,
+              "bestObjectiveBound": 98418,
+              "objectiveGap": 3,
+              "incumbentPopulation": 740,
+              "bestPopulationUpperBound": 740,
+              "populationGapUpperBound": 0,
+              "lastImprovementAtSeconds": 0.284283,
+              "secondsSinceLastImprovement": 0,
+              "numBranches": 4589,
+              "numConflicts": 142,
+              "modelSize": {
+                "variableCount": 407,
+                "booleanVariableCount": 208,
+                "constraintCount": 751,
+                "allowedCellCount": 36,
+                "roadEligibleCellCount": 36,
+                "roadVariableCount": 36,
+                "rootVariableCount": 11,
+                "directedEdgeCount": 120,
+                "serviceCandidateCount": 96,
+                "residentialCandidateCount": 65,
+                "populationVariableCount": 65
+              }
+            }
+          }
+        },
+        {
+          "atSeconds": 1.0006180000000005,
+          "update": {
+            "kind": "incumbent",
+            "telemetry": {
+              "solveWallTimeSeconds": 0.51688,
+              "userTimeSeconds": 0.51688,
+              "solutionCount": 5,
+              "incumbentObjectiveValue": 98416,
+              "bestObjectiveBound": 98418,
+              "objectiveGap": 2,
+              "incumbentPopulation": 740,
+              "bestPopulationUpperBound": 740,
+              "populationGapUpperBound": 0,
+              "lastImprovementAtSeconds": 0.51688,
+              "secondsSinceLastImprovement": 0,
+              "numBranches": 12530,
+              "numConflicts": 543,
+              "modelSize": {
+                "variableCount": 407,
+                "booleanVariableCount": 208,
+                "constraintCount": 751,
+                "allowedCellCount": 36,
+                "roadEligibleCellCount": 36,
+                "roadVariableCount": 36,
+                "rootVariableCount": 11,
+                "directedEdgeCount": 120,
+                "serviceCandidateCount": 96,
+                "residentialCandidateCount": 65,
+                "populationVariableCount": 65
+              }
+            }
+          }
+        }
+      ],
+      "progressSummary": {
+        "currentScore": 740,
+        "bestScore": 740,
+        "activeStage": "cp-sat",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 2.144,
+        "timeSinceImprovementSeconds": 1.047,
+        "stopReason": null,
+        "exactGap": 0,
+        "portfolioWorkerSummary": null
+      },
+      "wallClockSeconds": 2.1435825829999997
+    },
+    {
+      "name": "multi-anchor-road-components",
+      "description": "Disconnected anchor-valid road components should both remain usable under the aligned road formulation.",
+      "gridRows": 3,
+      "gridCols": 7,
+      "totalPopulation": 200,
+      "cpSatStatus": "OPTIMAL",
+      "cpSatTelemetry": {
+        "solveWallTimeSeconds": 0.0065450000000000005,
+        "userTimeSeconds": 0.0065450000000000005,
+        "solutionCount": 2,
+        "incumbentObjectiveValue": 2198,
+        "bestObjectiveBound": 2198,
+        "objectiveGap": 0,
+        "incumbentPopulation": 200,
+        "bestPopulationUpperBound": 200,
+        "populationGapUpperBound": 0,
+        "lastImprovementAtSeconds": 0.0062510000000000005,
+        "secondsSinceLastImprovement": 0.000294,
+        "numBranches": 89,
+        "numConflicts": 0,
+        "modelSize": {
+          "variableCount": 42,
+          "booleanVariableCount": 14,
+          "constraintCount": 126,
+          "allowedCellCount": 10,
+          "roadEligibleCellCount": 10,
+          "roadVariableCount": 10,
+          "rootVariableCount": 2,
+          "directedEdgeCount": 20,
+          "serviceCandidateCount": 0,
+          "residentialCandidateCount": 2,
+          "populationVariableCount": 2
+        }
+      },
+      "cpSatObjectiveSummary": "maximize population, then minimize roads + services",
+      "cpSatOptions": {
+        "timeLimitSeconds": 5,
+        "maxDeterministicTime": 5,
+        "numWorkers": 1,
+        "randomSeed": 7,
+        "progressIntervalSeconds": 0.25,
+        "randomizeSearch": false,
+        "logSearchProgress": false
+      },
+      "cpSatCpuPlan": {
+        "mode": "single",
+        "wallClockBudgetSeconds": 5,
+        "workerCount": 1,
+        "perWorkerNumWorkers": 1,
+        "perWorkerTimeLimitSeconds": 5,
+        "parallelWorkerCount": 1,
+        "workerCpuBudgetSeconds": 5,
+        "cpuBudgetMultiplier": 1,
+        "totalCpuBudgetSeconds": null,
+        "cpuBudgetHeadroomSeconds": null,
+        "admission": "within-budget"
+      },
+      "observedWorkerCpuSeconds": 0.007,
+      "populationPerWorkerCpuBudgetSecond": 40,
+      "populationPerObservedCpuSecond": 28571.429,
+      "progressTimeline": [
+        {
+          "atSeconds": 0.4548685830000004,
+          "update": {
+            "kind": "bound",
+            "telemetry": {
+              "solveWallTimeSeconds": 0,
+              "userTimeSeconds": 0,
+              "solutionCount": 0,
+              "incumbentObjectiveValue": null,
+              "bestObjectiveBound": 2199,
+              "objectiveGap": null,
+              "incumbentPopulation": null,
+              "bestPopulationUpperBound": 200,
+              "populationGapUpperBound": null,
+              "lastImprovementAtSeconds": null,
+              "secondsSinceLastImprovement": null,
+              "numBranches": 0,
+              "numConflicts": 0,
+              "modelSize": {
+                "variableCount": 42,
+                "booleanVariableCount": 14,
+                "constraintCount": 126,
+                "allowedCellCount": 10,
+                "roadEligibleCellCount": 10,
+                "roadVariableCount": 10,
+                "rootVariableCount": 2,
+                "directedEdgeCount": 20,
+                "serviceCandidateCount": 0,
+                "residentialCandidateCount": 2,
+                "populationVariableCount": 2
+              }
+            }
+          }
+        },
+        {
+          "atSeconds": 0.4557771250000005,
+          "update": {
+            "kind": "incumbent",
+            "telemetry": {
+              "solveWallTimeSeconds": 0.005814000000000001,
+              "userTimeSeconds": 0.005814000000000001,
+              "solutionCount": 1,
+              "incumbentObjectiveValue": 1099,
+              "bestObjectiveBound": 2199,
+              "objectiveGap": 1100,
+              "incumbentPopulation": 100,
+              "bestPopulationUpperBound": 200,
+              "populationGapUpperBound": 100,
+              "lastImprovementAtSeconds": 0.005814000000000001,
+              "secondsSinceLastImprovement": 0,
+              "numBranches": 89,
+              "numConflicts": 0,
+              "modelSize": {
+                "variableCount": 42,
+                "booleanVariableCount": 14,
+                "constraintCount": 126,
+                "allowedCellCount": 10,
+                "roadEligibleCellCount": 10,
+                "roadVariableCount": 10,
+                "rootVariableCount": 2,
+                "directedEdgeCount": 20,
+                "serviceCandidateCount": 0,
+                "residentialCandidateCount": 2,
+                "populationVariableCount": 2
+              }
+            }
+          }
+        },
+        {
+          "atSeconds": 0.4560585000000001,
+          "update": {
+            "kind": "incumbent",
+            "telemetry": {
+              "solveWallTimeSeconds": 0.0062510000000000005,
+              "userTimeSeconds": 0.0062510000000000005,
+              "solutionCount": 2,
+              "incumbentObjectiveValue": 2198,
+              "bestObjectiveBound": 2198,
+              "objectiveGap": 0,
+              "incumbentPopulation": 200,
+              "bestPopulationUpperBound": 200,
+              "populationGapUpperBound": 0,
+              "lastImprovementAtSeconds": 0.0062510000000000005,
+              "secondsSinceLastImprovement": 0,
+              "numBranches": 89,
+              "numConflicts": 0,
+              "modelSize": {
+                "variableCount": 42,
+                "booleanVariableCount": 14,
+                "constraintCount": 126,
+                "allowedCellCount": 10,
+                "roadEligibleCellCount": 10,
+                "roadVariableCount": 10,
+                "rootVariableCount": 2,
+                "directedEdgeCount": 20,
+                "serviceCandidateCount": 0,
+                "residentialCandidateCount": 2,
+                "populationVariableCount": 2
+              }
+            }
+          }
+        }
+      ],
+      "progressSummary": {
+        "currentScore": 200,
+        "bestScore": 200,
+        "activeStage": "cp-sat",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 0.544,
+        "timeSinceImprovementSeconds": 0,
+        "stopReason": null,
+        "exactGap": 0,
+        "portfolioWorkerSummary": null
+      },
+      "wallClockSeconds": 0.5441835
+    },
+    {
+      "name": "road-semantics-dense-saturated",
+      "description": "Dense saturated road-semantics scorecard case for model-size, branch, conflict, and wall-clock watchpoints.",
+      "gridRows": 5,
+      "gridCols": 6,
+      "totalPopulation": 980,
+      "cpSatStatus": "OPTIMAL",
+      "cpSatTelemetry": {
+        "solveWallTimeSeconds": 2.8410230000000003,
+        "userTimeSeconds": 2.8410230000000003,
+        "solutionCount": 14,
+        "incumbentObjectiveValue": 107795,
+        "bestObjectiveBound": 107795,
+        "objectiveGap": 0,
+        "incumbentPopulation": 980,
+        "bestPopulationUpperBound": 980,
+        "populationGapUpperBound": 0,
+        "lastImprovementAtSeconds": 0.73538,
+        "secondsSinceLastImprovement": 2.105643,
+        "numBranches": 62362,
+        "numConflicts": 3183,
+        "modelSize": {
+          "variableCount": 332,
+          "booleanVariableCount": 170,
+          "constraintCount": 611,
+          "allowedCellCount": 30,
+          "roadEligibleCellCount": 30,
+          "roadVariableCount": 30,
+          "rootVariableCount": 10,
+          "directedEdgeCount": 98,
+          "serviceCandidateCount": 79,
+          "residentialCandidateCount": 51,
+          "populationVariableCount": 51
+        }
+      },
+      "cpSatObjectiveSummary": "maximize population, then minimize roads + services",
+      "cpSatOptions": {
+        "timeLimitSeconds": 5,
+        "maxDeterministicTime": 5,
+        "numWorkers": 1,
+        "randomSeed": 7,
+        "progressIntervalSeconds": 0.25,
+        "randomizeSearch": false,
+        "logSearchProgress": false
+      },
+      "cpSatCpuPlan": {
+        "mode": "single",
+        "wallClockBudgetSeconds": 5,
+        "workerCount": 1,
+        "perWorkerNumWorkers": 1,
+        "perWorkerTimeLimitSeconds": 5,
+        "parallelWorkerCount": 1,
+        "workerCpuBudgetSeconds": 5,
+        "cpuBudgetMultiplier": 1,
+        "totalCpuBudgetSeconds": null,
+        "cpuBudgetHeadroomSeconds": null,
+        "admission": "within-budget"
+      },
+      "observedWorkerCpuSeconds": 2.841,
+      "populationPerWorkerCpuBudgetSecond": 196,
+      "populationPerObservedCpuSecond": 344.949,
+      "progressTimeline": [
+        {
+          "atSeconds": 0.4814535420000002,
+          "update": {
+            "kind": "bound",
+            "telemetry": {
+              "solveWallTimeSeconds": 0,
+              "userTimeSeconds": 0,
+              "solutionCount": 0,
+              "incumbentObjectiveValue": null,
+              "bestObjectiveBound": 125399,
+              "objectiveGap": null,
+              "incumbentPopulation": null,
+              "bestPopulationUpperBound": 1140,
+              "populationGapUpperBound": null,
+              "lastImprovementAtSeconds": null,
+              "secondsSinceLastImprovement": null,
+              "numBranches": 0,
+              "numConflicts": 0,
+              "modelSize": {
+                "variableCount": 332,
+                "booleanVariableCount": 170,
+                "constraintCount": 611,
+                "allowedCellCount": 30,
+                "roadEligibleCellCount": 30,
+                "roadVariableCount": 30,
+                "rootVariableCount": 10,
+                "directedEdgeCount": 98,
+                "serviceCandidateCount": 79,
+                "residentialCandidateCount": 51,
+                "populationVariableCount": 51
+              }
+            }
+          }
+        },
+        {
+          "atSeconds": 0.49677325000000017,
+          "update": {
+            "kind": "incumbent",
+            "telemetry": {
+              "solveWallTimeSeconds": 0.046104000000000006,
+              "userTimeSeconds": 0.046104000000000006,
+              "solutionCount": 1,
+              "incumbentObjectiveValue": 54994,
+              "bestObjectiveBound": 125399,
+              "objectiveGap": 70405,
+              "incumbentPopulation": 500,
+              "bestPopulationUpperBound": 1140,
+              "populationGapUpperBound": 640,
+              "lastImprovementAtSeconds": 0.046104000000000006,
+              "secondsSinceLastImprovement": 0,
+              "numBranches": 707,
+              "numConflicts": 6,
+              "modelSize": {
+                "variableCount": 332,
+                "booleanVariableCount": 170,
+                "constraintCount": 611,
+                "allowedCellCount": 30,
+                "roadEligibleCellCount": 30,
+                "roadVariableCount": 30,
+                "rootVariableCount": 10,
+                "directedEdgeCount": 98,
+                "serviceCandidateCount": 79,
+                "residentialCandidateCount": 51,
+                "populationVariableCount": 51
+              }
+            }
+          }
+        },
+        {
+          "atSeconds": 0.5234942090000004,
+          "update": {
+            "kind": "incumbent",
+            "telemetry": {
+              "solveWallTimeSeconds": 0.07280700000000001,
+              "userTimeSeconds": 0.07280700000000001,
+              "solutionCount": 2,
+              "incumbentObjectiveValue": 61597,
+              "bestObjectiveBound": 125399,
+              "objectiveGap": 63802,
+              "incumbentPopulation": 560,
+              "bestPopulationUpperBound": 1140,
+              "populationGapUpperBound": 580,
+              "lastImprovementAtSeconds": 0.07280700000000001,
+              "secondsSinceLastImprovement": 0,
+              "numBranches": 2712,
+              "numConflicts": 10,
+              "modelSize": {
+                "variableCount": 332,
+                "booleanVariableCount": 170,
+                "constraintCount": 611,
+                "allowedCellCount": 30,
+                "roadEligibleCellCount": 30,
+                "roadVariableCount": 30,
+                "rootVariableCount": 10,
+                "directedEdgeCount": 98,
+                "serviceCandidateCount": 79,
+                "residentialCandidateCount": 51,
+                "populationVariableCount": 51
+              }
+            }
+          }
+        },
+        {
+          "atSeconds": 0.5702381249999998,
+          "update": {
+            "kind": "incumbent",
+            "telemetry": {
+              "solveWallTimeSeconds": 0.11960000000000001,
+              "userTimeSeconds": 0.11960000000000001,
+              "solutionCount": 3,
+              "incumbentObjectiveValue": 67092,
+              "bestObjectiveBound": 125399,
+              "objectiveGap": 58307,
+              "incumbentPopulation": 610,
+              "bestPopulationUpperBound": 1140,
+              "populationGapUpperBound": 530,
+              "lastImprovementAtSeconds": 0.11960000000000001,
+              "secondsSinceLastImprovement": 0,
+              "numBranches": 2928,
+              "numConflicts": 77,
+              "modelSize": {
+                "variableCount": 332,
+                "booleanVariableCount": 170,
+                "constraintCount": 611,
+                "allowedCellCount": 30,
+                "roadEligibleCellCount": 30,
+                "roadVariableCount": 30,
+                "rootVariableCount": 10,
+                "directedEdgeCount": 98,
+                "serviceCandidateCount": 79,
+                "residentialCandidateCount": 51,
+                "populationVariableCount": 51
+              }
+            }
+          }
+        },
+        {
+          "atSeconds": 0.6295146670000004,
+          "update": {
+            "kind": "incumbent",
+            "telemetry": {
+              "solveWallTimeSeconds": 0.17888800000000002,
+              "userTimeSeconds": 0.17888800000000002,
+              "solutionCount": 4,
+              "incumbentObjectiveValue": 68965,
+              "bestObjectiveBound": 125398,
+              "objectiveGap": 56433,
+              "incumbentPopulation": 627,
+              "bestPopulationUpperBound": 1140,
+              "populationGapUpperBound": 513,
+              "lastImprovementAtSeconds": 0.17888800000000002,
+              "secondsSinceLastImprovement": 0,
+              "numBranches": 3030,
+              "numConflicts": 119,
+              "modelSize": {
+                "variableCount": 332,
+                "booleanVariableCount": 170,
+                "constraintCount": 611,
+                "allowedCellCount": 30,
+                "roadEligibleCellCount": 30,
+                "roadVariableCount": 30,
+                "rootVariableCount": 10,
+                "directedEdgeCount": 98,
+                "serviceCandidateCount": 79,
+                "residentialCandidateCount": 51,
+                "populationVariableCount": 51
+              }
+            }
+          }
+        },
+        {
+          "atSeconds": 0.7579581250000001,
+          "update": {
+            "kind": "incumbent",
+            "telemetry": {
+              "solveWallTimeSeconds": 0.307307,
+              "userTimeSeconds": 0.307307,
+              "solutionCount": 5,
+              "incumbentObjectiveValue": 77875,
+              "bestObjectiveBound": 125398,
+              "objectiveGap": 47523,
+              "incumbentPopulation": 708,
+              "bestPopulationUpperBound": 1140,
+              "populationGapUpperBound": 432,
+              "lastImprovementAtSeconds": 0.307307,
+              "secondsSinceLastImprovement": 0,
+              "numBranches": 5528,
+              "numConflicts": 297,
+              "modelSize": {
+                "variableCount": 332,
+                "booleanVariableCount": 170,
+                "constraintCount": 611,
+                "allowedCellCount": 30,
+                "roadEligibleCellCount": 30,
+                "roadVariableCount": 30,
+                "rootVariableCount": 10,
+                "directedEdgeCount": 98,
+                "serviceCandidateCount": 79,
+                "residentialCandidateCount": 51,
+                "populationVariableCount": 51
+              }
+            }
+          }
+        },
+        {
+          "atSeconds": 0.8681184590000003,
+          "update": {
+            "kind": "incumbent",
+            "telemetry": {
+              "solveWallTimeSeconds": 0.417335,
+              "userTimeSeconds": 0.417335,
+              "solutionCount": 6,
+              "incumbentObjectiveValue": 81281,
+              "bestObjectiveBound": 125398,
+              "objectiveGap": 44117,
+              "incumbentPopulation": 739,
+              "bestPopulationUpperBound": 1140,
+              "populationGapUpperBound": 401,
+              "lastImprovementAtSeconds": 0.417335,
+              "secondsSinceLastImprovement": 0,
+              "numBranches": 9310,
+              "numConflicts": 438,
+              "modelSize": {
+                "variableCount": 332,
+                "booleanVariableCount": 170,
+                "constraintCount": 611,
+                "allowedCellCount": 30,
+                "roadEligibleCellCount": 30,
+                "roadVariableCount": 30,
+                "rootVariableCount": 10,
+                "directedEdgeCount": 98,
+                "serviceCandidateCount": 79,
+                "residentialCandidateCount": 51,
+                "populationVariableCount": 51
+              }
+            }
+          }
+        },
+        {
+          "atSeconds": 0.955643959,
+          "update": {
+            "kind": "incumbent",
+            "telemetry": {
+              "solveWallTimeSeconds": 0.504958,
+              "userTimeSeconds": 0.504958,
+              "solutionCount": 7,
+              "incumbentObjectiveValue": 83705,
+              "bestObjectiveBound": 125398,
+              "objectiveGap": 41693,
+              "incumbentPopulation": 761,
+              "bestPopulationUpperBound": 1140,
+              "populationGapUpperBound": 379,
+              "lastImprovementAtSeconds": 0.504958,
+              "secondsSinceLastImprovement": 0,
+              "numBranches": 12762,
+              "numConflicts": 516,
+              "modelSize": {
+                "variableCount": 332,
+                "booleanVariableCount": 170,
+                "constraintCount": 611,
+                "allowedCellCount": 30,
+                "roadEligibleCellCount": 30,
+                "roadVariableCount": 30,
+                "rootVariableCount": 10,
+                "directedEdgeCount": 98,
+                "serviceCandidateCount": 79,
+                "residentialCandidateCount": 51,
+                "populationVariableCount": 51
+              }
+            }
+          }
+        },
+        {
+          "atSeconds": 1.0333426669999999,
+          "update": {
+            "kind": "incumbent",
+            "telemetry": {
+              "solveWallTimeSeconds": 0.582696,
+              "userTimeSeconds": 0.582696,
+              "solutionCount": 8,
+              "incumbentObjectiveValue": 94485,
+              "bestObjectiveBound": 125398,
+              "objectiveGap": 30913,
+              "incumbentPopulation": 859,
+              "bestPopulationUpperBound": 1140,
+              "populationGapUpperBound": 281,
+              "lastImprovementAtSeconds": 0.582696,
+              "secondsSinceLastImprovement": 0,
+              "numBranches": 12871,
+              "numConflicts": 548,
+              "modelSize": {
+                "variableCount": 332,
+                "booleanVariableCount": 170,
+                "constraintCount": 611,
+                "allowedCellCount": 30,
+                "roadEligibleCellCount": 30,
+                "roadVariableCount": 30,
+                "rootVariableCount": 10,
+                "directedEdgeCount": 98,
+                "serviceCandidateCount": 79,
+                "residentialCandidateCount": 51,
+                "populationVariableCount": 51
+              }
+            }
+          }
+        },
+        {
+          "atSeconds": 1.0473452090000002,
+          "update": {
+            "kind": "incumbent",
+            "telemetry": {
+              "solveWallTimeSeconds": 0.5967290000000001,
+              "userTimeSeconds": 0.5967290000000001,
+              "solutionCount": 9,
+              "incumbentObjectiveValue": 95695,
+              "bestObjectiveBound": 125398,
+              "objectiveGap": 29703,
+              "incumbentPopulation": 870,
+              "bestPopulationUpperBound": 1140,
+              "populationGapUpperBound": 270,
+              "lastImprovementAtSeconds": 0.5967290000000001,
+              "secondsSinceLastImprovement": 0,
+              "numBranches": 12902,
+              "numConflicts": 548,
+              "modelSize": {
+                "variableCount": 332,
+                "booleanVariableCount": 170,
+                "constraintCount": 611,
+                "allowedCellCount": 30,
+                "roadEligibleCellCount": 30,
+                "roadVariableCount": 30,
+                "rootVariableCount": 10,
+                "directedEdgeCount": 98,
+                "serviceCandidateCount": 79,
+                "residentialCandidateCount": 51,
+                "populationVariableCount": 51
+              }
+            }
+          }
+        },
+        {
+          "atSeconds": 1.1062223750000002,
+          "update": {
+            "kind": "incumbent",
+            "telemetry": {
+              "solveWallTimeSeconds": 0.655528,
+              "userTimeSeconds": 0.655528,
+              "solutionCount": 10,
+              "incumbentObjectiveValue": 95805,
+              "bestObjectiveBound": 125398,
+              "objectiveGap": 29593,
+              "incumbentPopulation": 871,
+              "bestPopulationUpperBound": 1140,
+              "populationGapUpperBound": 269,
+              "lastImprovementAtSeconds": 0.655528,
+              "secondsSinceLastImprovement": 0,
+              "numBranches": 16663,
+              "numConflicts": 568,
+              "modelSize": {
+                "variableCount": 332,
+                "booleanVariableCount": 170,
+                "constraintCount": 611,
+                "allowedCellCount": 30,
+                "roadEligibleCellCount": 30,
+                "roadVariableCount": 30,
+                "rootVariableCount": 10,
+                "directedEdgeCount": 98,
+                "serviceCandidateCount": 79,
+                "residentialCandidateCount": 51,
+                "populationVariableCount": 51
+              }
+            }
+          }
+        },
+        {
+          "atSeconds": 1.131492625,
+          "update": {
+            "kind": "incumbent",
+            "telemetry": {
+              "solveWallTimeSeconds": 0.680848,
+              "userTimeSeconds": 0.680848,
+              "solutionCount": 11,
+              "incumbentObjectiveValue": 97015,
+              "bestObjectiveBound": 125398,
+              "objectiveGap": 28383,
+              "incumbentPopulation": 882,
+              "bestPopulationUpperBound": 1140,
+              "populationGapUpperBound": 258,
+              "lastImprovementAtSeconds": 0.680848,
+              "secondsSinceLastImprovement": 0,
+              "numBranches": 16694,
+              "numConflicts": 568,
+              "modelSize": {
+                "variableCount": 332,
+                "booleanVariableCount": 170,
+                "constraintCount": 611,
+                "allowedCellCount": 30,
+                "roadEligibleCellCount": 30,
+                "roadVariableCount": 30,
+                "rootVariableCount": 10,
+                "directedEdgeCount": 98,
+                "serviceCandidateCount": 79,
+                "residentialCandidateCount": 51,
+                "populationVariableCount": 51
+              }
+            }
+          }
+        },
+        {
+          "atSeconds": 1.1464554589999998,
+          "update": {
+            "kind": "incumbent",
+            "telemetry": {
+              "solveWallTimeSeconds": 0.6957880000000001,
+              "userTimeSeconds": 0.6957880000000001,
+              "solutionCount": 12,
+              "incumbentObjectiveValue": 97125,
+              "bestObjectiveBound": 125398,
+              "objectiveGap": 28273,
+              "incumbentPopulation": 883,
+              "bestPopulationUpperBound": 1140,
+              "populationGapUpperBound": 257,
+              "lastImprovementAtSeconds": 0.6957880000000001,
+              "secondsSinceLastImprovement": 0,
+              "numBranches": 16719,
+              "numConflicts": 568,
+              "modelSize": {
+                "variableCount": 332,
+                "booleanVariableCount": 170,
+                "constraintCount": 611,
+                "allowedCellCount": 30,
+                "roadEligibleCellCount": 30,
+                "roadVariableCount": 30,
+                "rootVariableCount": 10,
+                "directedEdgeCount": 98,
+                "serviceCandidateCount": 79,
+                "residentialCandidateCount": 51,
+                "populationVariableCount": 51
+              }
+            }
+          }
+        },
+        {
+          "atSeconds": 1.1714502090000005,
+          "update": {
+            "kind": "incumbent",
+            "telemetry": {
+              "solveWallTimeSeconds": 0.7208300000000001,
+              "userTimeSeconds": 0.7208300000000001,
+              "solutionCount": 13,
+              "incumbentObjectiveValue": 107685,
+              "bestObjectiveBound": 125398,
+              "objectiveGap": 17713,
+              "incumbentPopulation": 979,
+              "bestPopulationUpperBound": 1140,
+              "populationGapUpperBound": 161,
+              "lastImprovementAtSeconds": 0.7208300000000001,
+              "secondsSinceLastImprovement": 0,
+              "numBranches": 16751,
+              "numConflicts": 568,
+              "modelSize": {
+                "variableCount": 332,
+                "booleanVariableCount": 170,
+                "constraintCount": 611,
+                "allowedCellCount": 30,
+                "roadEligibleCellCount": 30,
+                "roadVariableCount": 30,
+                "rootVariableCount": 10,
+                "directedEdgeCount": 98,
+                "serviceCandidateCount": 79,
+                "residentialCandidateCount": 51,
+                "populationVariableCount": 51
+              }
+            }
+          }
+        },
+        {
+          "atSeconds": 1.1860412500000002,
+          "update": {
+            "kind": "incumbent",
+            "telemetry": {
+              "solveWallTimeSeconds": 0.73538,
+              "userTimeSeconds": 0.73538,
+              "solutionCount": 14,
+              "incumbentObjectiveValue": 107795,
+              "bestObjectiveBound": 125398,
+              "objectiveGap": 17603,
+              "incumbentPopulation": 980,
+              "bestPopulationUpperBound": 1140,
+              "populationGapUpperBound": 160,
+              "lastImprovementAtSeconds": 0.73538,
+              "secondsSinceLastImprovement": 0,
+              "numBranches": 16770,
+              "numConflicts": 568,
+              "modelSize": {
+                "variableCount": 332,
+                "booleanVariableCount": 170,
+                "constraintCount": 611,
+                "allowedCellCount": 30,
+                "roadEligibleCellCount": 30,
+                "roadVariableCount": 30,
+                "rootVariableCount": 10,
+                "directedEdgeCount": 98,
+                "serviceCandidateCount": 79,
+                "residentialCandidateCount": 51,
+                "populationVariableCount": 51
+              }
+            }
+          }
+        }
+      ],
+      "progressSummary": {
+        "currentScore": 980,
+        "bestScore": 980,
+        "activeStage": "cp-sat",
+        "reuseSource": null,
+        "elapsedTimeSeconds": 3.383,
+        "timeSinceImprovementSeconds": 2.106,
+        "stopReason": null,
+        "exactGap": 0,
+        "portfolioWorkerSummary": null
+      },
+      "wallClockSeconds": 3.382678417
+    }
+  ]
+}

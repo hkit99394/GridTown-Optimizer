@@ -1,0 +1,1092 @@
+{
+  "generatedAt": "2026-05-10T05:17:43.496Z",
+  "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range1-big-service140-initial-stagnation-repeatability-wide-state-search-roll-forward-4x0.2",
+  "totalLabels": 432,
+  "gates": {
+    "slidingArea12": {
+      "selected": 54,
+      "pos": 54,
+      "neg": 0,
+      "neu": 0,
+      "best": 5,
+      "worst": 5,
+      "bySeed": {
+        "5": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 0
+        },
+        "7": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 0
+        },
+        "11": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 0
+        },
+        "13": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 0
+        },
+        "17": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 0
+        },
+        "19": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 0
+        },
+        "23": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 0
+        },
+        "29": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 0
+        },
+        "37": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 0
+        }
+      },
+      "examples": [
+        {
+          "seed": 5,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 2,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 1,
+          "newReach": 8,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 0,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 8,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 2,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 1,
+          "newReach": 8,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 0,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 8,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 2,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 1,
+          "newReach": 8,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 0,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 8,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        }
+      ]
+    },
+    "slidingArea12ComponentsMax2": {
+      "selected": 54,
+      "pos": 54,
+      "neg": 0,
+      "neu": 0,
+      "best": 5,
+      "worst": 5,
+      "bySeed": {
+        "5": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 0
+        },
+        "7": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 0
+        },
+        "11": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 0
+        },
+        "13": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 0
+        },
+        "17": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 0
+        },
+        "19": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 0
+        },
+        "23": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 0
+        },
+        "29": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 0
+        },
+        "37": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 0
+        }
+      },
+      "examples": [
+        {
+          "seed": 5,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 2,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 1,
+          "newReach": 8,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 0,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 8,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 2,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 1,
+          "newReach": 8,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 0,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 8,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 2,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 1,
+          "newReach": 8,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 0,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 8,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        }
+      ]
+    },
+    "slidingComponentsMax2": {
+      "selected": 90,
+      "pos": 64,
+      "neg": 0,
+      "neu": 26,
+      "best": 5,
+      "worst": 0,
+      "bySeed": {
+        "5": {
+          "pos": 8,
+          "neg": 0,
+          "neu": 2
+        },
+        "7": {
+          "pos": 8,
+          "neg": 0,
+          "neu": 2
+        },
+        "11": {
+          "pos": 8,
+          "neg": 0,
+          "neu": 2
+        },
+        "13": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 4
+        },
+        "17": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 4
+        },
+        "19": {
+          "pos": 8,
+          "neg": 0,
+          "neu": 2
+        },
+        "23": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 4
+        },
+        "29": {
+          "pos": 8,
+          "neg": 0,
+          "neu": 2
+        },
+        "37": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 4
+        }
+      },
+      "examples": [
+        {
+          "seed": 5,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 2,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 1,
+          "newReach": 8,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 0,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 8,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 9,
+          "componentsAfter": 2,
+          "newReach": 6,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 2,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 1,
+          "newReach": 8,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 0,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 8,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 9,
+          "componentsAfter": 2,
+          "newReach": 6,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 2,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 1,
+          "newReach": 8,
+          "source": "exploration-tail"
+        }
+      ]
+    },
+    "slidingTopOrLeft2": {
+      "selected": 72,
+      "pos": 64,
+      "neg": 0,
+      "neu": 8,
+      "best": 5,
+      "worst": 0,
+      "bySeed": {
+        "5": {
+          "pos": 8,
+          "neg": 0,
+          "neu": 0
+        },
+        "7": {
+          "pos": 8,
+          "neg": 0,
+          "neu": 0
+        },
+        "11": {
+          "pos": 8,
+          "neg": 0,
+          "neu": 0
+        },
+        "13": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 2
+        },
+        "17": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 2
+        },
+        "19": {
+          "pos": 8,
+          "neg": 0,
+          "neu": 0
+        },
+        "23": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 2
+        },
+        "29": {
+          "pos": 8,
+          "neg": 0,
+          "neu": 0
+        },
+        "37": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 2
+        }
+      },
+      "examples": [
+        {
+          "seed": 5,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 2,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 1,
+          "newReach": 8,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 0,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 8,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 9,
+          "componentsAfter": 2,
+          "newReach": 6,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 2,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 1,
+          "newReach": 8,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 0,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 8,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 9,
+          "componentsAfter": 2,
+          "newReach": 6,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 2,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 1,
+          "newReach": 8,
+          "source": "exploration-tail"
+        }
+      ]
+    },
+    "allNonBaselineSliding": {
+      "selected": 144,
+      "pos": 64,
+      "neg": 0,
+      "neu": 80,
+      "best": 5,
+      "worst": 0,
+      "bySeed": {
+        "5": {
+          "pos": 8,
+          "neg": 0,
+          "neu": 8
+        },
+        "7": {
+          "pos": 8,
+          "neg": 0,
+          "neu": 8
+        },
+        "11": {
+          "pos": 8,
+          "neg": 0,
+          "neu": 8
+        },
+        "13": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 10
+        },
+        "17": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 10
+        },
+        "19": {
+          "pos": 8,
+          "neg": 0,
+          "neu": 8
+        },
+        "23": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 10
+        },
+        "29": {
+          "pos": 8,
+          "neg": 0,
+          "neu": 8
+        },
+        "37": {
+          "pos": 6,
+          "neg": 0,
+          "neu": 10
+        }
+      },
+      "examples": [
+        {
+          "seed": 5,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 2,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 1,
+          "newReach": 8,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 0,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 8,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 9,
+          "componentsAfter": 2,
+          "newReach": 6,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 2,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 1,
+          "newReach": 8,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 0,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 8,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 5,
+          "state": "post-stagnation#1",
+          "operator": "sliding",
+          "window": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 9,
+          "componentsAfter": 2,
+          "newReach": 6,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 2,
+          "newReach": 4,
+          "source": "exploration-tail"
+        },
+        {
+          "seed": 7,
+          "state": "initial-incumbent#0",
+          "operator": "sliding",
+          "window": {
+            "top": 0,
+            "left": 2,
+            "rows": 4,
+            "cols": 3
+          },
+          "delta": 5,
+          "area": 12,
+          "componentsAfter": 1,
+          "newReach": 8,
+          "source": "exploration-tail"
+        }
+      ]
+    }
+  }
+}

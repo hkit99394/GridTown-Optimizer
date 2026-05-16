@@ -1,10 +1,10 @@
-import type { OptimizerName } from "../core/types.js";
+import type { OptimizerName } from "../packages/core/index.js";
 import { readNamedOptionValue } from "./cliParsing.js";
 
 export const DEFAULT_CLI_CP_SAT_PARAMS = {
   timeLimitSeconds: 30,
   noImprovementTimeoutSeconds: 15,
-  numWorkers: 8,
+  numWorkers: 8
 };
 
 export interface ParsedExampleCliArgs {
@@ -17,7 +17,7 @@ const OPTION_NAMES_WITH_VALUE = new Set([
   "greedy-seed",
   "cp-sat-time-limit",
   "cp-sat-no-improvement-timeout",
-  "cp-sat-workers",
+  "cp-sat-workers"
 ]);
 
 function isOptimizerName(value: string): value is OptimizerName {
@@ -59,7 +59,7 @@ function readCliCpSatOptions(argv: readonly string[]): typeof DEFAULT_CLI_CP_SAT
       "cp-sat-no-improvement-timeout",
       DEFAULT_CLI_CP_SAT_PARAMS.noImprovementTimeoutSeconds
     ),
-    numWorkers: readIntegerCliOption(argv, "cp-sat-workers", DEFAULT_CLI_CP_SAT_PARAMS.numWorkers),
+    numWorkers: readIntegerCliOption(argv, "cp-sat-workers", DEFAULT_CLI_CP_SAT_PARAMS.numWorkers)
   };
 }
 
@@ -69,6 +69,6 @@ export function parseExampleCliArgs(argv: readonly string[] = process.argv.slice
   return {
     optimizer,
     ...(greedyRandomSeed !== undefined ? { greedyRandomSeed } : {}),
-    ...(optimizer === "cp-sat" ? { cpSatOptions: readCliCpSatOptions(argv) } : {}),
+    ...(optimizer === "cp-sat" ? { cpSatOptions: readCliCpSatOptions(argv) } : {})
   };
 }

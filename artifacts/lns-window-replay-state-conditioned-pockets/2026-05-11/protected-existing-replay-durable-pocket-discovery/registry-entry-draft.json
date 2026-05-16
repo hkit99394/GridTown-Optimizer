@@ -1,0 +1,810 @@
+{
+  "schemaVersion": 1,
+  "runId": "lns-replay-state-conditioned-pockets-2830eab0",
+  "artifactType": "ablation-gate",
+  "generatedAt": "2026-05-11T23:14:39.472Z",
+  "commands": [
+    "node scripts/discover-lns-replay-state-conditioned-pockets.mjs --source-root=artifacts/lns-window-replay-labels --artifact-dir=artifacts/lns-window-replay-state-conditioned-pockets/2026-05-11/protected-existing-replay-durable-pocket-discovery --min-improved-labels=1 --max-atoms=180 --max-group-size=2 --top=30 --force-artifact-dir"
+  ],
+  "artifactPaths": [
+    "artifacts/lns-window-replay-state-conditioned-pockets/2026-05-11/protected-existing-replay-durable-pocket-discovery/state-conditioned-pockets.json",
+    "artifacts/lns-window-replay-state-conditioned-pockets/2026-05-11/protected-existing-replay-durable-pocket-discovery/state-conditioned-pockets.txt",
+    "artifacts/lns-window-replay-state-conditioned-pockets/2026-05-11/protected-existing-replay-durable-pocket-discovery/telemetry-manifest.json",
+    "artifacts/lns-window-replay-state-conditioned-pockets/2026-05-11/protected-existing-replay-durable-pocket-discovery/manifest.json"
+  ],
+  "cases": [
+    "lns-holdout-anchor-service-harbor-pressure",
+    "lns-holdout-anchor-service-shelf-pressure",
+    "lns-holdout-corridor-switchback-pressure",
+    "lns-holdout-corridor-weave-pressure",
+    "lns-holdout-footprint-lattice-pressure",
+    "lns-holdout-footprint-stagger-pressure",
+    "lns-holdout-gate-double-choke-pressure",
+    "lns-holdout-gate-offset-pressure",
+    "lns-holdout-service-braid-family-embed-7x8-down-screen-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-mirror-screen-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-origin-screen-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-right-repeatability-candidate",
+    "lns-holdout-service-braid-family-embed-7x8-right-screen-candidate",
+    "lns-holdout-service-braid-open-lower-notch-screen-candidate",
+    "lns-holdout-service-braid-open-upper-braid-screen-candidate",
+    "lns-holdout-service-braid-premium-scarcity-screen-candidate",
+    "lns-holdout-service-braid-pressure",
+    "lns-holdout-service-braid-range1-big-service120-candidate",
+    "lns-holdout-service-braid-range1-big-service135-candidate",
+    "lns-holdout-service-braid-range1-big-service138-initial-stagnation-screen-candidate",
+    "lns-holdout-service-braid-range1-big-service140-candidate",
+    "lns-holdout-service-braid-range1-big-service140-double-choke-screen-candidate",
+    "lns-holdout-service-braid-range1-big-service140-east-lane-screen-candidate",
+    "lns-holdout-service-braid-range1-big-service140-initial-stagnation-candidate",
+    "lns-holdout-service-braid-range1-big-service140-initial-stagnation-screen-candidate",
+    "lns-holdout-service-braid-range1-big-service140-south-shelf-repeatability-candidate",
+    "lns-holdout-service-braid-range1-big-service140-south-shelf-screen-candidate",
+    "lns-holdout-service-braid-range1-big-service142-initial-stagnation-screen-candidate",
+    "lns-holdout-service-braid-range2-big-service120-initial-stagnation-screen-candidate",
+    "lns-holdout-service-braid-range2-big-service140-initial-stagnation-screen-candidate",
+    "lns-holdout-service-braid-range2-big-service160-initial-stagnation-screen-candidate",
+    "lns-holdout-service-braid-res-headroom-plus20-screen-candidate",
+    "lns-holdout-service-braid-res-headroom-plus40-screen-candidate",
+    "lns-holdout-service-braid-shift-right-choke-screen-candidate",
+    "lns-holdout-service-ridge-pressure"
+  ],
+  "caseFamilies": [
+    "lns-anchor-service",
+    "lns-corridor",
+    "lns-footprint-pressure",
+    "lns-gate",
+    "lns-service-pressure",
+    "lns-window-replay"
+  ],
+  "seeds": [
+    5,
+    7,
+    11,
+    13,
+    17,
+    19,
+    23,
+    29,
+    37
+  ],
+  "inputFingerprint": "fnv1a:0e816613",
+  "datasetFingerprint": "fnv1a:2830eab0",
+  "splitStatus": {
+    "diagnosticsOnly": true,
+    "source": "existing-lns-window-replay-state-conditioned-pocket-discovery",
+    "sourceRoot": "artifacts/lns-window-replay-labels",
+    "sourceArtifactCount": 28
+  },
+  "budget": {
+    "sourceArtifactCount": 28,
+    "caseCount": 35,
+    "seedCount": 9,
+    "labelCount": 6372,
+    "rollForwardLabelCount": 6372,
+    "atomCount": 486,
+    "searchedCandidateCount": 15779
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "model": {
+    "trained": false,
+    "diagnosticsOnly": true,
+    "labelSource": "existing-lns-window-replay-labels",
+    "discoveryKind": "state-conditioned-repeatability-safe-pocket-search"
+  },
+  "decision": "diagnostics-only",
+  "summary": "Existing protected LNS replay labels mined for state-conditioned repeatability-safe durable pockets; no solver default changed.",
+  "summaryMetrics": {
+    "sourceArtifactCount": 28,
+    "caseCount": 35,
+    "seedCount": 9,
+    "labelCount": 6372,
+    "rollForwardLabelCount": 6372,
+    "repeatabilitySafeBucketCount": 68,
+    "featureIdenticalConflictBucketCount": 44,
+    "atomCount": 486,
+    "searchedCandidateCount": 15779,
+    "safeCandidateCount": 3183,
+    "blockedCandidateCount": 5130,
+    "topSafeCandidate": {
+      "expression": "serviceCandidateBonus>=2950 AND reachableBefore==22",
+      "atomCount": 2,
+      "atoms": [
+        {
+          "expression": "serviceCandidateBonus>=2950",
+          "field": "serviceCandidateBonus",
+          "fieldPath": "features.candidateLoss.serviceCandidateBonusInside",
+          "kind": "feature",
+          "operator": ">=",
+          "value": 2950
+        },
+        {
+          "expression": "reachableBefore==22",
+          "field": "reachableBefore",
+          "fieldPath": "features.connectivityShadow.reachableEmptyCellsBefore",
+          "kind": "feature",
+          "operator": "==",
+          "value": 22
+        }
+      ],
+      "selected": 187,
+      "improved": 96,
+      "regressed": 0,
+      "neutral": 91,
+      "unknown": 0,
+      "repeatabilitySafeSelected": 108,
+      "repeatabilitySafeImproved": 96,
+      "bestDelta": 60,
+      "worstDelta": 0,
+      "safeNoRegression": true,
+      "durablePocket": true,
+      "improvedRate": 0.5133689839572193,
+      "repeatabilitySafeRate": 0.5775401069518716,
+      "byStatePolicy": {
+        "post-first-improvement": {
+          "selected": 1,
+          "improved": 0,
+          "regressed": 0,
+          "neutral": 1,
+          "unknown": 0,
+          "repeatabilitySafeSelected": 0,
+          "repeatabilitySafeImproved": 0,
+          "bestDelta": 0,
+          "worstDelta": 0,
+          "safeNoRegression": true,
+          "durablePocket": false,
+          "improvedRate": 0,
+          "repeatabilitySafeRate": 0
+        },
+        "initial-incumbent": {
+          "selected": 93,
+          "improved": 48,
+          "regressed": 0,
+          "neutral": 45,
+          "unknown": 0,
+          "repeatabilitySafeSelected": 54,
+          "repeatabilitySafeImproved": 48,
+          "bestDelta": 60,
+          "worstDelta": 0,
+          "safeNoRegression": true,
+          "durablePocket": true,
+          "improvedRate": 0.5161290322580645,
+          "repeatabilitySafeRate": 0.5806451612903226
+        },
+        "post-stagnation": {
+          "selected": 93,
+          "improved": 48,
+          "regressed": 0,
+          "neutral": 45,
+          "unknown": 0,
+          "repeatabilitySafeSelected": 54,
+          "repeatabilitySafeImproved": 48,
+          "bestDelta": 60,
+          "worstDelta": 0,
+          "safeNoRegression": true,
+          "durablePocket": true,
+          "improvedRate": 0.5161290322580645,
+          "repeatabilitySafeRate": 0.5806451612903226
+        }
+      },
+      "byPressureFamily": {
+        "service-pressure": {
+          "selected": 187,
+          "improved": 96,
+          "regressed": 0,
+          "neutral": 91,
+          "unknown": 0,
+          "repeatabilitySafeSelected": 108,
+          "repeatabilitySafeImproved": 96,
+          "bestDelta": 60,
+          "worstDelta": 0,
+          "safeNoRegression": true,
+          "durablePocket": true,
+          "improvedRate": 0.5133689839572193,
+          "repeatabilitySafeRate": 0.5775401069518716
+        }
+      },
+      "bySourceArtifact": {
+        "artifacts/lns-window-replay-labels/2026-05-09/protected-service-braid-range1-big-service120-candidate-wide-state-search-roll-forward-4x0.2": {
+          "selected": 1,
+          "improved": 0,
+          "regressed": 0,
+          "neutral": 1,
+          "unknown": 0,
+          "repeatabilitySafeSelected": 0,
+          "repeatabilitySafeImproved": 0,
+          "bestDelta": 0,
+          "worstDelta": 0,
+          "safeNoRegression": true,
+          "durablePocket": false,
+          "improvedRate": 0,
+          "repeatabilitySafeRate": 0
+        },
+        "artifacts/lns-window-replay-labels/2026-05-09/protected-service-braid-range1-big-service140-candidate-wide-state-search-roll-forward-4x0.2": {
+          "selected": 42,
+          "improved": 22,
+          "regressed": 0,
+          "neutral": 20,
+          "unknown": 0,
+          "repeatabilitySafeSelected": 24,
+          "repeatabilitySafeImproved": 22,
+          "bestDelta": 5,
+          "worstDelta": 0,
+          "safeNoRegression": true,
+          "durablePocket": true,
+          "improvedRate": 0.5238095238095238,
+          "repeatabilitySafeRate": 0.5714285714285714
+        },
+        "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range1-big-service138-142-initial-stagnation-screen-roll-forward-2x0.1": {
+          "selected": 18,
+          "improved": 10,
+          "regressed": 0,
+          "neutral": 8,
+          "unknown": 0,
+          "repeatabilitySafeSelected": 12,
+          "repeatabilitySafeImproved": 10,
+          "bestDelta": 60,
+          "worstDelta": 0,
+          "safeNoRegression": true,
+          "durablePocket": true,
+          "improvedRate": 0.5555555555555556,
+          "repeatabilitySafeRate": 0.6666666666666666
+        },
+        "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range1-big-service140-initial-stagnation-repeatability-wide-state-search-roll-forward-4x0.2": {
+          "selected": 126,
+          "improved": 64,
+          "regressed": 0,
+          "neutral": 62,
+          "unknown": 0,
+          "repeatabilitySafeSelected": 72,
+          "repeatabilitySafeImproved": 64,
+          "bestDelta": 5,
+          "worstDelta": 0,
+          "safeNoRegression": true,
+          "durablePocket": true,
+          "improvedRate": 0.5079365079365079,
+          "repeatabilitySafeRate": 0.5714285714285714
+        }
+      },
+      "examples": [
+        {
+          "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-09/protected-service-braid-range1-big-service140-candidate-wide-state-search-roll-forward-4x0.2",
+          "caseName": "lns-holdout-service-braid-range1-big-service140-candidate",
+          "pressureFamily": "service-pressure",
+          "seed": 7,
+          "statePolicy": "initial-incumbent",
+          "stateIndex": 0,
+          "stateSourceStatus": "initial-incumbent",
+          "stateSourceIteration": null,
+          "stateStagnantIterations": 0,
+          "operator": "sliding",
+          "selectionSource": "exploration-tail",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "status": "improved",
+          "delta": 5,
+          "repeatability": {
+            "bucketKey": "lns-holdout-service-braid-range1-big-service140-candidate\u0000initial-incumbent\u0000sliding\u00000:4:4x3",
+            "labelCount": 3,
+            "statusCounts": {
+              "improved": 3,
+              "neutral": 0,
+              "regressed": 0,
+              "unknown": 0
+            },
+            "featureIdenticalConflictBucket": false
+          },
+          "selectedFeatures": {
+            "area": 12,
+            "roadCountInside": 0,
+            "serviceCandidateBonusInside": 3265,
+            "residentialCandidatesBlockedByIncumbent": 14,
+            "componentsBefore": 3,
+            "componentsAfter": 2,
+            "allowedWindowCells": 11,
+            "newlyReachable": 4,
+            "incumbentPopulation": 790,
+            "operatorScore": 981
+          }
+        },
+        {
+          "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-09/protected-service-braid-range1-big-service140-candidate-wide-state-search-roll-forward-4x0.2",
+          "caseName": "lns-holdout-service-braid-range1-big-service140-candidate",
+          "pressureFamily": "service-pressure",
+          "seed": 7,
+          "statePolicy": "initial-incumbent",
+          "stateIndex": 0,
+          "stateSourceStatus": "initial-incumbent",
+          "stateSourceIteration": null,
+          "stateStagnantIterations": 0,
+          "operator": "sliding",
+          "selectionSource": "exploration-tail",
+          "window": {
+            "top": 0,
+            "left": 2,
+            "rows": 4,
+            "cols": 3
+          },
+          "status": "improved",
+          "delta": 5,
+          "repeatability": {
+            "bucketKey": "lns-holdout-service-braid-range1-big-service140-candidate\u0000initial-incumbent\u0000sliding\u00000:2:4x3",
+            "labelCount": 3,
+            "statusCounts": {
+              "improved": 3,
+              "neutral": 0,
+              "regressed": 0,
+              "unknown": 0
+            },
+            "featureIdenticalConflictBucket": false
+          },
+          "selectedFeatures": {
+            "area": 12,
+            "roadCountInside": 0,
+            "serviceCandidateBonusInside": 3685,
+            "residentialCandidatesBlockedByIncumbent": 19,
+            "componentsBefore": 3,
+            "componentsAfter": 1,
+            "allowedWindowCells": 11,
+            "newlyReachable": 8,
+            "incumbentPopulation": 790,
+            "operatorScore": 983
+          }
+        },
+        {
+          "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-09/protected-service-braid-range1-big-service140-candidate-wide-state-search-roll-forward-4x0.2",
+          "caseName": "lns-holdout-service-braid-range1-big-service140-candidate",
+          "pressureFamily": "service-pressure",
+          "seed": 7,
+          "statePolicy": "initial-incumbent",
+          "stateIndex": 0,
+          "stateSourceStatus": "initial-incumbent",
+          "stateSourceIteration": null,
+          "stateStagnantIterations": 0,
+          "operator": "sliding",
+          "selectionSource": "exploration-tail",
+          "window": {
+            "top": 0,
+            "left": 0,
+            "rows": 4,
+            "cols": 3
+          },
+          "status": "improved",
+          "delta": 5,
+          "repeatability": {
+            "bucketKey": "lns-holdout-service-braid-range1-big-service140-candidate\u0000initial-incumbent\u0000sliding\u00000:0:4x3",
+            "labelCount": 3,
+            "statusCounts": {
+              "improved": 3,
+              "neutral": 0,
+              "regressed": 0,
+              "unknown": 0
+            },
+            "featureIdenticalConflictBucket": false
+          },
+          "selectedFeatures": {
+            "area": 12,
+            "roadCountInside": 2,
+            "serviceCandidateBonusInside": 3265,
+            "residentialCandidatesBlockedByIncumbent": 13,
+            "componentsBefore": 3,
+            "componentsAfter": 2,
+            "allowedWindowCells": 11,
+            "newlyReachable": 8,
+            "incumbentPopulation": 790,
+            "operatorScore": 985
+          }
+        },
+        {
+          "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-09/protected-service-braid-range1-big-service140-candidate-wide-state-search-roll-forward-4x0.2",
+          "caseName": "lns-holdout-service-braid-range1-big-service140-candidate",
+          "pressureFamily": "service-pressure",
+          "seed": 7,
+          "statePolicy": "initial-incumbent",
+          "stateIndex": 0,
+          "stateSourceStatus": "initial-incumbent",
+          "stateSourceIteration": null,
+          "stateStagnantIterations": 0,
+          "operator": "sliding",
+          "selectionSource": "exploration-tail",
+          "window": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "status": "improved",
+          "delta": 5,
+          "repeatability": {
+            "bucketKey": "lns-holdout-service-braid-range1-big-service140-candidate\u0000initial-incumbent\u0000sliding\u00002:1:3x3",
+            "labelCount": 3,
+            "statusCounts": {
+              "improved": 2,
+              "neutral": 1,
+              "regressed": 0,
+              "unknown": 0
+            },
+            "featureIdenticalConflictBucket": false
+          },
+          "selectedFeatures": {
+            "area": 9,
+            "roadCountInside": 2,
+            "serviceCandidateBonusInside": 2960,
+            "residentialCandidatesBlockedByIncumbent": 16,
+            "componentsBefore": 3,
+            "componentsAfter": 2,
+            "allowedWindowCells": 8,
+            "newlyReachable": 6,
+            "incumbentPopulation": 790,
+            "operatorScore": 993
+          }
+        },
+        {
+          "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-09/protected-service-braid-range1-big-service140-candidate-wide-state-search-roll-forward-4x0.2",
+          "caseName": "lns-holdout-service-braid-range1-big-service140-candidate",
+          "pressureFamily": "service-pressure",
+          "seed": 7,
+          "statePolicy": "post-stagnation",
+          "stateIndex": 2,
+          "stateSourceStatus": "neutral",
+          "stateSourceIteration": 0,
+          "stateStagnantIterations": 1,
+          "operator": "sliding",
+          "selectionSource": "exploration-tail",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "status": "improved",
+          "delta": 5,
+          "repeatability": {
+            "bucketKey": "lns-holdout-service-braid-range1-big-service140-candidate\u0000post-stagnation\u0000sliding\u00000:4:4x3",
+            "labelCount": 3,
+            "statusCounts": {
+              "improved": 3,
+              "neutral": 0,
+              "regressed": 0,
+              "unknown": 0
+            },
+            "featureIdenticalConflictBucket": false
+          },
+          "selectedFeatures": {
+            "area": 12,
+            "roadCountInside": 0,
+            "serviceCandidateBonusInside": 3265,
+            "residentialCandidatesBlockedByIncumbent": 14,
+            "componentsBefore": 3,
+            "componentsAfter": 2,
+            "allowedWindowCells": 11,
+            "newlyReachable": 4,
+            "incumbentPopulation": 790,
+            "operatorScore": 981
+          }
+        },
+        {
+          "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-09/protected-service-braid-range1-big-service140-candidate-wide-state-search-roll-forward-4x0.2",
+          "caseName": "lns-holdout-service-braid-range1-big-service140-candidate",
+          "pressureFamily": "service-pressure",
+          "seed": 7,
+          "statePolicy": "post-stagnation",
+          "stateIndex": 2,
+          "stateSourceStatus": "neutral",
+          "stateSourceIteration": 0,
+          "stateStagnantIterations": 1,
+          "operator": "sliding",
+          "selectionSource": "exploration-tail",
+          "window": {
+            "top": 0,
+            "left": 2,
+            "rows": 4,
+            "cols": 3
+          },
+          "status": "improved",
+          "delta": 5,
+          "repeatability": {
+            "bucketKey": "lns-holdout-service-braid-range1-big-service140-candidate\u0000post-stagnation\u0000sliding\u00000:2:4x3",
+            "labelCount": 3,
+            "statusCounts": {
+              "improved": 3,
+              "neutral": 0,
+              "regressed": 0,
+              "unknown": 0
+            },
+            "featureIdenticalConflictBucket": false
+          },
+          "selectedFeatures": {
+            "area": 12,
+            "roadCountInside": 0,
+            "serviceCandidateBonusInside": 3685,
+            "residentialCandidatesBlockedByIncumbent": 19,
+            "componentsBefore": 3,
+            "componentsAfter": 1,
+            "allowedWindowCells": 11,
+            "newlyReachable": 8,
+            "incumbentPopulation": 790,
+            "operatorScore": 983
+          }
+        },
+        {
+          "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-09/protected-service-braid-range1-big-service140-candidate-wide-state-search-roll-forward-4x0.2",
+          "caseName": "lns-holdout-service-braid-range1-big-service140-candidate",
+          "pressureFamily": "service-pressure",
+          "seed": 7,
+          "statePolicy": "post-stagnation",
+          "stateIndex": 2,
+          "stateSourceStatus": "neutral",
+          "stateSourceIteration": 0,
+          "stateStagnantIterations": 1,
+          "operator": "sliding",
+          "selectionSource": "exploration-tail",
+          "window": {
+            "top": 0,
+            "left": 0,
+            "rows": 4,
+            "cols": 3
+          },
+          "status": "improved",
+          "delta": 5,
+          "repeatability": {
+            "bucketKey": "lns-holdout-service-braid-range1-big-service140-candidate\u0000post-stagnation\u0000sliding\u00000:0:4x3",
+            "labelCount": 3,
+            "statusCounts": {
+              "improved": 3,
+              "neutral": 0,
+              "regressed": 0,
+              "unknown": 0
+            },
+            "featureIdenticalConflictBucket": false
+          },
+          "selectedFeatures": {
+            "area": 12,
+            "roadCountInside": 2,
+            "serviceCandidateBonusInside": 3265,
+            "residentialCandidatesBlockedByIncumbent": 13,
+            "componentsBefore": 3,
+            "componentsAfter": 2,
+            "allowedWindowCells": 11,
+            "newlyReachable": 8,
+            "incumbentPopulation": 790,
+            "operatorScore": 985
+          }
+        },
+        {
+          "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-09/protected-service-braid-range1-big-service140-candidate-wide-state-search-roll-forward-4x0.2",
+          "caseName": "lns-holdout-service-braid-range1-big-service140-candidate",
+          "pressureFamily": "service-pressure",
+          "seed": 7,
+          "statePolicy": "post-stagnation",
+          "stateIndex": 2,
+          "stateSourceStatus": "neutral",
+          "stateSourceIteration": 0,
+          "stateStagnantIterations": 1,
+          "operator": "sliding",
+          "selectionSource": "exploration-tail",
+          "window": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "status": "improved",
+          "delta": 5,
+          "repeatability": {
+            "bucketKey": "lns-holdout-service-braid-range1-big-service140-candidate\u0000post-stagnation\u0000sliding\u00002:1:3x3",
+            "labelCount": 3,
+            "statusCounts": {
+              "improved": 2,
+              "neutral": 1,
+              "regressed": 0,
+              "unknown": 0
+            },
+            "featureIdenticalConflictBucket": false
+          },
+          "selectedFeatures": {
+            "area": 9,
+            "roadCountInside": 2,
+            "serviceCandidateBonusInside": 2960,
+            "residentialCandidatesBlockedByIncumbent": 16,
+            "componentsBefore": 3,
+            "componentsAfter": 2,
+            "allowedWindowCells": 8,
+            "newlyReachable": 6,
+            "incumbentPopulation": 790,
+            "operatorScore": 993
+          }
+        },
+        {
+          "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-09/protected-service-braid-range1-big-service140-candidate-wide-state-search-roll-forward-4x0.2",
+          "caseName": "lns-holdout-service-braid-range1-big-service140-candidate",
+          "pressureFamily": "service-pressure",
+          "seed": 19,
+          "statePolicy": "initial-incumbent",
+          "stateIndex": 0,
+          "stateSourceStatus": "initial-incumbent",
+          "stateSourceIteration": null,
+          "stateStagnantIterations": 0,
+          "operator": "sliding",
+          "selectionSource": "exploration-tail",
+          "window": {
+            "top": 0,
+            "left": 4,
+            "rows": 4,
+            "cols": 3
+          },
+          "status": "improved",
+          "delta": 5,
+          "repeatability": {
+            "bucketKey": "lns-holdout-service-braid-range1-big-service140-candidate\u0000initial-incumbent\u0000sliding\u00000:4:4x3",
+            "labelCount": 3,
+            "statusCounts": {
+              "improved": 3,
+              "neutral": 0,
+              "regressed": 0,
+              "unknown": 0
+            },
+            "featureIdenticalConflictBucket": false
+          },
+          "selectedFeatures": {
+            "area": 12,
+            "roadCountInside": 0,
+            "serviceCandidateBonusInside": 3265,
+            "residentialCandidatesBlockedByIncumbent": 14,
+            "componentsBefore": 3,
+            "componentsAfter": 2,
+            "allowedWindowCells": 11,
+            "newlyReachable": 4,
+            "incumbentPopulation": 790,
+            "operatorScore": 981
+          }
+        },
+        {
+          "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-09/protected-service-braid-range1-big-service140-candidate-wide-state-search-roll-forward-4x0.2",
+          "caseName": "lns-holdout-service-braid-range1-big-service140-candidate",
+          "pressureFamily": "service-pressure",
+          "seed": 19,
+          "statePolicy": "initial-incumbent",
+          "stateIndex": 0,
+          "stateSourceStatus": "initial-incumbent",
+          "stateSourceIteration": null,
+          "stateStagnantIterations": 0,
+          "operator": "sliding",
+          "selectionSource": "exploration-tail",
+          "window": {
+            "top": 0,
+            "left": 2,
+            "rows": 4,
+            "cols": 3
+          },
+          "status": "improved",
+          "delta": 5,
+          "repeatability": {
+            "bucketKey": "lns-holdout-service-braid-range1-big-service140-candidate\u0000initial-incumbent\u0000sliding\u00000:2:4x3",
+            "labelCount": 3,
+            "statusCounts": {
+              "improved": 3,
+              "neutral": 0,
+              "regressed": 0,
+              "unknown": 0
+            },
+            "featureIdenticalConflictBucket": false
+          },
+          "selectedFeatures": {
+            "area": 12,
+            "roadCountInside": 0,
+            "serviceCandidateBonusInside": 3685,
+            "residentialCandidatesBlockedByIncumbent": 19,
+            "componentsBefore": 3,
+            "componentsAfter": 1,
+            "allowedWindowCells": 11,
+            "newlyReachable": 8,
+            "incumbentPopulation": 790,
+            "operatorScore": 983
+          }
+        },
+        {
+          "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-09/protected-service-braid-range1-big-service140-candidate-wide-state-search-roll-forward-4x0.2",
+          "caseName": "lns-holdout-service-braid-range1-big-service140-candidate",
+          "pressureFamily": "service-pressure",
+          "seed": 19,
+          "statePolicy": "initial-incumbent",
+          "stateIndex": 0,
+          "stateSourceStatus": "initial-incumbent",
+          "stateSourceIteration": null,
+          "stateStagnantIterations": 0,
+          "operator": "sliding",
+          "selectionSource": "exploration-tail",
+          "window": {
+            "top": 0,
+            "left": 0,
+            "rows": 4,
+            "cols": 3
+          },
+          "status": "improved",
+          "delta": 5,
+          "repeatability": {
+            "bucketKey": "lns-holdout-service-braid-range1-big-service140-candidate\u0000initial-incumbent\u0000sliding\u00000:0:4x3",
+            "labelCount": 3,
+            "statusCounts": {
+              "improved": 3,
+              "neutral": 0,
+              "regressed": 0,
+              "unknown": 0
+            },
+            "featureIdenticalConflictBucket": false
+          },
+          "selectedFeatures": {
+            "area": 12,
+            "roadCountInside": 2,
+            "serviceCandidateBonusInside": 3265,
+            "residentialCandidatesBlockedByIncumbent": 13,
+            "componentsBefore": 3,
+            "componentsAfter": 2,
+            "allowedWindowCells": 11,
+            "newlyReachable": 8,
+            "incumbentPopulation": 790,
+            "operatorScore": 985
+          }
+        },
+        {
+          "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-09/protected-service-braid-range1-big-service140-candidate-wide-state-search-roll-forward-4x0.2",
+          "caseName": "lns-holdout-service-braid-range1-big-service140-candidate",
+          "pressureFamily": "service-pressure",
+          "seed": 19,
+          "statePolicy": "initial-incumbent",
+          "stateIndex": 0,
+          "stateSourceStatus": "initial-incumbent",
+          "stateSourceIteration": null,
+          "stateStagnantIterations": 0,
+          "operator": "sliding",
+          "selectionSource": "exploration-tail",
+          "window": {
+            "top": 2,
+            "left": 1,
+            "rows": 3,
+            "cols": 3
+          },
+          "status": "improved",
+          "delta": 5,
+          "repeatability": {
+            "bucketKey": "lns-holdout-service-braid-range1-big-service140-candidate\u0000initial-incumbent\u0000sliding\u00002:1:3x3",
+            "labelCount": 3,
+            "statusCounts": {
+              "improved": 2,
+              "neutral": 1,
+              "regressed": 0,
+              "unknown": 0
+            },
+            "featureIdenticalConflictBucket": false
+          },
+          "selectedFeatures": {
+            "area": 9,
+            "roadCountInside": 2,
+            "serviceCandidateBonusInside": 2960,
+            "residentialCandidatesBlockedByIncumbent": 16,
+            "componentsBefore": 3,
+            "componentsAfter": 2,
+            "allowedWindowCells": 8,
+            "newlyReachable": 6,
+            "incumbentPopulation": 790,
+            "operatorScore": 993
+          }
+        }
+      ]
+    }
+  }
+}

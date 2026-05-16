@@ -1,0 +1,42 @@
+{
+  "artifactDir": "artifacts/lns-window-replay-labels/2026-05-08/protected-corridor-footprint-wide-state-search-roll-forward-4x0.2",
+  "artifactPaths": {
+    "replayJson": "artifacts/lns-window-replay-labels/2026-05-08/protected-corridor-footprint-wide-state-search-roll-forward-4x0.2/lns-window-replay-labels.json",
+    "replayText": "artifacts/lns-window-replay-labels/2026-05-08/protected-corridor-footprint-wide-state-search-roll-forward-4x0.2/lns-window-replay-labels.txt",
+    "manifestJson": "artifacts/lns-window-replay-labels/2026-05-08/protected-corridor-footprint-wide-state-search-roll-forward-4x0.2/manifest.json",
+    "repeatabilitySummaryJson": "artifacts/lns-window-replay-labels/2026-05-08/protected-corridor-footprint-wide-state-search-roll-forward-4x0.2/repeatability-summary.json"
+  },
+  "command": "node dist/lnsBenchmarkCli.js --window-replay-protected-holdout --state-policies=initial-incumbent,post-first-improvement,post-stagnation --state-collection-iterations=4 --state-collection-repair-time=0.2 --repair-time=0.2 --max-windows=16 --exploration-windows=8 --roll-forward-iterations=4 --roll-forward-repair-time=0.2 --seeds=7,19,37 --window-replay-artifact-dir=artifacts/lns-window-replay-labels/2026-05-08/protected-corridor-footprint-wide-state-search-roll-forward-4x0.2 --json lns-holdout-corridor-switchback-pressure lns-holdout-footprint-lattice-pressure",
+  "generatedAt": "2026-05-08T17:49:11.170Z",
+  "caseCount": 2,
+  "seedCount": 3,
+  "stateCount": 15,
+  "labelCount": 360,
+  "rollForwardLabelCount": 360,
+  "selectedCaseNames": [
+    "lns-holdout-corridor-switchback-pressure",
+    "lns-holdout-footprint-lattice-pressure"
+  ],
+  "pressureFamilies": [
+    "corridor",
+    "footprint-pressure"
+  ],
+  "repeatabilitySummary": {
+    "schemaVersion": 1,
+    "rollForwardLabelCount": 360,
+    "bucketCount": 120,
+    "repeatedBucketCount": 120,
+    "mixedFinalStatusBucketCount": 0,
+    "conflictingFinalStatusBucketCount": 0,
+    "conflictingLabelCount": 0,
+    "conflictingStatusCounts": {
+      "improved": 0,
+      "neutral": 0,
+      "regressed": 0,
+      "unknown": 0
+    },
+    "featureIdenticalConflictBucketCount": 0,
+    "featureIdenticalConflictLabelCount": 0,
+    "examples": []
+  }
+}

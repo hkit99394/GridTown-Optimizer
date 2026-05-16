@@ -1,0 +1,398 @@
+{
+  "schemaVersion": 1,
+  "source": "lns-window-replay-diagnostic-bundle",
+  "command": "node dist/lnsBenchmarkCli.js --window-replay-labels --window-replay-protected-holdout --window-replay-online-scorecard=artifacts/lns-window-ranker-online/2026-05-12/protected-holdout-two-iteration-online-decision-selected-pair-supervision-weight0.1-trajectory-model-9seed-min-score-delta-0.5/lns-window-ranker-online-ablation.json --window-replay-artifact-dir=artifacts/lns-window-replay-labels/2026-05-12/protected-weight0.1-neutral-overrides-online-decision-roll-forward-4x0.2 --roll-forward-iterations=4 --roll-forward-repair-time=0.2 --force-artifact-dir --json",
+  "generatedAt": "2026-05-12T02:14:57.631Z",
+  "git": {
+    "commit": "d21983c59090c36db60b1f217e5af504db0ed84b",
+    "branch": "features/validated-solver-improvement-loop"
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "inputFingerprint": "fnv1a:ab3f59fb",
+  "labelFingerprint": "fnv1a:408c4ece",
+  "diagnosticsOnly": true,
+  "input": {
+    "schemaVersion": 1,
+    "selectedCaseNames": [
+      "lns-holdout-anchor-service-harbor-pressure",
+      "lns-holdout-anchor-service-shelf-pressure",
+      "lns-holdout-corridor-switchback-pressure",
+      "lns-holdout-corridor-weave-pressure",
+      "lns-holdout-footprint-lattice-pressure",
+      "lns-holdout-footprint-stagger-pressure",
+      "lns-holdout-gate-double-choke-pressure",
+      "lns-holdout-gate-offset-pressure",
+      "lns-holdout-service-braid-pressure",
+      "lns-holdout-service-ridge-pressure"
+    ],
+    "pressureFamilies": [
+      "anchor-service",
+      "corridor",
+      "footprint-pressure",
+      "gate",
+      "service-pressure"
+    ],
+    "seeds": [
+      7,
+      11,
+      13,
+      19,
+      23,
+      29,
+      31,
+      37,
+      43
+    ],
+    "maxWindows": 8,
+    "explorationWindowCount": 0,
+    "repairTimeLimitSeconds": 1,
+    "rollForwardIterations": 4,
+    "rollForwardRepairTimeLimitSeconds": 0.2,
+    "statePolicies": [
+      "online-decision"
+    ],
+    "capturedStatePolicies": [
+      "online-decision"
+    ],
+    "stateCollectionIterations": 0,
+    "stateCollectionRepairTimeLimitSeconds": 1,
+    "featureSchemaVersion": 2,
+    "cpSatNumWorkers": 1,
+    "cpSatModelFingerprints": [
+      "fnv1a:08316803",
+      "fnv1a:10cf2cc8",
+      "fnv1a:12afa59a",
+      "fnv1a:3da1dc62",
+      "fnv1a:3f9a1d1d",
+      "fnv1a:5f02a57f",
+      "fnv1a:63835ec5",
+      "fnv1a:e293821e",
+      "fnv1a:e8ea4500",
+      "fnv1a:edca894c"
+    ]
+  },
+  "outputArtifacts": [
+    "artifacts/lns-window-replay-labels/2026-05-12/protected-weight0.1-neutral-overrides-online-decision-roll-forward-4x0.2/lns-window-replay-labels.json",
+    "artifacts/lns-window-replay-labels/2026-05-12/protected-weight0.1-neutral-overrides-online-decision-roll-forward-4x0.2/lns-window-replay-labels.txt",
+    "artifacts/lns-window-replay-labels/2026-05-12/protected-weight0.1-neutral-overrides-online-decision-roll-forward-4x0.2/repeatability-summary.json",
+    "artifacts/lns-window-replay-labels/2026-05-12/protected-weight0.1-neutral-overrides-online-decision-roll-forward-4x0.2/manifest.json",
+    "artifacts/lns-window-replay-labels/2026-05-12/protected-weight0.1-neutral-overrides-online-decision-roll-forward-4x0.2/telemetry-manifest.json"
+  ],
+  "repeatabilitySummary": {
+    "schemaVersion": 1,
+    "rollForwardLabelCount": 1521,
+    "bucketCount": 152,
+    "repeatedBucketCount": 152,
+    "mixedFinalStatusBucketCount": 9,
+    "conflictingFinalStatusBucketCount": 7,
+    "conflictingLabelCount": 81,
+    "conflictingStatusCounts": {
+      "improved": 27,
+      "neutral": 26,
+      "regressed": 28,
+      "unknown": 0
+    },
+    "featureIdenticalConflictBucketCount": 6,
+    "featureIdenticalConflictLabelCount": 63,
+    "examples": [
+      {
+        "caseName": "lns-holdout-service-braid-pressure",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "online-decision",
+        "operator": "residential-headroom",
+        "window": "1:0:3x3",
+        "labelCount": 18,
+        "seedCount": 9,
+        "seeds": [
+          7,
+          11,
+          13,
+          19,
+          23,
+          29,
+          31,
+          37,
+          43
+        ],
+        "statusCounts": {
+          "improved": 4,
+          "neutral": 10,
+          "regressed": 4,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -50,
+          0,
+          50
+        ],
+        "baselineTotals": [
+          760,
+          810
+        ],
+        "totalPopulations": [
+          760,
+          810
+        ],
+        "featureFingerprintCount": 1
+      },
+      {
+        "caseName": "lns-holdout-service-braid-pressure",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "online-decision",
+        "operator": "weak-service",
+        "window": "2:0:3x3",
+        "labelCount": 18,
+        "seedCount": 9,
+        "seeds": [
+          7,
+          11,
+          13,
+          19,
+          23,
+          29,
+          31,
+          37,
+          43
+        ],
+        "statusCounts": {
+          "improved": 4,
+          "neutral": 10,
+          "regressed": 4,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -50,
+          0,
+          50
+        ],
+        "baselineTotals": [
+          760,
+          810
+        ],
+        "totalPopulations": [
+          760,
+          810
+        ],
+        "featureFingerprintCount": 2
+      },
+      {
+        "caseName": "lns-holdout-service-braid-pressure",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "online-decision",
+        "operator": "frontier-congestion",
+        "window": "1:1:3x3",
+        "labelCount": 9,
+        "seedCount": 9,
+        "seeds": [
+          7,
+          11,
+          13,
+          19,
+          23,
+          29,
+          31,
+          37,
+          43
+        ],
+        "statusCounts": {
+          "improved": 4,
+          "neutral": 1,
+          "regressed": 4,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -50,
+          0,
+          50
+        ],
+        "baselineTotals": [
+          760,
+          810
+        ],
+        "totalPopulations": [
+          760,
+          810
+        ],
+        "featureFingerprintCount": 1
+      },
+      {
+        "caseName": "lns-holdout-service-braid-pressure",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "online-decision",
+        "operator": "gate-choke",
+        "window": "1:1:3x3",
+        "labelCount": 9,
+        "seedCount": 9,
+        "seeds": [
+          7,
+          11,
+          13,
+          19,
+          23,
+          29,
+          31,
+          37,
+          43
+        ],
+        "statusCounts": {
+          "improved": 4,
+          "neutral": 1,
+          "regressed": 4,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -50,
+          0,
+          50
+        ],
+        "baselineTotals": [
+          760,
+          810
+        ],
+        "totalPopulations": [
+          760,
+          810
+        ],
+        "featureFingerprintCount": 1
+      },
+      {
+        "caseName": "lns-holdout-service-braid-pressure",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "online-decision",
+        "operator": "service-overlap",
+        "window": "1:2:3x3",
+        "labelCount": 9,
+        "seedCount": 9,
+        "seeds": [
+          7,
+          11,
+          13,
+          19,
+          23,
+          29,
+          31,
+          37,
+          43
+        ],
+        "statusCounts": {
+          "improved": 4,
+          "neutral": 1,
+          "regressed": 4,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -50,
+          0,
+          50
+        ],
+        "baselineTotals": [
+          760,
+          810
+        ],
+        "totalPopulations": [
+          760,
+          810
+        ],
+        "featureFingerprintCount": 1
+      },
+      {
+        "caseName": "lns-holdout-service-braid-pressure",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "online-decision",
+        "operator": "weak-service",
+        "window": "1:2:3x3",
+        "labelCount": 9,
+        "seedCount": 9,
+        "seeds": [
+          7,
+          11,
+          13,
+          19,
+          23,
+          29,
+          31,
+          37,
+          43
+        ],
+        "statusCounts": {
+          "improved": 4,
+          "neutral": 1,
+          "regressed": 4,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -50,
+          0,
+          50
+        ],
+        "baselineTotals": [
+          760,
+          810
+        ],
+        "totalPopulations": [
+          760,
+          810
+        ],
+        "featureFingerprintCount": 1
+      },
+      {
+        "caseName": "lns-holdout-service-braid-pressure",
+        "pressureFamily": "service-pressure",
+        "statePolicy": "online-decision",
+        "operator": "sliding",
+        "window": "0:2:4x3",
+        "labelCount": 9,
+        "seedCount": 9,
+        "seeds": [
+          7,
+          11,
+          13,
+          19,
+          23,
+          29,
+          31,
+          37,
+          43
+        ],
+        "statusCounts": {
+          "improved": 3,
+          "neutral": 2,
+          "regressed": 4,
+          "unknown": 0
+        },
+        "finalDeltas": [
+          -50,
+          0,
+          50
+        ],
+        "baselineTotals": [
+          760,
+          810
+        ],
+        "totalPopulations": [
+          760,
+          810
+        ],
+        "featureFingerprintCount": 1
+      }
+    ]
+  },
+  "metrics": {
+    "caseCount": 10,
+    "seedCount": 9,
+    "stateCount": 180,
+    "labelCount": 1521,
+    "rollForwardLabelCount": 1521,
+    "repeatabilityConflictBucketCount": 7,
+    "repeatabilityFeatureIdenticalConflictBucketCount": 6
+  }
+}

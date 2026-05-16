@@ -1,0 +1,210 @@
+{
+  "schemaVersion": 1,
+  "source": "lns-window-replay-feature-gate-scan",
+  "command": "node scripts/summarize-lns-replay-feature-gate-scan.mjs --source-root=artifacts/lns-window-replay-labels --artifact-dir=artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-runtime-observable-selectivity-scan --force-artifact-dir",
+  "generatedAt": "2026-05-10T19:02:00.479Z",
+  "git": {
+    "commit": "cced03f0ee47eb5015462a5e4434c342cc73b177",
+    "branch": "features/validated-solver-improvement-loop"
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "diagnosticsOnly": true,
+  "inputFingerprint": "fnv1a:94ac36cc",
+  "scanFingerprint": "fnv1a:c7437ef9",
+  "sourceRoot": "artifacts/lns-window-replay-labels",
+  "outputArtifacts": [
+    "artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-runtime-observable-selectivity-scan/feature-gate-scan.json",
+    "artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-runtime-observable-selectivity-scan/feature-gate-scan.txt",
+    "artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-runtime-observable-selectivity-scan/telemetry-manifest.json",
+    "artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-runtime-observable-selectivity-scan/manifest.json"
+  ],
+  "metrics": {
+    "sourceArtifactCount": 27,
+    "caseCount": 35,
+    "seedCount": 9,
+    "labelCount": 6300,
+    "rollForwardLabelCount": 6300,
+    "gates": {
+      "slidingArea12": {
+        "selected": 587,
+        "improved": 134,
+        "regressed": 27,
+        "neutral": 426,
+        "unknown": 0,
+        "bestDelta": 60,
+        "worstDelta": -60,
+        "safeNoRegression": false,
+        "promotionReadyPocket": false,
+        "repeatabilitySafeOverlap": {
+          "selected": 144,
+          "improved": 120,
+          "regressed": 0,
+          "neutral": 24
+        }
+      },
+      "slidingArea12NoFeatureIdenticalRepeatabilityConflict": {
+        "selected": 539,
+        "improved": 120,
+        "regressed": 9,
+        "neutral": 410,
+        "unknown": 0,
+        "bestDelta": 60,
+        "worstDelta": -60,
+        "safeNoRegression": false,
+        "promotionReadyPocket": false,
+        "repeatabilitySafeOverlap": {
+          "selected": 144,
+          "improved": 120,
+          "regressed": 0,
+          "neutral": 24
+        }
+      },
+      "slidingArea12RepeatabilitySafeBucket": {
+        "selected": 144,
+        "improved": 120,
+        "regressed": 0,
+        "neutral": 24,
+        "unknown": 0,
+        "bestDelta": 60,
+        "worstDelta": 0,
+        "safeNoRegression": true,
+        "promotionReadyPocket": true,
+        "repeatabilitySafeOverlap": {
+          "selected": 144,
+          "improved": 120,
+          "regressed": 0,
+          "neutral": 24
+        }
+      },
+      "slidingArea12HighServiceCandidatePressure": {
+        "selected": 147,
+        "improved": 88,
+        "regressed": 0,
+        "neutral": 59,
+        "unknown": 0,
+        "bestDelta": 60,
+        "worstDelta": 0,
+        "safeNoRegression": true,
+        "promotionReadyPocket": true,
+        "repeatabilitySafeOverlap": {
+          "selected": 108,
+          "improved": 88,
+          "regressed": 0,
+          "neutral": 20
+        }
+      },
+      "slidingArea12ServiceComponentPocket": {
+        "selected": 63,
+        "improved": 58,
+        "regressed": 0,
+        "neutral": 5,
+        "unknown": 0,
+        "bestDelta": 60,
+        "worstDelta": 0,
+        "safeNoRegression": true,
+        "promotionReadyPocket": true,
+        "repeatabilitySafeOverlap": {
+          "selected": 60,
+          "improved": 58,
+          "regressed": 0,
+          "neutral": 2
+        }
+      },
+      "slidingArea12ObservablePressureEnsemble": {
+        "selected": 173,
+        "improved": 116,
+        "regressed": 0,
+        "neutral": 57,
+        "unknown": 0,
+        "bestDelta": 60,
+        "worstDelta": 0,
+        "safeNoRegression": true,
+        "promotionReadyPocket": true,
+        "repeatabilitySafeOverlap": {
+          "selected": 138,
+          "improved": 116,
+          "regressed": 0,
+          "neutral": 22
+        }
+      },
+      "slidingArea12ComponentsMax2": {
+        "selected": 460,
+        "improved": 106,
+        "regressed": 20,
+        "neutral": 334,
+        "unknown": 0,
+        "bestDelta": 60,
+        "worstDelta": -50,
+        "safeNoRegression": false,
+        "promotionReadyPocket": false,
+        "repeatabilitySafeOverlap": {
+          "selected": 114,
+          "improved": 92,
+          "regressed": 0,
+          "neutral": 22
+        }
+      },
+      "slidingComponentsMax2": {
+        "selected": 1277,
+        "improved": 131,
+        "regressed": 28,
+        "neutral": 1118,
+        "unknown": 0,
+        "bestDelta": 60,
+        "worstDelta": -55,
+        "safeNoRegression": false,
+        "promotionReadyPocket": false,
+        "repeatabilitySafeOverlap": {
+          "selected": 114,
+          "improved": 92,
+          "regressed": 0,
+          "neutral": 22
+        }
+      },
+      "slidingTopOrLeft2": {
+        "selected": 672,
+        "improved": 148,
+        "regressed": 29,
+        "neutral": 495,
+        "unknown": 0,
+        "bestDelta": 60,
+        "worstDelta": -60,
+        "safeNoRegression": false,
+        "promotionReadyPocket": false,
+        "repeatabilitySafeOverlap": {
+          "selected": 144,
+          "improved": 120,
+          "regressed": 0,
+          "neutral": 24
+        }
+      },
+      "allNonBaselineSliding": {
+        "selected": 1769,
+        "improved": 167,
+        "regressed": 52,
+        "neutral": 1550,
+        "unknown": 0,
+        "bestDelta": 60,
+        "worstDelta": -60,
+        "safeNoRegression": false,
+        "promotionReadyPocket": false,
+        "repeatabilitySafeOverlap": {
+          "selected": 144,
+          "improved": 120,
+          "regressed": 0,
+          "neutral": 24
+        }
+      }
+    }
+  },
+  "notes": "Static and repeatability-aware feature-gate scan over existing LNS replay labels; no solver default changed."
+}

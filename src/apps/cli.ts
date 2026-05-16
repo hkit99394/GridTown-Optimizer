@@ -6,12 +6,10 @@
  * advanced inspection mode.
  */
 
-import type { Grid, OptimizerName, SolverParams } from "../core/types.js";
-import { normalizeServicePlacement } from "../core/buildings.js";
-import { formatSolutionMap, validateSolutionMap } from "../core/index.js";
-import { solveAsync } from "../runtime/solve.js";
-import { describeAutoStopReason, startAutoSolve } from "../auto/index.js";
-import { startCpSatSolve } from "../cp-sat/solver.js";
+import type { Grid, OptimizerName, SolverParams } from "../packages/core/index.js";
+import { formatSolutionMap, normalizeServicePlacement, validateSolutionMap } from "../packages/core/index.js";
+import { solveAsync, startAutoSolve, startCpSatSolve } from "../packages/runtime/index.js";
+import { describeAutoStopReason } from "../packages/solvers/index.js";
 import { runCliMain } from "./cliEntrypoint.js";
 import { parseExampleCliArgs } from "./exampleCliArgs.js";
 
@@ -22,7 +20,7 @@ const DEFAULT_PARAMS = {
     { rows: 3, cols: 3, bonus: 189, range: 3, avail: 1 },
     { rows: 2, cols: 4, bonus: 48, range: 2, avail: 1 },
     { rows: 2, cols: 2, bonus: 45, range: 1, avail: 1 },
-    { rows: 2, cols: 3, bonus: 50, range: 2, avail: 1 },
+    { rows: 2, cols: 3, bonus: 50, range: 2, avail: 1 }
   ],
   residentialTypes: [
     { w: 2, h: 2, min: 140, max: 420, avail: 1 },
@@ -33,7 +31,7 @@ const DEFAULT_PARAMS = {
     { w: 2, h: 3, min: 240, max: 720, avail: 3 },
     { w: 2, h: 3, min: 250, max: 750, avail: 3 },
     { w: 2, h: 2, min: 280, max: 840, avail: 2 },
-    { w: 2, h: 2, min: 300, max: 900, avail: 2 },
+    { w: 2, h: 2, min: 300, max: 900, avail: 2 }
   ],
   // Standalone Greedy mirrors the heavy UI profile. Auto uses AUTO_GREEDY_PARAMS
   // below when it only needs a capped fast seed stage.
@@ -45,8 +43,8 @@ const DEFAULT_PARAMS = {
     serviceRefineCandidateLimit: 60,
     exhaustiveServiceSearch: true,
     serviceExactPoolLimit: 22,
-    serviceExactMaxCombinations: 12000,
-  },
+    serviceExactMaxCombinations: 12000
+  }
 };
 
 const AUTO_GREEDY_PARAMS = {
@@ -56,7 +54,7 @@ const AUTO_GREEDY_PARAMS = {
   serviceRefineCandidateLimit: 24,
   exhaustiveServiceSearch: false,
   serviceExactPoolLimit: 8,
-  serviceExactMaxCombinations: 512,
+  serviceExactMaxCombinations: 512
 };
 
 function describeOptimizerRole(optimizer: OptimizerName): string {
@@ -86,7 +84,7 @@ export async function runExample(): Promise<void> {
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
     [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
-    [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+    [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0]
   ];
 
   const params: SolverParams = {
@@ -94,48 +92,53 @@ export async function runExample(): Promise<void> {
     optimizer,
     greedy: {
       ...(optimizer === "auto" ? AUTO_GREEDY_PARAMS : DEFAULT_PARAMS.greedy),
-      ...(greedyRandomSeed !== undefined ? { randomSeed: greedyRandomSeed } : {}),
+      ...(greedyRandomSeed !== undefined ? { randomSeed: greedyRandomSeed } : {})
     },
-    ...(cpSatOptions ? { cpSat: cpSatOptions } : {}),
+    ...(cpSatOptions ? { cpSat: cpSatOptions } : {})
   };
-  const solution = optimizer === "auto"
-    ? await (async () => {
-        const handle = startAutoSolve(grid, params);
-        let lastStage = "";
-        let lastStageIndex = -1;
-        let lastCycleIndex = -1;
-        const progressTicker = setInterval(() => {
-          const snapshot = handle.getLatestSnapshot();
-          const autoStage = snapshot?.autoStage;
-          const activeStage = snapshot?.activeOptimizer;
-          if (!snapshot || !autoStage || !activeStage) return;
-          if (autoStage.stageIndex === lastStageIndex && autoStage.cycleIndex === lastCycleIndex && activeStage === lastStage) {
-            return;
+  const solution =
+    optimizer === "auto"
+      ? await (async () => {
+          const handle = startAutoSolve(grid, params);
+          let lastStage = "";
+          let lastStageIndex = -1;
+          let lastCycleIndex = -1;
+          const progressTicker = setInterval(() => {
+            const snapshot = handle.getLatestSnapshot();
+            const autoStage = snapshot?.autoStage;
+            const activeStage = snapshot?.activeOptimizer;
+            if (!snapshot || !autoStage || !activeStage) return;
+            if (
+              autoStage.stageIndex === lastStageIndex &&
+              autoStage.cycleIndex === lastCycleIndex &&
+              activeStage === lastStage
+            ) {
+              return;
+            }
+            lastStage = activeStage;
+            lastStageIndex = autoStage.stageIndex;
+            lastCycleIndex = autoStage.cycleIndex;
+            const cycleLabel = autoStage.cycleIndex > 0 ? `cycle=${autoStage.cycleIndex}` : "initial";
+            const generatedSeed = autoStage.generatedSeeds[autoStage.generatedSeeds.length - 1]?.randomSeed;
+            console.log(
+              "[AUTO progress]",
+              `stage=${autoStage.stageIndex}`,
+              cycleLabel,
+              `optimizer=${activeStage}`,
+              `seed=${generatedSeed ?? "n/a"}`,
+              `best=${snapshot.totalPopulation}`
+            );
+          }, 500);
+          progressTicker.unref?.();
+          try {
+            return await handle.promise;
+          } finally {
+            clearInterval(progressTicker);
           }
-          lastStage = activeStage;
-          lastStageIndex = autoStage.stageIndex;
-          lastCycleIndex = autoStage.cycleIndex;
-          const cycleLabel = autoStage.cycleIndex > 0 ? `cycle=${autoStage.cycleIndex}` : "initial";
-          const generatedSeed = autoStage.generatedSeeds[autoStage.generatedSeeds.length - 1]?.randomSeed;
-          console.log(
-            "[AUTO progress]",
-            `stage=${autoStage.stageIndex}`,
-            cycleLabel,
-            `optimizer=${activeStage}`,
-            `seed=${generatedSeed ?? "n/a"}`,
-            `best=${snapshot.totalPopulation}`
-          );
-        }, 500);
-        progressTicker.unref?.();
-        try {
-          return await handle.promise;
-        } finally {
-          clearInterval(progressTicker);
-        }
-      })()
-    : optimizer === "cp-sat"
-      ? await runCpSatExampleSolve(grid, params)
-      : await solveAsync(grid, params);
+        })()
+      : optimizer === "cp-sat"
+        ? await runCpSatExampleSolve(grid, params)
+        : await solveAsync(grid, params);
   const validation = validateSolutionMap({ grid, solution, params });
 
   console.log("=== City Builder Solution ===\n");
@@ -149,7 +152,10 @@ export async function runExample(): Promise<void> {
     );
   }
   if (solution.autoStage?.stopReason) {
-    console.log("Auto stop reason:", describeAutoStopReason(solution.autoStage.stopReason) ?? solution.autoStage.stopReason);
+    console.log(
+      "Auto stop reason:",
+      describeAutoStopReason(solution.autoStage.stopReason) ?? solution.autoStage.stopReason
+    );
   }
   if (params.greedy?.randomSeed !== undefined) console.log("Greedy random seed:", params.greedy.randomSeed);
   if (params.cpSat) {
@@ -186,12 +192,16 @@ export async function runExample(): Promise<void> {
   for (let i = 0; i < solution.services.length; i++) {
     const service = normalizeServicePlacement(solution.services[i]);
     const increase = solution.servicePopulationIncreases[i];
-    console.log(`  (r=${service.r}, c=${service.c}) ${service.rows}×${service.cols}  +${increase}  range=${service.range}`);
+    console.log(
+      `  (r=${service.r}, c=${service.c}) ${service.rows}×${service.cols}  +${increase}  range=${service.range}`
+    );
   }
   console.log("\nResidential placements:");
   for (let i = 0; i < solution.residentials.length; i++) {
     const residential = solution.residentials[i];
-    console.log(`  (r=${residential.r}, c=${residential.c}) ${residential.rows}×${residential.cols}  pop=${solution.populations[i]}`);
+    console.log(
+      `  (r=${residential.r}, c=${residential.c}) ${residential.rows}×${residential.cols}  pop=${solution.populations[i]}`
+    );
   }
   console.log("\nValidation:", validation.valid ? "PASS" : "FAIL");
   if (!validation.valid) {

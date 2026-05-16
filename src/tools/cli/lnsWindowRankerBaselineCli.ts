@@ -1,0 +1,359 @@
+import fs from "node:fs";
+import path from "node:path";
+
+import {
+  buildLnsWindowRankerBaselineRegistryEntryDraft,
+  buildLnsWindowRankerBaselineTelemetryManifest,
+  captureExperimentRegistryHardwareMetadata,
+  createLnsWindowRankerBaselineSnapshot,
+  DEFAULT_EXPERIMENT_REGISTRY_PATH,
+  ExperimentRegistryValidationError,
+  formatExperimentRegistryIssues,
+  formatLnsWindowRankerBaselineExperiment,
+  resolveExperimentRegistryGitMetadata,
+  runLnsWindowRankerBaselineExperiment
+} from "../../benchmarkApi.js";
+import { applyInlineOptionHandlers, isCliFlag, parsePositiveInteger } from "../../apps/cliParsing.js";
+import { runCliMain } from "../../apps/cliEntrypoint.js";
+import { writeCliJsonOrText } from "../../apps/cliOutput.js";
+import {
+  completeAppendableRegistryEntry,
+  defaultCliReplayCommand,
+  normalizeRepoRelativePath,
+  prepareArtifactBundleDirectory,
+  writeJsonArtifact,
+  writeTextArtifact
+} from "./artifactBundleHelpers.js";
+
+import type {
+  LearnedRankingLabelSnapshot,
+  LnsWindowRankerBaselineExperimentResult,
+  LnsWindowRankerLabelTarget
+} from "../../benchmarkApi.js";
+
+interface ParsedLnsWindowRankerArgs {
+  json: boolean;
+  labelsPath?: string;
+  topK?: number;
+  target?: LnsWindowRankerLabelTarget;
+  allowWeakSeedReplayLabels: boolean;
+  excludeFeatureIdenticalRepeatabilityConflicts: boolean;
+  randomBaselineSeed?: number;
+  artifactDir?: string;
+  baselineRunId?: string;
+  baselineDecision?: string;
+  baselineSummary?: string;
+  baselineRegistryPath?: string;
+  baselineRegisterDryRun: boolean;
+  forceArtifactDir: boolean;
+}
+
+interface LnsWindowRankerArtifactManifest {
+  artifactDir: string;
+  artifactPaths: {
+    experimentJson: string;
+    experimentText: string;
+    modelJson: string;
+    telemetryManifestJson: string;
+    registryEntryDraftJson: string;
+  };
+  runId: unknown;
+  generatedAt: string;
+  passed: boolean;
+  bestBaselineName: string;
+  bestBaselineHoldoutCaptureRate: number;
+  modelFingerprint: string;
+  datasetFingerprint: string;
+  labelFingerprint: string;
+  registry?: {
+    registryPath: string;
+    dryRun: boolean;
+    appended: boolean;
+    runId: unknown;
+  };
+}
+
+function parseArgs(argv: string[]): ParsedLnsWindowRankerArgs {
+  let json = false;
+  let labelsPath: string | undefined;
+  let topK: number | undefined;
+  let target: LnsWindowRankerLabelTarget | undefined;
+  let allowWeakSeedReplayLabels = true;
+  let excludeFeatureIdenticalRepeatabilityConflicts = false;
+  let randomBaselineSeed: number | undefined;
+  let artifactDir: string | undefined;
+  let baselineRunId: string | undefined;
+  let baselineDecision: string | undefined;
+  let baselineSummary: string | undefined;
+  let baselineRegistryPath: string | undefined;
+  let baselineRegisterDryRun = false;
+  let forceArtifactDir = false;
+  const inlineOptions: Record<string, (value: string) => void> = {
+    labels: (value) => {
+      labelsPath = value;
+    },
+    "label-artifact": (value) => {
+      labelsPath = value;
+    },
+    "top-k": (value) => {
+      topK = parsePositiveInteger(value, "top k");
+    },
+    target: (value) => {
+      if (
+        value !== "immediate-improvement" &&
+        value !== "roll-forward-final-lift" &&
+        value !== "roll-forward-baseline-stall-lift"
+      ) {
+        throw new Error(`Unknown LNS window ranker baseline target: ${value}`);
+      }
+      target = value;
+    },
+    "random-seed": (value) => {
+      randomBaselineSeed = parsePositiveInteger(value, "random seed");
+    },
+    "artifact-dir": (value) => {
+      artifactDir = value;
+    },
+    "baseline-run-id": (value) => {
+      baselineRunId = value;
+    },
+    "baseline-decision": (value) => {
+      baselineDecision = value;
+    },
+    "baseline-summary": (value) => {
+      baselineSummary = value;
+    },
+    "baseline-registry": (value) => {
+      baselineRegistryPath = value;
+    }
+  };
+
+  for (const arg of argv) {
+    if (isCliFlag(arg, "--json")) {
+      json = true;
+      continue;
+    }
+    if (isCliFlag(arg, "--baseline-register-dry-run")) {
+      baselineRegisterDryRun = true;
+      continue;
+    }
+    if (isCliFlag(arg, "--force-artifact-dir")) {
+      forceArtifactDir = true;
+      continue;
+    }
+    if (isCliFlag(arg, "--roll-forward-final-lift", "--final-lift-target")) {
+      target = "roll-forward-final-lift";
+      continue;
+    }
+    if (isCliFlag(arg, "--roll-forward-baseline-stall-lift", "--baseline-stall-target")) {
+      target = "roll-forward-baseline-stall-lift";
+      continue;
+    }
+    if (isCliFlag(arg, "--exclude-weak-replay-seed-labels", "--no-weak-replay-seed-labels")) {
+      allowWeakSeedReplayLabels = false;
+      continue;
+    }
+    if (isCliFlag(arg, "--exclude-feature-identical-repeatability-conflicts", "--exclude-repeatability-conflicts")) {
+      excludeFeatureIdenticalRepeatabilityConflicts = true;
+      continue;
+    }
+    if (applyInlineOptionHandlers(arg, inlineOptions)) {
+      continue;
+    }
+    throw new Error(`Unknown LNS window ranker baseline argument: ${arg}`);
+  }
+
+  return {
+    json,
+    labelsPath,
+    topK,
+    target,
+    allowWeakSeedReplayLabels,
+    excludeFeatureIdenticalRepeatabilityConflicts,
+    randomBaselineSeed,
+    artifactDir,
+    baselineRunId,
+    baselineDecision,
+    baselineSummary,
+    baselineRegistryPath,
+    baselineRegisterDryRun,
+    forceArtifactDir
+  };
+}
+
+function readLabelSnapshot(labelsPath: string): LearnedRankingLabelSnapshot {
+  const repoRelativePath = normalizeRepoRelativePath(labelsPath, "--labels");
+  const parsed = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), repoRelativePath), "utf8"));
+  return parsed as LearnedRankingLabelSnapshot;
+}
+
+function defaultBaselineArtifactCommand(argv: readonly string[]): string {
+  const replayArgs = argv.filter(
+    (arg) => arg !== "--baseline-register-dry-run" && !arg.startsWith("--baseline-registry=")
+  );
+  return defaultCliReplayCommand("dist/lnsWindowRankerBaselineCli.js", replayArgs);
+}
+
+function registerBaselineArtifacts(
+  registryEntryDraft: Record<string, unknown>,
+  args: ParsedLnsWindowRankerArgs
+): LnsWindowRankerArtifactManifest["registry"] {
+  const registryPath = normalizeRepoRelativePath(
+    args.baselineRegistryPath ?? DEFAULT_EXPERIMENT_REGISTRY_PATH,
+    "--baseline-registry"
+  );
+  const completedEntry = completeAppendableRegistryEntry(
+    registryPath,
+    registryEntryDraft,
+    "LNS window ranker baseline registry entry is invalid."
+  );
+  return {
+    registryPath,
+    dryRun: true,
+    appended: false,
+    runId: completedEntry.runId
+  };
+}
+
+function writeLnsWindowRankerArtifactBundle(
+  result: LnsWindowRankerBaselineExperimentResult,
+  labelsPath: string,
+  args: ParsedLnsWindowRankerArgs,
+  argv: readonly string[]
+): LnsWindowRankerArtifactManifest {
+  if (args.artifactDir === undefined) {
+    throw new Error("LNS window ranker baseline artifact directory is required.");
+  }
+  const artifacts = prepareArtifactBundleDirectory(args.artifactDir, "--artifact-dir", {
+    force: args.forceArtifactDir
+  });
+  const experimentJson = artifacts.artifactPath("lns-window-ranker-baselines.json");
+  const experimentText = artifacts.artifactPath("lns-window-ranker-baselines.txt");
+  const modelJson = artifacts.artifactPath("model.json");
+  const telemetryManifestJson = artifacts.artifactPath("telemetry-manifest.json");
+  const registryEntryDraftJson = artifacts.artifactPath("registry-entry-draft.json");
+  const command = defaultBaselineArtifactCommand(argv);
+  const labelSnapshot = readLabelSnapshot(labelsPath);
+  const telemetryManifest = buildLnsWindowRankerBaselineTelemetryManifest(result, {
+    command,
+    git: resolveExperimentRegistryGitMetadata(),
+    hardware: captureExperimentRegistryHardwareMetadata(),
+    inputArtifacts: [normalizeRepoRelativePath(labelsPath, "--labels")],
+    outputArtifacts: [experimentJson, experimentText, modelJson, telemetryManifestJson]
+  });
+  const registryEntryDraft = buildLnsWindowRankerBaselineRegistryEntryDraft(result, labelSnapshot, {
+    runId: args.baselineRunId,
+    commands: [command],
+    artifactPaths: [experimentJson, experimentText, modelJson, telemetryManifestJson],
+    decision: args.baselineDecision,
+    summary: args.baselineSummary
+  });
+
+  writeJsonArtifact(
+    artifacts.absoluteArtifactPath("lns-window-ranker-baselines.json"),
+    createLnsWindowRankerBaselineSnapshot(result),
+    { force: args.forceArtifactDir }
+  );
+  writeTextArtifact(
+    artifacts.absoluteArtifactPath("lns-window-ranker-baselines.txt"),
+    `${formatLnsWindowRankerBaselineExperiment(result)}\n`,
+    { force: args.forceArtifactDir }
+  );
+  writeJsonArtifact(artifacts.absoluteArtifactPath("model.json"), result.model, { force: args.forceArtifactDir });
+  writeJsonArtifact(artifacts.absoluteArtifactPath("telemetry-manifest.json"), telemetryManifest, {
+    force: args.forceArtifactDir
+  });
+  writeJsonArtifact(artifacts.absoluteArtifactPath("registry-entry-draft.json"), registryEntryDraft, {
+    force: args.forceArtifactDir
+  });
+
+  const registry = args.baselineRegisterDryRun ? registerBaselineArtifacts(registryEntryDraft, args) : undefined;
+
+  return {
+    artifactDir: artifacts.artifactDir,
+    artifactPaths: {
+      experimentJson,
+      experimentText,
+      modelJson,
+      telemetryManifestJson,
+      registryEntryDraftJson
+    },
+    runId: registryEntryDraft.runId,
+    generatedAt: result.generatedAt,
+    passed: result.evaluation.summary.passed,
+    bestBaselineName: result.evaluation.summary.bestBaselineName,
+    bestBaselineHoldoutCaptureRate: result.evaluation.summary.bestBaselineHoldoutCaptureRate,
+    modelFingerprint: result.modelFingerprint,
+    datasetFingerprint: result.datasetFingerprint,
+    labelFingerprint: result.labelFingerprint,
+    registry
+  };
+}
+
+function formatLnsWindowRankerArtifactManifest(manifest: LnsWindowRankerArtifactManifest): string {
+  const lines = [
+    `LNS window ranker baseline artifacts written to ${manifest.artifactDir}`,
+    `run-id=${manifest.runId}`,
+    `passed=${manifest.passed}`,
+    `best-baseline=${manifest.bestBaselineName}`,
+    `holdout-capture=${manifest.bestBaselineHoldoutCaptureRate.toFixed(4)}`,
+    `model-fingerprint=${manifest.modelFingerprint}`,
+    `dataset-fingerprint=${manifest.datasetFingerprint}`,
+    `label-fingerprint=${manifest.labelFingerprint}`,
+    `experiment-json=${manifest.artifactPaths.experimentJson}`,
+    `experiment-text=${manifest.artifactPaths.experimentText}`,
+    `model-json=${manifest.artifactPaths.modelJson}`,
+    `telemetry-manifest=${manifest.artifactPaths.telemetryManifestJson}`,
+    `registry-entry-draft=${manifest.artifactPaths.registryEntryDraftJson}`
+  ];
+  if (manifest.registry !== undefined) {
+    lines.push(`registry-dry-run=${manifest.registry.registryPath}`);
+  }
+  return lines.join("\n");
+}
+
+export function runLnsWindowRankerBaselineCli(): void {
+  const argv = process.argv.slice(2);
+  const args = parseArgs(argv);
+  if (args.labelsPath === undefined) {
+    throw new Error("--labels=<path> is required.");
+  }
+  if (args.baselineRegisterDryRun && args.artifactDir === undefined) {
+    throw new Error("--baseline-register-dry-run requires --artifact-dir.");
+  }
+  if (args.baselineRegistryPath !== undefined && !args.baselineRegisterDryRun) {
+    throw new Error("--baseline-registry requires --baseline-register-dry-run.");
+  }
+  if (args.forceArtifactDir && args.artifactDir === undefined) {
+    throw new Error("--force-artifact-dir requires --artifact-dir.");
+  }
+
+  const labelSnapshot = readLabelSnapshot(args.labelsPath);
+  const result = runLnsWindowRankerBaselineExperiment(labelSnapshot, {
+    randomBaselineSeed: args.randomBaselineSeed,
+    topK: args.topK,
+    target: args.target,
+    allowWeakSeedReplayLabels: args.allowWeakSeedReplayLabels,
+    excludeFeatureIdenticalRepeatabilityConflicts: args.excludeFeatureIdenticalRepeatabilityConflicts
+  });
+
+  if (args.artifactDir !== undefined) {
+    const manifest = writeLnsWindowRankerArtifactBundle(result, args.labelsPath, args, argv);
+    writeCliJsonOrText(args.json, manifest, () => formatLnsWindowRankerArtifactManifest(manifest));
+    return;
+  }
+
+  writeCliJsonOrText(
+    args.json,
+    () => createLnsWindowRankerBaselineSnapshot(result),
+    () => formatLnsWindowRankerBaselineExperiment(result)
+  );
+}
+
+runCliMain(runLnsWindowRankerBaselineCli, (error) => {
+  if (error instanceof ExperimentRegistryValidationError) {
+    process.stderr.write(`${formatExperimentRegistryIssues(error.issues)}\n`);
+  } else {
+    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+  }
+});

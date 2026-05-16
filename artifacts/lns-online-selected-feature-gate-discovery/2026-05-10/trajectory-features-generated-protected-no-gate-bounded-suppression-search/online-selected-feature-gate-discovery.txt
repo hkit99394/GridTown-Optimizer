@@ -1,0 +1,88 @@
+LNS online selected-feature gate discovery
+generatedAt=2026-05-12T18:20:07.856Z
+target=selection-improved
+sourceScorecards=3
+validationSourceScorecards=0
+overrideTraces=126
+targetImproved=17
+selectionImproved=17
+selectionRegressed=0
+terminalFinalImproved=7
+terminalFinalRegressed=11
+safetyRegressed=16
+validationOverrideTraces=0
+validationTargetImproved=0
+validationSelectionImproved=0
+validationSelectionRegressed=0
+validationTerminalFinalImproved=0
+validationTerminalFinalRegressed=0
+validationSafetyRegressed=0
+features=allowedWindowCells,anchorReachableWindowCells,area,clearedFootprint,componentDelta,emptyComponentsAfter,emptyComponentsBefore,maxServiceCandidateBonus,narrowGateCells,operatorScore,residentialCandidateHeadroom,residentialCandidatesBlocked,residentialCandidatesIntersecting,roadCountInside,selectedOperatorRandomExploration,selectedOperatorSliding,serviceCandidateBonus,serviceCandidatesBlocked,serviceCandidatesIntersecting,transitionRandomExplorationToRandomExploration,transitionWeakServiceToSliding
+atoms=120 global-capped / 152 per-feature-capped / 550 total-candidate
+safeTargetAtoms=37/81
+safeSingletonAdmissionQuota=0
+conjunctionReservationSearch=Bounded recursive reservation search up to requested --max-group-size; full candidate enumeration honors --max-group-size.
+conjunctionReservationSearchMaxGroupSize=3
+conjunctionReservationSupportsRequestedMaxGroupSize=true
+conjunctionReservationSearchExhaustive=false
+conjunctionReservationCoversRequestedMaxGroupSize=false
+conjunctionReservationUnsafeAtoms=120/469 considered
+conjunctionReservationPartnerAtoms=480/550 considered
+candidates=76901 total / 50 reported
+inputFingerprint=fnv1a:41e46135
+discoveryFingerprint=fnv1a:7994ee0d
+
+greedy-selected-groups=operatorScore>=19.96,anchorReachableWindowCells<=1.95
+greedy-selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 safe=true
+
+top-candidates:
+- operatorScore>=19.96,anchorReachableWindowCells<=1.95: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- operatorScore>=19.96,area<=2.1: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- operatorScore>=19.96,serviceCandidateBonus<=17.78: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- operatorScore>=19.96,serviceCandidatesIntersecting<=5.5: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- operatorScore>=19.96,allowedWindowCells>=0.7,anchorReachableWindowCells<=1.95: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- operatorScore>=19.96,allowedWindowCells>=0.7,area<=2.1: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- operatorScore>=19.96,allowedWindowCells>=0.7,serviceCandidateBonus<=17.78: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- operatorScore>=19.96,allowedWindowCells>=0.7,serviceCandidatesIntersecting<=5.5: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- operatorScore>=19.96,anchorReachableWindowCells<=1.95,area<=2.1: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- operatorScore>=19.96,anchorReachableWindowCells<=1.95,residentialCandidateHeadroom<=24.84: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- operatorScore>=19.96,anchorReachableWindowCells<=1.95,residentialCandidatesIntersecting<=3.3: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- operatorScore>=19.96,anchorReachableWindowCells<=1.95,serviceCandidateBonus<=17.78: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- operatorScore>=19.96,anchorReachableWindowCells<=1.95,serviceCandidateBonus<=18.9: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- operatorScore>=19.96,anchorReachableWindowCells<=1.95,serviceCandidatesIntersecting<=5.5: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- operatorScore>=19.96,anchorReachableWindowCells<=1.95,serviceCandidatesIntersecting<=5.9: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- operatorScore>=19.96,area<=2.1,anchorReachableWindowCells<=2.2: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- operatorScore>=19.96,area<=2.1,residentialCandidateHeadroom<=24.84: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- operatorScore>=19.96,area<=2.1,residentialCandidatesIntersecting<=3.3: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- operatorScore>=19.96,area<=2.1,serviceCandidateBonus<=17.78: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- operatorScore>=19.96,area<=2.1,serviceCandidateBonus<=18.9: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- operatorScore>=19.96,area<=2.1,serviceCandidatesIntersecting<=5.5: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- operatorScore>=19.96,area<=2.1,serviceCandidatesIntersecting<=5.9: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- operatorScore>=19.96,serviceCandidateBonus<=17.78,anchorReachableWindowCells<=2.2: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- operatorScore>=19.96,serviceCandidateBonus<=17.78,residentialCandidateHeadroom<=24.84: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- operatorScore>=19.96,serviceCandidateBonus<=17.78,residentialCandidatesIntersecting<=3.3: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- operatorScore>=19.96,serviceCandidateBonus<=17.78,serviceCandidatesIntersecting<=5.5: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- operatorScore>=19.96,serviceCandidateBonus<=17.78,serviceCandidatesIntersecting<=5.9: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- operatorScore>=19.96,serviceCandidatesIntersecting<=5.5,anchorReachableWindowCells<=2.2: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- operatorScore>=19.96,serviceCandidatesIntersecting<=5.5,residentialCandidateHeadroom<=24.84: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- operatorScore>=19.96,serviceCandidatesIntersecting<=5.5,residentialCandidatesIntersecting<=3.3: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- operatorScore>=19.96,serviceCandidatesIntersecting<=5.5,serviceCandidateBonus<=18.9: selected=33 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=16 worst=0 safe=true
+- allowedWindowCells>=0.7,anchorReachableWindowCells<=1.95: selected=36 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=19 worst=0 safe=true
+- allowedWindowCells>=0.7,area<=2.1: selected=36 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=19 worst=0 safe=true
+- allowedWindowCells>=0.7,serviceCandidateBonus<=17.78: selected=36 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=19 worst=0 safe=true
+- allowedWindowCells>=0.7,serviceCandidatesIntersecting<=5.5: selected=36 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=19 worst=0 safe=true
+- operatorScore>=19.96,anchorReachableWindowCells<=2.2: selected=36 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=19 worst=0 safe=true
+- operatorScore>=19.96,residentialCandidateHeadroom<=24.84: selected=36 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=19 worst=0 safe=true
+- operatorScore>=19.96,residentialCandidatesIntersecting<=3.3: selected=36 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=19 worst=0 safe=true
+- operatorScore>=19.96,serviceCandidateBonus<=18.9: selected=36 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=19 worst=0 safe=true
+- operatorScore>=19.96,serviceCandidatesIntersecting<=5.9: selected=36 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=19 worst=0 safe=true
+- allowedWindowCells>=0.7,anchorReachableWindowCells<=1.95,area<=2.1: selected=36 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=19 worst=0 safe=true
+- allowedWindowCells>=0.7,anchorReachableWindowCells<=1.95,residentialCandidateHeadroom<=24.84: selected=36 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=19 worst=0 safe=true
+- allowedWindowCells>=0.7,anchorReachableWindowCells<=1.95,residentialCandidatesIntersecting<=3.3: selected=36 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=19 worst=0 safe=true
+- allowedWindowCells>=0.7,anchorReachableWindowCells<=1.95,serviceCandidateBonus<=17.78: selected=36 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=19 worst=0 safe=true
+- allowedWindowCells>=0.7,anchorReachableWindowCells<=1.95,serviceCandidateBonus<=18.9: selected=36 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=19 worst=0 safe=true
+- allowedWindowCells>=0.7,anchorReachableWindowCells<=1.95,serviceCandidatesIntersecting<=5.5: selected=36 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=19 worst=0 safe=true
+- allowedWindowCells>=0.7,anchorReachableWindowCells<=1.95,serviceCandidatesIntersecting<=5.9: selected=36 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=19 worst=0 safe=true
+- allowedWindowCells>=0.7,area<=2.1,anchorReachableWindowCells<=2.2: selected=36 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=19 worst=0 safe=true
+- allowedWindowCells>=0.7,area<=2.1,residentialCandidateHeadroom<=24.84: selected=36 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=19 worst=0 safe=true
+- allowedWindowCells>=0.7,area<=2.1,residentialCandidatesIntersecting<=3.3: selected=36 target-improved=17 selection-improved=17 selection-regressed=0 terminal-final-improved=7 terminal-final-regressed=0 safety-regressed=0 neutral=19 worst=0 safe=true

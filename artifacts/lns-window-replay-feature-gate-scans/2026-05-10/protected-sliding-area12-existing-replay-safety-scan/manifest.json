@@ -1,0 +1,67 @@
+{
+  "artifactDir": "artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-sliding-area12-existing-replay-safety-scan",
+  "artifactPaths": {
+    "scanJson": "artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-sliding-area12-existing-replay-safety-scan/feature-gate-scan.json",
+    "scanText": "artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-sliding-area12-existing-replay-safety-scan/feature-gate-scan.txt",
+    "telemetryManifestJson": "artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-sliding-area12-existing-replay-safety-scan/telemetry-manifest.json",
+    "registryEntryDraftJson": "artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-sliding-area12-existing-replay-safety-scan/registry-entry-draft.json",
+    "manifestJson": "artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-sliding-area12-existing-replay-safety-scan/manifest.json"
+  },
+  "command": "node scripts/summarize-lns-replay-feature-gate-scan.mjs --source-root=artifacts/lns-window-replay-labels --artifact-dir=artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-sliding-area12-existing-replay-safety-scan --force-artifact-dir",
+  "generatedAt": "2026-05-10T11:16:23.651Z",
+  "inputFingerprint": "fnv1a:178933cd",
+  "scanFingerprint": "fnv1a:052b9809",
+  "sourceRoot": "artifacts/lns-window-replay-labels",
+  "sourceSummary": {
+    "sourceArtifactCount": 19,
+    "caseCount": 14,
+    "cases": [
+      "lns-holdout-anchor-service-harbor-pressure",
+      "lns-holdout-anchor-service-shelf-pressure",
+      "lns-holdout-corridor-switchback-pressure",
+      "lns-holdout-corridor-weave-pressure",
+      "lns-holdout-footprint-lattice-pressure",
+      "lns-holdout-footprint-stagger-pressure",
+      "lns-holdout-gate-double-choke-pressure",
+      "lns-holdout-gate-offset-pressure",
+      "lns-holdout-service-braid-pressure",
+      "lns-holdout-service-braid-range1-big-service120-candidate",
+      "lns-holdout-service-braid-range1-big-service135-candidate",
+      "lns-holdout-service-braid-range1-big-service140-candidate",
+      "lns-holdout-service-braid-range1-big-service140-initial-stagnation-candidate",
+      "lns-holdout-service-ridge-pressure"
+    ],
+    "pressureFamilies": [
+      "anchor-service",
+      "corridor",
+      "footprint-pressure",
+      "gate",
+      "service-pressure"
+    ],
+    "seeds": [
+      5,
+      7,
+      11,
+      13,
+      17,
+      19,
+      23,
+      29,
+      37
+    ],
+    "labelCount": 4068,
+    "rollForwardLabelCount": 4068
+  },
+  "gateNames": [
+    "slidingArea12",
+    "slidingArea12ComponentsMax2",
+    "slidingComponentsMax2",
+    "slidingTopOrLeft2",
+    "allNonBaselineSliding"
+  ],
+  "generator": {
+    "script": "scripts/summarize-lns-replay-feature-gate-scan.mjs",
+    "requiresBuild": true,
+    "command": "node scripts/summarize-lns-replay-feature-gate-scan.mjs --source-root=artifacts/lns-window-replay-labels --artifact-dir=artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-sliding-area12-existing-replay-safety-scan --force-artifact-dir"
+  }
+}

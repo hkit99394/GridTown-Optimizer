@@ -1,0 +1,201 @@
+LNS replay state-conditioned durable pocket discovery
+generatedAt=2026-05-11T23:14:39.472Z
+sourceRoot=artifacts/lns-window-replay-labels
+sourceArtifacts=14
+cases=8
+seeds=5,7,11,13,17,19,23,29,37
+labels=2202
+rollForwardLabels=2202
+repeatabilitySafeBuckets=9/500
+repeatabilitySafeBucketLabels=36/99 improved/selected
+featureIdenticalConflictBuckets=0
+atoms=107
+searchedCandidates=5665
+safeCandidates=2814
+blockedCandidates=2811
+inputFingerprint=fnv1a:01ab4640
+scanFingerprint=fnv1a:f6240775
+
+Top safe candidates:
+narrowGateCells==3 AND serviceCandidateBonus>=880: selected=99 improved=36 regressed=0 neutral=63 unknown=0 best=110 worst=0 repeatabilitySafe=99 durable=true
+  states=online-decision:18/27, initial-incumbent:9/36, post-stagnation:9/36
+  families=anchor-service:36/99
+residentialCandidateHeadroom>=3340 AND narrowGateCells==3: selected=99 improved=36 regressed=0 neutral=63 unknown=0 best=110 worst=0 repeatabilitySafe=99 durable=true
+  states=online-decision:18/27, initial-incumbent:9/36, post-stagnation:9/36
+  families=anchor-service:36/99
+residentialCandidateHeadroom>=3340 AND newlyReachable<=5: selected=99 improved=36 regressed=0 neutral=63 unknown=0 best=110 worst=0 repeatabilitySafe=99 durable=true
+  states=online-decision:18/27, initial-incumbent:9/36, post-stagnation:9/36
+  families=anchor-service:36/99
+residentialCandidateHeadroom>=3340 AND reachableAfter<=17: selected=99 improved=36 regressed=0 neutral=63 unknown=0 best=110 worst=0 repeatabilitySafe=99 durable=true
+  states=online-decision:18/27, initial-incumbent:9/36, post-stagnation:9/36
+  families=anchor-service:36/99
+residentialCandidatesIntersecting>=17 AND narrowGateCells==3: selected=99 improved=36 regressed=0 neutral=63 unknown=0 best=110 worst=0 repeatabilitySafe=99 durable=true
+  states=online-decision:18/27, initial-incumbent:9/36, post-stagnation:9/36
+  families=anchor-service:36/99
+residentialCandidatesIntersecting>=17 AND newlyReachable<=5: selected=99 improved=36 regressed=0 neutral=63 unknown=0 best=110 worst=0 repeatabilitySafe=99 durable=true
+  states=online-decision:18/27, initial-incumbent:9/36, post-stagnation:9/36
+  families=anchor-service:36/99
+residentialCandidatesIntersecting>=17 AND reachableAfter<=17: selected=99 improved=36 regressed=0 neutral=63 unknown=0 best=110 worst=0 repeatabilitySafe=99 durable=true
+  states=online-decision:18/27, initial-incumbent:9/36, post-stagnation:9/36
+  families=anchor-service:36/99
+residentialCandidateHeadroom>=3340 AND windowLeft==1: selected=105 improved=36 regressed=0 neutral=69 unknown=0 best=110 worst=0 repeatabilitySafe=99 durable=true
+  states=online-decision:18/33, initial-incumbent:9/36, post-stagnation:9/36
+  families=footprint-pressure:0/6, anchor-service:36/99
+residentialCandidatesIntersecting>=17 AND windowLeft==1: selected=105 improved=36 regressed=0 neutral=69 unknown=0 best=110 worst=0 repeatabilitySafe=99 durable=true
+  states=online-decision:18/33, initial-incumbent:9/36, post-stagnation:9/36
+  families=footprint-pressure:0/6, anchor-service:36/99
+disconnectedAfter==3 AND residentialCountInside==2: selected=108 improved=36 regressed=0 neutral=72 unknown=0 best=110 worst=0 repeatabilitySafe=99 durable=true
+  states=online-decision:18/36, initial-incumbent:9/36, post-stagnation:9/36
+  families=anchor-service:36/108
+disconnectedAfter==3 AND residentialCountInside>=2: selected=108 improved=36 regressed=0 neutral=72 unknown=0 best=110 worst=0 repeatabilitySafe=99 durable=true
+  states=online-decision:18/36, initial-incumbent:9/36, post-stagnation:9/36
+  families=anchor-service:36/108
+disconnectedAfter==3 AND residentialHeadroomInside>=170: selected=108 improved=36 regressed=0 neutral=72 unknown=0 best=110 worst=0 repeatabilitySafe=99 durable=true
+  states=online-decision:18/36, initial-incumbent:9/36, post-stagnation:9/36
+  families=anchor-service:36/108
+residentialCandidateHeadroom>=3340 AND residentialCandidatesBlocked<=12: selected=108 improved=36 regressed=0 neutral=72 unknown=0 best=110 worst=0 repeatabilitySafe=99 durable=true
+  states=online-decision:18/36, initial-incumbent:9/36, post-stagnation:9/36
+  families=anchor-service:36/108
+residentialCandidateHeadroom>=3340 AND residentialCountInside==2: selected=108 improved=36 regressed=0 neutral=72 unknown=0 best=110 worst=0 repeatabilitySafe=99 durable=true
+  states=online-decision:18/36, initial-incumbent:9/36, post-stagnation:9/36
+  families=anchor-service:36/108
+residentialCandidatesIntersecting>=17 AND residentialCandidatesBlocked<=12: selected=108 improved=36 regressed=0 neutral=72 unknown=0 best=110 worst=0 repeatabilitySafe=99 durable=true
+  states=online-decision:18/36, initial-incumbent:9/36, post-stagnation:9/36
+  families=anchor-service:36/108
+residentialCandidatesIntersecting>=17 AND residentialCountInside==2: selected=108 improved=36 regressed=0 neutral=72 unknown=0 best=110 worst=0 repeatabilitySafe=99 durable=true
+  states=online-decision:18/36, initial-incumbent:9/36, post-stagnation:9/36
+  families=anchor-service:36/108
+reachableAfter<=17 AND serviceCandidateBonus>=880: selected=111 improved=36 regressed=0 neutral=75 unknown=0 best=110 worst=0 repeatabilitySafe=99 durable=true
+  states=online-decision:18/33, initial-incumbent:9/39, post-stagnation:9/39
+  families=footprint-pressure:0/6, anchor-service:36/99, corridor:0/6
+residentialCandidateHeadroom>=3340 AND clearedFootprint<=5: selected=111 improved=36 regressed=0 neutral=75 unknown=0 best=110 worst=0 repeatabilitySafe=99 durable=true
+  states=online-decision:18/33, initial-incumbent:9/36, post-stagnation:9/36, post-first-improvement:0/6
+  families=anchor-service:36/111
+residentialCandidateHeadroom>=3340 AND narrowGateCells<=3: selected=111 improved=36 regressed=0 neutral=75 unknown=0 best=110 worst=0 repeatabilitySafe=99 durable=true
+  states=online-decision:18/33, initial-incumbent:9/36, post-stagnation:9/36, post-first-improvement:0/6
+  families=anchor-service:36/111
+residentialCandidatesIntersecting>=17 AND clearedFootprint<=5: selected=111 improved=36 regressed=0 neutral=75 unknown=0 best=110 worst=0 repeatabilitySafe=99 durable=true
+  states=online-decision:18/33, initial-incumbent:9/36, post-stagnation:9/36, post-first-improvement:0/6
+  families=anchor-service:36/111
+residentialCandidatesIntersecting>=17 AND narrowGateCells<=3: selected=111 improved=36 regressed=0 neutral=75 unknown=0 best=110 worst=0 repeatabilitySafe=99 durable=true
+  states=online-decision:18/33, initial-incumbent:9/36, post-stagnation:9/36, post-first-improvement:0/6
+  families=anchor-service:36/111
+serviceCandidateBonus>=880 AND windowLeft==1: selected=111 improved=36 regressed=0 neutral=75 unknown=0 best=110 worst=0 repeatabilitySafe=99 durable=true
+  states=online-decision:18/33, initial-incumbent:9/39, post-stagnation:9/39
+  families=footprint-pressure:0/6, anchor-service:36/105
+residentialCandidateHeadroom>=3340 AND serviceCandidatesBlocked<=6: selected=112 improved=36 regressed=0 neutral=76 unknown=0 best=110 worst=0 repeatabilitySafe=99 durable=true
+  states=online-decision:18/38, initial-incumbent:9/36, post-stagnation:9/36, post-first-improvement:0/2
+  families=anchor-service:36/112
+residentialCandidatesIntersecting>=17 AND serviceCandidatesBlocked<=6: selected=112 improved=36 regressed=0 neutral=76 unknown=0 best=110 worst=0 repeatabilitySafe=99 durable=true
+  states=online-decision:18/38, initial-incumbent:9/36, post-stagnation:9/36, post-first-improvement:0/2
+  families=anchor-service:36/112
+residentialCandidateHeadroom>=3340 AND residentialCandidatesIntersecting<=17: selected=114 improved=36 regressed=0 neutral=78 unknown=0 best=110 worst=0 repeatabilitySafe=99 durable=true
+  states=online-decision:18/39, initial-incumbent:9/36, post-stagnation:9/36, post-first-improvement:0/3
+  families=anchor-service:36/114
+residentialCandidatesIntersecting>=17 AND residentialCandidateHeadroom<=3340: selected=114 improved=36 regressed=0 neutral=78 unknown=0 best=110 worst=0 repeatabilitySafe=99 durable=true
+  states=online-decision:18/39, initial-incumbent:9/36, post-stagnation:9/36, post-first-improvement:0/3
+  families=anchor-service:36/114
+roadCountInside==2 AND residentialHeadroomInside>=170: selected=114 improved=36 regressed=0 neutral=78 unknown=0 best=110 worst=0 repeatabilitySafe=99 durable=true
+  states=online-decision:18/36, initial-incumbent:9/39, post-stagnation:9/39
+  families=footprint-pressure:0/15, anchor-service:36/99
+componentsAfter==2 AND residentialHeadroomInside>=170: selected=120 improved=36 regressed=0 neutral=84 unknown=0 best=110 worst=0 repeatabilitySafe=99 durable=true
+  states=online-decision:18/48, initial-incumbent:9/36, post-stagnation:9/36
+  families=gate:0/6, footprint-pressure:0/6, anchor-service:36/108
+reachableAfter<=17 AND residentialCountInside==2: selected=120 improved=36 regressed=0 neutral=84 unknown=0 best=110 worst=0 repeatabilitySafe=99 durable=true
+  states=online-decision:18/36, initial-incumbent:9/42, post-stagnation:9/42
+  families=footprint-pressure:0/21, anchor-service:36/99
+reachableAfter<=17 AND residentialCountInside>=2: selected=120 improved=36 regressed=0 neutral=84 unknown=0 best=110 worst=0 repeatabilitySafe=99 durable=true
+  states=online-decision:18/36, initial-incumbent:9/42, post-stagnation:9/42
+  families=footprint-pressure:0/21, anchor-service:36/99
+
+Top blocked candidates:
+residentialHeadroomInside>=170 AND clearedFootprint<=5: selected=129 improved=36 regressed=3 neutral=90 unknown=0 best=110 worst=-60 repeatabilitySafe=99 durable=false
+  states=online-decision:18/42, initial-incumbent:9/42, post-stagnation:9/42, post-first-improvement:0/3
+  families=footprint-pressure:0/24, anchor-service:36/99, gate:0/6
+residentialHeadroomInside>=170 AND newlyReachable<=5: selected=132 improved=36 regressed=3 neutral=93 unknown=0 best=110 worst=-60 repeatabilitySafe=99 durable=false
+  states=online-decision:18/39, initial-incumbent:9/42, post-stagnation:9/45, post-first-improvement:0/6
+  families=footprint-pressure:0/33, anchor-service:36/99
+disconnectedAfter>=3 AND residentialHeadroomInside>=170: selected=141 improved=36 regressed=3 neutral=102 unknown=0 best=110 worst=-60 repeatabilitySafe=99 durable=false
+  states=online-decision:18/48, initial-incumbent:9/45, post-stagnation:9/45, post-first-improvement:0/3
+  families=footprint-pressure:0/33, anchor-service:36/108
+residentialCountInside>=2 AND newlyReachable<=5: selected=150 improved=36 regressed=3 neutral=111 unknown=0 best=110 worst=-60 repeatabilitySafe=99 durable=false
+  states=online-decision:18/45, initial-incumbent:9/48, post-stagnation:9/51, post-first-improvement:0/6
+  families=footprint-pressure:0/33, anchor-service:36/99, gate:0/18
+disconnectedAfter>=3 AND residentialCountInside>=2: selected=159 improved=36 regressed=3 neutral=120 unknown=0 best=110 worst=-60 repeatabilitySafe=99 durable=false
+  states=online-decision:18/54, initial-incumbent:9/51, post-stagnation:9/51, post-first-improvement:0/3
+  families=footprint-pressure:0/33, anchor-service:36/108, gate:0/18
+clearedFootprint>=5 AND newlyReachable<=5: selected=168 improved=36 regressed=3 neutral=129 unknown=0 best=110 worst=-60 repeatabilitySafe=99 durable=false
+  states=online-decision:18/52, initial-incumbent:9/51, post-stagnation:9/54, post-first-improvement:0/11
+  families=footprint-pressure:0/33, anchor-service:36/117, gate:0/18
+residentialCountInside==2 AND clearedFootprint<=5: selected=180 improved=36 regressed=3 neutral=141 unknown=0 best=110 worst=-60 repeatabilitySafe=99 durable=false
+  states=online-decision:18/51, initial-incumbent:9/63, post-stagnation:9/63, post-first-improvement:0/3
+  families=gate:0/39, footprint-pressure:0/24, anchor-service:36/99, corridor:0/18
+residentialCountInside>=2 AND clearedFootprint<=5: selected=186 improved=36 regressed=3 neutral=147 unknown=0 best=110 worst=-60 repeatabilitySafe=99 durable=false
+  states=online-decision:18/57, initial-incumbent:9/63, post-stagnation:9/63, post-first-improvement:0/3
+  families=gate:0/45, footprint-pressure:0/24, anchor-service:36/99, corridor:0/18
+serviceCandidateBonus>=880 AND windowLeft<=1: selected=207 improved=36 regressed=3 neutral=168 unknown=0 best=110 worst=-60 repeatabilitySafe=99 durable=false
+  states=online-decision:18/108, initial-incumbent:9/48, post-stagnation:9/48, post-first-improvement:0/3
+  families=corridor:0/51, gate:0/12, footprint-pressure:0/21, anchor-service:36/123
+narrowGateCells==3 AND windowTop==2: selected=210 improved=36 regressed=3 neutral=171 unknown=0 best=110 worst=-60 repeatabilitySafe=99 durable=false
+  states=online-decision:18/61, initial-incumbent:9/72, post-stagnation:9/72, post-first-improvement:0/5
+  families=gate:0/15, footprint-pressure:0/27, anchor-service:36/168
+componentsAfter==2 AND windowTop==2: selected=245 improved=36 regressed=3 neutral=206 unknown=0 best=110 worst=-60 repeatabilitySafe=99 durable=false
+  states=initial-incumbent:9/90, post-first-improvement:0/11, post-stagnation:9/87, online-decision:18/57
+  families=corridor:0/51, gate:0/15, anchor-service:36/167, footprint-pressure:0/12
+narrowGateCells<=3 AND windowTop==2: selected=249 improved=36 regressed=3 neutral=210 unknown=0 best=110 worst=-60 repeatabilitySafe=99 durable=false
+  states=online-decision:18/70, initial-incumbent:9/84, post-stagnation:9/84, post-first-improvement:0/11
+  families=gate:0/27, footprint-pressure:0/27, anchor-service:36/195
+windowTop==2 AND clearedFootprint>=5: selected=260 improved=36 regressed=3 neutral=221 unknown=0 best=110 worst=-60 repeatabilitySafe=99 durable=false
+  states=online-decision:18/67, initial-incumbent:9/87, post-stagnation:9/93, post-first-improvement:0/13
+  families=footprint-pressure:0/39, anchor-service:36/209, gate:0/12
+narrowGateCells==3 AND serviceCandidatesIntersecting>=8: selected=261 improved=36 regressed=3 neutral=222 unknown=0 best=110 worst=-60 repeatabilitySafe=99 durable=false
+  states=online-decision:18/72, initial-incumbent:9/78, post-first-improvement:0/21, post-stagnation:9/90
+  families=corridor:0/126, footprint-pressure:0/36, anchor-service:36/99
+anchorReachableWindowCells==8 AND windowTop==2: selected=297 improved=36 regressed=3 neutral=258 unknown=0 best=110 worst=-60 repeatabilitySafe=99 durable=false
+  states=initial-incumbent:9/111, post-first-improvement:0/15, post-stagnation:9/108, online-decision:18/63
+  families=corridor:0/39, anchor-service:36/246, footprint-pressure:0/12
+serviceCandidateBonus>=880 AND windowLeft>=1: selected=297 improved=36 regressed=3 neutral=258 unknown=0 best=110 worst=-60 repeatabilitySafe=99 durable=false
+  states=initial-incumbent:9/102, post-first-improvement:0/24, post-stagnation:9/96, online-decision:18/75
+  families=corridor:0/87, footprint-pressure:0/33, anchor-service:36/177
+windowTop==2 AND anchorReachableWindowCells>=8: selected=297 improved=36 regressed=3 neutral=258 unknown=0 best=110 worst=-60 repeatabilitySafe=99 durable=false
+  states=initial-incumbent:9/111, post-first-improvement:0/15, post-stagnation:9/108, online-decision:18/63
+  families=corridor:0/39, anchor-service:36/246, footprint-pressure:0/12
+disconnectedAfter>=3 AND clearedFootprint>=5: selected=302 improved=36 regressed=3 neutral=263 unknown=0 best=110 worst=-60 repeatabilitySafe=99 durable=false
+  states=online-decision:18/89, initial-incumbent:9/102, post-stagnation:9/102, post-first-improvement:0/9
+  families=footprint-pressure:0/42, anchor-service:36/242, gate:0/18
+allowedWindowCells==8 AND windowTop==2: selected=303 improved=36 regressed=3 neutral=264 unknown=0 best=110 worst=-60 repeatabilitySafe=99 durable=false
+  states=initial-incumbent:9/111, post-first-improvement:0/18, post-stagnation:9/108, online-decision:18/66
+  families=corridor:0/39, anchor-service:36/252, footprint-pressure:0/12
+windowTop==2 AND allowedWindowCells>=8: selected=303 improved=36 regressed=3 neutral=264 unknown=0 best=110 worst=-60 repeatabilitySafe=99 durable=false
+  states=initial-incumbent:9/111, post-first-improvement:0/18, post-stagnation:9/108, online-decision:18/66
+  families=corridor:0/39, anchor-service:36/252, footprint-pressure:0/12
+disconnectedAfter>=3 AND serviceCandidatesBlocked>=6: selected=315 improved=36 regressed=3 neutral=276 unknown=0 best=110 worst=-60 repeatabilitySafe=99 durable=false
+  states=online-decision:18/98, initial-incumbent:9/102, post-stagnation:9/102, post-first-improvement:0/13
+  families=footprint-pressure:0/96, anchor-service:36/159, gate:0/18, corridor:0/42
+disconnectedAfter>=3 AND serviceCandidatesIntersecting>=8: selected=321 improved=36 regressed=3 neutral=282 unknown=0 best=110 worst=-60 repeatabilitySafe=99 durable=false
+  states=online-decision:18/84, initial-incumbent:9/117, post-stagnation:9/117, post-first-improvement:0/3
+  families=footprint-pressure:0/96, anchor-service:36/135, corridor:0/90
+narrowGateCells==3 AND anchorReachableWindowCells==8: selected=325 improved=36 regressed=3 neutral=286 unknown=0 best=110 worst=-60 repeatabilitySafe=99 durable=false
+  states=post-first-improvement:0/27, post-stagnation:9/114, online-decision:18/79, initial-incumbent:9/105
+  families=corridor:0/15, anchor-service:36/289, footprint-pressure:0/21
+componentsAfter<=2 AND windowTop==2: selected=342 improved=36 regressed=3 neutral=303 unknown=0 best=110 worst=-60 repeatabilitySafe=99 durable=false
+  states=initial-incumbent:9/126, post-first-improvement:0/15, post-stagnation:9/123, online-decision:18/78
+  families=corridor:0/66, gate:0/33, anchor-service:36/231, footprint-pressure:0/12
+narrowGateCells==3 AND anchorReachableWindowCells>=8: selected=343 improved=36 regressed=3 neutral=304 unknown=0 best=110 worst=-60 repeatabilitySafe=99 durable=false
+  states=post-first-improvement:0/36, post-stagnation:9/114, online-decision:18/88, initial-incumbent:9/105
+  families=corridor:0/15, anchor-service:36/307, footprint-pressure:0/21
+disconnectedAfter>=3 AND reachableAfter>=17: selected=351 improved=36 regressed=3 neutral=312 unknown=0 best=110 worst=-60 repeatabilitySafe=99 durable=false
+  states=online-decision:18/78, initial-incumbent:9/135, post-stagnation:9/135, post-first-improvement:0/3
+  families=anchor-service:36/222, gate:0/18, footprint-pressure:0/21, corridor:0/90
+narrowGateCells==3 AND allowedWindowCells==8: selected=363 improved=36 regressed=3 neutral=324 unknown=0 best=110 worst=-60 repeatabilitySafe=99 durable=false
+  states=post-first-improvement:0/46, post-stagnation:9/114, online-decision:18/98, initial-incumbent:9/105
+  families=corridor:0/15, anchor-service:36/327, footprint-pressure:0/21
+narrowGateCells==3 AND clearedFootprint>=5: selected=368 improved=36 regressed=3 neutral=329 unknown=0 best=110 worst=-60 repeatabilitySafe=99 durable=false
+  states=post-first-improvement:0/33, post-stagnation:9/120, online-decision:18/104, initial-incumbent:9/111
+  families=corridor:0/15, footprint-pressure:0/36, anchor-service:36/302, gate:0/15
+narrowGateCells==3 AND windowTop>=2: selected=371 improved=36 regressed=3 neutral=332 unknown=0 best=110 worst=-60 repeatabilitySafe=99 durable=false
+  states=post-first-improvement:0/25, post-stagnation:9/126, online-decision:18/103, initial-incumbent:9/117
+  families=corridor:0/15, gate:0/15, footprint-pressure:0/36, anchor-service:36/305
+narrowGateCells==3 AND componentsAfter==2: selected=374 improved=36 regressed=3 neutral=335 unknown=0 best=110 worst=-60 repeatabilitySafe=99 durable=false
+  states=online-decision:18/110, initial-incumbent:9/126, post-first-improvement:0/24, post-stagnation:9/114
+  families=corridor:0/90, gate:0/15, anchor-service:36/248, footprint-pressure:0/21

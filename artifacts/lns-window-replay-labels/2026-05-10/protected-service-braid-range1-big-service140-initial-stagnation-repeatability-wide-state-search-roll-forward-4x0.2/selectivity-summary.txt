@@ -1,0 +1,10 @@
+Service-braid bonus140 initial/stagnation selectivity summary
+generatedAt=2026-05-10T05:17:43.496Z
+source=artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range1-big-service140-initial-stagnation-repeatability-wide-state-search-roll-forward-4x0.2
+totalLabels=432
+
+slidingArea12: selected=54 pos=54 neg=0 neu=0 best=5 worst=5
+slidingArea12ComponentsMax2: selected=54 pos=54 neg=0 neu=0 best=5 worst=5
+slidingComponentsMax2: selected=90 pos=64 neg=0 neu=26 best=5 worst=0
+slidingTopOrLeft2: selected=72 pos=64 neg=0 neu=8 best=5 worst=0
+allNonBaselineSliding: selected=144 pos=64 neg=0 neu=80 best=5 worst=0

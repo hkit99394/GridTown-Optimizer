@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "runId": "service-braid-service-braid-range2-big-service120-160-initial-stagnation-screen",
+  "artifactType": "label-bundle",
+  "generatedAt": "2026-05-10T12:17:01.836Z",
+  "commands": [
+    "node scripts/generate-service-braid-replay-artifacts.mjs --bundle=service-braid-range2-big-service120-160-initial-stagnation-screen --force-artifact-dir"
+  ],
+  "artifactPaths": [
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range2-big-service120-160-initial-stagnation-screen-roll-forward-2x0.1/lns-window-replay-labels.json",
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range2-big-service120-160-initial-stagnation-screen-roll-forward-2x0.1/lns-window-replay-labels.txt",
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range2-big-service120-160-initial-stagnation-screen-roll-forward-2x0.1/repeatability-summary.json",
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range2-big-service120-160-initial-stagnation-screen-roll-forward-2x0.1/candidate-summary.json",
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range2-big-service120-160-initial-stagnation-screen-roll-forward-2x0.1/selectivity-summary.json",
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range2-big-service120-160-initial-stagnation-screen-roll-forward-2x0.1/selectivity-summary.txt",
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range2-big-service120-160-initial-stagnation-screen-roll-forward-2x0.1/telemetry-manifest.json",
+    "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range2-big-service120-160-initial-stagnation-screen-roll-forward-2x0.1/manifest.json"
+  ],
+  "cases": [
+    "lns-holdout-service-braid-range2-big-service120-initial-stagnation-screen-candidate",
+    "lns-holdout-service-braid-range2-big-service140-initial-stagnation-screen-candidate",
+    "lns-holdout-service-braid-range2-big-service160-initial-stagnation-screen-candidate"
+  ],
+  "caseFamilies": [
+    "lns-service-pressure",
+    "lns-window-replay"
+  ],
+  "seeds": [
+    7,
+    19,
+    37
+  ],
+  "inputFingerprint": "fnv1a:5e13771f",
+  "labelFingerprint": "fnv1a:ceb2034e",
+  "splitStatus": {
+    "diagnosticsOnly": true,
+    "source": "lns-window-replay-diagnostic-bundle",
+    "statePolicies": [
+      "initial-incumbent",
+      "post-stagnation"
+    ],
+    "capturedStatePolicies": [
+      "initial-incumbent",
+      "post-stagnation"
+    ],
+    "repeatabilitySummary": {
+      "schemaVersion": 1,
+      "rollForwardLabelCount": 216,
+      "bucketCount": 72,
+      "repeatedBucketCount": 72,
+      "mixedFinalStatusBucketCount": 0,
+      "conflictingFinalStatusBucketCount": 0,
+      "conflictingLabelCount": 0,
+      "conflictingStatusCounts": {
+        "improved": 0,
+        "neutral": 0,
+        "regressed": 0,
+        "unknown": 0
+      },
+      "featureIdenticalConflictBucketCount": 0,
+      "featureIdenticalConflictLabelCount": 0,
+      "examples": []
+    }
+  },
+  "budget": {
+    "seeds": [
+      7,
+      19,
+      37
+    ],
+    "maxWindows": 8,
+    "explorationWindowCount": 4,
+    "repairTimeLimitSeconds": 0.1,
+    "rollForwardIterations": 2,
+    "rollForwardRepairTimeLimitSeconds": 0.1,
+    "stateCollectionIterations": 4,
+    "stateCollectionRepairTimeLimitSeconds": 0.1,
+    "cpSatNumWorkers": 1,
+    "caseCount": 3,
+    "stateCount": 18,
+    "labelCount": 216,
+    "rollForwardLabelCount": 216
+  },
+  "model": {
+    "trained": false,
+    "diagnosticsOnly": true,
+    "labelSource": "lns-window-replay-labels",
+    "featureSchemaVersion": 2
+  },
+  "decision": "diagnostics-only",
+  "summary": "Protected service-braid LNS replay diagnostic label bundle; no solver default changed.",
+  "summaryMetrics": {
+    "caseCount": 3,
+    "seedCount": 3,
+    "stateCount": 18,
+    "labelCount": 216,
+    "rollForwardLabelCount": 216,
+    "repeatabilityConflictBucketCount": 0,
+    "repeatabilityFeatureIdenticalConflictBucketCount": 0,
+    "repeatabilityFeatureIdenticalConflictLabelCount": 0,
+    "statePolicies": [
+      "initial-incumbent",
+      "post-stagnation"
+    ],
+    "capturedStatePolicies": [
+      "initial-incumbent",
+      "post-stagnation"
+    ],
+    "cpSatModelFingerprints": [
+      "fnv1a:5225529f",
+      "fnv1a:66be782d",
+      "fnv1a:7b000513"
+    ]
+  }
+}

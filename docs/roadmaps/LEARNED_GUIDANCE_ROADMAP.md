@@ -17,8 +17,9 @@ This roadmap is intentionally about `hybrid search`, not replacing the current s
 ## Non-Goals
 
 This roadmap is not about:
-- replacing [src/core/evaluator.ts](../../src/core/evaluator.ts) as the source of truth for legality and population
-- replacing [src/cp-sat/solver.ts](../../src/cp-sat/solver.ts) as the exact repair / global solve path
+
+- replacing [src/packages/core/evaluator.ts](../../src/packages/core/evaluator.ts) as the source of truth for legality and population
+- replacing [src/packages/solvers/cp-sat/solver.ts](../../src/packages/solvers/cp-sat/solver.ts) as the exact repair / global solve path
 - learning road connectivity or shortest-path logic that is already solved cleanly with graph algorithms
 - treating roads as blockers in the training target; the future blocker is building footprints that remove cells from anchor-reachable empty space
 - training a raw cell-by-cell end-to-end RL agent as the first milestone
@@ -50,6 +51,7 @@ This roadmap is not about:
 - shared progress summaries already expose current score, best score, active stage, reuse source, stop reason, exact gap, and portfolio worker context across planner, HTTP, and benchmark surfaces.
 
 Relevant docs:
+
 - [README.md](../../README.md)
 - [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md)
 - [CP_SAT_ROADMAP.md](./CP_SAT_ROADMAP.md)
@@ -59,39 +61,43 @@ Relevant docs:
 
 Some early roadmap items are now delivered as measurement gates, but none of them have promoted a learned model or changed solver defaults.
 
-| Area | Status | Notes |
-| --- | --- | --- |
-| Cross-mode scorecards and decision traces | Delivered for benchmark comparison | Shared progress, JSONL trace export, time-to-quality scorecards, and budget-policy signals exist for reproducible solver comparison. The trace layer is still partial for rich offline-learning state capture. |
-| Development / holdout splits | Delivered for low-risk label bundles | The first learned-ranking label artifact has split protection and no case overlap. Future generated cases need split by case family and seed, not only by case name. |
-| Deterministic feature foundation | Partial | Connectivity-shadow, road-opportunity traces, and planner explainability maps exist. Broader reusable feature payloads for all model candidates still need scale and schema hardening. |
-| Baseline ablations | Delivered as an evidence gate | Deterministic Greedy and LNS ablation gates closed with no default promotion. Connectivity-shadow and LNS window movement became learning targets. |
-| Greedy labels | Needs offline diagnostics | The first bundle contains 4,593 Greedy labels, including connectivity-shadow and road-opportunity near-miss labels. These are useful for diagnostics but include proxy labels, so they require single-feature and online A/B gates before runtime use. |
-| LNS replay labels | Needs scale | The first bundle contains 84 usable LNS replay labels. Holdout replay labels are currently neutral, so this is schema evidence rather than model evidence. |
-| Model training | Not started | No learned model has been trained, versioned, integrated, or benchmarked online. |
-| GPU acceleration | Not started / gated | GPU should remain optional research infrastructure until a CPU-first model or label workflow is a measured bottleneck. |
+| Area                                      | Status                               | Notes                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ----------------------------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cross-mode scorecards and decision traces | Delivered for benchmark comparison   | Shared progress, JSONL trace export, time-to-quality scorecards, and budget-policy signals exist for reproducible solver comparison. The trace layer is still partial for rich offline-learning state capture.                                                                                                                                                                                             |
+| Development / holdout splits              | Delivered for low-risk label bundles | The first learned-ranking label artifact has split protection and no case overlap. Future generated cases need split by case family and seed, not only by case name.                                                                                                                                                                                                                                       |
+| Deterministic feature foundation          | Partial                              | Connectivity-shadow, road-opportunity traces, and planner explainability maps exist. Broader reusable feature payloads for all model candidates still need scale and schema hardening.                                                                                                                                                                                                                     |
+| Baseline ablations                        | Delivered as an evidence gate        | Deterministic Greedy and LNS ablation gates closed with no default promotion. Connectivity-shadow and LNS window movement became learning targets.                                                                                                                                                                                                                                                         |
+| Greedy labels and offline ranker          | Delivered for offline diagnostics    | The CPU-first Greedy ranker trains on protected development labels and beats deterministic, stable-random, and best single-feature baselines on protected holdout. This is still diagnostics-only until online A/B gates pass.                                                                                                                                                                             |
+| LNS replay labels                         | Infrastructure delivered             | Replay labels now include adaptive operator name/score, five-family development/holdout coverage, broader top-k plus tail exploration defaults, exact online-decision replay snapshots, and opt-in LNS window-ranker runtime / online benchmark plumbing.                                                                                                                                                  |
+| Model training                            | Diagnostics-only / gated             | A small CPU Greedy diagnostic model is trained and versioned through benchmark artifacts, and opt-in LNS window-ranker benchmark paths can exercise runtime scorer plumbing. No learned scorer is promoted. Greedy runtime promotion needs online equal-budget wins with bounded inference overhead; learned-LNS promotion needs new protected/fresh value coverage or a materially different model class. |
+| GPU acceleration                          | Not started / gated                  | GPU should remain optional research infrastructure until a CPU-first model or label workflow is a measured bottleneck.                                                                                                                                                                                                                                                                                     |
 
-Next-stage execution details live in [NEXT_STAGE_REVIEW.md](./NEXT_STAGE_REVIEW.md).
+Current execution gates live in the consolidated [SOLVER_ROADMAP.md](./SOLVER_ROADMAP.md).
 
 ## AlphaGo / AlphaZero Feasibility
 
 Current conclusion:
+
 - This repo is a good fit for learned guidance in the narrow AlphaGo sense: learned policies or values should steer strong deterministic search, not replace it.
 - The strongest current seam is `LNS` control, especially neighborhood re-ranking under a fixed repair budget.
 - Full end-to-end RL is not a current implementation priority. It belongs on a gated research track after cheaper learned baselines win.
 
 What transfers well:
+
 - policy / value guidance around exact legality, validation, and search
 - ranking which candidate, neighborhood, or seed to try next
 - learning the control layer while keeping `CP-SAT` and exact scoring deterministic
 - bootstrapping from search-improved labels, such as counterfactual `LNS` replay outcomes, as long as the search budget and data split are explicit
 
 What does not transfer well:
+
 - adversarial self-play assumptions
 - cheap rollout assumptions, because one useful `LNS` label may cost a bounded `CP-SAT` repair run
 - raw cell-by-cell generation or attempts to replace `CP-SAT`
 - irreversible learned pruning of branches, windows, or placements without exact solver evidence
 
 Remaining gates before any RL work:
+
 - extend the delivered trace layer with richer chosen-vs-available offline-learning state capture
 - expand development / holdout splits for generated benchmark and replay data by case family and seed
 - harden deterministic opportunity and connectivity-shadow feature payloads so models do not have to rediscover graph facts
@@ -102,7 +108,7 @@ Remaining gates before any RL work:
 
 ### Ordering By Priority
 
-The current recommended order inside the learned-guidance track is:
+When a track-specific solver-roadmap trigger reopens learned-guidance work, reuse this historical gated sequence. For Greedy, that means online equal-budget wins with inference-overhead accounting; for learned `LNS`, it means new protected/fresh value coverage or a materially different model class.
 
 1. measurement foundation and shared cross-optimizer traces
 2. deterministic feature foundation, especially building connectivity shadow
@@ -115,6 +121,7 @@ The current recommended order inside the learned-guidance track is:
 9. full RL, research-only and only if all earlier gates are cleared
 
 Why this order:
+
 - phases 0 through 3 reduce uncertainty and create reusable data at the lowest experimentation cost
 - later phases depend on a more stable solver policy, better reusable-input validation, and more expensive labels
 
@@ -123,12 +130,14 @@ Why this order:
 Status: Delivered for benchmark comparison; partial for offline-learning traces
 
 Why:
+
 - the repo already has per-optimizer benchmark CLIs plus a cross-mode equal-budget scorecard
 - benchmark-level traces, JSONL export, and time-to-quality scorecards are delivered for solver comparison
 - learned guidance still needs richer chosen-vs-available decision state capture for offline training, generated-case split discipline, and registry metadata before promotion decisions depend on those artifacts
 
 Original scope:
-- add shared optimizer run events to [src/core/types.ts](../../src/core/types.ts)
+
+- add shared optimizer run events to [src/packages/core/types.ts](../../src/packages/core/types.ts)
 - add trace-export support to the existing `greedy`, `LNS`, `CP-SAT`, and scorecard benchmark runners
 - emit JSONL traces for solver milestones:
   - seed built
@@ -142,7 +151,7 @@ Original scope:
   - incumbent improved
   - solver finished
 - make benchmark runs reproducible with explicit seeds where supported
-- record final validation using [src/core/evaluator.ts](../../src/core/evaluator.ts)
+- record final validation using [src/packages/core/evaluator.ts](../../src/packages/core/evaluator.ts)
 
 Delivered:
 
@@ -154,15 +163,17 @@ Delivered:
 Remaining:
 
 - richer chosen-vs-available state capture for offline training
-- durable experiment registry with commit, params, data, hardware, model, and decision fingerprints
+- offline-learning trace registry hardening for chosen-vs-available decision fingerprints, generated-case split metadata, and promotion-readiness lineage
 - generated-case split discipline by family and seed
 
 Original deliverables:
+
 - JSONL trace export from the existing benchmark CLIs
 - a stable trace schema
 - a benchmark corpus split for development vs holdout evaluation
 
 Exit criteria:
+
 - we can compare all optimizers under equal time budgets and export the decision trace for each run
 - we can plot incumbent quality over time for `greedy`, `LNS`, `CP-SAT`, and `auto`
 - we can inspect chosen-vs-available decisions without rerunning the solver
@@ -173,11 +184,13 @@ Exit criteria:
 Status: Partial; needs schema hardening and broader candidate coverage
 
 Why:
+
 - learned models should not have to rediscover graph reachability or basic opportunity cost
 - the strongest near-term feature is building connectivity shadow: how much future anchor-reachable empty space and placement value a candidate footprint disconnects
 - the same feature is useful for Greedy scoring, `LNS` anchor selection, planner heatmaps, and later learned ranking
 
 Definition:
+
 - consider all allowed cells that are not occupied by building footprints as the future road-candidate graph
 - roads are support cells, not the blocker
 - for a candidate building, remove its footprint from the graph and recompute reachability from row `0` or column `0`
@@ -189,23 +202,23 @@ Delivered:
 - connectivity-shadow profiling and guarded scoring path
 - road-opportunity constructive and local-search traces
 - planner explainability maps for service value, placement opportunity, and connectivity risk
+- `LNS` replay diagnostics can already record deterministic context for headroom, service marginal value, connectivity shadow, fragmentation pressure, and candidate loss
 
 Remaining concrete work:
-- add deterministic feature extraction for:
-  - residential headroom
-  - service marginal value
-  - candidate connectivity shadow
-  - candidate footprint fragmentation / articulation pressure
-  - post-placement candidate loss by service and residential type
-- expose the same feature payload in traces, benchmark summaries, and planner explainability maps
-- keep the feature computation flaggable until benchmark evidence shows where it should be used in scoring
+
+- harden a reusable deterministic feature schema shared across traces, replay labels, benchmark summaries, and planner explainability maps
+- broaden cross-candidate coverage so every model candidate sees the same feature families, including residential headroom, service marginal value, connectivity shadow, footprint fragmentation / articulation pressure, and post-placement candidate loss
+- generalize the delivered diagnostics into stable feature modules with schema-versioned payloads and validation against solver grid/building rules
+- keep scoring use flaggable until benchmark evidence shows where these delivered diagnostics should affect ranking
 
 Deliverables:
+
 - reusable connectivity-shadow / opportunity feature module
 - fixed gate/corridor benchmark cases
 - planner map or table that shows disconnected opportunity after a candidate placement
 
 Exit criteria:
+
 - feature extraction is deterministic and validated against the same grid/building rules as the solver
 - enabling a connectivity-shadow scoring penalty or tie-break improves or preserves population per second on holdout cases
 - traces can use these features as inputs for later learned ranking
@@ -215,6 +228,7 @@ Exit criteria:
 Status: Delivered as an evidence gate
 
 Why:
+
 - before adding learning, we need to isolate which existing pieces already provide the most lift
 - `LNS` currently mixes seed generation, deterministic upgrades, and exact repair
 - the new connectivity-shadow feature must be measured as a deterministic feature before it becomes an ML input
@@ -227,6 +241,7 @@ Delivered:
 - deterministic closeout decisions in [SOLVER_ABLATION_DECISIONS.md](../decisions/SOLVER_ABLATION_DECISIONS.md)
 
 Future re-runs should use the same matrix style when solver scoring changes:
+
 - benchmark `greedy` with and without:
   - restarts
   - local search
@@ -247,45 +262,56 @@ Delivered artifacts:
 - `artifacts/deterministic-ablations/2026-04-27/`
 
 Future re-run deliverables:
+
 - refreshed ablation matrices with median, worst-decile, and best-case outcomes when solver scoring changes
 - a short update on whether current solver quality-per-minute sources changed enough to reopen a default-promotion gate
 
 Exit criteria:
+
 - we know which components are worth learning around
 - we know which components should remain deterministic
 
 ### Phase 3: Counterfactual Label Collection For LNS
 
-Status: Needs scale before learned `LNS` window re-ranking
+Status: Scale-up infrastructure delivered; future expansion gated by the consolidated solver roadmap
 
 Why:
+
 - logging only the chosen window produces selection-biased data
 - `LNS` labels are expensive because a useful label requires bounded `CP-SAT` repair
-- learned window re-ranking should not start until we have at least a small trustworthy counterfactual dataset
+- learned window re-ranking should stay diagnostics-only until protected/fresh online evidence shows separable value
 
 Concrete work:
+
 - sample incumbent states from benchmark runs
 - replay multiple candidate windows from the same state
 - keep CP-SAT repair budgets equal across replayed windows
 - store actual downstream improvement for each replayed window
-- include deterministic features such as headroom, service marginal value, and connectivity shadow for each replayed window
+- preserve deterministic replay diagnostics for headroom, service marginal value, connectivity shadow, fragmentation pressure, and candidate loss
 
 Delivered:
 
 - small schema-valid replay label bundle with 84 usable labels
 - development / holdout split protection for the initial bundle
+- five-family development and holdout replay case coverage across corridor, gate, footprint-pressure, service-pressure, and anchor-service families
+- adaptive-operator name and score fields on replay labels
+- scale-oriented learned-label defaults with top-k adaptive candidates plus tail exploration windows
+- strict multi-state replay artifacts with CP-SAT fingerprints, timing metadata, and protected split coverage
+- opt-in LNS window-ranker runtime and online benchmark plumbing
 
-Remaining deliverables:
+Future gated deliverables:
 
-- larger replay corpus across corridor, gate, footprint-pressure, and service-pressure families
-- exploration windows beyond baseline top-k
-- initial, post-first-improvement, and post-stagnation incumbent states
 - multiple repair budgets when budget allocation is part of the target decision
-- model / CP-SAT formulation fingerprint and per-label timing metadata
-- train / validation / holdout splits that prevent benchmark leakage by family and seed
+- train / validation / holdout split evidence that prevents benchmark leakage by family and seed
 - parallel replay runner only if CPU-budget accounting remains explicit
+- new protected/fresh value coverage or a materially different model class before promotion work resumes
 
-Exit criteria:
+Current reopen gate:
+
+- expand or promote learned `LNS` work only when new protected/fresh online value coverage appears or a materially different model class is proposed
+
+Historical scale criteria:
+
 - at least 5 pressure families
 - at least 3 seeds per family
 - at least 200 usable labels in each of development and holdout
@@ -296,31 +322,44 @@ Exit criteria:
 
 ### Phase 4: Learned Greedy Service Re-Ranking
 
-Status: First ML milestone; diagnostics only until offline holdout wins
+Status: Offline diagnostics delivered; runtime re-ranking gated on online evidence
 
 Why:
+
 - this is cheaper than `LNS`-guided learning
 - it creates many labeled decisions per run
 - it is easier to benchmark than CP-SAT-backed neighborhood repair
 - it can reuse the deterministic service marginal-value and connectivity-shadow features
 
 Target:
-- learn to re-rank service candidates in the greedy construction path
 
-Concrete work:
-- log greedy construction states and service candidate features
-- include connectivity shadow, candidate loss, and residential headroom features
-- train a lightweight offline model in a separate research path, for example under `python/ml/`
-- start with supervised ranking, not RL
-- integrate the scorer behind a feature flag such as `greedy.learnedServiceRanking`
+- learn to re-rank Greedy construction candidates without replacing deterministic feasibility, validation, or final scoring
 
-Deliverables:
-- a baseline learned service scorer
-- offline ranking metrics
+Delivered:
+
+- TypeScript-only CPU pairwise linear ranker over Greedy ordering labels
+- protected development/holdout split check with no case-name features
+- deterministic-proxy, stable-random, and best single-feature baselines
+- model artifact, telemetry manifest, and strict registry-draft helpers
+- seed-7 regression slice: 0.7930 holdout accuracy versus 0.7667 deterministic-proxy, 0.5005 stable-random, and 0.6314 best single-feature
+
+Remaining work:
+
+- richer service-specific candidate-state capture before runtime scoring
+- feature-flagged scorer adapter such as `greedy.learnedServiceRanking`
+- model-load fallback and inference-overhead accounting
 - online A/B benchmarks against the current hand-written ordering
 
-Exit criteria:
+Deliverables:
+
+- offline diagnostic Greedy ranker and metrics: delivered
+- runtime scorer adapter: not started
+- online A/B benchmarks against the current hand-written ordering: not started
+
+Greedy-specific exit criteria:
+
 - at fixed wall-clock, the learned scorer beats the current greedy service ordering on median benchmark quality
+- online benchmarks account for inference overhead and preserve deterministic feasibility, validation, and final scoring
 - worst-decile performance does not regress materially
 - final solutions still validate exactly
 - deterministic-order, random, and single-feature baselines are beaten on protected holdout before online use
@@ -328,64 +367,77 @@ Exit criteria:
 
 ### Phase 5: Learned LNS Window Re-Ranking
 
-Status: Second ML milestone; blocked until Phase 3 scale gates pass
+Status: Diagnostics-only runtime / online benchmark plumbing exists; promotion work is parked
 
 Why:
+
 - `LNS` is already the closest analogue to policy-guided search
 - the code already separates window generation from repair
 - re-ranking is much lower risk than replacing neighborhood construction outright
-- counterfactual replay data should exist before this phase starts
+- current protected/fresh evidence does not justify promoting the learned ranker
 
 Important constraint:
+
 - keep the current `buildNeighborhoodWindows(...)` control path deterministic
 - do not move learned logic into the baseline window builder
-- add a separate re-ranking step after window generation and before selection
+- keep the delivered feature-flagged separate re-ranking diagnostics step after window generation and before selection
 
 Target:
+
 - reorder candidate windows based on predicted improvement under a fixed repair budget
 
 Concrete work:
+
 - log incumbent state, candidate windows, chosen window, repair budget, and outcome
-- add a feature-flagged `rerankNeighborhoodWindows(...)` stage
+- harden the delivered feature-flagged `rerankNeighborhoodWindows(...)` diagnostics path without changing baseline window generation
 - train and evaluate from counterfactual replay labels, not only chosen-window logs
 - compare baseline ordering vs learned ordering under the same CP-SAT budget
 
 Deliverables:
-- feature-flagged LNS window re-ranker
-- replay harness for ranked-window evaluation
-- benchmark report with repeated seeded runs
 
-Exit criteria:
+- opt-in LNS window-ranker runtime path: delivered for benchmark plumbing, not promoted
+- replay harness for ranked-window evaluation: delivered
+- benchmark reports with repeated seeded runs: delivered for diagnostics, still not promotion evidence
+
+Historical diagnostic criteria:
+
 - learned re-ranking improves `best population at fixed repair budget`
 - learned re-ranking improves `time-to-strong-incumbent`
 - deterministic fallback remains unchanged and existing baseline tests remain valid
 - holdout data includes enough non-neutral replay signal to evaluate ranking skill
 - online A/B uses paired seeds, exact validation, and bounded inference overhead
 
+These criteria are necessary but not sufficient for learned-`LNS` promotion. Current gates also require protected/fresh active value, no regressions, no final-neutral override blockers, and no product-axis loss.
+
 ### Phase 6: Value Model And CP-SAT Warm Starts
 
 Status: Later, and only if seed quality becomes a measured bottleneck
 
 Why:
+
 - this is the closest analogue to AlphaGo-style value guidance
 - `CP-SAT` already supports warm starts, so stronger seeds can compound with exact search
 - the current runtime usually carries one incumbent forward, so this is not yet the first demonstrated production bottleneck
 
 Targets:
+
 - predict which partial layouts or incumbents are most promising
 - rank candidate seeds before exact solve
 - build stronger `warmStartHint` payloads
 
 Concrete work:
+
 - train a value model on partial-layout snapshots
 - compare current seed policies vs learned seed ranking
 - benchmark `CP-SAT` continuation quality with and without learned seed guidance
 
 Deliverables:
+
 - a partial-layout value estimator
 - a learned seed-ranking experiment for `CP-SAT`
 
 Exit criteria:
+
 - learned seeds improve incumbent quality or time-to-quality under equal `CP-SAT` budgets
 
 ### Phase 7: Contextual Bandits Or RL
@@ -393,31 +445,37 @@ Exit criteria:
 Status: Research-only, only after earlier phases prove value
 
 Why:
+
 - RL adds training and evaluation complexity
 - if supervised ranking and value guidance already work, RL should only be added when it clearly improves search control
 - `LNS` labels are expensive because they require bounded `CP-SAT` repair, and current local repair still runs single-worker for stability
 
 Good RL targets:
+
 - choose which `LNS` window to repair next
 - allocate limited repair budget across neighborhoods
 - decide when to revisit a region vs diversify
 
 Bad RL targets:
+
 - exact legality checking
 - graph connectivity routines
 - raw cell-by-cell layout generation as the first learned system
 - replacing `CP-SAT`
 
 Deliverables:
+
 - a controlled online learning sandbox
 - strict legality masks over all learned decisions
 - equal-budget comparisons against the best supervised baseline
 
 Exit criteria:
+
 - the RL or bandit policy consistently beats the best supervised guidance baseline
 - the added complexity is justified by measured gains, not only by research interest
 
 Additional gates:
+
 - shared traces exist on top of the shipped benchmark paths
 - benchmark and replay data have a development / holdout split
 - reusable `CP-SAT` checkpoint and hint inputs remain validated well enough for learned seed experiments
@@ -426,16 +484,16 @@ Additional gates:
 
 ### Core runtime integration
 
-- [src/core/types.ts](../../src/core/types.ts): shared event, trace, and benchmark types
-- [src/core/roads.ts](../../src/core/roads.ts) or a sibling core module: deterministic connectivity-shadow and anchor-reachability opportunity features
-- [src/runtime/solve.ts](../../src/runtime/solve.ts): common solver callback / instrumentation entry point
-- [src/greedy/solver.ts](../../src/greedy/solver.ts): greedy trace emission and optional learned service re-ranking hook
-- [src/lns/solver.ts](../../src/lns/solver.ts): `LNS` trace emission and optional learned window re-ranking hook
-- [src/cp-sat/solver.ts](../../src/cp-sat/solver.ts): benchmark-safe warm-start comparisons and seed-quality reporting
+- [src/packages/core/types.ts](../../src/packages/core/types.ts): shared event, trace, and benchmark types
+- [src/packages/core/roads.ts](../../src/packages/core/roads.ts) or a sibling core module: deterministic connectivity-shadow and anchor-reachability opportunity features
+- [src/packages/runtime/dispatch/solve.ts](../../src/packages/runtime/dispatch/solve.ts): common solver callback / instrumentation entry point
+- [src/packages/solvers/greedy/solver.ts](../../src/packages/solvers/greedy/solver.ts): greedy trace emission and optional learned service re-ranking hook
+- [src/packages/solvers/lns/solver.ts](../../src/packages/solvers/lns/solver.ts): `LNS` trace emission and optional learned window re-ranking hook
+- [src/packages/solvers/cp-sat/solver.ts](../../src/packages/solvers/cp-sat/solver.ts): benchmark-safe warm-start comparisons and seed-quality reporting
 
 ### Benchmarking and research support
 
-- add a generic optimizer benchmark module next to [src/benchmarks/greedy.ts](../../src/benchmarks/greedy.ts) and [src/benchmarks/cpSat.ts](../../src/benchmarks/cpSat.ts)
+- add a generic optimizer benchmark module next to [src/packages/benchmarks/greedy.ts](../../src/packages/benchmarks/greedy.ts) and [src/packages/benchmarks/cpSat.ts](../../src/packages/benchmarks/cpSat.ts)
 - keep model-training code out of the main app path, for example under `python/ml/`
 - keep persisted traces as plain JSONL to stay easy to inspect and replay
 
@@ -447,7 +505,7 @@ Every milestone should clear all of the following before the next phase begins:
    compare under matched wall-clock and matched `CP-SAT` repair budgets
 
 2. Exact validation:
-   every reported solution must pass [src/core/evaluator.ts](../../src/core/evaluator.ts)
+   every reported solution must pass [src/packages/core/evaluator.ts](../../src/packages/core/evaluator.ts)
 
 3. Repeated seeded runs:
    use repeated runs where randomness exists and report aggregate statistics
@@ -484,7 +542,7 @@ Every milestone should clear all of the following before the next phase begins:
 
 ## Summary
 
-The recommended sequence is:
+When a track-specific solver-roadmap trigger reopens learned-guidance work, reuse this historical gated sequence. Greedy reopening needs online equal-budget wins with inference-overhead accounting; learned `LNS` reopening needs new protected/fresh value coverage or a materially different model class.
 
 1. measurement foundation and shared traces
 2. deterministic feature foundation, especially building connectivity shadow

@@ -1,0 +1,50 @@
+{
+  "artifactDir": "artifacts/lns-online-selected-feature-gate-discovery/2026-05-10/trajectory-features-generated-protected-no-gate-bounded-suppression-search",
+  "artifactPaths": {
+    "discoveryJson": "artifacts/lns-online-selected-feature-gate-discovery/2026-05-10/trajectory-features-generated-protected-no-gate-bounded-suppression-search/online-selected-feature-gate-discovery.json",
+    "discoveryText": "artifacts/lns-online-selected-feature-gate-discovery/2026-05-10/trajectory-features-generated-protected-no-gate-bounded-suppression-search/online-selected-feature-gate-discovery.txt",
+    "telemetryManifestJson": "artifacts/lns-online-selected-feature-gate-discovery/2026-05-10/trajectory-features-generated-protected-no-gate-bounded-suppression-search/telemetry-manifest.json",
+    "registryEntryDraftJson": "artifacts/lns-online-selected-feature-gate-discovery/2026-05-10/trajectory-features-generated-protected-no-gate-bounded-suppression-search/registry-entry-draft.json",
+    "manifestJson": "artifacts/lns-online-selected-feature-gate-discovery/2026-05-10/trajectory-features-generated-protected-no-gate-bounded-suppression-search/manifest.json"
+  },
+  "command": "node scripts/discover-lns-online-selected-feature-gates.mjs --source-artifact=artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0 --source-artifact=artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-one-iteration-trajectory-features-no-selected-feature-gate-min-score-delta-0 --source-artifact=artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-two-iteration-trajectory-features-no-selected-feature-gate-min-score-delta-0 --artifact-dir=artifacts/lns-online-selected-feature-gate-discovery/2026-05-10/trajectory-features-generated-protected-no-gate-bounded-suppression-search --target=selection-improved --max-group-size=3 --max-atoms-per-feature=8 --max-total-atoms=120 --top=50 --feature-allowlist=area,operatorScore,allowedWindowCells,anchorReachableWindowCells,narrowGateCells,serviceCandidateBonus,maxServiceCandidateBonus,serviceCandidatesBlocked,residentialCandidatesBlocked,emptyComponentsBefore,emptyComponentsAfter,componentDelta,residentialCandidateHeadroom,serviceCandidatesIntersecting,residentialCandidatesIntersecting,roadCountInside,clearedFootprint,transitionWeakServiceToSliding,transitionRandomExplorationToRandomExploration,selectedOperatorSliding,selectedOperatorRandomExploration --force-artifact-dir",
+  "generatedAt": "2026-05-12T18:20:07.856Z",
+  "target": "selection-improved",
+  "inputFingerprint": "fnv1a:41e46135",
+  "discoveryFingerprint": "fnv1a:7994ee0d",
+  "reportFingerprint": "fnv1a:cb983ace",
+  "sourceScorecards": [
+    "artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0/lns-window-ranker-online-ablation.json",
+    "artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-one-iteration-trajectory-features-no-selected-feature-gate-min-score-delta-0/lns-window-ranker-online-ablation.json",
+    "artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-two-iteration-trajectory-features-no-selected-feature-gate-min-score-delta-0/lns-window-ranker-online-ablation.json"
+  ],
+  "validationSourceScorecards": [],
+  "featureAllowlist": [
+    "area",
+    "operatorScore",
+    "allowedWindowCells",
+    "anchorReachableWindowCells",
+    "narrowGateCells",
+    "serviceCandidateBonus",
+    "maxServiceCandidateBonus",
+    "serviceCandidatesBlocked",
+    "residentialCandidatesBlocked",
+    "emptyComponentsBefore",
+    "emptyComponentsAfter",
+    "componentDelta",
+    "residentialCandidateHeadroom",
+    "serviceCandidatesIntersecting",
+    "residentialCandidatesIntersecting",
+    "roadCountInside",
+    "clearedFootprint",
+    "transitionWeakServiceToSliding",
+    "transitionRandomExplorationToRandomExploration",
+    "selectedOperatorSliding",
+    "selectedOperatorRandomExploration"
+  ],
+  "generator": {
+    "script": "scripts/discover-lns-online-selected-feature-gates.mjs",
+    "requiresBuild": true,
+    "command": "node scripts/discover-lns-online-selected-feature-gates.mjs --source-artifact=artifacts/lns-window-ranker-online/2026-05-10/service-braid-generated-grid-right-neighborhood-trajectory-features-no-selected-feature-gate-two-iteration-min-score-delta-0 --source-artifact=artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-one-iteration-trajectory-features-no-selected-feature-gate-min-score-delta-0 --source-artifact=artifacts/lns-window-ranker-online/2026-05-10/protected-broadened-two-iteration-trajectory-features-no-selected-feature-gate-min-score-delta-0 --artifact-dir=artifacts/lns-online-selected-feature-gate-discovery/2026-05-10/trajectory-features-generated-protected-no-gate-bounded-suppression-search --target=selection-improved --max-group-size=3 --max-atoms-per-feature=8 --max-total-atoms=120 --top=50 --feature-allowlist=area,operatorScore,allowedWindowCells,anchorReachableWindowCells,narrowGateCells,serviceCandidateBonus,maxServiceCandidateBonus,serviceCandidatesBlocked,residentialCandidatesBlocked,emptyComponentsBefore,emptyComponentsAfter,componentDelta,residentialCandidateHeadroom,serviceCandidatesIntersecting,residentialCandidatesIntersecting,roadCountInside,clearedFootprint,transitionWeakServiceToSliding,transitionRandomExplorationToRandomExploration,selectedOperatorSliding,selectedOperatorRandomExploration --force-artifact-dir"
+  }
+}

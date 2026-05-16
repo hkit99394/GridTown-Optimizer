@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noEmit": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true
+  },
+  "include": [
+    "apps/planner-web/app.js",
+    "apps/planner-web/plannerExpansion.js",
+    "apps/planner-web/plannerHeatmaps.js",
+    "apps/planner-web/plannerManualLayout.js",
+    "apps/planner-web/plannerPersistence.js",
+    "apps/planner-web/plannerPersistenceValidation.js",
+    "apps/planner-web/plannerRequestBuilder.js",
+    "apps/planner-web/plannerResultRendering.js",
+    "apps/planner-web/plannerResultProgress.js",
+    "apps/planner-web/plannerResults.js",
+    "apps/planner-web/plannerShared.js",
+    "apps/planner-web/plannerSolveRuntime.js",
+    "apps/planner-web/plannerShell.js",
+    "apps/planner-web/plannerWorkbench.js"
+  ]
+}

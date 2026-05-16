@@ -1,0 +1,223 @@
+{
+  "generatedAt": "2026-05-10T12:17:01.895Z",
+  "title": "Service-braid range2 compact bonus sweep selectivity summary",
+  "sourceArtifact": "artifacts/lns-window-replay-labels/2026-05-10/protected-service-braid-range2-big-service120-160-initial-stagnation-screen-roll-forward-2x0.1",
+  "totalLabels": 216,
+  "gates": {
+    "slidingArea12": {
+      "selected": 18,
+      "pos": 0,
+      "neg": 0,
+      "neu": 18,
+      "best": 0,
+      "worst": 0,
+      "bySeed": {
+        "7": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "19": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "37": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        }
+      },
+      "byCase": {
+        "lns-holdout-service-braid-range2-big-service120-initial-stagnation-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "lns-holdout-service-braid-range2-big-service140-initial-stagnation-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "lns-holdout-service-braid-range2-big-service160-initial-stagnation-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        }
+      },
+      "examples": []
+    },
+    "slidingArea12ComponentsMax2": {
+      "selected": 18,
+      "pos": 0,
+      "neg": 0,
+      "neu": 18,
+      "best": 0,
+      "worst": 0,
+      "bySeed": {
+        "7": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "19": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "37": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        }
+      },
+      "byCase": {
+        "lns-holdout-service-braid-range2-big-service120-initial-stagnation-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "lns-holdout-service-braid-range2-big-service140-initial-stagnation-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "lns-holdout-service-braid-range2-big-service160-initial-stagnation-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        }
+      },
+      "examples": []
+    },
+    "slidingComponentsMax2": {
+      "selected": 54,
+      "pos": 0,
+      "neg": 0,
+      "neu": 54,
+      "best": 0,
+      "worst": 0,
+      "bySeed": {
+        "7": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 18
+        },
+        "19": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 18
+        },
+        "37": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 18
+        }
+      },
+      "byCase": {
+        "lns-holdout-service-braid-range2-big-service120-initial-stagnation-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 18
+        },
+        "lns-holdout-service-braid-range2-big-service140-initial-stagnation-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 18
+        },
+        "lns-holdout-service-braid-range2-big-service160-initial-stagnation-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 18
+        }
+      },
+      "examples": []
+    },
+    "slidingTopOrLeft2": {
+      "selected": 18,
+      "pos": 0,
+      "neg": 0,
+      "neu": 18,
+      "best": 0,
+      "worst": 0,
+      "bySeed": {
+        "7": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "19": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "37": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        }
+      },
+      "byCase": {
+        "lns-holdout-service-braid-range2-big-service120-initial-stagnation-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "lns-holdout-service-braid-range2-big-service140-initial-stagnation-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        },
+        "lns-holdout-service-braid-range2-big-service160-initial-stagnation-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 6
+        }
+      },
+      "examples": []
+    },
+    "allNonBaselineSliding": {
+      "selected": 54,
+      "pos": 0,
+      "neg": 0,
+      "neu": 54,
+      "best": 0,
+      "worst": 0,
+      "bySeed": {
+        "7": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 18
+        },
+        "19": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 18
+        },
+        "37": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 18
+        }
+      },
+      "byCase": {
+        "lns-holdout-service-braid-range2-big-service120-initial-stagnation-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 18
+        },
+        "lns-holdout-service-braid-range2-big-service140-initial-stagnation-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 18
+        },
+        "lns-holdout-service-braid-range2-big-service160-initial-stagnation-screen-candidate": {
+          "pos": 0,
+          "neg": 0,
+          "neu": 18
+        }
+      },
+      "examples": []
+    }
+  }
+}

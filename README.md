@@ -3,6 +3,7 @@
 Optimize a city layout on a 2D grid by placing roads, service buildings, and residential buildings to maximize total population.
 
 This project now includes:
+
 - an `auto` staged solver that runs `greedy -> LNS -> bounded CP-SAT`
 - a `greedy` heuristic solver with restarts and local search
 - an `LNS` solver that improves a seed layout with neighborhood CP-SAT repair
@@ -11,11 +12,12 @@ This project now includes:
 - a local web planner with saved layouts, map inspection, planner explainability maps, and manual editing
 
 Core reference docs:
+
 - [SPEC.md](./docs/requirements/SPEC.md): formal problem statement
 - [Requirement.md](./docs/requirements/Requirement.md): product-level summary
 - [ALGORITHM.md](./docs/design/ALGORITHM.md): heuristic design notes
 - [LEARNED_GUIDANCE_ROADMAP.md](./docs/roadmaps/LEARNED_GUIDANCE_ROADMAP.md): roadmap for ML / RL-style learned guidance over the current solver stack
-- [PLANNER_ARCHITECTURE.md](./docs/design/PLANNER_ARCHITECTURE.md): current web/backend module boundaries
+- [PLANNER_ARCHITECTURE.md](./docs/design/PLANNER_ARCHITECTURE.md): current planner app/backend module boundaries
 - [SOLVER_ROADMAP.md](./docs/roadmaps/SOLVER_ROADMAP.md): overall solver roadmap
 - [SOLVER_ABLATION_DECISIONS.md](./docs/decisions/SOLVER_ABLATION_DECISIONS.md): deterministic ablation gate decisions before model training
 - [CP_SAT_ROADMAP.md](./docs/roadmaps/CP_SAT_ROADMAP.md): CP-SAT-specific roadmap
@@ -23,15 +25,18 @@ Core reference docs:
 ## Problem Summary
 
 The input is a grid of `0` and `1` values:
+
 - `1` means the cell is allowed
 - `0` means the cell is blocked
 
 The solver must place:
+
 - roads on allowed cells
 - service buildings on allowed rectangular footprints
 - residential buildings on allowed rectangular footprints
 
 Subject to these core rules:
+
 - every road component must touch row `0` or column `0`
 - every building must connect to a row-0-or-column-0-connected road component
 - buildings touching row `0` or column `0` are treated as road-connected automatically
@@ -47,6 +52,7 @@ For the CP-SAT solver, ties are broken explicitly in favor of fewer roads and fe
 ### Service buildings
 
 Each service type defines:
+
 - `rows`
 - `cols`
 - `bonus`
@@ -57,6 +63,7 @@ Each service type defines:
 ### Residential buildings
 
 Each residential type defines:
+
 - `w`
 - `h`
 - `min`
@@ -72,6 +79,7 @@ Preferred configuration is typed `residentialTypes`. Legacy `residentialSettings
 `auto` is the recommended quality path and the default optimizer for omitted `params.optimizer` values in the public runtime, HTTP API, example CLI, and web planner.
 
 In this project it:
+
 - starts with a capped fast greedy incumbent
 - improves it with `LNS`
 - follows with bounded `CP-SAT` polishing
@@ -86,6 +94,7 @@ Auto owns orchestration details. It generates per-stage random seeds and reports
 The greedy solver is the heavy standalone heuristic / advanced inspection mode.
 
 It uses:
+
 - service candidate ranking
 - constructive placement
 - optional restarts
@@ -99,6 +108,7 @@ Use standalone `greedy` when you want Greedy-only quality checks or heuristic tu
 `LNS` means `Large Neighborhood Search`.
 
 In this project it:
+
 - starts from a greedy solution or a displayed saved layout seed
 - fixes everything outside one neighborhood window
 - repairs that window with CP-SAT
@@ -113,6 +123,7 @@ Use this when you want a better layout than greedy without doing a full global C
 The CP-SAT solver is the exact optimization backend using OR-Tools.
 
 In practice it may return:
+
 - `OPTIMAL`: best solution found and proven optimal
 - `FEASIBLE`: best known solution found within limits, not proven optimal
 
@@ -172,10 +183,32 @@ The example CP-SAT command is bounded for local use: by default it runs with a 3
 npm test
 ```
 
+## Quality Gates
+
+The default test gate includes the TypeScript build, Prettier formatting check, ESLint for browser/test JavaScript, code-hygiene checks, file-size budget checks, route/API tests, and optimizer regression suites:
+
+```bash
+npm test
+```
+
+For the broader release-quality gate, run:
+
+```bash
+npm run quality
+```
+
+That adds the experiment registry check and a high-severity npm dependency audit. The audit contacts the npm registry.
+
 ## CLI Commands
 
 Available scripts from [package.json](./package.json):
+
 - `npm run build`
+- `npm run format`
+- `npm run format:check`
+- `npm run lint`
+- `npm run quality`
+- `npm run security:audit`
 - `npm run web`
 - `npm run solve`
 - `npm run solve:auto`
@@ -202,6 +235,7 @@ npm run web
 Then open [http://localhost:4173](http://localhost:4173).
 
 The planner now includes:
+
 - an interactive grid editor
 - service and residential catalog editing
 - collapsible catalog import
@@ -221,6 +255,7 @@ The planner now includes:
 - expansion comparison tooling for proposed next service or residential additions
 
 Notes:
+
 - `LNS` and `CP-SAT` need the Python OR-Tools backend
 - stopping a background solve preserves the best feasible result when one exists
 - the displayed output can be reused as the default seed or hint only when the current model fingerprint still matches and the layout has been validated
@@ -240,26 +275,24 @@ const grid = [
   [1, 1, 1, 1, 1, 1],
   [1, 1, 1, 1, 1, 1],
   [1, 1, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1],
+  [1, 1, 1, 1, 1, 1]
 ];
 
 const params = {
   optimizer: "greedy",
-  serviceTypes: [
-    { rows: 2, cols: 3, bonus: 50, range: 1, avail: 1 },
-  ],
+  serviceTypes: [{ rows: 2, cols: 3, bonus: 50, range: 1, avail: 1 }],
   residentialTypes: [
     { w: 2, h: 2, min: 100, max: 200, avail: 2 },
-    { w: 2, h: 3, min: 140, max: 260, avail: 2 },
+    { w: 2, h: 3, min: 140, max: 260, avail: 2 }
   ],
   availableBuildings: {
     services: 1,
-    residentials: 2,
+    residentials: 2
   },
   greedy: {
     localSearch: true,
-    restarts: 10,
-  },
+    restarts: 10
+  }
 };
 
 const solution = solve(grid, params);
@@ -284,8 +317,8 @@ const solution = solve(grid, {
     maxNoImprovementIterations: 4,
     neighborhoodRows: 6,
     neighborhoodCols: 8,
-    repairTimeLimitSeconds: 5,
-  },
+    repairTimeLimitSeconds: 5
+  }
 });
 ```
 
@@ -306,8 +339,8 @@ const solution = await solveAsync(grid, {
     randomizeSearch: false,
     relativeGapLimit: 0.01,
     absoluteGapLimit: 10,
-    logSearchProgress: false,
-  },
+    logSearchProgress: false
+  }
 });
 ```
 
@@ -325,8 +358,8 @@ const solution = await solveAsync(
     optimizer: "cp-sat",
     cpSat: {
       timeLimitSeconds: 120,
-      numWorkers: 1,
-    },
+      numWorkers: 1
+    }
   },
   {
     onProgress(update) {
@@ -334,7 +367,7 @@ const solution = await solveAsync(
         console.log(update.kind, update.telemetry.incumbentPopulation, update.telemetry.bestPopulationUpperBound);
       }
     },
-    progressIntervalSeconds: 0.5,
+    progressIntervalSeconds: 0.5
   }
 );
 ```
@@ -373,8 +406,8 @@ const continued = await solveAsync(grid, {
     timeLimitSeconds: 120,
     numWorkers: 1,
     warmStartHint: seed,
-    objectiveLowerBound: seed.totalPopulation,
-  },
+    objectiveLowerBound: seed.totalPopulation
+  }
 });
 ```
 
@@ -400,9 +433,9 @@ const portfolio = await solveAsync(grid, {
     portfolio: {
       randomSeeds: [3, 11, 17],
       perWorkerTimeLimitSeconds: 20,
-      perWorkerNumWorkers: 1,
-    },
-  },
+      perWorkerNumWorkers: 1
+    }
+  }
 });
 ```
 
@@ -485,9 +518,10 @@ Build the low-risk learned-ranking label bundle with protected development/holdo
 ```bash
 npm run benchmark:labels
 npm run benchmark:labels -- --json --seeds=7,19,37 --max-windows=8 --repair-time=1
+npm run benchmark:labels -- --artifact-dir=artifacts/learned-ranking-labels/2026-05-01/bundle --label-run-id=learned-ranking-labels-2026-05-01 --label-register-dry-run --seeds=7,19,37 --max-windows=8 --repair-time=1 --json
 ```
 
-The combined label bundle includes Greedy connectivity-shadow ordering labels, Greedy road-opportunity near-miss labels, split-aware LNS replay labels, schema/audit metadata, and leakage checks. It does not train a model or change solver defaults.
+The combined label bundle includes Greedy connectivity-shadow ordering labels, Greedy road-opportunity near-miss labels, split-aware LNS replay labels, schema/audit metadata, and leakage checks. `--artifact-dir` writes `labels.json`, `labels.txt`, `telemetry-manifest.json`, and `registry-entry-draft.json`; artifact bundle directories must be under `artifacts/` and non-empty directories require explicit `--force-artifact-dir`. `--label-register-dry-run` completes and validates strict label-bundle registry metadata without appending. It does not train a model or change solver defaults.
 
 List the available LNS case names:
 
@@ -541,6 +575,54 @@ Use the harder ablation coverage corpus when the default cases saturate:
 npm run benchmark:scorecard -- --budget-ablation --coverage-corpus --modes=auto,greedy,lns --budgets=5,30 --seeds=7,19
 ```
 
+Use the product-shaped workflow corpus when collecting evidence for promotion or regression decisions. This corpus keeps development and holdout cases explicit and tags planner-shaped workflows such as manual-layout replay, expansion comparison, corridor/gate pressure, service pressure, anchor-service, and multi-anchor road components:
+
+```bash
+npm run benchmark:scorecard -- --product-corpus --list
+npm run benchmark:scorecard -- --product-corpus --modes=auto,greedy,lns,cp-sat --budgets=1,5,30 --seeds=7,19 --json
+```
+
+Persist ordinary cross-mode scorecard artifacts, including a telemetry manifest, without product registry metadata:
+
+```bash
+npm run benchmark:scorecard -- --artifact-dir=artifacts/cross-mode/2026-05-01/smoke --modes=auto,greedy --budgets=1 --seeds=7 typed-housing-single
+```
+
+Use the promotion-matrix preset for the long product-corpus evidence run:
+
+```bash
+npm run benchmark:scorecard -- --product-corpus --product-promotion-matrix --product-artifact-dir=artifacts/product-corpus/2026-04-30/promotion-1s-5s-30s-120s-seeds7-19-37 --product-run-id=product-corpus-scorecard-2026-04-30-promotion-1s-5s-30s-120s-seeds7-19-37 --product-register-dry-run --json
+```
+
+Write product-corpus artifacts and a registry-entry draft in one repeatable run:
+
+```bash
+npm run benchmark:scorecard -- --product-corpus --product-artifact-dir=artifacts/product-corpus/2026-04-30 --product-run-id=product-corpus-scorecard-2026-04-30 --modes=auto,greedy,lns,cp-sat --budgets=1,5 --seeds=7 --json
+```
+
+Validate the completed registry entry first without writing, then append it only after the artifact bundle is committed or otherwise checkpointed:
+
+```bash
+npm run benchmark:scorecard -- --product-corpus --product-artifact-dir=artifacts/product-corpus/2026-04-30 --product-run-id=product-corpus-scorecard-2026-04-30 --product-register-dry-run --modes=auto,greedy,lns,cp-sat --budgets=1,5 --seeds=7 --json
+npm run experiment-registry -- append --entry=artifacts/product-corpus/2026-04-30/registry-entry-draft.json
+```
+
+`--artifact-dir` emits `scorecard.json`, `scorecard.txt`, and `telemetry-manifest.json` for ordinary scorecards. Artifact bundle directories must be under `artifacts/`; existing non-empty directories are refused unless the command includes `--force-artifact-dir`. The product artifact writer emits those files plus `evidence-summary.json`, `workflow-replay.json`, `workflow-replay-telemetry-manifest.json`, and `registry-entry-draft.json`. The telemetry manifests record the exact command, git commit/branch, captured hardware, per-run solver parameter summaries, wall/CPU timing, first-feasible and best-score timing, status/gap fields, candidate counts where available, CP-SAT model size where available, per-stage Auto/Greedy/LNS/CP-SAT records, and product workflow replay validity through `/api/layout/evaluate`. Model experiments should use the exported `buildModelExperimentTelemetryManifest` and `buildModelExperimentRegistryEntryDraft` helpers; current scripts do not train a model or change solver defaults. `--product-register-dry-run` completes that draft with git and hardware metadata and validates it with strict registry checks without appending; use `--product-registry=<path>` to target a temporary registry for validation. Direct `--product-register` append is blocked because generated artifacts cannot be honestly stamped with a commit until the artifact bundle has been checkpointed. `--product-promotion-matrix` expands to modes `auto,greedy,lns,cp-sat`, budgets `1,5,30,120`, and seeds `7,19,37`; it rejects explicit `--modes`, `--budget`, `--budgets`, or `--seeds` overrides. Register product-corpus artifacts with split-aware `cases` metadata, workflow-tag `caseFamilies`, per-case evidence metrics, replay metrics, and telemetry manifests so later checks can distinguish development tuning from protected holdout evidence. `protectedHoldout` is only true for the full promotion matrix: all 10 product-corpus cases with their expected development/holdout split, `auto`, `greedy`, `lns`, and `cp-sat`, budgets `1,5,30,120`, the exact seed set `7,19,37`, complete scorecard matrix coverage, and required modes inside every required scorecard.
+
+```json
+{
+  "cases": {
+    "development": ["manual-layout-replay-warm-start"],
+    "holdout": ["expansion-comparison-replay"]
+  },
+  "caseFamilies": ["manual-layout-replay", "expansion-comparison"],
+  "splitStatus": {
+    "protectedHoldout": false,
+    "notes": "Partial product workflow corpus scorecard; not protected holdout promotion evidence."
+  }
+}
+```
+
 Start with a narrow matrix before adding `120` second probes; corrected LNS budget policies can legitimately consume the requested budget. Ablation summaries report total coverage plus best-score, Auto, and LNS deltas versus the baseline policy so unrelated mode winners do not hide Auto/LNS movement.
 
 Emit policy-scoped decision traces for the same ablation runner:
@@ -552,7 +634,7 @@ npm run benchmark:scorecard -- --budget-ablation --trace-jsonl --ablation-polici
 From code:
 
 ```ts
-import { runCpSatBenchmarkSuite } from "./dist/index.js";
+import { runCpSatBenchmarkSuite } from "./dist/benchmarkApi.js";
 
 process.env.CITY_BUILDER_CP_SAT_PYTHON ??= ".venv-cp-sat/bin/python";
 
@@ -563,8 +645,8 @@ const result = await runCpSatBenchmarkSuite(undefined, {
     maxDeterministicTime: 10,
     numWorkers: 1,
     randomSeed: 7,
-    progressIntervalSeconds: 0.5,
-  },
+    progressIntervalSeconds: 0.5
+  }
 });
 
 console.log(result.results[0].cpSatTelemetry?.bestPopulationUpperBound);
@@ -598,7 +680,13 @@ console.log(validation.mapText);
 
 ## Main Exports
 
-The public API is exposed from [src/index.ts](./src/index.ts):
+The default public API is exposed from [src/index.ts](./src/index.ts). Benchmark,
+label, and experiment-registry tooling is exposed separately from
+[src/benchmarkApi.ts](./src/benchmarkApi.ts) through the `city-builder/benchmarks`
+package subpath.
+Benchmark-only functions and types such as `runCpSatBenchmarkSuite`,
+`CpSatBenchmarkCase`, and `CpSatBenchmarkSuiteResult` are available from
+`./dist/benchmarkApi.js` or `city-builder/benchmarks`.
 
 - `solveAsync`
 - `solve`
@@ -609,17 +697,6 @@ The public API is exposed from [src/index.ts](./src/index.ts):
 - `solveCpSatAsync`
 - `solveLns`
 - `solveCpSat`
-- `runGreedyBenchmarkSuite`
-- `listGreedyBenchmarkCaseNames`
-- `normalizeGreedyBenchmarkOptions`
-- `createGreedyBenchmarkSnapshot`
-- `formatGreedyBenchmarkSuite`
-- `DEFAULT_GREEDY_BENCHMARK_CORPUS`
-- `DEFAULT_GREEDY_BENCHMARK_OPTIONS`
-- `runCpSatBenchmarkSuite`
-- `listCpSatBenchmarkCaseNames`
-- `normalizeCpSatBenchmarkOptions`
-- `DEFAULT_CP_SAT_BENCHMARK_CORPUS`
 - `evaluateLayout`
 - `validateLayoutConstraints`
 - `assertValidLayout`
@@ -633,6 +710,7 @@ The public API is exposed from [src/index.ts](./src/index.ts):
 - `resolveOptimizerName`
 
 Useful types include:
+
 - `OptimizerName`
 - `AutoOptions`
 - `AutoSolveStageMetadata`
@@ -641,8 +719,6 @@ Useful types include:
 - `ServiceTypeSetting`
 - `ResidentialTypeSetting`
 - `CpSatOptions`
-- `CpSatBenchmarkCase`
-- `CpSatBenchmarkSuiteResult`
 - `CpSatAsyncOptions`
 - `CpSatProgressUpdate`
 - `CpSatObjectivePolicy`
@@ -658,6 +734,7 @@ Useful types include:
 ### Grid
 
 `Grid` is `number[][]`, where:
+
 - `1` = allowed
 - `0` = blocked
 
@@ -763,6 +840,7 @@ cpSat: {
 ## Output Shape
 
 A `Solution` contains:
+
 - `optimizer`
 - `activeOptimizer`
 - `autoStage`
@@ -789,25 +867,27 @@ Road cells are encoded as `"r,c"` strings inside the `Set`.
 ## Project Layout
 
 - [src/index.ts](./src/index.ts): public API
-- [src/runtime/solve.ts](./src/runtime/solve.ts): top-level solver dispatch
-- [src/runtime/optimizerRegistry.ts](./src/runtime/optimizerRegistry.ts): optimizer registry
-- [src/auto/solver.ts](./src/auto/solver.ts): staged `auto` orchestration
-- [src/greedy/solver.ts](./src/greedy/solver.ts): greedy solver
-- [src/lns/solver.ts](./src/lns/solver.ts): LNS solver
-- [src/cp-sat/solver.ts](./src/cp-sat/solver.ts): TypeScript bridge for CP-SAT
+- [src/packages/runtime/dispatch/solve.ts](./src/packages/runtime/dispatch/solve.ts): top-level solver dispatch
+- [src/packages/runtime/dispatch/optimizerRegistry.ts](./src/packages/runtime/dispatch/optimizerRegistry.ts): optimizer registry
+- [src/packages/solvers/auto/solver.ts](./src/packages/solvers/auto/solver.ts): staged `auto` orchestration
+- [src/packages/solvers/auto/stagePolicy.ts](./src/packages/solvers/auto/stagePolicy.ts): `auto` stage budgets and policy defaults
+- [src/packages/solvers/auto/terminal.ts](./src/packages/solvers/auto/terminal.ts): `auto` terminal recovery metadata
+- [src/packages/solvers/greedy/solver.ts](./src/packages/solvers/greedy/solver.ts): greedy solver
+- [src/packages/solvers/lns/solver.ts](./src/packages/solvers/lns/solver.ts): LNS solver
+- [src/packages/solvers/cp-sat/solver.ts](./src/packages/solvers/cp-sat/solver.ts): TypeScript bridge for CP-SAT
 - [python/cp_sat_solver.py](./python/cp_sat_solver.py): OR-Tools CP-SAT model
-- [src/greedy/roadAnchors.ts](./src/greedy/roadAnchors.ts): greedy road-anchor feasibility and refinement helpers
-- [src/runtime/jobs/solveJobManager.ts](./src/runtime/jobs/solveJobManager.ts): background solve job lifecycle
-- [src/server/http/requestHandler.ts](./src/server/http/requestHandler.ts): planner request composition
-- [src/server/http/routes.ts](./src/server/http/routes.ts): planner API route handlers
-- [src/server/http/contracts.ts](./src/server/http/contracts.ts): shared HTTP payload contracts
-- [src/server/http/solutionResponse.ts](./src/server/http/solutionResponse.ts): solve and manual-layout HTTP response shaping
-- [src/server/http/static.ts](./src/server/http/static.ts): local planner static asset serving
-- [src/benchmarks/greedy.ts](./src/benchmarks/greedy.ts): fixed greedy benchmark corpus and harness
-- [src/benchmarks/cpSat.ts](./src/benchmarks/cpSat.ts): fixed CP-SAT benchmark corpus and harness
-- [web/](./web): planner UI modules
-- [src/core/evaluator.ts](./src/core/evaluator.ts): validation and exact scoring
-- [src/core/map.ts](./src/core/map.ts): ASCII rendering and map-aware validation
+- [src/packages/solvers/greedy/roadAnchors.ts](./src/packages/solvers/greedy/roadAnchors.ts): greedy road-anchor feasibility and refinement helpers
+- [src/packages/runtime/jobs/solveJobManager.ts](./src/packages/runtime/jobs/solveJobManager.ts): background solve job lifecycle
+- [src/apps/planner-server/http/requestHandler.ts](./src/apps/planner-server/http/requestHandler.ts): planner request composition
+- [src/apps/planner-server/http/routes.ts](./src/apps/planner-server/http/routes.ts): planner API route handlers
+- [src/apps/planner-server/http/contracts.ts](./src/apps/planner-server/http/contracts.ts): shared HTTP payload contracts
+- [src/apps/planner-server/http/solutionResponse.ts](./src/apps/planner-server/http/solutionResponse.ts): solve and manual-layout HTTP response shaping
+- [src/apps/planner-server/http/static.ts](./src/apps/planner-server/http/static.ts): local planner static asset serving
+- [src/packages/benchmarks/greedy.ts](./src/packages/benchmarks/greedy.ts): fixed greedy benchmark corpus and harness
+- [src/packages/benchmarks/cpSat.ts](./src/packages/benchmarks/cpSat.ts): fixed CP-SAT benchmark corpus and harness
+- [apps/planner-web/](./apps/planner-web): planner UI modules
+- [src/packages/core/evaluator.ts](./src/packages/core/evaluator.ts): validation and exact scoring
+- [src/packages/core/map.ts](./src/packages/core/map.ts): ASCII rendering and map-aware validation
 - [tests/](./tests): regression, route, and optimizer tests
 
 ## Notes

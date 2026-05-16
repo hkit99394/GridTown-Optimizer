@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "runId": "lns-online-selected-feature-gate-nomination-c5b91615",
+  "artifactType": "ablation-gate",
+  "generatedAt": "2026-05-11T23:58:03.053Z",
+  "commands": [
+    "node scripts/evaluate-lns-online-selected-feature-gates.mjs --discovery-artifact=artifacts/lns-online-selected-feature-gate-discovery/2026-05-11/trajectory-features-broadened-generated-protected-two-iteration-validation-aware-final-outcome-search --artifact-dir=artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-11/protected-broadened-two-iteration-validation-aware-gate-validation-greedy-9seed-min-score-delta-0 --candidate-source=validation-greedy --candidate-count=1 --runner=dist/lnsBenchmarkCli.js --window-ranker-model=artifacts/lns-window-ranker/2026-05-10/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-generated-right-repeatability-trajectory-features-ignore-baseline-conflict-excluded-calibration-lr0.02-cap100/model.json --window-ranker-min-score-delta=0 --seeds=5,7,11,13,17,19,23,29,37 --lns-iterations=2 --window-ranker-protected-holdout --run-id-prefix=lns-online-selected-feature-gate-nomination-2026-05-11-protected-validation-greedy-9seed --decision=online-lns-window-ranker-validation-aware-gate-nomination-evaluation '--summary=Nomination-aware nine-seed protected recheck for the validation-greedy selected-feature gate from protected-validation-aware discovery. No solver default changed.'"
+  ],
+  "artifactPaths": [
+    "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-11/protected-broadened-two-iteration-validation-aware-gate-validation-greedy-9seed-min-score-delta-0/lns-online-selected-feature-gate-nomination-evaluation.json",
+    "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-11/protected-broadened-two-iteration-validation-aware-gate-validation-greedy-9seed-min-score-delta-0/lns-online-selected-feature-gate-nomination-evaluation.txt",
+    "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-11/protected-broadened-two-iteration-validation-aware-gate-validation-greedy-9seed-min-score-delta-0/telemetry-manifest.json",
+    "artifacts/lns-online-selected-feature-gate-nomination-evaluation/2026-05-11/protected-broadened-two-iteration-validation-aware-gate-validation-greedy-9seed-min-score-delta-0/manifest.json"
+  ],
+  "cases": [
+    "lns-window-ranker-online"
+  ],
+  "caseFamilies": [
+    "lns-window-ranker-online"
+  ],
+  "seeds": [
+    5,
+    7,
+    11,
+    13,
+    17,
+    19,
+    23,
+    29,
+    37
+  ],
+  "inputFingerprint": "fnv1a:34b0d192",
+  "datasetFingerprint": "fnv1a:3068260c",
+  "reportFingerprint": "fnv1a:c5b91615",
+  "splitStatus": {
+    "diagnosticsOnly": true,
+    "source": "online-lns-window-ranker-gated-candidate-reruns",
+    "candidateSource": "validation-greedy",
+    "candidateCount": 1
+  },
+  "budget": {
+    "candidateCountRequested": 1,
+    "evaluatedCandidateCount": 1,
+    "protectedHoldout": true,
+    "seeds": "5,7,11,13,17,19,23,29,37",
+    "lnsIterations": 2
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "model": {
+    "trained": false,
+    "diagnosticsOnly": true,
+    "gateKind": "online-selected-feature-gate-nomination-evaluation",
+    "windowRankerModel": "artifacts/lns-window-ranker/2026-05-10/strict-lns-replay-labels-curated-seeds-v3-final-lift-no-weak-generated-right-repeatability-trajectory-features-ignore-baseline-conflict-excluded-calibration-lr0.02-cap100/model.json",
+    "windowRankerMinScoreDelta": 0
+  },
+  "decision": "diagnostics-only",
+  "summary": "Online LNS window-ranker selected-feature gate candidates rerun through nomination-aware benchmark scoring; no solver default changed.",
+  "summaryMetrics": {
+    "candidateSource": "validation-greedy",
+    "candidateCountRequested": 1,
+    "evaluatedCandidateCount": 1,
+    "safeCandidateCount": 1,
+    "activeOverrideCandidateCount": 0,
+    "valuePositiveCandidateCount": 0,
+    "promotionCandidateCount": 0,
+    "bestCandidateIndex": 1,
+    "bestCandidateCliArg": "area>=2.1,area<=2.1,clearedFootprint>=0.75",
+    "bestCandidateMeanDelta": 0,
+    "bestCandidateWorstDelta": 0,
+    "bestCandidateImprovedCount": 0,
+    "bestCandidateRegressedCount": 0,
+    "bestCandidateOverrideCount": 0,
+    "bestCandidateFallbackCount": 180,
+    "bestCandidateAllFallback": true,
+    "bestCandidatePromotionCandidate": false
+  }
+}

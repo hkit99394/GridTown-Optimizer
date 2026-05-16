@@ -1,0 +1,1127 @@
+const assert = require("node:assert/strict");
+const childProcess = require("node:child_process");
+const fs = require("node:fs");
+const path = require("node:path");
+
+const repoRoot = path.join(__dirname, "../..");
+const {
+  buildLnsWindowRankerOnlineAblationRegistryEntryDraft,
+  buildLnsWindowRankerOnlineAblationTelemetryManifest,
+  buildLnsWindowRankerOnlineCalibrationRegistryEntryDraft,
+  buildLnsWindowRankerOnlineCalibrationTelemetryManifest,
+  buildLnsWindowRankerOnlineTransitionOutcomeDiagnostics,
+  createLnsWindowRankerOnlineCalibrationSnapshot,
+  createLnsWindowRankerOnlineAblationSnapshot,
+  DEFAULT_LNS_WINDOW_RANKER_ONLINE_FRESH_PRESSURE_HOLDOUT_CORPUS,
+  DEFAULT_LNS_WINDOW_RANKER_ONLINE_PRODUCT_PROMOTION_CORPUS,
+  DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS,
+  formatLnsWindowRankerOnlineCalibration,
+  formatLnsWindowRankerOnlineAblation,
+  runLnsWindowRankerOnlineCalibration,
+  runLnsWindowRankerOnlineAblation
+} = require("../../dist/benchmarkApi.js");
+
+function featureDeltas(selected, baseline) {
+  return Object.fromEntries(
+    [...new Set([...Object.keys(selected), ...Object.keys(baseline)])].map((featureName) => [
+      featureName,
+      (selected[featureName] ?? 0) - (baseline[featureName] ?? 0)
+    ])
+  );
+}
+
+function buildMockSolution(params) {
+  const ranker = params.lns?.windowRanker;
+  const usesRanker = Boolean(ranker?.model);
+  const overridesBaseline = usesRanker && (ranker.minScoreDelta ?? 0) < 0.2;
+  const totalPopulation = overridesBaseline ? 120 : 100;
+  const baselineFeatures = {
+    selectedByBaseline: 1,
+    serviceCandidatesIntersecting: 0,
+    residentialCandidateHeadroom: 0.1
+  };
+  const selectedFeatures = overridesBaseline
+    ? {
+        selectedByBaseline: 0,
+        serviceCandidatesIntersecting: 0.5,
+        residentialCandidateHeadroom: 0.3
+      }
+    : baselineFeatures;
+  const nominatedFeatures = {
+    selectedByBaseline: 0,
+    serviceCandidatesIntersecting: 0.5,
+    residentialCandidateHeadroom: 0.3
+  };
+  const windowRankerSelection = usesRanker
+    ? {
+        source: "learned-window-ranker",
+        modelFingerprint: "fnv1a:test-online",
+        featureSchemaVersion: 2,
+        candidateCount: 2,
+        baselineScore: 0.1,
+        selectedScore: overridesBaseline ? 0.4 : 0.25,
+        scoreDelta: overridesBaseline ? 0.3 : 0.15,
+        ...(ranker.suppressionModel
+          ? {
+              suppressionModelFingerprint: ranker.suppressionModel.modelFingerprint,
+              suppressionBaselineScore: 0.1,
+              suppressionSelectedScore: 0,
+              suppressionScoreDelta: 0.1
+            }
+          : {}),
+        baselineCandidateIndex: 0,
+        selectedCandidateIndex: overridesBaseline ? 1 : 0,
+        nominatedCandidateIndex: 1,
+        baselineOperator: "sliding",
+        selectedOperator: overridesBaseline ? "service-overlap" : "sliding",
+        nominatedOperator: "service-overlap",
+        baselineWindow: { top: 0, left: 0, rows: 2, cols: 2 },
+        selectedWindow: overridesBaseline
+          ? { top: 0, left: 1, rows: 2, cols: 2 }
+          : { top: 0, left: 0, rows: 2, cols: 2 },
+        nominatedWindow: { top: 0, left: 1, rows: 2, cols: 2 },
+        selectedByBaseline: !overridesBaseline,
+        nominatedByBaseline: false,
+        baselineFeatures,
+        selectedFeatures,
+        nominatedFeatures,
+        featureDeltas: featureDeltas(selectedFeatures, baselineFeatures),
+        nominatedFeatureDeltas: featureDeltas(nominatedFeatures, baselineFeatures),
+        nominatedScore: overridesBaseline ? 0.4 : 0.25,
+        nominatedScoreDelta: overridesBaseline ? 0.3 : 0.15,
+        ...(overridesBaseline ? {} : { fallbackReason: "score-delta-below-threshold" })
+      }
+    : undefined;
+  const roads = new Set(overridesBaseline ? ["0,0", "0,1"] : ["0,0"]);
+  const services = overridesBaseline ? [{ r: 0, c: 1, rows: 1, cols: 1, range: 2 }] : [];
+  const residentials = overridesBaseline ? [{ r: 1, c: 1, rows: 1, cols: 1 }] : [];
+  const seedWallClockSeconds = usesRanker && !overridesBaseline ? 0.5 : 1;
+  const outcomeWallClockSeconds = overridesBaseline ? 0.5 : 0;
+
+  return {
+    optimizer: "lns",
+    roads,
+    services,
+    serviceTypeIndices: services.map(() => 0),
+    servicePopulationIncreases: services.map(() => 5),
+    residentials,
+    residentialTypeIndices: residentials.map(() => 0),
+    populations: residentials.map(() => totalPopulation),
+    totalPopulation,
+    cpSatStatus: "FEASIBLE",
+    lnsTelemetry: {
+      stopReason: "iteration-limit",
+      seedSource: "hint",
+      seedWallClockSeconds,
+      seedTimeLimitSeconds: null,
+      wallClockLimitSeconds: null,
+      noImprovementTimeoutSeconds: null,
+      focusedRepairTimeLimitSeconds: 0.25,
+      escalatedRepairTimeLimitSeconds: 0.25,
+      iterationsStarted: 1,
+      iterationsCompleted: 1,
+      improvingIterations: usesRanker ? 1 : 0,
+      neutralIterations: usesRanker ? 0 : 1,
+      recoverableFailures: 0,
+      skippedIterations: 0,
+      finalStagnantIterations: usesRanker ? 0 : 1,
+      elapsedSeconds: seedWallClockSeconds + outcomeWallClockSeconds,
+      windowRanker: usesRanker
+        ? {
+            enabled: true,
+            modelFingerprint: "fnv1a:test-online",
+            featureSchemaVersion: 2,
+            minScoreDelta: ranker.minScoreDelta ?? 0,
+            ...(ranker.suppressionModel?.modelFingerprint
+              ? { suppressionModelFingerprint: ranker.suppressionModel.modelFingerprint }
+              : {}),
+            ...(ranker.suppressionModel ? { suppressionMinScoreDelta: ranker.suppressionMinScoreDelta ?? 0 } : {}),
+            ...(ranker.allowedTransitions ? { allowedTransitions: [...ranker.allowedTransitions] } : {}),
+            ...(ranker.selectedFeatureGates ? { selectedFeatureGates: [...ranker.selectedFeatureGates] } : {}),
+            ...(ranker.selectedFeatureGateGroups
+              ? { selectedFeatureGateGroups: ranker.selectedFeatureGateGroups.map((group) => [...group]) }
+              : {}),
+            ...(ranker.featureDeltaGates ? { featureDeltaGates: [...ranker.featureDeltaGates] } : {}),
+            decisions: 2,
+            overrides: overridesBaseline ? 1 : 0,
+            fallbackDecisions: overridesBaseline ? 1 : 2
+          }
+        : undefined,
+      outcomes: [
+        {
+          iteration: 0,
+          phase: "focused",
+          operator: windowRankerSelection?.selectedOperator ?? "sliding",
+          window: windowRankerSelection?.selectedWindow ?? { top: 0, left: 0, rows: 2, cols: 2 },
+          stagnantIterationsBefore: 0,
+          staleSecondsBefore: 0,
+          repairTimeLimitSeconds: 0.25,
+          wallClockSeconds: outcomeWallClockSeconds,
+          populationBefore: 100,
+          populationAfter: totalPopulation,
+          improvement: totalPopulation - 100,
+          status: usesRanker ? "improved" : "neutral",
+          windowRankerSelection
+        }
+      ]
+    }
+  };
+}
+
+function testOnlineAblationRunnerComparesEqualBudgets() {
+  const lnsSolverModule = require("../../dist/packages/solvers/lns/solver.js");
+  const originalSolveLns = lnsSolverModule.solveLns;
+  const observedParams = [];
+  lnsSolverModule.solveLns = (_grid, params) => {
+    observedParams.push(params);
+    return buildMockSolution(params);
+  };
+
+  try {
+    const result = runLnsWindowRankerOnlineAblation(
+      [
+        {
+          name: "online-ranker-fixture",
+          description: "Small fixture for online LNS ranker A/B scorecards.",
+          grid: [
+            [1, 1, 1],
+            [1, 1, 1],
+            [1, 1, 1]
+          ],
+          params: {
+            optimizer: "lns",
+            residentialTypes: [{ w: 1, h: 1, min: 10, max: 20, avail: 1 }]
+          }
+        }
+      ],
+      {
+        seeds: [7],
+        model: {
+          modelType: "lns-window-linear-pairwise-ranker",
+          modelFingerprint: "fnv1a:test-online",
+          featureSchemaVersion: 2,
+          weights: { selectedByBaseline: -1 }
+        },
+        minScoreDelta: 0.05,
+        suppressionModel: {
+          modelType: "lns-window-linear-pairwise-ranker",
+          modelFingerprint: "fnv1a:test-suppression",
+          featureSchemaVersion: 2,
+          weights: { selectedByBaseline: 1 }
+        },
+        suppressionMinScoreDelta: 0.25,
+        allowedTransitions: ["sliding->service-overlap"],
+        selectedFeatureGates: [{ feature: "selectedByBaseline", maxValue: 0 }],
+        selectedFeatureGateGroups: [
+          [
+            { feature: "serviceCandidatesIntersecting", minValue: 0.5 },
+            { feature: "residentialCandidateHeadroom", minValue: 0.3 }
+          ],
+          [{ feature: "selectedByBaseline", minValue: 1 }]
+        ],
+        featureDeltaGates: [{ feature: "selectedByBaseline", maxDelta: -1 }],
+        lns: {
+          iterations: 2,
+          repairTimeLimitSeconds: 0.25
+        },
+        cpSat: {
+          numWorkers: 1
+        },
+        greedy: {
+          profile: true
+        }
+      }
+    );
+
+    assert.equal(result.caseCount, 1);
+    assert.equal(result.seedCount, 1);
+    assert.equal(result.comparisonCount, 1);
+    assert.deepEqual(result.variants, ["baseline", "window-ranker"]);
+    assert.equal(result.coverage.runCount, 2);
+    assert.equal(result.cases[0].baseline.totalPopulation, 100);
+    assert.equal(result.cases[0].variants[1].totalPopulation, 120);
+    assert.equal(result.cases[0].variants[1].populationDeltaVsBaseline, 20);
+    assert.equal(result.cases[0].variants[0].timeToBestIteration, 0);
+    assert.equal(result.cases[0].variants[0].timeToBestIterationDeltaVsBaseline, 0);
+    assert.equal(result.cases[0].variants[1].timeToBestIteration, 1);
+    assert.equal(result.cases[0].variants[1].timeToBestIterationDeltaVsBaseline, 1);
+    assert.equal(result.cases[0].variants[1].timeToBestWallClockSeconds, 1.5);
+    assert.equal(result.cases[0].variants[1].timeToBestWallClockDeltaVsBaselineSeconds, 0.5);
+    assert.equal(result.variantSummaries[1].rankerDecisionCount, 2);
+    assert.equal(result.variantSummaries[1].rankerOverrideCount, 1);
+    assert.equal(result.variantSummaries[1].rankerFallbackDecisionCount, 1);
+    assert.equal(result.cases[0].variants[1].windowRanker.suppressionModelFingerprint, "fnv1a:test-suppression");
+    assert.equal(result.cases[0].variants[1].windowRanker.suppressionMinScoreDelta, 0.25);
+    assert.equal(result.cases[0].variants[1].selectionTrace[0].suppressionModelFingerprint, "fnv1a:test-suppression");
+    assert.equal(result.cases[0].variants[1].selectionTrace[0].suppressionScoreDelta, 0.1);
+    assert.deepEqual(result.cases[0].variants[1].windowRanker.allowedTransitions, ["sliding->service-overlap"]);
+    assert.deepEqual(result.cases[0].variants[1].windowRanker.selectedFeatureGates, [
+      { feature: "selectedByBaseline", maxValue: 0 }
+    ]);
+    assert.deepEqual(result.cases[0].variants[1].windowRanker.selectedFeatureGateGroups, [
+      [
+        { feature: "serviceCandidatesIntersecting", minValue: 0.5 },
+        { feature: "residentialCandidateHeadroom", minValue: 0.3 }
+      ],
+      [{ feature: "selectedByBaseline", minValue: 1 }]
+    ]);
+    assert.deepEqual(result.cases[0].variants[1].windowRanker.featureDeltaGates, [
+      { feature: "selectedByBaseline", maxDelta: -1 }
+    ]);
+    assert.equal(result.variantSummaries[1].improvedCaseCount, 1);
+    assert.equal(result.variantSummaries[1].regressedCaseCount, 0);
+    assert.equal(result.variantSummaries[1].overrideOutcomeCount, 1);
+    assert.equal(result.variantSummaries[1].overrideImprovedOutcomeCount, 1);
+    assert.equal(result.variantSummaries[1].overrideNeutralOutcomeCount, 0);
+    assert.equal(result.variantSummaries[1].fallbackOutcomeCount, 0);
+    assert.equal(result.variantSummaries[1].meanOverrideScoreDelta, 0.3);
+    assert.equal(result.variantSummaries[1].overrideChangedWindowCount, 1);
+    assert.equal(result.variantSummaries[1].fallbackChangedWindowCount, 0);
+    assert.equal(result.variantSummaries[1].overrideFeatureDeltaCount, 1);
+    assert.equal(result.variantSummaries[1].fallbackFeatureDeltaCount, 0);
+    assert.deepEqual(result.variantSummaries[1].overrideMeanFeatureDeltas, {
+      residentialCandidateHeadroom: 0.2,
+      selectedByBaseline: -1,
+      serviceCandidatesIntersecting: 0.5
+    });
+    assert.deepEqual(result.variantSummaries[1].fallbackMeanFeatureDeltas, {});
+    assert.deepEqual(result.variantSummaries[1].overrideTransitionCounts, { "sliding->service-overlap": 1 });
+    assert.deepEqual(result.variantSummaries[1].fallbackTransitionCounts, {});
+    assert.deepEqual(result.variantSummaries[1].overrideTransitionFeatureDeltaCounts, {
+      "sliding->service-overlap": 1
+    });
+    assert.deepEqual(result.variantSummaries[1].fallbackTransitionFeatureDeltaCounts, {});
+    assert.deepEqual(result.variantSummaries[1].overrideTransitionMeanFeatureDeltas, {
+      "sliding->service-overlap": {
+        residentialCandidateHeadroom: 0.2,
+        selectedByBaseline: -1,
+        serviceCandidatesIntersecting: 0.5
+      }
+    });
+    assert.deepEqual(result.variantSummaries[1].fallbackTransitionMeanFeatureDeltas, {});
+    assert.deepEqual(result.variantSummaries[1].overrideTransitionFinalOutcomeCounts, {
+      "sliding->service-overlap": { improved: 1, neutral: 0, regressed: 0 }
+    });
+    assert.deepEqual(result.variantSummaries[1].fallbackTransitionFinalOutcomeCounts, {});
+    assert.deepEqual(result.variantSummaries[1].overrideFinalOutcomeFeatureDeltaCounts, {
+      improved: 1,
+      neutral: 0,
+      regressed: 0
+    });
+    assert.deepEqual(result.variantSummaries[1].overrideFinalOutcomeMeanFeatureDeltas.improved, {
+      residentialCandidateHeadroom: 0.2,
+      selectedByBaseline: -1,
+      serviceCandidatesIntersecting: 0.5
+    });
+    assert.deepEqual(result.variantSummaries[1].overrideFinalOutcomeMeanFeatureDeltas.neutral, {});
+    assert.deepEqual(result.variantSummaries[1].overrideImprovedVsNeutralMeanFeatureDeltaGaps, {});
+    assert.deepEqual(result.variantSummaries[1].overrideTransitionPressureFamilyCounts, {
+      "sliding->service-overlap": { uncategorized: 1 }
+    });
+    assert.deepEqual(result.variantSummaries[1].fallbackTransitionPressureFamilyCounts, {});
+    assert.equal(result.variantSummaries[1].overrideFinalImprovedCaseCount, 1);
+    assert.equal(result.variantSummaries[1].overrideFinalNeutralCaseCount, 0);
+    assert.equal(result.variantSummaries[1].overrideFinalRegressedCaseCount, 0);
+    assert.equal(result.variantSummaries[1].meanOverrideFinalPopulationDelta, 20);
+    assert.equal(result.variantSummaries[1].sameFinalLayoutCount, 0);
+    assert.equal(result.variantSummaries[1].changedFinalLayoutCount, 1);
+    assert.equal(result.variantSummaries[1].meanFinalLayoutPlacementDelta, 3);
+    assert.equal(result.variantSummaries[1].meanTimeToBestIteration, 1);
+    assert.equal(result.variantSummaries[1].meanTimeToBestIterationDeltaVsBaseline, 1);
+    assert.equal(result.variantSummaries[1].meanTimeToBestWallClockSeconds, 1.5);
+    assert.equal(result.variantSummaries[1].meanTimeToBestWallClockDeltaVsBaselineSeconds, 0.5);
+    assert.equal(result.variantSummaries[1].timeToBestWallClockKnownPairCount, 1);
+    assert.equal(result.variantSummaries[1].timeToBestWallClockUnknownPairCount, 0);
+    assert.equal(result.variantSummaries[1].meanTimeToBestWallClockRatioVsBaseline, 1.5);
+    assert.equal(result.variantSummaries[1].medianTimeToBestWallClockRatioVsBaseline, 1.5);
+    assert.equal(result.variantSummaries[1].timeToBestWallClockFaster10PercentCount, 0);
+    assert.equal(result.variantSummaries[1].timeToBestWallClockSlower10PercentCount, 1);
+    assert.equal(result.variantSummaries[1].timeToBestWallClockFaster10PercentRate, 0);
+    assert.equal(result.variantSummaries[1].timeToBestWallClockSlower10PercentRate, 1);
+    assert.equal(result.variantSummaries[1].equalPopulationTimeToBestGatePassed, false);
+    assert.equal(result.variantSummaries[1].timeToBestPromotionGatePassed, false);
+    assert.equal(result.variantSummaries[1].earlierTimeToBestCount, 0);
+    assert.equal(result.variantSummaries[1].sameTimeToBestCount, 0);
+    assert.equal(result.variantSummaries[1].laterTimeToBestCount, 1);
+    assert.equal(result.variantSummaries[1].unknownTimeToBestCount, 0);
+    assert.equal(result.cases[0].variants[0].finalLayoutDeltaVsBaseline.sameFinalLayout, true);
+    assert.equal(result.cases[0].variants[0].finalLayoutDeltaVsBaseline.placementDeltaCount, 0);
+    assert.equal(result.cases[0].variants[1].finalLayoutDeltaVsBaseline.sameFinalLayout, false);
+    assert.equal(result.cases[0].variants[1].finalLayoutDeltaVsBaseline.roadAddedCount, 1);
+    assert.equal(result.cases[0].variants[1].finalLayoutDeltaVsBaseline.serviceAddedCount, 1);
+    assert.equal(result.cases[0].variants[1].finalLayoutDeltaVsBaseline.residentialAddedCount, 1);
+    assert.equal(result.cases[0].variants[1].finalLayoutDeltaVsBaseline.placementDeltaCount, 3);
+    assert.match(result.cases[0].variants[1].finalLayoutDeltaVsBaseline.baselineFingerprint, /^fnv1a:/);
+    assert.match(result.cases[0].variants[1].finalLayoutDeltaVsBaseline.variantFingerprint, /^fnv1a:/);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /Allowed transitions: sliding->service-overlap/);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /Selected feature gates: selectedByBaseline<=0/);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /Feature delta gates: selectedByBaseline<=-1/);
+    assert.deepEqual(result.cases[0].variants[1].selectionDiagnostics, {
+      overrideTransitionCounts: { "sliding->service-overlap": 1 },
+      fallbackTransitionCounts: {},
+      overrideChangedWindowCount: 1,
+      fallbackChangedWindowCount: 0,
+      overrideFeatureDeltaCount: 1,
+      fallbackFeatureDeltaCount: 0,
+      overrideMeanFeatureDeltas: {
+        residentialCandidateHeadroom: 0.2,
+        selectedByBaseline: -1,
+        serviceCandidatesIntersecting: 0.5
+      },
+      fallbackMeanFeatureDeltas: {},
+      overrideTransitionFeatureDeltaCounts: {
+        "sliding->service-overlap": 1
+      },
+      fallbackTransitionFeatureDeltaCounts: {},
+      overrideTransitionMeanFeatureDeltas: {
+        "sliding->service-overlap": {
+          residentialCandidateHeadroom: 0.2,
+          selectedByBaseline: -1,
+          serviceCandidatesIntersecting: 0.5
+        }
+      },
+      fallbackTransitionMeanFeatureDeltas: {}
+    });
+    assert.deepEqual(result.cases[0].variants[1].selectionTrace, [
+      {
+        iteration: 0,
+        phase: "focused",
+        outcomeStatus: "improved",
+        populationBefore: 100,
+        populationAfter: 120,
+        improvement: 20,
+        stagnantIterationsBefore: 0,
+        repairTimeLimitSeconds: 0.25,
+        appliedOperator: "service-overlap",
+        appliedWindow: { top: 0, left: 1, rows: 2, cols: 2 },
+        transition: "sliding->service-overlap",
+        changedWindow: true,
+        nominatedTransition: "sliding->service-overlap",
+        nominatedChangedWindow: true,
+        selectionStatus: "override",
+        candidateCount: 2,
+        baselineCandidateIndex: 0,
+        selectedCandidateIndex: 1,
+        baselineOperator: "sliding",
+        selectedOperator: "service-overlap",
+        baselineWindow: { top: 0, left: 0, rows: 2, cols: 2 },
+        selectedWindow: { top: 0, left: 1, rows: 2, cols: 2 },
+        selectedByBaseline: false,
+        baselineScore: 0.1,
+        selectedScore: 0.4,
+        scoreDelta: 0.3,
+        nominatedCandidateIndex: 1,
+        nominatedOperator: "service-overlap",
+        nominatedWindow: { top: 0, left: 1, rows: 2, cols: 2 },
+        nominatedByBaseline: false,
+        nominatedScore: 0.4,
+        nominatedScoreDelta: 0.3,
+        suppressionModelFingerprint: "fnv1a:test-suppression",
+        suppressionBaselineScore: 0.1,
+        suppressionSelectedScore: 0,
+        suppressionScoreDelta: 0.1,
+        modelFingerprint: "fnv1a:test-online",
+        featureSchemaVersion: 2,
+        baselineFeatures: {
+          residentialCandidateHeadroom: 0.1,
+          selectedByBaseline: 1,
+          serviceCandidatesIntersecting: 0
+        },
+        selectedFeatures: {
+          residentialCandidateHeadroom: 0.3,
+          selectedByBaseline: 0,
+          serviceCandidatesIntersecting: 0.5
+        },
+        featureDeltas: {
+          residentialCandidateHeadroom: 0.19999999999999998,
+          selectedByBaseline: -1,
+          serviceCandidatesIntersecting: 0.5
+        },
+        nominatedFeatures: {
+          residentialCandidateHeadroom: 0.3,
+          selectedByBaseline: 0,
+          serviceCandidatesIntersecting: 0.5
+        },
+        nominatedFeatureDeltas: {
+          residentialCandidateHeadroom: 0.19999999999999998,
+          selectedByBaseline: -1,
+          serviceCandidatesIntersecting: 0.5
+        }
+      }
+    ]);
+    assert.deepEqual(result.cases[0].variants[1].finalOutcome, {
+      status: "improved",
+      populationDeltaVsBaseline: 20,
+      hasOverride: true,
+      hasFallback: false
+    });
+
+    assert.equal(observedParams.length, 2);
+    assert.equal(observedParams[0].lns.iterations, observedParams[1].lns.iterations);
+    assert.equal(observedParams[0].lns.repairTimeLimitSeconds, observedParams[1].lns.repairTimeLimitSeconds);
+    assert.equal(observedParams[0].lns.windowRanker, undefined);
+    assert.equal(observedParams[1].lns.windowRanker.model.modelFingerprint, "fnv1a:test-online");
+    assert.equal(observedParams[1].lns.windowRanker.minScoreDelta, 0.05);
+    assert.equal(observedParams[1].lns.windowRanker.suppressionModel.modelFingerprint, "fnv1a:test-suppression");
+    assert.equal(observedParams[1].lns.windowRanker.suppressionMinScoreDelta, 0.25);
+    assert.deepEqual(observedParams[1].lns.windowRanker.allowedTransitions, ["sliding->service-overlap"]);
+    assert.deepEqual(observedParams[1].lns.windowRanker.selectedFeatureGates, [
+      { feature: "selectedByBaseline", maxValue: 0 }
+    ]);
+    assert.deepEqual(observedParams[1].lns.windowRanker.selectedFeatureGateGroups, [
+      [
+        { feature: "serviceCandidatesIntersecting", minValue: 0.5 },
+        { feature: "residentialCandidateHeadroom", minValue: 0.3 }
+      ],
+      [{ feature: "selectedByBaseline", minValue: 1 }]
+    ]);
+    assert.deepEqual(observedParams[1].lns.windowRanker.featureDeltaGates, [
+      { feature: "selectedByBaseline", maxDelta: -1 }
+    ]);
+    assert.equal(observedParams[0].greedy.randomSeed, 7);
+    assert.equal(observedParams[1].greedy.randomSeed, 7);
+    assert.equal(observedParams[0].cpSat.randomSeed, 7);
+    assert.equal(observedParams[1].cpSat.randomSeed, 7);
+
+    const snapshot = createLnsWindowRankerOnlineAblationSnapshot(result);
+    assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
+    assert.equal(Object.hasOwn(snapshot.cases[0].variants[1], "wallClockSeconds"), false);
+    assert.equal(Object.hasOwn(snapshot.cases[0].variants[1], "timeToBestWallClockSeconds"), false);
+    assert.equal(snapshot.cases[0].variants[1].timeToBestIteration, 1);
+    assert.equal(snapshot.cases[0].variants[1].selectionTrace.length, 1);
+    assert.equal(snapshot.cases[0].variants[1].finalLayoutDeltaVsBaseline.placementDeltaCount, 3);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /=== LNS Window Ranker Online A\/B ===/);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /Suppression model fingerprint: fnv1a:test-suppression/);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /overrides=1/);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /traces=1/);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /trace:1/);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /layout-changed=1/);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /layout-delta:3/);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /ttb-iter:1/);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /ttb-wall-ratio-mean=1\.500/);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /ttb-wall-fast10\/slower10\/known=0\/1\/1/);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /ttb-promotion=fail/);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /ttb-earlier\/same\/later\/unknown=0\/0\/1\/0/);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /override-improved=1/);
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /override-final=1\/0\/0/);
+    assert.match(
+      formatLnsWindowRankerOnlineAblation(result),
+      /override-transition-finals=sliding->service-overlap:1\/0\/0/
+    );
+    assert.match(formatLnsWindowRankerOnlineAblation(result), /override-final-feature-deltas=improved:1/);
+    assert.match(
+      formatLnsWindowRankerOnlineAblation(result),
+      /override-transition-families=sliding->service-overlap\[uncategorized:1\]/
+    );
+
+    const telemetryManifest = buildLnsWindowRankerOnlineAblationTelemetryManifest(result, {
+      command: "node dist/lnsBenchmarkCli.js --window-ranker-online-ablation",
+      inputArtifacts: ["artifacts/model.json"],
+      outputArtifacts: ["artifact.json"]
+    });
+    assert.equal(telemetryManifest.source, "model-experiment");
+    assert.equal(telemetryManifest.modelFingerprint, "fnv1a:test-online");
+    assert.equal(telemetryManifest.metrics.meanPopulationDeltaVsBaseline, 20);
+    assert.equal(telemetryManifest.metrics.suppressionModelFingerprint, "fnv1a:test-suppression");
+    assert.equal(telemetryManifest.metrics.suppressionMinScoreDelta, 0.25);
+    assert.deepEqual(telemetryManifest.metrics.allowedTransitions, ["sliding->service-overlap"]);
+    assert.deepEqual(telemetryManifest.metrics.selectedFeatureGates, [{ feature: "selectedByBaseline", maxValue: 0 }]);
+    assert.deepEqual(telemetryManifest.metrics.selectedFeatureGateGroups, [
+      [
+        { feature: "serviceCandidatesIntersecting", minValue: 0.5 },
+        { feature: "residentialCandidateHeadroom", minValue: 0.3 }
+      ],
+      [{ feature: "selectedByBaseline", minValue: 1 }]
+    ]);
+    assert.deepEqual(telemetryManifest.metrics.featureDeltaGates, [{ feature: "selectedByBaseline", maxDelta: -1 }]);
+    assert.equal(telemetryManifest.metrics.rankerOverrideCount, 1);
+    assert.equal(telemetryManifest.metrics.selectionTraceCount, 1);
+    assert.equal(telemetryManifest.metrics.changedFinalLayoutCount, 1);
+    assert.equal(telemetryManifest.metrics.meanFinalLayoutPlacementDelta, 3);
+    assert.equal(telemetryManifest.metrics.rankerMeanTimeToBestIteration, 1);
+    assert.equal(telemetryManifest.metrics.meanTimeToBestIterationDeltaVsBaseline, 1);
+    assert.equal(telemetryManifest.metrics.timeToBestWallClockKnownPairCount, 1);
+    assert.equal(telemetryManifest.metrics.timeToBestWallClockUnknownPairCount, 0);
+    assert.equal(telemetryManifest.metrics.meanTimeToBestWallClockRatioVsBaseline, 1.5);
+    assert.equal(telemetryManifest.metrics.medianTimeToBestWallClockRatioVsBaseline, 1.5);
+    assert.equal(telemetryManifest.metrics.timeToBestWallClockFaster10PercentCount, 0);
+    assert.equal(telemetryManifest.metrics.timeToBestWallClockSlower10PercentCount, 1);
+    assert.equal(telemetryManifest.metrics.equalPopulationTimeToBestGatePassed, false);
+    assert.equal(telemetryManifest.metrics.timeToBestPromotionGatePassed, false);
+    assert.equal(telemetryManifest.metrics.laterTimeToBestCount, 1);
+    assert.equal(telemetryManifest.metrics.overrideImprovedOutcomeCount, 1);
+    assert.equal(telemetryManifest.metrics.overrideNeutralOutcomeCount, 0);
+    assert.equal(telemetryManifest.metrics.overrideFinalImprovedCaseCount, 1);
+    assert.equal(telemetryManifest.metrics.meanOverrideFinalPopulationDelta, 20);
+    assert.equal(telemetryManifest.metrics.overrideChangedWindowCount, 1);
+    assert.equal(telemetryManifest.metrics.fallbackChangedWindowCount, 0);
+    assert.equal(telemetryManifest.metrics.overrideFeatureDeltaCount, 1);
+    assert.deepEqual(telemetryManifest.metrics.overrideMeanFeatureDeltas, {
+      residentialCandidateHeadroom: 0.2,
+      selectedByBaseline: -1,
+      serviceCandidatesIntersecting: 0.5
+    });
+    assert.deepEqual(telemetryManifest.metrics.overrideTransitionFeatureDeltaCounts, {
+      "sliding->service-overlap": 1
+    });
+    assert.deepEqual(telemetryManifest.metrics.overrideTransitionMeanFeatureDeltas, {
+      "sliding->service-overlap": {
+        residentialCandidateHeadroom: 0.2,
+        selectedByBaseline: -1,
+        serviceCandidatesIntersecting: 0.5
+      }
+    });
+    assert.deepEqual(telemetryManifest.metrics.overrideTransitionCounts, { "sliding->service-overlap": 1 });
+    assert.deepEqual(telemetryManifest.metrics.fallbackTransitionCounts, {});
+    assert.deepEqual(telemetryManifest.metrics.overrideTransitionFinalOutcomeCounts, {
+      "sliding->service-overlap": { improved: 1, neutral: 0, regressed: 0 }
+    });
+    assert.deepEqual(telemetryManifest.metrics.fallbackTransitionFinalOutcomeCounts, {});
+    assert.deepEqual(telemetryManifest.metrics.overrideFinalOutcomeFeatureDeltaCounts, {
+      improved: 1,
+      neutral: 0,
+      regressed: 0
+    });
+    assert.deepEqual(telemetryManifest.metrics.overrideFinalOutcomeMeanFeatureDeltas.improved, {
+      residentialCandidateHeadroom: 0.2,
+      selectedByBaseline: -1,
+      serviceCandidatesIntersecting: 0.5
+    });
+    assert.deepEqual(telemetryManifest.metrics.overrideImprovedVsNeutralMeanFeatureDeltaGaps, {});
+    assert.deepEqual(telemetryManifest.metrics.overrideTransitionPressureFamilyCounts, {
+      "sliding->service-overlap": { uncategorized: 1 }
+    });
+    assert.deepEqual(telemetryManifest.metrics.fallbackTransitionPressureFamilyCounts, {});
+
+    const registryDraft = buildLnsWindowRankerOnlineAblationRegistryEntryDraft(result, {
+      commands: ["node dist/lnsBenchmarkCli.js --window-ranker-online-ablation"],
+      artifactPaths: ["artifact.json"],
+      modelPath: "artifacts/model.json"
+    });
+    assert.equal(registryDraft.artifactType, "model-experiment");
+    assert.equal(registryDraft.modelFingerprint, "fnv1a:test-online");
+    assert.deepEqual(registryDraft.seeds, [7]);
+    assert.equal(registryDraft.budget.minScoreDelta, 0.05);
+    assert.equal("suppressionModelFingerprint" in registryDraft.budget, false);
+    assert.equal(registryDraft.budget.suppressionMinScoreDelta, 0.25);
+    assert.equal(registryDraft.budget.allowedTransitionCount, 1);
+    assert.equal(registryDraft.budget.selectedFeatureGateCount, 1);
+    assert.equal(registryDraft.budget.selectedFeatureGateGroupCount, 2);
+    assert.equal(registryDraft.budget.featureDeltaGateCount, 1);
+    assert.equal(registryDraft.budget.comparisonCount, 1);
+    assert.equal(registryDraft.budget.overrideImprovedOutcomeCount, 1);
+    assert.equal(registryDraft.budget.overrideNeutralOutcomeCount, 0);
+    assert.equal(registryDraft.budget.selectionTraceCount, 1);
+    assert.equal(registryDraft.budget.changedFinalLayoutCount, 1);
+    assert.equal(registryDraft.budget.meanFinalLayoutPlacementDelta, 3);
+    assert.equal(registryDraft.budget.timeToBestWallClockKnownPairCount, 1);
+    assert.equal(registryDraft.budget.timeToBestWallClockUnknownPairCount, 0);
+    assert.equal(registryDraft.budget.meanTimeToBestWallClockRatioVsBaseline, 1.5);
+    assert.equal(registryDraft.budget.medianTimeToBestWallClockRatioVsBaseline, 1.5);
+    assert.equal(registryDraft.budget.timeToBestWallClockFaster10PercentCount, 0);
+    assert.equal(registryDraft.budget.timeToBestWallClockSlower10PercentCount, 1);
+    assert.equal(registryDraft.budget.laterTimeToBestCount, 1);
+    assert.equal(registryDraft.budget.overrideFinalImprovedCaseCount, 1);
+    assert.equal(registryDraft.budget.overrideFinalNeutralCaseCount, 0);
+    assert.equal(registryDraft.budget.overrideFinalRegressedCaseCount, 0);
+    assert.equal(registryDraft.model.modelPath, "artifacts/model.json");
+    assert.equal(registryDraft.model.suppressionModelFingerprint, "fnv1a:test-suppression");
+    assert.equal(registryDraft.summaryMetrics.suppressionModelFingerprint, "fnv1a:test-suppression");
+    assert.equal(registryDraft.summaryMetrics.suppressionMinScoreDelta, 0.25);
+    assert.equal(registryDraft.splitStatus.protectedHoldout, false);
+    assert.equal(registryDraft.summaryMetrics.meanPopulationDeltaVsBaseline, 20);
+    assert.deepEqual(registryDraft.summaryMetrics.allowedTransitions, ["sliding->service-overlap"]);
+    assert.deepEqual(registryDraft.summaryMetrics.selectedFeatureGates, [
+      { feature: "selectedByBaseline", maxValue: 0 }
+    ]);
+    assert.deepEqual(registryDraft.summaryMetrics.selectedFeatureGateGroups, [
+      [
+        { feature: "serviceCandidatesIntersecting", minValue: 0.5 },
+        { feature: "residentialCandidateHeadroom", minValue: 0.3 }
+      ],
+      [{ feature: "selectedByBaseline", minValue: 1 }]
+    ]);
+    assert.deepEqual(registryDraft.summaryMetrics.featureDeltaGates, [{ feature: "selectedByBaseline", maxDelta: -1 }]);
+    assert.equal(registryDraft.summaryMetrics.changedFinalLayoutCount, 1);
+    assert.equal(registryDraft.summaryMetrics.meanFinalLayoutPlacementDelta, 3);
+    assert.equal(registryDraft.summaryMetrics.rankerMeanTimeToBestIteration, 1);
+    assert.equal(registryDraft.summaryMetrics.meanTimeToBestIterationDeltaVsBaseline, 1);
+    assert.equal(registryDraft.summaryMetrics.timeToBestWallClockKnownPairCount, 1);
+    assert.equal(registryDraft.summaryMetrics.timeToBestWallClockUnknownPairCount, 0);
+    assert.equal(registryDraft.summaryMetrics.meanTimeToBestWallClockRatioVsBaseline, 1.5);
+    assert.equal(registryDraft.summaryMetrics.medianTimeToBestWallClockRatioVsBaseline, 1.5);
+    assert.equal(registryDraft.summaryMetrics.timeToBestWallClockFaster10PercentCount, 0);
+    assert.equal(registryDraft.summaryMetrics.timeToBestWallClockSlower10PercentCount, 1);
+    assert.equal(registryDraft.summaryMetrics.equalPopulationTimeToBestGatePassed, false);
+    assert.equal(registryDraft.summaryMetrics.timeToBestPromotionGatePassed, false);
+    assert.equal(registryDraft.summaryMetrics.laterTimeToBestCount, 1);
+    assert.equal(registryDraft.summaryMetrics.overrideChangedWindowCount, 1);
+    assert.equal(registryDraft.summaryMetrics.fallbackChangedWindowCount, 0);
+    assert.equal(registryDraft.summaryMetrics.overrideFeatureDeltaCount, 1);
+    assert.deepEqual(registryDraft.summaryMetrics.overrideMeanFeatureDeltas, {
+      residentialCandidateHeadroom: 0.2,
+      selectedByBaseline: -1,
+      serviceCandidatesIntersecting: 0.5
+    });
+    assert.deepEqual(registryDraft.summaryMetrics.overrideTransitionFeatureDeltaCounts, {
+      "sliding->service-overlap": 1
+    });
+    assert.deepEqual(registryDraft.summaryMetrics.overrideTransitionMeanFeatureDeltas, {
+      "sliding->service-overlap": {
+        residentialCandidateHeadroom: 0.2,
+        selectedByBaseline: -1,
+        serviceCandidatesIntersecting: 0.5
+      }
+    });
+    assert.deepEqual(registryDraft.summaryMetrics.overrideTransitionCounts, { "sliding->service-overlap": 1 });
+    assert.deepEqual(registryDraft.summaryMetrics.fallbackTransitionCounts, {});
+    assert.deepEqual(registryDraft.summaryMetrics.overrideTransitionFinalOutcomeCounts, {
+      "sliding->service-overlap": { improved: 1, neutral: 0, regressed: 0 }
+    });
+    assert.deepEqual(registryDraft.summaryMetrics.fallbackTransitionFinalOutcomeCounts, {});
+    assert.deepEqual(registryDraft.summaryMetrics.overrideFinalOutcomeFeatureDeltaCounts, {
+      improved: 1,
+      neutral: 0,
+      regressed: 0
+    });
+    assert.deepEqual(registryDraft.summaryMetrics.overrideFinalOutcomeMeanFeatureDeltas.improved, {
+      residentialCandidateHeadroom: 0.2,
+      selectedByBaseline: -1,
+      serviceCandidatesIntersecting: 0.5
+    });
+    assert.deepEqual(registryDraft.summaryMetrics.overrideImprovedVsNeutralMeanFeatureDeltaGaps, {});
+    assert.deepEqual(registryDraft.summaryMetrics.overrideTransitionPressureFamilyCounts, {
+      "sliding->service-overlap": { uncategorized: 1 }
+    });
+    assert.deepEqual(registryDraft.summaryMetrics.fallbackTransitionPressureFamilyCounts, {});
+
+    const protectedDraft = buildLnsWindowRankerOnlineAblationRegistryEntryDraft(result, {
+      commands: ["node dist/lnsBenchmarkCli.js --window-ranker-online-ablation --window-ranker-protected-holdout"],
+      artifactPaths: ["artifact.json"],
+      protectedHoldout: true
+    });
+    assert.equal(protectedDraft.splitStatus.protectedHoldout, true);
+    assert.deepEqual(protectedDraft.cases, { development: [], holdout: ["online-ranker-fixture"] });
+    assert.equal(protectedDraft.splitStatus.leakage, "none");
+
+    const productProtectedDraft = buildLnsWindowRankerOnlineAblationRegistryEntryDraft(result, {
+      commands: [
+        "node dist/lnsBenchmarkCli.js --window-ranker-online-ablation --window-ranker-product-promotion-holdout"
+      ],
+      artifactPaths: ["artifact.json"],
+      protectedHoldout: true,
+      protectedCorpus: "product-promotion-holdout"
+    });
+    assert.equal(productProtectedDraft.splitStatus.protectedCorpus, "product-promotion-holdout");
+    assert.equal(
+      productProtectedDraft.splitStatus.splitField,
+      "DEFAULT_LNS_WINDOW_RANKER_ONLINE_PRODUCT_PROMOTION_CORPUS"
+    );
+    assert.equal(Object.hasOwn(productProtectedDraft.budget, "protectedCorpus"), false);
+
+    const freshPressureDraft = buildLnsWindowRankerOnlineAblationRegistryEntryDraft(result, {
+      commands: ["node dist/lnsBenchmarkCli.js --window-ranker-online-ablation --window-ranker-fresh-pressure-holdout"],
+      artifactPaths: ["artifact.json"],
+      protectedHoldout: true,
+      protectedCorpus: "fresh-pressure-holdout"
+    });
+    assert.equal(freshPressureDraft.splitStatus.protectedCorpus, "fresh-pressure-holdout");
+    assert.equal(
+      freshPressureDraft.splitStatus.splitField,
+      "DEFAULT_LNS_WINDOW_RANKER_ONLINE_FRESH_PRESSURE_HOLDOUT_CORPUS"
+    );
+  } finally {
+    lnsSolverModule.solveLns = originalSolveLns;
+  }
+}
+
+function testLnsBenchmarkCliListsOnlineAblationCases() {
+  const cliPath = path.join(repoRoot, "dist", "lnsBenchmarkCli.js");
+  const result = childProcess.spawnSync(process.execPath, [cliPath, "--list", "--window-ranker-online-ablation"], {
+    cwd: repoRoot,
+    encoding: "utf8"
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /compact-service-repair/);
+  assert.match(result.stdout, /lns-gate-choke-pressure/);
+
+  const protectedResult = childProcess.spawnSync(
+    process.execPath,
+    [cliPath, "--list", "--window-ranker-online-ablation", "--window-ranker-protected-holdout", "--lns-iterations=1"],
+    {
+      cwd: repoRoot,
+      encoding: "utf8"
+    }
+  );
+
+  assert.equal(protectedResult.status, 0, protectedResult.stderr);
+  assert.match(protectedResult.stdout, /lns-holdout-corridor-weave-pressure/);
+  assert.match(protectedResult.stdout, /lns-holdout-anchor-service-shelf-pressure/);
+  assert.match(protectedResult.stdout, /lns-holdout-corridor-switchback-pressure/);
+  assert.match(protectedResult.stdout, /lns-holdout-anchor-service-harbor-pressure/);
+  assert.equal(DEFAULT_LNS_WINDOW_RANKER_ONLINE_PROTECTED_HOLDOUT_CORPUS.length, 10);
+
+  const productProtectedResult = childProcess.spawnSync(
+    process.execPath,
+    [cliPath, "--list", "--window-ranker-online-ablation", "--window-ranker-product-promotion-holdout"],
+    {
+      cwd: repoRoot,
+      encoding: "utf8"
+    }
+  );
+
+  assert.equal(productProtectedResult.status, 0, productProtectedResult.stderr);
+  assert.match(productProtectedResult.stdout, /lns-product-typed-footprint-pressure/);
+  assert.match(productProtectedResult.stdout, /lns-product-expansion-comparison-replay-pressure/);
+  assert.equal(DEFAULT_LNS_WINDOW_RANKER_ONLINE_PRODUCT_PROMOTION_CORPUS.length, 4);
+
+  const freshPressureResult = childProcess.spawnSync(
+    process.execPath,
+    [cliPath, "--list", "--window-ranker-online-ablation", "--window-ranker-fresh-pressure-holdout"],
+    {
+      cwd: repoRoot,
+      encoding: "utf8"
+    }
+  );
+
+  assert.equal(freshPressureResult.status, 0, freshPressureResult.stderr);
+  assert.match(freshPressureResult.stdout, /lns-fresh-product-expansion-side-pocket-pressure/);
+  assert.match(freshPressureResult.stdout, /lns-fresh-anchor-service-inlet-pressure/);
+  assert.equal(DEFAULT_LNS_WINDOW_RANKER_ONLINE_FRESH_PRESSURE_HOLDOUT_CORPUS.length, 6);
+
+  const protectedSweepResult = childProcess.spawnSync(
+    process.execPath,
+    [cliPath, "--list", "--window-ranker-threshold-sweep", "--window-ranker-protected-holdout"],
+    {
+      cwd: repoRoot,
+      encoding: "utf8"
+    }
+  );
+
+  assert.equal(protectedSweepResult.status, 0, protectedSweepResult.stderr);
+  assert.match(protectedSweepResult.stdout, /lns-holdout-corridor-weave-pressure/);
+  assert.match(protectedSweepResult.stdout, /lns-holdout-anchor-service-shelf-pressure/);
+}
+
+function testOnlineCalibrationSummarizesThresholdSweep() {
+  const lnsSolverModule = require("../../dist/packages/solvers/lns/solver.js");
+  const originalSolveLns = lnsSolverModule.solveLns;
+  lnsSolverModule.solveLns = (_grid, params) => buildMockSolution(params);
+
+  try {
+    const model = {
+      modelType: "lns-window-linear-pairwise-ranker",
+      modelFingerprint: "fnv1a:test-online",
+      featureSchemaVersion: 2,
+      weights: { selectedByBaseline: -1 }
+    };
+    const suppressionModel = {
+      modelType: "lns-window-linear-pairwise-ranker",
+      modelFingerprint: "fnv1a:test-suppression",
+      featureSchemaVersion: 2,
+      weights: { selectedByBaseline: 1 }
+    };
+    const result = runLnsWindowRankerOnlineCalibration(
+      [
+        {
+          name: "online-ranker-calibration-fixture",
+          description: "Small fixture for online LNS ranker threshold calibration.",
+          grid: [
+            [1, 1, 1],
+            [1, 1, 1],
+            [1, 1, 1]
+          ],
+          params: {
+            optimizer: "lns",
+            residentialTypes: [{ w: 1, h: 1, min: 10, max: 20, avail: 1 }]
+          }
+        }
+      ],
+      {
+        seeds: [7],
+        minScoreDeltas: [0, 0.2],
+        model,
+        suppressionModel,
+        lns: {
+          iterations: 2,
+          repairTimeLimitSeconds: 0.25
+        }
+      }
+    );
+
+    assert.deepEqual(result.minScoreDeltas, [0, 0.2]);
+    assert.equal(result.suppressionModelFingerprint, "fnv1a:test-suppression");
+    assert.equal(result.suppressionMinScoreDelta, 0);
+    assert.equal(result.topMeanPopulationDeltaMinScoreDelta, 0);
+    assert.equal(result.topSafeMinScoreDelta, 0);
+    assert.equal(result.thresholdSummaries[0].meanPopulationDeltaVsBaseline, 20);
+    assert.equal(result.thresholdSummaries[0].meanTimeToBestIterationDeltaVsBaseline, 1);
+    assert.equal(result.thresholdSummaries[0].meanTimeToBestWallClockDeltaVsBaselineSeconds, 0.5);
+    assert.equal(result.thresholdSummaries[0].timeToBestWallClockKnownPairCount, 1);
+    assert.equal(result.thresholdSummaries[0].timeToBestWallClockUnknownPairCount, 0);
+    assert.equal(result.thresholdSummaries[0].meanTimeToBestWallClockRatioVsBaseline, 1.5);
+    assert.equal(result.thresholdSummaries[0].medianTimeToBestWallClockRatioVsBaseline, 1.5);
+    assert.equal(result.thresholdSummaries[0].timeToBestWallClockFaster10PercentCount, 0);
+    assert.equal(result.thresholdSummaries[0].timeToBestWallClockSlower10PercentCount, 1);
+    assert.equal(result.thresholdSummaries[0].timeToBestWallClockFaster10PercentRate, 0);
+    assert.equal(result.thresholdSummaries[0].timeToBestWallClockSlower10PercentRate, 1);
+    assert.equal(result.thresholdSummaries[0].equalPopulationTimeToBestGatePassed, false);
+    assert.equal(result.thresholdSummaries[0].timeToBestPromotionGatePassed, false);
+    assert.equal(result.thresholdSummaries[0].earlierTimeToBestCount, 0);
+    assert.equal(result.thresholdSummaries[0].sameTimeToBestCount, 0);
+    assert.equal(result.thresholdSummaries[0].laterTimeToBestCount, 1);
+    assert.equal(result.thresholdSummaries[0].unknownTimeToBestCount, 0);
+    assert.equal(result.thresholdSummaries[0].rankerOverrideCount, 1);
+    assert.equal(result.thresholdSummaries[0].changedFinalLayoutCount, 1);
+    assert.equal(result.thresholdSummaries[0].meanFinalLayoutPlacementDelta, 3);
+    assert.equal(result.thresholdSummaries[0].overrideChangedWindowCount, 1);
+    assert.equal(result.thresholdSummaries[0].overrideFeatureDeltaCount, 1);
+    assert.deepEqual(result.thresholdSummaries[0].overrideMeanFeatureDeltas, {
+      residentialCandidateHeadroom: 0.2,
+      selectedByBaseline: -1,
+      serviceCandidatesIntersecting: 0.5
+    });
+    assert.deepEqual(result.thresholdSummaries[0].overrideTransitionFeatureDeltaCounts, {
+      "sliding->service-overlap": 1
+    });
+    assert.deepEqual(result.thresholdSummaries[0].overrideTransitionMeanFeatureDeltas, {
+      "sliding->service-overlap": {
+        residentialCandidateHeadroom: 0.2,
+        selectedByBaseline: -1,
+        serviceCandidatesIntersecting: 0.5
+      }
+    });
+    assert.deepEqual(result.thresholdSummaries[0].overrideTransitionCounts, { "sliding->service-overlap": 1 });
+    assert.deepEqual(result.thresholdSummaries[0].overrideTransitionFinalOutcomeCounts, {
+      "sliding->service-overlap": { improved: 1, neutral: 0, regressed: 0 }
+    });
+    assert.deepEqual(result.thresholdSummaries[0].overrideFinalOutcomeFeatureDeltaCounts, {
+      improved: 1,
+      neutral: 0,
+      regressed: 0
+    });
+    assert.deepEqual(result.thresholdSummaries[0].overrideTransitionPressureFamilyCounts, {
+      "sliding->service-overlap": { uncategorized: 1 }
+    });
+    assert.equal(result.thresholdSummaries[1].meanPopulationDeltaVsBaseline, 0);
+    assert.equal(result.thresholdSummaries[1].meanTimeToBestIterationDeltaVsBaseline, 0);
+    assert.equal(result.thresholdSummaries[1].meanTimeToBestWallClockDeltaVsBaselineSeconds, -0.5);
+    assert.equal(result.thresholdSummaries[1].timeToBestWallClockKnownPairCount, 1);
+    assert.equal(result.thresholdSummaries[1].timeToBestWallClockUnknownPairCount, 0);
+    assert.equal(result.thresholdSummaries[1].meanTimeToBestWallClockRatioVsBaseline, 0.5);
+    assert.equal(result.thresholdSummaries[1].medianTimeToBestWallClockRatioVsBaseline, 0.5);
+    assert.equal(result.thresholdSummaries[1].timeToBestWallClockFaster10PercentCount, 1);
+    assert.equal(result.thresholdSummaries[1].timeToBestWallClockSlower10PercentCount, 0);
+    assert.equal(result.thresholdSummaries[1].timeToBestWallClockFaster10PercentRate, 1);
+    assert.equal(result.thresholdSummaries[1].timeToBestWallClockSlower10PercentRate, 0);
+    assert.equal(result.thresholdSummaries[1].equalPopulationTimeToBestGatePassed, true);
+    assert.equal(result.thresholdSummaries[1].timeToBestPromotionGatePassed, true);
+    assert.equal(result.thresholdSummaries[1].sameTimeToBestCount, 1);
+    assert.equal(result.thresholdSummaries[1].laterTimeToBestCount, 0);
+    assert.equal(result.thresholdSummaries[1].rankerFallbackDecisionCount, 2);
+    assert.equal(result.thresholdSummaries[1].changedFinalLayoutCount, 0);
+    assert.equal(result.thresholdSummaries[1].meanFinalLayoutPlacementDelta, 0);
+    assert.equal(result.thresholdSummaries[1].fallbackChangedWindowCount, 1);
+    assert.equal(result.thresholdSummaries[1].fallbackFeatureDeltaCount, 1);
+    assert.deepEqual(result.thresholdSummaries[1].fallbackMeanFeatureDeltas, {
+      residentialCandidateHeadroom: 0.2,
+      selectedByBaseline: -1,
+      serviceCandidatesIntersecting: 0.5
+    });
+    assert.deepEqual(result.thresholdSummaries[1].fallbackTransitionFeatureDeltaCounts, {
+      "sliding->service-overlap": 1
+    });
+    assert.deepEqual(result.thresholdSummaries[1].fallbackTransitionMeanFeatureDeltas, {
+      "sliding->service-overlap": {
+        residentialCandidateHeadroom: 0.2,
+        selectedByBaseline: -1,
+        serviceCandidatesIntersecting: 0.5
+      }
+    });
+    assert.deepEqual(result.thresholdSummaries[1].fallbackTransitionCounts, { "sliding->service-overlap": 1 });
+    assert.deepEqual(result.thresholdSummaries[1].fallbackTransitionFinalOutcomeCounts, {
+      "sliding->service-overlap": { improved: 0, neutral: 1, regressed: 0 }
+    });
+    assert.deepEqual(result.thresholdSummaries[1].fallbackFinalOutcomeFeatureDeltaCounts, {
+      improved: 0,
+      neutral: 1,
+      regressed: 0
+    });
+    assert.deepEqual(result.thresholdSummaries[1].fallbackFinalOutcomeMeanFeatureDeltas.neutral, {
+      residentialCandidateHeadroom: 0.2,
+      selectedByBaseline: -1,
+      serviceCandidatesIntersecting: 0.5
+    });
+    assert.deepEqual(result.thresholdSummaries[1].fallbackTransitionPressureFamilyCounts, {
+      "sliding->service-overlap": { uncategorized: 1 }
+    });
+    assert.equal(result.thresholdSummaries[1].safetyGatePassed, true);
+
+    const snapshot = createLnsWindowRankerOnlineCalibrationSnapshot(result);
+    assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
+    assert.equal(Object.hasOwn(snapshot.thresholdSummaries[0], "meanWallClockDeltaVsBaselineSeconds"), false);
+    assert.equal(Object.hasOwn(snapshot.thresholdSummaries[0], "meanTimeToBestWallClockDeltaVsBaselineSeconds"), false);
+    assert.equal(snapshot.suppressionModelFingerprint, "fnv1a:test-suppression");
+    assert.equal(snapshot.suppressionMinScoreDelta, 0);
+    assert.equal(snapshot.thresholdSummaries[0].meanTimeToBestIterationDeltaVsBaseline, 1);
+    assert.equal(snapshot.thresholdSummaries[1].meanTimeToBestWallClockRatioVsBaseline, 0.5);
+    assert.equal(snapshot.thresholdSummaries[1].timeToBestPromotionGatePassed, true);
+    const formatted = formatLnsWindowRankerOnlineCalibration(result);
+    assert.match(formatted, /=== LNS Window Ranker Threshold Sweep ===/);
+    assert.match(formatted, /Suppression model fingerprint: fnv1a:test-suppression/);
+    assert.match(formatted, /Suppression min score delta: 0/);
+    assert.match(formatted, /min-score-delta=0.2/);
+    assert.match(formatted, /ttb-iter-delta-mean=1/);
+    assert.match(formatted, /ttb-wall-ratio-mean=1\.500/);
+    assert.match(formatted, /ttb-wall-fast10\/slower10\/known=1\/0\/1/);
+    assert.match(formatted, /ttb-promotion=pass/);
+    assert.match(formatted, /ttb-earlier\/same\/later\/unknown=0\/0\/1\/0/);
+    assert.match(formatted, /override-transitions=sliding->service-overlap:1/);
+    assert.match(formatted, /override-feature-deltas=selectedByBaseline:-1/);
+    assert.match(formatted, /override-transition-feature-deltas=sliding->service-overlap\[selectedByBaseline:-1/);
+    assert.match(formatted, /fallback-transitions=sliding->service-overlap:1/);
+    assert.match(formatted, /override-transition-finals=sliding->service-overlap:1\/0\/0/);
+    assert.match(formatted, /fallback-transition-finals=sliding->service-overlap:0\/1\/0/);
+
+    const telemetryManifest = buildLnsWindowRankerOnlineCalibrationTelemetryManifest(result, {
+      command: "node dist/lnsBenchmarkCli.js --window-ranker-threshold-sweep",
+      model,
+      inputArtifacts: ["artifacts/model.json"],
+      outputArtifacts: ["artifacts/calibration.json"]
+    });
+    assert.equal(telemetryManifest.modelFingerprint, "fnv1a:test-online");
+    assert.equal(telemetryManifest.metrics.suppressionModelFingerprint, "fnv1a:test-suppression");
+    assert.equal(telemetryManifest.metrics.suppressionMinScoreDelta, 0);
+    assert.equal(telemetryManifest.metrics.thresholdCount, 2);
+    assert.equal(telemetryManifest.metrics.topMeanPopulationDeltaMinScoreDelta, 0);
+    assert.equal(telemetryManifest.metrics.topMeanTimeToBestIterationDeltaVsBaseline, 1);
+    assert.equal(telemetryManifest.metrics.topMeanTimeToBestWallClockRatioVsBaseline, 1.5);
+    assert.equal(telemetryManifest.metrics.timeToBestPromotionThresholdCount, 1);
+    assert.equal(telemetryManifest.metrics.safeThresholdCount, 2);
+    assert.equal(
+      telemetryManifest.metrics.thresholdSummaries[1].fallbackTransitionCounts["sliding->service-overlap"],
+      1
+    );
+    assert.equal(telemetryManifest.metrics.thresholdSummaries[0].laterTimeToBestCount, 1);
+    assert.equal(telemetryManifest.metrics.thresholdSummaries[1].sameTimeToBestCount, 1);
+    assert.equal(telemetryManifest.metrics.thresholdSummaries[1].timeToBestPromotionGatePassed, true);
+    assert.equal(
+      telemetryManifest.metrics.thresholdSummaries[1].fallbackTransitionFinalOutcomeCounts["sliding->service-overlap"]
+        .neutral,
+      1
+    );
+    assert.equal(telemetryManifest.metrics.thresholdSummaries[1].fallbackFinalOutcomeFeatureDeltaCounts.neutral, 1);
+    assert.equal(telemetryManifest.metrics.thresholdSummaries[0].changedFinalLayoutCount, 1);
+    assert.equal(telemetryManifest.metrics.thresholdSummaries[1].changedFinalLayoutCount, 0);
+
+    const registryDraft = buildLnsWindowRankerOnlineCalibrationRegistryEntryDraft(result, {
+      commands: ["node dist/lnsBenchmarkCli.js --window-ranker-threshold-sweep"],
+      artifactPaths: ["artifacts/calibration.json", "artifacts/calibration.txt", "artifacts/telemetry-manifest.json"],
+      model,
+      modelPath: "artifacts/model.json",
+      protectedHoldout: true
+    });
+    assert.equal(registryDraft.model.modelPath, "artifacts/model.json");
+    assert.equal(registryDraft.model.suppressionModelFingerprint, "fnv1a:test-suppression");
+    assert.equal(registryDraft.splitStatus.protectedHoldout, true);
+    assert.equal("suppressionModelFingerprint" in registryDraft.budget, false);
+    assert.equal(registryDraft.budget.suppressionMinScoreDelta, 0);
+    assert.equal(registryDraft.budget.thresholdCount, 2);
+    assert.equal(registryDraft.budget.totalRuns, 4);
+    assert.equal(registryDraft.summaryMetrics.suppressionModelFingerprint, "fnv1a:test-suppression");
+    assert.equal(registryDraft.summaryMetrics.suppressionMinScoreDelta, 0);
+    assert.equal(registryDraft.summaryMetrics.topMeanTimeToBestIterationDeltaVsBaseline, 1);
+    assert.equal(registryDraft.summaryMetrics.timeToBestPromotionThresholdCount, 1);
+    assert.equal(registryDraft.summaryMetrics.thresholdSummaries[1].timeToBestPromotionGatePassed, true);
+    assert.equal(registryDraft.summaryMetrics.thresholdSummaries[0].overrideChangedWindowCount, 1);
+    assert.equal(
+      registryDraft.summaryMetrics.thresholdSummaries[0].overrideTransitionPressureFamilyCounts[
+        "sliding->service-overlap"
+      ].uncategorized,
+      1
+    );
+  } finally {
+    lnsSolverModule.solveLns = originalSolveLns;
+  }
+}
+
+function selectionDiagnosticsFixture(meanDeltas, count) {
+  return {
+    overrideTransitionCounts: { "weak-service->random-exploration": count },
+    fallbackTransitionCounts: {},
+    overrideChangedWindowCount: count,
+    fallbackChangedWindowCount: 0,
+    overrideFeatureDeltaCount: count,
+    fallbackFeatureDeltaCount: 0,
+    overrideMeanFeatureDeltas: meanDeltas,
+    fallbackMeanFeatureDeltas: {},
+    overrideTransitionFeatureDeltaCounts: { "weak-service->random-exploration": count },
+    fallbackTransitionFeatureDeltaCounts: {},
+    overrideTransitionMeanFeatureDeltas: { "weak-service->random-exploration": meanDeltas },
+    fallbackTransitionMeanFeatureDeltas: {}
+  };
+}
+
+function testTransitionOutcomeFeatureDeltaDiagnostics() {
+  const diagnostics = buildLnsWindowRankerOnlineTransitionOutcomeDiagnostics([
+    {
+      pressureFamily: "anchor-service",
+      finalOutcomeStatus: "improved",
+      selectionDiagnostics: selectionDiagnosticsFixture({ candidateHeadroom: 3, operatorScore: -7 }, 2)
+    },
+    {
+      pressureFamily: "service-pressure",
+      finalOutcomeStatus: "neutral",
+      selectionDiagnostics: selectionDiagnosticsFixture({ candidateHeadroom: 1, serviceCandidateBonus: 4 }, 1)
+    }
+  ]);
+
+  assert.deepEqual(diagnostics.overrideFinalOutcomeFeatureDeltaCounts, {
+    improved: 2,
+    neutral: 1,
+    regressed: 0
+  });
+  assert.deepEqual(diagnostics.overrideFinalOutcomeMeanFeatureDeltas.improved, {
+    candidateHeadroom: 3,
+    operatorScore: -7
+  });
+  assert.deepEqual(diagnostics.overrideFinalOutcomeMeanFeatureDeltas.neutral, {
+    candidateHeadroom: 1,
+    serviceCandidateBonus: 4
+  });
+  assert.deepEqual(diagnostics.overrideImprovedVsNeutralMeanFeatureDeltaGaps, {
+    candidateHeadroom: 2,
+    operatorScore: -7,
+    serviceCandidateBonus: -4
+  });
+}
+
+function testOnlineAblationRejectsObsoleteRankerArtifacts() {
+  const { readWindowRankerModel } = require("../../dist/tools/cli/lnsBenchmarkArtifacts.js");
+  const tempRoot = `artifacts/tmp-lns-window-ranker-online-${process.pid}`;
+  const obsoleteDir = `${tempRoot}/obsolete-model`;
+  const obsoleteModelPath = `${obsoleteDir}/model.json`;
+  fs.rmSync(path.join(repoRoot, tempRoot), { recursive: true, force: true });
+  fs.mkdirSync(path.join(repoRoot, obsoleteDir), { recursive: true });
+  fs.writeFileSync(path.join(repoRoot, `${obsoleteDir}/OBSOLETE.md`), "Obsolete test bundle.\n");
+  fs.writeFileSync(
+    path.join(repoRoot, obsoleteModelPath),
+    `${JSON.stringify({ modelType: "lns-window-linear-pairwise-ranker", featureSchemaVersion: 2, weights: {} })}\n`
+  );
+
+  try {
+    assert.throws(
+      () => readWindowRankerModel(obsoleteModelPath),
+      /--window-ranker-model points to obsolete artifact bundle/
+    );
+  } finally {
+    fs.rmSync(path.join(repoRoot, tempRoot), { recursive: true, force: true });
+  }
+}
+
+testOnlineAblationRunnerComparesEqualBudgets();
+testLnsBenchmarkCliListsOnlineAblationCases();
+testOnlineCalibrationSummarizesThresholdSweep();
+testTransitionOutcomeFeatureDeltaDiagnostics();
+testOnlineAblationRejectsObsoleteRankerArtifacts();

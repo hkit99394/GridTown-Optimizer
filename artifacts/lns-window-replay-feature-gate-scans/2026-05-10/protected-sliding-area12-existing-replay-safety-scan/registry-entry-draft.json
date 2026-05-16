@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 1,
+  "runId": "lns-replay-feature-gate-scan-052b9809",
+  "artifactType": "ablation-gate",
+  "generatedAt": "2026-05-10T11:16:23.651Z",
+  "commands": [
+    "node scripts/summarize-lns-replay-feature-gate-scan.mjs --source-root=artifacts/lns-window-replay-labels --artifact-dir=artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-sliding-area12-existing-replay-safety-scan --force-artifact-dir"
+  ],
+  "artifactPaths": [
+    "artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-sliding-area12-existing-replay-safety-scan/feature-gate-scan.json",
+    "artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-sliding-area12-existing-replay-safety-scan/feature-gate-scan.txt",
+    "artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-sliding-area12-existing-replay-safety-scan/telemetry-manifest.json",
+    "artifacts/lns-window-replay-feature-gate-scans/2026-05-10/protected-sliding-area12-existing-replay-safety-scan/manifest.json"
+  ],
+  "cases": [
+    "lns-holdout-anchor-service-harbor-pressure",
+    "lns-holdout-anchor-service-shelf-pressure",
+    "lns-holdout-corridor-switchback-pressure",
+    "lns-holdout-corridor-weave-pressure",
+    "lns-holdout-footprint-lattice-pressure",
+    "lns-holdout-footprint-stagger-pressure",
+    "lns-holdout-gate-double-choke-pressure",
+    "lns-holdout-gate-offset-pressure",
+    "lns-holdout-service-braid-pressure",
+    "lns-holdout-service-braid-range1-big-service120-candidate",
+    "lns-holdout-service-braid-range1-big-service135-candidate",
+    "lns-holdout-service-braid-range1-big-service140-candidate",
+    "lns-holdout-service-braid-range1-big-service140-initial-stagnation-candidate",
+    "lns-holdout-service-ridge-pressure"
+  ],
+  "caseFamilies": [
+    "lns-anchor-service",
+    "lns-corridor",
+    "lns-footprint-pressure",
+    "lns-gate",
+    "lns-service-pressure",
+    "lns-window-replay"
+  ],
+  "seeds": [
+    5,
+    7,
+    11,
+    13,
+    17,
+    19,
+    23,
+    29,
+    37
+  ],
+  "inputFingerprint": "fnv1a:178933cd",
+  "datasetFingerprint": "fnv1a:052b9809",
+  "splitStatus": {
+    "diagnosticsOnly": true,
+    "source": "existing-lns-window-replay-feature-gate-scan",
+    "sourceRoot": "artifacts/lns-window-replay-labels",
+    "sourceArtifactCount": 19
+  },
+  "budget": {
+    "sourceArtifactCount": 19,
+    "caseCount": 14,
+    "seedCount": 9,
+    "labelCount": 4068,
+    "rollForwardLabelCount": 4068,
+    "gateCount": 5
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "model": {
+    "trained": false,
+    "diagnosticsOnly": true,
+    "labelSource": "existing-lns-window-replay-labels",
+    "gateKind": "static-feature-predicate"
+  },
+  "decision": "diagnostics-only",
+  "summary": "Existing protected LNS replay labels scanned for static feature-gate safety; no solver default changed.",
+  "summaryMetrics": {
+    "sourceArtifactCount": 19,
+    "caseCount": 14,
+    "seedCount": 9,
+    "labelCount": 4068,
+    "rollForwardLabelCount": 4068,
+    "gates": {
+      "slidingArea12": {
+        "selected": 401,
+        "improved": 94,
+        "regressed": 26,
+        "neutral": 281,
+        "unknown": 0,
+        "bestDelta": 55,
+        "worstDelta": -60,
+        "safeNoRegression": false,
+        "promotionReadyPocket": false
+      },
+      "slidingArea12ComponentsMax2": {
+        "selected": 346,
+        "improved": 94,
+        "regressed": 20,
+        "neutral": 232,
+        "unknown": 0,
+        "bestDelta": 55,
+        "worstDelta": -50,
+        "safeNoRegression": false,
+        "promotionReadyPocket": false
+      },
+      "slidingComponentsMax2": {
+        "selected": 875,
+        "improved": 111,
+        "regressed": 26,
+        "neutral": 738,
+        "unknown": 0,
+        "bestDelta": 55,
+        "worstDelta": -55,
+        "safeNoRegression": false,
+        "promotionReadyPocket": false
+      },
+      "slidingTopOrLeft2": {
+        "selected": 486,
+        "improved": 108,
+        "regressed": 28,
+        "neutral": 350,
+        "unknown": 0,
+        "bestDelta": 55,
+        "worstDelta": -60,
+        "safeNoRegression": false,
+        "promotionReadyPocket": false
+      },
+      "allNonBaselineSliding": {
+        "selected": 1163,
+        "improved": 111,
+        "regressed": 47,
+        "neutral": 1005,
+        "unknown": 0,
+        "bestDelta": 55,
+        "worstDelta": -60,
+        "safeNoRegression": false,
+        "promotionReadyPocket": false
+      }
+    }
+  }
+}

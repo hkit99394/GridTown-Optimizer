@@ -1,0 +1,48 @@
+LNS online selected-feature gate discovery
+generatedAt=2026-05-12T09:07:15.730Z
+target=final-improved
+sourceScorecards=2
+validationSourceScorecards=0
+overrideTraces=45
+targetImproved=9
+selectionImproved=9
+selectionRegressed=0
+terminalFinalImproved=9
+terminalFinalRegressed=0
+safetyRegressed=0
+validationOverrideTraces=0
+validationTargetImproved=0
+validationSelectionImproved=0
+validationSelectionRegressed=0
+validationTerminalFinalImproved=0
+validationTerminalFinalRegressed=0
+validationSafetyRegressed=0
+features=residentialCandidateHeadroom,serviceCandidatesIntersecting
+atoms=14 global-capped / 14 per-feature-capped / 14 total-candidate
+safeTargetAtoms=14/14
+safeSingletonAdmissionQuota=0
+conjunctionReservationSearch=Exhaustive recursive reservation search up to requested --max-group-size; full candidate enumeration honors --max-group-size.
+conjunctionReservationSearchMaxGroupSize=2
+conjunctionReservationSupportsRequestedMaxGroupSize=true
+conjunctionReservationSearchExhaustive=true
+conjunctionReservationCoversRequestedMaxGroupSize=true
+conjunctionReservationUnsafeAtoms=0/0 considered
+conjunctionReservationPartnerAtoms=14/14 considered
+candidates=63 total / 10 reported
+inputFingerprint=fnv1a:9c765f69
+discoveryFingerprint=fnv1a:e34fa5f1
+
+greedy-selected-groups=residentialCandidateHeadroom>=12.16
+greedy-selected=9 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=0 safe=true
+
+top-candidates:
+- residentialCandidateHeadroom>=12.16: selected=9 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=0 worst=35 safe=true
+- residentialCandidateHeadroom>=12.16,residentialCandidateHeadroom<=12.16: selected=9 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=0 worst=35 safe=true
+- serviceCandidatesIntersecting>=1.65: selected=9 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=0 worst=35 safe=true
+- serviceCandidatesIntersecting>=1.65,serviceCandidatesIntersecting<=1.65: selected=9 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=0 worst=35 safe=true
+- residentialCandidateHeadroom>=12.16,residentialCandidateHeadroom<=12.16,serviceCandidatesIntersecting<=1.65: selected=9 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=0 worst=35 safe=true
+- residentialCandidateHeadroom>=12.16,residentialCandidateHeadroom<=12.16,serviceCandidatesIntersecting>=0.3: selected=9 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=0 worst=35 safe=true
+- residentialCandidateHeadroom>=12.16,residentialCandidateHeadroom<=12.16,serviceCandidatesIntersecting>=0.75: selected=9 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=0 worst=35 safe=true
+- residentialCandidateHeadroom>=12.16,residentialCandidateHeadroom<=12.16,serviceCandidatesIntersecting>=0.8: selected=9 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=0 worst=35 safe=true
+- residentialCandidateHeadroom>=12.16,residentialCandidateHeadroom<=12.16,serviceCandidatesIntersecting>=0.9: selected=9 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=0 worst=35 safe=true
+- residentialCandidateHeadroom>=12.16,residentialCandidateHeadroom<=12.16,serviceCandidatesIntersecting>=1.65: selected=9 target-improved=9 selection-improved=9 selection-regressed=0 terminal-final-improved=9 terminal-final-regressed=0 safety-regressed=0 neutral=0 worst=35 safe=true

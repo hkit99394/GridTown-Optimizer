@@ -1,0 +1,18 @@
+=== LNS Window Ranker Offline/Online Gap Diagnostics ===
+Generated: 2026-05-11T23:25:00.439Z
+Schema: 1
+Audit: runtime-default-changed=false solver-default-changed=false target=roll-forward-final-lift weak-seed-labels=false supplemental-replay=4
+Inputs: label=fnv1a:58ce487f model=fnv1a:09853445 online=fnv1a:3348cdad supplemental=fnv1a:dcdf459c,fnv1a:b6510add,fnv1a:84fd7aa3,fnv1a:9cee3765
+Offline: decisions=177 supplemental=87 overrides=177 opportunities=81 selected-positive=42
+Online: cases=10 seeds=5,7,11,13,17,19,23,29,37 comparisons=90 min-score-delta=0 overrides=18 selection-trace=180 final-neutral-overrides=0
+Gap: joined-transition-families=2 offline-positive-online-neutral=0 online-active-no-offline-match=0 exact-replay-neutralized=0 promotion-blocked=false
+Layout signatures: none
+Promotion sensitivity: suppress=zero-layout-final-neutral:0 remaining=0 remaining-blocked=false blockers=none unmatched=0 changed-layout-no-lift=0 evidence-gate-suppress=online-active-no-offline-match:0 evidence-gate-remaining=0 evidence-gate-blocked=false evidence-gate-blockers=none
+Online neutral override rate: 0.0%
+Joined evidence:
+- none
+Trace comparisons:
+- none
+Recommended experiments:
+- none
+Decision: diagnostics only; no LNS runtime scorer or solver default changed.

@@ -11,6 +11,7 @@ import {
 } from "./benchmarkOptions.js";
 import { DEFAULT_GREEDY_BENCHMARK_CORPUS } from "./greedy.js";
 import { DEFAULT_LNS_BENCHMARK_CORPUS } from "./lns.js";
+import { DEFAULT_PRODUCT_WORKFLOW_BENCHMARK_CORPUS } from "./productWorkflow.js";
 import {
   collectCrossModeBenchmarkDecisionTraceEvents,
   DEFAULT_CROSS_MODE_BENCHMARK_BUDGET_SECONDS,
@@ -46,9 +47,18 @@ export interface CrossModeBenchmarkBudgetAblationBudgetSummary {
   meanAutoPopulation: number | null;
   meanLnsPopulation: number | null;
   meanAutoDeltaToBest: number | null;
+  meanAutoGreedySeedElapsedSeconds: number | null;
+  meanAutoBestScoreSeconds: number | null;
+  meanAutoWallClockSeconds: number | null;
+  meanAutoWorkerCpuBudgetSeconds: number | null;
+  meanAutoPopulationPerWorkerCpuBudgetSecond: number | null;
   deltaVsBaselineMeanBestPopulation: number | null;
   deltaVsBaselineMeanAutoPopulation: number | null;
   deltaVsBaselineMeanLnsPopulation: number | null;
+  deltaVsBaselineMeanAutoBestScoreSeconds: number | null;
+  deltaVsBaselineMeanAutoWallClockSeconds: number | null;
+  deltaVsBaselineMeanAutoWorkerCpuBudgetSeconds: number | null;
+  deltaVsBaselineMeanAutoPopulationPerWorkerCpuBudgetSecond: number | null;
   recommendationCounts: Record<CrossModeBudgetPolicyRecommendation, number>;
 }
 
@@ -60,11 +70,20 @@ export interface CrossModeBenchmarkBudgetAblationPolicyResult {
   meanAutoPopulation: number | null;
   meanLnsPopulation: number | null;
   meanAutoDeltaToBest: number | null;
+  meanAutoGreedySeedElapsedSeconds: number | null;
   meanAutoLnsStageElapsedSeconds: number | null;
   meanAutoCpSatStageElapsedSeconds: number | null;
+  meanAutoBestScoreSeconds: number | null;
+  meanAutoWallClockSeconds: number | null;
+  meanAutoWorkerCpuBudgetSeconds: number | null;
+  meanAutoPopulationPerWorkerCpuBudgetSecond: number | null;
   deltaVsBaselineMeanBestPopulation: number | null;
   deltaVsBaselineMeanAutoPopulation: number | null;
   deltaVsBaselineMeanLnsPopulation: number | null;
+  deltaVsBaselineMeanAutoBestScoreSeconds: number | null;
+  deltaVsBaselineMeanAutoWallClockSeconds: number | null;
+  deltaVsBaselineMeanAutoWorkerCpuBudgetSeconds: number | null;
+  deltaVsBaselineMeanAutoPopulationPerWorkerCpuBudgetSecond: number | null;
   budgetSummaries: CrossModeBenchmarkBudgetAblationBudgetSummary[];
   recommendationCounts: Record<CrossModeBudgetPolicyRecommendation, number>;
 }
@@ -120,12 +139,45 @@ export const DEFAULT_CROSS_MODE_BUDGET_ABLATION_POLICIES = Object.freeze([
     autoCpSatStageReserveRatio: 0.1,
   },
   {
+    name: "phase5-retuned",
+    description: "Selected Phase 5 policy: cap Auto seed time, shift budget to LNS repair, and keep CP-SAT reserve lean.",
+    autoGreedySeedBudgetRatio: 0.15,
+    lnsSeedBudgetRatio: 0.05,
+    lnsRepairBudgetRatio: 0.2,
+    lnsEscalatedRepairBudgetRatio: 0.3,
+    autoCpSatStageReserveRatio: 0.1,
+  },
+  {
+    name: "phase5-fast-exact",
+    description: "Phase 5 candidate: run a short LNS improvement pass, then reserve most of the Auto window for CP-SAT polish.",
+    autoGreedySeedBudgetRatio: 0.15,
+    lnsSeedBudgetRatio: 0.02,
+    lnsRepairBudgetRatio: 0.05,
+    lnsEscalatedRepairBudgetRatio: 0.08,
+    lnsNoImprovementTimeoutRatio: 0.12,
+    autoCpSatStageReserveRatio: 0.8,
+    autoCpSatStageTimeLimitRatio: 0.8,
+    autoCpSatStageNoImprovementTimeoutRatio: 0.8,
+  },
+  {
     name: "cp-sat-reserve-heavy",
     description: "Reserve a larger Auto slice for CP-SAT and keep LNS repairs compact.",
     lnsSeedBudgetRatio: 0.05,
     lnsRepairBudgetRatio: 0.1,
     lnsEscalatedRepairBudgetRatio: 0.15,
     autoCpSatStageReserveRatio: 0.35,
+  },
+  {
+    name: "phase5-stale-polish",
+    description: "Cap Auto seed time, keep adaptive LNS repairs short-stale, and reserve bounded CP-SAT polish.",
+    autoGreedySeedBudgetRatio: 0.15,
+    lnsSeedBudgetRatio: 0.05,
+    lnsRepairBudgetRatio: 0.15,
+    lnsEscalatedRepairBudgetRatio: 0.2,
+    lnsNoImprovementTimeoutRatio: 0.4,
+    autoCpSatStageReserveRatio: 0.25,
+    autoCpSatStageTimeLimitRatio: 0.25,
+    autoCpSatStageNoImprovementTimeoutRatio: 0.12,
   },
 ] satisfies CrossModeBenchmarkBudgetAblationPolicy[]);
 
@@ -137,6 +189,13 @@ const GREEDY_COVERAGE_CASE_NAMES = Object.freeze([
 
 const LNS_COVERAGE_CASE_NAMES = Object.freeze([
   "row0-anchor-repair",
+] satisfies string[]);
+
+const PRODUCT_WORKFLOW_HOLDOUT_CASE_NAMES = Object.freeze([
+  "planner-service-overlap",
+  "planner-anchor-service",
+  "planner-multi-anchor-islands",
+  "planner-gate-service-tradeoff",
 ] satisfies string[]);
 
 const MODE_LABELS: Record<CrossModeBenchmarkMode, string> = {
@@ -169,10 +228,24 @@ function selectCoverageCases(
   });
 }
 
+function selectProductWorkflowHoldoutCases(names: readonly string[]): CrossModeBenchmarkCase[] {
+  const productWorkflowCases = DEFAULT_PRODUCT_WORKFLOW_BENCHMARK_CORPUS
+    .filter((benchmarkCase) => benchmarkCase.split === "holdout")
+    .map((benchmarkCase): CrossModeBenchmarkCase => ({
+      name: benchmarkCase.name,
+      description: benchmarkCase.description,
+      problemSizeBand: inferCoverageProblemSizeBand(benchmarkCase),
+      grid: benchmarkCase.grid,
+      params: benchmarkCase.params,
+    }));
+  return selectCoverageCases(productWorkflowCases, names);
+}
+
 export const DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS: readonly CrossModeBenchmarkCase[] = Object.freeze([
   ...DEFAULT_CROSS_MODE_BENCHMARK_CORPUS,
   ...selectCoverageCases(DEFAULT_GREEDY_BENCHMARK_CORPUS, GREEDY_COVERAGE_CASE_NAMES),
   ...selectCoverageCases(DEFAULT_LNS_BENCHMARK_CORPUS, LNS_COVERAGE_CASE_NAMES),
+  ...selectProductWorkflowHoldoutCases(PRODUCT_WORKFLOW_HOLDOUT_CASE_NAMES),
 ]);
 
 function normalizeBudgetAblationPolicies(
@@ -268,6 +341,29 @@ function meanModePopulationByBudget(
   return byBudget;
 }
 
+function timeToBestScoreSeconds(result: CrossModeBenchmarkModeResult): number | null {
+  return result.timeToQuality.bestScoreAtMs === null
+    ? null
+    : result.timeToQuality.bestScoreAtMs / 1000;
+}
+
+function meanModeMetricByBudget(
+  suite: CrossModeBenchmarkSuiteResult,
+  mode: CrossModeBenchmarkMode,
+  metric: (result: CrossModeBenchmarkModeResult) => number | null
+): Map<number, number | null> {
+  const byBudget = new Map<number, number | null>();
+  const scorecardBuckets = scorecardsByBudget(suite);
+  for (const budgetSeconds of suite.budgetsSeconds) {
+    const scorecards = scorecardBuckets.get(budgetSeconds) ?? [];
+    byBudget.set(
+      budgetSeconds,
+      meanNullableBenchmarkValue(modeResultsInScorecards(scorecards, mode).map(metric))
+    );
+  }
+  return byBudget;
+}
+
 function deltaFromBaseline(value: number | null, baseline: number | null): number | null {
   return value === null || baseline === null ? null : value - baseline;
 }
@@ -278,7 +374,11 @@ function summarizeBudget(
   signals: readonly CrossModeBenchmarkBudgetPolicySignal[],
   baselineMeanBestPopulation: number | null,
   baselineMeanAutoPopulation: number | null,
-  baselineMeanLnsPopulation: number | null
+  baselineMeanLnsPopulation: number | null,
+  baselineMeanAutoBestScoreSeconds: number | null,
+  baselineMeanAutoWallClockSeconds: number | null,
+  baselineMeanAutoWorkerCpuBudgetSeconds: number | null,
+  baselineMeanAutoPopulationPerWorkerCpuBudgetSecond: number | null
 ): CrossModeBenchmarkBudgetAblationBudgetSummary {
   const autoResults = modeResultsInScorecards(scorecards, "auto");
   const lnsResults = modeResultsInScorecards(scorecards, "lns");
@@ -286,6 +386,14 @@ function summarizeBudget(
     meanNullableBenchmarkValue(scorecards.map((scorecard) => scorecard.bestScore)) ?? 0;
   const meanAutoPopulation = meanNullableBenchmarkValue(autoResults.map((result) => result.totalPopulation));
   const meanLnsPopulation = meanNullableBenchmarkValue(lnsResults.map((result) => result.totalPopulation));
+  const meanAutoBestScoreSeconds = meanNullableBenchmarkValue(autoResults.map(timeToBestScoreSeconds));
+  const meanAutoWallClockSeconds = meanNullableBenchmarkValue(autoResults.map((result) => result.wallClockSeconds));
+  const meanAutoWorkerCpuBudgetSeconds = meanNullableBenchmarkValue(
+    autoResults.map((result) => result.workerCpuBudgetSeconds)
+  );
+  const meanAutoPopulationPerWorkerCpuBudgetSecond = meanNullableBenchmarkValue(
+    autoResults.map((result) => result.populationPerWorkerCpuBudgetSecond)
+  );
   return {
     budgetSeconds,
     caseCount: scorecards.length,
@@ -293,11 +401,34 @@ function summarizeBudget(
     meanAutoPopulation,
     meanLnsPopulation,
     meanAutoDeltaToBest: meanNullableBenchmarkValue(signals.map((signal) => signal.autoDeltaToBest)),
+    meanAutoGreedySeedElapsedSeconds: meanNullableBenchmarkValue(
+      signals.map((signal) => signal.autoGreedySeedElapsedSeconds)
+    ),
+    meanAutoBestScoreSeconds,
+    meanAutoWallClockSeconds,
+    meanAutoWorkerCpuBudgetSeconds,
+    meanAutoPopulationPerWorkerCpuBudgetSecond,
     deltaVsBaselineMeanBestPopulation: baselineMeanBestPopulation === null
       ? null
       : meanBestPopulation - baselineMeanBestPopulation,
     deltaVsBaselineMeanAutoPopulation: deltaFromBaseline(meanAutoPopulation, baselineMeanAutoPopulation),
     deltaVsBaselineMeanLnsPopulation: deltaFromBaseline(meanLnsPopulation, baselineMeanLnsPopulation),
+    deltaVsBaselineMeanAutoBestScoreSeconds: deltaFromBaseline(
+      meanAutoBestScoreSeconds,
+      baselineMeanAutoBestScoreSeconds
+    ),
+    deltaVsBaselineMeanAutoWallClockSeconds: deltaFromBaseline(
+      meanAutoWallClockSeconds,
+      baselineMeanAutoWallClockSeconds
+    ),
+    deltaVsBaselineMeanAutoWorkerCpuBudgetSeconds: deltaFromBaseline(
+      meanAutoWorkerCpuBudgetSeconds,
+      baselineMeanAutoWorkerCpuBudgetSeconds
+    ),
+    deltaVsBaselineMeanAutoPopulationPerWorkerCpuBudgetSecond: deltaFromBaseline(
+      meanAutoPopulationPerWorkerCpuBudgetSecond,
+      baselineMeanAutoPopulationPerWorkerCpuBudgetSecond
+    ),
     recommendationCounts: countRecommendations(signals),
   };
 }
@@ -323,7 +454,11 @@ function summarizeBudgets(
   suite: CrossModeBenchmarkSuiteResult,
   baselineMeanBestPopulationByBudget: ReadonlyMap<number, number>,
   baselineMeanAutoPopulationByBudget: ReadonlyMap<number, number | null>,
-  baselineMeanLnsPopulationByBudget: ReadonlyMap<number, number | null>
+  baselineMeanLnsPopulationByBudget: ReadonlyMap<number, number | null>,
+  baselineMeanAutoBestScoreSecondsByBudget: ReadonlyMap<number, number | null>,
+  baselineMeanAutoWallClockSecondsByBudget: ReadonlyMap<number, number | null>,
+  baselineMeanAutoWorkerCpuBudgetSecondsByBudget: ReadonlyMap<number, number | null>,
+  baselineMeanAutoPopulationPerWorkerCpuBudgetSecondByBudget: ReadonlyMap<number, number | null>
 ): CrossModeBenchmarkBudgetAblationBudgetSummary[] {
   const scorecardBuckets = scorecardsByBudget(suite);
   const signalBuckets = signalsByBudget(suite);
@@ -334,7 +469,11 @@ function summarizeBudgets(
       signalBuckets.get(budgetSeconds) ?? [],
       baselineMeanBestPopulationByBudget.get(budgetSeconds) ?? null,
       baselineMeanAutoPopulationByBudget.get(budgetSeconds) ?? null,
-      baselineMeanLnsPopulationByBudget.get(budgetSeconds) ?? null
+      baselineMeanLnsPopulationByBudget.get(budgetSeconds) ?? null,
+      baselineMeanAutoBestScoreSecondsByBudget.get(budgetSeconds) ?? null,
+      baselineMeanAutoWallClockSecondsByBudget.get(budgetSeconds) ?? null,
+      baselineMeanAutoWorkerCpuBudgetSecondsByBudget.get(budgetSeconds) ?? null,
+      baselineMeanAutoPopulationPerWorkerCpuBudgetSecondByBudget.get(budgetSeconds) ?? null
     )
   );
 }
@@ -345,9 +484,17 @@ function summarizeBudgetAblationPolicy(
   baselineMeanBestPopulation: number | null,
   baselineMeanAutoPopulation: number | null,
   baselineMeanLnsPopulation: number | null,
+  baselineMeanAutoBestScoreSeconds: number | null,
+  baselineMeanAutoWallClockSeconds: number | null,
+  baselineMeanAutoWorkerCpuBudgetSeconds: number | null,
+  baselineMeanAutoPopulationPerWorkerCpuBudgetSecond: number | null,
   baselineMeanBestPopulationByBudget: ReadonlyMap<number, number>,
   baselineMeanAutoPopulationByBudget: ReadonlyMap<number, number | null>,
-  baselineMeanLnsPopulationByBudget: ReadonlyMap<number, number | null>
+  baselineMeanLnsPopulationByBudget: ReadonlyMap<number, number | null>,
+  baselineMeanAutoBestScoreSecondsByBudget: ReadonlyMap<number, number | null>,
+  baselineMeanAutoWallClockSecondsByBudget: ReadonlyMap<number, number | null>,
+  baselineMeanAutoWorkerCpuBudgetSecondsByBudget: ReadonlyMap<number, number | null>,
+  baselineMeanAutoPopulationPerWorkerCpuBudgetSecondByBudget: ReadonlyMap<number, number | null>
 ): CrossModeBenchmarkBudgetAblationPolicyResult {
   const autoResults = modeResults(suite, "auto");
   const lnsResults = modeResults(suite, "lns");
@@ -355,6 +502,14 @@ function summarizeBudgetAblationPolicy(
     meanNullableBenchmarkValue(suite.cases.map((scorecard) => scorecard.bestScore)) ?? 0;
   const meanAutoPopulation = meanNullableBenchmarkValue(autoResults.map((result) => result.totalPopulation));
   const meanLnsPopulation = meanNullableBenchmarkValue(lnsResults.map((result) => result.totalPopulation));
+  const meanAutoBestScoreSeconds = meanNullableBenchmarkValue(autoResults.map(timeToBestScoreSeconds));
+  const meanAutoWallClockSeconds = meanNullableBenchmarkValue(autoResults.map((result) => result.wallClockSeconds));
+  const meanAutoWorkerCpuBudgetSeconds = meanNullableBenchmarkValue(
+    autoResults.map((result) => result.workerCpuBudgetSeconds)
+  );
+  const meanAutoPopulationPerWorkerCpuBudgetSecond = meanNullableBenchmarkValue(
+    autoResults.map((result) => result.populationPerWorkerCpuBudgetSecond)
+  );
   return {
     policyName: policy.name,
     description: policy.description,
@@ -365,22 +520,49 @@ function summarizeBudgetAblationPolicy(
     meanAutoDeltaToBest: meanNullableBenchmarkValue(
       suite.budgetPolicySignals.map((signal) => signal.autoDeltaToBest)
     ),
+    meanAutoGreedySeedElapsedSeconds: meanNullableBenchmarkValue(
+      suite.budgetPolicySignals.map((signal) => signal.autoGreedySeedElapsedSeconds)
+    ),
     meanAutoLnsStageElapsedSeconds: meanNullableBenchmarkValue(
       suite.budgetPolicySignals.map((signal) => signal.autoLnsStageElapsedSeconds)
     ),
     meanAutoCpSatStageElapsedSeconds: meanNullableBenchmarkValue(
       suite.budgetPolicySignals.map((signal) => signal.autoCpSatStageElapsedSeconds)
     ),
+    meanAutoBestScoreSeconds,
+    meanAutoWallClockSeconds,
+    meanAutoWorkerCpuBudgetSeconds,
+    meanAutoPopulationPerWorkerCpuBudgetSecond,
     deltaVsBaselineMeanBestPopulation: baselineMeanBestPopulation === null
       ? null
       : meanBestPopulation - baselineMeanBestPopulation,
     deltaVsBaselineMeanAutoPopulation: deltaFromBaseline(meanAutoPopulation, baselineMeanAutoPopulation),
     deltaVsBaselineMeanLnsPopulation: deltaFromBaseline(meanLnsPopulation, baselineMeanLnsPopulation),
+    deltaVsBaselineMeanAutoBestScoreSeconds: deltaFromBaseline(
+      meanAutoBestScoreSeconds,
+      baselineMeanAutoBestScoreSeconds
+    ),
+    deltaVsBaselineMeanAutoWallClockSeconds: deltaFromBaseline(
+      meanAutoWallClockSeconds,
+      baselineMeanAutoWallClockSeconds
+    ),
+    deltaVsBaselineMeanAutoWorkerCpuBudgetSeconds: deltaFromBaseline(
+      meanAutoWorkerCpuBudgetSeconds,
+      baselineMeanAutoWorkerCpuBudgetSeconds
+    ),
+    deltaVsBaselineMeanAutoPopulationPerWorkerCpuBudgetSecond: deltaFromBaseline(
+      meanAutoPopulationPerWorkerCpuBudgetSecond,
+      baselineMeanAutoPopulationPerWorkerCpuBudgetSecond
+    ),
     budgetSummaries: summarizeBudgets(
       suite,
       baselineMeanBestPopulationByBudget,
       baselineMeanAutoPopulationByBudget,
-      baselineMeanLnsPopulationByBudget
+      baselineMeanLnsPopulationByBudget,
+      baselineMeanAutoBestScoreSecondsByBudget,
+      baselineMeanAutoWallClockSecondsByBudget,
+      baselineMeanAutoWorkerCpuBudgetSecondsByBudget,
+      baselineMeanAutoPopulationPerWorkerCpuBudgetSecondByBudget
     ),
     recommendationCounts: countRecommendations(suite.budgetPolicySignals),
   };
@@ -491,6 +673,21 @@ export async function runCrossModeBenchmarkBudgetAblations(
   const baselineMeanLnsPopulation = baseline
     ? meanNullableBenchmarkValue(modeResults(baseline.suite, "lns").map((result) => result.totalPopulation))
     : null;
+  const baselineAutoResults = baseline ? modeResults(baseline.suite, "auto") : [];
+  const baselineMeanAutoBestScoreSeconds = baseline
+    ? meanNullableBenchmarkValue(baselineAutoResults.map(timeToBestScoreSeconds))
+    : null;
+  const baselineMeanAutoWallClockSeconds = baseline
+    ? meanNullableBenchmarkValue(baselineAutoResults.map((result) => result.wallClockSeconds))
+    : null;
+  const baselineMeanAutoWorkerCpuBudgetSeconds = baseline
+    ? meanNullableBenchmarkValue(baselineAutoResults.map((result) => result.workerCpuBudgetSeconds))
+    : null;
+  const baselineMeanAutoPopulationPerWorkerCpuBudgetSecond = baseline
+    ? meanNullableBenchmarkValue(
+        baselineAutoResults.map((result) => result.populationPerWorkerCpuBudgetSecond)
+      )
+    : null;
   const baselineMeanBestPopulationByBudget = baseline
     ? meanBestPopulationByBudget(baseline.suite)
     : new Map<number, number>();
@@ -500,6 +697,18 @@ export async function runCrossModeBenchmarkBudgetAblations(
   const baselineMeanLnsPopulationByBudget = baseline
     ? meanModePopulationByBudget(baseline.suite, "lns")
     : new Map<number, number | null>();
+  const baselineMeanAutoBestScoreSecondsByBudget = baseline
+    ? meanModeMetricByBudget(baseline.suite, "auto", timeToBestScoreSeconds)
+    : new Map<number, number | null>();
+  const baselineMeanAutoWallClockSecondsByBudget = baseline
+    ? meanModeMetricByBudget(baseline.suite, "auto", (result) => result.wallClockSeconds)
+    : new Map<number, number | null>();
+  const baselineMeanAutoWorkerCpuBudgetSecondsByBudget = baseline
+    ? meanModeMetricByBudget(baseline.suite, "auto", (result) => result.workerCpuBudgetSeconds)
+    : new Map<number, number | null>();
+  const baselineMeanAutoPopulationPerWorkerCpuBudgetSecondByBudget = baseline
+    ? meanModeMetricByBudget(baseline.suite, "auto", (result) => result.populationPerWorkerCpuBudgetSecond)
+    : new Map<number, number | null>();
   const policyResults = policySuites.map(({ policy, suite }) =>
     summarizeBudgetAblationPolicy(
       policy,
@@ -507,9 +716,17 @@ export async function runCrossModeBenchmarkBudgetAblations(
       baselineMeanBestPopulation,
       baselineMeanAutoPopulation,
       baselineMeanLnsPopulation,
+      baselineMeanAutoBestScoreSeconds,
+      baselineMeanAutoWallClockSeconds,
+      baselineMeanAutoWorkerCpuBudgetSeconds,
+      baselineMeanAutoPopulationPerWorkerCpuBudgetSecond,
       baselineMeanBestPopulationByBudget,
       baselineMeanAutoPopulationByBudget,
-      baselineMeanLnsPopulationByBudget
+      baselineMeanLnsPopulationByBudget,
+      baselineMeanAutoBestScoreSecondsByBudget,
+      baselineMeanAutoWallClockSecondsByBudget,
+      baselineMeanAutoWorkerCpuBudgetSecondsByBudget,
+      baselineMeanAutoPopulationPerWorkerCpuBudgetSecondByBudget
     )
   );
 
@@ -596,11 +813,14 @@ export function formatCrossModeBenchmarkBudgetAblations(
       `  mean-best=${policy.meanBestPopulation.toFixed(1)} delta-vs-baseline=${formatScoreDeltaVsAuto(policy.deltaVsBaselineMeanBestPopulation)} mean-auto=${policy.meanAutoPopulation === null ? "n/a" : policy.meanAutoPopulation.toFixed(1)} auto-delta-vs-baseline=${formatScoreDeltaVsAuto(policy.deltaVsBaselineMeanAutoPopulation)} mean-lns=${policy.meanLnsPopulation === null ? "n/a" : policy.meanLnsPopulation.toFixed(1)} lns-delta-vs-baseline=${formatScoreDeltaVsAuto(policy.deltaVsBaselineMeanLnsPopulation)} mean-auto-gap=${formatPopulationGap(policy.meanAutoDeltaToBest)}`
     );
     lines.push(
-      `  auto-stage-mean=lns:${formatSeconds(policy.meanAutoLnsStageElapsedSeconds)} cp-sat:${formatSeconds(policy.meanAutoCpSatStageElapsedSeconds)} recommendations=${formatRecommendationCounts(policy.recommendationCounts)}`
+      `  auto-stage-mean=greedy-seed:${formatSeconds(policy.meanAutoGreedySeedElapsedSeconds)} lns:${formatSeconds(policy.meanAutoLnsStageElapsedSeconds)} cp-sat:${formatSeconds(policy.meanAutoCpSatStageElapsedSeconds)} best-at:${formatSeconds(policy.meanAutoBestScoreSeconds)} best-at-delta=${formatSeconds(policy.deltaVsBaselineMeanAutoBestScoreSeconds)} wall:${formatSeconds(policy.meanAutoWallClockSeconds)} wall-delta=${formatSeconds(policy.deltaVsBaselineMeanAutoWallClockSeconds)}`
+    );
+    lines.push(
+      `  auto-cpu=budget:${formatSeconds(policy.meanAutoWorkerCpuBudgetSeconds)} budget-delta=${formatSeconds(policy.deltaVsBaselineMeanAutoWorkerCpuBudgetSeconds)} pop/cpu-budget=${policy.meanAutoPopulationPerWorkerCpuBudgetSecond === null ? "n/a" : policy.meanAutoPopulationPerWorkerCpuBudgetSecond.toFixed(3)} pop/cpu-delta=${formatScoreDeltaVsAuto(policy.deltaVsBaselineMeanAutoPopulationPerWorkerCpuBudgetSecond)} recommendations=${formatRecommendationCounts(policy.recommendationCounts)}`
     );
     for (const budget of policy.budgetSummaries) {
       lines.push(
-        `  budget=${budget.budgetSeconds}s cases=${budget.caseCount} mean-best=${budget.meanBestPopulation.toFixed(1)} delta-vs-baseline=${formatScoreDeltaVsAuto(budget.deltaVsBaselineMeanBestPopulation)} mean-auto=${budget.meanAutoPopulation === null ? "n/a" : budget.meanAutoPopulation.toFixed(1)} auto-delta-vs-baseline=${formatScoreDeltaVsAuto(budget.deltaVsBaselineMeanAutoPopulation)} mean-lns=${budget.meanLnsPopulation === null ? "n/a" : budget.meanLnsPopulation.toFixed(1)} lns-delta-vs-baseline=${formatScoreDeltaVsAuto(budget.deltaVsBaselineMeanLnsPopulation)} mean-auto-gap=${formatPopulationGap(budget.meanAutoDeltaToBest)} recommendations=${formatRecommendationCounts(budget.recommendationCounts)}`
+        `  budget=${budget.budgetSeconds}s cases=${budget.caseCount} mean-best=${budget.meanBestPopulation.toFixed(1)} delta-vs-baseline=${formatScoreDeltaVsAuto(budget.deltaVsBaselineMeanBestPopulation)} mean-auto=${budget.meanAutoPopulation === null ? "n/a" : budget.meanAutoPopulation.toFixed(1)} auto-delta-vs-baseline=${formatScoreDeltaVsAuto(budget.deltaVsBaselineMeanAutoPopulation)} mean-lns=${budget.meanLnsPopulation === null ? "n/a" : budget.meanLnsPopulation.toFixed(1)} lns-delta-vs-baseline=${formatScoreDeltaVsAuto(budget.deltaVsBaselineMeanLnsPopulation)} mean-auto-gap=${formatPopulationGap(budget.meanAutoDeltaToBest)} greedy-seed=${formatSeconds(budget.meanAutoGreedySeedElapsedSeconds)} auto-best-at=${formatSeconds(budget.meanAutoBestScoreSeconds)} best-at-delta=${formatSeconds(budget.deltaVsBaselineMeanAutoBestScoreSeconds)} wall=${formatSeconds(budget.meanAutoWallClockSeconds)} wall-delta=${formatSeconds(budget.deltaVsBaselineMeanAutoWallClockSeconds)} cpu-budget=${formatSeconds(budget.meanAutoWorkerCpuBudgetSeconds)} cpu-budget-delta=${formatSeconds(budget.deltaVsBaselineMeanAutoWorkerCpuBudgetSeconds)} pop/cpu-budget=${budget.meanAutoPopulationPerWorkerCpuBudgetSecond === null ? "n/a" : budget.meanAutoPopulationPerWorkerCpuBudgetSecond.toFixed(3)} recommendations=${formatRecommendationCounts(budget.recommendationCounts)}`
       );
     }
   }

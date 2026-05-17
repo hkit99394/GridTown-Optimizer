@@ -204,6 +204,16 @@ Acceptance gates:
 - CPU-normalized cost is no worse than the baseline policy unless explicitly accepted as a product tradeoff.
 - Defaults change only after the scorecard and registry entry are reviewed.
 
+Completion evidence, 2026-05-17:
+
+- Budget ablations now compare Auto greedy seed caps, LNS seed/repair/stale-time budgets, CP-SAT reserve/runtime, and CP-SAT no-improvement timeout policies.
+- The default coverage corpus now includes the 4 protected product holdout payloads: `planner-service-overlap`, `planner-anchor-service`, `planner-multi-anchor-islands`, and `planner-gate-service-tradeoff`.
+- `npm run benchmark:scorecard -- --budget-ablation --coverage-corpus --ablation-policies=baseline,phase5-fast-exact --modes=auto,greedy,lns,cp-sat --budget=5 --seeds=7 --output=artifacts/auto-budget-retuning/2026-05-17/auto-budget-retuning-fast-exact-scorecard.json` produced a 96-run, 12-case protected coverage scorecard.
+- `phase5-fast-exact` tied baseline Auto mean population at `239.58`, preserved configured Auto worker CPU budget at `5.000s`, improved mean Auto time-to-best by `0.139s`, and improved mean Auto wall time by `0.811s`.
+- The policy-family scorecard at `artifacts/auto-budget-retuning/2026-05-17/auto-budget-retuning-policy-family-scorecard.json` records the slower seed-light, CP-SAT-reserve-heavy, and stale-polish alternatives as non-promoted comparisons.
+- Auto runtime defaults now use the promoted fast-exact budget slice: short LNS seed/repair/stale-time caps and a larger CP-SAT reserve for earlier exact polish.
+- Registry entry `auto-budget-retuning-2026-05-17` records the Phase 5 artifacts and promotion decision.
+
 ## Active Priorities
 
 Impact scale: `5` is most significant for population per minute. Rank is the recommended execution order.
@@ -223,7 +233,7 @@ Status vocabulary:
 | 2 | Product-shaped benchmark corpus | delivered | 4.5 | Phase 2 now has 8 planner-shaped payloads with manual-layout replay, expansion-comparison replay, fixed seed `7`, dev/holdout splits, and 1s/5s/30s/120s population reporting. | `artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json` passes with 8/8 cases and no manual-over-budget misses. |
 | 3 | Solver telemetry manifests | delivered | 4.0 | Phase 3 now has reusable solver telemetry manifests, CLI manifest writers for cross-mode and product workflow runs, registry-side manifest validation, and strict registry entry `solver-telemetry-manifests-2026-05-17`. | Every benchmark and workflow run can explain where time was spent and why a candidate change did or did not improve. |
 | 4 | Adaptive LNS operator set | delivered | 4.5 | Phase 4 now has named semantic repair operators, adaptive operator scoring, exploration windows, operator-aware telemetry/manifests, pressure-case ablations, and strict registry entry `adaptive-lns-operators-2026-05-17`. | Fixed-rectangle LNS comparison improved mean population by `+12.5` across 24 paired comparisons with zero regressions and no protected-holdout worst-decile regression. |
-| 5 | Auto budget policy retuning | active | 3.5 | Retune greedy seed, LNS repair, and CP-SAT reserve budgets now that product corpus, solver telemetry manifests, and adaptive LNS operator evidence are available. | New budget policy beats baseline on protected scorecards or reaches equal population faster with CPU cost accounted for. |
+| 5 | Auto budget policy retuning | delivered | 3.5 | Phase 5 now has fast-exact Auto budget defaults, protected product-holdout budget ablations, CPU-normalized scorecard metrics, and strict registry entry `auto-budget-retuning-2026-05-17`. | `phase5-fast-exact` tied baseline population with equal configured CPU budget while improving mean Auto time-to-best by `0.139s` and mean wall time by `0.811s`. |
 | 6 | Exact small-window DP repair | gated | 3.0 | Add bitmask/profile-DP repair only for tiny LNS neighborhoods, narrow corridors, and CP-SAT alignment oracles when telemetry shows CP-SAT startup/model overhead dominates. | DP matches exact evaluator results and beats CP-SAT repair wall time on small windows, improving LNS/Auto time-to-best without regressions. |
 | 7 | Service-master decomposition experiment | not-started | 3.5 | Treat service layouts as the master decision, then solve residential packing plus road repair as a subproblem; use no-good cuts or service swaps if useful. | Experimental mode beats Auto on service-overlap or facility-coverage pressure families without invalid layouts. |
 | 8 | LNS replay label scale-up | needs-scale | 3.0 | Use adaptive operator outcomes and replay windows to grow split-protected LNS labels. | Development and holdout splits satisfy usable, non-neutral, and family-balanced label gates before any LNS ranker is trained. |
@@ -244,6 +254,7 @@ Status vocabulary:
 | Product workflow benchmark corpus | delivered | `artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json`; `npm run benchmark:product-workflows` | Promotion and telemetry work now has stable planner-shaped dev/holdout case names. |
 | Solver telemetry manifests | delivered | `artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json`; `artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json`; registry run `solver-telemetry-manifests-2026-05-17` | Registry checks can validate manifest metadata and per-run telemetry without rerunning solvers. |
 | Adaptive LNS | delivered | `artifacts/adaptive-lns/2026-05-17/adaptive-lns-fixed-rectangle-scorecard.json`; registry run `adaptive-lns-operators-2026-05-17` | Named semantic operators and adaptive scoring are available for Phase 5 Auto budget retuning and future label scale-up. |
+| Auto budget retuning | delivered | `artifacts/auto-budget-retuning/2026-05-17/auto-budget-retuning-fast-exact-scorecard.json`; registry run `auto-budget-retuning-2026-05-17` | Auto now defaults to the promoted fast-exact budget slice after protected coverage evidence showed equal population, equal configured CPU budget, and faster time-to-best. |
 | Exact small-window DP repair | gated | Existing exact assignment DP shows the pattern is useful for bounded subproblems, but no LNS window DP exists | Candidate subroutine only; route tiny repairs to DP if telemetry proves CP-SAT overhead dominates. |
 | Model training path | gated | No `python/ml/` scaffold, offline metric report, trained model, or feature-flagged scorer is promoted | No learned default path. |
 | GPU, distributed solving, alternative solvers | gated | No CPU-first bottleneck evidence requiring them | Research-only until equal-budget wins exist. |
@@ -267,12 +278,12 @@ These are not next actions. Move them into the active table only after the trigg
 ## Combined Ordering
 
 1. Use the registered road-semantics, product workflow, telemetry, and adaptive-LNS baselines as the stable benchmark base for promotion decisions.
-2. Retune Auto budgets from evidence, not by intuition.
+2. Use the Phase 5 fast-exact Auto budget defaults as the new baseline for future solver promotion decisions.
 3. Add exact small-window DP repair only if telemetry shows a small-repair CP-SAT overhead bottleneck.
 4. Explore service-master decomposition if coverage/service pressure cases justify it.
 5. Scale LNS replay labels from adaptive operator outcomes.
 6. Revisit learned rankers only after offline holdout and equal-budget online gates pass.
-8. Revisit portfolio, GPU, distributed workers, or alternative solvers only after they have a measured bottleneck and CPU-normalized win path.
+7. Revisit portfolio, GPU, distributed workers, or alternative solvers only after they have a measured bottleneck and CPU-normalized win path.
 
 ## Discipline
 

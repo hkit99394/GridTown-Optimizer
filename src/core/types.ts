@@ -113,7 +113,7 @@ export interface AutoOptions {
   maxConsecutiveWeakCycles?: number;
   /** Default CP-SAT stage runtime when auto is driving exact passes. Defaults to 30 seconds. */
   cpSatStageTimeLimitSeconds?: number;
-  /** Share of the global Auto budget reserved for each CP-SAT stage after LNS. Defaults to 20%. */
+  /** Share of the global Auto budget reserved for each CP-SAT stage after LNS. Defaults to 80%. */
   cpSatStageReserveRatio?: number;
   /** Default CP-SAT no-improvement cutoff when auto is driving exact passes. Defaults to 10 seconds. */
   cpSatStageNoImprovementTimeoutSeconds?: number;

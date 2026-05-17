@@ -1,3 +1,6 @@
+import * as fs from "node:fs";
+import * as path from "node:path";
+
 import {
   DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS,
   DEFAULT_CROSS_MODE_BENCHMARK_MODES,
@@ -39,6 +42,7 @@ interface ParsedBenchmarkArgs {
   names: string[];
   modes?: CrossModeBenchmarkMode[];
   ablationPolicyNames?: string[];
+  outputPath?: string;
   budgetSeconds?: number;
   budgetsSeconds?: number[];
   seeds?: number[];
@@ -66,6 +70,7 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let list = false;
   let modes: CrossModeBenchmarkMode[] | undefined;
   let ablationPolicyNames: string[] | undefined;
+  let outputPath: string | undefined;
   let budgetSeconds: number | undefined;
   let budgetsSeconds: number[] | undefined;
   let seeds: number[] | undefined;
@@ -80,6 +85,9 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
         "name for cross-mode benchmark --ablation-policies"
       );
       budgetAblations = true;
+    },
+    output: (value) => {
+      outputPath = value;
     },
     budget: (value) => {
       budgetSeconds = parsePositiveNumber(value, "cross-mode benchmark --budget");
@@ -134,11 +142,18 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     names,
     modes,
     ablationPolicyNames,
+    outputPath,
     budgetSeconds,
     budgetsSeconds,
     seeds,
     manifestOutputPath,
   };
+}
+
+function writeJsonArtifact(outputPath: string, value: unknown): void {
+  const normalizedPath = path.resolve(process.cwd(), outputPath);
+  fs.mkdirSync(path.dirname(normalizedPath), { recursive: true });
+  fs.writeFileSync(normalizedPath, `${JSON.stringify(value, null, 2)}\n`);
 }
 
 export async function runCrossModeBenchmarkCli(): Promise<void> {
@@ -158,6 +173,13 @@ export async function runCrossModeBenchmarkCli(): Promise<void> {
       budgetsSeconds: args.budgetsSeconds,
       seeds: args.seeds,
     });
+
+    if (args.outputPath) {
+      writeJsonArtifact(args.outputPath, result);
+      if (!args.json && !args.traceJsonl) {
+        writeCliText(`Wrote cross-mode budget ablation artifact to ${args.outputPath}.`);
+      }
+    }
 
     if (args.json) {
       writeCliJson(result);
@@ -180,6 +202,13 @@ export async function runCrossModeBenchmarkCli(): Promise<void> {
     budgetsSeconds: args.budgetsSeconds,
     seeds: args.seeds,
   });
+
+  if (args.outputPath) {
+    writeJsonArtifact(args.outputPath, result);
+    if (!args.json && !args.traceJsonl) {
+      writeCliText(`Wrote cross-mode benchmark artifact to ${args.outputPath}.`);
+    }
+  }
 
   if (args.manifestOutputPath) {
     writeCrossModeTelemetryManifest(result, args.manifestOutputPath, corpus, {

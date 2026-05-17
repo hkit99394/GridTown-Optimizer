@@ -542,9 +542,13 @@ function testAutoKeepsEqualPopulationOptimalCpSatResult() {
   const originalSolveGreedy = solverModule.solveGreedy;
   const originalSolveLns = lnsModule.solveLns;
   const originalSolveCpSat = cpSatModule.solveCpSat;
+  let capturedLnsOptions = null;
 
   solverModule.solveGreedy = () => buildMockSolution({ optimizer: "greedy", totalPopulation: 100 });
-  lnsModule.solveLns = () => buildMockSolution({ optimizer: "lns", totalPopulation: 100 });
+  lnsModule.solveLns = (_grid, params) => {
+    capturedLnsOptions = params.lns;
+    return buildMockSolution({ optimizer: "lns", totalPopulation: 100 });
+  };
   cpSatModule.solveCpSat = () => buildMockSolution({ optimizer: "cp-sat", totalPopulation: 100, cpSatStatus: "OPTIMAL" });
 
   try {
@@ -557,6 +561,11 @@ function testAutoKeepsEqualPopulationOptimalCpSatResult() {
     assert.equal(solution.activeOptimizer, "cp-sat");
     assert.equal(solution.autoStage.activeStage, "cp-sat");
     assert.equal(solution.autoStage.stopReason, "optimal");
+    assert.equal(capturedLnsOptions.seedTimeLimitSeconds, 0.2);
+    assert.equal(capturedLnsOptions.repairTimeLimitSeconds, 0.5);
+    assert.equal(capturedLnsOptions.focusedRepairTimeLimitSeconds, 0.5);
+    assert.equal(capturedLnsOptions.escalatedRepairTimeLimitSeconds, 0.8);
+    assert.equal(capturedLnsOptions.noImprovementTimeoutSeconds, 1.2);
   } finally {
     solverModule.solveGreedy = originalSolveGreedy;
     lnsModule.solveLns = originalSolveLns;
@@ -990,13 +999,13 @@ function testAutoSyncReservesCpSatBudgetBeforeLnsStage() {
     assert.equal(solution.autoStage.stopReason, "optimal");
     assert(observedLnsOptions);
     assert.equal(typeof observedLnsOptions.wallClockLimitSeconds, "number");
-    assert.ok(observedLnsOptions.wallClockLimitSeconds > 1);
-    assert.ok(observedLnsOptions.wallClockLimitSeconds < 2);
+    assert.ok(observedLnsOptions.wallClockLimitSeconds >= 0.9);
+    assert.ok(observedLnsOptions.wallClockLimitSeconds <= 1.1);
     assert.ok(observedLnsOptions.seedTimeLimitSeconds <= observedLnsOptions.wallClockLimitSeconds);
     assert.ok(observedLnsOptions.repairTimeLimitSeconds <= observedLnsOptions.wallClockLimitSeconds);
     assert.equal(observedLnsOptions.repairTimeLimitSeconds, 0.5);
     assert.equal(observedLnsOptions.focusedRepairTimeLimitSeconds, 0.75);
-    assert.equal(observedLnsOptions.escalatedRepairTimeLimitSeconds, 1.25);
+    assert.ok(observedLnsOptions.escalatedRepairTimeLimitSeconds < 1.25);
     assert.ok(observedLnsOptions.focusedRepairTimeLimitSeconds <= observedLnsOptions.wallClockLimitSeconds);
     assert.ok(observedLnsOptions.escalatedRepairTimeLimitSeconds <= observedLnsOptions.wallClockLimitSeconds);
     assert.ok(observedLnsOptions.escalatedRepairTimeLimitSeconds > observedLnsOptions.repairTimeLimitSeconds);
@@ -4261,7 +4270,10 @@ async function testCrossModeBenchmarkHelpers() {
     "baseline",
     "seed-light",
     "repair-heavy",
+    "phase5-retuned",
+    "phase5-fast-exact",
     "cp-sat-reserve-heavy",
+    "phase5-stale-polish",
   ]);
   const coverageNames = DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS.map((entry) => entry.name);
   assert.equal(new Set(coverageNames).size, coverageNames.length);
@@ -4269,6 +4281,10 @@ async function testCrossModeBenchmarkHelpers() {
   assert(coverageNames.includes("deferred-road-packing-gain"));
   assert(coverageNames.includes("service-local-neighborhood"));
   assert(coverageNames.includes("row0-anchor-repair"));
+  assert(coverageNames.includes("planner-service-overlap"));
+  assert(coverageNames.includes("planner-anchor-service"));
+  assert(coverageNames.includes("planner-multi-anchor-islands"));
+  assert(coverageNames.includes("planner-gate-service-tradeoff"));
   assert.deepEqual(
     listCrossModeBenchmarkCaseNames(DEFAULT_CROSS_MODE_BUDGET_ABLATION_COVERAGE_CORPUS),
     coverageNames
@@ -4371,6 +4387,49 @@ async function testCrossModeBenchmarkHelpers() {
   assert.equal(reserveHeavyParams.auto.cpSatStageReserveRatio, 0.35);
   assert.equal(reserveHeavyParams.lns.seedTimeLimitSeconds, 1);
   assert.equal(reserveHeavyParams.lns.repairTimeLimitSeconds, 2);
+
+  const phase5Policy = DEFAULT_CROSS_MODE_BUDGET_ABLATION_POLICIES.find((policy) => policy.name === "phase5-retuned");
+  const phase5Params = buildCrossModeBenchmarkParams(benchmarkCase, "auto", {
+    budgetSeconds: 20,
+    seeds: [5],
+    budgetAblationPolicy: phase5Policy,
+  });
+  assert.equal(phase5Params.greedy.timeLimitSeconds, 3);
+  assert.equal(phase5Params.lns.seedTimeLimitSeconds, 1);
+  assert.equal(phase5Params.lns.repairTimeLimitSeconds, 4);
+  assert.equal(phase5Params.lns.focusedRepairTimeLimitSeconds, 4);
+  assert.equal(phase5Params.lns.escalatedRepairTimeLimitSeconds, 6);
+  assert.equal(phase5Params.lns.noImprovementTimeoutSeconds, undefined);
+  assert.equal(phase5Params.auto.cpSatStageReserveRatio, 0.1);
+  assert.equal(phase5Params.auto.cpSatStageTimeLimitSeconds, 20);
+  assert.equal(phase5Params.auto.cpSatStageNoImprovementTimeoutSeconds, undefined);
+  assert.equal(phase5Params.cpSat.timeLimitSeconds, 20);
+  assert.equal(phase5Params.cpSat.maxDeterministicTime, 20);
+
+  const phase5StalePolicy = DEFAULT_CROSS_MODE_BUDGET_ABLATION_POLICIES.find((policy) => policy.name === "phase5-stale-polish");
+  const phase5StaleParams = buildCrossModeBenchmarkParams(benchmarkCase, "auto", {
+    budgetSeconds: 20,
+    seeds: [5],
+    budgetAblationPolicy: phase5StalePolicy,
+  });
+  assert.equal(phase5StaleParams.lns.noImprovementTimeoutSeconds, 8);
+  assert.equal(phase5StaleParams.auto.cpSatStageTimeLimitSeconds, 5);
+  assert.equal(phase5StaleParams.auto.cpSatStageNoImprovementTimeoutSeconds, 2.4);
+  assert.equal(phase5StaleParams.cpSat.timeLimitSeconds, 5);
+
+  const phase5FastExactPolicy = DEFAULT_CROSS_MODE_BUDGET_ABLATION_POLICIES.find((policy) => policy.name === "phase5-fast-exact");
+  const phase5FastExactParams = buildCrossModeBenchmarkParams(benchmarkCase, "auto", {
+    budgetSeconds: 20,
+    seeds: [5],
+    budgetAblationPolicy: phase5FastExactPolicy,
+  });
+  assert.equal(phase5FastExactParams.lns.seedTimeLimitSeconds, 0.4);
+  assert.equal(phase5FastExactParams.lns.repairTimeLimitSeconds, 1);
+  assert.equal(phase5FastExactParams.lns.escalatedRepairTimeLimitSeconds, 1.6);
+  assert.equal(phase5FastExactParams.lns.noImprovementTimeoutSeconds, 2.4);
+  assert.equal(phase5FastExactParams.auto.cpSatStageReserveRatio, 0.8);
+  assert.equal(phase5FastExactParams.auto.cpSatStageTimeLimitSeconds, 16);
+  assert.equal(phase5FastExactParams.cpSat.timeLimitSeconds, 16);
 
   const portfolioParams = buildCrossModeBenchmarkParams(benchmarkCase, "cp-sat-portfolio", {
     budgetSeconds: 3,

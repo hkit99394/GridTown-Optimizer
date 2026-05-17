@@ -288,10 +288,14 @@ export interface CrossModeBenchmarkBudgetAblationPolicy {
   name: string;
   description: string;
   auto?: Partial<AutoOptions>;
+  autoGreedySeedBudgetRatio?: number;
+  autoCpSatStageTimeLimitRatio?: number;
+  autoCpSatStageNoImprovementTimeoutRatio?: number;
   lns?: Partial<LnsOptions>;
   lnsSeedBudgetRatio?: number;
   lnsRepairBudgetRatio?: number;
   lnsEscalatedRepairBudgetRatio?: number;
+  lnsNoImprovementTimeoutRatio?: number;
   autoCpSatStageReserveRatio?: number;
 }
 
@@ -481,6 +485,7 @@ function budgetAblationLnsOptions(
   const seedTimeLimitSeconds = ratioBudgetSeconds(policy.lnsSeedBudgetRatio, budgetSeconds);
   const repairTimeLimitSeconds = ratioBudgetSeconds(policy.lnsRepairBudgetRatio, budgetSeconds);
   const escalatedRepairTimeLimitSeconds = ratioBudgetSeconds(policy.lnsEscalatedRepairBudgetRatio, budgetSeconds);
+  const noImprovementTimeoutSeconds = ratioBudgetSeconds(policy.lnsNoImprovementTimeoutRatio, budgetSeconds);
   return {
     ...(policy.lns ?? {}),
     ...(seedTimeLimitSeconds !== null ? { seedTimeLimitSeconds } : {}),
@@ -491,16 +496,36 @@ function budgetAblationLnsOptions(
         }
       : {}),
     ...(escalatedRepairTimeLimitSeconds !== null ? { escalatedRepairTimeLimitSeconds } : {}),
+    ...(noImprovementTimeoutSeconds !== null ? { noImprovementTimeoutSeconds } : {}),
   };
 }
 
-function budgetAblationAutoOptions(policy: CrossModeBenchmarkBudgetAblationPolicy | undefined): Partial<AutoOptions> {
+function budgetAblationAutoGreedyOptions(
+  policy: CrossModeBenchmarkBudgetAblationPolicy | undefined,
+  budgetSeconds: number
+): Partial<GreedyOptions> {
   if (!policy) return {};
+  const timeLimitSeconds = ratioBudgetSeconds(policy.autoGreedySeedBudgetRatio, budgetSeconds);
+  return timeLimitSeconds !== null ? { timeLimitSeconds } : {};
+}
+
+function budgetAblationAutoOptions(
+  policy: CrossModeBenchmarkBudgetAblationPolicy | undefined,
+  budgetSeconds: number
+): Partial<AutoOptions> {
+  if (!policy) return {};
+  const cpSatStageTimeLimitSeconds = ratioBudgetSeconds(policy.autoCpSatStageTimeLimitRatio, budgetSeconds);
+  const cpSatStageNoImprovementTimeoutSeconds = ratioBudgetSeconds(
+    policy.autoCpSatStageNoImprovementTimeoutRatio,
+    budgetSeconds
+  );
   return {
     ...(policy.auto ?? {}),
     ...(typeof policy.autoCpSatStageReserveRatio === "number" && Number.isFinite(policy.autoCpSatStageReserveRatio)
       ? { cpSatStageReserveRatio: Math.max(0, Math.min(1, policy.autoCpSatStageReserveRatio)) }
       : {}),
+    ...(cpSatStageTimeLimitSeconds !== null ? { cpSatStageTimeLimitSeconds } : {}),
+    ...(cpSatStageNoImprovementTimeoutSeconds !== null ? { cpSatStageNoImprovementTimeoutSeconds } : {}),
   };
 }
 
@@ -575,7 +600,7 @@ export function buildCrossModeBenchmarkParams(
     ? buildPortfolioOptions(options, budgetSeconds, seed)
     : undefined;
   const cpSat = buildBudgetedCpSatOptions(baseWithGreedy, options, budgetSeconds, seed, portfolio);
-  const autoPolicyOverrides = budgetAblationAutoOptions(options.budgetAblationPolicy);
+  const autoPolicyOverrides = budgetAblationAutoOptions(options.budgetAblationPolicy, budgetSeconds);
 
   if (mode === "greedy") {
     return {
@@ -594,22 +619,34 @@ export function buildCrossModeBenchmarkParams(
   }
 
   if (mode === "auto") {
+    const autoBaseWithGreedy = applyGreedyCompatibilityFields(params, {
+      ...greedy,
+      ...budgetAblationAutoGreedyOptions(options.budgetAblationPolicy, budgetSeconds),
+    });
+    const autoCpSatStageTimeLimitSeconds = Math.min(
+      autoPolicyOverrides.cpSatStageTimeLimitSeconds ?? options.auto?.cpSatStageTimeLimitSeconds ?? budgetSeconds,
+      budgetSeconds
+    );
     return {
-      ...baseWithGreedy,
+      ...autoBaseWithGreedy,
       optimizer,
       auto: {
-        ...(baseWithGreedy.auto ?? {}),
+        ...(autoBaseWithGreedy.auto ?? {}),
         ...(options.auto ?? {}),
         ...autoPolicyOverrides,
         wallClockLimitSeconds: budgetSeconds,
         randomSeed: seed,
-        cpSatStageTimeLimitSeconds: Math.min(
-          autoPolicyOverrides.cpSatStageTimeLimitSeconds ?? options.auto?.cpSatStageTimeLimitSeconds ?? budgetSeconds,
-          budgetSeconds
+        cpSatStageTimeLimitSeconds: autoCpSatStageTimeLimitSeconds,
+      },
+      cpSat: {
+        ...withoutPortfolio(cpSat),
+        timeLimitSeconds: autoCpSatStageTimeLimitSeconds,
+        maxDeterministicTime: Math.min(
+          cpSat.maxDeterministicTime ?? autoCpSatStageTimeLimitSeconds,
+          autoCpSatStageTimeLimitSeconds
         ),
       },
-      cpSat: withoutPortfolio(cpSat),
-      lns: buildBudgetedLnsOptions(baseWithGreedy, options, budgetSeconds),
+      lns: buildBudgetedLnsOptions(autoBaseWithGreedy, options, budgetSeconds),
     };
   }
 

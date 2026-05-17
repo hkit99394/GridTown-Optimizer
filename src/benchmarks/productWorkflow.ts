@@ -2,9 +2,18 @@ import fs from "node:fs";
 import path from "node:path";
 import { performance } from "node:perf_hooks";
 
-import { assertValidSolveInputs } from "../core/solverInputValidation.js";
+import {
+  assertValidLayoutEvaluateInputs,
+  assertValidSolveInputs,
+} from "../core/solverInputValidation.js";
 import { solveAsync } from "../runtime/solve.js";
-import { assertHttpPlannerInputLimits } from "../server/http/contracts.js";
+import {
+  assertHttpPlannerInputLimits,
+  assertValidSerializedSolutionPayload,
+  isLayoutEvaluateRequest,
+  materializeSerializedSolution,
+  sanitizeSolveRequest,
+} from "../server/http/contracts.js";
 import { buildManualLayoutResponse, buildSolveResponse } from "../server/http/solutionResponse.js";
 import {
   buildBenchmarkSuiteMetadata,
@@ -21,7 +30,6 @@ import type {
   ResidentialTypeSetting,
   ServicePlacement,
   ServiceTypeSetting,
-  Solution,
   SolverParams,
 } from "../core/types.js";
 
@@ -74,6 +82,7 @@ export interface ProductWorkflowPayloadValidation {
 }
 
 export interface ProductWorkflowManualReplayResult {
+  endpoint: typeof PRODUCT_WORKFLOW_LAYOUT_EVALUATE_ENDPOINT;
   valid: boolean;
   totalPopulation: number;
   roadCount: number;
@@ -92,6 +101,15 @@ export interface ProductWorkflowBudgetResult {
   serviceCount: number;
   residentialCount: number;
   wallClockSeconds: number;
+}
+
+export interface ProductWorkflowBudgetQualitySummary {
+  bestBudgetSeconds: number | null;
+  bestSeed: number | null;
+  bestPopulation: number | null;
+  deltaFromManual: number | null;
+  coverageRatio: number | null;
+  matchedOrBeatManual: boolean;
 }
 
 export interface ProductWorkflowExpansionResult {
@@ -117,6 +135,7 @@ export interface ProductWorkflowBenchmarkCaseResult {
   payloadValidation: ProductWorkflowPayloadValidation;
   manualReplay: ProductWorkflowManualReplayResult;
   budgetResults: ProductWorkflowBudgetResult[];
+  budgetQuality: ProductWorkflowBudgetQualitySummary;
   expansion: ProductWorkflowExpansionResult;
   passed: boolean;
 }
@@ -138,6 +157,9 @@ export interface ProductWorkflowBenchmarkRegistryHints {
     manualReplayCount: number;
     expansionReplayCount: number;
     budgetRunCount: number;
+    manualOutperformingBudgetCaseCount: number;
+    worstBestBudgetDeltaFromManual: number | null;
+    averageBestBudgetDeltaFromManual: number | null;
   };
   artifactPaths: string[];
   decision: string;
@@ -155,21 +177,9 @@ export interface ProductWorkflowBenchmarkSuiteResult {
   registryHints: ProductWorkflowBenchmarkRegistryHints;
 }
 
-export const DEFAULT_PRODUCT_WORKFLOW_BUDGETS_SECONDS = Object.freeze([1, 5] as const);
+export const DEFAULT_PRODUCT_WORKFLOW_BUDGETS_SECONDS = Object.freeze([1, 5, 30, 120] as const);
 export const DEFAULT_PRODUCT_WORKFLOW_SEEDS = Object.freeze([7] as const);
-
-function materializeWorkflowSolution(solution: ProductWorkflowSerializedSolution): Solution {
-  return {
-    roads: new Set(solution.roads),
-    services: solution.services.map((service) => ({ ...service })),
-    serviceTypeIndices: [...solution.serviceTypeIndices],
-    servicePopulationIncreases: [...solution.servicePopulationIncreases],
-    residentials: solution.residentials.map((residential) => ({ ...residential })),
-    residentialTypeIndices: [...solution.residentialTypeIndices],
-    populations: [...solution.populations],
-    totalPopulation: solution.totalPopulation,
-  };
-}
+export const PRODUCT_WORKFLOW_LAYOUT_EVALUATE_ENDPOINT = "/api/layout/evaluate" as const;
 
 function workflowSolution(
   roads: string[],
@@ -242,19 +252,59 @@ function validatePayload(grid: Grid, params: SolverParams): ProductWorkflowPaylo
   };
 }
 
-function replayManualLayout(benchmarkCase: ProductWorkflowBenchmarkCase): ProductWorkflowManualReplayResult {
-  const response = buildManualLayoutResponse(
-    benchmarkCase.grid,
-    benchmarkCase.params,
-    materializeWorkflowSolution(benchmarkCase.manualLayout)
-  );
+function cloneManualLayoutSolution(solution: ProductWorkflowSerializedSolution): ProductWorkflowSerializedSolution {
   return {
-    valid: response.validation.valid,
-    totalPopulation: response.stats.totalPopulation,
-    roadCount: response.stats.roadCount,
-    serviceCount: response.stats.serviceCount,
-    residentialCount: response.stats.residentialCount,
-    errors: response.validation.errors,
+    roads: [...solution.roads],
+    services: solution.services.map((service) => ({ ...service })),
+    serviceTypeIndices: [...solution.serviceTypeIndices],
+    servicePopulationIncreases: [...solution.servicePopulationIncreases],
+    residentials: solution.residentials.map((residential) => ({ ...residential })),
+    residentialTypeIndices: [...solution.residentialTypeIndices],
+    populations: [...solution.populations],
+    totalPopulation: solution.totalPopulation,
+  };
+}
+
+function replayManualLayout(benchmarkCase: ProductWorkflowBenchmarkCase): ProductWorkflowManualReplayResult {
+  const errors: string[] = [];
+  const payload = {
+    grid: cloneBenchmarkGrid(benchmarkCase.grid),
+    params: cloneBenchmarkSolverParams(benchmarkCase.params),
+    solution: cloneManualLayoutSolution(benchmarkCase.manualLayout),
+  };
+  try {
+    if (!isLayoutEvaluateRequest(payload)) {
+      throw new Error("Invalid layout-evaluate payload. Expected { grid, params, solution } with a rectangular 0/1 grid.");
+    }
+    const sanitized = sanitizeSolveRequest(payload);
+    assertValidLayoutEvaluateInputs(sanitized.grid, sanitized.params);
+    assertHttpPlannerInputLimits(sanitized.grid, sanitized.params);
+    assertValidSerializedSolutionPayload(sanitized.solution, "Manual layout solution");
+    const response = buildManualLayoutResponse(
+      sanitized.grid,
+      sanitized.params,
+      materializeSerializedSolution(sanitized.solution)
+    );
+    return {
+      endpoint: PRODUCT_WORKFLOW_LAYOUT_EVALUATE_ENDPOINT,
+      valid: response.validation.valid,
+      totalPopulation: response.stats.totalPopulation,
+      roadCount: response.stats.roadCount,
+      serviceCount: response.stats.serviceCount,
+      residentialCount: response.stats.residentialCount,
+      errors: response.validation.errors,
+    };
+  } catch (error) {
+    errors.push(error instanceof Error ? error.message : "Unknown layout-evaluate replay error.");
+  }
+  return {
+    endpoint: PRODUCT_WORKFLOW_LAYOUT_EVALUATE_ENDPOINT,
+    valid: false,
+    totalPopulation: 0,
+    roadCount: 0,
+    serviceCount: 0,
+    residentialCount: 0,
+    errors,
   };
 }
 
@@ -278,6 +328,49 @@ async function runBudgetSample(
     serviceCount: response.stats.serviceCount,
     residentialCount: response.stats.residentialCount,
     wallClockSeconds,
+  };
+}
+
+function compareBudgetResults(
+  left: ProductWorkflowBudgetResult,
+  right: ProductWorkflowBudgetResult
+): ProductWorkflowBudgetResult {
+  if (left.totalPopulation !== right.totalPopulation) {
+    return left.totalPopulation > right.totalPopulation ? left : right;
+  }
+  if (left.budgetSeconds !== right.budgetSeconds) {
+    return left.budgetSeconds < right.budgetSeconds ? left : right;
+  }
+  return left.seed <= right.seed ? left : right;
+}
+
+function summarizeBudgetQuality(
+  manualReplay: ProductWorkflowManualReplayResult,
+  budgetResults: readonly ProductWorkflowBudgetResult[]
+): ProductWorkflowBudgetQualitySummary {
+  const validBudgetResults = budgetResults.filter((budgetResult) => budgetResult.valid);
+  if (validBudgetResults.length === 0) {
+    return {
+      bestBudgetSeconds: null,
+      bestSeed: null,
+      bestPopulation: null,
+      deltaFromManual: null,
+      coverageRatio: null,
+      matchedOrBeatManual: false,
+    };
+  }
+
+  const best = validBudgetResults.reduce(compareBudgetResults);
+  const deltaFromManual = best.totalPopulation - manualReplay.totalPopulation;
+  return {
+    bestBudgetSeconds: best.budgetSeconds,
+    bestSeed: best.seed,
+    bestPopulation: best.totalPopulation,
+    deltaFromManual,
+    coverageRatio: manualReplay.totalPopulation > 0
+      ? roundBenchmarkMetric(best.totalPopulation / manualReplay.totalPopulation)
+      : null,
+    matchedOrBeatManual: deltaFromManual >= 0,
   };
 }
 
@@ -399,11 +492,21 @@ function uniqueFamilies(results: readonly ProductWorkflowBenchmarkCaseResult[]):
   return [...new Set(results.map((result) => result.family))].sort();
 }
 
+function budgetQualityDeltas(results: readonly ProductWorkflowBenchmarkCaseResult[]): number[] {
+  return results
+    .map((result) => result.budgetQuality.deltaFromManual)
+    .filter((delta): delta is number => delta !== null);
+}
+
 function buildRegistryHints(
   result: Omit<ProductWorkflowBenchmarkSuiteResult, "registryHints">,
   artifactPaths: string[] = []
 ): ProductWorkflowBenchmarkRegistryHints {
   const failedCaseCount = result.results.filter((caseResult) => !caseResult.passed).length;
+  const qualityDeltas = budgetQualityDeltas(result.results);
+  const manualOutperformingBudgetCaseCount = result.results.filter(
+    (caseResult) => !caseResult.budgetQuality.matchedOrBeatManual
+  ).length;
   return {
     artifactType: "benchmark",
     cases: result.selectedCaseNames,
@@ -421,11 +524,18 @@ function buildRegistryHints(
       manualReplayCount: result.results.length,
       expansionReplayCount: result.results.filter((caseResult) => caseResult.expansion.servicePopulation !== null || caseResult.expansion.residentialPopulation !== null).length,
       budgetRunCount: result.results.reduce((sum, caseResult) => sum + caseResult.budgetResults.length, 0),
+      manualOutperformingBudgetCaseCount,
+      worstBestBudgetDeltaFromManual: qualityDeltas.length > 0
+        ? Math.min(...qualityDeltas)
+        : null,
+      averageBestBudgetDeltaFromManual: qualityDeltas.length > 0
+        ? roundBenchmarkMetric(qualityDeltas.reduce((sum, delta) => sum + delta, 0) / qualityDeltas.length)
+        : null,
     },
     artifactPaths,
     decision: result.passed ? "product-workflow-corpus-ready-for-scorecards" : "product-workflow-corpus-blocked",
     summary: result.passed
-      ? "Product-shaped planner payload, manual-layout, and expansion-comparison replays passed."
+      ? `Product-shaped planner payload, manual-layout, and expansion-comparison replays passed; ${manualOutperformingBudgetCaseCount} case(s) remain below manual replay quality.`
       : "Product-shaped workflow benchmark found invalid payloads or replay failures.",
   };
 }
@@ -463,6 +573,7 @@ export async function runProductWorkflowBenchmarkSuite(
         budgetResults.push(await runBudgetSample(benchmarkCase, budgetSeconds, seed));
       }
     }
+    const budgetQuality = summarizeBudgetQuality(manualReplay, budgetResults);
     const expansion = await replayExpansionComparison(benchmarkCase, manualReplay, budgetsSeconds[0]!, seeds[0]!);
     const passed =
       payloadValidation.valid
@@ -479,6 +590,7 @@ export async function runProductWorkflowBenchmarkSuite(
       payloadValidation,
       manualReplay,
       budgetResults,
+      budgetQuality,
       expansion,
       passed,
     });
@@ -518,6 +630,11 @@ function formatSigned(value: number | null): string {
   return `${value}`;
 }
 
+function formatRatio(value: number | null): string {
+  if (value === null) return "n/a";
+  return value.toFixed(2);
+}
+
 export function formatProductWorkflowBenchmarkSuite(result: ProductWorkflowBenchmarkSuiteResult): string {
   const lines: string[] = [];
   lines.push("=== Product Workflow Benchmark Suite ===");
@@ -534,9 +651,12 @@ export function formatProductWorkflowBenchmarkSuite(result: ProductWorkflowBench
       `  payload=${caseResult.payloadValidation.valid ? "valid" : `invalid:${caseResult.payloadValidation.errors.join(" ")}`}`
     );
     lines.push(
-      `  manual=pop:${caseResult.manualReplay.totalPopulation} roads:${caseResult.manualReplay.roadCount} buildings:${
+      `  manual=${caseResult.manualReplay.endpoint} pop:${caseResult.manualReplay.totalPopulation} roads:${caseResult.manualReplay.roadCount} buildings:${
         caseResult.manualReplay.serviceCount + caseResult.manualReplay.residentialCount
       } ${caseResult.manualReplay.valid ? "valid" : `invalid:${caseResult.manualReplay.errors.join(" ")}`}`
+    );
+    lines.push(
+      `  quality=best-budget-pop:${caseResult.budgetQuality.bestPopulation ?? "n/a"} budget:${caseResult.budgetQuality.bestBudgetSeconds ?? "n/a"}s seed:${caseResult.budgetQuality.bestSeed ?? "n/a"} manual-delta:${formatSigned(caseResult.budgetQuality.deltaFromManual)} coverage:${formatRatio(caseResult.budgetQuality.coverageRatio)}`
     );
     lines.push(
       `  expansion=baseline:${caseResult.expansion.baselinePopulation} service:${caseResult.expansion.servicePopulation ?? "n/a"}(${
@@ -737,7 +857,7 @@ export const DEFAULT_PRODUCT_WORKFLOW_BENCHMARK_CORPUS: readonly ProductWorkflow
         { name: "Island Studio", w: 1, h: 1, min: 10, max: 20, avail: 2 },
       ],
       availableBuildings: { services: 0, residentials: 2 },
-      greedy: { restarts: 2, localSearch: true },
+      greedy: { restarts: 2, localSearch: true, allowIndependentRoadAnchorComponents: true },
     },
     manualLayout: workflowSolution(
       ["0,1", "1,1", "0,5", "1,5"],
@@ -750,6 +870,95 @@ export const DEFAULT_PRODUCT_WORKFLOW_BENCHMARK_CORPUS: readonly ProductWorkflow
     ),
     expansion: {
       residential: { name: "Island Pod", w: 1, h: 1, min: 15, max: 25, avail: 1 },
+    },
+  },
+  {
+    name: "planner-rotated-rowhouse",
+    description: "Rotated rowhouse payload with a saved service-and-road reuse pattern.",
+    family: "footprint-pressure",
+    split: "development",
+    grid: [
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 0, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+    ],
+    params: {
+      optimizer: "greedy",
+      serviceTypes: [{ name: "Linear Market", rows: 1, cols: 2, bonus: 25, range: 1, avail: 1 }],
+      residentialTypes: [
+        { name: "Rowhouse", w: 3, h: 1, min: 35, max: 65, avail: 2 },
+        { name: "Pocket Courtyard", w: 2, h: 2, min: 55, max: 95, avail: 1 },
+      ],
+      availableBuildings: { services: 1, residentials: 2 },
+      greedy: { restarts: 2, localSearch: true },
+    },
+    manualLayout: workflowSolution(
+      ["0,1", "1,1"],
+      [
+        { r: 2, c: 0, rows: 1, cols: 3 },
+        { r: 0, c: 4, rows: 1, cols: 3 },
+      ],
+      [60, 60],
+      {
+        services: [{ r: 1, c: 2, rows: 1, cols: 2, range: 1 }],
+        serviceTypeIndices: [0],
+        servicePopulationIncreases: [25],
+        residentialTypeIndices: [0, 0],
+      }
+    ),
+    expansion: {
+      service: { name: "Pop-up Market", rows: 1, cols: 1, bonus: 20, range: 1, avail: 1 },
+      residential: { name: "Micro Rowhouse", w: 1, h: 2, min: 20, max: 45, avail: 1 },
+    },
+  },
+  {
+    name: "planner-gate-service-tradeoff",
+    description: "Gate-shaped service tradeoff payload with two saved service anchors.",
+    family: "gate",
+    split: "holdout",
+    grid: [
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 0, 1, 1, 1, 0, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 0, 1, 1, 1, 0, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+    ],
+    params: {
+      optimizer: "greedy",
+      serviceTypes: [
+        { name: "Gate Clinic", rows: 1, cols: 1, bonus: 20, range: 1, avail: 1 },
+        { name: "Gate Depot", rows: 1, cols: 1, bonus: 30, range: 1, avail: 1 },
+      ],
+      residentialTypes: [
+        { name: "Gate Block", w: 2, h: 2, min: 50, max: 100, avail: 2 },
+        { name: "Gate Studio", w: 1, h: 1, min: 15, max: 35, avail: 2 },
+      ],
+      availableBuildings: { services: 2, residentials: 2 },
+      greedy: { restarts: 2, localSearch: true },
+    },
+    manualLayout: workflowSolution(
+      ["0,2", "0,3", "0,4", "1,2", "1,4", "2,2", "2,4", "3,2", "3,4"],
+      [
+        { r: 4, c: 2, rows: 2, cols: 2 },
+        { r: 4, c: 4, rows: 2, cols: 2 },
+      ],
+      [80, 80],
+      {
+        services: [
+          { r: 1, c: 3, rows: 1, cols: 1, range: 1 },
+          { r: 3, c: 3, rows: 1, cols: 1, range: 1 },
+        ],
+        serviceTypeIndices: [0, 1],
+        servicePopulationIncreases: [20, 30],
+        residentialTypeIndices: [0, 0],
+      }
+    ),
+    expansion: {
+      service: { name: "Gate School", rows: 1, cols: 1, bonus: 35, range: 2, avail: 1 },
+      residential: { name: "Gate Studio Add", w: 1, h: 1, min: 20, max: 40, avail: 1 },
     },
   },
 ]);

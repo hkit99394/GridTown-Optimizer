@@ -54,13 +54,17 @@ const {
   runLnsWindowReplayLabels,
   runLnsBenchmarkSuite,
   DEFAULT_ROAD_SEMANTICS_SCORECARD_CASES,
+  DEFAULT_PRODUCT_WORKFLOW_BUDGETS_SECONDS,
   DEFAULT_PRODUCT_WORKFLOW_BENCHMARK_CORPUS,
+  PRODUCT_WORKFLOW_LAYOUT_EVALUATE_ENDPOINT,
   evaluateRoadSemanticsScorecardFixtures,
   evaluateProductWorkflowManualReplays,
+  formatRoadSemanticsScorecardCommand,
   formatRoadSemanticsScorecard,
   formatProductWorkflowBenchmarkSuite,
   listRoadSemanticsScorecardCaseNames,
   listProductWorkflowBenchmarkCaseNames,
+  writeRoadSemanticsScorecardArtifact,
 } = require("../dist/benchmarks/index.js");
 
 const {
@@ -308,6 +312,33 @@ function testRoadProbePreservesEdgeBorderConnectivity() {
   assert.deepEqual(adjacentProbe, { path: null });
   assert.equal((bridgeProbe?.path?.length ?? 0) > 0, true);
   assert.deepEqual(bridgeProbe?.path?.at(-1), [0, 2]);
+}
+
+function testRoadProbeFallsBackToIndependentAnchorComponent() {
+  const grid = [
+    [0, 1, 0, 0, 0, 1],
+    [0, 1, 0, 0, 0, 1],
+    [0, 1, 1, 0, 1, 1],
+    [0, 1, 1, 0, 1, 1],
+  ];
+  const roads = new Set(["0,1", "1,1"]);
+  const occupied = new Set([...roads, "2,1", "2,2", "3,1", "3,2"]);
+  const probe = probeBuildingConnectedToRoads(
+    grid,
+    roads,
+    occupied,
+    2,
+    4,
+    2,
+    2,
+    undefined,
+    { allowIndependentRoadAnchorFallback: true }
+  );
+
+  assert.deepEqual(probe?.path, [
+    [1, 5],
+    [0, 5],
+  ]);
 }
 
 function testRoadProbeScratchRepeatability() {
@@ -3463,19 +3494,62 @@ function testRoadSemanticsScorecardCorpusHelpers() {
     }),
     /Road Semantics Scorecard/
   );
+
+  assert.equal(
+    formatRoadSemanticsScorecardCommand(["--output=artifacts/road-semantics-scorecard.json"]),
+    "npm run benchmark:road-semantics -- --output=artifacts/road-semantics-scorecard.json"
+  );
+
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "road-semantics-artifact-"));
+  const artifactPath = path.join(tempDir, "scorecard.json");
+  const artifactGitCommit = "1234567890123456789012345678901234567890";
+  const written = writeRoadSemanticsScorecardArtifact({
+    generatedAt: "2026-05-17T00:00:00.000Z",
+    caseCount: 0,
+    selectedCaseNames: [],
+    passed: true,
+    cpSatOptions: { timeLimitSeconds: 5, maxDeterministicTime: 5, numWorkers: 1, randomSeed: 1 },
+    results: [],
+    registryHints: {
+      artifactType: "benchmark",
+      cases: [],
+      caseFamilies: [],
+      seeds: [1],
+      budget: { cpSatTimeLimitSeconds: 5, cpSatMaxDeterministicTime: 5, cpSatNumWorkers: 1 },
+      summaryMetrics: { caseCount: 0, passedCaseCount: 0, failedCaseCount: 0, cpSatCaseCount: 0 },
+      artifactPaths: [],
+      decision: "road-semantics-alignment-ready-for-product-scorecard",
+      summary: "No cases selected.",
+    },
+  }, artifactPath, {
+    metadata: {
+      commands: ["npm run benchmark:road-semantics -- --output=scorecard.json"],
+      branch: "features/test-road-semantics",
+      artifactGitCommit,
+      hardware: { captured: true, gpuUsed: false, cpuModel: "test-cpu" },
+    },
+  });
+  const parsedArtifact = JSON.parse(fs.readFileSync(artifactPath, "utf8"));
+  assert.deepEqual(written.commands, ["npm run benchmark:road-semantics -- --output=scorecard.json"]);
+  assert.deepEqual(parsedArtifact.registryHints.artifactPaths, [path.normalize(artifactPath)]);
+  assert.equal(parsedArtifact.branch, "features/test-road-semantics");
+  assert.equal(parsedArtifact.artifactGitCommit, artifactGitCommit);
+  assert.equal(parsedArtifact.hardware.captured, true);
 }
 
 function testProductWorkflowBenchmarkCorpusHelpers() {
   const names = DEFAULT_PRODUCT_WORKFLOW_BENCHMARK_CORPUS.map((entry) => entry.name);
   assert.equal(new Set(names).size, names.length);
   assert.deepEqual(listProductWorkflowBenchmarkCaseNames(), names);
-  assert.equal(names.length, 6);
+  assert.equal(names.length, 8);
   assert(names.includes("planner-corridor-reuse"));
   assert(names.includes("planner-gate-choke"));
   assert(names.includes("planner-footprint-pressure"));
   assert(names.includes("planner-service-overlap"));
   assert(names.includes("planner-anchor-service"));
   assert(names.includes("planner-multi-anchor-islands"));
+  assert(names.includes("planner-rotated-rowhouse"));
+  assert(names.includes("planner-gate-service-tradeoff"));
 
   const families = new Set(DEFAULT_PRODUCT_WORKFLOW_BENCHMARK_CORPUS.map((entry) => entry.family));
   assert(families.has("corridor"));
@@ -3490,8 +3564,10 @@ function testProductWorkflowBenchmarkCorpusHelpers() {
   assert(splits.has("holdout"));
 
   const manualReplays = evaluateProductWorkflowManualReplays();
-  assert.equal(manualReplays.length, 6);
+  assert.equal(manualReplays.length, 8);
   assert.equal(manualReplays.every((replay) => replay.valid), true);
+  assert.equal(manualReplays.every((replay) => replay.endpoint === PRODUCT_WORKFLOW_LAYOUT_EVALUATE_ENDPOINT), true);
+  assert.deepEqual([...DEFAULT_PRODUCT_WORKFLOW_BUDGETS_SECONDS], [1, 5, 30, 120]);
 
   assert.match(
     formatProductWorkflowBenchmarkSuite({
@@ -3499,7 +3575,7 @@ function testProductWorkflowBenchmarkCorpusHelpers() {
       caseCount: 0,
       selectedCaseNames: [],
       passed: true,
-      budgetsSeconds: [1, 5],
+      budgetsSeconds: [1, 5, 30, 120],
       seeds: [7],
       results: [],
       registryHints: {
@@ -3508,7 +3584,7 @@ function testProductWorkflowBenchmarkCorpusHelpers() {
         caseFamilies: [],
         seeds: [7],
         splitStatus: { development: [], holdout: [] },
-        budget: { budgetsSeconds: [1, 5], optimizer: "greedy" },
+        budget: { budgetsSeconds: [1, 5, 30, 120], optimizer: "greedy" },
         summaryMetrics: {
           caseCount: 0,
           passedCaseCount: 0,
@@ -3516,6 +3592,9 @@ function testProductWorkflowBenchmarkCorpusHelpers() {
           manualReplayCount: 0,
           expansionReplayCount: 0,
           budgetRunCount: 0,
+          manualOutperformingBudgetCaseCount: 0,
+          worstBestBudgetDeltaFromManual: null,
+          averageBestBudgetDeltaFromManual: null,
         },
         artifactPaths: [],
         decision: "product-workflow-corpus-ready-for-scorecards",
@@ -3524,6 +3603,23 @@ function testProductWorkflowBenchmarkCorpusHelpers() {
     }),
     /Product Workflow Benchmark Suite/
   );
+}
+
+function testGreedyMatchesProductWorkflowMultiAnchorManualReplay() {
+  const benchmarkCase = DEFAULT_PRODUCT_WORKFLOW_BENCHMARK_CORPUS.find(
+    (entry) => entry.name === "planner-multi-anchor-islands"
+  );
+  const solution = solveGreedy(structuredClone(benchmarkCase.grid), structuredClone(benchmarkCase.params));
+  const validation = validateSolution({
+    grid: benchmarkCase.grid,
+    params: benchmarkCase.params,
+    solution,
+  });
+
+  assert.equal(validation.valid, true);
+  assert.equal(solution.totalPopulation, benchmarkCase.manualLayout.totalPopulation);
+  assert.deepEqual([...solution.roads].sort(), [...benchmarkCase.manualLayout.roads].sort());
+  assert.deepEqual(solution.residentials, benchmarkCase.manualLayout.residentials);
 }
 
 function testLnsBenchmarkCorpusHelpers() {
@@ -8079,12 +8175,11 @@ function testGreedyDiagnosticsAreOptInDeterministicAndAdditive() {
   const residentialReasons = withDiagnostics.greedyDiagnostics.residentials.reasonCounts;
   assert.equal(serviceReasons["availability-cap"] > 0, true);
   assert.equal(serviceReasons["blocked-footprint"] > 0, true);
-  assert.equal(serviceReasons["no-road-path"] > 0, true);
   assert.equal(serviceReasons["lower-score-no-improvement"] > 0, true);
   assert.equal(residentialReasons["availability-cap"] > 0, true);
   assert.equal(residentialReasons["blocked-footprint"] > 0, true);
-  assert.equal(residentialReasons["no-road-path"] > 0, true);
   assert.equal(residentialReasons["base-only"] > 0, true);
+  assert.equal(residentialReasons["lower-score-no-improvement"] > 0, true);
   assert.equal(
     withDiagnostics.greedyDiagnostics.services.examplesByReason["lower-score-no-improvement"].length <= 3,
     true
@@ -8423,6 +8518,7 @@ async function main() {
   testGeometryHelperVisitorParity();
   testBuildingGeometryHelpersParity();
   testRoadProbePreservesEdgeBorderConnectivity();
+  testRoadProbeFallsBackToIndependentAnchorComponent();
   testRoadProbeScratchWorkspaceResetsBetweenCalls();
   testBuildingConnectivityShadowMeasuresDisconnectedReachableCells();
   testGreedyAttemptStateRejectsMismatchedProbeKind();
@@ -8529,6 +8625,7 @@ async function main() {
   await testCpSatBenchmarkCorpusHelpers();
   testRoadSemanticsScorecardCorpusHelpers();
   testProductWorkflowBenchmarkCorpusHelpers();
+  testGreedyMatchesProductWorkflowMultiAnchorManualReplay();
   testLnsBenchmarkCorpusHelpers();
   testLnsNeighborhoodAblationRunner();
   testLnsNeighborhoodAblationWindowSequenceMovement();

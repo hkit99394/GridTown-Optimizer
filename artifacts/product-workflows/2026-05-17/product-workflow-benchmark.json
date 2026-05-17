@@ -1,18 +1,22 @@
 {
-  "generatedAt": "2026-05-17T00:55:30.748Z",
-  "caseCount": 6,
+  "generatedAt": "2026-05-17T01:36:18.261Z",
+  "caseCount": 8,
   "selectedCaseNames": [
     "planner-corridor-reuse",
     "planner-gate-choke",
     "planner-footprint-pressure",
     "planner-service-overlap",
     "planner-anchor-service",
-    "planner-multi-anchor-islands"
+    "planner-multi-anchor-islands",
+    "planner-rotated-rowhouse",
+    "planner-gate-service-tradeoff"
   ],
   "passed": true,
   "budgetsSeconds": [
     1,
-    5
+    5,
+    30,
+    120
   ],
   "seeds": [
     7
@@ -30,6 +34,7 @@
         "errors": []
       },
       "manualReplay": {
+        "endpoint": "/api/layout/evaluate",
         "valid": true,
         "totalPopulation": 40,
         "roadCount": 3,
@@ -58,9 +63,39 @@
           "roadCount": 2,
           "serviceCount": 1,
           "residentialCount": 2,
-          "wallClockSeconds": 0.015
+          "wallClockSeconds": 0.014
+        },
+        {
+          "budgetSeconds": 30,
+          "seed": 7,
+          "totalPopulation": 130,
+          "valid": true,
+          "errors": [],
+          "roadCount": 2,
+          "serviceCount": 1,
+          "residentialCount": 2,
+          "wallClockSeconds": 0.013
+        },
+        {
+          "budgetSeconds": 120,
+          "seed": 7,
+          "totalPopulation": 130,
+          "valid": true,
+          "errors": [],
+          "roadCount": 2,
+          "serviceCount": 1,
+          "residentialCount": 2,
+          "wallClockSeconds": 0.011
         }
       ],
+      "budgetQuality": {
+        "bestBudgetSeconds": 1,
+        "bestSeed": 7,
+        "bestPopulation": 130,
+        "deltaFromManual": 90,
+        "coverageRatio": 3.25,
+        "matchedOrBeatManual": true
+      },
       "expansion": {
         "baselinePopulation": 40,
         "serviceCandidateName": "Kiosk",
@@ -87,6 +122,7 @@
         "errors": []
       },
       "manualReplay": {
+        "endpoint": "/api/layout/evaluate",
         "valid": true,
         "totalPopulation": 10,
         "roadCount": 2,
@@ -104,7 +140,7 @@
           "roadCount": 0,
           "serviceCount": 1,
           "residentialCount": 3,
-          "wallClockSeconds": 0.021
+          "wallClockSeconds": 0.016
         },
         {
           "budgetSeconds": 5,
@@ -115,9 +151,39 @@
           "roadCount": 0,
           "serviceCount": 1,
           "residentialCount": 3,
-          "wallClockSeconds": 0.016
+          "wallClockSeconds": 0.014
+        },
+        {
+          "budgetSeconds": 30,
+          "seed": 7,
+          "totalPopulation": 60,
+          "valid": true,
+          "errors": [],
+          "roadCount": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "wallClockSeconds": 0.014
+        },
+        {
+          "budgetSeconds": 120,
+          "seed": 7,
+          "totalPopulation": 60,
+          "valid": true,
+          "errors": [],
+          "roadCount": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "wallClockSeconds": 0.014
         }
       ],
+      "budgetQuality": {
+        "bestBudgetSeconds": 1,
+        "bestSeed": 7,
+        "bestPopulation": 60,
+        "deltaFromManual": 50,
+        "coverageRatio": 6,
+        "matchedOrBeatManual": true
+      },
       "expansion": {
         "baselinePopulation": 10,
         "serviceCandidateName": "Gate Plaza",
@@ -144,6 +210,7 @@
         "errors": []
       },
       "manualReplay": {
+        "endpoint": "/api/layout/evaluate",
         "valid": true,
         "totalPopulation": 60,
         "roadCount": 0,
@@ -161,7 +228,7 @@
           "roadCount": 0,
           "serviceCount": 1,
           "residentialCount": 2,
-          "wallClockSeconds": 0.023
+          "wallClockSeconds": 0.024
         },
         {
           "budgetSeconds": 5,
@@ -172,9 +239,39 @@
           "roadCount": 0,
           "serviceCount": 1,
           "residentialCount": 2,
-          "wallClockSeconds": 0.024
+          "wallClockSeconds": 0.022
+        },
+        {
+          "budgetSeconds": 30,
+          "seed": 7,
+          "totalPopulation": 140,
+          "valid": true,
+          "errors": [],
+          "roadCount": 0,
+          "serviceCount": 1,
+          "residentialCount": 2,
+          "wallClockSeconds": 0.022
+        },
+        {
+          "budgetSeconds": 120,
+          "seed": 7,
+          "totalPopulation": 140,
+          "valid": true,
+          "errors": [],
+          "roadCount": 0,
+          "serviceCount": 1,
+          "residentialCount": 2,
+          "wallClockSeconds": 0.02
         }
       ],
+      "budgetQuality": {
+        "bestBudgetSeconds": 1,
+        "bestSeed": 7,
+        "bestPopulation": 140,
+        "deltaFromManual": 80,
+        "coverageRatio": 2.333,
+        "matchedOrBeatManual": true
+      },
       "expansion": {
         "baselinePopulation": 60,
         "serviceCandidateName": "Pocket Park",
@@ -201,6 +298,7 @@
         "errors": []
       },
       "manualReplay": {
+        "endpoint": "/api/layout/evaluate",
         "valid": true,
         "totalPopulation": 65,
         "roadCount": 2,
@@ -229,9 +327,39 @@
           "roadCount": 1,
           "serviceCount": 1,
           "residentialCount": 2,
+          "wallClockSeconds": 0.068
+        },
+        {
+          "budgetSeconds": 30,
+          "seed": 7,
+          "totalPopulation": 130,
+          "valid": true,
+          "errors": [],
+          "roadCount": 1,
+          "serviceCount": 1,
+          "residentialCount": 2,
+          "wallClockSeconds": 0.066
+        },
+        {
+          "budgetSeconds": 120,
+          "seed": 7,
+          "totalPopulation": 130,
+          "valid": true,
+          "errors": [],
+          "roadCount": 1,
+          "serviceCount": 1,
+          "residentialCount": 2,
           "wallClockSeconds": 0.067
         }
       ],
+      "budgetQuality": {
+        "bestBudgetSeconds": 1,
+        "bestSeed": 7,
+        "bestPopulation": 130,
+        "deltaFromManual": 65,
+        "coverageRatio": 2,
+        "matchedOrBeatManual": true
+      },
       "expansion": {
         "baselinePopulation": 65,
         "serviceCandidateName": "School",
@@ -258,6 +386,7 @@
         "errors": []
       },
       "manualReplay": {
+        "endpoint": "/api/layout/evaluate",
         "valid": true,
         "totalPopulation": 20,
         "roadCount": 0,
@@ -286,9 +415,39 @@
           "roadCount": 0,
           "serviceCount": 1,
           "residentialCount": 2,
-          "wallClockSeconds": 0.006
+          "wallClockSeconds": 0.007
+        },
+        {
+          "budgetSeconds": 30,
+          "seed": 7,
+          "totalPopulation": 120,
+          "valid": true,
+          "errors": [],
+          "roadCount": 0,
+          "serviceCount": 1,
+          "residentialCount": 2,
+          "wallClockSeconds": 0.007
+        },
+        {
+          "budgetSeconds": 120,
+          "seed": 7,
+          "totalPopulation": 120,
+          "valid": true,
+          "errors": [],
+          "roadCount": 0,
+          "serviceCount": 1,
+          "residentialCount": 2,
+          "wallClockSeconds": 0.007
         }
       ],
+      "budgetQuality": {
+        "bestBudgetSeconds": 1,
+        "bestSeed": 7,
+        "bestPopulation": 120,
+        "deltaFromManual": 100,
+        "coverageRatio": 6,
+        "matchedOrBeatManual": true
+      },
       "expansion": {
         "baselinePopulation": 20,
         "serviceCandidateName": "Anchor Shop",
@@ -315,6 +474,7 @@
         "errors": []
       },
       "manualReplay": {
+        "endpoint": "/api/layout/evaluate",
         "valid": true,
         "totalPopulation": 80,
         "roadCount": 4,
@@ -326,35 +486,241 @@
         {
           "budgetSeconds": 1,
           "seed": 7,
-          "totalPopulation": 50,
+          "totalPopulation": 80,
           "valid": true,
           "errors": [],
-          "roadCount": 2,
+          "roadCount": 4,
+          "serviceCount": 0,
+          "residentialCount": 2,
+          "wallClockSeconds": 0.001
+        },
+        {
+          "budgetSeconds": 5,
+          "seed": 7,
+          "totalPopulation": 80,
+          "valid": true,
+          "errors": [],
+          "roadCount": 4,
+          "serviceCount": 0,
+          "residentialCount": 2,
+          "wallClockSeconds": 0.001
+        },
+        {
+          "budgetSeconds": 30,
+          "seed": 7,
+          "totalPopulation": 80,
+          "valid": true,
+          "errors": [],
+          "roadCount": 4,
           "serviceCount": 0,
           "residentialCount": 2,
           "wallClockSeconds": 0
         },
         {
-          "budgetSeconds": 5,
+          "budgetSeconds": 120,
           "seed": 7,
-          "totalPopulation": 50,
+          "totalPopulation": 80,
           "valid": true,
           "errors": [],
-          "roadCount": 2,
+          "roadCount": 4,
           "serviceCount": 0,
           "residentialCount": 2,
           "wallClockSeconds": 0
         }
       ],
+      "budgetQuality": {
+        "bestBudgetSeconds": 1,
+        "bestSeed": 7,
+        "bestPopulation": 80,
+        "deltaFromManual": 0,
+        "coverageRatio": 1,
+        "matchedOrBeatManual": true
+      },
       "expansion": {
         "baselinePopulation": 80,
         "serviceCandidateName": null,
         "servicePopulation": null,
         "serviceDelta": null,
         "residentialCandidateName": "Island Pod",
-        "residentialPopulation": 55,
-        "residentialDelta": -25,
+        "residentialPopulation": 80,
+        "residentialDelta": 0,
         "winner": "Remain current layout",
+        "valid": true,
+        "errors": []
+      },
+      "passed": true
+    },
+    {
+      "name": "planner-rotated-rowhouse",
+      "description": "Rotated rowhouse payload with a saved service-and-road reuse pattern.",
+      "family": "footprint-pressure",
+      "split": "development",
+      "gridRows": 5,
+      "gridCols": 7,
+      "payloadValidation": {
+        "valid": true,
+        "errors": []
+      },
+      "manualReplay": {
+        "endpoint": "/api/layout/evaluate",
+        "valid": true,
+        "totalPopulation": 120,
+        "roadCount": 2,
+        "serviceCount": 1,
+        "residentialCount": 2,
+        "errors": []
+      },
+      "budgetResults": [
+        {
+          "budgetSeconds": 1,
+          "seed": 7,
+          "totalPopulation": 140,
+          "valid": true,
+          "errors": [],
+          "roadCount": 0,
+          "serviceCount": 1,
+          "residentialCount": 2,
+          "wallClockSeconds": 0.053
+        },
+        {
+          "budgetSeconds": 5,
+          "seed": 7,
+          "totalPopulation": 140,
+          "valid": true,
+          "errors": [],
+          "roadCount": 0,
+          "serviceCount": 1,
+          "residentialCount": 2,
+          "wallClockSeconds": 0.052
+        },
+        {
+          "budgetSeconds": 30,
+          "seed": 7,
+          "totalPopulation": 140,
+          "valid": true,
+          "errors": [],
+          "roadCount": 0,
+          "serviceCount": 1,
+          "residentialCount": 2,
+          "wallClockSeconds": 0.05
+        },
+        {
+          "budgetSeconds": 120,
+          "seed": 7,
+          "totalPopulation": 140,
+          "valid": true,
+          "errors": [],
+          "roadCount": 0,
+          "serviceCount": 1,
+          "residentialCount": 2,
+          "wallClockSeconds": 0.047
+        }
+      ],
+      "budgetQuality": {
+        "bestBudgetSeconds": 1,
+        "bestSeed": 7,
+        "bestPopulation": 140,
+        "deltaFromManual": 20,
+        "coverageRatio": 1.167,
+        "matchedOrBeatManual": true
+      },
+      "expansion": {
+        "baselinePopulation": 120,
+        "serviceCandidateName": "Pop-up Market",
+        "servicePopulation": 160,
+        "serviceDelta": 40,
+        "residentialCandidateName": "Micro Rowhouse",
+        "residentialPopulation": 200,
+        "residentialDelta": 80,
+        "winner": "Add Micro Rowhouse",
+        "valid": true,
+        "errors": []
+      },
+      "passed": true
+    },
+    {
+      "name": "planner-gate-service-tradeoff",
+      "description": "Gate-shaped service tradeoff payload with two saved service anchors.",
+      "family": "gate",
+      "split": "holdout",
+      "gridRows": 6,
+      "gridCols": 7,
+      "payloadValidation": {
+        "valid": true,
+        "errors": []
+      },
+      "manualReplay": {
+        "endpoint": "/api/layout/evaluate",
+        "valid": true,
+        "totalPopulation": 160,
+        "roadCount": 8,
+        "serviceCount": 2,
+        "residentialCount": 2,
+        "errors": []
+      },
+      "budgetResults": [
+        {
+          "budgetSeconds": 1,
+          "seed": 7,
+          "totalPopulation": 200,
+          "valid": true,
+          "errors": [],
+          "roadCount": 7,
+          "serviceCount": 2,
+          "residentialCount": 2,
+          "wallClockSeconds": 0.139
+        },
+        {
+          "budgetSeconds": 5,
+          "seed": 7,
+          "totalPopulation": 200,
+          "valid": true,
+          "errors": [],
+          "roadCount": 7,
+          "serviceCount": 2,
+          "residentialCount": 2,
+          "wallClockSeconds": 0.141
+        },
+        {
+          "budgetSeconds": 30,
+          "seed": 7,
+          "totalPopulation": 200,
+          "valid": true,
+          "errors": [],
+          "roadCount": 7,
+          "serviceCount": 2,
+          "residentialCount": 2,
+          "wallClockSeconds": 0.139
+        },
+        {
+          "budgetSeconds": 120,
+          "seed": 7,
+          "totalPopulation": 200,
+          "valid": true,
+          "errors": [],
+          "roadCount": 7,
+          "serviceCount": 2,
+          "residentialCount": 2,
+          "wallClockSeconds": 0.138
+        }
+      ],
+      "budgetQuality": {
+        "bestBudgetSeconds": 1,
+        "bestSeed": 7,
+        "bestPopulation": 200,
+        "deltaFromManual": 40,
+        "coverageRatio": 1.25,
+        "matchedOrBeatManual": true
+      },
+      "expansion": {
+        "baselinePopulation": 160,
+        "serviceCandidateName": "Gate School",
+        "servicePopulation": 200,
+        "serviceDelta": 40,
+        "residentialCandidateName": "Gate Studio Add",
+        "residentialPopulation": 200,
+        "residentialDelta": 40,
+        "winner": "Tie",
         "valid": true,
         "errors": []
       },
@@ -369,7 +735,9 @@
       "planner-footprint-pressure",
       "planner-service-overlap",
       "planner-anchor-service",
-      "planner-multi-anchor-islands"
+      "planner-multi-anchor-islands",
+      "planner-rotated-rowhouse",
+      "planner-gate-service-tradeoff"
     ],
     "caseFamilies": [
       "anchor-service",
@@ -386,33 +754,40 @@
       "development": [
         "planner-corridor-reuse",
         "planner-gate-choke",
-        "planner-footprint-pressure"
+        "planner-footprint-pressure",
+        "planner-rotated-rowhouse"
       ],
       "holdout": [
         "planner-service-overlap",
         "planner-anchor-service",
-        "planner-multi-anchor-islands"
+        "planner-multi-anchor-islands",
+        "planner-gate-service-tradeoff"
       ]
     },
     "budget": {
       "budgetsSeconds": [
         1,
-        5
+        5,
+        30,
+        120
       ],
       "optimizer": "greedy"
     },
     "summaryMetrics": {
-      "caseCount": 6,
-      "passedCaseCount": 6,
+      "caseCount": 8,
+      "passedCaseCount": 8,
       "failedCaseCount": 0,
-      "manualReplayCount": 6,
-      "expansionReplayCount": 6,
-      "budgetRunCount": 12
+      "manualReplayCount": 8,
+      "expansionReplayCount": 8,
+      "budgetRunCount": 32,
+      "manualOutperformingBudgetCaseCount": 0,
+      "worstBestBudgetDeltaFromManual": 0,
+      "averageBestBudgetDeltaFromManual": 55.625
     },
     "artifactPaths": [
       "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json"
     ],
     "decision": "product-workflow-corpus-ready-for-scorecards",
-    "summary": "Product-shaped planner payload, manual-layout, and expansion-comparison replays passed."
+    "summary": "Product-shaped planner payload, manual-layout, and expansion-comparison replays passed; 0 case(s) remain below manual replay quality."
   }
 }

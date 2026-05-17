@@ -1,3 +1,4 @@
+import childProcess from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { performance } from "node:perf_hooks";
@@ -13,6 +14,7 @@ import {
   selectBenchmarkCasesByName,
 } from "./benchmarkOptions.js";
 import { normalizeCpSatBenchmarkOptions } from "./cpSat.js";
+import { captureExperimentRegistryHardwareMetadata } from "./experimentRegistry.js";
 
 import type {
   CpSatOptions,
@@ -132,8 +134,24 @@ export interface RoadSemanticsScorecardRegistryHints {
   summary: string;
 }
 
+export interface RoadSemanticsScorecardArtifactMetadata {
+  commands: string[];
+  branch: string;
+  artifactGitCommit: string | null;
+  hardware: ReturnType<typeof captureExperimentRegistryHardwareMetadata>;
+}
+
+export interface RoadSemanticsScorecardArtifactWriteOptions {
+  commands?: readonly string[];
+  metadata?: RoadSemanticsScorecardArtifactMetadata;
+}
+
 export interface RoadSemanticsScorecardSuiteResult {
   generatedAt: string;
+  commands?: string[];
+  branch?: string;
+  artifactGitCommit?: string | null;
+  hardware?: ReturnType<typeof captureExperimentRegistryHardwareMetadata>;
   caseCount: number;
   selectedCaseNames: string[];
   passed: boolean;
@@ -378,6 +396,39 @@ function buildRegistryHints(
   };
 }
 
+function execGitValue(args: string[], fallback: string): string {
+  try {
+    const value = childProcess.execFileSync("git", args, { encoding: "utf8" }).trim();
+    return value === "" ? fallback : value;
+  } catch {
+    return fallback;
+  }
+}
+
+function quoteRoadSemanticsCommandArg(value: string): string {
+  return /^[A-Za-z0-9_./:=@,+-]+$/.test(value) ? value : JSON.stringify(value);
+}
+
+export function formatRoadSemanticsScorecardCommand(argv: readonly string[]): string {
+  const command = ["npm", "run", "benchmark:road-semantics"];
+  if (argv.length > 0) {
+    command.push("--", ...argv);
+  }
+  return command.map(quoteRoadSemanticsCommandArg).join(" ");
+}
+
+export function buildRoadSemanticsScorecardArtifactMetadata(
+  commands: readonly string[]
+): RoadSemanticsScorecardArtifactMetadata {
+  const artifactGitCommit = execGitValue(["rev-parse", "HEAD"], "");
+  return {
+    commands: [...commands],
+    branch: execGitValue(["branch", "--show-current"], "unknown"),
+    artifactGitCommit: artifactGitCommit === "" ? null : artifactGitCommit,
+    hardware: captureExperimentRegistryHardwareMetadata(),
+  };
+}
+
 export function listRoadSemanticsScorecardCaseNames(
   corpus: readonly RoadSemanticsScorecardCase[] = DEFAULT_ROAD_SEMANTICS_SCORECARD_CASES
 ): string[] {
@@ -432,12 +483,16 @@ export async function runRoadSemanticsScorecard(
 
 export function writeRoadSemanticsScorecardArtifact(
   result: RoadSemanticsScorecardSuiteResult,
-  outputPath: string
+  outputPath: string,
+  options: RoadSemanticsScorecardArtifactWriteOptions = {}
 ): RoadSemanticsScorecardSuiteResult {
   const normalizedOutputPath = path.normalize(outputPath);
+  const commands = options.commands ?? [formatRoadSemanticsScorecardCommand([`--output=${normalizedOutputPath}`])];
+  const metadata = options.metadata ?? buildRoadSemanticsScorecardArtifactMetadata(commands);
   fs.mkdirSync(path.dirname(normalizedOutputPath), { recursive: true });
   const resultWithArtifactPath = {
     ...result,
+    ...metadata,
     registryHints: buildRegistryHints(result, [normalizedOutputPath]),
   };
   fs.writeFileSync(normalizedOutputPath, `${JSON.stringify(resultWithArtifactPath, null, 2)}\n`);
@@ -647,5 +702,10 @@ export const DEFAULT_ROAD_SEMANTICS_SCORECARD_CASES: readonly RoadSemanticsScore
         solution: residentialSolution(["1,1"], [{ r: 1, c: 2, rows: 1, cols: 1 }], [10]),
       },
     ],
+    cpSatExpectation: {
+      totalPopulation: 10,
+      roadCount: 0,
+      roadComponentCount: 0,
+    },
   },
 ]);

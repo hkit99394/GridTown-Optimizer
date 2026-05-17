@@ -16,7 +16,7 @@ import {
   probeBuildingConnectedToRoadAnchorReachableEmptyFrontier,
 } from "../core/roads.js";
 import type { BuildingConnectivityShadow } from "../core/roads.js";
-import type { RoadConnectionProbe } from "../core/roads.js";
+import type { RoadConnectionProbe, RoadConnectionProbeOptions } from "../core/roads.js";
 import { normalizeServicePlacement } from "../core/buildings.js";
 import { forEachRectangleCell } from "../core/grid.js";
 
@@ -55,7 +55,8 @@ export function probeExplicitRoadConnection(
   occupied: Set<string>,
   placement: PlacementRect,
   scratch: ReturnType<typeof createRoadProbeScratch>,
-  profileCounters?: GreedyProfileCounters
+  profileCounters?: GreedyProfileCounters,
+  options?: RoadConnectionProbeOptions
 ): RoadConnectionProbe | null {
   if (profileCounters) profileCounters.roads.canConnectChecks++;
   if (profileCounters) profileCounters.roads.probeCalls++;
@@ -68,7 +69,8 @@ export function probeExplicitRoadConnection(
     placement.c,
     placement.rows,
     placement.cols,
-    scratch
+    scratch,
+    options
   );
 }
 
@@ -152,7 +154,11 @@ export class GreedyAttemptState {
     }
   }
 
-  probeRoadConnection(snapshotOccupied: Set<string>, placement: PlacementRect): ConnectivityProbe | null {
+  probeRoadConnection(
+    snapshotOccupied: Set<string>,
+    placement: PlacementRect,
+    options?: RoadConnectionProbeOptions
+  ): ConnectivityProbe | null {
     if (this.useDeferredRoadCommitment) {
       const frontierProbe = this.deferredFrontier
         ? probeBuildingConnectedToRoadAnchorReachableEmptyFrontier(
@@ -174,7 +180,8 @@ export class GreedyAttemptState {
       snapshotOccupied,
       placement,
       this.explicitRoadProbeScratch,
-      this.profileCounters
+      this.profileCounters,
+      options
     );
     if (!roadProbe) return null;
     return { kind: "explicit", roadCost: roadProbe.path?.length ?? 0, roadProbe };

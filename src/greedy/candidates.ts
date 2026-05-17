@@ -80,6 +80,12 @@ export function roadCostFromTieBreakProbe(probe: TieBreakProbe): number {
   return "roadCost" in probe ? probe.roadCost : (probe.path?.length ?? 0);
 }
 
+function usesIndependentRoadAnchor(probe: TieBreakProbe): boolean {
+  if ("roadProbe" in probe) return Boolean(probe.roadProbe.usesIndependentRoadAnchor);
+  if ("frontierProbe" in probe) return false;
+  return Boolean(probe.usesIndependentRoadAnchor);
+}
+
 function countTopBoundaryFootprintCells(placement: { r: number; c: number; rows: number; cols: number }): number {
   return placement.r === 0 ? placement.cols : 0;
 }
@@ -101,6 +107,10 @@ export function compareServiceTieBreaks(
   const aTopBoundaryCells = countTopBoundaryFootprintCells(a);
   const bTopBoundaryCells = countTopBoundaryFootprintCells(b);
   if (aTopBoundaryCells !== bTopBoundaryCells) return aTopBoundaryCells - bTopBoundaryCells;
+
+  const aIndependentAnchor = usesIndependentRoadAnchor(aProbe);
+  const bIndependentAnchor = usesIndependentRoadAnchor(bProbe);
+  if (aIndependentAnchor !== bIndependentAnchor) return aIndependentAnchor ? 1 : -1;
 
   const aRoadCost = roadCostFromTieBreakProbe(aProbe);
   const bRoadCost = roadCostFromTieBreakProbe(bProbe);
@@ -135,6 +145,10 @@ export function compareResidentialTieBreaks(
   b: ResidentialCandidateLike,
   bProbe: TieBreakProbe
 ): number {
+  const aIndependentAnchor = usesIndependentRoadAnchor(aProbe);
+  const bIndependentAnchor = usesIndependentRoadAnchor(bProbe);
+  if (aIndependentAnchor !== bIndependentAnchor) return aIndependentAnchor ? 1 : -1;
+
   const aRoadCost = roadCostFromTieBreakProbe(aProbe);
   const bRoadCost = roadCostFromTieBreakProbe(bProbe);
   if (aRoadCost !== bRoadCost) return aRoadCost - bRoadCost;

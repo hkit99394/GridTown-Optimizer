@@ -63,7 +63,7 @@ Current reviewed baseline:
 
 The next stage is not "train first" or "add more modes." The next stage is:
 
-1. Close out CP-SAT road-semantics alignment with scorecards and registry evidence.
+1. Use the registered CP-SAT road-semantics baseline as the proof oracle for local repair and promotion scorecards.
 2. Use adaptive LNS as the main time-to-good-solution engine.
 3. Turn the benchmark and experiment registry into the promotion gate for every solver change.
 4. Measure the planner's actual workflow: solve, inspect, edit, validate, reuse, compare next addition.
@@ -111,6 +111,15 @@ Acceptance gates:
 - Cross-mode scorecards show no worst-family regression after the aligned CP-SAT formulation.
 - Results are captured as registry-ready artifacts with command, commit, branch, seed, budget, hardware, and summary metrics.
 
+Completion evidence, 2026-05-17:
+
+- `npm run benchmark:road-semantics -- --output=artifacts/road-semantics-scorecard/2026-05-17/road-semantics-scorecard.json` produced a passing 5-case road-semantics scorecard artifact.
+- The scorecard covers row-0 anchors, column-0 anchors, multiple independent anchored road components, disconnected non-anchor road rejection, and boundary-only roadless layouts.
+- CP-SAT and the TypeScript evaluator agree across all 5 adversarial cases; the disconnected non-anchor fixture is rejected by the evaluator while CP-SAT finds the valid no-road boundary alternative.
+- The artifact records exact command, branch, `artifactGitCommit`, fixed seed `1`, CP-SAT budget, captured hardware metadata, summary metrics, and normalized artifact path.
+- `npm run benchmark:scorecard -- --modes=greedy,cp-sat --budget=5 --seeds=7` passed the default 4-case cross-mode scorecard; CP-SAT matched or beat Greedy on every default case.
+- Registry entry `road-semantics-scorecard-2026-05-17-v2` records the strict Phase 1 evidence. The earlier `road-semantics-scorecard-2026-05-17` entry is superseded by the `-v2` entry after CP-SAT coverage was added to all adversarial cases.
+
 ### Phase 2: Product-Shaped Benchmark Corpus
 
 Dependencies:
@@ -126,6 +135,16 @@ Acceptance gates:
 - Include corridor, gate, footprint-pressure, service-overlap, anchor-service, and multi-anchor case families.
 - Maintain fixed seeds plus development and protected holdout splits.
 - Report population at 1s, 5s, 30s, and 120s where the budget is applicable.
+
+Completion evidence, 2026-05-17:
+
+- `npm run benchmark:product-workflows -- --output=artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json` produced a passing 8-case workflow artifact.
+- Corpus cases are split into 4 development and 4 protected holdout payloads:
+  `planner-corridor-reuse`, `planner-gate-choke`, `planner-footprint-pressure`, `planner-rotated-rowhouse`,
+  `planner-service-overlap`, `planner-anchor-service`, `planner-multi-anchor-islands`, and `planner-gate-service-tradeoff`.
+- The corpus covers corridor, gate, footprint-pressure, service-overlap, anchor-service, and multi-anchor families.
+- Manual replays are tagged with `/api/layout/evaluate`, expansion comparisons run for every case, and fixed seed `7` is reported at 1s, 5s, 30s, and 120s.
+- Artifact metrics: 8/8 cases passed, 32 budget runs, `manualOutperformingBudgetCaseCount=0`, and `worstBestBudgetDeltaFromManual=0`.
 
 ### Phase 3: Telemetry Manifests
 
@@ -182,8 +201,8 @@ Status vocabulary:
 
 | Rank | Priority | Status | Impact | Summary | Success Signal |
 | --- | --- | --- | ---: | --- | --- |
-| 1 | CP-SAT road-semantics verification closeout | partial | 5.0 | The implementation and targeted tests now use per-component road-anchor semantics instead of one global road root. Finish benchmark scorecards and registry evidence before treating the change as promotion-grade. | CP-SAT, TypeScript validation, and the formal spec agree on multi-anchor and roadless-boundary feasibility; product-shaped scorecards show no worst-family regression and are registered. |
-| 2 | Product-shaped benchmark corpus | active | 4.5 | Extend cross-mode scorecards with planner payloads, manual-layout replay, expansion-comparison replay, corridor/gate/footprint/service-pressure cases, and multi-anchor adversarial cases. | Promotion decisions use fixed-seed dev/holdout corpora with 1s/5s/30s/120s budgets and strict registry entries. |
+| 1 | CP-SAT road-semantics verification closeout | delivered | 5.0 | Phase 1 now has a passing 5-case road-semantics artifact, CP-SAT coverage on every adversarial case, registry-style artifact metadata, a default greedy/CP-SAT cross-mode smoke check, and strict registry entry `road-semantics-scorecard-2026-05-17-v2`. | CP-SAT, TypeScript validation, and the formal spec agree on multi-anchor, roadless-boundary, row/column anchor, and disconnected-road feasibility semantics. |
+| 2 | Product-shaped benchmark corpus | delivered | 4.5 | Phase 2 now has 8 planner-shaped payloads with manual-layout replay, expansion-comparison replay, fixed seed `7`, dev/holdout splits, and 1s/5s/30s/120s population reporting. | `artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json` passes with 8/8 cases and no manual-over-budget misses. |
 | 3 | Solver telemetry manifests | active | 4.0 | Persist stage-level candidate counts, CP-SAT model size, first-feasible time, best-score time, status/gap, operator outcome, wall time, CPU budget, and hardware metadata. | Every benchmark and workflow run can explain where time was spent and why a candidate change did or did not improve. |
 | 4 | Adaptive LNS operator set | active | 4.5 | Add semantic destroy/repair operators beyond fixed rectangles: weak services, residential headroom clusters, service-overlap conflicts, road gates/chokes, frontier congestion, and random exploration windows. | Equal-budget LNS/Auto scorecards improve time-to-best or fixed-budget population without worst-decile regression. |
 | 5 | Auto budget policy retuning | partial | 3.5 | Retune greedy seed, LNS repair, and CP-SAT reserve budgets only after telemetry and benchmark corpus identify a real bottleneck. | New budget policy beats baseline on protected scorecards or reaches equal population faster with CPU cost accounted for. |
@@ -203,7 +222,8 @@ Status vocabulary:
 | Generated pressure-case coverage | partial | [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED.md), item 30 | Useful starting point, but promotion needs broader workflow and adversarial coverage. |
 | CP-SAT portfolio telemetry and CPU-normalized scorecards | delivered | `artifacts/cp-sat-portfolio/2026-04-28/` | Portfolio remains explicit-only; Auto does not route through it. |
 | Experiment registry hardening | delivered | `artifacts/experiments/index.jsonl`; `npm run experiment-registry:check` | Future artifacts can be checked and appended with strict metadata. |
-| CP-SAT road-semantics alignment | partial | Formal spec, TS validator, and current CP-SAT implementation use per-component anchor semantics; targeted tests exist, but product-shaped scorecards and registry closeout are still needed. | Correctness fix is in place; promotion confidence depends on benchmark and artifact closeout. |
+| CP-SAT road-semantics alignment | delivered | `artifacts/road-semantics-scorecard/2026-05-17/road-semantics-scorecard.json`; registry run `road-semantics-scorecard-2026-05-17-v2`; targeted tests | Per-component road-anchor semantics are the trusted baseline for future repair and proof work. |
+| Product workflow benchmark corpus | delivered | `artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json`; `npm run benchmark:product-workflows` | Promotion and telemetry work now has stable planner-shaped dev/holdout case names. |
 | Adaptive LNS | active | Current LNS has ranked windows and replay labels but not operator scoring | Main next quality engine after model alignment and telemetry. |
 | Exact small-window DP repair | gated | Existing exact assignment DP shows the pattern is useful for bounded subproblems, but no LNS window DP exists | Candidate subroutine only; route tiny repairs to DP if telemetry proves CP-SAT overhead dominates. |
 | Model training path | gated | No `python/ml/` scaffold, offline metric report, trained model, or feature-flagged scorer is promoted | No learned default path. |
@@ -227,16 +247,15 @@ These are not next actions. Move them into the active table only after the trigg
 
 ## Combined Ordering
 
-1. Close CP-SAT road-semantics verification with adversarial tests, product scorecards, and registry evidence.
-2. Add product-shaped workflow and adversarial benchmark coverage.
-3. Persist stage-level telemetry manifests for solver and workflow runs.
-4. Implement adaptive LNS operators and operator scoring.
-5. Retune Auto budgets from evidence, not by intuition.
-6. Add exact small-window DP repair only if telemetry shows a small-repair CP-SAT overhead bottleneck.
-7. Explore service-master decomposition if coverage/service pressure cases justify it.
-8. Scale LNS replay labels from adaptive operator outcomes.
-9. Revisit learned rankers only after offline holdout and equal-budget online gates pass.
-10. Revisit portfolio, GPU, distributed workers, or alternative solvers only after they have a measured bottleneck and CPU-normalized win path.
+1. Use the registered road-semantics and product workflow baselines as the stable benchmark base for promotion decisions.
+2. Persist stage-level telemetry manifests for solver and workflow runs.
+3. Implement adaptive LNS operators and operator scoring.
+4. Retune Auto budgets from evidence, not by intuition.
+5. Add exact small-window DP repair only if telemetry shows a small-repair CP-SAT overhead bottleneck.
+6. Explore service-master decomposition if coverage/service pressure cases justify it.
+7. Scale LNS replay labels from adaptive operator outcomes.
+8. Revisit learned rankers only after offline holdout and equal-budget online gates pass.
+9. Revisit portfolio, GPU, distributed workers, or alternative solvers only after they have a measured bottleneck and CPU-normalized win path.
 
 ## Discipline
 

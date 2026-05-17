@@ -467,6 +467,8 @@ export interface GreedyOptions {
   densityTieBreakerTolerancePercent?: number;
   /** Prefer placements with lower building-induced road-anchor connectivity shadow when Greedy scores tie. Default false. */
   connectivityShadowScoring?: boolean;
+  /** Allow Greedy residential placement to start additional independent road-anchor components. Default false. */
+  allowIndependentRoadAnchorComponents?: boolean;
   /** Fixed seed for reproducible greedy restart shuffling. */
   randomSeed?: number;
   /** Optional wall-clock budget in seconds for raw greedy solves. Omit for no greedy-specific cap. */

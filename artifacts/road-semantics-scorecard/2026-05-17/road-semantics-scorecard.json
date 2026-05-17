@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-17T00:44:33.063Z",
+  "generatedAt": "2026-05-17T02:11:27.525Z",
   "caseCount": 5,
   "selectedCaseNames": [
     "row0-anchored-road-access",
@@ -48,7 +48,7 @@
           "row0RoadCount": 1,
           "column0RoadCount": 0
         },
-        "wallClockSeconds": 0.741,
+        "wallClockSeconds": 0.708,
         "expectationFailures": [],
         "solution": {
           "roads": [
@@ -162,7 +162,7 @@
           "row0RoadCount": 2,
           "column0RoadCount": 0
         },
-        "wallClockSeconds": 0.443,
+        "wallClockSeconds": 0.444,
         "expectationFailures": [],
         "solution": {
           "roads": [
@@ -230,7 +230,7 @@
           "row0RoadCount": 0,
           "column0RoadCount": 0
         },
-        "wallClockSeconds": 0.439,
+        "wallClockSeconds": 0.444,
         "expectationFailures": [],
         "solution": {
           "roads": [],
@@ -276,7 +276,42 @@
           "passed": true
         }
       ],
-      "cpSat": null,
+      "cpSat": {
+        "status": "OPTIMAL",
+        "totalPopulation": 10,
+        "roadCount": 0,
+        "validationValid": true,
+        "validationErrors": [],
+        "roadComponents": {
+          "componentCount": 0,
+          "allComponentsTouchAnchor": true,
+          "row0RoadCount": 0,
+          "column0RoadCount": 0
+        },
+        "wallClockSeconds": 0.477,
+        "expectationFailures": [],
+        "solution": {
+          "roads": [],
+          "services": [],
+          "serviceTypeIndices": [],
+          "servicePopulationIncreases": [],
+          "residentials": [
+            {
+              "r": 0,
+              "c": 1,
+              "rows": 1,
+              "cols": 1
+            }
+          ],
+          "residentialTypeIndices": [
+            0
+          ],
+          "populations": [
+            10
+          ],
+          "totalPopulation": 10
+        }
+      },
       "passed": true
     }
   ],
@@ -308,12 +343,27 @@
       "caseCount": 5,
       "passedCaseCount": 5,
       "failedCaseCount": 0,
-      "cpSatCaseCount": 4
+      "cpSatCaseCount": 5
     },
     "artifactPaths": [
       "artifacts/road-semantics-scorecard/2026-05-17/road-semantics-scorecard.json"
     ],
     "decision": "road-semantics-alignment-ready-for-product-scorecard",
     "summary": "Road-semantics adversarial fixtures and CP-SAT solves agree with the TypeScript evaluator."
+  },
+  "commands": [
+    "npm run benchmark:road-semantics -- --output=artifacts/road-semantics-scorecard/2026-05-17/road-semantics-scorecard.json"
+  ],
+  "branch": "features/solver-road-semantics-evidence-gate",
+  "artifactGitCommit": "2e1da9a8b6b2f4980bef808d8e7c25ac9ef5ca21",
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
   }
 }

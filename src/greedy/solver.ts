@@ -68,6 +68,7 @@ import {
   findAvailableRoadAnchorCell,
   pruneRedundantRoads,
 } from "../core/roads.js";
+import type { RoadConnectionProbeOptions } from "../core/roads.js";
 import { assertValidLayoutConstraints } from "../core/evaluator.js";
 import {
   buildFootprintCandidateIndexFromKeys,
@@ -415,6 +416,7 @@ function getGreedyOptions(params: SolverParams): NormalizedGreedyOptions {
     densityTieBreaker: greedy.densityTieBreaker ?? false,
     densityTieBreakerTolerancePercent: greedy.densityTieBreakerTolerancePercent ?? 2,
     connectivityShadowScoring: greedy.connectivityShadowScoring ?? false,
+    allowIndependentRoadAnchorComponents: greedy.allowIndependentRoadAnchorComponents ?? false,
     ...(randomSeed !== undefined ? { randomSeed } : {}),
     profile: greedy.profile ?? false,
     diagnostics: greedy.diagnostics ?? false,
@@ -1190,6 +1192,9 @@ function solveOne(
       ? Math.max(0, params.greedy.densityTieBreakerTolerancePercent) / 100
       : (densityTieBreaker ? 0.02 : 0);
   const connectivityShadowScoring = Boolean(params.greedy?.connectivityShadowScoring);
+  const residentialRoadConnectionOptions = {
+    allowIndependentRoadAnchorFallback: Boolean(params.greedy?.allowIndependentRoadAnchorComponents),
+  };
 
   const services: ServicePlacement[] = [];
   const serviceTypeIndices: number[] = [];
@@ -1202,9 +1207,10 @@ function solveOne(
     r: number,
     c: number,
     rows: number,
-    cols: number
+    cols: number,
+    options?: RoadConnectionProbeOptions
   ): ConnectivityProbe | null =>
-    attemptState.probeRoadConnection(snapshotOccupied, { r, c, rows, cols });
+    attemptState.probeRoadConnection(snapshotOccupied, { r, c, rows, cols }, options);
   const evaluateServiceLookahead = (
     entry: ServiceLookaheadCandidate
   ): ServiceLookaheadEvaluation => {
@@ -1273,7 +1279,8 @@ function solveOne(
           occupiedScratch,
           candidate,
           lookaheadRoadProbeScratch,
-          profileCounters
+          profileCounters,
+          residentialRoadConnectionOptions
         );
         if (!probe) continue;
         const pop = computeResidentialPopulation(
@@ -1388,7 +1395,14 @@ function solveOne(
         return null;
       }
       if (profileCounters) profileCounters.servicePhase.canConnectChecks++;
-      const probe = probeRoadConnection(occupied, placement.r, placement.c, placement.rows, placement.cols);
+      const probe = probeRoadConnection(
+        occupied,
+        placement.r,
+        placement.c,
+        placement.rows,
+        placement.cols,
+        { allowIndependentRoadAnchorFallback: false }
+      );
       if (!probe) {
         return null;
       }
@@ -1461,7 +1475,14 @@ function solveOne(
           if (!placementLeavesRoadAnchorCellAvailable(G, occupied, placement.r, placement.c, placement.rows, placement.cols)) continue;
         }
         if (profileCounters) profileCounters.servicePhase.canConnectChecks++;
-        const probe = probeRoadConnection(occupied, placement.r, placement.c, placement.rows, placement.cols);
+        const probe = probeRoadConnection(
+          occupied,
+          placement.r,
+          placement.c,
+          placement.rows,
+          placement.cols,
+          { allowIndependentRoadAnchorFallback: false }
+        );
         if (!probe) continue;
         if (serviceScoreDirty[candidateIndex]) {
           serviceScoreCache[candidateIndex] = computeServiceMarginalScore(
@@ -1775,7 +1796,14 @@ function solveOne(
         if (!placementLeavesRoadAnchorCellAvailable(G, occupied, cand.r, cand.c, cand.rows, cand.cols)) continue;
       }
       if (profileCounters) profileCounters.residentialPhase.canConnectChecks++;
-      const probe = probeRoadConnection(occupied, cand.r, cand.c, cand.rows, cand.cols);
+      const probe = probeRoadConnection(
+        occupied,
+        cand.r,
+        cand.c,
+        cand.rows,
+        cand.cols,
+        residentialRoadConnectionOptions
+      );
       if (!probe) continue;
       if (profileCounters) profileCounters.residentialPhase.populationCacheLookups++;
       const pop = residentialPopulationCache[candidateIndex] ?? -1;
@@ -1988,12 +2016,23 @@ function solveOne(
       normalized.c,
       normalized.rows,
       normalized.cols,
-      explicitRoadProbeScratch
+      explicitRoadProbeScratch,
+      { allowIndependentRoadAnchorFallback: false }
     );
   }
   for (const r of residentials) {
     if (profileCounters) profileCounters.roads.ensureConnectedCalls++;
-    ensureBuildingConnectedToRoads(G, roadsValid, occupiedBuildings, r.r, r.c, r.rows, r.cols, explicitRoadProbeScratch);
+    ensureBuildingConnectedToRoads(
+      G,
+      roadsValid,
+      occupiedBuildings,
+      r.r,
+      r.c,
+      r.rows,
+      r.cols,
+      explicitRoadProbeScratch,
+      residentialRoadConnectionOptions
+    );
   }
 
   roadsValid = pruneRedundantRoads(G, roadsValid, roadConnectedBuildings);
@@ -3095,7 +3134,8 @@ function runGreedyServiceNeighborhoodSearch(options: {
           incumbentOccupiedBuildings,
           candidate,
           serviceNeighborhoodRoadProbeScratch,
-          profileCounters
+          profileCounters,
+          { allowIndependentRoadAnchorFallback: false }
         );
         if (!probe) continue;
         const forcedServices = [...incumbentServices, candidate];
@@ -3190,7 +3230,8 @@ function runGreedyServiceNeighborhoodSearch(options: {
             occupiedWithoutCurrent,
             candidate,
             serviceNeighborhoodRoadProbeScratch,
-            profileCounters
+            profileCounters,
+            { allowIndependentRoadAnchorFallback: false }
           );
           if (!probe) continue;
           const forcedServices = [...incumbentServices];
@@ -4105,7 +4146,10 @@ function localSearchImprove(
       snapshotOccupied,
       { r, c, rows, cols },
       explicitRoadProbeScratch,
-      profileCounters
+      profileCounters,
+      {
+        allowIndependentRoadAnchorFallback: Boolean(params.greedy?.allowIndependentRoadAnchorComponents),
+      }
     );
 
   for (let iter = 0; iter < maxIter; iter++) {

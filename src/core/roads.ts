@@ -270,6 +270,12 @@ export interface DeferredRoadFrontierProbe {
 
 export interface RoadConnectionProbe {
   path: [number, number][] | null;
+  connectsToExistingRoad?: boolean;
+  usesIndependentRoadAnchor?: boolean;
+}
+
+export interface RoadConnectionProbeOptions {
+  allowIndependentRoadAnchorFallback?: boolean;
 }
 
 function buildRoadConnectionProbe(
@@ -280,7 +286,8 @@ function buildRoadConnectionProbe(
   c: number,
   rows: number,
   cols: number,
-  scratch?: RoadProbeScratch
+  scratch?: RoadProbeScratch,
+  options: RoadConnectionProbeOptions = {}
 ): RoadConnectionProbe | null {
   if (buildingTouchesRoadAnchorBoundary(r, c)) {
     return { path: null };
@@ -335,11 +342,31 @@ function buildRoadConnectionProbe(
     return null;
   }
 
-  const path = useScratch
-    ? bfsPathToTargetsWithScratch(G, startCells, useScratch, blockedGeneration, roads.size > 0 ? roads : null)
-    : bfsPathToTargets(G, startCells, blockSet!, roads.size > 0 ? roads : null);
-  if (!path) return null;
-  return { path };
+  const roadPath = roads.size > 0
+    ? (useScratch
+        ? bfsPathToTargetsWithScratch(G, startCells, useScratch, blockedGeneration, roads)
+        : bfsPathToTargets(G, startCells, blockSet!, roads))
+    : null;
+  if (roadPath) return { path: roadPath, connectsToExistingRoad: true };
+  if (roads.size > 0 && options.allowIndependentRoadAnchorFallback !== true) {
+    return null;
+  }
+
+  if (!(useScratch
+    ? hasAvailableRoadAnchorCellWithScratch(G, useScratch, blockedGeneration)
+    : hasAvailableRoadAnchorCell(G, blockSet!))
+  ) {
+    return null;
+  }
+
+  const anchorPath = useScratch
+    ? bfsPathToTargetsWithScratch(G, startCells, useScratch, blockedGeneration, null)
+    : bfsPathToTargets(G, startCells, blockSet!, null);
+  if (!anchorPath) return null;
+  return {
+    path: anchorPath,
+    usesIndependentRoadAnchor: roads.size > 0,
+  };
 }
 
 export function computeRoadAnchorReachableEmptyFrontier(
@@ -475,9 +502,10 @@ export function ensureBuildingConnectedToRoads(
   c: number,
   rows: number,
   cols: number,
-  scratch?: RoadProbeScratch
+  scratch?: RoadProbeScratch,
+  options?: RoadConnectionProbeOptions
 ): boolean {
-  const probe = buildRoadConnectionProbe(G, roads, occupied, r, c, rows, cols, scratch);
+  const probe = buildRoadConnectionProbe(G, roads, occupied, r, c, rows, cols, scratch, options);
   if (!probe) return false;
   applyRoadConnectionProbe(roads, probe);
   return true;
@@ -544,9 +572,10 @@ export function canConnectToRoads(
   c: number,
   rows: number,
   cols: number,
-  scratch?: RoadProbeScratch
+  scratch?: RoadProbeScratch,
+  options?: RoadConnectionProbeOptions
 ): boolean {
-  return buildRoadConnectionProbe(G, roads, occupied, r, c, rows, cols, scratch) !== null;
+  return buildRoadConnectionProbe(G, roads, occupied, r, c, rows, cols, scratch, options) !== null;
 }
 
 /** Probe road connectivity for a building and return the connection path when one is needed. */
@@ -558,9 +587,10 @@ export function probeBuildingConnectedToRoads(
   c: number,
   rows: number,
   cols: number,
-  scratch?: RoadProbeScratch
+  scratch?: RoadProbeScratch,
+  options?: RoadConnectionProbeOptions
 ): RoadConnectionProbe | null {
-  return buildRoadConnectionProbe(G, roads, occupied, r, c, rows, cols, scratch);
+  return buildRoadConnectionProbe(G, roads, occupied, r, c, rows, cols, scratch, options);
 }
 
 export type BuildingPlacementForRoadMaterialization = {

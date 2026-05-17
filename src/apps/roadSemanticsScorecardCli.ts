@@ -1,4 +1,5 @@
 import {
+  formatRoadSemanticsScorecardCommand,
   formatRoadSemanticsScorecard,
   listRoadSemanticsScorecardCaseNames,
   runRoadSemanticsScorecard,
@@ -78,7 +79,9 @@ export async function runRoadSemanticsScorecardCli(): Promise<void> {
     cpSat: args.cpSat,
   });
   if (args.outputPath) {
-    result = writeRoadSemanticsScorecardArtifact(result, args.outputPath);
+    result = writeRoadSemanticsScorecardArtifact(result, args.outputPath, {
+      commands: [formatRoadSemanticsScorecardCommand(process.argv.slice(2))],
+    });
     if (!args.json) {
       writeCliText(`Wrote road-semantics scorecard artifact to ${args.outputPath}.`);
     }

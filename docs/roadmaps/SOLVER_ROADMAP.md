@@ -105,6 +105,7 @@ Dependencies:
 
 Acceptance gates:
 
+- `npm run benchmark:road-semantics` produces a passing road-semantics scorecard artifact.
 - Adversarial cases cover row-0 anchors, column-0 anchors, multiple independent anchored road components, disconnected non-anchor components, and boundary-only roadless layouts.
 - CP-SAT and the exact TypeScript evaluator agree on feasibility for every adversarial case.
 - Cross-mode scorecards show no worst-family regression after the aligned CP-SAT formulation.

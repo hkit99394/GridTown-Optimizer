@@ -53,6 +53,10 @@ const {
   runLnsNeighborhoodAblation,
   runLnsWindowReplayLabels,
   runLnsBenchmarkSuite,
+  DEFAULT_ROAD_SEMANTICS_SCORECARD_CASES,
+  evaluateRoadSemanticsScorecardFixtures,
+  formatRoadSemanticsScorecard,
+  listRoadSemanticsScorecardCaseNames,
 } = require("../dist/benchmarks/index.js");
 
 const {
@@ -3407,6 +3411,53 @@ async function testCpSatBenchmarkCorpusHelpers() {
   await assert.rejects(
     () => runCpSatBenchmarkSuite(DEFAULT_CP_SAT_BENCHMARK_CORPUS, { names: ["missing-case"] }),
     /Unknown CP-SAT benchmark case\(s\): missing-case/
+  );
+}
+
+function testRoadSemanticsScorecardCorpusHelpers() {
+  const names = DEFAULT_ROAD_SEMANTICS_SCORECARD_CASES.map((entry) => entry.name);
+  assert.equal(new Set(names).size, names.length);
+  assert.deepEqual(listRoadSemanticsScorecardCaseNames(), names);
+  assert(names.includes("row0-anchored-road-access"));
+  assert(names.includes("column0-anchored-road-access"));
+  assert(names.includes("multiple-independent-anchor-components"));
+  assert(names.includes("roadless-boundary-building"));
+  assert(names.includes("disconnected-non-anchor-road-rejected"));
+
+  const families = new Set(DEFAULT_ROAD_SEMANTICS_SCORECARD_CASES.map((entry) => entry.family));
+  assert(families.has("row0-anchor"));
+  assert(families.has("column0-anchor"));
+  assert(families.has("multi-anchor"));
+  assert(families.has("roadless-boundary"));
+  assert(families.has("disconnected-non-anchor"));
+
+  const fixtureScores = evaluateRoadSemanticsScorecardFixtures();
+  assert.equal(fixtureScores.every((score) => score.passed), true);
+  const disconnectedFixture = fixtureScores.find((score) => score.caseName === "disconnected-non-anchor-road-rejected");
+  assert.equal(disconnectedFixture?.expectedValid, false);
+  assert.equal(disconnectedFixture?.valid, false);
+
+  assert.match(
+    formatRoadSemanticsScorecard({
+      generatedAt: "2026-05-17T00:00:00.000Z",
+      caseCount: 0,
+      selectedCaseNames: [],
+      passed: true,
+      cpSatOptions: { timeLimitSeconds: 5, maxDeterministicTime: 5, numWorkers: 1, randomSeed: 1 },
+      results: [],
+      registryHints: {
+        artifactType: "benchmark",
+        cases: [],
+        caseFamilies: [],
+        seeds: [1],
+        budget: { cpSatTimeLimitSeconds: 5, cpSatMaxDeterministicTime: 5, cpSatNumWorkers: 1 },
+        summaryMetrics: { caseCount: 0, passedCaseCount: 0, failedCaseCount: 0, cpSatCaseCount: 0 },
+        artifactPaths: [],
+        decision: "road-semantics-alignment-ready-for-product-scorecard",
+        summary: "No cases selected.",
+      },
+    }),
+    /Road Semantics Scorecard/
   );
 }
 
@@ -8411,6 +8462,7 @@ async function main() {
   testGreedyGroupedServiceScoringLeavesUntypedBenchmarkUndiscounted();
   testGreedyGroupedServiceScoringDiscountsLimitedFallbackTypes();
   await testCpSatBenchmarkCorpusHelpers();
+  testRoadSemanticsScorecardCorpusHelpers();
   testLnsBenchmarkCorpusHelpers();
   testLnsNeighborhoodAblationRunner();
   testLnsNeighborhoodAblationWindowSequenceMovement();

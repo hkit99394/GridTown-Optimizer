@@ -1,0 +1,319 @@
+{
+  "generatedAt": "2026-05-17T00:44:33.063Z",
+  "caseCount": 5,
+  "selectedCaseNames": [
+    "row0-anchored-road-access",
+    "column0-anchored-road-access",
+    "multiple-independent-anchor-components",
+    "roadless-boundary-building",
+    "disconnected-non-anchor-road-rejected"
+  ],
+  "passed": true,
+  "cpSatOptions": {
+    "timeLimitSeconds": 5,
+    "maxDeterministicTime": 5,
+    "numWorkers": 1,
+    "randomSeed": 1,
+    "randomizeSearch": false,
+    "logSearchProgress": false,
+    "progressIntervalSeconds": 0.5
+  },
+  "results": [
+    {
+      "name": "row0-anchored-road-access",
+      "description": "A non-boundary building is connected by a road component rooted on row 0.",
+      "family": "row0-anchor",
+      "gridRows": 3,
+      "gridCols": 3,
+      "fixtureResults": [
+        {
+          "caseName": "row0-anchored-road-access",
+          "fixtureName": "row0-road-valid",
+          "description": "A single row-0 road gives access to the only feasible residential footprint.",
+          "expectedValid": true,
+          "valid": true,
+          "errors": [],
+          "passed": true
+        }
+      ],
+      "cpSat": {
+        "status": "OPTIMAL",
+        "totalPopulation": 10,
+        "roadCount": 1,
+        "validationValid": true,
+        "validationErrors": [],
+        "roadComponents": {
+          "componentCount": 1,
+          "allComponentsTouchAnchor": true,
+          "row0RoadCount": 1,
+          "column0RoadCount": 0
+        },
+        "wallClockSeconds": 0.741,
+        "expectationFailures": [],
+        "solution": {
+          "roads": [
+            "0,1"
+          ],
+          "services": [],
+          "serviceTypeIndices": [],
+          "servicePopulationIncreases": [],
+          "residentials": [
+            {
+              "r": 1,
+              "c": 1,
+              "rows": 2,
+              "cols": 2
+            }
+          ],
+          "residentialTypeIndices": [
+            0
+          ],
+          "populations": [
+            10
+          ],
+          "totalPopulation": 10
+        }
+      },
+      "passed": true
+    },
+    {
+      "name": "column0-anchored-road-access",
+      "description": "A non-boundary building is connected by a road component rooted on column 0.",
+      "family": "column0-anchor",
+      "gridRows": 3,
+      "gridCols": 4,
+      "fixtureResults": [
+        {
+          "caseName": "column0-anchored-road-access",
+          "fixtureName": "column0-road-valid",
+          "description": "A single column-0 road gives access to the only feasible residential footprint.",
+          "expectedValid": true,
+          "valid": true,
+          "errors": [],
+          "passed": true
+        }
+      ],
+      "cpSat": {
+        "status": "OPTIMAL",
+        "totalPopulation": 10,
+        "roadCount": 1,
+        "validationValid": true,
+        "validationErrors": [],
+        "roadComponents": {
+          "componentCount": 1,
+          "allComponentsTouchAnchor": true,
+          "row0RoadCount": 0,
+          "column0RoadCount": 1
+        },
+        "wallClockSeconds": 0.447,
+        "expectationFailures": [],
+        "solution": {
+          "roads": [
+            "2,0"
+          ],
+          "services": [],
+          "serviceTypeIndices": [],
+          "servicePopulationIncreases": [],
+          "residentials": [
+            {
+              "r": 1,
+              "c": 1,
+              "rows": 2,
+              "cols": 2
+            }
+          ],
+          "residentialTypeIndices": [
+            0
+          ],
+          "populations": [
+            10
+          ],
+          "totalPopulation": 10
+        }
+      },
+      "passed": true
+    },
+    {
+      "name": "multiple-independent-anchor-components",
+      "description": "Two disconnected islands each use their own anchored road component.",
+      "family": "multi-anchor",
+      "gridRows": 4,
+      "gridCols": 6,
+      "fixtureResults": [
+        {
+          "caseName": "multiple-independent-anchor-components",
+          "fixtureName": "two-components-valid",
+          "description": "Each residential island is served by a separate row-0-anchored road component.",
+          "expectedValid": true,
+          "valid": true,
+          "errors": [],
+          "passed": true
+        }
+      ],
+      "cpSat": {
+        "status": "OPTIMAL",
+        "totalPopulation": 20,
+        "roadCount": 4,
+        "validationValid": true,
+        "validationErrors": [],
+        "roadComponents": {
+          "componentCount": 2,
+          "allComponentsTouchAnchor": true,
+          "row0RoadCount": 2,
+          "column0RoadCount": 0
+        },
+        "wallClockSeconds": 0.443,
+        "expectationFailures": [],
+        "solution": {
+          "roads": [
+            "0,1",
+            "0,5",
+            "1,1",
+            "1,5"
+          ],
+          "services": [],
+          "serviceTypeIndices": [],
+          "servicePopulationIncreases": [],
+          "residentials": [
+            {
+              "r": 2,
+              "c": 1,
+              "rows": 2,
+              "cols": 2
+            },
+            {
+              "r": 2,
+              "c": 4,
+              "rows": 2,
+              "cols": 2
+            }
+          ],
+          "residentialTypeIndices": [
+            0,
+            0
+          ],
+          "populations": [
+            10,
+            10
+          ],
+          "totalPopulation": 20
+        }
+      },
+      "passed": true
+    },
+    {
+      "name": "roadless-boundary-building",
+      "description": "A building touching the anchor boundary is connected without explicit roads.",
+      "family": "roadless-boundary",
+      "gridRows": 1,
+      "gridCols": 1,
+      "fixtureResults": [
+        {
+          "caseName": "roadless-boundary-building",
+          "fixtureName": "boundary-building-roadless-valid",
+          "description": "A row-0/column-0 residential placement needs no explicit road.",
+          "expectedValid": true,
+          "valid": true,
+          "errors": [],
+          "passed": true
+        }
+      ],
+      "cpSat": {
+        "status": "OPTIMAL",
+        "totalPopulation": 10,
+        "roadCount": 0,
+        "validationValid": true,
+        "validationErrors": [],
+        "roadComponents": {
+          "componentCount": 0,
+          "allComponentsTouchAnchor": true,
+          "row0RoadCount": 0,
+          "column0RoadCount": 0
+        },
+        "wallClockSeconds": 0.439,
+        "expectationFailures": [],
+        "solution": {
+          "roads": [],
+          "services": [],
+          "serviceTypeIndices": [],
+          "servicePopulationIncreases": [],
+          "residentials": [
+            {
+              "r": 0,
+              "c": 0,
+              "rows": 1,
+              "cols": 1
+            }
+          ],
+          "residentialTypeIndices": [
+            0
+          ],
+          "populations": [
+            10
+          ],
+          "totalPopulation": 10
+        }
+      },
+      "passed": true
+    },
+    {
+      "name": "disconnected-non-anchor-road-rejected",
+      "description": "An explicit road component away from row 0 and column 0 is invalid.",
+      "family": "disconnected-non-anchor",
+      "gridRows": 3,
+      "gridCols": 3,
+      "fixtureResults": [
+        {
+          "caseName": "disconnected-non-anchor-road-rejected",
+          "fixtureName": "non-anchor-road-invalid",
+          "description": "The residential is adjacent to a road, but that road component has no anchor.",
+          "expectedValid": false,
+          "valid": false,
+          "errors": [
+            "Road network does not touch row 0 or column 0.",
+            "Some road cells are not connected to any row-0-or-column-0-connected road component. Disconnected road cells: (1,1)."
+          ],
+          "passed": true
+        }
+      ],
+      "cpSat": null,
+      "passed": true
+    }
+  ],
+  "registryHints": {
+    "artifactType": "benchmark",
+    "cases": [
+      "row0-anchored-road-access",
+      "column0-anchored-road-access",
+      "multiple-independent-anchor-components",
+      "roadless-boundary-building",
+      "disconnected-non-anchor-road-rejected"
+    ],
+    "caseFamilies": [
+      "column0-anchor",
+      "disconnected-non-anchor",
+      "multi-anchor",
+      "roadless-boundary",
+      "row0-anchor"
+    ],
+    "seeds": [
+      1
+    ],
+    "budget": {
+      "cpSatTimeLimitSeconds": 5,
+      "cpSatMaxDeterministicTime": 5,
+      "cpSatNumWorkers": 1
+    },
+    "summaryMetrics": {
+      "caseCount": 5,
+      "passedCaseCount": 5,
+      "failedCaseCount": 0,
+      "cpSatCaseCount": 4
+    },
+    "artifactPaths": [
+      "artifacts/road-semantics-scorecard/2026-05-17/road-semantics-scorecard.json"
+    ],
+    "decision": "road-semantics-alignment-ready-for-product-scorecard",
+    "summary": "Road-semantics adversarial fixtures and CP-SAT solves agree with the TypeScript evaluator."
+  }
+}

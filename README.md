@@ -187,6 +187,7 @@ Available scripts from [package.json](./package.json):
 - `npm run benchmark:lns`
 - `npm run benchmark:cp-sat`
 - `npm run benchmark:labels`
+- `npm run benchmark:road-semantics`
 - `npm run benchmark:scorecard`
 - `npm run experiment-registry`
 - `npm run experiment-registry:check`

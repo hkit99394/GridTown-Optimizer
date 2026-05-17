@@ -814,6 +814,12 @@ export interface LnsOptions {
   operatorExplorationInterval?: number;
   /** Decay applied to recent operator reward after each repair attempt. Defaults to 0.7. */
   operatorScoreDecay?: number;
+  /** Experimental Phase 13 learned window ranking for LNS repair selection. Default false/off. */
+  learnedWindowRanking?: boolean;
+  /** Maximum LNS repair-window candidates considered by the learned ranker. Default 12. */
+  learnedWindowRankingCandidateLimit?: number;
+  /** Minimum adaptive-score ratio required before learned ranking may displace the deterministic best. Default 1. */
+  learnedWindowRankingMinScoreRatio?: number;
   /** Per-neighborhood CP-SAT repair budget in seconds. */
   repairTimeLimitSeconds?: number;
   /** Per-neighborhood budget for focused repair attempts before escalation. Defaults to repairTimeLimitSeconds. */
@@ -878,6 +884,9 @@ export interface LnsNeighborhoodOutcome {
   operatorScoreBefore?: number;
   operatorScoreAfter?: number;
   operatorExploration?: boolean;
+  learnedWindowRankingScore?: number;
+  learnedWindowRankingDisplaced?: boolean;
+  learnedWindowRankingModelVersion?: string;
   stagnantIterationsBefore: number;
   staleSecondsBefore: number;
   repairTimeLimitSeconds: number;
@@ -921,6 +930,13 @@ export interface LnsTelemetry {
   finalStagnantIterations: number;
   elapsedSeconds: number;
   operatorSelectionPolicy?: LnsOperatorSelectionPolicy;
+  learnedWindowRankingEnabled?: boolean;
+  learnedWindowRankingModelVersion?: string | null;
+  learnedWindowRankingModelFingerprint?: string | null;
+  learnedWindowRankingCandidateLimit?: number;
+  learnedWindowRankingMinScoreRatio?: number;
+  learnedWindowRankingEvaluations?: number;
+  learnedWindowRankingWins?: number;
   operatorScores?: LnsOperatorScoreTelemetry[];
   outcomes: LnsNeighborhoodOutcome[];
 }

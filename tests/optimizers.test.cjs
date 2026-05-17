@@ -13,6 +13,7 @@ const {
   collectGreedyOrderingLabelsFromBenchmarkSuite,
   createGreedyLearnedOnlineAbSnapshot,
   createGreedyOfflineRankerSnapshot,
+  createLnsLearnedOnlineAbSnapshot,
   createLnsOfflineRankerSnapshot,
   createLearnedRankingLabelSnapshot,
   DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS,
@@ -42,6 +43,7 @@ const {
   formatGreedyLearnedOnlineAb,
   formatGreedyOfflineRankerExperiment,
   formatLearnedRankingLabelSuite,
+  formatLnsLearnedOnlineAb,
   formatLnsOfflineRankerExperiment,
   formatLnsNeighborhoodAblation,
   formatLnsBenchmarkSuite,
@@ -57,6 +59,7 @@ const {
   runCrossModeBenchmarkSuite,
   runGreedyConnectivityShadowOrderingLabels,
   runGreedyLearnedOnlineAb,
+  runLnsLearnedOnlineAb,
   runGreedyOfflineRankerExperiment,
   runLearnedRankingLabelSuite,
   runLnsOfflineRankerExperiment,
@@ -1447,6 +1450,14 @@ async function testPublicSolverDispatchValidatesInputs() {
     () => solve(grid, { optimizer: "greedy", greedy: { diagnostics: "yes" } }),
     /Invalid solver input: Greedy option greedy\.diagnostics must be a boolean\./
   );
+  assert.throws(
+    () => solve(grid, { optimizer: "lns", lns: { learnedWindowRanking: "yes" } }),
+    /Invalid solver input: LNS option lns\.learnedWindowRanking must be a boolean\./
+  );
+  assert.throws(
+    () => solve(grid, { optimizer: "lns", lns: { learnedWindowRankingMinScoreRatio: 2 } }),
+    /Invalid solver input: LNS option lns\.learnedWindowRankingMinScoreRatio must be a finite number >= 0 and <= 1\./
+  );
   await assert.rejects(
     () => solveAsync(grid, { optimizer: "greedy", greedy: { restarts: 0 } }),
     /Invalid solver input: Greedy option greedy\.restarts must be an integer between 1 and 100\./
@@ -2032,6 +2043,132 @@ function testGreedyLearnedServiceRankingOnlineAb() {
   assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
   assert.match(formatted, /Greedy Learned Service Ranking Online A\/B/);
   assert.match(formatted, /learned-guarded\/holdout/);
+}
+
+function testLnsLearnedWindowRankingOnlineAb() {
+  const lnsModule = require("../dist/lns/solver.js");
+  const originalSolveLns = lnsModule.solveLns;
+  const observedRuns = [];
+
+  lnsModule.solveLns = (_grid, params) => {
+    const learned = params.lns.learnedWindowRanking === true;
+    const ratio = params.lns.learnedWindowRankingMinScoreRatio ?? null;
+    observedRuns.push({
+      learned,
+      ratio,
+      candidateLimit: params.lns.learnedWindowRankingCandidateLimit ?? null,
+      greedySeed: params.greedy.randomSeed,
+      cpSatSeed: params.cpSat.randomSeed,
+    });
+    if (learned) {
+      const until = Date.now() + 2;
+      while (Date.now() < until) {
+        // Keep mocked learned variants measurably slower so the no-promotion gate is deterministic.
+      }
+    }
+    const exploratory = learned && ratio === 0;
+    return {
+      ...buildMockSolution({
+        optimizer: "lns",
+        totalPopulation: exploratory ? 110 : 100,
+        cpSatStatus: "FEASIBLE",
+      }),
+      lnsTelemetry: {
+        stopReason: "iteration-limit",
+        seedSource: "greedy",
+        seedWallClockSeconds: 0,
+        seedTimeLimitSeconds: null,
+        wallClockLimitSeconds: null,
+        noImprovementTimeoutSeconds: null,
+        focusedRepairTimeLimitSeconds: 1,
+        escalatedRepairTimeLimitSeconds: 1,
+        iterationsStarted: 1,
+        iterationsCompleted: 1,
+        improvingIterations: exploratory ? 1 : 0,
+        neutralIterations: exploratory ? 0 : 1,
+        recoverableFailures: 0,
+        skippedIterations: 0,
+        finalStagnantIterations: exploratory ? 0 : 1,
+        elapsedSeconds: learned ? 0.002 : 0,
+        operatorSelectionPolicy: "adaptive",
+        learnedWindowRankingEnabled: learned,
+        learnedWindowRankingModelVersion: learned ? "lns-ranker-feature-enrichment-2026-05-17" : null,
+        learnedWindowRankingModelFingerprint: learned
+          ? "12ba51f1f0a0c51b0e084caa5e524926aedcd66ccfc28c253e98e8daa618ff70"
+          : null,
+        learnedWindowRankingCandidateLimit: params.lns.learnedWindowRankingCandidateLimit ?? 12,
+        learnedWindowRankingMinScoreRatio: params.lns.learnedWindowRankingMinScoreRatio ?? 1,
+        learnedWindowRankingEvaluations: learned ? 3 : 0,
+        learnedWindowRankingWins: exploratory ? 1 : 0,
+        operatorScores: [],
+        outcomes: [
+          {
+            iteration: 0,
+            phase: "focused",
+            window: { top: 1, left: exploratory ? 1 : 0, rows: 3, cols: 3 },
+            operatorName: "weak-service-repair",
+            operatorScoreBefore: 0,
+            operatorExploration: false,
+            learnedWindowRankingScore: learned ? 0.5 : undefined,
+            learnedWindowRankingDisplaced: exploratory,
+            learnedWindowRankingModelVersion: learned ? "lns-ranker-feature-enrichment-2026-05-17" : undefined,
+            stagnantIterationsBefore: 0,
+            staleSecondsBefore: 0,
+            repairTimeLimitSeconds: 1,
+            wallClockSeconds: learned ? 0.002 : 0,
+            populationBefore: 100,
+            populationAfter: exploratory ? 110 : 100,
+            improvement: exploratory ? 10 : 0,
+            status: exploratory ? "improved" : "neutral",
+          },
+        ],
+      },
+    };
+  };
+
+  try {
+    const result = runLnsLearnedOnlineAb({
+      names: ["row0-anchor-repair"],
+      seeds: [7],
+    });
+    const snapshot = createLnsLearnedOnlineAbSnapshot(result);
+    const formatted = formatLnsLearnedOnlineAb(result);
+    const guardedHoldout = result.summaries.find((summary) =>
+      summary.variantName === "learned-guarded" && summary.split === "holdout"
+    );
+    const exploratoryHoldout = result.summaries.find((summary) =>
+      summary.variantName === "learned-exploratory" && summary.split === "holdout"
+    );
+    const guardedRun = result.cases[0].variants.find((variant) => variant.variantName === "learned-guarded");
+    const exploratoryRun = result.cases[0].variants.find((variant) => variant.variantName === "learned-exploratory");
+
+    assert.equal(result.schemaVersion, 1);
+    assert.deepEqual(result.variants, ["baseline", "learned-guarded", "learned-exploratory"]);
+    assert.equal(result.model.featureFlag, "lns.learnedWindowRanking");
+    assert.equal(result.cases.length, 1);
+    assert.equal(result.cases[0].split, "holdout");
+    assert.equal(result.cases[0].comparisons.length, 2);
+    assert.equal(result.candidateLimit, 12);
+    assert.equal(result.guardedMinScoreRatio, 1);
+    assert(guardedHoldout);
+    assert(exploratoryHoldout);
+    assert(guardedRun);
+    assert(exploratoryRun);
+    assert.equal(guardedHoldout.comparisonCount, 1);
+    assert.equal(guardedHoldout.lossCount, 0);
+    assert.equal(guardedRun.learnedWindowRankingEvaluations, 3);
+    assert.equal(exploratoryRun.learnedWindowRankingWins, 1);
+    assert.equal(observedRuns.length, 3);
+    assert.deepEqual(observedRuns.map((run) => run.greedySeed), [7, 7, 7]);
+    assert.deepEqual(observedRuns.map((run) => run.cpSatSeed), [7, 7, 7]);
+    assert.equal(result.gate.protectedHoldout, true);
+    assert.equal(result.decision, "keep-learned-window-ranking-feature-flagged");
+    assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
+    assert.match(formatted, /LNS Learned Window Ranking Online A\/B/);
+    assert.match(formatted, /learned-guarded\/holdout/);
+  } finally {
+    lnsModule.solveLns = originalSolveLns;
+  }
 }
 
 function testGreedyRoadOpportunityCounterfactualsAreBoundedAndObservational() {
@@ -9100,6 +9237,7 @@ async function main() {
   testGreedyOfflineRankerExperiment();
   testLnsOfflineRankerExperiment();
   testGreedyLearnedServiceRankingOnlineAb();
+  testLnsLearnedWindowRankingOnlineAb();
   testGreedyRoadOpportunityCounterfactualsAreBoundedAndObservational();
   testRoadOpportunityLocalSearchMeasurementUsesPostRemoveOccupancy();
   testGreedyStopFileCancelsBeforePrecompute();

@@ -66,8 +66,8 @@ Some early roadmap items are now delivered as measurement gates, but none of the
 | Deterministic feature foundation | Partial | Connectivity-shadow, road-opportunity traces, and planner explainability maps exist. Broader reusable feature payloads for all model candidates still need scale and schema hardening. |
 | Baseline ablations | Delivered as an evidence gate | Deterministic Greedy and LNS ablation gates closed with no default promotion. Connectivity-shadow and LNS window movement became learning targets. |
 | Greedy labels | Online A/B delivered; no promotion | Phase 9 trains a CPU-only pairwise linear ranker on 1,896 development Greedy labels and evaluates 2,724 protected holdout labels. Phase 10 wires it behind `greedy.learnedServiceRanking`; guarded online A/B has zero holdout losses but no quality/time win, and exploratory mode regresses holdout. |
-| LNS replay labels | Enriched offline gate passed | Phase 8 contains split-protected pairwise LNS replay labels across five pressure families per split. Phase 12 enriches those replay/window features and trains a CPU-only LNS window ranker that beats deterministic, random, and single-feature protected-holdout baselines. Runtime integration still waits for online A/B. |
-| Model training | Partial / online-gated | The Phase 9 Greedy ranker is versioned in an offline artifact, Phase 10 embeds it behind a Greedy feature flag, and Phase 12 adds an enriched offline LNS ranker report. No runtime model loading or learned solver default change exists. |
+| LNS replay labels | Online A/B delivered; ready-for-default-review | Phase 8 contains split-protected pairwise LNS replay labels across five pressure families per split. Phase 12 enriches those replay/window features, and Phase 13 embeds the CPU-only LNS window ranker behind `lns.learnedWindowRanking` with protected online A/B evidence. No LNS default changed. |
+| Model training | Partial / default-gated | The Phase 9 Greedy ranker is versioned in an offline artifact, Phase 10 embeds it behind a Greedy feature flag, Phase 12 adds an enriched offline LNS ranker report, and Phase 13 embeds the LNS scorer behind a feature flag. No runtime model loading or learned solver default change exists. |
 | GPU acceleration | Not started / gated | GPU should remain optional research infrastructure until a CPU-first model or label workflow is a measured bottleneck. |
 
 Next-stage execution details live in [NEXT_STAGE_REVIEW.md](./NEXT_STAGE_REVIEW.md).
@@ -346,7 +346,7 @@ Exit criteria:
 
 ### Phase 5: Learned LNS Window Re-Ranking
 
-Status: Enriched offline gate passed; runtime integration still gated on online A/B
+Status: Runtime integration and online A/B delivered; default promotion still gated
 
 Why:
 - `LNS` is already the closest analogue to policy-guided search
@@ -388,12 +388,18 @@ Delivered:
 - enriched replay/window features for operator identity, candidate rank, anchor/boundary pressure, allowed/empty-cell counts, footprint overlap, and density signals
 - refreshed protected holdout comparison: model `100.0%`, deterministic window proxy `97.9%`, random `50.7%`, best single-feature `97.9%`
 - enriched inference timing of `21.764us` per held-out pair
-- no runtime scorer, feature flag, or solver default change
+- feature flag `lns.learnedWindowRanking` with guarded candidate re-ranking, validation, telemetry counters, and deterministic fallback
+- Phase 13 artifact `artifacts/lns-online-ab/2026-05-17/lns-online-ab.json`
+- registry run `lns-learned-online-ab-2026-05-17`
+- guarded online A/B: `18/18` protected holdout ties, zero losses, median delta `0`, and mean wall-clock delta `-0.0389s`
+- exploratory online A/B: `3` development wins, zero protected holdout losses, `24` protected holdout learned-window displacements
+- no solver default change
 
 Remaining:
 
-- add a feature-flagged LNS window re-ranker after window generation and before selection
-- run paired seeded online A/B with exact validation and bounded inference overhead before any default promotion
+- decide whether a guarded wall-clock-only win is enough for any default promotion attempt
+- before changing defaults, run a broader product-workflow or cross-mode scorecard with rollback criteria
+- prefer a follow-up ranker/guard that shows quality or time-to-quality lift, not only holdout wall-clock noise
 
 Exit criteria:
 - learned re-ranking improves `best population at fixed repair budget`
@@ -401,7 +407,7 @@ Exit criteria:
 - deterministic fallback remains unchanged and existing baseline tests remain valid
 - holdout data includes enough non-neutral replay signal to evaluate ranking skill
 - online A/B uses paired seeds, exact validation, and bounded inference overhead
-- offline holdout gate is met by Phase 12; runtime integration must still pass online A/B before defaults change
+- offline holdout gate is met by Phase 12 and online A/B is met by Phase 13; default promotion still needs explicit review because guarded mode has no protected-holdout quality lift
 
 ### Phase 6: Value Model And CP-SAT Warm Starts
 

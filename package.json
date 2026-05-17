@@ -19,6 +19,7 @@
     "benchmark:greedy-ranker": "npm run build && node dist/greedyOfflineRankerCli.js",
     "benchmark:lns-ranker": "npm run build && node dist/lnsOfflineRankerCli.js",
     "benchmark:greedy-online-ab": "npm run build && node dist/greedyLearnedOnlineAbCli.js",
+    "benchmark:lns-online-ab": "npm run build && node dist/lnsLearnedOnlineAbCli.js",
     "benchmark:road-semantics": "npm run build && node dist/roadSemanticsScorecardCli.js",
     "benchmark:product-workflows": "npm run build && node dist/productWorkflowBenchmarkCli.js",
     "benchmark:service-master": "npm run build && node dist/serviceMasterBenchmarkCli.js",

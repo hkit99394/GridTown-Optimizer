@@ -28,6 +28,7 @@ const AUTO_MAX_STAGE_TIME_LIMIT_SECONDS = 24 * 60 * 60;
 const LNS_MAX_ITERATIONS = 10_000;
 const LNS_MAX_NEIGHBORHOOD_DIMENSION = 10_000;
 const LNS_MAX_TIME_LIMIT_SECONDS = 24 * 60 * 60;
+const LNS_MAX_LEARNED_WINDOW_RANKING_CANDIDATES = 2_000;
 const LNS_SMALL_WINDOW_DP_MAX_CELLS = 20;
 const LNS_SMALL_WINDOW_DP_MAX_CANDIDATES = 1_000;
 const LNS_SMALL_WINDOW_DP_MAX_STATES = 10_000_000;
@@ -1252,6 +1253,22 @@ export function assertValidLnsOptions(params: SolverParams): void {
     "LNS option lns.operatorScoreDecay",
     0,
     1
+  );
+  requireOptionalBoolean(lns, "learnedWindowRanking", "LNS option lns.learnedWindowRanking");
+  requireOptionalIntegerInRange(
+    lns,
+    "learnedWindowRankingCandidateLimit",
+    "LNS option lns.learnedWindowRankingCandidateLimit",
+    1,
+    LNS_MAX_LEARNED_WINDOW_RANKING_CANDIDATES
+  );
+  requireOptionalFiniteNumberInRange(
+    lns,
+    "learnedWindowRankingMinScoreRatio",
+    "LNS option lns.learnedWindowRankingMinScoreRatio",
+    0,
+    1,
+    true
   );
   requireOptionalFiniteNumberInRange(
     lns,

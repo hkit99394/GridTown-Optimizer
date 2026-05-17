@@ -14,6 +14,12 @@ import { NO_TYPE_INDEX } from "../core/rules.js";
 import { writeSolutionSnapshot } from "../core/solutionSerialization.js";
 import { assertValidLnsOptions, materializeValidLnsSeedSolution } from "../core/solverInputValidation.js";
 import { solveGreedy } from "../greedy/solver.js";
+import {
+  buildLearnedLnsWindowFeatures,
+  PHASE12_LNS_WINDOW_RANKER_FINGERPRINT,
+  PHASE12_LNS_WINDOW_RANKER_VERSION,
+  scoreLearnedLnsWindowCandidate,
+} from "./learnedWindowRanking.js";
 import { solveSmallWindowDpRepair } from "./smallWindowDpRepair.js";
 
 import type {
@@ -47,6 +53,9 @@ type NormalizedLnsOptions = {
   operatorSelectionPolicy: LnsOperatorSelectionPolicy;
   operatorExplorationInterval: number;
   operatorScoreDecay: number;
+  learnedWindowRanking: boolean;
+  learnedWindowRankingCandidateLimit: number;
+  learnedWindowRankingMinScoreRatio: number;
   repairTimeLimitSeconds: number;
   focusedRepairTimeLimitSeconds: number;
   escalatedRepairTimeLimitSeconds: number;
@@ -72,6 +81,8 @@ interface LnsRepairAttempt {
   operatorName: LnsRepairOperatorName;
   operatorScoreBefore: number;
   operatorExploration: boolean;
+  learnedWindowRankingScore?: number;
+  learnedWindowRankingDisplaced?: boolean;
   stagnantIterationsBefore: number;
   staleSecondsBefore: number;
   repairTimeLimitSeconds: number;
@@ -86,6 +97,8 @@ const DEFAULT_LNS_MAX_NO_IMPROVEMENT_ITERATIONS = 4;
 const DEFAULT_LNS_REPAIR_TIME_LIMIT_SECONDS = 5;
 const DEFAULT_LNS_OPERATOR_EXPLORATION_INTERVAL = 5;
 const DEFAULT_LNS_OPERATOR_SCORE_DECAY = 0.7;
+const DEFAULT_LNS_LEARNED_WINDOW_RANKING_CANDIDATE_LIMIT = 12;
+const DEFAULT_LNS_LEARNED_WINDOW_RANKING_MIN_SCORE_RATIO = 1;
 const DEFAULT_LNS_SMALL_WINDOW_DP_MAX_CELLS = 12;
 const DEFAULT_LNS_SMALL_WINDOW_DP_MAX_CANDIDATES = 64;
 const DEFAULT_LNS_SMALL_WINDOW_DP_MAX_STATES = 200_000;
@@ -139,6 +152,12 @@ function operatorScoreDecayOrDefault(value: unknown): number {
   return typeof value === "number" && Number.isFinite(value) && value > 0 && value <= 1
     ? value
     : DEFAULT_LNS_OPERATOR_SCORE_DECAY;
+}
+
+function scoreRatioOrDefault(value: unknown, fallback: number): number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 1
+    ? value
+    : fallback;
 }
 
 function clampRepairBudgetToDeadline(repairTimeLimitSeconds: number, deadlineAtMs: number | null): number {
@@ -199,6 +218,15 @@ function getLnsOptions(G: Grid, params: SolverParams): NormalizedLnsOptions {
       DEFAULT_LNS_OPERATOR_EXPLORATION_INTERVAL
     ),
     operatorScoreDecay: operatorScoreDecayOrDefault(lns.operatorScoreDecay),
+    learnedWindowRanking: lns.learnedWindowRanking === true,
+    learnedWindowRankingCandidateLimit: positiveIntegerOrDefault(
+      lns.learnedWindowRankingCandidateLimit,
+      DEFAULT_LNS_LEARNED_WINDOW_RANKING_CANDIDATE_LIMIT
+    ),
+    learnedWindowRankingMinScoreRatio: scoreRatioOrDefault(
+      lns.learnedWindowRankingMinScoreRatio,
+      DEFAULT_LNS_LEARNED_WINDOW_RANKING_MIN_SCORE_RATIO
+    ),
     repairTimeLimitSeconds,
     focusedRepairTimeLimitSeconds: positiveFiniteNumberOrDefault(lns.focusedRepairTimeLimitSeconds, repairTimeLimitSeconds),
     escalatedRepairTimeLimitSeconds: positiveFiniteNumberOrDefault(
@@ -400,6 +428,16 @@ function updateOperatorScores(
   return selected.score;
 }
 
+function scoreAdaptiveNeighborhoodCandidate(
+  candidate: ReturnType<typeof buildNeighborhoodCandidates>[number],
+  operatorScores: Map<LnsRepairOperatorName, LnsOperatorScoreState>,
+  windowAttemptCounts: ReadonlyMap<string, number>
+): number {
+  const candidateOperatorScore = getOperatorState(operatorScores, candidate.operatorName).score;
+  const candidateAttemptPenalty = (windowAttemptCounts.get(neighborhoodWindowKey(candidate.window)) ?? 0) * 1_000_000;
+  return candidate.score + candidateOperatorScore * 1000 - candidateAttemptPenalty;
+}
+
 function selectNeighborhoodCandidate(
   candidates: ReturnType<typeof buildNeighborhoodCandidates>,
   iteration: number,
@@ -462,17 +500,110 @@ function selectNeighborhoodCandidate(
   }
 
   return candidates.reduce((best, candidate) => {
-    const candidateOperatorScore = getOperatorState(operatorScores, candidate.operatorName).score;
-    const bestOperatorScore = getOperatorState(operatorScores, best.operatorName).score;
-    const candidateAttemptPenalty = (windowAttemptCounts.get(neighborhoodWindowKey(candidate.window)) ?? 0) * 1_000_000;
-    const bestAttemptPenalty = (windowAttemptCounts.get(neighborhoodWindowKey(best.window)) ?? 0) * 1_000_000;
-    const candidateAdaptiveScore = candidate.score + candidateOperatorScore * 1000 - candidateAttemptPenalty;
-    const bestAdaptiveScore = best.score + bestOperatorScore * 1000 - bestAttemptPenalty;
+    const candidateAdaptiveScore = scoreAdaptiveNeighborhoodCandidate(candidate, operatorScores, windowAttemptCounts);
+    const bestAdaptiveScore = scoreAdaptiveNeighborhoodCandidate(best, operatorScores, windowAttemptCounts);
     if (candidateAdaptiveScore !== bestAdaptiveScore) {
       return candidateAdaptiveScore > bestAdaptiveScore ? candidate : best;
     }
     return best;
   });
+}
+
+interface LearnedNeighborhoodCandidatePlan {
+  candidate: ReturnType<typeof buildNeighborhoodCandidates>[number];
+  windowIndex: number;
+  adaptiveScore: number;
+}
+
+interface LearnedNeighborhoodSelection {
+  candidate: ReturnType<typeof buildNeighborhoodCandidates>[number];
+  evaluations: number;
+  displaced: boolean;
+  learnedWindowRankingScore: number;
+}
+
+function sameNeighborhoodWindow(left: CpSatNeighborhoodWindow, right: CpSatNeighborhoodWindow): boolean {
+  return left.top === right.top
+    && left.left === right.left
+    && left.rows === right.rows
+    && left.cols === right.cols;
+}
+
+function buildUniqueLearnedCandidatePlans(
+  candidates: ReturnType<typeof buildNeighborhoodCandidates>,
+  operatorScores: Map<LnsRepairOperatorName, LnsOperatorScoreState>,
+  windowAttemptCounts: ReadonlyMap<string, number>
+): LearnedNeighborhoodCandidatePlan[] {
+  const plans = new Map<string, LearnedNeighborhoodCandidatePlan>();
+  for (let candidateIndex = 0; candidateIndex < candidates.length; candidateIndex++) {
+    const candidate = candidates[candidateIndex]!;
+    const key = neighborhoodWindowKey(candidate.window);
+    if (plans.has(key)) continue;
+    plans.set(key, {
+      candidate,
+      windowIndex: plans.size,
+      adaptiveScore: scoreAdaptiveNeighborhoodCandidate(candidate, operatorScores, windowAttemptCounts),
+    });
+  }
+  return [...plans.values()];
+}
+
+function selectLearnedNeighborhoodCandidate(
+  G: Grid,
+  params: SolverParams,
+  incumbent: Solution,
+  candidates: ReturnType<typeof buildNeighborhoodCandidates>,
+  baselineCandidate: ReturnType<typeof buildNeighborhoodCandidates>[number],
+  options: NormalizedLnsOptions,
+  operatorScores: Map<LnsRepairOperatorName, LnsOperatorScoreState>,
+  windowAttemptCounts: ReadonlyMap<string, number>
+): LearnedNeighborhoodSelection {
+  const plans = buildUniqueLearnedCandidatePlans(candidates, operatorScores, windowAttemptCounts);
+  const baselinePlan = plans.find((plan) => sameNeighborhoodWindow(plan.candidate.window, baselineCandidate.window)) ?? {
+    candidate: baselineCandidate,
+    windowIndex: 0,
+    adaptiveScore: scoreAdaptiveNeighborhoodCandidate(baselineCandidate, operatorScores, windowAttemptCounts),
+  };
+  const shortlist = plans
+    .slice()
+    .sort((left, right) => {
+      if (right.adaptiveScore !== left.adaptiveScore) return right.adaptiveScore - left.adaptiveScore;
+      return left.windowIndex - right.windowIndex;
+    })
+    .slice(0, options.learnedWindowRankingCandidateLimit);
+  if (!shortlist.some((plan) => sameNeighborhoodWindow(plan.candidate.window, baselineCandidate.window))) {
+    shortlist.push(baselinePlan);
+  }
+
+  const scored = shortlist.map((plan) => ({
+    plan,
+    score: scoreLearnedLnsWindowCandidate(buildLearnedLnsWindowFeatures(G, params, incumbent, plan.candidate, {
+      candidateWindowCount: plans.length,
+      windowIndex: plan.windowIndex,
+      selectedByBaseline: sameNeighborhoodWindow(plan.candidate.window, baselineCandidate.window),
+    })),
+  }));
+  const baselineScored = scored.find((entry) =>
+    sameNeighborhoodWindow(entry.plan.candidate.window, baselineCandidate.window)
+  ) ?? {
+    plan: baselinePlan,
+    score: scoreLearnedLnsWindowCandidate(buildLearnedLnsWindowFeatures(G, params, incumbent, baselineCandidate, {
+      candidateWindowCount: plans.length,
+      windowIndex: baselinePlan.windowIndex,
+      selectedByBaseline: true,
+    })),
+  };
+  const best = scored.reduce((currentBest, entry) => entry.score > currentBest.score ? entry : currentBest, baselineScored);
+  const passesAdaptiveGuard = options.learnedWindowRankingMinScoreRatio <= 0
+    || best.plan.adaptiveScore >= baselinePlan.adaptiveScore * options.learnedWindowRankingMinScoreRatio;
+  const selected = passesAdaptiveGuard ? best : baselineScored;
+  const displaced = !sameNeighborhoodWindow(selected.plan.candidate.window, baselineCandidate.window);
+  return {
+    candidate: displaced ? selected.plan.candidate : baselineCandidate,
+    evaluations: scored.length,
+    displaced,
+    learnedWindowRankingScore: selected.score,
+  };
 }
 
 function buildLnsTelemetry(
@@ -482,7 +613,9 @@ function buildLnsTelemetry(
   startedAtMs: number,
   stagnantIterations: number,
   outcomes: LnsTelemetry["outcomes"],
-  operatorScores: Map<LnsRepairOperatorName, LnsOperatorScoreState>
+  operatorScores: Map<LnsRepairOperatorName, LnsOperatorScoreState>,
+  learnedWindowRankingEvaluations: number,
+  learnedWindowRankingWins: number
 ): LnsTelemetry {
   return {
     stopReason,
@@ -502,6 +635,13 @@ function buildLnsTelemetry(
     finalStagnantIterations: stagnantIterations,
     elapsedSeconds: (performance.now() - startedAtMs) / 1000,
     operatorSelectionPolicy: options.operatorSelectionPolicy,
+    learnedWindowRankingEnabled: options.learnedWindowRanking,
+    learnedWindowRankingModelVersion: options.learnedWindowRanking ? PHASE12_LNS_WINDOW_RANKER_VERSION : null,
+    learnedWindowRankingModelFingerprint: options.learnedWindowRanking ? PHASE12_LNS_WINDOW_RANKER_FINGERPRINT : null,
+    learnedWindowRankingCandidateLimit: options.learnedWindowRankingCandidateLimit,
+    learnedWindowRankingMinScoreRatio: options.learnedWindowRankingMinScoreRatio,
+    learnedWindowRankingEvaluations,
+    learnedWindowRankingWins,
     operatorScores: materializeOperatorScores(operatorScores),
     outcomes: [...outcomes],
   };
@@ -555,6 +695,13 @@ function buildRepairOutcome(
     operatorScoreBefore: attempt.operatorScoreBefore,
     ...(operatorScoreAfter !== undefined ? { operatorScoreAfter } : {}),
     operatorExploration: attempt.operatorExploration,
+    ...(attempt.learnedWindowRankingScore !== undefined ? {
+      learnedWindowRankingScore: attempt.learnedWindowRankingScore,
+      learnedWindowRankingModelVersion: PHASE12_LNS_WINDOW_RANKER_VERSION,
+    } : {}),
+    ...(attempt.learnedWindowRankingDisplaced !== undefined ? {
+      learnedWindowRankingDisplaced: attempt.learnedWindowRankingDisplaced,
+    } : {}),
     stagnantIterationsBefore: attempt.stagnantIterationsBefore,
     staleSecondsBefore: attempt.staleSecondsBefore,
     repairTimeLimitSeconds: attempt.repairTimeLimitSeconds,
@@ -577,6 +724,8 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
   const outcomes: LnsTelemetry["outcomes"] = [];
   const operatorScores = createOperatorScoreState();
   const windowAttemptCounts = new Map<string, number>();
+  let learnedWindowRankingEvaluations = 0;
+  let learnedWindowRankingWins = 0;
 
   const initialIncumbent = buildInitialLnsIncumbent(G, params, options);
   let incumbent = initialIncumbent.solution;
@@ -584,7 +733,17 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
   let lastImprovementAtMs = performance.now();
 
   const buildTelemetry = (stopReason: LnsStopReason): LnsTelemetry =>
-    buildLnsTelemetry(stopReason, options, initialIncumbent, startedAtMs, stagnantIterations, outcomes, operatorScores);
+    buildLnsTelemetry(
+      stopReason,
+      options,
+      initialIncumbent,
+      startedAtMs,
+      stagnantIterations,
+      outcomes,
+      operatorScores,
+      learnedWindowRankingEvaluations,
+      learnedWindowRankingWins
+    );
 
   const writeRunningSnapshot = (): void => writeLnsSnapshot(options, incumbent, buildTelemetry("running"));
 
@@ -628,7 +787,7 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
       return finish("no-neighborhoods");
     }
 
-    const candidate = selectNeighborhoodCandidate(
+    const baselineCandidate = selectNeighborhoodCandidate(
       candidates,
       iteration,
       stagnantIterations,
@@ -636,6 +795,23 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
       operatorScores,
       windowAttemptCounts
     );
+    const learnedSelection = options.learnedWindowRanking
+      ? selectLearnedNeighborhoodCandidate(
+          G,
+          params,
+          incumbent,
+          candidates,
+          baselineCandidate,
+          options,
+          operatorScores,
+          windowAttemptCounts
+        )
+      : null;
+    if (learnedSelection) {
+      learnedWindowRankingEvaluations += learnedSelection.evaluations;
+      if (learnedSelection.displaced) learnedWindowRankingWins += 1;
+    }
+    const candidate = learnedSelection?.candidate ?? baselineCandidate;
     const neighborhoodWindow = candidate.window;
     const selectedWindowKey = neighborhoodWindowKey(neighborhoodWindow);
     windowAttemptCounts.set(selectedWindowKey, (windowAttemptCounts.get(selectedWindowKey) ?? 0) + 1);
@@ -656,6 +832,10 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
         operatorName: candidate.operatorName,
         operatorScoreBefore,
         operatorExploration: candidate.exploration,
+        ...(learnedSelection ? {
+          learnedWindowRankingScore: learnedSelection.learnedWindowRankingScore,
+          learnedWindowRankingDisplaced: learnedSelection.displaced,
+        } : {}),
         stagnantIterationsBefore: stagnantIterations,
         staleSecondsBefore,
         repairTimeLimitSeconds: 0,
@@ -680,6 +860,10 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
       operatorName: candidate.operatorName,
       operatorScoreBefore,
       operatorExploration: candidate.exploration,
+      ...(learnedSelection ? {
+        learnedWindowRankingScore: learnedSelection.learnedWindowRankingScore,
+        learnedWindowRankingDisplaced: learnedSelection.displaced,
+      } : {}),
       stagnantIterationsBefore: stagnantIterations,
       staleSecondsBefore,
       repairTimeLimitSeconds,

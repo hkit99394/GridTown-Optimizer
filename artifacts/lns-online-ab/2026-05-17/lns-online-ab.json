@@ -1,0 +1,2068 @@
+{
+  "generatedAt": "2026-05-17T16:35:43.741Z",
+  "schemaVersion": 1,
+  "seeds": [
+    7,
+    19,
+    37
+  ],
+  "selectedCaseNames": [
+    "compact-service-repair",
+    "lns-service-split-pressure",
+    "seeded-service-anchor-pressure",
+    "lns-corridor-squeeze-pressure",
+    "lns-gate-split-pressure",
+    "lns-footprint-mix-pressure",
+    "row0-anchor-repair",
+    "lns-corridor-split-pressure",
+    "lns-gate-choke-pressure",
+    "lns-anchor-split-pressure",
+    "lns-footprint-split-pressure",
+    "lns-service-overlap-pressure"
+  ],
+  "variants": [
+    "baseline",
+    "learned-guarded",
+    "learned-exploratory"
+  ],
+  "splitCases": {
+    "development": [
+      "compact-service-repair",
+      "lns-service-split-pressure",
+      "seeded-service-anchor-pressure",
+      "lns-corridor-squeeze-pressure",
+      "lns-gate-split-pressure",
+      "lns-footprint-mix-pressure"
+    ],
+    "holdout": [
+      "row0-anchor-repair",
+      "lns-corridor-split-pressure",
+      "lns-gate-choke-pressure",
+      "lns-anchor-split-pressure",
+      "lns-footprint-split-pressure",
+      "lns-service-overlap-pressure"
+    ]
+  },
+  "candidateLimit": 12,
+  "guardedMinScoreRatio": 1,
+  "exploratoryMinScoreRatio": 0,
+  "model": {
+    "version": "lns-ranker-feature-enrichment-2026-05-17",
+    "fingerprint": "12ba51f1f0a0c51b0e084caa5e524926aedcd66ccfc28c253e98e8daa618ff70",
+    "cpuOnly": true,
+    "featureFlag": "lns.learnedWindowRanking"
+  },
+  "cases": [
+    {
+      "split": "development",
+      "caseName": "compact-service-repair",
+      "seed": 7,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 570,
+          "wallClockSeconds": 1.2017808749999999,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "stale-iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 570,
+          "wallClockSeconds": 1.089368125,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "stale-iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 570,
+          "wallClockSeconds": 1.074157209,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "stale-iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 25,
+          "learnedWindowRankingWins": 1
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.11241274999999984
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.12762366599999986
+        }
+      ]
+    },
+    {
+      "split": "development",
+      "caseName": "compact-service-repair",
+      "seed": 19,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 570,
+          "wallClockSeconds": 1.0866476670000003,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "stale-iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 570,
+          "wallClockSeconds": 1.0598553749999993,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "stale-iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 570,
+          "wallClockSeconds": 1.0690384999999996,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "stale-iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 25,
+          "learnedWindowRankingWins": 1
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.026792292000000995
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.017609167000000703
+        }
+      ]
+    },
+    {
+      "split": "development",
+      "caseName": "compact-service-repair",
+      "seed": 37,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 570,
+          "wallClockSeconds": 1.1033877080000003,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "stale-iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 570,
+          "wallClockSeconds": 1.1395061249999998,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "stale-iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 570,
+          "wallClockSeconds": 1.0564107079999994,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "stale-iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 25,
+          "learnedWindowRankingWins": 1
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.036118416999999514
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.046977000000000935
+        }
+      ]
+    },
+    {
+      "split": "development",
+      "caseName": "lns-service-split-pressure",
+      "seed": 7,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 700,
+          "wallClockSeconds": 1.588135624999999,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 700,
+          "wallClockSeconds": 1.5835692920000002,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 700,
+          "wallClockSeconds": 1.5998069579999992,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 1
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.004566332999998757
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.011671333000000228
+        }
+      ]
+    },
+    {
+      "split": "development",
+      "caseName": "lns-service-split-pressure",
+      "seed": 19,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 700,
+          "wallClockSeconds": 1.5741429590000007,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 700,
+          "wallClockSeconds": 1.5857385419999992,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 700,
+          "wallClockSeconds": 1.5852671249999986,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 1
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.011595582999998522
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.011124165999997881
+        }
+      ]
+    },
+    {
+      "split": "development",
+      "caseName": "lns-service-split-pressure",
+      "seed": 37,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 700,
+          "wallClockSeconds": 1.5699280419999995,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 700,
+          "wallClockSeconds": 1.6331136670000015,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 700,
+          "wallClockSeconds": 1.5906582500000004,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 1
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.06318562500000202
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.020730208000000916
+        }
+      ]
+    },
+    {
+      "split": "development",
+      "caseName": "seeded-service-anchor-pressure",
+      "seed": 7,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 200,
+          "wallClockSeconds": 0.4608157499999979,
+          "serviceCount": 1,
+          "residentialCount": 1,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 200,
+          "wallClockSeconds": 0.4528289590000022,
+          "serviceCount": 1,
+          "residentialCount": 1,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "learnedWindowRankingEvaluations": 12,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 200,
+          "wallClockSeconds": 0.45404158299999836,
+          "serviceCount": 1,
+          "residentialCount": 1,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "learnedWindowRankingEvaluations": 12,
+          "learnedWindowRankingWins": 1
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.007986790999995719
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.0067741669999995535
+        }
+      ]
+    },
+    {
+      "split": "development",
+      "caseName": "seeded-service-anchor-pressure",
+      "seed": 19,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 200,
+          "wallClockSeconds": 0.4552229159999988,
+          "serviceCount": 1,
+          "residentialCount": 1,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 200,
+          "wallClockSeconds": 0.4548797919999997,
+          "serviceCount": 1,
+          "residentialCount": 1,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "learnedWindowRankingEvaluations": 12,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 200,
+          "wallClockSeconds": 0.45665891700000066,
+          "serviceCount": 1,
+          "residentialCount": 1,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "learnedWindowRankingEvaluations": 12,
+          "learnedWindowRankingWins": 1
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.00034312399999908427
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.001436001000001852
+        }
+      ]
+    },
+    {
+      "split": "development",
+      "caseName": "seeded-service-anchor-pressure",
+      "seed": 37,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 200,
+          "wallClockSeconds": 0.46062149999999746,
+          "serviceCount": 1,
+          "residentialCount": 1,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 200,
+          "wallClockSeconds": 0.4585871249999982,
+          "serviceCount": 1,
+          "residentialCount": 1,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "learnedWindowRankingEvaluations": 12,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 200,
+          "wallClockSeconds": 0.4653057499999995,
+          "serviceCount": 1,
+          "residentialCount": 1,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "learnedWindowRankingEvaluations": 12,
+          "learnedWindowRankingWins": 1
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.0020343749999992555
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.004684250000002055
+        }
+      ]
+    },
+    {
+      "split": "development",
+      "caseName": "lns-corridor-squeeze-pressure",
+      "seed": 7,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 480,
+          "wallClockSeconds": 0.9814495839999982,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 480,
+          "wallClockSeconds": 0.9760711250000023,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 480,
+          "wallClockSeconds": 0.9752823750000025,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 1
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.005378458999995894
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.006167208999995677
+        }
+      ]
+    },
+    {
+      "split": "development",
+      "caseName": "lns-corridor-squeeze-pressure",
+      "seed": 19,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 480,
+          "wallClockSeconds": 0.9607765829999989,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 480,
+          "wallClockSeconds": 0.9515700410000026,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 480,
+          "wallClockSeconds": 0.9721862079999992,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 1
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.009206541999996265
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.011409625000000312
+        }
+      ]
+    },
+    {
+      "split": "development",
+      "caseName": "lns-corridor-squeeze-pressure",
+      "seed": 37,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 480,
+          "wallClockSeconds": 0.9641189169999997,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 480,
+          "wallClockSeconds": 1.009420125000004,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 480,
+          "wallClockSeconds": 0.9995475000000006,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 1
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.04530120800000437
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.035428583000000846
+        }
+      ]
+    },
+    {
+      "split": "development",
+      "caseName": "lns-gate-split-pressure",
+      "seed": 7,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 480,
+          "wallClockSeconds": 0.9489084169999987,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 480,
+          "wallClockSeconds": 0.9599464999999981,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 555,
+          "wallClockSeconds": 0.9617430829999939,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 1
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.011038082999999421
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 75,
+          "wallClockDeltaVsBaselineSeconds": 0.012834665999995165
+        }
+      ]
+    },
+    {
+      "split": "development",
+      "caseName": "lns-gate-split-pressure",
+      "seed": 19,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 480,
+          "wallClockSeconds": 0.9483689169999998,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 480,
+          "wallClockSeconds": 0.969728916,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 555,
+          "wallClockSeconds": 1.0346068749999977,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 1
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.021359999000000185
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 75,
+          "wallClockDeltaVsBaselineSeconds": 0.0862379579999979
+        }
+      ]
+    },
+    {
+      "split": "development",
+      "caseName": "lns-gate-split-pressure",
+      "seed": 37,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 480,
+          "wallClockSeconds": 0.9428320000000021,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 480,
+          "wallClockSeconds": 0.962174291000003,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 555,
+          "wallClockSeconds": 0.9877727499999964,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 1
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.019342291000000844
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 75,
+          "wallClockDeltaVsBaselineSeconds": 0.04494074999999431
+        }
+      ]
+    },
+    {
+      "split": "development",
+      "caseName": "lns-footprint-mix-pressure",
+      "seed": 7,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 480,
+          "wallClockSeconds": 1.0150522499999934,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 480,
+          "wallClockSeconds": 1.0066726249999993,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 480,
+          "wallClockSeconds": 1.0124645000000019,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 2
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.008379624999994117
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.002587749999991562
+        }
+      ]
+    },
+    {
+      "split": "development",
+      "caseName": "lns-footprint-mix-pressure",
+      "seed": 19,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 480,
+          "wallClockSeconds": 1.0174674169999998,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 480,
+          "wallClockSeconds": 1.0020790419999976,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 480,
+          "wallClockSeconds": 1.0052165830000013,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 2
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.015388375000002119
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.01225083399999849
+        }
+      ]
+    },
+    {
+      "split": "development",
+      "caseName": "lns-footprint-mix-pressure",
+      "seed": 37,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 480,
+          "wallClockSeconds": 0.9948782080000019,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 480,
+          "wallClockSeconds": 0.9978626250000016,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 480,
+          "wallClockSeconds": 1.054700291000001,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 2
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.0029844169999996284
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.05982208299999903
+        }
+      ]
+    },
+    {
+      "split": "holdout",
+      "caseName": "row0-anchor-repair",
+      "seed": 7,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 10,
+          "wallClockSeconds": 0.9011851250000036,
+          "serviceCount": 0,
+          "residentialCount": 1,
+          "stopReason": "stale-iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 10,
+          "wallClockSeconds": 0.8991394579999978,
+          "serviceCount": 0,
+          "residentialCount": 1,
+          "stopReason": "stale-iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 12,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 10,
+          "wallClockSeconds": 0.9178242089999985,
+          "serviceCount": 0,
+          "residentialCount": 1,
+          "stopReason": "stale-iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 12,
+          "learnedWindowRankingWins": 1
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.0020456670000057464
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.01663908399999492
+        }
+      ]
+    },
+    {
+      "split": "holdout",
+      "caseName": "row0-anchor-repair",
+      "seed": 19,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 10,
+          "wallClockSeconds": 0.9342267920000012,
+          "serviceCount": 0,
+          "residentialCount": 1,
+          "stopReason": "stale-iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 10,
+          "wallClockSeconds": 0.9261180839999943,
+          "serviceCount": 0,
+          "residentialCount": 1,
+          "stopReason": "stale-iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 12,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 10,
+          "wallClockSeconds": 0.913171957999999,
+          "serviceCount": 0,
+          "residentialCount": 1,
+          "stopReason": "stale-iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 12,
+          "learnedWindowRankingWins": 1
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.008108708000006959
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.021054834000002298
+        }
+      ]
+    },
+    {
+      "split": "holdout",
+      "caseName": "row0-anchor-repair",
+      "seed": 37,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 10,
+          "wallClockSeconds": 0.8916428749999977,
+          "serviceCount": 0,
+          "residentialCount": 1,
+          "stopReason": "stale-iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 10,
+          "wallClockSeconds": 0.9075634579999969,
+          "serviceCount": 0,
+          "residentialCount": 1,
+          "stopReason": "stale-iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 12,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 10,
+          "wallClockSeconds": 0.9198845000000001,
+          "serviceCount": 0,
+          "residentialCount": 1,
+          "stopReason": "stale-iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 12,
+          "learnedWindowRankingWins": 1
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.01592058299999921
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.02824162500000238
+        }
+      ]
+    },
+    {
+      "split": "holdout",
+      "caseName": "lns-corridor-split-pressure",
+      "seed": 7,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 495,
+          "wallClockSeconds": 1.0302837919999948,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 495,
+          "wallClockSeconds": 0.9911411670000015,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 495,
+          "wallClockSeconds": 0.9864617920000018,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 2
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.039142624999993214
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.04382199999999292
+        }
+      ]
+    },
+    {
+      "split": "holdout",
+      "caseName": "lns-corridor-split-pressure",
+      "seed": 19,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 495,
+          "wallClockSeconds": 0.9677459999999992,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 495,
+          "wallClockSeconds": 0.9741872909999947,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 495,
+          "wallClockSeconds": 0.9890490419999988,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 2
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.006441290999995464
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.02130304199999955
+        }
+      ]
+    },
+    {
+      "split": "holdout",
+      "caseName": "lns-corridor-split-pressure",
+      "seed": 37,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 495,
+          "wallClockSeconds": 0.9699881669999886,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 495,
+          "wallClockSeconds": 0.9610429589999985,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 495,
+          "wallClockSeconds": 0.9725669580000104,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 2
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.008945207999990101
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.002578791000021785
+        }
+      ]
+    },
+    {
+      "split": "holdout",
+      "caseName": "lns-gate-choke-pressure",
+      "seed": 7,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 540,
+          "wallClockSeconds": 0.9952698339999916,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 540,
+          "wallClockSeconds": 0.9487308330000087,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 540,
+          "wallClockSeconds": 0.9401086670000077,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 1
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.04653900099998287
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.05516116699998386
+        }
+      ]
+    },
+    {
+      "split": "holdout",
+      "caseName": "lns-gate-choke-pressure",
+      "seed": 19,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 540,
+          "wallClockSeconds": 0.931431792000003,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 540,
+          "wallClockSeconds": 1.2636479589999945,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 540,
+          "wallClockSeconds": 1.8565675829999964,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 1
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.33221616699999146
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.9251357909999933
+        }
+      ]
+    },
+    {
+      "split": "holdout",
+      "caseName": "lns-gate-choke-pressure",
+      "seed": 37,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 540,
+          "wallClockSeconds": 1.8361307919999963,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 540,
+          "wallClockSeconds": 1.0128109169999953,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 540,
+          "wallClockSeconds": 0.9747439589999994,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 1
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.823319875000001
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.8613868329999969
+        }
+      ]
+    },
+    {
+      "split": "holdout",
+      "caseName": "lns-anchor-split-pressure",
+      "seed": 7,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 470,
+          "wallClockSeconds": 1.0406235000000015,
+          "serviceCount": 1,
+          "residentialCount": 2,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 470,
+          "wallClockSeconds": 1.038732707999996,
+          "serviceCount": 1,
+          "residentialCount": 2,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 470,
+          "wallClockSeconds": 1.1039680410000001,
+          "serviceCount": 1,
+          "residentialCount": 2,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 1
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.0018907920000055256
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.06334454099999864
+        }
+      ]
+    },
+    {
+      "split": "holdout",
+      "caseName": "lns-anchor-split-pressure",
+      "seed": 19,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 470,
+          "wallClockSeconds": 1.0408572080000014,
+          "serviceCount": 1,
+          "residentialCount": 2,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 470,
+          "wallClockSeconds": 1.0100491249999906,
+          "serviceCount": 1,
+          "residentialCount": 2,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 470,
+          "wallClockSeconds": 1.018359208000009,
+          "serviceCount": 1,
+          "residentialCount": 2,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 1
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.03080808300001081
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.022497999999992357
+        }
+      ]
+    },
+    {
+      "split": "holdout",
+      "caseName": "lns-anchor-split-pressure",
+      "seed": 37,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 470,
+          "wallClockSeconds": 1.0015082089999923,
+          "serviceCount": 1,
+          "residentialCount": 2,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 470,
+          "wallClockSeconds": 1.0191922499999928,
+          "serviceCount": 1,
+          "residentialCount": 2,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 470,
+          "wallClockSeconds": 1.1023473340000054,
+          "serviceCount": 1,
+          "residentialCount": 2,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 1
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.01768404100000054
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.10083912500001313
+        }
+      ]
+    },
+    {
+      "split": "holdout",
+      "caseName": "lns-footprint-split-pressure",
+      "seed": 7,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 495,
+          "wallClockSeconds": 1.086642915999997,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 495,
+          "wallClockSeconds": 1.1663810000000085,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 495,
+          "wallClockSeconds": 1.1792550419999899,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 2
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.07973808400001148
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.0926121259999928
+        }
+      ]
+    },
+    {
+      "split": "holdout",
+      "caseName": "lns-footprint-split-pressure",
+      "seed": 19,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 495,
+          "wallClockSeconds": 1.0057097500000092,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 495,
+          "wallClockSeconds": 1.0117837909999943,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 495,
+          "wallClockSeconds": 1.043455084000001,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 2
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.0060740409999850975
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.037745333999991804
+        }
+      ]
+    },
+    {
+      "split": "holdout",
+      "caseName": "lns-footprint-split-pressure",
+      "seed": 37,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 495,
+          "wallClockSeconds": 1.0110580840000039,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 495,
+          "wallClockSeconds": 0.9956922499999927,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 495,
+          "wallClockSeconds": 1.0364638750000013,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 2
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.015365834000011125
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.025405790999997402
+        }
+      ]
+    },
+    {
+      "split": "holdout",
+      "caseName": "lns-service-overlap-pressure",
+      "seed": 7,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 740,
+          "wallClockSeconds": 1.6808952500000014,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 740,
+          "wallClockSeconds": 1.593023874999999,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 740,
+          "wallClockSeconds": 1.7342368329999882,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 1
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.08787137500000242
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.053341582999986814
+        }
+      ]
+    },
+    {
+      "split": "holdout",
+      "caseName": "lns-service-overlap-pressure",
+      "seed": 19,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 740,
+          "wallClockSeconds": 1.7326167920000006,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 740,
+          "wallClockSeconds": 1.6588015830000076,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 740,
+          "wallClockSeconds": 1.6085040829999926,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 1
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.07381520899999305
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.12411270900000804
+        }
+      ]
+    },
+    {
+      "split": "holdout",
+      "caseName": "lns-service-overlap-pressure",
+      "seed": 37,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 740,
+          "wallClockSeconds": 1.5798832499999989,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 0,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 740,
+          "wallClockSeconds": 1.5597297500000131,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 740,
+          "wallClockSeconds": 1.5576133750000007,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "learnedWindowRankingEvaluations": 24,
+          "learnedWindowRankingWins": 1
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.020153499999985725
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": -0.022269874999998107
+        }
+      ]
+    }
+  ],
+  "summaries": [
+    {
+      "variantName": "learned-guarded",
+      "split": "development",
+      "comparisonCount": 18,
+      "winCount": 0,
+      "tieCount": 18,
+      "lossCount": 0,
+      "winRate": 0,
+      "lossRate": 0,
+      "meanPopulationDeltaVsBaseline": 0,
+      "medianPopulationDeltaVsBaseline": 0,
+      "worstDecilePopulationDeltaVsBaseline": 0,
+      "bestPopulationDeltaVsBaseline": 0,
+      "meanWallClockDeltaVsBaselineSeconds": 0.0010242753888901365,
+      "learnedWindowRankingEvaluations": 396,
+      "learnedWindowRankingWins": 0
+    },
+    {
+      "variantName": "learned-guarded",
+      "split": "holdout",
+      "comparisonCount": 18,
+      "winCount": 0,
+      "tieCount": 18,
+      "lossCount": 0,
+      "winRate": 0,
+      "lossRate": 0,
+      "meanPopulationDeltaVsBaseline": 0,
+      "medianPopulationDeltaVsBaseline": 0,
+      "worstDecilePopulationDeltaVsBaseline": 0,
+      "bestPopulationDeltaVsBaseline": 0,
+      "meanWallClockDeltaVsBaselineSeconds": -0.038885092777778074,
+      "learnedWindowRankingEvaluations": 396,
+      "learnedWindowRankingWins": 0
+    },
+    {
+      "variantName": "learned-guarded",
+      "split": "all",
+      "comparisonCount": 36,
+      "winCount": 0,
+      "tieCount": 36,
+      "lossCount": 0,
+      "winRate": 0,
+      "lossRate": 0,
+      "meanPopulationDeltaVsBaseline": 0,
+      "medianPopulationDeltaVsBaseline": 0,
+      "worstDecilePopulationDeltaVsBaseline": 0,
+      "bestPopulationDeltaVsBaseline": 0,
+      "meanWallClockDeltaVsBaselineSeconds": -0.01893040869444397,
+      "learnedWindowRankingEvaluations": 792,
+      "learnedWindowRankingWins": 0
+    },
+    {
+      "variantName": "learned-exploratory",
+      "split": "development",
+      "comparisonCount": 18,
+      "winCount": 3,
+      "tieCount": 15,
+      "lossCount": 0,
+      "winRate": 0.16666666666666666,
+      "lossRate": 0,
+      "meanPopulationDeltaVsBaseline": 12.5,
+      "medianPopulationDeltaVsBaseline": 0,
+      "worstDecilePopulationDeltaVsBaseline": 0,
+      "bestPopulationDeltaVsBaseline": 75,
+      "meanWallClockDeltaVsBaselineSeconds": 0.004462768333333539,
+      "learnedWindowRankingEvaluations": 399,
+      "learnedWindowRankingWins": 21
+    },
+    {
+      "variantName": "learned-exploratory",
+      "split": "holdout",
+      "comparisonCount": 18,
+      "winCount": 0,
+      "tieCount": 18,
+      "lossCount": 0,
+      "winRate": 0,
+      "lossRate": 0,
+      "meanPopulationDeltaVsBaseline": 0,
+      "medianPopulationDeltaVsBaseline": 0,
+      "worstDecilePopulationDeltaVsBaseline": 0,
+      "bestPopulationDeltaVsBaseline": 0,
+      "meanWallClockDeltaVsBaselineSeconds": 0.012048967500001007,
+      "learnedWindowRankingEvaluations": 396,
+      "learnedWindowRankingWins": 24
+    },
+    {
+      "variantName": "learned-exploratory",
+      "split": "all",
+      "comparisonCount": 36,
+      "winCount": 3,
+      "tieCount": 33,
+      "lossCount": 0,
+      "winRate": 0.08333333333333333,
+      "lossRate": 0,
+      "meanPopulationDeltaVsBaseline": 6.25,
+      "medianPopulationDeltaVsBaseline": 0,
+      "worstDecilePopulationDeltaVsBaseline": 0,
+      "bestPopulationDeltaVsBaseline": 75,
+      "meanWallClockDeltaVsBaselineSeconds": 0.008255867916667273,
+      "learnedWindowRankingEvaluations": 795,
+      "learnedWindowRankingWins": 45
+    }
+  ],
+  "gate": {
+    "passed": true,
+    "failedReasons": [],
+    "protectedHoldout": true,
+    "promotedVariant": "learned-guarded",
+    "holdout": {
+      "variantName": "learned-guarded",
+      "split": "holdout",
+      "comparisonCount": 18,
+      "winCount": 0,
+      "tieCount": 18,
+      "lossCount": 0,
+      "winRate": 0,
+      "lossRate": 0,
+      "meanPopulationDeltaVsBaseline": 0,
+      "medianPopulationDeltaVsBaseline": 0,
+      "worstDecilePopulationDeltaVsBaseline": 0,
+      "bestPopulationDeltaVsBaseline": 0,
+      "meanWallClockDeltaVsBaselineSeconds": -0.038885092777778074,
+      "learnedWindowRankingEvaluations": 396,
+      "learnedWindowRankingWins": 0
+    }
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "decision": "lns-learned-window-ranking-ready-for-default-review",
+  "summary": "Feature-flagged LNS learned window ranking passed online A/B: guarded holdout median delta 0, worst-decile 0, losses 0, mean wall delta -0.0389s. Exploratory holdout mean delta 0, losses 0. No default changed."
+}

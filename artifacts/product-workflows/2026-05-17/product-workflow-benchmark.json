@@ -1,0 +1,418 @@
+{
+  "generatedAt": "2026-05-17T00:55:30.748Z",
+  "caseCount": 6,
+  "selectedCaseNames": [
+    "planner-corridor-reuse",
+    "planner-gate-choke",
+    "planner-footprint-pressure",
+    "planner-service-overlap",
+    "planner-anchor-service",
+    "planner-multi-anchor-islands"
+  ],
+  "passed": true,
+  "budgetsSeconds": [
+    1,
+    5
+  ],
+  "seeds": [
+    7
+  ],
+  "results": [
+    {
+      "name": "planner-corridor-reuse",
+      "description": "Saved corridor payload with manual road cleanup and expansion replay.",
+      "family": "corridor",
+      "split": "development",
+      "gridRows": 4,
+      "gridCols": 6,
+      "payloadValidation": {
+        "valid": true,
+        "errors": []
+      },
+      "manualReplay": {
+        "valid": true,
+        "totalPopulation": 40,
+        "roadCount": 3,
+        "serviceCount": 0,
+        "residentialCount": 1,
+        "errors": []
+      },
+      "budgetResults": [
+        {
+          "budgetSeconds": 1,
+          "seed": 7,
+          "totalPopulation": 130,
+          "valid": true,
+          "errors": [],
+          "roadCount": 2,
+          "serviceCount": 1,
+          "residentialCount": 2,
+          "wallClockSeconds": 0.037
+        },
+        {
+          "budgetSeconds": 5,
+          "seed": 7,
+          "totalPopulation": 130,
+          "valid": true,
+          "errors": [],
+          "roadCount": 2,
+          "serviceCount": 1,
+          "residentialCount": 2,
+          "wallClockSeconds": 0.015
+        }
+      ],
+      "expansion": {
+        "baselinePopulation": 40,
+        "serviceCandidateName": "Kiosk",
+        "servicePopulation": 65,
+        "serviceDelta": 25,
+        "residentialCandidateName": "Infill Studio",
+        "residentialPopulation": 80,
+        "residentialDelta": 40,
+        "winner": "Add Infill Studio",
+        "valid": true,
+        "errors": []
+      },
+      "passed": true
+    },
+    {
+      "name": "planner-gate-choke",
+      "description": "Gate-shaped map with an explicit central access check.",
+      "family": "gate",
+      "split": "development",
+      "gridRows": 5,
+      "gridCols": 5,
+      "payloadValidation": {
+        "valid": true,
+        "errors": []
+      },
+      "manualReplay": {
+        "valid": true,
+        "totalPopulation": 10,
+        "roadCount": 2,
+        "serviceCount": 0,
+        "residentialCount": 1,
+        "errors": []
+      },
+      "budgetResults": [
+        {
+          "budgetSeconds": 1,
+          "seed": 7,
+          "totalPopulation": 60,
+          "valid": true,
+          "errors": [],
+          "roadCount": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "wallClockSeconds": 0.021
+        },
+        {
+          "budgetSeconds": 5,
+          "seed": 7,
+          "totalPopulation": 60,
+          "valid": true,
+          "errors": [],
+          "roadCount": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "wallClockSeconds": 0.016
+        }
+      ],
+      "expansion": {
+        "baselinePopulation": 10,
+        "serviceCandidateName": "Gate Plaza",
+        "servicePopulation": 20,
+        "serviceDelta": 10,
+        "residentialCandidateName": "Gate Loft",
+        "residentialPopulation": 25,
+        "residentialDelta": 15,
+        "winner": "Add Gate Loft",
+        "valid": true,
+        "errors": []
+      },
+      "passed": true
+    },
+    {
+      "name": "planner-footprint-pressure",
+      "description": "Dense footprint pressure payload with large residential slabs.",
+      "family": "footprint-pressure",
+      "split": "development",
+      "gridRows": 5,
+      "gridCols": 5,
+      "payloadValidation": {
+        "valid": true,
+        "errors": []
+      },
+      "manualReplay": {
+        "valid": true,
+        "totalPopulation": 60,
+        "roadCount": 0,
+        "serviceCount": 0,
+        "residentialCount": 1,
+        "errors": []
+      },
+      "budgetResults": [
+        {
+          "budgetSeconds": 1,
+          "seed": 7,
+          "totalPopulation": 140,
+          "valid": true,
+          "errors": [],
+          "roadCount": 0,
+          "serviceCount": 1,
+          "residentialCount": 2,
+          "wallClockSeconds": 0.023
+        },
+        {
+          "budgetSeconds": 5,
+          "seed": 7,
+          "totalPopulation": 140,
+          "valid": true,
+          "errors": [],
+          "roadCount": 0,
+          "serviceCount": 1,
+          "residentialCount": 2,
+          "wallClockSeconds": 0.024
+        }
+      ],
+      "expansion": {
+        "baselinePopulation": 60,
+        "serviceCandidateName": "Pocket Park",
+        "servicePopulation": 75,
+        "serviceDelta": 15,
+        "residentialCandidateName": "Narrow Slab",
+        "residentialPopulation": 120,
+        "residentialDelta": 60,
+        "winner": "Add Narrow Slab",
+        "valid": true,
+        "errors": []
+      },
+      "passed": true
+    },
+    {
+      "name": "planner-service-overlap",
+      "description": "Service-overlap case where expansion can trade another service against another home.",
+      "family": "service-overlap",
+      "split": "holdout",
+      "gridRows": 6,
+      "gridCols": 6,
+      "payloadValidation": {
+        "valid": true,
+        "errors": []
+      },
+      "manualReplay": {
+        "valid": true,
+        "totalPopulation": 65,
+        "roadCount": 2,
+        "serviceCount": 1,
+        "residentialCount": 1,
+        "errors": []
+      },
+      "budgetResults": [
+        {
+          "budgetSeconds": 1,
+          "seed": 7,
+          "totalPopulation": 130,
+          "valid": true,
+          "errors": [],
+          "roadCount": 1,
+          "serviceCount": 1,
+          "residentialCount": 2,
+          "wallClockSeconds": 0.068
+        },
+        {
+          "budgetSeconds": 5,
+          "seed": 7,
+          "totalPopulation": 130,
+          "valid": true,
+          "errors": [],
+          "roadCount": 1,
+          "serviceCount": 1,
+          "residentialCount": 2,
+          "wallClockSeconds": 0.067
+        }
+      ],
+      "expansion": {
+        "baselinePopulation": 65,
+        "serviceCandidateName": "School",
+        "servicePopulation": 80,
+        "serviceDelta": 15,
+        "residentialCandidateName": "Studio Add",
+        "residentialPopulation": 130,
+        "residentialDelta": 65,
+        "winner": "Add Studio Add",
+        "valid": true,
+        "errors": []
+      },
+      "passed": true
+    },
+    {
+      "name": "planner-anchor-service",
+      "description": "Boundary-touching service and housing payload that should stay road-light.",
+      "family": "anchor-service",
+      "split": "holdout",
+      "gridRows": 4,
+      "gridCols": 4,
+      "payloadValidation": {
+        "valid": true,
+        "errors": []
+      },
+      "manualReplay": {
+        "valid": true,
+        "totalPopulation": 20,
+        "roadCount": 0,
+        "serviceCount": 1,
+        "residentialCount": 1,
+        "errors": []
+      },
+      "budgetResults": [
+        {
+          "budgetSeconds": 1,
+          "seed": 7,
+          "totalPopulation": 120,
+          "valid": true,
+          "errors": [],
+          "roadCount": 0,
+          "serviceCount": 1,
+          "residentialCount": 2,
+          "wallClockSeconds": 0.007
+        },
+        {
+          "budgetSeconds": 5,
+          "seed": 7,
+          "totalPopulation": 120,
+          "valid": true,
+          "errors": [],
+          "roadCount": 0,
+          "serviceCount": 1,
+          "residentialCount": 2,
+          "wallClockSeconds": 0.006
+        }
+      ],
+      "expansion": {
+        "baselinePopulation": 20,
+        "serviceCandidateName": "Anchor Shop",
+        "servicePopulation": 75,
+        "serviceDelta": 55,
+        "residentialCandidateName": "Anchor Studio",
+        "residentialPopulation": 120,
+        "residentialDelta": 100,
+        "winner": "Add Anchor Studio",
+        "valid": true,
+        "errors": []
+      },
+      "passed": true
+    },
+    {
+      "name": "planner-multi-anchor-islands",
+      "description": "Planner-shaped multi-anchor payload with two independent islands.",
+      "family": "multi-anchor",
+      "split": "holdout",
+      "gridRows": 4,
+      "gridCols": 6,
+      "payloadValidation": {
+        "valid": true,
+        "errors": []
+      },
+      "manualReplay": {
+        "valid": true,
+        "totalPopulation": 80,
+        "roadCount": 4,
+        "serviceCount": 0,
+        "residentialCount": 2,
+        "errors": []
+      },
+      "budgetResults": [
+        {
+          "budgetSeconds": 1,
+          "seed": 7,
+          "totalPopulation": 50,
+          "valid": true,
+          "errors": [],
+          "roadCount": 2,
+          "serviceCount": 0,
+          "residentialCount": 2,
+          "wallClockSeconds": 0
+        },
+        {
+          "budgetSeconds": 5,
+          "seed": 7,
+          "totalPopulation": 50,
+          "valid": true,
+          "errors": [],
+          "roadCount": 2,
+          "serviceCount": 0,
+          "residentialCount": 2,
+          "wallClockSeconds": 0
+        }
+      ],
+      "expansion": {
+        "baselinePopulation": 80,
+        "serviceCandidateName": null,
+        "servicePopulation": null,
+        "serviceDelta": null,
+        "residentialCandidateName": "Island Pod",
+        "residentialPopulation": 55,
+        "residentialDelta": -25,
+        "winner": "Remain current layout",
+        "valid": true,
+        "errors": []
+      },
+      "passed": true
+    }
+  ],
+  "registryHints": {
+    "artifactType": "benchmark",
+    "cases": [
+      "planner-corridor-reuse",
+      "planner-gate-choke",
+      "planner-footprint-pressure",
+      "planner-service-overlap",
+      "planner-anchor-service",
+      "planner-multi-anchor-islands"
+    ],
+    "caseFamilies": [
+      "anchor-service",
+      "corridor",
+      "footprint-pressure",
+      "gate",
+      "multi-anchor",
+      "service-overlap"
+    ],
+    "seeds": [
+      7
+    ],
+    "splitStatus": {
+      "development": [
+        "planner-corridor-reuse",
+        "planner-gate-choke",
+        "planner-footprint-pressure"
+      ],
+      "holdout": [
+        "planner-service-overlap",
+        "planner-anchor-service",
+        "planner-multi-anchor-islands"
+      ]
+    },
+    "budget": {
+      "budgetsSeconds": [
+        1,
+        5
+      ],
+      "optimizer": "greedy"
+    },
+    "summaryMetrics": {
+      "caseCount": 6,
+      "passedCaseCount": 6,
+      "failedCaseCount": 0,
+      "manualReplayCount": 6,
+      "expansionReplayCount": 6,
+      "budgetRunCount": 12
+    },
+    "artifactPaths": [
+      "artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json"
+    ],
+    "decision": "product-workflow-corpus-ready-for-scorecards",
+    "summary": "Product-shaped planner payload, manual-layout, and expansion-comparison replays passed."
+  }
+}

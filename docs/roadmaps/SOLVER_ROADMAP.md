@@ -119,6 +119,7 @@ Dependencies:
 
 Acceptance gates:
 
+- `npm run benchmark:product-workflows` produces a passing workflow artifact.
 - Add 6-10 saved planner payloads that represent the real web workflow.
 - Add manual-layout replay through `/api/layout/evaluate`.
 - Add expansion-comparison replay.

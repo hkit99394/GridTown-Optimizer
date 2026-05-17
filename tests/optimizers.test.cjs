@@ -54,9 +54,13 @@ const {
   runLnsWindowReplayLabels,
   runLnsBenchmarkSuite,
   DEFAULT_ROAD_SEMANTICS_SCORECARD_CASES,
+  DEFAULT_PRODUCT_WORKFLOW_BENCHMARK_CORPUS,
   evaluateRoadSemanticsScorecardFixtures,
+  evaluateProductWorkflowManualReplays,
   formatRoadSemanticsScorecard,
+  formatProductWorkflowBenchmarkSuite,
   listRoadSemanticsScorecardCaseNames,
+  listProductWorkflowBenchmarkCaseNames,
 } = require("../dist/benchmarks/index.js");
 
 const {
@@ -3458,6 +3462,67 @@ function testRoadSemanticsScorecardCorpusHelpers() {
       },
     }),
     /Road Semantics Scorecard/
+  );
+}
+
+function testProductWorkflowBenchmarkCorpusHelpers() {
+  const names = DEFAULT_PRODUCT_WORKFLOW_BENCHMARK_CORPUS.map((entry) => entry.name);
+  assert.equal(new Set(names).size, names.length);
+  assert.deepEqual(listProductWorkflowBenchmarkCaseNames(), names);
+  assert.equal(names.length, 6);
+  assert(names.includes("planner-corridor-reuse"));
+  assert(names.includes("planner-gate-choke"));
+  assert(names.includes("planner-footprint-pressure"));
+  assert(names.includes("planner-service-overlap"));
+  assert(names.includes("planner-anchor-service"));
+  assert(names.includes("planner-multi-anchor-islands"));
+
+  const families = new Set(DEFAULT_PRODUCT_WORKFLOW_BENCHMARK_CORPUS.map((entry) => entry.family));
+  assert(families.has("corridor"));
+  assert(families.has("gate"));
+  assert(families.has("footprint-pressure"));
+  assert(families.has("service-overlap"));
+  assert(families.has("anchor-service"));
+  assert(families.has("multi-anchor"));
+
+  const splits = new Set(DEFAULT_PRODUCT_WORKFLOW_BENCHMARK_CORPUS.map((entry) => entry.split));
+  assert(splits.has("development"));
+  assert(splits.has("holdout"));
+
+  const manualReplays = evaluateProductWorkflowManualReplays();
+  assert.equal(manualReplays.length, 6);
+  assert.equal(manualReplays.every((replay) => replay.valid), true);
+
+  assert.match(
+    formatProductWorkflowBenchmarkSuite({
+      generatedAt: "2026-05-17T00:00:00.000Z",
+      caseCount: 0,
+      selectedCaseNames: [],
+      passed: true,
+      budgetsSeconds: [1, 5],
+      seeds: [7],
+      results: [],
+      registryHints: {
+        artifactType: "benchmark",
+        cases: [],
+        caseFamilies: [],
+        seeds: [7],
+        splitStatus: { development: [], holdout: [] },
+        budget: { budgetsSeconds: [1, 5], optimizer: "greedy" },
+        summaryMetrics: {
+          caseCount: 0,
+          passedCaseCount: 0,
+          failedCaseCount: 0,
+          manualReplayCount: 0,
+          expansionReplayCount: 0,
+          budgetRunCount: 0,
+        },
+        artifactPaths: [],
+        decision: "product-workflow-corpus-ready-for-scorecards",
+        summary: "No cases selected.",
+      },
+    }),
+    /Product Workflow Benchmark Suite/
   );
 }
 
@@ -8463,6 +8528,7 @@ async function main() {
   testGreedyGroupedServiceScoringDiscountsLimitedFallbackTypes();
   await testCpSatBenchmarkCorpusHelpers();
   testRoadSemanticsScorecardCorpusHelpers();
+  testProductWorkflowBenchmarkCorpusHelpers();
   testLnsBenchmarkCorpusHelpers();
   testLnsNeighborhoodAblationRunner();
   testLnsNeighborhoodAblationWindowSequenceMovement();

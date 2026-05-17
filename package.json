@@ -17,6 +17,7 @@
     "benchmark:lns": "npm run build && node dist/lnsBenchmarkCli.js",
     "benchmark:labels": "npm run build && node dist/learnedRankingLabelCli.js",
     "benchmark:road-semantics": "npm run build && node dist/roadSemanticsScorecardCli.js",
+    "benchmark:product-workflows": "npm run build && node dist/productWorkflowBenchmarkCli.js",
     "benchmark:scorecard": "npm run build && node dist/crossModeBenchmarkCli.js",
     "experiment-registry": "npm run build && node dist/experimentRegistryCli.js",
     "experiment-registry:check": "npm run build && node dist/experimentRegistryCli.js check",

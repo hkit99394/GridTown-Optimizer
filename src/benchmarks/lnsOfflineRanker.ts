@@ -190,13 +190,41 @@ type LnsOfflineRankerBaseFeatureName =
   | "left"
   | "rows"
   | "cols"
+  | "operatorWeakServiceRepair"
+  | "operatorResidentialHeadroomRepair"
+  | "operatorFrontierCongestionRepair"
+  | "operatorGateChokeRepair"
+  | "operatorServiceOverlapRepair"
+  | "operatorRandomExploration"
+  | "operatorSlidingWindow"
+  | "operatorScore"
+  | "operatorExploration"
+  | "candidateWindowCount"
+  | "candidateRankRatio"
   | "area"
+  | "windowAreaRatio"
   | "touchesRoadAnchorBoundary"
+  | "touchesTopBoundary"
+  | "touchesLeftBoundary"
+  | "minAnchorDistance"
+  | "anchorBoundaryCellCount"
+  | "anchorBoundaryCoverageRatio"
+  | "allowedCellCountInside"
+  | "blockedCellCountInside"
   | "roadCountInside"
   | "serviceCountInside"
+  | "serviceFootprintCellsInside"
   | "residentialCountInside"
+  | "residentialFootprintCellsInside"
+  | "occupiedBuildingCellCountInside"
+  | "emptyAllowedCellCountInside"
+  | "roadDensityInside"
+  | "buildingDensityInside"
+  | "emptyAllowedRatioInside"
   | "residentialHeadroomInside"
+  | "residentialHeadroomDensityInside"
   | "serviceBonusInside"
+  | "serviceBonusDensityInside"
   | "selectedByBaseline"
   | "windowIndex"
   | "baselineRankScore"
@@ -216,13 +244,41 @@ const LNS_OFFLINE_RANKER_BASE_FEATURE_NAMES: readonly LnsOfflineRankerBaseFeatur
   "left",
   "rows",
   "cols",
+  "operatorWeakServiceRepair",
+  "operatorResidentialHeadroomRepair",
+  "operatorFrontierCongestionRepair",
+  "operatorGateChokeRepair",
+  "operatorServiceOverlapRepair",
+  "operatorRandomExploration",
+  "operatorSlidingWindow",
+  "operatorScore",
+  "operatorExploration",
+  "candidateWindowCount",
+  "candidateRankRatio",
   "area",
+  "windowAreaRatio",
   "touchesRoadAnchorBoundary",
+  "touchesTopBoundary",
+  "touchesLeftBoundary",
+  "minAnchorDistance",
+  "anchorBoundaryCellCount",
+  "anchorBoundaryCoverageRatio",
+  "allowedCellCountInside",
+  "blockedCellCountInside",
   "roadCountInside",
   "serviceCountInside",
+  "serviceFootprintCellsInside",
   "residentialCountInside",
+  "residentialFootprintCellsInside",
+  "occupiedBuildingCellCountInside",
+  "emptyAllowedCellCountInside",
+  "roadDensityInside",
+  "buildingDensityInside",
+  "emptyAllowedRatioInside",
   "residentialHeadroomInside",
+  "residentialHeadroomDensityInside",
   "serviceBonusInside",
+  "serviceBonusDensityInside",
   "selectedByBaseline",
   "windowIndex",
   "baselineRankScore",
@@ -275,20 +331,76 @@ function windowFeatureValue(
       return window.rows;
     case "cols":
       return window.cols;
+    case "operatorWeakServiceRepair":
+      return features.operatorName === "weak-service-repair" ? 1 : 0;
+    case "operatorResidentialHeadroomRepair":
+      return features.operatorName === "residential-headroom-repair" ? 1 : 0;
+    case "operatorFrontierCongestionRepair":
+      return features.operatorName === "frontier-congestion-repair" ? 1 : 0;
+    case "operatorGateChokeRepair":
+      return features.operatorName === "gate-choke-repair" ? 1 : 0;
+    case "operatorServiceOverlapRepair":
+      return features.operatorName === "service-overlap-repair" ? 1 : 0;
+    case "operatorRandomExploration":
+      return features.operatorName === "random-exploration" ? 1 : 0;
+    case "operatorSlidingWindow":
+      return features.operatorName === "sliding-window" ? 1 : 0;
+    case "operatorScore":
+      return finiteOrZero(features.operatorScore);
+    case "operatorExploration":
+      return boolFeature(features.operatorExploration);
+    case "candidateWindowCount":
+      return finiteOrZero(features.candidateWindowCount);
+    case "candidateRankRatio":
+      return finiteOrZero(features.candidateRankRatio);
     case "area":
       return finiteOrZero(features.area) || window.rows * window.cols;
+    case "windowAreaRatio":
+      return finiteOrZero(features.windowAreaRatio);
     case "touchesRoadAnchorBoundary":
       return boolFeature(features.touchesRoadAnchorBoundary);
+    case "touchesTopBoundary":
+      return boolFeature(features.touchesTopBoundary);
+    case "touchesLeftBoundary":
+      return boolFeature(features.touchesLeftBoundary);
+    case "minAnchorDistance":
+      return finiteOrZero(features.minAnchorDistance);
+    case "anchorBoundaryCellCount":
+      return finiteOrZero(features.anchorBoundaryCellCount);
+    case "anchorBoundaryCoverageRatio":
+      return finiteOrZero(features.anchorBoundaryCoverageRatio);
+    case "allowedCellCountInside":
+      return finiteOrZero(features.allowedCellCountInside);
+    case "blockedCellCountInside":
+      return finiteOrZero(features.blockedCellCountInside);
     case "roadCountInside":
       return finiteOrZero(features.roadCountInside);
     case "serviceCountInside":
       return finiteOrZero(features.serviceCountInside);
+    case "serviceFootprintCellsInside":
+      return finiteOrZero(features.serviceFootprintCellsInside);
     case "residentialCountInside":
       return finiteOrZero(features.residentialCountInside);
+    case "residentialFootprintCellsInside":
+      return finiteOrZero(features.residentialFootprintCellsInside);
+    case "occupiedBuildingCellCountInside":
+      return finiteOrZero(features.occupiedBuildingCellCountInside);
+    case "emptyAllowedCellCountInside":
+      return finiteOrZero(features.emptyAllowedCellCountInside);
+    case "roadDensityInside":
+      return finiteOrZero(features.roadDensityInside);
+    case "buildingDensityInside":
+      return finiteOrZero(features.buildingDensityInside);
+    case "emptyAllowedRatioInside":
+      return finiteOrZero(features.emptyAllowedRatioInside);
     case "residentialHeadroomInside":
       return finiteOrZero(features.residentialHeadroomInside);
+    case "residentialHeadroomDensityInside":
+      return finiteOrZero(features.residentialHeadroomDensityInside);
     case "serviceBonusInside":
       return finiteOrZero(features.serviceBonusInside);
+    case "serviceBonusDensityInside":
+      return finiteOrZero(features.serviceBonusDensityInside);
     case "selectedByBaseline":
       return boolFeature(summary.selectedByBaseline);
     case "windowIndex":

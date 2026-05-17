@@ -1,0 +1,2620 @@
+{
+  "generatedAt": "2026-05-17T16:11:32.097Z",
+  "schemaVersion": 1,
+  "seeds": [
+    7,
+    19,
+    37
+  ],
+  "splitCount": 2,
+  "audit": {
+    "cpuOnly": true,
+    "runtimeIntegration": false,
+    "solverDefaultsChanged": false,
+    "trainingTarget": "lns-pairwise-window-improvement",
+    "trainedOnNeutralPairs": false
+  },
+  "labels": {
+    "labelCount": 560,
+    "rankedLabelCount": 420,
+    "neutralLabelCount": 140,
+    "splits": [
+      {
+        "split": "development",
+        "selectedCaseNames": [
+          "compact-service-repair",
+          "lns-service-split-pressure",
+          "seeded-service-anchor-pressure",
+          "lns-corridor-squeeze-pressure",
+          "lns-gate-split-pressure",
+          "lns-footprint-mix-pressure"
+        ],
+        "pressureFamilies": [
+          "service-pressure",
+          "anchor-service",
+          "corridor",
+          "gate",
+          "footprint-pressure"
+        ],
+        "seeds": [
+          7,
+          19,
+          37
+        ],
+        "labelCount": 336,
+        "rankedLabelCount": 276,
+        "neutralLabelCount": 60
+      },
+      {
+        "split": "holdout",
+        "selectedCaseNames": [
+          "row0-anchor-repair",
+          "lns-corridor-split-pressure",
+          "lns-gate-choke-pressure",
+          "lns-anchor-split-pressure",
+          "lns-footprint-split-pressure",
+          "lns-service-overlap-pressure"
+        ],
+        "pressureFamilies": [
+          "corridor",
+          "gate",
+          "anchor-service",
+          "footprint-pressure",
+          "service-pressure"
+        ],
+        "seeds": [
+          7,
+          19,
+          37
+        ],
+        "labelCount": 224,
+        "rankedLabelCount": 144,
+        "neutralLabelCount": 80
+      }
+    ],
+    "labelFingerprint": "a9c96de7d7a0f3021941c83a7fbbceb14132a009230be190038e5ed2364d0f9a"
+  },
+  "leakage": {
+    "developmentGreedyCases": [
+      "cap-sweep-mixed",
+      "service-local-neighborhood",
+      "step14-service-lookahead-reranker",
+      "row0-corridor-repair-pressure"
+    ],
+    "holdoutGreedyCases": [
+      "fixed-service-realization-complete",
+      "geometry-occupancy-hot-path",
+      "typed-footprint-pressure",
+      "typed-availability-pressure"
+    ],
+    "developmentLnsCases": [
+      "compact-service-repair",
+      "lns-service-split-pressure",
+      "seeded-service-anchor-pressure",
+      "lns-corridor-squeeze-pressure",
+      "lns-gate-split-pressure",
+      "lns-footprint-mix-pressure"
+    ],
+    "holdoutLnsCases": [
+      "row0-anchor-repair",
+      "lns-corridor-split-pressure",
+      "lns-gate-choke-pressure",
+      "lns-anchor-split-pressure",
+      "lns-footprint-split-pressure",
+      "lns-service-overlap-pressure"
+    ],
+    "greedyOverlap": [],
+    "lnsOverlap": [],
+    "protectedHoldout": true
+  },
+  "model": {
+    "kind": "pairwise-linear",
+    "trainedOnSplit": "development",
+    "cpuOnly": true,
+    "featureNames": [
+      "all:top",
+      "all:left",
+      "all:rows",
+      "all:cols",
+      "all:operatorWeakServiceRepair",
+      "all:operatorResidentialHeadroomRepair",
+      "all:operatorFrontierCongestionRepair",
+      "all:operatorGateChokeRepair",
+      "all:operatorServiceOverlapRepair",
+      "all:operatorRandomExploration",
+      "all:operatorSlidingWindow",
+      "all:operatorScore",
+      "all:operatorExploration",
+      "all:candidateWindowCount",
+      "all:candidateRankRatio",
+      "all:area",
+      "all:windowAreaRatio",
+      "all:touchesRoadAnchorBoundary",
+      "all:touchesTopBoundary",
+      "all:touchesLeftBoundary",
+      "all:minAnchorDistance",
+      "all:anchorBoundaryCellCount",
+      "all:anchorBoundaryCoverageRatio",
+      "all:allowedCellCountInside",
+      "all:blockedCellCountInside",
+      "all:roadCountInside",
+      "all:serviceCountInside",
+      "all:serviceFootprintCellsInside",
+      "all:residentialCountInside",
+      "all:residentialFootprintCellsInside",
+      "all:occupiedBuildingCellCountInside",
+      "all:emptyAllowedCellCountInside",
+      "all:roadDensityInside",
+      "all:buildingDensityInside",
+      "all:emptyAllowedRatioInside",
+      "all:residentialHeadroomInside",
+      "all:residentialHeadroomDensityInside",
+      "all:serviceBonusInside",
+      "all:serviceBonusDensityInside",
+      "all:selectedByBaseline",
+      "all:windowIndex",
+      "all:baselineRankScore",
+      "all:selectionSourceBaselineTopK",
+      "all:selectionSourceExplorationTail",
+      "all:aspectRatio",
+      "all:perimeter",
+      "family:anchor-service:top",
+      "family:anchor-service:left",
+      "family:anchor-service:rows",
+      "family:anchor-service:cols",
+      "family:anchor-service:operatorWeakServiceRepair",
+      "family:anchor-service:operatorResidentialHeadroomRepair",
+      "family:anchor-service:operatorFrontierCongestionRepair",
+      "family:anchor-service:operatorGateChokeRepair",
+      "family:anchor-service:operatorServiceOverlapRepair",
+      "family:anchor-service:operatorRandomExploration",
+      "family:anchor-service:operatorSlidingWindow",
+      "family:anchor-service:operatorScore",
+      "family:anchor-service:operatorExploration",
+      "family:anchor-service:candidateWindowCount",
+      "family:anchor-service:candidateRankRatio",
+      "family:anchor-service:area",
+      "family:anchor-service:windowAreaRatio",
+      "family:anchor-service:touchesRoadAnchorBoundary",
+      "family:anchor-service:touchesTopBoundary",
+      "family:anchor-service:touchesLeftBoundary",
+      "family:anchor-service:minAnchorDistance",
+      "family:anchor-service:anchorBoundaryCellCount",
+      "family:anchor-service:anchorBoundaryCoverageRatio",
+      "family:anchor-service:allowedCellCountInside",
+      "family:anchor-service:blockedCellCountInside",
+      "family:anchor-service:roadCountInside",
+      "family:anchor-service:serviceCountInside",
+      "family:anchor-service:serviceFootprintCellsInside",
+      "family:anchor-service:residentialCountInside",
+      "family:anchor-service:residentialFootprintCellsInside",
+      "family:anchor-service:occupiedBuildingCellCountInside",
+      "family:anchor-service:emptyAllowedCellCountInside",
+      "family:anchor-service:roadDensityInside",
+      "family:anchor-service:buildingDensityInside",
+      "family:anchor-service:emptyAllowedRatioInside",
+      "family:anchor-service:residentialHeadroomInside",
+      "family:anchor-service:residentialHeadroomDensityInside",
+      "family:anchor-service:serviceBonusInside",
+      "family:anchor-service:serviceBonusDensityInside",
+      "family:anchor-service:selectedByBaseline",
+      "family:anchor-service:windowIndex",
+      "family:anchor-service:baselineRankScore",
+      "family:anchor-service:selectionSourceBaselineTopK",
+      "family:anchor-service:selectionSourceExplorationTail",
+      "family:anchor-service:aspectRatio",
+      "family:anchor-service:perimeter",
+      "family:baseline:top",
+      "family:baseline:left",
+      "family:baseline:rows",
+      "family:baseline:cols",
+      "family:baseline:operatorWeakServiceRepair",
+      "family:baseline:operatorResidentialHeadroomRepair",
+      "family:baseline:operatorFrontierCongestionRepair",
+      "family:baseline:operatorGateChokeRepair",
+      "family:baseline:operatorServiceOverlapRepair",
+      "family:baseline:operatorRandomExploration",
+      "family:baseline:operatorSlidingWindow",
+      "family:baseline:operatorScore",
+      "family:baseline:operatorExploration",
+      "family:baseline:candidateWindowCount",
+      "family:baseline:candidateRankRatio",
+      "family:baseline:area",
+      "family:baseline:windowAreaRatio",
+      "family:baseline:touchesRoadAnchorBoundary",
+      "family:baseline:touchesTopBoundary",
+      "family:baseline:touchesLeftBoundary",
+      "family:baseline:minAnchorDistance",
+      "family:baseline:anchorBoundaryCellCount",
+      "family:baseline:anchorBoundaryCoverageRatio",
+      "family:baseline:allowedCellCountInside",
+      "family:baseline:blockedCellCountInside",
+      "family:baseline:roadCountInside",
+      "family:baseline:serviceCountInside",
+      "family:baseline:serviceFootprintCellsInside",
+      "family:baseline:residentialCountInside",
+      "family:baseline:residentialFootprintCellsInside",
+      "family:baseline:occupiedBuildingCellCountInside",
+      "family:baseline:emptyAllowedCellCountInside",
+      "family:baseline:roadDensityInside",
+      "family:baseline:buildingDensityInside",
+      "family:baseline:emptyAllowedRatioInside",
+      "family:baseline:residentialHeadroomInside",
+      "family:baseline:residentialHeadroomDensityInside",
+      "family:baseline:serviceBonusInside",
+      "family:baseline:serviceBonusDensityInside",
+      "family:baseline:selectedByBaseline",
+      "family:baseline:windowIndex",
+      "family:baseline:baselineRankScore",
+      "family:baseline:selectionSourceBaselineTopK",
+      "family:baseline:selectionSourceExplorationTail",
+      "family:baseline:aspectRatio",
+      "family:baseline:perimeter",
+      "family:corridor:top",
+      "family:corridor:left",
+      "family:corridor:rows",
+      "family:corridor:cols",
+      "family:corridor:operatorWeakServiceRepair",
+      "family:corridor:operatorResidentialHeadroomRepair",
+      "family:corridor:operatorFrontierCongestionRepair",
+      "family:corridor:operatorGateChokeRepair",
+      "family:corridor:operatorServiceOverlapRepair",
+      "family:corridor:operatorRandomExploration",
+      "family:corridor:operatorSlidingWindow",
+      "family:corridor:operatorScore",
+      "family:corridor:operatorExploration",
+      "family:corridor:candidateWindowCount",
+      "family:corridor:candidateRankRatio",
+      "family:corridor:area",
+      "family:corridor:windowAreaRatio",
+      "family:corridor:touchesRoadAnchorBoundary",
+      "family:corridor:touchesTopBoundary",
+      "family:corridor:touchesLeftBoundary",
+      "family:corridor:minAnchorDistance",
+      "family:corridor:anchorBoundaryCellCount",
+      "family:corridor:anchorBoundaryCoverageRatio",
+      "family:corridor:allowedCellCountInside",
+      "family:corridor:blockedCellCountInside",
+      "family:corridor:roadCountInside",
+      "family:corridor:serviceCountInside",
+      "family:corridor:serviceFootprintCellsInside",
+      "family:corridor:residentialCountInside",
+      "family:corridor:residentialFootprintCellsInside",
+      "family:corridor:occupiedBuildingCellCountInside",
+      "family:corridor:emptyAllowedCellCountInside",
+      "family:corridor:roadDensityInside",
+      "family:corridor:buildingDensityInside",
+      "family:corridor:emptyAllowedRatioInside",
+      "family:corridor:residentialHeadroomInside",
+      "family:corridor:residentialHeadroomDensityInside",
+      "family:corridor:serviceBonusInside",
+      "family:corridor:serviceBonusDensityInside",
+      "family:corridor:selectedByBaseline",
+      "family:corridor:windowIndex",
+      "family:corridor:baselineRankScore",
+      "family:corridor:selectionSourceBaselineTopK",
+      "family:corridor:selectionSourceExplorationTail",
+      "family:corridor:aspectRatio",
+      "family:corridor:perimeter",
+      "family:footprint-pressure:top",
+      "family:footprint-pressure:left",
+      "family:footprint-pressure:rows",
+      "family:footprint-pressure:cols",
+      "family:footprint-pressure:operatorWeakServiceRepair",
+      "family:footprint-pressure:operatorResidentialHeadroomRepair",
+      "family:footprint-pressure:operatorFrontierCongestionRepair",
+      "family:footprint-pressure:operatorGateChokeRepair",
+      "family:footprint-pressure:operatorServiceOverlapRepair",
+      "family:footprint-pressure:operatorRandomExploration",
+      "family:footprint-pressure:operatorSlidingWindow",
+      "family:footprint-pressure:operatorScore",
+      "family:footprint-pressure:operatorExploration",
+      "family:footprint-pressure:candidateWindowCount",
+      "family:footprint-pressure:candidateRankRatio",
+      "family:footprint-pressure:area",
+      "family:footprint-pressure:windowAreaRatio",
+      "family:footprint-pressure:touchesRoadAnchorBoundary",
+      "family:footprint-pressure:touchesTopBoundary",
+      "family:footprint-pressure:touchesLeftBoundary",
+      "family:footprint-pressure:minAnchorDistance",
+      "family:footprint-pressure:anchorBoundaryCellCount",
+      "family:footprint-pressure:anchorBoundaryCoverageRatio",
+      "family:footprint-pressure:allowedCellCountInside",
+      "family:footprint-pressure:blockedCellCountInside",
+      "family:footprint-pressure:roadCountInside",
+      "family:footprint-pressure:serviceCountInside",
+      "family:footprint-pressure:serviceFootprintCellsInside",
+      "family:footprint-pressure:residentialCountInside",
+      "family:footprint-pressure:residentialFootprintCellsInside",
+      "family:footprint-pressure:occupiedBuildingCellCountInside",
+      "family:footprint-pressure:emptyAllowedCellCountInside",
+      "family:footprint-pressure:roadDensityInside",
+      "family:footprint-pressure:buildingDensityInside",
+      "family:footprint-pressure:emptyAllowedRatioInside",
+      "family:footprint-pressure:residentialHeadroomInside",
+      "family:footprint-pressure:residentialHeadroomDensityInside",
+      "family:footprint-pressure:serviceBonusInside",
+      "family:footprint-pressure:serviceBonusDensityInside",
+      "family:footprint-pressure:selectedByBaseline",
+      "family:footprint-pressure:windowIndex",
+      "family:footprint-pressure:baselineRankScore",
+      "family:footprint-pressure:selectionSourceBaselineTopK",
+      "family:footprint-pressure:selectionSourceExplorationTail",
+      "family:footprint-pressure:aspectRatio",
+      "family:footprint-pressure:perimeter",
+      "family:gate:top",
+      "family:gate:left",
+      "family:gate:rows",
+      "family:gate:cols",
+      "family:gate:operatorWeakServiceRepair",
+      "family:gate:operatorResidentialHeadroomRepair",
+      "family:gate:operatorFrontierCongestionRepair",
+      "family:gate:operatorGateChokeRepair",
+      "family:gate:operatorServiceOverlapRepair",
+      "family:gate:operatorRandomExploration",
+      "family:gate:operatorSlidingWindow",
+      "family:gate:operatorScore",
+      "family:gate:operatorExploration",
+      "family:gate:candidateWindowCount",
+      "family:gate:candidateRankRatio",
+      "family:gate:area",
+      "family:gate:windowAreaRatio",
+      "family:gate:touchesRoadAnchorBoundary",
+      "family:gate:touchesTopBoundary",
+      "family:gate:touchesLeftBoundary",
+      "family:gate:minAnchorDistance",
+      "family:gate:anchorBoundaryCellCount",
+      "family:gate:anchorBoundaryCoverageRatio",
+      "family:gate:allowedCellCountInside",
+      "family:gate:blockedCellCountInside",
+      "family:gate:roadCountInside",
+      "family:gate:serviceCountInside",
+      "family:gate:serviceFootprintCellsInside",
+      "family:gate:residentialCountInside",
+      "family:gate:residentialFootprintCellsInside",
+      "family:gate:occupiedBuildingCellCountInside",
+      "family:gate:emptyAllowedCellCountInside",
+      "family:gate:roadDensityInside",
+      "family:gate:buildingDensityInside",
+      "family:gate:emptyAllowedRatioInside",
+      "family:gate:residentialHeadroomInside",
+      "family:gate:residentialHeadroomDensityInside",
+      "family:gate:serviceBonusInside",
+      "family:gate:serviceBonusDensityInside",
+      "family:gate:selectedByBaseline",
+      "family:gate:windowIndex",
+      "family:gate:baselineRankScore",
+      "family:gate:selectionSourceBaselineTopK",
+      "family:gate:selectionSourceExplorationTail",
+      "family:gate:aspectRatio",
+      "family:gate:perimeter",
+      "family:service-pressure:top",
+      "family:service-pressure:left",
+      "family:service-pressure:rows",
+      "family:service-pressure:cols",
+      "family:service-pressure:operatorWeakServiceRepair",
+      "family:service-pressure:operatorResidentialHeadroomRepair",
+      "family:service-pressure:operatorFrontierCongestionRepair",
+      "family:service-pressure:operatorGateChokeRepair",
+      "family:service-pressure:operatorServiceOverlapRepair",
+      "family:service-pressure:operatorRandomExploration",
+      "family:service-pressure:operatorSlidingWindow",
+      "family:service-pressure:operatorScore",
+      "family:service-pressure:operatorExploration",
+      "family:service-pressure:candidateWindowCount",
+      "family:service-pressure:candidateRankRatio",
+      "family:service-pressure:area",
+      "family:service-pressure:windowAreaRatio",
+      "family:service-pressure:touchesRoadAnchorBoundary",
+      "family:service-pressure:touchesTopBoundary",
+      "family:service-pressure:touchesLeftBoundary",
+      "family:service-pressure:minAnchorDistance",
+      "family:service-pressure:anchorBoundaryCellCount",
+      "family:service-pressure:anchorBoundaryCoverageRatio",
+      "family:service-pressure:allowedCellCountInside",
+      "family:service-pressure:blockedCellCountInside",
+      "family:service-pressure:roadCountInside",
+      "family:service-pressure:serviceCountInside",
+      "family:service-pressure:serviceFootprintCellsInside",
+      "family:service-pressure:residentialCountInside",
+      "family:service-pressure:residentialFootprintCellsInside",
+      "family:service-pressure:occupiedBuildingCellCountInside",
+      "family:service-pressure:emptyAllowedCellCountInside",
+      "family:service-pressure:roadDensityInside",
+      "family:service-pressure:buildingDensityInside",
+      "family:service-pressure:emptyAllowedRatioInside",
+      "family:service-pressure:residentialHeadroomInside",
+      "family:service-pressure:residentialHeadroomDensityInside",
+      "family:service-pressure:serviceBonusInside",
+      "family:service-pressure:serviceBonusDensityInside",
+      "family:service-pressure:selectedByBaseline",
+      "family:service-pressure:windowIndex",
+      "family:service-pressure:baselineRankScore",
+      "family:service-pressure:selectionSourceBaselineTopK",
+      "family:service-pressure:selectionSourceExplorationTail",
+      "family:service-pressure:aspectRatio",
+      "family:service-pressure:perimeter",
+      "family:uncategorized:top",
+      "family:uncategorized:left",
+      "family:uncategorized:rows",
+      "family:uncategorized:cols",
+      "family:uncategorized:operatorWeakServiceRepair",
+      "family:uncategorized:operatorResidentialHeadroomRepair",
+      "family:uncategorized:operatorFrontierCongestionRepair",
+      "family:uncategorized:operatorGateChokeRepair",
+      "family:uncategorized:operatorServiceOverlapRepair",
+      "family:uncategorized:operatorRandomExploration",
+      "family:uncategorized:operatorSlidingWindow",
+      "family:uncategorized:operatorScore",
+      "family:uncategorized:operatorExploration",
+      "family:uncategorized:candidateWindowCount",
+      "family:uncategorized:candidateRankRatio",
+      "family:uncategorized:area",
+      "family:uncategorized:windowAreaRatio",
+      "family:uncategorized:touchesRoadAnchorBoundary",
+      "family:uncategorized:touchesTopBoundary",
+      "family:uncategorized:touchesLeftBoundary",
+      "family:uncategorized:minAnchorDistance",
+      "family:uncategorized:anchorBoundaryCellCount",
+      "family:uncategorized:anchorBoundaryCoverageRatio",
+      "family:uncategorized:allowedCellCountInside",
+      "family:uncategorized:blockedCellCountInside",
+      "family:uncategorized:roadCountInside",
+      "family:uncategorized:serviceCountInside",
+      "family:uncategorized:serviceFootprintCellsInside",
+      "family:uncategorized:residentialCountInside",
+      "family:uncategorized:residentialFootprintCellsInside",
+      "family:uncategorized:occupiedBuildingCellCountInside",
+      "family:uncategorized:emptyAllowedCellCountInside",
+      "family:uncategorized:roadDensityInside",
+      "family:uncategorized:buildingDensityInside",
+      "family:uncategorized:emptyAllowedRatioInside",
+      "family:uncategorized:residentialHeadroomInside",
+      "family:uncategorized:residentialHeadroomDensityInside",
+      "family:uncategorized:serviceBonusInside",
+      "family:uncategorized:serviceBonusDensityInside",
+      "family:uncategorized:selectedByBaseline",
+      "family:uncategorized:windowIndex",
+      "family:uncategorized:baselineRankScore",
+      "family:uncategorized:selectionSourceBaselineTopK",
+      "family:uncategorized:selectionSourceExplorationTail",
+      "family:uncategorized:aspectRatio",
+      "family:uncategorized:perimeter"
+    ],
+    "featureScale": [
+      {
+        "featureName": "all:top",
+        "rms": 1.7194539072421902
+      },
+      {
+        "featureName": "all:left",
+        "rms": 1.9945578130415818
+      },
+      {
+        "featureName": "all:rows",
+        "rms": 0.7223151185146152
+      },
+      {
+        "featureName": "all:cols",
+        "rms": 1
+      },
+      {
+        "featureName": "all:operatorWeakServiceRepair",
+        "rms": 0.3296902366978935
+      },
+      {
+        "featureName": "all:operatorResidentialHeadroomRepair",
+        "rms": 0.41702882811414954
+      },
+      {
+        "featureName": "all:operatorFrontierCongestionRepair",
+        "rms": 0.5897678246195885
+      },
+      {
+        "featureName": "all:operatorGateChokeRepair",
+        "rms": 0.20851441405707477
+      },
+      {
+        "featureName": "all:operatorServiceOverlapRepair",
+        "rms": 1
+      },
+      {
+        "featureName": "all:operatorRandomExploration",
+        "rms": 1
+      },
+      {
+        "featureName": "all:operatorSlidingWindow",
+        "rms": 0.8209220690651828
+      },
+      {
+        "featureName": "all:operatorScore",
+        "rms": 623259.602342761
+      },
+      {
+        "featureName": "all:operatorExploration",
+        "rms": 1
+      },
+      {
+        "featureName": "all:candidateWindowCount",
+        "rms": 1
+      },
+      {
+        "featureName": "all:candidateRankRatio",
+        "rms": 0.8309821905228678
+      },
+      {
+        "featureName": "all:area",
+        "rms": 2.1669453555438456
+      },
+      {
+        "featureName": "all:windowAreaRatio",
+        "rms": 0.06019292654288452
+      },
+      {
+        "featureName": "all:touchesRoadAnchorBoundary",
+        "rms": 0.7661308776828738
+      },
+      {
+        "featureName": "all:touchesTopBoundary",
+        "rms": 0.7223151185146152
+      },
+      {
+        "featureName": "all:touchesLeftBoundary",
+        "rms": 0.7071067811865476
+      },
+      {
+        "featureName": "all:minAnchorDistance",
+        "rms": 1.4521348601882378
+      },
+      {
+        "featureName": "all:anchorBoundaryCellCount",
+        "rms": 3.2201809292943935
+      },
+      {
+        "featureName": "all:anchorBoundaryCoverageRatio",
+        "rms": 0.2847259043004519
+      },
+      {
+        "featureName": "all:allowedCellCountInside",
+        "rms": 2.0903505010861947
+      },
+      {
+        "featureName": "all:blockedCellCountInside",
+        "rms": 0.5710402407201608
+      },
+      {
+        "featureName": "all:roadCountInside",
+        "rms": 2.340568492816482
+      },
+      {
+        "featureName": "all:serviceCountInside",
+        "rms": 0.9088932591463857
+      },
+      {
+        "featureName": "all:serviceFootprintCellsInside",
+        "rms": 2.0536288136729643
+      },
+      {
+        "featureName": "all:residentialCountInside",
+        "rms": 1.132523154576618
+      },
+      {
+        "featureName": "all:residentialFootprintCellsInside",
+        "rms": 2.4182278815191345
+      },
+      {
+        "featureName": "all:occupiedBuildingCellCountInside",
+        "rms": 3.5416773230871224
+      },
+      {
+        "featureName": "all:emptyAllowedCellCountInside",
+        "rms": 4.250319681071572
+      },
+      {
+        "featureName": "all:roadDensityInside",
+        "rms": 0.20851441405707472
+      },
+      {
+        "featureName": "all:buildingDensityInside",
+        "rms": 0.3560824794847237
+      },
+      {
+        "featureName": "all:emptyAllowedRatioInside",
+        "rms": 0.48433933070570706
+      },
+      {
+        "featureName": "all:residentialHeadroomInside",
+        "rms": 140.74916016430265
+      },
+      {
+        "featureName": "all:residentialHeadroomDensityInside",
+        "rms": 14.514632865845208
+      },
+      {
+        "featureName": "all:serviceBonusInside",
+        "rms": 83.24270434150345
+      },
+      {
+        "featureName": "all:serviceBonusDensityInside",
+        "rms": 8.17969277292043
+      },
+      {
+        "featureName": "all:selectedByBaseline",
+        "rms": 0.3296902366978935
+      },
+      {
+        "featureName": "all:windowIndex",
+        "rms": 12.464732857843016
+      },
+      {
+        "featureName": "all:baselineRankScore",
+        "rms": 0.36063722009706706
+      },
+      {
+        "featureName": "all:selectionSourceBaselineTopK",
+        "rms": 1
+      },
+      {
+        "featureName": "all:selectionSourceExplorationTail",
+        "rms": 1
+      },
+      {
+        "featureName": "all:aspectRatio",
+        "rms": 0.2407717061715381
+      },
+      {
+        "featureName": "all:perimeter",
+        "rms": 1.4446302370292303
+      },
+      {
+        "featureName": "family:anchor-service:top",
+        "rms": 1.318760946791574
+      },
+      {
+        "featureName": "family:anchor-service:left",
+        "rms": 1.7693034738587656
+      },
+      {
+        "featureName": "family:anchor-service:rows",
+        "rms": 0.5107539184552492
+      },
+      {
+        "featureName": "family:anchor-service:cols",
+        "rms": 1
+      },
+      {
+        "featureName": "family:anchor-service:operatorWeakServiceRepair",
+        "rms": 0.29488391230979427
+      },
+      {
+        "featureName": "family:anchor-service:operatorResidentialHeadroomRepair",
+        "rms": 0.29488391230979427
+      },
+      {
+        "featureName": "family:anchor-service:operatorFrontierCongestionRepair",
+        "rms": 0.5897678246195885
+      },
+      {
+        "featureName": "family:anchor-service:operatorGateChokeRepair",
+        "rms": 1
+      },
+      {
+        "featureName": "family:anchor-service:operatorServiceOverlapRepair",
+        "rms": 1
+      },
+      {
+        "featureName": "family:anchor-service:operatorRandomExploration",
+        "rms": 1
+      },
+      {
+        "featureName": "family:anchor-service:operatorSlidingWindow",
+        "rms": 0.7223151185146152
+      },
+      {
+        "featureName": "family:anchor-service:operatorScore",
+        "rms": 548272.2007209478
+      },
+      {
+        "featureName": "family:anchor-service:operatorExploration",
+        "rms": 1
+      },
+      {
+        "featureName": "family:anchor-service:candidateWindowCount",
+        "rms": 1
+      },
+      {
+        "featureName": "family:anchor-service:candidateRankRatio",
+        "rms": 0.6368703672917271
+      },
+      {
+        "featureName": "family:anchor-service:area",
+        "rms": 1.5322617553657476
+      },
+      {
+        "featureName": "family:anchor-service:windowAreaRatio",
+        "rms": 0.042562826537937394
+      },
+      {
+        "featureName": "family:anchor-service:touchesRoadAnchorBoundary",
+        "rms": 0.6255432421712243
+      },
+      {
+        "featureName": "family:anchor-service:touchesTopBoundary",
+        "rms": 0.5107539184552492
+      },
+      {
+        "featureName": "family:anchor-service:touchesLeftBoundary",
+        "rms": 0.5897678246195885
+      },
+      {
+        "featureName": "family:anchor-service:minAnchorDistance",
+        "rms": 1.2423680054112651
+      },
+      {
+        "featureName": "family:anchor-service:anchorBoundaryCellCount",
+        "rms": 2.340568492816482
+      },
+      {
+        "featureName": "family:anchor-service:anchorBoundaryCoverageRatio",
+        "rms": 0.2191055598947949
+      },
+      {
+        "featureName": "family:anchor-service:allowedCellCountInside",
+        "rms": 1.5322617553657476
+      },
+      {
+        "featureName": "family:anchor-service:blockedCellCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:anchor-service:roadCountInside",
+        "rms": 2.340568492816482
+      },
+      {
+        "featureName": "family:anchor-service:serviceCountInside",
+        "rms": 0.7223151185146152
+      },
+      {
+        "featureName": "family:anchor-service:serviceFootprintCellsInside",
+        "rms": 1.978141420187361
+      },
+      {
+        "featureName": "family:anchor-service:residentialCountInside",
+        "rms": 0.5897678246195885
+      },
+      {
+        "featureName": "family:anchor-service:residentialFootprintCellsInside",
+        "rms": 1.4744195615489712
+      },
+      {
+        "featureName": "family:anchor-service:occupiedBuildingCellCountInside",
+        "rms": 2.637521893583148
+      },
+      {
+        "featureName": "family:anchor-service:emptyAllowedCellCountInside",
+        "rms": 4.043244500021799
+      },
+      {
+        "featureName": "family:anchor-service:roadDensityInside",
+        "rms": 0.20851441405707472
+      },
+      {
+        "featureName": "family:anchor-service:buildingDensityInside",
+        "rms": 0.27656741133270263
+      },
+      {
+        "featureName": "family:anchor-service:emptyAllowedRatioInside",
+        "rms": 0.42927775167569054
+      },
+      {
+        "featureName": "family:anchor-service:residentialHeadroomInside",
+        "rms": 117.95356492391771
+      },
+      {
+        "featureName": "family:anchor-service:residentialHeadroomDensityInside",
+        "rms": 13.105951658213078
+      },
+      {
+        "featureName": "family:anchor-service:serviceBonusInside",
+        "rms": 72.23151185146152
+      },
+      {
+        "featureName": "family:anchor-service:serviceBonusDensityInside",
+        "rms": 7.417464991683138
+      },
+      {
+        "featureName": "family:anchor-service:selectedByBaseline",
+        "rms": 0.29488391230979427
+      },
+      {
+        "featureName": "family:anchor-service:windowIndex",
+        "rms": 9.553055509375907
+      },
+      {
+        "featureName": "family:anchor-service:baselineRankScore",
+        "rms": 0.32005505374681553
+      },
+      {
+        "featureName": "family:anchor-service:selectionSourceBaselineTopK",
+        "rms": 1
+      },
+      {
+        "featureName": "family:anchor-service:selectionSourceExplorationTail",
+        "rms": 1
+      },
+      {
+        "featureName": "family:anchor-service:aspectRatio",
+        "rms": 0.17025130615174958
+      },
+      {
+        "featureName": "family:anchor-service:perimeter",
+        "rms": 1.0215078369104984
+      },
+      {
+        "featureName": "family:baseline:top",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:left",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:rows",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:cols",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:operatorWeakServiceRepair",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:operatorResidentialHeadroomRepair",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:operatorFrontierCongestionRepair",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:operatorGateChokeRepair",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:operatorServiceOverlapRepair",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:operatorRandomExploration",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:operatorSlidingWindow",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:operatorScore",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:operatorExploration",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:candidateWindowCount",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:candidateRankRatio",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:area",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:windowAreaRatio",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:touchesRoadAnchorBoundary",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:touchesTopBoundary",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:touchesLeftBoundary",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:minAnchorDistance",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:anchorBoundaryCellCount",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:anchorBoundaryCoverageRatio",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:allowedCellCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:blockedCellCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:roadCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:serviceCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:serviceFootprintCellsInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:residentialCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:residentialFootprintCellsInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:occupiedBuildingCellCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:emptyAllowedCellCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:roadDensityInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:buildingDensityInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:emptyAllowedRatioInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:residentialHeadroomInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:residentialHeadroomDensityInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:serviceBonusInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:serviceBonusDensityInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:selectedByBaseline",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:windowIndex",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:baselineRankScore",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:selectionSourceBaselineTopK",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:selectionSourceExplorationTail",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:aspectRatio",
+        "rms": 1
+      },
+      {
+        "featureName": "family:baseline:perimeter",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:top",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:left",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:rows",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:cols",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:operatorWeakServiceRepair",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:operatorResidentialHeadroomRepair",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:operatorFrontierCongestionRepair",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:operatorGateChokeRepair",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:operatorServiceOverlapRepair",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:operatorRandomExploration",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:operatorSlidingWindow",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:operatorScore",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:operatorExploration",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:candidateWindowCount",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:candidateRankRatio",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:area",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:windowAreaRatio",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:touchesRoadAnchorBoundary",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:touchesTopBoundary",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:touchesLeftBoundary",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:minAnchorDistance",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:anchorBoundaryCellCount",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:anchorBoundaryCoverageRatio",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:allowedCellCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:blockedCellCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:roadCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:serviceCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:serviceFootprintCellsInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:residentialCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:residentialFootprintCellsInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:occupiedBuildingCellCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:emptyAllowedCellCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:roadDensityInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:buildingDensityInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:emptyAllowedRatioInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:residentialHeadroomInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:residentialHeadroomDensityInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:serviceBonusInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:serviceBonusDensityInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:selectedByBaseline",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:windowIndex",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:baselineRankScore",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:selectionSourceBaselineTopK",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:selectionSourceExplorationTail",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:aspectRatio",
+        "rms": 1
+      },
+      {
+        "featureName": "family:corridor:perimeter",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:top",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:left",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:rows",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:cols",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:operatorWeakServiceRepair",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:operatorResidentialHeadroomRepair",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:operatorFrontierCongestionRepair",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:operatorGateChokeRepair",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:operatorServiceOverlapRepair",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:operatorRandomExploration",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:operatorSlidingWindow",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:operatorScore",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:operatorExploration",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:candidateWindowCount",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:candidateRankRatio",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:area",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:windowAreaRatio",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:touchesRoadAnchorBoundary",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:touchesTopBoundary",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:touchesLeftBoundary",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:minAnchorDistance",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:anchorBoundaryCellCount",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:anchorBoundaryCoverageRatio",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:allowedCellCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:blockedCellCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:roadCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:serviceCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:serviceFootprintCellsInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:residentialCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:residentialFootprintCellsInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:occupiedBuildingCellCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:emptyAllowedCellCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:roadDensityInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:buildingDensityInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:emptyAllowedRatioInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:residentialHeadroomInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:residentialHeadroomDensityInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:serviceBonusInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:serviceBonusDensityInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:selectedByBaseline",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:windowIndex",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:baselineRankScore",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:selectionSourceBaselineTopK",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:selectionSourceExplorationTail",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:aspectRatio",
+        "rms": 1
+      },
+      {
+        "featureName": "family:footprint-pressure:perimeter",
+        "rms": 1
+      },
+      {
+        "featureName": "family:gate:top",
+        "rms": 1.103354568734741
+      },
+      {
+        "featureName": "family:gate:left",
+        "rms": 0.920774721067277
+      },
+      {
+        "featureName": "family:gate:rows",
+        "rms": 0.5107539184552492
+      },
+      {
+        "featureName": "family:gate:cols",
+        "rms": 1
+      },
+      {
+        "featureName": "family:gate:operatorWeakServiceRepair",
+        "rms": 0.14744195615489714
+      },
+      {
+        "featureName": "family:gate:operatorResidentialHeadroomRepair",
+        "rms": 0.29488391230979427
+      },
+      {
+        "featureName": "family:gate:operatorFrontierCongestionRepair",
+        "rms": 1
+      },
+      {
+        "featureName": "family:gate:operatorGateChokeRepair",
+        "rms": 0.20851441405707477
+      },
+      {
+        "featureName": "family:gate:operatorServiceOverlapRepair",
+        "rms": 1
+      },
+      {
+        "featureName": "family:gate:operatorRandomExploration",
+        "rms": 1
+      },
+      {
+        "featureName": "family:gate:operatorSlidingWindow",
+        "rms": 0.39009474880274697
+      },
+      {
+        "featureName": "family:gate:operatorScore",
+        "rms": 296395.21897133434
+      },
+      {
+        "featureName": "family:gate:operatorExploration",
+        "rms": 1
+      },
+      {
+        "featureName": "family:gate:candidateWindowCount",
+        "rms": 1
+      },
+      {
+        "featureName": "family:gate:candidateRankRatio",
+        "rms": 0.533786039749902
+      },
+      {
+        "featureName": "family:gate:area",
+        "rms": 1.5322617553657476
+      },
+      {
+        "featureName": "family:gate:windowAreaRatio",
+        "rms": 0.042562826537937394
+      },
+      {
+        "featureName": "family:gate:touchesRoadAnchorBoundary",
+        "rms": 0.4423258684646914
+      },
+      {
+        "featureName": "family:gate:touchesTopBoundary",
+        "rms": 0.5107539184552492
+      },
+      {
+        "featureName": "family:gate:touchesLeftBoundary",
+        "rms": 0.39009474880274697
+      },
+      {
+        "featureName": "family:gate:minAnchorDistance",
+        "rms": 0.7518094115561123
+      },
+      {
+        "featureName": "family:gate:anchorBoundaryCellCount",
+        "rms": 2.211629342323457
+      },
+      {
+        "featureName": "family:gate:anchorBoundaryCoverageRatio",
+        "rms": 0.18182847467571892
+      },
+      {
+        "featureName": "family:gate:allowedCellCountInside",
+        "rms": 1.4218787326754636
+      },
+      {
+        "featureName": "family:gate:blockedCellCountInside",
+        "rms": 0.5710402407201608
+      },
+      {
+        "featureName": "family:gate:roadCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:gate:serviceCountInside",
+        "rms": 0.5516772843673705
+      },
+      {
+        "featureName": "family:gate:serviceFootprintCellsInside",
+        "rms": 0.5516772843673705
+      },
+      {
+        "featureName": "family:gate:residentialCountInside",
+        "rms": 0.966841563388569
+      },
+      {
+        "featureName": "family:gate:residentialFootprintCellsInside",
+        "rms": 1.9167454300136626
+      },
+      {
+        "featureName": "family:gate:occupiedBuildingCellCountInside",
+        "rms": 2.3636743688036073
+      },
+      {
+        "featureName": "family:gate:emptyAllowedCellCountInside",
+        "rms": 1.3104927715740466
+      },
+      {
+        "featureName": "family:gate:roadDensityInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:gate:buildingDensityInside",
+        "rms": 0.22428820562998047
+      },
+      {
+        "featureName": "family:gate:emptyAllowedRatioInside",
+        "rms": 0.22428820562998047
+      },
+      {
+        "featureName": "family:gate:residentialHeadroomInside",
+        "rms": 76.79376673074223
+      },
+      {
+        "featureName": "family:gate:residentialHeadroomDensityInside",
+        "rms": 6.237675717994294
+      },
+      {
+        "featureName": "family:gate:serviceBonusInside",
+        "rms": 41.375796327552784
+      },
+      {
+        "featureName": "family:gate:serviceBonusDensityInside",
+        "rms": 3.447983027296065
+      },
+      {
+        "featureName": "family:gate:selectedByBaseline",
+        "rms": 0.14744195615489714
+      },
+      {
+        "featureName": "family:gate:windowIndex",
+        "rms": 8.00679059624853
+      },
+      {
+        "featureName": "family:gate:baselineRankScore",
+        "rms": 0.16620459407147417
+      },
+      {
+        "featureName": "family:gate:selectionSourceBaselineTopK",
+        "rms": 1
+      },
+      {
+        "featureName": "family:gate:selectionSourceExplorationTail",
+        "rms": 1
+      },
+      {
+        "featureName": "family:gate:aspectRatio",
+        "rms": 0.17025130615174958
+      },
+      {
+        "featureName": "family:gate:perimeter",
+        "rms": 1.0215078369104984
+      },
+      {
+        "featureName": "family:service-pressure:top",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:left",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:rows",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:cols",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:operatorWeakServiceRepair",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:operatorResidentialHeadroomRepair",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:operatorFrontierCongestionRepair",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:operatorGateChokeRepair",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:operatorServiceOverlapRepair",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:operatorRandomExploration",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:operatorSlidingWindow",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:operatorScore",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:operatorExploration",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:candidateWindowCount",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:candidateRankRatio",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:area",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:windowAreaRatio",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:touchesRoadAnchorBoundary",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:touchesTopBoundary",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:touchesLeftBoundary",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:minAnchorDistance",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:anchorBoundaryCellCount",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:anchorBoundaryCoverageRatio",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:allowedCellCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:blockedCellCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:roadCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:serviceCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:serviceFootprintCellsInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:residentialCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:residentialFootprintCellsInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:occupiedBuildingCellCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:emptyAllowedCellCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:roadDensityInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:buildingDensityInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:emptyAllowedRatioInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:residentialHeadroomInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:residentialHeadroomDensityInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:serviceBonusInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:serviceBonusDensityInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:selectedByBaseline",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:windowIndex",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:baselineRankScore",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:selectionSourceBaselineTopK",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:selectionSourceExplorationTail",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:aspectRatio",
+        "rms": 1
+      },
+      {
+        "featureName": "family:service-pressure:perimeter",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:top",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:left",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:rows",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:cols",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:operatorWeakServiceRepair",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:operatorResidentialHeadroomRepair",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:operatorFrontierCongestionRepair",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:operatorGateChokeRepair",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:operatorServiceOverlapRepair",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:operatorRandomExploration",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:operatorSlidingWindow",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:operatorScore",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:operatorExploration",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:candidateWindowCount",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:candidateRankRatio",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:area",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:windowAreaRatio",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:touchesRoadAnchorBoundary",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:touchesTopBoundary",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:touchesLeftBoundary",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:minAnchorDistance",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:anchorBoundaryCellCount",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:anchorBoundaryCoverageRatio",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:allowedCellCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:blockedCellCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:roadCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:serviceCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:serviceFootprintCellsInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:residentialCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:residentialFootprintCellsInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:occupiedBuildingCellCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:emptyAllowedCellCountInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:roadDensityInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:buildingDensityInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:emptyAllowedRatioInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:residentialHeadroomInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:residentialHeadroomDensityInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:serviceBonusInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:serviceBonusDensityInside",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:selectedByBaseline",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:windowIndex",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:baselineRankScore",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:selectionSourceBaselineTopK",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:selectionSourceExplorationTail",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:aspectRatio",
+        "rms": 1
+      },
+      {
+        "featureName": "family:uncategorized:perimeter",
+        "rms": 1
+      }
+    ],
+    "weights": [
+      -0.017582078607822717,
+      0.18576526382318542,
+      0.12178721970186845,
+      0,
+      -0.00597277217844312,
+      0.0006500055439777717,
+      0.28988962717328204,
+      -0.0023650013460484653,
+      0,
+      0,
+      -0.20559362534505415,
+      0.20413070866402014,
+      0,
+      0,
+      -0.060801893425124126,
+      0.12178721970186845,
+      0.12178721970186863,
+      0.024182864102126764,
+      0.12178721970186845,
+      -0.06010981877831807,
+      0.11958649570121228,
+      0.04235602646877471,
+      0.01959561708621118,
+      0.10767166959172679,
+      0.06800697892102742,
+      0.13897725067536765,
+      0.5708060093978263,
+      0.44787888435451867,
+      0.3481847488698697,
+      0.2076052504207139,
+      0.40145209660826914,
+      -0.35809730719942495,
+      0.14210974885319738,
+      0.36417135202984935,
+      -0.32891602829341743,
+      0.32683436322380527,
+      0.2994678884257406,
+      0.5650612276009863,
+      0.5064513559550899,
+      -0.00597277217844312,
+      -0.06080189342512414,
+      0.08655422829039323,
+      0,
+      0,
+      0.12178721970186863,
+      0.12178721970186845,
+      0.05303939328394493,
+      0.3661675915921812,
+      0.023903988021428,
+      0,
+      0.029405360266138963,
+      0.13778889071385872,
+      0.28988962717328204,
+      0,
+      0,
+      0,
+      -0.30495065657137416,
+      0.3039826633626362,
+      0,
+      0,
+      -0.1851222288407731,
+      0.023903988021428,
+      0.023903988021428006,
+      -0.048433738829761014,
+      0.023903988021428,
+      -0.1631481607129342,
+      0.18045554110118744,
+      -0.10767958366979181,
+      -0.11202282838967005,
+      0.023903988021428,
+      0,
+      0.13897725067536765,
+      0.4500581216742077,
+      0.3670410142622664,
+      0.25987017107551313,
+      0.25584649619834093,
+      0.41830330002286,
+      -0.3442638008816784,
+      0.14210974885319738,
+      0.3871173577412066,
+      -0.3184324740631617,
+      0.25987017107551313,
+      0.25987017107551313,
+      0.4500581216742077,
+      0.3952670245008352,
+      0.029405360266138963,
+      -0.18512222884077303,
+      0.15090341755983006,
+      0,
+      0,
+      0.023903988021428006,
+      0.023903988021428,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      -0.09079389083322977,
+      -0.3012050908031,
+      0.14832914980466405,
+      0,
+      -0.07216624513739636,
+      -0.1368696440579463,
+      0,
+      -0.0023650013460484653,
+      0,
+      0,
+      0.13200414898079488,
+      -0.13306159138409693,
+      0,
+      0,
+      0.1262183089705843,
+      0.14832914980466405,
+      0.14832914980466413,
+      0.11038159962690375,
+      0.14832914980466405,
+      0.13769853484358294,
+      -0.0672197909084624,
+      0.17562866530088836,
+      0.16567374490843306,
+      0.13253195051543604,
+      0.06800697892102742,
+      0,
+      0.3511436019130797,
+      0.3511436019130797,
+      0.24933167316677107,
+      0.0651164855875749,
+      0.13476038793624406,
+      -0.09926442623623571,
+      0,
+      0.10081222243560385,
+      -0.10081222243560381,
+      0.19987363160162594,
+      0.15082870585405395,
+      0.3511436019130797,
+      0.3511436019130797,
+      -0.07216624513739636,
+      0.12621830897058428,
+      -0.10278130538347005,
+      0,
+      0,
+      0.14832914980466413,
+      0.14832914980466405,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "epochs": 300,
+    "learningRate": 0.05,
+    "l2": 0.0001,
+    "trainingPairCount": 276,
+    "modelFingerprint": "12ba51f1f0a0c51b0e084caa5e524926aedcd66ccfc28c253e98e8daa618ff70"
+  },
+  "modelMetrics": {
+    "development": {
+      "split": "development",
+      "labelCount": 276,
+      "rankedLabelCount": 276,
+      "accuracy": 1,
+      "wins": 276,
+      "losses": 0,
+      "ties": 0,
+      "neutralLabelCount": 0,
+      "winRate": 1,
+      "lossRate": 0,
+      "tieRate": 0,
+      "meanSignedScoreMargin": 11.96688571327871,
+      "familyMetrics": {
+        "anchor-service": {
+          "labelCount": 192,
+          "rankedLabelCount": 192,
+          "accuracy": 1,
+          "wins": 192,
+          "losses": 0,
+          "ties": 0
+        },
+        "gate": {
+          "labelCount": 84,
+          "rankedLabelCount": 84,
+          "accuracy": 1,
+          "wins": 84,
+          "losses": 0,
+          "ties": 0
+        }
+      }
+    },
+    "holdout": {
+      "split": "holdout",
+      "labelCount": 144,
+      "rankedLabelCount": 144,
+      "accuracy": 1,
+      "wins": 144,
+      "losses": 0,
+      "ties": 0,
+      "neutralLabelCount": 0,
+      "winRate": 1,
+      "lossRate": 0,
+      "tieRate": 0,
+      "meanSignedScoreMargin": 9.018659606251163,
+      "familyMetrics": {
+        "gate": {
+          "labelCount": 144,
+          "rankedLabelCount": 144,
+          "accuracy": 1,
+          "wins": 144,
+          "losses": 0,
+          "ties": 0
+        }
+      }
+    }
+  },
+  "baselines": [
+    {
+      "name": "deterministic-window-proxy",
+      "description": "Fixed CPU heuristic over baseline selection, baseline rank, service bonus, headroom, and road count.",
+      "development": {
+        "split": "development",
+        "labelCount": 276,
+        "rankedLabelCount": 276,
+        "accuracy": 0.9782608695652174,
+        "wins": 270,
+        "losses": 6,
+        "ties": 0,
+        "neutralLabelCount": 0,
+        "winRate": 0.9782608695652174,
+        "lossRate": 0.021739130434782608,
+        "tieRate": 0,
+        "meanSignedScoreMargin": 151.09482927814452,
+        "familyMetrics": {
+          "anchor-service": {
+            "labelCount": 192,
+            "rankedLabelCount": 192,
+            "accuracy": 1,
+            "wins": 192,
+            "losses": 0,
+            "ties": 0
+          },
+          "gate": {
+            "labelCount": 84,
+            "rankedLabelCount": 84,
+            "accuracy": 0.9285714285714286,
+            "wins": 78,
+            "losses": 6,
+            "ties": 0
+          }
+        }
+      },
+      "holdout": {
+        "split": "holdout",
+        "labelCount": 144,
+        "rankedLabelCount": 144,
+        "accuracy": 0.9791666666666666,
+        "wins": 141,
+        "losses": 3,
+        "ties": 0,
+        "neutralLabelCount": 0,
+        "winRate": 0.9791666666666666,
+        "lossRate": 0.020833333333333332,
+        "tieRate": 0,
+        "meanSignedScoreMargin": 308.45749754472575,
+        "familyMetrics": {
+          "gate": {
+            "labelCount": 144,
+            "rankedLabelCount": 144,
+            "accuracy": 0.9791666666666666,
+            "wins": 141,
+            "losses": 3,
+            "ties": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "random-hash",
+      "description": "Deterministic hash baseline that picks better or worse with equal probability.",
+      "development": {
+        "split": "development",
+        "labelCount": 276,
+        "rankedLabelCount": 276,
+        "accuracy": 0.5,
+        "wins": 138,
+        "losses": 138,
+        "ties": 0,
+        "neutralLabelCount": 0,
+        "winRate": 0.5,
+        "lossRate": 0.5,
+        "tieRate": 0,
+        "meanSignedScoreMargin": 0,
+        "familyMetrics": {
+          "anchor-service": {
+            "labelCount": 192,
+            "rankedLabelCount": 192,
+            "accuracy": 0.5,
+            "wins": 96,
+            "losses": 96,
+            "ties": 0
+          },
+          "gate": {
+            "labelCount": 84,
+            "rankedLabelCount": 84,
+            "accuracy": 0.5,
+            "wins": 42,
+            "losses": 42,
+            "ties": 0
+          }
+        }
+      },
+      "holdout": {
+        "split": "holdout",
+        "labelCount": 144,
+        "rankedLabelCount": 144,
+        "accuracy": 0.5069444444444444,
+        "wins": 73,
+        "losses": 71,
+        "ties": 0,
+        "neutralLabelCount": 0,
+        "winRate": 0.5069444444444444,
+        "lossRate": 0.4930555555555556,
+        "tieRate": 0,
+        "meanSignedScoreMargin": 0.013888888888888888,
+        "familyMetrics": {
+          "gate": {
+            "labelCount": 144,
+            "rankedLabelCount": 144,
+            "accuracy": 0.5069444444444444,
+            "wins": 73,
+            "losses": 71,
+            "ties": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "best-single-feature",
+      "description": "Best single raw window feature and direction selected on development labels only.",
+      "development": {
+        "split": "development",
+        "labelCount": 276,
+        "rankedLabelCount": 276,
+        "accuracy": 0.9836956521739131,
+        "wins": 267,
+        "losses": 0,
+        "ties": 9,
+        "neutralLabelCount": 0,
+        "winRate": 0.967391304347826,
+        "lossRate": 0,
+        "tieRate": 0.03260869565217391,
+        "meanSignedScoreMargin": 3.1956521739130435,
+        "familyMetrics": {
+          "anchor-service": {
+            "labelCount": 192,
+            "rankedLabelCount": 192,
+            "accuracy": 1,
+            "wins": 192,
+            "losses": 0,
+            "ties": 0
+          },
+          "gate": {
+            "labelCount": 84,
+            "rankedLabelCount": 84,
+            "accuracy": 0.9464285714285714,
+            "wins": 75,
+            "losses": 0,
+            "ties": 9
+          }
+        }
+      },
+      "holdout": {
+        "split": "holdout",
+        "labelCount": 144,
+        "rankedLabelCount": 144,
+        "accuracy": 0.9791666666666666,
+        "wins": 138,
+        "losses": 0,
+        "ties": 6,
+        "neutralLabelCount": 0,
+        "winRate": 0.9583333333333334,
+        "lossRate": 0,
+        "tieRate": 0.041666666666666664,
+        "meanSignedScoreMargin": 3.75,
+        "familyMetrics": {
+          "gate": {
+            "labelCount": 144,
+            "rankedLabelCount": 144,
+            "accuracy": 0.9791666666666666,
+            "wins": 138,
+            "losses": 0,
+            "ties": 6
+          }
+        }
+      },
+      "selectedFeatureName": "occupiedBuildingCellCountInside",
+      "selectedFeatureDirection": "higher"
+    }
+  ],
+  "gate": {
+    "passed": true,
+    "failedReasons": [],
+    "protectedHoldout": true,
+    "requiredBaselines": [
+      "deterministic-window-proxy",
+      "random-hash",
+      "best-single-feature"
+    ],
+    "comparisons": [
+      {
+        "baselineName": "deterministic-window-proxy",
+        "holdoutAccuracyDelta": 0.02083333333333337
+      },
+      {
+        "baselineName": "random-hash",
+        "holdoutAccuracyDelta": 0.4930555555555556
+      },
+      {
+        "baselineName": "best-single-feature",
+        "holdoutAccuracyDelta": 0.02083333333333337
+      }
+    ]
+  },
+  "inference": {
+    "holdoutPairCount": 144,
+    "repeatCount": 100,
+    "totalPairScores": 14400,
+    "elapsedMs": 313.403583,
+    "microsecondsPerPair": 21.764137708333337,
+    "checksum": 129868.69833001809
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "decision": "lns-offline-ranker-ready-for-online-ab",
+  "summary": "CPU linear LNS window ranker passed offline diagnostics on protected holdout: model 100.0% vs deterministic-window-proxy 97.9%, random-hash 50.7%, best-single-feature 97.9%; inference 21.764us/pair. No runtime scorer or solver default changed."
+}

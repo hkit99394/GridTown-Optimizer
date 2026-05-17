@@ -73,7 +73,7 @@ Reasoning:
 - The problem is a hybrid of rectangle packing, set packing, service/facility coverage, and road-network design.
 - CP-SAT is the right exact backend, but it must be semantically faithful before it becomes the source of truth for local repair and proof.
 - LNS already matches the research shape for this kind of problem; adaptive destroy/repair operators are likely higher leverage than another global solver mode.
-- Greedy offline ranking has a protected-holdout diagnostic win and a feature-flagged runtime hook, but its first equal-budget online A/B did not earn promotion; LNS offline ranking now beats weak baselines but has not beaten the deterministic window proxy.
+- Greedy offline ranking has a protected-holdout diagnostic win and a feature-flagged runtime hook, but its first equal-budget online A/B did not earn promotion; enriched LNS offline ranking now beats deterministic, random, and single-feature baselines and is ready for feature-flagged online A/B.
 - Tiny saturated cases are useful smoke tests but weak promotion evidence.
 
 ## Current Milestone: Promotion-Grade Solver Alignment And Evidence Gate
@@ -264,6 +264,7 @@ Status vocabulary:
 | 9 | CPU-first Greedy offline ranker | delivered | 2.5 | Phase 9 now has a CPU-only pairwise linear Greedy ranker, CLI artifact output, split-protected development/holdout evaluation, deterministic/random/single-feature baselines, inference timing, targeted tests, and strict registry entry `greedy-offline-ranker-2026-05-17`. | Protected holdout accuracy is `90.1%`, beating deterministic proxy `76.7%`, random `50.0%`, and best single-feature `70.3%`; inference is `4.488us` per pair and no runtime scorer/default changed. |
 | 10 | Feature-flagged Greedy learned online A/B | delivered / no-promotion | 2.0 | Phase 10 wires the Phase 9 scorer behind `greedy.learnedServiceRanking`, adds guarded candidate re-ranking counters, validates new Greedy options, adds an online A/B CLI, and records strict registry entry `greedy-learned-online-ab-2026-05-17`. | Guarded mode tied population on all `12` protected holdout comparisons with zero losses but was slower by `0.2552s` mean wall time; exploratory mode lost `3` holdout comparisons, so Greedy defaults stay unchanged. |
 | 11 | CPU-first LNS offline window ranker | delivered / no-promotion | 2.5 | Phase 11 trains a CPU-only pairwise linear LNS window ranker from the Phase 8 replay labels, adds CLI artifact output, split-protected holdout evaluation, random/deterministic/single-feature baselines, inference timing, targeted tests, and strict registry entry `lns-offline-ranker-2026-05-17`. | Protected holdout accuracy is `97.9%`, beating random `50.7%` and best single-feature `87.5%`, but tying the deterministic window proxy at `97.9%`; no runtime scorer/default changed. |
+| 12 | Enriched LNS ranker feature gate | delivered / ready-for-online-A/B | 3.0 | Phase 12 enriches LNS replay/window features with operator identity, candidate rank, anchor/boundary pressure, allowed/empty-cell counts, footprint overlap, density signals, regenerated split-protected labels, and strict registry entry `lns-ranker-feature-enrichment-2026-05-17`. | Protected holdout accuracy reaches `100.0%`, beating deterministic window proxy `97.9%`, random `50.7%`, and best single-feature `97.9%`; runtime integration still waits for feature-flagged online A/B. |
 
 ## Status Snapshot
 
@@ -287,7 +288,8 @@ Status vocabulary:
 | Greedy offline ranker diagnostics | delivered | `artifacts/greedy-offline-ranker/2026-05-17/greedy-offline-ranker.json`; registry run `greedy-offline-ranker-2026-05-17`; targeted offline-ranker tests | CPU-only Greedy ranker clears protected-holdout offline baselines, but remains diagnostics-only until feature-flagged online A/B passes. |
 | Greedy learned online A/B | delivered / no-promotion | `artifacts/greedy-online-ab/2026-05-17/greedy-online-ab.json`; registry run `greedy-learned-online-ab-2026-05-17`; targeted online-A/B tests | `greedy.learnedServiceRanking` exists as an opt-in flag, but guarded mode is neutral/slower and exploratory mode regresses holdout, so no Greedy default changed. |
 | LNS offline window ranker | delivered / no-promotion | `artifacts/lns-offline-ranker/2026-05-17/lns-offline-ranker.json`; registry run `lns-offline-ranker-2026-05-17`; targeted offline-ranker tests | CPU-only LNS ranker clears random and single-feature baselines, but ties the deterministic window proxy, so runtime integration remains gated. |
-| Model training path | partial / gated | Phase 9 has an offline Greedy ranker metric report, Phase 10 has a feature-flagged Greedy scorer, and Phase 11 has an offline LNS ranker report; no `python/ml/` scaffold, runtime model loading path, or learned default is promoted | No learned default path. |
+| Enriched LNS ranker feature gate | delivered / ready-for-online-A/B | `artifacts/lns-ranker-feature-enrichment/2026-05-17/lns-ranker-feature-enrichment.json`; registry run `lns-ranker-feature-enrichment-2026-05-17`; targeted ranker tests | Enriched CPU-only LNS ranker beats deterministic/random/single-feature offline holdout baselines; next step is feature-flagged online A/B before any runtime/default change. |
+| Model training path | partial / gated | Phase 9 has an offline Greedy ranker metric report, Phase 10 has a feature-flagged Greedy scorer, and Phase 12 has an enriched offline LNS ranker report; no `python/ml/` scaffold, runtime model loading path, or learned default is promoted | No learned default path. |
 | GPU, distributed solving, alternative solvers | gated | No CPU-first bottleneck evidence requiring them | Research-only until equal-budget wins exist. |
 
 ## Gated Priorities
@@ -297,7 +299,7 @@ These are not next actions. Move them into the active table only after the trigg
 | Trigger | Priority | Impact | Summary | Success Signal |
 | --- | --- | ---: | --- | --- |
 | CP-SAT semantics scorecard and product corpus are stable | Geometry-native CP-SAT / `NoOverlap2D` experiment | 3.0 | Compare current cell-indexed set packing with optional-interval rectangle constraints. | Controlled scorecard shows propagation or time-to-best improvement without model-size blowup. |
-| New LNS window features or ranker objective beat the Phase 11 deterministic-proxy tie | Learned LNS window ranking retry | 2.5 | Improve replay features, labels, or model objective before another offline LNS ranker run. | Offline holdout beats deterministic, random, and single-feature baselines; only then run online A/B for fixed-budget quality without worst-decile regression. |
+| Phase 12 enriched LNS offline gate is ready | Feature-flagged LNS window-ranking online A/B | 3.0 | Add an opt-in LNS window re-ranker after deterministic window generation and before selection. | Paired seeded online A/B improves fixed-budget quality or time-to-best without protected-holdout or worst-decile regression. |
 | New Greedy ranker features or guard beat the Phase 10 no-promotion baseline | Learned Greedy promotion retry | 2.0 | Improve the scorer features, guard policy, or candidate shortlist before another equal-budget online A/B. | Online paired seeded benchmarks improve population or time-to-best with bounded inference overhead, zero protected-holdout losses, and no worst-decile regression. |
 | Portfolio scorecards show CPU-normalized wins | CP-SAT portfolio in Auto | 2.0 | Let Auto route a controlled budget slice to portfolio only when CPU cost is justified. | Portfolio improves wall-clock quality and CPU-normalized efficiency versus single CP-SAT. |
 | CPU-first workflow has a measured bottleneck | GPU acceleration | 2.0 | Use GPU for training, batched feature extraction, or inference only after CPU baseline is useful. | GPU reduces time-to-label, time-to-train, or inference overhead while preserving solver quality gates. |
@@ -310,9 +312,9 @@ These are not next actions. Move them into the active table only after the trigg
 2. Use the Phase 5 fast-exact Auto budget defaults as the new baseline for future solver promotion decisions.
 3. Keep small-window DP repair feature-gated to eligible tiny windows and use its telemetry to decide whether Auto should enable it by default later.
 4. Keep service-master decomposition explicit-only while using its fixed-service subproblem telemetry to decide whether a cheaper master shortlist is worth pursuing.
-5. Keep the Phase 11 LNS offline ranker as diagnostics only; do not enable an LNS model until it beats the deterministic window proxy on protected holdout.
+5. Use the Phase 12 enriched LNS ranker as the input to feature-flagged online A/B; do not change LNS defaults until paired seeded online benchmarks improve fixed-budget quality or time-to-best.
 6. Keep the Phase 10 Greedy learned scorer feature-flagged and off by default; the first guarded online A/B was safe but slower, and the exploratory variant regressed holdout.
-7. Revisit learned rankers only after offline holdout and equal-budget online gates pass with a real quality or time-to-best win.
+7. Revisit learned defaults only after offline holdout and equal-budget online gates pass with a real quality or time-to-best win.
 8. Revisit portfolio, GPU, distributed workers, or alternative solvers only after they have a measured bottleneck and CPU-normalized win path.
 
 ## Discipline

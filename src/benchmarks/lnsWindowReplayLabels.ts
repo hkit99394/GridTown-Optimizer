@@ -4,6 +4,8 @@ import {
   applyDeterministicDominanceUpgrades,
   getResidentialBaseMax,
   height,
+  isAllowed,
+  cellKey,
   normalizeServicePlacement,
   width,
   materializeValidLnsSeedSolution,
@@ -13,6 +15,7 @@ import { solveCpSat } from "../cp-sat/solver.js";
 import { solveGreedy } from "../greedy/solver.js";
 import {
   buildLnsWarmStartHint,
+  buildNeighborhoodCandidates,
   buildNeighborhoodWindows,
 } from "../lns/solver.js";
 import { selectNeighborhoodWindow } from "../lns/neighborhoods.js";
@@ -46,6 +49,7 @@ import type {
   GreedyOptions,
   Grid,
   LnsOptions,
+  LnsRepairOperatorName,
   Solution,
   SolverParams,
 } from "../core/types.js";
@@ -66,13 +70,35 @@ export interface LnsWindowReplayLabelRunOptions {
 }
 
 export interface LnsWindowReplayFeatures {
+  operatorName: LnsRepairOperatorName;
+  operatorScore: number;
+  operatorExploration: boolean;
+  candidateWindowCount: number;
+  candidateRankRatio: number;
   area: number;
+  windowAreaRatio: number;
   touchesRoadAnchorBoundary: boolean;
+  touchesTopBoundary: boolean;
+  touchesLeftBoundary: boolean;
+  minAnchorDistance: number;
+  anchorBoundaryCellCount: number;
+  anchorBoundaryCoverageRatio: number;
+  allowedCellCountInside: number;
+  blockedCellCountInside: number;
   roadCountInside: number;
   serviceCountInside: number;
+  serviceFootprintCellsInside: number;
   residentialCountInside: number;
+  residentialFootprintCellsInside: number;
+  occupiedBuildingCellCountInside: number;
+  emptyAllowedCellCountInside: number;
+  roadDensityInside: number;
+  buildingDensityInside: number;
+  emptyAllowedRatioInside: number;
   residentialHeadroomInside: number;
+  residentialHeadroomDensityInside: number;
   serviceBonusInside: number;
+  serviceBonusDensityInside: number;
   selectedByBaseline: boolean;
 }
 
@@ -203,29 +229,37 @@ function buildInitialIncumbent(G: Grid, params: SolverParams): Solution {
   });
 }
 
-function rectangleIntersectsWindow(
+function rectangleOverlapArea(
   window: CpSatNeighborhoodWindow,
   r: number,
   c: number,
   rows: number,
   cols: number
-): boolean {
-  return r < window.top + window.rows
-    && r + rows > window.top
-    && c < window.left + window.cols
-    && c + cols > window.left;
+): number {
+  const rowStart = Math.max(window.top, r);
+  const rowEnd = Math.min(window.top + window.rows, r + rows);
+  const colStart = Math.max(window.left, c);
+  const colEnd = Math.min(window.left + window.cols, c + cols);
+  return Math.max(0, rowEnd - rowStart) * Math.max(0, colEnd - colStart);
 }
 
-function roadInsideWindow(window: CpSatNeighborhoodWindow, key: string): boolean {
-  const [rRaw, cRaw] = key.split(",");
-  const r = Number(rRaw);
-  const c = Number(cRaw);
-  return Number.isInteger(r)
-    && Number.isInteger(c)
-    && r >= window.top
-    && r < window.top + window.rows
-    && c >= window.left
-    && c < window.left + window.cols;
+function addRectangleOverlapCells(
+  target: Set<string>,
+  window: CpSatNeighborhoodWindow,
+  r: number,
+  c: number,
+  rows: number,
+  cols: number
+): void {
+  const rowStart = Math.max(window.top, r);
+  const rowEnd = Math.min(window.top + window.rows, r + rows);
+  const colStart = Math.max(window.left, c);
+  const colEnd = Math.min(window.left + window.cols, c + cols);
+  for (let rr = rowStart; rr < rowEnd; rr++) {
+    for (let cc = colStart; cc < colEnd; cc++) {
+      target.add(cellKey(rr, cc));
+    }
+  }
 }
 
 function sameWindow(left: CpSatNeighborhoodWindow | null, right: CpSatNeighborhoodWindow): boolean {
@@ -237,39 +271,98 @@ function sameWindow(left: CpSatNeighborhoodWindow | null, right: CpSatNeighborho
 }
 
 function buildWindowFeatures(
+  G: Grid,
   window: CpSatNeighborhoodWindow,
+  plan: Pick<
+    ReplayWindowPlan,
+    "operatorName" | "operatorScore" | "operatorExploration" | "candidateWindowCount" | "candidateRankRatio"
+  >,
   params: SolverParams,
   incumbent: Solution,
   selectedWindow: CpSatNeighborhoodWindow | null
 ): LnsWindowReplayFeatures {
   let serviceCountInside = 0;
+  let serviceFootprintCellsInside = 0;
   let serviceBonusInside = 0;
+  const occupiedBuildingCells = new Set<string>();
   for (let serviceIndex = 0; serviceIndex < incumbent.services.length; serviceIndex++) {
     const service = normalizeServicePlacement(incumbent.services[serviceIndex]);
-    if (!rectangleIntersectsWindow(window, service.r, service.c, service.rows, service.cols)) continue;
+    const overlapArea = rectangleOverlapArea(window, service.r, service.c, service.rows, service.cols);
+    if (overlapArea <= 0) continue;
     serviceCountInside += 1;
+    serviceFootprintCellsInside += overlapArea;
     serviceBonusInside += incumbent.servicePopulationIncreases[serviceIndex] ?? 0;
+    addRectangleOverlapCells(occupiedBuildingCells, window, service.r, service.c, service.rows, service.cols);
   }
 
   let residentialCountInside = 0;
+  let residentialFootprintCellsInside = 0;
   let residentialHeadroomInside = 0;
   for (let residentialIndex = 0; residentialIndex < incumbent.residentials.length; residentialIndex++) {
     const residential = incumbent.residentials[residentialIndex];
-    if (!rectangleIntersectsWindow(window, residential.r, residential.c, residential.rows, residential.cols)) continue;
+    const overlapArea = rectangleOverlapArea(window, residential.r, residential.c, residential.rows, residential.cols);
+    if (overlapArea <= 0) continue;
     residentialCountInside += 1;
+    residentialFootprintCellsInside += overlapArea;
     const typeIndex = incumbent.residentialTypeIndices[residentialIndex];
     const { max } = getResidentialBaseMax(params, residential.rows, residential.cols, typeIndex);
     residentialHeadroomInside += Math.max(0, max - (incumbent.populations[residentialIndex] ?? 0));
+    addRectangleOverlapCells(occupiedBuildingCells, window, residential.r, residential.c, residential.rows, residential.cols);
   }
 
+  let allowedCellCountInside = 0;
+  let blockedCellCountInside = 0;
+  let roadCountInside = 0;
+  let emptyAllowedCellCountInside = 0;
+  let anchorBoundaryCellCount = 0;
+  for (let r = window.top; r < window.top + window.rows; r++) {
+    for (let c = window.left; c < window.left + window.cols; c++) {
+      if (r === 0 || c === 0) anchorBoundaryCellCount += 1;
+      const key = cellKey(r, c);
+      if (!isAllowed(G, r, c)) {
+        blockedCellCountInside += 1;
+        continue;
+      }
+      allowedCellCountInside += 1;
+      const hasRoad = incumbent.roads.has(key);
+      if (hasRoad) roadCountInside += 1;
+      if (!hasRoad && !occupiedBuildingCells.has(key)) emptyAllowedCellCountInside += 1;
+    }
+  }
+
+  const area = window.rows * window.cols;
+  const gridArea = Math.max(1, height(G) * width(G));
+  const buildingCellCount = occupiedBuildingCells.size;
   return {
-    area: window.rows * window.cols,
+    operatorName: plan.operatorName,
+    operatorScore: plan.operatorScore,
+    operatorExploration: plan.operatorExploration,
+    candidateWindowCount: plan.candidateWindowCount,
+    candidateRankRatio: plan.candidateRankRatio,
+    area,
+    windowAreaRatio: area / gridArea,
     touchesRoadAnchorBoundary: window.top === 0 || window.left === 0,
-    roadCountInside: [...incumbent.roads].filter((key) => roadInsideWindow(window, key)).length,
+    touchesTopBoundary: window.top === 0,
+    touchesLeftBoundary: window.left === 0,
+    minAnchorDistance: Math.min(window.top, window.left),
+    anchorBoundaryCellCount,
+    anchorBoundaryCoverageRatio: anchorBoundaryCellCount / Math.max(1, area),
+    allowedCellCountInside,
+    blockedCellCountInside,
+    roadCountInside,
     serviceCountInside,
+    serviceFootprintCellsInside,
     residentialCountInside,
+    residentialFootprintCellsInside,
+    occupiedBuildingCellCountInside: buildingCellCount,
+    emptyAllowedCellCountInside,
+    roadDensityInside: roadCountInside / Math.max(1, allowedCellCountInside),
+    buildingDensityInside: buildingCellCount / Math.max(1, allowedCellCountInside),
+    emptyAllowedRatioInside: emptyAllowedCellCountInside / Math.max(1, allowedCellCountInside),
     residentialHeadroomInside,
+    residentialHeadroomDensityInside: residentialHeadroomInside / Math.max(1, area),
     serviceBonusInside,
+    serviceBonusDensityInside: serviceBonusInside / Math.max(1, area),
     selectedByBaseline: sameWindow(selectedWindow, window),
   };
 }
@@ -304,14 +397,12 @@ function replayWindow(
   pressureFamily: LnsReplayPressureFamilyLabel,
   seed: number | null,
   incumbent: Solution,
-  window: CpSatNeighborhoodWindow,
-  windowIndex: number,
-  selectionSource: LnsWindowReplayLabel["selectionSource"],
+  plan: ReplayWindowPlan,
   selectedWindow: CpSatNeighborhoodWindow | null,
   repairTimeLimitSeconds: number
 ): LnsWindowReplayLabel {
   const startedAtMs = performance.now();
-  const features = buildWindowFeatures(window, params, incumbent, selectedWindow);
+  const features = buildWindowFeatures(G, plan.window, plan, params, incumbent, selectedWindow);
   try {
     const candidate = solveCpSat(G, {
       ...params,
@@ -320,7 +411,7 @@ function replayWindow(
         ...(params.cpSat ?? {}),
         numWorkers: 1,
         timeLimitSeconds: repairTimeLimitSeconds,
-        warmStartHint: buildLnsWarmStartHint(incumbent, window),
+        warmStartHint: buildLnsWarmStartHint(incumbent, plan.window),
       },
     });
     const populationDelta = candidate.totalPopulation - incumbent.totalPopulation;
@@ -330,9 +421,9 @@ function replayWindow(
       caseName,
       pressureFamily,
       seed,
-      windowIndex,
-      selectionSource,
-      window: { ...window },
+      windowIndex: plan.windowIndex,
+      selectionSource: plan.selectionSource,
+      window: { ...plan.window },
       selectedByBaseline: features.selectedByBaseline,
       incumbentPopulation: incumbent.totalPopulation,
       totalPopulation: candidate.totalPopulation,
@@ -354,9 +445,9 @@ function replayWindow(
       caseName,
       pressureFamily,
       seed,
-      windowIndex,
-      selectionSource,
-      window: { ...window },
+      windowIndex: plan.windowIndex,
+      selectionSource: plan.selectionSource,
+      window: { ...plan.window },
       selectedByBaseline: features.selectedByBaseline,
       incumbentPopulation: incumbent.totalPopulation,
       totalPopulation: incumbent.totalPopulation,
@@ -377,6 +468,11 @@ interface ReplayWindowPlan {
   window: CpSatNeighborhoodWindow;
   windowIndex: number;
   selectionSource: LnsWindowReplayLabel["selectionSource"];
+  operatorName: LnsRepairOperatorName;
+  operatorScore: number;
+  operatorExploration: boolean;
+  candidateWindowCount: number;
+  candidateRankRatio: number;
 }
 
 function replayWindowKey(window: CpSatNeighborhoodWindow): string {
@@ -384,15 +480,15 @@ function replayWindowKey(window: CpSatNeighborhoodWindow): string {
 }
 
 function selectReplayWindowPlans(
-  windows: readonly CpSatNeighborhoodWindow[],
+  candidates: ReturnType<typeof buildNeighborhoodCandidates>,
   maxWindows: number,
   explorationWindowCount: number
 ): ReplayWindowPlan[] {
+  const windows = uniqueWindowPlansFromCandidates(candidates);
   const selected = new Map<string, ReplayWindowPlan>();
-  for (const [windowIndex, window] of windows.slice(0, maxWindows).entries()) {
-    selected.set(replayWindowKey(window), {
-      window,
-      windowIndex,
+  for (const plan of windows.slice(0, maxWindows)) {
+    selected.set(replayWindowKey(plan.window), {
+      ...plan,
       selectionSource: "baseline-top-k",
     });
   }
@@ -405,18 +501,46 @@ function selectReplayWindowPlans(
   const stride = Math.max(1, Math.floor(tail.length / explorationWindowCount));
   let explorationAdded = 0;
   for (let index = tail.length - 1; index >= 0 && explorationAdded < explorationWindowCount; index -= stride) {
-    const window = tail[index];
-    const key = replayWindowKey(window);
+    const plan = tail[index]!;
+    const key = replayWindowKey(plan.window);
     if (selected.has(key)) continue;
     selected.set(key, {
-      window,
-      windowIndex: maxWindows + index,
+      ...plan,
       selectionSource: "exploration-tail",
     });
     explorationAdded++;
   }
 
   return [...selected.values()];
+}
+
+function uniqueWindowPlansFromCandidates(
+  candidates: ReturnType<typeof buildNeighborhoodCandidates>
+): ReplayWindowPlan[] {
+  const selected = new Map<string, ReplayWindowPlan>();
+  for (const [candidateIndex, candidate] of candidates.entries()) {
+    const key = replayWindowKey(candidate.window);
+    if (selected.has(key)) continue;
+    selected.set(key, {
+      window: candidate.window,
+      windowIndex: candidateIndex,
+      selectionSource: "baseline-top-k",
+      operatorName: candidate.operatorName,
+      operatorScore: candidate.score,
+      operatorExploration: candidate.exploration,
+      candidateWindowCount: 0,
+      candidateRankRatio: 0,
+    });
+  }
+  const values = [...selected.values()];
+  const candidateWindowCount = values.length;
+  return values.map((plan) => ({
+    ...plan,
+    candidateWindowCount,
+    candidateRankRatio: candidateWindowCount <= 1
+      ? 0
+      : plan.windowIndex / (candidateWindowCount - 1),
+  }));
 }
 
 export function runLnsWindowReplayLabels(
@@ -440,13 +564,14 @@ export function runLnsWindowReplayLabels(
         neighborhoodCols: lns.neighborhoodCols ?? Math.max(1, Math.ceil(width(G) / 2)),
         neighborhoodAnchorPolicy: lns.neighborhoodAnchorPolicy,
       };
+      const candidates = buildNeighborhoodCandidates(G, params, incumbent, neighborhoodOptions, 1);
       const windows = buildNeighborhoodWindows(G, params, incumbent, neighborhoodOptions, 1);
       const selectedWindow = windows.length
         ? selectNeighborhoodWindow(windows, 0, 0, neighborhoodOptions)
         : null;
-      const replayWindows = selectReplayWindowPlans(windows, maxWindows, explorationWindowCount);
+      const replayWindows = selectReplayWindowPlans(candidates, maxWindows, explorationWindowCount);
       const pressureFamily = getLnsReplayPressureFamily(benchmarkCase);
-      const labels = replayWindows.map(({ window, windowIndex, selectionSource }) =>
+      const labels = replayWindows.map((plan) =>
         replayWindow(
           G,
           params,
@@ -454,9 +579,7 @@ export function runLnsWindowReplayLabels(
           pressureFamily,
           seed,
           incumbent,
-          window,
-          windowIndex,
-          selectionSource,
+          plan,
           selectedWindow,
           replayRepairTimeLimitSeconds
         )
@@ -536,7 +659,7 @@ export function formatLnsWindowReplayLabels(result: LnsWindowReplaySuiteResult):
     );
     for (const label of benchmarkCase.labels) {
       lines.push(
-        `  window#${label.windowIndex} ${formatWindow(label.window)} source=${label.selectionSource} selected=${label.selectedByBaseline} status=${label.status} usable=${label.usable} population=${label.totalPopulation} delta=${formatSigned(label.populationDelta)} improvement=+${label.improvement} repair=${label.repairTimeLimitSeconds}s valid=${label.validation.valid} features=area:${label.features.area} roads:${label.features.roadCountInside} services:${label.features.serviceCountInside} residentials:${label.features.residentialCountInside} headroom:${label.features.residentialHeadroomInside} service-bonus:${label.features.serviceBonusInside}`
+        `  window#${label.windowIndex} ${formatWindow(label.window)} source=${label.selectionSource} operator=${label.features.operatorName} selected=${label.selectedByBaseline} status=${label.status} usable=${label.usable} population=${label.totalPopulation} delta=${formatSigned(label.populationDelta)} improvement=+${label.improvement} repair=${label.repairTimeLimitSeconds}s valid=${label.validation.valid} features=area:${label.features.area} allowed:${label.features.allowedCellCountInside} empty:${label.features.emptyAllowedCellCountInside} roads:${label.features.roadCountInside} services:${label.features.serviceCountInside} service-cells:${label.features.serviceFootprintCellsInside} residentials:${label.features.residentialCountInside} residential-cells:${label.features.residentialFootprintCellsInside} headroom:${label.features.residentialHeadroomInside} service-bonus:${label.features.serviceBonusInside}`
       );
     }
   }

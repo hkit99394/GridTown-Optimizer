@@ -4417,7 +4417,16 @@ function testLnsWindowReplayLabelRunner() {
     assert.equal(selectedLabel.features.selectedByBaseline, true);
     assert.equal(selectedLabel.pressureFamily, "anchor-service");
     assert.equal(selectedLabel.selectionSource, "baseline-top-k");
+    assert.equal(selectedLabel.features.operatorName, "weak-service-repair");
+    assert.equal(selectedLabel.features.operatorScore > 0, true);
+    assert.equal(selectedLabel.features.candidateWindowCount >= 2, true);
+    assert.equal(selectedLabel.features.candidateRankRatio >= 0, true);
     assert.equal(selectedLabel.features.area, 9);
+    assert.equal(selectedLabel.features.windowAreaRatio > 0, true);
+    assert.equal(selectedLabel.features.allowedCellCountInside > 0, true);
+    assert.equal(selectedLabel.features.emptyAllowedCellCountInside >= 0, true);
+    assert.equal(selectedLabel.features.serviceFootprintCellsInside >= 1, true);
+    assert.equal(selectedLabel.features.occupiedBuildingCellCountInside >= selectedLabel.features.serviceFootprintCellsInside, true);
     assert.equal(typeof selectedLabel.validation.valid, "boolean");
     assert.equal(selectedLabel.validation.recomputedTotalPopulation >= 0, true);
     assert.equal(selectedLabel.features.serviceCountInside >= 1, true);

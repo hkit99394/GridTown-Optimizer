@@ -353,6 +353,9 @@ export function formatGreedyBenchmarkSuite(result: GreedyBenchmarkSuiteResult): 
       lines.push(
         `  step14=lookahead:${counters.servicePhase.lookaheadEvaluations} res-scans:${counters.servicePhase.lookaheadResidentialScans} wins:${counters.servicePhase.lookaheadWins}`
       );
+      lines.push(
+        `  learned-service-ranking=evals:${counters.servicePhase.learnedRankingEvaluations} wins:${counters.servicePhase.learnedRankingWins}`
+      );
     } else {
       lines.push("  profile=disabled");
     }

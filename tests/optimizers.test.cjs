@@ -11,7 +11,9 @@ const {
   buildCpSatBenchmarkCpuPlan,
   buildLnsReplayLabelScaleReadiness,
   collectGreedyOrderingLabelsFromBenchmarkSuite,
+  createGreedyLearnedOnlineAbSnapshot,
   createGreedyOfflineRankerSnapshot,
+  createLnsOfflineRankerSnapshot,
   createLearnedRankingLabelSnapshot,
   DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS,
   DEFAULT_LEARNED_RANKING_LABEL_SPLITS,
@@ -37,8 +39,10 @@ const {
   formatDeterministicAblationGateReport,
   formatCrossModeBenchmarkSuite,
   formatGreedyConnectivityShadowOrderingLabels,
+  formatGreedyLearnedOnlineAb,
   formatGreedyOfflineRankerExperiment,
   formatLearnedRankingLabelSuite,
+  formatLnsOfflineRankerExperiment,
   formatLnsNeighborhoodAblation,
   formatLnsBenchmarkSuite,
   formatLnsWindowReplayLabels,
@@ -52,8 +56,10 @@ const {
   runCrossModeBenchmarkBudgetAblations,
   runCrossModeBenchmarkSuite,
   runGreedyConnectivityShadowOrderingLabels,
+  runGreedyLearnedOnlineAb,
   runGreedyOfflineRankerExperiment,
   runLearnedRankingLabelSuite,
+  runLnsOfflineRankerExperiment,
   runLnsNeighborhoodAblation,
   runLnsWindowReplayLabels,
   runLnsBenchmarkSuite,
@@ -1881,6 +1887,151 @@ function testGreedyOfflineRankerExperiment() {
   assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
   assert.match(formatted, /CPU-First Greedy Offline Ranker/);
   assert.match(formatted, /Gate: passed=true/);
+}
+
+function syntheticLnsWindowSummary(options) {
+  const serviceBonusInside = options.serviceBonusInside ?? 0;
+  const windowIndex = options.windowIndex ?? 0;
+  return {
+    windowIndex,
+    selectionSource: "baseline-top-k",
+    selectedByBaseline: false,
+    totalPopulation: options.totalPopulation ?? 100,
+    populationDelta: options.populationDelta ?? 0,
+    status: options.status ?? "neutral",
+    window: {
+      top: 1,
+      left: 1,
+      rows: 3,
+      cols: 3,
+    },
+    features: {
+      area: 9,
+      touchesRoadAnchorBoundary: false,
+      roadCountInside: 1,
+      serviceCountInside: serviceBonusInside > 0 ? 1 : 0,
+      residentialCountInside: 0,
+      residentialHeadroomInside: 0,
+      serviceBonusInside,
+      selectedByBaseline: false,
+    },
+  };
+}
+
+function syntheticLnsOfflineRankerLabels(split, casePrefix, count) {
+  const labels = [];
+  for (let index = 0; index < count; index += 1) {
+    const anchorFamily = index % 2 === 0;
+    const pressureFamily = anchorFamily ? "anchor-service" : "gate";
+    const betterBonus = anchorFamily ? 100 : 0;
+    const worseBonus = anchorFamily ? 0 : 100;
+    labels.push({
+      id: `${split}:${casePrefix}-${pressureFamily}-${index % 3}:7:lns-window-pair:${index}`,
+      split,
+      caseName: `${casePrefix}-${pressureFamily}-${index % 3}`,
+      pressureFamily,
+      seed: 7,
+      labelIndex: index,
+      target: "higher-window-improvement",
+      status: "ranked",
+      margin: 100,
+      usable: true,
+      better: syntheticLnsWindowSummary({
+        windowIndex: 0,
+        serviceBonusInside: betterBonus,
+        populationDelta: 100,
+        status: "improved",
+      }),
+      worse: syntheticLnsWindowSummary({
+        windowIndex: 0,
+        serviceBonusInside: worseBonus,
+        populationDelta: 0,
+        status: "neutral",
+      }),
+    });
+  }
+  return labels;
+}
+
+function testLnsOfflineRankerExperiment() {
+  const labels = [
+    ...syntheticLnsOfflineRankerLabels("development", "lns-ranker-dev", 80),
+    ...syntheticLnsOfflineRankerLabels("holdout", "lns-ranker-holdout", 40),
+  ];
+  const result = runLnsOfflineRankerExperiment({
+    labels,
+    epochs: 80,
+    inferenceRepeats: 2,
+  });
+  const snapshot = createLnsOfflineRankerSnapshot(result);
+  const formatted = formatLnsOfflineRankerExperiment(result);
+  const deterministic = result.baselines.find((baseline) => baseline.name === "deterministic-window-proxy");
+  const random = result.baselines.find((baseline) => baseline.name === "random-hash");
+  const singleFeature = result.baselines.find((baseline) => baseline.name === "best-single-feature");
+
+  assert.equal(result.schemaVersion, 1);
+  assert.equal(result.audit.cpuOnly, true);
+  assert.equal(result.audit.runtimeIntegration, false);
+  assert.equal(result.audit.solverDefaultsChanged, false);
+  assert.equal(result.audit.trainedOnNeutralPairs, false);
+  assert.equal(result.leakage.protectedHoldout, true);
+  assert.deepEqual(result.leakage.lnsOverlap, []);
+  assert.equal(result.labels.labelCount, labels.length);
+  assert.equal(result.labels.rankedLabelCount, labels.length);
+  assert.equal(result.labels.splits.length, 2);
+  assert.equal(result.model.kind, "pairwise-linear");
+  assert.equal(result.model.cpuOnly, true);
+  assert.equal(result.model.trainingPairCount, 80);
+  assert.equal(result.model.featureNames.length, result.model.weights.length);
+  assert.equal(result.modelMetrics.holdout.accuracy, 1);
+  assert.equal(result.gate.passed, true);
+  assert.equal(result.gate.failedReasons.length, 0);
+  assert.equal(result.decision, "lns-offline-ranker-ready-for-online-ab");
+  assert(result.inference.microsecondsPerPair >= 0);
+  assert(deterministic);
+  assert(random);
+  assert(singleFeature);
+  assert(result.modelMetrics.holdout.accuracy > deterministic.holdout.accuracy);
+  assert(result.modelMetrics.holdout.accuracy > random.holdout.accuracy);
+  assert(result.modelMetrics.holdout.accuracy > singleFeature.holdout.accuracy);
+  assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
+  assert.match(formatted, /CPU-First LNS Offline Window Ranker/);
+  assert.match(formatted, /Gate: passed=true/);
+}
+
+function testGreedyLearnedServiceRankingOnlineAb() {
+  const result = runGreedyLearnedOnlineAb({
+    names: ["fixed-service-realization-complete"],
+    seeds: [7],
+  });
+  const snapshot = createGreedyLearnedOnlineAbSnapshot(result);
+  const formatted = formatGreedyLearnedOnlineAb(result);
+  const guardedHoldout = result.summaries.find((summary) =>
+    summary.variantName === "learned-guarded" && summary.split === "holdout"
+  );
+  const exploratoryHoldout = result.summaries.find((summary) =>
+    summary.variantName === "learned-exploratory" && summary.split === "holdout"
+  );
+  const guardedRun = result.cases[0].variants.find((variant) => variant.variantName === "learned-guarded");
+
+  assert.equal(result.schemaVersion, 1);
+  assert.deepEqual(result.variants, ["baseline", "learned-guarded", "learned-exploratory"]);
+  assert.equal(result.cases.length, 1);
+  assert.equal(result.cases[0].split, "holdout");
+  assert.equal(result.cases[0].comparisons.length, 2);
+  assert.equal(result.candidateLimit, 12);
+  assert.equal(result.guardedMinScoreRatio, 1);
+  assert(guardedHoldout);
+  assert(exploratoryHoldout);
+  assert(guardedRun);
+  assert.equal(guardedHoldout.comparisonCount, 1);
+  assert.equal(guardedHoldout.lossCount, 0);
+  assert.equal(guardedRun.learnedRankingEvaluations > 0, true);
+  assert.equal(result.gate.protectedHoldout, true);
+  assert.equal(result.decision, "keep-learned-service-ranking-feature-flagged");
+  assert.equal(Object.hasOwn(snapshot, "generatedAt"), false);
+  assert.match(formatted, /Greedy Learned Service Ranking Online A\/B/);
+  assert.match(formatted, /learned-guarded\/holdout/);
 }
 
 function testGreedyRoadOpportunityCounterfactualsAreBoundedAndObservational() {
@@ -8938,6 +9089,8 @@ async function main() {
   testGreedyConnectivityShadowOrderingLabelRunner();
   testLearnedRankingLabelSuite();
   testGreedyOfflineRankerExperiment();
+  testLnsOfflineRankerExperiment();
+  testGreedyLearnedServiceRankingOnlineAb();
   testGreedyRoadOpportunityCounterfactualsAreBoundedAndObservational();
   testRoadOpportunityLocalSearchMeasurementUsesPostRemoveOccupancy();
   testGreedyStopFileCancelsBeforePrecompute();

@@ -1044,6 +1044,22 @@ function assertValidGreedyOptions(params: SolverParams): void {
       0,
       GREEDY_MAX_SERVICE_CANDIDATE_LIMIT
     );
+    requireOptionalBoolean(greedy, "learnedServiceRanking", "Greedy option greedy.learnedServiceRanking");
+    requireOptionalIntegerInRange(
+      greedy,
+      "learnedServiceRankingCandidateLimit",
+      "Greedy option greedy.learnedServiceRankingCandidateLimit",
+      1,
+      GREEDY_MAX_SERVICE_CANDIDATE_LIMIT
+    );
+    requireOptionalFiniteNumberInRange(
+      greedy,
+      "learnedServiceRankingMinScoreRatio",
+      "Greedy option greedy.learnedServiceRankingMinScoreRatio",
+      0,
+      1,
+      true
+    );
     requireOptionalBoolean(greedy, "deferRoadCommitment", "Greedy option greedy.deferRoadCommitment");
     requireOptionalBoolean(greedy, "densityTieBreaker", "Greedy option greedy.densityTieBreaker");
     requireOptionalFiniteNumberInRange(

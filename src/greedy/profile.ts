@@ -63,6 +63,8 @@ export function createGreedyProfileCounters(): GreedyProfileCounters {
       lookaheadEvaluations: 0,
       lookaheadResidentialScans: 0,
       lookaheadWins: 0,
+      learnedRankingEvaluations: 0,
+      learnedRankingWins: 0,
       candidateInvalidations: 0,
       typeInvalidations: 0,
       groupedScoreLookups: 0,

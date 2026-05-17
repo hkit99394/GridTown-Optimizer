@@ -1,0 +1,1288 @@
+{
+  "generatedAt": "2026-05-17T15:14:30.960Z",
+  "schemaVersion": 1,
+  "seeds": [
+    7,
+    19,
+    37
+  ],
+  "selectedCaseNames": [
+    "cap-sweep-mixed",
+    "service-local-neighborhood",
+    "step14-service-lookahead-reranker",
+    "row0-corridor-repair-pressure",
+    "fixed-service-realization-complete",
+    "geometry-occupancy-hot-path",
+    "typed-footprint-pressure",
+    "typed-availability-pressure"
+  ],
+  "variants": [
+    "baseline",
+    "learned-guarded",
+    "learned-exploratory"
+  ],
+  "splitCases": {
+    "development": [
+      "cap-sweep-mixed",
+      "service-local-neighborhood",
+      "step14-service-lookahead-reranker",
+      "row0-corridor-repair-pressure"
+    ],
+    "holdout": [
+      "fixed-service-realization-complete",
+      "geometry-occupancy-hot-path",
+      "typed-footprint-pressure",
+      "typed-availability-pressure"
+    ]
+  },
+  "candidateLimit": 12,
+  "guardedMinScoreRatio": 1,
+  "exploratoryMinScoreRatio": 0,
+  "cases": [
+    {
+      "split": "development",
+      "caseName": "cap-sweep-mixed",
+      "seed": 7,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 580,
+          "wallClockSeconds": 0.175110333,
+          "serviceCount": 3,
+          "residentialCount": 4,
+          "learnedRankingEvaluations": 0,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 580,
+          "wallClockSeconds": 0.28483187499999996,
+          "serviceCount": 3,
+          "residentialCount": 4,
+          "learnedRankingEvaluations": 5755,
+          "learnedRankingWins": 14
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 560,
+          "wallClockSeconds": 0.2141617080000001,
+          "serviceCount": 1,
+          "residentialCount": 5,
+          "learnedRankingEvaluations": 4415,
+          "learnedRankingWins": 82
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.10972154199999995
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": -20,
+          "wallClockDeltaVsBaselineSeconds": 0.03905137500000008
+        }
+      ]
+    },
+    {
+      "split": "development",
+      "caseName": "cap-sweep-mixed",
+      "seed": 19,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 580,
+          "wallClockSeconds": 0.1138705,
+          "serviceCount": 3,
+          "residentialCount": 4,
+          "learnedRankingEvaluations": 0,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 580,
+          "wallClockSeconds": 0.26995362499999986,
+          "serviceCount": 3,
+          "residentialCount": 4,
+          "learnedRankingEvaluations": 5755,
+          "learnedRankingWins": 14
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 560,
+          "wallClockSeconds": 0.205479333,
+          "serviceCount": 1,
+          "residentialCount": 5,
+          "learnedRankingEvaluations": 4415,
+          "learnedRankingWins": 82
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.15608312499999988
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": -20,
+          "wallClockDeltaVsBaselineSeconds": 0.09160883299999999
+        }
+      ]
+    },
+    {
+      "split": "development",
+      "caseName": "cap-sweep-mixed",
+      "seed": 37,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 580,
+          "wallClockSeconds": 0.10632491699999991,
+          "serviceCount": 3,
+          "residentialCount": 4,
+          "learnedRankingEvaluations": 0,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 580,
+          "wallClockSeconds": 0.269000916,
+          "serviceCount": 3,
+          "residentialCount": 4,
+          "learnedRankingEvaluations": 5755,
+          "learnedRankingWins": 14
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 560,
+          "wallClockSeconds": 0.20970366699999998,
+          "serviceCount": 1,
+          "residentialCount": 5,
+          "learnedRankingEvaluations": 4415,
+          "learnedRankingWins": 82
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.16267599900000007
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": -20,
+          "wallClockDeltaVsBaselineSeconds": 0.10337875000000007
+        }
+      ]
+    },
+    {
+      "split": "development",
+      "caseName": "service-local-neighborhood",
+      "seed": 7,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 395,
+          "wallClockSeconds": 0.03845049999999992,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "learnedRankingEvaluations": 0,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 395,
+          "wallClockSeconds": 0.13543883400000004,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "learnedRankingEvaluations": 5307,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 395,
+          "wallClockSeconds": 0.12751595799999996,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "learnedRankingEvaluations": 5151,
+          "learnedRankingWins": 47
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.09698833400000012
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.08906545800000004
+        }
+      ]
+    },
+    {
+      "split": "development",
+      "caseName": "service-local-neighborhood",
+      "seed": 19,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 395,
+          "wallClockSeconds": 0.03429754199999979,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "learnedRankingEvaluations": 0,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 395,
+          "wallClockSeconds": 0.13280741699999998,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "learnedRankingEvaluations": 5307,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 395,
+          "wallClockSeconds": 0.12873833399999968,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "learnedRankingEvaluations": 5151,
+          "learnedRankingWins": 47
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.09850987500000019
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.09444079199999988
+        }
+      ]
+    },
+    {
+      "split": "development",
+      "caseName": "service-local-neighborhood",
+      "seed": 37,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 395,
+          "wallClockSeconds": 0.0407795000000001,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "learnedRankingEvaluations": 0,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 395,
+          "wallClockSeconds": 0.13802366600000004,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "learnedRankingEvaluations": 5307,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 395,
+          "wallClockSeconds": 0.12978125,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "learnedRankingEvaluations": 5151,
+          "learnedRankingWins": 47
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.09724416599999994
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.08900174999999988
+        }
+      ]
+    },
+    {
+      "split": "development",
+      "caseName": "step14-service-lookahead-reranker",
+      "seed": 7,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 395,
+          "wallClockSeconds": 0.03884220800000003,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "learnedRankingEvaluations": 0,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 395,
+          "wallClockSeconds": 0.12027083300000004,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "learnedRankingEvaluations": 4445,
+          "learnedRankingWins": 2
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 395,
+          "wallClockSeconds": 0.1220369169999999,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "learnedRankingEvaluations": 4445,
+          "learnedRankingWins": 40
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.081428625
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.08319470899999987
+        }
+      ]
+    },
+    {
+      "split": "development",
+      "caseName": "step14-service-lookahead-reranker",
+      "seed": 19,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 395,
+          "wallClockSeconds": 0.03450229200000012,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "learnedRankingEvaluations": 0,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 395,
+          "wallClockSeconds": 0.11816733300000033,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "learnedRankingEvaluations": 4445,
+          "learnedRankingWins": 2
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 395,
+          "wallClockSeconds": 0.11739529100000028,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "learnedRankingEvaluations": 4445,
+          "learnedRankingWins": 40
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.08366504100000022
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.08289299900000016
+        }
+      ]
+    },
+    {
+      "split": "development",
+      "caseName": "step14-service-lookahead-reranker",
+      "seed": 37,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 395,
+          "wallClockSeconds": 0.03390650000000005,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "learnedRankingEvaluations": 0,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 395,
+          "wallClockSeconds": 0.11686008300000003,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "learnedRankingEvaluations": 4445,
+          "learnedRankingWins": 2
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 395,
+          "wallClockSeconds": 0.1156932499999998,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "learnedRankingEvaluations": 4445,
+          "learnedRankingWins": 40
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.08295358299999998
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.08178674999999976
+        }
+      ]
+    },
+    {
+      "split": "development",
+      "caseName": "row0-corridor-repair-pressure",
+      "seed": 7,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 260,
+          "wallClockSeconds": 0.012348582999999962,
+          "serviceCount": 1,
+          "residentialCount": 1,
+          "learnedRankingEvaluations": 0,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 260,
+          "wallClockSeconds": 0.014280624999999873,
+          "serviceCount": 1,
+          "residentialCount": 1,
+          "learnedRankingEvaluations": 230,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 260,
+          "wallClockSeconds": 0.01622129199999972,
+          "serviceCount": 1,
+          "residentialCount": 1,
+          "learnedRankingEvaluations": 263,
+          "learnedRankingWins": 5
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.0019320419999999117
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.003872708999999759
+        }
+      ]
+    },
+    {
+      "split": "development",
+      "caseName": "row0-corridor-repair-pressure",
+      "seed": 19,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 260,
+          "wallClockSeconds": 0.010601916999999957,
+          "serviceCount": 1,
+          "residentialCount": 1,
+          "learnedRankingEvaluations": 0,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 260,
+          "wallClockSeconds": 0.014255541999999878,
+          "serviceCount": 1,
+          "residentialCount": 1,
+          "learnedRankingEvaluations": 230,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 260,
+          "wallClockSeconds": 0.014626749999999902,
+          "serviceCount": 1,
+          "residentialCount": 1,
+          "learnedRankingEvaluations": 263,
+          "learnedRankingWins": 5
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.003653624999999921
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.004024832999999945
+        }
+      ]
+    },
+    {
+      "split": "development",
+      "caseName": "row0-corridor-repair-pressure",
+      "seed": 37,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 260,
+          "wallClockSeconds": 0.00960758399999986,
+          "serviceCount": 1,
+          "residentialCount": 1,
+          "learnedRankingEvaluations": 0,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 260,
+          "wallClockSeconds": 0.01381008299999985,
+          "serviceCount": 1,
+          "residentialCount": 1,
+          "learnedRankingEvaluations": 230,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 260,
+          "wallClockSeconds": 0.014750042000000121,
+          "serviceCount": 1,
+          "residentialCount": 1,
+          "learnedRankingEvaluations": 263,
+          "learnedRankingWins": 5
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.00420249899999999
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.005142458000000261
+        }
+      ]
+    },
+    {
+      "split": "holdout",
+      "caseName": "fixed-service-realization-complete",
+      "seed": 7,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 400,
+          "wallClockSeconds": 0.04849933400000009,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "learnedRankingEvaluations": 0,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 400,
+          "wallClockSeconds": 0.1533738330000001,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "learnedRankingEvaluations": 5307,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 400,
+          "wallClockSeconds": 0.1428370420000001,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "learnedRankingEvaluations": 5151,
+          "learnedRankingWins": 47
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.10487449900000001
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.09433770800000002
+        }
+      ]
+    },
+    {
+      "split": "holdout",
+      "caseName": "fixed-service-realization-complete",
+      "seed": 19,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 400,
+          "wallClockSeconds": 0.04593287500000042,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "learnedRankingEvaluations": 0,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 400,
+          "wallClockSeconds": 0.1451584160000002,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "learnedRankingEvaluations": 5307,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 400,
+          "wallClockSeconds": 0.14275166700000044,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "learnedRankingEvaluations": 5151,
+          "learnedRankingWins": 47
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.09922554099999978
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.09681879200000001
+        }
+      ]
+    },
+    {
+      "split": "holdout",
+      "caseName": "fixed-service-realization-complete",
+      "seed": 37,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 400,
+          "wallClockSeconds": 0.046452124999999796,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "learnedRankingEvaluations": 0,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 400,
+          "wallClockSeconds": 0.14506516699999975,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "learnedRankingEvaluations": 5307,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 400,
+          "wallClockSeconds": 0.14078562500000044,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "learnedRankingEvaluations": 5151,
+          "learnedRankingWins": 47
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.09861304199999996
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.09433350000000065
+        }
+      ]
+    },
+    {
+      "split": "holdout",
+      "caseName": "geometry-occupancy-hot-path",
+      "seed": 7,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 1160,
+          "wallClockSeconds": 0.4144249580000005,
+          "serviceCount": 5,
+          "residentialCount": 7,
+          "learnedRankingEvaluations": 0,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 1160,
+          "wallClockSeconds": 1.0675234999999994,
+          "serviceCount": 5,
+          "residentialCount": 7,
+          "learnedRankingEvaluations": 13719,
+          "learnedRankingWins": 23
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 1060,
+          "wallClockSeconds": 1.0137065000000003,
+          "serviceCount": 5,
+          "residentialCount": 6,
+          "learnedRankingEvaluations": 14263,
+          "learnedRankingWins": 119
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.6530985419999988
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": -100,
+          "wallClockDeltaVsBaselineSeconds": 0.5992815419999997
+        }
+      ]
+    },
+    {
+      "split": "holdout",
+      "caseName": "geometry-occupancy-hot-path",
+      "seed": 19,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 1160,
+          "wallClockSeconds": 0.41946379100000014,
+          "serviceCount": 5,
+          "residentialCount": 7,
+          "learnedRankingEvaluations": 0,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 1160,
+          "wallClockSeconds": 1.437495167,
+          "serviceCount": 5,
+          "residentialCount": 7,
+          "learnedRankingEvaluations": 13719,
+          "learnedRankingWins": 23
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 1060,
+          "wallClockSeconds": 1.0083856670000004,
+          "serviceCount": 5,
+          "residentialCount": 6,
+          "learnedRankingEvaluations": 14263,
+          "learnedRankingWins": 119
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 1.018031376
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": -100,
+          "wallClockDeltaVsBaselineSeconds": 0.5889218760000003
+        }
+      ]
+    },
+    {
+      "split": "holdout",
+      "caseName": "geometry-occupancy-hot-path",
+      "seed": 37,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 1160,
+          "wallClockSeconds": 0.40250737500000106,
+          "serviceCount": 5,
+          "residentialCount": 7,
+          "learnedRankingEvaluations": 0,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 1160,
+          "wallClockSeconds": 1.052742959000001,
+          "serviceCount": 5,
+          "residentialCount": 7,
+          "learnedRankingEvaluations": 13719,
+          "learnedRankingWins": 23
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 1060,
+          "wallClockSeconds": 0.9897970839999998,
+          "serviceCount": 5,
+          "residentialCount": 6,
+          "learnedRankingEvaluations": 14263,
+          "learnedRankingWins": 119
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.650235584
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": -100,
+          "wallClockDeltaVsBaselineSeconds": 0.5872897089999987
+        }
+      ]
+    },
+    {
+      "split": "holdout",
+      "caseName": "typed-footprint-pressure",
+      "seed": 7,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 505,
+          "wallClockSeconds": 0.11021187499999906,
+          "serviceCount": 2,
+          "residentialCount": 4,
+          "learnedRankingEvaluations": 0,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 505,
+          "wallClockSeconds": 0.18245745800000077,
+          "serviceCount": 2,
+          "residentialCount": 4,
+          "learnedRankingEvaluations": 3350,
+          "learnedRankingWins": 2
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 505,
+          "wallClockSeconds": 0.1807168330000004,
+          "serviceCount": 2,
+          "residentialCount": 4,
+          "learnedRankingEvaluations": 3277,
+          "learnedRankingWins": 9
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.07224558300000171
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.07050495800000135
+        }
+      ]
+    },
+    {
+      "split": "holdout",
+      "caseName": "typed-footprint-pressure",
+      "seed": 19,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 505,
+          "wallClockSeconds": 0.09762429100000009,
+          "serviceCount": 2,
+          "residentialCount": 4,
+          "learnedRankingEvaluations": 0,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 505,
+          "wallClockSeconds": 0.1794579589999994,
+          "serviceCount": 2,
+          "residentialCount": 4,
+          "learnedRankingEvaluations": 3350,
+          "learnedRankingWins": 2
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 505,
+          "wallClockSeconds": 0.1767836669999997,
+          "serviceCount": 2,
+          "residentialCount": 4,
+          "learnedRankingEvaluations": 3277,
+          "learnedRankingWins": 9
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.0818336679999993
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.07915937599999961
+        }
+      ]
+    },
+    {
+      "split": "holdout",
+      "caseName": "typed-footprint-pressure",
+      "seed": 37,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 505,
+          "wallClockSeconds": 0.0980908330000002,
+          "serviceCount": 2,
+          "residentialCount": 4,
+          "learnedRankingEvaluations": 0,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 505,
+          "wallClockSeconds": 0.17864291700000104,
+          "serviceCount": 2,
+          "residentialCount": 4,
+          "learnedRankingEvaluations": 3350,
+          "learnedRankingWins": 2
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 505,
+          "wallClockSeconds": 0.1794109159999989,
+          "serviceCount": 2,
+          "residentialCount": 4,
+          "learnedRankingEvaluations": 3277,
+          "learnedRankingWins": 9
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.08055208400000084
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.0813200829999987
+        }
+      ]
+    },
+    {
+      "split": "holdout",
+      "caseName": "typed-availability-pressure",
+      "seed": 7,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 615,
+          "wallClockSeconds": 0.10003179199999977,
+          "serviceCount": 2,
+          "residentialCount": 5,
+          "learnedRankingEvaluations": 0,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 615,
+          "wallClockSeconds": 0.17026483399999962,
+          "serviceCount": 2,
+          "residentialCount": 5,
+          "learnedRankingEvaluations": 2550,
+          "learnedRankingWins": 11
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 615,
+          "wallClockSeconds": 0.19070308400000066,
+          "serviceCount": 2,
+          "residentialCount": 5,
+          "learnedRankingEvaluations": 2631,
+          "learnedRankingWins": 25
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.07023304199999984
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.09067129200000089
+        }
+      ]
+    },
+    {
+      "split": "holdout",
+      "caseName": "typed-availability-pressure",
+      "seed": 19,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 615,
+          "wallClockSeconds": 0.10134720899999956,
+          "serviceCount": 2,
+          "residentialCount": 5,
+          "learnedRankingEvaluations": 0,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 615,
+          "wallClockSeconds": 0.16833749999999964,
+          "serviceCount": 2,
+          "residentialCount": 5,
+          "learnedRankingEvaluations": 2550,
+          "learnedRankingWins": 11
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 615,
+          "wallClockSeconds": 0.18600541599999998,
+          "serviceCount": 2,
+          "residentialCount": 5,
+          "learnedRankingEvaluations": 2631,
+          "learnedRankingWins": 25
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.06699029100000008
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.08465820700000042
+        }
+      ]
+    },
+    {
+      "split": "holdout",
+      "caseName": "typed-availability-pressure",
+      "seed": 37,
+      "variants": [
+        {
+          "variantName": "baseline",
+          "totalPopulation": 615,
+          "wallClockSeconds": 0.1084837920000009,
+          "serviceCount": 2,
+          "residentialCount": 5,
+          "learnedRankingEvaluations": 0,
+          "learnedRankingWins": 0
+        },
+        {
+          "variantName": "learned-guarded",
+          "totalPopulation": 615,
+          "wallClockSeconds": 0.17486570799999937,
+          "serviceCount": 2,
+          "residentialCount": 5,
+          "learnedRankingEvaluations": 2550,
+          "learnedRankingWins": 11
+        },
+        {
+          "variantName": "learned-exploratory",
+          "totalPopulation": 615,
+          "wallClockSeconds": 0.18673741700000027,
+          "serviceCount": 2,
+          "residentialCount": 5,
+          "learnedRankingEvaluations": 2631,
+          "learnedRankingWins": 25
+        }
+      ],
+      "comparisons": [
+        {
+          "variantName": "learned-guarded",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.06638191599999847
+        },
+        {
+          "variantName": "learned-exploratory",
+          "populationDeltaVsBaseline": 0,
+          "wallClockDeltaVsBaselineSeconds": 0.07825362499999937
+        }
+      ]
+    }
+  ],
+  "summaries": [
+    {
+      "variantName": "learned-guarded",
+      "split": "development",
+      "comparisonCount": 12,
+      "winCount": 0,
+      "tieCount": 12,
+      "lossCount": 0,
+      "winRate": 0,
+      "lossRate": 0,
+      "meanPopulationDeltaVsBaseline": 0,
+      "medianPopulationDeltaVsBaseline": 0,
+      "worstDecilePopulationDeltaVsBaseline": 0,
+      "bestPopulationDeltaVsBaseline": 0,
+      "meanWallClockDeltaVsBaselineSeconds": 0.08158820466666668,
+      "learnedRankingEvaluations": 47211,
+      "learnedRankingWins": 48
+    },
+    {
+      "variantName": "learned-guarded",
+      "split": "holdout",
+      "comparisonCount": 12,
+      "winCount": 0,
+      "tieCount": 12,
+      "lossCount": 0,
+      "winRate": 0,
+      "lossRate": 0,
+      "meanPopulationDeltaVsBaseline": 0,
+      "medianPopulationDeltaVsBaseline": 0,
+      "worstDecilePopulationDeltaVsBaseline": 0,
+      "bestPopulationDeltaVsBaseline": 0,
+      "meanWallClockDeltaVsBaselineSeconds": 0.25519293066666654,
+      "learnedRankingEvaluations": 74778,
+      "learnedRankingWins": 108
+    },
+    {
+      "variantName": "learned-guarded",
+      "split": "all",
+      "comparisonCount": 24,
+      "winCount": 0,
+      "tieCount": 24,
+      "lossCount": 0,
+      "winRate": 0,
+      "lossRate": 0,
+      "meanPopulationDeltaVsBaseline": 0,
+      "medianPopulationDeltaVsBaseline": 0,
+      "worstDecilePopulationDeltaVsBaseline": 0,
+      "bestPopulationDeltaVsBaseline": 0,
+      "meanWallClockDeltaVsBaselineSeconds": 0.16839056766666663,
+      "learnedRankingEvaluations": 121989,
+      "learnedRankingWins": 156
+    },
+    {
+      "variantName": "learned-exploratory",
+      "split": "development",
+      "comparisonCount": 12,
+      "winCount": 0,
+      "tieCount": 9,
+      "lossCount": 3,
+      "winRate": 0,
+      "lossRate": 0.25,
+      "meanPopulationDeltaVsBaseline": -5,
+      "medianPopulationDeltaVsBaseline": 0,
+      "worstDecilePopulationDeltaVsBaseline": -20,
+      "bestPopulationDeltaVsBaseline": 0,
+      "meanWallClockDeltaVsBaselineSeconds": 0.06395511799999996,
+      "learnedRankingEvaluations": 42822,
+      "learnedRankingWins": 522
+    },
+    {
+      "variantName": "learned-exploratory",
+      "split": "holdout",
+      "comparisonCount": 12,
+      "winCount": 0,
+      "tieCount": 9,
+      "lossCount": 3,
+      "winRate": 0,
+      "lossRate": 0.25,
+      "meanPopulationDeltaVsBaseline": -25,
+      "medianPopulationDeltaVsBaseline": 0,
+      "worstDecilePopulationDeltaVsBaseline": -100,
+      "bestPopulationDeltaVsBaseline": 0,
+      "meanWallClockDeltaVsBaselineSeconds": 0.2121292223333333,
+      "learnedRankingEvaluations": 75966,
+      "learnedRankingWins": 600
+    },
+    {
+      "variantName": "learned-exploratory",
+      "split": "all",
+      "comparisonCount": 24,
+      "winCount": 0,
+      "tieCount": 18,
+      "lossCount": 6,
+      "winRate": 0,
+      "lossRate": 0.25,
+      "meanPopulationDeltaVsBaseline": -15,
+      "medianPopulationDeltaVsBaseline": 0,
+      "worstDecilePopulationDeltaVsBaseline": -100,
+      "bestPopulationDeltaVsBaseline": 0,
+      "meanWallClockDeltaVsBaselineSeconds": 0.13804217016666664,
+      "learnedRankingEvaluations": 118788,
+      "learnedRankingWins": 1122
+    }
+  ],
+  "gate": {
+    "passed": false,
+    "failedReasons": [
+      "no holdout median population or mean wall-clock win"
+    ],
+    "protectedHoldout": true,
+    "promotedVariant": "learned-guarded",
+    "holdout": {
+      "variantName": "learned-guarded",
+      "split": "holdout",
+      "comparisonCount": 12,
+      "winCount": 0,
+      "tieCount": 12,
+      "lossCount": 0,
+      "winRate": 0,
+      "lossRate": 0,
+      "meanPopulationDeltaVsBaseline": 0,
+      "medianPopulationDeltaVsBaseline": 0,
+      "worstDecilePopulationDeltaVsBaseline": 0,
+      "bestPopulationDeltaVsBaseline": 0,
+      "meanWallClockDeltaVsBaselineSeconds": 0.25519293066666654,
+      "learnedRankingEvaluations": 74778,
+      "learnedRankingWins": 108
+    }
+  },
+  "hardware": {
+    "captured": true,
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M1 Pro",
+    "logicalCpuCount": 10,
+    "memoryBytes": 17179869184,
+    "totalMemoryBytes": 17179869184,
+    "gpuUsed": false
+  },
+  "decision": "keep-learned-service-ranking-feature-flagged",
+  "summary": "Feature-flagged Greedy learned service ranking did not pass online A/B: guarded holdout median delta 0, worst-decile 0, losses 0, mean wall delta 0.2552s. Exploratory holdout mean delta -25, losses 3. No default changed."
+}

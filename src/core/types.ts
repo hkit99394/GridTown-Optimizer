@@ -461,6 +461,12 @@ export interface GreedyOptions {
   localSearchServiceCandidateLimit?: number;
   /** Experimental Step 14 reranker: top-N service candidates to rescore with a bounded residential refill lookahead. Default 0/off. */
   serviceLookaheadCandidates?: number;
+  /** Experimental learned service re-ranking from the Phase 9 offline Greedy ranker. Default false/off. */
+  learnedServiceRanking?: boolean;
+  /** Maximum service candidates considered by the learned service re-ranker at each placement step. Default 12. */
+  learnedServiceRankingCandidateLimit?: number;
+  /** Minimum service marginal-score ratio required before learned ranking may displace the deterministic best. Default 1. */
+  learnedServiceRankingMinScoreRatio?: number;
   /** Prototype deferred road commitment during the main greedy construction pass (default false). */
   deferRoadCommitment?: boolean;
   /** Prefer more central high-population candidates when Greedy scores are close. Default false. */
@@ -587,6 +593,8 @@ export interface GreedyProfileCounters {
     lookaheadEvaluations: number;
     lookaheadResidentialScans: number;
     lookaheadWins: number;
+    learnedRankingEvaluations: number;
+    learnedRankingWins: number;
     candidateInvalidations: number;
     typeInvalidations: number;
     groupedScoreLookups: number;

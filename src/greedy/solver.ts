@@ -97,6 +97,7 @@ import {
   isBetterDensityAwareSearchSolution,
   isBetterSearchSolution,
 } from "./solutionRanking.js";
+import { scoreLearnedServiceCandidate } from "./learnedServiceRanking.js";
 import { applyDeterministicDominanceUpgrades } from "../core/dominanceUpgrades.js";
 import {
   buildFootprintGeometryCache,
@@ -171,6 +172,9 @@ interface GreedySolveContext {
   useTypes: boolean;
   localSearch: boolean;
   serviceLookaheadCandidates: number;
+  learnedServiceRanking: boolean;
+  learnedServiceRankingCandidateLimit: number;
+  learnedServiceRankingMinScoreRatio: number;
   profileCounters?: GreedyProfileCounters;
   recordProfilePhase?: GreedyProfilePhaseRecorder;
   maybeStop?: MaybeStop;
@@ -412,6 +416,9 @@ function getGreedyOptions(params: SolverParams): NormalizedGreedyOptions {
     localSearchServiceMoves: greedy.localSearchServiceMoves ?? true,
     localSearchServiceCandidateLimit: greedy.localSearchServiceCandidateLimit ?? 6,
     serviceLookaheadCandidates: greedy.serviceLookaheadCandidates ?? 0,
+    learnedServiceRanking: greedy.learnedServiceRanking ?? false,
+    learnedServiceRankingCandidateLimit: greedy.learnedServiceRankingCandidateLimit ?? 12,
+    learnedServiceRankingMinScoreRatio: greedy.learnedServiceRankingMinScoreRatio ?? 1,
     deferRoadCommitment: greedy.deferRoadCommitment ?? false,
     densityTieBreaker: greedy.densityTieBreaker ?? false,
     densityTieBreakerTolerancePercent: greedy.densityTieBreakerTolerancePercent ?? 2,
@@ -870,6 +877,10 @@ type ServiceLookaheadEvaluation = {
   refillScore: number;
 };
 
+type LearnedServiceCandidate = ServiceLookaheadCandidate & {
+  learnedScore: number;
+};
+
 const ROAD_OPPORTUNITY_COUNTERFACTUAL_POOL_LIMIT = ROAD_OPPORTUNITY_COUNTERFACTUAL_TRACE_LIMIT * 4;
 
 type RoadOpportunityCandidatePoolEntry<TCandidate> = {
@@ -903,6 +914,27 @@ function pushBoundedServiceLookaheadCandidate(
   shortlist: ServiceLookaheadCandidate[],
   limit: number,
   entry: ServiceLookaheadCandidate
+): void {
+  if (limit <= 0 || entry.score <= 0) return;
+  shortlist.push(entry);
+  shortlist.sort(compareServiceLookaheadCandidates);
+  if (shortlist.length > limit) shortlist.length = limit;
+}
+
+function compareLearnedServiceCandidates(
+  left: LearnedServiceCandidate,
+  right: LearnedServiceCandidate
+): number {
+  if (Math.abs(left.learnedScore - right.learnedScore) > 1e-9) {
+    return right.learnedScore - left.learnedScore;
+  }
+  return compareServiceLookaheadCandidates(left, right);
+}
+
+function pushBoundedLearnedServiceCandidate(
+  shortlist: LearnedServiceCandidate[],
+  limit: number,
+  entry: LearnedServiceCandidate
 ): void {
   if (limit <= 0 || entry.score <= 0) return;
   shortlist.push(entry);
@@ -1164,6 +1196,9 @@ function solveOne(
     useTypes,
     localSearch,
     serviceLookaheadCandidates,
+    learnedServiceRanking,
+    learnedServiceRankingCandidateLimit,
+    learnedServiceRankingMinScoreRatio,
     recordProfilePhase,
     recordConnectivityShadowDecision,
     recordRoadOpportunity,
@@ -1336,6 +1371,11 @@ function solveOne(
     && (maxResidentials === undefined || maxResidentials > 0)
     && anyResidentialCandidates.length > 0
     && residentialScoringGroups.length > 0;
+  const enableLearnedServiceRanking =
+    learnedServiceRanking
+    && !fixedServices
+    && learnedServiceRankingCandidateLimit > 0
+    && serviceSource.length > 0;
   const serviceGlobalToLocalCandidateIndices = !fixedServices && serviceOrderGlobalCandidateIndices
     ? Array.from({ length: serviceOrder.length }, () => -1)
     : null;
@@ -1460,6 +1500,7 @@ function solveOne(
       let bestDensityScore = Number.NEGATIVE_INFINITY;
       let bestConnectivityShadowPenalty: number | null = null;
       const lookaheadShortlist: ServiceLookaheadCandidate[] = [];
+      const learnedShortlist: LearnedServiceCandidate[] = [];
       const collectRoadOpportunityCounterfactuals = roadOpportunityHasTraceCapacity(recordRoadOpportunity, "service");
       const serviceRoadOpportunityPools = createRoadOpportunityCandidatePools<ServiceCandidate>();
       for (const candidateIndex of serviceActivePool.activeIndices) {
@@ -1526,6 +1567,27 @@ function solveOne(
               candidateIndex,
               score,
               probe,
+            }
+          );
+        }
+        if (enableLearnedServiceRanking && score > 0) {
+          const shadow = attemptState.measureConnectivityShadow(placement, serviceFootprintKeys);
+          const learnedScore = scoreLearnedServiceCandidate({
+            service,
+            score,
+            roadCost: probe.roadCost,
+            shadow,
+          });
+          if (profileCounters) profileCounters.servicePhase.learnedRankingEvaluations++;
+          pushBoundedLearnedServiceCandidate(
+            learnedShortlist,
+            learnedServiceRankingCandidateLimit,
+            {
+              service,
+              candidateIndex,
+              score,
+              probe,
+              learnedScore,
             }
           );
         }
@@ -1599,6 +1661,27 @@ function solveOne(
 
       let lookaheadDisplacedCandidateIndex = -1;
       const preLookaheadBestCandidateIndex = bestCandidateIndex;
+      if (
+        enableLearnedServiceRanking
+        && learnedShortlist.length > 1
+        && bestCandidate !== null
+        && bestProbe !== null
+      ) {
+        const learnedBestEntry = [...learnedShortlist].sort(compareLearnedServiceCandidates)[0]!;
+        const learnedMayDisplace = bestScore <= 0
+          || learnedBestEntry.score >= bestScore * learnedServiceRankingMinScoreRatio;
+        if (learnedMayDisplace && learnedBestEntry.candidateIndex !== bestCandidateIndex) {
+          bestCandidate = learnedBestEntry.service;
+          bestCandidateIndex = learnedBestEntry.candidateIndex;
+          bestProbe = learnedBestEntry.probe;
+          bestScore = learnedBestEntry.score;
+          bestDensityScore = densityTieBreaker
+            ? computePlacementDensityScore(G, learnedBestEntry.service, learnedBestEntry.score)
+            : 0;
+          bestConnectivityShadowPenalty = null;
+          if (profileCounters) profileCounters.servicePhase.learnedRankingWins++;
+        }
+      }
       if (
         enableServiceLookahead
         && lookaheadShortlist.length > 1
@@ -2070,6 +2153,9 @@ function prepareGreedyInputs(
     useTypes: boolean;
     localSearch: boolean;
     serviceLookaheadCandidates: number;
+    learnedServiceRanking: boolean;
+    learnedServiceRankingCandidateLimit: number;
+    learnedServiceRankingMinScoreRatio: number;
     profileCounters?: GreedyProfileCounters;
     recordProfilePhase?: GreedyProfilePhaseRecorder;
     recordConnectivityShadowDecision?: ConnectivityShadowDecisionRecorder;
@@ -2083,6 +2169,9 @@ function prepareGreedyInputs(
     useTypes,
     localSearch,
     serviceLookaheadCandidates,
+    learnedServiceRanking,
+    learnedServiceRankingCandidateLimit,
+    learnedServiceRankingMinScoreRatio,
     profileCounters,
     recordProfilePhase,
     recordConnectivityShadowDecision,
@@ -2206,6 +2295,9 @@ function prepareGreedyInputs(
       useTypes,
       localSearch,
       serviceLookaheadCandidates,
+      learnedServiceRanking,
+      learnedServiceRankingCandidateLimit,
+      learnedServiceRankingMinScoreRatio,
       profileCounters,
       recordProfilePhase,
       recordConnectivityShadowDecision,
@@ -3764,6 +3856,9 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     localSearchServiceMoves,
     localSearchServiceCandidateLimit,
     serviceLookaheadCandidates,
+    learnedServiceRanking,
+    learnedServiceRankingCandidateLimit,
+    learnedServiceRankingMinScoreRatio,
     deferRoadCommitment,
     densityTieBreaker,
     connectivityShadowScoring,
@@ -3837,6 +3932,9 @@ export function solveGreedy(G: Grid, params: SolverParams): Solution {
     useTypes,
     localSearch,
     serviceLookaheadCandidates,
+    learnedServiceRanking,
+    learnedServiceRankingCandidateLimit,
+    learnedServiceRankingMinScoreRatio,
     profileCounters,
     recordProfilePhase,
     recordConnectivityShadowDecision,

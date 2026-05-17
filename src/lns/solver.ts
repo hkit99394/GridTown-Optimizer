@@ -14,6 +14,7 @@ import { NO_TYPE_INDEX } from "../core/rules.js";
 import { writeSolutionSnapshot } from "../core/solutionSerialization.js";
 import { assertValidLnsOptions, materializeValidLnsSeedSolution } from "../core/solverInputValidation.js";
 import { solveGreedy } from "../greedy/solver.js";
+import { solveSmallWindowDpRepair } from "./smallWindowDpRepair.js";
 
 import type {
   CpSatNeighborhoodWindow,
@@ -24,8 +25,10 @@ import type {
   LnsNeighborhoodAnchorPolicy,
   LnsOperatorScoreTelemetry,
   LnsOperatorSelectionPolicy,
+  LnsRepairBackend,
   LnsRepairPhase,
   LnsRepairOperatorName,
+  LnsSmallWindowDpTelemetry,
   LnsStopReason,
   LnsTelemetry,
   Solution,
@@ -47,6 +50,10 @@ type NormalizedLnsOptions = {
   repairTimeLimitSeconds: number;
   focusedRepairTimeLimitSeconds: number;
   escalatedRepairTimeLimitSeconds: number;
+  smallWindowDpRepair: boolean;
+  smallWindowDpMaxCells: number;
+  smallWindowDpMaxCandidates: number;
+  smallWindowDpMaxStates: number;
   seedHint?: CpSatWarmStartHint;
   stopFilePath: string;
   snapshotFilePath: string;
@@ -79,6 +86,9 @@ const DEFAULT_LNS_MAX_NO_IMPROVEMENT_ITERATIONS = 4;
 const DEFAULT_LNS_REPAIR_TIME_LIMIT_SECONDS = 5;
 const DEFAULT_LNS_OPERATOR_EXPLORATION_INTERVAL = 5;
 const DEFAULT_LNS_OPERATOR_SCORE_DECAY = 0.7;
+const DEFAULT_LNS_SMALL_WINDOW_DP_MAX_CELLS = 12;
+const DEFAULT_LNS_SMALL_WINDOW_DP_MAX_CANDIDATES = 64;
+const DEFAULT_LNS_SMALL_WINDOW_DP_MAX_STATES = 200_000;
 const LNS_NEIGHBORHOOD_ANCHOR_POLICIES = new Set<LnsNeighborhoodAnchorPolicy>([
   "ranked",
   "sliding-only",
@@ -194,6 +204,19 @@ function getLnsOptions(G: Grid, params: SolverParams): NormalizedLnsOptions {
     escalatedRepairTimeLimitSeconds: positiveFiniteNumberOrDefault(
       lns.escalatedRepairTimeLimitSeconds,
       repairTimeLimitSeconds
+    ),
+    smallWindowDpRepair: lns.smallWindowDpRepair === true,
+    smallWindowDpMaxCells: positiveIntegerOrDefault(
+      lns.smallWindowDpMaxCells,
+      DEFAULT_LNS_SMALL_WINDOW_DP_MAX_CELLS
+    ),
+    smallWindowDpMaxCandidates: positiveIntegerOrDefault(
+      lns.smallWindowDpMaxCandidates,
+      DEFAULT_LNS_SMALL_WINDOW_DP_MAX_CANDIDATES
+    ),
+    smallWindowDpMaxStates: positiveIntegerOrDefault(
+      lns.smallWindowDpMaxStates,
+      DEFAULT_LNS_SMALL_WINDOW_DP_MAX_STATES
     ),
     seedHint: lns.seedHint,
     stopFilePath: lns.stopFilePath ?? "",
@@ -520,7 +543,9 @@ function buildRepairOutcome(
   populationAfter: number,
   improvement = 0,
   cpSatStatus?: string | null,
-  operatorScoreAfter?: number
+  operatorScoreAfter?: number,
+  repairBackend?: LnsRepairBackend,
+  smallWindowDp?: LnsSmallWindowDpTelemetry
 ): LnsNeighborhoodOutcome {
   return {
     iteration: attempt.iteration,
@@ -538,6 +563,8 @@ function buildRepairOutcome(
     populationAfter,
     improvement,
     status,
+    ...(repairBackend !== undefined ? { repairBackend } : {}),
+    ...(smallWindowDp !== undefined ? { smallWindowDp } : {}),
     ...(cpSatStatus !== undefined ? { cpSatStatus } : {}),
   };
 }
@@ -659,24 +686,43 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
       populationBefore,
       startedAtMs: repairStartedAtMs,
     });
+    let repairBackend: LnsRepairBackend = "cp-sat";
+    let smallWindowDpTelemetry: LnsSmallWindowDpTelemetry | undefined;
     try {
-      const candidate = solveCpSat(G, {
-        ...params,
-        optimizer: "cp-sat",
-        cpSat: {
-          ...(params.cpSat ?? {}),
-          // LNS repair is safer with a single worker; multi-worker repair_hint-style
-          // search has been crashing in the local OR-Tools runtime.
-          numWorkers: 1,
-          timeLimitSeconds: repairTimeLimitSeconds,
-          stopFilePath: options.stopFilePath || undefined,
-          warmStartHint: buildLnsWarmStartHint(incumbent, neighborhoodWindow),
-        },
-      });
+      let repaired: Solution | null = null;
+      if (options.smallWindowDpRepair) {
+        const dpRepair = solveSmallWindowDpRepair(G, params, incumbent, neighborhoodWindow, {
+          maxWindowCells: options.smallWindowDpMaxCells,
+          maxCandidates: options.smallWindowDpMaxCandidates,
+          maxStates: options.smallWindowDpMaxStates,
+        });
+        smallWindowDpTelemetry = dpRepair.telemetry;
+        if (dpRepair.solution) {
+          repaired = dpRepair.solution;
+          repairBackend = "small-window-dp";
+        }
+      }
 
-      if (candidate.totalPopulation > incumbent.totalPopulation) {
+      if (!repaired) {
+        repaired = solveCpSat(G, {
+          ...params,
+          optimizer: "cp-sat",
+          cpSat: {
+            ...(params.cpSat ?? {}),
+            // LNS repair is safer with a single worker; multi-worker repair_hint-style
+            // search has been crashing in the local OR-Tools runtime.
+            numWorkers: 1,
+            timeLimitSeconds: repairTimeLimitSeconds,
+            stopFilePath: options.stopFilePath || undefined,
+            warmStartHint: buildLnsWarmStartHint(incumbent, neighborhoodWindow),
+          },
+        });
+        repairBackend = "cp-sat";
+      }
+
+      if (repaired.totalPopulation > incumbent.totalPopulation) {
         incumbent = applyDeterministicDominanceUpgrades(G, params, {
-          ...candidate,
+          ...repaired,
           optimizer: "lns",
         });
         const populationAfter = incumbent.totalPopulation;
@@ -690,7 +736,16 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
           options
         );
         outcomes.push(
-          buildRepairOutcome(attempt, "improved", populationAfter, improvement, candidate.cpSatStatus ?? null, operatorScoreAfter)
+          buildRepairOutcome(
+            attempt,
+            "improved",
+            populationAfter,
+            improvement,
+            repaired.cpSatStatus ?? null,
+            operatorScoreAfter,
+            repairBackend,
+            smallWindowDpTelemetry
+          )
         );
         stagnantIterations = 0;
         lastImprovementAtMs = performance.now();
@@ -700,10 +755,12 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
       outcomes.push(buildRepairOutcome(
         attempt,
         "neutral",
-        candidate.totalPopulation,
+        repaired.totalPopulation,
         0,
-        candidate.cpSatStatus ?? null,
-        updateOperatorScores(operatorScores, attempt.operatorName, iteration, "neutral", 0, options)
+        repaired.cpSatStatus ?? null,
+        updateOperatorScores(operatorScores, attempt.operatorName, iteration, "neutral", 0, options),
+        repairBackend,
+        smallWindowDpTelemetry
       ));
       stagnantIterations += 1;
       writeRunningSnapshot();
@@ -715,7 +772,9 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
           populationBefore,
           0,
           undefined,
-          updateOperatorScores(operatorScores, attempt.operatorName, iteration, "stopped", 0, options)
+          updateOperatorScores(operatorScores, attempt.operatorName, iteration, "stopped", 0, options),
+          repairBackend,
+          smallWindowDpTelemetry
         ));
         return finish("cancelled", true);
       }
@@ -726,7 +785,9 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
           populationBefore,
           0,
           undefined,
-          updateOperatorScores(operatorScores, attempt.operatorName, iteration, "recoverable-failure", 0, options)
+          updateOperatorScores(operatorScores, attempt.operatorName, iteration, "recoverable-failure", 0, options),
+          repairBackend,
+          smallWindowDpTelemetry
         ));
         stagnantIterations += 1;
         writeRunningSnapshot();

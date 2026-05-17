@@ -1,0 +1,2088 @@
+{
+  "caseCount": 8,
+  "seedCount": 1,
+  "comparisonCount": 8,
+  "seeds": [
+    7
+  ],
+  "selectedCaseNames": [
+    "typed-housing-single",
+    "compact-service-repair",
+    "seeded-service-anchor-pressure",
+    "row0-anchor-repair",
+    "lns-corridor-squeeze-pressure",
+    "lns-gate-choke-pressure",
+    "lns-footprint-mix-pressure",
+    "lns-service-overlap-pressure"
+  ],
+  "variants": [
+    "baseline",
+    "small-window-dp"
+  ],
+  "variantExecutionOrders": [
+    {
+      "seed": 7,
+      "variants": [
+        "baseline",
+        "small-window-dp"
+      ]
+    }
+  ],
+  "coverage": {
+    "caseCount": 8,
+    "seedCount": 1,
+    "comparisonCount": 8,
+    "variantCount": 2,
+    "runCount": 16,
+    "gridCellCount": 250
+  },
+  "variantSummaries": [
+    {
+      "variantName": "baseline",
+      "caseCount": 8,
+      "seedCount": 1,
+      "comparisonCount": 8,
+      "meanPopulation": 391.25,
+      "medianPopulation": 480,
+      "worstDecilePopulation": 10,
+      "bestPopulation": 740,
+      "meanPopulationDeltaVsBaseline": 0,
+      "medianPopulationDeltaVsBaseline": 0,
+      "worstDecilePopulationDeltaVsBaseline": 0,
+      "bestPopulationDeltaVsBaseline": 0,
+      "improvedCaseCount": 0,
+      "regressedCaseCount": 0,
+      "unchangedCaseCount": 8,
+      "winRate": 0,
+      "regressionRate": 0,
+      "unchangedRate": 1,
+      "worstPopulationDeltaVsBaseline": 0,
+      "worstPopulationDeltaCaseName": "typed-housing-single",
+      "worstPopulationDeltaSeed": 7,
+      "bestPopulationDeltaCaseName": "typed-housing-single",
+      "bestPopulationDeltaSeed": 7,
+      "description": "Legacy ranked LNS anchors plus sliding fallback windows.",
+      "firstWindowMovementCount": 0,
+      "firstWindowMovementRate": 0,
+      "windowSequenceMovementCount": 0,
+      "windowSequenceMovementRate": 0,
+      "anchorCoordinateMovementCount": 0,
+      "anchorCoordinateMovementRate": 0
+    },
+    {
+      "variantName": "small-window-dp",
+      "caseCount": 8,
+      "seedCount": 1,
+      "comparisonCount": 8,
+      "meanPopulation": 391.25,
+      "medianPopulation": 480,
+      "worstDecilePopulation": 10,
+      "bestPopulation": 740,
+      "meanPopulationDeltaVsBaseline": 0,
+      "medianPopulationDeltaVsBaseline": 0,
+      "worstDecilePopulationDeltaVsBaseline": 0,
+      "bestPopulationDeltaVsBaseline": 0,
+      "improvedCaseCount": 0,
+      "regressedCaseCount": 0,
+      "unchangedCaseCount": 8,
+      "winRate": 0,
+      "regressionRate": 0,
+      "unchangedRate": 1,
+      "worstPopulationDeltaVsBaseline": 0,
+      "worstPopulationDeltaCaseName": "typed-housing-single",
+      "worstPopulationDeltaSeed": 7,
+      "bestPopulationDeltaCaseName": "typed-housing-single",
+      "bestPopulationDeltaSeed": 7,
+      "description": "Try exact small-window DP repair on eligible tiny neighborhoods before CP-SAT fallback.",
+      "firstWindowMovementCount": 0,
+      "firstWindowMovementRate": 0,
+      "windowSequenceMovementCount": 0,
+      "windowSequenceMovementRate": 0,
+      "anchorCoordinateMovementCount": 0,
+      "anchorCoordinateMovementRate": 0
+    }
+  ],
+  "cases": [
+    {
+      "name": "typed-housing-single",
+      "description": "Tiny LNS baseline seeded by greedy and repaired over compact residential windows.",
+      "seed": 7,
+      "gridRows": 4,
+      "gridCols": 4,
+      "gridCells": 16,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Legacy ranked LNS anchors plus sliding fallback windows.",
+        "seed": 7,
+        "totalPopulation": 110,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 0,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 0,
+        "residentialCount": 2,
+        "lnsOptions": {
+          "maxNoImprovementIterations": 4,
+          "neighborhoodAnchorPolicy": "ranked",
+          "operatorSelectionPolicy": "legacy",
+          "iterations": 2,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 1
+        },
+        "cpSatStatus": null,
+        "stopReason": "iteration-limit",
+        "improvingIterations": 0,
+        "neutralIterations": 2,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "repairBackend": "cp-sat",
+            "wallClockSeconds": 0.7141139160000001,
+            "smallWindowDp": null,
+            "improvement": 0,
+            "populationBefore": 110,
+            "populationAfter": 110,
+            "window": {
+              "top": 1,
+              "left": 1,
+              "rows": 3,
+              "cols": 3
+            }
+          },
+          {
+            "iteration": 1,
+            "phase": "escalated",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": -0.25,
+            "operatorScoreAfter": -0.425,
+            "operatorExploration": false,
+            "status": "neutral",
+            "repairBackend": "cp-sat",
+            "wallClockSeconds": 0.5065857079999998,
+            "smallWindowDp": null,
+            "improvement": 0,
+            "populationBefore": 110,
+            "populationAfter": 110,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 3,
+              "cols": 4
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Legacy ranked LNS anchors plus sliding fallback windows.",
+          "seed": 7,
+          "totalPopulation": 110,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 0,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 0,
+          "residentialCount": 2,
+          "lnsOptions": {
+            "maxNoImprovementIterations": 4,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "legacy",
+            "iterations": 2,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 1
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "repairBackend": "cp-sat",
+              "wallClockSeconds": 0.7141139160000001,
+              "smallWindowDp": null,
+              "improvement": 0,
+              "populationBefore": 110,
+              "populationAfter": 110,
+              "window": {
+                "top": 1,
+                "left": 1,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": -0.25,
+              "operatorScoreAfter": -0.425,
+              "operatorExploration": false,
+              "status": "neutral",
+              "repairBackend": "cp-sat",
+              "wallClockSeconds": 0.5065857079999998,
+              "smallWindowDp": null,
+              "improvement": 0,
+              "populationBefore": 110,
+              "populationAfter": 110,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 4
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "small-window-dp",
+          "description": "Try exact small-window DP repair on eligible tiny neighborhoods before CP-SAT fallback.",
+          "seed": 7,
+          "totalPopulation": 110,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 0,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 0,
+          "residentialCount": 2,
+          "lnsOptions": {
+            "maxNoImprovementIterations": 4,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive",
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "smallWindowDpRepair": true,
+            "iterations": 2,
+            "repairTimeLimitSeconds": 1
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "repairBackend": "cp-sat",
+              "wallClockSeconds": 0.4602673329999998,
+              "smallWindowDp": {
+                "eligible": false,
+                "reason": "intersecting-residential-crosses-window-boundary",
+                "usableWindowCells": 9,
+                "serviceCandidateCount": 0,
+                "residentialCandidateCount": 0,
+                "roadMaskCount": 0,
+                "serviceSubsetCount": 0,
+                "residentialStateCount": 0,
+                "elapsedSeconds": 0.00010254100000020117,
+                "bestPopulation": null
+              },
+              "improvement": 0,
+              "populationBefore": 110,
+              "populationAfter": 110,
+              "window": {
+                "top": 1,
+                "left": 1,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": -0.25,
+              "operatorScoreAfter": -0.425,
+              "operatorExploration": false,
+              "status": "neutral",
+              "repairBackend": "cp-sat",
+              "wallClockSeconds": 0.46359879100000034,
+              "smallWindowDp": {
+                "eligible": false,
+                "reason": "intersecting-residential-crosses-window-boundary",
+                "usableWindowCells": 12,
+                "serviceCandidateCount": 0,
+                "residentialCandidateCount": 0,
+                "roadMaskCount": 0,
+                "serviceSubsetCount": 0,
+                "residentialStateCount": 0,
+                "elapsedSeconds": 0.00002566599999954633,
+                "bestPopulation": null
+              },
+              "improvement": 0,
+              "populationBefore": 110,
+              "populationAfter": 110,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 4
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "compact-service-repair",
+      "description": "Small mixed case for measuring service-aware neighborhood repair overhead.",
+      "seed": 7,
+      "gridRows": 6,
+      "gridCols": 6,
+      "gridCells": 36,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Legacy ranked LNS anchors plus sliding fallback windows.",
+        "seed": 7,
+        "totalPopulation": 570,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 0,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 1,
+        "residentialCount": 3,
+        "lnsOptions": {
+          "maxNoImprovementIterations": 4,
+          "neighborhoodAnchorPolicy": "ranked",
+          "operatorSelectionPolicy": "legacy",
+          "iterations": 2,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 1
+        },
+        "cpSatStatus": null,
+        "stopReason": "iteration-limit",
+        "improvingIterations": 0,
+        "neutralIterations": 2,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "weak-service-repair",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "repairBackend": "cp-sat",
+            "wallClockSeconds": 0.48520691699999996,
+            "smallWindowDp": null,
+            "improvement": 0,
+            "populationBefore": 570,
+            "populationAfter": 570,
+            "window": {
+              "top": 2,
+              "left": 0,
+              "rows": 3,
+              "cols": 3
+            }
+          },
+          {
+            "iteration": 1,
+            "phase": "escalated",
+            "operatorName": "gate-choke-repair",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "repairBackend": "cp-sat",
+            "wallClockSeconds": 0.5288909170000001,
+            "smallWindowDp": null,
+            "improvement": 0,
+            "populationBefore": 570,
+            "populationAfter": 570,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 5,
+              "cols": 6
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Legacy ranked LNS anchors plus sliding fallback windows.",
+          "seed": 7,
+          "totalPopulation": 570,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 0,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "maxNoImprovementIterations": 4,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "legacy",
+            "iterations": 2,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 1
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "weak-service-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "repairBackend": "cp-sat",
+              "wallClockSeconds": 0.48520691699999996,
+              "smallWindowDp": null,
+              "improvement": 0,
+              "populationBefore": 570,
+              "populationAfter": 570,
+              "window": {
+                "top": 2,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "gate-choke-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "repairBackend": "cp-sat",
+              "wallClockSeconds": 0.5288909170000001,
+              "smallWindowDp": null,
+              "improvement": 0,
+              "populationBefore": 570,
+              "populationAfter": 570,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "small-window-dp",
+          "description": "Try exact small-window DP repair on eligible tiny neighborhoods before CP-SAT fallback.",
+          "seed": 7,
+          "totalPopulation": 570,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 0,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "maxNoImprovementIterations": 4,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive",
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "smallWindowDpRepair": true,
+            "iterations": 2,
+            "repairTimeLimitSeconds": 1
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "weak-service-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "repairBackend": "cp-sat",
+              "wallClockSeconds": 0.47751716699999996,
+              "smallWindowDp": {
+                "eligible": false,
+                "reason": "intersecting-residential-crosses-window-boundary",
+                "usableWindowCells": 9,
+                "serviceCandidateCount": 0,
+                "residentialCandidateCount": 0,
+                "roadMaskCount": 0,
+                "serviceSubsetCount": 0,
+                "residentialStateCount": 0,
+                "elapsedSeconds": 0.000036625000000640285,
+                "bestPopulation": null
+              },
+              "improvement": 0,
+              "populationBefore": 570,
+              "populationAfter": 570,
+              "window": {
+                "top": 2,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "gate-choke-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "repairBackend": "cp-sat",
+              "wallClockSeconds": 0.5167052500000009,
+              "smallWindowDp": {
+                "eligible": false,
+                "reason": "usable-window-cell-limit",
+                "usableWindowCells": 30,
+                "serviceCandidateCount": 0,
+                "residentialCandidateCount": 0,
+                "roadMaskCount": 0,
+                "serviceSubsetCount": 0,
+                "residentialStateCount": 0,
+                "elapsedSeconds": 0.000014709000000948436,
+                "bestPopulation": null
+              },
+              "improvement": 0,
+              "populationBefore": 570,
+              "populationAfter": 570,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "seeded-service-anchor-pressure",
+      "description": "Seeded LNS case where ranked service anchors find a service move that sliding windows miss.",
+      "seed": 7,
+      "gridRows": 6,
+      "gridCols": 6,
+      "gridCells": 36,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Legacy ranked LNS anchors plus sliding fallback windows.",
+        "seed": 7,
+        "totalPopulation": 200,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 11,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 1,
+        "residentialCount": 1,
+        "lnsOptions": {
+          "iterations": 1,
+          "maxNoImprovementIterations": 4,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 0.5,
+          "focusedRepairTimeLimitSeconds": 0.5,
+          "escalatedRepairTimeLimitSeconds": 0.5,
+          "seedHint": {
+            "sourceName": "seeded-service-anchor-pressure",
+            "solution": {
+              "roads": [
+                "0,0",
+                "0,1",
+                "0,2",
+                "0,3",
+                "0,4",
+                "0,5",
+                "1,3",
+                "2,3",
+                "3,3",
+                "4,3",
+                "5,3"
+              ],
+              "services": [
+                {
+                  "r": 1,
+                  "c": 4,
+                  "rows": 2,
+                  "cols": 2,
+                  "range": 1,
+                  "typeIndex": 0,
+                  "bonus": 100
+                }
+              ],
+              "residentials": [
+                {
+                  "r": 4,
+                  "c": 4,
+                  "rows": 2,
+                  "cols": 2,
+                  "typeIndex": 0,
+                  "population": 100
+                }
+              ],
+              "populations": [
+                100
+              ],
+              "totalPopulation": 100
+            }
+          },
+          "neighborhoodAnchorPolicy": "ranked",
+          "operatorSelectionPolicy": "legacy"
+        },
+        "cpSatStatus": "OPTIMAL",
+        "stopReason": "iteration-limit",
+        "improvingIterations": 1,
+        "neutralIterations": 0,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "weak-service-repair",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": 100,
+            "operatorExploration": false,
+            "status": "improved",
+            "repairBackend": "cp-sat",
+            "wallClockSeconds": 0.500599666,
+            "smallWindowDp": null,
+            "improvement": 100,
+            "populationBefore": 100,
+            "populationAfter": 200,
+            "window": {
+              "top": 1,
+              "left": 3,
+              "rows": 3,
+              "cols": 3
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Legacy ranked LNS anchors plus sliding fallback windows.",
+          "seed": 7,
+          "totalPopulation": 200,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 11,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 1,
+          "lnsOptions": {
+            "iterations": 1,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "focusedRepairTimeLimitSeconds": 0.5,
+            "escalatedRepairTimeLimitSeconds": 0.5,
+            "seedHint": {
+              "sourceName": "seeded-service-anchor-pressure",
+              "solution": {
+                "roads": [
+                  "0,0",
+                  "0,1",
+                  "0,2",
+                  "0,3",
+                  "0,4",
+                  "0,5",
+                  "1,3",
+                  "2,3",
+                  "3,3",
+                  "4,3",
+                  "5,3"
+                ],
+                "services": [
+                  {
+                    "r": 1,
+                    "c": 4,
+                    "rows": 2,
+                    "cols": 2,
+                    "range": 1,
+                    "typeIndex": 0,
+                    "bonus": 100
+                  }
+                ],
+                "residentials": [
+                  {
+                    "r": 4,
+                    "c": 4,
+                    "rows": 2,
+                    "cols": 2,
+                    "typeIndex": 0,
+                    "population": 100
+                  }
+                ],
+                "populations": [
+                  100
+                ],
+                "totalPopulation": 100
+              }
+            },
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "legacy"
+          },
+          "cpSatStatus": "OPTIMAL",
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "neutralIterations": 0,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "weak-service-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": 100,
+              "operatorExploration": false,
+              "status": "improved",
+              "repairBackend": "cp-sat",
+              "wallClockSeconds": 0.500599666,
+              "smallWindowDp": null,
+              "improvement": 100,
+              "populationBefore": 100,
+              "populationAfter": 200,
+              "window": {
+                "top": 1,
+                "left": 3,
+                "rows": 3,
+                "cols": 3
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "small-window-dp",
+          "description": "Try exact small-window DP repair on eligible tiny neighborhoods before CP-SAT fallback.",
+          "seed": 7,
+          "totalPopulation": 200,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 11,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 1,
+          "lnsOptions": {
+            "iterations": 1,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "focusedRepairTimeLimitSeconds": 0.5,
+            "escalatedRepairTimeLimitSeconds": 0.5,
+            "seedHint": {
+              "sourceName": "seeded-service-anchor-pressure",
+              "solution": {
+                "roads": [
+                  "0,0",
+                  "0,1",
+                  "0,2",
+                  "0,3",
+                  "0,4",
+                  "0,5",
+                  "1,3",
+                  "2,3",
+                  "3,3",
+                  "4,3",
+                  "5,3"
+                ],
+                "services": [
+                  {
+                    "r": 1,
+                    "c": 4,
+                    "rows": 2,
+                    "cols": 2,
+                    "range": 1,
+                    "typeIndex": 0,
+                    "bonus": 100
+                  }
+                ],
+                "residentials": [
+                  {
+                    "r": 4,
+                    "c": 4,
+                    "rows": 2,
+                    "cols": 2,
+                    "typeIndex": 0,
+                    "population": 100
+                  }
+                ],
+                "populations": [
+                  100
+                ],
+                "totalPopulation": 100
+              }
+            },
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive",
+            "smallWindowDpRepair": true
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "neutralIterations": 0,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "weak-service-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": 100,
+              "operatorExploration": false,
+              "status": "improved",
+              "repairBackend": "small-window-dp",
+              "wallClockSeconds": 0.006487457999999606,
+              "smallWindowDp": {
+                "eligible": true,
+                "reason": null,
+                "usableWindowCells": 9,
+                "serviceCandidateCount": 4,
+                "residentialCandidateCount": 4,
+                "roadMaskCount": 512,
+                "serviceSubsetCount": 102,
+                "residentialStateCount": 580,
+                "elapsedSeconds": 0.0064549170000009325,
+                "bestPopulation": 200
+              },
+              "improvement": 100,
+              "populationBefore": 100,
+              "populationAfter": 200,
+              "window": {
+                "top": 1,
+                "left": 3,
+                "rows": 3,
+                "cols": 3
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "row0-anchor-repair",
+      "description": "Sparse road-anchor access case that exercises LNS repair around road anchors.",
+      "seed": 7,
+      "gridRows": 3,
+      "gridCols": 4,
+      "gridCells": 12,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Legacy ranked LNS anchors plus sliding fallback windows.",
+        "seed": 7,
+        "totalPopulation": 10,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 1,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 0,
+        "residentialCount": 1,
+        "lnsOptions": {
+          "maxNoImprovementIterations": 4,
+          "neighborhoodAnchorPolicy": "ranked",
+          "operatorSelectionPolicy": "legacy",
+          "iterations": 2,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 1
+        },
+        "cpSatStatus": null,
+        "stopReason": "iteration-limit",
+        "improvingIterations": 0,
+        "neutralIterations": 2,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "frontier-congestion-repair",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "repairBackend": "cp-sat",
+            "wallClockSeconds": 0.45695899999999984,
+            "smallWindowDp": null,
+            "improvement": 0,
+            "populationBefore": 10,
+            "populationAfter": 10,
+            "window": {
+              "top": 1,
+              "left": 1,
+              "rows": 2,
+              "cols": 3
+            }
+          },
+          {
+            "iteration": 1,
+            "phase": "escalated",
+            "operatorName": "gate-choke-repair",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "repairBackend": "cp-sat",
+            "wallClockSeconds": 0.45730333399999973,
+            "smallWindowDp": null,
+            "improvement": 0,
+            "populationBefore": 10,
+            "populationAfter": 10,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 2,
+              "cols": 4
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Legacy ranked LNS anchors plus sliding fallback windows.",
+          "seed": 7,
+          "totalPopulation": 10,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 1,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 0,
+          "residentialCount": 1,
+          "lnsOptions": {
+            "maxNoImprovementIterations": 4,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "legacy",
+            "iterations": 2,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 1
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "frontier-congestion-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "repairBackend": "cp-sat",
+              "wallClockSeconds": 0.45695899999999984,
+              "smallWindowDp": null,
+              "improvement": 0,
+              "populationBefore": 10,
+              "populationAfter": 10,
+              "window": {
+                "top": 1,
+                "left": 1,
+                "rows": 2,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "gate-choke-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "repairBackend": "cp-sat",
+              "wallClockSeconds": 0.45730333399999973,
+              "smallWindowDp": null,
+              "improvement": 0,
+              "populationBefore": 10,
+              "populationAfter": 10,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 2,
+                "cols": 4
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "small-window-dp",
+          "description": "Try exact small-window DP repair on eligible tiny neighborhoods before CP-SAT fallback.",
+          "seed": 7,
+          "totalPopulation": 10,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 1,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 0,
+          "residentialCount": 1,
+          "lnsOptions": {
+            "maxNoImprovementIterations": 4,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive",
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "smallWindowDpRepair": true,
+            "iterations": 2,
+            "repairTimeLimitSeconds": 1
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "frontier-congestion-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "repairBackend": "small-window-dp",
+              "wallClockSeconds": 0.00027700000000004365,
+              "smallWindowDp": {
+                "eligible": true,
+                "reason": null,
+                "usableWindowCells": 4,
+                "serviceCandidateCount": 0,
+                "residentialCandidateCount": 1,
+                "roadMaskCount": 16,
+                "serviceSubsetCount": 8,
+                "residentialStateCount": 18,
+                "elapsedSeconds": 0.0002703750000000582,
+                "bestPopulation": 10
+              },
+              "improvement": 0,
+              "populationBefore": 10,
+              "populationAfter": 10,
+              "window": {
+                "top": 1,
+                "left": 1,
+                "rows": 2,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "gate-choke-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "repairBackend": "small-window-dp",
+              "wallClockSeconds": 0.00011641599999893516,
+              "smallWindowDp": {
+                "eligible": true,
+                "reason": null,
+                "usableWindowCells": 4,
+                "serviceCandidateCount": 0,
+                "residentialCandidateCount": 1,
+                "roadMaskCount": 16,
+                "serviceSubsetCount": 8,
+                "residentialStateCount": 18,
+                "elapsedSeconds": 0.0001130830000001879,
+                "bestPopulation": 10
+              },
+              "improvement": 0,
+              "populationBefore": 10,
+              "populationAfter": 10,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 2,
+                "cols": 4
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lns-corridor-squeeze-pressure",
+      "description": "Generated corridor pressure case with narrow anchor access and mixed footprints.",
+      "seed": 7,
+      "gridRows": 6,
+      "gridCols": 7,
+      "gridCells": 42,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Legacy ranked LNS anchors plus sliding fallback windows.",
+        "seed": 7,
+        "totalPopulation": 480,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 4,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 1,
+        "residentialCount": 3,
+        "lnsOptions": {
+          "iterations": 2,
+          "maxNoImprovementIterations": 4,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 0.5,
+          "neighborhoodAnchorPolicy": "ranked",
+          "operatorSelectionPolicy": "legacy"
+        },
+        "cpSatStatus": null,
+        "stopReason": "iteration-limit",
+        "improvingIterations": 0,
+        "neutralIterations": 2,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "weak-service-repair",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "repairBackend": "cp-sat",
+            "wallClockSeconds": 0.4802798329999996,
+            "smallWindowDp": null,
+            "improvement": 0,
+            "populationBefore": 480,
+            "populationAfter": 480,
+            "window": {
+              "top": 1,
+              "left": 1,
+              "rows": 3,
+              "cols": 3
+            }
+          },
+          {
+            "iteration": 1,
+            "phase": "escalated",
+            "operatorName": "gate-choke-repair",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "repairBackend": "cp-sat",
+            "wallClockSeconds": 0.5221086250000008,
+            "smallWindowDp": null,
+            "improvement": 0,
+            "populationBefore": 480,
+            "populationAfter": 480,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 5,
+              "cols": 6
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Legacy ranked LNS anchors plus sliding fallback windows.",
+          "seed": 7,
+          "totalPopulation": 480,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 4,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "legacy"
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "weak-service-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "repairBackend": "cp-sat",
+              "wallClockSeconds": 0.4802798329999996,
+              "smallWindowDp": null,
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 1,
+                "left": 1,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "gate-choke-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "repairBackend": "cp-sat",
+              "wallClockSeconds": 0.5221086250000008,
+              "smallWindowDp": null,
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "small-window-dp",
+          "description": "Try exact small-window DP repair on eligible tiny neighborhoods before CP-SAT fallback.",
+          "seed": 7,
+          "totalPopulation": 480,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 4,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive",
+            "smallWindowDpRepair": true
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "weak-service-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "repairBackend": "cp-sat",
+              "wallClockSeconds": 0.5600153340000016,
+              "smallWindowDp": {
+                "eligible": false,
+                "reason": "intersecting-service-crosses-window-boundary",
+                "usableWindowCells": 6,
+                "serviceCandidateCount": 0,
+                "residentialCandidateCount": 0,
+                "roadMaskCount": 0,
+                "serviceSubsetCount": 0,
+                "residentialStateCount": 0,
+                "elapsedSeconds": 0.000024000000001251465,
+                "bestPopulation": null
+              },
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 1,
+                "left": 1,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "gate-choke-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "repairBackend": "cp-sat",
+              "wallClockSeconds": 0.4946977499999994,
+              "smallWindowDp": {
+                "eligible": false,
+                "reason": "usable-window-cell-limit",
+                "usableWindowCells": 24,
+                "serviceCandidateCount": 0,
+                "residentialCandidateCount": 0,
+                "roadMaskCount": 0,
+                "serviceSubsetCount": 0,
+                "residentialStateCount": 0,
+                "elapsedSeconds": 0.000021416999999928522,
+                "bestPopulation": null
+              },
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lns-gate-choke-pressure",
+      "description": "Generated gate pressure case where a central choke point separates high-value placements.",
+      "seed": 7,
+      "gridRows": 6,
+      "gridCols": 6,
+      "gridCells": 36,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Legacy ranked LNS anchors plus sliding fallback windows.",
+        "seed": 7,
+        "totalPopulation": 540,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 1,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 1,
+        "residentialCount": 3,
+        "lnsOptions": {
+          "iterations": 2,
+          "maxNoImprovementIterations": 4,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 0.5,
+          "neighborhoodAnchorPolicy": "ranked",
+          "operatorSelectionPolicy": "legacy"
+        },
+        "cpSatStatus": "OPTIMAL",
+        "stopReason": "iteration-limit",
+        "improvingIterations": 1,
+        "neutralIterations": 1,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "weak-service-repair",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": 70,
+            "operatorExploration": false,
+            "status": "improved",
+            "repairBackend": "cp-sat",
+            "wallClockSeconds": 0.48268295800000033,
+            "smallWindowDp": null,
+            "improvement": 70,
+            "populationBefore": 470,
+            "populationAfter": 540,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 3,
+              "cols": 3
+            }
+          },
+          {
+            "iteration": 1,
+            "phase": "focused",
+            "operatorName": "residential-headroom-repair",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "repairBackend": "cp-sat",
+            "wallClockSeconds": 0.4671005420000001,
+            "smallWindowDp": null,
+            "improvement": 0,
+            "populationBefore": 540,
+            "populationAfter": 540,
+            "window": {
+              "top": 3,
+              "left": 0,
+              "rows": 3,
+              "cols": 3
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Legacy ranked LNS anchors plus sliding fallback windows.",
+          "seed": 7,
+          "totalPopulation": 540,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 1,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "legacy"
+          },
+          "cpSatStatus": "OPTIMAL",
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "neutralIterations": 1,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "weak-service-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": 70,
+              "operatorExploration": false,
+              "status": "improved",
+              "repairBackend": "cp-sat",
+              "wallClockSeconds": 0.48268295800000033,
+              "smallWindowDp": null,
+              "improvement": 70,
+              "populationBefore": 470,
+              "populationAfter": 540,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "focused",
+              "operatorName": "residential-headroom-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "repairBackend": "cp-sat",
+              "wallClockSeconds": 0.4671005420000001,
+              "smallWindowDp": null,
+              "improvement": 0,
+              "populationBefore": 540,
+              "populationAfter": 540,
+              "window": {
+                "top": 3,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "small-window-dp",
+          "description": "Try exact small-window DP repair on eligible tiny neighborhoods before CP-SAT fallback.",
+          "seed": 7,
+          "totalPopulation": 540,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 1,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive",
+            "smallWindowDpRepair": true
+          },
+          "cpSatStatus": "OPTIMAL",
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "neutralIterations": 1,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "weak-service-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": 70,
+              "operatorExploration": false,
+              "status": "improved",
+              "repairBackend": "cp-sat",
+              "wallClockSeconds": 0.47067608399999883,
+              "smallWindowDp": {
+                "eligible": false,
+                "reason": "intersecting-residential-crosses-window-boundary",
+                "usableWindowCells": 7,
+                "serviceCandidateCount": 0,
+                "residentialCandidateCount": 0,
+                "roadMaskCount": 0,
+                "serviceSubsetCount": 0,
+                "residentialStateCount": 0,
+                "elapsedSeconds": 0.0000246659999993426,
+                "bestPopulation": null
+              },
+              "improvement": 70,
+              "populationBefore": 470,
+              "populationAfter": 540,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "focused",
+              "operatorName": "residential-headroom-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "repairBackend": "small-window-dp",
+              "wallClockSeconds": 0.008775125000000116,
+              "smallWindowDp": {
+                "eligible": true,
+                "reason": null,
+                "usableWindowCells": 9,
+                "serviceCandidateCount": 9,
+                "residentialCandidateCount": 8,
+                "roadMaskCount": 512,
+                "serviceSubsetCount": 206,
+                "residentialStateCount": 484,
+                "elapsedSeconds": 0.008764417000000321,
+                "bestPopulation": 540
+              },
+              "improvement": 0,
+              "populationBefore": 540,
+              "populationAfter": 540,
+              "window": {
+                "top": 3,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lns-footprint-mix-pressure",
+      "description": "Generated footprint-pressure case with competing 2x2 and 3x2 residential placements.",
+      "seed": 7,
+      "gridRows": 6,
+      "gridCols": 6,
+      "gridCells": 36,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Legacy ranked LNS anchors plus sliding fallback windows.",
+        "seed": 7,
+        "totalPopulation": 480,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 4,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 1,
+        "residentialCount": 3,
+        "lnsOptions": {
+          "iterations": 2,
+          "maxNoImprovementIterations": 4,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 0.5,
+          "neighborhoodAnchorPolicy": "ranked",
+          "operatorSelectionPolicy": "legacy"
+        },
+        "cpSatStatus": null,
+        "stopReason": "iteration-limit",
+        "improvingIterations": 0,
+        "neutralIterations": 2,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "weak-service-repair",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "repairBackend": "cp-sat",
+            "wallClockSeconds": 0.4741641660000005,
+            "smallWindowDp": null,
+            "improvement": 0,
+            "populationBefore": 480,
+            "populationAfter": 480,
+            "window": {
+              "top": 2,
+              "left": 2,
+              "rows": 3,
+              "cols": 3
+            }
+          },
+          {
+            "iteration": 1,
+            "phase": "escalated",
+            "operatorName": "gate-choke-repair",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "repairBackend": "cp-sat",
+            "wallClockSeconds": 0.536582708,
+            "smallWindowDp": null,
+            "improvement": 0,
+            "populationBefore": 480,
+            "populationAfter": 480,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 5,
+              "cols": 6
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Legacy ranked LNS anchors plus sliding fallback windows.",
+          "seed": 7,
+          "totalPopulation": 480,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 4,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "legacy"
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "weak-service-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "repairBackend": "cp-sat",
+              "wallClockSeconds": 0.4741641660000005,
+              "smallWindowDp": null,
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 2,
+                "left": 2,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "gate-choke-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "repairBackend": "cp-sat",
+              "wallClockSeconds": 0.536582708,
+              "smallWindowDp": null,
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "small-window-dp",
+          "description": "Try exact small-window DP repair on eligible tiny neighborhoods before CP-SAT fallback.",
+          "seed": 7,
+          "totalPopulation": 480,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 4,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive",
+            "smallWindowDpRepair": true
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "weak-service-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "repairBackend": "cp-sat",
+              "wallClockSeconds": 0.4674737919999989,
+              "smallWindowDp": {
+                "eligible": false,
+                "reason": "intersecting-residential-crosses-window-boundary",
+                "usableWindowCells": 7,
+                "serviceCandidateCount": 0,
+                "residentialCandidateCount": 0,
+                "roadMaskCount": 0,
+                "serviceSubsetCount": 0,
+                "residentialStateCount": 0,
+                "elapsedSeconds": 0.00002074999999967986,
+                "bestPopulation": null
+              },
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 2,
+                "left": 2,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "gate-choke-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "repairBackend": "cp-sat",
+              "wallClockSeconds": 0.5430039579999993,
+              "smallWindowDp": {
+                "eligible": false,
+                "reason": "usable-window-cell-limit",
+                "usableWindowCells": 28,
+                "serviceCandidateCount": 0,
+                "residentialCandidateCount": 0,
+                "roadMaskCount": 0,
+                "serviceSubsetCount": 0,
+                "residentialStateCount": 0,
+                "elapsedSeconds": 0.00001358299999992596,
+                "bestPopulation": null
+              },
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lns-service-overlap-pressure",
+      "description": "Generated service-pressure case with overlapping service ranges and scarce premium housing.",
+      "seed": 7,
+      "gridRows": 6,
+      "gridCols": 6,
+      "gridCells": 36,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Legacy ranked LNS anchors plus sliding fallback windows.",
+        "seed": 7,
+        "totalPopulation": 740,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 4,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 2,
+        "residentialCount": 3,
+        "lnsOptions": {
+          "iterations": 2,
+          "maxNoImprovementIterations": 4,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 0.5,
+          "neighborhoodAnchorPolicy": "ranked",
+          "operatorSelectionPolicy": "legacy"
+        },
+        "cpSatStatus": null,
+        "stopReason": "iteration-limit",
+        "improvingIterations": 0,
+        "neutralIterations": 2,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "weak-service-repair",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "repairBackend": "cp-sat",
+            "wallClockSeconds": 0.520097334,
+            "smallWindowDp": null,
+            "improvement": 0,
+            "populationBefore": 740,
+            "populationAfter": 740,
+            "window": {
+              "top": 1,
+              "left": 1,
+              "rows": 3,
+              "cols": 3
+            }
+          },
+          {
+            "iteration": 1,
+            "phase": "escalated",
+            "operatorName": "gate-choke-repair",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "repairBackend": "cp-sat",
+            "wallClockSeconds": 0.9871585000000005,
+            "smallWindowDp": null,
+            "improvement": 0,
+            "populationBefore": 740,
+            "populationAfter": 740,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 5,
+              "cols": 6
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Legacy ranked LNS anchors plus sliding fallback windows.",
+          "seed": 7,
+          "totalPopulation": 740,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 4,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "legacy"
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "weak-service-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "repairBackend": "cp-sat",
+              "wallClockSeconds": 0.520097334,
+              "smallWindowDp": null,
+              "improvement": 0,
+              "populationBefore": 740,
+              "populationAfter": 740,
+              "window": {
+                "top": 1,
+                "left": 1,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "gate-choke-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "repairBackend": "cp-sat",
+              "wallClockSeconds": 0.9871585000000005,
+              "smallWindowDp": null,
+              "improvement": 0,
+              "populationBefore": 740,
+              "populationAfter": 740,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "small-window-dp",
+          "description": "Try exact small-window DP repair on eligible tiny neighborhoods before CP-SAT fallback.",
+          "seed": 7,
+          "totalPopulation": 740,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 4,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive",
+            "smallWindowDpRepair": true
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "weak-service-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "repairBackend": "cp-sat",
+              "wallClockSeconds": 0.5248512499999997,
+              "smallWindowDp": {
+                "eligible": false,
+                "reason": "intersecting-residential-crosses-window-boundary",
+                "usableWindowCells": 9,
+                "serviceCandidateCount": 0,
+                "residentialCandidateCount": 0,
+                "roadMaskCount": 0,
+                "serviceSubsetCount": 0,
+                "residentialStateCount": 0,
+                "elapsedSeconds": 0.000011249999999563443,
+                "bestPopulation": null
+              },
+              "improvement": 0,
+              "populationBefore": 740,
+              "populationAfter": 740,
+              "window": {
+                "top": 1,
+                "left": 1,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "gate-choke-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "repairBackend": "cp-sat",
+              "wallClockSeconds": 0.9781160830000007,
+              "smallWindowDp": {
+                "eligible": false,
+                "reason": "usable-window-cell-limit",
+                "usableWindowCells": 30,
+                "serviceCandidateCount": 0,
+                "residentialCandidateCount": 0,
+                "roadMaskCount": 0,
+                "serviceSubsetCount": 0,
+                "residentialStateCount": 0,
+                "elapsedSeconds": 0.000011209000000235391,
+                "bestPopulation": null
+              },
+              "improvement": 0,
+              "populationBefore": 740,
+              "populationAfter": 740,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

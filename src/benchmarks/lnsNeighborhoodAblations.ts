@@ -44,7 +44,8 @@ export type LnsNeighborhoodAblationVariantName =
   | "frontier-congestion-first"
   | "placed-buildings-first"
   | "small-2x2"
-  | "wide-4x4";
+  | "wide-4x4"
+  | "small-window-dp";
 
 export interface LnsNeighborhoodAblationVariant {
   name: LnsNeighborhoodAblationVariantName;
@@ -67,6 +68,20 @@ export interface LnsNeighborhoodAblationOutcome {
   operatorScoreAfter: number | null;
   operatorExploration: boolean | null;
   status: string;
+  repairBackend: string | null;
+  wallClockSeconds: number;
+  smallWindowDp: {
+    eligible: boolean;
+    reason: string | null;
+    usableWindowCells: number;
+    serviceCandidateCount: number;
+    residentialCandidateCount: number;
+    roadMaskCount: number;
+    serviceSubsetCount: number;
+    residentialStateCount: number;
+    elapsedSeconds: number;
+    bestPopulation: number | null;
+  } | null;
   improvement: number;
   populationBefore: number;
   populationAfter: number;
@@ -143,7 +158,9 @@ export interface LnsNeighborhoodAblationSuiteResult {
 }
 
 export interface LnsNeighborhoodAblationSnapshotVariantResult
-  extends BenchmarkVariantResultSnapshot<LnsNeighborhoodAblationVariantResult> {}
+  extends Omit<BenchmarkVariantResultSnapshot<LnsNeighborhoodAblationVariantResult>, "outcomes"> {
+  outcomes: Omit<LnsNeighborhoodAblationOutcome, "wallClockSeconds">[];
+}
 
 export interface LnsNeighborhoodAblationSnapshotCaseResult
   extends Omit<LnsNeighborhoodAblationCaseResult, "baseline" | "variants"> {
@@ -206,6 +223,17 @@ export const DEFAULT_LNS_NEIGHBORHOOD_ABLATION_VARIANTS: readonly LnsNeighborhoo
       name: "wide-4x4",
       description: "Keep ranked anchors but expand repair windows to 4x4.",
       lns: { neighborhoodAnchorPolicy: "ranked", operatorSelectionPolicy: "legacy", neighborhoodRows: 4, neighborhoodCols: 4 },
+    },
+    {
+      name: "small-window-dp",
+      description: "Try exact small-window DP repair on eligible tiny neighborhoods before CP-SAT fallback.",
+      lns: {
+        neighborhoodAnchorPolicy: "ranked",
+        operatorSelectionPolicy: "adaptive",
+        neighborhoodRows: 3,
+        neighborhoodCols: 3,
+        smallWindowDpRepair: true,
+      },
     },
   ]);
 
@@ -320,6 +348,22 @@ function variantResult(
       operatorScoreAfter: outcome.operatorScoreAfter ?? null,
       operatorExploration: outcome.operatorExploration ?? null,
       status: outcome.status,
+      repairBackend: outcome.repairBackend ?? null,
+      wallClockSeconds: outcome.wallClockSeconds,
+      smallWindowDp: outcome.smallWindowDp
+        ? {
+            eligible: outcome.smallWindowDp.eligible,
+            reason: outcome.smallWindowDp.reason,
+            usableWindowCells: outcome.smallWindowDp.usableWindowCells,
+            serviceCandidateCount: outcome.smallWindowDp.serviceCandidateCount,
+            residentialCandidateCount: outcome.smallWindowDp.residentialCandidateCount,
+            roadMaskCount: outcome.smallWindowDp.roadMaskCount,
+            serviceSubsetCount: outcome.smallWindowDp.serviceSubsetCount,
+            residentialStateCount: outcome.smallWindowDp.residentialStateCount,
+            elapsedSeconds: outcome.smallWindowDp.elapsedSeconds,
+            bestPopulation: outcome.smallWindowDp.bestPopulation,
+          }
+        : null,
       improvement: outcome.improvement,
       populationBefore: outcome.populationBefore,
       populationAfter: outcome.populationAfter,
@@ -476,6 +520,16 @@ export function runLnsNeighborhoodAblation(
 export function createLnsNeighborhoodAblationSnapshot(
   result: LnsNeighborhoodAblationSuiteResult
 ): LnsNeighborhoodAblationSnapshot {
+  const snapshotVariantResult = (
+    variant: LnsNeighborhoodAblationVariantResult
+  ): LnsNeighborhoodAblationSnapshotVariantResult => {
+    const snapshot = snapshotBenchmarkVariantResult(variant);
+    return {
+      ...snapshot,
+      outcomes: variant.outcomes.map(({ wallClockSeconds: _wallClockSeconds, ...outcome }) => outcome),
+    };
+  };
+
   return {
     caseCount: result.caseCount,
     seedCount: result.seedCount,
@@ -491,8 +545,8 @@ export function createLnsNeighborhoodAblationSnapshot(
     variantSummaries: result.variantSummaries.map(snapshotBenchmarkVariantSummary),
     cases: result.cases.map((benchmarkCase) => ({
       ...benchmarkCase,
-      baseline: snapshotBenchmarkVariantResult(benchmarkCase.baseline),
-      variants: benchmarkCase.variants.map(snapshotBenchmarkVariantResult),
+      baseline: snapshotVariantResult(benchmarkCase.baseline),
+      variants: benchmarkCase.variants.map(snapshotVariantResult),
     })),
   };
 }

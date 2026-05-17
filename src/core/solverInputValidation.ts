@@ -28,6 +28,9 @@ const AUTO_MAX_STAGE_TIME_LIMIT_SECONDS = 24 * 60 * 60;
 const LNS_MAX_ITERATIONS = 10_000;
 const LNS_MAX_NEIGHBORHOOD_DIMENSION = 10_000;
 const LNS_MAX_TIME_LIMIT_SECONDS = 24 * 60 * 60;
+const LNS_SMALL_WINDOW_DP_MAX_CELLS = 20;
+const LNS_SMALL_WINDOW_DP_MAX_CANDIDATES = 1_000;
+const LNS_SMALL_WINDOW_DP_MAX_STATES = 10_000_000;
 const LNS_NEIGHBORHOOD_ANCHOR_POLICIES = [
   "ranked",
   "sliding-only",
@@ -1248,6 +1251,28 @@ export function assertValidLnsOptions(params: SolverParams): void {
     "LNS option lns.escalatedRepairTimeLimitSeconds",
     0,
     LNS_MAX_TIME_LIMIT_SECONDS
+  );
+  requireOptionalBoolean(lns, "smallWindowDpRepair", "LNS option lns.smallWindowDpRepair");
+  requireOptionalIntegerInRange(
+    lns,
+    "smallWindowDpMaxCells",
+    "LNS option lns.smallWindowDpMaxCells",
+    1,
+    LNS_SMALL_WINDOW_DP_MAX_CELLS
+  );
+  requireOptionalIntegerInRange(
+    lns,
+    "smallWindowDpMaxCandidates",
+    "LNS option lns.smallWindowDpMaxCandidates",
+    1,
+    LNS_SMALL_WINDOW_DP_MAX_CANDIDATES
+  );
+  requireOptionalIntegerInRange(
+    lns,
+    "smallWindowDpMaxStates",
+    "LNS option lns.smallWindowDpMaxStates",
+    1,
+    LNS_SMALL_WINDOW_DP_MAX_STATES
   );
   requireOptionalString(lns, "stopFilePath", "LNS runtime option lns.stopFilePath");
   requireOptionalString(lns, "snapshotFilePath", "LNS runtime option lns.snapshotFilePath");

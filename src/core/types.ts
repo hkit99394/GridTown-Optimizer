@@ -810,6 +810,14 @@ export interface LnsOptions {
   focusedRepairTimeLimitSeconds?: number;
   /** Per-neighborhood budget for escalated repair attempts. Defaults to repairTimeLimitSeconds. */
   escalatedRepairTimeLimitSeconds?: number;
+  /** Enable exact bitmask/profile-DP repair for tiny LNS windows before falling back to CP-SAT. */
+  smallWindowDpRepair?: boolean;
+  /** Maximum usable cells in a window eligible for small-window DP repair. Defaults to 12. */
+  smallWindowDpMaxCells?: number;
+  /** Maximum service plus residential candidates considered by small-window DP repair. Defaults to 64. */
+  smallWindowDpMaxCandidates?: number;
+  /** Maximum bounded DP/search states before falling back to CP-SAT. Defaults to 200000. */
+  smallWindowDpMaxStates?: number;
   /** Optional saved-layout seed used instead of rebuilding the initial greedy incumbent. */
   seedHint?: CpSatWarmStartHint;
   /** Internal stop-token path used by the local web server. */
@@ -819,6 +827,22 @@ export interface LnsOptions {
 }
 
 export type LnsRepairPhase = "focused" | "escalated";
+
+export type LnsRepairBackend = "cp-sat" | "small-window-dp";
+
+export interface LnsSmallWindowDpTelemetry {
+  eligible: boolean;
+  reason: string | null;
+  windowCells: number;
+  usableWindowCells: number;
+  serviceCandidateCount: number;
+  residentialCandidateCount: number;
+  roadMaskCount: number;
+  serviceSubsetCount: number;
+  residentialStateCount: number;
+  elapsedSeconds: number;
+  bestPopulation: number | null;
+}
 
 export type LnsNeighborhoodOutcomeStatus =
   | "improved"
@@ -852,6 +876,8 @@ export interface LnsNeighborhoodOutcome {
   populationAfter: number;
   improvement: number;
   status: LnsNeighborhoodOutcomeStatus;
+  repairBackend?: LnsRepairBackend;
+  smallWindowDp?: LnsSmallWindowDpTelemetry;
   cpSatStatus?: string | null;
 }
 

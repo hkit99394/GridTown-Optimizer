@@ -214,6 +214,30 @@ Completion evidence, 2026-05-17:
 - Auto runtime defaults now use the promoted fast-exact budget slice: short LNS seed/repair/stale-time caps and a larger CP-SAT reserve for earlier exact polish.
 - Registry entry `auto-budget-retuning-2026-05-17` records the Phase 5 artifacts and promotion decision.
 
+### Phase 6: Exact Small-Window DP Repair
+
+Dependencies:
+
+- Road-semantics validation, product corpus, telemetry manifests, adaptive LNS operators, and Phase 5 Auto budget defaults are available.
+- The trigger is constrained to tiny repair windows where CP-SAT startup/model overhead dominates the repair itself.
+
+Acceptance gates:
+
+- Add bitmask/profile-DP repair only as a bounded subroutine for tiny LNS windows.
+- Eligibility must cap usable window cells, service/residential candidates, and DP/search states.
+- Ineligible windows must fall back to CP-SAT without changing repair semantics.
+- DP-produced layouts must be validated by the exact evaluator before acceptance.
+- Scorecard evidence must show no population regression and materially faster eligible repair wall time.
+
+Completion evidence, 2026-05-17:
+
+- LNS now exposes `lns.smallWindowDpRepair` plus `smallWindowDpMaxCells`, `smallWindowDpMaxCandidates`, and `smallWindowDpMaxStates` guardrails.
+- The DP repair path enumerates bounded road masks, service subsets, and residential placement states, rejects cross-boundary incumbent buildings, validates every accepted layout with the exact evaluator, and falls back to CP-SAT on ineligible or over-budget windows.
+- LNS outcomes now record `repairBackend` and `smallWindowDp` telemetry: eligibility, reason, usable cell count, candidate counts, road-mask count, service-subset count, DP state count, elapsed time, and best population.
+- `npm run benchmark:lns -- --neighborhood-ablation --ablation-variants=baseline,small-window-dp --seeds=7 --output=artifacts/small-window-dp/2026-05-17/small-window-dp-scorecard.json --json` produced a 16-run, 8-case scorecard.
+- `small-window-dp` tied baseline mean population at `391.25`, had zero regressions across the development plus generated-pressure holdout split, and used DP directly on 4 eligible repairs at `0.0039s` mean repair wall time versus roughly `0.541s` CP-SAT repair wall time.
+- Registry entry `small-window-dp-repair-2026-05-17` records the Phase 6 artifact and feature-gated shipping decision.
+
 ## Active Priorities
 
 Impact scale: `5` is most significant for population per minute. Rank is the recommended execution order.
@@ -234,7 +258,7 @@ Status vocabulary:
 | 3 | Solver telemetry manifests | delivered | 4.0 | Phase 3 now has reusable solver telemetry manifests, CLI manifest writers for cross-mode and product workflow runs, registry-side manifest validation, and strict registry entry `solver-telemetry-manifests-2026-05-17`. | Every benchmark and workflow run can explain where time was spent and why a candidate change did or did not improve. |
 | 4 | Adaptive LNS operator set | delivered | 4.5 | Phase 4 now has named semantic repair operators, adaptive operator scoring, exploration windows, operator-aware telemetry/manifests, pressure-case ablations, and strict registry entry `adaptive-lns-operators-2026-05-17`. | Fixed-rectangle LNS comparison improved mean population by `+12.5` across 24 paired comparisons with zero regressions and no protected-holdout worst-decile regression. |
 | 5 | Auto budget policy retuning | delivered | 3.5 | Phase 5 now has fast-exact Auto budget defaults, protected product-holdout budget ablations, CPU-normalized scorecard metrics, and strict registry entry `auto-budget-retuning-2026-05-17`. | `phase5-fast-exact` tied baseline population with equal configured CPU budget while improving mean Auto time-to-best by `0.139s` and mean wall time by `0.811s`. |
-| 6 | Exact small-window DP repair | gated | 3.0 | Add bitmask/profile-DP repair only for tiny LNS neighborhoods, narrow corridors, and CP-SAT alignment oracles when telemetry shows CP-SAT startup/model overhead dominates. | DP matches exact evaluator results and beats CP-SAT repair wall time on small windows, improving LNS/Auto time-to-best without regressions. |
+| 6 | Exact small-window DP repair | delivered | 3.0 | Phase 6 now has a bounded LNS DP repair backend behind `smallWindowDpRepair`, evaluator validation, CP-SAT fallback, telemetry, scorecard artifact, and strict registry entry `small-window-dp-repair-2026-05-17`. | DP handled 4 eligible tiny repairs at `0.0039s` mean wall time, tied baseline population, and produced zero regressions across the 8-case scorecard. |
 | 7 | Service-master decomposition experiment | not-started | 3.5 | Treat service layouts as the master decision, then solve residential packing plus road repair as a subproblem; use no-good cuts or service swaps if useful. | Experimental mode beats Auto on service-overlap or facility-coverage pressure families without invalid layouts. |
 | 8 | LNS replay label scale-up | needs-scale | 3.0 | Use adaptive operator outcomes and replay windows to grow split-protected LNS labels. | Development and holdout splits satisfy usable, non-neutral, and family-balanced label gates before any LNS ranker is trained. |
 | 9 | CPU-first Greedy offline ranker | gated | 2.5 | Use the healthier Greedy label bundle for offline diagnostics only. | A small CPU model beats deterministic, random, and single-feature baselines on protected holdout without leaked case names. |
@@ -255,7 +279,7 @@ Status vocabulary:
 | Solver telemetry manifests | delivered | `artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json`; `artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json`; registry run `solver-telemetry-manifests-2026-05-17` | Registry checks can validate manifest metadata and per-run telemetry without rerunning solvers. |
 | Adaptive LNS | delivered | `artifacts/adaptive-lns/2026-05-17/adaptive-lns-fixed-rectangle-scorecard.json`; registry run `adaptive-lns-operators-2026-05-17` | Named semantic operators and adaptive scoring are available for Phase 5 Auto budget retuning and future label scale-up. |
 | Auto budget retuning | delivered | `artifacts/auto-budget-retuning/2026-05-17/auto-budget-retuning-fast-exact-scorecard.json`; registry run `auto-budget-retuning-2026-05-17` | Auto now defaults to the promoted fast-exact budget slice after protected coverage evidence showed equal population, equal configured CPU budget, and faster time-to-best. |
-| Exact small-window DP repair | gated | Existing exact assignment DP shows the pattern is useful for bounded subproblems, but no LNS window DP exists | Candidate subroutine only; route tiny repairs to DP if telemetry proves CP-SAT overhead dominates. |
+| Exact small-window DP repair | delivered | `artifacts/small-window-dp/2026-05-17/small-window-dp-scorecard.json`; registry run `small-window-dp-repair-2026-05-17`; targeted LNS tests | Feature-gated tiny-window repairs can bypass CP-SAT overhead when eligible and fall back safely otherwise. |
 | Model training path | gated | No `python/ml/` scaffold, offline metric report, trained model, or feature-flagged scorer is promoted | No learned default path. |
 | GPU, distributed solving, alternative solvers | gated | No CPU-first bottleneck evidence requiring them | Research-only until equal-budget wins exist. |
 
@@ -266,7 +290,6 @@ These are not next actions. Move them into the active table only after the trigg
 | Trigger | Priority | Impact | Summary | Success Signal |
 | --- | --- | ---: | --- | --- |
 | CP-SAT semantics scorecard and product corpus are stable | Geometry-native CP-SAT / `NoOverlap2D` experiment | 3.0 | Compare current cell-indexed set packing with optional-interval rectangle constraints. | Controlled scorecard shows propagation or time-to-best improvement without model-size blowup. |
-| Telemetry shows CP-SAT overhead dominates tiny repairs or corridor windows | Exact small-window DP repair | 3.0 | Use bitmask/profile DP as an exact repair oracle for small LNS windows, narrow maps, and CP-SAT alignment tests. | DP returns evaluator-valid layouts, beats CP-SAT wall time on eligible windows, and improves Auto/LNS time-to-best without larger-window regressions. |
 | Service-overlap and coverage families expose a repeated bottleneck | Service-master / subproblem decomposition | 3.5 | Make service choice a master problem and residential/road repair a subproblem. | Beats Auto on targeted families and remains validated by the exact evaluator. |
 | LNS label-scale gates pass | Learned LNS window ranking | 3.0 | Train and evaluate a ranker over adaptive LNS candidate windows. | Offline holdout beats deterministic, random, and single-feature baselines; online A/B improves fixed-budget quality without worst-decile regression. |
 | Greedy offline ranker beats deterministic order on protected holdout | Feature-flagged learned Greedy re-ranking | 2.5 | Add scorer adapter, model-load fallback, and equal-budget online A/B. | Online paired seeded benchmarks improve population or time-to-best with bounded inference overhead. |
@@ -279,7 +302,7 @@ These are not next actions. Move them into the active table only after the trigg
 
 1. Use the registered road-semantics, product workflow, telemetry, and adaptive-LNS baselines as the stable benchmark base for promotion decisions.
 2. Use the Phase 5 fast-exact Auto budget defaults as the new baseline for future solver promotion decisions.
-3. Add exact small-window DP repair only if telemetry shows a small-repair CP-SAT overhead bottleneck.
+3. Keep small-window DP repair feature-gated to eligible tiny windows and use its telemetry to decide whether Auto should enable it by default later.
 4. Explore service-master decomposition if coverage/service pressure cases justify it.
 5. Scale LNS replay labels from adaptive operator outcomes.
 6. Revisit learned rankers only after offline holdout and equal-budget online gates pass.

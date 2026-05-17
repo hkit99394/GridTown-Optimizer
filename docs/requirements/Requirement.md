@@ -18,8 +18,9 @@ Supported examples include 2x2, 2x3, 3x3, 3x4, and more generally nxm when the f
 Each residential size or residential type has its own min and max population, e.g. 2×2 min 260 max 780, 2×3 min 480 max 1440.
 
 
-All buildings are placed on the allowed cells and must connect to roads.
-Any building whose footprint covers row index 0 or column index 0 is treated as connected to the road anchor automatically.
-Each road component must connect to the road-anchor boundary: at least one road cell in the component lies in row 0 or column 0.
+All buildings are placed on the allowed cells and must have road access.
+A building has road access when it is adjacent to an explicit road component connected to the road-anchor boundary, or when its own footprint covers row index 0 or column index 0.
+Each explicit road component must connect to the road-anchor boundary: at least one road cell in the component lies in row 0 or column 0.
+If every building touches row 0 or column 0, the layout can be valid with no explicit road cells.
 
 The goal is to maximize the Population of the city, provided the buildings and the roads.

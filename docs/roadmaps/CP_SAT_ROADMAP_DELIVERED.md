@@ -18,8 +18,9 @@ Target alignment:
 ### 2. Stronger road-connectivity formulation
 - anchor-boundary reachability filtering
 - road-eligibility trimming
-- canonical root symmetry break
-- tighter inflow / anti-bidirectional-flow rules
+- per-anchor root variables so independent anchored road components match the formal spec
+- zero-road feasibility when every selected building has implicit anchor-boundary access
+- tighter inflow / anti-bidirectional-flow rules for anchored components
 - gate and corridor access cuts
 
 ### 3. Explicit exact objective audit

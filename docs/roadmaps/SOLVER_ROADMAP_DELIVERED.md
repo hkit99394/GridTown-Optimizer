@@ -81,7 +81,7 @@ Reviewed through 2026-04-28.
 - Greedy finalization now prunes redundant road cells after connectivity is ensured.
 - Deferred road materialization uses the same pruning pass before returning the final road set.
 - Buildings that touch row `0` or column `0` are treated as connected by the anchor rule and no longer keep connector roads alive.
-- The pruning pass preserves an anchor-boundary-connected explicit road network and verifies every non-anchor building still has road access.
+- The pruning pass preserves per-component anchor connectivity for every remaining explicit road component and verifies every non-anchor building still has road access.
 - Regression coverage checks that anchor-boundary-connected buildings do not force unnecessary road cells, and benchmark snapshots were updated for lower final road counts.
 
 ### 13. Planner Saved-Layout Score Visibility

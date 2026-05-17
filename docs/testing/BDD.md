@@ -68,8 +68,11 @@ For behavior changes, aim for this loop:
 
 - Service effect range boosts residential population and caps it at the residential max.
 - Road components must touch row `0` or column `0`.
+- Multiple independent road components are valid when every component touches row `0` or column `0`.
+- Layouts can be valid with no explicit roads when every building footprint touches the road anchor boundary.
 - Buildings and roads must be on allowed cells.
 - Buildings must not overlap.
 - Buildings must be road-connected unless their footprint touches the road anchor boundary.
+- Oversized planner HTTP inputs are rejected before a solver starts.
 - The default interactive optimizer remains `auto`.
 - The solve API returns validation and stats that match the solved layout.

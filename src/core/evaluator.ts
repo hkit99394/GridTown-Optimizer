@@ -21,7 +21,11 @@ import {
   buildServiceEffectZoneSet,
   normalizeServicePlacement,
 } from "./buildings.js";
-import { isAdjacentToRoads, roadsConnectedToRoadAnchor } from "./roads.js";
+import {
+  buildingHasImplicitRoadAnchorAccess,
+  isAdjacentToRoads,
+  roadsConnectedToRoadAnchor,
+} from "./roads.js";
 import {
   compatibleResidentialTypeIndices,
   getBuildingLimits,
@@ -54,6 +58,41 @@ function summarizeCellKeys(keys: string[], limit = 12): string {
   const shown = sorted.slice(0, limit).map(formatCellKey).join(", ");
   const hiddenCount = sorted.length - limit;
   return hiddenCount > 0 ? `${shown}, and ${hiddenCount} more` : shown;
+}
+
+function serviceHasImplicitRoadAnchorAccess(service: EvaluatedServicePlacement): boolean {
+  return buildingHasImplicitRoadAnchorAccess(normalizeServicePlacement(service));
+}
+
+function hasBuildingRequiringExplicitRoadAccess(
+  services: EvaluatedServicePlacement[],
+  residentials: { r: number; c: number }[]
+): boolean {
+  return services.some((service) => !serviceHasImplicitRoadAnchorAccess(service))
+    || residentials.some((residential) => !buildingHasImplicitRoadAnchorAccess(residential));
+}
+
+function validateRoadAnchorConnectivity(
+  grid: number[][],
+  roads: Set<string>,
+  hasExplicitRoadAccessRequirement: boolean,
+  errors: string[]
+): void {
+  const anchoredRoads = roadsConnectedToRoadAnchor(grid, roads);
+  const hasNoUsableRoadAnchor = roads.size === 0
+    ? hasExplicitRoadAccessRequirement
+    : anchoredRoads.size === 0;
+  if (hasNoUsableRoadAnchor) {
+    errors.push("Road network does not touch row 0 or column 0.");
+  }
+
+  if (roads.size === 0 || anchoredRoads.size === roads.size) return;
+
+  const disconnectedRoads = [...roads].filter((key) => !anchoredRoads.has(key));
+  const disconnectedSummary = disconnectedRoads.length > 0
+    ? ` Disconnected road cells: ${summarizeCellKeys(disconnectedRoads)}.`
+    : "";
+  errors.push(`Some road cells are not connected to any row-0-or-column-0-connected road component.${disconnectedSummary}`);
 }
 
 function computeResidentialBoosts(
@@ -198,18 +237,14 @@ export function validateLayoutConstraints(input: LayoutEvaluationInput): LayoutC
     }
   }
 
-  // Road connectivity to row 0 or column 0.
-  const connected = roadsConnectedToRoadAnchor(grid, roads);
-  if (connected.size === 0) {
-    errors.push("Road network does not touch row 0 or column 0.");
-  }
-  if (connected.size !== roads.size) {
-    const disconnectedRoads = [...roads].filter((key) => !connected.has(key));
-    const disconnectedSummary = disconnectedRoads.length > 0
-      ? ` Disconnected road cells: ${summarizeCellKeys(disconnectedRoads)}.`
-      : "";
-    errors.push(`Some road cells are not connected to any row-0-or-column-0-connected road component.${disconnectedSummary}`);
-  }
+  // Multiple road components are valid when each component touches row 0 or column 0.
+  // Empty road sets are valid only when every building has implicit anchor-boundary access.
+  validateRoadAnchorConnectivity(
+    grid,
+    roads,
+    hasBuildingRequiringExplicitRoadAccess(services, residentials),
+    errors
+  );
 
   // Building-road adjacency.
   // Buildings that cover row 0 or column 0 are treated as connected to the road anchor.

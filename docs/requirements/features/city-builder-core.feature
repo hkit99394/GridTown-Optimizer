@@ -23,6 +23,19 @@ Feature: City builder core feasibility and scoring
       Then the solution is rejected
       And the validation explains that road components must touch the anchor boundary
 
+    Scenario: Two independent road components both touch the anchor boundary
+      Given two road components that are not connected to each other
+      And each road component contains at least one cell in row 0 or column 0
+      And each non-boundary building is adjacent to one of those components
+      When the solution is validated
+      Then the solution is accepted
+
+    Scenario: Boundary-touching buildings do not require explicit roads
+      Given every building footprint touches row 0 or column 0
+      And the solution contains no explicit road cells
+      When the solution is validated
+      Then the solution is accepted
+
   Rule: Building footprints are disjoint
 
     Scenario: A service and residential claim the same cell
@@ -30,3 +43,11 @@ Feature: City builder core feasibility and scoring
       When the solution is validated
       Then the solution is rejected
       And the validation explains that building footprints cannot overlap
+
+  Rule: Planner HTTP inputs are bounded before solving
+
+    Scenario: A planner request exceeds the HTTP complexity budget
+      Given a solve request whose grid, catalog, footprint, availability, or estimated candidate count exceeds the planner limit
+      When the solve API receives the request
+      Then the request is rejected before an optimizer starts
+      And the response names the exceeded planner limit

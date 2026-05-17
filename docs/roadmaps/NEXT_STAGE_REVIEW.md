@@ -6,7 +6,7 @@ Date: 2026-04-30
 
 The next stage should move away from a GPU/learned-ranking-first plan and toward a tighter solver-improvement loop:
 
-1. Confirm that CP-SAT, the TypeScript evaluator, and the formal spec encode the same road rules.
+1. Keep CP-SAT, the TypeScript evaluator, and the formal spec aligned on road rules, and close alignment changes with scorecard evidence.
 2. Make adaptive LNS the main improvement engine.
 3. Expand benchmarks around planner workflows and hard pressure cases.
 4. Use strict telemetry and registry evidence before changing defaults.
@@ -39,32 +39,33 @@ The default posture remains unchanged: keep `auto` as the recommended quality pa
   - Protected development/holdout splits.
 - CPU portfolio is closed as a measurement/safety gate. The latest tiny paired run tied population while using more configured worker CPU budget, so portfolio stays explicit-only.
 
-## Key Finding: CP-SAT Road Semantics
+## Key Finding: CP-SAT Road Semantics Closeout
 
-The highest-leverage next investigation is CP-SAT road semantics.
+The highest-leverage closeout item is CP-SAT road semantics evidence.
 
 The formal spec permits multiple road components as long as every road component touches the road-anchor boundary. The TypeScript validation path follows that interpretation by accepting every road cell reachable from any row-0-or-column-0 road anchor.
 
-The Python CP-SAT model appears to use one root and one connected flow network for all selected road cells. That can be stricter than the spec if multiple independent anchored road components are legal. If confirmed, this is not just a performance tweak. It is a correctness and search-quality issue:
+The current CP-SAT formulation has been updated to use selected anchor road cells as component roots rather than one global root. It also permits zero explicit roads when all selected buildings have implicit anchor-boundary access. The remaining risk is no longer discovery of the mismatch; it is proving the aligned formulation across adversarial cases and product-shaped benchmark families.
 
-- It can reject layouts that the spec and evaluator accept.
-- It can force extra connector roads.
-- It can reduce feasible building space.
-- It can make CP-SAT repairs less useful inside LNS.
-- It can skew benchmark decisions when CP-SAT is treated as the exact backend.
+If the closeout is skipped:
+
+- CP-SAT may still drift from the TypeScript evaluator on edge cases.
+- benchmark decisions may overfit to tiny smoke cases.
+- LNS repair quality may regress on corridor, gate, or multi-anchor maps without being caught.
+- roadmap status will overstate confidence in the exact backend.
 
 Recommended action:
 
-1. Add small adversarial cases with two or more independently anchored road components.
-2. Verify CP-SAT feasibility and objective against the TypeScript evaluator.
-3. Introduce a guarded CP-SAT road-connectivity formulation toggle if the mismatch is confirmed.
-4. Benchmark old versus aligned formulation across tiny, small, corridor, gate, and multi-anchor pressure cases before changing defaults.
+1. Keep the small adversarial cases with two or more independently anchored road components.
+2. Verify CP-SAT feasibility and objective against the TypeScript evaluator for multi-anchor and roadless-boundary cases.
+3. Benchmark the aligned formulation across tiny, small, corridor, gate, and multi-anchor pressure cases.
+4. Register the closeout artifact with command, hardware, seed, budget, and git metadata.
 
 Success signal:
 
 - CP-SAT, the formal spec, and the TypeScript evaluator agree on feasibility.
-- The aligned formulation does not regress saturated smoke cases.
-- Multi-anchor adversarial cases either improve or expose a documented tradeoff.
+- The aligned formulation does not regress saturated smoke cases or product-shaped pressure cases.
+- Multi-anchor adversarial cases improve or tie without invalid layouts.
 
 ## Science And Engineering Assessment
 
@@ -84,7 +85,7 @@ This shape supports the current hybrid architecture. Greedy, LNS, and CP-SAT are
 
 Best next algorithmic sequence:
 
-1. CP-SAT model alignment and strengthening.
+1. CP-SAT model alignment closeout and strengthening.
 2. Adaptive LNS over semantic neighborhoods.
 3. Auto budget retuning from telemetry.
 4. Service-master decomposition experiments.
@@ -112,7 +113,7 @@ Do not start with learned ranking. It should follow telemetry and label scale, n
 
 ### Gaps
 
-- CP-SAT road connectivity may be stricter than the formal spec and TypeScript evaluator.
+- CP-SAT road-semantics confidence still needs product-shaped scorecards and registry closeout.
 - LNS still relies heavily on window selection rather than a broader adaptive destroy/repair operator set.
 - The default benchmark corpus is too small and too easy to saturate for promotion decisions.
 - Planner workflows are not yet first-class benchmark cases.
@@ -123,9 +124,9 @@ Do not start with learned ranking. It should follow telemetry and label scale, n
 
 ## Recommended Next-Stage Roadmap
 
-### Stage 1: CP-SAT Road-Semantics Alignment
+### Stage 1: CP-SAT Road-Semantics Closeout
 
-Goal: make exact repair/proof match the formal spec.
+Goal: prove exact repair/proof matches the formal spec across adversarial and product-shaped cases.
 
 Deliverables:
 
@@ -320,7 +321,7 @@ Any default-path solver change must satisfy:
 
 Recommended order:
 
-1. Verify CP-SAT road semantics and add adversarial tests.
+1. Close CP-SAT road-semantics evidence with adversarial tests, product scorecards, and registry metadata.
 2. Build the product-shaped benchmark corpus.
 3. Add telemetry manifests and strict registry entries for solver/workflow runs.
 4. Implement adaptive LNS operators and operator weighting.

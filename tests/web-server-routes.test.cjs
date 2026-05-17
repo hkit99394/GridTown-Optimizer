@@ -9,6 +9,7 @@ const optimizerRegistry = require("../dist/runtime/dispatch/optimizerRegistry.js
 const { SolveJobManager } = require("../dist/runtime/jobs/solveJobManager.js");
 const { SolverInputError } = require("../dist/core/solverInputValidation.js");
 const { createPlannerRequestHandler } = require("../dist/server/http/requestHandler.js");
+const { HTTP_SOLVER_INPUT_LIMITS } = require("../dist/server/http/contracts.js");
 const { solve } = require("../dist/index.js");
 
 function createMockRequest(method, url, body = "", headers = undefined) {
@@ -305,6 +306,10 @@ function buildTinySolvePayload() {
       greedy: { localSearch: false },
     },
   };
+}
+
+function buildAllowedGrid(rows, cols) {
+  return Array.from({ length: rows }, () => Array.from({ length: cols }, () => 1));
 }
 
 function assertPlannerExplainabilityPayload(payload, grid) {
@@ -887,7 +892,7 @@ async function testImmediateSolveRejectsInvalidCpSatOptionsBeforeStartingBackend
             roads: [],
             services: [],
             residentials: [
-              { r: 0, c: 0, rows: 2, cols: 2, typeIndex: 0, population: 100 },
+              { r: 2, c: 2, rows: 2, cols: 2, typeIndex: 0, population: 100 },
             ],
             populations: [100],
             totalPopulation: 100,
@@ -895,7 +900,7 @@ async function testImmediateSolveRejectsInvalidCpSatOptionsBeforeStartingBackend
         },
       },
       expectedError:
-        "Invalid solver input: CP-SAT warm-start hint cpSat.warmStartHint.solution is invalid: Road network does not touch row 0 or column 0.",
+        "Invalid solver input: CP-SAT warm-start hint cpSat.warmStartHint.solution is invalid: Road network does not touch row 0 or column 0. Residential at (2,2) size 2x2 is not adjacent to a road.",
     },
   ];
 
@@ -1006,6 +1011,104 @@ async function testImmediateSolveRejectsInvalidGreedyOptionsBeforeStartingBacken
             ...solvePayload.params,
             greedy: testCase.greedy,
           },
+        },
+      });
+
+      assert.equal(result.statusCode, 400);
+      assert.equal(result.payload.ok, false);
+      assert.equal(result.payload.error, testCase.expectedError);
+      assert.equal(optimizerAdapterRequested, false);
+    }
+  } finally {
+    optimizerRegistry.getOptimizerAdapter = originalGetOptimizerAdapter;
+  }
+}
+
+async function testImmediateSolveRejectsHttpComplexityLimits(handler) {
+  const solvePayload = buildTinySolvePayload();
+  const originalGetOptimizerAdapter = optimizerRegistry.getOptimizerAdapter;
+  let optimizerAdapterRequested = false;
+
+  optimizerRegistry.getOptimizerAdapter = () => {
+    optimizerAdapterRequested = true;
+    return {
+      name: "greedy",
+      solve() {
+        throw new Error("Invalid HTTP planner input should be rejected before starting a solve.");
+      },
+      startBackgroundSolve() {
+        throw new Error("Invalid HTTP planner input should be rejected before starting a solve.");
+      },
+    };
+  };
+
+  const cases = [
+    {
+      grid: buildAllowedGrid(101, 100),
+      params: solvePayload.params,
+      expectedError:
+        `Invalid solver input: HTTP planner grid has 10100 cells, exceeding the limit of ${HTTP_SOLVER_INPUT_LIMITS.maxGridCells}.`,
+    },
+    {
+      grid: solvePayload.grid,
+      params: {
+        ...solvePayload.params,
+        serviceTypes: Array.from({ length: HTTP_SOLVER_INPUT_LIMITS.maxCatalogEntries + 1 }, () => ({
+          rows: 1,
+          cols: 1,
+          bonus: 1,
+          range: 0,
+          avail: 1,
+        })),
+        residentialTypes: [],
+      },
+      expectedError:
+        `Invalid solver input: HTTP planner catalog has 201 entries, exceeding the limit of ${HTTP_SOLVER_INPUT_LIMITS.maxCatalogEntries}.`,
+    },
+    {
+      grid: solvePayload.grid,
+      params: {
+        ...solvePayload.params,
+        serviceTypes: [{ rows: 21, cols: 20, bonus: 1, range: 0, avail: 1 }],
+      },
+      expectedError:
+        `Invalid solver input: HTTP planner serviceTypes[0] footprint area 420 exceeds the HTTP planner limit of ${HTTP_SOLVER_INPUT_LIMITS.maxFootprintArea}.`,
+    },
+    {
+      grid: solvePayload.grid,
+      params: {
+        ...solvePayload.params,
+        residentialTypes: [{ w: 1, h: 1, min: 1, max: 1, avail: HTTP_SOLVER_INPUT_LIMITS.maxAvailability + 1 }],
+      },
+      expectedError:
+        `Invalid solver input: HTTP planner residentialTypes[0].avail exceeds the HTTP planner limit of ${HTTP_SOLVER_INPUT_LIMITS.maxAvailability}.`,
+    },
+    {
+      grid: buildAllowedGrid(100, 100),
+      params: {
+        ...solvePayload.params,
+        serviceTypes: Array.from({ length: 26 }, () => ({
+          rows: 1,
+          cols: 1,
+          bonus: 1,
+          range: 0,
+          avail: 1,
+        })),
+        residentialTypes: [{ w: 1, h: 1, min: 1, max: 1, avail: 0 }],
+      },
+      expectedError:
+        `Invalid solver input: HTTP planner estimated candidate count 260000 exceeds the limit of ${HTTP_SOLVER_INPUT_LIMITS.maxEstimatedCandidates}.`,
+    },
+  ];
+
+  try {
+    for (const testCase of cases) {
+      const result = await invoke(handler, {
+        method: "POST",
+        url: "/api/solve",
+        json: {
+          grid: testCase.grid,
+          params: testCase.params,
         },
       });
 
@@ -1316,6 +1419,10 @@ async function testLayoutEvaluateReportsWellFormedInvalidManualLayout(handler) {
   const serializedSolution = {
     ...solved,
     roads: [],
+    residentials: [{ r: 2, c: 2, rows: 2, cols: 2 }],
+    residentialTypeIndices: [0],
+    populations: [100],
+    totalPopulation: 100,
   };
 
   const result = await invoke(handler, {
@@ -1815,7 +1922,7 @@ async function testStartSolveRejectsInvalidCpSatWarmStartBeforeStartingJob(handl
                 roads: [],
                 services: [],
                 residentials: [
-                  { r: 0, c: 0, rows: 2, cols: 2, typeIndex: 0, population: 100 },
+                  { r: 2, c: 2, rows: 2, cols: 2, typeIndex: 0, population: 100 },
                 ],
                 populations: [100],
                 totalPopulation: 100,
@@ -1830,7 +1937,7 @@ async function testStartSolveRejectsInvalidCpSatWarmStartBeforeStartingJob(handl
     assert.equal(result.payload.ok, false);
     assert.equal(
       result.payload.error,
-      "Invalid solver input: CP-SAT warm-start hint cpSat.warmStartHint.solution is invalid: Road network does not touch row 0 or column 0."
+      "Invalid solver input: CP-SAT warm-start hint cpSat.warmStartHint.solution is invalid: Road network does not touch row 0 or column 0. Residential at (2,2) size 2x2 is not adjacent to a road."
     );
     assert.equal(optimizerAdapterRequested, false);
 
@@ -1969,6 +2076,7 @@ async function main() {
   await testImmediateSolveRejectsStaleLnsSeedHintBeforeStartingBackend(handler);
   await testImmediateSolveRejectsInvalidCpSatOptionsBeforeStartingBackend(handler);
   await testImmediateSolveRejectsInvalidGreedyOptionsBeforeStartingBackend(handler);
+  await testImmediateSolveRejectsHttpComplexityLimits(handler);
   await testSolveRoutesRejectInvalidAutoOptionsBeforeStartingBackend(handler);
   await testSolveRoutesRejectInvalidLnsOptionsBeforeStartingBackend(handler);
   await testImmediateSolvePreservesTypedSolverInputErrors(handler);

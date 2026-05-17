@@ -1,5 +1,5 @@
 import { materializeSerializedSolution } from "../../core/solutionSerialization.js";
-import { assertValidSerializedSolutionPayload } from "../../core/solverInputValidation.js";
+import { assertValidSerializedSolutionPayload, SolverInputError } from "../../core/solverInputValidation.js";
 import type { Grid, SerializedSolution, SolverParams } from "../../core/types.js";
 
 export interface SolveRequest {
@@ -35,8 +35,26 @@ const LOCAL_RUNTIME_PARAM_SECTIONS = [
   { key: "lns", keysToStrip: LOCAL_RUNTIME_SOLVER_KEYS },
 ] as const;
 
+export const HTTP_SOLVER_INPUT_LIMITS = {
+  maxGridCells: 10_000,
+  maxCatalogEntries: 200,
+  maxFootprintArea: 400,
+  maxAvailability: 10_000,
+  maxEstimatedCandidates: 250_000,
+} as const;
+
+type FootprintDimensions = readonly [rows: number, cols: number];
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
+}
+
+function isFiniteNonNegativeInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0;
+}
+
+function positiveDimension(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value > 0 ? value : null;
 }
 
 export function isGrid(value: unknown): value is Grid {
@@ -116,6 +134,126 @@ export function sanitizeSolveRequest<T extends SolveRequest | LayoutEvaluateRequ
     ...payload,
     params: sanitizePlannerSolverParams(payload.params),
   };
+}
+
+function assertHttpPlannerLimit(
+  actual: number,
+  limit: number,
+  message: (actual: number, limit: number) => string
+): void {
+  if (actual <= limit) return;
+  throw new SolverInputError(message(actual, limit));
+}
+
+function estimatePlacements(gridRows: number, gridCols: number, [footprintRows, footprintCols]: FootprintDimensions): number {
+  if (footprintRows > gridRows || footprintCols > gridCols) return 0;
+  return (gridRows - footprintRows + 1) * (gridCols - footprintCols + 1);
+}
+
+function serviceOrientations(service: Record<string, unknown>): FootprintDimensions[] {
+  const rows = positiveDimension(service.rows);
+  const cols = positiveDimension(service.cols);
+  if (rows === null || cols === null) return [];
+  if (service.allowRotation !== false && rows !== cols) return [[rows, cols], [cols, rows]];
+  return [[rows, cols]];
+}
+
+function residentialOrientations(residential: Record<string, unknown>): FootprintDimensions[] {
+  const width = positiveDimension(residential.w);
+  const height = positiveDimension(residential.h);
+  if (width === null || height === null) return [];
+  if (width !== height) return [[height, width], [width, height]];
+  return [[height, width]];
+}
+
+function assertHttpCatalogEntryLimits(entry: unknown, path: string, dimensions: FootprintDimensions[]): void {
+  if (!isRecord(entry)) return;
+  const availability = entry.avail;
+  if (availability !== undefined && isFiniteNonNegativeInteger(availability)) {
+    assertHttpPlannerLimit(
+      availability,
+      HTTP_SOLVER_INPUT_LIMITS.maxAvailability,
+      (_actual, limit) => `${path}.avail exceeds the HTTP planner limit of ${limit}.`
+    );
+  }
+  for (const [rows, cols] of dimensions) {
+    const footprintArea = rows * cols;
+    assertHttpPlannerLimit(
+      footprintArea,
+      HTTP_SOLVER_INPUT_LIMITS.maxFootprintArea,
+      (actual, limit) => `${path} footprint area ${actual} exceeds the HTTP planner limit of ${limit}.`
+    );
+  }
+}
+
+function entryContributesCandidates(entry: unknown): boolean {
+  return !isRecord(entry) || entry.avail !== 0;
+}
+
+function estimateCatalogCandidates(
+  gridRows: number,
+  gridCols: number,
+  entries: readonly unknown[],
+  dimensionsForEntry: (entry: Record<string, unknown>) => FootprintDimensions[],
+  pathForEntry: (index: number) => string
+): number {
+  let candidates = 0;
+  entries.forEach((entry, index) => {
+    const dimensions = isRecord(entry) ? dimensionsForEntry(entry) : [];
+    assertHttpCatalogEntryLimits(entry, pathForEntry(index), dimensions);
+    if (!entryContributesCandidates(entry)) return;
+    for (const dimensionsEntry of dimensions) {
+      candidates += estimatePlacements(gridRows, gridCols, dimensionsEntry);
+    }
+  });
+  return candidates;
+}
+
+export function assertHttpPlannerInputLimits(grid: Grid, params: SolverParams): void {
+  const rowCount = grid.length;
+  const colCount = grid[0]?.length ?? 0;
+  const gridCells = rowCount * colCount;
+  assertHttpPlannerLimit(
+    gridCells,
+    HTTP_SOLVER_INPUT_LIMITS.maxGridCells,
+    (actual, limit) => `HTTP planner grid has ${actual} cells, exceeding the limit of ${limit}.`
+  );
+
+  const serviceTypes = Array.isArray(params.serviceTypes) ? params.serviceTypes : [];
+  const residentialTypes = Array.isArray(params.residentialTypes) ? params.residentialTypes : [];
+  const catalogEntries = serviceTypes.length + residentialTypes.length;
+  assertHttpPlannerLimit(
+    catalogEntries,
+    HTTP_SOLVER_INPUT_LIMITS.maxCatalogEntries,
+    (actual, limit) => `HTTP planner catalog has ${actual} entries, exceeding the limit of ${limit}.`
+  );
+
+  let estimatedCandidates = estimateCatalogCandidates(
+    rowCount,
+    colCount,
+    serviceTypes,
+    serviceOrientations,
+    (index) => `HTTP planner serviceTypes[${index}]`
+  );
+
+  if (residentialTypes.length > 0) {
+    estimatedCandidates += estimateCatalogCandidates(
+      rowCount,
+      colCount,
+      residentialTypes,
+      residentialOrientations,
+      (index) => `HTTP planner residentialTypes[${index}]`
+    );
+  } else {
+    estimatedCandidates += estimatePlacements(rowCount, colCount, [2, 2]);
+    estimatedCandidates += estimatePlacements(rowCount, colCount, [2, 3]);
+  }
+
+  assertHttpPlannerLimit(
+    estimatedCandidates,
+    HTTP_SOLVER_INPUT_LIMITS.maxEstimatedCandidates,
+    (actual, limit) => `HTTP planner estimated candidate count ${actual} exceeds the limit of ${limit}.`
+  );
 }
 
 export { assertValidSerializedSolutionPayload };

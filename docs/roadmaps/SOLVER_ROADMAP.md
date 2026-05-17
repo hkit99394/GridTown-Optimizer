@@ -7,7 +7,7 @@ Maximize feasible city population under a fixed wall-clock and CPU budget.
 The solver roadmap is now centered on the fastest path to better solutions:
 
 1. Keep `auto` as the default quality path.
-2. Align CP-SAT with the formal problem semantics.
+2. Keep CP-SAT aligned with the formal problem semantics and close every alignment change with registered evidence.
 3. Make LNS adaptive and evidence-driven.
 4. Expand benchmark coverage around planner workflows and pressure cases.
 5. Promote learned guidance, portfolio, GPU, distributed solving, or alternative solvers only after protected equal-budget evidence says they help.
@@ -55,6 +55,7 @@ Current reviewed baseline:
 - Experiment registry hardening exists through validation/check tooling, append helpers, and strict metadata gates.
 - Planner explainability, saved layouts, manual validation, continuation hints, and expansion comparison create a real product loop around the solver.
 - The 2026-04-28 health check passed `npm test`; Auto matched the best population on the four 5s seed-7 default scorecard cases.
+- CP-SAT road semantics now use per-component anchor connectivity: every explicit road component must touch row `0` or column `0`, and roadless boundary-only layouts are valid.
 - CP-SAT portfolio measurement tied single CP-SAT on the tiny paired run while spending more configured worker CPU, so portfolio remains explicit-only.
 - Low-risk learned-ranking labels exist for offline diagnostics only; no model has been trained or promoted.
 
@@ -62,7 +63,7 @@ Current reviewed baseline:
 
 The next stage is not "train first" or "add more modes." The next stage is:
 
-1. Verify that the exact backend encodes the same road semantics as the formal spec and TypeScript validator.
+1. Close out CP-SAT road-semantics alignment with scorecards and registry evidence.
 2. Use adaptive LNS as the main time-to-good-solution engine.
 3. Turn the benchmark and experiment registry into the promotion gate for every solver change.
 4. Measure the planner's actual workflow: solve, inspect, edit, validate, reuse, compare next addition.
@@ -74,6 +75,95 @@ Reasoning:
 - LNS already matches the research shape for this kind of problem; adaptive destroy/repair operators are likely higher leverage than another global solver mode.
 - Current learned labels are useful but too small, especially for LNS, to justify runtime model hooks.
 - Tiny saturated cases are useful smoke tests but weak promotion evidence.
+
+## Current Milestone: Promotion-Grade Solver Alignment And Evidence Gate
+
+Goal: turn the road-semantics fix into a trusted baseline and create the evidence loop that future solver changes must pass.
+
+This milestone is complete only when the implementation, docs, benchmarks, and experiment registry all agree on the same story: CP-SAT, TypeScript validation, and the formal spec use per-component road-anchor semantics; solver improvements are judged on planner-shaped cases; and every default-changing proposal has reproducible artifacts.
+
+### Phase 0: Stabilize The Current Semantic And Safety Pass
+
+Dependencies:
+
+- Per-component road-anchor semantics in CP-SAT, TypeScript validation, road cleanup, and road materialization.
+- HTTP planner complexity caps for local web/API usage.
+
+Acceptance gates:
+
+- `npm test` passes.
+- Python CP-SAT files compile.
+- Multi-anchor and roadless-boundary regressions are present in the optimizer/review-finding test suites.
+- Road-semantics docs no longer describe the CP-SAT mismatch as an open implementation question.
+- HTTP planner limits are documented as safety defaults and covered by route tests.
+
+### Phase 1: Road-Semantics Scorecard
+
+Dependencies:
+
+- Phase 0 is green.
+
+Acceptance gates:
+
+- Adversarial cases cover row-0 anchors, column-0 anchors, multiple independent anchored road components, disconnected non-anchor components, and boundary-only roadless layouts.
+- CP-SAT and the exact TypeScript evaluator agree on feasibility for every adversarial case.
+- Cross-mode scorecards show no worst-family regression after the aligned CP-SAT formulation.
+- Results are captured as registry-ready artifacts with command, commit, branch, seed, budget, hardware, and summary metrics.
+
+### Phase 2: Product-Shaped Benchmark Corpus
+
+Dependencies:
+
+- Road-semantics scorecard is stable enough to use as a baseline.
+
+Acceptance gates:
+
+- Add 6-10 saved planner payloads that represent the real web workflow.
+- Add manual-layout replay through `/api/layout/evaluate`.
+- Add expansion-comparison replay.
+- Include corridor, gate, footprint-pressure, service-overlap, anchor-service, and multi-anchor case families.
+- Maintain fixed seeds plus development and protected holdout splits.
+- Report population at 1s, 5s, 30s, and 120s where the budget is applicable.
+
+### Phase 3: Telemetry Manifests
+
+Dependencies:
+
+- Product-shaped corpus has stable case names, seeds, and split ownership.
+
+Acceptance gates:
+
+- Every benchmark/workflow run emits a manifest with command, git SHA, branch, dirty-state marker, case, seed, budget, hardware, solver params, and artifact paths.
+- Auto, Greedy, LNS, and CP-SAT runs expose stage timings, first-feasible time, best-score time, final status, and final validation result.
+- CP-SAT runs include status, upper bound, population gap, and model/candidate-size metadata where available.
+- LNS runs include operator/window attempts, feasible repairs, improvements, neutral repairs, recoverable failures, elapsed time, and selected-window context.
+- Experiment registry append/check flows can validate these manifests without rerunning the solver.
+
+### Phase 4: Adaptive LNS Operator Set
+
+Dependencies:
+
+- Telemetry can explain operator outcomes by case family and budget.
+
+Acceptance gates:
+
+- Add an operator interface for semantic destroy/repair choices.
+- Initial operators cover weak service repair, residential-headroom cluster repair, frontier-congestion repair, gate/choke repair, service-overlap repair, and random exploration.
+- Operator scoring rewards recent useful improvement while preserving exploration.
+- Equal-budget LNS/Auto scorecards improve population or time-to-best without worst-decile regression on protected holdout cases.
+
+### Phase 5: Auto Budget Retuning
+
+Dependencies:
+
+- Product corpus, telemetry manifests, and adaptive LNS operator data are available.
+
+Acceptance gates:
+
+- Budget ablations compare greedy seed time, LNS repair time, CP-SAT reserve time, and no-improvement timeout policies.
+- New Auto policy beats baseline on protected holdout or reaches equal population faster.
+- CPU-normalized cost is no worse than the baseline policy unless explicitly accepted as a product tradeoff.
+- Defaults change only after the scorecard and registry entry are reviewed.
 
 ## Active Priorities
 
@@ -90,7 +180,7 @@ Status vocabulary:
 
 | Rank | Priority | Status | Impact | Summary | Success Signal |
 | --- | --- | --- | ---: | --- | --- |
-| 1 | CP-SAT road-semantics alignment | active | 5.0 | Verify whether the Python CP-SAT model overconstrains roads by forcing one connected road tree where the spec permits multiple anchored components. Add a benchmark toggle and adversarial cases before changing defaults. | CP-SAT, TypeScript validation, and the formal spec agree on multi-anchor road-component feasibility; scorecards show no worst-family regression. |
+| 1 | CP-SAT road-semantics verification closeout | partial | 5.0 | The implementation and targeted tests now use per-component road-anchor semantics instead of one global road root. Finish benchmark scorecards and registry evidence before treating the change as promotion-grade. | CP-SAT, TypeScript validation, and the formal spec agree on multi-anchor and roadless-boundary feasibility; product-shaped scorecards show no worst-family regression and are registered. |
 | 2 | Product-shaped benchmark corpus | active | 4.5 | Extend cross-mode scorecards with planner payloads, manual-layout replay, expansion-comparison replay, corridor/gate/footprint/service-pressure cases, and multi-anchor adversarial cases. | Promotion decisions use fixed-seed dev/holdout corpora with 1s/5s/30s/120s budgets and strict registry entries. |
 | 3 | Solver telemetry manifests | active | 4.0 | Persist stage-level candidate counts, CP-SAT model size, first-feasible time, best-score time, status/gap, operator outcome, wall time, CPU budget, and hardware metadata. | Every benchmark and workflow run can explain where time was spent and why a candidate change did or did not improve. |
 | 4 | Adaptive LNS operator set | active | 4.5 | Add semantic destroy/repair operators beyond fixed rectangles: weak services, residential headroom clusters, service-overlap conflicts, road gates/chokes, frontier congestion, and random exploration windows. | Equal-budget LNS/Auto scorecards improve time-to-best or fixed-budget population without worst-decile regression. |
@@ -111,7 +201,7 @@ Status vocabulary:
 | Generated pressure-case coverage | partial | [SOLVER_ROADMAP_DELIVERED.md](SOLVER_ROADMAP_DELIVERED.md), item 30 | Useful starting point, but promotion needs broader workflow and adversarial coverage. |
 | CP-SAT portfolio telemetry and CPU-normalized scorecards | delivered | `artifacts/cp-sat-portfolio/2026-04-28/` | Portfolio remains explicit-only; Auto does not route through it. |
 | Experiment registry hardening | delivered | `artifacts/experiments/index.jsonl`; `npm run experiment-registry:check` | Future artifacts can be checked and appended with strict metadata. |
-| CP-SAT road-semantics alignment | active | Formal spec and TS validator allow every anchored road component; Python CP-SAT needs targeted verification | Potential correctness and quality improvement; no default change until benchmarked. |
+| CP-SAT road-semantics alignment | partial | Formal spec, TS validator, and current CP-SAT implementation use per-component anchor semantics; targeted tests exist, but product-shaped scorecards and registry closeout are still needed. | Correctness fix is in place; promotion confidence depends on benchmark and artifact closeout. |
 | Adaptive LNS | active | Current LNS has ranked windows and replay labels but not operator scoring | Main next quality engine after model alignment and telemetry. |
 | Exact small-window DP repair | gated | Existing exact assignment DP shows the pattern is useful for bounded subproblems, but no LNS window DP exists | Candidate subroutine only; route tiny repairs to DP if telemetry proves CP-SAT overhead dominates. |
 | Model training path | gated | No `python/ml/` scaffold, offline metric report, trained model, or feature-flagged scorer is promoted | No learned default path. |
@@ -123,7 +213,7 @@ These are not next actions. Move them into the active table only after the trigg
 
 | Trigger | Priority | Impact | Summary | Success Signal |
 | --- | --- | ---: | --- | --- |
-| CP-SAT semantics alignment and product corpus are stable | Geometry-native CP-SAT / `NoOverlap2D` experiment | 3.0 | Compare current cell-indexed set packing with optional-interval rectangle constraints. | Controlled scorecard shows propagation or time-to-best improvement without model-size blowup. |
+| CP-SAT semantics scorecard and product corpus are stable | Geometry-native CP-SAT / `NoOverlap2D` experiment | 3.0 | Compare current cell-indexed set packing with optional-interval rectangle constraints. | Controlled scorecard shows propagation or time-to-best improvement without model-size blowup. |
 | Telemetry shows CP-SAT overhead dominates tiny repairs or corridor windows | Exact small-window DP repair | 3.0 | Use bitmask/profile DP as an exact repair oracle for small LNS windows, narrow maps, and CP-SAT alignment tests. | DP returns evaluator-valid layouts, beats CP-SAT wall time on eligible windows, and improves Auto/LNS time-to-best without larger-window regressions. |
 | Service-overlap and coverage families expose a repeated bottleneck | Service-master / subproblem decomposition | 3.5 | Make service choice a master problem and residential/road repair a subproblem. | Beats Auto on targeted families and remains validated by the exact evaluator. |
 | LNS label-scale gates pass | Learned LNS window ranking | 3.0 | Train and evaluate a ranker over adaptive LNS candidate windows. | Offline holdout beats deterministic, random, and single-feature baselines; online A/B improves fixed-budget quality without worst-decile regression. |
@@ -135,7 +225,7 @@ These are not next actions. Move them into the active table only after the trigg
 
 ## Combined Ordering
 
-1. Verify CP-SAT road semantics against the spec and TS evaluator.
+1. Close CP-SAT road-semantics verification with adversarial tests, product scorecards, and registry evidence.
 2. Add product-shaped workflow and adversarial benchmark coverage.
 3. Persist stage-level telemetry manifests for solver and workflow runs.
 4. Implement adaptive LNS operators and operator scoring.

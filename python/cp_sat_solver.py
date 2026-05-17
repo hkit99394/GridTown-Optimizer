@@ -770,7 +770,7 @@ def add_opposing_flow_constraints(model, road_neighbor_ids, road_eligible_ids, d
             continue
         forward = directed_edge_vars[(cell_id, neighbor_id)]
         backward = directed_edge_vars[(neighbor_id, cell_id)]
-        model.Add(forward + backward <= total_roads - 1)
+        model.Add(forward + backward <= total_roads)
 
 
 def create_root_supply_variables(model, eligible_anchor_ids, root_vars, cell_count, total_roads):
@@ -779,6 +779,7 @@ def create_root_supply_variables(model, eligible_anchor_ids, root_vars, cell_cou
         supply_var = model.NewIntVar(0, cell_count, f"root_supply_{cell_id}")
         model.Add(supply_var <= cell_count * root_vars[cell_id])
         root_supply[cell_id] = supply_var
+    # Each selected anchor can supply its own component; empty road sets supply zero.
     model.Add(sum(root_supply.values()) == total_roads)
     return root_supply
 
@@ -1324,8 +1325,8 @@ def resolve_warm_start_selection(built: BuiltCpSatModel, warm_start_hint) -> Res
     )
 
 
-def hinted_root_id_from_selected_roads(built: BuiltCpSatModel, selected_road_ids):
-    return next((cell_id for cell_id in built.anchor_ids if cell_id in selected_road_ids), None)
+def selected_anchor_road_ids_from_selection(built: BuiltCpSatModel, selected_road_ids):
+    return {cell_id for cell_id in built.anchor_ids if cell_id in selected_road_ids}
 
 
 def resolve_warm_start_hint_indices(
@@ -1362,16 +1363,13 @@ def create_road_network_variables(model, grid, allowed_cells, anchor_ids, road_e
             model.Add(road_vars[cell_id] == 0)
 
     root_vars = {idx: model.NewBoolVar(f"root_{idx}") for idx in anchor_ids if idx in road_eligible_ids}
-    model.Add(sum(root_vars.values()) == 1)
     for idx, root_var in root_vars.items():
-        model.Add(root_var <= road_vars[idx])
+        # Any selected row-0/column-0 road cell is an anchor for its component.
+        model.Add(root_var == road_vars[idx])
 
     eligible_anchor_ids = [cell_id for cell_id in anchor_ids if cell_id in road_eligible_ids]
-    for position, cell_id in enumerate(eligible_anchor_ids):
-        for earlier_cell_id in eligible_anchor_ids[:position]:
-            model.Add(root_vars[cell_id] + road_vars[earlier_cell_id] <= 1)
 
-    total_roads = model.NewIntVar(1, cell_count, "total_roads")
+    total_roads = model.NewIntVar(0, cell_count, "total_roads")
     model.Add(total_roads == sum(road_vars))
     road_neighbor_ids = build_road_neighbor_ids(grid, id_to_cell, cell_to_id, road_eligible_ids)
     return road_vars, root_vars, eligible_anchor_ids, total_roads, road_neighbor_ids
@@ -1901,10 +1899,9 @@ def apply_warm_start_hints(model, built: BuiltCpSatModel, warm_start_hint):
     for cell_id, variable in enumerate(built.road_vars):
         model.AddHint(variable, 1 if cell_id in warm_start_selection.selected_road_ids else 0)
 
-    hinted_root_id = hinted_root_id_from_selected_roads(built, warm_start_selection.selected_road_ids)
-    if hinted_root_id is not None:
-        for cell_id, variable in built.root_vars.items():
-            model.AddHint(variable, 1 if cell_id == hinted_root_id else 0)
+    selected_anchor_ids = selected_anchor_road_ids_from_selection(built, warm_start_selection.selected_road_ids)
+    for cell_id, variable in built.root_vars.items():
+        model.AddHint(variable, 1 if cell_id in selected_anchor_ids else 0)
 
     for candidate_index, variable in enumerate(built.service_vars):
         model.AddHint(variable, 1 if candidate_index in warm_start_selection.selected_service_ids else 0)
@@ -1962,13 +1959,12 @@ def apply_local_neighborhood_fixing(model, built: BuiltCpSatModel, warm_start_hi
             continue
         model.Add(variable == (1 if cell_id in warm_start_selection.selected_road_ids else 0))
 
-    hinted_root_id = hinted_root_id_from_selected_roads(built, warm_start_selection.selected_road_ids)
-    if hinted_root_id is not None:
-        for cell_id, variable in built.root_vars.items():
-            r, c = built.allowed_cells[cell_id]
-            if top <= r < bottom and left <= c < right:
-                continue
-            model.Add(variable == (1 if cell_id == hinted_root_id else 0))
+    selected_anchor_ids = selected_anchor_road_ids_from_selection(built, warm_start_selection.selected_road_ids)
+    for cell_id, variable in built.root_vars.items():
+        r, c = built.allowed_cells[cell_id]
+        if top <= r < bottom and left <= c < right:
+            continue
+        model.Add(variable == (1 if cell_id in selected_anchor_ids else 0))
 
     for candidate_index, variable in enumerate(built.service_vars):
         candidate = built.service_candidates[candidate_index]

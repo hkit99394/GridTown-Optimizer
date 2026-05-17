@@ -2887,6 +2887,42 @@ function testManualLayoutResponseCleansRedundantRoads() {
   assert.equal(response.stats.totalPopulation, 10);
 }
 
+function testBoundaryAnchorBuildingsDoNotRequireExplicitRoads() {
+  const grid = [
+    [1, 1],
+    [1, 1],
+  ];
+  const params = {
+    residentialTypes: [{ name: "House", w: 1, h: 1, min: 10, max: 10, avail: 1 }],
+    availableBuildings: { residentials: 1, services: 0 },
+  };
+
+  const evaluation = evaluateLayout({
+    grid,
+    roads: new Set(),
+    services: [],
+    residentials: [{ r: 0, c: 0, rows: 1, cols: 1 }],
+    params,
+  });
+  const response = buildManualLayoutResponse(grid, params, {
+    roads: new Set(["0,1"]),
+    services: [],
+    serviceTypeIndices: [],
+    servicePopulationIncreases: [],
+    residentials: [{ r: 0, c: 0, rows: 1, cols: 1 }],
+    residentialTypeIndices: [0],
+    populations: [0],
+    totalPopulation: 0,
+  });
+
+  assert.equal(evaluation.valid, true);
+  assert.equal(evaluation.totalPopulation, 10);
+  assert.equal(response.validation.valid, true);
+  assert.deepEqual(response.solution.roads, []);
+  assert.equal(response.stats.roadCount, 0);
+  assert.equal(response.stats.totalPopulation, 10);
+}
+
 function testManualLayoutResponseReportsOutOfBoundsRoads() {
   const response = buildManualLayoutResponse(
     [[1]],
@@ -4284,6 +4320,7 @@ async function main() {
   testPlannerResultsAppliesConnectivityRiskMap();
   testManualLayoutResponseClearsSolverMetadata();
   testManualLayoutResponseCleansRedundantRoads();
+  testBoundaryAnchorBuildingsDoNotRequireExplicitRoads();
   testManualLayoutResponseReportsOutOfBoundsRoads();
   testBuildCpSatWarmStartCheckpointRejectsInvalidLayouts();
   testBuildCpSatWarmStartCheckpointRejectsLegacyLayoutsWithoutValidation();

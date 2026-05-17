@@ -245,6 +245,12 @@ export function buildingTouchesRoadAnchorBoundary(r: number, c: number): boolean
   return isRoadAnchorCell(r, c);
 }
 
+export function buildingHasImplicitRoadAnchorAccess(
+  building: { r: number; c: number }
+): boolean {
+  return buildingTouchesRoadAnchorBoundary(building.r, building.c);
+}
+
 export interface RoadAnchorReachableEmptyFrontier {
   reachable: Set<string>;
   distanceByKey: Map<string, number>;
@@ -574,10 +580,9 @@ function compareRoadPruneCandidates(leftKey: string, rightKey: string): number {
   return left.c - right.c;
 }
 
-function roadSetHasSingleRoadAnchorConnectedComponent(G: Grid, roads: Set<string>): boolean {
+export function allRoadComponentsTouchRoadAnchor(G: Grid, roads: Set<string>): boolean {
   const connectedRoads = roadsConnectedToRoadAnchor(G, roads);
-  if (connectedRoads.size === 0 || connectedRoads.size !== roads.size) return false;
-  return true;
+  return connectedRoads.size === roads.size;
 }
 
 function allBuildingsHaveRoadAccess(
@@ -604,7 +609,7 @@ export function pruneRedundantRoads(
       if (!pruned.has(key)) continue;
       const candidateRoads = new Set(pruned);
       candidateRoads.delete(key);
-      if (!roadSetHasSingleRoadAnchorConnectedComponent(G, candidateRoads)) continue;
+      if (!allRoadComponentsTouchRoadAnchor(G, candidateRoads)) continue;
       if (!allBuildingsHaveRoadAccess(candidateRoads, buildings)) continue;
       pruned = candidateRoads;
       changed = true;
@@ -628,13 +633,13 @@ export function materializeDeferredRoadNetwork(
     seed.add(key);
   }
   const roads = roadsConnectedToRoadAnchor(G, seed);
-  if (roads.size === 0) {
+  const pending = buildings.filter((building) => !buildingHasImplicitRoadAnchorAccess(building));
+  if (roads.size === 0 && pending.length > 0) {
     const fallbackRoad = findAvailableRoadAnchorCell(G, occupiedBuildings);
     if (!fallbackRoad) return null;
     roads.add(fallbackRoad);
   }
 
-  const pending = buildings.filter((building) => !buildingTouchesRoadAnchorBoundary(building.r, building.c));
   while (pending.length > 0) {
     let bestIndex = -1;
     let bestCost = Number.POSITIVE_INFINITY;

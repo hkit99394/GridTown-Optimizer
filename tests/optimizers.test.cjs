@@ -421,7 +421,23 @@ function testRoadPruningRevisitsCandidatesAfterDependentRoadRemoval() {
 
   const pruned = pruneRedundantRoads(grid, roads, []);
 
-  assert.deepEqual([...pruned].sort(), ["0,0"]);
+  assert.deepEqual([...pruned].sort(), []);
+}
+
+function testDeferredRoadMaterializationKeepsBoundaryOnlyLayoutsRoadless() {
+  const grid = [
+    [1, 1],
+    [1, 1],
+  ];
+
+  const roads = materializeDeferredRoadNetwork(
+    grid,
+    undefined,
+    new Set(["0,0"]),
+    [{ r: 0, c: 0, rows: 1, cols: 1 }]
+  );
+
+  assert.deepEqual([...(roads ?? [])].sort(), []);
 }
 
 async function maybeTestAutoOptimizer() {
@@ -1483,7 +1499,7 @@ function testGreedyConnectivityShadowScoringIsOptInTieBreaker() {
     assert.deepEqual([...explicitOff.roads].sort(), [...defaultSolution.roads].sort());
     assert.equal(defaultSolution.totalPopulation, enabled.totalPopulation);
     assert.deepEqual(enabled.residentials, [{ r: 0, c: 2, rows: 1, cols: 1 }]);
-    assert.deepEqual([...enabled.roads].sort(), ["0,1"]);
+    assert.deepEqual([...enabled.roads].sort(), []);
     assert.deepEqual(enabledProfiled.residentials, enabled.residentials);
     assert(enabledProfiled.greedyProfile.counters.roads.connectivityShadowScoreTies > 0);
     assert(enabledProfiled.greedyProfile.counters.roads.connectivityShadowScoreWins > 0);
@@ -1919,7 +1935,7 @@ function testGreedyExploresMultipleRoadAnchorSeedsWithinOneComponent() {
 
   assert.equal(solution.totalPopulation, 10);
   assert.deepEqual(solution.residentials, [{ r: 0, c: 0, rows: 2, cols: 2 }]);
-  assert.deepEqual([...solution.roads].sort(), ["0,2"]);
+  assert.deepEqual([...solution.roads].sort(), []);
 }
 
 function testGreedyExploresWideRoadAnchors() {
@@ -2193,9 +2209,10 @@ async function maybeTestCpSatUsesColumnZeroRoadAnchor() {
   }
 
   const grid = [
-    [0, 0, 0],
-    [1, 1, 1],
-    [1, 1, 1],
+    [0, 0, 0, 0],
+    [1, 0, 0, 0],
+    [1, 1, 1, 0],
+    [0, 1, 1, 0],
   ];
   const params = {
     optimizer: "cp-sat",
@@ -2216,6 +2233,39 @@ async function maybeTestCpSatUsesColumnZeroRoadAnchor() {
   assert.equal(validation.valid, true);
   assert.equal([...solution.roads].some((key) => key.endsWith(",0")), true);
   assert.equal([...solution.roads].some((key) => key.startsWith("0,")), false);
+}
+
+async function maybeTestCpSatAllowsMultipleAnchoredRoadComponents() {
+  const pythonExecutable = resolveCpSatPython();
+  if (!pythonExecutable) {
+    return;
+  }
+
+  const grid = [
+    [0, 1, 0, 0, 0, 1],
+    [0, 1, 0, 0, 0, 1],
+    [0, 1, 1, 0, 1, 1],
+    [0, 1, 1, 0, 1, 1],
+  ];
+  const params = {
+    optimizer: "cp-sat",
+    cpSat: {
+      pythonExecutable,
+      timeLimitSeconds: 5,
+      numWorkers: 1,
+    },
+    residentialTypes: [{ w: 2, h: 2, min: 10, max: 10, avail: 2 }],
+    availableBuildings: { residentials: 2, services: 0 },
+  };
+
+  const solution = await solveCpSatAsync(grid, params);
+  const validation = validateSolution({ grid, solution, params });
+
+  assert.match(solution.cpSatStatus ?? "", /^(OPTIMAL|FEASIBLE)$/);
+  assert.equal(solution.totalPopulation, 20);
+  assert.equal(validation.valid, true);
+  assert.equal([...solution.roads].some((key) => key.endsWith(",1")), true);
+  assert.equal([...solution.roads].some((key) => key.endsWith(",5")), true);
 }
 
 function maybeTestCpSatSyncCompatibility() {
@@ -5175,7 +5225,7 @@ function testGreedyStep14DeterministicLookaheadTieBenchmarkCase() {
   assert.equal(enabled.results[0].totalPopulation, 200);
   assert.equal(enabled.results[0].serviceCount, 1);
   assert.equal(enabled.results[0].residentialCount, 2);
-  assertLookaheadCounters(enabled.results[0], 28, 2);
+  assertLookaheadCounters(enabled.results[0], 24, 2);
   assert.deepEqual(baselineSolve.solution.services, [
     { r: 1, c: 0, rows: 1, cols: 1, range: 1 },
   ]);
@@ -5187,7 +5237,7 @@ function testGreedyStep14DeterministicLookaheadTieBenchmarkCase() {
     { r: 2, c: 0, rows: 2, cols: 2 },
   ]);
   assert.deepEqual(firstEnabledSolve.solution.populations, [100, 100]);
-  assert.deepEqual(sortedRoads(firstEnabledSolve.solution), ["0,0"]);
+  assert.deepEqual(sortedRoads(firstEnabledSolve.solution), []);
   assert.deepEqual(firstEnabledSolve.solution.services, baselineSolve.solution.services);
   assert.deepEqual(secondEnabledSolve.solution.services, firstEnabledSolve.solution.services);
   assert.deepEqual(secondEnabledSolve.solution.residentials, firstEnabledSolve.solution.residentials);
@@ -5212,20 +5262,20 @@ function testGreedyStep14Row0PathNullReservationBenchmarkCase() {
   assert.equal(enabled.results[0].totalPopulation, 230);
   assert.equal(enabled.results[0].serviceCount, 1);
   assert.equal(enabled.results[0].residentialCount, 2);
-  assertLookaheadCounters(enabled.results[0], 56, 6);
+  assertLookaheadCounters(enabled.results[0], 28, 3);
   assert.deepEqual(baselineSolve.solution.services, [
     { r: 1, c: 0, rows: 1, cols: 1, range: 1 },
   ]);
   assert.deepEqual(enabledSolve.solution.services, [
-    { r: 0, c: 2, rows: 1, cols: 1, range: 1 },
+    { r: 1, c: 0, rows: 1, cols: 1, range: 1 },
   ]);
-  assert.deepEqual(sortedRoads(baselineSolve.solution), ["0,0"]);
-  assert.deepEqual(sortedRoads(enabledSolve.solution), ["0,3"]);
+  assert.deepEqual(sortedRoads(baselineSolve.solution), []);
+  assert.deepEqual(sortedRoads(enabledSolve.solution), []);
   assert.deepEqual(enabledSolve.solution.residentials, [
-    { r: 0, c: 0, rows: 3, cols: 2 },
-    { r: 1, c: 2, rows: 2, cols: 2 },
+    { r: 0, c: 1, rows: 2, cols: 3 },
+    { r: 2, c: 0, rows: 2, cols: 2 },
   ]);
-  assert.equal(enabledSolve.solution.services[0].r, 0);
+  assert.equal(enabledSolve.solution.services[0].r, 1);
   assert.equal(enabledSolve.solution.roads.size, baselineSolve.solution.roads.size);
   assert.equal(baselineSolve.validation.valid, true);
   assert.equal(enabledSolve.validation.valid, true);
@@ -5903,7 +5953,7 @@ function testGreedyDeferredRoadCommitmentKeepsTopRowShortcut() {
   const validation = validateSolution({ grid, solution, params });
 
   assert.equal(solution.residentials[0].r, 0);
-  assert.equal(solution.roads.size > 0, true);
+  assert.equal(solution.roads.size, 0);
   assert.equal(validation.valid, true);
 }
 
@@ -6744,7 +6794,7 @@ async function maybeTestCpSatObjectivePrefersFewerRoadsOnPopulationTie() {
 
   const solution = await solveCpSatAsync(grid, params);
   assert.equal(solution.totalPopulation, 10);
-  assert.equal(solution.roads.size, 1);
+  assert.equal(solution.roads.size, 0);
   assert.equal(solution.residentials.length, 1);
   assert.equal(solution.residentials[0].r, 0);
   assert.equal(solution.residentials[0].c, 0);
@@ -7689,7 +7739,7 @@ function testGreedyRespectsTopRowConnectivityShortcut() {
   const validation = validateSolution({ grid, solution, params });
 
   assert.equal(solution.residentials[0].r, 0);
-  assert.equal(solution.roads.size > 0, true);
+  assert.equal(solution.roads.size, 0);
   assert.equal(validation.valid, true);
 }
 
@@ -8140,7 +8190,7 @@ print(json.dumps({
   }
 
   const payload = JSON.parse(result.stdout);
-  assert.deepEqual(payload.root_ids, [0]);
+  assert.deepEqual(payload.root_ids, [0, 1]);
   assert.deepEqual(payload.roads, [
     [0, 0],
     [0, 1],
@@ -8262,6 +8312,7 @@ async function main() {
   testGreedyAttemptStateRejectsMismatchedProbeKind();
   testRoadPruningDropsConnectorsOnlyNeededByAnchorBoundaryBuildings();
   testRoadPruningRevisitsCandidatesAfterDependentRoadRemoval();
+  testDeferredRoadMaterializationKeepsBoundaryOnlyLayoutsRoadless();
   testGreedyDispatcher();
   await testPublicSolverDispatchValidatesInputs();
   testGreedyRandomSeedIsDeterministic();
@@ -8295,6 +8346,7 @@ async function main() {
   maybeTestCpSatResidentialPopulationUpperBoundHelpers();
   await maybeTestCpSatOptimizer();
   await maybeTestCpSatUsesColumnZeroRoadAnchor();
+  await maybeTestCpSatAllowsMultipleAnchoredRoadComponents();
   maybeTestCpSatSyncCompatibility();
   await maybeTestCpSatAsyncOptimizer();
   await maybeTestAutoOptimizer();

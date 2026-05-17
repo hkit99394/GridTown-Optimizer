@@ -159,7 +159,15 @@ Owns:
 - request payload interfaces
 - route payload shape guards
 - browser-supplied local runtime parameter sanitization
+- HTTP-facing planner complexity caps for grid cells, catalog entries, footprint area, availability, and estimated candidate count
 - serialized solution payload assertions/materialization re-exports
+
+Current HTTP planner caps:
+- grid cells: `10000`
+- combined service/residential catalog entries: `200`
+- individual footprint area: `400`
+- per-type availability: `10000`
+- estimated placement candidates: `250000`
 
 Does not own:
 - solver/manual-layout response assembly
@@ -182,7 +190,7 @@ Owns:
 HTTP transport helpers shared by planner routes.
 
 Owns:
-- request-body parsing limits
+- request-body byte parsing limits
 - JSON parsing and validation helpers
 - JSON/text response helpers
 - error-to-status translation
@@ -270,11 +278,10 @@ When adding a new behavior:
 
 ## Current Follow-Up
 
-Reviewed on 2026-04-28:
-- Git status was clean before this pass.
-- Baseline `npm test` passed before refactoring.
-- Solver roadmap has no active default-changing priority; gated work should wait for new benchmark evidence.
-- Backend route contracts are now split from solver/manual-layout response assembly.
+Reviewed on 2026-05-17:
+- Road-semantics and HTTP planner-limit changes are treated as current behavior.
+- Solver roadmap priority is verification and scorecard closeout for CP-SAT road semantics, followed by product-shaped benchmarks and telemetry manifests.
+- Backend route contracts own HTTP planner complexity caps; transport owns byte parsing and response mechanics.
 
 The next cleanup candidates are the largest still-active hotspots:
 - `src/greedy/solver.ts`: split stable profiling, scratch-state, and local-search helpers only when benchmark evidence justifies the boundary.

@@ -176,6 +176,7 @@ npm test
 
 Available scripts from [package.json](./package.json):
 - `npm run build`
+- `npm start`
 - `npm run web`
 - `npm run solve`
 - `npm run solve:auto`
@@ -185,8 +186,12 @@ Available scripts from [package.json](./package.json):
 - `npm run benchmark:greedy`
 - `npm run benchmark:lns`
 - `npm run benchmark:cp-sat`
+- `npm run benchmark:labels`
 - `npm run benchmark:scorecard`
+- `npm run experiment-registry`
+- `npm run experiment-registry:check`
 - `npm run setup:cp-sat`
+- `npm run test:acceptance`
 - `npm test`
 
 `npm run solve` currently runs the built-in example with the default `auto` backend in the example CLI.
@@ -224,6 +229,14 @@ Notes:
 - `LNS` and `CP-SAT` need the Python OR-Tools backend
 - stopping a background solve preserves the best feasible result when one exists
 - the displayed output can be reused as the default seed or hint only when the current model fingerprint still matches and the layout has been validated
+
+Planner HTTP limits:
+- `/api/solve` and `/api/layout/evaluate` reject oversized planner inputs before starting an optimizer
+- maximum grid cells: `10000`
+- maximum combined service/residential catalog entries: `200`
+- maximum individual service or residential footprint area: `400`
+- maximum per-type availability: `10000`
+- maximum estimated placement candidates: `250000`
 
 ## Library Usage
 
@@ -596,9 +609,9 @@ console.log(validation.valid);
 console.log(validation.mapText);
 ```
 
-## Main Exports
+## Selected Public Exports
 
-The public API is exposed from [src/index.ts](./src/index.ts):
+The public API is exposed from [src/index.ts](./src/index.ts). That file is the exhaustive export list; commonly used exports include:
 
 - `solveAsync`
 - `solve`
@@ -607,9 +620,13 @@ The public API is exposed from [src/index.ts](./src/index.ts):
 - `describeAutoStopReason`
 - `solveGreedy`
 - `solveCpSatAsync`
+- `startCpSatSolve`
 - `solveLns`
 - `solveCpSat`
 - `runGreedyBenchmarkSuite`
+- `runLnsBenchmarkSuite`
+- `runCrossModeBenchmarkSuite`
+- `runLearnedRankingLabelSuite`
 - `listGreedyBenchmarkCaseNames`
 - `normalizeGreedyBenchmarkOptions`
 - `createGreedyBenchmarkSnapshot`
@@ -631,6 +648,7 @@ The public API is exposed from [src/index.ts](./src/index.ts):
 - `getOptimizerAdapter`
 - `listOptimizerAdapters`
 - `resolveOptimizerName`
+- experiment registry helpers such as `validateExperimentRegistryEntry`, `checkExperimentRegistryFile`, and `appendExperimentRegistryEntry`
 
 Useful types include:
 - `OptimizerName`
@@ -785,12 +803,14 @@ A `Solution` contains:
 - `totalPopulation`
 
 Road cells are encoded as `"r,c"` strings inside the `Set`.
+The set can be empty when every building footprint touches row `0` or column `0`; otherwise every explicit road component must contain at least one row-0-or-column-0 road cell.
 
 ## Project Layout
 
 - [src/index.ts](./src/index.ts): public API
-- [src/runtime/solve.ts](./src/runtime/solve.ts): top-level solver dispatch
-- [src/runtime/optimizerRegistry.ts](./src/runtime/optimizerRegistry.ts): optimizer registry
+- [src/runtime/dispatch/solve.ts](./src/runtime/dispatch/solve.ts): canonical solver dispatch
+- [src/runtime/dispatch/optimizerRegistry.ts](./src/runtime/dispatch/optimizerRegistry.ts): canonical optimizer registry
+- [src/runtime/solve.ts](./src/runtime/solve.ts) and [src/runtime/optimizerRegistry.ts](./src/runtime/optimizerRegistry.ts): compatibility wrappers for older imports
 - [src/auto/solver.ts](./src/auto/solver.ts): staged `auto` orchestration
 - [src/greedy/solver.ts](./src/greedy/solver.ts): greedy solver
 - [src/lns/solver.ts](./src/lns/solver.ts): LNS solver

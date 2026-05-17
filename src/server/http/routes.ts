@@ -8,6 +8,7 @@ import {
 import { getOptimizerAdapter, resolveOptimizerName } from "../../runtime/dispatch/optimizerRegistry.js";
 import { SolveJobManager, type SolveJob } from "../../runtime/jobs/solveJobManager.js";
 import {
+  assertHttpPlannerInputLimits,
   assertValidSerializedSolutionPayload,
   isCancelSolveRequest,
   isLayoutEvaluateRequest,
@@ -94,6 +95,7 @@ async function readSolvePayload(
 
   const sanitized = sanitizeSolveRequest(payload);
   assertValidSolveInputs(sanitized.grid, sanitized.params);
+  assertHttpPlannerInputLimits(sanitized.grid, sanitized.params);
   return sanitized;
 }
 
@@ -111,6 +113,7 @@ async function readLayoutEvaluatePayload(
 
   const sanitized = sanitizeSolveRequest(payload);
   assertValidLayoutEvaluateInputs(sanitized.grid, sanitized.params);
+  assertHttpPlannerInputLimits(sanitized.grid, sanitized.params);
   const solution = sanitized.solution;
   assertValidSerializedSolutionPayload(solution, "Manual layout solution");
   return { ...sanitized, solution };

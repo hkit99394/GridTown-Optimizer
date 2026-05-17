@@ -182,6 +182,15 @@ Acceptance gates:
 - Operator scoring rewards recent useful improvement while preserving exploration.
 - Equal-budget LNS/Auto scorecards improve population or time-to-best without worst-decile regression on protected holdout cases.
 
+Completion evidence, 2026-05-17:
+
+- LNS repair windows are now emitted as named operator candidates with adaptive selection telemetry: `weak-service-repair`, `residential-headroom-repair`, `frontier-congestion-repair`, `gate-choke-repair`, `service-overlap-repair`, `random-exploration`, and `sliding-window`.
+- Operator telemetry records selection policy, per-operator attempts, improvements, neutral repairs, recoverable failures, reward, decayed score, selected window, score before/after, and exploration status.
+- `npm run benchmark:lns -- --neighborhood-ablation --fixed-rectangle-baseline --seeds=7,19,37 --output=artifacts/adaptive-lns/2026-05-17/adaptive-lns-fixed-rectangle-scorecard.json --json` produced a 48-run, 8-case equal-budget scorecard.
+- Adaptive operators improved mean population by `+12.5` versus fixed-rectangle sliding windows, with best delta `+100`, `3/24` wins, zero regressions, and no worst-decile regression across the protected generated-pressure holdout.
+- `npm run benchmark:lns -- --neighborhood-ablation --ablation-variants=baseline,adaptive-operators --seeds=7,19,37 --output=artifacts/adaptive-lns/2026-05-17/adaptive-lns-operator-scorecard.json --json` confirmed legacy-ranked LNS and adaptive operators tie on fixed-budget population while preserving operator telemetry.
+- Registry entry `adaptive-lns-operators-2026-05-17` records the scorecards and gate report for Phase 4 promotion evidence.
+
 ### Phase 5: Auto Budget Retuning
 
 Dependencies:
@@ -213,8 +222,8 @@ Status vocabulary:
 | 1 | CP-SAT road-semantics verification closeout | delivered | 5.0 | Phase 1 now has a passing 5-case road-semantics artifact, CP-SAT coverage on every adversarial case, registry-style artifact metadata, a default greedy/CP-SAT cross-mode smoke check, and strict registry entry `road-semantics-scorecard-2026-05-17-v2`. | CP-SAT, TypeScript validation, and the formal spec agree on multi-anchor, roadless-boundary, row/column anchor, and disconnected-road feasibility semantics. |
 | 2 | Product-shaped benchmark corpus | delivered | 4.5 | Phase 2 now has 8 planner-shaped payloads with manual-layout replay, expansion-comparison replay, fixed seed `7`, dev/holdout splits, and 1s/5s/30s/120s population reporting. | `artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json` passes with 8/8 cases and no manual-over-budget misses. |
 | 3 | Solver telemetry manifests | delivered | 4.0 | Phase 3 now has reusable solver telemetry manifests, CLI manifest writers for cross-mode and product workflow runs, registry-side manifest validation, and strict registry entry `solver-telemetry-manifests-2026-05-17`. | Every benchmark and workflow run can explain where time was spent and why a candidate change did or did not improve. |
-| 4 | Adaptive LNS operator set | active | 4.5 | Add semantic destroy/repair operators beyond fixed rectangles: weak services, residential headroom clusters, service-overlap conflicts, road gates/chokes, frontier congestion, and random exploration windows. | Equal-budget LNS/Auto scorecards improve time-to-best or fixed-budget population without worst-decile regression. |
-| 5 | Auto budget policy retuning | partial | 3.5 | Retune greedy seed, LNS repair, and CP-SAT reserve budgets only after telemetry and benchmark corpus identify a real bottleneck. | New budget policy beats baseline on protected scorecards or reaches equal population faster with CPU cost accounted for. |
+| 4 | Adaptive LNS operator set | delivered | 4.5 | Phase 4 now has named semantic repair operators, adaptive operator scoring, exploration windows, operator-aware telemetry/manifests, pressure-case ablations, and strict registry entry `adaptive-lns-operators-2026-05-17`. | Fixed-rectangle LNS comparison improved mean population by `+12.5` across 24 paired comparisons with zero regressions and no protected-holdout worst-decile regression. |
+| 5 | Auto budget policy retuning | active | 3.5 | Retune greedy seed, LNS repair, and CP-SAT reserve budgets now that product corpus, solver telemetry manifests, and adaptive LNS operator evidence are available. | New budget policy beats baseline on protected scorecards or reaches equal population faster with CPU cost accounted for. |
 | 6 | Exact small-window DP repair | gated | 3.0 | Add bitmask/profile-DP repair only for tiny LNS neighborhoods, narrow corridors, and CP-SAT alignment oracles when telemetry shows CP-SAT startup/model overhead dominates. | DP matches exact evaluator results and beats CP-SAT repair wall time on small windows, improving LNS/Auto time-to-best without regressions. |
 | 7 | Service-master decomposition experiment | not-started | 3.5 | Treat service layouts as the master decision, then solve residential packing plus road repair as a subproblem; use no-good cuts or service swaps if useful. | Experimental mode beats Auto on service-overlap or facility-coverage pressure families without invalid layouts. |
 | 8 | LNS replay label scale-up | needs-scale | 3.0 | Use adaptive operator outcomes and replay windows to grow split-protected LNS labels. | Development and holdout splits satisfy usable, non-neutral, and family-balanced label gates before any LNS ranker is trained. |
@@ -234,7 +243,7 @@ Status vocabulary:
 | CP-SAT road-semantics alignment | delivered | `artifacts/road-semantics-scorecard/2026-05-17/road-semantics-scorecard.json`; registry run `road-semantics-scorecard-2026-05-17-v2`; targeted tests | Per-component road-anchor semantics are the trusted baseline for future repair and proof work. |
 | Product workflow benchmark corpus | delivered | `artifacts/product-workflows/2026-05-17/product-workflow-benchmark.json`; `npm run benchmark:product-workflows` | Promotion and telemetry work now has stable planner-shaped dev/holdout case names. |
 | Solver telemetry manifests | delivered | `artifacts/telemetry-manifests/2026-05-17/solver-telemetry-manifest.json`; `artifacts/telemetry-manifests/2026-05-17/product-workflow-telemetry-manifest.json`; registry run `solver-telemetry-manifests-2026-05-17` | Registry checks can validate manifest metadata and per-run telemetry without rerunning solvers. |
-| Adaptive LNS | active | Current LNS has ranked windows and replay labels but not operator scoring | Main next quality engine after model alignment and telemetry. |
+| Adaptive LNS | delivered | `artifacts/adaptive-lns/2026-05-17/adaptive-lns-fixed-rectangle-scorecard.json`; registry run `adaptive-lns-operators-2026-05-17` | Named semantic operators and adaptive scoring are available for Phase 5 Auto budget retuning and future label scale-up. |
 | Exact small-window DP repair | gated | Existing exact assignment DP shows the pattern is useful for bounded subproblems, but no LNS window DP exists | Candidate subroutine only; route tiny repairs to DP if telemetry proves CP-SAT overhead dominates. |
 | Model training path | gated | No `python/ml/` scaffold, offline metric report, trained model, or feature-flagged scorer is promoted | No learned default path. |
 | GPU, distributed solving, alternative solvers | gated | No CPU-first bottleneck evidence requiring them | Research-only until equal-budget wins exist. |
@@ -257,13 +266,12 @@ These are not next actions. Move them into the active table only after the trigg
 
 ## Combined Ordering
 
-1. Use the registered road-semantics, product workflow, and telemetry baselines as the stable benchmark base for promotion decisions.
-2. Implement adaptive LNS operators and operator scoring.
-3. Retune Auto budgets from evidence, not by intuition.
-4. Add exact small-window DP repair only if telemetry shows a small-repair CP-SAT overhead bottleneck.
-5. Explore service-master decomposition if coverage/service pressure cases justify it.
-6. Scale LNS replay labels from adaptive operator outcomes.
-7. Revisit learned rankers only after offline holdout and equal-budget online gates pass.
+1. Use the registered road-semantics, product workflow, telemetry, and adaptive-LNS baselines as the stable benchmark base for promotion decisions.
+2. Retune Auto budgets from evidence, not by intuition.
+3. Add exact small-window DP repair only if telemetry shows a small-repair CP-SAT overhead bottleneck.
+4. Explore service-master decomposition if coverage/service pressure cases justify it.
+5. Scale LNS replay labels from adaptive operator outcomes.
+6. Revisit learned rankers only after offline holdout and equal-budget online gates pass.
 8. Revisit portfolio, GPU, distributed workers, or alternative solvers only after they have a measured bottleneck and CPU-normalized win path.
 
 ## Discipline

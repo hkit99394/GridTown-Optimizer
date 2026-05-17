@@ -36,6 +36,10 @@ const LNS_NEIGHBORHOOD_ANCHOR_POLICIES = [
   "frontier-congestion-first",
   "placed-buildings-first",
 ] as const;
+const LNS_OPERATOR_SELECTION_POLICIES = [
+  "legacy",
+  "adaptive",
+] as const;
 const CP_SAT_MAX_TIME_LIMIT_SECONDS = 24 * 60 * 60;
 const CP_SAT_MAX_NUM_WORKERS = 64;
 const CP_SAT_RANDOM_SEED_MAX = 0x7fffffff;
@@ -1203,6 +1207,26 @@ export function assertValidLnsOptions(params: SolverParams): void {
     "neighborhoodAnchorPolicy",
     "LNS option lns.neighborhoodAnchorPolicy",
     LNS_NEIGHBORHOOD_ANCHOR_POLICIES
+  );
+  requireOptionalStringInSet(
+    lns,
+    "operatorSelectionPolicy",
+    "LNS option lns.operatorSelectionPolicy",
+    LNS_OPERATOR_SELECTION_POLICIES
+  );
+  requireOptionalIntegerInRange(
+    lns,
+    "operatorExplorationInterval",
+    "LNS option lns.operatorExplorationInterval",
+    1,
+    LNS_MAX_ITERATIONS
+  );
+  requireOptionalFiniteNumberInRange(
+    lns,
+    "operatorScoreDecay",
+    "LNS option lns.operatorScoreDecay",
+    0,
+    1
   );
   requireOptionalFiniteNumberInRange(
     lns,

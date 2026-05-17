@@ -114,7 +114,7 @@ const {
   validateSolutionMap,
 } = require("../dist/index.js");
 const { parseCpSatRawSolution } = require("../dist/cp-sat/solver.js");
-const { buildNeighborhoodWindows } = require("../dist/lns/solver.js");
+const { buildNeighborhoodCandidates, buildNeighborhoodWindows } = require("../dist/lns/solver.js");
 const { startJsonBackgroundSolve } = require("../dist/runtime/index.js");
 const { applyDeterministicDominanceUpgrades } = require("../dist/core/dominanceUpgrades.js");
 const { buildPlannerExplainabilityMap } = require("../dist/core/plannerExplainability.js");
@@ -2144,6 +2144,60 @@ function testLnsNeighborhoodWindowsPrioritizeWeakServicesAndUpgradeHeadroom() {
   });
 
   assert.notDeepEqual(slidingOnlyWindows[0], weakServiceWindow);
+}
+
+function testLnsAdaptiveNeighborhoodOperatorsCoverSemanticFamilies() {
+  const grid = [
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 0, 1, 1, 1],
+    [1, 1, 1, 1, 0, 1],
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+  ];
+  const params = {
+    serviceTypes: [
+      { rows: 1, cols: 1, bonus: 50, range: 2, avail: 2 },
+    ],
+    residentialTypes: [
+      { w: 2, h: 2, min: 100, max: 400, avail: 2 },
+    ],
+  };
+  const incumbent = {
+    optimizer: "lns",
+    roads: new Set(["0,0", "0,1", "0,2", "0,3", "1,1", "2,1", "3,1"]),
+    services: [
+      { r: 1, c: 1, rows: 1, cols: 1, range: 2 },
+      { r: 1, c: 3, rows: 1, cols: 1, range: 2 },
+    ],
+    serviceTypeIndices: [0, 0],
+    servicePopulationIncreases: [50, 50],
+    residentials: [
+      { r: 4, c: 0, rows: 2, cols: 2 },
+      { r: 4, c: 3, rows: 2, cols: 2 },
+    ],
+    residentialTypeIndices: [0, 0],
+    populations: [150, 100],
+    totalPopulation: 250,
+  };
+
+  const candidates = buildNeighborhoodCandidates(grid, params, incumbent, {
+    maxNoImprovementIterations: 4,
+    neighborhoodRows: 3,
+    neighborhoodCols: 3,
+    neighborhoodAnchorPolicy: "ranked",
+    operatorSelectionPolicy: "adaptive",
+  });
+  const operators = new Set(candidates.map((candidate) => candidate.operatorName));
+
+  assert.equal(operators.has("weak-service-repair"), true);
+  assert.equal(operators.has("residential-headroom-repair"), true);
+  assert.equal(operators.has("frontier-congestion-repair"), true);
+  assert.equal(operators.has("gate-choke-repair"), true);
+  assert.equal(operators.has("service-overlap-repair"), true);
+  assert.equal(operators.has("random-exploration"), true);
+  assert.equal(operators.has("sliding-window"), true);
+  assert(candidates.some((candidate) => candidate.exploration));
 }
 
 function testLnsNeighborhoodWindowsEscalateWhenStagnating() {
@@ -7418,10 +7472,19 @@ function testLnsTelemetryRecordsRepairPolicyAndOutcomes() {
     assert.equal(solution.lnsTelemetry.outcomes.length, 2);
     assert.equal(solution.lnsTelemetry.outcomes[0].phase, "focused");
     assert.equal(solution.lnsTelemetry.outcomes[0].status, "neutral");
+    assert.equal(typeof solution.lnsTelemetry.outcomes[0].operatorName, "string");
+    assert.equal(typeof solution.lnsTelemetry.outcomes[0].operatorScoreBefore, "number");
     assert.equal(solution.lnsTelemetry.outcomes[1].phase, "escalated");
     assert.equal(solution.lnsTelemetry.outcomes[1].status, "improved");
+    assert.equal(typeof solution.lnsTelemetry.outcomes[1].operatorName, "string");
+    assert.equal(solution.lnsTelemetry.operatorSelectionPolicy, "adaptive");
     assert.equal(solution.lnsTelemetry.improvingIterations, 1);
     assert.equal(solution.lnsTelemetry.neutralIterations, 1);
+    const attemptedScores = solution.lnsTelemetry.operatorScores.filter((score) => score.attempts > 0);
+    assert.equal(attemptedScores.reduce((total, score) => total + score.attempts, 0), 2);
+    assert.equal(attemptedScores.reduce((total, score) => total + score.improvements, 0), 1);
+    assert.equal(attemptedScores.reduce((total, score) => total + score.neutralRepairs, 0), 1);
+    assert.equal(attemptedScores.reduce((total, score) => total + score.reward, 0), 10);
   } finally {
     cpSatModule.solveCpSat = originalSolveCpSat;
   }
@@ -8562,6 +8625,7 @@ async function main() {
   testRoadAnchorSeedCandidatesIncludeAllAllowedAnchorBoundaryCells();
   testRepresentativeRoadAnchorSeedCandidatesStayBoundaryExhaustive();
   testLnsNeighborhoodWindowsPrioritizeWeakServicesAndUpgradeHeadroom();
+  testLnsAdaptiveNeighborhoodOperatorsCoverSemanticFamilies();
   maybeTestCpSatBackendJsonContractSmoke();
   maybeTestCpSatBackendStreamingProtocol();
   maybeTestCpSatObjectivePolicyHelpers();

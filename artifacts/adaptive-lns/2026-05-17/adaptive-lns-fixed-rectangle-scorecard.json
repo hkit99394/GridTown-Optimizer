@@ -1,0 +1,5142 @@
+{
+  "caseCount": 8,
+  "seedCount": 3,
+  "comparisonCount": 24,
+  "seeds": [
+    7,
+    19,
+    37
+  ],
+  "selectedCaseNames": [
+    "typed-housing-single",
+    "compact-service-repair",
+    "seeded-service-anchor-pressure",
+    "row0-anchor-repair",
+    "lns-corridor-squeeze-pressure",
+    "lns-gate-choke-pressure",
+    "lns-footprint-mix-pressure",
+    "lns-service-overlap-pressure"
+  ],
+  "variants": [
+    "baseline",
+    "adaptive-operators"
+  ],
+  "variantExecutionOrders": [
+    {
+      "seed": 7,
+      "variants": [
+        "baseline",
+        "adaptive-operators"
+      ]
+    },
+    {
+      "seed": 19,
+      "variants": [
+        "adaptive-operators",
+        "baseline"
+      ]
+    },
+    {
+      "seed": 37,
+      "variants": [
+        "baseline",
+        "adaptive-operators"
+      ]
+    }
+  ],
+  "coverage": {
+    "caseCount": 8,
+    "seedCount": 3,
+    "comparisonCount": 24,
+    "variantCount": 2,
+    "runCount": 48,
+    "gridCellCount": 750
+  },
+  "variantSummaries": [
+    {
+      "variantName": "baseline",
+      "caseCount": 8,
+      "seedCount": 3,
+      "comparisonCount": 24,
+      "meanPopulation": 378.75,
+      "medianPopulation": 480,
+      "worstDecilePopulation": 10,
+      "bestPopulation": 740,
+      "meanPopulationDeltaVsBaseline": 0,
+      "medianPopulationDeltaVsBaseline": 0,
+      "worstDecilePopulationDeltaVsBaseline": 0,
+      "bestPopulationDeltaVsBaseline": 0,
+      "improvedCaseCount": 0,
+      "regressedCaseCount": 0,
+      "unchangedCaseCount": 24,
+      "winRate": 0,
+      "regressionRate": 0,
+      "unchangedRate": 1,
+      "worstPopulationDeltaVsBaseline": 0,
+      "worstPopulationDeltaCaseName": "typed-housing-single",
+      "worstPopulationDeltaSeed": 7,
+      "bestPopulationDeltaCaseName": "typed-housing-single",
+      "bestPopulationDeltaSeed": 7,
+      "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+      "firstWindowMovementCount": 0,
+      "firstWindowMovementRate": 0,
+      "windowSequenceMovementCount": 0,
+      "windowSequenceMovementRate": 0,
+      "anchorCoordinateMovementCount": 0,
+      "anchorCoordinateMovementRate": 0
+    },
+    {
+      "variantName": "adaptive-operators",
+      "caseCount": 8,
+      "seedCount": 3,
+      "comparisonCount": 24,
+      "meanPopulation": 391.25,
+      "medianPopulation": 480,
+      "worstDecilePopulation": 10,
+      "bestPopulation": 740,
+      "meanPopulationDeltaVsBaseline": 12.5,
+      "medianPopulationDeltaVsBaseline": 0,
+      "worstDecilePopulationDeltaVsBaseline": 0,
+      "bestPopulationDeltaVsBaseline": 100,
+      "improvedCaseCount": 3,
+      "regressedCaseCount": 0,
+      "unchangedCaseCount": 21,
+      "winRate": 0.125,
+      "regressionRate": 0,
+      "unchangedRate": 0.875,
+      "worstPopulationDeltaVsBaseline": 0,
+      "worstPopulationDeltaCaseName": "typed-housing-single",
+      "worstPopulationDeltaSeed": 7,
+      "bestPopulationDeltaCaseName": "seeded-service-anchor-pressure",
+      "bestPopulationDeltaSeed": 7,
+      "description": "Adaptive semantic LNS operators with weak-service, headroom, frontier, gate, overlap, and exploration repair.",
+      "firstWindowMovementCount": 21,
+      "firstWindowMovementRate": 0.875,
+      "windowSequenceMovementCount": 24,
+      "windowSequenceMovementRate": 1,
+      "anchorCoordinateMovementCount": 24,
+      "anchorCoordinateMovementRate": 1
+    }
+  ],
+  "cases": [
+    {
+      "name": "typed-housing-single",
+      "description": "Tiny LNS baseline seeded by greedy and repaired over compact residential windows.",
+      "seed": 7,
+      "gridRows": 4,
+      "gridCols": 4,
+      "gridCells": 16,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+        "seed": 7,
+        "totalPopulation": 110,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 0,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 0,
+        "residentialCount": 2,
+        "lnsOptions": {
+          "maxNoImprovementIterations": 4,
+          "neighborhoodAnchorPolicy": "sliding-only",
+          "operatorSelectionPolicy": "legacy",
+          "iterations": 2,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 1
+        },
+        "cpSatStatus": null,
+        "stopReason": "iteration-limit",
+        "improvingIterations": 0,
+        "neutralIterations": 2,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 110,
+            "populationAfter": 110,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 3,
+              "cols": 3
+            }
+          },
+          {
+            "iteration": 1,
+            "phase": "escalated",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": -0.25,
+            "operatorScoreAfter": -0.425,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 110,
+            "populationAfter": 110,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 3,
+              "cols": 4
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+          "seed": 7,
+          "totalPopulation": 110,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 0,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 0,
+          "residentialCount": 2,
+          "lnsOptions": {
+            "maxNoImprovementIterations": 4,
+            "neighborhoodAnchorPolicy": "sliding-only",
+            "operatorSelectionPolicy": "legacy",
+            "iterations": 2,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 1
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 110,
+              "populationAfter": 110,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": -0.25,
+              "operatorScoreAfter": -0.425,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 110,
+              "populationAfter": 110,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 4
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "adaptive-operators",
+          "description": "Adaptive semantic LNS operators with weak-service, headroom, frontier, gate, overlap, and exploration repair.",
+          "seed": 7,
+          "totalPopulation": 110,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 0,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 0,
+          "residentialCount": 2,
+          "lnsOptions": {
+            "maxNoImprovementIterations": 4,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive",
+            "iterations": 2,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 1
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 110,
+              "populationAfter": 110,
+              "window": {
+                "top": 1,
+                "left": 1,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": -0.25,
+              "operatorScoreAfter": -0.425,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 110,
+              "populationAfter": 110,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 4
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "compact-service-repair",
+      "description": "Small mixed case for measuring service-aware neighborhood repair overhead.",
+      "seed": 7,
+      "gridRows": 6,
+      "gridCols": 6,
+      "gridCells": 36,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+        "seed": 7,
+        "totalPopulation": 570,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 0,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 1,
+        "residentialCount": 3,
+        "lnsOptions": {
+          "maxNoImprovementIterations": 4,
+          "neighborhoodAnchorPolicy": "sliding-only",
+          "operatorSelectionPolicy": "legacy",
+          "iterations": 2,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 1
+        },
+        "cpSatStatus": null,
+        "stopReason": "iteration-limit",
+        "improvingIterations": 0,
+        "neutralIterations": 2,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 570,
+            "populationAfter": 570,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 3,
+              "cols": 3
+            }
+          },
+          {
+            "iteration": 1,
+            "phase": "escalated",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": -0.25,
+            "operatorScoreAfter": -0.425,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 570,
+            "populationAfter": 570,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 5,
+              "cols": 6
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+          "seed": 7,
+          "totalPopulation": 570,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 0,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "maxNoImprovementIterations": 4,
+            "neighborhoodAnchorPolicy": "sliding-only",
+            "operatorSelectionPolicy": "legacy",
+            "iterations": 2,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 1
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 570,
+              "populationAfter": 570,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": -0.25,
+              "operatorScoreAfter": -0.425,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 570,
+              "populationAfter": 570,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "adaptive-operators",
+          "description": "Adaptive semantic LNS operators with weak-service, headroom, frontier, gate, overlap, and exploration repair.",
+          "seed": 7,
+          "totalPopulation": 570,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 0,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "maxNoImprovementIterations": 4,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive",
+            "iterations": 2,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 1
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "weak-service-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 570,
+              "populationAfter": 570,
+              "window": {
+                "top": 2,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "gate-choke-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 570,
+              "populationAfter": 570,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "seeded-service-anchor-pressure",
+      "description": "Seeded LNS case where ranked service anchors find a service move that sliding windows miss.",
+      "seed": 7,
+      "gridRows": 6,
+      "gridCols": 6,
+      "gridCells": 36,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+        "seed": 7,
+        "totalPopulation": 100,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 11,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 1,
+        "residentialCount": 1,
+        "lnsOptions": {
+          "iterations": 1,
+          "maxNoImprovementIterations": 4,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 0.5,
+          "focusedRepairTimeLimitSeconds": 0.5,
+          "escalatedRepairTimeLimitSeconds": 0.5,
+          "seedHint": {
+            "sourceName": "seeded-service-anchor-pressure",
+            "solution": {
+              "roads": [
+                "0,0",
+                "0,1",
+                "0,2",
+                "0,3",
+                "0,4",
+                "0,5",
+                "1,3",
+                "2,3",
+                "3,3",
+                "4,3",
+                "5,3"
+              ],
+              "services": [
+                {
+                  "r": 1,
+                  "c": 4,
+                  "rows": 2,
+                  "cols": 2,
+                  "range": 1,
+                  "typeIndex": 0,
+                  "bonus": 100
+                }
+              ],
+              "residentials": [
+                {
+                  "r": 4,
+                  "c": 4,
+                  "rows": 2,
+                  "cols": 2,
+                  "typeIndex": 0,
+                  "population": 100
+                }
+              ],
+              "populations": [
+                100
+              ],
+              "totalPopulation": 100
+            }
+          },
+          "neighborhoodAnchorPolicy": "sliding-only",
+          "operatorSelectionPolicy": "legacy"
+        },
+        "cpSatStatus": null,
+        "stopReason": "iteration-limit",
+        "improvingIterations": 0,
+        "neutralIterations": 1,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 100,
+            "populationAfter": 100,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 3,
+              "cols": 3
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+          "seed": 7,
+          "totalPopulation": 100,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 11,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 1,
+          "lnsOptions": {
+            "iterations": 1,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "focusedRepairTimeLimitSeconds": 0.5,
+            "escalatedRepairTimeLimitSeconds": 0.5,
+            "seedHint": {
+              "sourceName": "seeded-service-anchor-pressure",
+              "solution": {
+                "roads": [
+                  "0,0",
+                  "0,1",
+                  "0,2",
+                  "0,3",
+                  "0,4",
+                  "0,5",
+                  "1,3",
+                  "2,3",
+                  "3,3",
+                  "4,3",
+                  "5,3"
+                ],
+                "services": [
+                  {
+                    "r": 1,
+                    "c": 4,
+                    "rows": 2,
+                    "cols": 2,
+                    "range": 1,
+                    "typeIndex": 0,
+                    "bonus": 100
+                  }
+                ],
+                "residentials": [
+                  {
+                    "r": 4,
+                    "c": 4,
+                    "rows": 2,
+                    "cols": 2,
+                    "typeIndex": 0,
+                    "population": 100
+                  }
+                ],
+                "populations": [
+                  100
+                ],
+                "totalPopulation": 100
+              }
+            },
+            "neighborhoodAnchorPolicy": "sliding-only",
+            "operatorSelectionPolicy": "legacy"
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 1,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 100,
+              "populationAfter": 100,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "adaptive-operators",
+          "description": "Adaptive semantic LNS operators with weak-service, headroom, frontier, gate, overlap, and exploration repair.",
+          "seed": 7,
+          "totalPopulation": 200,
+          "populationDeltaVsBaseline": 100,
+          "roadCount": 11,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 1,
+          "lnsOptions": {
+            "iterations": 1,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "focusedRepairTimeLimitSeconds": 0.5,
+            "escalatedRepairTimeLimitSeconds": 0.5,
+            "seedHint": {
+              "sourceName": "seeded-service-anchor-pressure",
+              "solution": {
+                "roads": [
+                  "0,0",
+                  "0,1",
+                  "0,2",
+                  "0,3",
+                  "0,4",
+                  "0,5",
+                  "1,3",
+                  "2,3",
+                  "3,3",
+                  "4,3",
+                  "5,3"
+                ],
+                "services": [
+                  {
+                    "r": 1,
+                    "c": 4,
+                    "rows": 2,
+                    "cols": 2,
+                    "range": 1,
+                    "typeIndex": 0,
+                    "bonus": 100
+                  }
+                ],
+                "residentials": [
+                  {
+                    "r": 4,
+                    "c": 4,
+                    "rows": 2,
+                    "cols": 2,
+                    "typeIndex": 0,
+                    "population": 100
+                  }
+                ],
+                "populations": [
+                  100
+                ],
+                "totalPopulation": 100
+              }
+            },
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive"
+          },
+          "cpSatStatus": "OPTIMAL",
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "neutralIterations": 0,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "weak-service-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": 100,
+              "operatorExploration": false,
+              "status": "improved",
+              "improvement": 100,
+              "populationBefore": 100,
+              "populationAfter": 200,
+              "window": {
+                "top": 1,
+                "left": 3,
+                "rows": 3,
+                "cols": 3
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "row0-anchor-repair",
+      "description": "Sparse road-anchor access case that exercises LNS repair around road anchors.",
+      "seed": 7,
+      "gridRows": 3,
+      "gridCols": 4,
+      "gridCells": 12,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+        "seed": 7,
+        "totalPopulation": 10,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 1,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 0,
+        "residentialCount": 1,
+        "lnsOptions": {
+          "maxNoImprovementIterations": 4,
+          "neighborhoodAnchorPolicy": "sliding-only",
+          "operatorSelectionPolicy": "legacy",
+          "iterations": 2,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 1
+        },
+        "cpSatStatus": null,
+        "stopReason": "iteration-limit",
+        "improvingIterations": 0,
+        "neutralIterations": 2,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 10,
+            "populationAfter": 10,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 2,
+              "cols": 3
+            }
+          },
+          {
+            "iteration": 1,
+            "phase": "escalated",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": -0.25,
+            "operatorScoreAfter": -0.425,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 10,
+            "populationAfter": 10,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 2,
+              "cols": 4
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+          "seed": 7,
+          "totalPopulation": 10,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 1,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 0,
+          "residentialCount": 1,
+          "lnsOptions": {
+            "maxNoImprovementIterations": 4,
+            "neighborhoodAnchorPolicy": "sliding-only",
+            "operatorSelectionPolicy": "legacy",
+            "iterations": 2,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 1
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 10,
+              "populationAfter": 10,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 2,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": -0.25,
+              "operatorScoreAfter": -0.425,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 10,
+              "populationAfter": 10,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 2,
+                "cols": 4
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "adaptive-operators",
+          "description": "Adaptive semantic LNS operators with weak-service, headroom, frontier, gate, overlap, and exploration repair.",
+          "seed": 7,
+          "totalPopulation": 10,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 1,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 0,
+          "residentialCount": 1,
+          "lnsOptions": {
+            "maxNoImprovementIterations": 4,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive",
+            "iterations": 2,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 1
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "frontier-congestion-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 10,
+              "populationAfter": 10,
+              "window": {
+                "top": 1,
+                "left": 1,
+                "rows": 2,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "gate-choke-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 10,
+              "populationAfter": 10,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 2,
+                "cols": 4
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lns-corridor-squeeze-pressure",
+      "description": "Generated corridor pressure case with narrow anchor access and mixed footprints.",
+      "seed": 7,
+      "gridRows": 6,
+      "gridCols": 7,
+      "gridCells": 42,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+        "seed": 7,
+        "totalPopulation": 480,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 4,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 1,
+        "residentialCount": 3,
+        "lnsOptions": {
+          "iterations": 2,
+          "maxNoImprovementIterations": 4,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 0.5,
+          "neighborhoodAnchorPolicy": "sliding-only",
+          "operatorSelectionPolicy": "legacy"
+        },
+        "cpSatStatus": null,
+        "stopReason": "iteration-limit",
+        "improvingIterations": 0,
+        "neutralIterations": 2,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 480,
+            "populationAfter": 480,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 3,
+              "cols": 3
+            }
+          },
+          {
+            "iteration": 1,
+            "phase": "escalated",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": -0.25,
+            "operatorScoreAfter": -0.425,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 480,
+            "populationAfter": 480,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 5,
+              "cols": 6
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+          "seed": 7,
+          "totalPopulation": 480,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 4,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "sliding-only",
+            "operatorSelectionPolicy": "legacy"
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": -0.25,
+              "operatorScoreAfter": -0.425,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "adaptive-operators",
+          "description": "Adaptive semantic LNS operators with weak-service, headroom, frontier, gate, overlap, and exploration repair.",
+          "seed": 7,
+          "totalPopulation": 480,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 4,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive"
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "weak-service-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 1,
+                "left": 1,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "gate-choke-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lns-gate-choke-pressure",
+      "description": "Generated gate pressure case where a central choke point separates high-value placements.",
+      "seed": 7,
+      "gridRows": 6,
+      "gridCols": 6,
+      "gridCells": 36,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+        "seed": 7,
+        "totalPopulation": 540,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 1,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 1,
+        "residentialCount": 3,
+        "lnsOptions": {
+          "iterations": 2,
+          "maxNoImprovementIterations": 4,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 0.5,
+          "neighborhoodAnchorPolicy": "sliding-only",
+          "operatorSelectionPolicy": "legacy"
+        },
+        "cpSatStatus": "OPTIMAL",
+        "stopReason": "iteration-limit",
+        "improvingIterations": 1,
+        "neutralIterations": 1,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": 70,
+            "operatorExploration": false,
+            "status": "improved",
+            "improvement": 70,
+            "populationBefore": 470,
+            "populationAfter": 540,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 3,
+              "cols": 3
+            }
+          },
+          {
+            "iteration": 1,
+            "phase": "focused",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": 70,
+            "operatorScoreAfter": 48.75,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 540,
+            "populationAfter": 540,
+            "window": {
+              "top": 1,
+              "left": 1,
+              "rows": 3,
+              "cols": 3
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+          "seed": 7,
+          "totalPopulation": 540,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 1,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "sliding-only",
+            "operatorSelectionPolicy": "legacy"
+          },
+          "cpSatStatus": "OPTIMAL",
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "neutralIterations": 1,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": 70,
+              "operatorExploration": false,
+              "status": "improved",
+              "improvement": 70,
+              "populationBefore": 470,
+              "populationAfter": 540,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 70,
+              "operatorScoreAfter": 48.75,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 540,
+              "populationAfter": 540,
+              "window": {
+                "top": 1,
+                "left": 1,
+                "rows": 3,
+                "cols": 3
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "adaptive-operators",
+          "description": "Adaptive semantic LNS operators with weak-service, headroom, frontier, gate, overlap, and exploration repair.",
+          "seed": 7,
+          "totalPopulation": 540,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 1,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive"
+          },
+          "cpSatStatus": "OPTIMAL",
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "neutralIterations": 1,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "weak-service-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": 70,
+              "operatorExploration": false,
+              "status": "improved",
+              "improvement": 70,
+              "populationBefore": 470,
+              "populationAfter": 540,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "focused",
+              "operatorName": "residential-headroom-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 540,
+              "populationAfter": 540,
+              "window": {
+                "top": 3,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lns-footprint-mix-pressure",
+      "description": "Generated footprint-pressure case with competing 2x2 and 3x2 residential placements.",
+      "seed": 7,
+      "gridRows": 6,
+      "gridCols": 6,
+      "gridCells": 36,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+        "seed": 7,
+        "totalPopulation": 480,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 4,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 1,
+        "residentialCount": 3,
+        "lnsOptions": {
+          "iterations": 2,
+          "maxNoImprovementIterations": 4,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 0.5,
+          "neighborhoodAnchorPolicy": "sliding-only",
+          "operatorSelectionPolicy": "legacy"
+        },
+        "cpSatStatus": null,
+        "stopReason": "iteration-limit",
+        "improvingIterations": 0,
+        "neutralIterations": 2,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 480,
+            "populationAfter": 480,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 3,
+              "cols": 3
+            }
+          },
+          {
+            "iteration": 1,
+            "phase": "escalated",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": -0.25,
+            "operatorScoreAfter": -0.425,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 480,
+            "populationAfter": 480,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 5,
+              "cols": 6
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+          "seed": 7,
+          "totalPopulation": 480,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 4,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "sliding-only",
+            "operatorSelectionPolicy": "legacy"
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": -0.25,
+              "operatorScoreAfter": -0.425,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "adaptive-operators",
+          "description": "Adaptive semantic LNS operators with weak-service, headroom, frontier, gate, overlap, and exploration repair.",
+          "seed": 7,
+          "totalPopulation": 480,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 4,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive"
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "weak-service-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 2,
+                "left": 2,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "gate-choke-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lns-service-overlap-pressure",
+      "description": "Generated service-pressure case with overlapping service ranges and scarce premium housing.",
+      "seed": 7,
+      "gridRows": 6,
+      "gridCols": 6,
+      "gridCells": 36,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+        "seed": 7,
+        "totalPopulation": 740,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 4,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 2,
+        "residentialCount": 3,
+        "lnsOptions": {
+          "iterations": 2,
+          "maxNoImprovementIterations": 4,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 0.5,
+          "neighborhoodAnchorPolicy": "sliding-only",
+          "operatorSelectionPolicy": "legacy"
+        },
+        "cpSatStatus": null,
+        "stopReason": "iteration-limit",
+        "improvingIterations": 0,
+        "neutralIterations": 2,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 740,
+            "populationAfter": 740,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 3,
+              "cols": 3
+            }
+          },
+          {
+            "iteration": 1,
+            "phase": "escalated",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": -0.25,
+            "operatorScoreAfter": -0.425,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 740,
+            "populationAfter": 740,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 5,
+              "cols": 6
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+          "seed": 7,
+          "totalPopulation": 740,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 4,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "sliding-only",
+            "operatorSelectionPolicy": "legacy"
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 740,
+              "populationAfter": 740,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": -0.25,
+              "operatorScoreAfter": -0.425,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 740,
+              "populationAfter": 740,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "adaptive-operators",
+          "description": "Adaptive semantic LNS operators with weak-service, headroom, frontier, gate, overlap, and exploration repair.",
+          "seed": 7,
+          "totalPopulation": 740,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 4,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive"
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "weak-service-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 740,
+              "populationAfter": 740,
+              "window": {
+                "top": 1,
+                "left": 1,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "gate-choke-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 740,
+              "populationAfter": 740,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "typed-housing-single",
+      "description": "Tiny LNS baseline seeded by greedy and repaired over compact residential windows.",
+      "seed": 19,
+      "gridRows": 4,
+      "gridCols": 4,
+      "gridCells": 16,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+        "seed": 19,
+        "totalPopulation": 110,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 0,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 0,
+        "residentialCount": 2,
+        "lnsOptions": {
+          "maxNoImprovementIterations": 4,
+          "neighborhoodAnchorPolicy": "sliding-only",
+          "operatorSelectionPolicy": "legacy",
+          "iterations": 2,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 1
+        },
+        "cpSatStatus": null,
+        "stopReason": "iteration-limit",
+        "improvingIterations": 0,
+        "neutralIterations": 2,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 110,
+            "populationAfter": 110,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 3,
+              "cols": 3
+            }
+          },
+          {
+            "iteration": 1,
+            "phase": "escalated",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": -0.25,
+            "operatorScoreAfter": -0.425,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 110,
+            "populationAfter": 110,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 3,
+              "cols": 4
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+          "seed": 19,
+          "totalPopulation": 110,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 0,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 0,
+          "residentialCount": 2,
+          "lnsOptions": {
+            "maxNoImprovementIterations": 4,
+            "neighborhoodAnchorPolicy": "sliding-only",
+            "operatorSelectionPolicy": "legacy",
+            "iterations": 2,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 1
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 110,
+              "populationAfter": 110,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": -0.25,
+              "operatorScoreAfter": -0.425,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 110,
+              "populationAfter": 110,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 4
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "adaptive-operators",
+          "description": "Adaptive semantic LNS operators with weak-service, headroom, frontier, gate, overlap, and exploration repair.",
+          "seed": 19,
+          "totalPopulation": 110,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 0,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 0,
+          "residentialCount": 2,
+          "lnsOptions": {
+            "maxNoImprovementIterations": 4,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive",
+            "iterations": 2,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 1
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 110,
+              "populationAfter": 110,
+              "window": {
+                "top": 1,
+                "left": 1,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": -0.25,
+              "operatorScoreAfter": -0.425,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 110,
+              "populationAfter": 110,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 4
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "compact-service-repair",
+      "description": "Small mixed case for measuring service-aware neighborhood repair overhead.",
+      "seed": 19,
+      "gridRows": 6,
+      "gridCols": 6,
+      "gridCells": 36,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+        "seed": 19,
+        "totalPopulation": 570,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 0,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 1,
+        "residentialCount": 3,
+        "lnsOptions": {
+          "maxNoImprovementIterations": 4,
+          "neighborhoodAnchorPolicy": "sliding-only",
+          "operatorSelectionPolicy": "legacy",
+          "iterations": 2,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 1
+        },
+        "cpSatStatus": null,
+        "stopReason": "iteration-limit",
+        "improvingIterations": 0,
+        "neutralIterations": 2,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 570,
+            "populationAfter": 570,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 3,
+              "cols": 3
+            }
+          },
+          {
+            "iteration": 1,
+            "phase": "escalated",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": -0.25,
+            "operatorScoreAfter": -0.425,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 570,
+            "populationAfter": 570,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 5,
+              "cols": 6
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+          "seed": 19,
+          "totalPopulation": 570,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 0,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "maxNoImprovementIterations": 4,
+            "neighborhoodAnchorPolicy": "sliding-only",
+            "operatorSelectionPolicy": "legacy",
+            "iterations": 2,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 1
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 570,
+              "populationAfter": 570,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": -0.25,
+              "operatorScoreAfter": -0.425,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 570,
+              "populationAfter": 570,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "adaptive-operators",
+          "description": "Adaptive semantic LNS operators with weak-service, headroom, frontier, gate, overlap, and exploration repair.",
+          "seed": 19,
+          "totalPopulation": 570,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 0,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "maxNoImprovementIterations": 4,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive",
+            "iterations": 2,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 1
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "weak-service-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 570,
+              "populationAfter": 570,
+              "window": {
+                "top": 2,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "gate-choke-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 570,
+              "populationAfter": 570,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "seeded-service-anchor-pressure",
+      "description": "Seeded LNS case where ranked service anchors find a service move that sliding windows miss.",
+      "seed": 19,
+      "gridRows": 6,
+      "gridCols": 6,
+      "gridCells": 36,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+        "seed": 19,
+        "totalPopulation": 100,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 11,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 1,
+        "residentialCount": 1,
+        "lnsOptions": {
+          "iterations": 1,
+          "maxNoImprovementIterations": 4,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 0.5,
+          "focusedRepairTimeLimitSeconds": 0.5,
+          "escalatedRepairTimeLimitSeconds": 0.5,
+          "seedHint": {
+            "sourceName": "seeded-service-anchor-pressure",
+            "solution": {
+              "roads": [
+                "0,0",
+                "0,1",
+                "0,2",
+                "0,3",
+                "0,4",
+                "0,5",
+                "1,3",
+                "2,3",
+                "3,3",
+                "4,3",
+                "5,3"
+              ],
+              "services": [
+                {
+                  "r": 1,
+                  "c": 4,
+                  "rows": 2,
+                  "cols": 2,
+                  "range": 1,
+                  "typeIndex": 0,
+                  "bonus": 100
+                }
+              ],
+              "residentials": [
+                {
+                  "r": 4,
+                  "c": 4,
+                  "rows": 2,
+                  "cols": 2,
+                  "typeIndex": 0,
+                  "population": 100
+                }
+              ],
+              "populations": [
+                100
+              ],
+              "totalPopulation": 100
+            }
+          },
+          "neighborhoodAnchorPolicy": "sliding-only",
+          "operatorSelectionPolicy": "legacy"
+        },
+        "cpSatStatus": null,
+        "stopReason": "iteration-limit",
+        "improvingIterations": 0,
+        "neutralIterations": 1,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 100,
+            "populationAfter": 100,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 3,
+              "cols": 3
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+          "seed": 19,
+          "totalPopulation": 100,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 11,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 1,
+          "lnsOptions": {
+            "iterations": 1,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "focusedRepairTimeLimitSeconds": 0.5,
+            "escalatedRepairTimeLimitSeconds": 0.5,
+            "seedHint": {
+              "sourceName": "seeded-service-anchor-pressure",
+              "solution": {
+                "roads": [
+                  "0,0",
+                  "0,1",
+                  "0,2",
+                  "0,3",
+                  "0,4",
+                  "0,5",
+                  "1,3",
+                  "2,3",
+                  "3,3",
+                  "4,3",
+                  "5,3"
+                ],
+                "services": [
+                  {
+                    "r": 1,
+                    "c": 4,
+                    "rows": 2,
+                    "cols": 2,
+                    "range": 1,
+                    "typeIndex": 0,
+                    "bonus": 100
+                  }
+                ],
+                "residentials": [
+                  {
+                    "r": 4,
+                    "c": 4,
+                    "rows": 2,
+                    "cols": 2,
+                    "typeIndex": 0,
+                    "population": 100
+                  }
+                ],
+                "populations": [
+                  100
+                ],
+                "totalPopulation": 100
+              }
+            },
+            "neighborhoodAnchorPolicy": "sliding-only",
+            "operatorSelectionPolicy": "legacy"
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 1,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 100,
+              "populationAfter": 100,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "adaptive-operators",
+          "description": "Adaptive semantic LNS operators with weak-service, headroom, frontier, gate, overlap, and exploration repair.",
+          "seed": 19,
+          "totalPopulation": 200,
+          "populationDeltaVsBaseline": 100,
+          "roadCount": 11,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 1,
+          "lnsOptions": {
+            "iterations": 1,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "focusedRepairTimeLimitSeconds": 0.5,
+            "escalatedRepairTimeLimitSeconds": 0.5,
+            "seedHint": {
+              "sourceName": "seeded-service-anchor-pressure",
+              "solution": {
+                "roads": [
+                  "0,0",
+                  "0,1",
+                  "0,2",
+                  "0,3",
+                  "0,4",
+                  "0,5",
+                  "1,3",
+                  "2,3",
+                  "3,3",
+                  "4,3",
+                  "5,3"
+                ],
+                "services": [
+                  {
+                    "r": 1,
+                    "c": 4,
+                    "rows": 2,
+                    "cols": 2,
+                    "range": 1,
+                    "typeIndex": 0,
+                    "bonus": 100
+                  }
+                ],
+                "residentials": [
+                  {
+                    "r": 4,
+                    "c": 4,
+                    "rows": 2,
+                    "cols": 2,
+                    "typeIndex": 0,
+                    "population": 100
+                  }
+                ],
+                "populations": [
+                  100
+                ],
+                "totalPopulation": 100
+              }
+            },
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive"
+          },
+          "cpSatStatus": "OPTIMAL",
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "neutralIterations": 0,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "weak-service-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": 100,
+              "operatorExploration": false,
+              "status": "improved",
+              "improvement": 100,
+              "populationBefore": 100,
+              "populationAfter": 200,
+              "window": {
+                "top": 1,
+                "left": 3,
+                "rows": 3,
+                "cols": 3
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "row0-anchor-repair",
+      "description": "Sparse road-anchor access case that exercises LNS repair around road anchors.",
+      "seed": 19,
+      "gridRows": 3,
+      "gridCols": 4,
+      "gridCells": 12,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+        "seed": 19,
+        "totalPopulation": 10,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 1,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 0,
+        "residentialCount": 1,
+        "lnsOptions": {
+          "maxNoImprovementIterations": 4,
+          "neighborhoodAnchorPolicy": "sliding-only",
+          "operatorSelectionPolicy": "legacy",
+          "iterations": 2,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 1
+        },
+        "cpSatStatus": null,
+        "stopReason": "iteration-limit",
+        "improvingIterations": 0,
+        "neutralIterations": 2,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 10,
+            "populationAfter": 10,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 2,
+              "cols": 3
+            }
+          },
+          {
+            "iteration": 1,
+            "phase": "escalated",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": -0.25,
+            "operatorScoreAfter": -0.425,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 10,
+            "populationAfter": 10,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 2,
+              "cols": 4
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+          "seed": 19,
+          "totalPopulation": 10,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 1,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 0,
+          "residentialCount": 1,
+          "lnsOptions": {
+            "maxNoImprovementIterations": 4,
+            "neighborhoodAnchorPolicy": "sliding-only",
+            "operatorSelectionPolicy": "legacy",
+            "iterations": 2,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 1
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 10,
+              "populationAfter": 10,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 2,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": -0.25,
+              "operatorScoreAfter": -0.425,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 10,
+              "populationAfter": 10,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 2,
+                "cols": 4
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "adaptive-operators",
+          "description": "Adaptive semantic LNS operators with weak-service, headroom, frontier, gate, overlap, and exploration repair.",
+          "seed": 19,
+          "totalPopulation": 10,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 1,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 0,
+          "residentialCount": 1,
+          "lnsOptions": {
+            "maxNoImprovementIterations": 4,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive",
+            "iterations": 2,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 1
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "frontier-congestion-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 10,
+              "populationAfter": 10,
+              "window": {
+                "top": 1,
+                "left": 1,
+                "rows": 2,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "gate-choke-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 10,
+              "populationAfter": 10,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 2,
+                "cols": 4
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lns-corridor-squeeze-pressure",
+      "description": "Generated corridor pressure case with narrow anchor access and mixed footprints.",
+      "seed": 19,
+      "gridRows": 6,
+      "gridCols": 7,
+      "gridCells": 42,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+        "seed": 19,
+        "totalPopulation": 480,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 4,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 1,
+        "residentialCount": 3,
+        "lnsOptions": {
+          "iterations": 2,
+          "maxNoImprovementIterations": 4,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 0.5,
+          "neighborhoodAnchorPolicy": "sliding-only",
+          "operatorSelectionPolicy": "legacy"
+        },
+        "cpSatStatus": null,
+        "stopReason": "iteration-limit",
+        "improvingIterations": 0,
+        "neutralIterations": 2,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 480,
+            "populationAfter": 480,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 3,
+              "cols": 3
+            }
+          },
+          {
+            "iteration": 1,
+            "phase": "escalated",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": -0.25,
+            "operatorScoreAfter": -0.425,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 480,
+            "populationAfter": 480,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 5,
+              "cols": 6
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+          "seed": 19,
+          "totalPopulation": 480,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 4,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "sliding-only",
+            "operatorSelectionPolicy": "legacy"
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": -0.25,
+              "operatorScoreAfter": -0.425,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "adaptive-operators",
+          "description": "Adaptive semantic LNS operators with weak-service, headroom, frontier, gate, overlap, and exploration repair.",
+          "seed": 19,
+          "totalPopulation": 480,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 4,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive"
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "weak-service-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 1,
+                "left": 1,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "gate-choke-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lns-gate-choke-pressure",
+      "description": "Generated gate pressure case where a central choke point separates high-value placements.",
+      "seed": 19,
+      "gridRows": 6,
+      "gridCols": 6,
+      "gridCells": 36,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+        "seed": 19,
+        "totalPopulation": 540,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 1,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 1,
+        "residentialCount": 3,
+        "lnsOptions": {
+          "iterations": 2,
+          "maxNoImprovementIterations": 4,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 0.5,
+          "neighborhoodAnchorPolicy": "sliding-only",
+          "operatorSelectionPolicy": "legacy"
+        },
+        "cpSatStatus": "OPTIMAL",
+        "stopReason": "iteration-limit",
+        "improvingIterations": 1,
+        "neutralIterations": 1,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": 70,
+            "operatorExploration": false,
+            "status": "improved",
+            "improvement": 70,
+            "populationBefore": 470,
+            "populationAfter": 540,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 3,
+              "cols": 3
+            }
+          },
+          {
+            "iteration": 1,
+            "phase": "focused",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": 70,
+            "operatorScoreAfter": 48.75,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 540,
+            "populationAfter": 540,
+            "window": {
+              "top": 1,
+              "left": 1,
+              "rows": 3,
+              "cols": 3
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+          "seed": 19,
+          "totalPopulation": 540,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 1,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "sliding-only",
+            "operatorSelectionPolicy": "legacy"
+          },
+          "cpSatStatus": "OPTIMAL",
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "neutralIterations": 1,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": 70,
+              "operatorExploration": false,
+              "status": "improved",
+              "improvement": 70,
+              "populationBefore": 470,
+              "populationAfter": 540,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 70,
+              "operatorScoreAfter": 48.75,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 540,
+              "populationAfter": 540,
+              "window": {
+                "top": 1,
+                "left": 1,
+                "rows": 3,
+                "cols": 3
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "adaptive-operators",
+          "description": "Adaptive semantic LNS operators with weak-service, headroom, frontier, gate, overlap, and exploration repair.",
+          "seed": 19,
+          "totalPopulation": 540,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 1,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive"
+          },
+          "cpSatStatus": "OPTIMAL",
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "neutralIterations": 1,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "weak-service-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": 70,
+              "operatorExploration": false,
+              "status": "improved",
+              "improvement": 70,
+              "populationBefore": 470,
+              "populationAfter": 540,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "focused",
+              "operatorName": "residential-headroom-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 540,
+              "populationAfter": 540,
+              "window": {
+                "top": 3,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lns-footprint-mix-pressure",
+      "description": "Generated footprint-pressure case with competing 2x2 and 3x2 residential placements.",
+      "seed": 19,
+      "gridRows": 6,
+      "gridCols": 6,
+      "gridCells": 36,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+        "seed": 19,
+        "totalPopulation": 480,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 4,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 1,
+        "residentialCount": 3,
+        "lnsOptions": {
+          "iterations": 2,
+          "maxNoImprovementIterations": 4,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 0.5,
+          "neighborhoodAnchorPolicy": "sliding-only",
+          "operatorSelectionPolicy": "legacy"
+        },
+        "cpSatStatus": null,
+        "stopReason": "iteration-limit",
+        "improvingIterations": 0,
+        "neutralIterations": 2,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 480,
+            "populationAfter": 480,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 3,
+              "cols": 3
+            }
+          },
+          {
+            "iteration": 1,
+            "phase": "escalated",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": -0.25,
+            "operatorScoreAfter": -0.425,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 480,
+            "populationAfter": 480,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 5,
+              "cols": 6
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+          "seed": 19,
+          "totalPopulation": 480,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 4,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "sliding-only",
+            "operatorSelectionPolicy": "legacy"
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": -0.25,
+              "operatorScoreAfter": -0.425,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "adaptive-operators",
+          "description": "Adaptive semantic LNS operators with weak-service, headroom, frontier, gate, overlap, and exploration repair.",
+          "seed": 19,
+          "totalPopulation": 480,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 4,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive"
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "weak-service-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 2,
+                "left": 2,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "gate-choke-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lns-service-overlap-pressure",
+      "description": "Generated service-pressure case with overlapping service ranges and scarce premium housing.",
+      "seed": 19,
+      "gridRows": 6,
+      "gridCols": 6,
+      "gridCells": 36,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+        "seed": 19,
+        "totalPopulation": 740,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 4,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 2,
+        "residentialCount": 3,
+        "lnsOptions": {
+          "iterations": 2,
+          "maxNoImprovementIterations": 4,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 0.5,
+          "neighborhoodAnchorPolicy": "sliding-only",
+          "operatorSelectionPolicy": "legacy"
+        },
+        "cpSatStatus": null,
+        "stopReason": "iteration-limit",
+        "improvingIterations": 0,
+        "neutralIterations": 2,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 740,
+            "populationAfter": 740,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 3,
+              "cols": 3
+            }
+          },
+          {
+            "iteration": 1,
+            "phase": "escalated",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": -0.25,
+            "operatorScoreAfter": -0.425,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 740,
+            "populationAfter": 740,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 5,
+              "cols": 6
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+          "seed": 19,
+          "totalPopulation": 740,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 4,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "sliding-only",
+            "operatorSelectionPolicy": "legacy"
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 740,
+              "populationAfter": 740,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": -0.25,
+              "operatorScoreAfter": -0.425,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 740,
+              "populationAfter": 740,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "adaptive-operators",
+          "description": "Adaptive semantic LNS operators with weak-service, headroom, frontier, gate, overlap, and exploration repair.",
+          "seed": 19,
+          "totalPopulation": 740,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 4,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive"
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "weak-service-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 740,
+              "populationAfter": 740,
+              "window": {
+                "top": 1,
+                "left": 1,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "gate-choke-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 740,
+              "populationAfter": 740,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "typed-housing-single",
+      "description": "Tiny LNS baseline seeded by greedy and repaired over compact residential windows.",
+      "seed": 37,
+      "gridRows": 4,
+      "gridCols": 4,
+      "gridCells": 16,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+        "seed": 37,
+        "totalPopulation": 110,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 0,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 0,
+        "residentialCount": 2,
+        "lnsOptions": {
+          "maxNoImprovementIterations": 4,
+          "neighborhoodAnchorPolicy": "sliding-only",
+          "operatorSelectionPolicy": "legacy",
+          "iterations": 2,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 1
+        },
+        "cpSatStatus": null,
+        "stopReason": "iteration-limit",
+        "improvingIterations": 0,
+        "neutralIterations": 2,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 110,
+            "populationAfter": 110,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 3,
+              "cols": 3
+            }
+          },
+          {
+            "iteration": 1,
+            "phase": "escalated",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": -0.25,
+            "operatorScoreAfter": -0.425,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 110,
+            "populationAfter": 110,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 3,
+              "cols": 4
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+          "seed": 37,
+          "totalPopulation": 110,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 0,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 0,
+          "residentialCount": 2,
+          "lnsOptions": {
+            "maxNoImprovementIterations": 4,
+            "neighborhoodAnchorPolicy": "sliding-only",
+            "operatorSelectionPolicy": "legacy",
+            "iterations": 2,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 1
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 110,
+              "populationAfter": 110,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": -0.25,
+              "operatorScoreAfter": -0.425,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 110,
+              "populationAfter": 110,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 4
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "adaptive-operators",
+          "description": "Adaptive semantic LNS operators with weak-service, headroom, frontier, gate, overlap, and exploration repair.",
+          "seed": 37,
+          "totalPopulation": 110,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 0,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 0,
+          "residentialCount": 2,
+          "lnsOptions": {
+            "maxNoImprovementIterations": 4,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive",
+            "iterations": 2,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 1
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 110,
+              "populationAfter": 110,
+              "window": {
+                "top": 1,
+                "left": 1,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": -0.25,
+              "operatorScoreAfter": -0.425,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 110,
+              "populationAfter": 110,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 4
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "compact-service-repair",
+      "description": "Small mixed case for measuring service-aware neighborhood repair overhead.",
+      "seed": 37,
+      "gridRows": 6,
+      "gridCols": 6,
+      "gridCells": 36,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+        "seed": 37,
+        "totalPopulation": 570,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 0,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 1,
+        "residentialCount": 3,
+        "lnsOptions": {
+          "maxNoImprovementIterations": 4,
+          "neighborhoodAnchorPolicy": "sliding-only",
+          "operatorSelectionPolicy": "legacy",
+          "iterations": 2,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 1
+        },
+        "cpSatStatus": null,
+        "stopReason": "iteration-limit",
+        "improvingIterations": 0,
+        "neutralIterations": 2,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 570,
+            "populationAfter": 570,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 3,
+              "cols": 3
+            }
+          },
+          {
+            "iteration": 1,
+            "phase": "escalated",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": -0.25,
+            "operatorScoreAfter": -0.425,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 570,
+            "populationAfter": 570,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 5,
+              "cols": 6
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+          "seed": 37,
+          "totalPopulation": 570,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 0,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "maxNoImprovementIterations": 4,
+            "neighborhoodAnchorPolicy": "sliding-only",
+            "operatorSelectionPolicy": "legacy",
+            "iterations": 2,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 1
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 570,
+              "populationAfter": 570,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": -0.25,
+              "operatorScoreAfter": -0.425,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 570,
+              "populationAfter": 570,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "adaptive-operators",
+          "description": "Adaptive semantic LNS operators with weak-service, headroom, frontier, gate, overlap, and exploration repair.",
+          "seed": 37,
+          "totalPopulation": 570,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 0,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "maxNoImprovementIterations": 4,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive",
+            "iterations": 2,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 1
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "weak-service-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 570,
+              "populationAfter": 570,
+              "window": {
+                "top": 2,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "gate-choke-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 570,
+              "populationAfter": 570,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "seeded-service-anchor-pressure",
+      "description": "Seeded LNS case where ranked service anchors find a service move that sliding windows miss.",
+      "seed": 37,
+      "gridRows": 6,
+      "gridCols": 6,
+      "gridCells": 36,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+        "seed": 37,
+        "totalPopulation": 100,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 11,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 1,
+        "residentialCount": 1,
+        "lnsOptions": {
+          "iterations": 1,
+          "maxNoImprovementIterations": 4,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 0.5,
+          "focusedRepairTimeLimitSeconds": 0.5,
+          "escalatedRepairTimeLimitSeconds": 0.5,
+          "seedHint": {
+            "sourceName": "seeded-service-anchor-pressure",
+            "solution": {
+              "roads": [
+                "0,0",
+                "0,1",
+                "0,2",
+                "0,3",
+                "0,4",
+                "0,5",
+                "1,3",
+                "2,3",
+                "3,3",
+                "4,3",
+                "5,3"
+              ],
+              "services": [
+                {
+                  "r": 1,
+                  "c": 4,
+                  "rows": 2,
+                  "cols": 2,
+                  "range": 1,
+                  "typeIndex": 0,
+                  "bonus": 100
+                }
+              ],
+              "residentials": [
+                {
+                  "r": 4,
+                  "c": 4,
+                  "rows": 2,
+                  "cols": 2,
+                  "typeIndex": 0,
+                  "population": 100
+                }
+              ],
+              "populations": [
+                100
+              ],
+              "totalPopulation": 100
+            }
+          },
+          "neighborhoodAnchorPolicy": "sliding-only",
+          "operatorSelectionPolicy": "legacy"
+        },
+        "cpSatStatus": null,
+        "stopReason": "iteration-limit",
+        "improvingIterations": 0,
+        "neutralIterations": 1,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 100,
+            "populationAfter": 100,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 3,
+              "cols": 3
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+          "seed": 37,
+          "totalPopulation": 100,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 11,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 1,
+          "lnsOptions": {
+            "iterations": 1,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "focusedRepairTimeLimitSeconds": 0.5,
+            "escalatedRepairTimeLimitSeconds": 0.5,
+            "seedHint": {
+              "sourceName": "seeded-service-anchor-pressure",
+              "solution": {
+                "roads": [
+                  "0,0",
+                  "0,1",
+                  "0,2",
+                  "0,3",
+                  "0,4",
+                  "0,5",
+                  "1,3",
+                  "2,3",
+                  "3,3",
+                  "4,3",
+                  "5,3"
+                ],
+                "services": [
+                  {
+                    "r": 1,
+                    "c": 4,
+                    "rows": 2,
+                    "cols": 2,
+                    "range": 1,
+                    "typeIndex": 0,
+                    "bonus": 100
+                  }
+                ],
+                "residentials": [
+                  {
+                    "r": 4,
+                    "c": 4,
+                    "rows": 2,
+                    "cols": 2,
+                    "typeIndex": 0,
+                    "population": 100
+                  }
+                ],
+                "populations": [
+                  100
+                ],
+                "totalPopulation": 100
+              }
+            },
+            "neighborhoodAnchorPolicy": "sliding-only",
+            "operatorSelectionPolicy": "legacy"
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 1,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 100,
+              "populationAfter": 100,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "adaptive-operators",
+          "description": "Adaptive semantic LNS operators with weak-service, headroom, frontier, gate, overlap, and exploration repair.",
+          "seed": 37,
+          "totalPopulation": 200,
+          "populationDeltaVsBaseline": 100,
+          "roadCount": 11,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 1,
+          "lnsOptions": {
+            "iterations": 1,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "focusedRepairTimeLimitSeconds": 0.5,
+            "escalatedRepairTimeLimitSeconds": 0.5,
+            "seedHint": {
+              "sourceName": "seeded-service-anchor-pressure",
+              "solution": {
+                "roads": [
+                  "0,0",
+                  "0,1",
+                  "0,2",
+                  "0,3",
+                  "0,4",
+                  "0,5",
+                  "1,3",
+                  "2,3",
+                  "3,3",
+                  "4,3",
+                  "5,3"
+                ],
+                "services": [
+                  {
+                    "r": 1,
+                    "c": 4,
+                    "rows": 2,
+                    "cols": 2,
+                    "range": 1,
+                    "typeIndex": 0,
+                    "bonus": 100
+                  }
+                ],
+                "residentials": [
+                  {
+                    "r": 4,
+                    "c": 4,
+                    "rows": 2,
+                    "cols": 2,
+                    "typeIndex": 0,
+                    "population": 100
+                  }
+                ],
+                "populations": [
+                  100
+                ],
+                "totalPopulation": 100
+              }
+            },
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive"
+          },
+          "cpSatStatus": "OPTIMAL",
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "neutralIterations": 0,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "weak-service-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": 100,
+              "operatorExploration": false,
+              "status": "improved",
+              "improvement": 100,
+              "populationBefore": 100,
+              "populationAfter": 200,
+              "window": {
+                "top": 1,
+                "left": 3,
+                "rows": 3,
+                "cols": 3
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "row0-anchor-repair",
+      "description": "Sparse road-anchor access case that exercises LNS repair around road anchors.",
+      "seed": 37,
+      "gridRows": 3,
+      "gridCols": 4,
+      "gridCells": 12,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+        "seed": 37,
+        "totalPopulation": 10,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 1,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 0,
+        "residentialCount": 1,
+        "lnsOptions": {
+          "maxNoImprovementIterations": 4,
+          "neighborhoodAnchorPolicy": "sliding-only",
+          "operatorSelectionPolicy": "legacy",
+          "iterations": 2,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 1
+        },
+        "cpSatStatus": null,
+        "stopReason": "iteration-limit",
+        "improvingIterations": 0,
+        "neutralIterations": 2,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 10,
+            "populationAfter": 10,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 2,
+              "cols": 3
+            }
+          },
+          {
+            "iteration": 1,
+            "phase": "escalated",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": -0.25,
+            "operatorScoreAfter": -0.425,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 10,
+            "populationAfter": 10,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 2,
+              "cols": 4
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+          "seed": 37,
+          "totalPopulation": 10,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 1,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 0,
+          "residentialCount": 1,
+          "lnsOptions": {
+            "maxNoImprovementIterations": 4,
+            "neighborhoodAnchorPolicy": "sliding-only",
+            "operatorSelectionPolicy": "legacy",
+            "iterations": 2,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 1
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 10,
+              "populationAfter": 10,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 2,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": -0.25,
+              "operatorScoreAfter": -0.425,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 10,
+              "populationAfter": 10,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 2,
+                "cols": 4
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "adaptive-operators",
+          "description": "Adaptive semantic LNS operators with weak-service, headroom, frontier, gate, overlap, and exploration repair.",
+          "seed": 37,
+          "totalPopulation": 10,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 1,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 0,
+          "residentialCount": 1,
+          "lnsOptions": {
+            "maxNoImprovementIterations": 4,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive",
+            "iterations": 2,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 1
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "frontier-congestion-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 10,
+              "populationAfter": 10,
+              "window": {
+                "top": 1,
+                "left": 1,
+                "rows": 2,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "gate-choke-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 10,
+              "populationAfter": 10,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 2,
+                "cols": 4
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lns-corridor-squeeze-pressure",
+      "description": "Generated corridor pressure case with narrow anchor access and mixed footprints.",
+      "seed": 37,
+      "gridRows": 6,
+      "gridCols": 7,
+      "gridCells": 42,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+        "seed": 37,
+        "totalPopulation": 480,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 4,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 1,
+        "residentialCount": 3,
+        "lnsOptions": {
+          "iterations": 2,
+          "maxNoImprovementIterations": 4,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 0.5,
+          "neighborhoodAnchorPolicy": "sliding-only",
+          "operatorSelectionPolicy": "legacy"
+        },
+        "cpSatStatus": null,
+        "stopReason": "iteration-limit",
+        "improvingIterations": 0,
+        "neutralIterations": 2,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 480,
+            "populationAfter": 480,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 3,
+              "cols": 3
+            }
+          },
+          {
+            "iteration": 1,
+            "phase": "escalated",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": -0.25,
+            "operatorScoreAfter": -0.425,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 480,
+            "populationAfter": 480,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 5,
+              "cols": 6
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+          "seed": 37,
+          "totalPopulation": 480,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 4,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "sliding-only",
+            "operatorSelectionPolicy": "legacy"
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": -0.25,
+              "operatorScoreAfter": -0.425,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "adaptive-operators",
+          "description": "Adaptive semantic LNS operators with weak-service, headroom, frontier, gate, overlap, and exploration repair.",
+          "seed": 37,
+          "totalPopulation": 480,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 4,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive"
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "weak-service-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 1,
+                "left": 1,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "gate-choke-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lns-gate-choke-pressure",
+      "description": "Generated gate pressure case where a central choke point separates high-value placements.",
+      "seed": 37,
+      "gridRows": 6,
+      "gridCols": 6,
+      "gridCells": 36,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+        "seed": 37,
+        "totalPopulation": 540,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 1,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 1,
+        "residentialCount": 3,
+        "lnsOptions": {
+          "iterations": 2,
+          "maxNoImprovementIterations": 4,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 0.5,
+          "neighborhoodAnchorPolicy": "sliding-only",
+          "operatorSelectionPolicy": "legacy"
+        },
+        "cpSatStatus": "OPTIMAL",
+        "stopReason": "iteration-limit",
+        "improvingIterations": 1,
+        "neutralIterations": 1,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": 70,
+            "operatorExploration": false,
+            "status": "improved",
+            "improvement": 70,
+            "populationBefore": 470,
+            "populationAfter": 540,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 3,
+              "cols": 3
+            }
+          },
+          {
+            "iteration": 1,
+            "phase": "focused",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": 70,
+            "operatorScoreAfter": 48.75,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 540,
+            "populationAfter": 540,
+            "window": {
+              "top": 1,
+              "left": 1,
+              "rows": 3,
+              "cols": 3
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+          "seed": 37,
+          "totalPopulation": 540,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 1,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "sliding-only",
+            "operatorSelectionPolicy": "legacy"
+          },
+          "cpSatStatus": "OPTIMAL",
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "neutralIterations": 1,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": 70,
+              "operatorExploration": false,
+              "status": "improved",
+              "improvement": 70,
+              "populationBefore": 470,
+              "populationAfter": 540,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 70,
+              "operatorScoreAfter": 48.75,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 540,
+              "populationAfter": 540,
+              "window": {
+                "top": 1,
+                "left": 1,
+                "rows": 3,
+                "cols": 3
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "adaptive-operators",
+          "description": "Adaptive semantic LNS operators with weak-service, headroom, frontier, gate, overlap, and exploration repair.",
+          "seed": 37,
+          "totalPopulation": 540,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 1,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive"
+          },
+          "cpSatStatus": "OPTIMAL",
+          "stopReason": "iteration-limit",
+          "improvingIterations": 1,
+          "neutralIterations": 1,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "weak-service-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": 70,
+              "operatorExploration": false,
+              "status": "improved",
+              "improvement": 70,
+              "populationBefore": 470,
+              "populationAfter": 540,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "focused",
+              "operatorName": "residential-headroom-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 540,
+              "populationAfter": 540,
+              "window": {
+                "top": 3,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lns-footprint-mix-pressure",
+      "description": "Generated footprint-pressure case with competing 2x2 and 3x2 residential placements.",
+      "seed": 37,
+      "gridRows": 6,
+      "gridCols": 6,
+      "gridCells": 36,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+        "seed": 37,
+        "totalPopulation": 480,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 4,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 1,
+        "residentialCount": 3,
+        "lnsOptions": {
+          "iterations": 2,
+          "maxNoImprovementIterations": 4,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 0.5,
+          "neighborhoodAnchorPolicy": "sliding-only",
+          "operatorSelectionPolicy": "legacy"
+        },
+        "cpSatStatus": null,
+        "stopReason": "iteration-limit",
+        "improvingIterations": 0,
+        "neutralIterations": 2,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 480,
+            "populationAfter": 480,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 3,
+              "cols": 3
+            }
+          },
+          {
+            "iteration": 1,
+            "phase": "escalated",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": -0.25,
+            "operatorScoreAfter": -0.425,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 480,
+            "populationAfter": 480,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 5,
+              "cols": 6
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+          "seed": 37,
+          "totalPopulation": 480,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 4,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "sliding-only",
+            "operatorSelectionPolicy": "legacy"
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": -0.25,
+              "operatorScoreAfter": -0.425,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "adaptive-operators",
+          "description": "Adaptive semantic LNS operators with weak-service, headroom, frontier, gate, overlap, and exploration repair.",
+          "seed": 37,
+          "totalPopulation": 480,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 4,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 1,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive"
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "weak-service-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 2,
+                "left": 2,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "gate-choke-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 480,
+              "populationAfter": 480,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lns-service-overlap-pressure",
+      "description": "Generated service-pressure case with overlapping service ranges and scarce premium housing.",
+      "seed": 37,
+      "gridRows": 6,
+      "gridCols": 6,
+      "gridCells": 36,
+      "baseline": {
+        "variantName": "baseline",
+        "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+        "seed": 37,
+        "totalPopulation": 740,
+        "populationDeltaVsBaseline": 0,
+        "roadCount": 4,
+        "roadDeltaVsBaseline": 0,
+        "serviceCount": 2,
+        "residentialCount": 3,
+        "lnsOptions": {
+          "iterations": 2,
+          "maxNoImprovementIterations": 4,
+          "neighborhoodRows": 3,
+          "neighborhoodCols": 3,
+          "repairTimeLimitSeconds": 0.5,
+          "neighborhoodAnchorPolicy": "sliding-only",
+          "operatorSelectionPolicy": "legacy"
+        },
+        "cpSatStatus": null,
+        "stopReason": "iteration-limit",
+        "improvingIterations": 0,
+        "neutralIterations": 2,
+        "recoverableFailures": 0,
+        "outcomes": [
+          {
+            "iteration": 0,
+            "phase": "focused",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": 0,
+            "operatorScoreAfter": -0.25,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 740,
+            "populationAfter": 740,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 3,
+              "cols": 3
+            }
+          },
+          {
+            "iteration": 1,
+            "phase": "escalated",
+            "operatorName": "sliding-window",
+            "operatorScoreBefore": -0.25,
+            "operatorScoreAfter": -0.425,
+            "operatorExploration": false,
+            "status": "neutral",
+            "improvement": 0,
+            "populationBefore": 740,
+            "populationAfter": 740,
+            "window": {
+              "top": 1,
+              "left": 0,
+              "rows": 5,
+              "cols": 6
+            }
+          }
+        ]
+      },
+      "variants": [
+        {
+          "variantName": "baseline",
+          "description": "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+          "seed": 37,
+          "totalPopulation": 740,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 4,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "sliding-only",
+            "operatorSelectionPolicy": "legacy"
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 740,
+              "populationAfter": 740,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "sliding-window",
+              "operatorScoreBefore": -0.25,
+              "operatorScoreAfter": -0.425,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 740,
+              "populationAfter": 740,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        },
+        {
+          "variantName": "adaptive-operators",
+          "description": "Adaptive semantic LNS operators with weak-service, headroom, frontier, gate, overlap, and exploration repair.",
+          "seed": 37,
+          "totalPopulation": 740,
+          "populationDeltaVsBaseline": 0,
+          "roadCount": 4,
+          "roadDeltaVsBaseline": 0,
+          "serviceCount": 2,
+          "residentialCount": 3,
+          "lnsOptions": {
+            "iterations": 2,
+            "maxNoImprovementIterations": 4,
+            "neighborhoodRows": 3,
+            "neighborhoodCols": 3,
+            "repairTimeLimitSeconds": 0.5,
+            "neighborhoodAnchorPolicy": "ranked",
+            "operatorSelectionPolicy": "adaptive"
+          },
+          "cpSatStatus": null,
+          "stopReason": "iteration-limit",
+          "improvingIterations": 0,
+          "neutralIterations": 2,
+          "recoverableFailures": 0,
+          "outcomes": [
+            {
+              "iteration": 0,
+              "phase": "focused",
+              "operatorName": "weak-service-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 740,
+              "populationAfter": 740,
+              "window": {
+                "top": 1,
+                "left": 1,
+                "rows": 3,
+                "cols": 3
+              }
+            },
+            {
+              "iteration": 1,
+              "phase": "escalated",
+              "operatorName": "gate-choke-repair",
+              "operatorScoreBefore": 0,
+              "operatorScoreAfter": -0.25,
+              "operatorExploration": false,
+              "status": "neutral",
+              "improvement": 0,
+              "populationBefore": 740,
+              "populationAfter": 740,
+              "window": {
+                "top": 1,
+                "left": 0,
+                "rows": 5,
+                "cols": 6
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

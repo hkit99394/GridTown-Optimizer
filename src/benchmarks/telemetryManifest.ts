@@ -70,6 +70,7 @@ export interface SolverTelemetryCpSatManifest {
 export interface SolverTelemetryLnsManifest {
   stopReason: string;
   seedSource: string;
+  operatorSelectionPolicy: string | null;
   attempts: number;
   feasibleRepairs: number;
   improvements: number;
@@ -77,9 +78,24 @@ export interface SolverTelemetryLnsManifest {
   recoverableFailures: number;
   skippedIterations: number;
   elapsedTimeSeconds: number;
+  operatorScores: Array<{
+    name: string;
+    attempts: number;
+    improvements: number;
+    neutralRepairs: number;
+    recoverableFailures: number;
+    skippedIterations: number;
+    reward: number;
+    score: number;
+    lastSelectedIteration: number | null;
+  }>;
   selectedWindows: Array<{
     iteration: number;
     phase: string;
+    operatorName: string | null;
+    operatorScoreBefore: number | null;
+    operatorScoreAfter: number | null;
+    operatorExploration: boolean | null;
     window: { top: number; left: number; rows: number; cols: number };
     status: string;
     improvement: number;
@@ -434,6 +450,7 @@ function buildLnsTelemetryManifest(telemetry: LnsTelemetry | null | undefined): 
   return {
     stopReason: telemetry.stopReason,
     seedSource: telemetry.seedSource,
+    operatorSelectionPolicy: telemetry.operatorSelectionPolicy ?? null,
     attempts: telemetry.outcomes.length,
     feasibleRepairs: telemetry.outcomes.filter((outcome) => outcome.status === "improved" || outcome.status === "neutral").length,
     improvements: telemetry.improvingIterations,
@@ -441,9 +458,14 @@ function buildLnsTelemetryManifest(telemetry: LnsTelemetry | null | undefined): 
     recoverableFailures: telemetry.recoverableFailures,
     skippedIterations: telemetry.skippedIterations,
     elapsedTimeSeconds: roundSeconds(telemetry.elapsedSeconds) ?? 0,
+    operatorScores: telemetry.operatorScores?.map((score) => ({ ...score })) ?? [],
     selectedWindows: telemetry.outcomes.map((outcome) => ({
       iteration: outcome.iteration,
       phase: outcome.phase,
+      operatorName: outcome.operatorName ?? null,
+      operatorScoreBefore: typeof outcome.operatorScoreBefore === "number" ? outcome.operatorScoreBefore : null,
+      operatorScoreAfter: typeof outcome.operatorScoreAfter === "number" ? outcome.operatorScoreAfter : null,
+      operatorExploration: typeof outcome.operatorExploration === "boolean" ? outcome.operatorExploration : null,
       window: { ...outcome.window },
       status: outcome.status,
       improvement: outcome.improvement,
@@ -633,8 +655,32 @@ function validateRun(run: unknown, index: number, issues: SolverTelemetryManifes
     for (const key of ["attempts", "feasibleRepairs", "improvements", "neutralRepairs", "recoverableFailures", "elapsedTimeSeconds"]) {
       validateNullableNumber(run.lns[key], `${runPath}.lns.${key}`, issues);
     }
+    if (
+      run.lns.operatorSelectionPolicy !== undefined
+      && run.lns.operatorSelectionPolicy !== null
+      && typeof run.lns.operatorSelectionPolicy !== "string"
+    ) {
+      pushIssue(issues, "invalid-lns-operator-policy", `${runPath}.lns.operatorSelectionPolicy must be a string or null.`, `${runPath}.lns.operatorSelectionPolicy`);
+    }
+    if (run.lns.operatorScores !== undefined && !Array.isArray(run.lns.operatorScores)) {
+      pushIssue(issues, "missing-lns-operator-scores", `${runPath}.lns.operatorScores must be an array.`, `${runPath}.lns.operatorScores`);
+    }
     if (!Array.isArray(run.lns.selectedWindows)) {
       pushIssue(issues, "missing-lns-windows", `${runPath}.lns.selectedWindows must be an array.`, `${runPath}.lns.selectedWindows`);
+    } else {
+      run.lns.selectedWindows.forEach((window, windowIndex) => {
+        if (!isRecord(window)) {
+          pushIssue(issues, "invalid-lns-window", `${runPath}.lns.selectedWindows[${windowIndex}] must be an object.`, `${runPath}.lns.selectedWindows[${windowIndex}]`);
+          return;
+        }
+        if (
+          window.operatorName !== undefined
+          && window.operatorName !== null
+          && typeof window.operatorName !== "string"
+        ) {
+          pushIssue(issues, "invalid-lns-window-operator", `${runPath}.lns.selectedWindows[${windowIndex}].operatorName must be a string or null.`, `${runPath}.lns.selectedWindows[${windowIndex}].operatorName`);
+        }
+      });
     }
   }
 }

@@ -228,7 +228,7 @@ export function formatLnsBenchmarkSuite(result: LnsBenchmarkSuiteResult): string
     );
     lines.push(`  progress=${formatSolverProgressSummary(benchmark.progressSummary)}`);
     lines.push(
-      `  lns=iterations:${benchmark.lnsOptions.iterations} no-improve:${benchmark.lnsOptions.maxNoImprovementIterations} window:${benchmark.lnsOptions.neighborhoodRows}x${benchmark.lnsOptions.neighborhoodCols} repair:${benchmark.lnsOptions.repairTimeLimitSeconds}s seed-limit:${formatSeconds(benchmark.lnsTelemetry?.seedTimeLimitSeconds)}`
+      `  lns=iterations:${benchmark.lnsOptions.iterations} no-improve:${benchmark.lnsOptions.maxNoImprovementIterations} operators:${benchmark.lnsOptions.operatorSelectionPolicy ?? "adaptive"} window:${benchmark.lnsOptions.neighborhoodRows}x${benchmark.lnsOptions.neighborhoodCols} repair:${benchmark.lnsOptions.repairTimeLimitSeconds}s seed-limit:${formatSeconds(benchmark.lnsTelemetry?.seedTimeLimitSeconds)}`
     );
     if (benchmark.cpSatStatus || telemetry) {
       lines.push(

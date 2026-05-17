@@ -37,6 +37,7 @@ import type {
 
 export type LnsNeighborhoodAblationVariantName =
   | "baseline"
+  | "adaptive-operators"
   | "sliding-only"
   | "weak-service-first"
   | "residential-opportunity-first"
@@ -61,6 +62,10 @@ export interface LnsNeighborhoodAblationRunOptions extends LnsBenchmarkRunOption
 export interface LnsNeighborhoodAblationOutcome {
   iteration: number;
   phase: string;
+  operatorName: string | null;
+  operatorScoreBefore: number | null;
+  operatorScoreAfter: number | null;
+  operatorExploration: boolean | null;
   status: string;
   improvement: number;
   populationBefore: number;
@@ -159,43 +164,48 @@ export const DEFAULT_LNS_NEIGHBORHOOD_ABLATION_VARIANTS: readonly LnsNeighborhoo
   Object.freeze([
     {
       name: "baseline",
-      description: "Current ranked LNS anchors plus sliding fallback windows.",
-      lns: { neighborhoodAnchorPolicy: "ranked" },
+      description: "Legacy ranked LNS anchors plus sliding fallback windows.",
+      lns: { neighborhoodAnchorPolicy: "ranked", operatorSelectionPolicy: "legacy" },
+    },
+    {
+      name: "adaptive-operators",
+      description: "Adaptive semantic LNS operators with weak-service, headroom, frontier, gate, overlap, and exploration repair.",
+      lns: { neighborhoodAnchorPolicy: "ranked", operatorSelectionPolicy: "adaptive" },
     },
     {
       name: "sliding-only",
       description: "Disable ranked anchors and use only deterministic sliding windows.",
-      lns: { neighborhoodAnchorPolicy: "sliding-only" },
+      lns: { neighborhoodAnchorPolicy: "sliding-only", operatorSelectionPolicy: "legacy" },
     },
     {
       name: "weak-service-first",
       description: "Rank repair windows from weak service marginal-value anchors plus sliding fallback.",
-      lns: { neighborhoodAnchorPolicy: "weak-service-first" },
+      lns: { neighborhoodAnchorPolicy: "weak-service-first", operatorSelectionPolicy: "legacy" },
     },
     {
       name: "residential-opportunity-first",
       description: "Rank repair windows from residential headroom anchors plus sliding fallback.",
-      lns: { neighborhoodAnchorPolicy: "residential-opportunity-first" },
+      lns: { neighborhoodAnchorPolicy: "residential-opportunity-first", operatorSelectionPolicy: "legacy" },
     },
     {
       name: "frontier-congestion-first",
       description: "Rank repair windows from road-frontier congestion anchors plus sliding fallback.",
-      lns: { neighborhoodAnchorPolicy: "frontier-congestion-first" },
+      lns: { neighborhoodAnchorPolicy: "frontier-congestion-first", operatorSelectionPolicy: "legacy" },
     },
     {
       name: "placed-buildings-first",
       description: "Use incumbent service and weak-residential anchors without the ranked feature groups.",
-      lns: { neighborhoodAnchorPolicy: "placed-buildings-first" },
+      lns: { neighborhoodAnchorPolicy: "placed-buildings-first", operatorSelectionPolicy: "legacy" },
     },
     {
       name: "small-2x2",
       description: "Keep ranked anchors but constrain repair windows to 2x2.",
-      lns: { neighborhoodAnchorPolicy: "ranked", neighborhoodRows: 2, neighborhoodCols: 2 },
+      lns: { neighborhoodAnchorPolicy: "ranked", operatorSelectionPolicy: "legacy", neighborhoodRows: 2, neighborhoodCols: 2 },
     },
     {
       name: "wide-4x4",
       description: "Keep ranked anchors but expand repair windows to 4x4.",
-      lns: { neighborhoodAnchorPolicy: "ranked", neighborhoodRows: 4, neighborhoodCols: 4 },
+      lns: { neighborhoodAnchorPolicy: "ranked", operatorSelectionPolicy: "legacy", neighborhoodRows: 4, neighborhoodCols: 4 },
     },
   ]);
 
@@ -204,6 +214,10 @@ export const DEFAULT_LNS_NEIGHBORHOOD_ABLATION_CASE_NAMES = Object.freeze([
   "compact-service-repair",
   "seeded-service-anchor-pressure",
   "row0-anchor-repair",
+  "lns-corridor-squeeze-pressure",
+  "lns-gate-choke-pressure",
+  "lns-footprint-mix-pressure",
+  "lns-service-overlap-pressure",
 ] satisfies string[]);
 
 function selectDefaultAblationCases(corpus: readonly LnsBenchmarkCase[]): LnsBenchmarkCase[] {
@@ -301,6 +315,10 @@ function variantResult(
     outcomes: result.lnsTelemetry?.outcomes.map((outcome) => ({
       iteration: outcome.iteration,
       phase: outcome.phase,
+      operatorName: outcome.operatorName ?? null,
+      operatorScoreBefore: outcome.operatorScoreBefore ?? null,
+      operatorScoreAfter: outcome.operatorScoreAfter ?? null,
+      operatorExploration: outcome.operatorExploration ?? null,
       status: outcome.status,
       improvement: outcome.improvement,
       populationBefore: outcome.populationBefore,
@@ -511,10 +529,10 @@ export function formatLnsNeighborhoodAblation(result: LnsNeighborhoodAblationSui
     for (const variant of benchmarkCase.variants) {
       const firstOutcome = variant.outcomes[0];
       const firstWindow = firstOutcome
-        ? `${firstOutcome.window.top}:${firstOutcome.window.left}:${firstOutcome.window.rows}x${firstOutcome.window.cols}/${firstOutcome.status}/+${firstOutcome.improvement}`
+        ? `${firstOutcome.window.top}:${firstOutcome.window.left}:${firstOutcome.window.rows}x${firstOutcome.window.cols}/${firstOutcome.status}/+${firstOutcome.improvement}/${firstOutcome.operatorName ?? "unknown"}`
         : "n/a";
       lines.push(
-        `  ${variant.variantName}=population:${variant.totalPopulation} delta:${formatSigned(variant.populationDeltaVsBaseline)} wall:${formatSeconds(variant.wallClockSeconds)} wall-delta:${formatSeconds(variant.wallClockDeltaVsBaselineSeconds)} roads:${variant.roadCount} road-delta:${formatSigned(variant.roadDeltaVsBaseline)} services:${variant.serviceCount} residentials:${variant.residentialCount} policy:${variant.lnsOptions.neighborhoodAnchorPolicy ?? "ranked"} window:${variant.lnsOptions.neighborhoodRows ?? "n/a"}x${variant.lnsOptions.neighborhoodCols ?? "n/a"} stop:${variant.stopReason ?? "n/a"} improved:${variant.improvingIterations ?? "n/a"} neutral:${variant.neutralIterations ?? "n/a"} first-window:${firstWindow}`
+        `  ${variant.variantName}=population:${variant.totalPopulation} delta:${formatSigned(variant.populationDeltaVsBaseline)} wall:${formatSeconds(variant.wallClockSeconds)} wall-delta:${formatSeconds(variant.wallClockDeltaVsBaselineSeconds)} roads:${variant.roadCount} road-delta:${formatSigned(variant.roadDeltaVsBaseline)} services:${variant.serviceCount} residentials:${variant.residentialCount} policy:${variant.lnsOptions.neighborhoodAnchorPolicy ?? "ranked"} operators:${variant.lnsOptions.operatorSelectionPolicy ?? "adaptive"} window:${variant.lnsOptions.neighborhoodRows ?? "n/a"}x${variant.lnsOptions.neighborhoodCols ?? "n/a"} stop:${variant.stopReason ?? "n/a"} improved:${variant.improvingIterations ?? "n/a"} neutral:${variant.neutralIterations ?? "n/a"} first-window:${firstWindow}`
       );
     }
   }

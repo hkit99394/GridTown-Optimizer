@@ -9,7 +9,7 @@ import { applyDeterministicDominanceUpgrades } from "../core/dominanceUpgrades.j
 import { normalizeServicePlacement } from "../core/buildings.js";
 import { solveCpSat } from "../cp-sat/solver.js";
 import { height, width } from "../core/grid.js";
-import { buildNeighborhoodWindows, selectNeighborhoodWindow } from "./neighborhoods.js";
+import { buildNeighborhoodCandidates, selectNeighborhoodWindow } from "./neighborhoods.js";
 import { NO_TYPE_INDEX } from "../core/rules.js";
 import { writeSolutionSnapshot } from "../core/solutionSerialization.js";
 import { assertValidLnsOptions, materializeValidLnsSeedSolution } from "../core/solverInputValidation.js";
@@ -22,7 +22,10 @@ import type {
   LnsNeighborhoodOutcome,
   LnsNeighborhoodOutcomeStatus,
   LnsNeighborhoodAnchorPolicy,
+  LnsOperatorScoreTelemetry,
+  LnsOperatorSelectionPolicy,
   LnsRepairPhase,
+  LnsRepairOperatorName,
   LnsStopReason,
   LnsTelemetry,
   Solution,
@@ -38,6 +41,9 @@ type NormalizedLnsOptions = {
   neighborhoodRows: number;
   neighborhoodCols: number;
   neighborhoodAnchorPolicy: LnsNeighborhoodAnchorPolicy;
+  operatorSelectionPolicy: LnsOperatorSelectionPolicy;
+  operatorExplorationInterval: number;
+  operatorScoreDecay: number;
   repairTimeLimitSeconds: number;
   focusedRepairTimeLimitSeconds: number;
   escalatedRepairTimeLimitSeconds: number;
@@ -56,6 +62,9 @@ interface LnsRepairAttempt {
   iteration: number;
   phase: LnsRepairPhase;
   window: CpSatNeighborhoodWindow;
+  operatorName: LnsRepairOperatorName;
+  operatorScoreBefore: number;
+  operatorExploration: boolean;
   stagnantIterationsBefore: number;
   staleSecondsBefore: number;
   repairTimeLimitSeconds: number;
@@ -63,9 +72,13 @@ interface LnsRepairAttempt {
   startedAtMs: number | null;
 }
 
+interface LnsOperatorScoreState extends LnsOperatorScoreTelemetry {}
+
 const DEFAULT_LNS_ITERATIONS = 12;
 const DEFAULT_LNS_MAX_NO_IMPROVEMENT_ITERATIONS = 4;
 const DEFAULT_LNS_REPAIR_TIME_LIMIT_SECONDS = 5;
+const DEFAULT_LNS_OPERATOR_EXPLORATION_INTERVAL = 5;
+const DEFAULT_LNS_OPERATOR_SCORE_DECAY = 0.7;
 const LNS_NEIGHBORHOOD_ANCHOR_POLICIES = new Set<LnsNeighborhoodAnchorPolicy>([
   "ranked",
   "sliding-only",
@@ -74,6 +87,19 @@ const LNS_NEIGHBORHOOD_ANCHOR_POLICIES = new Set<LnsNeighborhoodAnchorPolicy>([
   "frontier-congestion-first",
   "placed-buildings-first",
 ]);
+const LNS_OPERATOR_SELECTION_POLICIES = new Set<LnsOperatorSelectionPolicy>([
+  "legacy",
+  "adaptive",
+]);
+const LNS_REPAIR_OPERATOR_NAMES: readonly LnsRepairOperatorName[] = [
+  "weak-service-repair",
+  "residential-headroom-repair",
+  "frontier-congestion-repair",
+  "gate-choke-repair",
+  "service-overlap-repair",
+  "random-exploration",
+  "sliding-window",
+];
 
 function positiveIntegerOrDefault(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isInteger(value) && value > 0 ? value : fallback;
@@ -91,6 +117,18 @@ function lnsNeighborhoodAnchorPolicyOrDefault(value: unknown): LnsNeighborhoodAn
   return typeof value === "string" && LNS_NEIGHBORHOOD_ANCHOR_POLICIES.has(value as LnsNeighborhoodAnchorPolicy)
     ? value as LnsNeighborhoodAnchorPolicy
     : "ranked";
+}
+
+function lnsOperatorSelectionPolicyOrDefault(value: unknown): LnsOperatorSelectionPolicy {
+  return typeof value === "string" && LNS_OPERATOR_SELECTION_POLICIES.has(value as LnsOperatorSelectionPolicy)
+    ? value as LnsOperatorSelectionPolicy
+    : "adaptive";
+}
+
+function operatorScoreDecayOrDefault(value: unknown): number {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 && value <= 1
+    ? value
+    : DEFAULT_LNS_OPERATOR_SCORE_DECAY;
 }
 
 function clampRepairBudgetToDeadline(repairTimeLimitSeconds: number, deadlineAtMs: number | null): number {
@@ -145,6 +183,12 @@ function getLnsOptions(G: Grid, params: SolverParams): NormalizedLnsOptions {
       Math.min(W || 1, positiveIntegerOrDefault(lns.neighborhoodCols, Math.max(4, Math.ceil(W / 2))))
     ),
     neighborhoodAnchorPolicy: lnsNeighborhoodAnchorPolicyOrDefault(lns.neighborhoodAnchorPolicy),
+    operatorSelectionPolicy: lnsOperatorSelectionPolicyOrDefault(lns.operatorSelectionPolicy),
+    operatorExplorationInterval: positiveIntegerOrDefault(
+      lns.operatorExplorationInterval,
+      DEFAULT_LNS_OPERATOR_EXPLORATION_INTERVAL
+    ),
+    operatorScoreDecay: operatorScoreDecayOrDefault(lns.operatorScoreDecay),
     repairTimeLimitSeconds,
     focusedRepairTimeLimitSeconds: positiveFiniteNumberOrDefault(lns.focusedRepairTimeLimitSeconds, repairTimeLimitSeconds),
     escalatedRepairTimeLimitSeconds: positiveFiniteNumberOrDefault(
@@ -207,7 +251,7 @@ export function buildLnsWarmStartHint(solution: Solution, neighborhoodWindow: Cp
     fixOutsideNeighborhoodToHintedValue: true,
   };
 }
-export { buildNeighborhoodWindows } from "./neighborhoods.js";
+export { buildNeighborhoodCandidates, buildNeighborhoodWindows } from "./neighborhoods.js";
 
 function shouldStop(stopFilePath: string): boolean {
   return Boolean(stopFilePath) && existsSync(stopFilePath);
@@ -249,13 +293,173 @@ function buildInitialLnsIncumbent(G: Grid, params: SolverParams, options: Normal
   };
 }
 
+function createOperatorScoreState(): Map<LnsRepairOperatorName, LnsOperatorScoreState> {
+  return new Map(LNS_REPAIR_OPERATOR_NAMES.map((name) => [
+    name,
+    {
+      name,
+      attempts: 0,
+      improvements: 0,
+      neutralRepairs: 0,
+      recoverableFailures: 0,
+      skippedIterations: 0,
+      reward: 0,
+      score: 0,
+      lastSelectedIteration: null,
+    },
+  ]));
+}
+
+function getOperatorState(
+  scores: Map<LnsRepairOperatorName, LnsOperatorScoreState>,
+  operatorName: LnsRepairOperatorName
+): LnsOperatorScoreState {
+  const existing = scores.get(operatorName);
+  if (existing) return existing;
+  const created: LnsOperatorScoreState = {
+    name: operatorName,
+    attempts: 0,
+    improvements: 0,
+    neutralRepairs: 0,
+    recoverableFailures: 0,
+    skippedIterations: 0,
+    reward: 0,
+    score: 0,
+    lastSelectedIteration: null,
+  };
+  scores.set(operatorName, created);
+  return created;
+}
+
+function materializeOperatorScores(
+  scores: Map<LnsRepairOperatorName, LnsOperatorScoreState>
+): LnsOperatorScoreTelemetry[] {
+  return [...scores.values()].map((score) => ({ ...score }));
+}
+
+function neighborhoodWindowKey(window: CpSatNeighborhoodWindow): string {
+  return `${window.top}:${window.left}:${window.rows}:${window.cols}`;
+}
+
+function roundOperatorScore(value: number): number {
+  return Math.round(value * 1000) / 1000;
+}
+
+function updateOperatorScores(
+  scores: Map<LnsRepairOperatorName, LnsOperatorScoreState>,
+  operatorName: LnsRepairOperatorName,
+  iteration: number,
+  status: LnsNeighborhoodOutcomeStatus,
+  improvement: number,
+  options: Pick<NormalizedLnsOptions, "operatorScoreDecay">
+): number {
+  for (const score of scores.values()) {
+    score.score = roundOperatorScore(score.score * options.operatorScoreDecay);
+  }
+
+  const selected = getOperatorState(scores, operatorName);
+  selected.attempts += 1;
+  selected.lastSelectedIteration = iteration;
+  if (status === "improved") {
+    selected.improvements += 1;
+    selected.reward = roundOperatorScore(selected.reward + Math.max(1, improvement));
+    selected.score = roundOperatorScore(selected.score + Math.max(1, improvement));
+  } else if (status === "neutral") {
+    selected.neutralRepairs += 1;
+    selected.score = roundOperatorScore(selected.score - 0.25);
+  } else if (status === "recoverable-failure") {
+    selected.recoverableFailures += 1;
+    selected.score = roundOperatorScore(selected.score - 0.75);
+  } else if (status === "skipped-budget" || status === "stopped") {
+    selected.skippedIterations += 1;
+    selected.score = roundOperatorScore(selected.score - 0.1);
+  }
+  return selected.score;
+}
+
+function selectNeighborhoodCandidate(
+  candidates: ReturnType<typeof buildNeighborhoodCandidates>,
+  iteration: number,
+  stagnantIterations: number,
+  options: NormalizedLnsOptions,
+  operatorScores: Map<LnsRepairOperatorName, LnsOperatorScoreState>,
+  windowAttemptCounts: ReadonlyMap<string, number>
+): ReturnType<typeof buildNeighborhoodCandidates>[number] {
+  if (options.operatorSelectionPolicy === "legacy") {
+    const selectedWindow = selectNeighborhoodWindow(
+      candidates.map((candidate) => candidate.window),
+      iteration,
+      stagnantIterations,
+      options
+    );
+    return candidates.find((candidate) =>
+      candidate.window.top === selectedWindow.top
+      && candidate.window.left === selectedWindow.left
+      && candidate.window.rows === selectedWindow.rows
+      && candidate.window.cols === selectedWindow.cols
+    ) ?? candidates[0]!;
+  }
+
+  if (new Set(candidates.map((candidate) => candidate.operatorName)).size === 1) {
+    const selectedWindow = selectNeighborhoodWindow(
+      candidates.map((candidate) => candidate.window),
+      iteration,
+      stagnantIterations,
+      options
+    );
+    return candidates.find((candidate) =>
+      candidate.window.top === selectedWindow.top
+      && candidate.window.left === selectedWindow.left
+      && candidate.window.rows === selectedWindow.rows
+      && candidate.window.cols === selectedWindow.cols
+    ) ?? candidates[0]!;
+  }
+
+  const repairAttempt = stagnantIterations + 1;
+  if (repairAttempt >= options.maxNoImprovementIterations) {
+    return candidates.reduce((best, candidate) => {
+      const bestArea = best.window.rows * best.window.cols;
+      const candidateArea = candidate.window.rows * candidate.window.cols;
+      if (candidateArea !== bestArea) return candidateArea > bestArea ? candidate : best;
+      if (candidate.window.rows !== best.window.rows) return candidate.window.rows > best.window.rows ? candidate : best;
+      if (candidate.window.cols !== best.window.cols) return candidate.window.cols > best.window.cols ? candidate : best;
+      if (candidate.score !== best.score) return candidate.score > best.score ? candidate : best;
+      return best;
+    });
+  }
+
+  const explorationDue = iteration > 0
+    && options.operatorExplorationInterval > 0
+    && (iteration + 1) % options.operatorExplorationInterval === 0;
+  if (explorationDue) {
+    const explorationCandidates = candidates.filter((candidate) => candidate.exploration);
+    if (explorationCandidates.length > 0) {
+      return explorationCandidates[iteration % explorationCandidates.length]!;
+    }
+  }
+
+  return candidates.reduce((best, candidate) => {
+    const candidateOperatorScore = getOperatorState(operatorScores, candidate.operatorName).score;
+    const bestOperatorScore = getOperatorState(operatorScores, best.operatorName).score;
+    const candidateAttemptPenalty = (windowAttemptCounts.get(neighborhoodWindowKey(candidate.window)) ?? 0) * 1_000_000;
+    const bestAttemptPenalty = (windowAttemptCounts.get(neighborhoodWindowKey(best.window)) ?? 0) * 1_000_000;
+    const candidateAdaptiveScore = candidate.score + candidateOperatorScore * 1000 - candidateAttemptPenalty;
+    const bestAdaptiveScore = best.score + bestOperatorScore * 1000 - bestAttemptPenalty;
+    if (candidateAdaptiveScore !== bestAdaptiveScore) {
+      return candidateAdaptiveScore > bestAdaptiveScore ? candidate : best;
+    }
+    return best;
+  });
+}
+
 function buildLnsTelemetry(
   stopReason: LnsStopReason,
   options: NormalizedLnsOptions,
   initialIncumbent: InitialLnsIncumbent,
   startedAtMs: number,
   stagnantIterations: number,
-  outcomes: LnsTelemetry["outcomes"]
+  outcomes: LnsTelemetry["outcomes"],
+  operatorScores: Map<LnsRepairOperatorName, LnsOperatorScoreState>
 ): LnsTelemetry {
   return {
     stopReason,
@@ -274,6 +478,8 @@ function buildLnsTelemetry(
     skippedIterations: outcomes.filter((outcome) => outcome.status === "skipped-budget" || outcome.status === "stopped").length,
     finalStagnantIterations: stagnantIterations,
     elapsedSeconds: (performance.now() - startedAtMs) / 1000,
+    operatorSelectionPolicy: options.operatorSelectionPolicy,
+    operatorScores: materializeOperatorScores(operatorScores),
     outcomes: [...outcomes],
   };
 }
@@ -313,12 +519,17 @@ function buildRepairOutcome(
   status: LnsNeighborhoodOutcomeStatus,
   populationAfter: number,
   improvement = 0,
-  cpSatStatus?: string | null
+  cpSatStatus?: string | null,
+  operatorScoreAfter?: number
 ): LnsNeighborhoodOutcome {
   return {
     iteration: attempt.iteration,
     phase: attempt.phase,
     window: attempt.window,
+    operatorName: attempt.operatorName,
+    operatorScoreBefore: attempt.operatorScoreBefore,
+    ...(operatorScoreAfter !== undefined ? { operatorScoreAfter } : {}),
+    operatorExploration: attempt.operatorExploration,
     stagnantIterationsBefore: attempt.stagnantIterationsBefore,
     staleSecondsBefore: attempt.staleSecondsBefore,
     repairTimeLimitSeconds: attempt.repairTimeLimitSeconds,
@@ -337,6 +548,8 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
   const options = getLnsOptions(G, params);
   const deadlineAtMs = options.wallClockLimitSeconds === null ? null : startedAtMs + options.wallClockLimitSeconds * 1000;
   const outcomes: LnsTelemetry["outcomes"] = [];
+  const operatorScores = createOperatorScoreState();
+  const windowAttemptCounts = new Map<string, number>();
 
   const initialIncumbent = buildInitialLnsIncumbent(G, params, options);
   let incumbent = initialIncumbent.solution;
@@ -344,7 +557,7 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
   let lastImprovementAtMs = performance.now();
 
   const buildTelemetry = (stopReason: LnsStopReason): LnsTelemetry =>
-    buildLnsTelemetry(stopReason, options, initialIncumbent, startedAtMs, stagnantIterations, outcomes);
+    buildLnsTelemetry(stopReason, options, initialIncumbent, startedAtMs, stagnantIterations, outcomes, operatorScores);
 
   const writeRunningSnapshot = (): void => writeLnsSnapshot(options, incumbent, buildTelemetry("running"));
 
@@ -383,12 +596,23 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
       return finish("stale-iteration-limit");
     }
 
-    const windows = buildNeighborhoodWindows(G, params, incumbent, options, stagnantIterations + 1);
-    if (windows.length === 0) {
+    const candidates = buildNeighborhoodCandidates(G, params, incumbent, options, stagnantIterations + 1);
+    if (candidates.length === 0) {
       return finish("no-neighborhoods");
     }
 
-    const neighborhoodWindow = selectNeighborhoodWindow(windows, iteration, stagnantIterations, options);
+    const candidate = selectNeighborhoodCandidate(
+      candidates,
+      iteration,
+      stagnantIterations,
+      options,
+      operatorScores,
+      windowAttemptCounts
+    );
+    const neighborhoodWindow = candidate.window;
+    const selectedWindowKey = neighborhoodWindowKey(neighborhoodWindow);
+    windowAttemptCounts.set(selectedWindowKey, (windowAttemptCounts.get(selectedWindowKey) ?? 0) + 1);
+    const operatorScoreBefore = getOperatorState(operatorScores, candidate.operatorName).score;
     const phase = getRepairPhase(stagnantIterations, options);
     const configuredRepairTimeLimitSeconds = phase === "escalated"
       ? options.escalatedRepairTimeLimitSeconds
@@ -402,11 +626,21 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
         iteration,
         phase,
         window: neighborhoodWindow,
+        operatorName: candidate.operatorName,
+        operatorScoreBefore,
+        operatorExploration: candidate.exploration,
         stagnantIterationsBefore: stagnantIterations,
         staleSecondsBefore,
         repairTimeLimitSeconds: 0,
         populationBefore,
-      }), "skipped-budget", populationBefore));
+      }), "skipped-budget", populationBefore, 0, undefined, updateOperatorScores(
+        operatorScores,
+        candidate.operatorName,
+        iteration,
+        "skipped-budget",
+        0,
+        options
+      )));
       writeRunningSnapshot();
       return finish("wall-clock-limit");
     }
@@ -416,6 +650,9 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
       iteration,
       phase,
       window: neighborhoodWindow,
+      operatorName: candidate.operatorName,
+      operatorScoreBefore,
+      operatorExploration: candidate.exploration,
       stagnantIterationsBefore: stagnantIterations,
       staleSecondsBefore,
       repairTimeLimitSeconds,
@@ -443,24 +680,54 @@ export function solveLns(G: Grid, params: SolverParams): Solution {
           optimizer: "lns",
         });
         const populationAfter = incumbent.totalPopulation;
+        const improvement = populationAfter - populationBefore;
+        const operatorScoreAfter = updateOperatorScores(
+          operatorScores,
+          attempt.operatorName,
+          iteration,
+          "improved",
+          improvement,
+          options
+        );
         outcomes.push(
-          buildRepairOutcome(attempt, "improved", populationAfter, populationAfter - populationBefore, candidate.cpSatStatus ?? null)
+          buildRepairOutcome(attempt, "improved", populationAfter, improvement, candidate.cpSatStatus ?? null, operatorScoreAfter)
         );
         stagnantIterations = 0;
         lastImprovementAtMs = performance.now();
         writeRunningSnapshot();
         continue;
       }
-      outcomes.push(buildRepairOutcome(attempt, "neutral", candidate.totalPopulation, 0, candidate.cpSatStatus ?? null));
+      outcomes.push(buildRepairOutcome(
+        attempt,
+        "neutral",
+        candidate.totalPopulation,
+        0,
+        candidate.cpSatStatus ?? null,
+        updateOperatorScores(operatorScores, attempt.operatorName, iteration, "neutral", 0, options)
+      ));
       stagnantIterations += 1;
       writeRunningSnapshot();
     } catch (error) {
       if (shouldStop(options.stopFilePath)) {
-        outcomes.push(buildRepairOutcome(attempt, "stopped", populationBefore));
+        outcomes.push(buildRepairOutcome(
+          attempt,
+          "stopped",
+          populationBefore,
+          0,
+          undefined,
+          updateOperatorScores(operatorScores, attempt.operatorName, iteration, "stopped", 0, options)
+        ));
         return finish("cancelled", true);
       }
       if (isRecoverableRepairFailure(error)) {
-        outcomes.push(buildRepairOutcome(attempt, "recoverable-failure", populationBefore));
+        outcomes.push(buildRepairOutcome(
+          attempt,
+          "recoverable-failure",
+          populationBefore,
+          0,
+          undefined,
+          updateOperatorScores(operatorScores, attempt.operatorName, iteration, "recoverable-failure", 0, options)
+        ));
         stagnantIterations += 1;
         writeRunningSnapshot();
         continue;

@@ -768,6 +768,17 @@ export type LnsNeighborhoodAnchorPolicy =
   | "frontier-congestion-first"
   | "placed-buildings-first";
 
+export type LnsRepairOperatorName =
+  | "weak-service-repair"
+  | "residential-headroom-repair"
+  | "frontier-congestion-repair"
+  | "gate-choke-repair"
+  | "service-overlap-repair"
+  | "random-exploration"
+  | "sliding-window";
+
+export type LnsOperatorSelectionPolicy = "legacy" | "adaptive";
+
 export interface LnsOptions {
   /** Number of neighborhood-repair attempts to run after the greedy seed. */
   iterations?: number;
@@ -787,6 +798,12 @@ export interface LnsOptions {
   neighborhoodCols?: number;
   /** Deterministic policy used to rank or suppress LNS repair-window anchors. Default ranked. */
   neighborhoodAnchorPolicy?: LnsNeighborhoodAnchorPolicy;
+  /** Selection policy for named semantic LNS repair operators. Default adaptive. */
+  operatorSelectionPolicy?: LnsOperatorSelectionPolicy;
+  /** Run a deterministic exploration operator at this interval. Defaults to 5 adaptive attempts. */
+  operatorExplorationInterval?: number;
+  /** Decay applied to recent operator reward after each repair attempt. Defaults to 0.7. */
+  operatorScoreDecay?: number;
   /** Per-neighborhood CP-SAT repair budget in seconds. */
   repairTimeLimitSeconds?: number;
   /** Per-neighborhood budget for focused repair attempts before escalation. Defaults to repairTimeLimitSeconds. */
@@ -823,6 +840,10 @@ export interface LnsNeighborhoodOutcome {
   iteration: number;
   phase: LnsRepairPhase;
   window: CpSatNeighborhoodWindow;
+  operatorName?: LnsRepairOperatorName;
+  operatorScoreBefore?: number;
+  operatorScoreAfter?: number;
+  operatorExploration?: boolean;
   stagnantIterationsBefore: number;
   staleSecondsBefore: number;
   repairTimeLimitSeconds: number;
@@ -832,6 +853,18 @@ export interface LnsNeighborhoodOutcome {
   improvement: number;
   status: LnsNeighborhoodOutcomeStatus;
   cpSatStatus?: string | null;
+}
+
+export interface LnsOperatorScoreTelemetry {
+  name: LnsRepairOperatorName;
+  attempts: number;
+  improvements: number;
+  neutralRepairs: number;
+  recoverableFailures: number;
+  skippedIterations: number;
+  reward: number;
+  score: number;
+  lastSelectedIteration: number | null;
 }
 
 export interface LnsTelemetry {
@@ -851,6 +884,8 @@ export interface LnsTelemetry {
   skippedIterations: number;
   finalStagnantIterations: number;
   elapsedSeconds: number;
+  operatorSelectionPolicy?: LnsOperatorSelectionPolicy;
+  operatorScores?: LnsOperatorScoreTelemetry[];
   outcomes: LnsNeighborhoodOutcome[];
 }
 

@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+
 import {
   buildDeterministicAblationGateReport,
   createLnsBenchmarkSnapshot,
@@ -27,6 +30,7 @@ import {
 import { runCliMain } from "./cliEntrypoint.js";
 import { optionalCliNames, writeCliJson, writeCliJsonOrText, writeCliList, writeCliText } from "./cliOutput.js";
 import type {
+  LnsNeighborhoodAblationVariant,
   LnsNeighborhoodAblationVariantName,
 } from "../benchmarks/index.js";
 
@@ -43,6 +47,8 @@ interface ParsedBenchmarkArgs {
   maxWindows?: number;
   explorationWindowCount?: number;
   repairTimeLimitSeconds?: number;
+  outputPath?: string;
+  fixedRectangleBaseline?: boolean;
 }
 
 function parseArgs(argv: string[]): ParsedBenchmarkArgs {
@@ -58,7 +64,12 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
   let maxWindows: number | undefined;
   let explorationWindowCount: number | undefined;
   let repairTimeLimitSeconds: number | undefined;
+  let outputPath: string | undefined;
+  let fixedRectangleBaseline = false;
   const inlineOptions: Record<string, (value: string) => void> = {
+    output: (value) => {
+      outputPath = value;
+    },
     "ablation-variants": (value) => {
       ablationVariantNames = parseNameList(
         value,
@@ -104,6 +115,10 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
       rotateVariantRunOrder = true;
       continue;
     }
+    if (isCliFlag(arg, "--fixed-rectangle-baseline")) {
+      fixedRectangleBaseline = true;
+      continue;
+    }
     if (isCliFlag(arg, "--no-rotate-variant-run-order")) {
       rotateVariantRunOrder = false;
       continue;
@@ -131,7 +146,30 @@ function parseArgs(argv: string[]): ParsedBenchmarkArgs {
     maxWindows,
     explorationWindowCount,
     repairTimeLimitSeconds,
+    outputPath,
+    fixedRectangleBaseline,
   };
+}
+
+function writeJsonArtifact(outputPath: string, value: unknown): void {
+  const normalizedPath = path.normalize(outputPath);
+  fs.mkdirSync(path.dirname(normalizedPath), { recursive: true });
+  fs.writeFileSync(normalizedPath, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+function phase4FixedRectangleBaselineVariants(): readonly LnsNeighborhoodAblationVariant[] {
+  return [
+    {
+      name: "baseline",
+      description: "Fixed-rectangle sliding LNS windows without semantic operator ranking.",
+      lns: { neighborhoodAnchorPolicy: "sliding-only", operatorSelectionPolicy: "legacy" },
+    },
+    {
+      name: "adaptive-operators",
+      description: "Adaptive semantic LNS operators with weak-service, headroom, frontier, gate, overlap, and exploration repair.",
+      lns: { neighborhoodAnchorPolicy: "ranked", operatorSelectionPolicy: "adaptive" },
+    },
+  ];
 }
 
 export function runLnsBenchmarkCli(): void {
@@ -160,6 +198,10 @@ export function runLnsBenchmarkCli(): void {
       explorationWindowCount: args.explorationWindowCount,
       repairTimeLimitSeconds: args.repairTimeLimitSeconds,
     });
+    if (args.outputPath) {
+      writeJsonArtifact(args.outputPath, createLnsWindowReplaySnapshot(result));
+      if (!args.json) writeCliText(`Wrote LNS window replay artifact to ${args.outputPath}.`);
+    }
 
     writeCliJsonOrText(args.json, () => createLnsWindowReplaySnapshot(result), () =>
       formatLnsWindowReplayLabels(result)
@@ -168,8 +210,12 @@ export function runLnsBenchmarkCli(): void {
   }
 
   if (args.neighborhoodAblation) {
+    if (args.fixedRectangleBaseline && args.ablationVariantNames?.length) {
+      throw new Error("--fixed-rectangle-baseline cannot be combined with --ablation-variants.");
+    }
     const result = runLnsNeighborhoodAblation(undefined, {
       names: optionalCliNames(args.names),
+      variants: args.fixedRectangleBaseline ? phase4FixedRectangleBaselineVariants() : undefined,
       variantNames: args.ablationVariantNames,
       seeds: args.seeds ?? (args.gateReport ? DEFAULT_DETERMINISTIC_ABLATION_GATE_SEEDS : undefined),
       rotateVariantRunOrder: args.rotateVariantRunOrder,
@@ -177,6 +223,10 @@ export function runLnsBenchmarkCli(): void {
 
     if (args.gateReport) {
       const report = buildDeterministicAblationGateReport({ lns: result });
+      if (args.outputPath) {
+        writeJsonArtifact(args.outputPath, report);
+        if (!args.json) writeCliText(`Wrote LNS neighborhood ablation gate report to ${args.outputPath}.`);
+      }
       if (args.json) {
         writeCliJson(report);
         return;
@@ -185,6 +235,10 @@ export function runLnsBenchmarkCli(): void {
       return;
     }
 
+    if (args.outputPath) {
+      writeJsonArtifact(args.outputPath, createLnsNeighborhoodAblationSnapshot(result));
+      if (!args.json) writeCliText(`Wrote LNS neighborhood ablation artifact to ${args.outputPath}.`);
+    }
     writeCliJsonOrText(args.json, () => createLnsNeighborhoodAblationSnapshot(result), () =>
       formatLnsNeighborhoodAblation(result)
     );
@@ -194,6 +248,10 @@ export function runLnsBenchmarkCli(): void {
   const result = runLnsBenchmarkSuite(undefined, {
     names: optionalCliNames(args.names),
   });
+  if (args.outputPath) {
+    writeJsonArtifact(args.outputPath, createLnsBenchmarkSnapshot(result));
+    if (!args.json) writeCliText(`Wrote LNS benchmark artifact to ${args.outputPath}.`);
+  }
 
   writeCliJsonOrText(args.json, () => createLnsBenchmarkSnapshot(result), () => formatLnsBenchmarkSuite(result));
 }

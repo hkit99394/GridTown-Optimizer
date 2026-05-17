@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "reportType": "deterministic-ablation-gate",
+  "suites": [
+    {
+      "suite": "lns-neighborhood",
+      "caseCount": 8,
+      "seedCount": 3,
+      "comparisonCount": 24,
+      "seeds": [
+        7,
+        19,
+        37
+      ],
+      "selectedCaseNames": [
+        "typed-housing-single",
+        "compact-service-repair",
+        "seeded-service-anchor-pressure",
+        "row0-anchor-repair",
+        "lns-corridor-squeeze-pressure",
+        "lns-gate-choke-pressure",
+        "lns-footprint-mix-pressure",
+        "lns-service-overlap-pressure"
+      ],
+      "variants": [
+        "baseline",
+        "adaptive-operators"
+      ],
+      "decisions": [
+        {
+          "suite": "lns-neighborhood",
+          "variantName": "baseline",
+          "decision": "keep-baseline",
+          "nextAction": "Keep the current baseline as the comparison reference.",
+          "reasons": [
+            "Baseline variant is the reference behavior."
+          ],
+          "evidence": {
+            "caseCount": 8,
+            "seedCount": 3,
+            "comparisonCount": 24,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 0,
+            "worstPopulationDeltaVsBaseline": 0,
+            "winRate": 0,
+            "regressionRate": 0,
+            "unchangedRate": 1,
+            "meanWallClockSeconds": 0.9699015313333338,
+            "meanWallClockDeltaVsBaselineSeconds": 0,
+            "bestPopulationDeltaCaseName": "typed-housing-single",
+            "bestPopulationDeltaSeed": 7,
+            "worstPopulationDeltaCaseName": "typed-housing-single",
+            "worstPopulationDeltaSeed": 7,
+            "firstWindowMovementRate": 0,
+            "windowSequenceMovementRate": 0,
+            "anchorCoordinateMovementRate": 0
+          }
+        },
+        {
+          "suite": "lns-neighborhood",
+          "variantName": "adaptive-operators",
+          "decision": "learning-target",
+          "nextAction": "Collect counterfactual LNS window replay labels before learned window ranking.",
+          "reasons": [
+            "Has isolated wins but not enough repeated lift for deterministic promotion: best-delta=+100."
+          ],
+          "evidence": {
+            "caseCount": 8,
+            "seedCount": 3,
+            "comparisonCount": 24,
+            "medianPopulationDeltaVsBaseline": 0,
+            "worstDecilePopulationDeltaVsBaseline": 0,
+            "bestPopulationDeltaVsBaseline": 100,
+            "worstPopulationDeltaVsBaseline": 0,
+            "winRate": 0.125,
+            "regressionRate": 0,
+            "unchangedRate": 0.875,
+            "meanWallClockSeconds": 0.95800897225,
+            "meanWallClockDeltaVsBaselineSeconds": -0.011892559083333686,
+            "bestPopulationDeltaCaseName": "seeded-service-anchor-pressure",
+            "bestPopulationDeltaSeed": 7,
+            "worstPopulationDeltaCaseName": "typed-housing-single",
+            "worstPopulationDeltaSeed": 7,
+            "firstWindowMovementRate": 0.875,
+            "windowSequenceMovementRate": 1,
+            "anchorCoordinateMovementRate": 1
+          }
+        }
+      ]
+    }
+  ],
+  "nextActions": [
+    "Collect counterfactual LNS window replay labels before learned window ranking."
+  ]
+}

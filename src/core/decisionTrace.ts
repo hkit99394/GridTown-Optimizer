@@ -232,6 +232,10 @@ function appendLnsEvents(
       },
       evidence: {
         status: outcome.status,
+        operatorName: outcome.operatorName ?? null,
+        operatorExploration: outcome.operatorExploration ?? null,
+        operatorScoreBefore: outcome.operatorScoreBefore ?? null,
+        operatorScoreAfter: outcome.operatorScoreAfter ?? null,
         repairTimeLimitSeconds: outcome.repairTimeLimitSeconds,
         staleSecondsBefore: outcome.staleSecondsBefore,
         stagnantIterationsBefore: outcome.stagnantIterationsBefore,
